@@ -1,8 +1,10 @@
+import type Anthropic from '@anthropic-ai/sdk';
 import { describe, expect, it, vi } from 'vitest';
 
 import { planFiling } from './filing.ts';
 import { asIssue, finding, loaded, metadata, RUN_URL, single } from './fixtures.ts';
 import {
+  askClaude,
   groupingInput,
   groupingMode,
   groupWithModel,
@@ -175,7 +177,9 @@ describe('groupingInput', () => {
 
 describe('groupWithModel', () => {
   it('returns the grouping of a valid answer', async () => {
-    const ask = vi.fn(async () => ({ groups: [{ members: [B, A], existingIssue: 7 }] }));
+    const ask = vi.fn(async () =>
+      JSON.stringify({ groups: [{ members: [B, A], existingIssue: 7 }] })
+    );
 
     await expect(groupWithModel(input, ask)).resolves.toEqual({
       groups: [{ members: [B, A], existingIssue: 7 }],
@@ -186,13 +190,15 @@ describe('groupWithModel', () => {
   it('asks again with the problems of an answer that drops a finding', async () => {
     const ask = vi
       .fn()
-      .mockResolvedValueOnce({ groups: [{ members: [A], existingIssue: null }] })
-      .mockResolvedValueOnce({
-        groups: [
-          { members: [A], existingIssue: null },
-          { members: [B], existingIssue: null },
-        ],
-      });
+      .mockResolvedValueOnce(JSON.stringify({ groups: [{ members: [A], existingIssue: null }] }))
+      .mockResolvedValueOnce(
+        JSON.stringify({
+          groups: [
+            { members: [A], existingIssue: null },
+            { members: [B], existingIssue: null },
+          ],
+        })
+      );
 
     await expect(groupWithModel(input, ask)).resolves.toEqual({
       groups: [{ members: [A] }, { members: [B] }],
@@ -208,13 +214,15 @@ describe('groupWithModel', () => {
     };
     const ask = vi
       .fn()
-      .mockResolvedValueOnce({ groups: [{ members: [A, B], existingIssue: 9 }] })
-      .mockResolvedValueOnce({
-        groups: [
-          { members: [A], existingIssue: 9 },
-          { members: [B], existingIssue: 7 },
-        ],
-      });
+      .mockResolvedValueOnce(JSON.stringify({ groups: [{ members: [A, B], existingIssue: 9 }] }))
+      .mockResolvedValueOnce(
+        JSON.stringify({
+          groups: [
+            { members: [A], existingIssue: 9 },
+            { members: [B], existingIssue: 7 },
+          ],
+        })
+      );
 
     await expect(groupWithModel(filed, ask)).resolves.toEqual({
       groups: [
@@ -228,12 +236,73 @@ describe('groupWithModel', () => {
   });
 
   it('throws with the problems of the last answer when no attempt fits', async () => {
-    const ask = vi.fn(async () => ({ groups: [{ members: [A, B], existingIssue: 8 }] }));
+    const ask = vi.fn(async () =>
+      JSON.stringify({ groups: [{ members: [A, B], existingIssue: 8 }] })
+    );
 
     await expect(groupWithModel(input, ask, { attempts: 2 })).rejects.toThrow(
       'group 1 names #8, which is not a listed QA issue'
     );
     expect(ask).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('askClaude', () => {
+  const reply = (
+    stop_reason: Anthropic.Beta.BetaStopReason,
+    content: Partial<Anthropic.Beta.BetaContentBlock>[]
+  ) => ({ stop_reason, content }) as Anthropic.Beta.BetaMessage;
+  const text = (value: string) => ({ type: 'text' as const, text: value });
+  const grouped = JSON.stringify({
+    groups: [
+      { members: [A], existingIssue: null },
+      { members: [B], existingIssue: null },
+    ],
+  });
+
+  it('repairs a reply that is not JSON on the next attempt', async () => {
+    const create = vi
+      .fn()
+      .mockResolvedValueOnce(reply('end_turn', [text('Here is the grouping: {"groups": [')]))
+      .mockResolvedValueOnce(reply('end_turn', [text(grouped)]));
+
+    await expect(groupWithModel(input, askClaude(create))).resolves.toEqual({
+      groups: [{ members: [A] }, { members: [B] }],
+    });
+    expect(create).toHaveBeenCalledTimes(2);
+    const [, assistant, problem] = create.mock.calls[1]![0].messages;
+    expect(assistant).toEqual({
+      role: 'assistant',
+      content: 'Here is the grouping: {"groups": [',
+    });
+    expect(problem.content).toContain('The answer is not JSON');
+  });
+
+  it('stops at a refusal without asking again', async () => {
+    const create = vi.fn(async () => reply('refusal', []));
+
+    await expect(groupWithModel(input, askClaude(create))).rejects.toThrow(
+      'The model refused to group the findings.'
+    );
+    expect(create).toHaveBeenCalledTimes(1);
+  });
+
+  it('stops at an answer cut off by max_tokens without asking again', async () => {
+    const create = vi.fn(async () => reply('max_tokens', [text('{"groups": [{"members": ["a')]));
+
+    await expect(groupWithModel(input, askClaude(create))).rejects.toThrow(
+      "The model's answer was cut off at max_tokens (16000) before it was complete."
+    );
+    expect(create).toHaveBeenCalledTimes(1);
+  });
+
+  it('stops at a reply without a text block, naming its stop reason', async () => {
+    const create = vi.fn(async () => reply('end_turn', [{ type: 'thinking' }]));
+
+    await expect(groupWithModel(input, askClaude(create))).rejects.toThrow(
+      'The model answered with no text (stop reason end_turn).'
+    );
+    expect(create).toHaveBeenCalledTimes(1);
   });
 });
 

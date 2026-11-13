@@ -5,13 +5,7 @@ import Anthropic from '@anthropic-ai/sdk';
 
 import { versionLine } from './lib/cycle.ts';
 import { listQaIssues } from './lib/github.ts';
-import {
-  GROUPING_REQUEST,
-  groupingInput,
-  groupingMode,
-  groupWithModel,
-  type Ask,
-} from './lib/group-model.ts';
+import { askClaude, groupingInput, groupingMode, groupWithModel } from './lib/group-model.ts';
 import { identityGrouping } from './lib/grouping.ts';
 import { loadFindingGroups, QA_LABEL } from './lib/proposals.ts';
 import type { Grouping } from './lib/schema.ts';
@@ -49,20 +43,6 @@ versionLine(version);
 
 const { groups } = loadFindingGroups(results, version);
 
-const askClaude =
-  (client: Anthropic): Ask =>
-  async (messages) => {
-    const response = await client.beta.messages.create({ ...GROUPING_REQUEST, messages });
-    if (response.stop_reason === 'refusal' || response.stop_reason === 'max_tokens') {
-      throw new Error(`The model stopped with ${response.stop_reason} instead of answering.`);
-    }
-    const text = response.content.find((block) => block.type === 'text');
-    if (!text) {
-      throw new Error(`The model answered with no text (stop reason ${response.stop_reason}).`);
-    }
-    return JSON.parse(text.text);
-  };
-
 const NO_KEY =
   'Grouping needs ANTHROPIC_API_KEY. The subscription token used for agent runs (CLAUDE_CODE_OAUTH_TOKEN) does not work for the Messages API.';
 
@@ -81,9 +61,10 @@ const modelGrouping = async (): Promise<Grouping> => {
     );
     return ungrouped;
   }
+  const client = new Anthropic();
   return groupWithModel(
     groupingInput(groups, listQaIssues(repo, QA_LABEL)),
-    askClaude(new Anthropic())
+    askClaude((params) => client.beta.messages.create(params))
   );
 };
 

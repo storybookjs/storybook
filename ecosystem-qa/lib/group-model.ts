@@ -162,7 +162,41 @@ export const groupingMode = (
   return env.GITHUB_ACTIONS ? 'fail' : 'skip';
 };
 
-export type Ask = (messages: Anthropic.Beta.BetaMessageParam[]) => Promise<unknown>;
+export type Ask = (messages: Anthropic.Beta.BetaMessageParam[]) => Promise<string>;
+
+type Create = (
+  params: Anthropic.Beta.MessageCreateParamsNonStreaming
+) => Promise<Anthropic.Beta.BetaMessage>;
+
+// Throws on a refusal, a reply cut off at max_tokens, and a reply without text. None of them is
+// asked again: a refusal must not be argued with, a cut-off answer hits the same limit the next
+// time, and a reply without text leaves nothing to point the model at.
+export const askClaude =
+  (create: Create): Ask =>
+  async (messages) => {
+    const response = await create({ ...GROUPING_REQUEST, messages });
+    if (response.stop_reason === 'refusal') {
+      throw new Error('The model refused to group the findings.');
+    }
+    if (response.stop_reason === 'max_tokens') {
+      throw new Error(
+        `The model's answer was cut off at max_tokens (${GROUPING_REQUEST.max_tokens}) before it was complete.`
+      );
+    }
+    const text = response.content.find((block) => block.type === 'text')?.text.trim();
+    if (!text) {
+      throw new Error(`The model answered with no text (stop reason ${response.stop_reason}).`);
+    }
+    return text;
+  };
+
+const parseJson = (text: string): { json: unknown } | { error: string } => {
+  try {
+    return { json: JSON.parse(text) };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : String(error) };
+  }
+};
 
 const review = (answer: unknown, input: GroupingInput): string[] | Grouping => {
   const parsed = GroupingAnswer.safeParse(answer);
@@ -199,14 +233,16 @@ export const groupWithModel = async (
   ];
   let problems: string[] = [];
   for (let attempt = 1; attempt <= attempts; attempt++) {
-    const answer = await ask(messages);
-    const result = review(answer, input);
+    const text = await ask(messages);
+    const parsed = parseJson(text);
+    const result =
+      'json' in parsed ? review(parsed.json, input) : [`The answer is not JSON: ${parsed.error}`];
     if (!Array.isArray(result)) {
       return result;
     }
     problems = result;
     messages.push(
-      { role: 'assistant', content: JSON.stringify(answer) },
+      { role: 'assistant', content: 'json' in parsed ? JSON.stringify(parsed.json) : text },
       {
         role: 'user',
         content: `That grouping does not fit the findings:\n${bullets(problems)}\n\nAnswer again with the whole grouping.`,

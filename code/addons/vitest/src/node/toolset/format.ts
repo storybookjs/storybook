@@ -287,7 +287,7 @@ export function displayPath(file: string): string {
 
 /**
  * A focused run whose selected stories all stayed out of the run, for example excluded by tags. It
- * fails, as a Vitest file without tests does, so a run that tested nothing never reads as a pass.
+ * passes, as a Vitest run whose tests are all skipped does; the selection line says why.
  */
 export function ranNothingSelected(result: TestRunResult): boolean {
   return (
@@ -421,11 +421,9 @@ function formatResultSection(
   const verdict =
     failureParts.length > 0
       ? `Failed: ${failureParts.join(', ')}${passed > 0 && testFailureParts.length === 0 ? `; ${pluralize(passed, 'component test')} passed` : ''}.`
-      : ranNothingSelected(result)
-        ? 'Failed: none of the selected stories ran.'
-        : passed === 0
-          ? 'No component tests ran.'
-          : `Passed: ${pluralize(passed, 'component test')} passed.`;
+      : passed === 0
+        ? 'No component tests ran.'
+        : `Passed: ${pluralize(passed, 'component test')} passed.`;
 
   // Skipped tests are reported too, as `status-value:unknown`; only a verdict means a story ran.
   const ranStoryIds = new Set(
@@ -528,18 +526,28 @@ function formatNoStories(
       selection?.files?.storyFiles === 0
         ? `\nFile arguments select story files by path, as Vitest filters select test files. To test the stories that depend on a changed file, use ${argument(ctx, '--changed', 'changed: true')}.`
         : '';
-    return `No stories found matching the provided input, so no tests ran.
+    return `No stories found matching the provided input.
 
 ${notFoundMessages.join('\n')}${filterHint}`;
+  }
+  if (selection?.files?.storyFiles === 0) {
+    // Only under `changed`, which passes with no tests, as in Vitest; otherwise it failed above.
+    return `No story files found for ${selection.files.filters.map((filter) => code(displayPath(filter))).join(', ')}, so no tests ran.
+File arguments select story files by path, as Vitest filters select test files. To test the stories that depend on a changed file, use ${argument(ctx, '--changed', 'changed: true')} without file arguments.`;
   }
   if (selection?.changed) {
     const { changedFiles } = selection.changed;
     const what =
       changedFiles === 0
         ? `No changed files found (${selection.changed.since ? `since ${code(selection.changed.since)}, and uncommitted` : 'uncommitted'})`
-        : `No stories are affected by the ${describeChanged(selection.changed)}${selection.files ? ' among the selected story files' : ''}`;
+        : selection.files || selection.stories
+          ? `None of the selected stories is affected by the ${describeChanged(selection.changed)}`
+          : `No stories are affected by the ${describeChanged(selection.changed)}`;
     return `${what}, so no tests ran.
 To test more, pass a ref (${argument(ctx, '--changed main', 'changed: "main"')}) or story files, or leave out every argument to run every story.`;
+  }
+  if (selection?.files && selection.stories) {
+    return 'None of the given story IDs is in the matched story files, so no tests ran.';
   }
   return 'No stories were given, so no tests ran. Pass files or story IDs, or neither to run every story test.';
 }

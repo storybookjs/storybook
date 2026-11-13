@@ -197,7 +197,9 @@ export async function runStoryTests({
 
   // Each form narrows the selection, as Vitest's file filters, `--changed` and `-t` do together.
   // `undefined` stands for every story.
-  if (stories || files || changed) {
+  // An empty filter list filters nothing, as in Vitest.
+  const filters = files?.length ? files : undefined;
+  if (stories || filters || changed) {
     const index = await getIndex();
     let candidates: Set<string> | undefined;
     const narrow = (ids: string[]) => {
@@ -205,16 +207,19 @@ export async function runStoryTests({
     };
     selection = {};
 
-    if (files) {
-      const matched = filterStoryFiles({ index, filters: files });
-      selection.files = { filters: files, storyFiles: matched.storyFiles.length };
+    if (filters) {
+      const matched = filterStoryFiles({ index, filters });
+      selection.files = { filters, storyFiles: matched.storyFiles.length };
       if (matched.storyFiles.length === 0) {
-        // Vitest: "No test files found, exiting with code 1".
+        // Vitest: "No test files found, exiting with code 1", or code 0 with `--changed`, which
+        // turns on `passWithNoTests`.
         return {
           status: 'no-stories',
-          notFoundMessages: [
-            `No story files found for ${files.map((file) => `\`${displayPath(file)}\``).join(', ')}.`,
-          ],
+          notFoundMessages: changed
+            ? []
+            : [
+                `No story files found for ${filters.map((file) => `\`${displayPath(file)}\``).join(', ')}.`,
+              ],
           selection,
         };
       }
@@ -251,6 +256,7 @@ export async function runStoryTests({
     }
 
     if (stories) {
+      selection.stories = stories.length;
       const resolved = findStoryIds(index, stories);
       notFoundMessages = resolved
         .filter((story): story is NotFoundStory => !('entry' in story))

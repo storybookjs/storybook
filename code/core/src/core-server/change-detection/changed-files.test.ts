@@ -54,6 +54,25 @@ describe('findChangedFiles', () => {
     );
   });
 
+  it('keeps paths with spaces and non-ASCII characters intact', async () => {
+    write('app/组件/My Button.stories.tsx');
+
+    expect(await findChangedFiles({ cwd: repo })).toEqual([
+      join(repo, 'app/组件/My Button.stories.tsx').replaceAll('\\', '/'),
+    ]);
+  });
+
+  it('reads staged deletions and renames, as Vitest does', async () => {
+    git('rm', '-q', 'app/src/Gone.tsx');
+    git('mv', 'app/src/Committed.tsx', 'app/src/Renamed.tsx');
+
+    expect((await findChangedFiles({ cwd: repo })).sort()).toEqual(
+      ['app/src/Gone.tsx', 'app/src/Renamed.tsx'].map((file) =>
+        join(repo, file).replaceAll('\\', '/')
+      )
+    );
+  });
+
   it('adds the changes committed since a ref', async () => {
     git('checkout', '-qb', 'feature');
     write('app/src/Committed.tsx', 'changed');

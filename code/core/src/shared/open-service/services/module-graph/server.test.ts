@@ -1,4 +1,4 @@
-import { mkdtempSync, realpathSync } from 'node:fs';
+import { mkdtempSync, realpathSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -181,6 +181,30 @@ describe('module-graph open service', () => {
           ],
         })
       ).resolves.toEqual([true, true, false]);
+    });
+
+    it('follows the imports of the files in a directory entry', async () => {
+      const configDir = realpathSync.native(mkdtempSync(join(tmpdir(), 'sb-config-')));
+      writeFileSync(join(configDir, 'vitest.setup.ts'), '');
+      const { buildSpy } = installDependencyGraphMocks(buildReverseIndex([]));
+      buildSpy.mockImplementation(async (roots: Iterable<string>) => ({
+        reverseIndex: buildReverseIndex([]),
+        graph: [...roots].includes(`${configDir}/vitest.setup.ts`)
+          ? new Map([[`${configDir}/vitest.setup.ts`, new Set(['/repo/src/setup-helpers.ts'])]])
+          : new Map(),
+      }));
+      const { adapter } = createMockAdapter();
+      const runtime = registerModuleGraphService({
+        channel: { on: vi.fn(() => () => undefined), emit: vi.fn() } as never,
+        getIndex: vi.fn().mockResolvedValue(createStoryIndex([])),
+        workingDir: '/repo',
+        getAdapter: async () => adapter,
+        getPreviewEntries: async () => [configDir],
+      });
+
+      await expect(
+        runtime.commands.loadedByPreview({ files: ['/repo/src/setup-helpers.ts'] })
+      ).resolves.toEqual([true]);
     });
 
     it('reports nothing as loaded when no preview entries are known', async () => {

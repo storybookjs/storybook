@@ -35,6 +35,10 @@ describe('storybook tools arguments after the tool name', () => {
     { tokens: ['--changed'], input: { changed: true } },
     { tokens: ['--changed', 'main'], input: { changed: 'main' } },
     { tokens: ['Button', '--changed'], input: { changed: true, files: ['Button'] } },
+    {
+      tokens: ['--input', '{"files":["A"]}', 'B'],
+      input: { files: ['A', 'B'] },
+    },
     { tokens: ['--delta', '-1'], input: { delta: -1 } },
     { tokens: ['--grep', '-h'], input: { grep: '-h' } },
     { tokens: ['--title', 'plain text'], input: { title: 'plain text' } },
@@ -111,7 +115,13 @@ describe('storybook tools arguments after the tool name', () => {
       // The dispatcher appends bare arguments to `files`, the `fileArguments` key of `test run`.
       const args =
         parsed.ok && parsed.positionals.length > 0
-          ? { ...parsed.args, files: [...parsed.positionals] }
+          ? {
+              ...parsed.args,
+              files: [
+                ...((parsed.args.files as string[] | undefined) ?? []),
+                ...parsed.positionals,
+              ],
+            }
           : parsed.ok
             ? parsed.args
             : undefined;

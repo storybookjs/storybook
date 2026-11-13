@@ -163,6 +163,36 @@ describe('findChangedStories', () => {
     expect(getModuleGraph).not.toHaveBeenCalled();
   });
 
+  it('selects every story for an env file, as Vite loads it everywhere', async () => {
+    expect(await find([at('.env.local')], vi.fn())).toEqual({
+      kind: 'every-story',
+      trigger: at('.env.local'),
+    });
+  });
+
+  it('reports the graph as unavailable when it cannot tell what the preview loads', async () => {
+    const getModuleGraph = graph({});
+    loadedByPreview.mockRejectedValue(new Error('Unknown command'));
+
+    expect(await find([at('src/theme.ts')], getModuleGraph)).toMatchObject({
+      kind: 'unavailable',
+    });
+  });
+
+  it('reports a graph that is not ready as unavailable', async () => {
+    const getModuleGraph = (): ModuleGraphAccess => ({
+      queries: {
+        status: { loaded: async () => ({ value: 'unavailable', reason: 'no adapter' }) },
+        storiesForFiles: { loaded: storiesForFiles },
+      },
+    });
+
+    expect(await find([at('src/Button.tsx')], getModuleGraph)).toMatchObject({
+      kind: 'unavailable',
+      reason: expect.stringContaining('no adapter'),
+    });
+  });
+
   it('selects nothing for deleted files and files no story imports', async () => {
     expect(await find([at('src/Deleted.tsx'), at('README.md')])).toEqual({
       kind: 'stories',

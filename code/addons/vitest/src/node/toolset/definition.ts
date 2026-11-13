@@ -15,12 +15,7 @@ import {
   type ToolsetTelemetryReport,
 } from 'storybook/open-service';
 
-import {
-  countTestRunFailures,
-  formatTestRun,
-  ranNothingSelected,
-  summarizeTestRun,
-} from './format.ts';
+import { countTestRunFailures, formatTestRun, summarizeTestRun } from './format.ts';
 import { createAsyncQueue, runStoryTests, type TestChannel } from './run.ts';
 
 const errorLikeSchema: v.GenericSchema = v.object({
@@ -88,6 +83,8 @@ const selectionSchema = v.object({
       storyFiles: v.optional(v.number()),
     })
   ),
+  /** How many story ids `stories` gave. */
+  stories: v.optional(v.number()),
   /** Stories the run was asked for; absent when the selection is every story. */
   storyCount: v.optional(v.number()),
 });
@@ -149,7 +146,7 @@ const runInputSchema = v.strictObject({
     v.pipe(
       storyInputArraySchema,
       v.description(
-        `Stories to test for focused feedback. Omit this field and \`files\` to run tests for all available stories.
+        `Stories to test for focused feedback. Omit this field, \`files\` and \`changed\` to run tests for all available stories.
 Prefer running tests for specific stories while developing to get faster feedback,
 and omit it once before you finish, to verify every story.
 Prefer { storyId } when you don't already have story file context, since this avoids filesystem discovery.
@@ -168,9 +165,11 @@ Use { absoluteStoryPath + exportName } only when you're currently working in a s
   ),
   changed: v.optional(
     v.pipe(
-      v.union([v.boolean(), v.string(), v.pipe(v.number(), v.transform(String))]),
+      // A number too: the CLI reads `--changed 1234567` (a short sha) as JSON. No `transform` here:
+      // the MCP server converts input schemas to JSON Schema, which cannot express one.
+      v.union([v.boolean(), v.string(), v.number()]),
       v.description(
-        `Test the stories affected by the files git reports as changed, as Vitest's --changed: true for the uncommitted changes (staged, unstaged and untracked), or a ref (a branch or commit) for the changes since it plus the uncommitted ones. A changed story file selects its stories, any other changed file the stories that depend on it, and a change to what the Storybook preview loads, a package.json or a vite or vitest config selects every story.`
+        `Test the stories affected by the files git reports as changed, as Vitest's --changed: true for the uncommitted changes (staged, unstaged and untracked), or a ref (a branch or commit) for the changes since it plus the uncommitted ones. A changed story file selects its stories, any other changed file the stories that depend on it, and a change to what the Storybook preview loads, a package.json, a vite or vitest config, or a .env file selects every story.`
       )
     )
   ),
@@ -190,7 +189,7 @@ Use { absoluteStoryPath + exportName } only when you're currently working in a s
 type RunInput = {
   stories?: StoryInput[];
   files?: string[];
-  changed?: boolean | string;
+  changed?: boolean | string | number;
   a11y: boolean;
 };
 
@@ -283,8 +282,7 @@ function isFailedRun(data: TestRunData): data is TestRunFailureData {
     case 'completed':
       return (
         Object.values(countTestRunFailures(data.result, data.a11y)).some((count) => count > 0) ||
-        (data.notFound?.length ?? 0) > 0 ||
-        ranNothingSelected(data.result)
+        (data.notFound?.length ?? 0) > 0
       );
     case 'no-stories':
       // A filter or id that matched nothing fails, as in Vitest; `changed` affecting nothing passes.
@@ -345,7 +343,7 @@ export function createTestToolset({
               getIndex: storyIndex.getIndex,
               stories: input.stories,
               files: input.files,
-              changed: input.changed,
+              changed: typeof input.changed === 'number' ? String(input.changed) : input.changed,
               getModuleGraph: () => getModuleGraph(ctx),
               a11y: input.a11y,
             });

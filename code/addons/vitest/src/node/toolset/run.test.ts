@@ -137,7 +137,7 @@ describe('runStoryTests', () => {
     expect(result).toEqual({
       status: 'no-stories',
       notFoundMessages: [expect.stringContaining('No story found for story ID "missing--story"')],
-      selection: {},
+      selection: { stories: 1 },
     });
     expect(requested).toEqual([]);
   });
@@ -163,7 +163,11 @@ describe('runStoryTests', () => {
 
     const result = await runStoryTests({ channel, getIndex: async () => index, stories: [] });
 
-    expect(result).toEqual({ status: 'no-stories', notFoundMessages: [], selection: {} });
+    expect(result).toEqual({
+      status: 'no-stories',
+      notFoundMessages: [],
+      selection: { stories: 0 },
+    });
     expect(requested).toEqual([]);
   });
 
@@ -207,6 +211,14 @@ describe('runStoryTests', () => {
       selection: { files: { filters: ['src/Button.tsx'], storyFiles: 0 } },
     });
     expect(requested).toEqual([]);
+  });
+
+  it('treats an empty filter list as no filter, as Vitest does', async () => {
+    const { channel, requested } = respondingChannel();
+
+    await runStoryTests({ channel, getIndex: async () => index, files: [] });
+
+    expect(requested).toEqual([undefined]);
   });
 
   describe('changed', () => {
@@ -290,6 +302,21 @@ describe('runStoryTests', () => {
 
       // The filter matches the Button story file, but no change affects it: a deleted file selects
       // nothing, as in Vitest.
+      expect(result).toMatchObject({ status: 'no-stories', notFoundMessages: [] });
+      expect(requested).toEqual([]);
+    });
+
+    it('passes when no story file matches the filters, as Vitest does with --changed', async () => {
+      const { channel, requested } = respondingChannel();
+
+      const result = await runStoryTests({
+        channel,
+        getIndex: async () => index,
+        files: ['src/Button.tsx'],
+        changed: true,
+        getChangedFiles: async () => [BUTTON_STORIES],
+      });
+
       expect(result).toMatchObject({ status: 'no-stories', notFoundMessages: [] });
       expect(requested).toEqual([]);
     });

@@ -1,6 +1,6 @@
-import { realpathSync, statSync } from 'node:fs';
+import { readdirSync, realpathSync, statSync } from 'node:fs';
 
-import { normalize } from 'pathe';
+import { join, normalize } from 'pathe';
 
 import type { ChannelLike } from 'storybook/internal/channels';
 import { STORY_INDEX_INVALIDATED } from 'storybook/internal/core-events';
@@ -18,6 +18,16 @@ function canonical(path: string): string {
     return normalize(realpathSync.native(path));
   } catch {
     return normalize(path);
+  }
+}
+
+function filesIn(directory: string): string[] {
+  try {
+    return readdirSync(directory, { withFileTypes: true })
+      .filter((entry) => entry.isFile())
+      .map((entry) => normalize(join(directory, entry.name)));
+  } catch {
+    return [];
   }
 }
 
@@ -125,11 +135,14 @@ export function registerModuleGraphService(options: RegisterModuleGraphServiceOp
             const entries = ((await options.getPreviewEntries?.()) ?? []).map(canonical);
             // A directory entry (the config directory) covers every file in it: `main.ts` and
             // `vitest.setup.ts` affect every story without being imported by one.
-            const directories = entries.filter(isDirectory).map((dir) => `${dir}/`);
-            const loaded = await engine!.filesReachableFrom(entries);
+            const directories = entries.filter(isDirectory);
+            // The files in a directory entry are roots too, so what `main.ts` or `vitest.setup.ts`
+            // imports counts as loaded.
+            const roots = [...entries, ...directories.flatMap(filesIn)];
+            const loaded = await engine!.filesReachableFrom(roots);
             return input.files.map((file) => {
               const path = normalize(file);
-              return loaded.has(path) || directories.some((dir) => path.startsWith(dir));
+              return loaded.has(path) || directories.some((dir) => path.startsWith(`${dir}/`));
             });
           },
         },

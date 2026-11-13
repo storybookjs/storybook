@@ -1,8 +1,8 @@
 name: Ecosystem QA
 
 # A probe on a branch that is never merged. While gutenberg's Storybook tests run in Vitest browser
-# mode inside the QA sandbox, a root process of the runner named `agent` grows by about a gigabyte a
-# minute, outside the sandbox's memory limit. In the sweep that lost a runner, the sandbox held a
+# mode inside the QA sandbox, the agent of the runner hardening action, a root process named `agent`,
+# grows by about a gigabyte a minute, outside the sandbox's memory limit. In the sweep that lost a runner, the sandbox held a
 # build at the same time. Here a second container holds 8000 MB from the moment the tests start, in
 # place of that build. Without the guard the runner is expected to stop answering; with it, the
 # runner is expected to end the test run and stay up.
@@ -23,6 +23,11 @@ jobs:
       matrix:
         guard: ['off', 'on']
     steps:
+      - name: Harden the runner
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          egress-policy: audit
+
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:

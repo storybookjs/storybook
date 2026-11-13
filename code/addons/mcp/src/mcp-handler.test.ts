@@ -342,10 +342,11 @@ describe('mcpServerHandler', () => {
   });
 
   it.each([
-    ['a null body', 'null'],
-    ['a message without jsonrpc', { id: 1, method: 'tools/list' }],
-    ['a batch', [{ jsonrpc: '2.0', id: 1, method: 'tools/list' }]],
-  ])('should answer %s with a 400 response', async (_, body) => {
+    ['a null body', 'null', -32600],
+    ['a message without jsonrpc', { id: 1, method: 'tools/list' }, -32600],
+    ['a batch', [{ jsonrpc: '2.0', id: 1, method: 'tools/list' }], -32600],
+    ['an unparseable body', '{bad', -32700],
+  ])('should answer %s with a 400 JSON-RPC error', async (_, body, code) => {
     const mockReq = createMockIncomingMessage({
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -364,7 +365,9 @@ describe('mcpServerHandler', () => {
     });
 
     expect(response.end).toHaveBeenCalled();
-    expect(getResponseData().status).toBe(400);
+    const { status, body: responseBody } = getResponseData();
+    expect(status).toBe(400);
+    expect(JSON.parse(responseBody)).toMatchObject({ jsonrpc: '2.0', error: { code } });
   });
 
   it('should include docs-style instructions when docs toolset is selected and manifest is available', async () => {

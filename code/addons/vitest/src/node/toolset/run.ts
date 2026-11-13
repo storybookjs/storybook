@@ -1,3 +1,5 @@
+import { existsSync } from 'node:fs';
+
 import type { ChannelLike } from 'storybook/internal/channels';
 import {
   ChangeDetectionUnavailableError,
@@ -146,8 +148,16 @@ export function triggerTestRun({
 }
 
 // Outside a repository, or without git, the file form still works; the message says so.
-function changedFilesError(error: unknown): string {
+function changedFilesError(error: unknown, since: string | undefined, cli: boolean): string {
   const message = error instanceof Error ? error.message : String(error);
+  // Vitest reads the token after `--changed` as its ref, so `--changed Button.stories.tsx` asks
+  // git for a ref named after a file.
+  if (since && !(error instanceof ChangeDetectionUnavailableError) && existsSync(since)) {
+    if (!cli) {
+      return `\`changed\` takes \`true\` or a git ref, but \`${since}\` is a path. Pass story files in \`files\`.`;
+    }
+    return `\`--changed\` took \`${since}\` as the git ref to compare with, but it is a path. As in Vitest, the argument right after \`--changed\` is its ref: put file arguments before \`--changed\`.`;
+  }
   return error instanceof ChangeDetectionUnavailableError
     ? `\`--changed\` reads the changed files from git, but ${message === 'not a git repository' ? 'this project is not in a git repository' : message}. Pass story files instead.`
     : `\`--changed\` could not read the changed files from git: ${message}`;
@@ -163,6 +173,8 @@ export type RunStoryTestsParams = {
   changed?: boolean | string;
   /** The module graph that maps a changed file to the stories that depend on it. */
   getModuleGraph?: () => ModuleGraphAccess | undefined;
+  /** The transport the call came over, for messages that name its argument syntax. */
+  transport?: string;
   /** Reads the changed files from git; injectable for tests. */
   getChangedFiles?: typeof findChangedFiles;
   a11y?: boolean;
@@ -185,6 +197,7 @@ export async function runStoryTests({
   changed,
   getModuleGraph = () => undefined,
   getChangedFiles = findChangedFiles,
+  transport = 'cli',
   a11y = true,
   actor = 'core/test',
   requestEvent = TRIGGER_TEST_RUN_REQUEST,
@@ -232,7 +245,10 @@ export async function runStoryTests({
       try {
         changedFiles = await getChangedFiles({ since });
       } catch (error) {
-        return { status: 'error', error: { message: changedFilesError(error) } };
+        return {
+          status: 'error',
+          error: { message: changedFilesError(error, since, transport === 'cli') },
+        };
       }
       const affected = await findChangedStories({ index, changedFiles, getModuleGraph });
       if (affected.kind === 'unavailable') {

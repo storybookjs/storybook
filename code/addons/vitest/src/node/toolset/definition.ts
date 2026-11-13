@@ -347,6 +347,7 @@ export function createTestToolset({
               files: input.files,
               changed: typeof input.changed === 'number' ? String(input.changed) : input.changed,
               getModuleGraph: () => getModuleGraph(ctx),
+              transport: ctx.transport,
               a11y: input.a11y,
             });
             const data: TestRunData = { ...output, a11y: input.a11y };

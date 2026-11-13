@@ -108,6 +108,7 @@ describe('test API', () => {
       files: undefined,
       changed: undefined,
       getModuleGraph: expect.any(Function),
+      transport: 'cli',
       a11y: true,
     });
   });
@@ -467,8 +468,10 @@ File arguments select story files by path, as Vitest filters select test files. 
       expect(outcome.ok).toBe(true);
       expect(outcome.markdown)
         .toBe(`No stories are affected by the 2 changed files (uncommitted), so no tests ran.
-To test more, pass a ref (\`--changed main\`) or story files, or leave out every argument to run every story.`);
-      expect(mcpOutcome.markdown).toContain('pass a ref (`changed: "main"`)');
+To test more, pass a ref (\`--changed main\`) or story files. Before you finish, run every story once: \`npx storybook tools test run\` without arguments.`);
+      expect(mcpOutcome.markdown).toContain(
+        'pass a ref (`changed: "main"`) or story files. Before you finish, run every story once: test-run without `files`, `changed` or `stories`.'
+      );
     });
 
     it('passes when no story file matches the filters under changed, as Vitest does', async () => {
@@ -483,6 +486,9 @@ To test more, pass a ref (\`--changed main\`) or story files, or leave out every
       expect(outcome.ok).toBe(true);
       expect(outcome.markdown).toContain(
         'No story files found for `src/Button.tsx`, so no tests ran.'
+      );
+      expect(outcome.markdown).toContain(
+        'Before you finish, run every story once: `npx storybook tools test run` without arguments.'
       );
     });
 
@@ -511,6 +517,7 @@ To test more, pass a ref (\`--changed main\`) or story files, or leave out every
       expect((await runTests()).markdown).toContain(
         'No changed files found (since `main`, and uncommitted), so no tests ran.'
       );
+      expect((await runTests()).markdown).toContain('Before you finish, run every story once');
     });
 
     it('says why accessibility was not checked when addon-a11y is not enabled', async () => {

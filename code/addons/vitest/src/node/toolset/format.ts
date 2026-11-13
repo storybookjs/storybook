@@ -511,6 +511,12 @@ function formatCompletedRun(
   return sections.join('\n\n');
 }
 
+function runEveryStoryBeforeFinishing(ctx: ToolsetCtx): string {
+  return ctx.transport === 'cli'
+    ? `Before you finish, run every story once: ${code(getToolName(ctx)('test.run'))} without arguments.`
+    : `Before you finish, run every story once: ${getToolName(ctx)('test.run')} without ${code('files')}, ${code('changed')} or ${code('stories')}.`;
+}
+
 // How to spell an argument for the transport the agent uses.
 function argument(ctx: ToolsetCtx, cli: string, mcp: string): string {
   return code(ctx.transport === 'cli' ? cli : mcp);
@@ -533,7 +539,8 @@ ${notFoundMessages.join('\n')}${filterHint}`;
   if (selection?.files?.storyFiles === 0) {
     // Only under `changed`, which passes with no tests, as in Vitest; otherwise it failed above.
     return `No story files found for ${selection.files.filters.map((filter) => code(displayPath(filter))).join(', ')}, so no tests ran.
-File arguments select story files by path, as Vitest filters select test files. To test the stories that depend on a changed file, use ${argument(ctx, '--changed', 'changed: true')} without file arguments.`;
+File arguments select story files by path, as Vitest filters select test files. To test the stories that depend on a changed file, use ${argument(ctx, '--changed', 'changed: true')} without file arguments.
+${runEveryStoryBeforeFinishing(ctx)}`;
   }
   if (selection?.changed) {
     const { changedFiles } = selection.changed;
@@ -543,8 +550,10 @@ File arguments select story files by path, as Vitest filters select test files. 
         : selection.files || selection.stories
           ? `None of the selected stories is affected by the ${describeChanged(selection.changed)}`
           : `No stories are affected by the ${describeChanged(selection.changed)}`;
+    // A run that selected nothing passes, as in Vitest, so the agent could otherwise finish without
+    // one test having run.
     return `${what}, so no tests ran.
-To test more, pass a ref (${argument(ctx, '--changed main', 'changed: "main"')}) or story files, or leave out every argument to run every story.`;
+To test more, pass a ref (${argument(ctx, '--changed main', 'changed: "main"')}) or story files. ${runEveryStoryBeforeFinishing(ctx)}`;
   }
   if (selection?.files && selection.stories) {
     return 'None of the given story IDs is in the matched story files, so no tests ran.';

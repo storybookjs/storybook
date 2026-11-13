@@ -297,7 +297,7 @@ describe('runStoryTests', () => {
     expect(result).toEqual({
       status: 'no-stories',
       notFoundMessages: [
-        `No file found at src/DoesNotExist.stories.tsx (relative paths resolve against ${process.cwd()}).`,
+        `No file found at src/DoesNotExist.stories.tsx (relative paths resolve against ${process.cwd()}). If you deleted it, leave it out.`,
       ],
     });
     expect(emitSpy).not.toHaveBeenCalled();

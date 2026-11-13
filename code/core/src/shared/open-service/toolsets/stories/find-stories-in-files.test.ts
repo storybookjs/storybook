@@ -127,7 +127,7 @@ describe('findStoriesInFiles', () => {
     expect(results).toEqual([
       {
         file: 'src/Nope.stories.tsx',
-        errorMessage: `No file found at src/Nope.stories.tsx (relative paths resolve against ${WORKING_DIR}).`,
+        errorMessage: `No file found at src/Nope.stories.tsx (relative paths resolve against ${WORKING_DIR}). If you deleted it, leave it out.`,
       },
     ]);
   });

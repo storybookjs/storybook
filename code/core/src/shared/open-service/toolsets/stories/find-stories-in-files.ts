@@ -142,7 +142,10 @@ export async function findStoriesInFiles({
       });
     } else if (!exists) {
       const base = isAbsolute(file) ? '' : ` (relative paths resolve against ${workingDir})`;
-      results.push({ file, errorMessage: `No file found at ${display(absolute)}${base}.` });
+      results.push({
+        file,
+        errorMessage: `No file found at ${display(absolute)}${base}. If you deleted it, leave it out.`,
+      });
     } else if (statSync(absolute).isDirectory()) {
       results.push({
         file,

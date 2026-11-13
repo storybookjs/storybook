@@ -50,6 +50,7 @@ const project = (
       precheckStorybookPackageInstall: async () => {},
       installDependencies: async () => {},
       isStorybookInMonorepo: () => false,
+      getAllDependencies: () => ({}),
     } as Partial<JsPackageManager> as JsPackageManager,
     ...overrides,
   }) as unknown as CollectProjectsSuccessResult;
@@ -143,11 +144,24 @@ describe('upgrade: refreshing the skills', () => {
     expect(installSkills).toHaveBeenCalledWith({
       packageManager: expect.objectContaining({ type: 'npm' }),
       source: 'refresh',
+      testSupported: false,
     });
     expect(skillsInUpgradeEvents()).toEqual([
       { result: 'installed', source: 'refresh' },
       { result: 'installed', source: 'refresh' },
     ]);
+  });
+
+  it('gives the section a test step when one Storybook of the project has addon-vitest', async () => {
+    const withVitest = project('/repo/b/.storybook');
+    withVitest.packageManager.getAllDependencies = () => ({
+      '@storybook/addon-vitest': '^11.0.0',
+    });
+    useProjects(project('/repo/a/.storybook'), withVitest);
+
+    await upgrade(baseOptions);
+
+    expect(installSkills).toHaveBeenCalledWith(expect.objectContaining({ testSupported: true }));
   });
 
   it('installs nothing when the project has no skills', async () => {

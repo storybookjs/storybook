@@ -1,6 +1,6 @@
 # Storybook Codex Plugin
 
-You can use Storybook's Codex plugin to connect agents to your Storybook. Agents can then use the plugin's skills and tools to generate UI, run tests, and preview their work in your Storybook. The agent can automatically open relevant stories in the ADE preview, so you can inspect the components and their code.
+You can use Storybook's Codex plugin to connect agents to your Storybook. Agents can then use the plugin's skills and tools to generate UI, run tests, and preview their work in your Storybook. The agent can open relevant stories in the ADE preview when you ask to see them, so you can inspect the components and their code.
 
 ## Requirements
 
@@ -62,19 +62,21 @@ The plugin's [skills](#skills) tell the agent how to work with your Storybook: r
 
 ## Storybook
 
-For every change to how the UI looks (you create, change, or delete a component, story, style, theme, or design token), follow these steps in order. Each step has a Storybook skill. First invoke the skills of all the steps, before you edit any file. Then follow each skill at its step.
+For every change to how the UI looks (you create, change, or delete a component, story, style, theme, or design token), follow these steps in order. First invoke the skills of steps 1 and 2, before you edit any file. Then follow each skill at its step.
 
 1. `component-docs`: look up the components to reuse, with their props and usage examples, before you edit any file. Also when the user asks about a component's props, API, or usage.
 2. `write-stories`: every component you create or change gets stories.
-3. `test-stories`: run the story tests after every change, the way this skill says, never with a `package.json` test script, and fix what fails. Also when the user asks to run or fix story tests.
-4. `ui-review`: publish a review that shows the user what changed, as your last step. Also when the user asks to see components or stories.
+3. Run the story tests after every change, and fix what fails. Also when the user asks to run or fix story tests. Run them only with this command, from the package where Storybook is installed, never a `package.json` test script or `vitest`. Pass the files you changed:
+   - `npx storybook tools test run <Button.stories.tsx>`: the stories in that story file.
+   - `npx storybook tools test run <Button.tsx>`: every story that depends on that file.
+   - `npx storybook tools test run`: every story.
 
 <!-- END:storybook-skills -->
 ```
 
-Storybook replaces the text between the markers when you upgrade. The section is the workflow: each step names the skill the agent uses for it. To change the workflow, for example to leave out the review, remove both markers and edit the section. Remove the whole section to stop the agent from following the workflow: it then uses a skill only when you ask for it, or when it finds one that fits its task. You can also call the plugin's skills in prompts (e.g. `/upgrade`) to have the agent perform specific actions. See [Skills and plugins](https://storybook.js.org/docs/ai/skills) for more details.
+Storybook replaces the text between the markers when you upgrade. The section is the workflow: the first two steps name the skill the agent uses for them, and the third is the test command itself, so the agent runs the tests from that line alone. A project without `@storybook/addon-vitest` cannot run story tests and gets no test step. To change the workflow, for example to have the agent publish a review after every change, remove both markers and edit the section. Remove the whole section to stop the agent from following the workflow: it then uses a skill only when you ask for it, or when it finds one that fits its task. You can also call the plugin's skills in prompts (e.g. `/upgrade`) to have the agent perform specific actions. See [Skills and plugins](https://storybook.js.org/docs/ai/skills) for more details.
 
-The agent will use the plugin to automatically open relevant stories or an [agentic review summary](https://storybook.js.org/docs/ai/agentic-review) in the ADE preview, so you can review the agent's work.
+When you ask to see stories or for a review, the agent will use the plugin to open relevant stories or an [agentic review summary](https://storybook.js.org/docs/ai/agentic-review) in the ADE preview, so you can review the agent's work.
 
 ## Skills
 
@@ -98,11 +100,11 @@ The rules for the stories of your project: which states get a story, and how to 
 
 ### `test-stories`
 
-Runs the story tests, with their accessibility checks, and fixes what fails.
+Runs the story tests of the story files or component files you changed, with their accessibility checks, and fixes what fails. The `AGENTS.md` section names the test command itself, so the agent needs this skill only when you call it by name.
 
 ### `ui-review`
 
-Finds the stories a change affects and publishes an [agentic review](https://storybook.js.org/docs/ai/agentic-review) of them. Also shows the components or stories you ask to see.
+Finds the stories a change affects and publishes an [agentic review](https://storybook.js.org/docs/ai/agentic-review) of them. Also shows the components or stories you ask to see. The agent uses it when you ask for a review or to see stories, not after every change: ask for example "Use the ui-review skill to publish a Storybook review of the stories that changed."
 
 ### `upgrade`
 

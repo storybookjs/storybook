@@ -11,12 +11,12 @@ function pluralize(count: number, singular: string, plural = `${singular}s`): st
 }
 
 /**
- * Recovery nudge for the review exit ramp: agents that skip the review tool end visual work on
+ * Recovery nudge for the review exit ramp: agents asked for a review or to see stories end on
  * exactly this call, so the result itself has to contradict that while a step remains to recover in.
  */
 function previewReviewNudge(ctx: ToolsetCtx): string {
   const reviewTool = getToolName(ctx)('review.create');
-  return `These preview links are for iterating or sharing a specific story — they are not how visual work or a browse request ends. The ${reviewTool} tool is available in this session: if you are finishing visually observable work or showing a set of stories, publish the review with **${reviewTool}** and link that instead.`;
+  return `These preview links are for iterating or sharing a specific story — they are not how a browse request or a requested review ends. The ${reviewTool} tool is available in this session: when the user asked for a review or to see a set of stories, publish the review with **${reviewTool}** and link that instead.`;
 }
 
 export function previewInstructions(
@@ -120,7 +120,7 @@ export function formatChangedStories(data: ChangedStoriesOutput, ctx: ToolsetCtx
   const skill = getSkillCommand(ctx)('ui-review');
   const openSkill = skill ? `run \`${skill}\` first if you have not yet, then ` : '';
   // Last, so output read through `tail` still ends on this step.
-  text += `\n\nNext: if the change is visually observable, publish the review as your last step, after your remaining tests and checks — ${openSkill}call **${getToolName(ctx)('review.create')}** curating these story IDs${gapStories}. That review link is how you finish; do not substitute individual preview URLs for it. A change with no visible effect, such as to a callback, tests or types, gets no review unless the user asked to see stories: say that nothing visible changed. When the agent instructions of the project leave the review out of their Storybook workflow, skip it. This list covers your edits so far: run it again only after another edit.`;
+  text += `\n\nNext: when the user asked for a review or to see the stories of the change, publish the review as your last step, after your remaining tests and checks — ${openSkill}call **${getToolName(ctx)('review.create')}** curating these story IDs${gapStories}. That review link is how you finish; do not substitute individual preview URLs for it. A change with no visible effect, such as to a callback, tests or types, gets no review: say that nothing visible changed. This list covers your edits so far: run it again only after another edit.`;
 
   return text;
 }

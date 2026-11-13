@@ -139,9 +139,9 @@ export function expectWorkflowCalls(expectedNames: string[]): void {
   }
 }
 
-// The tool that a step of the workflow runs, by the skill of that step.
+// The tool that a step of the workflow runs, by the skill of that step. The tests have no skill
+// in the workflow: `AGENTS.md` names the test command itself.
 const STEP_TOOLS: Record<string, string> = {
-  'test-stories': 'test-run',
   'ui-review': 'review-create',
 };
 
@@ -207,21 +207,48 @@ export function expectDisplayReviewForVisualChange(): void {
   expectFinalResponseSharesReviewLink();
 }
 
-// Trigger correctness: a pure non-visual refactor must NOT publish a review,
-// and the final response must not pretend there is one.
+// Trigger correctness: an agent publishes a review only when the user asks for one or to see
+// stories, so a task that does not ask must NOT publish one, and the final response must not
+// pretend there is one.
 export function expectNoDisplayReview(): void {
   const displayReviewCalls = getWorkflowCalls('review-create');
   expect(
     displayReviewCalls.length,
-    `Expected review-create NOT to be called for a non-visual change. Received payloads: ${JSON.stringify(
+    `Expected review-create NOT to be called for a task that did not ask for a review. Received payloads: ${JSON.stringify(
       displayReviewCalls.map((call) => call.input)
     )}`
   ).toBe(0);
 
   expect(
     getFinalAssistantMessage() ?? '',
-    'Final response must not link to the Storybook review page for a non-visual change'
+    'Final response must not link to the Storybook review page when no review was asked for'
   ).not.toMatch(/[?&]path=\/review\//);
+}
+
+// The agent runs the tests of the files it changed: a `test-run` call with `files`, as the
+// workflow names the command. A run of every story alone passes the other assertions, but it is
+// the slow path the file forms replace.
+export function expectFocusedTestRunWithFiles(): void {
+  const calls = getWorkflowCalls('test-run');
+  expect(
+    calls.some(({ input }) => Array.isArray(input.files) && input.files.length > 0),
+    `Expected a test-run call with files. Received inputs: ${JSON.stringify(calls.map(({ input }) => input))}`
+  ).toBe(true);
+}
+
+// Story tests run only through Storybook: never a package.json test script or vitest directly.
+// Only as a command of its own, so `grep vitest package.json` does not count.
+const OTHER_TEST_RUNNER =
+  /(?:^|[;&|(])\s*(?:(?:npm|yarn|pnpm|bun)\s+(?:run\s+)?test[\w:-]*|(?:npx\s+|pnpm\s+(?:exec\s+)?|yarn\s+)?vitest)(?=\s|$|[;&|)])/;
+
+export const isOtherTestRunner = (command: string): boolean => OTHER_TEST_RUNNER.test(command);
+
+export function expectNoOtherTestRunner(): void {
+  const others = getShellCommands().filter(isOtherTestRunner);
+  expect(
+    others,
+    'Expected story tests to run only through Storybook, never a package.json test script or vitest'
+  ).toEqual([]);
 }
 
 // Browse request: the review is resolved from the live story index, so the

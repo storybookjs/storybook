@@ -77,7 +77,7 @@ function describeCreate(ctx: ToolsetCtx): string {
   return `Publish a curated review to Storybook's review page for spot-checking visual impact. Each call replaces the active review; call again when the user iterates.${skill ? `\nFirst run ${skill} once and follow it.` : ''}
 
 ## When to call
-- Visual change (components, CSS, themes, tokens, i18n): the user should spot-check rendering. A shared file (token, style, util) has no stories; review its consumers'. Skip non-visual refactors unless side-effects are plausible. Start from ${ref('stories.changed')}; use ${ref('stories.findByComponent')} only for a file it leaves out, or when it is unavailable. Include changedFiles.
+- The user asks for a review of a visual change (components, CSS, themes, tokens, i18n), not after every change. A shared file (token, style, util) has no stories; review its consumers'. Skip non-visual refactors unless side-effects are plausible. Start from ${ref('stories.changed')}; use ${ref('stories.findByComponent')} only for a file it leaves out, or when it is unavailable. Include changedFiles.
 - Last: publish it after your tests and other checks (type check, lint), then end your answer with the three lines it returns.
 - Browse request ("show me the Badge component"): resolve via ${ref('stories.findByComponent')} / ${ref('docs.list')}. Show exactly what was asked. Pass changedFiles: [].
 

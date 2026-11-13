@@ -9,6 +9,7 @@ import {
   STORYBOOK_AGENT_INSTRUCTIONS,
   addStorybookAgentInstructions,
   planStorybookAgentInstructions,
+  storybookAgentInstructions,
 } from './agentInstructions.ts';
 
 vi.mock('node:fs/promises', { spy: true });
@@ -44,10 +45,57 @@ describe('addStorybookAgentInstructions', () => {
     expect(read('AGENTS.md')).toBe(STORYBOOK_AGENT_INSTRUCTIONS);
   });
 
-  it('wraps the section in markers, with the heading and a step for every skill', () => {
+  it('wraps the section in markers, with the heading, the two skills and the test command', () => {
     expect(STORYBOOK_AGENT_INSTRUCTIONS).toMatch(
-      /^<!-- BEGIN:storybook-skills -->\n[\s\S]*## Storybook\n[\s\S]*1\. `component-docs`[\s\S]*2\. `write-stories`[\s\S]*3\. `test-stories`[\s\S]*4\. `ui-review`[\s\S]*<!-- END:storybook-skills -->\n$/
+      /^<!-- BEGIN:storybook-skills -->\n[\s\S]*## Storybook\n[\s\S]*1\. `component-docs`[\s\S]*2\. `write-stories`[\s\S]*3\. Run the story tests[\s\S]*`npx storybook tools test run <Button\.tsx>`[\s\S]*<!-- END:storybook-skills -->\n$/
     );
+    expect(STORYBOOK_AGENT_INSTRUCTIONS).not.toContain('ui-review');
+  });
+
+  it('writes the section without the test step for a project without addon-vitest', async () => {
+    await addStorybookAgentInstructions(ROOT, 'install', { testSupported: false });
+
+    expect(read('AGENTS.md')).toBe(storybookAgentInstructions({ testSupported: false }));
+    expect(read('AGENTS.md')).not.toContain('test run');
+  });
+
+  // The section that 11.0.0-beta.2 wrote, word for word.
+  const BETA_2 = `<!-- BEGIN:storybook-skills -->
+<!-- Storybook updates this section on upgrade. Remove both markers to keep your own edits. -->
+
+## Storybook
+
+For every change to how the UI looks (you create, change, or delete a component, story, style, theme, or design token), follow these steps in order. Each step has a Storybook skill. First invoke the skills of all the steps, before you edit any file. Then follow each skill at its step.
+
+1. \`component-docs\`: look up the components to reuse, with their props and usage examples, before you edit any file. Also when the user asks about a component's props, API, or usage.
+2. \`write-stories\`: every component you create or change gets stories.
+3. \`test-stories\`: run the story tests after every change, the way this skill says, never with a \`package.json\` test script, and fix what fails. Also when the user asks to run or fix story tests.
+4. \`ui-review\`: publish a review that shows the user what changed, as your last step. Also when the user asks to see components or stories.
+
+<!-- END:storybook-skills -->
+`;
+
+  it('replaces the section of 11.0.0-beta.2 on upgrade, and keeps the rest of the file', async () => {
+    vol.writeFileSync(join(ROOT, 'AGENTS.md'), `# Rules\n\n${BETA_2}\nUse pnpm.\n`);
+    vol.writeFileSync(join(ROOT, 'CLAUDE.md'), `@AGENTS.md\n`);
+
+    expect(await addStorybookAgentInstructions(ROOT, 'update')).toEqual([
+      { file: 'AGENTS.md', change: 'updated' },
+    ]);
+    expect(read('AGENTS.md')).toBe(`# Rules\n\n${STORYBOOK_AGENT_INSTRUCTIONS}\nUse pnpm.\n`);
+    expect(read('CLAUDE.md')).toBe('@AGENTS.md\n');
+  });
+
+  it('keeps the section of 11.0.0-beta.2 when the user removed its markers', async () => {
+    const unmarked = BETA_2.split('\n')
+      .filter((line) => !line.startsWith('<!-- '))
+      .join('\n');
+    vol.writeFileSync(join(ROOT, 'AGENTS.md'), unmarked);
+
+    for (const mode of ['update', 'install'] as const) {
+      expect(await addStorybookAgentInstructions(ROOT, mode)).toEqual([]);
+      expect(read('AGENTS.md')).toBe(unmarked);
+    }
   });
 
   it('appends the section to an existing AGENTS.md', async () => {

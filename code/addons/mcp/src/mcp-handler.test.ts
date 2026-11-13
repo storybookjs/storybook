@@ -334,8 +334,10 @@ describe('mcpServerHandler', () => {
     expect(parsedResponse.result.instructions).toBeDefined();
     expect(parsedResponse.result.instructions).toContain('## Storybook');
     expect(parsedResponse.result.instructions).toContain(
-      '`npx storybook skills ui-review --mcp`: publish a review'
+      '`npx storybook skills write-stories --mcp`: every component'
     );
+    expect(parsedResponse.result.instructions).toContain('Call `test-run` for them');
+    expect(parsedResponse.result.instructions).not.toContain('ui-review');
     expect(parsedResponse.result.instructions).toContain(
       'Also when the user asks to run or fix story tests'
     );

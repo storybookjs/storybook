@@ -141,6 +141,7 @@ describe('installSkills', () => {
     packageManager = {
       runPackageCommand: vi.fn().mockResolvedValue(undefined),
       getRemoteRunCommand: vi.fn((args: string[]) => `npx ${args.join(' ')}`),
+      getAllDependencies: vi.fn(() => ({ '@storybook/addon-vitest': '^11.0.0' })),
     } as Partial<JsPackageManager> as JsPackageManager;
 
     vi.mocked(isTelemetryModuleEnabled).mockReturnValue(true);
@@ -195,10 +196,22 @@ describe('installSkills', () => {
     );
   });
 
+  it('leaves the test step out of the section when the project has no addon-vitest', async () => {
+    vi.mocked(packageManager.getAllDependencies).mockReturnValue({ storybook: '^11.0.0' });
+
+    await installSkills({ packageManager, source: 'ai-feature' });
+
+    expect(addStorybookAgentInstructions).toHaveBeenCalledWith(PROJECT_ROOT, 'install', {
+      testSupported: false,
+    });
+  });
+
   it('adds the section that tells agents when to use the skills', async () => {
     await installSkills({ packageManager, source: 'ai-feature' });
 
-    expect(addStorybookAgentInstructions).toHaveBeenCalledWith(PROJECT_ROOT, 'install');
+    expect(addStorybookAgentInstructions).toHaveBeenCalledWith(PROJECT_ROOT, 'install', {
+      testSupported: true,
+    });
     expect(logger.log).toHaveBeenCalledWith(
       expect.stringContaining('Added a Storybook section to AGENTS.md')
     );
@@ -213,7 +226,9 @@ describe('installSkills', () => {
 
     await installSkills({ packageManager, source: 'refresh' });
 
-    expect(addStorybookAgentInstructions).toHaveBeenCalledWith(PROJECT_ROOT, 'update');
+    expect(addStorybookAgentInstructions).toHaveBeenCalledWith(PROJECT_ROOT, 'update', {
+      testSupported: true,
+    });
     expect(logger.log).toHaveBeenCalledWith(
       'Updated the Storybook section in AGENTS.md, CLAUDE.md, and .claude/CLAUDE.md.'
     );
@@ -255,7 +270,9 @@ describe('installSkills', () => {
       args: ['skills@latest', 'remove', 'stories', 'ui-workflow', '--yes'],
       cwd: PROJECT_ROOT,
     });
-    expect(addStorybookAgentInstructions).toHaveBeenCalledWith(PROJECT_ROOT, 'install');
+    expect(addStorybookAgentInstructions).toHaveBeenCalledWith(PROJECT_ROOT, 'install', {
+      testSupported: true,
+    });
   });
 
   it('does not add the section back when a refresh replaces the ui-workflow skill', async () => {
@@ -271,7 +288,9 @@ describe('installSkills', () => {
     expect(vi.mocked(packageManager.runPackageCommand).mock.calls[1][0]).toMatchObject({
       args: ['skills@latest', 'remove', 'ui-workflow', '--yes'],
     });
-    expect(addStorybookAgentInstructions).toHaveBeenCalledWith(PROJECT_ROOT, 'update');
+    expect(addStorybookAgentInstructions).toHaveBeenCalledWith(PROJECT_ROOT, 'update', {
+      testSupported: true,
+    });
   });
 
   it('keeps the installed skills when removing the stories skill fails', async () => {
@@ -291,7 +310,9 @@ describe('installSkills', () => {
     expect(logger.warn).toHaveBeenCalledWith(
       'Could not remove the replaced Storybook skills stories. Remove them with: npx skills@latest remove stories --yes'
     );
-    expect(addStorybookAgentInstructions).toHaveBeenCalledWith(PROJECT_ROOT, 'install');
+    expect(addStorybookAgentInstructions).toHaveBeenCalledWith(PROJECT_ROOT, 'install', {
+      testSupported: true,
+    });
   });
 
   it('does not remove a stories skill from another repository', async () => {
@@ -352,16 +373,18 @@ describe('refreshAgentInstructions', () => {
       { file: 'AGENTS.md', change: 'updated' },
     ]);
 
-    await refreshAgentInstructions();
+    await refreshAgentInstructions({ testSupported: false });
 
-    expect(addStorybookAgentInstructions).toHaveBeenCalledWith(PROJECT_ROOT, 'update');
+    expect(addStorybookAgentInstructions).toHaveBeenCalledWith(PROJECT_ROOT, 'update', {
+      testSupported: false,
+    });
     expect(logger.log).toHaveBeenCalledWith('Updated the Storybook section in AGENTS.md.');
   });
 
   it('does nothing under CI', async () => {
     vi.mocked(isCI).mockReturnValue(true);
 
-    await refreshAgentInstructions();
+    await refreshAgentInstructions({ testSupported: true });
 
     expect(addStorybookAgentInstructions).not.toHaveBeenCalled();
   });

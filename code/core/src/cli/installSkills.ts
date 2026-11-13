@@ -94,11 +94,17 @@ export async function installSkills({
   packageManager,
   source,
   stdio = 'inherit',
+  testSupported = hasAddonVitest(packageManager),
 }: {
   packageManager: JsPackageManager;
   source: SkillsSource;
   /** `pipe` keeps the `skills` CLI output out of a running task log. */
   stdio?: 'inherit' | 'pipe';
+  /**
+   * A Storybook of the project has `@storybook/addon-vitest`, so the `AGENTS.md` section gets its
+   * test step. By default, whether `packageManager` lists it.
+   */
+  testSupported?: boolean;
 }): Promise<SkillsInstallResult> {
   if (isCI()) {
     return { result: 'skipped', source: 'ci' };
@@ -149,7 +155,8 @@ export async function installSkills({
   // The `stories` skill had no section yet. `ui-workflow` came with one, so a project without it
   // removed it.
   await addAgentInstructions(
-    source === 'refresh' && !removedSkills.includes('stories') ? 'update' : 'install'
+    source === 'refresh' && !removedSkills.includes('stories') ? 'update' : 'install',
+    testSupported
   );
 
   logger.log(
@@ -184,9 +191,12 @@ async function removeSkills(
 const listFiles = (files: string[]) =>
   new Intl.ListFormat('en', { style: 'long', type: 'conjunction' }).format(files);
 
-async function addAgentInstructions(mode: AgentInstructionsMode): Promise<void> {
+async function addAgentInstructions(
+  mode: AgentInstructionsMode,
+  testSupported: boolean
+): Promise<void> {
   try {
-    const changes = await addStorybookAgentInstructions(getProjectRoot(), mode);
+    const changes = await addStorybookAgentInstructions(getProjectRoot(), mode, { testSupported });
     const added = changes.filter(({ change }) => change === 'added').map(({ file }) => file);
     const updated = changes.filter(({ change }) => change === 'updated').map(({ file }) => file);
     if (added.length > 0) {
@@ -212,9 +222,21 @@ async function addAgentInstructions(mode: AgentInstructionsMode): Promise<void> 
  * skills, for `storybook upgrade` in a project that got the skills from a plugin or by hand. Adds
  * nothing, and never runs in CI.
  */
-export async function refreshAgentInstructions(): Promise<void> {
+export async function refreshAgentInstructions({
+  testSupported,
+}: {
+  testSupported: boolean;
+}): Promise<void> {
   if (isCI()) {
     return;
   }
-  await addAgentInstructions('update');
+  await addAgentInstructions('update', testSupported);
+}
+
+/**
+ * Whether the package manager lists `@storybook/addon-vitest`. Without it a project cannot run
+ * story tests, so the `AGENTS.md` section leaves the test step out.
+ */
+export function hasAddonVitest(packageManager: Pick<JsPackageManager, 'getAllDependencies'>) {
+  return '@storybook/addon-vitest' in packageManager.getAllDependencies();
 }

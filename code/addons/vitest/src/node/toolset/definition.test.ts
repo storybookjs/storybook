@@ -265,16 +265,15 @@ describe('test API', () => {
       expect(description).toContain('Results will include passing/failing status.');
     });
 
-    it('sends the agent to the test-stories skill of its transport first', () => {
-      expect(resolveToolsetDescription(toolset.methods.run.description, mcpCtx)).toContain(
-        'First run npx storybook skills test-stories --mcp once and follow it'
-      );
-      expect(resolveToolsetDescription(toolset.methods.run.description, ctx)).toContain(
-        'First run npx storybook skills test-stories once and follow it'
-      );
-      expect(
-        resolveToolsetDescription(toolset.methods.run.description, { ...ctx, transport: 'sdk' })
-      ).not.toContain('storybook skills');
+    it('rules out other test runners, and sends the agent to no skill', () => {
+      for (const transport of ['mcp', 'cli', 'sdk'] as const) {
+        const description = resolveToolsetDescription(toolset.methods.run.description, {
+          ...ctx,
+          transport,
+        });
+        expect(description).toContain('never a package.json test script or vitest directly');
+        expect(description).not.toContain('storybook skills');
+      }
     });
   });
 

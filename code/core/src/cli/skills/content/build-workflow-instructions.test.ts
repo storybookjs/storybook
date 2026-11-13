@@ -14,17 +14,31 @@ const MCP_CLIENT_INSTRUCTIONS_CHAR_LIMIT = 2048;
 const everything = { devEnabled: true, testSupported: true, docsEnabled: true };
 
 describe('buildAgentInstructions', () => {
-  it('is the workflow: one step per skill, in order', () => {
+  it('is the workflow: two skills, then the test command itself', () => {
     expect(buildAgentInstructions()).toMatchInlineSnapshot(`
       "## Storybook
 
-      For every change to how the UI looks (you create, change, or delete a component, story, style, theme, or design token), follow these steps in order. Each step has a Storybook skill. First invoke the skills of all the steps, before you edit any file. Then follow each skill at its step.
+      For every change to how the UI looks (you create, change, or delete a component, story, style, theme, or design token), follow these steps in order. First invoke the skills of steps 1 and 2, before you edit any file. Then follow each skill at its step.
 
       1. \`component-docs\`: look up the components to reuse, with their props and usage examples, before you edit any file. Also when the user asks about a component's props, API, or usage.
       2. \`write-stories\`: every component you create or change gets stories.
-      3. \`test-stories\`: run the story tests after every change, the way this skill says, never with a \`package.json\` test script, and fix what fails. Also when the user asks to run or fix story tests.
-      4. \`ui-review\`: publish a review that shows the user what changed, as your last step. Also when the user asks to see components or stories."
+      3. Run the story tests after every change, and fix what fails. Also when the user asks to run or fix story tests. Run them only with this command, from the package where Storybook is installed, never a \`package.json\` test script or \`vitest\`. Pass the files you changed:
+         - \`npx storybook tools test run <Button.stories.tsx>\`: the stories in that story file.
+         - \`npx storybook tools test run <Button.tsx>\`: every story that depends on that file.
+         - \`npx storybook tools test run\`: every story."
     `);
+  });
+
+  it('leaves out the test step without addon-vitest', () => {
+    const instructions = buildAgentInstructions({ testSupported: false });
+
+    expect(instructions).toContain('2. `write-stories`');
+    expect(instructions).not.toContain('3.');
+    expect(instructions).not.toContain('test run');
+  });
+
+  it('leaves the review to the user: no ui-review step', () => {
+    expect(buildAgentInstructions()).not.toMatch(/ui-review|review/);
   });
 });
 
@@ -42,16 +56,15 @@ describe('buildServerInstructions', () => {
         }
   });
 
-  it('runs the skills with --mcp, in the words of the AGENTS.md section, when all toolsets are enabled', () => {
+  it('runs the skills with --mcp and the tests with test-run, when all toolsets are enabled', () => {
     expect(buildServerInstructions(everything)).toMatchInlineSnapshot(`
       "## Storybook
 
-      For every change to how the UI looks (you create, change, or delete a component, story, style, theme, or design token), follow these steps in order. Each step has a Storybook skill. First run the skills of all the steps, before you edit any file: each in a command of its own, from the package where Storybook is installed, and read its whole output, without \`head\` or \`tail\`. Then follow each skill at its step.
+      For every change to how the UI looks (you create, change, or delete a component, story, style, theme, or design token), follow these steps in order. First run the skills of steps 1 and 2, before you edit any file: each in a command of its own, from the package where Storybook is installed, and read its whole output, without \`head\` or \`tail\`. Then follow each skill at its step.
 
       1. \`npx storybook skills component-docs --mcp\`: look up the components to reuse, with their props and usage examples, before you edit any file. Also when the user asks about a component's props, API, or usage.
       2. \`npx storybook skills write-stories --mcp\`: every component you create or change gets stories.
-      3. \`npx storybook skills test-stories --mcp\`: run the story tests after every change, the way this skill says, never with a \`package.json\` test script, and fix what fails. Also when the user asks to run or fix story tests.
-      4. \`npx storybook skills ui-review --mcp\`: publish a review that shows the user what changed, as your last step. Also when the user asks to see components or stories.
+      3. Run the story tests after every change, and fix what fails. Also when the user asks to run or fix story tests. Call \`test-run\` for them, never a \`package.json\` test script or \`vitest\`. Pass the story files or component files you changed in \`files\`: a story file selects the stories in it, any other file every story that depends on it, and no \`files\` every story.
 
       Run the skill of a step before you call a tool of that step, also when the request is only that step.
 
@@ -59,12 +72,24 @@ describe('buildServerInstructions', () => {
     `);
   });
 
-  it('states the steps of the AGENTS.md section word for word', () => {
+  it('states the skill steps of the AGENTS.md section word for word', () => {
     const stepText = (line: string) => line.slice(line.indexOf('`: '));
-    const steps = (text: string) => text.split('\n').filter((line) => /^\d\. /.test(line));
+    const skillSteps = (text: string) => text.split('\n').filter((line) => /^\d\. `/.test(line));
 
-    expect(steps(buildServerInstructions(everything)).map(stepText)).toEqual(
-      steps(buildAgentInstructions()).map(stepText)
+    expect(skillSteps(buildServerInstructions(everything)).map(stepText)).toEqual(
+      skillSteps(buildAgentInstructions()).map(stepText)
+    );
+  });
+
+  it('states the rules of the test step of the AGENTS.md section', () => {
+    const testStep = (text: string) => text.split('\n').find((line) => line.startsWith('3. '));
+    const rules =
+      'Run the story tests after every change, and fix what fails. Also when the user asks to run or fix story tests.';
+
+    expect(testStep(buildAgentInstructions())).toContain(rules);
+    expect(testStep(buildServerInstructions(everything))).toContain(rules);
+    expect(testStep(buildServerInstructions(everything))).toContain(
+      'never a `package.json` test script or `vitest`'
     );
   });
 
@@ -76,8 +101,8 @@ describe('buildServerInstructions', () => {
     });
 
     expect(instructions).toContain('1. `npx storybook skills write-stories --mcp`');
-    expect(instructions).toContain('2. `npx storybook skills ui-review --mcp`');
-    expect(instructions).not.toContain('test-stories');
+    expect(instructions).not.toContain('2.');
+    expect(instructions).not.toContain('test-run');
     expect(instructions).not.toContain('component-docs');
   });
 
@@ -85,23 +110,34 @@ describe('buildServerInstructions', () => {
     const instructions = buildServerInstructions({ ...everything, devEnabled: false });
 
     expect(instructions).toContain('1. `npx storybook skills component-docs --mcp`');
-    expect(instructions).toContain('2. `npx storybook skills test-stories --mcp`');
+    expect(instructions).toContain('2. Run the story tests');
+    expect(instructions).toContain('First run the skill of step 1, before you edit any file');
     expect(instructions).not.toContain('write-stories');
-    expect(instructions).not.toContain('ui-review');
     expect(instructions).not.toContain('review-create');
   });
 
   it('names one step for one toolset', () => {
     expect(buildServerInstructions({ devEnabled: false, testSupported: false, docsEnabled: true }))
       .toMatchInlineSnapshot(`
-        "## Storybook
+      "## Storybook
 
-        For every change to how the UI looks (you create, change, or delete a component, story, style, theme, or design token), follow this step. It has a Storybook skill. Run it before you edit any file, in a command of its own, from the package where Storybook is installed, and read its whole output, without \`head\` or \`tail\`, and follow it.
+      For every change to how the UI looks (you create, change, or delete a component, story, style, theme, or design token), follow this step. It has a Storybook skill. Run it before you edit any file, in a command of its own, from the package where Storybook is installed, and read its whole output, without \`head\` or \`tail\`, and follow it.
 
-        1. \`npx storybook skills component-docs --mcp\`: look up the components to reuse, with their props and usage examples, before you edit any file. Also when the user asks about a component's props, API, or usage.
+      1. \`npx storybook skills component-docs --mcp\`: look up the components to reuse, with their props and usage examples, before you edit any file. Also when the user asks about a component's props, API, or usage.
 
-        Run the skill before you call a tool of this step, also when the request is only this step."
-      `);
+      Run the skill before you call a tool of its step, also when the request is only that step."
+    `);
+  });
+
+  it('names no skill when only the test toolset is on', () => {
+    expect(buildServerInstructions({ devEnabled: false, testSupported: true, docsEnabled: false }))
+      .toMatchInlineSnapshot(`
+      "## Storybook
+
+      For every change to how the UI looks (you create, change, or delete a component, story, style, theme, or design token), follow this step.
+
+      1. Run the story tests after every change, and fix what fails. Also when the user asks to run or fix story tests. Call \`test-run\` for them, never a \`package.json\` test script or \`vitest\`. Pass the story files or component files you changed in \`files\`: a story file selects the stories in it, any other file every story that depends on it, and no \`files\` every story."
+    `);
   });
 
   it('returns empty instructions when all toolsets are disabled', () => {

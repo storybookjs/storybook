@@ -1,4 +1,5 @@
 import {
+  hasAddonVitest,
   hasStorybookSkills,
   installSkills,
   refreshAgentInstructions,
@@ -554,14 +555,21 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
       }
     }
 
+    // Every Storybook of a monorepo shares the AGENTS.md of the project root, so the section has a
+    // test step when one of them can run story tests.
+    const testSupported = allProjects.some(({ packageManager }) => hasAddonVitest(packageManager));
     const skills =
       !options.dryRun && hadSkills
-        ? await installSkills({ packageManager: rootPackageManager, source: 'refresh' })
+        ? await installSkills({
+            packageManager: rootPackageManager,
+            source: 'refresh',
+            testSupported,
+          })
         : undefined;
     // The skills of a plugin, or installed by hand, come with an AGENTS.md section that promises
     // the same updates.
     if (!options.dryRun && !hadSkills) {
-      await refreshAgentInstructions();
+      await refreshAgentInstructions({ testSupported });
     }
 
     // Run doctor for each project

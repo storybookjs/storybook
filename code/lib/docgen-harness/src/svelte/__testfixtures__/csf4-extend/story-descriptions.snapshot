@@ -1,0 +1,12 @@
+{
+  "component": undefined,
+  "stories": {
+    "Base": undefined,
+    "Children": undefined,
+    "Inherited": "Inherits the args of Base.",
+    "Overridden": "Overrides one arg of Base.",
+    "OwnChildren": "Replaces the children of Children.",
+    "Templated": undefined,
+    "TemplatedChild": "Inherits the template of Templated.",
+  },
+}

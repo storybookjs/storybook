@@ -145,6 +145,63 @@ describe('server static builds', () => {
       });
     });
 
+    it('tells static inputs, loads and commands that they run in a static build, and the live runtime that it does not', async () => {
+      const seen: string[] = [];
+      const service = registerService(
+        defineService({
+          id: 'internal-fixture/static-build-flag',
+          description: 'Records the isStaticBuild flag of every context it receives.',
+          initialState: { value: '' },
+          queries: {
+            value: {
+              description: 'Returns the recorded value.',
+              input: v.undefined(),
+              output: v.string(),
+              handler: (_input, ctx) => ctx.self.state.value,
+              load: async (_input, ctx) => {
+                seen.push(`load ${ctx.isStaticBuild}`);
+                await ctx.self.commands.record(undefined);
+              },
+              staticPath: () => 'state.json',
+            },
+          },
+          commands: {
+            record: {
+              description: 'Records the flag of the command context.',
+              input: v.undefined(),
+              output: v.undefined(),
+              handler: async (_input, ctx) => {
+                seen.push(`command ${ctx.isStaticBuild}`);
+                ctx.self.setState((state) => {
+                  state.value = String(ctx.isStaticBuild);
+                });
+                return undefined;
+              },
+            },
+          },
+        }),
+        {
+          queries: {
+            value: {
+              staticInputs: async (ctx) => {
+                seen.push(`staticInputs ${ctx.isStaticBuild}`);
+                return [undefined];
+              },
+            },
+          },
+        }
+      );
+
+      await expect(buildStaticFiles()).resolves.toEqual({
+        'internal-fixture/static-build-flag/state.json': { value: 'true' },
+      });
+      expect(seen).toEqual(['staticInputs true', 'load true', 'command true']);
+
+      seen.length = 0;
+      await service.queries.value.loaded(undefined);
+      expect(seen).toEqual(['load false', 'command false']);
+    });
+
     it('runs load tasks in parallel so one snapshot can read state another snapshot publishes', async () => {
       const readyEntryIds: string[] = [];
       const parallelSourceServiceDef = defineService({

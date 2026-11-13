@@ -27,6 +27,7 @@ import { z } from 'zod';
 import { checksFor, renderChecklist } from './checks.ts';
 import { answerOfFinishedAgent, QA_RESULT_TAG } from './lib/answer.ts';
 import { loadCatalogEntry } from './lib/catalog.ts';
+import { shipsSandcastleFiles } from './lib/clone-guard.ts';
 import { cycleBranchName, cycleRepo, versionLine } from './lib/cycle.ts';
 import { runFake } from './lib/fake-run.ts';
 import { forJobLog, liveLine } from './lib/live-log.ts';
@@ -200,6 +201,11 @@ const clone = (entry: CatalogEntry, cloneDir: string): string => {
   git(cloneDir, 'remote', 'add', 'origin', `https://github.com/${cycleRepo(entry)}`);
   git(cloneDir, 'fetch', '--quiet', '--depth', '1', 'origin', entry.ref);
   git(cloneDir, 'checkout', '--quiet', '-B', 'qa/start', 'FETCH_HEAD');
+  if (shipsSandcastleFiles(cloneDir)) {
+    return fail(
+      `${cycleRepo(entry)} ships a .sandcastle directory. Sandcastle would give the agent the variables of its .env file, so this repo cannot run.`
+    );
+  }
   git(cloneDir, 'config', 'user.name', 'Storybook Ecosystem QA');
   git(cloneDir, 'config', 'user.email', 'ecosystem-qa@storybook.js.org');
   appendFileSync(join(cloneDir, '.git/info/exclude'), '\n.sandcastle/\nqa-artifacts/\n*.log\n');

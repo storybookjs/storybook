@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       repo:
-        description: 'Catalog id from ecosystem-qa/catalog.json'
+        description: 'Catalog ids from ecosystem-qa/catalog.json, comma-separated; owned and tier1 stand for every repo of that class'
         type: string
         default: 'mealdrop'
       version:
@@ -30,6 +30,18 @@ on:
         description: 'Write proposals to the Step Summary instead of filing them'
         type: boolean
         default: true
+      budget_minutes:
+        description: 'Minutes a run may take before the agent has to answer; it is stopped 15 minutes later (empty: 90)'
+        type: string
+        default: ''
+      from_runs:
+        description: 'Comma-separated run ids: collect and group the results of these earlier runs instead of running agents'
+        type: string
+        default: ''
+      groups:
+        description: 'A groups.json document to use instead of asking the model, for splitting a wrong merge by hand'
+        type: string
+        default: ''
   pull_request:
     paths:
       - 'ecosystem-qa/**'
@@ -57,7 +69,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     permissions:
-      issues: read # gh search for each fingerprint
+      issues: read # list the internal-qa issues
     env:
       QA_VERSION: '11.0.0-beta.0'
     steps:
@@ -87,6 +99,9 @@ jobs:
       - name: Test
         run: yarn workspace ecosystem-qa test
 
+      - name: Plan a whole sweep from the catalog
+        run: node ecosystem-qa/plan.ts --repos owned,tier1 --os linux,windows --engines claude,codex
+
       - name: Install Chromium for the evidence tools
         run: cd ecosystem-qa && npx playwright install --with-deps chromium
 
@@ -105,6 +120,8 @@ jobs:
           --out ecosystem-qa/results/proposals.json --repo "$GITHUB_REPOSITORY"
 
       - name: Write proposals to the Step Summary
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: >-
           node ecosystem-qa/file.ts --proposals ecosystem-qa/results/proposals.json
           --repo "$GITHUB_REPOSITORY" --dry
@@ -116,11 +133,33 @@ jobs:
     permissions: {}
     outputs:
       matrix: ${{ steps.matrix.outputs.matrix }}
-      repo: ${{ steps.matrix.outputs.repo }}
       version: ${{ steps.matrix.outputs.version }}
       dry: ${{ steps.matrix.outputs.dry }}
+      from_runs: ${{ steps.matrix.outputs.from_runs }}
+      groups: ${{ steps.matrix.outputs.groups }}
+      job_minutes: ${{ steps.matrix.outputs.job_minutes }}
     steps:
-      - name: Build the os x engine matrix
+      # A run that only collects earlier results starts no agent, so it needs no matrix.
+      - name: Checkout
+        if: ${{ inputs.from_runs == '' }}
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Setup Node.js
+        if: ${{ inputs.from_runs == '' }}
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Install the ecosystem-qa workspace
+        if: ${{ inputs.from_runs == '' }}
+        run: |
+          corepack enable
+          yarn workspaces focus ecosystem-qa
+
+      - name: Build the repo x os x engine matrix
         id: matrix
         env:
           QA_REPO: ${{ inputs.repo }}
@@ -128,32 +167,53 @@ jobs:
           QA_ENGINES: ${{ inputs.engines }}
           QA_OS: ${{ inputs.os }}
           QA_DRY: ${{ inputs.dry }}
+          QA_FROM_RUNS: ${{ inputs.from_runs }}
+          QA_GROUPS: ${{ inputs.groups }}
+          QA_BUDGET_MINUTES: ${{ inputs.budget_minutes }}
         run: |
           if [[ ! "$QA_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$ ]]; then
             echo "::error::version '$QA_VERSION' is not a semver version"
             exit 1
           fi
-          matrix="$(jq -cn --arg engines "$QA_ENGINES" --arg oses "$QA_OS" '{include: [
-            ($oses | split(",")[]) as $os | ($engines | split(",")[]) as $engine | {
-              os: $os,
-              engine: $engine,
-              runner: (if $os == "windows" then "windows-latest" else "ubuntu-latest" end),
-              sandbox: (if $os == "windows" then "none" else "docker" end)
-            }
-          ]}')"
+          if [[ -n "$QA_FROM_RUNS" && ! "$QA_FROM_RUNS" =~ ^[0-9]+(,[0-9]+)*$ ]]; then
+            echo "::error::from_runs '$QA_FROM_RUNS' is not a comma-separated list of run ids"
+            exit 1
+          fi
+          # A job of a hosted runner ends after six hours whatever it is given.
+          if [[ -n "$QA_BUDGET_MINUTES" ]] && { [[ ! "$QA_BUDGET_MINUTES" =~ ^[1-9][0-9]{0,2}$ ]] || (( QA_BUDGET_MINUTES > 270 )); }; then
+            echo "::error::budget_minutes '$QA_BUDGET_MINUTES' is not a whole number of minutes up to 270"
+            exit 1
+          fi
+          groups=''
+          # One compact line, so the document cannot add a line of its own to GITHUB_OUTPUT.
+          if [[ -n "$QA_GROUPS" ]] && ! groups="$(jq -cs 'if length == 1 then .[0] else error("not one document") end' <<<"$QA_GROUPS")"; then
+            echo "::error::groups is not one JSON document"
+            exit 1
+          fi
+          if [[ -n "$QA_FROM_RUNS" ]]; then
+            matrix='{"include":[]}'
+          elif ! matrix="$(node ecosystem-qa/plan.ts --repos "$QA_REPO" --os "$QA_OS" --engines "$QA_ENGINES")"; then
+            echo "::error::no job matrix for repo '$QA_REPO', os '$QA_OS', engines '$QA_ENGINES'"
+            exit 1
+          fi
           {
             echo "matrix=$matrix"
-            echo "repo=$QA_REPO"
             echo "version=$QA_VERSION"
             echo "dry=$QA_DRY"
+            echo "from_runs=$QA_FROM_RUNS"
+            echo "groups=$groups"
+            # A run stops its agent 15 minutes after the budget and then asks it for its answer. A
+            # job that is cancelled before that writes no result at all.
+            echo "job_minutes=$(( ${QA_BUDGET_MINUTES:-90} + 90 ))"
           } >> "$GITHUB_OUTPUT"
           echo "$matrix" | jq .
 
   runner:
-    name: QA ${{ needs.plan.outputs.repo }} on ${{ matrix.os }} with ${{ matrix.engine }}
+    name: QA ${{ matrix.repo }} on ${{ matrix.os }} with ${{ matrix.engine }}
     needs: plan
+    if: ${{ needs.plan.outputs.from_runs == '' }}
     runs-on: ${{ matrix.runner }}
-    timeout-minutes: 180
+    timeout-minutes: ${{ fromJSON(needs.plan.outputs.job_minutes) }}
     permissions: {}
     # The agent keys live in this environment. The push token lives in ecosystem-qa-file, which only
     # the file job enters, so no job that runs the agent can read it.
@@ -165,12 +225,13 @@ jobs:
       run:
         shell: bash
     env:
-      QA_REPO: ${{ needs.plan.outputs.repo }}
+      QA_REPO: ${{ matrix.repo }}
       QA_VERSION: ${{ needs.plan.outputs.version }}
       QA_ENGINE: ${{ matrix.engine }}
       QA_OS: ${{ matrix.os }}
       QA_SANDBOX: ${{ matrix.sandbox }}
       QA_TIER: ${{ inputs.tier }}
+      QA_BUDGET_MINUTES: ${{ inputs.budget_minutes }}
     steps:
       - name: Harden the runner
         if: ${{ matrix.os == 'linux' }}
@@ -234,6 +295,7 @@ jobs:
           node ecosystem-qa/run.ts --repo "$QA_REPO" --version "$QA_VERSION" --engine "$QA_ENGINE"
           --sandbox "$QA_SANDBOX" --out "ecosystem-qa/results/$QA_REPO/$QA_OS/$QA_ENGINE"
           --clone-dir "$RUNNER_TEMP/qa-work/$QA_REPO" --tier "$QA_TIER"
+          ${QA_BUDGET_MINUTES:+--budget-minutes "$QA_BUDGET_MINUTES"}
 
       - name: Report free disk after the run (Linux)
         if: ${{ always() && matrix.os == 'linux' }}
@@ -261,7 +323,7 @@ jobs:
         if: ${{ always() && steps.redact.outcome == 'success' }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: qa-result-${{ matrix.os }}-${{ matrix.engine }}
+          name: qa-result-${{ matrix.repo }}-${{ matrix.os }}-${{ matrix.engine }}
           path: ecosystem-qa/results/
           retention-days: 14
           if-no-files-found: warn
@@ -279,7 +341,15 @@ jobs:
     if: ${{ always() && needs.plan.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
-      issues: read # gh search for each fingerprint
+      actions: read # download the artifacts of earlier runs
+      issues: read # list the internal-qa issues
+    # The model key for the grouping lives in this environment; only the grouping step reads it.
+    environment: ecosystem-qa
+    env:
+      QA_VERSION: ${{ needs.plan.outputs.version }}
+      # Earlier results are uploaded again as the artifact of the same name, so the filing jobs find
+      # the evidence and bundles at the paths the proposals name.
+      QA_RESULTS: ${{ needs.plan.outputs.from_runs != '' && 'ecosystem-qa/results/qa-earlier-results' || 'ecosystem-qa/results' }}
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -298,24 +368,71 @@ jobs:
           yarn workspaces focus ecosystem-qa
 
       - name: Download the run results
+        if: ${{ needs.plan.outputs.from_runs == '' }}
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           pattern: qa-result-*
           path: ecosystem-qa/results
 
+      - name: Name the planned runs that left no result
+        if: ${{ needs.plan.outputs.from_runs == '' }}
+        # It only reports, so it must not keep the results that are there from being collected.
+        continue-on-error: true
+        env:
+          QA_PLANNED: ${{ needs.plan.outputs.matrix }}
+        run: >-
+          node ecosystem-qa/missing-runs.ts --results "$QA_RESULTS" --version "$QA_VERSION"
+          --planned "$QA_PLANNED"
+
+      - name: Fetch the results of earlier runs
+        if: ${{ needs.plan.outputs.from_runs != '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          QA_FROM_RUNS: ${{ needs.plan.outputs.from_runs }}
+          # Results are taken only from runs on the default branch or on the branch of this run.
+          QA_TRUSTED_BRANCHES: ${{ github.event.repository.default_branch }},${{ github.ref_name }}
+        run: >-
+          node ecosystem-qa/fetch-runs.ts --out "$QA_RESULTS" --runs "$QA_FROM_RUNS"
+          --branches "$QA_TRUSTED_BRANCHES"
+
+      - name: Upload the results of earlier runs for the filing jobs
+        if: ${{ needs.plan.outputs.from_runs != '' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: qa-earlier-results
+          path: ecosystem-qa/results/qa-earlier-results/
+          retention-days: 14
+
+      - name: Use the given grouping
+        if: ${{ needs.plan.outputs.groups != '' }}
+        env:
+          QA_GROUPS: ${{ needs.plan.outputs.groups }}
+        run: printf '%s\n' "$QA_GROUPS" > ecosystem-qa/groups.json
+
+      - name: Group findings by root cause
+        if: ${{ needs.plan.outputs.groups == '' }}
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ECOSYSTEM_QA_ANTHROPIC_API_KEY }}
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          node ecosystem-qa/group.ts --results "$QA_RESULTS" --version "$QA_VERSION"
+          --repo "$GITHUB_REPOSITORY" --out ecosystem-qa/groups.json
+
       - name: Collect proposals
         env:
           GH_TOKEN: ${{ github.token }}
-          QA_VERSION: ${{ needs.plan.outputs.version }}
         run: >-
-          node ecosystem-qa/collect.ts --results ecosystem-qa/results --version "$QA_VERSION"
-          --out ecosystem-qa/proposals.json --repo "$GITHUB_REPOSITORY"
+          node ecosystem-qa/collect.ts --results "$QA_RESULTS" --version "$QA_VERSION"
+          --out ecosystem-qa/proposals.json --repo "$GITHUB_REPOSITORY" --groups ecosystem-qa/groups.json
 
       - name: Upload the proposals
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: qa-proposals
-          path: ecosystem-qa/proposals.json
+          path: |
+            ecosystem-qa/proposals.json
+            ecosystem-qa/groups.json
           retention-days: 14
 
   file-dry:
@@ -324,7 +441,8 @@ jobs:
     # Not the implicit success(): one failed runner in the matrix must not silence the filing.
     if: ${{ !cancelled() && needs.collect.result == 'success' && needs.plan.outputs.dry == 'true' }}
     runs-on: ubuntu-latest
-    permissions: {}
+    permissions:
+      issues: read # list the internal-qa issues
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -349,6 +467,8 @@ jobs:
           path: ecosystem-qa/results
 
       - name: Write proposals to the Step Summary
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: >-
           node ecosystem-qa/file.ts --proposals ecosystem-qa/results/qa-proposals/proposals.json
           --repo "$GITHUB_REPOSITORY" --dry
@@ -362,6 +482,13 @@ jobs:
       contents: write # push evidence to the qa-assets branch
       issues: write # create the issue or the comment
     environment: ecosystem-qa-file
+    # Two filing jobs that list the issues at the same moment would each file what the other is
+    # about to file, and one sweep can now overlap another in the repos it tests.
+    # A group holds one running and one waiting job. A third filing job cancels the waiting one, so a
+    # cancelled filing job means "collect that run again with from_runs", not "nothing to file".
+    concurrency:
+      group: ecosystem-qa-file
+      cancel-in-progress: false
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -389,6 +516,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           ECOSYSTEM_QA_PUSH_TOKEN: ${{ secrets.ECOSYSTEM_QA_PUSH_TOKEN }}
+          ECOSYSTEM_QA_PUSH_TOKEN_STORYBOOK_TMP: ${{ secrets.ECOSYSTEM_QA_PUSH_TOKEN_STORYBOOK_TMP }}
         run: >-
           node ecosystem-qa/file.ts --proposals ecosystem-qa/results/qa-proposals/proposals.json
           --repo "$GITHUB_REPOSITORY"

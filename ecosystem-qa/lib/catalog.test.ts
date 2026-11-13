@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { loadCatalogEntry } from './catalog.ts';
+import { loadCatalog, loadCatalogEntry } from './catalog.ts';
 import { ENTRY } from './fixtures.ts';
 import { Catalog } from './schema.ts';
 
@@ -9,28 +9,41 @@ describe('catalog', () => {
     expect(loadCatalogEntry('mealdrop').repo).toBe('storybookjs/mealdrop');
   });
 
+  it('parses every checked-in entry', () => {
+    expect(loadCatalog().length).toBeGreaterThan(1);
+  });
+
   it.each([
     ['an unknown repo class', { ...ENTRY, class: 'tier3' }],
     ['a repo without an owner', { ...ENTRY, repo: 'mealdrop' }],
-    ['an unsupported package manager', { ...ENTRY, packageManager: 'bun' }],
+    ['an unsupported package manager', { ...ENTRY, packageManager: 'deno' }],
     ['an unknown field', { ...ENTRY, branch: 'main' }],
-    ['a push target outside storybookjs', { ...ENTRY, pushTo: 'twentyhq/twenty' }],
+    ['a tier 1 entry without a push target', { ...ENTRY, class: 'tier1' }],
+    ['a push target outside the orgs with a push token', { ...ENTRY, pushTo: 'twentyhq/twenty' }],
+    [
+      'a repo that is its own push target and has no push token',
+      { ...ENTRY, repo: 'twentyhq/twenty' },
+    ],
+    ['a Node version that is not a plain version', { ...ENTRY, node: 'lts/*' }],
   ])('rejects %s', (_, entry) => {
     expect(() => Catalog.parse([entry])).toThrow();
   });
 
-  it('accepts a fork under storybookjs as the push target of an upstream repo', () => {
-    const [entry] = Catalog.parse([
-      {
-        ...ENTRY,
-        id: 'twenty',
-        repo: 'twentyhq/twenty',
-        class: 'tier1',
-        pushTo: 'storybookjs/twenty',
-      },
-    ]);
+  it.each(['storybook-tmp/twenty', 'storybookjs/twenty'])(
+    'accepts %s as the push target of an upstream repo',
+    (pushTo) => {
+      const [entry] = Catalog.parse([
+        { ...ENTRY, id: 'twenty', repo: 'twentyhq/twenty', class: 'tier1', pushTo },
+      ]);
 
-    expect(entry?.pushTo).toBe('storybookjs/twenty');
+      expect(entry?.pushTo).toBe(pushTo);
+    }
+  );
+
+  it('accepts a plain Node version', () => {
+    const [entry] = Catalog.parse([{ ...ENTRY, node: '24.11.0' }]);
+
+    expect(entry?.node).toBe('24.11.0');
   });
 
   it('rejects duplicate ids', () => {

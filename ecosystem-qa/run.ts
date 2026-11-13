@@ -5,6 +5,7 @@ import {
   createWriteStream,
   existsSync,
   mkdirSync,
+  readdirSync,
   readFileSync,
   realpathSync,
   renameSync,
@@ -15,7 +16,7 @@ import { homedir, tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 
-import { claudeCode, codex, Output, run, StructuredOutputError } from '@ai-hero/sandcastle';
+import { claudeCode, codex, createSandbox, type LoggingOption } from '@ai-hero/sandcastle';
 import { bwrap } from '@ai-hero/sandcastle/sandboxes/bwrap';
 import { docker } from '@ai-hero/sandcastle/sandboxes/docker';
 import { noSandbox } from '@ai-hero/sandcastle/sandboxes/no-sandbox';
@@ -24,11 +25,16 @@ import { join, relative, resolve } from 'pathe';
 import { z } from 'zod';
 
 import { checksFor, renderChecklist } from './checks.ts';
+import { answerAfterRepairs, answerOfFinishedAgent, type Reading } from './lib/answer.ts';
 import { loadCatalogEntry } from './lib/catalog.ts';
 import { shipsSandcastleFiles } from './lib/clone-guard.ts';
-import { cycleBranchName, versionLine } from './lib/cycle.ts';
+import { cycleBranchName, cycleRepo, versionLine } from './lib/cycle.ts';
 import { runFake } from './lib/fake-run.ts';
+import { outputOf, watchHost, type Report } from './lib/host-watch.ts';
 import { forJobLog, liveLine } from './lib/live-log.ts';
+import { memoryGuard } from './lib/memory-guard.ts';
+import { CHECKOUT_GUIDE, guideFor } from './lib/migration-guide.ts';
+import { budgetRecord, msUntilHardStop, parseBudget, type RunBudget } from './lib/run-budget.ts';
 import {
   agentOutput,
   Effort,
@@ -42,8 +48,19 @@ import {
 import { writeStepSummary } from './lib/step-summary.ts';
 import type { Outcome, RunRequest } from './lib/types.ts';
 import { redactTree } from './lib/redact.ts';
+import { upgraded } from './lib/results.ts';
 import { unsandboxedRefusal } from './lib/sandbox-policy.ts';
+import { stopChildren } from './lib/stop-children.ts';
 import { usageFromStream } from './lib/usage.ts';
+import {
+  saveStoppedClaudeSession,
+  stopAfterSilence,
+  stopAtTimeLimit,
+  within,
+  WRAP_UP_MINUTES,
+  wrapUpPrompt,
+  type Stop,
+} from './lib/wrap-up.ts';
 
 const HELP = `Usage: node ecosystem-qa/run.ts --repo <catalog id> --version <storybook version> --engine <claude|codex> --sandbox <docker|bwrap|seatbelt|none> --out <dir>
 
@@ -53,8 +70,10 @@ Options:
   --tier <tier>       must (default) runs the checks every sweep needs; extended runs all of them
   --clone-dir <dir>   Where to clone the catalog repo (default: <tmpdir>/ecosystem-qa/work/<id>)
   --image <name>      Docker image for --sandbox docker (default: sb-ecosystem-qa)
+  --budget-minutes <n>     Minutes the agent is asked to answer within, from the start of the run (default: 90)
+  --hard-stop-minutes <n>  Minute at which the runner stops the agent and asks it for its answer (default: 15 after the budget)
 
-Writes <out>/result.json and exits 0 whenever it did, findings or not.
+Writes <out>/result.json and exits 0 whenever it did, findings or not. <out> must be empty or new.
 Set ECOSYSTEM_QA_FAKE=1 and pass --fake to write a canned result for --engine without running an agent;
 the result records fake: true and costs $0.`;
 
@@ -71,16 +90,20 @@ const CREDENTIAL_ENV: Record<Engine, string[]> = {
   codex: ['CODEX_API_KEY'],
 };
 
+const INSTALL_LIMIT_SECONDS = 25 * 60;
+
 const INSTALL_COMMAND: Record<CatalogEntry['packageManager'], string> = {
   npm: 'npm ci',
   pnpm: 'pnpm install --frozen-lockfile',
   yarn: 'yarn install --immutable',
+  bun: 'bun install --frozen-lockfile',
 };
 
 const STORYBOOK_CLI: Record<CatalogEntry['packageManager'], (version: string) => string> = {
   npm: (version) => `npx storybook@${version}`,
   pnpm: (version) => `pnpm dlx storybook@${version}`,
   yarn: (version) => `yarn dlx storybook@${version}`,
+  bun: (version) => `bunx storybook@${version}`,
 };
 
 // The upgrade must rewrite the lockfile, but GitHub runners set CI and GITHUB_ACTIONS, which make
@@ -90,6 +113,11 @@ const UPGRADE_ENV = {
   CI: 'false',
   YARN_ENABLE_IMMUTABLE_INSTALLS: 'false',
   npm_config_frozen_lockfile: 'false',
+  // The version under test is usually days old, and the sandbox exists to run code nobody has
+  // reviewed, so a project's release-age gate must not stop the upgrade.
+  YARN_NPM_MINIMAL_AGE_GATE: '0',
+  pnpm_config_minimum_release_age: '0',
+  npm_config_min_release_age: '0',
 };
 
 // The real path, because git writes real paths into a worktree's gitdir pointer and the sandboxes
@@ -105,6 +133,8 @@ const HOST_OS: Partial<Record<NodeJS.Platform, Os>> = {
 const QA_DIR = fileURLToPath(new URL('.', import.meta.url));
 const PROMPT_FILE = join(QA_DIR, 'prompts/upgrade.md');
 const DOCKER_HOME = '/home/agent';
+// Where Sandcastle's Docker sandbox mounts the worktree.
+const DOCKER_WORKSPACE = `${DOCKER_HOME}/workspace`;
 
 const fail = (message: string): never => {
   console.error(`${message}\n\n${HELP}`);
@@ -127,6 +157,8 @@ const parseRequest = () => {
       tier: { type: 'string', default: 'must' },
       'clone-dir': { type: 'string' },
       image: { type: 'string', default: 'sb-ecosystem-qa' },
+      'budget-minutes': { type: 'string' },
+      'hard-stop-minutes': { type: 'string' },
       fake: { type: 'boolean', default: false },
       help: { type: 'boolean', default: false },
     },
@@ -150,6 +182,10 @@ const parseRequest = () => {
   }
 
   const os = HOST_OS[process.platform] ?? fail(`Unsupported platform ${process.platform}.`);
+  const budget = parseBudget(values['budget-minutes'], values['hard-stop-minutes']);
+  if (typeof budget === 'string') {
+    return fail(budget);
+  }
 
   if (values.fake && process.env.ECOSYSTEM_QA_FAKE !== '1') {
     return fail('--fake needs ECOSYSTEM_QA_FAKE=1.');
@@ -164,6 +200,11 @@ const parseRequest = () => {
     return fail(refusal);
   }
   const outDir = resolve(out);
+  // A run owns its output directory: the log, the agent stream and the evidence of an earlier run
+  // would otherwise be read as this run's.
+  if (existsSync(outDir) && readdirSync(outDir).length > 0) {
+    return fail(`${outDir} is not empty. Delete it or pass another --out.`);
+  }
   const request: RunRequest = {
     entry,
     version,
@@ -181,18 +222,21 @@ const parseRequest = () => {
   // sandbox denies the monorepo's own config files to the agent.
   const cloneDir = resolve(values['clone-dir'] ?? join(scratchDir(), 'work', entry.id));
 
-  return { request, cloneDir, image: values.image };
+  return { request, cloneDir, image: values.image, budget };
 };
 
 const clone = (entry: CatalogEntry, cloneDir: string): string => {
   if (existsSync(cloneDir)) {
     return fail(`${cloneDir} already exists. Delete it or pass another --clone-dir.`);
   }
-  git(process.cwd(), 'clone', '--quiet', `https://github.com/${entry.repo}`, cloneDir);
-  git(cloneDir, 'checkout', '--quiet', '-B', 'qa/start', entry.ref);
+  // The larger catalog repos have several GB of history and a run only needs the start commit.
+  git(process.cwd(), 'init', '--quiet', cloneDir);
+  git(cloneDir, 'remote', 'add', 'origin', `https://github.com/${cycleRepo(entry)}`);
+  git(cloneDir, 'fetch', '--quiet', '--depth', '1', 'origin', entry.ref);
+  git(cloneDir, 'checkout', '--quiet', '-B', 'qa/start', 'FETCH_HEAD');
   if (shipsSandcastleFiles(cloneDir)) {
     return fail(
-      `${entry.repo} ships a .sandcastle directory. Sandcastle would give the agent the variables of its .env file, so this repo cannot run.`
+      `${cycleRepo(entry)} ships a .sandcastle directory. Sandcastle would give the agent the variables of its .env file, so this repo cannot run.`
     );
   }
   git(cloneDir, 'config', 'user.name', 'Storybook Ecosystem QA');
@@ -202,22 +246,23 @@ const clone = (entry: CatalogEntry, cloneDir: string): string => {
 };
 
 interface SandboxPlan {
-  provider: Parameters<typeof run>[0]['sandbox'];
+  provider: Parameters<typeof createSandbox>[0]['sandbox'];
   toolsDir: string;
   migrationFile: string;
   evidenceDir: string;
   // Extra variables the agent process needs inside this sandbox.
   agentEnv: Record<string, string>;
+  hooks: NonNullable<Parameters<typeof createSandbox>[0]['hooks']>;
 }
 
 const planSandbox = (
   request: RunRequest,
   cloneDir: string,
   evidenceDir: string,
-  image: string
+  image: string,
+  migrationFile: string
 ): SandboxPlan => {
   const toolsDir = join(QA_DIR, 'tools');
-  const migrationFile = join(request.monorepoDir, 'MIGRATION.md');
   const identity = (path: string, readonly: boolean) => ({
     hostPath: path,
     sandboxPath: path,
@@ -247,6 +292,22 @@ const planSandbox = (
     identity(agentTmp, false),
   ];
   const nativeEnv = { CLAUDE_CODE_TMPDIR: agentTmp };
+  const { packageManager, node } = request.entry;
+  const install = (evidence: string, nodeFlag: string[]) => ({
+    command: [
+      `node "${toolsDir}/timed.mjs"`,
+      ...nodeFlag,
+      `--limit-seconds=${INSTALL_LIMIT_SECONDS}`,
+      `"${evidence}/install-seconds.txt"`,
+      INSTALL_COMMAND[packageManager],
+    ].join(' '),
+  });
+  const installHooks = { sandbox: { onSandboxReady: [install(evidenceDir, [])] } };
+  if (request.sandbox !== 'docker' && node) {
+    console.warn(
+      `${request.entry.id} asks for Node ${node}, and only the Docker image can switch Node. This run uses the Node of the host.`
+    );
+  }
   switch (request.sandbox) {
     case 'docker': {
       const sandboxMigration = `${DOCKER_HOME}/qa-input/MIGRATION.md`;
@@ -254,6 +315,7 @@ const planSandbox = (
       return {
         provider: docker({
           imageName: image,
+          env: UPGRADE_ENV,
           mounts: [
             ...toolMounts,
             { hostPath: migrationFile, sandboxPath: sandboxMigration, readonly: true },
@@ -264,26 +326,47 @@ const planSandbox = (
         migrationFile: sandboxMigration,
         evidenceDir: sandboxEvidence,
         agentEnv: {},
+        hooks: {
+          host: {
+            onSandboxReady: [
+              {
+                command: `node "${toolsDir}/cap-memory.mjs" "${evidenceDir}/memory-limit.txt" "${evidenceDir}/sandbox-container.txt"`,
+              },
+            ],
+          },
+          sandbox: {
+            onSandboxReady: [install(sandboxEvidence, [`--use-node${node ? `=${node}` : ''}`])],
+          },
+        },
       };
     }
     case 'bwrap':
       return {
-        provider: bwrap({ mounts: nativeMounts }),
+        provider: bwrap({ mounts: nativeMounts, env: UPGRADE_ENV }),
         toolsDir,
         migrationFile,
         evidenceDir,
         agentEnv: nativeEnv,
+        hooks: installHooks,
       };
     case 'seatbelt':
       return {
-        provider: seatbelt({ mounts: nativeMounts }),
+        provider: seatbelt({ mounts: nativeMounts, env: UPGRADE_ENV }),
         toolsDir,
         migrationFile,
         evidenceDir,
         agentEnv: nativeEnv,
+        hooks: installHooks,
       };
     case 'none':
-      return { provider: noSandbox(), toolsDir, migrationFile, evidenceDir, agentEnv: {} };
+      return {
+        provider: noSandbox({ env: UPGRADE_ENV }),
+        toolsDir,
+        migrationFile,
+        evidenceDir,
+        agentEnv: {},
+        hooks: installHooks,
+      };
   }
 };
 
@@ -293,28 +376,34 @@ const agentFor = (request: RunRequest, agentEnv: Record<string, string>) => {
     names.find((name) => process.env[name]) ?? fail(`None of ${names.join(', ')} is set.`);
   const options = {
     effort: request.effort,
-    env: { ...UPGRADE_ENV, ...agentEnv, [keyName]: process.env[keyName]! },
+    env: { ...agentEnv, [keyName]: process.env[keyName]! },
   };
   return request.engine === 'claude'
     ? claudeCode(request.model, options)
     : codex(request.model, options);
 };
 
-const statusOf = (error: unknown): Outcome['status'] => {
-  if (error instanceof StructuredOutputError) {
-    return 'output-invalid';
-  }
-  return error instanceof Object && '_tag' in error && error._tag === 'AgentIdleTimeoutError'
-    ? 'timeout'
-    : 'agent-failed';
+const IDLE_MINUTES = 15;
+
+// Sandcastle hands the error of a sandbox run over in a wrapper that ends its name with the name
+// of the error.
+const isIdleTimeout = (error: unknown): boolean =>
+  error instanceof Error && error.name.endsWith('AgentIdleTimeoutError');
+
+const readNumber = (file: string): number | undefined => {
+  const value = existsSync(file) ? Number(readFileSync(file, 'utf8')) : Number.NaN;
+  return Number.isFinite(value) ? value : undefined;
 };
 
 const runSandcastle = async (
   request: RunRequest,
   cloneDir: string,
-  image: string
+  image: string,
+  startedAt: Date,
+  budget: RunBudget
 ): Promise<Outcome> => {
   const evidenceDir = join(request.outDir, 'evidence');
+  writeFileSync(join(evidenceDir, 'budget.json'), budgetRecord(startedAt, budget));
   const cycleBranch = cycleBranchName(request.version, request.os, request.engine);
   const startSha = clone(request.entry, cloneDir);
   const { packageManager, storybookDir, repo } = request.entry;
@@ -322,18 +411,140 @@ const runSandcastle = async (
 
   let sessionSource: string | undefined;
   let output: Outcome['output'];
-  let failure: { status: Outcome['status']; error: string } | undefined;
+  let failure: Pick<Outcome, 'status' | 'error'> | undefined;
+  let recoveredFrom: string | undefined;
+  let migrationGuide: string | undefined;
+  let sandbox: Awaited<ReturnType<typeof createSandbox>> | undefined;
+  let sessionId: string | undefined;
+  let agentStarted = false;
+  let cutShort: string | undefined;
+  let stop:
+    | {
+        at: AbortSignal;
+        ask: (why: Stop) => Promise<{
+          reading: Reading<NonNullable<Outcome['output']>>;
+          turn: { iterations: { sessionFilePath?: string }[] };
+        }>;
+      }
+    | undefined;
+  const logFile = join(request.outDir, 'run.log');
+  const sandboxNameFile = join(evidenceDir, 'sandbox-container.txt');
+  const report = ({ level, line }: Report) =>
+    console.log(level === 'warning' && process.env.GITHUB_ACTIONS ? `::warning::${line}` : line);
+  const watch = watchHost({
+    file: join(evidenceDir, 'host-samples.jsonl'),
+    startedAt,
+    diskDir: request.outDir,
+    // Sandcastle hands the sandbox over only after the project install, and the install is part of
+    // what the watch is for.
+    container: () =>
+      sandbox?.sandboxId ??
+      (existsSync(sandboxNameFile) ? readFileSync(sandboxNameFile, 'utf8').trim() : undefined),
+    report,
+    onSample: memoryGuard({
+      agent: request.engine,
+      agentStarted: () => agentStarted,
+      inSandbox: (container, command) => outputOf('docker', ['exec', container, ...command]),
+      logFile: join(evidenceDir, 'memory-guard.log'),
+      report,
+    }),
+  });
+  // One list for the schema, the checklist and the count the prompt names.
+  const checks = checksFor(request.tier);
+  const answerSchema = agentOutput(checks.map((check) => check.id));
 
   try {
-    const plan = planSandbox(request, cloneDir, evidenceDir, image);
-    const agent = agentFor(request, plan.agentEnv);
-    const answerSchema = agentOutput(checksFor(request.tier).map((check) => check.id));
-    const result = await run({
+    const guide = await guideFor(request.version, {
+      checkout: join(request.monorepoDir, 'MIGRATION.md'),
+      saveTo: join(scratchDir(), 'guides', `v${request.version}`, 'MIGRATION.md'),
+    });
+    migrationGuide = guide.ref;
+    const plan = planSandbox(request, cloneDir, evidenceDir, image, guide.file);
+    sandbox = await createSandbox({
       cwd: cloneDir,
-      agent,
+      branch: cycleBranch,
       sandbox: plan.provider,
-      name: `${request.entry.id}-${request.os}-${request.engine}`,
-      branchStrategy: { type: 'branch', branch: cycleBranch },
+      hooks: plan.hooks,
+    });
+    // createSandbox does not look at how a hook ended, so the record of the install has to.
+    const installExit = readNumber(join(evidenceDir, 'install-exit.txt'));
+    if (installExit === undefined) {
+      throw new Error('The project install did not run to its end: it left no exit status.');
+    }
+    if (existsSync(join(evidenceDir, 'install-stopped.txt'))) {
+      throw new Error(
+        `The project install did not finish within ${INSTALL_LIMIT_SECONDS / 60} minutes.`
+      );
+    }
+    // The same signal goes to every repair turn, so the stop is one moment for the whole run.
+    const hardStop = AbortSignal.timeout(msUntilHardStop(startedAt, budget));
+    const agent = agentFor(request, plan.agentEnv);
+    const name = `${request.entry.id}-${request.os}-${request.engine}`;
+    const logging: LoggingOption = {
+      type: 'file',
+      path: logFile,
+      onAgentStreamEvent: (event) => {
+        if (event.type === 'raw') {
+          stream.write(`${event.line}\n`);
+          const started = agent
+            .parseStreamLine(event.line)
+            .find((parsed) => parsed.type === 'session_id');
+          if (started?.type === 'session_id') {
+            sessionId = started.sessionId;
+          }
+        } else if (event.type === 'text' || event.type === 'toolCall') {
+          console.log(liveLine(event));
+        }
+      },
+    };
+    const box = sandbox;
+    // An agent that is stopped in the middle of a turn has printed no answer. This ends what it
+    // runs and asks it once, in the same session, for the answer with what it has.
+    const askAfterStop = async (why: Stop) => {
+      if (!sessionId) {
+        throw new Error('it had not started a session.');
+      }
+      const hostFile = agent.sessionStorage?.hostSessionFilePath(cloneDir, sessionId);
+      const container = box.sandboxId;
+      if (request.sandbox === 'docker' && request.engine === 'claude' && hostFile && container) {
+        await within(
+          60,
+          'Ending what the agent ran',
+          box.exec('kill -TERM -1; sleep 3; kill -KILL -1; true')
+        );
+        saveStoppedClaudeSession({
+          container,
+          sessionId,
+          sandboxCwd: DOCKER_WORKSPACE,
+          sandboxHome: DOCKER_HOME,
+          hostCwd: cloneDir,
+          hostFile,
+        });
+        sessionSource = hostFile;
+      } else if (request.sandbox === 'none') {
+        stopChildren();
+      } else {
+        throw new Error(
+          'only Claude Code in the Docker sandbox, or an agent without a sandbox, can be asked after a stop.'
+        );
+      }
+      const turn = await box.run({
+        agent,
+        name,
+        resumeSession: sessionId,
+        prompt: wrapUpPrompt(why),
+        signal: AbortSignal.timeout(WRAP_UP_MINUTES * 60_000),
+        idleTimeoutSeconds: 300,
+        logging,
+      });
+      return answerAfterRepairs(turn, answerSchema);
+    };
+    stop = { at: hardStop, ask: askAfterStop };
+    agentStarted = true;
+    const first = await sandbox.run({
+      agent,
+      signal: hardStop,
+      name,
       promptFile: PROMPT_FILE,
       promptArgs: {
         REPO: repo,
@@ -348,41 +559,75 @@ const runSandcastle = async (
         MIGRATION_FILE: plan.migrationFile,
         TOOLS_DIR: plan.toolsDir,
         EVIDENCE_DIR: plan.evidenceDir,
-        CHECKLIST: renderChecklist(request.tier),
+        CHECKLIST: renderChecklist(checks),
+        CHECK_COUNT: String(checks.length),
+        BUDGET_MINUTES: String(budget.minutes),
+        HARD_STOP_MINUTES: String(budget.hardStopMinutes),
         OUTPUT_SCHEMA: JSON.stringify(z.toJSONSchema(answerSchema), null, 2),
       },
-      output: Output.object({ tag: 'qa-result', schema: answerSchema, maxRetries: 2 }),
-      hooks: {
-        sandbox: {
-          onSandboxReady: [
-            {
-              command: `node "${plan.toolsDir}/timed.mjs" "${plan.evidenceDir}/install-seconds.txt" ${INSTALL_COMMAND[packageManager]}`,
-              timeoutMs: 20 * 60_000,
-            },
-          ],
-        },
-      },
-      idleTimeoutSeconds: 900,
-      logging: {
-        type: 'file',
-        path: join(request.outDir, 'run.log'),
-        onAgentStreamEvent: (event) => {
-          if (event.type === 'raw') {
-            stream.write(`${event.line}\n`);
-          } else if (event.type === 'text' || event.type === 'toolCall') {
-            console.log(liveLine(event));
-          }
-        },
-      },
+      idleTimeoutSeconds: IDLE_MINUTES * 60,
+      logging,
     });
-    output = result.output;
-    sessionSource = result.iterations.at(-1)?.sessionFilePath;
+    sessionSource = first.iterations.at(-1)?.sessionFilePath;
+    // The sandbox is still open here, so a repair is one more turn of the same session.
+    const { reading, turn } = await answerAfterRepairs(first, answerSchema);
+    sessionSource = turn.iterations.at(-1)?.sessionFilePath ?? sessionSource;
+    if ('answer' in reading) {
+      output = reading.answer;
+    } else {
+      failure = { status: 'output-invalid', error: reading.problem };
+    }
   } catch (error) {
-    failure = { status: statusOf(error), error: String(error) };
-    if (error instanceof StructuredOutputError) {
-      sessionSource = error.sessionFilePath;
+    // The sandbox can fail after an agent that had already answered, for example while it collects
+    // the commits.
+    const answer = existsSync(logFile)
+      ? answerOfFinishedAgent(readFileSync(logFile, 'utf8'), answerSchema)
+      : undefined;
+    if (answer) {
+      output = answer;
+      recoveredFrom = String(error);
+    } else if (stop && (stop.at.aborted || isIdleTimeout(error))) {
+      const why = stop.at.aborted
+        ? stopAtTimeLimit(budget.hardStopMinutes)
+        : stopAfterSilence(IDLE_MINUTES);
+      try {
+        const { reading, turn } = await stop.ask(why);
+        sessionSource = turn.iterations.at(-1)?.sessionFilePath ?? sessionSource;
+        if ('answer' in reading) {
+          output = reading.answer;
+          cutShort = `${why.record} Asked for what it had, it gave this answer.`;
+        } else {
+          failure = {
+            status: 'timeout',
+            error: `${why.record} Asked for what it had, it gave no answer that could be used: ${reading.problem}`,
+          };
+        }
+      } catch (problem) {
+        failure = {
+          status: 'timeout',
+          error: `${why.record} It could not be asked for what it had: ${problem instanceof Error ? problem.message : String(problem)}`,
+        };
+      }
+    } else {
+      failure = { status: 'agent-failed', error: String(error) };
     }
   } finally {
+    watch.stop();
+    if (request.sandbox === 'none') {
+      const stopped = stopChildren();
+      if (stopped > 0) {
+        console.warn(`Stopped ${stopped} process(es) that the run had left behind.`);
+      }
+    }
+    // The answer is already read, so a sandbox that cannot be removed does not fail the run.
+    if (sandbox) {
+      await within(600, 'Closing the sandbox', sandbox.close()).catch((error: unknown) => {
+        console.warn(forJobLog(`The sandbox could not be closed: ${String(error)}`));
+        // A close that never returns keeps its docker process, and with it this one, alive. The
+        // record is written within seconds from here.
+        setTimeout(() => process.exit(), 60_000).unref();
+      });
+    }
     await new Promise((done) => stream.end(done));
   }
 
@@ -401,17 +646,15 @@ const runSandcastle = async (
   return {
     status: failure?.status ?? 'ok',
     ...(failure ? { error: failure.error } : {}),
+    ...(recoveredFrom ? { recoveredFrom } : {}),
+    ...(cutShort ? { cutShort } : {}),
+    ...(migrationGuide ? { migrationGuide } : {}),
     ...(output ? { output } : {}),
     startSha,
     headSha,
     ...(sessionSource ? { sessionSource } : {}),
     ...(headSha ? { bundle: 'cycle.bundle' } : {}),
   };
-};
-
-const readInstallSeconds = (file: string): number | undefined => {
-  const seconds = existsSync(file) ? Number(readFileSync(file, 'utf8')) : Number.NaN;
-  return Number.isFinite(seconds) ? seconds : undefined;
 };
 
 const freeDiskMb = (dir: string): number => {
@@ -431,10 +674,11 @@ const writeResult = (request: RunRequest, outcome: Outcome, startedAt: Date) => 
   if (usage.usd === null) {
     console.warn(`No price for model "${request.model}" in the shared price table; usd is null.`);
   }
-  const installSeconds = readInstallSeconds(join(outDir, 'evidence/install-seconds.txt'));
+  const installSeconds = readNumber(join(outDir, 'evidence/install-seconds.txt'));
   const { outDir: _out, monorepoDir: _monorepo, ...recorded } = request;
   const result: RunResultFile = {
     request: recorded,
+    storybookVersionBefore: outcome.output?.storybookVersionBefore ?? null,
     storybookVersionInstalled: outcome.output?.storybookVersionInstalled ?? null,
     startSha: outcome.startSha,
     headSha: outcome.headSha,
@@ -456,6 +700,9 @@ const writeResult = (request: RunRequest, outcome: Outcome, startedAt: Date) => 
     },
     status: outcome.status,
     ...(outcome.error ? { error: outcome.error } : {}),
+    ...(outcome.recoveredFrom ? { recoveredFrom: outcome.recoveredFrom } : {}),
+    ...(outcome.cutShort ? { cutShort: outcome.cutShort } : {}),
+    ...(outcome.migrationGuide ? { migrationGuide: outcome.migrationGuide } : {}),
   };
   // Written to a sibling first: an interrupted write must never leave a truncated result.json.
   const resultFile = join(outDir, 'result.json');
@@ -473,19 +720,39 @@ const summarize = (result: RunResultFile, resultPath: string): string => {
     result.usage.usd === null
       ? 'unpriced'
       : `$${result.usage.usd.toFixed(2)}${result.usage.priceSource === 'table' ? ' (priced from the shared price table, not from the agent)' : ''}`;
+  const installed = upgraded(result)
+    ? `Storybook ${result.storybookVersionInstalled} installed`
+    : `The upgrade to ${result.request.version} did not happen; Storybook is on ${result.storybookVersionInstalled ?? 'an unknown version'}`;
+  const installTime =
+    result.timing.installSeconds === undefined
+      ? ''
+      : ` (the project install took ${result.timing.installSeconds}s)`;
   return [
     `${result.request.entry.repo} on ${result.request.os} with ${engineLabel(result)} (${result.request.model}) finished with status ${result.status} in ${result.timing.wallSeconds}s.`,
-    `Storybook ${result.storybookVersionInstalled ?? 'version unknown'} installed${result.timing.installSeconds === undefined ? '' : ` (the project install took ${result.timing.installSeconds}s)`}, ${result.checks.length} checks reported, ${failed} failed, ${result.findings.length} findings.`,
+    `${installed}${installTime}, ${result.checks.length} checks reported, ${failed} failed, ${result.findings.length} findings.`,
     `Usage was ${result.usage.inputTokens} input, ${result.usage.outputTokens} output, ${result.usage.cacheReadTokens ?? 0} cache-read and ${result.usage.cacheWriteTokens ?? 0} cache-write tokens, ${usd}.`,
     `Cycle branch ${cycleBranchName(result.request.version, result.request.os, result.request.engine)} head ${result.headSha ?? 'has no commits'}.${result.machine.freeDiskMbAtEnd === undefined ? '' : ` ${result.machine.freeDiskMbAtEnd} MB disk free at the end.`} Result: ${resultPath}.`,
     ...(result.error ? [`Error: ${result.error}`] : []),
+    ...(result.migrationGuide === CHECKOUT_GUIDE
+      ? [
+          `The agent read the migration guide of this checkout, because v${result.request.version} is not a tag of storybookjs/storybook.`,
+        ]
+      : []),
+    ...(result.cutShort ? [result.cutShort] : []),
+    ...(result.recoveredFrom
+      ? [
+          `The sandbox failed after the agent had finished, so the answer was read from the run log: ${result.recoveredFrom}`,
+        ]
+      : []),
   ].join(' ');
 };
 
-const { request, cloneDir, image } = parseRequest();
+const { request, cloneDir, image, budget } = parseRequest();
 const startedAt = new Date();
 mkdirSync(join(request.outDir, 'evidence'), { recursive: true });
-const outcome = request.fake ? runFake(request) : await runSandcastle(request, cloneDir, image);
+const outcome = request.fake
+  ? runFake(request)
+  : await runSandcastle(request, cloneDir, image, startedAt, budget);
 const result = writeResult(request, outcome, startedAt);
 // The whole output directory becomes a public artifact, agent stream and session included, and the
 // agent holds the provider key, so nothing with a credential shape may stay in it.

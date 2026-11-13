@@ -1,20 +1,27 @@
-import { writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
 
-import { loadCatalog } from './lib/catalog.ts';
-import { versionLine } from './lib/cycle.ts';
-import { searchFingerprint } from './lib/github.ts';
-import { groupFindings, toProposal } from './lib/proposals.ts';
-import { loadResults } from './lib/results.ts';
+import { z } from 'zod';
 
-const HELP = `Usage: node ecosystem-qa/collect.ts --results <dir> --version <storybook version> --out <proposals.json> --repo <owner/name> [--run-url <url>]
+import { versionLine } from './lib/cycle.ts';
+import { listQaIssues, releasePublishedAt } from './lib/github.ts';
+import { clusterFindings, identityGrouping } from './lib/grouping.ts';
+import { CHECKOUT_GUIDE } from './lib/migration-guide.ts';
+import { loadFindingGroups, QA_LABEL, toProposal } from './lib/proposals.ts';
+import { upgraded } from './lib/results.ts';
+import { Grouping, type Proposal } from './lib/schema.ts';
+
+const HELP = `Usage: node ecosystem-qa/collect.ts --results <dir> --version <storybook version> --out <proposals.json> --repo <owner/name> [--run-url <url>] [--groups <groups.json>]
 
 Reads the result.json of every catalog repo, os and engine under --results, either from a downloaded
-artifact (<results>/qa-result-<os>-<engine>/<id>/<os>/<engine>) or from a local run
-(<results>/<id>/<os>/<engine>). Merges findings by fingerprint, searches --repo for each fingerprint
-with gh, and writes one proposal per fingerprint to --out.
+artifact (<results>/qa-result-<id>-<os>-<engine>/<id>/<os>/<engine>) or from a local run
+(<results>/<id>/<os>/<engine>). Merges findings by fingerprint, lists the issues of --repo that carry
+the internal-qa label with gh, and writes one proposal per group to --out.
 --version is the version the cycle ran; a record that names another version is ignored.
---run-url defaults to this GitHub Actions run, or "local" outside Actions.`;
+--run-url defaults to this GitHub Actions run, or "local" outside Actions.
+--groups merges fingerprints that share a root cause into one proposal, led by each group's first
+member and optionally matched to an existing issue by similarity; without it each fingerprint is its
+own group. Every fingerprint of this collect must be in exactly one group.`;
 
 const { values } = parseArgs({
   options: {
@@ -23,6 +30,7 @@ const { values } = parseArgs({
     out: { type: 'string' },
     repo: { type: 'string' },
     'run-url': { type: 'string' },
+    groups: { type: 'string' },
     help: { type: 'boolean', default: false },
   },
 });
@@ -44,25 +52,55 @@ const runUrl =
     ? `${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}`
     : 'local');
 
-const loaded = loadResults(results, {
-  version,
-  catalog: loadCatalog(),
-  warn: (message) => console.warn(`::warning::${message}`),
-});
-
-const proposals = groupFindings(loaded).map((group) =>
-  toProposal(group, searchFingerprint(repo, group.fingerprint), runUrl)
+const { loaded, groups } = loadFindingGroups(results, version);
+const issues = listQaIssues(repo, QA_LABEL);
+const publishedAt = releasePublishedAt(repo, version);
+console.log(
+  publishedAt
+    ? `${version} was published at ${publishedAt}; an issue closed as completed after that counts as known.`
+    : `${repo} has no release v${version}, so a bug fixed after it is filed again.`
+);
+const parsed = values.groups
+  ? Grouping.safeParse(JSON.parse(readFileSync(values.groups, 'utf8')))
+  : { success: true as const, data: identityGrouping(groups.map((group) => group.fingerprint)) };
+if (!parsed.success) {
+  console.error(`${values.groups} is not a grouping:\n${z.prettifyError(parsed.error)}`);
+  process.exit(1);
+}
+const clustering = clusterFindings(groups, parsed.data, issues);
+if ('problems' in clustering) {
+  console.error(
+    `${values.groups} does not fit this collect:\n${clustering.problems.map((problem) => `- ${problem}`).join('\n')}`
+  );
+  process.exit(1);
+}
+const proposals = clustering.clusters.map((cluster) =>
+  toProposal(cluster, issues, { runUrl, publishedAt })
 );
 writeFileSync(out, `${JSON.stringify(proposals, null, 2)}\n`);
 
 for (const { result, resultPath } of loaded) {
   const failed = result.checks.filter((check) => check.state === 'fail').map((check) => check.id);
   console.log(
-    `${resultPath}: ${result.status}, ${result.checks.length} checks, failed: ${failed.join(', ') || 'none'}`
+    `${resultPath}: ${result.status}, ${result.checks.length} checks, failed: ${failed.join(', ') || 'none'}${upgraded(result) ? '' : ', not upgraded'}${result.migrationGuide === CHECKOUT_GUIDE ? ', judged against the migration guide of the checkout' : ''}`
   );
 }
+const targetOf = (proposal: Proposal): string => {
+  switch (proposal.kind) {
+    case 'issue':
+      return '';
+    case 'comment':
+      return `${proposal.reason ? ` (${proposal.reason})` : ''} #${proposal.existingIssue}`;
+    case 'suppressed':
+      return ` (${proposal.reason}) #${proposal.existingIssue}`;
+    case 'skipped':
+      return ` (${proposal.reason})`;
+  }
+};
 for (const proposal of proposals) {
-  const target = proposal.kind === 'issue' ? '' : ` #${proposal.existingIssue}`;
-  console.log(`${proposal.kind}${target} ${proposal.fingerprint} ${proposal.title}`);
+  const more = proposal.related.length > 0 ? ` (+${proposal.related.length} more)` : '';
+  console.log(
+    `${proposal.kind}${targetOf(proposal)} ${proposal.fingerprint} ${proposal.title}${more}`
+  );
 }
 console.log(`${loaded.length} results, ${proposals.length} proposals written to ${out}`);

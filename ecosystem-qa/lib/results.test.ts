@@ -13,7 +13,7 @@ import { dirname, join } from 'pathe';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ENTRY, finding, loaded, VERSION } from './fixtures.ts';
-import { loadResults } from './results.ts';
+import { downloadedRuns, loadResults, upgraded } from './results.ts';
 import { Finding, type RunResultFile } from './schema.ts';
 
 vi.mock('node:fs', { spy: true });
@@ -55,14 +55,14 @@ const load = (resultsDir: string) => {
 };
 
 const artifactRun = (resultsDir: string) =>
-  join(resultsDir, 'qa-result-linux-claude/mealdrop/linux/claude');
+  join(resultsDir, 'qa-result-mealdrop-linux-claude/mealdrop/linux/claude');
 
 describe('loadResults', () => {
   it('reads only the records the runner wrote, never one inside the evidence', () => {
     const runDir = artifactRun(resultsDir);
     writeRun(runDir);
     writeRun(join(runDir, 'evidence'));
-    writeRun(join(resultsDir, 'qa-result-linux-claude/elsewhere'));
+    writeRun(join(resultsDir, 'qa-result-mealdrop-linux-claude/elsewhere'));
     writeRun(join(resultsDir, 'mealdrop/macos/claude'), {
       ...record(),
       request: { ...record().request, os: 'macos' },
@@ -95,7 +95,7 @@ describe('loadResults', () => {
       ...record(),
       request: {
         ...record().request,
-        entry: { ...ENTRY, repo: 'attacker/target' },
+        entry: { ...ENTRY, repo: 'storybookjs/storybook' },
       },
       headSha: 'f'.repeat(40),
     });
@@ -116,6 +116,31 @@ describe('loadResults', () => {
     expect(result?.result.request.entry.repo).toBe('storybookjs/mealdrop');
   });
 
+  it('reports the fork that holds the baseline as the cycle repository', () => {
+    const fork = { ...ENTRY, class: 'tier1' as const, pushTo: 'storybook-tmp/mealdrop' };
+    writeRun(artifactRun(resultsDir));
+
+    const [result] = loadResults(resultsDir, {
+      version: VERSION,
+      catalog: [fork],
+      warn: () => {},
+    });
+
+    expect(result?.cycle.repo).toBe('storybook-tmp/mealdrop');
+  });
+
+  it('loads a record written before the starting version was recorded', () => {
+    const { storybookVersionBefore: _newer, ...older } = record({
+      storybookVersionBefore: '10.6.0',
+    });
+    writeRun(artifactRun(resultsDir), older);
+
+    const { results, warnings } = load(resultsDir);
+
+    expect(results).toHaveLength(1);
+    expect(warnings).not.toContainEqual(expect.stringMatching(/not a valid result record/));
+  });
+
   it('rejects a model id that could close the metadata fence in the issue body', () => {
     const base = record();
     writeRun(artifactRun(resultsDir), {
@@ -131,7 +156,7 @@ describe('loadResults', () => {
 
   it('skips a truncated result.json and still collects the other runs', () => {
     write(
-      join(resultsDir, 'qa-result-linux-codex/mealdrop/linux/codex/result.json'),
+      join(resultsDir, 'qa-result-mealdrop-linux-codex/mealdrop/linux/codex/result.json'),
       '{"request": {'
     );
     writeRun(artifactRun(resultsDir));
@@ -235,5 +260,41 @@ describe('system info', () => {
     const { results } = load(resultsDir);
 
     expect(results[0]?.systemInfo).toBeUndefined();
+  });
+});
+
+describe('upgraded', () => {
+  it('is true when the installed version is the requested one', () => {
+    expect(upgraded(record({ storybookVersionInstalled: VERSION }))).toBe(true);
+  });
+
+  it('is false when another version is installed', () => {
+    expect(upgraded(record({ storybookVersionInstalled: '10.6.3' }))).toBe(false);
+  });
+
+  it('is false when the installed version is unknown', () => {
+    expect(upgraded(record({ storybookVersionInstalled: null }))).toBe(false);
+  });
+});
+
+describe('downloadedRuns', () => {
+  it('maps each catalog run of a download to its place in a local results directory', () => {
+    const download = '/download';
+    writeRun(artifactRun(download));
+    writeRun(join(artifactRun(download), 'evidence'));
+    writeRun(
+      join(download, 'qa-result-not-in-the-catalog-linux-claude/not-in-the-catalog/linux/claude')
+    );
+    writeRun(join(download, 'qa-result-linux-claude/mealdrop/linux/claude'));
+    writeRun(join(download, 'another-artifact/mealdrop/linux/claude'));
+
+    expect(downloadedRuns(download, '/out', [ENTRY])).toEqual([
+      {
+        artifact: 'qa-result-mealdrop-linux-claude',
+        from: artifactRun(download),
+        to: '/out/mealdrop/linux/claude',
+        label: 'mealdrop linux claude',
+      },
+    ]);
   });
 });

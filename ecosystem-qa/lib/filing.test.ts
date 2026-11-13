@@ -1,9 +1,32 @@
 import { describe, expect, it } from 'vitest';
 
-import { missingPrerequisites, planFiling, renderFilingReport, type FilingStep } from './filing.ts';
-import { asIssue, finding, loaded, RUN_URL, VERSION } from './fixtures.ts';
-import { groupFindings, toProposal, type IssueHit } from './proposals.ts';
-import type { Finding } from './schema.ts';
+import {
+  missingPrerequisites,
+  planFiling,
+  renderDry,
+  renderFilingReport,
+  type FilingStep,
+} from './filing.ts';
+import {
+  asIssue,
+  finding,
+  issueOn,
+  loaded,
+  metadata,
+  RUN_URL,
+  single,
+  VERSION,
+} from './fixtures.ts';
+import {
+  groupFindings,
+  toProposal,
+  writtenOn,
+  type Cluster,
+  type IssueHit,
+  type QaIssue,
+} from './proposals.ts';
+import type { LoadedResult } from './results.ts';
+import type { Engine, Finding, Os, Proposal } from './schema.ts';
 
 const REPO = 'storybookjs/storybook';
 
@@ -13,7 +36,11 @@ const proposalFor = (
   headSha?: string | null
 ) => {
   const [group] = groupFindings([loaded('linux', 'claude', [finding(findingOverrides)], headSha)]);
-  return toProposal(group!, hits, RUN_URL);
+  return toProposal(
+    single(group),
+    hits.map((hit) => issueOn(group, hit)),
+    { runUrl: RUN_URL }
+  );
 };
 
 const kinds = (steps: FilingStep[]) => steps.map((step) => step.kind);
@@ -102,30 +129,318 @@ describe('planFiling', () => {
     ]);
   });
 
-  it('files nothing for a fingerprint that is already on an issue', () => {
-    const steps = planFiling(asIssue(proposalFor()), {
+  it('files nothing when the issue filed in the meantime has every sighting of the proposal', () => {
+    const proposal = asIssue(proposalFor());
+    const body = issueBody(planFiling(proposal, { repo: REPO, evidenceLinks: 'assets' }));
+
+    expect(
+      planFiling(proposal, { repo: REPO, evidenceLinks: 'assets', filedAs: 12, existing: [body] })
+    ).toEqual([{ kind: 'skip', reason: 'already filed as #12' }]);
+  });
+
+  it('comments on an issue filed in the meantime that lacks a finding of the group', () => {
+    const build = finding({ checkId: 'build.static', title: 'Build fails', errorText: 'ENOSPC' });
+    const [buildGroup, hmrGroup] = groupFindings([
+      loaded('linux', 'claude', [build]),
+      loaded('windows', 'claude', [finding()]),
+    ]);
+    const alone = asIssue(toProposal(single(buildGroup), [], { runUrl: RUN_URL }));
+    const both = asIssue(
+      toProposal({ lead: hmrGroup!, members: [hmrGroup!, buildGroup!] }, [], { runUrl: RUN_URL })
+    );
+
+    const steps = planFiling(both, {
       repo: REPO,
       evidenceLinks: 'assets',
       filedAs: 12,
+      existing: [issueBody(planFiling(alone, { repo: REPO, evidenceLinks: 'assets' }))],
     });
 
-    expect(steps).toEqual([{ kind: 'skip', reason: 'already filed as #12' }]);
+    expect(kinds(steps)).toEqual(['push-cycle', 'comment']);
+    expect(steps.at(-1)).toMatchObject({
+      kind: 'comment',
+      issue: 12,
+      body: expect.stringContaining(hmrGroup!.fingerprint),
+    });
   });
 
   it('pushes the cycle ref, then comments once on the matching issue', () => {
     const proposal = proposalFor({}, [{ number: 9, labels: ['bug'], state: 'open' }]);
-    const steps = planFiling(proposal, { repo: REPO, evidenceLinks: 'assets', comments: [] });
+    const steps = planFiling(proposal, { repo: REPO, evidenceLinks: 'assets', existing: [] });
     const comment = steps.at(-1);
 
     const again = planFiling(proposal, {
       repo: REPO,
       evidenceLinks: 'assets',
-      comments: ['unrelated', comment?.kind === 'comment' ? comment.body : ''],
+      existing: ['unrelated', comment?.kind === 'comment' ? comment.body : ''],
     });
 
     expect(kinds(steps)).toEqual(['push-cycle', 'comment']);
     expect(comment).toMatchObject({ kind: 'comment', issue: 9 });
-    expect(again).toEqual([{ kind: 'skip', reason: '#9 already has this comment' }]);
+    expect(again).toEqual([{ kind: 'skip', reason: '#9 already has this sighting' }]);
+  });
+
+  it('does not report a sighting again when another run collects the same result', () => {
+    const [group] = groupFindings([loaded('linux', 'claude', [finding()])]);
+    const filed = asIssue(toProposal(single(group), [], { runUrl: RUN_URL }));
+    const issue = {
+      ...issueOn(group, { number: 9, labels: ['bug'], state: 'open' }),
+      body: issueBody(planFiling(filed, { repo: REPO, evidenceLinks: 'assets' })),
+    };
+    const collectedAgain = toProposal(single(group), [issue], { runUrl: `${RUN_URL}0` });
+
+    expect(
+      planFiling(collectedAgain, {
+        repo: REPO,
+        evidenceLinks: 'assets',
+        existing: writtenOn(issue),
+      })
+    ).toEqual([{ kind: 'skip', reason: '#9 already has this sighting' }]);
+  });
+
+  describe('for a later run of the same finding', () => {
+    const hit: IssueHit = { number: 9, labels: ['bug'], state: 'open' };
+    const commentFor = (...runs: LoadedResult[]) => {
+      const [group] = groupFindings(runs);
+      return toProposal(single(group), [issueOn(group, hit)], { runUrl: RUN_URL });
+    };
+    const bodyOf = (steps: FilingStep[]) => {
+      const comment = steps.at(-1);
+      return comment?.kind === 'comment' ? comment.body : '';
+    };
+    const firstComment = bodyOf(
+      planFiling(commentFor(loaded('linux', 'claude', [finding()])), {
+        repo: REPO,
+        evidenceLinks: 'assets',
+        existing: [],
+      })
+    );
+    const later = (os: Os, engine: Engine, change: (run: LoadedResult) => void = () => {}) => {
+      const run = loaded(os, engine, [finding()], 'd'.repeat(40));
+      change(run);
+      return commentFor(run);
+    };
+    const stepsOn = (proposal: Proposal, existing: string[]) =>
+      planFiling(proposal, { repo: REPO, evidenceLinks: 'assets', existing });
+
+    it('skips it as a repeat when the issue has its version, repo, system and engine', () => {
+      expect(stepsOn(later('linux', 'claude'), [firstComment])).toEqual([
+        {
+          kind: 'skip',
+          reason: `repeat: #9 already has a sighting on every version, repo, system and engine it reports: ${VERSION} on storybookjs/mealdrop (linux, claude)`,
+        },
+      ]);
+    });
+
+    it.each<[string, () => Proposal]>([
+      [
+        'a new repo',
+        () =>
+          later('linux', 'claude', (run) => {
+            run.cycle.repo = 'storybookjs/other';
+          }),
+      ],
+      [
+        'a new version',
+        () =>
+          later('linux', 'claude', (run) => {
+            run.result.request.version = '11.0.0-beta.1';
+          }),
+      ],
+      ['a new system', () => later('windows', 'claude')],
+      ['a new engine', () => later('linux', 'codex')],
+    ])('comments when the run is on %s', (_, proposal) => {
+      expect(kinds(stepsOn(proposal(), [firstComment]))).toEqual(['push-cycle', 'comment']);
+    });
+
+    it('comments when only one of its runs is new to the issue', () => {
+      const proposal = commentFor(
+        loaded('linux', 'claude', [finding()], 'd'.repeat(40)),
+        loaded('windows', 'claude', [finding()], 'e'.repeat(40))
+      );
+
+      expect(kinds(stepsOn(proposal, [firstComment]))).toEqual(['push-cycle', 'comment']);
+    });
+
+    it('skips a later run of any of the runs that one comment reported', () => {
+      const twoSystems = bodyOf(
+        stepsOn(
+          commentFor(
+            loaded('linux', 'claude', [finding()]),
+            loaded('windows', 'claude', [finding()])
+          ),
+          []
+        )
+      );
+
+      expect(kinds(stepsOn(later('windows', 'claude'), [twoSystems]))).toEqual(['skip']);
+    });
+
+    // As the harness wrote it before blocks had a sightings line, from an issue on GitHub.
+    const oldBlock = (os: string) =>
+      [
+        'Seen again by the ecosystem QA agent on:',
+        '',
+        '<!-- sb-qa-metadata -->',
+        '```yaml',
+        'fingerprint: 5b34acfdc0f977e0',
+        `storybook: ${VERSION}`,
+        'repo: storybookjs/mealdrop',
+        'sha: 8c128505ea4140fd53aa25543b0f0a3b200a9c38',
+        'cycleRef: refs/qa/cycles/qa/sb-11.0.0-beta.0/linux-claude',
+        `os: ${os}`,
+        'engine: claude',
+        'model: claude-haiku-5-5',
+        'run: https://github.com/storybookjs/storybook/actions/runs/2',
+        '```',
+        '',
+      ].join('\n');
+
+    it('skips it as a repeat of a block written before blocks listed what they saw', () => {
+      expect(kinds(stepsOn(later('linux', 'claude'), [oldBlock('linux')]))).toEqual(['skip']);
+    });
+
+    it('reads the repo, system and engine that such a block lists for its other members', () => {
+      const block = oldBlock('linux, windows').replace(
+        '<!-- sb-qa-metadata -->',
+        [
+          'Also seen as:',
+          '',
+          '- `build.static` on storybookjs/mealdrop (windows, claude): Build fails: ENOSPC',
+          '',
+          '<!-- sb-qa-metadata -->',
+        ].join('\n')
+      );
+
+      expect(kinds(stepsOn(later('windows', 'claude'), [block]))).toEqual(['skip']);
+      expect(kinds(stepsOn(later('windows', 'codex'), [block]))).toEqual(['push-cycle', 'comment']);
+    });
+
+    it('reads only the first run of such a block that lists several systems', () => {
+      const block = oldBlock('linux, windows');
+
+      expect(kinds(stepsOn(later('linux', 'claude'), [block]))).toEqual(['skip']);
+      expect(kinds(stepsOn(later('windows', 'claude'), [block]))).toEqual([
+        'push-cycle',
+        'comment',
+      ]);
+    });
+  });
+
+  describe('for a group of two findings that is already filed', () => {
+    const build = finding({ checkId: 'build.static', title: 'Build fails', errorText: 'ENOSPC' });
+    const run = loaded('linux', 'claude', [finding(), build]);
+    const [hmrGroup, buildGroup] = groupFindings([run]);
+    const filed = asIssue(
+      toProposal({ lead: hmrGroup!, members: [hmrGroup!, buildGroup!] }, [], { runUrl: RUN_URL })
+    );
+    const issue = {
+      ...issueOn(hmrGroup, { number: 9, labels: ['bug'], state: 'open' }),
+      body: issueBody(planFiling(filed, { repo: REPO, evidenceLinks: 'assets' })),
+    };
+    const stepsFor = (cluster: Cluster, existing = writtenOn(issue)) =>
+      planFiling(toProposal(cluster, [issue], { runUrl: `${RUN_URL}0` }), {
+        repo: REPO,
+        evidenceLinks: 'assets',
+        existing,
+      });
+    const skipped = [{ kind: 'skip', reason: '#9 already has this sighting' }];
+
+    it('adds no comment when the same findings come back in another order', () => {
+      expect(stepsFor({ lead: buildGroup!, members: [buildGroup!, hmrGroup!] })).toEqual(skipped);
+    });
+
+    it('adds no comment for one of the findings on its own', () => {
+      expect(stepsFor(single(buildGroup))).toEqual(skipped);
+    });
+
+    const elsewhere: LoadedResult = {
+      ...loaded('linux', 'claude', [build], 'e'.repeat(40)),
+      resultPath: 'results/other/linux/claude/result.json',
+    };
+    elsewhere.cycle.repo = 'storybookjs/other';
+    const [hmrAgain, buildTwice] = groupFindings([run, elsewhere]);
+    const withNewRepo: Cluster = { lead: hmrAgain!, members: [hmrAgain!, buildTwice!] };
+    const withoutKeys = issue.body.replace(/^sightings: .*\n/m, '');
+
+    it('comments when a member is seen in another repo behind an unchanged lead', () => {
+      expect(buildTwice!.occurrences).toHaveLength(2);
+      expect(kinds(stepsFor(withNewRepo))).toEqual(['push-cycle', 'comment']);
+    });
+
+    it('recognises a sighting that was filed before sightings had keys', () => {
+      expect(withoutKeys).not.toBe(issue.body);
+      expect(
+        stepsFor({ lead: buildGroup!, members: [buildGroup!, hmrGroup!] }, [withoutKeys])
+      ).toEqual(skipped);
+    });
+
+    it('comments for a member in another repo also when the issue has no sighting keys', () => {
+      expect(kinds(stepsFor(withNewRepo, [withoutKeys]))).toEqual(['push-cycle', 'comment']);
+    });
+  });
+
+  describe('for a group that only resembles an issue fixed after the tested version', () => {
+    const PUBLISHED = '2026-11-03T19:32:47Z';
+    const fixedIssue: QaIssue = {
+      ...issueOn(undefined, { number: 20, labels: ['bug'], state: 'closed' }),
+      completedAt: '2026-11-05T10:00:00Z',
+    };
+    const sweep = (run: LoadedResult, issue: QaIssue, publishedAt = PUBLISHED) => {
+      const [group] = groupFindings([run]);
+      return toProposal({ ...single(group), existingIssue: 20 }, [issue], {
+        runUrl: RUN_URL,
+        publishedAt,
+      });
+    };
+    const first = sweep(loaded('linux', 'claude', [finding()]), fixedIssue);
+    const firstSteps = planFiling(first, { repo: REPO, evidenceLinks: 'assets', existing: [] });
+    const commented: QaIssue = {
+      ...fixedIssue,
+      comments: firstSteps.flatMap((step) => (step.kind === 'comment' ? [step.body] : [])),
+    };
+
+    it('skips the fixed-later comment of the next sweep of the same version as a repeat', () => {
+      const next = sweep(loaded('linux', 'claude', [finding()], 'd'.repeat(40)), commented);
+
+      expect(first).toMatchObject({ kind: 'comment', reason: 'fixed-later' });
+      expect(kinds(firstSteps)).toEqual(['push-cycle', 'comment']);
+      expect(next).toMatchObject({ kind: 'comment', existingIssue: 20, reason: 'fixed-later' });
+      expect(
+        planFiling(next, { repo: REPO, evidenceLinks: 'assets', existing: writtenOn(commented) })
+      ).toEqual([
+        {
+          kind: 'skip',
+          reason: `repeat: #20 already has a sighting on every version, repo, system and engine it reports: ${VERSION} on storybookjs/mealdrop (linux, claude)`,
+        },
+      ]);
+    });
+
+    it('files a new issue on a version published after the fix', () => {
+      const run = loaded('linux', 'claude', [finding()], 'd'.repeat(40));
+      run.result.request.version = '11.0.0-beta.1';
+
+      expect(sweep(run, commented, '2026-11-10T10:00:00Z')).toMatchObject({
+        kind: 'issue',
+        previousIssue: 20,
+      });
+    });
+  });
+
+  it('says that a suppressed bug was fixed after the tested version', () => {
+    const [group] = groupFindings([loaded('linux', 'claude', [finding()])]);
+    const fixed = {
+      ...issueOn(group, { number: 7, labels: ['bug'], state: 'closed' }),
+      completedAt: '2026-11-05T10:00:00Z',
+    };
+    const proposal = toProposal(single(group), [fixed], {
+      runUrl: RUN_URL,
+      publishedAt: '2026-11-03T19:32:47Z',
+    });
+
+    expect(planFiling(proposal, { repo: REPO, evidenceLinks: 'assets' })).toEqual([
+      { kind: 'skip', reason: `fixed in #7 after ${VERSION} was published` },
+    ]);
   });
 
   it('files nothing for a qa:known issue', () => {
@@ -178,5 +493,82 @@ describe('renderFilingReport', () => {
     expect(report).toContain(
       `| \`${failed.fingerprint}\` | issue | [SB 11 QA]: a \\| b | failed: HTTP 502 |`
     );
+  });
+});
+
+describe('renderDry', () => {
+  it('lists every finding that a suppressed group silences', () => {
+    const [hmr, build] = groupFindings([
+      loaded('linux', 'claude', [
+        finding(),
+        finding({ checkId: 'build.static', title: 'Build fails', errorText: 'ENOSPC' }),
+      ]),
+    ]);
+    const proposal = toProposal(
+      { lead: hmr!, members: [hmr!, build!] },
+      [
+        {
+          ...issueOn(hmr, { number: 7, labels: ['qa:known'], state: 'open' }),
+          body: metadata(hmr!.fingerprint, build!.fingerprint),
+        },
+      ],
+      { runUrl: RUN_URL }
+    );
+
+    const summary = renderDry(proposal, REPO);
+
+    expect(summary).toContain(`<code>${hmr!.fingerprint}</code> and 1 more</summary>`);
+    expect(summary).toContain('Silenced with it:');
+    expect(summary).toContain(
+      '- `build.static` on storybookjs/mealdrop (linux, claude): Build fails'
+    );
+  });
+
+  it('shows the reason and the members of a group a person skipped', () => {
+    const [hmr, build] = groupFindings([
+      loaded('linux', 'claude', [
+        finding(),
+        finding({ checkId: 'build.static', title: 'Build fails', errorText: 'ENOSPC' }),
+      ]),
+    ]);
+    const proposal = toProposal({ lead: hmr!, members: [hmr!, build!], skip: 'by design' }, [], {
+      runUrl: RUN_URL,
+    });
+
+    const summary = renderDry(proposal, REPO);
+
+    expect(planFiling(proposal, { repo: REPO, evidenceLinks: 'assets' })).toEqual([
+      { kind: 'skip', reason: 'skipped by hand: by design' },
+    ]);
+    expect(summary).toContain('Skip: skipped by hand: by design.');
+    expect(summary).toContain(
+      '- `build.static` on storybookjs/mealdrop (linux, claude): Build fails'
+    );
+  });
+
+  it('names a comment it skips as a repeat, with the reason', () => {
+    const hit: IssueHit = { number: 9, labels: ['bug'], state: 'open' };
+    const first = proposalFor({}, [hit]);
+    const filed = planFiling(first, { repo: REPO, evidenceLinks: 'assets', existing: [] }).at(-1);
+    const later = proposalFor({}, [hit], 'd'.repeat(40));
+
+    const summary = renderDry(later, REPO, {
+      existing: [filed?.kind === 'comment' ? filed.body : ''],
+    });
+
+    expect(summary).toContain('<summary><b>comment</b>, skipped [SB 11 QA]:');
+    expect(summary).toContain(
+      `1. Skip: repeat: #9 already has a sighting on every version, repo, system and engine it reports: ${VERSION} on storybookjs/mealdrop (linux, claude).`
+    );
+    expect(summary).not.toContain('Seen again by the ecosystem QA agent on:');
+  });
+
+  it('adds nothing for a suppressed finding that stands alone', () => {
+    const proposal = proposalFor({}, [{ number: 7, labels: ['qa:known'], state: 'open' }]);
+
+    const summary = renderDry(proposal, REPO);
+
+    expect(summary).toContain(`<code>${proposal.fingerprint}</code></summary>`);
+    expect(summary).not.toContain('Silenced with it:');
   });
 });

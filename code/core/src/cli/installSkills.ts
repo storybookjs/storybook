@@ -69,7 +69,11 @@ export function skipsSkillsInCI(): boolean {
 }
 
 /** The command that installs the skills, for messages that tell the user how to add them later. */
-export const SKILLS_AUTOMIGRATE_COMMAND = 'npx storybook automigrate skills';
+export const SKILLS_AUTOMIGRATE_COMMAND = 'npx storybook automigrate skills --yes';
+
+/** The message for a run that skipped the skills because CI is set. */
+export const skippedSkillsInCIMessage = (command = SKILLS_AUTOMIGRATE_COMMAND) =>
+  `Skipped the Storybook skills for AI agents because CI is set. Add them with: ${command}`;
 
 // Matches the repository in any form the lock records (`owner/repo`, a URL, or an SSH remote), but
 // not a fork with a longer name such as `storybookjs/skills-fork`.
@@ -116,11 +120,12 @@ export async function installSkills({
   /** Install in CI too, because the caller already decided, for example on the user's request. */
   allowCI?: boolean;
 }): Promise<SkillsInstallResult> {
+  const skillsRef = `${SKILLS_REPO}#v${versions.storybook}`;
   if (!allowCI && skipsSkillsInCI()) {
     logger.log(
       source === 'refresh'
-        ? 'Did not update the Storybook skills because CI is set.'
-        : `Skipped the Storybook skills because CI is set. Add them with: ${SKILLS_AUTOMIGRATE_COMMAND}`
+        ? `Did not update the Storybook skills because CI is set. Update them with: ${packageManager.getRemoteRunCommand(['skills@latest', 'add', skillsRef])}`
+        : skippedSkillsInCIMessage()
     );
     return { result: 'skipped', source: 'ci' };
   }
@@ -128,7 +133,6 @@ export async function installSkills({
   const removedSkills = (await getStorybookSkillNames()).filter((name) =>
     REMOVED_SKILLS.includes(name)
   );
-  const skillsRef = `${SKILLS_REPO}#v${versions.storybook}`;
   const args = [
     'skills@latest',
     'add',

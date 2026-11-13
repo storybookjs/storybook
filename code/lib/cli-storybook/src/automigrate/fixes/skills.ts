@@ -24,8 +24,7 @@ export const skills: Fix<SkillsResult> = {
     'Install the official Storybook skills for AI agents into this project, and add a section to AGENTS.md that tells agents when to use them',
 
   async check(options) {
-    // Real CI gets the skills only on request; `upgrade` says that it skipped them. Coding agents
-    // set `CI=true` themselves, and `skipsSkillsInCI` does not count their runs as CI.
+    // In CI only on request; `upgrade` says that it skipped them.
     if (!options.requested && skipsSkillsInCI()) {
       return null;
     }
@@ -61,7 +60,7 @@ export const skills: Fix<SkillsResult> = {
   },
 };
 
-/** Whether the `skills` automigration applies to this project, regardless of CI. */
+// Whether the `skills` automigration applies to this project, regardless of CI.
 export async function offersSkills({
   packageManager,
   mainConfig,

@@ -3,6 +3,7 @@ import {
   hasStorybookSkills,
   installSkills,
   refreshAgentInstructions,
+  skippedSkillsInCIMessage,
   skipsSkillsInCI,
 } from 'storybook/internal/cli';
 import { PackageManagerName } from 'storybook/internal/common';
@@ -566,8 +567,8 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
     if (!options.dryRun && !hadSkills) {
       await refreshAgentInstructions();
     }
-    // The `skills` automigration skips CI without a word, inside a task log that clears on success.
-    if (!options.dryRun && !hadSkills && skipsSkillsInCI()) {
+    // The `skills` automigration skips CI without a word. Said here, it is said once for all projects.
+    if (!options.dryRun && !options.skipAutomigrations && !hadSkills && skipsSkillsInCI()) {
       for (const project of storybookProjects) {
         const offered = await offersSkills({
           packageManager: project.packageManager,
@@ -576,8 +577,13 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
           storybookVersion: project.currentCLIVersion,
         }).catch(() => null);
         if (offered) {
+          // `automigrate skills` alone does not apply until the project uses angular-vite.
           logger.warn(
-            `Skipped the Storybook skills for AI agents because CI is set. Add them with: ${SKILLS_AUTOMIGRATE_COMMAND}`
+            skippedSkillsInCIMessage(
+              offered.afterAngularViteMigration
+                ? `npx storybook automigrate angular-to-angular-vite --yes, and then ${SKILLS_AUTOMIGRATE_COMMAND}`
+                : undefined
+            )
           );
           break;
         }

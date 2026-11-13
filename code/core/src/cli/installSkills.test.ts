@@ -60,7 +60,7 @@ describe('skipsSkillsInCI', () => {
     [true, undefined, true],
     [true, { name: 'claude' }, false],
     [false, { name: 'claude' }, false],
-  ])('is %s in CI with agent %o: %s', (ci, agent, expected) => {
+  ])('with CI %s and agent %o, returns %s', (ci, agent, expected) => {
     vi.mocked(isCI).mockReturnValue(ci);
     vi.mocked(detectAgent).mockReturnValue(agent);
 
@@ -332,10 +332,13 @@ describe('installSkills', () => {
   });
 
   it.each([
-    ['refresh', 'Did not update the Storybook skills because CI is set.'],
+    [
+      'refresh',
+      'Did not update the Storybook skills because CI is set. Update them with: npx skills@latest add storybookjs/skills#v10.6.0',
+    ],
     [
       'ai-feature',
-      'Skipped the Storybook skills because CI is set. Add them with: npx storybook automigrate skills',
+      'Skipped the Storybook skills for AI agents because CI is set. Add them with: npx storybook automigrate skills --yes',
     ],
   ] as const)('spawns nothing under CI, and says so (%s)', async (source, message) => {
     vi.mocked(isCI).mockReturnValue(true);

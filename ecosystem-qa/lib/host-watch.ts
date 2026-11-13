@@ -22,8 +22,10 @@ export interface HostSample {
     memLimitMb: number;
     cpuPercent: number;
     pids: number;
-    // Percent of the last minute in which every process of the sandbox waited for memory.
+    // Percent of the last minute, and of the last ten seconds, in which every process of the
+    // sandbox waited for memory.
     stalledPercent?: number;
+    stalledNowPercent?: number;
   };
 }
 
@@ -33,8 +35,9 @@ const MB = 2 ** 20;
 
 // A sandbox at its memory limit is not always ended by the kernel. As long as taking the code of
 // its processes out of memory frees a page, the kernel does that and reads the code back from the
-// disk, and no process gets anything done. Above this share of a minute a sandbox is in that state.
-export const STALLED_PERCENT = 25;
+// disk, and no process gets anything done. A sandbox whose processes wait for memory this share of
+// the time is in that state: the stalls seen so far sat between 20 and 85, a sandbox with room at 0.
+export const STALLED_PERCENT = 20;
 
 const LATE_SECONDS = 60;
 
@@ -51,11 +54,11 @@ export const parseMeminfo = (text: string): Memory | undefined => {
   return Object.values(memory).every(Number.isFinite) ? memory : undefined;
 };
 
-// The `full` line of a kernel pressure file: the share of the last minute in which every task that
-// had work to do waited for the resource.
-export const parseStalledPercent = (text: string): number | undefined => {
-  const value = Number(/^full avg10=[\d.]+ avg60=([\d.]+)/m.exec(text)?.[1]);
-  return Number.isFinite(value) ? value : undefined;
+// The `full` line of a kernel pressure file: the share of the last ten seconds and of the last
+// minute in which every task that had work to do waited for the resource.
+export const parseStalled = (text: string): { now: number; minute: number } | undefined => {
+  const [, now, minute] = /^full avg10=([\d.]+) avg60=([\d.]+)/m.exec(text) ?? [];
+  return now === undefined ? undefined : { now: Number(now), minute: Number(minute) };
 };
 
 const UNIT: Record<string, number> = {
@@ -172,7 +175,8 @@ export const reporter = (): ((sample: HostSample) => Report[]) => {
   };
 };
 
-const run = (command: string, args: string[]): Promise<string> =>
+// What a program prints, or nothing when it fails or takes more than twenty seconds.
+export const outputOf = (command: string, args: string[]): Promise<string> =>
   new Promise((done) => {
     execFile(command, args, { encoding: 'utf8', timeout: 20_000 }, (error, stdout) =>
       done(error ? '' : stdout)
@@ -210,9 +214,9 @@ const memoryOf = (insideSandbox: string): Memory => {
 };
 
 const stalledHost = (): HostSample['stalled'] => {
-  const memory = parseStalledPercent(read('/proc/pressure/memory'));
-  const disk = parseStalledPercent(read('/proc/pressure/io'));
-  return memory === undefined || disk === undefined ? undefined : { memory, disk };
+  const memory = parseStalled(read('/proc/pressure/memory'));
+  const disk = parseStalled(read('/proc/pressure/io'));
+  return memory && disk ? { memory: memory.minute, disk: disk.minute } : undefined;
 };
 
 interface Watch {
@@ -225,6 +229,8 @@ interface Watch {
   container: () => string | undefined;
   // Called for the lines that must outlive a lost machine.
   report: (report: Report) => void;
+  // Called with every reading, and awaited before the next one is taken.
+  onSample?: (sample: HostSample, container: string | undefined) => Promise<void>;
   intervalMs?: number;
 }
 
@@ -253,14 +259,14 @@ export const watchHost = (watch: Watch): { stop: () => void } => {
       const name = watch.container();
       const [stats, inside] = name
         ? await Promise.all([
-            run('docker', [
+            outputOf('docker', [
               'stats',
               '--no-stream',
               '--format',
               '{{.MemUsage}}|{{.CPUPerc}}|{{.PIDs}}',
               name,
             ]),
-            run('docker', [
+            outputOf('docker', [
               'exec',
               name,
               'sh',
@@ -270,7 +276,7 @@ export const watchHost = (watch: Watch): { stop: () => void } => {
           ])
         : ['', ''];
       const container = parseDockerStats(stats);
-      const stalledPercent = parseStalledPercent(inside);
+      const waiting = parseStalled(inside);
       const stalled = stalledHost();
       const disk = statfsSync(watch.diskDir);
       const current: HostSample = {
@@ -285,7 +291,9 @@ export const watchHost = (watch: Watch): { stop: () => void } => {
           ? {
               container: {
                 ...container,
-                ...(stalledPercent === undefined ? {} : { stalledPercent }),
+                ...(waiting
+                  ? { stalledPercent: waiting.minute, stalledNowPercent: waiting.now }
+                  : {}),
               },
             }
           : {}),
@@ -295,6 +303,7 @@ export const watchHost = (watch: Watch): { stop: () => void } => {
         `${JSON.stringify({ at: new Date(startedAt).toISOString(), ...current })}\n`
       );
       reportsOf(current).forEach(watch.report);
+      await watch.onSample?.(current, name);
     } catch {
       // A reading that fails must never end the run it watches.
     } finally {

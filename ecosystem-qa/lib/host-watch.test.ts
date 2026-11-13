@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   parseDockerStats,
   parseMeminfo,
-  parseStalledPercent,
+  parseStalled,
   pressureOf,
   reporter,
   sampleLine,
@@ -47,19 +47,19 @@ describe('parseMeminfo', () => {
   });
 });
 
-describe('parseStalledPercent', () => {
-  it('reads the share of the last minute in which everything waited', () => {
+describe('parseStalled', () => {
+  it('reads the share of the last ten seconds and of the last minute in which everything waited', () => {
     const pressure = [
       'some avg10=86.94 avg60=54.73 avg300=19.88 total=71794989',
       'full avg10=85.15 avg60=53.97 avg300=19.68 total=71179153',
     ].join('\n');
 
-    expect(parseStalledPercent(pressure)).toBe(53.97);
+    expect(parseStalled(pressure)).toEqual({ now: 85.15, minute: 53.97 });
   });
 
   it('knows nothing where the kernel keeps no such account', () => {
-    expect(parseStalledPercent('')).toBeUndefined();
-    expect(parseStalledPercent('some avg10=1.00 avg60=2.00 avg300=3.00 total=4')).toBeUndefined();
+    expect(parseStalled('')).toBeUndefined();
+    expect(parseStalled('some avg10=1.00 avg60=2.00 avg300=3.00 total=4')).toBeUndefined();
   });
 });
 
@@ -111,14 +111,14 @@ describe('pressureOf', () => {
     ).toEqual(['disk', 'load', 'container']);
   });
 
-  it('names a sandbox whose processes wait for memory a quarter of the time', () => {
+  it('names a sandbox whose processes wait for memory a fifth of the time', () => {
     const waiting = (stalledPercent: number) =>
       pressureOf({ ...healthy, container: { ...healthy.container!, stalledPercent } });
 
     expect(waiting(53.97)).toEqual({
       stalled: 'the processes of the sandbox waited for memory in 54% of the last minute',
     });
-    expect(waiting(24.9)).toEqual({});
+    expect(waiting(19.9)).toEqual({});
   });
 
   it('names a reading that came more than a minute late', () => {

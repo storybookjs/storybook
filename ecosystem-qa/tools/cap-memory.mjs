@@ -36,6 +36,7 @@ const containersOfThisRun = () => {
 // then ends with "lost communication" and no result. Under the limit the kernel ends that build
 // inside the container only when it can free nothing at all. A build that leaves it something to
 // free stalls instead: the kernel takes the code of the processes out of memory and reads it back.
+// The runner ends such a build itself.
 //
 // Never throws: a run without the limit is better than no run.
 const capMemory = (reportFile, nameFile) => {

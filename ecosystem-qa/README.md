@@ -142,6 +142,10 @@ In every other case, and when the agent gives no answer that can be used then, t
 In CI the job itself is cancelled 90 minutes after the budget, which is after all of that; a cancelled job writes no record.
 While a run works, the runner writes what the machine looks like to `evidence/host-samples.jsonl` every 30 seconds, the project install included: host memory and swap, load, free disk, the memory and process count of the Docker sandbox, how much of the last minute the processes of the sandbox and of a Linux host spent waiting for memory, and how late the reading itself came.
 A Windows runner has no load figure and no account of waiting, so it reports memory and disk.
+The Docker sandbox gets 85% of the memory of the Docker daemon and no swap.
+The kernel ends a process of a sandbox at that limit only when it can free nothing at all; as long as it can take the code of the processes out of memory and read it back, it does that, and a build that needs more than the sandbox has neither fails nor moves on.
+So when the processes of the sandbox have waited for memory in a fifth of the last ten seconds in two readings in a row, the runner ends the command that holds the most memory, with everything it started: never the agent, and no command that holds less than a tenth of the memory of the sandbox.
+The agent sees that command end as one the kernel ended, and `evidence/memory-guard.log` names it.
 On a GitHub runner it also reports through annotations, a warning when the machine first runs short and a reading every twenty minutes, because annotations are all that is left of a job whose runner stops answering.
 When the sandbox fails after the agent has finished, for example while it collects the commits, the runner reads the answer from `run.log`.
 The record then has status `ok` and names the sandbox error in `recoveredFrom`.

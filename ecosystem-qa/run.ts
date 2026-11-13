@@ -30,8 +30,9 @@ import { loadCatalogEntry } from './lib/catalog.ts';
 import { shipsSandcastleFiles } from './lib/clone-guard.ts';
 import { cycleBranchName, cycleRepo, versionLine } from './lib/cycle.ts';
 import { runFake } from './lib/fake-run.ts';
-import { watchHost } from './lib/host-watch.ts';
+import { outputOf, watchHost, type Report } from './lib/host-watch.ts';
 import { forJobLog, liveLine } from './lib/live-log.ts';
+import { memoryGuard } from './lib/memory-guard.ts';
 import { CHECKOUT_GUIDE, guideFor } from './lib/migration-guide.ts';
 import { budgetRecord, msUntilHardStop, parseBudget, type RunBudget } from './lib/run-budget.ts';
 import {
@@ -428,6 +429,8 @@ const runSandcastle = async (
   const logFile = join(request.outDir, 'run.log');
   const sandboxNameFile = join(evidenceDir, 'sandbox-container.txt');
   // Annotations are all that is left of a job whose runner stopped answering.
+  const report = ({ level, line }: Report) =>
+    console.log(process.env.GITHUB_ACTIONS ? `::${level}::${line}` : line);
   const watch = watchHost({
     file: join(evidenceDir, 'host-samples.jsonl'),
     startedAt,
@@ -437,8 +440,13 @@ const runSandcastle = async (
     container: () =>
       sandbox?.sandboxId ??
       (existsSync(sandboxNameFile) ? readFileSync(sandboxNameFile, 'utf8').trim() : undefined),
-    report: ({ level, line }) =>
-      console.log(process.env.GITHUB_ACTIONS ? `::${level}::${line}` : line),
+    report,
+    onSample: memoryGuard({
+      agent: request.engine,
+      inSandbox: (container, command) => outputOf('docker', ['exec', container, ...command]),
+      logFile: join(evidenceDir, 'memory-guard.log'),
+      report,
+    }),
   });
   // One list for the schema, the checklist and the count the prompt names.
   const checks = checksFor(request.tier);

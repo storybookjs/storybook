@@ -106,8 +106,20 @@ interface Guard {
 
 const short = (command: string) => (command.length > 160 ? `${command.slice(0, 160)}...` : command);
 
+// The limit of the sandbox does not cover what the machine holds outside it. On a GitHub runner a
+// process of the runner itself grew by a gigabyte a minute while a project's tests ran in a
+// browser, and a machine that runs out of memory and swap stops answering and hands over nothing.
+// Below a tenth of its memory in what is available and what is left of the swap, the machine is
+// about a minute away from that. A sandbox that is merely full leaves less than that on a machine
+// without swap, so the machine also has to have lost part of the share the sandbox was given.
+const machineIsShort = (sample: HostSample): boolean =>
+  sample.container !== undefined &&
+  sample.memTotalMb > 0 &&
+  sample.memAvailableMb + sample.swapFreeMb < sample.memTotalMb * 0.1 &&
+  sample.memAvailableMb + sample.container.memUsedMb < sample.container.memLimitMb;
+
 // End the command that holds the most memory once a sandbox at its memory limit has stalled in two
-// readings in a row.
+// readings in a row, or at once when the machine itself is about to run out.
 //
 // The kernel ends a process of a sandbox at its memory limit only when it can free nothing at all.
 // While it can still take the code of the processes out of memory and read it back from the disk,
@@ -131,11 +143,14 @@ export const memoryGuard = (guard: Guard) => {
       waiting >= STALLED_PERCENT &&
       sandbox.memUsedMb >= sandbox.memLimitMb * 0.9;
     stalledReadings = container && stalled ? stalledReadings + 1 : 0;
-    if (!container || !sandbox || stalledReadings < 2) {
+    const machineShort = machineIsShort(sample);
+    if (!container || !sandbox || (!machineShort && stalledReadings < 2)) {
       return;
     }
     stalledReadings = 0;
-    const state = `Minute ${sample.minute}: the sandbox had no memory left, and its processes waited for memory in ${Math.round(waiting)}% of the last ten seconds.`;
+    const state = machineShort
+      ? `Minute ${sample.minute}: the machine had ${sample.memAvailableMb} MB of memory and ${sample.swapFreeMb} MB of swap left.`
+      : `Minute ${sample.minute}: the sandbox had no memory left, and its processes waited for memory in ${Math.round(waiting)}% of the last ten seconds.`;
     const processes = parseProcesses(
       await guard.inSandbox(container, ['ps', '-eo', 'pid=,ppid=,rss=,args='])
     );

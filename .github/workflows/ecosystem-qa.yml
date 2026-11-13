@@ -2,8 +2,10 @@ name: Ecosystem QA
 
 # A probe on a branch that is never merged. While gutenberg's Storybook tests run in Vitest browser
 # mode inside the QA sandbox, a root process of the runner named `agent` grows by about a gigabyte a
-# minute, outside the sandbox's memory limit. This probe names that process and shows whether the
-# older runner image has it too.
+# minute, outside the sandbox's memory limit. In the sweep that lost a runner, the sandbox held a
+# build at the same time. Here a second container holds 8000 MB from the moment the tests start, in
+# place of that build. Without the guard the runner is expected to stop answering; with it, the
+# runner is expected to end the test run and stay up.
 
 on:
   workflow_dispatch:
@@ -12,14 +14,14 @@ permissions: {}
 
 jobs:
   probe:
-    name: Probe vitest on ${{ matrix.runner }}
-    runs-on: ${{ matrix.runner }}
+    name: Probe a short machine, guard ${{ matrix.guard }}
+    runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions: {}
     strategy:
       fail-fast: false
       matrix:
-        runner: [ubuntu-latest, ubuntu-24.04]
+        guard: ['off', 'on']
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -41,56 +43,30 @@ jobs:
           docker build --build-arg AGENT_UID="$(id -u)" --build-arg AGENT_GID="$(id -g)" -t sb-ecosystem-qa ecosystem-qa
           docker build -t sb-ecosystem-qa-standin-vitest ecosystem-qa/probe/standin-vitest
 
-      - name: Name the processes of the runner
-        run: |
-          grep -E '^(NAME|VERSION)=' /etc/os-release; uname -r
-          echo "--- the largest processes, with their whole command lines"
-          ps -eo pid,ppid,user,rss,etimes,args --sort=-rss | head -n 12 | cut -c1-260
-          echo "--- every process whose name is agent"
-          for pid in $(pgrep -x agent); do
-            echo "pid $pid: exe $(sudo readlink "/proc/$pid/exe"); started by $(ps -o args= -p "$(ps -o ppid= -p "$pid" | tr -d ' ')" | cut -c1-160)"
-            echo "  command line: $(sudo cat "/proc/$pid/cmdline" | tr '\0' ' ' | cut -c1-400)"
-            echo "  cgroup: $(cat "/proc/$pid/cgroup")"
-            systemctl status "$pid" --no-pager 2>/dev/null | head -n 8 | sed 's/^/  /'
-            sudo ls -la "$(dirname "$(sudo readlink "/proc/$pid/exe")")" 2>/dev/null | head -n 20 | sed 's/^/  /'
-          done
-          echo "--- services that are running"
-          systemctl list-units --type=service --state=running --no-pager --no-legend | awk '{print $1}' | tr '\n' ' '
-
       - name: Run the probe
         env:
           CLAUDE_CODE_OAUTH_TOKEN: probe-not-a-credential
-          QA_PROBE_GUARD: 'on'
+          QA_PROBE_GUARD: ${{ matrix.guard }}
         run: |
-          # Where the memory of the host is, every 20 seconds, and what the process named agent holds.
           (
+            held=no
             while true; do
-              box=$(docker ps --filter name=^sandcastle- --format '{{.Names}}' | head -n 1)
-              echo "host $(date -u +%H:%M:%S): $(awk '/^(MemAvailable|AnonPages|Cached|Shmem|SUnreclaim|SReclaimable|SwapFree):/ {printf "%s %d MB  ", $1, $2/1024}' /proc/meminfo)"
-              echo "host largest: $(ps -eo rss=,pid=,user=,comm= --sort=-rss | head -n 5 | awk '{printf "%d MB %s %s (pid %s); ", $1/1024, $4, $3, $2}')"
-              for pid in $(pgrep -x agent); do
-                echo "agent $pid: $(sudo grep -E '^(VmRSS|RssAnon|RssFile|RssShmem|Threads|VmSwap):' "/proc/$pid/status" | tr -s '\t ' ' ' | tr '\n' ';') open files $(sudo ls "/proc/$pid/fd" 2>/dev/null | wc -l); sockets $(sudo ls -l "/proc/$pid/fd" 2>/dev/null | grep -c socket)"
-              done
-              if [ -n "$box" ]; then
-                echo "sandbox: $(docker exec "$box" sh -c 'echo "charged $(( $(cat /sys/fs/cgroup/memory.current) / 1048576 )) MB, $(cat /sys/fs/cgroup/pids.current) processes, tcp sockets $(cat /proc/net/sockstat | awk "/^TCP:/ {print \$3}")"' 2>/dev/null)"
+              if [ "$held" = no ] && [ -f "$RUNNER_TEMP/qa-result/evidence/vitest.log" ]; then
+                held=yes
+                echo "host $(date -u +%H:%M:%S): the tests have started, holding 8000 MB in a second container"
+                docker run -d --name ballast --entrypoint node sb-ecosystem-qa -e "const keep=[];for(let i=0;i<125;i++)keep.push(Buffer.alloc(64*2**20,1));setInterval(()=>{},1000)" > /dev/null
               fi
-              sleep 20
+              echo "host $(date -u +%H:%M:%S): $(awk '/^(MemAvailable|AnonPages|SwapFree):/ {printf "%s %d MB  ", $1, $2/1024}' /proc/meminfo) largest: $(ps -eo rss=,pid=,user=,comm= --sort=-rss | head -n 4 | awk '{printf "%d MB %s %s; ", $1/1024, $4, $3}')"
+              sleep 10
             done
           ) &
           node ecosystem-qa/run.ts --repo gutenberg --version 11.0.0-beta.2 --engine claude --sandbox docker \
             --tier extended --out "$RUNNER_TEMP/qa-result" --image sb-ecosystem-qa-standin-vitest
 
-      - name: Name the process again, and what it wrote
+      - name: Show the guard's log and the end of the test log
         if: ${{ always() }}
         run: |
-          ps -eo pid,ppid,user,rss,etimes,args --sort=-rss | head -n 8 | cut -c1-260
-          for pid in $(pgrep -x agent); do
-            echo "--- agent $pid, the files it has open"
-            sudo ls -l "/proc/$pid/fd" 2>/dev/null | awk '{print $NF}' | sed -E 's/[0-9]+/N/g' | sort | uniq -c | sort -rn | head -n 25
-            unit=$(systemctl status "$pid" --no-pager 2>/dev/null | head -n 1 | awk '{print $2}')
-            echo "--- unit $unit, its last lines"
-            sudo journalctl -u "$unit" --no-pager -n 40 2>/dev/null | cut -c1-300
-          done
+          cat "$RUNNER_TEMP/qa-result/evidence/memory-guard.log" || echo "the guard ended nothing"
           tail -n 12 "$RUNNER_TEMP/qa-result/evidence/vitest.log" || true
           free -m
 
@@ -98,9 +74,10 @@ jobs:
         if: ${{ always() }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: probe-vitest-${{ matrix.runner }}
+          name: probe-short-machine-guard-${{ matrix.guard }}
           path: |
             ${{ runner.temp }}/qa-result/result.json
             ${{ runner.temp }}/qa-result/evidence/host-samples.jsonl
+            ${{ runner.temp }}/qa-result/evidence/memory-guard.log
             ${{ runner.temp }}/qa-result/evidence/vitest.log
           retention-days: 7

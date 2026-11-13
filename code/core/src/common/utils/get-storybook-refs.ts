@@ -68,7 +68,10 @@ export const checkRef = async (url: string) => {
       return true;
     }
     // we might receive non-JSON as a response, because the service ignored our request for JSON response type.
-    const json = await data.json().catch(() => ({}));
+    const json = await data.json().catch(() => {
+      signal.throwIfAborted();
+      return {};
+    });
     return !json.loginUrl;
   } catch {
     return false;

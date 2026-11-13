@@ -54,6 +54,41 @@ describe('checkRef', () => {
     );
   });
 
+  it('returns false when the timeout aborts the JSON body after headers arrive', async () => {
+    const controller = new AbortController();
+    vi.spyOn(AbortSignal, 'timeout').mockReturnValue(controller.signal);
+    let body!: ReadableStreamDefaultController<Uint8Array>;
+    const response = new Response(
+      new ReadableStream<Uint8Array>({
+        start(stream) {
+          body = stream;
+          stream.enqueue(new TextEncoder().encode('{"loginUrl":'));
+        },
+      })
+    );
+    const readJson = vi.spyOn(response, 'json');
+    vi.spyOn(global, 'fetch')
+      .mockResolvedValueOnce(new Response('iframe'))
+      .mockImplementationOnce(async (_url, init) => {
+        init?.signal?.addEventListener('abort', () => body.error(init.signal!.reason));
+        return response;
+      });
+
+    const pending = checkRef('https://chromatic.com');
+    await vi.waitFor(() => expect(readJson).toHaveBeenCalledOnce());
+    controller.abort(new DOMException('timed out', 'TimeoutError'));
+
+    expect(await pending).toBe(false);
+  });
+
+  it('keeps non-JSON iframe responses publicly reachable', async () => {
+    vi.spyOn(global, 'fetch').mockImplementation(
+      async () => new Response('<html>Storybook</html>')
+    );
+
+    expect(await checkRef('https://chromatic.com')).toBe(true);
+  });
+
   it('returns false when fetch fails', async () => {
     vi.spyOn(global, 'fetch').mockRejectedValue(new Error('Network error'));
     expect(await checkRef('https://chromatic.com')).toBe(false);

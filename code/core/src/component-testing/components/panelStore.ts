@@ -60,6 +60,9 @@ export const INITIAL_PANEL_STATE: PanelState = {
   unhandledErrors: undefined,
 };
 
+// TODO(Storybook 12): Workaround. Delete this store once the manager adopts a UniversalStore or
+// OSA based alternative for addon-local state.
+// Context: https://github.com/storybookjs/storybook/pull/37391
 /**
  * A store for state that only this addon's panel and tab title read. A write to the shared addon
  * state goes through the manager store and re-renders the whole manager, and this state changes

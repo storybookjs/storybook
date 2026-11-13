@@ -23,6 +23,8 @@ export default defineConfig(
     },
     test: {
       environment: 'happy-dom',
+      // Svelte's runtime keeps component state across files when a worker is reused.
+      isolate: true,
       setupFiles: ['./vitest-setup.ts'],
     },
   })

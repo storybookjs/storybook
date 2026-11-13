@@ -1,7 +1,8 @@
+import { builtinModules, createRequire } from 'node:module';
 import { Writable } from 'node:stream';
 
 import '@testing-library/jest-dom/vitest';
-import { expect, vi } from 'vitest';
+import { afterAll, expect, vi } from 'vitest';
 
 import { dedent } from 'ts-dedent';
 
@@ -130,3 +131,85 @@ vi.mock('./core/src/shared/utils/module.ts', async (importOriginal) => {
     }),
   };
 });
+
+// With `isolate: false` a worker runs many test files, so each file undoes what it leaves behind
+// before the next one imports its modules. These hooks rely on Vitest internals.
+const fileRunKey = Symbol.for('storybook.vitest.fileRun');
+
+type WorkerGlobals = {
+  __vitest_mocker__?: { reset(): void };
+  __vitest_worker__?: {
+    config: { isolate: boolean };
+    evaluatedModules: {
+      idToModuleMap: Map<
+        string,
+        { promise?: unknown; exports?: unknown; evaluated: boolean; importers: Set<string> }
+      >;
+    };
+  };
+};
+const { __vitest_mocker__: mocker, __vitest_worker__: worker } = globalThis as WorkerGlobals;
+
+if (worker?.config.isolate === false) {
+  if (!mocker) {
+    throw new Error('Vitest internals changed: cannot reset test files that share a worker');
+  }
+
+  // `vi.mock('node:fs', { spy: true })` spies on the builtin itself, which Node's own module loader
+  // reads through. The originals are recorded before the worker's first test file runs.
+  const requireBuiltin = createRequire(import.meta.url);
+  const builtinsKey = Symbol.for('storybook.vitest.builtinOriginals');
+  const serializerKey = Symbol.for('storybook.vitest.addSnapshotSerializer');
+  const workerScope = globalThis as {
+    [builtinsKey]?: Map<Record<string, unknown>, Map<string, unknown>>;
+    [fileRunKey]?: number;
+    [serializerKey]?: typeof expect.addSnapshotSerializer;
+  };
+  workerScope[builtinsKey] ??= new Map(
+    builtinModules
+      .filter((name) => !name.startsWith('_') && !name.includes('internal'))
+      .map((name) => {
+        const exports = requireBuiltin(`node:${name}`);
+        return [exports, new Map(Object.keys(exports).map((key) => [key, exports[key]]))];
+      })
+  );
+
+  // Vitest cannot unregister snapshot serializers, so each one only applies to the file that added it.
+  const fileRun = (workerScope[fileRunKey] = (workerScope[fileRunKey] ?? 0) + 1);
+  const addSnapshotSerializer = (workerScope[serializerKey] ??= expect.addSnapshotSerializer);
+  expect.addSnapshotSerializer = (plugin) =>
+    addSnapshotSerializer.call(expect, {
+      ...plugin,
+      test: (value) => workerScope[fileRunKey] === fileRun && plugin.test(value),
+    });
+
+  afterAll(() => {
+    // Like Vitest between isolated files: `vi.resetModules()` alone would keep mocked modules.
+    mocker.reset();
+    worker.evaluatedModules.idToModuleMap.forEach((node, path) => {
+      if (!/\/vitest\/dist\/|vitest-virtual-\w+\/dist|@vitest\/dist/.test(path)) {
+        node.promise = undefined;
+        node.exports = undefined;
+        node.evaluated = false;
+        node.importers.clear();
+      }
+    });
+    for (const [exports, originals] of workerScope[builtinsKey]!) {
+      for (const [key, original] of originals) {
+        if (exports[key] !== original) {
+          exports[key] = original;
+        }
+      }
+    }
+    // Emotion warns when it is evaluated again while its global marker is set.
+    for (const key of Object.keys(globalThis)) {
+      if (key.startsWith('__EMOTION_REACT_')) {
+        delete (globalThis as Record<string, unknown>)[key];
+      }
+    }
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
+    vi.useRealTimers();
+  });
+}

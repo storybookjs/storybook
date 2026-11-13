@@ -9,6 +9,8 @@ const config: BuildEntries = {
       },
     ],
   },
+  // The banner reads import.meta.url at load time, which breaks Cloudflare Workers (#37397).
+  cjsCompatBanner: false,
 };
 
 export default config;

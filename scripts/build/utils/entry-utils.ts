@@ -43,6 +43,13 @@ export type BuildEntries = {
    */
   dtsBundler?: 'rolldown-tsgo' | 'rolldown';
   /**
+   * Set to `false` to leave the CJS compatibility banner out of this package's node entries. The
+   * banner calls `fileURLToPath(import.meta.url)` at module load, which throws on runtimes where
+   * `import.meta.url` is not a file URL, such as Cloudflare Workers. Only opt out when the bundled
+   * code never reads `require`, `__filename` or `__dirname`.
+   */
+  cjsCompatBanner?: false;
+  /**
    * The map of extra outputs to be added to the package.json's exports
    *
    * This can be useful to expose non-compiled/non-js files such as Svelte components,

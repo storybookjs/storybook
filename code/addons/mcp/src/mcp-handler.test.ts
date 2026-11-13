@@ -320,7 +320,6 @@ describe('mcpServerHandler', () => {
       id: 1,
       result: {
         protocolVersion: '2025-06-18',
-        adapter: {},
         capabilities: {
           tools: { listChanged: true },
         },
@@ -340,6 +339,32 @@ describe('mcpServerHandler', () => {
       'Also when the user asks to run or fix story tests'
     );
     expect(parsedResponse.result.instructions).not.toContain('component-docs');
+  });
+
+  it.each([
+    ['a null body', 'null'],
+    ['a message without jsonrpc', { id: 1, method: 'tools/list' }],
+    ['a batch', [{ jsonrpc: '2.0', id: 1, method: 'tools/list' }]],
+  ])('should answer %s with a 400 response', async (_, body) => {
+    const mockReq = createMockIncomingMessage({
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body,
+    });
+    const { response, getResponseData } = createMockServerResponse();
+
+    await mcpServerHandler({
+      req: mockReq,
+      res: response,
+      origin: 'http://localhost:6006',
+      basePath: '/',
+      options: createMockOptions(),
+      addonOptions: { toolsets: { dev: true, docs: true } },
+      compositionAuth: new CompositionAuth(),
+    });
+
+    expect(response.end).toHaveBeenCalled();
+    expect(getResponseData().status).toBe(400);
   });
 
   it('should include docs-style instructions when docs toolset is selected and manifest is available', async () => {

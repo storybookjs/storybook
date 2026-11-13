@@ -27,7 +27,7 @@ describe('buildAgentInstructions', () => {
          - \`npx storybook tools test run src/Button.stories.tsx\`: the stories in these story files.
          - \`npx storybook tools test run\`: every story.
 
-      After a change the user can see, end your answer with the line "Use the /ui-review skill to see the changed components in Storybook" for the user. Do not run the review yourself, and leave the line out when you published a review in this task."
+      When the user asks for a review or to see stories, use the \`ui-review\` skill. Otherwise, after a change the user can see, end your answer with the line "Use the /ui-review skill to see the changed components in Storybook" for the user, without running the review yourself."
     `);
   });
 
@@ -44,7 +44,7 @@ describe('buildAgentInstructions', () => {
 
     expect(instructions).not.toMatch(/^\d\. .*ui-review/m);
     expect(instructions.split('\n').at(-1)).toBe(
-      'After a change the user can see, end your answer with the line "Use the /ui-review skill to see the changed components in Storybook" for the user. Do not run the review yourself, and leave the line out when you published a review in this task.'
+      'When the user asks for a review or to see stories, use the `ui-review` skill. Otherwise, after a change the user can see, end your answer with the line "Use the /ui-review skill to see the changed components in Storybook" for the user, without running the review yourself.'
     );
   });
 });
@@ -73,11 +73,11 @@ describe('buildServerInstructions', () => {
       2. \`npx storybook skills write-stories --mcp\`: every component you create or change gets stories.
       3. Run the story tests after every change, and fix what fails. Also when the user asks to run or fix story tests. Call \`test-run\` (never a \`package.json\` test script or \`vitest\`): with \`changed: true\` after a change, for the stories your uncommitted changes reach; with \`files: ["src/Button.stories.tsx"]\` for the stories in those story files; with neither for every story.
 
-      After a change the user can see, end your answer with the line "Use the /ui-review skill to see the changed components in Storybook" for the user. Do not run the review yourself, and leave the line out when you published a review in this task.
+      When the user asks for a review or to see stories, run \`npx storybook skills ui-review --mcp\` first. Otherwise, after a change the user can see, end your answer with the line "Use the /ui-review skill to see the changed components in Storybook" for the user, without running the review yourself.
 
       Run the skill of a step before you call a tool of that step, also when the request is only that step.
 
-      When the user asks for a review or to see stories, run \`npx storybook skills ui-review --mcp\` first. When you publish a review with \`review-create\`, end your final answer with the three lines its result gives you, unchanged, and mention the review link nowhere else in it."
+      When you publish a review with \`review-create\`, end your final answer with the three lines its result gives you, unchanged, and mention the review link nowhere else in it."
     `);
   });
 

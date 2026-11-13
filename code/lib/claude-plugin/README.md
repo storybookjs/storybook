@@ -113,7 +113,7 @@ For every change to how the UI looks (you create, change, or delete a component,
    - `npx storybook tools test run src/Button.stories.tsx`: the stories in these story files.
    - `npx storybook tools test run`: every story.
 
-After a change the user can see, end your answer with the line "Use the /ui-review skill to see the changed components in Storybook" for the user. Do not run the review yourself, and leave the line out when you published a review in this task.
+When the user asks for a review or to see stories, use the `ui-review` skill. Otherwise, after a change the user can see, end your answer with the line "Use the /ui-review skill to see the changed components in Storybook" for the user, without running the review yourself.
 
 <!-- END:storybook-skills -->
 ```

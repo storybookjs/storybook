@@ -1,6 +1,6 @@
 ---
 name: ui-review
-description: When the user asks for a review, publish a Storybook review that shows them the stories a UI change affects, or the components and stories they ask to see.
+description: When the user asks for a review or to see stories, publish a Storybook review that shows them the stories a UI change affects, or the components and stories they ask to see.
 ---
 
 Prerequisites:

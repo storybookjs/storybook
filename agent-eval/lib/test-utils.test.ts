@@ -39,6 +39,7 @@ describe('isOtherTestRunner', () => {
     'pnpm --filter test-ui exec storybook tools test run src/Button.stories.tsx',
     'grep vitest package.json',
     'cat vitest.config.ts',
+    `cat package.json | grep -E '"(storybook|vitest)"'`,
     'npm install',
     'pnpm --filter ui build',
   ])('does not count %j', (command) => {

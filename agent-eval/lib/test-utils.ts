@@ -264,11 +264,11 @@ export function expectNoReviewHint(): void {
 // sit between the package manager and the script (`npm -w ui run test`, `pnpm --filter ui test`,
 // `yarn workspace ui test`), and vitest may come through any runner or `node_modules/.bin`.
 const OTHER_TEST_RUNNER = new RegExp(
-  String.raw`(?:^|[;&|(])\s*(?:\w+=\S*\s+)*(?:` +
+  String.raw`(?:^|[;&|])\s*(?:\w+=\S*\s+)*(?:` +
     String.raw`(?:npm|yarn|pnpm|bun)(?:\s+(?:-\S+|workspace)(?:\s+(?!(?:run|test)(?=\s|$))[^\s;&|]+)?)*\s+(?:run\s+)?test[\w:-]*` +
     '|' +
     String.raw`(?:npx(?:\s+-\S+)*\s+|bunx\s+|npm\s+exec\s+(?:--\s+)?|pnpm\s+(?:exec|dlx)\s+|yarn\s+(?:exec\s+)?|\S*node_modules/\.bin/)?vitest(?:@\S+)?` +
-    String.raw`)(?=\s|$|[;&|)])`
+    String.raw`)(?=\s|$|[;&|])`
 );
 
 // A command segment that runs `storybook tools` is the right command, whatever flags precede it.

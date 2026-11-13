@@ -342,7 +342,7 @@ describe('mcpServerHandler', () => {
       /^\d\. `npx storybook skills ui-review/m
     );
     expect(parsedResponse.result.instructions).toContain(
-      'When the user asks for a review or to see stories, run `npx storybook skills ui-review --mcp` first.'
+      'When the user asks for a review or to see stories, run `npx storybook skills ui-review --mcp` first. Otherwise'
     );
     expect(parsedResponse.result.instructions).toContain(
       'Also when the user asks to run or fix story tests'

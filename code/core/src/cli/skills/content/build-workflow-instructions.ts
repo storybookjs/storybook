@@ -81,7 +81,7 @@ function buildWorkflow(inputs: ServerInstructionsInputs, transport: SkillTextTra
   }
   const follow = steps.length > 1 ? 'follow these steps in order.' : 'follow this step.';
   // Without the `dev` toolset there is no review to point to.
-  const hint = inputs.devEnabled ? `\n\n${REVIEW_HINT}` : '';
+  const hint = inputs.devEnabled ? `\n\n${reviewHint(transport)}` : '';
   return `## Storybook
 
 For every change to how the UI looks (you create, change, or delete a component, story, style, theme, or design token), ${[follow, open].filter(Boolean).join(' ')}
@@ -99,7 +99,10 @@ ${lines.join('\n')}${hint}`;
  */
 export const REVIEW_HINT_LINE =
   'Use the /ui-review skill to see the changed components in Storybook';
-const REVIEW_HINT = `After a change the user can see, end your answer with the line "${REVIEW_HINT_LINE}" for the user. Do not run the review yourself, and leave the line out when you published a review in this task.`;
+// The request comes first: with a bare "do not run the review yourself", agents in the evals
+// refused a review the user asked for and answered with the line instead.
+const reviewHint = (transport: SkillTextTransport) =>
+  `When the user asks for a review or to see stories, ${transport === 'cli' ? 'use the `ui-review` skill' : 'run `npx storybook skills ui-review --mcp` first'}. Otherwise, after a change the user can see, end your answer with the line "${REVIEW_HINT_LINE}" for the user, without running the review yourself.`;
 
 /**
  * The `## Storybook` section that `create storybook` and `storybook upgrade` write in `AGENTS.md`.
@@ -123,7 +126,7 @@ export function buildServerInstructions(inputs: ServerInstructionsInputs): strin
   // review-create result are many calls back, and agents left the review lines out. A review is
   // only published when the user asks for one, through the `ui-review` skill.
   const review = inputs.devEnabled
-    ? `\n\nWhen the user asks for a review or to see stories, run \`npx storybook skills ui-review --mcp\` first. When you publish a review with \`${getToolName({ transport: 'mcp' })('review.create')}\`, end your final answer with the three lines its result gives you, unchanged, and mention the review link nowhere else in it.`
+    ? `\n\nWhen you publish a review with \`${getToolName({ transport: 'mcp' })('review.create')}\`, end your final answer with the three lines its result gives you, unchanged, and mention the review link nowhere else in it.`
     : '';
   // The tools are at hand over MCP, so an agent can do a step without its skill. It did for a
   // request that is one step, where no file edit comes first.

@@ -194,10 +194,10 @@ describe('reporter', () => {
 
     expect(at(0)).toEqual([]);
     expect(at(19)).toEqual([]);
-    expect(at(20)).toEqual(['notice']);
+    expect(at(20)).toEqual(['log']);
     expect(at(21)).toEqual([]);
-    expect(at(47)).toEqual(['notice']);
+    expect(at(47)).toEqual(['log']);
     expect(at(59)).toEqual([]);
-    expect(at(60)).toEqual(['notice']);
+    expect(at(60)).toEqual(['log']);
   });
 });

@@ -428,9 +428,8 @@ const runSandcastle = async (
     | undefined;
   const logFile = join(request.outDir, 'run.log');
   const sandboxNameFile = join(evidenceDir, 'sandbox-container.txt');
-  // Annotations are all that is left of a job whose runner stopped answering.
   const report = ({ level, line }: Report) =>
-    console.log(process.env.GITHUB_ACTIONS ? `::${level}::${line}` : line);
+    console.log(level === 'warning' && process.env.GITHUB_ACTIONS ? `::warning::${line}` : line);
   const watch = watchHost({
     file: join(evidenceDir, 'host-samples.jsonl'),
     startedAt,

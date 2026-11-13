@@ -120,11 +120,7 @@ export const memoryGuard = (guard: Guard) => {
     appendFileSync(guard.logFile, `${line}\n`);
     await guard.inSandbox(container, ['kill', '-KILL', ...command.pids.map(String)]);
     // A job step keeps ten warnings, and a run that stalls again and again must not use them up.
-    if (reported) {
-      console.log(line);
-    } else {
-      reported = true;
-      guard.report({ level: 'warning', line });
-    }
+    guard.report({ level: reported ? 'log' : 'warning', line });
+    reported = true;
   };
 };

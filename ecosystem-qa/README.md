@@ -146,7 +146,9 @@ The Docker sandbox gets 85% of the memory of the Docker daemon and no swap.
 The kernel ends a process of a sandbox at that limit only when it can free nothing at all; as long as it can take the code of the processes out of memory and read it back, it does that, and a build that needs more than the sandbox has neither fails nor moves on.
 So when the processes of the sandbox have waited for memory in a fifth of the last ten seconds in two readings in a row, the runner ends the command that holds the most memory, with everything it started: never the agent, and no command that holds less than a tenth of the memory of the sandbox.
 The agent sees that command end as one the kernel ended, and `evidence/memory-guard.log` names it.
-On a GitHub runner it also reports through annotations, a warning when the machine first runs short and a reading every twenty minutes, because annotations are all that is left of a job whose runner stops answering.
+It prints a reading to the job log every twenty minutes, and on a GitHub runner it puts a warning on the page of the run the first time the machine runs short.
+None of this explains a runner that stops answering: such a job hands over no log, no artifact and no warning, because the runner sends them only when a step or the job ends.
+The only way to see what such a run did is to have its job page open while it runs.
 When the sandbox fails after the agent has finished, for example while it collects the commits, the runner reads the answer from `run.log`.
 The record then has status `ok` and names the sandbox error in `recoveredFrom`.
 A run whose agent did not finish is never read this way.

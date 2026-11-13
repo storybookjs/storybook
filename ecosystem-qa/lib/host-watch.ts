@@ -141,21 +141,22 @@ export const sampleLine = (sample: HostSample): string =>
       : []),
   ].join(', ');
 
+// A warning is for the page of the run, a log line only for whoever reads the job log.
 export interface Report {
-  level: 'notice' | 'warning';
+  level: 'log' | 'warning';
   line: string;
 }
 
-const NOTICE_EVERY_MINUTES = 20;
+const READING_EVERY_MINUTES = 20;
 
 // Decide what a reading adds to what a run has already reported: a warning the first time a
 // condition holds, and a plain reading every twenty minutes.
 //
-// A job step keeps ten annotations of a level and drops the rest, so a condition that holds for an
-// hour must not use them up.
+// A job step keeps ten warnings and drops the rest, so a condition that holds for an hour must not
+// use them up.
 export const reporter = (): ((sample: HostSample) => Report[]) => {
   const reported = new Set<string>();
-  let lastNotice = 0;
+  let lastReading = 0;
   return (sample) => {
     const reports: Report[] = [];
     for (const [key, sentence] of Object.entries(pressureOf(sample))) {
@@ -167,9 +168,9 @@ export const reporter = (): ((sample: HostSample) => Report[]) => {
         });
       }
     }
-    if (sample.minute >= lastNotice + NOTICE_EVERY_MINUTES) {
-      lastNotice = sample.minute - (sample.minute % NOTICE_EVERY_MINUTES);
-      reports.push({ level: 'notice', line: `The machine at ${sampleLine(sample)}.` });
+    if (sample.minute >= lastReading + READING_EVERY_MINUTES) {
+      lastReading = sample.minute - (sample.minute % READING_EVERY_MINUTES);
+      reports.push({ level: 'log', line: `The machine at ${sampleLine(sample)}.` });
     }
     return reports;
   };
@@ -227,7 +228,6 @@ interface Watch {
   diskDir: string;
   // The name of the sandbox container, once there is one.
   container: () => string | undefined;
-  // Called for the lines that must outlive a lost machine.
   report: (report: Report) => void;
   // Called with every reading, and awaited before the next one is taken.
   onSample?: (sample: HostSample, container: string | undefined) => Promise<void>;
@@ -236,8 +236,8 @@ interface Watch {
 
 // Record what the machine looks like while the agent works, and say so when it runs short.
 //
-// A runner that stops answering takes the job log and every file with it. Only annotations outlive
-// it, so they are the one trace of why it stopped.
+// The readings explain a run that ends. A runner that stops answering hands over nothing, neither
+// its log nor a file nor a warning, because it sends all of them only when a step or the job ends.
 export const watchHost = (watch: Watch): { stop: () => void } => {
   const intervalMs = watch.intervalMs ?? 30_000;
   const reportsOf = reporter();

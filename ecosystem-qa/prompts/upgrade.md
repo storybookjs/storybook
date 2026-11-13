@@ -179,7 +179,7 @@ The JSON must match this JSON Schema:
 {{OUTPUT_SCHEMA}}
 ```
 
-Every check id from the list appears exactly once in `checks`.
+`checks` has {{CHECK_COUNT}} entries: every check id of Step 5 exactly once, in the order of that list.
 Each finding's `checkId` must be a check whose state is `fail`.
 `storybookVersionInstalled` is the version you read in Step 2, or `null` when you could not read it.
 `storybookVersionBefore` is the exact version you read in Step 1, such as `10.6.3` and never a range, or `null` when you could not read it.
@@ -191,4 +191,4 @@ Example of the shape:
 </qa-result>
 
 That example lists one check only to show the shape.
-Your answer must list all of them.
+Your answer must list all {{CHECK_COUNT}}.

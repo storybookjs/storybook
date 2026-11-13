@@ -1,0 +1,46 @@
+diff --git a/dist/cjs/event/createEvent.js b/dist/cjs/event/createEvent.js
+index 9e1f53cba3e353fe7172caf655296f825e1f4b05..b81de5ab00bde734af3873e91d0a04dfe4f21c6d 100644
+--- a/dist/cjs/event/createEvent.js
++++ b/dist/cjs/event/createEvent.js
+@@ -38,7 +38,17 @@ function createEvent(type, target, init) {
+     const window = getWindow.getWindow(target);
+     const { EventType, defaultInit } = eventMap.eventMap[type];
+     const event = new (getEventConstructors(window))[EventType](type, defaultInit);
+-    eventInitializer[EventType].forEach((f)=>f(event, init !== null && init !== void 0 ? init : {}));
++    // Patched for storybook: always set `view` to the target's window, like browsers do for UI events.
++    var eventInit = {};
++    for (var key in init) {
++        if (Object.prototype.hasOwnProperty.call(init, key)) {
++            eventInit[key] = init[key];
++        }
++    }
++    eventInit.view = window;
++    eventInitializer[EventType].forEach(function(f) {
++        f(event, eventInit);
++    });
+     return event;
+ }
+ /* istanbul ignore next */ function getEventConstructors(window) {
+diff --git a/dist/esm/event/createEvent.js b/dist/esm/event/createEvent.js
+index ad579d30c69412a0905b36e2ac21ba2f9e62081f..e3f7fc806a6ce3a169b0285d3c9861ce1c6bb643 100644
+--- a/dist/esm/event/createEvent.js
++++ b/dist/esm/event/createEvent.js
+@@ -36,7 +36,17 @@ function createEvent(type, target, init) {
+     const window = getWindow(target);
+     const { EventType, defaultInit } = eventMap[type];
+     const event = new (getEventConstructors(window))[EventType](type, defaultInit);
+-    eventInitializer[EventType].forEach((f)=>f(event, init !== null && init !== void 0 ? init : {}));
++    // Patched for storybook: always set `view` to the target's window, like browsers do for UI events.
++    var eventInit = {};
++    for (var key in init) {
++        if (Object.prototype.hasOwnProperty.call(init, key)) {
++            eventInit[key] = init[key];
++        }
++    }
++    eventInit.view = window;
++    eventInitializer[EventType].forEach(function(f) {
++        f(event, eventInit);
++    });
+     return event;
+ }
+ /* istanbul ignore next */ function getEventConstructors(window) {

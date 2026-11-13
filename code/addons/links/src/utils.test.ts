@@ -10,8 +10,8 @@ import { hrefTo, hrefToSync, linkTo } from './utils.ts';
 vi.mock('storybook/preview-api');
 vi.mock('@storybook/global', () => ({
   global: {
-    document: global.document,
-    window: global,
+    document: globalThis.document,
+    window: globalThis,
   },
 }));
 

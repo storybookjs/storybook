@@ -11,13 +11,15 @@ import { staticLoadSyncService } from './preview.ts';
 type StaticLoadSnapshot = {
   alpha: string | undefined;
   beta: string | undefined;
-  unbackedStatus: string;
+  unbacked: string | null | undefined;
+  unbackedError: string | undefined;
 };
 
 const store = createDemoStore<StaticLoadSnapshot>({
   alpha: undefined,
   beta: undefined,
-  unbackedStatus: 'pending',
+  unbacked: undefined,
+  unbackedError: undefined,
 });
 
 function StaticLoadDemo() {
@@ -74,7 +76,9 @@ function StaticLoadDemo() {
             padding: 12,
           }}
         >
-          {value.unbackedStatus}
+          {value.unbacked != null
+            ? JSON.stringify(value.unbacked)
+            : (value.unbackedError ?? 'pending')}
         </pre>
       </section>
     </main>
@@ -94,7 +98,8 @@ const meta = {
     const initialValue: StaticLoadSnapshot = {
       alpha: staticLoadSyncService.queries.entry.get({ id: 'alpha' }),
       beta: staticLoadSyncService.queries.entry.get({ id: 'beta' }),
-      unbackedStatus: 'pending',
+      unbacked: undefined,
+      unbackedError: undefined,
     };
     store.set(initialValue);
 
@@ -116,8 +121,8 @@ const meta = {
     );
     const unsubscribeUnbacked = staticLoadSyncService.queries.unbacked.subscribe(
       ({ data: unbacked }) => {
-        if (active && unbacked != null) {
-          store.set({ ...store.get(), unbackedStatus: JSON.stringify(unbacked) });
+        if (active) {
+          store.set({ ...store.get(), unbacked });
         }
       }
     );
@@ -126,14 +131,14 @@ const meta = {
       .loaded()
       .then((unbacked) => {
         if (active) {
-          store.set({ ...store.get(), unbackedStatus: JSON.stringify(unbacked) });
+          store.set({ ...store.get(), unbacked });
         }
       })
       .catch((error: unknown) => {
         if (active) {
           store.set({
             ...store.get(),
-            unbackedStatus: error instanceof Error ? error.message : String(error),
+            unbackedError: error instanceof Error ? error.message : String(error),
           });
         }
       });

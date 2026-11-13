@@ -1,4 +1,4 @@
-import { describe, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { extractModuleNodes } from './module-nodes.ts';
 
@@ -7,22 +7,24 @@ import { SVELTE_CSF_IMPORT_SOURCES } from '../../../constants.ts';
 import { getSvelteAST } from '../../ast.ts';
 
 describe(extractModuleNodes.name, () => {
-  it('fails when module tag not found', async ({ expect }) => {
+  it('fails when module tag not found', async () => {
     const { module } = getSvelteAST({
       code: `<script></script>`,
     });
 
     await expect(extractModuleNodes({ module })).rejects.toThrowErrorMatchingInlineSnapshot(`
       [SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0001 (MissingModuleTagError): The file '<path not specified>'
-      does not have a module context (<script module> ... </script>).
+      does not have a <script module>.
 
-      defineMeta(...) or preview.meta(...) should be called inside a module script tag, like so:
+      A Svelte stories file needs a <script module> that calls defineMeta() and uses the Story component that it returns, like so:
 
       <script module>
         import { defineMeta } from "@storybook/svelte-vite";
 
         const { Story } = defineMeta({});
       </script>
+
+      <Story name="Primary" />
 
       In a SvelteKit project, import defineMeta from "@storybook/sveltekit".
       With CSF factories, call preview.meta() in place of defineMeta(), with preview imported from '#.storybook/preview'.
@@ -32,22 +34,24 @@ describe(extractModuleNodes.name, () => {
     `);
   });
 
-  it("fails when 'defineMeta' not imported", async ({ expect }) => {
+  it("fails when 'defineMeta' not imported", async () => {
     const { module } = getSvelteAST({
       code: `<script module></script>`,
     });
 
     await expect(extractModuleNodes({ module })).rejects.toThrowErrorMatchingInlineSnapshot(`
       [SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0003 (MissingDefineMetaImportError): The file '<path not specified>'
-      does not import defineMeta from "@storybook/svelte-vite" or "@storybook/sveltekit", or the preview from .storybook/preview, inside the module context.
+      does not import defineMeta from "@storybook/svelte-vite" or "@storybook/sveltekit", or preview from the preview file of Storybook, in its <script module>.
 
-      Make sure to import defineMeta from the package and use it inside the module context like so:
+      A Svelte stories file needs a <script module> that calls defineMeta() and uses the Story component that it returns, like so:
 
       <script module>
         import { defineMeta } from "@storybook/svelte-vite";
 
         const { Story } = defineMeta({});
       </script>
+
+      <Story name="Primary" />
 
       In a SvelteKit project, import defineMeta from "@storybook/sveltekit".
       With CSF factories, call preview.meta() in place of defineMeta(), with preview imported from '#.storybook/preview'.
@@ -57,7 +61,7 @@ describe(extractModuleNodes.name, () => {
     `);
   });
 
-  it("fails when 'defineMeta' not used", async ({ expect }) => {
+  it("fails when 'defineMeta' not used", async () => {
     const { module } = getSvelteAST({
       code: `
         <script module>
@@ -77,6 +81,8 @@ describe(extractModuleNodes.name, () => {
         const { Story } = defineMeta({});
       </script>
 
+      <Story name="Primary" />
+
       In a SvelteKit project, import defineMeta from "@storybook/sveltekit".
       With CSF factories, call preview.meta() in place of defineMeta(), with preview imported from '#.storybook/preview'.
 
@@ -85,7 +91,7 @@ describe(extractModuleNodes.name, () => {
     `);
   });
 
-  it("fails when 'Story' is not destructured", async ({ expect }) => {
+  it("fails when 'Story' is not destructured", async () => {
     const { module } = getSvelteAST({
       code: `
         <script module>
@@ -105,6 +111,8 @@ describe(extractModuleNodes.name, () => {
         const { Story } = defineMeta({});
       </script>
 
+      <Story name="Primary" />
+
       In a SvelteKit project, import defineMeta from "@storybook/sveltekit".
       With CSF factories, call preview.meta() in place of defineMeta(), with preview imported from '#.storybook/preview'.
 
@@ -113,19 +121,7 @@ describe(extractModuleNodes.name, () => {
     `);
   });
 
-  it('works when it has valid required entry snippet', async ({ expect }) => {
-    const { module } = getSvelteAST({
-      code: `
-        <script module>
-          import { defineMeta } from "@storybook/svelte"
-          const { Story } = defineMeta();
-        </script>`,
-    });
-
-    await expect(extractModuleNodes({ module })).resolves.not.toThrow();
-  });
-
-  it('works when meta was destructured too', async ({ expect }) => {
+  it('extracts the Story name when meta is destructured from defineMeta() too', async () => {
     const { module } = getSvelteAST({
       code: `
         <script module>
@@ -135,10 +131,15 @@ describe(extractModuleNodes.name, () => {
       `,
     });
 
-    await expect(extractModuleNodes({ module })).resolves.not.toThrow();
+    const nodes = await extractModuleNodes({ module });
+
+    expect(nodes.defineMetaVariableDeclaration.declarations[0].init).toMatchObject({
+      callee: { name: 'defineMeta' },
+    });
+    expect(nodes.storyNames).toEqual(['Story']);
   });
 
-  it('extracts module nodes', async ({ expect }) => {
+  it('extracts module nodes', async () => {
     const { module } = getSvelteAST({
       code: `
         <script module>
@@ -156,7 +157,7 @@ describe(extractModuleNodes.name, () => {
     expect(nodes.storyNames).toEqual(['Story']);
   });
 
-  it('extracts module nodes with renamed identifiers', async ({ expect }) => {
+  it('extracts module nodes with renamed identifiers', async () => {
     const { module } = getSvelteAST({
       code: `
         <script module>
@@ -175,28 +176,25 @@ describe(extractModuleNodes.name, () => {
     expect(nodes.storyNames).toEqual(['S']);
   });
 
-  it.for(SVELTE_CSF_IMPORT_SOURCES)(
-    'finds defineMeta imported from %s',
-    async (source, { expect }) => {
-      const { module } = getSvelteAST({
-        code: `
+  it.for(SVELTE_CSF_IMPORT_SOURCES)('finds defineMeta imported from %s', async (source) => {
+    const { module } = getSvelteAST({
+      code: `
         <script module>
           import { defineMeta } from "${source}";
           const { Story } = defineMeta();
         </script>
       `,
-      });
+    });
 
-      const nodes = await extractModuleNodes({ module });
+    const nodes = await extractModuleNodes({ module });
 
-      expect(nodes.defineMetaVariableDeclaration.declarations[0].init).toMatchObject({
-        callee: { name: 'defineMeta' },
-      });
-    }
-  );
+    expect(nodes.defineMetaVariableDeclaration.declarations[0].init).toMatchObject({
+      callee: { name: 'defineMeta' },
+    });
+  });
 
   describe('other imports of @storybook/svelte', () => {
-    it('ignores a type-only import next to defineMeta', async ({ expect }) => {
+    it('ignores a type-only import next to defineMeta', async () => {
       const { module } = getSvelteAST({
         code: `
           <script module lang="ts">
@@ -214,7 +212,7 @@ describe(extractModuleNodes.name, () => {
       });
     });
 
-    it('ignores other named imports', async ({ expect }) => {
+    it('ignores other named imports', async () => {
       const { module } = getSvelteAST({
         code: `
           <script module>
@@ -232,7 +230,7 @@ describe(extractModuleNodes.name, () => {
       });
     });
 
-    it('allows a namespace import next to a named defineMeta import', async ({ expect }) => {
+    it('allows a namespace import next to a named defineMeta import', async () => {
       const { module } = getSvelteAST({
         code: `
           <script module>
@@ -250,7 +248,7 @@ describe(extractModuleNodes.name, () => {
       });
     });
 
-    it('fails with only a namespace import', async ({ expect }) => {
+    it('fails with only a namespace import', async () => {
       const { module } = getSvelteAST({
         code: `
           <script module>
@@ -275,7 +273,7 @@ describe(extractModuleNodes.name, () => {
     });
   });
   describe('CSF factories', () => {
-    it('extracts the nodes of preview.meta()', async ({ expect }) => {
+    it('extracts the nodes of preview.meta()', async () => {
       const { module } = getSvelteAST({
         code: `
           <script module>
@@ -292,7 +290,7 @@ describe(extractModuleNodes.name, () => {
       expect(nodes.storyNames).toEqual(['Story']);
     });
 
-    it('extracts the nodes of a meta variable', async ({ expect }) => {
+    it('extracts the nodes of a meta variable', async () => {
       const { module } = getSvelteAST({
         code: `
           <script module>
@@ -310,7 +308,7 @@ describe(extractModuleNodes.name, () => {
       expect(nodes.storyNames).toEqual(['S']);
     });
 
-    it('extracts the Story components of meta.type<>()', async ({ expect }) => {
+    it('extracts the Story components of meta.type<>()', async () => {
       const { module } = getSvelteAST({
         code: `
           <script module lang="ts">
@@ -331,7 +329,7 @@ describe(extractModuleNodes.name, () => {
       expect(nodes.storyNames).toEqual(['Story', 'IconStory', 'SizeStory']);
     });
 
-    it('extracts the nodes of preview.type<>().meta()', async ({ expect }) => {
+    it('extracts the nodes of preview.type<>().meta()', async () => {
       const { module } = getSvelteAST({
         code: `
           <script module lang="ts">
@@ -347,7 +345,7 @@ describe(extractModuleNodes.name, () => {
       expect(nodes.storyNames).toEqual(['Story']);
     });
 
-    it('extracts a Story component of meta.type<>() alone', async ({ expect }) => {
+    it('extracts a Story component of meta.type<>() alone', async () => {
       const { module } = getSvelteAST({
         code: `
           <script module lang="ts">
@@ -363,7 +361,7 @@ describe(extractModuleNodes.name, () => {
       expect(nodes.storyNames).toEqual(['IconStory']);
     });
 
-    it('fails when Story is not destructured from the meta', async ({ expect }) => {
+    it('fails when Story is not destructured from the meta', async () => {
       const { module } = getSvelteAST({
         code: `
           <script module>
@@ -384,6 +382,8 @@ describe(extractModuleNodes.name, () => {
           const { Story } = defineMeta({});
         </script>
 
+        <Story name="Primary" />
+
         In a SvelteKit project, import defineMeta from "@storybook/sveltekit".
         With CSF factories, call preview.meta() in place of defineMeta(), with preview imported from '#.storybook/preview'.
 
@@ -392,7 +392,7 @@ describe(extractModuleNodes.name, () => {
       `);
     });
 
-    it('fails when a file calls defineMeta() and preview.meta()', async ({ expect }) => {
+    it('fails when a file calls defineMeta() and preview.meta()', async () => {
       const { module } = getSvelteAST({
         code: `
           <script module>
@@ -414,7 +414,7 @@ describe(extractModuleNodes.name, () => {
       `);
     });
 
-    it('fails when a file calls preview.meta() twice', async ({ expect }) => {
+    it('fails when a file calls preview.meta() twice', async () => {
       const { module } = getSvelteAST({
         code: `
           <script module>
@@ -431,7 +431,7 @@ describe(extractModuleNodes.name, () => {
       });
     });
 
-    it('fails when preview is not imported from a preview file', async ({ expect }) => {
+    it('fails when preview is not imported from a preview file', async () => {
       const { module } = getSvelteAST({
         code: `
           <script module>
@@ -458,7 +458,7 @@ describe(extractModuleNodes.name, () => {
       `);
     });
 
-    it('ignores a .meta() call on another object', async ({ expect }) => {
+    it('ignores a .meta() call on another object', async () => {
       const { module } = getSvelteAST({
         code: `
           <script module>

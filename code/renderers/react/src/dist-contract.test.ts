@@ -13,6 +13,9 @@ const TYPESCRIPT = createRequire(import.meta.url).resolve('typescript/bin/tsc');
 const TYPESCRIPT_5 = createRequire(import.meta.url).resolve('typescript-5/bin/tsc');
 const DTS_BUILT = DTS_ARTIFACTS.every(existsSync);
 const REPOSITORY_ROOT = join(import.meta.dirname, '../../../..');
+// Compiling the full declaration surface with tsc takes 30s+ on loaded Windows
+// CI runners, so use a fixed generous timeout instead of the 10s default.
+const compileTimeoutMs = 90_000;
 const TSC_OPTIONS = [
   '--module',
   'Node16',
@@ -42,7 +45,7 @@ describe('React declaration contract', () => {
         stdio: 'pipe',
       });
     },
-    30_000
+    compileTimeoutMs
   );
 
   it.runIf(DTS_BUILT)(
@@ -53,6 +56,6 @@ describe('React declaration contract', () => {
         stdio: 'pipe',
       });
     },
-    30_000
+    compileTimeoutMs
   );
 });

@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 
-import { parse } from 'svelte/compiler';
+import { type CompileError, parse } from 'svelte/compiler';
 import { findMeta, findMetaImports, hasMetaImport } from '../utils/import-source.ts';
 import { unwrapExpression } from 'storybook/internal/csf-tools';
 import type { IndexInput } from 'storybook/internal/types';
@@ -56,11 +56,20 @@ export function parseSvelteSource(file: string): { source: string; ast: SvelteAS
 function getIndexableAST(code: string): SvelteAST.Root {
   try {
     return parse(code, { modern: true });
-  } catch {
+  } catch (error) {
     const blanked = code.replace(styleBlocks, (match, open?: string, content = '', close = '') =>
       open === undefined ? match : open + content.replace(/[^\r\n]/g, ' ') + close
     );
-    return parse(blanked, { modern: true });
+    if (blanked === code) {
+      throw error;
+    }
+    try {
+      return parse(blanked, { modern: true });
+    } catch (blankedError) {
+      // Svelte builds the code frame from the blanked code, which isn't the file
+      delete (blankedError as Partial<CompileError>).frame;
+      throw blankedError;
+    }
   }
 }
 

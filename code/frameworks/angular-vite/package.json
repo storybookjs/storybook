@@ -1,6 +1,6 @@
 {
   "name": "@storybook/angular-vite",
-  "version": "11.0.0-alpha.8",
+  "version": "11.0.0-beta.2",
   "description": "Storybook for Angular: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -37,6 +37,7 @@
     "./client/docs/config": "./dist/client/docs/config.js",
     "./client/preview-prod": "./dist/client/preview-prod.js",
     "./internal/docgen-worker": "./dist/docgen/docgen-worker.js",
+    "./internal/vitest-compiler-setup": "./dist/client/vitest-compiler-setup.js",
     "./node": {
       "types": "./dist/node/index.d.ts",
       "code": "./src/node/index.ts",
@@ -83,6 +84,7 @@
     "@angular/platform-browser-dynamic": "^21.2.14",
     "@storybook/angular-cm": "workspace:*",
     "@storybook/angular-compodoc": "workspace:*",
+    "@storybook/component-meta-typescript": "workspace:*",
     "@types/node": "^22.19.1",
     "empathic": "^2.0.0",
     "memfs": "^4.11.1",

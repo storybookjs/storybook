@@ -14,7 +14,7 @@ import { SVELTE_CSF_RUNTIME_STORIES_IMPORT_SOURCE } from '../constants.ts';
 const filename = normalizePath(
   path.resolve(
     path.dirname(url.fileURLToPath(import.meta.url)),
-    '../__tests__/stories/Example.stories.svelte'
+    '../../__test__/svelte-csf/example.stories.svelte'
   )
 );
 
@@ -28,10 +28,10 @@ describe(transformSvelteCsf.name, () => {
       compiledAST: parseAst(compiledCode),
     });
 
-    expect(code).toContain(`from "${SVELTE_CSF_RUNTIME_STORIES_IMPORT_SOURCE}"`);
+    expect(code).toContain(`from '${SVELTE_CSF_RUNTIME_STORIES_IMPORT_SOURCE}'`);
     expect(code).toContain('export default $__meta;');
     expect(code).toContain('export const __namedExportsOrder = [');
-    expect(map.sources).toEqual([filename]);
+    expect(JSON.parse(map).sources).toEqual([filename]);
   });
 });
 

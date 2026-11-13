@@ -2,9 +2,10 @@ import { logger } from 'storybook/internal/node-logger';
 import { SVELTE_CSF_RENDERER_IMPORT_SOURCE } from '../../../constants.ts';
 import { dedent } from 'ts-dedent';
 import { print } from 'esrap';
+import ts from 'esrap/languages/ts';
 import { parseAst } from 'rollup/parseAst';
 import { compile } from 'svelte/compiler';
-import { beforeEach, describe, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { insertDefineMetaParameters } from './insert-parameters.ts';
 
@@ -20,7 +21,7 @@ describe(insertDefineMetaParameters.name, () => {
     vi.clearAllMocks();
   });
 
-  it('works when defineMeta gets an empty object', async ({ expect }) => {
+  it('inserts the parameters into an empty defineMeta() object', async () => {
     const code = dedent`
       <script module>
         import { defineMeta } from "${SVELTE_CSF_RENDERER_IMPORT_SOURCE}";
@@ -41,20 +42,16 @@ describe(insertDefineMetaParameters.name, () => {
 
     const objectExpression = getDefineMetaFirstArgumentObjectExpression({ nodes: compiledNodes });
 
-    expect(print(objectExpression).code).toMatchInlineSnapshot(`
+    expect(print(objectExpression, ts()).code).toMatchInlineSnapshot(`
       "{
       	parameters: {
-      		docs: {
-      			description: { component: "Description of the component" }
-      		}
+      		docs: { description: { component: 'Description of the component' } }
       	}
       }"
     `);
   });
 
-  it('warns through the node logger when defineMeta parameters is not an object expression', async ({
-    expect,
-  }) => {
+  it('warns through the node logger when defineMeta parameters is not an object expression', async () => {
     const code = dedent`
       <script module>
         import { defineMeta } from "${SVELTE_CSF_RENDERER_IMPORT_SOURCE}";

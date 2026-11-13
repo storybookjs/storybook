@@ -15,6 +15,7 @@ const RENDERER_RUNTIME_PACKAGES: Record<string, string[]> = {
   '@storybook/ember': ['ember-source'],
   'storybook-framework-qwik': ['@builder.io/qwik'],
   'storybook-solidjs-vite': ['solid-js'],
+  '@storybook-astro/renderer': ['astro'],
 };
 
 /**

@@ -79,6 +79,7 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
   // `undefined` means the query has not loaded yet; render as "no review" but
   // skip dismissal side effects until the authoritative value arrives.
   const review = currentData ?? null;
+  const isReviewLoaded = currentData !== undefined;
   const pendingReview = pendingData ?? null;
   const flattenedEntries = entriesData ?? EMPTY_ENTRIES;
 
@@ -298,6 +299,7 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const value = useMemo<ReviewContextValue>(
     () => ({
       review,
+      isReviewLoaded,
       pendingReview,
       storyInfo,
       flattenedEntries,
@@ -314,6 +316,7 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
     }),
     [
       review,
+      isReviewLoaded,
       pendingReview,
       storyInfo,
       flattenedEntries,

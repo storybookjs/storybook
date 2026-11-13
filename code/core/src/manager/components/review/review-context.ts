@@ -19,6 +19,8 @@ export type ReviewBanner = AttentionBannerProps | null;
 export interface ReviewContextValue {
   /** The current review projected from the service's `current` query. */
   review: ReviewState | null;
+  /** False until the service's `current` query has answered, while `review` reads as null. */
+  isReviewLoaded: boolean;
   /** The deferred review update projected from the service's `pending` query. */
   pendingReview: ReviewState | null;
   storyInfo: Record<string, StoryInfo>;
@@ -45,6 +47,7 @@ const noop = () => {};
 
 const emptyReviewContextValue: ReviewContextValue = {
   review: null,
+  isReviewLoaded: true,
   pendingReview: null,
   storyInfo: {},
   flattenedEntries: [],

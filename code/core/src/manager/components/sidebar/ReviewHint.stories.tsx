@@ -1,6 +1,7 @@
 import React from 'react';
 
 import { Button } from 'storybook/internal/components';
+import { AI_PROMPT_NUDGE } from 'storybook/internal/core-events';
 import { CHANGE_DETECTION_STATUS_TYPE_ID } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
@@ -12,20 +13,19 @@ import { ManagerContext, internal_fullStatusStore } from 'storybook/manager-api'
 import { expect, fn, mocked, spyOn, userEvent, waitFor } from 'storybook/test';
 
 import { useCopyButton } from '../../../shared/useCopyButton.ts';
+import { UI_REVIEW_PROMPT } from '../../../shared/utils/ai-prompts.ts';
 import { ReviewProvider } from '../review/components/ReviewProvider.tsx';
 import { reviewServiceForStories as reviewService } from '../review/review-service-story-helpers.ts';
 import { IconSymbols } from './IconSymbols.tsx';
-import {
-  REVIEW_HINT_DISMISSED_KEY,
-  REVIEW_HINT_PROMPT,
-  ReviewHint,
-  useChangedStoryCount,
-} from './ReviewHint.tsx';
+import { REVIEW_HINT_DISMISSED_KEY, ReviewHint, useChangedStoryCount } from './ReviewHint.tsx';
 import { ShowChangesButton } from './ShowChangesButton.tsx';
 
 const storyIds = ['s1', 's2', 's3'];
 
-const makeManagerContext = (): any => ({
+const emit = fn().mockName('api::emit');
+const focusOnUIElement = fn().mockName('api::focusOnUIElement');
+
+const managerContext: any = {
   state: {
     path: '/',
     viewMode: 'story',
@@ -55,7 +55,8 @@ const makeManagerContext = (): any => ({
     on: fn().mockName('api::on'),
     off: fn().mockName('api::off'),
     once: fn().mockName('api::once'),
-    emit: fn().mockName('api::emit'),
+    emit,
+    focusOnUIElement,
     navigate: fn().mockName('api::navigate'),
     setQueryParams: fn().mockName('api::setQueryParams'),
     addNotification: fn().mockName('api::addNotification'),
@@ -68,7 +69,7 @@ const makeManagerContext = (): any => ({
     }),
     setAllStatusFilters: fn().mockName('api::setAllStatusFilters'),
   },
-});
+};
 
 const setChangedStories = () => {
   internal_fullStatusStore.set([
@@ -98,13 +99,27 @@ const withConfigType = (configType: 'DEVELOPMENT' | 'PRODUCTION') => () => {
   };
 };
 
+// These stories share an origin with the internal Storybook's own manager, which reads the same
+// key. Restore its value afterwards so opening a story does not change the developer's hint.
+const isolateDismissal = () => {
+  const previous = localStorage.getItem(REVIEW_HINT_DISMISSED_KEY);
+  localStorage.removeItem(REVIEW_HINT_DISMISSED_KEY);
+  return () => {
+    if (previous === null) {
+      localStorage.removeItem(REVIEW_HINT_DISMISSED_KEY);
+    } else {
+      localStorage.setItem(REVIEW_HINT_DISMISSED_KEY, previous);
+    }
+  };
+};
+
 const meta = {
   component: ReviewHint,
   title: 'Sidebar/ReviewHint',
   decorators: [
     (Story) => (
       <MemoryRouter initialEntries={['/']}>
-        <ManagerContext.Provider value={makeManagerContext()}>
+        <ManagerContext.Provider value={managerContext}>
           <ReviewProvider>
             <IconSymbols />
             <div
@@ -126,7 +141,8 @@ const meta = {
   beforeEach: async () => {
     await reviewService.commands.dismissReview(undefined);
     sessionStorage.clear();
-    localStorage.removeItem(REVIEW_HINT_DISMISSED_KEY);
+    emit.mockClear();
+    focusOnUIElement.mockClear();
     // The clipboard needs a permission in the test browser, and stories must not touch the real one.
     if (!navigator.clipboard) {
       Object.defineProperty(navigator, 'clipboard', {
@@ -135,11 +151,13 @@ const meta = {
       });
     }
     spyOn(navigator.clipboard, 'writeText').mockResolvedValue(undefined);
+    const restoreDismissal = isolateDismissal();
     const restoreConfigType = withConfigType('DEVELOPMENT')();
     const unsetStatuses = setChangedStories();
     return () => {
-      restoreConfigType();
       unsetStatuses();
+      restoreConfigType();
+      restoreDismissal();
     };
   },
 } satisfies Meta<typeof ReviewHint>;
@@ -153,51 +171,49 @@ export const Shown: Story = {
   play: async ({ canvas }) => {
     await expect(
       await canvas.findByRole('region', {
-        name: 'Ask your agent for a review',
+        name: 'Ask your agent for a UI review',
       })
     ).toBeVisible();
-    await expect(canvas.getByText(REVIEW_HINT_PROMPT)).toBeVisible();
+    // The prompt is part of the button's accessible name, so screen readers read it too.
+    await expect(canvas.getByRole('button', { name: /Copy prompt/ })).toHaveAccessibleName(
+      `Copy prompt ${UI_REVIEW_PROMPT}`
+    );
   },
 };
 
-/** Copying writes the prompt to the clipboard and confirms it in the button. */
+/** Copying writes the prompt to the clipboard, confirms it in the button, and records a nudge. */
 export const Copied: Story = {
   play: async ({ canvas }) => {
-    await userEvent.click(
-      await canvas.findByRole('button', {
-        name: 'Copy review prompt for your agent',
-      })
-    );
-    await expect(mocked(navigator.clipboard.writeText)).toHaveBeenCalledWith(REVIEW_HINT_PROMPT);
-    await expect(
-      await canvas.findByRole('button', {
-        name: 'Review prompt copied. Paste it in your agent.',
-      })
-    ).toHaveTextContent('Copied');
+    await userEvent.click(await canvas.findByRole('button', { name: /Copy prompt/ }));
+    await expect(mocked(navigator.clipboard.writeText)).toHaveBeenCalledWith(UI_REVIEW_PROMPT);
+    await expect(await canvas.findByRole('button', { name: /Copied/ })).toBeVisible();
+    await expect(emit).toHaveBeenCalledWith(AI_PROMPT_NUDGE, {
+      id: 'ui-review',
+      origin: 'sidebar-review-hint',
+    });
   },
 };
 
 /** The copy button and the dismiss button are reachable with the keyboard, in that order. */
 export const KeyboardCopy: Story = {
   play: async ({ canvas }) => {
-    const copy = await canvas.findByRole('button', {
-      name: 'Copy review prompt for your agent',
-    });
+    const copy = await canvas.findByRole('button', { name: /Copy prompt/ });
     await userEvent.tab();
     await expect(copy).toHaveFocus();
     await userEvent.keyboard('{Enter}');
-    await expect(mocked(navigator.clipboard.writeText)).toHaveBeenCalledWith(REVIEW_HINT_PROMPT);
+    await expect(mocked(navigator.clipboard.writeText)).toHaveBeenCalledWith(UI_REVIEW_PROMPT);
     await userEvent.tab();
     await expect(canvas.getByRole('button', { name: 'Dismiss review hint' })).toHaveFocus();
   },
 };
 
-/** Dismissing hides the hint and remembers it for later visits. */
+/** Dismissing hides the hint, remembers it, and moves focus to the search field. */
 export const Dismiss: Story = {
   play: async ({ canvas }) => {
     await userEvent.click(await canvas.findByRole('button', { name: 'Dismiss review hint' }));
     await waitFor(() => expect(canvas.queryByRole('region')).toBeNull());
     await expect(localStorage.getItem(REVIEW_HINT_DISMISSED_KEY)).toBe('true');
+    await expect(focusOnUIElement).toHaveBeenCalledWith('storybook-explorer-searchfield');
   },
 };
 
@@ -211,7 +227,10 @@ export const Dismissed: Story = {
   },
 };
 
-/** A review is active: the review widget takes over, so the hint hides. */
+/**
+ * A review is active: the review widget takes over, so the hint hides. A user who has had a review
+ * knows they can ask for one, so the hint does not come back after that review.
+ */
 export const ReviewActive: Story = {
   beforeEach: async () => {
     await reviewService.commands.setReview({
@@ -223,6 +242,7 @@ export const ReviewActive: Story = {
   },
   play: async ({ canvas }) => {
     await expect(canvas.queryByRole('region')).toBeNull();
+    await waitFor(() => expect(localStorage.getItem(REVIEW_HINT_DISMISSED_KEY)).toBe('true'));
   },
 };
 
@@ -264,11 +284,11 @@ export const WithShowChangesButton: Story = {
 const InlineCopyButton = () => {
   const changedStoryCount = useChangedStoryCount();
   const { children, buttonProps } = useCopyButton<React.ReactNode>({
-    content: REVIEW_HINT_PROMPT,
+    content: UI_REVIEW_PROMPT,
     children: <WandIcon />,
     childrenOnCopy: <CheckIcon />,
-    ariaLabel: 'Copy review prompt for your agent',
-    ariaLabelOnCopy: 'Review prompt copied. Paste it in your agent.',
+    ariaLabel: 'Copy a prompt to ask your agent for a UI review',
+    ariaLabelOnCopy: 'Prompt copied. Paste it in your agent.',
   });
   if (changedStoryCount === 0) {
     return null;
@@ -281,9 +301,10 @@ const InlineCopyButton = () => {
 };
 
 /**
- * Alternative placement, not shipped: an icon button next to the changes filter that copies the
- * prompt, with its explanation only in the tooltip. It takes no space, but users have to hover it
- * to learn what it does, so it fails the goal of telling users that they can ask for a review.
+ * Alternative placement, not shipped, kept for the product decision: an icon button next to the
+ * changes filter that copies the prompt, with its explanation only in the tooltip. It takes no
+ * space, but users have to hover it to learn what it does, so it does a poor job of telling users
+ * that they can ask for a review.
  */
 export const AlternativeInlineButton: Story = {
   render: () => (
@@ -295,11 +316,7 @@ export const AlternativeInlineButton: Story = {
     </div>
   ),
   play: async ({ canvas }) => {
-    await userEvent.click(
-      await canvas.findByRole('button', {
-        name: 'Copy review prompt for your agent',
-      })
-    );
-    await expect(mocked(navigator.clipboard.writeText)).toHaveBeenCalledWith(REVIEW_HINT_PROMPT);
+    await userEvent.click(await canvas.findByRole('button', { name: /Copy a prompt/ }));
+    await expect(mocked(navigator.clipboard.writeText)).toHaveBeenCalledWith(UI_REVIEW_PROMPT);
   },
 };

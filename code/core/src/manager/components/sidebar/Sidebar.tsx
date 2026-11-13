@@ -176,7 +176,9 @@ export const Sidebar = React.memo(function Sidebar({
           />
           {!showOnboardingChecklist ? null : <ChecklistWidget />}
         </div>
-        {isLoading ? null : showReviewWidget ? <ReviewWidget /> : <ReviewHint />}
+        {!isLoading && showReviewWidget ? <ReviewWidget /> : null}
+        {/* Mounted while a review is active too: it then records that the user has seen one. */}
+        {isLoading ? null : <ReviewHint />}
         <Search
           dataset={dataset}
           enableShortcuts={enableShortcuts}

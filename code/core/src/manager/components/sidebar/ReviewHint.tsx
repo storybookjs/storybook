@@ -1,6 +1,7 @@
-import React, { type SyntheticEvent, useCallback, useMemo, useRef, useState } from 'react';
+import React, { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 
 import { ActionList, Card } from 'storybook/internal/components';
+import { AI_PROMPT_NUDGE } from 'storybook/internal/core-events';
 import type { StatusesByStoryIdAndTypeId, StatusValue, StoryIndex } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
@@ -13,17 +14,12 @@ import {
 } from 'storybook/manager-api';
 import { styled } from 'storybook/theming/emotion';
 
+import { focusableUIElements } from '../../../manager-api/modules/layout.ts';
 import { useCopyButton } from '../../../shared/useCopyButton.ts';
+import { UI_REVIEW_PROMPT } from '../../../shared/utils/ai-prompts.ts';
 import { useLandmark } from '../../hooks/useLandmark.ts';
+import { useReviewContext } from '../review/review-context.ts';
 import { useActiveReviewStoryCount } from './ReviewWidget.tsx';
-
-/**
- * The prompt the user copies into their agent. It names the skill in plain language so it works
- * both with the project skill (`ui-review`) and with the plugin skill (`storybook:ui-review`):
- * agents match a skill by its name and description, not by the namespace prefix.
- */
-export const REVIEW_HINT_PROMPT =
-  'Use the ui-review skill to publish a Storybook review of the stories that changed.';
 
 export const REVIEW_HINT_DISMISSED_KEY = 'storybook/review-hint/dismissed';
 
@@ -51,7 +47,7 @@ const dismissedStore = {
   },
 };
 
-/** Number of stories in the index that change detection marks as new or modified. */
+// Number of stories in the index that change detection marks as new or modified.
 export const useChangedStoryCount = () => {
   const { internal_index: index } = useStorybookState();
   const allStatuses = experimental_useStatusStore() as StatusesByStoryIdAndTypeId;
@@ -71,7 +67,7 @@ export const useChangedStoryCount = () => {
   }, [index, allStatuses]);
 };
 
-// Landmark wrapper, like the review widget's, so the hint is reachable with F6.
+// Same structure and styles as the review widget, which takes this spot once a review is active.
 const Region = styled.section({
   width: '100%',
 });
@@ -98,11 +94,6 @@ const AgenticIcon = styled(WandIcon)(({ theme }) => ({
   color: theme.fgColor.agentic,
 }));
 
-const Prompt = styled.small({
-  // The prompt is the payload; show it in full so users know what they paste.
-  whiteSpace: 'normal',
-});
-
 const CopyAction = styled(ActionList.Action)({
   justifyContent: 'flex-start',
 });
@@ -118,29 +109,26 @@ const DismissIcon = styled(CloseAltIcon)({
   padding: 1,
 });
 
-export interface ReviewHintViewProps {
-  onDismiss: (event: SyntheticEvent) => void;
-}
-
-/**
- * Tells the user that they can ask their agent for a review of the changed stories, with a prompt
- * to copy. Storybook cannot call the agent itself.
- */
-export const ReviewHintView = ({ onDismiss }: ReviewHintViewProps) => {
+// Tells the user that they can ask their agent for a review of the changed stories, with a prompt
+// to copy. Storybook cannot call the agent itself.
+const ReviewHintCard = ({ onDismiss }: { onDismiss: () => void }) => {
+  const api = useStorybookApi();
   const regionRef = useRef<HTMLElement>(null);
   const { landmarkProps } = useLandmark(
     { role: 'region', 'aria-labelledby': HEADING_ID },
     regionRef
   );
 
-  const { children: copyChildren, buttonProps: copyButtonProps } = useCopyButton<React.ReactNode>({
-    content: REVIEW_HINT_PROMPT,
+  // No aria-label: the accessible name is the visible text, prompt included, so screen reader
+  // users hear what they copy. The hook announces "Copied to clipboard" after a copy.
+  const { children: copyChildren, buttonProps: copyButtonProps } = useCopyButton<ReactNode>({
+    content: UI_REVIEW_PROMPT,
     children: (
       <>
         <CopyIcon />
         <ActionList.Text>
           <strong>Copy prompt</strong>
-          <Prompt>{REVIEW_HINT_PROMPT}</Prompt>
+          <small>{UI_REVIEW_PROMPT}</small>
         </ActionList.Text>
       </>
     ),
@@ -149,12 +137,16 @@ export const ReviewHintView = ({ onDismiss }: ReviewHintViewProps) => {
         <CheckIcon />
         <ActionList.Text>
           <strong>Copied</strong>
-          <Prompt>Paste it in your agent's chat.</Prompt>
+          <small>Paste it in your agent's chat.</small>
         </ActionList.Text>
       </>
     ),
-    ariaLabel: 'Copy review prompt for your agent',
-    ariaLabelOnCopy: 'Review prompt copied. Paste it in your agent.',
+    onCopy: () => {
+      api.emit(AI_PROMPT_NUDGE, {
+        id: 'ui-review',
+        origin: 'sidebar-review-hint',
+      });
+    },
   });
 
   return (
@@ -164,7 +156,7 @@ export const ReviewHintView = ({ onDismiss }: ReviewHintViewProps) => {
           <ActionList.Item as="div">
             <HeaderContent>
               <AgenticIcon aria-hidden />
-              <HeaderTitle id={HEADING_ID}>Ask your agent for a review</HeaderTitle>
+              <HeaderTitle id={HEADING_ID}>Ask your agent for a UI review</HeaderTitle>
             </HeaderContent>
           </ActionList.Item>
         </ActionList>
@@ -183,25 +175,34 @@ export const ReviewHintView = ({ onDismiss }: ReviewHintViewProps) => {
   );
 };
 
-/**
- * Shows the review hint in the spot of the review widget while there are changed stories, no
- * active review, and the user has not dismissed it. Only on a dev server: a static build cannot
- * receive a review.
- */
+// Shows the review hint in the spot of the review widget while there are changed stories, no
+// active review, and the user has not dismissed it. Only on a dev server: a static build cannot
+// receive a review.
 export const ReviewHint = () => {
   const api = useStorybookApi();
+  const { isReviewLoaded } = useReviewContext();
   const changedStoryCount = useChangedStoryCount();
   const activeReviewStoryCount = useActiveReviewStoryCount();
   const [dismissed, setDismissed] = useState(dismissedStore.read);
 
-  const onDismiss = useCallback((event: SyntheticEvent) => {
-    event.stopPropagation();
+  // A user who has had a review knows that they can ask for one.
+  useEffect(() => {
+    if (activeReviewStoryCount > 0 && !dismissed) {
+      dismissedStore.write();
+      setDismissed(true);
+    }
+  }, [activeReviewStoryCount, dismissed]);
+
+  const onDismiss = () => {
     dismissedStore.write();
     setDismissed(true);
-  }, []);
+    // The card unmounts; keep keyboard focus in the sidebar.
+    api.focusOnUIElement(focusableUIElements.storySearchField);
+  };
 
   if (
     dismissed ||
+    !isReviewLoaded ||
     global.CONFIG_TYPE !== 'DEVELOPMENT' ||
     activeReviewStoryCount > 0 ||
     changedStoryCount === 0 ||
@@ -210,7 +211,5 @@ export const ReviewHint = () => {
     return null;
   }
 
-  return <ReviewHintView onDismiss={onDismiss} />;
+  return <ReviewHintCard onDismiss={onDismiss} />;
 };
-
-export default ReviewHint;

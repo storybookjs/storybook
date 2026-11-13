@@ -30,6 +30,7 @@ import { loadCatalogEntry } from './lib/catalog.ts';
 import { shipsSandcastleFiles } from './lib/clone-guard.ts';
 import { cycleBranchName, cycleRepo, versionLine } from './lib/cycle.ts';
 import { runFake } from './lib/fake-run.ts';
+import { watchHost } from './lib/host-watch.ts';
 import { forJobLog, liveLine } from './lib/live-log.ts';
 import { CHECKOUT_GUIDE, guideFor } from './lib/migration-guide.ts';
 import { budgetRecord, msUntilHardStop, parseBudget, type RunBudget } from './lib/run-budget.ts';
@@ -400,6 +401,14 @@ const runSandcastle = async (
   let sandbox: Awaited<ReturnType<typeof createSandbox>> | undefined;
   let hardStop: AbortSignal | undefined;
   const logFile = join(request.outDir, 'run.log');
+  // Annotations are all that is left of a job whose runner stopped answering.
+  const watch = watchHost({
+    file: join(evidenceDir, 'host-samples.jsonl'),
+    startedAt,
+    diskDir: request.outDir,
+    container: () => sandbox?.sandboxId,
+    report: (level, line) => console.log(process.env.GITHUB_ACTIONS ? `::${level}::${line}` : line),
+  });
   // One list for the schema, the checklist and the count the prompt names.
   const checks = checksFor(request.tier);
   const answerSchema = agentOutput(checks.map((check) => check.id));
@@ -493,6 +502,7 @@ const runSandcastle = async (
       failure = { status: statusOf(error), error: String(error) };
     }
   } finally {
+    watch.stop();
     if (request.sandbox === 'none') {
       const stopped = stopChildren();
       if (stopped > 0) {

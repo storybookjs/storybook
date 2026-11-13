@@ -1,3 +1,5 @@
+import { isDeepStrictEqual } from 'node:util';
+
 import type { ChannelLike } from 'storybook/internal/channels';
 import {
   findStoryIds,
@@ -6,7 +8,7 @@ import {
   type StoryInput,
 } from 'storybook/internal/core-server';
 import { OpenServiceTestRunTimeoutError } from 'storybook/internal/server-errors';
-import type { StoryIndex } from 'storybook/internal/types';
+import type { StoryId, StoryIndex } from 'storybook/internal/types';
 
 import { TRIGGER_TEST_RUN_REQUEST, TRIGGER_TEST_RUN_RESPONSE } from '../../constants.ts';
 import type { TestRunOutput, TestRunResult } from './definition.ts';
@@ -139,6 +141,35 @@ export function triggerTestRun({
   });
 }
 
+type StoryGlobals = Record<StoryId, Record<string, unknown>>;
+
+function collectStoryGlobals(index: StoryIndex, found: FoundStory[]) {
+  const storyGlobals: StoryGlobals = {};
+  const conflictingIds = new Set<StoryId>();
+
+  const assign = (id: StoryId, globals: Record<string, unknown>) => {
+    if (id in storyGlobals && !isDeepStrictEqual(storyGlobals[id], globals)) {
+      conflictingIds.add(id);
+    }
+    storyGlobals[id] = globals;
+  };
+
+  for (const { entry, input } of found) {
+    if (!input.globals) {
+      continue;
+    }
+    assign(entry.id, input.globals);
+    // Selecting a story also runs its tests, so they run under its globals too.
+    for (const child of Object.values(index.entries)) {
+      if (child.type === 'story' && child.parent === entry.id) {
+        assign(child.id, input.globals);
+      }
+    }
+  }
+
+  return { storyGlobals, conflictingIds: [...conflictingIds] };
+}
+
 export type RunStoryTestsParams = {
   channel: TestChannel;
   getIndex: () => Promise<StoryIndex>;
@@ -166,6 +197,7 @@ export async function runStoryTests({
   timeoutMs = DEFAULT_TEST_RUN_TIMEOUT_MS,
 }: RunStoryTestsParams): Promise<TestRunOutput> {
   let storyIds: string[] | undefined;
+  let storyGlobals: StoryGlobals | undefined;
 
   if (stories) {
     const index = await getIndex();
@@ -189,7 +221,20 @@ export async function runStoryTests({
       };
     }
 
+    const collected = collectStoryGlobals(index, found);
+    if (collected.conflictingIds.length > 0) {
+      return {
+        status: 'error',
+        error: {
+          message: `Each story runs once per test run, so it can't use different globals in one request: ${collected.conflictingIds.join(', ')}. Request each set of globals in a separate run.`,
+        },
+      };
+    }
+
     storyIds = found.map((story) => story.entry.id);
+    if (Object.keys(collected.storyGlobals).length > 0) {
+      storyGlobals = collected.storyGlobals;
+    }
   }
 
   let response: TriggerTestRunResponse;
@@ -199,7 +244,7 @@ export async function runStoryTests({
       requestEvent,
       responseEvent,
       storyIds,
-      config: { a11y },
+      config: storyGlobals ? { a11y, storyGlobals } : { a11y },
       actor,
       timeoutMs,
     });

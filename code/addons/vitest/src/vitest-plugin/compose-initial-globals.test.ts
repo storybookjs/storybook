@@ -5,6 +5,7 @@ import { composeInitialGlobals } from './compose-initial-globals.ts';
 
 describe('composeInitialGlobals', () => {
   const base = {
+    storyId: 'button--primary',
     runConfig: { a11y: true },
     ghostStoriesEnabled: false,
     renderAnalysisEnabled: false,
@@ -43,5 +44,46 @@ describe('composeInitialGlobals', () => {
     });
     expect(globals.ghostStories).toEqual({ enabled: true });
     expect(globals.renderAnalysis).toEqual({ enabled: true });
+  });
+
+  it("applies the run's globals for this story over the project initialGlobals", () => {
+    const globals = composeInitialGlobals({
+      ...base,
+      runConfig: { a11y: true, storyGlobals: { 'button--primary': { theme: 'dark' } } },
+      userInitialGlobals: { theme: 'light', locale: 'en' },
+    });
+    expect(globals.theme).toBe('dark');
+    expect(globals.locale).toBe('en');
+  });
+
+  it("ignores the run's globals for other stories", () => {
+    const globals = composeInitialGlobals({
+      ...base,
+      runConfig: { a11y: true, storyGlobals: { 'button--secondary': { theme: 'dark' } } },
+      userInitialGlobals: { theme: 'light' },
+    });
+    expect(globals.theme).toBe('light');
+  });
+
+  it("keeps Storybook's run-control globals overriding the run's story globals", () => {
+    const runConfig = {
+      a11y: false,
+      storyGlobals: {
+        'button--primary': {
+          a11y: { manual: false },
+          renderAnalysis: { enabled: true },
+          [STORYBOOK_TEST_PROVIDE_KEY]: { hijacked: true },
+        },
+      },
+    };
+    const globals = composeInitialGlobals({
+      ...base,
+      runConfig,
+      shouldRunA11yTests: false,
+      userInitialGlobals: {},
+    });
+    expect(globals.a11y).toEqual({ manual: true });
+    expect(globals.renderAnalysis).toBeUndefined();
+    expect(globals[STORYBOOK_TEST_PROVIDE_KEY]).toBe(runConfig);
   });
 });

@@ -16,7 +16,7 @@ import { homedir, tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 
-import { claudeCode, codex, Output, run, StructuredOutputError } from '@ai-hero/sandcastle';
+import { claudeCode, codex, createSandbox } from '@ai-hero/sandcastle';
 import { bwrap } from '@ai-hero/sandcastle/sandboxes/bwrap';
 import { docker } from '@ai-hero/sandcastle/sandboxes/docker';
 import { noSandbox } from '@ai-hero/sandcastle/sandboxes/no-sandbox';
@@ -25,7 +25,7 @@ import { join, relative, resolve } from 'pathe';
 import { z } from 'zod';
 
 import { checksFor, renderChecklist } from './checks.ts';
-import { answerOfFinishedAgent, QA_RESULT_TAG } from './lib/answer.ts';
+import { answerAfterRepairs, answerOfFinishedAgent } from './lib/answer.ts';
 import { loadCatalogEntry } from './lib/catalog.ts';
 import { shipsSandcastleFiles } from './lib/clone-guard.ts';
 import { cycleBranchName, cycleRepo, versionLine } from './lib/cycle.ts';
@@ -74,6 +74,10 @@ const CREDENTIAL_ENV: Record<Engine, string[]> = {
   claude: ['ANTHROPIC_API_KEY', 'CLAUDE_CODE_OAUTH_TOKEN'],
   codex: ['CODEX_API_KEY'],
 };
+
+const INSTALL_LIMIT_SECONDS = 25 * 60;
+// tools/timed.mjs records this exit status for an install it had to stop at the limit.
+const INSTALL_STOPPED = 124;
 
 const INSTALL_COMMAND: Record<CatalogEntry['packageManager'], string> = {
   npm: 'npm ci',
@@ -221,13 +225,13 @@ const clone = (entry: CatalogEntry, cloneDir: string): string => {
 };
 
 interface SandboxPlan {
-  provider: Parameters<typeof run>[0]['sandbox'];
+  provider: Parameters<typeof createSandbox>[0]['sandbox'];
   toolsDir: string;
   migrationFile: string;
   evidenceDir: string;
   // Extra variables the agent process needs inside this sandbox.
   agentEnv: Record<string, string>;
-  hooks: NonNullable<Parameters<typeof run>[0]['hooks']>;
+  hooks: NonNullable<Parameters<typeof createSandbox>[0]['hooks']>;
 }
 
 const planSandbox = (
@@ -272,10 +276,10 @@ const planSandbox = (
     command: [
       `node "${toolsDir}/timed.mjs"`,
       ...nodeFlag,
+      `--limit-seconds=${INSTALL_LIMIT_SECONDS}`,
       `"${evidence}/install-seconds.txt"`,
       INSTALL_COMMAND[packageManager],
     ].join(' '),
-    timeoutMs: 25 * 60_000,
   });
   const installHooks = { sandbox: { onSandboxReady: [install(evidenceDir, [])] } };
   if (request.sandbox !== 'docker' && node) {
@@ -290,6 +294,7 @@ const planSandbox = (
       return {
         provider: docker({
           imageName: image,
+          env: UPGRADE_ENV,
           mounts: [
             ...toolMounts,
             { hostPath: migrationFile, sandboxPath: sandboxMigration, readonly: true },
@@ -314,7 +319,7 @@ const planSandbox = (
     }
     case 'bwrap':
       return {
-        provider: bwrap({ mounts: nativeMounts }),
+        provider: bwrap({ mounts: nativeMounts, env: UPGRADE_ENV }),
         toolsDir,
         migrationFile,
         evidenceDir,
@@ -323,7 +328,7 @@ const planSandbox = (
       };
     case 'seatbelt':
       return {
-        provider: seatbelt({ mounts: nativeMounts }),
+        provider: seatbelt({ mounts: nativeMounts, env: UPGRADE_ENV }),
         toolsDir,
         migrationFile,
         evidenceDir,
@@ -332,7 +337,7 @@ const planSandbox = (
       };
     case 'none':
       return {
-        provider: noSandbox(),
+        provider: noSandbox({ env: UPGRADE_ENV }),
         toolsDir,
         migrationFile,
         evidenceDir,
@@ -348,20 +353,21 @@ const agentFor = (request: RunRequest, agentEnv: Record<string, string>) => {
     names.find((name) => process.env[name]) ?? fail(`None of ${names.join(', ')} is set.`);
   const options = {
     effort: request.effort,
-    env: { ...UPGRADE_ENV, ...agentEnv, [keyName]: process.env[keyName]! },
+    env: { ...agentEnv, [keyName]: process.env[keyName]! },
   };
   return request.engine === 'claude'
     ? claudeCode(request.model, options)
     : codex(request.model, options);
 };
 
-const statusOf = (error: unknown): Outcome['status'] => {
-  if (error instanceof StructuredOutputError) {
-    return 'output-invalid';
-  }
-  return error instanceof Object && '_tag' in error && error._tag === 'AgentIdleTimeoutError'
+const statusOf = (error: unknown): Outcome['status'] =>
+  error instanceof Object && '_tag' in error && error._tag === 'AgentIdleTimeoutError'
     ? 'timeout'
     : 'agent-failed';
+
+const readNumber = (file: string): number | undefined => {
+  const value = existsSync(file) ? Number(readFileSync(file, 'utf8')) : Number.NaN;
+  return Number.isFinite(value) ? value : undefined;
 };
 
 const runSandcastle = async (
@@ -380,6 +386,7 @@ const runSandcastle = async (
   let failure: Pick<Outcome, 'status' | 'error'> | undefined;
   let recoveredFrom: string | undefined;
   let migrationGuide: string | undefined;
+  let sandbox: Awaited<ReturnType<typeof createSandbox>> | undefined;
   const logFile = join(request.outDir, 'run.log');
   const answerSchema = agentOutput(checksFor(request.tier).map((check) => check.id));
 
@@ -390,13 +397,25 @@ const runSandcastle = async (
     });
     migrationGuide = guide.ref;
     const plan = planSandbox(request, cloneDir, evidenceDir, image, guide.file);
-    const agent = agentFor(request, plan.agentEnv);
-    const result = await run({
+    sandbox = await createSandbox({
       cwd: cloneDir,
-      agent,
+      branch: cycleBranch,
       sandbox: plan.provider,
+      hooks: plan.hooks,
+    });
+    // createSandbox does not look at how a hook ended, so the record of the install has to.
+    const installExit = readNumber(join(evidenceDir, 'install-exit.txt'));
+    if (installExit === undefined) {
+      throw new Error('The project install did not run to its end: it left no exit status.');
+    }
+    if (installExit === INSTALL_STOPPED) {
+      throw new Error(
+        `The project install did not finish within ${INSTALL_LIMIT_SECONDS / 60} minutes.`
+      );
+    }
+    const first = await sandbox.run({
+      agent: agentFor(request, plan.agentEnv),
       name: `${request.entry.id}-${request.os}-${request.engine}`,
-      branchStrategy: { type: 'branch', branch: cycleBranch },
       promptFile: PROMPT_FILE,
       promptArgs: {
         REPO: repo,
@@ -414,8 +433,6 @@ const runSandcastle = async (
         CHECKLIST: renderChecklist(request.tier),
         OUTPUT_SCHEMA: JSON.stringify(z.toJSONSchema(answerSchema), null, 2),
       },
-      output: Output.object({ tag: QA_RESULT_TAG, schema: answerSchema, maxRetries: 2 }),
-      hooks: plan.hooks,
       idleTimeoutSeconds: 900,
       logging: {
         type: 'file',
@@ -429,25 +446,32 @@ const runSandcastle = async (
         },
       },
     });
-    output = result.output;
-    sessionSource = result.iterations.at(-1)?.sessionFilePath;
+    sessionSource = first.iterations.at(-1)?.sessionFilePath;
+    // The sandbox is still open here, so a repair is one more turn of the same session.
+    const { reading, turn } = await answerAfterRepairs(first, answerSchema);
+    sessionSource = turn.iterations.at(-1)?.sessionFilePath ?? sessionSource;
+    if ('answer' in reading) {
+      output = reading.answer;
+    } else {
+      failure = { status: 'output-invalid', error: reading.problem };
+    }
   } catch (error) {
-    // Sandcastle judged the answer itself when it raises a StructuredOutputError. Any other error
-    // can come from the teardown, after an agent that had already answered.
-    const answer =
-      error instanceof StructuredOutputError || !existsSync(logFile)
-        ? undefined
-        : answerOfFinishedAgent(readFileSync(logFile, 'utf8'), answerSchema);
+    // The sandbox can fail after an agent that had already answered, for example while it collects
+    // the commits.
+    const answer = existsSync(logFile)
+      ? answerOfFinishedAgent(readFileSync(logFile, 'utf8'), answerSchema)
+      : undefined;
     if (answer) {
       output = answer;
       recoveredFrom = String(error);
     } else {
       failure = { status: statusOf(error), error: String(error) };
     }
-    if (error instanceof StructuredOutputError) {
-      sessionSource = error.sessionFilePath;
-    }
   } finally {
+    // The answer is already read, so a sandbox that cannot be removed does not fail the run.
+    await sandbox?.close().catch((error: unknown) => {
+      console.warn(forJobLog(`The sandbox could not be closed: ${String(error)}`));
+    });
     await new Promise((done) => stream.end(done));
   }
 
@@ -476,11 +500,6 @@ const runSandcastle = async (
   };
 };
 
-const readInstallSeconds = (file: string): number | undefined => {
-  const seconds = existsSync(file) ? Number(readFileSync(file, 'utf8')) : Number.NaN;
-  return Number.isFinite(seconds) ? seconds : undefined;
-};
-
 const freeDiskMb = (dir: string): number => {
   const stats = statfsSync(dir);
   return Math.round((stats.bavail * stats.bsize) / 1024 / 1024);
@@ -498,7 +517,7 @@ const writeResult = (request: RunRequest, outcome: Outcome, startedAt: Date) => 
   if (usage.usd === null) {
     console.warn(`No price for model "${request.model}" in the shared price table; usd is null.`);
   }
-  const installSeconds = readInstallSeconds(join(outDir, 'evidence/install-seconds.txt'));
+  const installSeconds = readNumber(join(outDir, 'evidence/install-seconds.txt'));
   const { outDir: _out, monorepoDir: _monorepo, ...recorded } = request;
   const result: RunResultFile = {
     request: recorded,

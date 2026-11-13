@@ -111,7 +111,7 @@ To collect again without running any agent, set `from_runs` to a comma-separated
 It takes only runs of this workflow that were started by hand, on the default branch or on the branch the collecting run itself runs on, and stops before it downloads anything when one of the ids is anything else.
 The branch is the name the run was started under, not the code it ran.
 So a sweep that ran on a feature branch has to be collected and filed from that branch before the branch is merged: once the branch is gone, no run can collect it.
-In a sweep the collect job gets the plan and names every planned run that left no result, as a warning and in its Step Summary: a job whose runner was lost uploads nothing, and the sweep would otherwise read as complete with one run fewer.
+In a sweep the collect job gets the plan and, before it groups anything, runs `missing-runs.ts`, which names every planned run that left no result it can read, as a warning and in the Step Summary: a job whose runner was lost uploads nothing, and the sweep would otherwise read as complete with one run fewer.
 It also stops, and collects nothing, when one of the runs holds no result it can read: a run whose agent jobs wrote no `result.json`, or one from before the artifact name carried the repo id.
 Any run of the repository can upload an artifact with the name of a result, also the run of a pull request from a fork, and the filing job pushes and files what the results say.
 It uploads them again as `qa-earlier-results`, so the filing job finds their evidence and cycle bundles.

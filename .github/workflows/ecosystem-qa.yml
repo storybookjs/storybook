@@ -366,6 +366,14 @@ jobs:
 
       - name: Fetch the results of earlier runs
         if: ${{ needs.plan.outputs.from_runs != '' }}
+      - name: Name the planned runs that left no result
+        if: ${{ needs.plan.outputs.from_runs == '' }}
+        env:
+          QA_PLANNED: ${{ needs.plan.outputs.matrix }}
+        run: >-
+          node ecosystem-qa/missing-runs.ts --results "$QA_RESULTS" --version "$QA_VERSION"
+          --planned "$QA_PLANNED"
+
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
@@ -402,11 +410,9 @@ jobs:
       - name: Collect proposals
         env:
           GH_TOKEN: ${{ github.token }}
-          QA_PLANNED: ${{ needs.plan.outputs.matrix }}
         run: >-
           node ecosystem-qa/collect.ts --results "$QA_RESULTS" --version "$QA_VERSION"
           --out ecosystem-qa/proposals.json --repo "$GITHUB_REPOSITORY" --groups ecosystem-qa/groups.json
-          --planned "$QA_PLANNED"
 
       - name: Upload the proposals
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

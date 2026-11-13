@@ -10,8 +10,6 @@ import { CHECKOUT_GUIDE } from './lib/migration-guide.ts';
 import { loadFindingGroups, QA_LABEL, toProposal } from './lib/proposals.ts';
 import { upgraded } from './lib/results.ts';
 import { Grouping, type Proposal } from './lib/schema.ts';
-import { writeStepSummary } from './lib/step-summary.ts';
-import { withoutResult } from './lib/sweep-matrix.ts';
 
 const HELP = `Usage: node ecosystem-qa/collect.ts --results <dir> --version <storybook version> --out <proposals.json> --repo <owner/name> [--run-url <url>] [--groups <groups.json>]
 
@@ -23,9 +21,7 @@ the internal-qa label with gh, and writes one proposal per group to --out.
 --run-url defaults to this GitHub Actions run, or "local" outside Actions.
 --groups merges fingerprints that share a root cause into one proposal, led by each group's first
 member and optionally matched to an existing issue by similarity; without it each fingerprint is its
-own group. Every fingerprint of this collect must be in exactly one group.
---planned takes the job matrix of the sweep, as plan.ts prints it, and names every job of it that left
-no result.`;
+own group. Every fingerprint of this collect must be in exactly one group.`;
 
 const { values } = parseArgs({
   options: {
@@ -35,7 +31,6 @@ const { values } = parseArgs({
     repo: { type: 'string' },
     'run-url': { type: 'string' },
     groups: { type: 'string' },
-    planned: { type: 'string' },
     help: { type: 'boolean', default: false },
   },
 });
@@ -108,29 +103,4 @@ for (const proposal of proposals) {
     `${proposal.kind}${targetOf(proposal)} ${proposal.fingerprint} ${proposal.title}${more}`
   );
 }
-const Planned = z.object({
-  include: z.array(z.object({ repo: z.string(), os: z.string(), engine: z.string() })),
-});
-const missing = values.planned
-  ? withoutResult(
-      Planned.parse(JSON.parse(values.planned)).include,
-      loaded.map(({ result }) => ({
-        repo: result.request.entry.id,
-        os: result.request.os,
-        engine: result.request.engine,
-      }))
-    )
-  : [];
-for (const run of missing) {
-  console.log(
-    `${process.env.GITHUB_ACTIONS ? '::warning::' : ''}No result from ${run}: its job left none, which is what a lost runner or a cancelled job looks like.`
-  );
-}
-if (missing.length > 0) {
-  writeStepSummary(
-    ['### Runs without a result', '', ...missing.map((run) => `- ${run}`), ''].join('\n')
-  );
-}
-console.log(
-  `${loaded.length} results, ${proposals.length} proposals written to ${out}${values.planned ? `, ${missing.length} of the planned runs left no result` : ''}`
-);
+console.log(`${loaded.length} results, ${proposals.length} proposals written to ${out}`);

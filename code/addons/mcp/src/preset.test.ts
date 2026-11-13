@@ -43,19 +43,21 @@ describe('experimental_devServer', () => {
     vi.unstubAllGlobals();
   });
 
-  const stubPrivateRefDiscovery = () => {
+  const stubPrivateRefDiscovery = (manifestResponse?: Promise<Response>) => {
     vi.stubGlobal(
       'fetch',
       vi
         .fn()
-        .mockResolvedValueOnce({
-          ok: false,
-          status: 401,
-          headers: new Headers({
-            'WWW-Authenticate':
-              'Bearer resource_metadata="https://private.example.com/.well-known/oauth-protected-resource"',
-          }),
-        })
+        .mockResolvedValueOnce(
+          manifestResponse ?? {
+            ok: false,
+            status: 401,
+            headers: new Headers({
+              'WWW-Authenticate':
+                'Bearer resource_metadata="https://private.example.com/.well-known/oauth-protected-resource"',
+            }),
+          }
+        )
         .mockResolvedValueOnce({
           ok: true,
           json: () =>
@@ -339,6 +341,64 @@ describe('experimental_devServer', () => {
     );
     expect(mockRes.end).toHaveBeenCalledWith('401 - Unauthorized');
     expect(mcpServerHandler).not.toHaveBeenCalled();
+  });
+
+  it('answers concurrent requests during a hung retry and challenges for OAuth after recovery', async () => {
+    vi.useFakeTimers();
+    try {
+      const mcpServerHandler = vi
+        .spyOn(mcpHandlerModule, 'mcpServerHandler')
+        .mockResolvedValue(undefined);
+      vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('fetch failed')));
+      await (experimental_devServer as any)(mockApp, createOptionsWithPrivateRef());
+
+      const before = { writeHead: vi.fn(), end: vi.fn() };
+      await mcpHandler({ headers: { 'content-type': 'application/json' } }, before);
+      expect(before.writeHead).not.toHaveBeenCalledWith(401, expect.anything());
+      expect(mcpServerHandler).toHaveBeenCalledWith(
+        expect.objectContaining({
+          multiSource: true,
+          sources: [
+            { id: 'local', title: 'Local' },
+            { id: 'private', title: 'Private', url: 'https://private.example.com' },
+          ],
+        })
+      );
+
+      let release!: (response: Response) => void;
+      stubPrivateRefDiscovery(new Promise<Response>((resolve) => (release = resolve)));
+      const retryFetch = vi.mocked(fetch);
+      await vi.advanceTimersByTimeAsync(5_000);
+      const first = mcpHandler({ headers: { 'content-type': 'application/json' } }, before);
+      const second = mcpHandler({ headers: { 'content-type': 'application/json' } }, before);
+      try {
+        await vi.waitFor(() => expect(mcpServerHandler).toHaveBeenCalledTimes(3));
+        expect(retryFetch).toHaveBeenCalledTimes(1);
+      } finally {
+        release(
+          new Response(null, {
+            status: 401,
+            headers: {
+              'WWW-Authenticate':
+                'Bearer resource_metadata="https://private.example.com/.well-known/oauth-protected-resource"',
+            },
+          })
+        );
+        await Promise.all([first, second]);
+        await vi.advanceTimersByTimeAsync(0);
+      }
+
+      const after = { writeHead: vi.fn(), end: vi.fn() };
+      await mcpHandler({ headers: { 'content-type': 'application/json' } }, after);
+      expect(after.writeHead).toHaveBeenCalledWith(
+        401,
+        expect.objectContaining({
+          'WWW-Authenticate': expect.stringContaining('/.well-known/oauth-protected-resource'),
+        })
+      );
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('should advertise the basePath-prefixed resource metadata in the OAuth challenge', async () => {

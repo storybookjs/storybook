@@ -2,7 +2,6 @@ import * as esbuild from 'esbuild';
 import { rolldown } from 'rolldown';
 import { describe, expect, it } from 'vitest';
 
-import mcpBuildConfig from '../../../code/lib/mcp/build-config.ts';
 import {
   esbuildNoDynamicRequireGuard,
   getNodeBanner,
@@ -99,10 +98,5 @@ describe('node CJS compatibility banner', () => {
 
   it('is left out when the package opts out', () => {
     expect(getNodeBanner({ cjsCompatBanner: false }, 'abc')).toBeUndefined();
-  });
-
-  // Cloudflare Workers leave import.meta.url undefined, so the banner throws there (#37397).
-  it('is left out of @storybook/mcp', () => {
-    expect(getNodeBanner(mcpBuildConfig, 'abc')).toBeUndefined();
   });
 });

@@ -68,9 +68,10 @@ export const build_linux = defineJob('Build (linux)', () => ({
         `${WORKING_DIR}/node_modules`,
         `${WORKING_DIR}/code/node_modules`,
         `${WORKING_DIR}/scripts/node_modules`,
-        // agent-eval nests all its dependencies (installConfig.hoistingLimits),
-        // so downstream checks need its node_modules packed explicitly.
+        // agent-eval and ecosystem-qa nest all their dependencies (installConfig.hoistingLimits),
+        // so downstream checks need their node_modules packed explicitly.
         `${WORKING_DIR}/agent-eval/node_modules`,
+        `${WORKING_DIR}/ecosystem-qa/node_modules`,
       ],
       packageDirs.map((p) => `${WORKING_DIR}/code/${p.replace('src', 'node_modules')}`)
     ),
@@ -424,7 +425,7 @@ export const testsUnit_linux = defineJob(
           name: 'Run tests',
           command: [
             'TEST_FILES=$(circleci tests glob "code/**/*.{test,spec,test-d}.{ts,tsx,js,jsx,cjs}" "scripts/**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" "agent-eval/**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" | sed "/e2e-sandbox\\//d" | sed "/e2e-internal\\//d" | sed "/node_modules\\//d")',
-            `echo "$TEST_FILES" | circleci tests run --command="xargs yarn test ${UNIT_TEST_REPORTERS}" --verbose`,
+            `echo "$TEST_FILES" | circleci tests run --command="xargs yarn test ${UNIT_TEST_REPORTERS}"`,
           ].join('\n'),
         },
       },
@@ -545,7 +546,7 @@ export const defineAffectedLintAndFormat = (changedFiles: readonly string[]) => 
                 `Lint changed ${dir} files`,
                 dir,
                 changedFiles,
-                'yarn lint:js:cmd --quiet --no-error-on-unmatched-pattern'
+                'yarn lint:js:cmd --quiet'
               )
             )),
         ...workflow.cancelOnFailure(),
@@ -570,7 +571,9 @@ export const defineAffectedUnitTests = (changedFiles: readonly string[]) =>
         {
           run: {
             name: 'Run affected tests',
-            command: `NODE_OPTIONS=--max_old_space_size=4096 yarn vitest related --run --project '!storybook-ui' ${UNIT_TEST_REPORTERS} $(cat ${CHANGED_FILES_PATH})`,
+            // ecosystem-qa nests its dependencies and the workspace does not carry them, so here its
+            // tests would load the root's zod 3. Its own workflow runs them with the right install.
+            command: `NODE_OPTIONS=--max_old_space_size=4096 yarn vitest related --run --project '!storybook-ui' --project '!ecosystem-qa' ${UNIT_TEST_REPORTERS} $(cat ${CHANGED_FILES_PATH})`,
           },
         },
         testResults.persist(`test-results`),
@@ -596,7 +599,7 @@ export const testsStories_linux = defineJob(
           name: 'Run stories tests',
           command: [
             'TEST_FILES=$(circleci tests glob "code/**/*.{stories}.{ts,tsx,js,jsx,cjs}" | sed "/e2e-sandbox\\//d" | sed "/e2e-internal\\//d" | sed "/node_modules\\//d")',
-            'echo "$TEST_FILES" | circleci tests run --command="xargs yarn test --reporter=junit --reporter=default --outputFile=./test-results/junit.xml" --verbose',
+            'echo "$TEST_FILES" | circleci tests run --command="xargs yarn test --reporter=junit --reporter=default --outputFile=./test-results/junit.xml"',
           ].join('\n'),
         },
       },
@@ -733,6 +736,27 @@ export const docgenPerfGate = defineJob(
         join(LINUX_ROOT_DIR, WORKING_DIR, DOCGEN_HARNESS_DIR, DOCGEN_PERF_RESULTS_DIR),
         'docgen-perf-results'
       ),
+    ],
+  }),
+  [commonJobsNoOpJob]
+);
+
+export const docgenNativeTypeScriptFixtures = defineJob(
+  'Docgen native TypeScript fixtures',
+  () => ({
+    executor: {
+      name: 'sb_node_22_classic',
+      class: 'medium+',
+    },
+    steps: [
+      ...workflow.restoreLinux(),
+      {
+        run: {
+          name: 'Harness fixtures on TypeScript 7.1',
+          command: `yarn vitest run --config ${DOCGEN_HARNESS_DIR}/vitest.config.native-typescript.ts ${UNIT_TEST_REPORTERS}`,
+        },
+      },
+      testResults.persist(`test-results`),
     ],
   }),
   [commonJobsNoOpJob]

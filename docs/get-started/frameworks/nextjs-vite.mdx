@@ -151,7 +151,7 @@ The following features are not supported (yet). Support for these features might
 - [fallback](https://nextjs.org/docs/pages/api-reference/components/font#fallback) option
 - [adjustFontFallback](https://nextjs.org/docs/pages/api-reference/components/font#adjustfontfallback) option
 - [preload](https://nextjs.org/docs/pages/api-reference/components/font#preload) option gets ignored. Storybook handles Font loading its own way.
-- [display](https://nextjs.org/docs/pages/api-reference/components/font#display) option gets ignored. All fonts are loaded with display set to "block" to make Storybook load the font properly.
+- [display](https://nextjs.org/docs/pages/api-reference/components/font#display) is respected (defaulting to `swap`); `optional` is loaded as `block` so fonts render reliably.
 
 #### Mocking fonts during testing
 
@@ -574,15 +574,14 @@ The Storybook 10 builder-based docgen is still available, but it is deprecated. 
 2. Set the package you want to use in [`typescript.reactDocgen`](../../api/main-config/main-config-typescript.mdx#reactdocgen). The default is `'react-docgen'`.
 3. Install the packages for that mode in your devDependencies:
 
-| `typescript.reactDocgen`    | Packages to install                                                              |
-| --------------------------- | -------------------------------------------------------------------------------- |
-| `'react-docgen'` (default)  | `react-docgen`                                                                   |
-| `'react-docgen-typescript'` | `@joshwooding/vite-plugin-react-docgen-typescript` and `react-docgen-typescript` |
+| `typescript.reactDocgen`    | Packages to install                                                                     |
+| --------------------------- | --------------------------------------------------------------------------------------- |
+| `'react-docgen'` (default)  | `react-docgen`                                                                          |
+| `'react-docgen-typescript'` | `@joshwooding/vite-plugin-react-docgen-typescript@^0.7.0` and `react-docgen-typescript` |
 
 When a docgen package is missing, Storybook stops and prints the install command. To run without docgen instead, set `typescript.reactDocgen: false`.
 
-{/* TEMPORARY(ts-7.1): update once Storybook supports TypeScript 7.1. */}
-Projects on TypeScript 7.0 cannot use server-side docgen yet. See [TypeScript 7](../../configure/integration/typescript.mdx#typescript-7).
+Projects on TypeScript 7.0 cannot use server-side docgen. Projects on TypeScript 7.1 or newer can. See [TypeScript 7](../../configure/integration/typescript.mdx#typescript-7).
 
 </Callout>
 

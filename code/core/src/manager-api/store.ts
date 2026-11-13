@@ -25,7 +25,7 @@ function update(storage: StoreAPI, patch: Patch) {
 }
 
 type GetState = () => State;
-type SetState = (a: any, b: any) => any;
+type SetState = (patch: Partial<State>, callback: (state: State) => void) => void;
 
 export interface Upstream {
   /**
@@ -38,6 +38,11 @@ export interface Upstream {
 }
 
 type Patch = Partial<State>;
+
+interface PendingPatch {
+  patch: Patch;
+  committed: boolean;
+}
 
 type InputFnPatch = (s: State) => Patch;
 type InputPatch = Patch | InputFnPatch;
@@ -54,6 +59,16 @@ export interface Options {
 type CallBack = (s: State) => void;
 type CallbackOrOptions = CallBack | Options;
 
+// Run an updater once, now, against the latest state, and keep only the keys it changed. A key it
+// returns unchanged (e.g. from spreading the whole state) would otherwise pin that value while the
+// patch is pending, hiding a newer one such as a route field set by the provider.
+function resolveUpdater(updater: InputFnPatch, state: State): Patch {
+  const result = updater(state);
+  return Object.fromEntries(
+    Object.entries(result).filter(([key, value]) => value !== state[key as keyof State])
+  ) as Patch;
+}
+
 // Our store piggybacks off the internal React state of the Context Provider
 // It has been augmented to persist state to local/sessionStorage
 export default class Store {
@@ -61,6 +76,12 @@ export default class Store {
   upstreamGetState: GetState;
   upstreamSetState: SetState;
   private persistenceHandlers: Map<string, PersistenceHandler> = new Map();
+  // Patches handed to React, oldest first, from the oldest one it has not committed yet. React can
+  // commit a later patch first (e.g. a click before a channel event), so committed patches stay
+  // until every earlier one has committed: re-applying them in order then gives React's final state.
+  // `getState()` applies these on top of the committed state, so `api.*` reads see every earlier
+  // write, even while the rendered context is still a commit behind.
+  private pendingPatches: PendingPatch[] = [];
 
   constructor({ allowPersistence, setState, getState }: Upstream) {
     this.upstreamPersistence = allowPersistence ?? true;
@@ -88,8 +109,12 @@ export default class Store {
     return { ...base, ...local, ...session };
   }
 
-  getState() {
-    return this.upstreamGetState();
+  getState(): State {
+    const committed = this.upstreamGetState();
+    if (this.pendingPatches.length === 0) {
+      return committed;
+    }
+    return this.pendingPatches.reduce<State>((acc, { patch }) => ({ ...acc, ...patch }), committed);
   }
 
   async setState(inputPatch: InputPatch, options?: Options): Promise<State>;
@@ -111,25 +136,31 @@ export default class Store {
     }
     const { persistence = 'none' } = options || {};
 
-    let patch: Patch = {};
-    // What did the patch actually return
-    let delta: Patch = {};
-    if (typeof inputPatch === 'function') {
-      // Pass the same function, but set delta on the way
-      patch = (state: State) => {
-        const getDelta = inputPatch as InputFnPatch;
-        delta = getDelta(state);
-        return delta;
-      };
-    } else {
-      patch = inputPatch;
-      delta = patch;
+    const delta: Patch =
+      typeof inputPatch === 'function' ? resolveUpdater(inputPatch, this.getState()) : inputPatch;
+    // Nothing to commit or persist: every React setState re-renders the provider, and persisting
+    // rewrites the whole stored state.
+    if (Object.keys(delta).length === 0) {
+      const state = this.getState();
+      callback?.(state);
+      return state;
     }
+    const pending: PendingPatch = { patch: delta, committed: false };
+    this.pendingPatches.push(pending);
 
     const newState: State = await new Promise((resolve) => {
-      this.upstreamSetState(patch, () => {
-        resolve(this.getState());
-      });
+      try {
+        this.upstreamSetState(delta, () => {
+          pending.committed = true;
+          while (this.pendingPatches[0]?.committed) {
+            this.pendingPatches.shift();
+          }
+          resolve(this.getState());
+        });
+      } catch (error) {
+        this.pendingPatches.splice(this.pendingPatches.indexOf(pending), 1);
+        throw error;
+      }
     });
 
     if (persistence !== 'none' && this.upstreamPersistence) {

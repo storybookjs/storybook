@@ -20,7 +20,6 @@
     "**/__testfixtures__",
     "**/__mockdata__",
     "**/__corpus__/inputs",
-    "renderers/svelte/src/svelte-csf/__tests__/__compiled__",
     "core/assets",
     "core/report",
     "lib/cli-storybook/test/default/cli.test.cjs",
@@ -98,6 +97,12 @@
       "files": ["**/*.ts", "**/*.tsx"],
       "rules": {
         "local-rules/no-untracked-service-state-key-check": "error"
+      }
+    },
+    {
+      "files": ["renderers/react/src/componentManifest/**", "lib/angular-cm/src/**"],
+      "rules": {
+        "local-rules/docgen-node-fields-through-contract": "error"
       }
     },
     {
@@ -210,6 +215,7 @@
         "storybook/no-redundant-story-name": "warn",
         "storybook/no-renderer-packages": "error",
         "storybook/prefer-pascal-case": "warn",
+        "storybook/static-csf-properties": "error",
         "storybook/story-exports": "error",
         "storybook/use-storybook-expect": "error",
         "storybook/use-storybook-testing-library": "error"
@@ -219,6 +225,12 @@
       "files": ["**/renderers/**/*.stories.*", "**/core/template/**/*.stories.*"],
       "rules": {
         "storybook/no-renderer-packages": "off"
+      }
+    },
+    {
+      "files": ["renderers/*/src/__test__/**/*.stories.*"],
+      "rules": {
+        "storybook/default-exports": "off"
       }
     },
     {

@@ -1,0 +1,64 @@
+{
+  "argTypes": {
+    "onCreateAccount": {
+      "description": "",
+      "name": "onCreateAccount",
+      "table": {
+        "type": {
+          "summary": "() => void"
+        }
+      },
+      "type": {
+        "name": "function",
+        "required": false,
+        "value": "() => void"
+      }
+    },
+    "onLogin": {
+      "description": "",
+      "name": "onLogin",
+      "table": {
+        "type": {
+          "summary": "() => void"
+        }
+      },
+      "type": {
+        "name": "function",
+        "required": false,
+        "value": "() => void"
+      }
+    },
+    "onLogout": {
+      "description": "",
+      "name": "onLogout",
+      "table": {
+        "type": {
+          "summary": "() => void"
+        }
+      },
+      "type": {
+        "name": "function",
+        "required": false,
+        "value": "() => void"
+      }
+    },
+    "user": {
+      "description": "",
+      "name": "user",
+      "table": {
+        "type": {
+          "summary": "User"
+        }
+      },
+      "type": {
+        "name": "other",
+        "required": false,
+        "value": "User"
+      }
+    }
+  },
+  "id": "example-header",
+  "jsDocTags": {},
+  "name": "Header",
+  "path": "./src/stories/Header.stories.ts"
+}

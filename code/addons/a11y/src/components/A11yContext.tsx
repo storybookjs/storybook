@@ -27,7 +27,6 @@ import {
 import {
   experimental_getStatusStore,
   experimental_useStatusStore,
-  useAddonState,
   useChannel,
   useGlobals,
   useParameter,
@@ -46,6 +45,7 @@ import {
   STATUS_TYPE_ID_COMPONENT_TEST,
 } from '../constants.ts';
 import type { A11yParameters } from '../params.ts';
+import { useA11yState } from '../store.ts';
 import type { A11yReport, EnhancedResult, EnhancedResults, Status } from '../types.ts';
 import { RuleType } from '../types.ts';
 import type { TestDiscrepancy } from './TestDiscrepancyMessage.tsx';
@@ -56,6 +56,9 @@ const unhighlightedSelectors = ['html', 'body', 'main'];
 
 const SELECTED_HIGHLIGHT_ID = `${ADDON_ID}/selected`;
 const OTHERS_HIGHLIGHT_ID = `${ADDON_ID}/others`;
+
+// One object, so that a story without a11y parameters keeps the same `parameters` identity.
+const NO_PARAMETERS: A11yParameters = {};
 
 export interface A11yContextStore {
   parameters: A11yParameters;
@@ -109,7 +112,7 @@ export const A11yContext = createContext<A11yContextStore>({
 });
 
 export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
-  const parameters = useParameter<A11yParameters>('a11y', {});
+  const parameters = useParameter<A11yParameters>('a11y', NO_PARAMETERS);
 
   const [globals] = useGlobals() ?? [];
   const api = useStorybookApi();
@@ -126,20 +129,7 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
     return value;
   }, [api]);
 
-  const [state, setState] = useAddonState<{
-    ui: { highlighted: boolean; tab: RuleType };
-    results: EnhancedResults | undefined;
-    error: unknown;
-    status: Status;
-  }>(ADDON_ID, {
-    ui: {
-      highlighted: false,
-      tab: RuleType.VIOLATION,
-    },
-    results: undefined,
-    error: undefined,
-    status: getInitialStatus(manual),
-  });
+  const [state, setState] = useA11yState();
 
   const { ui, results, error, status } = state;
 
@@ -490,38 +480,62 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
     return null;
   }, [results?.violations.length, status, currentStoryA11yStatusValue]);
 
-  return (
-    <A11yContext.Provider
-      value={{
-        parameters,
-        results,
-        highlighted: ui.highlighted,
-        toggleHighlight: handleToggleHighlight,
-        tab: ui.tab,
-        setTab: useCallback(
-          (type: RuleType) => setState((prev) => ({ ...prev, ui: { ...prev.ui, tab: type } })),
-          [setState]
-        ),
-        handleCopyLink,
-        status: status,
-        setStatus: useCallback(
-          (status: Status) => setState((prev) => ({ ...prev, status })),
-          [setState]
-        ),
-        error: error,
-        handleManual,
-        discrepancy,
-        selectedItems,
-        toggleOpen,
-        allExpanded,
-        handleCollapseAll,
-        handleExpandAll,
-        handleJumpToElement,
-        handleSelectionChange,
-      }}
-      {...props}
-    />
+  const setTab = useCallback(
+    (type: RuleType) => setState((prev) => ({ ...prev, ui: { ...prev.ui, tab: type } })),
+    [setState]
   );
+  const setStatus = useCallback(
+    (next: Status) => setState((prev) => ({ ...prev, status: next })),
+    [setState]
+  );
+
+  // The provider re-renders on every manager commit; a memoized value lets its consumers bail out.
+  const value = useMemo<A11yContextStore>(
+    () => ({
+      parameters,
+      results,
+      highlighted: ui.highlighted,
+      toggleHighlight: handleToggleHighlight,
+      tab: ui.tab,
+      setTab,
+      handleCopyLink,
+      status,
+      setStatus,
+      error,
+      handleManual,
+      discrepancy,
+      selectedItems,
+      toggleOpen,
+      allExpanded,
+      handleCollapseAll,
+      handleExpandAll,
+      handleJumpToElement,
+      handleSelectionChange,
+    }),
+    [
+      parameters,
+      results,
+      ui.highlighted,
+      handleToggleHighlight,
+      ui.tab,
+      setTab,
+      handleCopyLink,
+      status,
+      setStatus,
+      error,
+      handleManual,
+      discrepancy,
+      selectedItems,
+      toggleOpen,
+      allExpanded,
+      handleCollapseAll,
+      handleExpandAll,
+      handleJumpToElement,
+      handleSelectionChange,
+    ]
+  );
+
+  return <A11yContext.Provider value={value} {...props} />;
 };
 
 export const useA11yContext = () => useContext(A11yContext);

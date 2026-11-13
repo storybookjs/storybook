@@ -237,7 +237,7 @@ export const git = {
           '  echo "Uncommitted changes detected in the working tree. If the build generated files, run \`yarn task --task compile\` locally and commit them."',
           '  echo ""',
           '  git status --porcelain',
-          '  git diff',
+          '  git --no-pager diff',
           '  exit 1',
           'fi',
         ].join('\n'),
@@ -269,8 +269,10 @@ export const npm = {
     return {
       run: {
         name: `Install npm ${BEFORE_SANDBOX_NPM_MIN_VERSION}`,
+        // `sudo` resets PATH, so after a `node/install` step it would upgrade the system npm instead
+        // of the one on PATH.
         command: [
-          `sudo npm install -g npm@${BEFORE_SANDBOX_NPM_MIN_VERSION}`,
+          `if [ -w "$(npm root -g)" ]; then npm install -g npm@${BEFORE_SANDBOX_NPM_MIN_VERSION}; else sudo npm install -g npm@${BEFORE_SANDBOX_NPM_MIN_VERSION}; fi`,
           'npm --version',
         ].join('\n'),
       },

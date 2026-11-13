@@ -40,7 +40,7 @@ describe('the run-complete hook', () => {
 });
 
 describe('an experiment outside the default set', () => {
-  const experimentUrl = 'file:///repo/agent-eval/experiments/codex-plugin-gpt-6-luna-low.ts';
+  const experimentUrl = 'file:///repo/agent-eval/experiments/codex-plugin-gpt-6.1-sol-low.ts';
   const evals = ['801-create-accessible-component' as const];
 
   it('runs no evals when the command line does not name it', () => {
@@ -49,13 +49,13 @@ describe('an experiment outside the default set', () => {
 
   it('runs its evals when the command line names it', () => {
     expect(
-      onlyWhenNamed(experimentUrl, evals, ['node', 'agent-eval', 'codex-plugin-gpt-6-luna-low'])
+      onlyWhenNamed(experimentUrl, evals, ['node', 'agent-eval', 'codex-plugin-gpt-6.1-sol-low'])
     ).toEqual(evals);
   });
 
   it('does not run for another experiment whose name starts the same', () => {
     expect(
-      onlyWhenNamed(experimentUrl, evals, ['node', 'agent-eval', 'codex-plugin-gpt-6-luna-low-x3'])
+      onlyWhenNamed(experimentUrl, evals, ['node', 'agent-eval', 'codex-plugin-gpt-6.1-sol-low-x3'])
     ).toEqual([]);
   });
 });

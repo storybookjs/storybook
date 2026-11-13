@@ -1,7 +1,1 @@
-<lit-template-shapes></lit-template-shapes>
-<script>
-  {
-    const host = document.currentScript.previousElementSibling;
-    host.addEventListener('shape-change', () => {});
-  }
-</script>
+html`<lit-template-shapes @shape-change=${() => {}}></lit-template-shapes>`

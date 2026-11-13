@@ -1,6 +1,6 @@
 {
   "name": "@storybook/tanstack-react",
-  "version": "11.0.0-beta.0",
+  "version": "11.0.0-beta.3",
   "description": "Storybook for TanStack (React, Vite): Router and Start ready Storybook framework",
   "keywords": [
     "storybook",
@@ -89,7 +89,7 @@
     "vite": "^7.0.4"
   },
   "peerDependencies": {
-    "@joshwooding/vite-plugin-react-docgen-typescript": "^0.7.0 || ^0.8.0 || ^0.9.0",
+    "@joshwooding/vite-plugin-react-docgen-typescript": "^0.7.0",
     "@tanstack/react-router": "^1.168.10",
     "@tanstack/react-start": "^1.167.16",
     "@tanstack/router-core": "^1.168.9",

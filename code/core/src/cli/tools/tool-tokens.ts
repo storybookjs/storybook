@@ -102,6 +102,15 @@ export function parseToolsTokens(
       continue;
     }
 
+    // `-c`, `-p` and other short options belong before the toolset name; here they would read as
+    // file names. A file that starts with `-` goes after `--`.
+    if (token.startsWith('-') && !token.startsWith('--')) {
+      return {
+        ok: false,
+        error: `Unexpected option \`${token}\`. Options such as \`-c\` and \`-p\` go before the toolset name; tool arguments are \`--key value\` flags.`,
+      };
+    }
+
     if (!token.startsWith('--')) {
       positionals.push(token);
       continue;

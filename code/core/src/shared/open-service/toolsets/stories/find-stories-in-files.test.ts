@@ -1,4 +1,4 @@
-import { existsSync, realpathSync } from 'node:fs';
+import { existsSync, realpathSync, statSync } from 'node:fs';
 import path from 'node:path';
 
 import type { StoryIndex } from 'storybook/internal/types';
@@ -68,6 +68,7 @@ beforeEach(() => {
   vol.reset();
   vol.fromNestedJSON({ [BUTTON]: '', [BUTTON_STORIES]: '', [UNUSED]: '' });
   vi.mocked(existsSync).mockImplementation((filePath) => vol.existsSync(filePath));
+  vi.mocked(statSync).mockImplementation(((filePath: string) => vol.statSync(filePath)) as never);
   vi.mocked(realpathSync.native).mockImplementation((filePath) =>
     String(vol.realpathSync(filePath))
   );
@@ -78,7 +79,7 @@ describe('findStoriesInFiles', () => {
     const getModuleGraph = vi.fn();
 
     const results = await findStoriesInFiles({
-      files: ['src/Button.stories.tsx', BUTTON_STORIES],
+      files: ['src/Button.stories.tsx'],
       index,
       getModuleGraph,
       workingDir: WORKING_DIR,
@@ -89,10 +90,7 @@ describe('findStoriesInFiles', () => {
       storyIds: ['button--primary', 'button--primary:renders'],
       storyFiles: ['./src/Button.stories.tsx'],
     };
-    expect(results).toEqual([
-      { file: 'src/Button.stories.tsx', ...selected },
-      { file: BUTTON_STORIES, ...selected },
-    ]);
+    expect(results).toEqual([{ file: 'src/Button.stories.tsx', ...selected }]);
     expect(getModuleGraph).not.toHaveBeenCalled();
   });
 
@@ -127,8 +125,85 @@ describe('findStoriesInFiles', () => {
     });
 
     expect(results).toEqual([
-      { file: 'src/Nope.stories.tsx', errorMessage: 'No file found at src/Nope.stories.tsx.' },
+      {
+        file: 'src/Nope.stories.tsx',
+        errorMessage: `No file found at src/Nope.stories.tsx (relative paths resolve against ${WORKING_DIR}).`,
+      },
     ]);
+  });
+
+  it('gives a file passed twice, in any spelling, one result', async () => {
+    const results = await findStoriesInFiles({
+      files: [BUTTON, './src/Button.tsx', 'src/Button.stories.tsx', BUTTON_STORIES],
+      index,
+      getModuleGraph: () => readyGraph([{ storyFile: './src/Header.stories.tsx', depth: 2 }]),
+      workingDir: WORKING_DIR,
+    });
+
+    expect(results).toEqual([
+      expect.objectContaining({ file: BUTTON, kind: 'component', storyIds: ['header--default'] }),
+      expect.objectContaining({ file: 'src/Button.stories.tsx', kind: 'story-file' }),
+    ]);
+  });
+
+  it('keeps component results with their own file after a repeated one', async () => {
+    const HEADER = path.join(WORKING_DIR, 'src/Header.tsx');
+    vol.fromNestedJSON({ [HEADER]: '' });
+    storiesForFiles.mockImplementation(async ({ files }: { files: string[] }) =>
+      files.map((file) =>
+        file === asGraphPath(BUTTON)
+          ? [{ storyFile: './src/Button.stories.tsx', depth: 1 }]
+          : file === asGraphPath(HEADER)
+            ? [{ storyFile: './src/Header.stories.tsx', depth: 1 }]
+            : []
+      )
+    );
+    const graph: ModuleGraphAccess = {
+      queries: {
+        status: { loaded: async () => ({ value: 'ready' }) },
+        storiesForFiles: { loaded: storiesForFiles },
+      },
+    };
+
+    const results = await findStoriesInFiles({
+      files: [BUTTON, BUTTON, HEADER],
+      index,
+      getModuleGraph: () => graph,
+      workingDir: WORKING_DIR,
+    });
+
+    expect(results).toEqual([
+      expect.objectContaining({ file: BUTTON, storyFiles: ['./src/Button.stories.tsx'] }),
+      expect.objectContaining({ file: HEADER, storyIds: ['header--default'] }),
+    ]);
+  });
+
+  it('asks for files instead of a directory', async () => {
+    const [result] = await findStoriesInFiles({
+      files: ['src'],
+      index,
+      getModuleGraph: () => readyGraph([]),
+      workingDir: WORKING_DIR,
+    });
+
+    expect(result).toEqual({
+      file: 'src',
+      errorMessage: 'src is a directory: pass the story files or component files in it.',
+    });
+  });
+
+  it('finds a story file through a symlinked path', async () => {
+    const LINK = path.join(WORKING_DIR, 'link.stories.tsx');
+    vol.symlinkSync(BUTTON_STORIES, LINK);
+
+    const [result] = await findStoriesInFiles({
+      files: [LINK],
+      index,
+      getModuleGraph: () => undefined,
+      workingDir: WORKING_DIR,
+    });
+
+    expect(result).toEqual(expect.objectContaining({ kind: 'story-file' }));
   });
 
   it('says a file that no story imports has no stories', async () => {

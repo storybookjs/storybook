@@ -338,8 +338,8 @@ Before you finish, run every story once: test-run without \`files\` or \`stories
 
       expect((await runForMcp()).markdown).toContain(`## Result
 
-\`src/Button.stories.tsx\` is a story file: ran its 2 stories.
-\`src/Button.tsx\` is not a story file: ran the 3 stories that depend on it, in 2 story files.
+\`src/Button.stories.tsx\` is a story file: selected its 2 stories.
+\`src/Button.tsx\` is not a story file: selected the 3 stories that depend on it, in 2 story files.
 Passed: 3 component tests passed.`);
     });
 

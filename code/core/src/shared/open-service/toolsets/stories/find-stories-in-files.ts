@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { existsSync, realpathSync, statSync } from 'node:fs';
 
 import type { StoryIndex, StoryIndexEntry } from 'storybook/internal/types';
 
@@ -51,6 +51,10 @@ function toImportPathKey(importPath: string): string {
     : `./${normalized}`;
 }
 
+function canonical(absolute: string): string {
+  return normalize(realpathSync.native(absolute));
+}
+
 function storyEntriesByFile(index: StoryIndex): Map<string, StoryIndexEntry[]> {
   const byFile = new Map<string, StoryIndexEntry[]>();
   for (const entry of Object.values(index.entries)) {
@@ -68,7 +72,8 @@ function storyEntriesByFile(index: StoryIndex): Map<string, StoryIndexEntry[]> {
  * story file selects its own stories, and any other file selects the stories that depend on it.
  *
  * Relative paths resolve against `workingDir`. Story files need only the story index; the module
- * graph is consulted only for the other files.
+ * graph is consulted only for the other files. A file passed twice, in any spelling, gets one
+ * result.
  */
 export async function findStoriesInFiles({
   files,
@@ -79,30 +84,48 @@ export async function findStoriesInFiles({
   const byFile = storyEntriesByFile(index);
   const results: FindStoriesInFilesResult[] = [];
   const componentFiles: { position: number; file: string; absolute: string; shown: string }[] = [];
+  const seen = new Set<string>();
 
   // Messages name the file relative to the project, as agents pass it; the CLI sends absolute paths.
   const display = (absolute: string) => {
     const fromRoot = relative(workingDir, absolute);
     return fromRoot.startsWith('..') ? absolute : fromRoot;
   };
+  const storyEntriesAt = (absolute: string) =>
+    byFile.get(toImportPathKey(relative(workingDir, absolute)));
 
-  files.forEach((file, position) => {
+  for (const file of files) {
     const absolute = isAbsolute(file) ? normalize(file) : resolve(workingDir, file);
-    const entries = byFile.get(toImportPathKey(relative(workingDir, absolute)));
+    // `src/A.tsx` and `./src/A.tsx` are one file, and select its stories once.
+    if (seen.has(absolute)) {
+      continue;
+    }
+    seen.add(absolute);
+    const position = results.length;
+    const exists = existsSync(absolute);
+    // A wrong-case or symlinked path still names the indexed story file.
+    const entries =
+      storyEntriesAt(absolute) ?? (exists ? storyEntriesAt(canonical(absolute)) : undefined);
     if (entries) {
-      const storyFile = entries[0].importPath;
-      results[position] = {
+      results.push({
         file,
         kind: 'story-file',
         storyIds: entries.map((entry) => entry.id),
-        storyFiles: [storyFile],
-      };
-    } else if (!existsSync(absolute)) {
-      results[position] = { file, errorMessage: `No file found at ${display(absolute)}.` };
+        storyFiles: [entries[0].importPath],
+      });
+    } else if (!exists) {
+      const base = isAbsolute(file) ? '' : ` (relative paths resolve against ${workingDir})`;
+      results.push({ file, errorMessage: `No file found at ${display(absolute)}${base}.` });
+    } else if (statSync(absolute).isDirectory()) {
+      results.push({
+        file,
+        errorMessage: `${display(absolute)} is a directory: pass the story files or component files in it.`,
+      });
     } else {
+      results.push({ file, errorMessage: '' });
       componentFiles.push({ position, file, absolute, shown: display(absolute) });
     }
-  });
+  }
 
   if (componentFiles.length === 0) {
     return results;
@@ -117,6 +140,7 @@ export async function findStoriesInFiles({
     moduleGraph: getModuleGraph(),
   });
 
+  // The paths are distinct, so the lookup answers them one to one and in order.
   componentFiles.forEach(({ position, file, shown }, componentIndex) => {
     if (!lookup.available) {
       results[position] = {
@@ -129,7 +153,7 @@ export async function findStoriesInFiles({
     if (matches.length === 0) {
       results[position] = {
         file,
-        errorMessage: `No stories found for ${shown}: it is not a story file in the Storybook index, and no story imports it. Check the path, and that story files match the \`stories\` globs in the Storybook config.`,
+        errorMessage: `No stories found for ${shown}: it is not a story file in the Storybook index, and no story imports it. Check the path and the \`stories\` globs in the Storybook config. If the Storybook preview loads it (global styles, theme, decorators), run every story instead.`,
       };
       return;
     }

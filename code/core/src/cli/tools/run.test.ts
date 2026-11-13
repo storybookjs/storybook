@@ -917,6 +917,14 @@ describe('outcome mapping', () => {
       expect(JSON.parse(result.output)).toEqual({ files: ['/abs/A.tsx', resolve('B.tsx')] });
     });
 
+    it('resolves a single --files path the way it resolves bare arguments', async () => {
+      const { deps } = makeDeps();
+
+      const result = await run(['echo', 'files', '--files', 'src/A.tsx', '--json'], deps);
+
+      expect(JSON.parse(result.output)).toEqual({ files: [resolve('src/A.tsx')] });
+    });
+
     it('rejects bare arguments for a tool that takes no files, without calling it', async () => {
       const { deps } = makeDeps();
 

@@ -292,8 +292,8 @@ function formatSelection({ file, kind, storyIds, storyFiles }: FileSelection): s
   const path = `\`${displayPath(file)}\``;
   const stories = pluralize(storyIds.length, 'story', 'stories');
   return kind === 'story-file'
-    ? `${path} is a story file: ran its ${stories}.`
-    : `${path} is not a story file: ran the ${stories} that depend on it, in ${pluralize(storyFiles.length, 'story file')}.`;
+    ? `${path} is a story file: selected its ${stories}.`
+    : `${path} is not a story file: selected the ${stories} that depend on it, in ${pluralize(storyFiles.length, 'story file')}.`;
 }
 
 const A11Y_GUIDANCE =

@@ -74,6 +74,13 @@ describe('parseToolsTokens', () => {
     });
   });
 
+  it('rejects short options after the tool name instead of taking them as files', () => {
+    const result = parseToolsTokens(['-c', '.storybook', 'a.stories.tsx']);
+
+    expect(result).toMatchObject({ ok: false });
+    expect(result.ok === false && result.error).toContain('Unexpected option `-c`');
+  });
+
   it('takes every token after `--` as a positional, flag-like ones too', () => {
     expect(parseToolsTokens(['--json', '--', '--weird.tsx', 'b.tsx'])).toMatchObject({
       ok: true,

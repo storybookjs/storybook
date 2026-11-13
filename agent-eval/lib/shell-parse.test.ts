@@ -15,7 +15,9 @@ const toolTokensUrl = new URL('../../code/core/src/cli/tools/tool-tokens.ts', im
 const { parseToolsTokens } = (await import(toolTokensUrl.href)) as {
   parseToolsTokens: (
     tokens: string[]
-  ) => { ok: true; help: boolean; args: Record<string, unknown> } | { ok: false };
+  ) =>
+    | { ok: true; help: boolean; args: Record<string, unknown>; positionals: string[] }
+    | { ok: false };
 };
 
 function shellQuote(token: string): string {
@@ -74,9 +76,17 @@ describe('storybook tools arguments after the tool name', () => {
     { tokens: ['--a11y', 'false', '--help'], input: undefined },
     { tokens: ['-a11y', 'false'], input: undefined },
     { tokens: ['-p', '6006'], input: undefined },
-    { tokens: ['stories.json'], input: undefined },
-    { tokens: ['--componentPaths', 'src/A.tsx', 'src/B.tsx'], input: undefined },
-    { tokens: ['--'], input: undefined },
+    { tokens: ['src/A.stories.tsx'], input: { files: ['src/A.stories.tsx'] } },
+    {
+      tokens: ['src/A.stories.tsx', '--a11y', 'false', 'src/B.tsx'],
+      input: { a11y: false, files: ['src/A.stories.tsx', 'src/B.tsx'] },
+    },
+    {
+      tokens: ['--componentPaths', 'src/A.tsx', 'src/B.tsx'],
+      input: { componentPaths: 'src/A.tsx', files: ['src/B.tsx'] },
+    },
+    { tokens: ['--', '-weird.tsx'], input: { files: ['-weird.tsx'] } },
+    { tokens: ['--'], input: {} },
     { tokens: ['--=x'], input: undefined },
     { tokens: ['--json=true'], input: undefined },
     { tokens: ['--attach', '--no-attach'], input: undefined },
@@ -95,9 +105,16 @@ describe('storybook tools arguments after the tool name', () => {
         ['npx storybook tools test run', ...tokens.map(shellQuote)].join(' '),
       ]);
       const parsed = parseToolsTokens(tokens);
+      // The dispatcher appends bare arguments to `files`, the `fileArguments` key of `test run`.
+      const args =
+        parsed.ok && parsed.positionals.length > 0
+          ? { ...parsed.args, files: [...parsed.positionals] }
+          : parsed.ok
+            ? parsed.args
+            : undefined;
 
       expect(calls.map((call) => call.input)).toEqual(input === undefined ? [] : [input]);
-      expect(parsed.ok && !parsed.help ? parsed.args : undefined).toEqual(input);
+      expect(parsed.ok && !parsed.help ? args : undefined).toEqual(input);
     });
   }
 });
@@ -136,6 +153,21 @@ describe('parseStorybookWorkflowShellCommands', () => {
       {},
       { a11y: false, stories: [] },
       { stories: [] },
+    ]);
+  });
+
+  test('records file arguments only for a tool that takes them', () => {
+    const calls = parseStorybookWorkflowShellCommands([
+      'npx storybook tools test run src/Button.stories.tsx src/Card.tsx',
+      'npx storybook tools stories preview src/Button.stories.tsx',
+    ]);
+
+    expect(calls).toEqual([
+      {
+        name: 'test-run',
+        input: { files: ['src/Button.stories.tsx', 'src/Card.tsx'] },
+        source: 'cli',
+      },
     ]);
   });
 

@@ -189,8 +189,8 @@ function describeRun(a11yEnabled: boolean, ctx: ToolsetCtx): string {
   return (
     `Run story tests.${skill ? `\nFirst run ${skill} once and follow it: it has the rules for running the tests and fixing what fails.` : ''}
 Run them after editing anything that changes how the UI looks — components, stories, styles, CSS, themes, colors, or design tokens — shell-level substitutes like typecheck, lint, or package.json test scripts do not replace this.
-Pass the story files or component files you changed in files for focused runs (faster while iterating),
-or omit files and stories to run all tests for full-project verification.
+Pass the story files or component files you changed as the files argument for focused runs (faster while iterating),
+or leave out files and stories to run all tests for full-project verification.
 Use this continuously to monitor test results as you work on your UI components and stories.
 Results will include passing/failing status` +
     (a11yEnabled

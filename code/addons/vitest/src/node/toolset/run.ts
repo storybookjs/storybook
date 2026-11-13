@@ -249,12 +249,7 @@ export async function runStoryTests({
         result: response.result,
         ...(selection.length > 0
           ? {
-              files: selection.map(({ file, kind, storyIds: ids, storyFiles }) => ({
-                file,
-                kind,
-                storyIds: ids,
-                storyFiles,
-              })),
+              files: selection,
             }
           : {}),
       };

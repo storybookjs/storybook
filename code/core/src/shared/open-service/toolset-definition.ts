@@ -127,7 +127,7 @@ export type ToolsetMethod<
    * The CLI resolves each one against the directory the command runs in before the call, so the
    * handler receives absolute paths. Other transports ignore the trait and pass the key as is.
    */
-  fileArguments?: string;
+  fileArguments?: Extract<keyof StandardSchemaV1.InferInput<TSchema>, string>;
   handler: (
     input: StandardSchemaV1.InferOutput<TSchema>,
     context: ToolsetCtx

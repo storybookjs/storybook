@@ -391,29 +391,30 @@ async function dispatchTools(
 }
 
 /**
- * Bare arguments fill the tool's `fileArguments` key, after any `--key` value for it, each resolved
- * against the directory the command runs in: the handler may run in another process, with another
- * working directory.
+ * Bare arguments fill the tool's `fileArguments` key, after any `--key` value for it. Every path is
+ * resolved against the directory the command runs in: the handler may run in another process, with
+ * another working directory.
  */
 function withFileArguments(
   parsed: Extract<ParsedToolsTokens, { ok: true }>,
   key: string | undefined
 ): { ok: true; args: Record<string, unknown> } | { ok: false; unexpected: string } {
-  if (parsed.positionals.length === 0) {
+  if (!key) {
+    return parsed.positionals.length === 0
+      ? { ok: true, args: parsed.args }
+      : { ok: false, unexpected: parsed.positionals[0] };
+  }
+  if (parsed.positionals.length === 0 && parsed.args[key] === undefined) {
     return { ok: true, args: parsed.args };
   }
-  if (!key) {
-    return { ok: false, unexpected: parsed.positionals[0] };
-  }
   const given = parsed.args[key];
-  const files = parsed.positionals.map((file) => resolve(file));
-  return {
-    ok: true,
-    args: {
-      ...parsed.args,
-      [key]: given === undefined ? files : [...(Array.isArray(given) ? given : [given]), ...files],
-    },
-  };
+  // Flag values get the same treatment as bare arguments, so `--files a.tsx b.tsx` and
+  // `a.tsx b.tsx` select the same files. Anything that is not a path is left for validation.
+  const files = [
+    ...(given === undefined ? [] : Array.isArray(given) ? given : [given]),
+    ...parsed.positionals,
+  ].map((file) => (typeof file === 'string' ? resolve(file) : file));
+  return { ok: true, args: { ...parsed.args, [key]: files } };
 }
 
 function formatUnknownToolsetFromCatalog(

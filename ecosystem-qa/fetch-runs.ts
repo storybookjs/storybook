@@ -58,7 +58,14 @@ const problems = runIds.flatMap((id) => {
   return problem ? [`run ${id} ${problem}`] : [];
 });
 if (problems.length > 0) {
-  console.error(`Nothing was downloaded:\n${problems.map((problem) => `- ${problem}`).join('\n')}`);
+  console.error(
+    [
+      'Nothing was downloaded:',
+      ...problems.map((problem) => `- ${problem}`),
+      `Only a run of this workflow that was started by hand on ${branches.split(',').join(' or ')} is collected.`,
+      'A sweep that ran on another branch has to be collected from that branch, so file it before the branch is merged.',
+    ].join('\n')
+  );
   process.exit(1);
 }
 

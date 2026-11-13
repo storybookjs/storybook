@@ -33,6 +33,29 @@ export interface WebRenderer extends Renderer {
 export type ModuleExport = any;
 export type ModuleExports = Record<string, ModuleExport>;
 export type ModuleImportFn = (path: Path) => Promise<ModuleExports>;
+/**
+ * The export of a module importer, such as an entry of builder-vite's
+ * `experimental_moduleImporters`. It returns the module the preview uses for `importPath`, the path
+ * as in the story index (for the preview file the same form, e.g. `./.storybook/preview.ts`).
+ *
+ * - `importFn` imports the file through the importers before this one, and then from the build. An
+ *   importer need not call it: a Storybook built once can render story files that exist only at
+ *   runtime, which the importer fetches itself. For a path the build doesn't have, `importFn`
+ *   rejects; for the preview file it only imports the preview file.
+ * - Return the same object for the same module. The store caches by it, so a new object on every
+ *   call processes the file again and remounts its story. Cache a module you fetch by its path,
+ *   and a module you derive from what `importFn` returns in a `WeakMap` keyed by that module: after
+ *   an HMR update `importFn` returns a new module, which a cache by path would miss. A docs file
+ *   (MDX) refers to a story file with the module it imports itself, so for a story file that MDX
+ *   refers to, return what `importFn` returns.
+ * - With CSF Next, a story file imports the preview itself and its stories use that preview. An
+ *   importer that replaces the preview file also returns story files whose meta uses it.
+ * - It is asked again after an HMR update.
+ */
+export type ImportModule = (
+  importPath: Path,
+  importFn: ModuleImportFn
+) => ModuleExports | Promise<ModuleExports>;
 
 type MaybePromise<T> = Promise<T> | T;
 export type TeardownRenderToCanvas = () => MaybePromise<void>;

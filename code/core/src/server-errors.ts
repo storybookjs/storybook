@@ -1305,6 +1305,34 @@ export class ViteModuleGraphSubscriptionError extends StorybookError {
   }
 }
 
+export class ViteModuleImporterPathError extends StorybookError {
+  constructor(public data: { moduleImporter: string }) {
+    super({
+      name: 'ViteModuleImporterPathError',
+      category: Category.BUILDER_VITE,
+      code: 3,
+      message: dedent`
+        Each entry of \`experimental_moduleImporters\` must be an absolute path, a \`file:\` URL or a package specifier, received: ${data.moduleImporter}
+
+        The generated preview modules import it, so a relative path would not resolve against your config. Use, for example, \`fileURLToPath(import.meta.resolve('./importer.ts'))\`.`,
+    });
+  }
+}
+
+export class ViteModuleImportersNotArrayError extends StorybookError {
+  constructor(public data: { moduleImporters: string }) {
+    super({
+      name: 'ViteModuleImportersNotArrayError',
+      category: Category.BUILDER_VITE,
+      code: 4,
+      message: dedent`
+        \`experimental_moduleImporters\` must be an array of module specifiers, received: ${data.moduleImporters}
+
+        A preset that sets it as a function must return the array, e.g. \`(entries = []) => [...entries, importer]\`.`,
+    });
+  }
+}
+
 export class FindPackageVersionsError extends StorybookError {
   constructor(
     public data: { error: Error | unknown; packageName: string; packageManager: string }

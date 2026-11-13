@@ -1,10 +1,9 @@
-import { realpathSync } from 'node:fs';
-import { relative } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { resolve } from 'node:path';
 
 import { describe, expect, it, vi } from 'vitest';
 import * as v from 'valibot';
 
+import { ChangeDetectionUnavailableError } from 'storybook/internal/core-server';
 import type { StoryIndex } from 'storybook/internal/types';
 
 import { TRIGGER_TEST_RUN_REQUEST, TRIGGER_TEST_RUN_RESPONSE } from '../../constants.ts';
@@ -95,7 +94,7 @@ describe('createAsyncQueue', () => {
   });
 });
 
-const THIS_FILE = fileURLToPath(import.meta.url);
+const BUTTON_STORIES = resolve(process.cwd(), 'src/Button.stories.tsx');
 
 /** A channel that answers every run request with `sampleResult`, recording the requested ids. */
 function respondingChannel() {
@@ -113,24 +112,6 @@ function respondingChannel() {
   return { channel, requested };
 }
 
-/** A ready module graph in which no story imports anything and the preview loads `previewFiles`. */
-function graphLoading(previewFiles: string[]) {
-  return {
-    queries: {
-      status: { loaded: async () => ({ value: 'ready' as const }) },
-      storiesForFiles: {
-        loaded: async ({ files }: { files: string[] }) => files.map(() => []),
-      },
-      loadedByPreview: {
-        loaded: async ({ files }: { files: string[] }) =>
-          files.map((file) =>
-            previewFiles.some((preview) => realpathSync.native(preview) === file)
-          ),
-      },
-    },
-  };
-}
-
 describe('runStoryTests', () => {
   it('rejects when the story index cannot be loaded', async () => {
     await expect(
@@ -144,9 +125,8 @@ describe('runStoryTests', () => {
     ).rejects.toThrow('index unavailable');
   });
 
-  it('returns no-stories with the per-selector messages when nothing matched', async () => {
-    const channel = createMockChannel();
-    const emitSpy = vi.spyOn(channel, 'emit');
+  it('returns no-stories with the per-selector messages when no story id matched', async () => {
+    const { channel, requested } = respondingChannel();
 
     const result = await runStoryTests({
       channel,
@@ -156,12 +136,13 @@ describe('runStoryTests', () => {
 
     expect(result).toEqual({
       status: 'no-stories',
-      notFoundMessages: ['No story found for story ID "missing--story"'],
+      notFoundMessages: [expect.stringContaining('No story found for story ID "missing--story"')],
+      selection: {},
     });
-    expect(emitSpy).not.toHaveBeenCalled();
+    expect(requested).toEqual([]);
   });
 
-  it('runs the selectors that resolve and reports the ones that miss', async () => {
+  it('runs the story ids that resolve and reports the ones that miss', async () => {
     const { channel, requested } = respondingChannel();
 
     const result = await runStoryTests({
@@ -171,136 +152,168 @@ describe('runStoryTests', () => {
     });
 
     expect(requested).toEqual([['button--primary']]);
-    expect(result).toEqual({
+    expect(result).toMatchObject({
       status: 'completed',
-      result: sampleResult,
       notFound: [expect.stringContaining('No story found for story ID "missing--story"')],
     });
   });
 
-  it('returns no-stories, naming each file, when no story depends on any file', async () => {
+  it('returns no-stories when the focused selector list is empty', async () => {
+    const { channel, requested } = respondingChannel();
+
+    const result = await runStoryTests({ channel, getIndex: async () => index, stories: [] });
+
+    expect(result).toEqual({ status: 'no-stories', notFoundMessages: [], selection: {} });
+    expect(requested).toEqual([]);
+  });
+
+  it('runs every story without a selection', async () => {
+    const { channel, requested } = respondingChannel();
+
+    const result = await runStoryTests({ channel, getIndex: async () => index });
+
+    expect(requested).toEqual([undefined]);
+    expect(result).toEqual({ status: 'completed', result: sampleResult });
+  });
+
+  it('runs the story files a file filter matches', async () => {
     const { channel, requested } = respondingChannel();
 
     const result = await runStoryTests({
       channel,
       getIndex: async () => index,
-      files: [THIS_FILE],
-      getModuleGraph: () => graphLoading([]),
+      files: ['button'],
+    });
+
+    expect(requested).toEqual([['button--primary']]);
+    expect(result).toMatchObject({
+      status: 'completed',
+      selection: { files: { filters: ['button'], storyFiles: 1 }, storyCount: 1 },
+    });
+  });
+
+  it('fails without running when no story file matches the filters', async () => {
+    const { channel, requested } = respondingChannel();
+
+    const result = await runStoryTests({
+      channel,
+      getIndex: async () => index,
+      files: ['src/Button.tsx'],
     });
 
     expect(result).toEqual({
       status: 'no-stories',
-      notFoundMessages: [`No story depends on ${relative(process.cwd(), THIS_FILE)}.`],
+      notFoundMessages: ['No story files found for `src/Button.tsx`.'],
+      selection: { files: { filters: ['src/Button.tsx'], storyFiles: 0 } },
     });
     expect(requested).toEqual([]);
   });
 
-  it('runs every story for a file the preview loads', async () => {
-    const { channel, requested } = respondingChannel();
+  describe('changed', () => {
+    it('runs the stories of changed story files, reading the uncommitted changes', async () => {
+      const { channel, requested } = respondingChannel();
+      const getChangedFiles = vi.fn(async () => [BUTTON_STORIES]);
 
-    const result = await runStoryTests({
-      channel,
-      getIndex: async () => index,
-      files: [THIS_FILE],
-      getModuleGraph: () => graphLoading([THIS_FILE]),
+      const result = await runStoryTests({
+        channel,
+        getIndex: async () => index,
+        changed: true,
+        getChangedFiles,
+      });
+
+      expect(getChangedFiles).toHaveBeenCalledWith({ since: undefined });
+      expect(requested).toEqual([['button--primary']]);
+      expect(result).toMatchObject({
+        status: 'completed',
+        selection: { changed: { changedFiles: 1, storyFiles: 1 }, storyCount: 1 },
+      });
     });
 
-    expect(requested).toEqual([undefined]);
-    expect(result).toMatchObject({
-      status: 'completed',
-      files: [{ file: THIS_FILE, kind: 'preview' }],
-    });
-  });
+    it('reads the changes since a ref', async () => {
+      const { channel } = respondingChannel();
+      const getChangedFiles = vi.fn(async () => [BUTTON_STORIES]);
 
-  it('returns no-stories when the focused selector list is empty', async () => {
-    const channel = createMockChannel();
-    const emitSpy = vi.spyOn(channel, 'emit');
+      await runStoryTests({
+        channel,
+        getIndex: async () => index,
+        changed: 'main',
+        getChangedFiles,
+      });
 
-    const result = await runStoryTests({
-      channel,
-      getIndex: async () => index,
-      stories: [],
+      expect(getChangedFiles).toHaveBeenCalledWith({ since: 'main' });
     });
 
-    expect(result).toEqual({ status: 'no-stories', notFoundMessages: [] });
-    expect(emitSpy).not.toHaveBeenCalled();
-  });
+    it('passes without running when the changes affect no story, as Vitest does', async () => {
+      const { channel, requested } = respondingChannel();
 
-  it('maps a completed channel response', async () => {
-    const channel = createMockChannel();
-    channel.emit = (event, payload) => {
-      if (event === TRIGGER_TEST_RUN_REQUEST) {
-        const { requestId } = payload as { requestId: string };
-        queueMicrotask(() =>
-          respond(channel, {
-            requestId,
-            status: 'completed',
-            result: sampleResult,
-          })
-        );
-      }
-    };
+      const result = await runStoryTests({
+        channel,
+        getIndex: async () => index,
+        changed: true,
+        getChangedFiles: async () => [],
+      });
 
-    const result = await runStoryTests({
-      channel,
-      getIndex: async () => index,
-      stories: [{ storyId: 'button--primary' }],
+      expect(result).toEqual({
+        status: 'no-stories',
+        notFoundMessages: [],
+        selection: { changed: { changedFiles: 0, storyFiles: 0 } },
+      });
+      expect(requested).toEqual([]);
     });
 
-    expect(result).toEqual({ status: 'completed', result: sampleResult });
-  });
+    it('runs every story when a rerun trigger changed', async () => {
+      const { channel, requested } = respondingChannel();
 
-  it('runs the stories of a story file and reports how the file selected them', async () => {
-    const channel = createMockChannel();
-    const requested: unknown[] = [];
-    channel.emit = (event, payload) => {
-      if (event === TRIGGER_TEST_RUN_REQUEST) {
-        const { requestId, storyIds } = payload as { requestId: string; storyIds: string[] };
-        requested.push(storyIds);
-        queueMicrotask(() =>
-          respond(channel, { requestId, status: 'completed', result: sampleResult })
-        );
-      }
-    };
+      const result = await runStoryTests({
+        channel,
+        getIndex: async () => index,
+        changed: true,
+        getChangedFiles: async () => [resolve(process.cwd(), 'package.json')],
+      });
 
-    const result = await runStoryTests({
-      channel,
-      getIndex: async () => index,
-      files: ['src/Button.stories.tsx'],
+      expect(requested).toEqual([undefined]);
+      expect(result).toMatchObject({
+        selection: { changed: { everyStory: 'package.json' } },
+      });
     });
 
-    expect(requested).toEqual([['button--primary']]);
-    expect(result).toEqual({
-      status: 'completed',
-      result: sampleResult,
-      files: [
-        {
-          file: 'src/Button.stories.tsx',
-          kind: 'story-file',
-          storyIds: ['button--primary'],
-          storyFiles: ['./src/Button.stories.tsx'],
+    it('runs only the stories both a file filter and the changes select', async () => {
+      const { channel, requested } = respondingChannel();
+
+      const result = await runStoryTests({
+        channel,
+        getIndex: async () => index,
+        files: ['button'],
+        changed: true,
+        getChangedFiles: async () => [resolve(process.cwd(), 'src/deleted.ts')],
+      });
+
+      // The filter matches the Button story file, but no change affects it: a deleted file selects
+      // nothing, as in Vitest.
+      expect(result).toMatchObject({ status: 'no-stories', notFoundMessages: [] });
+      expect(requested).toEqual([]);
+    });
+
+    it('says the file form still works outside a git repository', async () => {
+      const { channel } = respondingChannel();
+
+      const result = await runStoryTests({
+        channel,
+        getIndex: async () => index,
+        changed: true,
+        getChangedFiles: async () => {
+          throw new ChangeDetectionUnavailableError('not a git repository');
         },
-      ],
-    });
-  });
+      });
 
-  it('returns no-stories with the reason when a file matches nothing', async () => {
-    const channel = createMockChannel();
-    const emitSpy = vi.spyOn(channel, 'emit');
-
-    const result = await runStoryTests({
-      channel,
-      getIndex: async () => index,
-      files: ['src/DoesNotExist.stories.tsx'],
+      expect(result).toEqual({
+        status: 'error',
+        error: {
+          message:
+            '`--changed` reads the changed files from git, but this project is not in a git repository. Pass story files instead.',
+        },
+      });
     });
-
-    expect(result).toEqual({
-      status: 'no-stories',
-      notFoundMessages: [
-        `No file found at src/DoesNotExist.stories.tsx (relative paths resolve against ${process.cwd()}). If you deleted it, leave it out.`,
-      ],
-    });
-    expect(emitSpy).not.toHaveBeenCalled();
   });
 
   it('maps an error channel response', async () => {

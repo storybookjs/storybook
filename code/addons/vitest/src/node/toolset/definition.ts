@@ -76,30 +76,34 @@ const testRunResultSchema = v.object({
   ),
 });
 
-const fileSelectionSchema = v.object({
-  file: v.string(),
-  kind: v.pipe(
-    v.picklist(['story-file', 'preview', 'component', 'unrelated']),
-    v.description(
-      '`story-file`: the stories in that file. `preview`: the Storybook preview loads it, so it selected every story. `component`: the stories, in any story file, that depend on it. `unrelated`: no story depends on it, so it selected nothing.'
-    )
+/** What `files`, `changed` and `stories` selected, for the summary line. */
+const selectionSchema = v.object({
+  files: v.optional(v.object({ filters: v.array(v.string()), storyFiles: v.number() })),
+  changed: v.optional(
+    v.object({
+      since: v.optional(v.string()),
+      changedFiles: v.number(),
+      /** The changed file that affects every story, when one did. */
+      everyStory: v.optional(v.string()),
+      storyFiles: v.optional(v.number()),
+    })
   ),
-  storyIds: v.array(v.string()),
-  storyFiles: v.array(v.string()),
+  /** Stories the run was asked for; absent when the selection is every story. */
+  storyCount: v.optional(v.number()),
 });
 
 const testRunOutputSchema = v.variant('status', [
   v.object({
     status: v.literal('no-stories'),
-    /** Per-selector lookup failures. When nothing matched, they are the whole answer. */
+    /** Why the selection is empty when that is a mistake; empty when nothing was affected. */
     notFoundMessages: v.array(v.string()),
+    selection: v.optional(selectionSchema),
   }),
   v.object({
     status: v.literal('completed'),
     result: testRunResultSchema,
-    /** How each `files` entry selected its stories; absent when `files` was not given. */
-    files: v.optional(v.array(fileSelectionSchema)),
-    /** Story ids and paths that matched nothing. The rest ran, but they fail the call. */
+    selection: v.optional(selectionSchema),
+    /** Story ids that matched nothing. The rest ran, but they fail the call. */
     notFound: v.optional(v.array(v.string())),
   }),
   v.object({
@@ -116,6 +120,7 @@ const testRunOutputSchema = v.variant('status', [
 
 export type TestRunResult = v.InferOutput<typeof testRunResultSchema>;
 export type TestRunOutput = v.InferOutput<typeof testRunOutputSchema>;
+export type TestRunSelection = v.InferOutput<typeof selectionSchema>;
 
 /**
  * What `run` renders: the run result plus whether accessibility tests were part of this run, which
@@ -157,7 +162,15 @@ Use { absoluteStoryPath + exportName } only when you're currently working in a s
     v.pipe(
       v.array(v.string()),
       v.description(
-        `Files to test, absolute or relative to the Storybook project directory. A story file (\`*.stories.*\`) runs the stories in that file and nothing else. A file the Storybook preview loads (a theme, tokens, global CSS) runs every story. Any other file, such as a component, runs every story that depends on it, at any import depth; a file no story depends on is reported and skipped. Can be combined with \`stories\`; omit both to run every story.`
+        `Story files to test, as Vitest file filters: each entry selects the story files whose path, relative to the Storybook project directory, contains it (case-insensitive), or that an absolute path or directory points to. Only story files match; to test the stories that depend on a changed component, use \`changed\`.`
+      )
+    )
+  ),
+  changed: v.optional(
+    v.pipe(
+      v.union([v.boolean(), v.string(), v.pipe(v.number(), v.transform(String))]),
+      v.description(
+        `Test the stories affected by the files git reports as changed, as Vitest's --changed: true for the uncommitted changes (staged, unstaged and untracked), or a ref (a branch or commit) for the changes since it plus the uncommitted ones. A changed story file selects its stories, any other changed file the stories that depend on it, and a change to what the Storybook preview loads, a package.json or a vite or vitest config selects every story.`
       )
     )
   ),
@@ -174,13 +187,26 @@ Use { absoluteStoryPath + exportName } only when you're currently working in a s
 
 // Inferring this from the schema would make the exported toolset type unnameable in declaration
 // output, because core's valibot types live in a private declaration chunk.
-type RunInput = { stories?: StoryInput[]; files?: string[]; a11y: boolean };
+type RunInput = {
+  stories?: StoryInput[];
+  files?: string[];
+  changed?: boolean | string;
+  a11y: boolean;
+};
 
 export type TestToolset = ToolsetDefinition<
   'test',
   {
     run: ToolsetMethod<
-      v.GenericSchema<{ stories?: StoryInput[]; files?: string[]; a11y?: boolean }, RunInput>,
+      v.GenericSchema<
+        {
+          stories?: StoryInput[];
+          files?: string[];
+          changed?: boolean | string | number;
+          a11y?: boolean;
+        },
+        RunInput
+      >,
       ToolsetOutcome<TestRunSuccessData, TestRunFailureData>
     >;
   }
@@ -194,8 +220,8 @@ function describeRun(a11yEnabled: boolean): string {
   return (
     `Run story tests. It is the only way to run them: never a package.json test script or vitest directly.
 Run them after editing anything that changes how the UI looks — components, stories, styles, CSS, themes, colors, or design tokens — shell-level substitutes like typecheck, lint, or package.json test scripts do not replace this.
-Pass the story files or component files you changed as the files argument for focused runs (faster while iterating),
-or leave out files and stories to run all tests for full-project verification.
+Use changed for focused runs on what you changed (faster while iterating), or files for specific story files,
+and leave all of them out to run every story for full-project verification.
 Use this continuously to monitor test results as you work on your UI components and stories.
 Results will include passing/failing status` +
     (a11yEnabled
@@ -212,6 +238,9 @@ For visual/design accessibility violations (for example color contrast), ask the
 function runTelemetry(data: TestRunData, input: RunInput): ToolsetTelemetryReport | undefined {
   const inputStoryCount = input.stories?.length ?? 0;
   const inputFileCount = input.files?.length ?? 0;
+  const changed = !input.changed
+    ? {}
+    : { changed: input.changed === true ? 'uncommitted' : 'since-ref' };
 
   if (data.status === 'no-stories') {
     return {
@@ -219,6 +248,7 @@ function runTelemetry(data: TestRunData, input: RunInput): ToolsetTelemetryRepor
         runA11y: data.a11y,
         inputStoryCount,
         inputFileCount,
+        ...changed,
         matchedStoryCount: 0,
         passingStoryCount: 0,
         failingStoryCount: 0,
@@ -237,6 +267,7 @@ function runTelemetry(data: TestRunData, input: RunInput): ToolsetTelemetryRepor
       runA11y: data.a11y,
       inputStoryCount,
       inputFileCount,
+      ...changed,
       // The stories the run was asked for; a full run falls back to the input count.
       matchedStoryCount: data.result.storyIds?.length ?? inputStoryCount,
       ...summarizeTestRun(data.result, data.a11y),
@@ -253,10 +284,10 @@ function isFailedRun(data: TestRunData): data is TestRunFailureData {
       return (
         Object.values(countTestRunFailures(data.result, data.a11y)).some((count) => count > 0) ||
         (data.notFound?.length ?? 0) > 0 ||
-        ranNothingSelected(data.result, data.files)
+        ranNothingSelected(data.result)
       );
     case 'no-stories':
-      // A selector that matched nothing is a failed request; an empty selector list is not.
+      // A filter or id that matched nothing fails, as in Vitest; `changed` affecting nothing passes.
       return data.notFoundMessages.length > 0;
     default: {
       // Type-only: a new status must decide its own pass/fail rather than falling through.
@@ -267,7 +298,7 @@ function isFailedRun(data: TestRunData): data is TestRunFailureData {
 }
 
 // A realm without the module graph (an older core, a builder without change detection) reports
-// that as the reason a component file found no stories, not as a crash.
+// that as the reason `changed` cannot find dependent stories, not as a crash.
 function getModuleGraph(ctx: ToolsetCtx) {
   try {
     return moduleGraphAccessFromCtx(ctx);
@@ -314,6 +345,7 @@ export function createTestToolset({
               getIndex: storyIndex.getIndex,
               stories: input.stories,
               files: input.files,
+              changed: input.changed,
               getModuleGraph: () => getModuleGraph(ctx),
               a11y: input.a11y,
             });

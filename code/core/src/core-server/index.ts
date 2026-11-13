@@ -71,11 +71,12 @@ export {
   type NotFoundStory,
 } from '../shared/open-service/toolsets/stories/find-story-ids.ts';
 export {
-  findStoriesInFiles,
-  type FoundFileStories,
-  type NotFoundFileStories,
-  type FileSelectionKind,
-} from '../shared/open-service/toolsets/stories/find-stories-in-files.ts';
+  filterStoryFiles,
+  findChangedStories,
+  type ChangedStories,
+  type StorySelection,
+} from '../shared/open-service/toolsets/stories/select-stories.ts';
+export { findChangedFiles } from './change-detection/changed-files.ts';
 export {
   moduleGraphAccessFromCtx,
   type ModuleGraphAccess,

@@ -2,9 +2,7 @@ import { getToolName, type ToolsetCtx } from 'storybook/open-service';
 
 import { isAbsolute, relative } from 'pathe';
 
-import type { TestRunData, TestRunOutput, TestRunResult } from './definition.ts';
-
-type FileSelection = NonNullable<Extract<TestRunOutput, { status: 'completed' }>['files']>[number];
+import type { TestRunData, TestRunResult, TestRunSelection } from './definition.ts';
 
 type ComponentTestStatus = TestRunResult['componentTestStatuses'][number];
 
@@ -289,12 +287,21 @@ export function displayPath(file: string): string {
 
 /**
  * A focused run whose selected stories all stayed out of the run, for example excluded by tags. It
- * fails, so a run that tested nothing never reads as a pass.
+ * fails, as a Vitest file without tests does, so a run that tested nothing never reads as a pass.
  */
-export function ranNothingSelected(result: TestRunResult, files?: FileSelection[]): boolean {
-  const selected =
-    (result.storyIds?.length ?? 0) > 0 || (files ?? []).some(({ kind }) => kind === 'preview');
-  return selected && result.componentTestCount.success + result.componentTestCount.error === 0;
+export function ranNothingSelected(result: TestRunResult): boolean {
+  return (
+    (result.storyIds?.length ?? 0) > 0 &&
+    result.componentTestCount.success + result.componentTestCount.error === 0
+  );
+}
+
+function code(value: string): string {
+  return `\`${value}\``;
+}
+
+function describeChanged({ since, changedFiles }: NonNullable<TestRunSelection['changed']>) {
+  return `${pluralize(changedFiles, 'changed file')} (${since ? `since ${code(since)}, and uncommitted` : 'uncommitted'})`;
 }
 
 // The likely cause is named only when no error could explain the gap instead.
@@ -311,49 +318,37 @@ function ranNote(ran: number, selected: number, unhandledErrors: number): string
   return `; ${ran === 0 ? 'none' : `only ${ran}`} ran${cause}`;
 }
 
-// Says which form each file argument took and what of it ran, since a component file also selects
-// stories elsewhere and tags can keep selected stories out of the run.
+// One line: what each form matched, then what that selected, counted against what actually ran.
 function formatSelection(
-  { file, kind, storyIds, storyFiles }: FileSelection,
+  selection: TestRunSelection,
   ranStoryIds: Set<string>,
-  unhandledErrors: number
-): string {
-  const path = `\`${displayPath(file)}\``;
-  const stories = pluralize(storyIds.length, 'story', 'stories');
-  const ran = storyIds.filter((id) => ranStoryIds.has(id)).length;
-  switch (kind) {
-    case 'story-file':
-      return `${path} is a story file: selected its ${stories}${ranNote(ran, storyIds.length, unhandledErrors)}.`;
-    case 'component':
-      return `${path} is not a story file: selected the ${stories} that depend on it, in ${pluralize(storyFiles.length, 'story file')}${ranNote(ran, storyIds.length, unhandledErrors)}.`;
-    case 'preview':
-      return `${path} is loaded by the Storybook preview: selected every story.`;
-    case 'unrelated':
-      // Collapsed into one line by `formatSelections`.
-      return `${path}: no story depends on it.`;
-    default: {
-      const _exhaustive: never = kind;
-      return _exhaustive;
-    }
+  result: TestRunResult
+): string | undefined {
+  const parts: string[] = [];
+  if (selection.files) {
+    const { filters, storyFiles } = selection.files;
+    parts.push(
+      `${pluralize(storyFiles, 'story file')} ${storyFiles === 1 ? 'matches' : 'match'} ${filters.map((filter) => code(displayPath(filter))).join(', ')}`
+    );
   }
-}
-// One line per form, with every file no story depends on in a single line.
-function formatSelections(
-  files: FileSelection[],
-  ranStoryIds: Set<string>,
-  unhandledErrors: number
-): string[] {
-  const unrelated = files.filter(({ kind }) => kind === 'unrelated');
-  const lines = files
-    .filter(({ kind }) => kind !== 'unrelated')
-    .map((selection) => formatSelection(selection, ranStoryIds, unhandledErrors));
-  if (unrelated.length === 1) {
-    lines.push(formatSelection(unrelated[0], ranStoryIds, unhandledErrors));
-  } else if (unrelated.length > 1) {
-    const paths = unrelated.map(({ file }) => `\`${displayPath(file)}\``).join(', ');
-    lines.push(`${paths}: no story depends on them.`);
+  if (selection.changed) {
+    const { everyStory, storyFiles = 0 } = selection.changed;
+    parts.push(
+      everyStory
+        ? `${describeChanged(selection.changed)} ${selection.changed.changedFiles === 1 ? 'includes' : 'include'} ${code(everyStory)}, which affects every story`
+        : `${describeChanged(selection.changed)} ${selection.changed.changedFiles === 1 ? 'affects' : 'affect'} ${pluralize(storyFiles, 'story file')}`
+    );
   }
-  return lines;
+  const selected = selection.storyCount;
+  if (parts.length === 0) {
+    // `stories` alone: the ids say what was selected, and the verdict counts what ran.
+    return undefined;
+  }
+  if (selected === undefined) {
+    return `${parts.join('; ')}: selected every story.`;
+  }
+  const ran = (result.storyIds ?? []).filter((id) => ranStoryIds.has(id)).length;
+  return `${parts.join('; ')}: selected ${pluralize(selected, 'story', 'stories')}${ranNote(ran, selected, result.unhandledErrors.length)}.`;
 }
 
 const A11Y_GUIDANCE =
@@ -392,7 +387,7 @@ function formatNextSteps(
     const all =
       ctx.transport === 'cli'
         ? `\`${getToolName(ctx)('test.run')}\` without arguments`
-        : `${getToolName(ctx)('test.run')} without \`files\` or \`stories\``;
+        : `${getToolName(ctx)('test.run')} without \`files\`, \`changed\` or \`stories\``;
     steps.push(`Before you finish, run every story once: ${all}.`);
   }
   return steps;
@@ -403,13 +398,13 @@ function formatResultSection(
   {
     a11y,
     a11yEnabled,
-    files,
+    selection,
     notFound = [],
     ctx,
   }: {
     a11y: boolean;
     a11yEnabled: boolean;
-    files?: FileSelection[];
+    selection?: TestRunSelection;
     notFound?: string[];
     ctx: ToolsetCtx;
   }
@@ -426,7 +421,7 @@ function formatResultSection(
   const verdict =
     failureParts.length > 0
       ? `Failed: ${failureParts.join(', ')}${passed > 0 && testFailureParts.length === 0 ? `; ${pluralize(passed, 'component test')} passed` : ''}.`
-      : ranNothingSelected(result, files)
+      : ranNothingSelected(result)
         ? 'Failed: none of the selected stories ran.'
         : passed === 0
           ? 'No component tests ran.'
@@ -442,12 +437,14 @@ function formatResultSection(
       .map((status) => status.storyId)
   );
   const lines = [
-    ...formatSelections(files ?? [], ranStoryIds, result.unhandledErrors.length),
+    ...[selection && formatSelection(selection, ranStoryIds, result)].filter(
+      (line): line is string => Boolean(line)
+    ),
     ...notFound,
     verdict,
     formatA11yResult(result, { a11y, a11yEnabled }),
     ...formatNextSteps(result, {
-      ranNothing: ranNothingSelected(result, files),
+      ranNothing: ranNothingSelected(result),
       a11y,
       testsFailed: testFailureParts.length > 0,
       notFound: notFound.length > 0,
@@ -465,13 +462,13 @@ function formatCompletedRun(
   {
     a11y,
     a11yEnabled,
-    files,
+    selection,
     notFound,
     ctx,
   }: {
     a11y: boolean;
     a11yEnabled: boolean;
-    files?: FileSelection[];
+    selection?: TestRunSelection;
     notFound?: string[];
     ctx: ToolsetCtx;
   }
@@ -511,9 +508,40 @@ function formatCompletedRun(
   }
 
   // Last, because agents mostly read this report through `tail`.
-  sections.push(formatResultSection(result, { a11y, a11yEnabled, files, notFound, ctx }));
+  sections.push(formatResultSection(result, { a11y, a11yEnabled, selection, notFound, ctx }));
 
   return sections.join('\n\n');
+}
+
+// How to spell an argument for the transport the agent uses.
+function argument(ctx: ToolsetCtx, cli: string, mcp: string): string {
+  return code(ctx.transport === 'cli' ? cli : mcp);
+}
+
+function formatNoStories(
+  { notFoundMessages, selection }: Extract<TestRunData, { status: 'no-stories' }>,
+  ctx: ToolsetCtx
+): string {
+  if (notFoundMessages.length > 0) {
+    // Vitest's filters select test files only; a component file selects nothing here either.
+    const filterHint =
+      selection?.files?.storyFiles === 0
+        ? `\nFile arguments select story files by path, as Vitest filters select test files. To test the stories that depend on a changed file, use ${argument(ctx, '--changed', 'changed: true')}.`
+        : '';
+    return `No stories found matching the provided input, so no tests ran.
+
+${notFoundMessages.join('\n')}${filterHint}`;
+  }
+  if (selection?.changed) {
+    const { changedFiles } = selection.changed;
+    const what =
+      changedFiles === 0
+        ? `No changed files found (${selection.changed.since ? `since ${code(selection.changed.since)}, and uncommitted` : 'uncommitted'})`
+        : `No stories are affected by the ${describeChanged(selection.changed)}${selection.files ? ' among the selected story files' : ''}`;
+    return `${what}, so no tests ran.
+To test more, pass a ref (${argument(ctx, '--changed main', 'changed: "main"')}) or story files, or leave out every argument to run every story.`;
+  }
+  return 'No stories were given, so no tests ran. Pass files or story IDs, or neither to run every story test.';
 }
 
 /**
@@ -529,16 +557,12 @@ export function formatTestRun(
 ): string {
   switch (data.status) {
     case 'no-stories':
-      return data.notFoundMessages.length === 0
-        ? 'No stories were given, so no tests ran. Pass files or story IDs, or neither to run every story test.'
-        : `No stories found matching the provided input, so no tests ran.
-
-${data.notFoundMessages.join('\n')}`;
+      return formatNoStories(data, ctx);
     case 'completed':
       return formatCompletedRun(data.result, {
         a11y: data.a11y,
         a11yEnabled,
-        files: data.files,
+        selection: data.selection,
         notFound: data.notFound,
         ctx,
       });

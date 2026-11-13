@@ -19,6 +19,10 @@ import type {
 } from '../shared/test-provider-store/index.ts';
 import { UNIVERSAL_TEST_PROVIDER_STORE_OPTIONS } from '../shared/test-provider-store/index.ts';
 import { createTestProviderStore } from '../shared/test-provider-store/index.ts';
+import {
+  type ReviewHintStoreState,
+  UNIVERSAL_REVIEW_HINT_STORE_OPTIONS,
+} from '../shared/review-hint-store/index.ts';
 import type { UniversalStore } from '../shared/universal-store/index.ts';
 
 export const {
@@ -58,3 +62,9 @@ export const internal_universalChecklistStore = new experimental_MockUniversalSt
 ) as unknown as UniversalStore<StoreState, StoreEvent>;
 
 export const internal_checklistStore = createChecklistStore(internal_universalChecklistStore);
+
+export const internal_universalReviewHintStore =
+  new experimental_MockUniversalStore<ReviewHintStoreState>(
+    { ...UNIVERSAL_REVIEW_HINT_STORE_OPTIONS, initialState: { loaded: true } },
+    testUtils
+  ) as unknown as UniversalStore<ReviewHintStoreState>;

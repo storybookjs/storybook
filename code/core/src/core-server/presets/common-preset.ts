@@ -70,6 +70,7 @@ import { initGhostStoriesChannel } from '../server-channel/ghost-stories-channel
 import { initOpenInEditorChannel } from '../server-channel/open-in-editor-channel.ts';
 import { initTelemetryChannel } from '../server-channel/telemetry-channel.ts';
 import { initializeChecklist } from '../utils/checklist.ts';
+import { initializeReviewHint } from '../utils/review-hint.ts';
 import { defaultFavicon, defaultStaticDirs } from '../utils/constants.ts';
 import { initializeSaveStory } from '../utils/save-story/save-story.ts';
 import { mapStaticDir, parseStaticDir } from '../utils/server-statics.ts';
@@ -314,6 +315,7 @@ export const experimental_serverChannel = async (
 ) => {
   initAIAnalyticsChannel(channel, options, () => storyIndexGeneratorPromise);
   initializeChecklist(channel, () => storyIndexGeneratorPromise, options.configDir);
+  initializeReviewHint();
   initializeWhatsNew(channel, options);
   initializeSaveStory(channel, options);
   initGhostStoriesChannel(channel, options);

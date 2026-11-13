@@ -8,8 +8,9 @@ export function getAiSetupPrompt(executor = DEFAULT_STORYBOOK_EXECUTOR) {
   return `Run \`${executor} skills setup\` and follow its instructions precisely.`;
 }
 
-// Offered by the review hint in the sidebar. It names the skill in plain words so it works with the
-// project skill (`ui-review`) and the plugin skill (`storybook:ui-review`) alike, and "the stories
-// that changed" leads the agent to the skill's `stories changed` step.
+// Offered by the review hint in the sidebar. The same line the agent ends its answer with after a UI
+// change (the Storybook section of AGENTS.md), so users meet one wording in both places. `/ui-review`
+// resolves to the project skill `ui-review` and to the plugin skill `storybook:ui-review`; sent as a
+// message, it makes the agent publish a review of the changed stories.
 export const UI_REVIEW_PROMPT =
-  'Use the ui-review skill to publish a Storybook review of the stories that changed.';
+  'Use the /ui-review skill to see the changed components in Storybook';

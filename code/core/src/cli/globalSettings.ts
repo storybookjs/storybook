@@ -60,6 +60,8 @@ const userSettingSchema = z.object({
       widget: z.object({ disable: z.boolean().optional() }).optional(),
     })
     .optional(),
+  // The sidebar hint that the user can ask their agent for a UI review.
+  reviewHint: z.object({ dismissedAt: z.number().optional() }).optional(),
 });
 
 let settings: Settings | undefined;

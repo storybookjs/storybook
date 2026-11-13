@@ -1,4 +1,4 @@
-import React, { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import React, { type ReactNode, useEffect, useMemo, useRef } from 'react';
 
 import { ActionList, Card } from 'storybook/internal/components';
 import { AI_PROMPT_NUDGE } from 'storybook/internal/core-events';
@@ -7,8 +7,10 @@ import type { StatusesByStoryIdAndTypeId, StatusValue, StoryIndex } from 'storyb
 import { global } from '@storybook/global';
 import { CheckIcon, CloseAltIcon, CopyIcon, WandIcon } from '@storybook/icons';
 
+import { internal_universalReviewHintStore as reviewHintStore } from '#manager-stores';
 import {
   experimental_useStatusStore,
+  internal_useUniversalStore,
   useStorybookApi,
   useStorybookState,
 } from 'storybook/manager-api';
@@ -20,32 +22,12 @@ import { UI_REVIEW_PROMPT } from '../../../shared/utils/ai-prompts.ts';
 import { useLandmark } from '../../hooks/useLandmark.ts';
 import { useReviewContext } from '../review/review-context.ts';
 import { useActiveReviewStoryCount } from './ReviewWidget.tsx';
-
-export const REVIEW_HINT_DISMISSED_KEY = 'storybook/review-hint/dismissed';
+import { useChecklist } from './useChecklist.ts';
 
 const HEADING_ID = 'storybook-review-hint-heading';
 
 const NEW = 'status-value:new' as StatusValue;
 const MOD = 'status-value:modified' as StatusValue;
-
-// `localStorage` can throw (privacy modes, disabled storage, sandboxed iframes). The hint then
-// stays dismissed for the current page only.
-const dismissedStore = {
-  read(): boolean {
-    try {
-      return globalThis.localStorage?.getItem(REVIEW_HINT_DISMISSED_KEY) === 'true';
-    } catch {
-      return false;
-    }
-  },
-  write(): void {
-    try {
-      globalThis.localStorage?.setItem(REVIEW_HINT_DISMISSED_KEY, 'true');
-    } catch {
-      // Storage unavailable: keep the in-memory state only.
-    }
-  },
-};
 
 // Number of stories in the index that change detection marks as new or modified.
 export const useChangedStoryCount = () => {
@@ -175,33 +157,49 @@ const ReviewHintCard = ({ onDismiss }: { onDismiss: () => void }) => {
   );
 };
 
+// True while the onboarding checklist in the sidebar shows its own "Set up with AI" step with a
+// prompt to copy. The hint waits until that step is done, so a first run after `storybook init`
+// does not show two prompt cards under each other.
+const useChecklistShowsAiSetup = () => {
+  const { loaded, nextItems } = useChecklist();
+  return (
+    global.FEATURES?.sidebarOnboardingChecklist !== false &&
+    (!loaded || nextItems.some((item) => item.id === 'aiSetup'))
+  );
+};
+
 // Shows the review hint in the spot of the review widget while there are changed stories, no
 // active review, and the user has not dismissed it. Only on a dev server: a static build cannot
-// receive a review.
+// receive a review. The dismissal lives in the user settings on disk, through the review hint
+// store, so it holds across projects and ports.
 export const ReviewHint = () => {
   const api = useStorybookApi();
   const { isReviewLoaded } = useReviewContext();
   const changedStoryCount = useChangedStoryCount();
   const activeReviewStoryCount = useActiveReviewStoryCount();
-  const [dismissed, setDismissed] = useState(dismissedStore.read);
+  const checklistShowsAiSetup = useChecklistShowsAiSetup();
+  const [{ dismissedAt, loaded }, setHintState] = internal_useUniversalStore(reviewHintStore);
+  const dismissed = dismissedAt !== undefined;
+
+  const dismiss = () => setHintState((state) => ({ ...state, dismissedAt: Date.now() }));
 
   // A user who has had a review knows that they can ask for one.
   useEffect(() => {
-    if (activeReviewStoryCount > 0 && !dismissed) {
-      dismissedStore.write();
-      setDismissed(true);
+    if (loaded && activeReviewStoryCount > 0 && !dismissed) {
+      setHintState((state) => ({ ...state, dismissedAt: Date.now() }));
     }
-  }, [activeReviewStoryCount, dismissed]);
+  }, [loaded, activeReviewStoryCount, dismissed, setHintState]);
 
   const onDismiss = () => {
-    dismissedStore.write();
-    setDismissed(true);
+    dismiss();
     // The card unmounts; keep keyboard focus in the sidebar.
     api.focusOnUIElement(focusableUIElements.storySearchField);
   };
 
   if (
+    !loaded ||
     dismissed ||
+    checklistShowsAiSetup ||
     !isReviewLoaded ||
     global.CONFIG_TYPE !== 'DEVELOPMENT' ||
     activeReviewStoryCount > 0 ||

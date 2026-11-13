@@ -12,12 +12,17 @@ import { MemoryRouter } from 'storybook/internal/router';
 import { ManagerContext, internal_fullStatusStore } from 'storybook/manager-api';
 import { expect, fn, mocked, spyOn, userEvent, waitFor } from 'storybook/test';
 
+import { initialState as checklistInitialState } from '../../../shared/checklist-store/checklistData.state.ts';
 import { useCopyButton } from '../../../shared/useCopyButton.ts';
 import { UI_REVIEW_PROMPT } from '../../../shared/utils/ai-prompts.ts';
+import {
+  internal_universalChecklistStore as checklistStore,
+  internal_universalReviewHintStore as reviewHintStore,
+} from '../../manager-stores.mock.ts';
 import { ReviewProvider } from '../review/components/ReviewProvider.tsx';
 import { reviewServiceForStories as reviewService } from '../review/review-service-story-helpers.ts';
 import { IconSymbols } from './IconSymbols.tsx';
-import { REVIEW_HINT_DISMISSED_KEY, ReviewHint, useChangedStoryCount } from './ReviewHint.tsx';
+import { ReviewHint, useChangedStoryCount } from './ReviewHint.tsx';
 import { ShowChangesButton } from './ShowChangesButton.tsx';
 
 const storyIds = ['s1', 's2', 's3'];
@@ -62,6 +67,11 @@ const managerContext: any = {
     addNotification: fn().mockName('api::addNotification'),
     clearNotification: fn().mockName('api::clearNotification'),
     getIsNavShown: () => true,
+    // Used by the onboarding checklist, which the hint reads.
+    getData: fn().mockName('api::getData'),
+    getIndex: fn().mockName('api::getIndex'),
+    getElements: fn(() => ({})),
+    getDocsUrl: () => 'https://storybook.js.org/docs/',
     getUrlState: () => ({ path: '/', queryParams: {} }),
     getStoryHrefs: (storyId: string) => ({
       managerHref: `?path=/story/${storyId}`,
@@ -96,20 +106,6 @@ const withConfigType = (configType: 'DEVELOPMENT' | 'PRODUCTION') => () => {
   global.CONFIG_TYPE = configType;
   return () => {
     global.CONFIG_TYPE = original;
-  };
-};
-
-// These stories share an origin with the internal Storybook's own manager, which reads the same
-// key. Restore its value afterwards so opening a story does not change the developer's hint.
-const isolateDismissal = () => {
-  const previous = localStorage.getItem(REVIEW_HINT_DISMISSED_KEY);
-  localStorage.removeItem(REVIEW_HINT_DISMISSED_KEY);
-  return () => {
-    if (previous === null) {
-      localStorage.removeItem(REVIEW_HINT_DISMISSED_KEY);
-    } else {
-      localStorage.setItem(REVIEW_HINT_DISMISSED_KEY, previous);
-    }
   };
 };
 
@@ -151,13 +147,15 @@ const meta = {
       });
     }
     spyOn(navigator.clipboard, 'writeText').mockResolvedValue(undefined);
-    const restoreDismissal = isolateDismissal();
+    // The server has read the user settings and the hint is not dismissed.
+    reviewHintStore.setState({ loaded: true });
+    // The onboarding checklist has loaded and does not show its "Set up with AI" step.
+    checklistStore.setState({ ...checklistInitialState, loaded: true });
     const restoreConfigType = withConfigType('DEVELOPMENT')();
     const unsetStatuses = setChangedStories();
     return () => {
       unsetStatuses();
       restoreConfigType();
-      restoreDismissal();
     };
   },
 } satisfies Meta<typeof ReviewHint>;
@@ -212,15 +210,15 @@ export const Dismiss: Story = {
   play: async ({ canvas }) => {
     await userEvent.click(await canvas.findByRole('button', { name: 'Dismiss review hint' }));
     await waitFor(() => expect(canvas.queryByRole('region')).toBeNull());
-    await expect(localStorage.getItem(REVIEW_HINT_DISMISSED_KEY)).toBe('true');
+    await expect(reviewHintStore.getState().dismissedAt).toEqual(expect.any(Number));
     await expect(focusOnUIElement).toHaveBeenCalledWith('storybook-explorer-searchfield');
   },
 };
 
-/** Dismissed on an earlier visit: the hint stays hidden. */
+/** Dismissed earlier, in this or another project: the hint stays hidden. */
 export const Dismissed: Story = {
   beforeEach: () => {
-    localStorage.setItem(REVIEW_HINT_DISMISSED_KEY, 'true');
+    reviewHintStore.setState({ loaded: true, dismissedAt: Date.now() });
   },
   play: async ({ canvas }) => {
     await expect(canvas.queryByRole('region')).toBeNull();
@@ -242,7 +240,30 @@ export const ReviewActive: Story = {
   },
   play: async ({ canvas }) => {
     await expect(canvas.queryByRole('region')).toBeNull();
-    await waitFor(() => expect(localStorage.getItem(REVIEW_HINT_DISMISSED_KEY)).toBe('true'));
+    await waitFor(() => expect(reviewHintStore.getState().dismissedAt).toEqual(expect.any(Number)));
+  },
+};
+
+/** Until the server has read the user settings, the hint does not know whether it was dismissed. */
+export const SettingsLoading: Story = {
+  beforeEach: () => {
+    reviewHintStore.setState({});
+  },
+  play: async ({ canvas }) => {
+    await expect(canvas.queryByRole('region')).toBeNull();
+  },
+};
+
+/**
+ * On a first run the onboarding checklist shows its own "Set up with AI" step with a prompt to
+ * copy. The hint waits until that step is done, so the sidebar does not show two prompt cards.
+ */
+export const HiddenWhileChecklistShowsAiSetup: Story = {
+  beforeEach: () => {
+    checklistStore.setState({ ...checklistInitialState, loaded: true, aiOptIn: true });
+  },
+  play: async ({ canvas }) => {
+    await expect(canvas.queryByRole('region')).toBeNull();
   },
 };
 

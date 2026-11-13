@@ -240,7 +240,10 @@ describe('components-ref-manifest', () => {
       path: './constructor.stories.tsx',
       stories: {},
     };
-    registerDocgenService({ getIndex, docgenProvider: async () => docgen });
+    registerDocgenService({
+      getIndex,
+      docgenProvider: async (inputs) => inputs.map(() => ({ status: 'fulfilled', value: docgen })),
+    });
     registerStoryDocsService({ getIndex, storyDocsProvider: async () => storyDocs });
     const store = await buildStaticFiles();
     vol.fromJSON(

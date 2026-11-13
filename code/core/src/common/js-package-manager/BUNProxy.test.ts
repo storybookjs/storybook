@@ -2,7 +2,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { logger, prompt } from 'storybook/internal/node-logger';
 import { MinimumReleaseAgeHandledError } from 'storybook/internal/server-errors';
@@ -31,6 +31,10 @@ const mockedExecuteCommand = vi.mocked(executeCommand);
 
 describe('BUN Proxy', () => {
   let bunProxy: BUNProxy;
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
 
   beforeEach(() => {
     vi.useRealTimers();
@@ -62,6 +66,20 @@ describe('BUN Proxy', () => {
 
   describe('installDependencies', () => {
     it('should run `bun install`', async () => {
+      vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (fn: any) => {
+        await Promise.resolve(fn());
+      });
+      const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({ stdout: '' } as any);
+
+      await bunProxy.installDependencies();
+
+      expect(executeCommandSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ command: 'bun', args: ['install'] })
+      );
+    });
+
+    it('runs a plain `bun install` when CI is set, because bun does not freeze the lockfile on CI', async () => {
+      vi.stubEnv('CI', 'true');
       vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (fn: any) => {
         await Promise.resolve(fn());
       });

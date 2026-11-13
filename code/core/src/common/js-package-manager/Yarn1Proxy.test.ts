@@ -67,6 +67,26 @@ describe('Yarn 1 Proxy', () => {
         })
       );
     });
+
+    it('runs a plain `yarn install` when CI is set, because Yarn 1 does not freeze the lockfile on CI', async () => {
+      // Yarn1Proxy reads `node:process`, which this file mocks with `CI: false`.
+      const { default: mockedProcess } = await import('node:process');
+      mockedProcess.env.CI = 'true';
+      try {
+        vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (fn: any) => {
+          await Promise.resolve(fn());
+        });
+        const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({ stdout: '' } as any);
+
+        await new Yarn1Proxy().installDependencies();
+
+        expect(executeCommandSpy).toHaveBeenCalledWith(
+          expect.objectContaining({ command: 'yarn', args: ['install'] })
+        );
+      } finally {
+        mockedProcess.env.CI = false as unknown as string;
+      }
+    });
   });
 
   describe('runScript', () => {

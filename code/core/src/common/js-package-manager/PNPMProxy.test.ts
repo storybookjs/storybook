@@ -88,6 +88,7 @@ describe('PNPM Proxy', () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
   });
 
   it('type should be pnpm', () => {
@@ -143,11 +144,18 @@ describe('PNPM Proxy', () => {
 
       expect(prompt.executeTask).toHaveBeenCalledOnce();
       expect(mockedExecuteCommand).toHaveBeenCalledWith(
-        expect.objectContaining({ command: 'pnpm', args: ['install'], stdio: 'inherit' })
+        expect.objectContaining({
+          command: 'pnpm',
+          args: ['install', '--no-frozen-lockfile'],
+          stdio: 'inherit',
+        })
       );
     });
 
-    it('should run `pnpm install`', async () => {
+    it('runs `pnpm install --no-frozen-lockfile`, so the lockfile can change when CI is set', async () => {
+      // pnpm defaults to `--frozen-lockfile` when `CI` is set, which fails with
+      // ERR_PNPM_OUTDATED_LOCKFILE after the CLI changed package.json.
+      vi.stubEnv('CI', 'true');
       // sort of un-mock part of the function so executeCommand (also mocked) is called
       vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (fn: any) => {
         await Promise.resolve(fn());
@@ -157,7 +165,7 @@ describe('PNPM Proxy', () => {
       await pnpmProxy.installDependencies();
 
       expect(executeCommandSpy).toHaveBeenCalledWith(
-        expect.objectContaining({ command: 'pnpm', args: ['install'] })
+        expect.objectContaining({ command: 'pnpm', args: ['install', '--no-frozen-lockfile'] })
       );
     });
 
@@ -171,7 +179,7 @@ describe('PNPM Proxy', () => {
       await pnpmProxy.installDependencies();
 
       expect(executeCommandSpy).toHaveBeenCalledWith(
-        expect.objectContaining({ command: 'pnpm', args: ['install'] })
+        expect.objectContaining({ command: 'pnpm', args: ['install', '--no-frozen-lockfile'] })
       );
     });
 
@@ -216,7 +224,7 @@ describe('PNPM Proxy', () => {
         'Approved build scripts for esbuild in /project/pnpm-workspace.yaml'
       );
       expect(mockedExecuteCommand).toHaveBeenCalledWith(
-        expect.objectContaining({ command: 'pnpm', args: ['install'] })
+        expect.objectContaining({ command: 'pnpm', args: ['install', '--no-frozen-lockfile'] })
       );
     });
 
@@ -426,7 +434,7 @@ describe('PNPM Proxy', () => {
         expect.stringContaining('Could not allow build scripts of esbuild')
       );
       expect(mockedExecuteCommand).toHaveBeenCalledWith(
-        expect.objectContaining({ command: 'pnpm', args: ['install'] })
+        expect.objectContaining({ command: 'pnpm', args: ['install', '--no-frozen-lockfile'] })
       );
     });
 

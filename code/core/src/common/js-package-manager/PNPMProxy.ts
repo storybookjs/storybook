@@ -471,7 +471,14 @@ export class PNPMProxy extends JsPackageManager {
     this.allowStorybookBuildScripts();
     return executeCommand({
       command: 'pnpm',
-      args: ['install', ...this.getInstallArgs('install'), ...(options?.force ? ['--force'] : [])],
+      args: [
+        'install',
+        // pnpm defaults to `--frozen-lockfile` when `CI` is set, which fails with
+        // ERR_PNPM_OUTDATED_LOCKFILE after the CLI changed `package.json`.
+        '--no-frozen-lockfile',
+        ...this.getInstallArgs('install'),
+        ...(options?.force ? ['--force'] : []),
+      ],
       stdio: this.installUsesTerminal ? 'inherit' : prompt.getPreferredStdio(),
       cwd: this.cwd,
     });

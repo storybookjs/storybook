@@ -342,6 +342,7 @@ export default {
     'internal_fullStatusStore',
     'internal_fullTestProviderStore',
     'internal_universalChecklistStore',
+    'internal_universalReviewHintStore',
     'internal_universalStatusStore',
     'internal_universalTestProviderStore',
     'internal_useUniversalStore',

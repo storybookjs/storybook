@@ -12,7 +12,8 @@ import { global } from '@storybook/global';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import type { IndexHash } from 'storybook/manager-api';
-import { ManagerContext } from 'storybook/manager-api';
+// The status store that the sidebar's change-detection UI reads (not the mock store below).
+import { ManagerContext, internal_fullStatusStore as statusStore } from 'storybook/manager-api';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 
 import { initialState } from '../../../shared/checklist-store/checklistData.state.ts';
@@ -20,6 +21,7 @@ import { defaultShortcuts } from '../../settings/defaultShortcuts.tsx';
 import {
   internal_fullStatusStore,
   internal_universalChecklistStore,
+  internal_universalReviewHintStore,
 } from '../../manager-stores.mock.ts';
 import { LayoutProvider } from '../layout/LayoutProvider.tsx';
 import { standardData as standardHeaderData } from './Heading.stories.tsx';
@@ -213,6 +215,67 @@ export const SimpleInProduction: Story = {
     return () => {
       global.CONFIG_TYPE = configType;
     };
+  },
+};
+
+// A modified story, a dev server, and a review hint that has not been dismissed.
+const withChangedStory = () => {
+  const configType = global.CONFIG_TYPE;
+  global.CONFIG_TYPE = 'DEVELOPMENT';
+  internal_universalReviewHintStore.setState({ loaded: true });
+  statusStore.set([
+    {
+      storyId: 'dummy--dummyId',
+      typeId: CHANGE_DETECTION_STATUS_TYPE_ID,
+      value: 'status-value:modified',
+      title: 'Change Detection',
+      description: '',
+    },
+  ]);
+  return () => {
+    global.CONFIG_TYPE = configType;
+    statusStore.unset();
+  };
+};
+
+/** Changed stories and no review: the review hint shows above the search, below the checklist. */
+export const WithReviewHint: Story = {
+  beforeEach: withChangedStory,
+  play: async ({ canvas }) => {
+    await expect(
+      await canvas.findByRole('region', { name: 'Ask your agent for a UI review' })
+    ).toBeVisible();
+    await expect(
+      await canvas.findByRole('switch', { name: /Show modified stories/ })
+    ).toBeVisible();
+    await waitForChecklistWidget();
+  },
+};
+
+/**
+ * A first run: the checklist shows its own "Set up with AI" step with a prompt to copy, so the
+ * review hint waits until that step is done instead of showing a second prompt card.
+ */
+export const WithChecklistAiSetupAndChanges: Story = {
+  beforeEach: () => {
+    const cleanup = withChangedStory();
+    internal_universalChecklistStore.setState({
+      loaded: true,
+      aiOptIn: true,
+      widget: {},
+      items: initialState.items,
+    });
+    return cleanup;
+  },
+  play: async ({ canvas }) => {
+    await waitForChecklistWidget();
+    await expect(await canvas.findByText('Set up with AI')).toBeVisible();
+    await expect(
+      await canvas.findByRole('switch', { name: /Show modified stories/ })
+    ).toBeVisible();
+    await expect(
+      canvas.queryByRole('region', { name: 'Ask your agent for a UI review' })
+    ).toBeNull();
   },
 };
 

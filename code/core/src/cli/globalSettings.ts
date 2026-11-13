@@ -60,6 +60,8 @@ const userSettingSchema = z.object({
       widget: z.object({ disable: z.boolean().optional() }).optional(),
     })
     .optional(),
+  // The sidebar hint that the user can ask their agent for a UI review.
+  reviewHint: z.object({ dismissedAt: z.number().optional() }).optional(),
 });
 
 let settings: Settings | undefined;
@@ -94,6 +96,15 @@ export async function globalSettings(filePath = getDefaultSettingsPath()) {
   return settings;
 }
 
+async function readJsonObject(filePath: string): Promise<Record<string, unknown>> {
+  try {
+    const value = JSON.parse(await fs.readFile(filePath, 'utf8'));
+    return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+  } catch {
+    return {};
+  }
+}
+
 // For testing
 export function _clearGlobalSettings() {
   settings = undefined;
@@ -124,7 +135,11 @@ export class Settings {
     invariant(this.filePath, 'No file path to save settings to');
     try {
       await fs.mkdir(dirname(this.filePath), { recursive: true });
-      await fs.writeFile(this.filePath, JSON.stringify(this.value, null, 2));
+      // Another Storybook process can have written the file since this one loaded it, such as a
+      // review hint dismissal in a Storybook on another port. Keep the top-level keys this process
+      // does not hold, so it does not undo that write.
+      const onDisk = await readJsonObject(this.filePath);
+      await fs.writeFile(this.filePath, JSON.stringify({ ...onDisk, ...this.value }, null, 2));
     } catch (err) {
       console.warn(dedent`
         Unable to save global settings file to ${this.filePath}

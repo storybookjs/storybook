@@ -8,6 +8,10 @@ import {
   createChecklistStore,
 } from '../shared/checklist-store/index.ts';
 import {
+  type ReviewHintStoreState,
+  UNIVERSAL_REVIEW_HINT_STORE_OPTIONS,
+} from '../shared/review-hint-store/index.ts';
+import {
   type StatusStoreEvent,
   type StatusesByStoryIdAndTypeId,
   createStatusStore,
@@ -58,3 +62,9 @@ export const internal_universalChecklistStore = new experimental_MockUniversalSt
 ) as unknown as UniversalStore<StoreState, StoreEvent>;
 
 export const internal_checklistStore = createChecklistStore(internal_universalChecklistStore);
+
+export const internal_universalReviewHintStore =
+  new experimental_MockUniversalStore<ReviewHintStoreState>(
+    { ...UNIVERSAL_REVIEW_HINT_STORE_OPTIONS, initialState: { loaded: true } },
+    testUtils
+  ) as unknown as UniversalStore<ReviewHintStoreState>;

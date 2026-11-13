@@ -3,6 +3,7 @@ const FIRST_PARTY_STORE_IDS = new Set([
   'storybook/status',
   'storybook/test-provider',
   'storybook/checklist',
+  'storybook/review-hint',
   'storybook/test',
 ]);
 

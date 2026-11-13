@@ -9,10 +9,58 @@ import {
 import type { State } from '../root.tsx';
 import { mockEntries } from '../tests/mockStoriesEntries.ts';
 import {
+  titleToPath,
   transformStoryIndexToStoriesHash,
   transformStoryIndexV3toV4,
   transformStoryIndexV4toV5,
+  getComponentLookupList,
 } from './stories.ts';
+
+describe('titleToPath', () => {
+  it.each<[string, { name: string; id: string }[]]>([
+    [
+      'Components/Button',
+      [
+        { name: 'Components', id: 'components' },
+        { name: 'Button', id: 'components-button' },
+      ],
+    ],
+    [
+      'Components\t / \tButton',
+      [
+        { name: 'Components', id: 'components' },
+        { name: 'Button', id: 'components-button' },
+      ],
+    ],
+    [
+      'Components/Button\t',
+      [
+        { name: 'Components', id: 'components' },
+        { name: 'Button', id: 'components-button' },
+      ],
+    ],
+    [
+      'Design System/Actions/Button',
+      [
+        { name: 'Design System', id: 'design-system' },
+        { name: 'Actions', id: 'design-system-actions' },
+        { name: 'Button', id: 'design-system-actions-button' },
+      ],
+    ],
+  ])('builds the title path for %j', (title, expected) => {
+    expect(titleToPath(title)).toEqual(expected);
+  });
+
+  it.each(['', 'Components/', 'Components//Button'])('rejects an empty segment in %j', (title) => {
+    expect(() => titleToPath(title)).toThrow(`Invalid title ${title} ending in slash.`);
+  });
+
+  it('rejects a segment that produces the same ID as its parent', () => {
+    expect(() => titleToPath('Components/---')).toThrow(
+      "Invalid part '---', leading to id === parentId ('components')"
+    );
+  });
+});
 
 const baseV3: StoryIndexV3['stories'][0] = {
   id: '1',
@@ -331,6 +379,103 @@ describe('transformStoryIndexToStoriesHash', () => {
         children: ['guides-button--docs'],
       });
       expect(filtered['guides-button--primary']).toBeUndefined();
+    });
+
+    const nestedIndex: API_PreparedStoryIndex = {
+      v: 5,
+      entries: {
+        'guides-button-icon--primary': {
+          id: 'guides-button-icon--primary',
+          type: 'story',
+          subtype: 'story',
+          title: 'Guides/Button/Icon',
+          name: 'Primary',
+          importPath: './icon.stories.ts',
+          tags: [],
+        },
+        ...index.entries,
+      },
+    };
+
+    it.each([false, true])(
+      'keeps a title with only nested stories a group (own docs: %s)',
+      (ownDocs) => {
+        const nested = transformStoryIndexToStoriesHash(
+          {
+            v: 5,
+            entries: {
+              'guides-button-icon--primary': nestedIndex.entries['guides-button-icon--primary'],
+              ...(ownDocs ? { 'guides-button--docs': index.entries['guides-button--docs'] } : {}),
+            },
+          },
+          options
+        );
+
+        expect(nested['guides-button']).toMatchObject({
+          type: 'group',
+          children: ownDocs
+            ? ['guides-button-icon', 'guides-button--docs']
+            : ['guides-button-icon'],
+        });
+      }
+    );
+
+    it('keeps a component with subcomponents and its own import path', () => {
+      const nested = transformStoryIndexToStoriesHash(nestedIndex, options);
+
+      expect(nested['guides-button']).toMatchObject({
+        type: 'component',
+        importPath: './guides-button--docs.mdx',
+        children: ['guides-button-icon', 'guides-button--docs', 'guides-button--primary'],
+      });
+      expect(nested['guides-button-icon']).toMatchObject({
+        type: 'component',
+        parent: 'guides-button',
+        importPath: './icon.stories.ts',
+      });
+      expect(nested['guides']).toMatchObject({ type: 'root' });
+      expect(nested['guides-faq']).toMatchObject({ type: 'group' });
+    });
+
+    it('keeps the component type when a filter hides its subcomponents', () => {
+      const filtered = transformStoryIndexToStoriesHash(nestedIndex, {
+        ...options,
+        filters: { hideIcon: (entry) => entry.title !== 'Guides/Button/Icon' },
+      });
+
+      expect(filtered['guides-button']).toMatchObject({
+        type: 'component',
+        children: ['guides-button--docs', 'guides-button--primary'],
+      });
+      expect(filtered['guides-button-icon']).toBeUndefined();
+    });
+
+    it('keeps the component source when only a subcomponent passes the filter', () => {
+      const filtered = transformStoryIndexToStoriesHash(nestedIndex, {
+        ...options,
+        filters: { onlyIcon: (entry) => entry.title === 'Guides/Button/Icon' },
+      });
+
+      expect(filtered['guides-button']).toMatchObject({
+        type: 'component',
+        importPath: './guides-button--docs.mdx',
+        children: ['guides-button-icon'],
+      });
+      expect(filtered['guides-button--primary']).toBeUndefined();
+      expect(getComponentLookupList(filtered)).toEqual([['guides-button-icon--primary']]);
+    });
+
+    it('keeps component navigation on leaf entries when a component has subcomponents', () => {
+      const nested = transformStoryIndexToStoriesHash(nestedIndex, options);
+
+      expect(getComponentLookupList(nested)).toEqual([
+        ['welcome--docs'],
+        ['guides-button--docs', 'guides-button--primary'],
+        ['guides-button-icon--primary'],
+        ['guides-intro--docs'],
+        ['guides-faq--setup'],
+        ['guides-faq--usage'],
+      ]);
     });
   });
 });

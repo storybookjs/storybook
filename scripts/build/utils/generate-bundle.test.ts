@@ -2,7 +2,11 @@ import * as esbuild from 'esbuild';
 import { rolldown } from 'rolldown';
 import { describe, expect, it } from 'vitest';
 
-import { esbuildNoDynamicRequireGuard, rolldownNoDynamicRequireGuard } from './generate-bundle.ts';
+import {
+  esbuildNoDynamicRequireGuard,
+  getNodeBanner,
+  rolldownNoDynamicRequireGuard,
+} from './generate-bundle.ts';
 
 const requiresReact = `module.exports = require('react');`;
 const importsReact = `export { useState } from 'react';`;
@@ -82,5 +86,17 @@ describe('no dynamic require in browser output', () => {
     await expect(
       bundleWithRolldown({ entry: 'export const help = `__require("react")`;' })
     ).resolves.toBeDefined();
+  });
+});
+
+describe('node CJS compatibility banner', () => {
+  it('reads import.meta.url by default', () => {
+    expect(getNodeBanner({}, 'abc')?.js).toContain(
+      'var __filename = CJS_COMPAT_NODE_URL_abc.fileURLToPath(import.meta.url);'
+    );
+  });
+
+  it('is left out when the package opts out', () => {
+    expect(getNodeBanner({ cjsCompatBanner: false }, 'abc')).toBeUndefined();
   });
 });

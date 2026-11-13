@@ -136,6 +136,41 @@ function metafileWriterPlugin(entryType: EntryType, outputDir: string): esbuild.
   };
 }
 
+/** The esbuild `banner` for a package's node entries, or `undefined` when the package opts out. */
+export const getNodeBanner = (
+  { cjsCompatBanner }: Pick<BuildEntries, 'cjsCompatBanner'>,
+  uid: string
+): { js: string } | undefined => {
+  if (cjsCompatBanner === false) {
+    return undefined;
+  }
+  return {
+    /*
+    This banner injects CJS compatibility code into the bundle, for when
+    dependencies need require, __filename, or __dirname.
+
+    We're adding unique names to the imports to avoid collisions
+    when one of our packages bundles in another of our packages,
+    like create-storybook bundling in parts of storybook core.
+    Similarly we're using var definitions as they can be redefined
+    without causing errors.
+    */
+    js: dedent`
+      import CJS_COMPAT_NODE_URL_${uid} from 'node:url';
+      import CJS_COMPAT_NODE_PATH_${uid} from 'node:path';
+      import CJS_COMPAT_NODE_MODULE_${uid} from "node:module";
+
+      var __filename = CJS_COMPAT_NODE_URL_${uid}.fileURLToPath(import.meta.url);
+      var __dirname = CJS_COMPAT_NODE_PATH_${uid}.dirname(__filename);
+      var require = CJS_COMPAT_NODE_MODULE_${uid}.createRequire(import.meta.url);
+
+      // ------------------------------------------------------------
+      // end of CJS compatibility banner, injected by Storybook's esbuild configuration
+      // ------------------------------------------------------------
+      `,
+  };
+};
+
 export async function generateBundle({
   cwd,
   entry,
@@ -326,31 +361,7 @@ export async function generateBundle({
           'jsonc-parser': join(resolvePackageDir('jsonc-parser'), 'lib/esm/main.js'),
         },
         chunkNames: '_node-chunks/[name]-[hash]',
-        banner: {
-          /*
-          This banner injects CJS compatibility code into the bundle, for when
-          dependencies need require, __filename, or __dirname.
-
-          We're adding unique names to the imports to avoid collisions
-          when one of our packages bundles in another of our packages,
-          like create-storybook bundling in parts of storybook core.
-          Similarly we're using var definitions as they can be redefined
-          without causing errors.
-          */
-          js: dedent`
-            import CJS_COMPAT_NODE_URL_${uid} from 'node:url';
-            import CJS_COMPAT_NODE_PATH_${uid} from 'node:path';
-            import CJS_COMPAT_NODE_MODULE_${uid} from "node:module";
-
-            var __filename = CJS_COMPAT_NODE_URL_${uid}.fileURLToPath(import.meta.url);
-            var __dirname = CJS_COMPAT_NODE_PATH_${uid}.dirname(__filename);
-            var require = CJS_COMPAT_NODE_MODULE_${uid}.createRequire(import.meta.url);
-
-            // ------------------------------------------------------------
-            // end of CJS compatibility banner, injected by Storybook's esbuild configuration
-            // ------------------------------------------------------------
-            `,
-        },
+        banner: getNodeBanner(entry, uid),
         plugins: [
           ...sharedOptions.plugins,
           metafileWriterPlugin('node', join(DIR_METAFILE_BASE, PACKAGE_DIR_NAME)),

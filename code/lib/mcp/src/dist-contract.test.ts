@@ -108,6 +108,16 @@ describe('published package contract', () => {
     expect(readFileSync(DIST_ENTRY, 'utf-8')).not.toMatch(STORYBOOK_IMPORT_RE);
   });
 
+  // The package opts out of the CJS compatibility banner so it loads on Cloudflare Workers
+  // (#37397). Without the banner, nothing else stops a bundled dependency from reaching for these.
+  it.runIf(DIST_BUILT)('loads without Node-only module globals', () => {
+    const bundle = readFileSync(DIST_ENTRY, 'utf-8');
+
+    expect(bundle).not.toMatch(/\bimport\.meta\b/);
+    expect(bundle).not.toMatch(/["']node:/);
+    expect(bundle).not.toMatch(/\b__(?:file|dir)name\b/);
+  });
+
   it.runIf(DIST_BUILT)('stays within its size budget', () => {
     expect(statSync(DIST_ENTRY).size).toBeLessThan(SIZE_BUDGET_BYTES);
   });

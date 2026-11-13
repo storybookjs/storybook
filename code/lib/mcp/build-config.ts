@@ -9,6 +9,8 @@ const config: BuildEntries = {
       },
     ],
   },
+  // Runs on Cloudflare Workers (#37397).
+  cjsCompatBanner: false,
 };
 
 export default config;

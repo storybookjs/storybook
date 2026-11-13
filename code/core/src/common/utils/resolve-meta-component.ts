@@ -1,6 +1,6 @@
 import type { CsfFile } from 'storybook/internal/csf-tools';
 
-import { type E, type Node, unwrapExpression } from '../../csf-tools/estree/ast.ts';
+import { type Node, unwrapExpression } from '../../csf-tools/estree/ast.ts';
 import { parseReferenceModule } from '../../csf-tools/story-shape/reference-context.ts';
 import { isSelfContained } from '../../csf-tools/story-shape/resolve-arg-value.ts';
 import {
@@ -9,7 +9,8 @@ import {
   oneLineTextOf,
 } from '../../csf-tools/story-shape/resolve-members.ts';
 import { jsTsSourceExtensions } from '../../shared/constants/extensions.ts';
-import { createModuleResolver } from './module-resolver.ts';
+import { findImport, followBinding, resolveFileOrUndefined } from './follow-export.ts';
+import { type ModuleResolver, createModuleResolver } from './module-resolver.ts';
 
 /** The component a story file documents, as far as static analysis can determine. */
 export interface ResolvedMetaComponent {
@@ -32,10 +33,20 @@ export type MetaComponentResolution =
       expression: string;
     };
 
-export interface MetaComponentResolverOptions {
-  /** Extensions tried ahead of the JS/TS set, for single-file-component formats like `.vue`. */
-  extensions?: string[];
-}
+export type MetaComponentResolverOptions =
+  | {
+      /** Extensions tried ahead of the JS/TS set, for single-file-component formats like `.vue`. */
+      extensions?: string[];
+      resolver?: never;
+    }
+  | {
+      /**
+       * Resolves import specifiers in place of the default resolver, for a renderer whose packages
+       * need their own conditions or extension aliases.
+       */
+      resolver: ModuleResolver;
+      extensions?: never;
+    };
 
 /** Peels the type-level wrappers off a component expression, as in `Comp<Props>` or `Comp as any`. */
 const unwrapComponentExpression = (node: Node): Node => {
@@ -56,24 +67,25 @@ const unwrapComponentExpression = (node: Node): Node => {
  * component annotation.
  */
 export function createMetaComponentResolver(options: MetaComponentResolverOptions = {}) {
-  const resolver = createModuleResolver({
-    extensions: [...(options.extensions ?? []), ...jsTsSourceExtensions],
-    mainFields: ['module', 'main'],
-    tsconfig: 'auto',
-  });
+  const resolver =
+    options.resolver ??
+    createModuleResolver({
+      extensions: [...(options.extensions ?? []), ...jsTsSourceExtensions],
+      // TypeScript's ESM resolution imports `./ui.ts` as `./ui.js`.
+      extensionAlias: {
+        '.js': ['.ts', '.tsx', '.js'],
+        '.jsx': ['.tsx', '.jsx'],
+        '.mjs': ['.mts', '.mjs'],
+        '.cjs': ['.cts', '.cjs'],
+      },
+      mainFields: ['module', 'main'],
+      tsconfig: 'auto',
+    });
 
-  const resolveFile = (fromFile: string, specifier: string): string | undefined => {
-    try {
-      return resolver.resolveFileSync(fromFile, specifier);
-    } catch {
-      return undefined;
-    }
-  };
-
-  const resolveModule = (fromFile: string, specifier: string): ReferenceModule | undefined => {
-    const filePath = resolveFile(fromFile, specifier);
-    return filePath ? parseReferenceModule(filePath) : undefined;
-  };
+  const resolveFile = (fromFile: string, specifier: string) =>
+    resolveFileOrUndefined(resolver, fromFile, specifier);
+  const resolveModule = (fromFile: string, specifier: string) =>
+    resolveReferenceModule(resolver, fromFile, specifier);
 
   const fromIdentifier = (module: ReferenceModule, localName: string): MetaComponentResolution => {
     const binding = findImport(module.editor.program, localName);
@@ -112,25 +124,19 @@ export function createMetaComponentResolver(options: MetaComponentResolverOption
       return fromIdentifier(storyModule, expression.name);
     }
 
-    // `ns.Button`, where `ns` is a namespace import, is `import { Button } from …` written another
-    // way, so it resolves the same.
+    // `ns.Button`, where `ns` is a namespace, is `import { Button } from …` written another way, so it
+    // resolves the same. The namespace can also come from a barrel, as in `export * as ns from …`.
     if (
       expression.type === 'MemberExpression' &&
       !expression.computed &&
       expression.object.type === 'Identifier' &&
       expression.property.type === 'Identifier'
     ) {
-      const namespace = findImport(csf.program, expression.object.name);
-      if (namespace.kind === 'namespace') {
+      const origin = followBinding({ resolver }, storyModule, expression.object.name);
+      if (origin?.kind === 'namespace') {
         const exportName = expression.property.name;
-        return {
-          component: {
-            localName: exportName,
-            importId: namespace.importId,
-            exportName,
-            path: resolveFile(storyPath, namespace.importId),
-          },
-        };
+        const { importId, path } = origin;
+        return { component: { localName: exportName, exportName, importId, path } };
       }
     }
 
@@ -155,49 +161,11 @@ export function createMetaComponentResolver(options: MetaComponentResolverOption
   };
 }
 
-type ImportBinding =
-  | { kind: 'import'; importId: string; exportName: string }
-  | { kind: 'namespace'; importId: string }
-  | { kind: 'local' }
-  | { kind: 'unsupported' };
-
-function findImport(program: E.Program, localName: string): ImportBinding {
-  for (const statement of program.body) {
-    if (statement.type !== 'ImportDeclaration') {
-      continue;
-    }
-
-    for (const specifier of statement.specifiers) {
-      if (specifier.local.name !== localName) {
-        continue;
-      }
-
-      // A type-only import binds nothing documentable, but the name is still imported rather than
-      // declared here.
-      if (statement.importKind === 'type') {
-        return { kind: 'unsupported' };
-      }
-
-      const importId = statement.source.value;
-      if (specifier.type === 'ImportNamespaceSpecifier') {
-        return { kind: 'namespace', importId };
-      }
-      if (specifier.type === 'ImportDefaultSpecifier') {
-        return { kind: 'import', importId, exportName: 'default' };
-      }
-      if (specifier.importKind === 'type') {
-        return { kind: 'unsupported' };
-      }
-      return {
-        kind: 'import',
-        importId,
-        exportName:
-          specifier.imported.type === 'Identifier'
-            ? specifier.imported.name
-            : (specifier.imported as E.StringLiteral).value,
-      };
-    }
-  }
-
-  return { kind: 'local' };
+function resolveReferenceModule(
+  resolver: ModuleResolver,
+  fromFile: string,
+  specifier: string
+): ReferenceModule | undefined {
+  const filePath = resolveFileOrUndefined(resolver, fromFile, specifier);
+  return filePath ? parseReferenceModule(filePath) : undefined;
 }

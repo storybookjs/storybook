@@ -101,6 +101,69 @@ describe('createMetaComponentResolver', () => {
     });
   });
 
+  describe('a namespace a barrel re-exports', () => {
+    it.each([
+      ['`export * as`', 'UI', './ui'],
+      ['a namespace import it exports by name', 'Imported', './ui'],
+      ['a namespace export it forwards by name', 'Forwarded', './ui'],
+      ['a namespace export it forwards with `export *`', 'Starred', './ui'],
+    ])('follows %s to the module the namespace stands for', (_, namespace, importId) => {
+      expect(
+        resolveInFixtures(`import { ${namespace} } from './barrel';
+                           export default { component: ${namespace}.Button };`)
+      ).toEqual({
+        component: {
+          localName: 'Button',
+          importId,
+          exportName: 'Button',
+          path: join(FIXTURES, 'barrel', 'ui', 'index.ts'),
+        },
+      });
+    });
+
+    it('prefers an explicit export over an `export *` written before it', () => {
+      // ES modules let an explicit export shadow a star export, whatever the statement order.
+      expect(
+        resolveInFixtures(`import { UI } from './barrel/precedence';
+                           export default { component: UI.Button };`)
+      ).toMatchObject({ component: { path: join(FIXTURES, 'barrel', 'ui', 'index.ts') } });
+    });
+
+    it('does not follow an `export *` that a declared export of the same name shadows', () => {
+      // `UI` is the object the barrel declares, so its `Button` is the class the object holds.
+      expect(
+        resolveInFixtures(`import { UI } from './barrel/declared';
+                           export default { component: UI.Button };`)
+      ).toMatchObject({ component: { path: join(FIXTURES, 'button.component.ts') } });
+    });
+
+    it('does not follow an `export *` that a destructured export of the same name shadows', () => {
+      expect(
+        resolveInFixtures(`import { UI } from './barrel/destructured';
+                           export default { component: UI.Button };`)
+      ).toEqual({ reason: 'unreadable-component-expression', expression: 'UI.Button' });
+    });
+
+    it('reports a named import that is not a namespace as unreadable', () => {
+      expect(
+        resolveInFixtures(`import { ButtonComponent } from './button.component';
+                           export default { component: ButtonComponent.Button };`)
+      ).toEqual({
+        reason: 'unreadable-component-expression',
+        expression: 'ButtonComponent.Button',
+      });
+    });
+  });
+
+  it('follows a `.js` specifier to the TypeScript file it stands for', () => {
+    expect(
+      resolveInFixtures(`import { UI } from './barrel/index.js';
+                         export default { component: UI.Button };`)
+    ).toMatchObject({
+      component: { exportName: 'Button', path: join(FIXTURES, 'barrel', 'ui', 'index.ts') },
+    });
+  });
+
   it('reports a member expression it cannot follow, rather than no component at all', () => {
     expect(
       resolve(`import * as internal from './nowhere';

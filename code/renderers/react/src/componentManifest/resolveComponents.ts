@@ -1,8 +1,13 @@
-import { extractDeclaredSubcomponents } from 'storybook/internal/common';
+import {
+  createMetaComponentResolver,
+  extractDeclaredSubcomponents,
+} from 'storybook/internal/common';
 import { storyNameFromExport } from 'storybook/internal/csf/csf-utils';
 import {
+  type ESTreeNode,
   type ImportRef,
   type StoryReferences,
+  collectImportBindings,
   createStoryArgsResolver,
   extractStoryJSDocInfo,
   loadCsf,
@@ -15,6 +20,7 @@ import { getCodeSnippet } from './generateCodeSnippet.ts';
 import {
   type ComponentRef,
   type DocgenEngine,
+  type DocgenTarget,
   type TypescriptOptions,
   getComponents,
 } from './getComponentImports.ts';
@@ -22,6 +28,9 @@ import { findExactComponentMatch } from './subcomponents.ts';
 import { cachedReadTextFileSync } from './utils.ts';
 
 export type ParsedCsf = ReturnType<ReturnType<typeof loadCsf>['parse']>;
+
+// One instance per process: the resolver caches its module resolutions.
+const resolveMetaComponent = createMetaComponentResolver();
 
 /** A declared subcomponent paired with the component ref it resolved to (if any). */
 export interface ResolvedSubcomponent {
@@ -117,20 +126,56 @@ export async function resolveStoryFileComponents(options: {
   const componentName = csf._meta?.component;
 
   const declaredSubcomponents = extractDeclaredSubcomponents(csf);
+
+  // The meta's component and subcomponents resolve as in every other renderer, so a name the story
+  // file's import cannot reach, such as a barrel's `export * as UI`, still finds its declaration.
+  // react-component-meta reads them through the TypeScript checker, which follows such names itself.
+  const docgenTargets = new Map<string, DocgenTarget>();
+  const storyImports = collectImportBindings(csf.editor.program);
+  // The name the story file refers to the component by. `parts.Button` after
+  // `const parts = { Button }` is the file's own `Button` import, so the ref, the snippets and the
+  // import lines all use `Button`.
+  const resolveName = (name: string, node?: ESTreeNode) => {
+    const resolved = resolveMetaComponent(csf, storyPath, node);
+    if ('reason' in resolved) {
+      return name;
+    }
+    const { localName, importId, path, exportName } = resolved.component;
+    const own = storyImports.get(localName);
+    const ownName =
+      !storyImports.has(name.split('.')[0]) &&
+      own !== undefined &&
+      own.importId === importId &&
+      own.importName === exportName
+        ? localName
+        : name;
+    if (importId && path && docgenEngine !== 'react-component-meta') {
+      docgenTargets.set(ownName, { path, exportName });
+    }
+    return ownName;
+  };
+  const metaComponentName = componentName && resolveName(componentName);
+  const declared = declaredSubcomponents.map((subcomponent) => ({
+    name: subcomponent.name,
+    componentName: resolveName(subcomponent.componentName, subcomponent.node),
+  }));
+
   const allComponents = await getComponents({
-    additionalComponentNames: declaredSubcomponents.map(
-      (subcomponent) => subcomponent.componentName
-    ),
+    additionalComponentNames: [
+      ...(metaComponentName ? [metaComponentName] : []),
+      ...declared.map((subcomponent) => subcomponent.componentName),
+    ],
     csf,
     storyFilePath: storyPath,
     typescriptOptions,
     docgenEngine,
+    docgenTargets,
   });
 
-  const component = findMatchingComponent(allComponents, componentName, title);
-  const subcomponents = declaredSubcomponents.map((declared) => ({
-    name: declared.name,
-    component: findExactComponentMatch(allComponents, declared.componentName),
+  const component = findMatchingComponent(allComponents, metaComponentName, title);
+  const subcomponents = declared.map((subcomponent) => ({
+    name: subcomponent.name,
+    component: findExactComponentMatch(allComponents, subcomponent.componentName),
   }));
 
   return { storyPath, storyFile, csf, componentName, allComponents, component, subcomponents };

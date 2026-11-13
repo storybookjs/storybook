@@ -459,6 +459,69 @@ describe('buildDocgenPayload', () => {
     });
   });
 
+  describe('subcomponents', () => {
+    const ICON_PATH = join(FIXTURES, 'icon.component.ts');
+    const managerByPath = () => ({
+      extractComponentMeta: vi.fn<AngularComponentMetaSource['extractComponentMeta']>((path) =>
+        path === ICON_PATH
+          ? metaFor(componentEntry({ name: 'IconComponent', file: ICON_PATH, inputsClass: [] }))
+          : metaFor(componentEntry())
+      ),
+    });
+
+    it('documents each declared subcomponent in declaration order, also through a barrel', () => {
+      givenStoryFile(`
+        import { ButtonComponent } from './button.component';
+        import { UI } from './ui';
+        export default {
+          title: 'Button',
+          component: ButtonComponent,
+          subcomponents: { Icon: UI.IconComponent, Again: ButtonComponent },
+        };
+      `);
+      const manager = managerByPath();
+
+      const payload = buildDocgenPayload({ entry }, context(manager));
+
+      expect(manager.extractComponentMeta).toHaveBeenCalledWith(ICON_PATH, {
+        exportName: 'IconComponent',
+        localName: 'IconComponent',
+      });
+      expect(Object.keys(payload?.subcomponents ?? {})).toEqual(['Icon', 'Again']);
+      expect(payload?.subcomponents?.Icon).toMatchObject({
+        name: 'IconComponent',
+        path: entry.importPath,
+        renderer: 'angular',
+        argTypes: {},
+      });
+      expect(payload?.subcomponents?.Again?.argTypes?.label).toMatchObject({ name: 'label' });
+      expect(payload?.subcomponents?.Icon).not.toHaveProperty('angularComponentMeta');
+    });
+
+    it('keeps a subcomponent that does not resolve to its own entry', () => {
+      givenStoryFile(`
+        import { ButtonComponent } from './button.component';
+        export default {
+          title: 'Button',
+          component: ButtonComponent,
+          subcomponents: { Global: globalThis.Icon },
+        };
+      `);
+
+      const payload = buildDocgenPayload({ entry }, context(managerByPath()));
+
+      expect(payload?.error).toBeUndefined();
+      expect(payload?.argTypes?.label).toMatchObject({ name: 'label' });
+      expect(payload?.subcomponents?.Global).toMatchObject({
+        name: 'Global',
+        error: { name: 'AngularComponentMetaNotFound' },
+      });
+      expect(payload?.subcomponents?.Global?.error?.message).toContain(
+        '`subcomponents.Global: globalThis.Icon`'
+      );
+    });
+  });
+
   describe('component reached through another module', () => {
     it('follows a property access on a namespace import to the component it names', () => {
       givenStoryFile(`

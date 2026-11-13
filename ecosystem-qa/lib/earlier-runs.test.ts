@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { oldestFirst, untrustedBecause, uploadedAt, type RunOrigin } from './earlier-runs.ts';
+import {
+  oldestFirst,
+  RunArtifactPages,
+  untrustedBecause,
+  uploadedAt,
+  type RunOrigin,
+} from './earlier-runs.ts';
 
 const run = (overrides: Partial<RunOrigin> = {}): RunOrigin => ({
   path: '.github/workflows/ecosystem-qa.yml',
@@ -62,5 +68,19 @@ describe('uploadedAt', () => {
 
   it('knows no time for an artifact the run does not list', () => {
     expect(uploadedAt(listing, 'qa-result-windows-claude')).toBeUndefined();
+  });
+});
+
+describe('RunArtifactPages', () => {
+  it('reads the artifacts of every page of a listing', () => {
+    const first = { name: 'qa-result-mealdrop-linux-claude', created_at: '2026-11-12T12:00:00Z' };
+    const second = { name: 'qa-result-n8n-linux-claude', created_at: '2026-11-12T12:30:00Z' };
+
+    expect(
+      RunArtifactPages.parse([
+        { total_count: 2, artifacts: [first] },
+        { total_count: 2, artifacts: [second] },
+      ])
+    ).toEqual({ artifacts: [first, second] });
   });
 });

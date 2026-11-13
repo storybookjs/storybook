@@ -50,6 +50,8 @@ The default for Claude is Haiku 5.5 at low effort: on mealdrop it found every kn
 Claude's cost comes from its own result line.
 Codex, and a Claude run that ended without one, is priced from the price table in `agent-eval/lib/usage.ts`, which both harnesses share; a run priced that way says so in its summary.
 A model missing from that table gives `usd: null`.
+The agent judges a break against the migration guide of the version under test: `run.ts` loads `MIGRATION.md` at the tag `v<version>` of storybookjs/storybook, so a sweep from a branch behind `next` does not read an old guide.
+A version without such a tag, a canary for example, gets the guide of this checkout, and `migrationGuide` in `result.json` says which one was read.
 The repo is cloned under the temp directory (`<tmpdir>/ecosystem-qa/work/<id>`) by default, outside the monorepo so no monorepo config file sits above it, and the run stops if that directory already exists. Pass `--clone-dir` to put it elsewhere.
 Tier 1 entries are forks under `storybook-tmp` whose `qa/base` branch is pinned at an upstream commit, and the runner fetches that start commit only, without its history.
 
@@ -96,15 +98,18 @@ ECOSYSTEM_QA_FAKE=1 node ecosystem-qa/run.ts --repo mealdrop --version 11.0.0-be
 
 ## Run it in CI
 
-Start the `Ecosystem QA` workflow by hand and pick the repo, version, engines and operating systems.
+Start the `Ecosystem QA` workflow by hand and pick the repos, version, engines and operating systems.
+`repo` takes catalog ids separated by commas, and `owned` or `tier1` for every repo of that class, so `owned,tier1` with `linux,windows` is a whole static sweep in one run.
+`plan.ts` turns the inputs into one job for each repo, operating system and engine, and a repo runs on Windows only when the catalog marks it `windows`.
 Linux runs the agent in `docker()`; Windows runs it with `noSandbox()`, and the API key is the only secret in that job.
 The agent keys live in the `ecosystem-qa` environment, and the push token in `ecosystem-qa-file`, which only the filing job enters.
-Each runner uploads `qa-result-<os>-<engine>` with `result.json`, the run log, the raw agent stream, the session, the evidence and the cycle branch bundle.
+Each runner uploads `qa-result-<id>-<os>-<engine>` with `result.json`, the run log, the raw agent stream, the session, the evidence and the cycle branch bundle.
 `run.ts` writes the status, wall time, tokens, dollars, free disk and every check to the Step Summary.
 
 The collect job runs `group.ts` with the key from the `ecosystem-qa` environment, then collects with its `groups.json` and uploads both files as `qa-proposals`.
 To collect again without running any agent, set `from_runs` to a comma-separated list of earlier run ids: the job fetches their `qa-result-*` artifacts with `fetch-runs.ts`, the result that was uploaded last winning where two runs hold the same repo, OS and engine, and groups and collects those.
 It takes only runs of this workflow that were started by hand, on the default branch or on the branch the collecting run itself runs on, and stops before it downloads anything when one of the ids is anything else.
+It also stops, and collects nothing, when one of the runs holds no result it can read: a run whose agent jobs wrote no `result.json`, or one from before the artifact name carried the repo id.
 Any run of the repository can upload an artifact with the name of a result, also the run of a pull request from a fork, and the filing job pushes and files what the results say.
 It uploads them again as `qa-earlier-results`, so the filing job finds their evidence and cycle bundles.
 To split a wrong merge, or to collect when the model is unavailable, paste a `groups.json` document into `groups`; the job uses it instead of asking the model.
@@ -117,7 +122,11 @@ A pull request that touches `ecosystem-qa/` or the workflow runs only the smoke 
 `<out>/result.json` is the record of one run, and every later stage reads only these files.
 Next to it are `run.log`, `agent-stream.jsonl` (the token counts come from here), `session.jsonl`, `evidence/` and `cycle.bundle` when the agent committed.
 A run needs an output directory of its own: `run.ts` stops when `--out` holds anything, so that the log, the agent stream and the evidence of an earlier run are never read as this run's.
-When the sandbox fails after the agent has finished, for example because its worktree cannot be deleted, the runner reads the answer from `run.log`.
+The runner keeps the sandbox open until it has an answer it can use.
+The answer is the `<qa-result>` block in the last message of the agent.
+Broken JSON, a missing check or a last message without the block goes back to the agent with the problem, in the same session, at most twice; after that the record has status `output-invalid`.
+The sandbox is closed last, and a worktree that cannot be deleted then is left behind without failing the run.
+When the sandbox fails after the agent has finished, for example while it collects the commits, the runner reads the answer from `run.log`.
 The record then has status `ok` and names the sandbox error in `recoveredFrom`.
 A run whose agent did not finish is never read this way.
 

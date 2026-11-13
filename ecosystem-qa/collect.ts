@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { versionLine } from './lib/cycle.ts';
 import { listQaIssues, releasePublishedAt } from './lib/github.ts';
 import { clusterFindings, identityGrouping } from './lib/grouping.ts';
+import { CHECKOUT_GUIDE } from './lib/migration-guide.ts';
 import { loadFindingGroups, QA_LABEL, toProposal } from './lib/proposals.ts';
 import { upgraded } from './lib/results.ts';
 import { Grouping, type Proposal } from './lib/schema.ts';
@@ -13,7 +14,7 @@ import { Grouping, type Proposal } from './lib/schema.ts';
 const HELP = `Usage: node ecosystem-qa/collect.ts --results <dir> --version <storybook version> --out <proposals.json> --repo <owner/name> [--run-url <url>] [--groups <groups.json>]
 
 Reads the result.json of every catalog repo, os and engine under --results, either from a downloaded
-artifact (<results>/qa-result-<os>-<engine>/<id>/<os>/<engine>) or from a local run
+artifact (<results>/qa-result-<id>-<os>-<engine>/<id>/<os>/<engine>) or from a local run
 (<results>/<id>/<os>/<engine>). Merges findings by fingerprint, lists the issues of --repo that carry
 the internal-qa label with gh, and writes one proposal per group to --out.
 --version is the version the cycle ran; a record that names another version is ignored.
@@ -81,7 +82,7 @@ writeFileSync(out, `${JSON.stringify(proposals, null, 2)}\n`);
 for (const { result, resultPath } of loaded) {
   const failed = result.checks.filter((check) => check.state === 'fail').map((check) => check.id);
   console.log(
-    `${resultPath}: ${result.status}, ${result.checks.length} checks, failed: ${failed.join(', ') || 'none'}${upgraded(result) ? '' : ', not upgraded'}`
+    `${resultPath}: ${result.status}, ${result.checks.length} checks, failed: ${failed.join(', ') || 'none'}${upgraded(result) ? '' : ', not upgraded'}${result.migrationGuide === CHECKOUT_GUIDE ? ', judged against the migration guide of the checkout' : ''}`
   );
 }
 const targetOf = (proposal: Proposal): string => {

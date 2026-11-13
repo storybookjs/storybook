@@ -11,6 +11,7 @@ export interface Outcome {
   status: RunResultFile['status'];
   error?: string;
   recoveredFrom?: string;
+  migrationGuide?: string;
   output?: z.infer<typeof AgentOutput>;
   startSha: string;
   headSha: string | null;

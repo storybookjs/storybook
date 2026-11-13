@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       repo:
-        description: 'Catalog id from ecosystem-qa/catalog.json'
+        description: 'Catalog ids from ecosystem-qa/catalog.json, comma-separated; owned and tier1 stand for every repo of that class'
         type: string
         default: 'mealdrop'
       version:
@@ -95,6 +95,9 @@ jobs:
       - name: Test
         run: yarn workspace ecosystem-qa test
 
+      - name: Plan a whole sweep from the catalog
+        run: node ecosystem-qa/plan.ts --repos owned,tier1 --os linux,windows --engines claude,codex
+
       - name: Install Chromium for the evidence tools
         run: cd ecosystem-qa && npx playwright install --with-deps chromium
 
@@ -124,13 +127,32 @@ jobs:
     permissions: {}
     outputs:
       matrix: ${{ steps.matrix.outputs.matrix }}
-      repo: ${{ steps.matrix.outputs.repo }}
       version: ${{ steps.matrix.outputs.version }}
       dry: ${{ steps.matrix.outputs.dry }}
       from_runs: ${{ steps.matrix.outputs.from_runs }}
       groups: ${{ steps.matrix.outputs.groups }}
     steps:
-      - name: Build the os x engine matrix
+      # A run that only collects earlier results starts no agent, so it needs no matrix.
+      - name: Checkout
+        if: ${{ inputs.from_runs == '' }}
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Setup Node.js
+        if: ${{ inputs.from_runs == '' }}
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Install the ecosystem-qa workspace
+        if: ${{ inputs.from_runs == '' }}
+        run: |
+          corepack enable
+          yarn workspaces focus ecosystem-qa
+
+      - name: Build the repo x os x engine matrix
         id: matrix
         env:
           QA_REPO: ${{ inputs.repo }}
@@ -155,17 +177,14 @@ jobs:
             echo "::error::groups is not one JSON document"
             exit 1
           fi
-          matrix="$(jq -cn --arg engines "$QA_ENGINES" --arg oses "$QA_OS" '{include: [
-            ($oses | split(",")[]) as $os | ($engines | split(",")[]) as $engine | {
-              os: $os,
-              engine: $engine,
-              runner: (if $os == "windows" then "windows-latest" else "ubuntu-latest" end),
-              sandbox: (if $os == "windows" then "none" else "docker" end)
-            }
-          ]}')"
+          if [[ -n "$QA_FROM_RUNS" ]]; then
+            matrix='{"include":[]}'
+          elif ! matrix="$(node ecosystem-qa/plan.ts --repos "$QA_REPO" --os "$QA_OS" --engines "$QA_ENGINES")"; then
+            echo "::error::no job matrix for repo '$QA_REPO', os '$QA_OS', engines '$QA_ENGINES'"
+            exit 1
+          fi
           {
             echo "matrix=$matrix"
-            echo "repo=$QA_REPO"
             echo "version=$QA_VERSION"
             echo "dry=$QA_DRY"
             echo "from_runs=$QA_FROM_RUNS"
@@ -174,7 +193,7 @@ jobs:
           echo "$matrix" | jq .
 
   runner:
-    name: QA ${{ needs.plan.outputs.repo }} on ${{ matrix.os }} with ${{ matrix.engine }}
+    name: QA ${{ matrix.repo }} on ${{ matrix.os }} with ${{ matrix.engine }}
     needs: plan
     if: ${{ needs.plan.outputs.from_runs == '' }}
     runs-on: ${{ matrix.runner }}
@@ -190,7 +209,7 @@ jobs:
       run:
         shell: bash
     env:
-      QA_REPO: ${{ needs.plan.outputs.repo }}
+      QA_REPO: ${{ matrix.repo }}
       QA_VERSION: ${{ needs.plan.outputs.version }}
       QA_ENGINE: ${{ matrix.engine }}
       QA_OS: ${{ matrix.os }}
@@ -286,7 +305,7 @@ jobs:
         if: ${{ always() && steps.redact.outcome == 'success' }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: qa-result-${{ matrix.os }}-${{ matrix.engine }}
+          name: qa-result-${{ matrix.repo }}-${{ matrix.os }}-${{ matrix.engine }}
           path: ecosystem-qa/results/
           retention-days: 14
           if-no-files-found: warn
@@ -432,6 +451,11 @@ jobs:
       contents: write # push evidence to the qa-assets branch
       issues: write # create the issue or the comment
     environment: ecosystem-qa-file
+    # Two filing jobs that list the issues at the same moment would each file what the other is
+    # about to file, and one sweep can now overlap another in the repos it tests.
+    concurrency:
+      group: ecosystem-qa-file
+      cancel-in-progress: false
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2

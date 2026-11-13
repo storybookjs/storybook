@@ -55,14 +55,14 @@ const load = (resultsDir: string) => {
 };
 
 const artifactRun = (resultsDir: string) =>
-  join(resultsDir, 'qa-result-linux-claude/mealdrop/linux/claude');
+  join(resultsDir, 'qa-result-mealdrop-linux-claude/mealdrop/linux/claude');
 
 describe('loadResults', () => {
   it('reads only the records the runner wrote, never one inside the evidence', () => {
     const runDir = artifactRun(resultsDir);
     writeRun(runDir);
     writeRun(join(runDir, 'evidence'));
-    writeRun(join(resultsDir, 'qa-result-linux-claude/elsewhere'));
+    writeRun(join(resultsDir, 'qa-result-mealdrop-linux-claude/elsewhere'));
     writeRun(join(resultsDir, 'mealdrop/macos/claude'), {
       ...record(),
       request: { ...record().request, os: 'macos' },
@@ -156,7 +156,7 @@ describe('loadResults', () => {
 
   it('skips a truncated result.json and still collects the other runs', () => {
     write(
-      join(resultsDir, 'qa-result-linux-codex/mealdrop/linux/codex/result.json'),
+      join(resultsDir, 'qa-result-mealdrop-linux-codex/mealdrop/linux/codex/result.json'),
       '{"request": {'
     );
     writeRun(artifactRun(resultsDir));
@@ -282,12 +282,15 @@ describe('downloadedRuns', () => {
     const download = '/download';
     writeRun(artifactRun(download));
     writeRun(join(artifactRun(download), 'evidence'));
-    writeRun(join(download, 'qa-result-linux-claude/not-in-the-catalog/linux/claude'));
+    writeRun(
+      join(download, 'qa-result-not-in-the-catalog-linux-claude/not-in-the-catalog/linux/claude')
+    );
+    writeRun(join(download, 'qa-result-linux-claude/mealdrop/linux/claude'));
     writeRun(join(download, 'another-artifact/mealdrop/linux/claude'));
 
     expect(downloadedRuns(download, '/out', [ENTRY])).toEqual([
       {
-        artifact: 'qa-result-linux-claude',
+        artifact: 'qa-result-mealdrop-linux-claude',
         from: artifactRun(download),
         to: '/out/mealdrop/linux/claude',
         label: 'mealdrop linux claude',

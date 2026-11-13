@@ -1,3 +1,5 @@
+import { resolve } from 'node:path';
+
 import { versions } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
@@ -329,6 +331,15 @@ async function dispatchTools(
   const toolPath = `${entry.id} ${toCliMethodName(methodName)}`;
   const commandPath = `npx storybook tools ${toolPath}`;
 
+  const args = withFileArguments(parsed, method.fileArguments);
+  if (!args.ok) {
+    return result({
+      exitCode: 1,
+      output: `Unexpected argument \`${args.unexpected}\`. \`${commandPath}\` takes no file arguments: pass tool arguments as \`--key value\` flags (or via \`--input '<object>'\`).`,
+      outcome: { kind: 'intercept', reason: 'invalid-arguments' },
+    });
+  }
+
   if (tools.mode === 'local' && method.requiresDevServer) {
     const discovery = await (deps.discoverInstance ?? discoverRunningInstance)(invocation.target);
     return result({
@@ -346,7 +357,7 @@ async function dispatchTools(
     logger.setLogLevel('error');
   }
   try {
-    const outcome = await tools.call(method.ref, parsed.args, {
+    const outcome = await tools.call(method.ref, args.args, {
       ...(tools.storybook.url ? { origin: tools.storybook.url } : {}),
     });
     const output = parsed.json
@@ -377,6 +388,32 @@ async function dispatchTools(
   } finally {
     logger.setLogLevel(previousLogLevel);
   }
+}
+
+/**
+ * Bare arguments fill the tool's `fileArguments` key, after any `--key` value for it, each resolved
+ * against the directory the command runs in: the handler may run in another process, with another
+ * working directory.
+ */
+function withFileArguments(
+  parsed: Extract<ParsedToolsTokens, { ok: true }>,
+  key: string | undefined
+): { ok: true; args: Record<string, unknown> } | { ok: false; unexpected: string } {
+  if (parsed.positionals.length === 0) {
+    return { ok: true, args: parsed.args };
+  }
+  if (!key) {
+    return { ok: false, unexpected: parsed.positionals[0] };
+  }
+  const given = parsed.args[key];
+  const files = parsed.positionals.map((file) => resolve(file));
+  return {
+    ok: true,
+    args: {
+      ...parsed.args,
+      [key]: given === undefined ? files : [...(Array.isArray(given) ? given : [given]), ...files],
+    },
+  };
 }
 
 function formatUnknownToolsetFromCatalog(

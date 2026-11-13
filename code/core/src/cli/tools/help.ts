@@ -57,6 +57,12 @@ function methodBodyLines(method: ToolsetCatalogMethod): string[] {
   } else {
     lines.push('', 'Arguments:', ...inputLines);
   }
+  if (method.fileArguments) {
+    lines.push(
+      '',
+      `Bare arguments are \`--${method.fileArguments}\`, relative to the current directory: \`npx storybook tools ${cliPath(method)} <file> [<file> ...]\`.`
+    );
+  }
   const outputLines = argumentLines(method.output, false);
   if (outputLines && outputLines.length > 0) {
     lines.push('', 'Output (`--json`):', ...outputLines);
@@ -139,7 +145,7 @@ export function renderToolsetHelpFromCatalog(entry: ToolsetCatalogEntry): string
 
 export function renderMethodHelpFromCatalog(method: ToolsetCatalogMethod): string {
   return [
-    `Usage: npx storybook tools ${cliPath(method)} [--key value ...]`,
+    `Usage: npx storybook tools ${cliPath(method)}${method.fileArguments ? ' [files...]' : ''} [--key value ...]`,
     '',
     method.requiresDevServer
       ? 'Execution: requires a running Storybook dev server; start it first.'

@@ -4,7 +4,11 @@ import type { StoryIndex } from 'storybook/internal/types';
 
 import { basename, dirname, extname, join, normalize, resolve } from 'pathe';
 
-import type { ModuleGraphServiceState } from '../../services/module-graph/definition.ts';
+import type {
+  ModuleGraphService,
+  ModuleGraphServiceState,
+} from '../../services/module-graph/definition.ts';
+import type { ToolsetCtx } from '../../toolset-definition.ts';
 
 /** Lifecycle status reported by the `core/module-graph` service. */
 export type ModuleGraphStatus = ModuleGraphServiceState['status'];
@@ -30,6 +34,25 @@ export type ModuleGraphAccess = {
     };
   };
 };
+
+/** The `core/module-graph` service of the handler's realm, narrowed to what the resolver needs. */
+export function moduleGraphAccessFromCtx(
+  ctx: ToolsetCtx,
+  moduleGraph: ModuleGraphService = ctx.getService<ModuleGraphService>('core/module-graph', {
+    internal: true,
+  })
+): ModuleGraphAccess {
+  return {
+    queries: {
+      status: {
+        loaded: () => moduleGraph.queries.status.loaded(undefined) as Promise<ModuleGraphStatus>,
+      },
+      storiesForFiles: {
+        loaded: (files) => moduleGraph.commands.storiesForFiles(files),
+      },
+    },
+  };
+}
 
 const SOURCE_EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'] as const;
 const INDEX_BASENAMES = SOURCE_EXTENSIONS.map((ext) => `index${ext}`);

@@ -173,6 +173,57 @@ describe('runStoryTests', () => {
     expect(result).toEqual({ status: 'completed', result: sampleResult });
   });
 
+  it('runs the stories of a story file and reports how the file selected them', async () => {
+    const channel = createMockChannel();
+    const requested: unknown[] = [];
+    channel.emit = (event, payload) => {
+      if (event === TRIGGER_TEST_RUN_REQUEST) {
+        const { requestId, storyIds } = payload as { requestId: string; storyIds: string[] };
+        requested.push(storyIds);
+        queueMicrotask(() =>
+          respond(channel, { requestId, status: 'completed', result: sampleResult })
+        );
+      }
+    };
+
+    const result = await runStoryTests({
+      channel,
+      getIndex: async () => index,
+      files: ['src/Button.stories.tsx'],
+    });
+
+    expect(requested).toEqual([['button--primary']]);
+    expect(result).toEqual({
+      status: 'completed',
+      result: sampleResult,
+      files: [
+        {
+          file: 'src/Button.stories.tsx',
+          kind: 'story-file',
+          storyIds: ['button--primary'],
+          storyFiles: ['./src/Button.stories.tsx'],
+        },
+      ],
+    });
+  });
+
+  it('returns no-stories with the reason when a file matches nothing', async () => {
+    const channel = createMockChannel();
+    const emitSpy = vi.spyOn(channel, 'emit');
+
+    const result = await runStoryTests({
+      channel,
+      getIndex: async () => index,
+      files: ['src/DoesNotExist.stories.tsx'],
+    });
+
+    expect(result).toEqual({
+      status: 'no-stories',
+      notFoundMessages: ['No file found at src/DoesNotExist.stories.tsx.'],
+    });
+    expect(emitSpy).not.toHaveBeenCalled();
+  });
+
   it('maps an error channel response', async () => {
     const channel = createMockChannel();
     channel.emit = (event, payload) => {

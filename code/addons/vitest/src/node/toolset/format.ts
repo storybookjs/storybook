@@ -1,6 +1,10 @@
-import type { ToolsetCtx } from 'storybook/open-service';
+import { getToolName, type ToolsetCtx } from 'storybook/open-service';
 
-import type { TestRunData, TestRunResult } from './definition.ts';
+import { isAbsolute, relative } from 'pathe';
+
+import type { TestRunData, TestRunOutput, TestRunResult } from './definition.ts';
+
+type FileSelection = NonNullable<Extract<TestRunOutput, { status: 'completed' }>['files']>[number];
 
 type ComponentTestStatus = TestRunResult['componentTestStatuses'][number];
 
@@ -274,9 +278,59 @@ const FAILURE_LABELS: Record<keyof TestRunFailureCounts, (count: number) => stri
   unhandledErrors: (count) => pluralize(count, 'unhandled error'),
 };
 
+// Short relative paths read better and cost fewer tokens; a path outside the project stays absolute.
+function displayPath(file: string): string {
+  if (!isAbsolute(file)) {
+    return file;
+  }
+  const fromCwd = relative(process.cwd(), file);
+  return fromCwd.startsWith('..') ? file : fromCwd;
+}
+
+// Says which form each file argument took, since a component file also selects stories elsewhere.
+function formatSelection({ file, kind, storyIds, storyFiles }: FileSelection): string {
+  const path = `\`${displayPath(file)}\``;
+  const stories = pluralize(storyIds.length, 'story', 'stories');
+  return kind === 'story-file'
+    ? `${path} is a story file: ran its ${stories}.`
+    : `${path} is not a story file: ran the ${stories} that depend on it, in ${pluralize(storyFiles.length, 'story file')}.`;
+}
+
+const A11Y_GUIDANCE =
+  'Accessibility violations: fix semantic ones yourself (roles, labels, alt text, keyboard access). For visual ones such as color contrast, do not change the design: describe the problem, offer two or three options and ask the user. Never change `parameters.a11y.test` to make a violation pass.';
+
+// What the agent needs next for this result, so no skill has to be read first.
+function formatNextSteps(
+  result: TestRunResult,
+  { a11y, failed, ctx }: { a11y: boolean; failed: boolean; ctx: ToolsetCtx }
+): string[] {
+  const steps: string[] = [];
+  if (failed) {
+    steps.push(
+      'Fix what fails and run again, changing only what each failure needs. Do not finish with failing tests.'
+    );
+  }
+  if (a11y && countA11yViolations(getA11yReports(result)) > 0) {
+    steps.push(A11Y_GUIDANCE);
+  }
+  if (!failed && result.storyIds && ctx.transport !== 'sdk') {
+    const all =
+      ctx.transport === 'cli'
+        ? `\`${getToolName(ctx)('test.run')}\` without arguments`
+        : `${getToolName(ctx)('test.run')} without \`files\` or \`stories\``;
+    steps.push(`Before you finish, run every story once: ${all}.`);
+  }
+  return steps;
+}
+
 function formatResultSection(
   result: TestRunResult,
-  { a11y, a11yEnabled }: { a11y: boolean; a11yEnabled: boolean }
+  {
+    a11y,
+    a11yEnabled,
+    files,
+    ctx,
+  }: { a11y: boolean; a11yEnabled: boolean; files?: FileSelection[]; ctx: ToolsetCtx }
 ): string {
   const failures = countTestRunFailures(result, a11y);
   const failureParts = (Object.keys(FAILURE_LABELS) as (keyof TestRunFailureCounts)[])
@@ -289,17 +343,28 @@ function formatResultSection(
         ? 'No component tests ran.'
         : `Passed: ${pluralize(result.componentTestCount.success, 'component test')} passed.`;
 
+  const lines = [
+    ...(files ?? []).map(formatSelection),
+    verdict,
+    formatA11yResult(result, { a11y, a11yEnabled }),
+    ...formatNextSteps(result, { a11y, failed: failureParts.length > 0, ctx }),
+  ];
   return `## Result
 
-${verdict}
-${formatA11yResult(result, { a11y, a11yEnabled })}`;
+${lines.join('\n')}`;
 }
 
 // Only the sections that carry information are emitted before the closing result.
 function formatCompletedRun(
   result: TestRunResult,
-  { a11y, a11yEnabled, origin }: { a11y: boolean; a11yEnabled: boolean; origin?: string }
+  {
+    a11y,
+    a11yEnabled,
+    files,
+    ctx,
+  }: { a11y: boolean; a11yEnabled: boolean; files?: FileSelection[]; ctx: ToolsetCtx }
 ): string {
+  const { origin } = ctx;
   const sections: string[] = [];
   // An error-level accessibility result fails the run without failing the component test, so the
   // story is listed as failing rather than passing.
@@ -334,7 +399,7 @@ function formatCompletedRun(
   }
 
   // Last, because agents mostly read this report through `tail`.
-  sections.push(formatResultSection(result, { a11y, a11yEnabled }));
+  sections.push(formatResultSection(result, { a11y, a11yEnabled, files, ctx }));
 
   return sections.join('\n\n');
 }
@@ -353,15 +418,16 @@ export function formatTestRun(
   switch (data.status) {
     case 'no-stories':
       return data.notFoundMessages.length === 0
-        ? 'No stories were given, so no tests ran. Pass story IDs in `stories`, or omit it to run every story test.'
-        : `No stories found matching the provided input.
+        ? 'No stories were given, so no tests ran. Pass files or story IDs, or neither to run every story test.'
+        : `No stories found matching the provided input, so no tests ran.
 
 ${data.notFoundMessages.join('\n')}`;
     case 'completed':
       return formatCompletedRun(data.result, {
         a11y: data.a11y,
         a11yEnabled,
-        origin: ctx.origin,
+        files: data.files,
+        ctx,
       });
     case 'error':
       return `Error: ${data.error.message}`;

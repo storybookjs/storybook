@@ -71,6 +71,16 @@ export {
   type NotFoundStory,
 } from '../shared/open-service/toolsets/stories/find-story-ids.ts';
 export {
+  findStoriesInFiles,
+  type FoundFileStories,
+  type NotFoundFileStories,
+  type FileSelectionKind,
+} from '../shared/open-service/toolsets/stories/find-stories-in-files.ts';
+export {
+  moduleGraphAccessFromCtx,
+  type ModuleGraphAccess,
+} from '../shared/open-service/toolsets/stories/resolve-component-stories.ts';
+export {
   storyInputArraySchema,
   type StoryInput,
 } from '../shared/open-service/toolsets/stories/story-input.ts';

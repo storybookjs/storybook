@@ -16,8 +16,7 @@ import type { StatusesByStoryIdAndTypeId } from '../../../status-store/index.ts'
 import { getChangedStories } from './changed.ts';
 import { detectChangedFilesOutsideStories } from './changed-files-outside-stories.ts';
 import { DEFAULT_MAX_DISTANCE, findStoriesByComponent } from './find-by-component.ts';
-import type { ModuleGraphAccess, ModuleGraphStatus } from './resolve-component-stories.ts';
-import { reasonForStatus } from './resolve-component-stories.ts';
+import { moduleGraphAccessFromCtx, reasonForStatus } from './resolve-component-stories.ts';
 import {
   formatChangedStories,
   formatFindByComponent,
@@ -232,24 +231,6 @@ Results are sorted by distance (0 = the path is itself a story file, 1 = direct 
 Only IDs returned by discovery tools resolve: never derive them from file names, feature names, titles (authors can override them) or memory.
 
 Needs a dev server builder with change detection (e.g. Vite); otherwise returns a typed error.`;
-}
-
-function moduleGraphAccessFromCtx(
-  ctx: ToolsetCtx,
-  moduleGraph: ModuleGraphService = ctx.getService<ModuleGraphService>('core/module-graph', {
-    internal: true,
-  })
-): ModuleGraphAccess {
-  return {
-    queries: {
-      status: {
-        loaded: () => moduleGraph.queries.status.loaded(undefined) as Promise<ModuleGraphStatus>,
-      },
-      storiesForFiles: {
-        loaded: (files) => moduleGraph.commands.storiesForFiles(files),
-      },
-    },
-  };
 }
 
 /** Creates the public stories API with request-local access to Storybook runtime dependencies. */

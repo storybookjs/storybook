@@ -1,6 +1,7 @@
 import * as v from 'valibot';
 
 import {
+  moduleGraphAccessFromCtx,
   storyInputArraySchema,
   type StoryIndexAccess,
   type StoryInput,
@@ -71,6 +72,18 @@ const testRunResultSchema = v.object({
   ),
 });
 
+const fileSelectionSchema = v.object({
+  file: v.string(),
+  kind: v.pipe(
+    v.picklist(['story-file', 'component']),
+    v.description(
+      '`story-file`: the stories in that file. `component`: the stories, in any story file, that depend on it.'
+    )
+  ),
+  storyIds: v.array(v.string()),
+  storyFiles: v.array(v.string()),
+});
+
 const testRunOutputSchema = v.variant('status', [
   v.object({
     status: v.literal('no-stories'),
@@ -80,6 +93,8 @@ const testRunOutputSchema = v.variant('status', [
   v.object({
     status: v.literal('completed'),
     result: testRunResultSchema,
+    /** How each `files` entry selected its stories; absent when `files` was not given. */
+    files: v.optional(v.array(fileSelectionSchema)),
   }),
   v.object({
     status: v.literal('error'),
@@ -113,7 +128,7 @@ export type TestRunSuccessData = Extract<TestRunOutput, { status: 'completed' | 
 
 export type TestRunFailureData = Extract<
   TestRunOutput,
-  { status: 'completed' | 'error' | 'cancelled' }
+  { status: 'completed' | 'no-stories' | 'error' | 'cancelled' }
 > & {
   a11y: boolean;
 };
@@ -123,12 +138,20 @@ const runInputSchema = v.strictObject({
     v.pipe(
       storyInputArraySchema,
       v.description(
-        `Stories to test for focused feedback. Omit this field to run tests for all available stories.
+        `Stories to test for focused feedback. Omit this field and \`files\` to run tests for all available stories.
 Prefer running tests for specific stories while developing to get faster feedback,
 and omit it once before you finish, to verify every story.
 Prefer { storyId } when you don't already have story file context, since this avoids filesystem discovery.
 Use { storyId } when IDs were discovered from documentation tools.
 Use { absoluteStoryPath + exportName } only when you're currently working in a story file and already know those values.`
+      )
+    )
+  ),
+  files: v.optional(
+    v.pipe(
+      v.array(v.string()),
+      v.description(
+        `Files to test, absolute or relative to the Storybook project directory. A story file (\`*.stories.*\`) runs the stories in that file and nothing else. Any other file, such as a component, runs every story that depends on it, at any import depth. Can be combined with \`stories\`; omit both to run every story.`
       )
     )
   ),
@@ -145,13 +168,13 @@ Use { absoluteStoryPath + exportName } only when you're currently working in a s
 
 // Inferring this from the schema would make the exported toolset type unnameable in declaration
 // output, because core's valibot types live in a private declaration chunk.
-type RunInput = { stories?: StoryInput[]; a11y: boolean };
+type RunInput = { stories?: StoryInput[]; files?: string[]; a11y: boolean };
 
 export type TestToolset = ToolsetDefinition<
   'test',
   {
     run: ToolsetMethod<
-      v.GenericSchema<{ stories?: StoryInput[]; a11y?: boolean }, RunInput>,
+      v.GenericSchema<{ stories?: StoryInput[]; files?: string[]; a11y?: boolean }, RunInput>,
       ToolsetOutcome<TestRunSuccessData, TestRunFailureData>
     >;
   }
@@ -166,8 +189,8 @@ function describeRun(a11yEnabled: boolean, ctx: ToolsetCtx): string {
   return (
     `Run story tests.${skill ? `\nFirst run ${skill} once and follow it: it has the rules for running the tests and fixing what fails.` : ''}
 Run them after editing anything that changes how the UI looks — components, stories, styles, CSS, themes, colors, or design tokens — shell-level substitutes like typecheck, lint, or package.json test scripts do not replace this.
-Provide stories for focused runs (faster while iterating),
-or omit stories to run all tests for full-project verification.
+Pass the story files or component files you changed in files for focused runs (faster while iterating),
+or omit files and stories to run all tests for full-project verification.
 Use this continuously to monitor test results as you work on your UI components and stories.
 Results will include passing/failing status` +
     (a11yEnabled
@@ -183,12 +206,14 @@ For visual/design accessibility violations (for example color contrast), ask the
  */
 function runTelemetry(data: TestRunData, input: RunInput): ToolsetTelemetryReport | undefined {
   const inputStoryCount = input.stories?.length ?? 0;
+  const inputFileCount = input.files?.length ?? 0;
 
   if (data.status === 'no-stories') {
     return {
       payload: {
         runA11y: data.a11y,
         inputStoryCount,
+        inputFileCount,
         matchedStoryCount: 0,
         passingStoryCount: 0,
         failingStoryCount: 0,
@@ -206,6 +231,7 @@ function runTelemetry(data: TestRunData, input: RunInput): ToolsetTelemetryRepor
     payload: {
       runA11y: data.a11y,
       inputStoryCount,
+      inputFileCount,
       // A partially resolved selector list never reaches a run, so every input matched by this point.
       matchedStoryCount: data.result.storyIds?.length ?? inputStoryCount,
       ...summarizeTestRun(data.result, data.a11y),
@@ -221,12 +247,23 @@ function isFailedRun(data: TestRunData): data is TestRunFailureData {
     case 'completed':
       return Object.values(countTestRunFailures(data.result, data.a11y)).some((count) => count > 0);
     case 'no-stories':
-      return false;
+      // A selector that matched nothing is a failed request; an empty selector list is not.
+      return data.notFoundMessages.length > 0;
     default: {
       // Type-only: a new status must decide its own pass/fail rather than falling through.
       const _exhaustive: never = data;
       return _exhaustive;
     }
+  }
+}
+
+// A realm without the module graph (an older core, a builder without change detection) reports
+// that as the reason a component file found no stories, not as a crash.
+function getModuleGraph(ctx: ToolsetCtx) {
+  try {
+    return moduleGraphAccessFromCtx(ctx);
+  } catch {
+    return undefined;
   }
 }
 
@@ -254,6 +291,7 @@ export function createTestToolset({
     methods: {
       run: {
         input: runInputSchema,
+        fileArguments: 'files',
         title: 'Run Storybook tests',
         description: (ctx) => describeRun(a11yEnabled, ctx),
         handler: async (
@@ -266,6 +304,8 @@ export function createTestToolset({
               channel,
               getIndex: storyIndex.getIndex,
               stories: input.stories,
+              files: input.files,
+              getModuleGraph: () => getModuleGraph(ctx),
               a11y: input.a11y,
             });
             const data: TestRunData = { ...output, a11y: input.a11y };

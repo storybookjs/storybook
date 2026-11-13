@@ -105,8 +105,22 @@ describe('test API', () => {
       channel,
       getIndex,
       stories: undefined,
+      files: undefined,
+      getModuleGraph: expect.any(Function),
       a11y: true,
     });
+  });
+
+  it('passes files through to the run', async () => {
+    await runTests({ files: ['/repo/src/Button.stories.tsx'] });
+
+    expect(runStoryTests).toHaveBeenCalledWith(
+      expect.objectContaining({ files: ['/repo/src/Button.stories.tsx'] })
+    );
+  });
+
+  it('lets the CLI fill files from bare arguments', () => {
+    expect(toolset.methods.run.fileArguments).toBe('files');
   });
 
   it('renders the same per-story report for the CLI consumer as for MCP', async () => {
@@ -282,7 +296,51 @@ describe('test API', () => {
 ## Result
 
 Passed: 1 component test passed.
-Accessibility: not checked.`);
+Accessibility: not checked.
+Before you finish, run every story once: test-run without \`files\` or \`stories\`.`);
+    });
+
+    it('tells the CLI agent the command that runs every story after a focused pass', async () => {
+      vi.mocked(runStoryTests).mockResolvedValue(
+        completed({
+          storyIds: ['button--primary'],
+          componentTestCount: { success: 1, error: 0 },
+          componentTestStatuses: [componentTest('button--primary', 'status-value:success')],
+        })
+      );
+
+      expect((await runTests()).markdown).toContain(
+        'Before you finish, run every story once: `npx storybook tools test run` without arguments.'
+      );
+    });
+
+    it('says which form each file took and how many stories it selected', async () => {
+      vi.mocked(runStoryTests).mockResolvedValue({
+        ...completed({
+          storyIds: ['button--primary', 'button--secondary', 'header--default'],
+          componentTestCount: { success: 3, error: 0 },
+        }),
+        files: [
+          {
+            file: 'src/Button.stories.tsx',
+            kind: 'story-file',
+            storyIds: ['button--primary', 'button--secondary'],
+            storyFiles: ['./src/Button.stories.tsx'],
+          },
+          {
+            file: 'src/Button.tsx',
+            kind: 'component',
+            storyIds: ['button--primary', 'button--secondary', 'header--default'],
+            storyFiles: ['./src/Button.stories.tsx', './src/Header.stories.tsx'],
+          },
+        ],
+      } as TestRunOutput);
+
+      expect((await runForMcp()).markdown).toContain(`## Result
+
+\`src/Button.stories.tsx\` is a story file: ran its 2 stories.
+\`src/Button.tsx\` is not a story file: ran the 3 stories that depend on it, in 2 story files.
+Passed: 3 component tests passed.`);
     });
 
     it('says why accessibility was not checked when addon-a11y is not enabled', async () => {
@@ -303,7 +361,8 @@ Accessibility: not checked.`);
 ## Result
 
 Passed: 1 component test passed.
-Accessibility: not checked (addon-a11y is not enabled).`);
+Accessibility: not checked (addon-a11y is not enabled).
+Before you finish, run every story once: test-run without \`files\` or \`stories\`.`);
     });
 
     it('says the accessibility check found nothing rather than staying silent', async () => {
@@ -384,7 +443,9 @@ Color contrast ratio is insufficient
 ## Result
 
 Failed: 1 accessibility check failed.
-Accessibility: 2 stories checked; 1 without violations; 1 failing the run.`);
+Accessibility: 2 stories checked; 1 without violations; 1 failing the run.
+Fix what fails and run again, changing only what each failure needs. Do not finish with failing tests.
+Accessibility violations: fix semantic ones yourself (roles, labels, alt text, keyboard access). For visual ones such as color contrast, do not change the design: describe the problem, offer two or three options and ask the user. Never change \`parameters.a11y.test\` to make a violation pass.`);
     });
 
     it('lists failing stories with their descriptions', async () => {
@@ -419,7 +480,8 @@ Expected button text to be "Secondary"
 ## Result
 
 Failed: 1 component test failed.
-Accessibility: 1 story checked, no violations. Stories with a failing component test get no accessibility result.`);
+Accessibility: 1 story checked, no violations. Stories with a failing component test get no accessibility result.
+Fix what fails and run again, changing only what each failure needs. Do not finish with failing tests.`);
     });
 
     it('reports accessibility violations with inspect links built from the origin', async () => {
@@ -470,7 +532,8 @@ Color contrast ratio is insufficient
 ## Result
 
 Passed: 1 component test passed.
-Accessibility: 1 story checked; 1 with violations reported as warnings, which do not fail the run.`);
+Accessibility: 1 story checked; 1 with violations reported as warnings, which do not fail the run.
+Accessibility violations: fix semantic ones yourself (roles, labels, alt text, keyboard access). For visual ones such as color contrast, do not change the design: describe the problem, offer two or three options and ask the user. Never change \`parameters.a11y.test\` to make a violation pass.`);
     });
 
     it('omits accessibility violations when the run disabled a11y', async () => {
@@ -536,7 +599,8 @@ ReferenceError: foo is not defined
 ## Result
 
 Failed: 1 unhandled error.
-Accessibility: not checked.`);
+Accessibility: not checked.
+Fix what fails and run again, changing only what each failure needs. Do not finish with failing tests.`);
     });
 
     it('passes a run whose accessibility violations are only warnings, and says so', async () => {
@@ -579,18 +643,21 @@ Accessibility: not checked.`);
         stories: [{ storyId: 'missing--story' }, { storyId: 'gone--story' }],
       });
 
-      expect(outcome.ok).toBe(true);
-      expect(outcome.markdown).toBe(`No stories found matching the provided input.
+      expect(outcome.ok).toBe(false);
+      expect(outcome.markdown).toBe(`No stories found matching the provided input, so no tests ran.
 
 No story found for story ID "missing--story"
 No story found for story ID "gone--story"`);
     });
 
-    it('says an empty story list selected nothing', async () => {
+    it('says an empty story list selected nothing, without failing', async () => {
       vi.mocked(runStoryTests).mockResolvedValue({ status: 'no-stories', notFoundMessages: [] });
 
-      expect((await runForMcp({ stories: [] })).markdown).toBe(
-        'No stories were given, so no tests ran. Pass story IDs in `stories`, or omit it to run every story test.'
+      const outcome = await runForMcp({ stories: [] });
+
+      expect(outcome.ok).toBe(true);
+      expect(outcome.markdown).toBe(
+        'No stories were given, so no tests ran. Pass files or story IDs, or neither to run every story test.'
       );
     });
 
@@ -649,6 +716,7 @@ No story found for story ID "gone--story"`);
         payload: {
           runA11y: true,
           inputStoryCount: 1,
+          inputFileCount: 0,
           matchedStoryCount: 1,
           passingStoryCount: 1,
           failingStoryCount: 0,
@@ -673,6 +741,7 @@ No story found for story ID "gone--story"`);
         payload: {
           runA11y: false,
           inputStoryCount: 1,
+          inputFileCount: 0,
           matchedStoryCount: 0,
           passingStoryCount: 0,
           failingStoryCount: 0,

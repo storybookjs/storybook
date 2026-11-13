@@ -13,6 +13,7 @@ describe('parseToolsTokens', () => {
       output: undefined,
       attach: undefined,
       args: { maxDistance: 2, name: 'button' },
+      positionals: [],
     });
   });
 
@@ -62,11 +63,24 @@ describe('parseToolsTokens', () => {
     expect(parseToolsTokens(['--output='])).toMatchObject({ ok: false });
   });
 
-  it('rejects bare positional tokens', () => {
-    const result = parseToolsTokens(['button']);
+  it('collects bare tokens as positionals, in order, around flags', () => {
+    const result = parseToolsTokens(['a.stories.tsx', '--a11y', 'false', 'b.tsx', '--json']);
 
-    expect(result).toMatchObject({ ok: false });
-    expect(result.ok === false && result.error).toContain('`button`');
+    expect(result).toMatchObject({
+      ok: true,
+      json: true,
+      args: { a11y: false },
+      positionals: ['a.stories.tsx', 'b.tsx'],
+    });
+  });
+
+  it('takes every token after `--` as a positional, flag-like ones too', () => {
+    expect(parseToolsTokens(['--json', '--', '--weird.tsx', 'b.tsx'])).toMatchObject({
+      ok: true,
+      json: true,
+      args: {},
+      positionals: ['--weird.tsx', 'b.tsx'],
+    });
   });
 
   it('rejects invalid --input JSON and non-object --input values', () => {

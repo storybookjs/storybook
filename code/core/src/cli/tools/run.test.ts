@@ -5,6 +5,8 @@
  * everything behind the commander wiring, without spawning processes.
  */
 
+import { resolve } from 'node:path';
+
 import { logger } from 'storybook/internal/node-logger';
 import type { StoryIndex } from 'storybook/internal/types';
 import { beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
@@ -773,6 +775,17 @@ describe('outcome mapping', () => {
               return { ok: true, data: {}, markdown: 'result' };
             },
           },
+          files: {
+            title: 'files',
+            input: v.strictObject({ files: v.optional(v.array(v.string())) }),
+            description: 'file echo',
+            fileArguments: 'files',
+            handler: async (input: { files?: string[] }) => ({
+              ok: true,
+              data: input,
+              markdown: JSON.stringify(input),
+            }),
+          },
           input: {
             title: 'input',
             input: v.strictObject({ a: v.optional(v.number()), b: v.optional(v.number()) }),
@@ -876,6 +889,60 @@ describe('outcome mapping', () => {
     );
 
     expect(JSON.parse(result.output)).toEqual({ a: 1, b: 2 });
+  });
+
+  describe('file arguments', () => {
+    it('fills the declared key from bare arguments, resolved against the current directory', async () => {
+      const { deps } = makeDeps();
+
+      const result = await run(
+        ['echo', 'files', 'src/A.stories.tsx', '/abs/B.tsx', '--json'],
+        deps
+      );
+
+      expect(result.exitCode).toBe(0);
+      expect(JSON.parse(result.output)).toEqual({
+        files: [resolve('src/A.stories.tsx'), resolve('/abs/B.tsx')],
+      });
+    });
+
+    it('appends bare arguments to the files given with the flag', async () => {
+      const { deps } = makeDeps();
+
+      const result = await run(
+        ['echo', 'files', '--files', '["/abs/A.tsx"]', '--json', '--', 'B.tsx'],
+        deps
+      );
+
+      expect(JSON.parse(result.output)).toEqual({ files: ['/abs/A.tsx', resolve('B.tsx')] });
+    });
+
+    it('rejects bare arguments for a tool that takes no files, without calling it', async () => {
+      const { deps } = makeDeps();
+
+      const result = await run(['echo', 'input', 'button'], deps);
+
+      expect(result).toMatchObject({
+        exitCode: 1,
+        outcome: { kind: 'intercept', reason: 'invalid-arguments' },
+      });
+      expect(result.output).toContain(
+        'Unexpected argument `button`. `npx storybook tools echo input` takes no file arguments'
+      );
+    });
+
+    it('shows the file arguments in the tool help', async () => {
+      const { deps } = makeDeps();
+
+      const result = await run(['echo', 'files', '--help'], deps);
+
+      expect(result.output).toContain(
+        'Usage: npx storybook tools echo files [files...] [--key value ...]'
+      );
+      expect(result.output).toContain(
+        'Bare arguments are `--files`, relative to the current directory: `npx storybook tools echo files <file> [<file> ...]`.'
+      );
+    });
   });
 });
 

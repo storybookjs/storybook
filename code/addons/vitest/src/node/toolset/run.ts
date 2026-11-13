@@ -1,7 +1,10 @@
 import type { ChannelLike } from 'storybook/internal/channels';
 import {
+  findStoriesInFiles,
   findStoryIds,
+  type FoundFileStories,
   type FoundStory,
+  type ModuleGraphAccess,
   type NotFoundStory,
   type StoryInput,
 } from 'storybook/internal/core-server';
@@ -143,6 +146,10 @@ export type RunStoryTestsParams = {
   channel: TestChannel;
   getIndex: () => Promise<StoryIndex>;
   stories?: StoryInput[];
+  /** Story files run their own stories; other files run the stories that depend on them. */
+  files?: string[];
+  /** The module graph that maps a non-story file to its dependent stories. */
+  getModuleGraph?: () => ModuleGraphAccess | undefined;
   a11y?: boolean;
   actor?: string;
   requestEvent?: string;
@@ -159,6 +166,8 @@ export async function runStoryTests({
   channel,
   getIndex,
   stories,
+  files,
+  getModuleGraph = () => undefined,
   a11y = true,
   actor = 'core/test',
   requestEvent = TRIGGER_TEST_RUN_REQUEST,
@@ -166,17 +175,30 @@ export async function runStoryTests({
   timeoutMs = DEFAULT_TEST_RUN_TIMEOUT_MS,
 }: RunStoryTestsParams): Promise<TestRunOutput> {
   let storyIds: string[] | undefined;
+  let selection: FoundFileStories[] = [];
 
-  if (stories) {
+  if (stories || files) {
     const index = await getIndex();
-    const resolved = findStoryIds(index, stories);
+    const resolved = stories ? findStoryIds(index, stories) : [];
     const found = resolved.filter((story): story is FoundStory => 'entry' in story);
-    const notFoundMessages = resolved
-      .filter((story): story is NotFoundStory => !('entry' in story))
-      .map((story) => story.errorMessage);
+    const fileResults = files ? await findStoriesInFiles({ files, index, getModuleGraph }) : [];
+    selection = fileResults.filter((result): result is FoundFileStories => 'kind' in result);
+    const notFoundMessages = [
+      ...resolved
+        .filter((story): story is NotFoundStory => !('entry' in story))
+        .map((story) => story.errorMessage),
+      ...fileResults.flatMap((result) => ('errorMessage' in result ? [result.errorMessage] : [])),
+    ];
+
+    const ids = [
+      ...new Set([
+        ...found.map((story) => story.entry.id),
+        ...selection.flatMap((result) => result.storyIds),
+      ]),
+    ];
 
     // Nothing to run: the per-selector failures are the answer, so they travel with the outcome.
-    if (found.length === 0) {
+    if (ids.length === 0) {
       return { status: 'no-stories', notFoundMessages };
     }
 
@@ -185,11 +207,13 @@ export async function runStoryTests({
     if (notFoundMessages.length > 0) {
       return {
         status: 'error',
-        error: { message: notFoundMessages.join('; ') },
+        error: {
+          message: `No tests ran, because part of the selection matched nothing.\n\n${notFoundMessages.join('\n')}`,
+        },
       };
     }
 
-    storyIds = found.map((story) => story.entry.id);
+    storyIds = ids;
   }
 
   let response: TriggerTestRunResponse;
@@ -220,7 +244,20 @@ export async function runStoryTests({
           error: { message: 'Test run completed but no result was returned' },
         };
       }
-      return { status: 'completed', result: response.result };
+      return {
+        status: 'completed',
+        result: response.result,
+        ...(selection.length > 0
+          ? {
+              files: selection.map(({ file, kind, storyIds: ids, storyFiles }) => ({
+                file,
+                kind,
+                storyIds: ids,
+                storyFiles,
+              })),
+            }
+          : {}),
+      };
     case 'error':
       return {
         status: 'error',

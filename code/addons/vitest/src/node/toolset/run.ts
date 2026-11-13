@@ -1,8 +1,10 @@
 import type { ChannelLike } from 'storybook/internal/channels';
 import {
-  findStoriesInFiles,
+  ChangeDetectionUnavailableError,
+  filterStoryFiles,
+  findChangedFiles,
+  findChangedStories,
   findStoryIds,
-  type FoundFileStories,
   type FoundStory,
   type ModuleGraphAccess,
   type NotFoundStory,
@@ -12,7 +14,7 @@ import { OpenServiceTestRunTimeoutError } from 'storybook/internal/server-errors
 import type { StoryIndex } from 'storybook/internal/types';
 
 import { TRIGGER_TEST_RUN_REQUEST, TRIGGER_TEST_RUN_RESPONSE } from '../../constants.ts';
-import type { TestRunOutput, TestRunResult } from './definition.ts';
+import type { TestRunOutput, TestRunResult, TestRunSelection } from './definition.ts';
 import { displayPath } from './format.ts';
 
 /** Default wait for a matching channel response before failing the queued run. */
@@ -143,14 +145,26 @@ export function triggerTestRun({
   });
 }
 
+// Outside a repository, or without git, the file form still works; the message says so.
+function changedFilesError(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error);
+  return error instanceof ChangeDetectionUnavailableError
+    ? `\`--changed\` reads the changed files from git, but ${message === 'not a git repository' ? 'this project is not in a git repository' : message}. Pass story files instead.`
+    : `\`--changed\` could not read the changed files from git: ${message}`;
+}
+
 export type RunStoryTestsParams = {
   channel: TestChannel;
   getIndex: () => Promise<StoryIndex>;
   stories?: StoryInput[];
-  /** Story files run their own stories; other files run the stories that depend on them. */
+  /** Story-file filters, matched the way Vitest matches its file filters. */
   files?: string[];
-  /** The module graph that maps a non-story file to its dependent stories. */
+  /** Vitest's `--changed`: `true` for the uncommitted changes, or a ref to also read changes since. */
+  changed?: boolean | string;
+  /** The module graph that maps a changed file to the stories that depend on it. */
   getModuleGraph?: () => ModuleGraphAccess | undefined;
+  /** Reads the changed files from git; injectable for tests. */
+  getChangedFiles?: typeof findChangedFiles;
   a11y?: boolean;
   actor?: string;
   requestEvent?: string;
@@ -168,7 +182,9 @@ export async function runStoryTests({
   getIndex,
   stories,
   files,
+  changed,
   getModuleGraph = () => undefined,
+  getChangedFiles = findChangedFiles,
   a11y = true,
   actor = 'core/test',
   requestEvent = TRIGGER_TEST_RUN_REQUEST,
@@ -176,48 +192,84 @@ export async function runStoryTests({
   timeoutMs = DEFAULT_TEST_RUN_TIMEOUT_MS,
 }: RunStoryTestsParams): Promise<TestRunOutput> {
   let storyIds: string[] | undefined;
-  let selection: FoundFileStories[] = [];
+  let selection: TestRunSelection | undefined;
   let notFoundMessages: string[] = [];
 
-  if (stories || files) {
+  // Each form narrows the selection, as Vitest's file filters, `--changed` and `-t` do together.
+  // `undefined` stands for every story.
+  if (stories || files || changed) {
     const index = await getIndex();
-    const resolved = stories ? findStoryIds(index, stories) : [];
-    const found = resolved.filter((story): story is FoundStory => 'entry' in story);
-    const fileResults = files ? await findStoriesInFiles({ files, index, getModuleGraph }) : [];
-    selection = fileResults.filter((result): result is FoundFileStories => 'kind' in result);
-    // A wrong story id, a missing path or a directory is a mistake: it fails the call, but the rest
-    // of the selection still runs. A file no story depends on is not a mistake.
-    notFoundMessages = [
-      ...resolved
-        .filter((story): story is NotFoundStory => !('entry' in story))
-        .map((story) => story.errorMessage),
-      ...fileResults.flatMap((result) => ('errorMessage' in result ? [result.errorMessage] : [])),
-    ];
+    let candidates: Set<string> | undefined;
+    const narrow = (ids: string[]) => {
+      candidates = new Set(candidates ? ids.filter((id) => candidates!.has(id)) : ids);
+    };
+    selection = {};
 
-    const everyStory = selection.some((result) => result.kind === 'preview');
-    const ids = [
-      ...new Set([
-        ...found.map((story) => story.entry.id),
-        ...selection.flatMap((result) => result.storyIds),
-      ]),
-    ];
-
-    // Nothing to run: what each argument matched is the answer, and it fails the call, so a run that
-    // ran nothing never reads as a pass.
-    if (!everyStory && ids.length === 0) {
-      return {
-        status: 'no-stories',
-        notFoundMessages: [
-          ...notFoundMessages,
-          ...(selection.length > 0
-            ? [`No story depends on ${selection.map(({ file }) => displayPath(file)).join(', ')}.`]
-            : []),
-        ],
-      };
+    if (files) {
+      const matched = filterStoryFiles({ index, filters: files });
+      selection.files = { filters: files, storyFiles: matched.storyFiles.length };
+      if (matched.storyFiles.length === 0) {
+        // Vitest: "No test files found, exiting with code 1".
+        return {
+          status: 'no-stories',
+          notFoundMessages: [
+            `No story files found for ${files.map((file) => `\`${displayPath(file)}\``).join(', ')}.`,
+          ],
+          selection,
+        };
+      }
+      narrow(matched.storyIds);
     }
 
-    // A file the preview loads selects every story: a full run, without a list of ids.
-    storyIds = everyStory ? undefined : ids;
+    if (changed) {
+      const since = typeof changed === 'string' ? changed : undefined;
+      let changedFiles: string[];
+      try {
+        changedFiles = await getChangedFiles({ since });
+      } catch (error) {
+        return { status: 'error', error: { message: changedFilesError(error) } };
+      }
+      const affected = await findChangedStories({ index, changedFiles, getModuleGraph });
+      if (affected.kind === 'unavailable') {
+        return {
+          status: 'error',
+          error: {
+            message: `\`--changed\` needs Storybook's module graph to find the stories that depend on a changed file: ${affected.reason} Pass story files instead.`,
+          },
+        };
+      }
+      selection.changed = {
+        ...(since ? { since } : {}),
+        changedFiles: changedFiles.length,
+        ...(affected.kind === 'every-story'
+          ? { everyStory: displayPath(affected.trigger) }
+          : { storyFiles: affected.storyFiles.length }),
+      };
+      if (affected.kind === 'stories') {
+        narrow(affected.storyIds);
+      }
+    }
+
+    if (stories) {
+      const resolved = findStoryIds(index, stories);
+      notFoundMessages = resolved
+        .filter((story): story is NotFoundStory => !('entry' in story))
+        .map((story) => story.errorMessage);
+      narrow(
+        resolved
+          .filter((story): story is FoundStory => 'entry' in story)
+          .map((story) => story.entry.id)
+      );
+    }
+
+    // Nothing to run. An unknown story id fails the call; `--changed` that affects nothing passes,
+    // as Vitest's `--changed` does ("No affected test files found, exiting with code 0").
+    if (candidates?.size === 0) {
+      return { status: 'no-stories', notFoundMessages, selection };
+    }
+
+    storyIds = candidates ? [...candidates] : undefined;
+    selection.storyCount = storyIds?.length;
   }
 
   let response: TriggerTestRunResponse;
@@ -251,7 +303,7 @@ export async function runStoryTests({
       return {
         status: 'completed',
         result: response.result,
-        ...(selection.length > 0 ? { files: selection } : {}),
+        ...(selection ? { selection } : {}),
         ...(notFoundMessages.length > 0 ? { notFound: notFoundMessages } : {}),
       };
     case 'error':

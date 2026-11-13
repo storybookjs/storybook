@@ -91,6 +91,26 @@ export class GitDiffProvider {
     };
   }
 
+  /** Files deleted in the working tree or the index, which {@link getChangedFiles} leaves out. */
+  async getDeletedFiles(): Promise<Set<string>> {
+    const repoRoot = await this.getRepoRoot();
+    const [staged, unstaged] = await Promise.all([
+      this.runGitCommand(repoRoot, ['diff', '--name-only', '--diff-filter=D', '--cached']),
+      this.runGitCommand(repoRoot, ['diff', '--name-only', '--diff-filter=D']),
+    ]);
+    return new Set([...parseChangedFiles(staged.stdout), ...parseChangedFiles(unstaged.stdout)]);
+  }
+
+  /**
+   * Files changed on this branch since it forked from `ref` (`git diff <ref>...HEAD`), as Vitest's
+   * `--changed <ref>` reads them. Repository-relative, deletions included.
+   */
+  async getFilesSince(ref: string): Promise<Set<string>> {
+    const repoRoot = await this.getRepoRoot();
+    const { stdout } = await this.runGitCommand(repoRoot, ['diff', '--name-only', `${ref}...HEAD`]);
+    return parseChangedFiles(stdout);
+  }
+
   async getHeadCommit(): Promise<string> {
     const repoRoot = await this.getRepoRoot();
     const { stdout } = await this.runGitCommand(repoRoot, ['rev-parse', 'HEAD']);

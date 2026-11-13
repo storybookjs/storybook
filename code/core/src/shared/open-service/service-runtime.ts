@@ -229,6 +229,7 @@ export function createServiceRuntime<
   runtimeOptions: {
     registryApi: ServiceRegistryApi;
     staticLoader?: StaticLoader;
+    isStaticBuild?: boolean;
   },
   initialState: TState = def.initialState
 ): ServiceRuntime<TState, TQueries, TCommands> {
@@ -240,7 +241,7 @@ export function createServiceRuntime<
   // per-field granularity.
   const state = deepSignal(rawState as object) as TState;
   const getStateSnapshot = (): TState => structuredClone(rawState);
-  const { registryApi, staticLoader } = runtimeOptions;
+  const { registryApi, staticLoader, isStaticBuild = false } = runtimeOptions;
 
   let author: EntryAuthor = () => {};
   const applyLocal = (mutate: (state: TState) => void): void => {
@@ -279,6 +280,7 @@ export function createServiceRuntime<
       () => commands as CommandSelf<TState>['commands']
     ),
     getService: registryApi.getService,
+    isStaticBuild,
   })) as ServiceInstance<TState, TQueries, TCommands>['commands'];
 
   // The command map load bodies should call. Defaults to the raw local map (used by the static build
@@ -312,6 +314,7 @@ export function createServiceRuntime<
           () => gated
         ),
         getService: registryApi.getService,
+        isStaticBuild,
       })
     ) as CommandSelf<TState>['commands'];
 
@@ -338,6 +341,7 @@ export function createServiceRuntime<
     loadScopeId,
     state,
     registryApi,
+    isStaticBuild,
     queryDefinitions,
     defaultQueries,
     reactiveLoadQueries,
@@ -372,6 +376,7 @@ export function createServiceRuntime<
       commands: commands as LoadSelf<TState>['commands'],
     },
     getService: registryApi.getService,
+    isStaticBuild,
   };
 
   /**

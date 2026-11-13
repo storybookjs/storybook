@@ -137,80 +137,50 @@ export class ComponentMetaManager extends BaseComponentMetaManager<
     this.fsFileSnapshots = fsFileSnapshots;
   }
 
-  private batch: StoryRef[] = [];
-  // The batch's files that each project has yet to receive.
-  private batchFiles: Map<ManagedProject, string[]> | undefined;
-
-  /**
-   * Announce every ref the coming `batchExtract` calls will ask for.
-   *
-   * A file a project has not seen invalidates its program and its type checker's cache. Extracting
-   * a run one component at a time therefore rebuilds the program for each of them, unless the
-   * project receives all of the run's files before its first extraction.
-   */
-  setBatch(entries: StoryRef[]): void {
-    this.batch = entries.filter(isExtractable);
-    this.batchFiles = undefined;
-  }
-
   /**
    * Batch-extract component props across all entries, grouping by tsconfig project so each project
    * builds its TS program only once.
+   *
+   * `batchFiles` holds the files of a larger batch that these entries are part of, from
+   * {@link groupFilesByProject}. A project gets its files before its first extraction, and its entry
+   * is then removed from the map.
    */
-  batchExtract(entries: StoryRef[]): void {
+  batchExtract(entries: StoryRef[], batchFiles?: Map<ManagedProject, string[]>): void {
     const byProject = groupByToMap(entries.filter(isExtractable), (storyRef) =>
       this.getProjectForFile(storyRef.storyPath)
     );
 
     for (const [project, projectEntries] of byProject) {
+      this.addBatchFiles(project, batchFiles);
       try {
-        this.addBatchFiles(project);
         project.extractPropsFromStories(projectEntries);
       } catch (err) {
         logger.debug(`[reactComponentMeta] Batch extraction failed: ${err}`);
       }
     }
 
-    // Programs holding the whole batch did not fit the heap, and giving the batch to the fresh
-    // projects would fill it again, so the rest of the run adds files as it reaches them.
-    if (this.recycleProjectsIfHeapPressured()) {
-      this.setBatch([]);
-    }
+    this.recycleProjectsIfHeapPressured();
   }
 
-  private addBatchFiles(project: ManagedProject): void {
-    if (this.batch.length === 0) {
-      return;
-    }
-    // A project missing from the map was created after the batch was last grouped, so a tsconfig
-    // change may have moved files between projects.
-    if (!this.batchFiles?.has(project)) {
-      this.batchFiles = this.groupBatchFiles();
-      if (!this.batchFiles.has(project)) {
-        this.batchFiles.set(project, []);
-      }
-    }
-    const files = this.batchFiles.get(project);
-    if (files?.length) {
+  // Not before the project's first extraction: the projects share their source files, and a
+  // program built between this project's program and its first type check leaves imports of those
+  // files unresolved.
+  private addBatchFiles(
+    project: ManagedProject,
+    batchFiles: Map<ManagedProject, string[]> | undefined
+  ): void {
+    const files = batchFiles?.get(project) ?? [];
+    batchFiles?.delete(project);
+    try {
       project.ensureFiles(files);
-      this.batchFiles.set(project, []);
+    } catch (err) {
+      // The native TypeScript backend can throw here. The extraction then adds its own files.
+      logger.debug(`[reactComponentMeta] Adding the batch files failed: ${err}`);
     }
-  }
-
-  // Finding a file's project is the expensive part, so each story file is looked up once.
-  private groupBatchFiles(): Map<ManagedProject, string[]> {
-    const projectByStoryPath = new Map<string, ManagedProject>();
-    const files = new Map<ManagedProject, string[]>();
-    for (const { storyPath, component } of this.batch) {
-      const project = projectByStoryPath.get(storyPath) ?? this.getProjectForFile(storyPath);
-      projectByStoryPath.set(storyPath, project);
-      const projectFiles = files.get(project) ?? [];
-      files.set(project, projectFiles);
-      projectFiles.push(storyPath, ...(component?.path ? [component.path] : []));
-    }
-    return files;
   }
 }
 
-const isExtractable = (storyRef: StoryRef) =>
+export const isExtractable = (
+  storyRef: StoryRef
+): storyRef is StoryRef & { component: { path: string; importName: string } } =>
   !!storyRef.component?.path && !!storyRef.component.importName;

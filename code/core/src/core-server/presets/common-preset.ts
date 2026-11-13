@@ -35,10 +35,7 @@ import {
   registerDocgenService,
   subscribeDocgenToModuleGraphChanges,
 } from '../../shared/open-service/services/docgen/server.ts';
-import {
-  BUILD_TASK_TIMEOUT_MS,
-  createDocgenWorkerClient,
-} from '../../shared/open-service/services/docgen/worker/docgen-worker-client.ts';
+import { createDocgenWorkerClient } from '../../shared/open-service/services/docgen/worker/docgen-worker-client.ts';
 import { registerModuleGraphService } from '../../shared/open-service/services/module-graph/server.ts';
 import {
   registerReviewService,
@@ -451,22 +448,17 @@ export const services = async (_value: void, options: Options): Promise<void> =>
     ]);
 
     // Docgen extraction runs in a long-lived worker so its CPU-bound TypeScript work never starves
-    // the dev-server event loop. The worker composes the descriptor chain; here we forward one
-    // component to it. When the compiled worker script is unavailable (e.g. running from source
-    // without a build) the client is undefined and we skip docgen registration rather than
-    // extracting on the main thread.
+    // the dev-server event loop. The worker composes the descriptor chain; here we forward each
+    // batch of components to it in one request. When the compiled worker script is unavailable
+    // (e.g. running from source without a build) the client is undefined and we skip docgen
+    // registration rather than extracting on the main thread.
     const docgenWorker =
-      docgenDescriptors.length > 0
-        ? createDocgenWorkerClient(docgenDescriptors, {
-            taskTimeoutMs: options.configType === 'PRODUCTION' ? BUILD_TASK_TIMEOUT_MS : undefined,
-          })
-        : undefined;
+      docgenDescriptors.length > 0 ? createDocgenWorkerClient(docgenDescriptors) : undefined;
 
     if (docgenWorker) {
       registerDocgenService({
         getIndex,
-        docgenProvider: (input) => docgenWorker.extract(input.entry),
-        prepareDocgen: (entries) => docgenWorker.prepare(entries),
+        docgenProvider: (inputs) => docgenWorker.extract(inputs.map(({ entry }) => entry)),
       });
       devServerSubscriptions.push(() =>
         subscribeDocgenToModuleGraphChanges({

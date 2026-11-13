@@ -221,6 +221,7 @@ Query handlers do **not** receive `commands` or `setState`. Mutations belong in 
 - `ctx.self.queries` — wrapped versions of the service's own queries; calling them inside `load` registers transitively triggered loads into the current drain
 - `ctx.self.commands` — declared commands, used for all state mutation (load contexts do not receive `setState` directly)
 - `ctx.getService(serviceId)` — synchronous
+- `ctx.isStaticBuild` — `true` when `buildStaticFiles` runs the load, which loads every static input of the query. `staticInputs` and command handlers receive the same flag.
 
 `load` mutations must go through commands. Cross-service `getService(...).queries.*` calls inside a load body are not auto-tracked for the drain; use `await ctx.getService(id).queries.foo.loaded(input)` when you need a cross-service dependency awaited before your own load completes.
 

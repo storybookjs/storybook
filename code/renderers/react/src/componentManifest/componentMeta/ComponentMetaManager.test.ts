@@ -606,7 +606,7 @@ describe('multi-project management', () => {
     }
   );
 
-  describe('setBatch', () => {
+  describe('groupFilesByProject', () => {
     const setup = () => {
       tempDir = createTempDir();
       const files = Object.fromEntries(
@@ -634,13 +634,18 @@ describe('multi-project management', () => {
     };
 
     it(
-      'gives a project the files of the whole batch before its first extraction',
+      'gives a project every file of the batch at its first extraction',
       { timeout: 30_000 },
       () => {
         const { button, card } = setup();
 
-        manager.setBatch([button, card]);
-        manager.batchExtract([button]);
+        const batchFiles = manager.groupFilesByProject(
+          [button, card].map(({ storyPath, component }) => ({
+            projectFile: storyPath,
+            files: [storyPath, component!.path!],
+          }))
+        );
+        manager.batchExtract([button], batchFiles);
 
         const project = manager.getProjectForFile(button.storyPath);
         expect(project.hasSourceFile(card.component!.path!)).toBe(true);
@@ -648,42 +653,93 @@ describe('multi-project management', () => {
       }
     );
 
-    it(
-      'stops giving projects the batch once holding it forced a heap-pressure recycle',
-      { timeout: 30_000 },
-      () => {
-        const { button, card } = setup();
-        const warn = vi.spyOn(once, 'warn').mockImplementation(() => undefined);
-        const memoryUsage = vi
-          .spyOn(process, 'memoryUsage')
-          .mockReturnValueOnce({ heapUsed: Number.POSITIVE_INFINITY } as NodeJS.MemoryUsage);
-
-        try {
-          manager.setBatch([button, card]);
-          manager.batchExtract([button]);
-          manager.batchExtract([button]);
-
-          const project = manager.getProjectForFile(button.storyPath);
-          expect(project.hasSourceFile(card.component!.path!)).toBe(false);
-        } finally {
-          warn.mockRestore();
-          memoryUsage.mockRestore();
+    it('extracts the entries when adding the batch files fails', { timeout: 30_000 }, () => {
+      const { button, card } = setup();
+      const batchFiles = manager.groupFilesByProject(
+        [button, card].map(({ storyPath, component }) => ({
+          projectFile: storyPath,
+          files: [storyPath, component!.path!],
+        }))
+      );
+      const project = manager.getProjectForFile(button.storyPath);
+      const ensureFiles = project.ensureFiles.bind(project);
+      vi.spyOn(project, 'ensureFiles').mockImplementation((files) => {
+        // The lookup of a file in the inferred project adds that one file.
+        if (files.length > 1) {
+          throw new Error('TypeScript dropped the program');
         }
+        ensureFiles(files);
+      });
+
+      manager.batchExtract([button], batchFiles);
+
+      expect(button.component?.reactComponentMeta).toMatchObject({ displayName: 'Button' });
+    });
+
+    it('gives a component under another tsconfig to the project of its story', () => {
+      tempDir = createTempDir();
+      const files = writeFiles(tempDir, {
+        'app/tsconfig.json': tsconfigJSON(),
+        'app/Button.stories.tsx': `import { Button } from '../lib/Button';\nexport default {};`,
+        'lib/tsconfig.json': tsconfigJSON(),
+        'lib/Button.tsx': `import React from 'react';\nexport const Button = (_props: { label: string }) => <div />;`,
+      });
+      manager = new ComponentMetaManager(typescript);
+
+      const batchFiles = manager.groupFilesByProject([
+        {
+          projectFile: files['app/Button.stories.tsx'],
+          files: [files['app/Button.stories.tsx'], files['lib/Button.tsx']],
+        },
+      ]);
+
+      const storyProject = manager.getProjectForFile(files['app/Button.stories.tsx']);
+      expect(storyProject).not.toBe(manager.getProjectForFile(files['lib/Button.tsx']));
+      expect(batchFiles.get(storyProject)).toContain(files['lib/Button.tsx']);
+    });
+
+    it.each([{ order: ['pkg', 'docs'] }, { order: ['docs', 'pkg'] }])(
+      'gives a story to the tsconfig elsewhere that includes it, for the order $order',
+      ({ order }) => {
+        tempDir = createTempDir();
+        const files = writeFiles(tempDir, {
+          'pkg/Button.tsx': `import React from 'react';\nexport const Button = (_props: { label: string }) => <div />;`,
+          'pkg/Button.stories.tsx': `import { Button } from './Button';\nexport default {};`,
+          'docs/tsconfig.json': tsconfigJSON({
+            include: ['./**/*.tsx', '../pkg/**/*.stories.tsx'],
+          }),
+          'docs/Intro.tsx': `import React from 'react';\nexport const Intro = (_props: { text: string }) => <div />;`,
+          'docs/Intro.stories.tsx': `import { Intro } from './Intro';\nexport default {};`,
+        });
+        manager = new ComponentMetaManager(typescript);
+        const groups = {
+          pkg: {
+            projectFile: files['pkg/Button.stories.tsx'],
+            files: [files['pkg/Button.stories.tsx'], files['pkg/Button.tsx']],
+          },
+          docs: {
+            projectFile: files['docs/Intro.stories.tsx'],
+            files: [files['docs/Intro.stories.tsx'], files['docs/Intro.tsx']],
+          },
+        };
+
+        const batchFiles = manager.groupFilesByProject(
+          order.map((name) => groups[name as keyof typeof groups])
+        );
+
+        const docsProject = manager.getProjectForFile(files['docs/Intro.stories.tsx']);
+        expect(batchFiles.get(docsProject)).toContain(files['pkg/Button.tsx']);
       }
     );
 
-    it(
-      'leaves later files out of the project when no batch is announced',
-      { timeout: 30_000 },
-      () => {
-        const { button, card } = setup();
+    it('leaves later files out of the project without it', { timeout: 30_000 }, () => {
+      const { button, card } = setup();
 
-        manager.batchExtract([button]);
+      manager.batchExtract([button]);
 
-        const project = manager.getProjectForFile(button.storyPath);
-        expect(project.hasSourceFile(card.component!.path!)).toBe(false);
-      }
-    );
+      const project = manager.getProjectForFile(button.storyPath);
+      expect(project.hasSourceFile(card.component!.path!)).toBe(false);
+    });
   });
 
   it('extracts via Path 1 (importId + JSX in story file)', { timeout: 30_000 }, () => {

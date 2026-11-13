@@ -1,4 +1,5 @@
 import type { EventEmitter } from 'node:events';
+import { fileURLToPath } from 'node:url';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -36,22 +37,44 @@ describe('docgen worker log level', () => {
   });
 });
 
-describe('docgen worker queue', () => {
-  it('announces each extraction when its turn comes, one at a time', async () => {
+describe('docgen worker extract', () => {
+  it('answers one request with one result per entry', async () => {
     await import('./docgen-worker.ts');
     const { parentPort } = workerThreads;
 
     parentPort.emit('message', { type: 'init', descriptors: [], logLevel: 'info' });
-    parentPort.emit('message', { type: 'extract', id: 0, entry: { id: 'a--default' } });
-    parentPort.emit('message', { type: 'extract', id: 1, entry: { id: 'b--default' } });
+    parentPort.emit('message', {
+      type: 'extract',
+      id: 0,
+      entries: [{ id: 'a--default' }, { id: 'b--default' }],
+    });
 
-    await vi.waitFor(() => expect(parentPort.postMessage).toHaveBeenCalledTimes(5));
+    await vi.waitFor(() => expect(parentPort.postMessage).toHaveBeenCalledTimes(2));
     expect(parentPort.postMessage.mock.calls.map(([message]) => message)).toEqual([
       { type: 'init' },
-      { type: 'started', id: 0 },
-      { type: 'extract', id: 0, payload: undefined },
-      { type: 'started', id: 1 },
-      { type: 'extract', id: 1, payload: undefined },
+      { type: 'extract', id: 0, results: [{ payload: undefined }, { payload: undefined }] },
     ]);
+  });
+
+  it('finishes one request before it starts the next', async () => {
+    await import('./docgen-worker.ts');
+    const { parentPort } = workerThreads;
+    const log: string[] = [];
+
+    parentPort.emit('message', {
+      type: 'init',
+      descriptors: [
+        {
+          moduleSpecifier: fileURLToPath(new URL('./docgen-worker.fixture.ts', import.meta.url)),
+          options: { log },
+        },
+      ],
+      logLevel: 'info',
+    });
+    parentPort.emit('message', { type: 'extract', id: 0, entries: [{ id: 'a' }, { id: 'b' }] });
+    parentPort.emit('message', { type: 'extract', id: 1, entries: [{ id: 'c' }] });
+
+    await vi.waitFor(() => expect(parentPort.postMessage).toHaveBeenCalledTimes(3));
+    expect(log).toEqual(['start a,b', 'end a,b', 'start c', 'end c']);
   });
 });

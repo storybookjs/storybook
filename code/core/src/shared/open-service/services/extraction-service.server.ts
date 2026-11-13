@@ -48,7 +48,10 @@ export type ExtractionInput = {
   storyEntries: IndexEntry[];
 };
 
-type ExtractionProvider<TPayload> = (input: ExtractionInput) => Promise<TPayload | undefined>;
+/** Extracts every input and settles one result per input, in the same order. */
+type ExtractionProvider<TPayload> = (
+  inputs: ExtractionInput[]
+) => Promise<PromiseSettledResult<TPayload | undefined>[]>;
 
 /** The `{ name, message }` shape both extraction payloads carry under `error`. */
 export type ExtractionError = { name: string; message: string };
@@ -61,11 +64,6 @@ export const toExtractionError = (error: unknown): ExtractionError =>
 export type RegisterExtractionServiceOptions<TPayload, TQueries, TCommands> = {
   getIndex: () => Promise<StoryIndex>;
   provider: ExtractionProvider<TPayload>;
-  /**
-   * Called with every component's input before the service extracts all of them, so the provider
-   * can do the setup those extractions share once.
-   */
-  prepare?: (inputs: ExtractionInput[]) => void;
   /**
    * Builds the payload stored for a component whose provider threw during the fan-out.
    *
@@ -224,15 +222,8 @@ export function registerExtractionService<
   definition: ServiceDefinition<TState, TQueries, TCommands>,
   options: RegisterExtractionServiceOptions<TState['components'][string], TQueries, TCommands>
 ) {
-  const {
-    getIndex,
-    provider,
-    prepare,
-    buildErrorPayload,
-    queryName,
-    extractCommand,
-    extractAllCommand,
-  } = options;
+  const { getIndex, provider, buildErrorPayload, queryName, extractCommand, extractAllCommand } =
+    options;
 
   // The registration object below is built with computed keys and cast to `ServiceRegistrationOptions`,
   // which defeats TS's per-key checking. Assert the names exist on the definition so a typo fails here
@@ -293,20 +284,39 @@ export function registerExtractionService<
     }
   };
 
+  type Result = PromiseSettledResult<TState['components'][string] | undefined>;
+
+  const extractOne = async (id: string): Promise<Result | undefined> => {
+    const input = (await resolveInputs()).get(id);
+    return input && (await provider([input]))[0];
+  };
+
+  // A static build loads every component on a runtime of its own, so the first load extracts all of
+  // them in one provider call and every load takes its own result from it.
+  let staticBuildResults: Promise<Map<string, Result>> | undefined;
+  const extractStaticBuild = () =>
+    (staticBuildResults ??= resolveInputs().then(async (inputs) => {
+      const results = await provider([...inputs.values()]);
+      return new Map(Array.from(inputs.keys(), (id, index) => [id, results[index]]));
+    }));
+
   const extractComponent = async (
     id: string,
     ctx: CommandCtx<TState>,
     isLatestRun: () => boolean
   ) => {
-    const extractionInput = (await resolveInputs()).get(id);
-    if (!extractionInput) {
+    const result = ctx.isStaticBuild ? (await extractStaticBuild()).get(id) : await extractOne(id);
+    if (!result) {
       if (isLatestRun()) {
         pendingIds.add(id);
         ctx.self.setState((state) => writePayload(state, id, undefined));
       }
       throw new OpenServiceDocgenMissingComponentError({ id });
     }
-    const payload = await provider(extractionInput);
+    if (result.status === 'rejected') {
+      throw result.reason;
+    }
+    const payload = result.value;
     // The file can be deleted or the title renamed while the provider runs. When the index cannot
     // be read, keep the payload.
     const indexed = await resolveInputs().then(
@@ -334,20 +344,20 @@ export function registerExtractionService<
     ctx: CommandCtx<TState>,
     isLatestRun: (id: string) => boolean
   ) => {
-    const results = await Promise.all(
-      Array.from(inputs, async ([id, input]) => {
-        try {
-          return [id, await provider(input)] as const;
-        } catch (error) {
-          // A provider is not required to be total, so one component's failure must not
-          // discard every other component's payload.
-          return [
-            id,
-            buildErrorPayload({ id, entry: input.entry, error: toExtractionError(error) }),
-          ] as const;
-        }
-      })
+    const settled = await provider([...inputs.values()]).catch((error: unknown) =>
+      Array.from(inputs, (): Result => ({ status: 'rejected', reason: error }))
     );
+    // A provider is not required to be total, so one component's failure must not discard every
+    // other component's payload.
+    const results = Array.from(inputs, ([id, input], index) => {
+      const result = settled[index];
+      return [
+        id,
+        result.status === 'fulfilled'
+          ? result.value
+          : buildErrorPayload({ id, entry: input.entry, error: toExtractionError(result.reason) }),
+      ] as const;
+    });
     // A component that left the index while the providers ran does not get its payload back.
     const current = await resolveInputs().catch(() => inputs);
     const latestResults = results.filter(([id]) => isLatestRun(id));
@@ -368,12 +378,7 @@ export function registerExtractionService<
   const service = registerService(definition, {
     queries: {
       [queryName]: {
-        staticInputs: async () => {
-          const inputs = await resolveInputs();
-          // A static build loads every id returned here, one query at a time.
-          prepare?.([...inputs.values()]);
-          return Array.from(inputs.keys(), (id) => ({ id }));
-        },
+        staticInputs: async () => Array.from((await resolveInputs()).keys(), (id) => ({ id })),
       },
     },
     commands: {
@@ -390,7 +395,6 @@ export function registerExtractionService<
       [extractAllCommand]: {
         handler: async (_input: undefined, ctx: CommandCtx<TState>) => {
           const inputs = await resolveInputs();
-          prepare?.([...inputs.values()]);
           const runs = new Map(Array.from(inputs.keys(), (id) => [id, startRun(ctx, id)]));
           try {
             await extractAllComponents(inputs, ctx, (id) => runs.get(id)?.isLatest() === true);

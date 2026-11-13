@@ -1,7 +1,8 @@
 import * as path from 'node:path';
 
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { once } from 'storybook/internal/node-logger';
 import type { IndexEntry } from 'storybook/internal/types';
 import { dedent } from 'ts-dedent';
 
@@ -14,7 +15,7 @@ import {
   writeFiles,
 } from '../componentManifest/componentMeta/test-helpers.ts';
 import { loadTestTypeScript } from '@storybook/component-meta-typescript/testing';
-import { buildDocgenPayload } from './buildDocgen.ts';
+import { buildDocgenPayload, buildDocgenPayloads } from './buildDocgen.ts';
 
 const typescript = await loadTestTypeScript();
 
@@ -34,6 +35,7 @@ function makeStoryIndexEntry(importPath: string, title: string): IndexEntry {
 }
 
 afterEach(() => {
+  vi.restoreAllMocks();
   componentMetaManager?.dispose();
   componentMetaManager = undefined;
   if (tempDir) {
@@ -358,4 +360,101 @@ describe('buildDocgenPayload', () => {
       });
     }
   );
+});
+
+describe('buildDocgenPayloads', () => {
+  // No tsconfig, so each file joins the inferred project only when something adds it.
+  const setup = (names: string[]) => {
+    tempDir = createTempDir('docgen-batch');
+    const dir = tempDir;
+    writeFiles(
+      dir,
+      Object.fromEntries(
+        names.flatMap((name) => [
+          [
+            `${name}.tsx`,
+            `import React from 'react';\nexport const ${name} = (_props: { label: string }) => <div />;`,
+          ],
+          [
+            `${name}.stories.tsx`,
+            `import { ${name} } from './${name}';\nexport default { component: ${name}, title: '${name}' };\nexport const Primary = {};`,
+          ],
+        ])
+      )
+    );
+    const manager = new ComponentMetaManager(typescript);
+    componentMetaManager = manager;
+    return {
+      manager,
+      inputs: names.map((name) => ({
+        entry: makeStoryIndexEntry(`./${name}.stories.tsx`, name),
+      })),
+      context: { componentMetaManager: manager, resolvePath: (p: string) => path.join(dir, p) },
+      file: (name: string) => path.join(dir, name),
+    };
+  };
+
+  it(
+    'gives every file of the inputs to its project at the first extraction',
+    { timeout: 30_000 },
+    async () => {
+      const { manager, inputs, context, file } = setup(['Button', 'Card']);
+      const batchExtract = manager.batchExtract.bind(manager);
+      const heldAfterFirstExtraction: boolean[] = [];
+      vi.spyOn(manager, 'batchExtract').mockImplementation((entries, batchFiles) => {
+        batchExtract(entries, batchFiles);
+        if (heldAfterFirstExtraction.length === 0) {
+          const project = manager.getProjectForFile(file('Button.stories.tsx'));
+          heldAfterFirstExtraction.push(
+            ...['Card.stories.tsx', 'Card.tsx'].map((name) => project.hasSourceFile(file(name)))
+          );
+        }
+      });
+
+      const results = await buildDocgenPayloads(inputs, context);
+
+      expect(heldAfterFirstExtraction).toEqual([true, true]);
+      expect(results).toMatchObject([
+        { status: 'fulfilled', value: { name: 'Button' } },
+        { status: 'fulfilled', value: { name: 'Card' } },
+      ]);
+    }
+  );
+
+  it(
+    'stops adding the batch`s files once holding them forced a heap-pressure recycle',
+    { timeout: 30_000 },
+    async () => {
+      const { manager, inputs, context, file } = setup(['Button', 'Card', 'Icon']);
+      vi.spyOn(once, 'warn').mockImplementation(() => undefined);
+      vi.spyOn(process, 'memoryUsage').mockReturnValueOnce({
+        heapUsed: Number.POSITIVE_INFINITY,
+      } as NodeJS.MemoryUsage);
+
+      const results = await buildDocgenPayloads(inputs, context);
+
+      const project = manager.getProjectForFile(file('Icon.stories.tsx'));
+      expect(project.hasSourceFile(file('Icon.tsx'))).toBe(true);
+      expect(project.hasSourceFile(file('Button.tsx'))).toBe(false);
+      expect(results.map((result) => result.status)).toEqual([
+        'fulfilled',
+        'fulfilled',
+        'fulfilled',
+      ]);
+    }
+  );
+
+  it('extracts every input when grouping the batch files fails', { timeout: 30_000 }, async () => {
+    const { manager, inputs, context } = setup(['Button', 'Card']);
+    vi.spyOn(manager, 'groupFilesByProject').mockImplementation(() => {
+      throw new Error('TypeScript dropped the program');
+    });
+
+    const results = await buildDocgenPayloads(inputs, context);
+
+    expect(results).toMatchObject([
+      { status: 'fulfilled', value: { name: 'Button' } },
+      { status: 'fulfilled', value: { name: 'Card' } },
+    ]);
+  });
 });

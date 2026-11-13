@@ -128,6 +128,11 @@ The runner keeps the sandbox open until it has an answer it can use.
 The answer is the `<qa-result>` block in the last message of the agent.
 Broken JSON, a missing check or a last message without the block goes back to the agent with the problem, in the same session, at most twice; after that the record has status `output-invalid`.
 The sandbox is closed last, and a worktree that cannot be deleted then is left behind without failing the run.
+A run has a time budget, counted from its start, the clone and the project install included: 90 minutes by default (`--budget-minutes`).
+The agent reads the clock with `tools/budget.mjs`, which the prompt tells it to run before every check, and is told to report what it did not finish as `blocked` once the budget is used up.
+The prompt also tells it to stop a command that has not finished after 15 minutes and not to start it again.
+At minute 105 (`--hard-stop-minutes`) the runner stops the agent.
+An answer that is not printed by then is lost, and the record has status `timeout`; the evidence, the logs and the commits are kept.
 When the sandbox fails after the agent has finished, for example while it collects the commits, the runner reads the answer from `run.log`.
 The record then has status `ok` and names the sandbox error in `recoveredFrom`.
 A run whose agent did not finish is never read this way.

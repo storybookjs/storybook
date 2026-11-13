@@ -32,6 +32,7 @@ import { cycleBranchName, cycleRepo, versionLine } from './lib/cycle.ts';
 import { runFake } from './lib/fake-run.ts';
 import { forJobLog, liveLine } from './lib/live-log.ts';
 import { CHECKOUT_GUIDE, guideFor } from './lib/migration-guide.ts';
+import { budgetRecord, msUntilHardStop, parseBudget, type RunBudget } from './lib/run-budget.ts';
 import {
   agentOutput,
   Effort,
@@ -57,6 +58,8 @@ Options:
   --tier <tier>       must (default) runs the checks every sweep needs; extended runs all of them
   --clone-dir <dir>   Where to clone the catalog repo (default: <tmpdir>/ecosystem-qa/work/<id>)
   --image <name>      Docker image for --sandbox docker (default: sb-ecosystem-qa)
+  --budget-minutes <n>     Minutes the agent is asked to answer within, from the start of the run (default: 90)
+  --hard-stop-minutes <n>  Minute at which the runner stops the agent and records a timeout (default: 105)
 
 Writes <out>/result.json and exits 0 whenever it did, findings or not. <out> must be empty or new.
 Set ECOSYSTEM_QA_FAKE=1 and pass --fake to write a canned result for --engine without running an agent;
@@ -140,6 +143,8 @@ const parseRequest = () => {
       tier: { type: 'string', default: 'must' },
       'clone-dir': { type: 'string' },
       image: { type: 'string', default: 'sb-ecosystem-qa' },
+      'budget-minutes': { type: 'string' },
+      'hard-stop-minutes': { type: 'string' },
       fake: { type: 'boolean', default: false },
       help: { type: 'boolean', default: false },
     },
@@ -163,6 +168,10 @@ const parseRequest = () => {
   }
 
   const os = HOST_OS[process.platform] ?? fail(`Unsupported platform ${process.platform}.`);
+  const budget = parseBudget(values['budget-minutes'], values['hard-stop-minutes']);
+  if (typeof budget === 'string') {
+    return fail(budget);
+  }
 
   if (values.fake && process.env.ECOSYSTEM_QA_FAKE !== '1') {
     return fail('--fake needs ECOSYSTEM_QA_FAKE=1.');
@@ -199,7 +208,7 @@ const parseRequest = () => {
   // sandbox denies the monorepo's own config files to the agent.
   const cloneDir = resolve(values['clone-dir'] ?? join(scratchDir(), 'work', entry.id));
 
-  return { request, cloneDir, image: values.image };
+  return { request, cloneDir, image: values.image, budget };
 };
 
 const clone = (entry: CatalogEntry, cloneDir: string): string => {
@@ -371,9 +380,12 @@ const readNumber = (file: string): number | undefined => {
 const runSandcastle = async (
   request: RunRequest,
   cloneDir: string,
-  image: string
+  image: string,
+  startedAt: Date,
+  budget: RunBudget
 ): Promise<Outcome> => {
   const evidenceDir = join(request.outDir, 'evidence');
+  writeFileSync(join(evidenceDir, 'budget.json'), budgetRecord(startedAt, budget));
   const cycleBranch = cycleBranchName(request.version, request.os, request.engine);
   const startSha = clone(request.entry, cloneDir);
   const { packageManager, storybookDir, repo } = request.entry;
@@ -385,6 +397,7 @@ const runSandcastle = async (
   let recoveredFrom: string | undefined;
   let migrationGuide: string | undefined;
   let sandbox: Awaited<ReturnType<typeof createSandbox>> | undefined;
+  let hardStop: AbortSignal | undefined;
   const logFile = join(request.outDir, 'run.log');
   // One list for the schema, the checklist and the count the prompt names.
   const checks = checksFor(request.tier);
@@ -413,8 +426,11 @@ const runSandcastle = async (
         `The project install did not finish within ${INSTALL_LIMIT_SECONDS / 60} minutes.`
       );
     }
+    // The same signal goes to every repair turn, so the stop is one moment for the whole run.
+    hardStop = AbortSignal.timeout(msUntilHardStop(startedAt, budget));
     const first = await sandbox.run({
       agent: agentFor(request, plan.agentEnv),
+      signal: hardStop,
       name: `${request.entry.id}-${request.os}-${request.engine}`,
       promptFile: PROMPT_FILE,
       promptArgs: {
@@ -432,6 +448,8 @@ const runSandcastle = async (
         EVIDENCE_DIR: plan.evidenceDir,
         CHECKLIST: renderChecklist(checks),
         CHECK_COUNT: String(checks.length),
+        BUDGET_MINUTES: String(budget.minutes),
+        HARD_STOP_MINUTES: String(budget.hardStopMinutes),
         OUTPUT_SCHEMA: JSON.stringify(z.toJSONSchema(answerSchema), null, 2),
       },
       idleTimeoutSeconds: 900,
@@ -465,6 +483,11 @@ const runSandcastle = async (
     if (answer) {
       output = answer;
       recoveredFrom = String(error);
+    } else if (hardStop?.aborted) {
+      failure = {
+        status: 'timeout',
+        error: `The agent had not answered by minute ${budget.hardStopMinutes} of the run and was stopped.`,
+      };
     } else {
       failure = { status: statusOf(error), error: String(error) };
     }
@@ -589,10 +612,12 @@ const summarize = (result: RunResultFile, resultPath: string): string => {
   ].join(' ');
 };
 
-const { request, cloneDir, image } = parseRequest();
+const { request, cloneDir, image, budget } = parseRequest();
 const startedAt = new Date();
 mkdirSync(join(request.outDir, 'evidence'), { recursive: true });
-const outcome = request.fake ? runFake(request) : await runSandcastle(request, cloneDir, image);
+const outcome = request.fake
+  ? runFake(request)
+  : await runSandcastle(request, cloneDir, image, startedAt, budget);
 const result = writeResult(request, outcome, startedAt);
 // The whole output directory becomes a public artifact, agent stream and session included, and the
 // agent holds the provider key, so nothing with a credential shape may stay in it.

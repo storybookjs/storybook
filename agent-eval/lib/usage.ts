@@ -1,7 +1,9 @@
+export type ModelPrice = { input: number; output: number; cacheRead?: number };
+
 /**
  * @see https://vercel.com/docs/ai-gateway/pricing
  */
-const MODEL_PRICING: Record<string, { input: number; output: number; cacheRead?: number }> = {
+export const MODEL_PRICING: Record<string, ModelPrice> = {
   /** @see https://platform.claude.com/docs/en/about-claude/pricing */
   'claude-opus-5': { input: 5, output: 25 },
   /** @see https://platform.claude.com/docs/en/pricing */

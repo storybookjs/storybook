@@ -102,6 +102,35 @@ describe('experimental_devServer', () => {
     expect(mcpHandler).toBeDefined();
   });
 
+  it('mounts routes before ref discovery settles and waits for it before handling MCP', async () => {
+    const mcpServerHandler = vi
+      .spyOn(mcpHandlerModule, 'mcpServerHandler')
+      .mockResolvedValue(undefined);
+    let release!: (response: Response) => void;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => new Promise<Response>((resolve) => (release = resolve)))
+    );
+
+    await (experimental_devServer as any)(mockApp, createOptionsWithPrivateRef());
+    await vi.waitFor(() => expect(release).toBeDefined());
+    expect(mockApp.post).toHaveBeenCalledWith('/mcp', expect.any(Function));
+
+    const pending = mcpHandler({ headers: { 'content-type': 'application/json' } }, {});
+    expect(mcpServerHandler).not.toHaveBeenCalled();
+    release(Response.json({ v: 1, components: {} }));
+    await pending;
+
+    expect(mcpServerHandler).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sources: [
+          { id: 'local', title: 'Local' },
+          { id: 'private', title: 'Private', url: 'https://private.example.com' },
+        ],
+      })
+    );
+  });
+
   it('does not register any review-related channel listeners (handled by addon-review preset)', async () => {
     const channel = { on: vi.fn(), emit: vi.fn() };
     const optionsWithReview = {
@@ -350,7 +379,7 @@ describe('experimental_devServer', () => {
     } as unknown as Options);
 
     const mockRes = { writeHead: vi.fn(), end: vi.fn() } as any;
-    handlers['/.well-known/oauth-protected-resource']({}, mockRes);
+    await handlers['/.well-known/oauth-protected-resource']({}, mockRes);
 
     expect(JSON.parse(mockRes.end.mock.calls[0][0]).resource).toBe(
       'http://localhost:5173/__storybook/custom-mcp'
@@ -920,7 +949,7 @@ describe('experimental_devServer', () => {
     expect(wellKnownHandler).toBeDefined();
 
     const mockRes = { writeHead: vi.fn(), end: vi.fn() } as any;
-    wellKnownHandler({}, mockRes);
+    await wellKnownHandler({}, mockRes);
 
     expect(mockRes.writeHead).toHaveBeenCalledWith(404);
     expect(mockRes.end).toHaveBeenCalledWith('Not found');

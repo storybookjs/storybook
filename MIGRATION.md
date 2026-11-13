@@ -779,7 +779,7 @@ import { Button, Modal } from 'storybook/internal/components';
 
 ### Theming imports
 
-End users who only create a theme keep `import { create, themes } from 'storybook/theming'`. That module is the same as `storybook/theming/create`. `ThemeVars` and `ThemeVarsPartial` are exported there too.
+End users who only create a theme can keep `import { create, themes } from 'storybook/theming'`. `ThemeVars` and `ThemeVarsPartial` are exported there too. In Node, `storybook/theming` resolves to the same lightweight module as `storybook/theming/create`, without loading React or Emotion. Use `storybook/theming/create` explicitly when you need that lightweight entry in the browser too.
 
 ```ts
 import { create, themes, type ThemeVars, type ThemeVarsPartial } from 'storybook/theming';
@@ -792,7 +792,7 @@ Addon authors who build manager UI or docs blocks move Emotion and theme-data im
 +import { styled, css, jsx, useTheme, ThemeProvider, color } from 'storybook/theming/emotion';
 ```
 
-In the manager, `storybook/theming` still resolves to the Emotion implementation at runtime, so already-published manager addons keep running. Update the import anyway. TypeScript only knows `create`, `themes`, `ThemeVars`, and `ThemeVarsPartial` on `storybook/theming`, so importing `styled`, `css`, `jsx`, `useTheme`, or the other Emotion and theme-data helpers from that module is a type error. Preview and docs blocks have no runtime alias, so the same old import fails there at runtime.
+For backwards runtime compatibility, `storybook/theming` resolves to the same Emotion implementation as `storybook/theming/emotion` in both the manager and browser previews, including docs blocks. The browser compatibility mapping does not affect Node imports. Already-published addons can keep their existing imports. The TypeScript API of `storybook/theming` remains limited to `create`, `themes`, `ThemeVars`, and `ThemeVarsPartial`, so addon source compiled against Storybook 11 must import Emotion and theme-data helpers from `storybook/theming/emotion`.
 
 ### `storybook dev` now blocks remote iframe embedding
 
@@ -1559,6 +1559,9 @@ The `preview-stats.json` file that `@storybook/builder-vite` writes for `storybo
 - Virtual modules such as `/virtual:/@storybook/builder-vite/project-annotations.js` and their edges
 - Proxy modules that Vite and Rollup insert between your code and its dependencies, for example `\0./node_modules/react/index.js?commonjs-es-import`
 - Sub-modules with a query string, for example `./src/Button.vue?vue&type=style&index=0&lang.css` next to `./src/Button.vue`
+- Files that a plugin reads itself and registers with `this.addWatchFile()` while it loads or transforms a module, for example an Angular `templateUrl` or a Sass partial. Each file is listed as a dependency of that module, so a change to it now traces to the stories that use it. Directories, globs and relative paths are left out. A stylesheet keeps only the stylesheets it watches, such as Sass partials and `@import`ed CSS files. A partial of a stylesheet that `.storybook/preview` imports makes TurboSnap capture every story, as any other change to the preview does.
+
+The other files that a stylesheet watches are left out: the source files that Tailwind scans for class names, a Tailwind v3 `tailwind.config.*`, a JavaScript plugin loaded with Tailwind v4's `@plugin`, and the fonts and images that `url()` references. They trace as they did before: a scanned source file through the stories that import it, and the other files to no story. To capture every story when one of these other files changes, pass it to Chromatic's `--externals` option, for example `--externals "tailwind.config.*"`.
 
 Chromatic TurboSnap reads this file. It needs `chromatic-cli` [v18.13.1](https://github.com/chromaui/chromatic-cli/releases/tag/v18.13.1) or later, which merges these nodes into the files they stand for. With an older version, a changed Vue or Svelte component can trace to zero stories. Upgrade `chromatic-cli` to v18.13.1 or later before you upgrade Storybook.
 

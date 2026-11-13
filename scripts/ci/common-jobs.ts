@@ -68,9 +68,10 @@ export const build_linux = defineJob('Build (linux)', () => ({
         `${WORKING_DIR}/node_modules`,
         `${WORKING_DIR}/code/node_modules`,
         `${WORKING_DIR}/scripts/node_modules`,
-        // agent-eval nests all its dependencies (installConfig.hoistingLimits),
-        // so downstream checks need its node_modules packed explicitly.
+        // agent-eval and ecosystem-qa nest all their dependencies (installConfig.hoistingLimits),
+        // so downstream checks need their node_modules packed explicitly.
         `${WORKING_DIR}/agent-eval/node_modules`,
+        `${WORKING_DIR}/ecosystem-qa/node_modules`,
       ],
       packageDirs.map((p) => `${WORKING_DIR}/code/${p.replace('src', 'node_modules')}`)
     ),
@@ -570,7 +571,9 @@ export const defineAffectedUnitTests = (changedFiles: readonly string[]) =>
         {
           run: {
             name: 'Run affected tests',
-            command: `NODE_OPTIONS=--max_old_space_size=4096 yarn vitest related --run --project '!storybook-ui' ${UNIT_TEST_REPORTERS} $(cat ${CHANGED_FILES_PATH})`,
+            // ecosystem-qa nests its dependencies and the workspace does not carry them, so here its
+            // tests would load the root's zod 3. Its own workflow runs them with the right install.
+            command: `NODE_OPTIONS=--max_old_space_size=4096 yarn vitest related --run --project '!storybook-ui' --project '!ecosystem-qa' ${UNIT_TEST_REPORTERS} $(cat ${CHANGED_FILES_PATH})`,
           },
         },
         testResults.persist(`test-results`),

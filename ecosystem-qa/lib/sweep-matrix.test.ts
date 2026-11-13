@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { ENTRY } from './fixtures.ts';
 import type { CatalogEntry } from './schema.ts';
-import { sweepMatrix } from './sweep-matrix.ts';
+import { sweepMatrix, withoutResult } from './sweep-matrix.ts';
 
 const CATALOG: CatalogEntry[] = [
   ENTRY,
@@ -120,5 +120,31 @@ describe('sweepMatrix', () => {
       problems: ['Nothing to run for n8n on windows with claude'],
     });
     expect(jobs(' , ')).toEqual({ problems: ['No repo was named'] });
+  });
+});
+
+describe('withoutResult', () => {
+  const run = (repo: string, os: string, engine = 'claude') => ({ repo, os, engine });
+  const planned = [run('mealdrop', 'linux'), run('mealdrop', 'windows'), run('gutenberg', 'linux')];
+
+  it('names the planned jobs that left no result', () => {
+    expect(withoutResult(planned, [run('mealdrop', 'linux')])).toEqual([
+      'mealdrop on windows with claude',
+      'gutenberg on linux with claude',
+    ]);
+  });
+
+  it('tells the same repo apart by system and by engine', () => {
+    const results = [run('mealdrop', 'linux', 'codex'), run('mealdrop', 'windows')];
+
+    expect(withoutResult(planned, results)).toEqual([
+      'mealdrop on linux with claude',
+      'gutenberg on linux with claude',
+    ]);
+  });
+
+  it('names nothing when every planned job has a result, or nothing was planned', () => {
+    expect(withoutResult(planned, planned)).toEqual([]);
+    expect(withoutResult([], [run('mealdrop', 'linux')])).toEqual([]);
   });
 });

@@ -116,3 +116,22 @@ export const sweepMatrix = (
     ? { include, notes: notesFor(catalog, names, os.values) }
     : { problems: [`Nothing to run for ${names.join(', ')} on ${oses} with ${engines}`] };
 };
+
+interface Run {
+  repo: string;
+  os: string;
+  engine: string;
+}
+
+// The planned jobs of a sweep that left no result. A job whose runner stops answering leaves no
+// artifact and no log, so the plan is the only place that still knows it was meant to run.
+export const withoutResult = (planned: Run[], results: Run[]): string[] =>
+  planned
+    .filter(
+      (job) =>
+        !results.some(
+          (result) =>
+            result.repo === job.repo && result.os === job.os && result.engine === job.engine
+        )
+    )
+    .map((job) => `${job.repo} on ${job.os} with ${job.engine}`);

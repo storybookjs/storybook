@@ -1422,6 +1422,97 @@ describe('PreviewWeb', () => {
       await preview.onPreloadStories({ ids: ['introduction--docs'] });
       expect(importFn).toHaveBeenCalledWith('./src/ComponentTwo.stories.js');
     });
+
+    it('starts the newest batch once the one in flight finishes', async () => {
+      document.location.search = '?id=component-one--docs&viewMode=docs';
+      const preview = await createAndRenderPreview();
+      await waitForRender();
+
+      vi.mocked(importFn).mockClear();
+      const [gate, openGate] = createGate();
+      vi.mocked(importFn).mockImplementationOnce(() => gate.then(() => componentTwoExports));
+      const inFlight = preview.onPreloadStories({ ids: ['component-two--c'] });
+      await vi.waitFor(() =>
+        expect(importFn).toHaveBeenCalledWith('./src/ComponentTwo.stories.js')
+      );
+
+      const next = preview.onPreloadStories({ ids: ['component-one--e'] });
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(importFn).not.toHaveBeenCalledWith('./src/ExtraComponentOne.stories.js');
+
+      openGate();
+      await Promise.all([inFlight, next]);
+      expect(importFn).toHaveBeenCalledWith('./src/ExtraComponentOne.stories.js');
+    });
+
+    it('drops a batch superseded before it starts', async () => {
+      document.location.search = '?id=component-one--docs&viewMode=docs';
+      const preview = await createAndRenderPreview();
+      await waitForRender();
+
+      vi.mocked(importFn).mockClear();
+      const [gate, openGate] = createGate();
+      vi.mocked(importFn).mockImplementationOnce(() => gate.then(() => componentTwoExports));
+      const inFlight = preview.onPreloadStories({ ids: ['component-two--c'] });
+      await vi.waitFor(() =>
+        expect(importFn).toHaveBeenCalledWith('./src/ComponentTwo.stories.js')
+      );
+
+      const superseded = preview.onPreloadStories({ ids: ['component-one--e'] });
+      const newest = preview.onPreloadStories({ ids: ['introduction--docs'] });
+      openGate();
+      await Promise.all([inFlight, superseded, newest]);
+
+      expect(importFn).toHaveBeenCalledWith('./src/Introduction.mdx');
+      expect(importFn).not.toHaveBeenCalledWith('./src/ExtraComponentOne.stories.js');
+    });
+
+    it('does not let a sibling request replace a waiting hover request', async () => {
+      document.location.search = '?id=component-one--docs&viewMode=docs';
+      const preview = await createAndRenderPreview();
+      await waitForRender();
+
+      vi.mocked(importFn).mockClear();
+      const [gate, openGate] = createGate();
+      vi.mocked(importFn).mockImplementationOnce(() => gate.then(() => componentTwoExports));
+      const inFlight = preview.onPreloadStories({ ids: ['component-two--c'], source: 'hover' });
+      await vi.waitFor(() =>
+        expect(importFn).toHaveBeenCalledWith('./src/ComponentTwo.stories.js')
+      );
+
+      const hover = preview.onPreloadStories({ ids: ['component-one--e'], source: 'hover' });
+      const sibling = preview.onPreloadStories({ ids: ['component-one--a'], source: 'sibling' });
+      openGate();
+      await Promise.all([inFlight, hover, sibling]);
+
+      expect(importFn).toHaveBeenCalledWith('./src/ExtraComponentOne.stories.js');
+      expect(importFn).toHaveBeenCalledWith('./src/ComponentOne.stories.js');
+    });
+
+    it('runs a waiting sibling request after the interactive ones', async () => {
+      document.location.search = '?id=component-one--docs&viewMode=docs';
+      const preview = await createAndRenderPreview();
+      await waitForRender();
+
+      vi.mocked(importFn).mockClear();
+      const [gate, openGate] = createGate();
+      vi.mocked(importFn).mockImplementationOnce(() => gate.then(() => componentTwoExports));
+      const inFlight = preview.onPreloadStories({ ids: ['component-two--c'], source: 'hover' });
+      await vi.waitFor(() =>
+        expect(importFn).toHaveBeenCalledWith('./src/ComponentTwo.stories.js')
+      );
+
+      const sibling = preview.onPreloadStories({ ids: ['component-one--a'], source: 'sibling' });
+      const hover = preview.onPreloadStories({ ids: ['component-one--e'], source: 'hover' });
+      openGate();
+      await Promise.all([inFlight, sibling, hover]);
+
+      expect(vi.mocked(importFn).mock.calls.map(([path]) => path)).toEqual([
+        './src/ComponentTwo.stories.js',
+        './src/ExtraComponentOne.stories.js',
+        './src/ComponentOne.stories.js',
+      ]);
+    });
   });
 
   describe('onResetArgs', () => {

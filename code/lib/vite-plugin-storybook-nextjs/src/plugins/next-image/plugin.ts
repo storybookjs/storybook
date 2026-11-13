@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import { createRequire } from 'node:module';
 import { type FilterPattern, createFilter } from '@rollup/pluginutils';
 import type { NextConfigComplete } from 'next/dist/server/config-shared.js';
-import path from 'pathe';
+import path, { normalize } from 'pathe';
 import probeSync from 'probe-image-size/sync.js';
 import { dedent } from 'ts-dedent';
 import type { Plugin } from 'vite';
@@ -151,6 +151,7 @@ export function vitePluginNextImage(
           }
         }
 
+        imagePath = normalize(imagePath);
         const pathForFilter = imagePath.replace(postfixRE, '');
 
         if (!filter(pathForFilter)) {
@@ -196,11 +197,12 @@ export function vitePluginNextImage(
         }
 
         const nextConfig = await nextConfigResolver.promise;
+        const imageImport = JSON.stringify(`${imagePath}?ignore`);
 
         try {
           if (nextConfig.images?.disableStaticImages) {
             return dedent`
-						import image from "${imagePath}?ignore";
+						import image from ${imageImport};
 						export default image;
 					`;
           }
@@ -217,7 +219,7 @@ export function vitePluginNextImage(
           const { width, height } = size;
 
           return dedent`
-						import src from "${imagePath}?ignore";
+						import src from ${imageImport};
 						export default {
 							src,
 							height: ${height},

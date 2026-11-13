@@ -55,6 +55,25 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@ai-hero/sandcastle@npm:0.13.0":
+  version: 0.13.0
+  resolution: "@ai-hero/sandcastle@npm:0.13.0"
+  dependencies:
+    "@clack/prompts": "npm:^1.1.0"
+  peerDependencies:
+    "@daytona/sdk": ">=0.164.0 <1.0.0"
+    "@vercel/sandbox": ">=1.0.0"
+  peerDependenciesMeta:
+    "@daytona/sdk":
+      optional: true
+    "@vercel/sandbox":
+      optional: true
+  bin:
+    sandcastle: dist/main.js
+  checksum: 10c0/0f6162ef2a2f34f85eeb9822a54a58aa725ed178e4f76a5bdd6ff62774479a9466730051e2590d807abd8987c8d3835dac0c065d354a32f935508adf360d8f01
+  languageName: node
+  linkType: hard
+
 "@ai-sdk/anthropic@npm:^2.0.0":
   version: 2.0.91
   resolution: "@ai-sdk/anthropic@npm:2.0.91"
@@ -2333,6 +2352,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@clack/core@npm:1.5.1":
+  version: 1.5.1
+  resolution: "@clack/core@npm:1.5.1"
+  dependencies:
+    fast-wrap-ansi: "npm:^0.2.0"
+    sisteransi: "npm:^1.0.5"
+  checksum: 10c0/6dca93ff5a34bfe8c150367519bc40a847e9172cb1a78b18c88da0507cb6ad899debe1ad5cfcb9796e439108f12f003cf06fd002e2293bc85ff500975e45ff13
+  languageName: node
+  linkType: hard
+
 "@clack/prompts@npm:1.0.0-alpha.7":
   version: 1.0.0-alpha.7
   resolution: "@clack/prompts@npm:1.0.0-alpha.7"
@@ -2341,6 +2370,18 @@ __metadata:
     picocolors: "npm:^1.0.0"
     sisteransi: "npm:^1.0.5"
   checksum: 10c0/21f657868fe538e260f0c79026cca909b51013ad8017a6951869c976dded786383b604db616fed2a799b40c300f7df672fa3e7f4c2e1484819c7fc482b2bd9bb
+  languageName: node
+  linkType: hard
+
+"@clack/prompts@npm:^1.1.0":
+  version: 1.8.1
+  resolution: "@clack/prompts@npm:1.8.1"
+  dependencies:
+    "@clack/core": "npm:1.5.1"
+    fast-string-width: "npm:^3.0.2"
+    fast-wrap-ansi: "npm:^0.2.0"
+    sisteransi: "npm:^1.0.5"
+  checksum: 10c0/ed38748acde0cb1e7ebdac1242470c78bd90380cbdde1e5560e0828881e3c74e2676de666086cf8183c8d4d3f1fc6e489f15a004f0d9f8ee294a3aa744de2093
   languageName: node
   linkType: hard
 
@@ -19200,6 +19241,24 @@ __metadata:
   languageName: node
   linkType: hard
 
+"ecosystem-qa@workspace:ecosystem-qa":
+  version: 0.0.0-use.local
+  resolution: "ecosystem-qa@workspace:ecosystem-qa"
+  dependencies:
+    "@ai-hero/sandcastle": "npm:0.13.0"
+    "@types/node": "npm:^22.19.1"
+    gifenc: "npm:1.0.3"
+    memfs: "npm:^4.11.1"
+    pathe: "npm:^2.0.3"
+    playwright: "npm:1.58.2"
+    pngjs: "npm:^7.0.0"
+    typescript: "npm:^6.0.3"
+    vite: "npm:^7.0.4"
+    vitest: "npm:5.0.5"
+    zod: "npm:^4.4.3"
+  languageName: unknown
+  linkType: soft
+
 "edge-runtime@npm:2.5.9":
   version: 2.5.9
   resolution: "edge-runtime@npm:2.5.9"
@@ -21132,6 +21191,22 @@ __metadata:
   languageName: node
   linkType: hard
 
+"fast-string-truncated-width@npm:^3.0.2":
+  version: 3.0.3
+  resolution: "fast-string-truncated-width@npm:3.0.3"
+  checksum: 10c0/043b8663397d14a3880ce4f3407bcda60b40db9bbeafe62863a35d1f9c69ea17c8da3fcd72de235553e6c9cd053128cde9e24ca0d4a7463208f48db3cd23d981
+  languageName: node
+  linkType: hard
+
+"fast-string-width@npm:^3.0.2":
+  version: 3.0.2
+  resolution: "fast-string-width@npm:3.0.2"
+  dependencies:
+    fast-string-truncated-width: "npm:^3.0.2"
+  checksum: 10c0/c8822d175315bb353ebe782b65214ac53b13e3bf704e03b132ea7bdfa8de6a636375b3ab7a4097545393d109381c37c4f387c72a462c90b61412dbc4632f39a7
+  languageName: node
+  linkType: hard
+
 "fast-text-encoding@npm:^1.0.0":
   version: 1.0.6
   resolution: "fast-text-encoding@npm:1.0.6"
@@ -21143,6 +21218,15 @@ __metadata:
   version: 3.0.6
   resolution: "fast-uri@npm:3.0.6"
   checksum: 10c0/74a513c2af0584448aee71ce56005185f81239eab7a2343110e5bad50c39ad4fb19c5a6f99783ead1cac7ccaf3461a6034fda89fffa2b30b6d99b9f21c2f9d29
+  languageName: node
+  linkType: hard
+
+"fast-wrap-ansi@npm:^0.2.0":
+  version: 0.2.2
+  resolution: "fast-wrap-ansi@npm:0.2.2"
+  dependencies:
+    fast-string-width: "npm:^3.0.2"
+  checksum: 10c0/1aa7be4f7cb86f4bdb14691cb6bcc0b8df8b3b89df142ade3ae1602332dcf6f990cd750a923cd581ca0847808cb4ec1aa5afaafa7a72f849e87a2a62c98fa370
   languageName: node
   linkType: hard
 
@@ -22134,6 +22218,13 @@ __metadata:
   dependencies:
     assert-plus: "npm:^1.0.0"
   checksum: 10c0/c13f8530ecf16fc509f3fa5cd8dd2129ffa5d0c7ccdf5728b6022d52954c2d24be3706b4cdf15333eec52f1fbb43feb70a01dabc639d1d10071e371da8aaa52f
+  languageName: node
+  linkType: hard
+
+"gifenc@npm:1.0.3":
+  version: 1.0.3
+  resolution: "gifenc@npm:1.0.3"
+  checksum: 10c0/34fc6b2c66c305fc556cd2f475154ce2ad68384a52ceb8253b901c8c7d9c63f2c0a5d109ceb3cb46e44c2c6155009920a286cf08a621105863aa43468e345229
   languageName: node
   linkType: hard
 

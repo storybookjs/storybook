@@ -1,0 +1,394 @@
+name: Ecosystem QA
+
+on:
+  workflow_dispatch:
+    inputs:
+      repo:
+        description: 'Catalog id from ecosystem-qa/catalog.json'
+        type: string
+        default: 'mealdrop'
+      version:
+        description: 'Storybook version to upgrade to'
+        type: string
+        default: '11.0.0-beta.0'
+      engines:
+        description: 'Agent engines to run'
+        type: choice
+        options: ['claude', 'codex', 'claude,codex']
+        default: 'claude'
+      os:
+        description: 'Runner operating systems'
+        type: choice
+        options: ['linux', 'windows', 'linux,windows']
+        default: 'linux'
+      tier:
+        description: 'must runs the checks every sweep needs; extended runs the whole registry'
+        type: choice
+        options: ['must', 'extended']
+        default: 'must'
+      dry:
+        description: 'Write proposals to the Step Summary instead of filing them'
+        type: boolean
+        default: true
+  pull_request:
+    paths:
+      - 'ecosystem-qa/**'
+      - '.github/workflows/ecosystem-qa.yml'
+      # The harness imports these, so a change there must run the smoke job too.
+      - 'agent-eval/lib/usage.ts'
+      - 'scripts/utils/gh.ts'
+
+permissions: {}
+
+# The agent CLI versions, used both for the Linux image and for the Windows host install.
+env:
+  CLAUDE_CODE_VERSION: '2.1.312'
+  CODEX_VERSION: '0.166.0'
+
+concurrency:
+  group: ecosystem-qa-${{ inputs.repo || 'mealdrop' }}-${{ inputs.version || github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  smoke:
+    name: Smoke-test the harness
+    if: ${{ github.event_name == 'pull_request' }}
+    # Not ubuntu-latest: the pinned Playwright has no Chromium build for Ubuntu 26.04.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      issues: read # gh search for each fingerprint
+    env:
+      QA_VERSION: '11.0.0-beta.0'
+    steps:
+      - name: Harden the runner
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Install the ecosystem-qa workspace
+        run: |
+          corepack enable
+          yarn workspaces focus ecosystem-qa
+
+      - name: Typecheck
+        run: yarn workspace ecosystem-qa typecheck
+
+      - name: Test
+        run: yarn workspace ecosystem-qa test
+
+      - name: Install Chromium for the evidence tools
+        run: cd ecosystem-qa && npx playwright install --with-deps chromium
+
+      - name: Run a fake Claude run
+        env:
+          ECOSYSTEM_QA_FAKE: '1'
+        run: >-
+          node ecosystem-qa/run.ts --repo mealdrop --version "$QA_VERSION" --engine claude --fake
+          --sandbox none --out ecosystem-qa/results/mealdrop/linux/claude
+
+      - name: Collect proposals
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          node ecosystem-qa/collect.ts --results ecosystem-qa/results --version "$QA_VERSION"
+          --out ecosystem-qa/results/proposals.json --repo "$GITHUB_REPOSITORY"
+
+      - name: Write proposals to the Step Summary
+        run: >-
+          node ecosystem-qa/file.ts --proposals ecosystem-qa/results/proposals.json
+          --repo "$GITHUB_REPOSITORY" --dry
+
+  plan:
+    name: Plan the matrix
+    if: ${{ github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    permissions: {}
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+      repo: ${{ steps.matrix.outputs.repo }}
+      version: ${{ steps.matrix.outputs.version }}
+      dry: ${{ steps.matrix.outputs.dry }}
+    steps:
+      - name: Build the os x engine matrix
+        id: matrix
+        env:
+          QA_REPO: ${{ inputs.repo }}
+          QA_VERSION: ${{ inputs.version }}
+          QA_ENGINES: ${{ inputs.engines }}
+          QA_OS: ${{ inputs.os }}
+          QA_DRY: ${{ inputs.dry }}
+        run: |
+          if [[ ! "$QA_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$ ]]; then
+            echo "::error::version '$QA_VERSION' is not a semver version"
+            exit 1
+          fi
+          matrix="$(jq -cn --arg engines "$QA_ENGINES" --arg oses "$QA_OS" '{include: [
+            ($oses | split(",")[]) as $os | ($engines | split(",")[]) as $engine | {
+              os: $os,
+              engine: $engine,
+              runner: (if $os == "windows" then "windows-latest" else "ubuntu-latest" end),
+              sandbox: (if $os == "windows" then "none" else "docker" end)
+            }
+          ]}')"
+          {
+            echo "matrix=$matrix"
+            echo "repo=$QA_REPO"
+            echo "version=$QA_VERSION"
+            echo "dry=$QA_DRY"
+          } >> "$GITHUB_OUTPUT"
+          echo "$matrix" | jq .
+
+  runner:
+    name: QA ${{ needs.plan.outputs.repo }} on ${{ matrix.os }} with ${{ matrix.engine }}
+    needs: plan
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 180
+    permissions: {}
+    # The agent keys live in this environment. The push token lives in ecosystem-qa-file, which only
+    # the file job enters, so no job that runs the agent can read it.
+    environment: ecosystem-qa
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    defaults:
+      run:
+        shell: bash
+    env:
+      QA_REPO: ${{ needs.plan.outputs.repo }}
+      QA_VERSION: ${{ needs.plan.outputs.version }}
+      QA_ENGINE: ${{ matrix.engine }}
+      QA_OS: ${{ matrix.os }}
+      QA_SANDBOX: ${{ matrix.sandbox }}
+      QA_TIER: ${{ inputs.tier }}
+    steps:
+      - name: Harden the runner
+        if: ${{ matrix.os == 'linux' }}
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Install the ecosystem-qa workspace
+        run: |
+          corepack enable
+          yarn workspaces focus ecosystem-qa
+
+      # A node_modules tree under the Sandcastle worktree exceeds Windows' 260-character path
+      # limit, and git refuses to remove the worktree without this.
+      - name: Allow long paths in git (Windows)
+        if: ${{ matrix.os == 'windows' }}
+        run: git config --global core.longpaths true
+
+      - name: Report free disk before the run (Linux)
+        if: ${{ matrix.os == 'linux' }}
+        run: df -h
+
+      - name: Report free disk before the run (Windows)
+        if: ${{ matrix.os == 'windows' }}
+        shell: pwsh
+        run: Get-PSDrive -PSProvider FileSystem
+
+      - name: Build the sandbox image
+        if: ${{ matrix.sandbox == 'docker' }}
+        run: >-
+          docker build --build-arg AGENT_UID="$(id -u)" --build-arg AGENT_GID="$(id -g)"
+          --build-arg CLAUDE_CODE_VERSION="$CLAUDE_CODE_VERSION" --build-arg CODEX_VERSION="$CODEX_VERSION"
+          -t sb-ecosystem-qa ecosystem-qa
+
+      - name: Install Chromium for the evidence tools on the host
+        if: ${{ matrix.sandbox == 'none' }}
+        run: cd ecosystem-qa && npx playwright install --with-deps chromium
+
+      - name: Install the agent CLIs on the host
+        if: ${{ matrix.sandbox == 'none' }}
+        # Exact versions, pinned in `env` above. A lockfile entry would add both CLIs to every install of
+        # the monorepo, because ecosystem-qa is one of its workspaces.
+        run: npm install -g "@anthropic-ai/claude-code@$CLAUDE_CODE_VERSION" "@openai/codex@$CODEX_VERSION" # zizmor: ignore[adhoc-packages]
+
+      - name: Run the QA agent
+        env:
+          ANTHROPIC_API_KEY: ${{ matrix.engine == 'claude' && secrets.ECOSYSTEM_QA_ANTHROPIC_API_KEY || '' }}
+          CODEX_API_KEY: ${{ matrix.engine == 'codex' && secrets.ECOSYSTEM_QA_OPENAI_API_KEY || '' }}
+        run: >-
+          node ecosystem-qa/run.ts --repo "$QA_REPO" --version "$QA_VERSION" --engine "$QA_ENGINE"
+          --sandbox "$QA_SANDBOX" --out "ecosystem-qa/results/$QA_REPO/$QA_OS/$QA_ENGINE"
+          --clone-dir "$RUNNER_TEMP/qa-work/$QA_REPO" --tier "$QA_TIER"
+
+      - name: Report free disk after the run (Linux)
+        if: ${{ always() && matrix.os == 'linux' }}
+        run: df -h
+
+      - name: Report free disk after the run (Windows)
+        if: ${{ always() && matrix.os == 'windows' }}
+        shell: pwsh
+        run: Get-PSDrive -PSProvider FileSystem
+
+      # The upload stores what a symlink points to, so a link the agent left in its evidence
+      # directory would publish a runner file; collect only sees the links that survive.
+      - name: Remove symlinks from the run result
+        if: ${{ always() }}
+        run: if [[ -d ecosystem-qa/results ]]; then find ecosystem-qa/results -type l -print -delete; fi
+
+      # run.ts redacts its output when it reaches its end. A run that crashed or was cancelled did
+      # not, and the upload publishes whatever is there.
+      - name: Redact credentials in the run result
+        id: redact
+        if: ${{ always() }}
+        run: node ecosystem-qa/redact.ts ecosystem-qa/results
+
+      - name: Upload the run result
+        if: ${{ always() && steps.redact.outcome == 'success' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: qa-result-${{ matrix.os }}-${{ matrix.engine }}
+          path: ecosystem-qa/results/
+          retention-days: 14
+          if-no-files-found: warn
+
+      - name: Note a run that wrote no result in the Step Summary
+        if: ${{ always() }}
+        run: |
+          if [[ ! -f "ecosystem-qa/results/$QA_REPO/$QA_OS/$QA_ENGINE/result.json" ]]; then
+            echo "### $QA_REPO on $QA_OS with $QA_ENGINE: no result.json was written" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  collect:
+    name: Collect and dedupe findings
+    needs: [plan, runner]
+    if: ${{ always() && needs.plan.result == 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      issues: read # gh search for each fingerprint
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Install the ecosystem-qa workspace
+        run: |
+          corepack enable
+          yarn workspaces focus ecosystem-qa
+
+      - name: Download the run results
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          pattern: qa-result-*
+          path: ecosystem-qa/results
+
+      - name: Collect proposals
+        env:
+          GH_TOKEN: ${{ github.token }}
+          QA_VERSION: ${{ needs.plan.outputs.version }}
+        run: >-
+          node ecosystem-qa/collect.ts --results ecosystem-qa/results --version "$QA_VERSION"
+          --out ecosystem-qa/proposals.json --repo "$GITHUB_REPOSITORY"
+
+      - name: Upload the proposals
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: qa-proposals
+          path: ecosystem-qa/proposals.json
+          retention-days: 14
+
+  file-dry:
+    name: Propose issues (dry run)
+    needs: [plan, collect]
+    # Not the implicit success(): one failed runner in the matrix must not silence the filing.
+    if: ${{ !cancelled() && needs.collect.result == 'success' && needs.plan.outputs.dry == 'true' }}
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Install the ecosystem-qa workspace
+        run: |
+          corepack enable
+          yarn workspaces focus ecosystem-qa
+
+      - name: Download the run results and proposals
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          pattern: qa-*
+          path: ecosystem-qa/results
+
+      - name: Write proposals to the Step Summary
+        run: >-
+          node ecosystem-qa/file.ts --proposals ecosystem-qa/results/qa-proposals/proposals.json
+          --repo "$GITHUB_REPOSITORY" --dry
+
+  file:
+    name: File issues
+    needs: [plan, collect]
+    if: ${{ !cancelled() && needs.collect.result == 'success' && needs.plan.outputs.dry == 'false' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # push evidence to the qa-assets branch
+      issues: write # create the issue or the comment
+    environment: ecosystem-qa-file
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Install the ecosystem-qa workspace
+        run: |
+          corepack enable
+          yarn workspaces focus ecosystem-qa
+
+      - name: Download the run results and proposals
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          pattern: qa-*
+          path: ecosystem-qa/results
+
+      - name: File issues and push evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ECOSYSTEM_QA_PUSH_TOKEN: ${{ secrets.ECOSYSTEM_QA_PUSH_TOKEN }}
+        run: >-
+          node ecosystem-qa/file.ts --proposals ecosystem-qa/results/qa-proposals/proposals.json
+          --repo "$GITHUB_REPOSITORY"

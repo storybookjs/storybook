@@ -1,7 +1,10 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { resolve } from 'node:path';
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { logger, prompt } from 'storybook/internal/node-logger';
 
+import { invalidateProjectRootCache } from '../utils/paths.ts';
 import { JsPackageManager } from './JsPackageManager.ts';
 
 vi.mock('storybook/internal/node-logger', { spy: true });
@@ -185,6 +188,52 @@ describe('JsPackageManager', () => {
 
       await expect(jsPackageManager.installDependencies()).resolves.toBeUndefined();
       expect(clearSpy).toHaveBeenCalled();
+    });
+  });
+
+  describe('instance directory', () => {
+    const fixtureRoot = resolve(__dirname, 'fixtures', 'monorepo-subpackage');
+    const subpackageDir = resolve(fixtureRoot, 'storybook');
+
+    beforeEach(() => {
+      // Clear the cached repository root so the fixture override takes effect.
+      invalidateProjectRootCache();
+      vi.stubEnv('STORYBOOK_PROJECT_ROOT', fixtureRoot);
+    });
+
+    afterEach(() => {
+      vi.unstubAllEnvs();
+    });
+
+    it.each([
+      { configDir: '.', instanceDir: subpackageDir },
+      { configDir: './', instanceDir: subpackageDir },
+      { configDir: '.storybook', instanceDir: subpackageDir },
+      { configDir: 'config/.storybook', instanceDir: resolve(subpackageDir, 'config') },
+    ])('resolves the instance directory for "$configDir"', ({ configDir, instanceDir }) => {
+      // @ts-expect-error Ignore abstract class error
+      const packageManager = new JsPackageManager({ cwd: subpackageDir, configDir });
+
+      expect(packageManager.instanceDir).toBe(instanceDir);
+    });
+
+    it('uses the parent directory for absolute config dirs', () => {
+      // @ts-expect-error Ignore abstract class error
+      const packageManager = new JsPackageManager({
+        cwd: subpackageDir,
+        configDir: resolve(fixtureRoot, '.storybook'),
+      });
+
+      expect(packageManager.instanceDir).toBe(fixtureRoot);
+    });
+
+    it('uses the subpackage package.json when configDir is "."', () => {
+      // @ts-expect-error Ignore abstract class error
+      const packageManager = new JsPackageManager({ cwd: subpackageDir, configDir: '.' });
+
+      expect(packageManager.primaryPackageJson.packageJson.name).toBe(
+        'monorepo-subpackage-storybook'
+      );
     });
   });
 });

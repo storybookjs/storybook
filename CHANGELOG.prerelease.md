@@ -1,3 +1,7 @@
+## 11.0.0-beta.4
+
+- Addons: Keep transient panel state out of the manager store - [#37391](https://github.com/storybookjs/storybook/pull/37391), thanks @Sidnioulz!
+
 ## 11.0.0-beta.3
 
 - Angular: Reject partial loglevel matches - [#37044](https://github.com/storybookjs/storybook/pull/37044), thanks @subhwastaken!

@@ -45,6 +45,7 @@ import { writeStepSummary } from './lib/step-summary.ts';
 import type { Outcome, RunRequest } from './lib/types.ts';
 import { redactTree } from './lib/redact.ts';
 import { upgraded } from './lib/results.ts';
+import { unsandboxedRefusal } from './lib/sandbox-policy.ts';
 import { usageFromStream } from './lib/usage.ts';
 
 const HELP = `Usage: node ecosystem-qa/run.ts --repo <catalog id> --version <storybook version> --engine <claude|codex> --sandbox <docker|bwrap|seatbelt|none> --out <dir>
@@ -166,6 +167,12 @@ const parseRequest = () => {
 
   const engine = Engine.parse(values.engine);
   const entry = loadCatalogEntry(repo);
+  const sandbox = SandboxKind.parse(values.sandbox);
+  // A fake run starts no agent and runs nothing of the repo.
+  const refusal = sandbox === 'none' && !values.fake ? unsandboxedRefusal(entry, os) : undefined;
+  if (refusal) {
+    return fail(refusal);
+  }
   const outDir = resolve(out);
   // A run owns its output directory: the log, the agent stream and the evidence of an earlier run
   // would otherwise be read as this run's.
@@ -179,7 +186,7 @@ const parseRequest = () => {
     model: values.model ?? DEFAULT_MODEL[engine],
     effort: Effort.parse(values.effort),
     tier: Tier.parse(values.tier),
-    sandbox: SandboxKind.parse(values.sandbox),
+    sandbox,
     os,
     fake: values.fake,
     outDir,

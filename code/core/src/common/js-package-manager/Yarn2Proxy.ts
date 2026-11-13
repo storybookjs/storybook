@@ -207,8 +207,7 @@ export class Yarn2Proxy extends JsPackageManager {
   protected runInstall() {
     return executeCommand({
       command: 'yarn',
-      // Yarn 3+ makes `yarn install` immutable when `CI` is set (or `enableImmutableInstalls` is
-      // on), which fails with YN0028 after the CLI changed `package.json`.
+      // The CLI installs after editing package.json; an immutable install (default on CI) fails.
       args: ['install', '--no-immutable', ...this.getInstallArgs()],
       cwd: this.cwd,
       stdio: prompt.getPreferredStdio(),

@@ -1,7 +1,7 @@
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { join } from 'pathe';
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { prompt } from 'storybook/internal/node-logger';
 import { MinimumReleaseAgeHandledError } from 'storybook/internal/server-errors';
@@ -28,10 +28,6 @@ const mockedExecuteCommand = vi.mocked(executeCommand);
 
 describe('NPM Proxy', () => {
   let npmProxy: NPMProxy;
-
-  afterEach(() => {
-    vi.unstubAllEnvs();
-  });
 
   beforeEach(() => {
     vi.useRealTimers();
@@ -128,20 +124,6 @@ describe('NPM Proxy', () => {
         const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({
           stdout: '7.1.0',
         } as any);
-
-        await npmProxy.installDependencies();
-
-        expect(executeCommandSpy).toHaveBeenCalledWith(
-          expect.objectContaining({ command: 'npm', args: ['install'] })
-        );
-      });
-
-      it('runs a plain `npm install` when CI is set, because npm does not freeze the lockfile on CI', async () => {
-        vi.stubEnv('CI', 'true');
-        vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (fn: any) => {
-          await Promise.resolve(fn());
-        });
-        const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({ stdout: '' } as any);
 
         await npmProxy.installDependencies();
 

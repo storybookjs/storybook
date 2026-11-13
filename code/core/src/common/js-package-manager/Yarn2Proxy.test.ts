@@ -43,24 +43,28 @@ describe('Yarn 2 Proxy', () => {
       vi.unstubAllEnvs();
     });
 
-    it('runs `yarn install --no-immutable`, so the lockfile can change when CI is set', async () => {
-      // Yarn 3+ makes installs immutable when `CI` is set, which fails with YN0028 after the CLI
-      // changed package.json.
-      vi.stubEnv('CI', 'true');
-      // sort of un-mock part of the function so executeCommand (also mocked) is called
-      vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (fn: any) => {
-        await Promise.resolve(fn());
-      });
-      const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({
-        stdout: '',
-      } as any);
+    it.each([
+      ['set', 'true'],
+      ['unset', ''],
+    ])(
+      'runs `yarn install --no-immutable` when CI is %s, so the lockfile can change',
+      async (_, ci) => {
+        vi.stubEnv('CI', ci);
+        // sort of un-mock part of the function so executeCommand (also mocked) is called
+        vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (fn: any) => {
+          await Promise.resolve(fn());
+        });
+        const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({
+          stdout: '',
+        } as any);
 
-      await yarn2Proxy.installDependencies();
+        await yarn2Proxy.installDependencies();
 
-      expect(executeCommandSpy).toHaveBeenCalledWith(
-        expect.objectContaining({ command: 'yarn', args: ['install', '--no-immutable'] })
-      );
-    });
+        expect(executeCommandSpy).toHaveBeenCalledWith(
+          expect.objectContaining({ command: 'yarn', args: ['install', '--no-immutable'] })
+        );
+      }
+    );
 
     it('keeps the original error when Yarn 6 finds no candidates', async () => {
       vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (fn: any) => {

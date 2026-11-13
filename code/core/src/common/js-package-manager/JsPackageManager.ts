@@ -842,12 +842,6 @@ export abstract class JsPackageManager {
     this.writePackageJson({ ...packageJson, ...resolutions }, operationDir);
   }
 
-  /**
-   * Runs the package manager's install. Every caller installs because the CLI just changed
-   * `package.json` (an upgrade, an added or removed addon, a migration, a new project), so the
-   * install must be allowed to update the lockfile. Yarn 3+ and pnpm forbid that by default when `CI`
-   * is set, which agents set to avoid prompts: their proxies opt out of it explicitly.
-   */
   protected abstract runInstall(options?: {
     force?: boolean;
     legacyPeerDeps?: boolean;

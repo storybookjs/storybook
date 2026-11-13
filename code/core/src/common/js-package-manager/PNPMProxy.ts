@@ -473,8 +473,7 @@ export class PNPMProxy extends JsPackageManager {
       command: 'pnpm',
       args: [
         'install',
-        // pnpm defaults to `--frozen-lockfile` when `CI` is set, which fails with
-        // ERR_PNPM_OUTDATED_LOCKFILE after the CLI changed `package.json`.
+        // The CLI installs after editing package.json; a frozen install (default on CI) fails.
         '--no-frozen-lockfile',
         ...this.getInstallArgs('install'),
         ...(options?.force ? ['--force'] : []),

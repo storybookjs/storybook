@@ -152,22 +152,28 @@ describe('PNPM Proxy', () => {
       );
     });
 
-    it('runs `pnpm install --no-frozen-lockfile`, so the lockfile can change when CI is set', async () => {
-      // pnpm defaults to `--frozen-lockfile` when `CI` is set, which fails with
-      // ERR_PNPM_OUTDATED_LOCKFILE after the CLI changed package.json.
-      vi.stubEnv('CI', 'true');
-      // sort of un-mock part of the function so executeCommand (also mocked) is called
-      vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (fn: any) => {
-        await Promise.resolve(fn());
-      });
-      const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({ stdout: '7.1.0' } as any);
+    it.each([
+      ['set', 'true'],
+      ['unset', ''],
+    ])(
+      'runs `pnpm install --no-frozen-lockfile` when CI is %s, so the lockfile can change',
+      async (_, ci) => {
+        vi.stubEnv('CI', ci);
+        // sort of un-mock part of the function so executeCommand (also mocked) is called
+        vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (fn: any) => {
+          await Promise.resolve(fn());
+        });
+        const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({
+          stdout: '7.1.0',
+        } as any);
 
-      await pnpmProxy.installDependencies();
+        await pnpmProxy.installDependencies();
 
-      expect(executeCommandSpy).toHaveBeenCalledWith(
-        expect.objectContaining({ command: 'pnpm', args: ['install', '--no-frozen-lockfile'] })
-      );
-    });
+        expect(executeCommandSpy).toHaveBeenCalledWith(
+          expect.objectContaining({ command: 'pnpm', args: ['install', '--no-frozen-lockfile'] })
+        );
+      }
+    );
 
     it('installs every workspace project from the workspace root', async () => {
       vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (fn: any) => {

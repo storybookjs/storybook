@@ -1,5 +1,5 @@
 diff --git a/dist/cjs/index.js b/dist/cjs/index.js
-index 6d1961830f978c0f3d90cc864003b0c50eb98f0d..9d48f1990ef440431e0e12ebf7560912893cd725 100644
+index 6d1961830f978c0f3d90cc864003b0c50eb98f0d..17d7c90da16da7d5066acd30352d0bbba7ce3899 100644
 --- a/dist/cjs/index.js
 +++ b/dist/cjs/index.js
 @@ -373,11 +373,7 @@ var formatProp = (function (name, hasValue, value, hasDefaultValue, defaultValue
@@ -15,8 +15,19 @@ index 6d1961830f978c0f3d90cc864003b0c50eb98f0d..9d48f1990ef440431e0e12ebf7560912
      attributeFormattedInline += "".concat(name);
      attributeFormattedMultiline += "".concat(name);
    } else {
+@@ -459,7 +455,9 @@ var formatOneChildren = function formatOneChildren(inline, lvl, options) {
+ var onlyPropsWithOriginalValue = function onlyPropsWithOriginalValue(defaultProps, props) {
+   return function (propName) {
+     var haveDefaultValue = Object.keys(defaultProps).includes(propName);
+-    return !haveDefaultValue || haveDefaultValue && defaultProps[propName] !== props[propName];
++    // React materializes `false` defaults onto props, so an explicitly passed `false`
++    // is indistinguishable from one inherited from `defaultProps`. Keep it either way.
++    return !haveDefaultValue || defaultProps[propName] !== props[propName] || props[propName] === false;
+   };
+ };
+ var isInlineAttributeTooLong = function isInlineAttributeTooLong(attributes, inlineAttributeString, lvl, tabStop, maxInlineAttributesLineLength) {
 diff --git a/dist/esm/index.js b/dist/esm/index.js
-index 1c23d38bc15c76c6f9277c39b362f01e99e561ae..4e2de641a3ddb5851f7afa18c74d5a0f22d1c364 100644
+index 1c23d38bc15c76c6f9277c39b362f01e99e561ae..945168712d81873e3f60c5eb4e14588d7d3face4 100644
 --- a/dist/esm/index.js
 +++ b/dist/esm/index.js
 @@ -347,11 +347,7 @@ var formatProp = (function (name, hasValue, value, hasDefaultValue, defaultValue
@@ -32,3 +43,14 @@ index 1c23d38bc15c76c6f9277c39b362f01e99e561ae..4e2de641a3ddb5851f7afa18c74d5a0f
      attributeFormattedInline += "".concat(name);
      attributeFormattedMultiline += "".concat(name);
    } else {
+@@ -433,7 +429,9 @@ var formatOneChildren = function formatOneChildren(inline, lvl, options) {
+ var onlyPropsWithOriginalValue = function onlyPropsWithOriginalValue(defaultProps, props) {
+   return function (propName) {
+     var haveDefaultValue = Object.keys(defaultProps).includes(propName);
+-    return !haveDefaultValue || haveDefaultValue && defaultProps[propName] !== props[propName];
++    // React materializes `false` defaults onto props, so an explicitly passed `false`
++    // is indistinguishable from one inherited from `defaultProps`. Keep it either way.
++    return !haveDefaultValue || defaultProps[propName] !== props[propName] || props[propName] === false;
+   };
+ };
+ var isInlineAttributeTooLong = function isInlineAttributeTooLong(attributes, inlineAttributeString, lvl, tabStop, maxInlineAttributesLineLength) {

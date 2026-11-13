@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { versionLine } from './lib/cycle.ts';
 import { listQaIssues, releasePublishedAt } from './lib/github.ts';
 import { clusterFindings, identityGrouping } from './lib/grouping.ts';
+import { CHECKOUT_GUIDE } from './lib/migration-guide.ts';
 import { loadFindingGroups, QA_LABEL, toProposal } from './lib/proposals.ts';
 import { upgraded } from './lib/results.ts';
 import { Grouping, type Proposal } from './lib/schema.ts';
@@ -81,7 +82,7 @@ writeFileSync(out, `${JSON.stringify(proposals, null, 2)}\n`);
 for (const { result, resultPath } of loaded) {
   const failed = result.checks.filter((check) => check.state === 'fail').map((check) => check.id);
   console.log(
-    `${resultPath}: ${result.status}, ${result.checks.length} checks, failed: ${failed.join(', ') || 'none'}${upgraded(result) ? '' : ', not upgraded'}`
+    `${resultPath}: ${result.status}, ${result.checks.length} checks, failed: ${failed.join(', ') || 'none'}${upgraded(result) ? '' : ', not upgraded'}${result.migrationGuide === CHECKOUT_GUIDE ? ', judged against the migration guide of the checkout' : ''}`
   );
 }
 const targetOf = (proposal: Proposal): string => {

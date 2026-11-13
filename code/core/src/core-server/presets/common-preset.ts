@@ -453,12 +453,15 @@ export const services = async (_value: void, options: Options): Promise<void> =>
     // without a build) the client is undefined and we skip docgen registration rather than
     // extracting on the main thread.
     const docgenWorker =
-      docgenDescriptors.length > 0 ? createDocgenWorkerClient(docgenDescriptors) : undefined;
+      docgenDescriptors.length > 0
+        ? createDocgenWorkerClient(docgenDescriptors, options.configType)
+        : undefined;
 
     if (docgenWorker) {
       registerDocgenService({
         getIndex,
         docgenProvider: (input) => docgenWorker.extract(input.entry),
+        prepareDocgen: (entries) => docgenWorker.prepare(entries),
       });
       devServerSubscriptions.push(() =>
         subscribeDocgenToModuleGraphChanges({

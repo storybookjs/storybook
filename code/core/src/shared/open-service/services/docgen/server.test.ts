@@ -162,6 +162,23 @@ describe('docgen open service', () => {
   });
 
   describe('extractAllDocgen command', () => {
+    it('announces every component entry before extracting them', async () => {
+      const prepareDocgen = vi.fn();
+      const button = makeStoryEntry('button--primary', 'Button');
+      const service = registerDocgenService({
+        getIndex: makeGetIndex([button]),
+        docgenProvider: async () => {
+          expect(prepareDocgen).toHaveBeenCalledWith([button]);
+          return makeDocgenPayload();
+        },
+        prepareDocgen,
+      });
+
+      await service.commands.extractAllDocgen(undefined);
+
+      expect(service.queries.docgen.get({ id: 'button' })).toEqual(makeDocgenPayload());
+    });
+
     it('records one component`s failure without dropping every other component`s payload', async () => {
       const service = registerDocgenService({
         getIndex: makeGetIndex([
@@ -525,6 +542,28 @@ describe('docgen open service', () => {
   });
 
   describe('static build', () => {
+    it('announces every component entry before a static build extracts them', async () => {
+      const button = makeStoryEntry('button--primary', 'Button');
+      const card = makeStoryEntry('card--default', 'Card');
+      const calls: string[] = [];
+      registerDocgenService({
+        getIndex: makeGetIndex([button, card]),
+        docgenProvider: async ({ entry }) => {
+          calls.push(`extract ${entry.id}`);
+          return makeDocgenPayload({ path: entry.importPath });
+        },
+        prepareDocgen: (entries) => calls.push(`prepare ${entries.map(({ id }) => id).join(',')}`),
+      });
+
+      await buildStaticFiles();
+
+      expect(calls).toEqual([
+        'prepare button--primary,card--default',
+        'extract button--primary',
+        'extract card--default',
+      ]);
+    });
+
     it('writes the static snapshot when the dev runtime extracts the same component meanwhile', async () => {
       const staticExtraction = Promise.withResolvers<DocgenPayload>();
       const provider = vi

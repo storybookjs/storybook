@@ -62,6 +62,11 @@ export type RegisterExtractionServiceOptions<TPayload, TQueries, TCommands> = {
   getIndex: () => Promise<StoryIndex>;
   provider: ExtractionProvider<TPayload>;
   /**
+   * Called with every component's input before the service extracts all of them, so the provider
+   * can do the setup those extractions share once.
+   */
+  prepare?: (inputs: ExtractionInput[]) => void;
+  /**
    * Builds the payload stored for a component whose provider threw during the fan-out.
    *
    * Supplied per service because the payload shapes differ and both are validated against their
@@ -219,8 +224,15 @@ export function registerExtractionService<
   definition: ServiceDefinition<TState, TQueries, TCommands>,
   options: RegisterExtractionServiceOptions<TState['components'][string], TQueries, TCommands>
 ) {
-  const { getIndex, provider, buildErrorPayload, queryName, extractCommand, extractAllCommand } =
-    options;
+  const {
+    getIndex,
+    provider,
+    prepare,
+    buildErrorPayload,
+    queryName,
+    extractCommand,
+    extractAllCommand,
+  } = options;
 
   // The registration object below is built with computed keys and cast to `ServiceRegistrationOptions`,
   // which defeats TS's per-key checking. Assert the names exist on the definition so a typo fails here
@@ -358,6 +370,8 @@ export function registerExtractionService<
       [queryName]: {
         staticInputs: async () => {
           const inputs = await resolveInputs();
+          // A static build loads every id returned here, one query at a time.
+          prepare?.([...inputs.values()]);
           return Array.from(inputs.keys(), (id) => ({ id }));
         },
       },
@@ -376,6 +390,7 @@ export function registerExtractionService<
       [extractAllCommand]: {
         handler: async (_input: undefined, ctx: CommandCtx<TState>) => {
           const inputs = await resolveInputs();
+          prepare?.([...inputs.values()]);
           const runs = new Map(Array.from(inputs.keys(), (id) => [id, startRun(ctx, id)]));
           try {
             await extractAllComponents(inputs, ctx, (id) => runs.get(id)?.isLatest() === true);

@@ -41,6 +41,12 @@ const seedProvider: DocgenProvider = async () => undefined;
 /** Resolved once per worker on `init`; every `extract` awaits it. */
 let providerPromise: Promise<DocgenProvider> | undefined;
 
+let batch: IndexEntry[] | undefined;
+
+// One extraction at a time, so the `started` message marks the moment a request's work begins and
+// not the moment its message arrived.
+let extractions = Promise.resolve();
+
 async function composeProvider(descriptors: DocgenProviderDescriptor[]): Promise<DocgenProvider> {
   let provider = seedProvider;
   for (const descriptor of descriptors) {
@@ -74,12 +80,13 @@ async function handleInit({ descriptors, logLevel }: DocgenWorkerInitRequest): P
 }
 
 async function handleExtract(id: number, entry: IndexEntry): Promise<void> {
+  port.postMessage({ type: 'started', id } satisfies DocgenWorkerResponse);
   try {
     if (!providerPromise) {
       throw new Error('docgen worker received an extract request before init');
     }
     const provider = await providerPromise;
-    const payload = await provider({ entry });
+    const payload = await provider({ entry, batch });
     port.postMessage({ type: 'extract', id, payload } satisfies DocgenWorkerResponse);
   } catch (error) {
     port.postMessage({
@@ -95,8 +102,11 @@ port.on('message', (msg: DocgenWorkerRequest) => {
     case 'init':
       void handleInit(msg);
       return;
+    case 'prepare':
+      batch = msg.entries;
+      return;
     case 'extract':
-      void handleExtract(msg.id, msg.entry);
+      extractions = extractions.then(() => handleExtract(msg.id, msg.entry));
       return;
     default: {
       const _exhaustive: never = msg;

@@ -18,12 +18,12 @@ import {
   createLazyDocgenMiddleware,
 } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
-import type { DocgenMiddleware } from 'storybook/internal/types';
+import type { DocgenMiddleware, DocgenProviderInput } from 'storybook/internal/types';
 
 import { loadDocgenTypeScript } from '@storybook/component-meta-typescript';
 
 import { ComponentMetaManager } from '../componentManifest/componentMeta/ComponentMetaManager.ts';
-import { buildDocgenPayload } from './buildDocgen.ts';
+import { buildDocgenPayload, resolveBatchStoryRefs } from './buildDocgen.ts';
 
 export interface ReactDocgenOptions {
   typeScriptSpecifier?: TypeScriptSpecifierForDocgen;
@@ -37,8 +37,10 @@ export interface ReactDocgenOptions {
  */
 export const createDocgenProvider = ({
   typeScriptSpecifier,
-}: ReactDocgenOptions = {}): DocgenMiddleware =>
-  createLazyDocgenMiddleware({
+}: ReactDocgenOptions = {}): DocgenMiddleware => {
+  let announcedBatch: DocgenProviderInput['batch'];
+
+  return createLazyDocgenMiddleware({
     createManager: async () => {
       try {
         return new ComponentMetaManager(await loadDocgenTypeScript(typeScriptSpecifier));
@@ -47,5 +49,12 @@ export const createDocgenProvider = ({
         return undefined;
       }
     },
-    extract: (componentMetaManager, input) => buildDocgenPayload(input, { componentMetaManager }),
+    extract: async (componentMetaManager, input) => {
+      if (input.batch && input.batch !== announcedBatch) {
+        announcedBatch = input.batch;
+        componentMetaManager.setBatch(await resolveBatchStoryRefs(input.batch));
+      }
+      return buildDocgenPayload(input, { componentMetaManager });
+    },
   });
+};

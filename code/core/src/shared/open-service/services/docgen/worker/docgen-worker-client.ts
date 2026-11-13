@@ -4,6 +4,7 @@ import { Worker } from 'node:worker_threads';
 
 import { logger } from 'storybook/internal/node-logger';
 
+import type { Options } from '../../../../../types/modules/core-common.ts';
 import type { IndexEntry } from '../../../../../types/modules/indexer.ts';
 import { importMetaResolve } from '../../../../utils/module.ts';
 import type { ErrorLike } from '../../module-graph/types.ts';
@@ -13,9 +14,14 @@ import type { DocgenWorkerRequest, DocgenWorkerResponse } from './protocol.ts';
 // Resolved via the export map, not a hard-coded dist path, so strict layouts like pnpm's work.
 const WORKER_SPECIFIER = 'storybook/internal/docgen-worker';
 
-const DEFAULT_TASK_TIMEOUT_MS = 120_000;
+const DEV_TASK_TIMEOUT_MS = 120_000;
+
+// Builds can occur in CI on slower machines. Increase this timeout if we see reports of bailouts on
+// components that actually need more time to build.
+const BUILD_TASK_TIMEOUT_MS = 300_000;
 
 interface Pending {
+  entry: IndexEntry;
   resolve: (payload: DocgenPayload | undefined) => void;
   reject: (error: unknown) => void;
   timer?: NodeJS.Timeout;
@@ -23,6 +29,11 @@ interface Pending {
 
 export interface DocgenWorkerClient {
   extract(entry: IndexEntry): Promise<DocgenPayload | undefined>;
+  /**
+   * Announce the entries about to be extracted, so providers can do the setup those extractions
+   * share once instead of per component. Optional: extraction works without it.
+   */
+  prepare(entries: IndexEntry[]): void;
 }
 
 function errorLikeToError(errorLike: ErrorLike): Error {
@@ -46,11 +57,13 @@ class DocgenWorker implements DocgenWorkerClient {
   private nextId = 0;
   private death: Error | undefined;
   private served = false;
+  private timedOut = false;
 
   constructor(
     scriptPath: string,
     descriptors: DocgenProviderDescriptor[],
-    private readonly taskTimeoutMs = DEFAULT_TASK_TIMEOUT_MS
+    private readonly taskTimeoutMs: number,
+    batch: IndexEntry[] | undefined
   ) {
     this.worker = new Worker(scriptPath);
     this.worker.on('message', (msg: DocgenWorkerResponse) => this.handleMessage(msg));
@@ -83,17 +96,26 @@ class DocgenWorker implements DocgenWorkerClient {
     this.ready.finally(() => this.keepProcessAliveWhileBusy()).catch(() => undefined);
 
     this.post({ type: 'init', descriptors, logLevel: logger.getLogLevel() });
+    if (batch) {
+      this.prepare(batch);
+    }
+  }
+
+  prepare(entries: IndexEntry[]): void {
+    if (!this.death) {
+      this.post({ type: 'prepare', entries });
+    }
   }
 
   /**
    * Whether a fresh worker would be worth spawning in this one's place.
    *
-   * Only once it has served an extract: a worker that died without ever answering died of something
-   * a replacement would hit again, and respawning would rebuild a multi-second TypeScript program
-   * per request to fail the same way.
+   * A worker that died without ever answering died of something a replacement would hit again, and
+   * respawning would rebuild a multi-second TypeScript program per request to fail the same way. A
+   * worker terminated for one slow extraction is different: other components can still be served.
    */
   get replaceable(): boolean {
-    return this.death !== undefined && this.served;
+    return this.death !== undefined && (this.served || this.timedOut);
   }
 
   async extract(entry: IndexEntry): Promise<DocgenPayload | undefined> {
@@ -107,19 +129,28 @@ class DocgenWorker implements DocgenWorkerClient {
     await this.ready;
     return new Promise<DocgenPayload | undefined>((resolve, reject) => {
       const id = this.nextId++;
-      const pending: Pending = { resolve, reject };
-      if (this.taskTimeoutMs > 0) {
-        pending.timer = setTimeout(() => {
-          this.pending.delete(id);
-          this.keepProcessAliveWhileBusy();
-          reject(new Error(`docgen worker extract ${id} timed out after ${this.taskTimeoutMs}ms`));
-        }, this.taskTimeoutMs);
-        pending.timer.unref?.();
-      }
-      this.pending.set(id, pending);
+      this.pending.set(id, { entry, resolve, reject });
       this.keepProcessAliveWhileBusy();
+      // Every request goes to the worker right away: it queues them itself, so it keeps working
+      // while this thread is busy with the rest of a build.
       this.post({ type: 'extract', id, entry });
     });
+  }
+
+  // The limit runs from the moment the worker starts a request, so it covers that request's own
+  // work and not the wait behind the requests queued before it.
+  private startTimeLimit(pending: Pending): void {
+    // The worker cannot be interrupted mid-extraction, so a request past its limit takes the worker
+    // down with it; the next extract spawns a replacement.
+    pending.timer = setTimeout(() => {
+      this.timedOut = true;
+      this.fail(
+        new Error(
+          `docgen extraction of "${pending.entry.title}" timed out after ${this.taskTimeoutMs}ms`
+        )
+      );
+    }, this.taskTimeoutMs);
+    pending.timer.unref?.();
   }
 
   private keepProcessAliveWhileBusy(): void {
@@ -135,16 +166,18 @@ class DocgenWorker implements DocgenWorkerClient {
   }
 
   private handleMessage(msg: DocgenWorkerResponse): void {
-    if (msg.type !== 'extract') {
+    if (msg.type === 'init') {
       return;
     }
     const pending = this.pending.get(msg.id);
     if (!pending) {
       return;
     }
-    if (pending.timer) {
-      clearTimeout(pending.timer);
+    if (msg.type === 'started') {
+      this.startTimeLimit(pending);
+      return;
     }
+    clearTimeout(pending.timer);
     this.pending.delete(msg.id);
     this.served = true;
     this.keepProcessAliveWhileBusy();
@@ -168,10 +201,8 @@ class DocgenWorker implements DocgenWorkerClient {
   }
 
   private rejectAllPending(error: Error): void {
-    for (const [, pending] of this.pending) {
-      if (pending.timer) {
-        clearTimeout(pending.timer);
-      }
+    for (const pending of this.pending.values()) {
+      clearTimeout(pending.timer);
       pending.reject(error);
     }
     this.pending.clear();
@@ -191,8 +222,10 @@ function resolveWorkerScriptPath(): string | undefined {
 // The thread is spawned on the first extract, not here: nothing extracts until a story renders, so
 // an eager spawn would only contend with the dev server's cold start.
 export function createDocgenWorkerClient(
-  descriptors: DocgenProviderDescriptor[]
+  descriptors: DocgenProviderDescriptor[],
+  configType: Options['configType']
 ): DocgenWorkerClient | undefined {
+  const taskTimeoutMs = configType === 'PRODUCTION' ? BUILD_TASK_TIMEOUT_MS : DEV_TASK_TIMEOUT_MS;
   const scriptPath = resolveWorkerScriptPath();
   if (!scriptPath) {
     logger.debug(
@@ -202,14 +235,20 @@ export function createDocgenWorkerClient(
   }
 
   let worker: DocgenWorker | undefined;
+  // Kept so a worker spawned or respawned after the announcement still receives it.
+  let batch: IndexEntry[] | undefined;
 
   return {
+    prepare(entries) {
+      batch = entries;
+      worker?.prepare(entries);
+    },
     async extract(entry) {
       if (worker?.replaceable) {
         logger.debug('docgen worker died after serving requests; spawning a replacement');
         worker = undefined;
       }
-      worker ??= new DocgenWorker(scriptPath, descriptors);
+      worker ??= new DocgenWorker(scriptPath, descriptors, taskTimeoutMs, batch);
       return worker.extract(entry);
     },
   };

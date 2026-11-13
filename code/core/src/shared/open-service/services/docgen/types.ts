@@ -14,6 +14,12 @@ import type { IndexEntry } from '../../../../types/modules/indexer.ts';
  */
 export interface DocgenProviderInput {
   entry: IndexEntry;
+  /**
+   * Every entry the caller extracts in the same run, when it knows them up front (a static build or
+   * an extract-all). The same array is passed with each of those extractions, so a provider can
+   * compare it by identity and do the setup they share once.
+   */
+  batch?: readonly IndexEntry[];
 }
 
 /** Free-form error attached to a payload or subcomponent. */

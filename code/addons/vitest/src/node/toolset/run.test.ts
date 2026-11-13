@@ -1,9 +1,13 @@
-import { resolve } from 'node:path';
+import { relative, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it, vi } from 'vitest';
 import * as v from 'valibot';
 
-import { ChangeDetectionUnavailableError } from 'storybook/internal/core-server';
+import {
+  ChangeDetectionFailureError,
+  ChangeDetectionUnavailableError,
+} from 'storybook/internal/core-server';
 import type { StoryIndex } from 'storybook/internal/types';
 
 import { TRIGGER_TEST_RUN_REQUEST, TRIGGER_TEST_RUN_RESPONSE } from '../../constants.ts';
@@ -319,6 +323,44 @@ describe('runStoryTests', () => {
 
       expect(result).toMatchObject({ status: 'no-stories', notFoundMessages: [] });
       expect(requested).toEqual([]);
+    });
+
+    it('says when the ref after --changed is a path, the way Vitest parses it', async () => {
+      const { channel } = respondingChannel();
+      const path = relative(process.cwd(), fileURLToPath(import.meta.url));
+
+      const result = await runStoryTests({
+        channel,
+        getIndex: async () => index,
+        changed: path,
+        getChangedFiles: async () => {
+          throw new ChangeDetectionFailureError(`\`${path}\` is not a known git ref.`);
+        },
+      });
+
+      expect(result).toEqual({
+        status: 'error',
+        error: {
+          message: `\`--changed\` took \`${path}\` as the git ref to compare with, but it is a path. As in Vitest, the argument right after \`--changed\` is its ref: put file arguments before \`--changed\`.`,
+        },
+      });
+
+      const overMcp = await runStoryTests({
+        channel,
+        getIndex: async () => index,
+        changed: path,
+        transport: 'mcp',
+        getChangedFiles: async () => {
+          throw new ChangeDetectionFailureError(`\`${path}\` is not a known git ref.`);
+        },
+      });
+
+      expect(overMcp).toEqual({
+        status: 'error',
+        error: {
+          message: `\`changed\` takes \`true\` or a git ref, but \`${path}\` is a path. Pass story files in \`files\`.`,
+        },
+      });
     });
 
     it('says the file form still works outside a git repository', async () => {

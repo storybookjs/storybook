@@ -371,13 +371,18 @@ describe('manifests', () => {
         },
       };
 
-      const docgenProvider = vi.fn<DocgenProvider>(async () => ({
-        id: 'button',
-        name: 'Button',
-        path: './button.stories.tsx',
-        description: 'A button',
-        jsDocTags: {},
-      }));
+      const docgenProvider = vi.fn<DocgenProvider>(async (inputs) =>
+        inputs.map(() => ({
+          status: 'fulfilled',
+          value: {
+            id: 'button',
+            name: 'Button',
+            path: './button.stories.tsx',
+            description: 'A button',
+            jsDocTags: {},
+          },
+        }))
+      );
 
       const storyDocsProvider = vi.fn<StoryDocsProvider>(async () => ({
         id: 'button',
@@ -497,7 +502,9 @@ describe('manifests', () => {
 
       registerDocgenService({
         getIndex: () => mockGenerator.getIndex(),
-        docgenProvider: vi.fn<DocgenProvider>(async () => undefined),
+        docgenProvider: vi.fn<DocgenProvider>(async (inputs) =>
+          inputs.map(() => ({ status: 'fulfilled', value: undefined }))
+        ),
       });
       registerStoryDocsService({
         getIndex: () => mockGenerator.getIndex(),
@@ -562,12 +569,16 @@ describe('manifests', () => {
       };
       registerDocgenService({
         getIndex: () => mockGenerator.getIndex(),
-        docgenProvider: async () => ({
-          id: 'constructor',
-          name: 'Constructor',
-          path: './constructor.tsx',
-          jsDocTags: {},
-        }),
+        docgenProvider: async (inputs) =>
+          inputs.map(() => ({
+            status: 'fulfilled',
+            value: {
+              id: 'constructor',
+              name: 'Constructor',
+              path: './constructor.tsx',
+              jsDocTags: {},
+            },
+          })),
       });
       registerStoryDocsService({
         getIndex: () => mockGenerator.getIndex(),
@@ -1055,13 +1066,17 @@ describe('manifests', () => {
 
         registerDocgenService({
           getIndex: () => mockGenerator.getIndex(),
-          docgenProvider: async () => ({
-            id: 'button',
-            name: 'Button',
-            path: './button.stories.tsx',
-            jsDocTags: {},
-            stories: [{ id: 'button--primary', name: 'Primary', snippet: '<Button />' }],
-          }),
+          docgenProvider: async (inputs) =>
+            inputs.map(() => ({
+              status: 'fulfilled',
+              value: {
+                id: 'button',
+                name: 'Button',
+                path: './button.stories.tsx',
+                jsDocTags: {},
+                stories: [{ id: 'button--primary', name: 'Primary', snippet: '<Button />' }],
+              },
+            })),
         });
         registerStoryDocsService({
           getIndex: () => mockGenerator.getIndex(),

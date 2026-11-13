@@ -1,3 +1,7 @@
+import { realpathSync } from 'node:fs';
+import { relative } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import { describe, expect, it, vi } from 'vitest';
 import * as v from 'valibot';
 
@@ -91,6 +95,42 @@ describe('createAsyncQueue', () => {
   });
 });
 
+const THIS_FILE = fileURLToPath(import.meta.url);
+
+/** A channel that answers every run request with `sampleResult`, recording the requested ids. */
+function respondingChannel() {
+  const channel = createMockChannel();
+  const requested: unknown[] = [];
+  channel.emit = (event, payload) => {
+    if (event === TRIGGER_TEST_RUN_REQUEST) {
+      const { requestId, storyIds } = payload as { requestId: string; storyIds?: string[] };
+      requested.push(storyIds);
+      queueMicrotask(() =>
+        respond(channel, { requestId, status: 'completed', result: sampleResult })
+      );
+    }
+  };
+  return { channel, requested };
+}
+
+/** A ready module graph in which no story imports anything and the preview loads `previewFiles`. */
+function graphLoading(previewFiles: string[]) {
+  return {
+    queries: {
+      status: { loaded: async () => ({ value: 'ready' as const }) },
+      storiesForFiles: {
+        loaded: async ({ files }: { files: string[] }) => files.map(() => []),
+      },
+      loadedByPreview: {
+        loaded: async ({ files }: { files: string[] }) =>
+          files.map((file) =>
+            previewFiles.some((preview) => realpathSync.native(preview) === file)
+          ),
+      },
+    },
+  };
+}
+
 describe('runStoryTests', () => {
   it('rejects when the story index cannot be loaded', async () => {
     await expect(
@@ -121,9 +161,8 @@ describe('runStoryTests', () => {
     expect(emitSpy).not.toHaveBeenCalled();
   });
 
-  it('returns an error when some selectors resolve and others miss', async () => {
-    const channel = createMockChannel();
-    const emitSpy = vi.spyOn(channel, 'emit');
+  it('runs the selectors that resolve and reports the ones that miss', async () => {
+    const { channel, requested } = respondingChannel();
 
     const result = await runStoryTests({
       channel,
@@ -131,8 +170,46 @@ describe('runStoryTests', () => {
       stories: [{ storyId: 'button--primary' }, { storyId: 'missing--story' }],
     });
 
-    expect(result.status).toBe('error');
-    expect(emitSpy).not.toHaveBeenCalled();
+    expect(requested).toEqual([['button--primary']]);
+    expect(result).toEqual({
+      status: 'completed',
+      result: sampleResult,
+      notFound: [expect.stringContaining('No story found for story ID "missing--story"')],
+    });
+  });
+
+  it('returns no-stories, naming each file, when no story depends on any file', async () => {
+    const { channel, requested } = respondingChannel();
+
+    const result = await runStoryTests({
+      channel,
+      getIndex: async () => index,
+      files: [THIS_FILE],
+      getModuleGraph: () => graphLoading([]),
+    });
+
+    expect(result).toEqual({
+      status: 'no-stories',
+      notFoundMessages: [`No story depends on ${relative(process.cwd(), THIS_FILE)}.`],
+    });
+    expect(requested).toEqual([]);
+  });
+
+  it('runs every story for a file the preview loads', async () => {
+    const { channel, requested } = respondingChannel();
+
+    const result = await runStoryTests({
+      channel,
+      getIndex: async () => index,
+      files: [THIS_FILE],
+      getModuleGraph: () => graphLoading([THIS_FILE]),
+    });
+
+    expect(requested).toEqual([undefined]);
+    expect(result).toMatchObject({
+      status: 'completed',
+      files: [{ file: THIS_FILE, kind: 'preview' }],
+    });
   });
 
   it('returns no-stories when the focused selector list is empty', async () => {
@@ -220,7 +297,7 @@ describe('runStoryTests', () => {
     expect(result).toEqual({
       status: 'no-stories',
       notFoundMessages: [
-        `No file found at src/DoesNotExist.stories.tsx (relative paths resolve against ${process.cwd()}).`,
+        `No file found at src/DoesNotExist.stories.tsx (relative paths resolve against ${process.cwd()}). If you deleted it, leave it out.`,
       ],
     });
     expect(emitSpy).not.toHaveBeenCalled();

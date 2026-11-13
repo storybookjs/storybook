@@ -15,7 +15,12 @@ import {
   type ToolsetTelemetryReport,
 } from 'storybook/open-service';
 
-import { countTestRunFailures, formatTestRun, summarizeTestRun } from './format.ts';
+import {
+  countTestRunFailures,
+  formatTestRun,
+  ranNothingSelected,
+  summarizeTestRun,
+} from './format.ts';
 import { createAsyncQueue, runStoryTests, type TestChannel } from './run.ts';
 
 const errorLikeSchema: v.GenericSchema = v.object({
@@ -74,9 +79,9 @@ const testRunResultSchema = v.object({
 const fileSelectionSchema = v.object({
   file: v.string(),
   kind: v.pipe(
-    v.picklist(['story-file', 'component']),
+    v.picklist(['story-file', 'preview', 'component', 'unrelated']),
     v.description(
-      '`story-file`: the stories in that file. `component`: the stories, in any story file, that depend on it.'
+      '`story-file`: the stories in that file. `preview`: the Storybook preview loads it, so it selected every story. `component`: the stories, in any story file, that depend on it. `unrelated`: no story depends on it, so it selected nothing.'
     )
   ),
   storyIds: v.array(v.string()),
@@ -94,6 +99,8 @@ const testRunOutputSchema = v.variant('status', [
     result: testRunResultSchema,
     /** How each `files` entry selected its stories; absent when `files` was not given. */
     files: v.optional(v.array(fileSelectionSchema)),
+    /** Story ids and paths that matched nothing. The rest ran, but they fail the call. */
+    notFound: v.optional(v.array(v.string())),
   }),
   v.object({
     status: v.literal('error'),
@@ -150,7 +157,7 @@ Use { absoluteStoryPath + exportName } only when you're currently working in a s
     v.pipe(
       v.array(v.string()),
       v.description(
-        `Files to test, absolute or relative to the Storybook project directory. A story file (\`*.stories.*\`) runs the stories in that file and nothing else. Any other file, such as a component, runs every story that depends on it, at any import depth. Can be combined with \`stories\`; omit both to run every story.`
+        `Files to test, absolute or relative to the Storybook project directory. A story file (\`*.stories.*\`) runs the stories in that file and nothing else. A file the Storybook preview loads (a theme, tokens, global CSS) runs every story. Any other file, such as a component, runs every story that depends on it, at any import depth; a file no story depends on is reported and skipped. Can be combined with \`stories\`; omit both to run every story.`
       )
     )
   ),
@@ -230,7 +237,7 @@ function runTelemetry(data: TestRunData, input: RunInput): ToolsetTelemetryRepor
       runA11y: data.a11y,
       inputStoryCount,
       inputFileCount,
-      // A partially resolved selector list never reaches a run, so every input matched by this point.
+      // The stories the run was asked for; a full run falls back to the input count.
       matchedStoryCount: data.result.storyIds?.length ?? inputStoryCount,
       ...summarizeTestRun(data.result, data.a11y),
     },
@@ -243,7 +250,11 @@ function isFailedRun(data: TestRunData): data is TestRunFailureData {
     case 'cancelled':
       return true;
     case 'completed':
-      return Object.values(countTestRunFailures(data.result, data.a11y)).some((count) => count > 0);
+      return (
+        Object.values(countTestRunFailures(data.result, data.a11y)).some((count) => count > 0) ||
+        (data.notFound?.length ?? 0) > 0 ||
+        ranNothingSelected(data.result, data.files)
+      );
     case 'no-stories':
       // A selector that matched nothing is a failed request; an empty selector list is not.
       return data.notFoundMessages.length > 0;

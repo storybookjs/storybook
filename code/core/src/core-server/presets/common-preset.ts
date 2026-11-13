@@ -57,6 +57,7 @@ import { getChangeDetectionReadiness } from '../change-detection/readiness.ts';
 import { getSyncedStatuses } from '../stores/status.ts';
 import { applyServicesPresetOnce } from '../utils/apply-services-preset-once.ts';
 import { getPreviewBuilder } from '../utils/get-builders.ts';
+import { getPreviewEntries } from '../utils/get-preview-entries.ts';
 import { getRefsFromConfig } from '../utils/get-refs-from-config.ts';
 import { loadManifests } from '../utils/manifests/manifests.ts';
 
@@ -386,6 +387,7 @@ export const services = async (_value: void, options: Options): Promise<void> =>
     getIndex,
     workingDir: process.cwd(),
     presets: options.presets,
+    getPreviewEntries: () => getPreviewEntries(options),
     getAdapter: () => getHeadlessChangeDetectionAdapter(options),
     getChangeDetectionReadiness,
   });

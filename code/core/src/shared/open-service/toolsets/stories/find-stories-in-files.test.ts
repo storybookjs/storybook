@@ -127,7 +127,7 @@ describe('findStoriesInFiles', () => {
     expect(results).toEqual([
       {
         file: 'src/Nope.stories.tsx',
-        errorMessage: `No file found at src/Nope.stories.tsx (relative paths resolve against ${WORKING_DIR}).`,
+        errorMessage: `No file found at src/Nope.stories.tsx (relative paths resolve against ${WORKING_DIR}). If you deleted it, leave it out.`,
       },
     ]);
   });
@@ -206,7 +206,7 @@ describe('findStoriesInFiles', () => {
     expect(result).toEqual(expect.objectContaining({ kind: 'story-file' }));
   });
 
-  it('says a file that no story imports has no stories', async () => {
+  it('reports a file that no story depends on as unrelated, not as an error', async () => {
     const [result] = await findStoriesInFiles({
       files: [UNUSED],
       index,
@@ -214,12 +214,54 @@ describe('findStoriesInFiles', () => {
       workingDir: WORKING_DIR,
     });
 
-    expect(result).toEqual({
-      file: UNUSED,
-      errorMessage: expect.stringContaining(
-        'No stories found for src/unused.ts: it is not a story file in the Storybook index, and no story imports it.'
-      ),
+    expect(result).toEqual({ file: UNUSED, kind: 'unrelated', storyIds: [], storyFiles: [] });
+  });
+
+  it('selects every story for a file the preview loads, even when stories import it too', async () => {
+    const loadedByPreview = vi.fn(async ({ files }: { files: string[] }) =>
+      files.map((file) => file === asGraphPath(BUTTON))
+    );
+    const graph = readyGraph([{ storyFile: './src/Button.stories.tsx', depth: 1 }]);
+
+    const results = await findStoriesInFiles({
+      files: [BUTTON, UNUSED],
+      index,
+      getModuleGraph: () => ({
+        queries: { ...graph.queries, loadedByPreview: { loaded: loadedByPreview } },
+      }),
+      workingDir: WORKING_DIR,
     });
+
+    expect(results).toEqual([
+      { file: BUTTON, kind: 'preview', storyIds: [], storyFiles: [] },
+      { file: UNUSED, kind: 'unrelated', storyIds: [], storyFiles: [] },
+    ]);
+    // Asked with the given and the real path of each file.
+    expect(loadedByPreview).toHaveBeenCalledWith({
+      files: [BUTTON, UNUSED, asGraphPath(BUTTON), asGraphPath(UNUSED)],
+    });
+  });
+
+  it('falls back to the import graph when the preview check fails', async () => {
+    const graph = readyGraph([{ storyFile: './src/Button.stories.tsx', depth: 1 }]);
+
+    const [result] = await findStoriesInFiles({
+      files: [BUTTON],
+      index,
+      getModuleGraph: () => ({
+        queries: {
+          ...graph.queries,
+          loadedByPreview: {
+            loaded: async () => {
+              throw new Error('Unknown command `loadedByPreview`');
+            },
+          },
+        },
+      }),
+      workingDir: WORKING_DIR,
+    });
+
+    expect(result).toEqual(expect.objectContaining({ file: BUTTON, kind: 'component' }));
   });
 
   it('reports a missing module graph instead of claiming a component has no stories', async () => {

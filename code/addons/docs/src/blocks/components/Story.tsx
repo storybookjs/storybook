@@ -1,12 +1,14 @@
 /* oxlint-disable react-classic/destructuring-assignment */
 import type { FunctionComponent } from 'react';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
 
 import { ErrorFormatter, Loader } from 'storybook/internal/components';
 import type { DocsContextProps, PreparedStory } from 'storybook/internal/types';
 
 import { styled } from 'storybook/theming/emotion';
 
+import { DocsContext } from '../blocks/DocsContext';
+import { useGlobalsParam } from '../blocks/useGlobalsParam';
 import { getStoryHref } from '../getStoryHref';
 import { IFrame } from './IFrame';
 import { ZoomContext } from './ZoomContext';
@@ -92,29 +94,38 @@ const InlineStory: FunctionComponent<InlineStoryProps> = (props) => {
   );
 };
 
-const IFrameStory: FunctionComponent<IFrameStoryProps> = ({ story, height = '500px' }) => (
-  <div style={{ width: '100%', height }}>
-    <ZoomContext.Consumer>
-      {({ scale }) => {
-        return (
-          <IFrame
-            key="iframe"
-            id={`iframe--${story.id}`}
-            title={story.name}
-            src={getStoryHref(story.id, { viewMode: 'story' })}
-            allowFullScreen
-            scale={scale}
-            style={{
-              width: '100%',
-              height: '100%',
-              border: '0 none',
-            }}
-          />
-        );
-      }}
-    </ZoomContext.Consumer>
-  </div>
-);
+const IFrameStory: FunctionComponent<IFrameStoryProps> = ({ story, height = '500px' }) => {
+  const context = useContext(DocsContext);
+  const globalsParam = useGlobalsParam(story.id, context);
+
+  return (
+    <div style={{ width: '100%', height }}>
+      <ZoomContext.Consumer>
+        {({ scale }) => {
+          return (
+            <IFrame
+              // `IFrame` never re-renders, so remount it to load the new `src` when globals change
+              key={`iframe-${globalsParam}`}
+              id={`iframe--${story.id}`}
+              title={story.name}
+              src={getStoryHref(story.id, {
+                viewMode: 'story',
+                ...(globalsParam ? { globals: globalsParam } : {}),
+              })}
+              allowFullScreen
+              scale={scale}
+              style={{
+                width: '100%',
+                height: '100%',
+                border: '0 none',
+              }}
+            />
+          );
+        }}
+      </ZoomContext.Consumer>
+    </div>
+  );
+};
 
 /** A story element, either rendered inline or in an iframe, with configurable height. */
 

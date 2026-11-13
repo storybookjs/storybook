@@ -16,7 +16,7 @@ import { homedir, tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 
-import { claudeCode, codex, createSandbox } from '@ai-hero/sandcastle';
+import { claudeCode, codex, createSandbox, type LoggingOption } from '@ai-hero/sandcastle';
 import { bwrap } from '@ai-hero/sandcastle/sandboxes/bwrap';
 import { docker } from '@ai-hero/sandcastle/sandboxes/docker';
 import { noSandbox } from '@ai-hero/sandcastle/sandboxes/no-sandbox';
@@ -25,7 +25,7 @@ import { join, relative, resolve } from 'pathe';
 import { z } from 'zod';
 
 import { checksFor, renderChecklist } from './checks.ts';
-import { answerAfterRepairs, answerOfFinishedAgent } from './lib/answer.ts';
+import { answerAfterRepairs, answerOfFinishedAgent, type Reading } from './lib/answer.ts';
 import { loadCatalogEntry } from './lib/catalog.ts';
 import { shipsSandcastleFiles } from './lib/clone-guard.ts';
 import { cycleBranchName, cycleRepo, versionLine } from './lib/cycle.ts';
@@ -51,6 +51,7 @@ import { upgraded } from './lib/results.ts';
 import { unsandboxedRefusal } from './lib/sandbox-policy.ts';
 import { stopChildren } from './lib/stop-children.ts';
 import { usageFromStream } from './lib/usage.ts';
+import { saveStoppedClaudeSession, WRAP_UP_MINUTES, wrapUpPrompt } from './lib/wrap-up.ts';
 
 const HELP = `Usage: node ecosystem-qa/run.ts --repo <catalog id> --version <storybook version> --engine <claude|codex> --sandbox <docker|bwrap|seatbelt|none> --out <dir>
 
@@ -123,6 +124,8 @@ const HOST_OS: Partial<Record<NodeJS.Platform, Os>> = {
 const QA_DIR = fileURLToPath(new URL('.', import.meta.url));
 const PROMPT_FILE = join(QA_DIR, 'prompts/upgrade.md');
 const DOCKER_HOME = '/home/agent';
+// Where Sandcastle's Docker sandbox mounts the worktree.
+const DOCKER_WORKSPACE = `${DOCKER_HOME}/workspace`;
 
 const fail = (message: string): never => {
   console.error(`${message}\n\n${HELP}`);
@@ -400,6 +403,14 @@ const runSandcastle = async (
   let migrationGuide: string | undefined;
   let sandbox: Awaited<ReturnType<typeof createSandbox>> | undefined;
   let hardStop: AbortSignal | undefined;
+  let sessionId: string | undefined;
+  let cutShort: string | undefined;
+  let askAfterStop:
+    | (() => Promise<{
+        reading: Reading<NonNullable<Outcome['output']>>;
+        turn: { iterations: { sessionFilePath?: string }[] };
+      }>)
+    | undefined;
   const logFile = join(request.outDir, 'run.log');
   // Annotations are all that is left of a job whose runner stopped answering.
   const watch = watchHost({
@@ -438,10 +449,63 @@ const runSandcastle = async (
     }
     // The same signal goes to every repair turn, so the stop is one moment for the whole run.
     hardStop = AbortSignal.timeout(msUntilHardStop(startedAt, budget));
+    const agent = agentFor(request, plan.agentEnv);
+    const name = `${request.entry.id}-${request.os}-${request.engine}`;
+    const logging: LoggingOption = {
+      type: 'file',
+      path: logFile,
+      onAgentStreamEvent: (event) => {
+        if (event.type === 'raw') {
+          stream.write(`${event.line}\n`);
+          const started = agent
+            .parseStreamLine(event.line)
+            .find((parsed) => parsed.type === 'session_id');
+          if (started?.type === 'session_id') {
+            sessionId = started.sessionId;
+          }
+        } else if (event.type === 'text' || event.type === 'toolCall') {
+          console.log(liveLine(event));
+        }
+      },
+    };
+    const box = sandbox;
+    // An agent that is stopped in the middle of a turn has printed no answer. This ends what it
+    // runs and asks it once, in the same session, for the answer with what it has.
+    askAfterStop = async () => {
+      const hostFile = sessionId && agent.sessionStorage?.hostSessionFilePath(cloneDir, sessionId);
+      if (request.sandbox === 'docker') {
+        if (request.engine !== 'claude' || !box.sandboxId || !sessionId || !hostFile) {
+          throw new Error('The session of the stopped agent cannot be read out of this sandbox.');
+        }
+        await box.exec('kill -TERM -1; sleep 3; kill -KILL -1; true');
+        saveStoppedClaudeSession({
+          container: box.sandboxId,
+          sessionId,
+          sandboxCwd: DOCKER_WORKSPACE,
+          sandboxHome: DOCKER_HOME,
+          hostCwd: cloneDir,
+          hostFile,
+        });
+      } else if (request.sandbox === 'none' && sessionId) {
+        stopChildren();
+      } else {
+        throw new Error('A stopped agent cannot be asked again in this sandbox.');
+      }
+      const turn = await box.run({
+        agent,
+        name,
+        resumeSession: sessionId,
+        prompt: wrapUpPrompt(budget.hardStopMinutes),
+        signal: AbortSignal.timeout(WRAP_UP_MINUTES * 60_000),
+        idleTimeoutSeconds: 300,
+        logging,
+      });
+      return answerAfterRepairs(turn, answerSchema);
+    };
     const first = await sandbox.run({
-      agent: agentFor(request, plan.agentEnv),
+      agent,
       signal: hardStop,
-      name: `${request.entry.id}-${request.os}-${request.engine}`,
+      name,
       promptFile: PROMPT_FILE,
       promptArgs: {
         REPO: repo,
@@ -463,17 +527,7 @@ const runSandcastle = async (
         OUTPUT_SCHEMA: JSON.stringify(z.toJSONSchema(answerSchema), null, 2),
       },
       idleTimeoutSeconds: 900,
-      logging: {
-        type: 'file',
-        path: logFile,
-        onAgentStreamEvent: (event) => {
-          if (event.type === 'raw') {
-            stream.write(`${event.line}\n`);
-          } else if (event.type === 'text' || event.type === 'toolCall') {
-            console.log(liveLine(event));
-          }
-        },
-      },
+      logging,
     });
     sessionSource = first.iterations.at(-1)?.sessionFilePath;
     // The sandbox is still open here, so a repair is one more turn of the same session.
@@ -494,10 +548,22 @@ const runSandcastle = async (
       output = answer;
       recoveredFrom = String(error);
     } else if (hardStop?.aborted) {
-      failure = {
-        status: 'timeout',
-        error: `The run reached minute ${budget.hardStopMinutes}, its hard stop, without an answer that could be used.`,
-      };
+      const stopped = `The run reached minute ${budget.hardStopMinutes}, its time limit, and the agent was stopped.`;
+      const asked = await askAfterStop?.().catch((problem: unknown) => ({
+        reading: { problem: String(problem) },
+        turn: undefined,
+      }));
+      const reading = asked?.reading;
+      if (reading && 'answer' in reading) {
+        output = reading.answer;
+        cutShort = `${stopped} Asked for what it had, it gave this answer.`;
+        sessionSource = asked?.turn?.iterations.at(-1)?.sessionFilePath ?? sessionSource;
+      } else {
+        failure = {
+          status: 'timeout',
+          error: `${stopped} ${reading ? `Asked for what it had, it gave no answer that could be used: ${reading.problem}` : 'It had not started, so there was nothing to ask it for.'}`,
+        };
+      }
     } else {
       failure = { status: statusOf(error), error: String(error) };
     }
@@ -532,6 +598,7 @@ const runSandcastle = async (
     status: failure?.status ?? 'ok',
     ...(failure ? { error: failure.error } : {}),
     ...(recoveredFrom ? { recoveredFrom } : {}),
+    ...(cutShort ? { cutShort } : {}),
     ...(migrationGuide ? { migrationGuide } : {}),
     ...(output ? { output } : {}),
     startSha,
@@ -585,6 +652,7 @@ const writeResult = (request: RunRequest, outcome: Outcome, startedAt: Date) => 
     status: outcome.status,
     ...(outcome.error ? { error: outcome.error } : {}),
     ...(outcome.recoveredFrom ? { recoveredFrom: outcome.recoveredFrom } : {}),
+    ...(outcome.cutShort ? { cutShort: outcome.cutShort } : {}),
     ...(outcome.migrationGuide ? { migrationGuide: outcome.migrationGuide } : {}),
   };
   // Written to a sibling first: an interrupted write must never leave a truncated result.json.
@@ -621,6 +689,7 @@ const summarize = (result: RunResultFile, resultPath: string): string => {
           `The agent read the migration guide of this checkout, because v${result.request.version} is not a tag of storybookjs/storybook.`,
         ]
       : []),
+    ...(result.cutShort ? [result.cutShort] : []),
     ...(result.recoveredFrom
       ? [
           `The sandbox failed after the agent had finished, so the answer was read from the run log: ${result.recoveredFrom}`,

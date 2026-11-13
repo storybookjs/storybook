@@ -111,6 +111,7 @@ To collect again without running any agent, set `from_runs` to a comma-separated
 It takes only runs of this workflow that were started by hand, on the default branch or on the branch the collecting run itself runs on, and stops before it downloads anything when one of the ids is anything else.
 The branch is the name the run was started under, not the code it ran.
 So a sweep that ran on a feature branch has to be collected and filed from that branch before the branch is merged: once the branch is gone, no run can collect it.
+In a sweep the collect job gets the plan and names every planned run that left no result, as a warning and in its Step Summary: a job whose runner was lost uploads nothing, and the sweep would otherwise read as complete with one run fewer.
 It also stops, and collects nothing, when one of the runs holds no result it can read: a run whose agent jobs wrote no `result.json`, or one from before the artifact name carried the repo id.
 Any run of the repository can upload an artifact with the name of a result, also the run of a pull request from a fork, and the filing job pushes and files what the results say.
 It uploads them again as `qa-earlier-results`, so the filing job finds their evidence and cycle bundles.
@@ -131,9 +132,14 @@ The sandbox is closed last, and a worktree that cannot be deleted then is left b
 A run has a time budget, counted from its start, the clone and the project install included: 90 minutes by default (`--budget-minutes`, or the workflow input `budget_minutes`).
 The agent reads the clock with `tools/budget.mjs`, which the prompt tells it to run before every check, and is told to report what it did not get to as `skip` once the budget is used up.
 The prompt also tells it to stop a build or test run that has not ended after 15 minutes and not to start it again.
-Fifteen minutes after the budget (`--hard-stop-minutes`), at minute 105 by default, the runner stops the agent.
-Without a sandbox it also stops every process the run started, because nothing else would.
-An answer that is not printed by then is lost, and the record has status `timeout`; the evidence, the logs and the commits are kept.
+Fifteen minutes after the budget (`--hard-stop-minutes`), at minute 105 by default, the runner stops the agent and everything it runs.
+It then asks the agent once, in the same session, for the answer with what it has, and gives it ten minutes for that.
+The record of such a run has status `ok` and says in `cutShort` that the run was stopped.
+For that the runner copies the session of the stopped agent out of the sandbox itself, because Sandcastle does so only when a turn ends.
+It can do that in the Docker sandbox with Claude Code, and it needs no copy without a sandbox.
+In every other case, and when the agent gives no answer that can be used then, the record has status `timeout` and no checks; the evidence, the logs and the commits are kept.
+While a run works, the runner writes what the machine looks like to `evidence/host-samples.jsonl` every 30 seconds: host memory and swap, load, free disk, and the memory and process count of the Docker sandbox.
+On a GitHub runner it also reports through annotations, a warning when the machine first runs short and a reading every twenty minutes, because annotations are all that is left of a job whose runner stops answering.
 When the sandbox fails after the agent has finished, for example while it collects the commits, the runner reads the answer from `run.log`.
 The record then has status `ok` and names the sandbox error in `recoveredFrom`.
 A run whose agent did not finish is never read this way.

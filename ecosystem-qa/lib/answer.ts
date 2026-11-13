@@ -12,7 +12,7 @@ const AGENT_STOPPED = '\nAgent stopped\n';
 
 const REPAIRS = 2;
 
-type Reading<T> = { answer: T } | { problem: string };
+export type Reading<T> = { answer: T } | { problem: string };
 
 const syntaxProblem = (body: string, error: unknown): string => {
   const message = error instanceof Error ? error.message : String(error);

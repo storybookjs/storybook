@@ -181,6 +181,7 @@ export const RunResultFile = z.strictObject({
   error: z.string().optional(),
   // The error the sandbox raised after the agent had finished, when the answer came from the run log.
   recoveredFrom: z.string().optional(),
+  cutShort: z.string().optional(),
   // The tag whose MIGRATION.md the agent read, or `checkout` for a tested version without a tag.
   migrationGuide: z.string().optional(),
 });

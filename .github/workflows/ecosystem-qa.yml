@@ -1,12 +1,9 @@
 name: Ecosystem QA
 
-# Probes on a branch that is never merged. They run gutenberg in the QA sandbox with a stand-in for
-# the agent and print where the memory of the runner is, to answer two questions:
-# - stall: what does a runner do while a sandbox sits at its memory limit and the kernel ends
-#   nothing, with the memory guard and without it?
-# - vitest: what holds the memory that appears on the host, outside the sandbox, while the
-#   project's Storybook tests run in Vitest browser mode, and does the runner hardening agent
-#   have a part in it?
+# A probe on a branch that is never merged. While gutenberg's Storybook tests run in Vitest browser
+# mode inside the QA sandbox, a root process of the runner named `agent` grows by about a gigabyte a
+# minute, outside the sandbox's memory limit. This probe names that process and shows whether the
+# older runner image has it too.
 
 on:
   workflow_dispatch:
@@ -15,25 +12,15 @@ permissions: {}
 
 jobs:
   probe:
-    name: Probe ${{ matrix.probe }}, guard ${{ matrix.guard }}, hardening ${{ matrix.harden }}
-    runs-on: ubuntu-latest
+    name: Probe vitest on ${{ matrix.runner }}
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
     permissions: {}
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - { probe: stall, guard: 'off', harden: 'on' }
-          - { probe: stall, guard: 'on', harden: 'on' }
-          - { probe: vitest, guard: 'on', harden: 'on' }
-          - { probe: vitest, guard: 'on', harden: 'off' }
+        runner: [ubuntu-latest, ubuntu-24.04]
     steps:
-      - name: Harden the runner
-        if: ${{ matrix.harden == 'on' }}
-        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
-        with:
-          egress-policy: audit
-
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -49,67 +36,71 @@ jobs:
           corepack enable
           yarn workspaces focus ecosystem-qa
 
-      - name: Build the sandbox image and the stand-in agents
+      - name: Build the sandbox image and the stand-in agent
         run: |
           docker build --build-arg AGENT_UID="$(id -u)" --build-arg AGENT_GID="$(id -g)" -t sb-ecosystem-qa ecosystem-qa
-          docker build -t sb-ecosystem-qa-standin-stall ecosystem-qa/probe/standin-stall
           docker build -t sb-ecosystem-qa-standin-vitest ecosystem-qa/probe/standin-vitest
 
-      # The sandbox of the stall probe is limited to the 6742 MB at which the build stalls. A second
-      # container holds the rest, so that the host is left with what it has next to a full sandbox
-      # of the usual size: about 960 MB.
-      - name: Leave the host what it has next to a full sandbox
-        if: ${{ matrix.probe == 'stall' }}
+      - name: Name the processes of the runner
         run: |
-          free -m
-          echo 6742 > /tmp/qa-probe-limit-mb
-          available=$(awk '/MemAvailable/ {print int($2/1024)}' /proc/meminfo)
-          ballast=$(( available - 6742 - 960 ))
-          echo "holding $ballast MB in a second container"
-          docker run -d --name ballast --entrypoint node sb-ecosystem-qa -e "const keep=[];for(let i=0;i<Math.floor($ballast/64);i++)keep.push(Buffer.alloc(64*2**20,1));setInterval(()=>{},1000)"
-          sleep 30
-          free -m
+          grep -E '^(NAME|VERSION)=' /etc/os-release; uname -r
+          echo "--- the largest processes, with their whole command lines"
+          ps -eo pid,ppid,user,rss,etimes,args --sort=-rss | head -n 12 | cut -c1-260
+          echo "--- every process whose name is agent"
+          for pid in $(pgrep -x agent); do
+            echo "pid $pid: exe $(sudo readlink "/proc/$pid/exe"); started by $(ps -o args= -p "$(ps -o ppid= -p "$pid" | tr -d ' ')" | cut -c1-160)"
+            echo "  command line: $(sudo cat "/proc/$pid/cmdline" | tr '\0' ' ' | cut -c1-400)"
+            echo "  cgroup: $(cat "/proc/$pid/cgroup")"
+            systemctl status "$pid" --no-pager 2>/dev/null | head -n 8 | sed 's/^/  /'
+            sudo ls -la "$(dirname "$(sudo readlink "/proc/$pid/exe")")" 2>/dev/null | head -n 20 | sed 's/^/  /'
+          done
+          echo "--- services that are running"
+          systemctl list-units --type=service --state=running --no-pager --no-legend | awk '{print $1}' | tr '\n' ' '
 
       - name: Run the probe
         env:
           CLAUDE_CODE_OAUTH_TOKEN: probe-not-a-credential
-          QA_PROBE_GUARD: ${{ matrix.guard }}
-          QA_PROBE: ${{ matrix.probe }}
+          QA_PROBE_GUARD: 'on'
         run: |
-          # Where the memory of the host is, every 20 seconds, next to what the sandbox is charged.
+          # Where the memory of the host is, every 20 seconds, and what the process named agent holds.
           (
             while true; do
               box=$(docker ps --filter name=^sandcastle- --format '{{.Names}}' | head -n 1)
-              echo "host $(date -u +%H:%M:%S): $(awk '/^(MemAvailable|AnonPages|Cached|Shmem|SUnreclaim|SReclaimable|KernelStack|PageTables|Mapped|SwapFree|Dirty|Writeback|Unevictable|Percpu|VmallocUsed):/ {printf "%s %d MB  ", $1, $2/1024}' /proc/meminfo)"
-              echo "host largest: $(ps -eo rss=,pid=,user=,comm= --sort=-rss | head -n 6 | awk '{printf "%d MB %s %s (pid %s); ", $1/1024, $4, $3, $2}')"
-              echo "host processes in sum: $(ps -eo rss= | awk '{s+=$1} END {printf "%d MB", s/1024}'); tmpfs: $(df -m --output=target,used -t tmpfs 2>/dev/null | awk 'NR>1 && $2>0 {printf "%s %s MB; ", $1, $2}')"
+              echo "host $(date -u +%H:%M:%S): $(awk '/^(MemAvailable|AnonPages|Cached|Shmem|SUnreclaim|SReclaimable|SwapFree):/ {printf "%s %d MB  ", $1, $2/1024}' /proc/meminfo)"
+              echo "host largest: $(ps -eo rss=,pid=,user=,comm= --sort=-rss | head -n 5 | awk '{printf "%d MB %s %s (pid %s); ", $1/1024, $4, $3, $2}')"
+              for pid in $(pgrep -x agent); do
+                echo "agent $pid: $(sudo grep -E '^(VmRSS|RssAnon|RssFile|RssShmem|Threads|VmSwap):' "/proc/$pid/status" | tr -s '\t ' ' ' | tr '\n' ';') open files $(sudo ls "/proc/$pid/fd" 2>/dev/null | wc -l); sockets $(sudo ls -l "/proc/$pid/fd" 2>/dev/null | grep -c socket)"
+              done
               if [ -n "$box" ]; then
-                docker exec "$box" sh -c 'echo "sandbox charged: $(( $(cat /sys/fs/cgroup/memory.current) / 1048576 )) MB; $(grep -E "^(anon|file|shmem|inactive_file|active_file|kernel|slab|sock|file_mapped|file_dirty|unevictable|pagetables|percpu|vmalloc) " /sys/fs/cgroup/memory.stat | awk "{printf \"%s %d MB  \", \$1, \$2/1048576}")"' 2>/dev/null
+                echo "sandbox: $(docker exec "$box" sh -c 'echo "charged $(( $(cat /sys/fs/cgroup/memory.current) / 1048576 )) MB, $(cat /sys/fs/cgroup/pids.current) processes, tcp sockets $(cat /proc/net/sockstat | awk "/^TCP:/ {print \$3}")"' 2>/dev/null)"
               fi
               sleep 20
             done
           ) &
           node ecosystem-qa/run.ts --repo gutenberg --version 11.0.0-beta.2 --engine claude --sandbox docker \
-            --tier extended --out "$RUNNER_TEMP/qa-result" --image "sb-ecosystem-qa-standin-$QA_PROBE"
+            --tier extended --out "$RUNNER_TEMP/qa-result" --image sb-ecosystem-qa-standin-vitest
 
-      - name: Show the guard's log and the end of the test log
+      - name: Name the process again, and what it wrote
         if: ${{ always() }}
         run: |
-          cat "$RUNNER_TEMP/qa-result/evidence/memory-guard.log" || echo "the guard ended nothing"
-          tail -n 25 "$RUNNER_TEMP/qa-result/evidence/vitest.log" || true
+          ps -eo pid,ppid,user,rss,etimes,args --sort=-rss | head -n 8 | cut -c1-260
+          for pid in $(pgrep -x agent); do
+            echo "--- agent $pid, the files it has open"
+            sudo ls -l "/proc/$pid/fd" 2>/dev/null | awk '{print $NF}' | sed -E 's/[0-9]+/N/g' | sort | uniq -c | sort -rn | head -n 25
+            unit=$(systemctl status "$pid" --no-pager 2>/dev/null | head -n 1 | awk '{print $2}')
+            echo "--- unit $unit, its last lines"
+            sudo journalctl -u "$unit" --no-pager -n 40 2>/dev/null | cut -c1-300
+          done
+          tail -n 12 "$RUNNER_TEMP/qa-result/evidence/vitest.log" || true
           free -m
 
       - name: Upload the readings
         if: ${{ always() }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: probe-${{ matrix.probe }}-guard-${{ matrix.guard }}-hardening-${{ matrix.harden }}
+          name: probe-vitest-${{ matrix.runner }}
           path: |
             ${{ runner.temp }}/qa-result/result.json
-            ${{ runner.temp }}/qa-result/run.log
             ${{ runner.temp }}/qa-result/evidence/host-samples.jsonl
-            ${{ runner.temp }}/qa-result/evidence/memory-guard.log
-            ${{ runner.temp }}/qa-result/evidence/memory-limit.txt
             ${{ runner.temp }}/qa-result/evidence/vitest.log
-            ${{ runner.temp }}/qa-result/evidence/build.log
           retention-days: 7

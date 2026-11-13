@@ -1,0 +1,58 @@
+---
+title: Table of contents
+sidebar:
+  order: 2
+---
+
+Storybook documentation pages can be long and difficult to navigate. You can enable a table of contents to provide an overview of the page and allow users to jump to a specific section. The table of contents works with both auto-generated documentation and MDX pages.
+
+## Generate a table of contents
+
+To enable the table of contents, extend your Storybook UI configuration file (i.e., `.storybook/preview.jsx|tsx`) and provide a `docs` [parameter](../writing-stories/parameters.mdx#global-parameters) with a `toc` property.
+
+<CodeSnippets path="storybook-preview-enable-toc.md" />
+
+## Configure the table of contents
+
+By default, the table of contents on the documentation page will only show the `h3` headings that are automatically generated. However, if you want to customize the table of contents, you can add more parameters to the `toc` property. The following options and examples of how to use them are available.
+
+| Option                | Description                                                                                                                                                                                                      |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `contentsSelector`    | Defines the container's CSS selector to search for the headings <br /> `toc: { contentsSelector: '.sbdocs-content' }`                                                                                               |
+| `disable`             | Hides the table of contents for the documentation pages <br /> `toc: { disable: true }`                                                                                                                          |
+| `headingSelector`     | Defines the list of headings to feature in the table of contents <br /> `toc: { headingSelector: 'h1, h2, h3' }`                                                                                                 |
+| `ignoreSelector`      | Configures the table of contents to ignore specific headings or stories. By default, the table of contents will ignore all content placed within Story blocks <br /> `toc: { ignoreSelector: '.docs-story h2' }` |
+| `title`               | Defines a title caption for the table of contents. <br />Accepts one of: `string`, `null`, React element <br /> `toc: { title: 'Table of Contents' }`                                                            |
+| `unsafeTocbotOptions` | Provides additional [`TocBot`](https://tscanlin.github.io/tocbot/) configuration options <br /> `toc: { unsafeTocbotOptions: { orderedList: true } }`                                                            |
+
+<Callout variant="info">
+
+The `contentsSelector`, `headingSelector`, and `ignoreSelector` properties allow additional customization. For more information on using them, see the [`Tocbot` documentation](https://tscanlin.github.io/tocbot/).
+
+</Callout>
+
+<CodeSnippets path="storybook-preview-custom-toc.md" />
+
+### Component-level configuration
+
+If you want to customize the table of contents for a specific story, you can include a `toc` property in the story's meta (or default export) and provide the required [configuration](#configure-the-table-of-contents). For example, if you need to hide the table of contents for a specific story, adjust your story as follows:
+
+<CodeSnippets path="my-component-disable-toc.md" />
+
+## Troubleshooting
+
+### The table of contents doesn't render as expected
+
+The following scenarios can cause the table of contents to render differently than expected.
+
+#### With simple documentation pages
+
+If you have a documentation page with only one matching heading and create a table of contents for it, the table of contents will not be hidden by default. A potential solution for this issue would be to add a second heading or turn it off entirely.
+
+#### With small screens
+
+If the screen width is 768px or less, the table of contents will be hidden by default. Currently, there's no built-in solution for this issue that doesn't impact the documentation page's style compatibility.
+
+#### With MDX
+
+If you're writing [unattached documentation](./mdx.mdx#writing-unattached-documentation) using MDX, you cannot customize the table of contents primarily due to the lack of support for defining parameters based on the current implementation. As a result, the table of contents will always revert to the default [configuration](#configure-the-table-of-contents) provided globally.

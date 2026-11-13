@@ -33,7 +33,7 @@ export const previewAnnotations: PresetPropertyFn<'previewAnnotations'> = async 
 
 /** What the MCP routes need from the probed composition, and how each request reads manifests. */
 function buildComposition(
-  { refs, compositionAuth, sources, multiSource }: ResolvedCompositionSources,
+  { refs, compositionAuth, multiSource }: ResolvedCompositionSources,
   {
     options,
     baseUrl,
@@ -58,7 +58,12 @@ function buildComposition(
     if (compositionAuth.requiresAuth) {
       logger.info(`Auth required for: ${compositionAuth.authUrls.join(', ')}`);
     }
-    logger.info(`Sources: ${(sources ?? []).map((source) => source.id).join(', ')}`);
+    logger.info(
+      `Sources: ${compositionAuth
+        .buildSources()
+        .map((source) => source.id)
+        .join(', ')}`
+    );
   }
 
   // Remote sources are fetched over HTTP; the local one is read through `localAccess` when
@@ -67,10 +72,8 @@ function buildComposition(
     refs.length > 0 ? compositionAuth.createManifestProvider(baseUrl) : undefined;
 
   return {
-    currentSources: () => {
-      void compositionAuth.recheckUnreachableRefs();
-      return refs.length > 0 ? compositionAuth.buildSources() : sources;
-    },
+    // Read per request: background re-checks can add a ref's auth or drop a ref without a manifest.
+    currentSources: () => (refs.length > 0 ? compositionAuth.buildSources() : undefined),
     multiSource,
     compositionAuth,
     manifestAccess: { manifestProvider, localAccess },
@@ -199,6 +202,7 @@ export const experimental_devServer: PresetPropertyFn<
   app!.post(endpoint, async (req, res) => {
     if (rejectDisallowedOrigin(req, res)) return;
     const { currentSources, compositionAuth, manifestAccess, multiSource } = await composition;
+    compositionAuth.startRecheck();
     const sources = currentSources();
     if (requireAuth(req, res, compositionAuth)) return;
     if (rejectNonJsonBody(req, res)) return;
@@ -225,6 +229,7 @@ export const experimental_devServer: PresetPropertyFn<
     const { currentSources, compositionAuth, manifestAccess, availability, multiSource } =
       await composition;
     if (!req.headers['accept']?.includes('text/html')) {
+      compositionAuth.startRecheck();
       const sources = currentSources();
       if (requireAuth(req, res, compositionAuth)) return;
 

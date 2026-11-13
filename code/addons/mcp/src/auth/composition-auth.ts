@@ -107,6 +107,15 @@ export class CompositionAuth {
     await this.#checkRefs(this.#refStates);
   }
 
+  // Starts a re-check without waiting for it; the next request sees its outcome.
+  startRecheck(): void {
+    this.recheckUnreachableRefs().catch((error) => {
+      logger.warn(
+        `[addon-mcp] Re-checking composed refs failed: ${error instanceof Error ? error.message : String(error)}`
+      );
+    });
+  }
+
   // Concurrent callers share one round of checks.
   async recheckUnreachableRefs(): Promise<void> {
     if (this.#recheck) return this.#recheck;

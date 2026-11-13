@@ -1176,4 +1176,14 @@ describe('CompositionAuth', () => {
       );
     });
   });
+
+  it('logs a failed background re-check instead of rejecting', async () => {
+    const auth = new CompositionAuth();
+    vi.spyOn(auth, 'recheckUnreachableRefs').mockRejectedValue(new Error('boom'));
+    const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {});
+
+    auth.startRecheck();
+
+    await vi.waitFor(() => expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('boom')));
+  });
 });

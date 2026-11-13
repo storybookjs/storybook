@@ -555,6 +555,7 @@ export const storyIndexGenerator: PresetPropertyFn<
       configDir,
       indexers,
       docs,
+      build: options.build,
       features,
       storySorts: await options.presets.apply('storySorts', []),
     });

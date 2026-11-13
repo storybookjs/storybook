@@ -91,13 +91,17 @@ export type Finding = z.infer<typeof Finding>;
 export const Tier = z.enum(['must', 'extended']);
 
 // The answer schema for one run: every check of the tier exactly once, findings only on failures.
-export const agentOutput = (ids: readonly CheckId[]) =>
-  z
+//
+// The agent reads the schema next to the checklist, so the schema names the ids of the tier only,
+// in the order given: one list of ids in one order.
+export const agentOutput = (ids: readonly CheckId[]) => {
+  const id = z.enum(ids);
+  return z
     .strictObject({
       storybookVersionBefore: Version.nullable(),
       storybookVersionInstalled: z.string().nullable(),
-      checks: z.array(CheckResult),
-      findings: z.array(Finding),
+      checks: z.array(CheckResult.extend({ id })),
+      findings: z.array(Finding.extend({ checkId: id })),
     })
     .superRefine((output, ctx) => {
       const reported = output.checks.map((check) => check.id);
@@ -122,6 +126,7 @@ export const agentOutput = (ids: readonly CheckId[]) =>
         }
       }
     });
+};
 
 export const AgentOutput = agentOutput(CHECK_IDS);
 

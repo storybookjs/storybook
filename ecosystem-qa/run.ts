@@ -431,6 +431,7 @@ const runSandcastle = async (
         TOOLS_DIR: plan.toolsDir,
         EVIDENCE_DIR: plan.evidenceDir,
         CHECKLIST: renderChecklist(request.tier),
+        CHECK_COUNT: String(checksFor(request.tier).length),
         OUTPUT_SCHEMA: JSON.stringify(z.toJSONSchema(answerSchema), null, 2),
       },
       idleTimeoutSeconds: 900,

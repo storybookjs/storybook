@@ -394,6 +394,21 @@ describe('getStoryHrefs', () => {
     expect(previewHref).toContain('&args=a:!null;b:!hex(f00);c:!undefined');
   });
 
+  it('retains args whose values contain a colon, such as dates', () => {
+    const { api, state } = initURL({
+      store,
+      provider: { channel: new EventEmitter() },
+      state: { location: { pathname: '/', search: '?args=a:!date(2024-01-02T03:04:05.000Z);b:2' } },
+      navigate: vi.fn(),
+      fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
+    });
+    store.setState(state);
+
+    const { managerHref, previewHref } = api.getStoryHrefs('test--story');
+    expect(managerHref).toContain('&args=a:!date(2024-01-02T03%3A04%3A05.000Z);b:2');
+    expect(previewHref).toContain('&args=a:!date(2024-01-02T03%3A04%3A05.000Z);b:2');
+  });
+
   it('drops args but retains globals when changing stories', () => {
     const { api, state } = initURL({
       store,

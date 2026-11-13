@@ -24,6 +24,7 @@ export * from './Title';
 export * from './Unstyled';
 export * from './Wrapper';
 
+export * from './useGlobals';
 export * from './useOf';
 export * from './types';
 export * from './mdx';

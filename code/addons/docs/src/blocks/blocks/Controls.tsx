@@ -72,7 +72,7 @@ function useControlsInteractiveState(
   // React versions that lack the built-in useId.
   const controlsId = useId();
   const [args, updateArgs, resetArgs] = useArgs(story, context);
-  const [globals] = useGlobals(story, context);
+  const [globals] = useGlobals();
 
   return { controlsId, args, globals, updateArgs, resetArgs };
 }

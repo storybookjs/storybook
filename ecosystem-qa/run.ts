@@ -48,6 +48,7 @@ import type { Outcome, RunRequest } from './lib/types.ts';
 import { redactTree } from './lib/redact.ts';
 import { upgraded } from './lib/results.ts';
 import { unsandboxedRefusal } from './lib/sandbox-policy.ts';
+import { stopChildren } from './lib/stop-children.ts';
 import { usageFromStream } from './lib/usage.ts';
 
 const HELP = `Usage: node ecosystem-qa/run.ts --repo <catalog id> --version <storybook version> --engine <claude|codex> --sandbox <docker|bwrap|seatbelt|none> --out <dir>
@@ -59,7 +60,7 @@ Options:
   --clone-dir <dir>   Where to clone the catalog repo (default: <tmpdir>/ecosystem-qa/work/<id>)
   --image <name>      Docker image for --sandbox docker (default: sb-ecosystem-qa)
   --budget-minutes <n>     Minutes the agent is asked to answer within, from the start of the run (default: 90)
-  --hard-stop-minutes <n>  Minute at which the runner stops the agent and records a timeout (default: 105)
+  --hard-stop-minutes <n>  Minute at which the runner stops the agent and records a timeout (default: 15 after the budget)
 
 Writes <out>/result.json and exits 0 whenever it did, findings or not. <out> must be empty or new.
 Set ECOSYSTEM_QA_FAKE=1 and pass --fake to write a canned result for --engine without running an agent;
@@ -486,12 +487,18 @@ const runSandcastle = async (
     } else if (hardStop?.aborted) {
       failure = {
         status: 'timeout',
-        error: `The agent had not answered by minute ${budget.hardStopMinutes} of the run and was stopped.`,
+        error: `The run reached minute ${budget.hardStopMinutes}, its hard stop, without an answer that could be used.`,
       };
     } else {
       failure = { status: statusOf(error), error: String(error) };
     }
   } finally {
+    if (request.sandbox === 'none') {
+      const stopped = stopChildren();
+      if (stopped > 0) {
+        console.warn(`Stopped ${stopped} process(es) that the run had left behind.`);
+      }
+    }
     // The answer is already read, so a sandbox that cannot be removed does not fail the run.
     await sandbox?.close().catch((error: unknown) => {
       console.warn(forJobLog(`The sandbox could not be closed: ${String(error)}`));

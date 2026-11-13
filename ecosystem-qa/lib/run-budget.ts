@@ -6,29 +6,30 @@ export interface RunBudget {
   hardStopMinutes: number;
 }
 
+// What the agent has left to write its answer once the budget is used up.
+const ANSWER_MINUTES = 15;
+
 // Every run of the first whole sweep but one ended within 77 minutes; the one that did not spent an
 // hour waiting on a build that never finished.
-export const DEFAULT_BUDGET: RunBudget = { minutes: 90, hardStopMinutes: 105 };
+const BUDGET_MINUTES = 90;
 
 // Returns the budget, or a sentence that says why the two values cannot be one.
 export const parseBudget = (minutes?: string, hardStopMinutes?: string): RunBudget | string => {
-  const budget = {
-    minutes: minutes === undefined ? DEFAULT_BUDGET.minutes : Number(minutes),
-    hardStopMinutes:
-      hardStopMinutes === undefined ? DEFAULT_BUDGET.hardStopMinutes : Number(hardStopMinutes),
-  };
-  if (!(budget.minutes > 0) || !Number.isFinite(budget.hardStopMinutes)) {
+  const budget = minutes === undefined ? BUDGET_MINUTES : Number(minutes);
+  const hardStop =
+    hardStopMinutes === undefined ? budget + ANSWER_MINUTES : Number(hardStopMinutes);
+  if (!(budget > 0) || !Number.isFinite(budget) || !Number.isFinite(hardStop)) {
     return '--budget-minutes and --hard-stop-minutes take a number of minutes above zero.';
   }
-  return budget.hardStopMinutes > budget.minutes
-    ? budget
-    : `The hard stop (${budget.hardStopMinutes} minutes) has to come after the budget (${budget.minutes} minutes): the time between them is what the agent has to write its answer.`;
+  return hardStop > budget
+    ? { minutes: budget, hardStopMinutes: hardStop }
+    : `The hard stop (${hardStop} minutes) has to come after the budget (${budget} minutes): the time between them is what the agent has to write its answer.`;
 };
 
-// A run whose clone and install already used up the time gets no time at all, never a negative one,
-// which a timer would refuse.
+// Whole milliseconds, which a timer insists on, and never below zero: a run whose clone and install
+// already used up the time gets none.
 export const msUntilHardStop = (startedAt: Date, budget: RunBudget, now = new Date()): number =>
-  Math.max(0, startedAt.getTime() + budget.hardStopMinutes * 60_000 - now.getTime());
+  Math.max(0, Math.floor(startedAt.getTime() + budget.hardStopMinutes * 60_000 - now.getTime()));
 
 export const budgetRecord = (startedAt: Date, budget: RunBudget): string =>
   `${JSON.stringify({ startedAt: startedAt.toISOString(), ...budget })}\n`;

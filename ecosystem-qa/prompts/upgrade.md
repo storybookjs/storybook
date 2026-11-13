@@ -44,9 +44,12 @@ It started before the project was installed, so part of it is already used.
 `node "{{TOOLS_DIR}}/budget.mjs" "{{EVIDENCE_DIR}}"` prints the minute you are in and how many are left.
 
 1. Run it before every step, before every check of Step 5, and before every new attempt at a blocker.
-2. When it says the budget is used up, stop working. Give every check you did not finish the state `blocked` with the note `the run budget was used up`, stop your servers, and write the final answer.
+2. When it says the budget is used up, stop working. Give every check you did not get to the state `skip` with the note `the run budget was used up`, stop your servers, and write the final answer.
 3. At minute {{HARD_STOP_MINUTES}} the run is stopped from outside. An answer that is not printed by then is lost, with every check and finding in it.
-4. A command that has not finished after 15 minutes is stuck for this run. Stop it by its process id and do not start it again. If the same command finished before the upgrade, that is a finding; otherwise report the check as `blocked` and say how long you waited.
+4. A build, a test run or another command that is meant to end, and that has not ended 15 minutes after you started it, is stuck for this run. Stop it by its process id and do not start it again.
+   - This is not for a dev server or a watcher, which runs until you stop it, and not for a package install, which may take 25 minutes.
+   - If the same command ended before the upgrade, that is a finding and its check is `fail`. You do not have to reproduce it a second time. Otherwise report the check as `blocked`. Say in the note how long you waited.
+   - The exit status of a command you stopped yourself says nothing. Do not read it as out of memory.
 
 ## Step 0. Make sure the project is installed
 
@@ -121,7 +124,7 @@ Give each check exactly one state:
 - `pass`: you ran the probe and it worked.
 - `fail`: you ran the probe and it did not work after the migration notes were applied.
 - `n/a`: the feature is not in this project. Say which file or search proved it.
-- `blocked`: an earlier failure stopped you and you could not get past it within the time box. Name that check.
+- `blocked`: an earlier failure stopped you and you could not get past it within the time box. Name that check. Also for a check whose own command was stuck, see Time.
 - `skip`: you did not try it. Give a concrete reason.
 
 Write a short note for every state except a plain `pass`.

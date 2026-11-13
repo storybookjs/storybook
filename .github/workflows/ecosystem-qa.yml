@@ -30,6 +30,10 @@ on:
         description: 'Write proposals to the Step Summary instead of filing them'
         type: boolean
         default: true
+      budget_minutes:
+        description: 'Minutes a run may take before the agent has to answer; it is stopped 15 minutes later (empty: 90)'
+        type: string
+        default: ''
       from_runs:
         description: 'Comma-separated run ids: collect and group the results of these earlier runs instead of running agents'
         type: string
@@ -215,6 +219,7 @@ jobs:
       QA_OS: ${{ matrix.os }}
       QA_SANDBOX: ${{ matrix.sandbox }}
       QA_TIER: ${{ inputs.tier }}
+      QA_BUDGET_MINUTES: ${{ inputs.budget_minutes }}
     steps:
       - name: Harden the runner
         if: ${{ matrix.os == 'linux' }}
@@ -278,6 +283,7 @@ jobs:
           node ecosystem-qa/run.ts --repo "$QA_REPO" --version "$QA_VERSION" --engine "$QA_ENGINE"
           --sandbox "$QA_SANDBOX" --out "ecosystem-qa/results/$QA_REPO/$QA_OS/$QA_ENGINE"
           --clone-dir "$RUNNER_TEMP/qa-work/$QA_REPO" --tier "$QA_TIER"
+          ${QA_BUDGET_MINUTES:+--budget-minutes "$QA_BUDGET_MINUTES"}
 
       - name: Report free disk after the run (Linux)
         if: ${{ always() && matrix.os == 'linux' }}

@@ -19,7 +19,7 @@ const leftText = `${left} ${left === 1 ? 'minute is' : 'minutes are'} left`;
 
 if (left <= 0) {
   console.log(
-    `The run budget of ${minutes} minutes is used up: this is minute ${minute}. Stop working now. Give every check you did not finish the state "blocked" with the note "the run budget was used up", and write the final answer. At minute ${hardStopMinutes} the run is stopped from outside, and an answer that is not printed by then is lost.`
+    `The run budget of ${minutes} minutes is used up: this is minute ${minute}. Stop working now. Give every check you did not get to the state "skip" with the note "the run budget was used up", stop your servers, and write the final answer. At minute ${hardStopMinutes} the run is stopped from outside, and an answer that is not printed by then is lost.`
   );
 } else if (left <= 10) {
   console.log(

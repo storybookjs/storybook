@@ -31,6 +31,7 @@ import { shipsSandcastleFiles } from './lib/clone-guard.ts';
 import { cycleBranchName, cycleRepo, versionLine } from './lib/cycle.ts';
 import { runFake } from './lib/fake-run.ts';
 import { forJobLog, liveLine } from './lib/live-log.ts';
+import { CHECKOUT_GUIDE, guideFor } from './lib/migration-guide.ts';
 import {
   agentOutput,
   Effort,
@@ -233,10 +234,10 @@ const planSandbox = (
   request: RunRequest,
   cloneDir: string,
   evidenceDir: string,
-  image: string
+  image: string,
+  migrationFile: string
 ): SandboxPlan => {
   const toolsDir = join(QA_DIR, 'tools');
-  const migrationFile = join(request.monorepoDir, 'MIGRATION.md');
   const identity = (path: string, readonly: boolean) => ({
     hostPath: path,
     sandboxPath: path,
@@ -378,11 +379,17 @@ const runSandcastle = async (
   let output: Outcome['output'];
   let failure: Pick<Outcome, 'status' | 'error'> | undefined;
   let recoveredFrom: string | undefined;
+  let migrationGuide: string | undefined;
   const logFile = join(request.outDir, 'run.log');
   const answerSchema = agentOutput(checksFor(request.tier).map((check) => check.id));
 
   try {
-    const plan = planSandbox(request, cloneDir, evidenceDir, image);
+    const guide = await guideFor(request.version, {
+      checkout: join(request.monorepoDir, 'MIGRATION.md'),
+      saveTo: join(scratchDir(), 'guides', `v${request.version}`, 'MIGRATION.md'),
+    });
+    migrationGuide = guide.ref;
+    const plan = planSandbox(request, cloneDir, evidenceDir, image, guide.file);
     const agent = agentFor(request, plan.agentEnv);
     const result = await run({
       cwd: cloneDir,
@@ -460,6 +467,7 @@ const runSandcastle = async (
     status: 'ok',
     ...failure,
     ...(recoveredFrom ? { recoveredFrom } : {}),
+    ...(migrationGuide ? { migrationGuide } : {}),
     ...(output ? { output } : {}),
     startSha,
     headSha,
@@ -517,6 +525,7 @@ const writeResult = (request: RunRequest, outcome: Outcome, startedAt: Date) => 
     status: outcome.status,
     ...(outcome.error ? { error: outcome.error } : {}),
     ...(outcome.recoveredFrom ? { recoveredFrom: outcome.recoveredFrom } : {}),
+    ...(outcome.migrationGuide ? { migrationGuide: outcome.migrationGuide } : {}),
   };
   // Written to a sibling first: an interrupted write must never leave a truncated result.json.
   const resultFile = join(outDir, 'result.json');
@@ -547,6 +556,11 @@ const summarize = (result: RunResultFile, resultPath: string): string => {
     `Usage was ${result.usage.inputTokens} input, ${result.usage.outputTokens} output, ${result.usage.cacheReadTokens ?? 0} cache-read and ${result.usage.cacheWriteTokens ?? 0} cache-write tokens, ${usd}.`,
     `Cycle branch ${cycleBranchName(result.request.version, result.request.os, result.request.engine)} head ${result.headSha ?? 'has no commits'}.${result.machine.freeDiskMbAtEnd === undefined ? '' : ` ${result.machine.freeDiskMbAtEnd} MB disk free at the end.`} Result: ${resultPath}.`,
     ...(result.error ? [`Error: ${result.error}`] : []),
+    ...(result.migrationGuide === CHECKOUT_GUIDE
+      ? [
+          `The agent read the migration guide of this checkout, because v${result.request.version} is not a tag of storybookjs/storybook.`,
+        ]
+      : []),
     ...(result.recoveredFrom
       ? [
           `The sandbox failed after the agent had finished, so the answer was read from the run log: ${result.recoveredFrom}`,

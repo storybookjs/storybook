@@ -3,12 +3,14 @@ import {
   ChangeDetectorRef,
   Component,
   Inject,
+  isSignal,
   NgModule,
   ViewChild,
   ViewContainerRef,
 } from '@angular/core';
 import type { Subject, Subscription } from 'rxjs';
 import { map, skip } from 'rxjs/operators';
+import { once } from 'storybook/internal/client-logger';
 
 import type { ICollection, NgModuleMetadata } from '../types.ts';
 import { STORY_PROPS } from './StorybookProvider.ts';
@@ -16,9 +18,18 @@ import type { ComponentInputsOutputs } from './utils/NgComponentAnalyzer.ts';
 import { getComponentInputsOutputs } from './utils/NgComponentAnalyzer.ts';
 import { PropertyExtractor } from './utils/PropertyExtractor.ts';
 
+// A story prop is only skipped when it would replace a signal field with a
+// plain value (the crash from #32201). A signal story prop may replace a
+// signal field, and reading the own data property never evaluates a getter:
+// signal fields are class fields, so they are own data properties, while
+// prototype getters are not.
+const isPreservedSignal = (instance: object, key: string, value: unknown) =>
+  isSignal(Object.getOwnPropertyDescriptor(instance, key)?.value) && !isSignal(value);
+
 const getNonInputsOutputsProps = (
   ngComponentInputsOutputs: ComponentInputsOutputs,
-  props: ICollection = {}
+  props: ICollection = {},
+  componentInstance: object
 ) => {
   const inputs = ngComponentInputsOutputs.inputs
     .filter((i) => i.templateName in props)
@@ -26,7 +37,18 @@ const getNonInputsOutputsProps = (
   const outputs = ngComponentInputsOutputs.outputs
     .filter((o) => o.templateName in props)
     .map((o) => o.templateName);
-  return Object.keys(props).filter((k) => ![...inputs, ...outputs].includes(k));
+  return Object.keys(props).filter((k) => {
+    if ([...inputs, ...outputs].includes(k)) {
+      return false;
+    }
+    if (isPreservedSignal(componentInstance, k, props[k])) {
+      once.warn(
+        `Storybook: skipping story prop "${k}" because it would overwrite a signal on the component. Pass a signal value to replace the signal.`
+      );
+      return false;
+    }
+    return true;
+  });
 };
 
 /** Wraps the story template into a component */
@@ -108,7 +130,11 @@ export const createStorybookWrapperComponent = ({
       if (storyComponentElementRef && storyComponentViewContainerRef) {
         const ngComponentInputsOutputs = getComponentInputsOutputs(storyComponent);
 
-        const initialOtherProps = getNonInputsOutputsProps(ngComponentInputsOutputs, initialProps);
+        const initialOtherProps = getNonInputsOutputsProps(
+          ngComponentInputsOutputs,
+          initialProps,
+          storyComponentElementRef
+        );
 
         // Initializes properties that are not Inputs | Outputs
         // Allows story props to override local component properties
@@ -125,7 +151,11 @@ export const createStorybookWrapperComponent = ({
           .pipe(
             skip(1),
             map((props = {}) => {
-              const propsKeyToKeep = getNonInputsOutputsProps(ngComponentInputsOutputs, props);
+              const propsKeyToKeep = getNonInputsOutputsProps(
+                ngComponentInputsOutputs,
+                props,
+                storyComponentElementRef
+              );
               return propsKeyToKeep.reduce((acc, p) => ({ ...acc, [p]: props[p] }), {});
             })
           )

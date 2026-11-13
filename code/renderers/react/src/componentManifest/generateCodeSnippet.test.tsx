@@ -2,6 +2,7 @@ import { describe, expect, it, test } from 'vitest';
 
 import { loadCsf } from 'storybook/internal/csf-tools';
 import {
+  argChanges,
   fillTemplate,
   formatTemplate,
   printValue,
@@ -1131,7 +1132,7 @@ const templateOf = (code: string, story = 'S') =>
   getCodeSnippet(load(code), story, 'Button').template;
 
 const fill = (code: string, initialArgs: Args, unmappedArgs: Args, story = 'S') =>
-  fillTemplate(templateOf(code, story), { initialArgs, unmappedArgs }, printHole);
+  fillTemplate(templateOf(code, story), argChanges({ initialArgs, unmappedArgs }), printHole);
 
 describe('template', () => {
   // The places an arg prints, each as a story that writes the arg `arg` as `value`, the code of a

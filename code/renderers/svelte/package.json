@@ -41,6 +41,7 @@
     },
     "./internal/docgen-worker": "./dist/docgen/docgen-worker.js",
     "./internal/PreviewRender.svelte": "./static/PreviewRender.svelte",
+    "./internal/register-print-hole": "./dist/docs/register-print-hole.js",
     "./internal/svelte-csf/addon-check": {
       "types": "./dist/svelte-csf/addon-check.d.ts",
       "code": "./src/svelte-csf/addon-check.ts",

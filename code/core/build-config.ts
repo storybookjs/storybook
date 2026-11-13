@@ -228,6 +228,10 @@ const config: BuildEntries = {
         entryPoint: './src/docs-tools/index.ts',
       },
       {
+        exportEntries: ['./internal/docs-tools/snippets'],
+        entryPoint: './src/docs-tools/snippets.ts',
+      },
+      {
         exportEntries: ['./internal/core-events'],
         entryPoint: './src/core-events/index.ts',
       },

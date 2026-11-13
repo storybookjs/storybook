@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
   type HoleRef,
@@ -7,6 +7,7 @@ import {
   type TemplateHole,
   UnprintableArgError,
   createHoleMarks,
+  argChanges,
   fillTemplate,
   formatTemplate,
   isSnippetTemplate,
@@ -40,43 +41,26 @@ describe('fillTemplate', () => {
     ' />',
   ];
 
-  it('prints the text of a hole whose arg holds its initial value', () => {
-    const args = { label: 'Go', theme: 'dark', onClick: () => {} };
-    expect(fillTemplate(template, { unmappedArgs: args, initialArgs: args }, echo)).toBe(
-      '<Button label="Go" />'
-    );
+  it('prints the text of a hole whose arg did not change', () => {
+    expect(fillTemplate(template, { args: {} }, echo)).toBe('<Button label="Go" />');
   });
 
-  it('asks the renderer for a changed or cleared value only', () => {
-    const initialArgs = { label: 'Go', theme: 'dark' };
-    expect(
-      fillTemplate(template, { unmappedArgs: { ...initialArgs, label: 'Stop' }, initialArgs }, echo)
-    ).toBe('<Button[attr label="Stop"][attrs *={"label":"Stop"}] />');
-    expect(fillTemplate(template, { unmappedArgs: { theme: 'dark' }, initialArgs }, echo)).toBe(
+  it('asks the renderer for a changed or unset value only', () => {
+    expect(fillTemplate(template, { args: { label: 'Stop' } }, echo)).toBe(
+      '<Button[attr label="Stop"][attrs *={"label":"Stop"}] />'
+    );
+    expect(fillTemplate(template, { args: {}, unset: ['label'] }, echo)).toBe(
       '<Button[attr label=undefined] />'
     );
   });
 
-  it('compares values deeply, so a copy of the initial value is unchanged', () => {
-    const items = [hole({ kind: 'value', arg: 'items' }, '[1]')];
+  it('gives a spread hole every changed arg that is set', () => {
     expect(
-      fillTemplate(items, { unmappedArgs: { items: [1] }, initialArgs: { items: [1] } }, echo)
-    ).toBe('[1]');
-  });
-
-  it('gives a spread hole every arg a control set', () => {
-    const initialArgs = { label: 'Go', theme: 'dark', onClick: () => {} };
-    const unmappedArgs = { ...initialArgs, label: 'Stop', size: 'lg', unset: undefined };
-    expect(fillTemplate(template, { unmappedArgs, initialArgs }, echo)).toBe(
-      '<Button[attr label="Stop"][attrs *={"label":"Stop","size":"lg"}] />'
+      fillTemplate(template, { args: { label: 'Stop', size: 'lg', unset: undefined } }, echo)
+    ).toBe('<Button[attr label="Stop"][attrs *={"label":"Stop","size":"lg"}] />');
+    expect(fillTemplate(template, { args: { theme: 'light' } }, echo)).toBe(
+      '<Button label="Go"[attrs *={"theme":"light"}] />'
     );
-    expect(
-      fillTemplate(
-        template,
-        { unmappedArgs: { ...initialArgs, theme: 'light' }, initialArgs },
-        echo
-      )
-    ).toBe('<Button label="Go"[attrs *={"theme":"light"}] />');
   });
 
   it('prints the space before a print, and leaves it out with an empty one', () => {
@@ -85,19 +69,16 @@ describe('fillTemplate', () => {
       (hole) => hole.kind === 'attr'
     );
     const clear: PrintHole<Place> = () => '';
-    const initialArgs = { label: 'Go' };
-    expect(fillTemplate(spaced, { unmappedArgs: {}, initialArgs }, clear)).toBe('<Button />');
-    expect(fillTemplate(spaced, { unmappedArgs: { label: 'Hi' }, initialArgs }, echo)).toBe(
+    expect(fillTemplate(spaced, { args: {}, unset: ['label'] }, clear)).toBe('<Button />');
+    expect(fillTemplate(spaced, { args: { label: 'Hi' } }, echo)).toBe(
       '<Button [attr label="Hi"] />'
     );
-    expect(fillTemplate(spaced, { unmappedArgs: initialArgs, initialArgs }, clear)).toBe(
-      '<Button label="Go" />'
-    );
+    expect(fillTemplate(spaced, { args: {} }, clear)).toBe('<Button label="Go" />');
   });
 
   it('gives the renderer the place and arg, not the code', () => {
     const seen: unknown[] = [];
-    fillTemplate(template, { unmappedArgs: { label: 'Stop' }, initialArgs: {} }, (ref) => {
+    fillTemplate(template, { args: { label: 'Stop' } }, (ref) => {
       seen.push(ref);
       return '';
     });
@@ -111,9 +92,45 @@ describe('fillTemplate', () => {
     const fail: PrintHole<Place> = (ref) => {
       throw new UnprintableArgError(ref.arg!);
     };
-    expect(() =>
-      fillTemplate(template, { unmappedArgs: { label: 'Stop' }, initialArgs: {} }, fail)
-    ).toThrow(new UnprintableArgError('label'));
+    expect(() => fillTemplate(template, { args: { label: 'Stop' } }, fail)).toThrow(
+      new UnprintableArgError('label')
+    );
+  });
+});
+
+describe('argChanges', () => {
+  it('holds the args that differ by value, and the args no longer set', () => {
+    expect(
+      argChanges({
+        unmappedArgs: { label: 'Stop', items: [1], size: 'lg', theme: undefined },
+        initialArgs: { label: 'Go', items: [1], theme: 'dark', icon: 'star' },
+      })
+    ).toEqual({ args: { label: 'Stop', size: 'lg' }, unset: ['theme', 'icon'] });
+  });
+
+  it('reads an arg written as undefined as unchanged once the args store drops it', () => {
+    expect(
+      argChanges({ unmappedArgs: { label: 'Hi' }, initialArgs: { label: 'Hi', size: undefined } })
+    ).toEqual({ args: {}, unset: [] });
+  });
+});
+
+describe('registerPrintHole', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('registers a printer that every copy of this module finds', async () => {
+    vi.stubGlobal(Symbol.for('storybook/docs-tools/print-hole'), undefined);
+    const printHole: PrintHole = () => 'printed';
+    const registering = await import('./snippetTemplate.ts');
+    vi.resetModules();
+    const reading = await import('./snippetTemplate.ts');
+
+    registering.registerPrintHole(printHole);
+
+    expect(reading).not.toBe(registering);
+    expect(reading.getPrintHole()).toBe(printHole);
   });
 });
 

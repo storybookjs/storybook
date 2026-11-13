@@ -4,6 +4,11 @@ const config: BuildEntries = {
   entries: {
     browser: [
       {
+        exportEntries: ['./internal/register-print-hole'],
+        entryPoint: './src/client/docs/register-print-hole.ts',
+        dts: false,
+      },
+      {
         exportEntries: ['.'],
         entryPoint: './src/index.ts',
       },

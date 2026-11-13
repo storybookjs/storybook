@@ -1,4 +1,8 @@
-import { type PrintHole, printValue, unknownHoleKind } from 'storybook/internal/docs-tools';
+import {
+  type PrintHole,
+  printValue,
+  unknownHoleKind,
+} from 'storybook/internal/docs-tools/snippets';
 import type { Args } from 'storybook/internal/types';
 
 import {

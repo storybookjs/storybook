@@ -1,10 +1,10 @@
 import {
-  getStoryImportPathFromEntry,
-  STORY_FILE_TEST_REGEXP,
+  createLazyDocgenMiddleware,
+  extractEach,
   type TypeScriptSpecifierForDocgen,
 } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
-import type { DocgenMiddleware, DocgenProvider } from 'storybook/internal/types';
+import type { DocgenMiddleware } from 'storybook/internal/types';
 
 import type { ParsingLogger } from '@storybook/angular-cm';
 import { AngularComponentMetaManager } from '@storybook/angular-cm';
@@ -42,33 +42,17 @@ const createManager = async (
  * Build the Angular docgen middleware, holding one analyzer for the worker's lifetime so its
  * language services stay warm across components.
  */
-export const createDocgenProvider = (options: AngularDocgenOptions): DocgenMiddleware => {
-  let managerPromise: Promise<AngularComponentMetaManager | undefined> | undefined;
-
-  return (nextDocgen: DocgenProvider): DocgenProvider =>
-    async (input) => {
-      const storyImportPath = getStoryImportPathFromEntry(input.entry);
-      if (!storyImportPath || !STORY_FILE_TEST_REGEXP.test(storyImportPath)) {
-        return nextDocgen(input);
-      }
-
-      const manager = await (managerPromise ??= createManager(options.typeScriptSpecifier));
-      if (!manager) {
-        return nextDocgen(input);
-      }
-
-      const ours = buildDocgenPayload(input, { manager, options, logger: workerLogger });
-      // There is no batch surface to hang this on, so heap pressure is checked once per extraction.
-      manager.recycleIfHeapPressured();
-
-      if (!ours) {
-        return nextDocgen(input);
-      }
-      // Replacing another provider's payload with our own error would let this link veto the rest
-      // of the chain for a component it knows nothing about.
-      if (ours.error) {
-        return (await nextDocgen(input)) ?? ours;
-      }
-      return { ...(await nextDocgen(input)), ...ours };
-    };
-};
+export const createDocgenProvider = (options: AngularDocgenOptions): DocgenMiddleware =>
+  createLazyDocgenMiddleware({
+    createManager: () => createManager(options.typeScriptSpecifier),
+    extract: (manager, inputs) =>
+      extractEach(inputs, async (input) => {
+        const ours = buildDocgenPayload(input, { manager, options, logger: workerLogger });
+        // A batch can hold every component, so heap pressure is checked after each one.
+        manager.recycleIfHeapPressured();
+        return ours;
+      }),
+    // Replacing another provider's payload with our own error would let this link veto the rest of
+    // the chain for a component it knows nothing about.
+    merge: (own, downstream) => (own.error ? (downstream ?? own) : { ...downstream, ...own }),
+  });

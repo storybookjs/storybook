@@ -20,23 +20,14 @@ export interface DocgenWorkerInitRequest {
   logLevel: LogLevel;
 }
 
-/** Sent per component to extract its docgen payload. `id` correlates the response. */
+/** Sent per batch of components to extract their docgen payloads. `id` correlates the response. */
 export interface DocgenWorkerExtractRequest {
   type: 'extract';
   id: number;
-  entry: IndexEntry;
-}
-
-/** Announces the entries about to be extracted; later extract requests carry them as `batch`. */
-export interface DocgenWorkerPrepareRequest {
-  type: 'prepare';
   entries: IndexEntry[];
 }
 
-export type DocgenWorkerRequest =
-  | DocgenWorkerInitRequest
-  | DocgenWorkerExtractRequest
-  | DocgenWorkerPrepareRequest;
+export type DocgenWorkerRequest = DocgenWorkerInitRequest | DocgenWorkerExtractRequest;
 
 /** Chain composition succeeded; the worker is ready for extract requests. */
 export interface DocgenWorkerInitSuccess {
@@ -52,15 +43,20 @@ export interface DocgenWorkerInitFailure {
 
 export type DocgenWorkerInitResponse = DocgenWorkerInitSuccess | DocgenWorkerInitFailure;
 
-/** Extraction succeeded; `payload` is the result (absent when no provider produced docgen). */
+/** One entry's extraction; `payload` is absent when no provider produced docgen. */
+export type DocgenWorkerEntryResult =
+  | { payload?: DocgenPayload; error?: undefined }
+  | { payload?: undefined; error: ErrorLike };
+
+/** The provider chain ran; `results` holds one result per requested entry, in the same order. */
 export interface DocgenWorkerExtractSuccess {
   type: 'extract';
   id: number;
-  payload?: DocgenPayload;
+  results: DocgenWorkerEntryResult[];
   error?: undefined;
 }
 
-/** Extraction threw; `error` describes the failure. */
+/** The provider chain threw for the whole batch; `error` describes the failure. */
 export interface DocgenWorkerExtractFailure {
   type: 'extract';
   id: number;
@@ -69,13 +65,4 @@ export interface DocgenWorkerExtractFailure {
 
 export type DocgenWorkerExtractResponse = DocgenWorkerExtractSuccess | DocgenWorkerExtractFailure;
 
-/** The worker reached this request in its queue and is now extracting it. */
-export interface DocgenWorkerExtractStarted {
-  type: 'started';
-  id: number;
-}
-
-export type DocgenWorkerResponse =
-  | DocgenWorkerInitResponse
-  | DocgenWorkerExtractStarted
-  | DocgenWorkerExtractResponse;
+export type DocgenWorkerResponse = DocgenWorkerInitResponse | DocgenWorkerExtractResponse;

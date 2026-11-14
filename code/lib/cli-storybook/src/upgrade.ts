@@ -246,9 +246,7 @@ function logUpgradeResults(
   // If there are any failures, show detailed summary
   if (failedProjects.length > 0) {
     logTracker.enableLogWriting();
-    logger.step(
-      'The upgrade is complete, but some automigrations could not finish. What is left to do:'
-    );
+    logger.step('The upgrade is complete, but some automigrations could not finish.');
     // Display appropriate messages based on results
     if (successfulProjects.length > 0) {
       const successfulProjectsList = successfulProjects

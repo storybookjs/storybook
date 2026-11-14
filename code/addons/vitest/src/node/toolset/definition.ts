@@ -1,7 +1,6 @@
 import * as v from 'valibot';
 
 import {
-  moduleGraphAccessFromCtx,
   storyInputArraySchema,
   type StoryIndexAccess,
   type StoryInput,
@@ -9,6 +8,7 @@ import {
 import {
   defineToolset,
   getSkillCommand,
+  getToolset,
   type ToolsetCtx,
   type ToolsetDefinition,
   type ToolsetMethod,
@@ -17,7 +17,7 @@ import {
 } from 'storybook/open-service';
 
 import { countTestRunFailures, formatTestRun, summarizeTestRun } from './format.ts';
-import { createAsyncQueue, runStoryTests, type TestChannel } from './run.ts';
+import { createAsyncQueue, runStoryTests, type ChangedStories, type TestChannel } from './run.ts';
 
 const errorLikeSchema: v.GenericSchema = v.object({
   message: v.string(),
@@ -77,11 +77,10 @@ const selectionSchema = v.object({
   files: v.optional(v.object({ filters: v.array(v.string()), storyFiles: v.number() })),
   changed: v.optional(
     v.object({
-      since: v.optional(v.string()),
-      changedFiles: v.number(),
-      /** The changed file that affects every story, when one did. */
-      everyStory: v.optional(v.string()),
-      storyFiles: v.optional(v.number()),
+      /** How many stories `stories changed` listed. */
+      stories: v.number(),
+      /** Changed files in the Storybook config directory, which can affect every story. */
+      changedConfigFiles: v.array(v.string()),
     })
   ),
   /** How many story ids `stories` gave. */
@@ -166,11 +165,9 @@ Use { absoluteStoryPath + exportName } only when you're currently working in a s
   ),
   changed: v.optional(
     v.pipe(
-      // A number too: the CLI reads `--changed 1234567` (a short sha) as JSON. No `transform` here:
-      // the MCP server converts input schemas to JSON Schema, which cannot express one.
-      v.union([v.boolean(), v.string(), v.number()]),
+      v.boolean(),
       v.description(
-        `Test the stories affected by the files git reports as changed, as Vitest's --changed: true for the uncommitted changes (staged, unstaged and untracked), or a ref (a branch or commit) for the changes since it plus the uncommitted ones. A changed story file selects its stories, any other changed file the stories that depend on it, and a change to what the Storybook preview loads, a package.json, a vite or vitest config, or a .env file selects every story.`
+        'Test the changed stories, exactly as the stories changed tool lists them: new and modified stories, and the stories that depend on changed files. Combined with files or stories, only the stories that match both run.'
       )
     )
   ),
@@ -190,7 +187,7 @@ Use { absoluteStoryPath + exportName } only when you're currently working in a s
 type RunInput = {
   stories?: StoryInput[];
   files?: string[];
-  changed?: boolean | string | number;
+  changed?: boolean;
   a11y: boolean;
 };
 
@@ -202,7 +199,7 @@ export type TestToolset = ToolsetDefinition<
         {
           stories?: StoryInput[];
           files?: string[];
-          changed?: boolean | string | number;
+          changed?: boolean;
           a11y?: boolean;
         },
         RunInput
@@ -239,9 +236,7 @@ For visual/design accessibility violations (for example color contrast), ask the
 function runTelemetry(data: TestRunData, input: RunInput): ToolsetTelemetryReport | undefined {
   const inputStoryCount = input.stories?.length ?? 0;
   const inputFileCount = input.files?.length ?? 0;
-  const changed = !input.changed
-    ? {}
-    : { changed: input.changed === true ? 'uncommitted' : 'since-ref' };
+  const changed = input.changed ? { changed: true } : {};
 
   if (data.status === 'no-stories') {
     return {
@@ -297,14 +292,13 @@ function isFailedRun(data: TestRunData): data is TestRunFailureData {
   }
 }
 
-// A realm without the module graph (an older core, a builder without change detection) reports
-// that as the reason `changed` cannot find dependent stories, not as a crash.
-function getModuleGraph(ctx: ToolsetCtx) {
-  try {
-    return moduleGraphAccessFromCtx(ctx);
-  } catch {
-    return undefined;
-  }
+// `stories changed` itself, so both commands select the same stories for the same working tree.
+async function getChangedStories(ctx: ToolsetCtx): Promise<ChangedStories> {
+  const { data } = await getToolset('stories').methods.changed.handler({}, ctx);
+  return {
+    storyIds: data.stories.map((story) => story.storyId),
+    changedConfigFiles: data.changedConfigFiles,
+  };
 }
 
 export type CreateTestToolsetOptions = {
@@ -345,9 +339,8 @@ export function createTestToolset({
               getIndex: storyIndex.getIndex,
               stories: input.stories,
               files: input.files,
-              changed: typeof input.changed === 'number' ? String(input.changed) : input.changed,
-              getModuleGraph: () => getModuleGraph(ctx),
-              transport: ctx.transport,
+              changed: input.changed,
+              getChangedStories: () => getChangedStories(ctx),
               a11y: input.a11y,
             });
             const data: TestRunData = { ...output, a11y: input.a11y };

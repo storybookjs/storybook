@@ -4,7 +4,6 @@ import type { CoverageOptions, TestProject, TestSpecification, Vitest } from 'vi
 
 import { getProjectRoot, resolvePathInStorybookCache } from 'storybook/internal/common';
 import { Tag } from 'storybook/internal/core-server';
-import { storyNameFromExport } from 'storybook/internal/csf';
 import { logger } from 'storybook/internal/node-logger';
 import type { StoryId, StoryIndexEntry } from 'storybook/internal/types';
 
@@ -44,26 +43,17 @@ export const toModuleId = (importPath: string) => path.join(process.cwd(), impor
 const getTestName = (name: string) => `${name}${DOUBLE_SPACES}`;
 
 /**
- * The names a story's test can have, as one regex group: its name, its export name, and the name
- * derived from its export (see `buildStoryTestNamePattern`).
+ * A story's test is named after its name, or after its export when the Vitest transform cannot read
+ * a name from the source: a story exported as `export { X as Y }`, which is how Svelte CSF compiles
+ * `.stories.svelte` (index `Hover Shows Full Date`, test `HoverShowsFullDate`). So match either.
  */
 const testNames = (
-  story: Pick<StoryIndexEntry, 'name' | 'exportName'>,
-  toTestName = (name: string) => name
-) => {
-  const names = [
-    ...new Set(
-      [
-        story.name,
-        story.exportName,
-        // What the transform names a CSF object export without a `name`, for an indexer whose
-        // display name differs from it.
-        story.exportName && storyNameFromExport(story.exportName),
-      ].filter((name): name is string => !!name)
-    ),
-  ].map((name) => escapeRegExp(toTestName(name)));
-  return names.length === 1 ? names[0] : `(?:${names.join('|')})`;
-};
+  { name, exportName }: Pick<StoryIndexEntry, 'name' | 'exportName'>,
+  toTestName = (value: string) => value
+) =>
+  exportName && exportName !== name
+    ? `(?:${escapeRegExp(toTestName(name))}|${escapeRegExp(toTestName(exportName))})`
+    : escapeRegExp(toTestName(name));
 
 export class VitestManager {
   vitest: Vitest | null = null;
@@ -290,12 +280,6 @@ export class VitestManager {
    * - Component entry (has child stories/tests): match the whole describe block prefix
    * - Story-test entry (has parent): match "parent describe + test name" exactly
    * - Regular story entry: match the story name exactly
-   *
-   * A story's test is named after its name where the Vitest transform can read that name from the
-   * source (a CSF object or factory with `name`, or the name derived from the export), and after
-   * its export name where it cannot: a story exported as `export { X as Y }`, which is how Svelte
-   * CSF compiles `.stories.svelte` (the index has `Hover Shows Full Date`, the test
-   * `HoverShowsFullDate`). So a story matches either; the export name is unique in its file.
    */
   private buildStoryTestNamePattern(
     story: StoryIndexEntry,
@@ -366,9 +350,6 @@ export class VitestManager {
   ) {
     const filteredTestSpecifications: TestSpecification[] = [];
     const filteredStoryIds: StoryId[] = [];
-    // Why a story stays out, for the run's report: a story counts as run when any project runs it.
-    const runStoryIds = new Set<StoryId>();
-    const inProjectStoryIds = new Set<StoryId>();
 
     const storiesByImportPath: Record<StoryIndexEntry['importPath'], StoryIndexEntry[]> = {};
 
@@ -387,9 +368,6 @@ export class VitestManager {
       const skip = env.__VITEST_SKIP_TAGS__?.split(',').filter(Boolean) ?? [];
 
       const storiesInTestSpecification = storiesByImportPath[testSpecification.moduleId] ?? [];
-      for (const story of storiesInTestSpecification) {
-        inProjectStoryIds.add(story.id);
-      }
 
       const filteredStories = storiesInTestSpecification.filter((story) => {
         if (include.length && !include.some((tag) => story.tags?.includes(tag))) {
@@ -412,26 +390,15 @@ export class VitestManager {
       }
 
       filteredTestSpecifications.push(testSpecification);
-      const runStories = filteredStories
-        // Don't count skipped stories, because StorybookReporter doesn't include them either
-        .filter((story) => !skip.some((tag) => story.tags?.includes(tag)))
-        .map((story) => story.id);
-      filteredStoryIds.push(...runStories);
-      for (const id of runStories) {
-        runStoryIds.add(id);
-      }
+      filteredStoryIds.push(
+        ...filteredStories
+          // Don't count skipped stories, because StorybookReporter doesn't include them either
+          .filter((story) => !skip.some((tag) => story.tags?.includes(tag)))
+          .map((story) => story.id)
+      );
     }
 
-    const excludedStoryIds = {
-      byTags: stories
-        .filter((story) => inProjectStoryIds.has(story.id) && !runStoryIds.has(story.id))
-        .map((story) => story.id),
-      notInProject: stories
-        .filter((story) => !inProjectStoryIds.has(story.id))
-        .map((story) => story.id),
-    };
-
-    return { filteredTestSpecifications, filteredStoryIds, excludedStoryIds };
+    return { filteredTestSpecifications, filteredStoryIds };
   }
 
   private getCurrentRunConfig() {
@@ -474,16 +441,16 @@ export class VitestManager {
       }
     }
 
-    const { filteredTestSpecifications, filteredStoryIds, excludedStoryIds } =
-      this.filterTestSpecifications(testSpecifications, filteredStories);
+    const { filteredTestSpecifications, filteredStoryIds } = this.filterTestSpecifications(
+      testSpecifications,
+      filteredStories
+    );
 
     this.testManager.store.setState((s) => ({
       ...s,
       currentRun: {
         ...s.currentRun,
         totalTestCount: filteredStoryIds.length,
-        // Only a focused run reports what it left out of its selection.
-        excludedStoryIds: runPayload.storyIds?.length ? excludedStoryIds : undefined,
       },
     }));
 

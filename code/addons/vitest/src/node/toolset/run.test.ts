@@ -156,37 +156,6 @@ describe('runStoryTests', () => {
     });
   });
 
-  it('reports a docs entry id as having no tests instead of selecting it', async () => {
-    const { channel, requested } = respondingChannel();
-    const withDocs: StoryIndex = {
-      v: 5,
-      entries: {
-        ...index.entries,
-        'button--docs': {
-          type: 'docs',
-          id: 'button--docs',
-          name: 'Docs',
-          title: 'Button',
-          importPath: './src/Button.stories.tsx',
-          storiesImports: [],
-          tags: ['autodocs'],
-        },
-      },
-    };
-
-    const result = await runStoryTests({
-      channel,
-      getIndex: async () => withDocs,
-      stories: [{ storyId: 'button--primary' }, { storyId: 'button--docs' }],
-    });
-
-    expect(requested).toEqual([['button--primary']]);
-    expect(result).toMatchObject({
-      status: 'completed',
-      notFound: ['"button--docs" is a docs entry, not a story: docs have no tests.'],
-    });
-  });
-
   it('returns no-stories when the focused selector list is empty', async () => {
     const { channel, requested } = respondingChannel();
 

@@ -286,9 +286,8 @@ export function displayPath(file: string): string {
 }
 
 /**
- * A focused run whose selected stories all stayed out of the run. It passes, as a Vitest run whose
- * tests are all skipped does; the selection line says why where the runner knows, and says plainly
- * where it does not (see `storiesNotRun`).
+ * A focused run whose selected stories all stayed out of the run, for example excluded by tags. It
+ * passes, as a Vitest run whose tests are all skipped does; the selection line says why.
  */
 function ranNothingSelected(result: TestRunResult): boolean {
   return (
@@ -317,59 +316,9 @@ function formatChangedConfigFiles(changed: TestRunSelection['changed']): string[
   ];
 }
 
-/** The stories a run reached a verdict for; skipped tests are reported too, as `unknown`. */
-function ranStoryIdsOf(result: TestRunResult): Set<string> {
-  return new Set(
-    result.componentTestStatuses
-      .filter(
-        (status) =>
-          isPassing(status) || isFailing(status) || status.value === 'status-value:warning'
-      )
-      .map((status) => status.storyId)
-  );
-}
-
-/**
- * The selected stories that did not run, by the reason the runner knows: their tags keep them out
- * of tests or skip them, or their story file is not a test file of the Storybook Vitest project.
- * `unexplained` did not run for a reason Storybook cannot tell.
- */
-export function storiesNotRun(result: TestRunResult): {
-  byTags: number;
-  notInProject: number;
-  unexplained: string[];
-} {
-  const ran = ranStoryIdsOf(result);
-  const byTags = new Set(result.excludedStoryIds?.byTags);
-  const notInProject = new Set(result.excludedStoryIds?.notInProject);
-  const notRun = (result.storyIds ?? []).filter((id) => !ran.has(id));
-  return {
-    byTags: notRun.filter((id) => byTags.has(id)).length,
-    notInProject: notRun.filter((id) => notInProject.has(id)).length,
-    unexplained: notRun.filter((id) => !byTags.has(id) && !notInProject.has(id)),
-  };
-}
-
-// Says why selected stories did not run only where the runner knows why, and says plainly when it
-// does not.
-function ranNote(result: TestRunResult, ran: number, selected: number): string {
-  if (ran >= selected) {
-    return '';
-  }
-  const { byTags, notInProject, unexplained } = storiesNotRun(result);
-  const reasons = [
-    byTags > 0 && `${byTags} ${byTags === 1 ? 'is' : 'are'} excluded from tests by tags`,
-    notInProject > 0 &&
-      `${notInProject} ${notInProject === 1 ? 'is' : 'are'} in story files the Storybook Vitest project does not include`,
-    unexplained.length > 0 &&
-      `${unexplained.length} did not run, and Storybook cannot tell why${result.unhandledErrors.length > 0 ? ' (see the unhandled errors)' : ''}: ${listIds(unexplained)}`,
-  ].filter((reason): reason is string => Boolean(reason));
-  return `; ${ran === 0 ? 'none' : `only ${ran}`} ran: ${reasons.join('; ')}`;
-}
-
-function listIds(ids: string[], max = 5): string {
-  const shown = ids.slice(0, max).map(code).join(', ');
-  return ids.length > max ? `${shown} and ${ids.length - max} more` : shown;
+// How many of the selected stories ran, without guessing why the others did not.
+function ranNote(ran: number, selected: number): string {
+  return ran >= selected ? '' : `; ${ran === 0 ? 'none' : `only ${ran}`} ran`;
 }
 
 // One line: what each form matched, then what that selected, counted against what actually ran.
@@ -389,18 +338,15 @@ function formatSelection(
     parts.push(pluralize(selection.changed.stories, 'changed story', 'changed stories'));
   }
   const selected = selection.storyCount;
-  const ran = (result.storyIds ?? []).filter((id) => ranStoryIds.has(id)).length;
   if (parts.length === 0) {
-    // `stories` alone: the ids say what was selected; only a gap needs a line.
-    const count = selected ?? result.storyIds?.length;
-    return count !== undefined && ran < count
-      ? `Selected ${pluralize(count, 'story', 'stories')}${ranNote(result, ran, count)}.`
-      : undefined;
+    // `stories` alone: the ids say what was selected, and the verdict counts what ran.
+    return undefined;
   }
   if (selected === undefined) {
     return `${parts.join('; ')}: selected every story.`;
   }
-  return `${parts.join('; ')}: selected ${pluralize(selected, 'story', 'stories')}${ranNote(result, ran, selected)}.`;
+  const ran = (result.storyIds ?? []).filter((id) => ranStoryIds.has(id)).length;
+  return `${parts.join('; ')}: selected ${pluralize(selected, 'story', 'stories')}${ranNote(ran, selected)}.`;
 }
 
 const A11Y_GUIDANCE =
@@ -414,23 +360,16 @@ function formatNextSteps(
     testsFailed,
     notFound,
     ranNothing,
-    unexplained,
     ctx,
   }: {
     a11y: boolean;
     testsFailed: boolean;
     notFound: boolean;
     ranNothing: boolean;
-    unexplained: boolean;
     ctx: ToolsetCtx;
   }
 ): string[] {
   const steps: string[] = [];
-  if (unexplained) {
-    steps.push(
-      'Storybook could not run the stories listed above as not run. Do not change their tags or test settings to make that go away: tell the user which stories did not run.'
-    );
-  }
   if (notFound) {
     steps.push('Fix or leave out the arguments listed above, then run again.');
   }
@@ -485,7 +424,14 @@ function formatResultSection(
         : `Passed: ${pluralize(passed, 'component test')} passed.`;
 
   // Skipped tests are reported too, as `status-value:unknown`; only a verdict means a story ran.
-  const ranStoryIds = ranStoryIdsOf(result);
+  const ranStoryIds = new Set(
+    result.componentTestStatuses
+      .filter(
+        (status) =>
+          isPassing(status) || isFailing(status) || status.value === 'status-value:warning'
+      )
+      .map((status) => status.storyId)
+  );
   const lines = [
     ...[selection && formatSelection(selection, ranStoryIds, result)].filter(
       (line): line is string => Boolean(line)
@@ -496,7 +442,6 @@ function formatResultSection(
     formatA11yResult(result, { a11y, a11yEnabled }),
     ...formatNextSteps(result, {
       ranNothing: ranNothingSelected(result),
-      unexplained: storiesNotRun(result).unexplained.length > 0,
       a11y,
       testsFailed: testFailureParts.length > 0,
       notFound: notFound.length > 0,

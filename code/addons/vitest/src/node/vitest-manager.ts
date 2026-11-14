@@ -468,19 +468,21 @@ export class VitestManager {
    */
   private async runTestSpecifications(specifications: TestSpecification[], allTestsRun: boolean) {
     const generation = ++this.runGeneration;
-    const { totalTestCount } = this.testManager.store.getState().currentRun;
     for (const attempt of [1, 2]) {
       this.optimizerHashes.clear();
       specifications.forEach(({ project }) => project.browser && this.recordOptimizerHash(project));
       await this.vitest!.runTestSpecifications(specifications, allTestsRun);
+      if (generation !== this.runGeneration) {
+        return; // Cancelled or replaced: the store belongs to the newer run.
+      }
       const disrupted =
         [...this.optimizerHashes].some(([project, hash]) => optimizerHash(project) !== hash) &&
         this.testManager.currentRunHasFailures();
       if (attempt === 2) {
         this.testManager.markRepeated({ stillDisrupted: disrupted });
-      } else if (disrupted && generation === this.runGeneration) {
+      } else if (disrupted) {
         log('Vite re-bundled dependencies during the run. Running the tests again.');
-        this.testManager.discardRunResults({ totalTestCount });
+        this.testManager.discardRunResults();
         continue;
       }
       return;
@@ -618,8 +620,7 @@ export class VitestManager {
             totalTestCount: filteredStoryIds.length,
           },
         }));
-        await this.vitest!.cancelCurrentRun('keyboard-input');
-        await this.runningPromise;
+        await this.cancelCurrentRun();
         this.provideRunConfig();
         await this.runTestSpecifications(filteredTestSpecifications, false);
       },

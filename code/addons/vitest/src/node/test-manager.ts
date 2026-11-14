@@ -238,7 +238,7 @@ export class TestManager {
    * Drops the results the current run has collected so far, so the run can start over without
    * counting a story twice. The run keeps its trigger, selection, config and start time.
    */
-  discardRunResults({ totalTestCount }: { totalTestCount?: number }) {
+  discardRunResults() {
     this.throttledFlushTestCaseResults.cancel();
     this.batchedTestCaseResults = [];
     const { storyIds } = this.store.getState().currentRun;
@@ -259,14 +259,12 @@ export class TestManager {
         unhandledErrors,
         finishedAt,
         coverageSummary,
-        totalTestCount,
       },
     }));
   }
 
   /** Whether the current run has a failing test, accessibility check or unhandled error so far. */
   currentRunHasFailures() {
-    this.throttledFlushTestCaseResults.flush();
     const { componentTestCount, a11yCount, unhandledErrors } = this.store.getState().currentRun;
     return componentTestCount.error > 0 || a11yCount.error > 0 || unhandledErrors.length > 0;
   }

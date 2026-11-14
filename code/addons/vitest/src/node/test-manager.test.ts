@@ -644,6 +644,26 @@ describe('TestManager', () => {
       expect(vitest.runTestSpecifications).toHaveBeenCalledTimes(1);
     });
 
+    it('leaves the store alone when its repeat is cancelled', async () => {
+      const testManager = await startWithIndex();
+      attempts(testManager, [
+        { result: failed, rebundles: true },
+        { result: failed, rebundles: true },
+      ]);
+      const attempt = vitest.runTestSpecifications.getMockImplementation()!;
+      vitest.runTestSpecifications
+        .mockImplementationOnce(attempt)
+        .mockImplementationOnce(async (...args) => {
+          await attempt(...args);
+          await testManager.handleCancelEvent();
+        });
+
+      await run(testManager);
+
+      expect(vitest.runTestSpecifications).toHaveBeenCalledTimes(2);
+      expect(completedRun().depsReoptimized).toBeUndefined();
+    });
+
     it('notices a re-bundle when Vitest starts the browser during the run', async () => {
       const testManager = await startWithIndex();
       const { browser } = project;

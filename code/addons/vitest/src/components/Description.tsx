@@ -56,7 +56,7 @@ export function Description({
       'Crashed'
     );
   } else if (!entryId && unhandledErrors.length > 0) {
-    const unhandledErrorDescription = `View ${unhandledErrors.length} unhandled error${unhandledErrors?.length > 1 ? 's' : ''}`;
+    const unhandledErrorDescription = `View ${unhandledErrors.length} unhandled error${unhandledErrors?.length > 1 ? 's' : ''}${depsReoptimized ? ' (ran twice)' : ''}`;
     description = setModalOpen ? (
       <LinkComponent onClick={() => setModalOpen(true)}>{unhandledErrorDescription}</LinkComponent>
     ) : (

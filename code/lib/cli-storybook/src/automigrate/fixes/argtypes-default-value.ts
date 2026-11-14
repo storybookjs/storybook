@@ -18,10 +18,23 @@ import type { Fix } from '../types.ts';
 
 /**
  * Fields whose `defaultValue` is not the deprecated `argTypes.<name>.defaultValue`: the docs table
- * keeps `table.defaultValue`, and `args`, `globalTypes` and `parameters` never hold an argType. An
- * arg may still be named so, as in `argTypes: { table: { defaultValue: 1 } }`.
+ * keeps `table.defaultValue`, `args`, `globalTypes` and `parameters` never hold an argType, and
+ * neither do the story functions, whose `defaultValue` is a component's. An arg may still be named
+ * so, as in `argTypes: { table: { defaultValue: 1 } }`.
  */
-const NOT_AN_ARG_TYPE = new Set(['table', 'args', 'globalTypes', 'parameters']);
+const NOT_AN_ARG_TYPE = new Set([
+  'table',
+  'args',
+  'globalTypes',
+  'parameters',
+  'render',
+  'play',
+  'loaders',
+  'decorators',
+  'beforeEach',
+  'beforeAll',
+  'mount',
+]);
 
 type Parents = Map<ESTreeNode, ESTreeNode | null>;
 
@@ -58,6 +71,15 @@ const isArgTypes = (object: ESTreeNode | null, parents: Parents) => {
   );
 };
 
+/** Whether `object` is the value of an arg in an argTypes object, as in `argTypes: { a: {…} }`. */
+const isArgType = (object: ESTreeNode | null, parents: Parents) => {
+  if (object?.type !== 'ObjectExpression') {
+    return false;
+  }
+  const holder = holderOf(object, parents);
+  return holder?.type === 'Property' && isArgTypes(parents.get(holder) ?? null, parents);
+};
+
 // Where a `defaultValue` sits, such as `base.defaultValue` or `argTypes.label.make(…).defaultValue`.
 const pathOf = (property: ESTreeNode, parents: Parents, code: string) => {
   const segments: string[] = [];
@@ -66,7 +88,7 @@ const pathOf = (property: ESTreeNode, parents: Parents, code: string) => {
     if (node.type === 'Property' && node.value === child) {
       segments.unshift(staticKey(node) ?? '[…]');
     } else if (node.type === 'CallExpression' && node.callee !== child) {
-      segments.unshift(`${code.slice(node.callee.start, node.callee.end)}(…)`);
+      segments.unshift(`${code.slice(node.callee.start, node.callee.end).replace(/\s+/g, '')}(…)`);
     } else if (node.type === 'VariableDeclarator') {
       segments.unshift(code.slice(node.id.start, node.id.end));
       break;
@@ -89,6 +111,8 @@ interface Candidate {
   path: string;
   line: number;
   start: number;
+  // Written as `argTypes.<name>.defaultValue`, so an argType's whether the editor reached it or not.
+  ofArgType: boolean;
 }
 
 /**
@@ -118,6 +142,7 @@ const candidatesIn = (program: E.Program, code: string): Candidate[] => {
         path: pathOf(node, parents, code),
         line: locationOf(code, node.start, node.end).start.line,
         start: node.start,
+        ofArgType: isArgType(parent, parents),
       });
     }
   });
@@ -202,7 +227,9 @@ const migrate = (
     return;
   }
   const left = candidatesIn(file.program, file.editor.code);
-  if (left.length === 0 || (found.unread.length === 0 && !found.opaque)) {
+  const mayBeArgType =
+    found.unread.length > 0 || found.opaque || left.some(({ ofArgType }) => ofArgType);
+  if (left.length === 0 || !mayBeArgType) {
     return;
   }
 
@@ -218,6 +245,7 @@ const migrate = (
       return original ? `\`${path}\` (line ${original.line})` : `\`${path}\``;
     })
     .join(', ');
+  const verb = left.length === 1 ? 'is' : 'are';
   // Only the reasons of the argTypes that hold what is left: the others did not keep it in place.
   const reasons = found.unread.filter(({ loc }) =>
     leftBefore.some(
@@ -227,8 +255,8 @@ const migrate = (
   );
   throw new HandledError(
     reasons.length > 0
-      ? [`${named} is left in place`, ...new Set(reasons.map(describeDiagnostic))].join('; ')
-      : `${named} is left in place: it may reach an argType the migration could not read, through a variable, a spread or a helper. If it does, remove it by hand`
+      ? [`${named} ${verb} left in place`, ...new Set(reasons.map(describeDiagnostic))].join('; ')
+      : `${named} ${verb} left in place: ${left.length === 1 ? 'it' : 'they'} may reach an argType the migration could not read, through a variable, a spread or a helper. If so, remove ${left.length === 1 ? 'it' : 'them'} by hand`
   );
 };
 

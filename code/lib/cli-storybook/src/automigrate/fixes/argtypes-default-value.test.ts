@@ -407,6 +407,40 @@ describe('argtypes-default-value', () => {
     expect(result.story).toBe(story);
   });
 
+  it('does not apply to a component defaultValue in a story function beside a story factory', async () => {
+    const story = [
+      'export default {',
+      "  render: (args) => ({ props: { ...args, defaultValue: 'x' } }),",
+      '  play: async () => { await setup({ defaultValue: 1 }); },',
+      '};',
+      "export const Select = generateStory({ name: 'Select' });",
+    ].join('\n');
+    vol.fromJSON({ [previewConfigPath]: 'export default {};', [storyPath]: story });
+
+    expect(await checkFix(argtypesDefaultValue, options)).toBeNull();
+    const result = await migrate({ story });
+    expect(result.failures).toEqual([]);
+    expect(result.story).toBe(story);
+  });
+
+  it('fails an argType defaultValue that the editor does not reach, written as one', async () => {
+    const story = [
+      'export default { title: "Example" };',
+      'export const A = {};',
+      'Object.assign(A, { argTypes: { a: { defaultValue: 1 } } });',
+    ].join('\n');
+    const result = await migrate({ story });
+
+    expect(result.failures).toEqual([
+      {
+        file: storyPath,
+        kind: 'story',
+        message: expect.stringContaining('argTypes.a.defaultValue` (line 3) is left in place'),
+      },
+    ]);
+    expect(result.story).toBe(story);
+  });
+
   it('does not edit an MDX story', async () => {
     const docsPath = resolve('src/Intro.mdx');
     const source = '<Meta argTypes={{ value: { defaultValue: 0 } }} />';

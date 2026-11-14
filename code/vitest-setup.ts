@@ -151,11 +151,11 @@ type WorkerGlobals = {
 };
 const { __vitest_mocker__: mocker, __vitest_worker__: worker } = globalThis as WorkerGlobals;
 
-if (worker?.config.isolate === false) {
-  if (!mocker) {
-    throw new Error('Vitest internals changed: cannot reset test files that share a worker');
-  }
+if (!worker || !mocker) {
+  throw new Error('Vitest internals changed: cannot reset test files that share a worker');
+}
 
+if (worker.config.isolate === false) {
   // `vi.mock('node:fs', { spy: true })` spies on the builtin itself, which Node's own module loader
   // reads through. The originals are recorded before the worker's first test file runs.
   const requireBuiltin = createRequire(import.meta.url);
@@ -170,9 +170,12 @@ if (worker?.config.isolate === false) {
   };
   workerScope[builtinsKey] ??= new Map(
     builtinModules
-      .filter((name) => !name.startsWith('_') && !name.includes('internal'))
+      // `trace_events` cannot be loaded in a worker thread.
+      .filter(
+        (name) => !name.startsWith('_') && !name.includes('internal') && name !== 'trace_events'
+      )
       .map((name) => {
-        const exports = requireBuiltin(`node:${name}`);
+        const exports = requireBuiltin(name.startsWith('node:') ? name : `node:${name}`);
         return [exports, new Map(Object.keys(exports).map((key) => [key, exports[key]]))];
       })
   );

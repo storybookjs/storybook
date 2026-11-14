@@ -9,6 +9,7 @@ import {
 
 import picocolors from 'picocolors';
 
+import { readForEdit } from '../helpers/edit-parsed-file.ts';
 import type { Fix } from '../types.ts';
 
 const argName = (property: E.ObjectProperty): string | undefined => {
@@ -48,8 +49,8 @@ const hasField = (node: ESTreeNode | null | undefined, key: string) => {
 
 /**
  * Whether the file writes a literal `argTypes: { <name>: { defaultValue } }`. Only such a field is
- * this migration's to remove: `defaultValue` has set no arg since 7.0, so one behind a helper or a
- * spread does nothing and is left alone, and a file without one is not edited at all.
+ * this migration's to remove: `defaultValue` has set no arg since 7.0, so a file without one is not
+ * edited at all, and its argTypes or stories the editor cannot read are not reported.
  */
 const writesArgTypeDefaultValue = (program: E.Program) => {
   let found = false;
@@ -66,18 +67,17 @@ const writesArgTypeDefaultValue = (program: E.Program) => {
   return found;
 };
 
-/** Remove every `defaultValue` written in an argType of `object`; the editor reports one it cannot. */
 const strip = (object: CsfObject) => {
-  const argTypes = object.inspect(['argTypes']);
-  if (argTypes.kind !== 'value' || argTypes.node.type !== 'ObjectExpression') {
+  const argTypes = readForEdit(object, ['argTypes']);
+  if (argTypes?.type !== 'ObjectExpression') {
     return;
   }
-  for (const property of argTypes.node.properties) {
+  for (const property of argTypes.properties) {
     if (property.type !== 'Property') {
       continue;
     }
     const name = argName(property);
-    if (name && hasField(property.value as ESTreeNode, 'defaultValue')) {
+    if (name) {
       object.remove(['argTypes', name, 'defaultValue']);
     }
   }
@@ -94,8 +94,12 @@ export const argtypesDefaultValue: Fix = {
   transform: () => [
     {
       filter: { kind: ['preview', 'story'], code: 'defaultValue' },
-      editConfig: strip,
-      // `objects()` reports the stories it cannot read, so it runs only when there is work.
+      // An edit reports every argType and story it cannot read, so it runs only when there is work.
+      editConfig: (config) => {
+        if (writesArgTypeDefaultValue(config.program)) {
+          strip(config);
+        }
+      },
       editCsf: (csf) => {
         if (writesArgTypeDefaultValue(csf.program)) {
           csf.objects().forEach(strip);

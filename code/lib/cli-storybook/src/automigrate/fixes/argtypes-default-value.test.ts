@@ -99,8 +99,8 @@ describe('argtypes-default-value', () => {
     expect(story).toContain("control: 'number'");
   });
 
-  it('leaves argTypes it cannot read alone, without reporting the file', async () => {
-    // The lucca-front shapes: helper calls, spreads, story factories and `table.defaultValue`.
+  it('does not touch a file without a literal argTypes defaultValue, whatever it cannot read', async () => {
+    // Helper calls, spreads, story factories and `table.defaultValue`, without a literal argType one.
     const story = [
       "import { intlArgType, makeArgType, PaletteArgType, generateStory } from '../helpers';",
       'export default {',

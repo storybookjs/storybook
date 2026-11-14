@@ -211,13 +211,22 @@ function formatStoryContent(story: Story, importStatement: string | undefined): 
   return parts;
 }
 
+// `react-docgen` reads props with builder docgen, which Storybook falls back to for example with
+// TypeScript 7. It cannot resolve type helpers, so its list can be short, and an agent that trusts
+// it leaves out required props.
+const REACT_DOCGEN_NOTE =
+  'This list may be incomplete: `react-docgen` leaves out props from type helpers such as `Pick<…>` or `ComponentProps<typeof X>`, required ones too. Check the props type in the component source; props you find there are valid.';
+
 function formatPropsSection(
+  componentManifest: Pick<ComponentManifest | SubcomponentManifest, 'reactDocgen'>,
   parsedDocgen: ParsedDocgen | undefined,
   options: { title?: string; typeName?: string } = {}
 ): string[] {
   const propEntries = parsedDocgen ? Object.entries(parsedDocgen.props) : [];
+  const fromReactDocgen = !!componentManifest.reactDocgen;
 
-  if (propEntries.length === 0) {
+  // An empty list from `react-docgen` can mean every prop comes from another type.
+  if (propEntries.length === 0 && !fromReactDocgen) {
     return [];
   }
 
@@ -226,6 +235,13 @@ function formatPropsSection(
   const parts: string[] = [];
   parts.push(title);
   parts.push('');
+  if (fromReactDocgen) {
+    parts.push(REACT_DOCGEN_NOTE);
+    parts.push('');
+  }
+  if (propEntries.length === 0) {
+    return parts;
+  }
   parts.push('```');
   parts.push(`export type ${typeName} = {`);
 
@@ -341,7 +357,9 @@ function formatSubcomponentsSection(
     }
 
     const typeName = `${(subcomponent.name || key).replace(/\W+/g, '')}Props`;
-    parts.push(...formatPropsSection(parsedDocgen, { title: '#### Props', typeName }));
+    parts.push(
+      ...formatPropsSection(subcomponent, parsedDocgen, { title: '#### Props', typeName })
+    );
   }
 
   return parts;
@@ -381,7 +399,7 @@ export function formatComponentManifest(
     parts.push(apiDescription);
     parts.push('');
   } else {
-    parts.push(...formatPropsSection(parsedDocgen));
+    parts.push(...formatPropsSection(componentManifest, parsedDocgen));
   }
 
   parts.push(...formatSubcomponentsSection(componentManifest.subcomponents));

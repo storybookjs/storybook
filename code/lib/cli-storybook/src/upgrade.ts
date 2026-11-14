@@ -155,6 +155,8 @@ export const checkVersionConsistency = () => {
 };
 
 export type UpgradeOptions = {
+  /** `false` with `--no-agent`: prompt in a terminal even when a coding agent is detected. */
+  agent?: boolean;
   skipCheck: boolean;
   skipAutomigrations?: boolean;
   packageManager?: PackageManagerName;
@@ -369,7 +371,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
     throw new HandledError('--features cannot be combined with --skip-automigrations');
   }
 
-  options = { ...options, yes: answersPromptsWithYes(options.yes) };
+  options = { ...options, yes: answersPromptsWithYes(options) };
   const storybookVersionSpecifier = getStorybookVersionSpecifierFromCli();
   const projectsResult = await getProjects(options);
 
@@ -383,11 +385,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
   const storybookProjects = await Promise.all(
     projectsResult.selectedProjects.map(async (project) => ({
       ...project,
-      beforeVersion: await upgradeStartVersion({
-        configDir: project.configDir,
-        installed: project.beforeVersion,
-        target: project.currentCLIVersion,
-      }),
+      beforeVersion: await upgradeStartVersion(project.configDir, project.beforeVersion),
     }))
   );
 

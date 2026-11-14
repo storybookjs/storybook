@@ -46,11 +46,10 @@ const hasFailures = (fixResults: Record<string, FixStatus> | undefined): boolean
 };
 
 export const doAutomigrate = async (cliOptions: AutofixOptionsFromCLI) => {
-  // `--list` and `--dry-run` change nothing, so they need no answers.
-  const options =
-    cliOptions.list || cliOptions.dryRun
-      ? cliOptions
-      : { ...cliOptions, yes: answersPromptsWithYes(cliOptions.yes) };
+  // `--list` asks nothing. A dry run can: the csf-factories codemod asks for its options.
+  const options = cliOptions.list
+    ? cliOptions
+    : { ...cliOptions, yes: answersPromptsWithYes(cliOptions) };
   logger.debug('Extracting storybook data...');
   const {
     mainConfig,

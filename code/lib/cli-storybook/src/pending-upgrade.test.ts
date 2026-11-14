@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { cache } from 'storybook/internal/common';
+import { createFileSystemCache } from 'storybook/internal/common';
 
 import {
   forgetUpgradeStart,
@@ -12,54 +12,70 @@ vi.mock('storybook/internal/common', { spy: true });
 vi.mock('storybook/internal/node-logger', { spy: true });
 
 const store = new Map<string, unknown>();
+const fakeCache = {
+  get: vi.fn(async (key: string) => store.get(key)),
+  set: vi.fn(async (key: string, value: unknown) => {
+    store.set(key, value);
+  }),
+  remove: vi.fn(async (key: string) => {
+    store.delete(key);
+  }),
+};
 
 beforeEach(() => {
   store.clear();
-  vi.mocked(cache.get).mockImplementation(async (key: string) => store.get(key));
-  vi.mocked(cache.set).mockImplementation(async (key: string, value: unknown) => {
-    store.set(key, value);
-  });
-  vi.mocked(cache.remove).mockImplementation(async (key: string) => {
-    store.delete(key);
-  });
+  vi.mocked(createFileSystemCache).mockReturnValue(
+    fakeCache as unknown as ReturnType<typeof createFileSystemCache>
+  );
 });
 
-const start = (installed: string, target = '11.0.0') =>
-  upgradeStartVersion({ configDir: '/repo/.storybook', installed, target });
+const CONFIG_DIR = '/repo/.storybook';
 
 describe('upgradeStartVersion', () => {
   it('is the installed version without an unfinished upgrade', async () => {
-    await expect(start('10.6.7')).resolves.toBe('10.6.7');
+    await expect(upgradeStartVersion(CONFIG_DIR, '10.6.7')).resolves.toBe('10.6.7');
   });
 
-  it('is the start of an unfinished upgrade to the same version, after an install', async () => {
-    await rememberUpgradeStart('/repo/.storybook', { from: '10.6.7', to: '11.0.0' });
+  it('is the start of an unfinished upgrade whose version is now installed', async () => {
+    await rememberUpgradeStart(CONFIG_DIR, { from: '10.6.7', to: '11.0.0' });
 
-    await expect(start('11.0.0')).resolves.toBe('10.6.7');
+    await expect(upgradeStartVersion(CONFIG_DIR, '11.0.0')).resolves.toBe('10.6.7');
   });
 
-  it('ignores an unfinished upgrade to another version', async () => {
-    await rememberUpgradeStart('/repo/.storybook', { from: '10.6.7', to: '11.0.0-beta.2' });
+  it('is the installed version while the unfinished upgrade is not installed yet', async () => {
+    await rememberUpgradeStart(CONFIG_DIR, { from: '10.6.7', to: '11.0.0' });
 
-    await expect(start('11.0.0', '11.0.0')).resolves.toBe('11.0.0');
+    await expect(upgradeStartVersion(CONFIG_DIR, '10.6.7')).resolves.toBe('10.6.7');
+  });
+
+  it('ignores an unfinished upgrade to a version other than the installed one', async () => {
+    await rememberUpgradeStart(CONFIG_DIR, { from: '9.1.0', to: '11.0.0' });
+
+    await expect(upgradeStartVersion(CONFIG_DIR, '10.3.0')).resolves.toBe('10.3.0');
+  });
+
+  it('finds the record from another spelling of the same config dir', async () => {
+    await rememberUpgradeStart('/repo/app/../.storybook', { from: '10.6.7', to: '11.0.0' });
+
+    await expect(upgradeStartVersion(CONFIG_DIR, '11.0.0')).resolves.toBe('10.6.7');
   });
 
   it('ignores an unfinished upgrade of another project', async () => {
     await rememberUpgradeStart('/repo/other/.storybook', { from: '10.6.7', to: '11.0.0' });
 
-    await expect(start('11.0.0')).resolves.toBe('11.0.0');
+    await expect(upgradeStartVersion(CONFIG_DIR, '11.0.0')).resolves.toBe('11.0.0');
   });
 
   it('is the installed version once the upgrade ran its automigrations', async () => {
-    await rememberUpgradeStart('/repo/.storybook', { from: '10.6.7', to: '11.0.0' });
-    await forgetUpgradeStart('/repo/.storybook');
+    await rememberUpgradeStart(CONFIG_DIR, { from: '10.6.7', to: '11.0.0' });
+    await forgetUpgradeStart(CONFIG_DIR);
 
-    await expect(start('11.0.0')).resolves.toBe('11.0.0');
+    await expect(upgradeStartVersion(CONFIG_DIR, '11.0.0')).resolves.toBe('11.0.0');
   });
 
-  it('is the installed version when the cache cannot be read', async () => {
-    vi.mocked(cache.get).mockRejectedValue(new Error('EACCES'));
+  it('is the installed version when the record cannot be read', async () => {
+    fakeCache.get.mockRejectedValueOnce(new Error('EACCES'));
 
-    await expect(start('11.0.0')).resolves.toBe('11.0.0');
+    await expect(upgradeStartVersion(CONFIG_DIR, '11.0.0')).resolves.toBe('11.0.0');
   });
 });

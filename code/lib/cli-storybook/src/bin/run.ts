@@ -171,6 +171,7 @@ command('upgrade')
     )
   )
   .option('-y --yes', 'Skip prompting the user')
+  .option('--no-agent', 'Show prompts in a terminal even when a coding agent is detected')
   .addOption(
     new Option(
       '--features <list>',
@@ -258,6 +259,7 @@ command('link <repo-url-or-directory>')
 command('automigrate [fixId]')
   .description('Check storybook for incompatibilities or migrations and apply fixes')
   .option('-y --yes', 'Skip prompting the user')
+  .option('--no-agent', 'Show prompts in a terminal even when a coding agent is detected')
   .option('-n --dry-run', 'Only check for fixes, do not actually run them')
   .addOption(
     new Option('--package-manager <type>', 'Force package manager for installing deps').choices(

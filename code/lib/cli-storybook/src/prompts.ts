@@ -2,17 +2,15 @@ import { isCI } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import { detectAgent } from 'storybook/internal/telemetry';
 
-/**
- * Why this run cannot answer prompts, or `undefined` when a person at a terminal can. Like `create
- * storybook`, a run without an interactive terminal or in CI does not prompt. A coding agent does
- * not either: it can drive a terminal, but it answers a prompt to finish the task, not on the
- * user's behalf, and unticked the default automigrations in our QA.
- */
-export function promptlessReason(): string | undefined {
+// Why this run cannot answer prompts, or `undefined` when a person at a terminal can. Like `create
+// storybook`, a run without an interactive terminal, in CI or by a coding agent does not prompt. An
+// agent can drive a terminal, but it answers a prompt to finish its task, not on the user's behalf.
+// `--no-agent` turns the agent detection off, for a person whose shell std-env mistakes for one.
+export function promptlessReason({ detectAgents = true } = {}): string | undefined {
   if (isCI()) {
     return 'CI is set';
   }
-  const agent = detectAgent();
+  const agent = detectAgents ? detectAgent() : undefined;
   if (agent) {
     return `a coding agent (${agent.name}) runs it`;
   }
@@ -22,15 +20,20 @@ export function promptlessReason(): string | undefined {
   return undefined;
 }
 
-/**
- * Resolve `--yes` for a command whose prompts all fall back to `yes`: a run that cannot answer
- * prompts gets the answers of `--yes`, instead of aborting halfway on the first prompt.
- */
-export function answersPromptsWithYes(yes: boolean | undefined): boolean {
+// A run that cannot answer prompts gets the answers of `--yes`, instead of aborting halfway on the
+// first prompt. Every prompt of `upgrade` and `automigrate` has one.
+export function answersPromptsWithYes({
+  yes,
+  agent,
+}: {
+  yes?: boolean;
+  /** `false` from `--no-agent`. */
+  agent?: boolean;
+}): boolean {
   if (yes) {
     return true;
   }
-  const reason = promptlessReason();
+  const reason = promptlessReason({ detectAgents: agent !== false });
   if (reason) {
     logger.log(`Running without prompts, as with --yes, because ${reason}.`);
     return true;

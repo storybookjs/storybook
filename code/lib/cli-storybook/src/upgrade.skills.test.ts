@@ -24,6 +24,8 @@ vi.mock('./automigrate/fixes/angular-to-angular-vite.ts', { spy: true });
 vi.mock('./automigrate/multi-project.ts', { spy: true });
 vi.mock('./doctor/index.ts', { spy: true });
 vi.mock('./pending-upgrade.ts');
+// Vitest workers have no terminal; these tests are about what follows the prompts.
+vi.mock('./prompts.ts', () => ({ answersPromptsWithYes: ({ yes }: { yes?: boolean }) => !!yes }));
 vi.mock('./util.ts', { spy: true });
 vi.mock(import('storybook/internal/common'), async (importOriginal) => {
   const actual = await importOriginal();
@@ -85,7 +87,7 @@ describe('upgrade: refreshing the skills', () => {
     vi.mocked(displayDoctorResults).mockReturnValue(false);
     vi.mocked(isCI).mockReturnValue(false);
     vi.mocked(detectAgent).mockReturnValue(undefined);
-    vi.mocked(upgradeStartVersion).mockImplementation(async ({ installed }) => installed);
+    vi.mocked(upgradeStartVersion).mockImplementation(async (_, installed) => installed);
     for (const method of ['info', 'step', 'log', 'warn', 'debug'] as const) {
       vi.mocked(logger[method]).mockImplementation(() => {});
     }
@@ -350,7 +352,6 @@ describe('upgrade: refreshing the skills', () => {
         );
 
     it('says how to add the skills when the automigration did not install them', async () => {
-      // For example unticked in the picker, or a failed install.
       await upgrade(baseOptions);
 
       expect(notInstalledWarnings()).toEqual([

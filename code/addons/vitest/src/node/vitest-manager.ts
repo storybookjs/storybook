@@ -55,6 +55,10 @@ const testNames = (
     ? `(?:${escapeRegExp(toTestName(name))}|${escapeRegExp(toTestName(exportName))})`
     : escapeRegExp(toTestName(name));
 
+/** Vite's dependency optimizer hash; it changes when Vite re-bundles in a way that needs a reload. */
+const optimizerHash = (project: TestProject) =>
+  project.browser?.vite.environments.client.depsOptimizer?.metadata.browserHash;
+
 export class VitestManager {
   vitest: Vitest | null = null;
 
@@ -65,6 +69,12 @@ export class VitestManager {
   vitestRestartPromise: Promise<void> | null = null;
 
   runningPromise: Promise<any> | null = null;
+
+  /** Counts runs and cancellations, so a cancelled or replaced run does not start over. */
+  private runGeneration = 0;
+
+  /** The optimizer hash of each browser project when the current attempt started. */
+  private optimizerHashes = new Map<TestProject, string | undefined>();
 
   // Tracked here because `vitest.config.coverage.enabled` does not follow `disableCoverage()`.
   coverageEnabled = false;
@@ -457,11 +467,46 @@ export class VitestManager {
       },
     }));
 
-    await this.vitest!.runTestSpecifications(filteredTestSpecifications, true);
+    await this.runTestSpecifications(filteredTestSpecifications, true);
     this.resetGlobalTestNamePattern();
   }
 
+  /** Records a browser project's optimizer hash; Vitest 4 starts the browser on the first run. */
+  recordOptimizerHash(project: TestProject) {
+    this.optimizerHashes.set(project, optimizerHash(project));
+  }
+
+  /**
+   * With a warm cache, Vite finds a dependency that only a new story file imports while the tests
+   * run. It re-bundles and reloads, the running tests mix two copies of modules like React, and
+   * stories fail for reasons that are not theirs. Such an attempt is run once more, with the new
+   * bundles in place, and the run says so.
+   */
+  private async runTestSpecifications(specifications: TestSpecification[], allTestsRun: boolean) {
+    const generation = ++this.runGeneration;
+    for (const attempt of [1, 2]) {
+      this.optimizerHashes.clear();
+      specifications.forEach(({ project }) => project.browser && this.recordOptimizerHash(project));
+      await this.vitest!.runTestSpecifications(specifications, allTestsRun);
+      if (generation !== this.runGeneration) {
+        return; // Cancelled or replaced: the store belongs to the newer run.
+      }
+      const disrupted =
+        [...this.optimizerHashes].some(([project, hash]) => optimizerHash(project) !== hash) &&
+        this.testManager.currentRunHasFailures();
+      if (attempt === 2) {
+        this.testManager.markRepeated({ stillDisrupted: disrupted });
+      } else if (disrupted) {
+        log('Vite re-bundled dependencies during the run. Running the tests again.');
+        this.testManager.discardRunResults();
+        continue;
+      }
+      return;
+    }
+  }
+
   async cancelCurrentRun() {
+    this.runGeneration++;
     await this.vitest?.cancelCurrentRun('keyboard-input');
     await this.runningPromise;
   }
@@ -591,10 +636,9 @@ export class VitestManager {
             totalTestCount: filteredStoryIds.length,
           },
         }));
-        await this.vitest!.cancelCurrentRun('keyboard-input');
-        await this.runningPromise;
+        await this.cancelCurrentRun();
         this.provideRunConfig();
-        await this.vitest!.runTestSpecifications(filteredTestSpecifications, false);
+        await this.runTestSpecifications(filteredTestSpecifications, false);
       },
     });
   }

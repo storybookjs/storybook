@@ -237,7 +237,7 @@ describe('runSkillsCommand', () => {
     expect(uiReview.output).toContain('Call `review-create` with:');
 
     const cli = await runSkillsCommand({ tokens: ['ui-review'], target: {} }, d);
-    expect(cli.output).toContain('## Publish the review');
+    expect(cli.output).toContain('## Create the review');
     expect(cli.output).not.toContain('skip this step');
 
     d.resolveSkillInputs.mockResolvedValue({

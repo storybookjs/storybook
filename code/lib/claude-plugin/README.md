@@ -118,7 +118,7 @@ When the user asks for a review or to see stories, use the `ui-review` skill. Ot
 <!-- END:storybook-skills -->
 ```
 
-Storybook replaces the text between the markers when you upgrade. The section is the workflow: the first two steps name the skill the agent uses for them, and the third is the test command itself, so the agent runs the tests from that line alone. A project without `@storybook/addon-vitest` cannot run story tests and gets no test step. After a change you can see, the agent ends its answer with a line that offers the `ui-review` skill; it does not publish a review unless you ask. To change the workflow, for example to drop that line or to have the agent publish a review after every change, remove both markers and edit the section. An edit between the markers lasts only until the next upgrade, which writes the section again. Remove the whole section to stop the agent from following the workflow: it then uses a skill only when you ask for it, or when it finds one that fits its task. You can also call the plugin's skills in prompts (e.g. `/upgrade`) to have the agent perform specific actions. See [Skills and plugins](https://storybook.js.org/docs/ai/skills) for more details.
+Storybook replaces the text between the markers when you upgrade. The section is the workflow: the first two steps name the skill the agent uses for them, and the third is the test command itself, so the agent runs the tests from that line alone. A project without `@storybook/addon-vitest` cannot run story tests and gets no test step. After a change you can see, the agent ends its answer with a line that offers the `ui-review` skill; it does not publish a review unless you ask. To change the workflow, for example to drop that line or to have the agent create a review after every change, remove both markers and edit the section. An edit between the markers lasts only until the next upgrade, which writes the section again. Remove the whole section to stop the agent from following the workflow: it then uses a skill only when you ask for it, or when it finds one that fits its task. You can also call the plugin's skills in prompts (e.g. `/upgrade`) to have the agent perform specific actions. See [Skills and plugins](https://storybook.js.org/docs/ai/skills) for more details.
 
 If you're using Claude Desktop and ask to see stories or for a review, the agent will use the plugin to open relevant stories or an [agentic review summary](https://storybook.js.org/docs/ai/agentic-review) in the ADE preview, so you can review the agent's work.
 
@@ -148,7 +148,7 @@ Runs the story tests of what you changed, with their accessibility checks, and f
 
 ### `ui-review`
 
-Finds the stories a change affects and publishes an [agentic review](https://storybook.js.org/docs/ai/agentic-review) of them. Also shows the components or stories you ask to see. The agent uses it when you ask for a review or to see stories, not after every change: ask for example "Use the ui-review skill to publish a Storybook review of the stories that changed."
+Finds the stories a change affects and creates an [agentic review](https://storybook.js.org/docs/ai/agentic-review) of them. Also shows the components or stories you ask to see. The agent uses it when you ask for a review or to see stories, not after every change: ask for example "Use the ui-review skill to publish a Storybook review of the stories that changed."
 
 ### `upgrade`
 

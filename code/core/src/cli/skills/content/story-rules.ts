@@ -13,9 +13,8 @@ export const ERROR_EXPORT_RULE =
 export const USER_EVENT_RULE =
   '`userEvent.click(element)` takes no options; to check a disabled element, assert `toBeDisabled()` instead of clicking it.';
 
-export function networkMockRule({ csfFactories, previewFile }: StoryFormatInputs): string {
-  const mswSetup = csfFactories
-    ? "`addons: [addonMsw()]` (`import addonMsw from 'msw-storybook-addon'`, without an `initialize()` call)"
-    : "`loaders: [mswLoader()]` (`import { mswLoader } from 'msw-storybook-addon/csf3'`, without an `initialize()` call)";
-  return `A story never calls a real service. Mock network requests with MSW, never with a module mock or a replaced \`fetch\`: give the story \`beforeEach({ msw }) { msw.use(http.get('/api/users', () => HttpResponse.json([...]))) }\`, and leave the code that calls \`fetch\` as it is. When the project has no \`msw-storybook-addon\` yet, set it up first: install \`msw\` and \`msw-storybook-addon\` as dev dependencies, run \`npx msw init ./public --save\` (\`../public\` has to be in \`staticDirs\` of the main config), and add ${mswSetup} to \`${previewFile}\`. Read the version of \`msw-storybook-addon\` in the project's \`package.json\`: only before version 3 do stories have no \`msw\` in \`beforeEach\` and take \`parameters: { msw: { handlers: [...] } }\` instead. From version 3 on, never write \`parameters.msw\`.`;
+// Adding a dependency is the team's decision, not a skill's: agents that were told to set up MSW
+// installed it for a one-line change. Without MSW, the stories that need the network wait.
+export function networkMockRule({ previewFile }: Pick<StoryFormatInputs, 'previewFile'>): string {
+  return `A story never calls a real service. When the project has MSW set up for Storybook (\`msw-storybook-addon\` in its \`package.json\` and in \`${previewFile}\`), mock network requests with it, never with a module mock or a replaced \`fetch\`: give the story \`beforeEach({ msw }) { msw.use(http.get('/api/users', () => HttpResponse.json([...]))) }\`, and leave the code that calls \`fetch\` as it is. Read the version of \`msw-storybook-addon\` in the project's \`package.json\`: only before version 3 do stories have no \`msw\` in \`beforeEach\` and take \`parameters: { msw: { handlers: [...] } }\` instead. From version 3 on, never write \`parameters.msw\`. When the project has no MSW setup, do not add one or any other dependency: write the stories that need no network, and end your answer by telling the user which stories, such as one for the page, would need a network mock, and that MSW would give them. Do not stop to ask.`;
 }

@@ -126,7 +126,7 @@ export function buildServerInstructions(inputs: ServerInstructionsInputs): strin
   // review-create result are many calls back, and agents left the review lines out. A review is
   // only published when the user asks for one, through the `ui-review` skill.
   const review = inputs.devEnabled
-    ? `\n\nWhen you publish a review with \`${getToolName({ transport: 'mcp' })('review.create')}\`, end your final answer with the three lines its result gives you, unchanged, and mention the review link nowhere else in it.`
+    ? `\n\nWhen you create a review with \`${getToolName({ transport: 'mcp' })('review.create')}\`, end your final answer with the three lines its result gives you, unchanged, and mention the review link nowhere else in it.`
     : '';
   // The tools are at hand over MCP, so an agent can do a step without its skill. It did for a
   // request that is one step, where no file edit comes first.

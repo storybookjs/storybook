@@ -1,6 +1,6 @@
 ---
 name: ui-review
-description: When the user asks for a review or to see stories, publish a Storybook review that shows them the stories a UI change affects, or the components and stories they ask to see.
+description: When the user asks for a review or to see stories, create a Storybook review that shows them the stories a UI change affects, or the components and stories they ask to see.
 ---
 
 Prerequisites:
@@ -12,6 +12,6 @@ Run the Storybook dev server and every Storybook CLI command from the same worki
 
 If the sandbox blocks network access or ports, request escalated permissions for Storybook CLI commands; otherwise the dev server can fail in confusing ways (for example, it finds no free port to bind to).
 
-Run `npx storybook skills ui-review` in a command of its own, without `head` or `tail`, and follow its output: how to use the running Storybook dev server, and the commands that find the stories your change affects and publish a review of them.
+Run `npx storybook skills ui-review` in a command of its own, without `head` or `tail`, and follow its output: how to use the running Storybook dev server, and the commands that find the stories your change affects and create a review of them.
 
-When you publish a review, end your final answer with the three lines `review create` prints, unchanged, and mention the review link nowhere else in it.
+When you create a review, end your final answer with the three lines `review create` prints, unchanged, and mention the review link nowhere else in it.

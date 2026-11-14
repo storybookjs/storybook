@@ -77,7 +77,7 @@ describe('buildServerInstructions', () => {
 
       Run the skill of a step before you call a tool of that step, also when the request is only that step.
 
-      When you publish a review with \`review-create\`, end your final answer with the three lines its result gives you, unchanged, and mention the review link nowhere else in it."
+      When you create a review with \`review-create\`, end your final answer with the three lines its result gives you, unchanged, and mention the review link nowhere else in it."
     `);
   });
 

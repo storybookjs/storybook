@@ -210,7 +210,7 @@ function describePreview(ctx: ToolsetCtx): string {
   // No "include the URLs in your final response" and no "when available" hedge: both let agents
   // end a browse request or an asked-for review at preview links.
   return `Use this tool to get Storybook preview URLs while iterating on a specific story, or when the user asks for a direct link to one.
-Do not end browse requests or a review that was asked for with these links — publish a curated review with ${getToolName(ctx)('review.create')} instead (passing changedFiles: [] when no code changed) and link that.`;
+Do not end browse requests or a review that was asked for with these links — create a curated review with ${getToolName(ctx)('review.create')} instead (passing changedFiles: [] when no code changed) and link that.`;
 }
 
 function describeChanged(ctx: ToolsetCtx): string {

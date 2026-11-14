@@ -1,11 +1,9 @@
 import React from 'react';
 
-import { Button } from 'storybook/internal/components';
 import { AI_PROMPT_NUDGE } from 'storybook/internal/core-events';
 import { CHANGE_DETECTION_STATUS_TYPE_ID } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
-import { CheckIcon, WandIcon } from '@storybook/icons';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { MemoryRouter } from 'storybook/internal/router';
@@ -13,17 +11,12 @@ import { ManagerContext, internal_fullStatusStore } from 'storybook/manager-api'
 import { expect, fn, mocked, spyOn, userEvent, waitFor } from 'storybook/test';
 
 import { initialState as checklistInitialState } from '../../../shared/checklist-store/checklistData.state.ts';
-import { useCopyButton } from '../../../shared/useCopyButton.ts';
 import { UI_REVIEW_PROMPT } from '../../../shared/utils/ai-prompts.ts';
-import {
-  internal_universalChecklistStore as checklistStore,
-  internal_universalReviewHintStore as reviewHintStore,
-} from '../../manager-stores.mock.ts';
+import { internal_universalChecklistStore as checklistStore } from '../../manager-stores.mock.ts';
 import { ReviewProvider } from '../review/components/ReviewProvider.tsx';
 import { reviewServiceForStories as reviewService } from '../review/review-service-story-helpers.ts';
 import { IconSymbols } from './IconSymbols.tsx';
-import { ReviewHint, useChangedStoryCount } from './ReviewHint.tsx';
-import { ShowChangesButton } from './ShowChangesButton.tsx';
+import { REVIEW_HINT_DISMISSED_KEY, ReviewHint } from './ReviewHint.tsx';
 
 const storyIds = ['s1', 's2', 's3'];
 
@@ -147,15 +140,22 @@ const meta = {
       });
     }
     spyOn(navigator.clipboard, 'writeText').mockResolvedValue(undefined);
-    // The server has read the user settings and the hint is not dismissed.
-    reviewHintStore.setState({ loaded: true });
-    // The onboarding checklist has loaded and does not show its "Set up with AI" step.
-    checklistStore.setState({ ...checklistInitialState, loaded: true });
+    // The project has Storybook's skills, and the checklist does not show "Set up with AI".
+    checklistStore.setState({ ...checklistInitialState, loaded: true, hasSkills: true });
+    // These stories share an origin with the internal Storybook's own manager, which reads the
+    // same key: put the developer's value back afterwards.
+    const dismissedBefore = localStorage.getItem(REVIEW_HINT_DISMISSED_KEY);
+    localStorage.removeItem(REVIEW_HINT_DISMISSED_KEY);
     const restoreConfigType = withConfigType('DEVELOPMENT')();
     const unsetStatuses = setChangedStories();
     return () => {
       unsetStatuses();
       restoreConfigType();
+      if (dismissedBefore === null) {
+        localStorage.removeItem(REVIEW_HINT_DISMISSED_KEY);
+      } else {
+        localStorage.setItem(REVIEW_HINT_DISMISSED_KEY, dismissedBefore);
+      }
     };
   },
 } satisfies Meta<typeof ReviewHint>;
@@ -210,15 +210,15 @@ export const Dismiss: Story = {
   play: async ({ canvas }) => {
     await userEvent.click(await canvas.findByRole('button', { name: 'Dismiss review hint' }));
     await waitFor(() => expect(canvas.queryByRole('region')).toBeNull());
-    await expect(reviewHintStore.getState().dismissedAt).toEqual(expect.any(Number));
+    await expect(localStorage.getItem(REVIEW_HINT_DISMISSED_KEY)).toBe('true');
     await expect(focusOnUIElement).toHaveBeenCalledWith('storybook-explorer-searchfield');
   },
 };
 
-/** Dismissed earlier, in this or another project: the hint stays hidden. */
+/** Dismissed earlier in this browser, on this origin: the hint stays hidden. */
 export const Dismissed: Story = {
   beforeEach: () => {
-    reviewHintStore.setState({ loaded: true, dismissedAt: Date.now() });
+    localStorage.setItem(REVIEW_HINT_DISMISSED_KEY, 'true');
   },
   play: async ({ canvas }) => {
     await expect(canvas.queryByRole('region')).toBeNull();
@@ -240,19 +240,17 @@ export const ReviewActive: Story = {
   },
   play: async ({ canvas }) => {
     await expect(canvas.queryByRole('region')).toBeNull();
-    await waitFor(() => expect(reviewHintStore.getState().dismissedAt).toEqual(expect.any(Number)));
+    await waitFor(() => expect(localStorage.getItem(REVIEW_HINT_DISMISSED_KEY)).toBe('true'));
   },
 };
 
-/** Hidden until the server has read the user settings, since only they say whether it was dismissed. */
-export const AppearsOnceSettingsLoad: Story = {
+/** Without Storybook's skills in the project, the prompt would do nothing, so there is no hint. */
+export const NoSkills: Story = {
   beforeEach: () => {
-    reviewHintStore.setState({});
+    checklistStore.setState({ ...checklistInitialState, loaded: true, hasSkills: false });
   },
   play: async ({ canvas }) => {
     await expect(canvas.queryByRole('region')).toBeNull();
-    reviewHintStore.setState({ loaded: true });
-    await expect(await canvas.findByRole('region')).toBeVisible();
   },
 };
 
@@ -262,7 +260,12 @@ export const AppearsOnceSettingsLoad: Story = {
  */
 export const AppearsOnceChecklistAiSetupIsDone: Story = {
   beforeEach: () => {
-    checklistStore.setState({ ...checklistInitialState, loaded: true, aiOptIn: true });
+    checklistStore.setState({
+      ...checklistInitialState,
+      loaded: true,
+      hasSkills: true,
+      aiOptIn: true,
+    });
   },
   play: async ({ canvas }) => {
     await expect(canvas.queryByRole('region')).toBeNull();
@@ -277,7 +280,12 @@ export const AppearsOnceChecklistAiSetupIsDone: Story = {
 /** With the onboarding checklist turned off, its "Set up with AI" step does not hold the hint back. */
 export const ChecklistTurnedOff: Story = {
   beforeEach: () => {
-    checklistStore.setState({ ...checklistInitialState, loaded: true, aiOptIn: true });
+    checklistStore.setState({
+      ...checklistInitialState,
+      loaded: true,
+      hasSkills: true,
+      aiOptIn: true,
+    });
     const features = global.FEATURES;
     global.FEATURES = { ...features, sidebarOnboardingChecklist: false };
     return () => {
@@ -304,62 +312,5 @@ export const NoChanges: Story = {
   },
   play: async ({ canvas }) => {
     await expect(canvas.queryByRole('region')).toBeNull();
-  },
-};
-
-/** The hint renders in the spot of the review widget, above the search and the changes filter. */
-export const WithShowChangesButton: Story = {
-  render: () => (
-    <>
-      <ReviewHint />
-      <div style={{ height: 32, border: '1px dashed currentColor', opacity: 0.3 }}>search</div>
-      <ShowChangesButton />
-    </>
-  ),
-  play: async ({ canvas }) => {
-    await expect(await canvas.findByRole('region')).toBeVisible();
-    await expect(await canvas.findByRole('switch')).toHaveTextContent(
-      'Show new and modified stories'
-    );
-  },
-};
-
-const InlineCopyButton = () => {
-  const changedStoryCount = useChangedStoryCount();
-  const { children, buttonProps } = useCopyButton<React.ReactNode>({
-    content: UI_REVIEW_PROMPT,
-    children: <WandIcon />,
-    childrenOnCopy: <CheckIcon />,
-    ariaLabel: 'Copy a prompt to ask your agent for a UI review',
-    ariaLabelOnCopy: 'Prompt copied. Paste it in your agent.',
-  });
-  if (changedStoryCount === 0) {
-    return null;
-  }
-  return (
-    <Button variant="ghost" padding="small" size="small" {...buttonProps}>
-      {children}
-    </Button>
-  );
-};
-
-/**
- * Alternative placement, not shipped, kept for the product decision: an icon button next to the
- * changes filter that copies the prompt, with its explanation only in the tooltip. It takes no
- * space, but users have to hover it to learn what it does, so it does a poor job of telling users
- * that they can ask for a review.
- */
-export const AlternativeInlineButton: Story = {
-  render: () => (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-      <div style={{ flex: 1 }}>
-        <ShowChangesButton />
-      </div>
-      <InlineCopyButton />
-    </div>
-  ),
-  play: async ({ canvas }) => {
-    await userEvent.click(await canvas.findByRole('button', { name: /Copy a prompt/ }));
-    await expect(mocked(navigator.clipboard.writeText)).toHaveBeenCalledWith(UI_REVIEW_PROMPT);
   },
 };

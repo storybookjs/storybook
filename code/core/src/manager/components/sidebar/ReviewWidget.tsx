@@ -16,11 +16,11 @@ const HEADING_ID = 'storybook-review-widget-heading';
 // Landmark wrapper so the review widget is reachable via F6 and announced as a
 // named region; the Card provides the visuals. A plain block (not
 // `display: contents`) keeps the region reliably exposed in the a11y tree.
-const Region = styled.section({
+export const Region = styled.section({
   width: '100%',
 });
 
-const HeaderContent = styled(ActionList.Text)({
+export const HeaderContent = styled(ActionList.Text)({
   display: 'flex',
   flexDirection: 'row',
   justifyContent: 'flex-start',
@@ -31,7 +31,7 @@ const HeaderContent = styled(ActionList.Text)({
   paddingRight: 24,
 });
 
-const HeaderTitle = styled.h2(({ theme }) => ({
+export const HeaderTitle = styled.h2(({ theme }) => ({
   margin: 0,
   color: theme.color.defaultText,
   fontWeight: theme.typography.weight.bold,
@@ -39,18 +39,18 @@ const HeaderTitle = styled.h2(({ theme }) => ({
   lineHeight: `${theme.typography.size.s3}px`,
 }));
 
-const AgenticIcon = styled(WandIcon)(({ theme }) => ({
+export const AgenticIcon = styled(WandIcon)(({ theme }) => ({
   color: theme.fgColor.agentic,
 }));
 
-const DismissButton = styled(ActionList.Button)({
+export const DismissButton = styled(ActionList.Button)({
   position: 'absolute',
   top: 4,
   right: 4,
   zIndex: 1,
 });
 
-const DismissIcon = styled(CloseAltIcon)({
+export const DismissIcon = styled(CloseAltIcon)({
   padding: 1,
 });
 

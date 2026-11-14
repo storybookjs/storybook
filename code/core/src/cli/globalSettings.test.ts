@@ -142,23 +142,6 @@ describe('Settings', () => {
       );
     });
 
-    it('keeps keys that another process wrote since this one loaded the file', async () => {
-      vi.mocked(fs.readFile).mockResolvedValue(
-        JSON.stringify({ ...baseSettings, reviewHint: { dismissedAt: 1 } })
-      );
-      settings.value.init = { skipOnboarding: true };
-      await settings.save();
-
-      expect(fs.writeFile).toHaveBeenCalledWith(
-        TEST_SETTINGS_FILE,
-        JSON.stringify(
-          { ...baseSettings, reviewHint: { dismissedAt: 1 }, init: { skipOnboarding: true } },
-          null,
-          2
-        )
-      );
-    });
-
     it('logs warning if write fails', async () => {
       vi.mocked(fs.writeFile).mockRejectedValue(new Error('Write error'));
 

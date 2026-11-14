@@ -7,5 +7,4 @@ export {
   experimental_useTestProviderStore,
   internal_checklistStore,
   internal_universalChecklistStore,
-  internal_universalReviewHintStore,
 } from 'storybook/manager-api';

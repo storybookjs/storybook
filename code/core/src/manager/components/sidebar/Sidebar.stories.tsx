@@ -21,10 +21,10 @@ import { defaultShortcuts } from '../../settings/defaultShortcuts.tsx';
 import {
   internal_fullStatusStore,
   internal_universalChecklistStore,
-  internal_universalReviewHintStore,
 } from '../../manager-stores.mock.ts';
 import { LayoutProvider } from '../layout/LayoutProvider.tsx';
 import { standardData as standardHeaderData } from './Heading.stories.tsx';
+import { REVIEW_HINT_DISMISSED_KEY } from './ReviewHint.tsx';
 import { DEFAULT_REF_ID, Sidebar } from './Sidebar.tsx';
 import { mockDataset } from './mockdata.ts';
 import type { RefType } from './types.ts';
@@ -218,29 +218,31 @@ export const SimpleInProduction: Story = {
   },
 };
 
-// A modified story, a dev server, and a review hint that has not been dismissed.
-const withChangedStory = () => {
-  const configType = global.CONFIG_TYPE;
-  global.CONFIG_TYPE = 'DEVELOPMENT';
-  internal_universalReviewHintStore.setState({ loaded: true });
-  statusStore.set([
-    {
-      storyId: 'dummy--dummyId',
-      typeId: CHANGE_DETECTION_STATUS_TYPE_ID,
-      value: 'status-value:modified',
-      title: 'Change Detection',
-      description: '',
-    },
-  ]);
-  return () => {
-    global.CONFIG_TYPE = configType;
-    statusStore.unset();
-  };
-};
-
 /** Changed stories and no review: the review hint shows above the search, below the checklist. */
 export const WithReviewHint: Story = {
-  beforeEach: withChangedStory,
+  beforeEach: () => {
+    const configType = global.CONFIG_TYPE;
+    global.CONFIG_TYPE = 'DEVELOPMENT';
+    internal_universalChecklistStore.setState((state) => ({ ...state, hasSkills: true }));
+    const dismissedBefore = localStorage.getItem(REVIEW_HINT_DISMISSED_KEY);
+    localStorage.removeItem(REVIEW_HINT_DISMISSED_KEY);
+    statusStore.set([
+      {
+        storyId: 'dummy--dummyId',
+        typeId: CHANGE_DETECTION_STATUS_TYPE_ID,
+        value: 'status-value:modified',
+        title: 'Change Detection',
+        description: '',
+      },
+    ]);
+    return () => {
+      global.CONFIG_TYPE = configType;
+      statusStore.unset();
+      if (dismissedBefore !== null) {
+        localStorage.setItem(REVIEW_HINT_DISMISSED_KEY, dismissedBefore);
+      }
+    };
+  },
   play: async ({ canvas }) => {
     await expect(
       await canvas.findByRole('region', { name: 'Ask your agent for a UI review' })
@@ -249,33 +251,6 @@ export const WithReviewHint: Story = {
       await canvas.findByRole('switch', { name: /Show modified stories/ })
     ).toBeVisible();
     await waitForChecklistWidget();
-  },
-};
-
-/**
- * A first run: the checklist shows its own "Set up with AI" step with a prompt to copy, so the
- * review hint waits until that step is done instead of showing a second prompt card.
- */
-export const WithChecklistAiSetupAndChanges: Story = {
-  beforeEach: () => {
-    const cleanup = withChangedStory();
-    internal_universalChecklistStore.setState({
-      loaded: true,
-      aiOptIn: true,
-      widget: {},
-      items: initialState.items,
-    });
-    return cleanup;
-  },
-  play: async ({ canvas }) => {
-    await waitForChecklistWidget();
-    await expect(await canvas.findByText('Set up with AI')).toBeVisible();
-    await expect(
-      await canvas.findByRole('switch', { name: /Show modified stories/ })
-    ).toBeVisible();
-    await expect(
-      canvas.queryByRole('region', { name: 'Ask your agent for a UI review' })
-    ).toBeNull();
   },
 };
 

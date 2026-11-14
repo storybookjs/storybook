@@ -22,7 +22,6 @@ export {
   checklistStore as internal_checklistStore,
   universalChecklistStore as internal_universalChecklistStore,
 } from './stores/checklist.ts';
-export { universalReviewHintStore as internal_universalReviewHintStore } from './stores/review-hint.ts';
 
 export { Tag } from '../shared/constants/tags.ts';
 

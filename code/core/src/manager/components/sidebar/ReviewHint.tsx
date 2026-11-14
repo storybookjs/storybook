@@ -1,16 +1,14 @@
-import React, { type ReactNode, useEffect, useMemo, useRef } from 'react';
+import React, { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 
 import { ActionList, Card } from 'storybook/internal/components';
 import { AI_PROMPT_NUDGE } from 'storybook/internal/core-events';
 import type { StatusesByStoryIdAndTypeId, StatusValue, StoryIndex } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
-import { CheckIcon, CloseAltIcon, CopyIcon, WandIcon } from '@storybook/icons';
+import { CheckIcon, CopyIcon } from '@storybook/icons';
 
-import { internal_universalReviewHintStore as reviewHintStore } from '#manager-stores';
 import {
   experimental_useStatusStore,
-  internal_useUniversalStore,
   useStorybookApi,
   useStorybookState,
 } from 'storybook/manager-api';
@@ -20,75 +18,42 @@ import { focusableUIElements } from '../../../manager-api/modules/layout.ts';
 import { useCopyButton } from '../../../shared/useCopyButton.ts';
 import { UI_REVIEW_PROMPT } from '../../../shared/utils/ai-prompts.ts';
 import { useLandmark } from '../../hooks/useLandmark.ts';
-import { useReviewContext } from '../review/review-context.ts';
-import { useActiveReviewStoryCount } from './ReviewWidget.tsx';
+// The review widget takes this spot once a review is active; the hint uses its parts.
+import {
+  AgenticIcon,
+  DismissButton,
+  DismissIcon,
+  HeaderContent,
+  HeaderTitle,
+  Region,
+  useActiveReviewStoryCount,
+} from './ReviewWidget.tsx';
 import { useChecklist } from './useChecklist.ts';
+
+export const REVIEW_HINT_DISMISSED_KEY = 'storybook/review-hint/dismissed';
 
 const HEADING_ID = 'storybook-review-hint-heading';
 
 const NEW = 'status-value:new' as StatusValue;
 const MOD = 'status-value:modified' as StatusValue;
 
-// Number of stories in the index that change detection marks as new or modified.
-export const useChangedStoryCount = () => {
+// Whether change detection marks a story of the index as new or modified.
+const useHasChangedStories = () => {
   const { internal_index: index } = useStorybookState();
   const allStatuses = experimental_useStatusStore() as StatusesByStoryIdAndTypeId;
 
   return useMemo(() => {
     const entries = (index as StoryIndex | undefined)?.entries ?? {};
-    let count = 0;
-    for (const [storyId, statusesByType] of Object.entries(allStatuses)) {
-      if (!entries[storyId]) {
-        continue;
-      }
-      if (Object.values(statusesByType).some(({ value }) => value === NEW || value === MOD)) {
-        count += 1;
-      }
-    }
-    return count;
+    return Object.entries(allStatuses).some(
+      ([storyId, statusesByType]) =>
+        entries[storyId] &&
+        Object.values(statusesByType).some(({ value }) => value === NEW || value === MOD)
+    );
   }, [index, allStatuses]);
 };
 
-// Same structure and styles as the review widget, which takes this spot once a review is active.
-const Region = styled.section({
-  width: '100%',
-});
-
-const HeaderContent = styled(ActionList.Text)({
-  display: 'flex',
-  flexDirection: 'row',
-  justifyContent: 'flex-start',
-  alignItems: 'center',
-  gap: 6,
-  // Room for the dismiss button in the top-right corner.
-  paddingRight: 24,
-});
-
-const HeaderTitle = styled.h2(({ theme }) => ({
-  margin: 0,
-  color: theme.color.defaultText,
-  fontWeight: theme.typography.weight.bold,
-  fontSize: theme.typography.size.s1,
-  lineHeight: `${theme.typography.size.s3}px`,
-}));
-
-const AgenticIcon = styled(WandIcon)(({ theme }) => ({
-  color: theme.fgColor.agentic,
-}));
-
 const CopyAction = styled(ActionList.Action)({
   justifyContent: 'flex-start',
-});
-
-const DismissButton = styled(ActionList.Button)({
-  position: 'absolute',
-  top: 4,
-  right: 4,
-  zIndex: 1,
-});
-
-const DismissIcon = styled(CloseAltIcon)({
-  padding: 1,
 });
 
 // Tells the user that they can ask their agent for a review of the changed stories, with a prompt
@@ -157,38 +122,49 @@ const ReviewHintCard = ({ onDismiss }: { onDismiss: () => void }) => {
   );
 };
 
-// True while the onboarding checklist in the sidebar shows its own "Set up with AI" step with a
-// prompt to copy. The hint waits until that step is done, so a first run after `storybook init`
-// does not show two prompt cards under each other.
-const useChecklistShowsAiSetup = () => {
-  const { loaded, nextItems } = useChecklist();
-  return (
-    global.FEATURES?.sidebarOnboardingChecklist !== false &&
-    (!loaded || nextItems.some((item) => item.id === 'aiSetup'))
-  );
+// Remembered per origin. `localStorage` can throw (privacy modes, disabled storage); the hint then
+// stays dismissed for this page only.
+const readDismissed = () => {
+  try {
+    return localStorage.getItem(REVIEW_HINT_DISMISSED_KEY) === 'true';
+  } catch {
+    return false;
+  }
 };
 
-// Shows the review hint in the spot of the review widget while there are changed stories, no
-// active review, and the user has not dismissed it. Only on a dev server: a static build cannot
-// receive a review. The dismissal lives in the user settings on disk, through the review hint
-// store, so it holds across projects and ports.
+const writeDismissed = () => {
+  try {
+    localStorage.setItem(REVIEW_HINT_DISMISSED_KEY, 'true');
+  } catch {
+    // Storage unavailable: keep the in-memory state only.
+  }
+};
+
+// Shows the review hint in the spot of the review widget while:
+// - the project has Storybook's skills, so the prompt works (`hasSkills`, set by the server);
+// - stories changed and no review is active;
+// - the onboarding checklist does not show its own "Set up with AI" prompt, so a first run after
+//   `storybook init` does not show two prompt cards under each other;
+// - the user has not dismissed it or had a review, and Storybook runs as a dev server.
 export const ReviewHint = () => {
   const api = useStorybookApi();
-  const { isReviewLoaded } = useReviewContext();
-  const changedStoryCount = useChangedStoryCount();
+  const { loaded, hasSkills, nextItems } = useChecklist();
+  const hasChangedStories = useHasChangedStories();
   const activeReviewStoryCount = useActiveReviewStoryCount();
-  const checklistShowsAiSetup = useChecklistShowsAiSetup();
-  const [{ dismissedAt, loaded }, setHintState] = internal_useUniversalStore(reviewHintStore);
-  const dismissed = dismissedAt !== undefined;
+  const [dismissed, setDismissed] = useState(readDismissed);
 
-  const dismiss = () => setHintState((state) => ({ ...state, dismissedAt: Date.now() }));
+  const dismiss = () => {
+    writeDismissed();
+    setDismissed(true);
+  };
 
   // A user who has had a review knows that they can ask for one.
   useEffect(() => {
-    if (loaded && activeReviewStoryCount > 0 && !dismissed) {
-      setHintState((state) => ({ ...state, dismissedAt: Date.now() }));
+    if (activeReviewStoryCount > 0) {
+      writeDismissed();
+      setDismissed(true);
     }
-  }, [loaded, activeReviewStoryCount, dismissed, setHintState]);
+  }, [activeReviewStoryCount]);
 
   const onDismiss = () => {
     dismiss();
@@ -196,14 +172,18 @@ export const ReviewHint = () => {
     api.focusOnUIElement(focusableUIElements.storySearchField);
   };
 
+  const checklistShowsAiSetup =
+    global.FEATURES?.sidebarOnboardingChecklist !== false &&
+    nextItems.some((item) => item.id === 'aiSetup');
+
   if (
     !loaded ||
+    !hasSkills ||
     dismissed ||
     checklistShowsAiSetup ||
-    !isReviewLoaded ||
     global.CONFIG_TYPE !== 'DEVELOPMENT' ||
     activeReviewStoryCount > 0 ||
-    changedStoryCount === 0 ||
+    !hasChangedStories ||
     !api.getIsNavShown()
   ) {
     return null;

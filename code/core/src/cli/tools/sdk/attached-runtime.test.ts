@@ -382,6 +382,55 @@ describe('bootstrapAttachedRuntime', () => {
     expect(inspect(error)).not.toContain('secret');
   });
 
+  it('calls the instance stale only when its process is gone', async () => {
+    const refused = () =>
+      vi.fn(async () => {
+        throw Object.assign(new Error('connect ECONNREFUSED 127.0.0.1:6006'), {
+          code: 'ECONNREFUSED',
+          syscall: 'connect',
+        });
+      });
+    const gone = makeRuntimeDeps([RECORD], {
+      createNodeChannel: refused(),
+      isProcessAlive: () => false,
+    });
+    await expect(bootstrapAttachedRuntime({ cwd: '/repo' }, gone.deps)).rejects.toThrow(
+      'is no longer running'
+    );
+
+    const alive = makeRuntimeDeps([RECORD], {
+      createNodeChannel: refused(),
+      isProcessAlive: () => true,
+    });
+    const failure = bootstrapAttachedRuntime({ cwd: '/repo' }, alive.deps);
+    await expect(failure).rejects.toThrow('is still running, but it did not accept the connection');
+    await expect(failure).rejects.not.toThrow('no longer running');
+  });
+
+  it('names the environment when a sandbox blocks the connection to a running instance', async () => {
+    // What the WebSocket rejects with inside a sandbox: the socket error travels as `cause`.
+    const socketError = Object.assign(
+      new Error('connect EPERM 127.0.0.1:6006 - Local (0.0.0.0:0)'),
+      { code: 'EPERM', syscall: 'connect' }
+    );
+    const isProcessAlive = vi.fn(() => true);
+    const { deps } = makeRuntimeDeps([RECORD], {
+      createNodeChannel: vi.fn(async () => {
+        throw new Error('Storybook dev server disconnected.', { cause: socketError });
+      }),
+      isProcessAlive,
+    });
+
+    const failure = bootstrapAttachedRuntime({ cwd: '/repo' }, deps);
+
+    await expect(failure).rejects.toMatchObject({ data: { reason: 'connection-failed' } });
+    await expect(failure).rejects.toThrow('does not allow connections to localhost');
+    await expect(failure).rejects.toThrow('connect EPERM 127.0.0.1:6006');
+    await expect(failure).rejects.toThrow('do not start another one');
+    await expect(failure).rejects.toThrow('Run this same command again with network access');
+    await expect(failure).rejects.not.toThrow('npm run storybook');
+  });
+
   it('rejects when the handshake never completes', async () => {
     vi.useFakeTimers();
     const close = vi.fn();

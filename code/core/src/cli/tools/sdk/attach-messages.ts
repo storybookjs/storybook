@@ -1,3 +1,8 @@
+import {
+  BLOCKED_NETWORK_CAUSE,
+  BLOCKED_NETWORK_REMEDY,
+  type BlockedNetwork,
+} from '../../../common/utils/blocked-network.ts';
 import type { StorybookInstanceRecord } from '../instances/types.ts';
 import type { ToolsStorybookInfo } from './types.ts';
 
@@ -35,8 +40,27 @@ export function formatOldServer(version: string): string {
   return `Restart Storybook (v${version}+) to enable attach. The running instance was started with an older Storybook that does not publish a channel token.`;
 }
 
-export function formatConnectionFailed(record: StorybookInstanceRecord): string {
-  return `Could not connect to the Storybook at ${record.url}. The instance registry may be stale — if that Storybook is no longer running, start it again (for example \`npm run storybook\`) and retry.`;
+/**
+ * Why attaching to a matching instance failed after its record was found. `blocked` is the
+ * environment refusing the connection (a sandboxed shell), `alive` whether the recorded process
+ * still runs: only a gone process makes the record stale.
+ */
+export function formatConnectionFailed(
+  record: StorybookInstanceRecord,
+  { blocked, alive }: { blocked?: BlockedNetwork; alive: boolean }
+): string {
+  const failed = `Could not connect to the Storybook at ${record.url}.`;
+  if (blocked) {
+    return [
+      `${failed} That Storybook is running (process ${record.pid}), so do not start another one: the connection was blocked (\`${blocked.detail}\`).`,
+      BLOCKED_NETWORK_CAUSE[blocked.operation],
+      BLOCKED_NETWORK_REMEDY,
+    ].join(' ');
+  }
+  if (!alive) {
+    return `${failed} That Storybook (process ${record.pid}) is no longer running. Start it again (for example \`npm run storybook\`) and retry.`;
+  }
+  return `${failed} Its process (${record.pid}) is still running, but it did not accept the connection; it may still be starting, or it may have stopped responding. Retry in a moment, and if it still fails, restart that Storybook (for example \`npm run storybook\`).`;
 }
 
 // Symmetric fact-only report: every path shown is a stored or compared fact, and no path appears
@@ -68,8 +92,18 @@ export function formatUnknownInstallation(): string {
   return `Could not verify that the running Storybook and this CLI are the same \`storybook\` installation. ${RESTART_GUIDANCE}`;
 }
 
+const ATTACH_FALLBACK_SUFFIX =
+  "\n\nFalling back to loading this project's Storybook configuration.";
+
 export function formatAttachFallback(remediation: string): string {
-  return `${remediation}\n\nFalling back to loading this project's Storybook configuration.`;
+  return `${remediation}${ATTACH_FALLBACK_SUFFIX}`;
+}
+
+/** The attach failure inside a fallback notice, for a command that cannot fall back. */
+export function attachFailureFromFallback(notice: string): string {
+  return notice.endsWith(ATTACH_FALLBACK_SUFFIX)
+    ? notice.slice(0, -ATTACH_FALLBACK_SUFFIX.length)
+    : notice;
 }
 
 /**

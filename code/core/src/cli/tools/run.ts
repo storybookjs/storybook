@@ -7,6 +7,7 @@ import { logger } from 'storybook/internal/node-logger';
 import type { ToolsetMethodReport } from '../../shared/open-service/toolset-definition.ts';
 import { parseToolsetMethodId, toCliMethodName } from '../../shared/open-service/toolset-names.ts';
 import type { StorybookInstanceRecord } from './instances/types.ts';
+import { attachFailureFromFallback } from './sdk/attach-messages.ts';
 import {
   attachGateReasonFromError,
   createTools,
@@ -247,7 +248,13 @@ export async function runToolsCommand(
       requestedMode: tools.requestedMode,
       attachMode: tools.mode,
       host: tools.host,
-      fallbackNotice: tools.fallbackNotice,
+      // A command that requires the dev server already says why attaching failed, and no fallback
+      // happened.
+      fallbackNotice:
+        dispatched.outcome.kind === 'intercept' &&
+        dispatched.outcome.reason === 'requires-dev-server'
+          ? undefined
+          : tools.fallbackNotice,
       fallbackReason: tools.fallbackReason,
       ...(tools.storybook.siblings?.length
         ? { multiInstanceNotice: formatMultiInstanceNotice(tools.storybook), multipleMatches: true }
@@ -342,6 +349,15 @@ async function dispatchTools(
   }
 
   if (tools.mode === 'local' && method.requiresDevServer) {
+    // Attach failed for a reason worth reporting (a sandbox that blocks localhost, for example):
+    // that reason is the answer, and this command cannot fall back to anything.
+    if (tools.fallbackNotice) {
+      return result({
+        exitCode: 1,
+        output: `\`${commandPath}\` requires a running Storybook dev server, and could not attach to the one for this project. ${attachFailureFromFallback(tools.fallbackNotice)}`,
+        outcome: { kind: 'intercept', reason: 'requires-dev-server' },
+      });
+    }
     const discovery = await (deps.discoverInstance ?? discoverRunningInstance)(invocation.target);
     return result({
       exitCode: 1,

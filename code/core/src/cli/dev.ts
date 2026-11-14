@@ -1,11 +1,18 @@
 import { cache } from 'storybook/internal/common';
 import { buildDevStandalone, withTelemetry } from 'storybook/internal/core-server';
 import { logger } from 'storybook/internal/node-logger';
+import { NoFreePortError } from 'storybook/internal/server-errors';
 import type { CLIOptions, PackageJson } from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';
 
 function printError(error: any) {
+  // The environment refused every port: the message says why and what to do. A stack trace and
+  // "fix the error above" would point at code that is not at fault.
+  if (error instanceof NoFreePortError) {
+    logger.error(`${error.name}: ${error.message}`);
+    return;
+  }
   if (error instanceof Error) {
     if ((error as any).error) {
       logger.error((error as any).error);

@@ -1,4 +1,7 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+
+import { beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import type { TestResult } from 'vitest/node';
 
 import { Tag, experimental_MockUniversalStore } from 'storybook/internal/core-server';
@@ -202,6 +205,42 @@ const options: TestManagerOptions = {
 };
 
 describe('TestManager', () => {
+  describe('the Vitest config it starts Vitest with', () => {
+    const plugin = `import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';`;
+    const startIn = async (files: Record<string, string>) => {
+      const root = realpathSync(mkdtempSync(path.join(tmpdir(), 'sb-test-manager-')));
+      onTestFinished(() => rmSync(root, { recursive: true, force: true }));
+      for (const [file, content] of Object.entries({ '.storybook/main.ts': '', ...files })) {
+        mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
+        writeFileSync(path.join(root, file), content);
+      }
+      await TestManager.start({
+        ...options,
+        storybookOptions: { configDir: path.join(root, '.storybook') } as Options,
+      });
+      return { root, args: createVitest.mock.calls[0][1] };
+    };
+
+    // SB-2533 (lucca-front): the Storybook project lives next to main.ts, the root config has none.
+    it('finds a config in the Storybook config dir', async () => {
+      const { root, args } = await startIn({
+        '.storybook/vitest.config.ts': plugin,
+        'vitest.config.ts': 'export default {};',
+      });
+
+      expect(args.root).toBe(path.join(root, '.storybook'));
+    });
+
+    it('keeps a config in the package that uses the plugin, as before', async () => {
+      const { root, args } = await startIn({
+        '.storybook/vitest.config.ts': plugin,
+        'vitest.config.ts': plugin,
+      });
+
+      expect(args.root).toBe(root);
+    });
+  });
+
   it('initializes Vitest without running tests', async () => {
     await TestManager.start(options);
     expect(vitest.standalone).toHaveBeenCalledOnce();

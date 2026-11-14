@@ -49,7 +49,10 @@ export const blocker = createBlocker<MajorVersionData>({
   async check(options) {
     const { packageManager } = options;
     try {
-      const currentStorybookVersion = packageManager.getAllDependencies().storybook;
+      // The installed version, as the upgrade itself uses: the range in package.json
+      // (e.g. `^8.6.15`) is not a version, so it would never be compared.
+      const currentStorybookVersion = (await packageManager.getModulePackageJSON('storybook'))
+        ?.version;
       if (!currentStorybookVersion) {
         return false;
       }

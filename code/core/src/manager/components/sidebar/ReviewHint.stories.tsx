@@ -142,20 +142,21 @@ const meta = {
     spyOn(navigator.clipboard, 'writeText').mockResolvedValue(undefined);
     // The project has Storybook's skills, and the checklist does not show "Set up with AI".
     checklistStore.setState({ ...checklistInitialState, loaded: true, hasSkills: true });
-    // These stories share an origin with the internal Storybook's own manager, which reads the
-    // same key: put the developer's value back afterwards.
-    const dismissedBefore = localStorage.getItem(REVIEW_HINT_DISMISSED_KEY);
-    localStorage.removeItem(REVIEW_HINT_DISMISSED_KEY);
+    // A `localStorage` of its own per story, so stories that run at the same time, and the
+    // developer's own Storybook on this origin, do not see each other's dismissal.
+    const storage = new Map<string, string>();
+    const { getItem, setItem } = Storage.prototype;
+    spyOn(Storage.prototype, 'getItem').mockImplementation(function (this: Storage, key) {
+      return this === localStorage ? (storage.get(key) ?? null) : getItem.call(this, key);
+    });
+    spyOn(Storage.prototype, 'setItem').mockImplementation(function (this: Storage, key, value) {
+      return this === localStorage ? void storage.set(key, value) : setItem.call(this, key, value);
+    });
     const restoreConfigType = withConfigType('DEVELOPMENT')();
     const unsetStatuses = setChangedStories();
     return () => {
       unsetStatuses();
       restoreConfigType();
-      if (dismissedBefore === null) {
-        localStorage.removeItem(REVIEW_HINT_DISMISSED_KEY);
-      } else {
-        localStorage.setItem(REVIEW_HINT_DISMISSED_KEY, dismissedBefore);
-      }
     };
   },
 } satisfies Meta<typeof ReviewHint>;

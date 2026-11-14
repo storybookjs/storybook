@@ -12,6 +12,7 @@ import {
   useStorybookApi,
   useStorybookState,
 } from 'storybook/manager-api';
+import store from 'store2';
 import { styled } from 'storybook/theming/emotion';
 
 import { focusableUIElements } from '../../../manager-api/modules/layout.ts';
@@ -122,24 +123,6 @@ const ReviewHintCard = ({ onDismiss }: { onDismiss: () => void }) => {
   );
 };
 
-// Remembered per origin. `localStorage` can throw (privacy modes, disabled storage); the hint then
-// stays dismissed for this page only.
-const readDismissed = () => {
-  try {
-    return localStorage.getItem(REVIEW_HINT_DISMISSED_KEY) === 'true';
-  } catch {
-    return false;
-  }
-};
-
-const writeDismissed = () => {
-  try {
-    localStorage.setItem(REVIEW_HINT_DISMISSED_KEY, 'true');
-  } catch {
-    // Storage unavailable: keep the in-memory state only.
-  }
-};
-
 // Shows the review hint in the spot of the review widget while:
 // - the project has Storybook's skills, so the prompt works (`hasSkills`, set by the server);
 // - stories changed and no review is active;
@@ -151,17 +134,18 @@ export const ReviewHint = () => {
   const { loaded, hasSkills, nextItems } = useChecklist();
   const hasChangedStories = useHasChangedStories();
   const activeReviewStoryCount = useActiveReviewStoryCount();
-  const [dismissed, setDismissed] = useState(readDismissed);
+  // In `localStorage`, so per origin.
+  const [dismissed, setDismissed] = useState(() => store.get(REVIEW_HINT_DISMISSED_KEY) === true);
 
   const dismiss = () => {
-    writeDismissed();
+    store.set(REVIEW_HINT_DISMISSED_KEY, true);
     setDismissed(true);
   };
 
   // A user who has had a review knows that they can ask for one.
   useEffect(() => {
     if (activeReviewStoryCount > 0) {
-      writeDismissed();
+      store.set(REVIEW_HINT_DISMISSED_KEY, true);
       setDismissed(true);
     }
   }, [activeReviewStoryCount]);

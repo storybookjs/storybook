@@ -14,7 +14,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { IndexHash } from 'storybook/manager-api';
 // The status store that the sidebar's change-detection UI reads (not the mock store below).
 import { ManagerContext, internal_fullStatusStore as statusStore } from 'storybook/manager-api';
-import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
+import { expect, fn, spyOn, userEvent, waitFor, within } from 'storybook/test';
 
 import { initialState } from '../../../shared/checklist-store/checklistData.state.ts';
 import { defaultShortcuts } from '../../settings/defaultShortcuts.tsx';
@@ -224,8 +224,11 @@ export const WithReviewHint: Story = {
     const configType = global.CONFIG_TYPE;
     global.CONFIG_TYPE = 'DEVELOPMENT';
     internal_universalChecklistStore.setState((state) => ({ ...state, hasSkills: true }));
-    const dismissedBefore = localStorage.getItem(REVIEW_HINT_DISMISSED_KEY);
-    localStorage.removeItem(REVIEW_HINT_DISMISSED_KEY);
+    // Not dismissed, whatever this browser's `localStorage` holds.
+    const { getItem } = Storage.prototype;
+    spyOn(Storage.prototype, 'getItem').mockImplementation(function (this: Storage, key) {
+      return key === REVIEW_HINT_DISMISSED_KEY ? null : getItem.call(this, key);
+    });
     statusStore.set([
       {
         storyId: 'dummy--dummyId',
@@ -238,9 +241,6 @@ export const WithReviewHint: Story = {
     return () => {
       global.CONFIG_TYPE = configType;
       statusStore.unset();
-      if (dismissedBefore !== null) {
-        localStorage.setItem(REVIEW_HINT_DISMISSED_KEY, dismissedBefore);
-      }
     };
   },
   play: async ({ canvas }) => {

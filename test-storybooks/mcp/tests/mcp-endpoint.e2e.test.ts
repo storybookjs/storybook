@@ -560,8 +560,8 @@ describe('MCP Endpoint E2E Tests', () => {
 				    "description": "Run story tests.
 				First run npx storybook skills test-stories --mcp once and follow it: it has the rules for running the tests and fixing what fails.
 				Run them after editing anything that changes how the UI looks — components, stories, styles, CSS, themes, colors, or design tokens — shell-level substitutes like typecheck, lint, or package.json test scripts do not replace this.
-				Provide stories for focused runs (faster while iterating),
-				or omit stories to run all tests for full-project verification.
+				Use changed for focused runs on what you changed (faster while iterating), or files for specific story files,
+				and leave all of them out to run every story for full-project verification.
 				Use this continuously to monitor test results as you work on your UI components and stories.
 				Results will include passing/failing status, and accessibility violation reports.
 				For visual/design accessibility violations (for example color contrast), ask the user before changing styles.",
@@ -574,8 +574,19 @@ describe('MCP Endpoint E2E Tests', () => {
 				          "description": "Whether to run accessibility tests. Defaults to true. Disable if you only need component test results.",
 				          "type": "boolean",
 				        },
+				        "changed": {
+				          "description": "Test the changed stories, exactly as the stories changed tool lists them: new and modified stories, and the stories that depend on changed files. Combined with files or stories, only the stories that match both run.",
+				          "type": "boolean",
+				        },
+				        "files": {
+				          "description": "Story files to test, as Vitest file filters: each entry selects the story files whose path, relative to the Storybook project directory, contains it (case-insensitive), or that an absolute path or directory points to. Only story files match; to test the stories that depend on a changed component, use \`changed\`.",
+				          "items": {
+				            "type": "string",
+				          },
+				          "type": "array",
+				        },
 				        "stories": {
-				          "description": "Stories to test for focused feedback. Omit this field to run tests for all available stories.
+				          "description": "Stories to test for focused feedback. Omit this field, \`files\` and \`changed\` to run tests for all available stories.
 				Prefer running tests for specific stories while developing to get faster feedback,
 				and omit it once before you finish, to verify every story.
 				Prefer { storyId } when you don't already have story file context, since this avoids filesystem discovery.
@@ -966,6 +977,44 @@ describe('MCP Endpoint E2E Tests', () => {
 			expect(text).toContain('example-button--secondary');
 			expect(text).toContain('## Accessibility Violations');
 			expect(text).toContain('example-button--primary - color-contrast');
+		});
+
+		it('should run the story files that the files filters match', async () => {
+			const response = await mcpRequest('tools/call', {
+				name: 'test-run',
+				arguments: { files: ['components/Button.stories'] },
+			});
+
+			const text = response.result.content[0].text;
+			expect(response.result.isError).toBeFalsy();
+			expect(text).toContain('1 story file matches `components/Button.stories`');
+			expect(text).toContain('example-button--primary');
+			expect(text).not.toContain('page--logged-out');
+		});
+
+		it('should fail when no story file matches the files filters', async () => {
+			const response = await mcpRequest('tools/call', {
+				name: 'test-run',
+				arguments: { files: ['stories/components/Button.tsx'] },
+			});
+
+			expect(response.result.isError).toBe(true);
+			expect(response.result.content[0].text).toContain(
+				'No story files found for `stories/components/Button.tsx`.',
+			);
+		});
+
+		it('should select the stories affected by the changed files', async () => {
+			const response = await mcpRequest('tools/call', {
+				name: 'test-run',
+				arguments: { changed: true },
+			});
+
+			// What changed depends on the checkout, so this asserts the shape, not the selection.
+			expect(response.result.isError).toBeFalsy();
+			expect(response.result.content[0].text).toMatch(
+				/changed stor|No stories changed/,
+			);
 		});
 
 		it('should return error for non-existent story', async () => {

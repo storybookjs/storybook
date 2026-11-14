@@ -121,6 +121,14 @@ export type ToolsetMethod<
    * start the dev server first. Adapters that always have a dev server (MCP) ignore the trait.
    */
   requiresDevServer?: true;
+  /**
+   * The input key, an array of file paths or path patterns, that the `storybook tools` CLI fills
+   * from bare arguments, as test runners take files: `npx storybook tools test run Button`. The CLI
+   * resolves each one that exists against the directory the command runs in before the call, so the
+   * handler receives absolute paths for files; patterns pass as typed. Other transports ignore the
+   * trait and pass the key as is.
+   */
+  fileArguments?: Extract<keyof StandardSchemaV1.InferInput<TSchema>, string>;
   handler: (
     input: StandardSchemaV1.InferOutput<TSchema>,
     context: ToolsetCtx

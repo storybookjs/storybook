@@ -25,6 +25,7 @@ export function toCatalogEntry(
       title: method.title,
       description: resolveToolsetDescription(method.description, ctx).trim(),
       requiresDevServer: method.requiresDevServer === true,
+      ...(method.fileArguments ? { fileArguments: method.fileArguments } : {}),
       input: toToolsetJsonSchema(method.input),
       ...(method.output ? { output: toToolsetJsonSchema(method.output) } : {}),
     })),

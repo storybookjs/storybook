@@ -5,6 +5,9 @@
  * everything behind the commander wiring, without spawning processes.
  */
 
+import { dirname, relative, resolve, sep } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import { logger } from 'storybook/internal/node-logger';
 import type { StoryIndex } from 'storybook/internal/types';
 import { beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
@@ -773,6 +776,17 @@ describe('outcome mapping', () => {
               return { ok: true, data: {}, markdown: 'result' };
             },
           },
+          files: {
+            title: 'files',
+            input: v.strictObject({ files: v.optional(v.array(v.string())) }),
+            description: 'file echo',
+            fileArguments: 'files',
+            handler: async (input: { files?: string[] }) => ({
+              ok: true,
+              data: input,
+              markdown: JSON.stringify(input),
+            }),
+          },
           input: {
             title: 'input',
             input: v.strictObject({ a: v.optional(v.number()), b: v.optional(v.number()) }),
@@ -876,6 +890,75 @@ describe('outcome mapping', () => {
     );
 
     expect(JSON.parse(result.output)).toEqual({ a: 1, b: 2 });
+  });
+
+  describe('file arguments', () => {
+    // A file that exists, named relative to the directory the tests run in.
+    const EXISTING = relative(process.cwd(), fileURLToPath(import.meta.url));
+    const EXISTING_DIR = relative(process.cwd(), dirname(fileURLToPath(import.meta.url)));
+
+    it('resolves bare arguments that exist against the current directory, and passes patterns as typed', async () => {
+      const { deps } = makeDeps();
+
+      const result = await run(['echo', 'files', EXISTING, 'Button', '--json'], deps);
+
+      expect(result.exitCode).toBe(0);
+      expect(JSON.parse(result.output)).toEqual({ files: [resolve(EXISTING), 'Button'] });
+    });
+
+    it('keeps the trailing slash of a directory, so it matches only inside it', async () => {
+      const { deps } = makeDeps();
+
+      const result = await run(['echo', 'files', `${EXISTING_DIR}/`, '--json'], deps);
+
+      expect(JSON.parse(result.output)).toEqual({ files: [`${resolve(EXISTING_DIR)}${sep}`] });
+    });
+
+    it('appends bare arguments to the files given with the flag', async () => {
+      const { deps } = makeDeps();
+
+      const result = await run(
+        ['echo', 'files', '--files', '["/abs/A.tsx"]', '--json', '--', EXISTING],
+        deps
+      );
+
+      expect(JSON.parse(result.output)).toEqual({ files: ['/abs/A.tsx', resolve(EXISTING)] });
+    });
+
+    it('resolves a single --files path the way it resolves bare arguments', async () => {
+      const { deps } = makeDeps();
+
+      const result = await run(['echo', 'files', '--files', EXISTING, '--json'], deps);
+
+      expect(JSON.parse(result.output)).toEqual({ files: [resolve(EXISTING)] });
+    });
+
+    it('rejects bare arguments for a tool that takes no files, without calling it', async () => {
+      const { deps } = makeDeps();
+
+      const result = await run(['echo', 'input', 'button'], deps);
+
+      expect(result).toMatchObject({
+        exitCode: 1,
+        outcome: { kind: 'intercept', reason: 'invalid-arguments' },
+      });
+      expect(result.output).toContain(
+        'Unexpected argument `button`. `npx storybook tools echo input` takes no file arguments'
+      );
+    });
+
+    it('shows the file arguments in the tool help', async () => {
+      const { deps } = makeDeps();
+
+      const result = await run(['echo', 'files', '--help'], deps);
+
+      expect(result.output).toContain(
+        'Usage: npx storybook tools echo files [files...] [--key value ...]'
+      );
+      expect(result.output).toContain(
+        'Bare arguments are `--files`, relative to the current directory: `npx storybook tools echo files <file> [<file> ...]`.'
+      );
+    });
   });
 });
 

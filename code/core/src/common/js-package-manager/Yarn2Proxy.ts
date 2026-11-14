@@ -207,7 +207,8 @@ export class Yarn2Proxy extends JsPackageManager {
   protected runInstall() {
     return executeCommand({
       command: 'yarn',
-      args: ['install', ...this.getInstallArgs()],
+      // The CLI installs after editing package.json; an immutable install (default on CI) fails.
+      args: ['install', '--no-immutable', ...this.getInstallArgs()],
       cwd: this.cwd,
       stdio: prompt.getPreferredStdio(),
     });

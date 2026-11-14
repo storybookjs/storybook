@@ -10,7 +10,7 @@ import {
   ExecaCommandFailedError,
   PackageInstallFailedError,
 } from 'storybook/internal/server-errors';
-import { isTelemetryModuleEnabled } from 'storybook/internal/telemetry';
+import { detectAgent, isTelemetryModuleEnabled } from 'storybook/internal/telemetry';
 import { SupportedBuilder, SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
 
 import { vol } from 'memfs';
@@ -20,6 +20,7 @@ import {
   hasStorybookSkills,
   installSkills,
   refreshAgentInstructions,
+  skipsSkillsInCI,
   supportsSkills,
   supportsAiSetup,
 } from './installSkills.ts';
@@ -47,9 +48,24 @@ beforeEach(async () => {
   vol.reset();
   vi.mocked(getProjectRoot).mockReturnValue(PROJECT_ROOT);
   vi.mocked(isCI).mockReturnValue(false);
+  vi.mocked(detectAgent).mockReturnValue(undefined);
   vi.mocked(addStorybookAgentInstructions).mockResolvedValue([
     { file: 'AGENTS.md', change: 'added' },
   ]);
+});
+
+describe('skipsSkillsInCI', () => {
+  it.each([
+    [false, undefined, false],
+    [true, undefined, true],
+    [true, { name: 'claude' }, false],
+    [false, { name: 'claude' }, false],
+  ])('with CI %s and agent %o, returns %s', (ci, agent, expected) => {
+    vi.mocked(isCI).mockReturnValue(ci);
+    vi.mocked(detectAgent).mockReturnValue(agent);
+
+    expect(skipsSkillsInCI()).toBe(expected);
+  });
 });
 
 describe('supportsSkills', () => {
@@ -182,17 +198,23 @@ describe('installSkills', () => {
     });
   });
 
-  it('prints the literal command and how to remove the skills', async () => {
+  it('says what it installed, why, and how to opt out', async () => {
     await installSkills({ packageManager, source: 'ai-feature' });
 
-    expect(logger.log).toHaveBeenCalledWith(
+    expect(vi.mocked(logger.log).mock.calls.map(([message]) => String(message))).toEqual([
       expect.stringContaining(
         'npx skills@latest add storybookjs/skills#v10.6.0 --yes --agent claude-code universal --copy'
-      )
-    );
-    expect(logger.log).toHaveBeenCalledWith(
-      'Remove the Storybook skills with: npx skills@latest remove'
-    );
+      ),
+      'Installed the Storybook skills for AI agents. They are part of Storybook 11: they teach coding agents to reuse your components, write stories for what they change, and run the story tests.',
+      'Added a Storybook section to AGENTS.md that tells agents when to use them. Storybook keeps that section current on upgrade.',
+      'To opt out: npx skills@latest remove',
+    ]);
+  });
+
+  it('says it updated the skills on a refresh', async () => {
+    await installSkills({ packageManager, source: 'refresh' });
+
+    expect(logger.log).toHaveBeenCalledWith('Updated the Storybook skills for AI agents.');
   });
 
   it('adds the section that tells agents when to use the skills', async () => {
@@ -324,6 +346,26 @@ describe('installSkills', () => {
     expect(result).toEqual({ result: 'skipped', source: 'ci' });
   });
 
+  it('installs when a coding agent set CI', async () => {
+    vi.mocked(isCI).mockReturnValue(true);
+    vi.mocked(detectAgent).mockReturnValue({ name: 'claude' });
+
+    const result = await installSkills({ packageManager, source: 'automigration' });
+
+    expect(packageManager.runPackageCommand).toHaveBeenCalled();
+    expect(addStorybookAgentInstructions).toHaveBeenCalledWith(PROJECT_ROOT, 'install');
+    expect(result).toEqual({ result: 'installed', source: 'automigration' });
+  });
+
+  it('installs under CI when the caller allows it', async () => {
+    vi.mocked(isCI).mockReturnValue(true);
+
+    const result = await installSkills({ packageManager, source: 'automigration', allowCI: true });
+
+    expect(packageManager.runPackageCommand).toHaveBeenCalled();
+    expect(result).toEqual({ result: 'installed', source: 'automigration' });
+  });
+
   it.each([
     ['npx', ExecaCommandFailedError],
     ['pnpm', PackageInstallFailedError],
@@ -364,5 +406,14 @@ describe('refreshAgentInstructions', () => {
     await refreshAgentInstructions();
 
     expect(addStorybookAgentInstructions).not.toHaveBeenCalled();
+  });
+
+  it('updates the section when a coding agent set CI', async () => {
+    vi.mocked(isCI).mockReturnValue(true);
+    vi.mocked(detectAgent).mockReturnValue({ name: 'claude' });
+
+    await refreshAgentInstructions();
+
+    expect(addStorybookAgentInstructions).toHaveBeenCalledWith(PROJECT_ROOT, 'update');
   });
 });

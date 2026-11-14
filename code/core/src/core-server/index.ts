@@ -70,17 +70,7 @@ export {
   type FoundStory,
   type NotFoundStory,
 } from '../shared/open-service/toolsets/stories/find-story-ids.ts';
-export {
-  filterStoryFiles,
-  findChangedStories,
-  type ChangedStories,
-  type StorySelection,
-} from '../shared/open-service/toolsets/stories/select-stories.ts';
-export { findChangedFiles } from './change-detection/changed-files.ts';
-export {
-  moduleGraphAccessFromCtx,
-  type ModuleGraphAccess,
-} from '../shared/open-service/toolsets/stories/resolve-component-stories.ts';
+export { filterStoryFiles } from '../shared/open-service/toolsets/stories/select-stories.ts';
 export {
   storyInputArraySchema,
   type StoryInput,

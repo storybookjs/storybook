@@ -33,7 +33,6 @@ describe('storybook tools arguments after the tool name', () => {
     { tokens: ['--a11y=false'], input: { a11y: false } },
     { tokens: ['--verbose'], input: { verbose: true } },
     { tokens: ['--changed'], input: { changed: true } },
-    { tokens: ['--changed', 'main'], input: { changed: 'main' } },
     { tokens: ['Button', '--changed'], input: { changed: true, files: ['Button'] } },
     {
       tokens: ['--input', '{"files":["A"]}', 'B'],

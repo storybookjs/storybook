@@ -1,7 +1,3 @@
-import { mkdtempSync, realpathSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { STORY_INDEX_INVALIDATED } from 'storybook/internal/core-events';
@@ -123,96 +119,6 @@ describe('module-graph open service', () => {
         reason: 'builder does not support change detection',
         error: { message: 'adapter missing' },
       });
-    });
-  });
-
-  describe('loadedByPreview command', () => {
-    it('reports, positionally, the files the preview entries reach by import', async () => {
-      const { buildSpy } = installDependencyGraphMocks(buildReverseIndex([]));
-      buildSpy.mockImplementation(async (roots: Iterable<string>) => ({
-        reverseIndex: buildReverseIndex([]),
-        graph: [...roots].includes('/repo/.storybook/preview.tsx')
-          ? new Map([
-              ['/repo/.storybook/preview.tsx', new Set(['/repo/src/theme.ts'])],
-              ['/repo/src/theme.ts', new Set(['/repo/src/tokens.ts'])],
-            ])
-          : new Map(),
-      }));
-      const { adapter } = createMockAdapter();
-      const runtime = registerModuleGraphService({
-        channel: { on: vi.fn(() => () => undefined), emit: vi.fn() } as never,
-        getIndex: vi.fn().mockResolvedValue(createStoryIndex([])),
-        workingDir: '/repo',
-        getAdapter: async () => adapter,
-        getPreviewEntries: async () => ['/repo/.storybook/preview.tsx'],
-      });
-
-      await expect(
-        runtime.commands.loadedByPreview({
-          files: [
-            '/repo/src/tokens.ts',
-            '/repo/src/Button.tsx',
-            '/repo/.storybook/preview.tsx',
-            '/repo/src/../src/theme.ts',
-          ],
-        })
-      ).resolves.toEqual([true, false, true, true]);
-    });
-
-    it('counts every file in a directory entry, such as the config directory', async () => {
-      const configDir = mkdtempSync(join(tmpdir(), 'sb-config-'));
-      const realConfigDir = realpathSync.native(configDir);
-      installDependencyGraphMocks(buildReverseIndex([]));
-      const { adapter } = createMockAdapter();
-      const withEntries = registerModuleGraphService({
-        channel: { on: vi.fn(() => () => undefined), emit: vi.fn() } as never,
-        getIndex: vi.fn().mockResolvedValue(createStoryIndex([])),
-        workingDir: '/repo',
-        getAdapter: async () => adapter,
-        getPreviewEntries: async () => [configDir],
-      });
-
-      await expect(
-        withEntries.commands.loadedByPreview({
-          files: [
-            `${realConfigDir}/main.ts`,
-            `${realConfigDir}/vitest.setup.ts`,
-            '/repo/src/A.tsx',
-          ],
-        })
-      ).resolves.toEqual([true, true, false]);
-    });
-
-    it('follows the imports of the files in a directory entry', async () => {
-      const configDir = realpathSync.native(mkdtempSync(join(tmpdir(), 'sb-config-')));
-      writeFileSync(join(configDir, 'vitest.setup.ts'), '');
-      const { buildSpy } = installDependencyGraphMocks(buildReverseIndex([]));
-      buildSpy.mockImplementation(async (roots: Iterable<string>) => ({
-        reverseIndex: buildReverseIndex([]),
-        graph: [...roots].includes(`${configDir}/vitest.setup.ts`)
-          ? new Map([[`${configDir}/vitest.setup.ts`, new Set(['/repo/src/setup-helpers.ts'])]])
-          : new Map(),
-      }));
-      const { adapter } = createMockAdapter();
-      const runtime = registerModuleGraphService({
-        channel: { on: vi.fn(() => () => undefined), emit: vi.fn() } as never,
-        getIndex: vi.fn().mockResolvedValue(createStoryIndex([])),
-        workingDir: '/repo',
-        getAdapter: async () => adapter,
-        getPreviewEntries: async () => [configDir],
-      });
-
-      await expect(
-        runtime.commands.loadedByPreview({ files: ['/repo/src/setup-helpers.ts'] })
-      ).resolves.toEqual([true]);
-    });
-
-    it('reports nothing as loaded when no preview entries are known', async () => {
-      const { runtime } = registerEngineBackedModuleGraph(buildReverseIndex([]));
-
-      await expect(
-        runtime.commands.loadedByPreview({ files: ['/repo/src/theme.ts'] })
-      ).resolves.toEqual([false]);
     });
   });
 

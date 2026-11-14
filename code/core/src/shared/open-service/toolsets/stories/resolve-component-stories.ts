@@ -4,11 +4,7 @@ import type { StoryIndex } from 'storybook/internal/types';
 
 import { basename, dirname, extname, join, normalize, resolve } from 'pathe';
 
-import type {
-  ModuleGraphService,
-  ModuleGraphServiceState,
-} from '../../services/module-graph/definition.ts';
-import type { ToolsetCtx } from '../../toolset-definition.ts';
+import type { ModuleGraphServiceState } from '../../services/module-graph/definition.ts';
 
 /** Lifecycle status reported by the `core/module-graph` service. */
 export type ModuleGraphStatus = ModuleGraphServiceState['status'];
@@ -32,32 +28,8 @@ export type ModuleGraphAccess = {
     storiesForFiles: {
       loaded: (input: { files: string[] }) => Promise<Array<ModuleGraphStoryHit[] | undefined>>;
     };
-    /** Positional: whether the preview loads `files[i]`. Optional for callers that never ask. */
-    loadedByPreview?: { loaded: (input: { files: string[] }) => Promise<boolean[]> };
   };
 };
-
-/** The `core/module-graph` service of the handler's realm, narrowed to what the resolver needs. */
-export function moduleGraphAccessFromCtx(
-  ctx: ToolsetCtx,
-  moduleGraph: ModuleGraphService = ctx.getService<ModuleGraphService>('core/module-graph', {
-    internal: true,
-  })
-): ModuleGraphAccess {
-  return {
-    queries: {
-      status: {
-        loaded: () => moduleGraph.queries.status.loaded(undefined) as Promise<ModuleGraphStatus>,
-      },
-      storiesForFiles: {
-        loaded: (files) => moduleGraph.commands.storiesForFiles(files),
-      },
-      loadedByPreview: {
-        loaded: (files) => moduleGraph.commands.loadedByPreview(files),
-      },
-    },
-  };
-}
 
 const SOURCE_EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'] as const;
 const INDEX_BASENAMES = SOURCE_EXTENSIONS.map((ext) => `index${ext}`);

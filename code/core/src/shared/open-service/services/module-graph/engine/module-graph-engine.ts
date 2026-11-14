@@ -143,26 +143,6 @@ export class ModuleGraphEngine {
     return this.reverseIndex?.lookup(dep) ?? new Map<string, number>();
   }
 
-  /**
-   * Every file reachable by imports from `roots`, the roots included, walked with the same parse and
-   * resolve cache as the story graph. A separate walk: the story reverse index, and the change
-   * detection fed from it, never see these roots. Empty before the engine has started.
-   */
-  async filesReachableFrom(roots: string[]): Promise<Set<string>> {
-    if (!this.dependencyGraphBuilder) {
-      return new Set();
-    }
-    const { graph } = await this.dependencyGraphBuilder.build(roots);
-    const reachable = new Set(roots.map((root) => normalize(root)));
-    for (const [file, deps] of graph) {
-      reachable.add(file);
-      for (const dep of deps) {
-        reachable.add(dep);
-      }
-    }
-    return reachable;
-  }
-
   /** True once the initial build has produced a reverse index. */
   hasGraph(): boolean {
     return this.reverseIndex !== undefined;

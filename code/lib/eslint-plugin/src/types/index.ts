@@ -2,6 +2,13 @@ import type { TSESLint } from '@typescript-eslint/utils';
 
 import type { CategoryId } from '../utils/constants.ts';
 
+export interface CompatibleFlatConfig {
+  name?: string;
+  files?: string[];
+  rules?: object;
+  plugins?: Record<string, { meta: { name: string } }>;
+}
+
 export type RuleModule = TSESLint.RuleModule<'', []> & {
   meta: { hasSuggestions?: boolean };
 };

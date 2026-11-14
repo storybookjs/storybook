@@ -301,6 +301,32 @@ describe('Yarn 1 Proxy', () => {
     });
   });
 
+  describe('findInstallations', () => {
+    it('lists devDependencies even when NODE_ENV is production', async () => {
+      mockedExecuteCommand.mockResolvedValue({
+        stdout: JSON.stringify({ type: 'tree', data: { type: 'list', trees: [] } }),
+      } as any);
+
+      await yarn1Proxy.findInstallations(['@storybook/*', 'storybook']);
+
+      expect(mockedExecuteCommand).toHaveBeenCalledWith(
+        expect.objectContaining({
+          command: 'yarn',
+          args: [
+            'list',
+            '--pattern',
+            '"@storybook/*" "storybook"',
+            '--json',
+            '--production=false',
+            '--recursive',
+            '@storybook/*',
+            'storybook',
+          ],
+        })
+      );
+    });
+  });
+
   describe('mapDependencies', () => {
     it('should display duplicated dependencies based on yarn output', async () => {
       // yarn list --pattern "@storybook/*" "@storybook/react" --recursive --json

@@ -1,10 +1,7 @@
 import {
-  SKILLS_AUTOMIGRATE_COMMAND,
   hasStorybookSkills,
   installSkills,
   refreshAgentInstructions,
-  skippedSkillsInCIMessage,
-  skipsSkillsInCI,
 } from 'storybook/internal/cli';
 import { PackageManagerName } from 'storybook/internal/common';
 import {
@@ -43,7 +40,7 @@ import {
   type AutomigrationResult,
   runAutomigrations,
 } from './automigrate/multi-project.ts';
-import { offersSkills } from './automigrate/fixes/skills.ts';
+import { addSkillsCommand } from './automigrate/fixes/skills.ts';
 import { FixStatus } from './automigrate/types.ts';
 import { displayDoctorResults, runMultiProjectDoctor } from './doctor/index.ts';
 import { configureDeferredAddons } from './postinstallAddon.ts';
@@ -614,34 +611,15 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
     // Display upgrade results summary
     logUpgradeResults(automigrationResults, detectedAutomigrations, doctorResults);
 
-    // The skills only reach a project through the `skills` automigration. When a project was offered
-    // them and did not get them (skipped in CI, unticked, declined or failed), say so last, once.
-    if (
-      !options.dryRun &&
-      !options.skipAutomigrations &&
-      !hadSkills &&
-      !(await hasStorybookSkills())
-    ) {
-      for (const project of storybookProjects) {
-        const offered = await offersSkills({
-          packageManager: project.packageManager,
-          mainConfig: project.mainConfig,
-          beforeVersion: project.beforeVersion,
-          storybookVersion: project.currentCLIVersion,
-        }).catch(() => null);
-        if (offered) {
-          // `automigrate skills` alone does not apply until the project uses angular-vite.
-          const command = offered.afterAngularViteMigration
-            ? `npx storybook automigrate angular-to-angular-vite --yes, and then ${SKILLS_AUTOMIGRATE_COMMAND}`
-            : SKILLS_AUTOMIGRATE_COMMAND;
-          logger.warn(
-            skipsSkillsInCI()
-              ? skippedSkillsInCIMessage(command)
-              : `Did not install the Storybook skills for AI agents. Add them with: ${command}`
-          );
-          break;
-        }
-      }
+    // When the skills were offered and are not there (unticked, declined or failed), say so last.
+    const offeredSkills = detectedAutomigrations.find(({ fix }) => fix.id === 'skills');
+    if (offeredSkills && !options.dryRun && !(await hasStorybookSkills())) {
+      const command = addSkillsCommand({
+        afterAngularViteMigration: offeredSkills.reports.some(
+          ({ result }) => result?.afterAngularViteMigration
+        ),
+      });
+      logger.warn(`Did not install the Storybook skills for AI agents. Add them with: ${command}`);
     }
 
     // TELEMETRY

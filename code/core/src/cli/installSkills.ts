@@ -68,13 +68,6 @@ export function skipsSkillsInCI(): boolean {
   return !!isCI() && !detectAgent();
 }
 
-/** The command that installs the skills, for messages that tell the user how to add them later. */
-export const SKILLS_AUTOMIGRATE_COMMAND = 'npx storybook automigrate skills --yes';
-
-/** The message for a run that skipped the skills because CI is set. */
-export const skippedSkillsInCIMessage = (command = SKILLS_AUTOMIGRATE_COMMAND) =>
-  `Skipped the Storybook skills for AI agents because CI is set. Add them with: ${command}`;
-
 // Matches the repository in any form the lock records (`owner/repo`, a URL, or an SSH remote), but
 // not a fork with a longer name such as `storybookjs/skills-fork`.
 const isSkillsRepo = (source: string) =>
@@ -120,19 +113,14 @@ export async function installSkills({
   /** Install in CI too, because the caller already decided, for example on the user's request. */
   allowCI?: boolean;
 }): Promise<SkillsInstallResult> {
-  const skillsRef = `${SKILLS_REPO}#v${versions.storybook}`;
   if (!allowCI && skipsSkillsInCI()) {
-    logger.log(
-      source === 'refresh'
-        ? `Did not update the Storybook skills because CI is set. Update them with: ${packageManager.getRemoteRunCommand(['skills@latest', 'add', skillsRef])}`
-        : skippedSkillsInCIMessage()
-    );
     return { result: 'skipped', source: 'ci' };
   }
 
   const removedSkills = (await getStorybookSkillNames()).filter((name) =>
     REMOVED_SKILLS.includes(name)
   );
+  const skillsRef = `${SKILLS_REPO}#v${versions.storybook}`;
   const args = [
     'skills@latest',
     'add',
@@ -171,15 +159,19 @@ export async function installSkills({
   if (removedSkills.length > 0) {
     await removeSkills(packageManager, removedSkills, stdio);
   }
+  // Says why the skills are there: agents told only how to remove them did so, as unrequested.
+  logger.log(
+    source === 'refresh'
+      ? 'Updated the Storybook skills for AI agents.'
+      : 'Installed the Storybook skills for AI agents. They are part of Storybook 11: they teach coding agents to reuse your components, write stories for what they change, and run the story tests.'
+  );
   // The `stories` skill had no section yet. `ui-workflow` came with one, so a project without it
   // removed it.
   await addAgentInstructions(
     source === 'refresh' && !removedSkills.includes('stories') ? 'update' : 'install'
   );
 
-  logger.log(
-    `Remove the Storybook skills with: ${packageManager.getRemoteRunCommand(['skills@latest', 'remove'])}`
-  );
+  logger.log(`To opt out: ${packageManager.getRemoteRunCommand(['skills@latest', 'remove'])}`);
   return { result: 'installed', source };
 }
 
@@ -216,7 +208,7 @@ async function addAgentInstructions(mode: AgentInstructionsMode): Promise<void> 
     const updated = changes.filter(({ change }) => change === 'updated').map(({ file }) => file);
     if (added.length > 0) {
       logger.log(
-        `Added a Storybook section to ${listFiles(added)} that tells agents when to use the skills. Storybook keeps it current on upgrade: remove its markers to keep your own edits, or remove the section to opt out of the workflow.`
+        `Added a Storybook section to ${listFiles(added)} that tells agents when to use them. Storybook keeps that section current on upgrade.`
       );
     }
     if (updated.length > 0) {

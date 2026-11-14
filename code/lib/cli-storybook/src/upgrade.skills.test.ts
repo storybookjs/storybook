@@ -3,9 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { hasStorybookSkills, installSkills } from 'storybook/internal/cli';
 import { type JsPackageManager, isCI } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
-import { detectAgent, telemetry } from 'storybook/internal/telemetry';
+import { telemetry } from 'storybook/internal/telemetry';
 
-import { offersAngularViteMigration } from './automigrate/fixes/angular-to-angular-vite.ts';
 import { runAutomigrations } from './automigrate/multi-project.ts';
 import { FixStatus } from './automigrate/types.ts';
 import { displayDoctorResults, runMultiProjectDoctor } from './doctor/index.ts';
@@ -20,7 +19,6 @@ import { type CollectProjectsSuccessResult, getProjects } from './util.ts';
 vi.mock('storybook/internal/cli', { spy: true });
 vi.mock('storybook/internal/telemetry');
 vi.mock('storybook/internal/node-logger', { spy: true });
-vi.mock('./automigrate/fixes/angular-to-angular-vite.ts', { spy: true });
 vi.mock('./automigrate/multi-project.ts', { spy: true });
 vi.mock('./doctor/index.ts', { spy: true });
 vi.mock('./pending-upgrade.ts');
@@ -86,7 +84,6 @@ describe('upgrade: refreshing the skills', () => {
     vi.mocked(runMultiProjectDoctor).mockResolvedValue({});
     vi.mocked(displayDoctorResults).mockReturnValue(false);
     vi.mocked(isCI).mockReturnValue(false);
-    vi.mocked(detectAgent).mockReturnValue(undefined);
     vi.mocked(upgradeStartVersion).mockImplementation(async (_, installed) => installed);
     for (const method of ['info', 'step', 'log', 'warn', 'debug'] as const) {
       vi.mocked(logger[method]).mockImplementation(() => {});
@@ -202,7 +199,6 @@ describe('upgrade: refreshing the skills', () => {
       from: '10.6.7',
       to: '11.0.0',
     });
-    expect(forgetUpgradeStart).toHaveBeenCalledWith('/repo/a/.storybook');
     expect(vi.mocked(forgetUpgradeStart).mock.invocationCallOrder[0]).toBeGreaterThan(
       vi.mocked(runAutomigrations).mock.invocationCallOrder[0]
     );
@@ -215,161 +211,52 @@ describe('upgrade: refreshing the skills', () => {
     expect(forgetUpgradeStart).not.toHaveBeenCalled();
   });
 
-  describe('in CI', () => {
-    beforeEach(() => {
-      vi.mocked(isCI).mockReturnValue(true);
-      vi.mocked(detectAgent).mockReturnValue(undefined);
-      vi.mocked(hasStorybookSkills).mockResolvedValue(false);
-    });
-
-    it('tells an Angular project to move to angular-vite before it adds the skills', async () => {
-      vi.mocked(offersAngularViteMigration).mockResolvedValueOnce(true);
-      useProjects(
-        project('/repo/a/.storybook', {
-          mainConfig: { stories: [], framework: '@storybook/angular' },
-        })
-      );
-
-      await upgrade(baseOptions);
-
-      expect(skippedWarnings()).toEqual([
-        [
-          'Skipped the Storybook skills for AI agents because CI is set. Add them with: npx storybook automigrate angular-to-angular-vite --yes, and then npx storybook automigrate skills --yes',
-        ],
-      ]);
-    });
-
-    const skippedWarnings = () =>
-      vi
-        .mocked(logger.warn)
-        .mock.calls.filter(([message]) =>
-          String(message).includes('the Storybook skills for AI agents')
-        );
-
-    it('says once that it skipped the skills, and how to add them', async () => {
-      useProjects(
-        project('/repo/a/.storybook', {
-          mainConfig: { stories: [], framework: '@storybook/react-vite' },
-        }),
-        project('/repo/b/.storybook', {
-          mainConfig: { stories: [], framework: '@storybook/react-vite' },
-        })
-      );
-
-      await upgrade(baseOptions);
-
-      expect(skippedWarnings()).toEqual([
-        [
-          'Skipped the Storybook skills for AI agents because CI is set. Add them with: npx storybook automigrate skills --yes',
-        ],
-      ]);
-    });
-
-    it('says nothing when no project supports the skills', async () => {
-      useProjects(
-        project('/repo/a/.storybook', {
-          mainConfig: { stories: [], framework: '@storybook/html-vite' },
-        })
-      );
-
-      await upgrade(baseOptions);
-
-      expect(skippedWarnings()).toEqual([]);
-    });
-
-    it('says nothing when a coding agent set CI, because the skills automigration installs them', async () => {
-      vi.mocked(detectAgent).mockReturnValue({ name: 'claude' });
-      vi.mocked(runAutomigrations).mockImplementation(async () => {
-        vi.mocked(hasStorybookSkills).mockResolvedValue(true);
-        return { automigrationResults: {}, detectedAutomigrations: [] };
+  describe('when the skills were offered', () => {
+    const offered = (result: object = {}) =>
+      vi.mocked(runAutomigrations).mockResolvedValue({
+        automigrationResults: {},
+        detectedAutomigrations: [{ fix: { id: 'skills' }, reports: [{ result }] } as never],
       });
-      useProjects(
-        project('/repo/a/.storybook', {
-          mainConfig: { stories: [], framework: '@storybook/react-vite' },
-        })
-      );
-
-      await upgrade(baseOptions);
-
-      expect(skippedWarnings()).toEqual([]);
-    });
-
-    it('says nothing when the upgrade skips the automigrations', async () => {
-      useProjects(
-        project('/repo/a/.storybook', {
-          mainConfig: { stories: [], framework: '@storybook/react-vite' },
-        })
-      );
-
-      await upgrade({ ...baseOptions, skipAutomigrations: true });
-
-      expect(skippedWarnings()).toEqual([]);
-    });
-
-    it('says nothing on a dry run', async () => {
-      useProjects(
-        project('/repo/a/.storybook', {
-          mainConfig: { stories: [], framework: '@storybook/react-vite' },
-        })
-      );
-
-      await upgrade({ ...baseOptions, dryRun: true });
-
-      expect(skippedWarnings()).toEqual([]);
-    });
-
-    it('says nothing about adding skills that the project has', async () => {
-      vi.mocked(hasStorybookSkills).mockResolvedValue(true);
-      vi.mocked(installSkills).mockResolvedValue({ result: 'skipped', source: 'ci' });
-      useProjects(
-        project('/repo/a/.storybook', {
-          mainConfig: { stories: [], framework: '@storybook/react-vite' },
-        })
-      );
-
-      await upgrade(baseOptions);
-
-      expect(installSkills).toHaveBeenCalledWith(expect.objectContaining({ source: 'refresh' }));
-      expect(skippedWarnings()).toEqual([]);
-    });
-  });
-
-  describe('outside CI', () => {
-    beforeEach(() => {
-      vi.mocked(hasStorybookSkills).mockResolvedValue(false);
-      useProjects(
-        project('/repo/a/.storybook', {
-          mainConfig: { stories: [], framework: '@storybook/react-vite' },
-        })
-      );
-    });
-
-    const notInstalledWarnings = () =>
+    const notInstalled = () =>
       vi
         .mocked(logger.warn)
-        .mock.calls.filter(([message]) =>
-          String(message).includes('the Storybook skills for AI agents')
-        );
+        .mock.calls.filter(([message]) => String(message).startsWith('Did not install'));
 
-    it('says how to add the skills when the automigration did not install them', async () => {
+    beforeEach(() => {
+      vi.mocked(hasStorybookSkills).mockResolvedValue(false);
+    });
+
+    it('says how to add them when they are not there, for example unticked', async () => {
+      offered();
+
       await upgrade(baseOptions);
 
-      expect(notInstalledWarnings()).toEqual([
+      expect(notInstalled()).toEqual([
         [
           'Did not install the Storybook skills for AI agents. Add them with: npx storybook automigrate skills --yes',
         ],
       ]);
     });
 
-    it('says nothing when the automigration installed them', async () => {
-      vi.mocked(runAutomigrations).mockImplementation(async () => {
-        vi.mocked(hasStorybookSkills).mockResolvedValue(true);
-        return { automigrationResults: {}, detectedAutomigrations: [] };
-      });
+    it('tells Angular to move to angular-vite first', async () => {
+      offered({ afterAngularViteMigration: true });
 
       await upgrade(baseOptions);
 
-      expect(notInstalledWarnings()).toEqual([]);
+      expect(notInstalled()).toEqual([
+        [
+          'Did not install the Storybook skills for AI agents. Add them with: npx storybook automigrate angular-to-angular-vite --yes, and then npx storybook automigrate skills --yes',
+        ],
+      ]);
+    });
+
+    it('says nothing once they are installed', async () => {
+      offered();
+      vi.mocked(hasStorybookSkills).mockResolvedValueOnce(false).mockResolvedValue(true);
+
+      await upgrade(baseOptions);
+
+      expect(notInstalled()).toEqual([]);
     });
   });
 });

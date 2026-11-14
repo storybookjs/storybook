@@ -12,8 +12,9 @@ import { global } from '@storybook/global';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import type { IndexHash } from 'storybook/manager-api';
-import { ManagerContext } from 'storybook/manager-api';
-import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
+// The status store that the sidebar's change-detection UI reads (not the mock store below).
+import { ManagerContext, internal_fullStatusStore as statusStore } from 'storybook/manager-api';
+import { expect, fn, spyOn, userEvent, waitFor, within } from 'storybook/test';
 
 import { initialState } from '../../../shared/checklist-store/checklistData.state.ts';
 import { defaultShortcuts } from '../../settings/defaultShortcuts.tsx';
@@ -23,6 +24,7 @@ import {
 } from '../../manager-stores.mock.ts';
 import { LayoutProvider } from '../layout/LayoutProvider.tsx';
 import { standardData as standardHeaderData } from './Heading.stories.tsx';
+import { REVIEW_HINT_DISMISSED_KEY } from './ReviewHint.tsx';
 import { DEFAULT_REF_ID, Sidebar } from './Sidebar.tsx';
 import { mockDataset } from './mockdata.ts';
 import type { RefType } from './types.ts';
@@ -213,6 +215,42 @@ export const SimpleInProduction: Story = {
     return () => {
       global.CONFIG_TYPE = configType;
     };
+  },
+};
+
+/** Changed stories and no review: the review hint shows above the search, below the checklist. */
+export const WithReviewHint: Story = {
+  beforeEach: () => {
+    const configType = global.CONFIG_TYPE;
+    global.CONFIG_TYPE = 'DEVELOPMENT';
+    internal_universalChecklistStore.setState((state) => ({ ...state, hasSkills: true }));
+    // Not dismissed, whatever this browser's `localStorage` holds.
+    const { getItem } = Storage.prototype;
+    spyOn(Storage.prototype, 'getItem').mockImplementation(function (this: Storage, key) {
+      return key === REVIEW_HINT_DISMISSED_KEY ? null : getItem.call(this, key);
+    });
+    statusStore.set([
+      {
+        storyId: 'dummy--dummyId',
+        typeId: CHANGE_DETECTION_STATUS_TYPE_ID,
+        value: 'status-value:modified',
+        title: 'Change Detection',
+        description: '',
+      },
+    ]);
+    return () => {
+      global.CONFIG_TYPE = configType;
+      statusStore.unset();
+    };
+  },
+  play: async ({ canvas }) => {
+    await expect(
+      await canvas.findByRole('region', { name: 'Ask your agent for a UI review' })
+    ).toBeVisible();
+    await expect(
+      await canvas.findByRole('switch', { name: /Show modified stories/ })
+    ).toBeVisible();
+    await waitForChecklistWidget();
   },
 };
 

@@ -9,8 +9,6 @@ import {
   getEvalContext,
 } from '#test-utils';
 
-const STORIES_PATH = 'src/components/OrderHistory.stories.tsx';
-
 // The skills of the workflow in AGENTS.md that this task cannot do without. The tests are a
 // command of the workflow, not a skill, and a review only comes when the user asks for one.
 const WORKFLOW_SKILLS = ['write-stories'];
@@ -47,12 +45,15 @@ describe('writing stories for a fetching OrderHistory in a project without MSW',
     expect(component, 'Expected OrderHistory to keep fetching /api/orders').toMatch(
       /fetch\(\s*['"`]\/api\/orders/
     );
-    if (existsSync(STORIES_PATH)) {
+    // Every story of a component that fetches needs a network mock, so without MSW there is none.
+    for (const file of readdirSync('src/components').filter((name) => name.includes('.stories.'))) {
+      const stories = readFileSync(`src/components/${file}`, 'utf8');
       expect(
-        readFileSync(STORIES_PATH, 'utf8'),
-        'Expected no module mock or stubbed fetch'
-      ).not.toMatch(
-        /\bsb\.mock\(|\bvi\.mock\(|\bmocked\(|\bspyOn\(|\b(globalThis|window)\.fetch\s*=/
+        stories,
+        `Expected ${file} not to render OrderHistory without a network mock`
+      ).not.toMatch(/from ['"]\.\/OrderHistory['"]/);
+      expect(stories, `Expected no module mock or stubbed fetch in ${file}`).not.toMatch(
+        /\bsb\.mock\(|\bvi\.mock\(|\bmocked\(|\bspyOn\(|\b(globalThis|global|window)\.fetch\s*=/
       );
     }
   });

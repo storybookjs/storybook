@@ -54,10 +54,8 @@ describe('buildWriteStoriesSkill', () => {
   it('uses MSW only when the project has it set up, and never installs it', () => {
     const text = buildWriteStoriesSkill({ ...reactTs, previewFile: 'config/preview.tsx' });
 
-    expect(text).toContain(
-      'When the project has MSW set up for Storybook (`msw-storybook-addon` in its `package.json` and in `config/preview.tsx`)'
-    );
-    expect(text).toContain('never with a module mock or a replaced `fetch`');
+    expect(text).toContain('loaded by `config/preview.tsx` directly or through a file it imports');
+    expect(text).toContain('never fakes one with a module mock or a replaced `fetch`');
     expect(text).toContain(
       'When the project has no MSW setup, do not add one or any other dependency'
     );
@@ -81,7 +79,7 @@ describe('buildWriteStoriesSkill', () => {
       - Import \`Meta\` and \`StoryObj\` from \`@storybook/react-vite\` (in a new story file also when other stories import them from another package; a file you only edit keeps its imports), and \`fn\`, \`expect\`, \`mocked\` and \`sb\` from \`storybook/test\`.
       - Leave \`title\` out of a new story file, so Storybook derives it from the file path.
       - \`play: async ({ canvas, userEvent }) => { ... }\`: query \`canvas\` directly, by role or label. Never wrap it in \`within()\`. \`userEvent.click(element)\` takes no options; to check a disabled element, assert \`toBeDisabled()\` instead of clicking it.
-      - A story never calls a real service. When the project has MSW set up for Storybook (\`msw-storybook-addon\` in its \`package.json\` and in \`.storybook/preview.ts\`), mock network requests with it, never with a module mock or a replaced \`fetch\`: give the story \`beforeEach({ msw }) { msw.use(http.get('/api/users', () => HttpResponse.json([...]))) }\`, and leave the code that calls \`fetch\` as it is. Read the version of \`msw-storybook-addon\` in the project's \`package.json\`: only before version 3 do stories have no \`msw\` in \`beforeEach\` and take \`parameters: { msw: { handlers: [...] } }\` instead. From version 3 on, never write \`parameters.msw\`. When the project has no MSW setup, do not add one or any other dependency: write the stories that need no network, and end your answer by telling the user which stories, such as one for the page, would need a network mock, and that MSW would give them. Do not stop to ask.
+      - A story never calls a real service, and never fakes one with a module mock or a replaced \`fetch\`: leave the code that calls \`fetch\` as it is. Every story of a component that fetches needs a network mock. When the project has MSW set up for Storybook (\`msw-storybook-addon\` installed, in a monorepo also at the root, and loaded by \`.storybook/preview.ts\` directly or through a file it imports), mock the requests with it: give the story \`beforeEach({ msw }) { msw.use(http.get('/api/users', () => HttpResponse.json([...]))) }\`. Read the version of \`msw-storybook-addon\` in the project's \`package.json\`: only before version 3 do stories have no \`msw\` in \`beforeEach\` and take \`parameters: { msw: { handlers: [...] } }\` instead. From version 3 on, never write \`parameters.msw\`. When the project has no MSW setup, do not add one or any other dependency: write the stories that need no network, and in your answer tell the user which stories, such as one for the page, would need a network mock, and that MSW would give them. Do not stop to ask.
       - Mock a module only for a dependency that is not a network call: register it in \`.storybook/preview.ts\` with \`sb.mock(import('../src/api.ts'), { spy: true })\` (path relative to that file, with its extension), then set the result per story in \`beforeEach\` with \`mocked(getUser).mockResolvedValue(...)\`."
     `);
   });

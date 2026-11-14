@@ -299,7 +299,7 @@ describe('test API', () => {
           ...ctx,
           transport,
         });
-        expect(description).toContain('never a package.json test script or vitest directly');
+        expect(description).toContain('package.json test scripts do not replace this');
         expect(description).not.toContain('storybook skills');
       }
     });

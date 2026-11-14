@@ -28,6 +28,6 @@ Every component you create or change gets stories: one per distinct state it can
 - ${format} \`fn\`, \`expect\`, \`mocked\` and \`sb\` from \`storybook/test\`.
 - Leave \`title\` out of a new story file, so Storybook derives it from the file path.
 - \`play: async ({ canvas, userEvent }) => { ... }\`: query \`canvas\` directly, by role or label. Never wrap it in \`within()\`. ${USER_EVENT_RULE}
-- ${networkMockRule({ previewFile })}
+- ${networkMockRule({ csfFactories, previewFile })}
 - Mock a module only for a dependency that is not a network call: register it in \`${previewFile}\` with \`sb.mock(import('../src/api.${typescript ? 'ts' : 'js'}'), { spy: true })\` (path relative to that file, with its extension), then set the result per story in \`beforeEach\` with \`mocked(getUser).mockResolvedValue(...)\`.`;
 }

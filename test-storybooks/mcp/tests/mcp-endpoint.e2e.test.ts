@@ -557,7 +557,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				    "title": "Create Storybook review",
 				  },
 				  {
-				    "description": "Run story tests. It is the only way to run them: never a package.json test script or vitest directly.
+				    "description": "Run story tests.
 				Run them after editing anything that changes how the UI looks — components, stories, styles, CSS, themes, colors, or design tokens — shell-level substitutes like typecheck, lint, or package.json test scripts do not replace this.
 				Use changed for focused runs on what you changed (faster while iterating), or files for specific story files,
 				and leave all of them out to run every story for full-project verification.

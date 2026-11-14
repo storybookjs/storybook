@@ -155,17 +155,25 @@ describe('upgrade: refreshing the skills', () => {
     vi.mocked(runAutomigrations).mockResolvedValue({
       automigrationResults: {
         '/repo/a/.storybook': {
-          automigrationStatuses: { 'argtypes-default-value': FixStatus.SUCCEEDED },
+          automigrationStatuses: {
+            'argtypes-default-value': FixStatus.SUCCEEDED,
+            'upgrade-storybook-related-dependencies': FixStatus.SUCCEEDED,
+          },
           automigrationErrors: {},
           fileFailures: [],
         },
       },
-      detectedAutomigrations: [],
+      detectedAutomigrations: [
+        { fix: { id: 'argtypes-default-value', link: 'https://example.com/argtypes' } },
+        { fix: { id: 'upgrade-storybook-related-dependencies' } },
+      ] as Awaited<ReturnType<typeof runAutomigrations>>['detectedAutomigrations'],
     });
 
     await expect(upgrade(baseOptions)).resolves.toBeUndefined();
     expect(loggedText()).not.toContain('unfinished');
     expect(loggedText()).toContain('upgraded successfully');
+    expect(loggedText()).toContain('argtypes-default-value');
+    expect(loggedText()).not.toContain('undefined');
   });
 
   it('refreshes installed skills once for the whole upgrade, and reports the result', async () => {

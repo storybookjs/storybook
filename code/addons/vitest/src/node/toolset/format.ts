@@ -382,7 +382,7 @@ function formatNextSteps(
   if (notFound) {
     steps.push('Fix or leave out the arguments listed above, then run again.');
   }
-  if (testsFailed) {
+  if (testsFailed && result.depsReoptimized !== 'unresolved') {
     steps.push(
       'Fix what fails and run again, changing only what each failure needs. Do not finish with failing tests.'
     );
@@ -399,6 +399,13 @@ function formatNextSteps(
   }
   return steps;
 }
+
+const DEPS_REOPTIMIZED = {
+  repeated:
+    'Vite pre-bundled a new dependency during the run, which breaks the tests that are running, so Storybook ran them again. These are the results of the second run.',
+  unresolved:
+    'Vite pre-bundled a new dependency during the run, also when Storybook ran the tests again, so these failures may not be caused by the stories. Run the same command again before you change any code.',
+};
 
 function formatResultSection(
   result: TestRunResult,
@@ -448,6 +455,7 @@ function formatResultSection(
     ...formatChangedConfigFiles(selection?.changed),
     ...notFound,
     verdict,
+    ...(result.depsReoptimized ? [DEPS_REOPTIMIZED[result.depsReoptimized]] : []),
     formatA11yResult(result, { a11y, a11yEnabled }),
     ...formatNextSteps(result, {
       ranNothing: ranNothingSelected(result),

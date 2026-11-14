@@ -37,7 +37,8 @@ export function Description({
 }: DescriptionProps) {
   const { setModalOpen } = React.useContext(GlobalErrorContext);
 
-  const { componentTestCount, totalTestCount, unhandledErrors, finishedAt } = storeState.currentRun;
+  const { componentTestCount, totalTestCount, unhandledErrors, finishedAt, depsReoptimized } =
+    storeState.currentRun;
   const finishedTestCount = componentTestCount.success + componentTestCount.error;
 
   let description: string | React.ReactNode = 'Not run';
@@ -55,7 +56,7 @@ export function Description({
       'Crashed'
     );
   } else if (!entryId && unhandledErrors.length > 0) {
-    const unhandledErrorDescription = `View ${unhandledErrors.length} unhandled error${unhandledErrors?.length > 1 ? 's' : ''}`;
+    const unhandledErrorDescription = `View ${unhandledErrors.length} unhandled error${unhandledErrors?.length > 1 ? 's' : ''}${depsReoptimized ? ' (ran twice)' : ''}`;
     description = setModalOpen ? (
       <LinkComponent onClick={() => setModalOpen(true)}>{unhandledErrorDescription}</LinkComponent>
     ) : (
@@ -66,13 +67,21 @@ export function Description({
   } else if (finishedAt) {
     description = (
       <>
-        Ran {totalTestCount} {totalTestCount === 1 ? 'test' : 'tests'}{' '}
-        <RelativeTime timestamp={finishedAt} />
+        Ran {totalTestCount} {totalTestCount === 1 ? 'test' : 'tests'}
+        {depsReoptimized ? ' twice' : ''} <RelativeTime timestamp={finishedAt} />
       </>
     );
   } else if (storeState.watching) {
     description = 'Watching for file changes';
   }
 
-  return <Wrapper {...props}>{description}</Wrapper>;
+  const title =
+    depsReoptimized &&
+    `Vite pre-bundled a new dependency during the run, which breaks the running tests, so they ran again.${depsReoptimized === 'unresolved' ? ' It happened again, so failures may not be caused by the stories: run the tests again.' : ''}`;
+
+  return (
+    <Wrapper title={title || undefined} {...props}>
+      {description}
+    </Wrapper>
+  );
 }

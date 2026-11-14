@@ -29,7 +29,7 @@ describe('noStorybookProjectMessage', () => {
         '',
         'Storybook looked for a Vite or Vitest config (vitest.config.*, vite.config.*, vitest.*.config.*, vite.*.config.*) that uses the plugin for this Storybook in `.`, `.storybook`, and found none; `vitest.config.ts` does not use it for this Storybook. Vitest loaded `vitest.config.ts`.',
         '',
-        "To run story tests, add `storybookTest({ configDir: '.storybook' })` to the plugins of a Vitest project in one of those configs, or run `npx storybook add @storybook/addon-vitest --yes` to set it up. A config that reaches the plugin only through another file it imports is not recognised: put the config that uses the plugin in one of those places.",
+        "To run story tests, add `storybookTest({ configDir: path.join(import.meta.dirname, '.storybook') })` to the plugins of a Vitest project in a config in `.` (or the same plugin, with a `configDir` that leads to this folder, in one of the other configs), or run `npx storybook add @storybook/addon-vitest --yes` to set it up. A config that reaches the plugin only through another file it imports is not recognised: put the config that uses the plugin in one of those places.",
       ].join('\n')
     );
   });

@@ -1,7 +1,7 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { dirname, join } from 'pathe';
 
@@ -15,9 +15,12 @@ let root: string;
 
 beforeEach(() => {
   root = mkdtempSync(join(tmpdir(), 'sb-vitest-config-'));
+  // Storybook runs from the package root, so a plugin without `configDir` runs `<root>/.storybook`.
+  vi.spyOn(process, 'cwd').mockReturnValue(root);
 });
 
 afterEach(() => {
+  vi.restoreAllMocks();
   rmSync(root, { recursive: true, force: true });
 });
 
@@ -144,7 +147,7 @@ export default { optimizeDeps: { include: ['@storybook/addon-vitest'] } };`,
     expect(find('.storybook').configFile).toBeUndefined();
   });
 
-  it('passes a config Vitest does not load by name, and reports the one it does load', () => {
+  it("keeps Vitest's own choice of default config, and passes a .tsx config explicitly", () => {
     write({
       '.storybook/main.ts': '',
       'vitest.config.ts': WITHOUT_PLUGIN,
@@ -212,6 +215,48 @@ export default { plugins: [storybookTest({ configDir: './storybook-ui' })] };`,
     write({ 'storybook-ui/main.ts': '', 'vitest.config.ts': WITH_PLUGIN });
 
     expect(find('storybook-ui').loose).toBe(true);
+  });
+
+  // Review: a glob in a string must not open a block comment that swallows `configDir`.
+  it('reads configDir past globs and URLs in strings', () => {
+    write({
+      '.storybook/main.ts': '',
+      '.storybook-ui/main.ts': '',
+      'vitest.config.ts': `import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+export default {
+  test: {
+    include: ['src/*.test.ts'],
+    exclude: ['**/node_modules/**'],
+    projects: [{ plugins: [storybookTest({ configDir: '.storybook-ui', storybookUrl: 'http://localhost:6006' })] }],
+  },
+};`,
+    });
+
+    expect(find('.storybook').loose).toBe(true);
+    expect(find('.storybook-ui').loose).toBeUndefined();
+  });
+
+  it('takes a plugin without configDir only loosely when Storybook runs from another folder', () => {
+    write({ 'packages/ui/.storybook/main.ts': '', 'packages/ui/vite.config.ts': WITH_PLUGIN });
+
+    expect(find('packages/ui/.storybook')).toMatchObject({
+      configFile: join(root, 'packages/ui/vite.config.ts'),
+      loose: true,
+    });
+  });
+
+  it('runs a dedicated config through the default config that composes it', () => {
+    write({
+      '.storybook/main.ts': '',
+      'vitest.config.ts': `export default { test: { projects: ['./vitest.storybook.config.ts'] } };`,
+      'vitest.storybook.config.ts': WITH_PLUGIN,
+    });
+
+    expect(find('.storybook')).toMatchObject({
+      configFile: join(root, 'vitest.storybook.config.ts'),
+      explicit: false,
+      loads: join(root, 'vitest.config.ts'),
+    });
   });
 
   it('does not look above the project root', () => {

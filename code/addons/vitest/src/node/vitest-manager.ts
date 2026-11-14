@@ -81,7 +81,7 @@ export function noStorybookProjectMessage({
           : ''
       }.${loaded ? ` Vitest loaded \`${show(loaded)}\`.` : ''}`,
       '',
-      `To run story tests, add \`storybookTest({ configDir: '${relativeConfigDir}' })\` to the plugins of a Vitest project in one of those configs, or run \`npx storybook add @storybook/addon-vitest --yes\` to set it up. A config that reaches the plugin only through another file it imports is not recognised: put the config that uses the plugin in one of those places.`
+      `To run story tests, add \`storybookTest({ configDir: path.join(import.meta.dirname, '${path.basename(configDir)}') })\` to the plugins of a Vitest project in a config in \`${show(path.dirname(configDir))}\` (or the same plugin, with a \`configDir\` that leads to this folder, in one of the other configs), or run \`npx storybook add @storybook/addon-vitest --yes\` to set it up. A config that reaches the plugin only through another file it imports is not recognised: put the config that uses the plugin in one of those places.`
     );
   }
   return lines.join('\n');

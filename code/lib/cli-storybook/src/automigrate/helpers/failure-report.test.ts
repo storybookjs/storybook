@@ -12,12 +12,7 @@ import { fs, vol } from 'memfs';
 import { automigrate, doAutomigrate, runFixes } from '../index.ts';
 import * as mainConfigFile from './mainConfigFile.ts';
 import type { Fix } from '../types.ts';
-import { FixStatus } from '../types.ts';
-import {
-  describeUnfinishedMigrations,
-  REPORT_FILE_NAME,
-  reportFileFailures,
-} from './failure-report.ts';
+import { REPORT_FILE_NAME, reportFileFailures } from './failure-report.ts';
 
 vi.mock('node:fs/promises', { spy: true });
 vi.mock('node:path', async (importOriginal) => {
@@ -153,9 +148,7 @@ describe('file failures', () => {
         skipInstall: true,
         skipDoctor: true,
       })
-    ).rejects.toMatchObject({
-      data: { errors: [expect.stringContaining('could not migrate 1 file')] },
-    });
+    ).rejects.toMatchObject({ data: { errors: [expect.stringContaining('1 file skipped')] } });
   });
 
   it('removes the sections of fixes that ran cleanly, and the file once none is left', async () => {
@@ -237,62 +230,6 @@ describe('file failures', () => {
 
     expect(fs.readFileSync(`/project/${REPORT_FILE_NAME}`, 'utf8')).toContain(
       "| `src/B.stories.ts` | EACCES: permission denied, open 'src/B.stories.ts' |"
-    );
-  });
-});
-
-describe('describeUnfinishedMigrations', () => {
-  beforeEach(() => {
-    vi.mocked(getProjectRoot).mockReturnValue('/project');
-  });
-
-  // Without colors, as the assertions read like the terminal.
-  const describe_ = (input: Parameters<typeof describeUnfinishedMigrations>[0]) =>
-    describeUnfinishedMigrations(input).map((line) => line.replace(/\x1b\[[0-9;]*m/g, ''));
-
-  it('names each fix that failed or whose check failed, without the ones that finished', () => {
-    expect(
-      describe_({
-        automigrationStatuses: {
-          'story-sort-to-main': FixStatus.FAILED,
-          'addon-x': FixStatus.CHECK_FAILED,
-          'finished-fix': FixStatus.SUCCEEDED,
-        },
-        automigrationErrors: {
-          'story-sort-to-main': 'Comparator requires manual migration\nstack',
-        },
-        fileFailures: [],
-      })
-    ).toEqual([
-      'story-sort-to-main failed: Comparator requires manual migration',
-      'addon-x: its check failed. Run with --debug for details.',
-    ]);
-  });
-
-  it('lists the first five files of a fix with their reason, and how many more there are', () => {
-    const fileFailures = Array.from({ length: 7 }, (_, index) => ({
-      fixId: 'argtypes-default-value',
-      file: `/project/src/S${index}.stories.ts`,
-      kind: 'story' as const,
-      message: index === 0 ? `${'x'.repeat(300)}` : `line ${index}: reason`,
-    }));
-    const lines = describe_({
-      automigrationStatuses: { 'argtypes-default-value': FixStatus.SUCCEEDED },
-      automigrationErrors: {},
-      fileFailures,
-    });
-
-    expect(lines[0]).toBe('argtypes-default-value could not migrate 7 files:');
-    expect(lines[1]).toBe(`- src/S0.stories.ts: ${'x'.repeat(199)}…`);
-    expect(lines.slice(2, 6)).toEqual([
-      '- src/S1.stories.ts: line 1: reason',
-      '- src/S2.stories.ts: line 2: reason',
-      '- src/S3.stories.ts: line 3: reason',
-      '- src/S4.stories.ts: line 4: reason',
-    ]);
-    expect(lines[6]).toBe('- and 2 more files');
-    expect(lines[7]).toBe(
-      `Every file and why: ${relative(process.cwd(), `/project/${REPORT_FILE_NAME}`)}`
     );
   });
 });

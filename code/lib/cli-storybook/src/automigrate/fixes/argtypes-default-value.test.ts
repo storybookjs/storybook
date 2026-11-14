@@ -99,16 +99,24 @@ describe('argtypes-default-value', () => {
     expect(story).toContain("control: 'number'");
   });
 
-  it('leaves a factory call unchanged when the editor cannot remove it', async () => {
+  it('leaves argTypes it cannot read alone, without reporting the file', async () => {
+    // The lucca-front shapes: helper calls, spreads, story factories and `table.defaultValue`.
     const story = [
-      'const makeArgType = (argType) => argType;',
-      "export default { argTypes: { label: makeArgType({ defaultValue: 'Hi' }) } };",
+      "import { intlArgType, makeArgType, PaletteArgType, generateStory } from '../helpers';",
+      'export default {',
+      '  argTypes: {',
+      "    intl: intlArgType('LinkTranslate'),",
+      "    label: makeArgType({ defaultValue: 'Hi' }),",
+      "    palette: { ...PaletteArgType, table: { defaultValue: { summary: 'neutral' } } },",
+      '  },',
+      '};',
+      "export const Select = generateStory({ name: 'Select' });",
     ].join('\n');
-    const result = await migrate({ story });
+    vol.fromJSON({ [previewConfigPath]: 'export default {};', [storyPath]: story });
 
-    expect(result.failures).toEqual([
-      { file: storyPath, kind: 'story', message: expect.stringContaining('Cannot mutate') },
-    ]);
+    expect(await checkFix(argtypesDefaultValue, options)).toBeNull();
+    const result = await migrate({ story });
+    expect(result.failures).toEqual([]);
     expect(result.story).toBe(story);
   });
 
@@ -245,198 +253,6 @@ describe('argtypes-default-value', () => {
 
     expect(result.failures).toEqual([
       { file: storyPath, kind: 'story', message: expect.stringContaining('Cannot mutate') },
-    ]);
-    expect(result.story).toBe(story);
-  });
-
-  it('does not apply to argTypes it cannot read when no argType has a defaultValue', async () => {
-    // Helper calls, spreads and story factories, beside `table.defaultValue` and an arg named so.
-    const story = [
-      "import { intlArgType, PaletteArgType, generateStory } from '../helpers';",
-      'const { defaultValue } = PaletteArgType;',
-      'export default {',
-      "  args: { defaultValue: 'Hi' },",
-      '  argTypes: {',
-      "    intl: intlArgType('LinkTranslate'),",
-      "    palette: { ...PaletteArgType, table: { category: 'inputs', defaultValue: { summary: defaultValue } } },",
-      '  },',
-      '};',
-      "export const Select = generateStory({ name: 'Select', argTypes: { size: { table: { defaultValue: { summary: 'M' } } } } });",
-    ].join('\n');
-    vol.fromJSON({ [previewConfigPath]: 'export default {};', [storyPath]: story });
-
-    expect(await checkFix(argtypesDefaultValue, options)).toBeNull();
-    const result = await migrate({ story });
-    expect(result.failures).toEqual([]);
-    expect(result.story).toBe(story);
-  });
-
-  it('deletes the defaultValue it can read beside an argType it cannot read', async () => {
-    const result = await migrate({
-      story: [
-        "import { intlArgType } from '../helpers';",
-        "export default { argTypes: { intl: intlArgType('LinkTranslate'), label: { defaultValue: 'A', control: 'text' } } };",
-      ].join('\n'),
-    });
-
-    expect(result.failures).toEqual([]);
-    expect(result.story).toContain("intl: intlArgType('LinkTranslate')");
-    expect(result.story).toContain("control: 'text'");
-    expect(result.story).not.toContain('defaultValue');
-  });
-
-  it('fails a defaultValue that reaches an argType through a spread, naming its line', async () => {
-    const story = [
-      "const base = { defaultValue: 'A', control: 'text' };",
-      'export default { argTypes: { label: { ...base } } };',
-    ].join('\n');
-    const result = await migrate({ story });
-
-    expect(result.failures).toEqual([
-      {
-        file: storyPath,
-        kind: 'story',
-        message: expect.stringMatching(
-          /^`base\.defaultValue` \(line 1\) is left in place: it may reach an argType the migration could not read/
-        ),
-      },
-    ]);
-    expect(result.story).toBe(story);
-  });
-
-  it('names why the argType that holds the defaultValue left could not be read, and only that one', async () => {
-    const story = [
-      "import { intlArgType, makeArgType } from '../helpers';",
-      'export default {',
-      '  argTypes: {',
-      "    intl: intlArgType('LinkTranslate'),",
-      "    label: makeArgType({ defaultValue: 'Hi' }),",
-      '  },',
-      '};',
-    ].join('\n');
-    const result = await migrate({ story });
-
-    expect(result.failures).toEqual([
-      {
-        file: storyPath,
-        kind: 'story',
-        message:
-          '`argTypes.label.makeArgType(…).defaultValue` (line 5) is left in place; line 5: Cannot mutate argTypes.label.defaultValue because the target contains unsupported member',
-      },
-    ]);
-    expect(result.story).toBe(story);
-  });
-
-  it('fails a defaultValue left in place when the story has an alias', async () => {
-    const story = [
-      "const base = { defaultValue: 'A', control: 'text' };",
-      'export default { title: "Example" };',
-      'export const Primary = { argTypes: { label: { ...base } } };',
-      'export const Secondary = Primary;',
-    ].join('\n');
-    const result = await migrate({ story });
-
-    expect(result.failures).toEqual([
-      { file: storyPath, kind: 'story', message: expect.stringContaining('`base.defaultValue`') },
-    ]);
-    expect(result.story).toBe(story);
-  });
-
-  it('keeps an arg named defaultValue, and migrates args named like other fields', async () => {
-    const result = await migrate({
-      preview: "export default { argTypes: { defaultValue: { control: 'text' } } };",
-      story: [
-        'export default {',
-        '  argTypes: {',
-        "    defaultValue: { control: 'text', defaultValue: 'x' },",
-        "    table: { defaultValue: 1, control: 'number' },",
-        "    args: { defaultValue: 2, table: { defaultValue: { summary: '2' } } },",
-        '  },',
-        '};',
-      ].join('\n'),
-    });
-
-    expect(result.failures).toEqual([]);
-    expect(result.preview).toContain("defaultValue: { control: 'text' }");
-    expect(result.story).toContain("defaultValue: { control: 'text' }");
-    expect(result.story).toContain("table: { control: 'number' }");
-    expect(result.story).toContain("summary: '2'");
-    expect(result.story).not.toMatch(/defaultValue: (1|2|'x')/);
-  });
-
-  it('does not fail on a defaultValue that no argType can reach', async () => {
-    const story = [
-      "const options = [{ label: 'a', defaultValue: true }];",
-      'export default {',
-      "  argTypes: { label: { control: 'text', defaultValue: 'A' } },",
-      "  render: (args) => ({ props: { ...args, options, defaultValue: 'x' } }),",
-      '};',
-    ].join('\n');
-    const result = await migrate({ story });
-
-    expect(result.failures).toEqual([]);
-    expect(result.story).toContain("options = [{ label: 'a', defaultValue: true }]");
-    expect(result.story).toContain("defaultValue: 'x'");
-    expect(result.story).not.toContain("defaultValue: 'A'");
-  });
-
-  it('names lines as they are on disk when an earlier argType was migrated', async () => {
-    const story = [
-      "import { makeArgType } from '../helpers';",
-      'export default {',
-      '  argTypes: {',
-      '    first: {',
-      '      defaultValue: {',
-      "        value: 'long',",
-      '      },',
-      '    },',
-      '    second: makeArgType({ defaultValue: 2 }),',
-      '  },',
-      '};',
-    ].join('\n');
-    const result = await migrate({ story });
-
-    expect(result.failures).toEqual([
-      {
-        file: storyPath,
-        kind: 'story',
-        message:
-          '`argTypes.second.makeArgType(…).defaultValue` (line 9) is left in place; line 9: Cannot mutate argTypes.second.defaultValue because the target contains unsupported member',
-      },
-    ]);
-    expect(result.story).toBe(story);
-  });
-
-  it('does not apply to a component defaultValue in a story function beside a story factory', async () => {
-    const story = [
-      'export default {',
-      "  render: (args) => ({ props: { ...args, defaultValue: 'x' } }),",
-      '  play: async () => { await setup({ defaultValue: 1 }); },',
-      '};',
-      "export const Select = generateStory({ name: 'Select' });",
-    ].join('\n');
-    vol.fromJSON({ [previewConfigPath]: 'export default {};', [storyPath]: story });
-
-    expect(await checkFix(argtypesDefaultValue, options)).toBeNull();
-    const result = await migrate({ story });
-    expect(result.failures).toEqual([]);
-    expect(result.story).toBe(story);
-  });
-
-  it('fails an argType defaultValue that the editor does not reach, written as one', async () => {
-    const story = [
-      'export default { title: "Example" };',
-      'export const A = {};',
-      'Object.assign(A, { argTypes: { a: { defaultValue: 1 } } });',
-    ].join('\n');
-    const result = await migrate({ story });
-
-    expect(result.failures).toEqual([
-      {
-        file: storyPath,
-        kind: 'story',
-        message: expect.stringContaining('argTypes.a.defaultValue` (line 3) is left in place'),
-      },
     ]);
     expect(result.story).toBe(story);
   });

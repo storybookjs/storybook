@@ -9,7 +9,6 @@ import picocolors from 'picocolors';
 import slash from 'slash';
 
 import type { FileFailure } from '../pipeline.ts';
-import { FixStatus } from '../types.ts';
 
 export const REPORT_FILE_NAME = 'automigrations-summary.md';
 
@@ -75,58 +74,4 @@ export const reportFileFailures = async (failures: FixFileFailure[], ran: Iterab
       ? `${pluralFiles(count)} could not be migrated automatically. See ${picocolors.cyan(relative(process.cwd(), reportPath))} for which ones and why.`
       : `${picocolors.cyan(relative(process.cwd(), reportPath))} still lists files that earlier runs could not migrate.`
   );
-};
-
-const MAX_LISTED_FILES = 5;
-const MAX_REASON_LENGTH = 200;
-
-const firstLine = (text: string) => text.split('\n')[0];
-
-const shorten = (text: string) =>
-  text.length > MAX_REASON_LENGTH ? `${text.slice(0, MAX_REASON_LENGTH - 1)}…` : text;
-
-/**
- * Describe, for the end of an upgrade, what the fixes of one project left undone: each fix that
- * failed or whose check failed, and per fix the first files it could not migrate, with why. The
- * report file lists every file.
- */
-export const describeUnfinishedMigrations = ({
-  automigrationStatuses,
-  automigrationErrors,
-  fileFailures,
-}: {
-  automigrationStatuses: Record<string, FixStatus>;
-  automigrationErrors: Record<string, string>;
-  fileFailures: FixFileFailure[];
-}): string[] => {
-  const root = getProjectRoot();
-  const byFix = Map.groupBy(fileFailures, ({ fixId }) => fixId);
-  const lines: string[] = [];
-  for (const [fixId, status] of Object.entries(automigrationStatuses)) {
-    if (status === FixStatus.CHECK_FAILED) {
-      lines.push(`${picocolors.cyan(fixId)}: its check failed. Run with --debug for details.`);
-    } else if (status === FixStatus.FAILED && !byFix.has(fixId)) {
-      const error = automigrationErrors[fixId];
-      lines.push(
-        `${picocolors.cyan(fixId)} failed${error ? `: ${shorten(firstLine(error))}` : ''}`
-      );
-    }
-  }
-  // The terminal trims leading spaces, so markers, not indentation, tell the levels apart.
-  for (const [fixId, failures] of byFix) {
-    lines.push(`${picocolors.cyan(fixId)} could not migrate ${pluralFiles(failures.length)}:`);
-    for (const { file, message } of failures.slice(0, MAX_LISTED_FILES)) {
-      const reason = slash(message).replaceAll(`${slash(root)}/`, '');
-      lines.push(`- ${slash(relative(root, file))}: ${shorten(firstLine(reason))}`);
-    }
-    if (failures.length > MAX_LISTED_FILES) {
-      const more = failures.length - MAX_LISTED_FILES;
-      lines.push(`- and ${more} more ${more === 1 ? 'file' : 'files'}`);
-    }
-  }
-  if (fileFailures.length > 0) {
-    const report = relative(process.cwd(), join(root, REPORT_FILE_NAME));
-    lines.push(`Every file and why: ${picocolors.cyan(report)}`);
-  }
-  return lines;
 };

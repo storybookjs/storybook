@@ -1,153 +1,15 @@
-import { HandledError } from 'storybook/internal/common';
 import {
-  type CsfMutationDiagnostic,
   type CsfObject,
-  type CsfPath,
   type ESTree as E,
   type ESTreeNode,
-  isTSWrapper,
-  locationOf,
   staticKey,
+  unwrapExpression,
   walk,
 } from 'storybook/internal/csf-tools';
 
 import picocolors from 'picocolors';
 
-import { describeDiagnostic, failsFile } from '../helpers/edit-parsed-file.ts';
 import type { Fix } from '../types.ts';
-
-/**
- * Fields whose `defaultValue` is not the deprecated `argTypes.<name>.defaultValue`: the docs table
- * keeps `table.defaultValue`, `args`, `globalTypes` and `parameters` never hold an argType, and
- * neither do the story functions, whose `defaultValue` is a component's. An arg may still be named
- * so, as in `argTypes: { table: { defaultValue: 1 } }`.
- */
-const NOT_AN_ARG_TYPE = new Set([
-  'table',
-  'args',
-  'globalTypes',
-  'parameters',
-  'render',
-  'play',
-  'loaders',
-  'decorators',
-  'beforeEach',
-  'beforeAll',
-  'mount',
-]);
-
-type Parents = Map<ESTreeNode, ESTreeNode | null>;
-
-// The node that holds `node` as a value, past `as`, `satisfies` and parentheses.
-const holderOf = (node: ESTreeNode, parents: Parents) => {
-  let holder = parents.get(node);
-  while (holder && (isTSWrapper(holder) || holder.type === 'ParenthesizedExpression')) {
-    holder = parents.get(holder);
-  }
-  return holder;
-};
-
-const memberName = (node: ESTreeNode | null | undefined) =>
-  node?.type === 'MemberExpression' && !node.computed && node.property.type === 'Identifier'
-    ? node.property.name
-    : undefined;
-
-/**
- * Whether `object` is an argTypes object, whose own keys name args: `argTypes: {…}`, `X.argTypes =
- * {…}`, or `const argTypes = {…}`.
- */
-const isArgTypes = (object: ESTreeNode | null, parents: Parents) => {
-  if (object?.type !== 'ObjectExpression') {
-    return false;
-  }
-  const holder = holderOf(object, parents);
-  return (
-    (holder?.type === 'Property' && staticKey(holder) === 'argTypes') ||
-    (holder?.type === 'AssignmentExpression' &&
-      memberName(holder.left as ESTreeNode) === 'argTypes') ||
-    (holder?.type === 'VariableDeclarator' &&
-      holder.id.type === 'Identifier' &&
-      holder.id.name === 'argTypes')
-  );
-};
-
-/** Whether `object` is the value of an arg in an argTypes object, as in `argTypes: { a: {…} }`. */
-const isArgType = (object: ESTreeNode | null, parents: Parents) => {
-  if (object?.type !== 'ObjectExpression') {
-    return false;
-  }
-  const holder = holderOf(object, parents);
-  return holder?.type === 'Property' && isArgTypes(parents.get(holder) ?? null, parents);
-};
-
-// Where a `defaultValue` sits, such as `base.defaultValue` or `argTypes.label.make(…).defaultValue`.
-const pathOf = (property: ESTreeNode, parents: Parents, code: string) => {
-  const segments: string[] = [];
-  let child = property;
-  for (let node = parents.get(property); node; child = node, node = parents.get(node)) {
-    if (node.type === 'Property' && node.value === child) {
-      segments.unshift(staticKey(node) ?? '[…]');
-    } else if (node.type === 'CallExpression' && node.callee !== child) {
-      segments.unshift(`${code.slice(node.callee.start, node.callee.end).replace(/\s+/g, '')}(…)`);
-    } else if (node.type === 'VariableDeclarator') {
-      segments.unshift(code.slice(node.id.start, node.id.end));
-      break;
-    } else if (node.type === 'AssignmentExpression') {
-      segments.unshift(code.slice(node.left.start, node.left.end));
-      break;
-    } else if (
-      !['ObjectExpression', 'ArrayExpression', 'SpreadElement', 'ParenthesizedExpression'].includes(
-        node.type
-      ) &&
-      !isTSWrapper(node)
-    ) {
-      break;
-    }
-  }
-  return [...segments, 'defaultValue'].join('.');
-};
-
-interface Candidate {
-  path: string;
-  line: number;
-  start: number;
-  // Written as `argTypes.<name>.defaultValue`, so an argType's whether the editor reached it or not.
-  ofArgType: boolean;
-}
-
-/**
- * The `defaultValue` properties in a file that may be a deprecated `argTypes.<name>.defaultValue`:
- * every object property with that key, except under the fields that cannot hold an argType, except
- * in destructuring patterns, and except an arg named `defaultValue`. One in a helper or a story the
- * editor cannot read counts too, so the file is reported when the edit cannot reach it.
- */
-const candidatesIn = (program: E.Program, code: string): Candidate[] => {
-  const parents: Parents = new Map();
-  const found: Candidate[] = [];
-  walk(program as ESTreeNode, (node, parent) => {
-    parents.set(node, parent);
-    if (node.type !== 'Property' || parent?.type === 'ObjectPattern') {
-      return;
-    }
-    // An arg's name, whatever it is, is not a field of the argType.
-    if (isArgTypes(parent, parents)) {
-      return;
-    }
-    const key = staticKey(node);
-    if (key && NOT_AN_ARG_TYPE.has(key)) {
-      return false;
-    }
-    if (key === 'defaultValue') {
-      found.push({
-        path: pathOf(node, parents, code),
-        line: locationOf(code, node.start, node.end).start.line,
-        start: node.start,
-        ofArgType: isArgType(parent, parents),
-      });
-    }
-  });
-  return found;
-};
 
 const argName = (property: E.ObjectProperty): string | undefined => {
   if (property.key.type === 'Identifier' && !property.computed) {
@@ -159,105 +21,66 @@ const argName = (property: E.ObjectProperty): string | undefined => {
   return undefined;
 };
 
-interface Plan {
-  removals: { object: CsfObject; path: CsfPath }[];
-  // Why the editor could not read an argType, or `argTypes` itself.
-  unread: CsfMutationDiagnostic[];
-  // Whether an argType may come from elsewhere: a spread, a computed key, or `argTypes` that is not
-  // an object literal.
-  opaque: boolean;
-}
+/** The value written to `argTypes` by `argTypes: …` or `X.argTypes = …`. */
+const argTypesValue = (node: ESTreeNode) => {
+  if (node.type === 'Property' && staticKey(node) === 'argTypes') {
+    return node.value;
+  }
+  if (
+    node.type === 'AssignmentExpression' &&
+    node.left.type === 'MemberExpression' &&
+    !node.left.computed &&
+    node.left.property.type === 'Identifier' &&
+    node.left.property.name === 'argTypes'
+  ) {
+    return node.right;
+  }
+  return undefined;
+};
 
-/** Read every `argTypes.<name>.defaultValue` of `object` before any edit moves the lines. */
-const plan = (object: CsfObject, into: Plan) => {
-  const argTypes = object.inspect(['argTypes']);
-  if (argTypes.kind === 'unreadable') {
-    into.unread.push(argTypes.diagnostic);
-    return;
-  }
-  if (argTypes.kind !== 'value') {
-    return;
-  }
-  if (argTypes.node.type !== 'ObjectExpression') {
-    into.opaque = true;
-    return;
-  }
-  for (const property of argTypes.node.properties) {
-    const name = property.type === 'Property' ? argName(property) : undefined;
-    if (!name) {
-      into.opaque = true;
-      continue;
-    }
-    const path = ['argTypes', name, 'defaultValue'];
-    const found = object.inspect(path);
-    if (found.kind === 'value') {
-      into.removals.push({ object, path });
-    } else if (found.kind === 'unreadable') {
-      into.unread.push(found.diagnostic);
-    }
-  }
+const hasField = (node: ESTreeNode | null | undefined, key: string) => {
+  const object = unwrapExpression(node);
+  return (
+    object?.type === 'ObjectExpression' &&
+    object.properties.some((property) => staticKey(property as ESTreeNode) === key)
+  );
 };
 
 /**
- * Migrate one parsed file. A file without a `defaultValue` that may belong to an argType has nothing
- * to migrate, so the objects the editor cannot read in it are not reported. After the edit, a
- * `defaultValue` left in place fails the file when it may reach an argType the editor could not
- * read; one that cannot is not an argType's.
+ * Whether the file writes a literal `argTypes: { <name>: { defaultValue } }`. Only such a field is
+ * this migration's to remove: `defaultValue` has set no arg since 7.0, so one behind a helper or a
+ * spread does nothing and is left alone, and a file without one is not edited at all.
  */
-const migrate = (
-  file: {
-    program: E.Program;
-    editor: { code: string };
-    mutationDiagnostics: readonly CsfMutationDiagnostic[];
-  },
-  objects: () => readonly CsfObject[]
-) => {
-  const before = candidatesIn(file.program, file.editor.code);
-  if (before.length === 0) {
-    return;
-  }
-  const diagnosticsBefore = file.mutationDiagnostics.length;
-  const found: Plan = { removals: [], unread: [], opaque: false };
-  objects().forEach((object) => plan(object, found));
-  found.removals.forEach(({ object, path }) => object.remove(path));
-
-  // A refused edit, or a story the editor could not discover, fails the file through its own
-  // diagnostic, which `editParsedFile` throws.
-  if (file.mutationDiagnostics.slice(diagnosticsBefore).some(failsFile)) {
-    return;
-  }
-  const left = candidatesIn(file.program, file.editor.code);
-  const mayBeArgType =
-    found.unread.length > 0 || found.opaque || left.some(({ ofArgType }) => ofArgType);
-  if (left.length === 0 || !mayBeArgType) {
-    return;
-  }
-
-  // The file is left unchanged, so name each `defaultValue` with its line before the edit.
-  const unmatched = [...before];
-  const leftBefore = left.map(({ path }) => {
-    const index = unmatched.findIndex((candidate) => candidate.path === path);
-    return index === -1 ? undefined : unmatched.splice(index, 1)[0];
+const writesArgTypeDefaultValue = (program: E.Program) => {
+  let found = false;
+  walk(program as ESTreeNode, (node) => {
+    const argTypes = unwrapExpression(argTypesValue(node) as ESTreeNode | undefined);
+    if (argTypes?.type === 'ObjectExpression') {
+      found ||= argTypes.properties.some(
+        (property) =>
+          property.type === 'Property' && hasField(property.value as ESTreeNode, 'defaultValue')
+      );
+    }
+    return !found;
   });
-  const named = left
-    .map(({ path }, index) => {
-      const original = leftBefore[index];
-      return original ? `\`${path}\` (line ${original.line})` : `\`${path}\``;
-    })
-    .join(', ');
-  const verb = left.length === 1 ? 'is' : 'are';
-  // Only the reasons of the argTypes that hold what is left: the others did not keep it in place.
-  const reasons = found.unread.filter(({ loc }) =>
-    leftBefore.some(
-      (candidate) =>
-        candidate && loc && candidate.start >= loc.start.index && candidate.start < loc.end.index
-    )
-  );
-  throw new HandledError(
-    reasons.length > 0
-      ? [`${named} ${verb} left in place`, ...new Set(reasons.map(describeDiagnostic))].join('; ')
-      : `${named} ${verb} left in place: ${left.length === 1 ? 'it' : 'they'} may reach an argType the migration could not read, through a variable, a spread or a helper. If so, remove ${left.length === 1 ? 'it' : 'them'} by hand`
-  );
+  return found;
+};
+
+/** Remove every `defaultValue` written in an argType of `object`; the editor reports one it cannot. */
+const strip = (object: CsfObject) => {
+  const argTypes = object.inspect(['argTypes']);
+  if (argTypes.kind !== 'value' || argTypes.node.type !== 'ObjectExpression') {
+    return;
+  }
+  for (const property of argTypes.node.properties) {
+    if (property.type !== 'Property') {
+      continue;
+    }
+    const name = argName(property);
+    if (name && hasField(property.value as ESTreeNode, 'defaultValue')) {
+      object.remove(['argTypes', name, 'defaultValue']);
+    }
+  }
 };
 
 export const argtypesDefaultValue: Fix = {
@@ -271,8 +94,13 @@ export const argtypesDefaultValue: Fix = {
   transform: () => [
     {
       filter: { kind: ['preview', 'story'], code: 'defaultValue' },
-      editConfig: (config) => migrate(config, () => [config]),
-      editCsf: (csf) => migrate(csf, () => csf.objects()),
+      editConfig: strip,
+      // `objects()` reports the stories it cannot read, so it runs only when there is work.
+      editCsf: (csf) => {
+        if (writesArgTypeDefaultValue(csf.program)) {
+          csf.objects().forEach(strip);
+        }
+      },
     },
   ],
 };

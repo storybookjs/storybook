@@ -35,7 +35,6 @@ import semver, { clean, lt } from 'semver';
 import { dedent } from 'ts-dedent';
 
 import { processAutoblockerResults } from './autoblock/utils.ts';
-import { describeUnfinishedMigrations } from './automigrate/helpers/failure-report.ts';
 import {
   type AutomigrationCheckResult,
   type AutomigrationResult,
@@ -246,7 +245,9 @@ function logUpgradeResults(
   // If there are any failures, show detailed summary
   if (failedProjects.length > 0) {
     logTracker.enableLogWriting();
-    logger.step('The upgrade is complete, but some automigrations could not finish.');
+    logger.step(
+      'The upgrade is complete, but some projects failed to upgrade or migrate completely. Please see the debug logs for more details.'
+    );
     // Display appropriate messages based on results
     if (successfulProjects.length > 0) {
       const successfulProjectsList = successfulProjects
@@ -255,12 +256,10 @@ function logUpgradeResults(
       logger.log(`${CLI_COLORS.success('Successfully upgraded:')}\n${successfulProjectsList}`);
     }
 
-    const failedProjectsList = failedProjects
-      .map((dir) =>
-        [`• ${shortenPath(dir)}`, ...describeUnfinishedMigrations(projectResults[dir])].join('\n')
-      )
-      .join('\n');
-    logger.log(`${CLI_COLORS.error('Automigrations left unfinished:')}\n${failedProjectsList}`);
+    const failedProjectsList = failedProjects.map((dir) => `  • ${shortenPath(dir)}`).join('\n');
+    logger.log(
+      `${CLI_COLORS.error('Failed to upgrade:')}\nSome automigrations failed or skipped files. Review the upgrade output for details.\n${failedProjectsList}`
+    );
 
     if (projectsWithNoFixes.length > 0) {
       const projectList = projectsWithNoFixes.map((dir) => `  • ${shortenPath(dir)}`).join('\n');
@@ -276,9 +275,7 @@ function logUpgradeResults(
     }
   }
 
-  // A fix without a page to link to would print `undefined`.
   const automigrationLinks = detectedAutomigrations
-    .filter((am) => !!am.fix.link)
     .filter((am) =>
       Object.entries(projectResults).some(
         ([_, resultData]) =>
@@ -637,7 +634,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
 
     if (getUpgradeResults(automigrationResults, doctorResults).failedProjects.length > 0) {
       throw new HandledError(
-        'Some automigrations could not finish. Review the list at the end of the upgrade output.'
+        'Some automigrations failed or skipped files. Review the upgrade output.'
       );
     }
   } finally {

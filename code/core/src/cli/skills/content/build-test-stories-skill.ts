@@ -23,7 +23,7 @@ This project cannot run story tests: it has no \`@storybook/addon-vitest\`. Skip
     ? `\n\nThe \`main.ts\` of this project turns the \`test\` toolset of the Storybook MCP server off. When the server does not give you ${v.name('test.run')}, skip this step.`
     : '';
   const a11y = inputs.a11yEnabled
-    ? '\n\nThe run lists accessibility violations under `## Accessibility Violations`. Fix semantic ones yourself (roles, labels, alt text, keyboard access). For visual ones such as color contrast, do not change the design: describe the problem, offer two or three options and ask the user. Never change the accessibility test level (`parameters.a11y.test`) to make violations fail or pass.'
+    ? '\n\nThe run lists accessibility violations under `## Accessibility Violations`. Fix only what your change caused, and report the rest. For visual ones such as color contrast, ask before changing the design. Never change the accessibility test level (`parameters.a11y.test`) to make violations fail or pass.'
     : '';
   const command = v.cli
     ? `\`\`\`sh

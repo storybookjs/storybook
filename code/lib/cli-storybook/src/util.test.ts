@@ -53,6 +53,47 @@ describe('findStorybookProjects in a git repository', () => {
     ]);
   });
 
+  it('finds a new .storybook directory that only ignores some of its files', async () => {
+    createFixture({
+      'app/.storybook/.gitignore': '*\n!*.ts\n',
+      'app/.storybook/main.ts': 'export default {};',
+    });
+    execFileSync('git', ['init', '-q'], { cwd: root });
+
+    expect(await findStorybookProjects(root)).toEqual([
+      join(root, 'app/.storybook').replace(/\\/g, '/'),
+    ]);
+  });
+
+  it('skips ignored .storybook directories under an allow-list .gitignore', async () => {
+    createFixture({
+      '.gitignore': '*\n!*/\n!**/*.ts\ngenerated/\n',
+      'app/.storybook/main.ts': 'export default {};',
+      'generated/x/.storybook/main.ts': 'export default {};',
+    });
+    execFileSync('git', ['init', '-q'], { cwd: root });
+
+    expect(await findStorybookProjects(root)).toEqual([
+      join(root, 'app/.storybook').replace(/\\/g, '/'),
+    ]);
+  });
+
+  // Windows does not allow `:` in a file name.
+  it.skipIf(process.platform === 'win32')(
+    'reads a directory named like :gen as a path',
+    async () => {
+      createFixture({
+        ':gen/.storybook/main.ts': 'export default {};',
+        'gen/.gitignore': '*\n',
+      });
+      execFileSync('git', ['init', '-q'], { cwd: root });
+
+      expect(await findStorybookProjects(root)).toEqual([
+        join(root, ':gen/.storybook').replace(/\\/g, '/'),
+      ]);
+    }
+  );
+
   it('skips .storybook directories that a submodule ignores', async () => {
     createFixture({
       'vendor/.gitignore': 'generated/\n',

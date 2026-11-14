@@ -5,8 +5,6 @@ import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import * as fsPromises from 'node:fs/promises';
 
-// eslint-disable-next-line depend/ban-dependencies
-import { globby } from 'globby';
 import { fs as memfs, vol } from 'memfs';
 import { dedent } from 'ts-dedent';
 
@@ -19,7 +17,9 @@ import {
 
 vi.mock('node:fs/promises', { spy: true });
 
-vi.mock('globby', { spy: true });
+vi.mock('tinyglobby', async (importOriginal) =>
+  (await import('./__test__/memfs-tinyglobby.ts')).memfsTinyglobby(importOriginal)
+);
 
 vi.mock('storybook/internal/node-logger', { spy: true });
 
@@ -90,16 +90,6 @@ beforeEach((): void => {
   vi.mocked(fsPromises.writeFile).mockImplementation(memfs.promises.writeFile as never);
   vi.mocked(logger.warn).mockImplementation(() => {});
   vi.mocked(logger.debug).mockImplementation(() => {});
-  vi.mocked(globby).mockImplementation(async (patterns, options): Promise<string[]> => {
-    const basenames = [patterns].flat().map((pattern) => pattern.replaceAll('**/', ''));
-    return Object.keys(vol.toJSON()).filter(
-      (path) =>
-        basenames.some((basename) => path.endsWith(`/${basename}`)) &&
-        !options?.ignore?.some((pattern) =>
-          path.includes(`/${pattern.replaceAll('**/', '').replaceAll('/**', '')}/`)
-        )
-    );
-  });
 });
 
 afterEach((): void => {

@@ -4,9 +4,11 @@ import { HandledError, formatFileContent } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
 import { promises as fs } from 'fs';
+import { basename, dirname, isAbsolute, resolve } from 'pathe';
 import picocolors from 'picocolors';
 // eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
+import { escapePath, glob } from 'tinyglobby';
 
 export const maxConcurrentTasks = Math.max(1, os.cpus().length - 1);
 
@@ -15,6 +17,58 @@ export interface FileInfo {
   source: string;
   [key: string]: any;
 }
+
+const IGNORE = ['**/node_modules/**', '**/dist/**', '**/storybook-static/**', '**/build/**'];
+
+const isDirectory = (path: string) =>
+  fs.stat(path).then(
+    (stats) => stats.isDirectory(),
+    () => false
+  );
+
+/** Splits `../src/**\/*.ts` into the directory `../src` and the pattern `**\/*.ts` below it. */
+const splitStaticBase = (pattern: string) => {
+  const segments = pattern.split('/');
+  const first = segments.findIndex((segment) => /[*?[\]{}()!+@\\]/.test(segment));
+  if (first === -1) {
+    return { base: dirname(pattern), rest: escapePath(basename(pattern)) };
+  }
+  const base = segments.slice(0, first).join('/');
+  // `/` and `C:/` for a pattern that has a glob right below the root.
+  return {
+    base: base === '' || base.endsWith(':') ? `${base}/` : base,
+    rest: segments.slice(first).join('/'),
+  };
+};
+
+const findFiles = async (globPattern: string) => {
+  // glob only supports forward slashes
+  let pattern = slash(globPattern);
+  if (/\{[^{}]*\.\.[^{}]*\}/.test(pattern)) {
+    logger.error(
+      `The glob pattern "${globPattern}" has a range like {1..9}, which is not supported.`
+    );
+    throw new HandledError('Unsupported glob pattern');
+  }
+  // A directory stands for all files in it.
+  if (await isDirectory(pattern)) {
+    pattern = `${escapePath(pattern.replace(/\/+$/, ''))}/**`;
+  }
+  const options = {
+    ignore: IGNORE,
+    // Otherwise `*.stories.tsx` also matches what is in a directory with that name, such as the
+    // screenshots of Vitest browser mode in `__screenshots__/Button.stories.tsx/`.
+    expandDirectories: false,
+  };
+  if (!isAbsolute(pattern) && !/^(\.\/)*\.\.(\/|$)/.test(pattern)) {
+    return glob(pattern, options);
+  }
+  // tinyglobby matches a pattern that starts above the current directory against paths relative
+  // to it, so it would miss files and apply no ignores there. It globs from the pattern's own
+  // directory instead, and returns absolute paths, as globby did for an absolute pattern.
+  const { base, rest } = splitStaticBase(pattern);
+  return glob(rest, { ...options, cwd: resolve(base), absolute: true });
+};
 
 /**
  * Runs a codemod transformation on files matching the specified glob pattern.
@@ -41,18 +95,7 @@ export async function runCodemod(
   let unmodifiedCount = 0;
   let errorCount = 0;
 
-  // Dynamically import these packages because they are pure ESM modules
-  // eslint-disable-next-line depend/ban-dependencies
-  const { globby } = await import('globby');
-
-  // glob only supports forward slashes
-  const files =
-    typeof globPattern === 'string'
-      ? await globby(slash(globPattern), {
-          followSymbolicLinks: true,
-          ignore: ['**/node_modules/**', '**/dist/**', '**/storybook-static/**', '**/build/**'],
-        })
-      : globPattern;
+  const files = typeof globPattern === 'string' ? await findFiles(globPattern) : globPattern;
 
   if (!files.length) {
     logger.error(

@@ -230,7 +230,9 @@ function parseStorybookToolsInvocation(
   const input = parseToolArguments(
     segment.slice(command.index + 2),
     readCommanderInput(commanderOptions),
-    unresolved
+    unresolved,
+    // The tools whose method declares `fileArguments`: bare arguments fill `files`.
+    command.name === 'test-run'
   );
   if (input === undefined) {
     return undefined;
@@ -349,15 +351,19 @@ function readCommanderInput(options: string[]): string | undefined {
 
 // A copy of parseToolsTokens (code/core/src/cli/tools/tool-tokens.ts) that
 // returns only the tool arguments, or `undefined` where the CLI prints help or
-// rejects the invocation. shell-parse.test.ts runs both on the same tokens.
+// rejects the invocation. Bare arguments are appended to `files` for a tool
+// that takes them, as the CLI dispatcher does (without resolving the paths).
+// shell-parse.test.ts runs both on the same tokens.
 function parseToolArguments(
   tokens: string[],
   commanderInput: string | undefined,
-  unresolved: ReadonlySet<string>
+  unresolved: ReadonlySet<string>,
+  takesFiles: boolean
 ): Record<string, unknown> | undefined {
   let rawInput = commanderInput;
   let attach: boolean | undefined;
   const flagArgs: Record<string, unknown> = {};
+  const positionals: string[] = [];
 
   let index = 0;
   while (index < tokens.length) {
@@ -386,8 +392,16 @@ function parseToolArguments(
       index += 1;
       continue;
     }
-    if (!token.startsWith('--') || token === '--') {
+    if (token === '--') {
+      positionals.push(...tokens.slice(index));
+      break;
+    }
+    if (token.startsWith('-') && !token.startsWith('--')) {
       return undefined;
+    }
+    if (!token.startsWith('--')) {
+      positionals.push(token);
+      continue;
     }
 
     const equalsIndex = token.indexOf('=');
@@ -418,8 +432,26 @@ function parseToolArguments(
     flagArgs[key] = value === undefined ? true : coerceValue(value);
   }
 
+  if (positionals.length > 0 && !takesFiles) {
+    return undefined;
+  }
+  // Bare arguments are appended to `files`, after `--input` and `--files`, as the CLI does.
+  const withFiles = (args: Record<string, unknown>): Record<string, unknown> => {
+    if (positionals.length === 0) {
+      return args;
+    }
+    const given = args.files;
+    return {
+      ...args,
+      files: [
+        ...(given === undefined ? [] : Array.isArray(given) ? given : [given]),
+        ...positionals,
+      ],
+    };
+  };
+
   if (rawInput === undefined) {
-    return flagArgs;
+    return withFiles(flagArgs);
   }
   let input: unknown;
   try {
@@ -427,9 +459,9 @@ function parseToolArguments(
   } catch {
     // The CLI saw what the shell made of this (`$(cat file)` from an earlier
     // command, `$VAR`); keep the raw text so a failing assertion shows it.
-    return unresolved.has(rawInput) ? { input: rawInput, ...flagArgs } : undefined;
+    return unresolved.has(rawInput) ? withFiles({ input: rawInput, ...flagArgs }) : undefined;
   }
-  return isRecord(input) ? { ...input, ...flagArgs } : undefined;
+  return isRecord(input) ? withFiles({ ...input, ...flagArgs }) : undefined;
 }
 
 function coerceValue(value: string): unknown {

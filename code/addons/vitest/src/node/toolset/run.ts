@@ -1,5 +1,6 @@
 import type { ChannelLike } from 'storybook/internal/channels';
 import {
+  filterStoryFiles,
   findStoryIds,
   type FoundStory,
   type NotFoundStory,
@@ -9,7 +10,8 @@ import { OpenServiceTestRunTimeoutError } from 'storybook/internal/server-errors
 import type { StoryIndex } from 'storybook/internal/types';
 
 import { TRIGGER_TEST_RUN_REQUEST, TRIGGER_TEST_RUN_RESPONSE } from '../../constants.ts';
-import type { TestRunOutput, TestRunResult } from './definition.ts';
+import type { TestRunOutput, TestRunResult, TestRunSelection } from './definition.ts';
+import { displayPath } from './format.ts';
 
 /** Default wait for a matching channel response before failing the queued run. */
 export const DEFAULT_TEST_RUN_TIMEOUT_MS = 30 * 60 * 1000;
@@ -139,10 +141,25 @@ export function triggerTestRun({
   });
 }
 
+/** What `stories changed` reports, as far as a test run needs it. */
+export type ChangedStories = {
+  storyIds: string[];
+  /** Changed files in the config directory, which can affect every story. */
+  changedConfigFiles: string[];
+  /** Changed files change detection has not caught up with, so their stories may be missing. */
+  pendingFiles: string[];
+};
+
 export type RunStoryTestsParams = {
   channel: TestChannel;
   getIndex: () => Promise<StoryIndex>;
   stories?: StoryInput[];
+  /** Story-file filters, matched the way Vitest matches its file filters. */
+  files?: string[];
+  /** Run the stories `stories changed` lists. */
+  changed?: boolean;
+  /** The `stories.changed` tool, so both commands share one definition of "changed". */
+  getChangedStories?: () => Promise<ChangedStories>;
   a11y?: boolean;
   actor?: string;
   requestEvent?: string;
@@ -159,6 +176,9 @@ export async function runStoryTests({
   channel,
   getIndex,
   stories,
+  files,
+  changed,
+  getChangedStories,
   a11y = true,
   actor = 'core/test',
   requestEvent = TRIGGER_TEST_RUN_REQUEST,
@@ -166,30 +186,68 @@ export async function runStoryTests({
   timeoutMs = DEFAULT_TEST_RUN_TIMEOUT_MS,
 }: RunStoryTestsParams): Promise<TestRunOutput> {
   let storyIds: string[] | undefined;
+  let selection: TestRunSelection | undefined;
+  let notFoundMessages: string[] = [];
 
-  if (stories) {
+  // Each form narrows the selection, as Vitest's file filters, `--changed` and `-t` do together.
+  // `undefined` stands for every story.
+  // An empty filter list filters nothing, as in Vitest.
+  const filters = files?.length ? files : undefined;
+  if (stories || filters || changed) {
     const index = await getIndex();
-    const resolved = findStoryIds(index, stories);
-    const found = resolved.filter((story): story is FoundStory => 'entry' in story);
-    const notFoundMessages = resolved
-      .filter((story): story is NotFoundStory => !('entry' in story))
-      .map((story) => story.errorMessage);
+    let candidates: Set<string> | undefined;
+    const narrow = (ids: string[]) => {
+      candidates = new Set(candidates ? ids.filter((id) => candidates!.has(id)) : ids);
+    };
+    selection = {};
 
-    // Nothing to run: the per-selector failures are the answer, so they travel with the outcome.
-    if (found.length === 0) {
-      return { status: 'no-stories', notFoundMessages };
+    if (filters) {
+      const matched = filterStoryFiles({ index, filters });
+      selection.files = { filters, storyFiles: matched.storyFiles.length };
+      if (matched.storyFiles.length === 0) {
+        // Vitest: "No test files found, exiting with code 1", or code 0 with `--changed`, which
+        // turns on `passWithNoTests`.
+        return {
+          status: 'no-stories',
+          notFoundMessages: changed
+            ? []
+            : [
+                `No story files found for ${filters.map((file) => `\`${displayPath(file)}\``).join(', ')}.`,
+              ],
+          selection,
+        };
+      }
+      narrow(matched.storyIds);
     }
 
-    // Running the matched subset would report a verdict for stories that were never run, so a
-    // partially resolved selector list fails instead.
-    if (notFoundMessages.length > 0) {
-      return {
-        status: 'error',
-        error: { message: notFoundMessages.join('; ') },
-      };
+    if (changed) {
+      // No default: a caller that forgot to wire it must fail, not read as "nothing changed".
+      const { storyIds: changedIds, changedConfigFiles, pendingFiles } = await getChangedStories!();
+      selection.changed = { stories: changedIds.length, changedConfigFiles, pendingFiles };
+      narrow(changedIds);
     }
 
-    storyIds = found.map((story) => story.entry.id);
+    if (stories) {
+      selection.stories = stories.length;
+      const resolved = findStoryIds(index, stories);
+      notFoundMessages = resolved
+        .filter((story): story is NotFoundStory => !('entry' in story))
+        .map((story) => story.errorMessage);
+      narrow(
+        resolved
+          .filter((story): story is FoundStory => 'entry' in story)
+          .map((story) => story.entry.id)
+      );
+    }
+
+    // Nothing to run. An unknown story id fails the call; `--changed` that finds nothing passes, as
+    // Vitest's `--changed` does ("No affected test files found, exiting with code 0").
+    if (candidates?.size === 0) {
+      return { status: 'no-stories', notFoundMessages, selection };
+    }
+
+    storyIds = candidates ? [...candidates] : undefined;
+    selection.storyCount = storyIds?.length;
   }
 
   let response: TriggerTestRunResponse;
@@ -220,7 +278,12 @@ export async function runStoryTests({
           error: { message: 'Test run completed but no result was returned' },
         };
       }
-      return { status: 'completed', result: response.result };
+      return {
+        status: 'completed',
+        result: response.result,
+        ...(selection ? { selection } : {}),
+        ...(notFoundMessages.length > 0 ? { notFound: notFoundMessages } : {}),
+      };
     case 'error':
       return {
         status: 'error',

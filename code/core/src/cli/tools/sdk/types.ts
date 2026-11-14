@@ -72,6 +72,8 @@ export type ToolsetCatalogMethod = {
   title: string;
   description: string;
   requiresDevServer: boolean;
+  /** The input key the CLI fills from bare arguments, as absolute file paths. */
+  fileArguments?: string;
   /** `undefined` when the method's schema has no JSON Schema representation. */
   input: ToolsetJsonSchema | undefined;
   output?: ToolsetJsonSchema;

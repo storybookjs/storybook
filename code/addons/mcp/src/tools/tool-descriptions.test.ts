@@ -1,5 +1,7 @@
 import type { ToolAvailability } from 'storybook/internal/core-server';
-import { registerToolset } from 'storybook/open-service';
+import { getRegisteredToolsets, registerToolset } from 'storybook/open-service';
+
+import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
 import { describe, expect, it } from 'vitest';
 
 import { createTestToolset } from '../../../vitest/src/node/toolset/definition.ts';
@@ -81,5 +83,32 @@ describe('MCP tool descriptions', () => {
               .not.toMatch(MARKDOWN_EMPHASIS);
           }
         }
+  });
+
+  // `tools/list` converts every input and output schema with this adapter, and one schema it cannot
+  // convert (a valibot `transform`, say) fails the whole list, taking every tool down with it.
+  it('convert to JSON Schema the way the MCP server lists them, for every registered toolset', async () => {
+    toolMetadataFor({ multiSource: false, testSupported: true, a11yEnabled: true });
+    const adapter = new ValibotJsonSchemaAdapter();
+    const methods = getRegisteredToolsets().flatMap((toolset) =>
+      Object.entries(toolset.methods).map(([name, method]) => ({
+        ref: `${toolset.id}.${name}`,
+        method,
+      }))
+    );
+
+    expect(methods.map(({ ref }) => ref)).toContain('test.run');
+    for (const { ref, method } of methods) {
+      for (const [kind, schema] of [
+        ['input', method.input],
+        ['output', method.output],
+      ] as const) {
+        if (schema) {
+          await expect
+            .soft(adapter.toJsonSchema(schema as never), `${ref} ${kind}`)
+            .resolves.toBeTypeOf('object');
+        }
+      }
+    }
   });
 });

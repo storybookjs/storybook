@@ -1,6 +1,8 @@
-import type { ToolsetCtx } from 'storybook/open-service';
+import { getToolName, type ToolsetCtx } from 'storybook/open-service';
 
-import type { TestRunData, TestRunResult } from './definition.ts';
+import { isAbsolute, relative } from 'pathe';
+
+import type { TestRunData, TestRunResult, TestRunSelection } from './definition.ts';
 
 type ComponentTestStatus = TestRunResult['componentTestStatuses'][number];
 
@@ -274,32 +276,210 @@ const FAILURE_LABELS: Record<keyof TestRunFailureCounts, (count: number) => stri
   unhandledErrors: (count) => pluralize(count, 'unhandled error'),
 };
 
+// Short relative paths read better and cost fewer tokens; a path outside the project stays absolute.
+export function displayPath(file: string): string {
+  if (!isAbsolute(file)) {
+    return file;
+  }
+  const fromCwd = relative(process.cwd(), file);
+  return fromCwd.startsWith('..') ? file : fromCwd;
+}
+
+/**
+ * A focused run whose selected stories all stayed out of the run, for example excluded by tags. It
+ * passes, as a Vitest run whose tests are all skipped does; the selection line says why.
+ */
+function ranNothingSelected(result: TestRunResult): boolean {
+  return (
+    (result.storyIds?.length ?? 0) > 0 &&
+    result.componentTestCount.success + result.componentTestCount.error === 0
+  );
+}
+
+function code(value: string): string {
+  return `\`${value}\``;
+}
+
+// The notes `stories changed` gives about what its story list cannot show.
+function formatChangedConfigFiles(changed: TestRunSelection['changed']): string[] {
+  return [
+    ...(changed?.pendingFiles.length
+      ? [
+          `Change detection has not caught up with these changed files yet, so their stories may be missing: ${changed.pendingFiles.map(code).join(', ')}. Run this again in a moment.`,
+        ]
+      : []),
+    ...(changed?.changedConfigFiles.length
+      ? [
+          `Changed files in the Storybook config directory, which can affect every story: ${changed.changedConfigFiles.map(code).join(', ')}.`,
+        ]
+      : []),
+  ];
+}
+
+// The likely cause is named only when no error could explain the gap instead.
+function ranNote(ran: number, selected: number, unhandledErrors: number): string {
+  if (ran >= selected) {
+    return '';
+  }
+  const cause =
+    unhandledErrors > 0
+      ? ''
+      : ran === 0
+        ? ', they are excluded from tests (for example by tags)'
+        : ', the others are excluded from tests (for example by tags)';
+  return `; ${ran === 0 ? 'none' : `only ${ran}`} ran${cause}`;
+}
+
+// One line: what each form matched, then what that selected, counted against what actually ran.
+function formatSelection(
+  selection: TestRunSelection,
+  ranStoryIds: Set<string>,
+  result: TestRunResult
+): string | undefined {
+  const parts: string[] = [];
+  if (selection.files) {
+    const { filters, storyFiles } = selection.files;
+    parts.push(
+      `${pluralize(storyFiles, 'story file')} ${storyFiles === 1 ? 'matches' : 'match'} ${filters.map((filter) => code(displayPath(filter))).join(', ')}`
+    );
+  }
+  if (selection.changed) {
+    parts.push(pluralize(selection.changed.stories, 'changed story', 'changed stories'));
+  }
+  const selected = selection.storyCount;
+  if (parts.length === 0) {
+    // `stories` alone: the ids say what was selected, and the verdict counts what ran.
+    return undefined;
+  }
+  if (selected === undefined) {
+    return `${parts.join('; ')}: selected every story.`;
+  }
+  const ran = (result.storyIds ?? []).filter((id) => ranStoryIds.has(id)).length;
+  return `${parts.join('; ')}: selected ${pluralize(selected, 'story', 'stories')}${ranNote(ran, selected, result.unhandledErrors.length)}.`;
+}
+
+const A11Y_GUIDANCE =
+  'Accessibility violations: fix only what your change caused, and report the rest. For visual ones such as color contrast, ask before changing the design.';
+
+// What the agent needs next for this result, so no skill has to be read first.
+function formatNextSteps(
+  result: TestRunResult,
+  {
+    a11y,
+    testsFailed,
+    notFound,
+    ranNothing,
+    ctx,
+  }: {
+    a11y: boolean;
+    testsFailed: boolean;
+    notFound: boolean;
+    ranNothing: boolean;
+    ctx: ToolsetCtx;
+  }
+): string[] {
+  const steps: string[] = [];
+  if (notFound) {
+    steps.push('Fix or leave out the arguments listed above, then run again.');
+  }
+  if (testsFailed) {
+    steps.push(
+      'Fix what fails and run again, changing only what each failure needs. Do not finish with failing tests.'
+    );
+  }
+  if (a11y && countA11yViolations(getA11yReports(result)) > 0) {
+    steps.push(A11Y_GUIDANCE);
+  }
+  if (!testsFailed && !notFound && !ranNothing && result.storyIds && ctx.transport !== 'sdk') {
+    const all =
+      ctx.transport === 'cli'
+        ? `\`${getToolName(ctx)('test.run')}\` without arguments`
+        : `${getToolName(ctx)('test.run')} without \`files\`, \`changed\` or \`stories\``;
+    steps.push(`Before you finish, run every story once: ${all}.`);
+  }
+  return steps;
+}
+
 function formatResultSection(
   result: TestRunResult,
-  { a11y, a11yEnabled }: { a11y: boolean; a11yEnabled: boolean }
+  {
+    a11y,
+    a11yEnabled,
+    selection,
+    notFound = [],
+    ctx,
+  }: {
+    a11y: boolean;
+    a11yEnabled: boolean;
+    selection?: TestRunSelection;
+    notFound?: string[];
+    ctx: ToolsetCtx;
+  }
 ): string {
   const failures = countTestRunFailures(result, a11y);
-  const failureParts = (Object.keys(FAILURE_LABELS) as (keyof TestRunFailureCounts)[])
+  const testFailureParts = (Object.keys(FAILURE_LABELS) as (keyof TestRunFailureCounts)[])
     .filter((key) => failures[key] > 0)
     .map((key) => FAILURE_LABELS[key](failures[key]));
+  const failureParts = [
+    ...(notFound.length > 0 ? [`${pluralize(notFound.length, 'argument')} not used`] : []),
+    ...testFailureParts,
+  ];
+  const passed = result.componentTestCount.success;
   const verdict =
     failureParts.length > 0
-      ? `Failed: ${failureParts.join(', ')}.`
-      : result.componentTestCount.success === 0
+      ? `Failed: ${failureParts.join(', ')}${passed > 0 && testFailureParts.length === 0 ? `; ${pluralize(passed, 'component test')} passed` : ''}.`
+      : passed === 0
         ? 'No component tests ran.'
-        : `Passed: ${pluralize(result.componentTestCount.success, 'component test')} passed.`;
+        : `Passed: ${pluralize(passed, 'component test')} passed.`;
 
+  // Skipped tests are reported too, as `status-value:unknown`; only a verdict means a story ran.
+  const ranStoryIds = new Set(
+    result.componentTestStatuses
+      .filter(
+        (status) =>
+          isPassing(status) || isFailing(status) || status.value === 'status-value:warning'
+      )
+      .map((status) => status.storyId)
+  );
+  const lines = [
+    ...[selection && formatSelection(selection, ranStoryIds, result)].filter(
+      (line): line is string => Boolean(line)
+    ),
+    ...formatChangedConfigFiles(selection?.changed),
+    ...notFound,
+    verdict,
+    formatA11yResult(result, { a11y, a11yEnabled }),
+    ...formatNextSteps(result, {
+      ranNothing: ranNothingSelected(result),
+      a11y,
+      testsFailed: testFailureParts.length > 0,
+      notFound: notFound.length > 0,
+      ctx,
+    }),
+  ];
   return `## Result
 
-${verdict}
-${formatA11yResult(result, { a11y, a11yEnabled })}`;
+${lines.join('\n')}`;
 }
 
 // Only the sections that carry information are emitted before the closing result.
 function formatCompletedRun(
   result: TestRunResult,
-  { a11y, a11yEnabled, origin }: { a11y: boolean; a11yEnabled: boolean; origin?: string }
+  {
+    a11y,
+    a11yEnabled,
+    selection,
+    notFound,
+    ctx,
+  }: {
+    a11y: boolean;
+    a11yEnabled: boolean;
+    selection?: TestRunSelection;
+    notFound?: string[];
+    ctx: ToolsetCtx;
+  }
 ): string {
+  const { origin } = ctx;
   const sections: string[] = [];
   // An error-level accessibility result fails the run without failing the component test, so the
   // story is listed as failing rather than passing.
@@ -334,9 +514,57 @@ function formatCompletedRun(
   }
 
   // Last, because agents mostly read this report through `tail`.
-  sections.push(formatResultSection(result, { a11y, a11yEnabled }));
+  sections.push(formatResultSection(result, { a11y, a11yEnabled, selection, notFound, ctx }));
 
   return sections.join('\n\n');
+}
+
+function runEveryStoryBeforeFinishing(ctx: ToolsetCtx): string {
+  return ctx.transport === 'cli'
+    ? `Before you finish, run every story once: ${code(getToolName(ctx)('test.run'))} without arguments.`
+    : `Before you finish, run every story once: ${getToolName(ctx)('test.run')} without ${code('files')}, ${code('changed')} or ${code('stories')}.`;
+}
+
+// How to spell an argument for the transport the agent uses.
+function argument(ctx: ToolsetCtx, cli: string, mcp: string): string {
+  return code(ctx.transport === 'cli' ? cli : mcp);
+}
+
+function formatNoStories(
+  { notFoundMessages, selection }: Extract<TestRunData, { status: 'no-stories' }>,
+  ctx: ToolsetCtx
+): string {
+  if (notFoundMessages.length > 0) {
+    // Vitest's filters select test files only; a component file selects nothing here either.
+    const filterHint =
+      selection?.files?.storyFiles === 0
+        ? `\nFile arguments select story files by path, as Vitest filters select test files. To test the stories that depend on a changed file, use ${argument(ctx, '--changed', 'changed: true')}.`
+        : '';
+    return `No stories found matching the provided input.
+
+${notFoundMessages.join('\n')}${filterHint}`;
+  }
+  if (selection?.files?.storyFiles === 0) {
+    // Only under `changed`, which passes with no tests, as in Vitest; otherwise it failed above.
+    return `No story files found for ${selection.files.filters.map((filter) => code(displayPath(filter))).join(', ')}, so no tests ran.
+File arguments select story files by path, as Vitest filters select test files. To test the stories that depend on a changed file, use ${argument(ctx, '--changed', 'changed: true')} without file arguments.
+${runEveryStoryBeforeFinishing(ctx)}`;
+  }
+  if (selection?.changed) {
+    const what =
+      selection.changed.stories > 0 ? 'None of the selected stories changed' : 'No stories changed';
+    // A run that selected nothing passes, as in Vitest, so the agent could otherwise finish without
+    // one test having run.
+    return [
+      `${what}, so no tests ran.`,
+      ...formatChangedConfigFiles(selection.changed),
+      `To test more, pass story files. ${runEveryStoryBeforeFinishing(ctx)}`,
+    ].join('\n');
+  }
+  if (selection?.files && selection.stories) {
+    return 'None of the given story IDs is in the matched story files, so no tests ran.';
+  }
+  return 'No stories were given, so no tests ran. Pass files or story IDs, or neither to run every story test.';
 }
 
 /**
@@ -352,16 +580,14 @@ export function formatTestRun(
 ): string {
   switch (data.status) {
     case 'no-stories':
-      return data.notFoundMessages.length === 0
-        ? 'No stories were given, so no tests ran. Pass story IDs in `stories`, or omit it to run every story test.'
-        : `No stories found matching the provided input.
-
-${data.notFoundMessages.join('\n')}`;
+      return formatNoStories(data, ctx);
     case 'completed':
       return formatCompletedRun(data.result, {
         a11y: data.a11y,
         a11yEnabled,
-        origin: ctx.origin,
+        selection: data.selection,
+        notFound: data.notFound,
+        ctx,
       });
     case 'error':
       return `Error: ${data.error.message}`;

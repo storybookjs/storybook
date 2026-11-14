@@ -1,7 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 import * as v from 'valibot';
 
+import { createStoriesToolset } from 'storybook/internal/core-server';
+import { CHANGE_DETECTION_STATUS_TYPE_ID } from 'storybook/internal/types';
 import type { StoryIndex } from 'storybook/internal/types';
+import { clearToolsetRegistry, getToolset, registerToolset } from 'storybook/open-service';
 
 import { TRIGGER_TEST_RUN_REQUEST, TRIGGER_TEST_RUN_RESPONSE } from '../../constants.ts';
 import { createTestToolset, type TestRunResult } from './definition.ts';
@@ -91,6 +94,22 @@ describe('createAsyncQueue', () => {
   });
 });
 
+/** A channel that answers every run request with `sampleResult`, recording the requested ids. */
+function respondingChannel() {
+  const channel = createMockChannel();
+  const requested: unknown[] = [];
+  channel.emit = (event, payload) => {
+    if (event === TRIGGER_TEST_RUN_REQUEST) {
+      const { requestId, storyIds } = payload as { requestId: string; storyIds?: string[] };
+      requested.push(storyIds);
+      queueMicrotask(() =>
+        respond(channel, { requestId, status: 'completed', result: sampleResult })
+      );
+    }
+  };
+  return { channel, requested };
+}
+
 describe('runStoryTests', () => {
   it('rejects when the story index cannot be loaded', async () => {
     await expect(
@@ -104,9 +123,8 @@ describe('runStoryTests', () => {
     ).rejects.toThrow('index unavailable');
   });
 
-  it('returns no-stories with the per-selector messages when nothing matched', async () => {
-    const channel = createMockChannel();
-    const emitSpy = vi.spyOn(channel, 'emit');
+  it('returns no-stories with the per-selector messages when no story id matched', async () => {
+    const { channel, requested } = respondingChannel();
 
     const result = await runStoryTests({
       channel,
@@ -116,14 +134,14 @@ describe('runStoryTests', () => {
 
     expect(result).toEqual({
       status: 'no-stories',
-      notFoundMessages: ['No story found for story ID "missing--story"'],
+      notFoundMessages: [expect.stringContaining('No story found for story ID "missing--story"')],
+      selection: { stories: 1 },
     });
-    expect(emitSpy).not.toHaveBeenCalled();
+    expect(requested).toEqual([]);
   });
 
-  it('returns an error when some selectors resolve and others miss', async () => {
-    const channel = createMockChannel();
-    const emitSpy = vi.spyOn(channel, 'emit');
+  it('runs the story ids that resolve and reports the ones that miss', async () => {
+    const { channel, requested } = respondingChannel();
 
     const result = await runStoryTests({
       channel,
@@ -131,46 +149,156 @@ describe('runStoryTests', () => {
       stories: [{ storyId: 'button--primary' }, { storyId: 'missing--story' }],
     });
 
-    expect(result.status).toBe('error');
-    expect(emitSpy).not.toHaveBeenCalled();
+    expect(requested).toEqual([['button--primary']]);
+    expect(result).toMatchObject({
+      status: 'completed',
+      notFound: [expect.stringContaining('No story found for story ID "missing--story"')],
+    });
   });
 
   it('returns no-stories when the focused selector list is empty', async () => {
-    const channel = createMockChannel();
-    const emitSpy = vi.spyOn(channel, 'emit');
+    const { channel, requested } = respondingChannel();
 
-    const result = await runStoryTests({
-      channel,
-      getIndex: async () => index,
-      stories: [],
+    const result = await runStoryTests({ channel, getIndex: async () => index, stories: [] });
+
+    expect(result).toEqual({
+      status: 'no-stories',
+      notFoundMessages: [],
+      selection: { stories: 0 },
     });
-
-    expect(result).toEqual({ status: 'no-stories', notFoundMessages: [] });
-    expect(emitSpy).not.toHaveBeenCalled();
+    expect(requested).toEqual([]);
   });
 
-  it('maps a completed channel response', async () => {
-    const channel = createMockChannel();
-    channel.emit = (event, payload) => {
-      if (event === TRIGGER_TEST_RUN_REQUEST) {
-        const { requestId } = payload as { requestId: string };
-        queueMicrotask(() =>
-          respond(channel, {
-            requestId,
-            status: 'completed',
-            result: sampleResult,
-          })
-        );
-      }
-    };
+  it('runs every story without a selection', async () => {
+    const { channel, requested } = respondingChannel();
+
+    const result = await runStoryTests({ channel, getIndex: async () => index });
+
+    expect(requested).toEqual([undefined]);
+    expect(result).toEqual({ status: 'completed', result: sampleResult });
+  });
+
+  it('runs the story files a file filter matches', async () => {
+    const { channel, requested } = respondingChannel();
 
     const result = await runStoryTests({
       channel,
       getIndex: async () => index,
-      stories: [{ storyId: 'button--primary' }],
+      files: ['button'],
     });
 
-    expect(result).toEqual({ status: 'completed', result: sampleResult });
+    expect(requested).toEqual([['button--primary']]);
+    expect(result).toMatchObject({
+      status: 'completed',
+      selection: { files: { filters: ['button'], storyFiles: 1 }, storyCount: 1 },
+    });
+  });
+
+  it('fails without running when no story file matches the filters', async () => {
+    const { channel, requested } = respondingChannel();
+
+    const result = await runStoryTests({
+      channel,
+      getIndex: async () => index,
+      files: ['src/Button.tsx'],
+    });
+
+    expect(result).toEqual({
+      status: 'no-stories',
+      notFoundMessages: ['No story files found for `src/Button.tsx`.'],
+      selection: { files: { filters: ['src/Button.tsx'], storyFiles: 0 } },
+    });
+    expect(requested).toEqual([]);
+  });
+
+  it('treats an empty filter list as no filter, as Vitest does', async () => {
+    const { channel, requested } = respondingChannel();
+
+    await runStoryTests({ channel, getIndex: async () => index, files: [] });
+
+    expect(requested).toEqual([undefined]);
+  });
+
+  describe('changed', () => {
+    it('runs exactly the stories that stories changed lists', async () => {
+      const { channel, requested } = respondingChannel();
+
+      const result = await runStoryTests({
+        channel,
+        getIndex: async () => index,
+        changed: true,
+        getChangedStories: async () => ({
+          storyIds: ['button--primary'],
+          changedConfigFiles: ['.storybook/preview.ts'],
+          pendingFiles: [],
+        }),
+      });
+
+      expect(requested).toEqual([['button--primary']]);
+      expect(result).toMatchObject({
+        status: 'completed',
+        selection: {
+          changed: { stories: 1, changedConfigFiles: ['.storybook/preview.ts'], pendingFiles: [] },
+          storyCount: 1,
+        },
+      });
+    });
+
+    it('passes without running when no story changed, as Vitest does', async () => {
+      const { channel, requested } = respondingChannel();
+
+      const result = await runStoryTests({
+        channel,
+        getIndex: async () => index,
+        changed: true,
+        getChangedStories: async () => ({ storyIds: [], changedConfigFiles: [], pendingFiles: [] }),
+      });
+
+      expect(result).toEqual({
+        status: 'no-stories',
+        notFoundMessages: [],
+        selection: { changed: { stories: 0, changedConfigFiles: [], pendingFiles: [] } },
+      });
+      expect(requested).toEqual([]);
+    });
+
+    it('runs only the stories both a file filter and the changes select', async () => {
+      const { channel, requested } = respondingChannel();
+
+      const result = await runStoryTests({
+        channel,
+        getIndex: async () => index,
+        files: ['button'],
+        changed: true,
+        getChangedStories: async () => ({
+          storyIds: ['header--default'],
+          changedConfigFiles: [],
+          pendingFiles: [],
+        }),
+      });
+
+      expect(result).toMatchObject({ status: 'no-stories', notFoundMessages: [] });
+      expect(requested).toEqual([]);
+    });
+
+    it('passes when no story file matches the filters, as Vitest does with --changed', async () => {
+      const { channel, requested } = respondingChannel();
+
+      const result = await runStoryTests({
+        channel,
+        getIndex: async () => index,
+        files: ['src/Button.tsx'],
+        changed: true,
+        getChangedStories: async () => ({
+          storyIds: ['button--primary'],
+          changedConfigFiles: [],
+          pendingFiles: [],
+        }),
+      });
+
+      expect(result).toMatchObject({ status: 'no-stories', notFoundMessages: [] });
+      expect(requested).toEqual([]);
+    });
   });
 
   it('maps an error channel response', async () => {
@@ -303,5 +431,91 @@ describe('createTestToolset channel identity', () => {
 
     expect(outcome.ok).toBe(true);
     expect(outcome.data).toMatchObject({ status: 'completed', a11y: false });
+  });
+});
+
+describe('test run --changed and stories changed', () => {
+  it('select the same stories for the same working tree', async () => {
+    const parityIndex: StoryIndex = {
+      v: 5,
+      entries: Object.fromEntries(
+        ['button--primary', 'header--default', 'page--default'].map((id) => [
+          id,
+          {
+            type: 'story',
+            subtype: 'story',
+            id,
+            name: id,
+            title: id,
+            importPath: `./src/${id}.stories.tsx`,
+            tags: ['story'],
+          },
+        ])
+      ),
+    };
+    const status = (storyId: string, value: string) => ({
+      [storyId]: {
+        [CHANGE_DETECTION_STATUS_TYPE_ID]: {
+          storyId,
+          typeId: CHANGE_DETECTION_STATUS_TYPE_ID,
+          value,
+          title: '',
+          description: '',
+        },
+      },
+    });
+    const moduleGraph = {
+      queries: {
+        status: { loaded: async () => ({ value: 'ready' }) },
+        changeDetectionReadiness: { loaded: async () => ({ status: 'ready' }) },
+      },
+      commands: { storiesForFiles: async () => [] },
+    };
+    const ctx = { transport: 'cli' as const, getService: () => moduleGraph as never };
+
+    clearToolsetRegistry();
+    registerToolset(
+      createStoriesToolset({
+        storyIndex: { getIndex: async () => parityIndex },
+        git: {
+          getRepoRoot: async () => process.cwd(),
+          getChangedFiles: async () => ({ changed: new Set<string>(), new: new Set<string>() }),
+        },
+        changeStatuses: {
+          getAll: () =>
+            ({
+              ...status('button--primary', 'status-value:new'),
+              ...status('page--default', 'status-value:affected'),
+              ...status('header--default', 'status-value:unknown'),
+            }) as never,
+        },
+        storybookDirs: {
+          configDir: `${process.cwd()}/.storybook`,
+          getStaticDirs: async () => [],
+          getStoriesMatcher: async () => () => false,
+        },
+      })
+    );
+    const { channel, requested } = respondingChannel();
+    const testToolset = createTestToolset({
+      channel,
+      storyIndex: { getIndex: async () => parityIndex },
+      a11yEnabled: false,
+    });
+
+    let listed;
+    try {
+      listed = await getToolset('stories').methods.changed.handler({}, ctx);
+      await testToolset.methods.run.handler(
+        v.parse(testToolset.methods.run.input, { changed: true }),
+        ctx
+      );
+    } finally {
+      clearToolsetRegistry();
+    }
+
+    const listedIds = listed.data.stories.map((story) => story.storyId);
+    expect(listedIds.sort()).toEqual(['button--primary', 'page--default']);
+    expect((requested[0] as string[]).sort()).toEqual(listedIds);
   });
 });

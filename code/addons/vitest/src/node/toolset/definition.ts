@@ -8,6 +8,7 @@ import {
 import {
   defineToolset,
   getSkillCommand,
+  getToolset,
   type ToolsetCtx,
   type ToolsetDefinition,
   type ToolsetMethod,
@@ -16,7 +17,7 @@ import {
 } from 'storybook/open-service';
 
 import { countTestRunFailures, formatTestRun, summarizeTestRun } from './format.ts';
-import { createAsyncQueue, runStoryTests, type TestChannel } from './run.ts';
+import { createAsyncQueue, runStoryTests, type ChangedStories, type TestChannel } from './run.ts';
 
 const errorLikeSchema: v.GenericSchema = v.object({
   message: v.string(),
@@ -71,15 +72,38 @@ const testRunResultSchema = v.object({
   ),
 });
 
+/** What `files`, `changed` and `stories` selected, for the summary line. */
+const selectionSchema = v.object({
+  files: v.optional(v.object({ filters: v.array(v.string()), storyFiles: v.number() })),
+  changed: v.optional(
+    v.object({
+      /** How many stories `stories changed` listed. */
+      stories: v.number(),
+      /** Changed files in the Storybook config directory, which can affect every story. */
+      changedConfigFiles: v.array(v.string()),
+      /** Changed files change detection has not caught up with yet. */
+      pendingFiles: v.array(v.string()),
+    })
+  ),
+  /** How many story ids `stories` gave. */
+  stories: v.optional(v.number()),
+  /** Stories the run was asked for; absent when the selection is every story. */
+  storyCount: v.optional(v.number()),
+});
+
 const testRunOutputSchema = v.variant('status', [
   v.object({
     status: v.literal('no-stories'),
-    /** Per-selector lookup failures. When nothing matched, they are the whole answer. */
+    /** Why the selection is empty when that is a mistake; empty when nothing was affected. */
     notFoundMessages: v.array(v.string()),
+    selection: v.optional(selectionSchema),
   }),
   v.object({
     status: v.literal('completed'),
     result: testRunResultSchema,
+    selection: v.optional(selectionSchema),
+    /** Story ids that matched nothing. The rest ran, but they fail the call. */
+    notFound: v.optional(v.array(v.string())),
   }),
   v.object({
     status: v.literal('error'),
@@ -95,6 +119,7 @@ const testRunOutputSchema = v.variant('status', [
 
 export type TestRunResult = v.InferOutput<typeof testRunResultSchema>;
 export type TestRunOutput = v.InferOutput<typeof testRunOutputSchema>;
+export type TestRunSelection = v.InferOutput<typeof selectionSchema>;
 
 /**
  * What `run` renders: the run result plus whether accessibility tests were part of this run, which
@@ -113,7 +138,7 @@ export type TestRunSuccessData = Extract<TestRunOutput, { status: 'completed' | 
 
 export type TestRunFailureData = Extract<
   TestRunOutput,
-  { status: 'completed' | 'error' | 'cancelled' }
+  { status: 'completed' | 'no-stories' | 'error' | 'cancelled' }
 > & {
   a11y: boolean;
 };
@@ -123,12 +148,28 @@ const runInputSchema = v.strictObject({
     v.pipe(
       storyInputArraySchema,
       v.description(
-        `Stories to test for focused feedback. Omit this field to run tests for all available stories.
+        `Stories to test for focused feedback. Omit this field, \`files\` and \`changed\` to run tests for all available stories.
 Prefer running tests for specific stories while developing to get faster feedback,
 and omit it once before you finish, to verify every story.
 Prefer { storyId } when you don't already have story file context, since this avoids filesystem discovery.
 Use { storyId } when IDs were discovered from documentation tools.
 Use { absoluteStoryPath + exportName } only when you're currently working in a story file and already know those values.`
+      )
+    )
+  ),
+  files: v.optional(
+    v.pipe(
+      v.array(v.string()),
+      v.description(
+        `Story files to test, as Vitest file filters: each entry selects the story files whose path, relative to the Storybook project directory, contains it (case-insensitive), or that an absolute path or directory points to. Only story files match; to test the stories that depend on a changed component, use \`changed\`.`
+      )
+    )
+  ),
+  changed: v.optional(
+    v.pipe(
+      v.boolean(),
+      v.description(
+        'Test the changed stories, exactly as the stories changed tool lists them: new and modified stories, and the stories that depend on changed files. Combined with files or stories, only the stories that match both run.'
       )
     )
   ),
@@ -145,13 +186,26 @@ Use { absoluteStoryPath + exportName } only when you're currently working in a s
 
 // Inferring this from the schema would make the exported toolset type unnameable in declaration
 // output, because core's valibot types live in a private declaration chunk.
-type RunInput = { stories?: StoryInput[]; a11y: boolean };
+type RunInput = {
+  stories?: StoryInput[];
+  files?: string[];
+  changed?: boolean;
+  a11y: boolean;
+};
 
 export type TestToolset = ToolsetDefinition<
   'test',
   {
     run: ToolsetMethod<
-      v.GenericSchema<{ stories?: StoryInput[]; a11y?: boolean }, RunInput>,
+      v.GenericSchema<
+        {
+          stories?: StoryInput[];
+          files?: string[];
+          changed?: boolean;
+          a11y?: boolean;
+        },
+        RunInput
+      >,
       ToolsetOutcome<TestRunSuccessData, TestRunFailureData>
     >;
   }
@@ -166,8 +220,8 @@ function describeRun(a11yEnabled: boolean, ctx: ToolsetCtx): string {
   return (
     `Run story tests.${skill ? `\nFirst run ${skill} once and follow it: it has the rules for running the tests and fixing what fails.` : ''}
 Run them after editing anything that changes how the UI looks — components, stories, styles, CSS, themes, colors, or design tokens — shell-level substitutes like typecheck, lint, or package.json test scripts do not replace this.
-Provide stories for focused runs (faster while iterating),
-or omit stories to run all tests for full-project verification.
+Use changed for focused runs on what you changed (faster while iterating), or files for specific story files,
+and leave all of them out to run every story for full-project verification.
 Use this continuously to monitor test results as you work on your UI components and stories.
 Results will include passing/failing status` +
     (a11yEnabled
@@ -183,12 +237,16 @@ For visual/design accessibility violations (for example color contrast), ask the
  */
 function runTelemetry(data: TestRunData, input: RunInput): ToolsetTelemetryReport | undefined {
   const inputStoryCount = input.stories?.length ?? 0;
+  const inputFileCount = input.files?.length ?? 0;
+  const changed = input.changed ? { changed: true } : {};
 
   if (data.status === 'no-stories') {
     return {
       payload: {
         runA11y: data.a11y,
         inputStoryCount,
+        inputFileCount,
+        ...changed,
         matchedStoryCount: 0,
         passingStoryCount: 0,
         failingStoryCount: 0,
@@ -206,7 +264,9 @@ function runTelemetry(data: TestRunData, input: RunInput): ToolsetTelemetryRepor
     payload: {
       runA11y: data.a11y,
       inputStoryCount,
-      // A partially resolved selector list never reaches a run, so every input matched by this point.
+      inputFileCount,
+      ...changed,
+      // The stories the run was asked for; a full run falls back to the input count.
       matchedStoryCount: data.result.storyIds?.length ?? inputStoryCount,
       ...summarizeTestRun(data.result, data.a11y),
     },
@@ -219,15 +279,29 @@ function isFailedRun(data: TestRunData): data is TestRunFailureData {
     case 'cancelled':
       return true;
     case 'completed':
-      return Object.values(countTestRunFailures(data.result, data.a11y)).some((count) => count > 0);
+      return (
+        Object.values(countTestRunFailures(data.result, data.a11y)).some((count) => count > 0) ||
+        (data.notFound?.length ?? 0) > 0
+      );
     case 'no-stories':
-      return false;
+      // A filter or id that matched nothing fails, as in Vitest; `changed` affecting nothing passes.
+      return data.notFoundMessages.length > 0;
     default: {
       // Type-only: a new status must decide its own pass/fail rather than falling through.
       const _exhaustive: never = data;
       return _exhaustive;
     }
   }
+}
+
+// `stories changed` itself, so both commands select the same stories for the same working tree.
+async function getChangedStories(ctx: ToolsetCtx): Promise<ChangedStories> {
+  const { data } = await getToolset('stories').methods.changed.handler({}, ctx);
+  return {
+    storyIds: data.stories.map((story) => story.storyId),
+    changedConfigFiles: data.changedConfigFiles,
+    pendingFiles: [...data.unindexedStoryFiles, ...data.pendingFiles],
+  };
 }
 
 export type CreateTestToolsetOptions = {
@@ -254,6 +328,7 @@ export function createTestToolset({
     methods: {
       run: {
         input: runInputSchema,
+        fileArguments: 'files',
         title: 'Run Storybook tests',
         description: (ctx) => describeRun(a11yEnabled, ctx),
         handler: async (
@@ -266,6 +341,9 @@ export function createTestToolset({
               channel,
               getIndex: storyIndex.getIndex,
               stories: input.stories,
+              files: input.files,
+              changed: input.changed,
+              getChangedStories: () => getChangedStories(ctx),
               a11y: input.a11y,
             });
             const data: TestRunData = { ...output, a11y: input.a11y };

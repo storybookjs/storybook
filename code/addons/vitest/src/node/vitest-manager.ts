@@ -4,6 +4,7 @@ import type { CoverageOptions, TestProject, TestSpecification, Vitest } from 'vi
 
 import { getProjectRoot, resolvePathInStorybookCache } from 'storybook/internal/common';
 import { Tag } from 'storybook/internal/core-server';
+import { storyNameFromExport } from 'storybook/internal/csf';
 import { logger } from 'storybook/internal/node-logger';
 import type { StoryId, StoryIndexEntry } from 'storybook/internal/types';
 
@@ -43,15 +44,23 @@ export const toModuleId = (importPath: string) => path.join(process.cwd(), impor
 const getTestName = (name: string) => `${name}${DOUBLE_SPACES}`;
 
 /**
- * The names a story's test can have, as one regex group: its name, and its export name (see
- * `buildStoryTestNamePattern`).
+ * The names a story's test can have, as one regex group: its name, its export name, and the name
+ * derived from its export (see `buildStoryTestNamePattern`).
  */
 const testNames = (
   story: Pick<StoryIndexEntry, 'name' | 'exportName'>,
   toTestName = (name: string) => name
 ) => {
   const names = [
-    ...new Set([story.name, story.exportName].filter((name): name is string => !!name)),
+    ...new Set(
+      [
+        story.name,
+        story.exportName,
+        // What the transform names a CSF object export without a `name`, for an indexer whose
+        // display name differs from it.
+        story.exportName && storyNameFromExport(story.exportName),
+      ].filter((name): name is string => !!name)
+    ),
   ].map((name) => escapeRegExp(toTestName(name)));
   return names.length === 1 ? names[0] : `(?:${names.join('|')})`;
 };

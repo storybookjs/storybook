@@ -385,7 +385,7 @@ Fix or leave out the arguments listed above, then run again.`);
       expect(outcome.markdown).not.toContain('Before you finish');
     });
 
-    it('says why selected stories did not run only where the runner knows, and fails on the rest', async () => {
+    it('says why selected stories did not run only where the runner knows, and says so plainly for the rest', async () => {
       const statuses = [
         componentTest('button--primary', 'status-value:success'),
         {
@@ -408,10 +408,12 @@ Fix or leave out the arguments listed above, then run again.`);
 
       const outcome = await runTests();
 
-      expect(outcome.ok).toBe(false);
+      expect(outcome.ok).toBe(true);
       expect(outcome.markdown).toContain(
         `1 story file matches \`Button\`: selected 3 stories; only 1 ran: 1 is excluded from tests by tags; 1 did not run, and Storybook cannot tell why: \`button--secondary\`.
-Failed: 1 selected story did not run; 1 component test passed.`
+Passed: 1 component test passed.
+Accessibility: not checked.
+Storybook could not run the stories listed above as not run. Do not change their tags or test settings to make that go away: tell the user which stories did not run.`
       );
 
       vi.mocked(runStoryTests).mockResolvedValue({
@@ -449,8 +451,8 @@ No component tests ran.
 Accessibility: not checked.`);
     });
 
-    // SB-2557: the run used to pass here and blame tags.
-    it('fails a focused run in which selected stories did not run for no known reason', async () => {
+    // SB-2557: the run used to blame tags here.
+    it('says plainly that selected stories did not run for no known reason', async () => {
       vi.mocked(runStoryTests).mockResolvedValue({
         ...completed({
           storyIds: ['button--primary', 'button--secondary'],
@@ -461,11 +463,12 @@ Accessibility: not checked.`);
 
       const outcome = await runTests();
 
-      expect(outcome.ok).toBe(false);
-      expect(outcome.markdown).toContain(`## Result
+      expect(outcome.markdown).toBe(`## Result
 
 Selected 2 stories; none ran: 2 did not run, and Storybook cannot tell why: \`button--primary\`, \`button--secondary\`.
-Failed: 2 selected stories did not run.`);
+No component tests ran.
+Accessibility: not checked.
+Storybook could not run the stories listed above as not run. Do not change their tags or test settings to make that go away: tell the user which stories did not run.`);
     });
 
     it('fails when no story file matches, pointing a component file to changed', async () => {

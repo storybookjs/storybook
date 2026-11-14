@@ -821,6 +821,60 @@ describe('TestManager', () => {
     expect(regex?.test('From A String')).toBe(false);
   });
 
+  it('matches a story by the name derived from its export, for an indexer with its own names', async () => {
+    vitest.globTestSpecifications.mockImplementation(() => tests);
+    const testManager = await startWithIndex();
+    testManager.storyIndex = {
+      v: 5,
+      entries: {
+        'button--primary-button': {
+          type: 'story',
+          subtype: 'story',
+          id: 'button--primary-button',
+          name: 'The main button',
+          exportName: 'PrimaryButton',
+          title: 'button',
+          importPath: 'path/to/file',
+          tags: [Tag.TEST],
+        },
+      },
+    } as StoryIndex;
+
+    await testManager.handleTriggerRunEvent({
+      type: 'TRIGGER_RUN',
+      payload: { storyIds: ['button--primary-button'], triggeredBy: 'global' },
+    });
+
+    expect(setTestNamePattern).toHaveBeenCalledWith(
+      new RegExp('^(?:The main button|PrimaryButton|Primary Button)$')
+    );
+  });
+
+  it('matches the describe of a story with tests by its name or export name', async () => {
+    vitest.globTestSpecifications.mockImplementation(() => tests);
+    const testManager = await startWithIndex();
+    testManager.storyIndex = {
+      ...mockIndex,
+      entries: {
+        ...mockIndex.entries,
+        'parent--story': { ...mockIndex.entries['parent--story'], exportName: 'ParentStory' },
+      },
+    } as StoryIndex;
+
+    await testManager.handleTriggerRunEvent({
+      type: 'TRIGGER_RUN',
+      payload: { storyIds: ['parent--story:test'], triggeredBy: 'global' },
+    });
+
+    const regex = setTestNamePattern.mock.calls.find(([arg]) => arg instanceof RegExp)?.[0] as
+      | RegExp
+      | undefined;
+    // Vitest 4 joins the describe and the test with a space.
+    expect(regex?.test(`Parent story${DOUBLE_SPACES} Test name`)).toBe(true);
+    expect(regex?.test(`ParentStory${DOUBLE_SPACES} Test name`)).toBe(true);
+    expect(regex?.test(`Other${DOUBLE_SPACES} Test name`)).toBe(false);
+  });
+
   it('records which selected stories tags or the Vitest project leave out', async () => {
     // Only the first story file is a test file of the Vitest project.
     vitest.globTestSpecifications.mockImplementation(() => tests.slice(0, 1));
@@ -846,6 +900,48 @@ describe('TestManager', () => {
       byTags: ['story--two'],
       notInProject: ['another--one'],
     });
+  });
+
+  it('counts a story its skip tags skip as excluded by tags', async () => {
+    vitest.globTestSpecifications.mockImplementation(() =>
+      tests.slice(0, 1).map((test) => ({
+        ...test,
+        project: {
+          ...test.project,
+          config: { env: { ...test.project.config.env, __VITEST_SKIP_TAGS__: 'skip-me' } },
+        },
+      }))
+    );
+    const testManager = await startWithIndex();
+    testManager.storyIndex = {
+      ...mockIndex,
+      entries: {
+        ...mockIndex.entries,
+        'story--two': { ...mockIndex.entries['story--two'], tags: [Tag.TEST, 'skip-me'] },
+      },
+    } as StoryIndex;
+
+    await testManager.handleTriggerRunEvent({
+      type: 'TRIGGER_RUN',
+      payload: { storyIds: ['story--one', 'story--two'], triggeredBy: 'global' },
+    });
+
+    expect(mockStore.getState().currentRun.excludedStoryIds).toEqual({
+      byTags: ['story--two'],
+      notInProject: [],
+    });
+  });
+
+  it('records nothing left out for a run of every story', async () => {
+    vitest.globTestSpecifications.mockImplementation(() => tests);
+    const testManager = await startWithIndex();
+
+    await testManager.handleTriggerRunEvent({
+      type: 'TRIGGER_RUN',
+      payload: { triggeredBy: 'global' },
+    });
+
+    expect(mockStore.getState().currentRun.excludedStoryIds).toBeUndefined();
   });
 
   it('should trigger only selected stories across multiple files', async () => {

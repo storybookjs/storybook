@@ -92,6 +92,18 @@ describe('test names of the Vitest transform, against the story index', () => {
     expect(entries[0].exportName).toBe('HoverShowsFullDate');
   });
 
+  // A focused run reports such a story as one that did not run for a reason Storybook cannot tell;
+  // it is tested in its own file.
+  it('a story re-exported from another file is in the index but gets no test', async () => {
+    const { tests, entries } = await namesOf(`
+      export default {};
+      export { Primary } from './Other.stories';
+      export const Local = {};
+    `);
+    expect(entries.map((entry) => entry.exportName)).toEqual(['Primary', 'Local']);
+    expect(tests).toEqual(['Local']);
+  });
+
   it('CSF factories, with a name and with `.test()` entries', async () => {
     await expectEveryEntryToFindItsTest(`
       import { config } from '#.storybook/preview';

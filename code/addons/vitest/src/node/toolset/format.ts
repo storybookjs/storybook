@@ -286,9 +286,9 @@ export function displayPath(file: string): string {
 }
 
 /**
- * A focused run whose selected stories all stayed out of the run. When tags or the Vitest project
- * explain that, it passes, as a Vitest run whose tests are all skipped does; when nothing does, it
- * fails (see `storiesNotRun`). The selection line says which.
+ * A focused run whose selected stories all stayed out of the run. It passes, as a Vitest run whose
+ * tests are all skipped does; the selection line says why where the runner knows, and says plainly
+ * where it does not (see `storiesNotRun`).
  */
 export function ranNothingSelected(result: TestRunResult): boolean {
   return (
@@ -407,16 +407,23 @@ function formatNextSteps(
     testsFailed,
     notFound,
     ranNothing,
+    unexplained,
     ctx,
   }: {
     a11y: boolean;
     testsFailed: boolean;
     notFound: boolean;
     ranNothing: boolean;
+    unexplained: boolean;
     ctx: ToolsetCtx;
   }
 ): string[] {
   const steps: string[] = [];
+  if (unexplained) {
+    steps.push(
+      'Storybook could not run the stories listed above as not run. Do not change their tags or test settings to make that go away: tell the user which stories did not run.'
+    );
+  }
   if (notFound) {
     steps.push('Fix or leave out the arguments listed above, then run again.');
   }
@@ -458,13 +465,9 @@ function formatResultSection(
   const testFailureParts = (Object.keys(FAILURE_LABELS) as (keyof TestRunFailureCounts)[])
     .filter((key) => failures[key] > 0)
     .map((key) => FAILURE_LABELS[key](failures[key]));
-  const unexplained = storiesNotRun(result).unexplained.length;
   const failureParts = [
     ...(notFound.length > 0 ? [`${pluralize(notFound.length, 'argument')} not used`] : []),
     ...testFailureParts,
-    ...(unexplained > 0
-      ? [`${pluralize(unexplained, 'selected story', 'selected stories')} did not run`]
-      : []),
   ];
   const passed = result.componentTestCount.success;
   const verdict =
@@ -485,6 +488,7 @@ function formatResultSection(
     formatA11yResult(result, { a11y, a11yEnabled }),
     ...formatNextSteps(result, {
       ranNothing: ranNothingSelected(result),
+      unexplained: storiesNotRun(result).unexplained.length > 0,
       a11y,
       testsFailed: testFailureParts.length > 0,
       notFound: notFound.length > 0,

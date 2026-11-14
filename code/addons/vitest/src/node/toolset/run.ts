@@ -274,14 +274,19 @@ export async function runStoryTests({
     if (stories) {
       selection.stories = stories.length;
       const resolved = findStoryIds(index, stories);
-      notFoundMessages = resolved
-        .filter((story): story is NotFoundStory => !('entry' in story))
-        .map((story) => story.errorMessage);
-      narrow(
-        resolved
-          .filter((story): story is FoundStory => 'entry' in story)
-          .map((story) => story.entry.id)
-      );
+      const found = resolved.filter((story): story is FoundStory => 'entry' in story);
+      // A docs entry has an id like a story's, but no test: say so instead of counting it as a
+      // story that did not run.
+      const docs = found.filter((story) => story.entry.type !== 'story');
+      notFoundMessages = [
+        ...resolved
+          .filter((story): story is NotFoundStory => !('entry' in story))
+          .map((story) => story.errorMessage),
+        ...docs.map(
+          (story) => `"${story.entry.id}" is a docs entry, not a story: docs have no tests.`
+        ),
+      ];
+      narrow(found.filter((story) => story.entry.type === 'story').map((story) => story.entry.id));
     }
 
     // Nothing to run. An unknown story id fails the call; `--changed` that affects nothing passes,

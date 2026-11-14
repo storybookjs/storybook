@@ -113,6 +113,72 @@ EscapeWithQueryStaysInSearch.play = async ({ canvasElement }) => {
   await waitFor(() => expect(escapeAbove).toHaveBeenCalledOnce());
 };
 
+const selectStory = fn().mockName('selectStory');
+
+/**
+ * Selecting a search result opens it and keeps both the query and the results, so the next result
+ * is one click away. Clearing the query removes them.
+ */
+export const KeepsResultsAfterSelecting: StoryFn = () => (
+  <Search {...baseProps}>
+    {({
+      query,
+      results,
+      isSearchResultRendered,
+      closeMenu,
+      getMenuProps,
+      getItemProps,
+      highlightedIndex,
+    }) =>
+      isSearchResultRendered ? (
+        <SearchResults
+          query={query}
+          results={results}
+          closeMenu={closeMenu}
+          getMenuProps={getMenuProps}
+          getItemProps={getItemProps}
+          highlightedIndex={highlightedIndex}
+        />
+      ) : null
+    }
+  </Search>
+);
+KeepsResultsAfterSelecting.decorators = [
+  (storyFn) => (
+    <ManagerContext.Provider
+      value={
+        {
+          api: {
+            getShortcutKeys: () => ({ search: ['/'] }),
+            selectStory,
+            resolveStory: () => undefined,
+            emit: () => {},
+          } as unknown as API,
+        } as any
+      }
+    >
+      {storyFn()}
+    </ManagerContext.Provider>
+  ),
+];
+KeepsResultsAfterSelecting.play = async ({ canvasElement }) => {
+  selectStory.mockClear();
+  const canvas = within(canvasElement);
+  const input = canvas.getByRole('searchbox');
+
+  await userEvent.type(input, 'Default');
+  const [firstResult] = await canvas.findAllByRole('option');
+  await userEvent.click(firstResult);
+
+  await waitFor(() => expect(selectStory).toHaveBeenCalledOnce());
+  expect(input).toHaveValue('Default');
+  expect(canvas.getAllByRole('option').length).toBeGreaterThan(0);
+
+  await userEvent.click(canvas.getByRole('button', { name: 'Clear search' }));
+  await waitFor(() => expect(input).toHaveValue(''));
+  expect(canvas.queryAllByRole('option')).toHaveLength(0);
+};
+
 export const ShortcutsDisabled: StoryFn = () => (
   <Search {...baseProps} enableShortcuts={false}>
     {() => null}

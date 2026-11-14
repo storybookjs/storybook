@@ -42,6 +42,19 @@ export const DOUBLE_SPACES = '  ';
 export const toModuleId = (importPath: string) => path.join(process.cwd(), importPath);
 const getTestName = (name: string) => `${name}${DOUBLE_SPACES}`;
 
+/**
+ * A story's test is named after its name, or after its export when the Vitest transform cannot read
+ * a name from the source: a story exported as `export { X as Y }`, which is how Svelte CSF compiles
+ * `.stories.svelte` (index `Hover Shows Full Date`, test `HoverShowsFullDate`). So match either.
+ */
+const testNames = (
+  { name, exportName }: Pick<StoryIndexEntry, 'name' | 'exportName'>,
+  toTestName = (value: string) => value
+) =>
+  exportName && exportName !== name
+    ? `(?:${escapeRegExp(toTestName(name))}|${escapeRegExp(toTestName(exportName))})`
+    : escapeRegExp(toTestName(name));
+
 export class VitestManager {
   vitest: Vitest | null = null;
 
@@ -269,7 +282,7 @@ export class VitestManager {
    *
    * - Component entry (has child stories/tests): match the whole describe block prefix
    * - Story-test entry (has parent): match "parent describe + test name" exactly
-   * - Regular story entry: match the story name exactly
+   * - Regular story entry: match the story name or export name exactly
    */
   private buildStoryTestNamePattern(
     story: StoryIndexEntry,
@@ -279,7 +292,7 @@ export class VitestManager {
     const isParentStory = allStories.some((candidate) => story.id === candidate.parent);
 
     if (isParentStory) {
-      return `^${escapeRegExp(getTestName(story.name))}`;
+      return `^${testNames(story, getTestName)}`;
     }
 
     if (story.parent) {
@@ -288,10 +301,10 @@ export class VitestManager {
         throw new Error(`Parent story not found for story ${story.id}`);
       }
 
-      return `^${escapeRegExp(getTestName(parentStory.name))}${this.testNameSeparator}${escapeRegExp(story.name)}$`;
+      return `^${testNames(parentStory, getTestName)}${this.testNameSeparator}${escapeRegExp(story.name)}$`;
     }
 
-    return `^${escapeRegExp(story.name)}$`;
+    return `^${testNames(story)}$`;
   }
 
   /**

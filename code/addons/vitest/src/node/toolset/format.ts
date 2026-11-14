@@ -136,7 +136,8 @@ function isOwnFrame(frame: string): boolean {
   return LOCATED_FRAME.test(frame) && !FOREIGN_FRAME.test(frame);
 }
 
-// Keeps the first frames in the project's own files, or the first frame when there is none.
+// Keeps the first frames in the project's own files, or the first frames of the trace when there
+// are none.
 export function trimStackTrace(text: string): string {
   const lines = text.split('\n');
   const output: string[] = [];

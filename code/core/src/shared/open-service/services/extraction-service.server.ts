@@ -11,7 +11,7 @@ import {
 } from '../../../common/utils/select-component-entry.ts';
 import { OpenServiceDocgenMissingComponentError } from '../../../server-errors.ts';
 import type { IndexEntry, StoryIndex } from '../../../types/modules/indexer.ts';
-import { getService, registerService } from '../server.ts';
+import { getService, isBuildingStaticFiles, registerService } from '../server.ts';
 import type {
   CommandCtx,
   Commands,
@@ -294,7 +294,17 @@ export function registerExtractionService<
       }
       throw new OpenServiceDocgenMissingComponentError({ id });
     }
-    const payload = await provider(extractionInput);
+    const payload = await provider(extractionInput).catch((error: unknown) => {
+      // A static build records the failure in the snapshot, like `extractAllComponents` does.
+      if (!isBuildingStaticFiles()) {
+        throw error;
+      }
+      return buildErrorPayload({
+        id,
+        entry: extractionInput.entry,
+        error: toExtractionError(error),
+      });
+    });
     // The file can be deleted or the title renamed while the provider runs. When the index cannot
     // be read, keep the payload.
     const indexed = await resolveInputs().then(

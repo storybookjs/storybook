@@ -1,3 +1,4 @@
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { mkdir, writeFile } from 'node:fs/promises';
 
 import { dirname, join } from 'pathe';
@@ -32,6 +33,11 @@ type RuntimeServiceDefinition = ServiceDefinition<unknown, Queries<unknown>, Com
 type RuntimeQueryDefinition = AnyQueryDefinition<unknown>;
 
 export const getService = getServiceCore as TypedGetService<ServerCoreServices>;
+
+const staticBuildScope = new AsyncLocalStorage<true>();
+
+/** Whether the caller runs inside a `load` that {@link buildStaticFiles} started. */
+export const isBuildingStaticFiles = (): boolean => staticBuildScope.getStore() === true;
 
 export { clearRegistry, describeService, getRegisteredServices, listServices };
 
@@ -97,7 +103,9 @@ export async function buildStaticFiles(): Promise<StaticStore> {
               });
               const path = resolveStaticPath(service.id, queryName, { staticPath }, validatedInput);
 
-              await buildRuntime.runLoadOnce(queryName, validatedInput);
+              await staticBuildScope.run(true, () =>
+                buildRuntime.runLoadOnce(queryName, validatedInput)
+              );
 
               return { path, state: buildRuntime.getStateSnapshot() };
             })

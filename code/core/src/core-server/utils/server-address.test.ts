@@ -1,10 +1,9 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { logger } from 'storybook/internal/node-logger';
 
-import detectPort from 'detect-port';
-
 import {
+  getBoundHosts,
   getReachableNetworkAddresses,
   getServerAddresses,
   getServerChannelUrl,
@@ -28,7 +27,36 @@ vi.mock('node:os', () => ({
     signals: {},
   },
 }));
-vi.mock('detect-port');
+// Each probe bind asks `bind(port, host)`: a number is the port it binds, a string the error code.
+const { bind } = vi.hoisted(() => ({
+  bind: vi.fn<(port: number, host: string) => number | string>(),
+}));
+vi.mock('node:net', () => {
+  const createServer = () => {
+    let onError: (error: Error) => void = () => {};
+    let boundPort = 0;
+    const server = {
+      once: (_event: 'error', handler: (error: Error) => void) => {
+        onError = handler;
+        return server;
+      },
+      listen: ({ port, host }: { port: number; host: string }, onListening: () => void) => {
+        const result = bind(port, host);
+        if (typeof result === 'string') {
+          queueMicrotask(() => onError(Object.assign(new Error(result), { code: result })));
+        } else {
+          boundPort = result;
+          queueMicrotask(onListening);
+        }
+        return server;
+      },
+      address: () => ({ port: boundPort }),
+      close: (onClose: () => void) => onClose(),
+    };
+    return server;
+  };
+  return { default: { createServer }, createServer };
+});
 vi.mock('storybook/internal/node-logger');
 
 describe('getServerAddresses', () => {
@@ -87,23 +115,85 @@ describe('getReachableNetworkAddresses', () => {
   );
 });
 
+describe('getBoundHosts', () => {
+  it('lists the listen host, plus 127.0.0.1 when the listen host does not cover it', () => {
+    expect(getBoundHosts(undefined)).toEqual(['127.0.0.1']);
+    expect(getBoundHosts('0.0.0.0')).toEqual(['0.0.0.0']);
+    expect(getBoundHosts('::')).toEqual(['::']);
+    expect(getBoundHosts('192.168.1.100')).toEqual(['192.168.1.100', '127.0.0.1']);
+  });
+});
+
 describe('getServerPort', () => {
   const port = 3000;
+  const probedHosts = () => bind.mock.calls.map(([, host]) => host);
 
-  it('should resolve with a free port', async () => {
-    const expectedFreePort = 4000;
+  beforeEach(() => {
+    bind.mockReset();
+    bind.mockImplementation((requested) => requested || 5000);
+  });
 
-    vi.mocked(detectPort).mockResolvedValue(expectedFreePort);
+  it('should resolve with the requested port when it is free', async () => {
+    await expect(getServerPort(port)).resolves.toBe(port);
+  });
 
-    const result = await getServerPort(port);
+  it('should resolve with the next port when the requested one is taken on any probed host', async () => {
+    bind.mockImplementation((requested, host) =>
+      requested === port && host === '::1' ? 'EADDRINUSE' : requested
+    );
 
-    expect(result).toBe(expectedFreePort);
+    await expect(getServerPort(port)).resolves.toBe(port + 1);
+  });
+
+  it.each([
+    [undefined, ['127.0.0.1', '::1', '0.0.0.0']],
+    ['0.0.0.0', ['0.0.0.0', '::1']],
+    ['192.168.1.100', ['192.168.1.100', '127.0.0.1', '::1', '0.0.0.0']],
+  ])('should check the port on every host the server binds for --host %s', async (host, hosts) => {
+    await getServerPort(port, { host });
+
+    expect(probedHosts()).toEqual(hosts);
+    expect(bind.mock.calls.every(([requested]) => requested === port)).toBe(true);
+  });
+
+  it('should treat a missing ::1 as free', async () => {
+    bind.mockImplementation((requested, host) => (host === '::1' ? 'EADDRNOTAVAIL' : requested));
+
+    await expect(getServerPort(port)).resolves.toBe(port);
+  });
+
+  it('should log the error and exit when the --host address does not exist', async () => {
+    bind.mockImplementation((requested, host) =>
+      host === '10.0.0.99' ? 'EADDRNOTAVAIL' : requested
+    );
+    const exit = vi.spyOn(process, 'exit').mockImplementation((() => undefined) as () => never);
+
+    try {
+      await getServerPort(port, { host: '10.0.0.99' }).catch(() => {});
+
+      expect(logger.error).toHaveBeenCalledWith(expect.objectContaining({ code: 'EADDRNOTAVAIL' }));
+      expect(exit).toHaveBeenCalledWith(-1);
+    } finally {
+      exit.mockRestore();
+    }
+  });
+
+  it('should check the port the OS picks on the other hosts too', async () => {
+    bind.mockImplementation((requested, host) =>
+      host === '127.0.0.1' && !requested ? 5000 : requested
+    );
+
+    await expect(getServerPort(undefined)).resolves.toBe(5000);
+    expect(bind.mock.calls).toEqual([
+      [0, '127.0.0.1'],
+      [5000, '::1'],
+      [5000, '0.0.0.0'],
+    ]);
   });
 
   it('should reject with an actionable error when no port can be bound', async () => {
-    // detect-port resolves `undefined` instead of rejecting when the environment
-    // refuses every bind attempt (e.g. sandboxed shells).
-    vi.mocked(detectPort).mockResolvedValue(undefined as unknown as number);
+    // Sandboxed shells can refuse every bind attempt.
+    bind.mockReturnValue('EPERM');
 
     await expect(getServerPort(port)).rejects.toThrow(
       "Unable to find a free port for Storybook's dev server"
@@ -111,7 +201,7 @@ describe('getServerPort', () => {
   });
 
   it('should log an error and exit when the port is taken and exactPort is set', async () => {
-    vi.mocked(detectPort).mockResolvedValue(4000);
+    bind.mockImplementation((requested) => (requested === port ? 'EADDRINUSE' : requested));
     const exit = vi.spyOn(process, 'exit').mockImplementation((() => undefined) as () => never);
 
     try {
@@ -127,13 +217,12 @@ describe('getServerPort', () => {
   });
 
   it('should not exit for exactPort when no port was requested', async () => {
-    vi.mocked(detectPort).mockResolvedValue(4000);
     const exit = vi.spyOn(process, 'exit').mockImplementation((() => undefined) as () => never);
 
     try {
       const result = await getServerPort(undefined, { exactPort: true });
 
-      expect(result).toBe(4000);
+      expect(result).toBe(5000);
       expect(exit).not.toHaveBeenCalled();
     } finally {
       exit.mockRestore();

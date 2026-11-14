@@ -4,7 +4,7 @@ import { createServer, get, type Server } from 'node:http';
 import { type AddressInfo, connect } from 'node:net';
 import os from 'node:os';
 
-import { addLoopbackListener, getListenHost } from './server-address.ts';
+import { addLoopbackListener, getListenHost, getServerPort } from './server-address.ts';
 
 const lanAddress = Object.values(os.networkInterfaces())
   .flat()
@@ -119,4 +119,48 @@ describe('getListenHost', () => {
       }
     });
   });
+});
+
+const canListen = async (host: string) => {
+  try {
+    await close(await listen(host));
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const hasIpv6Loopback = await canListen('::1');
+// All of 127.0.0.0/8 is loopback on Linux; macOS only configures 127.0.0.1.
+const hasSecondLoopback = await canListen('127.0.0.2');
+
+describe('getServerPort', () => {
+  const expectSkipped = async (holder: string, options: { host?: string }) => {
+    const server = await listen(holder);
+    const { port } = server.address() as AddressInfo;
+    try {
+      await expect(getServerPort(port, options)).resolves.not.toBe(port);
+    } finally {
+      await close(server);
+    }
+  };
+
+  it('skips a port that is taken on the host the dev server listens on', async () => {
+    await expectSkipped(getListenHost(undefined), {});
+  });
+
+  it('skips a port that is taken on 0.0.0.0', async () => {
+    await expectSkipped('0.0.0.0', {});
+  });
+
+  it.skipIf(!hasIpv6Loopback)('skips a port that is taken on ::1', async () => {
+    await expectSkipped('::1', {});
+  });
+
+  it.skipIf(!hasSecondLoopback)(
+    'skips a port that is taken on 127.0.0.1 when --host binds another address',
+    async () => {
+      await expectSkipped('127.0.0.1', { host: '127.0.0.2' });
+    }
+  );
 });

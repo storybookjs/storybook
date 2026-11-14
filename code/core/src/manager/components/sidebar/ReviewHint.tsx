@@ -5,7 +5,7 @@ import { AI_PROMPT_NUDGE } from 'storybook/internal/core-events';
 import type { StatusesByStoryIdAndTypeId, StatusValue, StoryIndex } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
-import { CheckIcon, CopyIcon } from '@storybook/icons';
+import { CheckIcon, CloseAltIcon, CopyIcon, WandIcon } from '@storybook/icons';
 
 import {
   experimental_useStatusStore,
@@ -21,9 +21,7 @@ import { UI_REVIEW_PROMPT } from '../../../shared/utils/ai-prompts.ts';
 import { useLandmark } from '../../hooks/useLandmark.ts';
 // The review widget takes this spot once a review is active; the hint uses its parts.
 import {
-  AgenticIcon,
   DismissButton,
-  DismissIcon,
   HeaderContent,
   HeaderTitle,
   Region,
@@ -52,6 +50,15 @@ const useHasChangedStories = () => {
     );
   }, [index, allStatuses]);
 };
+
+// Styled icons stay module-local: exported, their type cannot be named in the declaration build.
+const AgenticIcon = styled(WandIcon)(({ theme }) => ({
+  color: theme.fgColor.agentic,
+}));
+
+const DismissIcon = styled(CloseAltIcon)({
+  padding: 1,
+});
 
 const CopyAction = styled(ActionList.Action)({
   justifyContent: 'flex-start',

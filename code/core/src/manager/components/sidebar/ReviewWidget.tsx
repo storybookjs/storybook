@@ -39,7 +39,7 @@ export const HeaderTitle = styled.h2(({ theme }) => ({
   lineHeight: `${theme.typography.size.s3}px`,
 }));
 
-export const AgenticIcon = styled(WandIcon)(({ theme }) => ({
+const AgenticIcon = styled(WandIcon)(({ theme }) => ({
   color: theme.fgColor.agentic,
 }));
 
@@ -50,7 +50,7 @@ export const DismissButton = styled(ActionList.Button)({
   zIndex: 1,
 });
 
-export const DismissIcon = styled(CloseAltIcon)({
+const DismissIcon = styled(CloseAltIcon)({
   padding: 1,
 });
 

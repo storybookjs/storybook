@@ -1,3 +1,8 @@
+import {
+  ASK_TO_RUN_OUTSIDE_SANDBOX,
+  formatBlockedNetwork,
+  type BlockedNetwork,
+} from '../../../common/utils/blocked-network.ts';
 import type { StorybookInstanceRecord } from '../instances/types.ts';
 import type { ToolsStorybookInfo } from './types.ts';
 
@@ -33,6 +38,13 @@ export function formatPortMismatch(port: number, candidates: StorybookInstanceRe
 
 export function formatOldServer(version: string): string {
   return `Restart Storybook (v${version}+) to enable attach. The running instance was started with an older Storybook that does not publish a channel token.`;
+}
+
+export function formatConnectionBlocked(
+  record: StorybookInstanceRecord,
+  blocked: BlockedNetwork
+): string {
+  return `Could not connect to the Storybook at ${record.url}. ${formatBlockedNetwork(blocked)} Do not start another Storybook; if this command cannot finish without that Storybook, ${ASK_TO_RUN_OUTSIDE_SANDBOX}`;
 }
 
 export function formatConnectionFailed(record: StorybookInstanceRecord): string {

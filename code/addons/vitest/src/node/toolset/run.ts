@@ -1,5 +1,10 @@
 import type { ChannelLike } from 'storybook/internal/channels';
 import {
+  ASK_TO_RUN_OUTSIDE_SANDBOX,
+  detectBlockedNetwork,
+  formatBlockedNetwork,
+} from 'storybook/internal/common';
+import {
   filterStoryFiles,
   findStoryIds,
   type FoundStory,
@@ -141,6 +146,15 @@ export function triggerTestRun({
   });
 }
 
+// A sandbox that refuses ports stops Vitest before any test runs, which the run reports as an
+// unhandled error, not as a test failure.
+function blockedBeforeAnyTest(result: TestRunResult) {
+  const ran = result.componentTestCount.success + result.componentTestCount.error;
+  return ran === 0
+    ? result.unhandledErrors.map((error) => detectBlockedNetwork(error)).find(Boolean)
+    : undefined;
+}
+
 /** What `stories changed` reports, as far as a test run needs it. */
 export type ChangedStories = {
   storyIds: string[];
@@ -271,11 +285,20 @@ export async function runStoryTests({
   }
 
   switch (response.status) {
-    case 'completed':
+    case 'completed': {
       if (!response.result) {
         return {
           status: 'error',
           error: { message: 'Test run completed but no result was returned' },
+        };
+      }
+      const blocked = blockedBeforeAnyTest(response.result);
+      if (blocked) {
+        return {
+          status: 'error',
+          error: {
+            message: `The tests did not run. ${formatBlockedNetwork(blocked)} To run them, ${ASK_TO_RUN_OUTSIDE_SANDBOX}`,
+          },
         };
       }
       return {
@@ -284,6 +307,7 @@ export async function runStoryTests({
         ...(selection ? { selection } : {}),
         ...(notFoundMessages.length > 0 ? { notFound: notFoundMessages } : {}),
       };
+    }
     case 'error':
       return {
         status: 'error',

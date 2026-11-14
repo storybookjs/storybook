@@ -470,7 +470,7 @@ function formatRequiresDevServer(
     return `Found your Storybook running at ${discovery.currentRecord.url}, but \`${commandPath}\` cannot run from a local tools host. Re-run without \`--no-attach\` to attach to that instance.`;
   }
   if (discovery.currentRecord) {
-    return `Found your Storybook running at ${discovery.currentRecord.url}, but \`${commandPath}\` could not attach to it. Start or restart that Storybook, then re-run this command.`;
+    return `Found your Storybook running at ${discovery.currentRecord.url}, but \`${commandPath}\` could not attach to it, for the reason printed above.`;
   }
 
   const lines = [

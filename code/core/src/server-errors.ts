@@ -1097,11 +1097,12 @@ export class NoFreePortError extends StorybookError {
 }
 
 export class StorybookDevServerDisconnectedError extends StorybookError {
-  constructor(public data: { code?: number; reason?: string } = {}) {
+  constructor(public data: { code?: number; reason?: string; cause?: unknown } = {}) {
     super({
       name: 'StorybookDevServerDisconnectedError',
       category: Category.CORE_SERVER,
       code: 19,
+      cause: data.cause,
       message: dedent`
         Storybook dev server disconnected${data.code ? ` (close code ${data.code}${data.reason ? `: ${data.reason}` : ''})` : ''}.
         Any request that was still in flight has been abandoned.

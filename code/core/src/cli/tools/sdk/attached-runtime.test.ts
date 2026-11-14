@@ -382,6 +382,24 @@ describe('bootstrapAttachedRuntime', () => {
     expect(inspect(error)).not.toContain('secret');
   });
 
+  it('says the sandbox blocked the connection when the socket error says so', async () => {
+    const socketError = Object.assign(new Error('connect EPERM 127.0.0.1:6006'), {
+      code: 'EPERM',
+      syscall: 'connect',
+    });
+    const { deps } = makeRuntimeDeps([RECORD], {
+      createNodeChannel: vi.fn(async () => {
+        throw new Error('Storybook dev server disconnected.', { cause: socketError });
+      }),
+    });
+
+    const failure = bootstrapAttachedRuntime({ cwd: '/repo' }, deps);
+
+    await expect(failure).rejects.toMatchObject({ data: { reason: 'connection-failed' } });
+    await expect(failure).rejects.toThrow('The sandbox this command runs in blocked');
+    await expect(failure).rejects.not.toThrow('may be stale');
+  });
+
   it('rejects when the handshake never completes', async () => {
     vi.useFakeTimers();
     const close = vi.fn();

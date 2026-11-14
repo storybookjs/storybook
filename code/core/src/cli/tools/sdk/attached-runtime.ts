@@ -11,11 +11,13 @@ import { setDelegatedMode } from '../../../shared/open-service/service-registry.
 import type { ToolsetGetService } from '../../../shared/open-service/toolset-definition.ts';
 import { getRegisteredToolsets } from '../../../shared/open-service/toolset-registry.ts';
 import { detectAgent } from '../../../telemetry/detect-agent.ts';
+import { detectBlockedNetwork } from '../../../common/utils/blocked-network.ts';
 import { readRegistry } from '../instances/registry.ts';
 import { selectInstances } from '../instances/resolve.ts';
 import { resolveStorybookConfigDir } from '../config-dir.ts';
 import type { StorybookInstanceRecord } from '../instances/types.ts';
 import {
+  formatConnectionBlocked,
   formatConnectionFailed,
   formatInstallationMismatch,
   formatNoInstance,
@@ -137,12 +139,15 @@ export async function bootstrapAttachedRuntime(
       token: record.token,
     });
     await waitForHandshake(connection);
-  } catch {
+  } catch (error) {
     connection?.close();
+    const blocked = detectBlockedNetwork(error);
     throw new AttachUnavailableError({
       reason: 'connection-failed',
       instances: [record],
-      remediation: formatConnectionFailed(record),
+      remediation: blocked
+        ? formatConnectionBlocked(record, blocked)
+        : formatConnectionFailed(record),
     });
   }
 

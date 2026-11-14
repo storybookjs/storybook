@@ -1,3 +1,5 @@
+import { relative } from 'node:path';
+
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { hasStorybookSkills, installSkills } from 'storybook/internal/cli';
@@ -32,6 +34,7 @@ vi.mock(import('storybook/internal/common'), async (importOriginal) => {
   return {
     ...actual,
     isCI: vi.fn(),
+    getProjectRoot: () => '/repo',
     JsPackageManagerFactory: Object.assign(actual.JsPackageManagerFactory, {
       getPackageManager: () => ({
         type: 'npm',
@@ -101,6 +104,12 @@ describe('upgrade: refreshing the skills', () => {
     vi.mocked(installSkills).mockResolvedValue({ result: 'installed', source: 'refresh' });
   });
 
+  // Without colors, so the assertions read like the terminal.
+  const loggedText = () =>
+    [...vi.mocked(logger.log).mock.calls, ...vi.mocked(logger.step).mock.calls]
+      .map(([message]) => String(message).replace(/\x1b\[[0-9;]*m/g, ''))
+      .join('\n');
+
   const skillsInUpgradeEvents = () =>
     vi
       .mocked(telemetry)
@@ -119,10 +128,11 @@ describe('upgrade: refreshing the skills', () => {
       detectedAutomigrations: [],
     });
 
-    await expect(upgrade(baseOptions)).rejects.toThrow(
-      'Some automigrations failed or skipped files'
-    );
+    await expect(upgrade(baseOptions)).rejects.toThrow('Some automigrations could not finish');
     expect(telemetry).toHaveBeenCalled();
+    expect(loggedText()).toContain(
+      'Automigrations left unfinished:\n• a/.storybook\nstory-sort-to-main failed: Comparator requires manual migration'
+    );
   });
 
   it('fails after reporting files skipped by an otherwise successful automigration', async () => {
@@ -144,9 +154,41 @@ describe('upgrade: refreshing the skills', () => {
       detectedAutomigrations: [],
     });
 
-    await expect(upgrade(baseOptions)).rejects.toThrow(
-      'Some automigrations failed or skipped files'
+    await expect(upgrade(baseOptions)).rejects.toThrow('Some automigrations could not finish');
+    expect(loggedText()).toContain(
+      [
+        'Automigrations left unfinished:',
+        '• a/.storybook',
+        'argtypes-default-value could not migrate 1 file:',
+        '- a/src/Stack.stories.tsx: Cannot mutate spread field',
+        `Every file and why: ${relative(process.cwd(), '/repo/automigrations-summary.md')}`,
+      ].join('\n')
     );
+  });
+
+  it('succeeds when every automigration finished, without listing a project as failed', async () => {
+    vi.mocked(runAutomigrations).mockResolvedValue({
+      automigrationResults: {
+        '/repo/a/.storybook': {
+          automigrationStatuses: {
+            'argtypes-default-value': FixStatus.SUCCEEDED,
+            'upgrade-storybook-related-dependencies': FixStatus.SUCCEEDED,
+          },
+          automigrationErrors: {},
+          fileFailures: [],
+        },
+      },
+      detectedAutomigrations: [
+        { fix: { id: 'argtypes-default-value', link: 'https://example.com/argtypes' } },
+        { fix: { id: 'upgrade-storybook-related-dependencies' } },
+      ] as Awaited<ReturnType<typeof runAutomigrations>>['detectedAutomigrations'],
+    });
+
+    await expect(upgrade(baseOptions)).resolves.toBeUndefined();
+    expect(loggedText()).not.toContain('unfinished');
+    expect(loggedText()).toContain('upgraded successfully');
+    expect(loggedText()).toContain('argtypes-default-value');
+    expect(loggedText()).not.toContain('undefined');
   });
 
   it('refreshes installed skills once for the whole upgrade, and reports the result', async () => {

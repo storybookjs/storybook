@@ -1,3 +1,5 @@
+import { isAbsolute, relative, sep } from 'node:path';
+
 import type { PackageJsonWithDepsAndDevDeps } from 'storybook/internal/common';
 import {
   HandledError,
@@ -599,14 +601,21 @@ const formatProjectDirectories = (
 };
 
 /**
- * Shortens a path to the relative path from the project root
+ * Shortens an absolute path to the path relative to the project root, such as `.storybook`, or
+ * `'.'` for the root itself. A relative path, or one outside the project, is returned unchanged.
  *
  * @param path - The path to shorten
  * @returns The shortened path
  */
 export const shortenPath = (path: string) => {
-  const gitRoot = getProjectRoot();
-  return path.replace(gitRoot, '');
+  const projectRoot = getProjectRoot();
+  if (!isAbsolute(path) || !projectRoot) {
+    return path;
+  }
+  const relativePath = relative(projectRoot, path);
+  const outside =
+    relativePath === '..' || relativePath.startsWith(`..${sep}`) || isAbsolute(relativePath);
+  return outside ? path : relativePath || '.';
 };
 
 /**

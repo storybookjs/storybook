@@ -8,8 +8,11 @@ import type {
 
 type ParsedFile = { mutationDiagnostics: ConfigFile['mutationDiagnostics'] };
 
-const describeDiagnostic = ({ message, loc }: CsfMutationDiagnostic) =>
+export const describeDiagnostic = ({ message, loc }: CsfMutationDiagnostic) =>
   loc ? `line ${loc.start.line}: ${message}` : message;
+
+/** Whether a diagnostic fails the file: an alias holds its story's object, so the edit sees it. */
+export const failsFile = ({ code }: CsfMutationDiagnostic) => code !== 'aliased-story';
 
 /** Run `edit` on a parsed file, and throw the mutation diagnostics it left, with their lines. */
 export const editParsedFile = async <File extends ParsedFile>(
@@ -18,10 +21,7 @@ export const editParsedFile = async <File extends ParsedFile>(
 ) => {
   const diagnosticsBefore = file.mutationDiagnostics.length;
   await edit(file);
-  const diagnostics = file.mutationDiagnostics
-    .slice(diagnosticsBefore)
-    // An alias holds its story's object: the edit sees it, or that story reports why not.
-    .filter(({ code }) => code !== 'aliased-story');
+  const diagnostics = file.mutationDiagnostics.slice(diagnosticsBefore).filter(failsFile);
   if (diagnostics.length > 0) {
     throw new HandledError([...new Set(diagnostics.map(describeDiagnostic))].join('; '));
   }

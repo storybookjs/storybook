@@ -387,7 +387,7 @@
     "micromark-extension-mdxjs": "^3.0.0",
     "modern-tar": "^0.5.5",
     "nanoid": "^4.0.2",
-    "open": "^10.2.0",
+    "open": "^11.0.0",
     "p-limit": "^7.2.0",
     "package-manager-detector": "^1.1.0",
     "pathe": "^1.1.2",

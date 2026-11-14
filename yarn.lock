@@ -28003,7 +28003,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"open@npm:11.0.0":
+"open@npm:11.0.0, open@npm:^11.0.0":
   version: 11.0.0
   resolution: "open@npm:11.0.0"
   dependencies:
@@ -33640,7 +33640,7 @@ __metadata:
     micromark-extension-mdxjs: "npm:^3.0.0"
     modern-tar: "npm:^0.5.5"
     nanoid: "npm:^4.0.2"
-    open: "npm:^10.2.0"
+    open: "npm:^11.0.0"
     oxc-parser: "npm:^0.155.0"
     oxc-resolver: "npm:11.21.2"
     p-limit: "npm:^7.2.0"

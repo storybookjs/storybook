@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { hasStorybookSkills, installSkills } from 'storybook/internal/cli';
-import { type JsPackageManager, isCI } from 'storybook/internal/common';
+import { hasStorybookSkills, installSkills, skipsSkillsInCI } from 'storybook/internal/cli';
+import type { JsPackageManager } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
@@ -58,7 +58,7 @@ const runSkills = (result: { afterAngularViteMigration?: boolean } = {}) =>
 describe('skills', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(isCI).mockReturnValue(false);
+    vi.mocked(skipsSkillsInCI).mockReturnValue(false);
     vi.mocked(hasStorybookSkills).mockResolvedValue(false);
     vi.mocked(installSkills).mockResolvedValue({ result: 'installed', source: 'automigration' });
     useDependencies({});
@@ -111,10 +111,37 @@ describe('skills', () => {
       ).resolves.toBeNull();
     });
 
-    it('does not apply in CI, where the skills are never installed', async () => {
-      vi.mocked(isCI).mockReturnValue(true);
+    describe('in real CI', () => {
+      beforeEach(() => {
+        vi.mocked(skipsSkillsInCI).mockReturnValue(true);
+      });
 
-      await expect(checkFix(skills, checkOptions('@storybook/react-vite'))).resolves.toBeNull();
+      it('does not apply, and says how to add the skills', async () => {
+        await expect(checkFix(skills, checkOptions('@storybook/react-vite'))).resolves.toBeNull();
+        expect(logger.warn).toHaveBeenCalledWith(
+          'Skipped the Storybook skills for AI agents because CI is set. Add them with: npx storybook automigrate skills --yes'
+        );
+      });
+
+      it('tells Angular to move to angular-vite first', async () => {
+        useDependencies(angular21);
+
+        await expect(checkFix(skills, checkOptions('@storybook/angular'))).resolves.toBeNull();
+        expect(logger.warn).toHaveBeenCalledWith(
+          'Skipped the Storybook skills for AI agents because CI is set. Add them with: npx storybook automigrate angular-to-angular-vite --yes, and then npx storybook automigrate skills --yes'
+        );
+      });
+
+      it('says nothing on a framework without skills', async () => {
+        await expect(checkFix(skills, checkOptions('@storybook/html-vite'))).resolves.toBeNull();
+        expect(logger.warn).not.toHaveBeenCalled();
+      });
+
+      it('applies when requested by id', async () => {
+        await expect(
+          checkFix(skills, checkOptions('@storybook/react-vite', { requested: true }))
+        ).resolves.toEqual({});
+      });
     });
 
     it('does not apply when the project has the skills', async () => {
@@ -148,6 +175,7 @@ describe('skills', () => {
         source: 'automigration',
         stdio: 'pipe',
         testSupported: false,
+        allowCI: true,
       });
     });
 

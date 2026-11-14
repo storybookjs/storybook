@@ -463,6 +463,18 @@ describe('requires-dev-server contract', () => {
     expect(result.output).toContain('--cwd');
   });
 
+  it('points at the attach failure when auto mode found an instance but could not attach', async () => {
+    const { deps } = makeDeps({
+      discoverInstance: vi.fn(async () => ({ currentRecord: RECORD, records: [RECORD] })),
+    });
+
+    const result = await run(['review', 'create', '--input', '{}'], deps);
+
+    expect(result.outcome).toEqual({ kind: 'intercept', reason: 'requires-dev-server' });
+    expect(result.output).toContain('could not attach to it, for the reason printed above.');
+    expect(result.output).not.toContain('Start or restart');
+  });
+
   it('intercepts stories preview in local mode even when an instance is running', async () => {
     const { deps } = makeDeps({
       discoverInstance: vi.fn(async () => ({ currentRecord: RECORD, records: [RECORD] })),

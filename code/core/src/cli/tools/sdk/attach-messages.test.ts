@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { StorybookInstanceRecord } from '../instances/types.ts';
 import {
   formatAttachFallback,
+  formatConnectionBlocked,
   formatConnectionFailed,
   formatInstallationMismatch,
   formatMultiInstanceNotice,
@@ -96,6 +97,17 @@ describe('attach failure messages', () => {
   it('names the version that must be restarted to enable attach', () => {
     expect(formatOldServer('10.2.0')).toMatchInlineSnapshot(
       `"Restart Storybook (v10.2.0+) to enable attach. The running instance was started with an older Storybook that does not publish a channel token."`
+    );
+  });
+
+  it('says the sandbox blocked the connection, not that the registry is stale', () => {
+    expect(
+      formatConnectionBlocked(other, {
+        operation: 'connect',
+        detail: 'connect EPERM 127.0.0.1:6006',
+      })
+    ).toMatchInlineSnapshot(
+      `"Could not connect to the Storybook at http://localhost:6006. The sandbox this command runs in blocked connecting to localhost (\`connect EPERM 127.0.0.1:6006\`); this is not a problem in the code. Do not start another Storybook; if this command cannot finish without that Storybook, ask the user to run this command outside the sandbox."`
     );
   });
 

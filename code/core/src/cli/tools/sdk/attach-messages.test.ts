@@ -107,7 +107,7 @@ describe('attach failure messages', () => {
         detail: 'connect EPERM 127.0.0.1:6006',
       })
     ).toMatchInlineSnapshot(
-      `"Could not connect to the Storybook at http://localhost:6006. The sandbox this command runs in blocked connecting to localhost (\`connect EPERM 127.0.0.1:6006\`); this is not a problem in the code. Do not start another Storybook; if this command cannot finish without it, ask the user to run this command outside the sandbox."`
+      `"Could not connect to the Storybook at http://localhost:6006. The sandbox this command runs in blocked connecting to localhost (\`connect EPERM 127.0.0.1:6006\`); this is not a problem in the code. Do not start another Storybook; if this command cannot finish without that Storybook, ask the user to run this command outside the sandbox."`
     );
   });
 

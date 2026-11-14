@@ -7,15 +7,26 @@ function systemError(message: string, code: string, syscall: string) {
 }
 
 describe('detectBlockedNetwork', () => {
-  it('recognizes a blocked listen or connect, with EPERM or EACCES', () => {
+  it('recognizes a blocked listen or connect', () => {
     expect(
       detectBlockedNetwork(
         systemError('listen EPERM: operation not permitted ::1:63315', 'EPERM', 'listen')
       )
     ).toEqual({ operation: 'listen', detail: 'listen EPERM: operation not permitted ::1:63315' });
     expect(
-      detectBlockedNetwork(systemError('connect EACCES 127.0.0.1:6006', 'EACCES', 'connect'))
-    ).toEqual({ operation: 'connect', detail: 'connect EACCES 127.0.0.1:6006' });
+      detectBlockedNetwork(systemError('connect EPERM 127.0.0.1:6006', 'EPERM', 'connect'))
+    ).toEqual({ operation: 'connect', detail: 'connect EPERM 127.0.0.1:6006' });
+  });
+
+  it('leaves EACCES alone, which reserved and privileged ports give outside any sandbox', () => {
+    expect(
+      detectBlockedNetwork(
+        systemError('listen EACCES: permission denied ::1:63315', 'EACCES', 'listen')
+      )
+    ).toBeUndefined();
+    expect(
+      detectBlockedNetwork({ message: 'listen EACCES: permission denied ::1:80' })
+    ).toBeUndefined();
   });
 
   it('recognizes an error serialized over a channel, which keeps only its message', () => {

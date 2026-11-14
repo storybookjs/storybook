@@ -44,7 +44,7 @@ export function formatConnectionBlocked(
   record: StorybookInstanceRecord,
   blocked: BlockedNetwork
 ): string {
-  return `Could not connect to the Storybook at ${record.url}. ${formatBlockedNetwork(blocked)} Do not start another Storybook; if this command cannot finish without it, ${ASK_TO_RUN_OUTSIDE_SANDBOX}`;
+  return `Could not connect to the Storybook at ${record.url}. ${formatBlockedNetwork(blocked)} Do not start another Storybook; if this command cannot finish without that Storybook, ${ASK_TO_RUN_OUTSIDE_SANDBOX}`;
 }
 
 export function formatConnectionFailed(record: StorybookInstanceRecord): string {

@@ -332,7 +332,7 @@ async function dispatchTools(
   const toolPath = `${entry.id} ${toCliMethodName(methodName)}`;
   const commandPath = `npx storybook tools ${toolPath}`;
 
-  const args = withFileArguments(withBooleanFlags(parsed, method.input), method.fileArguments);
+  const args = withFileArguments(parsed, method.fileArguments);
   if (!args.ok) {
     return result({
       exitCode: 1,
@@ -389,26 +389,6 @@ async function dispatchTools(
   } finally {
     logger.setLogLevel(previousLogLevel);
   }
-}
-
-/**
- * A boolean flag takes no value, so the bare token the parser took for one (a file after
- * `--changed`) is a bare argument after all.
- */
-function withBooleanFlags(
-  parsed: Extract<ParsedToolsTokens, { ok: true }>,
-  input: ToolsetJsonSchema | undefined
-): Extract<ParsedToolsTokens, { ok: true }> {
-  const properties = (input?.properties ?? {}) as Record<string, { type?: unknown }>;
-  const args = { ...parsed.args };
-  const positionals = [...parsed.positionals];
-  for (const [key, value] of Object.entries(args)) {
-    if (properties[key]?.type === 'boolean' && typeof value === 'string') {
-      args[key] = true;
-      positionals.push(value);
-    }
-  }
-  return { ...parsed, args, positionals };
 }
 
 /**

@@ -81,6 +81,8 @@ const selectionSchema = v.object({
       stories: v.number(),
       /** Changed files in the Storybook config directory, which can affect every story. */
       changedConfigFiles: v.array(v.string()),
+      /** Changed files change detection has not caught up with yet. */
+      pendingFiles: v.array(v.string()),
     })
   ),
   /** How many story ids `stories` gave. */
@@ -298,6 +300,7 @@ async function getChangedStories(ctx: ToolsetCtx): Promise<ChangedStories> {
   return {
     storyIds: data.stories.map((story) => story.storyId),
     changedConfigFiles: data.changedConfigFiles,
+    pendingFiles: [...data.unindexedStoryFiles, ...data.pendingFiles],
   };
 }
 

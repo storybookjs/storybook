@@ -300,13 +300,20 @@ function code(value: string): string {
   return `\`${value}\``;
 }
 
-// The same note `stories changed` gives: the config directory is outside the story graph.
+// The notes `stories changed` gives about what its story list cannot show.
 function formatChangedConfigFiles(changed: TestRunSelection['changed']): string[] {
-  return changed?.changedConfigFiles.length
-    ? [
-        `Changed files in the Storybook config directory, which can affect every story: ${changed.changedConfigFiles.map(code).join(', ')}.`,
-      ]
-    : [];
+  return [
+    ...(changed?.pendingFiles.length
+      ? [
+          `Change detection has not caught up with these changed files yet, so their stories may be missing: ${changed.pendingFiles.map(code).join(', ')}. Run this again in a moment.`,
+        ]
+      : []),
+    ...(changed?.changedConfigFiles.length
+      ? [
+          `Changed files in the Storybook config directory, which can affect every story: ${changed.changedConfigFiles.map(code).join(', ')}.`,
+        ]
+      : []),
+  ];
 }
 
 // The likely cause is named only when no error could explain the gap instead.

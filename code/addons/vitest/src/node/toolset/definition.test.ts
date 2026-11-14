@@ -128,6 +128,8 @@ describe('test API', () => {
       data: {
         stories: [{ storyId: 'button--primary' }, { storyId: 'header--default' }],
         changedConfigFiles: ['.storybook/preview.ts'],
+        unindexedStoryFiles: ['src/New.stories.tsx'],
+        pendingFiles: ['src/Card.tsx'],
       },
       markdown: '',
     }));
@@ -139,6 +141,7 @@ describe('test API', () => {
     expect(await getChangedStories!()).toEqual({
       storyIds: ['button--primary', 'header--default'],
       changedConfigFiles: ['.storybook/preview.ts'],
+      pendingFiles: ['src/New.stories.tsx', 'src/Card.tsx'],
     });
     expect(getToolset).toHaveBeenCalledWith('stories');
     expect(changed).toHaveBeenCalledWith({}, ctx);
@@ -351,7 +354,7 @@ Before you finish, run every story once: test-run without \`files\`, \`changed\`
         }),
         selection: {
           files: { filters: ['src/Button.stories.tsx', 'Header'], storyFiles: 2 },
-          changed: { stories: 5, changedConfigFiles: [] },
+          changed: { stories: 5, changedConfigFiles: [], pendingFiles: [] },
           storyCount: 2,
         },
       } as TestRunOutput);
@@ -362,6 +365,20 @@ Before you finish, run every story once: test-run without \`files\`, \`changed\`
 Passed: 2 component tests passed.`);
     });
 
+    it('says when change detection has not caught up with a changed file', async () => {
+      vi.mocked(runStoryTests).mockResolvedValue({
+        status: 'no-stories',
+        notFoundMessages: [],
+        selection: {
+          changed: { stories: 0, changedConfigFiles: [], pendingFiles: ['src/New.stories.tsx'] },
+        },
+      });
+
+      expect((await runTests()).markdown).toContain(
+        'Change detection has not caught up with these changed files yet, so their stories may be missing: `src/New.stories.tsx`. Run this again in a moment.'
+      );
+    });
+
     it('says when a file in the config directory changed, as stories changed does', async () => {
       vi.mocked(runStoryTests).mockResolvedValue({
         ...completed({
@@ -370,7 +387,7 @@ Passed: 2 component tests passed.`);
           componentTestStatuses: [componentTest('button--primary', 'status-value:success')],
         }),
         selection: {
-          changed: { stories: 1, changedConfigFiles: ['.storybook/preview.ts'] },
+          changed: { stories: 1, changedConfigFiles: ['.storybook/preview.ts'], pendingFiles: [] },
           storyCount: 1,
         },
       } as TestRunOutput);
@@ -479,7 +496,9 @@ File arguments select story files by path, as Vitest filters select test files. 
       vi.mocked(runStoryTests).mockResolvedValue({
         status: 'no-stories',
         notFoundMessages: [],
-        selection: { changed: { stories: 0, changedConfigFiles: ['.storybook/main.ts'] } },
+        selection: {
+          changed: { stories: 0, changedConfigFiles: ['.storybook/main.ts'], pendingFiles: [] },
+        },
       });
 
       const outcome = await runTests();
@@ -518,7 +537,7 @@ To test more, pass story files. Before you finish, run every story once: \`npx s
         notFoundMessages: [],
         selection: {
           files: { filters: ['Header'], storyFiles: 1 },
-          changed: { stories: 3, changedConfigFiles: [] },
+          changed: { stories: 3, changedConfigFiles: [], pendingFiles: [] },
         },
       });
 

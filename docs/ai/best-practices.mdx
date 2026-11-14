@@ -88,13 +88,22 @@ A docblock sitting on its own at the top of the block is not picked up.
 
 </If>
 
+<If renderer={['react', 'vue']}>
+
+You can also write the JSDoc comment above the `meta` declaration in the stories file.
+If both have a description, the one on `meta` is used.
+This helps for components whose source you can't or shouldn't edit, such as generated or third-party components.
+
+</If>
+
 You can use Markdown syntax in your description to add formatting or links.
 
 ### Story summary and descriptions
 
 Similarly, you can provide descriptions (and summaries) for each story, which serve as usage examples for the agent. Don't just repeat what the story is demonstrating; describe _why_ you would use whatever is demonstrated.
 
-The agent will receive the summary, if present, or the first 60 characters of the description.
+The agent sees the first three stories with a code snippet in full, or every story with a snippet if no component API details were extracted.
+For each other story, it receives the summary, if present, or the first 90 characters of the description.
 
 <CodeSnippets path="story-description-and-summary.md" />
 

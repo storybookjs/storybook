@@ -568,6 +568,20 @@ ${runEveryStoryBeforeFinishing(ctx)}`;
 }
 
 /**
+ * The run's error with its causes: a failure to start or run Vitest is reported as a generic message
+ * (such as "Failed to start Vitest"), and only its cause says what went wrong.
+ */
+function formatRunError(error: Extract<TestRunData, { status: 'error' }>['error']): string {
+  const lines = [`Error: ${error.message}`];
+  for (let cause = error.error as ErrorLike | undefined; cause; cause = cause.cause) {
+    lines.push(cause.message);
+  }
+  return lines.join('\n\n');
+}
+
+type ErrorLike = { message: string; cause?: ErrorLike };
+
+/**
  * Per-story rendering shared by every transport — the `test-run` MCP tool and the tools CLI.
  *
  * Failed and cancelled runs read as `Error: …` because the MCP tool surfaced them by throwing; the
@@ -590,7 +604,7 @@ export function formatTestRun(
         ctx,
       });
     case 'error':
-      return `Error: ${data.error.message}`;
+      return formatRunError(data.error);
     case 'cancelled':
       return 'Error: Test run was cancelled';
     default: {

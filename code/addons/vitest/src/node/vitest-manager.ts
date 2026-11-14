@@ -95,9 +95,12 @@ export class VitestManager {
       ]),
     ];
 
-    const potentialConfigFileLocations = walk.up(packageRoot || process.cwd(), {
-      last: getProjectRoot(),
-    });
+    // The Storybook config dir itself comes last (e.g. `.storybook/vitest.config.ts`), so a config
+    // found in the package or above it keeps winning.
+    const potentialConfigFileLocations = [
+      ...walk.up(packageRoot || process.cwd(), { last: getProjectRoot() }),
+      ...(configDir ? [resolve(configDir)] : []),
+    ];
 
     let vitestConfigLocation: string | undefined;
     let firstVitestConfig: string | undefined;

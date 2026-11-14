@@ -147,6 +147,8 @@ export interface AutofixOptions extends Omit<AutofixOptionsFromCLI, 'packageMana
   storiesPaths: string[];
 }
 export interface AutofixOptionsFromCLI {
+  /** `false` with `--no-agent`: prompt in a terminal even when a coding agent is detected. */
+  agent?: boolean;
   fixId?: FixId;
   list?: boolean;
   fixes?: Fix[];

@@ -5,10 +5,18 @@ import { dirname, join } from 'node:path';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { prompt } from 'storybook/internal/node-logger';
 import { UpgradeStorybookConfigDirNotFoundError } from 'storybook/internal/server-errors';
 
 import type { UpgradeOptions } from './upgrade.ts';
-import { findStorybookProjects, getProjects } from './util.ts';
+import {
+  type CollectProjectsSuccessResult,
+  findStorybookProjects,
+  getProjects,
+  handleMultipleProjects,
+} from './util.ts';
+
+vi.mock('storybook/internal/node-logger', { spy: true });
 
 let root: string;
 
@@ -22,7 +30,9 @@ const createFixture = (files: Record<string, string>) => {
 
 afterEach(() => {
   vi.restoreAllMocks();
-  rmSync(root, { recursive: true, force: true });
+  if (root) {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 
 describe('findStorybookProjects', () => {
@@ -122,5 +132,28 @@ describe('getProjects', () => {
     await expect(getProjects({ yes: true } as UpgradeOptions)).rejects.toThrow(
       UpgradeStorybookConfigDirNotFoundError
     );
+  });
+});
+
+describe('handleMultipleProjects', () => {
+  const project = (configDir: string) =>
+    ({
+      configDir,
+      packageManager: { packageJsonPaths: [`${dirname(configDir)}/package.json`] },
+    }) as unknown as CollectProjectsSuccessResult;
+  const projects = [project('/repo/a/.storybook'), project('/repo/b/.storybook')];
+  const configDirs = projects.map(({ configDir }) => configDir);
+
+  it('upgrades every project with --yes, without asking which', async () => {
+    await expect(handleMultipleProjects(projects, [], configDirs, true)).resolves.toEqual(projects);
+    expect(prompt.multiselect).not.toHaveBeenCalled();
+  });
+
+  it('asks which projects to upgrade without --yes', async () => {
+    vi.mocked(prompt.multiselect).mockResolvedValue(['/repo/b/.storybook']);
+
+    await expect(handleMultipleProjects(projects, [], configDirs, false)).resolves.toEqual([
+      projects[1],
+    ]);
   });
 });

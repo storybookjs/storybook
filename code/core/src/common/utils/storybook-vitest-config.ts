@@ -58,9 +58,37 @@ export type StorybookVitestConfig = {
 
 const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-/** The source without comments, so a commented-out plugin or a note about it does not count. */
-const stripComments = (source: string) =>
-  source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\])\/\/.*$/gm, '$1');
+/**
+ * The source without comments, so a commented-out plugin or a note about it does not count. String
+ * and template literals are kept as they are, so a glob such as `'src/*.test.ts'` or a URL such
+ * as `'http://localhost:6006'` does not open a comment.
+ */
+const stripComments = (source: string): string => {
+  let out = '';
+  for (let i = 0; i < source.length; i++) {
+    const char = source[i];
+    const next = source[i + 1];
+    if (char === "'" || char === '"' || char === '`') {
+      let j = i + 1;
+      while (j < source.length && source[j] !== char) {
+        j += source[j] === '\\' ? 2 : 1;
+      }
+      out += source.slice(i, j + 1);
+      i = j;
+    } else if (char === '/' && next === '/') {
+      while (i < source.length && source[i] !== '\n') {
+        i++;
+      }
+      out += '\n';
+    } else if (char === '/' && next === '*') {
+      const end = source.indexOf('*/', i + 2);
+      i = end === -1 ? source.length : end + 1;
+    } else {
+      out += char;
+    }
+  }
+  return out;
+};
 
 /** Whether `content` names `path` (with either slash), as whole path segments. */
 const namesPath = (content: string, path: string) =>
@@ -76,7 +104,7 @@ const namesPath = (content: string, path: string) =>
  *
  * A config inside the config dir is for that Storybook. Elsewhere, the plugin's `configDir` option
  * must name the config dir: by folder name for a config in the package root, where a plugin without
- * `configDir` runs `<cwd>/.storybook` and so counts for a config dir named `.storybook`; and by its
+ * `configDir` runs `<cwd>/.storybook` and so counts when that is this config dir; and by its
  * path from the config's folder for a config above the package root, so the root config of a
  * monorepo never counts for every package that has a `.storybook`.
  */
@@ -96,7 +124,8 @@ const registration = (file: string, storybookDir: string): 'strict' | 'loose' | 
   }
   if (directory === dirname(storybookDir)) {
     if (!/\bconfigDir\b/.test(content)) {
-      return basename(storybookDir) === '.storybook' ? 'strict' : 'loose';
+      // The plugin's default is `<cwd>/.storybook`; the test runner inherits Storybook's cwd.
+      return resolve(process.cwd(), '.storybook') === storybookDir ? 'strict' : 'loose';
     }
     return namesPath(content, basename(storybookDir)) ? 'strict' : 'loose';
   }
@@ -135,7 +164,14 @@ function located(file: string, directory: string, storybookDir: string) {
   const loads = defaultVitestConfigIn(root);
   // Passed explicitly unless Vitest would load a config from `root` by itself and `file` is one
   // Vitest picks by name, so Vitest's own choice is kept (and reported in `loads`).
-  const explicit = directory !== root || !loads || !DEFAULT_CONFIG_FILES.includes(basename(file));
+  let explicit = directory !== root || !loads || !DEFAULT_CONFIG_FILES.includes(basename(file));
+  // A dedicated config that the default config composes (`projects: ['./vitest.storybook.config.ts']`)
+  // runs through that default config, as with `vitest` in that directory, so its options apply.
+  if (explicit && directory === root && loads && loads !== file) {
+    try {
+      explicit = !stripComments(readFileSync(loads, 'utf8')).includes(basename(file));
+    } catch {}
+  }
   return { configFile: file, root, explicit, loads: explicit ? file : loads };
 }
 

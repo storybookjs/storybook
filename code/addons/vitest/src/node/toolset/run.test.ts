@@ -230,6 +230,7 @@ describe('runStoryTests', () => {
         getChangedStories: async () => ({
           storyIds: ['button--primary'],
           changedConfigFiles: ['.storybook/preview.ts'],
+          pendingFiles: [],
         }),
       });
 
@@ -237,7 +238,7 @@ describe('runStoryTests', () => {
       expect(result).toMatchObject({
         status: 'completed',
         selection: {
-          changed: { stories: 1, changedConfigFiles: ['.storybook/preview.ts'] },
+          changed: { stories: 1, changedConfigFiles: ['.storybook/preview.ts'], pendingFiles: [] },
           storyCount: 1,
         },
       });
@@ -250,13 +251,13 @@ describe('runStoryTests', () => {
         channel,
         getIndex: async () => index,
         changed: true,
-        getChangedStories: async () => ({ storyIds: [], changedConfigFiles: [] }),
+        getChangedStories: async () => ({ storyIds: [], changedConfigFiles: [], pendingFiles: [] }),
       });
 
       expect(result).toEqual({
         status: 'no-stories',
         notFoundMessages: [],
-        selection: { changed: { stories: 0, changedConfigFiles: [] } },
+        selection: { changed: { stories: 0, changedConfigFiles: [], pendingFiles: [] } },
       });
       expect(requested).toEqual([]);
     });
@@ -269,7 +270,11 @@ describe('runStoryTests', () => {
         getIndex: async () => index,
         files: ['button'],
         changed: true,
-        getChangedStories: async () => ({ storyIds: ['header--default'], changedConfigFiles: [] }),
+        getChangedStories: async () => ({
+          storyIds: ['header--default'],
+          changedConfigFiles: [],
+          pendingFiles: [],
+        }),
       });
 
       expect(result).toMatchObject({ status: 'no-stories', notFoundMessages: [] });
@@ -284,7 +289,11 @@ describe('runStoryTests', () => {
         getIndex: async () => index,
         files: ['src/Button.tsx'],
         changed: true,
-        getChangedStories: async () => ({ storyIds: ['button--primary'], changedConfigFiles: [] }),
+        getChangedStories: async () => ({
+          storyIds: ['button--primary'],
+          changedConfigFiles: [],
+          pendingFiles: [],
+        }),
       });
 
       expect(result).toMatchObject({ status: 'no-stories', notFoundMessages: [] });
@@ -494,11 +503,16 @@ describe('test run --changed and stories changed', () => {
       a11yEnabled: false,
     });
 
-    const listed = await getToolset('stories').methods.changed.handler({}, ctx);
-    await testToolset.methods.run.handler(
-      v.parse(testToolset.methods.run.input, { changed: true }),
-      ctx
-    );
+    let listed;
+    try {
+      listed = await getToolset('stories').methods.changed.handler({}, ctx);
+      await testToolset.methods.run.handler(
+        v.parse(testToolset.methods.run.input, { changed: true }),
+        ctx
+      );
+    } finally {
+      clearToolsetRegistry();
+    }
 
     const listedIds = listed.data.stories.map((story) => story.storyId);
     expect(listedIds.sort()).toEqual(['button--primary', 'page--default']);

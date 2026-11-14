@@ -141,8 +141,14 @@ export function triggerTestRun({
   });
 }
 
-/** What `stories changed` reports: the changed stories, and changed files in the config directory. */
-export type ChangedStories = { storyIds: string[]; changedConfigFiles: string[] };
+/** What `stories changed` reports, as far as a test run needs it. */
+export type ChangedStories = {
+  storyIds: string[];
+  /** Changed files in the config directory, which can affect every story. */
+  changedConfigFiles: string[];
+  /** Changed files change detection has not caught up with, so their stories may be missing. */
+  pendingFiles: string[];
+};
 
 export type RunStoryTestsParams = {
   channel: TestChannel;
@@ -172,7 +178,7 @@ export async function runStoryTests({
   stories,
   files,
   changed,
-  getChangedStories = async () => ({ storyIds: [], changedConfigFiles: [] }),
+  getChangedStories,
   a11y = true,
   actor = 'core/test',
   requestEvent = TRIGGER_TEST_RUN_REQUEST,
@@ -215,8 +221,9 @@ export async function runStoryTests({
     }
 
     if (changed) {
-      const { storyIds: changedIds, changedConfigFiles } = await getChangedStories();
-      selection.changed = { stories: changedIds.length, changedConfigFiles };
+      // No default: a caller that forgot to wire it must fail, not read as "nothing changed".
+      const { storyIds: changedIds, changedConfigFiles, pendingFiles } = await getChangedStories!();
+      selection.changed = { stories: changedIds.length, changedConfigFiles, pendingFiles };
       narrow(changedIds);
     }
 

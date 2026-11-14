@@ -778,10 +778,13 @@ describe('outcome mapping', () => {
           },
           files: {
             title: 'files',
-            input: v.strictObject({ files: v.optional(v.array(v.string())) }),
+            input: v.strictObject({
+              files: v.optional(v.array(v.string())),
+              flag: v.optional(v.boolean()),
+            }),
             description: 'file echo',
             fileArguments: 'files',
-            handler: async (input: { files?: string[] }) => ({
+            handler: async (input: { files?: string[]; flag?: boolean }) => ({
               ok: true,
               data: input,
               markdown: JSON.stringify(input),
@@ -931,6 +934,14 @@ describe('outcome mapping', () => {
       const result = await run(['echo', 'files', '--files', EXISTING, '--json'], deps);
 
       expect(JSON.parse(result.output)).toEqual({ files: [resolve(EXISTING)] });
+    });
+
+    it('reads a bare token after a boolean flag as a file argument, not its value', async () => {
+      const { deps } = makeDeps();
+
+      const result = await run(['echo', 'files', '--flag', 'Button', '--json'], deps);
+
+      expect(JSON.parse(result.output)).toEqual({ flag: true, files: ['Button'] });
     });
 
     it('rejects bare arguments for a tool that takes no files, without calling it', async () => {

@@ -1,12 +1,8 @@
 import type { ChannelLike } from 'storybook/internal/channels';
 import {
-  ChangeDetectionUnavailableError,
   filterStoryFiles,
-  findChangedFiles,
-  findChangedStories,
   findStoryIds,
   type FoundStory,
-  type ModuleGraphAccess,
   type NotFoundStory,
   type StoryInput,
 } from 'storybook/internal/core-server';
@@ -145,13 +141,8 @@ export function triggerTestRun({
   });
 }
 
-// Outside a repository, or without git, the file form still works; the message says so.
-function changedFilesError(error: unknown): string {
-  const message = error instanceof Error ? error.message : String(error);
-  return error instanceof ChangeDetectionUnavailableError
-    ? `\`--changed\` reads the changed files from git, but ${message === 'not a git repository' ? 'this project is not in a git repository' : message}. Pass story files instead.`
-    : `\`--changed\` could not read the changed files from git: ${message}`;
-}
+/** What `stories changed` reports: the changed stories, and changed files in the config directory. */
+export type ChangedStories = { storyIds: string[]; changedConfigFiles: string[] };
 
 export type RunStoryTestsParams = {
   channel: TestChannel;
@@ -159,12 +150,10 @@ export type RunStoryTestsParams = {
   stories?: StoryInput[];
   /** Story-file filters, matched the way Vitest matches its file filters. */
   files?: string[];
-  /** Vitest's `--changed`: `true` for the uncommitted changes, or a ref to also read changes since. */
-  changed?: boolean | string;
-  /** The module graph that maps a changed file to the stories that depend on it. */
-  getModuleGraph?: () => ModuleGraphAccess | undefined;
-  /** Reads the changed files from git; injectable for tests. */
-  getChangedFiles?: typeof findChangedFiles;
+  /** Run the stories `stories changed` lists. */
+  changed?: boolean;
+  /** The `stories.changed` tool, so both commands share one definition of "changed". */
+  getChangedStories?: () => Promise<ChangedStories>;
   a11y?: boolean;
   actor?: string;
   requestEvent?: string;
@@ -183,8 +172,7 @@ export async function runStoryTests({
   stories,
   files,
   changed,
-  getModuleGraph = () => undefined,
-  getChangedFiles = findChangedFiles,
+  getChangedStories = async () => ({ storyIds: [], changedConfigFiles: [] }),
   a11y = true,
   actor = 'core/test',
   requestEvent = TRIGGER_TEST_RUN_REQUEST,
@@ -227,32 +215,9 @@ export async function runStoryTests({
     }
 
     if (changed) {
-      const since = typeof changed === 'string' ? changed : undefined;
-      let changedFiles: string[];
-      try {
-        changedFiles = await getChangedFiles({ since });
-      } catch (error) {
-        return { status: 'error', error: { message: changedFilesError(error) } };
-      }
-      const affected = await findChangedStories({ index, changedFiles, getModuleGraph });
-      if (affected.kind === 'unavailable') {
-        return {
-          status: 'error',
-          error: {
-            message: `\`--changed\` needs Storybook's module graph to find the stories that depend on a changed file: ${affected.reason} Pass story files instead.`,
-          },
-        };
-      }
-      selection.changed = {
-        ...(since ? { since } : {}),
-        changedFiles: changedFiles.length,
-        ...(affected.kind === 'every-story'
-          ? { everyStory: displayPath(affected.trigger) }
-          : { storyFiles: affected.storyFiles.length }),
-      };
-      if (affected.kind === 'stories') {
-        narrow(affected.storyIds);
-      }
+      const { storyIds: changedIds, changedConfigFiles } = await getChangedStories();
+      selection.changed = { stories: changedIds.length, changedConfigFiles };
+      narrow(changedIds);
     }
 
     if (stories) {
@@ -268,8 +233,8 @@ export async function runStoryTests({
       );
     }
 
-    // Nothing to run. An unknown story id fails the call; `--changed` that affects nothing passes,
-    // as Vitest's `--changed` does ("No affected test files found, exiting with code 0").
+    // Nothing to run. An unknown story id fails the call; `--changed` that finds nothing passes, as
+    // Vitest's `--changed` does ("No affected test files found, exiting with code 0").
     if (candidates?.size === 0) {
       return { status: 'no-stories', notFoundMessages, selection };
     }

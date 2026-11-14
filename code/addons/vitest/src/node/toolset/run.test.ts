@@ -1,10 +1,10 @@
-import { resolve } from 'node:path';
-
 import { describe, expect, it, vi } from 'vitest';
 import * as v from 'valibot';
 
-import { ChangeDetectionUnavailableError } from 'storybook/internal/core-server';
+import { createStoriesToolset } from 'storybook/internal/core-server';
+import { CHANGE_DETECTION_STATUS_TYPE_ID } from 'storybook/internal/types';
 import type { StoryIndex } from 'storybook/internal/types';
+import { clearToolsetRegistry, getToolset, registerToolset } from 'storybook/open-service';
 
 import { TRIGGER_TEST_RUN_REQUEST, TRIGGER_TEST_RUN_RESPONSE } from '../../constants.ts';
 import { createTestToolset, type TestRunResult } from './definition.ts';
@@ -93,8 +93,6 @@ describe('createAsyncQueue', () => {
     expect(order).toEqual([1, 2, 3]);
   });
 });
-
-const BUTTON_STORIES = resolve(process.cwd(), 'src/Button.stories.tsx');
 
 /** A channel that answers every run request with `sampleResult`, recording the requested ids. */
 function respondingChannel() {
@@ -222,71 +220,45 @@ describe('runStoryTests', () => {
   });
 
   describe('changed', () => {
-    it('runs the stories of changed story files, reading the uncommitted changes', async () => {
+    it('runs exactly the stories that stories changed lists', async () => {
       const { channel, requested } = respondingChannel();
-      const getChangedFiles = vi.fn(async () => [BUTTON_STORIES]);
 
       const result = await runStoryTests({
         channel,
         getIndex: async () => index,
         changed: true,
-        getChangedFiles,
+        getChangedStories: async () => ({
+          storyIds: ['button--primary'],
+          changedConfigFiles: ['.storybook/preview.ts'],
+        }),
       });
 
-      expect(getChangedFiles).toHaveBeenCalledWith({ since: undefined });
       expect(requested).toEqual([['button--primary']]);
       expect(result).toMatchObject({
         status: 'completed',
-        selection: { changed: { changedFiles: 1, storyFiles: 1 }, storyCount: 1 },
+        selection: {
+          changed: { stories: 1, changedConfigFiles: ['.storybook/preview.ts'] },
+          storyCount: 1,
+        },
       });
     });
 
-    it('reads the changes since a ref', async () => {
-      const { channel } = respondingChannel();
-      const getChangedFiles = vi.fn(async () => [BUTTON_STORIES]);
-
-      await runStoryTests({
-        channel,
-        getIndex: async () => index,
-        changed: 'main',
-        getChangedFiles,
-      });
-
-      expect(getChangedFiles).toHaveBeenCalledWith({ since: 'main' });
-    });
-
-    it('passes without running when the changes affect no story, as Vitest does', async () => {
+    it('passes without running when no story changed, as Vitest does', async () => {
       const { channel, requested } = respondingChannel();
 
       const result = await runStoryTests({
         channel,
         getIndex: async () => index,
         changed: true,
-        getChangedFiles: async () => [],
+        getChangedStories: async () => ({ storyIds: [], changedConfigFiles: [] }),
       });
 
       expect(result).toEqual({
         status: 'no-stories',
         notFoundMessages: [],
-        selection: { changed: { changedFiles: 0, storyFiles: 0 } },
+        selection: { changed: { stories: 0, changedConfigFiles: [] } },
       });
       expect(requested).toEqual([]);
-    });
-
-    it('runs every story when a rerun trigger changed', async () => {
-      const { channel, requested } = respondingChannel();
-
-      const result = await runStoryTests({
-        channel,
-        getIndex: async () => index,
-        changed: true,
-        getChangedFiles: async () => [resolve(process.cwd(), 'package.json')],
-      });
-
-      expect(requested).toEqual([undefined]);
-      expect(result).toMatchObject({
-        selection: { changed: { everyStory: 'package.json' } },
-      });
     });
 
     it('runs only the stories both a file filter and the changes select', async () => {
@@ -297,11 +269,9 @@ describe('runStoryTests', () => {
         getIndex: async () => index,
         files: ['button'],
         changed: true,
-        getChangedFiles: async () => [resolve(process.cwd(), 'src/deleted.ts')],
+        getChangedStories: async () => ({ storyIds: ['header--default'], changedConfigFiles: [] }),
       });
 
-      // The filter matches the Button story file, but no change affects it: a deleted file selects
-      // nothing, as in Vitest.
       expect(result).toMatchObject({ status: 'no-stories', notFoundMessages: [] });
       expect(requested).toEqual([]);
     });
@@ -314,32 +284,11 @@ describe('runStoryTests', () => {
         getIndex: async () => index,
         files: ['src/Button.tsx'],
         changed: true,
-        getChangedFiles: async () => [BUTTON_STORIES],
+        getChangedStories: async () => ({ storyIds: ['button--primary'], changedConfigFiles: [] }),
       });
 
       expect(result).toMatchObject({ status: 'no-stories', notFoundMessages: [] });
       expect(requested).toEqual([]);
-    });
-
-    it('says the file form still works outside a git repository', async () => {
-      const { channel } = respondingChannel();
-
-      const result = await runStoryTests({
-        channel,
-        getIndex: async () => index,
-        changed: true,
-        getChangedFiles: async () => {
-          throw new ChangeDetectionUnavailableError('not a git repository');
-        },
-      });
-
-      expect(result).toEqual({
-        status: 'error',
-        error: {
-          message:
-            '`--changed` reads the changed files from git, but this project is not in a git repository. Pass story files instead.',
-        },
-      });
     });
   });
 
@@ -473,5 +422,86 @@ describe('createTestToolset channel identity', () => {
 
     expect(outcome.ok).toBe(true);
     expect(outcome.data).toMatchObject({ status: 'completed', a11y: false });
+  });
+});
+
+describe('test run --changed and stories changed', () => {
+  it('select the same stories for the same working tree', async () => {
+    const parityIndex: StoryIndex = {
+      v: 5,
+      entries: Object.fromEntries(
+        ['button--primary', 'header--default', 'page--default'].map((id) => [
+          id,
+          {
+            type: 'story',
+            subtype: 'story',
+            id,
+            name: id,
+            title: id,
+            importPath: `./src/${id}.stories.tsx`,
+            tags: ['story'],
+          },
+        ])
+      ),
+    };
+    const status = (storyId: string, value: string) => ({
+      [storyId]: {
+        [CHANGE_DETECTION_STATUS_TYPE_ID]: {
+          storyId,
+          typeId: CHANGE_DETECTION_STATUS_TYPE_ID,
+          value,
+          title: '',
+          description: '',
+        },
+      },
+    });
+    const moduleGraph = {
+      queries: {
+        status: { loaded: async () => ({ value: 'ready' }) },
+        changeDetectionReadiness: { loaded: async () => ({ status: 'ready' }) },
+      },
+      commands: { storiesForFiles: async () => [] },
+    };
+    const ctx = { transport: 'cli' as const, getService: () => moduleGraph as never };
+
+    clearToolsetRegistry();
+    registerToolset(
+      createStoriesToolset({
+        storyIndex: { getIndex: async () => parityIndex },
+        git: {
+          getRepoRoot: async () => process.cwd(),
+          getChangedFiles: async () => ({ changed: new Set<string>(), new: new Set<string>() }),
+        },
+        changeStatuses: {
+          getAll: () =>
+            ({
+              ...status('button--primary', 'status-value:new'),
+              ...status('page--default', 'status-value:affected'),
+              ...status('header--default', 'status-value:unknown'),
+            }) as never,
+        },
+        storybookDirs: {
+          configDir: `${process.cwd()}/.storybook`,
+          getStaticDirs: async () => [],
+          getStoriesMatcher: async () => () => false,
+        },
+      })
+    );
+    const { channel, requested } = respondingChannel();
+    const testToolset = createTestToolset({
+      channel,
+      storyIndex: { getIndex: async () => parityIndex },
+      a11yEnabled: false,
+    });
+
+    const listed = await getToolset('stories').methods.changed.handler({}, ctx);
+    await testToolset.methods.run.handler(
+      v.parse(testToolset.methods.run.input, { changed: true }),
+      ctx
+    );
+
+    const listedIds = listed.data.stories.map((story) => story.storyId);
+    expect(listedIds.sort()).toEqual(['button--primary', 'page--default']);
+    expect((requested[0] as string[]).sort()).toEqual(listedIds);
   });
 });

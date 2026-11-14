@@ -1,15 +1,10 @@
-import { existsSync, realpathSync } from 'node:fs';
 import path from 'node:path';
 
 import type { StoryIndex } from 'storybook/internal/types';
 
-import { vol } from 'memfs';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import type { ModuleGraphAccess, ModuleGraphStoryHit } from './resolve-component-stories.ts';
-import { filterStoryFiles, findChangedStories } from './select-stories.ts';
-
-vi.mock('node:fs', { spy: true });
+import { filterStoryFiles } from './select-stories.ts';
 
 const ROOT = path.resolve('/repo');
 const at = (file: string) => path.join(ROOT, file).replaceAll('\\', '/');
@@ -36,23 +31,6 @@ const index = {
     },
   },
 } as unknown as StoryIndex;
-
-beforeEach(() => {
-  vi.clearAllMocks();
-  vol.reset();
-  vol.fromNestedJSON({
-    [at('src/Button.tsx')]: '',
-    [at('src/theme.ts')]: '',
-    [at('README.md')]: '',
-  });
-  vi.mocked(existsSync).mockImplementation((file) => vol.existsSync(file));
-  vi.mocked(realpathSync.native).mockImplementation(((file: string) => {
-    if (!vol.existsSync(file)) {
-      throw Object.assign(new Error('ENOENT'), { code: 'ENOENT' });
-    }
-    return String(vol.realpathSync(file));
-  }) as never);
-});
 
 describe('filterStoryFiles', () => {
   const filter = (filters: string[], cwd = ROOT) =>
@@ -86,124 +64,5 @@ describe('filterStoryFiles', () => {
 
   it('matches no story file for a component file', () => {
     expect(filter(['src/Button.tsx'])).toEqual({ storyFiles: [], storyIds: [] });
-  });
-});
-
-describe('findChangedStories', () => {
-  const storiesForFiles = vi.fn();
-  const loadedByPreview = vi.fn();
-
-  function graph(hits: Record<string, ModuleGraphStoryHit[]>, preview: string[] = []) {
-    storiesForFiles.mockImplementation(async ({ files }: { files: string[] }) =>
-      files.map((file) => hits[file] ?? [])
-    );
-    loadedByPreview.mockImplementation(async ({ files }: { files: string[] }) =>
-      files.map((file) => preview.includes(file))
-    );
-    return (): ModuleGraphAccess => ({
-      queries: {
-        status: { loaded: async () => ({ value: 'ready' }) },
-        storiesForFiles: { loaded: storiesForFiles },
-        loadedByPreview: { loaded: loadedByPreview },
-      },
-    });
-  }
-
-  const find = (
-    changedFiles: string[],
-    getModuleGraph: () => ModuleGraphAccess | undefined = graph({})
-  ) => findChangedStories({ index, changedFiles, getModuleGraph, workingDir: ROOT });
-
-  it('selects the stories of a changed story file without asking the graph', async () => {
-    const getModuleGraph = vi.fn();
-
-    expect(await find([at('src/Button.stories.tsx')], getModuleGraph)).toEqual({
-      kind: 'stories',
-      storyFiles: ['./src/Button.stories.tsx'],
-      storyIds: ['button--primary', 'button--primary:renders'],
-    });
-    expect(getModuleGraph).not.toHaveBeenCalled();
-  });
-
-  it('selects the stories that depend on another changed file, at any depth', async () => {
-    const result = await find(
-      [at('src/Button.tsx')],
-      graph({
-        [at('src/Button.tsx')]: [
-          { storyFile: './src/Button.stories.tsx', depth: 1 },
-          { storyFile: './src/Page.stories.tsx', depth: 9 },
-        ],
-      })
-    );
-
-    expect(result).toEqual({
-      kind: 'stories',
-      storyFiles: ['./src/Button.stories.tsx', './src/Page.stories.tsx'],
-      storyIds: ['button--primary', 'button--primary:renders', 'page--default'],
-    });
-  });
-
-  it('selects every story for a file the preview loads', async () => {
-    expect(await find([at('src/theme.ts')], graph({}, [at('src/theme.ts')]))).toEqual({
-      kind: 'every-story',
-      trigger: at('src/theme.ts'),
-    });
-  });
-
-  it("selects every story for Vitest's rerun triggers, without the graph", async () => {
-    const getModuleGraph = vi.fn();
-
-    expect(await find([at('vite.config.ts')], getModuleGraph)).toEqual({
-      kind: 'every-story',
-      trigger: at('vite.config.ts'),
-    });
-    expect(await find([at('packages/ui/package.json')], getModuleGraph)).toMatchObject({
-      kind: 'every-story',
-    });
-    expect(getModuleGraph).not.toHaveBeenCalled();
-  });
-
-  it('selects every story for an env file, as Vite loads it everywhere', async () => {
-    expect(await find([at('.env.local')], vi.fn())).toEqual({
-      kind: 'every-story',
-      trigger: at('.env.local'),
-    });
-  });
-
-  it('reports the graph as unavailable when it cannot tell what the preview loads', async () => {
-    const getModuleGraph = graph({});
-    loadedByPreview.mockRejectedValue(new Error('Unknown command'));
-
-    expect(await find([at('src/theme.ts')], getModuleGraph)).toMatchObject({
-      kind: 'unavailable',
-    });
-  });
-
-  it('reports a graph that is not ready as unavailable', async () => {
-    const getModuleGraph = (): ModuleGraphAccess => ({
-      queries: {
-        status: { loaded: async () => ({ value: 'unavailable', reason: 'no adapter' }) },
-        storiesForFiles: { loaded: storiesForFiles },
-      },
-    });
-
-    expect(await find([at('src/Button.tsx')], getModuleGraph)).toMatchObject({
-      kind: 'unavailable',
-      reason: expect.stringContaining('no adapter'),
-    });
-  });
-
-  it('selects nothing for deleted files and files no story imports', async () => {
-    expect(await find([at('src/Deleted.tsx'), at('README.md')])).toEqual({
-      kind: 'stories',
-      storyFiles: [],
-      storyIds: [],
-    });
-  });
-
-  it('reports a missing module graph instead of selecting nothing', async () => {
-    expect(await find([at('src/Button.tsx')], () => undefined)).toMatchObject({
-      kind: 'unavailable',
-    });
   });
 });

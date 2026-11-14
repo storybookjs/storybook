@@ -32,14 +32,6 @@ const { document } = global;
 
 const DEFAULT_MAX_SEARCH_RESULTS = 50;
 
-// Downshift state changes after which the stateReducer keeps the query (and the search results).
-const QUERY_PRESERVING_CHANGES = new Set<unknown>([
-  Downshift.stateChangeTypes.clickItem,
-  Downshift.stateChangeTypes.keyDownEnter,
-  Downshift.stateChangeTypes.blurInput,
-  Downshift.stateChangeTypes.mouseUp,
-]);
-
 const options = {
   shouldSort: true,
   tokenize: true,
@@ -321,10 +313,10 @@ export const Search = React.memo<SearchProps>(function Search({
     [api]
   );
 
-  const onInputValueChange = useCallback((inputValue: string, stateAndHelpers: any) => {
-    // Downshift also reports the input value when a result is selected or the input loses focus,
-    // but the stateReducer keeps the query then. Only a new query collapses "Show more".
-    if (!QUERY_PRESERVING_CHANGES.has(stateAndHelpers.type)) {
+  // A new query collapses "Show more". onStateChange reports only what the stateReducer actually
+  // changed, so selecting a result or leaving the input, which keep the query, does not count.
+  const onStateChange = useCallback((changes: StateChangeOptions<DownshiftItem>) => {
+    if ('inputValue' in changes) {
       showAllComponents(false);
     }
   }, []);
@@ -339,7 +331,7 @@ export const Search = React.memo<SearchProps>(function Search({
             inputValue: state.inputValue,
             // Keep the search results while there is a query, including after selecting one of
             // them. Clearing the query returns to the tree view.
-            isOpen: !!state.inputValue,
+            isOpen: !!state.inputValue?.trim(),
           };
         }
 
@@ -362,8 +354,8 @@ export const Search = React.memo<SearchProps>(function Search({
         case Downshift.stateChangeTypes.keyDownEnter: {
           if (isSearchResult(changes.selectedItem)) {
             // Keep the query and, when there is one, the search results, so the next result is
-            // one click away. With an empty query (a recently opened item), return to the tree view.
-            return { ...changes, inputValue: state.inputValue, isOpen: !!state.inputValue };
+            // one click away. With no query (a recently opened item), return to the tree view.
+            return { ...changes, inputValue: state.inputValue, isOpen: !!state.inputValue?.trim() };
           }
           if (isExpandType(changes.selectedItem)) {
             // Downshift should completely ignore this
@@ -391,7 +383,7 @@ export const Search = React.memo<SearchProps>(function Search({
       itemToString={(result) => result?.item?.name || ''}
       scrollIntoView={(e) => scrollIntoView(e)}
       onSelect={onSelect}
-      onInputValueChange={onInputValueChange}
+      onStateChange={onStateChange}
     >
       {({
         isOpen,

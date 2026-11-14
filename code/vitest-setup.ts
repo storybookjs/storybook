@@ -1,7 +1,9 @@
+import { builtinModules, createRequire, syncBuiltinESMExports } from 'node:module';
 import { Writable } from 'node:stream';
+import { fileURLToPath } from 'node:url';
 
 import '@testing-library/jest-dom/vitest';
-import { expect, vi } from 'vitest';
+import { afterAll, expect, vi } from 'vitest';
 
 import { dedent } from 'ts-dedent';
 
@@ -130,3 +132,108 @@ vi.mock('./core/src/shared/utils/module.ts', async (importOriginal) => {
     }),
   };
 });
+
+// With `isolate: false` a worker runs many test files, so each file undoes what it leaves behind
+// before the next one imports its modules. This relies on Vitest internals.
+type WorkerGlobals = {
+  __vitest_worker__?: {
+    config: { isolate: boolean };
+    filepath: string;
+    evaluatedModules: {
+      idToModuleMap: Map<
+        string,
+        { promise?: unknown; exports?: unknown; evaluated: boolean; importers: Set<string> }
+      >;
+    };
+  };
+};
+const { __vitest_worker__: worker } = globalThis as WorkerGlobals;
+
+if (!worker) {
+  throw new Error('Vitest internals changed: cannot reset test files that share a worker');
+}
+
+if (!worker.config.isolate) {
+  const stateKey = Symbol.for('storybook.vitest.workerState');
+  type WorkerState = {
+    builtins: Map<Record<string, unknown>, Map<string, unknown>>;
+    addSnapshotSerializer: typeof expect.addSnapshotSerializer;
+    pendingCleanup?: (keep?: string) => void;
+  };
+  const workerScope = globalThis as { [stateKey]?: WorkerState };
+  // `vi.mock('node:fs', { spy: true })` spies on the builtin itself, which Node's own module loader
+  // reads through, so the originals are recorded before the worker's first test file runs.
+  const requireBuiltin = createRequire(import.meta.url);
+  const state: WorkerState = (workerScope[stateKey] ??= {
+    builtins: new Map(
+      builtinModules
+        // `trace_events` cannot be loaded in a worker thread.
+        .filter((name) => !name.startsWith('_') && name !== 'trace_events')
+        .map((name) => {
+          const exports = requireBuiltin(name);
+          return [exports, new Map(Object.entries(exports))];
+        })
+    ),
+    addSnapshotSerializer: expect.addSnapshotSerializer,
+  });
+
+  // Vitest cannot unregister snapshot serializers, so each one only applies to the file that added it.
+  const { filepath } = worker;
+  expect.addSnapshotSerializer = (plugin) =>
+    state.addSnapshotSerializer.call(expect, {
+      ...plugin,
+      // Vitest installs a new worker state for each batch of files, so read the current one.
+      test: (value) =>
+        (globalThis as WorkerGlobals).__vitest_worker__?.filepath === filepath &&
+        plugin.test(value),
+    });
+
+  // Vitest restores mocks and resets the mocker after each file, but leaves the modules evaluated.
+  const cleanup = (keep?: string) => {
+    worker.evaluatedModules.idToModuleMap.forEach((node, path) => {
+      if (path !== keep && !/\/vitest\/dist\/|vitest-virtual-\w+\/dist|@vitest\/dist/.test(path)) {
+        node.promise = undefined;
+        node.exports = undefined;
+        node.evaluated = false;
+        node.importers.clear();
+      }
+    });
+    for (const [exports, originals] of state.builtins) {
+      for (const [key, original] of originals) {
+        if (exports[key] !== original) {
+          exports[key] = original;
+        }
+      }
+    }
+    // ESM imports of builtins only see the restored exports after a sync.
+    syncBuiltinESMExports();
+    // Files with the same DOM environment share its document.
+    if (globalThis.document) {
+      document.head.replaceChildren();
+      document.body.replaceChildren();
+      for (const element of [document.documentElement, document.body]) {
+        for (const { name } of [...element.attributes]) {
+          element.removeAttribute(name);
+        }
+      }
+    }
+    // Emotion warns when it is evaluated again while its global marker is set.
+    for (const key of Object.keys(globalThis)) {
+      if (key.startsWith('__EMOTION_REACT_')) {
+        delete (globalThis as Record<string, unknown>)[key];
+      }
+    }
+    vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
+    vi.useRealTimers();
+  };
+
+  // A file whose tests are all skipped or filtered out runs no hooks, so the next file cleans up
+  // after it, keeping this setup file, which is being evaluated for that next file.
+  state.pendingCleanup?.(fileURLToPath(import.meta.url));
+  state.pendingCleanup = cleanup;
+  afterAll(() => {
+    state.pendingCleanup = undefined;
+    cleanup();
+  });
+}

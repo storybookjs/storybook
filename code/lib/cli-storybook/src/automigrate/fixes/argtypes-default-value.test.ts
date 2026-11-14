@@ -285,7 +285,7 @@ describe('argtypes-default-value', () => {
     expect(result.story).not.toContain('defaultValue');
   });
 
-  it('fails a defaultValue that reaches an argType through a spread, naming its line and why', async () => {
+  it('fails a defaultValue that reaches an argType through a spread, naming its line', async () => {
     const story = [
       "const base = { defaultValue: 'A', control: 'text' };",
       'export default { argTypes: { label: { ...base } } };',
@@ -297,8 +297,31 @@ describe('argtypes-default-value', () => {
         file: storyPath,
         kind: 'story',
         message: expect.stringMatching(
-          /^line 1: `defaultValue` is left in place.*; line 2: Cannot mutate argTypes\.label\.defaultValue because the target contains spread field$/
+          /^line 1: `defaultValue` is left in place, outside any argType the migration could read\. If it reaches one through a variable, a spread or a helper, remove it by hand$/
         ),
+      },
+    ]);
+    expect(result.story).toBe(story);
+  });
+
+  it('names why the argType that holds the defaultValue left could not be read, and only that one', async () => {
+    const story = [
+      "import { intlArgType, makeArgType } from '../helpers';",
+      'export default {',
+      '  argTypes: {',
+      "    intl: intlArgType('LinkTranslate'),",
+      "    label: makeArgType({ defaultValue: 'Hi' }),",
+      '  },',
+      '};',
+    ].join('\n');
+    const result = await migrate({ story });
+
+    expect(result.failures).toEqual([
+      {
+        file: storyPath,
+        kind: 'story',
+        message:
+          'line 5: `defaultValue` is left in place; line 5: Cannot mutate argTypes.label.defaultValue because the target contains unsupported member',
       },
     ]);
     expect(result.story).toBe(story);

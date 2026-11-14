@@ -116,11 +116,15 @@ const migrate = (
       left.map((property) => locationOf(file.editor.code, property.start, property.end).start.line)
     ),
   ];
+  // Only the reasons of the argTypes that hold what is left: the others did not keep it in place.
+  const reasons = unread.filter(
+    ({ loc }) => loc && lines.some((line) => line >= loc.start.line && line <= loc.end.line)
+  );
+  const where = `${lines.length === 1 ? 'line' : 'lines'} ${lines.join(', ')}`;
   throw new HandledError(
-    [
-      `${lines.length === 1 ? 'line' : 'lines'} ${lines.join(', ')}: \`defaultValue\` is left in place, outside any argType the migration could read. If it belongs to an argType, remove it by hand`,
-      ...unread.map(describe),
-    ].join('; ')
+    reasons.length > 0
+      ? [`${where}: \`defaultValue\` is left in place`, ...reasons.map(describe)].join('; ')
+      : `${where}: \`defaultValue\` is left in place, outside any argType the migration could read. If it reaches one through a variable, a spread or a helper, remove it by hand`
   );
 };
 

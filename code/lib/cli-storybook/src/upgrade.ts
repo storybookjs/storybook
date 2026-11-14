@@ -47,6 +47,12 @@ import { offersSkills } from './automigrate/fixes/skills.ts';
 import { FixStatus } from './automigrate/types.ts';
 import { displayDoctorResults, runMultiProjectDoctor } from './doctor/index.ts';
 import { configureDeferredAddons } from './postinstallAddon.ts';
+import {
+  forgetUpgradeStart,
+  rememberUpgradeStart,
+  upgradeStartVersion,
+} from './pending-upgrade.ts';
+import { answersPromptsWithYes } from './prompts.ts';
 import type { ProjectDoctorData, ProjectDoctorResults } from './doctor/types.ts';
 import {
   type CollectProjectsSuccessResult,
@@ -363,6 +369,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
     throw new HandledError('--features cannot be combined with --skip-automigrations');
   }
 
+  options = { ...options, yes: answersPromptsWithYes(options.yes) };
   const storybookVersionSpecifier = getStorybookVersionSpecifierFromCli();
   const projectsResult = await getProjects(options);
 
@@ -371,7 +378,18 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
     return;
   }
 
-  const { allProjects, selectedProjects: storybookProjects } = projectsResult;
+  const { allProjects } = projectsResult;
+  // A rerun after a run that stopped before its automigrations migrates from where that run started.
+  const storybookProjects = await Promise.all(
+    projectsResult.selectedProjects.map(async (project) => ({
+      ...project,
+      beforeVersion: await upgradeStartVersion({
+        configDir: project.configDir,
+        installed: project.beforeVersion,
+        target: project.currentCLIVersion,
+      }),
+    }))
+  );
 
   if (storybookProjects.length > 1) {
     logger.info(`Upgrading the following projects:
@@ -447,6 +465,13 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
         }
       }
 
+      for (const project of storybookProjects) {
+        await rememberUpgradeStart(project.configDir, {
+          from: project.beforeVersion,
+          to: project.currentCLIVersion,
+        });
+      }
+
       const task = prompt.taskLog({
         id: 'upgrade-dependencies',
         title: `Fetching versions to update package.json files..`,
@@ -492,6 +517,11 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
         storybookProjects,
         options
       ));
+    }
+    if (!options.dryRun) {
+      for (const project of storybookProjects) {
+        await forgetUpgradeStart(project.configDir);
+      }
     }
 
     // Install dependencies
@@ -567,28 +597,6 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
     if (!options.dryRun && !hadSkills) {
       await refreshAgentInstructions();
     }
-    // The `skills` automigration skips CI without a word. Said here, it is said once for all projects.
-    if (!options.dryRun && !options.skipAutomigrations && !hadSkills && skipsSkillsInCI()) {
-      for (const project of storybookProjects) {
-        const offered = await offersSkills({
-          packageManager: project.packageManager,
-          mainConfig: project.mainConfig,
-          beforeVersion: project.beforeVersion,
-          storybookVersion: project.currentCLIVersion,
-        }).catch(() => null);
-        if (offered) {
-          // `automigrate skills` alone does not apply until the project uses angular-vite.
-          logger.warn(
-            skippedSkillsInCIMessage(
-              offered.afterAngularViteMigration
-                ? `npx storybook automigrate angular-to-angular-vite --yes, and then ${SKILLS_AUTOMIGRATE_COMMAND}`
-                : undefined
-            )
-          );
-          break;
-        }
-      }
-    }
 
     // Run doctor for each project
     const doctorProjects: ProjectDoctorData[] = storybookProjects.map((project) => ({
@@ -607,6 +615,36 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
 
     // Display upgrade results summary
     logUpgradeResults(automigrationResults, detectedAutomigrations, doctorResults);
+
+    // The skills only reach a project through the `skills` automigration. When a project was offered
+    // them and did not get them (skipped in CI, unticked, declined or failed), say so last, once.
+    if (
+      !options.dryRun &&
+      !options.skipAutomigrations &&
+      !hadSkills &&
+      !(await hasStorybookSkills())
+    ) {
+      for (const project of storybookProjects) {
+        const offered = await offersSkills({
+          packageManager: project.packageManager,
+          mainConfig: project.mainConfig,
+          beforeVersion: project.beforeVersion,
+          storybookVersion: project.currentCLIVersion,
+        }).catch(() => null);
+        if (offered) {
+          // `automigrate skills` alone does not apply until the project uses angular-vite.
+          const command = offered.afterAngularViteMigration
+            ? `npx storybook automigrate angular-to-angular-vite --yes, and then ${SKILLS_AUTOMIGRATE_COMMAND}`
+            : SKILLS_AUTOMIGRATE_COMMAND;
+          logger.warn(
+            skipsSkillsInCI()
+              ? skippedSkillsInCIMessage(command)
+              : `Did not install the Storybook skills for AI agents. Add them with: ${command}`
+          );
+          break;
+        }
+      }
+    }
 
     // TELEMETRY
     for (const project of storybookProjects) {

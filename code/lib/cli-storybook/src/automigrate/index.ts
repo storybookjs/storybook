@@ -9,6 +9,7 @@ import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
 
 import { doctor } from '../doctor/index.ts';
+import { answersPromptsWithYes } from '../prompts.ts';
 import { configureDeferredAddons } from '../postinstallAddon.ts';
 import type {
   AutofixOptions,
@@ -44,7 +45,12 @@ const hasFailures = (fixResults: Record<string, FixStatus> | undefined): boolean
   );
 };
 
-export const doAutomigrate = async (options: AutofixOptionsFromCLI) => {
+export const doAutomigrate = async (cliOptions: AutofixOptionsFromCLI) => {
+  // `--list` and `--dry-run` change nothing, so they need no answers.
+  const options =
+    cliOptions.list || cliOptions.dryRun
+      ? cliOptions
+      : { ...cliOptions, yes: answersPromptsWithYes(cliOptions.yes) };
   logger.debug('Extracting storybook data...');
   const {
     mainConfig,

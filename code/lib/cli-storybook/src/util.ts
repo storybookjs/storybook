@@ -617,7 +617,7 @@ export const shortenPath = (path: string) => {
  * @param detectedConfigDirs - Array of detected configuration directories
  * @returns Promise resolving to selected projects or undefined
  */
-const handleMultipleProjects = async (
+export const handleMultipleProjects = async (
   validProjects: readonly CollectProjectsSuccessResult[],
   errorProjects: readonly CollectProjectsErrorResult[],
   detectedConfigDirs: readonly string[],
@@ -663,6 +663,12 @@ const handleMultipleProjects = async (
   }
 
   if (detectedConfigDirs.length > 1) {
+    if (yes) {
+      logger.log(
+        `Upgrading all Storybook projects found:\n${formatProjectDirectories(validProjects, logger.SYMBOLS.success)}`
+      );
+      return [...validProjects];
+    }
     const selectedConfigDirs = await prompt.multiselect({
       message: 'Select which projects to upgrade',
       options: detectedConfigDirs.map((configDir) => ({

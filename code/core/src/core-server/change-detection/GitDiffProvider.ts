@@ -91,29 +91,6 @@ export class GitDiffProvider {
     };
   }
 
-  /**
-   * The files Vitest's `--changed` reads, with Vitest's own git commands: the staged files and the
-   * unstaged and untracked ones (deletions included), plus, with `since`, the files changed on this
-   * branch since it forked from that ref. Repository-relative. `-z` keeps paths with spaces or
-   * non-ASCII characters intact, where line output would quote them.
-   */
-  async getChangedFilesForTests(since?: string): Promise<string[]> {
-    // A ref is passed to git as an argument; one that starts with `-` would be read as an option.
-    if (since?.startsWith('-')) {
-      throw new ChangeDetectionFailureError(`\`${since}\` is not a git ref.`);
-    }
-    const repoRoot = await this.getRepoRoot();
-    const commands = [
-      ['diff', '--cached', '--name-only', '-z'],
-      ['ls-files', '-z', '--other', '--modified', '--exclude-standard'],
-      ...(since ? [['diff', '--name-only', '-z', `${since}...HEAD`]] : []),
-    ];
-    const outputs = await Promise.all(commands.map((args) => this.runGitCommand(repoRoot, args)));
-    return [
-      ...new Set(outputs.flatMap(({ stdout }) => stdout.split('\0').filter((path) => path !== ''))),
-    ];
-  }
-
   async getHeadCommit(): Promise<string> {
     const repoRoot = await this.getRepoRoot();
     const { stdout } = await this.runGitCommand(repoRoot, ['rev-parse', 'HEAD']);

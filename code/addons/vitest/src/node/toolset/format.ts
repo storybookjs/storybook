@@ -289,7 +289,7 @@ export function displayPath(file: string): string {
  * A focused run whose selected stories all stayed out of the run, for example excluded by tags. It
  * passes, as a Vitest run whose tests are all skipped does; the selection line says why.
  */
-export function ranNothingSelected(result: TestRunResult): boolean {
+function ranNothingSelected(result: TestRunResult): boolean {
   return (
     (result.storyIds?.length ?? 0) > 0 &&
     result.componentTestCount.success + result.componentTestCount.error === 0
@@ -300,8 +300,20 @@ function code(value: string): string {
   return `\`${value}\``;
 }
 
-function describeChanged({ since, changedFiles }: NonNullable<TestRunSelection['changed']>) {
-  return `${pluralize(changedFiles, 'changed file')} (${since ? `since ${code(since)}, and uncommitted` : 'uncommitted'})`;
+// The notes `stories changed` gives about what its story list cannot show.
+function formatChangedConfigFiles(changed: TestRunSelection['changed']): string[] {
+  return [
+    ...(changed?.pendingFiles.length
+      ? [
+          `Change detection has not caught up with these changed files yet, so their stories may be missing: ${changed.pendingFiles.map(code).join(', ')}. Run this again in a moment.`,
+        ]
+      : []),
+    ...(changed?.changedConfigFiles.length
+      ? [
+          `Changed files in the Storybook config directory, which can affect every story: ${changed.changedConfigFiles.map(code).join(', ')}.`,
+        ]
+      : []),
+  ];
 }
 
 // The likely cause is named only when no error could explain the gap instead.
@@ -332,12 +344,7 @@ function formatSelection(
     );
   }
   if (selection.changed) {
-    const { everyStory, storyFiles = 0 } = selection.changed;
-    parts.push(
-      everyStory
-        ? `${describeChanged(selection.changed)} ${selection.changed.changedFiles === 1 ? 'includes' : 'include'} ${code(everyStory)}, which affects every story`
-        : `${describeChanged(selection.changed)} ${selection.changed.changedFiles === 1 ? 'affects' : 'affect'} ${pluralize(storyFiles, 'story file')}`
-    );
+    parts.push(pluralize(selection.changed.stories, 'changed story', 'changed stories'));
   }
   const selected = selection.storyCount;
   if (parts.length === 0) {
@@ -352,7 +359,7 @@ function formatSelection(
 }
 
 const A11Y_GUIDANCE =
-  'Accessibility violations: fix semantic ones yourself (roles, labels, alt text, keyboard access). For visual ones such as color contrast, do not change the design: describe the problem, offer two or three options and ask the user. Never change `parameters.a11y.test` to make a violation pass.';
+  'Accessibility violations: fix only what your change caused, and report the rest. For visual ones such as color contrast, ask before changing the design.';
 
 // What the agent needs next for this result, so no skill has to be read first.
 function formatNextSteps(
@@ -438,6 +445,7 @@ function formatResultSection(
     ...[selection && formatSelection(selection, ranStoryIds, result)].filter(
       (line): line is string => Boolean(line)
     ),
+    ...formatChangedConfigFiles(selection?.changed),
     ...notFound,
     verdict,
     formatA11yResult(result, { a11y, a11yEnabled }),
@@ -543,17 +551,15 @@ File arguments select story files by path, as Vitest filters select test files. 
 ${runEveryStoryBeforeFinishing(ctx)}`;
   }
   if (selection?.changed) {
-    const { changedFiles } = selection.changed;
     const what =
-      changedFiles === 0
-        ? `No changed files found (${selection.changed.since ? `since ${code(selection.changed.since)}, and uncommitted` : 'uncommitted'})`
-        : selection.files || selection.stories
-          ? `None of the selected stories is affected by the ${describeChanged(selection.changed)}`
-          : `No stories are affected by the ${describeChanged(selection.changed)}`;
+      selection.changed.stories > 0 ? 'None of the selected stories changed' : 'No stories changed';
     // A run that selected nothing passes, as in Vitest, so the agent could otherwise finish without
     // one test having run.
-    return `${what}, so no tests ran.
-To test more, pass a ref (${argument(ctx, '--changed main', 'changed: "main"')}) or story files. ${runEveryStoryBeforeFinishing(ctx)}`;
+    return [
+      `${what}, so no tests ran.`,
+      ...formatChangedConfigFiles(selection.changed),
+      `To test more, pass story files. ${runEveryStoryBeforeFinishing(ctx)}`,
+    ].join('\n');
   }
   if (selection?.files && selection.stories) {
     return 'None of the given story IDs is in the matched story files, so no tests ran.';

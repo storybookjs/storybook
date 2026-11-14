@@ -575,18 +575,8 @@ describe('MCP Endpoint E2E Tests', () => {
 				          "type": "boolean",
 				        },
 				        "changed": {
-				          "anyOf": [
-				            {
-				              "type": "boolean",
-				            },
-				            {
-				              "type": "string",
-				            },
-				            {
-				              "type": "number",
-				            },
-				          ],
-				          "description": "Test the stories affected by the files git reports as changed, as Vitest's --changed: true for the uncommitted changes (staged, unstaged and untracked), or a ref (a branch or commit) for the changes since it plus the uncommitted ones. A changed story file selects its stories, any other changed file the stories that depend on it, and a change to what the Storybook preview loads, a package.json, a vite or vitest config, or a .env file selects every story.",
+				          "description": "Test the changed stories, exactly as the stories changed tool lists them: new and modified stories, and the stories that depend on changed files. Combined with files or stories, only the stories that match both run.",
+				          "type": "boolean",
 				        },
 				        "files": {
 				          "description": "Story files to test, as Vitest file filters: each entry selects the story files whose path, relative to the Storybook project directory, contains it (case-insensitive), or that an absolute path or directory points to. Only story files match; to test the stories that depend on a changed component, use \`changed\`.",
@@ -1020,10 +1010,10 @@ describe('MCP Endpoint E2E Tests', () => {
 				arguments: { changed: true },
 			});
 
-			// What git reports depends on the checkout, so this asserts the shape, not the selection.
+			// What changed depends on the checkout, so this asserts the shape, not the selection.
 			expect(response.result.isError).toBeFalsy();
 			expect(response.result.content[0].text).toMatch(
-				/\(uncommitted\)|No changed files found \(uncommitted\)/,
+				/changed stor|No stories changed/,
 			);
 		});
 

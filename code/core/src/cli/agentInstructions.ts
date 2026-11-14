@@ -134,6 +134,18 @@ export async function planStorybookAgentInstructions(
   return files;
 }
 
+// Whether AGENTS.md or a CLAUDE.md file has Storybook's section, for skills that came from a plugin
+// or by hand and so have no entry in `skills-lock.json`.
+export async function hasStorybookAgentInstructions(root: string): Promise<boolean> {
+  for (const file of ['AGENTS.md', ...CLAUDE_FILES.map(({ file }) => file)]) {
+    const content = await readFile(join(root, file), 'utf8').catch(() => undefined);
+    if (findSection(content) !== undefined) {
+      return true;
+    }
+  }
+  return false;
+}
+
 export type AgentInstructionsChange = { file: string; change: 'added' | 'updated' };
 
 export async function addStorybookAgentInstructions(

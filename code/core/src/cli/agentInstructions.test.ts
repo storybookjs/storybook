@@ -8,6 +8,7 @@ import { vol } from 'memfs';
 import {
   STORYBOOK_AGENT_INSTRUCTIONS,
   addStorybookAgentInstructions,
+  hasStorybookAgentInstructions,
   planStorybookAgentInstructions,
   storybookAgentInstructions,
 } from './agentInstructions.ts';
@@ -346,5 +347,22 @@ describe('planStorybookAgentInstructions', () => {
     );
 
     expect(files).toEqual({ 'AGENTS.md': section, 'CLAUDE.md': `# Rules\n\n${section}` });
+  });
+});
+
+describe('hasStorybookAgentInstructions', () => {
+  it.each(['AGENTS.md', 'CLAUDE.md', '.claude/CLAUDE.md'])(
+    'finds the section in %s',
+    async (file) => {
+      vol.writeFileSync(join(ROOT, file), `# Project\n\n${STORYBOOK_AGENT_INSTRUCTIONS}`);
+
+      await expect(hasStorybookAgentInstructions(ROOT)).resolves.toBe(true);
+    }
+  );
+
+  it('finds nothing without the markers or the files', async () => {
+    vol.writeFileSync(join(ROOT, 'AGENTS.md'), '# Project\n');
+
+    await expect(hasStorybookAgentInstructions(ROOT)).resolves.toBe(false);
   });
 });

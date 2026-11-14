@@ -359,7 +359,7 @@ function formatSelection(
 }
 
 const A11Y_GUIDANCE =
-  'Accessibility violations: fix only what your change caused, and report the rest. For visual ones such as color contrast, ask before changing the design. Never change `parameters.a11y.test` to make a violation pass.';
+  'Accessibility violations: fix only what your change caused, and report the rest. For visual ones such as color contrast, ask before changing the design.';
 
 // What the agent needs next for this result, so no skill has to be read first.
 function formatNextSteps(

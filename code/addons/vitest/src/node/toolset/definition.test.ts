@@ -648,7 +648,7 @@ Color contrast ratio is insufficient
 Failed: 1 accessibility check failed.
 Accessibility: 2 stories checked; 1 without violations; 1 failing the run.
 Fix what fails and run again, changing only what each failure needs. Do not finish with failing tests.
-Accessibility violations: fix only what your change caused, and report the rest. For visual ones such as color contrast, ask before changing the design. Never change \`parameters.a11y.test\` to make a violation pass.`);
+Accessibility violations: fix only what your change caused, and report the rest. For visual ones such as color contrast, ask before changing the design.`);
     });
 
     it('lists failing stories with their descriptions', async () => {
@@ -736,7 +736,7 @@ Color contrast ratio is insufficient
 
 Passed: 1 component test passed.
 Accessibility: 1 story checked; 1 with violations reported as warnings, which do not fail the run.
-Accessibility violations: fix only what your change caused, and report the rest. For visual ones such as color contrast, ask before changing the design. Never change \`parameters.a11y.test\` to make a violation pass.`);
+Accessibility violations: fix only what your change caused, and report the rest. For visual ones such as color contrast, ask before changing the design.`);
     });
 
     it('omits accessibility violations when the run disabled a11y', async () => {

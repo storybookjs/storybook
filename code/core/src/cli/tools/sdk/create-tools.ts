@@ -138,7 +138,7 @@ export async function createTools(
           fallbackReason === 'no-instance' ? undefined : formatAttachFallback(error.message);
         try {
           return await createLocalTools(options, deps, clientInfo, mode, {
-            ...(notice ? { fallbackNotice: notice } : {}),
+            ...(notice ? { fallbackNotice: notice, attachFailure: error.message } : {}),
             fallbackReason,
           });
         } catch (localError) {
@@ -233,7 +233,11 @@ async function createLocalTools(
   deps: CreateToolsDeps,
   clientInfo: Required<ToolsClientInfo>,
   requestedMode: ToolsMode,
-  fallback?: { fallbackNotice?: string; fallbackReason?: ToolsAttachGateReason }
+  fallback?: {
+    fallbackNotice?: string;
+    fallbackReason?: ToolsAttachGateReason;
+    attachFailure?: string;
+  }
 ): Promise<LocalTools> {
   delete process.env.STORYBOOK_ATTACHED_TOOLS;
   const cwd = resolve(options.cwd ?? process.cwd());
@@ -323,6 +327,7 @@ function createToolsHost(args: {
   requestedMode: ToolsMode;
   fallbackNotice?: string;
   fallbackReason?: ToolsAttachGateReason;
+  attachFailure?: string;
   runtime: ToolsRuntime;
   clientInfo: Required<ToolsClientInfo>;
   storybook: ToolsStorybookInfo;
@@ -335,6 +340,7 @@ function createToolsHost(args: {
   requestedMode: ToolsMode;
   fallbackNotice?: string;
   fallbackReason?: ToolsAttachGateReason;
+  attachFailure?: string;
   runtime: ToolsRuntime;
   clientInfo: Required<ToolsClientInfo>;
   storybook: ToolsStorybookInfo;
@@ -347,6 +353,7 @@ function createToolsHost(args: {
   requestedMode: ToolsMode;
   fallbackNotice?: string;
   fallbackReason?: ToolsAttachGateReason;
+  attachFailure?: string;
   runtime: ToolsRuntime;
   clientInfo: Required<ToolsClientInfo>;
   storybook: ToolsStorybookInfo;
@@ -416,6 +423,7 @@ function createToolsHost(args: {
     storybook,
     ...(args.fallbackNotice ? { fallbackNotice: args.fallbackNotice } : {}),
     ...(args.fallbackReason ? { fallbackReason: args.fallbackReason } : {}),
+    ...(args.attachFailure ? { attachFailure: args.attachFailure } : {}),
 
     async describe(options: ToolsDescribeOptions = {}): Promise<ToolsetCatalog> {
       assertOpen();

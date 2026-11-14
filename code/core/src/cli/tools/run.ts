@@ -247,7 +247,12 @@ export async function runToolsCommand(
       requestedMode: tools.requestedMode,
       attachMode: tools.mode,
       host: tools.host,
-      fallbackNotice: tools.fallbackNotice,
+      // Such a command reports the attach error as its result, and nothing fell back.
+      fallbackNotice:
+        dispatched.outcome.kind === 'intercept' &&
+        dispatched.outcome.reason === 'requires-dev-server'
+          ? undefined
+          : tools.fallbackNotice,
       fallbackReason: tools.fallbackReason,
       ...(tools.storybook.siblings?.length
         ? { multiInstanceNotice: formatMultiInstanceNotice(tools.storybook), multipleMatches: true }
@@ -342,6 +347,14 @@ async function dispatchTools(
   }
 
   if (tools.mode === 'local' && method.requiresDevServer) {
+    // This command cannot fall back, so why attaching failed is its answer.
+    if (tools.attachFailure) {
+      return result({
+        exitCode: 1,
+        output: `\`${commandPath}\` requires a running Storybook dev server, and could not attach to the one for this project. ${tools.attachFailure}`,
+        outcome: { kind: 'intercept', reason: 'requires-dev-server' },
+      });
+    }
     const discovery = await (deps.discoverInstance ?? discoverRunningInstance)(invocation.target);
     return result({
       exitCode: 1,
@@ -469,10 +482,6 @@ function formatRequiresDevServer(
   if (discovery.currentRecord && requestedMode === 'local') {
     return `Found your Storybook running at ${discovery.currentRecord.url}, but \`${commandPath}\` cannot run from a local tools host. Re-run without \`--no-attach\` to attach to that instance.`;
   }
-  if (discovery.currentRecord) {
-    return `Found your Storybook running at ${discovery.currentRecord.url}, but \`${commandPath}\` could not attach to it. Start or restart that Storybook, then re-run this command.`;
-  }
-
   const lines = [
     `\`${commandPath}\` requires a running Storybook dev server, and none was found for this project. Start it first (for example \`npm run storybook\`), then re-run this command.`,
   ];

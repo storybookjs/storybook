@@ -80,7 +80,7 @@ async function readRegistryDir(registryDir: string): Promise<StorybookInstanceRe
  * Liveness check by sending signal 0. `EPERM` means the PID exists but we lack permission to
  * signal it (foreign user), which still counts as alive.
  */
-function isProcessAlive(pid: number): boolean {
+export function isProcessAlive(pid: number): boolean {
   if (!Number.isInteger(pid) || pid <= 0) {
     return false;
   }

@@ -118,7 +118,9 @@ function waitUntilOpen(socket: WebSocket): Promise<void> {
       resolve();
       return;
     }
-    const fail = (reason?: string) => reject(new StorybookDevServerDisconnectedError({ reason }));
+    // The socket error's `code` tells a refused connection from one the environment blocked.
+    const fail = (reason?: string, cause?: Error) =>
+      reject(new StorybookDevServerDisconnectedError({ reason, ...(cause ? { cause } : {}) }));
     if (socket.readyState === WebSocket.CLOSED || socket.readyState === WebSocket.CLOSING) {
       fail('WebSocket closed before the Storybook channel opened');
       return;
@@ -130,7 +132,7 @@ function waitUntilOpen(socket: WebSocket): Promise<void> {
       action();
     };
     const onOpen = () => settle(resolve);
-    const onError = (error: Error) => settle(() => fail(error.message));
+    const onError = (error: Error) => settle(() => fail(error.message, error));
     const onClose = () =>
       settle(() => fail('WebSocket closed before the Storybook channel opened'));
     socket.once('open', onOpen);

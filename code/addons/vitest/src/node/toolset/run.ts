@@ -2,6 +2,12 @@ import { existsSync } from 'node:fs';
 
 import type { ChannelLike } from 'storybook/internal/channels';
 import {
+  BLOCKED_NETWORK_REMEDY,
+  describeBlockedNetwork,
+  detectBlockedNetwork,
+  type BlockedNetwork,
+} from 'storybook/internal/common';
+import {
   ChangeDetectionUnavailableError,
   filterStoryFiles,
   findChangedFiles,
@@ -145,6 +151,31 @@ export function triggerTestRun({
       settle(() => reject(error instanceof Error ? error : new Error(String(error))));
     }
   });
+}
+
+// A sandbox that refuses ports stops Vitest before any test runs. Reported as an unhandled error,
+// that reads as a test failure and sends an agent to edit code.
+function blockedNetworkError(blocked: BlockedNetwork): TestRunOutput {
+  const what = blocked.operation === 'listen' ? 'open a local port' : 'connect to localhost';
+  return {
+    status: 'error',
+    error: {
+      message: `The tests did not run: the test runner could not ${what} (\`${blocked.detail}\`). ${describeBlockedNetwork(blocked)} ${BLOCKED_NETWORK_REMEDY}`,
+    },
+  };
+}
+
+function blockedNetworkInRun(result: TestRunResult): BlockedNetwork | undefined {
+  if (result.componentTestCount.success + result.componentTestCount.error > 0) {
+    return undefined;
+  }
+  for (const error of result.unhandledErrors) {
+    const blocked = detectBlockedNetwork(error);
+    if (blocked) {
+      return blocked;
+    }
+  }
+  return undefined;
 }
 
 // Outside a repository, or without git, the file form still works; the message says so.
@@ -315,12 +346,16 @@ export async function runStoryTests({
   }
 
   switch (response.status) {
-    case 'completed':
+    case 'completed': {
       if (!response.result) {
         return {
           status: 'error',
           error: { message: 'Test run completed but no result was returned' },
         };
+      }
+      const blocked = blockedNetworkInRun(response.result);
+      if (blocked) {
+        return blockedNetworkError(blocked);
       }
       return {
         status: 'completed',
@@ -328,7 +363,14 @@ export async function runStoryTests({
         ...(selection ? { selection } : {}),
         ...(notFoundMessages.length > 0 ? { notFound: notFoundMessages } : {}),
       };
-    case 'error':
+    }
+    case 'error': {
+      const blocked =
+        detectBlockedNetwork(response.error?.error) ??
+        detectBlockedNetwork({ message: response.error?.message });
+      if (blocked) {
+        return blockedNetworkError(blocked);
+      }
       return {
         status: 'error',
         error: {
@@ -338,6 +380,7 @@ export async function runStoryTests({
             : {}),
         },
       };
+    }
     case 'cancelled':
       return { status: 'cancelled' };
     default: {

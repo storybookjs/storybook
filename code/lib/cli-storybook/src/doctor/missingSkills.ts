@@ -1,5 +1,9 @@
-import { hasStorybookSkills, supportsSkills } from 'storybook/internal/cli';
-import { frameworkPackages, frameworkToRenderer } from 'storybook/internal/common';
+import {
+  hasStorybookAgentInstructions,
+  hasStorybookSkills,
+  supportsSkills,
+} from 'storybook/internal/cli';
+import { frameworkPackages, frameworkToRenderer, getProjectRoot } from 'storybook/internal/common';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import { coerce, major } from 'semver';
@@ -21,7 +25,8 @@ export async function getMissingSkillsMessage(
   if (!framework || !supportsSkills(frameworkToRenderer[framework], framework)) {
     return undefined;
   }
-  if (await hasStorybookSkills()) {
+  // Skills from a plugin or added by hand have no lock entry, but come with Storybook's section.
+  if ((await hasStorybookSkills()) || (await hasStorybookAgentInstructions(getProjectRoot()))) {
     return undefined;
   }
   return 'This project has no Storybook skills for AI agents. Add them with: npx storybook automigrate skills --yes';

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { hasStorybookSkills } from 'storybook/internal/cli';
+import { hasStorybookAgentInstructions, hasStorybookSkills } from 'storybook/internal/cli';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import { getMissingSkillsMessage } from './missingSkills.ts';
@@ -12,6 +12,7 @@ const config = (framework: string) => ({ stories: [], framework }) as StorybookC
 describe('getMissingSkillsMessage', () => {
   beforeEach(() => {
     vi.mocked(hasStorybookSkills).mockResolvedValue(false);
+    vi.mocked(hasStorybookAgentInstructions).mockResolvedValue(false);
   });
 
   it.each(['11.0.0', '11.0.0-beta.2', '12.1.0'])(
@@ -22,6 +23,14 @@ describe('getMissingSkillsMessage', () => {
       );
     }
   );
+
+  it('says nothing when AGENTS.md has the Storybook section, as with skills from a plugin', async () => {
+    vi.mocked(hasStorybookAgentInstructions).mockResolvedValue(true);
+
+    await expect(
+      getMissingSkillsMessage(config('@storybook/react-vite'), '11.0.0')
+    ).resolves.toBeUndefined();
+  });
 
   it('says nothing when the project has the skills', async () => {
     vi.mocked(hasStorybookSkills).mockResolvedValue(true);

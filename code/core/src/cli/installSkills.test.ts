@@ -465,8 +465,10 @@ describe('refreshAgentInstructions', () => {
     vi.mocked(isCI).mockReturnValue(true);
     vi.mocked(detectAgent).mockReturnValue({ name: 'claude' });
 
-    await refreshAgentInstructions();
+    await refreshAgentInstructions({ testSupported: true });
 
-    expect(addStorybookAgentInstructions).toHaveBeenCalledWith(PROJECT_ROOT, 'update');
+    expect(addStorybookAgentInstructions).toHaveBeenCalledWith(PROJECT_ROOT, 'update', {
+      testSupported: true,
+    });
   });
 });

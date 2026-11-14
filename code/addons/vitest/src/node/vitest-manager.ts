@@ -18,7 +18,6 @@ import { COVERAGE_DIRECTORY, STORYBOOK_TEST_PROVIDE_KEY } from '../constants.ts'
 import { log } from '../logger.ts';
 import type { TriggerRunEvent } from '../types.ts';
 import type { StorybookCoverageReporterOptions } from './coverage-reporter.ts';
-import { optimizeTestDependencies, watchOptimizedDeps } from './optimized-deps.ts';
 import { StorybookReporter } from './reporter.ts';
 import type { TestManager } from './test-manager.ts';
 
@@ -43,33 +42,9 @@ export const DOUBLE_SPACES = '  ';
 export const toModuleId = (importPath: string) => path.join(process.cwd(), importPath);
 const getTestName = (name: string) => `${name}${DOUBLE_SPACES}`;
 
-/** How often a run may start over because Vite re-bundled dependencies while it ran. */
-const MAX_RUN_ATTEMPTS = 3;
-
-/**
- * How long a run waits for Vite to pre-bundle what the tests import. It is a head start: the run
- * recovers when Vite re-bundles while the tests run, so it never waits on Vite indefinitely.
- */
-const OPTIMIZE_TIMEOUT_MS = 60_000;
-
-async function optimizeWithinTimeout(specifications: TestSpecification[]) {
-  let timeout: ReturnType<typeof setTimeout> | undefined;
-  try {
-    await Promise.race([
-      optimizeTestDependencies(specifications),
-      new Promise<void>((resolve) => {
-        timeout = setTimeout(() => {
-          log('Pre-bundling the dependencies of the tests took too long. Running the tests now.');
-          resolve();
-        }, OPTIMIZE_TIMEOUT_MS);
-      }),
-    ]);
-  } catch (e) {
-    log(`Could not pre-bundle the dependencies of the tests: ${e}`);
-  } finally {
-    clearTimeout(timeout);
-  }
-}
+/** Vite's dependency optimizer hash; it changes when Vite re-bundles in a way that needs a reload. */
+const optimizerHash = (project: TestProject) =>
+  project.browser?.vite.environments.client.depsOptimizer?.metadata.browserHash;
 
 export class VitestManager {
   vitest: Vitest | null = null;
@@ -82,11 +57,11 @@ export class VitestManager {
 
   runningPromise: Promise<any> | null = null;
 
-  /**
-   * Counts runs and cancellations. A run that sees it change was cancelled or replaced by a newer
-   * run, and stops: it neither starts its tests late nor starts over.
-   */
+  /** Counts runs and cancellations, so a cancelled or replaced run does not start over. */
   private runGeneration = 0;
+
+  /** The optimizer hash of each browser project when the current attempt started. */
+  private optimizerHashes = new Map<TestProject, string | undefined>();
 
   // Tracked here because `vitest.config.coverage.enabled` does not follow `disableCoverage()`.
   coverageEnabled = false;
@@ -480,38 +455,35 @@ export class VitestManager {
     this.resetGlobalTestNamePattern();
   }
 
+  /** Records a browser project's optimizer hash; Vitest 4 starts the browser on the first run. */
+  recordOptimizerHash(project: TestProject) {
+    this.optimizerHashes.set(project, optimizerHash(project));
+  }
+
   /**
-   * Runs the test specifications once Vite has pre-bundled the dependencies they import.
-   *
-   * A dependency that only a test-time import reaches, like a dynamic `import()`, can still make
-   * Vite re-bundle dependencies during the run. The browser then mixes old and new copies of
-   * modules like React, and stories fail for reasons that are not theirs. The results of such a run
-   * are discarded and the run starts over, now with the new bundles in place.
+   * With a warm cache, Vite finds a dependency that only a new story file imports while the tests
+   * run. It re-bundles and reloads, the running tests mix two copies of modules like React, and
+   * stories fail for reasons that are not theirs. Such an attempt is run once more, with the new
+   * bundles in place, and the run says so.
    */
   private async runTestSpecifications(specifications: TestSpecification[], allTestsRun: boolean) {
     const generation = ++this.runGeneration;
-    const superseded = () => generation !== this.runGeneration;
     const { totalTestCount } = this.testManager.store.getState().currentRun;
-    for (let attempt = 1; ; attempt++) {
-      await optimizeWithinTimeout(specifications);
-      if (superseded()) {
-        return;
-      }
-      const reoptimized = watchOptimizedDeps(specifications.map(({ project }) => project));
+    for (const attempt of [1, 2]) {
+      this.optimizerHashes.clear();
+      specifications.forEach(({ project }) => project.browser && this.recordOptimizerHash(project));
       await this.vitest!.runTestSpecifications(specifications, allTestsRun);
-      // A run that passed is right whatever Vite did meanwhile.
-      if (superseded() || !reoptimized() || !this.testManager.currentRunHasFailures()) {
-        return;
+      const disrupted =
+        [...this.optimizerHashes].some(([project, hash]) => optimizerHash(project) !== hash) &&
+        this.testManager.currentRunHasFailures();
+      if (attempt === 2) {
+        this.testManager.markRepeated({ stillDisrupted: disrupted });
+      } else if (disrupted && generation === this.runGeneration) {
+        log('Vite re-bundled dependencies during the run. Running the tests again.');
+        this.testManager.discardRunResults({ totalTestCount });
+        continue;
       }
-      if (attempt === MAX_RUN_ATTEMPTS) {
-        logger.warn(
-          'Vite pre-bundled new dependencies while the tests ran, so failures in this run may not be caused by the stories. Run the tests again.'
-        );
-        this.testManager.markDepsReoptimized();
-        return;
-      }
-      log('Vite pre-bundled new dependencies while the tests ran. Running the tests again.');
-      this.testManager.discardRunResults({ totalTestCount });
+      return;
     }
   }
 

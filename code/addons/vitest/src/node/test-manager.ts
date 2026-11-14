@@ -271,9 +271,10 @@ export class TestManager {
     return componentTestCount.error > 0 || a11yCount.error > 0 || unhandledErrors.length > 0;
   }
 
-  /** Records that Vite re-bundled dependencies while the current run's last attempt ran. */
-  markDepsReoptimized() {
-    this.store.setState((s) => ({ ...s, currentRun: { ...s.currentRun, depsReoptimized: true } }));
+  /** Records that the run was repeated because Vite re-bundled dependencies during it. */
+  markRepeated({ stillDisrupted }: { stillDisrupted: boolean }) {
+    const depsReoptimized = stillDisrupted ? 'unresolved' : 'repeated';
+    this.store.setState((s) => ({ ...s, currentRun: { ...s.currentRun, depsReoptimized } }));
   }
 
   onTestModuleCollected(collectedTestCount: number) {

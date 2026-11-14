@@ -55,10 +55,10 @@ export type CurrentRun = {
   finishedAt: number | undefined;
   unhandledErrors: VitestError[];
   /**
-   * Vite re-bundled dependencies while the last attempt of this run ran, so its failures may not
-   * be caused by the stories.
+   * Vite re-bundled dependencies during the run and something failed, so the run was repeated.
+   * `unresolved`: it happened again during the repeat, so its failures may not be the stories'.
    */
-  depsReoptimized?: boolean;
+  depsReoptimized?: 'repeated' | 'unresolved';
   coverageSummary:
     | {
         status: 'positive' | 'warning' | 'negative' | 'unknown';

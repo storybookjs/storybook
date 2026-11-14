@@ -1,5 +1,5 @@
 import type { SerializedError, TaskMeta } from 'vitest';
-import type { Reporter, TestCase, TestModule, Vitest } from 'vitest/node';
+import type { Reporter, TestCase, TestModule, TestProject, Vitest } from 'vitest/node';
 
 import type { Report } from 'storybook/preview-api';
 
@@ -13,6 +13,10 @@ export class StorybookReporter implements Reporter {
 
   onInit(ctx: Vitest) {
     this.ctx = ctx;
+  }
+
+  onBrowserInit(project: TestProject) {
+    this.testManager.vitestManager.recordOptimizerHash(project);
   }
 
   onTestCaseResult(testCase: TestCase) {

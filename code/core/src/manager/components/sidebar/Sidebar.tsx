@@ -21,6 +21,7 @@ import { Filter } from './Filter.tsx';
 import type { HeadingProps } from './Heading.tsx';
 import { Heading } from './Heading.tsx';
 import { IconSymbols } from './IconSymbols.tsx';
+import { ReviewHint } from './ReviewHint.tsx';
 import ReviewWidget, { useActiveReviewStoryCount } from './ReviewWidget.tsx';
 import { Search } from './Search.tsx';
 import { SearchResults } from './SearchResults.tsx';
@@ -176,6 +177,8 @@ export const Sidebar = React.memo(function Sidebar({
           {!showOnboardingChecklist ? null : <ChecklistWidget />}
         </div>
         {!isLoading && showReviewWidget ? <ReviewWidget /> : null}
+        {/* Mounted while a review is active too: it then records that the user has seen one. */}
+        {isLoading ? null : <ReviewHint />}
         <Search
           dataset={dataset}
           enableShortcuts={enableShortcuts}

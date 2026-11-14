@@ -257,10 +257,7 @@ function logUpgradeResults(
 
     const failedProjectsList = failedProjects
       .map((dir) =>
-        [
-          `  • ${shortenPath(dir) || '.'}`,
-          ...describeUnfinishedMigrations(projectResults[dir]).map((line) => `    ${line}`),
-        ].join('\n')
+        [`• ${shortenPath(dir)}`, ...describeUnfinishedMigrations(projectResults[dir])].join('\n')
       )
       .join('\n');
     logger.log(`${CLI_COLORS.error('Automigrations left unfinished:')}\n${failedProjectsList}`);

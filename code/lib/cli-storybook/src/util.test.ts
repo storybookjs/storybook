@@ -27,13 +27,13 @@ afterEach(() => {
 });
 
 describe('shortenPath', () => {
-  it('names a path in the project relative to its root, without a leading separator', () => {
+  it('names a path in the project relative to its root, without a leading separator, and the root as .', () => {
     createFixture({});
     const projectRoot = getProjectRoot();
 
     expect(shortenPath(join(projectRoot, '.storybook'))).toBe('.storybook');
     expect(shortenPath(join(projectRoot, 'web', '.storybook'))).toBe(join('web', '.storybook'));
-    expect(shortenPath(projectRoot)).toBe('');
+    expect(shortenPath(projectRoot)).toBe('.');
   });
 
   it('keeps a relative path, and a path outside the project, as given', () => {

@@ -601,8 +601,8 @@ const formatProjectDirectories = (
 };
 
 /**
- * Shortens an absolute path to the path relative to the project root, such as `.storybook`, or `''`
- * for the root itself. A relative path, or one outside the project, is returned unchanged.
+ * Shortens an absolute path to the path relative to the project root, such as `.storybook`, or
+ * `'.'` for the root itself. A relative path, or one outside the project, is returned unchanged.
  *
  * @param path - The path to shorten
  * @returns The shortened path
@@ -615,7 +615,7 @@ export const shortenPath = (path: string) => {
   const relativePath = relative(projectRoot, path);
   const outside =
     relativePath === '..' || relativePath.startsWith(`..${sep}`) || isAbsolute(relativePath);
-  return outside ? path : relativePath;
+  return outside ? path : relativePath || '.';
 };
 
 /**

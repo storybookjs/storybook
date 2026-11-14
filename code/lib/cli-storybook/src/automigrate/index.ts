@@ -473,7 +473,7 @@ export async function runFixes({
       const skipped = outcome.fileFailures.length;
       taskLog.message(
         skipped > 0
-          ? `▲ ${picocolors.cyan(fixId)}: could not migrate ${pluralFiles(skipped)}`
+          ? `${picocolors.yellow('▲')} ${picocolors.cyan(fixId)}: could not migrate ${pluralFiles(skipped)}`
           : `${logger.SYMBOLS.success} ${picocolors.cyan(fixId)}`
       );
     }

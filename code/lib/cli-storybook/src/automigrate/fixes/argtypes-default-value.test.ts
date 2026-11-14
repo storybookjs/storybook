@@ -297,7 +297,7 @@ describe('argtypes-default-value', () => {
         file: storyPath,
         kind: 'story',
         message: expect.stringMatching(
-          /^line 1: `defaultValue` is left in place, outside any argType the migration could read\. If it reaches one through a variable, a spread or a helper, remove it by hand$/
+          /^`base\.defaultValue` \(line 1\) is left in place: it may reach an argType the migration could not read/
         ),
       },
     ]);
@@ -321,7 +321,87 @@ describe('argtypes-default-value', () => {
         file: storyPath,
         kind: 'story',
         message:
-          'line 5: `defaultValue` is left in place; line 5: Cannot mutate argTypes.label.defaultValue because the target contains unsupported member',
+          '`argTypes.label.makeArgType(…).defaultValue` (line 5) is left in place; line 5: Cannot mutate argTypes.label.defaultValue because the target contains unsupported member',
+      },
+    ]);
+    expect(result.story).toBe(story);
+  });
+
+  it('fails a defaultValue left in place when the story has an alias', async () => {
+    const story = [
+      "const base = { defaultValue: 'A', control: 'text' };",
+      'export default { title: "Example" };',
+      'export const Primary = { argTypes: { label: { ...base } } };',
+      'export const Secondary = Primary;',
+    ].join('\n');
+    const result = await migrate({ story });
+
+    expect(result.failures).toEqual([
+      { file: storyPath, kind: 'story', message: expect.stringContaining('`base.defaultValue`') },
+    ]);
+    expect(result.story).toBe(story);
+  });
+
+  it('keeps an arg named defaultValue, and migrates args named like other fields', async () => {
+    const result = await migrate({
+      preview: "export default { argTypes: { defaultValue: { control: 'text' } } };",
+      story: [
+        'export default {',
+        '  argTypes: {',
+        "    defaultValue: { control: 'text', defaultValue: 'x' },",
+        "    table: { defaultValue: 1, control: 'number' },",
+        "    args: { defaultValue: 2, table: { defaultValue: { summary: '2' } } },",
+        '  },',
+        '};',
+      ].join('\n'),
+    });
+
+    expect(result.failures).toEqual([]);
+    expect(result.preview).toContain("defaultValue: { control: 'text' }");
+    expect(result.story).toContain("defaultValue: { control: 'text' }");
+    expect(result.story).toContain("table: { control: 'number' }");
+    expect(result.story).toContain("summary: '2'");
+    expect(result.story).not.toMatch(/defaultValue: (1|2|'x')/);
+  });
+
+  it('does not fail on a defaultValue that no argType can reach', async () => {
+    const story = [
+      "const options = [{ label: 'a', defaultValue: true }];",
+      'export default {',
+      "  argTypes: { label: { control: 'text', defaultValue: 'A' } },",
+      "  render: (args) => ({ props: { ...args, options, defaultValue: 'x' } }),",
+      '};',
+    ].join('\n');
+    const result = await migrate({ story });
+
+    expect(result.failures).toEqual([]);
+    expect(result.story).toContain("options = [{ label: 'a', defaultValue: true }]");
+    expect(result.story).toContain("defaultValue: 'x'");
+    expect(result.story).not.toContain("defaultValue: 'A'");
+  });
+
+  it('names lines as they are on disk when an earlier argType was migrated', async () => {
+    const story = [
+      "import { makeArgType } from '../helpers';",
+      'export default {',
+      '  argTypes: {',
+      '    first: {',
+      '      defaultValue: {',
+      "        value: 'long',",
+      '      },',
+      '    },',
+      '    second: makeArgType({ defaultValue: 2 }),',
+      '  },',
+      '};',
+    ].join('\n');
+    const result = await migrate({ story });
+
+    expect(result.failures).toEqual([
+      {
+        file: storyPath,
+        kind: 'story',
+        message:
+          '`argTypes.second.makeArgType(…).defaultValue` (line 9) is left in place; line 9: Cannot mutate argTypes.second.defaultValue because the target contains unsupported member',
       },
     ]);
     expect(result.story).toBe(story);

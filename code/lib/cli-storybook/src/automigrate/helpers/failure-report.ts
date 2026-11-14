@@ -112,18 +112,21 @@ export const describeUnfinishedMigrations = ({
       );
     }
   }
+  // The terminal trims leading spaces, so markers, not indentation, tell the levels apart.
   for (const [fixId, failures] of byFix) {
     lines.push(`${picocolors.cyan(fixId)} could not migrate ${pluralFiles(failures.length)}:`);
     for (const { file, message } of failures.slice(0, MAX_LISTED_FILES)) {
       const reason = slash(message).replaceAll(`${slash(root)}/`, '');
-      lines.push(`  ${slash(relative(root, file))}: ${shorten(firstLine(reason))}`);
+      lines.push(`- ${slash(relative(root, file))}: ${shorten(firstLine(reason))}`);
     }
     if (failures.length > MAX_LISTED_FILES) {
-      lines.push(`  and ${pluralFiles(failures.length - MAX_LISTED_FILES)} more`);
+      const more = failures.length - MAX_LISTED_FILES;
+      lines.push(`- and ${more} more ${more === 1 ? 'file' : 'files'}`);
     }
   }
   if (fileFailures.length > 0) {
-    lines.push(`Every file and why: ${picocolors.cyan(REPORT_FILE_NAME)}`);
+    const report = relative(process.cwd(), join(root, REPORT_FILE_NAME));
+    lines.push(`Every file and why: ${picocolors.cyan(report)}`);
   }
   return lines;
 };

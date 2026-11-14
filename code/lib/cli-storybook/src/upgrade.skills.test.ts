@@ -1,3 +1,5 @@
+import { relative } from 'node:path';
+
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { hasStorybookSkills, installSkills } from 'storybook/internal/cli';
@@ -116,7 +118,7 @@ describe('upgrade: refreshing the skills', () => {
     await expect(upgrade(baseOptions)).rejects.toThrow('Some automigrations could not finish');
     expect(telemetry).toHaveBeenCalled();
     expect(loggedText()).toContain(
-      'Automigrations left unfinished:\n  • a/.storybook\n    story-sort-to-main failed: Comparator requires manual migration'
+      'Automigrations left unfinished:\n• a/.storybook\nstory-sort-to-main failed: Comparator requires manual migration'
     );
   });
 
@@ -143,10 +145,10 @@ describe('upgrade: refreshing the skills', () => {
     expect(loggedText()).toContain(
       [
         'Automigrations left unfinished:',
-        '  • a/.storybook',
-        '    argtypes-default-value could not migrate 1 file:',
-        '      a/src/Stack.stories.tsx: Cannot mutate spread field',
-        '    Every file and why: automigrations-summary.md',
+        '• a/.storybook',
+        'argtypes-default-value could not migrate 1 file:',
+        '- a/src/Stack.stories.tsx: Cannot mutate spread field',
+        `Every file and why: ${relative(process.cwd(), '/repo/automigrations-summary.md')}`,
       ].join('\n')
     );
   });

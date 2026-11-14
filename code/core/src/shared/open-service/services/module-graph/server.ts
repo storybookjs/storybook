@@ -1,7 +1,3 @@
-import { readdirSync, realpathSync, statSync } from 'node:fs';
-
-import { join, normalize } from 'pathe';
-
 import type { ChannelLike } from 'storybook/internal/channels';
 import { STORY_INDEX_INVALIDATED } from 'storybook/internal/core-events';
 import type { Presets } from 'storybook/internal/types';
@@ -12,43 +8,11 @@ import type { ChangeDetectionAdapter } from './engine/adapters/types.ts';
 import { ModuleGraphEngine, type ModuleGraphEngineOptions } from './engine/module-graph-engine.ts';
 import { errorToErrorLike, lookupStoriesForFiles } from './types.ts';
 
-// The graph keys files by their real path, so a symlinked entry is followed before the walk.
-function canonical(path: string): string {
-  try {
-    return normalize(realpathSync.native(path));
-  } catch {
-    return normalize(path);
-  }
-}
-
-function filesIn(directory: string): string[] {
-  try {
-    return readdirSync(directory, { withFileTypes: true })
-      .filter((entry) => entry.isFile())
-      .map((entry) => normalize(join(directory, entry.name)));
-  } catch {
-    return [];
-  }
-}
-
-function isDirectory(path: string): boolean {
-  try {
-    return statSync(path).isDirectory();
-  } catch {
-    return false;
-  }
-}
-
 export type RegisterModuleGraphServiceOptions = {
   channel: ChannelLike;
   getIndex: ModuleGraphEngineOptions['getIndex'];
   workingDir?: string;
   presets?: Presets;
-  /**
-   * Absolute paths of what the preview loads: the preview file and the preview annotations, whose
-   * imports count too, and the config directory, whose files all count.
-   */
-  getPreviewEntries?: () => Promise<string[]>;
   getAdapter?: () => Promise<ChangeDetectionAdapter | null | undefined>;
   getChangeDetectionReadiness?: () => Promise<
     Exclude<ChangeDetectionReadinessResult, { status: 'pending' }>
@@ -127,23 +91,6 @@ export function registerModuleGraphService(options: RegisterModuleGraphServiceOp
           handler: async (input) => {
             await waitForSettledEngine();
             return lookupStoriesForFiles(engine!, input.files, workingDir);
-          },
-        },
-        loadedByPreview: {
-          handler: async (input) => {
-            await waitForSettledEngine();
-            const entries = ((await options.getPreviewEntries?.()) ?? []).map(canonical);
-            // A directory entry (the config directory) covers every file in it: `main.ts` and
-            // `vitest.setup.ts` affect every story without being imported by one.
-            const directories = entries.filter(isDirectory);
-            // The files in a directory entry are roots too, so what `main.ts` or `vitest.setup.ts`
-            // imports counts as loaded.
-            const roots = [...entries, ...directories.flatMap(filesIn)];
-            const loaded = await engine!.filesReachableFrom(roots);
-            return input.files.map((file) => {
-              const path = normalize(file);
-              return loaded.has(path) || directories.some((dir) => path.startsWith(`${dir}/`));
-            });
           },
         },
         _waitForSettledEngine: {

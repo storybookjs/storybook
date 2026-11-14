@@ -884,8 +884,7 @@ No story found for story ID "gone--story"`);
           message: 'Failed to start Vitest',
           error: {
             name: 'Error',
-            message: 'Vitest has no project for the Storybook in `.storybook`.',
-            cause: { message: 'Failed to start Vitest' },
+            message: 'No projects matched the filter "storybook:/project/.storybook".',
           },
         },
       });
@@ -894,7 +893,7 @@ No story found for story ID "gone--story"`);
 
       expect(outcome.ok).toBe(false);
       expect(outcome.markdown).toBe(
-        'Error: Failed to start Vitest\n\nVitest has no project for the Storybook in `.storybook`.'
+        'Error: Failed to start Vitest\n\nNo projects matched the filter "storybook:/project/.storybook".'
       );
     });
 

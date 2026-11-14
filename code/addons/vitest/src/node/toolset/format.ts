@@ -572,21 +572,14 @@ ${runEveryStoryBeforeFinishing(ctx)}`;
  * (such as "Failed to start Vitest"), and only its cause says what went wrong.
  */
 function formatRunError(error: Extract<TestRunData, { status: 'error' }>['error']): string {
-  const causes: string[] = [];
-  for (
-    let cause: { message?: unknown; cause?: unknown } | undefined = error.error as
-      | { message?: unknown; cause?: unknown }
-      | undefined;
-    cause && causes.length < 3;
-    cause = cause.cause as typeof cause
-  ) {
-    const message = typeof cause.message === 'string' ? cause.message.trim() : '';
-    if (message && message !== error.message && !causes.includes(message)) {
-      causes.push(message);
-    }
+  const lines = [`Error: ${error.message}`];
+  for (let cause = error.error as ErrorLike | undefined; cause; cause = cause.cause) {
+    lines.push(cause.message);
   }
-  return [`Error: ${error.message}`, ...causes].join('\n\n');
+  return lines.join('\n\n');
 }
+
+type ErrorLike = { message: string; cause?: ErrorLike };
 
 /**
  * Per-story rendering shared by every transport — the `test-run` MCP tool and the tools CLI.

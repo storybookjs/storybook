@@ -62,7 +62,13 @@ export function extractArgTypesFromComponentMeta(
           : prop,
       ])
   );
-  return extractArgTypes({ __docgenInfo: { ...componentMeta, props } }) ?? undefined;
+  const argTypes = extractArgTypes({ __docgenInfo: { ...componentMeta, props } }) ?? undefined;
+  for (const [name, prop] of Object.entries(props)) {
+    if (prop.jsDocTags && argTypes?.[name]) {
+      argTypes[name].table = { ...argTypes[name].table, jsDocTags: prop.jsDocTags };
+    }
+  }
+  return argTypes;
 }
 
 /**

@@ -97,6 +97,64 @@ describe('buildDocgenPayload', () => {
     }
   );
 
+  it(
+    'preserves inherited callback parameter and return descriptions in argTypes',
+    { timeout: 30_000 },
+    async () => {
+      tempDir = createTempDir('docgen-build');
+
+      const files = writeFiles(tempDir, {
+        'tsconfig.json': tsconfigJSON(),
+        'Button.tsx': dedent`
+        import React from 'react';
+        interface Callbacks {
+          /**
+           * Called when the value changes.
+           * @param {string} value - The new value.
+           * @param {boolean} committed - Whether the change is final.
+           * @returns {boolean} Whether the change was accepted.
+           */
+          onChange: (value: string, committed: boolean) => boolean;
+        }
+        interface ButtonProps extends Callbacks {
+          /** The button label. */
+          label: string;
+        }
+        export const Button = (_props: ButtonProps) => <button />;
+      `,
+        'Button.stories.tsx': dedent`
+        import { Button } from './Button';
+        export default { component: Button, title: 'Forms/Button' };
+        export const Primary = {};
+      `,
+      });
+
+      componentMetaManager = new ComponentMetaManager(ts);
+      const payload = await buildDocgenPayload(
+        { entry: makeStoryIndexEntry(files['Button.stories.tsx'], 'Forms/Button') },
+        {
+          componentMetaManager,
+          resolvePath: (p) => (path.isAbsolute(p) ? p : path.join(tempDir!, p)),
+        }
+      );
+
+      expect(payload?.argTypes?.onChange).toMatchObject({
+        description: 'Called when the value changes.',
+        table: {
+          jsDocTags: {
+            params: [
+              { name: 'value', description: 'The new value.' },
+              { name: 'committed', description: 'Whether the change is final.' },
+            ],
+            returns: { description: 'Whether the change was accepted.' },
+          },
+        },
+      });
+      expect(payload?.argTypes?.label.description).toBe('The button label.');
+      expect(payload?.argTypes?.label.table?.jsDocTags).toBeUndefined();
+    }
+  );
+
   it('keeps string defaults quoted once in argTypes', { timeout: 30_000 }, async () => {
     tempDir = createTempDir('docgen-build');
 

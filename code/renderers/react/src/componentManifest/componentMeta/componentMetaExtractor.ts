@@ -24,6 +24,7 @@
 import type ts from 'typescript';
 
 import { extractComponentJsDocInfo } from 'storybook/internal/component-meta';
+import type { JsDocTags } from 'storybook/internal/docs-tools';
 
 import type { ComponentRef, ResolvedComponentTarget } from '../types.ts';
 import type { DocgenTypeChecker, DocgenTypeScript } from '@storybook/component-meta-typescript';
@@ -48,6 +49,7 @@ export interface PropItem {
   required: boolean;
   type: PropItemType;
   description: string;
+  jsDocTags?: JsDocTags;
   defaultValue: { value: string } | null;
   parent?: ParentType;
   declarations?: ParentType[];
@@ -1277,6 +1279,22 @@ function getJSDocDefault(
 // Single prop extraction
 // ---------------------------------------------------------------------------
 
+function extractPropJsDocTags(typescript: typeof ts, prop: ts.Symbol): JsDocTags | undefined {
+  const jsDocTags: JsDocTags = {};
+  for (const declaration of prop.getDeclarations() ?? []) {
+    for (const tag of typescript.getJSDocTags(declaration)) {
+      const description =
+        typescript.getTextOfJSDocComment(tag.comment)?.replace(/^- /, '').trim() || null;
+      if (typescript.isJSDocParameterTag(tag)) {
+        (jsDocTags.params ??= []).push({ name: tag.name.getText(), description });
+      } else if (typescript.isJSDocReturnTag(tag)) {
+        jsDocTags.returns = { description };
+      }
+    }
+  }
+  return Object.keys(jsDocTags).length > 0 ? jsDocTags : undefined;
+}
+
 function extractPropItem(
   typescript: DocgenTypeScript,
   checker: DocgenTypeChecker,
@@ -1296,6 +1314,8 @@ function extractPropItem(
     prop.getDocumentationComment(checker as ts.TypeChecker)
   );
 
+  const jsDocTags = extractPropJsDocTags(typescript, prop);
+
   const parent = getParentType(typescript, prop);
   const declarations = getAllDeclarationParents(typescript, prop);
 
@@ -1310,6 +1330,7 @@ function extractPropItem(
     required: isRequired,
     type,
     description,
+    ...(jsDocTags ? { jsDocTags } : {}),
     defaultValue: defaultStr !== undefined ? { value: defaultStr } : null,
     parent,
     declarations,

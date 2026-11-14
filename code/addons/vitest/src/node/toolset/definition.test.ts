@@ -692,6 +692,31 @@ Accessibility: 1 story checked, no violations. Stories with a failing component 
 Fix what fails and run again, changing only what each failure needs. Do not finish with failing tests.`);
     });
 
+    it('says to run again, not to fix the stories, when Vite re-bundled during the run', async () => {
+      vi.mocked(runStoryTests).mockResolvedValue(
+        completed({
+          componentTestCount: { success: 0, error: 1 },
+          a11yCount: { success: 0, warning: 0, error: 0 },
+          componentTestStatuses: [
+            componentTest(
+              'button--secondary',
+              'status-value:error',
+              "Cannot read properties of null (reading 'useContext')"
+            ),
+          ],
+          depsReoptimized: true,
+        })
+      );
+
+      const outcome = await runForMcp();
+
+      expect(outcome.ok).toBe(false);
+      expect(outcome.markdown).toContain(
+        'Vite pre-bundled new dependencies while these tests ran, so these failures may not be caused by the stories. Run the same command again before you change any code.'
+      );
+      expect(outcome.markdown).not.toContain('Fix what fails');
+    });
+
     it('reports accessibility violations with inspect links built from the origin', async () => {
       vi.mocked(runStoryTests).mockResolvedValue(
         completed({

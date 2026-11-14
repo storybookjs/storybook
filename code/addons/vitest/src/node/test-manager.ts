@@ -234,6 +234,48 @@ export class TestManager {
     });
   }
 
+  /**
+   * Drops the results the current run has collected so far, so the run can start over without
+   * counting a story twice. The run keeps its trigger, selection, config and start time.
+   */
+  discardRunResults({ totalTestCount }: { totalTestCount?: number }) {
+    this.throttledFlushTestCaseResults.cancel();
+    this.batchedTestCaseResults = [];
+    const { storyIds } = this.store.getState().currentRun;
+    this.componentTestStatusStore.unset(storyIds);
+    this.a11yStatusStore.unset(storyIds);
+    this.runComponentTestStatuses = [];
+    this.runA11yStatuses = [];
+    this.runReports = {};
+    this.runA11yReports = {};
+    const { componentTestCount, a11yCount, unhandledErrors, finishedAt, coverageSummary } =
+      storeOptions.initialState.currentRun;
+    this.store.setState((s) => ({
+      ...s,
+      currentRun: {
+        ...s.currentRun,
+        componentTestCount,
+        a11yCount,
+        unhandledErrors,
+        finishedAt,
+        coverageSummary,
+        totalTestCount,
+      },
+    }));
+  }
+
+  /** Whether the current run has a failing test, accessibility check or unhandled error so far. */
+  currentRunHasFailures() {
+    this.throttledFlushTestCaseResults.flush();
+    const { componentTestCount, a11yCount, unhandledErrors } = this.store.getState().currentRun;
+    return componentTestCount.error > 0 || a11yCount.error > 0 || unhandledErrors.length > 0;
+  }
+
+  /** Records that Vite re-bundled dependencies while the current run's last attempt ran. */
+  markDepsReoptimized() {
+    this.store.setState((s) => ({ ...s, currentRun: { ...s.currentRun, depsReoptimized: true } }));
+  }
+
   onTestModuleCollected(collectedTestCount: number) {
     this.store.setState((s) => ({
       ...s,

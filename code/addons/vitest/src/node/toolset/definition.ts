@@ -61,6 +61,7 @@ const testRunResultSchema = v.object({
   startedAt: v.optional(v.number()),
   finishedAt: v.optional(v.number()),
   unhandledErrors: v.array(v.any()),
+  depsReoptimized: v.optional(v.boolean()),
   coverageSummary: v.optional(
     v.object({
       status: v.union([

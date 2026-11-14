@@ -3,14 +3,20 @@ import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { HandledError, JsPackageManager } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
-import { UpgradeStorybookConfigDirNotFoundError } from 'storybook/internal/server-errors';
+import {
+  MainFileEvaluationError,
+  UpgradeStorybookConfigDirNotFoundError,
+} from 'storybook/internal/server-errors';
 
 import type { UpgradeOptions } from './upgrade.ts';
 import {
+  type CollectProjectsErrorResult,
   type CollectProjectsSuccessResult,
+  checkUnreadableProjects,
   findStorybookProjects,
   getProjects,
   handleMultipleProjects,
@@ -151,28 +157,126 @@ describe('handleMultipleProjects', () => {
     expect(prompt.multiselect).not.toHaveBeenCalled();
   });
 
-  it('names the projects it could not read when nobody can answer', async () => {
-    const broken = { configDir: '/repo/c/.storybook', error: new Error('boom') };
-
-    await handleMultipleProjects(
-      projects,
-      [broken],
-      [...configDirs, broken.configDir],
-      true,
-      false
-    );
-
-    expect(vi.mocked(logger.log).mock.calls.at(-1)?.[0]).toContain(
-      'Not upgrading the projects that could not be read:'
-    );
-    expect(vi.mocked(logger.log).mock.calls.at(-1)?.[0]).toContain('/repo/c/.storybook');
-  });
-
   it('asks which projects to upgrade at a terminal, also with --yes', async () => {
     vi.mocked(prompt.multiselect).mockResolvedValue(['/repo/b/.storybook']);
 
     await expect(handleMultipleProjects(projects, [], configDirs, true)).resolves.toEqual([
       projects[1],
     ]);
+  });
+});
+
+describe('checkUnreadableProjects', () => {
+  const withStorybook = JSON.stringify({ devDependencies: { storybook: '10.6.7' } });
+  const main = 'export default {};';
+  const readable = (dir: string) =>
+    ({
+      configDir: join(root, dir, '.storybook'),
+      packageManager: {
+        packageJsonPaths: JsPackageManager.listAllPackageJsonPaths(join(root, dir)),
+      },
+    }) as unknown as CollectProjectsSuccessResult;
+  const unreadable = (dir: string): CollectProjectsErrorResult => ({
+    configDir: join(root, dir, '.storybook'),
+    error: new MainFileEvaluationError({
+      location: `${dir}/.storybook/main.ts`,
+      error: new Error(`Cannot find module 'shared/vite' imported from ${dir}\n    at stack`),
+    }),
+  });
+  const logged = (method: 'error' | 'warn') =>
+    String(vi.mocked(logger[method]).mock.calls[0]?.[0] ?? '').replaceAll('\\', '/');
+
+  beforeEach(() => {
+    vi.spyOn(logger, 'error').mockImplementation(() => {});
+    vi.spyOn(logger, 'warn').mockImplementation(() => {});
+  });
+
+  it('changes nothing when an unreadable project shares a package.json with the others', () => {
+    createFixture({
+      'package.json': withStorybook,
+      'packages/a/package.json': withStorybook,
+      'packages/c/package.json': withStorybook,
+      'packages/c/.storybook/main.ts': main,
+    });
+
+    expect(() =>
+      checkUnreadableProjects([readable('packages/a')], [unreadable('packages/c')])
+    ).toThrow(HandledError);
+    expect(logged('error')).toMatch(
+      /could not read these projects, which share a package\.json with the others, so it changed nothing:\n.*packages\/c\/\.storybook: Cannot find module 'shared\/vite' imported from packages\/c\nFix them and run the upgrade again\. To upgrade only the others, which still upgrades the shared package\.json and leaves these projects behind: npx storybook@\S+ upgrade --config-dir \S*packages\/a\/\.storybook$/
+    );
+  });
+
+  it('goes on with separate Storybooks, and names the one it leaves and why', () => {
+    createFixture({
+      'package.json': JSON.stringify({ private: true }),
+      'packages/a/package.json': withStorybook,
+      'packages/c/package.json': withStorybook,
+      'packages/c/.storybook/main.ts': main,
+    });
+
+    checkUnreadableProjects([readable('packages/a')], [unreadable('packages/c')]);
+
+    expect(logged('warn')).toMatch(
+      /^Not upgrading these Storybook projects, because Storybook could not read them:\n.*packages\/c\/\.storybook: Cannot find module 'shared\/vite' imported from packages\/c$/
+    );
+  });
+
+  it('stops only for the unreadable projects that share, and names only those', () => {
+    createFixture({
+      'package.json': JSON.stringify({ private: true }),
+      'packages/package.json': withStorybook,
+      'packages/a/package.json': withStorybook,
+      'packages/c/package.json': withStorybook,
+      'packages/c/.storybook/main.ts': main,
+      'other/d/package.json': withStorybook,
+      'other/d/.storybook/main.ts': main,
+    });
+
+    expect(() =>
+      checkUnreadableProjects(
+        [readable('packages/a')],
+        [unreadable('packages/c'), unreadable('other/d')]
+      )
+    ).toThrow(HandledError);
+    expect(logged('error')).toContain('packages/c/.storybook');
+    expect(logged('error')).not.toContain('other/d');
+  });
+
+  it('does not stop for a .storybook folder without a main file, and still names it', () => {
+    createFixture({
+      'package.json': withStorybook,
+      'packages/a/package.json': withStorybook,
+      'packages/c/package.json': withStorybook,
+    });
+
+    checkUnreadableProjects([readable('packages/a')], [unreadable('packages/c')]);
+
+    expect(logged('warn')).toContain('packages/c/.storybook');
+  });
+
+  it('does not count a package.json the upgrade would not rewrite, such as one with only @nx/storybook', () => {
+    createFixture({
+      'package.json': JSON.stringify({ devDependencies: { '@nx/storybook': '20.0.0' } }),
+      'packages/a/package.json': withStorybook,
+      'packages/c/package.json': withStorybook,
+      'packages/c/.storybook/main.ts': main,
+    });
+
+    checkUnreadableProjects([readable('packages/a')], [unreadable('packages/c')]);
+
+    expect(logger.error).not.toHaveBeenCalled();
+    expect(logged('warn')).toContain('packages/c/.storybook');
+  });
+
+  it('names a non-Error throw', () => {
+    createFixture({ 'package.json': JSON.stringify({ private: true }) });
+
+    checkUnreadableProjects(
+      [readable('packages/a')],
+      [{ configDir: join(root, 'packages/c/.storybook'), error: 'x' as unknown as Error }]
+    );
+
+    expect(logged('warn')).toMatch(/packages\/c\/\.storybook: x$/);
   });
 });

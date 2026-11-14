@@ -29,6 +29,7 @@ import { lt, prerelease, rsort } from 'semver';
 import { autoblock } from './autoblock/index.ts';
 import type { AutoblockerResult } from './autoblock/types.ts';
 import { getStorybookData } from './automigrate/helpers/mainConfigFile.ts';
+import { promptlessReason } from './prompts.ts';
 import { type UpgradeOptions } from './upgrade.ts';
 
 export { getStoriesPathsFromConfig };
@@ -617,11 +618,12 @@ export const shortenPath = (path: string) => {
  * @param detectedConfigDirs - Array of detected configuration directories
  * @returns Promise resolving to selected projects or undefined
  */
-const handleMultipleProjects = async (
+export const handleMultipleProjects = async (
   validProjects: readonly CollectProjectsSuccessResult[],
   errorProjects: readonly CollectProjectsErrorResult[],
   detectedConfigDirs: readonly string[],
-  yes: boolean
+  yes: boolean,
+  canPrompt = true
 ): Promise<CollectProjectsSuccessResult[] | undefined> => {
   // Check for overlapping Storybooks
   const allPackageJsonPaths = validProjects
@@ -663,6 +665,22 @@ const handleMultipleProjects = async (
   }
 
   if (detectedConfigDirs.length > 1) {
+    // `--yes` keeps this picker; only a run that nobody can answer upgrades every project.
+    if (!canPrompt) {
+      const found = [
+        'Upgrading all Storybook projects found:',
+        formatProjectDirectories(validProjects, logger.SYMBOLS.success),
+      ];
+      if (errorProjects.length > 0) {
+        logTracker.enableLogWriting();
+        found.push(
+          'Not upgrading the projects that could not be read:',
+          formatProjectDirectories(errorProjects, logger.SYMBOLS.error)
+        );
+      }
+      logger.log(found.join('\n'));
+      return [...validProjects];
+    }
     const selectedConfigDirs = await prompt.multiselect({
       message: 'Select which projects to upgrade',
       options: detectedConfigDirs.map((configDir) => ({
@@ -763,7 +781,8 @@ export const getProjects = async (
       validProjects,
       errorProjects,
       detectedConfigDirs,
-      options.yes
+      options.yes,
+      !promptlessReason({ detectAgents: options.agent !== false })
     );
 
     return selectedProjects ? { allProjects: validProjects, selectedProjects } : undefined;

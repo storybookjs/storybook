@@ -40,9 +40,11 @@ import {
   type AutomigrationResult,
   runAutomigrations,
 } from './automigrate/multi-project.ts';
+import { addSkillsCommand } from './automigrate/fixes/skills.ts';
 import { FixStatus } from './automigrate/types.ts';
 import { displayDoctorResults, runMultiProjectDoctor } from './doctor/index.ts';
 import { configureDeferredAddons } from './postinstallAddon.ts';
+import { answersPromptsWithYes } from './prompts.ts';
 import type { ProjectDoctorData, ProjectDoctorResults } from './doctor/types.ts';
 import {
   type CollectProjectsSuccessResult,
@@ -145,6 +147,8 @@ export const checkVersionConsistency = () => {
 };
 
 export type UpgradeOptions = {
+  /** `false` with `--no-agent`: prompt in a terminal even when a coding agent is detected. */
+  agent?: boolean;
   skipCheck: boolean;
   skipAutomigrations?: boolean;
   packageManager?: PackageManagerName;
@@ -359,6 +363,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
     throw new HandledError('--features cannot be combined with --skip-automigrations');
   }
 
+  options = { ...options, yes: answersPromptsWithYes(options) };
   const storybookVersionSpecifier = getStorybookVersionSpecifierFromCli();
   const projectsResult = await getProjects(options);
 
@@ -581,6 +586,17 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
 
     // Display upgrade results summary
     logUpgradeResults(automigrationResults, detectedAutomigrations, doctorResults);
+
+    // When the skills were offered and are not there (unticked, declined or failed), say so last.
+    const offeredSkills = detectedAutomigrations.find(({ fix }) => fix.id === 'skills');
+    if (offeredSkills && !options.dryRun && !(await hasStorybookSkills())) {
+      const command = addSkillsCommand({
+        afterAngularViteMigration: offeredSkills.reports.some(
+          ({ result }) => result?.afterAngularViteMigration
+        ),
+      });
+      logger.warn(`Did not install the Storybook skills for AI agents. Add them with: ${command}`);
+    }
 
     // TELEMETRY
     for (const project of storybookProjects) {

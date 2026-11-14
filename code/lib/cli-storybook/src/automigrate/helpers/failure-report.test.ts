@@ -148,7 +148,9 @@ describe('file failures', () => {
         skipInstall: true,
         skipDoctor: true,
       })
-    ).rejects.toMatchObject({ data: { errors: [expect.stringContaining('1 file skipped')] } });
+    ).rejects.toMatchObject({
+      data: { errors: [expect.stringContaining('could not migrate 1 file')] },
+    });
   });
 
   it('removes the sections of fixes that ran cleanly, and the file once none is left', async () => {

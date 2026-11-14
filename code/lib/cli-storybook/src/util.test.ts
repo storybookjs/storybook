@@ -5,10 +5,11 @@ import { dirname, join } from 'node:path';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { getProjectRoot } from 'storybook/internal/common';
 import { UpgradeStorybookConfigDirNotFoundError } from 'storybook/internal/server-errors';
 
 import type { UpgradeOptions } from './upgrade.ts';
-import { findStorybookProjects, getProjects } from './util.ts';
+import { findStorybookProjects, getProjects, shortenPath } from './util.ts';
 
 let root: string;
 
@@ -23,6 +24,28 @@ const createFixture = (files: Record<string, string>) => {
 afterEach(() => {
   vi.restoreAllMocks();
   rmSync(root, { recursive: true, force: true });
+});
+
+describe('shortenPath', () => {
+  it('names a path in the project relative to its root, without a leading separator', () => {
+    createFixture({});
+    const projectRoot = getProjectRoot();
+
+    expect(shortenPath(join(projectRoot, '.storybook'))).toBe('.storybook');
+    expect(shortenPath(join(projectRoot, 'web', '.storybook'))).toBe(join('web', '.storybook'));
+    expect(shortenPath(projectRoot)).toBe('');
+  });
+
+  it('keeps a relative path, and a path outside the project, as given', () => {
+    createFixture({});
+
+    expect(shortenPath(join('packages', 'docs', '.storybook'))).toBe(
+      join('packages', 'docs', '.storybook')
+    );
+    expect(shortenPath(join(dirname(getProjectRoot()), 'elsewhere', '.storybook'))).toBe(
+      join(dirname(getProjectRoot()), 'elsewhere', '.storybook')
+    );
+  });
 });
 
 describe('findStorybookProjects', () => {

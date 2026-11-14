@@ -173,8 +173,9 @@ export async function collectAutomigrationsAcrossProjects(
 
   taskLog.message('\nAutomigrations detected:');
 
+  // Not ticked yet: the results of the run below are.
   successAutomigrations.forEach((fixId) => {
-    taskLog.message(`${CLI_COLORS.success(`${logger.SYMBOLS.success} ${fixId}`)}`);
+    taskLog.message(`• ${fixId}`);
   });
 
   failedAutomigrations.forEach((fixId) => {
@@ -445,9 +446,9 @@ export async function runAutomigrationsForProjects(
       } else {
         fixResults[fixId] = FixStatus.SUCCEEDED;
         taskLog.message(
-          CLI_COLORS.success(
-            `${logger.SYMBOLS.success} ${fixId}${skipped > 0 ? ` (${pluralFiles(skipped)} skipped)` : ''}`
-          )
+          skipped > 0
+            ? CLI_COLORS.warning(`▲ ${fixId}: could not migrate ${pluralFiles(skipped)}`)
+            : CLI_COLORS.success(`${logger.SYMBOLS.success} ${fixId}`)
         );
       }
     }

@@ -249,6 +249,61 @@ describe('argtypes-default-value', () => {
     expect(result.story).toBe(story);
   });
 
+  it('does not apply to argTypes it cannot read when no argType has a defaultValue', async () => {
+    // Helper calls, spreads and story factories, beside `table.defaultValue` and an arg named so.
+    const story = [
+      "import { intlArgType, PaletteArgType, generateStory } from '../helpers';",
+      'const { defaultValue } = PaletteArgType;',
+      'export default {',
+      "  args: { defaultValue: 'Hi' },",
+      '  argTypes: {',
+      "    intl: intlArgType('LinkTranslate'),",
+      "    palette: { ...PaletteArgType, table: { category: 'inputs', defaultValue: { summary: defaultValue } } },",
+      '  },',
+      '};',
+      "export const Select = generateStory({ name: 'Select', argTypes: { size: { table: { defaultValue: { summary: 'M' } } } } });",
+    ].join('\n');
+    vol.fromJSON({ [previewConfigPath]: 'export default {};', [storyPath]: story });
+
+    expect(await checkFix(argtypesDefaultValue, options)).toBeNull();
+    const result = await migrate({ story });
+    expect(result.failures).toEqual([]);
+    expect(result.story).toBe(story);
+  });
+
+  it('deletes the defaultValue it can read beside an argType it cannot read', async () => {
+    const result = await migrate({
+      story: [
+        "import { intlArgType } from '../helpers';",
+        "export default { argTypes: { intl: intlArgType('LinkTranslate'), label: { defaultValue: 'A', control: 'text' } } };",
+      ].join('\n'),
+    });
+
+    expect(result.failures).toEqual([]);
+    expect(result.story).toContain("intl: intlArgType('LinkTranslate')");
+    expect(result.story).toContain("control: 'text'");
+    expect(result.story).not.toContain('defaultValue');
+  });
+
+  it('fails a defaultValue that reaches an argType through a spread, naming its line and why', async () => {
+    const story = [
+      "const base = { defaultValue: 'A', control: 'text' };",
+      'export default { argTypes: { label: { ...base } } };',
+    ].join('\n');
+    const result = await migrate({ story });
+
+    expect(result.failures).toEqual([
+      {
+        file: storyPath,
+        kind: 'story',
+        message: expect.stringMatching(
+          /^line 1: `defaultValue` is left in place.*; line 2: Cannot mutate argTypes\.label\.defaultValue because the target contains spread field$/
+        ),
+      },
+    ]);
+    expect(result.story).toBe(story);
+  });
+
   it('does not edit an MDX story', async () => {
     const docsPath = resolve('src/Intro.mdx');
     const source = '<Meta argTypes={{ value: { defaultValue: 0 } }} />';

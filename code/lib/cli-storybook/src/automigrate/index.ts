@@ -108,7 +108,10 @@ export const doAutomigrate = async (options: AutofixOptionsFromCLI) => {
     });
   const skippedFiles = [...Map.groupBy(outcome?.fileFailures ?? [], ({ fixId }) => fixId)]
     .filter(([id]) => outcome?.fixResults[id] === FixStatus.SUCCEEDED)
-    .map(([id, failures]) => `${picocolors.cyan(id)} (${pluralFiles(failures.length)} skipped)`);
+    .map(
+      ([id, failures]) =>
+        `${picocolors.cyan(id)} (could not migrate ${pluralFiles(failures.length)})`
+    );
   if (failedMigrations.length > 0 || skippedFiles.length > 0) {
     throw new AutomigrateError({ errors: [...failedMigrations, ...skippedFiles] });
   }
@@ -469,7 +472,9 @@ export async function runFixes({
       fixSummary.succeeded.push(fixId);
       const skipped = outcome.fileFailures.length;
       taskLog.message(
-        `${logger.SYMBOLS.success} ${picocolors.cyan(fixId)}${skipped > 0 ? ` (${pluralFiles(skipped)} skipped)` : ''}`
+        skipped > 0
+          ? `▲ ${picocolors.cyan(fixId)}: could not migrate ${pluralFiles(skipped)}`
+          : `${logger.SYMBOLS.success} ${picocolors.cyan(fixId)}`
       );
     }
   }

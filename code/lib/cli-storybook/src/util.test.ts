@@ -5,7 +5,7 @@ import { dirname, join } from 'node:path';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { prompt } from 'storybook/internal/node-logger';
+import { logger, prompt } from 'storybook/internal/node-logger';
 import { UpgradeStorybookConfigDirNotFoundError } from 'storybook/internal/server-errors';
 
 import type { UpgradeOptions } from './upgrade.ts';
@@ -149,6 +149,23 @@ describe('handleMultipleProjects', () => {
       projects
     );
     expect(prompt.multiselect).not.toHaveBeenCalled();
+  });
+
+  it('names the projects it could not read when nobody can answer', async () => {
+    const broken = { configDir: '/repo/c/.storybook', error: new Error('boom') };
+
+    await handleMultipleProjects(
+      projects,
+      [broken],
+      [...configDirs, broken.configDir],
+      true,
+      false
+    );
+
+    expect(vi.mocked(logger.log).mock.calls.at(-1)?.[0]).toContain(
+      'Not upgrading the projects that could not be read:'
+    );
+    expect(vi.mocked(logger.log).mock.calls.at(-1)?.[0]).toContain('/repo/c/.storybook');
   });
 
   it('asks which projects to upgrade at a terminal, also with --yes', async () => {

@@ -664,18 +664,9 @@ export const handleMultipleProjects = async (
 
   if (detectedConfigDirs.length > 1) {
     if (yes) {
-      const found = [
-        'Upgrading all Storybook projects found:',
-        formatProjectDirectories(validProjects, logger.SYMBOLS.success),
-      ];
-      if (errorProjects.length > 0) {
-        logTracker.enableLogWriting();
-        found.push(
-          'Skipping the projects that could not be read:',
-          formatProjectDirectories(errorProjects, logger.SYMBOLS.error)
-        );
-      }
-      logger.log(found.join('\n'));
+      logger.log(
+        `Upgrading all Storybook projects found:\n${formatProjectDirectories(validProjects, logger.SYMBOLS.success)}`
+      );
       return [...validProjects];
     }
     const selectedConfigDirs = await prompt.multiselect({

@@ -41,7 +41,7 @@ export const skills: Fix<{ afterAngularViteMigration?: boolean }> = {
   link: 'https://github.com/storybookjs/skills',
 
   prompt: () =>
-    'Install the official Storybook skills for AI agents into this project, and add a section to AGENTS.md that tells agents when to use them',
+    'Recommended: install the official Storybook skills for AI agents into this project, and add a section to AGENTS.md that tells agents when to use them',
 
   async check({ packageManager, mainConfig, beforeVersion, storybookVersion, requested }) {
     if (

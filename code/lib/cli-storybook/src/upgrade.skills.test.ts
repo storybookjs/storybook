@@ -16,6 +16,8 @@ vi.mock('storybook/internal/telemetry');
 vi.mock('storybook/internal/node-logger', { spy: true });
 vi.mock('./automigrate/multi-project.ts', { spy: true });
 vi.mock('./doctor/index.ts', { spy: true });
+// Vitest workers have no terminal; these tests are about what follows the prompts.
+vi.mock('./prompts.ts', () => ({ answersPromptsWithYes: ({ yes }: { yes?: boolean }) => !!yes }));
 vi.mock('./util.ts', { spy: true });
 vi.mock(import('storybook/internal/common'), async (importOriginal) => {
   const actual = await importOriginal();
@@ -189,5 +191,54 @@ describe('upgrade: refreshing the skills', () => {
     await upgrade({ ...baseOptions, dryRun: true });
 
     expect(installSkills).not.toHaveBeenCalled();
+  });
+
+  describe('when the skills were offered', () => {
+    const offered = (result: object = {}) =>
+      vi.mocked(runAutomigrations).mockResolvedValue({
+        automigrationResults: {},
+        detectedAutomigrations: [{ fix: { id: 'skills' }, reports: [{ result }] } as never],
+      });
+    const notInstalled = () =>
+      vi
+        .mocked(logger.warn)
+        .mock.calls.filter(([message]) => String(message).startsWith('Did not install'));
+
+    beforeEach(() => {
+      vi.mocked(hasStorybookSkills).mockResolvedValue(false);
+    });
+
+    it('says how to add them when they are not there, for example unticked', async () => {
+      offered();
+
+      await upgrade(baseOptions);
+
+      expect(notInstalled()).toEqual([
+        [
+          'Did not install the Storybook skills for AI agents. Add them with: npx storybook automigrate skills --yes',
+        ],
+      ]);
+    });
+
+    it('tells Angular to move to angular-vite first', async () => {
+      offered({ afterAngularViteMigration: true });
+
+      await upgrade(baseOptions);
+
+      expect(notInstalled()).toEqual([
+        [
+          'Did not install the Storybook skills for AI agents. Add them with: npx storybook automigrate angular-to-angular-vite --yes, and then npx storybook automigrate skills --yes',
+        ],
+      ]);
+    });
+
+    it('says nothing once they are installed', async () => {
+      offered();
+      vi.mocked(hasStorybookSkills).mockResolvedValueOnce(false).mockResolvedValue(true);
+
+      await upgrade(baseOptions);
+
+      expect(notInstalled()).toEqual([]);
+    });
   });
 });

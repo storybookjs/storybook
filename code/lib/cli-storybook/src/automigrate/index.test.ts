@@ -4,6 +4,7 @@ import type { JsPackageManager, PackageJson } from 'storybook/internal/common';
 import { prompt } from 'storybook/internal/node-logger';
 
 import * as mainConfigFile from './helpers/mainConfigFile.ts';
+import { answersPromptsWithYes } from '../prompts.ts';
 import { doAutomigrate, runFixes } from './index.ts';
 import type { Fix } from './types.ts';
 
@@ -15,6 +16,8 @@ const prompt1Message = 'prompt1Message';
 
 vi.spyOn(console, 'error').mockImplementation(console.log);
 vi.spyOn(mainConfigFile, 'getStorybookData').mockImplementation(getStorybookData);
+
+vi.mock('../prompts.ts', { spy: true });
 
 vi.mock('storybook/internal/node-logger', () => ({
   logger: {
@@ -206,5 +209,30 @@ describe('runFixes', () => {
       'An error occurred while running the automigrate command.'
     );
     expect(run1).not.toHaveBeenCalled();
+  });
+});
+
+describe('doAutomigrate', () => {
+  beforeEach(() => {
+    vi.mocked(answersPromptsWithYes).mockReturnValue(true);
+    getStorybookData.mockResolvedValue({
+      ...common,
+      versionInstalled: '7.0.0',
+      isLatest: true,
+    });
+  });
+
+  it('answers the prompts as with --yes when nobody can answer them, dry runs included', async () => {
+    check1.mockResolvedValue(null);
+
+    await doAutomigrate({ configDir, fixes, dryRun: true, skipInstall: true, skipDoctor: true });
+
+    expect(answersPromptsWithYes).toHaveBeenCalledWith(expect.objectContaining({ dryRun: true }));
+  });
+
+  it('asks nothing for --list', async () => {
+    await doAutomigrate({ configDir, fixes, list: true, skipInstall: true, skipDoctor: true });
+
+    expect(answersPromptsWithYes).not.toHaveBeenCalled();
   });
 });

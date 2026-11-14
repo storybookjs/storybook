@@ -9,26 +9,61 @@ import { logger } from 'storybook/internal/node-logger';
 
 import { getFrameworkPackageName } from '../helpers/mainConfigFile.ts';
 import { crossesVersionBoundary } from '../helpers/versionBoundary.ts';
-import type { CheckOptions, Fix } from '../types.ts';
+import type { Fix } from '../types.ts';
 import { ANGULAR_VITE_PACKAGE, offersAngularViteMigration } from './angular-to-angular-vite.ts';
 
 const introducedIn = '11.0.0';
 
-type SkillsResult = { afterAngularViteMigration?: boolean };
+// How to add the skills later. `automigrate skills` alone does not apply until the project uses
+// angular-vite.
+export const addSkillsCommand = (result?: { afterAngularViteMigration?: boolean }) =>
+  result?.afterAngularViteMigration
+    ? 'npx storybook automigrate angular-to-angular-vite --yes, and then npx storybook automigrate skills --yes'
+    : 'npx storybook automigrate skills --yes';
 
-export const skills: Fix<SkillsResult> = {
+// In real CI the skills are installed only on request. Coding agents set `CI=true` themselves, and
+// `skipsSkillsInCI` does not count their runs.
+const unlessSkippedInCI = <T extends { afterAngularViteMigration?: boolean }>(
+  result: T,
+  requested: boolean | undefined
+): T | null => {
+  if (requested || !skipsSkillsInCI()) {
+    return result;
+  }
+  logger.warn(
+    `Skipped the Storybook skills for AI agents because CI is set. Add them with: ${addSkillsCommand(result)}`
+  );
+  return null;
+};
+
+export const skills: Fix<{ afterAngularViteMigration?: boolean }> = {
   id: 'skills',
   link: 'https://github.com/storybookjs/skills',
 
   prompt: () =>
     'Install the official Storybook skills for AI agents into this project, and add a section to AGENTS.md that tells agents when to use them',
 
-  async check(options) {
-    // In CI only on request; `upgrade` says that it skipped them.
-    if (!options.requested && skipsSkillsInCI()) {
+  async check({ packageManager, mainConfig, beforeVersion, storybookVersion, requested }) {
+    if (
+      !requested &&
+      !(beforeVersion && crossesVersionBoundary(beforeVersion, storybookVersion, introducedIn))
+    ) {
       return null;
     }
-    return offersSkills(options);
+    if (await hasStorybookSkills()) {
+      return null;
+    }
+    const frameworkPackage = getFrameworkPackageName(mainConfig);
+    const framework = frameworkPackage ? frameworkPackages[frameworkPackage] : undefined;
+    if (framework && supportsSkills(frameworkToRenderer[framework], framework)) {
+      return unlessSkippedInCI({}, requested);
+    }
+    // Checks see the main config from before the upgrade, so an Angular project that can move to
+    // `@storybook/angular-vite` in this upgrade is offered the skills too. This check must not read
+    // through `files`: a recheck after the migration would then drop the fix without installing.
+    return !requested && (await offersAngularViteMigration(packageManager, mainConfig))
+      ? unlessSkippedInCI({ afterAngularViteMigration: true }, requested)
+      : null;
   },
 
   async run({ packageManager, result }) {
@@ -59,36 +94,3 @@ export const skills: Fix<SkillsResult> = {
     }
   },
 };
-
-// Whether the `skills` automigration applies to this project, regardless of CI.
-export async function offersSkills({
-  packageManager,
-  mainConfig,
-  beforeVersion,
-  storybookVersion,
-  requested,
-}: Pick<
-  CheckOptions,
-  'packageManager' | 'mainConfig' | 'beforeVersion' | 'storybookVersion' | 'requested'
->): Promise<SkillsResult | null> {
-  if (
-    !requested &&
-    !(beforeVersion && crossesVersionBoundary(beforeVersion, storybookVersion, introducedIn))
-  ) {
-    return null;
-  }
-  if (await hasStorybookSkills()) {
-    return null;
-  }
-  const frameworkPackage = getFrameworkPackageName(mainConfig);
-  const framework = frameworkPackage ? frameworkPackages[frameworkPackage] : undefined;
-  if (framework && supportsSkills(frameworkToRenderer[framework], framework)) {
-    return {};
-  }
-  // Checks see the main config from before the upgrade, so an Angular project that can move to
-  // `@storybook/angular-vite` in this upgrade is offered the skills too. This check must not read
-  // through `files`: a recheck after the migration would then drop the fix without installing.
-  return !requested && (await offersAngularViteMigration(packageManager, mainConfig))
-    ? { afterAngularViteMigration: true }
-    : null;
-}

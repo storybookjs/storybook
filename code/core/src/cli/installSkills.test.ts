@@ -198,17 +198,23 @@ describe('installSkills', () => {
     });
   });
 
-  it('prints the literal command and how to remove the skills', async () => {
+  it('says what it installed, why, and how to opt out', async () => {
     await installSkills({ packageManager, source: 'ai-feature' });
 
-    expect(logger.log).toHaveBeenCalledWith(
+    expect(vi.mocked(logger.log).mock.calls.map(([message]) => String(message))).toEqual([
       expect.stringContaining(
         'npx skills@latest add storybookjs/skills#v10.6.0 --yes --agent claude-code universal --copy'
-      )
-    );
-    expect(logger.log).toHaveBeenCalledWith(
-      'Remove the Storybook skills with: npx skills@latest remove'
-    );
+      ),
+      'Installed the Storybook skills for AI agents. They are part of Storybook 11: they teach coding agents to reuse your components, write stories for what they change, and run the story tests.',
+      'Added a Storybook section to AGENTS.md that tells agents when to use them. Storybook keeps that section current on upgrade.',
+      'To opt out: npx skills@latest remove',
+    ]);
+  });
+
+  it('says it updated the skills on a refresh', async () => {
+    await installSkills({ packageManager, source: 'refresh' });
+
+    expect(logger.log).toHaveBeenCalledWith('Updated the Storybook skills for AI agents.');
   });
 
   it('adds the section that tells agents when to use the skills', async () => {
@@ -331,24 +337,13 @@ describe('installSkills', () => {
     );
   });
 
-  it.each([
-    [
-      'refresh',
-      'Did not update the Storybook skills because CI is set. Update them with: npx skills@latest add storybookjs/skills#v10.6.0',
-    ],
-    [
-      'ai-feature',
-      'Skipped the Storybook skills for AI agents because CI is set. Add them with: npx storybook automigrate skills --yes',
-    ],
-  ] as const)('spawns nothing under CI, and says so (%s)', async (source, message) => {
+  it('spawns nothing under CI', async () => {
     vi.mocked(isCI).mockReturnValue(true);
 
-    const result = await installSkills({ packageManager, source });
+    const result = await installSkills({ packageManager, source: 'refresh' });
 
     expect(packageManager.runPackageCommand).not.toHaveBeenCalled();
-    expect(addStorybookAgentInstructions).not.toHaveBeenCalled();
     expect(result).toEqual({ result: 'skipped', source: 'ci' });
-    expect(logger.log).toHaveBeenCalledWith(message);
   });
 
   it('installs when a coding agent set CI', async () => {

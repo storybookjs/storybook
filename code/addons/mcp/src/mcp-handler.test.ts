@@ -334,7 +334,15 @@ describe('mcpServerHandler', () => {
     expect(parsedResponse.result.instructions).toBeDefined();
     expect(parsedResponse.result.instructions).toContain('## Storybook');
     expect(parsedResponse.result.instructions).toContain(
-      '`npx storybook skills ui-review --mcp`: publish a review'
+      '`npx storybook skills write-stories --mcp`: every component'
+    );
+    expect(parsedResponse.result.instructions).toContain('Call `test-run` (never a `package.json`');
+    // A review is no step: the agent runs ui-review only when the user asks.
+    expect(parsedResponse.result.instructions).not.toMatch(
+      /^\d\. `npx storybook skills ui-review/m
+    );
+    expect(parsedResponse.result.instructions).toContain(
+      'When the user asks for a review or to see stories, run `npx storybook skills ui-review --mcp` first. Otherwise'
     );
     expect(parsedResponse.result.instructions).toContain(
       'Also when the user asks to run or fix story tests'

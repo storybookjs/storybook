@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ProjectType, installSkills } from 'storybook/internal/cli';
-import type { JsPackageManager } from 'storybook/internal/common';
+import { type JsPackageManager, loadMainConfig } from 'storybook/internal/common';
 import { telemetry } from 'storybook/internal/telemetry';
 import {
   Feature,
@@ -33,6 +33,7 @@ vi.mock('./services/FeatureCompatibilityService.ts', { spy: true });
 vi.mock(import('storybook/internal/common'), async (importOriginal) => ({
   ...(await importOriginal()),
   cache: { set: vi.fn().mockResolvedValue(undefined) } as never,
+  loadMainConfig: vi.fn(),
 }));
 
 const packageManager = {
@@ -74,17 +75,33 @@ describe('init: the skills step', () => {
     vi.mocked(executeAddonConfiguration).mockResolvedValue({ status: 'success' });
     vi.mocked(executeFinalization).mockResolvedValue(undefined);
     vi.mocked(installSkills).mockResolvedValue({ result: 'installed', source: 'ai-feature' });
+    vi.mocked(loadMainConfig).mockResolvedValue({ stories: [] } as never);
   });
 
   it('installs the skills when the AI feature is selected, and reports the result', async () => {
     await initiateWith(Feature.DOCS, Feature.AI);
 
-    expect(installSkills).toHaveBeenCalledWith({ packageManager, source: 'ai-feature' });
+    expect(installSkills).toHaveBeenCalledWith({
+      packageManager,
+      source: 'ai-feature',
+      testSupported: false,
+    });
     expect(telemetry).toHaveBeenCalledWith('init-step', {
       step: 'skills',
       result: 'installed',
       source: 'ai-feature',
     });
+  });
+
+  it('gives the section a test step when the main config lists addon-vitest', async () => {
+    vi.mocked(loadMainConfig).mockResolvedValue({
+      stories: [],
+      addons: ['@storybook/addon-vitest'],
+    } as never);
+
+    await initiateWith(Feature.DOCS, Feature.TEST, Feature.AI);
+
+    expect(installSkills).toHaveBeenCalledWith(expect.objectContaining({ testSupported: true }));
   });
 
   it('installs nothing without the AI feature', async () => {
@@ -125,7 +142,11 @@ describe('init: the skills step', () => {
 
     await initiateWith(Feature.AI);
 
-    expect(installSkills).toHaveBeenCalledWith({ packageManager, source: 'ai-feature' });
+    expect(installSkills).toHaveBeenCalledWith({
+      packageManager,
+      source: 'ai-feature',
+      testSupported: false,
+    });
     expect(executeFinalization).toHaveBeenCalledWith(
       expect.objectContaining({ showAiInstructions: false })
     );

@@ -107,7 +107,9 @@ When working on UI components, always use the `your-project-sb-mcp` MCP tools to
 - Query `docs-show` for that component to see all available properties and examples
 - Only use properties that are explicitly documented or shown in example stories
 - If a property isn't documented, do not assume properties based on naming conventions or common patterns from other libraries. Check back with the user in these cases.
-- Before you edit any file, run `npx storybook skills write-stories --mcp` for the rules to create or update stories, `npx storybook skills test-stories --mcp` to test them, and `npx storybook skills ui-review --mcp` to publish a review of your change, each in a command of its own. Then follow each one at its step. They name the MCP tools each step calls.
+- Before you edit any file, run `npx storybook skills write-stories --mcp` in a command of its own for the rules to create or update stories, and follow it.
+- After every change, call `test-run` with `changed: true`, and fix what fails. Never run story tests with a `package.json` test script or `vitest`.
+- When the user asks for a review or to see stories, run `npx storybook skills ui-review --mcp` and follow it.
 
 Remember: A story name might not reflect the property name correctly, so always verify properties through documentation or example stories before using them.
 ```
@@ -165,7 +167,7 @@ The MCP server provides a set of tools that an agent can call to interact with y
 
 ### Development
 
-The development toolset provides tools to find the stories a change affects, preview them in the agent's chat interface, and publish a review of them. How to use them comes from `npx storybook skills ui-review --mcp`, and how to write well-considered stories with [interaction tests](../../writing-tests/interaction-testing.mdx) from `npx storybook skills write-stories --mcp`. This allows you to easily check the agent's work, and the generated stories can serve as tests (which the agent can run, with the [testing toolset](#testing), to validate that the generated UI works as intended).
+The development toolset provides tools to find the stories a change affects, preview them in the agent's chat interface, and create a review of them when you ask for one. How to use them comes from `npx storybook skills ui-review --mcp`, and how to write well-considered stories with [interaction tests](../../writing-tests/interaction-testing.mdx) from `npx storybook skills write-stories --mcp`. This allows you to easily check the agent's work, and the generated stories can serve as tests (which the agent can run, with the [testing toolset](#testing), to validate that the generated UI works as intended).
 
 The development toolset includes the following tools:
 
@@ -211,7 +213,7 @@ The testing toolset includes the following tool:
 
 #### `test-run`
 
-Runs tests for specific stories and returns results, including any accessibility issues (if configured). Also instructs the agent to interpret the results and resolve any issues found.
+Runs the tests of the stories that the uncommitted changes reach, of the stories in the story files it is given, or of every story. Returns the results, including any accessibility issues (if configured), and instructs the agent to interpret the results and resolve any issues found.
 
 ## Composition
 

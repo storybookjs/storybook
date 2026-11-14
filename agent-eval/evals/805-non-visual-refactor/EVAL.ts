@@ -1,4 +1,4 @@
-import { expectNoDisplayReview } from '#test-utils';
+import { expectNoDisplayReview, expectNoReviewHint } from '#test-utils';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, test } from 'vitest';
@@ -50,4 +50,8 @@ describe('renaming formatRating to formatStars without a visual change', () => {
         : [];
     });
   }
+
+  test('leaves out the review line when nothing visible changed', () => {
+    expectNoReviewHint();
+  });
 });

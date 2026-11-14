@@ -9,8 +9,43 @@ vi.mock('node:fs', { spy: true });
 import {
   expectDevServerLeftRunning,
   findDevServerKillCommands,
+  isOtherTestRunner,
   parseWorkflowToolResults,
 } from './test-utils.ts';
+
+describe('isOtherTestRunner', () => {
+  test.each([
+    'npm test',
+    'npm run test:stories',
+    'cd packages/ui && npx vitest run',
+    'pnpm exec vitest --project storybook',
+    'yarn test-storybook',
+    'npm -w @acme/ui run test:stories',
+    'npm --prefix packages/ui run test:stories',
+    'yarn workspace @acme/ui test:stories',
+    'pnpm --filter ui test:stories',
+    'npx -y vitest run',
+    'npm exec vitest',
+    'bunx vitest',
+    'CI=1 npx vitest run',
+    './node_modules/.bin/vitest',
+    'npx vitest@latest run',
+  ])('counts %j', (command) => {
+    expect(isOtherTestRunner(command)).toBe(true);
+  });
+
+  test.each([
+    'npx storybook tools test run --changed',
+    'pnpm --filter test-ui exec storybook tools test run src/Button.stories.tsx',
+    'grep vitest package.json',
+    'cat vitest.config.ts',
+    `cat package.json | grep -E '"(storybook|vitest)"'`,
+    'npm install',
+    'pnpm --filter ui build',
+  ])('does not count %j', (command) => {
+    expect(isOtherTestRunner(command)).toBe(false);
+  });
+});
 
 describe('parseWorkflowToolResults', () => {
   function claudeToolUseLine(id: string, name: string, input: Record<string, unknown>): string {

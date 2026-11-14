@@ -23,6 +23,7 @@ const CORE_STORYBOOK_EVALS = [
   '813-monorepo-leaf-create-component',
   '814-write-stories-for-fetching-component',
   '815-write-stories-for-fetching-component-without-msw',
+  '816-edit-component-and-review',
 ] as const;
 
 // The 82x block: lifecycle-skill evals (storybook-init / storybook-upgrade).

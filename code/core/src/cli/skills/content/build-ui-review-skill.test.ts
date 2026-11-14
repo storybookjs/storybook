@@ -15,7 +15,7 @@ describe('buildUiReviewSkill', () => {
     expect(text).toContain(
       'Run `stories changed` after your last edit and before every review, also when you already know the ids'
     );
-    expect(text.indexOf('## Find the stories')).toBeLessThan(text.indexOf('## Publish the review'));
+    expect(text.indexOf('## Find the stories')).toBeLessThan(text.indexOf('## Create the review'));
   });
 
   it('falls back to find-by-component for a file that `stories changed` leaves out', () => {
@@ -47,7 +47,7 @@ describe('buildUiReviewSkill', () => {
     const text = buildUiReviewSkill({ ...everything, transport: 'mcp', toolsetOff: true });
 
     expect(text).toContain(
-      'The `main.ts` of this project turns the `dev` toolset of the Storybook MCP server off. When the server does not give you `review-create`, skip this step.'
+      'The `main.ts` of this project turns the `dev` toolset of the Storybook MCP server off. When the server does not give you `review-create`, skip the review.'
     );
     expect(text).toContain('Call `review-create` with:');
     expect(buildUiReviewSkill({ ...everything, transport: 'mcp' })).not.toContain('skip this step');
@@ -106,7 +106,7 @@ describe('buildUiReviewSkill', () => {
 
       Run \`stories changed\` after your last edit and before every review, also when you already know the ids of the stories you wrote: it adds the stories of other components that your change affects. Run it in a command of its own and read its whole output, without \`head\` or \`tail\`. The list covers your edits so far, so checks in between, such as a type check, need no new call. Story ids come only from the output of these commands, so wait for it before you use an id. Never build one yourself from a file name, an export name, a title or memory. When \`stories changed\` leaves out a file you touched, pass that file to \`find-by-component\`, or for a shared file (design token, theme, util, hook), which has no stories of its own, the components that use it. When \`find-by-component\` reports stories hidden by \`maxDistance\`, rerun it with a higher \`--maxDistance\`. When none of them finds a story for a component, it has no stories yet: say so, or write them.
 
-      ## Publish the review
+      ## Create the review
 
       \`\`\`sh
       npx storybook tools review create --input '{
@@ -120,9 +120,9 @@ describe('buildUiReviewSkill', () => {
       }'
       \`\`\`
 
-      Publish a review after every change the user can see, and again after each later change. When you changed files, take the story ids from \`stories changed\`, run after your last edit (and from \`find-by-component\` only for a file it leaves out), also when you only wrote stories; never take them from the test output. Group the stories into two to five collections, from the changed component up to the pages that show it (one is enough when a single component is affected), and include every story you created. List every file you created or changed in \`changedFiles\`, story files too. When the user only asks to see or browse components or stories and you changed no files, publish the same review with \`"changedFiles": []\`. Skip the review only when nothing visible changed, such as a change to a callback, tests or types, and the user did not ask to see anything, and say that instead.
+      Create a review when the user (or the agent instructions of the project) asks for one, or the user asks to see the stories of a change. When you changed files, take the story ids from \`stories changed\`, run after your last edit (and from \`find-by-component\` only for a file it leaves out), also when you only wrote stories; never take them from the test output. Group the stories into two to five collections, from the changed component up to the pages that show it (one is enough when a single component is affected), and include every story you created. List every file you created or changed in \`changedFiles\`, story files too. When the user only asks to see or browse components or stories and you changed no files, create the same review with \`"changedFiles": []\`. When nothing visible changed, such as a change to a callback, tests or types, say that instead of creating a review.
 
-      Publish it as your last step, after your other checks such as the story tests, a type check, lint or \`git status\`. Then end your answer with the three lines the command prints, unchanged: heading, text line and 👉 link, with nothing after them. Do not list separate story links next to them or repeat the review link elsewhere in your answer.
+      Create it as your last step, after your other checks such as the story tests, a type check, lint or \`git status\`. Then end your answer with the three lines the command prints, unchanged: heading, text line and 👉 link, with nothing after them. Do not list separate story links next to them or repeat the review link elsewhere in your answer.
 
       ## Link to one story
 
@@ -148,7 +148,7 @@ describe('buildUiReviewSkill', () => {
 
       Call \`stories-changed\` after your last edit and before every review, also when you already know the ids of the stories you wrote: it adds the stories of other components that your change affects. The list covers your edits so far, so checks in between, such as a type check, need no new call. Story ids come only from the result of these tools, so wait for it before you use an id. Never build one yourself from a file name, an export name, a title or memory. When \`stories-changed\` leaves out a file you touched, pass that file to \`stories-find-by-component\`, or for a shared file (design token, theme, util, hook), which has no stories of its own, the components that use it. When \`stories-find-by-component\` reports stories hidden by \`maxDistance\`, call it again with a higher \`maxDistance\`. When none of them finds a story for a component, it has no stories yet: say so, or write them.
 
-      ## Publish the review
+      ## Create the review
 
       Call \`review-create\` with:
 
@@ -164,9 +164,9 @@ describe('buildUiReviewSkill', () => {
       }
       \`\`\`
 
-      Publish a review after every change the user can see, and again after each later change. When you changed files, take the story ids from \`stories-changed\`, called after your last edit (and from \`stories-find-by-component\` only for a file it leaves out), also when you only wrote stories; never take them from the test result. Group the stories into two to five collections, from the changed component up to the pages that show it (one is enough when a single component is affected), and include every story you created. List every file you created or changed in \`changedFiles\`, story files too. When the user only asks to see or browse components or stories and you changed no files, publish the same review with \`"changedFiles": []\`. Skip the review only when nothing visible changed, such as a change to a callback, tests or types, and the user did not ask to see anything, and say that instead.
+      Create a review when the user (or the agent instructions of the project) asks for one, or the user asks to see the stories of a change. When you changed files, take the story ids from \`stories-changed\`, called after your last edit (and from \`stories-find-by-component\` only for a file it leaves out), also when you only wrote stories; never take them from the test result. Group the stories into two to five collections, from the changed component up to the pages that show it (one is enough when a single component is affected), and include every story you created. List every file you created or changed in \`changedFiles\`, story files too. When the user only asks to see or browse components or stories and you changed no files, create the same review with \`"changedFiles": []\`. When nothing visible changed, such as a change to a callback, tests or types, say that instead of creating a review.
 
-      Publish it as your last step, after your other checks such as the story tests, a type check, lint or \`git status\`. Then end your answer with the three lines its result gives you, unchanged: heading, text line and 👉 link, with nothing after them. Do not list separate story links next to them or repeat the review link elsewhere in your answer.
+      Create it as your last step, after your other checks such as the story tests, a type check, lint or \`git status\`. Then end your answer with the three lines its result gives you, unchanged: heading, text line and 👉 link, with nothing after them. Do not list separate story links next to them or repeat the review link elsewhere in your answer.
 
       ## Link to one story
 

@@ -107,7 +107,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				      },
 				    },
 				    "description": "Use this tool to get Storybook preview URLs while iterating on a specific story, or when the user asks for a direct link to one.
-				Do not end visual work or browse requests with these links — publish a curated review with review-create instead (passing changedFiles: [] when no code changed) and link that.",
+				Do not end browse requests or a review that was asked for with these links — create a curated review with review-create instead (passing changedFiles: [] when no code changed) and link that.",
 				    "inputSchema": {
 				      "$schema": "http://json-schema.org/draft-07/schema#",
 				      "additionalProperties": false,
@@ -354,7 +354,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				  {
 				    "description": "Map component source files to the stories that render them, returning grounded storyId values from the live Storybook index; hand these to stories-preview or review-create instead of guessing. When the result says a component has no stories found, it has none yet: say so, never fabricate IDs.
 
-				Use it whenever you need story IDs: files you just edited, a feature/domain/topic the user named, a query like "all consumers of X", or an autonomous review after a UI change. First resolve the input to absolute component file paths yourself (grep / Glob / find, code reading); this tool starts there. Shared infrastructure (theme or design token, util, hook, CSS module) is not a component: grep for its consumers and pass their paths. If the symbol is one of a related group (sibling tokens, neighboring exports), widen to the whole group; a too-narrow grep silently drops stories. For "I just edited X", try stories-changed first; for any touched file missing from its response, treat it as shared infrastructure and pass its consumers here.
+				Use it whenever you need story IDs: files you just edited, a feature/domain/topic the user named, a query like "all consumers of X", or a review of a UI change. First resolve the input to absolute component file paths yourself (grep / Glob / find, code reading); this tool starts there. Shared infrastructure (theme or design token, util, hook, CSS module) is not a component: grep for its consumers and pass their paths. If the symbol is one of a related group (sibling tokens, neighboring exports), widen to the whole group; a too-narrow grep silently drops stories. For "I just edited X", try stories-changed first; for any touched file missing from its response, treat it as shared infrastructure and pass its consumers here.
 
 				Results are sorted by distance (0 = the path is itself a story file, 1 = direct importer, 2+ = transitive; lower = stronger). Shared primitives are usually consumed through wrappers, so distance 1 is often empty; the default maxDistance: 3 keeps the cascade visible while capping noise from wide decorators. Raise it for recall, lower it for precision. For review-create, the distance buckets map onto the visual cascade (component → direct importers → page context), one collection per layer. Among a component's stories at one distance, prefer the variant whose name signals it renders the changed surface.
 
@@ -477,12 +477,12 @@ describe('MCP Endpoint E2E Tests', () => {
 				    "title": "Get stories for component files",
 				  },
 				  {
-				    "description": "Publish a curated review to Storybook's review page for spot-checking visual impact. Each call replaces the active review; call again when the user iterates.
+				    "description": "Create a curated review on Storybook's review page for spot-checking visual impact. Each call replaces the active review; call again when the user iterates.
 				First run npx storybook skills ui-review --mcp once and follow it.
 
 				## When to call
-				- Visual change (components, CSS, themes, tokens, i18n): the user should spot-check rendering. A shared file (token, style, util) has no stories; review its consumers'. Skip non-visual refactors unless side-effects are plausible. Start from stories-changed; use stories-find-by-component only for a file it leaves out, or when it is unavailable. Include changedFiles.
-				- Last: publish it after your tests and other checks (type check, lint), then end your answer with the three lines it returns.
+				- The user or the project's agent instructions ask for a review of a visual change (components, CSS, themes, tokens, i18n). A shared file (token, style, util) has no stories; review its consumers'. Skip non-visual refactors unless side-effects are plausible. Start from stories-changed; use stories-find-by-component only for a file it leaves out, or when it is unavailable. Include changedFiles.
+				- Last: create it after your tests and other checks (type check, lint), then end your answer with the three lines it returns.
 				- Browse request ("show me the Badge component"): resolve via stories-find-by-component / docs-list. Show exactly what was asked. Pass changedFiles: [].
 
 				## Hard rules
@@ -558,7 +558,6 @@ describe('MCP Endpoint E2E Tests', () => {
 				  },
 				  {
 				    "description": "Run story tests.
-				First run npx storybook skills test-stories --mcp once and follow it: it has the rules for running the tests and fixing what fails.
 				Run them after editing anything that changes how the UI looks — components, stories, styles, CSS, themes, colors, or design tokens — shell-level substitutes like typecheck, lint, or package.json test scripts do not replace this.
 				Use changed for focused runs on what you changed (faster while iterating), or files for specific story files,
 				and leave all of them out to run every story for full-project verification.
@@ -779,12 +778,12 @@ describe('MCP Endpoint E2E Tests', () => {
 				      "type": "text",
 				    },
 				    {
-				      "text": "These preview links are for iterating or sharing a specific story — they are not how visual work or a browse request ends. The review-create tool is available in this session: if you are finishing visually observable work or showing a set of stories, publish the review with **review-create** and link that instead.",
+				      "text": "These preview links are for iterating or sharing a specific story — they are not how a browse request or a requested review ends. The review-create tool is available in this session: when the user (or the agent instructions of the project) asked for a review, or the user asked to see a set of stories, create the review with **review-create** and link that instead.",
 				      "type": "text",
 				    },
 				  ],
 				  "structuredContent": {
-				    "instructions": "These preview links are for iterating or sharing a specific story — they are not how visual work or a browse request ends. The review-create tool is available in this session: if you are finishing visually observable work or showing a set of stories, publish the review with **review-create** and link that instead.",
+				    "instructions": "These preview links are for iterating or sharing a specific story — they are not how a browse request or a requested review ends. The review-create tool is available in this session: when the user (or the agent instructions of the project) asked for a review, or the user asked to see a set of stories, create the review with **review-create** and link that instead.",
 				    "stories": [
 				      {
 				        "name": "Primary",

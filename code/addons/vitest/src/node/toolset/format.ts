@@ -289,7 +289,7 @@ export function displayPath(file: string): string {
  * A focused run whose selected stories all stayed out of the run, for example excluded by tags. It
  * passes, as a Vitest run whose tests are all skipped does; the selection line says why.
  */
-export function ranNothingSelected(result: TestRunResult): boolean {
+function ranNothingSelected(result: TestRunResult): boolean {
   return (
     (result.storyIds?.length ?? 0) > 0 &&
     result.componentTestCount.success + result.componentTestCount.error === 0

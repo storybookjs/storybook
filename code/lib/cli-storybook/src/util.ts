@@ -1,10 +1,12 @@
-import { dirname, relative, resolve } from 'node:path';
+import { readFileSync } from 'node:fs';
+import { dirname, relative, resolve, sep } from 'node:path';
 import { stripVTControlCharacters } from 'node:util';
 
 import type { PackageJsonWithDepsAndDevDeps } from 'storybook/internal/common';
 import {
   HandledError,
   JsPackageManager,
+  getInterpretedFile,
   getPkgPrNewPackageSpecifier,
   getProjectRoot,
   isPkgPrNewVersionSpecifier,
@@ -641,14 +643,6 @@ const handleMultipleProjects = async (
     if (validProjects.length > 0) {
       projectsFoundMessage.push(formatProjectDirectories(validProjects, logger.SYMBOLS.success));
     }
-    if (errorProjects.length > 0) {
-      logTracker.enableLogWriting();
-      projectsFoundMessage.push(
-        `There were some errors while collecting data for the following projects:\n${formatProjectDirectories(errorProjects, logger.SYMBOLS.error)}`,
-        '',
-        'Full logs will be available in the Storybook debug logs at the end of the run.'
-      );
-    }
     logger.log(projectsFoundMessage.join('\n'));
 
     const continueUpgrade =
@@ -684,9 +678,24 @@ const handleMultipleProjects = async (
 // The first line of the error that made a project unreadable. A main config that failed to
 // evaluate keeps the original error in `data.error`.
 const unreadableReason = ({ error }: CollectProjectsErrorResult) => {
-  const original = (error as { data?: { error?: unknown } }).data?.error;
-  const message = original instanceof Error ? original.message : error.message;
-  return stripVTControlCharacters(message).trim().split('\n')[0].replaceAll(process.cwd(), '.');
+  const original = (error as { data?: { error?: unknown } } | undefined)?.data?.error ?? error;
+  const message = original instanceof Error ? original.message : String(original);
+  return stripVTControlCharacters(message)
+    .trim()
+    .split('\n')[0]
+    .replaceAll(process.cwd() + sep, `.${sep}`);
+};
+
+// Whether the upgrade rewrites this package.json: it lists a package that the upgrade bumps.
+const rewrittenOnUpgrade = (packageJsonPath: string) => {
+  try {
+    const { dependencies, devDependencies } = JSON.parse(readFileSync(packageJsonPath, 'utf8'));
+    return Object.keys({ ...dependencies, ...devDependencies }).some(
+      (name) => name in versions || isSatelliteAddon(name)
+    );
+  } catch {
+    return false;
+  }
 };
 
 const listUnreadable = (projects: readonly CollectProjectsErrorResult[]) =>
@@ -709,18 +718,21 @@ export const checkUnreadableProjects = (
   const upgraded = new Set(
     validProjects
       .flatMap(({ packageManager }) => packageManager.packageJsonPaths)
-      .filter(JsPackageManager.hasAnyStorybookDependency)
+      .filter(rewrittenOnUpgrade)
   );
-  const sharing = errorProjects.filter(({ configDir }) =>
-    JsPackageManager.listAllPackageJsonPaths(dirname(resolve(configDir))).some((path) =>
-      upgraded.has(path)
-    )
+  // A `.storybook` folder without a main file, such as a leftover, is no Storybook to keep in step.
+  const sharing = errorProjects.filter(
+    ({ configDir }) =>
+      getInterpretedFile(resolve(configDir, 'main')) !== undefined &&
+      JsPackageManager.listAllPackageJsonPaths(dirname(resolve(configDir))).some((path) =>
+        upgraded.has(path)
+      )
   );
   logTracker.enableLogWriting();
   if (sharing.length > 0) {
     const others = validProjects.map(({ configDir }) => relative(process.cwd(), configDir));
     logger.error(
-      `Storybook could not read these projects, which share a package.json with the others, so it changed nothing:\n${listUnreadable(sharing)}\nFix them and run the upgrade again. To upgrade only the others, which still upgrades the shared package.json and leaves these projects behind: npx storybook upgrade --config-dir ${others.join(' ')}`
+      `Storybook could not read these projects, which share a package.json with the others, so it changed nothing:\n${listUnreadable(sharing)}\nFix them and run the upgrade again. To upgrade only the others, which still upgrades the shared package.json and leaves these projects behind: npx storybook@${versions.storybook} upgrade --config-dir ${others.join(' ')}`
     );
     throw new HandledError('A project that shares a package.json could not be read');
   }

@@ -5,6 +5,7 @@ import type { CoverageOptions, TestProject, TestSpecification, Vitest } from 'vi
 import {
   STORYBOOK_VITEST_CONFIG_NAMES,
   type StorybookVitestConfig,
+  defaultVitestConfigIn,
   findStorybookVitestConfig,
   getProjectRoot,
   resolvePathInStorybookCache,
@@ -38,10 +39,6 @@ process.env.VITEST_STORYBOOK = 'true';
  */
 export const DOUBLE_SPACES = '  ';
 
-/**
- * Turns a story index `importPath` into the absolute module ID Vitest uses for the test file. Test
- * files are registered and test specifications are matched to stories by this exact key.
- */
 /**
  * What to tell the user when Vitest has no project for this Storybook: which project Storybook
  * asked for, which config Vitest loaded, where Storybook looked for one that registers the plugin,
@@ -84,12 +81,16 @@ export function noStorybookProjectMessage({
           : ''
       }.${loaded ? ` Vitest loaded \`${show(loaded)}\`.` : ''}`,
       '',
-      `To run story tests, add \`storybookTest({ configDir: '${relativeConfigDir}' })\` to the plugins of a Vitest project in one of those configs, or run \`npx storybook add @storybook/addon-vitest\` to set it up. A config that reaches the plugin only through another file it imports is not recognised: put the config that uses the plugin in one of those places.`
+      `To run story tests, add \`storybookTest({ configDir: '${relativeConfigDir}' })\` to the plugins of a Vitest project in one of those configs, or run \`npx storybook add @storybook/addon-vitest --yes\` to set it up. A config that reaches the plugin only through another file it imports is not recognised: put the config that uses the plugin in one of those places.`
     );
   }
   return lines.join('\n');
 }
 
+/**
+ * Turns a story index `importPath` into the absolute module ID Vitest uses for the test file. Test
+ * files are registered and test specifications are matched to stories by this exact key.
+ */
 export const toModuleId = (importPath: string) => path.join(process.cwd(), importPath);
 const getTestName = (name: string) => `${name}${DOUBLE_SPACES}`;
 
@@ -135,12 +136,17 @@ export class VitestManager {
     // package root (the parent of the config dir), in the config dir itself (such as
     // `.storybook/vitest.config.ts`), or upward to the project root, under any Vite or Vitest
     // config name. A config Vitest would not load by itself is passed to it explicitly.
-    const configDir = resolve(this.testManager.storybookOptions.configDir ?? '.storybook');
+    // A config that uses the plugin but not recognisably for this config dir (`loose`) is still
+    // used here, as before: the worst case is the message below.
+    const configDir = resolve(this.testManager.storybookOptions.configDir || '.storybook');
     const packageRoot = dirname(configDir);
     const found = findStorybookVitestConfig({ configDir, projectRoot: getProjectRoot() });
-    // Without the plugin anywhere, Vitest starts where the nearest config outside the config dir
-    // is, and the error below says what was looked for.
-    const fallbackConfig = found.others.find((file) => dirname(file) !== configDir);
+    // Without the plugin anywhere, Vitest starts where the nearest config it loads by itself is,
+    // outside the config dir, and the error below says what was looked for.
+    const fallbackConfig = found.searched
+      .filter((directory) => directory !== configDir)
+      .map(defaultVitestConfigIn)
+      .find((file) => file !== undefined);
 
     const projectName = 'storybook:' + process.env.STORYBOOK_CONFIG_DIR;
 

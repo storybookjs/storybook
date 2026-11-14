@@ -103,13 +103,66 @@ describe('findStorybookVitestConfig', () => {
     });
   });
 
-  it('walks up to a monorepo root config that uses the plugin', () => {
-    write({ 'vitest.config.ts': WITH_PLUGIN, 'packages/ui/.storybook/main.ts': '' });
+  it('walks up to a monorepo root config whose plugin names the package', () => {
+    write({
+      'vitest.config.ts': `import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+export default { plugins: [storybookTest({ configDir: './packages/ui/.storybook' })] };`,
+      'packages/ui/.storybook/main.ts': '',
+    });
 
     expect(find('packages/ui/.storybook')).toMatchObject({
       configFile: join(root, 'vitest.config.ts'),
       root,
       explicit: false,
+    });
+    expect(find('packages/ui/.storybook').loose).toBeUndefined();
+  });
+
+  // Review: every package of a monorepo has a `.storybook`, so the folder name alone is not enough
+  // above the package root.
+  it('takes a monorepo root config that runs another package only loosely', () => {
+    write({
+      'vitest.config.ts': `import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+export default { plugins: [storybookTest({ configDir: path.join(dirname, 'packages/a/.storybook') })] };`,
+      'packages/b/.storybook/main.ts': '',
+    });
+
+    expect(find('packages/b/.storybook')).toMatchObject({
+      configFile: join(root, 'vitest.config.ts'),
+      loose: true,
+    });
+  });
+
+  it('does not count a commented-out plugin or a mention of the addon', () => {
+    write({
+      '.storybook/main.ts': '',
+      'vite.config.ts': `// storybookTest() from @storybook/addon-vitest was removed
+/* plugins: [storybookTest()] */
+export default { optimizeDeps: { include: ['@storybook/addon-vitest'] } };`,
+    });
+
+    expect(find('.storybook').configFile).toBeUndefined();
+  });
+
+  it('passes a config Vitest does not load by name, and reports the one it does load', () => {
+    write({
+      '.storybook/main.ts': '',
+      'vitest.config.ts': WITHOUT_PLUGIN,
+      'vitest.config.mts': WITH_PLUGIN,
+      'lib/.storybook/main.ts': '',
+      'lib/vite.config.tsx': WITH_PLUGIN,
+    });
+
+    // Vitest tries .ts before .mts, so it would load the config without the plugin.
+    expect(find('.storybook')).toMatchObject({
+      configFile: join(root, 'vitest.config.mts'),
+      explicit: false,
+      loads: join(root, 'vitest.config.ts'),
+    });
+    // Vitest never loads a .tsx config by itself.
+    expect(find('lib/.storybook')).toMatchObject({
+      configFile: join(root, 'lib/vite.config.tsx'),
+      explicit: true,
     });
   });
 
@@ -137,9 +190,12 @@ export default { test: { projects: [{ plugins: [storybookTest({ configDir: path.
     });
 
     expect(find('.storybook').configFile).toBe(join(root, 'vitest.config.ts'));
-    const other = find('.storybook-no-vitest');
-    expect(other.configFile).toBeUndefined();
-    expect(other.others).toEqual([join(root, 'vitest.config.ts')]);
+    // Still good enough to start Vitest with, but not for this Storybook.
+    expect(find('.storybook-no-vitest')).toMatchObject({
+      configFile: join(root, 'vitest.config.ts'),
+      loose: true,
+      others: [join(root, 'vitest.config.ts')],
+    });
   });
 
   it('finds a config whose plugin names a config dir of another name', () => {
@@ -155,7 +211,7 @@ export default { plugins: [storybookTest({ configDir: './storybook-ui' })] };`,
   it('does not take a plugin without configDir for a config dir of another name', () => {
     write({ 'storybook-ui/main.ts': '', 'vitest.config.ts': WITH_PLUGIN });
 
-    expect(find('storybook-ui').configFile).toBeUndefined();
+    expect(find('storybook-ui').loose).toBe(true);
   });
 
   it('does not look above the project root', () => {

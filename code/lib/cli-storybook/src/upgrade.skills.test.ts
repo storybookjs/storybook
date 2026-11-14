@@ -50,7 +50,6 @@ const project = (
       precheckStorybookPackageInstall: async () => {},
       installDependencies: async () => {},
       isStorybookInMonorepo: () => false,
-      getAllDependencies: () => ({}),
     } as Partial<JsPackageManager> as JsPackageManager,
     ...overrides,
   }) as unknown as CollectProjectsSuccessResult;
@@ -152,12 +151,13 @@ describe('upgrade: refreshing the skills', () => {
     ]);
   });
 
-  it('gives the section a test step when one Storybook of the project has addon-vitest', async () => {
-    const withVitest = project('/repo/b/.storybook');
-    withVitest.packageManager.getAllDependencies = () => ({
-      '@storybook/addon-vitest': '^11.0.0',
-    });
-    useProjects(project('/repo/a/.storybook'), withVitest);
+  it('gives the section a test step when the main config of one Storybook lists addon-vitest', async () => {
+    useProjects(
+      project('/repo/a/.storybook'),
+      project('/repo/b/.storybook', {
+        mainConfig: { stories: [], addons: ['@storybook/addon-vitest'] },
+      })
+    );
 
     await upgrade(baseOptions);
 

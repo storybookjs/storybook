@@ -557,7 +557,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
 
     // Every Storybook of a monorepo shares the AGENTS.md of the project root, so the section has a
     // test step when one of them can run story tests.
-    const testSupported = allProjects.some(({ packageManager }) => hasAddonVitest(packageManager));
+    const testSupported = allProjects.some(({ mainConfig }) => hasAddonVitest(mainConfig));
     const skills =
       !options.dryRun && hadSkills
         ? await installSkills({

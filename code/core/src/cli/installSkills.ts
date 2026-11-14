@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import type { JsPackageManager } from 'storybook/internal/common';
-import { getProjectRoot, isCI, versions } from 'storybook/internal/common';
+import { getAddonNames, getProjectRoot, isCI, versions } from 'storybook/internal/common';
 import { CLI_COLORS, logger } from 'storybook/internal/node-logger';
 import { isTelemetryModuleEnabled } from 'storybook/internal/telemetry';
 import { SupportedBuilder, SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
@@ -94,17 +94,17 @@ export async function installSkills({
   packageManager,
   source,
   stdio = 'inherit',
-  testSupported = hasAddonVitest(packageManager),
+  testSupported,
 }: {
   packageManager: JsPackageManager;
   source: SkillsSource;
   /** `pipe` keeps the `skills` CLI output out of a running task log. */
   stdio?: 'inherit' | 'pipe';
   /**
-   * A Storybook of the project has `@storybook/addon-vitest`, so the `AGENTS.md` section gets its
-   * test step. By default, whether `packageManager` lists it.
+   * A Storybook of the project lists `@storybook/addon-vitest` in its main config, so the
+   * `AGENTS.md` section gets its test step.
    */
-  testSupported?: boolean;
+  testSupported: boolean;
 }): Promise<SkillsInstallResult> {
   if (isCI()) {
     return { result: 'skipped', source: 'ci' };
@@ -234,9 +234,9 @@ export async function refreshAgentInstructions({
 }
 
 /**
- * Whether the package manager lists `@storybook/addon-vitest`. Without it a project cannot run
- * story tests, so the `AGENTS.md` section leaves the test step out.
+ * Whether the main config lists `@storybook/addon-vitest`. Without it a Storybook runs no story
+ * tests, so the `AGENTS.md` section leaves the test step out.
  */
-export function hasAddonVitest(packageManager: Pick<JsPackageManager, 'getAllDependencies'>) {
-  return '@storybook/addon-vitest' in packageManager.getAllDependencies();
+export function hasAddonVitest(mainConfig: Parameters<typeof getAddonNames>[0]): boolean {
+  return getAddonNames(mainConfig).includes('@storybook/addon-vitest');
 }

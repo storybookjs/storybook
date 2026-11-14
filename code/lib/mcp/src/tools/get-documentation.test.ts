@@ -311,6 +311,8 @@ describe('getDocumentationTool', () => {
 
       ## Props
 
+      Read with \`react-docgen\`, which leaves out props that come from other types, such as \`Pick<…>\` or \`ComponentProps<typeof X>\`, required ones too. Read the props type in the component source for the full list.
+
       \`\`\`
       export type Props = {
         /** Button style variant */

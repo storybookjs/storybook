@@ -211,13 +211,21 @@ function formatStoryContent(story: Story, importStatement: string | undefined): 
   return parts;
 }
 
+// `react-docgen` is the fallback reader, for example with TypeScript 7. It cannot resolve props
+// from other types, so its list can be short; an agent that trusts it leaves out required props.
+const REACT_DOCGEN_NOTE =
+  'Read with `react-docgen`, which leaves out props that come from other types, such as `Pick<…>` or `ComponentProps<typeof X>`, required ones too. Read the props type in the component source for the full list.';
+
 function formatPropsSection(
+  componentManifest: Pick<ComponentManifest | SubcomponentManifest, 'reactDocgen'>,
   parsedDocgen: ParsedDocgen | undefined,
   options: { title?: string; typeName?: string } = {}
 ): string[] {
   const propEntries = parsedDocgen ? Object.entries(parsedDocgen.props) : [];
+  const fromReactDocgen = !!componentManifest.reactDocgen;
 
-  if (propEntries.length === 0) {
+  // An empty list from `react-docgen` can mean every prop comes from another type.
+  if (propEntries.length === 0 && !fromReactDocgen) {
     return [];
   }
 
@@ -226,6 +234,10 @@ function formatPropsSection(
   const parts: string[] = [];
   parts.push(title);
   parts.push('');
+  if (fromReactDocgen) {
+    parts.push(REACT_DOCGEN_NOTE);
+    parts.push('');
+  }
   parts.push('```');
   parts.push(`export type ${typeName} = {`);
 
@@ -341,7 +353,9 @@ function formatSubcomponentsSection(
     }
 
     const typeName = `${(subcomponent.name || key).replace(/\W+/g, '')}Props`;
-    parts.push(...formatPropsSection(parsedDocgen, { title: '#### Props', typeName }));
+    parts.push(
+      ...formatPropsSection(subcomponent, parsedDocgen, { title: '#### Props', typeName })
+    );
   }
 
   return parts;
@@ -381,7 +395,7 @@ export function formatComponentManifest(
     parts.push(apiDescription);
     parts.push('');
   } else {
-    parts.push(...formatPropsSection(parsedDocgen));
+    parts.push(...formatPropsSection(componentManifest, parsedDocgen));
   }
 
   parts.push(...formatSubcomponentsSection(componentManifest.subcomponents));

@@ -608,6 +608,8 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
 
         ## Props
 
+        Read with \`react-docgen\`, which leaves out props that come from other types, such as \`Pick<…>\` or \`ComponentProps<typeof X>\`, required ones too. Read the props type in the component source for the full list.
+
         \`\`\`
         export type Props = {
           variant: string;
@@ -837,6 +839,8 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
 
         ## Props
 
+        Read with \`react-docgen\`, which leaves out props that come from other types, such as \`Pick<…>\` or \`ComponentProps<typeof X>\`, required ones too. Read the props type in the component source for the full list.
+
         \`\`\`
         export type Props = {
           size: string;
@@ -918,6 +922,8 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
         ID: button
 
         ## Props
+
+        Read with \`react-docgen\`, which leaves out props that come from other types, such as \`Pick<…>\` or \`ComponentProps<typeof X>\`, required ones too. Read the props type in the component source for the full list.
 
         \`\`\`
         export type Props = {
@@ -1245,6 +1251,8 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
 
 				## Props
 
+				Read with \`react-docgen\`, which leaves out props that come from other types, such as \`Pick<…>\` or \`ComponentProps<typeof X>\`, required ones too. Read the props type in the component source for the full list.
+
 				\`\`\`
 				export type Props = {
 				  variant: union;
@@ -1282,6 +1290,8 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
 
         ## Props
 
+        Read with \`react-docgen\`, which leaves out props that come from other types, such as \`Pick<…>\` or \`ComponentProps<typeof X>\`, required ones too. Read the props type in the component source for the full list.
+
         \`\`\`
         export type Props = {
           /** The visual style variant */
@@ -1306,12 +1316,16 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
       expect(result).not.toContain('## Props');
     });
 
-    it('should omit props section when reactDocgen has no props', () => {
+    it('should omit props section when reactComponentMeta has no props', () => {
       const manifest: ComponentManifest = {
         id: 'button',
         name: 'Button',
         path: 'src/components/Button.tsx',
-        reactDocgen: {
+        reactComponentMeta: {
+          displayName: 'Button',
+          filePath: 'src/components/Button.tsx',
+          description: '',
+          exportName: 'Button',
           props: {},
         },
       };
@@ -1319,6 +1333,35 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
       const result = formatComponentManifest(manifest);
 
       expect(result).not.toContain('## Props');
+    });
+
+    // `react-docgen` drops props from other types, so an empty list can hide them all.
+    it('should say that react-docgen leaves out derived props, also when it found none', () => {
+      const manifest: ComponentManifest = {
+        id: 'pill',
+        name: 'Pill',
+        path: 'src/components/Pill.tsx',
+        reactDocgen: {
+          props: {},
+        },
+      };
+
+      const result = formatComponentManifest(manifest);
+
+      expect(result).toMatchInlineSnapshot(`
+        "# Pill
+
+        ID: pill
+
+        ## Props
+
+        Read with \`react-docgen\`, which leaves out props that come from other types, such as \`Pick<…>\` or \`ComponentProps<typeof X>\`, required ones too. Read the props type in the component source for the full list.
+
+        \`\`\`
+        export type Props = {
+        }
+        \`\`\`"
+      `);
     });
   });
 
@@ -1355,6 +1398,8 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
       ID: button
 
       ## Props
+
+      Read with \`react-docgen\`, which leaves out props that come from other types, such as \`Pick<…>\` or \`ComponentProps<typeof X>\`, required ones too. Read the props type in the component source for the full list.
 
       \`\`\`
       export type Props = {

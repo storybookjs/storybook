@@ -124,6 +124,44 @@ export function summarizeTestRun(result: TestRunResult, a11y: boolean): TestRunS
   };
 }
 
+const STACK_FRAME = /^\s+at\s/;
+// Frames an agent cannot act on: installed packages (the Vite deps cache lives under
+// `node_modules/.vite`), Node itself, and Vitest's browser runner.
+const FOREIGN_FRAME =
+  /[\\/]node_modules[\\/]|[\\/]\.vite[\\/]|\(node:|\bat node:|__vitest_browser__|__vitest__/;
+const KEPT_FRAMES = 3;
+
+/**
+ * Keeps the first stack frames that point into the project's own files and drops the rest, which
+ * are long traces through installed packages and the Vite deps cache. A trace with no such frame
+ * keeps its first one, so the agent still sees where the error came from.
+ */
+export function trimStackTrace(text: string): string {
+  const lines = text.split('\n');
+  const output: string[] = [];
+  for (let start = 0; start < lines.length;) {
+    if (!STACK_FRAME.test(lines[start])) {
+      output.push(lines[start]);
+      start += 1;
+      continue;
+    }
+    let end = start;
+    while (end < lines.length && STACK_FRAME.test(lines[end])) {
+      end += 1;
+    }
+    const frames = lines.slice(start, end);
+    const own = frames.filter((frame) => !FOREIGN_FRAME.test(frame));
+    const kept = (own.length > 0 ? own : frames).slice(0, KEPT_FRAMES);
+    output.push(...kept);
+    if (frames.length > kept.length) {
+      const indent = frames[0].match(/^\s*/)?.[0] ?? '';
+      output.push(`${indent}… ${pluralize(frames.length - kept.length, 'more frame')} omitted`);
+    }
+    start = end;
+  }
+  return output.join('\n');
+}
+
 function formatPassingStoriesSection(passingStories: ComponentTestStatus[]): string {
   return `## Passing Stories
 
@@ -136,7 +174,8 @@ const A11Y_CHECK_FAILED = 'The accessibility check failed; see Accessibility Vio
 function formatFailingStoriesSection(statuses: ComponentTestStatus[]): string {
   const entries = statuses.map((status) => {
     const details = isFailing(status)
-      ? status.description || 'No failure details available.'
+      ? (status.description && trimStackTrace(status.description)) ||
+        'No failure details available.'
       : A11Y_CHECK_FAILED;
     return `### ${status.storyId}
 
@@ -223,7 +262,7 @@ function formatUnhandledErrorsSection(errors: UnhandledError[]): string {
 **Path**: ${unhandledError.VITEST_TEST_PATH || 'No path available'}
 **Test name**: ${unhandledError.VITEST_TEST_NAME || 'No test name available'}
 **Stack trace**:
-${unhandledError.stack || 'No stack trace available'}`
+${unhandledError.stack ? trimStackTrace(unhandledError.stack) : 'No stack trace available'}`
   );
 
   return `## Unhandled Errors

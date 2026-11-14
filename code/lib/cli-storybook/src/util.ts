@@ -29,6 +29,7 @@ import { lt, prerelease, rsort } from 'semver';
 import { autoblock } from './autoblock/index.ts';
 import type { AutoblockerResult } from './autoblock/types.ts';
 import { getStorybookData } from './automigrate/helpers/mainConfigFile.ts';
+import { promptlessReason } from './prompts.ts';
 import { type UpgradeOptions } from './upgrade.ts';
 
 export { getStoriesPathsFromConfig };
@@ -621,7 +622,8 @@ export const handleMultipleProjects = async (
   validProjects: readonly CollectProjectsSuccessResult[],
   errorProjects: readonly CollectProjectsErrorResult[],
   detectedConfigDirs: readonly string[],
-  yes: boolean
+  yes: boolean,
+  canPrompt = true
 ): Promise<CollectProjectsSuccessResult[] | undefined> => {
   // Check for overlapping Storybooks
   const allPackageJsonPaths = validProjects
@@ -663,7 +665,8 @@ export const handleMultipleProjects = async (
   }
 
   if (detectedConfigDirs.length > 1) {
-    if (yes) {
+    // `--yes` keeps this picker; only a run that nobody can answer upgrades every project.
+    if (!canPrompt) {
       logger.log(
         `Upgrading all Storybook projects found:\n${formatProjectDirectories(validProjects, logger.SYMBOLS.success)}`
       );
@@ -769,7 +772,8 @@ export const getProjects = async (
       validProjects,
       errorProjects,
       detectedConfigDirs,
-      options.yes
+      options.yes,
+      !promptlessReason({ detectAgents: options.agent !== false })
     );
 
     return selectedProjects ? { allProjects: validProjects, selectedProjects } : undefined;

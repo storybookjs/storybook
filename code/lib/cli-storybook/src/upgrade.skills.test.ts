@@ -8,11 +8,6 @@ import { telemetry } from 'storybook/internal/telemetry';
 import { runAutomigrations } from './automigrate/multi-project.ts';
 import { FixStatus } from './automigrate/types.ts';
 import { displayDoctorResults, runMultiProjectDoctor } from './doctor/index.ts';
-import {
-  forgetUpgradeStart,
-  rememberUpgradeStart,
-  upgradeStartVersion,
-} from './pending-upgrade.ts';
 import { type UpgradeOptions, upgrade } from './upgrade.ts';
 import { type CollectProjectsSuccessResult, getProjects } from './util.ts';
 
@@ -21,7 +16,6 @@ vi.mock('storybook/internal/telemetry');
 vi.mock('storybook/internal/node-logger', { spy: true });
 vi.mock('./automigrate/multi-project.ts', { spy: true });
 vi.mock('./doctor/index.ts', { spy: true });
-vi.mock('./pending-upgrade.ts');
 // Vitest workers have no terminal; these tests are about what follows the prompts.
 vi.mock('./prompts.ts', () => ({ answersPromptsWithYes: ({ yes }: { yes?: boolean }) => !!yes }));
 vi.mock('./util.ts', { spy: true });
@@ -84,7 +78,6 @@ describe('upgrade: refreshing the skills', () => {
     vi.mocked(runMultiProjectDoctor).mockResolvedValue({});
     vi.mocked(displayDoctorResults).mockReturnValue(false);
     vi.mocked(isCI).mockReturnValue(false);
-    vi.mocked(upgradeStartVersion).mockImplementation(async (_, installed) => installed);
     for (const method of ['info', 'step', 'log', 'warn', 'debug'] as const) {
       vi.mocked(logger[method]).mockImplementation(() => {});
     }
@@ -184,31 +177,6 @@ describe('upgrade: refreshing the skills', () => {
     await upgrade({ ...baseOptions, dryRun: true });
 
     expect(installSkills).not.toHaveBeenCalled();
-  });
-
-  it('migrates from the start of an unfinished upgrade, and forgets it after the automigrations', async () => {
-    useProjects(project('/repo/a/.storybook', { beforeVersion: '11.0.0' }));
-    vi.mocked(upgradeStartVersion).mockResolvedValue('10.6.7');
-
-    await upgrade(baseOptions);
-
-    expect(vi.mocked(runAutomigrations).mock.calls[0][0]).toEqual([
-      expect.objectContaining({ configDir: '/repo/a/.storybook', beforeVersion: '10.6.7' }),
-    ]);
-    expect(rememberUpgradeStart).toHaveBeenCalledWith('/repo/a/.storybook', {
-      from: '10.6.7',
-      to: '11.0.0',
-    });
-    expect(vi.mocked(forgetUpgradeStart).mock.invocationCallOrder[0]).toBeGreaterThan(
-      vi.mocked(runAutomigrations).mock.invocationCallOrder[0]
-    );
-  });
-
-  it('remembers nothing on a dry run', async () => {
-    await upgrade({ ...baseOptions, dryRun: true });
-
-    expect(rememberUpgradeStart).not.toHaveBeenCalled();
-    expect(forgetUpgradeStart).not.toHaveBeenCalled();
   });
 
   describe('when the skills were offered', () => {

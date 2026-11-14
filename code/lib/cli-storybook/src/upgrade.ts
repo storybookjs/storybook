@@ -44,11 +44,6 @@ import { addSkillsCommand } from './automigrate/fixes/skills.ts';
 import { FixStatus } from './automigrate/types.ts';
 import { displayDoctorResults, runMultiProjectDoctor } from './doctor/index.ts';
 import { configureDeferredAddons } from './postinstallAddon.ts';
-import {
-  forgetUpgradeStart,
-  rememberUpgradeStart,
-  upgradeStartVersion,
-} from './pending-upgrade.ts';
 import { answersPromptsWithYes } from './prompts.ts';
 import type { ProjectDoctorData, ProjectDoctorResults } from './doctor/types.ts';
 import {
@@ -377,14 +372,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
     return;
   }
 
-  const { allProjects } = projectsResult;
-  // A rerun after a run that stopped before its automigrations migrates from where that run started.
-  const storybookProjects = await Promise.all(
-    projectsResult.selectedProjects.map(async (project) => ({
-      ...project,
-      beforeVersion: await upgradeStartVersion(project.configDir, project.beforeVersion),
-    }))
-  );
+  const { allProjects, selectedProjects: storybookProjects } = projectsResult;
 
   if (storybookProjects.length > 1) {
     logger.info(`Upgrading the following projects:
@@ -460,13 +448,6 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
         }
       }
 
-      for (const project of storybookProjects) {
-        await rememberUpgradeStart(project.configDir, {
-          from: project.beforeVersion,
-          to: project.currentCLIVersion,
-        });
-      }
-
       const task = prompt.taskLog({
         id: 'upgrade-dependencies',
         title: `Fetching versions to update package.json files..`,
@@ -512,11 +493,6 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
         storybookProjects,
         options
       ));
-    }
-    if (!options.dryRun) {
-      for (const project of storybookProjects) {
-        await forgetUpgradeStart(project.configDir);
-      }
     }
 
     // Install dependencies

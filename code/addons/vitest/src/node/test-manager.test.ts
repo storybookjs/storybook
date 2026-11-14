@@ -761,6 +761,93 @@ describe('TestManager', () => {
     expect(regex?.test('Parent story  Test name')).toBe(false);
   });
 
+  // SB-2557: Svelte CSF compiles stories to `export { $__X as X }`, so their tests are named after
+  // the export (`HoverShowsFullDate`) while the index has the display name.
+  it('matches a story by its name or its export name', async () => {
+    vitest.globTestSpecifications.mockImplementation(() => tests);
+    const testManager = await startWithIndex();
+    testManager.storyIndex = {
+      v: 5,
+      entries: {
+        'timestamp--hover-shows-full-date': {
+          type: 'story',
+          subtype: 'story',
+          id: 'timestamp--hover-shows-full-date',
+          name: 'Hover Shows Full Date',
+          exportName: 'HoverShowsFullDate',
+          title: 'timestamp',
+          importPath: 'path/to/file',
+          tags: [Tag.TEST],
+        },
+        'timestamp--today': {
+          type: 'story',
+          subtype: 'story',
+          id: 'timestamp--today',
+          name: 'Today',
+          exportName: 'Today',
+          title: 'timestamp',
+          importPath: 'path/to/file',
+          tags: [Tag.TEST],
+        },
+        'timestamp--from-a-string': {
+          type: 'story',
+          subtype: 'story',
+          id: 'timestamp--from-a-string',
+          name: 'From A String',
+          exportName: 'FromAString',
+          title: 'timestamp',
+          importPath: 'path/to/file',
+          tags: [Tag.TEST],
+        },
+      },
+    } as StoryIndex;
+
+    await testManager.handleTriggerRunEvent({
+      type: 'TRIGGER_RUN',
+      payload: {
+        storyIds: ['timestamp--hover-shows-full-date', 'timestamp--today'],
+        triggeredBy: 'global',
+      },
+    });
+
+    const regex = setTestNamePattern.mock.calls.find(([arg]) => arg instanceof RegExp)?.[0] as
+      | RegExp
+      | undefined;
+
+    expect(regex?.test('HoverShowsFullDate')).toBe(true);
+    expect(regex?.test('Hover Shows Full Date')).toBe(true);
+    expect(regex?.test('Today')).toBe(true);
+    expect(regex?.test('FromAString')).toBe(false);
+    expect(regex?.test('From A String')).toBe(false);
+  });
+
+  it('records which selected stories tags or the Vitest project leave out', async () => {
+    // Only the first story file is a test file of the Vitest project.
+    vitest.globTestSpecifications.mockImplementation(() => tests.slice(0, 1));
+    const testManager = await startWithIndex();
+    testManager.storyIndex = {
+      ...mockIndex,
+      entries: {
+        ...mockIndex.entries,
+        // Without the `test` tag, the default include filter keeps it out.
+        'story--two': { ...mockIndex.entries['story--two'], tags: ['dev'] },
+      },
+    } as StoryIndex;
+
+    await testManager.handleTriggerRunEvent({
+      type: 'TRIGGER_RUN',
+      payload: {
+        storyIds: ['story--one', 'story--two', 'another--one'],
+        triggeredBy: 'global',
+      },
+    });
+
+    expect(mockStore.getState().currentRun.excludedStoryIds).toEqual({
+      byTags: ['story--two'],
+      notInProject: ['another--one'],
+    });
+  });
+
   it('should trigger only selected stories across multiple files', async () => {
     vitest.globTestSpecifications.mockImplementation(() => tests);
     const testManager = await startWithIndex();

@@ -51,6 +51,13 @@ export type CurrentRun = {
   reports: Record<StoryId, Report[]>;
   totalTestCount: number | undefined;
   storyIds: StoryId[] | undefined;
+  /**
+   * Of the selected `storyIds`, the ones the run leaves out for a reason Storybook knows: their tags
+   * keep them out of tests (or skip them), or their story file is not a test file of the Storybook
+   * Vitest project. Any other selected story that did not run, did not run for a reason Storybook
+   * cannot tell.
+   */
+  excludedStoryIds: { byTags: StoryId[]; notInProject: StoryId[] } | undefined;
   startedAt: number | undefined;
   finishedAt: number | undefined;
   unhandledErrors: VitestError[];

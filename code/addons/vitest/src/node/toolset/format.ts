@@ -286,8 +286,9 @@ export function displayPath(file: string): string {
 }
 
 /**
- * A focused run whose selected stories all stayed out of the run, for example excluded by tags. It
- * passes, as a Vitest run whose tests are all skipped does; the selection line says why.
+ * A focused run whose selected stories all stayed out of the run. When tags or the Vitest project
+ * explain that, it passes, as a Vitest run whose tests are all skipped does; when nothing does, it
+ * fails (see `storiesNotRun`). The selection line says which.
  */
 export function ranNothingSelected(result: TestRunResult): boolean {
   return (
@@ -304,18 +305,59 @@ function describeChanged({ since, changedFiles }: NonNullable<TestRunSelection['
   return `${pluralize(changedFiles, 'changed file')} (${since ? `since ${code(since)}, and uncommitted` : 'uncommitted'})`;
 }
 
-// The likely cause is named only when no error could explain the gap instead.
-function ranNote(ran: number, selected: number, unhandledErrors: number): string {
+/** The stories a run reached a verdict for; skipped tests are reported too, as `unknown`. */
+function ranStoryIdsOf(result: TestRunResult): Set<string> {
+  return new Set(
+    result.componentTestStatuses
+      .filter(
+        (status) =>
+          isPassing(status) || isFailing(status) || status.value === 'status-value:warning'
+      )
+      .map((status) => status.storyId)
+  );
+}
+
+/**
+ * The selected stories that did not run, by the reason the runner knows: their tags keep them out
+ * of tests or skip them, or their story file is not a test file of the Storybook Vitest project.
+ * `unexplained` did not run for a reason Storybook cannot tell.
+ */
+export function storiesNotRun(result: TestRunResult): {
+  byTags: number;
+  notInProject: number;
+  unexplained: string[];
+} {
+  const ran = ranStoryIdsOf(result);
+  const byTags = new Set(result.excludedStoryIds?.byTags);
+  const notInProject = new Set(result.excludedStoryIds?.notInProject);
+  const notRun = (result.storyIds ?? []).filter((id) => !ran.has(id));
+  return {
+    byTags: notRun.filter((id) => byTags.has(id)).length,
+    notInProject: notRun.filter((id) => notInProject.has(id)).length,
+    unexplained: notRun.filter((id) => !byTags.has(id) && !notInProject.has(id)),
+  };
+}
+
+// Says why selected stories did not run only where the runner knows why, and says plainly when it
+// does not.
+function ranNote(result: TestRunResult, ran: number, selected: number): string {
   if (ran >= selected) {
     return '';
   }
-  const cause =
-    unhandledErrors > 0
-      ? ''
-      : ran === 0
-        ? ', they are excluded from tests (for example by tags)'
-        : ', the others are excluded from tests (for example by tags)';
-  return `; ${ran === 0 ? 'none' : `only ${ran}`} ran${cause}`;
+  const { byTags, notInProject, unexplained } = storiesNotRun(result);
+  const reasons = [
+    byTags > 0 && `${byTags} ${byTags === 1 ? 'is' : 'are'} excluded from tests by tags`,
+    notInProject > 0 &&
+      `${notInProject} ${notInProject === 1 ? 'is' : 'are'} in story files the Storybook Vitest project does not include`,
+    unexplained.length > 0 &&
+      `${unexplained.length} did not run, and Storybook cannot tell why${result.unhandledErrors.length > 0 ? ' (see the unhandled errors)' : ''}: ${listIds(unexplained)}`,
+  ].filter((reason): reason is string => Boolean(reason));
+  return `; ${ran === 0 ? 'none' : `only ${ran}`} ran: ${reasons.join('; ')}`;
+}
+
+function listIds(ids: string[], max = 5): string {
+  const shown = ids.slice(0, max).map(code).join(', ');
+  return ids.length > max ? `${shown} and ${ids.length - max} more` : shown;
 }
 
 // One line: what each form matched, then what that selected, counted against what actually ran.
@@ -340,15 +382,18 @@ function formatSelection(
     );
   }
   const selected = selection.storyCount;
+  const ran = (result.storyIds ?? []).filter((id) => ranStoryIds.has(id)).length;
   if (parts.length === 0) {
-    // `stories` alone: the ids say what was selected, and the verdict counts what ran.
-    return undefined;
+    // `stories` alone: the ids say what was selected; only a gap needs a line.
+    const count = selected ?? result.storyIds?.length;
+    return count !== undefined && ran < count
+      ? `Selected ${pluralize(count, 'story', 'stories')}${ranNote(result, ran, count)}.`
+      : undefined;
   }
   if (selected === undefined) {
     return `${parts.join('; ')}: selected every story.`;
   }
-  const ran = (result.storyIds ?? []).filter((id) => ranStoryIds.has(id)).length;
-  return `${parts.join('; ')}: selected ${pluralize(selected, 'story', 'stories')}${ranNote(ran, selected, result.unhandledErrors.length)}.`;
+  return `${parts.join('; ')}: selected ${pluralize(selected, 'story', 'stories')}${ranNote(result, ran, selected)}.`;
 }
 
 const A11Y_GUIDANCE =
@@ -413,9 +458,13 @@ function formatResultSection(
   const testFailureParts = (Object.keys(FAILURE_LABELS) as (keyof TestRunFailureCounts)[])
     .filter((key) => failures[key] > 0)
     .map((key) => FAILURE_LABELS[key](failures[key]));
+  const unexplained = storiesNotRun(result).unexplained.length;
   const failureParts = [
     ...(notFound.length > 0 ? [`${pluralize(notFound.length, 'argument')} not used`] : []),
     ...testFailureParts,
+    ...(unexplained > 0
+      ? [`${pluralize(unexplained, 'selected story', 'selected stories')} did not run`]
+      : []),
   ];
   const passed = result.componentTestCount.success;
   const verdict =
@@ -426,14 +475,7 @@ function formatResultSection(
         : `Passed: ${pluralize(passed, 'component test')} passed.`;
 
   // Skipped tests are reported too, as `status-value:unknown`; only a verdict means a story ran.
-  const ranStoryIds = new Set(
-    result.componentTestStatuses
-      .filter(
-        (status) =>
-          isPassing(status) || isFailing(status) || status.value === 'status-value:warning'
-      )
-      .map((status) => status.storyId)
-  );
+  const ranStoryIds = ranStoryIdsOf(result);
   const lines = [
     ...[selection && formatSelection(selection, ranStoryIds, result)].filter(
       (line): line is string => Boolean(line)

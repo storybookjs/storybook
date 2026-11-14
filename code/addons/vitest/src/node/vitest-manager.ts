@@ -42,6 +42,20 @@ export const DOUBLE_SPACES = '  ';
 export const toModuleId = (importPath: string) => path.join(process.cwd(), importPath);
 const getTestName = (name: string) => `${name}${DOUBLE_SPACES}`;
 
+/**
+ * The names a story's test can have, as one regex group: its name, and its export name (see
+ * `buildStoryTestNamePattern`).
+ */
+const testNames = (
+  story: Pick<StoryIndexEntry, 'name' | 'exportName'>,
+  toTestName = (name: string) => name
+) => {
+  const names = [
+    ...new Set([story.name, story.exportName].filter((name): name is string => !!name)),
+  ].map((name) => escapeRegExp(toTestName(name)));
+  return names.length === 1 ? names[0] : `(?:${names.join('|')})`;
+};
+
 export class VitestManager {
   vitest: Vitest | null = null;
 
@@ -267,6 +281,12 @@ export class VitestManager {
    * - Component entry (has child stories/tests): match the whole describe block prefix
    * - Story-test entry (has parent): match "parent describe + test name" exactly
    * - Regular story entry: match the story name exactly
+   *
+   * A story's test is named after its name where the Vitest transform can read that name from the
+   * source (a CSF object or factory with `name`, or the name derived from the export), and after
+   * its export name where it cannot: a story exported as `export { X as Y }`, which is how Svelte
+   * CSF compiles `.stories.svelte` (the index has `Hover Shows Full Date`, the test
+   * `HoverShowsFullDate`). So a story matches either; the export name is unique in its file.
    */
   private buildStoryTestNamePattern(
     story: StoryIndexEntry,
@@ -276,7 +296,7 @@ export class VitestManager {
     const isParentStory = allStories.some((candidate) => story.id === candidate.parent);
 
     if (isParentStory) {
-      return `^${escapeRegExp(getTestName(story.name))}`;
+      return `^${testNames(story, getTestName)}`;
     }
 
     if (story.parent) {
@@ -285,10 +305,10 @@ export class VitestManager {
         throw new Error(`Parent story not found for story ${story.id}`);
       }
 
-      return `^${escapeRegExp(getTestName(parentStory.name))}${this.testNameSeparator}${escapeRegExp(story.name)}$`;
+      return `^${testNames(parentStory, getTestName)}${this.testNameSeparator}${escapeRegExp(story.name)}$`;
     }
 
-    return `^${escapeRegExp(story.name)}$`;
+    return `^${testNames(story)}$`;
   }
 
   /**
@@ -337,6 +357,9 @@ export class VitestManager {
   ) {
     const filteredTestSpecifications: TestSpecification[] = [];
     const filteredStoryIds: StoryId[] = [];
+    // Why a story stays out, for the run's report: a story counts as run when any project runs it.
+    const runStoryIds = new Set<StoryId>();
+    const inProjectStoryIds = new Set<StoryId>();
 
     const storiesByImportPath: Record<StoryIndexEntry['importPath'], StoryIndexEntry[]> = {};
 
@@ -355,6 +378,9 @@ export class VitestManager {
       const skip = env.__VITEST_SKIP_TAGS__?.split(',').filter(Boolean) ?? [];
 
       const storiesInTestSpecification = storiesByImportPath[testSpecification.moduleId] ?? [];
+      for (const story of storiesInTestSpecification) {
+        inProjectStoryIds.add(story.id);
+      }
 
       const filteredStories = storiesInTestSpecification.filter((story) => {
         if (include.length && !include.some((tag) => story.tags?.includes(tag))) {
@@ -377,15 +403,26 @@ export class VitestManager {
       }
 
       filteredTestSpecifications.push(testSpecification);
-      filteredStoryIds.push(
-        ...filteredStories
-          // Don't count skipped stories, because StorybookReporter doesn't include them either
-          .filter((story) => !skip.some((tag) => story.tags?.includes(tag)))
-          .map((story) => story.id)
-      );
+      const runStories = filteredStories
+        // Don't count skipped stories, because StorybookReporter doesn't include them either
+        .filter((story) => !skip.some((tag) => story.tags?.includes(tag)))
+        .map((story) => story.id);
+      filteredStoryIds.push(...runStories);
+      for (const id of runStories) {
+        runStoryIds.add(id);
+      }
     }
 
-    return { filteredTestSpecifications, filteredStoryIds };
+    const excludedStoryIds = {
+      byTags: stories
+        .filter((story) => inProjectStoryIds.has(story.id) && !runStoryIds.has(story.id))
+        .map((story) => story.id),
+      notInProject: stories
+        .filter((story) => !inProjectStoryIds.has(story.id))
+        .map((story) => story.id),
+    };
+
+    return { filteredTestSpecifications, filteredStoryIds, excludedStoryIds };
   }
 
   private getCurrentRunConfig() {
@@ -428,16 +465,16 @@ export class VitestManager {
       }
     }
 
-    const { filteredTestSpecifications, filteredStoryIds } = this.filterTestSpecifications(
-      testSpecifications,
-      filteredStories
-    );
+    const { filteredTestSpecifications, filteredStoryIds, excludedStoryIds } =
+      this.filterTestSpecifications(testSpecifications, filteredStories);
 
     this.testManager.store.setState((s) => ({
       ...s,
       currentRun: {
         ...s.currentRun,
         totalTestCount: filteredStoryIds.length,
+        // Only a focused run reports what it left out of its selection.
+        excludedStoryIds: runPayload.storyIds?.length ? excludedStoryIds : undefined,
       },
     }));
 

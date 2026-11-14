@@ -16,7 +16,7 @@ import {
   type ToolsetTelemetryReport,
 } from 'storybook/open-service';
 
-import { countTestRunFailures, formatTestRun, summarizeTestRun } from './format.ts';
+import { countTestRunFailures, formatTestRun, storiesNotRun, summarizeTestRun } from './format.ts';
 import { createAsyncQueue, runStoryTests, type TestChannel } from './run.ts';
 
 const errorLikeSchema: v.GenericSchema = v.object({
@@ -56,6 +56,9 @@ const testRunResultSchema = v.object({
   reports: v.record(v.string(), v.array(v.any())),
   totalTestCount: v.optional(v.number()),
   storyIds: v.optional(v.array(v.string())),
+  excludedStoryIds: v.optional(
+    v.object({ byTags: v.array(v.string()), notInProject: v.array(v.string()) })
+  ),
   startedAt: v.optional(v.number()),
   finishedAt: v.optional(v.number()),
   unhandledErrors: v.array(v.any()),
@@ -284,7 +287,9 @@ function isFailedRun(data: TestRunData): data is TestRunFailureData {
     case 'completed':
       return (
         Object.values(countTestRunFailures(data.result, data.a11y)).some((count) => count > 0) ||
-        (data.notFound?.length ?? 0) > 0
+        (data.notFound?.length ?? 0) > 0 ||
+        // A selected story that did not run for a reason Storybook cannot tell is not a pass.
+        storiesNotRun(data.result).unexplained.length > 0
       );
     case 'no-stories':
       // A filter or id that matched nothing fails, as in Vitest; `changed` affecting nothing passes.

@@ -1,57 +1,50 @@
-/**
- * Sandboxed shells, such as the ones coding agents run commands in, often refuse to open ports or to
- * connect to localhost. The operating system then fails `listen` or `connect` with `EPERM` (or
- * `EACCES`), which no code change can fix. Every command that meets such an error says so in the
- * same words, so an agent asks to re-run the command with network access instead of editing code
- * or starting a second Storybook.
- */
-
-/** What the environment blocked. */
-export type BlockedNetworkOperation = 'listen' | 'connect';
+// A sandboxed shell, such as a coding agent's, fails `listen` and `connect` with `EPERM`. Every
+// command reports that in the same words, so an agent asks for network access instead of editing
+// code or starting a second Storybook.
 
 export type BlockedNetwork = {
-  operation: BlockedNetworkOperation;
+  operation: 'listen' | 'connect';
+  code: 'EPERM' | 'EACCES';
   /** The system error in one line, for example `listen EPERM: operation not permitted ::1:63315`. */
   detail: string;
 };
 
-const BLOCKED_CODES = new Set(['EPERM', 'EACCES']);
+// A serialized error keeps only its message, such as `listen EPERM: operation not permitted
+// ::1:63315` or `connect EPERM 127.0.0.1:6006 - Local (0.0.0.0:0)`. The port keeps out Unix
+// sockets, which fail with the same codes for file permissions.
+const BLOCKED_MESSAGE = /\b(listen|connect) (EPERM|EACCES)\b[^\n]*?:\d+\b[^\n]*/;
 
-// Node spells these errors `<syscall> <code>`, as in `listen EPERM: operation not permitted ::1:63315`
-// or `connect EPERM 127.0.0.1:6006 - Local (0.0.0.0:0)`. The message is all that survives an error
-// serialized over a channel.
-const BLOCKED_MESSAGE = /\b(listen|connect) (EPERM|EACCES)\b[^\n]*/;
+function isBlockedCode(code: unknown): code is BlockedNetwork['code'] {
+  return code === 'EPERM' || code === 'EACCES';
+}
 
 /**
- * Recognizes an error that means the environment does not allow opening a port or connecting to
- * one, from its `syscall` and `code` or, for an error serialized without them, from its message.
- * Looks through `cause` chains and aggregate errors (a connect to `localhost` tries every address).
+ * Recognize an error that means the operating system refused to open or connect to a TCP port,
+ * also when it is a `cause`, inside an `AggregateError`, or serialized to its message.
  */
 export function detectBlockedNetwork(error: unknown, depth = 0): BlockedNetwork | undefined {
   if (error == null || typeof error !== 'object' || depth > 5) {
     return undefined;
   }
-  const { syscall, code, message, cause, errors } = error as {
-    syscall?: unknown;
-    code?: unknown;
-    message?: unknown;
-    cause?: unknown;
-    errors?: unknown;
-  };
+  const { syscall, code, port, message, cause, errors } = error as Record<string, unknown>;
+  const fromMessage = typeof message === 'string' ? BLOCKED_MESSAGE.exec(message) : null;
   if (
     (syscall === 'listen' || syscall === 'connect') &&
-    typeof code === 'string' &&
-    BLOCKED_CODES.has(code)
+    isBlockedCode(code) &&
+    typeof port === 'number'
   ) {
-    const fromMessage =
-      typeof message === 'string' ? BLOCKED_MESSAGE.exec(message)?.[0] : undefined;
-    return { operation: syscall, detail: (fromMessage ?? `${syscall} ${code}`).trim() };
+    return {
+      operation: syscall,
+      code,
+      detail: fromMessage?.[0].trim() ?? `${syscall} ${code} port ${port}`,
+    };
   }
-  if (typeof message === 'string') {
-    const match = BLOCKED_MESSAGE.exec(message);
-    if (match) {
-      return { operation: match[1] as BlockedNetworkOperation, detail: match[0].trim() };
-    }
+  if (fromMessage) {
+    return {
+      operation: fromMessage[1] as BlockedNetwork['operation'],
+      code: fromMessage[2] as BlockedNetwork['code'],
+      detail: fromMessage[0].trim(),
+    };
   }
   for (const nested of [cause, ...(Array.isArray(errors) ? errors : [])]) {
     const found = detectBlockedNetwork(nested, depth + 1);
@@ -62,14 +55,18 @@ export function detectBlockedNetwork(error: unknown, depth = 0): BlockedNetwork 
   return undefined;
 }
 
-/** Why the error is the environment's, in the words every command uses. */
-export const BLOCKED_NETWORK_CAUSE: Record<BlockedNetworkOperation, string> = {
-  listen:
-    "This environment does not allow listening on network ports, as sandboxed shells such as a coding agent's sandbox often do. It is not caused by the code or the stories.",
-  connect:
-    "This environment does not allow connections to localhost, as sandboxed shells such as a coding agent's sandbox often do. It is not caused by the code or the stories.",
-};
+const NOT_THE_CODE = 'It is not caused by the code or the stories.';
 
-/** What to do about it, in the words every command uses. */
+/** Say, in the words every command uses, that the environment refused the port. */
+export function describeBlockedNetwork({ operation, code }: BlockedNetwork): string {
+  if (code === 'EACCES') {
+    // Also what Windows answers for a port in a reserved range, and Unix for a port below 1024.
+    return `The operating system refused it, as it does in a sandboxed shell such as a coding agent's sandbox, and for a port that is reserved or needs administrator rights. ${NOT_THE_CODE}`;
+  }
+  const what = operation === 'listen' ? 'listening on network ports' : 'connections to localhost';
+  return `This environment does not allow ${what}, as sandboxed shells such as a coding agent's sandbox often do. ${NOT_THE_CODE}`;
+}
+
+/** What to do about a refused port, in the words every command uses. */
 export const BLOCKED_NETWORK_REMEDY =
   'Run this same command again with network access: for a coding agent, that means outside its sandbox (ask the user to approve that if needed).';

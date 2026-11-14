@@ -7,7 +7,6 @@ import { logger } from 'storybook/internal/node-logger';
 import type { ToolsetMethodReport } from '../../shared/open-service/toolset-definition.ts';
 import { parseToolsetMethodId, toCliMethodName } from '../../shared/open-service/toolset-names.ts';
 import type { StorybookInstanceRecord } from './instances/types.ts';
-import { attachFailureFromFallback } from './sdk/attach-messages.ts';
 import {
   attachGateReasonFromError,
   createTools,
@@ -248,8 +247,7 @@ export async function runToolsCommand(
       requestedMode: tools.requestedMode,
       attachMode: tools.mode,
       host: tools.host,
-      // A command that requires the dev server already says why attaching failed, and no fallback
-      // happened.
+      // Such a command reports the attach error as its result, and nothing fell back.
       fallbackNotice:
         dispatched.outcome.kind === 'intercept' &&
         dispatched.outcome.reason === 'requires-dev-server'
@@ -349,12 +347,11 @@ async function dispatchTools(
   }
 
   if (tools.mode === 'local' && method.requiresDevServer) {
-    // Attach failed for a reason worth reporting (a sandbox that blocks localhost, for example):
-    // that reason is the answer, and this command cannot fall back to anything.
-    if (tools.fallbackNotice) {
+    // This command cannot fall back, so why attaching failed is its answer.
+    if (tools.attachFailure) {
       return result({
         exitCode: 1,
-        output: `\`${commandPath}\` requires a running Storybook dev server, and could not attach to the one for this project. ${attachFailureFromFallback(tools.fallbackNotice)}`,
+        output: `\`${commandPath}\` requires a running Storybook dev server, and could not attach to the one for this project. ${tools.attachFailure}`,
         outcome: { kind: 'intercept', reason: 'requires-dev-server' },
       });
     }
@@ -485,10 +482,6 @@ function formatRequiresDevServer(
   if (discovery.currentRecord && requestedMode === 'local') {
     return `Found your Storybook running at ${discovery.currentRecord.url}, but \`${commandPath}\` cannot run from a local tools host. Re-run without \`--no-attach\` to attach to that instance.`;
   }
-  if (discovery.currentRecord) {
-    return `Found your Storybook running at ${discovery.currentRecord.url}, but \`${commandPath}\` could not attach to it. Start or restart that Storybook, then re-run this command.`;
-  }
-
   const lines = [
     `\`${commandPath}\` requires a running Storybook dev server, and none was found for this project. Start it first (for example \`npm run storybook\`), then re-run this command.`,
   ];

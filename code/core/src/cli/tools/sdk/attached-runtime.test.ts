@@ -403,8 +403,8 @@ describe('bootstrapAttachedRuntime', () => {
       isProcessAlive: () => true,
     });
     const failure = bootstrapAttachedRuntime({ cwd: '/repo' }, alive.deps);
-    await expect(failure).rejects.toThrow('is still running, but it did not accept the connection');
-    await expect(failure).rejects.not.toThrow('no longer running');
+    await expect(failure).rejects.toThrow('still exists, but it did not accept the connection');
+    await expect(failure).rejects.not.toThrow('is no longer running. Start it again');
   });
 
   it('names the environment when a sandbox blocks the connection to a running instance', async () => {

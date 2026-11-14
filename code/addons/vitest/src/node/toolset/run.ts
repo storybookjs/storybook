@@ -2,8 +2,8 @@ import { existsSync } from 'node:fs';
 
 import type { ChannelLike } from 'storybook/internal/channels';
 import {
-  BLOCKED_NETWORK_CAUSE,
   BLOCKED_NETWORK_REMEDY,
+  describeBlockedNetwork,
   detectBlockedNetwork,
   type BlockedNetwork,
 } from 'storybook/internal/common';
@@ -153,22 +153,18 @@ export function triggerTestRun({
   });
 }
 
-/**
- * A sandboxed shell that refuses ports stops Vitest before any test runs, which the run reports as
- * an unhandled error. Read as a test failure, that sends an agent to edit code; it is the
- * environment, so the run fails with the reason and the way out instead.
- */
+// A sandbox that refuses ports stops Vitest before any test runs. Reported as an unhandled error,
+// that reads as a test failure and sends an agent to edit code.
 function blockedNetworkError(blocked: BlockedNetwork): TestRunOutput {
   const what = blocked.operation === 'listen' ? 'open a local port' : 'connect to localhost';
   return {
     status: 'error',
     error: {
-      message: `The tests did not run: the test runner could not ${what} (\`${blocked.detail}\`). ${BLOCKED_NETWORK_CAUSE[blocked.operation]} ${BLOCKED_NETWORK_REMEDY}`,
+      message: `The tests did not run: the test runner could not ${what} (\`${blocked.detail}\`). ${describeBlockedNetwork(blocked)} ${BLOCKED_NETWORK_REMEDY}`,
     },
   };
 }
 
-/** The blocked port behind a run that produced no test result, if that is what stopped it. */
 function blockedNetworkInRun(result: TestRunResult): BlockedNetwork | undefined {
   if (result.componentTestCount.success + result.componentTestCount.error > 0) {
     return undefined;
@@ -341,10 +337,6 @@ export async function runStoryTests({
       timeoutMs,
     });
   } catch (error) {
-    const blocked = detectBlockedNetwork(error);
-    if (blocked) {
-      return blockedNetworkError(blocked);
-    }
     return {
       status: 'error',
       error: {

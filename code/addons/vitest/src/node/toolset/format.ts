@@ -125,17 +125,18 @@ export function summarizeTestRun(result: TestRunResult, a11y: boolean): TestRunS
 }
 
 const STACK_FRAME = /^\s+at\s/;
-// Frames an agent cannot act on: installed packages (the Vite deps cache lives under
-// `node_modules/.vite`), Node itself, and Vitest's browser runner.
+// A frame in the project's own code has a `:line:column` location outside installed packages (the
+// Vite deps cache lives under `node_modules/.vite`), Node and Vitest's browser runner.
+const LOCATED_FRAME = /:\d+:\d+\)?\s*$/;
 const FOREIGN_FRAME =
-  /[\\/]node_modules[\\/]|[\\/]\.vite[\\/]|\(node:|\bat node:|__vitest_browser__|__vitest__/;
+  /[\\/]node_modules[\\/]|[\\/]\.vite[\\/]|\/@(?:vite|id)\/|\(node:|\bat node:|__vitest_browser__|__vitest__/;
 const KEPT_FRAMES = 3;
 
-/**
- * Keeps the first stack frames that point into the project's own files and drops the rest, which
- * are long traces through installed packages and the Vite deps cache. A trace with no such frame
- * keeps its first one, so the agent still sees where the error came from.
- */
+function isOwnFrame(frame: string): boolean {
+  return LOCATED_FRAME.test(frame) && !FOREIGN_FRAME.test(frame);
+}
+
+// Keeps the first frames in the project's own files, or the first frame when there is none.
 export function trimStackTrace(text: string): string {
   const lines = text.split('\n');
   const output: string[] = [];
@@ -150,7 +151,7 @@ export function trimStackTrace(text: string): string {
       end += 1;
     }
     const frames = lines.slice(start, end);
-    const own = frames.filter((frame) => !FOREIGN_FRAME.test(frame));
+    const own = frames.filter(isOwnFrame);
     const kept = (own.length > 0 ? own : frames).slice(0, KEPT_FRAMES);
     output.push(...kept);
     if (frames.length > kept.length) {

@@ -790,6 +790,8 @@ Fix what fails and run again, changing only what each failure needs. Do not fini
               'status-value:error',
               [
                 'TypeError: Cannot read properties of undefined',
+                '    at new Promise (<anonymous>)',
+                '    at async Promise.all (index 0)',
                 '    at http://localhost:63315/node_modules/.vite/deps/react-dom_client.js?v=1:100:5',
                 '    at Button (http://localhost:63315/src/Button.tsx:12:3)',
                 '    at http://localhost:63315/node_modules/.vite/deps/react-dom_client.js?v=1:200:9',
@@ -809,7 +811,7 @@ Fix what fails and run again, changing only what each failure needs. Do not fini
 TypeError: Cannot read properties of undefined
     at Button (http://localhost:63315/src/Button.tsx:12:3)
     at Object.play (http://localhost:63315/src/Button.stories.tsx:20:7)
-    … 4 more frames omitted`);
+    … 6 more frames omitted`);
     });
 
     it('passes a run whose accessibility violations are only warnings, and says so', async () => {

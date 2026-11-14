@@ -107,7 +107,7 @@ describe('attach failure messages', () => {
 
   it('does not call a running Storybook stale when it refuses the connection', () => {
     expect(formatConnectionFailed(other, { alive: true })).toMatchInlineSnapshot(
-      `"Could not connect to the Storybook at http://localhost:6006. Its process (11) is still running, but it did not accept the connection; it may still be starting, or it may have stopped responding. Retry in a moment, and if it still fails, restart that Storybook (for example \`npm run storybook\`)."`
+      `"Could not connect to the Storybook at http://localhost:6006. A process with its PID (11) still exists, but it did not accept the connection: Storybook may still be starting, or it stopped responding. Retry in a moment; if that Storybook is no longer running, start it again (for example \`npm run storybook\`)."`
     );
   });
 
@@ -115,7 +115,7 @@ describe('attach failure messages', () => {
     expect(
       formatConnectionFailed(other, {
         alive: true,
-        blocked: { operation: 'connect', detail: 'connect EPERM 127.0.0.1:6006' },
+        blocked: { operation: 'connect', code: 'EPERM', detail: 'connect EPERM 127.0.0.1:6006' },
       })
     ).toMatchInlineSnapshot(
       `"Could not connect to the Storybook at http://localhost:6006. That Storybook is running (process 11), so do not start another one: the connection was blocked (\`connect EPERM 127.0.0.1:6006\`). This environment does not allow connections to localhost, as sandboxed shells such as a coding agent's sandbox often do. It is not caused by the code or the stories. Run this same command again with network access: for a coding agent, that means outside its sandbox (ask the user to approve that if needed)."`
@@ -162,6 +162,20 @@ Falling back to loading this project's Storybook configuration."`
     );
   });
 
+  it('does not ask for a second run with network access when the command falls back', () => {
+    const blocked = formatConnectionFailed(other, {
+      alive: true,
+      blocked: { operation: 'connect', code: 'EPERM', detail: 'connect EPERM 127.0.0.1:6006' },
+    });
+
+    const notice = formatAttachFallback(blocked);
+
+    expect(blocked).toContain('Run this same command again with network access');
+    expect(notice).not.toContain('Run this same command again');
+    expect(notice).toContain('does not allow connections to localhost');
+    expect(notice).toContain("Falling back to loading this project's Storybook configuration.");
+  });
+
   it('never places a path in executable-command position anywhere in the message catalog', () => {
     // Matches a real path (absolute, home-relative, dot-relative, or Windows) directly after `cd `
     // or a `--flag`, i.e. a copy-pasteable command an agent could run with a constructed or
@@ -176,7 +190,7 @@ Falling back to loading this project's Storybook configuration."`
       formatConnectionFailed(other, { alive: false }),
       formatConnectionFailed(other, {
         alive: true,
-        blocked: { operation: 'connect', detail: 'connect EPERM 127.0.0.1:6006' },
+        blocked: { operation: 'connect', code: 'EPERM', detail: 'connect EPERM 127.0.0.1:6006' },
       }),
       formatInstallationMismatch(mismatch),
       formatUnknownInstallation(),

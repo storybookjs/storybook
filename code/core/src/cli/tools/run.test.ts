@@ -1155,6 +1155,7 @@ describe('attached tools', () => {
       'Could not connect to the Storybook at http://127.0.0.1:6006. That Storybook is running (process 42), so do not start another one: the connection was blocked (`connect EPERM 127.0.0.1:6006`).';
     const tools = makeLocalTools();
     tools.fallbackNotice = `${blocked}\n\nFalling back to loading this project's Storybook configuration.`;
+    tools.attachFailure = blocked;
     tools.requestedMode = 'auto';
     tools.fallbackReason = 'connection-failed';
     const discoverInstance = vi.fn(async () => ({ currentRecord: RECORD, records: [RECORD] }));

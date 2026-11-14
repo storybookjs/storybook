@@ -118,15 +118,9 @@ function waitUntilOpen(socket: WebSocket): Promise<void> {
       resolve();
       return;
     }
-    const fail = (reason?: string, cause?: Error) => {
-      const error = new StorybookDevServerDisconnectedError({ reason });
-      // The socket error's `code` and `syscall` tell a refused connection from one the environment
-      // blocked, so attach can say which it was.
-      if (cause) {
-        error.cause = cause;
-      }
-      reject(error);
-    };
+    // The socket error's `code` tells a refused connection from one the environment blocked.
+    const fail = (reason?: string, cause?: Error) =>
+      reject(new StorybookDevServerDisconnectedError({ reason, ...(cause ? { cause } : {}) }));
     if (socket.readyState === WebSocket.CLOSED || socket.readyState === WebSocket.CLOSING) {
       fail('WebSocket closed before the Storybook channel opened');
       return;

@@ -113,6 +113,74 @@ EscapeWithQueryStaysInSearch.play = async ({ canvasElement }) => {
   await waitFor(() => expect(escapeAbove).toHaveBeenCalledOnce());
 };
 
+const selectStory = fn().mockName('selectStory');
+
+// A filter (a tag, for example) hides the BuildNotification component: it is in `index` but not in
+// `filteredIndex`. The user opened one of its stories before turning the filter on.
+const hiddenComponentId = 'emails-buildnotification';
+const filteredData = {
+  [refId]: {
+    ...data[refId],
+    filteredIndex: Object.fromEntries(
+      Object.entries(index).filter(([id]) => !id.startsWith(hiddenComponentId))
+    ),
+  },
+};
+
+/**
+ * "Recently opened" ignores the filters, so a filter cannot empty it, and selecting an item opens
+ * it. The search results still follow the filters, as the tree does.
+ */
+export const RecentlyOpenedIgnoresFilters: StoryFn = () => (
+  <Search
+    dataset={{ hash: filteredData, entries: Object.entries(filteredData) }}
+    getLastViewed={() => [{ storyId: `${hiddenComponentId}--with-changes`, refId }]}
+  >
+    {({ query, results, closeMenu, getMenuProps, getItemProps, highlightedIndex }) => (
+      <SearchResults
+        query={query}
+        results={results}
+        closeMenu={closeMenu}
+        getMenuProps={getMenuProps}
+        getItemProps={getItemProps}
+        highlightedIndex={highlightedIndex}
+      />
+    )}
+  </Search>
+);
+RecentlyOpenedIgnoresFilters.decorators = [
+  (storyFn) => (
+    <ManagerContext.Provider
+      value={
+        {
+          api: {
+            getShortcutKeys: () => ({ search: ['/'] }),
+            selectStory,
+            resolveStory: () => undefined,
+            emit: () => {},
+          } as unknown as API,
+        } as any
+      }
+    >
+      {storyFn()}
+    </ManagerContext.Provider>
+  ),
+];
+RecentlyOpenedIgnoresFilters.play = async ({ canvasElement }) => {
+  selectStory.mockClear();
+  const canvas = within(canvasElement);
+  const input = canvas.getByRole('searchbox');
+
+  await userEvent.click(input);
+  await userEvent.click(await canvas.findByRole('option', { name: /BuildNotification/ }));
+  await waitFor(() => expect(selectStory).toHaveBeenCalledOnce());
+  expect(selectStory.mock.calls[0][0]).toBe(hiddenComponentId);
+
+  await userEvent.type(input, 'Notification');
+  await canvas.findByRole('option', { name: /CommentNotification/ });
+  expect(canvas.queryByRole('option', { name: /BuildNotification/ })).not.toBeInTheDocument();
+};
+
 export const ShortcutsDisabled: StoryFn = () => (
   <Search {...baseProps} enableShortcuts={false}>
     {() => null}

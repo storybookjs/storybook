@@ -484,6 +484,35 @@ export const Searching: Story = {
   },
 };
 
+// A filter (a tag, for example) hides Child A2, the component of the current story.
+const hiddenComponentId = 'root-1-child-a2';
+const indexWithoutChildA2 = Object.fromEntries(
+  Object.entries(index)
+    .filter(([id]) => !id.startsWith(hiddenComponentId))
+    .map(([id, entry]): [string, IndexHash[string]] => [
+      id,
+      'children' in entry && entry.children
+        ? { ...entry, children: entry.children.filter((c) => !c.startsWith(hiddenComponentId)) }
+        : entry,
+    ])
+);
+
+/**
+ * The tree follows the filters, but "Recently opened" does not: it still lists the current story's
+ * component, which the filters hide.
+ */
+export const RecentlyOpenedIgnoresFilters: Story = {
+  args: { filteredIndex: indexWithoutChildA2 },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await waitFor(() => expect(canvasElement.querySelector('[data-item-id]')).not.toBeNull());
+    expect(canvasElement.querySelector(`[data-item-id="${hiddenComponentId}"]`)).toBeNull();
+
+    await userEvent.click(await canvas.findByRole('searchbox'));
+    await expect(await canvas.findByRole('option', { name: /Child A2/ })).toBeVisible();
+  },
+};
+
 export const Bottom: Story = {
   beforeEach: () => {
     internal_fullStatusStore.set([

@@ -25,7 +25,8 @@ const Sidebar = React.memo(function Sideber({ onMenuClick }: SidebarProps) {
       // FIXME: This is the actual `index.json` index where the `index` below
       // is actually the stories hash. We should fix this up and make it consistent.
       internal_index,
-      filteredIndex: index,
+      index,
+      filteredIndex,
       indexError,
       previewInitialized,
       refs,
@@ -40,6 +41,7 @@ const Sidebar = React.memo(function Sideber({ onMenuClick }: SidebarProps) {
       url,
       indexJson: internal_index,
       index,
+      filteredIndex,
       indexError,
       previewInitialized,
       refs,

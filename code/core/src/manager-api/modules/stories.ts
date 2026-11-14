@@ -692,8 +692,10 @@ export const init: ModuleFn<SubAPI, SubState> = ({
         }
 
         if (!gotoStory(entry)) {
-          // If the entry is not a story or docs, find the first descendant entry that is
-          gotoStory(api.findLeafEntry(filteredHash, entry.id));
+          // If the entry is not a story or docs, find the first descendant entry that is. Prefer
+          // one the filters show; when they hide them all, as for a recently opened component, use
+          // the first one.
+          gotoStory(api.findLeafEntry(filteredHash, entry.id) ?? api.findLeafEntry(hash, entry.id));
         }
       } else if (!titleOrId) {
         // Navigate to a named story/docs within the current component (i.e. "kind")

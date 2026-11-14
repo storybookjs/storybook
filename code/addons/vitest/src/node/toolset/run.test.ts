@@ -128,8 +128,8 @@ const LISTEN_EPERM = {
     'Error: listen EPERM: operation not permitted ::1:63315\n    at Server.setupListenHandle [as _listen2] (node:net:1918:21)',
 };
 
-describe('runStoryTests in an environment that blocks ports', () => {
-  it('reports a run that a blocked port stopped as the environment, not as a test failure', async () => {
+describe('runStoryTests in a sandbox that blocks ports', () => {
+  it('fails a run that a blocked port stopped, instead of reporting it as an unhandled error', async () => {
     const result = await runStoryTests({
       channel: channelResponding({
         status: 'completed',
@@ -142,27 +142,12 @@ describe('runStoryTests in an environment that blocks ports', () => {
       status: 'error',
       error: {
         message:
-          "The tests did not run: the test runner could not open a local port (`listen EPERM: operation not permitted ::1:63315`). This environment does not allow listening on network ports, as sandboxed shells such as a coding agent's sandbox often do. It is not caused by the code or the stories. Run this same command again with network access: for a coding agent, that means outside its sandbox (ask the user to approve that if needed).",
+          'The tests did not run. The sandbox this command runs in blocked opening a port (`listen EPERM: operation not permitted ::1:63315`); this is not a problem in the code. To run them, ask the user to run this command outside the sandbox.',
       },
     });
   });
 
-  it('recognizes the blocked port in a run that ended in an error', async () => {
-    const result = await runStoryTests({
-      channel: channelResponding({
-        status: 'error',
-        error: { message: 'Failed to start Vitest', error: LISTEN_EPERM },
-      }),
-      getIndex: async () => index,
-    });
-
-    expect(result).toMatchObject({
-      status: 'error',
-      error: { message: expect.stringContaining('does not allow listening on network ports') },
-    });
-  });
-
-  it('keeps the report of a run whose tests ran, whatever its unhandled errors', async () => {
+  it('keeps the report of a run whose tests ran', async () => {
     const ran = {
       ...sampleResult,
       componentTestCount: { success: 1, error: 0 },

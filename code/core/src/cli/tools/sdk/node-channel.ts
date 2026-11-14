@@ -118,9 +118,9 @@ function waitUntilOpen(socket: WebSocket): Promise<void> {
       resolve();
       return;
     }
-    // The socket error's `code` tells a refused connection from one the environment blocked.
+    // The socket error's `code` tells a refused connection from one a sandbox blocked.
     const fail = (reason?: string, cause?: Error) =>
-      reject(new StorybookDevServerDisconnectedError({ reason, ...(cause ? { cause } : {}) }));
+      reject(new StorybookDevServerDisconnectedError({ reason, cause }));
     if (socket.readyState === WebSocket.CLOSED || socket.readyState === WebSocket.CLOSING) {
       fail('WebSocket closed before the Storybook channel opened');
       return;

@@ -1150,29 +1150,6 @@ describe('attached tools', () => {
     expect(result.output).not.toContain('Falling back');
   });
 
-  it('gives a command that requires the dev server the attach failure instead of a fallback', async () => {
-    const blocked =
-      'Could not connect to the Storybook at http://127.0.0.1:6006. That Storybook is running (process 42), so do not start another one: the connection was blocked (`connect EPERM 127.0.0.1:6006`).';
-    const tools = makeLocalTools();
-    tools.fallbackNotice = `${blocked}\n\nFalling back to loading this project's Storybook configuration.`;
-    tools.attachFailure = blocked;
-    tools.requestedMode = 'auto';
-    tools.fallbackReason = 'connection-failed';
-    const discoverInstance = vi.fn(async () => ({ currentRecord: RECORD, records: [RECORD] }));
-    const { deps } = makeDeps({ createTools: vi.fn(async () => tools), discoverInstance });
-
-    const result = await run(['review', 'create', '--input', '{}'], deps);
-
-    expect(result.exitCode).toBe(1);
-    expect(result.outcome).toEqual({ kind: 'intercept', reason: 'requires-dev-server' });
-    expect(result.output).toBe(
-      `\`npx storybook tools review create\` requires a running Storybook dev server, and could not attach to the one for this project. ${blocked}`
-    );
-    expect(result.output).not.toContain('restart');
-    expect(result.fallbackNotice).toBeUndefined();
-    expect(discoverInstance).not.toHaveBeenCalled();
-  });
-
   it('maps catalog failures onto the command runner error contract', async () => {
     const { deps } = makeDeps({
       createTools: vi.fn(async () => ({

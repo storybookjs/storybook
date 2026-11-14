@@ -12,11 +12,12 @@ import type { ToolsetGetService } from '../../../shared/open-service/toolset-def
 import { getRegisteredToolsets } from '../../../shared/open-service/toolset-registry.ts';
 import { detectAgent } from '../../../telemetry/detect-agent.ts';
 import { detectBlockedNetwork } from '../../../common/utils/blocked-network.ts';
-import { isProcessAlive, readRegistry } from '../instances/registry.ts';
+import { readRegistry } from '../instances/registry.ts';
 import { selectInstances } from '../instances/resolve.ts';
 import { resolveStorybookConfigDir } from '../config-dir.ts';
 import type { StorybookInstanceRecord } from '../instances/types.ts';
 import {
+  formatConnectionBlocked,
   formatConnectionFailed,
   formatInstallationMismatch,
   formatNoInstance,
@@ -50,7 +51,6 @@ export type AttachedBootstrapResult = AttachedInProcessResult | AttachedSpawnRes
 
 export type AttachRuntimeDeps = {
   readRegistry?: typeof readRegistry;
-  isProcessAlive?: (pid: number) => boolean;
   createNodeChannel?: (options: {
     url: string;
     token: string;
@@ -145,10 +145,9 @@ export async function bootstrapAttachedRuntime(
     throw new AttachUnavailableError({
       reason: 'connection-failed',
       instances: [record],
-      remediation: formatConnectionFailed(record, {
-        ...(blocked ? { blocked } : {}),
-        alive: blocked ? true : (deps.isProcessAlive ?? isProcessAlive)(record.pid),
-      }),
+      remediation: blocked
+        ? formatConnectionBlocked(record, blocked)
+        : formatConnectionFailed(record),
     });
   }
 

@@ -113,8 +113,6 @@ type ToolsBase = {
   fallbackNotice?: string;
   /** Why `auto` loaded locally instead of attaching. */
   fallbackReason?: ToolsAttachGateReason;
-  /** The attach error behind `fallbackNotice`, for a caller that cannot use the local host. */
-  attachFailure?: string;
   /** Toolset registry and service accessor for an in-process host. Empty when this host is a child. */
   runtime: ToolsRuntime;
   describe(options?: ToolsDescribeOptions): Promise<ToolsetCatalog>;

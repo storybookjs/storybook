@@ -9,6 +9,7 @@ import type {
   LoadedPreset,
   PresetConfig,
   Presets,
+  StorybookConfig,
   StorybookConfigRaw,
 } from 'storybook/internal/types';
 
@@ -19,6 +20,7 @@ import { dedent } from 'ts-dedent';
 
 import type { ChannelLike } from '../channels/index.ts';
 import { importModule, safeResolveModule } from '../shared/utils/module.ts';
+import { getAddonNames } from './utils/get-addon-names.ts';
 import { getInterpretedFile } from './utils/interpret-files.ts';
 import { findStorybookVitestConfig } from './utils/storybook-vitest-config.ts';
 import { stripAbsNodeModulesPath } from './utils/strip-abs-node-modules-path.ts';
@@ -365,6 +367,47 @@ function presetsFromLoaded(
 const ADDON_VITEST = '@storybook/addon-vitest';
 
 /**
+ * The Vitest config that registers the `storybookTest` plugin for this Storybook strictly (inside
+ * the config dir, or with a `configDir` option that names it), when `@storybook/addon-vitest`
+ * resolves from the config dir. A loose match (a plugin that may run another Storybook) does not
+ * count.
+ */
+function findAddonVitestPluginConfig(configDir: string) {
+  const { configFile, loose } = findStorybookVitestConfig({ configDir });
+  if (!configFile || loose) {
+    return undefined;
+  }
+  const resolved = resolveAddonName(configDir, ADDON_VITEST, undefined);
+  return resolved ? { configFile, resolved } : undefined;
+}
+
+/**
+ * Whether the Storybook in `configDir` can run story tests through `@storybook/addon-vitest`
+ * without loading its presets: `main` lists the addon, or a Vite or Vitest config registers its
+ * plugin for this Storybook and the addon is installed (then {@link loadAllPresets} enables it).
+ *
+ * For callers that decide from the config alone, such as the test step of the `AGENTS.md`
+ * section. With loaded presets, `presets.apply('isAddonVitestEnabled', false)` is exact; this can
+ * miss an addon that `main` lists only through a preset of its own.
+ */
+export function isAddonVitestConfigured({
+  configDir,
+  mainConfig,
+}: {
+  configDir: string;
+  mainConfig: Pick<StorybookConfigRaw, 'addons'>;
+}): boolean {
+  try {
+    return (
+      getAddonNames(mainConfig as StorybookConfig).includes(ADDON_VITEST) ||
+      findAddonVitestPluginConfig(configDir) !== undefined
+    );
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Addons a project uses without listing them: `@storybook/addon-vitest` when a Vite or Vitest config
  * registers its `storybookTest` plugin for this Storybook (inside the config dir, or with a
  * `configDir` option that names it). Such a project runs its story tests through Vitest already;
@@ -382,18 +425,14 @@ export async function getImplicitAddons(
     if (build?.test?.disabledAddons?.some((name) => name.includes(ADDON_VITEST))) {
       return [];
     }
-    const { configFile, loose } = findStorybookVitestConfig({ configDir });
-    if (!configFile || loose) {
-      return [];
-    }
-    const resolved = resolveAddonName(configDir, ADDON_VITEST, undefined);
-    if (!resolved) {
+    const found = findAddonVitestPluginConfig(configDir);
+    if (!found) {
       return [];
     }
     logger.debug(
-      `Enabling ${ADDON_VITEST}: ${configFile} uses its Vitest plugin for this Storybook, though the main config does not list the addon.`
+      `Enabling ${ADDON_VITEST}: ${found.configFile} uses its Vitest plugin for this Storybook, though the main config does not list the addon.`
     );
-    return [resolved as PresetConfig];
+    return [found.resolved as PresetConfig];
   } catch {
     return [];
   }

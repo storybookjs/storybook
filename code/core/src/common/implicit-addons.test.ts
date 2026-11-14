@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { dirname, join } from 'pathe';
 
-import { getImplicitAddons, loadAllPresets } from './presets.ts';
+import { getImplicitAddons, isAddonVitestConfigured, loadAllPresets } from './presets.ts';
 
 // The shared setup stubs module loading; these tests load real presets from a temp project.
 vi.mock('../shared/utils/module.ts', async (importOriginal) => importOriginal());
@@ -140,5 +140,36 @@ describe('loadAllPresets', () => {
     });
 
     expect(await loadAddonVitestCount(true)).toBe(0);
+  });
+});
+
+describe('isAddonVitestConfigured', () => {
+  it('is true when main lists the addon', () => {
+    expect(
+      isAddonVitestConfigured({
+        configDir: configDir(),
+        mainConfig: { addons: ['@storybook/addon-vitest'] },
+      })
+    ).toBe(true);
+  });
+
+  // SB-2534 (GitButler): the plugin in vite.config.ts, main lists other addons only.
+  it('is true when a Vitest config uses the plugin for this Storybook', () => {
+    write({ 'vite.config.ts': PLUGIN_CONFIG });
+
+    expect(
+      isAddonVitestConfigured({
+        configDir: configDir(),
+        mainConfig: { addons: ['@storybook/addon-docs'] },
+      })
+    ).toBe(true);
+  });
+
+  it('is false when the addon is only installed', () => {
+    write({ 'vite.config.ts': 'export default {};' });
+
+    expect(isAddonVitestConfigured({ configDir: configDir(), mainConfig: { addons: [] } })).toBe(
+      false
+    );
   });
 });

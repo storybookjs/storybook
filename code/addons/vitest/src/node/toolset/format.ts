@@ -375,7 +375,11 @@ function formatNextSteps(
   if (notFound) {
     steps.push('Fix or leave out the arguments listed above, then run again.');
   }
-  if (testsFailed) {
+  if (testsFailed && result.depsReoptimized) {
+    steps.push(
+      'Vite pre-bundled new dependencies while these tests ran, so these failures may not be caused by the stories. Run the same command again before you change any code.'
+    );
+  } else if (testsFailed) {
     steps.push(
       'Fix what fails and run again, changing only what each failure needs. Do not finish with failing tests.'
     );

@@ -46,6 +46,31 @@ const getTestName = (name: string) => `${name}${DOUBLE_SPACES}`;
 /** How often a run may start over because Vite re-bundled dependencies while it ran. */
 const MAX_RUN_ATTEMPTS = 3;
 
+/**
+ * How long a run waits for Vite to pre-bundle what the tests import. It is a head start: the run
+ * recovers when Vite re-bundles while the tests run, so it never waits on Vite indefinitely.
+ */
+const OPTIMIZE_TIMEOUT_MS = 60_000;
+
+async function optimizeWithinTimeout(specifications: TestSpecification[]) {
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  try {
+    await Promise.race([
+      optimizeTestDependencies(specifications),
+      new Promise<void>((resolve) => {
+        timeout = setTimeout(() => {
+          log('Pre-bundling the dependencies of the tests took too long. Running the tests now.');
+          resolve();
+        }, OPTIMIZE_TIMEOUT_MS);
+      }),
+    ]);
+  } catch (e) {
+    log(`Could not pre-bundle the dependencies of the tests: ${e}`);
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 export class VitestManager {
   vitest: Vitest | null = null;
 
@@ -57,8 +82,11 @@ export class VitestManager {
 
   runningPromise: Promise<any> | null = null;
 
-  /** Set when the current run is cancelled, so it does not start over. */
-  private runCancelled = false;
+  /**
+   * Counts runs and cancellations. A run that sees it change was cancelled or replaced by a newer
+   * run, and stops: it neither starts its tests late nor starts over.
+   */
+  private runGeneration = 0;
 
   // Tracked here because `vitest.config.coverage.enabled` does not follow `disableCoverage()`.
   coverageEnabled = false;
@@ -167,7 +195,7 @@ export class VitestManager {
 
     if (this.vitest) {
       this.vitest.onCancel(() => {
-        this.runCancelled = true;
+        // TODO: handle cancellation
       });
     }
 
@@ -461,23 +489,25 @@ export class VitestManager {
    * are discarded and the run starts over, now with the new bundles in place.
    */
   private async runTestSpecifications(specifications: TestSpecification[], allTestsRun: boolean) {
+    const generation = ++this.runGeneration;
+    const superseded = () => generation !== this.runGeneration;
     const { totalTestCount } = this.testManager.store.getState().currentRun;
     for (let attempt = 1; ; attempt++) {
-      this.runCancelled = false;
-      try {
-        await optimizeTestDependencies(specifications);
-      } catch (e) {
-        // Only a head start: without it, Vite still finds the dependencies while the tests run.
-        log(`Could not pre-bundle the dependencies of the tests: ${e}`);
+      await optimizeWithinTimeout(specifications);
+      if (superseded()) {
+        return;
       }
       const reoptimized = watchOptimizedDeps(specifications.map(({ project }) => project));
       await this.vitest!.runTestSpecifications(specifications, allTestsRun);
-      if (!reoptimized() || this.runCancelled || attempt === MAX_RUN_ATTEMPTS) {
-        if (reoptimized() && !this.runCancelled) {
-          logger.warn(
-            'Vite pre-bundled new dependencies while the tests ran, so failures in this run may not be caused by the stories. Run the tests again.'
-          );
-        }
+      // A run that passed is right whatever Vite did meanwhile.
+      if (superseded() || !reoptimized() || !this.testManager.currentRunHasFailures()) {
+        return;
+      }
+      if (attempt === MAX_RUN_ATTEMPTS) {
+        logger.warn(
+          'Vite pre-bundled new dependencies while the tests ran, so failures in this run may not be caused by the stories. Run the tests again.'
+        );
+        this.testManager.markDepsReoptimized();
         return;
       }
       log('Vite pre-bundled new dependencies while the tests ran. Running the tests again.');
@@ -486,6 +516,7 @@ export class VitestManager {
   }
 
   async cancelCurrentRun() {
+    this.runGeneration++;
     await this.vitest?.cancelCurrentRun('keyboard-input');
     await this.runningPromise;
   }

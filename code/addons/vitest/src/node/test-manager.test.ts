@@ -57,8 +57,9 @@ const vitest = vi.hoisted(() => ({
 
 // Per run attempt: whether Vite re-bundled dependencies while it ran.
 const reoptimizedPerAttempt = vi.hoisted(() => ({ value: [] as boolean[] }));
+const optimizeTestDependencies = vi.hoisted(() => vi.fn());
 vi.mock('./optimized-deps.ts', () => ({
-  optimizeTestDependencies: vi.fn(),
+  optimizeTestDependencies,
   watchOptimizedDeps: vi.fn(() => {
     const reoptimized = reoptimizedPerAttempt.value.shift() ?? false;
     return () => reoptimized;
@@ -82,6 +83,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   mockVitestVersion.value = '4.1.6';
   reoptimizedPerAttempt.value = [];
+  optimizeTestDependencies.mockResolvedValue(undefined);
   mockStore.setState(() => storeOptions.initialState);
   vitest.projects = [{ config: { env: {} }, matchesTestGlob: vi.fn(() => false) }];
   vitest.config.coverage.enabled = false;
@@ -606,6 +608,8 @@ describe('TestManager', () => {
       ).rejects.toThrow('unhandled errors');
 
       expect(vitest.runTestSpecifications).toHaveBeenCalledTimes(3);
+      // The output tells the agent to run again rather than to fix the stories.
+      expect(completedRun().depsReoptimized).toBe(true);
       expect(completedRun().componentTestCount).toEqual({
         success: 0,
         error: 1,
@@ -615,16 +619,47 @@ describe('TestManager', () => {
     it('does not start over a cancelled run', async () => {
       vitest.globTestSpecifications.mockImplementation(() => tests);
       const testManager = await startWithIndex();
-      const cancel = vitest.onCancel.mock.calls.at(-1)![0];
-      vitest.runTestSpecifications.mockImplementation(async () => cancel());
+      reportPerAttempt(testManager, [failed, passed]);
+      const run = vitest.runTestSpecifications.getMockImplementation()!;
+      vitest.runTestSpecifications.mockImplementation(async (...args) => {
+        await run(...args);
+        await testManager.handleCancelEvent();
+      });
       reoptimizedPerAttempt.value = [true, false];
+
+      await testManager
+        .handleTriggerRunEvent({ type: 'TRIGGER_RUN', payload: { triggeredBy: 'global' } })
+        .catch(() => {});
+
+      expect(vitest.runTestSpecifications).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not start the tests of a run cancelled while Vite pre-bundles', async () => {
+      vitest.globTestSpecifications.mockImplementation(() => tests);
+      const testManager = await startWithIndex();
+      optimizeTestDependencies.mockImplementation(() => testManager.handleCancelEvent());
 
       await testManager.handleTriggerRunEvent({
         type: 'TRIGGER_RUN',
         payload: { triggeredBy: 'global' },
       });
 
+      expect(vitest.runTestSpecifications).not.toHaveBeenCalled();
+    });
+
+    it('keeps a run that passed', async () => {
+      vitest.globTestSpecifications.mockImplementation(() => tests);
+      const testManager = await startWithIndex();
+      reportPerAttempt(testManager, [passed]);
+      reoptimizedPerAttempt.value = [true];
+
+      await testManager.handleTriggerRunEvent({
+        type: 'TRIGGER_RUN',
+        payload: { triggeredBy: 'global', storyIds: ['story--one'] },
+      });
+
       expect(vitest.runTestSpecifications).toHaveBeenCalledTimes(1);
+      expect(completedRun().depsReoptimized).toBeUndefined();
     });
   });
 

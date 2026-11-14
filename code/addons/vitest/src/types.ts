@@ -54,6 +54,11 @@ export type CurrentRun = {
   startedAt: number | undefined;
   finishedAt: number | undefined;
   unhandledErrors: VitestError[];
+  /**
+   * Vite re-bundled dependencies while the last attempt of this run ran, so its failures may not
+   * be caused by the stories.
+   */
+  depsReoptimized?: boolean;
   coverageSummary:
     | {
         status: 'positive' | 'warning' | 'negative' | 'unknown';

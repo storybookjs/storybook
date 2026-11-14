@@ -53,7 +53,7 @@ ${v.ref('stories.preview')} --stories '[{"storyId":"<id>"}]'   # direct links to
 
 ${v.notes}${toolsetOff}
 ${v.cli ? `\n${DEV_SERVER}\n` : ''}
-${findStoriesSection(v, inputs)}
+${findStoriesSection(v, inputs, { forReview: true })}
 
 ## Create the review
 

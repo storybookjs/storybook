@@ -5,11 +5,12 @@ export type FindStoriesInputs = {
   moduleGraphSupported: boolean;
 };
 
-// How to get the story ids of a review, which has to cover every story a change affects. The tests
-// take files, so only `ui-review` needs story ids.
+// How to get story ids, for the skills that take them: `test-stories` and `ui-review`. Only a
+// review has to cover every story a change affects, so only `ui-review` gets those rules.
 export function findStoriesSection(
   v: SkillVocabulary,
-  { docsEnabled, moduleGraphSupported }: FindStoriesInputs
+  { docsEnabled, moduleGraphSupported }: FindStoriesInputs,
+  { forReview }: { forReview: boolean }
 ): string {
   const changed = v.name('stories.changed');
   const findByComponent = v.name('stories.findByComponent');
@@ -35,17 +36,21 @@ export function findStoriesSection(
       ? 'This project has no command that lists story ids.'
       : 'This Storybook has no tool that lists story ids.';
     // A review takes story ids only, and a story link ends with the id of its story.
-    const use = `Get the link of each story from ${v.name('stories.preview')}, which selects a story by its file and export: ${select}. The id follows \`/story/\` in the link.`;
+    const use = forReview
+      ? `Get the link of each story from ${v.name('stories.preview')}, which selects a story by its file and export: ${select}. The id follows \`/story/\` in the link.`
+      : `Select a story by its file and export instead: ${select}.`;
     return `## Find the stories
 
 ${none} ${use}`;
   }
   const several = commands.length > 1;
   const guidance = [
-    moduleGraphSupported &&
+    forReview &&
+      moduleGraphSupported &&
       `${v.Run} ${changed} after your last edit and before every review, also when you already know the ids of the stories you wrote: it adds the stories of other components that your change affects.${v.cli ? ' Run it in a command of its own and read its whole output, without `head` or `tail`.' : ''} The list covers your edits so far, so checks in between, such as a type check, need no new call.`,
     `Story ids come only from the ${v.output} of ${several ? `these ${v.commands}` : `this ${v.command}`}, so wait for it before you use an id. Never build one yourself from a file name, an export name, a title or memory.`,
-    moduleGraphSupported &&
+    forReview &&
+      moduleGraphSupported &&
       `When ${changed} leaves out a file you touched, pass that file to ${findByComponent}, or for a shared file (design token, theme, util, hook), which has no stories of its own, the components that use it. When ${findByComponent} reports stories hidden by \`maxDistance\`, ${v.cli ? 'rerun it' : 'call it again'} with a higher ${v.flag('maxDistance')}.`,
     `When ${several ? 'none of them finds' : 'it does not find'} a story for a component, it has no stories yet: say so, or write them.`,
   ]

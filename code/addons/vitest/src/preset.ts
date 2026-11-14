@@ -163,7 +163,9 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
     }));
   });
   store.subscribe('TEST_RUN_COMPLETED', async (event) => {
-    const { unhandledErrors, startedAt, finishedAt, ...currentRun } = event.payload;
+    // `excludedStoryIds` is for the run's own report; telemetry keeps the payload it had.
+    const { unhandledErrors, startedAt, finishedAt, excludedStoryIds, ...currentRun } =
+      event.payload;
     await telemetry('addon-test', () => ({
       ...currentRun,
       duration: (finishedAt ?? 0) - (startedAt ?? 0),

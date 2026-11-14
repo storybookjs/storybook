@@ -55,6 +55,9 @@ const testRunResultSchema = v.object({
   reports: v.record(v.string(), v.array(v.any())),
   totalTestCount: v.optional(v.number()),
   storyIds: v.optional(v.array(v.string())),
+  excludedStoryIds: v.optional(
+    v.object({ byTags: v.array(v.string()), notInProject: v.array(v.string()) })
+  ),
   startedAt: v.optional(v.number()),
   finishedAt: v.optional(v.number()),
   unhandledErrors: v.array(v.any()),

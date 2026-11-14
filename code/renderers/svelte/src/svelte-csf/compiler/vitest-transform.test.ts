@@ -51,6 +51,33 @@ async function transform(originalCode: string) {
   return typeof transformed === 'string' ? transformed : transformed.code;
 }
 
+// SB-2557: the index has a story's display name, the test its export name; a focused run in
+// addon-vitest matches either (`VitestManager.buildStoryTestNamePattern`).
+describe('vitestTransform test names of a stories file', () => {
+  it('names each test after the export of the story, not its display name', async () => {
+    const output = await transform(dedent`
+      <script module>
+        import { defineMeta } from '@storybook/svelte';
+        import Button from './Button.svelte';
+
+        const { Story } = defineMeta({ component: Button });
+      </script>
+
+      <Story name="Hover Shows Full Date" />
+
+      <Story name="Ünïcode & punctuation!" />
+
+      <Story name="Custom" exportName="MyExport" />
+    `);
+
+    expect([...output.matchAll(/_test\("([^"]*)"/g)].map(([, name]) => name)).toEqual([
+      'HoverShowsFullDate',
+      'ÜnïcodePunctuation',
+      'MyExport',
+    ]);
+  });
+});
+
 describe('vitestTransform of a CSF factories stories file', () => {
   it('tests the stories with the meta of the file', async () => {
     const output = await transform(dedent`

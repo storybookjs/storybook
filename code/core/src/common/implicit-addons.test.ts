@@ -9,11 +9,18 @@ import { getImplicitAddons, isAddonVitestConfigured, loadAllPresets } from './pr
 
 // The shared setup stubs module loading; these tests load real presets from a temp project.
 vi.mock('../shared/utils/module.ts', async (importOriginal) => importOriginal());
+// The temp project is the project root, so the search reaches its root config.
+vi.mock('./utils/paths.ts', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./utils/paths.ts')>()),
+  getProjectRoot: () => root,
+}));
 
 let root: string;
 
 beforeEach(() => {
   root = realpathSync(mkdtempSync(join(tmpdir(), 'sb-implicit-addons-')));
+  // Storybook runs from the package root, so a plugin without `configDir` runs `<root>/.storybook`.
+  vi.spyOn(process, 'cwd').mockReturnValue(root);
   write({
     'node_modules/@storybook/addon-vitest/package.json': JSON.stringify({
       name: '@storybook/addon-vitest',
@@ -28,6 +35,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  vi.restoreAllMocks();
   rmSync(root, { recursive: true, force: true });
 });
 
@@ -86,6 +94,16 @@ export default { plugins: [storybookTest({ configDir: 'packages/a/.storybook' })
     expect(await getImplicitAddons(join(root, 'packages/b/.storybook'))).toEqual([]);
   });
 
+  it('enables it for the package a monorepo root config names', async () => {
+    write({
+      'packages/b/.storybook/main.mjs': '',
+      'vitest.config.ts': `import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+export default { plugins: [storybookTest({ configDir: 'packages/b/.storybook' })] };`,
+    });
+
+    expect(await getImplicitAddons(join(root, 'packages/b/.storybook'))).toHaveLength(1);
+  });
+
   it('adds nothing when the addon is not installed', async () => {
     rmSync(join(root, 'node_modules'), { recursive: true });
     write({ 'vite.config.ts': PLUGIN_CONFIG });
@@ -93,12 +111,12 @@ export default { plugins: [storybookTest({ configDir: 'packages/a/.storybook' })
     expect(await getImplicitAddons(configDir())).toEqual([]);
   });
 
-  it('adds nothing when build.test.disabledAddons turns it off', async () => {
+  it('adds nothing when build.test.disabledAddons names it, as for a listed addon', async () => {
     write({ 'vite.config.ts': PLUGIN_CONFIG });
 
     expect(
       await getImplicitAddons(configDir(), {
-        test: { disabledAddons: ['@storybook/addon-vitest'] },
+        test: { disabledAddons: ['addon-vitest'] },
       })
     ).toEqual([]);
   });

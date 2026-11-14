@@ -20,7 +20,7 @@ import { dedent } from 'ts-dedent';
 
 import type { ChannelLike } from '../channels/index.ts';
 import { importModule, safeResolveModule } from '../shared/utils/module.ts';
-import { getAddonNames } from './utils/get-addon-names.ts';
+import { getAddonNames, normalizeAddonName } from './utils/get-addon-names.ts';
 import { getInterpretedFile } from './utils/interpret-files.ts';
 import { findStorybookVitestConfig } from './utils/storybook-vitest-config.ts';
 import { stripAbsNodeModulesPath } from './utils/strip-abs-node-modules-path.ts';
@@ -382,13 +382,14 @@ function findAddonVitestPluginConfig(configDir: string) {
 }
 
 /**
- * Whether the Storybook in `configDir` can run story tests through `@storybook/addon-vitest`
- * without loading its presets: `main` lists the addon, or a Vite or Vitest config registers its
- * plugin for this Storybook and the addon is installed (then {@link loadAllPresets} enables it).
+ * Whether the Storybook in `configDir` uses `@storybook/addon-vitest`, read from the config alone:
+ * `main` lists the addon, or a Vite or Vitest config registers its plugin for this Storybook and the
+ * addon resolves (then {@link loadAllPresets} enables it).
  *
- * For callers that decide from the config alone, such as the test step of the `AGENTS.md`
- * section. With loaded presets, `presets.apply('isAddonVitestEnabled', false)` is exact; this can
- * miss an addon that `main` lists only through a preset of its own.
+ * For callers that decide without loading presets, such as the test step of the `AGENTS.md`
+ * section. With loaded presets, `presets.apply('isAddonVitestEnabled', false)` is exact. This one
+ * misses an addon that `main` lists only through a preset of its own, and does not check that a
+ * listed addon is installed.
  */
 export function isAddonVitestConfigured({
   configDir,
@@ -397,11 +398,15 @@ export function isAddonVitestConfigured({
   configDir: string;
   mainConfig: Pick<StorybookConfigRaw, 'addons'>;
 }): boolean {
+  let listed = false;
   try {
-    return (
-      getAddonNames(mainConfig as StorybookConfig).includes(ADDON_VITEST) ||
-      findAddonVitestPluginConfig(configDir) !== undefined
-    );
+    listed = getAddonNames(mainConfig as StorybookConfig).includes(ADDON_VITEST);
+  } catch {}
+  if (listed) {
+    return true;
+  }
+  try {
+    return findAddonVitestPluginConfig(configDir) !== undefined;
   } catch {
     return false;
   }
@@ -412,7 +417,9 @@ export function isAddonVitestConfigured({
  * registers its `storybookTest` plugin for this Storybook (inside the config dir, or with a
  * `configDir` option that names it). Such a project runs its story tests through Vitest already;
  * enabling the addon lets Storybook run them too (the test widget, `storybook tools test run`, the
- * MCP `test-run` tool), from the same config. `build.test.disabledAddons` still turns it off.
+ * MCP `test-run` tool), from the same config. `build.test.disabledAddons` turns it off where
+ * Storybook applies that option (`storybook build --test`); elsewhere there is no opt-out but
+ * removing the plugin.
  *
  * {@link loadAllPresets} adds these only when no loaded preset enabled the addon already, however
  * `main` or a preset of it lists it.
@@ -422,7 +429,8 @@ export async function getImplicitAddons(
   build?: StorybookConfigRaw['build']
 ): Promise<PresetConfig[]> {
   try {
-    if (build?.test?.disabledAddons?.some((name) => name.includes(ADDON_VITEST))) {
+    // Matched as the preset filter matches listed addons: an entry the name contains.
+    if (build?.test?.disabledAddons?.some((name) => ADDON_VITEST.includes(name))) {
       return [];
     }
     const found = findAddonVitestPluginConfig(configDir);
@@ -473,7 +481,13 @@ export async function loadAllPresets(
   // project did not list must never make it fail. Decided on the loaded presets, so an addon that
   // `main` lists in a form `getAddonNames` cannot read (a relative path, a preset of its own) is
   // never loaded twice.
-  if (!options.isCritical && !loaded.some(({ preset }) => preset?.isAddonVitestEnabled === true)) {
+  // An addon-vitest from before the `isAddonVitestEnabled` marker is recognised by its name.
+  const addonVitestLoaded = loaded.some(
+    ({ name, preset }) =>
+      preset?.isAddonVitestEnabled === true ||
+      (typeof name === 'string' && normalizeAddonName(name) === ADDON_VITEST)
+  );
+  if (!options.isCritical && !addonVitestLoaded) {
     loaded.push(
       ...(await loadPresets(
         await getImplicitAddons(options.configDir, options.build),

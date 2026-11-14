@@ -80,9 +80,9 @@ describe('validateVersionTransition', () => {
     expect(result).toBe('ok');
   });
 
-  test('should return "downgrade" when current version is greater than target', () => {
+  test('should return "ok" when current version is greater than target', () => {
     const result = validateVersionTransition('9.0.0', '8.0.0');
-    expect(result).toBe('downgrade');
+    expect(result).toBe('ok');
   });
 
   test('should return "gap-too-large" when version gap is greater than 1', () => {
@@ -135,14 +135,11 @@ describe('blocker', () => {
       expect(result).toBe(false);
     });
 
-    test('should return data when downgrade is detected', async () => {
+    test('should return false when the installed version is newer than the target', async () => {
       mockPackageManager.getModulePackageJSON.mockResolvedValue({ version: '10.0.0' });
 
       const result = await blocker.check(baseOptions);
-      expect(result).toEqual({
-        currentVersion: '10.0.0',
-        reason: 'downgrade',
-      });
+      expect(result).toBe(false);
     });
 
     test('should return data when version gap is too large', async () => {
@@ -177,19 +174,6 @@ describe('blocker', () => {
   });
 
   describe('log method', () => {
-    test('should return downgrade message when reason is downgrade', () => {
-      const data = {
-        currentVersion: '10.0.0',
-        reason: 'downgrade' as const,
-      };
-
-      const result = blocker.log(data);
-      expect(result.title).toContain('Downgrade Not Supported');
-      expect(result.message).toContain('v10.0.0');
-      expect(result.message).toContain('v9.0.0');
-      expect(result.message).toContain('Downgrading is not supported');
-    });
-
     test('should return version gap message with upgrade command when version can be coerced', () => {
       const data = {
         currentVersion: '7.0.0',

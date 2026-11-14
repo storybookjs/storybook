@@ -1,12 +1,12 @@
 import { versions } from 'storybook/internal/common';
 import { CLI_COLORS } from 'storybook/internal/node-logger';
 
-import { coerce, gt, major, parse } from 'semver';
+import { coerce, major, parse } from 'semver';
 import { dedent } from 'ts-dedent';
 
 import { createBlocker } from './types.ts';
 
-type UpgradeCheckResult = 'downgrade' | 'gap-too-large' | 'ok';
+type UpgradeCheckResult = 'gap-too-large' | 'ok';
 
 interface MajorVersionData {
   currentVersion: string;
@@ -34,12 +34,8 @@ export function validateVersionTransition(
     return 'ok';
   }
 
-  // Check for downgrade (when current version is greater than target)
-  if (gt(currentVersion, targetVersion)) {
-    return 'downgrade';
-  }
-
-  // Check for version gap
+  // A downgrade is not checked here: the upgrade rejects it before the blockers run, except for
+  // canaries, where it is allowed on purpose.
   const gap = target.major - current.major;
   return gap > 1 ? 'gap-too-large' : 'ok';
 }
@@ -74,16 +70,6 @@ export const blocker = createBlocker<MajorVersionData>({
   },
   log(data) {
     const coercedVersion = coerce(data.currentVersion);
-
-    if (data.reason === 'downgrade') {
-      return {
-        title: 'Downgrade Not Supported',
-        message: dedent`
-          Your Storybook version (v${data.currentVersion}) is newer than the target release (v${versions.storybook}). Downgrading is not supported.
-          `,
-        link: 'https://storybook.js.org/docs/releases/migration-guide?ref=upgrade',
-      };
-    }
 
     if (coercedVersion) {
       const currentMajor = major(coercedVersion);

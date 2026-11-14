@@ -5,10 +5,21 @@ import { dirname, join } from 'node:path';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { UpgradeStorybookConfigDirNotFoundError } from 'storybook/internal/server-errors';
+import { HandledError, JsPackageManager } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
+import {
+  MainFileEvaluationError,
+  UpgradeStorybookConfigDirNotFoundError,
+} from 'storybook/internal/server-errors';
 
 import type { UpgradeOptions } from './upgrade.ts';
-import { findStorybookProjects, getProjects } from './util.ts';
+import {
+  type CollectProjectsErrorResult,
+  type CollectProjectsSuccessResult,
+  checkUnreadableProjects,
+  findStorybookProjects,
+  getProjects,
+} from './util.ts';
 
 let root: string;
 
@@ -121,6 +132,58 @@ describe('getProjects', () => {
 
     await expect(getProjects({ yes: true } as UpgradeOptions)).rejects.toThrow(
       UpgradeStorybookConfigDirNotFoundError
+    );
+  });
+});
+
+describe('checkUnreadableProjects', () => {
+  const withStorybook = JSON.stringify({ devDependencies: { storybook: '10.6.7' } });
+  const readable = (dir: string) =>
+    ({
+      configDir: join(root, dir, '.storybook'),
+      packageManager: {
+        packageJsonPaths: JsPackageManager.listAllPackageJsonPaths(join(root, dir)),
+      },
+    }) as unknown as CollectProjectsSuccessResult;
+  const unreadable = (dir: string): CollectProjectsErrorResult => ({
+    configDir: join(root, dir, '.storybook'),
+    error: new MainFileEvaluationError({
+      location: `${dir}/.storybook/main.ts`,
+      error: new Error("Cannot find module 'shared/vite' imported from main.ts\n    at stack"),
+    }),
+  });
+
+  it('changes nothing when an unreadable project shares a package.json with the others', () => {
+    createFixture({
+      'package.json': withStorybook,
+      'packages/a/package.json': withStorybook,
+      'packages/c/package.json': withStorybook,
+    });
+    vi.spyOn(logger, 'error').mockImplementation(() => {});
+
+    expect(() =>
+      checkUnreadableProjects([readable('packages/a')], [unreadable('packages/c')])
+    ).toThrow(HandledError);
+    expect(vi.mocked(logger.error).mock.calls[0][0]).toContain(
+      ": Cannot find module 'shared/vite' imported from main.ts\nFix them and run the upgrade again. To upgrade only the others, which still upgrades the shared package.json and leaves these projects behind: npx storybook upgrade --config-dir "
+    );
+    expect(vi.mocked(logger.error).mock.calls[0][0]).toMatch(
+      /--config-dir \S*packages\/a\/\.storybook$/
+    );
+  });
+
+  it('goes on with separate Storybooks, and names the one it leaves and why', () => {
+    createFixture({
+      'package.json': JSON.stringify({ private: true }),
+      'packages/a/package.json': withStorybook,
+      'packages/c/package.json': withStorybook,
+    });
+    vi.spyOn(logger, 'warn').mockImplementation(() => {});
+
+    checkUnreadableProjects([readable('packages/a')], [unreadable('packages/c')]);
+
+    expect(vi.mocked(logger.warn).mock.calls[0][0]).toMatch(
+      /^Not upgrading these Storybook projects, because Storybook could not read them:\n.*packages\/c\/\.storybook: Cannot find module 'shared\/vite' imported from main\.ts$/
     );
   });
 });

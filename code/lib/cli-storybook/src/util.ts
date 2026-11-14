@@ -1,3 +1,6 @@
+import { dirname, relative, resolve } from 'node:path';
+import { stripVTControlCharacters } from 'node:util';
+
 import type { PackageJsonWithDepsAndDevDeps } from 'storybook/internal/common';
 import {
   HandledError,
@@ -65,7 +68,7 @@ export interface CollectProjectsSuccessResult extends UpgradeConfig {
 }
 
 /** Result when project collection fails */
-interface CollectProjectsErrorResult {
+export interface CollectProjectsErrorResult {
   /** Path to the configuration directory that failed */
   readonly configDir: string;
   /** Error that occurred during collection */
@@ -665,7 +668,8 @@ const handleMultipleProjects = async (
   if (detectedConfigDirs.length > 1) {
     const selectedConfigDirs = await prompt.multiselect({
       message: 'Select which projects to upgrade',
-      options: detectedConfigDirs.map((configDir) => ({
+      // Only the projects it can upgrade; the others were named above.
+      options: validProjects.map(({ configDir }) => ({
         label: shortenPath(configDir),
         value: configDir,
       })),
@@ -675,6 +679,54 @@ const handleMultipleProjects = async (
   }
 
   return undefined;
+};
+
+// The first line of the error that made a project unreadable. A main config that failed to
+// evaluate keeps the original error in `data.error`.
+const unreadableReason = ({ error }: CollectProjectsErrorResult) => {
+  const original = (error as { data?: { error?: unknown } }).data?.error;
+  const message = original instanceof Error ? original.message : error.message;
+  return stripVTControlCharacters(message).trim().split('\n')[0].replaceAll(process.cwd(), '.');
+};
+
+const listUnreadable = (projects: readonly CollectProjectsErrorResult[]) =>
+  projects
+    .map(
+      (project) =>
+        `${logger.SYMBOLS.error} ${shortenPath(project.configDir)}: ${unreadableReason(project)}`
+    )
+    .join('\n');
+
+/**
+ * Stops the upgrade before it changes anything when a project it cannot read shares a package.json
+ * with the projects it would upgrade, since upgrading only those would leave that package.json
+ * half upgraded. Otherwise it names the projects it leaves alone, and why.
+ */
+export const checkUnreadableProjects = (
+  validProjects: readonly CollectProjectsSuccessResult[],
+  errorProjects: readonly CollectProjectsErrorResult[]
+) => {
+  const upgraded = new Set(
+    validProjects
+      .flatMap(({ packageManager }) => packageManager.packageJsonPaths)
+      .filter(JsPackageManager.hasAnyStorybookDependency)
+  );
+  const sharing = errorProjects.filter(({ configDir }) =>
+    JsPackageManager.listAllPackageJsonPaths(dirname(resolve(configDir))).some((path) =>
+      upgraded.has(path)
+    )
+  );
+  logTracker.enableLogWriting();
+  if (sharing.length > 0) {
+    const others = validProjects.map(({ configDir }) => relative(process.cwd(), configDir));
+    logger.error(
+      `Storybook could not read these projects, which share a package.json with the others, so it changed nothing:\n${listUnreadable(sharing)}\nFix them and run the upgrade again. To upgrade only the others, which still upgrades the shared package.json and leaves these projects behind: npx storybook upgrade --config-dir ${others.join(' ')}`
+    );
+    throw new HandledError('A project that shares a package.json could not be read');
+  }
+  logger.warn(
+    `Not upgrading these Storybook projects, because Storybook could not read them:\n${listUnreadable(errorProjects)}`
+  );
 };
 
 /**
@@ -738,6 +790,10 @@ export const getProjects = async (
     logger.debug(
       `Found ${validProjects.length} valid projects and ${errorProjects.length} error projects`
     );
+
+    if (validProjects.length > 0 && errorProjects.length > 0) {
+      checkUnreadableProjects(validProjects, errorProjects);
+    }
 
     // Handle single project case
     if (validProjects.length === 1) {

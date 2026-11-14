@@ -12,7 +12,7 @@ export function promptlessReason({ detectAgents = true } = {}): string | undefin
   }
   const agent = detectAgents ? detectAgent() : undefined;
   if (agent) {
-    return `a coding agent (${agent.name}) runs it`;
+    return `a coding agent (${agent.name}) runs it (pass --no-agent to answer them yourself)`;
   }
   if (!process.stdin.isTTY || !process.stdout.isTTY) {
     return 'there is no interactive terminal';

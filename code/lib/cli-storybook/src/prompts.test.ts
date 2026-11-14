@@ -76,7 +76,9 @@ describe('promptlessReason', () => {
   it('does not prompt a coding agent, even in a terminal', () => {
     vi.mocked(detectAgent).mockReturnValue({ name: 'codex' });
 
-    expect(promptlessReason()).toBe('a coding agent (codex) runs it');
+    expect(promptlessReason()).toBe(
+      'a coding agent (codex) runs it (pass --no-agent to answer them yourself)'
+    );
   });
 
   it('lets a person in a terminal answer with --no-agent, whatever std-env detects', () => {

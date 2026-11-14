@@ -568,8 +568,8 @@ ${runEveryStoryBeforeFinishing(ctx)}`;
 }
 
 /**
- * The run's error with its cause: a failure to start or run Vitest is reported as a generic message
- * (such as "Failed to start Vitest") whose cause says what went wrong and what to do about it.
+ * The run's error with its causes: a failure to start or run Vitest is reported as a generic message
+ * (such as "Failed to start Vitest"), and only its cause says what went wrong.
  */
 function formatRunError(error: Extract<TestRunData, { status: 'error' }>['error']): string {
   const causes: string[] = [];

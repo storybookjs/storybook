@@ -65,7 +65,6 @@ export * from './utils/transform-imports.ts';
 export * from '../shared/utils/module.ts';
 export * from '../shared/utils/paths.ts';
 export * from './utils/get-addon-names.ts';
-export * from './utils/storybook-vitest-config.ts';
 export * from './utils/utils.ts';
 export * from './utils/command.ts';
 export * from './utils/file-lock.ts';

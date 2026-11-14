@@ -206,6 +206,7 @@ const options: TestManagerOptions = {
 
 describe('TestManager', () => {
   describe('the Vitest config it starts Vitest with', () => {
+    const plugin = `import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';`;
     const startIn = async (files: Record<string, string>) => {
       const root = realpathSync(mkdtempSync(path.join(tmpdir(), 'sb-test-manager-')));
       onTestFinished(() => rmSync(root, { recursive: true, force: true }));
@@ -219,29 +220,24 @@ describe('TestManager', () => {
       });
       return { root, args: createVitest.mock.calls[0][1] };
     };
-    const plugin = `import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
-export default { plugins: [storybookTest({ configDir: dirname })] };`;
 
     // SB-2533 (lucca-front): the Storybook project lives next to main.ts, the root config has none.
-    it('passes a config in the config dir, with the package root as root', async () => {
+    it('finds a config in the Storybook config dir', async () => {
       const { root, args } = await startIn({
         '.storybook/vitest.config.ts': plugin,
         'vitest.config.ts': 'export default {};',
       });
 
-      expect(args).toMatchObject({
-        root,
-        config: path.join(root, '.storybook/vitest.config.ts'),
-      });
+      expect(args.root).toBe(path.join(root, '.storybook'));
     });
 
-    it('passes only the root for a standard vitest.config.ts with the plugin', async () => {
+    it('keeps a config in the package that uses the plugin, as before', async () => {
       const { root, args } = await startIn({
-        'vitest.config.ts': plugin.replace('{ configDir: dirname }', ''),
+        '.storybook/vitest.config.ts': plugin,
+        'vitest.config.ts': plugin,
       });
 
       expect(args.root).toBe(root);
-      expect(args).not.toHaveProperty('config');
     });
   });
 

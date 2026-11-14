@@ -311,7 +311,7 @@ describe('getDocumentationTool', () => {
 
       ## Props
 
-      Read with \`react-docgen\`, which leaves out props that come from other types, such as \`Pick<…>\` or \`ComponentProps<typeof X>\`, required ones too. Read the props type in the component source for the full list.
+      This list may be incomplete: \`react-docgen\` leaves out props from type helpers such as \`Pick<…>\` or \`ComponentProps<typeof X>\`, required ones too. Check the props type in the component source; props you find there are valid.
 
       \`\`\`
       export type Props = {

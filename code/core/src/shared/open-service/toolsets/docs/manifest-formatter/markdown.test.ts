@@ -608,7 +608,7 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
 
         ## Props
 
-        Read with \`react-docgen\`, which leaves out props that come from other types, such as \`Pick<…>\` or \`ComponentProps<typeof X>\`, required ones too. Read the props type in the component source for the full list.
+        This list may be incomplete: \`react-docgen\` leaves out props from type helpers such as \`Pick<…>\` or \`ComponentProps<typeof X>\`, required ones too. Check the props type in the component source; props you find there are valid.
 
         \`\`\`
         export type Props = {
@@ -839,7 +839,7 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
 
         ## Props
 
-        Read with \`react-docgen\`, which leaves out props that come from other types, such as \`Pick<…>\` or \`ComponentProps<typeof X>\`, required ones too. Read the props type in the component source for the full list.
+        This list may be incomplete: \`react-docgen\` leaves out props from type helpers such as \`Pick<…>\` or \`ComponentProps<typeof X>\`, required ones too. Check the props type in the component source; props you find there are valid.
 
         \`\`\`
         export type Props = {
@@ -923,7 +923,7 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
 
         ## Props
 
-        Read with \`react-docgen\`, which leaves out props that come from other types, such as \`Pick<…>\` or \`ComponentProps<typeof X>\`, required ones too. Read the props type in the component source for the full list.
+        This list may be incomplete: \`react-docgen\` leaves out props from type helpers such as \`Pick<…>\` or \`ComponentProps<typeof X>\`, required ones too. Check the props type in the component source; props you find there are valid.
 
         \`\`\`
         export type Props = {
@@ -1251,7 +1251,7 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
 
 				## Props
 
-				Read with \`react-docgen\`, which leaves out props that come from other types, such as \`Pick<…>\` or \`ComponentProps<typeof X>\`, required ones too. Read the props type in the component source for the full list.
+				This list may be incomplete: \`react-docgen\` leaves out props from type helpers such as \`Pick<…>\` or \`ComponentProps<typeof X>\`, required ones too. Check the props type in the component source; props you find there are valid.
 
 				\`\`\`
 				export type Props = {
@@ -1290,7 +1290,7 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
 
         ## Props
 
-        Read with \`react-docgen\`, which leaves out props that come from other types, such as \`Pick<…>\` or \`ComponentProps<typeof X>\`, required ones too. Read the props type in the component source for the full list.
+        This list may be incomplete: \`react-docgen\` leaves out props from type helpers such as \`Pick<…>\` or \`ComponentProps<typeof X>\`, required ones too. Check the props type in the component source; props you find there are valid.
 
         \`\`\`
         export type Props = {
@@ -1355,10 +1355,42 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
 
         ## Props
 
-        Read with \`react-docgen\`, which leaves out props that come from other types, such as \`Pick<…>\` or \`ComponentProps<typeof X>\`, required ones too. Read the props type in the component source for the full list.
+        This list may be incomplete: \`react-docgen\` leaves out props from type helpers such as \`Pick<…>\` or \`ComponentProps<typeof X>\`, required ones too. Check the props type in the component source; props you find there are valid."
+      `);
+    });
+
+    it('should say so for a subcomponent whose props come from react-docgen', () => {
+      const manifest: ComponentManifest = {
+        id: 'list',
+        name: 'List',
+        path: 'src/components/List.tsx',
+        subcomponents: {
+          Item: {
+            name: 'ListItem',
+            path: 'src/components/ListItem.tsx',
+            reactDocgen: { props: { label: { tsType: { name: 'string' }, required: true } } },
+          },
+        },
+      };
+
+      const result = formatComponentManifest(manifest);
+
+      expect(result).toMatchInlineSnapshot(`
+        "# List
+
+        ID: list
+
+        ## Subcomponents
+
+        ### ListItem
+
+        #### Props
+
+        This list may be incomplete: \`react-docgen\` leaves out props from type helpers such as \`Pick<…>\` or \`ComponentProps<typeof X>\`, required ones too. Check the props type in the component source; props you find there are valid.
 
         \`\`\`
-        export type Props = {
+        export type ListItemProps = {
+          label: string;
         }
         \`\`\`"
       `);
@@ -1399,7 +1431,7 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
 
       ## Props
 
-      Read with \`react-docgen\`, which leaves out props that come from other types, such as \`Pick<…>\` or \`ComponentProps<typeof X>\`, required ones too. Read the props type in the component source for the full list.
+      This list may be incomplete: \`react-docgen\` leaves out props from type helpers such as \`Pick<…>\` or \`ComponentProps<typeof X>\`, required ones too. Check the props type in the component source; props you find there are valid.
 
       \`\`\`
       export type Props = {

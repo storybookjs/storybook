@@ -849,6 +849,28 @@ No story found for story ID "gone--story"`);
       expect(outcome.markdown).toBe('Error: Vitest failed to start');
     });
 
+    // SB-2533: "Failed to start Vitest" alone left the agent guessing which config was loaded.
+    it('renders the cause under the error line, so a failure to start says why', async () => {
+      vi.mocked(runStoryTests).mockResolvedValue({
+        status: 'error',
+        error: {
+          message: 'Failed to start Vitest',
+          error: {
+            name: 'Error',
+            message: 'Vitest has no project for the Storybook in `.storybook`.',
+            cause: { message: 'Failed to start Vitest' },
+          },
+        },
+      });
+
+      const outcome = await runForMcp();
+
+      expect(outcome.ok).toBe(false);
+      expect(outcome.markdown).toBe(
+        'Error: Failed to start Vitest\n\nVitest has no project for the Storybook in `.storybook`.'
+      );
+    });
+
     it('flags a cancelled run as a failure while still rendering the error line', async () => {
       vi.mocked(runStoryTests).mockResolvedValue({ status: 'cancelled' });
 

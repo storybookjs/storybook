@@ -29,7 +29,7 @@ export type StorybookVitestConfig = {
   /**
    * Whether `configFile` was matched only loosely: it uses the plugin, but its `configDir` option
    * could not be read as this Storybook's (for example, computed from a variable). Good enough to
-   * start Vitest with, as before, but not to turn on `@storybook/addon-vitest` for this Storybook.
+   * start Vitest with, as before.
    */
   loose?: boolean;
   /**

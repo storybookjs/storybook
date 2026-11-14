@@ -143,11 +143,25 @@ describe('upgrade: refreshing the skills', () => {
     expect(installSkills).toHaveBeenCalledWith({
       packageManager: expect.objectContaining({ type: 'npm' }),
       source: 'refresh',
+      testSupported: false,
     });
     expect(skillsInUpgradeEvents()).toEqual([
       { result: 'installed', source: 'refresh' },
       { result: 'installed', source: 'refresh' },
     ]);
+  });
+
+  it('gives the section a test step when the main config of one Storybook lists addon-vitest', async () => {
+    useProjects(
+      project('/repo/a/.storybook'),
+      project('/repo/b/.storybook', {
+        mainConfig: { stories: [], addons: ['@storybook/addon-vitest'] },
+      })
+    );
+
+    await upgrade(baseOptions);
+
+    expect(installSkills).toHaveBeenCalledWith(expect.objectContaining({ testSupported: true }));
   });
 
   it('installs nothing when the project has no skills', async () => {

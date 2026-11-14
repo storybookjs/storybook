@@ -1,6 +1,6 @@
 # Storybook Claude Code Plugin
 
-You can use Storybook's plugin in Claude Code or Claude Desktop to connect agents to your Storybook. Agents can then use the plugin's skills and tools to generate UI, run tests, and preview their work in your Storybook. If you're using Claude Desktop, the agent can automatically open relevant stories in the Agentic Development Environment (ADE) preview, so you can review the agent's work.
+You can use Storybook's plugin in Claude Code or Claude Desktop to connect agents to your Storybook. Agents can then use the plugin's skills and tools to generate UI, run tests, and preview their work in your Storybook. If you're using Claude Desktop, the agent can open relevant stories in the Agentic Development Environment (ADE) preview when you ask to see them, so you can review the agent's work.
 
 ## Requirements
 
@@ -96,7 +96,7 @@ To remove a plugin:
 
 ## Usage
 
-The plugin's [skills](#skills) tell the agent how to work with your Storybook: reuse your components, generate stories, run tests, and preview its work. The `AGENTS.md` section below is the workflow that tells the agent which skill to use at which step. Add it to the `AGENTS.md` of each project where the agent should follow it. When you set up Storybook 11 with AI features, or accept the `skills` automigration when you upgrade, Storybook adds it for you (and to your `CLAUDE.md` or `CLAUDE.local.md`, if it does not import `AGENTS.md`):
+The plugin's [skills](#skills) tell the agent how to work with your Storybook: reuse your components, generate stories, run tests, and preview its work. The `AGENTS.md` section below is the workflow that tells the agent which skills to use and how to run the story tests for every UI change. Add it to the `AGENTS.md` of each project where the agent should follow it. When you set up Storybook 11 with AI features, or accept the `skills` automigration when you upgrade, Storybook adds it for you (and to your `CLAUDE.md` or `CLAUDE.local.md`, if it does not import `AGENTS.md`):
 
 ```md
 <!-- BEGIN:storybook-skills -->
@@ -104,19 +104,23 @@ The plugin's [skills](#skills) tell the agent how to work with your Storybook: r
 
 ## Storybook
 
-For every change to how the UI looks (you create, change, or delete a component, story, style, theme, or design token), follow these steps in order. Each step has a Storybook skill. First invoke the skills of all the steps, before you edit any file. Then follow each skill at its step.
+For every change to how the UI looks (you create, change, or delete a component, story, style, theme, or design token), follow these steps in order. First invoke the Storybook skills of steps 1 and 2, before you edit any file. Then follow each skill at its step.
 
 1. `component-docs`: look up the components to reuse, with their props and usage examples, before you edit any file. Also when the user asks about a component's props, API, or usage.
 2. `write-stories`: every component you create or change gets stories.
-3. `test-stories`: run the story tests after every change, the way this skill says, never with a `package.json` test script, and fix what fails. Also when the user asks to run or fix story tests.
-4. `ui-review`: publish a review that shows the user what changed, as your last step. Also when the user asks to see components or stories.
+3. Run the story tests after every change, and fix what fails. Also when the user asks to run or fix story tests. Run them from the package where Storybook is installed, never with a `package.json` test script or `vitest`:
+   - `npx storybook tools test run --changed`: the stories your uncommitted changes reach. Run this after a change.
+   - `npx storybook tools test run src/Button.stories.tsx`: the stories in these story files.
+   - `npx storybook tools test run`: every story.
+
+When the user asks for a review or to see stories, use the `ui-review` skill. Otherwise, after a change the user can see, end your answer with the line "Use the /ui-review skill to see the changed components in Storybook" for the user, without running the review yourself.
 
 <!-- END:storybook-skills -->
 ```
 
-Storybook replaces the text between the markers when you upgrade. The section is the workflow: each step names the skill the agent uses for it. To change the workflow, for example to leave out the review, remove both markers and edit the section. Remove the whole section to stop the agent from following the workflow: it then uses a skill only when you ask for it, or when it finds one that fits its task. You can also call the plugin's skills in prompts (e.g. `/upgrade`) to have the agent perform specific actions. See [Skills and plugins](https://storybook.js.org/docs/ai/skills) for more details.
+Storybook replaces the text between the markers when you upgrade. The section is the workflow: the first two steps name the skill the agent uses for them, and the third is the test command itself, so the agent runs the tests from that line alone. A project without `@storybook/addon-vitest` cannot run story tests and gets no test step. After a change you can see, the agent ends its answer with a line that offers the `ui-review` skill; it does not create a review unless you ask. To change the workflow, for example to drop that line or to have the agent create a review after every change, remove both markers and edit the section. An edit between the markers lasts only until the next upgrade, which writes the section again. Remove the whole section to stop the agent from following the workflow: it then uses a skill only when you ask for it, or when it finds one that fits its task. You can also call the plugin's skills in prompts (e.g. `/upgrade`) to have the agent perform specific actions. See [Skills and plugins](https://storybook.js.org/docs/ai/skills) for more details.
 
-If you're using Claude Desktop, the agent will use the plugin to automatically open relevant stories or an [agentic review summary](https://storybook.js.org/docs/ai/agentic-review) in the ADE preview, so you can review the agent's work.
+If you're using Claude Desktop and ask to see stories or for a review, the agent will use the plugin to open relevant stories or an [agentic review summary](https://storybook.js.org/docs/ai/agentic-review) in the ADE preview, so you can review the agent's work.
 
 ## Skills
 
@@ -140,11 +144,11 @@ The rules for the stories of your project: which states get a story, and how to 
 
 ### `test-stories`
 
-Runs the story tests, with their accessibility checks, and fixes what fails.
+Runs the story tests of what you changed, with their accessibility checks, and fixes what fails. The `AGENTS.md` section names the test command itself, so the agent needs this skill only when you call it by name.
 
 ### `ui-review`
 
-Finds the stories a change affects and publishes an [agentic review](https://storybook.js.org/docs/ai/agentic-review) of them. Also shows the components or stories you ask to see.
+Finds the stories a change affects and creates an [agentic review](https://storybook.js.org/docs/ai/agentic-review) of them. Also shows the components or stories you ask to see. The agent uses it when you ask for a review or to see stories, not after every change: ask for example "Use the ui-review skill to create a Storybook review of the stories that changed."
 
 ### `upgrade`
 

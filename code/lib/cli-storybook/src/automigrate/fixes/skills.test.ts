@@ -147,6 +147,7 @@ describe('skills', () => {
         packageManager,
         source: 'automigration',
         stdio: 'pipe',
+        testSupported: false,
       });
     });
 

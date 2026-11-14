@@ -12,4 +12,4 @@ Run every Storybook CLI command from the package where Storybook is installed (i
 
 If the sandbox blocks network access or ports, request escalated permissions for Storybook CLI commands.
 
-Run `npx storybook skills test-stories` in a command of its own, without `head` or `tail`, and follow its output: the command that runs the story tests of this project, and how to handle failing tests and accessibility violations.
+Run `npx storybook skills test-stories` in a command of its own, without `head` or `tail`, and follow its output: the command that runs the story tests of this project for the files you changed. The test output says how to handle failing tests and accessibility violations.

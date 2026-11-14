@@ -1,9 +1,8 @@
 import {
   expectFinalResponseMatches,
-  expectAnyWorkflowSkillInvoked,
+  expectFocusedTestRun,
+  expectNoOtherTestRunner,
   expectStoryTestsRanAndPassed,
-  expectWorkflowCalls,
-  getEvalContext,
   getWorkflowCalls,
   getWorkflowToolResults,
   runStoryTestsInSandbox,
@@ -65,14 +64,9 @@ describe('fixing Button accessibility violations', () => {
     expectFinalResponseMatches([/contrast/i]);
   });
 
-  test('runs the test-stories skill for a request to run the story tests', () => {
-    expectWorkflowCalls(['test-stories']);
+  // The workflow names the test command itself, so a request to run the tests needs no skill.
+  test('runs the Button tests through Storybook only', () => {
+    expectFocusedTestRun();
+    expectNoOtherTestRunner();
   });
-
-  test.skipIf(getEvalContext().integration === 'mcp')(
-    'finds the workflow through the plugin skills',
-    () => {
-      expectAnyWorkflowSkillInvoked();
-    }
-  );
 });

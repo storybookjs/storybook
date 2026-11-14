@@ -74,11 +74,11 @@ export type ReviewCreateOutput = {
 function describeCreate(ctx: ToolsetCtx): string {
   const ref = getToolName(ctx);
   const skill = getSkillCommand(ctx)('ui-review');
-  return `Publish a curated review to Storybook's review page for spot-checking visual impact. Each call replaces the active review; call again when the user iterates.${skill ? `\nFirst run ${skill} once and follow it.` : ''}
+  return `Create a curated review on Storybook's review page for spot-checking visual impact. Each call replaces the active review; call again when the user iterates.${skill ? `\nFirst run ${skill} once and follow it.` : ''}
 
 ## When to call
-- Visual change (components, CSS, themes, tokens, i18n): the user should spot-check rendering. A shared file (token, style, util) has no stories; review its consumers'. Skip non-visual refactors unless side-effects are plausible. Start from ${ref('stories.changed')}; use ${ref('stories.findByComponent')} only for a file it leaves out, or when it is unavailable. Include changedFiles.
-- Last: publish it after your tests and other checks (type check, lint), then end your answer with the three lines it returns.
+- The user or the project's agent instructions ask for a review of a visual change (components, CSS, themes, tokens, i18n). A shared file (token, style, util) has no stories; review its consumers'. Skip non-visual refactors unless side-effects are plausible. Start from ${ref('stories.changed')}; use ${ref('stories.findByComponent')} only for a file it leaves out, or when it is unavailable. Include changedFiles.
+- Last: create it after your tests and other checks (type check, lint), then end your answer with the three lines it returns.
 - Browse request ("show me the Badge component"): resolve via ${ref('stories.findByComponent')} / ${ref('docs.list')}. Show exactly what was asked. Pass changedFiles: [].
 
 ## Hard rules

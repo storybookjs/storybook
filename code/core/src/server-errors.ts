@@ -581,7 +581,7 @@ export class OpenServiceMissingOriginError extends StorybookError {
  */
 export function describeUnknownStoryIds(unknownIds: string[]): string {
   const plural = unknownIds.length === 1 ? 'ID is' : 'IDs are';
-  return `Refusing to publish review: ${unknownIds.length} story ${plural} not backed by a story entry in the live Storybook index (docs entries cannot be review slots):`;
+  return `Refusing to create review: ${unknownIds.length} story ${plural} not backed by a story entry in the live Storybook index (docs entries cannot be review slots):`;
 }
 
 export class OpenServiceUnknownStoryIdsError extends StorybookError {

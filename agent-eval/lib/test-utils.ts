@@ -139,9 +139,9 @@ export function expectWorkflowCalls(expectedNames: string[]): void {
   }
 }
 
-// The tool that a step of the workflow runs, by the skill of that step.
+// The tool that a step of the workflow runs, by the skill of that step. The tests have no skill
+// in the workflow: `AGENTS.md` names the test command itself.
 const STEP_TOOLS: Record<string, string> = {
-  'test-stories': 'test-run',
   'ui-review': 'review-create',
 };
 
@@ -207,21 +207,82 @@ export function expectDisplayReviewForVisualChange(): void {
   expectFinalResponseSharesReviewLink();
 }
 
-// Trigger correctness: a pure non-visual refactor must NOT publish a review,
-// and the final response must not pretend there is one.
+// Trigger correctness: an agent publishes a review only when the user asks for one or to see
+// stories, so a task that does not ask must NOT publish one, and the final response must not
+// pretend there is one.
 export function expectNoDisplayReview(): void {
   const displayReviewCalls = getWorkflowCalls('review-create');
   expect(
     displayReviewCalls.length,
-    `Expected review-create NOT to be called for a non-visual change. Received payloads: ${JSON.stringify(
+    `Expected review-create NOT to be called for a task that did not ask for a review. Received payloads: ${JSON.stringify(
       displayReviewCalls.map((call) => call.input)
     )}`
   ).toBe(0);
 
   expect(
     getFinalAssistantMessage() ?? '',
-    'Final response must not link to the Storybook review page for a non-visual change'
+    'Final response must not link to the Storybook review page when no review was asked for'
   ).not.toMatch(/[?&]path=\/review\//);
+}
+
+// The agent runs the tests of what it changed: a \`test-run\` call with \`changed\` (the workflow's
+// default after a change) or with story \`files\`. A run of every story alone passes the other
+// assertions, but it is the slow path these forms replace.
+export function expectFocusedTestRun(): void {
+  const calls = getWorkflowCalls('test-run');
+  expect(
+    calls.some(
+      ({ input }) =>
+        (input.changed !== undefined && input.changed !== false) ||
+        (Array.isArray(input.files) && input.files.length > 0)
+    ),
+    `Expected a test-run call with changed or files. Received inputs: ${JSON.stringify(calls.map(({ input }) => input))}`
+  ).toBe(true);
+}
+
+// The line the workflow asks for at the end of an answer after a visible change, so the user
+// learns they can ask for a review. Any spelling of the skill name counts (\`/storybook:ui-review\`,
+// \`$ui-review\`).
+const REVIEW_HINT = /ui-review\b[^\n]{0,20}skill to see the changed components in Storybook/i;
+
+export function expectReviewHint(): void {
+  expect(
+    getFinalAssistantMessage() ?? '',
+    'Expected the final answer to end with the line that offers the ui-review skill'
+  ).toMatch(REVIEW_HINT);
+}
+
+export function expectNoReviewHint(): void {
+  expect(
+    getFinalAssistantMessage() ?? '',
+    'Expected no ui-review line in the final answer: nothing visible changed, or a review was just published'
+  ).not.toMatch(REVIEW_HINT);
+}
+
+// Story tests run only through Storybook: never a package.json test script or vitest directly.
+// Only as a command of its own, so `grep vitest package.json` does not count. Workspace flags may
+// sit between the package manager and the script (`npm -w ui run test`, `pnpm --filter ui test`,
+// `yarn workspace ui test`), and vitest may come through any runner or `node_modules/.bin`.
+const OTHER_TEST_RUNNER = new RegExp(
+  String.raw`(?:^|[;&|])\s*(?:\w+=\S*\s+)*(?:` +
+    String.raw`(?:npm|yarn|pnpm|bun)(?:\s+(?:-\S+|workspace)(?:\s+(?!(?:run|test)(?=\s|$))[^\s;&|]+)?)*\s+(?:run\s+)?test[\w:-]*` +
+    '|' +
+    String.raw`(?:npx(?:\s+-\S+)*\s+|bunx\s+|npm\s+exec\s+(?:--\s+)?|pnpm\s+(?:exec|dlx)\s+|yarn\s+(?:exec\s+)?|\S*node_modules/\.bin/)?vitest(?:@\S+)?` +
+    String.raw`)(?=\s|$|[;&|])`
+);
+
+// A command segment that runs `storybook tools` is the right command, whatever flags precede it.
+export const isOtherTestRunner = (command: string): boolean =>
+  command
+    .split(/&&|\|\||[;|]/)
+    .some((segment) => !segment.includes('storybook tools') && OTHER_TEST_RUNNER.test(segment));
+
+export function expectNoOtherTestRunner(): void {
+  const others = getShellCommands().filter(isOtherTestRunner);
+  expect(
+    others,
+    'Expected story tests to run only through Storybook, never a package.json test script or vitest'
+  ).toEqual([]);
 }
 
 // Browse request: the review is resolved from the live story index, so the

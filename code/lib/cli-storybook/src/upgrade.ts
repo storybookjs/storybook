@@ -502,11 +502,14 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
         ? JsPackageManagerFactory.getPackageManager({ force: options.packageManager })
         : storybookProjects[0].packageManager;
 
-    await withNpmForceFallback(rootPackageManager, (installOptions) =>
-      rootPackageManager.installDependencies(installOptions)
-    );
+    if (!options.dryRun) {
+      await withNpmForceFallback(rootPackageManager, (installOptions) =>
+        rootPackageManager.installDependencies(installOptions)
+      );
+    }
 
     if (
+      !options.dryRun &&
       rootPackageManager.type !== PackageManagerName.YARN1 &&
       rootPackageManager.isStorybookInMonorepo()
     ) {

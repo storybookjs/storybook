@@ -13,6 +13,7 @@ import {
   getIncompatibleStorybookPackages,
 } from './getIncompatibleStorybookPackages.ts';
 import { getMismatchingVersionsWarnings } from './getMismatchingVersionsWarning.ts';
+import { getMissingSkillsMessage } from './missingSkills.ts';
 import { DiagnosticType as DiagType, DiagnosticStatus } from './types.ts';
 import type {
   DiagnosticResult,
@@ -236,6 +237,11 @@ export const doctor = async ({
 
   if (foundIssues) {
     logTracker.enableLogWriting();
+  }
+
+  const missingSkills = await getMissingSkillsMessage(mainConfig, versionInstalled);
+  if (missingSkills) {
+    logger.info(missingSkills);
   }
 };
 

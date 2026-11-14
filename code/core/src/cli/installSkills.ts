@@ -159,7 +159,6 @@ export async function installSkills({
   if (removedSkills.length > 0) {
     await removeSkills(packageManager, removedSkills, stdio);
   }
-  // Says why the skills are there: agents told only how to remove them did so, as unrequested.
   logger.log(
     source === 'refresh'
       ? 'Updated the Storybook skills for AI agents.'

@@ -279,7 +279,7 @@ export class VitestManager {
    *
    * - Component entry (has child stories/tests): match the whole describe block prefix
    * - Story-test entry (has parent): match "parent describe + test name" exactly
-   * - Regular story entry: match the story name exactly
+   * - Regular story entry: match the story name or export name exactly
    */
   private buildStoryTestNamePattern(
     story: StoryIndexEntry,

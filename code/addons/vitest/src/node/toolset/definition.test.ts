@@ -422,7 +422,7 @@ Fix or leave out the arguments listed above, then run again.`);
       expect(outcome.markdown).not.toContain('Before you finish');
     });
 
-    it('counts only the selected stories that got a verdict, without blaming tags for an error', async () => {
+    it('counts only the selected stories that got a verdict, without guessing a cause', async () => {
       const statuses = [
         componentTest('button--primary', 'status-value:success'),
         {
@@ -442,7 +442,7 @@ Fix or leave out the arguments listed above, then run again.`);
       } as TestRunOutput);
 
       expect((await runTests()).markdown).toContain(
-        '1 story file matches `Button`: selected 3 stories; only 1 ran, the others are excluded from tests (for example by tags).'
+        '1 story file matches `Button`: selected 3 stories; only 1 ran.'
       );
 
       vi.mocked(runStoryTests).mockResolvedValue({
@@ -471,7 +471,7 @@ Fix or leave out the arguments listed above, then run again.`);
       expect(outcome.ok).toBe(true);
       expect(outcome.markdown).toBe(`## Result
 
-1 story file matches \`Button\`: selected 2 stories; none ran, they are excluded from tests (for example by tags).
+1 story file matches \`Button\`: selected 2 stories; none ran.
 No component tests ran.
 Accessibility: not checked.`);
     });

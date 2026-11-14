@@ -287,7 +287,7 @@ export function displayPath(file: string): string {
 
 /**
  * A focused run whose selected stories all stayed out of the run, for example excluded by tags. It
- * passes, as a Vitest run whose tests are all skipped does; the selection line says why.
+ * passes, as a Vitest run whose tests are all skipped does; the selection line counts how many ran.
  */
 function ranNothingSelected(result: TestRunResult): boolean {
   return (
@@ -316,18 +316,9 @@ function formatChangedConfigFiles(changed: TestRunSelection['changed']): string[
   ];
 }
 
-// The likely cause is named only when no error could explain the gap instead.
-function ranNote(ran: number, selected: number, unhandledErrors: number): string {
-  if (ran >= selected) {
-    return '';
-  }
-  const cause =
-    unhandledErrors > 0
-      ? ''
-      : ran === 0
-        ? ', they are excluded from tests (for example by tags)'
-        : ', the others are excluded from tests (for example by tags)';
-  return `; ${ran === 0 ? 'none' : `only ${ran}`} ran${cause}`;
+// How many of the selected stories ran, without guessing why the others did not.
+function ranNote(ran: number, selected: number): string {
+  return ran >= selected ? '' : `; ${ran === 0 ? 'none' : `only ${ran}`} ran`;
 }
 
 // One line: what each form matched, then what that selected, counted against what actually ran.
@@ -355,7 +346,7 @@ function formatSelection(
     return `${parts.join('; ')}: selected every story.`;
   }
   const ran = (result.storyIds ?? []).filter((id) => ranStoryIds.has(id)).length;
-  return `${parts.join('; ')}: selected ${pluralize(selected, 'story', 'stories')}${ranNote(ran, selected, result.unhandledErrors.length)}.`;
+  return `${parts.join('; ')}: selected ${pluralize(selected, 'story', 'stories')}${ranNote(ran, selected)}.`;
 }
 
 const A11Y_GUIDANCE =

@@ -21,6 +21,8 @@
     "**/agent-eval/.eval-cache/**",
     "**/agent-eval/results/**",
     "**/agent-eval/templates/*/public/mockServiceWorker.js",
+    "ecosystem-qa/results/**",
+    "ecosystem-qa/work/**",
     "storybook-static",
     "built-storybooks",
     "code/core/assets",

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { GlobalTypes } from '../../csf/story.ts';
 
-import { normalizeArgType } from './normalize-toolbar-arg-type.ts';
+import { normalizeArgType, normalizeToolbarArgTypes } from './normalize-toolbar-arg-type.ts';
 
 describe('normalizeArgType', () => {
   it('returns null when the argType has no toolbar config', () => {
@@ -62,6 +62,26 @@ describe('normalizeArgType', () => {
     });
 
     expect(result?.toolbar.items).toEqual([{ title: 'Untitled option' }]);
+  });
+});
+
+describe('normalizeToolbarArgTypes', () => {
+  it('keeps the global types that have a toolbar, with their id, in declaration order', () => {
+    const result = normalizeToolbarArgTypes({
+      theme: { description: 'Theme', toolbar: { items: ['light', 'dark'] } },
+      locale: { description: 'Locale' },
+      density: { toolbar: { items: [{ value: 'compact', title: 'Compact' }] } },
+    });
+
+    expect(result.map((toolbar) => toolbar.id)).toEqual(['theme', 'density']);
+    expect(result[0].toolbar.items).toEqual([
+      { value: 'light', title: 'light' },
+      { value: 'dark', title: 'dark' },
+    ]);
+  });
+
+  it('returns nothing when no global type has a toolbar', () => {
+    expect(normalizeToolbarArgTypes({ locale: { description: 'Locale' } })).toEqual([]);
   });
 });
 

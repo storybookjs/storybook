@@ -45,7 +45,8 @@ const options = {
   minMatchCharLength: 1,
   keys: [
     { name: 'name', weight: 0.6 },
-    { name: 'path', weight: 0.3 },
+    { name: 'path', weight: 0.2 },
+    { name: 'altNames', weight: 0.1 },
     { name: 'anchors.title', weight: 0.1 },
   ],
 } as FuseOptions<SearchItem>;

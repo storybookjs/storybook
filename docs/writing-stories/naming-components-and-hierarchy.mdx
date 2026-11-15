@@ -44,6 +44,18 @@ Yields this:
 
 ![Stories hierarchy with paths](../_assets/writing-stories/naming-hierarchy-with-path.png)
 
+<If notRenderer="svelte">
+
+## Alternative names
+
+People don't always search for a component by the name in its title. A designer might look for "CTA" when the component is called Button. Use the `altNames` property to list other names, and the sidebar search will also find the component by them:
+
+<CodeSnippets path="button-story-alt-names.md" />
+
+Searching for "CTA" now lists the Button component and its stories. Write `altNames` as an array of strings directly in the meta, or in a variable that holds one, because Storybook reads it without running your stories file.
+
+</If>
+
 ## Roots
 
 By default, the top-level grouping will be displayed as “root” in the Storybook UI (i.e., the uppercased, non-expandable items). If you need, you can [configure Storybook](../configure/user-interface/sidebar-and-urls.mdx#roots) and disable this behavior. Useful if you need to provide a streamlined experience for your users; nevertheless, if you have a large Storybook composed of multiple component stories, we recommend naming your components according to the file hierarchy.

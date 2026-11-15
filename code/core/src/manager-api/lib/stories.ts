@@ -313,6 +313,10 @@ export const transformStoryIndexToStoriesHash = (
       .reduce(intersect);
     if (entry.type === 'component') {
       entry.importPath = (storiesHash[children[0]] as API_LeafEntry).importPath;
+      const altNames = [...new Set(children.flatMap((id) => storiesHash[id].altNames ?? []))];
+      if (altNames.length) {
+        entry.altNames = altNames;
+      }
     }
   };
 

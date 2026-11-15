@@ -69,6 +69,7 @@ export interface BaseIndexEntry {
   name: StoryName;
   title: ComponentTitle;
   tags?: Tag[];
+  altNames?: string[];
   importPath: Path;
 }
 export type StoryIndexEntry = BaseIndexEntry & {
@@ -132,6 +133,8 @@ export type BaseIndexInput = {
   metaId?: MetaId;
   /** Tags for filtering entries in Storybook and its tools. */
   tags?: Tag[];
+  /** Other names the sidebar search also matches, set at `meta.altNames`. */
+  altNames?: string[];
   /**
    * The id of the entry, auto-generated from {@link title}/{@link metaId} and {@link exportName} if
    * unspecified. If specified, the story in the CSF file _must_ have a matching id set at

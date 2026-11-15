@@ -333,4 +333,38 @@ describe('transformStoryIndexToStoriesHash', () => {
       expect(filtered['guides-button--primary']).toBeUndefined();
     });
   });
+
+  it('gives a component the altNames of its stories', () => {
+    const story = (id: string, name: string) => ({
+      id,
+      type: 'story' as const,
+      subtype: 'story' as const,
+      title: 'Overlay/Modal',
+      name,
+      importPath: './modal.stories.ts',
+      tags: [],
+      altNames: ['Dialog', 'Popup'],
+    });
+    const result = transformStoryIndexToStoriesHash(
+      {
+        v: 5,
+        entries: {
+          'overlay-modal--basic': story('overlay-modal--basic', 'Basic'),
+          'overlay-modal--large': story('overlay-modal--large', 'Large'),
+        },
+      },
+      {
+        provider: { getConfig: () => ({ sidebar: {} }) } as any,
+        docsOptions: { docsMode: false },
+        filters: {},
+        allStatuses: {},
+      }
+    );
+
+    expect(result['overlay-modal']).toMatchObject({
+      type: 'component',
+      altNames: ['Dialog', 'Popup'],
+    });
+    expect(result['overlay-modal--basic']).toMatchObject({ altNames: ['Dialog', 'Popup'] });
+  });
 });

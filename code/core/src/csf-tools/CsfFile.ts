@@ -103,6 +103,19 @@ function parseTags(prop: Node | null | undefined) {
   }) as Tag[];
 }
 
+function parseAltNames(prop: Node | null | undefined) {
+  if (prop?.type !== 'ArrayExpression') {
+    throw new Error('CSF: Expected altNames array');
+  }
+
+  return prop.elements.map((e) => {
+    if (isStringLiteral(e)) {
+      return e.value;
+    }
+    throw new Error(`CSF: Expected altNames to be string literals`);
+  });
+}
+
 function resolveTags(tags: Node, program: E.Program) {
   return parseTags(tags.type === 'Identifier' ? findVarInitialization(tags.name, program) : tags);
 }
@@ -318,7 +331,7 @@ export class BadMetaError extends Error {
 
 export interface StaticMeta extends Pick<
   ComponentAnnotations,
-  'id' | 'title' | 'includeStories' | 'excludeStories' | 'tags'
+  'id' | 'title' | 'includeStories' | 'excludeStories' | 'tags' | 'altNames'
 > {
   component?: string;
 }
@@ -745,6 +758,12 @@ export class CsfFile {
           node = findVarInitialization(node.name, this.program);
         }
         meta.tags = parseTags(node);
+      } else if (key === 'altNames') {
+        meta.altNames = parseAltNames(
+          p.value.type === 'Identifier'
+            ? findVarInitialization(p.value.name, this.program)
+            : p.value
+        );
       } else if (key === 'id') {
         if (isStringLiteral(p.value)) {
           meta.id = p.value.value;
@@ -1372,6 +1391,7 @@ export class CsfFile {
         exportName,
         title: this.meta?.title,
         metaId: this.meta?.id,
+        altNames: this.meta?.altNames,
         tags,
         __id: story.id,
         __stats: story.__stats,

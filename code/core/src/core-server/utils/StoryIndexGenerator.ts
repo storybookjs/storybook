@@ -410,6 +410,7 @@ export class StoryIndexGenerator {
           importPath: toImportPath(input.importPath),
           componentPath,
           tags,
+          ...(input.altNames && { altNames: input.altNames }),
         };
 
         if (subtype === 'test') {
@@ -444,6 +445,7 @@ export class StoryIndexGenerator {
         importPath: entry.importPath,
         type: 'docs',
         tags,
+        ...(indexInputs[0].altNames && { altNames: indexInputs[0].altNames }),
         storiesImports: [],
         ...(this.options.features?.experimentalSearchDocsHeadings && {
           // Each story in an autodocs page is wrapped in an `Anchor` block whose DOM id is

@@ -1,5 +1,7 @@
 import React from 'react';
 
+import type { API_IndexHash } from 'storybook/internal/types';
+
 import type { Meta, StoryFn } from '@storybook/react-vite';
 
 import type { API } from 'storybook/manager-api';
@@ -74,6 +76,65 @@ export const LastViewed: StoryFn = () => (
     )}
   </Search>
 );
+
+const altNamesIndex: API_IndexHash = {
+  overlay: {
+    type: 'root',
+    id: 'overlay',
+    name: 'Overlay',
+    depth: 0,
+    tags: [],
+    children: ['overlay-modal'],
+  },
+  'overlay-modal': {
+    type: 'component',
+    id: 'overlay-modal',
+    name: 'Modal',
+    parent: 'overlay',
+    depth: 1,
+    tags: [],
+    altNames: ['Dialog', 'Popup'],
+    children: ['overlay-modal--basic'],
+  },
+  'overlay-modal--basic': {
+    type: 'story',
+    subtype: 'story',
+    id: 'overlay-modal--basic',
+    name: 'Basic',
+    title: 'Overlay/Modal',
+    importPath: './modal.stories.ts',
+    exportName: 'Basic',
+    parent: 'overlay-modal',
+    depth: 2,
+    tags: [],
+    altNames: ['Dialog', 'Popup'],
+    prepared: false,
+  },
+};
+const altNamesData = {
+  [refId]: { id: refId, url: '/', index: altNamesIndex, previewInitialized: true, allStatuses: {} },
+};
+
+/** A component's `altNames` are searchable, so searching "Dialog" finds the "Modal" component. */
+export const AltNames: StoryFn = () => (
+  <Search {...baseProps} dataset={{ hash: altNamesData, entries: Object.entries(altNamesData) }}>
+    {({ query, results, closeMenu, getMenuProps, getItemProps, highlightedIndex }) => (
+      <SearchResults
+        query={query}
+        results={results}
+        closeMenu={closeMenu}
+        getMenuProps={getMenuProps}
+        getItemProps={getItemProps}
+        highlightedIndex={highlightedIndex}
+      />
+    )}
+  </Search>
+);
+AltNames.play = async ({ canvasElement }) => {
+  const canvas = within(canvasElement);
+  await userEvent.type(canvas.getByRole('searchbox'), 'Dialog');
+  await expect(await canvas.findByText('Modal')).toBeVisible();
+};
 
 const escapeAbove = fn().mockName('escapeAbove');
 

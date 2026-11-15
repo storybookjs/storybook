@@ -116,46 +116,39 @@ EscapeWithQueryStaysInSearch.play = async ({ canvasElement }) => {
 const selectStory = fn().mockName('selectStory');
 
 // Renders the search results only while they are open, as the sidebar does.
-const SearchWithResults: StoryFn = () => (
-  <Search {...baseProps}>
-    {({
-      query,
-      results,
-      isSearchResultRendered,
-      closeMenu,
-      getMenuProps,
-      getItemProps,
-      highlightedIndex,
-    }) =>
-      isSearchResultRendered ? (
-        <SearchResults
-          query={query}
-          results={results}
-          closeMenu={closeMenu}
-          getMenuProps={getMenuProps}
-          getItemProps={getItemProps}
-          highlightedIndex={highlightedIndex}
-        />
-      ) : null
-    }
-  </Search>
-);
+const renderOpenResults: SearchProps['children'] = ({
+  query,
+  results,
+  isSearchResultRendered,
+  closeMenu,
+  getMenuProps,
+  getItemProps,
+  highlightedIndex,
+}) =>
+  isSearchResultRendered ? (
+    <SearchResults
+      query={query}
+      results={results}
+      closeMenu={closeMenu}
+      getMenuProps={getMenuProps}
+      getItemProps={getItemProps}
+      highlightedIndex={highlightedIndex}
+    />
+  ) : null;
+
+const SearchWithResults: StoryFn = () => <Search {...baseProps}>{renderOpenResults}</Search>;
+
+const selectStoryContext = {
+  api: {
+    getShortcutKeys: () => ({ search: ['/'] }),
+    selectStory,
+    resolveStory: () => undefined,
+    emit: () => {},
+  },
+} as unknown as React.ContextType<typeof ManagerContext>;
 
 const withSelectStoryApi: Decorator = (storyFn) => (
-  <ManagerContext.Provider
-    value={
-      {
-        api: {
-          getShortcutKeys: () => ({ search: ['/'] }),
-          selectStory,
-          resolveStory: () => undefined,
-          emit: () => {},
-        } as unknown as API,
-      } as any
-    }
-  >
-    {storyFn()}
-  </ManagerContext.Provider>
+  <ManagerContext.Provider value={selectStoryContext}>{storyFn()}</ManagerContext.Provider>
 );
 
 /**
@@ -208,10 +201,32 @@ KeepsShowMoreAfterSelecting.play = async ({ canvasElement }) => {
   expect(canvasElement.querySelector(`[data-id="${laterResultId}"]`)).toBeInTheDocument();
   expect(canvas.queryByRole('option', { name: /more results/ })).not.toBeInTheDocument();
 
-  await userEvent.type(input, ' ');
+  await userEvent.type(input, '{backspace}');
   await waitFor(() =>
     expect(canvas.getByRole('option', { name: /more results/ })).toBeInTheDocument()
   );
+};
+
+/**
+ * A query of only spaces lists the recently opened items, as an empty query does. Opening one
+ * returns to the tree view, because the trimmed query is empty.
+ */
+export const RecentlyOpenedFromSpacesOnlyQuery: StoryFn = () => (
+  <Search {...baseProps} getLastViewed={getLastViewed}>
+    {renderOpenResults}
+  </Search>
+);
+RecentlyOpenedFromSpacesOnlyQuery.decorators = [withSelectStoryApi];
+RecentlyOpenedFromSpacesOnlyQuery.play = async ({ canvasElement }) => {
+  selectStory.mockClear();
+  const canvas = within(canvasElement);
+
+  await userEvent.type(canvas.getByRole('searchbox'), '  ');
+  const [firstRecentItem] = await canvas.findAllByRole('option');
+  await userEvent.click(firstRecentItem);
+
+  await waitFor(() => expect(selectStory).toHaveBeenCalledOnce());
+  await waitFor(() => expect(canvas.queryAllByRole('option')).toHaveLength(0));
 };
 
 export const ShortcutsDisabled: StoryFn = () => (

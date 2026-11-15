@@ -49,13 +49,11 @@ test.describe('navigating', () => {
   test('opening a search result keeps the query and the search results', async ({ page }) => {
     await page.goto(storybookUrl);
 
-    const sbPage = new SbPage(page, expect);
-    await sbPage.waitUntilLoaded();
-
     const searchField = page.getByRole('searchbox');
+    await expect(searchField).toBeVisible();
     await searchField.fill('typography');
 
-    const result = page.locator('.search-result-item[data-id="brand-typography--docs"]');
+    const result = page.getByRole('option').and(page.locator('[data-id="brand-typography--docs"]'));
     await result.click();
     await page.waitForFunction(() =>
       window.document.location.href.match('/docs/brand-typography--docs')

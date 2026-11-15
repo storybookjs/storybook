@@ -82,13 +82,13 @@ const InlineStory: FunctionComponent<InlineStoryProps> = (props) => {
           {showLoader && <StorySkeleton />}
         </>
       )}
-      {/* Stays mounted while the error shows, so the story can render here again once it recovers */}
+      {/* Stays mounted and laid out while the error shows, so a recovering story renders here at its real size */}
       <div
         ref={storyRef as any}
         id={`${storyBlockIdFromId(props)}-inner`}
         data-name={story.name}
         lang={story.parameters?.htmlLang || 'en'}
-        hidden={!!error}
+        style={error ? { visibility: 'hidden' } : undefined}
       />
     </>
   );

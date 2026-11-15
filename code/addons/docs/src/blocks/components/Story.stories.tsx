@@ -12,7 +12,7 @@ import type { ModuleExport, RenderContextCallbacks, WebRenderer } from 'storyboo
 import type { Meta, ReactRenderer, StoryObj } from '@storybook/react-vite';
 
 import type { PreviewWeb } from 'storybook/preview-api';
-import { expect, within } from 'storybook/test';
+import { expect, waitFor, within } from 'storybook/test';
 
 import type { DocsContextProps } from '../blocks';
 import * as ButtonStories from '../examples/Button.stories';
@@ -104,9 +104,12 @@ export const InlineErrorRecovery: Story = {
 
     errorRecoveryCallbacks?.showException(new Error('Story failed'));
     await canvas.findByText(/Story failed/);
+    await expect(canvas.getByText('Story content').getBoundingClientRect().width).toBeGreaterThan(
+      0
+    );
 
     errorRecoveryCallbacks?.showMain();
-    await expect(await canvas.findByText('Story content')).toBeVisible();
+    await waitFor(() => expect(canvas.getByText('Story content')).toBeVisible());
     await expect(canvas.queryByText(/Story failed/)).not.toBeInTheDocument();
   },
 };

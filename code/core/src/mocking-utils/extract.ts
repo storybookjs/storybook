@@ -128,7 +128,7 @@ export function extractMockCalls(
       tsconfig: false,
     });
     if (errors.length > 0) {
-      throw new SyntaxError(errors[0].message);
+      throw new SyntaxError(errors.map((error) => error.message).join('\n'));
     }
     const ast = parseModule(jsCode, options.previewConfigPath).program;
     const mocks: MockCall[] = [];

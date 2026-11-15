@@ -4,18 +4,15 @@ import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'pathe';
 import type { Plugin } from 'rolldown';
 
-// An `@import` of a stylesheet, or the `url()` of an asset.
+// A comment, an `@import` of a stylesheet with its conditions, or the `url()` of an asset.
 const REFERENCE =
-  /@import\s+(?:url\(\s*)?(["']?)([^"')\s]+)\1\s*\)?\s*;|url\(\s*(["']?)([^"')]+)\3\s*\)/g;
+  /\/\*[\s\S]*?\*\/|@import\s+(?:url\(\s*)?(["']?)([^"')\s]+)\1\s*\)?([^;]*);|url\(\s*(["']?)([^"')]+)\4\s*\)/g;
 
 // A URL with a scheme, a path from the root of the site or a fragment names no file to bundle.
 const isBundled = (reference: string) => !/^(?:[a-z][a-z\d+.-]*:|\/|#)/i.test(reference);
 
-/**
- * Rolldown bundles no CSS. A stylesheet becomes a module that adds a `<style>` element, with its
- * `@import`s and `url()`s as imports of that module, so Rolldown resolves and inlines them as it
- * does for a script.
- */
+// Rolldown bundles no CSS. A stylesheet becomes a module that adds a `<style>` element, with its
+// `@import`s and `url()`s as imports of that module, so Rolldown resolves and inlines them.
 export const cssAsStyleElement = (): Plugin => ({
   name: 'storybook:manager-css',
   load: {
@@ -32,9 +29,14 @@ export const cssAsStyleElement = (): Plugin => ({
       const text: string[] = [];
       let end = 0;
       for (const match of css.matchAll(REFERENCE)) {
-        const [reference, , stylesheet, , asset] = match;
-        if (!isBundled(stylesheet ?? asset)) {
+        const [reference, , stylesheet, condition, , asset] = match;
+        if (!(stylesheet ?? asset) || !isBundled(stylesheet ?? asset)) {
           continue;
+        }
+        if (condition?.trim()) {
+          this.error(
+            `An @import with a condition cannot be bundled into the manager: ${reference}`
+          );
         }
         text.push(JSON.stringify(css.slice(end, match.index)));
         end = match.index + reference.length;

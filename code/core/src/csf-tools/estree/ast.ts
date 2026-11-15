@@ -7,8 +7,7 @@ export * from './nodes.ts';
 
 export type { E };
 
-// Rolldown has no export for the child keys of each node type, so they are bundled from
-// oxc-parser, the parser inside Rolldown.
+// Rolldown does not export the child keys of each node type; oxc-parser, its parser, does.
 export { visitorKeys };
 
 export type Node = E.Node;

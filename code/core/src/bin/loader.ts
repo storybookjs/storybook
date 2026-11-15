@@ -156,7 +156,7 @@ export const load: LoadHookSync = (url, context, nextLoad) => {
     const { code, errors } = transformSync(filePath, rawSource, {
       lang: 'ts',
       target: NODE_TARGET,
-      // The project's tsconfig must not change how Storybook's own config files are compiled.
+      // Rolldown would otherwise compile with the options of the nearest tsconfig.json.
       tsconfig: false,
     });
     if (errors.length > 0) {

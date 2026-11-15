@@ -1,4 +1,4 @@
-import { readdirSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import os from 'node:os';
 
@@ -19,7 +19,7 @@ import {
 vi.mock('node:fs');
 vi.mock('node:fs/promises');
 vi.mock('storybook/internal/node-logger');
-vi.mock('rolldown/utils');
+vi.mock('rolldown/utils', { spy: true });
 
 describe('loader', () => {
   beforeEach(() => {
@@ -50,7 +50,7 @@ describe('loader', () => {
     it('still transforms a .ts URL with a cache-busting query string appended', () => {
       // Regression test: importModule appends `?<timestamp>` to bust the module cache when
       // skipCache is set. That must not cause this loader to skip the file and fall through to
-      // Node's native handling, which does not elide type-only named imports the way the transform does.
+      // Node's native handling, which does not elide type-only named imports as the transform does.
       const path =
         os.platform() === 'win32'
           ? 'file:///C:/project/main.ts?1234567890'
@@ -61,6 +61,15 @@ describe('loader', () => {
       expect(transformSync).toHaveBeenCalled();
       expect(nextLoad).not.toHaveBeenCalled();
       expect(result).toMatchObject({ format: 'module', shortCircuit: true });
+    });
+
+    it('throws the syntax errors of a .ts file', () => {
+      vi.mocked(transformSync).mockRestore();
+      vi.mocked(readFileSync).mockReturnValue('const a: = 1;');
+
+      const path =
+        os.platform() === 'win32' ? 'file:///C:/project/main.ts' : 'file:///project/main.ts';
+      expect(() => load(path, {} as any, nextLoad)).toThrow(SyntaxError);
     });
 
     it('delegates non-TS URLs to nextLoad', () => {

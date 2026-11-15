@@ -4,6 +4,7 @@ import { join, relative } from 'pathe';
 import { build } from 'rolldown';
 import { describe, expect, it } from 'vitest';
 
+import { keepEveryModule } from '../../builder-manager/utils/bundle.ts';
 import { globalExternals } from '../../builder-manager/utils/global-externals.ts';
 import { globalsModuleInfoMap } from './globals-module-info.ts';
 
@@ -54,11 +55,12 @@ describe('built-in manager entries', () => {
   it.runIf(built.length > 0).each(built.map((entry) => [entry.slice(CODE.length + 1), entry]))(
     '%s bundles no test library',
     async (_, entry) => {
-      // Like the manager builder: its globals and resolve conditions.
+      // Like the manager builder: its globals, resolve conditions and kept modules.
       const { output } = await build({
         input: entry,
         write: false,
         platform: 'browser',
+        treeshake: keepEveryModule,
         resolve: { conditionNames: ['browser', 'module', 'default'] },
         plugins: [globalExternals(globalsModuleInfoMap)],
         logLevel: 'silent',

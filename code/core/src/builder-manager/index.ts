@@ -4,7 +4,7 @@ import { stringifyProcessEnvs } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
 import { resolveModulePath } from 'exsolve';
-import { dirname, join, parse, relative } from 'pathe';
+import { join, parse } from 'pathe';
 import sirv from 'sirv';
 
 import { globalsModuleInfoMap } from '../manager/globals/globals-module-info.ts';
@@ -17,12 +17,13 @@ import type {
   ManagerBuilder,
   StarterFunction,
 } from './types.ts';
+import { bundleManagerEntries, keepEveryModule } from './utils/bundle.ts';
 import { cssAsStyleElement } from './utils/css.ts';
 import { getData } from './utils/data.ts';
 import { buildFrameworkGlobalsFromOptions } from './utils/framework.ts';
 import { globalExternals } from './utils/global-externals.ts';
 import { wrapManagerEntries } from './utils/managerEntries.ts';
-import { getTemplatePath, renderHTML } from './utils/template.ts';
+import { renderHTML } from './utils/template.ts';
 
 export { BROWSER_TARGETS, NODE_TARGET } from '../shared/constants/environments-support.ts';
 
@@ -72,7 +73,7 @@ export const getConfig: ManagerBuilder['getConfig'] = async (options) => {
     entryPoints: await wrapManagerEntries(entryPoints, options.cacheKey),
     outdir: join(options.outputDir || './', 'sb-addons'),
     platform: 'browser',
-    tsconfig: getTemplatePath('addon.tsconfig.json'),
+    tsconfig: false,
     resolve: {
       conditionNames: ['browser', 'module', 'default'],
       extensions: ['.ts', '.tsx', '.mjs', '.js', '.jsx'],
@@ -81,9 +82,7 @@ export const getConfig: ManagerBuilder['getConfig'] = async (options) => {
       '.js': 'jsx',
       ...Object.fromEntries(DATA_URL_EXTENSIONS.map((extension) => [extension, 'dataurl'])),
     },
-    // A manager entry is imported for what it registers, so no module may be dropped because its
-    // package.json or a `@__PURE__` comment calls it free of side effects.
-    treeshake: { moduleSideEffects: [{ test: /./, sideEffects: true }], annotations: false },
+    treeshake: keepEveryModule,
     transform: {
       target: BROWSER_TARGETS,
       jsx: { runtime: 'classic', pragma: 'React.createElement', pragmaFrag: 'React.Fragment' },
@@ -94,38 +93,8 @@ export const getConfig: ManagerBuilder['getConfig'] = async (options) => {
       },
     },
     plugins: [globalExternals(globalsModuleInfoMap), cssAsStyleElement()],
-    output: { format: 'iife', minify: 'dce-only' },
+    output: { format: 'iife' },
   };
-};
-
-// Bundles each manager entry into its own file of `outdir`, and returns the URL of each.
-const bundle = async (
-  { entryPoints, outdir, ...options }: Awaited<ReturnType<ManagerBuilder['getConfig']>>,
-  minify = options.output?.minify
-) => {
-  // An entry is `<directory of the addon>/<name>-bundle.js` in the cache directory.
-  const files = entryPoints.map((entry) => relative(dirname(dirname(entry)), entry));
-  const urls = files.map(
-    (file) => `./sb-addons/${file.split('/').map(encodeURIComponent).join('/')}`
-  );
-  const { build } = await import('rolldown');
-  await build(
-    entryPoints.map((input, index) => ({
-      ...options,
-      input,
-      output: {
-        ...options.output,
-        minify,
-        file: join(outdir, files[index]),
-        // A failing manager entry must not stop the others. `module` is bound here instead of
-        // defined away, as a define would hide `module.exports` from Rolldown, which then reads a
-        // CommonJS dependency as a module without exports.
-        banner: 'try{var module={};',
-        footer: `}catch(e){ console.error("[Storybook] One of your manager-entries failed: " + ${JSON.stringify(urls[index])}, e); }`,
-      },
-    }))
-  );
-  return urls;
 };
 
 /**
@@ -165,7 +134,7 @@ const starter: StarterFunction = async function* starterGeneratorFn({
 
   yield;
 
-  const jsFiles = await bundle(config);
+  const jsFiles = await bundleManagerEntries(config, false);
 
   yield;
 
@@ -261,7 +230,7 @@ const builder: BuilderFunction = async function* builderGeneratorFn({ startTime,
 
   const coreDirTarget = join(options.outputDir, `sb-manager`);
 
-  const jsFiles = await bundle(config, true);
+  const jsFiles = await bundleManagerEntries(config, true);
 
   yield;
 

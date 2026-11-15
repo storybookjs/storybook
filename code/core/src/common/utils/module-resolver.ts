@@ -1,6 +1,6 @@
 import { ResolverFactory } from 'rolldown/experimental';
 
-// `rolldown/experimental` is outside Rolldown's semver promise, so this is its only import.
+// `rolldown/experimental` may change in a minor release, so a lint rule keeps its import here.
 export { ResolverFactory };
 
 /**

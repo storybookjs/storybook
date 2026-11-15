@@ -1,0 +1,67 @@
+---
+title: Component docs
+sidebar:
+  order: 3
+---
+
+<If notRenderer={['react', 'vue', 'angular', 'svelte', 'web-components']}>
+
+The `component-docs` skill lets your agent look up your components, with their props and usage examples, so it will use them correctly and can answer questions about them. It needs a [components manifest](../reference/manifests.mdx), which your framework doesn't generate yet. See [framework support](../reference/manifests.mdx#framework-support).
+
+</If>
+
+<If renderer={['react', 'vue', 'angular', 'svelte', 'web-components']}>
+
+The `component-docs` skill lets your agent look up the components in your Storybook, with their props and usage examples. Your agent will then use the components you have instead of building new ones, use only the props and attributes they support, and answer questions about how to use them.
+
+## When your agent uses it
+
+The skill is step 1 of the [UI workflow](./ui-workflow.mdx). With the [Storybook section in `AGENTS.md`](../connect.mdx#tell-your-agent-when-to-use-the-skills), your agent uses it before it edits any file for a UI change, and when you ask about a component's props, API, or usage. For example:
+
+| Task                    | Example prompt                                                         | What the agent does                                                                                               |
+| ----------------------- | ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Use your components     | "Build a new settings page"                                            | Looks for existing components that can be reused for the new page as part of the [UI workflow](./ui-workflow.mdx) |
+| Choose a component      | "Should I use `Button` or `IconButton` for a toolbar's close control?" | Compares the descriptions, props, and examples of both, then recommends one and says why                          |
+| Find the right props    | "Which props make `Dialog` more accessible?"                           | Lists only the documented props that apply, such as labels and focus behavior, and says if none do the job        |
+| Answer a usage question | "Which props does `Card` take?"                                        | Shows the props, their types, and example stories                                                                 |
+
+## What the agent reads
+
+The agent reads your components' documentation from your Storybook, not from source files or `node_modules`:
+
+- A list of every component and docs page, with a summary of each
+- For each component: its description, its props with their types, and the code of its first stories
+- The code of any other story, when the first stories don't show the usage it needs
+
+This information comes from the [components manifest](../reference/manifests.mdx). The agent reads source files only when your Storybook has no documentation for what it needs.
+
+## Components from other Storybooks
+
+If your Storybook uses [composition](../../sharing/storybook-composition.mdx), the agent also sees the components of each composed Storybook that has a components manifest. For example, an app's Storybook can compose your design system's published Storybook. The agent then finds components in both, and can tell you which app components duplicate a design system component.
+
+## Get better results
+
+The agent can only answer from what your Storybook documents. Good documentation helps it choose and use the right component:
+
+- **Component summaries and descriptions** that say when to use the component, and when to use another one instead. These help the agent choose between similar components, such as `Button` and `IconButton`.
+- **Prop descriptions**, especially for accessibility props such as `aria-label` or `closeLabel`.
+- **Stories that show real usage**, such as an icon-only button with its accessible label.
+
+See the [best practices](../best-practices.mdx) for more guidance on documenting your components.
+
+## Requirements
+
+- A [components manifest](../reference/manifests.mdx). See [framework support](../reference/manifests.mdx#framework-support).
+- With the [MCP server](../reference/mcp-server.mdx), the [`docs` toolset](../reference/mcp-server.mdx#docs) turned on
+
+</If>
+{/* End supported renderers */}
+
+**More AI resources**
+
+- [Connect your agent](../connect.mdx)
+- [UI workflow](./ui-workflow.mdx)
+- [Write stories](./write-stories.mdx)
+- [Best practices for using Storybook with AI](../best-practices.mdx)
+- [Manifests](../reference/manifests.mdx)
+- [Use a published Storybook](../published-storybook.mdx)

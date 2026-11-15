@@ -17,7 +17,7 @@ import type {
   ManagerBuilder,
   StarterFunction,
 } from './types.ts';
-import { bundleManagerEntries, keepEveryModule } from './utils/bundle.ts';
+import { bundleManagerEntries } from './utils/bundle.ts';
 import { cssAsStyleElement } from './utils/css.ts';
 import { getData } from './utils/data.ts';
 import { buildFrameworkGlobalsFromOptions } from './utils/framework.ts';
@@ -82,7 +82,9 @@ export const getConfig: ManagerBuilder['getConfig'] = async (options) => {
       '.js': 'jsx',
       ...Object.fromEntries(DATA_URL_EXTENSIONS.map((extension) => [extension, 'dataurl'])),
     },
-    treeshake: keepEveryModule,
+    // A manager entry is imported for what it registers, so nothing in it is unused. Rolldown's
+    // tree-shaking also removes a top-level `return` of a CommonJS module.
+    treeshake: false,
     transform: {
       target: BROWSER_TARGETS,
       jsx: { runtime: 'classic', pragma: 'React.createElement', pragmaFrag: 'React.Fragment' },

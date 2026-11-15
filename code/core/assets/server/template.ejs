@@ -73,11 +73,14 @@
     <script type="module">
       import './sb-manager/globals-runtime.js';
 
+      <%# An entry that the browser cannot parse or fetch must not stop the others or the manager. %>
       <% files.js.forEach(file => { %>
-        import '<%= file %>';
+        await import('<%= file %>').catch((error) =>
+          console.error('[Storybook] One of your manager-entries failed: <%= file %>', error)
+        );
       <% }); %>
 
-      import './sb-manager/runtime.js';
+      await import('./sb-manager/runtime.js');
     </script>
   </body>
 </html>

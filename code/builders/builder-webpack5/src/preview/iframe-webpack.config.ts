@@ -17,13 +17,13 @@ import { type BuilderOptions } from '@storybook/core-webpack';
 import CaseSensitivePathsPlugin from 'case-sensitive-paths-webpack-plugin';
 import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
-import { minify } from 'rolldown/utils';
 import TerserWebpackPlugin from 'terser-webpack-plugin';
 import webpackModule from 'webpack';
 import type { Configuration } from 'webpack';
 import VirtualModulePlugin from 'webpack-virtual-modules';
 
 import type { TypescriptOptions } from '../types.ts';
+import { fastMinify } from './fast-minify.ts';
 import {
   developmentPreviewChunkFilename,
   productionPreviewChunkFilename,
@@ -244,20 +244,9 @@ export default async (
             minimizer: options.build?.test?.esbuildMinify
               ? [
                   new TerserWebpackPlugin<{ module?: boolean }>({
-                    // This closure cannot be sent to a worker, and Rolldown has its own threads.
+                    // A function that imports cannot be sent to a worker, and Rolldown has its own threads.
                     parallel: false,
-                    minify: async (input, sourceMap, { module = false }) => {
-                      const [[fileName, source]] = Object.entries(input);
-                      const { code, map, errors } = await minify(fileName, source, {
-                        module,
-                        sourcemap: Boolean(sourceMap),
-                      });
-                      const messages = (isError: boolean) =>
-                        errors
-                          .filter((error) => (error.severity === 'Error') === isError)
-                          .map((error) => new Error(error.message));
-                      return { code, map, errors: messages(true), warnings: messages(false) };
-                    },
+                    minify: fastMinify,
                   }),
                 ]
               : [

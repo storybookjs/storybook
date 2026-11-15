@@ -4,7 +4,6 @@ import { join, relative } from 'pathe';
 import { build } from 'rolldown';
 import { describe, expect, it } from 'vitest';
 
-import { keepEveryModule } from '../../builder-manager/utils/bundle.ts';
 import { globalExternals } from '../../builder-manager/utils/global-externals.ts';
 import { globalsModuleInfoMap } from './globals-module-info.ts';
 
@@ -60,7 +59,7 @@ describe('built-in manager entries', () => {
         input: entry,
         write: false,
         platform: 'browser',
-        treeshake: keepEveryModule,
+        treeshake: false,
         resolve: { conditionNames: ['browser', 'module', 'default'] },
         plugins: [globalExternals(globalsModuleInfoMap)],
         logLevel: 'silent',

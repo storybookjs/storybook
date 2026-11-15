@@ -1,0 +1,2 @@
+@layer one, two;
+@import './other.css';

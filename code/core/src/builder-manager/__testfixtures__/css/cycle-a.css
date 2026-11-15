@@ -1,0 +1,4 @@
+@import './cycle-b.css';
+.a {
+  color: red;
+}

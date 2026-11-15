@@ -1687,7 +1687,7 @@ Storybook no longer bundles Babel or recast to read and write story and config f
 - Code that a migration or `storybook add` inserts follows the file: string quotes and indentation are inferred from it, new imports go after the existing imports in the order they are added, and a statement put first in a file stays below its header comments.
 - The Vitest config that `@storybook/addon-vitest` writes reads the config directory from `import.meta.dirname`.
 - Story files read string-literal keys and ignore computed identifier keys. `export default { 'title': 'X' }` now gives story ids under `X`, where Babel used the automatic title, and `export default { [title]: 'X' }` no longer sets the title.
-- On StackBlitz WebContainers, which have no native `oxc-parser` binding, `oxc-parser` downloads `@oxc-parser/binding-wasm32-wasi` itself with `pnpm`. On any other host without a native binding, Storybook fails with a "Cannot find native binding" error whose cause names the missing packages; install `@oxc-parser/binding-wasm32-wasi` in the project at the exact version of `oxc-parser`.
+- On StackBlitz WebContainers, which have no native Rolldown binding, Rolldown downloads `@rolldown/binding-wasm32-wasi` itself with `pnpm`. On any other host without a native binding, Storybook fails with a "Cannot find native binding" error whose cause names the missing packages; install `@rolldown/binding-wasm32-wasi` in the project at the exact version of `rolldown`.
 
 #### Community packages that need a release
 
@@ -2715,13 +2715,14 @@ Server-side docgen, the default in Storybook 11, reads the JSDoc types, so a new
 
 ### Storybook depends on Rolldown instead of esbuild
 
-`storybook` no longer depends on `esbuild`, `oxc-parser` and `oxc-resolver`. Its only native dependency is now `rolldown`, the bundler inside Vite 8. A project on Vite 8.0.12 or newer can share one copy of Rolldown with Vite.
+`storybook` no longer depends on `esbuild`, `oxc-parser` and `oxc-resolver`. Its only native dependency is now `rolldown`, the bundler inside Vite 8. A project on the newest Vite 8 shares one copy of Rolldown with Vite.
 
 - If your project uses the `esbuild` that Storybook installed, add `esbuild` to your own dependencies.
 - Rolldown has no native binary for `linux-riscv64`, `linux-arm-musleabihf` and 32-bit Windows, which Storybook supported before.
-- CSS that a manager entry imports, such as `.storybook/manager.ts` or the manager entry of an addon, is added to the page in `<style>` elements instead of a linked stylesheet. An `@import` of a local file with a media query, layer or `supports()` condition, and CSS modules (`import styles from './x.module.css'`), now fail the build.
+- CSS that a manager entry imports, such as `.storybook/manager.ts` or the manager entry of an addon, is added to the page in a `<style>` element instead of a linked stylesheet. CSS modules (`import styles from './x.module.css'`) now fail the build.
+- Decorators and the `accessor` keyword in a manager entry are no longer compiled. A browser that cannot run them reports that entry as failed in its console, and loads the other entries.
 - A TypeScript config file such as `.storybook/main.ts` must be an ES module. `module.exports =` and `export =` are no longer converted to `export default`.
-- A TypeScript config file only has its types removed. A `using` declaration needs a Node.js version that runs it, and decorators are no longer compiled.
+- A TypeScript config file only has its types removed. A `using` declaration needs a Node.js version that runs it, and decorators and the `accessor` keyword are no longer compiled.
 
 ## From version 10.6.1 to 10.6.2
 

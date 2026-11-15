@@ -5,13 +5,6 @@ import type { BuildOptions } from 'rolldown';
 
 import type { ManagerBuilder } from '../types.ts';
 
-// A manager entry is imported for what it registers, so its package.json and `@__PURE__` comments
-// may not mark a module as free of side effects.
-export const keepEveryModule: BuildOptions['treeshake'] = {
-  moduleSideEffects: [{ test: /./, sideEffects: true }],
-  annotations: false,
-};
-
 // Bundles each manager entry into its own file of `outdir`, and returns the URL of each.
 export const bundleManagerEntries = async (
   { entryPoints, outdir, ...options }: Awaited<ReturnType<ManagerBuilder['getConfig']>>,
@@ -54,7 +47,10 @@ export const bundleManagerEntries = async (
         ...(minify && { minify }),
         file: join(outdir, files[index]),
         // A define of `module` would hide `module.exports` from Rolldown's CommonJS detection.
-        banner: 'try{var module={};',
+        // A UMD module picks its CommonJS branch by `typeof require`, and Rolldown bundles the
+        // `require` calls of that branch.
+        banner:
+          'try{var module={};function require(id){throw new Error("Cannot require " + id + " in the browser")}',
         footer: `}catch(e){ console.error("[Storybook] One of your manager-entries failed: " + ${JSON.stringify(urls[index])}, e); }`,
       },
     }))

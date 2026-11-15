@@ -89,6 +89,25 @@ describe('loader', () => {
       `);
     });
 
+    it('does not read an import in a comment, which the transform keeps', () => {
+      vi.mocked(transformSync).mockRestore();
+      vi.mocked(readFileSync).mockReturnValue(
+        [
+          `const emoji = '🦋'; // import { old } from './old-config';`,
+          `/* import('./legacy') */`,
+          `export { emoji } from './real.ts';`,
+        ].join('\n')
+      );
+
+      const path =
+        os.platform() === 'win32' ? 'file:///C:/project/main.ts' : 'file:///project/main.ts';
+      const { source } = load(path, {} as any, nextLoad);
+
+      expect(deprecate).not.toHaveBeenCalled();
+      expect(source).toContain(`from "./real.ts"`);
+      expect(source).not.toContain('old-config');
+    });
+
     it('delegates non-TS URLs to nextLoad', () => {
       nextLoad.mockReturnValue({ format: 'module', shortCircuit: true, source: '' });
 

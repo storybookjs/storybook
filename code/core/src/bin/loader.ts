@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 
 import { deprecate } from 'storybook/internal/node-logger';
 
-import { transformSync } from 'rolldown/utils';
+import { parseSync, transformSync } from 'rolldown/utils';
 import { dedent } from 'ts-dedent';
 
 type LoadHookSync = (url: string, context: any, nextLoad: any) => any;
@@ -134,6 +134,19 @@ export function addExtensionsToRelativeImports(source: string, filePath: string)
   return result;
 }
 
+// Replaces each comment by spaces. The transform keeps comments, and the patterns of
+// `addExtensionsToRelativeImports` would read an import in one.
+function withoutComments(code: string, filePath: string): string {
+  let result = '';
+  let end = 0;
+  for (const comment of parseSync(filePath, code, { lang: 'js' }).comments) {
+    const text = code.slice(comment.start, comment.end);
+    result += code.slice(end, comment.start) + text.replace(/[^\n]/g, ' ');
+    end = comment.end;
+  }
+  return result + code.slice(end);
+}
+
 export const load: LoadHookSync = (url, context, nextLoad) => {
   // Strip any query string (e.g. the cache-busting `?<timestamp>` importModule appends for
   // skipCache) before checking the extension, otherwise a cache-busted URL like
@@ -159,7 +172,10 @@ export const load: LoadHookSync = (url, context, nextLoad) => {
     }
 
     // Add extensions to relative imports so Node.js ESM can resolve them
-    const sourceWithExtensions = addExtensionsToRelativeImports(code, filePath);
+    const sourceWithExtensions = addExtensionsToRelativeImports(
+      withoutComments(code, filePath),
+      filePath
+    );
 
     return {
       format: 'module',

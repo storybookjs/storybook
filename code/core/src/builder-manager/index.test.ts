@@ -1,6 +1,7 @@
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { pathToFileURL } from 'node:url';
+import { runInNewContext } from 'node:vm';
 
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -81,7 +82,13 @@ const run = async (urls: string[]) => {
 describe.each([false, true])('manager entries bundled with minify %s', (minify) => {
   it('run in order, each isolated from one that fails', async () => {
     const config = await configFor(
-      [addon('pure+css'), addon('failing'), addon('commonjs'), addon('esm-on-commonjs')],
+      [
+        addon('pure+css'),
+        addon('failing'),
+        addon('commonjs'),
+        addon('esm-on-commonjs'),
+        addon('top-level-return'),
+      ],
       join(fixtures, 'config')
     );
     const urls = await bundleManagerEntries(config, minify);
@@ -91,12 +98,19 @@ describe.each([false, true])('manager entries bundled with minify %s', (minify) 
       'addons-failing-1/manager-bundle.js',
       'addons-commonjs-2/manager-bundle.js',
       'addons-esm-on-commonjs-3/manager-bundle.js',
-      'config-4/manager-bundle.js',
+      'addons-top-level-return-4/manager-bundle.js',
+      'config-5/manager-bundle.js',
     ]);
 
     const page = await run(urls);
 
-    expect(page.registered).toEqual(['pure+css', 'commonjs', 'esm-on-commonjs', 'config']);
+    expect(page.registered).toEqual([
+      'pure+css',
+      'commonjs',
+      'esm-on-commonjs',
+      'before-return',
+      'config',
+    ]);
     expect(page.added).toMatchObject({
       'pure+css/panel': {
         type: 'panel',
@@ -120,6 +134,22 @@ describe.each([false, true])('manager entries bundled with minify %s', (minify) 
       ],
     ]);
   });
+});
+
+it('gives a UMD wrapper that tests `typeof require` its CommonJS branch, as esbuild did', async () => {
+  const [url] = await bundleManagerEntries(await configFor([addon('umd-with-require')]), false);
+  const code = await readFile(join(outputDir, decodeURIComponent(url)), 'utf-8');
+
+  // A new context has no `require`, like the manager page and unlike the test runner.
+  const registered: string[] = [];
+  runInNewContext(code, {
+    [globalsNameReferenceMap['storybook/manager-api']]: {
+      addons: { register: (id: string) => registered.push(id) },
+    },
+    console: { error: () => {} },
+  });
+
+  expect(registered).toEqual(['umd-with-require']);
 });
 
 it('fails the build on an import that cannot be resolved', async () => {

@@ -3,7 +3,7 @@ import { createRequire } from 'node:module';
 
 import { dirname, isAbsolute, resolve } from 'pathe';
 
-import { ResolverFactory } from '../common/utils/module-resolver.ts';
+import { createModuleResolver } from '../common/utils/module-resolver.ts';
 import { userModuleExtensions } from '../shared/constants/extensions.ts';
 import { isModuleDirectory } from './extract.ts';
 
@@ -12,7 +12,7 @@ const require = createRequire(import.meta.url);
 /**
  * Browser-condition resolver used for `sb.mock()` external module resolution.
  */
-const externalResolver = new ResolverFactory({
+const externalResolver = createModuleResolver({
   conditionNames: ['browser', 'import', 'module', 'default'],
   mainFields: ['browser', 'module', 'main'],
   aliasFields: [['browser']],
@@ -28,11 +28,11 @@ const externalResolver = new ResolverFactory({
  * @returns The absolute path to the module.
  */
 export function resolveExternalModule(path: string, root: string) {
-  const result = externalResolver.sync(root, path);
-  if (result.path) {
-    return result.path;
+  try {
+    return externalResolver.resolveSync(root, path);
+  } catch {
+    return require.resolve(path, { paths: [root] });
   }
-  return require.resolve(path, { paths: [root] });
 }
 
 export function getIsExternal(path: string, importer: string) {

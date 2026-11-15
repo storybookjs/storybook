@@ -4,9 +4,9 @@ import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'pathe';
 import type { Plugin } from 'rolldown';
 
-// A comment, an `@import` of a stylesheet with its conditions, or the `url()` of an asset.
+// A comment, an `@import` of a stylesheet with its conditions, the `url()` of an asset, or a string.
 const REFERENCE =
-  /\/\*[\s\S]*?\*\/|@import\s+(?:url\(\s*)?(["']?)([^"')\s]+)\1\s*\)?([^;]*);|url\(\s*(["']?)([^"')]+)\4\s*\)/g;
+  /\/\*[\s\S]*?\*\/|@import\s+(?:url\(\s*)?(["']?)([^"')\s]+)\1\s*\)?([^;]*);|url\(\s*(["']?)([^"')]+)\4\s*\)|"(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'/gi;
 
 // A URL with a scheme, a path from the root of the site or a fragment names no file to bundle.
 const isBundled = (reference: string) => !/^(?:[a-z][a-z\d+.-]*:|\/|#)/i.test(reference);
@@ -18,6 +18,9 @@ export const cssAsStyleElement = (): Plugin => ({
   load: {
     filter: { id: /\.css$/ },
     async handler(id) {
+      if (id.endsWith('.module.css')) {
+        this.error('CSS modules cannot be bundled into the manager');
+      }
       const css = await readFile(id, 'utf-8');
       // CSS resolves a bare path against the stylesheet; a bundler also finds it in a package.
       const specifier = (reference: string) => {
@@ -56,6 +59,7 @@ export const cssAsStyleElement = (): Plugin => ({
           `const style = document.createElement('style');`,
           `style.textContent = ${text.join(' + ')};`,
           `document.head.append(style);`,
+          `export default {};`,
         ].join('\n'),
       };
     },

@@ -2715,12 +2715,13 @@ Server-side docgen, the default in Storybook 11, reads the JSDoc types, so a new
 
 ### Storybook depends on Rolldown instead of esbuild
 
-`storybook` no longer depends on `esbuild`, `oxc-parser` and `oxc-resolver`. Its only native dependency is now `rolldown`, the bundler inside Vite 8. A project on Vite 8.1 or newer can share one copy of Rolldown with Vite.
+`storybook` no longer depends on `esbuild`, `oxc-parser` and `oxc-resolver`. Its only native dependency is now `rolldown`, the bundler inside Vite 8. A project on Vite 8.0.12 or newer can share one copy of Rolldown with Vite.
 
 - If your project uses the `esbuild` that Storybook installed, add `esbuild` to your own dependencies.
+- Rolldown has no native binary for `linux-riscv64`, `linux-arm-musleabihf` and 32-bit Windows, which Storybook supported before.
 - CSS that a manager entry imports, such as `.storybook/manager.ts` or the manager entry of an addon, is added to the page in `<style>` elements instead of a linked stylesheet. An `@import` of a local file with a media query, layer or `supports()` condition, and CSS modules (`import styles from './x.module.css'`), now fail the build.
 - A TypeScript config file such as `.storybook/main.ts` must be an ES module. `module.exports =` and `export =` are no longer converted to `export default`.
-- `using` declarations and decorators in a TypeScript config file are no longer compiled for Node.js versions that do not run them.
+- A TypeScript config file only has its types removed. A `using` declaration needs a Node.js version that runs it, and decorators are no longer compiled.
 
 ## From version 10.6.1 to 10.6.2
 

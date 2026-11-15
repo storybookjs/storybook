@@ -22,14 +22,28 @@ export const bundleManagerEntries = async (
   const urls = files.map(
     (file) => `./sb-addons/${file.split('/').map(encodeURIComponent).join('/')}`
   );
+  // An `import()` may name an optional package, with a `catch` for when it is missing.
+  const dynamicImports = new Set<string>();
   const { build } = await import('rolldown');
   await build(
     entryPoints.map((input, index): BuildOptions => ({
       ...options,
       input,
+      plugins: [
+        options.plugins,
+        {
+          name: 'storybook:manager-dynamic-imports',
+          resolveId(id, importer, { kind }) {
+            if (kind === 'dynamic-import') {
+              dynamicImports.add(`${importer}\0${id}`);
+            }
+            return null;
+          },
+        },
+      ],
       onLog(level, log, handler) {
         // Rolldown leaves an import it cannot resolve for the browser, where it throws.
-        if (log.code === 'UNRESOLVED_IMPORT') {
+        if (log.code === 'UNRESOLVED_IMPORT' && !dynamicImports.has(`${log.id}\0${log.exporter}`)) {
           handler('error', log);
         } else {
           logger[level](log.message);

@@ -1,8 +1,8 @@
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { runInNewContext } from 'node:vm';
+import { pathToFileURL } from 'node:url';
 
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Options } from 'storybook/internal/types';
 
@@ -17,13 +17,15 @@ import { bundleManagerEntries } from './utils/bundle.ts';
 const fixtures = join(import.meta.dirname, '__testfixtures__');
 const addon = (name: string) => join(fixtures, 'addons', name, 'manager.js');
 
+// A directory per test: Node.js caches a module by its URL.
 let outputDir: string;
 
-beforeAll(async () => {
+beforeEach(async () => {
   outputDir = await mkdtemp(join(tmpdir(), 'sb-builder-manager-'));
 });
 
-afterAll(async () => {
+afterEach(async () => {
+  vi.unstubAllGlobals();
   await rm(outputDir, { recursive: true, force: true });
 });
 
@@ -38,7 +40,7 @@ const configFor = (managerEntries: string[], configDir = fixtures) =>
     },
   } as unknown as Options);
 
-// Runs the bundles as the manager page does, and returns what they did to it.
+// Imports the bundles as the manager page does, and returns what they did to it.
 const run = async (urls: string[]) => {
   const page = {
     registered: [] as string[],
@@ -46,32 +48,32 @@ const run = async (urls: string[]) => {
     styles: [] as string[],
     errors: [] as unknown[][],
   };
-  const context: Record<string, unknown> = {
-    document: {
-      createElement: () => ({}),
-      head: { append: (style: { textContent: string }) => page.styles.push(style.textContent) },
-    },
-    console: { error: (...args: unknown[]) => page.errors.push(args) },
-    [globalsNameReferenceMap.react]: {
-      createElement: (type: unknown) => (typeof type === 'function' ? 'component' : type),
-      useState: (value: unknown) => [value],
-    },
-    [globalsNameReferenceMap['storybook/manager-api']]: {
-      addons: {
-        register: (id: string, callback: () => void) => {
-          page.registered.push(id);
-          callback();
-        },
-        add: (id: string, value: unknown) => {
-          page.added[id] = value;
-        },
+  vi.stubGlobal('window', globalThis);
+  vi.stubGlobal('document', {
+    createElement: () => ({}),
+    head: { append: (style: { textContent: string }) => page.styles.push(style.textContent) },
+  });
+  vi.stubGlobal(globalsNameReferenceMap.react, {
+    createElement: (type: unknown) => (typeof type === 'function' ? 'component' : type),
+    useState: (value: unknown) => [value],
+  });
+  vi.stubGlobal(globalsNameReferenceMap['storybook/manager-api'], {
+    addons: {
+      register: (id: string, callback: () => void) => {
+        page.registered.push(id);
+        callback();
       },
-      types: { PANEL: 'panel', TOOL: 'tool' },
+      add: (id: string, value: unknown) => {
+        page.added[id] = value;
+      },
     },
-  };
-  context.window = context;
+    types: { PANEL: 'panel', TOOL: 'tool' },
+  });
+  vi.spyOn(console, 'error').mockImplementation((...args) => {
+    page.errors.push(args);
+  });
   for (const url of urls) {
-    runInNewContext(await readFile(join(outputDir, decodeURIComponent(url)), 'utf-8'), context);
+    await import(pathToFileURL(join(outputDir, decodeURIComponent(url))).href);
   }
   return page;
 };
@@ -107,6 +109,9 @@ describe.each([false, true])('manager entries bundled with minify %s', (minify) 
       'config/tool': { type: 'tool', title: 'tool' },
     });
     expect((page.added['config/tool'] as { render: () => unknown }).render()).toBe('component');
+    await expect(
+      (page.added['esm-on-commonjs/tool'] as { optional: Promise<string> }).optional
+    ).resolves.toBe('missing');
     expect(page.styles).toEqual([expect.stringContaining('background: url("data:image/svg+xml,')]);
     expect(page.errors).toEqual([
       [

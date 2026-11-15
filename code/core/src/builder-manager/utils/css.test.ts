@@ -8,7 +8,7 @@ import { keepEveryModule } from './bundle.ts';
 import { cssAsStyleElement } from './css.ts';
 
 // Rolldown reads the real file system, so the stylesheets are committed.
-const entry = join(import.meta.dirname, '../__testfixtures__/css/entry.js');
+const fixture = (name: string) => join(import.meta.dirname, '../__testfixtures__/css', name);
 
 const bundleEntry = (input: string) =>
   build({
@@ -18,11 +18,16 @@ const bundleEntry = (input: string) =>
     treeshake: keepEveryModule,
     moduleTypes: { '.svg': 'dataurl' },
     plugins: [cssAsStyleElement()],
-    output: { format: 'iife' },
+    output: { format: 'iife', name: 'entry' },
   });
 
+const document = () => ({
+  createElement: () => ({}),
+  head: { append: () => {} },
+});
+
 it('adds each stylesheet as a style element, in import order and with its assets inlined', async () => {
-  const { output } = await bundleEntry(entry);
+  const { output } = await bundleEntry(fixture('entry.js'));
 
   const styles: string[] = [];
   runInNewContext(output[0].code, {
@@ -46,13 +51,33 @@ it('adds each stylesheet as a style element, in import order and with its assets
       background: url("data:image/svg+xml,<svg xmlns=\\"http://www.w3.org/2000/svg\\" width=\\"1\\" height=\\"1\\"/>%0A");
       mask: url('#mask');
     }
+
+    .panel::after {
+      content: 'a string with a url(./missing.png) and a /* in it';
+      background: url("data:image/svg+xml,<svg xmlns=\\"http://www.w3.org/2000/svg\\" width=\\"1\\" height=\\"1\\"/>%0A");
+    }
     ",
     ]
   `);
 });
 
+it('gives a stylesheet an empty default export, as esbuild did', async () => {
+  const { output } = await bundleEntry(fixture('default-import.js'));
+
+  const context = { document: document(), entry: undefined };
+  runInNewContext(output[0].code, context);
+
+  expect(context.entry).toEqual({});
+});
+
 it('rejects a local @import with a condition, which a style element cannot express', async () => {
-  await expect(
-    bundleEntry(join(import.meta.dirname, '../__testfixtures__/css/conditional.js'))
-  ).rejects.toThrow('An @import with a condition cannot be bundled into the manager');
+  await expect(bundleEntry(fixture('conditional.js'))).rejects.toThrow(
+    'An @import with a condition cannot be bundled into the manager'
+  );
+});
+
+it('rejects a CSS module, whose class names it cannot provide', async () => {
+  await expect(bundleEntry(fixture('css-module.js'))).rejects.toThrow(
+    'CSS modules cannot be bundled into the manager'
+  );
 });

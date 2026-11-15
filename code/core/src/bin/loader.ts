@@ -12,8 +12,6 @@ import { deprecate } from 'storybook/internal/node-logger';
 import { transformSync } from 'rolldown/utils';
 import { dedent } from 'ts-dedent';
 
-import { NODE_TARGET } from '../shared/constants/environments-support.ts';
-
 type LoadHookSync = (url: string, context: any, nextLoad: any) => any;
 
 export const supportedExtensions = [
@@ -153,12 +151,9 @@ export const load: LoadHookSync = (url, context, nextLoad) => {
   ) {
     const filePath = fileURLToPath(url);
     const rawSource = readFileSync(filePath, 'utf-8');
-    const { code, errors } = transformSync(filePath, rawSource, {
-      lang: 'ts',
-      target: NODE_TARGET,
-      // Rolldown would otherwise compile with the options of the nearest tsconfig.json.
-      tsconfig: false,
-    });
+    // No `target`: lowered syntax imports helpers from `@oxc-project/runtime`, which is not
+    // installed. No tsconfig: Rolldown would compile with the options of the nearest one.
+    const { code, errors } = transformSync(filePath, rawSource, { lang: 'ts', tsconfig: false });
     if (errors.length > 0) {
       throw new SyntaxError(errors.map((error) => error.message).join('\n'));
     }

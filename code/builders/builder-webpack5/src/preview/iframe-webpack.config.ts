@@ -244,15 +244,19 @@ export default async (
             minimizer: options.build?.test?.esbuildMinify
               ? [
                   new TerserWebpackPlugin<{ module?: boolean }>({
-                    // Rolldown minifies on its own threads.
+                    // This closure cannot be sent to a worker, and Rolldown has its own threads.
                     parallel: false,
-                    minify: async (input, sourceMap, { module }) => {
+                    minify: async (input, sourceMap, { module = false }) => {
                       const [[fileName, source]] = Object.entries(input);
                       const { code, map, errors } = await minify(fileName, source, {
                         module,
                         sourcemap: Boolean(sourceMap),
                       });
-                      return { code, map, errors: errors.map((error) => new Error(error.message)) };
+                      const messages = (isError: boolean) =>
+                        errors
+                          .filter((error) => (error.severity === 'Error') === isError)
+                          .map((error) => new Error(error.message));
+                      return { code, map, errors: messages(true), warnings: messages(false) };
                     },
                   }),
                 ]

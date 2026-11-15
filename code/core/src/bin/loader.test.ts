@@ -72,6 +72,23 @@ describe('loader', () => {
       expect(() => load(path, {} as any, nextLoad)).toThrow(SyntaxError);
     });
 
+    it('keeps a `using` declaration for Node.js to run, without an import of a helper', () => {
+      vi.mocked(transformSync).mockRestore();
+      vi.mocked(readFileSync).mockReturnValue(
+        'export function f(resource: Disposable) { using r = resource; return r; }'
+      );
+
+      const path =
+        os.platform() === 'win32' ? 'file:///C:/project/main.ts' : 'file:///project/main.ts';
+      expect(load(path, {} as any, nextLoad).source).toMatchInlineSnapshot(`
+        "export function f(resource) {
+        	using r = resource;
+        	return r;
+        }
+        "
+      `);
+    });
+
     it('delegates non-TS URLs to nextLoad', () => {
       nextLoad.mockReturnValue({ format: 'module', shortCircuit: true, source: '' });
 

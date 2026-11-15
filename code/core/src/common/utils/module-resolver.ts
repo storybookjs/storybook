@@ -1,7 +1,6 @@
+// `rolldown/experimental` may change in a minor release, so a lint rule keeps its import here, and
+// the `rolldown` range in package.json ends at the newest minor the tests ran on.
 import { ResolverFactory } from 'rolldown/experimental';
-
-// `rolldown/experimental` may change in a minor release, so a lint rule keeps its import here.
-export { ResolverFactory };
 
 /**
  * Module resolution options, declared locally so consumers don't depend on the underlying resolver
@@ -15,6 +14,10 @@ export interface ModuleResolverOptions {
   extensionAlias?: Record<string, string[]>;
   /** Honor `paths`/`baseUrl` from a tsconfig. `'auto'` walks up from the resolution origin. */
   tsconfig?: 'auto' | { configFile: string };
+  /** Paths to try in place of a specifier or its prefix, such as `{ '@': ['/project/src'] }`. */
+  alias?: Record<string, string[]>;
+  /** package.json fields that redirect files of that package, such as `[['browser']]`. */
+  aliasFields?: string[][];
 }
 
 export interface ModuleResolver {
@@ -22,6 +25,8 @@ export interface ModuleResolver {
   resolveFileSync(fromFile: string, specifier: string): string;
   /** Resolves `specifier` as if imported from a file in `fromDirectory`. Throws when unresolvable. */
   resolveSync(fromDirectory: string, specifier: string): string;
+  /** Resolves `specifier` as if imported from `fromFile`. Rejects when unresolvable. */
+  resolveFile(fromFile: string, specifier: string): Promise<string>;
 }
 
 /**
@@ -55,5 +60,7 @@ export function createModuleResolver(options: ModuleResolverOptions = {}): Modul
       unwrap(factory.resolveFileSync(fromFile, specifier), specifier, fromFile),
     resolveSync: (fromDirectory, specifier) =>
       unwrap(factory.sync(fromDirectory, specifier), specifier, fromDirectory),
+    resolveFile: async (fromFile, specifier) =>
+      unwrap(await factory.resolveFileAsync(fromFile, specifier), specifier, fromFile),
   };
 }

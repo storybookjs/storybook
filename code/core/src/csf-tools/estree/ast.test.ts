@@ -1,5 +1,6 @@
 import { inspect } from 'node:util';
 
+import { parseSync } from 'rolldown/utils';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -14,6 +15,7 @@ import {
   parseModule,
   placeableTextOf,
   textOf,
+  visitorKeys,
   walk,
 } from './ast.ts';
 
@@ -129,6 +131,63 @@ describe('parseModule', () => {
     expect(first).toEqual(second);
     expect(inspect(first)).toBe(inspect(structuredClone(first)));
     expect(moduleOf({ ...first })).toBeUndefined();
+  });
+});
+
+describe('visitorKeys', () => {
+  // The table comes from oxc-parser, the tree from the parser inside the installed Rolldown.
+  it('names every node type and child key that the parser produces', () => {
+    const code = `
+      import type { A } from 'a';
+      import b, * as c from 'b' with { type: 'json' };
+      export * as d from 'd';
+      export { b as default, type A };
+      declare module 'm' { export const x: number; }
+      declare global { interface Window { y?: string } }
+      namespace N { export enum E { A = 1, B = A << 1 } }
+      abstract class K<T extends object = {}> extends Base<T> implements I, J {
+        static #count = 0n;
+        declare readonly brand: unique symbol;
+        accessor value: T | undefined;
+        static { K.#count++; }
+        constructor(private readonly x: number, public y?: string) { super(); }
+        abstract method<U>(this: K<T>, ...rest: U[]): asserts rest is U[];
+        get [Symbol.iterator]() { return new.target, import.meta.url; }
+        @decorate() async *generate(): AsyncGenerator<T> { yield* await this.value!; }
+      }
+      type Mapped<T> = { -readonly [P in keyof T as \`get\${Capitalize<P & string>}\`]+?: T[P] extends infer U ? U : never };
+      type Fn = new (...args: [first: string, second?: number, ...rest: boolean[]]) => typeof import('x').y;
+      function overload(a: string): void;
+      async function overload(a: unknown): Promise<void> {
+        label: for (const [k, { v = 1, ...rest }] of Object.entries(a as any)) {
+          switch (k) { case 'a': continue label; default: break; }
+        }
+        try { using r = open(); throw r; } catch { debugger; } finally { do {} while (false); }
+        for await (const x of [a?.b?.[0]?.(), a ?? b, a ||= b, (-a) ** 2, /r/gu, \`t\${a}\`, tag\`q\`]) void x;
+      }
+      const element = <ns:tag {...props} key="k" on={() => {}}><>text {/* c */} <A.B<string> /></></ns:tag>;
+      export default (async <T,>(x: T) => (x satisfies unknown, x as T, import('y')))(1);
+      export = element;
+    `;
+    const { program, errors } = parseSync('zoo.tsx', code, { lang: 'tsx', preserveParens: true });
+    const unknown = new Set<string>();
+    const visit = (node: Record<string, unknown>) => {
+      const keys = visitorKeys[node.type as string];
+      for (const [key, value] of Object.entries(node)) {
+        for (const child of Array.isArray(value) ? value : [value]) {
+          if (child && typeof child === 'object' && typeof child.type === 'string') {
+            if (!keys?.includes(key)) {
+              unknown.add(`${node.type}.${key}`);
+            }
+            visit(child);
+          }
+        }
+      }
+    };
+    visit(program as unknown as Record<string, unknown>);
+
+    expect(errors.filter((error) => error.severity === 'Error')).toEqual([]);
+    expect([...unknown]).toEqual([]);
   });
 });
 

@@ -6,3 +6,8 @@
   background: url(pixel.svg);
   mask: url('#mask');
 }
+
+.panel::after {
+  content: 'a string with a url(./missing.png) and a /* in it';
+  background: URL(./pixel.svg);
+}

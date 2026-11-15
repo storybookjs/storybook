@@ -1,6 +1,10 @@
 import { join } from 'pathe';
 
-import { ResolverFactory, defaultResolveConditionNames } from 'storybook/internal/common';
+import {
+  type ModuleResolver,
+  createModuleResolver,
+  defaultResolveConditionNames,
+} from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
 import type { ModuleResolveConfig } from '../adapters/types.ts';
@@ -12,7 +16,7 @@ const DEFAULT_EXTENSIONS = ['.tsx', '.ts', '.d.ts', '.jsx', '.js', '.mjs', '.cjs
  *   - `Record<string, string>` (object form)
  *   - `Array<{ find: string | RegExp; replacement: string }>` (array form)
  *
- * The resolver expects `Record<string, Array<string | undefined | null>>`.
+ * The resolver expects `Record<string, string[]>`.
  * RegExp `find` entries cannot be expressed in the resolver's alias config and
  * are skipped with a debug log (downgraded to opaque-leaf at resolve time).
  *
@@ -22,14 +26,12 @@ const DEFAULT_EXTENSIONS = ['.tsx', '.ts', '.d.ts', '.jsx', '.js', '.mjs', '.cjs
 class AliasNormalizer {
   private readonly warnedRegexAliases = new Set<string>();
 
-  normalize(
-    alias: ModuleResolveConfig['alias']
-  ): Record<string, Array<string | undefined | null>> | undefined {
+  normalize(alias: ModuleResolveConfig['alias']): Record<string, string[]> | undefined {
     if (!alias) {
       return undefined;
     }
 
-    const out: Record<string, Array<string | undefined | null>> = {};
+    const out: Record<string, string[]> = {};
     const skippedRegex: string[] = [];
 
     if (Array.isArray(alias)) {
@@ -78,13 +80,13 @@ class AliasNormalizer {
  * unresolvable specifiers as opaque-leaf edges.
  */
 export class ChangeDetectionResolverFactory {
-  private readonly factory: ResolverFactory;
+  private readonly resolver: ModuleResolver;
   private readonly aliasNormalizer = new AliasNormalizer();
   /**
    * Virtual entry point placed directly in the project root.
    *
    * Used as the fallback `from` path when the primary resolution fails.
-   * Resolving from here guarantees that `resolveFileAsync`'s tsconfig
+   * Resolving from here guarantees that the resolver's tsconfig
    * walk-up reaches the root `tsconfig.json` before any intermediate
    * per-package tsconfig — so workspace-level `paths` mappings are
    * consulted even when the per-package tsconfig does not extend root.
@@ -95,7 +97,7 @@ export class ChangeDetectionResolverFactory {
     const alias = this.aliasNormalizer.normalize(config.alias);
     const conditionNames = config.conditions ?? defaultResolveConditionNames;
 
-    this.factory = new ResolverFactory({
+    this.resolver = createModuleResolver({
       tsconfig: 'auto',
       alias,
       conditionNames,
@@ -120,36 +122,20 @@ export class ChangeDetectionResolverFactory {
    */
   async resolve(from: string, specifier: string): Promise<string | null> {
     try {
-      const result = await this.factory.resolveFileAsync(from, specifier);
-      if (result.path) {
-        return result.path;
-      }
-
+      return await this.resolver.resolveFile(from, specifier);
+    } catch (error) {
       // Fallback: retry from the project root so that root-level tsconfig paths
       // and root node_modules are consulted.  Skip the fallback when `from` is
       // already the virtual root entry to avoid a redundant second attempt.
       if (from !== this.projectRootEntry) {
-        const rootResult = await this.factory.resolveFileAsync(this.projectRootEntry, specifier);
-        if (rootResult.path) {
-          return rootResult.path;
+        try {
+          return await this.resolver.resolveFile(this.projectRootEntry, specifier);
+        } catch {
+          // The debug line below reports the error of the first attempt.
         }
-        if (result.error ?? rootResult.error) {
-          logger.debug(
-            `ChangeDetectionResolverFactory: '${specifier}' from '${from}' unresolved (${result.error ?? rootResult.error})`
-          );
-        }
-        return null;
       }
-
-      if (result.error) {
-        logger.debug(
-          `ChangeDetectionResolverFactory: '${specifier}' from '${from}' unresolved (${result.error})`
-        );
-      }
-      return null;
-    } catch (error) {
       logger.debug(
-        `ChangeDetectionResolverFactory: error resolving '${specifier}' from '${from}': ${String(error)}`
+        `ChangeDetectionResolverFactory: '${specifier}' from '${from}' unresolved (${String(error)})`
       );
       return null;
     }

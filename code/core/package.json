@@ -280,7 +280,7 @@
   "dependencies": {
     "@storybook/global": "^5.0.0",
     "@storybook/icons": "^2.0.2",
-    "rolldown": "^1.0.0"
+    "rolldown": ">=1.0.0 <1.4.0"
   },
   "devDependencies": {
     "@aw-web-design/x-default-browser": "1.4.126",
@@ -408,6 +408,7 @@
     "react-textarea-autosize": "^8.3.0",
     "react-transition-state": "^2.3.1",
     "require-from-string": "^2.0.2",
+    "rolldown-oldest": "npm:rolldown@1.0.0",
     "semver": "^7.7.3",
     "sirv": "^2.0.4",
     "slash": "^5.0.0",

@@ -152,6 +152,23 @@ it('gives a UMD wrapper that tests `typeof require` its CommonJS branch, as esbu
   expect(registered).toEqual(['umd-with-require']);
 });
 
+it('lowers `using`, which Safari cannot run', async () => {
+  const [url] = await bundleManagerEntries(await configFor([addon('using')]), false);
+  const code = await readFile(join(outputDir, decodeURIComponent(url)), 'utf-8');
+
+  const registered: string[] = [];
+  runInNewContext(code, {
+    [globalsNameReferenceMap['storybook/manager-api']]: {
+      addons: { register: (id: string) => registered.push(id) },
+    },
+    // Node.js 22 has `Symbol.dispose` in its main context only.
+    Symbol,
+  });
+
+  expect(code).not.toContain('using resource');
+  expect(registered).toEqual(['using', 'disposed']);
+});
+
 it('fails the build on an import that cannot be resolved', async () => {
   const config = await configFor([addon('unresolved')]);
 

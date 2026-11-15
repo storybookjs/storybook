@@ -86,7 +86,8 @@ export const getConfig: ManagerBuilder['getConfig'] = async (options) => {
     // tree-shaking also removes a top-level `return` of a CommonJS module.
     treeshake: false,
     transform: {
-      target: BROWSER_TARGETS,
+      // Safari has no `using`, and Rolldown lowers it only for a target below ES2026.
+      target: ['es2022', ...BROWSER_TARGETS],
       jsx: { runtime: 'classic', pragma: 'React.createElement', pragmaFrag: 'React.Fragment' },
       define: {
         'process.env': JSON.stringify(envs),

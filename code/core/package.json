@@ -280,7 +280,7 @@
   "dependencies": {
     "@storybook/global": "^5.0.0",
     "@storybook/icons": "^2.0.2",
-    "rolldown": ">=1.0.0 <1.4.0"
+    "rolldown": ">=1.0.0 <1.3.0"
   },
   "devDependencies": {
     "@aw-web-design/x-default-browser": "1.4.126",

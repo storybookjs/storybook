@@ -1,5 +1,6 @@
-// `rolldown/experimental` may change in a minor release, so a lint rule keeps its import here, and
-// the `rolldown` range in package.json ends at the newest minor the tests ran on.
+// `rolldown/experimental` may change in a minor release, so a lint rule keeps its import here. The
+// `rolldown` range in package.json ends at the minor of the newest Vite: package managers install
+// the newest version of a range, and Vite pins its minor, so a wider range is a second copy.
 import { ResolverFactory } from 'rolldown/experimental';
 
 /**

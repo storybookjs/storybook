@@ -583,6 +583,7 @@ export class StoryIndexGenerator {
       storiesImports: sortedDependencies.map((dep) => dep.entries[0].importPath),
       type: 'docs',
       tags,
+      ...(csfEntry?.altNames && { altNames: csfEntry.altNames }),
       ...(this.options.features?.experimentalSearchDocsHeadings && { anchors: analysis.anchors }),
     };
   }

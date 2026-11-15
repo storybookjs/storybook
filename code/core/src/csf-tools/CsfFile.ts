@@ -90,34 +90,41 @@ function parseIncludeExclude(prop: Node) {
   throw new Error(`Unknown include/exclude: ${prop}`);
 }
 
-function parseTags(prop: Node | null | undefined) {
+function parseStringArray(prop: Node | null | undefined, arrayError: string, itemError: string) {
   if (prop?.type !== 'ArrayExpression') {
-    throw new Error('CSF: Expected tags array');
+    throw new Error(arrayError);
   }
 
   return prop.elements.map((e) => {
     if (isStringLiteral(e)) {
       return e.value;
     }
-    throw new Error(`CSF: Expected tag to be string literal`);
-  }) as Tag[];
-}
-
-function parseAltNames(prop: Node | null | undefined) {
-  if (prop?.type !== 'ArrayExpression') {
-    throw new Error('CSF: Expected altNames array');
-  }
-
-  return prop.elements.map((e) => {
-    if (isStringLiteral(e)) {
-      return e.value;
-    }
-    throw new Error(`CSF: Expected altNames to be string literals`);
+    throw new Error(itemError);
   });
 }
 
+function parseTags(prop: Node | null | undefined) {
+  return parseStringArray(
+    prop,
+    'CSF: Expected tags array',
+    'CSF: Expected tag to be string literal'
+  ) as Tag[];
+}
+
+function resolveVariable(node: Node, program: E.Program) {
+  return node.type === 'Identifier' ? findVarInitialization(node.name, program) : node;
+}
+
 function resolveTags(tags: Node, program: E.Program) {
-  return parseTags(tags.type === 'Identifier' ? findVarInitialization(tags.name, program) : tags);
+  return parseTags(resolveVariable(tags, program));
+}
+
+function resolveAltNames(altNames: Node, program: E.Program) {
+  return parseStringArray(
+    resolveVariable(altNames, program),
+    'CSF: Expected altNames array',
+    'CSF: Expected altNames to be string literals'
+  );
 }
 
 // The tags of a parent story. A parent that isn't exported isn't indexed on its own, so tags that
@@ -753,17 +760,9 @@ export class CsfFile {
         }
         meta.component = this.editor.source(p.value);
       } else if (key === 'tags') {
-        let node: Node | null = p.value;
-        if (node.type === 'Identifier') {
-          node = findVarInitialization(node.name, this.program);
-        }
-        meta.tags = parseTags(node);
+        meta.tags = resolveTags(p.value, this.program);
       } else if (key === 'altNames') {
-        meta.altNames = parseAltNames(
-          p.value.type === 'Identifier'
-            ? findVarInitialization(p.value.name, this.program)
-            : p.value
-        );
+        meta.altNames = resolveAltNames(p.value, this.program);
       } else if (key === 'id') {
         if (isStringLiteral(p.value)) {
           meta.id = p.value.value;

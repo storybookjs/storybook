@@ -1650,6 +1650,23 @@ describe('StoryIndexGenerator', () => {
         expect(storyIndex.entries['overlay-modal--basic'].altNames).toEqual(['Dialog', 'Popup']);
         expect(storyIndex.entries['overlay-modal--docs'].altNames).toEqual(['Dialog', 'Popup']);
       });
+
+      it('copies the meta altNames to attached MDX docs entries', async () => {
+        const generator = new StoryIndexGenerator(
+          [
+            normalizeStoriesEntry('./alt-names/Modal.stories.ts', options),
+            normalizeStoriesEntry('./alt-names/ModalGuide.mdx', options),
+          ],
+          options
+        );
+        await generator.initialize();
+
+        const { storyIndex } = await generator.getIndexAndStats();
+        const mdxEntry = Object.values(storyIndex.entries).find((entry) =>
+          entry.importPath.endsWith('ModalGuide.mdx')
+        );
+        expect(mdxEntry?.altNames).toEqual(['Dialog', 'Popup']);
+      });
     });
 
     describe('docs specifier', () => {

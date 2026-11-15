@@ -3,7 +3,7 @@ import { basename } from 'node:path';
 import { getRefs } from 'storybook/internal/common';
 import type { Options } from 'storybook/internal/types';
 
-import { executor, getConfig } from '../index.ts';
+import { getConfig } from '../index.ts';
 import { readTemplate } from './template.ts';
 
 export const getData = async (options: Options) => {
@@ -18,12 +18,8 @@ export const getData = async (options: Options) => {
   const template = readTemplate('template.ejs');
   const customHead = options.presets.apply<string>('managerHead');
 
-  // we await these, because crucially if these fail, we want to bail out asap
-  const [instance, config] = await Promise.all([
-    //
-    executor.get(),
-    getConfig(options),
-  ]);
+  // we await this, because crucially if it fails, we want to bail out asap
+  const config = await getConfig(options);
 
   return {
     refs,
@@ -32,7 +28,6 @@ export const getData = async (options: Options) => {
     docsOptions,
     template,
     customHead,
-    instance,
     config,
     logLevel,
     favicon,

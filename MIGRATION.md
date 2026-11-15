@@ -97,6 +97,7 @@
   - [`argTypeTargetsV7` feature flag removed](#argtypetargetsv7-feature-flag-removed)
   - [`disallowImplicitActionsInRenderV8` feature flag removed](#disallowimplicitactionsinrenderv8-feature-flag-removed)
   - [JavaScript init templates use JSDoc types instead of `propTypes`](#javascript-init-templates-use-jsdoc-types-instead-of-proptypes)
+  - [Storybook depends on Rolldown instead of esbuild](#storybook-depends-on-rolldown-instead-of-esbuild)
 - [From version 10.6.1 to 10.6.2](#from-version-1061-to-1062)
   - [`storybook dev` now blocks remote iframe embedding](#storybook-dev-now-blocks-remote-iframe-embedding-1)
   - [Storybook now restricts iframe messaging](#storybook-now-restricts-iframe-messaging-1)
@@ -2711,6 +2712,14 @@ The `remove-legacy-feature-flags` automigration deletes both it and the `argType
 `storybook init` for React JavaScript projects now writes `Button.jsx` and `Header.jsx` templates whose props are typed with JSDoc, and no longer adds the `prop-types` package. React 19 no longer checks `propTypes` on function components, and `React.PropTypes` moved to the separate `prop-types` package in React 15.5.
 
 Server-side docgen, the default in Storybook 11, reads the JSDoc types, so a new project's Docs args table shows the same types and descriptions as the TypeScript template. The deprecated builder docgen (`react-docgen`, active only when `features.docgenServer` is `false`) does not: without `propTypes` it reports no prop types or descriptions for these templates and folds the JSDoc `@param` lines into the component description. Install the `typescript` package and remove `docgenServer: false` to use server-side docgen.
+
+### Storybook depends on Rolldown instead of esbuild
+
+`storybook` no longer depends on `esbuild`, `oxc-parser` and `oxc-resolver`. Its only native dependency is now `rolldown`, the bundler inside Vite 8, so a Vite 8 project has it installed already.
+
+- If your project uses the `esbuild` that Storybook installed, add `esbuild` to your own dependencies.
+- CSS that a manager entry imports, such as `.storybook/manager.ts` or the manager entry of an addon, is added to the page in `<style>` elements instead of a linked stylesheet.
+- A `.cts` config file that uses `export =` or `import x = require()` is no longer converted to ESM. Use `export default` and `import` instead.
 
 ## From version 10.6.1 to 10.6.2
 

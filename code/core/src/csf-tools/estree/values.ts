@@ -1,5 +1,3 @@
-import { visitorKeys } from 'oxc-parser';
-
 import {
   type E,
   type Node,
@@ -10,6 +8,7 @@ import {
   moduleOf,
   staticKey,
   unwrapExpression,
+  visitorKeys,
 } from './ast.ts';
 import { type SourceEditor, detachedSource, detachedTextOf, functionFromMethod } from './editor.ts';
 import type { ScopeInfo } from './scope.ts';

@@ -1,8 +1,6 @@
 import { join } from 'pathe';
 
-import { ResolverFactory as OxcResolverFactory } from 'oxc-resolver';
-
-import { defaultResolveConditionNames } from 'storybook/internal/common';
+import { ResolverFactory, defaultResolveConditionNames } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
 import type { ModuleResolveConfig } from '../adapters/types.ts';
@@ -14,8 +12,8 @@ const DEFAULT_EXTENSIONS = ['.tsx', '.ts', '.d.ts', '.jsx', '.js', '.mjs', '.cjs
  *   - `Record<string, string>` (object form)
  *   - `Array<{ find: string | RegExp; replacement: string }>` (array form)
  *
- * `oxc-resolver` expects `Record<string, Array<string | undefined | null>>`.
- * RegExp `find` entries cannot be expressed in oxc-resolver's alias config and
+ * The resolver expects `Record<string, Array<string | undefined | null>>`.
+ * RegExp `find` entries cannot be expressed in the resolver's alias config and
  * are skipped with a debug log (downgraded to opaque-leaf at resolve time).
  *
  * Instance-scoped so each ChangeDetectionResolverFactory warns independently —
@@ -74,13 +72,13 @@ class AliasNormalizer {
 }
 
 /**
- * Thin wrapper around `oxc-resolver`'s `ResolverFactory` configured per a
+ * Thin wrapper around Rolldown's `ResolverFactory` configured per a
  * builder-supplied {@link ModuleResolveConfig}. Normalizes the alias map shape and
  * converts resolver errors to `null` (with a debug log) — the caller treats
  * unresolvable specifiers as opaque-leaf edges.
  */
 export class ChangeDetectionResolverFactory {
-  private readonly factory: OxcResolverFactory;
+  private readonly factory: ResolverFactory;
   private readonly aliasNormalizer = new AliasNormalizer();
   /**
    * Virtual entry point placed directly in the project root.
@@ -97,7 +95,7 @@ export class ChangeDetectionResolverFactory {
     const alias = this.aliasNormalizer.normalize(config.alias);
     const conditionNames = config.conditions ?? defaultResolveConditionNames;
 
-    this.factory = new OxcResolverFactory({
+    this.factory = new ResolverFactory({
       tsconfig: 'auto',
       alias,
       conditionNames,

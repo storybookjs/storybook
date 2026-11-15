@@ -1,4 +1,7 @@
-import { ResolverFactory } from 'oxc-resolver';
+import { ResolverFactory } from 'rolldown/experimental';
+
+// `rolldown/experimental` is outside Rolldown's semver promise, so this is its only import.
+export { ResolverFactory };
 
 /**
  * Module resolution options, declared locally so consumers don't depend on the underlying resolver
@@ -23,9 +26,9 @@ export interface ModuleResolver {
 
 /**
  * Resolve the same files the preview bundles: the browser build's resolve conditions, trimmed to
- * what oxc-resolver understands.
+ * what Rolldown's resolver understands.
  *
- * oxc-resolver defaults to no conditions at all, which would make exports maps without an
+ * The resolver defaults to no conditions at all, which would make exports maps without an
  * unconditional entry unresolvable.
  */
 export const defaultResolveConditionNames = ['storybook', 'import', 'module', 'default'];

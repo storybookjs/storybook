@@ -1,0 +1,7 @@
+@import 'https://fonts.example/font.css';
+@import './other.css';
+
+.panel {
+  background: url(pixel.svg);
+  mask: url('#mask');
+}

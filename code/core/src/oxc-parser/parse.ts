@@ -1,5 +1,4 @@
-import type { StaticImportEntry } from 'oxc-parser';
-import { parse as oxcRawParse } from 'oxc-parser';
+import { type ParseResult, parse as oxcRawParse } from 'rolldown/utils';
 
 import { OxcParseError } from './errors.ts';
 import type { ImportEdge } from './types.ts';
@@ -153,7 +152,9 @@ function extractLiteralFromSource(source: string, start: number, end: number): s
  * or when no runtime names can be determined; otherwise returns the array of names as
  * they appear in the source module (before any `as` rename).
  */
-function extractImportedNames(entries: StaticImportEntry[]): Set<string> | null {
+function extractImportedNames(
+  entries: ParseResult['module']['staticImports'][number]['entries']
+): Set<string> | null {
   if (entries.length === 0) {
     return null; // side-effect: import 'mod'
   }

@@ -1,17 +1,11 @@
-import type {
-  Builder,
-  BuilderStats,
-  Builder_Unpromise,
-  Builder_WithRequiredProperty,
-} from 'storybook/internal/types';
+import type { Builder, BuilderStats, Builder_Unpromise } from 'storybook/internal/types';
 
-import type { BuildOptions, BuildResult } from 'esbuild';
+import type { BuildOptions } from 'rolldown';
 
 export type ManagerBuilder = Builder<
-  Builder_WithRequiredProperty<BuildOptions, 'outdir'> & { entryPoints: string[] },
+  BuildOptions & { entryPoints: string[]; outdir: string },
   BuilderStats
 >;
-export type Compilation = BuildResult;
 
 export type BuilderStartOptions = Parameters<ManagerBuilder['start']>['0'];
 export type BuilderStartResult = Builder_Unpromise<ReturnType<ManagerBuilder['start']>>;

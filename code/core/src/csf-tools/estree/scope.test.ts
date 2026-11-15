@@ -1,7 +1,6 @@
-import { visitorKeys } from 'oxc-parser';
 import { describe, expect, it } from 'vitest';
 
-import { type E, type Node, parseModule, walk } from './ast.ts';
+import { type E, type Node, parseModule, visitorKeys, walk } from './ast.ts';
 import { TS_EXPRESSIONS, TS_TYPES, analyzeScopes, generateUid } from './scope.ts';
 
 const identifiersNamed = (program: E.Program, name: string) => {

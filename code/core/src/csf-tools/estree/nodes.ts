@@ -1,8 +1,8 @@
 /**
- * Node predicates with no runtime dependency on oxc-parser, in their own module so the ESLint
+ * Node predicates with no runtime dependency on the parser, in their own module so the ESLint
  * plugin can bundle them; re-exported through ./ast.ts, which owns parsing and traversal.
  */
-import type * as E from 'oxc-parser';
+import type { ESTree as E } from 'rolldown/utils';
 
 type Node = E.Node;
 

@@ -425,7 +425,7 @@ export interface TestBuildFlags {
   disableSourcemaps?: boolean;
   /** Override tree-shaking (dead code elimination) to be disabled. */
   disableTreeShaking?: boolean;
-  /** Minify with ESBuild when using webpack. */
+  /** Minify with Rolldown instead of Terser when using webpack. */
   esbuildMinify?: boolean;
 }
 

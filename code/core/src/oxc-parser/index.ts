@@ -1,10 +1,4 @@
-import {
-  parseSync as oxcRawParseSync,
-  type Class,
-  type Declaration,
-  type Function,
-  type VariableDeclaration,
-} from 'oxc-parser';
+import { type ESTree, parseSync as oxcRawParseSync } from 'rolldown/utils';
 
 import { oxcParse } from './parse.ts';
 import type { ImportEdge, ReExportEntry } from './types.ts';
@@ -98,7 +92,7 @@ export async function parseBarrelInfo(filePath: string, source: string): Promise
 
 /** Adds the binding name(s) introduced by a top-level declaration node to `names`. */
 function collectDeclaredNames(
-  node: VariableDeclaration | Class | Function | Declaration,
+  node: ESTree.VariableDeclaration | ESTree.Class | ESTree.Function | ESTree.Declaration,
   names: Set<string>
 ): void {
   if (node.type === 'FunctionDeclaration' || node.type === 'ClassDeclaration') {

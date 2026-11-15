@@ -15,9 +15,9 @@ import { type BuilderOptions } from '@storybook/core-webpack';
 
 // @ts-expect-error (I removed this on purpose, because it's incorrect)
 import CaseSensitivePathsPlugin from 'case-sensitive-paths-webpack-plugin';
-import type { TransformOptions as EsbuildOptions } from 'esbuild';
 import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
+import { minify } from 'rolldown/utils';
 import TerserWebpackPlugin from 'terser-webpack-plugin';
 import webpackModule from 'webpack';
 import type { Configuration } from 'webpack';
@@ -243,12 +243,16 @@ export default async (
             minimize: true,
             minimizer: options.build?.test?.esbuildMinify
               ? [
-                  new TerserWebpackPlugin<EsbuildOptions>({
-                    parallel: true,
-                    minify: TerserWebpackPlugin.esbuildMinify,
-                    terserOptions: {
-                      sourcemap: !options.build?.test?.disableSourcemaps,
-                      treeShaking: !options.build?.test?.disableTreeShaking,
+                  new TerserWebpackPlugin<{ module?: boolean }>({
+                    // Rolldown minifies on its own threads.
+                    parallel: false,
+                    minify: async (input, sourceMap, { module }) => {
+                      const [[fileName, source]] = Object.entries(input);
+                      const { code, map, errors } = await minify(fileName, source, {
+                        module,
+                        sourcemap: Boolean(sourceMap),
+                      });
+                      return { code, map, errors: errors.map((error) => new Error(error.message)) };
                     },
                   }),
                 ]

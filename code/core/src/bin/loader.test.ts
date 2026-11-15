@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { deprecate } from 'storybook/internal/node-logger';
 
-import { transformSync } from 'esbuild';
+import { transformSync } from 'rolldown/utils';
 
 import {
   addExtensionsToRelativeImports,
@@ -19,7 +19,7 @@ import {
 vi.mock('node:fs');
 vi.mock('node:fs/promises');
 vi.mock('storybook/internal/node-logger');
-vi.mock('esbuild');
+vi.mock('rolldown/utils');
 
 describe('loader', () => {
   beforeEach(() => {
@@ -33,12 +33,11 @@ describe('loader', () => {
       nextLoad.mockReset();
       vi.mocked(transformSync).mockReturnValue({
         code: 'const x = 1;',
-        map: '',
-        warnings: [],
+        errors: [],
       } as any);
     });
 
-    it('transforms a plain .ts URL with esbuild', () => {
+    it('transforms a plain .ts URL', () => {
       const path =
         os.platform() === 'win32' ? 'file:///C:/project/main.ts' : 'file:///project/main.ts';
       const result = load(path, {} as any, nextLoad);
@@ -51,7 +50,7 @@ describe('loader', () => {
     it('still transforms a .ts URL with a cache-busting query string appended', () => {
       // Regression test: importModule appends `?<timestamp>` to bust the module cache when
       // skipCache is set. That must not cause this loader to skip the file and fall through to
-      // Node's native handling, which does not elide type-only named imports the way esbuild does.
+      // Node's native handling, which does not elide type-only named imports the way the transform does.
       const path =
         os.platform() === 'win32'
           ? 'file:///C:/project/main.ts?1234567890'

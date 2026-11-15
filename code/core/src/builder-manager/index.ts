@@ -3,25 +3,24 @@ import { cp, rm, writeFile } from 'node:fs/promises';
 import { stringifyProcessEnvs } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
-import { globalExternals } from '@fal-works/esbuild-plugin-global-externals';
 import { resolveModulePath } from 'exsolve';
-import { join, parse } from 'pathe';
+import { dirname, join, parse, relative } from 'pathe';
 import sirv from 'sirv';
 
 import { globalsModuleInfoMap } from '../manager/globals/globals-module-info.ts';
-import { BROWSER_TARGETS, SUPPORTED_FEATURES } from '../shared/constants/environments-support.ts';
+import { BROWSER_TARGETS } from '../shared/constants/environments-support.ts';
 import { resolvePackageDir } from '../shared/utils/module.ts';
 import type {
   BuilderBuildResult,
   BuilderFunction,
   BuilderStartResult,
-  Compilation,
   ManagerBuilder,
   StarterFunction,
 } from './types.ts';
+import { cssAsStyleElement } from './utils/css.ts';
 import { getData } from './utils/data.ts';
-import { readOrderedFiles } from './utils/files.ts';
 import { buildFrameworkGlobalsFromOptions } from './utils/framework.ts';
+import { globalExternals } from './utils/global-externals.ts';
 import { wrapManagerEntries } from './utils/managerEntries.ts';
 import { getTemplatePath, renderHTML } from './utils/template.ts';
 
@@ -29,8 +28,25 @@ export { BROWSER_TARGETS, NODE_TARGET } from '../shared/constants/environments-s
 
 const CORE_DIR_ORIGIN = join(resolvePackageDir('storybook'), 'dist/manager');
 
+const DATA_URL_EXTENSIONS = [
+  // media
+  '.png',
+  '.gif',
+  '.jpg',
+  '.jpeg',
+  '.svg',
+  '.webp',
+  '.webm',
+  '.mp3',
+  // modern fonts
+  '.woff2',
+  // legacy font formats
+  '.woff',
+  '.eot',
+  '.ttf',
+];
+
 const isRootPath = /^\/($|\?)/;
-let compilation: Compilation;
 let asyncIterator: ReturnType<StarterFunction> | ReturnType<BuilderFunction>;
 
 export const getConfig: ManagerBuilder['getConfig'] = async (options) => {
@@ -38,7 +54,6 @@ export const getConfig: ManagerBuilder['getConfig'] = async (options) => {
     options.presets.apply('managerEntries', []),
     options.presets.apply<Record<string, string>>('env'),
   ]);
-  const tsconfigPath = getTemplatePath('addon.tsconfig.json');
   let configDirManagerEntry;
   try {
     configDirManagerEntry = resolveModulePath('./manager', {
@@ -56,75 +71,61 @@ export const getConfig: ManagerBuilder['getConfig'] = async (options) => {
   return {
     entryPoints: await wrapManagerEntries(entryPoints, options.cacheKey),
     outdir: join(options.outputDir || './', 'sb-addons'),
-    format: 'iife',
-    write: false,
-    ignoreAnnotations: true,
-    resolveExtensions: ['.ts', '.tsx', '.mjs', '.js', '.jsx'],
-    outExtension: { '.js': '.js' },
-    loader: {
-      '.js': 'jsx',
-      // media
-      '.png': 'dataurl',
-      '.gif': 'dataurl',
-      '.jpg': 'dataurl',
-      '.jpeg': 'dataurl',
-      '.svg': 'dataurl',
-      '.webp': 'dataurl',
-      '.webm': 'dataurl',
-      '.mp3': 'dataurl',
-      // modern fonts
-      '.woff2': 'dataurl',
-      // legacy font formats
-      '.woff': 'dataurl',
-      '.eot': 'dataurl',
-      '.ttf': 'dataurl',
-    },
-    target: BROWSER_TARGETS,
-    supported: SUPPORTED_FEATURES,
     platform: 'browser',
-    bundle: true,
-    minify: false,
-    minifyWhitespace: false,
-    minifyIdentifiers: false,
-    minifySyntax: true,
-    metafile: false, // turn this on to assist with debugging the bundling of managerEntries
-
-    // treeShaking: true,
-
-    sourcemap: false,
-    conditions: ['browser', 'module', 'default'],
-
-    jsxFactory: 'React.createElement',
-    jsxFragment: 'React.Fragment',
-    jsx: 'transform',
-    jsxImportSource: 'react',
-
-    tsconfig: tsconfigPath,
-
-    legalComments: 'external',
-    plugins: [globalExternals(globalsModuleInfoMap)],
-
-    banner: {
-      js: 'try{',
+    tsconfig: getTemplatePath('addon.tsconfig.json'),
+    resolve: {
+      conditionNames: ['browser', 'module', 'default'],
+      extensions: ['.ts', '.tsx', '.mjs', '.js', '.jsx'],
     },
-    footer: {
-      js: '}catch(e){ console.error("[Storybook] One of your manager-entries failed: " + import.meta.url, e); }',
+    moduleTypes: {
+      '.js': 'jsx',
+      ...Object.fromEntries(DATA_URL_EXTENSIONS.map((extension) => [extension, 'dataurl'])),
     },
-
-    define: {
-      'process.env': JSON.stringify(envs),
-      ...stringifyProcessEnvs(envs),
-      global: 'window',
-      module: '{}',
+    // A manager entry is imported for what it registers, so no module may be dropped because its
+    // package.json or a `@__PURE__` comment calls it free of side effects.
+    treeshake: { moduleSideEffects: [{ test: /./, sideEffects: true }], annotations: false },
+    transform: {
+      target: BROWSER_TARGETS,
+      jsx: { runtime: 'classic', pragma: 'React.createElement', pragmaFrag: 'React.Fragment' },
+      define: {
+        'process.env': JSON.stringify(envs),
+        ...stringifyProcessEnvs(envs),
+        global: 'window',
+      },
     },
+    plugins: [globalExternals(globalsModuleInfoMap), cssAsStyleElement()],
+    output: { format: 'iife', minify: 'dce-only' },
   };
 };
 
-export const executor = {
-  get: async () => {
-    const { build } = await import('esbuild');
-    return build;
-  },
+// Bundles each manager entry into its own file of `outdir`, and returns the URL of each.
+const bundle = async (
+  { entryPoints, outdir, ...options }: Awaited<ReturnType<ManagerBuilder['getConfig']>>,
+  minify = options.output?.minify
+) => {
+  // An entry is `<directory of the addon>/<name>-bundle.js` in the cache directory.
+  const files = entryPoints.map((entry) => relative(dirname(dirname(entry)), entry));
+  const urls = files.map(
+    (file) => `./sb-addons/${file.split('/').map(encodeURIComponent).join('/')}`
+  );
+  const { build } = await import('rolldown');
+  await build(
+    entryPoints.map((input, index) => ({
+      ...options,
+      input,
+      output: {
+        ...options.output,
+        minify,
+        file: join(outdir, files[index]),
+        // A failing manager entry must not stop the others. `module` is bound here instead of
+        // defined away, as a define would hide `module.exports` from Rolldown, which then reads a
+        // CommonJS dependency as a module without exports.
+        banner: 'try{var module={};',
+        footer: `}catch(e){ console.error("[Storybook] One of your manager-entries failed: " + ${JSON.stringify(urls[index])}, e); }`,
+      },
+    }))
+  );
+  return urls;
 };
 
 /**
@@ -147,7 +148,6 @@ const starter: StarterFunction = async function* starterGeneratorFn({
     favicon,
     customHead,
     features,
-    instance,
     refs,
     template,
     title,
@@ -165,9 +165,7 @@ const starter: StarterFunction = async function* starterGeneratorFn({
 
   yield;
 
-  compilation = await instance({
-    ...config,
-  });
+  const jsFiles = await bundle(config);
 
   yield;
 
@@ -188,15 +186,6 @@ const starter: StarterFunction = async function* starterGeneratorFn({
     })
   );
 
-  const { cssFiles, jsFiles } = await readOrderedFiles(addonsDir, compilation?.outputFiles);
-
-  if (compilation.metafile && options.outputDir) {
-    await writeFile(
-      join(options.outputDir, 'metafile.json'),
-      JSON.stringify(compilation.metafile, null, 2)
-    );
-  }
-
   // Build additional global values
   const globals: Record<string, any> = await buildFrameworkGlobalsFromOptions(options);
 
@@ -207,7 +196,6 @@ const starter: StarterFunction = async function* starterGeneratorFn({
     title,
     favicon,
     customHead,
-    cssFiles,
     jsFiles,
     features,
     refs,
@@ -262,7 +250,6 @@ const builder: BuilderFunction = async function* builderGeneratorFn({ startTime,
     customHead,
     favicon,
     features,
-    instance,
     refs,
     template,
     title,
@@ -272,14 +259,9 @@ const builder: BuilderFunction = async function* builderGeneratorFn({ startTime,
   } = await getData(options);
   yield;
 
-  const addonsDir = config.outdir;
   const coreDirTarget = join(options.outputDir, `sb-manager`);
 
-  // TODO: this doesn't watch, we should change this to use the esbuild watch API: https://esbuild.github.io/api/#watch
-  compilation = await instance({
-    ...config,
-    minify: true,
-  });
+  const jsFiles = await bundle(config, true);
 
   yield;
 
@@ -293,8 +275,6 @@ const builder: BuilderFunction = async function* builderGeneratorFn({ startTime,
     },
     recursive: true,
   });
-  const { cssFiles, jsFiles } = await readOrderedFiles(addonsDir, compilation?.outputFiles);
-
   // Build additional global values
   const globals: Record<string, any> = await buildFrameworkGlobalsFromOptions(options);
 
@@ -305,7 +285,6 @@ const builder: BuilderFunction = async function* builderGeneratorFn({ startTime,
     title,
     favicon,
     customHead,
-    cssFiles,
     jsFiles,
     features,
     refs,

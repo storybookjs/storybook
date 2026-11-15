@@ -1,5 +1,5 @@
-import type * as E from 'oxc-parser';
-import { parseSync, rawTransferSupported, visitorKeys } from 'oxc-parser';
+import visitorKeys from 'oxc-parser/src-js/generated/visit/keys.js';
+import { type ESTree as E, type ParseResult, type ParserOptions, parseSync } from 'rolldown/utils';
 
 import { isNode } from './nodes.ts';
 
@@ -7,7 +7,13 @@ export * from './nodes.ts';
 
 export type { E };
 
+// Rolldown has no export for the child keys of each node type, so they are bundled from
+// oxc-parser, the parser inside Rolldown.
+export { visitorKeys };
+
 export type Node = E.Node;
+
+export type Comment = ParseResult['comments'][number];
 
 /** The start and end of a span, as 1-based lines, 0-based columns and offsets. */
 export interface SourceLocation {
@@ -18,7 +24,7 @@ export interface SourceLocation {
 export interface ParsedModule {
   code: string;
   program: E.Program;
-  comments: E.Comment[];
+  comments: Comment[];
 }
 
 export class EstreeParseError extends SyntaxError {
@@ -52,69 +58,18 @@ const langFor = (fileName: string): Lang | undefined => {
 
 type ParseAttempt = { module: ParsedModule } | { error: EstreeParseError; offset: number };
 
-const labelStart = (diagnostic: E.OxcError) => diagnostic.labels?.[0]?.start;
-
-// Raw transfer reads the tree out of the parser's memory instead of through JSON, into a buffer
-// that reserves 6 GiB of virtual address space, of which only the pages written are ever
-// resident. It is unsupported on 32-bit hosts, under the WASM binding and before Node 22. The
-// first raw parse also loads the deserializer with `require`; when that fails, for example under
-// a test that mocks `node:fs`, this process reads trees through JSON from then on.
-// Off on Windows until oxc PR #27566 lands: the 6 GiB there is committed memory, not reserved
-// address space, and its allocation fails without that much RAM and pagefile (oxc issue #11834).
-export const rawTransferAvailable = process.platform !== 'win32' && rawTransferSupported();
-
-let rawTransferEnabled = rawTransferAvailable;
-
-// The option is missing from the `ParserOptions` type of oxc-parser 0.154.
-type ParseOptions = E.ParserOptions & { experimentalRawTransfer: boolean };
-
-/**
- * Runs `fn` with raw transfer forced on or off; for tests that compare the two tree readers.
- * Throws when a parse in `fn` turned raw transfer off, so its trees came through JSON after all.
- */
-export const withRawTransfer = <T>(enabled: boolean, fn: () => T): T => {
-  const before = rawTransferEnabled;
-  rawTransferEnabled = enabled;
-  try {
-    const result = fn();
-    if (enabled && !rawTransferEnabled) {
-      throw new Error('Raw transfer was turned off during the call, so later parses used JSON');
-    }
-    return result;
-  } finally {
-    rawTransferEnabled = before;
-  }
-};
+const labelStart = (diagnostic: ParseResult['errors'][number]) => diagnostic.labels?.[0]?.start;
 
 const parseWith = (code: string, fileName: string | undefined, lang: Lang): ParseAttempt => {
-  const rawTransfer = rawTransferEnabled;
-  const name = fileName ?? `file.${lang}`;
-  const options: ParseOptions = {
+  const options: ParserOptions = {
     lang,
     sourceType: 'module',
     preserveParens: true,
     // Duplicate declarations and legacy octals are reported like Babel did, instead of parsing
     // into a program that silently keeps the last declaration.
     showSemanticErrors: true,
-    experimentalRawTransfer: rawTransfer,
   };
-  let result: E.ParseResult;
-  try {
-    result = parseSync(name, code, options);
-  } catch (error) {
-    if (!rawTransfer) {
-      throw error;
-    }
-    // The raw transfer deserializer recurses, so a tree nested deeper than the call stack allows
-    // comes through JSON, which does not. Any other failure, the buffer's allocation included,
-    // turns the raw path off for the process: a failed 6 GiB allocation costs full garbage
-    // collections, which would repeat on every parse.
-    if (!(error instanceof RangeError && /call stack/i.test(error.message))) {
-      rawTransferEnabled = false;
-    }
-    const json: ParseOptions = { ...options, experimentalRawTransfer: false };
-    result = parseSync(name, code, json);
-  }
+  const result = parseSync(fileName ?? `file.${lang}`, code, options);
   const [error] = result.errors.filter((diagnostic) => diagnostic.severity === 'Error');
   if (error) {
     const offset = labelStart(error) ?? 0;

@@ -1,9 +1,9 @@
 import { realpathSync } from 'node:fs';
 import { createRequire } from 'node:module';
 
-import { ResolverFactory } from 'oxc-resolver';
 import { dirname, isAbsolute, resolve } from 'pathe';
 
+import { ResolverFactory } from '../common/utils/module-resolver.ts';
 import { userModuleExtensions } from '../shared/constants/extensions.ts';
 import { isModuleDirectory } from './extract.ts';
 

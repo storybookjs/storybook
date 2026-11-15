@@ -10,6 +10,7 @@ import type { Plugin as RolldownPlugin } from 'rolldown';
 import { rolldown } from 'rolldown';
 import { dedent } from 'ts-dedent';
 
+import { globalExternals as rolldownGlobalExternals } from '../../../code/core/src/builder-manager/utils/global-externals.ts';
 import { globalsModuleInfoMap } from '../../../code/core/src/manager/globals/globals-module-info.ts';
 import {
   BROWSER_TARGETS,
@@ -85,30 +86,6 @@ export const rolldownNoDynamicRequireGuard: RolldownPlugin = {
     return resolved;
   },
 };
-
-function rolldownGlobalExternalsPlugin(): RolldownPlugin {
-  const prefix = '\0storybook-global:';
-
-  return {
-    name: 'storybook-global-externals',
-    resolveId(id) {
-      return id in globalsModuleInfoMap ? `${prefix}${id}` : null;
-    },
-    load(id) {
-      if (!id.startsWith(prefix)) {
-        return null;
-      }
-
-      const moduleName = id.slice(prefix.length) as keyof typeof globalsModuleInfoMap;
-      const { namedExports, varName } = globalsModuleInfoMap[moduleName];
-      const exports = namedExports.map(
-        (name) => `export const ${name} = ${varName}[${JSON.stringify(name)}];`
-      );
-
-      return [...exports, `export default ${varName};`].join('\n');
-    },
-  };
-}
 
 /*
  * This plugin writes the metafile to a file in the output directory.
@@ -267,7 +244,7 @@ export async function generateBundle({
       platform: 'browser',
       plugins: [
         rolldownNoDynamicRequireGuard,
-        ...(useGlobals ? [rolldownGlobalExternalsPlugin()] : []),
+        ...(useGlobals ? [rolldownGlobalExternals(globalsModuleInfoMap)] : []),
       ],
       resolve: {
         alias,

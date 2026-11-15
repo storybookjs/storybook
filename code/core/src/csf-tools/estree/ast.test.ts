@@ -1,8 +1,6 @@
 import { inspect } from 'node:util';
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
-
-import { parseSync } from 'oxc-parser';
+import { describe, expect, it } from 'vitest';
 
 import {
   type E,
@@ -15,16 +13,9 @@ import {
   outerSpan,
   parseModule,
   placeableTextOf,
-  rawTransferAvailable,
   textOf,
   walk,
-  withRawTransfer,
 } from './ast.ts';
-
-vi.mock('oxc-parser', { spy: true });
-
-// Where raw transfer is in use, both ways of reading the tree run.
-const transfers = rawTransferAvailable ? [true, false] : [false];
 
 describe('parseModule', () => {
   const flowBody = 'const x: { +readOnly: number } = {};';
@@ -119,36 +110,16 @@ describe('parseModule', () => {
     expect(moduleOf(comments[0])?.program).toBe(program);
   });
 
-  it.each(transfers)(
-    'normalizes an expression nested deeper than the call stack allows recursion, rawTransfer %s',
-    (rawTransfer) => {
-      const code = `x = ${Array(20_000).fill('(a)').join(' + ')};`;
-      const { program } = withRawTransfer(rawTransfer, () => parseModule(code));
-      expect(program.body).toHaveLength(1);
-    }
-  );
+  it('normalizes an expression nested deeper than the call stack allows recursion', () => {
+    const code = `x = ${Array(20_000).fill('(a)').join(' + ')};`;
+    const { program } = parseModule(code);
+    expect(program.body).toHaveLength(1);
+  });
 
-  it.runIf(transfers.length === 2)(
-    'reads the same tree through raw transfer as through JSON',
-    () => {
-      const code = [
-        '#!/usr/bin/env node',
-        '/** Doc */',
-        'export const a = <T,>(x: T) => (x as any)!;',
-        'const j = <div a="1">{(1, 2)}</div>;',
-        'const r = /a+/gu, b = 10n, n = 0x1f, s = `${b}`;',
-        "export default { title: 'A' } satisfies Meta; // end",
-      ].join('\n');
-      const raw = withRawTransfer(true, () => parseModule(code, 'a.tsx'));
-      const json = withRawTransfer(false, () => parseModule(code, 'a.tsx'));
-      expect(raw).toEqual(json);
-    }
-  );
-
-  it.each(transfers)('reports a parse error at its position with rawTransfer %s', (rawTransfer) => {
-    expect(() =>
-      withRawTransfer(rawTransfer, () => parseModule('const a = 1;\nconst = ;\n', 'a.ts'))
-    ).toThrow('Unexpected token (2:6) in a.ts');
+  it('reports a parse error at its position', () => {
+    expect(() => parseModule('const a = 1;\nconst = ;\n', 'a.ts')).toThrow(
+      'Unexpected token (2:6) in a.ts'
+    );
   });
 
   it('keeps what it records on a node out of its inspection and equality', () => {
@@ -158,43 +129,6 @@ describe('parseModule', () => {
     expect(first).toEqual(second);
     expect(inspect(first)).toBe(inspect(structuredClone(first)));
     expect(moduleOf({ ...first })).toBeUndefined();
-  });
-});
-
-describe('raw transfer fallback', () => {
-  afterEach(() => {
-    vi.mocked(parseSync).mockReset();
-  });
-
-  const failRawTransferWith = async (error: Error) => {
-    const actual = await vi.importActual<typeof import('oxc-parser')>('oxc-parser');
-    let attempts = 0;
-    vi.mocked(parseSync).mockImplementation((name, code, options) => {
-      if ((options as { experimentalRawTransfer?: boolean }).experimentalRawTransfer) {
-        attempts++;
-        throw error;
-      }
-      return actual.parseSync(name, code, options);
-    });
-    return () => attempts;
-  };
-
-  const parseFive = () => {
-    for (let index = 0; index < 5; index++) {
-      parseModule(`const a${index} = ${index};`, 'a.ts');
-    }
-  };
-
-  it('turns raw transfer off for the process when its buffer cannot be allocated', async () => {
-    const attempts = await failRawTransferWith(new RangeError('Array buffer allocation failed'));
-    expect(() => withRawTransfer(true, parseFive)).toThrow('Raw transfer was turned off');
-    expect(attempts()).toBe(1);
-  });
-
-  it('keeps raw transfer on when a tree overflows the call stack of its deserializer', async () => {
-    const attempts = await failRawTransferWith(new RangeError('Maximum call stack size exceeded'));
-    withRawTransfer(true, parseFive);
-    expect(attempts()).toBe(5);
   });
 });
 

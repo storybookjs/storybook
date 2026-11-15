@@ -162,12 +162,14 @@ const mobileLayoutDecorator: DecoratorFunction = (storyFn, { args, globals, titl
   </ManagerContext.Provider>
 );
 
+// Like a loaded ref, it holds both indexes: `index` and the filtered `filteredIndex`.
 const refs: Record<string, RefType> = {
   optimized: {
     id: 'optimized',
     title: 'This is a ref',
     url: 'https://example.com',
     type: 'lazy',
+    index,
     filteredIndex: index,
     previewInitialized: true,
     allStatuses: {},
@@ -179,6 +181,7 @@ const indexError = new Error('Failed to load index');
 const refsError = {
   optimized: {
     ...refs.optimized,
+    index: undefined,
     // @ts-expect-error (non strict)
     filteredIndex: undefined as IndexHash,
     indexError,
@@ -189,6 +192,7 @@ const refsEmpty = {
   optimized: {
     ...refs.optimized,
     // type: 'auto-inject',
+    index: {} as IndexHash,
     filteredIndex: {} as IndexHash,
   },
 };
@@ -324,6 +328,21 @@ export const WithRefs: Story = {
     refs,
   },
   play: waitForChecklistWidget,
+};
+
+/** The search results include the matching entries of a composed Storybook. */
+export const WithRefsSearching: Story = {
+  args: {
+    refs,
+  },
+  play: async ({ canvasElement }) => {
+    await waitForChecklistWidget();
+    const canvas = within(canvasElement);
+    await userEvent.type(await canvas.findByRole('searchbox'), 'Child A2');
+    await waitFor(() =>
+      expect(canvasElement.querySelector('[role="option"][data-refid="optimized"]')).not.toBeNull()
+    );
+  },
 };
 
 export const WithRefsNarrow: Story = {

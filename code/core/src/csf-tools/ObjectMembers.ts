@@ -6,15 +6,17 @@ import {
   type Node,
   type Property,
   isTSWrapper,
+  isIdentifier,
   staticKey,
   unwrapExpression,
 } from './estree/ast.ts';
 import { type SourceEditor, printMemberAccess } from './estree/editor.ts';
 import { type Binding, isTSDeclaration } from './estree/scope.ts';
+import { resolveExpression } from './estree/values.ts';
 
 type PropertyLookup =
   | { ok: true; property?: Property }
-  | { ok: false; code: CsfMutationDiagnosticCode; node: Node };
+  | { ok: false; code: CsfMutationDiagnosticCode; node: Node; property?: Property };
 
 // A `set` appends a missing field after every member, so it overrides what they could provide;
 // a removal could reveal what an earlier member provides.
@@ -62,21 +64,21 @@ export const lookupProperty = (
     unknownAfterMatch ??
     (access === 'remove' || (access === 'read' && matches.length === 0) ? unknown : undefined);
   if (unproven) {
-    return { ok: false, code: unproven.code, node: unproven.node };
+    return { ok: false, code: unproven.code, node: unproven.node, property: matches[0] };
   }
   return { ok: true, property: matches[0] };
 };
 
 // The spread a parent created after it carries forward, read at the parent's key, and whether
 // that member is known to be an object literal.
-type CarriedSpread = { source: string; object: boolean };
+export type CarriedSpread = { source: string; object: boolean; own: boolean; optional?: boolean };
 
 // A reference reads the same value when it is read again.
 const isReference = (node: Node): boolean =>
   node.type === 'Identifier' ||
+  (node.type === 'ChainExpression' && isReference(node.expression)) ||
   (node.type === 'MemberExpression' &&
     !node.computed &&
-    !node.optional &&
     node.property.type === 'Identifier' &&
     isReference(node.object));
 
@@ -195,6 +197,13 @@ const literalMember = (literal: E.ObjectExpression, key: string) => {
 
 // Whether `spread` is of a trusted local object literal known to lack `key`.
 const lacks = (editor: SourceEditor, spread: E.SpreadElement, key: string) => {
+  const value = resolveExpression(editor.scopes, spread.argument, 'read');
+  if (
+    (value?.type === 'Literal' && value.value === null) ||
+    (value && isIdentifier(value, 'undefined') && !editor.scopes.bindingOf(value))
+  ) {
+    return true;
+  }
   const literal = trustedLiteral(editor, unwrapExpression(spread.argument));
   return literal !== undefined && literalMember(literal, key).kind === 'missing';
 };
@@ -236,17 +245,19 @@ export const carriedSpreads = (
     if (!isReference(reference)) {
       return { ok: false, code: 'spread-field', node: member };
     }
-    const literal = trustedLiteral(editor, reference);
-    const known = literal ? literalMember(literal, key) : undefined;
-    if (known?.kind === 'missing') {
+    if (lacks(editor, member, key)) {
       continue;
     }
+    const literal = trustedLiteral(editor, reference);
+    const known = literal ? literalMember(literal, key) : undefined;
     // A type assertion stays, so the carried member has the type the spread was given.
     const source = editor.source(member.argument);
     const candidate = {
       spread: {
         source: reference === member.argument ? source : `(${source})`,
         object: known?.kind === 'value' && known.object,
+        own: known?.kind === 'value',
+        optional: reference.type === 'ChainExpression',
       },
       node: member,
     };
@@ -274,7 +285,7 @@ export const carriedSpread = (
   const [first, ...rest] = keys;
   const expression =
     spread.source +
-    printMemberAccess(first, quote) +
+    printMemberAccess(first, quote, spread.optional) +
     rest.map((key, index) => printMemberAccess(key, quote, index > 0 || !spread.object)).join('');
   return into === 'array' ? `...(${expression} ?? [])` : `...${expression}`;
 };

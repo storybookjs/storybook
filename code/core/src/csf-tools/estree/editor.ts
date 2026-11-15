@@ -988,6 +988,27 @@ export const memberText = (
   member: E.ObjectPropertyKind
 ) => itemText(editor, objectList(editor, object), member);
 
+export const replacedMemberText = (
+  editor: SourceEditor,
+  object: E.ObjectExpression,
+  member: Property,
+  value: string
+) => {
+  const list = objectList(editor, object);
+  return itemTextWith(editor, list, list.items.indexOf(member), () => {
+    if (member.shorthand) {
+      return `${editor.source(member.key)}: ${value}`;
+    }
+    const prefix = dedentSource(
+      editor,
+      member.start,
+      outerSpan(member.value).start,
+      lineIndent(editor.code, member.start)
+    );
+    return `${prefix}${value}`;
+  });
+};
+
 // Items with their commas on the line of a one-line list, their continuation lines indented like
 // it. A line comment ending an item takes the line break where a space would join the next.
 const inline = (

@@ -64,15 +64,31 @@ it('adds a stylesheet as one style element, with its imports in place and its as
   `);
 });
 
-it('reads a byte order mark, an @import without a semicolon and every form of url()', async () => {
-  // Written here, because the formatter would normalize what these stylesheets are about.
+// The styles of files that are written here, because the formatter would normalize what they are
+// about. `entry.css` is the stylesheet that the script imports.
+const stylesOfFiles = async (files: Record<string, string>) => {
   const directory = await mkdtemp(join(tmpdir(), 'sb-manager-css-'));
+  const all = {
+    'entry.js': `import './entry.css';`,
+    'other.css': '.other { color: red; }',
+    ...files,
+  };
+  await Promise.all(
+    Object.entries(all).map(([name, content]) => writeFile(join(directory, name), content))
+  );
+  try {
+    return await stylesOf(join(directory, 'entry.js'));
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+};
+
+it('reads a byte order mark, an @import without a semicolon and every form of url()', async () => {
   const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>';
-  const files = {
+  const styles = await stylesOfFiles({
     'entry.js': `import './bom.css';\nimport './last-import.css';\nimport './urls.css';`,
     'bom.css': '\uFEFF@charset "UTF-8";\r\n.first { color: red; }\r\n',
     'last-import.css': '@import "./other.css"',
-    'other.css': '.other { color: red; }',
     'urls.css': [
       '.spaces { background: url( ./pixel.svg ); }',
       '.parentheses { background: url("./pixel (1).svg"); }',
@@ -81,28 +97,56 @@ it('reads a byte order mark, an @import without a semicolon and every form of ur
     ].join('\n'),
     'pixel.svg': svg,
     'pixel (1).svg': svg,
-  };
-  await Promise.all(
-    Object.entries(files).map(([name, content]) => writeFile(join(directory, name), content))
-  );
+  });
 
-  try {
-    const styles = await stylesOf(join(directory, 'entry.js'));
+  const pixel = `url("data:image/svg+xml,${svg.replaceAll('"', '\\"')}`;
+  expect(styles).toEqual([
+    '@charset "UTF-8";\r\n.first { color: red; }\r\n',
+    '.other { color: red; }',
+    [
+      `.spaces { background: ${pixel}"); }`,
+      `.parentheses { background: ${pixel}"); }`,
+      `.fragment { background: ${pixel}#icon"); }`,
+      `.query { background: ${pixel}"); }`,
+    ].join('\n'),
+  ]);
+});
 
-    const pixel = `url("data:image/svg+xml,${svg.replaceAll('"', '\\"')}`;
-    expect(styles).toEqual([
-      '@charset "UTF-8";\r\n.first { color: red; }\r\n',
-      '.other { color: red; }',
-      [
-        `.spaces { background: ${pixel}"); }`,
-        `.parentheses { background: ${pixel}"); }`,
-        `.fragment { background: ${pixel}#icon"); }`,
-        `.query { background: ${pixel}"); }`,
-      ].join('\n'),
-    ]);
-  } finally {
-    await rm(directory, { recursive: true, force: true });
-  }
+const fonts = `@import url('https://fonts.example/css2?family=Inter:wght@400;700');`;
+
+it('inlines an @import after one of a URL that holds a semicolon', async () => {
+  expect(await stylesOfFiles({ 'entry.css': `${fonts}\n@import './other.css';` })).toEqual([
+    `${fonts}\n.other { color: red; }`,
+  ]);
+});
+
+it('starts a style element at an @import of a URL that follows a stylesheet', async () => {
+  const styles = await stylesOfFiles({
+    'entry.css': `@import './other.css';\n@import './fonts.css';\n.rule { color: blue; }`,
+    'fonts.css': `${fonts}\n.fonts { color: green; }`,
+  });
+
+  expect(styles).toEqual([
+    '.other { color: red; }\n',
+    `${fonts}\n.fonts { color: green; }\n.rule { color: blue; }`,
+  ]);
+});
+
+it('rejects an @import of a URL in a stylesheet that is imported with a condition', async () => {
+  const styles = stylesOfFiles({
+    'entry.css': `@import './fonts.css' print;`,
+    'fonts.css': fonts,
+  });
+
+  await expect(styles).rejects.toThrow('is imported with a condition');
+});
+
+it('reads a supports() condition with nested parentheses', async () => {
+  const condition = '((display: grid) and (not (display: inline-grid)))';
+
+  expect(
+    await stylesOfFiles({ 'entry.css': `@import './other.css' supports${condition};` })
+  ).toEqual([`@supports ${condition} {\n.other { color: red; }}\n`]);
 });
 
 it('keeps a layer order that is declared before an @import', async () => {

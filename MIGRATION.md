@@ -2718,9 +2718,10 @@ Server-side docgen, the default in Storybook 11, reads the JSDoc types, so a new
 `storybook` no longer depends on `esbuild`, `oxc-parser` and `oxc-resolver`. Its only native dependency is now `rolldown`, the bundler inside Vite 8. A project on the newest Vite 8 shares one copy of Rolldown with Vite.
 
 - If your project uses the `esbuild` that Storybook installed, add `esbuild` to your own dependencies.
-- Rolldown has no native binary for `linux-riscv64`, `linux-arm-musleabihf` and 32-bit Windows, which Storybook supported before.
-- CSS that a manager entry imports, such as `.storybook/manager.ts` or the manager entry of an addon, is added to the page in a `<style>` element instead of a linked stylesheet. CSS modules (`import styles from './x.module.css'`) now fail the build.
-- Decorators and the `accessor` keyword in a manager entry are no longer compiled. A browser that cannot run them reports that entry as failed in its console, and loads the other entries.
+- Rolldown has no native binary for `linux-riscv64` and `linux-arm-musleabihf`, which Storybook supported before.
+- CSS that a manager entry imports, such as `.storybook/manager.ts` or the manager entry of an addon, is added to the page in `<style>` elements instead of a linked stylesheet. CSS modules (`import styles from './x.module.css'`) now fail the build.
+- Decorators and the `accessor` keyword in a manager entry are no longer compiled. In a browser that cannot run them, that entry fails with a syntax error in the console, and the other entries load.
+- In a manager entry, `require('pkg')` of a package with a `main` and a `module` field now gives the ES module, such as `{ default: … }`, instead of the value of `main`.
 - A TypeScript config file such as `.storybook/main.ts` must be an ES module. `module.exports =` and `export =` are no longer converted to `export default`.
 - A TypeScript config file only has its types removed. A `using` declaration needs a Node.js version that runs it, and decorators and the `accessor` keyword are no longer compiled.
 

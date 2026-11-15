@@ -70,17 +70,13 @@
     </script>
     <% } %>
 
-    <script type="module">
-      import './sb-manager/globals-runtime.js';
+    <script type="module" src="./sb-manager/globals-runtime.js"></script>
 
-      <%# An entry that the browser cannot parse or fetch must not stop the others or the manager. %>
-      <% files.js.forEach(file => { %>
-        await import('<%= file %>').catch((error) =>
-          console.error('[Storybook] One of your manager-entries failed: <%= file %>', error)
-        );
-      <% }); %>
+    <%# Each entry is a script of its own, so one that the browser cannot parse or fetch stops no other. %>
+    <% files.js.forEach(file => { %>
+    <script type="module" src="<%= file %>"></script>
+    <% }); %>
 
-      await import('./sb-manager/runtime.js');
-    </script>
+    <script type="module" src="./sb-manager/runtime.js"></script>
   </body>
 </html>

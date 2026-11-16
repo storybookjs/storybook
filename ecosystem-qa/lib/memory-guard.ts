@@ -106,9 +106,10 @@ interface Guard {
 
 const short = (command: string) => (command.length > 160 ? `${command.slice(0, 160)}...` : command);
 
-// The limit of the sandbox does not cover what the machine holds outside it. On a GitHub runner the
-// agent of the runner hardening step grew by a gigabyte a minute while a project's tests ran in a
-// browser, and a machine that runs out of memory and swap stops answering and hands over nothing.
+// The limit of the sandbox does not cover what the machine holds outside it. On a GitHub runner an
+// agent that a workflow step had installed grew by a gigabyte a minute while a project's tests ran
+// in a browser, and a machine that runs out of memory and swap stops answering and hands over
+// nothing.
 // Below 15% of its memory in what is available and what is left of the swap, the machine is
 // about a minute away from that. A sandbox that is merely full leaves less than that on a machine
 // without swap, so the machine also has to have lost part of the share the sandbox was given.

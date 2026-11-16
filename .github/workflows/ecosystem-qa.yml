@@ -233,12 +233,10 @@ jobs:
       QA_TIER: ${{ inputs.tier }}
       QA_BUDGET_MINUTES: ${{ inputs.budget_minutes }}
     steps:
-      - name: Harden the runner
-        if: ${{ matrix.os == 'linux' }}
-        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
-        with:
-          egress-policy: audit
-
+      # No runner hardening step in this job. Its agent grows by about a gigabyte a minute while a
+      # project's tests run in a browser, outside the memory limit of the sandbox, and a runner that
+      # runs out of memory hands over no result at all. It still does so with its file monitoring
+      # switched off.
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:

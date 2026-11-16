@@ -376,8 +376,8 @@ Accessibility: not checked.`);
           ],
         }),
         selection: {
-          files: { filters: ['src/Button.stories.tsx', 'Header'], storyFiles: 2 },
-          changed: { stories: 5, changedConfigFiles: [], pendingFiles: [] },
+          files: { filters: ['src/Button.stories.tsx', 'Header'], storyFileCount: 2 },
+          changed: { storyCount: 5, changedConfigFiles: [], pendingFiles: [] },
           storyCount: 2,
         },
       } as TestRunOutput);
@@ -396,7 +396,7 @@ Passed: 2 component tests passed.`);
           componentTestStatuses: [componentTest('button--primary', 'status-value:success')],
         }),
         selection: {
-          changed: { stories: 1, changedConfigFiles: [], pendingFiles: [], since: 'next' },
+          changed: { storyCount: 1, changedConfigFiles: [], pendingFiles: [], since: 'next' },
           storyCount: 1,
         },
       } as TestRunOutput);
@@ -411,7 +411,7 @@ Passed: 2 component tests passed.`);
         status: 'no-stories',
         notFoundMessages: [],
         selection: {
-          changed: { stories: 0, changedConfigFiles: [], pendingFiles: ['src/New.stories.tsx'] },
+          changed: { storyCount: 0, changedConfigFiles: [], pendingFiles: ['src/New.stories.tsx'] },
         },
       });
 
@@ -428,7 +428,11 @@ Passed: 2 component tests passed.`);
           componentTestStatuses: [componentTest('button--primary', 'status-value:success')],
         }),
         selection: {
-          changed: { stories: 1, changedConfigFiles: ['.storybook/preview.ts'], pendingFiles: [] },
+          changed: {
+            storyCount: 1,
+            changedConfigFiles: ['.storybook/preview.ts'],
+            pendingFiles: [],
+          },
           storyCount: 1,
         },
       } as TestRunOutput);
@@ -448,7 +452,7 @@ Passed: 1 component test passed.`);
           componentTestStatuses: [componentTest('button--primary', 'status-value:success')],
         }),
         selection: { storyCount: 1 },
-        notFound: ['No story found for story ID "missing--story"'],
+        notFoundMessages: ['No story found for story ID "missing--story"'],
       } as TestRunOutput);
 
       const outcome = await runTests();
@@ -464,7 +468,7 @@ Accessibility: not checked.`);
     it('passes a focused run in which none of the selected stories ran, as Vitest does with skipped tests', async () => {
       vi.mocked(runStoryTests).mockResolvedValue({
         ...completed({ storyIds: ['button--primary', 'button--secondary'] }),
-        selection: { files: { filters: ['Button'], storyFiles: 1 }, storyCount: 2 },
+        selection: { files: { filters: ['Button'], storyFileCount: 1 }, storyCount: 2 },
       } as TestRunOutput);
 
       const outcome = await runTests();
@@ -481,7 +485,7 @@ Accessibility: not checked.`);
       vi.mocked(runStoryTests).mockResolvedValue({
         status: 'no-stories',
         notFoundMessages: ['No story files found for `src/Button.tsx`.'],
-        selection: { files: { filters: ['src/Button.tsx'], storyFiles: 0 } },
+        selection: { files: { filters: ['src/Button.tsx'], storyFileCount: 0 } },
       });
 
       const outcome = await runTests();
@@ -497,7 +501,7 @@ No story files found for \`src/Button.tsx\`.`);
         status: 'no-stories',
         notFoundMessages: [],
         selection: {
-          changed: { stories: 0, changedConfigFiles: ['.storybook/main.ts'], pendingFiles: [] },
+          changed: { storyCount: 0, changedConfigFiles: ['.storybook/main.ts'], pendingFiles: [] },
         },
       });
 
@@ -516,7 +520,7 @@ To test more, pass a ref (\`--changed main\`) or story files.`);
         status: 'no-stories',
         notFoundMessages: [],
         selection: {
-          changed: { stories: 0, changedConfigFiles: [], pendingFiles: [], since: 'next' },
+          changed: { storyCount: 0, changedConfigFiles: [], pendingFiles: [], since: 'next' },
         },
       });
 
@@ -528,7 +532,7 @@ To test more, pass story files.`);
       vi.mocked(runStoryTests).mockResolvedValue({
         status: 'no-stories',
         notFoundMessages: [],
-        selection: { files: { filters: ['src/Button.tsx'], storyFiles: 0 } },
+        selection: { files: { filters: ['src/Button.tsx'], storyFileCount: 0 } },
       });
 
       const outcome = await runTests();
@@ -544,13 +548,28 @@ To test more, pass story files.`);
         status: 'no-stories',
         notFoundMessages: [],
         selection: {
-          files: { filters: ['Header'], storyFiles: 1 },
-          changed: { stories: 3, changedConfigFiles: [], pendingFiles: [] },
+          files: { filters: ['Header'], storyFileCount: 1 },
+          changed: { storyCount: 3, changedConfigFiles: [], pendingFiles: [] },
         },
       });
 
-      expect((await runTests()).markdown).toContain(
-        'None of the selected stories changed, so no tests ran.'
+      expect((await runTests()).markdown)
+        .toBe(`None of the selected stories changed, so no tests ran.
+To test more, pass a ref (\`--changed main\`).`);
+    });
+
+    it('offers nothing more when story files and a ref were both given', async () => {
+      vi.mocked(runStoryTests).mockResolvedValue({
+        status: 'no-stories',
+        notFoundMessages: [],
+        selection: {
+          files: { filters: ['Header'], storyFileCount: 1 },
+          changed: { storyCount: 3, changedConfigFiles: [], pendingFiles: [], since: 'next' },
+        },
+      });
+
+      expect((await runTests()).markdown).toBe(
+        'None of the selected stories changed since `next`, so no tests ran.'
       );
     });
 

@@ -313,14 +313,14 @@ function formatChangedConfigFiles(changed: TestRunSelection['changed']): string[
 function formatSelection(selection: TestRunSelection): string | undefined {
   const parts: string[] = [];
   if (selection.files) {
-    const { filters, storyFiles } = selection.files;
+    const { filters, storyFileCount } = selection.files;
     parts.push(
-      `${pluralize(storyFiles, 'story file')} ${storyFiles === 1 ? 'matches' : 'match'} ${filters.map((filter) => code(displayPath(filter))).join(', ')}`
+      `${pluralize(storyFileCount, 'story file')} ${storyFileCount === 1 ? 'matches' : 'match'} ${filters.map((filter) => code(displayPath(filter))).join(', ')}`
     );
   }
   if (selection.changed) {
     parts.push(
-      `${pluralize(selection.changed.stories, 'changed story', 'changed stories')}${sinceRef(selection.changed)}`
+      `${pluralize(selection.changed.storyCount, 'changed story', 'changed stories')}${sinceRef(selection.changed)}`
     );
   }
   const selected = selection.storyCount;
@@ -448,25 +448,32 @@ function formatNoStories(
 
 ${notFoundMessages.join('\n')}`;
   }
-  if (selection?.files?.storyFiles === 0) {
+  if (selection?.files?.storyFileCount === 0) {
     // Only under `changed`, which passes with no tests, as in Vitest; otherwise it failed above.
     return `No story files found for ${selection.files.filters.map((filter) => code(displayPath(filter))).join(', ')}, so no tests ran.`;
   }
   if (selection?.changed) {
     const what = `${
-      selection.changed.stories > 0 ? 'None of the selected stories changed' : 'No stories changed'
+      selection.changed.storyCount > 0
+        ? 'None of the selected stories changed'
+        : 'No stories changed'
     }${sinceRef(selection.changed)}`;
-    // A run that selected nothing passes, as in Vitest; the last line says how to test anyway.
+    // A run that selected nothing passes, as in Vitest; the last line names what the caller has not
+    // passed yet. Without a ref only the uncommitted changes count, so after a commit nothing has
+    // changed.
+    const more = [
+      ...(selection.changed.since === undefined
+        ? [`a ref (${argument(ctx, '--changed main', 'changed: "main"')})`]
+        : []),
+      ...(selection.files ? [] : ['story files']),
+    ];
     return [
       `${what}, so no tests ran.`,
       ...formatChangedConfigFiles(selection.changed),
-      // Without a ref only the uncommitted changes count, so after a commit nothing has changed.
-      selection.changed.since === undefined
-        ? `To test more, pass a ref (${argument(ctx, '--changed main', 'changed: "main"')}) or story files.`
-        : 'To test more, pass story files.',
+      ...(more.length > 0 ? [`To test more, pass ${more.join(' or ')}.`] : []),
     ].join('\n');
   }
-  if (selection?.files && selection.stories) {
+  if (selection?.files && selection.inputStoryCount) {
     return 'None of the given story IDs is in the matched story files, so no tests ran.';
   }
   return 'No stories were given, so no tests ran.';
@@ -491,7 +498,7 @@ export function formatTestRun(
         a11y: data.a11y,
         a11yEnabled,
         selection: data.selection,
-        notFound: data.notFound,
+        notFound: data.notFoundMessages,
         ctx,
       });
     case 'error':

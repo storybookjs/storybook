@@ -171,7 +171,7 @@ It then holds the plan against these rules and prints each problem as `<file>:<l
 - No repo of an entry is more than one major behind the plan's line, by the `tags` of its catalog entry or the major of its discovered row.
 - Every PR of an entry has a row that names the entry, every row has a decision, and every decision names entries that exist.
 - Every maintainer PR marked `qa:skip` with a product label names a group, and every group has a decision.
-- The file holds no link to Linear, Notion or Slack, and no step or expected outcome holds a URL other than `localhost`.
+- The file holds no link to Linear, Notion or Slack, and no step or expected outcome holds a URL other than `localhost`, with or without its scheme.
 - With `--window`, the tables hold exactly the PRs of the window, with their titles and areas.
 
 A plan that passes prints its hash, which names the cycle, its batches with their runs, and about what it costs, priced at the most expensive static run so far.

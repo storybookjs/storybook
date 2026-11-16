@@ -704,6 +704,8 @@ const noPrivateLinks: Rule = ({ lines }) =>
   );
 
 const URL_HOST = /\b[a-z][\w+.-]*:\/\/(?:[^\s/@]*@)?([^\s/:?#`'")<>\]]+)/gi;
+// A host without a scheme needs a path after it, so a file name such as `README.md` passes.
+const BARE_HOST = /(?<![\w.@/:-])((?:[a-z0-9-]+\.)+[a-z]{2,})(?=\/)/gi;
 
 const stepsStayOnLocalhost: Rule = ({ plan, at }) =>
   plan.entries.flatMap((entry, index) => {
@@ -712,7 +714,7 @@ const stepsStayOnLocalhost: Rule = ({ plan, at }) =>
       ...entry.steps.map((text, step) => ({ text, line: layout.steps[step]! })),
       { text: entry.expected, line: layout.expected },
     ].flatMap(({ text, line }) =>
-      [...text.matchAll(URL_HOST)]
+      [...text.matchAll(URL_HOST), ...text.matchAll(BARE_HOST)]
         .filter((match) => match[1]!.toLowerCase() !== 'localhost')
         .map((match) => ({ line, message: `${match[0]} is a URL other than localhost` }))
     );

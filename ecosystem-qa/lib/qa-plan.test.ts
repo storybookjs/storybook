@@ -268,12 +268,29 @@ describe('checkPlanText', () => {
       'fetch `https://example.com',
       'https://example.com is a URL other than localhost',
     ],
+    [
+      'an expected outcome with a host but no scheme',
+      'the baseline, and the upgrade',
+      'the copy on www.example.com/sb/index.json, and the upgrade',
+      'the copy on www.example.com',
+      'www.example.com is a URL other than localhost',
+    ],
   ])('refuses %s with its line', (_, from, to, lineNeedle, message) => {
     const text = replaced(FIXTURE, from, to);
     expect(problemsOf(text)).toContainEqual({
       line: lineOf(text, lineNeedle),
       message: expect.stringContaining(message),
     });
+  });
+
+  it('accepts file names and paths in a step', () => {
+    const text = replaced(
+      FIXTURE,
+      'Read which automigrations the upgrade ran',
+      'Read `README.md`, `.storybook/main.ts`, `package.json:12`, `src/ui.kit/Button.tsx`, and which automigrations the upgrade ran'
+    );
+
+    expect(problemsOf(text)).toEqual([]);
   });
 
   it('refuses a discovered id used twice at its second row', () => {

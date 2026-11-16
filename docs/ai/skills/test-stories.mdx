@@ -16,23 +16,22 @@ The `test-stories` skill lets your agent run your [story tests](../../writing-te
 
 ## When your agent uses it
 
-The skill is step 3 of the [UI workflow](./ui-workflow.mdx). With the [Storybook section in `AGENTS.md`](../connect.mdx#tell-your-agent-when-to-use-the-skills), your agent uses it after every UI change, and when you ask it to run or fix the story tests, for example "Fix the failing story tests".
+The [Storybook section in `AGENTS.md`](../connect.mdx#tell-your-agent-when-to-use-the-skills) names the test command itself (step 3 of the [UI workflow](./ui-workflow.mdx)), so your agent runs the story tests after every UI change, and when you ask it to run or fix them, without opening this skill. The skill gives the same commands when you or your agent call it by name.
 
 ## What the agent does
 
-- **Runs focused tests while it works.** After each change, the agent runs the tests of the stories it changed.
-- **Runs every test before it finishes.** When its work is done, the agent runs all story tests once.
+- **Runs the tests of what it changed.** After each change, the agent runs `npx storybook tools test run --changed`, which tests the stories that its uncommitted changes affect. It can also pass story files, or run every story.
 - **Fixes failures.** The agent fixes what fails and runs the tests again. It changes only what the fix needs.
 
 The agent runs the tests with Storybook's own command, never with a test script from your `package.json` or with `vitest` directly.
 
 ### Accessibility issues
 
-If you are using the [accessibility addon](../../writing-tests/accessibility-testing.mdx), the agent fixes semantic accessibility issues, such as missing labels, roles, or alt text. For visual issues, such as low color contrast, it doesn't change your design. It describes the problem, gives you two or three options, and asks you to choose. The agent never changes your accessibility test level to make a test pass.
+If you are using the [accessibility addon](../../writing-tests/accessibility-testing.mdx), the agent fixes only the accessibility issues that its change caused, and reports the rest. For visual issues, such as low color contrast, it asks before it changes your design. The agent never changes your accessibility test level to make a test pass.
 
 ## Requirements
 
-- The [Vitest addon](../../writing-tests/integrations/vitest-addon/index.mdx), which needs the Vite builder. Without it, the agent skips this step.
+- The [Vitest addon](../../writing-tests/integrations/vitest-addon/index.mdx), which needs the Vite builder. Without it in your main config, the `AGENTS.md` section has no test step.
 - With the [MCP server](../reference/mcp-server.mdx), the [`test` toolset](../reference/mcp-server.mdx#test) turned on
 
 To run accessibility checks with the tests, also install the [accessibility addon](../../writing-tests/accessibility-testing.mdx).

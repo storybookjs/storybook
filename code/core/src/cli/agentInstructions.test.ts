@@ -53,14 +53,16 @@ describe('addStorybookAgentInstructions', () => {
   });
 
   // Plugin users copy the section from these files by hand.
-  it.each(['code/lib/claude-plugin/README.md', 'code/lib/codex-plugin/README.md', 'MIGRATION.md'])(
-    '%s prints the current section',
-    async (file) => {
-      const fs = await vi.importActual<typeof import('node:fs')>('node:fs');
-      const repoRoot = join(import.meta.dirname, '../../../..');
-      expect(fs.readFileSync(join(repoRoot, file), 'utf8')).toContain(STORYBOOK_AGENT_INSTRUCTIONS);
-    }
-  );
+  it.each([
+    'code/lib/claude-plugin/README.md',
+    'code/lib/codex-plugin/README.md',
+    'MIGRATION.md',
+    'docs/ai/connect.mdx',
+  ])('%s prints the current section', async (file) => {
+    const fs = await vi.importActual<typeof import('node:fs')>('node:fs');
+    const repoRoot = join(import.meta.dirname, '../../../..');
+    expect(fs.readFileSync(join(repoRoot, file), 'utf8')).toContain(STORYBOOK_AGENT_INSTRUCTIONS);
+  });
 
   it('writes the section without the test step for a project without addon-vitest', async () => {
     await addStorybookAgentInstructions(ROOT, 'install', { testSupported: false });

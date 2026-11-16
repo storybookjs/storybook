@@ -259,6 +259,7 @@ function buildProjectSkill(
         transport,
         testSupported: inputs.testSupported,
         toolsetOff: !toolsets.test,
+        a11yEnabled: inputs.a11yEnabled,
       })
     : buildUiReviewSkill({
         docsEnabled,

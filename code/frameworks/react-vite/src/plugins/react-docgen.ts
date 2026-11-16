@@ -38,6 +38,34 @@ type Options = {
 
 type ImporterCacheOptions = NonNullable<Parameters<typeof makeFsImporter>[1]>;
 
+class ResolveCache extends Map<string, string | null> {
+  #onResolvedFile: ((filename: string) => void) | undefined;
+
+  override get(key: string) {
+    const resolvedFile = super.get(key);
+    if (resolvedFile) {
+      this.#onResolvedFile?.(resolvedFile);
+    }
+    return resolvedFile;
+  }
+
+  override set(key: string, resolvedFile: string | null) {
+    if (resolvedFile) {
+      this.#onResolvedFile?.(resolvedFile);
+    }
+    return super.set(key, resolvedFile);
+  }
+
+  withWatchFile<T>(onResolvedFile: (filename: string) => void, callback: () => T) {
+    this.#onResolvedFile = onResolvedFile;
+    try {
+      return callback();
+    } finally {
+      this.#onResolvedFile = undefined;
+    }
+  }
+}
+
 export async function reactDocgen({
   include = /\.(mjs|tsx?|jsx?)$/,
   exclude = [/node_modules\/.*/],
@@ -45,10 +73,7 @@ export async function reactDocgen({
   const cwd = process.cwd();
   const filter = createFilter(include, exclude);
   const parseCache: NonNullable<ImporterCacheOptions['parseCache']> = new Map();
-  const resolveCaches = new Map<
-    TsconfigPaths.MatchPath | undefined,
-    NonNullable<ImporterCacheOptions['resolveCache']>
-  >();
+  const resolveCaches = new Map<TsconfigPaths.MatchPath | undefined, ResolveCache>();
 
   return {
     name: 'storybook:react-docgen-plugin',
@@ -63,13 +88,12 @@ export async function reactDocgen({
         if (tsconfigPath) {
           this.addWatchFile(tsconfigPath);
         }
-        const resolveCache = resolveCaches.get(matchPath) ?? new Map();
+        const resolveCache = resolveCaches.get(matchPath) ?? new ResolveCache();
         resolveCaches.set(matchPath, resolveCache);
-        const docgenResults = parseDocgen(src, id, matchPath, {
-          parseCache,
-          resolveCache,
-          onResolvedFile: (filename) => this.addWatchFile(filename),
-        });
+        const docgenResults = resolveCache.withWatchFile(
+          (filename) => this.addWatchFile(filename),
+          () => parseDocgen(src, id, matchPath, { parseCache, resolveCache })
+        );
         const s = new MagicString(src);
 
         docgenResults.forEach((info) => {
@@ -116,8 +140,7 @@ export async function reactDocgen({
  */
 type ImporterCaches = {
   parseCache: NonNullable<ImporterCacheOptions['parseCache']>;
-  resolveCache: NonNullable<ImporterCacheOptions['resolveCache']>;
-  onResolvedFile?: (filename: string) => void;
+  resolveCache: ResolveCache;
 };
 
 function parseDocgen(
@@ -182,13 +205,11 @@ export function getReactDocgenImporter(
         );
         if (existsSync(replaced)) {
           if (RESOLVE_EXTENSIONS.find((ext) => result.endsWith(ext))) {
-            caches?.onResolvedFile?.(replaced);
             return replaced;
           }
         }
       }
       if (RESOLVE_EXTENSIONS.find((ext) => result.endsWith(ext))) {
-        caches?.onResolvedFile?.(result);
         return result;
       }
 

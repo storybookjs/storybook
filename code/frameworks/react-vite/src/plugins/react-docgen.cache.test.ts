@@ -1,8 +1,8 @@
 import * as fs from 'node:fs';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join, relative } from 'node:path';
 
+import { join, normalize, relative } from 'pathe';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { reactDocgen } from './react-docgen.ts';
@@ -11,6 +11,29 @@ vi.mock('node:fs', { spy: true });
 
 let projectDir: string;
 let externalDir: string;
+
+type AddWatchFile = (id: string) => void;
+type ReactDocgenPlugin = {
+  transform: (
+    this: { addWatchFile: AddWatchFile },
+    src: string,
+    id: string
+  ) => Promise<{ code: string } | void>;
+  watchChange: (id: string, change: { event: 'update' | 'create' | 'delete' }) => void;
+};
+
+async function createReactDocgenTestPlugin() {
+  const plugin = (await reactDocgen()) as ReactDocgenPlugin;
+  const addWatchFile = vi.fn<AddWatchFile>();
+
+  return {
+    addWatchFile,
+    transform(src: string, id: string, watchFile = addWatchFile) {
+      return plugin.transform.call({ addWatchFile: watchFile }, src, id);
+    },
+    watchChange: plugin.watchChange.bind(plugin),
+  };
+}
 
 beforeEach(async () => {
   projectDir = await mkdtemp(join(tmpdir(), 'sb-react-docgen-cache-'));
@@ -37,51 +60,47 @@ describe('react-docgen cache', () => {
 }`
     );
 
-    const plugin = (await reactDocgen()) as {
-      transform: (
-        this: { addWatchFile: (id: string) => void },
-        src: string,
-        id: string
-      ) => Promise<{
-        code: string;
-      } | void>;
-      watchChange: (id: string, change: { event: 'update' | 'create' | 'delete' }) => void;
-    };
-    const addWatchFile = vi.fn();
+    const { addWatchFile, transform, watchChange } = await createReactDocgenTestPlugin();
     const readFile = vi.mocked(fs.readFileSync);
     const source = (name: string) => `
-import type { SharedProps } from '${relative(projectDir, sharedProps).replaceAll('\\', '/')}';
+import type { SharedProps } from '${relative(projectDir, sharedProps)}';
 
 export const ${name} = ({ label }: SharedProps) => <button>{label}</button>;
 `;
 
-    const first = await plugin.transform.call(
-      { addWatchFile },
+    const firstWatchFile = vi.fn<AddWatchFile>();
+    const first = await transform(
       source('PrimaryButton'),
-      join(projectDir, 'PrimaryButton.tsx')
+      join(projectDir, 'PrimaryButton.tsx'),
+      firstWatchFile
     );
-    const second = await plugin.transform.call(
-      { addWatchFile },
+    const second = await transform(
       source('SecondaryButton'),
       join(projectDir, 'SecondaryButton.tsx')
     );
 
     expect(first?.code).toContain('"label"');
     expect(second?.code).toContain('"label"');
-    expect(addWatchFile).toHaveBeenCalledWith(sharedProps);
-    expect(readFile.mock.calls.filter(([filename]) => filename === sharedProps)).toHaveLength(1);
+    expect(firstWatchFile.mock.calls.map(([filename]) => normalize(filename))).toContain(
+      sharedProps
+    );
+    expect(addWatchFile.mock.calls.map(([filename]) => normalize(filename))).toContain(sharedProps);
+    expect(
+      readFile.mock.calls.filter(([filename]) => normalize(filename) === sharedProps)
+    ).toHaveLength(1);
 
     await writeFile(sharedProps, 'export interface SharedProps { disabled: boolean; }');
-    plugin.watchChange(sharedProps, { event: 'update' });
+    watchChange(sharedProps, { event: 'update' });
 
-    const changed = await plugin.transform.call(
-      { addWatchFile },
+    const changed = await transform(
       source('TertiaryButton'),
       join(projectDir, 'TertiaryButton.tsx')
     );
 
     expect(changed?.code).toContain('"disabled"');
-    expect(readFile.mock.calls.filter(([filename]) => filename === sharedProps)).toHaveLength(2);
+    expect(
+      readFile.mock.calls.filter(([filename]) => normalize(filename) === sharedProps)
+    ).toHaveLength(2);
   });
 
   it('refreshes tsconfig path resolution after its configuration changes', async () => {
@@ -99,30 +118,17 @@ export const ${name} = ({ label }: SharedProps) => <button>{label}</button>;
       ),
     ]);
 
-    const plugin = (await reactDocgen()) as {
-      transform: (
-        this: { addWatchFile: (id: string) => void },
-        src: string,
-        id: string
-      ) => Promise<{
-        code: string;
-      } | void>;
-      watchChange: (id: string, change: { event: 'update' | 'create' | 'delete' }) => void;
-    };
+    const { addWatchFile, transform, watchChange } = await createReactDocgenTestPlugin();
     const source = (name: string) => `
 import type { SharedProps } from '@props';
 
 export const ${name} = (props: SharedProps) => <button>{JSON.stringify(props)}</button>;
 `;
-    const addWatchFile = vi.fn();
-
-    const first = await plugin.transform.call(
-      { addWatchFile },
-      source('FirstButton'),
-      join(projectDir, 'FirstButton.tsx')
-    );
+    const first = await transform(source('FirstButton'), join(projectDir, 'FirstButton.tsx'));
     expect(first?.code).toContain('"first"');
-    expect(addWatchFile).toHaveBeenCalledWith(tsconfigPath);
+    expect(addWatchFile.mock.calls.map(([filename]) => normalize(filename))).toContain(
+      tsconfigPath
+    );
 
     await writeFile(
       tsconfigPath,
@@ -130,13 +136,9 @@ export const ${name} = (props: SharedProps) => <button>{JSON.stringify(props)}</
         compilerOptions: { baseUrl: '.', paths: { '@props': ['./second-props'] } },
       })
     );
-    plugin.watchChange(tsconfigPath, { event: 'update' });
+    watchChange(tsconfigPath, { event: 'update' });
 
-    const second = await plugin.transform.call(
-      { addWatchFile: vi.fn() },
-      source('SecondButton'),
-      join(projectDir, 'SecondButton.tsx')
-    );
+    const second = await transform(source('SecondButton'), join(projectDir, 'SecondButton.tsx'));
     expect(second?.code).toContain('"second"');
   });
 
@@ -157,31 +159,15 @@ export const ${name} = (props: SharedProps) => <button>{JSON.stringify(props)}</
       ),
     ]);
 
-    const plugin = (await reactDocgen()) as {
-      transform: (
-        this: { addWatchFile: (id: string) => void },
-        src: string,
-        id: string
-      ) => Promise<{
-        code: string;
-      } | void>;
-    };
+    const { transform } = await createReactDocgenTestPlugin();
     const source = (name: string) => `
 import type { SharedProps } from '@props';
 
 export const ${name} = (props: SharedProps) => <button>{JSON.stringify(props)}</button>;
 `;
 
-    const first = await plugin.transform.call(
-      { addWatchFile: vi.fn() },
-      source('FirstButton'),
-      join(firstDir, 'FirstButton.tsx')
-    );
-    const second = await plugin.transform.call(
-      { addWatchFile: vi.fn() },
-      source('SecondButton'),
-      join(secondDir, 'SecondButton.tsx')
-    );
+    const first = await transform(source('FirstButton'), join(firstDir, 'FirstButton.tsx'));
+    const second = await transform(source('SecondButton'), join(secondDir, 'SecondButton.tsx'));
 
     expect(first?.code).toContain('"first"');
     expect(second?.code).toContain('"second"');
@@ -189,47 +175,29 @@ export const ${name} = (props: SharedProps) => <button>{JSON.stringify(props)}</
 
   it('refreshes failed resolutions when imported files are added or deleted', async () => {
     const propsPath = join(projectDir, 'generated-props.ts');
-    const plugin = (await reactDocgen()) as {
-      transform: (
-        this: { addWatchFile: (id: string) => void },
-        src: string,
-        id: string
-      ) => Promise<{
-        code: string;
-      } | void>;
-      watchChange: (id: string, change: { event: 'update' | 'create' | 'delete' }) => void;
-    };
+    const { transform, watchChange } = await createReactDocgenTestPlugin();
     const source = (name: string) => `
 import type { GeneratedProps } from './generated-props';
 
 export const ${name} = (props: GeneratedProps) => <button>{JSON.stringify(props)}</button>;
 `;
 
-    const beforeCreate = await plugin.transform.call(
-      { addWatchFile: vi.fn() },
+    const beforeCreate = await transform(
       source('BeforeCreate'),
       join(projectDir, 'BeforeCreate.tsx')
     );
     expect(beforeCreate?.code).not.toContain('"generated"');
 
     await writeFile(propsPath, 'export interface GeneratedProps { generated: string; }');
-    plugin.watchChange(propsPath, { event: 'create' });
+    watchChange(propsPath, { event: 'create' });
 
-    const afterCreate = await plugin.transform.call(
-      { addWatchFile: vi.fn() },
-      source('AfterCreate'),
-      join(projectDir, 'AfterCreate.tsx')
-    );
+    const afterCreate = await transform(source('AfterCreate'), join(projectDir, 'AfterCreate.tsx'));
     expect(afterCreate?.code).toContain('"generated"');
 
     await rm(propsPath);
-    plugin.watchChange(propsPath, { event: 'delete' });
+    watchChange(propsPath, { event: 'delete' });
 
-    const afterDelete = await plugin.transform.call(
-      { addWatchFile: vi.fn() },
-      source('AfterDelete'),
-      join(projectDir, 'AfterDelete.tsx')
-    );
+    const afterDelete = await transform(source('AfterDelete'), join(projectDir, 'AfterDelete.tsx'));
     expect(afterDelete?.code).not.toContain('"generated"');
   });
 });

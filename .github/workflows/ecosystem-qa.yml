@@ -138,6 +138,7 @@ jobs:
       from_runs: ${{ steps.matrix.outputs.from_runs }}
       groups: ${{ steps.matrix.outputs.groups }}
       job_minutes: ${{ steps.matrix.outputs.job_minutes }}
+      docker_runner: ${{ steps.matrix.outputs.docker_runner }}
     steps:
       # A run that only collects earlier results starts no agent, so it needs no matrix.
       - name: Checkout
@@ -202,6 +203,7 @@ jobs:
             echo "dry=$QA_DRY"
             echo "from_runs=$QA_FROM_RUNS"
             echo "groups=$groups"
+            echo "docker_runner=$(jq -r '[.include[] | select(.sandbox == "docker") | .runner][0] // ""' <<<"$matrix")"
             # A run stops its agent 15 minutes after the budget and then asks it for its answer. A
             # job that is cancelled before that writes no result at all.
             echo "job_minutes=$(( ${QA_BUDGET_MINUTES:-90} + 90 ))"
@@ -211,9 +213,8 @@ jobs:
   image:
     name: Build the sandbox image
     needs: plan
-    if: ${{ needs.plan.outputs.from_runs == '' }}
-    # The runner label of the Linux runner jobs, so the image gets their uid and gid.
-    runs-on: ubuntu-latest
+    if: ${{ needs.plan.outputs.docker_runner != '' }}
+    runs-on: ${{ needs.plan.outputs.docker_runner }}
     permissions:
       packages: write # push ghcr.io/storybookjs/ecosystem-qa-sandbox
     outputs:
@@ -234,7 +235,6 @@ jobs:
           name="ghcr.io/storybookjs/ecosystem-qa-sandbox:$tag"
           printf '%s' "$GH_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
           if ! docker buildx imagetools inspect "$name" > /dev/null 2>&1; then
-            # No build context, so the tag's hash of the Dockerfile covers everything the image is built from.
             docker build --build-arg AGENT_UID="$(id -u)" --build-arg AGENT_GID="$(id -g)" \
               --build-arg CLAUDE_CODE_VERSION="$CLAUDE_CODE_VERSION" --build-arg CODEX_VERSION="$CODEX_VERSION" \
               -t "$name" - < ecosystem-qa/Dockerfile
@@ -322,7 +322,7 @@ jobs:
         run: >-
           docker build --build-arg AGENT_UID="$(id -u)" --build-arg AGENT_GID="$(id -g)"
           --build-arg CLAUDE_CODE_VERSION="$CLAUDE_CODE_VERSION" --build-arg CODEX_VERSION="$CODEX_VERSION"
-          -t sb-ecosystem-qa ecosystem-qa
+          -t sb-ecosystem-qa - < ecosystem-qa/Dockerfile
 
       - name: Install Chromium for the evidence tools on the host
         if: ${{ matrix.sandbox == 'none' }}

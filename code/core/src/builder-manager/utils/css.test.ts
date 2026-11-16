@@ -1,8 +1,8 @@
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { runInNewContext } from 'node:vm';
 
-import { join } from 'pathe';
+import { dirname, join } from 'pathe';
 import { build } from 'rolldown';
 import { expect, it } from 'vitest';
 
@@ -73,9 +73,10 @@ const stylesOfFiles = async (files: Record<string, string>) => {
     'other.css': '.other { color: red; }',
     ...files,
   };
-  await Promise.all(
-    Object.entries(all).map(([name, content]) => writeFile(join(directory, name), content))
-  );
+  for (const [name, content] of Object.entries(all)) {
+    await mkdir(dirname(join(directory, name)), { recursive: true });
+    await writeFile(join(directory, name), content);
+  }
   try {
     return await stylesOf(join(directory, 'entry.js'));
   } finally {
@@ -128,7 +129,47 @@ it('reads an @import without a space, as a minifier writes it, and a path with a
 it('rejects a path that it cannot read, which the browser would look for next to the page', async () => {
   await expect(
     stylesOfFiles({ 'entry.css': '.a { background: url(./a b.svg); }' })
-  ).rejects.toThrow('Could not read url(./a b.svg); }');
+  ).rejects.toThrow('Could not read url(./a b.svg)');
+});
+
+it('reads what only a CSS parser can tell apart', async () => {
+  const styles = await stylesOfFiles({
+    'entry.css': [
+      `@import /* why */ './other.css';`,
+      '.hack { *background: URL(./pixel.svg) !important; }',
+      '.set { background: image-set(url(./pixel.svg) 1x, url("./pixel.svg") 2x); }',
+      '.comment { background: /* url(./missing.svg) */ url(./pixel.svg); }',
+      `.string { content: "@import './missing.css'; url(./missing.svg)"; }`,
+    ].join('\n'),
+    'pixel.svg': svg,
+  });
+
+  expect(styles).toEqual([
+    [
+      '.other { color: red; }',
+      `.hack { *background: ${pixel}") !important; }`,
+      `.set { background: image-set(${pixel}") 1x, ${pixel}") 2x); }`,
+      `.comment { background: /* url(./missing.svg) */ ${pixel}"); }`,
+      `.string { content: "@import './missing.css'; url(./missing.svg)"; }`,
+    ].join('\n'),
+  ]);
+});
+
+it('inlines the stylesheet of a package and the font that it names', async () => {
+  const styles = await stylesOfFiles({
+    'entry.css': `@import 'fonts/index.css';`,
+    'node_modules/fonts/package.json': '{ "name": "fonts", "version": "1.0.0" }',
+    'node_modules/fonts/index.css': '@font-face { src: url(./files/a.svg) format("svg"); }',
+    'node_modules/fonts/files/a.svg': svg,
+  });
+
+  expect(styles).toEqual([`@font-face { src: ${pixel}") format("svg"); }`]);
+});
+
+it('fails on a stylesheet that it cannot parse, and says where', async () => {
+  await expect(stylesOfFiles({ 'entry.css': '.a { color: red;' })).rejects.toThrow(
+    /entry\.css:1:1: Unclosed block/
+  );
 });
 
 it('leaves a URL that it cannot read and that names no file', async () => {

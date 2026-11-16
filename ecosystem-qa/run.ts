@@ -31,6 +31,12 @@ import { shipsSandcastleFiles } from './lib/clone-guard.ts';
 import { cycleBranchName, cycleRepo, versionLine } from './lib/cycle.ts';
 import { runFake } from './lib/fake-run.ts';
 import { outputOf, watchHost, type Report } from './lib/host-watch.ts';
+import {
+  PLACEHOLDER_KEY,
+  sandboxAddresses,
+  startKeyProxy,
+  type KeyProxy,
+} from './lib/key-proxy.ts';
 import { forJobLog, liveLine } from './lib/live-log.ts';
 import { memoryGuard } from './lib/memory-guard.ts';
 import { CHECKOUT_GUIDE, guideFor } from './lib/migration-guide.ts';
@@ -370,14 +376,19 @@ const planSandbox = (
   }
 };
 
-const agentFor = (request: RunRequest, agentEnv: Record<string, string>) => {
-  const names = CREDENTIAL_ENV[request.engine];
-  const keyName =
+const credentialOf = (engine: Engine) => {
+  const names = CREDENTIAL_ENV[engine];
+  const name =
     names.find((name) => process.env[name]) ?? fail(`None of ${names.join(', ')} is set.`);
-  const options = {
-    effort: request.effort,
-    env: { ...agentEnv, [keyName]: process.env[keyName]! },
-  };
+  return { name, value: process.env[name]! };
+};
+
+const agentFor = (
+  request: RunRequest,
+  agentEnv: Record<string, string>,
+  credential: Record<string, string>
+) => {
+  const options = { effort: request.effort, env: { ...agentEnv, ...credential } };
   return request.engine === 'claude'
     ? claudeCode(request.model, options)
     : codex(request.model, options);
@@ -415,6 +426,7 @@ const runSandcastle = async (
   let recoveredFrom: string | undefined;
   let migrationGuide: string | undefined;
   let sandbox: Awaited<ReturnType<typeof createSandbox>> | undefined;
+  let keyProxy: KeyProxy | undefined;
   let sessionId: string | undefined;
   let agentStarted = false;
   let cutShort: string | undefined;
@@ -478,7 +490,36 @@ const runSandcastle = async (
     }
     // The same signal goes to every repair turn, so the stop is one moment for the whole run.
     const hardStop = AbortSignal.timeout(msUntilHardStop(startedAt, budget));
-    const agent = agentFor(request, plan.agentEnv);
+    const credential = credentialOf(request.engine);
+    let agentCredential = { [credential.name]: credential.value };
+    if (
+      request.os === 'linux' &&
+      request.sandbox === 'docker' &&
+      credential.name === 'ANTHROPIC_API_KEY'
+    ) {
+      const note = (line: string) => {
+        console.log(line);
+        appendFileSync(logFile, `${line}\n`);
+      };
+      const addresses = sandboxAddresses(
+        await outputOf('docker', ['inspect', sandbox.sandboxId ?? ''])
+      );
+      keyProxy = await startKeyProxy({
+        host: addresses.gateway,
+        caller: addresses.container,
+        upstream: 'https://api.anthropic.com',
+        apiKey: credential.value,
+        log: note,
+      });
+      keyProxy.server.unref();
+      agentCredential = { ANTHROPIC_BASE_URL: keyProxy.url, ANTHROPIC_API_KEY: PLACEHOLDER_KEY };
+      const { stdout } = await within(60, 'Reading the sandbox environment', sandbox.exec('env'));
+      if (stdout.includes(credential.value)) {
+        throw new Error('The sandbox holds the provider key, so the run stops here.');
+      }
+      note('The sandbox holds no provider key.');
+    }
+    const agent = agentFor(request, plan.agentEnv, agentCredential);
     const name = `${request.entry.id}-${request.os}-${request.engine}`;
     const logging: LoggingOption = {
       type: 'file',
@@ -613,6 +654,8 @@ const runSandcastle = async (
     }
   } finally {
     watch.stop();
+    keyProxy?.server.close();
+    keyProxy?.server.closeAllConnections();
     if (request.sandbox === 'none') {
       const stopped = stopChildren();
       if (stopped > 0) {

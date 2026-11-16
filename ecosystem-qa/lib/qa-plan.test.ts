@@ -1,0 +1,378 @@
+import { readFileSync } from 'node:fs';
+
+import { describe, expect, it } from 'vitest';
+
+import { loadEntries } from './catalog.ts';
+import {
+  type CheckContext,
+  checkPlanText,
+  parsePlan,
+  type Plan,
+  PlanDraft,
+  planFromWindow,
+  planRuns,
+  renderPlan,
+} from './qa-plan.ts';
+import type { Window, WindowPr } from './window.ts';
+
+const FIXTURE = readFileSync(new URL('./plan.fixture.md', import.meta.url), 'utf8');
+
+const pr = (number: number) =>
+  `[#${number}](https://github.com/storybookjs/storybook/pull/${number})`;
+const COMMIT = '998b471a4ad78c7c23426038ef0c4a5261fc41cf';
+
+const replaced = (text: string, from: string, to: string) => {
+  expect(text).toContain(from);
+  return text.replace(from, to);
+};
+
+const lineOf = (text: string, needle: string) =>
+  text.split('\n').findIndex((line) => line.includes(needle)) + 1;
+
+const CATALOG = loadEntries();
+
+const problemsOf = (text: string, context: Partial<CheckContext> = {}) =>
+  checkPlanText(text, { catalog: CATALOG, ...context }).problems;
+
+const windowPr = (pr: Partial<WindowPr> & Pick<WindowPr, 'number' | 'title'>): WindowPr => ({
+  area: null,
+  status: 'needed',
+  labels: [],
+  authorAssociation: 'CONTRIBUTOR',
+  manualTesting: null,
+  issues: [],
+  ...pr,
+});
+
+const windowOf = (prs: WindowPr[]): Window => ({
+  from: 'v10.6.0',
+  fromSha: 'a77777356be2aeaff89d7a2b25254db7b2318392',
+  to: 'v11.0.0-beta.3',
+  toSha: 'e0ecb3ec6ba3648e9e5d2cf74002adec6aefe561',
+  prs,
+});
+
+const maintainerSkip = (number: number, title: string, area: string) =>
+  windowPr({
+    number,
+    title,
+    area,
+    status: 'skip',
+    labels: ['bug', 'qa:skip'],
+    authorAssociation: 'MEMBER',
+  });
+
+const windowOfPlan = (plan: Plan): Window =>
+  windowOf([
+    ...plan.needed.map((row) => windowPr({ number: row.pr, title: row.title, area: row.area })),
+    ...plan.undeclared.map((row) =>
+      windowPr({ number: row.pr, title: row.title, area: row.area, status: 'undeclared' })
+    ),
+    ...plan.maintainerSkips.map((row) => maintainerSkip(row.pr, row.title, row.area!)),
+    ...plan.verified.map((row) =>
+      windowPr({ number: row.pr, title: row.title, area: row.area, status: 'verified' })
+    ),
+    ...plan.skipped.map((row) =>
+      windowPr({ number: row.pr, title: row.title, area: row.area, status: 'skip' })
+    ),
+  ]);
+
+describe('the fixture plan', () => {
+  it('is in its rendered form and passes every rule', () => {
+    expect(renderPlan(parsePlan(FIXTURE))).toBe(FIXTURE);
+    expect(problemsOf(FIXTURE)).toEqual([]);
+  });
+
+  it('matches a window that holds exactly its PRs', () => {
+    expect(problemsOf(FIXTURE, { window: windowOfPlan(parsePlan(FIXTURE)) })).toEqual([]);
+  });
+
+  it('splits the entries of mealdrop in batch 1 into parts of Entries per run', () => {
+    expect(planRuns(parsePlan(FIXTURE), 1)).toEqual([
+      { repo: 'mealdrop', part: 1, entries: ['story-sort-in-main', 'preview-animations'] },
+      { repo: 'mealdrop', part: 2, entries: ['csf-factory-namespaces'] },
+      { repo: 'mantine', part: 1, entries: ['csf-factory-namespaces'] },
+    ]);
+  });
+});
+
+describe('a file that is not in its rendered form', () => {
+  it('fails at the first line that differs', () => {
+    const text = replaced(FIXTURE, `| ${pr(33422)} | UI |`, `| ${pr(33422)} |  UI |`);
+
+    expect(problemsOf(text)).toEqual([
+      { line: lineOf(text, `${pr(33422)} |`), message: expect.stringContaining('rendered form') },
+    ]);
+  });
+
+  it('fails at a line the parser skipped', () => {
+    const text = replaced(FIXTURE, '## Discovered repos', 'A note.\n\n## Discovered repos');
+
+    expect(problemsOf(text)).toEqual([
+      { line: lineOf(text, 'A note.'), message: 'expected "## Discovered repos"' },
+    ]);
+  });
+
+  it('fails without its final newline', () => {
+    expect(problemsOf(FIXTURE.trimEnd())).toEqual([
+      {
+        line: FIXTURE.split('\n').length,
+        message: expect.stringContaining('the end of the file after a newline'),
+      },
+    ]);
+  });
+});
+
+describe('checkPlanText', () => {
+  it.each([
+    [
+      'a slug with upper case',
+      '### `preview-animations`',
+      '### `Preview-animations`',
+      '### `Preview',
+      'lower case letters',
+    ],
+    [
+      'a slug used twice',
+      '### `preview-animations`',
+      '### `story-sort-in-main`',
+      'Animations pause only',
+      'is used twice',
+    ],
+    [
+      'a version off the line',
+      '| Version | 11.0.0-beta.3 |',
+      '| Version | 11.1.0-beta.3 |',
+      '| Version |',
+      'is not on line 11.0',
+    ],
+    [
+      'a discovered row on a short commit',
+      `/tree/${COMMIT})`,
+      '/tree/998b471)',
+      '| `primer-react` |',
+      'full commit SHA',
+    ],
+    [
+      'a discovered repo without the link to its commit',
+      `[primer/react](https://github.com/primer/react/tree/${COMMIT})`,
+      'primer/react',
+      '| `primer-react` |',
+      'expected a repo linked to its commit',
+    ],
+    [
+      'a discovered repo that links another repo',
+      `[primer/react](https://github.com/primer/react/tree/`,
+      `[primer/react](https://github.com/evil/react/tree/`,
+      '| `primer-react` |',
+      'expected a repo linked to its commit',
+    ],
+    [
+      'a last push that is not in the form pin.ts prints',
+      '| 2026-11-16T14:42:00Z |',
+      '| 2026-11-16 |',
+      '| `primer-react` |',
+      'expected a time',
+    ],
+    [
+      'a discovered row with an unknown package manager',
+      '| npm | packages/react |',
+      '| deno | packages/react |',
+      '| `primer-react` |',
+      'packageManager',
+    ],
+    [
+      'an entry PR without a row',
+      `- PRs: ${pr(31900)}`,
+      `- PRs: ${pr(31900)}, ${pr(40000)}`,
+      `- PRs: ${pr(31900)}`,
+      '#40000 has no row',
+    ],
+    [
+      'an entry PR whose row names another entry',
+      `- PRs: ${pr(36137)}`,
+      `- PRs: ${pr(36137)}, ${pr(31900)}`,
+      `- PRs: ${pr(36137)}`,
+      'does not name `story-sort-in-main`',
+    ],
+    ['a PR without its link', `| ${pr(36664)} |`, '| #36664 |', '| #36664 |', 'expected a PR like'],
+    [
+      'a PR that links another PR',
+      `- PRs: ${pr(36137)}`,
+      '- PRs: [#36137](https://github.com/storybookjs/storybook/pull/36138)',
+      '- PRs: [#36137]',
+      'expected a PR like',
+    ],
+    [
+      'a row without a decision',
+      "| skip: a change of this repository's CI, no project can see it |",
+      '|  |',
+      pr(36664),
+      '#36664 has no decision',
+    ],
+    [
+      'a row that names no entry',
+      '| `preview-animations` |\n',
+      '| `preview-animation` |\n',
+      `| ${pr(31900)} |`,
+      'which is no entry',
+    ],
+    [
+      'a repo that is no catalog id and was not discovered',
+      '- Repo `mantine`',
+      '- Repo `mantin`',
+      '- Repo `mantin`',
+      '`mantin` is no catalog id and no id of "Discovered repos"',
+    ],
+    [
+      'a discovered repo with the id of a catalog entry',
+      '| `primer-react` |',
+      '| `mantine` |',
+      '| `mantine` |',
+      '`mantine` is a catalog id',
+    ],
+    [
+      'a discovered repo more than one major behind the line',
+      '| packages/react | 10 |',
+      '| packages/react | 9 |',
+      '- Repo `primer-react`',
+      '`primer-react` is on Storybook 9, more than one major behind 11.0',
+    ],
+    ['a gap in the batches', '- Batch: 2', '- Batch: 3', '- Batch: 3', 'batch 2 has no entry'],
+    [
+      'a maintainer PR without a group',
+      '| `tooling` |\n',
+      '|  |\n',
+      pr(34799),
+      '#34799 names no group',
+    ],
+    [
+      'a group without a decision',
+      '| `tooling` | area Tooling, no project | skip: no effect that a project can show |',
+      '| `tooling` | area Tooling, no project |  |',
+      '| `tooling` | area',
+      'has no decision',
+    ],
+    [
+      'a link to Linear',
+      'a deep sidebar tree that no catalog entry has',
+      'see https://linear.app/storybook/issue/SB-1',
+      '| `primer-react` |',
+      'Linear, Notion, or Slack',
+    ],
+    [
+      'a step with a URL other than localhost',
+      'fetch `http://localhost:6006/index.json`',
+      'fetch `https://example.com/index.json`',
+      'fetch `https://example.com',
+      'https://example.com is a URL other than localhost',
+    ],
+  ])('refuses %s with its line', (_, from, to, lineNeedle, message) => {
+    const text = replaced(FIXTURE, from, to);
+    expect(problemsOf(text)).toContainEqual({
+      line: lineOf(text, lineNeedle),
+      message: expect.stringContaining(message),
+    });
+  });
+
+  it('refuses a catalog entry more than one major behind the line', () => {
+    const catalog = CATALOG.map((entry) =>
+      entry.id === 'mantine' ? { ...entry, tags: { ...entry.tags!, storybook: 9 } } : entry
+    );
+
+    expect(problemsOf(FIXTURE, { catalog })).toEqual([
+      {
+        line: lineOf(FIXTURE, '- Repo `mantine`'),
+        message: '`mantine` is on Storybook 9, more than one major behind 11.0',
+      },
+    ]);
+  });
+
+  it('names a PR of the window that has no row, and a row that is not in the window', () => {
+    const plan = parsePlan(FIXTURE);
+    const window = windowOfPlan(plan);
+    window.prs.push(windowPr({ number: 40000, title: 'Core: Something new', area: 'Core' }));
+    const text = replaced(FIXTURE, pr(36153), pr(36154));
+
+    expect(problemsOf(text, { window })).toEqual([
+      {
+        line: lineOf(text, '## PRs that need QA'),
+        message: '#40000 of the window has no row in "PRs that need QA"',
+      },
+      {
+        line: lineOf(text, '## PRs verified by hand'),
+        message: '#36153 of the window has no row in "PRs verified by hand"',
+      },
+      {
+        line: lineOf(text, pr(36154)),
+        message: '#36154 does not belong in "PRs verified by hand" for this window',
+      },
+    ]);
+  });
+});
+
+describe('planFromWindow', () => {
+  const needed = windowPr({ number: 1, title: 'Core: Keep `a | b` in a title', area: 'Core' });
+  const grouped = maintainerSkip(2, 'UI: Rebuild the sidebar', 'UI');
+
+  it('keeps a pipe and a backtick of a title through render and parse', () => {
+    const text = renderPlan(planFromWindow(windowOf([needed]), PlanDraft.parse({})));
+
+    expect(parsePlan(text).needed[0]!.title).toBe('Core: Keep `a | b` in a title');
+    expect(checkPlanText(text, { catalog: CATALOG }).plan).not.toBeNull();
+  });
+
+  it('leaves every row of a skeleton undecided, so the check names each of them', () => {
+    const text = renderPlan(planFromWindow(windowOf([needed, grouped]), PlanDraft.parse({})));
+
+    expect(problemsOf(text).map((problem) => problem.message)).toEqual([
+      '#1 has no decision',
+      '#2 names no group',
+    ]);
+  });
+
+  it('takes decisions and groups from the draft', () => {
+    const draft = PlanDraft.parse({
+      decisions: { '1': { skip: 'only CI can see it' } },
+      groups: [{ slug: 'sidebar', source: 'area UI', decision: { skip: 'covered by E2E' } }],
+      groupOf: { '2': 'sidebar' },
+    });
+    const text = renderPlan(planFromWindow(windowOf([needed, grouped]), draft));
+
+    expect(problemsOf(text)).toEqual([]);
+  });
+
+  it('refuses a draft that decides a PR the window holds in another role', () => {
+    const draft = PlanDraft.parse({ decisions: { '2': { skip: 'no' } }, groupOf: { '1': 'x' } });
+
+    expect(() => planFromWindow(windowOf([needed, grouped]), draft)).toThrow(
+      /decides #2[^]*groups #1/
+    );
+  });
+
+  it('puts a PR whose issue belongs to a tracking issue with QA steps into its group', () => {
+    const tracked = {
+      ...grouped,
+      issues: [
+        {
+          number: 30,
+          title: 'A bug',
+          subIssues: 0,
+          qaHeading: false,
+          closes: true,
+          parent: { number: 31202, title: 'Tracking', subIssues: 4, qaHeading: true },
+        },
+      ],
+    };
+    const plan = planFromWindow(windowOf([tracked]), PlanDraft.parse({}));
+
+    expect(plan.maintainerSkips[0]!.group).toBe('issue-31202');
+    expect(plan.groups).toEqual([
+      {
+        slug: 'issue-31202',
+        source: '[#31202](https://github.com/storybookjs/storybook/issues/31202)',
+        decision: null,
+      },
+    ]);
+  });
+});

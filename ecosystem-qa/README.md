@@ -210,6 +210,22 @@ The answer schema names the ids of this run only, so the agent cannot report a c
 The run ends with exit 1 before anything is cloned when the plan is not in its rendered form or fails `checkPlan`, when the plan has no such batch, when the batch lists no entry or no such part for the repo, or when `--version` is not on the plan's line.
 `request.plan` in `result.json` records the plan file, its hash, the batch, the part, and the slug and PRs of each entry.
 
+### Collect the results of a plan batch
+
+`collect.ts`, `group.ts`, `missing-runs.ts` and `fetch-runs.ts` take the same `--plan <file> --batch <n>`, and load the discovered repos of the plan with the catalog.
+
+```sh
+node ecosystem-qa/collect.ts --results ecosystem-qa/results --version 11.0.0-beta.3 --out ecosystem-qa/results/proposals.json \
+  --repo storybookjs/storybook --plan ecosystem-qa/lib/plan.fixture.md --batch 1
+```
+
+They read each part under `<id>/<os>/<engine>/part-<n>`, or in the artifact `qa-result-<id>-<os>-<engine>-part-<n>`.
+A record of another plan or batch, a record of a plan run when no plan is given, and a record with a check id that is neither in `checks.ts` nor an entry of its part of the plan are ignored with a warning.
+The plan file decides which entries a part has, never `request.plan`, because a run that executed code of a public repository wrote the record.
+For the same reason the issue body of a plan check takes the entry and its PRs from the plan file, in a line above the list of related findings.
+`collect.ts` prints the plan checks of each result by state, so a tail of checks that the budget left as `skip` is visible.
+A job of a plan run in the matrix that `missing-runs.ts` reads names its `part`, and a missing one is named by its repo and part.
+
 ## Run it in CI
 
 Start the `Ecosystem QA` workflow by hand and pick the repos, version, engines and operating systems.

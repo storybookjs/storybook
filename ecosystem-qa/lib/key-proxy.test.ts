@@ -2,6 +2,7 @@ import { once } from 'node:events';
 import { createServer, request, type IncomingMessage, type ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
 
+import { claudeCode } from '@ai-hero/sandcastle';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { PLACEHOLDER_KEY, proxyTheKey, sandboxAddresses, startKeyProxy } from './key-proxy.ts';
@@ -276,6 +277,17 @@ describe('proxyTheKey', () => {
     proxy.close();
 
     await expect(answerOf(`${proxy.agentEnv.ANTHROPIC_BASE_URL}/v1/messages`)).rejects.toThrow();
+  });
+
+  it('finds the key in the variables Sandcastle exports for the agent, where it went before the proxy', async () => {
+    const proxy = await proxied({ ANTHROPIC_API_KEY: REAL_KEY }, 'http://127.0.0.1:9');
+    const clean = 'HOME=/home/agent\nCI=false\n';
+
+    expect(proxy.reaches(clean, claudeCode('m', { env: { ANTHROPIC_API_KEY: REAL_KEY } }))).toBe(
+      true
+    );
+    expect(proxy.reaches(`ANTHROPIC_API_KEY=${REAL_KEY}\n`, claudeCode('m', {}))).toBe(true);
+    expect(proxy.reaches(clean, claudeCode('m', { env: proxy.agentEnv }))).toBe(false);
   });
 });
 

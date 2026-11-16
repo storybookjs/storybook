@@ -84,6 +84,7 @@ export const startKeyProxy = async (options: KeyProxyOptions): Promise<KeyProxy>
 
 export interface ProxiedKey {
   agentEnv: { ANTHROPIC_BASE_URL: string; ANTHROPIC_API_KEY: string };
+  reaches: (sandboxEnv: string, agent: { env: Record<string, string> }) => boolean;
   close: () => void;
 }
 
@@ -92,13 +93,18 @@ export const proxyTheKey = async (
   name: string,
   options: Omit<KeyProxyOptions, 'apiKey'>
 ): Promise<ProxiedKey> => {
-  const proxy = await startKeyProxy({ ...options, apiKey: env[name]! });
+  const apiKey = env[name]!;
+  const proxy = await startKeyProxy({ ...options, apiKey });
   // Every process started on the host inherits the environment, git in the clone the sandbox wrote
   // to included.
   delete env[name];
   proxy.server.unref();
   return {
     agentEnv: { ANTHROPIC_BASE_URL: proxy.baseUrl, ANTHROPIC_API_KEY: PLACEHOLDER_KEY },
+    // Sandcastle exports `agent.env` in front of the agent's own command, so the container's
+    // environment never shows it.
+    reaches: (sandboxEnv, agent) =>
+      [sandboxEnv, ...Object.values(agent.env)].some((text) => text.includes(apiKey)),
     close: () => {
       proxy.server.close();
       proxy.server.closeAllConnections();

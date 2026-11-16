@@ -512,10 +512,14 @@ const runSandcastle = async (
     );
     if (keyProxy) {
       const { stdout } = await within(60, 'Reading the sandbox environment', sandbox.exec('env'));
-      if (stdout.includes(credential.value)) {
-        throw new Error('The sandbox holds the provider key, so the run stops here.');
+      if (keyProxy.reaches(stdout, agent)) {
+        throw new Error(
+          'The environment of the sandbox or the variables Sandcastle exports for the agent hold the provider key, so the run stops here.'
+        );
       }
-      note('The sandbox holds no provider key.');
+      note(
+        'Neither the environment of the sandbox nor the variables Sandcastle exports for the agent hold the provider key.'
+      );
     }
     const name = `${request.entry.id}-${request.os}-${request.engine}`;
     const logging: LoggingOption = {

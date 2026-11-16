@@ -241,6 +241,23 @@ describe('typescript-compiler-api', () => {
       } as CheckOptions)
     ).resolves.toBeNull();
   });
+
+  it('uses the installed TypeScript when the declared range is broad', async () => {
+    vi.mocked(readTypeScriptPackageForDocgen).mockReturnValue({
+      version: '7.0.2',
+      packageDir: '/project/node_modules/typescript',
+    });
+    const packageManager = packageManagerWith({ typescript: '>=6' });
+
+    await expect(
+      checkFix(typescriptCompilerApi, {
+        mainConfig: { framework: '@storybook/vue3-vite' } as StorybookConfigRaw,
+        packageManager,
+        configDir: '/project/.storybook',
+        ...upgrade,
+      } as CheckOptions)
+    ).resolves.toEqual({ version: '7.0.2' });
+  });
 });
 
 describe('when the main config sets typescript.docgenSpecifier', () => {

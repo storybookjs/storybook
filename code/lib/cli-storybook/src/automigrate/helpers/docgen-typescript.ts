@@ -14,8 +14,17 @@ export async function getDocgenTypeScriptVersion({
   const specifier = (mainConfig.typescript as { docgenSpecifier?: string } | undefined)
     ?.docgenSpecifier;
   if (!specifier) {
-    // Docgen loads the TypeScript declared by this project. Another installed copy in a monorepo
-    // can report a different version, so resolve the declared constraint instead.
+    // Docgen loads the TypeScript installed in this project. A broad declared range or a root
+    // declaration can hide an installed TypeScript 7, so read the installed copy first.
+    if (configDir) {
+      try {
+        return {
+          version: readTypeScriptPackageForDocgen({ specifier: 'typescript', configDir }).version,
+        };
+      } catch {
+        // Fall back to the declared constraint when no installed copy can be resolved.
+      }
+    }
     const version = coerce(
       await packageManager.getDeclaredVersionSpecifier('typescript', { preferDeclared: true })
     )?.version;

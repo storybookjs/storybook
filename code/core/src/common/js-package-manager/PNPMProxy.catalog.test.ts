@@ -55,8 +55,29 @@ describe('PNPMProxy catalogs', () => {
 
     it('uses the declared catalog version when installed copies are ignored', async () => {
       vi.spyOn(pnpmProxy, 'getInstalledVersion').mockResolvedValue('7.0.2');
-      vi.spyOn(pnpmProxy, 'getAllDependencies').mockReturnValue({ typescript: 'catalog:' });
-      vol.fromJSON({ [WORKSPACE_YAML]: 'catalog:\n  typescript: 6.0.2\n' });
+      vi.mocked(pnpmProxy.getAllDependencies).mockRestore();
+      JsPackageManager.packageJsonCache.clear();
+      pnpmProxy.packageJsonPaths = ['/root/apps/web/package.json'];
+      vol.fromJSON({
+        '/root/apps/web/package.json': JSON.stringify({
+          devDependencies: { typescript: 'catalog:' },
+        }),
+        [WORKSPACE_YAML]: 'catalog:\n  typescript: 6.0.2\n',
+      });
+
+      await expect(
+        pnpmProxy.getDeclaredVersionSpecifier('typescript', { preferDeclared: true })
+      ).resolves.toBe('6.0.2');
+    });
+
+    it('uses the app declaration before a root declaration with real manifests', async () => {
+      vi.mocked(pnpmProxy.getAllDependencies).mockRestore();
+      JsPackageManager.packageJsonCache.clear();
+      pnpmProxy.packageJsonPaths = ['/root/apps/web/package.json', '/root/package.json'];
+      vol.fromJSON({
+        '/root/apps/web/package.json': JSON.stringify({ devDependencies: { typescript: '6.0.2' } }),
+        '/root/package.json': JSON.stringify({ devDependencies: { typescript: '7.0.2' } }),
+      });
 
       await expect(
         pnpmProxy.getDeclaredVersionSpecifier('typescript', { preferDeclared: true })

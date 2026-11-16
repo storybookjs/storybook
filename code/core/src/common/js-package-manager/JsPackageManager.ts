@@ -347,7 +347,23 @@ export abstract class JsPackageManager {
         return installed;
       }
     }
-    const declared = this.getAllDependencies()[packageName];
+    let declared: string | undefined;
+    if (preferDeclared) {
+      // getAllDependencies() merges nearest-first paths with Object.assign, so a root declaration
+      // overwrites the app's. Walk nearest-first and keep the first declaration instead.
+      for (const packageJsonPath of this.packageJsonPaths) {
+        const packageJson = JsPackageManager.getPackageJson(packageJsonPath);
+        declared =
+          packageJson.peerDependencies?.[packageName] ??
+          packageJson.devDependencies?.[packageName] ??
+          packageJson.dependencies?.[packageName];
+        if (declared) {
+          break;
+        }
+      }
+    } else {
+      declared = this.getAllDependencies()[packageName];
+    }
     const range = declared && this.getDeclaredRange(packageName, declared);
     return range && validRange(range) ? range : null;
   }

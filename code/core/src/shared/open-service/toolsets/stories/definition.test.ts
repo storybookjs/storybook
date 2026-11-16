@@ -284,6 +284,8 @@ describe('stories.changed', () => {
       const outcome = await runChanged(cliCtx, toolset, { since: 'next' });
 
       expect(getChangedFiles).toHaveBeenCalledExactlyOnceWith('next');
+      // The notes and the statuses need the same file; the graph is asked once.
+      expect(storiesForFiles.mock.calls.flatMap(([{ files }]) => files)).toEqual([componentPath]);
       expect(getStatuses).not.toHaveBeenCalled();
       expect(changeDetectionReadiness).not.toHaveBeenCalled();
       expect(outcome.data).toEqual({

@@ -265,6 +265,34 @@ function moduleGraphAccessFromCtx(
   };
 }
 
+/** Looks each file up in the graph once, however often it is asked for. */
+function withLookupCache(moduleGraph: ModuleGraphAccess): ModuleGraphAccess {
+  type Hits = Awaited<
+    ReturnType<ModuleGraphAccess['queries']['storiesForFiles']['loaded']>
+  >[number];
+  const cache = new Map<string, Promise<Hits>>();
+  return {
+    queries: {
+      ...moduleGraph.queries,
+      storiesForFiles: {
+        loaded: ({ files }) => {
+          const missing = [...new Set(files)].filter((file) => !cache.has(file));
+          if (missing.length > 0) {
+            const lookup = moduleGraph.queries.storiesForFiles.loaded({ files: missing });
+            missing.forEach((file, position) =>
+              cache.set(
+                file,
+                lookup.then((hits) => hits[position])
+              )
+            );
+          }
+          return Promise.all(files.map((file) => cache.get(file)!));
+        },
+      },
+    },
+  };
+}
+
 /** Creates the public stories API with request-local access to Storybook runtime dependencies. */
 export function createStoriesToolset({
   storyIndex,
@@ -402,16 +430,18 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
           // Files outside the story graph are why an empty or partial result can still be wrong,
           // so they are part of the answer rather than a separate lookup.
           const read = async () => {
+            // With a ref, the notes and the statuses ask the graph about the same files.
+            const graph = changesSince ? withLookupCache(moduleGraph) : moduleGraph;
             const { reachableFiles, ...filesOutsideStories } =
               await detectChangedFilesOutsideStories({
                 git,
-                moduleGraph,
+                moduleGraph: graph,
                 storybookDirs,
                 changes: changesSince,
               });
             const index = await storyIndex.getIndex();
             const changed = changesSince
-              ? await getChangedStoriesSince({ ...changesSince, moduleGraph, index })
+              ? await getChangedStoriesSince({ ...changesSince, moduleGraph: graph, index })
               : getChangedStories({ statuses: await changeStatuses.getAll(), index });
             return { changed, filesOutsideStories, reachableFiles };
           };

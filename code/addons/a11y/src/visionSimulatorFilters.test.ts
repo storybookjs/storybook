@@ -3,8 +3,8 @@ import { describe, expect, it } from 'vitest';
 import { filterDefs, filters } from './visionSimulatorFilters.ts';
 
 describe('anomaly simulations', () => {
-  it('does not offer the anomalies that protanopia and deuteranopia are the severe form of', () => {
-    for (const anomaly of ['protanomaly', 'deuteranomaly']) {
+  it('does not offer the anomalies that the dichromacy simulations are the severe form of', () => {
+    for (const anomaly of ['protanomaly', 'deuteranomaly', 'tritanomaly']) {
       expect(filters).not.toHaveProperty(anomaly);
       expect(filterDefs).not.toContain(`storybook-a11y-vision-${anomaly}`);
     }
@@ -42,7 +42,7 @@ describe('filterDefs', () => {
     expect(matrixFor('storybook-a11y-vision-deuteranopia')).toBe(
       '0.367322 0.860646 -0.227968 0 0 0.280085 0.672501 0.047413 0 0 -0.011820 0.042940 0.968881 0 0 0 0 0 1 0'
     );
-    expect(matrixFor('storybook-a11y-vision-tritanomaly')).toBe(
+    expect(matrixFor('storybook-a11y-vision-tritanopia-machado')).toBe(
       '1.255528 -0.076749 -0.178779 0 0 -0.078411 0.930809 0.147602 0 0 0.004733 0.691367 0.303900 0 0 0 0 0 1 0'
     );
   });

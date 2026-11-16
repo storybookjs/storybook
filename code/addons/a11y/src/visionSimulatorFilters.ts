@@ -23,7 +23,7 @@ export const filters: Record<string, { label: string; filter: string; descriptio
   },
   tritanopiaMachado: {
     label: 'Tritanopia (inaccurate)',
-    filter: 'url("#storybook-a11y-vision-tritanomaly")',
+    filter: 'url("#storybook-a11y-vision-tritanopia-machado")',
     description: '0.016% of users\nMachado et al. 2009',
   },
   tritanopia: {
@@ -43,7 +43,8 @@ export const filters: Record<string, { label: string; filter: string; descriptio
 } as const;
 
 // Firefox ignores CSS `filter: url(#id)` when the SVG defining `#id` is `display: none`.
-// Protanopia, deuteranopia and tritanomaly use the Machado et al. (2009) severity 1.0 matrices:
+// Protanopia, deuteranopia and the inaccurate tritanopia use the Machado et al. (2009) severity 1.0
+// matrices:
 // https://www.inf.ufrgs.br/~oliveira/pubs_files/CVD_Simulation/CVD_Simulation.html
 // Tritanopia projects onto the two half-planes of Brettel, Viénot & Mollon (1997). Its first matrix
 // puts each side of the dividing plane in its own channel, relying on filter results clamping
@@ -73,7 +74,7 @@ export const filterDefs = `<svg id="storybook-a11y-vision-filters" aria-hidden="
         values="0.367322, 0.860646, -0.227968, 0, 0 0.280085, 0.672501, 0.047413, 0, 0 -0.011820, 0.042940, 0.968881, 0, 0 0, 0, 0, 1, 0"
       />
     </filter>
-    <filter id="storybook-a11y-vision-tritanomaly">
+    <filter id="storybook-a11y-vision-tritanopia-machado">
       <feColorMatrix
         in="SourceGraphic"
         type="matrix"

@@ -109,6 +109,88 @@ ECOSYSTEM_QA_FAKE=1 node ecosystem-qa/run.ts --repo mealdrop --version 11.0.0-be
   --engine claude --fake --sandbox none --out ecosystem-qa/results/mealdrop/macos/claude
 ```
 
+## Write a QA plan
+
+A QA plan names what a sweep tests beyond the fixed checks: the changes of a release line, each with the repos to try it on, the steps and the expected outcome.
+It is one Markdown file in `ecosystem-qa/plans/`, named after its line, such as `11.0.md`, and a person reviews and merges it like code.
+
+```
+window.ts ──> window.json ──> qa-plan.ts render ──> plans/<line>.md ──> qa-plan.ts check
+   │ PRs merged into next      │ + draft.json:          │ edited by hand     │ format, rules,
+   │ between two tags          │ entries, decisions     │                    │ catalog, window
+```
+
+`window.ts` lists every PR that was merged into `next` between two tags:
+
+```sh
+node ecosystem-qa/window.ts --from v10.6.0 --to v11.0.0-beta.3 --out window.json
+```
+
+For each PR it records the QA status from its labels, the area that the title prefix names, the manual testing section of its body, the author association, and the issues the PR closes or names, with their parent issue and whether they have a heading for QA or testing.
+It keeps a PR only when its merge commit is between the two tags and it was merged at most 30 days before the first tag.
+It reads git and GitHub and writes nothing else.
+
+`qa-plan.ts render` writes the plan from the window and a JSON draft, and `check` validates it:
+
+```sh
+node ecosystem-qa/qa-plan.ts render --window window.json --draft draft.json --out ecosystem-qa/plans/11.0.md
+node ecosystem-qa/qa-plan.ts check ecosystem-qa/plans/11.0.md --window window.json
+```
+
+The draft is optional, and every key of it too: `entries`, `discovered`, `decisions` by PR number, `groups`, and `groupOf`, which puts a maintainer PR into a group by PR number.
+Without a draft, render writes a skeleton in which every row is undecided.
+
+The plan has a table of its line, version and window, a section `## Changes to test` with one entry per change, and seven tables.
+"PRs that need QA" and "Undeclared PRs" give every PR a decision, the slugs of the entries that test it or `skip:` with the reason.
+A maintainer PR marked `qa:skip` that carries a product label belongs to a group in "Maintainer PRs marked qa:skip", and each group has a decision.
+"PRs verified by hand" and "PRs marked qa:skip" only record the rest of the window.
+Every PR is a link to the PR, because GitHub links no bare `#36137` in a Markdown file.
+
+An entry is a block of lines:
+
+```markdown
+### `story-sort-in-main` Story sort moves from the preview file to the main file
+
+- PRs: [#36137](https://github.com/storybookjs/storybook/pull/36137)
+- Batch: 1
+- Repo `mealdrop`: sets `storySort` in its preview file today
+- Step: Read which automigrations the upgrade ran, and the diff of the main file and the preview file.
+- Step: Start the dev server and fetch `http://localhost:6006/index.json`.
+- Expected: The order of `/index.json` is the order of the baseline, and the upgrade output names a sort that it could not move.
+```
+
+Its check id is `plan.` with the slug, and its batch decides when it runs: batch 1 first, and the batches are numbered without a gap.
+A repo with more entries in one batch than `Entries per run` runs them in several parts, in parallel.
+
+`check` accepts a file only when it equals what render would write for what it read, so a line that is not in the format fails at its line number.
+It then holds the plan against these rules and prints each problem as `<file>:<line>: <message>`:
+
+- Every slug and group is unique, and the version is on the plan's line.
+- Every repo of an entry is a catalog id or a discovered repo, and a discovered repo never takes a catalog id.
+- No repo of an entry is more than one major behind the plan's line, by the `tags` of its catalog entry or the major of its discovered row.
+- Every PR of an entry has a row that names the entry, every row has a decision, and every decision names entries that exist.
+- Every maintainer PR marked `qa:skip` with a product label names a group, and every group has a decision.
+- The file holds no link to Linear, Notion or Slack, and no step or expected outcome holds a URL other than `localhost`.
+- With `--window`, the tables hold exactly the PRs of the window, with their titles and areas.
+
+A plan that passes prints its hash, which names the cycle, its batches with their runs, and about what it costs, priced at the most expensive static run so far.
+A run of plan entries can cost more than that.
+
+A repo that no catalog entry covers goes into "Discovered repos".
+Each of its fields but the id and the reason is a value of one line of `pin.ts` output for the commit to test, copied as printed:
+
+| Column | From the `pin.ts` line |
+| --- | --- |
+| Repo at its commit | `repo`, linked to `commit` |
+| Package manager | `packageManager` |
+| Storybook directory | `storybookDirs[].dir` |
+| Storybook major | `major` of that directory |
+| Stars | `stars` |
+| Pushed at | `pushedAt` |
+
+`loadEntries(plan)` in `lib/catalog.ts` returns the catalog with each discovered repo as an entry without a push target: at its upstream commit, on Linux only, and with nothing pushed.
+It parses the catalog and the discovered repos as one list, so a discovered repo cannot reuse a catalog id.
+
 ## Run it in CI
 
 Start the `Ecosystem QA` workflow by hand and pick the repos, version, engines and operating systems.
@@ -131,7 +213,8 @@ It uploads them again as `qa-earlier-results`, so the filing job finds their evi
 To split a wrong merge, or to collect when the model is unavailable, paste a `groups.json` document into `groups`; the job uses it instead of asking the model.
 Two requests over the same findings can group a borderline pair differently, so start the run that files with the `groups.json` of the dry run you reviewed.
 
-A pull request that touches `ecosystem-qa/` or the workflow runs only the smoke job: typecheck, tests and a fake run through collect and a dry filing, with no environment and no secrets.
+A pull request that touches `ecosystem-qa/` or the workflow runs only the smoke job: typecheck, tests, `qa-plan.ts check` on the fixture plan and on every plan in `ecosystem-qa/plans/`, and a fake run through collect and a dry filing, with no environment and no secrets.
+That is how a pull request against `qa/plans` that adds a plan gets its red or green check.
 
 ## Where results land
 

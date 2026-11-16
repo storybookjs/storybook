@@ -1,9 +1,9 @@
-import { execFileSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 
 import { z } from 'zod';
 
-export const PLAYWRIGHT_LABEL = 'org.js.storybook.ecosystem-qa.playwright';
+const PLAYWRIGHT_LABEL = 'org.js.storybook.ecosystem-qa.playwright';
 
 const Labels = z.record(z.string(), z.string()).nullable();
 
@@ -23,13 +23,16 @@ export const playwrightProblem = (
 };
 
 export const sandboxImageProblem = (image: string): string | undefined => {
-  const labels = Labels.parse(
-    JSON.parse(
-      execFileSync('docker', ['image', 'inspect', '--format', '{{json .Config.Labels}}', image], {
-        encoding: 'utf8',
-      })
-    )
+  const inspect = spawnSync(
+    'docker',
+    ['image', 'inspect', '--format', '{{json .Config.Labels}}', image],
+    { encoding: 'utf8' }
   );
+  if (inspect.status !== 0) {
+    const reason = inspect.stderr?.trim() || String(inspect.error);
+    return `Docker cannot read the image ${image} (${reason}). Build it as ecosystem-qa/README.md says.`;
+  }
+  const labels = Labels.parse(JSON.parse(inspect.stdout));
   const installed: string = createRequire(import.meta.url)('playwright/package.json').version;
   return playwrightProblem(image, labels?.[PLAYWRIGHT_LABEL], installed);
 };

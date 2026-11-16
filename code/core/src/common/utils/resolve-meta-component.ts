@@ -13,6 +13,7 @@ import {
   type ExportReader,
   findImport,
   followBinding,
+  followExport,
   resolveFileOrUndefined,
 } from './follow-export.ts';
 import { createModuleResolver } from './module-resolver.ts';
@@ -31,9 +32,12 @@ export interface ResolvedMetaComponent {
    * namespace the barrel re-exports, so compare it before reading `importId` as the story's own.
    */
   importer?: string;
-  /** Declaring module, or the naming module itself; `undefined` when the import does not resolve. */
+  /**
+   * Declaring module, followed through re-exports, or the naming module itself; `undefined` when the
+   * import does not resolve. When a module on the way cannot be read, the last module reached.
+   */
   path?: string;
-  /** Export name in the declaring module, so an import alias resolves to the real export. */
+  /** Export name in `path`, so an import alias or a barrel's rename resolves to the real export. */
   exportName: string;
 }
 
@@ -44,6 +48,14 @@ export type MetaComponentResolution =
       reason: 'unreadable-component-expression';
       /** Source text of the expression, so a caller can name what it could not follow. */
       expression: string;
+    }
+  | {
+      /** The module the expression reads from has no export of that name. */
+      reason: 'missing-export';
+      expression: string;
+      /** The specifier and export name that do not resolve to a declaration. */
+      importId: string;
+      exportName: string;
     };
 
 export type MetaComponentResolverOptions =
@@ -65,7 +77,7 @@ export type MetaComponentResolverOptions =
  * The module resolver the component resolvers use by default: JS and TS sources, with `extensions`
  * tried first, and TypeScript's `.js` specifiers.
  */
-export function createSourceModuleResolver(extensions: string[] = []) {
+function createSourceModuleResolver(extensions: string[] = []) {
   return createModuleResolver({
     extensions: [...extensions, ...jsTsSourceExtensions],
     extensionAlias: typescriptExtensionAlias,
@@ -101,6 +113,9 @@ const unwrapComponentExpression = (node: Node): Node => {
 export function createComponentNodeResolver(options: MetaComponentResolverOptions = {}) {
   const reader: ExportReader = options.reader ?? {
     resolver: createSourceModuleResolver(options.extensions),
+    // A single-file component, such as a `.vue` file, is the default export of its file.
+    ownsExport: (filePath, exportName) =>
+      exportName === 'default' && !!options.extensions?.some((ext) => filePath.endsWith(ext)),
   };
   const readModule = reader.readModule ?? parseReferenceModule;
   const resolveModule = (fromFile: string, specifier: string) => {
@@ -108,7 +123,42 @@ export function createComponentNodeResolver(options: MetaComponentResolverOption
     return filePath ? readModule(filePath) : undefined;
   };
 
-  const fromIdentifier = (module: ReferenceModule, localName: string): MetaComponentResolution => {
+  // An imported component is followed through re-exports to the file that declares it, so an engine
+  // reads the component itself rather than a barrel that forwards it, and a name the module does not
+  // export is reported rather than documented as whatever the barrel holds.
+  const declared = (
+    component: ResolvedMetaComponent,
+    expression: string
+  ): MetaComponentResolution => {
+    const { importId, path, exportName } = component;
+    if (!importId || !path) {
+      return { component };
+    }
+    const origin = followExport(reader, path, exportName);
+    switch (origin?.kind) {
+      case 'declaration':
+        return {
+          component: { ...component, path: origin.filePath, exportName: origin.exportName },
+        };
+      case 'missing':
+        return { reason: 'missing-export', expression, importId, exportName };
+      // A namespace object is not a component, so naming one documents nothing.
+      case 'namespace':
+        return { reason: 'no-component-import' };
+      case undefined:
+        return { component };
+      default: {
+        const unhandled: never = origin;
+        throw new Error(`Unhandled export origin ${JSON.stringify(unhandled)}`);
+      }
+    }
+  };
+
+  const fromIdentifier = (
+    module: ReferenceModule,
+    localName: string,
+    expression: string
+  ): MetaComponentResolution => {
     const binding = findImport(module.editor.program, localName);
     // A namespace object is not a class, so naming one as the component documents nothing.
     if (binding.kind === 'unsupported' || binding.kind === 'namespace') {
@@ -122,15 +172,16 @@ export function createComponentNodeResolver(options: MetaComponentResolverOption
     }
 
     const { importId, exportName } = binding;
-    return {
-      component: {
+    return declared(
+      {
         localName,
         importId,
         importer: module.filePath,
         exportName,
         path: resolveFileOrUndefined(reader.resolver, module.filePath, importId),
       },
-    };
+      expression
+    );
   };
 
   return function resolveComponentNode(
@@ -138,8 +189,9 @@ export function createComponentNodeResolver(options: MetaComponentResolverOption
     node: Node
   ): MetaComponentResolution {
     const expression = unwrapComponentExpression(node);
+    const text = oneLineTextOf(node);
     if (expression.type === 'Identifier') {
-      return fromIdentifier(module, expression.name);
+      return fromIdentifier(module, expression.name, text);
     }
 
     // `ns.Button`, where `ns` is a namespace, is `import { Button } from …` written another way, so it
@@ -154,7 +206,7 @@ export function createComponentNodeResolver(options: MetaComponentResolverOption
       if (origin?.kind === 'namespace') {
         const exportName = expression.property.name;
         const { importId, importer, path } = origin;
-        return { component: { localName: exportName, exportName, importId, importer, path } };
+        return declared({ localName: exportName, exportName, importId, importer, path }, text);
       }
     }
 
@@ -171,11 +223,11 @@ export function createComponentNodeResolver(options: MetaComponentResolverOption
     if (referenced) {
       const value = unwrapComponentExpression(referenced.node);
       if (value.type === 'Identifier') {
-        return fromIdentifier(referenced.ctx, value.name);
+        return fromIdentifier(referenced.ctx, value.name, text);
       }
     }
 
-    return { reason: 'unreadable-component-expression', expression: oneLineTextOf(node) };
+    return { reason: 'unreadable-component-expression', expression: text };
   };
 }
 

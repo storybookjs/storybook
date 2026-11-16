@@ -8,10 +8,13 @@ export type ExportOrigin =
   /** A module namespace, as after `export * as UI from './ui'`. */
   | { kind: 'namespace'; importId: string; importer: string; path: string | undefined }
   /**
-   * A binding that `filePath` declares under `localName`. An anonymous default export, or an export
-   * that the reader says the file owns, has the local name of the export.
+   * A binding that `filePath` declares under `localName` and exports as `exportName`. An anonymous
+   * default export, or an export that the reader says the file owns, has the local name of the
+   * export.
    */
-  | { kind: 'declaration'; filePath: string; localName: string };
+  | { kind: 'declaration'; filePath: string; exportName: string; localName: string }
+  /** The module, and every module it forwards to, was read and has no such export. */
+  | { kind: 'missing' };
 
 /** How `followExport` reads the modules it walks. */
 export interface ExportReader {
@@ -24,8 +27,8 @@ export interface ExportReader {
 
 /**
  * Follows the export `exportName` of the module at `filePath` through re-exports and imports, as a
- * barrel writes them, to the namespace or declaration it comes from. `undefined` when the export
- * cannot be followed.
+ * barrel writes them, to the namespace or declaration it comes from. `undefined` when a module on
+ * the way cannot be resolved or read, so whether the export exists is not known.
  */
 export function followExport(
   reader: ExportReader,
@@ -34,12 +37,13 @@ export function followExport(
   seen = new Set<string>()
 ): ExportOrigin | undefined {
   if (reader.ownsExport?.(filePath, exportName)) {
-    return { kind: 'declaration', filePath, localName: exportName };
+    return { kind: 'declaration', filePath, exportName, localName: exportName };
   }
-  // Two barrels can re-export each other with `export *`, which would never end.
+  // Two barrels can re-export each other with `export *`, which would never end. A name that leads
+  // back to itself declares nothing.
   const key = `${filePath}#${exportName}`;
   if (seen.has(key)) {
-    return undefined;
+    return { kind: 'missing' };
   }
   seen.add(key);
 
@@ -51,6 +55,11 @@ export function followExport(
     const target = resolveFileOrUndefined(reader.resolver, filePath, specifier);
     return target ? followExport(reader, target, name, seen) : undefined;
   };
+
+  // A module with no ES export syntax, such as CommonJS, may still export the name.
+  if (!module.editor.program.body.some((statement) => statement.type.startsWith('Export'))) {
+    return undefined;
+  }
 
   // An explicit export wins over `export *` wherever it is written, so the stars are tried last.
   const stars: string[] = [];
@@ -72,8 +81,8 @@ export function followExport(
 
     if (statement.type === 'ExportDefaultDeclaration' && exportName === 'default') {
       return statement.declaration.type === 'Identifier'
-        ? followBinding(reader, module, statement.declaration.name, seen)
-        : { kind: 'declaration', filePath, localName: exportName };
+        ? followBinding(reader, module, statement.declaration.name, seen, exportName)
+        : { kind: 'declaration', filePath, exportName, localName: exportName };
     }
 
     if (statement.type !== 'ExportNamedDeclaration' || statement.exportKind === 'type') {
@@ -81,7 +90,7 @@ export function followExport(
     }
     // A declared export also shadows any `export *` of the same name.
     if (statement.declaration && declares(module, statement.declaration, exportName)) {
-      return { kind: 'declaration', filePath, localName: exportName };
+      return { kind: 'declaration', filePath, exportName, localName: exportName };
     }
     const specifier = statement.specifiers.find(
       (candidate) =>
@@ -93,31 +102,36 @@ export function followExport(
     const localName = moduleExportName(specifier.local);
     return statement.source
       ? forward(statement.source.value, localName)
-      : followBinding(reader, module, localName, seen);
+      : followBinding(reader, module, localName, seen, exportName);
   }
 
   // `export *` forwards every name but `default`.
   if (exportName === 'default') {
-    return undefined;
+    return { kind: 'missing' };
   }
+  let unknown = false;
   for (const specifier of stars) {
     const found = forward(specifier, exportName);
-    if (found) {
+    if (found === undefined) {
+      unknown = true;
+    } else if (found.kind !== 'missing') {
       return found;
     }
   }
-  return undefined;
+  return unknown ? undefined : { kind: 'missing' };
 }
 
 /**
  * Follows the name `localName` binds in `module` to the namespace or declaration it comes from, as
- * `followExport` follows an export.
+ * `followExport` follows an export. `exportName` is the name `module` exports the binding under,
+ * when it does.
  */
 export function followBinding(
   reader: ExportReader,
   module: ReferenceModule,
   localName: string,
-  seen = new Set<string>()
+  seen = new Set<string>(),
+  exportName = localName
 ): ExportOrigin | undefined {
   const binding = findImport(module.editor.program, localName);
   switch (binding.kind) {
@@ -133,7 +147,7 @@ export function followBinding(
       return target ? followExport(reader, target, binding.exportName, seen) : undefined;
     }
     case 'local':
-      return { kind: 'declaration', filePath: module.filePath, localName };
+      return { kind: 'declaration', filePath: module.filePath, exportName, localName };
     case 'unsupported':
       return undefined;
     default: {

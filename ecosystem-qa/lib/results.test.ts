@@ -301,7 +301,9 @@ describe('loadResults of a plan batch', () => {
     expect(loadWith(scope())).toEqual({
       paths: [],
       warnings: [
-        expect.stringMatching(/reports plan\.invented, which is neither a check of the tier gate nor a plan check/),
+        expect.stringMatching(
+          /reports plan\.invented, which is neither a check of the tier gate nor a plan check/
+        ),
       ],
     });
   });
@@ -310,7 +312,9 @@ describe('loadResults of a plan batch', () => {
     writeRun(partDir(1), planRun(partOne, 'core.story-render'));
 
     expect(loadWith(scope()).warnings).toEqual([
-      expect.stringMatching(/reports core\.story-render, which is neither a check of the tier gate/),
+      expect.stringMatching(
+        /reports core\.story-render, which is neither a check of the tier gate/
+      ),
     ]);
   });
 

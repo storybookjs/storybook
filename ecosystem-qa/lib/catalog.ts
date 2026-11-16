@@ -8,4 +8,3 @@ export const loadEntries = (plan?: Plan): CatalogEntry[] =>
     ...JSON.parse(readFileSync(new URL('../catalog.json', import.meta.url), 'utf8')),
     ...(plan ? discoveredEntries(plan) : []),
   ]);
-

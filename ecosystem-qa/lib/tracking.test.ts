@@ -301,7 +301,7 @@ describe('spentUsd', () => {
   it('ignores a comment by another account', () => {
     const forged = posted(batchReport(input({ runs: ['1'] })), PERSON);
 
-    expect(spentUsd([forged], HASH)).toEqual({ usd: 0, runs: 0, unreadable: [] });
+    expect(spentUsd([forged], HASH)).toEqual({ usd: 0, runs: 0, batches: [], unreadable: [] });
   });
 
   it('names a comment of the workflow whose first line is not the hidden line of a batch of the plan', () => {
@@ -311,6 +311,7 @@ describe('spentUsd', () => {
     expect(spentUsd([buried, otherPlan], HASH)).toEqual({
       usd: 0,
       runs: 0,
+      batches: [],
       unreadable: [
         `${buried.url}, whose first line is not the hidden line of a batch of this plan`,
         `${otherPlan.url}, whose first line is not the hidden line of a batch of this plan`,
@@ -331,6 +332,7 @@ describe('spentUsd', () => {
     expect(spentUsd([edited], HASH)).toEqual({
       usd: 0,
       runs: 0,
+      batches: [],
       unreadable: [`${edited.url}, which someone other than the workflow edited`],
     });
     expect(spentUsd([selfEdited], HASH).unreadable).toEqual([]);
@@ -357,8 +359,7 @@ describe('nextStep', () => {
     overrides: Partial<BatchInput> = {},
     capUsd = 250,
     chain = true,
-    reportedBefore = false,
-    tracked = true
+    reportedBefore = false
   ) => {
     const report = batchReport(input(overrides));
     return nextStep({
@@ -367,7 +368,6 @@ describe('nextStep', () => {
       capUsd,
       chain,
       reportedBefore,
-      tracked,
     });
   };
 
@@ -400,13 +400,6 @@ describe('nextStep', () => {
     expect(step({}, 250, false, true)).toEqual(stop);
   });
 
-  it('stops after a later batch that found no discussion of the plan, and not after the first', () => {
-    expect(step({ batch: 2, batches: 3 }, 250, true, false, false)).toEqual({
-      stop: 'Batch 3 was not started, because the plan had no tracking discussion before batch 2, so the spend of its earlier batches is unknown.',
-    });
-    expect(step({}, 250, true, false, false)).toEqual({ start: 2 });
-  });
-
   it('stops when the batch left no result', () => {
     expect(step({ results: [] })).toEqual({
       stop: 'Batch 2 was not started, because batch 1 left no result.',
@@ -424,7 +417,6 @@ describe('nextStep', () => {
         capUsd: 250,
         chain: true,
         reportedBefore: false,
-        tracked: true,
       })
     ).toEqual({
       stop: `Batch 3 was not started, because the spend of this plan cannot be read from ${edited.url}, which someone other than the workflow edited.`,
@@ -484,7 +476,6 @@ describe('trackBatch', () => {
     const tracked = trackBatch({
       report,
       comments,
-      tracked: true,
       capUsd,
       chain: true,
       expiresOn: '2027-02-14',
@@ -548,13 +539,40 @@ describe('trackBatch', () => {
       trackBatch({
         report,
         comments: [batchOne, edited],
-        tracked: true,
         capUsd: 250,
         chain: false,
         expiresOn: '2027-02-14',
       })
     ).toEqual({
       refuse: `Batch 2 is not reported again, because someone other than the workflow edited ${edited.url}, and writing over it would hide that edit. Every later batch of this plan stops at that comment.`,
+    });
+  });
+
+  it('starts the next batch only when the discussion holds a report of every batch before this one', () => {
+    const batchThree = batchReport(input({ batch: 3, batches: 4, runs: ['43900000003'] }));
+    const missing = (batch: number) => ({
+      stop: `Batch 4 was not started, because this discussion holds no report of batch ${batch}, so the spend of the plan is unknown.`,
+    });
+    const second = comment(track(batchTwo(1), [batchOne]).body);
+
+    expect(track(batchThree, [batchOne, second], 250).next).toEqual({ start: 4 });
+    expect(track(batchThree, [second], 250).next).toEqual(missing(1));
+    expect(track(batchThree, [batchOne], 250).next).toEqual(missing(2));
+    expect(track(batchTwo(1), [], 250).next).toEqual({
+      stop: 'Batch 3 was not started, because this discussion holds no report of batch 1, so the spend of the plan is unknown.',
+    });
+    expect(track(batchThree, [], 250).next).toEqual({
+      stop: 'Batch 4 was not started, because this discussion holds no report of batches 1 and 2, so the spend of the plan is unknown.',
+    });
+    expect(track(batchThree, [second], 250).body).toContain('Spent on this plan: at least $');
+  });
+
+  it('starts no batch that a report in the discussion went past already', () => {
+    const second = comment(track(batchTwo(1), [batchOne]).body);
+    const lateFirst = batchReport(input({ runs: ['43900000009'] }));
+
+    expect(track(lateFirst, [batchOne, second], 250).next).toEqual({
+      stop: 'Batch 2 was not started, because this discussion holds a report of batch 2 already, so another run of the plan went on from here.',
     });
   });
 

@@ -47,9 +47,10 @@ comment of the batch when the same runs are reported again.
 --runs are the workflow runs whose artifacts hold the results; the comment names the day the first
 of their result artifacts expires.
 Then it starts the next batch with gh workflow run, with the same plan hash, unless the plan has no
-next batch, --no-chain is given, the batch was reported before, it left no result, a comment of the
-plan was edited by anyone but the workflow, a batch after the first finds no discussion of the plan,
-or the plan has spent --cap-usd (default ${DEFAULT_CAP_USD}).
+next batch, --no-chain is given, the batch was reported before, it left no result, a comment that
+the workflow wrote in the discussion was edited by anyone else or reports no batch of the plan, the
+discussion holds no report of an earlier batch or holds one of a later batch, or the plan has spent
+--cap-usd (default ${DEFAULT_CAP_USD}). It never writes over a comment that someone else edited.
 If the dispatch fails, the comment says so in place of the next batch.
 --filing says what the comment says of the filing: dry prints the dispatch that files the batch,
 pending says that the file job of this run files it next, and filed names the issue of each finding.
@@ -204,7 +205,6 @@ const comments: DiscussionComment[] = thread ? listDiscussionComments(thread.id)
 const tracked = trackBatch({
   report,
   comments,
-  tracked: thread !== undefined,
   capUsd,
   chain: values.chain,
   expiresOn,

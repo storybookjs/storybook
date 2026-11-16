@@ -21,12 +21,12 @@ import { bwrap } from '@ai-hero/sandcastle/sandboxes/bwrap';
 import { docker } from '@ai-hero/sandcastle/sandboxes/docker';
 import { noSandbox } from '@ai-hero/sandcastle/sandboxes/no-sandbox';
 import { seatbelt } from '@ai-hero/sandcastle/sandboxes/seatbelt';
-import { basename, join, relative, resolve } from 'pathe';
+import { join, relative, resolve } from 'pathe';
 import { z } from 'zod';
 
 import { checksFor, renderChecklist } from './checks.ts';
 import { answerAfterRepairs, answerOfFinishedAgent, type Reading } from './lib/answer.ts';
-import { loadCatalogEntry, loadEntries } from './lib/catalog.ts';
+import { loadCatalogEntry } from './lib/catalog.ts';
 import { shipsSandcastleFiles } from './lib/clone-guard.ts';
 import { cycleBranchName, cycleRepo, versionLine } from './lib/cycle.ts';
 import { runFake } from './lib/fake-run.ts';
@@ -34,11 +34,9 @@ import { outputOf, watchHost, type Report } from './lib/host-watch.ts';
 import { forJobLog, liveLine } from './lib/live-log.ts';
 import { memoryGuard } from './lib/memory-guard.ts';
 import { CHECKOUT_GUIDE, guideFor } from './lib/migration-guide.ts';
+import { readPlanScope, wholeNumber } from './lib/plan-scope.ts';
 import {
-  checkPlanText,
-  planBatches,
   planCheckId,
-  planHash,
   planRuns,
   renderPlanChecks,
   type Plan,
@@ -163,13 +161,6 @@ const refuse = (message: string): never => {
   process.exit(1);
 };
 
-const runNumber = (flag: string, value: string): number => {
-  const number = Number(value);
-  return Number.isInteger(number) && number >= 1
-    ? number
-    : refuse(`${flag} must be a whole number from 1, found "${value}".`);
-};
-
 interface PlannedRun {
   plan: Plan;
   record: PlanRecord;
@@ -177,50 +168,41 @@ interface PlannedRun {
 }
 
 const planOfRun = (
-  { plan: file, batch, part }: { plan?: string; batch?: string; part?: string },
+  values: { plan?: string; batch?: string; part?: string },
   repo: string,
   version: string
 ): PlannedRun | undefined => {
-  if (!file) {
-    return batch || part ? refuse('--batch and --part need --plan.') : undefined;
+  if (!values.plan && (values.batch || values.part)) {
+    return refuse('--batch and --part need --plan.');
   }
-  if (!batch) {
-    return refuse('--plan needs --batch.');
+  const scope = readPlanScope(values, refuse);
+  if (!scope) {
+    return undefined;
   }
-  const batchNumber = runNumber('--batch', batch);
-  const partNumber = runNumber('--part', part ?? '1');
-  const text = readFileSync(file, 'utf8');
-  const { plan, problems } = checkPlanText(text, { catalog: loadEntries() });
-  if (!plan || problems.length > 0) {
-    const [first] = problems;
-    return refuse(`${file} is not a plan that can run, line ${first!.line}: ${first!.message}`);
-  }
+  const { plan, file, batch } = scope;
+  const part = wholeNumber('--part', values.part ?? '1', refuse);
   if (versionLine(version) !== plan.line) {
     return refuse(
-      `${file} plans line ${plan.line}, and --version ${version} is on line ${versionLine(version)}.`
+      `${values.plan} plans line ${plan.line}, and --version ${version} is on line ${versionLine(version)}.`
     );
   }
-  const batches = planBatches(plan);
-  if (!batches.includes(batchNumber)) {
-    return refuse(`${file} has no batch ${batchNumber}, only 1 to ${batches.length}.`);
-  }
-  const parts = planRuns(plan, batchNumber).filter((run) => run.repo === repo);
+  const parts = planRuns(plan, batch).filter((run) => run.repo === repo);
   if (parts.length === 0) {
-    return refuse(`Batch ${batchNumber} of ${file} lists no entry for ${repo}.`);
+    return refuse(`Batch ${batch} of ${values.plan} lists no entry for ${repo}.`);
   }
   const run =
-    parts.find((candidate) => candidate.part === partNumber) ??
+    parts.find((candidate) => candidate.part === part) ??
     refuse(
-      `Batch ${batchNumber} of ${file} has ${parts.length} part(s) for ${repo}, not part ${partNumber}.`
+      `Batch ${batch} of ${values.plan} has ${parts.length} part(s) for ${repo}, not part ${part}.`
     );
   const entries = run.entries.map((slug) => plan.entries.find((entry) => entry.slug === slug)!);
   return {
     plan,
     record: {
-      file: basename(file),
-      hash: planHash(text),
-      batch: batchNumber,
-      part: partNumber,
+      file,
+      hash: scope.hash,
+      batch,
+      part,
       entries: entries.map(({ slug, prs }) => ({ id: slug, prs })),
     },
     entries,
@@ -243,7 +225,8 @@ const checklistOf = (tier: z.infer<typeof Tier>, planned: PlannedRun | undefined
           readFileSync(PLAN_PROMPT_FILE, 'utf8').trim(),
         ].join('\n\n')
       : renderChecklist(fixed),
-    failing: planChecks[0]?.id ?? 'core.story-render',
+    failing:
+      planChecks[0]?.id ?? fixed.find(({ id }) => id === 'core.story-render')?.id ?? fixed[0]!.id,
   };
 };
 type Checklist = ReturnType<typeof checklistOf>;
@@ -303,9 +286,6 @@ const parseRequest = () => {
 
   const planned = planOfRun(values, repo, version);
   const tier = Tier.parse(values.tier ?? (planned ? 'gate' : 'must'));
-  if (tier === 'gate' && !planned) {
-    return refuse('--tier gate runs only with --plan.');
-  }
   const engine = Engine.parse(values.engine);
   const entry = loadCatalogEntry(repo, planned?.plan);
   const sandbox = SandboxKind.parse(values.sandbox);

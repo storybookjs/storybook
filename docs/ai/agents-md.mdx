@@ -22,7 +22,7 @@ Storybook adds the section when it [installs the skills](./connect.mdx#install-t
 | ---- | -------------------------------------------------------------------------------------------------------------------------------------- |
 | 1    | Looks up the components to reuse, with their props and usage examples, with the [`/component-docs`](./skills/component-docs.mdx) skill |
 | 2    | Writes stories for every component it creates or changes, with the [`/write-stories`](./skills/write-stories.mdx) skill                |
-| 3    | Names the command that tests stories: `npx storybook tools test run`                                                                   |
+| 3    | Can test the stories with the command the section names, `npx storybook tools test run`                                                |
 | 4    | Ends its reply with a line that tells you about the [`/ui-review`](./skills/ui-review.mdx) skill, after a change you can see           |
 
 Your agent opens the skills of steps 1 and 2 before it edits any file, then follows each skill at its step. Steps 3 and 4 need no skill: step 3 is the command itself, and step 4 is the line "Use the /ui-review skill to see the changed components in Storybook". The agent creates a review only when you ask for it. See [UI review](./skills/ui-review.mdx).
@@ -43,7 +43,7 @@ Without that section, an agent connected only through skills doesn't follow thes
 For example, you ask your agent to "Build a login form". The agent:
 
 1. **Looks up your components.** Before it edits any file, it lists the components in your Storybook and reads the props and examples of the ones it needs, such as `TextField` and `Button`. It uses only documented props. See [Component docs](./skills/component-docs.mdx).
-2. **Writes the component and its stories.** It writes one story for each state the component can reach, such as empty, filled, invalid, and submitting, with realistic data. Interactive states get a [play function](../writing-stories/play-function.mdx) that tests the behavior. It mocks network requests and modules that the stories need. See [Write stories](./skills/write-stories.mdx).
+2. **Writes the component and its stories.** It writes one story for each state the component can reach, such as empty, filled, invalid, and submitting, with realistic data. Interactive states get a [play function](../writing-stories/play-function.mdx) that tests the behavior. When your project has MSW set up, it mocks the network requests the stories need; otherwise it tells you which stories would need a network mock. See [Write stories](./skills/write-stories.mdx).
 3. **Knows how to test the stories.** If your project has the [Vitest addon](../writing-tests/integrations/vitest-addon/index.mdx), the section names the command that runs the [component tests](../writing-tests/index.mdx) of the stories, with [accessibility checks](../writing-tests/accessibility-testing.mdx). When your agent runs it is up to the agent and the tool it runs in. See [Test stories](./skills/test-stories.mdx).
 4. **Offers a review.** It ends its reply with a line that offers the `/ui-review` skill. When you ask for the review, it finds the stories that its change affects, such as those of a `LoginPage` that renders the form, and groups them into a review. See [UI review](./skills/ui-review.mdx).
 

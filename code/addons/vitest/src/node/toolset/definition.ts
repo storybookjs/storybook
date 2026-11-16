@@ -220,10 +220,7 @@ export type TestToolset = ToolsetDefinition<
 function describeRun(a11yEnabled: boolean): string {
   return (
     `Run story tests.
-Run them after editing anything that changes how the UI looks — components, stories, styles, CSS, themes, colors, or design tokens — shell-level substitutes like typecheck, lint, or package.json test scripts do not replace this.
-Use changed for focused runs on what you changed (faster while iterating), or files for specific story files,
-and leave all of them out to run every story.
-Use this continuously to monitor test results as you work on your UI components and stories.
+Use changed for the stories your changes affect, or files for specific story files, and leave both out to run every story.
 Results will include passing/failing status` +
     (a11yEnabled
       ? `, and accessibility violation reports.

@@ -40,9 +40,9 @@ npx storybook tools test run --changed                # new and modified stories
 npx storybook tools test run --changed main           # the same since the branch forked from main, plus the uncommitted changes
 \`\`\`
 
-Only story files match a file argument: a component file matches nothing, and \`--changed\` finds the stories that depend on it. Files and \`--changed\` combine: then only the stories that match both run. \`--a11y false\` leaves out the accessibility checks, \`--json\` prints the result as JSON, and \`--help\` lists every argument.
+Only story files match a file argument: a component file matches nothing, and \`--changed\` finds the stories that depend on it. Files and \`--changed\` combine, with the files first (the argument after \`--changed\` is its ref): \`test run src/Button.stories.tsx --changed\` runs the changed stories in those files. \`--a11y false\` leaves out the accessibility checks, \`--json\` prints the result as JSON, and \`--help\` lists every argument.
 
-The output ends with \`## Result\`: what was selected, then \`Passed: …\` or \`Failed: …\`. Each failing story is under \`## Failing Stories\` with its error, and errors outside a story are under \`## Unhandled Errors\`. The command exits with 1 when a story fails or when the files or story ids you pass match nothing, and with 0 when nothing changed under \`--changed\`.`
+A run ends with \`## Result\`: what was selected, then \`Passed: …\` or \`Failed: …\`. Each failing story is under \`## Failing Stories\` with its error, and errors outside a story are under \`## Unhandled Errors\`. When nothing is selected, the output is one line that says so. The command exits with 1 when a story fails, an error occurs outside a story, or a file argument matches no story file; with \`--changed\`, nothing to run exits with 0.`
     : `${v.name('test.run')} runs the story tests of this Storybook in Vitest:
 
 - with neither \`files\` nor \`changed\`: every story
@@ -50,9 +50,9 @@ The output ends with \`## Result\`: what was selected, then \`Passed: …\` or \
 - with \`changed: true\`: new and modified stories, and the stories that depend on changed files, in the uncommitted changes
 - with \`changed: "main"\`: the same since the branch forked from main, plus the uncommitted changes
 
-Only story files match \`files\`: a component file matches nothing, and \`changed\` finds the stories that depend on it. \`files\` and \`changed\` combine: then only the stories that match both run. \`a11y: false\` leaves out the accessibility checks.
+Only story files match \`files\`: a component file matches nothing, and \`changed\` finds the stories that depend on it. \`files\` and \`changed\` combine: then only the changed stories in those files run. \`a11y: false\` leaves out the accessibility checks.
 
-The result ends with \`## Result\`: what was selected, then \`Passed: …\` or \`Failed: …\`. Each failing story is under \`## Failing Stories\` with its error, and errors outside a story are under \`## Unhandled Errors\`.`;
+A run ends with \`## Result\`: what was selected, then \`Passed: …\` or \`Failed: …\`. Each failing story is under \`## Failing Stories\` with its error, and errors outside a story are under \`## Unhandled Errors\`. When nothing is selected, the result is one line that says so.`;
   return `# Test the stories
 
 ${v.notes}${toolsetOff}

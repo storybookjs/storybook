@@ -7,8 +7,7 @@ const PLAYWRIGHT_LABEL = 'org.js.storybook.ecosystem-qa.playwright';
 
 const Labels = z.record(z.string(), z.string()).nullable();
 
-// The evidence tools load this package from the mounted node_modules and launch the browsers of the
-// image, and a Playwright of another version finds no browser there.
+// A Playwright of another version than the image's finds no browser in it.
 export const playwrightProblem = (
   image: string,
   label: string | undefined,

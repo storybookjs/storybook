@@ -7,6 +7,7 @@ export const filters: Record<string, { label: string; filter: string; descriptio
   reducedContrast: {
     label: 'Reduced contrast',
     filter: 'url("#storybook-a11y-vision-reduced-contrast")',
+    description: '10% of users',
   },
   deuteranopia: {
     label: 'Deuteranopia',

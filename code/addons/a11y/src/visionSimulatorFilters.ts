@@ -24,7 +24,7 @@ export const filters: Record<string, { label: string; filter: string; descriptio
   tritanopiaMachado: {
     label: 'Tritanopia (inaccurate)',
     filter: 'url("#storybook-a11y-vision-tritanomaly")',
-    description: '0.01% of users\nMachado et al. 2009',
+    description: '0.016% of users\nMachado et al. 2009',
   },
   tritanopia: {
     label: 'Tritanopia',

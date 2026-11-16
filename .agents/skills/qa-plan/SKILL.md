@@ -16,6 +16,7 @@ A person reviews the plan in one sitting and merges it, and that merge starts th
 `ecosystem-qa/README.md`, section "Write a QA plan", describes the format and every rule that `check` enforces.
 Read that section once before step 1.
 Do not read the source of the scripts. Run them.
+To know what a run does before and around your steps, read `ecosystem-qa/prompts/` and the gate checks in `ecosystem-qa/checks.ts`: an expected outcome has to be something that a run records.
 
 ## Rules
 
@@ -24,9 +25,10 @@ Do not read the source of the scripts. Run them.
 - **Decision rule.** A PR becomes an entry when an agent can show its effect on a real project with a command, a fetch of a URL, a file edit, a screenshot, or a click and typed text in the browser. Every other PR gets `skip:` with a reason of one line that says why no project can show it. Typical reasons are a change of this repository's CI, build, tests, sandboxes, or documentation site, a change of an internal tool or eval, or a fix that only Windows or macOS shows, because the sweep runs on Linux.
 - **Opt-in APIs.** A PR that adds an API no catalog repo uses yet becomes an entry only when a step can turn it on by an edit that the step spells out in full, such as one line of `.storybook/main.ts` or one new story. When the agent would have to design code of its own, skip it with the reason that no project uses the API yet.
 - **Fixed checks.** A plan run reports the five gate checks, `upgrade.command`, `upgrade.automigrations`, `upgrade.installed-version`, `upgrade.doctor`, and `core.dev-server`, and its own plan checks, on the repos of its batch. Every other fixed check of `ecosystem-qa/checks.ts` runs only in a static sweep, which a plan cannot start. A decision may skip a PR because a fixed check shows it only when that check is one of the five gate checks and a batch of this plan runs a repo that has what the PR changes, or when a static sweep on this version has covered such a repo. The reason names the check and the repo, for example `skip: upgrade.automigrations shows it on mealdrop in batch 1`. Without one of the two, the PR needs an entry or another reason.
-- **Step rule.** Steps run in the project, after the upgrade to the plan's version. Write them for the repos the entry lists, never as commands of this monorepo (no `yarn task`, no `nx`, no sandbox, no path under `code/`). Use the project's own package manager and `npx storybook`. The dev server runs at `http://localhost:6006`. `check` accepts any URL on `localhost`, so a step that starts a second server on another port may name that port, and it refuses a URL with a scheme and any other host in a title, a repo reason, a step, or an expected outcome. It does not look for a host without a scheme, so never write one: the reviewer has to find it. The expected outcome is something a log, a file, a screenshot, or a snapshot of the page shows.
+- **Step rule.** Steps run in the project after Step 2 and Step 3 of `ecosystem-qa/prompts/upgrade.md`: the upgrade to the plan's version, and then the manual steps of the migration guide that apply to the project, which the agent applies and commits as `qa: apply migration notes`. So a step starts from a project that has those changes already. An entry about a manual step of the guide reads that commit and tests the result, and does not apply the step again. Write them for the repos the entry lists, never as commands of this monorepo (no `yarn task`, no `nx`, no sandbox, no path under `code/`). Use the project's own package manager and `npx storybook`. The dev server runs at `http://localhost:6006`. `check` accepts any URL on `localhost`, so a step that starts a second server on another port may name that port, and it refuses a URL with a scheme and any other host in a title, a repo reason, a step, or an expected outcome. It does not look for a host without a scheme, so never write one: the reviewer has to find it. The expected outcome is something a log, a file, a screenshot, or a snapshot of the page shows.
 - **Baseline.** Before the upgrade the agent records the installed version, the number of entries in `index.json` with the first story id and the first docs id, a screenshot of the first story, and any other check it can run cheaply on the old version (step 1 of `ecosystem-qa/prompts/upgrade.md`). An outcome may compare with those, and with nothing else from before the upgrade.
-- **Repo rule.** Give each entry two or three repos of the catalog when that many fit, chosen by their `tags`, each with a reason of one line that says what this repo shows that the other ones do not. When only one repo fits, one is fine, and its reason says what it has. Never pick a repo whose Storybook major is more than one below the plan's line. Search GitHub only when no catalog entry fits, and list a repo found there only after `pin.ts` probed it.
+- **Repo rule.** Give each entry two or three repos of the catalog when that many fit, chosen by their `tags`, each with a reason of one line that says what this repo shows that the other ones do not. When only one repo fits, one is fine, and its reason says what it has. When one change comes as several PRs, one for each framework or builder, give the entry one repo for each of them, even when that makes more than three, and let each reason name the framework it tests. Never pick a repo whose Storybook major is more than one below the plan's line. Search GitHub only when no catalog entry fits, and list a repo found there only after `pin.ts` probed it.
+- **Upgrade blockers.** `storybook upgrade` refuses to start on a project below a version floor of the line, such as an old Vite, Vitest, or SvelteKit, which the migration guide names. On such a repo the run first spends its time on getting past the blocker, and no plan check runs before it is past. Check the versions of step 2 against those floors, and list such a repo only for an entry that tests the blocker itself, with a step that says how to get past it.
 - **A reason is a fact you checked.** A repo reason states something the repo has at its pinned commit, such as a `storySort` in its preview file or Vitest 3. Check it with the commands of step 2 before you write it.
 - **Fewest entries.** One entry may cover several PRs when one test shows all of them. Aim for the smallest number of entries that still tests every decision, because the reviewer reads the whole plan at once. There is no fixed limit.
 - **Fewest runs.** A run upgrades one repo and tests up to `Entries per run` entries of one batch on it, and the cost of a batch is its number of runs. `render` sets `Entries per run` to 4, what one run checks within its time budget, and no draft key changes it. A repo with five entries in one batch costs two runs, so move the fifth to another batch or another repo when one fits as well. When two repos fit an entry equally well, take the one that other entries of the same batch already list.
@@ -47,13 +49,13 @@ npm view "storybook@>=11.0.0-0 <11.0.0" version --json
 Take the last version it prints, for example `11.0.0-beta.3`.
 The window starts at the `.0` tag of the minor before the line.
 For a minor line such as 11.1 that is `v11.0.0`.
-For a major line such as 11.0 it is the `.0` tag of the newest minor of the major before, `v10.6.0`, which this lists first:
+For a major line such as 11.0 it is the `.0` tag of the newest minor of the major before, `v10.6.0`, which is the first tag without a suffix that this lists:
 
 ```bash
 git ls-remote --tags --sort=-v:refname origin 'v10.*.0'
 ```
 
-Skip the prerelease tags in that list, such as `v10.6.0-beta.0`, and take the first tag without a suffix.
+The list starts with the prerelease tags of that minor, such as `v10.6.0-beta.0`. Skip them.
 Run from the repository root:
 
 ```bash
@@ -107,6 +109,7 @@ A maintainer marks a PR `qa:skip` when its project gets tested as a whole.
 - Group the rest yourself by feature, from the title, the labels, and the linked issues, and fetch a body only when those are not enough. A group is one feature that its PRs share, such as `wc-docgen`. When no feature ties a PR to others, group it by its area.
 - The source of a group is one line: a public issue that gathers its PRs, written as `[#36000](https://github.com/storybookjs/storybook/issues/36000)`, or `area <Area>`. When the PRs of a feature span areas and no public issue gathers them, name every area: `area Core, area Docs`. `check` reads any line of text here, so this rule is yours to keep.
 - The area is the prefix of the title. `Docs` is the docs addon, not the documentation site, and a PR with the label `documentation` changes the site.
+- The area of a row is copied from the window, and `check --window` refuses any change to it, so it stays as the author typed it: empty for a title without a prefix, `Revert "Docs` for a revert, `Typescript` next to `TypeScript`. Group by what the area means instead: a revert by the area of the PR it reverts, the spellings of one area together, and a PR without an area by its title. Write the source of such a group with the area as it should read, such as `area TypeScript`.
 
 ## Step 4: Write the draft
 
@@ -207,6 +210,7 @@ node ecosystem-qa/qa-plan.ts check ecosystem-qa/plans/11.0.md --window ecosystem
 Run `check` again on this branch, because its catalog is the one the sweep uses.
 The smoke job checks the plan against the window file next to it, so a row that someone deletes or moves by hand fails the plan PR, and so does a plan without its window file.
 Commit the two files alone, with a message that names no PR or issue number.
+Other PRs merge into `qa/plans` while you work, so fetch it again before you push. When it moved, run `git merge origin/qa/plans` on your branch and `check` again, because the catalog may have changed. Never rebase or force-push a branch that has a PR.
 Open the PR against `qa/plans` with the title `Ecosystem QA: Plan for Storybook <line>` and the labels `build` and `qa:skip`, following `.agents/skills/pr/SKILL.md` for the template.
 The body holds:
 
@@ -216,3 +220,23 @@ The body holds:
 
 The body names no PR or issue, neither as `#number` nor as a link, because every reference posts a mention on that PR and the plan holds hundreds.
 Never merge the PR. Merging it starts the sweep, so only the reviewer merges it.
+
+## Update a plan
+
+A plan changes when a newer prerelease moves the end of its window, or when the reviewer asks for other decisions.
+The draft is not in the repository, so make it again from the plan and the window it was rendered from.
+Take both from the branch of the open plan PR, or from `qa/plans` once the plan is merged:
+
+```bash
+git fetch origin qa/plans
+git show origin/qa/plans:ecosystem-qa/plans/11.0.md > /tmp/qa-plan-11.0/old.md
+git show origin/qa/plans:ecosystem-qa/plans/11.0.window.json > /tmp/qa-plan-11.0/old.window.json
+node ecosystem-qa/qa-plan.ts draft /tmp/qa-plan-11.0/old.md --window /tmp/qa-plan-11.0/old.window.json --out /tmp/qa-plan-11.0/draft.json
+```
+
+`draft` exits 1 when the plan is not what `render` writes from that window, which means someone edited it by hand. Then `check --window` names the line.
+For a new end of the window, run step 1 with its tag, then render the draft on the new window.
+`render` names every PR that the draft decides or groups and that the new window holds in another role, and `check` names every new PR without a decision. Decide those in the draft, change what the reviewer asked for, and go on with step 6.
+
+Commit the new plan and window on the branch of the open plan PR, and push to it, so the review goes on in that PR. Replace the output of `check` and the counts in its body.
+When the plan is merged already, open a new PR from `qa/plans` as in step 7, with the title `Ecosystem QA: Update the plan for Storybook <line>`.

@@ -7,7 +7,6 @@ import { CatalogEntry } from './schema.ts';
 import { needsGroup, type Window, type WindowPr } from './window.ts';
 
 const Text = z.string().regex(/^\S(?:[^\n\r]*\S)?$/, 'expected one line of text');
-// `plan.` and the slug make a check id, which may have at most 80 characters.
 const Slug = z
   .string()
   .max(75)
@@ -37,7 +36,6 @@ export const PlanEntry = z.strictObject({
 });
 export type PlanEntry = z.infer<typeof PlanEntry>;
 
-// Every field but the id and the reason is a value of one line of `pin.ts` output, as it prints it.
 export const DiscoveredRepo = z.strictObject({
   id: RepoId,
   repo: CatalogEntry.shape.repo,
@@ -380,11 +378,6 @@ type RawEntry = {
   expected?: string;
 };
 
-/**
- * Read a plan file into its model.
- *
- * @throws {PlanSyntaxError} With the line at which the file stops following the format.
- */
 export const parsePlan = (text: string): Plan => {
   const lines = text.replace(/\n$/, '').split('\n');
   let i = 0;
@@ -700,7 +693,6 @@ const noPrivateLinks: Rule = ({ lines }) =>
   );
 
 const URL_HOST = /\b[a-z][\w+.-]*:\/\/(?:[^\s/@]*@)?([^\s/:?#`'")<>\]]+)/gi;
-// A host without a scheme needs a path after it, so a file name such as `README.md` passes.
 const BARE_HOST = /(?<![\w.@/:-])((?:[a-z0-9-]+\.)+[a-z]{2,})(?=\/)/gi;
 
 const stepsStayOnLocalhost: Rule = ({ plan, at }) =>
@@ -780,7 +772,6 @@ export const checkPlan = (plan: Plan, context: CheckContext): Problem[] => {
   );
 };
 
-// A valid file equals its rendered form, so nothing the parser skipped can stay in it.
 export const checkPlanText = (
   text: string,
   context: CheckContext
@@ -830,7 +821,6 @@ export const planBatches = (plan: Plan): number[] =>
 
 export type PlanRun = { repo: string; part: number; entries: string[] };
 
-// The parts of one repo run in parallel jobs, each upgrading the repo once for its entries.
 export const planRuns = (plan: Plan, batch: number): PlanRun[] => {
   const slugsOfRepo = new Map<string, string[]>();
   for (const entry of plan.entries.filter((candidate) => candidate.batch === batch)) {
@@ -860,10 +850,8 @@ export type PlanDraft = z.infer<typeof PlanDraft>;
 
 export const ENTRIES_PER_RUN = 4;
 
-// The most expensive of 32 static runs on Haiku at low effort. A run of plan entries may cost more.
 export const USD_PER_RUN = 2.59;
 
-// An issue with sub-issues and a QA heading tracks a project, and its PRs share its instructions.
 const trackingIssueOf = (pr: WindowPr) =>
   pr.issues
     .map((issue) =>
@@ -871,11 +859,6 @@ const trackingIssueOf = (pr: WindowPr) =>
     )
     .find((issue) => issue !== null);
 
-/**
- * Build the plan of a window, with the entries and decisions of a draft.
- *
- * @throws {Error} When the draft decides a PR that the window does not hold in that role.
- */
 export const planFromWindow = (window: Window, draft: PlanDraft): Plan => {
   const version = window.to.replace(/^v/, '');
   const [, major, minor] = SEMVER.exec(version) ?? [];

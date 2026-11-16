@@ -1,11 +1,4 @@
 #!/usr/bin/env bash
-# Usage: ecosystem-qa/tools/fork-tier2.sh [--dry] <pins.jsonl>
-#
-# Forks every tier 2 entry of catalog.json that has a push target into storybook-tmp, under the name
-# of that target, and creates its branch qa/base at the commit that pin.ts printed for the repo in
-# <pins.jsonl>. A fork that exists is kept, and a qa/base at that commit is kept. It stops when a
-# repo of that name is not a fork of the entry's repo, or when qa/base is at another commit, and
-# never moves a ref. With --dry it runs only the reads and prints the writes it would make.
 set -euo pipefail
 
 dry=false
@@ -26,7 +19,6 @@ write_gh() {
   fi
 }
 
-# Runs a read and prints its answer, nothing when GitHub answers 404, and fails on any other error.
 read_or_missing() {
   echo "gh $*" >&2
   local out err status=0

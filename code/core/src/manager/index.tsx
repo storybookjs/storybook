@@ -67,8 +67,8 @@ export const Main: FC<{ provider: Provider }> = ({ provider }) => {
             );
 
             // A new theme object would change the emotion theme context on every store commit,
-            // which re-renders every styled component in the manager, the whole sidebar tree
-            // included.
+            // which re-renders every styled component in the manager and strongly
+            // degrades frontend performance.
             const theme = useMemo(() => ensureTheme(state.theme), [state.theme]);
 
             return (

@@ -6,7 +6,7 @@ import { useStorybookApi } from 'storybook/manager-api';
 
 import { CallStates } from '../../instrumenter/types.ts';
 import { PANEL_ID } from '../constants.ts';
-import { usePanelState } from './Panel.tsx';
+import { usePanelState } from './panelStore.ts';
 import { StatusIcon } from './StatusIcon.tsx';
 
 export function PanelTitle() {

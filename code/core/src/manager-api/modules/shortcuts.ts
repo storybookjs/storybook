@@ -267,12 +267,9 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
     async setAddonShortcut(addon: string, shortcut: API_AddonShortcut) {
       const id = `${addon}-${shortcut.actionName}`;
       const previous = addonsShortcuts[id];
-      // The action closure of a tool changes with the story or its globals, so tools re-register
-      // on every story change. The map always takes the latest closure, but the store, which only
-      // holds the key binding, is written when the registration is new or its default binding
-      // changed: every write there re-renders the manager and persists the whole store, and it
-      // would reset a binding the user customised.
       addonsShortcuts[id] = shortcut;
+      // The store holds the key binding, which the user may have customised. A registration writes
+      // it when it is new or its default changed, not to replace the binding with the default.
       const isRegistered =
         !!previous &&
         isEqual(previous.defaultShortcut, shortcut.defaultShortcut) &&

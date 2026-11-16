@@ -1,14 +1,5 @@
 import type { Dispatch, SetStateAction } from 'react';
-import React, {
-  Fragment,
-  memo,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  useSyncExternalStore,
-} from 'react';
+import React, { Fragment, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import {
   FORCE_REMOUNT,
@@ -37,35 +28,21 @@ import { EVENTS } from '../../instrumenter/EVENTS.ts';
 import {
   type Call,
   CallStates,
-  type ControlStates,
   type LogItem,
   type RenderPhase,
   type SyncPayload,
 } from '../../instrumenter/types.ts';
 import { INTERNAL_RENDER_CALL_ID } from '../constants.ts';
-import { InteractionsPanel, type SerializedError } from './InteractionsPanel.tsx';
+import { InteractionsPanel } from './InteractionsPanel.tsx';
 import type { PlayStatus } from './StatusBadge.tsx';
-import { createPanelStore } from './panelStore.ts';
-
-export interface PanelState {
-  status: PlayStatus;
-  controlStates: ControlStates;
-  interactions: ReturnType<typeof getInteractions>;
-  interactionsCount: number;
-  hasException: boolean;
-  pausedAt?: Call['id'];
-  caughtException?: Error;
-  unhandledErrors?: SerializedError[];
-}
-
-const INITIAL_CONTROL_STATES = {
-  detached: false,
-  start: false,
-  back: false,
-  goto: false,
-  next: false,
-  end: false,
-};
+import {
+  INITIAL_CONTROL_STATES,
+  INITIAL_PANEL_STATE,
+  type Interaction,
+  type PanelState,
+  panelStore,
+  usePanelState,
+} from './panelStore.ts';
 
 const playStatusMap: Record<
   Extract<RenderPhase, 'rendering' | 'playing' | 'completed' | 'errored' | 'aborted'>,
@@ -98,9 +75,8 @@ export const getInteractions = ({
   calls: Map<Call['id'], Call>;
   collapsed: Set<Call['id']>;
   setCollapsed: Dispatch<SetStateAction<Set<string>>>;
-  /** Collapse toggles by call id, reused across calls so that equal inputs give equal interactions. */
   toggles?: Map<Call['id'], () => void>;
-}) => {
+}): Interaction[] => {
   const callsById = new Map<Call['id'], Call>();
   const childCallMap = new Map<Call['id'], Call['id'][]>();
   const getToggleCollapsed = (id: Call['id']) => {
@@ -152,6 +128,16 @@ export const getInteractions = ({
   return interactions;
 };
 
+/** Drops the cached collapse toggles of the calls that are no longer in the log. */
+export const pruneToggles = (toggles: Map<Call['id'], () => void>, log: LogItem[]) => {
+  const live = new Set(log.map((item) => item.callId));
+  toggles.forEach((_, id) => {
+    if (!live.has(id)) {
+      toggles.delete(id);
+    }
+  });
+};
+
 export const getPanelState = (
   state: PanelState,
   options: Parameters<typeof getInteractions>[0]
@@ -172,7 +158,7 @@ export const getPanelState = (
     {
       ...state,
       controlStates: INITIAL_CONTROL_STATES,
-      interactions: [] as ReturnType<typeof getInteractions>,
+      interactions: [] as Interaction[],
       interactionsCount: 0,
     }
   );
@@ -229,20 +215,6 @@ const getInternalRenderLogItem = (status: CallStates): LogItem => ({
   status,
   ancestors: [],
 });
-
-export const panelStore = createPanelStore<PanelState>({
-  status: 'rendering',
-  controlStates: INITIAL_CONTROL_STATES,
-  interactions: [],
-  interactionsCount: 0,
-  hasException: false,
-  pausedAt: undefined,
-  caughtException: undefined,
-  unhandledErrors: undefined,
-});
-
-export const usePanelState = () =>
-  useSyncExternalStore(panelStore.subscribe, panelStore.getState, panelStore.getState);
 
 export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>(
   function PanelMemoized({ refId, storyId, storyUrl }) {
@@ -311,9 +283,15 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
             return;
           }
           log.current = [getInternalRenderLogItem(CallStates.DONE), ...payload.logItems];
+          pruneToggles(toggles, log.current);
           set((state) =>
             getPanelState(
-              { ...state, controlStates: payload.controlStates, pausedAt: payload.pausedAt },
+              {
+                ...state,
+                controlStates: payload.controlStates,
+                pausedAt: payload.pausedAt,
+                revision: state.revision + 1,
+              },
               { log: log.current, calls: calls.current, collapsed, setCollapsed, toggles }
             )
           );
@@ -333,16 +311,7 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
           if (event.newPhase === 'rendering') {
             log.current = [getInternalRenderLogItem(CallStates.ACTIVE)];
             calls.current.set(INTERNAL_RENDER_CALL_ID, getInternalRenderCall(storyId));
-            set({
-              status: 'rendering',
-              controlStates: INITIAL_CONTROL_STATES,
-              pausedAt: undefined,
-              interactions: [],
-              interactionsCount: 0,
-              hasException: false,
-              caughtException: undefined,
-              unhandledErrors: undefined,
-            });
+            set((state) => ({ ...INITIAL_PANEL_STATE, revision: state.revision }));
           } else {
             set((state) => {
               const status =
@@ -419,7 +388,7 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
     );
     // Stable props keep the memoized panel from re-rendering its whole list on every commit.
     const { detached, start, back, goto, next, end } = controlStates;
-    const panelControlStates = useMemo<ControlStates>(
+    const panelControlStates = useMemo(
       () => ({ detached: !!refId || detached, start, back, goto, next, end }),
       [refId, detached, start, back, goto, next, end]
     );

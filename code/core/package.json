@@ -1,6 +1,6 @@
 {
   "name": "storybook",
-  "version": "11.0.0-beta.2",
+  "version": "11.0.0-beta.3",
   "description": "Storybook: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -246,6 +246,10 @@
     },
     "./theming": {
       "types": "./dist/theming/create.d.ts",
+      "browser": {
+        "code": "./src/theming/emotion.ts",
+        "default": "./dist/theming/emotion.js"
+      },
       "code": "./src/theming/create.ts",
       "default": "./dist/theming/create.js"
     },

@@ -1,10 +1,26 @@
 import { describe, expect, it, vi } from 'vitest';
 
+import store2 from 'store2';
+
 import { Addon_TypesEnum as types } from 'storybook/internal/types';
 
 import { init as initAddons } from '../modules/addons';
 import Store from '../store';
 import { createLaggingUpstream } from '../test-utils/store';
+
+vi.mock('store2', () => ({
+  default: {
+    local: {
+      set: vi.fn(),
+      get: vi.fn(),
+    },
+    session: {
+      set: vi.fn(),
+      get: vi.fn(),
+    },
+    _: { fn: () => {} },
+  },
+}));
 
 const PANELS = {
   a11y: {
@@ -226,6 +242,18 @@ describe('Addons API', () => {
       await api.setAddonState('counter', (s) => ({ ...s, count: 0 }));
 
       expect(setState).not.toHaveBeenCalled();
+    });
+
+    it('writes an equal state when persistence is requested', async () => {
+      const current = { open: true };
+      const setState = vi.fn().mockImplementation((patch, callback) => callback());
+      const store = new Store({ setState, getState: () => ({ addons: { 'my-addon': current } }) });
+      const { api } = initAddons({ provider, store });
+
+      await api.setAddonState('my-addon', { open: true }, { persistence: 'session' });
+
+      expect(setState).toHaveBeenCalledTimes(1);
+      expect(store2.session.set).toHaveBeenCalled();
     });
 
     it('writes a changed state', async () => {

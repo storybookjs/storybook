@@ -25,6 +25,9 @@ export const initialA11yState: A11yState = {
 let state = initialA11yState;
 const listeners = new Set<() => void>();
 
+// TODO(Storybook 12): Workaround. Delete this store once the manager adopts a UniversalStore or
+// OSA based alternative for addon-local state.
+// Context: https://github.com/storybookjs/storybook/pull/37391
 /**
  * Only the context provider, the panel and the tab title read this state. A write to the shared
  * addon state would go through the manager store and re-render the whole manager, and this state

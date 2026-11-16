@@ -94,6 +94,7 @@
   - [`core/module-graph` query aliases removed](#coremodule-graph-query-aliases-removed)
   - [ExternalDocs and ExternalDocsContainer are removed](#externaldocs-and-externaldocscontainer-are-removed)
   - [CSF `.story` annotations removed](#csf-story-annotations-removed)
+  - [Addon A11y: Removed anomaly vision simulations](#addon-a11y-removed-anomaly-vision-simulations)
   - [`argTypeTargetsV7` feature flag removed](#argtypetargetsv7-feature-flag-removed)
   - [`disallowImplicitActionsInRenderV8` feature flag removed](#disallowimplicitactionsinrenderv8-feature-flag-removed)
   - [JavaScript init templates use JSDoc types instead of `propTypes`](#javascript-init-templates-use-jsdoc-types-instead-of-proptypes)
@@ -779,7 +780,7 @@ import { Button, Modal } from 'storybook/internal/components';
 
 ### Theming imports
 
-End users who only create a theme keep `import { create, themes } from 'storybook/theming'`. That module is the same as `storybook/theming/create`. `ThemeVars` and `ThemeVarsPartial` are exported there too.
+End users who only create a theme can keep `import { create, themes } from 'storybook/theming'`. `ThemeVars` and `ThemeVarsPartial` are exported there too. In Node, `storybook/theming` resolves to the same lightweight module as `storybook/theming/create`, without loading React or Emotion. Use `storybook/theming/create` explicitly when you need that lightweight entry in the browser too.
 
 ```ts
 import { create, themes, type ThemeVars, type ThemeVarsPartial } from 'storybook/theming';
@@ -792,7 +793,7 @@ Addon authors who build manager UI or docs blocks move Emotion and theme-data im
 +import { styled, css, jsx, useTheme, ThemeProvider, color } from 'storybook/theming/emotion';
 ```
 
-In the manager, `storybook/theming` still resolves to the Emotion implementation at runtime, so already-published manager addons keep running. Update the import anyway. TypeScript only knows `create`, `themes`, `ThemeVars`, and `ThemeVarsPartial` on `storybook/theming`, so importing `styled`, `css`, `jsx`, `useTheme`, or the other Emotion and theme-data helpers from that module is a type error. Preview and docs blocks have no runtime alias, so the same old import fails there at runtime.
+For backwards runtime compatibility, `storybook/theming` resolves to the same Emotion implementation as `storybook/theming/emotion` in both the manager and browser previews, including docs blocks. The browser compatibility mapping does not affect Node imports. Already-published addons can keep their existing imports. The TypeScript API of `storybook/theming` remains limited to `create`, `themes`, `ThemeVars`, and `ThemeVarsPartial`, so addon source compiled against Storybook 11 must import Emotion and theme-data helpers from `storybook/theming/emotion`.
 
 ### `storybook dev` now blocks remote iframe embedding
 
@@ -2667,6 +2668,16 @@ If the value is not a static object, move the fields yourself. This includes a v
 ```
 
 `storybook migrate csf-2-to-3` still lifts a static `Story.story = { ... }` into a CSF 3 story object. It does not rewrite the dynamic cases above. The old `csf-hoist-story-annotations` codemod no longer ships.
+
+### Addon A11y: Removed anomaly vision simulations
+
+The Vision Simulator was updated to match the simulations offered by Chrome DevTool, to use the best available academic research for each simulator and to get rid of redundant entries. The `protanomaly`, `deuteranomaly` and `tritanomaly` entries are less severe forms of `protanopia`, `deuteranopia` and `tritanopia`, so they were removed.
+
+The `tritanopia` simulator is available with both the Brettel et al. (1997) and Machado et al. (2009) projections. Brettel et al. is the most reliable simulator for tritanopia. Machado et al. matches the implementation in Chrome DevTools.
+
+The `achromatopsia` simulator was optimized for sRGB monitors. `protanopia`, and `deuteranopia` now use the Machado et al. implementation, which is the best available for this type of deficiency.
+
+`storybook upgrade` stops when a preview or story file sets one of the removed values through the `vision` global. No automigration is provided, because the replacement renders differently: remove the global, or replace it with a new value. At runtime, an unsupported value produces a warning. Existing visual snapshots that use any of these `globals.vision` values will therefore produce intentional diffs.
 
 ### `argTypeTargetsV7` feature flag removed
 

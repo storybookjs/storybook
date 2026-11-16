@@ -42,6 +42,10 @@ export const WithDescription = meta.story({
   args: { description: 'Handheld device' },
 });
 
+export const WithMultiLineDescription = meta.story({
+  args: { description: 'First line\nSecond line' },
+});
+
 export const WithChildren = meta.story({
   args: {
     children: (

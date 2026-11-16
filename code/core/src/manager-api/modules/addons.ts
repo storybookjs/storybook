@@ -135,8 +135,12 @@ export const init: ModuleFn<SubAPI, SubState> = ({ provider, store, fullAPI }): 
           const next = merger(current);
           // Addons tend to write their state again on every story change, mostly unchanged. A
           // write of an equal state would still re-render the whole manager and hand consumers
-          // a new object.
-          return isEqual(next, current) ? {} : { addons: { ...s.addons, [addonId]: next } };
+          // a new object. A write that asks for persistence goes through: the value may not be
+          // in storage yet.
+          const persisted = (options?.persistence ?? 'none') !== 'none';
+          return !persisted && isEqual(next, current)
+            ? {}
+            : { addons: { ...s.addons, [addonId]: next } };
         }, options)
         .then(() => api.getAddonState(addonId));
     },

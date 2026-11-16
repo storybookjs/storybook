@@ -83,6 +83,7 @@ This file owns Storybook-specific editorial, MDX component, frontmatter, and val
 
 - Internal: relative paths to `.mdx` files, e.g. `[text](../path/to/file.mdx)`. `[auto]`
 - External: full URLs, always wrapped in markdown link syntax (no bare URLs in prose). `[auto]`
+- "More … resources" lists link to each skill page (`ai/skills/setup.mdx`, `ai/skills/ui-workflow.mdx`, and so on), never to the skills index (`ai/skills/index.mdx`). `[auto]`
 
 ## Lists
 

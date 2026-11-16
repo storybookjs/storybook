@@ -1,7 +1,7 @@
 import { fileURLToPath } from 'node:url';
 
 import type { Plugin } from 'vitest/config';
-import { configDefaults, mergeConfig } from 'vitest/config';
+import { defaultExclude, mergeConfig } from 'vitest/config';
 import type { ViteUserConfig } from 'vitest/config';
 import type {} from '@vitest/browser-playwright';
 
@@ -185,9 +185,10 @@ const createComponentTestTransformPlugin = (presets: Presets, configDir: string)
 // segment. So `**/node_modules/**` does not apply to story globs outside the root, such as
 // `../../packages/ui/**/*.stories.tsx` in a monorepo, and Vitest crawls every `node_modules` below
 // them. Each exclude that starts with `**/` is also added after the leading `../` segments of such
-// a glob, so it matches every directory below them, as it does inside the root.
+// a glob, so it matches every directory below them, as it does inside the root. Globs on another
+// drive (Windows) are out of scope: their relative path is absolute, so they get no rebased excludes.
 const getTestExclude = (userExclude: string[] | undefined, includeStories: string[]) => {
-  const exclude = userExclude ?? [...configDefaults.exclude];
+  const exclude = userExclude ?? defaultExclude;
 
   const parentPrefixes = new Set(
     includeStories.flatMap((story) => story.match(/^(?:\.\.\/)+/) ?? [])

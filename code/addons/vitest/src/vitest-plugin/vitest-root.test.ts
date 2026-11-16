@@ -2,7 +2,7 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { configDefaults, mergeConfig } from 'vitest/config';
+import { defaultExclude, mergeConfig } from 'vitest/config';
 import type { InlineConfig } from 'vitest/node';
 
 import { validateConfigurationFiles } from 'storybook/internal/common';
@@ -123,7 +123,7 @@ describe('test exclude', () => {
   it("keeps Vitest's default exclude when the user sets none", async () => {
     const { test } = await getPluginConfig(PACKAGE_ROOT);
 
-    expect(test.exclude).toEqual([...configDefaults.exclude, '**/*.mdx']);
+    expect(test.exclude).toEqual([...defaultExclude, '**/*.mdx']);
   });
 
   it("uses the user's exclude instead of Vitest's default", async () => {

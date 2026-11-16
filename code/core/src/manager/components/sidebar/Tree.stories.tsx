@@ -1169,6 +1169,48 @@ export const StickyAncestorsDark: Story = {
   globals: { sb_theme: 'dark' },
 };
 
+export const StickyRowsKeepStatusPosition: Story = {
+  parameters: StickyAncestors.parameters,
+  render: StickyAncestors.render,
+  args: {
+    refId: DEFAULT_REF_ID,
+    allStatuses: {
+      [stickyStoryId]: {
+        'storybook/vitest': {
+          storyId: stickyStoryId,
+          typeId: 'storybook/vitest',
+          value: 'status-value:error',
+          title: 'Vitest',
+          description: 'Test failed',
+        },
+      },
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const statusInset = (row: Element, statusSelector: string) =>
+      row.getBoundingClientRect().right -
+      row.querySelector(statusSelector)!.getBoundingClientRect().right;
+
+    const scrollingRow = await waitFor(() => {
+      const row = canvasElement.querySelector(`[data-item-id="${stickyStoryId}"]`);
+      expect(row?.querySelector('[role="status"]')).toBeTruthy();
+      return row!;
+    });
+    const stickyRows = await waitFor(() => {
+      const rows = [...canvasElement.querySelectorAll('[data-sticky-item-id]')].filter((row) =>
+        row.querySelector('[data-sticky-status]')
+      );
+      expect(rows.length).toBeGreaterThan(0);
+      return rows;
+    });
+
+    const expectedInset = statusInset(scrollingRow, '[role="status"]');
+    for (const stickyRow of stickyRows) {
+      expect(statusInset(stickyRow, '[data-sticky-status]')).toBe(expectedInset);
+    }
+  },
+};
+
 /**
  * Arrow-up navigation moves focus through the ancestors of the selected row, up into the rows the
  * sticky stack covers.

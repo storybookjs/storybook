@@ -57,9 +57,10 @@ const StickyRow = styled.button<{ $level: number; $isRoot: boolean }>(
     border: 0,
     margin: 0,
     paddingBlock: 0,
-    paddingInlineEnd: 8,
+    // The trailing content (context menu button, status icons) mirrors TreeNode's layout, so
+    // that a row's content does not shift sideways when it becomes sticky or is hovered.
+    paddingInlineEnd: 2,
     paddingInlineStart: `calc(${$level} * ${TREE_INDENT_STEP}px + ${TREE_CONTENT_INSET}px)`,
-    gap: 6,
     cursor: 'pointer',
     textAlign: 'left',
     font: 'inherit',
@@ -111,6 +112,7 @@ const StickyMenuButton = styled.span(({ theme }) => ({
   flexShrink: 0,
   width: 28,
   height: 28,
+  margin: -2,
   borderRadius: 4,
   padding: 0,
   color: 'inherit',
@@ -155,6 +157,7 @@ const StickyRowIcon = styled.span({
 // sideways as sticky rows replace each other during a scroll.
 const StickyLabel = styled.span(({ theme }) => ({
   ...truncatedLabel,
+  marginInlineStart: 6,
   position: 'relative',
   fontSize: theme.typography.size.s2,
 }));

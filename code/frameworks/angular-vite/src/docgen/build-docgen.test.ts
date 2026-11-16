@@ -490,7 +490,7 @@ describe('buildDocgenPayload', () => {
       expect(Object.keys(payload?.subcomponents ?? {})).toEqual(['Icon', 'Again']);
       expect(payload?.subcomponents?.Icon).toMatchObject({
         name: 'IconComponent',
-        path: entry.importPath,
+        path: `./${relative(process.cwd(), ICON_PATH)}`,
         renderer: 'angular',
         argTypes: {},
       });
@@ -567,6 +567,7 @@ describe('buildDocgenPayload', () => {
 
       expect(payload?.error?.name).toBe('AngularComponentMetaNotFound');
       expect(payload?.error?.message).toContain('./does-not-exist.component');
+      expect(payload?.error?.message).toContain('button.internal-broken-import.ts');
       // The story file only names `internal.config.component`; the import statement that fails to
       // resolve is written in button.internal-broken-import.ts, not here.
       expect(payload?.error?.message).not.toContain('The story file imports');

@@ -27,6 +27,7 @@ describe('resolveMetaComponent', () => {
       {
         localName: 'ButtonComponent',
         importId: './button.component',
+        importer: storyPath,
         exportName: 'ButtonComponent',
         path: join(fixtures, 'button.component.ts'),
       },
@@ -39,6 +40,7 @@ describe('resolveMetaComponent', () => {
       {
         localName: 'Btn',
         importId: './button.component',
+        importer: storyPath,
         exportName: 'ButtonComponent',
         path: join(fixtures, 'button.component.ts'),
       },
@@ -51,6 +53,7 @@ describe('resolveMetaComponent', () => {
       {
         localName: 'ButtonComponent',
         importId: './button.component',
+        importer: storyPath,
         exportName: 'ButtonComponent',
         path: join(fixtures, 'button.component.ts'),
       },
@@ -62,6 +65,7 @@ describe('resolveMetaComponent', () => {
       {
         localName: 'Button',
         importId: './default-button.component',
+        importer: storyPath,
         exportName: 'default',
         path: join(fixtures, 'default-button.component.ts'),
       },
@@ -75,6 +79,7 @@ describe('resolveMetaComponent', () => {
       {
         localName: 'AliasedButtonComponent',
         importId: '@ui/aliased-button.component',
+        importer: storyPath,
         exportName: 'AliasedButtonComponent',
         path: join(fixtures, 'aliased', 'aliased-button.component.ts'),
       },
@@ -94,6 +99,7 @@ describe('resolveMetaComponent', () => {
       {
         localName: 'ButtonComponent',
         importId: './nope.component',
+        importer: storyPath,
         exportName: 'ButtonComponent',
         path: undefined,
       },
@@ -106,6 +112,7 @@ describe('resolveMetaComponent', () => {
       {
         localName: 'ButtonComponent',
         importId: './button.component',
+        importer: storyPath,
         exportName: 'ButtonComponent',
         path: join(fixtures, 'button.component.ts'),
       },
@@ -119,6 +126,7 @@ describe('resolveMetaComponent', () => {
       {
         localName: 'ButtonComponent',
         importId: './button.component',
+        importer: join(fixtures, 'button.internal.ts'),
         exportName: 'ButtonComponent',
         path: join(fixtures, 'button.component.ts'),
       },
@@ -176,6 +184,7 @@ describe('resolveStoryComponents', () => {
         component: {
           localName: 'ButtonComponent',
           importId: './button.component',
+          importer: storyPath,
           exportName: 'ButtonComponent',
           path: join(fixtures, 'button.component.ts'),
         },

@@ -21,7 +21,7 @@ import { bwrap } from '@ai-hero/sandcastle/sandboxes/bwrap';
 import { docker } from '@ai-hero/sandcastle/sandboxes/docker';
 import { noSandbox } from '@ai-hero/sandcastle/sandboxes/no-sandbox';
 import { seatbelt } from '@ai-hero/sandcastle/sandboxes/seatbelt';
-import { join, relative, resolve } from 'pathe';
+import { basename, dirname, join, relative, resolve } from 'pathe';
 import { z } from 'zod';
 
 import { checksFor, renderChecklist } from './checks.ts';
@@ -128,7 +128,10 @@ const UPGRADE_ENV = {
 
 // The real path, because git writes real paths into a worktree's gitdir pointer and the sandboxes
 // bind-mount whatever path they are given: on macOS tmpdir() is a symlink under /private.
-const scratchDir = () => join(realpathSync(tmpdir()), 'ecosystem-qa');
+const realPathOf = (path: string): string =>
+  existsSync(path) ? realpathSync(path) : join(realPathOf(dirname(path)), basename(path));
+
+const scratchDir = () => join(realPathOf(tmpdir()), 'ecosystem-qa');
 
 const HOST_OS: Partial<Record<NodeJS.Platform, Os>> = {
   linux: 'linux',
@@ -280,7 +283,7 @@ const parseRequest = () => {
   };
   // Outside the monorepo: yarn and npm read every .yarnrc and .npmrc above the clone, and a native
   // sandbox denies the monorepo's own config files to the agent.
-  const cloneDir = resolve(values['clone-dir'] ?? join(scratchDir(), 'work', entry.id));
+  const cloneDir = realPathOf(resolve(values['clone-dir'] ?? join(scratchDir(), 'work', entry.id)));
 
   return {
     request,

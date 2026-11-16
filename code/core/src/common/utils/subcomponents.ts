@@ -1,6 +1,7 @@
 import type { CsfFile } from 'storybook/internal/csf-tools';
 
-import { type E, type Node, isStringLiteral } from '../../csf-tools/estree/ast.ts';
+import { type E, type Node } from '../../csf-tools/estree/ast.ts';
+import { staticKey } from '../../csf-tools/estree/nodes.ts';
 
 export type DeclaredSubcomponent = {
   componentName: string;
@@ -25,7 +26,8 @@ export function extractDeclaredSubcomponents(csf: CsfFile): DeclaredSubcomponent
       return [];
     }
 
-    const name = getObjectKeyName(property.key);
+    // A computed key, as in `{ [label]: Icon }`, has no name that is known before the story runs.
+    const name = staticKey(property);
     const directComponentName = getComponentExpressionName(property.value);
     const componentExpression = unwrapSubcomponentNode(property.value, csf.program);
     const componentName = getComponentExpressionName(componentExpression) ?? directComponentName;
@@ -81,18 +83,6 @@ function unwrapSubcomponentNode(
     }
 
     return current;
-  }
-
-  return undefined;
-}
-
-function getObjectKeyName(key: Node) {
-  if (key.type === 'Identifier') {
-    return key.name;
-  }
-
-  if (isStringLiteral(key)) {
-    return key.value;
   }
 
   return undefined;

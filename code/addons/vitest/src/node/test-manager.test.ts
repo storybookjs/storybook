@@ -231,6 +231,13 @@ describe('TestManager', () => {
       expect(args).toMatchObject({ root, config: path.join(root, '.storybook/vitest.config.ts') });
     });
 
+    it('starts from the package root when no config uses the plugin, as before', async () => {
+      const { root, args } = await startIn({ '.storybook/vite.config.ts': 'export default {};' });
+
+      expect(args.root).toBe(root);
+      expect(args).not.toHaveProperty('config');
+    });
+
     it('keeps a config in the package that uses the plugin, as before', async () => {
       const { root, args } = await startIn({
         '.storybook/vitest.config.ts': plugin,

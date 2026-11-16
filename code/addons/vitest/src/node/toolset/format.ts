@@ -491,6 +491,10 @@ function formatRunError(error: Extract<TestRunData, { status: 'error' }>['error'
       lines.push(cause.message);
     }
   }
+  if (lines.length > 1) {
+    // A summary that ends in a newline would otherwise leave two blank lines before its cause.
+    lines[0] = lines[0].trimEnd();
+  }
   return lines.join('\n\n');
 }
 

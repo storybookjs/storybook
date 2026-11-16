@@ -96,8 +96,8 @@ export class VitestManager {
     ];
 
     // The Storybook config dir itself comes last (e.g. `.storybook/vitest.config.ts`), so a config
-    // found in the package or above it keeps winning. Such a config is passed to Vitest with the
-    // package root as its root, as `vitest --config .storybook/vitest.config.ts` run there would.
+    // found in the package or above it keeps winning. Such a config is passed to Vitest as its
+    // config, with the package root as its root.
     const potentialConfigFileLocations = [
       ...walk.up(packageRoot || process.cwd(), { last: getProjectRoot() }),
       ...(configDir ? [resolve(configDir)] : []),
@@ -114,7 +114,10 @@ export class VitestManager {
           last: getProjectRoot(),
         });
         if (maybe && existsSync(maybe)) {
-          firstVitestConfig ??= dirname(maybe);
+          // Only the package and the folders above it give the fallback root, as before.
+          if (!configDir || location !== resolve(configDir)) {
+            firstVitestConfig ??= dirname(maybe);
+          }
           const content = readFileSync(maybe, 'utf8');
           if (content.includes('storybookTest') || content.includes('@storybook/addon-vitest')) {
             if (configDir && location === resolve(configDir)) {

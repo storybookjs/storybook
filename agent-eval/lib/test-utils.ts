@@ -225,9 +225,8 @@ export function expectNoDisplayReview(): void {
   ).not.toMatch(/[?&]path=\/review\//);
 }
 
-// The agent runs the tests of what it changed: a \`test-run\` call with \`changed\` (the workflow's
-// default after a change) or with story \`files\`. A run of every story alone passes the other
-// assertions, but it is the slow path these forms replace.
+// For a request to test or fix one component (810, 811): a \`test-run\` call with \`changed\` or
+// with story \`files\`. A run of every story alone also tests it, but is not the run that was asked for.
 export function expectFocusedTestRun(): void {
   const calls = getWorkflowCalls('test-run');
   expect(

@@ -104,6 +104,20 @@ describe('init: the skills step', () => {
     expect(installSkills).toHaveBeenCalledWith(expect.objectContaining({ testSupported: true }));
   });
 
+  it('falls back to the selected test feature when the main config cannot be read', async () => {
+    vi.mocked(loadMainConfig).mockRejectedValue(new Error('cannot load main.ts'));
+
+    await initiateWith(Feature.DOCS, Feature.TEST, Feature.AI);
+    expect(installSkills).toHaveBeenLastCalledWith(
+      expect.objectContaining({ testSupported: true })
+    );
+
+    await initiateWith(Feature.DOCS, Feature.AI);
+    expect(installSkills).toHaveBeenLastCalledWith(
+      expect.objectContaining({ testSupported: false })
+    );
+  });
+
   it('installs nothing without the AI feature', async () => {
     await initiateWith(Feature.DOCS, Feature.TEST);
 

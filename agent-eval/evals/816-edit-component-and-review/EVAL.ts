@@ -36,7 +36,6 @@ describe('editing ReviewCard and creating the review the user asks for', () => {
     expectStoryDiscoveryBeforeReview();
   });
 
-
   describe('depending on the current agent and integration', () => {
     const { integration } = getEvalContext();
 

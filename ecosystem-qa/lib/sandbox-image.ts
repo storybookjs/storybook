@@ -1,0 +1,35 @@
+import { execFileSync } from 'node:child_process';
+import { createRequire } from 'node:module';
+
+import { z } from 'zod';
+
+export const PLAYWRIGHT_LABEL = 'org.js.storybook.ecosystem-qa.playwright';
+
+const Labels = z.record(z.string(), z.string()).nullable();
+
+// The evidence tools load this package from the mounted node_modules and launch the browsers of the
+// image, and a Playwright of another version finds no browser there.
+export const playwrightProblem = (
+  image: string,
+  label: string | undefined,
+  installed: string
+): string | undefined => {
+  if (label === installed) {
+    return undefined;
+  }
+  const built =
+    label === undefined ? `has no ${PLAYWRIGHT_LABEL} label` : `has Playwright ${label}`;
+  return `The image ${image} ${built}, and ecosystem-qa has Playwright ${installed}. Build the image again as ecosystem-qa/README.md says.`;
+};
+
+export const sandboxImageProblem = (image: string): string | undefined => {
+  const labels = Labels.parse(
+    JSON.parse(
+      execFileSync('docker', ['image', 'inspect', '--format', '{{json .Config.Labels}}', image], {
+        encoding: 'utf8',
+      })
+    )
+  );
+  const installed: string = createRequire(import.meta.url)('playwright/package.json').version;
+  return playwrightProblem(image, labels?.[PLAYWRIGHT_LABEL], installed);
+};

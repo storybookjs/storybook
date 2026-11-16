@@ -254,6 +254,12 @@ Start the `Ecosystem QA` workflow by hand and pick the repos, version, engines a
 `repo` takes catalog ids separated by commas, and `owned`, `tier1` or `tier2` for every repo of that class, so `owned,tier1,tier2` with `linux,windows` is a whole static sweep in one run.
 `plan.ts` turns the inputs into one job for each repo, operating system and engine, and a repo runs on Windows only when the catalog marks it `windows`.
 Linux runs the agent in `docker()`; Windows runs it with `noSandbox()`, and the API key is the only secret in that job.
+Before the runners start, the `image` job names the sandbox image by a hash of the Dockerfile, the two agent CLI versions and the runner's uid and gid, and builds and pushes it to `ghcr.io/storybookjs/ecosystem-qa-sandbox` only when no image has that tag yet.
+It prints the image with its digest, and each Linux runner pulls that digest without a login and tags it `sb-ecosystem-qa`.
+When the pull fails, or the `image` job failed, the runner builds the image itself as before, so a registry outage only costs time.
+The package is private when the first push creates it, and the pull fails until a person makes it public in the package settings.
+`run.ts` reads the image's `org.js.storybook.ecosystem-qa.playwright` label before it clones, and ends the run when that version is not the Playwright of the workspace, because the evidence tools would find no browser in the image.
+The Dockerfile takes that version as `PLAYWRIGHT_VERSION` and pins the base image by `PLAYWRIGHT_DIGEST`, and the build fails when the two disagree; a Playwright upgrade changes both and the `playwright` pin in `package.json`.
 The agent keys live in the `ecosystem-qa` environment, and the push token in `ecosystem-qa-file`, which only the filing job enters.
 
 A Claude Code run in the Docker sandbox on Linux with `ANTHROPIC_API_KEY` keeps the key out of the sandbox.

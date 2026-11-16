@@ -309,26 +309,8 @@ function formatChangedConfigFiles(changed: TestRunSelection['changed']): string[
   ];
 }
 
-// The likely cause is named only when no error could explain the gap instead.
-function ranNote(ran: number, selected: number, unhandledErrors: number): string {
-  if (ran >= selected) {
-    return '';
-  }
-  const cause =
-    unhandledErrors > 0
-      ? ''
-      : ran === 0
-        ? ', they are excluded from tests (for example by tags)'
-        : ', the others are excluded from tests (for example by tags)';
-  return `; ${ran === 0 ? 'none' : `only ${ran}`} ran${cause}`;
-}
-
-// One line: what each form matched, then what that selected, counted against what actually ran.
-function formatSelection(
-  selection: TestRunSelection,
-  ranStoryIds: Set<string>,
-  result: TestRunResult
-): string | undefined {
+// One line: what each form matched, then what that selected.
+function formatSelection(selection: TestRunSelection): string | undefined {
   const parts: string[] = [];
   if (selection.files) {
     const { filters, storyFiles } = selection.files;
@@ -349,8 +331,7 @@ function formatSelection(
   if (selected === undefined) {
     return `${parts.join('; ')}: selected every story.`;
   }
-  const ran = (result.storyIds ?? []).filter((id) => ranStoryIds.has(id)).length;
-  return `${parts.join('; ')}: selected ${pluralize(selected, 'story', 'stories')}${ranNote(ran, selected, result.unhandledErrors.length)}.`;
+  return `${parts.join('; ')}: selected ${pluralize(selected, 'story', 'stories')}.`;
 }
 
 const A11Y_GUIDANCE =
@@ -386,19 +367,8 @@ function formatResultSection(
         ? 'No component tests ran.'
         : `Passed: ${pluralize(passed, 'component test')} passed.`;
 
-  // Skipped tests are reported too, as `status-value:unknown`; only a verdict means a story ran.
-  const ranStoryIds = new Set(
-    result.componentTestStatuses
-      .filter(
-        (status) =>
-          isPassing(status) || isFailing(status) || status.value === 'status-value:warning'
-      )
-      .map((status) => status.storyId)
-  );
   const lines = [
-    ...[selection && formatSelection(selection, ranStoryIds, result)].filter(
-      (line): line is string => Boolean(line)
-    ),
+    ...[selection && formatSelection(selection)].filter((line): line is string => Boolean(line)),
     ...formatChangedConfigFiles(selection?.changed),
     ...notFound,
     verdict,
@@ -477,19 +447,13 @@ function formatNoStories(
   ctx: ToolsetCtx
 ): string {
   if (notFoundMessages.length > 0) {
-    // Vitest's filters select test files only; a component file selects nothing here either.
-    const filterHint =
-      selection?.files?.storyFiles === 0
-        ? `\nFile arguments match story files only, by their path relative to ${code(process.cwd())}. To test the stories that depend on a changed file, use ${argument(ctx, '--changed', 'changed: true')}.`
-        : '';
     return `No stories found matching the provided input.
 
-${notFoundMessages.join('\n')}${filterHint}`;
+${notFoundMessages.join('\n')}`;
   }
   if (selection?.files?.storyFiles === 0) {
     // Only under `changed`, which passes with no tests, as in Vitest; otherwise it failed above.
-    return `No story files found for ${selection.files.filters.map((filter) => code(displayPath(filter))).join(', ')}, so no tests ran.
-File arguments match story files only, by their path relative to ${code(process.cwd())}. To test the stories that depend on a changed file, use ${argument(ctx, '--changed', 'changed: true')} without file arguments.`;
+    return `No story files found for ${selection.files.filters.map((filter) => code(displayPath(filter))).join(', ')}, so no tests ran.`;
   }
   if (selection?.changed) {
     const what = `${

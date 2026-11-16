@@ -476,44 +476,6 @@ Failed: 1 argument not used; 1 component test passed.
 Accessibility: not checked.`);
     });
 
-    it('counts only the selected stories that got a verdict, without blaming tags for an error', async () => {
-      const statuses = [
-        componentTest('button--primary', 'status-value:success'),
-        {
-          ...componentTest('button--skipped', 'status-value:success'),
-          value: 'status-value:unknown',
-        },
-      ];
-      const selection = { files: { filters: ['Button'], storyFiles: 1 }, storyCount: 3 };
-      const storyIds = ['button--primary', 'button--secondary', 'button--skipped'];
-      vi.mocked(runStoryTests).mockResolvedValue({
-        ...completed({
-          storyIds,
-          componentTestCount: { success: 1, error: 0 },
-          componentTestStatuses: statuses,
-        }),
-        selection,
-      } as TestRunOutput);
-
-      expect((await runTests()).markdown).toContain(
-        '1 story file matches `Button`: selected 3 stories; only 1 ran, the others are excluded from tests (for example by tags).'
-      );
-
-      vi.mocked(runStoryTests).mockResolvedValue({
-        ...completed({
-          storyIds,
-          componentTestCount: { success: 1, error: 0 },
-          componentTestStatuses: statuses,
-          unhandledErrors: [{ name: 'SyntaxError', message: 'Unexpected token' }],
-        }),
-        selection,
-      } as TestRunOutput);
-
-      expect((await runTests()).markdown).toContain(
-        '1 story file matches `Button`: selected 3 stories; only 1 ran.'
-      );
-    });
-
     it('passes a focused run in which none of the selected stories ran, as Vitest does with skipped tests', async () => {
       vi.mocked(runStoryTests).mockResolvedValue({
         ...completed({ storyIds: ['button--primary', 'button--secondary'] }),
@@ -525,12 +487,12 @@ Accessibility: not checked.`);
       expect(outcome.ok).toBe(true);
       expect(outcome.markdown).toBe(`## Result
 
-1 story file matches \`Button\`: selected 2 stories; none ran, they are excluded from tests (for example by tags).
+1 story file matches \`Button\`: selected 2 stories.
 No component tests ran.
 Accessibility: not checked.`);
     });
 
-    it('fails when no story file matches, pointing a component file to changed', async () => {
+    it('fails when no story file matches', async () => {
       vi.mocked(runStoryTests).mockResolvedValue({
         status: 'no-stories',
         notFoundMessages: ['No story files found for `src/Button.tsx`.'],
@@ -542,8 +504,7 @@ Accessibility: not checked.`);
       expect(outcome.ok).toBe(false);
       expect(outcome.markdown).toBe(`No stories found matching the provided input.
 
-No story files found for \`src/Button.tsx\`.
-File arguments match story files only, by their path relative to \`${process.cwd()}\`. To test the stories that depend on a changed file, use \`--changed\`.`);
+No story files found for \`src/Button.tsx\`.`);
     });
 
     it('passes when no story changed, with what to try next', async () => {
@@ -588,8 +549,9 @@ To test more, pass story files.`);
       const outcome = await runTests();
 
       expect(outcome.ok).toBe(true);
-      expect(outcome.markdown).toBe(`No story files found for \`src/Button.tsx\`, so no tests ran.
-File arguments match story files only, by their path relative to \`${process.cwd()}\`. To test the stories that depend on a changed file, use \`--changed\` without file arguments.`);
+      expect(outcome.markdown).toBe(
+        `No story files found for \`src/Button.tsx\`, so no tests ran.`
+      );
     });
 
     it('says when none of the stories the other forms selected changed', async () => {

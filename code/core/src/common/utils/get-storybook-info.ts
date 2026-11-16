@@ -40,6 +40,7 @@ export const rendererPackages: Record<string, SupportedRenderer> = {
   // community (outside of monorepo)
   'storybook-framework-qwik': SupportedRenderer.QWIK,
   'storybook-solidjs-vite': SupportedRenderer.SOLID,
+  '@storybook-astro/renderer': SupportedRenderer.ASTRO,
 };
 
 export const frameworkPackages: Record<string, SupportedFramework> = {
@@ -67,6 +68,7 @@ export const frameworkPackages: Record<string, SupportedFramework> = {
   'storybook-web-components-rsbuild': SupportedFramework.WEB_COMPONENTS_RSBUILD,
   'storybook-html-rsbuild': SupportedFramework.HTML_RSBUILD,
   '@storybook-vue/nuxt': SupportedFramework.NUXT,
+  '@storybook-astro/framework': SupportedFramework.ASTRO,
 };
 
 export const builderPackages: Record<string, SupportedBuilder> = {

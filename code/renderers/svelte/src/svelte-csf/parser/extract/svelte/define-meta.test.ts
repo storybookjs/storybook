@@ -1,4 +1,4 @@
-import { describe, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { extractDefineMetaPropertiesNodes } from './define-meta.ts';
 
@@ -6,7 +6,7 @@ import { getSvelteAST, type ESTreeAST } from '../../ast.ts';
 import { extractSvelteASTNodes } from './nodes.ts';
 
 describe(extractDefineMetaPropertiesNodes.name, () => {
-  it('extracts correctly selected properties', async ({ expect }) => {
+  it('extracts the selected properties that defineMeta() sets', async () => {
     const ast = getSvelteAST({
       code: `
         <script module>

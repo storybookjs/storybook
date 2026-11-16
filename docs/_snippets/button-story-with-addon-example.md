@@ -20,7 +20,7 @@ const meta = preview.meta({
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/writing-stories/csf
  * to learn how to use render functions.
  */
 export const Basic = meta.story({
@@ -56,7 +56,7 @@ type Story = StoryObj<Button>;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/writing-stories/csf
  * to learn how to use render functions.
  */
 export const Basic: Story = {
@@ -117,7 +117,7 @@ const meta = preview.meta({
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/writing-stories/csf
  * to learn how to use render functions.
  */
 export const Basic = meta.story({
@@ -173,7 +173,7 @@ type Story = StoryObj<typeof meta>;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/writing-stories/csf
  * to learn how to use render functions.
  */
 export const Basic: Story = {
@@ -303,7 +303,7 @@ const meta = preview.meta({
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/writing-stories/csf
  * to learn how to use render functions.
  */
 export const Basic = meta.story({
@@ -336,7 +336,7 @@ const meta = preview.meta({
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/writing-stories/csf
  * to learn how to use render functions.
  */
 export const Basic = meta.story({
@@ -365,7 +365,7 @@ const meta = preview.meta({
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/writing-stories/csf
  * to learn how to use render functions.
  */
 export const Basic = meta.story({
@@ -391,7 +391,7 @@ const meta = preview.meta({
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/writing-stories/csf
  * to learn how to use render functions.
  */
 export const Basic = meta.story({
@@ -416,7 +416,7 @@ export default {
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/writing-stories/csf
  * to learn how to use render functions.
  */
 export const Basic = {
@@ -446,7 +446,7 @@ type Story = StoryObj;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/writing-stories/csf
  * to learn how to use render functions.
  */
 export const Basic: Story = {
@@ -480,7 +480,7 @@ type Story = StoryObj<typeof meta>;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/writing-stories/csf
  * to learn how to use render functions.
  */
 export const Basic: Story = {
@@ -547,7 +547,7 @@ type Story = StoryObj<typeof meta>;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/writing-stories/csf
  * to learn how to use render functions.
  */
 export const Basic: Story = {

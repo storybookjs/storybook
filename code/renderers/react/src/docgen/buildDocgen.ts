@@ -43,7 +43,7 @@ function isReactAttribute(prop: ComponentDoc['props'][string]) {
 }
 
 /** Converts one RCM `ComponentDoc` into the `StrictArgTypes` shape consumed by args tables. */
-function extractArgTypesFromComponentMeta(
+export function extractArgTypesFromComponentMeta(
   componentMeta: ComponentDoc | undefined
 ): StrictArgTypes | undefined {
   if (!componentMeta) {

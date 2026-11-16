@@ -1,3 +1,5 @@
+import { Writable } from 'node:stream';
+
 import '@testing-library/jest-dom/vitest';
 import { expect, vi } from 'vitest';
 
@@ -31,6 +33,21 @@ const ALLOWED_CONSOLE_PREDICATES: ((...args: any[]) => boolean)[] = [
   (message) => message.includes('<Focusable> child must forward its ref to a DOM element.'),
   (message) => message.includes('Please ensure the tabIndex prop is passed through.'),
 ];
+
+// Vitest cannot tie direct stream writes (from @clack/prompts, or Node's own warnings) to a test,
+// so `silent: 'passed-only'` cannot hide them. Route them through the console Vitest captures,
+// keeping references from before the spies below and any test replace `console` methods.
+const toConsole = (log: (...args: unknown[]) => void) =>
+  new Writable({
+    write(chunk: Buffer, _encoding, callback) {
+      log('%s', chunk.toString().replace(/\n$/, ''));
+      callback();
+    },
+  });
+const stdout = toConsole(console.log.bind(console));
+const stderr = toConsole(console.error.bind(console));
+process.stdout.write = stdout.write.bind(stdout);
+process.stderr.write = stderr.write.bind(stderr);
 
 (['warn', 'error'] as const).forEach((type) => {
   const failOnConsole = vi.defineHelper((...args) => {
@@ -98,6 +115,7 @@ vi.mock('storybook/internal/node-logger', async (importOriginal) => {
       logBox: vi.fn(),
       intro: vi.fn(),
       outro: vi.fn(),
+      shouldLog: vi.fn(() => false),
       step: vi.fn(),
     },
   };

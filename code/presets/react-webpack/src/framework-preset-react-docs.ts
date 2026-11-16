@@ -1,14 +1,16 @@
 import { fileURLToPath } from 'node:url';
 
 import {
-  getTypeScriptForDocgenError,
-  isDocgenServerDisabledInMainConfig,
-} from 'storybook/internal/common';
-import { deprecate } from 'storybook/internal/node-logger';
+  isReactBuilderDocgenPackageInstalled,
+  prepareReactBuilderDocgen,
+} from '@storybook/react/internal/builder-docgen';
 
 import type { Configuration } from 'webpack';
 
 import type { StorybookConfig } from './types.ts';
+
+/** Resolve from this package, which declares the builder docgen packages as optional peers. */
+const resolve = (specifier: string) => import.meta.resolve(specifier);
 
 export const webpackFinal: StorybookConfig['webpackFinal'] = async (
   config,
@@ -22,7 +24,10 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (
     return config;
   }
 
-  const typescriptOptions = await options.presets.apply('typescript', {} as any);
+  const typescriptOptions = await options.presets.apply<{
+    reactDocgen?: 'react-docgen' | 'react-docgen-typescript' | false;
+    reactDocgenTypescriptOptions?: Record<string, unknown>;
+  }>('typescript', {});
   const debug = options.loglevel === 'debug';
 
   const { reactDocgen, reactDocgenTypescriptOptions } = typescriptOptions || {};
@@ -31,18 +36,20 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (
     return config;
   }
 
-  if (await isDocgenServerDisabledInMainConfig(options)) {
-    deprecate(
-      `Builder docgen (\`typescript.reactDocgen: '${reactDocgen}'\`) is deprecated and will be removed in Storybook 12. ` +
-        `It runs because your Storybook main config sets \`features.docgenServer: false\`. Remove that setting to use server-side docgen.`
-    );
+  // Builder docgen packages are optional peers: the loader and plugin import them only once
+  // builder docgen runs, so projects on the docgen server never resolve them.
+  const mode = await prepareReactBuilderDocgen({
+    reactDocgen,
+    builder: 'webpack',
+    resolve,
+    options,
+  });
+  if (!mode) {
+    return config;
   }
+  const useReactDocgenTypescript = mode === 'react-docgen-typescript';
 
-  const typescriptUsable = !getTypeScriptForDocgenError((specifier) =>
-    import.meta.resolve(specifier)
-  );
-
-  if (reactDocgen !== 'react-docgen-typescript' || !typescriptUsable) {
+  if (!useReactDocgenTypescript) {
     return {
       ...config,
       module: {
@@ -67,12 +74,9 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (
 
   const { ReactDocgenTypeScriptPlugin } = await import('@storybook/react-docgen-typescript-plugin');
 
-  return {
-    ...config,
-    module: {
-      ...(config.module ?? {}),
-      rules: [
-        ...(config.module?.rules ?? []),
+  // In react-docgen-typescript mode, react-docgen is optional and only covers JavaScript files.
+  const javaScriptDocgenRules = isReactBuilderDocgenPackageInstalled(resolve, 'react-docgen')
+    ? [
         {
           test: /\.(cjs|mjs|jsx?)$/,
           enforce: 'pre',
@@ -83,8 +87,15 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (
             debug,
           },
           exclude: /(\.(stories|story)\.(js|jsx|ts|tsx))|(node_modules)/,
-        },
-      ],
+        } as const,
+      ]
+    : [];
+
+  return {
+    ...config,
+    module: {
+      ...(config.module ?? {}),
+      rules: [...(config.module?.rules ?? []), ...javaScriptDocgenRules],
     },
     plugins: [
       ...(config.plugins || []),

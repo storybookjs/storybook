@@ -11,6 +11,7 @@ export const BEFORE_DIR_NAME = 'before-storybook';
 // code/e2e-sandbox/*.spec.ts) to CommonJS, where import.meta is a syntax
 // error. Keep this module free of ESM-only globals.
 export const ROOT_DIRECTORY = join(__dirname, '..', '..');
+export const SCRIPTS_DIRECTORY = join(ROOT_DIRECTORY, 'scripts');
 export const CODE_DIRECTORY = join(ROOT_DIRECTORY, 'code');
 export const PACKS_DIRECTORY = join(ROOT_DIRECTORY, 'packs');
 export const REPROS_DIRECTORY = join(ROOT_DIRECTORY, 'repros');

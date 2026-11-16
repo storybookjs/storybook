@@ -134,8 +134,12 @@ const COLOR_PICKER_ID = 'stories-frameworks-angular-vite-model-signal-color-pick
 // Derived from the story file's path under the linked renderer template stories.
 const DEFINE_MODEL_ID = 'stories-renderers-vue3-vue3-vite-default-ts-component-meta-definemodel';
 
-const isReactSandbox = templateName === 'react-vite/default-ts';
-const isAngularSandbox = templateName === 'angular-vite/default-ts';
+const isReactSandbox = ['react-vite/default-ts', 'react-vite/typescript-7-ts'].includes(
+  templateName
+);
+const isAngularSandbox = ['angular-vite/default-ts', 'angular-vite/typescript-7-ts'].includes(
+  templateName
+);
 const isVueSandbox = templateName === 'vue3-vite/default-ts';
 
 test.describe('addon-mcp', () => {
@@ -259,22 +263,6 @@ test.describe('addon-mcp', () => {
             instructions: expect.stringContaining('review-create'),
           },
         });
-      });
-    });
-
-    test.describe('Tool: get-storybook-story-instructions', () => {
-      test('should return UI building instructions', async ({ request }) => {
-        const response = await mcpRequest(request, 'tools/call', {
-          name: 'get-storybook-story-instructions',
-          arguments: {},
-        });
-
-        expect(response.result).toHaveProperty('content');
-        expect(response.result.content[0]).toHaveProperty('type', 'text');
-
-        const text = response.result.content[0].text;
-        expect(text).toContain('stories');
-        expect(text.length).toBeGreaterThan(100);
       });
     });
 

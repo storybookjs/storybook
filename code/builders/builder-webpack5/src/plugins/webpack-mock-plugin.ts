@@ -1,56 +1,25 @@
-import { dirname, isAbsolute } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import {
-  extractMockCalls,
-  findMockRedirect,
-  getIsExternal,
-  resolveExternalModule,
-  resolveWithExtensions,
-} from 'storybook/internal/mocking-utils';
+import { extractMockCalls, findMockRedirect } from 'storybook/internal/mocking-utils';
+import type { MockCall } from 'storybook/internal/mocking-utils';
 import { logger } from 'storybook/internal/node-logger';
 
-import type { Compiler } from 'webpack';
+import { dirname, isAbsolute, normalize } from 'pathe';
+import type { Compiler, ResolveData, Resolver } from 'webpack';
 
-// --- Type Definitions ---
-
-/** Options for configuring the WebpackMockPlugin. */
 export interface WebpackMockPluginOptions {
-  /**
-   * The absolute path to the preview configuration file (e.g., `.storybook/preview.ts`). This file
-   * will be scanned for `sb.mock()` calls.
-   */
   previewConfigPath: string;
-}
-
-/** Represents a single `sb.mock()` call extracted directly from the AST. */
-interface ExtractedMock {
-  /** The raw module path string from the mock call (e.g., '../utils/api'). */
-  path: string;
-  /** Whether the mock was configured with `{ spy: true }`. */
-  spy: boolean;
-}
-
-/** Represents a fully processed mock, with resolved paths and its replacement resource. */
-interface ResolvedMock extends ExtractedMock {
-  /** The absolute resolved path of the module to be mocked. */
-  absolutePath: string;
-  /** The resource that Webpack will use to replace the original module. */
-  replacementResource: string;
 }
 
 const PLUGIN_NAME = 'storybook-mock-plugin';
 
-/**
- * A Webpack plugin that enables module mocking for Storybook. It scans the preview config for
- * `sb.mock()` calls and uses Webpack's NormalModuleReplacementPlugin to substitute the original
- * modules with mocks.
- */
+const isBareSpecifier = (specifier: string) => !specifier.startsWith('.') && !isAbsolute(specifier);
+
 export class WebpackMockPlugin {
-  private readonly options: WebpackMockPluginOptions;
-  private mockMap: Map<string, ResolvedMock> = new Map();
-  private candidateSpecifiers: Set<string> = new Set();
+  private mocksByPath = new Map<string, MockCall>();
+  private redirectsBySpecifier = new Map<string, string>();
   private lastPreviewMtime: number | undefined;
+  private readonly options: WebpackMockPluginOptions;
 
   constructor(options: WebpackMockPluginOptions) {
     if (!options.previewConfigPath) {
@@ -59,78 +28,103 @@ export class WebpackMockPlugin {
     this.options = options;
   }
 
-  /**
-   * The main entry point for the Webpack plugin.
-   *
-   * @param {Compiler} compiler The Webpack compiler instance.
-   */
   public apply(compiler: Compiler): void {
-    // This function will be called to update the mock map before each compilation.
-    const updateMocks = () => {
-      const mTimePreviewConfig = this.getPreviewConfigMtime(compiler);
-      if (
-        this.lastPreviewMtime !== undefined &&
-        mTimePreviewConfig !== undefined &&
-        mTimePreviewConfig === this.lastPreviewMtime
-      ) {
-        return; // unchanged
-      }
-      const resolved = this.extractAndResolveMocks(compiler);
-      this.mockMap = new Map(
-        resolved.flatMap((mock) => [
-          [mock.absolutePath, mock],
-          [mock.absolutePath.replace(/\.[^.]+$/, ''), mock],
-        ])
-      );
-      this.candidateSpecifiers = new Set(resolved.map((m) => m.path));
-      this.lastPreviewMtime = mTimePreviewConfig;
+    const automockLoader = fileURLToPath(
+      import.meta.resolve('@storybook/builder-webpack5/loaders/webpack-automock-loader')
+    );
 
-      if (resolved.length > 0) {
-        logger.info(`Mock map updated with ${resolved.length} mocks.`);
+    const updateMocks = async () => {
+      const previewMtime = this.getPreviewConfigMtime(compiler);
+      if (previewMtime !== undefined && previewMtime === this.lastPreviewMtime) {
+        return;
+      }
+      const { previewConfigPath } = this.options;
+      const previewDir = dirname(previewConfigPath);
+      const mocks = extractMockCalls(
+        { previewConfigPath, configDir: previewDir },
+        compiler.context,
+        findMockRedirect
+      );
+      // Mocks resolve through webpack's resolver so that aliases, symlink handling and package
+      // conditions match the resolution of the imports they are compared against. A dual package
+      // can resolve to one file for `import` and another for `require`, so both are keyed.
+      const resolvers = ['esm', 'commonjs'].map((dependencyType) =>
+        compiler.resolverFactory.get('normal', { dependencyType })
+      );
+      this.mocksByPath = new Map();
+      this.redirectsBySpecifier = new Map();
+      for (const mock of mocks) {
+        if (mock.redirectPath && isBareSpecifier(mock.specifier)) {
+          this.redirectsBySpecifier.set(mock.specifier, mock.redirectPath);
+        }
+        const paths = await Promise.all(
+          resolvers.map((resolver) => resolveWithWebpack(resolver, previewDir, mock.specifier))
+        );
+        const resolved = paths.filter((path): path is string => path !== undefined);
+        if (resolved.length === 0 && !this.redirectsBySpecifier.has(mock.specifier)) {
+          logger.warn(
+            `Could not resolve "${mock.specifier}" from ${previewDir}, so its sb.mock() call is ignored.`
+          );
+        }
+        for (const path of resolved) {
+          this.mocksByPath.set(normalize(path), mock);
+        }
+      }
+      this.lastPreviewMtime = previewMtime;
+
+      if (mocks.length > 0) {
+        logger.info(`Mock map updated with ${mocks.length} mocks.`);
       }
     };
 
-    compiler.hooks.beforeRun.tap(PLUGIN_NAME, updateMocks); // for build
-    compiler.hooks.watchRun.tap(PLUGIN_NAME, updateMocks); // for dev
+    compiler.hooks.beforeRun.tapPromise(PLUGIN_NAME, updateMocks);
+    compiler.hooks.watchRun.tapPromise(PLUGIN_NAME, updateMocks);
 
-    // Apply the replacement plugin. Its callback will now use the dynamically updated mockMap.
-    new compiler.webpack.NormalModuleReplacementPlugin(/.*/, (resource) => {
-      try {
-        if (this.mockMap.size === 0) {
-          return;
+    compiler.hooks.normalModuleFactory.tap(PLUGIN_NAME, (factory) => {
+      // A package the browser build cannot resolve, such as one with a server-only `exports` map,
+      // still needs its manual mock, so a bare request is redirected before resolution.
+      factory.hooks.beforeResolve.tap(PLUGIN_NAME, (resolveData) => {
+        const redirectPath = this.redirectsBySpecifier.get(resolveData.request);
+        if (redirectPath) {
+          resolveData.request = redirectPath;
+          resolveData.context = dirname(redirectPath);
         }
-        const path = resource.request;
-        const importer = resource.context;
+      });
 
-        const isExternal = getIsExternal(path, importer);
-        // Early filter only for external specifiers. Relative/local specifiers need resolution
-        if (isExternal && !this.candidateSpecifiers.has(path)) {
-          return;
+      factory.hooks.afterResolve.tapAsync(PLUGIN_NAME, (resolveData, callback) => {
+        const mock = this.findMock(resolveData.createData);
+        if (!mock) {
+          return callback();
         }
-        const absolutePath = isExternal
-          ? resolveExternalModule(path, importer)
-          : resolveWithExtensions(path, importer);
-
-        if (this.mockMap.has(absolutePath)) {
-          resource.request = this.mockMap.get(absolutePath)!.replacementResource;
+        // Resolving the replacement through webpack again gives a `__mocks__` file its own loaders
+        // and context, and places the inline automock loader between the post and normal loaders.
+        if (mock.redirectPath) {
+          resolveData.request = mock.redirectPath;
+          resolveData.context = dirname(mock.redirectPath);
+        } else {
+          resolveData.request = `${automockLoader}?spy=${mock.spy}!${resolveData.createData.resource}`;
         }
-      } catch (e) {
-        logger.debug(`Could not resolve mock for "${resource.request}".`);
-      }
-    }).apply(compiler);
+        factory.hooks.resolve.callAsync(resolveData, (error) => callback(error));
+      });
+    });
 
     compiler.hooks.afterCompile.tap(PLUGIN_NAME, (compilation) => {
       compilation.fileDependencies.add(this.options.previewConfigPath);
 
-      for (const mock of this.mockMap.values()) {
-        if (
-          isAbsolute(mock.replacementResource) &&
-          mock.replacementResource.includes('__mocks__')
-        ) {
-          compilation.contextDependencies.add(dirname(mock.replacementResource));
+      for (const mock of this.mocksByPath.values()) {
+        if (mock.redirectPath && mock.redirectPath.includes('__mocks__')) {
+          compilation.contextDependencies.add(dirname(mock.redirectPath));
         }
       }
     });
+  }
+
+  private findMock({ resourceResolveData, resource }: ResolveData['createData']) {
+    if (this.mocksByPath.size === 0) {
+      return undefined;
+    }
+    const path = resourceResolveData?.path;
+    return this.mocksByPath.get(normalize(typeof path === 'string' ? path : (resource ?? '')));
   }
 
   private getPreviewConfigMtime(compiler: Compiler): number | undefined {
@@ -142,53 +136,13 @@ export class WebpackMockPlugin {
       return undefined;
     }
   }
+}
 
-  /**
-   * Reads the preview config, parses it to find all `sb.mock()` calls, and resolves their
-   * corresponding mock implementations.
-   *
-   * @param {Compiler} compiler The Webpack compiler instance.
-   * @returns {ResolvedMock[]} An array of fully processed mocks.
-   */
-  private extractAndResolveMocks(compiler: Compiler): ResolvedMock[] {
-    const { previewConfigPath } = this.options;
-    const logger = compiler.getInfrastructureLogger(PLUGIN_NAME);
-
-    // Use extractMockCalls to get all mocks from the transformed preview file
-    const mocks = extractMockCalls(
-      { previewConfigPath, configDir: dirname(previewConfigPath) },
-      compiler.context,
-      findMockRedirect
-    );
-
-    // 2. Resolve each mock call to its absolute path and replacement resource.
-    const resolvedMocks: ResolvedMock[] = [];
-    for (const mock of mocks) {
-      try {
-        const { absolutePath, redirectPath } = mock;
-
-        let replacementResource: string;
-
-        if (redirectPath) {
-          // A `__mocks__` file exists. Use it directly as the replacement.
-          replacementResource = redirectPath;
-        } else {
-          // No `__mocks__` file found. Use our custom loader to automock the module.
-          const loaderPath = fileURLToPath(
-            import.meta.resolve('@storybook/builder-webpack5/loaders/webpack-automock-loader')
-          );
-          replacementResource = `${loaderPath}?spy=${mock.spy}!${absolutePath}`;
-        }
-
-        resolvedMocks.push({
-          ...mock,
-          replacementResource,
-        });
-      } catch (e) {
-        logger.warn(`Could not resolve mock for "${mock.path}". It will be ignored.`);
-      }
-    }
-
-    return resolvedMocks;
-  }
+function resolveWithWebpack(resolver: Resolver, context: string, specifier: string) {
+  return new Promise<string | undefined>((resolve) => {
+    resolver.resolve({}, context, specifier, {}, (error, _result, request) => {
+      const path = request?.path;
+      resolve(!error && typeof path === 'string' ? path : undefined);
+    });
+  });
 }

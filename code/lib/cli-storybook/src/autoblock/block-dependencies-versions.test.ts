@@ -50,7 +50,7 @@ describe('dependenciesVersions blocker', () => {
     vi.mocked(getVitePlusVersions).mockImplementation(async () => null);
   });
 
-  test.each(['10.0.0', '10.7.1', '10.7.3'])(
+  test.each(['10.0.0', '10.7.1', '10.8.2'])(
     'blocks Preact %s before upgrading',
     async (version) => {
       const result = await blocker.check(
@@ -60,12 +60,12 @@ describe('dependenciesVersions blocker', () => {
       expect(result).toEqual({
         packageName: 'preact',
         installedVersion: version,
-        minimumVersion: '10.8.0',
+        minimumVersion: '10.9.0',
       });
     }
   );
 
-  test.each(['10.8.0', '10.29.8', '11.0.0-rc.2'])('accepts Preact %s', async (version) => {
+  test.each(['10.9.0', '10.29.8', '11.0.0-rc.2'])('accepts Preact %s', async (version) => {
     const result = await blocker.check(
       createCheckOptions(createPackageManager({ preact: version }))
     );

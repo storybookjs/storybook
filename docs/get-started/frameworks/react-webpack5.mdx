@@ -59,6 +59,29 @@ You will find the output in the configured `outputDir` (default is `storybook-st
 
 If you're working on an app that was initialized manually, ensure that your app has [react-dom](https://www.npmjs.com/package/react-dom) included as a dependency. Failing to do so can lead to unforeseen issues with Storybook and your project.
 
+## Component documentation
+
+Storybook 11 reads React component props on the server by default, with the [`typescript`](../../configure/integration/typescript.mdx) package (TypeScript 5.9 or 6, even in JavaScript projects, where it reads types from JSDoc comments). New projects need no docgen configuration and no extra packages.
+
+<Callout variant="info">
+
+The Storybook 10 builder-based docgen is still available, but it is deprecated. It will be removed in Storybook 12. To use it:
+
+1. Set [`features.docgenServer: false`](../../api/main-config/main-config-features.mdx#docgenserver) in your main config.
+2. Set the package you want to use in [`typescript.reactDocgen`](../../api/main-config/main-config-typescript.mdx#reactdocgen). The default is `'react-docgen'`.
+3. Install the packages for that mode in your devDependencies:
+
+| `typescript.reactDocgen`    | Packages to install                                                                                                                                 |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `'react-docgen'` (default)  | `react-docgen`                                                                                                                                      |
+| `'react-docgen-typescript'` | `@storybook/react-docgen-typescript-plugin@1.0.6--canary.9.0c3f3b7.0` (this exact version; its `latest` tag is older) and `react-docgen-typescript` |
+
+When a docgen package is missing, Storybook stops and prints the install command. To run without docgen instead, set `typescript.reactDocgen: false`.
+
+Projects on TypeScript 7.0 cannot use server-side docgen. Projects on TypeScript 7.1 or newer can. See [TypeScript 7](../../configure/integration/typescript.mdx#typescript-7).
+
+</Callout>
+
 ## FAQ
 
 ### How do I manually install the React Webpack framework?

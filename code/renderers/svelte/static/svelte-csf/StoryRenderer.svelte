@@ -43,7 +43,6 @@
   });
 
   $effect(() => {
-    // TODO: optimize effect params here, we don't read the whole context in reality
     emitCode({ args, storyContext });
   });
 </script>

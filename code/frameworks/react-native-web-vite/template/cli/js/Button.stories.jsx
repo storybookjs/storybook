@@ -1,9 +1,10 @@
+import preview from '../../.storybook/preview';
 import { View } from 'react-native';
 import { fn } from 'storybook/test';
 
 import { Button } from './Button';
 
-const meta = {
+const meta = preview.meta({
   title: 'Example/Button',
   component: Button,
   decorators: [
@@ -17,33 +18,31 @@ const meta = {
   tags: ['autodocs'],
   // Use `fn` to spy on the onPress arg, which will appear in the actions panel once invoked: https://storybook.js.org/docs/essentials/actions#story-args
   args: { onPress: fn() },
-};
+});
 
-export default meta;
-
-export const Primary = {
+export const Primary = meta.story({
   args: {
     primary: true,
     label: 'Button',
   },
-};
+});
 
-export const Secondary = {
+export const Secondary = meta.story({
   args: {
     label: 'Button',
   },
-};
+});
 
-export const Large = {
+export const Large = meta.story({
   args: {
     size: 'large',
     label: 'Button',
   },
-};
+});
 
-export const Small = {
+export const Small = meta.story({
   args: {
     size: 'small',
     label: 'Button',
   },
-};
+});

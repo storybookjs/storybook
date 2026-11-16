@@ -23,6 +23,7 @@ const routerPackages = new Set([
   'gatsby',
   'nuxt',
   '@sveltejs/kit',
+  'astro',
 ]);
 
 /**

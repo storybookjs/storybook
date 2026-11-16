@@ -7,23 +7,7 @@ interface Params {
   filename?: string;
 }
 
-/**
- * Get an {@link ObjectExpression} with props _(attributes)_ passed down to Svelte component in compiled code.
- *
- * - In **development** mode, extract from the {@link ExpressionStatement}.
- *   How it looks in **development** mode:
- *
- *   ```js
- *   $.validate_component(Story)(node_1, { props })
- *   ```
- *
- * - In **production** mode, extract from the {@link CallExpression}.
- *   And in **production** mode:
- *
- *   ```js
- *   Story(node_1, { props })
- *   ```
- */
+// Development builds compile a story to `$.validate_component(Story)(node, props)`, production builds to `Story(node, props)`.
 export function getStoryPropsObjectExpression(params: Params): ESTreeAST.ObjectExpression {
   const { node, filename } = params;
   if (node.type === 'CallExpression' && node.arguments[1].type === 'ObjectExpression') {
@@ -38,8 +22,5 @@ export function getStoryPropsObjectExpression(params: Params): ESTreeAST.ObjectE
     return node.expression.arguments[1];
   }
 
-  throw new NoCompiledStoryPropsObjectExpression({
-    filename,
-    node,
-  });
+  throw new NoCompiledStoryPropsObjectExpression(filename);
 }

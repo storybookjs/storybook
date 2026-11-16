@@ -75,12 +75,10 @@ const HARNESS_TOOLS = [
 
 const RENDER_HINT = 'Run `yarn nx compile claude-plugin` and commit the Codex skills.';
 
-const uiWorkflowSkill = readFileSync(resolve(packageRoot, 'skills/ui-workflow/SKILL.md'), 'utf8');
-const componentDocsSkill = readFileSync(
-  resolve(packageRoot, 'skills/component-docs/SKILL.md'),
-  'utf8'
-);
+const readSkill = (name: string) =>
+  readFileSync(resolve(packageRoot, 'skills', name, 'SKILL.md'), 'utf8');
 
+const WORKFLOW_SKILLS = ['component-docs', 'write-stories', 'test-stories', 'ui-review'];
 function readSkillDescription(skill: string) {
   const description = skill.match(/^description: (.*)$/m)?.[1];
   if (description === undefined) {
@@ -100,6 +98,11 @@ describe('canonical skills', () => {
     }
   );
 
+  // A plain YAML scalar ends at `: ` or ` #`, so a strict loader rejects such a description.
+  it.each(claudeSkills)('$name has a description that is valid YAML unquoted', ({ content }) => {
+    expect(readSkillDescription(content)).not.toMatch(/: | #|:$|^[-?:,[\]{}#&*!|>'"%@`]/);
+  });
+
   it.each(claudeSkills)('$name names no harness-specific tool or file', ({ content }) => {
     for (const harnessTool of HARNESS_TOOLS) {
       expect(content).not.toContain(harnessTool);
@@ -107,27 +110,24 @@ describe('canonical skills', () => {
   });
 });
 
-describe('ui-workflow and component-docs skills', () => {
-  it.each([uiWorkflowSkill, componentDocsSkill])(
-    'run when the agent instructions or the user ask, not on every UI change',
-    (skill) => {
-      const description = readSkillDescription(skill);
-      expect(description).toContain("the project's agent instructions (such as AGENTS.md)");
-      expect(description).not.toMatch(/FIRST|no exceptions|before creating, editing/i);
+describe('workflow skills', () => {
+  it.each(WORKFLOW_SKILLS)(
+    '%s describes what it does, and leaves when to use it to the agent instructions',
+    (name) => {
+      const description = readSkillDescription(readSkill(name));
+      expect(description).not.toMatch(
+        /FIRST|no exceptions|always|must|\bUse (it )?(when|after)\b/i
+      );
     }
   );
 
-  it('serve their workflow from the Storybook CLI of the project', () => {
-    expect(uiWorkflowSkill).toContain('`npx storybook skills ui-workflow`');
-    expect(componentDocsSkill).toContain('`npx storybook skills component-docs`');
-    expect(uiWorkflowSkill).toContain('set up or install Storybook');
+  it.each(WORKFLOW_SKILLS)('%s serves its text from the Storybook CLI of the project', (name) => {
+    expect(readSkill(name)).toContain(`\`npx storybook skills ${name}\``);
   });
 
-  it('starts the dev server from the package.json script without shell interpolation', () => {
-    expect(uiWorkflowSkill).toContain('preferred package manager');
-    expect(uiWorkflowSkill).toContain('existing `package.json` Storybook script');
-    expect(uiWorkflowSkill).not.toMatch(/(?:^|[^\w])--port\b|\$\{?PORT\}?|\$env:PORT|%PORT%/i);
-    expect(uiWorkflowSkill).not.toContain('--ci');
+  it.each(WORKFLOW_SKILLS)('%s names no other workflow skill', (name) => {
+    const others = WORKFLOW_SKILLS.filter((other) => other !== name);
+    expect(readSkill(name)).not.toMatch(new RegExp(others.join('|')));
   });
 });
 

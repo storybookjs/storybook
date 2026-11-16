@@ -417,6 +417,17 @@ export const services = async (_value: void, options: Options): Promise<void> =>
               return [];
             }
           }),
+        // The story index's own specifiers, so a file matches exactly when the index takes it in.
+        getStoriesMatcher: async () => {
+          const { specifiers, options: indexOptions } =
+            await options.presets.apply<StoryIndexGenerator>('storyIndexGenerator');
+          const workingDir = realpathSync.native(indexOptions.workingDir);
+          return (file) => {
+            const relativePath = pathe.relative(workingDir, file);
+            const importPath = relativePath.startsWith('.') ? relativePath : `./${relativePath}`;
+            return specifiers.some(({ importPathMatcher }) => importPathMatcher.test(importPath));
+          };
+        },
       },
     })
   );
@@ -450,7 +461,11 @@ export const services = async (_value: void, options: Options): Promise<void> =>
         docgenProvider: (input) => docgenWorker.extract(input.entry),
       });
       devServerSubscriptions.push(() =>
-        subscribeDocgenToModuleGraphChanges({ getIndex, workingDir: process.cwd() })
+        subscribeDocgenToModuleGraphChanges({
+          channel: options.channel,
+          getIndex,
+          workingDir: process.cwd(),
+        })
       );
     }
 
@@ -461,9 +476,14 @@ export const services = async (_value: void, options: Options): Promise<void> =>
     registerStoryDocsService({
       getIndex,
       storyDocsProvider,
+      liveSnippets: features.experimentalLiveServerSnippets,
     });
     devServerSubscriptions.push(() =>
-      subscribeStoryDocsToModuleGraphChanges({ getIndex, workingDir: process.cwd() })
+      subscribeStoryDocsToModuleGraphChanges({
+        channel: options.channel,
+        getIndex,
+        workingDir: process.cwd(),
+      })
     );
   }
 

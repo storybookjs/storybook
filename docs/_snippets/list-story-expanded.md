@@ -118,7 +118,7 @@ export default {
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/writing-stories/csf
  * to learn how to use render functions.
  */
 export const Empty = {
@@ -159,7 +159,7 @@ type Story = StoryObj<ListArgs>;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/writing-stories/csf
  * to learn how to use render functions.
  */
 export const Empty: Story = {
@@ -199,7 +199,7 @@ export const Empty = meta.story();
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/writing-stories/csf
  * to learn how to use render functions.
  */
 export const OneItem = meta.story({
@@ -235,7 +235,7 @@ export const Empty = meta.story();
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/writing-stories/csf
  * to learn how to use render functions.
  */
 export const OneItem = meta.story({
@@ -269,7 +269,7 @@ export const Empty = {};
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/writing-stories/csf
  * to learn how to use render functions.
  */
 export const OneItem = {
@@ -308,7 +308,7 @@ export const Empty: Story = {};
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/writing-stories/csf
  * to learn how to use render functions.
  */
 export const OneItem: Story = {
@@ -478,7 +478,7 @@ const meta = preview.meta({
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/writing-stories/csf
  * to learn how to use render functions.
  */
 export const Empty = meta.story({
@@ -523,7 +523,7 @@ const meta = preview.meta({
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/writing-stories/csf
  * to learn how to use render functions.
  */
 export const Empty = meta.story({
@@ -703,7 +703,7 @@ type Story = StoryObj<typeof meta>;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/writing-stories/csf
  * to learn how to use render functions.
  */
 export const Empty: Story = {
@@ -747,7 +747,7 @@ export default {
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/writing-stories/csf
  * to learn how to use render functions.
  */
 export const Empty = {
@@ -799,7 +799,7 @@ export const Empty: Story = {};
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/writing-stories/csf
  * to learn how to use render functions.
  */
 export const OneItem: Story = {
@@ -834,7 +834,7 @@ export const Empty = {};
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/writing-stories/csf
  * to learn how to use render functions.
  */
 export const OneItem = {

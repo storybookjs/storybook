@@ -78,13 +78,13 @@ export function getStoryParents(params: Params): StoryParents {
     parents.set(exportName, namedStories[0].exportName);
   }
 
-  for (const { component, exportName } of stories) {
+  for (const { exportName } of stories) {
     const chain = getStoryChain(parents, exportName);
     if (parents.has(chain.at(-1)!)) {
       const names = [...chain, parents.get(chain.at(-1)!)!].map(
         (name) => stories.find((story) => story.exportName === name)!.name ?? name
       );
-      throw new StoryExtendCycleError({ filename, component, names });
+      throw new StoryExtendCycleError({ filename, names });
     }
   }
 

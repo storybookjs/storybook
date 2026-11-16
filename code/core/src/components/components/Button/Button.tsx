@@ -1,8 +1,6 @@
 import type { ComponentProps } from 'react';
 import React, { forwardRef, useEffect, useMemo, useState } from 'react';
 
-import { deprecate } from 'storybook/internal/client-logger';
-
 import { Slot } from '@radix-ui/react-slot';
 import { darken, lighten, rgba, transparentize } from 'polished';
 import { shortcutToAriaKeyshortcuts, type API_KeyCollection } from 'storybook/manager-api';
@@ -22,7 +20,7 @@ export interface ButtonProps extends Omit<ComponentProps<typeof StyledButton>, '
    * Button's content is already accessible to all. When a string is passed, it is also used as the
    * default tooltip text.
    */
-  ariaLabel?: string | false;
+  ariaLabel: string | false;
 
   /**
    * An optional tooltip to display when the Button is hovered. If the Button has no text content,
@@ -68,7 +66,6 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       padding = 'medium',
       disabled = false,
       readOnly = false,
-      active,
       onClick,
       ariaLabel,
       ariaDescription = undefined,
@@ -81,26 +78,6 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const Comp = asChild ? Slot : as;
-
-    let deprecated = undefined;
-    if (!readOnly && (ariaLabel === undefined || ariaLabel === '')) {
-      deprecated = 'ariaLabel';
-      deprecate(
-        `The 'ariaLabel' prop on 'Button' will become mandatory in Storybook 11. Buttons with text content should set 'ariaLabel={false}' to indicate that they are accessible as-is. Buttons without text content must provide a meaningful 'ariaLabel' for accessibility. The button content is: ${props.children}.`
-      );
-
-      // TODO in Storybook 11
-      // throw new Error(
-      //   'Button requires an ARIA label to be accessible. Please provide a valid ariaLabel prop.'
-      // );
-    }
-
-    if (active !== undefined) {
-      deprecated = 'active';
-      deprecate(
-        'The `active` prop on `Button` is deprecated and will be removed in Storybook 11. Use specialized components like `ToggleButton` or `Select` instead.'
-      );
-    }
 
     const { ariaDescriptionAttrs, AriaDescription } = useAriaDescription(ariaDescription);
 
@@ -142,7 +119,6 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           tooltipPlacement={tooltipPlacement}
         >
           <StyledButton
-            data-deprecated={deprecated}
             as={Comp}
             ref={ref}
             appearance={appearance}
@@ -152,7 +128,6 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
             $disabled={disabled || readOnly}
             aria-disabled={disabled || readOnly ? 'true' : undefined}
             readOnly={readOnly}
-            active={active}
             animating={isAnimating}
             animation={animation}
             onClick={disabled || readOnly ? undefined : handleClick}
@@ -177,7 +152,6 @@ const StyledButton = styled('button', {
   padding?: 'small' | 'medium' | 'none';
   appearance?: 'default' | 'agentic';
   variant?: 'outline' | 'solid' | 'ghost';
-  active?: boolean;
   $disabled?: boolean;
   readOnly?: boolean;
   animating?: boolean;
@@ -189,7 +163,6 @@ const StyledButton = styled('button', {
   size,
   $disabled,
   readOnly,
-  active,
   animating,
   animation = 'none',
   padding,
@@ -257,13 +230,6 @@ const StyledButton = styled('button', {
         return colors.background;
       }
 
-      if (variant === 'ghost' && active) {
-        return transparentize(
-          0.93,
-          appearance === 'agentic' ? theme.bgColor.agentic : theme.barSelectedColor
-        );
-      }
-
       return 'transparent';
     })(),
     color: (() => {
@@ -273,10 +239,6 @@ const StyledButton = styled('button', {
 
       if (variant === 'outline') {
         return appearance === 'agentic' ? theme.fgColor.agentic : theme.input.color;
-      }
-
-      if (variant === 'ghost' && active) {
-        return theme.base === 'light' ? darken(0.1, colors.foreground) : colors.foreground;
       }
 
       if (variant === 'ghost') {
@@ -354,12 +316,3 @@ const StyledButton = styled('button', {
     },
   };
 });
-
-export const IconButton = forwardRef<HTMLButtonElement, ButtonProps>((props, ref) => {
-  deprecate(
-    '`IconButton` is deprecated and will be removed in Storybook 11, use `Button` instead.'
-  );
-
-  return <Button ref={ref} {...props} data-deprecated="IconButton" />;
-});
-IconButton.displayName = 'IconButton';

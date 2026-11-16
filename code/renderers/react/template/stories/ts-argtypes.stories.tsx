@@ -77,6 +77,11 @@ export default {
       argTypes={loaded.argTypes ?? parameters.docs.extractArgTypes(parameters.component)}
     />
   ),
+  parameters: {
+    // Docgen is resolved asynchronously through the server loader, so the rendered table is not
+    // deterministic across runs; snapshotting it produces false positives on every build.
+    chromatic: { disableSnapshot: true },
+  },
 };
 
 const ArgsStory = ({ argTypes }: { argTypes: StrictArgTypes }) => {

@@ -136,6 +136,29 @@ jobs:
           node ecosystem-qa/file.ts --proposals ecosystem-qa/results/proposals.json
           --repo "$GITHUB_REPOSITORY" --dry
 
+      - name: Run a fake run of the first part of batch 1 of the fixture plan
+        env:
+          ECOSYSTEM_QA_FAKE: '1'
+        run: >-
+          node ecosystem-qa/run.ts --repo mealdrop --version "$QA_VERSION" --engine claude --fake
+          --sandbox none --plan ecosystem-qa/lib/plan.fixture.md --batch 1 --part 1
+          --out ecosystem-qa/plan-results/mealdrop/linux/claude/part-1
+
+      - name: Collect the proposals of the plan run
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          node ecosystem-qa/collect.ts --results ecosystem-qa/plan-results --version "$QA_VERSION"
+          --out ecosystem-qa/plan-results/proposals.json --repo "$GITHUB_REPOSITORY"
+          --plan ecosystem-qa/lib/plan.fixture.md --batch 1
+
+      - name: Write the proposals of the plan run to the Step Summary
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          node ecosystem-qa/file.ts --proposals ecosystem-qa/plan-results/proposals.json
+          --repo "$GITHUB_REPOSITORY" --dry
+
   plan:
     name: Plan the matrix
     if: ${{ github.event_name == 'workflow_dispatch' }}

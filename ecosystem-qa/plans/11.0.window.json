@@ -1125,6 +1125,20 @@
       "issues": []
     },
     {
+      "number": 36192,
+      "title": "MIGRATION: Consolidate item title format",
+      "area": "MIGRATION",
+      "status": "skip",
+      "labels": [
+        "ci:docs",
+        "documentation",
+        "qa:skip"
+      ],
+      "authorAssociation": "CONTRIBUTOR",
+      "manualTesting": "1. Open the MIGRATION.md file view on GitHub for this branch, click the `Vite: requires Vite 7.0 or higher`, `Next.js: requires Next.js 15 or higher`, and `Angular: requires Angular 21 or higher` entries in the table of contents, and confirm each jumps to its corresponding section heading.",
+      "issues": []
+    },
+    {
       "number": 36193,
       "title": "Next.js: Deprecate @storybook/nextjs (removal in SB12)",
       "area": "Next.js",

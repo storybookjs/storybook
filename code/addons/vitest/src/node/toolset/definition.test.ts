@@ -1,3 +1,4 @@
+import { OpenServiceGitRefError } from 'storybook/internal/server-errors';
 import type { StoryIndex } from 'storybook/internal/types';
 import {
   getToolset,
@@ -147,8 +148,45 @@ describe('test API', () => {
     expect(changed).toHaveBeenCalledWith({}, ctx);
   });
 
+  it('takes a git ref for changed, as Vitest does, and asks stories changed for it', async () => {
+    const changed = vi.fn(async () => ({
+      ok: true as const,
+      data: { stories: [], changedConfigFiles: [], unindexedStoryFiles: [], pendingFiles: [] },
+      markdown: '',
+    }));
+    vi.mocked(getToolset).mockReturnValue({ methods: { changed: { handler: changed } } } as never);
+
+    await runTests({ changed: 'next' });
+    const { changed: passed, getChangedStories } = vi.mocked(runStoryTests).mock.lastCall![0];
+    await getChangedStories!('next');
+
+    expect(passed).toBe('next');
+    expect(changed).toHaveBeenCalledWith({ since: 'next' }, ctx);
+  });
+
+  it('rejects an empty ref, which would otherwise read as not changed and run every story', () => {
+    expect(v.safeParse(toolset.methods.run.input, { changed: '' }).success).toBe(false);
+  });
+
+  it('rejects an empty file entry, which would otherwise match every story file', () => {
+    expect(v.safeParse(toolset.methods.run.input, { files: [''] }).success).toBe(false);
+  });
+
+  it('lets a ref that git cannot compare fail the call as stories changed reports it', async () => {
+    const error = new OpenServiceGitRefError({ ref: 'Button', reason: 'unknown' });
+    const changed = vi.fn(async () => {
+      throw error;
+    });
+    vi.mocked(getToolset).mockReturnValue({ methods: { changed: { handler: changed } } } as never);
+
+    await runTests({ changed: 'Button' });
+    const { getChangedStories } = vi.mocked(runStoryTests).mock.lastCall![0];
+
+    await expect(getChangedStories!('Button')).rejects.toBe(error);
+  });
+
   it('lets the CLI fill files from bare arguments', () => {
-    expect(toolset.methods.run.fileArguments).toBe('files');
+    expect(toolset.methods.run.positional).toBe('files');
   });
 
   it('renders the same per-story report for the CLI consumer as for MCP', async () => {
@@ -323,22 +361,7 @@ describe('test API', () => {
 ## Result
 
 Passed: 1 component test passed.
-Accessibility: not checked.
-Before you finish, run every story once: test-run without \`files\`, \`changed\` or \`stories\`.`);
-    });
-
-    it('tells the CLI agent the command that runs every story after a focused pass', async () => {
-      vi.mocked(runStoryTests).mockResolvedValue(
-        completed({
-          storyIds: ['button--primary'],
-          componentTestCount: { success: 1, error: 0 },
-          componentTestStatuses: [componentTest('button--primary', 'status-value:success')],
-        })
-      );
-
-      expect((await runTests()).markdown).toContain(
-        'Before you finish, run every story once: `npx storybook tools test run` without arguments.'
-      );
+Accessibility: not checked.`);
     });
 
     it('summarizes what the file filters and the changes selected in one line', async () => {
@@ -352,8 +375,8 @@ Before you finish, run every story once: test-run without \`files\`, \`changed\`
           ],
         }),
         selection: {
-          files: { filters: ['src/Button.stories.tsx', 'Header'], storyFiles: 2 },
-          changed: { stories: 5, changedConfigFiles: [], pendingFiles: [] },
+          files: { filters: ['src/Button.stories.tsx', 'Header'], storyFileCount: 2 },
+          changed: { storyCount: 5, changedConfigFiles: [], pendingFiles: [] },
           storyCount: 2,
         },
       } as TestRunOutput);
@@ -364,12 +387,30 @@ Before you finish, run every story once: test-run without \`files\`, \`changed\`
 Passed: 2 component tests passed.`);
     });
 
+    it('names the ref the changes are counted since', async () => {
+      vi.mocked(runStoryTests).mockResolvedValue({
+        ...completed({
+          storyIds: ['button--primary'],
+          componentTestCount: { success: 1, error: 0 },
+          componentTestStatuses: [componentTest('button--primary', 'status-value:success')],
+        }),
+        selection: {
+          changed: { storyCount: 1, changedConfigFiles: [], pendingFiles: [], since: 'next' },
+          storyCount: 1,
+        },
+      } as TestRunOutput);
+
+      expect((await runTests()).markdown).toContain(
+        '1 changed story since `next`: selected 1 story.'
+      );
+    });
+
     it('says when change detection has not caught up with a changed file', async () => {
       vi.mocked(runStoryTests).mockResolvedValue({
         status: 'no-stories',
         notFoundMessages: [],
         selection: {
-          changed: { stories: 0, changedConfigFiles: [], pendingFiles: ['src/New.stories.tsx'] },
+          changed: { storyCount: 0, changedConfigFiles: [], pendingFiles: ['src/New.stories.tsx'] },
         },
       });
 
@@ -386,7 +427,11 @@ Passed: 2 component tests passed.`);
           componentTestStatuses: [componentTest('button--primary', 'status-value:success')],
         }),
         selection: {
-          changed: { stories: 1, changedConfigFiles: ['.storybook/preview.ts'], pendingFiles: [] },
+          changed: {
+            storyCount: 1,
+            changedConfigFiles: ['.storybook/preview.ts'],
+            pendingFiles: [],
+          },
           storyCount: 1,
         },
       } as TestRunOutput);
@@ -406,7 +451,7 @@ Passed: 1 component test passed.`);
           componentTestStatuses: [componentTest('button--primary', 'status-value:success')],
         }),
         selection: { storyCount: 1 },
-        notFound: ['No story found for story ID "missing--story"'],
+        notFoundMessages: ['No story found for story ID "missing--story"'],
       } as TestRunOutput);
 
       const outcome = await runTests();
@@ -416,53 +461,13 @@ Passed: 1 component test passed.`);
 
 No story found for story ID "missing--story"
 Failed: 1 argument not used; 1 component test passed.
-Accessibility: not checked.
-Fix or leave out the arguments listed above, then run again.`);
-      expect(outcome.markdown).not.toContain('Before you finish');
-    });
-
-    it('counts only the selected stories that got a verdict, without blaming tags for an error', async () => {
-      const statuses = [
-        componentTest('button--primary', 'status-value:success'),
-        {
-          ...componentTest('button--skipped', 'status-value:success'),
-          value: 'status-value:unknown',
-        },
-      ];
-      const selection = { files: { filters: ['Button'], storyFiles: 1 }, storyCount: 3 };
-      const storyIds = ['button--primary', 'button--secondary', 'button--skipped'];
-      vi.mocked(runStoryTests).mockResolvedValue({
-        ...completed({
-          storyIds,
-          componentTestCount: { success: 1, error: 0 },
-          componentTestStatuses: statuses,
-        }),
-        selection,
-      } as TestRunOutput);
-
-      expect((await runTests()).markdown).toContain(
-        '1 story file matches `Button`: selected 3 stories; only 1 ran, the others are excluded from tests (for example by tags).'
-      );
-
-      vi.mocked(runStoryTests).mockResolvedValue({
-        ...completed({
-          storyIds,
-          componentTestCount: { success: 1, error: 0 },
-          componentTestStatuses: statuses,
-          unhandledErrors: [{ name: 'SyntaxError', message: 'Unexpected token' }],
-        }),
-        selection,
-      } as TestRunOutput);
-
-      expect((await runTests()).markdown).toContain(
-        '1 story file matches `Button`: selected 3 stories; only 1 ran.'
-      );
+Accessibility: not checked.`);
     });
 
     it('passes a focused run in which none of the selected stories ran, as Vitest does with skipped tests', async () => {
       vi.mocked(runStoryTests).mockResolvedValue({
         ...completed({ storyIds: ['button--primary', 'button--secondary'] }),
-        selection: { files: { filters: ['Button'], storyFiles: 1 }, storyCount: 2 },
+        selection: { files: { filters: ['Button'], storyFileCount: 1 }, storyCount: 2 },
       } as TestRunOutput);
 
       const outcome = await runTests();
@@ -470,16 +475,16 @@ Fix or leave out the arguments listed above, then run again.`);
       expect(outcome.ok).toBe(true);
       expect(outcome.markdown).toBe(`## Result
 
-1 story file matches \`Button\`: selected 2 stories; none ran, they are excluded from tests (for example by tags).
+1 story file matches \`Button\`: selected 2 stories.
 No component tests ran.
 Accessibility: not checked.`);
     });
 
-    it('fails when no story file matches, pointing a component file to changed', async () => {
+    it('fails when no story file matches', async () => {
       vi.mocked(runStoryTests).mockResolvedValue({
         status: 'no-stories',
         notFoundMessages: ['No story files found for `src/Button.tsx`.'],
-        selection: { files: { filters: ['src/Button.tsx'], storyFiles: 0 } },
+        selection: { files: { filters: ['src/Button.tsx'], storyFileCount: 0 } },
       });
 
       const outcome = await runTests();
@@ -487,8 +492,7 @@ Accessibility: not checked.`);
       expect(outcome.ok).toBe(false);
       expect(outcome.markdown).toBe(`No stories found matching the provided input.
 
-No story files found for \`src/Button.tsx\`.
-File arguments select story files by path, as Vitest filters select test files. To test the stories that depend on a changed file, use \`--changed\`.`);
+No story files found for \`src/Button.tsx\`.`);
     });
 
     it('passes when no story changed, with what to try next', async () => {
@@ -496,7 +500,7 @@ File arguments select story files by path, as Vitest filters select test files. 
         status: 'no-stories',
         notFoundMessages: [],
         selection: {
-          changed: { stories: 0, changedConfigFiles: ['.storybook/main.ts'], pendingFiles: [] },
+          changed: { storyCount: 0, changedConfigFiles: ['.storybook/main.ts'], pendingFiles: [] },
         },
       });
 
@@ -506,27 +510,35 @@ File arguments select story files by path, as Vitest filters select test files. 
       expect(outcome.ok).toBe(true);
       expect(outcome.markdown).toBe(`No stories changed, so no tests ran.
 Changed files in the Storybook config directory, which can affect every story: \`.storybook/main.ts\`.
-To test more, pass story files. Before you finish, run every story once: \`npx storybook tools test run\` without arguments.`);
-      expect(mcpOutcome.markdown).toContain(
-        'Before you finish, run every story once: test-run without `files`, `changed` or `stories`.'
-      );
+To test more, pass a ref (\`--changed main\`) or story files.`);
+      expect(mcpOutcome.markdown).toContain('pass a ref (`changed: "main"`) or story files.');
+    });
+
+    it('names the ref when no story changed since it', async () => {
+      vi.mocked(runStoryTests).mockResolvedValue({
+        status: 'no-stories',
+        notFoundMessages: [],
+        selection: {
+          changed: { storyCount: 0, changedConfigFiles: [], pendingFiles: [], since: 'next' },
+        },
+      });
+
+      expect((await runTests()).markdown).toBe(`No stories changed since \`next\`, so no tests ran.
+To test more, pass story files.`);
     });
 
     it('passes when no story file matches the filters under changed, as Vitest does', async () => {
       vi.mocked(runStoryTests).mockResolvedValue({
         status: 'no-stories',
         notFoundMessages: [],
-        selection: { files: { filters: ['src/Button.tsx'], storyFiles: 0 } },
+        selection: { files: { filters: ['src/Button.tsx'], storyFileCount: 0 } },
       });
 
       const outcome = await runTests();
 
       expect(outcome.ok).toBe(true);
-      expect(outcome.markdown).toContain(
-        'No story files found for `src/Button.tsx`, so no tests ran.'
-      );
-      expect(outcome.markdown).toContain(
-        'Before you finish, run every story once: `npx storybook tools test run` without arguments.'
+      expect(outcome.markdown).toBe(
+        `No story files found for \`src/Button.tsx\`, so no tests ran.`
       );
     });
 
@@ -535,13 +547,28 @@ To test more, pass story files. Before you finish, run every story once: \`npx s
         status: 'no-stories',
         notFoundMessages: [],
         selection: {
-          files: { filters: ['Header'], storyFiles: 1 },
-          changed: { stories: 3, changedConfigFiles: [], pendingFiles: [] },
+          files: { filters: ['Header'], storyFileCount: 1 },
+          changed: { storyCount: 3, changedConfigFiles: [], pendingFiles: [] },
         },
       });
 
-      expect((await runTests()).markdown).toContain(
-        'None of the selected stories changed, so no tests ran.'
+      expect((await runTests()).markdown)
+        .toBe(`None of the selected stories changed, so no tests ran.
+To test more, pass a ref (\`--changed main\`).`);
+    });
+
+    it('offers nothing more when story files and a ref were both given', async () => {
+      vi.mocked(runStoryTests).mockResolvedValue({
+        status: 'no-stories',
+        notFoundMessages: [],
+        selection: {
+          files: { filters: ['Header'], storyFileCount: 1 },
+          changed: { storyCount: 3, changedConfigFiles: [], pendingFiles: [], since: 'next' },
+        },
+      });
+
+      expect((await runTests()).markdown).toBe(
+        'None of the selected stories changed since `next`, so no tests ran.'
       );
     });
 
@@ -563,8 +590,7 @@ To test more, pass story files. Before you finish, run every story once: \`npx s
 ## Result
 
 Passed: 1 component test passed.
-Accessibility: not checked (addon-a11y is not enabled).
-Before you finish, run every story once: test-run without \`files\`, \`changed\` or \`stories\`.`);
+Accessibility: not checked (addon-a11y is not enabled).`);
     });
 
     it('says the accessibility check found nothing rather than staying silent', async () => {
@@ -646,7 +672,6 @@ Color contrast ratio is insufficient
 
 Failed: 1 accessibility check failed.
 Accessibility: 2 stories checked; 1 without violations; 1 failing the run.
-Fix what fails and run again, changing only what each failure needs. Do not finish with failing tests.
 Accessibility violations: fix only what your change caused, and report the rest. For visual ones such as color contrast, ask before changing the design.`);
     });
 
@@ -682,8 +707,7 @@ Expected button text to be "Secondary"
 ## Result
 
 Failed: 1 component test failed.
-Accessibility: 1 story checked, no violations. Stories with a failing component test get no accessibility result.
-Fix what fails and run again, changing only what each failure needs. Do not finish with failing tests.`);
+Accessibility: 1 story checked, no violations. Stories with a failing component test get no accessibility result.`);
     });
 
     it('reports accessibility violations with inspect links built from the origin', async () => {
@@ -801,8 +825,7 @@ ReferenceError: foo is not defined
 ## Result
 
 Failed: 1 unhandled error.
-Accessibility: not checked.
-Fix what fails and run again, changing only what each failure needs. Do not finish with failing tests.`);
+Accessibility: not checked.`);
     });
 
     it('passes a run whose accessibility violations are only warnings, and says so', async () => {
@@ -858,9 +881,7 @@ No story found for story ID "gone--story"`);
       const outcome = await runForMcp({ stories: [] });
 
       expect(outcome.ok).toBe(true);
-      expect(outcome.markdown).toBe(
-        'No stories were given, so no tests ran. Pass files or story IDs, or neither to run every story test.'
-      );
+      expect(outcome.markdown).toBe('No stories were given, so no tests ran.');
     });
 
     it('flags a failed run as a failure while still rendering the error line', async () => {

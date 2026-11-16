@@ -83,7 +83,7 @@ describe('MCP Endpoint E2E Tests', () => {
 
 			expect(response.error).toMatchInlineSnapshot(`
 				{
-				  "code": 0,
+				  "code": -32602,
 				  "message": "MCP error -32602: Invalid protocol version format",
 				}
 			`);
@@ -343,9 +343,20 @@ describe('MCP Endpoint E2E Tests', () => {
 				  {
 				    "description": "Get Storybook stories marked as new, modified, or related. Returns story metadata only (no URLs).
 
+				By default the result covers the uncommitted changes. Pass since with a git ref, such as the branch this one forked from, to also cover what is committed since then.
+
 				The result reflects the cumulative working-tree diff, not just your latest edit — after multiple edits in one session, a non-empty result may cover an earlier sub-change and miss your most recent one. Check that every file you touched is represented; for any that isn't, find its consumer components and pass their paths to stories-find-by-component instead. The response surfaces this gap with a "coverage sanity check" hint when it detects unreachable working-tree files.",
 				    "inputSchema": {
-				      "properties": {},
+				      "$schema": "http://json-schema.org/draft-07/schema#",
+				      "additionalProperties": false,
+				      "properties": {
+				        "since": {
+				          "description": "A git ref: a branch, tag or commit. Lists the stories for what this branch committed since it forked from that ref, plus the uncommitted changes. Leave it out for the uncommitted changes only.",
+				          "minLength": 1,
+				          "type": "string",
+				        },
+				      },
+				      "required": [],
 				      "type": "object",
 				    },
 				    "name": "stories-changed",
@@ -560,7 +571,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				    "description": "Run story tests.
 				Run them after editing anything that changes how the UI looks — components, stories, styles, CSS, themes, colors, or design tokens — shell-level substitutes like typecheck, lint, or package.json test scripts do not replace this.
 				Use changed for focused runs on what you changed (faster while iterating), or files for specific story files,
-				and leave all of them out to run every story for full-project verification.
+				and leave all of them out to run every story.
 				Use this continuously to monitor test results as you work on your UI components and stories.
 				Results will include passing/failing status, and accessibility violation reports.
 				For visual/design accessibility violations (for example color contrast), ask the user before changing styles.",
@@ -574,20 +585,28 @@ describe('MCP Endpoint E2E Tests', () => {
 				          "type": "boolean",
 				        },
 				        "changed": {
-				          "description": "Test the changed stories, exactly as the stories changed tool lists them: new and modified stories, and the stories that depend on changed files. Combined with files or stories, only the stories that match both run.",
-				          "type": "boolean",
+				          "anyOf": [
+				            {
+				              "type": "boolean",
+				            },
+				            {
+				              "minLength": 1,
+				              "type": "string",
+				            },
+				          ],
+				          "description": "Test the changed stories, exactly as the stories changed tool lists them: new and modified stories, and the stories that depend on changed files. true for the uncommitted changes, or a git ref (a branch, tag or commit) for what this branch committed since it forked from that ref, plus the uncommitted changes. Combined with files or stories, only the stories that match both run.",
 				        },
 				        "files": {
-				          "description": "Story files to test, as Vitest file filters: each entry selects the story files whose path, relative to the Storybook project directory, contains it (case-insensitive), or that an absolute path or directory points to. Only story files match; to test the stories that depend on a changed component, use \`changed\`.",
+				          "description": "Story files to test: each entry selects the story files whose path contains it (case-insensitive), or that an absolute path or directory points to. Only story files match; to test the stories that depend on a changed component, use \`changed\`.",
 				          "items": {
+				            "minLength": 1,
 				            "type": "string",
 				          },
 				          "type": "array",
 				        },
 				        "stories": {
 				          "description": "Stories to test for focused feedback. Omit this field, \`files\` and \`changed\` to run tests for all available stories.
-				Prefer running tests for specific stories while developing to get faster feedback,
-				and omit it once before you finish, to verify every story.
+				Prefer running tests for specific stories while developing to get faster feedback.
 				Prefer { storyId } when you don't already have story file context, since this avoids filesystem discovery.
 				Use { storyId } when IDs were discovered from documentation tools.
 				Use { absoluteStoryPath + exportName } only when you're currently working in a story file and already know those values.",

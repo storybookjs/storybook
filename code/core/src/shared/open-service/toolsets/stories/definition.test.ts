@@ -9,6 +9,7 @@ import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vites
 import * as v from 'valibot';
 
 import {
+  OpenServiceGitRefError,
   OpenServiceMissingOriginError,
   OpenServiceModuleGraphUnavailableError,
 } from '../../../../server-errors.ts';
@@ -18,7 +19,11 @@ import {
   resolveToolsetDescription,
   type ToolsetCtx,
 } from '../../toolset-definition.ts';
-import { createStoriesToolset, type StoriesToolset } from './definition.ts';
+import {
+  createStoriesToolset,
+  type ChangedStoriesOutput,
+  type StoriesToolset,
+} from './definition.ts';
 
 vi.mock('node:fs', { spy: true });
 
@@ -107,8 +112,12 @@ function runPreview(
   );
 }
 
-function runChanged(ctx: ToolsetCtx = cliCtx, target: StoriesToolset = toolset) {
-  return invokeToolsetMethod(target, 'changed', v.parse(target.methods.changed.input, {}), ctx);
+function runChanged(
+  ctx: ToolsetCtx = cliCtx,
+  target: StoriesToolset = toolset,
+  input: { since?: string } = {}
+) {
+  return invokeToolsetMethod(target, 'changed', v.parse(target.methods.changed.input, input), ctx);
 }
 
 function runFindByComponent(
@@ -261,6 +270,127 @@ describe('stories.preview', () => {
 });
 
 describe('stories.changed', () => {
+  describe('since a git ref', () => {
+    const changedStoryFile = 'packages/ui/src/Button.stories.tsx';
+    const storyPath = resolve(storybookWorkingDir, 'src/Button.stories.tsx');
+
+    it('computes the stories from git and the graph, without change detection', async () => {
+      // The status store holds the uncommitted changes only; nothing in it for this ref.
+      getChangedFiles.mockResolvedValue({
+        changed: new Set([changedComponentFile]),
+        new: new Set<string>(),
+      });
+
+      const outcome = await runChanged(cliCtx, toolset, { since: 'next' });
+
+      expect(getChangedFiles).toHaveBeenCalledExactlyOnceWith('next');
+      // The notes and the statuses need the same file; the graph is asked once.
+      expect(storiesForFiles.mock.calls.flatMap(([{ files }]) => files)).toEqual([componentPath]);
+      expect(getStatuses).not.toHaveBeenCalled();
+      expect(changeDetectionReadiness).not.toHaveBeenCalled();
+      expect(outcome.data).toEqual({
+        stories: [
+          {
+            storyId: 'button--primary',
+            statusValue: 'status-value:modified',
+            title: 'Button',
+            name: 'Primary',
+            importPath: './src/Button.stories.tsx',
+          },
+        ],
+        counts: { new: 0, modified: 1, affected: 0 },
+        unreachableFiles: [],
+        unreachableFilesTruncated: false,
+        pendingFiles: [],
+        unindexedStoryFiles: [],
+        changedConfigFiles: [],
+        since: 'next',
+      });
+      expect(String(outcome.markdown)).toMatch(
+        /^Detected 1 changed story since `next` \(0 new, 1 modified, 0 related\)\./
+      );
+      expect(outcome.telemetry?.payload).toMatchObject({ storyCount: 1, since: true });
+    });
+
+    it('marks the stories of a story file added since the ref as new', async () => {
+      getChangedFiles.mockResolvedValue({
+        changed: new Set([changedComponentFile]),
+        new: new Set([changedStoryFile]),
+      });
+      graphMatchesByFile.set(storyPath, [{ storyFile: './src/Button.stories.tsx', depth: 0 }]);
+
+      const outcome = await runChanged(cliCtx, toolset, { since: 'next' });
+
+      expect(outcome.data.counts).toEqual({ new: 1, modified: 0, affected: 0 });
+    });
+
+    it('marks stories further from the changed file as related', async () => {
+      getIndex.mockResolvedValue({
+        ...index,
+        entries: {
+          ...index.entries,
+          'form--default': {
+            ...index.entries['button--primary'],
+            id: 'form--default',
+            title: 'Form',
+            name: 'Default',
+            importPath: './src/Form.stories.tsx',
+          },
+        },
+      });
+      graphMatchesByFile.set(componentPath, [
+        buttonStoryHit,
+        { storyFile: './src/Form.stories.tsx', depth: 2 },
+      ]);
+      getChangedFiles.mockResolvedValue({
+        changed: new Set([changedComponentFile]),
+        new: new Set<string>(),
+      });
+
+      const outcome = await runChanged(cliCtx, toolset, { since: 'next' });
+
+      expect(
+        outcome.data.stories.map((story: ChangedStoriesOutput['stories'][number]) => [
+          story.storyId,
+          story.statusValue,
+        ])
+      ).toEqual([
+        ['button--primary', 'status-value:modified'],
+        ['form--default', 'status-value:affected'],
+      ]);
+    });
+
+    it('says so when nothing changed since the ref', async () => {
+      getChangedFiles.mockResolvedValue({ changed: new Set<string>(), new: new Set<string>() });
+
+      const outcome = await runChanged(cliCtx, toolset, { since: 'next' });
+
+      expect(outcome.data.stories).toEqual([]);
+      expect(outcome.markdown).toBe('No new, modified, or related stories detected since `next`.');
+    });
+
+    it('rejects an empty ref', () => {
+      expect(v.safeParse(toolset.methods.changed.input, { since: '' }).success).toBe(false);
+    });
+
+    it('lets a ref that git cannot compare fail the call', async () => {
+      const error = new OpenServiceGitRefError({ ref: 'nope', reason: 'unknown' });
+      getChangedFiles.mockRejectedValue(error);
+
+      await expect(runChanged(cliCtx, toolset, { since: 'nope' })).rejects.toBe(error);
+      expect(error.message).toContain('`nope` is not a known git ref.');
+      expect(error.agentFacing).toBe(true);
+    });
+
+    it('fails outside a git repository, where a ref cannot be compared', async () => {
+      getChangedFiles.mockRejectedValue(new Error('not a git repository'));
+
+      await expect(runChanged(cliCtx, toolset, { since: 'next' })).rejects.toThrow(
+        'Cannot list the changes since `next`: this project is not in a git repository, or git is not available.'
+      );
+    });
+  });
+
   it('enriches change-detection statuses and lists unreachable working-tree files', async () => {
     markChanged('button--primary', 'status-value:modified');
 

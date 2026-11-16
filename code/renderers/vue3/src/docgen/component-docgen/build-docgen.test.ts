@@ -46,7 +46,7 @@ describe('buildDocgenPayload subcomponents', () => {
     const header = payload?.subcomponents?.Header;
     expect(header).toBeDefined();
     expect(header?.name).toBe('CardHeader');
-    expect(header?.path).toContain('CardHeader.vue');
+    expect(header?.path).toBe('./subcomponents/CardHeader.vue');
     expect(header?.renderer).toBe('vue3');
     // The child's own props are extracted, not the parent's.
     expect(header?.argTypes?.heading).toMatchObject({

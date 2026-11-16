@@ -81,8 +81,9 @@ function formatChangedFilesOutsideStories(
 
 export function formatChangedStories(data: ChangedStoriesOutput, ctx: ToolsetCtx): string {
   const { stories, counts } = data;
+  const since = data.since === undefined ? '' : ` since \`${data.since}\``;
   if (stories.length === 0) {
-    return `No new, modified, or related stories detected.${formatChangedFilesOutsideStories(data, ctx)}`;
+    return `No new, modified, or related stories detected${since}.${formatChangedFilesOutsideStories(data, ctx)}`;
   }
 
   const buckets = {
@@ -91,7 +92,7 @@ export function formatChangedStories(data: ChangedStoriesOutput, ctx: ToolsetCtx
     affected: stories.filter((story) => story.statusValue === 'status-value:affected'),
   };
 
-  let text = `Detected ${stories.length} changed stor${pluralize(stories.length, 'y', 'ies')} (${counts.new} new, ${counts.modified} modified, ${counts.affected} related).`;
+  let text = `Detected ${stories.length} changed stor${pluralize(stories.length, 'y', 'ies')}${since} (${counts.new} new, ${counts.modified} modified, ${counts.affected} related).`;
 
   const serializeStory = ({
     storyId,

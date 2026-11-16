@@ -96,7 +96,7 @@ To remove a plugin:
 
 ## Usage
 
-The plugin's [skills](#skills) tell the agent how to work with your Storybook: reuse your components, generate stories, run tests, and preview its work. The `AGENTS.md` section below is the workflow that tells the agent which skills to use and how to run the story tests for every UI change. Add it to the `AGENTS.md` of each project where the agent should follow it. When you set up Storybook 11 with AI features, or accept the `skills` automigration when you upgrade, Storybook adds it for you (and to your `CLAUDE.md` or `CLAUDE.local.md`, if it does not import `AGENTS.md`):
+The plugin's [skills](#skills) tell the agent how to work with your Storybook: reuse your components, generate stories, run tests, and preview its work. The `AGENTS.md` section below is the [UI workflow](https://storybook.js.org/docs/ai/skills/ui-workflow) that tells the agent which skills to use and how to run the story tests for every UI change. Add it to the `AGENTS.md` of each project where the agent should follow it. When you set up Storybook 11 with AI features, or accept the `skills` automigration when you upgrade, Storybook adds it for you (and to your `CLAUDE.md` or `CLAUDE.local.md`, if it does not import `AGENTS.md`):
 
 ```md
 <!-- BEGIN:storybook-skills -->
@@ -120,7 +120,7 @@ When the user asks for a review or to see stories, use the `ui-review` skill. Ot
 
 Storybook replaces the text between the markers when you upgrade. The section is the workflow: the first two steps name the skill the agent uses for them, and the third is the test command itself, so the agent runs the tests from that line alone. A project without `@storybook/addon-vitest` cannot run story tests and gets no test step. After a change you can see, the agent ends its answer with a line that offers the `ui-review` skill; it does not create a review unless you ask. To change the workflow, for example to drop that line or to have the agent create a review after every change, remove both markers and edit the section. An edit between the markers lasts only until the next upgrade, which writes the section again. Remove the whole section to stop the agent from following the workflow: it then uses a skill only when you ask for it, or when it finds one that fits its task. You can also call the plugin's skills in prompts (e.g. `/upgrade`) to have the agent perform specific actions. See [Skills and plugins](https://storybook.js.org/docs/ai/skills) for more details.
 
-If you're using Claude Desktop and ask to see stories or for a review, the agent will use the plugin to open relevant stories or an [agentic review summary](https://storybook.js.org/docs/ai/agentic-review) in the ADE preview, so you can review the agent's work.
+If you're using Claude Desktop and ask to see stories or for a review, the agent will use the plugin to open relevant stories or an [agentic review summary](https://storybook.js.org/docs/ai/skills/ui-review) in the ADE preview, so you can review the agent's work.
 
 ## Skills
 
@@ -132,7 +132,7 @@ Initializes Storybook in your project (i.e. runs [`npm create storybook@latest`]
 
 ### `setup`
 
-Sets up your Storybook for agentic workflows, automatically configures your project to correctly render your components, and writes story files for a variety of component types. See the [agentic setup docs](https://storybook.js.org/docs/ai/agentic-setup) for more details.
+Sets up your Storybook for agentic workflows, automatically configures your project to correctly render your components, and writes story files for a variety of component types. See the [agentic setup docs](https://storybook.js.org/docs/ai/skills/setup) for more details.
 
 ### `component-docs`
 
@@ -140,15 +140,15 @@ Looks up the components of your Storybook, with their props and usage examples, 
 
 ### `write-stories`
 
-The rules for the stories of your project: which states get a story, and how to write the imports, `play` functions, and mocks.
+The rules for the stories of your project: which states get a story, and how to write the imports, `play` functions, and mocks. See [Write stories](https://storybook.js.org/docs/ai/skills/write-stories).
 
 ### `test-stories`
 
-Runs the story tests of what you changed, with their accessibility checks, and fixes what fails. The `AGENTS.md` section names the test command itself, so the agent needs this skill only when you call it by name.
+Runs the story tests of what you changed, with their accessibility checks, and fixes what fails. The `AGENTS.md` section names the test command itself, so the agent needs this skill only when you call it by name. See [Test stories](https://storybook.js.org/docs/ai/skills/test-stories).
 
 ### `ui-review`
 
-Finds the stories a change affects and creates an [agentic review](https://storybook.js.org/docs/ai/agentic-review) of them. Also shows the components or stories you ask to see. The agent uses it when you ask for a review or to see stories, not after every change: ask for example "Use the ui-review skill to create a Storybook review of the stories that changed."
+Finds the stories a change affects and creates an [agentic review](https://storybook.js.org/docs/ai/skills/ui-review) of them. Also shows the components or stories you ask to see. The agent uses it when you ask for a review or to see stories, not after every change: ask for example "Use the ui-review skill to create a Storybook review of the stories that changed."
 
 ### `upgrade`
 
@@ -156,4 +156,4 @@ Upgrades your Storybook to the latest version. This is the same as running [`npx
 
 ## Tools
 
-Agents with the plugin get the same tools as the [Storybook MCP server](https://storybook.js.org/docs/ai/mcp/overview#toolsets), through the `storybook tools` CLI.
+Agents with the plugin get the same tools as the [Storybook MCP server](https://storybook.js.org/docs/ai/reference/mcp-server), through the `storybook tools` CLI.

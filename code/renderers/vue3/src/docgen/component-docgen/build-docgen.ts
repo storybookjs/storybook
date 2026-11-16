@@ -19,6 +19,7 @@ import type ts from 'typescript';
 
 import {
   type DeclaredSubcomponent,
+  componentPathFromStory,
   extractDeclaredSubcomponents,
   getComponentIdFromEntry,
   getStoryImportPathFromEntry,
@@ -214,7 +215,8 @@ async function buildSubcomponentDocgen(
 
     return {
       name: declared.componentName,
-      path: extracted.path,
+      // Written like the story's index path, as in the other renderers, not as a machine path.
+      path: componentPathFromStory(storyFilePath, storyPath, extracted.path),
       description: extracted.description,
       summary: extracted.summary,
       jsDocTags: extracted.jsDocTags,

@@ -534,8 +534,14 @@ jobs:
         continue-on-error: true
         env:
           QA_IMAGE: ${{ needs.image.outputs.image }}
+        # Sandcastle refuses an image of another uid only after the clone, when no build can follow.
         run: |
           docker pull "$QA_IMAGE"
+          user="$(docker image inspect --format '{{.Config.User}}' "$QA_IMAGE")"
+          if [ "$user" != "$(id -u):$(id -g)" ]; then
+            echo "::warning::The image runs as $user and this runner as $(id -u):$(id -g), so the runner builds the image."
+            exit 1
+          fi
           docker tag "$QA_IMAGE" sb-ecosystem-qa
 
       - name: Build the sandbox image

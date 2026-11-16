@@ -91,7 +91,7 @@ if (!results || !values.plan || !version || !planned || !repo) {
   fail(`Missing one of --results, --plan, --batch, --version, --planned, --repo.\n\n${HELP}`);
 }
 versionLine(version!);
-const scope = readPlanScope(values, fail)!;
+const scope = readPlanScope(values)!;
 const runs = values.runs === '' ? [] : values.runs.split(',');
 if (runs.some((id) => !/^\d+$/.test(id))) {
   fail(`A run id is digits only: ${values.runs}`);

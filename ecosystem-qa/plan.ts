@@ -72,7 +72,7 @@ const planned = () => {
       `--plan takes its repos from the plan and runs on Linux, so it takes no --repos or --os.\n\n${HELP}`
     );
   }
-  const scope = readPlanScope(values, fail)!;
+  const scope = readPlanScope(values)!;
   return { scope, matrix: planMatrix(scope.plan, scope.batch, engines) };
 };
 

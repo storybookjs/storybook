@@ -6,7 +6,17 @@ import { SEMVER } from './cycle.ts';
 import { CatalogEntry } from './schema.ts';
 import { needsGroup, type Window, type WindowPr } from './window.ts';
 
-const Text = z.string().regex(/^\S(?:[^\n\r]*\S)?$/, 'expected one line of text');
+// GitHub shows neither an HTML comment nor a control character, so either would hide text from
+// the reviewer that the agent still reads.
+const Text = z
+  .string()
+  .regex(/^\S(?:[^\n\r]*\S)?$/, 'expected one line of text')
+  .regex(/^[^\p{Cc}\p{Zl}\p{Zp}]*$/u, 'expected no control character or line separator')
+  .refine((text) => !text.includes('<!--'), 'expected no HTML comment');
+const RepoDir = Text.refine(
+  (dir) => !dir.startsWith('/') && !dir.includes('\\') && !dir.split('/').includes('..'),
+  'expected a relative path inside the repository'
+);
 const Slug = z
   .string()
   .max(75)
@@ -41,7 +51,7 @@ export const DiscoveredRepo = z.strictObject({
   repo: CatalogEntry.shape.repo,
   commit: Sha,
   packageManager: CatalogEntry.shape.packageManager,
-  storybookDir: Text,
+  storybookDir: RepoDir,
   major: z.int().positive(),
   stars: z.int().min(0),
   pushedAt: z
@@ -649,11 +659,12 @@ const rowsAreDecided: Rule = (input) => {
 };
 
 const batchesHaveNoGap: Rule = ({ plan, at }) => {
-  const batches = new Set(plan.entries.map((entry) => entry.batch));
-  const missing = planBatches(plan).find((batch) => !batches.has(batch));
-  if (missing === undefined) {
+  const batches = [...new Set(plan.entries.map((entry) => entry.batch))].sort((a, b) => a - b);
+  const gap = batches.findIndex((batch, index) => batch !== index + 1);
+  if (gap === -1) {
     return [];
   }
+  const missing = gap + 1;
   const index = plan.entries.findIndex((entry) => entry.batch > missing);
   return [{ line: at.entries[index]!.batch, message: `batch ${missing} has no entry` }];
 };
@@ -811,8 +822,8 @@ export const discoveredEntries = (plan: Plan): CatalogEntry[] =>
     windows: false,
   }));
 
-export const planHash = (text: string): string =>
-  createHash('sha256').update(text).digest('hex').slice(0, 12);
+export const planHash = (content: string | Uint8Array): string =>
+  createHash('sha256').update(content).digest('hex').slice(0, 12);
 
 export const planCheckId = (slug: string): string => `plan.${slug}`;
 

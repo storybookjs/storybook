@@ -99,6 +99,16 @@ jobs:
       - name: Test
         run: yarn workspace ecosystem-qa test
 
+      # A pull request against qa/plans that only adds a plan gets its red or green check here.
+      - name: Check the QA plans
+        run: |
+          shopt -s nullglob
+          status=0
+          for plan in ecosystem-qa/lib/plan.fixture.md ecosystem-qa/plans/*.md; do
+            node ecosystem-qa/qa-plan.ts check "$plan" || status=1
+          done
+          exit "$status"
+
       - name: Plan a whole sweep from the catalog
         run: node ecosystem-qa/plan.ts --repos owned,tier1,tier2 --os linux,windows --engines claude,codex
 

@@ -9,20 +9,22 @@ import { ghParse } from './lib/github.ts';
 import {
   IssueNode,
   issueNumbersOf,
-  inWindow,
   needsGroup,
   PullNode,
+  PULLS_QUERY,
   QaStatus,
   readMergedPulls,
   Window,
   windowCutoff,
   windowPr,
+  windowPulls,
 } from './lib/window.ts';
 
 const HELP = `Usage: node ecosystem-qa/window.ts --from <tag> --to <tag> --out <file>
 
-Writes every PR whose merge commit is between two tags, whatever branch it was merged into, to --out
-as JSON, sorted by number, and leaves out the release PRs. For each PR: its QA status, its area,
+Writes every PR whose merge commit is between two tags, whatever branch it was merged into, and every
+PR merged into the branch of such a PR before that PR merged, to --out as JSON, sorted by number,
+and leaves out the release PRs. For each PR: its QA status, its area,
 its manual testing section, who wrote it as GitHub's author association, and the issues it closes
 or names in its body, each with its parent issue, its number of sub-issues, and whether it has a
 heading for QA or testing. Prints the count of each status. Reads GitHub, and fetches a tag that
@@ -64,20 +66,6 @@ const toSha = commitOf(to);
 const commits = new Set(git('rev-list', `${fromSha}..${toSha}`).split('\n'));
 const cutoff = windowCutoff(git('log', '-1', '--format=%cI', fromSha));
 
-const PULLS_QUERY = `query($cursor: String) {
-  repository(owner: "storybookjs", name: "storybook") {
-    pullRequests(states: MERGED, first: 100, after: $cursor, orderBy: { field: UPDATED_AT, direction: DESC }) {
-      pageInfo { hasNextPage endCursor }
-      nodes {
-        number title body updatedAt mergedAt authorAssociation baseRefName
-        mergeCommit { oid }
-        labels(first: 50) { nodes { name } }
-        closingIssuesReferences(first: 25) { nodes { number repository { nameWithOwner } } }
-      }
-    }
-  }
-}`;
-
 const PullsPage = z.object({
   data: z.object({
     repository: z.object({
@@ -98,7 +86,7 @@ const readPage = (cursor: string | null) =>
     ...(cursor ? ['-f', `cursor=${cursor}`] : []),
   ]).data.repository.pullRequests;
 
-const inRange = readMergedPulls(readPage, cutoff).filter((pr) => inWindow(pr, commits, cutoff));
+const inRange = windowPulls(readMergedPulls(readPage, cutoff), commits, cutoff);
 
 const ISSUE_FIELDS = 'number title body subIssues { totalCount }';
 const ISSUES_PER_QUERY = 100;

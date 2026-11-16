@@ -108,7 +108,8 @@ jobs:
             if [ -f "$window" ]; then
               node ecosystem-qa/qa-plan.ts check "$plan" --window "$window" || status=1
             else
-              node ecosystem-qa/qa-plan.ts check "$plan" || status=1
+              echo "::error file=$plan::$plan has no window file $window next to it."
+              status=1
             fi
           done
           exit "$status"

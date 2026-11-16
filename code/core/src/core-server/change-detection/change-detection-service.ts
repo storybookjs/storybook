@@ -2,16 +2,14 @@ import { join, normalize } from 'pathe';
 
 import { dequal } from 'dequal';
 import { logger } from 'storybook/internal/node-logger';
-import type {
-  Status,
-  StatusStoreByTypeId,
-  StatusValue,
-  StoryIndex,
-} from 'storybook/internal/types';
+import type { Status, StatusStoreByTypeId, StoryIndex } from 'storybook/internal/types';
 import { CHANGE_DETECTION_STATUS_TYPE_ID } from 'storybook/internal/types';
 
 import { getService } from '../../shared/open-service/server.ts';
-import { storyFileChangeStatuses } from '../../shared/open-service/services/module-graph/change-statuses.ts';
+import {
+  mergeStatusValues,
+  storyFileChangeStatuses,
+} from '../../shared/open-service/services/module-graph/change-statuses.ts';
 import { getStoryIdsByAbsolutePath } from '../../shared/open-service/services/module-graph/story-files.ts';
 import type {
   ErrorLike,
@@ -54,24 +52,7 @@ function isSameStatus(a: Status | undefined, b: Status): boolean {
   );
 }
 
-export function mergeStatusValues(
-  previousValue: StatusValue | undefined,
-  nextValue: StatusValue
-): StatusValue {
-  if (previousValue === 'status-value:new' || nextValue === 'status-value:new') {
-    return 'status-value:new';
-  }
-
-  if (previousValue === 'status-value:modified' || nextValue === 'status-value:modified') {
-    return 'status-value:modified';
-  }
-
-  if (previousValue === 'status-value:affected' || nextValue === 'status-value:affected') {
-    return 'status-value:affected';
-  }
-
-  return nextValue;
-}
+export { mergeStatusValues };
 
 export function mergeChangeDetectionStatuses(
   existing: Status | undefined,

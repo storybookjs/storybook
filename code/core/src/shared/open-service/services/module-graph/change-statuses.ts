@@ -1,13 +1,29 @@
+import type { StatusValue } from '../../../status-store/index.ts';
+
 export type StoryChangeStatus =
   | 'status-value:new'
   | 'status-value:modified'
   | 'status-value:affected';
 
-const STRENGTH: Record<StoryChangeStatus, number> = {
-  'status-value:new': 2,
-  'status-value:modified': 1,
-  'status-value:affected': 0,
-};
+/** The stronger of two statuses: new, then modified, then affected. Any other value loses. */
+export function mergeStatusValues(
+  previousValue: StatusValue | undefined,
+  nextValue: StatusValue
+): StatusValue {
+  if (previousValue === 'status-value:new' || nextValue === 'status-value:new') {
+    return 'status-value:new';
+  }
+
+  if (previousValue === 'status-value:modified' || nextValue === 'status-value:modified') {
+    return 'status-value:modified';
+  }
+
+  if (previousValue === 'status-value:affected' || nextValue === 'status-value:affected') {
+    return 'status-value:affected';
+  }
+
+  return nextValue;
+}
 
 /** One changed file, and the story files that render it with their import-graph depth. */
 export type ChangedFileStories = {
@@ -37,10 +53,10 @@ export function storyFileChangeStatuses(
           : depth === closest
             ? 'status-value:modified'
             : 'status-value:affected';
-      const previous = statuses.get(storyFile);
-      if (!previous || STRENGTH[status] > STRENGTH[previous]) {
-        statuses.set(storyFile, status);
-      }
+      statuses.set(
+        storyFile,
+        mergeStatusValues(statuses.get(storyFile), status) as StoryChangeStatus
+      );
     }
   }
   return statuses;

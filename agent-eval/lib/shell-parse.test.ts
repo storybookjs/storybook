@@ -12,12 +12,18 @@ import {
 // Not a static import: tsc would then check the core source against this
 // package's stricter `noUncheckedIndexedAccess`.
 const toolTokensUrl = new URL('../../code/core/src/cli/tools/tool-tokens.ts', import.meta.url);
-const { parseToolsTokens } = (await import(toolTokensUrl.href)) as {
-  parseToolsTokens: (
-    tokens: string[]
-  ) =>
-    | { ok: true; help: boolean; args: Record<string, unknown>; positionals: string[] }
-    | { ok: false };
+type ParsedTokens = {
+  ok: true;
+  help: boolean;
+  args: Record<string, unknown>;
+  positionals: string[];
+};
+const { parseToolsTokens, withPositionals } = (await import(toolTokensUrl.href)) as {
+  parseToolsTokens: (tokens: string[]) => ParsedTokens | { ok: false };
+  withPositionals: (
+    parsed: ParsedTokens,
+    key: string | undefined
+  ) => { ok: true; args: Record<string, unknown> } | { ok: false };
 };
 
 function shellQuote(token: string): string {
@@ -113,19 +119,9 @@ describe('storybook tools arguments after the tool name', () => {
         ['npx storybook tools test run', ...tokens.map(shellQuote)].join(' '),
       ]);
       const parsed = parseToolsTokens(tokens);
-      // The dispatcher appends bare arguments to `files`, the `positional` key of `test run`.
-      const given = parsed.ok ? parsed.args.files : undefined;
-      const args = !parsed.ok
-        ? undefined
-        : parsed.positionals.length === 0 && given === undefined
-          ? parsed.args
-          : {
-              ...parsed.args,
-              files: [
-                ...(given === undefined ? [] : Array.isArray(given) ? given : [given]),
-                ...parsed.positionals,
-              ],
-            };
+      // `files` is the `positional` key of `test run`.
+      const merged = parsed.ok ? withPositionals(parsed, 'files') : undefined;
+      const args = merged?.ok ? merged.args : undefined;
 
       expect(calls.map((call) => call.input)).toEqual(input === undefined ? [] : [input]);
       expect(parsed.ok && !parsed.help ? args : undefined).toEqual(input);

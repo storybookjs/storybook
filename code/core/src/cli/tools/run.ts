@@ -32,6 +32,7 @@ import {
 import {
   parsePort,
   parseToolsTokens,
+  withPositionals,
   type ParsedToolsTokens,
   type ToolsOutputFlags,
 } from './tool-tokens.ts';
@@ -386,28 +387,6 @@ async function dispatchTools(
   } finally {
     logger.setLogLevel(previousLogLevel);
   }
-}
-
-/** Bare arguments fill the method's `positional` key, after any `--key` values for it. */
-function withPositionals(
-  parsed: Extract<ParsedToolsTokens, { ok: true }>,
-  key: string | undefined
-): { ok: true; args: Record<string, unknown> } | { ok: false; unexpected: string } {
-  if (!key) {
-    return parsed.positionals.length === 0
-      ? { ok: true, args: parsed.args }
-      : { ok: false, unexpected: parsed.positionals[0] };
-  }
-  const given = parsed.args[key];
-  if (parsed.positionals.length === 0 && given === undefined) {
-    return { ok: true, args: parsed.args };
-  }
-  // A single `--key value` is a list of one.
-  const values = [
-    ...(given === undefined ? [] : Array.isArray(given) ? given : [given]),
-    ...parsed.positionals,
-  ];
-  return { ok: true, args: { ...parsed.args, [key]: values } };
 }
 
 function formatUnknownToolsetFromCatalog(

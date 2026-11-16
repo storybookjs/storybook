@@ -225,6 +225,27 @@ describe('checkPlanText', () => {
       'which is no entry',
     ],
     [
+      'a row that names an entry whose PRs do not list it',
+      '| `story-sort-in-main` |\n',
+      '| `story-sort-in-main`, `preview-animations` |\n',
+      `| ${pr(36137)} |`,
+      '#36137 names `preview-animations`, whose PRs do not list it',
+    ],
+    [
+      'a PR with a second row that decides it otherwise',
+      '| `preview-animations` |\n',
+      `| \`preview-animations\` |\n| ${pr(31900)} | Preview | Preview: Only pause DocumentTimeline animations in preview-web | skip: no project shows it |\n`,
+      'skip: no project shows it',
+      '#31900 has a row already',
+    ],
+    [
+      'a PR with a row in two tables',
+      '| [#35658](https://github.com/storybookjs/storybook/pull/35658) | Core |',
+      `| ${pr(36664)} | CI | CI: Cancel workflow when format check fails | skip: CI only |\n| [#35658](https://github.com/storybookjs/storybook/pull/35658) | Core |`,
+      'skip: CI only',
+      '#36664 has a row already',
+    ],
+    [
       'a repo that is no catalog id and was not discovered',
       '- Repo `mantine`',
       '- Repo `mantin`',

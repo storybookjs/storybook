@@ -166,10 +166,13 @@ A repo with more entries in one batch than `Entries per run` runs them in severa
 `check` accepts a file only when it equals what render would write for what it read, so a line that is not in the format fails at its line number.
 It then holds the plan against these rules and prints each problem as `<file>:<line>: <message>`:
 
-- Every slug and group is unique, and the version is on the plan's line.
+- Every slug, group, and discovered id is unique, every PR has one row in one table, and the version is on the plan's line.
+- Every text field is one line without an HTML comment, a control character, or a line separator, because GitHub shows none of them to the reviewer.
+- The Storybook directory of a discovered repo is a relative path inside the repository, without `..` or a leading `/`.
 - Every repo of an entry is a catalog id or a discovered repo, and a discovered repo never takes a catalog id.
 - No repo of an entry is more than one major behind the plan's line, by the `tags` of its catalog entry or the major of its discovered row.
-- Every PR of an entry has a row that names the entry, or a row in a group whose decision names it, every row has a decision, and every decision names entries that exist.
+- Every PR of an entry has a row that names the entry, or a row in a group whose decision names it, every row has a decision, and every decision names entries that exist. An entry lists every PR whose row in "PRs that need QA" or "Undeclared PRs" names it; a PR of a group may stay out of the entries its group names.
+- The batches are numbered from 1 without a gap.
 - Every maintainer PR marked `qa:skip` with a product label names a group, and every group has a decision.
 - The file holds no link to `linear.app`, `notion.so`, `notion.site`, `notion.com`, or a `slack.com` host.
 - No entry title, repo reason, step, or expected outcome names a host other than `localhost`, because the runner prints all four into the agent's prompt. A host is refused in these forms:

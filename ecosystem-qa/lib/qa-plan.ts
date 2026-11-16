@@ -540,28 +540,33 @@ const decisionRows = ({ plan, at }: RuleInput) =>
 const unknownSlugs = (decision: Decision, slugs: Set<string>): string[] =>
   decision && 'entries' in decision ? decision.entries.filter((slug) => !slugs.has(slug)) : [];
 
-const duplicates = (keys: string[], lineOf: (index: number) => number, what: string) =>
+const duplicates = <Key>(keys: Key[], lines: number[], message: (key: Key) => string): Problem[] =>
   keys.flatMap((key, index) =>
-    keys.indexOf(key) < index
-      ? [{ line: lineOf(index), message: `${what} \`${key}\` is used twice` }]
-      : []
+    keys.indexOf(key) < index ? [{ line: lines[index]!, message: message(key) }] : []
   );
+
+const WINDOW_TABLES = ['needed', 'undeclared', 'maintainerSkips', 'verified', 'skipped'] as const;
 
 const namesAreUnique: Rule = ({ plan, at }) => [
   ...duplicates(
     plan.entries.map((entry) => entry.slug),
-    (index) => at.entries[index]!.heading,
-    'the slug'
+    at.entries.map((entry) => entry.heading),
+    (slug) => `the slug \`${slug}\` is used twice`
   ),
   ...duplicates(
     plan.groups.map((group) => group.slug),
-    (index) => at.tables.groups.rows[index]!,
-    'the group'
+    at.tables.groups.rows,
+    (slug) => `the group \`${slug}\` is used twice`
   ),
   ...duplicates(
     plan.discovered.map((repo) => repo.id),
-    (index) => at.tables.discovered.rows[index]!,
-    'the id'
+    at.tables.discovered.rows,
+    (id) => `the id \`${id}\` is used twice`
+  ),
+  ...duplicates(
+    WINDOW_TABLES.flatMap((key) => plan[key].map((row) => row.pr)),
+    WINDOW_TABLES.flatMap((key) => at.tables[key].rows),
+    (pr) => `#${pr} has a row already`
   ),
 ];
 
@@ -647,15 +652,21 @@ const entryPrsHaveRows: Rule = (input) => {
 };
 
 const rowsAreDecided: Rule = (input) => {
-  const slugs = new Set(input.plan.entries.map((entry) => entry.slug));
-  return decisionRows(input).flatMap(({ row, line }) =>
-    row.decision === null
-      ? [{ line, message: `#${row.pr} has no decision` }]
-      : unknownSlugs(row.decision, slugs).map((slug) => ({
-          line,
-          message: `#${row.pr} names \`${slug}\`, which is no entry of this plan`,
-        }))
-  );
+  const entries = new Map(input.plan.entries.map((entry) => [entry.slug, entry]));
+  return decisionRows(input).flatMap(({ row, line }) => {
+    if (row.decision === null) {
+      return [{ line, message: `#${row.pr} has no decision` }];
+    }
+    return ('entries' in row.decision ? row.decision.entries : []).flatMap((slug) => {
+      const entry = entries.get(slug);
+      if (!entry) {
+        return [{ line, message: `#${row.pr} names \`${slug}\`, which is no entry of this plan` }];
+      }
+      return entry.prs.includes(row.pr)
+        ? []
+        : [{ line, message: `#${row.pr} names \`${slug}\`, whose PRs do not list it` }];
+    });
+  });
 };
 
 const batchesHaveNoGap: Rule = ({ plan, at }) => {
@@ -738,8 +749,6 @@ const textStaysOnLocalhost: Rule = ({ plan, at }) =>
         .map((match) => ({ line, message: `${match[0]} is a URL other than localhost` }))
     );
   });
-
-const WINDOW_TABLES = ['needed', 'undeclared', 'maintainerSkips', 'verified', 'skipped'] as const;
 
 const matchesWindow: Rule = ({ plan, at, window }) => {
   if (!window) {

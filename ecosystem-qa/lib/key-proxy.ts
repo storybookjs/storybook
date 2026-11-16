@@ -94,7 +94,13 @@ export const proxyTheKey = async (
   options: Omit<KeyProxyOptions, 'apiKey'>
 ): Promise<ProxiedKey> => {
   const apiKey = env[name]!;
-  const proxy = await startKeyProxy({ ...options, apiKey });
+  const proxy = await startKeyProxy({ ...options, apiKey }).catch((error: unknown) => {
+    throw (error as NodeJS.ErrnoException).code === 'EADDRNOTAVAIL'
+      ? new Error(
+          `The key proxy cannot listen on ${options.host}, the gateway of Docker's default bridge, because it is not an address of this machine. The Docker daemon runs in a VM, and the key proxy needs one that runs on this machine.`
+        )
+      : error;
+  });
   // Every process started on the host inherits the environment, git in the clone the sandbox wrote
   // to included.
   delete env[name];

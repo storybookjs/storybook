@@ -289,6 +289,12 @@ describe('proxyTheKey', () => {
     expect(proxy.reaches(`ANTHROPIC_API_KEY=${REAL_KEY}\n`, claudeCode('m', {}))).toBe(true);
     expect(proxy.reaches(clean, claudeCode('m', { env: proxy.agentEnv }))).toBe(false);
   });
+
+  it('names a Docker daemon in a VM when the gateway is not an address of this machine', async () => {
+    await expect(
+      proxied({ ANTHROPIC_API_KEY: REAL_KEY }, 'http://127.0.0.1:9', '192.0.2.1')
+    ).rejects.toThrow('The Docker daemon runs in a VM');
+  });
 });
 
 describe('PLACEHOLDER_KEY', () => {

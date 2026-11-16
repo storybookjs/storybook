@@ -253,6 +253,22 @@ describe('planFiling', () => {
       expect(kinds(stepsOn(proposal(), [firstComment]))).toEqual(['push-cycle', 'comment']);
     });
 
+    it('skips a gate finding of a plan run as a repeat of the static sweep of its version', () => {
+      const gate = finding({ checkId: 'upgrade.command' });
+      const sweep = bodyOf(stepsOn(commentFor(loaded('linux', 'claude', [gate])), []));
+      const planRun = loaded('linux', 'claude', [gate], 'd'.repeat(40));
+      planRun.result.request.tier = 'gate';
+      planRun.result.request.plan = {
+        file: '11.0.md',
+        hash: '3f9c2a7b10de',
+        batch: 1,
+        part: 2,
+        entries: [{ id: 'story-sort-in-main', prs: [36137] }],
+      };
+
+      expect(kinds(stepsOn(commentFor(planRun), [sweep]))).toEqual(['skip']);
+    });
+
     it('comments when only one of its runs is new to the issue', () => {
       const proposal = commentFor(
         loaded('linux', 'claude', [finding()], 'd'.repeat(40)),

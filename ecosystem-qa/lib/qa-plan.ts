@@ -3,14 +3,17 @@ import { createHash } from 'node:crypto';
 import { z } from 'zod';
 
 import { SEMVER } from './cycle.ts';
-import { CatalogEntry } from './schema.ts';
+import { CatalogEntry, CheckId } from './schema.ts';
 import { needsGroup, type Window, type WindowPr } from './window.ts';
 
 const Text = z.string().regex(/^\S(?:[^\n\r]*\S)?$/, 'expected one line of text');
 const Slug = z
   .string()
-  .max(75)
-  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'expected lower case letters, digits, and hyphens');
+  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'expected lower case letters, digits, and hyphens')
+  .refine(
+    (slug) => CheckId.safeParse(planCheckId(slug)).success,
+    'expected a slug short enough for the check id plan.<slug>'
+  );
 const RepoId = CatalogEntry.shape.id;
 const Sha = z.string().regex(/^[0-9a-f]{40}$/, 'expected a full commit SHA');
 const PrNumber = z.int().positive();
@@ -91,7 +94,7 @@ const uncode = (cell: string): string => {
 // GitHub links no bare `#36137` in a Markdown file, so every reference carries its URL.
 const githubLink = (kind: 'pull' | 'issues') => (number: number) =>
   `[#${number}](https://github.com/storybookjs/storybook/${kind}/${number})`;
-const prCell = githubLink('pull');
+export const prCell = githubLink('pull');
 const issueLink = githubLink('issues');
 const unPr = (cell: string): number => {
   const number = Number(/^\[#(\d+)\]/.exec(cell)?.[1]);
@@ -815,6 +818,18 @@ export const planHash = (text: string): string =>
   createHash('sha256').update(text).digest('hex').slice(0, 12);
 
 export const planCheckId = (slug: string): string => `plan.${slug}`;
+
+export const renderPlanChecks = (entries: PlanEntry[], repo: string): string =>
+  entries
+    .map((entry) => {
+      const { reason } = entry.repos.find(({ id }) => id === repo)!;
+      return [
+        `- \`${planCheckId(entry.slug)}\` (plan): ${entry.title}. Why this repo: ${reason}.`,
+        ...entry.steps.map((step, index) => `  ${index + 1}. ${step}`),
+        `  Expected: ${entry.expected}`,
+      ].join('\n');
+    })
+    .join('\n');
 
 export const planBatches = (plan: Plan): number[] =>
   Array.from({ length: Math.max(0, ...plan.entries.map((entry) => entry.batch)) }, (_, i) => i + 1);

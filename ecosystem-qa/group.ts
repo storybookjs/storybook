@@ -7,10 +7,11 @@ import { versionLine } from './lib/cycle.ts';
 import { listQaIssues } from './lib/github.ts';
 import { askClaude, groupingInput, groupingMode, groupWithModel } from './lib/group-model.ts';
 import { identityGrouping } from './lib/grouping.ts';
+import { readPlanScope } from './lib/plan-scope.ts';
 import { loadFindingGroups, QA_LABEL } from './lib/proposals.ts';
 import type { Grouping } from './lib/schema.ts';
 
-const HELP = `Usage: node ecosystem-qa/group.ts --results <dir> --version <storybook version> --repo <owner/name> --out <groups.json>
+const HELP = `Usage: node ecosystem-qa/group.ts --results <dir> --version <storybook version> --repo <owner/name> --out <groups.json> [--plan <file> --batch <n>]
 
 Reads the results under --results the way collect.ts does, lists the issues of --repo that carry the
 internal-qa label with gh, and asks Claude which fingerprints share a root cause and which listed
@@ -19,7 +20,10 @@ The model only groups: no text of its answer reaches an issue. Finding text is s
 Anthropic API with ANTHROPIC_API_KEY; the subscription token of agent runs does not work.
 Without that key a local run groups nothing and leaves each fingerprint on its own, so collect.ts
 makes one proposal per fingerprint. In GitHub Actions a missing key is an error.
-With at most one fingerprint it never calls the model.`;
+With at most one fingerprint it never calls the model.
+--plan and --batch collect the runs of one batch of a QA plan: its discovered repos load with the
+catalog, and a record of another plan or batch, or with a check that neither checks.ts nor its part
+of the plan has, is ignored with a warning. Without --plan a record of a plan run is ignored too.`;
 
 const { values } = parseArgs({
   options: {
@@ -27,6 +31,8 @@ const { values } = parseArgs({
     version: { type: 'string' },
     repo: { type: 'string' },
     out: { type: 'string' },
+    plan: { type: 'string' },
+    batch: { type: 'string' },
     help: { type: 'boolean', default: false },
   },
 });
@@ -40,8 +46,9 @@ if (!results || !version || !repo || !out) {
   process.exit(1);
 }
 versionLine(version);
+const scope = readPlanScope(values);
 
-const { groups } = loadFindingGroups(results, version);
+const { groups } = loadFindingGroups(results, version, scope);
 
 const NO_KEY =
   'Grouping needs ANTHROPIC_API_KEY. The subscription token used for agent runs (CLAUDE_CODE_OAUTH_TOKEN) does not work for the Messages API.';

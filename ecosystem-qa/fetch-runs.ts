@@ -14,23 +14,29 @@ import {
   uploadedAt,
 } from './lib/earlier-runs.ts';
 import { ghParse } from './lib/github.ts';
+import { readPlanScope } from './lib/plan-scope.ts';
 import { downloadedRuns } from './lib/results.ts';
 
-const HELP = `Usage: node ecosystem-qa/fetch-runs.ts --out <results dir> --runs <run id>[,<run id>...] --branches <branch>[,<branch>...]
+const HELP = `Usage: node ecosystem-qa/fetch-runs.ts --out <results dir> --runs <run id>[,<run id>...] --branches <branch>[,<branch>...] [--plan <file> --batch <n>]
 
 Downloads the qa-result-* artifacts of earlier runs of the Ecosystem QA workflow with gh, from the
-repository in GH_REPO, and writes each catalog repo, OS and engine they hold to
-<out>/<id>/<os>/<engine>, where collect.ts reads a local run. Where two runs hold the same repo, OS
-and engine, the result that was uploaded last wins, whatever the order of --runs.
+repository in GH_REPO, and writes each catalog repo, OS, engine and part they hold to
+<out>/<id>/<os>/<engine>, or <out>/<id>/<os>/<engine>/part-<n> for a part of a plan run, where
+collect.ts reads a local run. Where two runs hold the same repo, OS, engine and part, the result
+that was uploaded last wins, whatever the order of --runs.
 Takes only runs of the workflow that were started by hand on one of --branches, and downloads
 nothing when one of the ids is anything else. Writes nothing when one of the runs holds no result it
-can read.`;
+can read.
+--plan and --batch take the discovered repos of the plan as well; collect.ts with the same flags
+decides which records belong to the batch.`;
 
 const { values } = parseArgs({
   options: {
     out: { type: 'string' },
     runs: { type: 'string' },
     branches: { type: 'string' },
+    plan: { type: 'string' },
+    batch: { type: 'string' },
     help: { type: 'boolean', default: false },
   },
 });
@@ -43,6 +49,7 @@ if (!out || !runs || !branches) {
   console.error(`Missing one of --out, --runs, --branches.\n\n${HELP}`);
   process.exit(1);
 }
+const scope = readPlanScope(values);
 const runIds = runs.split(',');
 const invalid = runIds.filter((id) => !/^\d+$/.test(id));
 if (invalid.length > 0) {
@@ -69,7 +76,7 @@ if (problems.length > 0) {
   process.exit(1);
 }
 
-const catalog = loadEntries();
+const catalog = loadEntries(scope?.plan);
 const downloads: string[] = [];
 let unread: string[] = [];
 try {
@@ -98,7 +105,11 @@ try {
   });
   unread = fetched.filter(({ results }) => results.length === 0).map(({ id }) => id);
   if (unread.length === 0) {
-    for (const { from, to, label, id } of oldestFirst(fetched.flatMap(({ results }) => results))) {
+    const parentsBeforeParts = (a: { to: string }, b: { to: string }) => a.to.length - b.to.length;
+    const inOrder = oldestFirst(fetched.flatMap(({ results }) => results)).toSorted(
+      parentsBeforeParts
+    );
+    for (const { from, to, label, id } of inOrder) {
       rmSync(to, { recursive: true, force: true });
       cpSync(from, to, { recursive: true });
       console.log(`${label} from run ${id}`);

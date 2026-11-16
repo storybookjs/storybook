@@ -1,8 +1,11 @@
+import { readFileSync } from 'node:fs';
+
 import { describe, expect, it } from 'vitest';
 
 import { ENTRY } from './fixtures.ts';
+import { parsePlan } from './qa-plan.ts';
 import type { CatalogEntry } from './schema.ts';
-import { sweepMatrix, withoutResult } from './sweep-matrix.ts';
+import { planMatrix, sweepMatrix, withoutResult } from './sweep-matrix.ts';
 
 const CATALOG: CatalogEntry[] = [
   ENTRY,
@@ -120,6 +123,60 @@ describe('sweepMatrix', () => {
       problems: ['Nothing to run for n8n on windows with claude'],
     });
     expect(jobs(' , ')).toEqual({ problems: ['No repo was named'] });
+  });
+});
+
+describe('planMatrix', () => {
+  const plan = parsePlan(readFileSync(new URL('./plan.fixture.md', import.meta.url), 'utf8'));
+  const jobsOf = (batch: number, engines = 'claude') => {
+    const matrix = planMatrix(plan, batch, engines);
+    return 'include' in matrix
+      ? matrix.include.map((job) => `${job.repo} part ${job.part} ${job.os} ${job.engine}`)
+      : matrix;
+  };
+
+  it('plans one Linux job in the Docker sandbox for each repo and part of the batch', () => {
+    expect(planMatrix(plan, 2, 'claude')).toEqual({
+      include: [
+        {
+          repo: 'mealdrop',
+          part: 1,
+          os: 'linux',
+          engine: 'claude',
+          runner: 'ubuntu-latest',
+          sandbox: 'docker',
+        },
+        {
+          repo: 'primer-react',
+          part: 1,
+          os: 'linux',
+          engine: 'claude',
+          runner: 'ubuntu-latest',
+          sandbox: 'docker',
+        },
+      ],
+    });
+  });
+
+  it('gives a repo with more entries than one run holds a job for each part, with every engine', () => {
+    expect(jobsOf(1, 'claude,codex')).toEqual([
+      'mealdrop part 1 linux claude',
+      'mealdrop part 1 linux codex',
+      'mealdrop part 2 linux claude',
+      'mealdrop part 2 linux codex',
+      'mantine part 1 linux claude',
+      'mantine part 1 linux codex',
+    ]);
+  });
+
+  it('names the batches the plan has when asked for another', () => {
+    expect(jobsOf(99)).toEqual({ problems: ['The plan has no batch 99, only 1 to 2'] });
+    expect(jobsOf(0)).toEqual({ problems: ['The plan has no batch 0, only 1 to 2'] });
+  });
+
+  it('refuses an engine the workflow has no runner for, and no engine at all', () => {
+    expect(jobsOf(1, 'gemini')).toEqual({ problems: ['"gemini" is not one of claude, codex'] });
+    expect(jobsOf(1, ' ')).toEqual({ problems: ['No engine was named'] });
   });
 });
 

@@ -8,7 +8,6 @@ import { basename, dirname, join, relative } from 'pathe';
 import picocolors from 'picocolors';
 import type { Plugin as RolldownPlugin } from 'rolldown';
 import { rolldown } from 'rolldown';
-import { dedent } from 'ts-dedent';
 
 import { globalsModuleInfoMap } from '../../../code/core/src/manager/globals/globals-module-info.ts';
 import {
@@ -106,6 +105,41 @@ function rolldownGlobalExternalsPlugin(): RolldownPlugin {
       );
 
       return [...exports, `export default ${varName};`].join('\n');
+    },
+  };
+}
+
+// A free `require` (not `x.require`, not `__require`): esbuild's `__require` helper, or our own
+// `require.resolve` / `require.cache`. Matches inside strings over-inject, which is harmless.
+const FREE_REQUIRE = /(?<![\w$.])require\s*[(.]|typeof require\b/;
+
+/**
+ * Gives `require` only to the node outputs that reference it. ESM has no `require`, and esbuild's
+ * `__require` helper falls back to it for CommonJS dependencies we bundle. Outputs that never
+ * touch it stay free of `import.meta.url`, which some runtimes (Cloudflare Workers) lack.
+ */
+function cjsRequirePlugin(uid: string): esbuild.Plugin {
+  const header = `import { createRequire as CJS_COMPAT_CREATE_REQUIRE_${uid} } from "node:module";var require = CJS_COMPAT_CREATE_REQUIRE_${uid}(import.meta.url);\n`;
+  return {
+    name: 'cjs-require',
+    setup(build) {
+      build.onEnd(async (result) => {
+        if (result.errors.length || !result.metafile) {
+          return;
+        }
+        const cwd = build.initialOptions.absWorkingDir ?? process.cwd();
+        await Promise.all(
+          Object.keys(result.metafile.outputs)
+            .filter((file) => file.endsWith('.js'))
+            .map(async (file) => {
+              const path = join(cwd, file);
+              const code = await readFile(path, 'utf8');
+              if (FREE_REQUIRE.test(code)) {
+                await writeFile(path, header + code);
+              }
+            })
+        );
+      });
     },
   };
 }
@@ -307,6 +341,7 @@ export async function generateBundle({
         ...sharedOptions,
         entryPoints: entries.node.map(({ entryPoint }) => entryPoint),
         platform: 'node',
+        ignoreAnnotations: false,
         target: NODE_TARGET,
         external: [
           ...external,
@@ -326,33 +361,15 @@ export async function generateBundle({
           'jsonc-parser': join(resolvePackageDir('jsonc-parser'), 'lib/esm/main.js'),
         },
         chunkNames: '_node-chunks/[name]-[hash]',
-        banner: {
-          /*
-          This banner injects CJS compatibility code into the bundle, for when
-          dependencies need require, __filename, or __dirname.
-
-          We're adding unique names to the imports to avoid collisions
-          when one of our packages bundles in another of our packages,
-          like create-storybook bundling in parts of storybook core.
-          Similarly we're using var definitions as they can be redefined
-          without causing errors.
-          */
-          js: dedent`
-            import CJS_COMPAT_NODE_URL_${uid} from 'node:url';
-            import CJS_COMPAT_NODE_PATH_${uid} from 'node:path';
-            import CJS_COMPAT_NODE_MODULE_${uid} from "node:module";
-
-            var __filename = CJS_COMPAT_NODE_URL_${uid}.fileURLToPath(import.meta.url);
-            var __dirname = CJS_COMPAT_NODE_PATH_${uid}.dirname(__filename);
-            var require = CJS_COMPAT_NODE_MODULE_${uid}.createRequire(import.meta.url);
-
-            // ------------------------------------------------------------
-            // end of CJS compatibility banner, injected by Storybook's esbuild configuration
-            // ------------------------------------------------------------
-            `,
+        define: {
+          ...sharedOptions.define,
+          // Only free references are replaced, so a local `const __dirname` keeps working.
+          __dirname: 'import.meta.dirname',
+          __filename: 'import.meta.filename',
         },
         plugins: [
           ...sharedOptions.plugins,
+          cjsRequirePlugin(uid),
           metafileWriterPlugin('node', join(DIR_METAFILE_BASE, PACKAGE_DIR_NAME)),
         ],
       })

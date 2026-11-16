@@ -64,7 +64,55 @@ describe('resolveStoryFileComponents', () => {
 
       expect(docName(docgenEngine, resolved.component)).toBe('Button');
       expect(docName(docgenEngine, resolved.subcomponents[0]?.component)).toBe('Icon');
-      expect(resolved.component).toMatchObject({ importId: './lib', importName: 'UI' });
+      expect(resolved.component).toMatchObject({
+        importId: './lib',
+        importName: 'UI',
+        path: files['lib.ts'],
+      });
+    }
+  );
+
+  it.each<DocgenEngine>(['react-docgen', 'react-docgen-typescript'])(
+    'documents the file a `storybook` export condition points at, with %s',
+    { timeout: 30_000 },
+    async (docgenEngine) => {
+      tempDir = createTempDir('resolve-components');
+      vi.spyOn(process, 'cwd').mockReturnValue(tempDir);
+      const files = writeFiles(tempDir, {
+        'tsconfig.json': tsconfigJSON(),
+        'package.json': JSON.stringify({
+          name: 'app',
+          private: true,
+          imports: { '#ui': { storybook: './src/ui.tsx', default: './dist/ui.tsx' } },
+        }),
+        'src/ui.tsx': dedent`
+          import React from 'react';
+          export const Button = (_props: { label: string }) => <button />;
+        `,
+        'dist/ui.tsx': dedent`
+          import React from 'react';
+          export const Button = (_props: { built: boolean }) => <button />;
+        `,
+        'Button.stories.tsx': dedent`
+          import { Button } from '#ui';
+          export default { component: Button };
+          export const Primary = {};
+        `,
+      });
+
+      const resolved = await resolveStoryFileComponents({
+        storyPath: files['Button.stories.tsx'],
+        title: 'Button',
+        docgenEngine,
+      });
+
+      const props =
+        docgenEngine === 'react-docgen'
+          ? resolved.component?.reactDocgen?.type === 'success'
+            ? resolved.component.reactDocgen.data.props
+            : undefined
+          : resolved.component?.reactDocgenTypescript?.props;
+      expect(Object.keys(props ?? {})).toEqual(['label']);
     }
   );
 
@@ -152,7 +200,12 @@ describe('resolveStoryFileComponents', () => {
             : undefined
           : resolved.component?.reactDocgenTypescript?.displayName;
       expect(doc).toBe('Button');
-      expect(resolved.component).toMatchObject({ importId: '@/ui', importName: 'Button' });
+      // React's own lookup cannot read `${configDir}`, so `path` falls back to core's file.
+      expect(resolved.component).toMatchObject({
+        importId: '@/ui',
+        importName: 'Button',
+        path: files['src/ui.tsx'],
+      });
     }
   );
 
@@ -175,7 +228,6 @@ describe('resolveStoryFileComponents', () => {
 
       expect(docName(docgenEngine, resolved.component)).toBe('Button');
       expect(docName(docgenEngine, resolved.subcomponents[0]?.component)).toBe('Icon');
-      // Snippets and import lines name the component as the story file imports it.
       expect(resolved.component?.componentName).toBe('Button');
       expect(resolved.subcomponents[0]?.component?.componentName).toBe('Icon');
     }

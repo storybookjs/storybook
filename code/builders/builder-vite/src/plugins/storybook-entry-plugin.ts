@@ -4,6 +4,7 @@ import type { Plugin } from 'vite';
 
 import { codeGeneratorPlugin } from './code-generator-plugin.ts';
 import { injectExportOrderPlugin } from './inject-export-order-plugin.ts';
+import { injectPreviewRuntimePlugin } from './inject-preview-runtime-plugin.ts';
 import { stripStoryHMRBoundary } from './strip-story-hmr-boundaries.ts';
 
 /**
@@ -18,5 +19,7 @@ export async function storybookEntryPlugin(options: Options): Promise<Plugin[]> 
     await injectExportOrderPlugin(),
     // Post-enforcement: removes import.meta.hot.accept() from story files
     await stripStoryHMRBoundary(),
+    // Post-enforcement: loads the preview runtime ahead of every other module script in dev
+    injectPreviewRuntimePlugin(),
   ];
 }

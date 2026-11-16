@@ -101,6 +101,19 @@ describe('agentOutput', () => {
       ).toEqual([]);
     });
 
+    it('counts only a finding of the failed plan check itself', () => {
+      const output = failing(plan, 'Another order');
+      const bothFail = {
+        ...output,
+        checks: output.checks.map((check) =>
+          check.id === 'core.dev-server' ? { ...check, state: 'fail' } : check
+        ),
+        findings: [finding('core.dev-server')],
+      };
+
+      expect(problems(bothFail)).toEqual([`plan check "${plan}" is "fail" and needs a finding`]);
+    });
+
     it('asks for a note on every state, a pass included', () => {
       expect(problems(reporting(...ids, plan))).toEqual([
         `plan check "${plan}" needs a note with what you saw`,

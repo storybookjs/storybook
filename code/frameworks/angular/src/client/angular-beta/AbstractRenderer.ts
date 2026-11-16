@@ -36,17 +36,24 @@ export abstract class AbstractRenderer {
   /** Wait and destroy the platform */
   public static resetApplications(domNode?: HTMLElement) {
     applicationRefs.forEach((appRef, appDOMNode) => {
-      if (!appRef.destroyed && (!domNode || appDOMNode === domNode)) {
-        try {
-          // componentRef.destroy runs remove(appRef.components, componentRef).
-          // Copy the array first, or the loop skips the next component.
-          const components = appRef.components.slice();
-          // Destroy the views now, while the injector is still alive. A teardown
-          // path that reads the injector throws NG0205 after it is destroyed.
-          components.forEach((componentRef) => componentRef.destroy());
-        } finally {
-          appRef.destroy();
-        }
+      if (domNode && appDOMNode !== domNode) {
+        return;
+      }
+      // The map holds appDOMNode strongly. Drop the entry first, or a detached
+      // node and its destroyed appRef stay in memory for the whole session.
+      applicationRefs.delete(appDOMNode);
+      if (appRef.destroyed) {
+        return;
+      }
+      try {
+        // componentRef.destroy runs remove(appRef.components, componentRef).
+        // Copy the array first, or the loop skips the next component.
+        const components = appRef.components.slice();
+        // Destroy the views now, while the injector is still alive. A teardown
+        // path that reads the injector throws NG0205 after it is destroyed.
+        components.forEach((componentRef) => componentRef.destroy());
+      } finally {
+        appRef.destroy();
       }
     });
   }

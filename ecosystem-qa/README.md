@@ -113,6 +113,7 @@ ECOSYSTEM_QA_FAKE=1 node ecosystem-qa/run.ts --repo mealdrop --version 11.0.0-be
 
 A QA plan names what a sweep tests beyond the fixed checks: the changes of a release line, each with the repos to try it on, the steps and the expected outcome.
 It is one Markdown file in `ecosystem-qa/plans/`, named after its line, such as `11.0.md`, and a person reviews and merges it like code.
+The window it was written from is committed next to it as `11.0.window.json`, and the smoke job checks every plan with `--window` against the window file next to it, so a plan PR in which a row was deleted or moved by hand fails without a call to GitHub.
 An agent writes it with the `/qa-plan` skill in `.agents/skills/qa-plan/`, which runs the commands below and opens the plan PR.
 
 ```
@@ -124,7 +125,7 @@ window.ts ──> window.json ──> qa-plan.ts render ──> plans/<line>.md 
 `window.ts` lists every PR whose merge commit is in `next` between two tags, whatever branch the PR was merged into, so a PR merged into the branch of another PR is in the window too:
 
 ```sh
-node ecosystem-qa/window.ts --from v10.6.0 --to v11.0.0-beta.3 --out window.json
+node ecosystem-qa/window.ts --from v10.6.0 --to v11.0.0-beta.3 --out ecosystem-qa/plans/11.0.window.json
 ```
 
 For each PR it records the QA status from its labels, the area that the title prefix names, the manual testing section of its body, the author association, and the issues the PR closes or names, with their parent issue and whether they have a heading for QA or testing.
@@ -134,8 +135,8 @@ It reads GitHub, fetches a tag that the local repository lacks, and writes nothi
 `qa-plan.ts render` writes the plan from the window and a JSON draft, and `check` validates it:
 
 ```sh
-node ecosystem-qa/qa-plan.ts render --window window.json --draft draft.json --out ecosystem-qa/plans/11.0.md
-node ecosystem-qa/qa-plan.ts check ecosystem-qa/plans/11.0.md --window window.json
+node ecosystem-qa/qa-plan.ts render --window ecosystem-qa/plans/11.0.window.json --draft draft.json --out ecosystem-qa/plans/11.0.md
+node ecosystem-qa/qa-plan.ts check ecosystem-qa/plans/11.0.md --window ecosystem-qa/plans/11.0.window.json
 ```
 
 The draft is optional, and every key of it too: `entries`, `discovered`, `decisions` by PR number, `groups`, and `groupOf`, which puts a maintainer PR into a group by PR number.

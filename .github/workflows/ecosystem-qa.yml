@@ -51,7 +51,7 @@ on:
         type: string
         default: ''
       plan_hash:
-        description: 'End the run when the plan at this commit has another hash (set by the batch before)'
+        description: 'Run nothing when the plan at this commit has another hash (set by the batch before)'
         type: string
         default: ''
       chain:
@@ -310,6 +310,11 @@ jobs:
             tier=gate
             # Also with from_runs: the planned runs of the batch are what its report counts.
             outputs="$(node ecosystem-qa/plan.ts --plan "$plan" --batch "$QA_BATCH" --engines "$QA_ENGINES" --outputs ${QA_PLAN_HASH:+--hash "$QA_PLAN_HASH"} ${QA_VERSION:+--version "$QA_VERSION"})"
+            # Nothing, with a notice, when the plan changed since its chain started.
+            if [[ -z "$outputs" ]]; then
+              skip=true
+              outputs='matrix={"include":[]}'
+            fi
           elif [[ -n "$QA_FROM_RUNS" ]]; then
             outputs=$'matrix={"include":[]}\nversion='"$QA_VERSION"
           elif matrix="$(node ecosystem-qa/plan.ts --repos "$QA_REPO" --os "$QA_OS" --engines "$QA_ENGINES")"; then

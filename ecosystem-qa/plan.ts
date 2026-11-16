@@ -1,11 +1,11 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
 
 import { loadEntries } from './lib/catalog.ts';
 import { versionLine } from './lib/cycle.ts';
 import { planOfPush } from './lib/plan-push.ts';
 import { readPlanScope } from './lib/plan-scope.ts';
-import { planBatches } from './lib/qa-plan.ts';
+import { planBatches, planHash } from './lib/qa-plan.ts';
 import { planMatrix, sweepMatrix } from './lib/sweep-matrix.ts';
 
 const HELP = `Usage: node ecosystem-qa/plan.ts --repos <id or class>[,...] --os <linux|windows>[,...] --engines <claude|codex>[,...]
@@ -21,7 +21,8 @@ With --plan, prints one Linux job for each repo and part of batch <n> of the QA 
 engine of --engines (default: claude), and fails on a plan that qa-plan.ts check rejects.
 --outputs prints the lines the plan job writes to GITHUB_OUTPUT instead: the matrix, the plan, its
 hash, the batch, the number of batches, and the version, which is --version or the plan's own. It
-fails when --hash is not the hash of the plan, and when --version is not on the plan's line.
+prints nothing and says why on stderr when --hash is not the hash of the plan, and fails when
+--version is not on the plan's line.
 
 With --push, reads the --name-status diff over ecosystem-qa/plans/ of the commits of a push, and
 prints the plan file that the push runs. It prints nothing and says why on stderr when the push runs
@@ -76,15 +77,25 @@ const planned = () => {
   return { scope, matrix: planMatrix(scope.plan, scope.batch, engines) };
 };
 
+// A chain carries the hash of the plan it started from, and a plan that changed or went since then
+// starts a cycle of its own, so the batch of the old one has nothing left to run.
+const changedPlan = (): string | undefined => {
+  const { plan, hash } = values;
+  if (hash === undefined || !plan) {
+    return undefined;
+  }
+  const now = existsSync(plan) ? planHash(readFileSync(plan, 'utf8')) : undefined;
+  if (now === hash) {
+    return undefined;
+  }
+  const state = now ? `has the hash ${now}` : 'does not exist';
+  return `${plan} ${state} at this commit and its chain started from the hash ${hash}, so this batch of the plan as it was is not run.`;
+};
+
 const outputsOf = ({ scope, matrix }: ReturnType<typeof planned>): string[] => {
-  const { hash, version } = values;
+  const { version } = values;
   if ('problems' in matrix) {
     return fail(matrix.problems.join('\n'));
-  }
-  if (hash !== undefined && hash !== scope.hash) {
-    return fail(
-      `${values.plan} has the hash ${scope.hash} at this commit, not ${hash}, so batch ${scope.batch} belongs to another version of the plan.`
-    );
   }
   if (version !== undefined && versionLine(version) !== scope.plan.line) {
     return fail(
@@ -115,7 +126,12 @@ const swept = () => {
 if (values.push) {
   pushed();
 } else if (values.plan && values.outputs) {
-  console.log(outputsOf(planned()).join('\n'));
+  const changed = changedPlan();
+  if (changed) {
+    notice(changed);
+  } else {
+    console.log(outputsOf(planned()).join('\n'));
+  }
 } else {
   const matrix = values.plan ? planned().matrix : swept();
   if ('problems' in matrix) {

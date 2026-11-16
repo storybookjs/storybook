@@ -98,9 +98,6 @@ const ownerAndName = (repo: string) => {
   return { owner, name };
 };
 
-// Return when the GitHub release `v<version>` of `repo` was published, or nothing when there is no
-// such release.
-//
 // Asked through GraphQL, which answers a missing release with null where REST answers 404.
 export const releasePublishedAt = (repo: string, version: string): string | undefined =>
   publishedAtFrom(
@@ -153,7 +150,6 @@ const CategoriesAnswer = z.object({
 
 export type DiscussionPlace = { repositoryId: string; categoryId: string };
 
-// Throws when the repository has no category of that name, which only a maintainer can add.
 export const discussionPlaceFrom = (
   answer: unknown,
   repo: string,

@@ -77,8 +77,6 @@ const planned = () => {
   return { scope, matrix: planMatrix(scope.plan, scope.batch, engines) };
 };
 
-// A chain carries the hash of the plan it started from, and a plan that changed or went since then
-// starts a cycle of its own, so the batch of the old one has nothing left to run.
 const changedPlan = (): string | undefined => {
   const { plan, hash } = values;
   if (hash === undefined || !plan) {

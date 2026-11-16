@@ -1,4 +1,3 @@
-// A push to this branch starts a cycle, and pushing to it needs write access.
 export const PLANS_BRANCH = 'qa/plans';
 
 const PLAN_FILE = /^ecosystem-qa\/plans\/[^/]+\.md$/;
@@ -18,10 +17,6 @@ const changeOf = (line: string): Change => {
   return { status: code.charAt(0), score, path: paths.at(-1) ?? '' };
 };
 
-// Decide what a push to the plans branch runs, from `git diff --name-status` over its commits.
-//
-// A plan whose text a push left as it was has run already, so a pure rename or copy runs nothing.
-// The push that creates the branch has no commits to compare, so the caller passes an empty diff.
 export const planOfPush = (nameStatus: string): PushPlan => {
   const changes = nameStatus
     .split('\n')

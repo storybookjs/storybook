@@ -7,7 +7,6 @@ export const TRACKING_CATEGORY = 'QA sweeps';
 
 export const DEFAULT_CAP_USD = 250;
 
-// A discussion or a comment as the GraphQL listing returns it.
 export type Written = { url: string; body: string; author: Actor; editor: Actor };
 
 // A body written in the browser comes back with CRLF line ends.
@@ -36,7 +35,6 @@ export const renderTrackingThread = ({
   ].join('\n'),
 });
 
-// The discussion of a plan is the oldest one the workflow wrote for its hash.
 export const trackingThreadOf = <Thread extends Written & { number: number }>(
   discussions: Thread[],
   hash: string
@@ -50,7 +48,6 @@ export const trackingThreadOf = <Thread extends Written & { number: number }>(
 
 type CheckState = RunResultFile['checks'][number]['state'];
 
-// The fields of a run record that a batch comment reports.
 export type ReportedResult = {
   request: { entry: { id: string }; os: string; engine: string; plan?: { part: number } };
   timing: { startedAt: string };
@@ -59,10 +56,8 @@ export type ReportedResult = {
   checks: { state: CheckState }[];
 };
 
-// What the comment says of one proposal. `issue` is the issue it was filed as or commented on.
 export type ReportedFinding = { kind: Proposal['kind']; title: string; issue?: number };
 
-// A batch is reported before its filing, by the track job, and after it, by the file job.
 export type Filing = 'dry' | 'pending' | 'filed';
 
 export type PlannedJob = { repo: string; part: number; os: string; engine: string };
@@ -72,12 +67,10 @@ export type BatchInput = {
   batch: number;
   batches: number;
   version: string;
-  // The workflow runs whose artifacts hold the results.
   runs: string[];
   filing: Filing;
   planned: PlannedJob[];
   results: ReportedResult[];
-  // Null when the batch has no proposals, because its collect failed.
   findings: ReportedFinding[] | null;
 };
 
@@ -104,14 +97,12 @@ const jobOf = ({ request }: ReportedResult): PlannedJob => ({
   engine: request.engine,
 });
 
-// The spend counts each run once by this key. A run is its job with the moment its runner started,
-// so collecting the same artifact again gives the same key and running the batch again a new one. A
-// run that left no result has no start, so the workflow runs that should hold it stand in for it.
+// A run is its job and the moment its runner started, so a second collect of the same artifact
+// counts it once and a second run of the batch counts again.
 const resultLine = (result: ReportedResult): RunLine => {
   const job = jobOf(result);
   const started = Date.parse(result.timing.startedAt);
   return {
-    // Parsed, so no text of the record can reach the ledger line.
     key: `${jobKey(job)}/${Number.isNaN(started) ? 'unknown-start' : new Date(started).toISOString()}`,
     job,
     outcome: result.status,
@@ -145,7 +136,6 @@ export const batchReport = ({ planned, results, ...input }: BatchInput): BatchRe
 export const batchMarker = ({ plan, batch, version, runs }: BatchReport): string =>
   `<!-- sb-qa-batch ${plan.hash} batch=${batch} version=${version} runs=${runs.join(',')} -->`;
 
-// The comment the workflow writes for this report, if it wrote one: the one to edit.
 export const batchCommentOf = <Comment extends Written>(
   comments: Comment[],
   report: BatchReport
@@ -166,8 +156,6 @@ const ledgerOf = (body: string): LedgerEntry[] =>
     return match ? [{ key: match[1]!, usd: Number(match[2]) }] : [];
   });
 
-// The runs that the comment of this batch counted and the report no longer holds, such as the
-// first attempt of a job that was run again. They stay in its ledger, so the spend never drops.
 export const carriedRuns = (existing: Written | undefined, report: BatchReport): LedgerEntry[] => {
   const reported = new Set(report.lines.map(({ key }) => key));
   return existing && !editedByOther(existing)
@@ -175,11 +163,6 @@ export const carriedRuns = (existing: Written | undefined, report: BatchReport):
     : [];
 };
 
-// Sum the dollars of every run of a plan once, from the hidden ledger lines of the batch comments
-// the workflow wrote and from `current`, the report about to be written.
-//
-// The visible table is never read, so editing it changes no sum, and a comment that anyone but the
-// workflow edited is left out of the sum and named instead.
 export const spentUsd = (comments: Written[], hash: string, current?: BatchReport): Spend => {
   const counted = comments.filter(
     (comment) =>
@@ -207,10 +190,8 @@ export type StepInput = {
   spend: Spend;
   capUsd: number;
   chain: boolean;
-  // The batch already has its comment, so this is a collect or a job of it again.
   reportedBefore: boolean;
-  // The plan had its discussion before this report. Without it the spend of earlier batches is
-  // unknown, as after an edit that took the marker out of the first line of the discussion.
+  // False after an edit took the marker out of the discussion, which hides the earlier spend.
   tracked: boolean;
 };
 
@@ -218,7 +199,6 @@ const dollars = (usd: number) => `$${usd.toFixed(2)}`;
 
 const runCount = (count: number) => (count === 1 ? '1 run' : `${count} runs`);
 
-// Start the batch after this one, or say why not. A cycle only ever moves forward.
 export const nextStep = ({
   report,
   spend,
@@ -261,8 +241,8 @@ export const nextStep = ({
   return { start: next };
 };
 
-// A title in a body is inline markdown: a newline would start a block, a lone `<` an HTML comment,
-// which could pose as a ledger line, and an `@` a mention, which notifies whoever it names.
+// A title in a body is inline markdown: a newline would start a block, a `<` HTML, and an `@` a
+// mention, which notifies whoever it names.
 const inline = (text: string) =>
   text.replace(/\s+/g, ' ').replaceAll('<', '&lt;').replaceAll('@', '@\u200B');
 
@@ -279,8 +259,6 @@ const findingLine = (filing: Filing, { kind, title, issue }: ReportedFinding) =>
 
 export type ListedArtifact = { name: string; expires_at: string };
 
-// A batch can be filed only while every result artifact of it is there, so the first to expire
-// sets the day.
 export const resultsExpireOn = (artifacts: ListedArtifact[]): string | undefined =>
   artifacts
     .filter(({ name }) => name.startsWith('qa-result-'))

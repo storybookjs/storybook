@@ -58,7 +58,7 @@ on:
         description: 'Start the next batch of the plan when this one is reported, unless the spend cap is reached'
         type: boolean
         default: false
-  # A plan merged into this branch starts its sweep. Pushing to it needs write access, as a dispatch does.
+  # Pushing to it needs write access, as a dispatch does.
   push:
     branches: ['qa/plans']
     paths: ['ecosystem-qa/plans/**']
@@ -185,7 +185,6 @@ jobs:
     if: ${{ github.event_name != 'pull_request' }}
     runs-on: ubuntu-latest
     permissions: {}
-    # The only job that reads inputs and github.event. Every other job reads these outputs.
     outputs:
       matrix: ${{ steps.matrix.outputs.matrix }}
       version: ${{ steps.matrix.outputs.version }}
@@ -203,7 +202,6 @@ jobs:
       skip: ${{ steps.matrix.outputs.skip }}
       default_branch: ${{ steps.matrix.outputs.default_branch }}
     steps:
-      # A run that only collects earlier results of a sweep without a plan needs no matrix.
       - name: Checkout
         if: ${{ inputs.from_runs == '' || inputs.plan != '' }}
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -245,7 +243,6 @@ jobs:
           plan=''
           skip=false
           if [[ "$GITHUB_EVENT_NAME" == push ]]; then
-            # A push runs batch 1 of the plan it adds or changes as a dry run, and chains.
             QA_ENGINES=claude
             QA_DRY=true
             QA_CHAIN=true
@@ -260,7 +257,6 @@ jobs:
               git fetch --no-tags --depth=1 origin "$QA_BEFORE"
               changes="$(git diff --name-status "$QA_BEFORE" HEAD -- ecosystem-qa/plans/)"
             fi
-            # The names of changed files are data: only a path that is a plan file comes back.
             plan="$(node ecosystem-qa/plan.ts --push <<<"$changes")"
             [[ -n "$plan" ]] || skip=true
           elif [[ -n "$QA_PLAN" ]]; then
@@ -308,9 +304,7 @@ jobs:
             outputs='matrix={"include":[]}'
           elif [[ -n "$plan" ]]; then
             tier=gate
-            # Also with from_runs: the planned runs of the batch are what its report counts.
             outputs="$(node ecosystem-qa/plan.ts --plan "$plan" --batch "$QA_BATCH" --engines "$QA_ENGINES" --outputs ${QA_PLAN_HASH:+--hash "$QA_PLAN_HASH"} ${QA_VERSION:+--version "$QA_VERSION"})"
-            # Nothing, with a notice, when the plan changed since its chain started.
             if [[ -z "$outputs" ]]; then
               skip=true
               outputs='matrix={"include":[]}'
@@ -613,7 +607,7 @@ jobs:
 
   file:
     name: File issues
-    # After the track job, so that only one job at a time writes the comment of the batch.
+    # After track, so that two jobs never both add the comment of a new batch.
     needs: [plan, collect, track]
     if: ${{ !cancelled() && needs.collect.result == 'success' && needs.plan.outputs.dry == 'false' }}
     runs-on: ubuntu-latest
@@ -662,7 +656,6 @@ jobs:
           node ecosystem-qa/file.ts --proposals ecosystem-qa/results/qa-proposals/proposals.json
           --repo "$GITHUB_REPOSITORY"
 
-      # Also after a filing that failed in part, so the comment names every issue that was filed.
       - name: Name the filed issues in the tracking discussion
         if: ${{ !cancelled() && needs.plan.outputs.plan != '' }}
         env:
@@ -684,9 +677,8 @@ jobs:
   track:
     name: Report the batch in its tracking discussion
     needs: [plan, runner, collect]
-    # Not after the collect alone: a batch whose collect failed still reports its runs and dollars.
-    # A collect of earlier runs that failed has no results to report, and its comment would replace
-    # the one those runs have.
+    # A failed collect still reports the runs and dollars, except a collect of earlier runs, whose
+    # empty report would replace the comment of those runs.
     if: >-
       ${{ !cancelled() && needs.plan.result == 'success' && needs.plan.outputs.plan != ''
       && (needs.plan.outputs.from_runs == '' || needs.collect.result == 'success') }}

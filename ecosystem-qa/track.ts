@@ -133,8 +133,6 @@ if (!proposals) {
   warn(`No proposals at ${values.proposals ?? 'no --proposals'}, so the comment lists no finding.`);
 }
 
-// Before the filing, every issue proposal is a new issue. After it, the issue that now carries the
-// fingerprint is the one it was filed as.
 const filed =
   proposals && filing === 'filed'
     ? openIssueOf(
@@ -187,7 +185,6 @@ const expiresOn =
     ? `a day GitHub does not list, because run ${runs.join(', ')} holds no result artifact`
     : 'a day no run names, because these results are local');
 
-// A missing category ends a run that writes; --print goes on as if the plan had no discussion yet.
 const placeOf = (): DiscussionPlace | undefined => {
   try {
     return discussionPlace(repo!, TRACKING_CATEGORY);

@@ -122,8 +122,6 @@ export interface PlanJob extends SweepJob {
   part: number;
 }
 
-// Plan the jobs of one batch of a QA plan: each repo and part of `planRuns` with every engine asked
-// for, on Linux only, because no plan entry is about Windows yet.
 export const planMatrix = (
   plan: Plan,
   batch: number,

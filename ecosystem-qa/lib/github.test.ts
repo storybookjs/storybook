@@ -14,7 +14,6 @@ import {
   updateDiscussionComment,
 } from './github.ts';
 
-// No test may reach GitHub, least of all with a mutation.
 vi.mock('../../scripts/utils/gh.ts', () => ({ gh: vi.fn(), ghJson: vi.fn() }));
 
 const item = (extra: object = {}) => ({

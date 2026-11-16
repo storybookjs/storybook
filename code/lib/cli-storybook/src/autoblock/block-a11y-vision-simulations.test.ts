@@ -30,11 +30,38 @@ beforeEach(() => {
 });
 
 describe('blocks', () => {
-  test('when a story pins a removed simulation', async () => {
+  test.each(['protanomaly', 'deuteranomaly'])(
+    'when a story pins the removed %s simulation',
+    async (vision) => {
+      await expect(
+        check(['@storybook/addon-a11y'], {
+          '/project/src/Button.stories.ts': `export default {}; export const Dim = { globals: { vision: '${vision}' } };`,
+          '/project/src/Card.stories.ts': `export default {}; export const Dim = { globals: { vision: 'protanopia' } };`,
+        })
+      ).resolves.toEqual({ files: ['/project/src/Button.stories.ts'] });
+    }
+  );
+
+  test('when the meta sets a removed simulation through a local constant', async () => {
     await expect(
       check(['@storybook/addon-a11y'], {
-        '/project/src/Button.stories.ts': `export const Dim = { globals: { vision: 'protanomaly' } };`,
-        '/project/src/Card.stories.ts': `export const Dim = { globals: { vision: 'protanopia' } };`,
+        '/project/src/Button.stories.ts': `
+          const globals = { vision: 'deuteranomaly' };
+          export default { globals };
+          export const Dim = {};
+        `,
+      })
+    ).resolves.toEqual({ files: ['/project/src/Button.stories.ts'] });
+  });
+
+  test('when a CSF factory story pins a removed simulation', async () => {
+    await expect(
+      check(['@storybook/addon-a11y'], {
+        '/project/src/Button.stories.ts': `
+          import preview from '../.storybook/preview';
+          const meta = preview.meta({});
+          export const Dim = meta.story({ globals: { vision: 'protanomaly' } });
+        `,
       })
     ).resolves.toEqual({ files: ['/project/src/Button.stories.ts'] });
   });
@@ -53,7 +80,31 @@ describe('does not block', () => {
     await expect(
       check(['@storybook/addon-a11y'], {
         '/project/.storybook/preview.ts': `export default { initialGlobals: { vision: undefined } };`,
-        '/project/src/Button.stories.ts': `export const Dim = { globals: { vision: 'tritanomaly' } };`,
+        '/project/src/Button.stories.ts': `export default {}; export const Dim = { globals: { vision: 'tritanopia' } };`,
+      })
+    ).resolves.toBe(false);
+  });
+
+  test('when a removed simulation only appears in a comment', async () => {
+    await expect(
+      check(['@storybook/addon-a11y'], {
+        '/project/.storybook/preview.ts': `
+          // export default { initialGlobals: { vision: 'protanomaly' } };
+          export default {};
+        `,
+        '/project/src/Button.stories.ts': `
+          export default {};
+          /* globals: { vision: 'protanomaly' } */
+          export const Dim = {};
+        `,
+      })
+    ).resolves.toBe(false);
+  });
+
+  test('when a removed simulation is the value of an unrelated field', async () => {
+    await expect(
+      check(['@storybook/addon-a11y'], {
+        '/project/src/Eye.stories.ts': `export default {}; export const Dim = { args: { vision: 'protanomaly' } };`,
       })
     ).resolves.toBe(false);
   });
@@ -61,7 +112,7 @@ describe('does not block', () => {
   test('when the accessibility addon is not used', async () => {
     await expect(
       check(['@storybook/addon-docs'], {
-        '/project/src/Button.stories.ts': `export const Dim = { globals: { vision: 'protanomaly' } };`,
+        '/project/src/Button.stories.ts': `export default {}; export const Dim = { globals: { vision: 'protanomaly' } };`,
       })
     ).resolves.toBe(false);
   });
@@ -74,6 +125,14 @@ describe('does not block', () => {
         mainConfigPath: '/project/.storybook/main.ts',
         configDir: '/project/.storybook',
         storiesPaths: ['/project/src/Deleted.stories.ts'],
+      })
+    ).resolves.toBe(false);
+  });
+
+  test('when a story file cannot be parsed', async () => {
+    await expect(
+      check(['@storybook/addon-a11y'], {
+        '/project/src/Button.stories.svelte': `<Story name="Dim" globals={{ vision: 'protanomaly' }} />`,
       })
     ).resolves.toBe(false);
   });

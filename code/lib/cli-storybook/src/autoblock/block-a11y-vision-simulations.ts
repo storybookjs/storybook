@@ -1,14 +1,36 @@
 import { readFile } from 'node:fs/promises';
 
 import { getAddonNames } from 'storybook/internal/common';
+import { loadConfig, loadCsf } from 'storybook/internal/csf-tools';
 
 import { dedent } from 'ts-dedent';
 
 import { shortenPath } from '../util.ts';
 import { createBlocker } from './types.ts';
 
-const removedVisionGlobal = /\bvision['"]?\s*:\s*['"`](?:protanomaly|deuteranomaly)['"`]/;
+const removedSimulations = ['protanomaly', 'deuteranomaly'];
+const mentionsRemovedSimulation = new RegExp(removedSimulations.join('|'));
 const maxListedFiles = 10;
+
+const setsRemovedSimulation = async (file: string, kind: 'preview' | 'story') => {
+  const code = await readFile(file, 'utf8');
+  if (!mentionsRemovedSimulation.test(code)) {
+    return false;
+  }
+
+  const objects =
+    kind === 'preview'
+      ? [loadConfig(code, file).parse()]
+      : loadCsf(code, { fileName: file, makeTitle: (title) => title || file })
+          .parse()
+          .objects();
+  const globals = kind === 'preview' ? 'initialGlobals' : 'globals';
+
+  return objects.some((object) => {
+    const vision = object.getValue([globals, 'vision']);
+    return typeof vision === 'string' && removedSimulations.includes(vision);
+  });
+};
 
 export const blocker = createBlocker({
   id: 'a11yRemovedVisionSimulations',
@@ -17,10 +39,14 @@ export const blocker = createBlocker({
       return false;
     }
 
+    const candidates = [
+      ...(previewConfigPath ? [{ file: previewConfigPath, kind: 'preview' as const }] : []),
+      ...storiesPaths.map((file) => ({ file, kind: 'story' as const })),
+    ];
+    // A file that cannot be read or parsed is left to the runtime warning of the addon.
     const files: string[] = [];
-    for (const file of previewConfigPath ? [previewConfigPath, ...storiesPaths] : storiesPaths) {
-      const code = await readFile(file, 'utf8').catch(() => '');
-      if (removedVisionGlobal.test(code)) {
+    for (const { file, kind } of candidates) {
+      if (await setsRemovedSimulation(file, kind).catch(() => false)) {
         files.push(file);
       }
     }

@@ -3,14 +3,17 @@ import { createHash } from 'node:crypto';
 import { z } from 'zod';
 
 import { SEMVER } from './cycle.ts';
-import { CatalogEntry } from './schema.ts';
+import { CatalogEntry, CheckId } from './schema.ts';
 import { needsGroup, type Window, type WindowPr } from './window.ts';
 
 const Text = z.string().regex(/^\S(?:[^\n\r]*\S)?$/, 'expected one line of text');
 const Slug = z
   .string()
-  .max(75)
-  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'expected lower case letters, digits, and hyphens');
+  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'expected lower case letters, digits, and hyphens')
+  .refine(
+    (slug) => CheckId.safeParse(planCheckId(slug)).success,
+    'expected a slug short enough for the check id plan.<slug>'
+  );
 const RepoId = CatalogEntry.shape.id;
 const Sha = z.string().regex(/^[0-9a-f]{40}$/, 'expected a full commit SHA');
 const PrNumber = z.int().positive();

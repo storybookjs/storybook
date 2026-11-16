@@ -282,6 +282,13 @@ describe('checkPlanText', () => {
       'the copy on www.example.com',
       'www.example.com is a URL other than localhost',
     ],
+    [
+      'a slug too long for its check id',
+      '### `preview-animations`',
+      `### \`preview-animations-${'x'.repeat(57)}\``,
+      '### `preview-animations-',
+      'short enough for the check id',
+    ],
   ])('refuses %s with its line', (_, from, to, lineNeedle, message) => {
     const text = replaced(FIXTURE, from, to);
     expect(problemsOf(text)).toContainEqual({

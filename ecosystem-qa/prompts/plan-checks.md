@@ -28,5 +28,5 @@ Do them with your Playwright browser tool, the tools whose names contain `browse
 6. An evidence name has at most one directory, so for a finding copy the screenshot that shows the actual result to `<slug>.png` in the evidence directory.
 
 When no tool with `browser_` in its name is available, report a step that needs a click or typed text as `blocked`, with the note that this sandbox has no browser tool.
-A screenshot of a URL still works with the shot tool.
-Drag and drop, UI that shows only on hover, and file pickers are not supported. Report such a step as `skip` and say so in the note.
+Take a screenshot of a URL with the shot tool, as for the other checks.
+Drag and drop, UI that shows only on hover, file pickers, and anything that needs a headed browser are not supported. Report such a step as `skip` and say so in the note.

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { CHECK_IDS, type CheckId } from '../checks.ts';
+import { CHECK_IDS, TIERS } from '../checks.ts';
 import { cycleRepo, SEMVER } from './cycle.ts';
 import { canPushTo } from './push-targets.ts';
 
@@ -120,7 +120,12 @@ export const Catalog = z
     message: 'catalog ids must be unique',
   });
 
-const CheckId = z.enum(CHECK_IDS);
+// A static id of checks.ts or the id of a plan entry. The answer schema of a run still names only
+// the ids of that run.
+export const CheckId = z
+  .string()
+  .max(80)
+  .regex(/^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$/);
 
 const Version = z.string().regex(SEMVER);
 
@@ -159,14 +164,14 @@ export const Finding = z.strictObject({
 });
 export type Finding = z.infer<typeof Finding>;
 
-export const Tier = z.enum(['must', 'extended']);
+export const Tier = z.enum(TIERS);
 
-// The answer schema for one run: every check of the tier exactly once, findings only on failures.
+// The answer schema for one run: every check of the run exactly once, findings only on failures.
 //
-// The agent reads the schema next to the checklist, so the schema names the ids of the tier only,
+// The agent reads the schema next to the checklist, so the schema names the ids of the run only,
 // in the order given: one list of ids in one order.
-export const agentOutput = (ids: readonly CheckId[]) => {
-  const id = z.enum(ids);
+export const agentOutput = (ids: readonly [string, ...string[]]) => {
+  const id = z.enum(z.tuple([CheckId], CheckId).parse(ids));
   return z
     .strictObject({
       storybookVersionBefore: Version.nullable(),
@@ -201,8 +206,27 @@ export const agentOutput = (ids: readonly CheckId[]) => {
 
 export const AgentOutput = agentOutput(CHECK_IDS);
 
+// What a run of plan checks tested: the plan file by name and hash, the run of `planRuns`, and for
+// each of its entries the slug and the PRs.
+export const PlanRecord = z.strictObject({
+  file: z.string().regex(/^[\w.-]+\.md$/),
+  hash: z.string().regex(/^[0-9a-f]{12}$/),
+  batch: z.int().min(1),
+  part: z.int().min(1),
+  entries: z
+    .array(
+      z.strictObject({
+        id: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+        prs: z.array(z.int().positive()).min(1),
+      })
+    )
+    .min(1),
+});
+export type PlanRecord = z.infer<typeof PlanRecord>;
+
 export const RunRequestRecord = z.strictObject({
   entry: CatalogEntry,
+  plan: PlanRecord.optional(),
   version: z.string(),
   engine: Engine,
   model: ModelId,

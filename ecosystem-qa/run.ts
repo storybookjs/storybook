@@ -21,12 +21,12 @@ import { bwrap } from '@ai-hero/sandcastle/sandboxes/bwrap';
 import { docker } from '@ai-hero/sandcastle/sandboxes/docker';
 import { noSandbox } from '@ai-hero/sandcastle/sandboxes/no-sandbox';
 import { seatbelt } from '@ai-hero/sandcastle/sandboxes/seatbelt';
-import { join, relative, resolve } from 'pathe';
+import { basename, join, relative, resolve } from 'pathe';
 import { z } from 'zod';
 
 import { checksFor, renderChecklist } from './checks.ts';
 import { answerAfterRepairs, answerOfFinishedAgent, type Reading } from './lib/answer.ts';
-import { loadCatalogEntry } from './lib/catalog.ts';
+import { loadCatalogEntry, loadEntries } from './lib/catalog.ts';
 import { shipsSandcastleFiles } from './lib/clone-guard.ts';
 import { cycleBranchName, cycleRepo, versionLine } from './lib/cycle.ts';
 import { runFake } from './lib/fake-run.ts';
@@ -34,6 +34,16 @@ import { outputOf, watchHost, type Report } from './lib/host-watch.ts';
 import { forJobLog, liveLine } from './lib/live-log.ts';
 import { memoryGuard } from './lib/memory-guard.ts';
 import { CHECKOUT_GUIDE, guideFor } from './lib/migration-guide.ts';
+import {
+  checkPlanText,
+  planBatches,
+  planCheckId,
+  planHash,
+  planRuns,
+  renderPlanChecks,
+  type Plan,
+  type PlanEntry,
+} from './lib/qa-plan.ts';
 import { budgetRecord, msUntilHardStop, parseBudget, type RunBudget } from './lib/run-budget.ts';
 import {
   agentOutput,
@@ -43,6 +53,7 @@ import {
   Tier,
   type CatalogEntry,
   type Os,
+  type PlanRecord,
   type RunResultFile,
 } from './lib/schema.ts';
 import { writeStepSummary } from './lib/step-summary.ts';
@@ -67,7 +78,11 @@ const HELP = `Usage: node ecosystem-qa/run.ts --repo <catalog id> --version <sto
 Options:
   --model <id>        Model id (default: claude-haiku-5-5 for claude, gpt-6.1-sol for codex)
   --effort <level>    low, medium or high (default: low)
-  --tier <tier>       must (default) runs the checks every sweep needs; extended runs all of them
+  --tier <tier>       must (default without --plan) runs the checks every sweep needs; extended runs
+                      all of them; gate (default with --plan) runs only the upgrade and the dev server
+  --plan <file>       A QA plan: the run adds one check for each entry of its batch and part on --repo
+  --batch <n>         The batch of --plan to run
+  --part <n>          The part of the batch on --repo, when the plan splits it (default: 1)
   --clone-dir <dir>   Where to clone the catalog repo (default: <tmpdir>/ecosystem-qa/work/<id>)
   --image <name>      Docker image for --sandbox docker (default: sb-ecosystem-qa)
   --budget-minutes <n>     Minutes the agent is asked to answer within, from the start of the run (default: 90)
@@ -132,6 +147,7 @@ const HOST_OS: Partial<Record<NodeJS.Platform, Os>> = {
 
 const QA_DIR = fileURLToPath(new URL('.', import.meta.url));
 const PROMPT_FILE = join(QA_DIR, 'prompts/upgrade.md');
+const PLAN_PROMPT_FILE = join(QA_DIR, 'prompts/plan-checks.md');
 const DOCKER_HOME = '/home/agent';
 // Where Sandcastle's Docker sandbox mounts the worktree.
 const DOCKER_WORKSPACE = `${DOCKER_HOME}/workspace`;
@@ -140,6 +156,97 @@ const fail = (message: string): never => {
   console.error(`${message}\n\n${HELP}`);
   process.exit(1);
 };
+
+// A request that the plan does not allow, where the usage text would bury the reason.
+const refuse = (message: string): never => {
+  console.error(message);
+  process.exit(1);
+};
+
+const runNumber = (flag: string, value: string): number => {
+  const number = Number(value);
+  return Number.isInteger(number) && number >= 1
+    ? number
+    : refuse(`${flag} must be a whole number from 1, found "${value}".`);
+};
+
+interface PlannedRun {
+  plan: Plan;
+  record: PlanRecord;
+  entries: PlanEntry[];
+}
+
+const planOfRun = (
+  { plan: file, batch, part }: { plan?: string; batch?: string; part?: string },
+  repo: string,
+  version: string
+): PlannedRun | undefined => {
+  if (!file) {
+    return batch || part ? refuse('--batch and --part need --plan.') : undefined;
+  }
+  if (!batch) {
+    return refuse('--plan needs --batch.');
+  }
+  const batchNumber = runNumber('--batch', batch);
+  const partNumber = runNumber('--part', part ?? '1');
+  const text = readFileSync(file, 'utf8');
+  const { plan, problems } = checkPlanText(text, { catalog: loadEntries() });
+  if (!plan || problems.length > 0) {
+    const [first] = problems;
+    return refuse(`${file} is not a plan that can run, line ${first!.line}: ${first!.message}`);
+  }
+  if (versionLine(version) !== plan.line) {
+    return refuse(
+      `${file} plans line ${plan.line}, and --version ${version} is on line ${versionLine(version)}.`
+    );
+  }
+  const batches = planBatches(plan);
+  if (!batches.includes(batchNumber)) {
+    return refuse(`${file} has no batch ${batchNumber}, only 1 to ${batches.length}.`);
+  }
+  const parts = planRuns(plan, batchNumber).filter((run) => run.repo === repo);
+  if (parts.length === 0) {
+    return refuse(`Batch ${batchNumber} of ${file} lists no entry for ${repo}.`);
+  }
+  const run =
+    parts.find((candidate) => candidate.part === partNumber) ??
+    refuse(
+      `Batch ${batchNumber} of ${file} has ${parts.length} part(s) for ${repo}, not part ${partNumber}.`
+    );
+  const entries = run.entries.map((slug) => plan.entries.find((entry) => entry.slug === slug)!);
+  return {
+    plan,
+    record: {
+      file: basename(file),
+      hash: planHash(text),
+      batch: batchNumber,
+      part: partNumber,
+      entries: entries.map(({ slug, prs }) => ({ id: slug, prs })),
+    },
+    entries,
+  };
+};
+
+// The checks of a run in the order the agent reports them, the checklist it reads, and the check
+// that a fake run fails.
+const checklistOf = (tier: z.infer<typeof Tier>, planned: PlannedRun | undefined, repo: string) => {
+  const fixed = checksFor(tier);
+  const planChecks = (planned?.entries ?? []).map((entry) => ({
+    id: planCheckId(entry.slug),
+    label: entry.title,
+  }));
+  return {
+    checks: [...fixed.map(({ id, label }) => ({ id, label })), ...planChecks],
+    text: planned
+      ? [
+          `${renderChecklist(fixed)}\n${renderPlanChecks(planned.entries, repo)}`,
+          readFileSync(PLAN_PROMPT_FILE, 'utf8').trim(),
+        ].join('\n\n')
+      : renderChecklist(fixed),
+    failing: planChecks[0]?.id ?? 'core.story-render',
+  };
+};
+type Checklist = ReturnType<typeof checklistOf>;
 
 const git = (cwd: string, ...args: string[]) =>
   execFileSync('git', args, { cwd, encoding: 'utf8' }).trim();
@@ -154,7 +261,10 @@ const parseRequest = () => {
       out: { type: 'string' },
       model: { type: 'string' },
       effort: { type: 'string', default: 'low' },
-      tier: { type: 'string', default: 'must' },
+      tier: { type: 'string' },
+      plan: { type: 'string' },
+      batch: { type: 'string' },
+      part: { type: 'string' },
       'clone-dir': { type: 'string' },
       image: { type: 'string', default: 'sb-ecosystem-qa' },
       'budget-minutes': { type: 'string' },
@@ -191,8 +301,13 @@ const parseRequest = () => {
     return fail('--fake needs ECOSYSTEM_QA_FAKE=1.');
   }
 
+  const planned = planOfRun(values, repo, version);
+  const tier = Tier.parse(values.tier ?? (planned ? 'gate' : 'must'));
+  if (tier === 'gate' && !planned) {
+    return refuse('--tier gate runs only with --plan.');
+  }
   const engine = Engine.parse(values.engine);
-  const entry = loadCatalogEntry(repo);
+  const entry = loadCatalogEntry(repo, planned?.plan);
   const sandbox = SandboxKind.parse(values.sandbox);
   // A fake run starts no agent and runs nothing of the repo.
   const refusal = sandbox === 'none' && !values.fake ? unsandboxedRefusal(entry, os) : undefined;
@@ -207,11 +322,12 @@ const parseRequest = () => {
   }
   const request: RunRequest = {
     entry,
+    ...(planned ? { plan: planned.record } : {}),
     version,
     engine,
     model: values.model ?? DEFAULT_MODEL[engine],
     effort: Effort.parse(values.effort),
-    tier: Tier.parse(values.tier),
+    tier,
     sandbox,
     os,
     fake: values.fake,
@@ -222,7 +338,13 @@ const parseRequest = () => {
   // sandbox denies the monorepo's own config files to the agent.
   const cloneDir = resolve(values['clone-dir'] ?? join(scratchDir(), 'work', entry.id));
 
-  return { request, cloneDir, image: values.image, budget };
+  return {
+    request,
+    cloneDir,
+    image: values.image,
+    budget,
+    checklist: checklistOf(tier, planned, repo),
+  };
 };
 
 const clone = (entry: CatalogEntry, cloneDir: string): string => {
@@ -400,7 +522,8 @@ const runSandcastle = async (
   cloneDir: string,
   image: string,
   startedAt: Date,
-  budget: RunBudget
+  budget: RunBudget,
+  checklist: Checklist
 ): Promise<Outcome> => {
   const evidenceDir = join(request.outDir, 'evidence');
   writeFileSync(join(evidenceDir, 'budget.json'), budgetRecord(startedAt, budget));
@@ -450,8 +573,8 @@ const runSandcastle = async (
     }),
   });
   // One list for the schema, the checklist and the count the prompt names.
-  const checks = checksFor(request.tier);
-  const answerSchema = agentOutput(checks.map((check) => check.id));
+  const { checks } = checklist;
+  const answerSchema = agentOutput(checks.map((check) => check.id) as [string, ...string[]]);
 
   try {
     const guide = await guideFor(request.version, {
@@ -559,7 +682,7 @@ const runSandcastle = async (
         MIGRATION_FILE: plan.migrationFile,
         TOOLS_DIR: plan.toolsDir,
         EVIDENCE_DIR: plan.evidenceDir,
-        CHECKLIST: renderChecklist(checks),
+        CHECKLIST: checklist.text,
         CHECK_COUNT: String(checks.length),
         BUDGET_MINUTES: String(budget.minutes),
         HARD_STOP_MINUTES: String(budget.hardStopMinutes),
@@ -747,12 +870,13 @@ const summarize = (result: RunResultFile, resultPath: string): string => {
   ].join(' ');
 };
 
-const { request, cloneDir, image, budget } = parseRequest();
+const { request, cloneDir, image, budget, checklist } = parseRequest();
 const startedAt = new Date();
 mkdirSync(join(request.outDir, 'evidence'), { recursive: true });
+writeFileSync(join(request.outDir, 'evidence/checklist.md'), `${checklist.text}\n`);
 const outcome = request.fake
-  ? runFake(request)
-  : await runSandcastle(request, cloneDir, image, startedAt, budget);
+  ? runFake(request, checklist.checks, checklist.failing)
+  : await runSandcastle(request, cloneDir, image, startedAt, budget, checklist);
 const result = writeResult(request, outcome, startedAt);
 // The whole output directory becomes a public artifact, agent stream and session included, and the
 // agent holds the provider key, so nothing with a credential shape may stay in it.

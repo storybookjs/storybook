@@ -10,8 +10,8 @@ export const loadEntries = (plan?: Plan): CatalogEntry[] =>
     ...(plan ? discoveredEntries(plan) : []),
   ]);
 
-export const loadCatalogEntry = (id: string): CatalogEntry => {
-  const entries = loadEntries();
+export const loadCatalogEntry = (id: string, plan?: Plan): CatalogEntry => {
+  const entries = loadEntries(plan);
   const entry = entries.find((candidate) => candidate.id === id);
   if (!entry) {
     throw new Error(

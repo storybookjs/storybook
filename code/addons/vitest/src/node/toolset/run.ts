@@ -197,6 +197,11 @@ export async function runStoryTests({
   // An empty filter list filters nothing, as in Vitest.
   const filters = files?.length ? files : undefined;
   if (stories || filters || changed) {
+    // First, because `stories changed` waits for a story file written a moment ago to be indexed:
+    // the index read after it has that file.
+    // No default: a caller that forgot to wire it must fail, not read as "nothing changed".
+    const since = typeof changed === 'string' ? changed : undefined;
+    const changedStories = changed ? await getChangedStories!(since) : undefined;
     const index = await getIndex();
     let candidates: Set<string> | undefined;
     const narrow = (ids: string[]) => {
@@ -217,14 +222,8 @@ export async function runStoryTests({
       narrow(matched.storyIds);
     }
 
-    if (changed) {
-      // No default: a caller that forgot to wire it must fail, not read as "nothing changed".
-      const since = typeof changed === 'string' ? changed : undefined;
-      const {
-        storyIds: changedIds,
-        changedConfigFiles,
-        pendingFiles,
-      } = await getChangedStories!(since);
+    if (changedStories) {
+      const { storyIds: changedIds, changedConfigFiles, pendingFiles } = changedStories;
       selection.changed = {
         stories: changedIds.length,
         changedConfigFiles,

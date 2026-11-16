@@ -94,7 +94,7 @@ describe('createAsyncQueue', () => {
   });
 });
 
-/** A channel that answers every run request with `sampleResult`, recording the requested ids. */
+// A channel that answers every run request with `sampleResult`, recording the requested ids.
 function respondingChannel() {
   const channel = createMockChannel();
   const requested: unknown[] = [];

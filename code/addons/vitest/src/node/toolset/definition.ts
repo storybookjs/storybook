@@ -1,6 +1,5 @@
 import * as v from 'valibot';
 
-import { OpenServiceGitRefError } from 'storybook/internal/server-errors';
 import {
   storyInputArraySchema,
   type StoryIndexAccess,
@@ -90,7 +89,7 @@ const selectionSchema = v.object({
   ),
   /** How many story ids `stories` gave. */
   stories: v.optional(v.number()),
-  /** Stories the run was asked for; absent when the selection is every story. */
+  /** Stories the run was asked for. */
   storyCount: v.optional(v.number()),
 });
 
@@ -161,9 +160,10 @@ Use { absoluteStoryPath + exportName } only when you're currently working in a s
   ),
   files: v.optional(
     v.pipe(
-      v.array(v.string()),
+      // An empty entry, as from an unset variable, would match every story file.
+      v.array(v.pipe(v.string(), v.minLength(1))),
       v.description(
-        `Story files to test: each entry selects the story files whose path, relative to the Storybook project directory, contains it (case-insensitive), or that an absolute path or directory points to. Only story files match; to test the stories that depend on a changed component, use \`changed\`.`
+        `Story files to test: each entry selects the story files whose path contains it (case-insensitive), or that an absolute path or directory points to. Only story files match; to test the stories that depend on a changed component, use \`changed\`.`
       )
     )
   ),
@@ -299,23 +299,10 @@ function isFailedRun(data: TestRunData): data is TestRunFailureData {
 
 // `stories changed` itself, so both commands select the same stories for the same changes.
 async function getChangedStories(ctx: ToolsetCtx, since?: string): Promise<ChangedStories> {
-  const { data } = await getToolset('stories')
-    .methods.changed.handler(since === undefined ? {} : { since }, ctx)
-    .catch((error: unknown) => {
-      // The CLI reads the token after `--changed` as its ref, as Vitest does, so
-      // `--changed Button` asks for the changes since `Button`.
-      if (
-        ctx.transport === 'cli' &&
-        error instanceof OpenServiceGitRefError &&
-        error.data.reason === 'unknown'
-      ) {
-        throw new OpenServiceGitRefError({
-          ...error.data,
-          hint: '`--changed` reads the argument after it as a git ref: put file arguments before `--changed`.',
-        });
-      }
-      throw error;
-    });
+  const { data } = await getToolset('stories').methods.changed.handler(
+    since === undefined ? {} : { since },
+    ctx
+  );
   return {
     storyIds: data.stories.map((story) => story.storyId),
     changedConfigFiles: data.changedConfigFiles,

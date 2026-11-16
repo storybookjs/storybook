@@ -382,13 +382,12 @@ describe('stories.changed', () => {
       expect(error.agentFacing).toBe(true);
     });
 
-    it('reports no changes outside a git repository, as without a ref', async () => {
+    it('fails outside a git repository, where a ref cannot be compared', async () => {
       getChangedFiles.mockRejectedValue(new Error('not a git repository'));
 
-      const outcome = await runChanged(cliCtx, toolset, { since: 'next' });
-
-      expect(outcome.ok).toBe(true);
-      expect(outcome.data).toMatchObject({ stories: [], since: 'next' });
+      await expect(runChanged(cliCtx, toolset, { since: 'next' })).rejects.toThrow(
+        'Cannot list the changes since `next`: this project is not in a git repository, or git is not available.'
+      );
     });
   });
 

@@ -668,16 +668,16 @@ export class OpenServiceModuleGraphUnavailableError extends StorybookError {
  * Agent-facing: the message names the ref and, where there is one, the recovery.
  */
 export class OpenServiceGitRefError extends StorybookError {
-  constructor(public data: { ref: string; reason: 'unknown' | 'no-merge-base'; hint?: string }) {
+  constructor(public data: { ref: string; reason: 'unknown' | 'no-merge-base' | 'no-git' }) {
     super({
       name: 'OpenServiceGitRefError',
       category: Category.CORE_COMMON,
       code: 36,
-      message:
-        (data.reason === 'unknown'
-          ? `\`${data.ref}\` is not a known git ref.`
-          : `\`${data.ref}\` and HEAD have no common commit in this clone. In a shallow clone, fetch more history first: \`git fetch --unshallow\`.`) +
-        (data.hint ? ` ${data.hint}` : ''),
+      message: {
+        unknown: `\`${data.ref}\` is not a known git ref.`,
+        'no-merge-base': `\`${data.ref}\` and HEAD have no common commit in this clone. In a shallow clone, fetch more history first: \`git fetch --unshallow\`.`,
+        'no-git': `Cannot list the changes since \`${data.ref}\`: this project is not in a git repository, or git is not available.`,
+      }[data.reason],
       agentFacing: true,
     });
   }

@@ -324,12 +324,9 @@ function formatSelection(selection: TestRunSelection): string | undefined {
     );
   }
   const selected = selection.storyCount;
-  if (parts.length === 0) {
+  if (parts.length === 0 || selected === undefined) {
     // `stories` alone: the ids say what was selected, and the verdict counts what ran.
     return undefined;
-  }
-  if (selected === undefined) {
-    return `${parts.join('; ')}: selected every story.`;
   }
   return `${parts.join('; ')}: selected ${pluralize(selected, 'story', 'stories')}.`;
 }

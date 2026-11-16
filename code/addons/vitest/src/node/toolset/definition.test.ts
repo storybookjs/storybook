@@ -168,24 +168,21 @@ describe('test API', () => {
     expect(v.safeParse(toolset.methods.run.input, { changed: '' }).success).toBe(false);
   });
 
-  it('tells the CLI that a file after --changed was read as its ref', async () => {
+  it('rejects an empty file entry, which would otherwise match every story file', () => {
+    expect(v.safeParse(toolset.methods.run.input, { files: [''] }).success).toBe(false);
+  });
+
+  it('lets a ref that git cannot compare fail the call as stories changed reports it', async () => {
+    const error = new OpenServiceGitRefError({ ref: 'Button', reason: 'unknown' });
     const changed = vi.fn(async () => {
-      throw new OpenServiceGitRefError({ ref: 'Button', reason: 'unknown' });
+      throw error;
     });
     vi.mocked(getToolset).mockReturnValue({ methods: { changed: { handler: changed } } } as never);
 
     await runTests({ changed: 'Button' });
     const { getChangedStories } = vi.mocked(runStoryTests).mock.lastCall![0];
 
-    await expect(getChangedStories!('Button')).rejects.toThrow(
-      '`Button` is not a known git ref. `--changed` reads the argument after it as a git ref: put file arguments before `--changed`.'
-    );
-
-    await runForMcp({ changed: 'Button' });
-    const forMcp = vi.mocked(runStoryTests).mock.lastCall![0].getChangedStories!;
-    await expect(forMcp('Button')).rejects.toThrow(
-      new OpenServiceGitRefError({ ref: 'Button', reason: 'unknown' })
-    );
+    await expect(getChangedStories!('Button')).rejects.toBe(error);
   });
 
   it('lets the CLI fill files from bare arguments', () => {
@@ -366,18 +363,6 @@ describe('test API', () => {
 
 Passed: 1 component test passed.
 Accessibility: not checked.`);
-    });
-
-    it('ends a passing focused run with the verdict, not with a run of every story', async () => {
-      vi.mocked(runStoryTests).mockResolvedValue(
-        completed({
-          storyIds: ['button--primary'],
-          componentTestCount: { success: 1, error: 0 },
-          componentTestStatuses: [componentTest('button--primary', 'status-value:success')],
-        })
-      );
-
-      expect((await runTests()).markdown).toMatch(/Accessibility: not checked\.$/);
     });
 
     it('summarizes what the file filters and the changes selected in one line', async () => {

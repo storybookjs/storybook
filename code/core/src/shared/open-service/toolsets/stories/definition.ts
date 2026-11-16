@@ -3,6 +3,7 @@ import type { StoryIndex } from 'storybook/internal/types';
 import * as v from 'valibot';
 
 import {
+  OpenServiceGitRefError,
   OpenServiceMissingOriginError,
   OpenServiceModuleGraphUnavailableError,
 } from '../../../../server-errors.ts';
@@ -379,9 +380,9 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
             });
           }
 
-          // Without git there are no changes to list, with or without a ref.
+          // Without git there are no changes to list.
           const noChanges = (): ToolsetOutcome<ChangedStoriesOutput, never> => {
-            const data = { ...emptyChangedStories(), ...(since === undefined ? {} : { since }) };
+            const data = emptyChangedStories();
             return {
               ok: true,
               data,
@@ -392,7 +393,6 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
                   newStoryCount: 0,
                   modifiedStoryCount: 0,
                   affectedStoryCount: 0,
-                  ...(since === undefined ? {} : { since: true }),
                 },
               },
             };
@@ -420,8 +420,10 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
               ]);
               changesSince = { changedFiles, repoRoot };
             } catch (error) {
+              // Without a ref, no git means no changes to list. A ref that cannot be compared is
+              // not "nothing changed".
               if (error instanceof Error && GIT_UNUSABLE_REASONS.has(error.message)) {
-                return noChanges();
+                throw new OpenServiceGitRefError({ ref: since, reason: 'no-git' });
               }
               throw error;
             }

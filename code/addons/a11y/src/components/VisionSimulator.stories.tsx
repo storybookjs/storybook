@@ -37,8 +37,8 @@ const openMenu: PlayFunction = async ({ canvas, userEvent }) => {
 export const Default = meta.story({
   play: async (context) => {
     await openMenu(context);
-    await expect(await screen.findByText('Up to 3.26% of users')).toBeVisible();
-    await expect(await screen.findByText('22.9% of users')).toBeVisible();
+    await expect(await screen.findByText(/Up to 3\.26% of users/)).toBeVisible();
+    await expect(await screen.findByText(/Brettel et al\. 1997/)).toBeVisible();
   },
 });
 

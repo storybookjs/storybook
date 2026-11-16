@@ -8,18 +8,18 @@ export const filters: Record<string, { label: string; filter: string; descriptio
     label: 'Deuteranopia',
     filter: 'url("#storybook-a11y-vision-deuteranopia")',
     // Includes deuteranomaly, whose severity ranges up to deuteranopia.
-    description: '3.26% of users\nMachado et al. 2009',
+    description: 'Up to 3.26% of users\nMachado et al. 2009',
   },
   protanopia: {
     label: 'Protanopia',
     filter: 'url("#storybook-a11y-vision-protanopia")',
     // Includes protanomaly, whose severity ranges up to protanopia.
-    description: '1.25% of users\nMachado et al. 2009',
+    description: 'Up to 1.25% of users\nMachado et al. 2009',
   },
   tritanomaly: {
     label: 'Tritanomaly (inaccurate)',
-    filter: 'url("#storybook-a11y-vision-tritanopia")',
-    description: '0.016% of users\nMachado et al. 2009',
+    filter: 'url("#storybook-a11y-vision-tritanomaly")',
+    description: '0.01% of users\nMachado et al. 2009',
   },
   tritanopia: {
     label: 'Tritanopia',
@@ -29,7 +29,7 @@ export const filters: Record<string, { label: string; filter: string; descriptio
   achromatopsia: {
     label: 'Achromatopsia',
     filter: 'url("#storybook-a11y-vision-achromatopsia")',
-    description: '0.0001% of users',
+    description: '0.0001% of users\nNguyen & Brown 2017',
   },
   grayscale: {
     label: 'Grayscale',
@@ -38,9 +38,12 @@ export const filters: Record<string, { label: string; filter: string; descriptio
 } as const;
 
 // Firefox ignores CSS `filter: url(#id)` when the SVG defining `#id` is `display: none`.
-// The dichromacy matrices below use Machado et al. (2009) at severity 1.0:
+// Protanopia, deuteranopia and tritanomaly use the Machado et al. (2009) severity 1.0 matrices:
 // https://www.inf.ufrgs.br/~oliveira/pubs_files/CVD_Simulation/CVD_Simulation.html
-// The achromatopsia matrix uses the sRGB relative luminance weights, which apply to linear light.
+// Tritanopia projects onto the two half-planes of Brettel, Viénot & Mollon (1997). Its first matrix
+// puts each side of the dividing plane in its own channel, relying on filter results clamping
+// negative values to 0, and its second matrix maps each side onto its half-plane.
+// Achromatopsia uses the sRGB relative luminance weights, which apply to linear light.
 export const filterDefs = `<svg id="storybook-a11y-vision-filters" aria-hidden="true" color-interpolation-filters="linearRGB" style="position:absolute;width:0;height:0;overflow:hidden">
   <defs>
     <filter id="storybook-a11y-vision-protanopia">
@@ -57,11 +60,22 @@ export const filterDefs = `<svg id="storybook-a11y-vision-filters" aria-hidden="
         values="0.367322, 0.860646, -0.227968, 0, 0 0.280085, 0.672501, 0.047413, 0, 0 -0.011820, 0.042940, 0.968881, 0, 0 0, 0, 0, 1, 0"
       />
     </filter>
-    <filter id="storybook-a11y-vision-tritanopia">
+    <filter id="storybook-a11y-vision-tritanomaly">
       <feColorMatrix
         in="SourceGraphic"
         type="matrix"
         values="1.255528, -0.076749, -0.178779, 0, 0 -0.078411, 0.930809, 0.147602, 0, 0 0.004733, 0.691367, 0.303900, 0, 0 0, 0, 0, 1, 0"
+      />
+    </filter>
+    <filter id="storybook-a11y-vision-tritanopia">
+      <feColorMatrix
+        in="SourceGraphic"
+        type="matrix"
+        values="1, -0.714810, -0.285190, 0, 0 -1, 0.714810, 0.285190, 0, 0 0.185545, 0.734543, 0.079911, 0, 0 0, 0, 0, 1, 0"
+      />
+      <feColorMatrix
+        type="matrix"
+        values="0.827996, -0.747824, 1, 0, 0 -0.197351, 0.127458, 1, 0, 0 -0.108473, 0.564773, 1, 0, 0 0, 0, 0, 1, 0"
       />
     </filter>
     <filter id="storybook-a11y-vision-achromatopsia">

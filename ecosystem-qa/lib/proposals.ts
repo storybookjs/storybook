@@ -592,7 +592,7 @@ export interface ProposalOptions {
 const planEntriesOf = (members: FindingGroup[], plan: Plan | undefined) =>
   (plan?.entries ?? [])
     .filter((entry) => members.some((member) => member.finding.checkId === planCheckId(entry.slug)))
-    .map(({ slug, title, prs }) => ({ slug, title, prs }));
+    .map(({ slug, title, prs }) => ({ slug, title: inlineTitle(title), prs }));
 
 // Build the one proposal for a cluster from its lead, matching `issues` by any member's fingerprint.
 export const toProposal = (

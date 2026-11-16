@@ -362,6 +362,7 @@ export const Proposal = z.discriminatedUnion('kind', [
       .array(
         z.strictObject({
           slug: PlanRecord.shape.entries.element.shape.id,
+          // Already safe to print inline: the plan's title, sanitized when the proposal was built.
           title: z.string().min(1),
           prs: PlanRecord.shape.entries.element.shape.prs,
         })

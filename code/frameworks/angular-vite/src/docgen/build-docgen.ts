@@ -1,9 +1,12 @@
 import {
+  componentPathFromStory,
+  createSourceModuleResolver,
+  followExport,
   getComponentIdFromEntry,
   getStoryImportPathFromEntry,
   type TypeScriptSpecifierForDocgen,
 } from 'storybook/internal/common';
-import type { ResolvedMetaComponent } from 'storybook/internal/common';
+import type { MetaComponentResolution, ResolvedMetaComponent } from 'storybook/internal/common';
 import type {
   DocgenJsDocTags,
   DocgenPayload,
@@ -119,15 +122,10 @@ type DocgenError = NonNullable<DocgenPayload['error']>;
 // The docs of one resolved class, or why there are none.
 type ClassDocgen =
   | { error: DocgenError }
-  | {
-      name: string;
-      description?: string;
-      summary?: string;
-      jsDocTags: DocgenJsDocTags;
-      argTypes: DocgenPayload['argTypes'];
-      apiDescription?: string;
-      angularComponentMeta: AngularComponentSnippetMeta;
-    };
+  | (Pick<DocgenPayload, 'name' | 'description' | 'summary' | 'jsDocTags' | 'apiDescription'> &
+      Required<Pick<DocgenPayload, 'argTypes'>> & {
+        angularComponentMeta: AngularComponentSnippetMeta;
+      });
 
 const notFound = (message: string): { error: DocgenError } => ({
   error: { name: 'AngularComponentMetaNotFound', message },
@@ -136,26 +134,35 @@ const notFound = (message: string): { error: DocgenError } => ({
 // Why a reference in the meta did not resolve to a class. `reference` is how the story file writes
 // it, such as `component` or `subcomponents.Header`.
 const unresolvedError = (
-  reason: 'no-component-import' | 'unreadable-component-expression',
-  expression: string | undefined,
+  resolution: Exclude<MetaComponentResolution, { component: unknown }>,
   reference: string,
   storyFilePath: string
-) =>
-  reason === 'unreadable-component-expression'
-    ? notFound(
-        `The story file sets \`${reference}: ${expression}\`, which does not resolve to a class.\n` +
+): { error: DocgenError } => {
+  switch (resolution.reason) {
+    case 'unreadable-component-expression':
+      return notFound(
+        `The story file sets \`${reference}: ${resolution.expression}\`, which does not resolve to a class.\n` +
           `Storybook follows an imported name, a namespace-import property access, or a chain of ` +
           `property accesses and spreads through modules it can resolve. ` +
           `Assign the component to a name in ${storyFilePath}.`
-      )
-    : // The reference may reach this binding through another module (e.g. a spread config object),
+      );
+    case 'no-component-import':
+      // The reference may reach this binding through another module (e.g. a spread config object),
       // so the type-only or namespace import is not necessarily written in the story file itself -
       // naming it here would send the reader to the wrong file.
-      notFound(
+      return notFound(
         `Resolving \`meta.${reference}\` from ${storyFilePath} reached a binding that is a type-only ` +
           `or namespace import, which carries no class to document.\n` +
           `Import the component as a value in whichever module declares that binding.`
       );
+    case 'no-meta-component':
+      return notFound(`The story file ${storyFilePath} sets no \`meta.${reference}\`.`);
+    default: {
+      const unhandled: never = resolution;
+      throw new Error(`Unhandled resolution ${JSON.stringify(unhandled)}`);
+    }
+  }
+};
 
 // The docs of one resolved class, for the meta's component or one of its subcomponents.
 const extractClassDocgen = (
@@ -169,13 +176,12 @@ const extractClassDocgen = (
   // only mean the import specifier did not resolve.
   if (!component.path) {
     return notFound(
-      // `component.importId` may be read from a module the reference only reaches through a chain
-      // (e.g. a spread config object), so the import is not necessarily written in the story file
-      // itself - naming it here would send the reader to the wrong file.
-      `Storybook could not resolve the import of "${displayName}" from "${component.importId}", ` +
-        `reached while resolving \`meta.${reference}\` from ${storyFilePath}.\n` +
-        `Check the import specifier (and any tsconfig path aliases it relies on) in whichever module ` +
-        `actually imports it.`
+      // The import can be written in another module the reference reaches, such as a barrel, so the
+      // message names the module that writes it.
+      `Storybook could not resolve the import "${component.importId}" of "${displayName}" in ` +
+        `${component.importer ?? storyFilePath}, reached while resolving \`meta.${reference}\` from ` +
+        `${storyFilePath}.\n` +
+        `Check the import specifier there, and any tsconfig path aliases it relies on.`
     );
   }
 
@@ -246,6 +252,15 @@ const extractClassDocgen = (
 const displayNameOf = (component: ResolvedMetaComponent) =>
   component.exportName === 'default' ? component.localName : component.exportName;
 
+const exportReader = { resolver: createSourceModuleResolver() };
+
+// Like Vue and Svelte, a documented subcomponent points at the file that declares it. `path` can be
+// a barrel that re-exports the class, as when the meta reads it off a namespace.
+const declaringFile = (path: string, exportName: string) => {
+  const origin = followExport(exportReader, path, exportName);
+  return origin?.kind === 'declaration' ? origin.filePath : path;
+};
+
 // One declared subcomponent's entry. A failure stays in the entry's `error`, so one broken
 // subcomponent cannot fail the payload that documents the main component.
 const buildSubcomponentDocgen = (
@@ -256,14 +271,7 @@ const buildSubcomponentDocgen = (
 ): DocgenSubcomponent => {
   const reference = `subcomponents.${name}`;
   if ('reason' in resolution) {
-    const { error } = unresolvedError(
-      resolution.reason === 'unreadable-component-expression'
-        ? resolution.reason
-        : 'no-component-import',
-      'expression' in resolution ? resolution.expression : undefined,
-      reference,
-      storyFilePath
-    );
+    const { error } = unresolvedError(resolution, reference, storyFilePath);
     return { name, path: storyImportPath, jsDocTags: {}, error };
   }
 
@@ -278,7 +286,14 @@ const buildSubcomponentDocgen = (
     return { name, path: storyImportPath, jsDocTags: {}, error: docgen.error };
   }
   const { angularComponentMeta: _, ...entry } = docgen;
-  return { ...entry, path: storyImportPath, renderer: 'angular' };
+  const { path, exportName } = resolution.component;
+  return {
+    ...entry,
+    path: path
+      ? componentPathFromStory(storyImportPath, storyFilePath, declaringFile(path, exportName))
+      : storyImportPath,
+    renderer: 'angular',
+  };
 };
 
 // `undefined` means "no Angular component here", so callers fall through to the next provider,
@@ -313,12 +328,13 @@ export const buildDocgenPayload = (
       return undefined;
     }
 
-    const expression =
-      resolved.reason === 'unreadable-component-expression' ? resolved.expression : undefined;
-    const { error } = unresolvedError(resolved.reason, expression, 'component', storyFilePath);
+    const { error } = unresolvedError(resolved, 'component', storyFilePath);
     return {
       id,
-      name: expression ?? input.entry.title.split('/').at(-1) ?? input.entry.title,
+      name:
+        resolved.reason === 'unreadable-component-expression'
+          ? resolved.expression
+          : (input.entry.title.split('/').at(-1) ?? input.entry.title),
       path: storyImportPath,
       jsDocTags: {},
       error,

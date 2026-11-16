@@ -1,5 +1,4 @@
 import { byHarness, type Actor } from './github.ts';
-import { PLANS_BRANCH } from './plan-push.ts';
 import { USD_PER_RUN } from './qa-plan.ts';
 import { CheckResult, type Proposal, type RunResultFile } from './schema.ts';
 
@@ -359,11 +358,12 @@ export const renderBatchComment = (
   const lost = report.lines.filter((line) => line.outcome === 'no result').length;
   const fileCommand = [
     'gh workflow run ecosystem-qa.yml',
-    `--ref ${PLANS_BRANCH}`,
+    `--ref ${report.ref}`,
     `-f plan=${report.plan.file}`,
     `-f batch=${report.batch}`,
     `-f plan_hash=${report.plan.hash}`,
     `-f version=${report.version}`,
+    `-f engines=${report.engines}`,
     `-f from_runs=${report.runs.join(',')}`,
     '-f dry=false',
   ].join(' ');

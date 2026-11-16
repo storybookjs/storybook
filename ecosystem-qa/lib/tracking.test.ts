@@ -154,7 +154,7 @@ describe('batchReport and renderBatchComment', () => {
 
       Next: Batch 2 is started.
 
-      Dry run, so nothing was filed. To file this batch, run \`gh workflow run ecosystem-qa.yml --ref qa/plans -f plan=11.0.md -f batch=1 -f plan_hash=3f9c2a7b10de -f version=11.0.0-beta.3 -f from_runs=43900000001 -f dry=false\` before its artifacts expire on 2027-02-14.
+      Dry run, so nothing was filed. To file this batch, run \`gh workflow run ecosystem-qa.yml --ref qa/plans -f plan=11.0.md -f batch=1 -f plan_hash=3f9c2a7b10de -f version=11.0.0-beta.3 -f engines=claude -f from_runs=43900000001 -f dry=false\` before its artifacts expire on 2027-02-14.
       "
     `);
   });
@@ -714,6 +714,16 @@ describe('trackBatch', () => {
     expect(forward.runs).toEqual(['43900000001', '43900000009']);
     expect(batchCommentOf([posted(forward)], backward)).toBeDefined();
     expect(spentUsd([posted(forward), posted(backward)], HASH).runs).toBe(3);
+  });
+
+  it('prints the dispatch that files a batch on its branch and with its engines, so the filing run plans the jobs that ran', () => {
+    const report = batchReport(
+      input({ ref: 'qa/try', planned: [{ ...job('mealdrop'), engine: 'codex' }], results: [] })
+    );
+
+    expect(track(report, []).body).toContain(
+      '`gh workflow run ecosystem-qa.yml --ref qa/try -f plan=11.0.md -f batch=1 -f plan_hash=3f9c2a7b10de -f version=11.0.0-beta.3 -f engines=codex -f from_runs=43900000001 -f dry=false`'
+    );
   });
 
   it('starts the next batch on the branch, engines and budget of this one', () => {

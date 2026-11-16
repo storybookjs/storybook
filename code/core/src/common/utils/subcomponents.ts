@@ -15,7 +15,19 @@ export type DeclaredSubcomponent = {
 };
 
 export function extractDeclaredSubcomponents(csf: CsfFile): DeclaredSubcomponent[] {
-  const rawSubcomponents = unwrapSubcomponentNode(csf._metaAnnotations.subcomponents, csf.program);
+  return extractSubcomponents(csf._metaAnnotations.subcomponents, csf.program);
+}
+
+/**
+ * The subcomponents a meta's `subcomponents` value declares, following variable aliases in
+ * `program`, the module that holds the meta. For a meta outside a CSF file, such as a Svelte CSF
+ * `defineMeta` object.
+ */
+export function extractSubcomponents(
+  subcomponents: Node | undefined,
+  program: E.Program
+): DeclaredSubcomponent[] {
+  const rawSubcomponents = unwrapSubcomponentNode(subcomponents, program);
 
   if (rawSubcomponents?.type !== 'ObjectExpression') {
     return [];
@@ -29,7 +41,7 @@ export function extractDeclaredSubcomponents(csf: CsfFile): DeclaredSubcomponent
     // A computed key, as in `{ [label]: Icon }`, has no name that is known before the story runs.
     const name = staticKey(property);
     const directComponentName = getComponentExpressionName(property.value);
-    const componentExpression = unwrapSubcomponentNode(property.value, csf.program);
+    const componentExpression = unwrapSubcomponentNode(property.value, program);
     const componentName = getComponentExpressionName(componentExpression) ?? directComponentName;
 
     return name && componentName

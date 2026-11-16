@@ -41,8 +41,13 @@ const proxyTo = async (origin: string, caller = '127.0.0.1') => {
   return { url: proxy.url, log };
 };
 
-const send = (url: string, method = 'POST') => {
-  const req = request(url, {
+// `target` goes on the request line as it is, the way a hostile caller could write it.
+const send = (url: string, method = 'POST', target?: string) => {
+  const { hostname, port, pathname, search } = new URL(url);
+  const req = request({
+    hostname,
+    port,
+    path: target ?? `${pathname}${search}`,
     method,
     headers: { 'x-api-key': PLACEHOLDER_KEY, 'content-type': 'application/json' },
   });
@@ -50,8 +55,8 @@ const send = (url: string, method = 'POST') => {
   return req;
 };
 
-const answerOf = async (url: string, method?: string) => {
-  const [res] = (await once(send(url, method), 'response')) as [IncomingMessage];
+const answerOf = async (url: string, method?: string, target?: string) => {
+  const [res] = (await once(send(url, method, target), 'response')) as [IncomingMessage];
   let body = '';
   for await (const chunk of res) {
     body += chunk;
@@ -137,6 +142,39 @@ describe('startKeyProxy', () => {
     const closed = once(provider.seen[0]!.socket, 'close');
     caller.destroy();
     await closed;
+  });
+});
+
+describe('startKeyProxy against a hostile caller', () => {
+  it.each([
+    ['an absolute-form target', (port: number) => `http://127.0.0.1:${port}/v1/messages`],
+    ['a target that starts with two slashes', (port: number) => `//127.0.0.1:${port}/v1/messages`],
+  ])('never sends the key to a host named in %s', async (_name, target) => {
+    const provider = await standIn((req, res) => {
+      req.resume();
+      res.end();
+    });
+    const elsewhere = await standIn((req, res) => {
+      req.resume();
+      res.end();
+    });
+    const { url } = await proxyTo(provider.origin);
+
+    const { status } = await answerOf(url, 'POST', target(Number(new URL(elsewhere.origin).port)));
+
+    expect(status).toBe(404);
+    expect(elsewhere.seen).toHaveLength(0);
+  });
+
+  it('answers 404 to a target that is no URL, and keeps serving', async () => {
+    const provider = await standIn((req, res) => {
+      req.resume();
+      res.end();
+    });
+    const { url } = await proxyTo(provider.origin);
+
+    expect((await answerOf(url, 'POST', 'http://[')).status).toBe(404);
+    expect((await answerOf(`${url}/v1/messages`)).status).toBe(200);
   });
 });
 

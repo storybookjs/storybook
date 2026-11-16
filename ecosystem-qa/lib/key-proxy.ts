@@ -39,7 +39,10 @@ export const startKeyProxy = async (options: KeyProxyOptions): Promise<KeyProxy>
   const upstream = new URL(options.upstream);
   const send = upstream.protocol === 'https:' ? httpsRequest : httpRequest;
   const server = createServer((req, res) => {
-    const { pathname } = new URL(req.url ?? '/', 'http://proxy');
+    // A request line may name a host of its own, as `http://elsewhere/v1/messages` or
+    // `//elsewhere/v1/messages`, and resolving it against the provider would send the key there.
+    const target = URL.parse(req.url ?? '', upstream.href);
+    const pathname = target?.origin === upstream.origin ? target.pathname : '(not the provider)';
     const respond = (status: number, headers?: IncomingHttpHeaders) => {
       options.log(`Key proxy: ${req.method} ${pathname} ${status}`);
       return res.writeHead(status, headers);
@@ -48,21 +51,17 @@ export const startKeyProxy = async (options: KeyProxyOptions): Promise<KeyProxy>
       respond(403).end();
       return;
     }
-    if (!FORWARDED.has(`${req.method} ${pathname}`)) {
+    if (!target || !FORWARDED.has(`${req.method} ${pathname}`)) {
       respond(404).end();
       return;
     }
     const headers = { ...req.headers, 'x-api-key': options.apiKey };
     delete headers.host;
     delete headers.authorization;
-    const forwarded = send(
-      new URL(req.url!, upstream),
-      { method: req.method, headers },
-      (reply) => {
-        respond(reply.statusCode ?? 502, reply.headers);
-        reply.pipe(res);
-      }
-    );
+    const forwarded = send(target, { method: req.method, headers }, (reply) => {
+      respond(reply.statusCode ?? 502, reply.headers);
+      reply.pipe(res);
+    });
     forwarded.on('error', () => {
       if (!res.headersSent) {
         respond(502);

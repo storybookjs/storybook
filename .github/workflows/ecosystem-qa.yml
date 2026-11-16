@@ -287,6 +287,15 @@ jobs:
             echo "::error::version '$QA_VERSION' is not a semver version"
             exit 1
           fi
+          # A push passes no tier, and a run with a plan runs the tier gate.
+          if [[ "$GITHUB_EVENT_NAME" != push && ! "$QA_TIER" =~ ^(must|extended)$ ]]; then
+            echo "::error::tier '$QA_TIER' is not must or extended"
+            exit 1
+          fi
+          if [[ ! "$QA_DRY" =~ ^(true|false)$ || ! "$QA_CHAIN" =~ ^(true|false)$ ]]; then
+            echo "::error::dry '$QA_DRY' and chain '$QA_CHAIN' are each true or false"
+            exit 1
+          fi
           if [[ -n "$QA_FROM_RUNS" && ! "$QA_FROM_RUNS" =~ ^[0-9]+(,[0-9]+)*$ ]]; then
             echo "::error::from_runs '$QA_FROM_RUNS' is not a comma-separated list of run ids"
             exit 1

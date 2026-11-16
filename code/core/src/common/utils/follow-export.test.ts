@@ -21,6 +21,7 @@ describe('followExport', () => {
     expect(followExport(reader, join(BARREL, 'ui', 'index.ts'), 'Button')).toEqual({
       kind: 'declaration',
       filePath: BUTTON,
+      exportName: 'ButtonComponent',
       localName: 'ButtonComponent',
     });
   });
@@ -38,12 +39,26 @@ describe('followExport', () => {
     expect(followExport(reader, join(BARREL, 'default-export.ts'), 'default')).toEqual({
       kind: 'declaration',
       filePath: BUTTON,
+      exportName: 'ButtonComponent',
       localName: 'ButtonComponent',
     });
   });
 
-  it('ends an `export *` cycle without an origin', () => {
-    expect(followExport(reader, join(BARREL, 'cycle-a.ts'), 'Button')).toBeUndefined();
+  it('reports a name an `export *` cycle leads back to as missing', () => {
+    expect(followExport(reader, join(BARREL, 'cycle-a.ts'), 'Button')).toEqual({ kind: 'missing' });
+  });
+
+  it('reports a name no module on the way exports as missing', () => {
+    expect(followExport(reader, join(BARREL, 'index.ts'), 'Nope')).toEqual({ kind: 'missing' });
+  });
+
+  it('follows a default export of a local constant to the constant', () => {
+    expect(followExport(reader, join(BARREL, 'default-renamed.ts'), 'Button')).toEqual({
+      kind: 'declaration',
+      filePath: join(BARREL, 'default-const.ts'),
+      exportName: 'default',
+      localName: 'Impl',
+    });
   });
 
   it('reads each module through the reader, and stops at an export the reader says a file owns', () => {
@@ -73,6 +88,7 @@ describe('followExport', () => {
     ).toEqual({
       kind: 'declaration',
       filePath: join(BARREL, 'ui', 'index.ts'),
+      exportName: 'Button',
       localName: 'Button',
     });
   });

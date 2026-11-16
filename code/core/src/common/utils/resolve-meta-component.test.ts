@@ -112,7 +112,7 @@ describe('createMetaComponentResolver', () => {
       ['a namespace import it exports by name', 'Imported', 'index.ts'],
       ['a namespace export it forwards by name', 'Forwarded', 'forwarded.ts'],
       ['a namespace export it forwards with `export *`', 'Starred', 'star.ts'],
-    ])('follows %s to the module the namespace stands for', (_, namespace, importer) => {
+    ])('follows %s to the file that declares the member', (_, namespace, importer) => {
       expect(
         resolveInFixtures(`import { ${namespace} } from './barrel';
                            export default { component: ${namespace}.Button };`)
@@ -121,22 +121,44 @@ describe('createMetaComponentResolver', () => {
           localName: 'Button',
           importId: './ui',
           importer: join(FIXTURES, 'barrel', importer),
-          exportName: 'Button',
-          path: join(FIXTURES, 'barrel', 'ui', 'index.ts'),
+          exportName: 'ButtonComponent',
+          path: join(FIXTURES, 'button.component.ts'),
         },
       });
     });
 
+    it('follows a member a parts module renames to the file that declares it', () => {
+      expect(
+        resolveInFixtures(`import { Accordion } from './barrel/accordion';
+                           export default { component: Accordion.Root };`)
+      ).toMatchObject({
+        component: {
+          exportName: 'AccordionRoot',
+          path: join(FIXTURES, 'barrel', 'accordion', 'accordion-root.ts'),
+        },
+      });
+    });
+
+    it('reports a member the namespace module does not export', () => {
+      expect(
+        resolveInFixtures(`import { UI } from './barrel';
+                           export default { component: UI.Nope };`)
+      ).toEqual({
+        reason: 'missing-export',
+        expression: 'UI.Nope',
+        importId: './ui',
+        exportName: 'Nope',
+      });
+    });
+
     it('prefers an explicit export over an `export *` written before it', () => {
-      // ES modules let an explicit export shadow a star export, whatever the statement order.
       expect(
         resolveInFixtures(`import { UI } from './barrel/precedence';
                            export default { component: UI.Button };`)
-      ).toMatchObject({ component: { path: join(FIXTURES, 'barrel', 'ui', 'index.ts') } });
+      ).toMatchObject({ component: { path: join(FIXTURES, 'button.component.ts') } });
     });
 
     it('does not follow an `export *` that a declared export of the same name shadows', () => {
-      // `UI` is the object the barrel declares, so its `Button` is the class the object holds.
       expect(
         resolveInFixtures(`import { UI } from './barrel/declared';
                            export default { component: UI.Button };`)
@@ -166,7 +188,16 @@ describe('createMetaComponentResolver', () => {
       resolveInFixtures(`import { UI } from './barrel/index.js';
                          export default { component: UI.Button };`)
     ).toMatchObject({
-      component: { exportName: 'Button', path: join(FIXTURES, 'barrel', 'ui', 'index.ts') },
+      component: { exportName: 'ButtonComponent', path: join(FIXTURES, 'button.component.ts') },
+    });
+  });
+
+  it('follows a renamed default export to the file that declares it', () => {
+    expect(
+      resolveInFixtures(`import { Button } from './barrel/default-renamed';
+                         export default { component: Button };`)
+    ).toMatchObject({
+      component: { exportName: 'default', path: join(FIXTURES, 'barrel', 'default-const.ts') },
     });
   });
 

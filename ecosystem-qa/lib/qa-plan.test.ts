@@ -239,6 +239,7 @@ describe('checkPlanText', () => {
       '`primer-react` is on Storybook 9, more than one major behind 11.0',
     ],
     ['a gap in the batches', '- Batch: 2', '- Batch: 3', '- Batch: 3', 'batch 2 has no entry'],
+    ['a batch 0', '- Batch: 1', '- Batch: 0', '### `story-sort-in-main`', 'batch: Too small'],
     [
       'a maintainer PR without a group',
       '| `tooling` |\n',
@@ -273,6 +274,15 @@ describe('checkPlanText', () => {
       line: lineOf(text, lineNeedle),
       message: expect.stringContaining(message),
     });
+  });
+
+  it('refuses a discovered id used twice at its second row', () => {
+    const row = FIXTURE.split('\n').find((line) => line.startsWith('| `primer-react` |'))!;
+    const text = replaced(FIXTURE, row, `${row}\n${row}`);
+
+    expect(problemsOf(text)).toEqual([
+      { line: lineOf(text, row) + 1, message: 'the id `primer-react` is used twice' },
+    ]);
   });
 
   it('refuses a catalog entry more than one major behind the line', () => {

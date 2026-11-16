@@ -45,6 +45,7 @@ const input = (overrides: Partial<BatchInput> = {}): BatchInput => ({
   batches: 2,
   version: '11.0.0-beta.3',
   runs: ['43900000001'],
+  attempt: 1,
   filing: 'dry',
   planned: [job('mealdrop'), job('mealdrop', 2), job('mantine')],
   results: [result('mealdrop'), result('mealdrop', { part: 2, usd: null })],
@@ -619,6 +620,47 @@ describe('trackBatch', () => {
     const lost = comment(track(batchTwo(1, { results: [] }), [batchOne]).body);
 
     expect(track(batchTwo(1, { runs: ['6'] }), [batchOne, lost]).next).toEqual({ start: 3 });
+  });
+
+  it('prices a job again that a second attempt of the run lost again, and once more when it finishes', () => {
+    const planned = [job('mealdrop'), job('mantine')];
+    const attempt = (number: number, results = [result('mealdrop', { usd: 5 })]) =>
+      batchReport(input({ attempt: number, planned, results }));
+    const reportOf = (report: BatchReport, comments: Written[]) => {
+      const tracked = trackBatch({
+        report,
+        comments,
+        capUsd: 250,
+        chain: false,
+        expiresOn: '2027-02-14',
+      });
+      if ('refuse' in tracked) {
+        throw new Error(tracked.refuse);
+      }
+      return comment(tracked.body);
+    };
+    const first = reportOf(attempt(1), []);
+    const second = reportOf(attempt(2), [first]);
+    const third = reportOf(
+      attempt(3, [
+        result('mealdrop', { usd: 5 }),
+        result('mantine', { usd: 4, startedAt: '2026-11-16T15:00:00Z' }),
+      ]),
+      [first]
+    );
+
+    expect(spentUsd([first], HASH).usd).toBeCloseTo(5 + USD_PER_RUN);
+    expect(spentUsd([second], HASH).usd).toBeCloseTo(5 + 2 * USD_PER_RUN);
+    expect(spentUsd([third], HASH).usd).toBeCloseTo(5 + USD_PER_RUN + 4);
+  });
+
+  it('reads the same runs collected in another order as the same report', () => {
+    const forward = batchReport(input({ runs: ['43900000009', '43900000001'] }));
+    const backward = batchReport(input({ runs: ['43900000001', '43900000009'] }));
+
+    expect(forward.runs).toEqual(['43900000001', '43900000009']);
+    expect(batchCommentOf([posted(forward)], backward)).toBeDefined();
+    expect(spentUsd([posted(forward), posted(backward)], HASH).runs).toBe(3);
   });
 
   it('starts the next batch on the branch, engines and budget of this one', () => {

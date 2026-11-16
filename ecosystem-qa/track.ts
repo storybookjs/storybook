@@ -161,6 +161,10 @@ const report = batchReport({
   batches: planBatches(scope.plan).length,
   version: version!,
   runs,
+  attempt:
+    runs.length === 1 && runs[0] === process.env.GITHUB_RUN_ID
+      ? Number(process.env.GITHUB_RUN_ATTEMPT ?? '1')
+      : 1,
   filing: filing!,
   planned: jobs,
   results: loaded.map(({ result }) => result),

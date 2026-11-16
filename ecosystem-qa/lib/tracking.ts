@@ -72,6 +72,9 @@ export type BatchInput = {
   batches: number;
   version: string;
   runs: string[];
+  // The attempt of the workflow run in `runs` that reports its own batch, which "Re-run failed
+  // jobs" raises while the run id stays.
+  attempt: number;
   filing: Filing;
   planned: PlannedJob[];
   results: ReportedResult[];
@@ -116,12 +119,13 @@ const resultLine = (result: ReportedResult): RunLine => {
   };
 };
 
-export const batchReport = ({ planned, results, ...input }: BatchInput): BatchReport => {
+export const batchReport = ({ planned, results, runs, ...input }: BatchInput): BatchReport => {
+  const sorted = runs.toSorted((a, b) => Number(a) - Number(b));
   const finished = new Set(results.map((result) => jobKey(jobOf(result))));
   const lost = planned
     .filter((job) => !finished.has(jobKey(job)))
     .map((job): RunLine => ({
-      key: `${jobKey(job)}/lost-${input.runs.join('+')}`,
+      key: `${jobKey(job)}/lost-${sorted.join('+')}${input.attempt > 1 ? `-attempt-${input.attempt}` : ''}`,
       job,
       outcome: 'no result',
       usd: USD_PER_RUN,
@@ -130,6 +134,7 @@ export const batchReport = ({ planned, results, ...input }: BatchInput): BatchRe
   const states = results.flatMap((result) => result.checks.map((check) => check.state));
   return {
     ...input,
+    runs: sorted,
     planned: planned.length,
     engines: [...new Set(planned.map(({ engine }) => engine))].toSorted().join(','),
     lines: [...results.map(resultLine), ...lost],

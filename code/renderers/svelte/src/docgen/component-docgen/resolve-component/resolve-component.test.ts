@@ -83,7 +83,7 @@ it('resolves the component of a Svelte CSF file with a member expression of a na
     await resolveStoryComponent(entryFor('svelte-csf/namespace-import.stories.svelte'))
   ).toEqual({
     componentPath: join(fixtures, 'svelte-csf/Button.svelte'),
-    exportName: 'Button',
+    exportName: 'default',
     name: 'Button',
   });
 });
@@ -93,7 +93,7 @@ it('resolves the component of a Svelte CSF file with a member expression of a na
     await resolveStoryComponent(entryFor('svelte-csf/namespace-export.stories.svelte'))
   ).toEqual({
     componentPath: join(fixtures, 'barrels/Button.svelte'),
-    exportName: 'Button',
+    exportName: 'default',
     name: 'Button',
   });
 });
@@ -135,7 +135,7 @@ it.each([
 ])('resolves a plain CSF component through the %s barrel', async (barrel) => {
   expect(await resolveStoryComponent(entryFor(`barrels/${barrel}.stories.ts`))).toEqual({
     componentPath: join(fixtures, 'barrels/Button.svelte'),
-    exportName: 'Button',
+    exportName: 'default',
     name: 'Button',
   });
 });
@@ -190,10 +190,26 @@ it.each([
   });
 });
 
+it.each(['aliased.stories.svelte', 'as-const.stories.svelte'])(
+  'resolves the subcomponents of %s like a CSF meta',
+  async (file) => {
+    expect(await resolveStorySubcomponents(entryFor(`subcomponents/${file}`))).toEqual({
+      Icon: {
+        componentPath: join(fixtures, 'subcomponents/Icon.svelte'),
+        exportName: 'default',
+        name: 'Icon',
+      },
+    });
+  }
+);
+
 it.each(['namespaces.stories.ts', 'namespaces.stories.svelte'])(
   'resolves the subcomponents of %s through a namespace import and a barrel namespace',
   async (file) => {
-    const icon = { componentPath: join(fixtures, 'subcomponents/Icon.svelte'), exportName: 'Icon' };
+    const icon = {
+      componentPath: join(fixtures, 'subcomponents/Icon.svelte'),
+      exportName: 'default',
+    };
     expect(await resolveStorySubcomponents(entryFor(`subcomponents/${file}`))).toEqual({
       Barrel: { ...icon, name: 'Barrel' },
       Namespace: { ...icon, name: 'Namespace' },

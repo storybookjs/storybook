@@ -4,6 +4,10 @@ export const filters: Record<string, { label: string; filter: string; descriptio
     filter: 'blur(2px)',
     description: '22.9% of users',
   },
+  reducedContrast: {
+    label: 'Reduced contrast',
+    filter: 'url("#storybook-a11y-vision-reduced-contrast")',
+  },
   deuteranopia: {
     label: 'Deuteranopia',
     filter: 'url("#storybook-a11y-vision-deuteranopia")',
@@ -44,8 +48,16 @@ export const filters: Record<string, { label: string; filter: string; descriptio
 // puts each side of the dividing plane in its own channel, relying on filter results clamping
 // negative values to 0, and its second matrix maps each side onto its half-plane.
 // Achromatopsia uses the sRGB relative luminance weights, which apply to linear light.
+// Reduced contrast adds half of the linear range to every channel, as Chrome DevTools does.
 export const filterDefs = `<svg id="storybook-a11y-vision-filters" aria-hidden="true" color-interpolation-filters="linearRGB" style="position:absolute;width:0;height:0;overflow:hidden">
   <defs>
+    <filter id="storybook-a11y-vision-reduced-contrast">
+      <feComponentTransfer in="SourceGraphic">
+        <feFuncR type="linear" intercept="0.5" />
+        <feFuncG type="linear" intercept="0.5" />
+        <feFuncB type="linear" intercept="0.5" />
+      </feComponentTransfer>
+    </filter>
     <filter id="storybook-a11y-vision-protanopia">
       <feColorMatrix
         in="SourceGraphic"

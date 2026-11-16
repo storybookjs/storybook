@@ -130,6 +130,15 @@ describe('filterDefs', () => {
     );
   });
 
+  it('lifts every color channel by half of the linear range for reduced contrast', () => {
+    const filter = filterDefs.match(
+      /<filter id="storybook-a11y-vision-reduced-contrast">([\s\S]*?)<\/filter>/
+    )?.[1];
+
+    expect(filter?.match(/<feFunc[RGB] type="linear" intercept="0.5" \/>/g)).toHaveLength(3);
+    expect(filter).not.toContain('feFuncA');
+  });
+
   it('defines an SVG filter for every url() option', () => {
     const referenced = Object.values(filters)
       .map(({ filter }) => filter.match(/^url\("#(.+)"\)$/)?.[1])

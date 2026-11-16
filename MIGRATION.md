@@ -2715,7 +2715,7 @@ Server-side docgen, the default in Storybook 11, reads the JSDoc types, so a new
 
 ### Storybook depends on Rolldown instead of esbuild
 
-`storybook` no longer depends on `esbuild`, `oxc-parser` and `oxc-resolver`. Its only native dependency is now `rolldown`, the bundler inside Vite 8.
+`storybook` no longer depends on `esbuild`, `oxc-parser` and `oxc-resolver`. Its only native dependency is now `rolldown`, the bundler inside Vite 8, so a Vite 8 project installs about 18 MB less.
 
 - If your project uses the `esbuild` that Storybook installed, add `esbuild` to your own dependencies.
 - Rolldown has no native binary for `linux-riscv64` and `linux-arm-musleabihf`, which Storybook supported before.

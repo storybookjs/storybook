@@ -200,6 +200,14 @@ describe('withoutResult', () => {
     ]);
   });
 
+  it('names a missing part of a plan run by its repo and part', () => {
+    const part = (number: number) => ({ ...run('mealdrop', 'linux'), part: number });
+
+    expect(withoutResult([part(1), part(2)], [part(1), run('mealdrop', 'linux')])).toEqual([
+      'mealdrop part 2 on linux with claude',
+    ]);
+  });
+
   it('names nothing when every planned job has a result, or nothing was planned', () => {
     expect(withoutResult(planned, planned)).toEqual([]);
     expect(withoutResult([], [run('mealdrop', 'linux')])).toEqual([]);

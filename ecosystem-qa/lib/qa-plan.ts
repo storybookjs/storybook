@@ -93,7 +93,7 @@ const uncode = (cell: string): string => {
 // GitHub links no bare `#36137` in a Markdown file, so every reference carries its URL.
 const githubLink = (kind: 'pull' | 'issues') => (number: number) =>
   `[#${number}](https://github.com/storybookjs/storybook/${kind}/${number})`;
-const prCell = githubLink('pull');
+export const prCell = githubLink('pull');
 const issueLink = githubLink('issues');
 const unPr = (cell: string): number => {
   const number = Number(/^\[#(\d+)\]/.exec(cell)?.[1]);

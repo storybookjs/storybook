@@ -3,6 +3,7 @@ import {
   existsSync,
   lstatSync,
   openSync,
+  readdirSync,
   readFileSync,
   readSync,
   realpathSync,
@@ -23,11 +24,16 @@ import {
   single,
   VERSION,
 } from './fixtures.ts';
+import type { PlanScope } from './plan-scope.ts';
 import { groupFindings, toProposal } from './proposals.ts';
+import { parsePlan, planHash } from './qa-plan.ts';
 import { downloadedRuns, loadResults, upgraded } from './results.ts';
-import { Finding, type CatalogEntry, type RunResultFile } from './schema.ts';
+import { Finding, type CatalogEntry, type PlanRecord, type RunResultFile } from './schema.ts';
 
 vi.mock('node:fs', { spy: true });
+
+// Read before the file system is redirected to memfs.
+const PLAN_TEXT = readFileSync(new URL('./plan.fixture.md', import.meta.url), 'utf8');
 
 beforeEach(() => {
   vol.reset();
@@ -35,6 +41,7 @@ beforeEach(() => {
   vi.mocked(existsSync).mockImplementation(memfs.existsSync as typeof existsSync);
   vi.mocked(lstatSync).mockImplementation(memfs.lstatSync as typeof lstatSync);
   vi.mocked(openSync).mockImplementation(memfs.openSync as typeof openSync);
+  vi.mocked(readdirSync).mockImplementation(memfs.readdirSync as typeof readdirSync);
   vi.mocked(readFileSync).mockImplementation(memfs.readFileSync as typeof readFileSync);
   vi.mocked(readSync).mockImplementation(memfs.readSync as typeof readSync);
   vi.mocked(realpathSync).mockImplementation(memfs.realpathSync as typeof realpathSync);
@@ -230,6 +237,139 @@ describe('loadResults', () => {
   });
 });
 
+describe('loadResults of a plan batch', () => {
+  const scope = (batch = 1): PlanScope => ({
+    file: 'plan.fixture.md',
+    hash: planHash(PLAN_TEXT),
+    plan: parsePlan(PLAN_TEXT),
+    batch,
+  });
+  const partOne: PlanRecord = {
+    file: 'plan.fixture.md',
+    hash: planHash(PLAN_TEXT),
+    batch: 1,
+    part: 1,
+    entries: [
+      { id: 'story-sort-in-main', prs: [36137] },
+      { id: 'preview-animations', prs: [31900] },
+    ],
+  };
+  const planRun = (plan: PlanRecord = partOne, checkId = 'plan.story-sort-in-main') =>
+    record({
+      request: { ...record().request, tier: 'gate', plan },
+      checks: [
+        { id: 'upgrade.command', label: 'Upgrade', state: 'pass' },
+        { id: checkId, label: 'Entry', state: 'fail' },
+      ],
+      findings: [finding({ checkId, evidence: { logs: [] } })],
+    });
+  const partDir = (part: number) => join(resultsDir, `mealdrop/linux/claude/part-${part}`);
+  const loadWith = (plan?: PlanScope) => {
+    const warnings: string[] = [];
+    const results = loadResults(resultsDir, {
+      version: VERSION,
+      catalog: [ENTRY],
+      ...(plan ? { plan } : {}),
+      warn: (message) => warnings.push(message),
+    });
+    return { paths: results.map((result) => result.resultPath), warnings };
+  };
+
+  it('loads each part of a repo from a local run and from an artifact', () => {
+    const artifactPart = join(
+      resultsDir,
+      'qa-result-mealdrop-linux-claude-part-2/mealdrop/linux/claude/part-2'
+    );
+    writeRun(partDir(1), planRun());
+    writeRun(
+      artifactPart,
+      planRun(
+        { ...partOne, part: 2, entries: [{ id: 'csf-factory-namespaces', prs: [35658] }] },
+        'plan.csf-factory-namespaces'
+      )
+    );
+
+    expect(loadWith(scope())).toEqual({
+      paths: [join(partDir(1), 'result.json'), join(artifactPart, 'result.json')],
+      warnings: [],
+    });
+  });
+
+  it('ignores a record with a check id the plan does not have', () => {
+    writeRun(partDir(1), planRun(partOne, 'plan.invented'));
+
+    expect(loadWith(scope())).toEqual({
+      paths: [],
+      warnings: [
+        expect.stringMatching(/reports plan\.invented, which is neither a static check nor a plan/),
+      ],
+    });
+  });
+
+  it('takes the plan checks of a part from the plan file, not from the record', () => {
+    writeRun(
+      partDir(1),
+      planRun(
+        { ...partOne, entries: [{ id: 'csf-factory-namespaces', prs: [35658] }] },
+        'plan.csf-factory-namespaces'
+      )
+    );
+
+    expect(loadWith(scope()).warnings).toEqual([
+      expect.stringMatching(/reports plan\.csf-factory-namespaces, which is neither/),
+    ]);
+  });
+
+  it('ignores a record of another plan', () => {
+    writeRun(partDir(1), planRun({ ...partOne, hash: '0123456789ab' }));
+
+    expect(loadWith(scope()).warnings).toEqual([
+      expect.stringMatching(/ran the plan plan\.fixture\.md 0123456789ab, not plan\.fixture\.md/),
+    ]);
+  });
+
+  it('ignores a record of another batch', () => {
+    writeRun(partDir(1), planRun());
+
+    expect(loadWith(scope(2)).warnings).toEqual([
+      expect.stringMatching(/ran batch 1 of the plan, not batch 2/),
+    ]);
+  });
+
+  it('ignores a static record in the collect of a plan', () => {
+    writeRun(join(resultsDir, 'mealdrop/linux/claude'));
+
+    expect(loadWith(scope()).warnings).toEqual([expect.stringMatching(/it ran no plan/)]);
+  });
+
+  it('ignores a record of a plan run, and a plan check of a static run, when no plan is given', () => {
+    writeRun(partDir(1), planRun());
+    writeRun(
+      join(resultsDir, 'mealdrop/macos/claude'),
+      record({
+        request: { ...record().request, os: 'macos' },
+        findings: [finding({ checkId: 'plan.story-sort-in-main' })],
+      })
+    );
+
+    expect(loadWith()).toEqual({
+      paths: [],
+      warnings: [
+        expect.stringMatching(
+          /ran batch 1 of the plan plan\.fixture\.md .*, and no plan was given/
+        ),
+        expect.stringMatching(/reports plan\.story-sort-in-main, which is neither/),
+      ],
+    });
+  });
+
+  it('ignores a record that names another part than its directory', () => {
+    writeRun(partDir(2), planRun());
+
+    expect(loadWith(scope()).warnings).toEqual([expect.stringMatching(/disagrees .* on part/)]);
+  });
+});
+
 describe('evidence names in a finding', () => {
   it.each(['../result.json', '/etc/passwd', '.env', 'a/../b.log', 'a/b/c.png', 'C:\\x.png'])(
     'rejects %s',
@@ -357,6 +497,23 @@ describe('downloadedRuns', () => {
         to: '/out/mealdrop/linux/claude',
         label: 'mealdrop linux claude',
       },
+    ]);
+  });
+
+  it('keeps the parts of a plan run apart', () => {
+    const download = '/download';
+    for (const part of [1, 2]) {
+      writeRun(
+        join(
+          download,
+          `qa-result-mealdrop-linux-claude-part-${part}/mealdrop/linux/claude/part-${part}`
+        )
+      );
+    }
+
+    expect(downloadedRuns(download, '/out', [ENTRY]).map(({ to, label }) => [to, label])).toEqual([
+      ['/out/mealdrop/linux/claude/part-1', 'mealdrop part 1 linux claude'],
+      ['/out/mealdrop/linux/claude/part-2', 'mealdrop part 2 linux claude'],
     ]);
   });
 });

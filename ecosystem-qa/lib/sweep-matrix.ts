@@ -150,6 +150,7 @@ export const planMatrix = (
 
 interface Run {
   repo: string;
+  part?: number | undefined;
   os: string;
   engine: string;
 }
@@ -162,7 +163,12 @@ export const withoutResult = (planned: Run[], results: Run[]): string[] =>
       (job) =>
         !results.some(
           (result) =>
-            result.repo === job.repo && result.os === job.os && result.engine === job.engine
+            result.repo === job.repo &&
+            result.part === job.part &&
+            result.os === job.os &&
+            result.engine === job.engine
         )
     )
-    .map((job) => `${job.repo} on ${job.os} with ${job.engine}`);
+    .map(
+      (job) => `${job.repo}${job.part ? ` part ${job.part}` : ''} on ${job.os} with ${job.engine}`
+    );

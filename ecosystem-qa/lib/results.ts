@@ -1,8 +1,11 @@
-import { existsSync, lstatSync, readFileSync, realpathSync } from 'node:fs';
+import { existsSync, lstatSync, readdirSync, readFileSync, realpathSync } from 'node:fs';
 
 import { isAbsolute, join, relative } from 'pathe';
 
+import { CHECK_IDS } from '../checks.ts';
 import { cycleBranchName, cycleRepo, publishedCycleBranch, readBundleHeader } from './cycle.ts';
+import type { PlanScope } from './plan-scope.ts';
+import { planCheckId, planRuns } from './qa-plan.ts';
 import {
   Engine,
   Os,
@@ -11,6 +14,7 @@ import {
   type CatalogEntry,
   type Cycle,
   type Finding,
+  type PlanRecord,
 } from './schema.ts';
 
 export interface LoadedResult {
@@ -25,56 +29,131 @@ interface RunKey {
   entry: CatalogEntry;
   os: Os;
   engine: Engine;
+  part?: number;
   version: string;
 }
 
 interface LoadOptions {
   version: string;
   catalog: CatalogEntry[];
+  // Without a plan only records of static runs load.
+  plan?: PlanScope;
   warn: (message: string) => void;
 }
 
 // The runner job uploads results/ as the artifact qa-result-<id>-<os>-<engine>; a local run writes
-// results/<id>/<os>/<engine> directly. Only these two places hold a record the runner wrote.
-type RunCell = Pick<RunKey, 'entry' | 'os' | 'engine'>;
+// results/<id>/<os>/<engine> directly. A part of a plan batch adds -part-<n> to the artifact and
+// part-<n> to the directory. Only these places hold a record the runner wrote.
+type RunPlace = Pick<RunKey, 'entry' | 'os' | 'engine'> & { part?: number };
 
-const artifactName = ({ entry, os, engine }: RunCell) => `qa-result-${entry.id}-${os}-${engine}`;
+const artifactName = ({ entry, os, engine, part }: RunPlace) =>
+  `qa-result-${entry.id}-${os}-${engine}${part ? `-part-${part}` : ''}`;
 
-const artifactRunDir = (resultsDir: string, cell: RunCell) =>
-  join(resultsDir, artifactName(cell), cell.entry.id, cell.os, cell.engine);
+const localRunDir = (resultsDir: string, { entry, os, engine, part }: RunPlace) =>
+  join(resultsDir, entry.id, os, engine, ...(part ? [`part-${part}`] : []));
 
-const localRunDir = (resultsDir: string, { entry, os, engine }: RunCell) =>
-  join(resultsDir, entry.id, os, engine);
+const artifactRunDir = (resultsDir: string, place: RunPlace) =>
+  localRunDir(join(resultsDir, artifactName(place)), place);
 
-const runDirs = (resultsDir: string, cell: RunCell) => [
-  artifactRunDir(resultsDir, cell),
-  localRunDir(resultsDir, cell),
-];
+const PART = /^part-([1-9]\d*)$/;
+
+const namesIn = (dir: string): string[] => (existsSync(dir) ? readdirSync(dir) : []);
+
+// The cell itself and each part that a local run or an artifact of it holds.
+const placesOf = (resultsDir: string, cell: RunPlace): RunPlace[] => {
+  const prefix = `${artifactName(cell)}-`;
+  const partNames = [
+    ...namesIn(localRunDir(resultsDir, cell)),
+    ...namesIn(resultsDir)
+      .filter((name) => name.startsWith(prefix))
+      .map((name) => name.slice(prefix.length)),
+  ];
+  const parts = [...new Set(partNames.flatMap((name) => PART.exec(name)?.[1] ?? []))];
+  return [cell, ...parts.map((part) => ({ ...cell, part: Number(part) }))];
+};
+
+const runPlaces = (resultsDir: string, catalog: CatalogEntry[]): RunPlace[] =>
+  catalog.flatMap((entry) =>
+    Os.options.flatMap((os) =>
+      Engine.options.flatMap((engine) => placesOf(resultsDir, { entry, os, engine }))
+    )
+  );
 
 // List where the runs of downloaded artifacts go in a local results directory: one entry for each
-// catalog repo, OS and engine that `downloadDir` holds a record of.
+// catalog repo, OS, engine and part that `downloadDir` holds a record of.
 export const downloadedRuns = (
   downloadDir: string,
   resultsDir: string,
   catalog: CatalogEntry[]
 ): { artifact: string; from: string; to: string; label: string }[] =>
-  catalog.flatMap((entry) =>
-    Os.options.flatMap((os) =>
-      Engine.options.flatMap((engine) => {
-        const from = artifactRunDir(downloadDir, { entry, os, engine });
-        return existsSync(join(from, 'result.json'))
-          ? [
-              {
-                artifact: artifactName({ entry, os, engine }),
-                from,
-                to: localRunDir(resultsDir, { entry, os, engine }),
-                label: `${entry.id} ${os} ${engine}`,
-              },
-            ]
-          : [];
-      })
-    )
-  );
+  runPlaces(downloadDir, catalog).flatMap((place) => {
+    const from = artifactRunDir(downloadDir, place);
+    return existsSync(join(from, 'result.json'))
+      ? [
+          {
+            artifact: artifactName(place),
+            from,
+            to: localRunDir(resultsDir, place),
+            label: [
+              place.entry.id,
+              ...(place.part ? [`part ${place.part}`] : []),
+              place.os,
+              place.engine,
+            ].join(' '),
+          },
+        ]
+      : [];
+  });
+
+const otherPlan = (
+  ran: PlanRecord | undefined,
+  scope: PlanScope | undefined
+): string | undefined => {
+  if (!scope) {
+    return (
+      ran && `it ran batch ${ran.batch} of the plan ${ran.file} ${ran.hash}, and no plan was given`
+    );
+  }
+  if (!ran) {
+    return `it ran no plan, and this collect is of the plan ${scope.file} ${scope.hash}`;
+  }
+  if (ran.hash !== scope.hash) {
+    return `it ran the plan ${ran.file} ${ran.hash}, not ${scope.file} ${scope.hash}`;
+  }
+  return ran.batch === scope.batch
+    ? undefined
+    : `it ran batch ${ran.batch} of the plan, not batch ${scope.batch}`;
+};
+
+// The record was written by a run that executed code of the repository, so the plan file, not the
+// record, says which plan checks its part has.
+const planChecksOf = (scope: PlanScope, { entry, plan }: RunResultFile['request']): string[] =>
+  (
+    planRuns(scope.plan, scope.batch).find(
+      (run) => run.repo === entry.id && run.part === plan?.part
+    )?.entries ?? []
+  ).map(planCheckId);
+
+// Why a record does not belong to the collect: another plan or batch, or a check id that neither
+// checks.ts nor its part of the plan has.
+const outOfScope = (record: RunResultFile, scope: PlanScope | undefined): string | undefined => {
+  const other = otherPlan(record.request.plan, scope);
+  if (other) {
+    return other;
+  }
+  const known = new Set<string>([
+    ...CHECK_IDS,
+    ...(scope ? planChecksOf(scope, record.request) : []),
+  ]);
+  const ids = [
+    ...record.checks.map(({ id }) => id),
+    ...record.findings.map(({ checkId }) => checkId),
+  ];
+  const unknown = [...new Set(ids.filter((id) => !known.has(id)))];
+  return unknown.length > 0
+    ? `it reports ${unknown.join(', ')}, which is neither a static check nor a plan check of its part`
+    : undefined;
+};
 
 const evidenceProblem = (evidenceDir: string, name: string): string | undefined => {
   const path = join(evidenceDir, name);
@@ -180,7 +259,7 @@ const readCycle = (
 const loadRun = (
   dir: string,
   key: RunKey,
-  warn: (message: string) => void
+  { plan, warn }: Pick<LoadOptions, 'plan' | 'warn'>
 ): LoadedResult | undefined => {
   const resultPath = join(dir, 'result.json');
   let record: unknown;
@@ -201,11 +280,17 @@ const loadRun = (
     request.os !== key.os && 'os',
     request.engine !== key.engine && 'engine',
     request.version !== key.version && 'version',
+    request.plan?.part !== key.part && 'part',
   ].filter(Boolean);
   if (mismatch.length > 0) {
     warn(
       `${resultPath} disagrees with the run it belongs to on ${mismatch.join(', ')}; ignoring it.`
     );
+    return undefined;
+  }
+  const outside = outOfScope(parsed.data, plan);
+  if (outside) {
+    warn(`${resultPath} is not part of this collect, because ${outside}; ignoring it.`);
     return undefined;
   }
   const evidenceDir = join(dir, 'evidence');
@@ -235,18 +320,14 @@ const loadRun = (
 // and evidence that is missing, a symlink or outside its run's evidence directory is dropped.
 export const loadResults = (
   resultsDir: string,
-  { version, catalog, warn }: LoadOptions
+  { version, catalog, plan, warn }: LoadOptions
 ): LoadedResult[] =>
-  catalog.flatMap((entry) =>
-    Os.options.flatMap((os) =>
-      Engine.options.flatMap((engine) => {
-        const key = { entry, os, engine, version };
-        return runDirs(resultsDir, key)
-          .filter((dir) => existsSync(join(dir, 'result.json')))
-          .flatMap((dir) => loadRun(dir, key, warn) ?? []);
-      })
-    )
-  );
+  runPlaces(resultsDir, catalog).flatMap((place) => {
+    const key = { ...place, version };
+    return [artifactRunDir(resultsDir, place), localRunDir(resultsDir, place)]
+      .filter((dir) => existsSync(join(dir, 'result.json')))
+      .flatMap((dir) => loadRun(dir, key, { plan, warn }) ?? []);
+  });
 
 // Whether the installed Storybook is the version the run was asked to upgrade to.
 export const upgraded = (result: RunResultFile): boolean =>

@@ -164,6 +164,10 @@ describe('test API', () => {
     expect(changed).toHaveBeenCalledWith({ since: 'next' }, ctx);
   });
 
+  it('rejects an empty ref, which would otherwise read as not changed and run every story', () => {
+    expect(v.safeParse(toolset.methods.run.input, { changed: '' }).success).toBe(false);
+  });
+
   it('tells the CLI that a file after --changed was read as its ref', async () => {
     const changed = vi.fn(async () => {
       throw new OpenServiceGitRefError({ ref: 'Button', reason: 'unknown' });

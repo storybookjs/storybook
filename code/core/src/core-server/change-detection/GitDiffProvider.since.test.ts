@@ -66,6 +66,32 @@ describe('GitDiffProvider.getChangedFiles(since)', () => {
     });
   });
 
+  it('reads staged and intent-to-add files, and leaves out a committed file deleted since', async () => {
+    write('app/src/Button.tsx', 'committed change');
+    write('app/src/Card.stories.tsx', 'a new story file');
+    git('add', '-A');
+    git('commit', '-qm', 'feature work');
+    rmSync(join(repo, 'app/src/Button.tsx'));
+    rmSync(join(repo, 'app/src/Card.stories.tsx'));
+    write('app/src/Header.tsx', 'staged change');
+    git('add', 'app/src/Header.tsx');
+    write('app/src/Intent.stories.tsx', 'intent to add');
+    git('add', '-N', 'app/src/Intent.stories.tsx');
+
+    expect(await changedFiles('main')).toEqual({
+      changed: ['app/src/Header.tsx'],
+      new: ['app/src/Intent.stories.tsx'],
+    });
+  });
+
+  it('lists only the uncommitted changes for a ref that is HEAD', async () => {
+    write('app/src/Button.tsx', 'committed change');
+    git('commit', '-qam', 'feature work');
+    write('app/src/Header.tsx', 'uncommitted change');
+
+    expect(await changedFiles('HEAD')).toEqual({ changed: ['app/src/Header.tsx'], new: [] });
+  });
+
   it('compares with the commit the branch forked from, not with the tip of the ref', async () => {
     write('app/src/Button.tsx', 'feature change');
     git('commit', '-qam', 'feature work');

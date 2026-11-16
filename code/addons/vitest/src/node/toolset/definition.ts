@@ -169,7 +169,8 @@ Use { absoluteStoryPath + exportName } only when you're currently working in a s
   ),
   changed: v.optional(
     v.pipe(
-      v.union([v.boolean(), v.string()]),
+      // An empty ref, as from an unset variable in CI, must not read as "not changed".
+      v.union([v.boolean(), v.pipe(v.string(), v.minLength(1))]),
       v.description(
         'Test the changed stories, exactly as the stories changed tool lists them: new and modified stories, and the stories that depend on changed files. true for the uncommitted changes, or a git ref (a branch, tag or commit) for what this branch committed since it forked from that ref, plus the uncommitted changes. Combined with files or stories, only the stories that match both run.'
       )

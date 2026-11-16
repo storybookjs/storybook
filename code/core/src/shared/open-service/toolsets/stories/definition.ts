@@ -328,6 +328,7 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
           since: v.optional(
             v.pipe(
               v.string(),
+              v.minLength(1),
               v.description(
                 'A git ref: a branch, tag or commit. Lists the stories for what this branch committed since it forked from that ref, plus the uncommitted changes. Leave it out for the uncommitted changes only.'
               )

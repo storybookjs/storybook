@@ -367,6 +367,10 @@ describe('stories.changed', () => {
       expect(outcome.markdown).toBe('No new, modified, or related stories detected since `next`.');
     });
 
+    it('rejects an empty ref', () => {
+      expect(v.safeParse(toolset.methods.changed.input, { since: '' }).success).toBe(false);
+    });
+
     it('lets a ref that git cannot compare fail the call', async () => {
       const error = new OpenServiceGitRefError({ ref: 'nope', reason: 'unknown' });
       getChangedFiles.mockRejectedValue(error);

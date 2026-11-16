@@ -77,34 +77,39 @@ export class GitDiffProvider {
   async getChangedFiles(since?: string): Promise<GitDiffResult> {
     const repoRoot = await this.getRepoRoot();
     const runGitCommand = (args: string[]) => this.runGitCommand(repoRoot, args);
-    const forkPoint = since === undefined ? undefined : await this.getForkPoint(repoRoot, since);
 
-    const [staged, unstaged, added, intentToAdd, untracked, committed, committedNew] =
-      await Promise.all([
-        runGitCommand(['diff', '--name-only', '--diff-filter=ad', '--cached']),
-        runGitCommand(['diff', '--name-only', '--diff-filter=ad']),
-        runGitCommand(['diff', '--name-only', '--diff-filter=A', '--cached']),
-        runGitCommand(['diff', '--name-only', '--diff-filter=A']),
+    if (since !== undefined) {
+      // The working tree against the fork point, so a file that was committed on the branch and
+      // deleted since is left out, as any other deleted file.
+      const forkPoint = await this.getForkPoint(repoRoot, since);
+      const [changed, added, untracked] = await Promise.all([
+        runGitCommand(['diff', '--name-only', '--diff-filter=ad', forkPoint]),
+        runGitCommand(['diff', '--name-only', '--diff-filter=A', forkPoint]),
         runGitCommand(['ls-files', '--others', '--exclude-standard']),
-        ...(forkPoint
-          ? [
-              runGitCommand(['diff', '--name-only', '--diff-filter=ad', forkPoint, 'HEAD']),
-              runGitCommand(['diff', '--name-only', '--diff-filter=A', forkPoint, 'HEAD']),
-            ]
-          : []),
       ]);
+      return {
+        changed: parseChangedFiles(changed.stdout),
+        new: new Set([...parseChangedFiles(added.stdout), ...parseChangedFiles(untracked.stdout)]),
+      };
+    }
+
+    const [staged, unstaged, added, intentToAdd, untracked] = await Promise.all([
+      runGitCommand(['diff', '--name-only', '--diff-filter=ad', '--cached']),
+      runGitCommand(['diff', '--name-only', '--diff-filter=ad']),
+      runGitCommand(['diff', '--name-only', '--diff-filter=A', '--cached']),
+      runGitCommand(['diff', '--name-only', '--diff-filter=A']),
+      runGitCommand(['ls-files', '--others', '--exclude-standard']),
+    ]);
 
     return {
       changed: new Set([
         ...parseChangedFiles(staged.stdout),
         ...parseChangedFiles(unstaged.stdout),
-        ...parseChangedFiles(committed?.stdout ?? ''),
       ]),
       new: new Set([
         ...parseChangedFiles(added.stdout),
         ...parseChangedFiles(intentToAdd.stdout),
         ...parseChangedFiles(untracked.stdout),
-        ...parseChangedFiles(committedNew?.stdout ?? ''),
       ]),
     };
   }

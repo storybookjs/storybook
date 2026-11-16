@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 
 import { basename } from 'pathe';
 
@@ -13,28 +13,38 @@ export interface PlanScope {
   batch: number;
 }
 
-type Refuse = (message: string) => never;
+// End a script on a request it cannot serve, with the reason as its one line of output.
+export const refuse = (message: string): never => {
+  console.error(message);
+  process.exit(1);
+};
 
-export const wholeNumber = (flag: string, value: string, refuse: Refuse): number => {
+export const wholeNumber = (flag: string, value: string): number => {
   const number = Number(value);
   return Number.isInteger(number) && number >= 1
     ? number
     : refuse(`${flag} must be a whole number from 1, found "${value}".`);
 };
 
-// Read `--plan` and `--batch`: nothing without them, and `refuse` with one line of reason when the
-// plan cannot run or has no such batch.
-export const readPlanScope = (
-  { plan: file, batch }: { plan?: string; batch?: string },
-  refuse: Refuse
-): PlanScope | undefined => {
+// Read `--plan` and `--batch`: nothing without them, and a refusal when the plan cannot run or has
+// no such batch.
+export const readPlanScope = ({
+  plan: file,
+  batch,
+}: {
+  plan?: string;
+  batch?: string;
+}): PlanScope | undefined => {
   if (!file) {
     return batch ? refuse('--batch needs --plan.') : undefined;
   }
   if (!batch) {
     return refuse('--plan needs --batch.');
   }
-  const number = wholeNumber('--batch', batch, refuse);
+  const number = wholeNumber('--batch', batch);
+  if (!existsSync(file)) {
+    return refuse(`${file} does not exist.`);
+  }
   const text = readFileSync(file, 'utf8');
   const { plan, problems } = checkPlanText(text, { catalog: loadEntries() });
   if (!plan || problems.length > 0) {

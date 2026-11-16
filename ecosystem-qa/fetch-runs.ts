@@ -49,11 +49,7 @@ if (!out || !runs || !branches) {
   console.error(`Missing one of --out, --runs, --branches.\n\n${HELP}`);
   process.exit(1);
 }
-const refuse = (message: string): never => {
-  console.error(message);
-  process.exit(1);
-};
-const scope = readPlanScope(values, refuse);
+const scope = readPlanScope(values);
 const runIds = runs.split(',');
 const invalid = runIds.filter((id) => !/^\d+$/.test(id));
 if (invalid.length > 0) {

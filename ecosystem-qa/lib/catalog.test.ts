@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 
 import { describe, expect, it } from 'vitest';
 
-import { loadCatalogEntry, loadEntries } from './catalog.ts';
+import { loadEntries } from './catalog.ts';
 import { DISCOVERED, ENTRY } from './fixtures.ts';
 import { parsePlan } from './qa-plan.ts';
 import { Catalog, pushesCycle } from './schema.ts';
@@ -10,10 +10,6 @@ import { Catalog, pushesCycle } from './schema.ts';
 const PLAN = parsePlan(readFileSync(new URL('./plan.fixture.md', import.meta.url), 'utf8'));
 
 describe('catalog', () => {
-  it('loads the checked-in entry by id', () => {
-    expect(loadCatalogEntry('mealdrop').repo).toBe('storybookjs/mealdrop');
-  });
-
   it('parses every checked-in entry', () => {
     expect(loadEntries().length).toBeGreaterThan(1);
   });

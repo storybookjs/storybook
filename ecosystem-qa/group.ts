@@ -46,11 +46,7 @@ if (!results || !version || !repo || !out) {
   process.exit(1);
 }
 versionLine(version);
-const refuse = (message: string): never => {
-  console.error(message);
-  process.exit(1);
-};
-const scope = readPlanScope(values, refuse);
+const scope = readPlanScope(values);
 
 const { groups } = loadFindingGroups(results, version, scope);
 

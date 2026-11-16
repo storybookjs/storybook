@@ -9994,9 +9994,9 @@ __metadata:
     "@storybook/addon-a11y": "workspace:*"
     "@storybook/addon-vitest": "workspace:*"
     "@tmcp/adapter-valibot": "npm:^0.1.5"
-    "@tmcp/transport-http": "npm:^0.8.5"
+    "@tmcp/transport-http": "npm:^0.9.1"
     storybook: "workspace:*"
-    tmcp: "npm:^1.19.4"
+    tmcp: "npm:^1.20.1"
     typescript: "npm:^6.0.3"
     valibot: "npm:^1.4.0"
   peerDependencies:
@@ -10566,14 +10566,14 @@ __metadata:
   dependencies:
     "@modelcontextprotocol/sdk": "npm:^1.22.0"
     "@tmcp/adapter-valibot": "npm:^0.1.5"
-    "@tmcp/transport-http": "npm:^0.8.5"
+    "@tmcp/transport-http": "npm:^0.9.1"
     "@tmcp/transport-stdio": "npm:^0.4.3"
     react-docgen: "npm:^8.0.2"
     react-docgen-typescript: "npm:^2.4.0"
     srvx: "npm:^0.8.16"
     storybook: "workspace:*"
     tinyexec: "npm:^1.0.2"
-    tmcp: "npm:^1.19.4"
+    tmcp: "npm:^1.20.1"
     typescript: "npm:^6.0.3"
     valibot: "npm:^1.4.0"
   languageName: unknown
@@ -12136,28 +12136,30 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@tmcp/session-manager@npm:^0.2.2":
-  version: 0.2.2
-  resolution: "@tmcp/session-manager@npm:0.2.2"
+"@tmcp/session-manager@npm:^0.3.1":
+  version: 0.3.1
+  resolution: "@tmcp/session-manager@npm:0.3.1"
+  dependencies:
+    json-rpc-2.0: "npm:^1.7.1"
   peerDependencies:
-    tmcp: ^1.16.3
-  checksum: 10c0/a29507e7e36568f4eb5f0e7525c651adf4ec16d11273499f538f2e5cc4071920294c08cc4771b11cb52bc9f999e3a1a32466bb6521f605fc482cc932139b5d25
+    tmcp: ^1.20.0-next.0 || ^1.20.0
+  checksum: 10c0/b36fb52e14e4990e22d7d413dc130704af922f3368ae65abd7cbbe51658136b8e64d7d849d5c7dbe6648e28564efa809ad1aefc2b60a342c7620759ec1b49647
   languageName: node
   linkType: hard
 
-"@tmcp/transport-http@npm:^0.8.5":
-  version: 0.8.6
-  resolution: "@tmcp/transport-http@npm:0.8.6"
+"@tmcp/transport-http@npm:^0.9.1":
+  version: 0.9.1
+  resolution: "@tmcp/transport-http@npm:0.9.1"
   dependencies:
-    "@tmcp/session-manager": "npm:^0.2.2"
+    "@tmcp/session-manager": "npm:^0.3.1"
     esm-env: "npm:^1.2.2"
   peerDependencies:
-    "@tmcp/auth": ^0.3.3 || ^0.4.0
-    tmcp: ^1.18.0
+    "@tmcp/auth": ^0.3.3 || ^0.4.0 || ^0.5.0-next.0
+    tmcp: ^1.20.0-next.0 || ^1.20.0
   peerDependenciesMeta:
     "@tmcp/auth":
       optional: true
-  checksum: 10c0/da9a734cf15bcc84527194b2848ebcb33815fb9c26d579a90b2f0052eb193d764c1857f4c172f87167a51339f78cf7e17eba2b15f8a90459158b54a519291527
+  checksum: 10c0/2faa24e44f47d28ad72fecc618a14bcccce0f866f6f5cab2be9a436b0152feeccd5f73ee7f47dcea989383a656e76ec8e9fbbb40927c8fd66fd66b4d8d2d4111
   languageName: node
   linkType: hard
 
@@ -34674,16 +34676,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tmcp@npm:^1.19.4":
-  version: 1.19.4
-  resolution: "tmcp@npm:1.19.4"
+"tmcp@npm:^1.20.1":
+  version: 1.20.1
+  resolution: "tmcp@npm:1.20.1"
   dependencies:
     "@standard-schema/spec": "npm:^1.0.0"
+    "@types/json-schema": "npm:^7.0.15"
     json-rpc-2.0: "npm:^1.7.1"
     sqids: "npm:^0.3.0"
     uri-template-matcher: "npm:^1.1.1"
     valibot: "npm:^1.1.0"
-  checksum: 10c0/fcb275c74fe4dd80da3eb4702d7631423e73f2dd9ec537228457b997a9206ece899295035a492a9238184e28a46017034f63c6a4aa82d1fe0ee486fb7b33449a
+  checksum: 10c0/5ffb854767211633c2b9b8877271140fddc89ad582fd74a4d8d26651527da117a9ef2cb2c783d02a2db090187c0f36b96c3f294a38d78ffcb7fe349cc9f3406f
   languageName: node
   linkType: hard
 

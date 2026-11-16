@@ -1,35 +1,35 @@
-export const filters: Record<
-  string,
-  { label: string; filter: string; percentage?: number; percentageIsUpperBound?: boolean }
-> = {
+export const filters: Record<string, { label: string; filter: string; description?: string }> = {
   blurred: {
     label: 'Blurred vision',
     filter: 'blur(2px)',
-    percentage: 22.9,
+    description: '22.9% of users',
   },
   deuteranopia: {
     label: 'Deuteranopia',
     filter: 'url("#storybook-a11y-vision-deuteranopia")',
     // Includes deuteranomaly, whose severity ranges up to deuteranopia.
-    percentage: 3.26,
-    percentageIsUpperBound: true,
+    description: '3.26% of users\nMachado et al. 2009',
   },
   protanopia: {
     label: 'Protanopia',
     filter: 'url("#storybook-a11y-vision-protanopia")',
     // Includes protanomaly, whose severity ranges up to protanopia.
-    percentage: 1.25,
-    percentageIsUpperBound: true,
+    description: '1.25% of users\nMachado et al. 2009',
+  },
+  tritanomaly: {
+    label: 'Tritanomaly (inaccurate)',
+    filter: 'url("#storybook-a11y-vision-tritanopia")',
+    description: '0.016% of users\nMachado et al. 2009',
   },
   tritanopia: {
     label: 'Tritanopia',
     filter: 'url("#storybook-a11y-vision-tritanopia")',
-    percentage: 0.016,
+    description: '0.016% of users\nBrettel et al. 1997',
   },
   achromatopsia: {
     label: 'Achromatopsia',
     filter: 'url("#storybook-a11y-vision-achromatopsia")',
-    percentage: 0.0001,
+    description: '0.0001% of users',
   },
   grayscale: {
     label: 'Grayscale',

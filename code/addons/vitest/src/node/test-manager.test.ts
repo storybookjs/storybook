@@ -228,7 +228,7 @@ describe('TestManager', () => {
         'vitest.config.ts': 'export default {};',
       });
 
-      expect(args.root).toBe(path.join(root, '.storybook'));
+      expect(args).toMatchObject({ root, config: path.join(root, '.storybook/vitest.config.ts') });
     });
 
     it('keeps a config in the package that uses the plugin, as before', async () => {
@@ -238,6 +238,7 @@ describe('TestManager', () => {
       });
 
       expect(args.root).toBe(root);
+      expect(args).not.toHaveProperty('config');
     });
   });
 

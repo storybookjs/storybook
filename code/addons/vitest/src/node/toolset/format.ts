@@ -2,6 +2,7 @@ import type { ToolsetCtx } from 'storybook/open-service';
 
 import { isAbsolute, relative } from 'pathe';
 
+import type { ErrorLike } from '../../types.ts';
 import type { TestRunData, TestRunResult, TestRunSelection } from './definition.ts';
 
 type ComponentTestStatus = TestRunResult['componentTestStatuses'][number];
@@ -486,12 +487,12 @@ ${notFoundMessages.join('\n')}`;
 function formatRunError(error: Extract<TestRunData, { status: 'error' }>['error']): string {
   const lines = [`Error: ${error.message}`];
   for (let cause = error.error as ErrorLike | undefined; cause; cause = cause.cause) {
-    lines.push(cause.message);
+    if (cause.message) {
+      lines.push(cause.message);
+    }
   }
   return lines.join('\n\n');
 }
-
-type ErrorLike = { message: string; cause?: ErrorLike };
 
 /**
  * Per-story rendering shared by every transport — the `test-run` MCP tool and the tools CLI.

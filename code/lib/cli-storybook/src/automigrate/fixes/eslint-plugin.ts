@@ -3,8 +3,11 @@ import {
   configureEslintPlugin,
   extractEslintInfo,
 } from 'storybook/internal/cli';
+import { JsPackageManager } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
+import * as find from 'empathic/find';
+import { dirname } from 'pathe';
 import { dedent } from 'ts-dedent';
 
 import type { Fix } from '../types.ts';
@@ -46,9 +49,20 @@ export const eslintPlugin: Fix<{
     packageManager,
     storybookVersion,
   }) {
-    await packageManager.addDependencies({ type: 'devDependencies', skipInstall: true }, [
-      `eslint-plugin-storybook@${storybookVersion}`,
-    ]);
+    // The config file can live above the current package (findEslintFile walks up to the project
+    // root). The plugin must be declared where that file resolves imports from, not in whichever
+    // package.json the upgrade happened to start in.
+    const configPackageJsonPath = find.up('package.json', { cwd: dirname(eslintConfigFile) });
+    await packageManager.addDependencies(
+      {
+        type: 'devDependencies',
+        skipInstall: true,
+        packageJsonInfo: configPackageJsonPath
+          ? JsPackageManager.getPackageJsonInfo(configPackageJsonPath)
+          : packageManager.primaryPackageJson,
+      },
+      [`eslint-plugin-storybook@${storybookVersion}`]
+    );
 
     if (unsupportedExtension) {
       logger.warn(dedent`

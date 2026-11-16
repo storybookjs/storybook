@@ -336,6 +336,18 @@ describe('checkPlanText', () => {
       },
     ]);
   });
+
+  it('names the area and title of the window for a row that changed them', () => {
+    const window = windowOfPlan(parsePlan(FIXTURE));
+    const text = replaced(FIXTURE, `| ${pr(33422)} | UI |`, `| ${pr(33422)} | Manager |`);
+
+    expect(problemsOf(text, { window })).toEqual([
+      {
+        line: lineOf(text, `| ${pr(33422)} |`),
+        message: '#33422 has the area "UI" and the title "UI: Rebuild Sidebar Tree" in the window',
+      },
+    ]);
+  });
 });
 
 describe('planFromWindow', () => {

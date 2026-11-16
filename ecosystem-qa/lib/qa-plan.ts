@@ -745,7 +745,12 @@ const matchesWindow: Rule = ({ plan, at, window }) => {
         }
         return other.title === row.title && other.area === row.area
           ? []
-          : [{ line, message: `#${row.pr} has the area and title "${other.title}" in the window` }];
+          : [
+              {
+                line,
+                message: `#${row.pr} has the area "${other.area ?? ''}" and the title "${other.title}" in the window`,
+              },
+            ];
       }),
       ...[...want.keys()]
         .filter((pr) => !have.has(pr))

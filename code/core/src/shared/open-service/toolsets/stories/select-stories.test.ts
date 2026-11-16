@@ -1,13 +1,12 @@
-import path from 'node:path';
-
 import type { StoryIndex } from 'storybook/internal/types';
 
+import { join, resolve } from 'pathe';
 import { describe, expect, it } from 'vitest';
 
 import { filterStoryFiles } from './select-stories.ts';
 
-const ROOT = path.resolve('/repo');
-const at = (file: string) => path.join(ROOT, file).replaceAll('\\', '/');
+const ROOT = resolve('/repo');
+const at = (file: string) => join(ROOT, file);
 
 function story(id: string, importPath: string, subtype: 'story' | 'test' = 'story') {
   return { type: 'story', subtype, id, name: id, title: id, importPath, tags: [] };

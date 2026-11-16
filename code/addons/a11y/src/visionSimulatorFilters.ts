@@ -1,4 +1,7 @@
-export const filters: Record<string, { label: string; filter: string; percentage?: number }> = {
+export const filters: Record<
+  string,
+  { label: string; filter: string; percentage?: number; percentageIsUpperBound?: boolean }
+> = {
   blurred: {
     label: 'Blurred vision',
     filter: 'blur(2px)',
@@ -7,12 +10,16 @@ export const filters: Record<string, { label: string; filter: string; percentage
   deuteranopia: {
     label: 'Deuteranopia',
     filter: 'url("#storybook-a11y-vision-deuteranopia")',
-    percentage: 0.56,
+    // Includes deuteranomaly, whose severity ranges up to deuteranopia.
+    percentage: 3.26,
+    percentageIsUpperBound: true,
   },
   protanopia: {
     label: 'Protanopia',
     filter: 'url("#storybook-a11y-vision-protanopia")',
-    percentage: 0.59,
+    // Includes protanomaly, whose severity ranges up to protanopia.
+    percentage: 1.25,
+    percentageIsUpperBound: true,
   },
   tritanopia: {
     label: 'Tritanopia',
@@ -33,6 +40,7 @@ export const filters: Record<string, { label: string; filter: string; percentage
 // Firefox ignores CSS `filter: url(#id)` when the SVG defining `#id` is `display: none`.
 // The dichromacy matrices below use Machado et al. (2009) at severity 1.0:
 // https://www.inf.ufrgs.br/~oliveira/pubs_files/CVD_Simulation/CVD_Simulation.html
+// The achromatopsia matrix uses the sRGB relative luminance weights, which apply to linear light.
 export const filterDefs = `<svg id="storybook-a11y-vision-filters" aria-hidden="true" color-interpolation-filters="linearRGB" style="position:absolute;width:0;height:0;overflow:hidden">
   <defs>
     <filter id="storybook-a11y-vision-protanopia">
@@ -60,7 +68,7 @@ export const filterDefs = `<svg id="storybook-a11y-vision-filters" aria-hidden="
       <feColorMatrix
         in="SourceGraphic"
         type="matrix"
-        values="0.299, 0.587, 0.114, 0, 0 0.299, 0.587, 0.114, 0, 0 0.299, 0.587, 0.114, 0, 0 0, 0, 0, 1, 0"
+        values="0.2126, 0.7152, 0.0722, 0, 0 0.2126, 0.7152, 0.0722, 0, 0 0.2126, 0.7152, 0.0722, 0, 0 0, 0, 0, 1, 0"
       />
     </filter>
   </defs>

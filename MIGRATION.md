@@ -2247,7 +2247,7 @@ If the value is not a static object, move the fields yourself. This includes a v
 
 The Vision Simulator no longer offers `protanomaly`, `deuteranomaly`, or `tritanomaly`. Each condition covers a range of severities, so a single fixed matrix cannot represent it accurately. No automigration is provided because none of the remaining simulations is semantically equivalent. If a story sets one of these values through `globals.vision`, remove that global or choose a remaining value based on the intended test. Unsupported values now produce a warning that lists the available values.
 
-The remaining color-vision simulations also render differently: `protanopia`, `deuteranopia`, and `tritanopia` now use the Machado matrices in `linearRGB`, while the existing `achromatopsia` matrix also runs in `linearRGB`. Existing visual snapshots that use any of these `globals.vision` values will therefore produce intentional diffs.
+The remaining color-vision simulations also render differently: `protanopia`, `deuteranopia`, and `tritanopia` now use the Machado matrices in `linearRGB`, and `achromatopsia` now uses the sRGB relative luminance weights in `linearRGB`. Existing visual snapshots that use any of these `globals.vision` values will therefore produce intentional diffs.
 
 ### `argTypeTargetsV7` feature flag removed
 

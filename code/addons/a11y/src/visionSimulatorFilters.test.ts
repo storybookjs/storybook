@@ -21,19 +21,19 @@ describe('filterDefs', () => {
     expect(filterDefs).toContain('overflow:hidden');
   });
 
-  it('renders in linearRGB, the color space used by the Machado matrices', () => {
+  it('renders in linearRGB, the color space the matrices are defined in', () => {
     expect(filterDefs).toContain('color-interpolation-filters="linearRGB"');
     expect(filterDefs).not.toContain('color-interpolation-filters="sRGB"');
   });
 
+  const matrixFor = (id: string) => {
+    const filter = filterDefs.match(new RegExp(`<filter id="${id}">([\\s\\S]*?)</filter>`))?.[1];
+    const values = filter?.match(/values="([^"]+)"/)?.[1];
+
+    return values?.replace(/[\s,]+/g, ' ').trim();
+  };
+
   it('uses the Machado et al. severity 1.0 matrices for dichromacy', () => {
-    const matrixFor = (id: string) => {
-      const filter = filterDefs.match(new RegExp(`<filter id="${id}">([\\s\\S]*?)</filter>`))?.[1];
-      const values = filter?.match(/values="([^"]+)"/)?.[1];
-
-      return values?.replace(/[\s,]+/g, ' ').trim();
-    };
-
     expect(matrixFor('storybook-a11y-vision-protanopia')).toBe(
       '0.152286 1.052583 -0.204868 0 0 0.114503 0.786281 0.099216 0 0 -0.003882 -0.048116 1.051998 0 0 0 0 0 1 0'
     );
@@ -42,6 +42,12 @@ describe('filterDefs', () => {
     );
     expect(matrixFor('storybook-a11y-vision-tritanopia')).toBe(
       '1.255528 -0.076749 -0.178779 0 0 -0.078411 0.930809 0.147602 0 0 0.004733 0.691367 0.303900 0 0 0 0 0 1 0'
+    );
+  });
+
+  it('uses the sRGB relative luminance weights for achromatopsia', () => {
+    expect(matrixFor('storybook-a11y-vision-achromatopsia')).toBe(
+      '0.2126 0.7152 0.0722 0 0 0.2126 0.7152 0.0722 0 0 0.2126 0.7152 0.0722 0 0 0 0 0 1 0'
     );
   });
 

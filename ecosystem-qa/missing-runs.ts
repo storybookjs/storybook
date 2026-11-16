@@ -37,11 +37,7 @@ if (!results || !version || !planned) {
   process.exit(1);
 }
 versionLine(version);
-const refuse = (message: string): never => {
-  console.error(message);
-  process.exit(1);
-};
-const scope = readPlanScope(values, refuse);
+const scope = readPlanScope(values);
 
 const Planned = z.object({
   include: z.array(

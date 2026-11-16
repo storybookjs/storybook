@@ -1,10 +1,9 @@
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
 
 import { z } from 'zod';
 
-import { ghJson } from '../scripts/utils/gh.ts';
 import { ghParse } from './lib/github.ts';
 import {
   IssueNode,
@@ -117,19 +116,40 @@ const ISSUES_PER_QUERY = 100;
 const IssuesAnswer = z.object({
   data: z.object({ repository: z.record(z.string(), IssueNode) }),
 });
-const NotFoundOnly = z.object({ errors: z.array(z.object({ type: z.literal('NOT_FOUND') })) });
+const NotFoundOnly = z.object({
+  errors: z.array(z.object({ type: z.literal('NOT_FOUND'), message: z.string() })),
+});
 
-// A number in a body can name nothing, and GitHub then answers that alias with null, an error, and
-// a failing exit status.
-const answerDespiteNotFound = (error: unknown): unknown => {
-  const stdout = (error as { stdout?: unknown }).stdout;
-  if (typeof stdout === 'string' && stdout.startsWith('{')) {
-    const answer: unknown = JSON.parse(stdout);
-    if (NotFoundOnly.safeParse(answer).success) {
-      return answer;
-    }
+// GitHub answers an alias whose number names nothing with null and a NOT_FOUND error, and gh then
+// exits 1 and prints the messages on stderr, the first one after `gh: `.
+const askIssues = (args: string[]): unknown => {
+  const { status, stdout, stderr, error } = spawnSync('gh', args, {
+    encoding: 'utf8',
+    maxBuffer: 1 << 28,
+  });
+  if (error) {
+    throw error;
   }
-  throw error;
+  let answer: unknown;
+  try {
+    answer = JSON.parse(stdout);
+  } catch {
+    answer = undefined;
+  }
+  const notFound = status === 0 ? undefined : NotFoundOnly.safeParse(answer);
+  const noise = new Set(
+    notFound?.data?.errors.flatMap(({ message }) => [message, `gh: ${message}`]) ?? []
+  );
+  process.stderr.write(
+    stderr
+      .split('\n')
+      .filter((line) => !noise.has(line))
+      .join('\n')
+  );
+  if (status !== 0 && !notFound?.success) {
+    throw new Error(`gh ${args.slice(0, 2).join(' ')} exited ${status}.`);
+  }
+  return answer;
 };
 
 const lookUpIssues = (numbers: number[]): [number, IssueNode][] => {
@@ -139,18 +159,12 @@ const lookUpIssues = (numbers: number[]): [number, IssueNode][] => {
         `i${number}: issueOrPullRequest(number: ${number}) { __typename ... on Issue { ${ISSUE_FIELDS} parent { ${ISSUE_FIELDS} } } }`
     )
     .join('\n');
-  const args = [
+  const answer = askIssues([
     'api',
     'graphql',
     '-f',
     `query=query { repository(owner: "storybookjs", name: "storybook") { ${aliases} } }`,
-  ];
-  let answer: unknown;
-  try {
-    answer = ghJson(args, { stdio: ['ignore', 'pipe', 'inherit'] });
-  } catch (error) {
-    answer = answerDespiteNotFound(error);
-  }
+  ]);
   const found = IssuesAnswer.parse(answer).data.repository;
   return numbers.map((number) => [number, found[`i${number}`] ?? null]);
 };

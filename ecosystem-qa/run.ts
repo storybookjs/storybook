@@ -26,7 +26,7 @@ import { z } from 'zod';
 
 import { checksFor, renderChecklist } from './checks.ts';
 import { answerAfterRepairs, answerOfFinishedAgent, type Reading } from './lib/answer.ts';
-import { loadCatalogEntry } from './lib/catalog.ts';
+import { loadEntries } from './lib/catalog.ts';
 import { shipsSandcastleFiles } from './lib/clone-guard.ts';
 import { cycleBranchName, cycleRepo, versionLine } from './lib/cycle.ts';
 import { runFake } from './lib/fake-run.ts';
@@ -34,7 +34,7 @@ import { outputOf, watchHost, type Report } from './lib/host-watch.ts';
 import { forJobLog, liveLine } from './lib/live-log.ts';
 import { memoryGuard } from './lib/memory-guard.ts';
 import { CHECKOUT_GUIDE, guideFor } from './lib/migration-guide.ts';
-import { readPlanScope, wholeNumber } from './lib/plan-scope.ts';
+import { readPlanScope, refuse, wholeNumber } from './lib/plan-scope.ts';
 import {
   planCheckId,
   planRuns,
@@ -155,10 +155,11 @@ const fail = (message: string): never => {
   process.exit(1);
 };
 
-// A request that the plan does not allow, where the usage text would bury the reason.
-const refuse = (message: string): never => {
-  console.error(message);
-  process.exit(1);
+const parsedFlag = <T>(schema: z.ZodType<T>, flag: string, value: unknown): T => {
+  const parsed = schema.safeParse(value);
+  return parsed.success
+    ? parsed.data
+    : refuse(`--${flag} ${JSON.stringify(value)}: ${parsed.error.issues[0]!.message}.`);
 };
 
 interface PlannedRun {
@@ -175,12 +176,12 @@ const planOfRun = (
   if (!values.plan && (values.batch || values.part)) {
     return refuse('--batch and --part need --plan.');
   }
-  const scope = readPlanScope(values, refuse);
+  const scope = readPlanScope(values);
   if (!scope) {
     return undefined;
   }
   const { plan, file, batch } = scope;
-  const part = wholeNumber('--part', values.part ?? '1', refuse);
+  const part = wholeNumber('--part', values.part ?? '1');
   if (versionLine(version) !== plan.line) {
     return refuse(
       `${values.plan} plans line ${plan.line}, and --version ${version} is on line ${versionLine(version)}.`
@@ -209,8 +210,6 @@ const planOfRun = (
   };
 };
 
-// The checks of a run in the order the agent reports them, the checklist it reads, and the check
-// that a fake run fails.
 const checklistOf = (tier: z.infer<typeof Tier>, planned: PlannedRun | undefined, repo: string) => {
   const fixed = checksFor(tier);
   const planChecks = (planned?.entries ?? []).map((entry) => ({
@@ -225,7 +224,7 @@ const checklistOf = (tier: z.infer<typeof Tier>, planned: PlannedRun | undefined
           readFileSync(PLAN_PROMPT_FILE, 'utf8').trim(),
         ].join('\n\n')
       : renderChecklist(fixed),
-    failing:
+    fakeFailure:
       planChecks[0]?.id ?? fixed.find(({ id }) => id === 'core.story-render')?.id ?? fixed[0]!.id,
   };
 };
@@ -285,10 +284,13 @@ const parseRequest = () => {
   }
 
   const planned = planOfRun(values, repo, version);
-  const tier = Tier.parse(values.tier ?? (planned ? 'gate' : 'must'));
-  const engine = Engine.parse(values.engine);
-  const entry = loadCatalogEntry(repo, planned?.plan);
-  const sandbox = SandboxKind.parse(values.sandbox);
+  const tier = parsedFlag(Tier, 'tier', values.tier ?? (planned ? 'gate' : 'must'));
+  const engine = parsedFlag(Engine, 'engine', values.engine);
+  const entries = loadEntries(planned?.plan);
+  const entry =
+    entries.find((candidate) => candidate.id === repo) ??
+    refuse(`No catalog entry "${repo}". Known: ${entries.map(({ id }) => id).join(', ')}`);
+  const sandbox = parsedFlag(SandboxKind, 'sandbox', values.sandbox);
   // A fake run starts no agent and runs nothing of the repo.
   const refusal = sandbox === 'none' && !values.fake ? unsandboxedRefusal(entry, os) : undefined;
   if (refusal) {
@@ -306,7 +308,7 @@ const parseRequest = () => {
     version,
     engine,
     model: values.model ?? DEFAULT_MODEL[engine],
-    effort: Effort.parse(values.effort),
+    effort: parsedFlag(Effort, 'effort', values.effort),
     tier,
     sandbox,
     os,
@@ -855,7 +857,7 @@ const startedAt = new Date();
 mkdirSync(join(request.outDir, 'evidence'), { recursive: true });
 writeFileSync(join(request.outDir, 'evidence/checklist.md'), `${checklist.text}\n`);
 const outcome = request.fake
-  ? runFake(request, checklist.checks, checklist.failing)
+  ? runFake(request, checklist.checks, checklist.fakeFailure)
   : await runSandcastle(request, cloneDir, image, startedAt, budget, checklist);
 const result = writeResult(request, outcome, startedAt);
 // The whole output directory becomes a public artifact, agent stream and session included, and the

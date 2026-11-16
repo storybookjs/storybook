@@ -15,7 +15,7 @@ import {
 const HELP = `Usage: node ecosystem-qa/pin.ts <owner/repo> [ref] [--dir <storybook directory>]
 
 Prints one line of JSON about the commit of a public repository that a catalog entry would pin:
-the commit, the package manager of the root lockfile, each Storybook directory with its main config,
+the repository under the name GitHub answers with, which differs after a rename, the commit, the package manager of the root lockfile, each Storybook directory with its main config,
 version range, framework packages and feature addons, the stars, the last push and whether the repository
 is archived. The ref defaults to the default branch. It only reads from GitHub and writes nothing.
 
@@ -38,6 +38,7 @@ if (!repo || !/^[\w.-]+\/[\w.-]+$/.test(repo)) {
 
 const info = ghParse(
   z.object({
+    full_name: z.string(),
     stargazers_count: z.number(),
     pushed_at: z.string(),
     archived: z.boolean(),
@@ -90,7 +91,7 @@ const factsOf = ({ dir, main }: { dir: string; main: string }) => {
 
 console.log(
   JSON.stringify({
-    repo,
+    repo: info.full_name,
     commit,
     packageManager: packageManagerOf(rootPaths),
     storybookDirs: dirs

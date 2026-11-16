@@ -50,11 +50,7 @@ if (!out || !runs || !branches) {
   console.error(`Missing one of --out, --runs, --branches.\n\n${HELP}`);
   process.exit(1);
 }
-const refuse = (message: string): never => {
-  console.error(message);
-  process.exit(1);
-};
-const scope = readPlanScope(values, refuse);
+const scope = readPlanScope(values);
 const runIds = runs.split(',');
 const invalid = runIds.filter((id) => !/^\d+$/.test(id));
 if (invalid.length > 0) {
@@ -110,9 +106,9 @@ try {
   });
   unread = fetched.filter(({ results }) => results.length === 0).map(({ id }) => id);
   if (unread.length === 0) {
-    // The directory of a static run holds the part directories, so replacing it comes first.
+    const parentsBeforeParts = (a: { to: string }, b: { to: string }) => a.to.length - b.to.length;
     const inOrder = oldestFirst(fetched.flatMap(({ results }) => results)).toSorted(
-      (a, b) => a.to.length - b.to.length
+      parentsBeforeParts
     );
     for (const { from, to, label, id } of inOrder) {
       rmSync(to, { recursive: true, force: true });

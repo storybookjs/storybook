@@ -60,12 +60,12 @@ Every entry carries `tags`: the framework package, its builder, the Storybook ma
 To pin a repo, probe it without cloning anything:
 
 ```sh
-node ecosystem-qa/pin.ts dnum-mi/vue-dsfr > pins.jsonl
+node ecosystem-qa/pin.ts dnum-mi/vue-dsfr >> pins.jsonl
 ```
 
 It prints one line of JSON with the commit, the package manager, each Storybook directory with its version range, framework packages and feature addons, the stars, the last push and the archived flag.
 GitHub truncates the file tree of a very large repository, and then `--dir` names the Storybook directory to read.
-`tools/fork-tier2.sh pins.jsonl` forks every tier 2 entry with a `pushTo` into `storybook-tmp` and creates its `qa/base` at the commit of its line, and `--dry` prints the calls without making any write.
+With a line in `pins.jsonl` for every tier 2 entry, `ecosystem-qa/tools/fork-tier2.sh pins.jsonl` forks each one with a `pushTo` into `storybook-tmp` and creates its `qa/base` at the commit of its line, and `--dry` before the file prints the calls without making any write.
 Run it twice and the second run changes nothing; it stops where a `qa/base` exists at another commit, because it never moves one.
 
 Then collect and look at the proposals without filing anything:
@@ -113,6 +113,7 @@ ECOSYSTEM_QA_FAKE=1 node ecosystem-qa/run.ts --repo mealdrop --version 11.0.0-be
 
 A QA plan names what a sweep tests beyond the fixed checks: the changes of a release line, each with the repos to try it on, the steps and the expected outcome.
 It is one Markdown file in `ecosystem-qa/plans/`, named after its line, such as `11.0.md`, and a person reviews and merges it like code.
+An agent writes it with the `/qa-plan` skill in `.agents/skills/qa-plan/`, which runs the commands below and opens the plan PR.
 
 ```
 window.ts ──> window.json ──> qa-plan.ts render ──> plans/<line>.md ──> qa-plan.ts check
@@ -168,9 +169,9 @@ It then holds the plan against these rules and prints each problem as `<file>:<l
 - Every slug and group is unique, and the version is on the plan's line.
 - Every repo of an entry is a catalog id or a discovered repo, and a discovered repo never takes a catalog id.
 - No repo of an entry is more than one major behind the plan's line, by the `tags` of its catalog entry or the major of its discovered row.
-- Every PR of an entry has a row that names the entry, every row has a decision, and every decision names entries that exist.
+- Every PR of an entry has a row that names the entry, or a row in a group whose decision names it, every row has a decision, and every decision names entries that exist.
 - Every maintainer PR marked `qa:skip` with a product label names a group, and every group has a decision.
-- The file holds no link to Linear, Notion or Slack, and no step or expected outcome holds a URL other than `localhost`.
+- The file holds no link to Linear, Notion or Slack, and no step or expected outcome holds a URL other than `localhost`, with or without its scheme.
 - With `--window`, the tables hold exactly the PRs of the window, with their titles and areas.
 
 A plan that passes prints its hash, which names the cycle, its batches with their runs, and about what it costs, priced at the most expensive static run so far.

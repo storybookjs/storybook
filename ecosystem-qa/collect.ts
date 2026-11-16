@@ -53,11 +53,7 @@ if (!results || !version || !out || !repo) {
   process.exit(1);
 }
 versionLine(version);
-const refuse = (message: string): never => {
-  console.error(message);
-  process.exit(1);
-};
-const scope = readPlanScope(values, refuse);
+const scope = readPlanScope(values);
 
 const { GITHUB_SERVER_URL, GITHUB_REPOSITORY, GITHUB_RUN_ID } = process.env;
 const runUrl =

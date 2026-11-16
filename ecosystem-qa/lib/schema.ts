@@ -52,12 +52,11 @@ export const builderOf = (framework: Framework): Builder => {
   return framework.endsWith('-vite') || framework === '@storybook/sveltekit' ? 'vite' : 'webpack5';
 };
 
-// What the pinned commit shows of the Storybook directory, as `pin.ts` prints it.
 export const Tags = z
   .strictObject({
     framework: Framework,
     builder: Builder,
-    storybook: z.number().int().positive(),
+    major: z.int().positive(),
     features: z.array(Feature),
   })
   .refine((tags) => tags.builder === builderOf(tags.framework), {
@@ -67,9 +66,6 @@ export const Tags = z
 
 const FULL_SHA = /^[0-9a-f]{40}$/;
 
-// Whether the filer pushes a cycle of this entry. An owned repo receives its own cycle and a fork
-// under storybook-tmp the cycle of its upstream. A repo that a plan discovered has neither, so its
-// cycle stays in the run artifact.
 export const pushesCycle = (entry: { class: RepoClass; pushTo?: string }): boolean =>
   entry.class === 'owned' || entry.pushTo !== undefined;
 
@@ -77,7 +73,6 @@ export const CatalogEntry = z
   .strictObject({
     id: z.string().regex(/^[a-z0-9-]+$/),
     repo: z.string().regex(/^[\w.-]+\/[\w.-]+$/),
-    // Where the cycle branch is pushed: a fork under storybook-tmp for tier 1 and 2, the repo itself when owned.
     pushTo: z
       .string()
       .regex(/^[\w.-]+\/[\w.-]+$/)
@@ -102,14 +97,13 @@ export const CatalogEntry = z
     message: 'no push token is configured for the owner of the repository that receives the cycle',
     path: ['pushTo'],
   })
-  // Without a fork nothing holds a branch at the pin, so the upstream commit is the only stable start.
   .refine((entry) => pushesCycle(entry) || FULL_SHA.test(entry.ref), {
     message: 'an entry without a push target needs a full commit SHA as its ref',
     path: ['ref'],
   })
-  // A Windows cell runs the agent without a sandbox, which only a reviewed catalog entry may get.
   .refine((entry) => pushesCycle(entry) || !entry.windows, {
-    message: 'an entry without a push target runs on Linux only',
+    message:
+      'an entry without a push target runs on Linux only, because Windows runs the agent without a sandbox',
     path: ['windows'],
   });
 export type CatalogEntry = z.infer<typeof CatalogEntry>;
@@ -120,8 +114,7 @@ export const Catalog = z
     message: 'catalog ids must be unique',
   });
 
-// A static id of checks.ts or the id of a plan entry. The answer schema of a run still names only
-// the ids of that run.
+// A static id of checks.ts or the id of a plan entry; `agentOutput` narrows it to the ids of one run.
 export const CheckId = z
   .string()
   .max(80)
@@ -166,8 +159,6 @@ export type Finding = z.infer<typeof Finding>;
 
 export const Tier = z.enum(TIERS);
 
-// The answer schema for one run: every check of the run exactly once, findings only on failures.
-//
 // The agent reads the schema next to the checklist, so the schema names the ids of the run only,
 // in the order given: one list of ids in one order.
 export const agentOutput = (ids: readonly [string, ...string[]]) => {
@@ -206,8 +197,6 @@ export const agentOutput = (ids: readonly [string, ...string[]]) => {
 
 export const AgentOutput = agentOutput(CHECK_IDS);
 
-// What a run of plan checks tested: the plan file by name and hash, the run of `planRuns`, and for
-// each of its entries the slug and the PRs.
 export const PlanRecord = z.strictObject({
   file: z.string().regex(/^[\w.-]+\.md$/),
   hash: z.string().regex(/^[0-9a-f]{12}$/),
@@ -368,7 +357,6 @@ export const Proposal = z.discriminatedUnion('kind', [
     evidence: z.array(EvidenceFile),
     // A closed issue this cluster matched: the bug came back, so it is filed anew and linked.
     previousIssue: z.number().int().optional(),
-    // The plan entries whose checks found it, from the plan file of the collect.
     planEntries: z
       .array(
         z.strictObject({

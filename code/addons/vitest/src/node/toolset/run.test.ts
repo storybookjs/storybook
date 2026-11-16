@@ -244,6 +244,29 @@ describe('runStoryTests', () => {
       });
     });
 
+    it('asks for the changes since a ref, and records the ref', async () => {
+      const { channel } = respondingChannel();
+      const getChangedStories = vi.fn(async () => ({
+        storyIds: ['button--primary'],
+        changedConfigFiles: [],
+        pendingFiles: [],
+      }));
+
+      const result = await runStoryTests({
+        channel,
+        getIndex: async () => index,
+        changed: 'next',
+        getChangedStories,
+      });
+
+      expect(getChangedStories).toHaveBeenCalledExactlyOnceWith('next');
+      expect(result).toMatchObject({
+        selection: {
+          changed: { stories: 1, changedConfigFiles: [], pendingFiles: [], since: 'next' },
+        },
+      });
+    });
+
     it('passes without running when no story changed, as Vitest does', async () => {
       const { channel, requested } = respondingChannel();
 

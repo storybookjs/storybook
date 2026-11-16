@@ -156,10 +156,13 @@ export type RunStoryTestsParams = {
   stories?: StoryInput[];
   /** Story-file filters, matched the way Vitest matches its file filters. */
   files?: string[];
-  /** Run the stories `stories changed` lists. */
-  changed?: boolean;
+  /**
+   * Run the stories `stories changed` lists: `true` for the uncommitted changes, or a git ref to
+   * also cover what is committed since it.
+   */
+  changed?: boolean | string;
   /** The `stories.changed` tool, so both commands share one definition of "changed". */
-  getChangedStories?: () => Promise<ChangedStories>;
+  getChangedStories?: (since?: string) => Promise<ChangedStories>;
   a11y?: boolean;
   actor?: string;
   requestEvent?: string;
@@ -222,8 +225,18 @@ export async function runStoryTests({
 
     if (changed) {
       // No default: a caller that forgot to wire it must fail, not read as "nothing changed".
-      const { storyIds: changedIds, changedConfigFiles, pendingFiles } = await getChangedStories!();
-      selection.changed = { stories: changedIds.length, changedConfigFiles, pendingFiles };
+      const since = typeof changed === 'string' ? changed : undefined;
+      const {
+        storyIds: changedIds,
+        changedConfigFiles,
+        pendingFiles,
+      } = await getChangedStories!(since);
+      selection.changed = {
+        stories: changedIds.length,
+        changedConfigFiles,
+        pendingFiles,
+        ...(since === undefined ? {} : { since }),
+      };
       narrow(changedIds);
     }
 

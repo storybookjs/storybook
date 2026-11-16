@@ -1,3 +1,4 @@
+import { OpenServiceGitRefError } from 'storybook/internal/server-errors';
 import type { StoryIndex } from 'storybook/internal/types';
 import {
   getToolset,
@@ -145,6 +146,42 @@ describe('test API', () => {
     });
     expect(getToolset).toHaveBeenCalledWith('stories');
     expect(changed).toHaveBeenCalledWith({}, ctx);
+  });
+
+  it('takes a git ref for changed, as Vitest does, and asks stories changed for it', async () => {
+    const changed = vi.fn(async () => ({
+      ok: true as const,
+      data: { stories: [], changedConfigFiles: [], unindexedStoryFiles: [], pendingFiles: [] },
+      markdown: '',
+    }));
+    vi.mocked(getToolset).mockReturnValue({ methods: { changed: { handler: changed } } } as never);
+
+    await runTests({ changed: 'next' });
+    const { changed: passed, getChangedStories } = vi.mocked(runStoryTests).mock.lastCall![0];
+    await getChangedStories!('next');
+
+    expect(passed).toBe('next');
+    expect(changed).toHaveBeenCalledWith({ since: 'next' }, ctx);
+  });
+
+  it('tells the CLI that a file after --changed was read as its ref', async () => {
+    const changed = vi.fn(async () => {
+      throw new OpenServiceGitRefError({ ref: 'Button', reason: 'unknown' });
+    });
+    vi.mocked(getToolset).mockReturnValue({ methods: { changed: { handler: changed } } } as never);
+
+    await runTests({ changed: 'Button' });
+    const { getChangedStories } = vi.mocked(runStoryTests).mock.lastCall![0];
+
+    await expect(getChangedStories!('Button')).rejects.toThrow(
+      '`Button` is not a known git ref. The argument right after `--changed` is its ref, as in Vitest: put file arguments before `--changed`.'
+    );
+
+    await runForMcp({ changed: 'Button' });
+    const forMcp = vi.mocked(runStoryTests).mock.lastCall![0].getChangedStories!;
+    await expect(forMcp('Button')).rejects.toThrow(
+      new OpenServiceGitRefError({ ref: 'Button', reason: 'unknown' })
+    );
   });
 
   it('lets the CLI fill files from bare arguments', () => {
@@ -362,6 +399,24 @@ Accessibility: not checked.`);
 Passed: 2 component tests passed.`);
     });
 
+    it('names the ref the changes are counted since', async () => {
+      vi.mocked(runStoryTests).mockResolvedValue({
+        ...completed({
+          storyIds: ['button--primary'],
+          componentTestCount: { success: 1, error: 0 },
+          componentTestStatuses: [componentTest('button--primary', 'status-value:success')],
+        }),
+        selection: {
+          changed: { stories: 1, changedConfigFiles: [], pendingFiles: [], since: 'next' },
+          storyCount: 1,
+        },
+      } as TestRunOutput);
+
+      expect((await runTests()).markdown).toContain(
+        '1 changed story since `next`: selected 1 story.'
+      );
+    });
+
     it('says when change detection has not caught up with a changed file', async () => {
       vi.mocked(runStoryTests).mockResolvedValue({
         status: 'no-stories',
@@ -503,8 +558,21 @@ File arguments select story files by path, relative to \`${process.cwd()}\`, as 
       expect(outcome.ok).toBe(true);
       expect(outcome.markdown).toBe(`No stories changed, so no tests ran.
 Changed files in the Storybook config directory, which can affect every story: \`.storybook/main.ts\`.
+To test more, pass a ref (\`--changed main\`) or story files.`);
+      expect(mcpOutcome.markdown).toContain('pass a ref (`changed: "main"`) or story files.');
+    });
+
+    it('names the ref when no story changed since it', async () => {
+      vi.mocked(runStoryTests).mockResolvedValue({
+        status: 'no-stories',
+        notFoundMessages: [],
+        selection: {
+          changed: { stories: 0, changedConfigFiles: [], pendingFiles: [], since: 'next' },
+        },
+      });
+
+      expect((await runTests()).markdown).toBe(`No stories changed since \`next\`, so no tests ran.
 To test more, pass story files.`);
-      expect(mcpOutcome.markdown).toBe(outcome.markdown);
     });
 
     it('passes when no story file matches the filters under changed, as Vitest does', async () => {

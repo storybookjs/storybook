@@ -603,9 +603,24 @@ Run \`npx storybook tools docs show --help\` for the expected arguments.`);
   });
 
   it('rejects any flag for a tool that takes no arguments', async () => {
+    clearToolsetRegistry();
+    registerToolset(
+      defineToolset({
+        id: 'echo',
+        description: 'Echo tools.',
+        methods: {
+          ping: {
+            title: 'Ping',
+            description: 'Takes no arguments.',
+            input: v.strictObject({}),
+            handler: async () => ({ ok: true as const, data: {}, markdown: 'pong' }),
+          },
+        },
+      })
+    );
     const { deps } = makeDeps();
 
-    const result = await run(['stories', 'changed', '--verbose'], deps);
+    const result = await run(['echo', 'ping', '--verbose'], deps);
 
     expect(result.outcome).toEqual({ kind: 'intercept', reason: 'invalid-arguments' });
     expect(result.output).toContain('- Unknown flag `--verbose`.');

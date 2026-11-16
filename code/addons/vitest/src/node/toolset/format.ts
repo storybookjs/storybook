@@ -289,6 +289,10 @@ function code(value: string): string {
   return `\`${value}\``;
 }
 
+function sinceRef({ since }: NonNullable<TestRunSelection['changed']>): string {
+  return since === undefined ? '' : ` since ${code(since)}`;
+}
+
 // The notes `stories changed` gives about what its story list cannot show.
 function formatChangedConfigFiles(changed: TestRunSelection['changed']): string[] {
   return [
@@ -333,7 +337,9 @@ function formatSelection(
     );
   }
   if (selection.changed) {
-    parts.push(pluralize(selection.changed.stories, 'changed story', 'changed stories'));
+    parts.push(
+      `${pluralize(selection.changed.stories, 'changed story', 'changed stories')}${sinceRef(selection.changed)}`
+    );
   }
   const selected = selection.storyCount;
   if (parts.length === 0) {
@@ -518,13 +524,17 @@ ${notFoundMessages.join('\n')}${filterHint}`;
 File arguments select story files by path, relative to ${code(process.cwd())}, as Vitest filters select test files. To test the stories that depend on a changed file, use ${argument(ctx, '--changed', 'changed: true')} without file arguments.`;
   }
   if (selection?.changed) {
-    const what =
-      selection.changed.stories > 0 ? 'None of the selected stories changed' : 'No stories changed';
+    const what = `${
+      selection.changed.stories > 0 ? 'None of the selected stories changed' : 'No stories changed'
+    }${sinceRef(selection.changed)}`;
     // A run that selected nothing passes, as in Vitest; the last line says how to test anyway.
     return [
       `${what}, so no tests ran.`,
       ...formatChangedConfigFiles(selection.changed),
-      'To test more, pass story files.',
+      // Without a ref only the uncommitted changes count, so after a commit nothing has changed.
+      selection.changed.since === undefined
+        ? `To test more, pass a ref (${argument(ctx, '--changed main', 'changed: "main"')}) or story files.`
+        : 'To test more, pass story files.',
     ].join('\n');
   }
   if (selection?.files && selection.stories) {

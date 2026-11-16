@@ -6,6 +6,7 @@ import { dirname, join, resolve as resolvePath } from 'pathe';
 import { execa, type ExecaError } from 'execa';
 import { logger } from 'storybook/internal/node-logger';
 
+import { OpenServiceGitRefError } from '../../server-errors.ts';
 import { ChangeDetectionFailureError, ChangeDetectionUnavailableError } from './errors.ts';
 
 export interface GitDiffResult {
@@ -66,29 +67,66 @@ export class GitDiffProvider {
     }
   }
 
-  async getChangedFiles(): Promise<GitDiffResult> {
+  /**
+   * The uncommitted changes: staged, unstaged and untracked files. With `since`, also the files
+   * committed on this branch since it forked from that ref, as `git diff <since>...HEAD` lists
+   * them. Deleted files are left out.
+   *
+   * @throws OpenServiceGitRefError When `since` is not a ref, or shares no commit with HEAD.
+   */
+  async getChangedFiles(since?: string): Promise<GitDiffResult> {
     const repoRoot = await this.getRepoRoot();
     const runGitCommand = (args: string[]) => this.runGitCommand(repoRoot, args);
+    const forkPoint = since === undefined ? undefined : await this.getForkPoint(repoRoot, since);
 
-    const [staged, unstaged, added, intentToAdd, untracked] = await Promise.all([
-      runGitCommand(['diff', '--name-only', '--diff-filter=ad', '--cached']),
-      runGitCommand(['diff', '--name-only', '--diff-filter=ad']),
-      runGitCommand(['diff', '--name-only', '--diff-filter=A', '--cached']),
-      runGitCommand(['diff', '--name-only', '--diff-filter=A']),
-      runGitCommand(['ls-files', '--others', '--exclude-standard']),
-    ]);
+    const [staged, unstaged, added, intentToAdd, untracked, committed, committedNew] =
+      await Promise.all([
+        runGitCommand(['diff', '--name-only', '--diff-filter=ad', '--cached']),
+        runGitCommand(['diff', '--name-only', '--diff-filter=ad']),
+        runGitCommand(['diff', '--name-only', '--diff-filter=A', '--cached']),
+        runGitCommand(['diff', '--name-only', '--diff-filter=A']),
+        runGitCommand(['ls-files', '--others', '--exclude-standard']),
+        ...(forkPoint
+          ? [
+              runGitCommand(['diff', '--name-only', '--diff-filter=ad', forkPoint, 'HEAD']),
+              runGitCommand(['diff', '--name-only', '--diff-filter=A', forkPoint, 'HEAD']),
+            ]
+          : []),
+      ]);
 
     return {
       changed: new Set([
         ...parseChangedFiles(staged.stdout),
         ...parseChangedFiles(unstaged.stdout),
+        ...parseChangedFiles(committed?.stdout ?? ''),
       ]),
       new: new Set([
         ...parseChangedFiles(added.stdout),
         ...parseChangedFiles(intentToAdd.stdout),
         ...parseChangedFiles(untracked.stdout),
+        ...parseChangedFiles(committedNew?.stdout ?? ''),
       ]),
     };
+  }
+
+  /** The commit where this branch forked from `since`: what `<since>...HEAD` diffs against. */
+  private async getForkPoint(repoRoot: string, since: string): Promise<string> {
+    const run = async (args: string[], reason: 'unknown' | 'no-merge-base') => {
+      try {
+        return (await this.runGitCommand(repoRoot, args)).stdout.trim();
+      } catch (error) {
+        if (error instanceof ChangeDetectionFailureError) {
+          throw new OpenServiceGitRefError({ ref: since, reason });
+        }
+        throw error;
+      }
+    };
+    // Git would read a ref that starts with `-` as an option.
+    if (since.startsWith('-')) {
+      throw new OpenServiceGitRefError({ ref: since, reason: 'unknown' });
+    }
+    await run(['rev-parse', '--verify', '--quiet', `${since}^{commit}`], 'unknown');
+    return run(['merge-base', since, 'HEAD'], 'no-merge-base');
   }
 
   async getHeadCommit(): Promise<string> {

@@ -1,5 +1,6 @@
 import * as v from 'valibot';
 
+import { OpenServiceGitRefError } from 'storybook/internal/server-errors';
 import {
   storyInputArraySchema,
   type StoryIndexAccess,
@@ -79,6 +80,8 @@ const selectionSchema = v.object({
     v.object({
       /** How many stories `stories changed` listed. */
       stories: v.number(),
+      /** The git ref the changes are listed since, when one was passed. */
+      since: v.optional(v.string()),
       /** Changed files in the Storybook config directory, which can affect every story. */
       changedConfigFiles: v.array(v.string()),
       /** Changed files change detection has not caught up with yet. */
@@ -166,9 +169,9 @@ Use { absoluteStoryPath + exportName } only when you're currently working in a s
   ),
   changed: v.optional(
     v.pipe(
-      v.boolean(),
+      v.union([v.boolean(), v.string()]),
       v.description(
-        'Test the changed stories, exactly as the stories changed tool lists them: new and modified stories, and the stories that depend on changed files. Combined with files or stories, only the stories that match both run.'
+        'Test the changed stories, exactly as the stories changed tool lists them: new and modified stories, and the stories that depend on changed files. true for the uncommitted changes, or a git ref (a branch, tag or commit) for what this branch committed since it forked from that ref, plus the uncommitted changes. Combined with files or stories, only the stories that match both run.'
       )
     )
   ),
@@ -188,7 +191,7 @@ Use { absoluteStoryPath + exportName } only when you're currently working in a s
 type RunInput = {
   stories?: StoryInput[];
   files?: string[];
-  changed?: boolean;
+  changed?: boolean | string;
   a11y: boolean;
 };
 
@@ -200,7 +203,7 @@ export type TestToolset = ToolsetDefinition<
         {
           stories?: StoryInput[];
           files?: string[];
-          changed?: boolean;
+          changed?: boolean | string;
           a11y?: boolean;
         },
         RunInput
@@ -293,9 +296,25 @@ function isFailedRun(data: TestRunData): data is TestRunFailureData {
   }
 }
 
-// `stories changed` itself, so both commands select the same stories for the same working tree.
-async function getChangedStories(ctx: ToolsetCtx): Promise<ChangedStories> {
-  const { data } = await getToolset('stories').methods.changed.handler({}, ctx);
+// `stories changed` itself, so both commands select the same stories for the same changes.
+async function getChangedStories(ctx: ToolsetCtx, since?: string): Promise<ChangedStories> {
+  const { data } = await getToolset('stories')
+    .methods.changed.handler(since === undefined ? {} : { since }, ctx)
+    .catch((error: unknown) => {
+      // The CLI reads the token after `--changed` as its ref, as Vitest does, so
+      // `--changed Button` asks for the changes since `Button`.
+      if (
+        ctx.transport === 'cli' &&
+        error instanceof OpenServiceGitRefError &&
+        error.data.reason === 'unknown'
+      ) {
+        throw new OpenServiceGitRefError({
+          ...error.data,
+          hint: 'The argument right after `--changed` is its ref, as in Vitest: put file arguments before `--changed`.',
+        });
+      }
+      throw error;
+    });
   return {
     storyIds: data.stories.map((story) => story.storyId),
     changedConfigFiles: data.changedConfigFiles,
@@ -342,7 +361,7 @@ export function createTestToolset({
               stories: input.stories,
               files: input.files,
               changed: input.changed,
-              getChangedStories: () => getChangedStories(ctx),
+              getChangedStories: (since) => getChangedStories(ctx, since),
               a11y: input.a11y,
             });
             const data: TestRunData = { ...output, a11y: input.a11y };

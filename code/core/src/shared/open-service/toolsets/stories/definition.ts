@@ -13,8 +13,11 @@ import type {
 import { defineToolset, type ToolsetCtx, type ToolsetOutcome } from '../../toolset-definition.ts';
 import { getToolName } from '../../toolset-names.ts';
 import type { StatusesByStoryIdAndTypeId } from '../../../status-store/index.ts';
-import { getChangedStories } from './changed.ts';
-import { detectChangedFilesOutsideStories } from './changed-files-outside-stories.ts';
+import { getChangedStories, getChangedStoriesSince } from './changed.ts';
+import {
+  detectChangedFilesOutsideStories,
+  type GitChanges,
+} from './changed-files-outside-stories.ts';
 import { DEFAULT_MAX_DISTANCE, findStoriesByComponent } from './find-by-component.ts';
 import type { ModuleGraphAccess, ModuleGraphStatus } from './resolve-component-stories.ts';
 import { reasonForStatus } from './resolve-component-stories.ts';
@@ -86,6 +89,10 @@ const changedOutputSchema = v.object({
     )
   ),
   changedConfigFiles: v.array(v.string()),
+  since: v.pipe(
+    v.optional(v.string()),
+    v.description('The git ref the changes are listed since, when one was passed.')
+  ),
 });
 
 export type ChangedStoriesOutput = v.InferOutput<typeof changedOutputSchema>;
@@ -141,7 +148,11 @@ export type StoryIndexAccess = {
 
 export type StoriesGitAccess = {
   getRepoRoot: () => Promise<string>;
-  getChangedFiles: () => Promise<{
+  /**
+   * The uncommitted changes; with `since`, also what this branch committed since it forked from
+   * that ref. Repo-root-relative paths.
+   */
+  getChangedFiles: (since?: string) => Promise<{
     changed: Set<string>;
     new: Set<string>;
   }>;
@@ -216,6 +227,8 @@ Do not end visual work or browse requests with these links — publish a curated
 
 function describeChanged(ctx: ToolsetCtx): string {
   return `Get Storybook stories marked as new, modified, or related. Returns story metadata only (no URLs).
+
+By default the result covers the uncommitted changes. Pass since with a git ref, such as the branch this one forked from, to also cover what is committed since then.
 
 The result reflects the cumulative working-tree diff, not just your latest edit — after multiple edits in one session, a non-empty result may cover an earlier sub-change and miss your most recent one. Check that every file you touched is represented; for any that isn't, find its consumer components and pass their paths to ${getToolName(ctx)('stories.findByComponent')} instead. The response surfaces this gap with a "coverage sanity check" hint when it detects unreachable working-tree files.`;
 }
@@ -311,10 +324,19 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
         },
       },
       changed: {
-        input: v.strictObject({}),
+        input: v.strictObject({
+          since: v.optional(
+            v.pipe(
+              v.string(),
+              v.description(
+                'A git ref: a branch, tag or commit. Lists the stories for what this branch committed since it forked from that ref, plus the uncommitted changes. Leave it out for the uncommitted changes only.'
+              )
+            )
+          ),
+        }),
         title: 'Get changed stories metadata',
         description: describeChanged,
-        handler: async (_input, ctx): Promise<ToolsetOutcome<ChangedStoriesOutput, never>> => {
+        handler: async ({ since }, ctx): Promise<ToolsetOutcome<ChangedStoriesOutput, never>> => {
           const graphService = ctx.getService<ModuleGraphService>('core/module-graph', {
             internal: true,
           });
@@ -328,39 +350,68 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
             });
           }
 
-          const changeDetection =
-            await graphService.queries.changeDetectionReadiness.loaded(undefined);
-          if (changeDetection.status !== 'ready') {
-            if (isGitUnusableReadiness(changeDetection)) {
-              const data = emptyChangedStories();
-              return {
-                ok: true,
-                data,
-                markdown: formatChangedStories(data, ctx),
-                telemetry: {
-                  payload: {
-                    storyCount: 0,
-                    newStoryCount: 0,
-                    modifiedStoryCount: 0,
-                    affectedStoryCount: 0,
-                  },
+          // Without git there are no changes to list, with or without a ref.
+          const noChanges = (): ToolsetOutcome<ChangedStoriesOutput, never> => {
+            const data = { ...emptyChangedStories(), ...(since === undefined ? {} : { since }) };
+            return {
+              ok: true,
+              data,
+              markdown: formatChangedStories(data, ctx),
+              telemetry: {
+                payload: {
+                  storyCount: 0,
+                  newStoryCount: 0,
+                  modifiedStoryCount: 0,
+                  affectedStoryCount: 0,
+                  ...(since === undefined ? {} : { since: true }),
                 },
-              };
+              },
+            };
+          };
+
+          // The statuses of change detection cover the uncommitted changes only. With a ref, the
+          // stories are computed here from git and the graph; change detection is not involved.
+          let changesSince: GitChanges | undefined;
+          if (since === undefined) {
+            const changeDetection =
+              await graphService.queries.changeDetectionReadiness.loaded(undefined);
+            if (changeDetection.status !== 'ready') {
+              if (isGitUnusableReadiness(changeDetection)) {
+                return noChanges();
+              }
+              throw new OpenServiceModuleGraphUnavailableError({
+                reason: reasonForChangeDetectionReadiness(changeDetection),
+              });
             }
-            throw new OpenServiceModuleGraphUnavailableError({
-              reason: reasonForChangeDetectionReadiness(changeDetection),
-            });
+          } else {
+            try {
+              const [changedFiles, repoRoot] = await Promise.all([
+                git.getChangedFiles(since),
+                git.getRepoRoot(),
+              ]);
+              changesSince = { changedFiles, repoRoot };
+            } catch (error) {
+              if (error instanceof Error && GIT_UNUSABLE_REASONS.has(error.message)) {
+                return noChanges();
+              }
+              throw error;
+            }
           }
 
           // Files outside the story graph are why an empty or partial result can still be wrong,
           // so they are part of the answer rather than a separate lookup.
           const read = async () => {
             const { reachableFiles, ...filesOutsideStories } =
-              await detectChangedFilesOutsideStories({ git, moduleGraph, storybookDirs });
-            const changed = getChangedStories({
-              statuses: await changeStatuses.getAll(),
-              index: await storyIndex.getIndex(),
-            });
+              await detectChangedFilesOutsideStories({
+                git,
+                moduleGraph,
+                storybookDirs,
+                changes: changesSince,
+              });
+            const index = await storyIndex.getIndex();
+            const changed = changesSince
+              ? await getChangedStoriesSince({ ...changesSince, moduleGraph, index })
+              : getChangedStories({ statuses: await changeStatuses.getAll(), index });
             return { changed, filesOutsideStories, reachableFiles };
           };
           // A new story file reaches the index, and an edit the statuses, only after a debounced
@@ -379,6 +430,7 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
             ...changed,
             ...filesOutsideStories,
             pendingFiles: changed.stories.length === 0 ? reachableFiles : [],
+            ...(since === undefined ? {} : { since }),
           };
 
           return {
@@ -391,6 +443,7 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
                 newStoryCount: data.counts.new,
                 modifiedStoryCount: data.counts.modified,
                 affectedStoryCount: data.counts.affected,
+                ...(since === undefined ? {} : { since: true }),
               },
             },
           };

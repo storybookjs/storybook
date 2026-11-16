@@ -4,28 +4,25 @@ import { resolve } from 'node:path';
 
 import {
   type ExportReader,
-  createMetaComponentResolver,
+  createComponentNodeResolver,
   createModuleResolver,
   defaultResolveConditionNames,
   extractDeclaredSubcomponents,
   followExport,
   getStoryImportPathFromEntry,
   jsTsSourceExtensions,
+  typescriptExtensionAlias,
 } from 'storybook/internal/common';
 import {
   type CsfFile,
   type ESTree as E,
   type ESTreeNode,
   SourceEditor,
-  collectImportBindings,
   loadCsf,
-  oneLineTextOf,
   parseExpression,
   propertyValue,
-  resolveReferencedValue,
   staticKey,
   type ReferenceModule,
-  unwrapExpression,
 } from 'storybook/internal/csf-tools';
 import type { IndexEntry } from 'storybook/internal/types';
 
@@ -42,24 +39,12 @@ export interface ResolvedSvelteComponent {
 const moduleResolver = createModuleResolver({
   extensions: ['.svelte', ...jsTsSourceExtensions],
   // TypeScript projects import `./index.ts` as `./index.js`, as SvelteKit's packaging requires.
-  extensionAlias: { '.js': ['.ts', '.js'] },
+  extensionAlias: typescriptExtensionAlias,
   mainFields: ['svelte', 'module', 'main'],
   // Core's conditions plus `svelte`, so a `storybook` entry resolves as it does in the preview.
   conditionNames: ['svelte', ...defaultResolveConditionNames],
   tsconfig: 'auto',
 });
-
-// Core and this module use one resolver, so a barrel that core follows lands on the same file that
-// `followExport` walks.
-const resolveMetaComponent = createMetaComponentResolver({ resolver: moduleResolver });
-
-function resolveImport(fromFile: string, specifier: string): string | undefined {
-  try {
-    return moduleResolver.resolveFileSync(fromFile, specifier);
-  } catch {
-    return undefined;
-  }
-}
 
 // The editor of the JS a module exposes: a `.svelte` file's module script, or the file itself.
 // `undefined` when it cannot be read or parsed.
@@ -90,9 +75,9 @@ const exportReader: ExportReader = {
   ownsExport: isComponent,
 };
 
-function locate(storyPath: string, specifier: string, exportName: string, name: string) {
-  return locateIn(resolveImport(storyPath, specifier), specifier, exportName, name);
-}
+// Core reads every module in the chain with this reader, so a `.svelte` file in it exposes its
+// module script, and a barrel that core follows lands on the same file that `locateIn` walks.
+const resolveComponentExpression = createComponentNodeResolver({ reader: exportReader });
 
 function locateIn(
   filePath: string | undefined,
@@ -130,97 +115,27 @@ function resolveComponentNode(
   story: StoryFile,
   node?: ESTreeNode
 ): ResolvedSvelteComponent | undefined {
-  if ('csf' in story) {
-    const resolved = resolveMetaComponent(story.csf, story.storyPath, node);
-    if ('reason' in resolved) {
-      if (resolved.reason === 'unreadable-component-expression') {
-        throw new Error(`Cannot resolve the component \`${resolved.expression}\``);
-      }
-      return undefined;
+  const { module, meta } =
+    'csf' in story
+      ? {
+          module: { editor: story.csf.editor, filePath: story.storyPath },
+          meta: story.csf._metaAnnotations.component,
+        }
+      : { module: story.module, meta: propertyValue(story.meta, 'component') };
+  const expression = node ?? meta;
+  if (!expression) return undefined;
+
+  const resolved = resolveComponentExpression(module, expression);
+  if ('reason' in resolved) {
+    if (resolved.reason === 'unreadable-component-expression') {
+      throw new Error(`Cannot resolve the component \`${resolved.expression}\``);
     }
-    // `path` is resolved in the module that wrote `importId`, which is not the story file when core
-    // followed the component through another module, such as a barrel's `export * as`.
-    const { importId, path, exportName, localName } = resolved.component;
-    return importId ? locateIn(path, importId, exportName, localName) : undefined;
+    return undefined;
   }
-
-  const expression = node ?? propertyValue(story.meta, 'component');
-  return expression && resolveSvelteCsfComponent(expression, story.module, story.storyPath);
-}
-
-// Svelte CSF reads the module script with Svelte's own module reader, so a `.svelte` file in the
-// chain exposes its module script, which core's reader cannot parse.
-function resolveSvelteCsfComponent(
-  node: ESTreeNode,
-  module: ReferenceModule,
-  storyPath: string
-): ResolvedSvelteComponent | undefined {
-  // Type arguments, as in `Button<{ id: number }>`, are type-level only.
-  let expression = unwrapExpression(node);
-  while (expression.type === 'TSInstantiationExpression') {
-    expression = unwrapExpression(expression.expression);
-  }
-  const name =
-    expression.type === 'Identifier'
-      ? { local: expression.name }
-      : expression.type === 'MemberExpression' &&
-          !expression.computed &&
-          expression.object.type === 'Identifier' &&
-          expression.property.type === 'Identifier'
-        ? { local: expression.object.name, property: expression.property.name }
-        : undefined;
-  if (!name) {
-    throw new Error(`Cannot resolve the component \`${oneLineTextOf(node)}\``);
-  }
-
-  const binding = collectImportBindings(module.editor.program).get(name.local);
-  if (!binding) return undefined;
-
-  // A plain identifier keeps the import's imported name, which may be aliased or `default`.
-  if (name.property === undefined) {
-    return locate(storyPath, binding.importId, binding.importName, name.local);
-  }
-  const { property } = name;
-
-  // `ns.Button` on a namespace import is `import { Button } from …` written another way, so the
-  // property is the export name — the same shortcut core's resolver applies to namespaces.
-  if (binding.importName === '*') {
-    return locate(storyPath, binding.importId, property, property);
-  }
-
-  // A named import of a namespace a barrel exports, as in `export * as UI from './ui'`, is the
-  // same shortcut one module further.
-  const barrel = resolveImport(storyPath, binding.importId);
-  const namespace = barrel ? followExport(exportReader, barrel, binding.importName) : undefined;
-  if (namespace?.kind === 'namespace') {
-    return locateIn(namespace.path, namespace.importId, property, property);
-  }
-
-  // A named object import (`import { Input }`) names the component through the object it binds,
-  // not a module export — a module that also exports `Select` is not the component. Core's
-  // reference resolver follows the object through spreads, aliases and export forms; where it
-  // cannot, docgen declines rather than guessing.
-  const parsed = new Map<string, ReferenceModule | undefined>();
-  const referenced = resolveReferencedValue(
-    {
-      ...module,
-      resolveModule: (fromFile, specifier) => {
-        const target = resolveImport(fromFile, specifier);
-        if (!target) return undefined;
-        if (!parsed.has(target)) parsed.set(target, readModule(target));
-        return parsed.get(target);
-      },
-    },
-    expression
-  );
-  if (!referenced) return undefined;
-  const value = unwrapExpression(referenced.node);
-  if (value.type !== 'Identifier') return undefined;
-  // The chain lands on a name in the module that wrote it: a component import, or a binding this
-  // pass does not pretend to follow.
-  const target = collectImportBindings(referenced.ctx.editor.program).get(value.name);
-  if (!target) return undefined;
-  return locate(referenced.ctx.filePath, target.importId, target.importName, property);
+  // `path` is resolved in the module that wrote `importId`, which is not the story file when core
+  // followed the component through another module, such as a barrel's `export * as`.
+  const { importId, path, exportName, localName } = resolved.component;
+  return importId ? locateIn(path, importId, exportName, localName) : undefined;
 }
 
 export async function resolveStoryComponent(

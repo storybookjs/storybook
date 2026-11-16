@@ -333,11 +333,19 @@ export abstract class JsPackageManager {
    * Resolve the effective version/range of a declared dependency: the installed version if present,
    * otherwise the declared semver range. Returns null when the package is not declared or only a
    * non-semver specifier is declared. PNPMProxy additionally resolves pnpm `catalog:` references.
+   *
+   * Pass `preferDeclared` when the caller needs the project's own constraint: in a monorepo the
+   * first installed copy can belong to another workspace or catalog and report a different version.
    */
-  public async getDeclaredVersionSpecifier(packageName: string): Promise<string | null> {
-    const installed = await this.getInstalledVersion(packageName);
-    if (installed) {
-      return installed;
+  public async getDeclaredVersionSpecifier(
+    packageName: string,
+    { preferDeclared }: { preferDeclared?: boolean } = {}
+  ): Promise<string | null> {
+    if (!preferDeclared) {
+      const installed = await this.getInstalledVersion(packageName);
+      if (installed) {
+        return installed;
+      }
     }
     const declared = this.getAllDependencies()[packageName];
     const range = declared && this.getDeclaredRange(packageName, declared);

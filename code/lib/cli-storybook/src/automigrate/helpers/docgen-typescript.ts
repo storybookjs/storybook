@@ -14,7 +14,11 @@ export async function getDocgenTypeScriptVersion({
   const specifier = (mainConfig.typescript as { docgenSpecifier?: string } | undefined)
     ?.docgenSpecifier;
   if (!specifier) {
-    const version = coerce(await packageManager.getDeclaredVersionSpecifier('typescript'))?.version;
+    // Docgen loads the TypeScript declared by this project. Another installed copy in a monorepo
+    // can report a different version, so resolve the declared constraint instead.
+    const version = coerce(
+      await packageManager.getDeclaredVersionSpecifier('typescript', { preferDeclared: true })
+    )?.version;
     return version ? { version } : undefined;
   }
   if (!configDir) {

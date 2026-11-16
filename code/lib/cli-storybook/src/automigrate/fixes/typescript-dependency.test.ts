@@ -13,10 +13,15 @@ import {
 
 vi.mock('storybook/internal/common', { spy: true });
 
-const packageManagerWith = (dependencies: Record<string, string>) =>
+const packageManagerWith = (
+  dependencies: Record<string, string>,
+  installed: Record<string, string> = {}
+) =>
   ({
     isDependencyInstalled: (name: string) => name in dependencies,
-    getDeclaredVersionSpecifier: async (name: string) => dependencies[name] ?? null,
+    getDeclaredVersionSpecifier: async (name: string, options?: { preferDeclared?: boolean }) =>
+      (options?.preferDeclared ? dependencies[name] : (installed[name] ?? dependencies[name])) ??
+      null,
     addDependencies: vi.fn().mockResolvedValue(undefined),
     upgradeDeclaredDependency: vi.fn(),
   }) as unknown as JsPackageManager;
@@ -223,6 +228,18 @@ describe('typescript-compiler-api', () => {
 
   it('stays quiet for a renderer without TypeScript docgen', async () => {
     await expect(checkTs('@storybook/preact-vite', { typescript: '^7.0.2' })).resolves.toBeNull();
+  });
+
+  it('uses the declared version when another installed copy is TypeScript 7', async () => {
+    const packageManager = packageManagerWith({ typescript: '6.0.2' }, { typescript: '7.0.2' });
+
+    await expect(
+      checkFix(typescriptCompilerApi, {
+        mainConfig: { framework: '@storybook/vue3-vite' } as StorybookConfigRaw,
+        packageManager,
+        ...upgrade,
+      } as CheckOptions)
+    ).resolves.toBeNull();
   });
 });
 

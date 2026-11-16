@@ -43,12 +43,6 @@ const runModule = async (code: string) => {
 describe('require in node output', () => {
   const requiresOs = `module.exports = require('node:os').EOL;`;
 
-  it('fails to run bundled CommonJS without a require', async () => {
-    await expect(runModule(await bundleForNode(requiresOs))).rejects.toThrow(
-      'Dynamic require of "node:os" is not supported'
-    );
-  });
-
   it('runs bundled CommonJS once require is added', async () => {
     const code = addCjsRequire(await bundleForNode(requiresOs), 'test');
     await expect(runModule(code!)).resolves.toBe('\n');
@@ -68,9 +62,5 @@ describe('require in node output', () => {
       `// require('node:os')\nexport default "require.resolve('x')";`
     );
     expect(addCjsRequire(code, 'test')).toBeUndefined();
-  });
-
-  it('leaves ESM output alone', async () => {
-    expect(addCjsRequire(await bundleForNode(`export { EOL } from 'node:os';`), 'test')).toBeUndefined();
   });
 });

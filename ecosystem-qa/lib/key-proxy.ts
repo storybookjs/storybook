@@ -6,6 +6,7 @@ import {
 } from 'node:http';
 import { request as httpsRequest } from 'node:https';
 import type { AddressInfo } from 'node:net';
+import { pipeline } from 'node:stream';
 
 import { z } from 'zod';
 
@@ -60,7 +61,8 @@ export const startKeyProxy = async (options: KeyProxyOptions): Promise<KeyProxy>
     delete headers.authorization;
     const forwarded = send(target, { method: req.method, headers }, (reply) => {
       respond(reply.statusCode ?? 502, reply.headers);
-      reply.pipe(res);
+      // Unlike `pipe`, this breaks off the caller's answer when the provider breaks off its own.
+      pipeline(reply, res, () => {});
     });
     forwarded.on('error', () => {
       if (!res.headersSent) {

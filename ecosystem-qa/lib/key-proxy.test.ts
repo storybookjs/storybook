@@ -143,6 +143,20 @@ describe('startKeyProxy', () => {
     caller.destroy();
     await closed;
   });
+
+  it('breaks off the answer to the caller when the provider breaks off its own', async () => {
+    const provider = await standIn((req, res) => {
+      req.resume();
+      res.writeHead(200);
+      res.write('partial');
+      setTimeout(() => res.socket!.destroy(), 20);
+    });
+    const { url } = await proxyTo(provider.origin);
+
+    const [res] = (await once(send(`${url}/v1/messages`), 'response')) as [IncomingMessage];
+    res.resume();
+    await expect(once(res, 'end')).rejects.toThrow('aborted');
+  });
 });
 
 describe('startKeyProxy against a hostile caller', () => {

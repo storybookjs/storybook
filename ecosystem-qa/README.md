@@ -110,7 +110,10 @@ Once the proxy holds the key, `run.ts` deletes it from its own environment, so n
 The proxy forwards only `POST /v1/messages` and `POST /v1/messages/count_tokens`, answers only the sandbox container's address, and writes one line for each request that Node's HTTP parser accepts, with method, path and status, or `closed by the caller` when the caller goes away first, to the job log and to `run.log`.
 Before the agent starts, the runner reads the environment of the sandbox and the variables that Sandcastle exports in front of the agent's command, ends the run when the real key is in either, and writes `Neither the environment of the sandbox nor the variables Sandcastle exports for the agent hold the provider key.` otherwise.
 Where the Docker daemon runs in a VM, as Docker Desktop does on Linux too, the bridge gateway is no address of the host, so the proxy cannot listen there and the run ends with an error that says so.
-Everywhere else the key still reaches the agent: Codex, a run without a sandbox (the Windows cells), a run on macOS, and a run with `CLAUDE_CODE_OAUTH_TOKEN`.
+Every other run still hands the real key to the agent: Codex, any run on macOS or on Windows (the Windows cells run without a sandbox), a run on Linux in bwrap or without a sandbox, and a run with `CLAUDE_CODE_OAUTH_TOKEN` and no `ANTHROPIC_API_KEY`.
+The proxy limits where the key goes, not what it spends.
+Any code in the sandbox, the project's install scripts and tests included, can send requests on the real key to those two paths for as long as the run lasts, with any model and any body, and the harness does not count that spend.
+The backstop is a spend limit on the key's workspace at the provider, which only the owner of the key can set.
 The `Reach the key proxy from the sandbox` job of a pull request checks on the runner image of the agent job that a container on the default bridge gets through the proxy to a stand-in for the provider.
 Each runner uploads `qa-result-<id>-<os>-<engine>` with `result.json`, the run log, the raw agent stream, the session, the evidence and the cycle branch bundle.
 `run.ts` writes the status, wall time, tokens, dollars, free disk and every check to the Step Summary.

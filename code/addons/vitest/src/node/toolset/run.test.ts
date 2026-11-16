@@ -135,7 +135,7 @@ describe('runStoryTests', () => {
     expect(result).toEqual({
       status: 'no-stories',
       notFoundMessages: [expect.stringContaining('No story found for story ID "missing--story"')],
-      selection: { stories: 1 },
+      selection: { inputStoryCount: 1 },
     });
     expect(requested).toEqual([]);
   });
@@ -152,7 +152,7 @@ describe('runStoryTests', () => {
     expect(requested).toEqual([['button--primary']]);
     expect(result).toMatchObject({
       status: 'completed',
-      notFound: [expect.stringContaining('No story found for story ID "missing--story"')],
+      notFoundMessages: [expect.stringContaining('No story found for story ID "missing--story"')],
     });
   });
 
@@ -164,7 +164,7 @@ describe('runStoryTests', () => {
     expect(result).toEqual({
       status: 'no-stories',
       notFoundMessages: [],
-      selection: { stories: 0 },
+      selection: { inputStoryCount: 0 },
     });
     expect(requested).toEqual([]);
   });
@@ -190,7 +190,7 @@ describe('runStoryTests', () => {
     expect(requested).toEqual([['button--primary']]);
     expect(result).toMatchObject({
       status: 'completed',
-      selection: { files: { filters: ['button'], storyFiles: 1 }, storyCount: 1 },
+      selection: { files: { filters: ['button'], storyFileCount: 1 }, storyCount: 1 },
     });
   });
 
@@ -206,7 +206,7 @@ describe('runStoryTests', () => {
     expect(result).toEqual({
       status: 'no-stories',
       notFoundMessages: ['No story files found for `src/Button.tsx`.'],
-      selection: { files: { filters: ['src/Button.tsx'], storyFiles: 0 } },
+      selection: { files: { filters: ['src/Button.tsx'], storyFileCount: 0 } },
     });
     expect(requested).toEqual([]);
   });
@@ -238,7 +238,11 @@ describe('runStoryTests', () => {
       expect(result).toMatchObject({
         status: 'completed',
         selection: {
-          changed: { stories: 1, changedConfigFiles: ['.storybook/preview.ts'], pendingFiles: [] },
+          changed: {
+            storyCount: 1,
+            changedConfigFiles: ['.storybook/preview.ts'],
+            pendingFiles: [],
+          },
           storyCount: 1,
         },
       });
@@ -262,7 +266,7 @@ describe('runStoryTests', () => {
       expect(getChangedStories).toHaveBeenCalledExactlyOnceWith('next');
       expect(result).toMatchObject({
         selection: {
-          changed: { stories: 1, changedConfigFiles: [], pendingFiles: [], since: 'next' },
+          changed: { storyCount: 1, changedConfigFiles: [], pendingFiles: [], since: 'next' },
         },
       });
     });
@@ -280,7 +284,7 @@ describe('runStoryTests', () => {
       expect(result).toEqual({
         status: 'no-stories',
         notFoundMessages: [],
-        selection: { changed: { stories: 0, changedConfigFiles: [], pendingFiles: [] } },
+        selection: { changed: { storyCount: 0, changedConfigFiles: [], pendingFiles: [] } },
       });
       expect(requested).toEqual([]);
     });

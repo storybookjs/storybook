@@ -74,11 +74,11 @@ const testRunResultSchema = v.object({
 
 /** What `files`, `changed` and `stories` selected, for the summary line. */
 const selectionSchema = v.object({
-  files: v.optional(v.object({ filters: v.array(v.string()), storyFiles: v.number() })),
+  files: v.optional(v.object({ filters: v.array(v.string()), storyFileCount: v.number() })),
   changed: v.optional(
     v.object({
       /** How many stories `stories changed` listed. */
-      stories: v.number(),
+      storyCount: v.number(),
       /** The git ref the changes are listed since, when one was passed. */
       since: v.optional(v.string()),
       /** Changed files in the Storybook config directory, which can affect every story. */
@@ -88,7 +88,7 @@ const selectionSchema = v.object({
     })
   ),
   /** How many story ids `stories` gave. */
-  stories: v.optional(v.number()),
+  inputStoryCount: v.optional(v.number()),
   /** Stories the run was asked for. */
   storyCount: v.optional(v.number()),
 });
@@ -105,7 +105,7 @@ const testRunOutputSchema = v.variant('status', [
     result: testRunResultSchema,
     selection: v.optional(selectionSchema),
     /** Story ids that matched nothing. The rest ran, but they fail the call. */
-    notFound: v.optional(v.array(v.string())),
+    notFoundMessages: v.optional(v.array(v.string())),
   }),
   v.object({
     status: v.literal('error'),
@@ -284,7 +284,7 @@ function isFailedRun(data: TestRunData): data is TestRunFailureData {
     case 'completed':
       return (
         Object.values(countTestRunFailures(data.result, data.a11y)).some((count) => count > 0) ||
-        (data.notFound?.length ?? 0) > 0
+        (data.notFoundMessages?.length ?? 0) > 0
       );
     case 'no-stories':
       // A filter or id that matched nothing fails, as in Vitest; `changed` affecting nothing passes.

@@ -211,7 +211,7 @@ export async function runStoryTests({
 
     if (filters) {
       const matched = filterStoryFiles({ index, filters });
-      selection.files = { filters, storyFiles: matched.storyFiles.length };
+      selection.files = { filters, storyFileCount: matched.storyFiles.length };
       // Vitest: "No test files found, exiting with code 1", or code 0 with `--changed`, which
       // turns on `passWithNoTests`. The ref and the story ids below are still checked.
       if (matched.storyFiles.length === 0 && !changed) {
@@ -225,7 +225,7 @@ export async function runStoryTests({
     if (changedStories) {
       const { storyIds: changedIds, changedConfigFiles, pendingFiles } = changedStories;
       selection.changed = {
-        stories: changedIds.length,
+        storyCount: changedIds.length,
         changedConfigFiles,
         pendingFiles,
         ...(since === undefined ? {} : { since }),
@@ -234,7 +234,7 @@ export async function runStoryTests({
     }
 
     if (stories) {
-      selection.stories = stories.length;
+      selection.inputStoryCount = stories.length;
       const resolved = findStoryIds(index, stories);
       notFoundMessages.push(
         ...resolved
@@ -290,7 +290,7 @@ export async function runStoryTests({
         status: 'completed',
         result: response.result,
         ...(selection ? { selection } : {}),
-        ...(notFoundMessages.length > 0 ? { notFound: notFoundMessages } : {}),
+        ...(notFoundMessages.length > 0 ? { notFoundMessages } : {}),
       };
     case 'error':
       return {

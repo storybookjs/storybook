@@ -17,22 +17,30 @@ it.runIf(process.env.CI)('is built before the loader tests run', () => {
 });
 
 it.runIf(BUILT).each([
-  ['Vitest 4', "require('istanbul-reports').create"],
-  ['Vitest 5', "(await import('@vitest/istanbul-lib-report')).createAsync"],
-])('loads the built coverage reporter through the %s loader', async (_version, loader) => {
-  await expect(
-    promisify(execFile)(
-      process.execPath,
-      [
-        '--input-type=module',
-        '--eval',
-        `
+  ['Vitest 4', "require('istanbul-reports').create", false],
+  ['Vitest 5', "(await import('@vitest/istanbul-lib-report')).createAsync", true],
+])(
+  'loads the built coverage reporter through the %s loader',
+  async (_version, loader, useAbsolutePath) => {
+    // Vitest 5 resolves a bare specifier from `@vitest/istanbul-lib-report`, not from this
+    // package. Pass the same absolute path the addon passes to Vitest.
+    const reporterId = useAbsolutePath
+      ? fileURLToPath(import.meta.resolve('@storybook/addon-vitest/internal/coverage-reporter'))
+      : '@storybook/addon-vitest/internal/coverage-reporter';
+
+    await expect(
+      promisify(execFile)(
+        process.execPath,
+        [
+          '--input-type=module',
+          '--eval',
+          `
           import { strict as assert } from 'node:assert';
           import { createRequire } from 'node:module';
           const require = createRequire(import.meta.url);
           const summaries = [];
           const reporter = await (${loader})(
-            '@storybook/addon-vitest/internal/coverage-reporter',
+            ${JSON.stringify(reporterId)},
             {
               getTestManager: () => ({
                 onCoverageCollected: (summary) => summaries.push(summary),
@@ -49,8 +57,9 @@ it.runIf(BUILT).each([
       ],
       { cwd: fileURLToPath(new URL('../../', import.meta.url)) }
     )
-  ).resolves.toMatchObject({ stdout: '' });
-});
+    ).resolves.toMatchObject({ stdout: '' });
+  }
+);
 
 it.each([
   { percentage: 49, watermarks: [50, 90], expected: { percentage: 49, status: 'negative' } },

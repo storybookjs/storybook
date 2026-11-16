@@ -1,4 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
 import type { CoverageOptions, TestProject, TestSpecification, Vitest } from 'vitest/node';
 
@@ -63,7 +64,11 @@ export class VitestManager {
     this.testNameSeparator = Number.parseInt(version, 10) >= 5 ? ' > ' : ' ';
 
     const storybookCoverageReporter: [string, StorybookCoverageReporterOptions] = [
-      '@storybook/addon-vitest/internal/coverage-reporter',
+      // `@vitest/istanbul-lib-report` imports a bare specifier from its own file. In a pnpm
+      // workspace that file can live in another package, which cannot resolve this addon.
+      // An absolute path is imported directly. `import.meta.resolve` returns a file URL, and
+      // `path.isAbsolute` does not treat that as a file path.
+      fileURLToPath(import.meta.resolve('@storybook/addon-vitest/internal/coverage-reporter')),
       {
         // A function, not the manager itself: Vitest deep-clones coverage options when coverage
         // is toggled at runtime, and the reporter must reach the live manager.

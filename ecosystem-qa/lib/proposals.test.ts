@@ -636,8 +636,10 @@ describe('renderIssueBody', () => {
 });
 
 describe('the plan entry of an issue', () => {
-  const plan = parsePlan(readFileSync(new URL('./plan.fixture.md', import.meta.url), 'utf8'));
-  const bodyOf = (checkId: string) => {
+  const fixturePlan = parsePlan(
+    readFileSync(new URL('./plan.fixture.md', import.meta.url), 'utf8')
+  );
+  const planRun = (checkId: string) => {
     const run = loaded('linux', 'claude', [finding({ checkId })]);
     run.result.request.plan = {
       file: 'plan.fixture.md',
@@ -646,7 +648,10 @@ describe('the plan entry of an issue', () => {
       part: 1,
       entries: [{ id: 'story-sort-in-main', prs: [1] }],
     };
-    const [group] = groupFindings([run]);
+    return run;
+  };
+  const bodyOf = (checkId: string, plan = fixturePlan) => {
+    const [group] = groupFindings([planRun(checkId)]);
     return renderIssueBody(asIssue(toProposal(single(group), [], { ...OPTIONS, plan })), byName);
   };
 
@@ -661,5 +666,47 @@ describe('the plan entry of an issue', () => {
 
   it('gives a static finding no entry line', () => {
     expect(bodyOf('upgrade.command')).not.toContain('Plan entry');
+  });
+
+  it('prints a title of the plan so that it mentions, references and hides nothing', () => {
+    const plan = {
+      ...fixturePlan,
+      entries: fixturePlan.entries.map((entry) =>
+        entry.slug === 'story-sort-in-main'
+          ? {
+              ...entry,
+              title:
+                'Sort for @storybookjs/core and _@octocat_ &#64;octocat, see #1 and <!-- hidden',
+            }
+          : entry
+      ),
+    };
+
+    expect(bodyOf('plan.story-sort-in-main', plan)).toContain(
+      'Plan entry `story-sort-in-main`, Sort for `@storybookjs/core` and _`@octocat_` &amp;`#64`;octocat, see `#1` and &lt;!-- hidden: '
+    );
+  });
+
+  it('puts the entry line above the related findings', () => {
+    const [lead, other] = groupFindings([
+      planRun('plan.story-sort-in-main'),
+      loaded('windows', 'codex', [
+        finding({ checkId: 'core.dev-server', title: 'Other &#64;octocat' }),
+      ]),
+    ]);
+    const body = renderIssueBody(
+      asIssue(
+        toProposal({ lead: lead!, members: [lead!, other!] }, [], { ...OPTIONS, plan: fixturePlan })
+      ),
+      byName
+    );
+
+    expect(body).toContain(
+      '- `core.dev-server` on storybookjs/mealdrop (windows, codex): Other &amp;`#64`;octocat'
+    );
+    expect(body.indexOf('Plan entry `story-sort-in-main`')).toBeGreaterThan(-1);
+    expect(body.indexOf('Plan entry `story-sort-in-main`')).toBeLessThan(
+      body.indexOf('Also seen as:')
+    );
   });
 });

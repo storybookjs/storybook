@@ -9,13 +9,14 @@ import { loadResults } from './lib/results.ts';
 import { writeStepSummary } from './lib/step-summary.ts';
 import { withoutResult } from './lib/sweep-matrix.ts';
 
-const HELP = `Usage: node ecosystem-qa/missing-runs.ts --results <dir> --version <storybook version> --planned <matrix> [--plan <file> --batch <n>]
+const HELP = `Usage: node ecosystem-qa/missing-runs.ts --results <dir> --version <storybook version> --planned <matrix> [--plan <file> --batch <n> [--tier <tier>]]
 
 Names every job of a sweep that left no result under --results that can be read.
 --planned is the job matrix of the sweep, as plan.ts prints it. A job of a plan run names its part.
 A job whose runner stops answering uploads nothing, so the plan is the only place that still knows
 it was meant to run. Exits 0 whatever it finds: the results that are there are still collected.
---plan and --batch count only the results of that batch of the plan, as collect.ts loads them.`;
+--plan, --batch and --tier count only the results of that batch of the plan, as collect.ts loads
+them.`;
 
 const { values } = parseArgs({
   options: {
@@ -24,6 +25,7 @@ const { values } = parseArgs({
     planned: { type: 'string' },
     plan: { type: 'string' },
     batch: { type: 'string' },
+    tier: { type: 'string' },
     help: { type: 'boolean', default: false },
   },
 });

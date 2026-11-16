@@ -122,14 +122,23 @@ const otherPlan = (
     : `it ran batch ${ran.batch} of the plan, not batch ${scope.batch}`;
 };
 
-// The record comes from a run that executed the repository's code, so only the plan file says
-// which plan checks its part has.
-const planChecksOf = (scope: PlanScope, { entry, plan }: RunResultFile['request']): string[] =>
-  (
-    planRuns(scope.plan, scope.batch).find(
-      (run) => run.repo === entry.id && run.part === plan?.part
-    )?.entries ?? []
-  ).map(planCheckId);
+// The record comes from a run that executed the repository's code, so only the plan file and the
+// collect say which runs the batch has, which tier they ran, and which plan checks each part has.
+const knownChecksOf = (
+  scope: PlanScope,
+  { entry, plan, tier }: RunResultFile['request']
+): string[] | string => {
+  const run = planRuns(scope.plan, scope.batch).find(
+    (candidate) => candidate.repo === entry.id && candidate.part === plan?.part
+  );
+  if (!run) {
+    return `batch ${scope.batch} of the plan has no part ${plan?.part} for ${entry.id}`;
+  }
+  if (tier !== scope.tier) {
+    return `it says it ran the tier ${tier}, and this collect is of the tier ${scope.tier}`;
+  }
+  return [...checksFor(scope.tier).map(({ id }) => id), ...run.entries.map(planCheckId)];
+};
 
 // A static record may report any id of checks.ts, so records of earlier sweeps still load after a
 // check changes tier.
@@ -138,14 +147,11 @@ const outOfScope = (record: RunResultFile, scope: PlanScope | undefined): string
   if (other) {
     return other;
   }
-  const known = new Set<string>(
-    scope
-      ? [
-          ...checksFor(record.request.tier).map(({ id }) => id),
-          ...planChecksOf(scope, record.request),
-        ]
-      : CHECK_IDS
-  );
+  const checks = scope ? knownChecksOf(scope, record.request) : CHECK_IDS;
+  if (typeof checks === 'string') {
+    return checks;
+  }
+  const known = new Set<string>(checks);
   const ids = [
     ...record.checks.map(({ id }) => id),
     ...record.findings.map(({ checkId }) => checkId),
@@ -154,7 +160,7 @@ const outOfScope = (record: RunResultFile, scope: PlanScope | undefined): string
   if (unknown.length === 0) {
     return undefined;
   }
-  return `it reports ${unknown.join(', ')}, which ${scope ? `is neither a check of the tier ${record.request.tier} nor a plan check of its part` : 'is no check of checks.ts'}`;
+  return `it reports ${unknown.join(', ')}, which ${scope ? `is neither a check of the tier ${scope.tier} nor a plan check of its part` : 'is no check of checks.ts'}`;
 };
 
 const evidenceProblem = (evidenceDir: string, name: string): string | undefined => {

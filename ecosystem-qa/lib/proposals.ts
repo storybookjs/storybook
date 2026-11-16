@@ -323,9 +323,10 @@ const sourceLines = (proposal: IssueProposal | CommentProposal, withVersion = fa
     return `- ${withVersion ? `${version}: ` : ''}${where}`;
   });
 
-// A title in a body is inline markdown: a newline would start a block and a lone `<` an HTML comment.
+// A title in a body is inline markdown: a newline would start a block, a lone `<` an HTML comment,
+// and `&#64;` a mention once GitHub decodes it.
 const inlineTitle = (title: string): string =>
-  sanitizeTitle(title.replace(/\s+/g, ' ')).replaceAll('<', '&lt;');
+  sanitizeTitle(title.replace(/\s+/g, ' ').replaceAll('&', '&amp;')).replaceAll('<', '&lt;');
 
 const RELATED_HEADING = 'Also seen as:';
 
@@ -592,7 +593,7 @@ export interface ProposalOptions {
 const planEntriesOf = (members: FindingGroup[], plan: Plan | undefined) =>
   (plan?.entries ?? [])
     .filter((entry) => members.some((member) => member.finding.checkId === planCheckId(entry.slug)))
-    .map(({ slug, title, prs }) => ({ slug, title, prs }));
+    .map(({ slug, title, prs }) => ({ slug, title: inlineTitle(title), prs }));
 
 // Build the one proposal for a cluster from its lead, matching `issues` by any member's fingerprint.
 export const toProposal = (

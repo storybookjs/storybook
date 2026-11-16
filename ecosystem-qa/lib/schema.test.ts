@@ -59,6 +59,71 @@ describe('agentOutput', () => {
       agentOutput(planRun).safeParse(reporting(...planRun, 'plan.preview-animations')).success
     ).toBe(false);
   });
+
+  describe('for the plan checks it names', () => {
+    const plan = 'plan.story-sort-in-main';
+    const schema = agentOutput([...ids, plan], [plan]);
+    const failing = (id: string, note?: string) => {
+      const output = reporting(...ids, plan);
+      return {
+        ...output,
+        checks: output.checks.map((check) => ({
+          ...check,
+          note: 'Saw it',
+          ...(check.id === id ? { state: 'fail', note } : {}),
+        })),
+      };
+    };
+    const finding = (checkId: string) => ({
+      checkId,
+      title: 'Sort is lost',
+      baseline: 'pass',
+      expected: 'The order of the baseline',
+      actual: 'Another order',
+      reproSteps: ['Start Storybook'],
+      evidence: { logs: [] },
+      windowsOnly: false,
+    });
+    const problems = (output: unknown) => {
+      const parsed = schema.safeParse(output);
+      return parsed.success ? [] : parsed.error.issues.map(({ message }) => message);
+    };
+
+    it('asks for a finding on a fail, also when the agent doubts the plan', () => {
+      expect(problems(failing(plan, 'The plan expects the wrong order'))).toEqual([
+        `plan check "${plan}" is "fail" and needs a finding`,
+      ]);
+      expect(
+        problems({
+          ...failing(plan, 'The plan expects the wrong order'),
+          findings: [finding(plan)],
+        })
+      ).toEqual([]);
+    });
+
+    it('counts only a finding of the failed plan check itself', () => {
+      const output = failing(plan, 'Another order');
+      const bothFail = {
+        ...output,
+        checks: output.checks.map((check) =>
+          check.id === 'core.dev-server' ? { ...check, state: 'fail' } : check
+        ),
+        findings: [finding('core.dev-server')],
+      };
+
+      expect(problems(bothFail)).toEqual([`plan check "${plan}" is "fail" and needs a finding`]);
+    });
+
+    it('asks for a note on every state, a pass included', () => {
+      expect(problems(reporting(...ids, plan))).toEqual([
+        `plan check "${plan}" needs a note with what you saw`,
+      ]);
+    });
+
+    it('leaves a static fail without a finding and a static check without a note alone', () => {
+      expect(problems(failing('core.dev-server'))).toEqual([]);
+    });
+  });
 });
 
 describe('CheckResult', () => {

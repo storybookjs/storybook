@@ -114,6 +114,9 @@ export const PullNode = z.object({
   updatedAt: z.string(),
   mergedAt: z.string(),
   authorAssociation: AuthorAssociation,
+  baseRefName: z.string(),
+  headRefName: z.string(),
+  isCrossRepository: z.boolean(),
   mergeCommit: z.object({ oid: z.string() }).nullable(),
   labels: z.object({ nodes: z.array(z.object({ name: z.string() })) }),
   closingIssuesReferences: z.object({
@@ -148,10 +151,79 @@ export const MERGED_BEFORE_START_DAYS = 30;
 export const windowCutoff = (startDate: string): string =>
   new Date(Date.parse(startDate) - MERGED_BEFORE_START_DAYS * DAY_MS).toISOString();
 
-export const inWindow = (pr: PullNode, commits: Set<string>, cutoff: string): boolean =>
-  pr.mergeCommit !== null &&
-  commits.has(pr.mergeCommit.oid) &&
-  Date.parse(pr.mergedAt) >= Date.parse(cutoff);
+// A release PR merges the version bump of a tag, so it changes nothing a project can test.
+const RELEASE_BASES = new Set(['next-release', 'latest-release']);
+// No one rebases these, so a PR merged into one of them keeps its merge commit.
+const TRUNKS = new Set(['next', 'main', 'master']);
+
+const mergedSince = (pr: PullNode, cutoff: string) =>
+  !RELEASE_BASES.has(pr.baseRefName) && Date.parse(pr.mergedAt) >= Date.parse(cutoff);
+
+// A PR merged into the branch of another PR reaches the range through that PR's merge. Its own
+// merge commit is in the range too, unless the branch was rebased or squashed before it merged, so
+// such a PR is kept by the branch it was merged into, for as long as that PR had not merged yet.
+export const windowPulls = (pulls: PullNode[], commits: Set<string>, cutoff: string) => {
+  const kept = new Map(
+    pulls
+      .filter((pr) => pr.mergeCommit && commits.has(pr.mergeCommit.oid) && mergedSince(pr, cutoff))
+      .map((pr) => [pr.number, pr])
+  );
+  let size: number;
+  do {
+    size = kept.size;
+    const carriers = new Map(
+      [...kept.values()]
+        .filter((pr) => !pr.isCrossRepository && !TRUNKS.has(pr.headRefName))
+        .map((pr) => [pr.headRefName, pr])
+    );
+    for (const pr of pulls) {
+      const carrier = carriers.get(pr.baseRefName);
+      if (carrier && mergedSince(pr, cutoff) && pr.mergedAt <= carrier.mergedAt) {
+        kept.set(pr.number, pr);
+      }
+    }
+  } while (kept.size > size);
+  return [...kept.values()];
+};
+
+export const PULLS_QUERY = `query($cursor: String) {
+  repository(owner: "storybookjs", name: "storybook") {
+    pullRequests(states: MERGED, first: 100, after: $cursor, orderBy: { field: UPDATED_AT, direction: DESC }) {
+      pageInfo { hasNextPage endCursor }
+      nodes {
+        number title body updatedAt mergedAt authorAssociation baseRefName headRefName isCrossRepository
+        mergeCommit { oid }
+        labels(first: 50) { nodes { name } }
+        closingIssuesReferences(first: 25) { nodes { number repository { nameWithOwner } } }
+      }
+    }
+  }
+}`;
+
+export type PullsPage = {
+  pageInfo: { hasNextPage: boolean; endCursor: string | null };
+  nodes: PullNode[];
+};
+
+// Every update comes after the merge, so past the cutoff no PR of the window is left. A PR updated
+// while the pages are read moves up the list and shows twice, so the last copy of a number wins.
+export const readMergedPulls = (
+  readPage: (cursor: string | null) => PullsPage,
+  cutoff: string
+): PullNode[] => {
+  const pulls = new Map<number, PullNode>();
+  for (let cursor: string | null = null; ;) {
+    const page = readPage(cursor);
+    for (const pr of page.nodes) {
+      pulls.set(pr.number, pr);
+    }
+    const oldest = page.nodes.at(-1)?.updatedAt;
+    if (!page.pageInfo.hasNextPage || !oldest || Date.parse(oldest) < Date.parse(cutoff)) {
+      return [...pulls.values()];
+    }
+    cursor = page.pageInfo.endCursor;
+  }
+};
 
 const closedIssues = (pr: PullNode): number[] =>
   pr.closingIssuesReferences.nodes

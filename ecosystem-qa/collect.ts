@@ -12,7 +12,7 @@ import { loadFindingGroups, QA_LABEL, toProposal } from './lib/proposals.ts';
 import { upgraded } from './lib/results.ts';
 import { CheckResult, Grouping, type Proposal } from './lib/schema.ts';
 
-const HELP = `Usage: node ecosystem-qa/collect.ts --results <dir> --version <storybook version> --out <proposals.json> --repo <owner/name> [--run-url <url>] [--groups <groups.json>] [--plan <file> --batch <n>]
+const HELP = `Usage: node ecosystem-qa/collect.ts --results <dir> --version <storybook version> --out <proposals.json> --repo <owner/name> [--run-url <url>] [--groups <groups.json>] [--plan <file> --batch <n> [--tier <tier>]]
 
 Reads the result.json of every catalog repo, os and engine under --results, either from a downloaded
 artifact (<results>/qa-result-<id>-<os>-<engine>/<id>/<os>/<engine>) or from a local run
@@ -24,9 +24,11 @@ proposal per group to --out.
 --groups merges fingerprints that share a root cause into one proposal, led by each group's first
 member and optionally matched to an existing issue by similarity; without it each fingerprint is its
 own group. Every fingerprint of this collect must be in exactly one group.
---plan and --batch collect the runs of one batch of a QA plan: its discovered repos load with the
-catalog, and a record of another plan or batch, or with a check that neither checks.ts nor its part
-of the plan has, is ignored with a warning. Without --plan a record of a plan run is ignored too.
+--plan and --batch collect the runs of one batch of a QA plan, which ran the tier --tier (default:
+gate): its discovered repos load with the catalog. A record is ignored with a warning when it ran
+another plan, batch or tier, when the batch has no run of its repo and part, or when it reports a
+check that is neither in that tier nor a plan check of its part. Without --plan a record of a plan
+run is ignored too.
 An issue body names the plan entry of a plan check and links its PRs, as the plan file has them.
 Each result prints its plan checks by state.`;
 
@@ -40,6 +42,7 @@ const { values } = parseArgs({
     groups: { type: 'string' },
     plan: { type: 'string' },
     batch: { type: 'string' },
+    tier: { type: 'string' },
     help: { type: 'boolean', default: false },
   },
 });

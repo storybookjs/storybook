@@ -126,7 +126,13 @@ jobs:
           shopt -s nullglob
           status=0
           for plan in ecosystem-qa/lib/plan.fixture.md ecosystem-qa/plans/*.md; do
-            node ecosystem-qa/qa-plan.ts check "$plan" || status=1
+            window="${plan%.md}.window.json"
+            if [ -f "$window" ]; then
+              node ecosystem-qa/qa-plan.ts check "$plan" --window "$window" || status=1
+            else
+              echo "::error file=$plan::$plan has no window file $window next to it."
+              status=1
+            fi
           done
           exit "$status"
 

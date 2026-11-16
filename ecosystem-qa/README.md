@@ -37,7 +37,7 @@ ANTHROPIC_API_KEY=... node ecosystem-qa/run.ts --repo mealdrop --version 11.0.0-
 
 Pick the sandbox for your machine:
 
-- `--sandbox docker` wherever Docker runs, with the image built first: `docker build --build-arg AGENT_UID=$(id -u) --build-arg AGENT_GID=$(id -g) -t sb-ecosystem-qa ecosystem-qa`. This is the one sandbox that covers every check, and the one CI uses. The image carries `n`, a C/C++ compiler, `mise`, and the Playwright MCP server, which Claude Code and Codex load from their user config, so the agent can click and type in a page and save its screenshots to `browser/` in the evidence directory. Before the install the runner switches to the Node version the project asks for and writes what happened as the first line of `install.log`. Only this sandbox can switch Node: with any other, a catalog entry's `node` is ignored and the runner prints a warning. A failed install does not end the run: the exit status and log go to the evidence directory, and the agent repairs the environment before it starts. The runner limits this run's container to 85% of the Docker daemon's memory and writes what it did to `memory-limit.txt` in the evidence directory, so a build that takes everything is ended inside the container and the agent sees exit status 137; without the limit the host starves, and a GitHub runner then ends the job with "lost communication" and no result.
+- `--sandbox docker` wherever Docker runs, with the image built first: `docker build --build-arg AGENT_UID=$(id -u) --build-arg AGENT_GID=$(id -g) -t sb-ecosystem-qa ecosystem-qa`. This is the one sandbox that covers every check, and the one CI uses. The image carries `n`, a C/C++ compiler, `mise`, and the Playwright MCP server, which Claude Code and Codex load from their user config, so the agent can click and type in a page and save its screenshots to `browser/` in the evidence directory. The browser server blocks every request to a host other than `localhost` and `127.0.0.1`. It is no security boundary: a redirect from `localhost` to another host is still followed. The image denies the agent the browser tools that run a script in the page or install a browser. Claude Code in the sandbox also starts the MCP servers that the tested project names in its own configuration, such as a `.mcp.json`, so that list covers the browser server of the image only. It keeps an agent from a mistake and does not contain a project. Before the install the runner switches to the Node version the project asks for and writes what happened as the first line of `install.log`. Only this sandbox can switch Node: with any other, a catalog entry's `node` is ignored and the runner prints a warning. A failed install does not end the run: the exit status and log go to the evidence directory, and the agent repairs the environment before it starts. The runner limits this run's container to 85% of the Docker daemon's memory and writes what it did to `memory-limit.txt` in the evidence directory, so a build that takes everything is ended inside the container and the agent sees exit status 137; without the limit the host starves, and a GitHub runner then ends the job with "lost communication" and no result.
 - `--sandbox seatbelt` on macOS covers the upgrade, build and CLI checks only. Its profile denies Chromium the Mach port it registers at launch, so screenshots and HMR checks come back `skip`, and the agent's shells inherit launchd's 256 open-file limit, which breaks the file watcher.
 - `--sandbox bwrap` on Linux.
 - `--sandbox none` runs the agent on the host with your environment. `run.ts` refuses it for a repo that is not `owned`, except on Windows for a repo the catalog marks `windows`: there no sandbox exists, and the mark is the reviewed list of exceptions. The release-age gates below are off here too, so an install the agent runs on your machine skips the project's own gate. The Windows cells in CI use this mode, on a runner that is discarded after the job.
@@ -113,33 +113,41 @@ ECOSYSTEM_QA_FAKE=1 node ecosystem-qa/run.ts --repo mealdrop --version 11.0.0-be
 
 A QA plan names what a sweep tests beyond the fixed checks: the changes of a release line, each with the repos to try it on, the steps and the expected outcome.
 It is one Markdown file in `ecosystem-qa/plans/`, named after its line, such as `11.0.md`, and a person reviews and merges it like code.
+The window it was written from is committed next to it as `11.0.window.json`, and the smoke job checks every plan with `--window` against the window file next to it and fails a plan that has none, so a plan PR in which a row was deleted or moved by hand fails without a call to GitHub.
 An agent writes it with the `/qa-plan` skill in `.agents/skills/qa-plan/`, which runs the commands below and opens the plan PR.
 
 ```
 window.ts ──> window.json ──> qa-plan.ts render ──> plans/<line>.md ──> qa-plan.ts check
-   │ PRs merged into next      │ + draft.json:          │ edited by hand     │ format, rules,
-   │ between two tags          │ entries, decisions     │                    │ catalog, window
+   │ PRs whose merge commit    │ + draft.json:          │ edited by hand     │ format, rules,
+   │ is between two tags       │ entries, decisions     │                    │ catalog, window
 ```
 
-`window.ts` lists every PR that was merged into `next` between two tags:
+`window.ts` lists every PR whose merge commit is in `next` between two tags, whatever branch the PR was merged into, so a PR merged into the branch of another PR is in the window too.
+When that branch was rebased or squashed before its PR merged, the merge commit of the PR merged into it is not in `next`, so `window.ts` also keeps a PR whose base is the head branch of a kept PR from this repository and that was merged before that PR:
 
 ```sh
-node ecosystem-qa/window.ts --from v10.6.0 --to v11.0.0-beta.3 --out window.json
+node ecosystem-qa/window.ts --from v10.6.0 --to v11.0.0-beta.3 --out ecosystem-qa/plans/11.0.window.json
 ```
 
 For each PR it records the QA status from its labels, the area that the title prefix names, the manual testing section of its body, the author association, and the issues the PR closes or names, with their parent issue and whether they have a heading for QA or testing.
-It keeps a PR only when its merge commit is between the two tags and it was merged at most 30 days before the first tag.
-It reads git and GitHub and writes nothing else.
+It keeps a PR only when it was merged at most 30 days before the first tag, and it leaves out the release PRs, whose base is `next-release` or `latest-release`.
+So a PR merged into the branch of another PR more than 30 days before the first tag is dropped even when that branch reaches `next` inside the window, which happens when a long-lived stack merges late.
+It reads GitHub, fetches a tag that the local repository lacks, and writes nothing but the file of `--out`, whose directory it creates.
 
 `qa-plan.ts render` writes the plan from the window and a JSON draft, and `check` validates it:
 
 ```sh
-node ecosystem-qa/qa-plan.ts render --window window.json --draft draft.json --out ecosystem-qa/plans/11.0.md
-node ecosystem-qa/qa-plan.ts check ecosystem-qa/plans/11.0.md --window window.json
+node ecosystem-qa/qa-plan.ts render --window ecosystem-qa/plans/11.0.window.json --draft draft.json --out ecosystem-qa/plans/11.0.md
+node ecosystem-qa/qa-plan.ts check ecosystem-qa/plans/11.0.md --window ecosystem-qa/plans/11.0.window.json
 ```
 
 The draft is optional, and every key of it too: `entries`, `discovered`, `decisions` by PR number, `groups`, and `groupOf`, which puts a maintainer PR into a group by PR number.
 Without a draft, render writes a skeleton in which every row is undecided.
+The draft is not committed, so `draft` writes it again from a plan and its window, to change decisions or render the plan on a newer window, and exits 1 when render would not write that plan from that window:
+
+```sh
+node ecosystem-qa/qa-plan.ts draft ecosystem-qa/plans/11.0.md --window ecosystem-qa/plans/11.0.window.json --out draft.json
+```
 
 The plan has a table of its line, version and window, a section `## Changes to test` with one entry per change, and seven tables.
 "PRs that need QA" and "Undeclared PRs" give every PR a decision, the slugs of the entries that test it or `skip:` with the reason.
@@ -166,12 +174,16 @@ A repo with more entries in one batch than `Entries per run` runs them in severa
 `check` accepts a file only when it equals what render would write for what it read, so a line that is not in the format fails at its line number.
 It then holds the plan against these rules and prints each problem as `<file>:<line>: <message>`:
 
-- Every slug and group is unique, and the version is on the plan's line.
+- Every slug, group, and discovered id is unique, every PR has one row in one table, and the version is on the plan's line.
+- Every text field is one line without an HTML comment, a control character, an invisible format character such as a zero width space or a byte order mark, or a line separator, because GitHub shows none of them to the reviewer.
+- The Storybook directory of a discovered repo is a relative path inside the repository, without `..` or a leading `/`.
 - Every repo of an entry is a catalog id or a discovered repo, and a discovered repo never takes a catalog id.
 - No repo of an entry is more than one major behind the plan's line, by the `tags` of its catalog entry or the major of its discovered row.
-- Every PR of an entry has a row that names the entry, or a row in a group whose decision names it, every row has a decision, and every decision names entries that exist.
+- Every PR of an entry has a row that names the entry, or a row in a group whose decision names it, every row has a decision, and every decision names entries that exist. An entry lists every PR whose row in "PRs that need QA" or "Undeclared PRs" names it; a PR of a group may stay out of the entries its group names.
+- The batches are numbered from 1 without a gap.
 - Every maintainer PR marked `qa:skip` with a product label names a group, and every group has a decision.
-- The file holds no link to Linear, Notion or Slack, and no step or expected outcome holds a URL other than `localhost`, with or without its scheme.
+- The file holds no link to `linear.app`, `notion.so`, `notion.site`, `notion.com`, or a `slack.com` host.
+- No entry title, repo reason, step, or expected outcome holds a URL with a scheme whose host is other than `localhost`, `127.0.0.1`, or `[::1]`, because the runner prints all four into the agent's prompt. `check` takes every URL that starts with a scheme, also one after other text such as `see:http://example.com`, apart with Node's URL parser, and refuses it when the host is another one or when the parser cannot read it: `https://example.com`, `http:/example.com`, `http://localhost;.example.com`, and `http://localhost].example.com` are refused. It reads a backslash once as the parser does, as a slash, and once as curl does, as a character, so `http://localhost\@example.com` is refused too. It does not look for a host without a scheme, such as `example.com/x` or `//example.com`. The check is one layer of four: the reviewer reads every plan before it is merged, the prompt of a plan run forbids every URL other than `localhost`, and the browser tool of the sandbox image opens `localhost` only.
 - With `--window`, the tables hold exactly the PRs of the window, with their titles and areas.
 
 A plan that passes prints its hash, which names the cycle, its batches with their runs, and about what it costs, priced at the most expensive static run so far.
@@ -199,15 +211,14 @@ It parses the catalog and the discovered repos as one list, so a discovered repo
 ```sh
 ECOSYSTEM_QA_FAKE=1 node ecosystem-qa/run.ts --repo mealdrop --version 11.0.0-beta.3 --engine claude \
   --fake --sandbox none --plan ecosystem-qa/lib/plan.fixture.md --batch 1 --part 2 \
-  --out ecosystem-qa/results/mealdrop/linux/claude/part-2
+  --out ecosystem-qa/results/mealdrop/macos/claude/part-2
 ```
 
-The run records the operating system it runs on, and the collect takes a result only under the path of that system.
-On a Mac, write it under `macos` in place of `linux`.
-The collect then reads it, and `track.ts` lists the Linux jobs that the plan plans as runs without a result, because a plan runs on Linux.
+The `macos` in the path is the operating system of the machine that runs it, and `linux` or `windows` on another one: the collect ignores a record in the directory of another system.
+`track.ts` then lists the Linux jobs that the plan plans as runs without a result, because a plan runs on Linux.
 
 The run reports the five checks of the tier `gate` first, the upgrade and the dev server that the prompt's steps run in any case, and then one check `plan.<slug>` for each entry of its part, in plan order.
-`--tier must` or `--tier extended` runs those tiers in place of the gate.
+`--tier must` or `--tier extended` runs those tiers in place of the gate, and the collect of the batch then needs the same `--tier`.
 The checklist gets the steps, the expected outcome and the reason for the repo of each entry, and the rules of `prompts/plan-checks.md`, which also say how the agent works in the browser.
 The answer schema names the ids of this run only, so the agent cannot report a check the plan does not have.
 `--repo` may name a discovered repo of the plan, which the runner resolves through `loadEntries(plan)`.
@@ -218,6 +229,7 @@ The run ends with exit 1 before anything is cloned when the plan is not in its r
 ### Collect the results of a plan batch
 
 `collect.ts`, `group.ts`, `missing-runs.ts` and `fetch-runs.ts` take the same `--plan <file> --batch <n>`, and load the discovered repos of the plan with the catalog.
+The first three also take the `--tier` of the runs, `gate` by default.
 
 ```sh
 node ecosystem-qa/collect.ts --results ecosystem-qa/results --version 11.0.0-beta.3 --out ecosystem-qa/results/proposals.json \
@@ -225,8 +237,13 @@ node ecosystem-qa/collect.ts --results ecosystem-qa/results --version 11.0.0-bet
 ```
 
 They read each part under `<id>/<os>/<engine>/part-<n>`, or in the artifact `qa-result-<id>-<os>-<engine>-part-<n>`.
-A record of another plan or batch, a record of a plan run when no plan is given, and a record with a check id that is neither in `checks.ts` nor an entry of its part of the plan are ignored with a warning.
-The plan file decides which entries a part has, never `request.plan`, because a run that executed code of a public repository wrote the record.
+These records are ignored with a warning:
+
+- a record of another plan, batch or tier, and a record of a plan run when no plan is given,
+- a record of a repo or a part that the batch does not have,
+- a record with a check id that is neither a check of the tier nor an entry of its part of the plan.
+
+The plan file and the flags of the collect decide which runs, tier and entries a batch has, never `request`, because a run that executed code of a public repository wrote the record.
 For the same reason the issue body of a plan check takes the entry and its PRs from the plan file, in a line above the list of related findings.
 `collect.ts` prints the plan checks of each result by state, so a tail of checks that the budget left as `skip` is visible.
 A job of a plan run in the matrix that `missing-runs.ts` reads names its `part`, and a missing one is named by its repo and part.

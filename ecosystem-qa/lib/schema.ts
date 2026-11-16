@@ -162,7 +162,13 @@ export type Tier = z.infer<typeof Tier>;
 
 // The agent reads the schema next to the checklist, so the schema names the ids of the run only,
 // in the order given: one list of ids in one order.
-export const agentOutput = (ids: readonly [string, ...string[]]) => {
+//
+// A plan check is read by the person who triages the plan, so each one carries a note, and a
+// `fail` carries a finding even when the agent doubts the plan's expectation.
+export const agentOutput = (
+  ids: readonly [string, ...string[]],
+  planIds: readonly string[] = []
+) => {
   const id = z.enum(z.tuple([CheckId], CheckId).parse(ids));
   return z
     .strictObject({
@@ -180,6 +186,28 @@ export const agentOutput = (ids: readonly [string, ...string[]]) => {
             code: 'custom',
             path: ['checks'],
             message: `check "${id}" must be reported exactly once, found ${count}`,
+          });
+        }
+      }
+      for (const [index, check] of output.checks.entries()) {
+        if (!planIds.includes(check.id)) {
+          continue;
+        }
+        if (!check.note?.trim()) {
+          ctx.addIssue({
+            code: 'custom',
+            path: ['checks', index, 'note'],
+            message: `plan check "${check.id}" needs a note with what you saw`,
+          });
+        }
+        if (
+          check.state === 'fail' &&
+          !output.findings.some((finding) => finding.checkId === check.id)
+        ) {
+          ctx.addIssue({
+            code: 'custom',
+            path: ['findings'],
+            message: `plan check "${check.id}" is "fail" and needs a finding`,
           });
         }
       }

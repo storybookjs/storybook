@@ -179,6 +179,7 @@ const checklistOf = (tier: Tier, planned: PlannedRun | undefined, repo: string) 
   }));
   return {
     checks: [...fixed.map(({ id, label }) => ({ id, label })), ...planChecks],
+    planIds: planChecks.map(({ id }) => id),
     text: planned
       ? [
           `${renderChecklist(fixed)}\n${renderPlanChecks(planned.entries, repo)}`,
@@ -516,8 +517,11 @@ const runSandcastle = async (
     }),
   });
   // One list for the schema, the checklist and the count the prompt names.
-  const { checks } = checklist;
-  const answerSchema = agentOutput(checks.map((check) => check.id) as [string, ...string[]]);
+  const { checks, planIds } = checklist;
+  const answerSchema = agentOutput(
+    checks.map((check) => check.id) as [string, ...string[]],
+    planIds
+  );
 
   try {
     const guide = await guideFor(request.version, {

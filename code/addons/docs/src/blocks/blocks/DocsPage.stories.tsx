@@ -45,3 +45,16 @@ export const SingleStoryWithHiddenStory: Story = {
     ).not.toBeInTheDocument();
   },
 };
+export const PrimaryStoryLeftOutOfStories: Story = {
+  parameters: {
+    relativeCsfPaths: ['../examples/DocsPageMountPrimary.stories'],
+  },
+  play: async ({ canvas }) => {
+    await expect(
+      await canvas.findByRole('heading', { level: 2, name: /Stories/ })
+    ).toBeInTheDocument();
+    await expect(
+      await canvas.findByText('This is the description for the other story')
+    ).toBeVisible();
+  },
+};

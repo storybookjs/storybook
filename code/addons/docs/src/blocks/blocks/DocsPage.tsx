@@ -7,21 +7,22 @@ import { Primary } from './Primary';
 import { Stories } from './Stories';
 import { Subtitle } from './Subtitle';
 import { Title } from './Title';
-import { useDocsStories } from './useDocsStories';
+import { useDocsStories } from './useDocsStories.ts';
+import { usePrimaryStory } from './usePrimaryStory.ts';
 
 export const DocsPage: FC = () => {
-  const stories = useDocsStories();
-  const singleStory = stories.length === 1 ? stories[0] : undefined;
+  const primaryStory = usePrimaryStory();
+  const isSingleStory = useDocsStories().every((story) => story.id === primaryStory?.id);
 
   return (
     <>
       <Title />
       <Subtitle />
       <Description of="meta" />
-      {singleStory ? <Description of={singleStory.moduleExport} /> : null}
+      {isSingleStory && primaryStory ? <Description of={primaryStory.moduleExport} /> : null}
       <Primary />
       <Controls />
-      {singleStory ? null : <Stories />}
+      {isSingleStory ? null : <Stories />}
     </>
   );
 };

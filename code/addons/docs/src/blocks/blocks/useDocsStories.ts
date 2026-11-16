@@ -3,7 +3,7 @@ import { useContext } from 'react';
 import { Tag } from 'storybook/internal/preview-api';
 import type { PreparedStory } from 'storybook/internal/types';
 
-import { DocsContext } from './DocsContext';
+import { DocsContext } from './DocsContext.ts';
 import type { DocsParameters } from '../../types.ts';
 
 /** Returns the stories the `Stories` block renders for the current docs page. */

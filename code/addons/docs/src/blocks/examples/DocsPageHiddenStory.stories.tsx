@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { EmptyExample } from './EmptyExample';
+import { EmptyExample } from './EmptyExample.tsx';
 
 /** One story on the docs page, one story excluded from it */
 const meta = {

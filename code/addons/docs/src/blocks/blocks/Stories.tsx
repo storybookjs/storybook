@@ -3,7 +3,7 @@ import React from 'react';
 
 import { DocsStory } from './DocsStory';
 import { Heading } from './Heading';
-import { useDocsStories } from './useDocsStories';
+import { useDocsStories } from './useDocsStories.ts';
 import { withMdxComponentOverride } from './with-mdx-component-override';
 
 interface StoriesProps {

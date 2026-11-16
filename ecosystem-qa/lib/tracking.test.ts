@@ -168,6 +168,12 @@ describe('batchReport and renderBatchComment', () => {
     expect(spend.runs).toBe(3);
   });
 
+  it('counts one planned run as one run', () => {
+    expect(
+      posted(batchReport(input({ planned: [job('mealdrop')], results: [result('mealdrop')] }))).body
+    ).toContain('1 run planned, 1 finished, 0 without a result');
+  });
+
   it('takes a run record as the collector loads it, and keeps its text out of the ledger', () => {
     const record = loaded('linux', 'claude', []).result;
     const report = batchReport(
@@ -446,6 +452,53 @@ describe('a batch whose collect failed', () => {
 
     expect(body).toContain('The findings were not collected, so this comment lists none.');
     expect(body).not.toContain('No findings.');
+  });
+
+  it('says that a run that files files nothing, since its file job does not run', () => {
+    const body = posted(batchReport(input({ findings: null, filing: 'pending' }))).body;
+
+    expect(body).toContain(
+      'The findings were not collected, so this run files nothing. The artifacts of this batch expire on 2027-02-14.'
+    );
+    expect(body).not.toContain('The file job of this run files');
+  });
+});
+
+describe('the last line of a batch comment', () => {
+  const lastLine = (overrides: Partial<BatchInput>, expiresOn?: string) =>
+    renderBatchComment(batchReport(input(overrides)), {
+      spend: spentUsd([], HASH),
+      capUsd: 250,
+      next: { start: 2 },
+      expiresOn,
+      carried: [],
+    })
+      .trimEnd()
+      .split('\n')
+      .at(-1);
+
+  it('says Filed only when every new issue was filed', () => {
+    const filed = { kind: 'issue', title: 'Crash', issue: 37400 } as const;
+    const unfiled = { kind: 'issue', title: 'Hang' } as const;
+
+    expect(lastLine({ filing: 'filed', findings: [filed] }, '2027-02-14')).toBe(
+      'Filed. The artifacts of this batch expire on 2027-02-14.'
+    );
+    expect(lastLine({ filing: 'filed', findings: [filed, unfiled] }, '2027-02-14')).toBe(
+      '1 new issue was not filed, and the log of the file job says why. The artifacts of this batch expire on 2027-02-14.'
+    );
+    expect(lastLine({ filing: 'filed', findings: [unfiled, unfiled] })).toBe(
+      '2 new issues were not filed, and the log of the file job says why.'
+    );
+  });
+
+  it('names no day of expiry when the runs hold no result artifact', () => {
+    expect(lastLine({})).toBe(
+      'Dry run, so nothing was filed, and workflow run 43900000001 holds no result artifact to file.'
+    );
+    expect(lastLine({ filing: 'pending' })).toBe(
+      'The file job of this run files the batch next and then names each issue here.'
+    );
   });
 });
 

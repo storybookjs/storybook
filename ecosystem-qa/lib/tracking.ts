@@ -320,8 +320,36 @@ export type CommentContext = {
   spend: Spend;
   capUsd: number;
   next: NextStep;
-  expiresOn: string;
+  // The day the first result artifact of the runs expires, none when they hold no result artifact.
+  expiresOn: string | undefined;
   carried: LedgerEntry[];
+};
+
+const filingOf = (report: BatchReport, expiresOn: string | undefined, fileCommand: string) => {
+  const expiry = expiresOn ? ` The artifacts of this batch expire on ${expiresOn}.` : '';
+  const unfiled =
+    report.findings?.filter(({ kind, issue }) => kind === 'issue' && issue === undefined).length ??
+    0;
+  switch (report.filing) {
+    case 'dry':
+      if (report.runs.length === 0) {
+        return 'Dry run of local results, so nothing was filed, and no workflow run holds them to file.';
+      }
+      return expiresOn
+        ? `Dry run, so nothing was filed. To file this batch, run \`${fileCommand}\` before its artifacts expire on ${expiresOn}.`
+        : `Dry run, so nothing was filed, and workflow run ${report.runs.join(', ')} holds no result artifact to file.`;
+    case 'pending':
+      return report.findings === null
+        ? `The findings were not collected, so this run files nothing.${expiry}`
+        : `The file job of this run files the batch next and then names each issue here.${expiry}`;
+    case 'filed':
+      if (report.findings === null) {
+        return `The findings were not collected, so nothing was filed.${expiry}`;
+      }
+      return unfiled > 0
+        ? `${unfiled === 1 ? '1 new issue was' : `${unfiled} new issues were`} not filed, and the log of the file job says why.${expiry}`
+        : `Filed.${expiry}`;
+  }
 };
 
 export const renderBatchComment = (
@@ -346,7 +374,7 @@ export const renderBatchComment = (
     ),
     `### Batch ${report.batch} of ${report.batches} on Storybook ${report.version}`,
     '',
-    `${report.planned} runs planned, ${report.lines.length - lost} finished, ${lost} without a result, ${report.runs.length > 0 ? `from workflow run ${report.runs.join(', ')}` : 'from local results'}.`,
+    `${runCount(report.planned)} planned, ${report.lines.length - lost} finished, ${lost} without a result, ${report.runs.length > 0 ? `from workflow run ${report.runs.join(', ')}` : 'from local results'}.`,
     '',
     '| Run | Outcome | Dollars |',
     '| --- | --- | --- |',
@@ -378,14 +406,7 @@ export const renderBatchComment = (
     '',
     `Next: ${('start' in next ? `Batch ${next.start} is started.` : next.stop).replace(/\s+/g, ' ')}`,
     '',
-    {
-      dry:
-        report.runs.length > 0
-          ? `Dry run, so nothing was filed. To file this batch, run \`${fileCommand}\` before its artifacts expire on ${expiresOn}.`
-          : 'Dry run of local results, so nothing was filed, and no workflow run holds them to file.',
-      pending: `The file job of this run files the batch next and then names each issue here. The artifacts of this batch expire on ${expiresOn}.`,
-      filed: `Filed. The artifacts of this batch expire on ${expiresOn}.`,
-    }[report.filing],
+    filingOf(report, expiresOn, fileCommand),
     '',
   ].join('\n');
 };
@@ -396,7 +417,7 @@ export type TrackInput<Comment extends Written> = {
   comments: Comment[];
   capUsd: number;
   chain: boolean;
-  expiresOn: string;
+  expiresOn: string | undefined;
 };
 
 export type Tracked<Comment extends Written> =

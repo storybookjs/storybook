@@ -182,11 +182,7 @@ const artifacts: ListedArtifact[] = runs.flatMap((id) =>
     `repos/${repo}/actions/runs/${id}/artifacts?per_page=100`,
   ]).flatMap((page) => page.artifacts)
 );
-const expiresOn =
-  resultsExpireOn(artifacts) ??
-  (runs.length > 0
-    ? `a day GitHub does not list, because run ${runs.join(', ')} holds no result artifact`
-    : 'a day no run names, because these results are local');
+const expiresOn = resultsExpireOn(artifacts);
 
 const placeOf = (): DiscussionPlace | undefined => {
   try {

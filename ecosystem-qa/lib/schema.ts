@@ -114,8 +114,7 @@ export const Catalog = z
     message: 'catalog ids must be unique',
   });
 
-// A static id of checks.ts or the id of a plan entry. The answer schema of a run still names only
-// the ids of that run.
+// A static id of checks.ts or the id of a plan entry; `agentOutput` narrows it to the ids of one run.
 export const CheckId = z
   .string()
   .max(80)

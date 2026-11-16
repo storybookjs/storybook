@@ -106,6 +106,7 @@ The agent keys live in the `ecosystem-qa` environment, and the push token in `ec
 
 A Claude Code run in the Docker sandbox on Linux with `ANTHROPIC_API_KEY` keeps the key out of the sandbox.
 `run.ts` starts a proxy on the gateway of Docker's default bridge, gives the agent that address as `ANTHROPIC_BASE_URL` and a placeholder as its key, and puts the real key on each request it forwards to the Anthropic API.
+Once the proxy holds the key, `run.ts` deletes it from its own environment, so no process it starts afterwards inherits it.
 The proxy forwards only `POST /v1/messages` and `POST /v1/messages/count_tokens`, answers only the sandbox container's address, and writes one line for each request that Node's HTTP parser accepts, with method, path and status, or `closed by the caller` when the caller goes away first, to the job log and to `run.log`.
 Before the agent starts, the runner reads the environment of the sandbox, ends the run when the real key is in it, and writes `The sandbox holds no provider key.` otherwise.
 Everywhere else the key still reaches the agent: Codex, a run without a sandbox (the Windows cells), a run on macOS, and a run with `CLAUDE_CODE_OAUTH_TOKEN`.

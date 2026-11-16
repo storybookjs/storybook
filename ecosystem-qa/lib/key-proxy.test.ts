@@ -4,7 +4,7 @@ import type { AddressInfo } from 'node:net';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { PLACEHOLDER_KEY, sandboxAddresses, startKeyProxy } from './key-proxy.ts';
+import { PLACEHOLDER_KEY, proxyTheKey, sandboxAddresses, startKeyProxy } from './key-proxy.ts';
 import { redactSecrets } from './redact.ts';
 
 const REAL_KEY = 'sk-ant-real-key-0123456789';
@@ -232,6 +232,50 @@ describe('startKeyProxy against a hostile caller', () => {
 
     expect((await answerOf(url, 'POST', 'http://[')).status).toBe(404);
     expect((await answerOf(`${url}/v1/messages`)).status).toBe(200);
+  });
+});
+
+describe('proxyTheKey', () => {
+  const proxied = async (env: NodeJS.ProcessEnv, upstreamOrigin: string, host = '127.0.0.1') => {
+    const proxy = await proxyTheKey(env, 'ANTHROPIC_API_KEY', {
+      host,
+      callerAddress: '127.0.0.1',
+      upstreamOrigin,
+      log: () => {},
+    });
+    closers.push(proxy.close);
+    return proxy;
+  };
+
+  it('takes the key out of the environment and hands the agent the proxy and a placeholder', async () => {
+    const provider = await standIn((req, res) => {
+      req.resume();
+      res.end();
+    });
+    const env = { ANTHROPIC_API_KEY: REAL_KEY, PATH: '/usr/bin' };
+
+    const { agentEnv } = await proxied(env, provider.origin);
+
+    expect(env).toEqual({ PATH: '/usr/bin' });
+    expect(agentEnv).toEqual({
+      ANTHROPIC_BASE_URL: expect.stringMatching(/^http:\/\/127\.0\.0\.1:\d+$/),
+      ANTHROPIC_API_KEY: PLACEHOLDER_KEY,
+    });
+    expect((await answerOf(`${agentEnv.ANTHROPIC_BASE_URL}/v1/messages`)).status).toBe(200);
+    expect(provider.seen[0]!.headers['x-api-key']).toBe(REAL_KEY);
+  });
+
+  it('stops answering once closed', async () => {
+    const provider = await standIn((req, res) => {
+      req.resume();
+      res.end();
+    });
+    const proxy = await proxied({ ANTHROPIC_API_KEY: REAL_KEY }, provider.origin);
+    await answerOf(`${proxy.agentEnv.ANTHROPIC_BASE_URL}/v1/messages`);
+
+    proxy.close();
+
+    await expect(answerOf(`${proxy.agentEnv.ANTHROPIC_BASE_URL}/v1/messages`)).rejects.toThrow();
   });
 });
 

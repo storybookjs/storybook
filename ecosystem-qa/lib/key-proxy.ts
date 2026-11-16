@@ -82,6 +82,30 @@ export const startKeyProxy = async (options: KeyProxyOptions): Promise<KeyProxy>
   return { server, baseUrl: `http://${options.host}:${port}` };
 };
 
+export interface ProxiedKey {
+  agentEnv: { ANTHROPIC_BASE_URL: string; ANTHROPIC_API_KEY: string };
+  close: () => void;
+}
+
+export const proxyTheKey = async (
+  env: NodeJS.ProcessEnv,
+  name: string,
+  options: Omit<KeyProxyOptions, 'apiKey'>
+): Promise<ProxiedKey> => {
+  const proxy = await startKeyProxy({ ...options, apiKey: env[name]! });
+  // Every process started on the host inherits the environment, git in the clone the sandbox wrote
+  // to included.
+  delete env[name];
+  proxy.server.unref();
+  return {
+    agentEnv: { ANTHROPIC_BASE_URL: proxy.baseUrl, ANTHROPIC_API_KEY: PLACEHOLDER_KEY },
+    close: () => {
+      proxy.server.close();
+      proxy.server.closeAllConnections();
+    },
+  };
+};
+
 const Inspected = z
   .array(
     z.object({

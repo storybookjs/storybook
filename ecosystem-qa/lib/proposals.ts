@@ -323,9 +323,10 @@ const sourceLines = (proposal: IssueProposal | CommentProposal, withVersion = fa
     return `- ${withVersion ? `${version}: ` : ''}${where}`;
   });
 
-// A title in a body is inline markdown: a newline would start a block and a lone `<` an HTML comment.
+// A title in a body is inline markdown: a newline would start a block, a lone `<` an HTML comment,
+// and `&#64;` a mention once GitHub decodes it.
 const inlineTitle = (title: string): string =>
-  sanitizeTitle(title.replace(/\s+/g, ' ')).replaceAll('<', '&lt;');
+  sanitizeTitle(title.replace(/\s+/g, ' ').replaceAll('&', '&amp;')).replaceAll('<', '&lt;');
 
 const RELATED_HEADING = 'Also seen as:';
 

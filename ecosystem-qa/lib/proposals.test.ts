@@ -673,20 +673,23 @@ describe('the plan entry of an issue', () => {
       ...fixturePlan,
       entries: fixturePlan.entries.map((entry) =>
         entry.slug === 'story-sort-in-main'
-          ? { ...entry, title: 'Sort for @storybookjs/core, see #1 and <!-- hidden' }
+          ? {
+              ...entry,
+              title: 'Sort for @storybookjs/core and _@octocat_ &#64;octocat, see #1 and <!-- hidden',
+            }
           : entry
       ),
     };
 
     expect(bodyOf('plan.story-sort-in-main', plan)).toContain(
-      'Plan entry `story-sort-in-main`, Sort for `@storybookjs/core`, see `#1` and &lt;!-- hidden: '
+      'Plan entry `story-sort-in-main`, Sort for `@storybookjs/core` and _`@octocat_` &amp;`#64`;octocat, see `#1` and &lt;!-- hidden: '
     );
   });
 
   it('puts the entry line above the related findings', () => {
     const [lead, other] = groupFindings([
       planRun('plan.story-sort-in-main'),
-      loaded('windows', 'codex', [finding({ checkId: 'core.dev-server', title: 'Other' })]),
+      loaded('windows', 'codex', [finding({ checkId: 'core.dev-server', title: 'Other &#64;octocat' })]),
     ]);
     const body = renderIssueBody(
       asIssue(
@@ -695,6 +698,9 @@ describe('the plan entry of an issue', () => {
       byName
     );
 
+    expect(body).toContain(
+      '- `core.dev-server` on storybookjs/mealdrop (windows, codex): Other &amp;`#64`;octocat'
+    );
     expect(body.indexOf('Plan entry `story-sort-in-main`')).toBeGreaterThan(-1);
     expect(body.indexOf('Plan entry `story-sort-in-main`')).toBeLessThan(
       body.indexOf('Also seen as:')

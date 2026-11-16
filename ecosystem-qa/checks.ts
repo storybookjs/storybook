@@ -56,7 +56,7 @@ export const CHECKS = [
     phase: 'dev',
     tier: 'gate',
     probe:
-      'Start the dev server on port 6006 with `--ci --exact-port --no-open`. Fetch `/index.json` and compare the entry count with the baseline.',
+      'Start the dev server on port 6006 with `--ci --exact-port`, which opens no browser on any version. Fetch `/index.json` and compare the entry count with the baseline.',
   },
   {
     id: 'core.story-render',

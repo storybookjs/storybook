@@ -31,6 +31,7 @@ import {
 } from './help.ts';
 import {
   parsePort,
+  keepTypedText,
   parseToolsTokens,
   withPositionals,
   type ParsedToolsTokens,
@@ -330,7 +331,7 @@ async function dispatchTools(
   const toolPath = `${entry.id} ${toCliMethodName(methodName)}`;
   const commandPath = `npx storybook tools ${toolPath}`;
 
-  const args = withPositionals(parsed, method.positional);
+  const args = withPositionals(keepTypedText(parsed, method.input), method.positional);
   if (!args.ok) {
     return result({
       exitCode: 1,

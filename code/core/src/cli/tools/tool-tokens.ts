@@ -1,3 +1,7 @@
+import * as v from 'valibot';
+
+import { JsonSchemaNodeSchema, type JsonSchemaNode } from './schema-lines.ts';
+
 /**
  * The output-shaping flags of the tools CLI. Commander parses them before the toolset name, the
  * token parser after the tool name; the commander-side values arrive as `defaults` and later
@@ -23,6 +27,8 @@ export type ParsedToolsTokens =
       /** `true` from `--attach`, `false` from `--no-attach`. */
       attach?: boolean;
       args: Record<string, unknown>;
+      /** The value of each `--key value` flag as typed, before it was read as JSON. */
+      flagText: Record<string, string>;
       /** Bare arguments, in order; the tool decides whether it takes them (`positional`). */
       positionals: string[];
     }
@@ -55,6 +61,7 @@ export function parseToolsTokens(
   let output = defaults.output;
   let attach = defaults.attach;
   const flagArgs: Record<string, unknown> = {};
+  const flagText: Record<string, string> = {};
   const positionals: string[] = [];
 
   let i = 0;
@@ -157,6 +164,11 @@ export function parseToolsTokens(
     }
 
     flagArgs[key] = value === undefined ? true : coerceValue(value);
+    if (value === undefined) {
+      delete flagText[key];
+    } else {
+      flagText[key] = value;
+    }
   }
 
   let inputArgs: Record<string, unknown> = {};
@@ -186,6 +198,7 @@ export function parseToolsTokens(
     output,
     attach,
     args: { ...inputArgs, ...flagArgs },
+    flagText,
     positionals,
   };
 }
@@ -197,6 +210,47 @@ export function parseToolsTokens(
 export function isJsonToolsRun(tokens: string[], defaults: ToolsOutputFlags = {}): boolean {
   const parsed = parseToolsTokens(tokens, defaults);
   return parsed.ok && parsed.json && !parsed.help;
+}
+
+/**
+ * A flag value is read as JSON first, so `--a11y false` is a boolean. Where the argument does not
+ * take that JSON type but does take a string, the value stays as typed: `--changed 1234567` is a
+ * commit and `--files 2024` a folder, not numbers.
+ */
+export function keepTypedText(
+  parsed: Extract<ParsedToolsTokens, { ok: true }>,
+  inputSchema: unknown
+): Extract<ParsedToolsTokens, { ok: true }> {
+  const schema = v.safeParse(JsonSchemaNodeSchema, inputSchema);
+  const properties = schema.success ? schema.output.properties : undefined;
+  if (!properties) {
+    return parsed;
+  }
+  const args = { ...parsed.args };
+  for (const [key, text] of Object.entries(parsed.flagText)) {
+    const value = args[key];
+    const property = properties[key];
+    const jsonType = typeof value === 'number' || typeof value === 'boolean' ? typeof value : null;
+    if (!property || (jsonType === null && value !== null)) {
+      continue;
+    }
+    // A list takes its entries one by one: `--files 2024` is a list of one.
+    const items = Array.isArray(property.items) ? property.items[0] : property.items;
+    const takes = (type: string) =>
+      schemaTakes(property, type) || (items !== undefined && schemaTakes(items, type));
+    if (!takes(jsonType ?? 'null') && takes('string')) {
+      args[key] = text;
+    }
+  }
+  return { ...parsed, args };
+}
+
+function schemaTakes(schema: JsonSchemaNode, type: string): boolean {
+  return (
+    schema.type === type ||
+    (type === 'number' && schema.type === 'integer') ||
+    [...(schema.anyOf ?? []), ...(schema.oneOf ?? [])].some((variant) => schemaTakes(variant, type))
+  );
 }
 
 /** Bare arguments fill the method's `positional` key, after any `--key` values for it. */

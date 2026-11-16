@@ -8,7 +8,7 @@ import {
   createModuleResolver,
   defaultResolveConditionNames,
   extractDeclaredSubcomponents,
-  followExport,
+  extractSubcomponents,
   getStoryImportPathFromEntry,
   jsTsSourceExtensions,
   typescriptExtensionAlias,
@@ -21,7 +21,6 @@ import {
   loadCsf,
   parseExpression,
   propertyValue,
-  staticKey,
   type ReferenceModule,
 } from 'storybook/internal/csf-tools';
 import type { IndexEntry } from 'storybook/internal/types';
@@ -76,21 +75,11 @@ const exportReader: ExportReader = {
 };
 
 // Core reads every module in the chain with this reader, so a `.svelte` file in it exposes its
-// module script, and a barrel that core follows lands on the same file that `locateIn` walks.
+// module script, and the declaration core follows an import to is a `.svelte` file's default.
 const resolveComponentExpression = createComponentNodeResolver({ reader: exportReader });
 
-function locateIn(
-  filePath: string | undefined,
-  specifier: string,
-  exportName: string,
-  name: string
-) {
-  const origin = filePath ? followExport(exportReader, filePath, exportName) : undefined;
-  if (origin?.kind !== 'declaration' || !isComponent(origin.filePath, origin.localName)) {
-    throw new Error(`Could not resolve \`${specifier}\` export \`${exportName}\``);
-  }
-  return { componentPath: origin.filePath, exportName, name };
-}
+const unresolved = (specifier: string, exportName: string) =>
+  new Error(`Could not resolve \`${specifier}\` export \`${exportName}\``);
 
 // A story file read for the components it names: a CSF file, or a Svelte CSF file's `defineMeta`
 // object and module script.
@@ -127,15 +116,24 @@ function resolveComponentNode(
 
   const resolved = resolveComponentExpression(module, expression);
   if ('reason' in resolved) {
-    if (resolved.reason === 'unreadable-component-expression') {
-      throw new Error(`Cannot resolve the component \`${resolved.expression}\``);
+    switch (resolved.reason) {
+      case 'unreadable-component-expression':
+        throw new Error(`Cannot resolve the component \`${resolved.expression}\``);
+      case 'missing-export':
+        throw unresolved(resolved.importId, resolved.exportName);
+      case 'no-meta-component':
+      case 'no-component-import':
+        return undefined;
+      default: {
+        const unhandled: never = resolved;
+        throw new Error(`Unhandled resolution ${JSON.stringify(unhandled)}`);
+      }
     }
-    return undefined;
   }
-  // `path` is resolved in the module that wrote `importId`, which is not the story file when core
-  // followed the component through another module, such as a barrel's `export * as`.
   const { importId, path, exportName, localName } = resolved.component;
-  return importId ? locateIn(path, importId, exportName, localName) : undefined;
+  if (!importId) return undefined;
+  if (!path || !isComponent(path, exportName)) throw unresolved(importId, exportName);
+  return { componentPath: path, exportName, name: localName };
 }
 
 export async function resolveStoryComponent(
@@ -154,7 +152,12 @@ export async function resolveStorySubcomponents(
   const story = await readStoryFile(entry);
   if (!story) return {};
   const declared =
-    'csf' in story ? extractDeclaredSubcomponents(story.csf) : svelteSubcomponents(story);
+    'csf' in story
+      ? extractDeclaredSubcomponents(story.csf)
+      : extractSubcomponents(
+          propertyValue(story.meta, 'subcomponents'),
+          story.module.editor.program
+        );
   const resolved: Record<string, ResolvedSvelteComponent> = {};
   for (const { name, node } of declared) {
     try {
@@ -165,15 +168,6 @@ export async function resolveStorySubcomponents(
     }
   }
   return resolved;
-}
-
-function svelteSubcomponents({ meta }: { meta: E.ObjectExpression | undefined }) {
-  const subcomponents = propertyValue(meta, 'subcomponents');
-  if (subcomponents?.type !== 'ObjectExpression') return [];
-  return subcomponents.properties.flatMap((property) => {
-    const name = property.type === 'Property' ? staticKey(property) : undefined;
-    return name && property.type === 'Property' ? [{ name, node: property.value }] : [];
-  });
 }
 
 async function readSvelteMeta(file: string, storyPath: string) {

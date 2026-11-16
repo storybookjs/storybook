@@ -2,7 +2,7 @@ import { once } from 'node:events';
 import { createServer, request, type IncomingMessage, type ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
 
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { PLACEHOLDER_KEY, sandboxAddresses, startKeyProxy } from './key-proxy.ts';
 import { redactSecrets } from './redact.ts';
@@ -170,6 +170,21 @@ describe('startKeyProxy', () => {
     const closed = once(provider.seen[0]!.socket, 'close');
     caller.destroy();
     await closed;
+  });
+
+  it('logs a caller that goes away before the answer as such, not as a provider failure', async () => {
+    const provider = await standIn((req) => req.resume());
+    const { url, log } = await proxyTo(provider.origin);
+
+    const caller = request(`${url}/v1/messages`, { method: 'POST' });
+    caller.on('error', () => {});
+    caller.write('{"model":');
+    await vi.waitFor(() => expect(provider.seen).toHaveLength(1));
+    caller.destroy();
+
+    await vi.waitFor(() =>
+      expect(log).toEqual(['Key proxy: POST /v1/messages closed by the caller'])
+    );
   });
 
   it('breaks off the answer to the caller when the provider breaks off its own', async () => {

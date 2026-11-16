@@ -50,12 +50,17 @@ export const startKeyProxy = async (options: KeyProxyOptions): Promise<KeyProxy>
     const headers = { ...req.headers, 'x-api-key': options.apiKey };
     delete headers.host;
     delete headers.authorization;
+    let callerLeft = false;
     const forwarded = send(target, { method: req.method, headers }, (reply) => {
       respond(reply.statusCode ?? 502, reply.headers);
       // Unlike `pipe`, this breaks off the caller's answer when the provider breaks off its own.
       pipeline(reply, res, () => {});
     });
     forwarded.on('error', () => {
+      if (callerLeft) {
+        options.log(`Key proxy: ${req.method} ${pathname} closed by the caller`);
+        return;
+      }
       if (!res.headersSent) {
         respond(502);
       }
@@ -63,6 +68,7 @@ export const startKeyProxy = async (options: KeyProxyOptions): Promise<KeyProxy>
     });
     res.on('close', () => {
       if (!res.writableFinished) {
+        callerLeft = true;
         forwarded.destroy();
       }
     });

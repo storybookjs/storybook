@@ -12,6 +12,7 @@ import {
   planFromWindow,
   planRuns,
   renderPlan,
+  renderPlanChecks,
 } from './qa-plan.ts';
 import type { Window, WindowPr } from './window.ts';
 
@@ -93,6 +94,17 @@ describe('the fixture plan', () => {
       { repo: 'mealdrop', part: 2, entries: ['csf-factory-namespaces'] },
       { repo: 'mantine', part: 1, entries: ['csf-factory-namespaces'] },
     ]);
+  });
+
+  it('gives the agent the reason for the repo, every step and the expected outcome of an entry', () => {
+    const plan = parsePlan(FIXTURE);
+    const entries = plan.entries.filter(({ slug }) => slug === 'csf-factory-namespaces');
+
+    expect(renderPlanChecks(entries, 'mantine')).toMatchInlineSnapshot(`
+      "- \`plan.csf-factory-namespaces\` (plan): Legacy addon namespaces work in CSF factories. Why this repo: a large set of stories with addon parameters.
+        1. Run \`npx storybook doctor\` and build Storybook.
+        Expected: The build ends with exit 0 and the doctor output names no addon namespace."
+    `);
   });
 });
 

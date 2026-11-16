@@ -6,12 +6,15 @@ import { SEMVER } from './cycle.ts';
 import { CatalogEntry } from './schema.ts';
 import { needsGroup, type Window, type WindowPr } from './window.ts';
 
-// GitHub shows neither an HTML comment nor a control character, so either would hide text from
-// the reviewer that the agent still reads.
+// GitHub shows neither an HTML comment nor a control or format character, so each would hide text
+// from the reviewer that the agent still reads.
 const Text = z
   .string()
   .regex(/^\S(?:[^\n\r]*\S)?$/, 'expected one line of text')
-  .regex(/^[^\p{Cc}\p{Zl}\p{Zp}]*$/u, 'expected no control character or line separator')
+  .regex(
+    /^[^\p{Cc}\p{Cf}\p{Zl}\p{Zp}]*$/u,
+    'expected no control character, invisible format character, or line separator'
+  )
   .refine((text) => !text.includes('<!--'), 'expected no HTML comment');
 const RepoDir = Text.refine(
   (dir) => !dir.startsWith('/') && !dir.includes('\\') && !dir.split('/').includes('..'),
@@ -714,26 +717,30 @@ const noPrivateLinks: Rule = ({ lines }) =>
       : []
   );
 
-// Without a scheme, a top-level domain is what tells a host such as example.com from a file name
-// such as README.md or a directory such as ui.kit, so a domain that is also a file extension of a
-// project (md, sh) is not on the list.
-const HOST_TLDS = [
-  ...['com', 'net', 'org', 'edu', 'gov', 'io', 'dev', 'app', 'ai', 'co', 'me', 'info', 'biz'],
-  ...['xyz', 'site', 'online', 'page', 'link', 'cloud', 'tech', 'ly', 'to', 'gg', 'tv', 'fm'],
-  ...['us', 'uk', 'de', 'fr', 'eu', 'nl', 'ru', 'cn', 'jp', 'ch', 'se', 'es', 'it', 'be', 'at'],
-  ...['ca', 'au', 'br'],
-];
+const LOOPBACK = new Set(['localhost', '127.0.0.1', '[::1]']);
 
-const HOST = String.raw`(?:[^\s/\\@]*@)?([^\s/\\:?#\x60'",;)<>\]]+)`;
-const OFF_HOST = new RegExp(
-  [
-    String.raw`\b(?:https?|wss?|ftp):[\\/]*${HOST}`,
-    String.raw`\b[a-z][\w+.-]*:\/\/${HOST}`,
-    String.raw`(?<![\w:\\/])\/\/${HOST}`,
-    String.raw`(?<![\w.\\/-])((?:[a-z0-9-]+\.)+(?:${HOST_TLDS.join('|')})|\d{1,3}(?:\.\d{1,3}){3})(?![\w-]|\.\w)`,
-  ].join('|'),
-  'gi'
-);
+// A scheme starts after any character that cannot be part of one, so `see:http://x` holds a second
+// URL. Punctuation at the end belongs to the sentence around the URL.
+const URL_AT = /(?<![a-z\d+.-])(?=([a-z][a-z\d+.-]*:[^ ]*))/gi;
+const TRAILING_PUNCTUATION = /[.,;:!?'"`)\]}>]+$/;
+
+// The URL parser reads a backslash as a slash and curl reads it as a character, so
+// `http://localhost\@example.com` is localhost to one and example.com to the other.
+const readingsOf = (url: string) => [url, url.replaceAll('\\', '%5C')].map((it) => URL.parse(it));
+
+const offLocalhost = (text: string): string[] =>
+  [...text.matchAll(URL_AT)].flatMap(([, candidate]) => {
+    const url = candidate!.replace(TRAILING_PUNCTUATION, '');
+    if (!url.includes(':')) {
+      return [];
+    }
+    const readings = readingsOf(url);
+    const host = readings.map((reading) => reading?.hostname).find((it) => it && !LOOPBACK.has(it));
+    if (host) {
+      return [`${url} has the host ${host}, not localhost`];
+    }
+    return readings.includes(null) ? [`${url} is a URL that the URL parser cannot read`] : [];
+  });
 
 const textStaysOnLocalhost: Rule = ({ plan, at }) =>
   plan.entries.flatMap((entry, index) => {
@@ -743,11 +750,7 @@ const textStaysOnLocalhost: Rule = ({ plan, at }) =>
       ...entry.repos.map((repo, n) => ({ text: repo.reason, line: layout.repos[n]! })),
       ...entry.steps.map((text, step) => ({ text, line: layout.steps[step]! })),
       { text: entry.expected, line: layout.expected },
-    ].flatMap(({ text, line }) =>
-      [...text.matchAll(OFF_HOST)]
-        .filter((match) => match.slice(1).find(Boolean)!.toLowerCase() !== 'localhost')
-        .map((match) => ({ line, message: `${match[0]} is a URL other than localhost` }))
-    );
+    ].flatMap(({ text, line }) => offLocalhost(text).map((message) => ({ line, message })));
   });
 
 const matchesWindow: Rule = ({ plan, at, window }) => {

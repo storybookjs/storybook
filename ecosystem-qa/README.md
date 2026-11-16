@@ -168,7 +168,7 @@ A repo with more entries in one batch than `Entries per run` runs them in severa
 It then holds the plan against these rules and prints each problem as `<file>:<line>: <message>`:
 
 - Every slug, group, and discovered id is unique, every PR has one row in one table, and the version is on the plan's line.
-- Every text field is one line without an HTML comment, a control character, or a line separator, because GitHub shows none of them to the reviewer.
+- Every text field is one line without an HTML comment, a control character, an invisible format character such as a zero width space or a byte order mark, or a line separator, because GitHub shows none of them to the reviewer.
 - The Storybook directory of a discovered repo is a relative path inside the repository, without `..` or a leading `/`.
 - Every repo of an entry is a catalog id or a discovered repo, and a discovered repo never takes a catalog id.
 - No repo of an entry is more than one major behind the plan's line, by the `tags` of its catalog entry or the major of its discovered row.
@@ -176,14 +176,7 @@ It then holds the plan against these rules and prints each problem as `<file>:<l
 - The batches are numbered from 1 without a gap.
 - Every maintainer PR marked `qa:skip` with a product label names a group, and every group has a decision.
 - The file holds no link to `linear.app`, `notion.so`, `notion.site`, `notion.com`, or a `slack.com` host.
-- No entry title, repo reason, step, or expected outcome names a host other than `localhost`, because the runner prints all four into the agent's prompt. A host is refused in these forms:
-  - after any scheme and `//`, such as `https://example.com` or `http://localhost@example.com`;
-  - after `http`, `https`, `ws`, `wss`, or `ftp` and a colon with any number of slashes or backslashes, such as `http:/example.com` or `http:\\example.com`;
-  - after `//` alone, such as `//example.com`;
-  - an IPv4 address, such as `93.184.216.34`, `127.0.0.1` included;
-  - a dotted name that ends in one of the top-level domains of `HOST_TLDS` in `lib/qa-plan.ts`, such as `com`, `org`, `io`, or `dev`, alone or followed by a port, a path, a query, or a fragment: `example.com`, `example.com:8080/x`, `git@github.com:x`.
-
-  A dotted name with another ending passes, so `README.md`, `ui.kit/src`, `the Next.js/Vite project`, and `package.json:12` are fine, and so are a host on a domain outside that list, such as `example.zone/x`, and a package that `npx` fetches. The reviewer reads for those.
+- No entry title, repo reason, step, or expected outcome holds a URL with a scheme whose host is other than `localhost`, `127.0.0.1`, or `[::1]`, because the runner prints all four into the agent's prompt. `check` takes every URL that starts with a scheme, also one after other text such as `see:http://example.com`, apart with Node's URL parser, and refuses it when the host is another one or when the parser cannot read it: `https://example.com`, `http:/example.com`, `http://localhost;.example.com`, and `http://localhost].example.com` are refused. It reads a backslash once as the parser does, as a slash, and once as curl does, as a character, so `http://localhost\@example.com` is refused too. It does not look for a host without a scheme, such as `example.com/x` or `//example.com`. The check is one layer of four: the reviewer reads every plan before it is merged, the prompt of a plan run forbids every URL other than `localhost`, and the browser tool of the sandbox image opens `localhost` only.
 - With `--window`, the tables hold exactly the PRs of the window, with their titles and areas.
 
 A plan that passes prints its hash, which names the cycle, its batches with their runs, and about what it costs, priced at the most expensive static run so far.

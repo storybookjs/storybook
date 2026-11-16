@@ -1,0 +1,350 @@
+
+[90m┌[39m  Storybook upgrade - v11.0.0-beta.3
+[90m│[39m
+[90m│[39m  Detecting projects...
+[90m│[39m
+[90m│[39m  Detecting projects: 1 projects
+[90m│[39m
+[90m│[39m  1 project detected
+[90m│[39m
+[34m●[39m  Upgrading from [1m10.3.3[22m to [1m11.0.0-beta.3[22m
+[90m│[39m
+[90m│[39m  /packages/ui-svelte/package.json
+[90m│[39m  /package.json
+[90m│[39m
+[90m│[39m  Updated package versions in package.json files
+[90m│[39m
+[90m│[39m  Checking automigrations for /packages/ui-svelte/.storybook...
+[90m│[39m
+
+[90m│[39m  Automigrations detected:
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m upgrade-storybook-related-dependencies[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m addon-svelte-csf-to-core[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m skills[39m
+[90m│[39m
+[90m│[39m  3 automigration(s) detected
+[90m│[39m
+[90m│[39m  Running all detected automigrations:
+[90m│[39m
+[90m│[39m  - upgrade-storybook-related-dependencies
+[90m│[39m  (/packages/ui-svelte/.storybook)
+[90m│[39m
+[90m│[39m  - addon-svelte-csf-to-core (/packages/ui-svelte/.storybook)
+[90m│[39m
+[90m│[39m  - skills (/packages/ui-svelte/.storybook)
+│ ┌─addon-svelte-csf-to-core (/packages/ui-svelte/.storybook)──────────────────┐
+│ │  Migrate from [35m@storybook/addon-svelte-csf[39m to the Svelte CSF built into     │
+│ │  your framework                                                            │
+│ │                                                                            │
+│ │  Files that change, besides package.json:                                  │
+│ │  - packages/ui-svelte/.storybook/main.ts                                   │
+│ │  - packages/ui-svelte/src/stories/components/AccountButton.stories.svelte  │
+│ │  - packages/ui-svelte/src/stories/components/AddForgeAccountButton.storie  │
+│ │  s.svelte                                                                  │
+│ │  - packages/ui-svelte/src/stories/components/AllButton.stories.svelte      │
+│ │  - packages/ui-svelte/src/stories/components/AllFileIcons.stories.svelte   │
+│ │  - packages/ui-svelte/src/stories/components/Avatar.stories.svelte         │
+│ │  - packages/ui-svelte/src/stories/components/AvatarGroup.stories.svelte    │
+│ │  - packages/ui-svelte/src/stories/components/Badge.stories.svelte          │
+│ │  - packages/ui-svelte/src/stories/components/ButPcAvatar.stories.svelte    │
+│ │  - packages/ui-svelte/src/stories/components/Button.stories.svelte         │
+│ │  - packages/ui-svelte/src/stories/components/CardGroup.stories.svelte      │
+│ │  - packages/ui-svelte/src/stories/components/Checkbox.stories.svelte       │
+│ │  - packages/ui-svelte/src/stories/components/ChipToast.stories.svelte      │
+│ │  - packages/ui-svelte/src/stories/components/Codeblock.stories.svelte      │
+│ │  - packages/ui-svelte/src/stories/components/CommitLines.stories.svelte    │
+│ │  - packages/ui-svelte/src/stories/components/CommitStatusBadge.stories.sv  │
+│ │  elte                                                                      │
+│ │  - packages/ui-svelte/src/stories/components/ContextMenu.stories.svelte    │
+│ │  -                                                                         │
+│ │  packages/ui-svelte/src/stories/components/DropdownButton.stories.svelte   │
+│ │  - packages/ui-svelte/src/stories/components/EmailTextbox.stories.svelte   │
+│ │  - packages/ui-svelte/src/stories/components/EmojiPicker.stories.svelte    │
+│ │  - packages/ui-svelte/src/stories/components/EmptyStatePlaceholder.storie  │
+│ │  s.svelte                                                                  │
+│ │  - packages/ui-svelte/src/stories/components/FileIcon.stories.svelte       │
+│ │  - packages/ui-svelte/src/stories/components/FileListItem.stories.svelte   │
+│ │  -                                                                         │
+│ │  packages/ui-svelte/src/stories/components/FileStatusBadge.stories.svelte  │
+│ │  -                                                                         │
+│ │  packages/ui-svelte/src/stories/components/FileViewHeader.stories.svelte   │
+│ │  - packages/ui-svelte/src/stories/components/FileViewHeaderStickyTest.sto  │
+│ │  ries.svelte                                                               │
+│ │  -                                                                         │
+│ │  packages/ui-svelte/src/stories/components/FolderListItem.stories.svelte   │
+│ │  - packages/ui-svelte/src/stories/components/ForgeUserCard.stories.svelte  │
+│ │  - packages/ui-svelte/src/stories/components/HunkDiff.stories.svelte       │
+│ │  - packages/ui-svelte/src/stories/components/HunkDiffRow.stories.svelte    │
+│ │  - packages/ui-svelte/src/stories/components/HunkDiffSkeleton.stories.sve  │
+│ │  lte                                                                       │
+│ │  - packages/ui-svelte/src/stories/components/Icon.stories.svelte           │
+│ │  - packages/ui-svelte/src/stories/components/ImageDiff.stories.svelte      │
+│ │  - packages/ui-svelte/src/stories/components/InfoButton.stories.svelte     │
+│ │  - packages/ui-svelte/src/stories/components/InfoMessage.stories.svelte    │
+│ │  - packages/ui-svelte/src/stories/components/IntegrationSeriesRow.stories  │
+│ │  .svelte                                                                   │
+│ │  - packages/ui-svelte/src/stories/components/KebabButton.stories.svelte    │
+│ │  - packages/ui-svelte/src/stories/components/LineStats.stories.svelte      │
+│ │  - packages/ui-svelte/src/stories/components/Modal.stories.svelte          │
+│ │  - packages/ui-svelte/src/stories/components/NotificationButton.stories.s  │
+│ │  velte                                                                     │
+│ │  - packages/ui-svelte/src/stories/components/ProfilePictureUpload.stories  │
+│ │  .svelte                                                                   │
+│ │  - packages/ui-svelte/src/stories/components/RadioButton.stories.svelte    │
+│ │  - packages/ui-svelte/src/stories/components/RangeInput.stories.svelte     │
+│ │  - packages/ui-svelte/src/stories/components/ReviewBadge.stories.svelte    │
+│ │  -                                                                         │
+│ │  packages/ui-svelte/src/stories/components/RichTextEditor.stories.svelte   │
+│ │  -                                                                         │
+│ │  packages/ui-svelte/src/stories/components/SegmentControl.stories.svelte   │
+│ │  - packages/ui-svelte/src/stories/components/Select.stories.svelte         │
+│ │  -                                                                         │
+│ │  packages/ui-svelte/src/stories/components/SeriesLabelsRow.stories.svelte  │
+│ │  -                                                                         │
+│ │  packages/ui-svelte/src/stories/components/SimpleCommitRow.stories.svelte  │
+│ │  - packages/ui-svelte/src/stories/components/SimpleCommitRowList.stories.  │
+│ │  svelte                                                                    │
+│ │  - packages/ui-svelte/src/stories/components/SimpleCommitRowSkeleton.stor  │
+│ │  ies.svelte                                                                │
+│ │  - packages/ui-svelte/src/stories/components/SkeletonBone.stories.svelte   │
+│ │  - packages/ui-svelte/src/stories/components/Spacer.stories.svelte         │
+│ │  - packages/ui-svelte/src/stories/components/TagInput.stories.svelte       │
+│ │  - packages/ui-svelte/src/stories/components/Textarea.stories.svelte       │
+│ │  - packages/ui-svelte/src/stories/components/Textbox.stories.svelte        │
+│ │  - packages/ui-svelte/src/stories/components/TimeAgo.stories.svelte        │
+│ │  - packages/ui-svelte/src/stories/components/Toggle.stories.svelte         │
+│ │  - packages/ui-svelte/src/stories/components/Tooltip.stories.svelte        │
+│ │  - packages/ui-svelte/src/stories/components/VirtualList.stories.svelte    │
+│ │  - packages/ui-svelte/src/stories/components/scrollbarContainer.stories.s  │
+│ │  velte                                                                     │
+│ │  - packages/ui-svelte/src/stories/utils/Sticky.stories.svelte              │
+│ │                                                                            │
+│ │  Change other files that import the addon by hand.                         │
+│ └────────────────────────────────────────────────────────────────────────────┘
+[90m│[39m
+[90m│[39m  [36mpnpm --allow-build=esbuild dlx skills@latest add[39m
+[90m│[39m  [36mstorybookjs/skills#v11.0.0-beta.3 --yes --agent claude-code universal[39m
+[90m│[39m  [36m--copy[39m
+[90m│[39m
+[90m│[39m  Added a Storybook section to AGENTS.md that tells agents when to use
+[90m│[39m  the skills. Storybook keeps it current on upgrade: remove its markers
+[90m│[39m  to keep your own edits, or remove the section to opt out of the
+[90m│[39m  workflow.
+[90m│[39m
+[90m│[39m  Remove the Storybook skills with: pnpm --allow-build=esbuild dlx
+[90m│[39m  skills@latest remove
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m upgrade-storybook-related-dependencies[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m addon-svelte-csf-to-core[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m skills[39m
+[90m│[39m
+[90m│[39m  Completed automigrations for /packages/ui-svelte/.storybook
+[90m│[39m
+[90m│[39m  Installing dependencies...
+[90m│[39m
+[90m│[39m  Installing dependencies...: Scope: all 14 workspace p
+[90m│[39m
+[90m│[39m  Installing dependencies...: ✓ Lockfile at ../../pnpm-
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: Downloading @sentry/cli-l
+[90m│[39m
+[90m│[39m  Installing dependencies...: Downloading @ffmpeg-insta
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: [WARN] 18 deprecated subd
+[90m│[39m
+[90m│[39m  Installing dependencies...: Downloading @turbo/linux-
+[90m│[39m
+[90m│[39m  Installing dependencies...: Downloading @tauri-apps/c
+[90m│[39m
+[90m│[39m  Installing dependencies...: Downloading @oxlint/bindi
+[90m│[39m
+[90m│[39m  Installing dependencies...: Downloading @oxlint-tsgol
+[90m│[39m
+[90m│[39m  Installing dependencies...: Downloading posthog-js@1.
+[90m│[39m
+[90m│[39m  Installing dependencies...: Downloading emojibase-dat
+[90m│[39m
+[90m│[39m  Installing dependencies...: Downloading @typescript/n
+[90m│[39m
+[90m│[39m  Installing dependencies...: Downloading node@runtime:
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: .../core-js@3.50.0/node_m
+[90m│[39m
+[90m│[39m  Installing dependencies...: .../@ffmpeg-installer/lin
+[90m│[39m
+[90m│[39m  Installing dependencies...: .../@ffmpeg-installer/lin
+[90m│[39m
+[90m│[39m  Installing dependencies...: .../core-js@3.50.0/node_m
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../svelte-comment-injecto
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../no-cross-domain-import
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../no-relative-imports pr
+[90m│[39m
+[90m│[39m  Installing dependencies...: . prepare$ svelte-kit syn
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../no-cross-domain-import
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../no-relative-imports pr
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../svelte-comment-injecto
+[90m│[39m
+[90m│[39m  Installing dependencies...: . prepare: Done
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../shared prepare$ svelte
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../no-relative-imports pr
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../no-cross-domain-import
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../svelte-comment-injecto
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../.. prepare$ pnpm --fil
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../.. prepare: $ svelte-k
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../shared prepare: Done
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../../apps/web prepare$ s
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../../apps/desktop prepar
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../../apps/desktop prepar
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../.. prepare: Done
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../../apps/web prepare: D
+[90m│[39m
+[90m│[39m  Installing dependencies...: [WARN] Issues with peer d
+[90m│[39m
+[90m│[39m  Installing dependencies...: devDependencies:
+[90m│[39m  - @story
+[90m│[39m
+[90m│[39m  Installing dependencies...: Done in 14.4s using pnpm
+[90m│[39m
+[90m│[39m  Dependencies installed
+[90m│[39m
+[33m▲[39m  Since you are in a monorepo, we advise you to deduplicate your
+[90m│[39m  dependencies. We can do this for you but it might take some time.
+[90m│[39m
+[90m│[39m  Deduplicating dependencies...
+[90m│[39m
+[90m│[39m  ✓ Lockfile at ../../pnpm-lock.yaml passes supply-chain policies
+[90m│[39m  (verified 3s ago)
+[90m│[39m
+[90m│[39m  ../..                                    | [WARN] deprecated
+[90m│[39m  eslint@9.39.5
+[90m│[39m
+[90m│[39m  ../../apps/desktop                       | [WARN] deprecated
+[90m│[39m  @gitbutler/design-core@2.2.2
+[90m│[39m
+[90m│[39m  ../..                                    | Progress: resolved 1438,
+[90m│[39m  reused 2486, downloaded 0, added 0
+[90m│[39m
+[90m│[39m  ../..                                    | Progress: resolved 1751,
+[90m│[39m  reused 3030, downloaded 0, added 0
+[90m│[39m
+[90m│[39m  [WARN] 19 deprecated subdependencies found:
+[90m│[39m  @opentelemetry/sdk-trace-base@2.6.0, abstract-leveldown@6.2.3,
+[90m│[39m  abstract-leveldown@6.3.0, deferred-leveldown@5.3.0,
+[90m│[39m  encoding-down@6.3.0, glob@10.5.0, glob@11.1.0, glob@8.1.0,
+[90m│[39m  inflight@1.0.6, level-codec@9.0.2, level-concat-iterator@2.0.1,
+[90m│[39m  level-errors@2.0.1, level-js@5.0.2, level-packager@5.1.1,
+[90m│[39m  leveldown@5.6.0, levelup@4.4.0, uuid@8.3.2, uuid@9.0.1,
+[90m│[39m  whatwg-encoding@3.1.1
+[90m│[39m
+[90m│[39m  ../..                                    | Progress: resolved 1826,
+[90m│[39m  reused 3096, downloaded 0, added 43, done
+[90m│[39m
+[90m│[39m  .../core-js@3.50.0/node_modules/core-js postinstall$ node -e
+[90m│[39m  "try{require('./postinstall')}catch(e){}"
+[90m│[39m
+[90m│[39m  .../core-js@3.50.0/node_modules/core-js postinstall: Done
+[90m│[39m
+[90m│[39m  ../svelte-comment-injector prepare$ pnpm build
+[90m│[39m
+[90m│[39m  ../no-relative-imports prepare$ pnpm package
+[90m│[39m
+[90m│[39m  ../no-cross-domain-imports prepare$ pnpm package
+[90m│[39m
+[90m│[39m  . prepare$ svelte-kit sync
+[90m│[39m
+[90m│[39m  ../svelte-comment-injector prepare: $ tsc
+[90m│[39m
+[90m│[39m  ../no-relative-imports prepare: $ tsc
+[90m│[39m  ../no-cross-domain-imports prepare: $ tsc
+[90m│[39m
+[90m│[39m  . prepare: Done
+[90m│[39m
+[90m│[39m  ../shared prepare$ svelte-kit sync
+[90m│[39m
+[90m│[39m  ../svelte-comment-injector prepare: Done
+[90m│[39m
+[90m│[39m  ../no-relative-imports prepare: Done
+[90m│[39m
+[90m│[39m  ../no-cross-domain-imports prepare: Done
+[90m│[39m
+[90m│[39m  ../shared prepare: Done
+[90m│[39m
+[90m│[39m  ../../apps/web prepare$ svelte-kit sync
+[90m│[39m
+[90m│[39m  ../../apps/desktop prepare$ svelte-kit sync
+[90m│[39m
+[90m│[39m  ../.. prepare$ pnpm --filter @gitbutler/desktop run prepare
+[90m│[39m
+[90m│[39m  ../.. prepare: $ svelte-kit sync
+[90m│[39m
+[90m│[39m  ../../apps/desktop prepare: Done
+[90m│[39m
+[90m│[39m  ../../apps/web prepare: Done
+[90m│[39m
+[90m│[39m  ../.. prepare: Done
+[90m│[39m
+[90m│[39m  [WARN] Issues with peer dependencies found. Run "pnpm peers check" to
+[90m│[39m  list them.
+[90m│[39m
+[90m│[39m  Done in 7.3s using pnpm v12.5.1
+[90m│[39m
+[90m│[39m  [32mDependencies deduplicated[39m
+[90m│[39m
+[32m◇[39m  Checking the health of your project(s)..
+[90m│[39m
+[90m│[39m  Your Storybook project looks good!
+[90m│[39m
+[32m◇[39m  [32mYour project(s) have been upgraded successfully! 🎉[39m
+[90m│[39m
+[90m│[39m  If you want to learn more about the automigrations that executed in
+[90m│[39m  your project(s), please check the following links:
+[90m│[39m  • upgrade-storybook-related-dependencies: undefined
+[90m│[39m  • addon-svelte-csf-to-core:
+[90m│[39m  https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#svelte-csf-is-built-into-the-svelte-frameworks
+[90m│[39m  • skills: https://github.com/storybookjs/skills
+[90m│[39m
+[90m│[39m  For a full list of changes, please check our migration guide:
+[90m│[39m  [36mhttps://storybook.js.org/docs/releases/migration-guide?ref=upgrade[39m
+[90m│[39m
+[90m└[39m  Storybook upgrade completed!
+
+Done in 26.4s using pnpm v12.5.1
+Done in 26.9s using pnpm v12.5.1
+exit 0

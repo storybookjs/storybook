@@ -1,0 +1,9 @@
+@storybook/sveltekit 11.0.0-beta.3 peerDependencies:
+{
+ "@sveltejs/kit": "^3.0.0",
+ "storybook": "^11.0.0-beta.3",
+ "svelte": "^5.0.0",
+ "typescript": "^5.9.0 || ^6.0.0 || ^7.0.0",
+ "vite": "^8.0.0"
+}
+installed: @sveltejs/kit 2.52.2, vite 6.4.3, svelte 5.54.0

@@ -7,22 +7,21 @@ import { Primary } from './Primary';
 import { Stories } from './Stories';
 import { Subtitle } from './Subtitle';
 import { Title } from './Title';
-import { useOf } from './useOf';
+import { useDocsStories } from './useDocsStories';
 
 export const DocsPage: FC = () => {
-  const resolvedOf = useOf('meta', ['meta']);
-  const { stories } = resolvedOf.csfFile;
-  const isSingleStory = Object.keys(stories).length === 1;
+  const stories = useDocsStories();
+  const singleStory = stories.length === 1 ? stories[0] : undefined;
 
   return (
     <>
       <Title />
       <Subtitle />
       <Description of="meta" />
-      {isSingleStory ? <Description of="story" /> : null}
+      {singleStory ? <Description of={singleStory.moduleExport} /> : null}
       <Primary />
       <Controls />
-      {isSingleStory ? null : <Stories />}
+      {singleStory ? null : <Stories />}
     </>
   );
 };

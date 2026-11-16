@@ -2,6 +2,7 @@ import {
   expectAnyWorkflowSkillInvoked,
   expectNoDisplayReview,
   expectNoOtherTestRunner,
+  expectWorkflowCalls,
   expectReviewHint,
   expectStoriesPass,
   getEvalContext,
@@ -27,7 +28,9 @@ describe('changing a shared accent token and testing its consumer stories', () =
   });
 
   // `--changed` reaches the stories of the token's consumers, so the agent needs no story ids.
-  test('tests only through Storybook, and creates no review unasked', () => {
+  test('runs the skills of the workflow, tests only through Storybook, and creates no review unasked', () => {
+    // A token change is a change to how the UI looks, so the section's skills apply.
+    expectWorkflowCalls(['component-docs', 'write-stories']);
     expectNoOtherTestRunner();
     expectNoDisplayReview();
   });

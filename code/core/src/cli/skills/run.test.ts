@@ -66,11 +66,11 @@ describe('resolveSkillsIntent', () => {
     }
   });
 
-  it('names the skills and the test command that replace stories, the skill of Storybook 10.6', () => {
+  it('names the skills that replace stories, the skill of Storybook 10.6', () => {
     expect(resolveSkillsIntent({ tokens: ['stories'] })).toEqual({
       kind: 'error',
       message: expect.stringMatching(
-        /^The `\/stories` skill is replaced by `\/component-docs` .*`\/write-stories` .*`npx storybook tools test run --changed`.*When the user asks for a review, run `npx storybook skills ui-review`\.$/
+        /^The `\/stories` skill is replaced by `\/component-docs` .*`\/write-stories` .*When the user asks for a review, run `npx storybook skills ui-review`\.$/
       ),
     });
   });

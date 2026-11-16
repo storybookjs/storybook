@@ -62,7 +62,7 @@ describe('writing stories for a fetching OrderHistory in a project without MSW',
     expectFinalResponseMatches([/\bMSW\b|msw-storybook-addon|network mock/i]);
   });
 
-  test('runs the write-stories skill, and publishes no review unasked', () => {
+  test('runs the write-stories skill, and creates no review unasked', () => {
     expectWorkflowCalls(WORKFLOW_SKILLS);
     expectNoOtherTestRunner();
     expectNoDisplayReview();

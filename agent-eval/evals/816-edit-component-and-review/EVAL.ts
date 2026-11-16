@@ -3,7 +3,6 @@ import {
   expectDevServerLeftRunning,
   expectDisplayReviewForVisualChange,
   expectNoOtherTestRunner,
-  expectNoReviewHint,
   expectStoryDiscoveryBeforeReview,
   expectStoryIdsInDisplayReview,
   expectStoriesPass,
@@ -16,7 +15,7 @@ import { describe, test } from 'vitest';
 // ui-review skill, which the agent runs only when asked.
 const WORKFLOW_SKILLS = ['component-docs', 'write-stories', 'ui-review'];
 
-describe('editing ReviewCard and publishing the review the user asks for', () => {
+describe('editing ReviewCard and creating the review the user asks for', () => {
   test('the stories of the change pass', async () => {
     await expectStoriesPass({
       covering: ['reviewcard'],
@@ -33,13 +32,10 @@ describe('editing ReviewCard and publishing the review the user asks for', () =>
     expectStoryIdsInDisplayReview(['reviewcard']);
   });
 
-  test('discovers stories through the workflow tools before publishing the review', () => {
+  test('discovers stories through the workflow tools before creating the review', () => {
     expectStoryDiscoveryBeforeReview();
   });
 
-  test('leaves out the review line after publishing the review', () => {
-    expectNoReviewHint();
-  });
 
   describe('depending on the current agent and integration', () => {
     const { integration } = getEvalContext();

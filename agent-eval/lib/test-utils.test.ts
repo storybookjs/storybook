@@ -593,6 +593,9 @@ describe('mentionsReviewSkill', () => {
     'this is a UI change you can see, so run `/ui-review` to see the changed component in Storybook.',
     'Use the $ui-review skill to see the changed components in Storybook',
     'Use `/storybook:ui-review` to see the changed components.',
+    'Use **/ui-review** to see the changed components.',
+    'Use the “/ui-review” skill to see them.',
+    'Run [/ui-review](https://storybook.js.org/docs/ai/skills/ui-review) to see them.',
   ])('counts %j', async (answer) => {
     const { mentionsReviewSkill } = await import('./test-utils.ts');
     expect(mentionsReviewSkill(answer)).toBe(true);
@@ -601,6 +604,7 @@ describe('mentionsReviewSkill', () => {
   test.each([
     'I created the review with the ui-review skill.',
     'See docs/ai/skills/ui-review.mdx for details.',
+    'The old /ui-review-old skill is gone.',
   ])('does not count %j', async (answer) => {
     const { mentionsReviewSkill } = await import('./test-utils.ts');
     expect(mentionsReviewSkill(answer)).toBe(false);

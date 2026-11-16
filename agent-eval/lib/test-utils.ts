@@ -207,8 +207,8 @@ export function expectDisplayReviewForVisualChange(): void {
   expectFinalResponseSharesReviewLink();
 }
 
-// Trigger correctness: an agent publishes a review only when the user asks for one or to see
-// stories, so a task that does not ask must NOT publish one, and the final response must not
+// Trigger correctness: an agent creates a review only when the user asks for one or to see
+// stories, so a task that does not ask must NOT create one, and the final response must not
 // pretend there is one.
 export function expectNoDisplayReview(): void {
   const displayReviewCalls = getWorkflowCalls('review-create');
@@ -243,7 +243,7 @@ export function expectFocusedTestRun(): void {
 // The workflow tells the agent to inform the user about the `/ui-review` skill after a visible
 // change. The words are the agent's; the skill has to be named the way a user invokes it: with a
 // slash, or `$` in Codex, with or without the plugin namespace (`/storybook:ui-review`).
-const REVIEW_HINT = /(?:^|[\s`'"(])[/$](?:storybook:)?ui-review\b/m;
+const REVIEW_HINT = /(?:^|[\s`'"(*_[“>])[/$](?:storybook:)?ui-review(?![\w-])/m;
 
 export const mentionsReviewSkill = (answer: string): boolean => REVIEW_HINT.test(answer);
 
@@ -306,7 +306,7 @@ export function expectDisplayReviewForBrowseRequest(): void {
 }
 
 // Hard completeness floor: every story exported from the story files written
-// during the run must appear in the published review — curation may group
+// during the run must appear in the created review — curation may group
 // stories, never omit them. Assumes the template starts without story files,
 // so every story file on disk was created by the agent.
 export function expectAllStoryExportsInDisplayReview(): void {
@@ -333,7 +333,7 @@ export function expectAllStoryExportsInDisplayReview(): void {
 }
 
 // Targeted completeness floor: the stories the task is about must appear in
-// the published review. Deliberately weaker than the every-new-story rule of
+// the created review. Deliberately weaker than the every-new-story rule of
 // expectAllStoryExportsInDisplayReview, for fixtures with pre-existing
 // stories the agent may legitimately leave out of the review.
 export function expectStoryIdsInDisplayReview(idSubstrings: string[]): void {
@@ -421,7 +421,7 @@ export function findDevServerKillCommands(commands: string[]): string[] {
 
 // Story IDs must come from a discovery tool (stories-changed, or the
 // stories-find-by-component fallback), never from file names or memory. A
-// published review without a prior discovery call means the agent guessed
+// created review without a prior discovery call means the agent guessed
 // its way to valid-looking IDs.
 const STORY_DISCOVERY_WORKFLOW_NAMES = ['stories-changed', 'stories-find-by-component'];
 
@@ -432,14 +432,14 @@ export function expectStoryDiscoveryBeforeReview(): void {
   );
   expect(
     firstDiscoveryIndex,
-    `Expected a story-discovery call (${STORY_DISCOVERY_WORKFLOW_NAMES.join(' or ')}) before publishing the review`
+    `Expected a story-discovery call (${STORY_DISCOVERY_WORKFLOW_NAMES.join(' or ')}) before creating the review`
   ).toBeGreaterThanOrEqual(0);
 
   const lastReviewIndex = calls.findLastIndex((call) => call.name === 'review-create');
   expect(lastReviewIndex, 'Expected review-create to be called').toBeGreaterThanOrEqual(0);
   expect(
     firstDiscoveryIndex,
-    'Story discovery must happen before the review is published'
+    'Story discovery must happen before the review is created'
   ).toBeLessThan(lastReviewIndex);
 }
 
@@ -1063,7 +1063,7 @@ function killProcessTree(child: ReturnType<typeof spawn>): void {
 // mechanically, because "meaningful grouping" and "useful rationale" are
 // judgment calls.
 export const DISPLAY_REVIEW_CURATION_CRITERION = [
-  'The final review-create tool call publishes a well-curated review.',
+  'The final review-create tool call creates a well-curated review.',
   'It groups stories into 2 to 5 collections.',
   'No collection contains only a single story, unless there are too few stories to avoid it.',
   "Collections follow a meaningful layering, such as the changed component's visual states, its interaction behavior, or the surfaces that consume it — not arbitrary groupings.",

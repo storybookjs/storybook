@@ -5,7 +5,7 @@ import { describe, expect, test } from 'vitest';
 
 describe('renaming formatRating to formatStars without a visual change', () => {
   // Specialized negative case: rename + no display review only. A non-visual
-  // refactor must not publish a review; create/edit lifecycle checks (instructions,
+  // refactor must not create a review; create/edit lifecycle checks (instructions,
   // preview, launch, story tests) are owned by the other 80x evals. Not
   // review-mode-only: skip-review must still fail without the rename.
 
@@ -31,7 +31,7 @@ describe('renaming formatRating to formatStars without a visual change', () => {
     ).toBe(true);
   });
 
-  test('does not publish a display review for a non-visual refactor', () => {
+  test('does not create a display review for a non-visual refactor', () => {
     expectNoDisplayReview();
   });
 

@@ -31,17 +31,15 @@ function workflowSteps({ devEnabled, testSupported, docsEnabled }: ServerInstruc
   return steps.filter((step) => step !== false);
 }
 
-// The test step names the command, so an agent runs the right tests from this text alone. The
-// rules for failures and accessibility violations come with the output of the command.
+// The test step names the command that tests stories in this project, and nothing more: when to
+// test and that failures get fixed is what the agent and its harness already do.
 function testStep(number: number, transport: SkillTextTransport): string {
-  // An agent without this rule runs the test script of the project.
-  const never = 'never a `package.json` test script or `vitest`';
   if (transport === 'mcp') {
     const run = `\`${getToolName({ transport })('test.run')}\``;
-    return `${number}. After every change, call ${run} and fix what fails (${never}): with \`changed: true\` for the stories your changes affect, with \`files\` for these story files, with neither for every story.`;
+    return `${number}. To test stories, call ${run}: with neither for every story, with \`files\` for these story files, with \`changed: true\` for the stories your changes affect.`;
   }
   // `[files...]` as `test run --help` writes it.
-  return `${number}. After every change, run the story tests and fix what fails, from the package where Storybook is installed (${never}):
+  return `${number}. To test stories in the CLI run:
    \`\`\`sh
    npx storybook tools test run [files...]   # every story, or these story files
    npx storybook tools test run --changed    # the stories your changes affect
@@ -55,7 +53,7 @@ function testStep(number: number, transport: SkillTextTransport): string {
 export const REVIEW_HINT_LINE =
   'Use the /ui-review skill to see the changed components in Storybook';
 const reviewStep = (number: number) =>
-  `${number}. After a change the user can see, tell them about the \`ui-review\` skill: end your answer with "${REVIEW_HINT_LINE}".`;
+  `${number}. Inform the user about the \`ui-review\` skill after a change the user can see: "${REVIEW_HINT_LINE}"`;
 
 // The workflow that ties the skills together, in the order an agent takes the steps. A project
 // edits it to change the workflow.

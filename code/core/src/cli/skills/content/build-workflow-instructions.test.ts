@@ -26,12 +26,12 @@ describe('buildAgentInstructions', () => {
 
       1. \`component-docs\`: look up the components to reuse, with their props and usage examples, before you edit any file. Also when the user asks about a component's props, API, or usage.
       2. \`write-stories\`: every component you create or change gets stories.
-      3. After every change, run the story tests and fix what fails, from the package where Storybook is installed (never a \`package.json\` test script or \`vitest\`):
+      3. To test stories in the CLI run:
          \`\`\`sh
          npx storybook tools test run [files...]   # every story, or these story files
          npx storybook tools test run --changed    # the stories your changes affect
          \`\`\`
-      4. After a change the user can see, tell them about the \`ui-review\` skill: end your answer with "Use the /ui-review skill to see the changed components in Storybook"."
+      4. Inform the user about the \`ui-review\` skill after a change the user can see: "Use the /ui-review skill to see the changed components in Storybook""
     `);
   });
 
@@ -39,7 +39,7 @@ describe('buildAgentInstructions', () => {
     const instructions = buildAgentInstructions({ testSupported: false });
 
     expect(instructions).toContain('2. `write-stories`');
-    expect(instructions).toContain(`3. After a change the user can see`);
+    expect(instructions).toContain('3. Inform the user about the `ui-review` skill');
     expect(instructions).not.toContain('test run');
   });
 
@@ -47,7 +47,7 @@ describe('buildAgentInstructions', () => {
     const instructions = buildAgentInstructions();
 
     expect(instructions.split('\n').at(-1)).toBe(
-      `4. After a change the user can see, tell them about the \`ui-review\` skill: end your answer with "${REVIEW_HINT_LINE}".`
+      `4. Inform the user about the \`ui-review\` skill after a change the user can see: "${REVIEW_HINT_LINE}"`
     );
     // When to create a review is in the description of the `ui-review` skill.
     expect(instructions).not.toContain('asks for a review');
@@ -76,8 +76,8 @@ describe('buildServerInstructions', () => {
 
       1. \`npx storybook skills component-docs --mcp\`: look up the components to reuse, with their props and usage examples, before you edit any file. Also when the user asks about a component's props, API, or usage.
       2. \`npx storybook skills write-stories --mcp\`: every component you create or change gets stories.
-      3. After every change, call \`test-run\` and fix what fails (never a \`package.json\` test script or \`vitest\`): with \`changed: true\` for the stories your changes affect, with \`files\` for these story files, with neither for every story.
-      4. After a change the user can see, tell them about the \`ui-review\` skill: end your answer with "Use the /ui-review skill to see the changed components in Storybook".
+      3. To test stories, call \`test-run\`: with neither for every story, with \`files\` for these story files, with \`changed: true\` for the stories your changes affect.
+      4. Inform the user about the \`ui-review\` skill after a change the user can see: "Use the /ui-review skill to see the changed components in Storybook"
 
       Run the skill of a step before you call a tool of that step, also when the request is only that step.
 
@@ -100,11 +100,8 @@ describe('buildServerInstructions', () => {
     const cli = buildAgentInstructions();
     const mcp = buildServerInstructions(everything);
 
-    expect(step(cli, 3)).toContain('After every change, run the story tests and fix what fails');
-    expect(step(mcp, 3)).toContain('After every change, call `test-run` and fix what fails');
-    for (const text of [cli, mcp]) {
-      expect(step(text, 3)).toContain('never a `package.json` test script or `vitest`');
-    }
+    expect(step(cli, 3)).toBe('3. To test stories in the CLI run:');
+    expect(step(mcp, 3)).toContain('3. To test stories, call `test-run`');
     expect(step(mcp, 4)).toBe(step(cli, 4));
   });
 
@@ -116,7 +113,7 @@ describe('buildServerInstructions', () => {
     });
 
     expect(instructions).toContain('1. `npx storybook skills write-stories --mcp`');
-    expect(instructions).toContain('2. After a change the user can see');
+    expect(instructions).toContain('2. Inform the user about the `ui-review` skill');
     expect(instructions).not.toContain('3.');
     expect(instructions).not.toContain('test-run');
     expect(instructions).not.toContain('component-docs');
@@ -126,7 +123,7 @@ describe('buildServerInstructions', () => {
     const instructions = buildServerInstructions({ ...everything, devEnabled: false });
 
     expect(instructions).toContain('1. `npx storybook skills component-docs --mcp`');
-    expect(instructions).toContain('2. After every change, call `test-run`');
+    expect(instructions).toContain('2. To test stories, call `test-run`');
     expect(instructions).toContain(
       'First run the Storybook skill of step 1, before you edit any file'
     );
@@ -155,7 +152,7 @@ describe('buildServerInstructions', () => {
 
         For every change to how the UI looks (you create, change, or delete a component, story, style, theme, or design token), follow this step.
 
-        1. After every change, call \`test-run\` and fix what fails (never a \`package.json\` test script or \`vitest\`): with \`changed: true\` for the stories your changes affect, with \`files\` for these story files, with neither for every story."
+        1. To test stories, call \`test-run\`: with neither for every story, with \`files\` for these story files, with \`changed: true\` for the stories your changes affect."
       `);
   });
 

@@ -335,15 +335,13 @@ describe('mcpServerHandler', () => {
     expect(parsedResponse.result.instructions).toContain(
       '`npx storybook skills write-stories --mcp`: every component'
     );
-    expect(parsedResponse.result.instructions).toContain(
-      'After every change, call `test-run` and fix what fails (never a `package.json`'
-    );
+    expect(parsedResponse.result.instructions).toContain('2. To test stories, call `test-run`');
     // A review is no step: the agent tells the user about it, and creates one only when asked.
     expect(parsedResponse.result.instructions).not.toMatch(
       /^\d\. `npx storybook skills ui-review/m
     );
     expect(parsedResponse.result.instructions).toContain(
-      'end your answer with "Use the /ui-review skill to see the changed components in Storybook"'
+      'Inform the user about the `ui-review` skill after a change the user can see: "Use the /ui-review skill to see the changed components in Storybook"'
     );
     expect(parsedResponse.result.instructions).not.toContain('component-docs');
   });

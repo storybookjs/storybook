@@ -318,6 +318,27 @@ describe('checkPlanText', () => {
       '#34799 names no group',
     ],
     [
+      'a maintainer PR in a group that has no row',
+      '| `tooling` |\n',
+      '| `build` |\n',
+      pr(34799),
+      '#34799 names the group `build`, which has no row',
+    ],
+    [
+      'a group that names no entry of the plan',
+      '| `ui` | area UI | `sidebar-tree` |',
+      '| `ui` | area UI | `sidebar` |',
+      '| `ui` | area UI |',
+      'the group `ui` names `sidebar`, which is no entry of this plan',
+    ],
+    [
+      'an entry PR whose group skips',
+      '| `ui` | area UI | `sidebar-tree` |',
+      '| `ui` | area UI | skip: covered elsewhere |',
+      `- PRs: ${pr(33422)}`,
+      '#35509 is listed here, but its row does not name `sidebar-tree`',
+    ],
+    [
       'a group without a decision',
       '| `tooling` | area Tooling, no project | skip: no effect that a project can show |',
       '| `tooling` | area Tooling, no project |  |',
@@ -454,14 +475,28 @@ describe('checkPlanText', () => {
     ]);
   });
 
-  it('names the area and title of the window for a row that changed them', () => {
+  it.each([
+    ['area', `| ${pr(33422)} | UI |`, `| ${pr(33422)} | Manager |`],
+    ['title', 'UI: Rebuild Sidebar Tree', 'UI: Rebuild the Sidebar Tree'],
+  ])('names the area and title of the window for a row that changed its %s', (_, from, to) => {
     const window = windowOfPlan(parsePlan(FIXTURE));
-    const text = replaced(FIXTURE, `| ${pr(33422)} | UI |`, `| ${pr(33422)} | Manager |`);
+    const text = replaced(FIXTURE, from, to);
 
     expect(problemsOf(text, { window })).toEqual([
       {
         line: lineOf(text, `| ${pr(33422)} |`),
         message: '#33422 has the area "UI" and the title "UI: Rebuild Sidebar Tree" in the window',
+      },
+    ]);
+  });
+
+  it('names the tags of the window when the plan was written for other ones', () => {
+    const window = { ...windowOfPlan(parsePlan(FIXTURE)), from: 'v10.5.0' };
+
+    expect(problemsOf(FIXTURE, { window })).toEqual([
+      {
+        line: lineOf(FIXTURE, '| Window start |'),
+        message: 'the window has `v10.5.0` a77777356be2aeaff89d7a2b25254db7b2318392',
       },
     ]);
   });

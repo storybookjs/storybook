@@ -137,20 +137,17 @@ export class ComponentMetaManager extends BaseComponentMetaManager<
     this.fsFileSnapshots = fsFileSnapshots;
   }
 
-  private batch: StoryRef[] = [];
-  // The batch's files that each project has yet to receive.
-  private batchFiles: Map<ManagedProject, string[]> | undefined;
-
-  /**
-   * Announce every ref the coming `batchExtract` calls will ask for.
-   *
-   * A file a project has not seen invalidates its program and its type checker's cache. Extracting
-   * a run one component at a time therefore rebuilds the program for each of them, unless the
-   * project receives all of the run's files before its first extraction.
-   */
+  /** Announce every ref the coming `batchExtract` calls will ask for. */
   setBatch(entries: StoryRef[]): void {
-    this.batch = entries.filter(isExtractable);
-    this.batchFiles = undefined;
+    const filesByStoryPath = new Map<string, string[]>();
+    for (const { storyPath, component } of entries.filter(isExtractable)) {
+      const files = filesByStoryPath.get(storyPath) ?? [storyPath];
+      filesByStoryPath.set(storyPath, files);
+      if (component?.path) {
+        files.push(component.path);
+      }
+    }
+    this.setBatchFiles(filesByStoryPath);
   }
 
   /**
@@ -171,44 +168,7 @@ export class ComponentMetaManager extends BaseComponentMetaManager<
       }
     }
 
-    // Programs holding the whole batch did not fit the heap, and giving the batch to the fresh
-    // projects would fill it again, so the rest of the run adds files as it reaches them.
-    if (this.recycleProjectsIfHeapPressured()) {
-      this.setBatch([]);
-    }
-  }
-
-  private addBatchFiles(project: ManagedProject): void {
-    if (this.batch.length === 0) {
-      return;
-    }
-    // A project missing from the map was created after the batch was last grouped, so a tsconfig
-    // change may have moved files between projects.
-    if (!this.batchFiles?.has(project)) {
-      this.batchFiles = this.groupBatchFiles();
-      if (!this.batchFiles.has(project)) {
-        this.batchFiles.set(project, []);
-      }
-    }
-    const files = this.batchFiles.get(project);
-    if (files?.length) {
-      project.ensureFiles(files);
-      this.batchFiles.set(project, []);
-    }
-  }
-
-  // Finding a file's project is the expensive part, so each story file is looked up once.
-  private groupBatchFiles(): Map<ManagedProject, string[]> {
-    const projectByStoryPath = new Map<string, ManagedProject>();
-    const files = new Map<ManagedProject, string[]>();
-    for (const { storyPath, component } of this.batch) {
-      const project = projectByStoryPath.get(storyPath) ?? this.getProjectForFile(storyPath);
-      projectByStoryPath.set(storyPath, project);
-      const projectFiles = files.get(project) ?? [];
-      files.set(project, projectFiles);
-      projectFiles.push(storyPath, ...(component?.path ? [component.path] : []));
-    }
-    return files;
+    this.recycleProjectsIfHeapPressured();
   }
 }
 

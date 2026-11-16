@@ -52,6 +52,9 @@ export class ComponentMetaManager<
   // Per root tsconfig, the tsconfigs its project references reach, in the order a lookup tries
   // them. Walking the references stats every referenced path, which is too slow per lookup.
   private referencedTsConfigs = new Map<string, string[]>();
+  private batch = new Map<string, string[]>();
+  // The batch's files that each project has yet to receive.
+  private batchFiles: Map<P, string[]> | undefined;
 
   // Our own file watching layer
   private watching = false;
@@ -104,14 +107,14 @@ export class ComponentMetaManager<
   /**
    * Reclaim the shared program(s)' resident type-resolution cache when heap usage approaches the V8
    * limit, preventing the next extraction's spike from OOMing the dev server. Callers with a
-   * batch-extraction surface invoke this after each batch. Returns whether it recycled.
+   * batch-extraction surface invoke this after each batch.
    */
-  protected recycleProjectsIfHeapPressured(): boolean {
+  protected recycleProjectsIfHeapPressured(): void {
     if (this.configProjects.size === 0 && !this.inferredProject) {
-      return false;
+      return;
     }
     if (process.memoryUsage().heapUsed < this.heapRecycleThresholdBytes) {
-      return false;
+      return;
     }
 
     // We crossed the heap-pressure threshold. Recycling reclaims the type cache and usually prevents
@@ -134,7 +137,47 @@ export class ComponentMetaManager<
     this.referencedTsConfigs.clear();
     this.inferredProject = undefined;
     this.factory.recycle?.();
-    return true;
+    // Programs holding the whole batch did not fit the heap, and giving the batch to the fresh
+    // projects would fill it again, so the rest of the run adds files as it reaches them.
+    this.setBatchFiles(new Map());
+  }
+
+  /**
+   * Announce the files of a run before its extractions start, keyed by the file whose project
+   * should receive them.
+   *
+   * A file a project has not seen invalidates its program and its type checker's cache. Extracting
+   * a run one component at a time therefore rebuilds the program for each of them, unless the
+   * project receives all of the run's files before its first extraction. A subclass hands them over
+   * by calling {@link addBatchFiles} before it extracts from a project.
+   */
+  setBatchFiles(filesByOwner: Map<string, string[]>): void {
+    this.batch = filesByOwner;
+    this.batchFiles = undefined;
+  }
+
+  /** Give `project` the announced files that belong to it, once. */
+  protected addBatchFiles(project: P): void {
+    if (this.batch.size === 0) {
+      return;
+    }
+    // A project missing from the map was created after the batch was last grouped, so a tsconfig
+    // change may have moved files between projects.
+    if (!this.batchFiles?.has(project)) {
+      this.batchFiles = new Map();
+      for (const [owner, files] of this.batch) {
+        const ownerProject = this.getProjectForFile(owner);
+        this.batchFiles.set(ownerProject, [...(this.batchFiles.get(ownerProject) ?? []), ...files]);
+      }
+      if (!this.batchFiles.has(project)) {
+        this.batchFiles.set(project, []);
+      }
+    }
+    const files = this.batchFiles.get(project);
+    if (files?.length) {
+      project.ensureFiles(files);
+      this.batchFiles.set(project, []);
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -594,6 +637,7 @@ export class ComponentMetaManager<
     this.searchedDirs.clear();
     this.rootTsConfigs.clear();
     this.referencedTsConfigs.clear();
+    this.setBatchFiles(new Map());
   }
 }
 

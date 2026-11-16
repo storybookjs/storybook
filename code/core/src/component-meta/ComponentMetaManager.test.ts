@@ -110,3 +110,85 @@ describe('ComponentMetaManager file watching', () => {
     expect(cardEvents).toContain('rename');
   });
 });
+
+describe('ComponentMetaManager batch files', () => {
+  class TestManager extends ComponentMetaManager<ReturnType<typeof createProject>> {
+    addBatchFilesTo(project: ReturnType<typeof createProject>) {
+      this.addBatchFiles(project);
+    }
+
+    recycle() {
+      this.recycleProjectsIfHeapPressured();
+    }
+  }
+
+  let root: string;
+  let button: string;
+  let card: string;
+  let outside: string;
+  let manager: TestManager;
+
+  const createManager = (recycleHeapPressureRatio?: number) =>
+    new TestManager(
+      { sys: { fileExists: existsSync, directoryExists: existsSync } },
+      {
+        parseCommandLine: () => ({ fileNames: [button, card] }),
+        createConfiguredProject: (commandLine) => ({
+          ...createProject(button),
+          getCommandLine: () => commandLine,
+        }),
+        createInferredProject: () => createProject(outside),
+      },
+      recycleHeapPressureRatio
+    );
+
+  beforeEach(() => {
+    // The manager finds tsconfig files through the real file system.
+    root = mkdtempSync(join(tmpdir(), 'component-meta-batch-'));
+    mkdirSync(join(root, 'src'));
+    writeFileSync(join(root, 'src', 'tsconfig.json'), '{}');
+    button = join(root, 'src', 'Button.ts');
+    card = join(root, 'src', 'Card.ts');
+    outside = join(root, 'Outside.ts');
+    manager = createManager();
+  });
+
+  afterEach(() => {
+    manager.dispose();
+    rmSync(root, { recursive: true, force: true });
+  });
+
+  it('gives a project the announced files that belong to it, once', () => {
+    manager.setBatchFiles(
+      new Map([
+        [button, [button]],
+        [card, [card]],
+        [outside, [outside]],
+      ])
+    );
+    const project = manager.getProjectForFile(button);
+
+    manager.addBatchFilesTo(project);
+    manager.addBatchFilesTo(project);
+
+    expect(project.ensureFiles).toHaveBeenCalledExactlyOnceWith([button, card]);
+  });
+
+  it('stops handing out the batch once holding it forced a heap-pressure recycle', async () => {
+    const { once } = await import('storybook/internal/node-logger');
+    const warn = vi.spyOn(once, 'warn').mockImplementation(() => undefined);
+    manager = createManager(0);
+    manager.setBatchFiles(new Map([[button, [button, card]]]));
+    manager.getProjectForFile(button);
+
+    try {
+      manager.recycle();
+      const fresh = manager.getProjectForFile(button);
+      manager.addBatchFilesTo(fresh);
+
+      expect(fresh.ensureFiles).not.toHaveBeenCalled();
+    } finally {
+      warn.mockRestore();
+    }
+  });
+});

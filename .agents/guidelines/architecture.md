@@ -110,6 +110,8 @@ the fields to change and provide migration-specific error guidance.
   A provider must not read `features.docgenServer`: only consumers gate on it.
 - The `docgen-server` automigration only renames `experimentalDocgenServer`; legacy React and Vue extractor settings are not preserved.
   Angular `compodoc: false` controls only the legacy Compodoc run and is not a server opt-out.
+- A static build and an extract-all pass every entry of the run to providers as `input.batch`.
+  A provider built on `ComponentMetaManager` should turn that into `setBatchFiles()` and call `addBatchFiles()` before extracting from a project: a file a TypeScript project has not seen rebuilds its program, so adding files one component at a time rebuilds it per component.
 
 ## Agent-facing skills
 

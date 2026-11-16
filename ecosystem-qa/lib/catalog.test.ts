@@ -1,8 +1,13 @@
+import { readFileSync } from 'node:fs';
+
 import { describe, expect, it } from 'vitest';
 
-import { loadCatalog, loadCatalogEntry } from './catalog.ts';
+import { loadCatalogEntry, loadEntries } from './catalog.ts';
 import { DISCOVERED, ENTRY } from './fixtures.ts';
-import { Catalog } from './schema.ts';
+import { parsePlan } from './qa-plan.ts';
+import { Catalog, pushesCycle } from './schema.ts';
+
+const PLAN = parsePlan(readFileSync(new URL('./plan.fixture.md', import.meta.url), 'utf8'));
 
 describe('catalog', () => {
   it('loads the checked-in entry by id', () => {
@@ -10,7 +15,7 @@ describe('catalog', () => {
   });
 
   it('parses every checked-in entry', () => {
-    expect(loadCatalog().length).toBeGreaterThan(1);
+    expect(loadEntries().length).toBeGreaterThan(1);
   });
 
   it.each([
@@ -81,7 +86,7 @@ describe('catalog', () => {
 
   it('finds tags on every checked-in entry', () => {
     expect(
-      loadCatalog()
+      loadEntries()
         .filter((entry) => !entry.tags)
         .map((entry) => entry.id)
     ).toEqual([]);
@@ -95,5 +100,28 @@ describe('catalog', () => {
 
   it('rejects duplicate ids', () => {
     expect(() => Catalog.parse([ENTRY, ENTRY])).toThrow(/unique/);
+  });
+});
+
+describe('loadEntries', () => {
+  it('adds each discovered repo of a plan as an entry at its commit that pushes nothing', () => {
+    const entry = loadEntries(PLAN).find((candidate) => candidate.id === 'primer-react');
+
+    expect(entry).toEqual({
+      id: 'primer-react',
+      repo: 'primer/react',
+      ref: '998b471a4ad78c7c23426038ef0c4a5261fc41cf',
+      class: 'tier2',
+      packageManager: 'npm',
+      storybookDir: 'packages/react',
+      windows: false,
+    });
+    expect(pushesCycle(entry!)).toBe(false);
+  });
+
+  it('refuses a plan that discovers a repo under the id of a catalog entry', () => {
+    const plan = { ...PLAN, discovered: [{ ...PLAN.discovered[0]!, id: 'mantine' }] };
+
+    expect(() => loadEntries(plan)).toThrow(/unique/);
   });
 });

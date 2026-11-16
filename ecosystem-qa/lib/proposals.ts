@@ -3,7 +3,7 @@ import { existsSync, statSync } from 'node:fs';
 
 import { join } from 'pathe';
 
-import { loadCatalog } from './catalog.ts';
+import { loadEntries } from './catalog.ts';
 import { cycleRef, versionLine } from './cycle.ts';
 import { fingerprint } from './fingerprint.ts';
 import { loadResults, type LoadedResult } from './results.ts';
@@ -136,7 +136,7 @@ export const loadFindingGroups = (
 ): { loaded: LoadedResult[]; groups: FindingGroup[] } => {
   const loaded = loadResults(resultsDir, {
     version,
-    catalog: loadCatalog(),
+    catalog: loadEntries(),
     warn: (message) => console.warn(`::warning::${message}`),
   });
   return { loaded, groups: groupFindings(loaded) };

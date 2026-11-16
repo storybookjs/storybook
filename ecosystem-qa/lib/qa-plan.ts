@@ -522,7 +522,7 @@ export const parsePlan = (text: string): Plan => {
 
 export type Problem = { line: number; message: string };
 
-export type CheckContext = { window?: Window };
+export type CheckContext = { catalog: CatalogEntry[]; window?: Window };
 
 type RuleInput = CheckContext & { plan: Plan; at: PlanLayout; lines: string[] };
 type Rule = (input: RuleInput) => Problem[];
@@ -572,6 +572,55 @@ const discoveredIdsAreUnique: Rule = ({ plan, at }) =>
         ]
       : []
   );
+
+const entryRepos = ({ plan, at }: RuleInput) =>
+  plan.entries.flatMap((entry, index) =>
+    entry.repos.map(({ id }, repo) => ({ id, line: at.entries[index]!.repos[repo]! }))
+  );
+
+const reposAreKnown: Rule = (input) => {
+  const { plan, at, catalog } = input;
+  const cataloged = new Set(catalog.map((entry) => entry.id));
+  const discovered = new Set(plan.discovered.map((repo) => repo.id));
+  return [
+    ...plan.discovered.flatMap((repo, index) =>
+      cataloged.has(repo.id)
+        ? [
+            {
+              line: at.tables.discovered.rows[index]!,
+              message: `\`${repo.id}\` is a catalog id, so it cannot be a discovered repo too`,
+            },
+          ]
+        : []
+    ),
+    ...entryRepos(input)
+      .filter(({ id }) => !cataloged.has(id) && !discovered.has(id))
+      .map(({ id, line }) => ({
+        line,
+        message: `\`${id}\` is no catalog id and no id of "${TABLES.discovered.heading}"`,
+      })),
+  ];
+};
+
+const reposAreCurrent: Rule = (input) => {
+  const { plan, catalog } = input;
+  const oldest = Number(plan.line.split('.')[0]) - 1;
+  const majors = new Map<string, number | undefined>([
+    ...catalog.map((entry) => [entry.id, entry.tags?.storybook] as const),
+    ...plan.discovered.map((repo) => [repo.id, repo.major] as const),
+  ]);
+  return entryRepos(input).flatMap(({ id, line }) => {
+    const major = majors.get(id);
+    return major !== undefined && major < oldest
+      ? [
+          {
+            line,
+            message: `\`${id}\` is on Storybook ${major}, more than one major behind ${plan.line}`,
+          },
+        ]
+      : [];
+  });
+};
 
 const entryPrsHaveRows: Rule = (input) => {
   const { plan, at } = input;
@@ -711,6 +760,8 @@ const RULES: Rule[] = [
   slugsAreUnique,
   versionIsOnLine,
   discoveredIdsAreUnique,
+  reposAreKnown,
+  reposAreCurrent,
   entryPrsHaveRows,
   rowsAreDecided,
   batchesHaveNoGap,
@@ -720,7 +771,7 @@ const RULES: Rule[] = [
   matchesWindow,
 ];
 
-export const checkPlan = (plan: Plan, context: CheckContext = {}): Problem[] => {
+export const checkPlan = (plan: Plan, context: CheckContext): Problem[] => {
   const { lines, at } = layoutPlan(plan);
   return RULES.flatMap((rule) => rule({ ...context, plan, at, lines })).sort(
     (a, b) => a.line - b.line
@@ -730,7 +781,7 @@ export const checkPlan = (plan: Plan, context: CheckContext = {}): Problem[] => 
 // A valid file equals its rendered form, so nothing the parser skipped can stay in it.
 export const checkPlanText = (
   text: string,
-  context: CheckContext = {}
+  context: CheckContext
 ): { plan: Plan; problems: Problem[] } | { plan: null; problems: Problem[] } => {
   let plan: Plan;
   try {
@@ -755,6 +806,17 @@ export const checkPlanText = (
   }
   return { plan, problems: checkPlan(plan, context) };
 };
+
+export const discoveredEntries = (plan: Plan): CatalogEntry[] =>
+  plan.discovered.map((repo): CatalogEntry => ({
+    id: repo.id,
+    repo: repo.repo,
+    ref: repo.commit,
+    class: 'tier2',
+    packageManager: repo.packageManager,
+    storybookDir: repo.storybookDir,
+    windows: false,
+  }));
 
 export const planHash = (text: string): string =>
   createHash('sha256').update(text).digest('hex').slice(0, 12);

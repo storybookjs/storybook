@@ -3,6 +3,7 @@ import { parseArgs } from 'node:util';
 
 import { basename } from 'pathe';
 
+import { loadEntries } from './lib/catalog.ts';
 import {
   checkPlanText,
   planBatches,
@@ -21,9 +22,10 @@ const HELP = `Usage: node ecosystem-qa/qa-plan.ts render --window <file> [--draf
 render writes a QA plan from the JSON that window.ts wrote and an optional JSON draft of entries,
 discovered repos, decisions, and groups. A PR without a decision gets an empty cell.
 
-check accepts a plan only in the form that render writes and when every rule holds, and then prints
-its entries, batches, runs, and an estimate of its cost. With --window it also checks that the
-tables hold exactly the PRs of that window. It exits 1 with the line of each problem.`;
+check accepts a plan only in the form that render writes and when every rule holds against the
+catalog, and then prints its entries, batches, runs, and an estimate of its cost. With --window it
+also checks that the tables hold exactly the PRs of that window. It exits 1 with the line of each
+problem.`;
 
 const { values, positionals } = parseArgs({
   allowPositionals: true,
@@ -59,10 +61,10 @@ if (command === 'render' && values.window && values.out && !file) {
   console.log(`Wrote ${values.out}. Run check on it before you open the plan PR.`);
 } else if (command === 'check' && file && !values.draft && !values.out) {
   const text = readFileSync(file, 'utf8');
-  const { plan, problems } = checkPlanText(
-    text,
-    values.window ? { window: readWindow(values.window) } : {}
-  );
+  const { plan, problems } = checkPlanText(text, {
+    catalog: loadEntries(),
+    window: values.window ? readWindow(values.window) : undefined,
+  });
   if (!plan || problems.length) {
     for (const problem of problems) {
       console.error(`${file}:${problem.line}: ${problem.message}`);

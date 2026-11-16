@@ -2,7 +2,9 @@ import { readFileSync } from 'node:fs';
 
 import { describe, expect, it } from 'vitest';
 
+import { loadEntries } from './catalog.ts';
 import {
+  type CheckContext,
   checkPlanText,
   parsePlan,
   type Plan,
@@ -27,7 +29,10 @@ const replaced = (text: string, from: string, to: string) => {
 const lineOf = (text: string, needle: string) =>
   text.split('\n').findIndex((line) => line.includes(needle)) + 1;
 
-const problemsOf = (text: string, context = {}) => checkPlanText(text, context).problems;
+const CATALOG = loadEntries();
+
+const problemsOf = (text: string, context: Partial<CheckContext> = {}) =>
+  checkPlanText(text, { catalog: CATALOG, ...context }).problems;
 
 const windowPr = (pr: Partial<WindowPr> & Pick<WindowPr, 'number' | 'title'>): WindowPr => ({
   area: null,
@@ -212,6 +217,27 @@ describe('checkPlanText', () => {
       `| ${pr(31900)} |`,
       'which is no entry',
     ],
+    [
+      'a repo that is no catalog id and was not discovered',
+      '- Repo `mantine`',
+      '- Repo `mantin`',
+      '- Repo `mantin`',
+      '`mantin` is no catalog id and no id of "Discovered repos"',
+    ],
+    [
+      'a discovered repo with the id of a catalog entry',
+      '| `primer-react` |',
+      '| `mantine` |',
+      '| `mantine` |',
+      '`mantine` is a catalog id',
+    ],
+    [
+      'a discovered repo more than one major behind the line',
+      '| packages/react | 10 |',
+      '| packages/react | 9 |',
+      '- Repo `primer-react`',
+      '`primer-react` is on Storybook 9, more than one major behind 11.0',
+    ],
     ['a gap in the batches', '- Batch: 2', '- Batch: 3', '- Batch: 3', 'batch 2 has no entry'],
     [
       'a maintainer PR without a group',
@@ -249,6 +275,19 @@ describe('checkPlanText', () => {
     });
   });
 
+  it('refuses a catalog entry more than one major behind the line', () => {
+    const catalog = CATALOG.map((entry) =>
+      entry.id === 'mantine' ? { ...entry, tags: { ...entry.tags!, storybook: 9 } } : entry
+    );
+
+    expect(problemsOf(FIXTURE, { catalog })).toEqual([
+      {
+        line: lineOf(FIXTURE, '- Repo `mantine`'),
+        message: '`mantine` is on Storybook 9, more than one major behind 11.0',
+      },
+    ]);
+  });
+
   it('names a PR of the window that has no row, and a row that is not in the window', () => {
     const plan = parsePlan(FIXTURE);
     const window = windowOfPlan(plan);
@@ -280,7 +319,7 @@ describe('planFromWindow', () => {
     const text = renderPlan(planFromWindow(windowOf([needed]), PlanDraft.parse({})));
 
     expect(parsePlan(text).needed[0]!.title).toBe('Core: Keep `a | b` in a title');
-    expect(checkPlanText(text).plan).not.toBeNull();
+    expect(checkPlanText(text, { catalog: CATALOG }).plan).not.toBeNull();
   });
 
   it('leaves every row of a skeleton undecided, so the check names each of them', () => {

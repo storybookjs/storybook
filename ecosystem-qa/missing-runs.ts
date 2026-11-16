@@ -2,7 +2,7 @@ import { parseArgs } from 'node:util';
 
 import { z } from 'zod';
 
-import { loadCatalog } from './lib/catalog.ts';
+import { loadEntries } from './lib/catalog.ts';
 import { versionLine } from './lib/cycle.ts';
 import { loadResults } from './lib/results.ts';
 import { writeStepSummary } from './lib/step-summary.ts';
@@ -39,7 +39,7 @@ const Planned = z.object({
 });
 const { include } = Planned.parse(JSON.parse(planned));
 // The collect names every record it cannot read, with the reason.
-const loaded = loadResults(results, { version, catalog: loadCatalog(), warn: () => {} });
+const loaded = loadResults(results, { version, catalog: loadEntries(), warn: () => {} });
 const missing = withoutResult(
   include,
   loaded.map(({ result }) => ({

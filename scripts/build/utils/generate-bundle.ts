@@ -109,17 +109,29 @@ function rolldownGlobalExternalsPlugin(): RolldownPlugin {
   };
 }
 
-// A free `require` (not `x.require`, not `__require`): esbuild's `__require` helper, or our own
-// `require.resolve` / `require.cache`. Matches inside strings over-inject, which is harmless.
-const FREE_REQUIRE = /(?<![\w$.])require\s*[(.]|typeof require\b/;
+// esbuild rewrites every free `require` in bundled sources to its `__require` helper, so the
+// helper's `typeof require` check is the only free `require` left in an output.
+const REQUIRE_HELPER = /\btypeof require\b/;
 
 /**
- * Gives `require` only to the node outputs that reference it. ESM has no `require`, and esbuild's
- * `__require` helper falls back to it for CommonJS dependencies we bundle. Outputs that never
- * touch it stay free of `import.meta.url`, which some runtimes (Cloudflare Workers) lack.
+ * Returns `code` with a `require` defined when it holds esbuild's `__require` helper, which falls
+ * back to `require` for the CommonJS dependencies we bundle, or `undefined` when it needs none.
+ */
+export function addCjsRequire(code: string, uid: string): string | undefined {
+  if (!REQUIRE_HELPER.test(code)) {
+    return undefined;
+  }
+  const header = `import { createRequire as CJS_COMPAT_CREATE_REQUIRE_${uid} } from "node:module";var require = CJS_COMPAT_CREATE_REQUIRE_${uid}(import.meta.url);\n`;
+  // A hashbang is only valid on the first line.
+  const bodyStart = code.startsWith('#!') ? code.indexOf('\n') + 1 : 0;
+  return code.slice(0, bodyStart) + header + code.slice(bodyStart);
+}
+
+/**
+ * Gives `require` only to the node outputs that use it. Outputs that do not stay free of
+ * `import.meta.url`, which some runtimes (Cloudflare Workers) lack.
  */
 function cjsRequirePlugin(uid: string): esbuild.Plugin {
-  const header = `import { createRequire as CJS_COMPAT_CREATE_REQUIRE_${uid} } from "node:module";var require = CJS_COMPAT_CREATE_REQUIRE_${uid}(import.meta.url);\n`;
   return {
     name: 'cjs-require',
     setup(build) {
@@ -133,9 +145,9 @@ function cjsRequirePlugin(uid: string): esbuild.Plugin {
             .filter((file) => file.endsWith('.js'))
             .map(async (file) => {
               const path = join(cwd, file);
-              const code = await readFile(path, 'utf8');
-              if (FREE_REQUIRE.test(code)) {
-                await writeFile(path, header + code);
+              const code = addCjsRequire(await readFile(path, 'utf8'), uid);
+              if (code !== undefined) {
+                await writeFile(path, code);
               }
             })
         );

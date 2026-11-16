@@ -497,7 +497,7 @@
   },
   {
     "id": "inkline",
-    "repo": "inkline/inkline",
+    "repo": "uxfront-com/inkline",
     "pushTo": "storybook-tmp/inkline",
     "ref": "qa/base",
     "class": "tier2",

@@ -83,6 +83,8 @@ describe('storybook tools arguments after the tool name', () => {
     { tokens: ['-a11y', 'false'], input: undefined },
     { tokens: ['-p', '6006'], input: undefined },
     { tokens: ['src/A.stories.tsx'], input: { files: ['src/A.stories.tsx'] } },
+    // A single flag value is a list of one, as one bare argument is.
+    { tokens: ['--files', 'src/A.stories.tsx'], input: { files: ['src/A.stories.tsx'] } },
     {
       tokens: ['src/A.stories.tsx', '--a11y', 'false', 'src/B.tsx'],
       input: { a11y: false, files: ['src/A.stories.tsx', 'src/B.tsx'] },
@@ -112,18 +114,18 @@ describe('storybook tools arguments after the tool name', () => {
       ]);
       const parsed = parseToolsTokens(tokens);
       // The dispatcher appends bare arguments to `files`, the `positional` key of `test run`.
-      const args =
-        parsed.ok && parsed.positionals.length > 0
-          ? {
+      const given = parsed.ok ? parsed.args.files : undefined;
+      const args = !parsed.ok
+        ? undefined
+        : parsed.positionals.length === 0 && given === undefined
+          ? parsed.args
+          : {
               ...parsed.args,
               files: [
-                ...((parsed.args.files as string[] | undefined) ?? []),
+                ...(given === undefined ? [] : Array.isArray(given) ? given : [given]),
                 ...parsed.positionals,
               ],
-            }
-          : parsed.ok
-            ? parsed.args
-            : undefined;
+            };
 
       expect(calls.map((call) => call.input)).toEqual(input === undefined ? [] : [input]);
       expect(parsed.ok && !parsed.help ? args : undefined).toEqual(input);

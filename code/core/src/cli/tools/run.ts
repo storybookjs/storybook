@@ -402,7 +402,7 @@ function withPositionals(
   if (parsed.positionals.length === 0 && given === undefined) {
     return { ok: true, args: parsed.args };
   }
-  // A single `--key value` is a list of one, so the flag and bare arguments spell the same input.
+  // A single `--key value` is a list of one.
   const values = [
     ...(given === undefined ? [] : Array.isArray(given) ? given : [given]),
     ...parsed.positionals,

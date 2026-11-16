@@ -485,7 +485,7 @@ Accessibility: not checked.`);
       expect(outcome.markdown).toBe(`No stories found matching the provided input.
 
 No story files found for \`src/Button.tsx\`.
-File arguments select story files by path, as Vitest filters select test files. To test the stories that depend on a changed file, use \`--changed\`.`);
+File arguments select story files by path, relative to \`${process.cwd()}\`, as Vitest filters select test files. To test the stories that depend on a changed file, use \`--changed\`.`);
     });
 
     it('passes when no story changed, with what to try next', async () => {
@@ -518,7 +518,7 @@ To test more, pass story files.`);
 
       expect(outcome.ok).toBe(true);
       expect(outcome.markdown).toBe(`No story files found for \`src/Button.tsx\`, so no tests ran.
-File arguments select story files by path, as Vitest filters select test files. To test the stories that depend on a changed file, use \`--changed\` without file arguments.`);
+File arguments select story files by path, relative to \`${process.cwd()}\`, as Vitest filters select test files. To test the stories that depend on a changed file, use \`--changed\` without file arguments.`);
     });
 
     it('says when none of the stories the other forms selected changed', async () => {

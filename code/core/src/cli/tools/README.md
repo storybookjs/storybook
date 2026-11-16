@@ -69,7 +69,8 @@ Tool arguments are `--key value` flags spelled exactly like the input schema key
 key also takes that key as bare arguments: `test run src/Button.stories.tsx Card` is
 `test run --files src/Button.stories.tsx Card`. The CLI passes the values as typed, after any
 `--files` values; what they mean is up to the tool (`test run` reads relative paths against the
-Storybook project directory, so against `--cwd` when given). A bare token right after a flag is
+directory its Storybook runs in: `--cwd` when given, or the dev server's directory when the CLI
+attaches to one). A bare token right after a flag is
 that flag's value, so put bare arguments first or after `--`. Other tools reject bare arguments.
 Toolset inputs are `v.strictObject`, so a flag
 or `--input` key the tool does not declare is an invalid-input error, and the CLI names the flag

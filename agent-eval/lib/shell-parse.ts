@@ -437,10 +437,10 @@ function parseToolArguments(
   }
   // Bare arguments are appended to `files`, after `--input` and `--files`, as the CLI does.
   const withFiles = (args: Record<string, unknown>): Record<string, unknown> => {
-    if (positionals.length === 0) {
+    const given = args.files;
+    if (!takesFiles || (positionals.length === 0 && given === undefined)) {
       return args;
     }
-    const given = args.files;
     return {
       ...args,
       files: [

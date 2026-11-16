@@ -11,7 +11,7 @@ export type TestStoriesSkillInputs = {
 
 // The `AGENTS.md` section names the command itself, so this skill is for an agent that opens it by
 // name. It says what the section says, and no more: the output of a run says what to do next
-// (fix and rerun, the accessibility rules, the run of every story before finishing).
+// (fix and rerun, the accessibility rules).
 export function buildTestStoriesSkill(inputs: TestStoriesSkillInputs): string {
   const v = skillVocabulary(inputs.transport);
   if (!inputs.testSupported) {

@@ -560,7 +560,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				    "description": "Run story tests.
 				Run them after editing anything that changes how the UI looks — components, stories, styles, CSS, themes, colors, or design tokens — shell-level substitutes like typecheck, lint, or package.json test scripts do not replace this.
 				Use changed for focused runs on what you changed (faster while iterating), or files for specific story files,
-				and leave all of them out to run every story for full-project verification.
+				and leave all of them out to run every story.
 				Use this continuously to monitor test results as you work on your UI components and stories.
 				Results will include passing/failing status, and accessibility violation reports.
 				For visual/design accessibility violations (for example color contrast), ask the user before changing styles.",
@@ -586,8 +586,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				        },
 				        "stories": {
 				          "description": "Stories to test for focused feedback. Omit this field, \`files\` and \`changed\` to run tests for all available stories.
-				Prefer running tests for specific stories while developing to get faster feedback,
-				and omit it once before you finish, to verify every story.
+				Prefer running tests for specific stories while developing to get faster feedback.
 				Prefer { storyId } when you don't already have story file context, since this avoids filesystem discovery.
 				Use { storyId } when IDs were discovered from documentation tools.
 				Use { absoluteStoryPath + exportName } only when you're currently working in a story file and already know those values.",

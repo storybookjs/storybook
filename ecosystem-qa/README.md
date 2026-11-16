@@ -259,6 +259,12 @@ push to qa/plans ──> plan job ─────────> runner jobs ─�
                      plan.ts --outputs   part, tier gate                           plan_hash
 ```
 
+A maintainer sets up three things once, before the first plan is merged:
+
+- The discussion category `QA sweeps`, under the edit button of Categories on the Discussions tab. Without it the `track` job fails with a message that names it, and no batch starts the next one.
+- The branch `qa/plans` in the deployment branches of the environments `ecosystem-qa` and `ecosystem-qa-file`, so that its runs get the agent keys and its filings the push tokens.
+- The repository variable `ECOSYSTEM_QA_CYCLE_CAP_USD`, the spend cap of one plan in dollars, when the cap should not be 250.
+
 The plan job is the only job that reads the inputs and the event, and every other job reads its outputs.
 For a push it diffs the plans directory over the commits of the push, and only a path that is a plan file in `ecosystem-qa/plans/` is ever read.
 A push that adds or changes one plan runs batch 1 of it as a dry run.
@@ -269,26 +275,31 @@ A dispatch by hand runs one batch of a plan with `plan` set to its file name, su
 It starts the next batch only when `chain` is set.
 `version` is the version of the plan's header when it is empty, and must be on the plan's line when it is not; a sweep without a plan needs it.
 A run with a plan runs the tier `gate` and the checks of its batch, on Linux, with `repo`, `os` and `tier` left out.
-When `plan_hash` is given, the plan job ends the run if the plan at that commit has another hash, so a chain stops once its plan changed.
+When `plan_hash` is given and the plan at that commit has another hash or is gone, the plan job ends green with a notice and runs nothing, so a chain stops once its plan changed.
 Each batch of a plan has its own concurrency group of plan, batch and `from_runs`, so a chained batch never waits behind the batch that started it.
 
-The `track` job runs `track.ts` for every run with a plan that was not cancelled, also when the collect failed.
-It writes into the discussion category `QA sweeps`, which a maintainer creates once under the edit button of Categories on the Discussions tab.
-Without that category the job ends with a message that names it, and writes nothing elsewhere.
+The `track` job runs `track.ts` for every run with a plan that was not cancelled, also when the collect failed, except a collect of earlier runs that failed, which has nothing to report.
 The first batch of a plan creates the discussion `[SB 11 QA] Dynamic sweep 11.0.md`, with a hidden marker of the plan's hash in its first line.
 Each batch adds one comment, for its batch, version and source runs: the runs planned, finished and without a result, the dollars of each, the checks by state, and one line for each finding.
 Collecting the same runs again edits that comment and starts no batch.
-The spend of a plan is the sum of the dollars in the comments that the workflow wrote, and a run without a result or without a price counts as $2.59.
-The chain stops after the last batch, when a run does not chain, when a batch left no result, when anyone but the workflow edited a comment of the plan, and when the spend reaches the cap, which is the repository variable `ECOSYSTEM_QA_CYCLE_CAP_USD`, or 250 dollars when it is unset.
+The spend of a plan is the sum of the dollars in the comments that the workflow wrote, each run counted once, and a run without a result or without a price counts as the flat price `USD_PER_RUN` of `lib/qa-plan.ts`.
+A changed plan has another hash, so it starts a cycle of its own with a new discussion and a spend of zero.
+The chain stops after the last batch, when a run does not chain, when a batch left no result, when anyone but the workflow edited a comment of the plan, when a batch after the first finds no discussion of the plan, and when the spend reaches the cap.
+The cap is checked before each next batch starts, so the spend of a plan can pass it by at most one batch.
 The comment then says why.
-The `track` job uses the job token with `discussions: write`, `actions: write` to start the next batch, and `issues: read`, and no environment.
+Do not edit the first line of the discussion: without it the next batch finds no discussion and stops.
+The `track` job uses the job token with `discussions: write` and `actions: write` to start the next batch, and no environment.
 
-To see what a batch would write without writing it, run `track.ts --print` on its results:
+A chained batch is always a dry run, so a person files each batch by hand with the dispatch that its comment prints.
+That dispatch carries the plan's hash, so it runs nothing once the plan changed.
+In a run that files, the `file` job runs after the `track` job, and then edits the comment of the batch so that each finding names its issue.
+
+To see what a batch would write without writing it, run `track.ts --print` on its results, here the fake run and collect of the fixture plan above:
 
 ```sh
-node ecosystem-qa/track.ts --print --dry --results ecosystem-qa/results \
-  --plan ecosystem-qa/plans/11.0.md --batch 1 --version 11.0.0-beta.3 \
-  --planned "$(node ecosystem-qa/plan.ts --plan ecosystem-qa/plans/11.0.md --batch 1)" \
+node ecosystem-qa/track.ts --print --filing dry --results ecosystem-qa/results \
+  --plan ecosystem-qa/lib/plan.fixture.md --batch 1 --version 11.0.0-beta.3 \
+  --planned "$(node ecosystem-qa/plan.ts --plan ecosystem-qa/lib/plan.fixture.md --batch 1)" \
   --proposals ecosystem-qa/results/proposals.json --repo storybookjs/storybook
 ```
 
@@ -340,7 +351,6 @@ Dry mode is the default, and a push to `qa/plans` is always a dry run.
 The filer writes each proposal, with its full issue body and the evidence it would upload, to the Step Summary and changes nothing.
 Dry mode files no finding, but a batch with a plan still reports its numbers in the tracking discussion.
 Its comment prints the dispatch that files the batch, with `from_runs` and `dry` set to false, and the day its result artifacts expire, after which the batch can no longer be filed.
-After a filing, the `file` job edits the comment of the batch so that each finding names its issue.
 Without dry mode it pushes the evidence to the `qa-assets` branch with the job token, pushes the upgraded state to the catalog repo with the push token of the target's org, and files the issue in milestone 11.
 That is `ECOSYSTEM_QA_PUSH_TOKEN` for `storybookjs` and `ECOSYSTEM_QA_PUSH_TOKEN_STORYBOOK_TMP` for `storybook-tmp`, both from the `ecosystem-qa-file` environment.
 The upgraded state lands under `refs/qa/`, never as a branch: a branch push would start the catalog repo's own workflows and run the agent's commits with that repo's secrets before anyone read the diff.

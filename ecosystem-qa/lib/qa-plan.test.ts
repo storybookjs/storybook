@@ -15,6 +15,10 @@ import type { Window, WindowPr } from './window.ts';
 
 const FIXTURE = readFileSync(new URL('./plan.fixture.md', import.meta.url), 'utf8');
 
+const pr = (number: number) =>
+  `[#${number}](https://github.com/storybookjs/storybook/pull/${number})`;
+const COMMIT = '998b471a4ad78c7c23426038ef0c4a5261fc41cf';
+
 const replaced = (text: string, from: string, to: string) => {
   expect(text).toContain(from);
   return text.replace(from, to);
@@ -89,10 +93,10 @@ describe('the fixture plan', () => {
 
 describe('a file that is not in its rendered form', () => {
   it('fails at the first line that differs', () => {
-    const text = replaced(FIXTURE, '| #33422 | UI |', '| #33422 |  UI |');
+    const text = replaced(FIXTURE, `| ${pr(33422)} | UI |`, `| ${pr(33422)} |  UI |`);
 
     expect(problemsOf(text)).toEqual([
-      { line: lineOf(text, '#33422 |'), message: expect.stringContaining('rendered form') },
+      { line: lineOf(text, `${pr(33422)} |`), message: expect.stringContaining('rendered form') },
     ]);
   });
 
@@ -139,10 +143,31 @@ describe('checkPlanText', () => {
     ],
     [
       'a discovered row on a short commit',
-      '| 998b471a4ad78c7c23426038ef0c4a5261fc41cf |',
-      '| 998b471 |',
+      `/tree/${COMMIT})`,
+      '/tree/998b471)',
       '| `primer-react` |',
       'full commit SHA',
+    ],
+    [
+      'a discovered repo without the link to its commit',
+      `[primer/react](https://github.com/primer/react/tree/${COMMIT})`,
+      'primer/react',
+      '| `primer-react` |',
+      'expected a repo linked to its commit',
+    ],
+    [
+      'a discovered repo that links another repo',
+      `[primer/react](https://github.com/primer/react/tree/`,
+      `[primer/react](https://github.com/evil/react/tree/`,
+      '| `primer-react` |',
+      'expected a repo linked to its commit',
+    ],
+    [
+      'a last push that is not in the form pin.ts prints',
+      '| 2026-11-16T14:42:00Z |',
+      '| 2026-11-16 |',
+      '| `primer-react` |',
+      'expected a time',
     ],
     [
       'a discovered row with an unknown package manager',
@@ -153,30 +178,38 @@ describe('checkPlanText', () => {
     ],
     [
       'an entry PR without a row',
-      '- PRs: #31900',
-      '- PRs: #31900, #40000',
-      '- PRs: #31900',
+      `- PRs: ${pr(31900)}`,
+      `- PRs: ${pr(31900)}, ${pr(40000)}`,
+      `- PRs: ${pr(31900)}`,
       '#40000 has no row',
     ],
     [
       'an entry PR whose row names another entry',
-      '- PRs: #36137',
-      '- PRs: #36137, #31900',
-      '- PRs: #36137',
+      `- PRs: ${pr(36137)}`,
+      `- PRs: ${pr(36137)}, ${pr(31900)}`,
+      `- PRs: ${pr(36137)}`,
       'does not name `story-sort-in-main`',
+    ],
+    ['a PR without its link', `| ${pr(36664)} |`, '| #36664 |', '| #36664 |', 'expected a PR like'],
+    [
+      'a PR that links another PR',
+      `- PRs: ${pr(36137)}`,
+      '- PRs: [#36137](https://github.com/storybookjs/storybook/pull/36138)',
+      '- PRs: [#36137]',
+      'expected a PR like',
     ],
     [
       'a row without a decision',
       "| skip: a change of this repository's CI, no project can see it |",
       '|  |',
-      '| #36664 |',
+      pr(36664),
       '#36664 has no decision',
     ],
     [
       'a row that names no entry',
       '| `preview-animations` |\n',
       '| `preview-animation` |\n',
-      '| #31900 |',
+      `| ${pr(31900)} |`,
       'which is no entry',
     ],
     ['a gap in the batches', '- Batch: 2', '- Batch: 3', '- Batch: 3', 'batch 2 has no entry'],
@@ -184,7 +217,7 @@ describe('checkPlanText', () => {
       'a maintainer PR without a group',
       '| `tooling` |\n',
       '|  |\n',
-      '| #34799 |',
+      pr(34799),
       '#34799 names no group',
     ],
     [
@@ -220,7 +253,7 @@ describe('checkPlanText', () => {
     const plan = parsePlan(FIXTURE);
     const window = windowOfPlan(plan);
     window.prs.push(windowPr({ number: 40000, title: 'Core: Something new', area: 'Core' }));
-    const text = replaced(FIXTURE, '| #36153 |', '| #36154 |');
+    const text = replaced(FIXTURE, pr(36153), pr(36154));
 
     expect(problemsOf(text, { window })).toEqual([
       {
@@ -232,7 +265,7 @@ describe('checkPlanText', () => {
         message: '#36153 of the window has no row in "PRs verified by hand"',
       },
       {
-        line: lineOf(text, '| #36154 |'),
+        line: lineOf(text, pr(36154)),
         message: '#36154 does not belong in "PRs verified by hand" for this window',
       },
     ]);
@@ -295,6 +328,12 @@ describe('planFromWindow', () => {
     const plan = planFromWindow(windowOf([tracked]), PlanDraft.parse({}));
 
     expect(plan.maintainerSkips[0]!.group).toBe('issue-31202');
-    expect(plan.groups).toEqual([{ slug: 'issue-31202', source: '#31202', decision: null }]);
+    expect(plan.groups).toEqual([
+      {
+        slug: 'issue-31202',
+        source: '[#31202](https://github.com/storybookjs/storybook/issues/31202)',
+        decision: null,
+      },
+    ]);
   });
 });

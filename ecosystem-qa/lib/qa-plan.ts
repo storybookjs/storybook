@@ -37,14 +37,18 @@ export const PlanEntry = z.strictObject({
 });
 export type PlanEntry = z.infer<typeof PlanEntry>;
 
+// Every field but the id and the reason is a value of one line of `pin.ts` output, as it prints it.
 export const DiscoveredRepo = z.strictObject({
   id: RepoId,
   repo: CatalogEntry.shape.repo,
   commit: Sha,
   packageManager: CatalogEntry.shape.packageManager,
   storybookDir: Text,
+  major: z.int().positive(),
   stars: z.int().min(0),
-  lastPush: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'expected a date like 2026-11-16'),
+  pushedAt: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/, 'expected a time like 2026-11-16T14:42:00Z'),
   reason: Text,
 });
 export type DiscoveredRepo = z.infer<typeof DiscoveredRepo>;
@@ -86,13 +90,28 @@ const uncode = (cell: string): string => {
   }
   return match[1]!;
 };
-const prCell = (pr: number) => `#${pr}`;
+// GitHub links no bare `#36137` in a Markdown file, so every reference carries its URL.
+const githubLink = (kind: 'pull' | 'issues') => (number: number) =>
+  `[#${number}](https://github.com/storybookjs/storybook/${kind}/${number})`;
+const prCell = githubLink('pull');
+const issueLink = githubLink('issues');
 const unPr = (cell: string): number => {
-  const match = /^#(\d+)$/.exec(cell);
-  if (!match) {
-    throw new Error(`expected a PR like #36137, found "${cell}"`);
+  const number = Number(/^\[#(\d+)\]/.exec(cell)?.[1]);
+  if (!number || cell !== prCell(number)) {
+    throw new Error(`expected a PR like ${prCell(36137)}, found "${cell}"`);
   }
-  return Number(match[1]);
+  return number;
+};
+const repoCell = (repo: string, commit: string) =>
+  `[${repo}](https://github.com/${repo}/tree/${commit})`;
+const unRepoCell = (cell: string): { repo: string; commit: string } => {
+  const [, repo = '', commit = ''] = /^\[([^\]]*)\]\(.*\/tree\/([^/)]*)\)$/.exec(cell) ?? [];
+  if (cell !== repoCell(repo, commit)) {
+    throw new Error(
+      `expected a repo linked to its commit like ${repoCell('owner/repo', '<commit>')}, found "${cell}"`
+    );
+  }
+  return { repo, commit };
 };
 const numberOrText = (cell: string): unknown => (/^\d+$/.test(cell) ? Number(cell) : cell);
 const orNull = (cell: string) => (cell === '' ? null : cell);
@@ -152,33 +171,33 @@ const TABLES: { [K in TableKey]: Table<Plan[K][number]> } = {
     heading: 'Discovered repos',
     columns: [
       'Id',
-      'Repo',
-      'Commit',
+      'Repo at its commit',
       'Package manager',
       'Storybook directory',
+      'Storybook major',
       'Stars',
-      'Last push',
+      'Pushed at',
       'Reason',
     ],
     schema: DiscoveredRepo,
     encode: (row) => [
       code(row.id),
-      row.repo,
-      row.commit,
+      repoCell(row.repo, row.commit),
       row.packageManager,
       row.storybookDir,
+      String(row.major),
       String(row.stars),
-      row.lastPush,
+      row.pushedAt,
       row.reason,
     ],
-    decode: ([id, repo, commit, packageManager, storybookDir, stars, lastPush, reason]) => ({
+    decode: ([id, repo, packageManager, storybookDir, major, stars, pushedAt, reason]) => ({
       id: uncode(id!),
-      repo,
-      commit,
+      ...unRepoCell(repo!),
       packageManager,
       storybookDir,
+      major: numberOrText(major!),
       stars: numberOrText(stars!),
-      lastPush,
+      pushedAt,
       reason,
     }),
   },
@@ -777,6 +796,9 @@ export type PlanDraft = z.infer<typeof PlanDraft>;
 
 export const ENTRIES_PER_RUN = 4;
 
+// The most expensive of 32 static runs on Haiku at low effort. A run of plan entries may cost more.
+export const USD_PER_RUN = 2.59;
+
 // An issue with sub-issues and a QA heading tracks a project, and its PRs share its instructions.
 const trackingIssueOf = (pr: WindowPr) =>
   pr.issues
@@ -822,7 +844,7 @@ export const planFromWindow = (window: Window, draft: PlanDraft): Plan => {
   const usedGroups = new Set(maintainerSkips.map((row) => row.group));
   const trackedGroups = [...tracked]
     .filter(([slug]) => usedGroups.has(slug) && !draft.groups.some((group) => group.slug === slug))
-    .map(([slug, number]) => ({ slug, source: `#${number}`, decision: null }));
+    .map(([slug, number]) => ({ slug, source: issueLink(number), decision: null }));
 
   const statusOf = new Map(window.prs.map((pr) => [pr.number, pr.status]));
   const groupable = new Set(maintainerPrs.map((pr) => pr.number));

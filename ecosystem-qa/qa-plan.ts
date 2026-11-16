@@ -11,6 +11,7 @@ import {
   planHash,
   planRuns,
   renderPlan,
+  USD_PER_RUN,
 } from './lib/qa-plan.ts';
 import { Window } from './lib/window.ts';
 
@@ -21,11 +22,8 @@ render writes a QA plan from the JSON that window.ts wrote and an optional JSON 
 discovered repos, decisions, and groups. A PR without a decision gets an empty cell.
 
 check accepts a plan only in the form that render writes and when every rule holds, and then prints
-its entries, batches, runs, and an upper estimate of its cost. With --window it also checks that the
+its entries, batches, runs, and an estimate of its cost. With --window it also checks that the
 tables hold exactly the PRs of that window. It exits 1 with the line of each problem.`;
-
-// The most expensive of 32 static runs on Haiku at low effort cost 2.59 dollars.
-const USD_PER_RUN_UPPER = 2.59;
 
 const { values, positionals } = parseArgs({
   allowPositionals: true,
@@ -89,7 +87,7 @@ if (command === 'render' && values.window && values.out && !file) {
     );
   }
   console.log(
-    `At most ${(total * USD_PER_RUN_UPPER).toFixed(2)} dollars: ${plural(total, 'run')} at ${USD_PER_RUN_UPPER} dollars, the most expensive static run so far.`
+    `About ${(total * USD_PER_RUN).toFixed(2)} dollars: ${plural(total, 'run')} at ${USD_PER_RUN} dollars, what the most expensive static run so far cost.`
   );
 } else {
   console.error(HELP);

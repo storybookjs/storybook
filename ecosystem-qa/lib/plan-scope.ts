@@ -4,6 +4,7 @@ import { basename } from 'pathe';
 
 import { loadEntries } from './catalog.ts';
 import { checkPlanText, planBatches, planHash, type Plan } from './qa-plan.ts';
+import { PlanRecord } from './schema.ts';
 
 // The batch of a checked plan file that a run or a collect is about.
 export interface PlanScope {
@@ -44,6 +45,11 @@ export const readPlanScope = ({
   const number = wholeNumber('--batch', batch);
   if (!existsSync(file)) {
     return refuse(`${file} does not exist.`);
+  }
+  if (!PlanRecord.shape.file.safeParse(basename(file)).success) {
+    return refuse(
+      `${file} cannot name a run record: use letters, digits, dots and hyphens, ending in .md.`
+    );
   }
   const text = readFileSync(file, 'utf8');
   const { plan, problems } = checkPlanText(text, { catalog: loadEntries() });

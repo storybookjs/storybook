@@ -21,8 +21,8 @@ export const filters: Record<string, { label: string; filter: string; descriptio
     // Includes protanomaly, whose severity ranges up to protanopia.
     description: '1.25% of users\nMachado et al. 2009',
   },
-  tritanomaly: {
-    label: 'Tritanomaly (inaccurate)',
+  tritanopiaMachado: {
+    label: 'Tritanopia (inaccurate)',
     filter: 'url("#storybook-a11y-vision-tritanomaly")',
     description: '0.01% of users\nMachado et al. 2009',
   },

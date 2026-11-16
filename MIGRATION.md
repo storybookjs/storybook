@@ -2671,17 +2671,13 @@ If the value is not a static object, move the fields yourself. This includes a v
 
 ### Addon A11y: Removed protanomaly and deuteranomaly vision simulations
 
-The Vision Simulator no longer offers `protanomaly` or `deuteranomaly`. Each condition covers a range of severities, so a single fixed matrix cannot represent it accurately. `protanopia` and `deuteranopia` simulate the most severe form of each.
+The Vision Simulator was updated to match the simulations offered by Chrome DevTool, to use the best available academic research for each simulator and to get rid of redundant entries. The `protanomaly`, `deuteranomaly` and `tritanomaly` entries are less severe forms of `protanopia`, `deuteranopia` and `tritanopia`, so they were removed.
 
-`storybook upgrade` stops when a preview or story file sets one of the removed values through the `vision` global. No automigration is provided, because the replacement renders differently: remove the global, or replace it with `protanopia` or `deuteranopia`. At runtime, an unsupported value produces a warning that lists the available values.
+The `tritanopia` simulator is available with both the Brettel et al. (1997) and Machado et al. (2009) projections. Brettel et al. is the most reliable simulator for tritanopia. Machado et al. matches the implementation in Chrome DevTools.
 
-The remaining color-vision simulations also render differently, and all of them now run in `linearRGB`:
+The `achromatopsia` simulator was optimized for sRGB monitors. `protanopia`, and `deuteranopia` now use the Machado et al. implementation, which is the best available for this type of deficiency.
 
-- `protanopia`, `deuteranopia`, and `tritanomaly` use the Machado et al. (2009) matrices.
-- `tritanopia` uses the Brettel et al. (1997) projection.
-- `achromatopsia` uses the sRGB relative luminance weights.
-
-Existing visual snapshots that use any of these `globals.vision` values will therefore produce intentional diffs.
+`storybook upgrade` stops when a preview or story file sets one of the removed values through the `vision` global. No automigration is provided, because the replacement renders differently: remove the global, or replace it with a new value. At runtime, an unsupported value produces a warning. Existing visual snapshots that use any of these `globals.vision` values will therefore produce intentional diffs.
 
 ### `argTypeTargetsV7` feature flag removed
 

@@ -114,6 +114,7 @@ export const PullNode = z.object({
   updatedAt: z.string(),
   mergedAt: z.string(),
   authorAssociation: AuthorAssociation,
+  baseRefName: z.string(),
   mergeCommit: z.object({ oid: z.string() }).nullable(),
   labels: z.object({ nodes: z.array(z.object({ name: z.string() })) }),
   closingIssuesReferences: z.object({
@@ -148,10 +149,41 @@ export const MERGED_BEFORE_START_DAYS = 30;
 export const windowCutoff = (startDate: string): string =>
   new Date(Date.parse(startDate) - MERGED_BEFORE_START_DAYS * DAY_MS).toISOString();
 
+// A release PR merges the version bump of a tag, so it changes nothing a project can test.
+const RELEASE_BASES = new Set(['next-release', 'latest-release']);
+
+// The base is not asked for: a PR merged into the branch of another PR reaches the range through
+// that PR's merge, and its own merge commit is in the range all the same.
 export const inWindow = (pr: PullNode, commits: Set<string>, cutoff: string): boolean =>
   pr.mergeCommit !== null &&
   commits.has(pr.mergeCommit.oid) &&
+  !RELEASE_BASES.has(pr.baseRefName) &&
   Date.parse(pr.mergedAt) >= Date.parse(cutoff);
+
+export type PullsPage = {
+  pageInfo: { hasNextPage: boolean; endCursor: string | null };
+  nodes: PullNode[];
+};
+
+// Every update comes after the merge, so past the cutoff no PR of the window is left. A PR updated
+// while the pages are read moves up the list and shows twice, so the last copy of a number wins.
+export const readMergedPulls = (
+  readPage: (cursor: string | null) => PullsPage,
+  cutoff: string
+): PullNode[] => {
+  const pulls = new Map<number, PullNode>();
+  for (let cursor: string | null = null; ;) {
+    const page = readPage(cursor);
+    for (const pr of page.nodes) {
+      pulls.set(pr.number, pr);
+    }
+    const oldest = page.nodes.at(-1)?.updatedAt;
+    if (!page.pageInfo.hasNextPage || !oldest || Date.parse(oldest) < Date.parse(cutoff)) {
+      return [...pulls.values()];
+    }
+    cursor = page.pageInfo.endCursor;
+  }
+};
 
 const closedIssues = (pr: PullNode): number[] =>
   pr.closingIssuesReferences.nodes

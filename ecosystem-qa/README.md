@@ -113,29 +113,30 @@ ECOSYSTEM_QA_FAKE=1 node ecosystem-qa/run.ts --repo mealdrop --version 11.0.0-be
 
 A QA plan names what a sweep tests beyond the fixed checks: the changes of a release line, each with the repos to try it on, the steps and the expected outcome.
 It is one Markdown file in `ecosystem-qa/plans/`, named after its line, such as `11.0.md`, and a person reviews and merges it like code.
+The window it was written from is committed next to it as `11.0.window.json`, and the smoke job checks every plan with `--window` against the window file next to it, so a plan PR in which a row was deleted or moved by hand fails without a call to GitHub.
 An agent writes it with the `/qa-plan` skill in `.agents/skills/qa-plan/`, which runs the commands below and opens the plan PR.
 
 ```
 window.ts ──> window.json ──> qa-plan.ts render ──> plans/<line>.md ──> qa-plan.ts check
-   │ PRs merged into next      │ + draft.json:          │ edited by hand     │ format, rules,
-   │ between two tags          │ entries, decisions     │                    │ catalog, window
+   │ PRs whose merge commit    │ + draft.json:          │ edited by hand     │ format, rules,
+   │ is between two tags       │ entries, decisions     │                    │ catalog, window
 ```
 
-`window.ts` lists every PR that was merged into `next` between two tags:
+`window.ts` lists every PR whose merge commit is in `next` between two tags, whatever branch the PR was merged into, so a PR merged into the branch of another PR is in the window too:
 
 ```sh
-node ecosystem-qa/window.ts --from v10.6.0 --to v11.0.0-beta.3 --out window.json
+node ecosystem-qa/window.ts --from v10.6.0 --to v11.0.0-beta.3 --out ecosystem-qa/plans/11.0.window.json
 ```
 
 For each PR it records the QA status from its labels, the area that the title prefix names, the manual testing section of its body, the author association, and the issues the PR closes or names, with their parent issue and whether they have a heading for QA or testing.
-It keeps a PR only when its merge commit is between the two tags and it was merged at most 30 days before the first tag.
-It reads git and GitHub and writes nothing else.
+It keeps a PR only when its merge commit is between the two tags and it was merged at most 30 days before the first tag, and it leaves out the release PRs, whose base is `next-release` or `latest-release`.
+It reads GitHub, fetches a tag that the local repository lacks, and writes nothing but the file of `--out`, whose directory it creates.
 
 `qa-plan.ts render` writes the plan from the window and a JSON draft, and `check` validates it:
 
 ```sh
-node ecosystem-qa/qa-plan.ts render --window window.json --draft draft.json --out ecosystem-qa/plans/11.0.md
-node ecosystem-qa/qa-plan.ts check ecosystem-qa/plans/11.0.md --window window.json
+node ecosystem-qa/qa-plan.ts render --window ecosystem-qa/plans/11.0.window.json --draft draft.json --out ecosystem-qa/plans/11.0.md
+node ecosystem-qa/qa-plan.ts check ecosystem-qa/plans/11.0.md --window ecosystem-qa/plans/11.0.window.json
 ```
 
 The draft is optional, and every key of it too: `entries`, `discovered`, `decisions` by PR number, `groups`, and `groupOf`, which puts a maintainer PR into a group by PR number.
@@ -166,12 +167,23 @@ A repo with more entries in one batch than `Entries per run` runs them in severa
 `check` accepts a file only when it equals what render would write for what it read, so a line that is not in the format fails at its line number.
 It then holds the plan against these rules and prints each problem as `<file>:<line>: <message>`:
 
-- Every slug and group is unique, and the version is on the plan's line.
+- Every slug, group, and discovered id is unique, every PR has one row in one table, and the version is on the plan's line.
+- Every text field is one line without an HTML comment, a control character, or a line separator, because GitHub shows none of them to the reviewer.
+- The Storybook directory of a discovered repo is a relative path inside the repository, without `..` or a leading `/`.
 - Every repo of an entry is a catalog id or a discovered repo, and a discovered repo never takes a catalog id.
 - No repo of an entry is more than one major behind the plan's line, by the `tags` of its catalog entry or the major of its discovered row.
-- Every PR of an entry has a row that names the entry, or a row in a group whose decision names it, every row has a decision, and every decision names entries that exist.
+- Every PR of an entry has a row that names the entry, or a row in a group whose decision names it, every row has a decision, and every decision names entries that exist. An entry lists every PR whose row in "PRs that need QA" or "Undeclared PRs" names it; a PR of a group may stay out of the entries its group names.
+- The batches are numbered from 1 without a gap.
 - Every maintainer PR marked `qa:skip` with a product label names a group, and every group has a decision.
-- The file holds no link to Linear, Notion or Slack, and no step or expected outcome holds a URL other than `localhost`, with or without its scheme.
+- The file holds no link to `linear.app`, `notion.so`, `notion.site`, `notion.com`, or a `slack.com` host.
+- No entry title, repo reason, step, or expected outcome names a host other than `localhost`, because the runner prints all four into the agent's prompt. A host is refused in these forms:
+  - after any scheme and `//`, such as `https://example.com` or `http://localhost@example.com`;
+  - after `http`, `https`, `ws`, `wss`, or `ftp` and a colon with any number of slashes or backslashes, such as `http:/example.com` or `http:\\example.com`;
+  - after `//` alone, such as `//example.com`;
+  - an IPv4 address, such as `93.184.216.34`, `127.0.0.1` included;
+  - a dotted name that ends in one of the top-level domains of `HOST_TLDS` in `lib/qa-plan.ts`, such as `com`, `org`, `io`, or `dev`, alone or followed by a port, a path, a query, or a fragment: `example.com`, `example.com:8080/x`, `git@github.com:x`.
+
+  A dotted name with another ending passes, so `README.md`, `ui.kit/src`, `the Next.js/Vite project`, and `package.json:12` are fine, and so are a host on a domain outside that list, such as `example.zone/x`, and a package that `npx` fetches. The reviewer reads for those.
 - With `--window`, the tables hold exactly the PRs of the window, with their titles and areas.
 
 A plan that passes prints its hash, which names the cycle, its batches with their runs, and about what it costs, priced at the most expensive static run so far.

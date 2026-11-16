@@ -1,6 +1,9 @@
-# The tag must match the `playwright` version in package.json: the evidence tools load that package
-# from the mounted node_modules and launch the browsers baked into this image.
-FROM mcr.microsoft.com/playwright:v1.58.2-noble
+# The version must match the `playwright` version in package.json: the evidence tools load that
+# package from the mounted node_modules and launch the browsers baked into this image.
+ARG PLAYWRIGHT_VERSION=1.58.2
+FROM mcr.microsoft.com/playwright:v${PLAYWRIGHT_VERSION}-noble
+
+ARG PLAYWRIGHT_VERSION
 
 RUN apt-get update && apt-get install -y --no-install-recommends build-essential curl git jq \
   && rm -rf /var/lib/apt/lists/*
@@ -42,11 +45,10 @@ RUN curl -fsSL https://mise.run | MISE_VERSION="$MISE_VERSION" MISE_INSTALL_PATH
   && mise --version
 
 # The agents click and type through the Playwright MCP server, which the `playwright` package
-# carries. Its version must equal the image tag, or the server finds no browser it can launch.
+# carries at the version of the base image, the one whose browsers it can launch.
 # Docker's seccomp profile denies the user namespaces of Chromium's own sandbox, and the server
 # turns that sandbox on, so it gets --no-sandbox. Screenshots land in the evidence directory that
 # run.ts mounts.
-ARG PLAYWRIGHT_VERSION=1.58.2
 ARG BROWSER_MCP="/home/agent/.npm-global/bin/playwright run-mcp-server --headless --browser chromium --no-sandbox --isolated --viewport-size 1280x800 --output-dir /home/agent/qa-evidence/browser"
 RUN PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm install -g "playwright@$PLAYWRIGHT_VERSION" \
   && claude mcp add --scope user playwright -- $BROWSER_MCP \

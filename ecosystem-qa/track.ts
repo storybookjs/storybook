@@ -27,6 +27,7 @@ import { Proposal } from './lib/schema.ts';
 import {
   batchCommentOf,
   batchReport,
+  carriedRuns,
   DEFAULT_CAP_USD,
   nextStep,
   renderBatchComment,
@@ -39,7 +40,7 @@ import {
   type ReportedFinding,
 } from './lib/tracking.ts';
 
-const HELP = `Usage: node ecosystem-qa/track.ts --results <dir> --plan <file> --batch <n> --version <storybook version> --planned <matrix> --repo <owner/name> [--proposals <proposals.json>] [--runs <run id>[,...]] [--cap-usd <dollars>] [--budget-minutes <n>] [--dry] [--no-chain] [--print]
+const HELP = `Usage: node ecosystem-qa/track.ts --results <dir> --plan <file> --batch <n> --version <storybook version> --planned <matrix> --repo <owner/name> [--proposals <proposals.json>] [--runs <run id>[,...]] --filing <dry|pending|filed> [--cap-usd <dollars>] [--budget-minutes <n>] [--no-chain] [--print]
 
 Writes the numbers of one batch of a QA plan into the tracking discussion of the plan, in the
 discussion category "${TRACKING_CATEGORY}" of --repo: the runs of --planned that left a result under
@@ -50,8 +51,11 @@ comment of the batch when the same runs are reported again.
 of their result artifacts expires.
 Then it starts the next batch with gh workflow run, with the same plan hash, unless the plan has no
 next batch, --no-chain is given, the batch was reported before, it left no result, a comment of the
-plan was edited by anyone but the workflow, or the plan has spent --cap-usd (default ${DEFAULT_CAP_USD}).
---dry says in the comment that nothing was filed, and without it each filed finding names its issue.
+plan was edited by anyone but the workflow, a batch after the first finds no discussion of the plan,
+or the plan has spent --cap-usd (default ${DEFAULT_CAP_USD}).
+If the dispatch fails, the comment says so in place of the next batch.
+--filing says what the comment says of the filing: dry prints the dispatch that files the batch,
+pending says that the file job of this run files it next, and filed names the issue of each finding.
 --print reads GitHub but writes nothing: it prints the discussion, the comment, and the next step.`;
 
 const { values } = parseArgs({
@@ -67,7 +71,7 @@ const { values } = parseArgs({
     repo: { type: 'string' },
     'cap-usd': { type: 'string' },
     'budget-minutes': { type: 'string' },
-    dry: { type: 'boolean', default: false },
+    filing: { type: 'string' },
     chain: { type: 'boolean', default: true },
     print: { type: 'boolean', default: false },
     help: { type: 'boolean', default: false },
@@ -87,8 +91,14 @@ const warn = (message: string) =>
   console.warn(process.env.GITHUB_ACTIONS ? `::warning::${message}` : message);
 
 const { results, version, planned, repo } = values;
-if (!results || !values.plan || !version || !planned || !repo) {
-  fail(`Missing one of --results, --plan, --batch, --version, --planned, --repo.\n\n${HELP}`);
+if (!results || !values.plan || !version || !planned || !repo || !values.filing) {
+  fail(
+    `Missing one of --results, --plan, --batch, --version, --planned, --repo, --filing.\n\n${HELP}`
+  );
+}
+const filing = z.enum(['dry', 'pending', 'filed']).safeParse(values.filing).data;
+if (!filing) {
+  fail(`--filing is dry, pending or filed, found "${values.filing}".`);
 }
 versionLine(version!);
 const scope = readPlanScope(values)!;
@@ -126,7 +136,7 @@ if (!proposals) {
 // Before the filing, every issue proposal is a new issue. After it, the issue that now carries the
 // fingerprint is the one it was filed as.
 const filed =
-  proposals && !values.dry
+  proposals && filing === 'filed'
     ? openIssueOf(
         listQaIssues(repo!, QA_LABEL),
         proposals.map(({ fingerprint }) => fingerprint)
@@ -154,7 +164,7 @@ const report = batchReport({
   batches: planBatches(scope.plan).length,
   version: version!,
   runs,
-  dry: values.dry,
+  filing: filing!,
   planned: jobs,
   results: loaded.map(({ result }) => result),
   findings: proposals?.map(findingOf) ?? null,
@@ -204,8 +214,10 @@ const next = nextStep({
   capUsd,
   chain: values.chain,
   reportedBefore: existing !== undefined,
+  tracked: thread !== undefined,
 });
-const body = renderBatchComment(report, { spend, capUsd, next, expiresOn });
+const context = { spend, capUsd, expiresOn, carried: carriedRuns(existing, report) };
+const body = renderBatchComment(report, { ...context, next });
 const newThread = renderTrackingThread({
   file: scope.file,
   hash: scope.hash,
@@ -258,8 +270,14 @@ const written = existing
   : addDiscussionComment(discussion.id, body);
 console.log(`${existing ? 'Edited' : 'Added'} ${written.url}`);
 if ('start' in next) {
-  execFileSync('gh', dispatch(next.start), { stdio: 'inherit' });
-  console.log(`Started batch ${next.start} of ${scope.file}.`);
+  try {
+    execFileSync('gh', dispatch(next.start), { stdio: 'inherit' });
+    console.log(`Started batch ${next.start} of ${scope.file}.`);
+  } catch (error) {
+    const stop = `Batch ${next.start} was not started, because its dispatch failed: ${error instanceof Error ? error.message : String(error)}`;
+    updateDiscussionComment(written.id, renderBatchComment(report, { ...context, next: { stop } }));
+    fail(stop);
+  }
 } else {
   console.log(next.stop);
 }

@@ -5,6 +5,7 @@ import { USD_PER_RUN } from './qa-plan.ts';
 import {
   batchCommentOf,
   batchReport,
+  carriedRuns,
   nextStep,
   renderBatchComment,
   renderTrackingThread,
@@ -36,12 +37,12 @@ const result = (
 });
 
 const input = (overrides: Partial<BatchInput> = {}): BatchInput => ({
-  plan: { file: 'ecosystem-qa/plans/11.0.md', hash: HASH },
+  plan: { file: '11.0.md', hash: HASH },
   batch: 1,
   batches: 2,
   version: '11.0.0-beta.3',
   runs: ['43900000001'],
-  dry: true,
+  filing: 'dry',
   planned: [job('mealdrop'), job('mealdrop', 2), job('mantine')],
   results: [result('mealdrop'), result('mealdrop', { part: 2, usd: null })],
   findings: [{ kind: 'issue', title: '[SB 11 QA]: Dev server crashes' }],
@@ -66,6 +67,7 @@ const posted = (report: BatchReport, author = HARNESS) =>
       capUsd: 250,
       next: { start: 2 },
       expiresOn: '2027-02-14',
+      carried: [],
     }),
     author
   );
@@ -144,7 +146,7 @@ describe('batchReport and renderBatchComment', () => {
 
       Spent on this plan: $6.43 for 3 runs, of a cap of $250.00. Batch 2 is started next.
 
-      Dry run, so nothing was filed. To file this batch, run \`gh workflow run ecosystem-qa.yml --ref qa/plans -f plan=ecosystem-qa/plans/11.0.md -f batch=1 -f version=11.0.0-beta.3 -f from_runs=43900000001 -f dry=false\` before its artifacts expire on 2027-02-14.
+      Dry run, so nothing was filed. To file this batch, run \`gh workflow run ecosystem-qa.yml --ref qa/plans -f plan=11.0.md -f batch=1 -f plan_hash=3f9c2a7b10de -f version=11.0.0-beta.3 -f from_runs=43900000001 -f dry=false\` before its artifacts expire on 2027-02-14.
       "
     `);
   });
@@ -172,12 +174,13 @@ describe('batchReport and renderBatchComment', () => {
     ]);
   });
 
-  it('names the issue each finding was filed as or commented on', () => {
+  it('names the issue each finding was filed as or commented on, and a finding left unfiled', () => {
     const report = batchReport(
       input({
-        dry: false,
+        filing: 'filed',
         findings: [
           { kind: 'issue', title: 'Crash', issue: 37400 },
+          { kind: 'issue', title: 'Hang' },
           { kind: 'comment', title: 'Seen again', issue: 37364 },
           { kind: 'suppressed', title: 'Known', issue: 37365 },
           { kind: 'skipped', title: 'Not a bug' },
@@ -188,11 +191,36 @@ describe('batchReport and renderBatchComment', () => {
     expect(posted(report).body).toContain(
       [
         '- filed as #37400: Crash',
+        '- not filed: Hang',
         '- comment on #37364: Seen again',
         '- known as #37365: Known',
         '- skipped: Not a bug',
       ].join('\n')
     );
+  });
+
+  it('says before the filing of a run that files that its file job files the batch next', () => {
+    const body = posted(batchReport(input({ filing: 'pending' }))).body;
+
+    expect(body).toContain('- new issue: [SB 11 QA]: Dev server crashes');
+    expect(body).toContain('The file job of this run files the batch next');
+    expect(body).not.toContain('Filed.');
+    expect(body).not.toContain('Dry run');
+  });
+
+  it('prints no dispatch to file results that no workflow run holds', () => {
+    const body = posted(batchReport(input({ runs: [] }))).body;
+
+    expect(body).not.toContain('gh workflow run');
+    expect(body).toContain('Dry run of local results');
+  });
+
+  it('mentions nobody that a finding title names', () => {
+    const body = posted(
+      batchReport(input({ findings: [{ kind: 'issue', title: 'Broken with @someone/pkg' }] }))
+    ).body;
+
+    expect(body).not.toMatch(/@someone/);
   });
 
   it('finds the comment it wrote for the same batch, version and runs, to edit it', () => {
@@ -232,10 +260,37 @@ describe('spentUsd', () => {
     );
   });
 
-  it('takes the report it is about to write in place of the comment of that batch', () => {
-    const recollected = batchReport(input({ planned: [job('mealdrop'), job('mealdrop', 2)] }));
+  it('counts a run once when the comment of the batch is written again from the same results', () => {
+    expect(spentUsd([posted(first)], HASH, first).usd).toBeCloseTo(1.25 + 2 * USD_PER_RUN);
+  });
 
-    expect(spentUsd([posted(first)], HASH, recollected).usd).toBeCloseTo(1.25 + USD_PER_RUN);
+  it('keeps the runs of an earlier report of the batch that a job run again replaced', () => {
+    const rerun = batchReport(
+      input({
+        results: [
+          ...input().results,
+          result('mantine', { usd: 4, startedAt: '2026-11-16T12:00:00Z' }),
+        ],
+      })
+    );
+    const earlier = posted(first);
+    const rewritten = comment(
+      renderBatchComment(rerun, {
+        spend: spentUsd([earlier], HASH, rerun),
+        capUsd: 250,
+        next: { stop: 'x' },
+        expiresOn: '2027-02-14',
+        carried: carriedRuns(earlier, rerun),
+      })
+    );
+    const total = 1.25 + 2 * USD_PER_RUN + 4;
+
+    expect(carriedRuns(earlier, rerun)).toEqual([
+      { key: 'mantine/1/linux/claude/lost-43900000001', usd: USD_PER_RUN },
+    ]);
+    expect(spentUsd([earlier], HASH, rerun).usd).toBeCloseTo(total);
+    expect(spentUsd([rewritten], HASH).usd).toBeCloseTo(total);
+    expect(rewritten.body).toContain('The spend also counts 1 run of an earlier report');
   });
 
   it('ignores a comment by another account and a ledger that does not open the comment', () => {
@@ -280,10 +335,18 @@ describe('nextStep', () => {
     overrides: Partial<BatchInput> = {},
     capUsd = 250,
     chain = true,
-    reportedBefore = false
+    reportedBefore = false,
+    tracked = true
   ) => {
     const report = batchReport(input(overrides));
-    return nextStep({ report, spend: spentUsd([], HASH, report), capUsd, chain, reportedBefore });
+    return nextStep({
+      report,
+      spend: spentUsd([], HASH, report),
+      capUsd,
+      chain,
+      reportedBefore,
+      tracked,
+    });
   };
 
   it('starts the batch after this one', () => {
@@ -315,6 +378,13 @@ describe('nextStep', () => {
     expect(step({}, 250, false, true)).toEqual(stop);
   });
 
+  it('stops after a later batch that found no discussion of the plan, and not after the first', () => {
+    expect(step({ batch: 2, batches: 3 }, 250, true, false, false)).toEqual({
+      stop: 'Batch 3 was not started, because the plan had no tracking discussion before batch 2, so the spend of its earlier batches is unknown.',
+    });
+    expect(step({}, 250, true, false, false)).toEqual({ start: 2 });
+  });
+
   it('stops when the batch left no result', () => {
     expect(step({ results: [] })).toEqual({
       stop: 'Batch 2 was not started, because batch 1 left no result.',
@@ -332,6 +402,7 @@ describe('nextStep', () => {
         capUsd: 250,
         chain: true,
         reportedBefore: false,
+        tracked: true,
       })
     ).toEqual({
       stop: `Batch 3 was not started, because someone other than the workflow edited ${edited.url}, so its dollars are not counted.`,

@@ -62,6 +62,9 @@ export type ReportedResult = {
 // What the comment says of one proposal. `issue` is the issue it was filed as or commented on.
 export type ReportedFinding = { kind: Proposal['kind']; title: string; issue?: number };
 
+// A batch is reported before its filing, by the track job, and after it, by the file job.
+export type Filing = 'dry' | 'pending' | 'filed';
+
 export type PlannedJob = { repo: string; part: number; os: string; engine: string };
 
 export type BatchInput = {
@@ -71,7 +74,7 @@ export type BatchInput = {
   version: string;
   // The workflow runs whose artifacts hold the results.
   runs: string[];
-  dry: boolean;
+  filing: Filing;
   planned: PlannedJob[];
   results: ReportedResult[];
   // Null when the batch has no proposals, because its collect failed.
@@ -155,32 +158,40 @@ export type Spend = { usd: number; runs: number; editedComments: string[] };
 
 const editedByOther = (comment: Written) => comment.editor !== null && !byHarness(comment.editor);
 
+type LedgerEntry = { key: string; usd: number };
+
+const ledgerOf = (body: string): LedgerEntry[] =>
+  body.split(/\r?\n/).flatMap((line) => {
+    const match = RUN_LEDGER.exec(line);
+    return match ? [{ key: match[1]!, usd: Number(match[2]) }] : [];
+  });
+
+// The runs that the comment of this batch counted and the report no longer holds, such as the
+// first attempt of a job that was run again. They stay in its ledger, so the spend never drops.
+export const carriedRuns = (existing: Written | undefined, report: BatchReport): LedgerEntry[] => {
+  const reported = new Set(report.lines.map(({ key }) => key));
+  return existing && !editedByOther(existing)
+    ? ledgerOf(existing.body).filter(({ key }) => !reported.has(key))
+    : [];
+};
+
 // Sum the dollars of every run of a plan once, from the hidden ledger lines of the batch comments
-// the workflow wrote, and from `current` in place of its own comment.
+// the workflow wrote and from `current`, the report about to be written.
 //
 // The visible table is never read, so editing it changes no sum, and a comment that anyone but the
 // workflow edited is left out of the sum and named instead.
 export const spentUsd = (comments: Written[], hash: string, current?: BatchReport): Spend => {
-  const replaced = current && batchMarker(current);
-  const counted = comments.filter((comment) => {
-    const marker = firstLine(comment.body);
-    return (
-      byHarness(comment.author) && BATCH_MARKER.exec(marker)?.[1] === hash && marker !== replaced
-    );
-  });
-  const trusted = counted.filter((comment) => !editedByOther(comment));
+  const counted = comments.filter(
+    (comment) =>
+      byHarness(comment.author) && BATCH_MARKER.exec(firstLine(comment.body))?.[1] === hash
+  );
   const ledger = new Map<string, number>();
-  const book = (key: string, usd: number) => ledger.set(key, Math.max(usd, ledger.get(key) ?? 0));
-  for (const comment of trusted) {
-    for (const line of comment.body.split(/\r?\n/)) {
-      const match = RUN_LEDGER.exec(line);
-      if (match) {
-        book(match[1]!, Number(match[2]));
-      }
-    }
-  }
-  for (const line of current?.lines ?? []) {
-    book(line.key, line.usd);
+  const entries = [
+    ...counted.filter((comment) => !editedByOther(comment)).flatMap(({ body }) => ledgerOf(body)),
+    ...(current?.lines ?? []),
+  ];
+  for (const { key, usd } of entries) {
+    ledger.set(key, Math.max(usd, ledger.get(key) ?? 0));
   }
   return {
     usd: [...ledger.values()].reduce((sum, usd) => sum + usd, 0),
@@ -198,12 +209,24 @@ export type StepInput = {
   chain: boolean;
   // The batch already has its comment, so this is a collect or a job of it again.
   reportedBefore: boolean;
+  // The plan had its discussion before this report. Without it the spend of earlier batches is
+  // unknown, as after an edit that took the marker out of the first line of the discussion.
+  tracked: boolean;
 };
 
 const dollars = (usd: number) => `$${usd.toFixed(2)}`;
 
+const runCount = (count: number) => (count === 1 ? '1 run' : `${count} runs`);
+
 // Start the batch after this one, or say why not. A cycle only ever moves forward.
-export const nextStep = ({ report, spend, capUsd, chain, reportedBefore }: StepInput): NextStep => {
+export const nextStep = ({
+  report,
+  spend,
+  capUsd,
+  chain,
+  reportedBefore,
+  tracked,
+}: StepInput): NextStep => {
   const next = report.batch + 1;
   const notStarted = `Batch ${next} was not started`;
   if (report.batch >= report.batches) {
@@ -216,6 +239,11 @@ export const nextStep = ({ report, spend, capUsd, chain, reportedBefore }: StepI
   }
   if (!chain) {
     return { stop: `${notStarted}, because this run does not chain.` };
+  }
+  if (!tracked && report.batch > 1) {
+    return {
+      stop: `${notStarted}, because the plan had no tracking discussion before batch ${report.batch}, so the spend of its earlier batches is unknown.`,
+    };
   }
   if (spend.editedComments.length > 0) {
     return {
@@ -233,13 +261,15 @@ export const nextStep = ({ report, spend, capUsd, chain, reportedBefore }: StepI
   return { start: next };
 };
 
-// A title in a body is inline markdown: a newline would start a block and a lone `<` an HTML
-// comment, which could pose as a ledger line.
-const inline = (text: string) => text.replace(/\s+/g, ' ').replaceAll('<', '&lt;');
+// A title in a body is inline markdown: a newline would start a block, a lone `<` an HTML comment,
+// which could pose as a ledger line, and an `@` a mention, which notifies whoever it names.
+const inline = (text: string) =>
+  text.replace(/\s+/g, ' ').replaceAll('<', '&lt;').replaceAll('@', '@\u200B');
 
-const findingLine = ({ kind, title, issue }: ReportedFinding) => {
+const findingLine = (filing: Filing, { kind, title, issue }: ReportedFinding) => {
+  const unfiled = filing === 'filed' ? 'not filed' : 'new issue';
   const where = {
-    issue: issue === undefined ? 'new issue' : `filed as #${issue}`,
+    issue: issue === undefined ? unfiled : `filed as #${issue}`,
     comment: `comment on #${issue}`,
     suppressed: `known as #${issue}`,
     skipped: 'skipped',
@@ -257,11 +287,17 @@ export const resultsExpireOn = (artifacts: ListedArtifact[]): string | undefined
     .map(({ expires_at }) => new Date(expires_at).toISOString().slice(0, 10))
     .toSorted()[0];
 
-export type CommentContext = { spend: Spend; capUsd: number; next: NextStep; expiresOn: string };
+export type CommentContext = {
+  spend: Spend;
+  capUsd: number;
+  next: NextStep;
+  expiresOn: string;
+  carried: LedgerEntry[];
+};
 
 export const renderBatchComment = (
   report: BatchReport,
-  { spend, capUsd, next, expiresOn }: CommentContext
+  { spend, capUsd, next, expiresOn, carried }: CommentContext
 ): string => {
   const lost = report.lines.filter((line) => line.outcome === 'no result').length;
   const fileCommand = [
@@ -269,13 +305,16 @@ export const renderBatchComment = (
     `--ref ${PLANS_BRANCH}`,
     `-f plan=${report.plan.file}`,
     `-f batch=${report.batch}`,
+    `-f plan_hash=${report.plan.hash}`,
     `-f version=${report.version}`,
     `-f from_runs=${report.runs.join(',')}`,
     '-f dry=false',
   ].join(' ');
   return [
     batchMarker(report),
-    ...report.lines.map((line) => `<!-- sb-qa-run ${line.key} usd=${line.usd.toFixed(6)} -->`),
+    ...[...report.lines, ...carried].map(
+      ({ key, usd }) => `<!-- sb-qa-run ${key} usd=${usd.toFixed(6)} -->`
+    ),
     `### Batch ${report.batch} of ${report.batches} on Storybook ${report.version}`,
     '',
     `${report.planned} runs planned, ${report.lines.length - lost} finished, ${lost} without a result, ${report.runs.length > 0 ? `from workflow run ${report.runs.join(', ')}` : 'from local results'}.`,
@@ -288,20 +327,34 @@ export const renderBatchComment = (
     ),
     '',
     `A run without a result or without a price counts as the flat ${dollars(USD_PER_RUN)} of a run.`,
+    ...(carried.length > 0
+      ? [
+          `The spend also counts ${runCount(carried.length)} of an earlier report of this batch that its results no longer hold, such as the first attempt of a job that ran again.`,
+        ]
+      : []),
     '',
     `Checks: ${report.checks.length > 0 ? report.checks.map(({ state, count }) => `${count} ${state}`).join(', ') : 'none'}.`,
     '',
     ...(report.findings === null
       ? ['The findings were not collected, so this comment lists none.']
       : report.findings.length > 0
-        ? ['Findings:', '', ...report.findings.map(findingLine)]
+        ? [
+            'Findings:',
+            '',
+            ...report.findings.map((finding) => findingLine(report.filing, finding)),
+          ]
         : ['No findings.']),
     '',
-    `Spent on this plan: ${dollars(spend.usd)} for ${spend.runs} runs, of a cap of ${dollars(capUsd)}. ${'start' in next ? `Batch ${next.start} is started next.` : next.stop}`,
+    `Spent on this plan: ${dollars(spend.usd)} for ${runCount(spend.runs)}, of a cap of ${dollars(capUsd)}. ${'start' in next ? `Batch ${next.start} is started next.` : next.stop}`,
     '',
-    report.dry
-      ? `Dry run, so nothing was filed. To file this batch, run \`${fileCommand}\` before its artifacts expire on ${expiresOn}.`
-      : `Filed. The artifacts of this batch expire on ${expiresOn}.`,
+    {
+      dry:
+        report.runs.length > 0
+          ? `Dry run, so nothing was filed. To file this batch, run \`${fileCommand}\` before its artifacts expire on ${expiresOn}.`
+          : 'Dry run of local results, so nothing was filed, and no workflow run holds them to file.',
+      pending: `The file job of this run files the batch next and then names each issue here. The artifacts of this batch expire on ${expiresOn}.`,
+      filed: `Filed. The artifacts of this batch expire on ${expiresOn}.`,
+    }[report.filing],
     '',
   ].join('\n');
 };

@@ -613,10 +613,12 @@ jobs:
 
   file:
     name: File issues
-    needs: [plan, collect]
+    # After the track job, so that only one job at a time writes the comment of the batch.
+    needs: [plan, collect, track]
     if: ${{ !cancelled() && needs.collect.result == 'success' && needs.plan.outputs.dry == 'false' }}
     runs-on: ubuntu-latest
     permissions:
+      actions: read # name the day the result artifacts of the batch expire
       contents: write # push evidence to the qa-assets branch
       discussions: write # name the filed issues in the comment of the batch
       issues: write # create the issue or the comment
@@ -677,19 +679,22 @@ jobs:
           --proposals ecosystem-qa/results/qa-proposals/proposals.json
           --plan "$QA_PLAN" --batch "$QA_BATCH" --version "$QA_VERSION" --planned "$QA_PLANNED"
           --runs "${QA_FROM_RUNS:-$GITHUB_RUN_ID}" --repo "$GITHUB_REPOSITORY"
-          ${QA_CAP_USD:+--cap-usd "$QA_CAP_USD"} --no-chain
+          ${QA_CAP_USD:+--cap-usd "$QA_CAP_USD"} --filing filed --no-chain
 
   track:
     name: Report the batch in its tracking discussion
     needs: [plan, runner, collect]
     # Not after the collect alone: a batch whose collect failed still reports its runs and dollars.
-    if: ${{ !cancelled() && needs.plan.result == 'success' && needs.plan.outputs.plan != '' }}
+    # A collect of earlier runs that failed has no results to report, and its comment would replace
+    # the one those runs have.
+    if: >-
+      ${{ !cancelled() && needs.plan.result == 'success' && needs.plan.outputs.plan != ''
+      && (needs.plan.outputs.from_runs == '' || needs.collect.result == 'success') }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
       actions: write # list the artifacts of the batch and start the next batch
       discussions: write # write the tracking discussion and the comment of the batch
-      issues: read # name the issue each filed finding went to
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -734,6 +739,6 @@ jobs:
           )
           if [[ -n "$QA_CAP_USD" ]]; then args+=(--cap-usd "$QA_CAP_USD"); fi
           if [[ -n "$QA_BUDGET_MINUTES" ]]; then args+=(--budget-minutes "$QA_BUDGET_MINUTES"); fi
-          if [[ "$QA_DRY" == true ]]; then args+=(--dry); fi
+          if [[ "$QA_DRY" == true ]]; then args+=(--filing dry); else args+=(--filing pending); fi
           if [[ "$QA_CHAIN" != true ]]; then args+=(--no-chain); fi
           node ecosystem-qa/track.ts "${args[@]}"

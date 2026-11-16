@@ -21,7 +21,7 @@ import { bwrap } from '@ai-hero/sandcastle/sandboxes/bwrap';
 import { docker } from '@ai-hero/sandcastle/sandboxes/docker';
 import { noSandbox } from '@ai-hero/sandcastle/sandboxes/no-sandbox';
 import { seatbelt } from '@ai-hero/sandcastle/sandboxes/seatbelt';
-import { join, relative, resolve } from 'pathe';
+import { basename, dirname, join, relative, resolve } from 'pathe';
 import { z } from 'zod';
 
 import { checksFor, renderChecklist } from './checks.ts';
@@ -35,14 +35,8 @@ import { credentialFor, proxyTheKey, sandboxAddresses, type ProxiedKey } from '.
 import { forJobLog, liveLine } from './lib/live-log.ts';
 import { memoryGuard } from './lib/memory-guard.ts';
 import { CHECKOUT_GUIDE, guideFor } from './lib/migration-guide.ts';
-import { readPlanScope, refuse, wholeNumber } from './lib/plan-scope.ts';
-import {
-  planCheckId,
-  planRuns,
-  renderPlanChecks,
-  type Plan,
-  type PlanEntry,
-} from './lib/qa-plan.ts';
+import { plannedRun, readPlanScope, refuse, type PlannedRun } from './lib/plan-scope.ts';
+import { planCheckId, renderPlanChecks } from './lib/qa-plan.ts';
 import { budgetRecord, msUntilHardStop, parseBudget, type RunBudget } from './lib/run-budget.ts';
 import {
   agentOutput,
@@ -52,7 +46,6 @@ import {
   Tier,
   type CatalogEntry,
   type Os,
-  type PlanRecord,
   type RunResultFile,
 } from './lib/schema.ts';
 import { writeStepSummary } from './lib/step-summary.ts';
@@ -129,7 +122,10 @@ const UPGRADE_ENV = {
 
 // The real path, because git writes real paths into a worktree's gitdir pointer and the sandboxes
 // bind-mount whatever path they are given: on macOS tmpdir() is a symlink under /private.
-const scratchDir = () => join(realpathSync(tmpdir()), 'ecosystem-qa');
+const realPathOf = (path: string): string =>
+  existsSync(path) ? realpathSync(path) : join(realPathOf(dirname(path)), basename(path));
+
+const scratchDir = () => join(realPathOf(tmpdir()), 'ecosystem-qa');
 
 const HOST_OS: Partial<Record<NodeJS.Platform, Os>> = {
   linux: 'linux',
@@ -156,17 +152,11 @@ const parsedFlag = <T>(schema: z.ZodType<T>, flag: string, value: unknown): T =>
     : refuse(`--${flag} ${JSON.stringify(value)}: ${parsed.error.issues[0]!.message}.`);
 };
 
-interface PlannedRun {
-  plan: Plan;
-  record: PlanRecord;
-  entries: PlanEntry[];
-}
-
 const planOfRun = (
-  values: { plan?: string; batch?: string; part?: string },
+  values: { plan?: string; batch?: string; part?: string; tier?: string },
   repo: string,
   version: string
-): PlannedRun | undefined => {
+): (PlannedRun & { tier: Tier }) | undefined => {
   if (!values.plan && (values.batch || values.part)) {
     return refuse('--batch and --part need --plan.');
   }
@@ -174,37 +164,11 @@ const planOfRun = (
   if (!scope) {
     return undefined;
   }
-  const { plan, file, batch } = scope;
-  const part = wholeNumber('--part', values.part ?? '1');
-  if (versionLine(version) !== plan.line) {
-    return refuse(
-      `${values.plan} plans line ${plan.line}, and --version ${version} is on line ${versionLine(version)}.`
-    );
-  }
-  const parts = planRuns(plan, batch).filter((run) => run.repo === repo);
-  if (parts.length === 0) {
-    return refuse(`Batch ${batch} of ${values.plan} lists no entry for ${repo}.`);
-  }
-  const run =
-    parts.find((candidate) => candidate.part === part) ??
-    refuse(
-      `Batch ${batch} of ${values.plan} has ${parts.length} part(s) for ${repo}, not part ${part}.`
-    );
-  const entries = run.entries.map((slug) => plan.entries.find((entry) => entry.slug === slug)!);
-  return {
-    plan,
-    record: {
-      file,
-      hash: scope.hash,
-      batch,
-      part,
-      entries: entries.map(({ slug, prs }) => ({ id: slug, prs })),
-    },
-    entries,
-  };
+  const planned = plannedRun(scope, { repo, version, part: values.part });
+  return typeof planned === 'string' ? refuse(planned) : { ...planned, tier: scope.tier };
 };
 
-const checklistOf = (tier: z.infer<typeof Tier>, planned: PlannedRun | undefined, repo: string) => {
+const checklistOf = (tier: Tier, planned: PlannedRun | undefined, repo: string) => {
   const fixed = checksFor(tier);
   const planChecks = (planned?.entries ?? []).map((entry) => ({
     id: planCheckId(entry.slug),
@@ -212,6 +176,7 @@ const checklistOf = (tier: z.infer<typeof Tier>, planned: PlannedRun | undefined
   }));
   return {
     checks: [...fixed.map(({ id, label }) => ({ id, label })), ...planChecks],
+    planIds: planChecks.map(({ id }) => id),
     text: planned
       ? [
           `${renderChecklist(fixed)}\n${renderPlanChecks(planned.entries, repo)}`,
@@ -278,7 +243,7 @@ const parseRequest = () => {
   }
 
   const planned = planOfRun(values, repo, version);
-  const tier = parsedFlag(Tier, 'tier', values.tier ?? (planned ? 'gate' : 'must'));
+  const tier = planned?.tier ?? parsedFlag(Tier, 'tier', values.tier ?? 'must');
   const engine = parsedFlag(Engine, 'engine', values.engine);
   const entries = loadEntries(planned?.plan);
   const entry =
@@ -312,7 +277,7 @@ const parseRequest = () => {
   };
   // Outside the monorepo: yarn and npm read every .yarnrc and .npmrc above the clone, and a native
   // sandbox denies the monorepo's own config files to the agent.
-  const cloneDir = resolve(values['clone-dir'] ?? join(scratchDir(), 'work', entry.id));
+  const cloneDir = realPathOf(resolve(values['clone-dir'] ?? join(scratchDir(), 'work', entry.id)));
 
   return {
     request,
@@ -552,8 +517,11 @@ const runSandcastle = async (
     }),
   });
   // One list for the schema, the checklist and the count the prompt names.
-  const { checks } = checklist;
-  const answerSchema = agentOutput(checks.map((check) => check.id) as [string, ...string[]]);
+  const { checks, planIds } = checklist;
+  const answerSchema = agentOutput(
+    checks.map((check) => check.id) as [string, ...string[]],
+    planIds
+  );
 
   try {
     const guide = await guideFor(request.version, {

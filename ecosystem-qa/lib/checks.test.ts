@@ -111,6 +111,16 @@ describe('check registry', () => {
     expect(extended.length).toBeGreaterThan(must.length);
   });
 
+  it('has the upgrade and the dev server in the gate, which every plan check starts from', () => {
+    expect(checksFor('gate').map((check) => check.id)).toEqual([
+      'upgrade.command',
+      'upgrade.automigrations',
+      'upgrade.installed-version',
+      'upgrade.doctor',
+      'core.dev-server',
+    ]);
+  });
+
   it('runs the gate in every must run', () => {
     expect(checksFor('must')).toEqual(expect.arrayContaining(checksFor('gate')));
   });

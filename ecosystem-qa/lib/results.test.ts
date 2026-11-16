@@ -243,6 +243,7 @@ describe('loadResults of a plan batch', () => {
     hash: planHash(PLAN_TEXT),
     plan: parsePlan(PLAN_TEXT),
     batch,
+    tier: 'gate',
   });
   const partOne: PlanRecord = {
     file: 'plan.fixture.md',
@@ -264,11 +265,11 @@ describe('loadResults of a plan batch', () => {
       findings: [finding({ checkId, evidence: { logs: [] } })],
     });
   const partDir = (part: number) => join(resultsDir, `mealdrop/linux/claude/part-${part}`);
-  const loadWith = (plan?: PlanScope) => {
+  const loadWith = (plan?: PlanScope, catalog = [ENTRY]) => {
     const warnings: string[] = [];
     const results = loadResults(resultsDir, {
       version: VERSION,
-      catalog: [ENTRY],
+      catalog,
       ...(plan ? { plan } : {}),
       warn: (message) => warnings.push(message),
     });
@@ -315,6 +316,55 @@ describe('loadResults of a plan batch', () => {
       expect.stringMatching(
         /reports core\.story-render, which is neither a check of the tier gate/
       ),
+    ]);
+  });
+
+  it('ignores a record that says it ran another tier than the collect, whatever checks it reports', () => {
+    const extended = planRun(partOne, 'core.story-render');
+    writeRun(partDir(1), { ...extended, request: { ...extended.request, tier: 'extended' } });
+
+    expect(loadWith(scope())).toEqual({
+      paths: [],
+      warnings: [
+        expect.stringMatching(
+          /it says it ran the tier extended, and this collect is of the tier gate/
+        ),
+      ],
+    });
+  });
+
+  it('ignores a gate record of a part that the batch does not have', () => {
+    writeRun(partDir(3), planRun({ ...partOne, part: 3 }, 'upgrade.command'));
+
+    expect(loadWith(scope())).toEqual({
+      paths: [],
+      warnings: [expect.stringMatching(/batch 1 of the plan has no part 3 for mealdrop/)],
+    });
+  });
+
+  it('ignores a gate record of a repo that the batch does not list', () => {
+    const twenty: CatalogEntry = { ...ENTRY, id: 'twenty', repo: 'storybook-tmp/twenty' };
+    const gateOnly = planRun(partOne, 'upgrade.command');
+    writeRun(join(resultsDir, 'twenty/linux/claude/part-1'), {
+      ...gateOnly,
+      request: { ...gateOnly.request, entry: twenty },
+    });
+
+    expect(loadWith(scope(), [ENTRY, twenty])).toEqual({
+      paths: [],
+      warnings: [expect.stringMatching(/batch 1 of the plan has no part 1 for twenty/)],
+    });
+  });
+
+  it('ignores a record that reports a check outside its part only among its checks', () => {
+    const run = planRun();
+    writeRun(partDir(1), {
+      ...run,
+      checks: [...run.checks, { id: 'plan.invented', label: 'Invented', state: 'pass' }],
+    });
+
+    expect(loadWith(scope()).warnings).toEqual([
+      expect.stringMatching(/reports plan\.invented, which is neither/),
     ]);
   });
 

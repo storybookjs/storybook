@@ -16,8 +16,19 @@ RUN npm install -g "n@$N_VERSION" && N_PREFIX=/usr/local n "$NODE_VERSION" && no
 RUN corepack enable
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 
-# The project under test may pin another Playwright version and install its browsers here.
+# The project under test may pin another Playwright version and install its browsers here. Its
+# install would delete the browser of the image's own Playwright, which the browser tool runs.
 RUN chmod -R a+rwX /ms-playwright
+ENV PLAYWRIGHT_SKIP_BROWSER_GC=1
+
+# The browser tools no agent gets: a script in the page reads what the page hides from a user, and
+# an installed browser replaces the one the browser tool runs. Claude Code's managed settings win
+# over the user's and the project's.
+ARG DENIED_BROWSER_TOOLS="browser_evaluate browser_run_code browser_install"
+RUN mkdir -p /etc/claude-code \
+  && jq -n --arg tools "$DENIED_BROWSER_TOOLS" \
+    '{permissions: {deny: ($tools | split(" ") | map("mcp__playwright__" + .))}}' \
+    > /etc/claude-code/managed-settings.json
 
 ARG AGENT_UID=1000
 ARG AGENT_GID=1000
@@ -45,12 +56,15 @@ RUN curl -fsSL https://mise.run | MISE_VERSION="$MISE_VERSION" MISE_INSTALL_PATH
   && mise --version
 
 # Docker's seccomp profile denies the user namespaces of Chromium's own sandbox, which the
-# Playwright MCP server turns on, so the server gets --no-sandbox.
-ARG BROWSER_MCP="/home/agent/.npm-global/bin/playwright run-mcp-server --headless --browser chromium --no-sandbox --isolated --viewport-size 1280x800 --output-dir /home/agent/qa-evidence/browser"
-RUN PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm install -g "playwright@$PLAYWRIGHT_VERSION" \
+# Playwright MCP server turns on, so the server gets --no-sandbox. A plan step may only open
+# localhost, so the browser requests nothing else.
+ARG BROWSER_MCP="/home/agent/.npm-global/bin/playwright run-mcp-server --headless --browser chromium --no-sandbox --isolated --viewport-size 1280x800 --allowed-origins localhost:*;127.0.0.1:* --output-dir /home/agent/qa-evidence/browser"
+RUN set -f && PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm install -g "playwright@$PLAYWRIGHT_VERSION" \
   && claude mcp add --scope user playwright -- $BROWSER_MCP \
   && codex mcp add playwright -- $BROWSER_MCP \
-  && claude mcp list && codex mcp list
+  && jq -cn --arg tools "$DENIED_BROWSER_TOOLS" '"disabled_tools = \($tools | split(" "))"' -r \
+    >> /home/agent/.codex/config.toml \
+  && claude mcp list && codex mcp get playwright --json
 
 WORKDIR /home/agent
 ENTRYPOINT ["sleep", "infinity"]

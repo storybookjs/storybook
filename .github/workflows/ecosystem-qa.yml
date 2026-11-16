@@ -429,6 +429,7 @@ jobs:
     needs: plan
     if: ${{ needs.plan.outputs.docker_runner != '' }}
     runs-on: ${{ needs.plan.outputs.docker_runner }}
+    timeout-minutes: 30
     permissions:
       packages: write # push ghcr.io/storybookjs/ecosystem-qa-sandbox
     outputs:

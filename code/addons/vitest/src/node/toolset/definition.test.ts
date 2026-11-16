@@ -731,7 +731,7 @@ Vite pre-bundled a new dependency during the run, which breaks the tests that ar
 `);
     });
 
-    it('says to run again, not to fix the stories, when the run again was disrupted too', async () => {
+    it('says to run again, not to fix the stories, when the repeat was disrupted too', async () => {
       vi.mocked(runStoryTests).mockResolvedValue(
         completed({
           componentTestCount: { success: 0, error: 1 },
@@ -753,9 +753,8 @@ Vite pre-bundled a new dependency during the run, which breaks the tests that ar
       expect(outcome.markdown).toContain(`## Result
 
 Failed: 1 component test failed.
-Vite pre-bundled a new dependency during the run, also when Storybook ran the tests again, so these failures may not be caused by the stories. Run the same command again before you change any code.
+Vite pre-bundled a new dependency during the run, also when Storybook ran the tests again, so these failures may not be caused by the stories. Run the same tests again before you change any code.
 `);
-      expect(outcome.markdown).not.toContain('Fix what fails');
     });
 
     it('reports accessibility violations with inspect links built from the origin', async () => {

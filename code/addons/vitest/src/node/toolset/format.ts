@@ -337,8 +337,8 @@ const A11Y_GUIDANCE =
 
 const DEPS_REOPTIMIZED = {
   repeated: DEPS_REOPTIMIZED_TEXT.repeated,
-  // The test panel has no command to repeat, so only the output says what to do.
-  unresolved: `${DEPS_REOPTIMIZED_TEXT.unresolved} Run the same command again before you change any code.`,
+  // The test panel has its own run button, so only the output says what to do.
+  unresolved: `${DEPS_REOPTIMIZED_TEXT.unresolved} Run the same tests again before you change any code.`,
 };
 
 function formatResultSection(

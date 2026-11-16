@@ -41,6 +41,8 @@ export function Description({
   const { componentTestCount, totalTestCount, unhandledErrors, finishedAt, depsReoptimized } =
     storeState.currentRun;
   const finishedTestCount = componentTestCount.success + componentTestCount.error;
+  // Only the run as a whole says it ran twice; a story or component shows its own result.
+  const ranTwice = entryId ? undefined : depsReoptimized;
 
   let description: string | React.ReactNode = 'Not run';
   if (!entryId && isSettingsUpdated) {
@@ -57,7 +59,7 @@ export function Description({
       'Crashed'
     );
   } else if (!entryId && unhandledErrors.length > 0) {
-    const unhandledErrorDescription = `View ${unhandledErrors.length} unhandled error${unhandledErrors?.length > 1 ? 's' : ''}${depsReoptimized ? ' (ran twice)' : ''}`;
+    const unhandledErrorDescription = `View ${unhandledErrors.length} unhandled error${unhandledErrors?.length > 1 ? 's' : ''}${ranTwice ? ' (ran twice)' : ''}`;
     description = setModalOpen ? (
       <LinkComponent onClick={() => setModalOpen(true)}>{unhandledErrorDescription}</LinkComponent>
     ) : (
@@ -69,7 +71,7 @@ export function Description({
     description = (
       <>
         Ran {totalTestCount} {totalTestCount === 1 ? 'test' : 'tests'}
-        {depsReoptimized ? ' twice' : ''} <RelativeTime timestamp={finishedAt} />
+        {ranTwice ? ' twice' : ''} <RelativeTime timestamp={finishedAt} />
       </>
     );
   } else if (storeState.watching) {
@@ -77,7 +79,7 @@ export function Description({
   }
 
   return (
-    <Wrapper title={depsReoptimized && DEPS_REOPTIMIZED_TEXT[depsReoptimized]} {...props}>
+    <Wrapper title={ranTwice && DEPS_REOPTIMIZED_TEXT[ranTwice]} {...props}>
       {description}
     </Wrapper>
   );

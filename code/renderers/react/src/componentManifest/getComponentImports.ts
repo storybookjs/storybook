@@ -47,11 +47,9 @@ export interface TypescriptOptions extends TypescriptOptionsBase {
 
 export type { ComponentRef } from './types.ts';
 
-// The file that declares a component, and the export it declares it under.
-export interface DocgenTarget {
-  path: string;
-  exportName: string;
-}
+// The file that declares a component and the export it declares it under, or why the module the
+// story reads it from has no such export.
+export type DocgenTarget = { path: string; exportName: string } | { missing: string };
 
 /** Selected component for a story file; `storyPath` is the absolute path on disk. */
 export type StoryRef = {
@@ -195,6 +193,13 @@ export const getComponents = async ({
         // Core's resolver decides which file and export the engines document, as in every other
         // renderer. The ref keeps the story file's own import, which the import lines need.
         const target = docgenTargets?.get(c);
+        // An export core found missing is an error, not a reason to document another component.
+        if (target && 'missing' in target) {
+          const error = { name: 'Component export not found', message: target.missing };
+          return docgenEngine === 'react-docgen'
+            ? { ...componentWithPackage, path, reactDocgen: { type: 'error' as const, error } }
+            : { ...componentWithPackage, path, reactDocgenTypescriptError: error };
+        }
         const docgenRef = target
           ? {
               ...componentWithPackage,

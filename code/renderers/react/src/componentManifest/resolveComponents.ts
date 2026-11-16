@@ -1,6 +1,8 @@
 import {
   createMetaComponentResolver,
+  createModuleResolver,
   extractDeclaredSubcomponents,
+  supportedExtensions,
 } from 'storybook/internal/common';
 import { storyNameFromExport } from 'storybook/internal/csf/csf-utils';
 import {
@@ -29,8 +31,24 @@ import { cachedReadTextFileSync } from './utils.ts';
 
 export type ParsedCsf = ReturnType<ReturnType<typeof loadCsf>['parse']>;
 
-// One instance per process: the resolver caches its module resolutions.
-const resolveMetaComponent = createMetaComponentResolver();
+// One instance per process: the resolver caches its module resolutions. It tries extensions in the
+// order React's own lookup does, `.js` first as Vite does, so when `ui.js` sits next to `ui.tsx`
+// both pick the same file.
+const resolveMetaComponent = createMetaComponentResolver({
+  reader: {
+    resolver: createModuleResolver({
+      extensions: [...supportedExtensions],
+      extensionAlias: {
+        '.js': ['.js', '.ts', '.tsx'],
+        '.jsx': ['.jsx', '.tsx'],
+        '.mjs': ['.mjs', '.mts'],
+        '.cjs': ['.cjs', '.cts'],
+      },
+      mainFields: ['module', 'main'],
+      tsconfig: 'auto',
+    }),
+  },
+});
 
 /** A declared subcomponent paired with the component ref it resolved to (if any). */
 export interface ResolvedSubcomponent {
@@ -138,14 +156,20 @@ export async function resolveStoryFileComponents(options: {
   const resolveName = (name: string, node?: ESTreeNode) => {
     const resolved = resolveMetaComponent(csf, storyPath, node);
     if ('reason' in resolved) {
+      if (resolved.reason === 'missing-export') {
+        docgenTargets.set(name, {
+          missing: `"${resolved.importId}" has no export "${resolved.exportName}", which ${resolved.expression} reads.`,
+        });
+      }
       return name;
     }
     const { localName, importId, importer, path, exportName } = resolved.component;
-    const own = storyImports.get(localName);
-    const ownName =
-      importer === storyPath && own?.importId === importId && own?.importName === exportName
-        ? localName
-        : name;
+    // Core landed on a binding the story file imports itself, through an object the file declares.
+    const throughLocalObject =
+      importer === storyPath &&
+      storyImports.get(localName)?.importId === importId &&
+      !storyImports.has(name.split('.')[0]);
+    const ownName = throughLocalObject ? localName : name;
     if (importId && path) {
       docgenTargets.set(ownName, { path, exportName });
     }

@@ -97,6 +97,20 @@ describe('story-sort-to-main', () => {
     );
   });
 
+  it('names the preview file and the migration guide when the preview blocks the edit', async () => {
+    const main = `export default { stories: [] }`;
+    const preview = `export default { [key]: { options: { storySort: { order: ['Intro'] } } } }`;
+    const migrated = await migrate(main, preview);
+
+    expect(migrated.failures).toHaveLength(1);
+    expect(migrated.failures[0].message).toContain(previewConfigPath);
+    expect(migrated.failures[0].message).toContain(
+      'MIGRATION.md#storysort-in-the-preview-replaced-by-storysorts-in-main'
+    );
+    expect(migrated.main).toBe(main);
+    expect(migrated.preview).toBe(preview);
+  });
+
   it('moves a literal object and keeps unrelated configuration', async () => {
     const { preview } = await expectMoved(
       `export default { stories: ['./src/**/*.stories.ts'] }`,

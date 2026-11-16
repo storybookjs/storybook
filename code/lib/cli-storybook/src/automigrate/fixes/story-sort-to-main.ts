@@ -9,13 +9,17 @@ interface StorySortToMainOptions {
   storySort: CsfValue | undefined;
   // Why the preview cannot give up `storySort` safely; the main config then stays untouched too.
   previewProblem?: string;
+  previewConfigPath: string;
 }
 
 const storySortPath = ['parameters', 'options', 'storySort'];
+const migrationLink =
+  'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storysort-in-the-preview-replaced-by-storysorts-in-main';
 
-const fail = (reason: string): never => {
+const fail = (reason: string, file?: string): never => {
+  const where = file ? ` in ${file}` : '';
   throw new HandledError(
-    `Cannot automigrate storySort: ${reason}. Storybook no longer reads parameters.options.storySort from the preview. Move it to storySorts in the main config manually and remove the preview property.`
+    `Cannot automigrate storySort${where}: ${reason}. Storybook no longer reads parameters.options.storySort from the preview. Move it to storySorts in the main config manually and remove the preview property. See ${migrationLink}`
   );
 };
 
@@ -23,7 +27,7 @@ const firstProblem = (config: ConfigFile) => config.mutationDiagnostics[0]?.mess
 
 export const storySortToMain: Fix<StorySortToMainOptions> = {
   id: 'story-sort-to-main',
-  link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storysort-in-the-preview-replaced-by-storysorts-in-main',
+  link: migrationLink,
 
   async check({ files, previewConfigPath }) {
     if (!previewConfigPath) {
@@ -37,18 +41,18 @@ export const storySortToMain: Fix<StorySortToMainOptions> = {
     const storySort = preview.getValue(storySortPath);
     // The main config is visited first, so its hook learns here whether the preview edit will fail.
     preview.remove(storySortPath);
-    return { storySort, previewProblem: firstProblem(preview) };
+    return { storySort, previewProblem: firstProblem(preview), previewConfigPath };
   },
 
   prompt: () =>
     `Move ${picocolors.cyan('parameters.options.storySort')} from preview to ${picocolors.cyan('storySorts')} in main?`,
 
-  transform: ({ result: { storySort, previewProblem } }) => [
+  transform: ({ result: { storySort, previewProblem, previewConfigPath } }) => [
     {
       filter: { kind: ['main'] },
       editConfig: (main) => {
         if (previewProblem) {
-          fail(previewProblem);
+          fail(previewProblem, previewConfigPath);
         }
         const existing = main.inspect(['storySorts']);
         if (existing.kind === 'unreadable') {

@@ -137,6 +137,10 @@ The workflow needs these things, which only an admin of the repository and the o
 - A required reviewer on `ecosystem-qa-file`, with self-review allowed, so every filing that is not dry waits for a person.
 
 A filing that is not dry fails at its first token step until the App, its installations, its id and its key exist.
+That holds from the moment this workflow is on the branch a sweep is dispatched from, so create them before the merge, or file what is pending before it.
+An App that one org owns can be installed on the other org only when the App is public, so the App is either public, or each org has its own App and the workflow needs a second id and key.
+The image's tag is a hash of inputs anyone can read, and the `image` job builds nothing when the tag exists, so whoever can write the package chooses the image that the agents run in, with their keys.
+The access settings of the package decide who that is, so read them after the first push.
 Once one filing has pushed as the App, the two personal push tokens that the filing job used before can be deleted from `ecosystem-qa-file` and revoked.
 
 ## Where results land
@@ -182,7 +186,7 @@ A run whose agent did not finish is never read this way.
 Dry mode is the default.
 The filer writes each proposal, with its full issue body and the evidence it would upload, to the Step Summary and changes nothing.
 Without dry mode it pushes the evidence to the `qa-assets` branch with the job token, pushes the upgraded state to the catalog repo with the push token of the target's org, and files the issue in milestone 11.
-The push token is an installation token of a GitHub App, which the filing job mints for each org directly before it files, with write access to contents and nothing else.
+The push token is an installation token of a GitHub App, which the filing job mints for each org directly before it files, with write access to contents and nothing else, and only for the repositories of that org that `catalog.json` pushes to.
 `file.ts` reads it as `ECOSYSTEM_QA_APP_TOKEN_STORYBOOKJS` for `storybookjs` and `ECOSYSTEM_QA_APP_TOKEN_STORYBOOK_TMP` for `storybook-tmp`.
 The dry filing runs in another job, so it mints no token and needs no App.
 The upgraded state lands under `refs/qa/`, never as a branch: a branch push would start the catalog repo's own workflows and run the agent's commits with that repo's secrets before anyone read the diff.

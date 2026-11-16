@@ -121,7 +121,7 @@ export function formatChangedStories(data: ChangedStoriesOutput, ctx: ToolsetCtx
   const skill = getSkillCommand(ctx)('ui-review');
   const openSkill = skill ? `run \`${skill}\` first if you have not yet, then ` : '';
   // Last, so output read through `tail` still ends on this step.
-  text += `\n\nNext: when the user (or the agent instructions of the project) asked for a review, or the user asked to see the stories of the change, create the review as your last step, after your remaining tests and checks — ${openSkill}call **${getToolName(ctx)('review.create')}** curating these story IDs${gapStories}. That review link is how you finish; do not substitute individual preview URLs for it. A change with no visible effect, such as to a callback, tests or types, gets no review: say that nothing visible changed. This list covers your edits so far: run it again only after another edit.`;
+  text += `\n\nNext: when the user (or the agent instructions of the project) asked for a review, or the user asked to see the stories of the change, ${openSkill}call **${getToolName(ctx)('review.create')}** curating these story IDs${gapStories}. A review shows the stories as they are when it is created, so an edit after it needs a new review; individual preview URLs do not replace it. A change with no visible effect, such as to a callback, tests or types, gets no review: say that nothing visible changed. This list covers your edits so far.`;
 
   return text;
 }

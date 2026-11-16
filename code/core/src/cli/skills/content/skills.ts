@@ -23,7 +23,7 @@ export const SKILLS: Record<SkillId, { blurb: string }> = {
       'How to write the stories of a component in this project: imports, play functions and mocks.',
   },
   'test-stories': {
-    blurb: 'Run the story tests, with their accessibility checks, and fix what fails.',
+    blurb: 'Run the story tests, with their accessibility checks.',
   },
   'ui-review': {
     blurb:

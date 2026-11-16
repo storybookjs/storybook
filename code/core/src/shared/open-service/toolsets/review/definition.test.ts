@@ -226,14 +226,14 @@ The review shows the 1 story you asked to see. Because this is AI-curated, resul
       );
     });
 
-    it('makes the review the last step and the three lines the end of the answer', () => {
+    it('says that an edit after the review needs a new one, and ends the answer with the three lines', () => {
       const description = resolveToolsetDescription(
         reviewToolset.methods.create.description,
         mcpCtx
       );
 
       expect(description).toContain(
-        '- Last: create it after your tests and other checks (type check, lint), then end your answer with the three lines it returns.'
+        '- A review shows the stories as they are when it is created: an edit after it needs a new review. End your answer with the three lines it returns.'
       );
       expect(description).not.toContain('browser');
     });

@@ -2,7 +2,7 @@
 title: Skills
 hideRendererSelector: true
 sidebar:
-  order: 2
+  order: 3
 ---
 
 <If notRenderer={['react', 'vue', 'angular', 'svelte', 'web-components']}>
@@ -20,10 +20,10 @@ Storybook's skills tell your agent how to work with Storybook in your project. E
 - **Upgrade** (`/storybook-upgrade`): upgrade Storybook by following the [upgrade guide](../../releases/upgrading.mdx#upgrade-with-an-agent).
 - [**Component docs**](./component-docs.mdx) (`/component-docs`): look up the components to reuse, with their props and usage examples.
 - [**Write stories**](./write-stories.mdx) (`/write-stories`): write stories for every component your agent creates or changes.
-- [**Test stories**](./test-stories.mdx) (`/test-stories`): run the story tests, with their accessibility checks, and fix what fails.
+- [**Test stories**](./test-stories.mdx) (`/test-stories`): the command that runs the story tests, with their accessibility checks, and what its result means.
 - [**UI review**](./ui-review.mdx) (`/ui-review`): create a review of the stories that a change affects, when you ask for one.
 
-`/component-docs` and `/write-stories` are steps of the [UI workflow](./ui-workflow.mdx), which your agent follows for every UI change. Its test step is the test command itself, and it ends with a line that offers `/ui-review`.
+`/component-docs` and `/write-stories` are steps of the [Storybook section in `AGENTS.md`](../agents-md.mdx), which your agent follows for every UI change. Its test step is the test command itself, and it ends with a line that offers `/ui-review`.
 
 </If>
 {/* End supported renderers */}

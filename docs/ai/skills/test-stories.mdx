@@ -6,24 +6,22 @@ sidebar:
 
 <If notRenderer={['react', 'vue', 'angular', 'svelte', 'web-components']}>
 
-The `/test-stories` skill lets your agent run your story tests, with their accessibility checks, and fix what fails. It isn't available for your framework yet. See [supported frameworks](../connect.mdx#supported-frameworks).
+The `/test-stories` skill tells your agent how to run your story tests, with their accessibility checks. It isn't available for your framework yet. See [supported frameworks](../connect.mdx#supported-frameworks).
 
 </If>
 
 <If renderer={['react', 'vue', 'angular', 'svelte', 'web-components']}>
 
-The `/test-stories` skill lets your agent run your [story tests](../../writing-tests/index.mdx), with their [accessibility checks](../../writing-tests/accessibility-testing.mdx), and fix what fails. Your agent doesn't finish its work with failing tests.
+The `/test-stories` skill tells your agent how to run your [story tests](../../writing-tests/index.mdx), with their [accessibility checks](../../writing-tests/accessibility-testing.mdx), and what the result means.
 
 ## When your agent uses it
 
-The [Storybook section in `AGENTS.md`](../connect.mdx#tell-your-agent-when-to-use-the-skills) names the test command itself (step 3 of the [UI workflow](./ui-workflow.mdx)), so your agent runs the story tests after every UI change, and when you ask it to run or fix them, without opening this skill. The skill gives the same commands when you or your agent call it by name.
+The [Storybook section in `AGENTS.md`](../agents-md.mdx) names the test command itself (step 3), so your agent can run the story tests without opening this skill. When it runs them, and what it does about a failure, is up to your agent and the tool it runs in: some test after every change, others only when you ask. The skill gives the same commands when you or your agent call it by name.
 
-## What the agent does
+## What the skill tells your agent
 
-- **Runs the tests of what it changed.** After each change, the agent runs `npx storybook tools test run --changed`, which tests the stories that its uncommitted changes affect. It can also pass story files, or run every story.
-- **Fixes failures.** The agent fixes what fails and runs the tests again. It changes only what the fix needs.
-
-The agent runs the tests with Storybook's own command, never with a test script from your `package.json` or with `vitest` directly.
+- **The command.** `npx storybook tools test run`: with `--changed` it tests the stories that the uncommitted changes affect, with story files it tests the stories in those files, and without either it tests every story.
+- **The result.** The output lists the passing and failing stories, with the error of each failure.
 
 ### Accessibility issues
 
@@ -42,7 +40,7 @@ To run accessibility checks with the tests, also install the [accessibility addo
 **More AI resources**
 
 - [Connect your agent](../connect.mdx)
-- [UI workflow](./ui-workflow.mdx)
+- [The AGENTS.md section](../agents-md.mdx)
 - [Write stories](./write-stories.mdx)
 - [UI review](./ui-review.mdx)
 - [Best practices for using Storybook with AI](../best-practices.mdx)

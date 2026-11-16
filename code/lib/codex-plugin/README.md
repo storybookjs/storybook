@@ -54,7 +54,7 @@ To remove a plugin:
 
 ## Usage
 
-The plugin's [skills](#skills) tell the agent how to work with your Storybook: reuse your components, generate stories, run tests, and preview its work. The `AGENTS.md` section below is the [UI workflow](https://storybook.js.org/docs/ai/skills/ui-workflow) that tells the agent which skills to use and how to run the story tests for every UI change. Add it to the `AGENTS.md` of each project where the agent should follow it. When you set up Storybook 11 with AI features, or accept the `skills` automigration when you upgrade, Storybook adds it for you (and to your `CLAUDE.md` or `CLAUDE.local.md`, if it does not import `AGENTS.md`):
+The plugin's [skills](#skills) tell the agent how to work with your Storybook: reuse your components, generate stories, run tests, and preview its work. The [`AGENTS.md` section](https://storybook.js.org/docs/ai/agents-md) below tells the agent which skills to use and how to run the story tests for every UI change. Add it to the `AGENTS.md` of each project where the agent should follow it. When you set up Storybook 11 with AI features, or accept the `skills` automigration when you upgrade, Storybook adds it for you (and to your `CLAUDE.md` or `CLAUDE.local.md`, if it does not import `AGENTS.md`):
 
 ````md
 <!-- BEGIN:storybook-skills -->
@@ -76,7 +76,7 @@ For every change to how the UI looks (you create, change, or delete a component,
 <!-- END:storybook-skills -->
 ````
 
-Storybook replaces the text between the markers when you upgrade. The section is the workflow: the first two steps name the skill the agent uses for them, and the third is the test command itself, so the agent runs the tests from that line alone. A project without `@storybook/addon-vitest` cannot run story tests and gets no test step. After a change you can see, the agent ends its answer with a line that offers the `/ui-review` skill; it does not create a review unless you ask. To change the workflow, for example to drop that line or to have the agent create a review after every change, remove both markers and edit the section. An edit between the markers lasts only until the next upgrade, which writes the section again. Remove the whole section to stop the agent from following the workflow: it then uses a skill only when you ask for it, or when it finds one that fits its task. You can also call the plugin's skills in prompts (e.g. `/upgrade`) to have the agent perform specific actions. See [Skills and plugins](https://storybook.js.org/docs/ai/skills) for more details.
+Storybook replaces the text between the markers when you upgrade. The section is the workflow: the first two steps name the skill the agent uses for them, and the third is the test command itself, so the agent needs no skill to run the tests. When it runs them is up to the agent and its harness. A project without `@storybook/addon-vitest` cannot run story tests and gets no test step. After a change you can see, the agent tells you about the `/ui-review` skill; it does not create a review unless you ask. To change the workflow, for example to drop that line or to have the agent create a review after every change, remove both markers and edit the section. An edit between the markers lasts only until the next upgrade, which writes the section again. Remove the whole section to stop the agent from following the workflow: it then uses a skill only when you ask for it, or when it finds one that fits its task. You can also call the plugin's skills in prompts (e.g. `/upgrade`) to have the agent perform specific actions. See [Skills and plugins](https://storybook.js.org/docs/ai/skills) for more details.
 
 When you ask to see stories or for a review, the agent will use the plugin to open relevant stories or an [agentic review summary](https://storybook.js.org/docs/ai/skills/ui-review) in the ADE preview, so you can review the agent's work.
 
@@ -102,7 +102,7 @@ The rules for the stories of your project: which states get a story, and how to 
 
 ### `/test-stories`
 
-Runs the story tests of what you changed, with their accessibility checks, and fixes what fails. The `AGENTS.md` section names the test command itself, so the agent needs this skill only when you call it by name. See [Test stories](https://storybook.js.org/docs/ai/skills/test-stories).
+The command that runs the story tests, with their accessibility checks, and what its result reports. The `AGENTS.md` section names the test command itself, so the agent needs this skill only when you call it by name. See [Test stories](https://storybook.js.org/docs/ai/skills/test-stories).
 
 ### `/ui-review`
 

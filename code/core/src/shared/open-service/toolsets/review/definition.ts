@@ -78,7 +78,7 @@ function describeCreate(ctx: ToolsetCtx): string {
 
 ## When to call
 - The user or the project's agent instructions ask for a review of a visual change (components, CSS, themes, tokens, i18n). A shared file (token, style, util) has no stories; review its consumers'. Skip non-visual refactors unless side-effects are plausible. Start from ${ref('stories.changed')}; use ${ref('stories.findByComponent')} only for a file it leaves out, or when it is unavailable. Include changedFiles.
-- Last: create it after your tests and other checks (type check, lint), then end your answer with the three lines it returns.
+- A review shows the stories as they are when it is created: an edit after it needs a new review. End your answer with the three lines it returns.
 - Browse request ("show me the Badge component"): resolve via ${ref('stories.findByComponent')} / ${ref('docs.list')}. Show exactly what was asked. Pass changedFiles: [].
 
 ## Hard rules

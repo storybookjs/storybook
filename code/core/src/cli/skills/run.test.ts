@@ -228,7 +228,7 @@ describe('runSkillsCommand', () => {
       { tokens: ['test-stories'], mcp: true, target: {} },
       d
     );
-    expect(testStories.output).toContain('`test-run` with `files');
+    expect(testStories.output).toContain('with `files: [');
     expect(testStories.output).not.toContain('stories-changed');
 
     // A client that turns the toolset on with the `X-MCP-Toolsets` header has the tool.
@@ -248,8 +248,10 @@ describe('runSkillsCommand', () => {
       { tokens: ['test-stories'], mcp: true, target: {} },
       d
     );
-    expect(withoutTests.output).toContain('When the server does not give you `test-run`, skip');
-    expect(withoutTests.output).toContain('Call it after every change');
+    expect(withoutTests.output).toContain(
+      'turns the `test` toolset of the Storybook MCP server off'
+    );
+    expect(withoutTests.output).toContain('`test-run` runs the story tests');
   });
 
   it('--all prints each skill once', async () => {

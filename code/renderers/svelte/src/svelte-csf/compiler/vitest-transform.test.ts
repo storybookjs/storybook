@@ -52,8 +52,7 @@ async function transform(originalCode: string) {
 }
 
 // Characterises how the Vitest transform names Svelte CSF tests today: after the export, while the
-// index has the display name. A focused run in addon-vitest matches either
-// (`VitestManager.buildStoryTestNamePattern`), so naming tests after the display name stays fine.
+// index has the display name.
 describe('vitestTransform test names of a stories file', () => {
   it('names each test after the export of the story, not its display name', async () => {
     const output = await transform(dedent`

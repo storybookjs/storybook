@@ -43,9 +43,9 @@ export const toModuleId = (importPath: string) => path.join(process.cwd(), impor
 const getTestName = (name: string) => `${name}${DOUBLE_SPACES}`;
 
 /**
- * A story's test is named after its name, or after its export when the Vitest transform cannot read
- * a name from the source: a story exported as `export { X as Y }`, which is how Svelte CSF compiles
- * `.stories.svelte` (index `Hover Shows Full Date`, test `HoverShowsFullDate`). So match either.
+ * The Vitest transform names a story exported as `export { X as Y }` after its export. Svelte CSF
+ * compiles `.stories.svelte` to that form, while its indexer gives the story its display name
+ * (index `Hover Shows Full Date`, test `HoverShowsFullDate`). So match either.
  */
 const testNames = (
   { name, exportName }: Pick<StoryIndexEntry, 'name' | 'exportName'>,

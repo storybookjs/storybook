@@ -13,6 +13,10 @@ import {
   getIncompatibleStorybookPackages,
 } from './getIncompatibleStorybookPackages.ts';
 import { getMismatchingVersionsWarnings } from './getMismatchingVersionsWarning.ts';
+import {
+  STORYBOOK_OVERRIDES_TITLE,
+  getStorybookOverridesSummary,
+} from './getStorybookOverridesSummary.ts';
 import { DiagnosticType as DiagType, DiagnosticStatus } from './types.ts';
 import type {
   DiagnosticMessage,
@@ -309,6 +313,20 @@ export async function getDoctorDiagnostics({
       type: DiagType.INCOMPATIBLE_PACKAGES,
       title: 'Incompatible packages found',
       message: incompatiblePackagesMessage,
+      project: { configDir },
+    });
+  }
+
+  const overridesSummary = getStorybookOverridesSummary({
+    packageManager,
+    targetVersion: storybookVersion,
+  });
+
+  if (overridesSummary) {
+    results.push({
+      type: DiagType.STORYBOOK_OVERRIDES,
+      title: STORYBOOK_OVERRIDES_TITLE,
+      message: `${overridesSummary}\nThen reinstall your dependencies.`,
       project: { configDir },
     });
   }

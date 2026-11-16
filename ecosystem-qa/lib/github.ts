@@ -153,11 +153,7 @@ const CategoriesAnswer = z.object({
 
 export type DiscussionPlace = { repositoryId: string; categoryId: string };
 
-/**
- * Read the ids that creating a discussion of `category` needs from the answer of the category query.
- *
- * @throws {Error} When the repository has no category of that name, which only a maintainer can add.
- */
+// Throws when the repository has no category of that name, which only a maintainer can add.
 export const discussionPlaceFrom = (
   answer: unknown,
   repo: string,

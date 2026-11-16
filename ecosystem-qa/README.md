@@ -117,19 +117,19 @@ An agent writes it with the `/qa-plan` skill in `.agents/skills/qa-plan/`, which
 
 ```
 window.ts ──> window.json ──> qa-plan.ts render ──> plans/<line>.md ──> qa-plan.ts check
-   │ PRs merged into next      │ + draft.json:          │ edited by hand     │ format, rules,
-   │ between two tags          │ entries, decisions     │                    │ catalog, window
+   │ PRs whose merge commit    │ + draft.json:          │ edited by hand     │ format, rules,
+   │ is between two tags       │ entries, decisions     │                    │ catalog, window
 ```
 
-`window.ts` lists every PR that was merged into `next` between two tags:
+`window.ts` lists every PR whose merge commit is in `next` between two tags, whatever branch the PR was merged into, so a PR merged into the branch of another PR is in the window too:
 
 ```sh
 node ecosystem-qa/window.ts --from v10.6.0 --to v11.0.0-beta.3 --out window.json
 ```
 
 For each PR it records the QA status from its labels, the area that the title prefix names, the manual testing section of its body, the author association, and the issues the PR closes or names, with their parent issue and whether they have a heading for QA or testing.
-It keeps a PR only when its merge commit is between the two tags and it was merged at most 30 days before the first tag.
-It reads git and GitHub and writes nothing else.
+It keeps a PR only when its merge commit is between the two tags and it was merged at most 30 days before the first tag, and it leaves out the release PRs, whose base is `next-release` or `latest-release`.
+It reads GitHub, fetches a tag that the local repository lacks, and writes nothing but the file of `--out`, whose directory it creates.
 
 `qa-plan.ts render` writes the plan from the window and a JSON draft, and `check` validates it:
 

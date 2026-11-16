@@ -8,7 +8,9 @@ import {
   manualTesting,
   needsGroup,
   PullNode,
+  type PullsPage,
   qaStatus,
+  readMergedPulls,
   windowCutoff,
   windowPr,
 } from './window.ts';
@@ -23,6 +25,7 @@ const pull = (extra: object = {}): PullNode =>
     updatedAt: '2026-10-02T10:00:00Z',
     mergedAt: '2026-10-01T10:00:00Z',
     authorAssociation: 'MEMBER',
+    baseRefName: 'next',
     mergeCommit: { oid: MERGE },
     labels: { nodes: [{ name: 'qa:skip' }, { name: 'bug' }] },
     closingIssuesReferences: { nodes: [] },
@@ -46,6 +49,10 @@ describe('qaStatus', () => {
   ])('reads %j as %s', (labels, status) => {
     expect(qaStatus(labels)).toBe(status);
   });
+
+  it('reads a PR verified by hand as verified, even when it still carries qa:needed', () => {
+    expect(qaStatus(['qa:needed', 'qa:success'])).toBe('verified');
+  });
 });
 
 describe('needsGroup', () => {
@@ -55,8 +62,9 @@ describe('needsGroup', () => {
     expect(needsGroup(prOf('MEMBER'))).toBe(true);
   });
 
-  it('leaves out the same PR from a contributor', () => {
+  it('leaves out the same PR from a contributor or an outside collaborator', () => {
     expect(needsGroup(prOf('CONTRIBUTOR'))).toBe(false);
+    expect(needsGroup(prOf('COLLABORATOR'))).toBe(false);
   });
 
   it('leaves out a maintainer PR without a product label', () => {
@@ -143,12 +151,66 @@ describe('inWindow', () => {
     expect(inWindow(pull({ mergedAt: '2026-08-20T10:00:00Z' }), commits, cutoff)).toBe(true);
   });
 
-  it('leaves out a PR in the range that was merged in 2021', () => {
-    expect(inWindow(pull({ mergedAt: '2021-06-01T10:00:00Z' }), commits, cutoff)).toBe(false);
+  it('leaves out a PR in the range that was merged more than 30 days before the start commit', () => {
+    expect(inWindow(pull({ mergedAt: '2026-07-31T10:00:00Z' }), commits, cutoff)).toBe(false);
   });
 
   it('leaves out a PR whose merge commit is not in the range', () => {
     expect(inWindow(pull({ mergeCommit: { oid: 'b'.repeat(40) } }), commits, cutoff)).toBe(false);
+  });
+
+  it('keeps a PR that was merged into the branch of another PR', () => {
+    expect(inWindow(pull({ baseRefName: 'kasper/live-snippets-1-core' }), commits, cutoff)).toBe(
+      true
+    );
+  });
+
+  it('leaves out a release PR', () => {
+    expect(inWindow(pull({ baseRefName: 'next-release' }), commits, cutoff)).toBe(false);
+  });
+});
+
+describe('readMergedPulls', () => {
+  const cutoff = '2026-08-01T00:00:00Z';
+  const at = (number: number, updatedAt: string) => pull({ number, updatedAt });
+
+  it('follows the pages until one ends before the cutoff, and keeps one copy of a PR that moved', () => {
+    const pages: Record<string, PullsPage> = {
+      first: {
+        pageInfo: { hasNextPage: true, endCursor: 'a' },
+        nodes: [at(3, '2026-10-03T00:00:00Z'), at(2, '2026-10-02T00:00:00Z')],
+      },
+      a: {
+        pageInfo: { hasNextPage: true, endCursor: 'b' },
+        nodes: [at(2, '2026-10-04T00:00:00Z'), at(1, '2026-07-01T00:00:00Z')],
+      },
+      b: {
+        pageInfo: { hasNextPage: false, endCursor: null },
+        nodes: [at(99, '2026-06-01T00:00:00Z')],
+      },
+    };
+    const read: (string | null)[] = [];
+
+    const pulls = readMergedPulls((cursor) => {
+      read.push(cursor);
+      return pages[cursor ?? 'first']!;
+    }, cutoff);
+
+    expect(read).toEqual([null, 'a']);
+    expect(pulls.map((pr) => [pr.number, pr.updatedAt])).toEqual([
+      [3, '2026-10-03T00:00:00Z'],
+      [2, '2026-10-04T00:00:00Z'],
+      [1, '2026-07-01T00:00:00Z'],
+    ]);
+  });
+
+  it('stops at the last page', () => {
+    const page = {
+      pageInfo: { hasNextPage: false, endCursor: 'x' },
+      nodes: [at(1, '2026-10-01T00:00:00Z')],
+    };
+
+    expect(readMergedPulls(() => page, cutoff)).toHaveLength(1);
   });
 });
 

@@ -155,7 +155,6 @@ const fail = (message: string): never => {
   process.exit(1);
 };
 
-// The first problem of a flag the schema refuses, on one line.
 const parsedFlag = <T>(schema: z.ZodType<T>, flag: string, value: unknown): T => {
   const parsed = schema.safeParse(value);
   return parsed.success
@@ -211,8 +210,6 @@ const planOfRun = (
   };
 };
 
-// The checks of a run in the order the agent reports them, the checklist it reads, and the check
-// that a fake run fails.
 const checklistOf = (tier: z.infer<typeof Tier>, planned: PlannedRun | undefined, repo: string) => {
   const fixed = checksFor(tier);
   const planChecks = (planned?.entries ?? []).map((entry) => ({
@@ -227,7 +224,7 @@ const checklistOf = (tier: z.infer<typeof Tier>, planned: PlannedRun | undefined
           readFileSync(PLAN_PROMPT_FILE, 'utf8').trim(),
         ].join('\n\n')
       : renderChecklist(fixed),
-    failing:
+    fakeFailure:
       planChecks[0]?.id ?? fixed.find(({ id }) => id === 'core.story-render')?.id ?? fixed[0]!.id,
   };
 };
@@ -860,7 +857,7 @@ const startedAt = new Date();
 mkdirSync(join(request.outDir, 'evidence'), { recursive: true });
 writeFileSync(join(request.outDir, 'evidence/checklist.md'), `${checklist.text}\n`);
 const outcome = request.fake
-  ? runFake(request, checklist.checks, checklist.failing)
+  ? runFake(request, checklist.checks, checklist.fakeFailure)
   : await runSandcastle(request, cloneDir, image, startedAt, budget, checklist);
 const result = writeResult(request, outcome, startedAt);
 // The whole output directory becomes a public artifact, agent stream and session included, and the

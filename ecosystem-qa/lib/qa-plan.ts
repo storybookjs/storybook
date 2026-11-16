@@ -819,7 +819,6 @@ export const planHash = (text: string): string =>
 
 export const planCheckId = (slug: string): string => `plan.${slug}`;
 
-// The checklist lines of plan entries that all list `repo`, in the format of `renderChecklist`.
 export const renderPlanChecks = (entries: PlanEntry[], repo: string): string =>
   entries
     .map((entry) => {

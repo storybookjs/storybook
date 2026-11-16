@@ -159,8 +159,6 @@ export type Finding = z.infer<typeof Finding>;
 
 export const Tier = z.enum(TIERS);
 
-// The answer schema for one run: every check of the run exactly once, findings only on failures.
-//
 // The agent reads the schema next to the checklist, so the schema names the ids of the run only,
 // in the order given: one list of ids in one order.
 export const agentOutput = (ids: readonly [string, ...string[]]) => {
@@ -199,8 +197,6 @@ export const agentOutput = (ids: readonly [string, ...string[]]) => {
 
 export const AgentOutput = agentOutput(CHECK_IDS);
 
-// What a run of plan checks tested: the plan file by name and hash, the run of `planRuns`, and for
-// each of its entries the slug and the PRs.
 export const PlanRecord = z.strictObject({
   file: z.string().regex(/^[\w.-]+\.md$/),
   hash: z.string().regex(/^[0-9a-f]{12}$/),
@@ -361,7 +357,6 @@ export const Proposal = z.discriminatedUnion('kind', [
     evidence: z.array(EvidenceFile),
     // A closed issue this cluster matched: the bug came back, so it is filed anew and linked.
     previousIssue: z.number().int().optional(),
-    // The plan entries whose checks found it, from the plan file of the collect.
     planEntries: z
       .array(
         z.strictObject({

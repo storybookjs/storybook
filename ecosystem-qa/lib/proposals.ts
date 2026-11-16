@@ -131,8 +131,6 @@ export const groupFindings = (results: LoadedResult[]): FindingGroup[] => {
   return [...groups.values()];
 };
 
-// Load the results of the runs of `version` under `resultsDir`, of the batch of `plan` when given,
-// and merge their findings by fingerprint.
 export const loadFindingGroups = (
   resultsDir: string,
   version: string,
@@ -588,7 +586,6 @@ export interface ProposalOptions {
   runUrl: string;
   // When the tested version was published; an issue closed as completed after it counts as known.
   publishedAt?: string | undefined;
-  // The reviewed plan of the collect, which names the entry of a plan check.
   plan?: Plan | undefined;
 }
 

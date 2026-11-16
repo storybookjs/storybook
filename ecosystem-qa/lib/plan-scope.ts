@@ -6,7 +6,6 @@ import { loadEntries } from './catalog.ts';
 import { checkPlanText, planBatches, planHash, type Plan } from './qa-plan.ts';
 import { PlanRecord } from './schema.ts';
 
-// The batch of a checked plan file that a run or a collect is about.
 export interface PlanScope {
   file: string;
   hash: string;
@@ -14,7 +13,6 @@ export interface PlanScope {
   batch: number;
 }
 
-// End a script on a request it cannot serve, with the reason as its one line of output.
 export const refuse = (message: string): never => {
   console.error(message);
   process.exit(1);
@@ -27,8 +25,6 @@ export const wholeNumber = (flag: string, value: string): number => {
     : refuse(`${flag} must be a whole number from 1, found "${value}".`);
 };
 
-// Read `--plan` and `--batch`: nothing without them, and a refusal when the plan cannot run or has
-// no such batch.
 export const readPlanScope = ({
   plan: file,
   batch,

@@ -36,14 +36,11 @@ interface RunKey {
 interface LoadOptions {
   version: string;
   catalog: CatalogEntry[];
-  // Without a plan only records of static runs load.
   plan?: PlanScope;
   warn: (message: string) => void;
 }
 
-// The runner job uploads results/ as the artifact qa-result-<id>-<os>-<engine>; a local run writes
-// results/<id>/<os>/<engine> directly. A part of a plan batch adds -part-<n> to the artifact and
-// part-<n> to the directory. Only these places hold a record the runner wrote.
+// Only the artifact and local run directories below hold a record the runner wrote.
 type RunPlace = Pick<RunKey, 'entry' | 'os' | 'engine'> & { part?: number };
 
 const artifactName = ({ entry, os, engine, part }: RunPlace) =>
@@ -125,8 +122,8 @@ const otherPlan = (
     : `it ran batch ${ran.batch} of the plan, not batch ${scope.batch}`;
 };
 
-// The record was written by a run that executed code of the repository, so the plan file, not the
-// record, says which plan checks its part has.
+// The record comes from a run that executed the repository's code, so only the plan file says
+// which plan checks its part has.
 const planChecksOf = (scope: PlanScope, { entry, plan }: RunResultFile['request']): string[] =>
   (
     planRuns(scope.plan, scope.batch).find(
@@ -134,9 +131,8 @@ const planChecksOf = (scope: PlanScope, { entry, plan }: RunResultFile['request'
     )?.entries ?? []
   ).map(planCheckId);
 
-// Why a record does not belong to the collect: another plan or batch, or a check id that its run
-// was not given. A static record keeps every id of checks.ts, so records of earlier sweeps load
-// after a check moves to another tier.
+// A static record may report any id of checks.ts, so records of earlier sweeps still load after a
+// check changes tier.
 const outOfScope = (record: RunResultFile, scope: PlanScope | undefined): string | undefined => {
   const other = otherPlan(record.request.plan, scope);
   if (other) {

@@ -1,8 +1,7 @@
 // The agent-runnable rows of `references/basic-qa.md`, whose Agent column maps each row to one of
 // these ids; `checks.test.ts` keeps the two in sync.
-// Each tier runs the checks of the tiers before it. `gate` holds the probes that the prompt's
-// upgrade steps run in any case, and a run of plan checks runs only those by default. `must` runs on
-// every repo of every sweep; `extended` only when a dispatch asks for it.
+// `gate` holds the probes that the prompt's upgrade steps run in any case; `must` runs on every
+// repo of every sweep; `extended` only when a dispatch asks for it.
 export const TIERS = ['gate', 'must', 'extended'] as const;
 export type Tier = (typeof TIERS)[number];
 

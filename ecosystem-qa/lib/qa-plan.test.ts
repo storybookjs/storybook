@@ -140,6 +140,13 @@ describe('checkPlanText', () => {
       'is used twice',
     ],
     [
+      'a group used twice',
+      '| `ui` | area UI |',
+      '| `tooling` | area UI |',
+      '| `tooling` | area Tooling',
+      'the group `tooling` is used twice',
+    ],
+    [
       'a version off the line',
       '| Version | 11.0.0-beta.3 |',
       '| Version | 11.1.0-beta.3 |',
@@ -239,6 +246,7 @@ describe('checkPlanText', () => {
       '`primer-react` is on Storybook 9, more than one major behind 11.0',
     ],
     ['a gap in the batches', '- Batch: 2', '- Batch: 3', '- Batch: 3', 'batch 2 has no entry'],
+    ['a batch 0', '- Batch: 1', '- Batch: 0', '### `story-sort-in-main`', 'batch: Too small'],
     [
       'a maintainer PR without a group',
       '| `tooling` |\n',
@@ -256,7 +264,7 @@ describe('checkPlanText', () => {
     [
       'a link to Linear',
       'a deep sidebar tree that no catalog entry has',
-      'see https://linear.app/storybook/issue/SB-1',
+      'see https://linear.app/example/issue/EX-1',
       '| `primer-react` |',
       'Linear, Notion, or Slack',
     ],
@@ -267,6 +275,13 @@ describe('checkPlanText', () => {
       'fetch `https://example.com',
       'https://example.com is a URL other than localhost',
     ],
+    [
+      'an expected outcome with a host but no scheme',
+      'the baseline, and the upgrade',
+      'the copy on www.example.com/sb/index.json, and the upgrade',
+      'the copy on www.example.com',
+      'www.example.com is a URL other than localhost',
+    ],
   ])('refuses %s with its line', (_, from, to, lineNeedle, message) => {
     const text = replaced(FIXTURE, from, to);
     expect(problemsOf(text)).toContainEqual({
@@ -275,9 +290,28 @@ describe('checkPlanText', () => {
     });
   });
 
+  it('accepts file names and paths in a step', () => {
+    const text = replaced(
+      FIXTURE,
+      'Read which automigrations the upgrade ran',
+      'Read `README.md`, `.storybook/main.ts`, `package.json:12`, `src/ui.kit/Button.tsx`, and which automigrations the upgrade ran'
+    );
+
+    expect(problemsOf(text)).toEqual([]);
+  });
+
+  it('refuses a discovered id used twice at its second row', () => {
+    const row = FIXTURE.split('\n').find((line) => line.startsWith('| `primer-react` |'))!;
+    const text = replaced(FIXTURE, row, `${row}\n${row}`);
+
+    expect(problemsOf(text)).toEqual([
+      { line: lineOf(text, row) + 1, message: 'the id `primer-react` is used twice' },
+    ]);
+  });
+
   it('refuses a catalog entry more than one major behind the line', () => {
     const catalog = CATALOG.map((entry) =>
-      entry.id === 'mantine' ? { ...entry, tags: { ...entry.tags!, storybook: 9 } } : entry
+      entry.id === 'mantine' ? { ...entry, tags: { ...entry.tags!, major: 9 } } : entry
     );
 
     expect(problemsOf(FIXTURE, { catalog })).toEqual([
@@ -306,6 +340,18 @@ describe('checkPlanText', () => {
       {
         line: lineOf(text, pr(36154)),
         message: '#36154 does not belong in "PRs verified by hand" for this window',
+      },
+    ]);
+  });
+
+  it('names the area and title of the window for a row that changed them', () => {
+    const window = windowOfPlan(parsePlan(FIXTURE));
+    const text = replaced(FIXTURE, `| ${pr(33422)} | UI |`, `| ${pr(33422)} | Manager |`);
+
+    expect(problemsOf(text, { window })).toEqual([
+      {
+        line: lineOf(text, `| ${pr(33422)} |`),
+        message: '#33422 has the area "UI" and the title "UI: Rebuild Sidebar Tree" in the window',
       },
     ]);
   });

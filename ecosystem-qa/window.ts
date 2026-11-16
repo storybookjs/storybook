@@ -120,9 +120,8 @@ const NotFoundOnly = z.object({
   errors: z.array(z.object({ type: z.literal('NOT_FOUND'), message: z.string() })),
 });
 
-// A number in a body can name nothing. GitHub then answers that alias with null and an error, and gh
-// exits 1 and prints the error's message on stderr, which is noise here. Any other line of stderr,
-// the GH_DEBUG trace included, still reaches the terminal.
+// GitHub answers an alias whose number names nothing with null and a NOT_FOUND error, and gh then
+// exits 1 and prints the messages on stderr, the first one after `gh: `.
 const askIssues = (args: string[]): unknown => {
   const { status, stdout, stderr, error } = spawnSync('gh', args, {
     encoding: 'utf8',

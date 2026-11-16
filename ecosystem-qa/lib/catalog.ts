@@ -3,7 +3,6 @@ import { readFileSync } from 'node:fs';
 import { discoveredEntries, type Plan } from './qa-plan.ts';
 import { Catalog, type CatalogEntry } from './schema.ts';
 
-// One parse of both lists, so an id of the plan cannot shadow a catalog entry.
 export const loadEntries = (plan?: Plan): CatalogEntry[] =>
   Catalog.parse([
     ...JSON.parse(readFileSync(new URL('../catalog.json', import.meta.url), 'utf8')),

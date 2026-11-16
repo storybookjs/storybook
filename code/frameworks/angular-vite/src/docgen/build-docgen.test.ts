@@ -490,7 +490,7 @@ describe('buildDocgenPayload', () => {
       expect(Object.keys(payload?.subcomponents ?? {})).toEqual(['Icon', 'Again']);
       expect(payload?.subcomponents?.Icon).toMatchObject({
         name: 'IconComponent',
-        path: `./${relative(process.cwd(), ICON_PATH)}`,
+        path: `./${relative(process.cwd(), ICON_PATH).replaceAll('\\', '/')}`,
         renderer: 'angular',
         argTypes: {},
       });

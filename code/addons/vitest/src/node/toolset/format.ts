@@ -356,34 +356,6 @@ function formatSelection(
 const A11Y_GUIDANCE =
   'Accessibility violations: fix only what your change caused, and report the rest. For visual ones such as color contrast, ask before changing the design.';
 
-// What the agent needs next for this result, so no skill has to be read first.
-function formatNextSteps(
-  result: TestRunResult,
-  {
-    a11y,
-    testsFailed,
-    notFound,
-  }: {
-    a11y: boolean;
-    testsFailed: boolean;
-    notFound: boolean;
-  }
-): string[] {
-  const steps: string[] = [];
-  if (notFound) {
-    steps.push('Fix or leave out the arguments listed above, then run again.');
-  }
-  if (testsFailed) {
-    steps.push(
-      'Fix what fails and run again, changing only what each failure needs. Do not finish with failing tests.'
-    );
-  }
-  if (a11y && countA11yViolations(getA11yReports(result)) > 0) {
-    steps.push(A11Y_GUIDANCE);
-  }
-  return steps;
-}
-
 function formatResultSection(
   result: TestRunResult,
   {
@@ -431,11 +403,7 @@ function formatResultSection(
     ...notFound,
     verdict,
     formatA11yResult(result, { a11y, a11yEnabled }),
-    ...formatNextSteps(result, {
-      a11y,
-      testsFailed: testFailureParts.length > 0,
-      notFound: notFound.length > 0,
-    }),
+    ...(a11y && countA11yViolations(getA11yReports(result)) > 0 ? [A11Y_GUIDANCE] : []),
   ];
   return `## Result
 

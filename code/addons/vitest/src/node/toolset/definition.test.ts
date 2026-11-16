@@ -473,8 +473,7 @@ Passed: 1 component test passed.`);
 
 No story found for story ID "missing--story"
 Failed: 1 argument not used; 1 component test passed.
-Accessibility: not checked.
-Fix or leave out the arguments listed above, then run again.`);
+Accessibility: not checked.`);
     });
 
     it('counts only the selected stories that got a verdict, without blaming tags for an error', async () => {
@@ -708,7 +707,6 @@ Color contrast ratio is insufficient
 
 Failed: 1 accessibility check failed.
 Accessibility: 2 stories checked; 1 without violations; 1 failing the run.
-Fix what fails and run again, changing only what each failure needs. Do not finish with failing tests.
 Accessibility violations: fix only what your change caused, and report the rest. For visual ones such as color contrast, ask before changing the design.`);
     });
 
@@ -744,8 +742,7 @@ Expected button text to be "Secondary"
 ## Result
 
 Failed: 1 component test failed.
-Accessibility: 1 story checked, no violations. Stories with a failing component test get no accessibility result.
-Fix what fails and run again, changing only what each failure needs. Do not finish with failing tests.`);
+Accessibility: 1 story checked, no violations. Stories with a failing component test get no accessibility result.`);
     });
 
     it('reports accessibility violations with inspect links built from the origin', async () => {
@@ -863,8 +860,7 @@ ReferenceError: foo is not defined
 ## Result
 
 Failed: 1 unhandled error.
-Accessibility: not checked.
-Fix what fails and run again, changing only what each failure needs. Do not finish with failing tests.`);
+Accessibility: not checked.`);
     });
 
     it('passes a run whose accessibility violations are only warnings, and says so', async () => {

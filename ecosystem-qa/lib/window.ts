@@ -14,14 +14,12 @@ const STATUS_OF_LABEL: [label: string, status: QaStatus][] = [
 export const qaStatus = (labels: string[]): QaStatus =>
   STATUS_OF_LABEL.find(([label]) => labels.includes(label))?.[1] ?? 'undeclared';
 
-// Danger requires a title of the form `Area: Summary`, both starting with a capital letter.
 export const areaOf = (title: string): string | null => /^([A-Z][^:]*):\s/.exec(title)?.[1] ?? null;
 
 const withoutComments = (text: string): string => text.replace(/<!--[^]*?(?:-->|$)/g, '');
 
 export const MANUAL_TESTING_CAP = 3000;
 
-// Cut the way `scripts/dangerfile.ts` finds the section, so a PR that passed Danger has one here.
 export const manualTesting = (body: string): string | null => {
   const text = body.replace(/\r\n/g, '\n');
   const heading = /####\s*Manual testing/i.exec(text);
@@ -104,8 +102,6 @@ export type Window = z.infer<typeof Window>;
 const MAINTAINERS = new Set(['OWNER', 'MEMBER']);
 const PRODUCT_LABELS = new Set(['bug', 'feature request', 'maintenance', 'BREAKING CHANGE']);
 
-// A maintainer marks a PR `qa:skip` when its project gets tested as a whole, so such a PR is
-// decided by group.
 export const needsGroup = (pr: WindowPr): boolean =>
   pr.status === 'skip' &&
   MAINTAINERS.has(pr.authorAssociation) &&
@@ -144,8 +140,9 @@ export type IssueNode = z.infer<typeof IssueNode>;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-// The range also holds old history that the merge of another repository into the monorepo brought
-// in, so a merge commit in the range alone does not make a PR new.
+// GitHub lists merged PRs by date, not by commit, so the pages stop at a date, and a PR merged
+// before it is dropped even when an update listed it early, which keeps the output stable. A
+// release tag sits on a version bump branched off next, so the date reaches back past the start.
 export const MERGED_BEFORE_START_DAYS = 30;
 
 export const windowCutoff = (startDate: string): string =>

@@ -99,7 +99,6 @@ jobs:
       - name: Test
         run: yarn workspace ecosystem-qa test
 
-      # A pull request against qa/plans that only adds a plan gets its red or green check here.
       - name: Check the QA plans
         run: |
           shopt -s nullglob

@@ -126,6 +126,47 @@ jobs:
           node ecosystem-qa/file.ts --proposals ecosystem-qa/results/proposals.json
           --repo "$GITHUB_REPOSITORY" --dry
 
+  # The key proxy listens on the gateway of Docker's default bridge, so the sandbox must reach that
+  # address. This job runs where the agent job runs: on the same runner image and without the runner
+  # hardening step, which the smoke job keeps.
+  sandbox-network:
+    name: Reach the runner from the sandbox
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions: {}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Build the sandbox image
+        run: >-
+          docker build --build-arg AGENT_UID="$(id -u)" --build-arg AGENT_GID="$(id -g)"
+          --build-arg CLAUDE_CODE_VERSION="$CLAUDE_CODE_VERSION" --build-arg CODEX_VERSION="$CODEX_VERSION"
+          -t sb-ecosystem-qa ecosystem-qa
+
+      - name: Call a listener on the bridge gateway from the sandbox
+        run: |
+          gateway="$(docker network inspect bridge --format '{{(index .IPAM.Config 0).Gateway}}')"
+          echo "Bridge gateway: $gateway"
+          node -e '
+            require("node:http")
+              .createServer((req, res) => res.end(`reached from ${req.socket.remoteAddress}\n`))
+              .listen(8787, process.argv[1], () => console.log(`Listening on ${process.argv[1]}:8787`));
+          ' "$gateway" &
+          listener=$!
+          sleep 1
+          container="$(docker run -d --user "$(id -u):$(id -g)" sb-ecosystem-qa)"
+          docker inspect --format '{{json .NetworkSettings.Networks}}' "$container" | jq .
+          docker exec "$container" curl -sS --max-time 10 "http://$gateway:8787/v1/messages"
+          docker rm -f "$container" > /dev/null
+          kill "$listener"
+
   plan:
     name: Plan the matrix
     if: ${{ github.event_name == 'workflow_dispatch' }}

@@ -40,16 +40,12 @@ export const VisionSimulator = () => {
   const value = globals[VISION_GLOBAL_KEY];
   const isLocked = storyGlobals[VISION_GLOBAL_KEY] !== undefined;
 
-  const options = Object.entries(filters).map(
-    ([key, { label, percentage, percentageIsUpperBound }]) => ({
-      title: label,
-      description: percentage
-        ? `${percentageIsUpperBound ? 'Up to ' : ''}${percentage}% of users`
-        : undefined,
-      icon: <ColorIcon $filter={key} />,
-      value: key,
-    })
-  );
+  const options = Object.entries(filters).map(([key, { label, description }]) => ({
+    title: label,
+    description,
+    icon: <ColorIcon $filter={key} />,
+    value: key,
+  }));
 
   return (
     <>

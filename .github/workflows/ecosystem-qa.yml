@@ -208,10 +208,47 @@ jobs:
           } >> "$GITHUB_OUTPUT"
           echo "$matrix" | jq .
 
-  runner:
-    name: QA ${{ matrix.repo }} on ${{ matrix.os }} with ${{ matrix.engine }}
+  image:
+    name: Build the sandbox image
     needs: plan
     if: ${{ needs.plan.outputs.from_runs == '' }}
+    # The runner label of the Linux runner jobs, so the image gets their uid and gid.
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write # push ghcr.io/storybookjs/ecosystem-qa-sandbox
+    outputs:
+      image: ${{ steps.image.outputs.image }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Build and push the image unless its tag exists
+        id: image
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="$(printf '%s\n' "$(sha256sum < ecosystem-qa/Dockerfile)" "$CLAUDE_CODE_VERSION" "$CODEX_VERSION" "$(id -u)" "$(id -g)" | sha256sum | cut -c1-16)"
+          name="ghcr.io/storybookjs/ecosystem-qa-sandbox:$tag"
+          printf '%s' "$GH_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+          if ! docker buildx imagetools inspect "$name" > /dev/null 2>&1; then
+            # No build context, so the tag's hash of the Dockerfile covers everything the image is built from.
+            docker build --build-arg AGENT_UID="$(id -u)" --build-arg AGENT_GID="$(id -g)" \
+              --build-arg CLAUDE_CODE_VERSION="$CLAUDE_CODE_VERSION" --build-arg CODEX_VERSION="$CODEX_VERSION" \
+              -t "$name" - < ecosystem-qa/Dockerfile
+            docker push "$name"
+          fi
+          digest="$(docker buildx imagetools inspect "$name" --format '{{.Manifest.Digest}}')"
+          echo "$name@$digest"
+          echo "image=ghcr.io/storybookjs/ecosystem-qa-sandbox@$digest" >> "$GITHUB_OUTPUT"
+
+  runner:
+    name: QA ${{ matrix.repo }} on ${{ matrix.os }} with ${{ matrix.engine }}
+    needs: [plan, image]
+    # Not the implicit success(): a failed image job leaves the runner jobs to build the image.
+    if: ${{ !cancelled() && needs.plan.result == 'success' && needs.plan.outputs.from_runs == '' }}
     runs-on: ${{ matrix.runner }}
     timeout-minutes: ${{ fromJSON(needs.plan.outputs.job_minutes) }}
     permissions: {}
@@ -268,8 +305,20 @@ jobs:
         shell: pwsh
         run: Get-PSDrive -PSProvider FileSystem
 
+      # Without a login, as this job has no package permission: until the package is public the pull
+      # fails and the next step builds the image.
+      - name: Pull the sandbox image
+        id: pull
+        if: ${{ matrix.sandbox == 'docker' && needs.image.outputs.image != '' }}
+        continue-on-error: true
+        env:
+          QA_IMAGE: ${{ needs.image.outputs.image }}
+        run: |
+          docker pull "$QA_IMAGE"
+          docker tag "$QA_IMAGE" sb-ecosystem-qa
+
       - name: Build the sandbox image
-        if: ${{ matrix.sandbox == 'docker' }}
+        if: ${{ matrix.sandbox == 'docker' && steps.pull.outcome != 'success' }}
         run: >-
           docker build --build-arg AGENT_UID="$(id -u)" --build-arg AGENT_GID="$(id -g)"
           --build-arg CLAUDE_CODE_VERSION="$CLAUDE_CODE_VERSION" --build-arg CODEX_VERSION="$CODEX_VERSION"

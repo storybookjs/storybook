@@ -65,6 +65,8 @@ node ecosystem-qa/pin.ts dnum-mi/vue-dsfr > pins.jsonl
 
 It prints one line of JSON with the commit, the package manager, each Storybook directory with its version range, framework packages and feature addons, the stars, the last push and the archived flag.
 GitHub truncates the file tree of a very large repository, and then `--dir` names the Storybook directory to read.
+`tools/fork-tier2.sh pins.jsonl` forks every tier 2 entry with a `pushTo` into `storybook-tmp` and creates its `qa/base` at the commit of its line, and `--dry` prints the calls without making any write.
+Run it twice and the second run changes nothing; it stops where a `qa/base` exists at another commit, because it never moves one.
 
 Then collect and look at the proposals without filing anything:
 
@@ -110,7 +112,7 @@ ECOSYSTEM_QA_FAKE=1 node ecosystem-qa/run.ts --repo mealdrop --version 11.0.0-be
 ## Run it in CI
 
 Start the `Ecosystem QA` workflow by hand and pick the repos, version, engines and operating systems.
-`repo` takes catalog ids separated by commas, and `owned` or `tier1` for every repo of that class, so `owned,tier1` with `linux,windows` is a whole static sweep in one run.
+`repo` takes catalog ids separated by commas, and `owned`, `tier1` or `tier2` for every repo of that class, so `owned,tier1,tier2` with `linux,windows` is a whole static sweep in one run.
 `plan.ts` turns the inputs into one job for each repo, operating system and engine, and a repo runs on Windows only when the catalog marks it `windows`.
 Linux runs the agent in `docker()`; Windows runs it with `noSandbox()`, and the API key is the only secret in that job.
 The agent keys live in the `ecosystem-qa` environment, and the push token in `ecosystem-qa-file`, which only the filing job enters.

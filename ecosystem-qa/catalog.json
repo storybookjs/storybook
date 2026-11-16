@@ -206,5 +206,405 @@
       "storybook": 10,
       "features": ["a11y", "docs", "vitest"]
     }
+  },
+  {
+    "id": "fortanix-baklava",
+    "repo": "fortanix/baklava",
+    "pushTo": "storybook-tmp/fortanix-baklava",
+    "ref": "qa/base",
+    "class": "tier2",
+    "packageManager": "npm",
+    "storybookDir": ".",
+    "windows": false,
+    "tags": {
+      "framework": "@storybook/react-vite",
+      "builder": "vite",
+      "storybook": 10,
+      "features": ["a11y", "docs", "vitest"]
+    }
+  },
+  {
+    "id": "eui",
+    "repo": "elastic/eui",
+    "pushTo": "storybook-tmp/eui",
+    "ref": "qa/base",
+    "class": "tier2",
+    "packageManager": "yarn",
+    "storybookDir": "packages/eui",
+    "windows": false,
+    "tags": {
+      "framework": "@storybook/react-vite",
+      "builder": "vite",
+      "storybook": 10,
+      "features": ["test-runner"]
+    }
+  },
+  {
+    "id": "grommet",
+    "repo": "grommet/grommet",
+    "pushTo": "storybook-tmp/grommet",
+    "ref": "qa/base",
+    "class": "tier2",
+    "packageManager": "yarn",
+    "storybookDir": ".",
+    "windows": false,
+    "tags": {
+      "framework": "@storybook/react-webpack5",
+      "builder": "webpack5",
+      "storybook": 10,
+      "features": ["a11y", "docs"]
+    }
+  },
+  {
+    "id": "drei",
+    "repo": "pmndrs/drei",
+    "pushTo": "storybook-tmp/drei",
+    "ref": "qa/base",
+    "class": "tier2",
+    "packageManager": "yarn",
+    "storybookDir": ".",
+    "windows": false,
+    "tags": {
+      "framework": "@storybook/react-vite",
+      "builder": "vite",
+      "storybook": 10,
+      "features": ["docs"]
+    }
+  },
+  {
+    "id": "univer",
+    "repo": "dream-num/univer",
+    "pushTo": "storybook-tmp/univer",
+    "ref": "qa/base",
+    "class": "tier2",
+    "packageManager": "pnpm",
+    "storybookDir": "common/storybook",
+    "windows": false,
+    "tags": {
+      "framework": "@storybook/react-webpack5",
+      "builder": "webpack5",
+      "storybook": 10,
+      "features": ["docs"]
+    }
+  },
+  {
+    "id": "vibe",
+    "repo": "mondaycom/vibe",
+    "pushTo": "storybook-tmp/vibe",
+    "ref": "qa/base",
+    "class": "tier2",
+    "packageManager": "yarn",
+    "storybookDir": "packages/docs",
+    "windows": false,
+    "tags": {
+      "framework": "@storybook/react-vite",
+      "builder": "vite",
+      "storybook": 8,
+      "features": ["a11y", "docs", "test-runner"]
+    }
+  },
+  {
+    "id": "radix-primitives",
+    "repo": "radix-ui/primitives",
+    "pushTo": "storybook-tmp/radix-primitives",
+    "ref": "qa/base",
+    "class": "tier2",
+    "packageManager": "pnpm",
+    "storybookDir": "apps/storybook",
+    "windows": false,
+    "tags": {
+      "framework": "@storybook/react-webpack5",
+      "builder": "webpack5",
+      "storybook": 9,
+      "features": ["docs"]
+    }
+  },
+  {
+    "id": "source-coop",
+    "repo": "source-cooperative/source.coop",
+    "pushTo": "storybook-tmp/source-coop",
+    "ref": "qa/base",
+    "class": "tier2",
+    "packageManager": "npm",
+    "storybookDir": ".",
+    "windows": false,
+    "tags": {
+      "framework": "@storybook/nextjs-vite",
+      "builder": "vite",
+      "storybook": 10,
+      "features": ["a11y", "docs"]
+    }
+  },
+  {
+    "id": "vue-dsfr",
+    "repo": "dnum-mi/vue-dsfr",
+    "pushTo": "storybook-tmp/vue-dsfr",
+    "ref": "qa/base",
+    "class": "tier2",
+    "packageManager": "pnpm",
+    "storybookDir": ".",
+    "windows": false,
+    "tags": {
+      "framework": "@storybook/vue3-vite",
+      "builder": "vite",
+      "storybook": 10,
+      "features": ["a11y", "docs", "test-runner", "vitest"]
+    }
+  },
+  {
+    "id": "datashare-client",
+    "repo": "ICIJ/datashare-client",
+    "pushTo": "storybook-tmp/datashare-client",
+    "ref": "qa/base",
+    "class": "tier2",
+    "packageManager": "yarn",
+    "storybookDir": ".",
+    "windows": false,
+    "tags": {
+      "framework": "@storybook/vue3-vite",
+      "builder": "vite",
+      "storybook": 10,
+      "features": ["docs", "msw"]
+    }
+  },
+  {
+    "id": "advanced-chat-components",
+    "repo": "advanced-chat/advanced-chat-components",
+    "pushTo": "storybook-tmp/advanced-chat-components",
+    "ref": "qa/base",
+    "class": "tier2",
+    "packageManager": "npm",
+    "storybookDir": ".",
+    "windows": false,
+    "tags": {
+      "framework": "@storybook/vue3-vite",
+      "builder": "vite",
+      "storybook": 10,
+      "features": ["a11y", "docs", "vitest"]
+    }
+  },
+  {
+    "id": "lion5-component-library",
+    "repo": "lion5/component-library",
+    "pushTo": "storybook-tmp/lion5-component-library",
+    "ref": "qa/base",
+    "class": "tier2",
+    "packageManager": "npm",
+    "storybookDir": "packages/core",
+    "windows": false,
+    "tags": {
+      "framework": "@storybook/vue3-vite",
+      "builder": "vite",
+      "storybook": 10,
+      "features": ["a11y", "docs", "vitest"]
+    }
+  },
+  {
+    "id": "spartan",
+    "repo": "spartan-ng/spartan",
+    "pushTo": "storybook-tmp/spartan",
+    "ref": "qa/base",
+    "class": "tier2",
+    "packageManager": "pnpm",
+    "storybookDir": ".",
+    "windows": false,
+    "tags": {
+      "framework": "@storybook/angular",
+      "builder": "webpack5",
+      "storybook": 10,
+      "features": ["a11y", "docs"]
+    }
+  },
+  {
+    "id": "radix-ng-primitives",
+    "repo": "radix-ng/primitives",
+    "pushTo": "storybook-tmp/radix-ng-primitives",
+    "ref": "qa/base",
+    "class": "tier2",
+    "packageManager": "pnpm",
+    "storybookDir": ".",
+    "windows": false,
+    "tags": {
+      "framework": "@storybook/angular",
+      "builder": "webpack5",
+      "storybook": 10,
+      "features": ["a11y", "docs"]
+    }
+  },
+  {
+    "id": "ng-clarity",
+    "repo": "vmware-clarity/ng-clarity",
+    "pushTo": "storybook-tmp/ng-clarity",
+    "ref": "qa/base",
+    "class": "tier2",
+    "packageManager": "npm",
+    "storybookDir": ".",
+    "windows": false,
+    "tags": {
+      "framework": "@storybook/angular",
+      "builder": "webpack5",
+      "storybook": 10,
+      "features": ["a11y", "docs"]
+    }
+  },
+  {
+    "id": "tenzu-front",
+    "repo": "BIRU-Scop/tenzu-front",
+    "pushTo": "storybook-tmp/tenzu-front",
+    "ref": "qa/base",
+    "class": "tier2",
+    "packageManager": "npm",
+    "storybookDir": ".",
+    "windows": false,
+    "tags": {
+      "framework": "@storybook/angular-vite",
+      "builder": "vite",
+      "storybook": 10,
+      "features": ["a11y", "docs"]
+    }
+  },
+  {
+    "id": "gradio",
+    "repo": "gradio-app/gradio",
+    "pushTo": "storybook-tmp/gradio",
+    "ref": "qa/base",
+    "class": "tier2",
+    "packageManager": "pnpm",
+    "storybookDir": ".",
+    "windows": false,
+    "tags": {
+      "framework": "@storybook/svelte-vite",
+      "builder": "vite",
+      "storybook": 10,
+      "features": ["a11y", "docs", "vitest"]
+    }
+  },
+  {
+    "id": "podman-desktop",
+    "repo": "podman-desktop/podman-desktop",
+    "pushTo": "storybook-tmp/podman-desktop",
+    "ref": "qa/base",
+    "class": "tier2",
+    "packageManager": "pnpm",
+    "storybookDir": "storybook",
+    "windows": false,
+    "tags": {
+      "framework": "@storybook/svelte-vite",
+      "builder": "vite",
+      "storybook": 10,
+      "features": ["a11y", "docs"]
+    }
+  },
+  {
+    "id": "inkline",
+    "repo": "inkline/inkline",
+    "pushTo": "storybook-tmp/inkline",
+    "ref": "qa/base",
+    "class": "tier2",
+    "packageManager": "pnpm",
+    "storybookDir": "ui/svelte",
+    "windows": false,
+    "tags": {
+      "framework": "@storybook/svelte-vite",
+      "builder": "vite",
+      "storybook": 10,
+      "features": ["a11y", "docs"]
+    }
+  },
+  {
+    "id": "documentcloud-frontend",
+    "repo": "MuckRock/documentcloud-frontend",
+    "pushTo": "storybook-tmp/documentcloud-frontend",
+    "ref": "qa/base",
+    "class": "tier2",
+    "packageManager": "npm",
+    "storybookDir": ".",
+    "windows": false,
+    "tags": {
+      "framework": "@storybook/sveltekit",
+      "builder": "vite",
+      "storybook": 10,
+      "features": ["docs", "msw"]
+    }
+  },
+  {
+    "id": "dxos",
+    "repo": "dxos/dxos",
+    "pushTo": "storybook-tmp/dxos",
+    "ref": "qa/base",
+    "class": "tier2",
+    "packageManager": "pnpm",
+    "storybookDir": "tools/storybook-lit",
+    "windows": false,
+    "tags": {
+      "framework": "@storybook/web-components-vite",
+      "builder": "vite",
+      "storybook": 10,
+      "features": ["docs", "vitest"]
+    }
+  },
+  {
+    "id": "authentik",
+    "repo": "goauthentik/authentik",
+    "pushTo": "storybook-tmp/authentik",
+    "ref": "qa/base",
+    "class": "tier2",
+    "packageManager": "pnpm",
+    "storybookDir": "web",
+    "windows": false,
+    "tags": {
+      "framework": "@storybook/web-components-vite",
+      "builder": "vite",
+      "storybook": 10,
+      "features": ["docs"]
+    }
+  },
+  {
+    "id": "fundamental-styles",
+    "repo": "SAP/fundamental-styles",
+    "pushTo": "storybook-tmp/fundamental-styles",
+    "ref": "qa/base",
+    "class": "tier2",
+    "packageManager": "yarn",
+    "storybookDir": ".",
+    "windows": false,
+    "tags": {
+      "framework": "@storybook/html-vite",
+      "builder": "vite",
+      "storybook": 10,
+      "features": ["a11y", "docs"]
+    }
+  },
+  {
+    "id": "trendyol-baklava",
+    "repo": "Trendyol/baklava",
+    "pushTo": "storybook-tmp/trendyol-baklava",
+    "ref": "qa/base",
+    "class": "tier2",
+    "packageManager": "npm",
+    "storybookDir": ".",
+    "windows": false,
+    "tags": {
+      "framework": "@storybook/web-components-vite",
+      "builder": "vite",
+      "storybook": 7,
+      "features": ["a11y", "docs"]
+    }
+  },
+  {
+    "id": "trezor-suite",
+    "repo": "trezor/trezor-suite",
+    "pushTo": "storybook-tmp/trezor-suite",
+    "ref": "qa/base",
+    "class": "tier2",
+    "packageManager": "yarn",
+    "storybookDir": "suite-native-app/storybook",
+    "windows": false,
+    "tags": {
+      "framework": "@storybook/react-native-web-vite",
+      "builder": "vite",
+      "storybook": 10,
+      "features": []
+    }
   }
 ]

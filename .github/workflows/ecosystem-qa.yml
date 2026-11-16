@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       repo:
-        description: 'Catalog ids from ecosystem-qa/catalog.json, comma-separated; owned and tier1 stand for every repo of that class'
+        description: 'Catalog ids from ecosystem-qa/catalog.json, comma-separated; owned, tier1 and tier2 stand for every repo of that class'
         type: string
         default: 'mealdrop'
       version:
@@ -100,7 +100,7 @@ jobs:
         run: yarn workspace ecosystem-qa test
 
       - name: Plan a whole sweep from the catalog
-        run: node ecosystem-qa/plan.ts --repos owned,tier1 --os linux,windows --engines claude,codex
+        run: node ecosystem-qa/plan.ts --repos owned,tier1,tier2 --os linux,windows --engines claude,codex
 
       - name: Install Chromium for the evidence tools
         run: cd ecosystem-qa && npx playwright install --with-deps chromium

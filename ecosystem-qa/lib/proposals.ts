@@ -371,7 +371,7 @@ const reproductionLink = (cycle: Cycle): string[] => {
   return [
     `${repoUrl}/tree/${cycle.startSha}`,
     '',
-    'The upgraded state was not committed. The steps below reproduce from this commit.',
+    'The run started from this commit, and the steps below reproduce from it. Where the run committed the upgraded state, it is the `cycle.bundle` in the artifact of the run.',
   ];
 };
 

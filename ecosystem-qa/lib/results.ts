@@ -6,6 +6,7 @@ import { cycleBranchName, cycleRepo, publishedCycleBranch, readBundleHeader } fr
 import {
   Engine,
   Os,
+  pushesCycle,
   RunResultFile,
   type CatalogEntry,
   type Cycle,
@@ -148,6 +149,9 @@ const readCycle = (
     headSha: null,
     bundle: null,
   };
+  if (!pushesCycle(key.entry)) {
+    return { ...noCommits, startSha: key.entry.ref };
+  }
   const bundle = join(dir, 'cycle.bundle');
   if (!existsSync(bundle)) {
     return noCommits;

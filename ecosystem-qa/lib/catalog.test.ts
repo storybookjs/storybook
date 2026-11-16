@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { loadCatalog, loadCatalogEntry } from './catalog.ts';
-import { ENTRY } from './fixtures.ts';
+import { DISCOVERED, ENTRY } from './fixtures.ts';
 import { Catalog } from './schema.ts';
 
 describe('catalog', () => {
@@ -25,6 +25,33 @@ describe('catalog', () => {
       { ...ENTRY, repo: 'twentyhq/twenty' },
     ],
     ['a Node version that is not a plain version', { ...ENTRY, node: 'lts/*' }],
+    ['an entry without a push target on a branch name', { ...DISCOVERED, ref: 'main' }],
+    ['an entry without a push target on a short commit', { ...DISCOVERED, ref: 'e'.repeat(12) }],
+    ['an entry without a push target marked for Windows', { ...DISCOVERED, windows: true }],
+    [
+      "tags whose builder is not the framework package's",
+      {
+        ...ENTRY,
+        tags: {
+          framework: '@storybook/react-vite',
+          builder: 'webpack5',
+          storybook: 10,
+          features: [],
+        },
+      },
+    ],
+    [
+      'a feature outside the closed list',
+      {
+        ...ENTRY,
+        tags: {
+          framework: '@storybook/react-vite',
+          builder: 'vite',
+          storybook: 10,
+          features: ['i18n'],
+        },
+      },
+    ],
   ])('rejects %s', (_, entry) => {
     expect(() => Catalog.parse([entry])).toThrow();
   });
@@ -39,6 +66,26 @@ describe('catalog', () => {
       expect(entry?.pushTo).toBe(pushTo);
     }
   );
+
+  it('accepts a tier 2 fork whose baseline is qa/base', () => {
+    const [entry] = Catalog.parse([
+      { ...DISCOVERED, pushTo: 'storybook-tmp/vue-dsfr', ref: 'qa/base' },
+    ]);
+
+    expect(entry?.pushTo).toBe('storybook-tmp/vue-dsfr');
+  });
+
+  it('accepts an entry without a push target, outside the orgs with a push token, on a full commit', () => {
+    expect(Catalog.parse([DISCOVERED])).toEqual([DISCOVERED]);
+  });
+
+  it('finds tags on every checked-in entry', () => {
+    expect(
+      loadCatalog()
+        .filter((entry) => !entry.tags)
+        .map((entry) => entry.id)
+    ).toEqual([]);
+  });
 
   it('accepts a plain Node version', () => {
     const [entry] = Catalog.parse([{ ...ENTRY, node: '24.11.0' }]);

@@ -13,11 +13,71 @@ export const Os = z.enum(['linux', 'windows', 'macos']);
 export type Os = z.infer<typeof Os>;
 export const Effort = z.enum(['low', 'medium', 'high']);
 
+export const FRAMEWORKS = [
+  '@storybook/angular',
+  '@storybook/angular-vite',
+  '@storybook/ember',
+  '@storybook/html-vite',
+  '@storybook/nextjs',
+  '@storybook/nextjs-vite',
+  '@storybook/preact-vite',
+  '@storybook/react-native',
+  '@storybook/react-native-web-vite',
+  '@storybook/react-vite',
+  '@storybook/react-webpack5',
+  '@storybook/server-webpack5',
+  '@storybook/svelte-vite',
+  '@storybook/sveltekit',
+  '@storybook/tanstack-react',
+  '@storybook/vue3-vite',
+  '@storybook/web-components-vite',
+  'storybook-react-rsbuild',
+  'storybook-vue3-rsbuild',
+  'storybook-web-components-rsbuild',
+] as const;
+export const Framework = z.enum(FRAMEWORKS);
+export type Framework = z.infer<typeof Framework>;
+export const Builder = z.enum(['vite', 'webpack5', 'rsbuild', 'metro']);
+export type Builder = z.infer<typeof Builder>;
+export const Feature = z.enum(['vitest', 'docs', 'a11y', 'test-runner', 'msw']);
+export type Feature = z.infer<typeof Feature>;
+
+export const builderOf = (framework: Framework): Builder => {
+  if (framework.endsWith('-rsbuild')) {
+    return 'rsbuild';
+  }
+  if (framework === '@storybook/react-native') {
+    return 'metro';
+  }
+  return framework.endsWith('-vite') || framework === '@storybook/sveltekit' ? 'vite' : 'webpack5';
+};
+
+// What the pinned commit shows of the Storybook directory, as `pin.ts` prints it.
+export const Tags = z
+  .strictObject({
+    framework: Framework,
+    builder: Builder,
+    storybook: z.number().int().positive(),
+    features: z.array(Feature),
+  })
+  .refine((tags) => tags.builder === builderOf(tags.framework), {
+    message: 'the builder is not the one the framework package uses',
+    path: ['builder'],
+  });
+
+const FULL_SHA = /^[0-9a-f]{40}$/;
+
+// Whether the filer pushes a cycle of this entry. An owned repo receives its own cycle and a fork
+// under storybook-tmp the cycle of its upstream. A repo that a plan discovered has neither, so its
+// cycle stays in the run artifact.
+export const pushesCycle = (entry: { class: RepoClass; pushTo?: string }): boolean =>
+  entry.class === 'owned' || entry.pushTo !== undefined;
+
 export const CatalogEntry = z
   .strictObject({
     id: z.string().regex(/^[a-z0-9-]+$/),
     repo: z.string().regex(/^[\w.-]+\/[\w.-]+$/),
-    // Where the cycle branch is pushed: a fork under storybook-tmp for tier 1, the repo itself when owned.
+    // Where the cycle branch is pushed: a fork under storybook-tmp for tier 1 and 2, the repo itself when owned.
     pushTo: z
       .string()
       .regex(/^[\w.-]+\/[\w.-]+$/)
@@ -32,14 +92,25 @@ export const CatalogEntry = z
       .regex(/^\d+(?:\.\d+){0,2}$/)
       .optional(),
     windows: z.boolean(),
+    tags: Tags.optional(),
   })
   .refine((entry) => entry.class !== 'tier1' || entry.pushTo !== undefined, {
     message: 'a tier 1 entry needs pushTo, the fork that holds its baseline',
     path: ['pushTo'],
   })
-  .refine((entry) => canPushTo(cycleRepo(entry)), {
+  .refine((entry) => !pushesCycle(entry) || canPushTo(cycleRepo(entry)), {
     message: 'no push token is configured for the owner of the repository that receives the cycle',
     path: ['pushTo'],
+  })
+  // Without a fork nothing holds a branch at the pin, so the upstream commit is the only stable start.
+  .refine((entry) => pushesCycle(entry) || FULL_SHA.test(entry.ref), {
+    message: 'an entry without a push target needs a full commit SHA as its ref',
+    path: ['ref'],
+  })
+  // A Windows cell runs the agent without a sandbox, which only a reviewed catalog entry may get.
+  .refine((entry) => pushesCycle(entry) || !entry.windows, {
+    message: 'an entry without a push target runs on Linux only',
+    path: ['windows'],
   });
 export type CatalogEntry = z.infer<typeof CatalogEntry>;
 

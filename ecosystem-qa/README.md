@@ -211,11 +211,13 @@ It parses the catalog and the discovered repos as one list, so a discovered repo
 ```sh
 ECOSYSTEM_QA_FAKE=1 node ecosystem-qa/run.ts --repo mealdrop --version 11.0.0-beta.3 --engine claude \
   --fake --sandbox none --plan ecosystem-qa/lib/plan.fixture.md --batch 1 --part 2 \
-  --out ecosystem-qa/results/mealdrop/linux/claude/part-2
+  --out ecosystem-qa/results/mealdrop/macos/claude/part-2
 ```
 
+The `macos` in the path is the operating system of the machine that runs it, and `linux` or `windows` on another one: the collect ignores a record in the directory of another system.
+
 The run reports the five checks of the tier `gate` first, the upgrade and the dev server that the prompt's steps run in any case, and then one check `plan.<slug>` for each entry of its part, in plan order.
-`--tier must` or `--tier extended` runs those tiers in place of the gate.
+`--tier must` or `--tier extended` runs those tiers in place of the gate, and the collect of the batch then needs the same `--tier`.
 The checklist gets the steps, the expected outcome and the reason for the repo of each entry, and the rules of `prompts/plan-checks.md`, which also say how the agent works in the browser.
 The answer schema names the ids of this run only, so the agent cannot report a check the plan does not have.
 `--repo` may name a discovered repo of the plan, which the runner resolves through `loadEntries(plan)`.
@@ -226,6 +228,7 @@ The run ends with exit 1 before anything is cloned when the plan is not in its r
 ### Collect the results of a plan batch
 
 `collect.ts`, `group.ts`, `missing-runs.ts` and `fetch-runs.ts` take the same `--plan <file> --batch <n>`, and load the discovered repos of the plan with the catalog.
+The first three also take the `--tier` of the runs, `gate` by default.
 
 ```sh
 node ecosystem-qa/collect.ts --results ecosystem-qa/results --version 11.0.0-beta.3 --out ecosystem-qa/results/proposals.json \
@@ -233,8 +236,13 @@ node ecosystem-qa/collect.ts --results ecosystem-qa/results --version 11.0.0-bet
 ```
 
 They read each part under `<id>/<os>/<engine>/part-<n>`, or in the artifact `qa-result-<id>-<os>-<engine>-part-<n>`.
-A record of another plan or batch, a record of a plan run when no plan is given, and a record with a check id that is neither in `checks.ts` nor an entry of its part of the plan are ignored with a warning.
-The plan file decides which entries a part has, never `request.plan`, because a run that executed code of a public repository wrote the record.
+These records are ignored with a warning:
+
+- a record of another plan, batch or tier, and a record of a plan run when no plan is given,
+- a record of a repo or a part that the batch does not have,
+- a record with a check id that is neither a check of the tier nor an entry of its part of the plan.
+
+The plan file and the flags of the collect decide which runs, tier and entries a batch has, never `request`, because a run that executed code of a public repository wrote the record.
 For the same reason the issue body of a plan check takes the entry and its PRs from the plan file, in a line above the list of related findings.
 `collect.ts` prints the plan checks of each result by state, so a tail of checks that the budget left as `skip` is visible.
 A job of a plan run in the matrix that `missing-runs.ts` reads names its `part`, and a missing one is named by its repo and part.

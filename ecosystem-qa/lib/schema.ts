@@ -158,6 +158,7 @@ export const Finding = z.strictObject({
 export type Finding = z.infer<typeof Finding>;
 
 export const Tier = z.enum(TIERS);
+export type Tier = z.infer<typeof Tier>;
 
 // The agent reads the schema next to the checklist, so the schema names the ids of the run only,
 // in the order given: one list of ids in one order.

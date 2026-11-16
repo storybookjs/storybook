@@ -73,6 +73,19 @@ describe('blocks', () => {
       })
     ).resolves.toEqual({ files: ['/project/.storybook/preview.ts'] });
   });
+
+  test('and lists the files in the order they were given', async () => {
+    const files = Object.fromEntries(
+      Array.from({ length: 25 }, (_, index) => [
+        `/project/src/Story${index}.stories.ts`,
+        `export default {}; export const Dim = { globals: { vision: 'protanomaly' } };`,
+      ])
+    );
+
+    await expect(check(['@storybook/addon-a11y'], files)).resolves.toEqual({
+      files: Object.keys(files),
+    });
+  });
 });
 
 describe('does not block', () => {

@@ -11,6 +11,7 @@ import { createBlocker } from './types.ts';
 const removedSimulations = ['protanomaly', 'deuteranomaly', 'tritanomaly'];
 const mentionsRemovedSimulation = new RegExp(removedSimulations.join('|'));
 const maxListedFiles = 10;
+const maxConcurrentReads = 10;
 
 const setsRemovedSimulation = async (file: string, kind: 'preview' | 'story') => {
   const code = await readFile(file, 'utf8');
@@ -39,17 +40,19 @@ export const blocker = createBlocker({
       return false;
     }
 
+    const { default: pLimit } = await import('p-limit');
+    const limit = pLimit(maxConcurrentReads);
     const candidates = [
       ...(previewConfigPath ? [{ file: previewConfigPath, kind: 'preview' as const }] : []),
       ...storiesPaths.map((file) => ({ file, kind: 'story' as const })),
     ];
     // A file that cannot be read or parsed is left to the runtime warning of the addon.
-    const files: string[] = [];
-    for (const { file, kind } of candidates) {
-      if (await setsRemovedSimulation(file, kind).catch(() => false)) {
-        files.push(file);
-      }
-    }
+    const matches = await Promise.all(
+      candidates.map(({ file, kind }) =>
+        limit(() => setsRemovedSimulation(file, kind).catch(() => false))
+      )
+    );
+    const files = candidates.filter((_, index) => matches[index]).map(({ file }) => file);
 
     return files.length > 0 && { files };
   },

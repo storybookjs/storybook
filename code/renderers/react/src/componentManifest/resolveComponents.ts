@@ -129,7 +129,7 @@ export async function resolveStoryFileComponents(options: {
 
   // The meta's component and subcomponents resolve as in every other renderer, so a name the story
   // file's import cannot reach, such as a barrel's `export * as UI`, still finds its declaration.
-  // react-component-meta reads them through the TypeScript checker, which follows such names itself.
+  // react-component-meta gets no targets: it follows such names through the TypeScript checker.
   const docgenTargets = new Map<string, DocgenTarget>();
   const storyImports = collectImportBindings(csf.editor.program);
   // The name the story file refers to the component by. `parts.Button` after
@@ -140,16 +140,13 @@ export async function resolveStoryFileComponents(options: {
     if ('reason' in resolved) {
       return name;
     }
-    const { localName, importId, path, exportName } = resolved.component;
+    const { localName, importId, importer, path, exportName } = resolved.component;
     const own = storyImports.get(localName);
     const ownName =
-      !storyImports.has(name.split('.')[0]) &&
-      own !== undefined &&
-      own.importId === importId &&
-      own.importName === exportName
+      importer === storyPath && own?.importId === importId && own?.importName === exportName
         ? localName
         : name;
-    if (importId && path && docgenEngine !== 'react-component-meta') {
+    if (importId && path) {
       docgenTargets.set(ownName, { path, exportName });
     }
     return ownName;
@@ -169,7 +166,7 @@ export async function resolveStoryFileComponents(options: {
     storyFilePath: storyPath,
     typescriptOptions,
     docgenEngine,
-    docgenTargets,
+    docgenTargets: docgenEngine === 'react-component-meta' ? undefined : docgenTargets,
   });
 
   const component = findMatchingComponent(allComponents, metaComponentName, title);

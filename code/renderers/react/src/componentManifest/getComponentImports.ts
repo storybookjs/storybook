@@ -47,7 +47,7 @@ export interface TypescriptOptions extends TypescriptOptionsBase {
 
 export type { ComponentRef } from './types.ts';
 
-/** The file that declares a component, and the export it declares it under. */
+// The file that declares a component, and the export it declares it under.
 export interface DocgenTarget {
   path: string;
   exportName: string;
@@ -92,7 +92,7 @@ export const getComponents = async ({
   typescriptOptions?: Partial<TypescriptOptions>;
   docgenEngine: DocgenEngine;
   additionalComponentNames?: string[];
-  /** The declaring file and export of a component, by its name, as core's resolver finds them. */
+  // The declaring file and export of a component, by its name, as core's resolver finds them.
   docgenTargets?: ReadonlyMap<string, DocgenTarget>;
 }): Promise<ComponentRef[]> => {
   const { reactDocgenTypescriptOptions } = typescriptOptions;

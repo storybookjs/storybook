@@ -1,7 +1,5 @@
 import {
   componentPathFromStory,
-  createSourceModuleResolver,
-  followExport,
   getComponentIdFromEntry,
   getStoryImportPathFromEntry,
   type TypeScriptSpecifierForDocgen,
@@ -155,6 +153,12 @@ const unresolvedError = (
           `or namespace import, which carries no class to document.\n` +
           `Import the component as a value in whichever module declares that binding.`
       );
+    case 'missing-export':
+      return notFound(
+        `The story file sets \`${reference}: ${resolution.expression}\`, but "${resolution.importId}" ` +
+          `has no export "${resolution.exportName}".\n` +
+          `Check the name against the module's exports, and any barrel that re-exports it.`
+      );
     case 'no-meta-component':
       return notFound(`The story file ${storyFilePath} sets no \`meta.${reference}\`.`);
     default: {
@@ -252,15 +256,6 @@ const extractClassDocgen = (
 const displayNameOf = (component: ResolvedMetaComponent) =>
   component.exportName === 'default' ? component.localName : component.exportName;
 
-const exportReader = { resolver: createSourceModuleResolver() };
-
-// Like Vue and Svelte, a documented subcomponent points at the file that declares it. `path` can be
-// a barrel that re-exports the class, as when the meta reads it off a namespace.
-const declaringFile = (path: string, exportName: string) => {
-  const origin = followExport(exportReader, path, exportName);
-  return origin?.kind === 'declaration' ? origin.filePath : path;
-};
-
 // One declared subcomponent's entry. A failure stays in the entry's `error`, so one broken
 // subcomponent cannot fail the payload that documents the main component.
 const buildSubcomponentDocgen = (
@@ -286,12 +281,11 @@ const buildSubcomponentDocgen = (
     return { name, path: storyImportPath, jsDocTags: {}, error: docgen.error };
   }
   const { angularComponentMeta: _, ...entry } = docgen;
-  const { path, exportName } = resolution.component;
+  // Like Vue and Svelte, a documented subcomponent points at the file that declares it.
+  const { path } = resolution.component;
   return {
     ...entry,
-    path: path
-      ? componentPathFromStory(storyImportPath, storyFilePath, declaringFile(path, exportName))
-      : storyImportPath,
+    path: path ? componentPathFromStory(storyImportPath, storyFilePath, path) : storyImportPath,
     renderer: 'angular',
   };
 };

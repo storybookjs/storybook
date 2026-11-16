@@ -268,7 +268,9 @@ A maintainer sets up three things once, before the first plan is merged:
 The plan job is the only job that reads the inputs and the event, and every other job reads its outputs.
 For a push it diffs the plans directory over the commits of the push, and only a path that is a plan file in `ecosystem-qa/plans/` is ever read.
 A push that adds or changes one plan runs batch 1 of it as a dry run.
-A push that adds or changes no plan, and the push that creates the branch, end with a green plan job that says so.
+A push that adds or changes no plan ends with a green plan job that says so.
+So does the push that creates the branch, which runs no plan even when it carries one.
+A push that adds or changes a Markdown file in `ecosystem-qa/plans/` whose name is not the name of a plan, such as one with a space or a letter outside ASCII, ends in the plan job and names the file.
 A push that adds or changes two plans ends in the plan job and names both.
 
 A dispatch by hand runs one batch of a plan with `plan` set to its file name, such as `11.0.md`, and `batch` set to its number.
@@ -276,7 +278,7 @@ It starts the next batch only when `chain` is set.
 `version` is the version of the plan's header when it is empty, and must be on the plan's line when it is not; a sweep without a plan needs it.
 A run with a plan runs the tier `gate` and the checks of its batch, on Linux, with `repo`, `os` and `tier` left out.
 When `plan_hash` is given and the plan at that commit has another hash or is gone, the plan job ends green with a notice and runs nothing, so a chain stops once its plan changed.
-Each batch of a plan has its own concurrency group of plan, batch and `from_runs`, so a chained batch never waits behind the batch that started it.
+A dispatched batch of a plan has a concurrency group of its plan, batch and `from_runs`, and the batch 1 that a push starts has a group of its commit, so a chained batch never waits behind the batch that started it.
 
 The `track` job runs `track.ts` for every run with a plan that was not cancelled, also when the collect failed, except a collect of earlier runs that failed, which has nothing to report.
 The first batch of a plan creates the discussion `[SB 11 QA] Dynamic sweep 11.0.md`, with a hidden marker of the plan's hash in its first line.

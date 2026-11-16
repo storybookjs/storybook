@@ -301,9 +301,17 @@ describe('loadResults of a plan batch', () => {
     expect(loadWith(scope())).toEqual({
       paths: [],
       warnings: [
-        expect.stringMatching(/reports plan\.invented, which is neither a static check nor a plan/),
+        expect.stringMatching(/reports plan\.invented, which is neither a check of the tier gate nor a plan check/),
       ],
     });
+  });
+
+  it('ignores a gate run that reports a static check outside the gate', () => {
+    writeRun(partDir(1), planRun(partOne, 'core.story-render'));
+
+    expect(loadWith(scope()).warnings).toEqual([
+      expect.stringMatching(/reports core\.story-render, which is neither a check of the tier gate/),
+    ]);
   });
 
   it('takes the plan checks of a part from the plan file, not from the record', () => {
@@ -358,7 +366,7 @@ describe('loadResults of a plan batch', () => {
         expect.stringMatching(
           /ran batch 1 of the plan plan\.fixture\.md .*, and no plan was given/
         ),
-        expect.stringMatching(/reports plan\.story-sort-in-main, which is neither/),
+        expect.stringMatching(/reports plan\.story-sort-in-main, which is no check of checks\.ts/),
       ],
     });
   });

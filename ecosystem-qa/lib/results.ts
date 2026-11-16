@@ -2,7 +2,7 @@ import { existsSync, lstatSync, readdirSync, readFileSync, realpathSync } from '
 
 import { isAbsolute, join, relative } from 'pathe';
 
-import { CHECK_IDS } from '../checks.ts';
+import { CHECK_IDS, checksFor } from '../checks.ts';
 import { cycleBranchName, cycleRepo, publishedCycleBranch, readBundleHeader } from './cycle.ts';
 import type { PlanScope } from './plan-scope.ts';
 import { planCheckId, planRuns } from './qa-plan.ts';
@@ -134,25 +134,31 @@ const planChecksOf = (scope: PlanScope, { entry, plan }: RunResultFile['request'
     )?.entries ?? []
   ).map(planCheckId);
 
-// Why a record does not belong to the collect: another plan or batch, or a check id that neither
-// checks.ts nor its part of the plan has.
+// Why a record does not belong to the collect: another plan or batch, or a check id that its run
+// was not given. A static record keeps every id of checks.ts, so records of earlier sweeps load
+// after a check moves to another tier.
 const outOfScope = (record: RunResultFile, scope: PlanScope | undefined): string | undefined => {
   const other = otherPlan(record.request.plan, scope);
   if (other) {
     return other;
   }
-  const known = new Set<string>([
-    ...CHECK_IDS,
-    ...(scope ? planChecksOf(scope, record.request) : []),
-  ]);
+  const known = new Set<string>(
+    scope
+      ? [
+          ...checksFor(record.request.tier).map(({ id }) => id),
+          ...planChecksOf(scope, record.request),
+        ]
+      : CHECK_IDS
+  );
   const ids = [
     ...record.checks.map(({ id }) => id),
     ...record.findings.map(({ checkId }) => checkId),
   ];
   const unknown = [...new Set(ids.filter((id) => !known.has(id)))];
-  return unknown.length > 0
-    ? `it reports ${unknown.join(', ')}, which is neither a static check nor a plan check of its part`
-    : undefined;
+  if (unknown.length === 0) {
+    return undefined;
+  }
+  return `it reports ${unknown.join(', ')}, which ${scope ? `is neither a check of the tier ${record.request.tier} nor a plan check of its part` : 'is no check of checks.ts'}`;
 };
 
 const evidenceProblem = (evidenceDir: string, name: string): string | undefined => {

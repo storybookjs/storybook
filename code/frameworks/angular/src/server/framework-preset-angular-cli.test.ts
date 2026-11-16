@@ -5,7 +5,7 @@ import { logger } from 'storybook/internal/node-logger';
 import type { BuilderContext } from '@angular-devkit/architect';
 import { logging } from '@angular-devkit/core';
 
-import { getBuilderOptions } from './framework-preset-angular-cli.ts';
+import { getBuilderOptions, webpackFinal } from './framework-preset-angular-cli.ts';
 import type { PresetOptions } from './preset-options.ts';
 import { Channel } from 'storybook/internal/channels';
 
@@ -27,9 +27,17 @@ vi.mock('storybook/internal/server-errors', () => ({
 
 vi.mock('storybook/internal/common', () => ({
   getProjectRoot: vi.fn(),
+  resolvePackageDir: vi.fn(() => '/test/node_modules/pkg'),
 }));
 
-vi.mock('@storybook/builder-webpack5', () => ({}));
+vi.mock('@storybook/builder-webpack5', () => ({
+  WebpackDefinePlugin: class WebpackDefinePlugin {
+    constructor(public definitions: Record<string, unknown>) {}
+  },
+  WebpackIgnorePlugin: class WebpackIgnorePlugin {
+    constructor(public options: unknown) {}
+  },
+}));
 
 vi.mock('@angular-devkit/architect', () => ({
   targetFromTargetString: vi.fn(),
@@ -41,7 +49,7 @@ vi.mock('./utils/module-is-available', () => ({
   moduleIsAvailable: vi.fn(),
 }));
 
-vi.mock('./angular-cli-webpack', () => ({
+vi.mock('./angular-cli-webpack.js', () => ({
   getWebpackConfig: vi.fn(),
 }));
 
@@ -308,5 +316,74 @@ describe('framework-preset-angular-cli', () => {
         tsConfig: '/test/tsconfig.json',
       });
     });
+  });
+});
+
+describe('webpackFinal ngDevMode define', () => {
+  const definesFor = async (extra: Partial<PresetOptions> & { enableProdMode?: boolean }) => {
+    const { getWebpackConfig } = await import('./angular-cli-webpack.js');
+    vi.mocked(getWebpackConfig).mockResolvedValue({ plugins: [] } as any);
+    mockedGetProjectRoot.mockReturnValue('/test/project');
+    mockedFindUp.mockReturnValue('/test/tsconfig.json');
+
+    const config = await webpackFinal({}, {
+      configDir: '/test/config',
+      // Undefined here means the legacy setup, which throws instead.
+      angularBrowserTarget: null,
+      presets: { apply: vi.fn() } as any,
+      channel: new Channel({}),
+      ...extra,
+    } as PresetOptions);
+
+    const plugin = config.plugins?.find(
+      (p: any) => p?.constructor?.name === 'WebpackDefinePlugin'
+    ) as any;
+    return plugin?.definitions ?? {};
+  };
+
+  it('defines ngDevMode as false in a production build', async () => {
+    // Core always fills `build.test`, so a fixture without it would not
+    // match what this preset really receives.
+    const defines = await definesFor({
+      configType: 'PRODUCTION',
+      build: { test: {} },
+      enableProdMode: true,
+    });
+    expect(defines.ngDevMode).toBe('false');
+  });
+
+  it('leaves ngDevMode undefined when enableProdMode is false', async () => {
+    // enableProdMode false keeps Angular's dev checks on in a built Storybook,
+    // so the define must not fold them away.
+    const defines = await definesFor({
+      configType: 'PRODUCTION',
+      build: { test: {} },
+      enableProdMode: false,
+    });
+    expect(defines).not.toHaveProperty('ngDevMode');
+  });
+
+  it('leaves ngDevMode undefined when enableProdMode is not set', async () => {
+    const defines = await definesFor({ configType: 'PRODUCTION', build: { test: {} } });
+    expect(defines).not.toHaveProperty('ngDevMode');
+  });
+
+  it('leaves ngDevMode undefined in a test build, which still runs Angular dev checks', async () => {
+    const defines = await definesFor({
+      configType: 'PRODUCTION',
+      test: true,
+      build: { test: { disableDocgen: true } },
+      enableProdMode: true,
+    });
+    expect(defines).not.toHaveProperty('ngDevMode');
+  });
+
+  it('leaves ngDevMode undefined in a development build', async () => {
+    const defines = await definesFor({
+      configType: 'DEVELOPMENT',
+      build: { test: {} },
+      enableProdMode: true,
+    });
+    expect(defines).not.toHaveProperty('ngDevMode');
   });
 });

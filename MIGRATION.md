@@ -94,7 +94,7 @@
   - [`core/module-graph` query aliases removed](#coremodule-graph-query-aliases-removed)
   - [ExternalDocs and ExternalDocsContainer are removed](#externaldocs-and-externaldocscontainer-are-removed)
   - [CSF `.story` annotations removed](#csf-story-annotations-removed)
-  - [Addon A11y: Removed anomaly vision simulations](#addon-a11y-removed-anomaly-vision-simulations)
+  - [Addon A11y: Removed protanomaly and deuteranomaly vision simulations](#addon-a11y-removed-protanomaly-and-deuteranomaly-vision-simulations)
   - [`argTypeTargetsV7` feature flag removed](#argtypetargetsv7-feature-flag-removed)
   - [`disallowImplicitActionsInRenderV8` feature flag removed](#disallowimplicitactionsinrenderv8-feature-flag-removed)
   - [JavaScript init templates use JSDoc types instead of `propTypes`](#javascript-init-templates-use-jsdoc-types-instead-of-proptypes)
@@ -2669,11 +2669,19 @@ If the value is not a static object, move the fields yourself. This includes a v
 
 `storybook migrate csf-2-to-3` still lifts a static `Story.story = { ... }` into a CSF 3 story object. It does not rewrite the dynamic cases above. The old `csf-hoist-story-annotations` codemod no longer ships.
 
-### Addon A11y: Removed anomaly vision simulations
+### Addon A11y: Removed protanomaly and deuteranomaly vision simulations
 
-The Vision Simulator no longer offers `protanomaly`, `deuteranomaly`, or `tritanomaly`. Each condition covers a range of severities, so a single fixed matrix cannot represent it accurately. No automigration is provided because none of the remaining simulations is semantically equivalent. If a story sets one of these values through `globals.vision`, remove that global or choose a remaining value based on the intended test. Unsupported values now produce a warning that lists the available values.
+The Vision Simulator no longer offers `protanomaly` or `deuteranomaly`. Each condition covers a range of severities, so a single fixed matrix cannot represent it accurately. `protanopia` and `deuteranopia` simulate the most severe form of each.
 
-The remaining color-vision simulations also render differently: `protanopia`, `deuteranopia`, and `tritanopia` now use the Machado matrices in `linearRGB`, and `achromatopsia` now uses the sRGB relative luminance weights in `linearRGB`. Existing visual snapshots that use any of these `globals.vision` values will therefore produce intentional diffs.
+`storybook upgrade` stops when a preview or story file sets one of the removed values through the `vision` global. No automigration is provided, because the replacement renders differently: remove the global, or replace it with `protanopia` or `deuteranopia`. At runtime, an unsupported value produces a warning that lists the available values.
+
+The remaining color-vision simulations also render differently, and all of them now run in `linearRGB`:
+
+- `protanopia`, `deuteranopia`, and `tritanomaly` use the Machado et al. (2009) matrices.
+- `tritanopia` uses the Brettel et al. (1997) projection.
+- `achromatopsia` uses the sRGB relative luminance weights.
+
+Existing visual snapshots that use any of these `globals.vision` values will therefore produce intentional diffs.
 
 ### `argTypeTargetsV7` feature flag removed
 

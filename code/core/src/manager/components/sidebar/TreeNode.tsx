@@ -13,7 +13,7 @@ import { darken, transparentize } from 'polished';
 import { Button as AriaButton } from 'react-aria-components/Button';
 import { TreeItem, TreeItemContent } from 'react-aria-components/Tree';
 import type { API } from 'storybook/manager-api';
-import { shortcutToHumanString } from 'storybook/manager-api';
+import { shortcutToHumanString, useStorybookState } from 'storybook/manager-api';
 import { styled, useTheme } from 'storybook/theming/emotion';
 
 import { getStatus } from '../../utils/status.tsx';
@@ -274,6 +274,18 @@ function RowFocusReporter({
   return null;
 }
 
+// A custom label may read the manager through the API, for a global or the current story, as it
+// did on every tree render before the row content was memoized. It subscribes on its own, so that
+// rows without a custom label keep their memoized content.
+function CustomRowLabel({
+  item,
+  api,
+  labelContext,
+}: Pick<TreeNodeProps, 'item' | 'api' | 'labelContext'>) {
+  useStorybookState();
+  return <>{item.renderLabel?.(item, api, labelContext) || item.name}</>;
+}
+
 interface TreeRowContentProps extends Pick<
   TreeNodeProps,
   | 'item'
@@ -414,7 +426,13 @@ const TreeRowContent = React.memo<TreeRowContentProps>(function TreeRowContent({
       <IndentLines level={item.depth} selectionLevel={selectionLineLevel} />
       <StyledContent>
         {leadingIcon}
-        <StyledLabel>{item.renderLabel?.(item, api, labelContext) || item.name}</StyledLabel>
+        <StyledLabel>
+          {item.renderLabel ? (
+            <CustomRowLabel item={item} api={api} labelContext={labelContext} />
+          ) : (
+            item.name
+          )}
+        </StyledLabel>
         {renderContextMenu && (
           // react-aria selects rows on pointerdown; the press that opens the menu must not
           // also activate the row underneath (navigate, or fold the branch under the menu).

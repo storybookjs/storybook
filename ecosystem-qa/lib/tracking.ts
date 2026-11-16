@@ -74,7 +74,8 @@ export type BatchInput = {
   dry: boolean;
   planned: PlannedJob[];
   results: ReportedResult[];
-  findings: ReportedFinding[];
+  // Null when the batch has no proposals, because its collect failed.
+  findings: ReportedFinding[] | null;
 };
 
 export type RunLine = {
@@ -195,16 +196,23 @@ export type StepInput = {
   spend: Spend;
   capUsd: number;
   chain: boolean;
+  // The batch already has its comment, so this is a collect or a job of it again.
+  reportedBefore: boolean;
 };
 
 const dollars = (usd: number) => `$${usd.toFixed(2)}`;
 
 // Start the batch after this one, or say why not. A cycle only ever moves forward.
-export const nextStep = ({ report, spend, capUsd, chain }: StepInput): NextStep => {
+export const nextStep = ({ report, spend, capUsd, chain, reportedBefore }: StepInput): NextStep => {
   const next = report.batch + 1;
   const notStarted = `Batch ${next} was not started`;
   if (report.batch >= report.batches) {
     return { stop: `Batch ${report.batch} is the last batch of the plan.` };
+  }
+  if (reportedBefore) {
+    return {
+      stop: `Batch ${next} is not started from this report, because batch ${report.batch} was reported before and its first report decided that.`,
+    };
   }
   if (!chain) {
     return { stop: `${notStarted}, because this run does not chain.` };
@@ -239,6 +247,16 @@ const findingLine = ({ kind, title, issue }: ReportedFinding) => {
   return `- ${where}: ${inline(title)}`;
 };
 
+export type ListedArtifact = { name: string; expires_at: string };
+
+// A batch can be filed only while every result artifact of it is there, so the first to expire
+// sets the day.
+export const resultsExpireOn = (artifacts: ListedArtifact[]): string | undefined =>
+  artifacts
+    .filter(({ name }) => name.startsWith('qa-result-'))
+    .map(({ expires_at }) => new Date(expires_at).toISOString().slice(0, 10))
+    .toSorted()[0];
+
 export type CommentContext = { spend: Spend; capUsd: number; next: NextStep; expiresOn: string };
 
 export const renderBatchComment = (
@@ -260,7 +278,7 @@ export const renderBatchComment = (
     ...report.lines.map((line) => `<!-- sb-qa-run ${line.key} usd=${line.usd.toFixed(6)} -->`),
     `### Batch ${report.batch} of ${report.batches} on Storybook ${report.version}`,
     '',
-    `${report.planned} runs planned, ${report.lines.length - lost} finished, ${lost} without a result, from workflow run ${report.runs.join(', ')}.`,
+    `${report.planned} runs planned, ${report.lines.length - lost} finished, ${lost} without a result, ${report.runs.length > 0 ? `from workflow run ${report.runs.join(', ')}` : 'from local results'}.`,
     '',
     '| Run | Outcome | Dollars |',
     '| --- | --- | --- |',
@@ -273,9 +291,11 @@ export const renderBatchComment = (
     '',
     `Checks: ${report.checks.length > 0 ? report.checks.map(({ state, count }) => `${count} ${state}`).join(', ') : 'none'}.`,
     '',
-    ...(report.findings.length > 0
-      ? ['Findings:', '', ...report.findings.map(findingLine)]
-      : ['No findings.']),
+    ...(report.findings === null
+      ? ['The findings were not collected, so this comment lists none.']
+      : report.findings.length > 0
+        ? ['Findings:', '', ...report.findings.map(findingLine)]
+        : ['No findings.']),
     '',
     `Spent on this plan: ${dollars(spend.usd)} for ${spend.runs} runs, of a cap of ${dollars(capUsd)}. ${'start' in next ? `Batch ${next.start} is started next.` : next.stop}`,
     '',

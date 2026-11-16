@@ -8,6 +8,7 @@ import {
   nextStep,
   renderBatchComment,
   renderTrackingThread,
+  resultsExpireOn,
   spentUsd,
   trackingThreadOf,
   type BatchInput,
@@ -275,9 +276,14 @@ describe('spentUsd', () => {
 });
 
 describe('nextStep', () => {
-  const step = (overrides: Partial<BatchInput> = {}, capUsd = 250, chain = true) => {
+  const step = (
+    overrides: Partial<BatchInput> = {},
+    capUsd = 250,
+    chain = true,
+    reportedBefore = false
+  ) => {
     const report = batchReport(input(overrides));
-    return nextStep({ report, spend: spentUsd([], HASH, report), capUsd, chain });
+    return nextStep({ report, spend: spentUsd([], HASH, report), capUsd, chain, reportedBefore });
   };
 
   it('starts the batch after this one', () => {
@@ -300,6 +306,15 @@ describe('nextStep', () => {
     });
   });
 
+  it('starts no batch twice when a batch is reported again, whether or not the run chains', () => {
+    const stop = {
+      stop: 'Batch 2 is not started from this report, because batch 1 was reported before and its first report decided that.',
+    };
+
+    expect(step({}, 250, true, true)).toEqual(stop);
+    expect(step({}, 250, false, true)).toEqual(stop);
+  });
+
   it('stops when the batch left no result', () => {
     expect(step({ results: [] })).toEqual({
       stop: 'Batch 2 was not started, because batch 1 left no result.',
@@ -311,7 +326,13 @@ describe('nextStep', () => {
     const edited = comment(posted(batchReport(input())).body, HARNESS, PERSON);
 
     expect(
-      nextStep({ report, spend: spentUsd([edited], HASH, report), capUsd: 250, chain: true })
+      nextStep({
+        report,
+        spend: spentUsd([edited], HASH, report),
+        capUsd: 250,
+        chain: true,
+        reportedBefore: false,
+      })
     ).toEqual({
       stop: `Batch 3 was not started, because someone other than the workflow edited ${edited.url}, so its dollars are not counted.`,
     });
@@ -322,5 +343,32 @@ describe('nextStep', () => {
       const next = step({ batch, batches: 4 });
       expect('start' in next ? next.start : batch + 1).toBeGreaterThan(batch);
     }
+  });
+});
+
+describe('a batch whose collect failed', () => {
+  it('says that its findings were not collected instead of claiming none', () => {
+    const body = posted(batchReport(input({ findings: null }))).body;
+
+    expect(body).toContain('The findings were not collected, so this comment lists none.');
+    expect(body).not.toContain('No findings.');
+  });
+});
+
+describe('resultsExpireOn', () => {
+  it('is the day the first result artifact expires, whatever the other artifacts say', () => {
+    expect(
+      resultsExpireOn([
+        { name: 'qa-proposals', expires_at: '2026-11-20T08:00:00Z' },
+        { name: 'qa-result-mealdrop-linux-claude-part-2', expires_at: '2026-11-30T23:30:00Z' },
+        { name: 'qa-result-mantine-linux-claude-part-1', expires_at: '2026-11-29T10:00:00Z' },
+      ])
+    ).toBe('2026-11-29');
+  });
+
+  it('has no day when the runs hold no result artifact', () => {
+    expect(
+      resultsExpireOn([{ name: 'qa-proposals', expires_at: '2026-11-20T08:00:00Z' }])
+    ).toBeUndefined();
   });
 });

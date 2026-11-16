@@ -6,6 +6,8 @@ import { loadEntries } from './catalog.ts';
 import {
   type CheckContext,
   checkPlanText,
+  draftOfPlan,
+  ENTRIES_PER_RUN,
   parsePlan,
   type Plan,
   PlanDraft,
@@ -305,7 +307,27 @@ describe('checkPlanText', () => {
       '| UI | UI: Rebuild Sidebar Tree |',
       '| UI | UI: Rebuild Sidebar Tree |',
       `| ${pr(33422)} |`,
-      'expected no control character or line separator',
+      'or line separator',
+    ],
+    ...[
+      ['a byte order mark', '\u{FEFF}'],
+      ['a soft hyphen', '\u{AD}'],
+      ['a zero width space', '\u{200B}'],
+      ['a right-to-left override', '\u{202E}'],
+      ['a Unicode tag character', '\u{E0041}'],
+    ].map(([name, character]) => [
+      `${name} in a step, which GitHub does not show`,
+      '- Step: Open a story with a transition',
+      `- Step: Open a story with${character} a transition`,
+      '### `preview-animations`',
+      'invisible format character',
+    ]),
+    [
+      'a Storybook directory with a backslash',
+      '| npm | packages/react |',
+      '| npm | packages\\react |',
+      '| `primer-react` |',
+      'expected a relative path inside the repository',
     ],
     [
       'a Storybook directory that climbs out of the repository',
@@ -369,14 +391,14 @@ describe('checkPlanText', () => {
       'fetch `http://localhost:6006/index.json`',
       'fetch `https://example.com/index.json`',
       'fetch `https://example.com',
-      'https://example.com is a URL other than localhost',
+      'https://example.com/index.json has the host example.com, not localhost',
     ],
     [
-      'an expected outcome with a host but no scheme',
+      'an expected outcome with a URL of another host',
       'the baseline, and the upgrade',
-      'the copy on www.example.com/sb/index.json, and the upgrade',
-      'the copy on www.example.com',
-      'www.example.com is a URL other than localhost',
+      'the copy on https://www.example.com/sb/index.json, and the upgrade',
+      'the copy on https://www.example.com',
+      'has the host www.example.com, not localhost',
     ],
     [
       'a slug too long for its check id',
@@ -397,47 +419,164 @@ describe('checkPlanText', () => {
     replaced(FIXTURE, '- Step: Read which automigrations the upgrade ran', `- Step: ${step}`);
 
   it.each([
-    ['a host with a port', 'fetch `example.com:8080/index.json`', 'example.com'],
-    ['one slash after the scheme', 'fetch `http:/example.com/index.json`', 'http:/example.com'],
-    ['backslashes after the scheme', 'open `http:\\\\example.com\\x`', 'http:\\\\example.com'],
-    ['a host after two slashes', 'fetch `//example.com/index.json`', '//example.com'],
-    ['an IP address', 'fetch `93.184.216.34/index.json`', '93.184.216.34'],
-    ['a host alone', 'open `example.com` in the browser', 'example.com'],
-    ['a host before a query', 'fetch `example.com?file=index.json`', 'example.com'],
-    ['a host after git@', 'run `git clone git@github.com:evil/x.git`', 'github.com'],
     [
-      'a host after localhost as user',
-      'fetch `http://localhost@example.com/x`',
-      'http://localhost@example.com',
+      'one slash after the scheme',
+      'fetch `http:/example.com/x`',
+      'http:/example.com/x',
+      'example.com',
     ],
-  ])('refuses %s in a step', (_, step, url) => {
+    [
+      'backslashes after the scheme',
+      'open `http:\\\\example.com\\x`',
+      'http:\\\\example.com\\x',
+      'example.com',
+    ],
+    [
+      'no slash after the scheme',
+      'fetch `http:example.com/x`',
+      'http:example.com/x',
+      'example.com',
+    ],
+    ['a web socket with one slash', 'open `ws:/example.com/x`', 'ws:/example.com/x', 'example.com'],
+    ['upper case', 'fetch `HTTPS://EXAMPLE.COM/x`', 'HTTPS://EXAMPLE.COM/x', 'example.com'],
+    [
+      'localhost as user',
+      'fetch `http://localhost@example.com/x`',
+      'http://localhost@example.com/x',
+      'example.com',
+    ],
+    [
+      'a backslash before the user',
+      'fetch `http://localhost\\@example.com/x`',
+      'http://localhost\\@example.com/x',
+      'example.com',
+    ],
+    [
+      'a semicolon after localhost',
+      'fetch `http://localhost;.example.com/x`',
+      'http://localhost;.example.com/x',
+      'localhost;.example.com',
+    ],
+    [
+      'a comma after localhost',
+      'fetch `http://localhost,.example.com/x`',
+      'http://localhost,.example.com/x',
+      'localhost,.example.com',
+    ],
+    [
+      'an apostrophe after localhost',
+      "fetch http://localhost'.example.com/x",
+      "http://localhost'.example.com/x",
+      "localhost'.example.com",
+    ],
+    [
+      'a parenthesis after localhost',
+      'fetch http://localhost).example.com/x',
+      'http://localhost).example.com/x',
+      'localhost).example.com',
+    ],
+    [
+      'a backtick after localhost',
+      'fetch `http://localhost`.example.com/x',
+      'http://localhost`.example.com/x',
+      'localhost`.example.com',
+    ],
+    [
+      'a percent-encoded dot',
+      'fetch `http://localhost%2eexample.com/x`',
+      'http://localhost%2eexample.com/x',
+      'localhost.example.com',
+    ],
+    ['three slashes', 'fetch `http:///example.com/x`', 'http:///example.com/x', 'example.com'],
+    [
+      'a scheme after another word',
+      'fetch `see:http://example.com/x`',
+      'http://example.com/x',
+      'example.com',
+    ],
+    [
+      'a file URL with a host',
+      'open `file://example.com/x`',
+      'file://example.com/x',
+      'example.com',
+    ],
+    ['every interface', 'open `http://0.0.0.0:6006`', 'http://0.0.0.0:6006', '0.0.0.0'],
+  ])('refuses a URL with %s in a step', (_, step, url, host) => {
     const text = withStep(step);
 
     expect(problemsOf(text)).toEqual([
-      { line: lineOf(text, step), message: `${url} is a URL other than localhost` },
+      { line: lineOf(text, step), message: `${url} has the host ${host}, not localhost` },
     ]);
   });
 
-  it('accepts file names, paths, versions, and localhost in a step', () => {
-    const text = withStep(
-      'Read `README.md`, `.storybook/main.ts`, `package.json:12`, `ui.kit/src/Button.tsx`, `node_modules/lodash.debounce/index.js`, and `storybook@11.0.0-beta.3` in the Next.js/Vite project, then open `//localhost:6006/iframe.html?id=a--b`.'
-    );
-
-    expect(problemsOf(text)).toEqual([]);
-  });
-
   it.each([
-    ['the title of an entry', '### `preview-animations` Animations', 'see example.com'],
-    ['the reason of a repo', '- Repo `mealdrop`: its stories animate', 'see example.com'],
-  ])('refuses a URL in %s, which the runner prints into the prompt', (_, line, url) => {
-    const text = replaced(FIXTURE, line, `${line} ${url}`);
+    [
+      'a bracket after localhost',
+      'fetch `http://localhost].example.com/x`',
+      'http://localhost].example.com/x',
+    ],
+    [
+      'a port that is no number',
+      'fetch `http://localhost:6006.example.com/x`',
+      'http://localhost:6006.example.com/x',
+    ],
+  ])('refuses a URL with %s, which no parser reads', (_, step, url) => {
+    const text = withStep(step);
 
     expect(problemsOf(text)).toEqual([
-      { line: lineOf(text, url), message: 'example.com is a URL other than localhost' },
+      { line: lineOf(text, step), message: `${url} is a URL that the URL parser cannot read` },
     ]);
   });
 
   it.each([
+    [
+      'localhost before prose punctuation',
+      'Open (http://localhost:6006), "http://localhost:6006"; then http://localhost:6006.',
+    ],
+    ['the loopback addresses', 'Open `http://127.0.0.1:6006/` and `http://[::1]:6006/`.'],
+    [
+      'a second port and a web socket',
+      'Open `http://localhost:6007/iframe.html?id=a--b` and `ws://localhost:6006/storybook-server-channel`.',
+    ],
+    ['localhost in upper case', 'Open `HTTP://LOCALHOST:6006/index.json`.'],
+    ['a file URL without a host', 'Read `file:///tmp/x.log`.'],
+    [
+      'file names and paths',
+      'Read `README.md`, `ui.kit/src/Button.tsx`, `package.json:12`, `tsconfig.app.json`, `.env.dev`, and `node_modules/lodash.debounce/index.js`.',
+    ],
+    [
+      'property paths',
+      'Read `console.info`, `parameters.docs.page`, `import.meta.env.DEV`, `items.at(-1)`, and `args.to`.',
+    ],
+    [
+      'names and versions',
+      'Check `socket.io`, `ASP.NET`, and monday.com on Chrome 120.0.0.0 with `storybook@11.0.0-beta.3`.',
+    ],
+    ['a script and a time', 'Run `yarn test:watch` at 10:30. Note: it prints a warning.'],
+    [
+      'a host without a scheme, which the reviewer reads for',
+      'Start with `--host 0.0.0.0` and fetch `example.com/x` and `//example.com/x`.',
+    ],
+  ])('accepts %s in a step', (_, step) => {
+    expect(problemsOf(withStep(step))).toEqual([]);
+  });
+
+  it.each([
+    ['the title of an entry', '### `preview-animations` Animations'],
+    ['the reason of a repo', '- Repo `mealdrop`: its stories animate'],
+  ])('refuses a URL in %s, which the runner prints into the prompt', (_, line) => {
+    const text = replaced(FIXTURE, line, `${line} see https://example.com`);
+
+    expect(problemsOf(text)).toEqual([
+      {
+        line: lineOf(text, 'see https://example.com'),
+        message: 'https://example.com has the host example.com, not localhost',
+      },
+    ]);
+  });
+
+  it.each([
+    ['Notion', 'https://www.notion.so/example/Plan-0123456789abcdef'],
     ['Notion', 'https://www.notion.com/example/Plan-0123456789abcdef'],
     ['Notion', 'https://example.notion.site/Plan'],
     ['Slack', 'https://example.slack.com/archives/C0/p1'],
@@ -518,6 +657,25 @@ describe('checkPlanText', () => {
         message: 'the window has `v10.5.0` a77777356be2aeaff89d7a2b25254db7b2318392',
       },
     ]);
+  });
+});
+
+describe('draftOfPlan', () => {
+  const window = JSON.parse(
+    readFileSync(new URL('./plan.fixture.window.json', import.meta.url), 'utf8')
+  ) as Window;
+  const rendered = { ...parsePlan(FIXTURE), entriesPerRun: ENTRIES_PER_RUN };
+  const undecided = structuredClone(rendered);
+  undecided.needed[0]!.decision = null;
+  undecided.maintainerSkips[0]!.group = null;
+
+  it.each([
+    ['a finished plan', rendered],
+    ['a plan with an undecided row and an ungrouped PR', undecided],
+  ])('gives for %s the JSON draft from which render writes it again', (_, plan) => {
+    const draft = PlanDraft.parse(JSON.parse(JSON.stringify(draftOfPlan(plan))));
+
+    expect(renderPlan(planFromWindow(window, draft))).toBe(renderPlan(plan));
   });
 });
 

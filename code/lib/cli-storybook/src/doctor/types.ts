@@ -2,8 +2,13 @@ import type { JsPackageManager, PackageManagerName } from 'storybook/internal/co
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 export interface DoctorOptions {
-  configDir: string;
+  configDir?: string;
   packageManager?: PackageManagerName;
+}
+
+export interface DiagnosticMessage {
+  title: string;
+  message: string;
 }
 
 export interface ProjectDoctorData {
@@ -11,6 +16,7 @@ export interface ProjectDoctorData {
   packageManager: JsPackageManager;
   storybookVersion?: string;
   mainConfig: StorybookConfigRaw;
+  configurationError?: DiagnosticMessage;
 }
 
 export enum DiagnosticType {
@@ -38,10 +44,8 @@ export interface DiagnosticResult {
   projects: DiagnosticDoctorData[];
 }
 
-export interface DoctorCheckResult {
+export interface DoctorCheckResult extends DiagnosticMessage {
   type: DiagnosticType;
-  title: string;
-  message: string;
   project: DiagnosticDoctorData;
 }
 

@@ -75,11 +75,13 @@ const testRunResultSchema = v.object({
 
 /** What `files`, `changed` and `stories` selected, for the summary line. */
 const selectionSchema = v.object({
-  files: v.optional(v.object({ filters: v.array(v.string()), storyFiles: v.number() })),
+  files: v.optional(v.object({ filters: v.array(v.string()), storyFileCount: v.number() })),
   changed: v.optional(
     v.object({
       /** How many stories `stories changed` listed. */
-      stories: v.number(),
+      storyCount: v.number(),
+      /** The git ref the changes are listed since, when one was passed. */
+      since: v.optional(v.string()),
       /** Changed files in the Storybook config directory, which can affect every story. */
       changedConfigFiles: v.array(v.string()),
       /** Changed files change detection has not caught up with yet. */
@@ -87,8 +89,8 @@ const selectionSchema = v.object({
     })
   ),
   /** How many story ids `stories` gave. */
-  stories: v.optional(v.number()),
-  /** Stories the run was asked for; absent when the selection is every story. */
+  inputStoryCount: v.optional(v.number()),
+  /** Stories the run was asked for. */
   storyCount: v.optional(v.number()),
 });
 
@@ -104,7 +106,7 @@ const testRunOutputSchema = v.variant('status', [
     result: testRunResultSchema,
     selection: v.optional(selectionSchema),
     /** Story ids that matched nothing. The rest ran, but they fail the call. */
-    notFound: v.optional(v.array(v.string())),
+    notFoundMessages: v.optional(v.array(v.string())),
   }),
   v.object({
     status: v.literal('error'),
@@ -159,17 +161,19 @@ Use { absoluteStoryPath + exportName } only when you're currently working in a s
   ),
   files: v.optional(
     v.pipe(
-      v.array(v.string()),
+      // An empty entry, as from an unset variable, would match every story file.
+      v.array(v.pipe(v.string(), v.minLength(1))),
       v.description(
-        `Story files to test, as Vitest file filters: each entry selects the story files whose path, relative to the Storybook project directory, contains it (case-insensitive), or that an absolute path or directory points to. Only story files match; to test the stories that depend on a changed component, use \`changed\`.`
+        `Story files to test: each entry selects the story files whose path contains it (case-insensitive), or that an absolute path or directory points to. Only story files match; to test the stories that depend on a changed component, use \`changed\`.`
       )
     )
   ),
   changed: v.optional(
     v.pipe(
-      v.boolean(),
+      // An empty ref, as from an unset variable in CI, must not read as "not changed".
+      v.union([v.boolean(), v.pipe(v.string(), v.minLength(1))]),
       v.description(
-        'Test the changed stories, exactly as the stories changed tool lists them: new and modified stories, and the stories that depend on changed files. Combined with files or stories, only the stories that match both run.'
+        'Test the changed stories, exactly as the stories changed tool lists them: new and modified stories, and the stories that depend on changed files. true for the uncommitted changes, or a git ref (a branch, tag or commit) for what this branch committed since it forked from that ref, plus the uncommitted changes. Combined with files or stories, only the stories that match both run.'
       )
     )
   ),
@@ -189,7 +193,7 @@ Use { absoluteStoryPath + exportName } only when you're currently working in a s
 type RunInput = {
   stories?: StoryInput[];
   files?: string[];
-  changed?: boolean;
+  changed?: boolean | string;
   a11y: boolean;
 };
 
@@ -201,7 +205,7 @@ export type TestToolset = ToolsetDefinition<
         {
           stories?: StoryInput[];
           files?: string[];
-          changed?: boolean;
+          changed?: boolean | string;
           a11y?: boolean;
         },
         RunInput
@@ -281,7 +285,7 @@ function isFailedRun(data: TestRunData): data is TestRunFailureData {
     case 'completed':
       return (
         Object.values(countTestRunFailures(data.result, data.a11y)).some((count) => count > 0) ||
-        (data.notFound?.length ?? 0) > 0
+        (data.notFoundMessages?.length ?? 0) > 0
       );
     case 'no-stories':
       // A filter or id that matched nothing fails, as in Vitest; `changed` affecting nothing passes.
@@ -294,9 +298,12 @@ function isFailedRun(data: TestRunData): data is TestRunFailureData {
   }
 }
 
-// `stories changed` itself, so both commands select the same stories for the same working tree.
-async function getChangedStories(ctx: ToolsetCtx): Promise<ChangedStories> {
-  const { data } = await getToolset('stories').methods.changed.handler({}, ctx);
+// `stories changed` itself, so both commands select the same stories for the same changes.
+async function getChangedStories(ctx: ToolsetCtx, since?: string): Promise<ChangedStories> {
+  const { data } = await getToolset('stories').methods.changed.handler(
+    since === undefined ? {} : { since },
+    ctx
+  );
   return {
     storyIds: data.stories.map((story) => story.storyId),
     changedConfigFiles: data.changedConfigFiles,
@@ -328,7 +335,7 @@ export function createTestToolset({
     methods: {
       run: {
         input: runInputSchema,
-        fileArguments: 'files',
+        positional: 'files',
         title: 'Run Storybook tests',
         description: (ctx) => describeRun(a11yEnabled, ctx),
         handler: async (
@@ -343,7 +350,7 @@ export function createTestToolset({
               stories: input.stories,
               files: input.files,
               changed: input.changed,
-              getChangedStories: () => getChangedStories(ctx),
+              getChangedStories: (since) => getChangedStories(ctx, since),
               a11y: input.a11y,
             });
             const data: TestRunData = { ...output, a11y: input.a11y };

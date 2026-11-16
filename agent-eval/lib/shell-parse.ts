@@ -231,7 +231,7 @@ function parseStorybookToolsInvocation(
     segment.slice(command.index + 2),
     readCommanderInput(commanderOptions),
     unresolved,
-    // The tools whose method declares `fileArguments`: bare arguments fill `files`.
+    // The tools whose method declares `positional`: bare arguments fill `files`.
     command.name === 'test-run'
   );
   if (input === undefined) {
@@ -352,7 +352,7 @@ function readCommanderInput(options: string[]): string | undefined {
 // A copy of parseToolsTokens (code/core/src/cli/tools/tool-tokens.ts) that
 // returns only the tool arguments, or `undefined` where the CLI prints help or
 // rejects the invocation. Bare arguments are appended to `files` for a tool
-// that takes them, as the CLI dispatcher does (without resolving the paths).
+// that takes them, as the CLI dispatcher does.
 // shell-parse.test.ts runs both on the same tokens.
 function parseToolArguments(
   tokens: string[],
@@ -437,10 +437,10 @@ function parseToolArguments(
   }
   // Bare arguments are appended to `files`, after `--input` and `--files`, as the CLI does.
   const withFiles = (args: Record<string, unknown>): Record<string, unknown> => {
-    if (positionals.length === 0) {
+    const given = args.files;
+    if (!takesFiles || (positionals.length === 0 && given === undefined)) {
       return args;
     }
-    const given = args.files;
     return {
       ...args,
       files: [

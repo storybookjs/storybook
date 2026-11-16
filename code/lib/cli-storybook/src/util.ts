@@ -353,6 +353,8 @@ const processProject = async ({
         configDir: resolvedConfigDir,
         mainConfig,
         mainConfigPath,
+        previewConfigPath,
+        storiesPaths,
       });
     }
 

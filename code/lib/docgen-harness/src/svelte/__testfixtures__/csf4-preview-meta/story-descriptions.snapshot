@@ -1,0 +1,8 @@
+{
+  "component": "CSF4 tag meta description.",
+  "stories": {
+    "Default": "Inherits the meta args.",
+    "Success": undefined,
+    "WithTemplate": undefined,
+  },
+}

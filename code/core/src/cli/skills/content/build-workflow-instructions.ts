@@ -131,5 +131,14 @@ export function buildServerInstructions(inputs: ServerInstructionsInputs): strin
       : skillSteps > 1
         ? '\n\nRun the skill of a step before you call a tool of that step, also when the request is only that step.'
         : '\n\nRun the skill before you call a tool of its step, also when the request is only that step.';
-  return `${buildWorkflow(inputs, 'mcp')}${skillFirst}${review}`;
+  // Over MCP there is no skill description to say when to open a skill, and Claude Code loads tool
+  // descriptions only on use, so the triggers that skill descriptions carry are here.
+  const triggers = [
+    inputs.devEnabled &&
+      '`npx storybook skills ui-review --mcp` when the user asks for a review or to see stories',
+    inputs.docsEnabled &&
+      "`npx storybook skills component-docs --mcp` when the user asks about a component's props, API, or usage",
+  ].filter(Boolean);
+  const when = triggers.length > 0 ? `\n\nAlso run ${triggers.join(', and ')}.` : '';
+  return `${buildWorkflow(inputs, 'mcp')}${skillFirst}${when}${review}`;
 }

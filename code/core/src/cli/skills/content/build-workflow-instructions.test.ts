@@ -81,6 +81,8 @@ describe('buildServerInstructions', () => {
 
       Run the skill of a step before you call a tool of that step, also when the request is only that step.
 
+      Also run \`npx storybook skills ui-review --mcp\` when the user asks for a review or to see stories, and \`npx storybook skills component-docs --mcp\` when the user asks about a component's props, API, or usage.
+
       When you create a review with \`review-create\`, end your final answer with the three lines its result gives you, unchanged, and mention the review link nowhere else in it."
     `);
   });
@@ -141,7 +143,9 @@ describe('buildServerInstructions', () => {
 
         1. \`npx storybook skills component-docs --mcp\`: look up the components to reuse, with their props and usage examples, before you edit any file.
 
-        Run the skill before you call a tool of its step, also when the request is only that step."
+        Run the skill before you call a tool of its step, also when the request is only that step.
+
+        Also run \`npx storybook skills component-docs --mcp\` when the user asks about a component's props, API, or usage."
       `);
   });
 
@@ -154,6 +158,21 @@ describe('buildServerInstructions', () => {
 
         1. To test stories, call \`test-run\`: with neither for every story, with \`files\` for these story files, with \`changed: true\` for the stories your changes affect."
       `);
+  });
+
+  // Over MCP there is no skill description, so the instructions say when to run these skills.
+  it('says when to run ui-review and component-docs, for the toolsets that are on', () => {
+    expect(buildServerInstructions(everything)).toContain(
+      "Also run `npx storybook skills ui-review --mcp` when the user asks for a review or to see stories, and `npx storybook skills component-docs --mcp` when the user asks about a component's props, API, or usage."
+    );
+    expect(buildServerInstructions({ ...everything, devEnabled: false })).not.toContain(
+      'ui-review'
+    );
+    expect(buildServerInstructions({ ...everything, docsEnabled: false })).not.toContain(
+      'component-docs'
+    );
+    // The AGENTS.md section leaves both to the skill descriptions.
+    expect(buildAgentInstructions()).not.toMatch(/asks for a review|asks about a component/);
   });
 
   it('returns empty instructions when all toolsets are disabled', () => {

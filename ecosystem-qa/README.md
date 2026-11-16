@@ -103,6 +103,13 @@ Start the `Ecosystem QA` workflow by hand and pick the repos, version, engines a
 `plan.ts` turns the inputs into one job for each repo, operating system and engine, and a repo runs on Windows only when the catalog marks it `windows`.
 Linux runs the agent in `docker()`; Windows runs it with `noSandbox()`, and the API key is the only secret in that job.
 The agent keys live in the `ecosystem-qa` environment, and the push token in `ecosystem-qa-file`, which only the filing job enters.
+
+A Claude Code run in the Docker sandbox on Linux with `ANTHROPIC_API_KEY` keeps the key out of the sandbox.
+`run.ts` starts a proxy on the gateway of Docker's default bridge, gives the agent that address as `ANTHROPIC_BASE_URL` and a placeholder as its key, and puts the real key on each request it forwards to the Anthropic API.
+The proxy forwards only `POST /v1/messages` and `POST /v1/messages/count_tokens`, answers only the sandbox container's address, and writes one line for each request, with method, path and status, to the job log and to `run.log`.
+Before the agent starts, the runner reads the environment of the sandbox, ends the run when the real key is in it, and writes `The sandbox holds no provider key.` otherwise.
+Everywhere else the key still reaches the agent: Codex, a run without a sandbox (the Windows cells), a run on macOS, and a run with `CLAUDE_CODE_OAUTH_TOKEN`.
+The `Reach the key proxy from the sandbox` job of a pull request checks on the runner image of the agent job that a container on the default bridge gets through the proxy to a stand-in for the provider.
 Each runner uploads `qa-result-<id>-<os>-<engine>` with `result.json`, the run log, the raw agent stream, the session, the evidence and the cycle branch bundle.
 `run.ts` writes the status, wall time, tokens, dollars, free disk and every check to the Step Summary.
 

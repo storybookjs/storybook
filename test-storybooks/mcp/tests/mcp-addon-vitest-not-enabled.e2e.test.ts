@@ -19,7 +19,7 @@ let storybookProcess: ReturnType<typeof x> | null = null;
 describe('MCP endpoint with addon-vitest installed but not enabled', () => {
 	beforeAll(async () => {
 		await killPort(PORT);
-		storybookProcess = startStorybook('.storybook-no-vitest', PORT);
+		({ storybookProcess } = await startStorybook('.storybook-no-vitest', PORT));
 		await waitForMcpEndpoint(MCP_ENDPOINT);
 	}, STARTUP_TIMEOUT);
 

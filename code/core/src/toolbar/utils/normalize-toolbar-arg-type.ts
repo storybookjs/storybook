@@ -1,4 +1,6 @@
-import type { NormalizedToolbarArgType, ToolbarArgType } from '../types.ts';
+import type { GlobalTypes } from '../../csf/story.ts';
+
+import type { NormalizedToolbarArgType, ToolbarArgType, ToolbarMenuProps } from '../types.ts';
 
 export const normalizeArgType = (
   key: string,
@@ -28,3 +30,10 @@ export const normalizeArgType = (
     },
   };
 };
+
+/** The toolbars of a project's global types, in declaration order, each with its id. */
+export const normalizeToolbarArgTypes = (globalTypes: GlobalTypes): ToolbarMenuProps[] =>
+  Object.entries(globalTypes).flatMap(([id, argType]) => {
+    const normalized = normalizeArgType(id, argType as ToolbarArgType);
+    return normalized ? [{ ...normalized, id }] : [];
+  });

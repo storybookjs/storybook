@@ -1,5 +1,7 @@
 # Agent Evaluation Suite
 
+For benchmark setup and story-writing runs on real repos, see [`scripts/eval/`](../scripts/eval/README.md); for upgrade QA of real projects across operating systems, see [`ecosystem-qa/`](../ecosystem-qa/README.md).
+
 Runs coding agents (Claude Code and Codex) against fixture projects in
 sandboxes and asserts that they follow the Storybook workflows this repo
 ships — writing stories, previewing or reviewing them, and running story

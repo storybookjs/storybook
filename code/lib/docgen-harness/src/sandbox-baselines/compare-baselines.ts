@@ -79,11 +79,16 @@ function compareComponent(
       });
       continue;
     }
+    const beforeSummary = JSON.stringify(summarize(before));
+    const afterSummary = JSON.stringify(summarize(after));
     findings.push({
       component,
       severity: 'change',
       kind: 'field-changed',
-      message: `${field} differs (baseline ${JSON.stringify(summarize(before))}, candidate ${JSON.stringify(summarize(after))})`,
+      message:
+        beforeSummary === afterSummary
+          ? `${field} differs at ${describeFirstDifference(before, after, field)}`
+          : `${field} differs (baseline ${beforeSummary}, candidate ${afterSummary})`,
     });
   }
 
@@ -216,4 +221,17 @@ export function formatFindings(findings: BaselineFinding[]): string {
     }
   }
   return lines.join('\n');
+}
+
+function describeFirstDifference(before: unknown, after: unknown, path: string): string {
+  const isRecord = (value: unknown): value is Record<string, unknown> =>
+    value !== null && typeof value === 'object';
+  if (isRecord(before) && isRecord(after)) {
+    const keys = [...new Set([...Object.keys(before), ...Object.keys(after)])].sort();
+    const key = keys.find((candidate) => !deepEqual(before[candidate], after[candidate]));
+    if (key !== undefined) {
+      return describeFirstDifference(before[key], after[key], `${path}.${key}`);
+    }
+  }
+  return `${path} (baseline ${JSON.stringify(before)}, candidate ${JSON.stringify(after)})`;
 }

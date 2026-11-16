@@ -1,5 +1,6 @@
-import { expect, test } from '@playwright/test';
+import { type Page, expect, test } from '@playwright/test';
 import * as fs from 'node:fs';
+import { rm } from 'node:fs/promises';
 import * as path from 'node:path';
 
 import { SbPage } from './util.ts';
@@ -25,6 +26,26 @@ const type = process.env.STORYBOOK_TYPE || 'dev';
 const templateName = process.env.STORYBOOK_TEMPLATE_NAME || '';
 
 const CHANGE_DETECTION_TIMEOUT = 15_000;
+
+const expectRemovedFromIndex = async (page: Page, title: string) => {
+  await expect
+    .poll(
+      async () => {
+        const response = await page.request.get(`${storybookUrl}/index.json`);
+        if (!response.ok()) {
+          return `index.json responded ${response.status()}: ${await response.text()}`;
+        }
+        const { entries } = (await response.json()) as {
+          entries: Record<string, { title: string }>;
+        };
+        return Object.values(entries).some((entry) => entry.title === title)
+          ? `${title} is still indexed`
+          : 'removed';
+      },
+      { timeout: CHANGE_DETECTION_TIMEOUT }
+    )
+    .toBe('removed');
+};
 
 // Resolve paths eagerly so test.skip() calls need no if-conditionals inside tests.
 const headerStoriesPath =
@@ -99,9 +120,14 @@ test.describe('Change Detection', () => {
       );
 
       // New stories roll up to "Change status: New" on the parent component node
-      await expect(page.locator('[aria-label="Change status: New"]').first()).toBeVisible({
-        timeout: CHANGE_DETECTION_TIMEOUT,
-      });
+      await expect(
+        page.locator(
+          '[data-item-id="example-changedetectionnew"] [aria-label="Change status: New"]'
+        )
+      ).toBeVisible({ timeout: CHANGE_DETECTION_TIMEOUT });
+
+      await rm(newStoryPath);
+      await expectRemovedFromIndex(page, 'Example/ChangeDetectionNew');
     } finally {
       fs.rmSync(newStoryPath, { force: true });
     }
@@ -126,9 +152,14 @@ test.describe('Change Detection', () => {
       );
 
       // New stories roll up to "Change status: New" on the parent component node
-      await expect(page.locator('[aria-label="Change status: New"]').first()).toBeVisible({
-        timeout: CHANGE_DETECTION_TIMEOUT,
-      });
+      await expect(
+        page.locator(
+          '[data-item-id="example-changedetectionnew"] [aria-label="Change status: New"]'
+        )
+      ).toBeVisible({ timeout: CHANGE_DETECTION_TIMEOUT });
+
+      await rm(newStoryPath);
+      await expectRemovedFromIndex(page, 'Example/ChangeDetectionNew');
     } finally {
       fs.rmSync(newStoryPath, { force: true });
     }

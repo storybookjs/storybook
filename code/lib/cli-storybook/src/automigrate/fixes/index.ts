@@ -19,6 +19,7 @@ import { storybookPackageNameConflict } from './storybook-package-name-conflict.
 import { storySortToMain } from './story-sort-to-main.ts';
 import { setConfigLayout } from './set-config-layout.ts';
 import { sidebarFilters } from './sidebar-filters.ts';
+import { sveltekitMockingBeforeEach } from './sveltekit-mocking-before-each.ts';
 import { skills } from './skills.ts';
 import { tagFilterApi } from './tag-filter-api.ts';
 import {
@@ -46,6 +47,7 @@ export const allFixes: Fix[] = [
   webComponentsRuntimeManifest,
   reactViteToTanstackReact,
   addonSvelteCsfToCore,
+  sveltekitMockingBeforeEach,
   wrapGetAbsolutePath,
   storybookPackageNameConflict,
   storySortToMain,

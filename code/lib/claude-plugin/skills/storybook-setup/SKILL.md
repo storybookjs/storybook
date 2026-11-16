@@ -1,6 +1,6 @@
 ---
 name: storybook-setup
-description: Use this skill when Storybook is already installed and the user wants it set up for the project, with a working `preview` file and stories for its real components. To write or update the stories of a component, use ui-workflow instead.
+description: Use this skill when Storybook is already installed and the user wants it set up for the project, with a working `preview` file and stories for its real components. To write or update the stories of a component, use write-stories instead.
 ---
 
 Prerequisites:

@@ -320,7 +320,6 @@ describe('mcpServerHandler', () => {
       id: 1,
       result: {
         protocolVersion: '2025-06-18',
-        adapter: {},
         capabilities: {
           tools: { listChanged: true },
         },
@@ -334,10 +333,41 @@ describe('mcpServerHandler', () => {
     expect(parsedResponse.result.instructions).toBeDefined();
     expect(parsedResponse.result.instructions).toContain('## Storybook');
     expect(parsedResponse.result.instructions).toContain(
-      '- `npx storybook skills ui-workflow --mcp`'
+      '`npx storybook skills ui-review --mcp`: publish a review'
     );
-    expect(parsedResponse.result.instructions).toContain('you run or fix story tests');
+    expect(parsedResponse.result.instructions).toContain(
+      'Also when the user asks to run or fix story tests'
+    );
     expect(parsedResponse.result.instructions).not.toContain('component-docs');
+  });
+
+  it.each([
+    ['a null body', 'null', -32600],
+    ['a message without jsonrpc', { id: 1, method: 'tools/list' }, -32600],
+    ['a batch', [{ jsonrpc: '2.0', id: 1, method: 'tools/list' }], -32600],
+    ['an unparseable body', '{bad', -32700],
+  ])('should answer %s with a 400 JSON-RPC error', async (_, body, code) => {
+    const mockReq = createMockIncomingMessage({
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body,
+    });
+    const { response, getResponseData } = createMockServerResponse();
+
+    await mcpServerHandler({
+      req: mockReq,
+      res: response,
+      origin: 'http://localhost:6006',
+      basePath: '/',
+      options: createMockOptions(),
+      addonOptions: { toolsets: { dev: true, docs: true } },
+      compositionAuth: new CompositionAuth(),
+    });
+
+    expect(response.end).toHaveBeenCalled();
+    const { status, body: responseBody } = getResponseData();
+    expect(status).toBe(400);
+    expect(JSON.parse(responseBody)).toMatchObject({ jsonrpc: '2.0', error: { code } });
   });
 
   it('should include docs-style instructions when docs toolset is selected and manifest is available', async () => {
@@ -391,10 +421,11 @@ describe('mcpServerHandler', () => {
     const parsedResponse = JSON.parse(responseText);
 
     expect(parsedResponse.result.instructions).toContain(
-      '- `npx storybook skills component-docs --mcp`'
+      '1. `npx storybook skills component-docs --mcp`'
     );
-    expect(parsedResponse.result.instructions).not.toContain('ui-workflow');
-    expect(parsedResponse.result.instructions).not.toContain('test-run');
+    expect(parsedResponse.result.instructions).not.toContain('write-stories');
+    expect(parsedResponse.result.instructions).not.toContain('ui-review');
+    expect(parsedResponse.result.instructions).not.toContain('test-stories');
   });
 
   it('should respect disableTelemetry setting', async () => {

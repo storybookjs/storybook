@@ -5,7 +5,9 @@ import type { Options } from '../../types/index.ts';
 import { resolveStorybookConfigDir } from '../tools/config-dir.ts';
 import { ALL_MCP_TOOLSETS } from './availability.ts';
 import { buildComponentDocsSkill } from './content/build-component-docs-skill.ts';
-import { buildUiWorkflowSkill, buildWriteStorySkill } from './content/build-ui-workflow-skill.ts';
+import { buildTestStoriesSkill } from './content/build-test-stories-skill.ts';
+import { buildUiReviewSkill } from './content/build-ui-review-skill.ts';
+import { buildWriteStoriesSkill } from './content/build-write-stories-skill.ts';
 import type { SkillTextTransport } from './content/skill-vocabulary.ts';
 import type { getSetupMarkdownOutput } from './content/setup-prompts/index.ts';
 import { SKILLS, SKILL_IDS, isSkillId, type SkillId } from './content/skills.ts';
@@ -67,11 +69,24 @@ export type SkillsIntent =
   | { kind: 'get'; id: SkillId }
   | { kind: 'error'; message: string };
 
+// The skill ids of Storybook 10.6, which an `AGENTS.md` or a plugin from then can still name.
+function replacedSkillMessage(id: string, mcp: boolean): string | undefined {
+  const run = (skill: string) => `\`npx storybook skills ${skill}${mcp ? ' --mcp' : ''}\``;
+  if (id === 'stories') {
+    return `The \`stories\` skill is replaced by one skill per step: \`component-docs\` (look up the components to reuse), \`write-stories\` (the story rules), \`test-stories\` (run the story tests) and \`ui-review\` (publish the review). Run ${run('<id>')} for each of the four now, each in a command of its own, and follow each one at its step.`;
+  }
+  if (id === 'write-story') {
+    return `The \`write-story\` skill is renamed to \`write-stories\`. Run ${run('write-stories')}.`;
+  }
+  return undefined;
+}
+
 export function resolveSkillsIntent({
   tokens,
   help,
   all,
-}: Pick<SkillsRunInput, 'tokens' | 'help' | 'all'>): SkillsIntent {
+  mcp = false,
+}: Pick<SkillsRunInput, 'tokens' | 'help' | 'all' | 'mcp'>): SkillsIntent {
   const [id, ...rest] = tokens;
   if (help) {
     return { kind: 'catalog' };
@@ -79,12 +94,9 @@ export function resolveSkillsIntent({
   if (id === undefined) {
     return all ? { kind: 'all' } : { kind: 'catalog' };
   }
-  if (id === 'stories') {
-    return {
-      kind: 'error',
-      message:
-        'The `stories` skill is renamed to `ui-workflow`. Run `npx storybook skills ui-workflow`, or `npx storybook skills component-docs` to look up the components to reuse.',
-    };
+  const replaced = replacedSkillMessage(id, mcp);
+  if (replaced) {
+    return { kind: 'error', message: replaced };
   }
   if (!isSkillId(id)) {
     return {
@@ -152,22 +164,14 @@ async function serveSkills(
   let inputs: SkillInputs | undefined;
   let setupRun: SetupRun | undefined;
   const docs: string[] = [];
-  // `write-story` is a section of `ui-workflow`, so `--all` prints it once, inside that document.
-  const served = ids.length > 1 ? ids.filter((id) => id !== 'write-story') : ids;
-  for (const id of served) {
+  for (const id of ids) {
     if (id === 'setup') {
       const setup = await serveSetup(configDir, deps);
       docs.push(setup.markdown);
       setupRun = setup.run;
-    } else if (id === 'component-docs') {
-      // The same text for every project, so it needs no configuration.
-      docs.push(buildComponentDocsSkill(transport));
-    } else if (id === 'write-story') {
-      inputs ??= await loadInputs(configDir, deps);
-      docs.push(buildWriteStorySkill({ ...inputs, transport }));
     } else {
       inputs ??= await loadInputs(configDir, deps);
-      docs.push(assembleUiWorkflow(inputs, transport));
+      docs.push(buildProjectSkill(id, inputs, transport));
     }
   }
   return { docs, setupRun };
@@ -229,24 +233,40 @@ function renderCatalogHelp(): string {
   ].join('\n');
 }
 
-function assembleUiWorkflow(inputs: SkillInputs, transport: SkillTextTransport): string {
-  // Over MCP, a step only appears when the server registers its tools, with the same gates as
+function buildProjectSkill(
+  id: Exclude<SkillId, 'setup'>,
+  inputs: SkillInputs,
+  transport: SkillTextTransport
+): string {
+  if (id === 'write-stories') {
+    return buildWriteStoriesSkill(inputs);
+  }
+  // Over MCP, a skill only names the tools the server registers, with the same gates as
   // addon-mcp's tool registry: the toolsets `main.ts` turns on, and for the docs tools the
   // `componentsManifest` opt-in or composed Storybooks. The CLI docs commands need manifests or
   // composed Storybooks.
   const mcp = transport === 'mcp';
   const toolsets = mcp ? inputs.mcpToolsets : ALL_MCP_TOOLSETS;
-  return buildUiWorkflowSkill({
-    transport,
-    framework: inputs.framework,
-    csfFactories: inputs.csfFactories,
-    previewFile: inputs.previewFile,
-    typescript: inputs.typescript,
-    docsEnabled:
-      toolsets.docs && ((mcp ? inputs.docsEnabled : inputs.docsEnabledForCli) || inputs.composed),
-    testSupported: toolsets.test && inputs.testSupported,
-    a11yEnabled: inputs.a11yEnabled,
-    moduleGraphSupported: toolsets.dev && inputs.moduleGraphSupported,
-    devEnabled: toolsets.dev,
-  });
+  const docsSupported = (mcp ? inputs.docsEnabled : inputs.docsEnabledForCli) || inputs.composed;
+  const docsEnabled = toolsets.docs && docsSupported;
+  // A skill names the tools of its own toolset also when `main.ts` turns that toolset off, and
+  // says so: a client that turns it on with the `X-MCP-Toolsets` header has those tools.
+  if (id === 'component-docs') {
+    return buildComponentDocsSkill({ transport, docsSupported, toolsetOff: !toolsets.docs });
+  }
+  return id === 'test-stories'
+    ? buildTestStoriesSkill({
+        docsEnabled,
+        moduleGraphSupported: toolsets.dev && inputs.moduleGraphSupported,
+        transport,
+        testSupported: inputs.testSupported,
+        toolsetOff: !toolsets.test,
+        a11yEnabled: inputs.a11yEnabled,
+      })
+    : buildUiReviewSkill({
+        docsEnabled,
+        moduleGraphSupported: inputs.moduleGraphSupported,
+        transport,
+        toolsetOff: !toolsets.dev,
+      });
 }

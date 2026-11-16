@@ -7,7 +7,7 @@ describe('creating StatusPill stories and running focused story tests', () => {
   }
 
   test('creates stories, runs focused story tests, and previews the stories', () => {
-    expectWorkflowCalls(['ui-workflow', 'test-run', 'stories-preview']);
+    expectWorkflowCalls(['write-stories', 'test-run', 'stories-preview']);
     expect(getWorkflowCalls('test-run').some(hasStoriesInput)).toBe(true);
   });
 });

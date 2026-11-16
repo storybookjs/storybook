@@ -76,7 +76,6 @@ describe('readTemplateCheckoutPackages', () => {
         // Served by the lifecycle evals' checkout registry.
         'create-storybook',
         '@storybook/cli',
-        '@storybook/codemod',
       ])
     );
   });

@@ -238,6 +238,19 @@ The review shows the 1 story you asked to see. Because this is AI-curated, resul
       expect(description).not.toContain('browser');
     });
 
+    it('sends the agent to the ui-review skill of its transport first, and not over the SDK', () => {
+      const describeFor = (ctx: ToolsetCtx) =>
+        resolveToolsetDescription(reviewToolset.methods.create.description, ctx);
+
+      expect(describeFor(mcpCtx)).toContain(
+        'First run npx storybook skills ui-review --mcp once and follow it.'
+      );
+      expect(describeFor(cliCtx)).toContain(
+        'First run npx storybook skills ui-review once and follow it.'
+      );
+      expect(describeFor({ ...cliCtx, transport: 'sdk' })).not.toContain('storybook skills');
+    });
+
     it('names the discovery tools as CLI commands', () => {
       const description = resolveToolsetDescription(
         reviewToolset.methods.create.description,

@@ -50,7 +50,7 @@ beforeEach(() => {
   vi.mocked(runSkillsCommand).mockResolvedValue({
     output: 'ok',
     exitCode: 0,
-    skill: 'ui-workflow',
+    skill: 'ui-review',
   });
   vi.mocked(withTelemetry).mockImplementation(async (_eventType, _options, run) => run());
   vi.mocked(telemetry).mockResolvedValue(undefined);
@@ -76,10 +76,10 @@ afterEach(() => {
 describe('registerSkillsCommand', () => {
   it('passes a bare skill id through as tokens', async () => {
     const { program } = buildProgram();
-    await parse(program, ['skills', 'ui-workflow']);
+    await parse(program, ['skills', 'ui-review']);
 
     expect(vi.mocked(runSkillsCommand).mock.calls[0]?.[0]).toEqual({
-      tokens: ['ui-workflow'],
+      tokens: ['ui-review'],
       help: undefined,
       all: undefined,
       mcp: undefined,
@@ -89,15 +89,15 @@ describe('registerSkillsCommand', () => {
 
   it('forwards `--mcp` and records it in telemetry', async () => {
     const { program } = buildProgram();
-    await parse(program, ['skills', 'ui-workflow', '--mcp']);
+    await parse(program, ['skills', 'ui-review', '--mcp']);
 
     expect(vi.mocked(runSkillsCommand).mock.calls[0]?.[0]).toMatchObject({
-      tokens: ['ui-workflow'],
+      tokens: ['ui-review'],
       mcp: true,
     });
     expect(telemetry).toHaveBeenCalledWith(
       'skills-get',
-      { skill: 'ui-workflow', mcp: true },
+      { skill: 'ui-review', mcp: true },
       expect.anything()
     );
   });
@@ -134,27 +134,27 @@ describe('registerSkillsCommand', () => {
 
   it('does not record a setup run for other skills', async () => {
     const { program } = buildProgram();
-    await parse(program, ['skills', 'ui-workflow']);
+    await parse(program, ['skills', 'ui-review']);
 
     expect(recordSetupRun).not.toHaveBeenCalled();
   });
 
   it('does not intercept `help` as commander help', async () => {
     const { program } = buildProgram();
-    await parse(program, ['skills', 'help', 'ui-workflow']);
+    await parse(program, ['skills', 'help', 'ui-review']);
 
     expect(vi.mocked(runSkillsCommand).mock.calls[0]?.[0]).toMatchObject({
-      tokens: ['help', 'ui-workflow'],
+      tokens: ['help', 'ui-review'],
     });
   });
 
   it('forwards `-h` after a skill id', async () => {
     vi.mocked(runSkillsCommand).mockResolvedValue({ output: 'usage', exitCode: 0 });
     const { program } = buildProgram();
-    await parse(program, ['skills', 'write-story', '-h']);
+    await parse(program, ['skills', 'write-stories', '-h']);
 
     expect(vi.mocked(runSkillsCommand).mock.calls[0]?.[0]).toMatchObject({
-      tokens: ['write-story'],
+      tokens: ['write-stories'],
       help: true,
     });
     expect(telemetry).not.toHaveBeenCalled();

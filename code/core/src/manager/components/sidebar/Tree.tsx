@@ -531,8 +531,8 @@ export const Tree = React.memo<TreeProps>(function Tree({
     };
   }, [rows, scrollerRef]);
 
-  // One delegated listener preloads a hovered branch's first story. It sits on the wrapper, so
-  // it also sees the sticky rows, which are outside the scroller.
+  // One delegated listener preloads the story a hovered row would open. It sits on the wrapper,
+  // so it also sees the sticky rows, which are outside the scroller.
   useEffect(() => {
     const wrapper = treeWrapperRef.current;
     if (!wrapper) {
@@ -547,11 +547,20 @@ export const Tree = React.memo<TreeProps>(function Tree({
       hoveredRowRef.current = next;
 
       const item = next && !next.sticky ? hoistedDataRef.current[next.id] : undefined;
-      if (item && next!.id !== preloadedId && isBranch(item)) {
-        preloadedId = next!.id;
-        // The preview has then usually started to load by the time the user clicks.
-        api.emit(PRELOAD_ENTRIES, { ids: [item.children[0]], options: { target: refId } });
+      if (!item || next!.id === preloadedId) {
+        return;
       }
+      const entry = isBranch(item) ? hoistedDataRef.current[item.children[0]] : item;
+      if (entry?.type !== 'story' && entry?.type !== 'docs') {
+        return;
+      }
+      preloadedId = next!.id;
+      // The preview has then usually started to load by the time the user clicks.
+      api.emit(PRELOAD_ENTRIES, {
+        ids: [isStoryRow(entry) ? entry.storyRowOf : entry.id],
+        source: 'hover',
+        options: { target: refId },
+      });
     };
     const onOver = (event: Event) => {
       const target = event.target as Element | null;

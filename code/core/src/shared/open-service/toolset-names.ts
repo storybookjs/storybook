@@ -78,3 +78,25 @@ export function getToolName(context: Pick<ToolsetCtx, 'transport'>) {
     }
   };
 }
+
+/**
+ * Renders the command that prints the skill of a workflow step, for the active transport.
+ *
+ * Nothing over `sdk`: the skills name commands and MCP tools, not SDK methods.
+ */
+export function getSkillCommand(context: Pick<ToolsetCtx, 'transport'>) {
+  return (skill: 'test-stories' | 'ui-review'): string | undefined => {
+    switch (context.transport) {
+      case 'mcp':
+        return `npx storybook skills ${skill} --mcp`;
+      case 'cli':
+        return `npx storybook skills ${skill}`;
+      case 'sdk':
+        return undefined;
+      default: {
+        const exhaustive: never = context.transport;
+        return exhaustive;
+      }
+    }
+  };
+}

@@ -20,7 +20,6 @@
     "**/__testfixtures__",
     "**/__mockdata__",
     "**/__corpus__/inputs",
-    "renderers/svelte/src/svelte-csf/__tests__/__compiled__",
     "core/assets",
     "core/report",
     "lib/cli-storybook/test/default/cli.test.cjs",

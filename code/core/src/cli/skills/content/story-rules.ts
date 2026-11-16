@@ -1,4 +1,4 @@
-// The story-writing rules of the ui-workflow skill, which its CLI and MCP renderings share.
+// The story-writing rules of the `write-stories` skill.
 
 export type StoryFormatInputs = {
   // The preview file uses `definePreview`, so story files use CSF Factories.

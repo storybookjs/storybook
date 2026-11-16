@@ -1,7 +1,7 @@
 import {
   expectDisplayReviewForVisualChange,
   expectDevServerLeftRunning,
-  expectSkillInvoked,
+  expectAnyWorkflowSkillInvoked,
   expectStoryDiscoveryBeforeReview,
   expectStoryIdsInDisplayReview,
   expectStoryTestsRanAndPassed,
@@ -10,6 +10,9 @@ import {
 } from '#test-utils';
 import { describe, test } from 'vitest';
 
+// The steps of the workflow in AGENTS.md that this task cannot do without.
+const WORKFLOW_SKILLS = ['component-docs', 'write-stories', 'test-stories', 'ui-review'];
+
 describe('editing ReviewCard to add date and optional onReport', () => {
   test('runs story tests after the change and finishes with them passing', async () => {
     await expectStoryTestsRanAndPassed({
@@ -17,8 +20,8 @@ describe('editing ReviewCard to add date and optional onReport', () => {
     });
   });
 
-  test('uses Storybook story instructions and publishes a display review', () => {
-    expectWorkflowCalls(['ui-workflow', 'review-create']);
+  test('runs the skill of each of these steps and publishes a display review', () => {
+    expectWorkflowCalls([...WORKFLOW_SKILLS, 'review-create']);
     expectDisplayReviewForVisualChange();
   });
 
@@ -39,8 +42,8 @@ describe('editing ReviewCard to add date and optional onReport', () => {
       expectWorkflowCalls(['docs-show']);
     });
 
-    test.skipIf(integration === 'mcp')('invokes the ui-workflow skill', () => {
-      expectSkillInvoked('ui-workflow');
+    test.skipIf(integration === 'mcp')('finds the workflow through the plugin skills', () => {
+      expectAnyWorkflowSkillInvoked();
     });
 
     test.skipIf(integration !== 'plugin')(

@@ -6,7 +6,7 @@ Storybook addon for MCP-powered UI development workflows.
 	<img src="./addon-mcp-claude-code-showcase.gif" alt="Storybook MCP Addon Demo" />
 </div>
 
-See [documentation](https://storybook.js.org/docs/next/ai/mcp/overview/?ref=readme) for installation instructions, usage examples, APIs, and more.
+See [documentation](https://storybook.js.org/docs/next/ai/reference/mcp-server/?ref=readme) for installation instructions, usage examples, APIs, and more.
 
 ## Configuration
 

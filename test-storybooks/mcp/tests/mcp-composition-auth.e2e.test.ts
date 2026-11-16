@@ -8,6 +8,7 @@ import {
 	startStorybook,
 	stopStorybook,
 } from './helpers';
+import { startRefFixtures, type RefFixtures } from './ref-fixtures.ts';
 
 const PORT = 6008;
 const MCP_ENDPOINT = `http://localhost:${PORT}/mcp`;
@@ -15,6 +16,7 @@ const WELL_KNOWN_ENDPOINT = `http://localhost:${PORT}/.well-known/oauth-protecte
 const STARTUP_TIMEOUT = 30_000;
 
 let storybookProcess: ReturnType<typeof x> | null = null;
+let fixtures: RefFixtures | null = null;
 
 async function mcpRequest(method: string, params: any = {}, token?: string) {
 	const headers: Record<string, string> = {
@@ -34,13 +36,16 @@ async function mcpRequest(method: string, params: any = {}, token?: string) {
 describe('MCP Composition Auth E2E Tests', () => {
 	beforeAll(async () => {
 		await killPort(PORT);
-		storybookProcess = startStorybook('.storybook-composition-auth', PORT);
+		fixtures = await startRefFixtures();
+		({ storybookProcess } = await startStorybook('.storybook-composition-auth', PORT, fixtures.env));
 		await waitForMcpEndpoint(MCP_ENDPOINT, { acceptStatuses: [401] });
 	}, STARTUP_TIMEOUT);
 
 	afterAll(async () => {
 		await stopStorybook(storybookProcess);
 		storybookProcess = null;
+		await fixtures?.close();
+		fixtures = null;
 	});
 
 	describe('OAuth Discovery', () => {
@@ -49,18 +54,11 @@ describe('MCP Composition Auth E2E Tests', () => {
 			expect(response.status).toBe(200);
 
 			const metadata = await response.json();
-			expect(metadata).toMatchInlineSnapshot(`
-				{
-				  "authorization_servers": [
-				    "https://www.chromatic.com",
-				  ],
-				  "resource": "http://localhost:6008/mcp",
-				  "scopes_supported": [
-				    "storybook:read",
-				    "project:read",
-				  ],
-				}
-			`);
+			expect(metadata).toEqual({
+				authorization_servers: [fixtures!.privateRefUrl],
+				resource: `http://localhost:${PORT}/mcp`,
+				scopes_supported: ['storybook:read', 'project:read'],
+			});
 		});
 
 		it('should point resource to the local MCP endpoint', async () => {

@@ -665,6 +665,7 @@ jobs:
           path: ecosystem-qa/results
 
       - name: File issues and push evidence
+        id: file
         env:
           GH_TOKEN: ${{ github.token }}
           ECOSYSTEM_QA_PUSH_TOKEN: ${{ secrets.ECOSYSTEM_QA_PUSH_TOKEN }}
@@ -684,12 +685,13 @@ jobs:
           QA_PLANNED: ${{ needs.plan.outputs.matrix }}
           QA_FROM_RUNS: ${{ needs.plan.outputs.from_runs }}
           QA_CAP_USD: ${{ vars.ECOSYSTEM_QA_CYCLE_CAP_USD }}
+          QA_FILING: ${{ steps.file.outcome == 'success' && 'filed' || 'failed' }}
         run: >-
           node ecosystem-qa/track.ts --results "$QA_RESULTS"
           --proposals ecosystem-qa/results/qa-proposals/proposals.json
           --plan "$QA_PLAN" --batch "$QA_BATCH" --version "$QA_VERSION" --planned "$QA_PLANNED"
           --runs "${QA_FROM_RUNS:-$GITHUB_RUN_ID}" --repo "$GITHUB_REPOSITORY"
-          ${QA_CAP_USD:+--cap-usd "$QA_CAP_USD"} --filing filed --no-chain
+          ${QA_CAP_USD:+--cap-usd "$QA_CAP_USD"} --filing "$QA_FILING" --no-chain
 
   track:
     name: Report the batch in its tracking discussion
@@ -702,6 +704,10 @@ jobs:
       || needs.collect.result == 'success') }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # Two reports of a plan at once would each create its discussion and each start its next batch.
+    concurrency:
+      group: ecosystem-qa-discussion-${{ needs.plan.outputs.plan_hash }}
+      cancel-in-progress: false
     permissions:
       actions: write # list the artifacts of the batch and start the next batch
       discussions: write # write the tracking discussion and the comment of the batch

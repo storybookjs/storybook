@@ -3,6 +3,9 @@ import { describe, expect, it } from 'vitest';
 import { loaded } from './fixtures.ts';
 import { USD_PER_RUN } from './qa-plan.ts';
 import {
+  attemptOf,
+  findingsOf,
+  startNext,
   batchCommentOf,
   batchReport,
   carriedRuns,
@@ -14,7 +17,7 @@ import {
   resultsExpireOn,
   spentUsd,
   trackBatch,
-  trackingThreadOf,
+  trackingThreadsOf,
   type BatchInput,
   type BatchReport,
   type PlannedJob,
@@ -75,11 +78,12 @@ const posted = (report: BatchReport, author = HARNESS) =>
       next: { start: 2 },
       expiresOn: '2027-02-14',
       carried: [],
+      short: false,
     }),
     author
   );
 
-describe('renderTrackingThread and trackingThreadOf', () => {
+describe('renderTrackingThread and trackingThreadsOf', () => {
   const thread = renderTrackingThread({
     file: '11.0.md',
     hash: HASH,
@@ -95,18 +99,18 @@ describe('renderTrackingThread and trackingThreadOf', () => {
     expect(thread.title).toBe('[SB 11 QA] Dynamic sweep 11.0.md');
   });
 
-  it('finds the oldest discussion the workflow wrote for the hash', () => {
-    const found = trackingThreadOf(
+  it('lists the discussions the workflow wrote for the hash, oldest first', () => {
+    const found = trackingThreadsOf(
       [discussion(9, thread.body), discussion(7, thread.body), discussion(8, 'unrelated')],
       HASH
     );
 
-    expect(found?.number).toBe(7);
+    expect(found.map(({ number }) => number)).toEqual([7, 9]);
   });
 
   it('ignores a discussion by another account, a marker below the first line, and another hash', () => {
     expect(
-      trackingThreadOf(
+      trackingThreadsOf(
         [
           discussion(1, thread.body, PERSON),
           discussion(2, `Notes\n${thread.body}`),
@@ -114,12 +118,12 @@ describe('renderTrackingThread and trackingThreadOf', () => {
         ],
         HASH
       )
-    ).toBeUndefined();
+    ).toEqual([]);
   });
 
   it('reads a marker in a body that an edit in the browser saved with CRLF', () => {
     expect(
-      trackingThreadOf([discussion(4, thread.body.replaceAll('\n', '\r\n'))], HASH)?.number
+      trackingThreadsOf([discussion(4, thread.body.replaceAll('\n', '\r\n'))], HASH)[0]?.number
     ).toBe(4);
   });
 });
@@ -133,6 +137,7 @@ describe('batchReport and renderBatchComment', () => {
       <!-- sb-qa-run mealdrop/1/linux/claude/2026-11-16T10:00:00.000Z usd=1.250000 -->
       <!-- sb-qa-run mealdrop/2/linux/claude/2026-11-16T10:00:00.000Z usd=2.590000 -->
       <!-- sb-qa-run mantine/1/linux/claude/lost-43900000001 usd=2.590000 -->
+      <!-- sb-qa-total usd=6.430000 runs=3 -->
       ### Batch 1 of 2 on Storybook 11.0.0-beta.3
 
       3 runs planned, 2 finished, 1 without a result, from workflow run 43900000001.
@@ -296,6 +301,7 @@ describe('spentUsd', () => {
         next: { stop: 'x' },
         expiresOn: '2027-02-14',
         carried: carriedRuns(earlier, rerun),
+        short: false,
       })
     );
     const total = 1.25 + 2 * USD_PER_RUN + 4;
@@ -314,6 +320,8 @@ describe('spentUsd', () => {
     expect(spentUsd([forged], HASH)).toEqual({
       usd: 0,
       runs: 0,
+      held: { usd: 0, runs: 0 },
+      written: { usd: 0, runs: 0 },
       batches: [],
       started: [],
       unreadable: [],
@@ -327,6 +335,8 @@ describe('spentUsd', () => {
     expect(spentUsd([buried, otherPlan], HASH)).toEqual({
       usd: 0,
       runs: 0,
+      held: { usd: 0, runs: 0 },
+      written: { usd: 0, runs: 0 },
       batches: [],
       started: [],
       unreadable: [
@@ -349,6 +359,8 @@ describe('spentUsd', () => {
     expect(spentUsd([edited], HASH)).toEqual({
       usd: 0,
       runs: 0,
+      held: { usd: 0, runs: 0 },
+      written: { usd: 0, runs: 0 },
       batches: [],
       started: [],
       unreadable: [`${edited.url}, which someone other than the workflow edited`],
@@ -386,6 +398,7 @@ describe('nextStep', () => {
       capUsd,
       chain,
       reported,
+      discussions: [],
     });
   };
 
@@ -396,6 +409,7 @@ describe('nextStep', () => {
   it('stops at the cap and names the spent amount and the cap', () => {
     expect(step({}, 0.1)).toEqual({
       stop: 'Batch 2 was not started, because $6.43 is spent and the cap is $0.10.',
+      resume: 2,
     });
   });
 
@@ -406,6 +420,7 @@ describe('nextStep', () => {
   it('stops when the run does not chain', () => {
     expect(step({}, 250, false)).toEqual({
       stop: 'Batch 2 was not started, because this run does not chain.',
+      resume: 2,
     });
   });
 
@@ -419,6 +434,7 @@ describe('nextStep', () => {
   it('stops when the batch left no result', () => {
     expect(step({ results: [] })).toEqual({
       stop: 'Batch 2 was not started, because batch 1 left no result.',
+      resume: 2,
     });
   });
 
@@ -433,9 +449,11 @@ describe('nextStep', () => {
         capUsd: 250,
         chain: true,
         reported: undefined,
+        discussions: [],
       })
     ).toEqual({
       stop: `Batch 3 was not started, because the spend of this plan cannot be read from ${edited.url}, which someone other than the workflow edited.`,
+      resume: 3,
     });
   });
 
@@ -468,15 +486,15 @@ describe('a batch whose collect failed', () => {
 describe('chainEndComment', () => {
   const end = { file: '11.0.md', hash: HASH, batch: 3, run: '43900000007', now: 'aaaaaaaaaaaa' };
 
-  it('says at which batch the chain of the plan ended and what the run found', () => {
+  it('says that the run ran nothing for its batch, and what it found', () => {
     expect(chainEndComment([], end)).toMatchInlineSnapshot(`
       "<!-- sb-qa-end 3f9c2a7b10de batch=3 run=43900000007 -->
-      The chain of this plan ends at batch 3, because workflow run 43900000007 found \`11.0.md\` with the hash \`aaaaaaaaaaaa\` where this sweep has the hash \`3f9c2a7b10de\`, and so ran nothing.
-      A changed plan starts a sweep of its own, with a discussion of its own, when it is pushed.
+      Workflow run 43900000007 ran nothing for batch 3 of this plan, because it found \`11.0.md\` with the hash \`aaaaaaaaaaaa\` where this sweep has the hash \`3f9c2a7b10de\`.
+      A changed plan is a sweep of its own, with a discussion of its own.
       "
     `);
     expect(chainEndComment([], { ...end, now: undefined })).toContain(
-      'because workflow run 43900000007 found no `11.0.md` where this sweep has the hash'
+      'ran nothing for batch 3 of this plan, because it found no `11.0.md` where this sweep has the hash'
     );
   });
 
@@ -488,6 +506,8 @@ describe('chainEndComment', () => {
     expect(spentUsd([said], HASH)).toEqual({
       usd: 0,
       runs: 0,
+      held: { usd: 0, runs: 0 },
+      written: { usd: 0, runs: 0 },
       batches: [],
       started: [],
       unreadable: [],
@@ -503,6 +523,7 @@ describe('the last line of a batch comment', () => {
       next: { start: 2 },
       expiresOn,
       carried: [],
+      short: false,
     })
       .trimEnd()
       .split('\n')
@@ -522,6 +543,27 @@ describe('the last line of a batch comment', () => {
       '2 new issues were not filed, and the log of the file job says why.'
     );
   });
+
+  it('says that the filing did not finish after a failed file step, also for a comment on a known issue', () => {
+    const known = { kind: 'comment', title: 'Seen again', issue: 37490 } as const;
+    const filed = { kind: 'issue', title: 'Crash', issue: 37400 } as const;
+
+    expect(lastLine({ filing: 'failed', findings: [known] }, '2027-02-14')).toBe(
+      'The filing did not finish, and the log of the file job says what was not filed. The artifacts of this batch expire on 2027-02-14.'
+    );
+    expect(lastLine({ filing: 'failed', findings: [filed] })).toBe(
+      'The filing did not finish, and the log of the file job says what was not filed.'
+    );
+  });
+
+  it.each(['filed', 'failed'] as const)(
+    'says that nothing was filed when the findings of a %s batch were not collected',
+    (filing) => {
+      expect(lastLine({ filing, findings: null })).toBe(
+        'The findings were not collected, so nothing was filed.'
+      );
+    }
+  );
 
   it('names no day of expiry when the runs hold no result artifact', () => {
     expect(lastLine({})).toBe(
@@ -566,12 +608,18 @@ describe('trackBatch', () => {
         ...overrides,
       })
     );
-  const track = (report: BatchReport, comments: Written[], capUsd = 60) => {
+  const track = (
+    report: BatchReport,
+    comments: Written[],
+    capUsd = 60,
+    { chain = true, discussions = [] as string[] } = {}
+  ) => {
     const tracked = trackBatch({
       report,
       comments,
       capUsd,
-      chain: true,
+      chain,
+      discussions,
       expiresOn: '2027-02-14',
     });
     if ('refuse' in tracked) {
@@ -583,6 +631,7 @@ describe('trackBatch', () => {
   it('stops the chain when the spend reaches the cap exactly, and starts it one cent below', () => {
     expect(track(batchTwo(20), [batchOne]).next).toEqual({
       stop: 'Batch 3 was not started, because $60.00 is spent and the cap is $60.00.',
+      resume: 3,
     });
     expect(track(batchTwo(19.99), [batchOne]).next).toEqual({ start: 3 });
   });
@@ -619,6 +668,7 @@ describe('trackBatch', () => {
 
     expect(tracked.next).toEqual({
       stop: `Batch 3 was not started, because the spend of this plan cannot be read from ${edited.url}, which someone other than the workflow edited.`,
+      resume: 3,
     });
     expect(tracked.body).toContain(
       'Spent on this plan: at least $1.00 for 1 run, of a cap of $250.00.'
@@ -635,6 +685,7 @@ describe('trackBatch', () => {
         comments: [batchOne, edited],
         capUsd: 250,
         chain: false,
+        discussions: [],
         expiresOn: '2027-02-14',
       })
     ).toEqual({
@@ -646,6 +697,7 @@ describe('trackBatch', () => {
     const batchThree = batchReport(input({ batch: 3, batches: 4, runs: ['43900000003'] }));
     const missing = (batch: number) => ({
       stop: `Batch 4 was not started, because this discussion holds no report of batch ${batch}, so the spend of the plan is unknown.`,
+      resume: 4,
     });
     const second = comment(track(batchTwo(1), [batchOne]).body);
 
@@ -654,9 +706,11 @@ describe('trackBatch', () => {
     expect(track(batchThree, [batchOne], 250).next).toEqual(missing(2));
     expect(track(batchTwo(1), [], 250).next).toEqual({
       stop: 'Batch 3 was not started, because this discussion holds no report of batch 1, so the spend of the plan is unknown.',
+      resume: 3,
     });
     expect(track(batchThree, [], 250).next).toEqual({
       stop: 'Batch 4 was not started, because this discussion holds no report of batches 1 and 2, so the spend of the plan is unknown.',
+      resume: 4,
     });
     expect(track(batchThree, [second], 250).body).toContain('Spent on this plan: at least $');
   });
@@ -679,12 +733,16 @@ describe('trackBatch', () => {
       comments: [batchOne, capped],
       capUsd: 1000,
       chain: false,
+      discussions: [],
       expiresOn: '2027-02-14',
     });
 
     expect(again).toMatchObject({
       existing: capped,
-      next: { stop: 'Batch 3 was not started, because $65.00 is spent and the cap is $60.00.' },
+      next: {
+        stop: 'Batch 3 was not started, because $65.00 is spent and the cap is $60.00.',
+        resume: 3,
+      },
     });
     expect('body' in again && again.body).toContain(
       'Next: Batch 3 was not started, because $65.00 is spent and the cap is $60.00.'
@@ -716,6 +774,7 @@ describe('trackBatch', () => {
         comments,
         capUsd: 250,
         chain: false,
+        discussions: [],
         expiresOn: '2027-02-14',
       });
       if ('refuse' in tracked) {
@@ -759,16 +818,164 @@ describe('trackBatch', () => {
 
   it('starts the next batch on the branch, engines and budget of this one', () => {
     const report = batchReport(
-      input({ ref: 'qa/try', planned: [job('mealdrop'), { ...job('mealdrop'), engine: 'codex' }] })
+      input({
+        ref: 'qa/try',
+        budgetMinutes: '120',
+        planned: [job('mealdrop'), { ...job('mealdrop'), engine: 'codex' }],
+      })
     );
 
-    expect(
-      batchDispatch(report, { repo: 'storybookjs/storybook', batch: 2, budgetMinutes: '120' })
-    ).toEqual([
-      ...['workflow', 'run', 'ecosystem-qa.yml', '--repo', 'storybookjs/storybook'],
+    expect(batchDispatch(report, 2)).toEqual([
+      ...['workflow', 'run', 'ecosystem-qa.yml'],
       ...['--ref', 'qa/try', '-f', 'plan=11.0.md', '-f', 'batch=2', '-f', `plan_hash=${HASH}`],
       ...['-f', 'chain=true', '-f', 'version=11.0.0-beta.3', '-f', 'engines=claude,codex'],
       ...['-f', 'budget_minutes=120'],
     ]);
+  });
+
+  it('starts no batch from the first report of a later attempt of a run, whose earlier attempts may have spent', () => {
+    const tracked = track(batchTwo(1, { attempt: 2 }), [batchOne], 250);
+    const reported = comment(track(batchTwo(1), [batchOne], 250).body);
+
+    expect(tracked.next).toEqual({
+      stop: 'Batch 3 was not started, because attempt 2 of workflow run 43900000002 is its first report here, so what its earlier attempts spent is unknown.',
+      resume: 3,
+    });
+    expect(tracked.body).toContain('Spent on this plan: at least $41.00 for 2 runs');
+    expect(track(batchTwo(1, { attempt: 2 }), [batchOne, reported], 250).body).toContain(
+      'Spent on this plan: $41.00 for 2 runs'
+    );
+  });
+
+  it('stops the chain when a comment is gone that a later comment counted, also when its batch has another', () => {
+    const again = batchReport(
+      input({
+        runs: ['43900000009'],
+        planned: [job('mealdrop')],
+        results: [result('mealdrop', { usd: 35, startedAt: '2026-11-17T09:00:00Z' })],
+      })
+    );
+    const second = comment(track(again, [batchOne], 250, { chain: false }).body);
+    const third = comment(track(batchTwo(1), [batchOne, second], 250).body);
+    const batchThree = batchReport(
+      input({ batch: 3, batches: 4, runs: ['43900000003'], planned: [job('primer-react')] })
+    );
+    const tracked = track(batchTwo(1), [second], 250);
+
+    expect(track(batchTwo(1), [batchOne, second], 250).next).toEqual({ start: 3 });
+    expect(tracked.next).toEqual({
+      stop: 'Batch 3 was not started, because the comments of this discussion hold $35.00 for 1 run, where one of them was written with $75.00 for 2 runs, so a comment of the workflow is gone.',
+      resume: 3,
+    });
+    expect(tracked.body).toContain('Spent on this plan: at least $36.00 for 2 runs');
+    expect(track(batchThree, [batchOne, second, third], 250).next).toEqual({ start: 4 });
+    expect(track(batchThree, [batchOne, third], 250).next).toEqual({
+      stop: 'Batch 4 was not started, because the comments of this discussion hold $41.00 for 2 runs, where one of them was written with $76.00 for 3 runs, so a comment of the workflow is gone.',
+      resume: 4,
+    });
+  });
+
+  it('stops the chain and names the discussions when the plan has more than one', () => {
+    const discussions = [
+      'https://github.com/storybookjs/storybook/discussions/1',
+      'https://github.com/storybookjs/storybook/discussions/3',
+    ];
+    const tracked = track(batchTwo(1), [batchOne], 250, { discussions });
+
+    expect(tracked.next).toEqual({
+      stop: `Batch 3 was not started, because the plan has 2 discussions, ${discussions[0]} and ${discussions[1]}, which share its spend.`,
+      resume: 3,
+    });
+    expect(tracked.body).toContain('Spent on this plan: at least $41.00');
+    expect(track(batchTwo(1), [batchOne], 250, { discussions: [discussions[0]!] }).next).toEqual({
+      start: 3,
+    });
+  });
+
+  it('prints how to start the next batch by hand when the chain stops, and keeps it when the batch is reported again', () => {
+    const lost = track(batchTwo(1, { results: [] }), [batchOne], 250);
+    const line =
+      'To start batch 3 by hand once the reason is gone, run `gh workflow run ecosystem-qa.yml --ref qa/plans -f plan=11.0.md -f batch=3 -f plan_hash=3f9c2a7b10de -f chain=true -f version=11.0.0-beta.3 -f engines=claude`.';
+    const again = track(batchTwo(1, { attempt: 2 }), [batchOne, comment(lost.body)], 250);
+
+    expect(lost.body).toContain(
+      `Next: Batch 3 was not started, because batch 2 left no result.\n\n${line}`
+    );
+    expect(again.next).toEqual({
+      stop: 'Batch 3 was not started, because batch 2 left no result.',
+      resume: 3,
+    });
+    expect(again.body).toContain(line);
+  });
+
+  it('prints no start by hand for a batch that is started, that a report went past, or after the last batch', () => {
+    const started = comment(track(batchTwo(1), [batchOne], 250).body);
+
+    expect(started.body).not.toContain('by hand');
+    expect(track(batchTwo(1, { runs: ['5'] }), [batchOne, started], 250).body).not.toContain(
+      'by hand'
+    );
+    expect(track(batchTwo(1, { batches: 2 }), [batchOne], 250).body).not.toContain('by hand');
+  });
+
+  it('says that the next batch is started only once its dispatch went through', () => {
+    const tracked = track(batchTwo(1), [batchOne], 250);
+    const dispatched: number[] = [];
+    const failed = startNext(tracked, () => {
+      throw new Error('HTTP 403: Resource not accessible by integration');
+    });
+
+    expect(startNext(tracked, (batch) => dispatched.push(batch))).toEqual({ body: tracked.body });
+    expect(dispatched).toEqual([3]);
+    expect(tracked.body).toContain('Next: Batch 3 is started.');
+    expect(failed.failure).toBe(
+      'Batch 3 was not started, because its dispatch failed: HTTP 403: Resource not accessible by integration'
+    );
+    expect(failed.body).toContain(
+      'Next: Batch 3 was not started, because its dispatch failed: HTTP 403: Resource not accessible by integration\n\nTo start batch 3 by hand'
+    );
+    expect(failed.body).not.toContain('is started');
+  });
+
+  it('dispatches nothing when the chain stops', () => {
+    const tracked = track(batchTwo(1), [batchOne], 1);
+    const dispatched: number[] = [];
+
+    expect(startNext(tracked, (batch) => dispatched.push(batch))).toEqual({ body: tracked.body });
+    expect(dispatched).toEqual([]);
+  });
+});
+
+describe('findingsOf', () => {
+  it('names the filed issue of a new issue, and the known issue of a comment or a suppressed finding', () => {
+    expect(
+      findingsOf(
+        [
+          { kind: 'issue', title: 'Crash', fingerprint: 'a' },
+          { kind: 'issue', title: 'Hang', fingerprint: 'b' },
+          { kind: 'comment', title: 'Seen again', existingIssue: 37364 },
+          { kind: 'suppressed', title: 'Known', existingIssue: 37365 },
+          { kind: 'skipped', title: 'Not a bug' },
+        ],
+        new Map([['a', 37400]])
+      )
+    ).toEqual([
+      { kind: 'issue', title: 'Crash', issue: 37400 },
+      { kind: 'issue', title: 'Hang' },
+      { kind: 'comment', title: 'Seen again', issue: 37364 },
+      { kind: 'suppressed', title: 'Known', issue: 37365 },
+      { kind: 'skipped', title: 'Not a bug' },
+    ]);
+  });
+});
+
+describe('attemptOf', () => {
+  it('is the attempt of the run that reports its own batch, and 1 for a collect of other runs', () => {
+    const env = { GITHUB_RUN_ID: '43900000002', GITHUB_RUN_ATTEMPT: '3' };
+
+    expect(attemptOf(['43900000002'], env)).toBe(3);
+    expect(attemptOf(['43900000001'], env)).toBe(1);
+    expect(attemptOf(['43900000001', '43900000002'], env)).toBe(1);
+    expect(attemptOf(['43900000002'], { GITHUB_RUN_ID: '43900000002' })).toBe(1);
   });
 });

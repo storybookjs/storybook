@@ -589,13 +589,13 @@ describe('renderIssueBody', () => {
     expect(body).toContain(`sha: ${'b'.repeat(40)}\ncycleRef: refs/qa/sb-${VERSION}/linux-claude`);
   });
 
-  it('links the start commit and says so when the agent made no commits', () => {
+  it('links the start commit and points to the run artifact when no head was pushed', () => {
     const [group] = groupFindings([loaded('linux', 'claude', [finding()], null)]);
 
     const body = renderIssueBody(issueFor(group), byName);
 
     expect(body).toContain(`https://github.com/storybookjs/mealdrop/tree/${'a'.repeat(40)}`);
-    expect(body).toContain('The upgraded state was not committed.');
+    expect(body).toContain('the `cycle.bundle` in the artifact of the run');
     expect(body).not.toContain('holds the upgraded state');
     expect(body).toContain(`sha: ${'a'.repeat(40)}\ncycleRef: none`);
   });

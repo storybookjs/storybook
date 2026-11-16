@@ -13,11 +13,19 @@ export const Os = z.enum(['linux', 'windows', 'macos']);
 export type Os = z.infer<typeof Os>;
 export const Effort = z.enum(['low', 'medium', 'high']);
 
+const FULL_SHA = /^[0-9a-f]{40}$/;
+
+// Whether the filer pushes a cycle of this entry. An owned repo receives its own cycle and a fork
+// under storybook-tmp the cycle of its upstream. A repo that a plan discovered has neither, so its
+// cycle stays in the run artifact.
+export const pushesCycle = (entry: { class: RepoClass; pushTo?: string }): boolean =>
+  entry.class === 'owned' || entry.pushTo !== undefined;
+
 export const CatalogEntry = z
   .strictObject({
     id: z.string().regex(/^[a-z0-9-]+$/),
     repo: z.string().regex(/^[\w.-]+\/[\w.-]+$/),
-    // Where the cycle branch is pushed: a fork under storybook-tmp for tier 1, the repo itself when owned.
+    // Where the cycle branch is pushed: a fork under storybook-tmp for tier 1 and 2, the repo itself when owned.
     pushTo: z
       .string()
       .regex(/^[\w.-]+\/[\w.-]+$/)
@@ -37,9 +45,19 @@ export const CatalogEntry = z
     message: 'a tier 1 entry needs pushTo, the fork that holds its baseline',
     path: ['pushTo'],
   })
-  .refine((entry) => canPushTo(cycleRepo(entry)), {
+  .refine((entry) => !pushesCycle(entry) || canPushTo(cycleRepo(entry)), {
     message: 'no push token is configured for the owner of the repository that receives the cycle',
     path: ['pushTo'],
+  })
+  // Without a fork nothing holds a branch at the pin, so the upstream commit is the only stable start.
+  .refine((entry) => pushesCycle(entry) || FULL_SHA.test(entry.ref), {
+    message: 'an entry without a push target needs a full commit SHA as its ref',
+    path: ['ref'],
+  })
+  // A Windows cell runs the agent without a sandbox, which only a reviewed catalog entry may get.
+  .refine((entry) => pushesCycle(entry) || !entry.windows, {
+    message: 'an entry without a push target runs on Linux only',
+    path: ['windows'],
   });
 export type CatalogEntry = z.infer<typeof CatalogEntry>;
 

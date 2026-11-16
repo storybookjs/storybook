@@ -32,6 +32,7 @@ export const SingleStory: Story = {
 export const SingleStoryWithHiddenStory: Story = {
   parameters: {
     relativeCsfPaths: ['../examples/DocsPageHiddenStory.stories'],
+    chromatic: { disableSnapshot: false },
   },
   play: async ({ canvas }) => {
     await expect(
@@ -48,6 +49,7 @@ export const SingleStoryWithHiddenStory: Story = {
 export const PrimaryStoryLeftOutOfStories: Story = {
   parameters: {
     relativeCsfPaths: ['../examples/DocsPageMountPrimary.stories'],
+    chromatic: { disableSnapshot: false },
   },
   play: async ({ canvas }) => {
     await expect(

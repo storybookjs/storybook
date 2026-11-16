@@ -205,7 +205,7 @@ node ecosystem-qa/qa-plan.ts check ecosystem-qa/plans/11.0.md --window ecosystem
 ```
 
 Run `check` again on this branch, because its catalog is the one the sweep uses.
-The smoke job checks the plan against the window file next to it, so a row that someone deletes or moves by hand fails the plan PR.
+The smoke job checks the plan against the window file next to it, so a row that someone deletes or moves by hand fails the plan PR, and so does a plan without its window file.
 Commit the two files alone, with a message that names no PR or issue number.
 Open the PR against `qa/plans` with the title `Ecosystem QA: Plan for Storybook <line>` and the labels `build` and `qa:skip`, following `.agents/skills/pr/SKILL.md` for the template.
 The body holds:

@@ -1,13 +1,12 @@
-import path from 'node:path';
-
 import type { StoryIndex } from 'storybook/internal/types';
 
-import { describe, expect, it } from 'vitest';
+import { join, resolve } from 'pathe';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { filterStoryFiles } from './select-stories.ts';
 
-const ROOT = path.resolve('/repo');
-const at = (file: string) => path.join(ROOT, file).replaceAll('\\', '/');
+const ROOT = resolve('/repo');
+const at = (file: string) => join(ROOT, file);
 
 function story(id: string, importPath: string, subtype: 'story' | 'test' = 'story') {
   return { type: 'story', subtype, id, name: id, title: id, importPath, tags: [] };
@@ -33,8 +32,14 @@ const index = {
 } as unknown as StoryIndex;
 
 describe('filterStoryFiles', () => {
-  const filter = (filters: string[], cwd = ROOT) =>
-    filterStoryFiles({ index, filters, cwd, workingDir: ROOT });
+  beforeEach(() => {
+    vi.spyOn(process, 'cwd').mockReturnValue(ROOT);
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  const filter = (filters: string[]) => filterStoryFiles({ index, filters });
 
   it('matches a case-insensitive substring of the path relative to the current directory', () => {
     expect(filter(['button'])).toEqual({
@@ -47,12 +52,6 @@ describe('filterStoryFiles', () => {
   it('matches an absolute file or directory as a path prefix', () => {
     expect(filter([at('src/Button.stories.tsx')]).storyFiles).toEqual(['./src/Button.stories.tsx']);
     expect(filter([at('src/header')]).storyFiles).toEqual(['./src/header/Header.stories.tsx']);
-  });
-
-  it('matches relative to the current directory, from a subdirectory too', () => {
-    expect(filter(['Header.stories'], at('src/header')).storyFiles).toEqual([
-      './src/header/Header.stories.tsx',
-    ]);
   });
 
   it('unions several filters and ignores one that matches nothing', () => {

@@ -54,6 +54,12 @@ describe('schemaLines', () => {
     ]);
   });
 
+  it('names the types of a union of plain types, without option lines', () => {
+    expect(
+      render({ anyOf: [{ type: 'boolean' }, { type: 'string' }], description: 'A ref.' })
+    ).toEqual(['- `--stories` (boolean or string): A ref.']);
+  });
+
   it('numbers union variants and carries their descriptions', () => {
     expect(
       render({

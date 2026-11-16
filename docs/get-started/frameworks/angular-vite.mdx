@@ -110,12 +110,12 @@ JSDoc comments above your components, and above their `@Input` and `@Output` mem
 
 Two engines can read them, and which one you get depends on a single feature flag:
 
-|                       | [`docgenServer`](../../api/main-config/main-config-features.mdx#docgenserver) on, the default | flag off                             |
-| --------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------ |
-| Reads your components | on the Storybook server, from your TypeScript sources                                         | in the browser, from Compodoc output |
-| Compodoc              | never runs, and is not a dependency                                                           | runs on demand                       |
-| `documentation.json`  | never generated, never read                                                                   | generated and read                   |
-| Powers                | controls, autodocs, code snippets, and the [components manifest](../../ai/manifests.mdx)      | controls and autodocs                |
+|                       | [`docgenServer`](../../api/main-config/main-config-features.mdx#docgenserver) on, the default      | flag off                             |
+| --------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------ |
+| Reads your components | on the Storybook server, from your TypeScript sources                                              | in the browser, from Compodoc output |
+| Compodoc              | never runs, and is not a dependency                                                                | runs on demand                       |
+| `documentation.json`  | never generated, never read                                                                        | generated and read                   |
+| Powers                | controls, autodocs, code snippets, and the [components manifest](../../ai/reference/manifests.mdx) | controls and autodocs                |
 
 Storybook 11 enables `docgenServer` for `@storybook/angular-vite`, so server-side extraction is what you get unless you turn it off. The Webpack-based [`@storybook/angular`](./angular.mdx) is unaffected and always uses Compodoc.
 

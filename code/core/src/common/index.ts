@@ -36,6 +36,13 @@ export * from './utils/normalize-stories.ts';
 export * from './utils/paths.ts';
 export * from './utils/read-dependency-manifest.ts';
 export * from './utils/readTemplate.ts';
+export {
+  type ExportOrigin,
+  type ExportReader,
+  followBinding,
+  followExport,
+} from './utils/follow-export.ts';
+export * from './utils/component-path-from-story.ts';
 export * from './utils/resolve-meta-component.ts';
 export * from './utils/subcomponents.ts';
 export * from './utils/remove.ts';

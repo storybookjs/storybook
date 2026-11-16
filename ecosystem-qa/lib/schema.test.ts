@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 
 import { CHECK_IDS } from '../checks.ts';
-import { AgentOutput, agentOutput, CheckResult } from './schema.ts';
+import { loaded } from './fixtures.ts';
+import { AgentOutput, agentOutput, CheckResult, RunResultFile } from './schema.ts';
 
 const answer = (storybookVersionBefore: unknown) => ({
   storybookVersionBefore,
@@ -123,6 +124,19 @@ describe('agentOutput', () => {
     it('leaves a static fail without a finding and a static check without a note alone', () => {
       expect(problems(failing('core.dev-server'))).toEqual([]);
     });
+  });
+});
+
+describe('RunResultFile', () => {
+  const record = (usd: number | null) => {
+    const { result } = loaded('linux', 'claude', []);
+    return RunResultFile.safeParse({ ...result, usage: { ...result.usage, usd } }).success;
+  };
+
+  it('takes a run without a price, and rejects a price below zero', () => {
+    expect(record(1.25)).toBe(true);
+    expect(record(null)).toBe(true);
+    expect(record(-0.01)).toBe(false);
   });
 });
 

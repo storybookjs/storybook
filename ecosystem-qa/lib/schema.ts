@@ -269,7 +269,7 @@ export const RunResultFile = z.strictObject({
     outputTokens: z.number(),
     cacheReadTokens: z.number().optional(),
     cacheWriteTokens: z.number().optional(),
-    usd: z.number().nullable(),
+    usd: z.number().nonnegative().nullable(),
     model: ModelId,
     priceSource: z.enum(['agent', 'table']),
   }),

@@ -310,7 +310,7 @@ A dispatch by hand runs one batch of a plan with `plan` set to its file name, su
 It starts the next batch only when `chain` is set.
 `version` is the version of the plan's header when it is empty, and must be on the plan's line when it is not; a sweep without a plan needs it.
 A run with a plan runs the tier `gate` and the checks of its batch, on Linux, with `repo`, `os` and `tier` left out.
-When `plan_hash` is given and the plan at that commit has another hash or is gone, the plan job ends green with a notice and runs nothing, and the `track` job adds a comment to the discussion of the plan as it was that its chain ends at that batch.
+When `plan_hash` is given and the plan at that commit has another hash or is gone, the plan job ends green with a notice and runs nothing, and the `track` job adds a comment to the discussion of the plan as it was, which says that the run ran nothing for that batch and what it found.
 A dispatched batch of a plan has a concurrency group of its plan, batch and `from_runs`, and the batch 1 that a push starts has a group of its commit, so a chained batch never waits behind the batch that started it.
 
 The `track` job runs `track.ts` for every run with a plan that was not cancelled, also when the collect failed, except a collect of earlier runs that failed, which has nothing to report.
@@ -318,12 +318,33 @@ The first batch of a plan creates the discussion `[SB 11 QA] Dynamic sweep 11.0.
 Each batch adds one comment, for its batch, version and source runs: the runs planned, finished and without a result, the dollars of each, the checks by state, and one line for each finding.
 Collecting the same runs again edits that comment and starts no batch.
 The spend of a plan is the sum of the dollars in the comments that the workflow wrote, and a run without a result or without a price counts as the flat price `USD_PER_RUN` of `lib/qa-plan.ts`.
-A run is counted once however often it is reported, and a job that leaves no result is counted once for each attempt of its workflow run, so a "Re-run failed jobs" that loses it again costs one more flat price.
+A run is counted once however often it is reported, and a job that leaves no result is counted once for each attempt of its workflow run that reports it, so a "Re-run failed jobs" that loses it again costs one more flat price.
+Two cases count too much, and stay so because they err on the safe side: a job lost in two runs that are collected together is priced a third time, and a re-run of only the `file` or `track` job prices each lost job once more.
+Each batch comment also carries, in a hidden line, the spend of the plan that it was written with.
 A changed plan has another hash, so it starts a cycle of its own with a new discussion and a spend of zero.
+
 The chain stops after the last batch, when a run does not chain, when a batch left no result, and when the spend reaches the cap.
-It also stops whenever the record of the spend may be short: when a comment that the workflow wrote was edited by anyone else or reports no batch of the plan, when the discussion holds no report of an earlier batch, such as after a comment was deleted, a batch was skipped, or the first line of the discussion was edited so that the next batch started a new one, and when it holds a report of a later batch or an earlier report of the same batch started the next one already.
+It also stops when the discussion holds a report of a later batch, or when an earlier report of the same batch started the next one already.
+And it stops, and the comment says "at least" of the spend, when the record of the spend is short or may be:
+
+- A comment that the workflow wrote was edited by anyone else, or reports no batch of the plan.
+- The discussion holds no report of an earlier batch, such as after a comment was deleted or a batch was skipped.
+- The comments of the workflow hold fewer runs than the spend that one of them was written with, which is what a deleted comment leaves.
+- The plan has more than one discussion, for example after its first line was edited, the next batch started a new one, and the line was put back.
+- The first report of a batch comes from a later attempt of its workflow run, whose earlier attempts reported nothing because they were cancelled or their `track` job failed before it wrote.
+
+A deleted comment stays unseen when no comment that is left was written after it, such as the newest comment, or the only comment of a batch that is deleted before another run of that batch reports.
+The attempts of a run that another run collects with `from_runs` are not known, so they are not checked.
 The cap is checked before each next batch starts, so the spend of a plan can pass it by at most one batch.
-The comment says what comes next on a line `Next:`, and a report of the same batch again keeps that line as the first report wrote it.
+
+The comment says what comes next on a line `Next:`.
+When the chain stops before the last batch, the line below it prints the dispatch that starts the next batch by hand, such as `gh workflow run ecosystem-qa.yml --ref qa/plans -f plan=11.0.md -f batch=2 -f plan_hash=e526520a70c0 -f chain=true -f version=11.0.0-beta.3 -f engines=claude`.
+Run it once the reason is gone: after the jobs of a batch that left no result were run again and finished, after a dispatch that failed, after the cap was raised, or once you know what the record of the spend is short of.
+The batch it starts reports and chains like any other, and stops again for a reason that stays, such as a second discussion or a comment that is gone.
+A report of the same batch again keeps both lines as the first report wrote them, so a re-run never starts a batch itself.
+The `track` job starts the next batch before it writes the comment, so the comment says `Batch 2 is started.` only after the dispatch went through, and otherwise that the dispatch failed.
+The `track` jobs of one plan share a concurrency group of the plan's hash, so two reports never create two discussions or start the next batch twice.
+A third report that queues while one waits cancels the waiting one, and its run then reports nothing.
 The workflow never writes over a comment that someone else edited, so the `track` job of that batch fails and names the comment.
 Edit nothing the workflow wrote in the discussion, and write notes as comments of your own.
 The `track` job uses the job token with `discussions: write` and `actions: write` to start the next batch, and no environment.
@@ -331,6 +352,7 @@ The `track` job uses the job token with `discussions: write` and `actions: write
 A chained batch is always a dry run, so a person files each batch by hand with the dispatch that its comment prints.
 That dispatch carries the plan's hash, so it runs nothing once the plan changed.
 In a run that files, the `file` job runs after the `track` job, and then edits the comment of the batch so that each finding names its issue.
+Its last line says `Filed.` only when the file step succeeded, and otherwise that the filing did not finish.
 
 To see what a batch would write without writing it, run `track.ts --print` on its results, here the fake run and collect of the fixture plan above:
 

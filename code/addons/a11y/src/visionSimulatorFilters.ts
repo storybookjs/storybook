@@ -8,13 +8,13 @@ export const filters: Record<string, { label: string; filter: string; descriptio
     label: 'Deuteranopia',
     filter: 'url("#storybook-a11y-vision-deuteranopia")',
     // Includes deuteranomaly, whose severity ranges up to deuteranopia.
-    description: 'Up to 3.26% of users\nMachado et al. 2009',
+    description: '3.26% of users\nMachado et al. 2009',
   },
   protanopia: {
     label: 'Protanopia',
     filter: 'url("#storybook-a11y-vision-protanopia")',
     // Includes protanomaly, whose severity ranges up to protanopia.
-    description: 'Up to 1.25% of users\nMachado et al. 2009',
+    description: '1.25% of users\nMachado et al. 2009',
   },
   tritanomaly: {
     label: 'Tritanomaly (inaccurate)',
@@ -29,7 +29,7 @@ export const filters: Record<string, { label: string; filter: string; descriptio
   achromatopsia: {
     label: 'Achromatopsia',
     filter: 'url("#storybook-a11y-vision-achromatopsia")',
-    description: '0.0001% of users\nNguyen & Brown 2017',
+    description: '0.0001% of users',
   },
   grayscale: {
     label: 'Grayscale',

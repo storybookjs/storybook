@@ -10,34 +10,25 @@ import { pipeline } from 'node:stream';
 
 import { z } from 'zod';
 
-// The only calls an agent run needs from the provider. Anything else, a files upload for example,
-// would let the sandbox use the key for more than the run.
-const FORWARDED = new Set(['POST /v1/messages', 'POST /v1/messages/count_tokens']);
+const AGENT_RUN_CALLS = new Set(['POST /v1/messages', 'POST /v1/messages/count_tokens']);
 
-// What the sandbox gets as its key. It must not look like a key, so the redaction of the run
-// record leaves it alone and a leak search finds only the real one.
 export const PLACEHOLDER_KEY = 'key-proxy-adds-the-real-key';
 
 export interface KeyProxyOptions {
-  // The address to listen on, the gateway of the sandbox's network.
   host: string;
-  // The one address a request may come from, the sandbox container's.
-  caller: string;
-  // The provider, as an origin such as `https://api.anthropic.com`.
-  upstream: string;
+  callerAddress: string;
+  upstreamOrigin: string;
   apiKey: string;
   log: (line: string) => void;
 }
 
 export interface KeyProxy {
   server: Server;
-  // What the agent gets as its base URL.
-  url: string;
+  baseUrl: string;
 }
 
-// Forward the agent's requests to the provider with the real key in place of the placeholder.
 export const startKeyProxy = async (options: KeyProxyOptions): Promise<KeyProxy> => {
-  const upstream = new URL(options.upstream);
+  const upstream = new URL(options.upstreamOrigin);
   const send = upstream.protocol === 'https:' ? httpsRequest : httpRequest;
   const server = createServer((req, res) => {
     // A request line may name a host of its own, as `http://elsewhere/v1/messages` or
@@ -48,11 +39,11 @@ export const startKeyProxy = async (options: KeyProxyOptions): Promise<KeyProxy>
       options.log(`Key proxy: ${req.method} ${pathname} ${status}`);
       return res.writeHead(status, headers);
     };
-    if (req.socket.remoteAddress !== options.caller) {
+    if (req.socket.remoteAddress !== options.callerAddress) {
       respond(403).end();
       return;
     }
-    if (!target || !FORWARDED.has(`${req.method} ${pathname}`)) {
+    if (!target || !AGENT_RUN_CALLS.has(`${req.method} ${pathname}`)) {
       respond(404).end();
       return;
     }
@@ -82,7 +73,7 @@ export const startKeyProxy = async (options: KeyProxyOptions): Promise<KeyProxy>
     server.listen(0, options.host, listening);
   });
   const { port } = server.address() as AddressInfo;
-  return { server, url: `http://${options.host}:${port}` };
+  return { server, baseUrl: `http://${options.host}:${port}` };
 };
 
 const Inspected = z
@@ -95,7 +86,6 @@ const Inspected = z
   )
   .length(1);
 
-// The gateway and the container's address on its one network, from `docker inspect <container>`.
 export const sandboxAddresses = (inspectJson: string): { gateway: string; container: string } => {
   const [container] = Inspected.parse(JSON.parse(inspectJson));
   const networks = Object.values(container!.NetworkSettings.Networks);

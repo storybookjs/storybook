@@ -5,6 +5,7 @@ import type { AddressInfo } from 'node:net';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { PLACEHOLDER_KEY, sandboxAddresses, startKeyProxy } from './key-proxy.ts';
+import { redactSecrets } from './redact.ts';
 
 const REAL_KEY = 'sk-ant-real-key-0123456789';
 
@@ -32,22 +33,21 @@ const proxyTo = async (origin: string, caller = '127.0.0.1') => {
   const log: string[] = [];
   const proxy = await startKeyProxy({
     host: '127.0.0.1',
-    caller,
-    upstream: origin,
+    callerAddress: caller,
+    upstreamOrigin: origin,
     apiKey: REAL_KEY,
     log: (line) => log.push(line),
   });
   closers.push(() => proxy.server.close());
-  return { url: proxy.url, log };
+  return { url: proxy.baseUrl, log };
 };
 
-// `target` goes on the request line as it is, the way a hostile caller could write it.
-const send = (url: string, method = 'POST', target?: string) => {
+const send = (url: string, method = 'POST', requestTarget?: string) => {
   const { hostname, port, pathname, search } = new URL(url);
   const req = request({
     hostname,
     port,
-    path: target ?? `${pathname}${search}`,
+    path: requestTarget ?? `${pathname}${search}`,
     method,
     headers: { 'x-api-key': PLACEHOLDER_KEY, 'content-type': 'application/json' },
   });
@@ -55,8 +55,8 @@ const send = (url: string, method = 'POST', target?: string) => {
   return req;
 };
 
-const answerOf = async (url: string, method?: string, target?: string) => {
-  const [res] = (await once(send(url, method, target), 'response')) as [IncomingMessage];
+const answerOf = async (url: string, method?: string, requestTarget?: string) => {
+  const [res] = (await once(send(url, method, requestTarget), 'response')) as [IncomingMessage];
   let body = '';
   for await (const chunk of res) {
     body += chunk;
@@ -217,6 +217,12 @@ describe('startKeyProxy against a hostile caller', () => {
 
     expect((await answerOf(url, 'POST', 'http://[')).status).toBe(404);
     expect((await answerOf(`${url}/v1/messages`)).status).toBe(200);
+  });
+});
+
+describe('PLACEHOLDER_KEY', () => {
+  it('survives the redaction of the run record, so a leak search finds only the real key', () => {
+    expect(redactSecrets(`ANTHROPIC_API_KEY=${PLACEHOLDER_KEY}`)).toContain(PLACEHOLDER_KEY);
   });
 });
 

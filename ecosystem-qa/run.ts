@@ -506,13 +506,16 @@ const runSandcastle = async (
       );
       keyProxy = await startKeyProxy({
         host: addresses.gateway,
-        caller: addresses.container,
-        upstream: 'https://api.anthropic.com',
+        callerAddress: addresses.container,
+        upstreamOrigin: 'https://api.anthropic.com',
         apiKey: credential.value,
         log: note,
       });
       keyProxy.server.unref();
-      agentCredential = { ANTHROPIC_BASE_URL: keyProxy.url, ANTHROPIC_API_KEY: PLACEHOLDER_KEY };
+      agentCredential = {
+        ANTHROPIC_BASE_URL: keyProxy.baseUrl,
+        ANTHROPIC_API_KEY: PLACEHOLDER_KEY,
+      };
       const { stdout } = await within(60, 'Reading the sandbox environment', sandbox.exec('env'));
       if (stdout.includes(credential.value)) {
         throw new Error('The sandbox holds the provider key, so the run stops here.');

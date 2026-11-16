@@ -126,10 +126,8 @@ jobs:
           node ecosystem-qa/file.ts --proposals ecosystem-qa/results/proposals.json
           --repo "$GITHUB_REPOSITORY" --dry
 
-  # The key proxy listens on the gateway of Docker's default bridge, so the sandbox must reach that
-  # address. This job runs where the agent job runs: on the same runner image and without the runner
-  # hardening step, which the smoke job keeps. Every container on the default bridge takes the
-  # sandbox's way to the gateway, so a small curl image stands in for the sandbox image.
+  # Runs like the agent job, on ubuntu-latest and without the hardening step of the smoke job, so
+  # that its call over Docker's default bridge holds for the agent's sandbox.
   key-proxy:
     name: Reach the key proxy from the sandbox
     if: ${{ github.event_name == 'pull_request' }}
@@ -165,7 +163,7 @@ jobs:
             import { promisify } from "node:util";
             import { PLACEHOLDER_KEY, sandboxAddresses, startKeyProxy } from "./ecosystem-qa/lib/key-proxy.ts";
 
-            // Asynchronous, because the proxy has to answer from this same process meanwhile.
+            // A synchronous exec would block the proxy, which answers from this same process.
             const run = async (command, ...args) => (await promisify(execFile)(command, args)).stdout.trim();
             const docker = (...args) => run("docker", ...args);
             const key = "stand-in-key";
@@ -180,17 +178,17 @@ jobs:
               console.log(`Sandbox ${addresses.container}, gateway ${addresses.gateway}`);
               const proxy = await startKeyProxy({
                 host: addresses.gateway,
-                caller: addresses.container,
-                upstream: `http://127.0.0.1:${provider.address().port}`,
+                callerAddress: addresses.container,
+                upstreamOrigin: `http://127.0.0.1:${provider.address().port}`,
                 apiKey: key,
                 log: console.log,
               });
               const curl = ["curl", "-sS", "--max-time", "10", "-X", "POST", "-H", `x-api-key: ${PLACEHOLDER_KEY}`, "-w", " %{http_code}"];
               const answers = [
-                await docker("exec", container, ...curl, `${proxy.url}/v1/messages?beta=true`),
-                await docker("exec", container, ...curl, `${proxy.url}/v1/files`),
-                await docker("exec", container, ...curl, "--path-as-is", `${proxy.url}//example.com/v1/messages`),
-                await run(...curl, `${proxy.url}/v1/messages`),
+                await docker("exec", container, ...curl, `${proxy.baseUrl}/v1/messages?beta=true`),
+                await docker("exec", container, ...curl, `${proxy.baseUrl}/v1/files`),
+                await docker("exec", container, ...curl, "--path-as-is", `${proxy.baseUrl}//example.com/v1/messages`),
+                await run(...curl, `${proxy.baseUrl}/v1/messages`),
               ];
               console.log(answers.join("\n"));
               deepStrictEqual(answers, ["the real key 200", "404", "404", "403"]);

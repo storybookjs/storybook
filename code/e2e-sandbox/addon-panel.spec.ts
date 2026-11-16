@@ -148,9 +148,13 @@ test.describe('addon panel', () => {
     const sbPage = new SbPage(page, expect);
     const codeTab = page.getByRole('tab', { name: 'Code' });
 
-    await sbPage.deepLinkToStory(storybookUrl, 'addons/docs/codePanel', 'custom-code');
+    await sbPage.deepLinkToStory(storybookUrl, 'addons/docs/codePanel', 'default');
     await expect(codeTab).toBeVisible();
     await sbPage.viewAddonPanel('Code');
+    await expect(sbPage.panelContent()).toContainText('Button');
+    await expect(sbPage.panelContent()).not.toContainText('Custom code');
+
+    await sbPage.navigateToStory('addons/docs/codePanel', 'custom-code');
     await expect(sbPage.panelContent()).toContainText('Custom code');
 
     await sbPage.navigateToStory('addons/docs/codePanel', 'without-panel');

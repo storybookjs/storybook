@@ -43,6 +43,7 @@ const createCheckOptions = (packageManager: JsPackageManager) => ({
   mainConfig: { stories: [] },
   mainConfigPath: '.storybook/main.ts',
   configDir: '.storybook',
+  storiesPaths: [],
 });
 
 describe('dependenciesVersions blocker', () => {

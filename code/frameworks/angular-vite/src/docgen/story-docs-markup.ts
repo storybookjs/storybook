@@ -660,7 +660,8 @@ const declaredValue = (shape: StoryShape, node: Node | undefined): Node | undefi
   }
   const declaration = binding.node;
   if (declaration.type === 'VariableDeclarator') {
-    return declaration.init ?? node;
+    // A destructured name holds only part of its initializer.
+    return declaration.id.type === 'Identifier' ? (declaration.init ?? node) : node;
   }
   return declaration.type === 'FunctionDeclaration' ? declaration : node;
 };

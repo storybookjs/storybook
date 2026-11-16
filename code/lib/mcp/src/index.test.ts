@@ -74,6 +74,29 @@ describe('createStorybookMcpHandler', () => {
     }
   });
 
+  it.each([
+    ['a null body', 'null', -32600],
+    ['a message without jsonrpc', JSON.stringify({ id: 1, method: 'tools/list' }), -32600],
+    ['a batch', JSON.stringify([{ jsonrpc: '2.0', id: 1, method: 'tools/list' }]), -32600],
+    ['an unparseable body', '{bad', -32700],
+  ])('should answer %s with a 400 JSON-RPC error', async (_, body, code) => {
+    const handler = await createStorybookMcpHandler();
+
+    const response = await handler(
+      new Request('http://localhost/mcp', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          accept: 'application/json, text/event-stream',
+        },
+        body,
+      })
+    );
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({ jsonrpc: '2.0', error: { code } });
+  });
+
   it('should handle initialize and list tools', async () => {
     const handler = await createStorybookMcpHandler();
     await setupClient(handler);

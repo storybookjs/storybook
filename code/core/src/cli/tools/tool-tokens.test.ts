@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { parsePort, parseToolsTokens } from './tool-tokens.ts';
+import { keepTypedText, parsePort, parseToolsTokens } from './tool-tokens.ts';
 
 describe('parseToolsTokens', () => {
   it('parses --key value pairs with JSON coercion', () => {
@@ -13,6 +13,7 @@ describe('parseToolsTokens', () => {
       output: undefined,
       attach: undefined,
       args: { maxDistance: 2, name: 'button' },
+      flagText: { maxDistance: '2', name: 'button' },
       positionals: [],
     });
   });
@@ -102,6 +103,51 @@ describe('parseToolsTokens', () => {
     expect(parseToolsTokens(['--attach=yes'])).toMatchObject({ ok: false });
     expect(parseToolsTokens(['--no-attach=yes'])).toMatchObject({ ok: false });
     expect(parseToolsTokens(['--attach', '--no-attach'])).toMatchObject({ ok: false });
+  });
+});
+
+describe('keepTypedText', () => {
+  const schema = {
+    type: 'object',
+    properties: {
+      since: { type: 'string' },
+      changed: { anyOf: [{ type: 'boolean' }, { type: 'string' }] },
+      files: { type: 'array', items: { type: 'string' } },
+      a11y: { type: 'boolean' },
+      maxDistance: { type: 'number' },
+      stories: { type: 'array', items: { type: 'object' } },
+    },
+  };
+  const args = (tokens: string[]) => {
+    const parsed = parseToolsTokens(tokens);
+    return parsed.ok ? keepTypedText(parsed, schema).args : undefined;
+  };
+
+  it('keeps a value as typed where the argument takes a string, not the JSON type', () => {
+    expect(args(['--since', '1234567'])).toEqual({ since: '1234567' });
+    expect(args(['--changed', '1234e56'])).toEqual({ changed: '1234e56' });
+    expect(args(['--changed=1.0'])).toEqual({ changed: '1.0' });
+    expect(args(['--since', 'null'])).toEqual({ since: 'null' });
+    expect(args(['--files', '2024'])).toEqual({ files: '2024' });
+  });
+
+  it('keeps the JSON value where the argument takes that type', () => {
+    expect(args(['--changed', 'true'])).toEqual({ changed: true });
+    expect(args(['--changed'])).toEqual({ changed: true });
+    expect(args(['--a11y', 'false', '--maxDistance', '2'])).toEqual({
+      a11y: false,
+      maxDistance: 2,
+    });
+    expect(args(['--stories', '[{"storyId":"a"}]', '--files', '["a.tsx"]'])).toEqual({
+      stories: [{ storyId: 'a' }],
+      files: ['a.tsx'],
+    });
+  });
+
+  it('leaves a value that no reading fits to validation, and --input untouched', () => {
+    expect(args(['--a11y', '1'])).toEqual({ a11y: 1 });
+    expect(args(['--input', '{"since":123}'])).toEqual({ since: 123 });
+    expect(args(['--unknown', '5'])).toEqual({ unknown: 5 });
   });
 });
 

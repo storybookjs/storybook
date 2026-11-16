@@ -57,6 +57,7 @@ export interface DocgenPayload {
 /** Component-level summary + docgen for one subcomponent. */
 export interface DocgenSubcomponent {
   name: string;
+  /** The file that declares the subcomponent, or the story file when it does not resolve. */
   path: string;
   description?: string;
   summary?: string;

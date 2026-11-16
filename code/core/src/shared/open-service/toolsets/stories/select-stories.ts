@@ -7,26 +7,22 @@ export type StorySelection = { storyFiles: string[]; storyIds: string[] };
 
 /**
  * Story files matching any filter, the way Vitest matches its file filters against test files: a
- * case-insensitive substring of the path relative to `cwd`, or, for an absolute filter, a path
- * prefix (a file or a directory). A filter that matches nothing is ignored.
+ * case-insensitive substring of the path relative to the current directory, or, for an absolute
+ * filter, a path prefix (a file or a directory). A filter that matches nothing is ignored.
  */
 export function filterStoryFiles({
   index,
   filters,
-  cwd = process.cwd(),
-  workingDir = process.cwd(),
 }: {
   index: StoryIndex;
   filters: string[];
-  /** The directory filters are relative to, as Vitest's `process.cwd()`. */
-  cwd?: string;
-  /** The directory story index import paths are relative to. */
-  workingDir?: string;
 }): StorySelection {
+  // Story index import paths and relative filters are both relative to the current directory.
+  const cwd = process.cwd();
   const byFile = new Map<string, StoryIndexEntry[]>();
   for (const entry of Object.values(index.entries)) {
     if (entry.type === 'story' && !entry.importPath.startsWith('virtual:')) {
-      const file = resolve(workingDir, entry.importPath);
+      const file = resolve(cwd, entry.importPath);
       byFile.set(file, [...(byFile.get(file) ?? []), entry]);
     }
   }

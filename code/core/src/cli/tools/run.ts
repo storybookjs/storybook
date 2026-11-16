@@ -1,6 +1,3 @@
-import { existsSync } from 'node:fs';
-import { resolve, sep } from 'node:path';
-
 import { versions } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
@@ -34,7 +31,9 @@ import {
 } from './help.ts';
 import {
   parsePort,
+  keepTypedText,
   parseToolsTokens,
+  withPositionals,
   type ParsedToolsTokens,
   type ToolsOutputFlags,
 } from './tool-tokens.ts';
@@ -332,11 +331,11 @@ async function dispatchTools(
   const toolPath = `${entry.id} ${toCliMethodName(methodName)}`;
   const commandPath = `npx storybook tools ${toolPath}`;
 
-  const args = withFileArguments(parsed, method.fileArguments);
+  const args = withPositionals(keepTypedText(parsed, method.input), method.positional);
   if (!args.ok) {
     return result({
       exitCode: 1,
-      output: `Unexpected argument \`${args.unexpected}\`. \`${commandPath}\` takes no file arguments: pass tool arguments as \`--key value\` flags (or via \`--input '<object>'\`).`,
+      output: `Unexpected argument \`${args.unexpected}\`. \`${commandPath}\` takes no bare arguments: pass tool arguments as \`--key value\` flags (or via \`--input '<object>'\`).`,
       outcome: { kind: 'intercept', reason: 'invalid-arguments' },
     });
   }
@@ -389,46 +388,6 @@ async function dispatchTools(
   } finally {
     logger.setLogLevel(previousLogLevel);
   }
-}
-
-/**
- * Bare arguments fill the tool's `fileArguments` key, after any `--key` value for it. Every path that
- * exists is resolved against the directory the command runs in: the handler may run in another
- * process, with another working directory.
- */
-function withFileArguments(
-  parsed: Extract<ParsedToolsTokens, { ok: true }>,
-  key: string | undefined
-): { ok: true; args: Record<string, unknown> } | { ok: false; unexpected: string } {
-  if (!key) {
-    return parsed.positionals.length === 0
-      ? { ok: true, args: parsed.args }
-      : { ok: false, unexpected: parsed.positionals[0] };
-  }
-  if (parsed.positionals.length === 0 && parsed.args[key] === undefined) {
-    return { ok: true, args: parsed.args };
-  }
-  const given = parsed.args[key];
-  // Flag values get the same treatment as bare arguments, so `--files a.tsx b.tsx` and
-  // `a.tsx b.tsx` select the same files. Anything that is not a path is left for validation.
-  const files = [
-    ...(given === undefined ? [] : Array.isArray(given) ? given : [given]),
-    ...parsed.positionals,
-  ].map((file) => (typeof file === 'string' ? resolveExisting(file) : file));
-  return { ok: true, args: { ...parsed.args, [key]: files } };
-}
-
-/**
- * A path that exists is resolved against the directory the command runs in, keeping a trailing
- * slash. Any other argument passes as typed: it can only be a pattern, such as a Vitest-style
- * substring filter, which resolving would turn into a path that matches nothing.
- */
-function resolveExisting(file: string): string {
-  if (!existsSync(file)) {
-    return file;
-  }
-  const absolute = resolve(file);
-  return /[\\/]$/.test(file) ? `${absolute}${sep}` : absolute;
 }
 
 function formatUnknownToolsetFromCatalog(

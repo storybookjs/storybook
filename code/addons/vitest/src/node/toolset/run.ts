@@ -170,10 +170,13 @@ export type RunStoryTestsParams = {
   stories?: StoryInput[];
   /** Story-file filters, matched the way Vitest matches its file filters. */
   files?: string[];
-  /** Run the stories `stories changed` lists. */
-  changed?: boolean;
+  /**
+   * Run the stories `stories changed` lists: `true` for the uncommitted changes, or a git ref to
+   * also cover what is committed since it.
+   */
+  changed?: boolean | string;
   /** The `stories.changed` tool, so both commands share one definition of "changed". */
-  getChangedStories?: () => Promise<ChangedStories>;
+  getChangedStories?: (since?: string) => Promise<ChangedStories>;
   a11y?: boolean;
   actor?: string;
   requestEvent?: string;
@@ -201,13 +204,18 @@ export async function runStoryTests({
 }: RunStoryTestsParams): Promise<TestRunOutput> {
   let storyIds: string[] | undefined;
   let selection: TestRunSelection | undefined;
-  let notFoundMessages: string[] = [];
+  const notFoundMessages: string[] = [];
 
   // Each form narrows the selection, as Vitest's file filters, `--changed` and `-t` do together.
   // `undefined` stands for every story.
   // An empty filter list filters nothing, as in Vitest.
   const filters = files?.length ? files : undefined;
   if (stories || filters || changed) {
+    // First, because `stories changed` waits for a story file written a moment ago to be indexed:
+    // the index read after it has that file.
+    // No default: a caller that forgot to wire it must fail, not read as "nothing changed".
+    const since = typeof changed === 'string' ? changed : undefined;
+    const changedStories = changed ? await getChangedStories!(since) : undefined;
     const index = await getIndex();
     let candidates: Set<string> | undefined;
     const narrow = (ids: string[]) => {
@@ -217,36 +225,36 @@ export async function runStoryTests({
 
     if (filters) {
       const matched = filterStoryFiles({ index, filters });
-      selection.files = { filters, storyFiles: matched.storyFiles.length };
-      if (matched.storyFiles.length === 0) {
-        // Vitest: "No test files found, exiting with code 1", or code 0 with `--changed`, which
-        // turns on `passWithNoTests`.
-        return {
-          status: 'no-stories',
-          notFoundMessages: changed
-            ? []
-            : [
-                `No story files found for ${filters.map((file) => `\`${displayPath(file)}\``).join(', ')}.`,
-              ],
-          selection,
-        };
+      selection.files = { filters, storyFileCount: matched.storyFiles.length };
+      // Vitest: "No test files found, exiting with code 1", or code 0 with `--changed`, which
+      // turns on `passWithNoTests`. The ref and the story ids below are still checked.
+      if (matched.storyFiles.length === 0 && !changed) {
+        notFoundMessages.push(
+          `No story files found for ${filters.map((file) => `\`${displayPath(file)}\``).join(', ')}.`
+        );
       }
       narrow(matched.storyIds);
     }
 
-    if (changed) {
-      // No default: a caller that forgot to wire it must fail, not read as "nothing changed".
-      const { storyIds: changedIds, changedConfigFiles, pendingFiles } = await getChangedStories!();
-      selection.changed = { stories: changedIds.length, changedConfigFiles, pendingFiles };
+    if (changedStories) {
+      const { storyIds: changedIds, changedConfigFiles, pendingFiles } = changedStories;
+      selection.changed = {
+        storyCount: changedIds.length,
+        changedConfigFiles,
+        pendingFiles,
+        ...(since === undefined ? {} : { since }),
+      };
       narrow(changedIds);
     }
 
     if (stories) {
-      selection.stories = stories.length;
+      selection.inputStoryCount = stories.length;
       const resolved = findStoryIds(index, stories);
-      notFoundMessages = resolved
-        .filter((story): story is NotFoundStory => !('entry' in story))
-        .map((story) => story.errorMessage);
+      notFoundMessages.push(
+        ...resolved
+          .filter((story): story is NotFoundStory => !('entry' in story))
+          .map((story) => story.errorMessage)
+      );
       narrow(
         resolved
           .filter((story): story is FoundStory => 'entry' in story)
@@ -305,7 +313,7 @@ export async function runStoryTests({
         status: 'completed',
         result: response.result,
         ...(selection ? { selection } : {}),
-        ...(notFoundMessages.length > 0 ? { notFound: notFoundMessages } : {}),
+        ...(notFoundMessages.length > 0 ? { notFoundMessages } : {}),
       };
     }
     case 'error':

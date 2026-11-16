@@ -33,6 +33,8 @@ export const vitestCommonConfig = defineConfig({
   test: {
     passWithNoTests: true,
     clearMocks: true,
+    // Reuse workers across test files. `vitest-setup.ts` undoes what each file leaves behind.
+    isolate: false,
     server: {
       deps: {
         // storybook/test registers its own copy of `@vitest/expect` on `chai`. Vitest loads the same

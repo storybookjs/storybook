@@ -94,7 +94,7 @@ describe('createAsyncQueue', () => {
   });
 });
 
-/** A channel that answers every run request with `sampleResult`, recording the requested ids. */
+// A channel that answers every run request with `sampleResult`, recording the requested ids.
 function respondingChannel() {
   const channel = createMockChannel();
   const requested: unknown[] = [];
@@ -200,7 +200,7 @@ describe('runStoryTests', () => {
     expect(result).toEqual({
       status: 'no-stories',
       notFoundMessages: [expect.stringContaining('No story found for story ID "missing--story"')],
-      selection: { stories: 1 },
+      selection: { inputStoryCount: 1 },
     });
     expect(requested).toEqual([]);
   });
@@ -217,7 +217,7 @@ describe('runStoryTests', () => {
     expect(requested).toEqual([['button--primary']]);
     expect(result).toMatchObject({
       status: 'completed',
-      notFound: [expect.stringContaining('No story found for story ID "missing--story"')],
+      notFoundMessages: [expect.stringContaining('No story found for story ID "missing--story"')],
     });
   });
 
@@ -229,7 +229,7 @@ describe('runStoryTests', () => {
     expect(result).toEqual({
       status: 'no-stories',
       notFoundMessages: [],
-      selection: { stories: 0 },
+      selection: { inputStoryCount: 0 },
     });
     expect(requested).toEqual([]);
   });
@@ -255,7 +255,7 @@ describe('runStoryTests', () => {
     expect(requested).toEqual([['button--primary']]);
     expect(result).toMatchObject({
       status: 'completed',
-      selection: { files: { filters: ['button'], storyFiles: 1 }, storyCount: 1 },
+      selection: { files: { filters: ['button'], storyFileCount: 1 }, storyCount: 1 },
     });
   });
 
@@ -271,7 +271,7 @@ describe('runStoryTests', () => {
     expect(result).toEqual({
       status: 'no-stories',
       notFoundMessages: ['No story files found for `src/Button.tsx`.'],
-      selection: { files: { filters: ['src/Button.tsx'], storyFiles: 0 } },
+      selection: { files: { filters: ['src/Button.tsx'], storyFileCount: 0 } },
     });
     expect(requested).toEqual([]);
   });
@@ -303,8 +303,35 @@ describe('runStoryTests', () => {
       expect(result).toMatchObject({
         status: 'completed',
         selection: {
-          changed: { stories: 1, changedConfigFiles: ['.storybook/preview.ts'], pendingFiles: [] },
+          changed: {
+            storyCount: 1,
+            changedConfigFiles: ['.storybook/preview.ts'],
+            pendingFiles: [],
+          },
           storyCount: 1,
+        },
+      });
+    });
+
+    it('asks for the changes since a ref, and records the ref', async () => {
+      const { channel } = respondingChannel();
+      const getChangedStories = vi.fn(async () => ({
+        storyIds: ['button--primary'],
+        changedConfigFiles: [],
+        pendingFiles: [],
+      }));
+
+      const result = await runStoryTests({
+        channel,
+        getIndex: async () => index,
+        changed: 'next',
+        getChangedStories,
+      });
+
+      expect(getChangedStories).toHaveBeenCalledExactlyOnceWith('next');
+      expect(result).toMatchObject({
+        selection: {
+          changed: { storyCount: 1, changedConfigFiles: [], pendingFiles: [], since: 'next' },
         },
       });
     });
@@ -322,7 +349,7 @@ describe('runStoryTests', () => {
       expect(result).toEqual({
         status: 'no-stories',
         notFoundMessages: [],
-        selection: { changed: { stories: 0, changedConfigFiles: [], pendingFiles: [] } },
+        selection: { changed: { storyCount: 0, changedConfigFiles: [], pendingFiles: [] } },
       });
       expect(requested).toEqual([]);
     });
@@ -362,6 +389,38 @@ describe('runStoryTests', () => {
       });
 
       expect(result).toMatchObject({ status: 'no-stories', notFoundMessages: [] });
+      expect(requested).toEqual([]);
+    });
+
+    it('still checks the ref and the story ids when no story file matches', async () => {
+      const { channel, requested } = respondingChannel();
+      const unknownRef = new Error('`nope` is not a known git ref.');
+
+      await expect(
+        runStoryTests({
+          channel,
+          getIndex: async () => index,
+          files: ['src/Button.tsx'],
+          changed: 'nope',
+          getChangedStories: async () => {
+            throw unknownRef;
+          },
+        })
+      ).rejects.toBe(unknownRef);
+
+      const result = await runStoryTests({
+        channel,
+        getIndex: async () => index,
+        files: ['src/Button.tsx'],
+        changed: true,
+        stories: [{ storyId: 'missing--story' }],
+        getChangedStories: async () => ({ storyIds: [], changedConfigFiles: [], pendingFiles: [] }),
+      });
+
+      expect(result).toMatchObject({
+        status: 'no-stories',
+        notFoundMessages: ['No story found for story ID "missing--story"'],
+      });
       expect(requested).toEqual([]);
     });
   });

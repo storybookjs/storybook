@@ -112,12 +112,23 @@ const short = (command: string) => (command.length > 160 ? `${command.slice(0, 1
 // nothing.
 // Below 15% of its memory in what is available and what is left of the swap, the machine is
 // about a minute away from that. A sandbox that is merely full leaves less than that on a machine
-// without swap, so the machine also has to have lost part of the share the sandbox was given.
-const machineIsShort = (sample: HostSample): boolean =>
-  sample.container !== undefined &&
-  sample.memTotalMb > 0 &&
-  sample.memAvailableMb + sample.swapFreeMb < sample.memTotalMb * 0.15 &&
-  sample.memAvailableMb + sample.container.memUsedMb < sample.container.memLimitMb;
+// without swap, so what the machine holds outside the sandbox also has to be more than the share
+// the sandbox was not given. The sandbox has no swap, so swap in use is memory held outside it.
+const machineIsShort = (sample: HostSample): boolean => {
+  const sandbox = sample.container;
+  if (!sandbox || sample.memTotalMb <= 0) {
+    return false;
+  }
+  const outsideMb =
+    sample.memTotalMb -
+    sample.memAvailableMb -
+    sandbox.memUsedMb +
+    (sample.swapTotalMb - sample.swapFreeMb);
+  return (
+    sample.memAvailableMb + sample.swapFreeMb < sample.memTotalMb * 0.15 &&
+    outsideMb > sample.memTotalMb - sandbox.memLimitMb
+  );
+};
 
 // End the command that holds the most memory once a sandbox at its memory limit has stalled in two
 // readings in a row, or at once when the machine itself is about to run out.

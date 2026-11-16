@@ -247,6 +247,30 @@ describe('memoryGuard', () => {
     });
   });
 
+  it('ends the heaviest command when the sandbox is nearly full and the rest of the machine sits in swap', async () => {
+    const { guard, kills } = guardWith();
+
+    await guard(
+      {
+        ...reading(5),
+        memTotalMb: 15_983,
+        memAvailableMb: 300,
+        swapTotalMb: 3072,
+        swapFreeMb: 100,
+        container: {
+          memUsedMb: 13_400,
+          memLimitMb: 13_585,
+          cpuPercent: 900,
+          pids: 263,
+          stalledNowPercent: 5,
+        },
+      },
+      'sandbox'
+    );
+
+    expect(kills()).toHaveLength(1);
+  });
+
   it('leaves a machine without swap alone when the sandbox is merely full', async () => {
     const { guard, kills } = guardWith();
 

@@ -149,7 +149,8 @@ It does nothing where the kernel keeps no account of waiting, which is the case 
 The limit of the sandbox does not cover what the machine holds outside it.
 On a GitHub runner the agent of the `step-security/harden-runner` step, a root process named `agent`, grew from 170 MB by about a gigabyte a minute while a project's Storybook tests ran in Vitest browser mode in the sandbox, to 9 GB in two real runs, and a runner that runs out of memory and swap stops answering.
 That is why the job that runs the agent has no such step: without it the same tests leave the host 10 GB and take 269 seconds in place of 458.
-Whatever else may hold memory outside the sandbox, the runner also ends the command that holds the most memory in the sandbox, at once, when what the machine has available and what is left of its swap are together less than 15% of its memory.
+Whatever else may hold memory outside the sandbox, the runner also ends the command that holds the most memory in the sandbox, under the same rules and at once, when what the machine has available and what is left of its swap are together less than 15% of its memory.
+It does so only when what the machine holds outside the sandbox, in memory and in swap, is more than the share the sandbox was not given, so that a sandbox that is merely full on a machine without swap is left alone.
 The agent sees that command end as one the kernel ended, and `evidence/memory-guard.log` names it.
 It prints a reading to the job log every twenty minutes, and on a GitHub runner it puts a warning on the page of the run the first time the machine runs short.
 None of this explains a runner that stops answering: such a job hands over no log, no artifact and no warning, because the runner sends them only when a step or the job ends.

@@ -438,6 +438,8 @@ export const Search = React.memo<SearchProps>(function Search({
           ref: inputRef,
           required: true,
           type: 'search',
+          role: 'combobox',
+          'aria-expanded': isOpen,
           placeholder: inputPlaceholder,
           onFocus: () => {
             openMenu();
@@ -471,7 +473,18 @@ export const Search = React.memo<SearchProps>(function Search({
             <ScreenReaderLabel {...labelProps}>Search for components</ScreenReaderLabel>
             <SearchBar ref={searchLandmarkRef} {...landmarkProps}>
               <SearchField
-                {...getRootProps({ refKey: '' }, { suppressRefError: true })}
+                {...getRootProps(
+                  {
+                    refKey: '',
+                    // ARIA 1.2 puts the combobox role on the input, not on this wrapper.
+                    role: undefined,
+                    'aria-expanded': undefined,
+                    'aria-haspopup': undefined,
+                    'aria-owns': undefined,
+                    'aria-labelledby': undefined,
+                  },
+                  { suppressRefError: true }
+                )}
                 isMobile={isMobile}
                 className="search-field"
               >

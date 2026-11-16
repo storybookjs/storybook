@@ -62,14 +62,14 @@ it('resolves a member expression through a spread that overrides the property', 
   ).toEqual({
     componentPath: join(fixtures, 'svelte-csf/Other.svelte'),
     exportName: 'default',
-    name: 'Select',
+    name: 'Other',
   });
 });
 
-it('declines a member expression an unreadable spread may replace', async () => {
+it('reports a member expression an unreadable spread may replace', async () => {
   await expect(
     resolveStoryComponent(entryFor('svelte-csf/member-expression-opaque-spread.stories.svelte'))
-  ).resolves.toBeUndefined();
+  ).rejects.toThrow('Cannot resolve the component `Input.Select`');
 });
 
 it('declines a member expression whose binding an unrelated export shadows', async () => {

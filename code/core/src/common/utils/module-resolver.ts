@@ -1,4 +1,6 @@
 // `rolldown/experimental` may change in a minor release, so a lint rule keeps its import here.
+import * as find from 'empathic/find';
+import { dirname } from 'pathe';
 import { ResolverFactory } from 'rolldown/experimental';
 
 /**
@@ -38,28 +40,55 @@ export interface ModuleResolver {
 export const defaultResolveConditionNames = ['storybook', 'import', 'module', 'default'];
 
 export function createModuleResolver(options: ModuleResolverOptions = {}): ModuleResolver {
-  const factory = new ResolverFactory({
-    ...options,
-    conditionNames: options.conditionNames ?? defaultResolveConditionNames,
-  });
+  const create = (tsconfig: ModuleResolverOptions['tsconfig']) =>
+    new ResolverFactory({
+      ...options,
+      tsconfig,
+      conditionNames: options.conditionNames ?? defaultResolveConditionNames,
+    });
+  const factory = create(options.tsconfig);
 
-  const unwrap = (
-    result: { path?: string | null; error?: string | null },
-    specifier: string,
-    from: string
-  ) => {
-    if (result.path) {
-      return result.path;
+  // Since Rolldown 1.1.2, `'auto'` applies a tsconfig only to a file that it includes. The root
+  // tsconfig of an Angular project includes no file and declares the `paths` of the project.
+  const factoryOfTsconfig = new Map<string, ResolverFactory>();
+  const nearestTsconfig = (directory: string) => {
+    const configFile = options.tsconfig === 'auto' && find.up('tsconfig.json', { cwd: directory });
+    if (configFile && !factoryOfTsconfig.has(configFile)) {
+      factoryOfTsconfig.set(configFile, create({ configFile }));
+    }
+    return configFile ? factoryOfTsconfig.get(configFile) : undefined;
+  };
+
+  type Result = { path?: string | null; error?: string | null };
+  const unwrap = (result: Result, retried: Result | undefined, specifier: string, from: string) => {
+    const path = result.path ?? retried?.path;
+    if (path) {
+      return path;
     }
     throw new Error(result.error ?? `Cannot resolve module '${specifier}' from '${from}'`);
   };
 
   return {
-    resolveFileSync: (fromFile, specifier) =>
-      unwrap(factory.resolveFileSync(fromFile, specifier), specifier, fromFile),
-    resolveSync: (fromDirectory, specifier) =>
-      unwrap(factory.sync(fromDirectory, specifier), specifier, fromDirectory),
-    resolveFile: async (fromFile, specifier) =>
-      unwrap(await factory.resolveFileAsync(fromFile, specifier), specifier, fromFile),
+    resolveFileSync: (fromFile, specifier) => {
+      const result = factory.resolveFileSync(fromFile, specifier);
+      const retried = result.path
+        ? undefined
+        : nearestTsconfig(dirname(fromFile))?.resolveFileSync(fromFile, specifier);
+      return unwrap(result, retried, specifier, fromFile);
+    },
+    resolveSync: (fromDirectory, specifier) => {
+      const result = factory.sync(fromDirectory, specifier);
+      const retried = result.path
+        ? undefined
+        : nearestTsconfig(fromDirectory)?.sync(fromDirectory, specifier);
+      return unwrap(result, retried, specifier, fromDirectory);
+    },
+    resolveFile: async (fromFile, specifier) => {
+      const result = await factory.resolveFileAsync(fromFile, specifier);
+      const retried = result.path
+        ? undefined
+        : await nearestTsconfig(dirname(fromFile))?.resolveFileAsync(fromFile, specifier);
+      return unwrap(result, retried, specifier, fromFile);
+    },
   };
 }

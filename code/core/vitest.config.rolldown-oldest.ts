@@ -16,6 +16,7 @@ export default mergeConfig(
         'src/bin/loader.test.ts',
         'src/builder-manager/**/*.test.ts',
         'src/common/utils/interpret-files.test.ts',
+        'src/common/utils/module-resolver.test.ts',
         'src/common/utils/rolldown-version.test.ts',
         'src/core-server/utils/build-or-throw.test.ts',
         'src/csf-tools/estree/*.test.ts',

@@ -171,7 +171,6 @@ const planOfRun = (
   return typeof planned === 'string' ? refuse(planned) : { ...planned, tier: scope.tier };
 };
 
-
 const git = (cwd: string, ...args: string[]) =>
   execFileSync('git', args, { cwd, encoding: 'utf8' }).trim();
 

@@ -675,7 +675,8 @@ describe('the plan entry of an issue', () => {
         entry.slug === 'story-sort-in-main'
           ? {
               ...entry,
-              title: 'Sort for @storybookjs/core and _@octocat_ &#64;octocat, see #1 and <!-- hidden',
+              title:
+                'Sort for @storybookjs/core and _@octocat_ &#64;octocat, see #1 and <!-- hidden',
             }
           : entry
       ),
@@ -689,7 +690,9 @@ describe('the plan entry of an issue', () => {
   it('puts the entry line above the related findings', () => {
     const [lead, other] = groupFindings([
       planRun('plan.story-sort-in-main'),
-      loaded('windows', 'codex', [finding({ checkId: 'core.dev-server', title: 'Other &#64;octocat' })]),
+      loaded('windows', 'codex', [
+        finding({ checkId: 'core.dev-server', title: 'Other &#64;octocat' }),
+      ]),
     ]);
     const body = renderIssueBody(
       asIssue(

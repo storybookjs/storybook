@@ -55,6 +55,16 @@ A version without such a tag, a canary for example, gets the guide of this check
 The repo is cloned under the temp directory (`<tmpdir>/ecosystem-qa/work/<id>`) by default, outside the monorepo so no monorepo config file sits above it, and the run stops if that directory already exists. Pass `--clone-dir` to put it elsewhere.
 Tier 1 entries, and tier 2 entries with a `pushTo`, are forks under `storybook-tmp` whose `qa/base` branch is pinned at an upstream commit, and the runner fetches that start commit only, without its history.
 An entry without `pushTo` that is not owned is a repo that a QA plan discovered: its `ref` is a full upstream commit, it never runs on Windows, and nothing is pushed for it, so the upgraded state of such a run stays in the `cycle.bundle` of its artifact.
+Every entry carries `tags`: the framework package, its builder, the Storybook major and the feature addons of its Storybook directory, as `pin.ts` prints them for the pinned commit.
+
+To pin a repo, probe it without cloning anything:
+
+```sh
+node ecosystem-qa/pin.ts dnum-mi/vue-dsfr > pins.jsonl
+```
+
+It prints one line of JSON with the commit, the package manager, each Storybook directory with its version range, framework packages and feature addons, the stars, the last push and the archived flag.
+GitHub truncates the file tree of a very large repository, and then `--dir` names the Storybook directory to read.
 
 Then collect and look at the proposals without filing anything:
 

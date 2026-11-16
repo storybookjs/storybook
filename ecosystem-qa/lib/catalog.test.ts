@@ -28,6 +28,30 @@ describe('catalog', () => {
     ['an entry without a push target on a branch name', { ...DISCOVERED, ref: 'main' }],
     ['an entry without a push target on a short commit', { ...DISCOVERED, ref: 'e'.repeat(12) }],
     ['an entry without a push target marked for Windows', { ...DISCOVERED, windows: true }],
+    [
+      "tags whose builder is not the framework package's",
+      {
+        ...ENTRY,
+        tags: {
+          framework: '@storybook/react-vite',
+          builder: 'webpack5',
+          storybook: 10,
+          features: [],
+        },
+      },
+    ],
+    [
+      'a feature outside the closed list',
+      {
+        ...ENTRY,
+        tags: {
+          framework: '@storybook/react-vite',
+          builder: 'vite',
+          storybook: 10,
+          features: ['i18n'],
+        },
+      },
+    ],
   ])('rejects %s', (_, entry) => {
     expect(() => Catalog.parse([entry])).toThrow();
   });
@@ -53,6 +77,14 @@ describe('catalog', () => {
 
   it('accepts an entry without a push target, outside the orgs with a push token, on a full commit', () => {
     expect(Catalog.parse([DISCOVERED])).toEqual([DISCOVERED]);
+  });
+
+  it('finds tags on every checked-in entry', () => {
+    expect(
+      loadCatalog()
+        .filter((entry) => !entry.tags)
+        .map((entry) => entry.id)
+    ).toEqual([]);
   });
 
   it('accepts a plain Node version', () => {

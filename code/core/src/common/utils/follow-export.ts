@@ -6,7 +6,7 @@ import type { ModuleResolver } from './module-resolver.ts';
 /** Where a module export comes from, after its re-exports are followed. */
 export type ExportOrigin =
   /** A module namespace, as after `export * as UI from './ui'`. */
-  | { kind: 'namespace'; importId: string; path: string | undefined }
+  | { kind: 'namespace'; importId: string; importer: string; path: string | undefined }
   /**
    * A binding that `filePath` declares under `localName`. An anonymous default export, or an export
    * that the reader says the file owns, has the local name of the export.
@@ -63,6 +63,7 @@ export function followExport(
         return {
           kind: 'namespace',
           importId: specifier,
+          importer: filePath,
           path: resolveFileOrUndefined(reader.resolver, filePath, specifier),
         };
       }
@@ -124,6 +125,7 @@ export function followBinding(
       return {
         kind: 'namespace',
         importId: binding.importId,
+        importer: module.filePath,
         path: resolveFileOrUndefined(reader.resolver, module.filePath, binding.importId),
       };
     case 'import': {

@@ -537,22 +537,30 @@ const decisionRows = ({ plan, at }: RuleInput) =>
 const unknownSlugs = (decision: Decision, slugs: Set<string>): string[] =>
   decision && 'entries' in decision ? decision.entries.filter((slug) => !slugs.has(slug)) : [];
 
-const slugsAreUnique: Rule = ({ plan, at }) => {
-  const seen = (items: { slug: string }[], lineOf: (index: number) => number, what: string) => {
-    const first = new Set<string>();
-    return items.flatMap(({ slug }, index) => {
-      if (first.has(slug)) {
-        return [{ line: lineOf(index), message: `${what} \`${slug}\` is used twice` }];
-      }
-      first.add(slug);
-      return [];
-    });
-  };
-  return [
-    ...seen(plan.entries, (index) => at.entries[index]!.heading, 'the slug'),
-    ...seen(plan.groups, (index) => at.tables.groups.rows[index]!, 'the group'),
-  ];
-};
+const duplicates = (keys: string[], lineOf: (index: number) => number, what: string) =>
+  keys.flatMap((key, index) =>
+    keys.indexOf(key) < index
+      ? [{ line: lineOf(index), message: `${what} \`${key}\` is used twice` }]
+      : []
+  );
+
+const namesAreUnique: Rule = ({ plan, at }) => [
+  ...duplicates(
+    plan.entries.map((entry) => entry.slug),
+    (index) => at.entries[index]!.heading,
+    'the slug'
+  ),
+  ...duplicates(
+    plan.groups.map((group) => group.slug),
+    (index) => at.tables.groups.rows[index]!,
+    'the group'
+  ),
+  ...duplicates(
+    plan.discovered.map((repo) => repo.id),
+    (index) => at.tables.discovered.rows[index]!,
+    'the id'
+  ),
+];
 
 const versionIsOnLine: Rule = ({ plan, at }) => {
   const [, major, minor] = SEMVER.exec(plan.version)!;
@@ -560,18 +568,6 @@ const versionIsOnLine: Rule = ({ plan, at }) => {
     ? []
     : [{ line: at.meta.version, message: `version ${plan.version} is not on line ${plan.line}` }];
 };
-
-const discoveredIdsAreUnique: Rule = ({ plan, at }) =>
-  plan.discovered.flatMap((repo, index) =>
-    plan.discovered.findIndex((other) => other.id === repo.id) < index
-      ? [
-          {
-            line: at.tables.discovered.rows[index]!,
-            message: `the id \`${repo.id}\` is used twice`,
-          },
-        ]
-      : []
-  );
 
 const entryRepos = ({ plan, at }: RuleInput) =>
   plan.entries.flatMap((entry, index) =>
@@ -764,9 +760,8 @@ const matchesWindow: Rule = ({ plan, at, window }) => {
 };
 
 const RULES: Rule[] = [
-  slugsAreUnique,
+  namesAreUnique,
   versionIsOnLine,
-  discoveredIdsAreUnique,
   reposAreKnown,
   reposAreCurrent,
   entryPrsHaveRows,

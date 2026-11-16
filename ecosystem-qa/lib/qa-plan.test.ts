@@ -140,6 +140,13 @@ describe('checkPlanText', () => {
       'is used twice',
     ],
     [
+      'a group used twice',
+      '| `ui` | area UI |',
+      '| `tooling` | area UI |',
+      '| `tooling` | area Tooling',
+      'the group `tooling` is used twice',
+    ],
+    [
       'a version off the line',
       '| Version | 11.0.0-beta.3 |',
       '| Version | 11.1.0-beta.3 |',

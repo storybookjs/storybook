@@ -25,16 +25,13 @@ import { planBatches } from './lib/qa-plan.ts';
 import { loadResults } from './lib/results.ts';
 import { Proposal } from './lib/schema.ts';
 import {
-  batchCommentOf,
+  batchDispatch,
   batchReport,
-  carriedRuns,
   DEFAULT_CAP_USD,
-  nextStep,
-  renderBatchComment,
   renderTrackingThread,
   resultsExpireOn,
-  spentUsd,
   TRACKING_CATEGORY,
+  trackBatch,
   trackingThreadOf,
   type ListedArtifact,
   type ReportedFinding,
@@ -158,6 +155,7 @@ const findingOf = (proposal: Proposal): ReportedFinding => {
 
 const report = batchReport({
   plan: { file: scope.file, hash: scope.hash },
+  ref: process.env.GITHUB_REF_NAME ?? PLANS_BRANCH,
   batch: scope.batch,
   batches: planBatches(scope.plan).length,
   version: version!,
@@ -203,18 +201,14 @@ const thread = place
   ? trackingThreadOf(listDiscussions(repo!, place.categoryId), scope.hash)
   : undefined;
 const comments: DiscussionComment[] = thread ? listDiscussionComments(thread.id) : [];
-const existing = batchCommentOf(comments, report);
-const spend = spentUsd(comments, scope.hash, report);
-const next = nextStep({
+const { existing, next, body, stopped } = trackBatch({
   report,
-  spend,
+  comments,
+  tracked: thread !== undefined,
   capUsd,
   chain: values.chain,
-  reportedBefore: existing !== undefined,
-  tracked: thread !== undefined,
+  expiresOn,
 });
-const context = { spend, capUsd, expiresOn, carried: carriedRuns(existing, report) };
-const body = renderBatchComment(report, { ...context, next });
 const newThread = renderTrackingThread({
   file: scope.file,
   hash: scope.hash,
@@ -222,30 +216,8 @@ const newThread = renderTrackingThread({
   version: version!,
 });
 
-const engines = [...new Set(jobs.map(({ engine }) => engine))].toSorted().join(',');
-const ref = process.env.GITHUB_REF_NAME ?? PLANS_BRANCH;
-const dispatch = (batch: number) => [
-  'workflow',
-  'run',
-  'ecosystem-qa.yml',
-  '--repo',
-  repo!,
-  '--ref',
-  ref,
-  '-f',
-  `plan=${scope.file}`,
-  '-f',
-  `batch=${batch}`,
-  '-f',
-  `plan_hash=${scope.hash}`,
-  '-f',
-  'chain=true',
-  '-f',
-  `version=${version}`,
-  '-f',
-  `engines=${engines}`,
-  ...(values['budget-minutes'] ? ['-f', `budget_minutes=${values['budget-minutes']}`] : []),
-];
+const dispatch = (batch: number) =>
+  batchDispatch(report, { repo: repo!, batch, budgetMinutes: values['budget-minutes'] });
 
 if (values.print) {
   console.log(
@@ -272,7 +244,7 @@ if ('start' in next) {
     console.log(`Started batch ${next.start} of ${scope.file}.`);
   } catch (error) {
     const stop = `Batch ${next.start} was not started, because its dispatch failed: ${error instanceof Error ? error.message : String(error)}`;
-    updateDiscussionComment(written.id, renderBatchComment(report, { ...context, next: { stop } }));
+    updateDiscussionComment(written.id, stopped(stop));
     fail(stop);
   }
 } else {

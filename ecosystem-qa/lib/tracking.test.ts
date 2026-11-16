@@ -6,11 +6,13 @@ import {
   batchCommentOf,
   batchReport,
   carriedRuns,
+  batchDispatch,
   nextStep,
   renderBatchComment,
   renderTrackingThread,
   resultsExpireOn,
   spentUsd,
+  trackBatch,
   trackingThreadOf,
   type BatchInput,
   type BatchReport,
@@ -38,6 +40,7 @@ const result = (
 
 const input = (overrides: Partial<BatchInput> = {}): BatchInput => ({
   plan: { file: '11.0.md', hash: HASH },
+  ref: 'qa/plans',
   batch: 1,
   batches: 2,
   version: '11.0.0-beta.3',
@@ -49,12 +52,14 @@ const input = (overrides: Partial<BatchInput> = {}): BatchInput => ({
   ...overrides,
 });
 
+let comments = 0;
 const comment = (
   body: string,
   author = HARNESS,
   editor: typeof HARNESS | null = null
 ): Written => ({
-  url: `https://github.com/storybookjs/storybook/discussions/1#discussioncomment-${body.length}`,
+  id: `DC_${++comments}`,
+  url: `https://github.com/storybookjs/storybook/discussions/1#discussioncomment-${comments}`,
   body,
   author,
   editor,
@@ -441,5 +446,67 @@ describe('resultsExpireOn', () => {
     expect(
       resultsExpireOn([{ name: 'qa-proposals', expires_at: '2026-11-20T08:00:00Z' }])
     ).toBeUndefined();
+  });
+});
+
+describe('trackBatch', () => {
+  const batchOne = posted(
+    batchReport(input({ planned: [job('mealdrop')], results: [result('mealdrop', { usd: 40 })] }))
+  );
+  const batchTwo = (usd: number) =>
+    batchReport(
+      input({
+        batch: 2,
+        batches: 3,
+        runs: ['43900000002'],
+        planned: [job('mantine')],
+        results: [result('mantine', { usd })],
+      })
+    );
+  const track = (report: BatchReport, comments: Written[], capUsd = 60) =>
+    trackBatch({ report, comments, tracked: true, capUsd, chain: true, expiresOn: '2027-02-14' });
+
+  it('stops the chain when the spend reaches the cap exactly, and starts it one cent below', () => {
+    expect(track(batchTwo(20), [batchOne]).next).toEqual({
+      stop: 'Batch 3 was not started, because $60.00 is spent and the cap is $60.00.',
+    });
+    expect(track(batchTwo(19.99), [batchOne]).next).toEqual({ start: 3 });
+  });
+
+  it('counts a run at the highest price any comment of the plan holds for it', () => {
+    const report = (usd: number, runs: string[]) =>
+      batchReport(
+        input({ runs, planned: [job('mealdrop')], results: [result('mealdrop', { usd })] })
+      );
+    const high = posted(report(40, ['43900000001']));
+    const low = posted(report(1, ['43900000001', '43900000009']));
+
+    expect(track(batchTwo(19.99), [high, low]).next).toEqual({ start: 3 });
+    expect(track(batchTwo(20), [high, low]).next).toMatchObject({ stop: expect.any(String) });
+    expect(track(batchTwo(20), [low, high]).next).toMatchObject({ stop: expect.any(String) });
+  });
+
+  it('edits the comment of a batch that is reported again, and adds one for a new report', () => {
+    const report = batchTwo(5);
+    const first = track(report, [batchOne]);
+    const reported = comment(first.body);
+
+    expect(first.existing).toBeUndefined();
+    expect(track(report, [batchOne, reported]).existing).toBe(reported);
+  });
+
+  it('starts the next batch on the branch, engines and budget of this one', () => {
+    const report = batchReport(
+      input({ ref: 'qa/try', planned: [job('mealdrop'), { ...job('mealdrop'), engine: 'codex' }] })
+    );
+
+    expect(
+      batchDispatch(report, { repo: 'storybookjs/storybook', batch: 2, budgetMinutes: '120' })
+    ).toEqual([
+      ...['workflow', 'run', 'ecosystem-qa.yml', '--repo', 'storybookjs/storybook'],
+      ...['--ref', 'qa/try', '-f', 'plan=11.0.md', '-f', 'batch=2', '-f', `plan_hash=${HASH}`],
+      ...['-f', 'chain=true', '-f', 'version=11.0.0-beta.3', '-f', 'engines=claude,codex'],
+      ...['-f', 'budget_minutes=120'],
+    ]);
   });
 });

@@ -7,7 +7,7 @@ export const TRACKING_CATEGORY = 'QA sweeps';
 
 export const DEFAULT_CAP_USD = 250;
 
-export type Written = { url: string; body: string; author: Actor; editor: Actor };
+export type Written = { id: string; url: string; body: string; author: Actor; editor: Actor };
 
 // A body written in the browser comes back with CRLF line ends.
 const firstLine = (body: string) => body.split(/\r?\n/, 1)[0] ?? '';
@@ -64,6 +64,8 @@ export type PlannedJob = { repo: string; part: number; os: string; engine: strin
 
 export type BatchInput = {
   plan: { file: string; hash: string };
+  // The branch the batch ran on, which every later dispatch of the plan runs on too.
+  ref: string;
   batch: number;
   batches: number;
   version: string;
@@ -84,6 +86,7 @@ export type RunLine = {
 
 export type BatchReport = Omit<BatchInput, 'planned' | 'results'> & {
   planned: number;
+  engines: string;
   lines: RunLine[];
   checks: { state: CheckState; count: number }[];
 };
@@ -126,6 +129,7 @@ export const batchReport = ({ planned, results, ...input }: BatchInput): BatchRe
   return {
     ...input,
     planned: planned.length,
+    engines: [...new Set(planned.map(({ engine }) => engine))].toSorted().join(','),
     lines: [...results.map(resultLine), ...lost],
     checks: CheckResult.shape.state.options
       .map((state) => ({ state, count: states.filter((seen) => seen === state).length }))
@@ -336,3 +340,73 @@ export const renderBatchComment = (
     '',
   ].join('\n');
 };
+
+export type TrackInput<Comment extends Written> = {
+  report: BatchReport;
+  // Every comment of the tracking discussion of the plan, none when it has no discussion yet.
+  comments: Comment[];
+  tracked: boolean;
+  capUsd: number;
+  chain: boolean;
+  expiresOn: string;
+};
+
+export type Tracked<Comment extends Written> = {
+  existing: Comment | undefined;
+  next: NextStep;
+  body: string;
+  stopped: (stop: string) => string;
+};
+
+export const trackBatch = <Comment extends Written>({
+  report,
+  comments,
+  tracked,
+  capUsd,
+  chain,
+  expiresOn,
+}: TrackInput<Comment>): Tracked<Comment> => {
+  const existing = batchCommentOf(comments, report);
+  const spend = spentUsd(comments, report.plan.hash, report);
+  const next = nextStep({
+    report,
+    spend,
+    capUsd,
+    chain,
+    reportedBefore: existing !== undefined,
+    tracked,
+  });
+  const context = { spend, capUsd, expiresOn, carried: carriedRuns(existing, report) };
+  return {
+    existing,
+    next,
+    body: renderBatchComment(report, { ...context, next }),
+    stopped: (stop) => renderBatchComment(report, { ...context, next: { stop } }),
+  };
+};
+
+export const batchDispatch = (
+  report: BatchReport,
+  { repo, batch, budgetMinutes }: { repo: string; batch: number; budgetMinutes?: string }
+): string[] => [
+  'workflow',
+  'run',
+  'ecosystem-qa.yml',
+  '--repo',
+  repo,
+  '--ref',
+  report.ref,
+  '-f',
+  `plan=${report.plan.file}`,
+  '-f',
+  `batch=${batch}`,
+  '-f',
+  `plan_hash=${report.plan.hash}`,
+  '-f',
+  'chain=true',
+  '-f',
+  `version=${report.version}`,
+  '-f',
+  `engines=${report.engines}`,
+  ...(budgetMinutes ? ['-f', `budget_minutes=${budgetMinutes}`] : []),
+];

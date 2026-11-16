@@ -205,7 +205,6 @@ export const carriedRuns = (existing: Written | undefined, report: BatchReport):
   return existing ? ledgerOf(existing.body).filter(({ key }) => !reported.has(key)) : [];
 };
 
-// The sentence on what came after the batch, as the first report of the batch decided it.
 const nextOf = (body: string): string | undefined =>
   body
     .split(/\r?\n/)
@@ -246,8 +245,6 @@ export const spentUsd = (comments: Written[], hash: string, current?: BatchRepor
   };
 };
 
-// The batches before this one that the discussion holds no counted comment of, whose dollars are
-// then unknown.
 const missingBatches = ({ batch }: BatchReport, { batches }: Spend): number[] =>
   Array.from({ length: batch - 1 }, (_, index) => index + 1).filter(
     (earlier) => !batches.includes(earlier)

@@ -78,8 +78,6 @@ const planned = () => {
   return { scope, matrix: planMatrix(scope.plan, scope.batch, engines) };
 };
 
-// The lines of a batch whose plan changed since its chain started, which runs nothing and tells the
-// discussion of the plan as it was that its chain ended.
 const changedPlan = (): string[] | undefined => {
   const { plan, hash, batch = '' } = values;
   if (hash === undefined || !plan) {

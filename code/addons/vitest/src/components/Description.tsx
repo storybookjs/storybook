@@ -5,6 +5,7 @@ import type { TestProviderState } from 'storybook/internal/types';
 
 import { styled } from 'storybook/theming/emotion';
 
+import { DEPS_REOPTIMIZED_TEXT } from '../constants.ts';
 import type { StoreState } from '../types.ts';
 import { GlobalErrorContext } from './GlobalErrorModal.tsx';
 import { RelativeTime } from './RelativeTime.tsx';
@@ -75,12 +76,8 @@ export function Description({
     description = 'Watching for file changes';
   }
 
-  const title =
-    depsReoptimized &&
-    `Vite pre-bundled a new dependency during the run, which breaks the running tests, so they ran again.${depsReoptimized === 'unresolved' ? ' It happened again, so failures may not be caused by the stories: run the tests again.' : ''}`;
-
   return (
-    <Wrapper title={title || undefined} {...props}>
+    <Wrapper title={depsReoptimized && DEPS_REOPTIMIZED_TEXT[depsReoptimized]} {...props}>
       {description}
     </Wrapper>
   );

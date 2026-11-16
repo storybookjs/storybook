@@ -2,6 +2,7 @@ import type { ToolsetCtx } from 'storybook/open-service';
 
 import { isAbsolute, relative } from 'pathe';
 
+import { DEPS_REOPTIMIZED_TEXT } from '../../constants.ts';
 import type { TestRunData, TestRunResult, TestRunSelection } from './definition.ts';
 
 type ComponentTestStatus = TestRunResult['componentTestStatuses'][number];
@@ -335,10 +336,9 @@ const A11Y_GUIDANCE =
   'Accessibility violations: fix only what your change caused, and report the rest. For visual ones such as color contrast, ask before changing the design.';
 
 const DEPS_REOPTIMIZED = {
-  repeated:
-    'Vite pre-bundled a new dependency during the run, which breaks the tests that are running, so Storybook ran them again. These are the results of the second run.',
-  unresolved:
-    'Vite pre-bundled a new dependency during the run, also when Storybook ran the tests again, so these failures may not be caused by the stories. Run the same command again before you change any code.',
+  repeated: DEPS_REOPTIMIZED_TEXT.repeated,
+  // The test panel has no command to repeat, so only the output says what to do.
+  unresolved: `${DEPS_REOPTIMIZED_TEXT.unresolved} Run the same command again before you change any code.`,
 };
 
 function formatResultSection(

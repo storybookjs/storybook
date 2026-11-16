@@ -6,19 +6,19 @@ sidebar:
 
 <If notRenderer={['react', 'vue', 'angular', 'svelte', 'web-components']}>
 
-The `write-stories` skill gives your agent the rules for the stories of your project, so every component it creates or changes gets stories. It isn't available for your framework yet. See [supported frameworks](../connect.mdx#supported-frameworks).
+The `/write-stories` skill gives your agent the rules for the stories of your project, so every component it creates or changes gets stories. It isn't available for your framework yet. See [supported frameworks](../connect.mdx#supported-frameworks).
 
 </If>
 
 <If renderer={['react', 'vue', 'angular', 'svelte', 'web-components']}>
 
-The `write-stories` skill gives your agent the rules for the stories of your project: which states get a story, and how to write the imports, play functions, and mocks. Every component your agent creates or changes gets stories that show its states and test its behavior.
+The `/write-stories` skill gives your agent the rules for the stories of your project: which states get a story, and how to write the imports, play functions, and mocks. Every component your agent creates or changes gets stories that show its states and test its behavior.
 
 ## When your agent uses it
 
 The skill is step 2 of the [UI workflow](./ui-workflow.mdx). With the [Storybook section in `AGENTS.md`](../connect.mdx#tell-your-agent-when-to-use-the-skills), your agent uses it for every component it creates or changes.
 
-You can also ask for the skill by name, for example "Use the write-stories skill to add stories for the user list".
+You can also ask for the skill by name, for example "Use the /write-stories skill to add stories for the user list".
 
 ## What the agent writes
 

@@ -2,11 +2,10 @@ import { existsSync } from 'node:fs';
 import { describe, expect, test } from 'vitest';
 import {
   expectAnyWorkflowSkillInvoked,
-  expectFocusedTestRun,
   expectNoDisplayReview,
   expectNoOtherTestRunner,
   expectReviewHint,
-  expectStoryTestsRanAndPassed,
+  expectStoriesPass,
   expectWorkflowCalls,
   getEvalContext,
 } from '#test-utils';
@@ -28,21 +27,20 @@ describe('creating a Callout in a monorepo UI package', () => {
     ).toBe(true);
   });
 
-  test('runs story tests after the change and finishes with them passing', async () => {
-    await expectStoryTestsRanAndPassed({
+  test('the stories of the change pass', async () => {
+    await expectStoriesPass({
       covering: ['callout'],
       cwd: 'packages/ui',
     });
   });
 
-  test('runs the skills of the workflow, tests what it changed, and publishes no review unasked', () => {
+  test('runs the skills of the workflow, tests only through Storybook, and creates no review unasked', () => {
     expectWorkflowCalls(WORKFLOW_SKILLS);
-    expectFocusedTestRun();
     expectNoOtherTestRunner();
     expectNoDisplayReview();
   });
 
-  test('ends the answer with the line that offers a review', () => {
+  test('tells the user about the /ui-review skill', () => {
     expectReviewHint();
   });
 

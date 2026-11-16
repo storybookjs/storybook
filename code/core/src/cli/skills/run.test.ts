@@ -70,7 +70,7 @@ describe('resolveSkillsIntent', () => {
     expect(resolveSkillsIntent({ tokens: ['stories'] })).toEqual({
       kind: 'error',
       message: expect.stringMatching(
-        /^The `stories` skill is replaced by `component-docs` .*`write-stories` .*`npx storybook tools test run --changed`.*When the user asks for a review, run `npx storybook skills ui-review`\.$/
+        /^The `\/stories` skill is replaced by `\/component-docs` .*`\/write-stories` .*`npx storybook tools test run --changed`.*When the user asks for a review, run `npx storybook skills ui-review`\.$/
       ),
     });
   });
@@ -79,7 +79,7 @@ describe('resolveSkillsIntent', () => {
     expect(resolveSkillsIntent({ tokens: ['write-story'] })).toEqual({
       kind: 'error',
       message:
-        'The `write-story` skill is renamed to `write-stories`. Run `npx storybook skills write-stories`.',
+        'The `/write-story` skill is renamed to `/write-stories`. Run `npx storybook skills write-stories`.',
     });
   });
 

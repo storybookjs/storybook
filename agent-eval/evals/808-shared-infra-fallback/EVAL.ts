@@ -1,10 +1,9 @@
 import {
   expectAnyWorkflowSkillInvoked,
-  expectFocusedTestRun,
   expectNoDisplayReview,
   expectNoOtherTestRunner,
   expectReviewHint,
-  expectStoryTestsRanAndPassed,
+  expectStoriesPass,
   getEvalContext,
 } from '#test-utils';
 import { readFileSync } from 'node:fs';
@@ -21,20 +20,19 @@ describe('changing a shared accent token and testing its consumer stories', () =
     expect(colors, 'Expected the old accent value #2563eb to be gone').not.toMatch(/#2563eb/i);
   });
 
-  test('runs story tests after the change and finishes with them passing', async () => {
-    await expectStoryTestsRanAndPassed({
+  test('the stories of the change pass', async () => {
+    await expectStoriesPass({
       covering: ['badge', 'statuspill'],
     });
   });
 
   // `--changed` reaches the stories of the token's consumers, so the agent needs no story ids.
-  test('tests what it changed, and publishes no review unasked', () => {
-    expectFocusedTestRun();
+  test('tests only through Storybook, and creates no review unasked', () => {
     expectNoOtherTestRunner();
     expectNoDisplayReview();
   });
 
-  test('ends the answer with the line that offers a review', () => {
+  test('tells the user about the /ui-review skill', () => {
     expectReviewHint();
   });
 

@@ -10,19 +10,20 @@ export type ServerInstructionsInputs = {
 
 // A step either opens a skill or, for the tests, names the command itself: an agent runs the
 // tests right from that line, without a skill in between.
-type Step = { skill: SkillId; does: string; also?: string } | { tests: true };
+type Step = { skill: SkillId; does: string } | { tests: true };
 
 function workflowSteps({ devEnabled, testSupported, docsEnabled }: ServerInstructionsInputs) {
   const steps: (Step | false)[] = [
     docsEnabled && {
       skill: 'component-docs',
+      // When the user asks about a component is in the description of the skill, as for `/ui-review`.
       does: 'look up the components to reuse, with their props and usage examples, before you edit any file',
-      also: "the user asks about a component's props, API, or usage",
     },
     // Without the `dev` toolset the server is for lookups and test runs, not for the story workflow.
     devEnabled && {
       skill: 'write-stories',
-      does: 'every component you create or change gets stories',
+      // The reason to open the skill: how stories are written now, which training data lags behind.
+      does: 'every component you create or change gets stories, written with the current best practices for this Storybook version and this project',
     },
     testSupported && { tests: true },
     // No review step: publishing one after every change costs tokens also when nobody looks at
@@ -53,7 +54,7 @@ function testStep(number: number, transport: SkillTextTransport): string {
 export const REVIEW_HINT_LINE =
   'Use the /ui-review skill to see the changed components in Storybook';
 const reviewStep = (number: number) =>
-  `${number}. Inform the user about the \`ui-review\` skill after a change the user can see: "${REVIEW_HINT_LINE}"`;
+  `${number}. Inform the user about the \`/ui-review\` skill after a change the user can see: "${REVIEW_HINT_LINE}"`;
 
 // The workflow that ties the skills together, in the order an agent takes the steps. A project
 // edits it to change the workflow.
@@ -63,7 +64,7 @@ function buildWorkflow(inputs: ServerInstructionsInputs, transport: SkillTextTra
   const lines = steps.map((step, index) =>
     'tests' in step
       ? testStep(index + 1, transport)
-      : `${index + 1}. \`${cli ? step.skill : `npx storybook skills ${step.skill} --mcp`}\`: ${step.does}.${step.also ? ` Also when ${step.also}.` : ''}`
+      : `${index + 1}. \`${cli ? `/${step.skill}` : `npx storybook skills ${step.skill} --mcp`}\`: ${step.does}.`
   );
   // Without the `dev` toolset there is no review to tell the user about.
   if (inputs.devEnabled) {

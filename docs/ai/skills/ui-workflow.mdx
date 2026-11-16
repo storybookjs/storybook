@@ -18,12 +18,12 @@ The UI workflow gives your agent one way to make every UI change: reuse your com
 
 The workflow is the [Storybook section in `AGENTS.md`](../connect.mdx#tell-your-agent-when-to-use-the-skills). It lists four steps in order:
 
-| Step | What the agent does                                                                                                            |
-| ---- | ------------------------------------------------------------------------------------------------------------------------------ |
-| 1    | Looks up the components to reuse, with their props and usage examples, with the [`component-docs`](./component-docs.mdx) skill |
-| 2    | Writes stories for every component it creates or changes, with the [`write-stories`](./write-stories.mdx) skill                |
-| 3    | Runs the story tests after every change with `npx storybook tools test run`, and fixes what fails                              |
-| 4    | Ends its reply with a line that tells you about the [`ui-review`](./ui-review.mdx) skill, after a change you can see           |
+| Step | What the agent does                                                                                                             |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | Looks up the components to reuse, with their props and usage examples, with the [`/component-docs`](./component-docs.mdx) skill |
+| 2    | Writes stories for every component it creates or changes, with the [`/write-stories`](./write-stories.mdx) skill                |
+| 3    | Runs the story tests after every change with `npx storybook tools test run`, and fixes what fails                               |
+| 4    | Ends its reply with a line that tells you about the [`/ui-review`](./ui-review.mdx) skill, after a change you can see           |
 
 Your agent opens the skills of steps 1 and 2 before it edits any file, then follows each skill at its step. Steps 3 and 4 need no skill: step 3 is the command itself, and step 4 is the line "Use the /ui-review skill to see the changed components in Storybook". The agent creates a review only when you ask for it. See [UI review](./ui-review.mdx).
 
@@ -33,10 +33,10 @@ With the Storybook section in `AGENTS.md`, your agent follows the workflow for e
 
 Some steps also run on their own:
 
-- `component-docs`, when you ask about a component's props, API, or usage
-- [`ui-review`](./ui-review.mdx), when you ask for a review or to see components or stories
+- `/component-docs`, when you ask about a component's props, API, or usage
+- [`/ui-review`](./ui-review.mdx), when you ask for a review or to see components or stories
 
-Without that section, an agent connected only through skills doesn't follow the workflow automatically. It can still use a skill that fits its task, and you can ask for one by name, for example "Use the write-stories skill to add stories for the user list". An agent connected to the [MCP server](../reference/mcp-server.mdx) receives the workflow from the server instead.
+Without that section, an agent connected only through skills doesn't follow the workflow automatically. It can still use a skill that fits its task, and you can ask for one by name, for example "Use the /write-stories skill to add stories for the user list". An agent connected to the [MCP server](../reference/mcp-server.mdx) receives the workflow from the server instead.
 
 ## What the agent does
 
@@ -45,7 +45,7 @@ For example, you ask your agent to "Build a login form". The agent:
 1. **Looks up your components.** Before it edits any file, it lists the components in your Storybook and reads the props and examples of the ones it needs, such as `TextField` and `Button`. It uses only documented props. See [Component docs](./component-docs.mdx).
 2. **Writes the component and its stories.** It writes one story for each state the component can reach, such as empty, filled, invalid, and submitting, with realistic data. Interactive states get a [play function](../../writing-stories/play-function.mdx) that tests the behavior. It mocks network requests and modules that the stories need. See [Write stories](./write-stories.mdx).
 3. **Runs the story tests.** If your project has the [Vitest addon](../../writing-tests/integrations/vitest-addon/index.mdx), it runs the [component tests](../../writing-tests/index.mdx) of the stories its change affects, with [accessibility checks](../../writing-tests/accessibility-testing.mdx), after each change. See [Test stories](./test-stories.mdx).
-4. **Offers a review.** It ends its reply with a line that offers the `ui-review` skill. When you ask for the review, it finds the stories that its change affects, such as those of a `LoginPage` that renders the form, and groups them into a review. See [UI review](./ui-review.mdx).
+4. **Offers a review.** It ends its reply with a line that offers the `/ui-review` skill. When you ask for the review, it finds the stories that its change affects, such as those of a `LoginPage` that renders the form, and groups them into a review. See [UI review](./ui-review.mdx).
 
 ## Change the workflow
 

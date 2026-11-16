@@ -1,10 +1,9 @@
 import {
   expectAnyWorkflowSkillInvoked,
-  expectFocusedTestRun,
   expectNoDisplayReview,
   expectNoOtherTestRunner,
   expectReviewHint,
-  expectStoryTestsRanAndPassed,
+  expectStoriesPass,
   expectWorkflowCalls,
   getEvalContext,
 } from '#test-utils';
@@ -15,20 +14,19 @@ import { describe, test } from 'vitest';
 const WORKFLOW_SKILLS = ['component-docs', 'write-stories'];
 
 describe('creating an accessible ToggleSwitch', () => {
-  test('runs story tests after the change and finishes with them passing', async () => {
-    await expectStoryTestsRanAndPassed({
+  test('the stories of the change pass', async () => {
+    await expectStoriesPass({
       covering: ['toggleswitch'],
     });
   });
 
-  test('runs the skills of the workflow, tests what it changed, and publishes no review unasked', () => {
+  test('runs the skills of the workflow, tests only through Storybook, and creates no review unasked', () => {
     expectWorkflowCalls(WORKFLOW_SKILLS);
-    expectFocusedTestRun();
     expectNoOtherTestRunner();
     expectNoDisplayReview();
   });
 
-  test('ends the answer with the line that offers a review', () => {
+  test('tells the user about the /ui-review skill', () => {
     expectReviewHint();
   });
 

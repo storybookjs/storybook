@@ -6,17 +6,17 @@ sidebar:
 
 <If notRenderer={['react', 'vue', 'angular', 'svelte', 'web-components']}>
 
-The `component-docs` skill lets your agent look up your components, with their props and usage examples, so it will use them correctly and can answer questions about them. It needs a [components manifest](../reference/manifests.mdx), which your framework doesn't generate yet. See [framework support](../reference/manifests.mdx#framework-support).
+The `/component-docs` skill lets your agent look up your components, with their props and usage examples, so it will use them correctly and can answer questions about them. It needs a [components manifest](../reference/manifests.mdx), which your framework doesn't generate yet. See [framework support](../reference/manifests.mdx#framework-support).
 
 </If>
 
 <If renderer={['react', 'vue', 'angular', 'svelte', 'web-components']}>
 
-The `component-docs` skill lets your agent look up the components in your Storybook, with their props and usage examples. Your agent will then use the components you have instead of building new ones, use only the props and attributes they support, and answer questions about how to use them.
+The `/component-docs` skill lets your agent look up the components in your Storybook, with their props and usage examples. Your agent will then use the components you have instead of building new ones, use only the props and attributes they support, and answer questions about how to use them.
 
 ## When your agent uses it
 
-The skill is step 1 of the [UI workflow](./ui-workflow.mdx). With the [Storybook section in `AGENTS.md`](../connect.mdx#tell-your-agent-when-to-use-the-skills), your agent uses it before it edits any file for a UI change, and when you ask about a component's props, API, or usage. For example:
+The skill is step 1 of the [UI workflow](./ui-workflow.mdx). With the [Storybook section in `AGENTS.md`](../connect.mdx#tell-your-agent-when-to-use-the-skills), your agent uses it before it edits any file for a UI change. Its description also makes your agent use it when you ask about a component's props, API, or usage. For example:
 
 | Task                    | Example prompt                                                         | What the agent does                                                                                               |
 | ----------------------- | ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |

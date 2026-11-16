@@ -420,6 +420,16 @@ describe('expectStoryTestsRanAndPassed', () => {
     );
   });
 
+  test('expectStoriesPass does not require that the agent ran the tests', async () => {
+    givenRun({
+      commands: [],
+      stdout: testRunDocument({ 'example-badge--accent': 'status-value:success' }),
+    });
+    const { expectStoriesPass } = await loadTestUtils();
+
+    await expectStoriesPass({ covering: ['badge'] });
+  });
+
   test('judges the tests by a run in the sandbox, not by the tail-cut transcript output', async () => {
     givenRun({
       commands: [tailCutTestRun],
@@ -572,6 +582,28 @@ describe('expectStoryTestsRanAndPassed', () => {
     const { expectStoryTestsRanAndPassed } = await loadTestUtils();
 
     await expect(expectStoryTestsRanAndPassed()).rejects.toThrow(/Expected test-run to be called/);
+  });
+});
+
+describe('mentionsReviewSkill', () => {
+  test.each([
+    // The line of the AGENTS.md section, and the forms agents wrote in eval runs (2026-11-16).
+    'Use the /ui-review skill to see the changed components in Storybook',
+    'Use `/ui-review` to see them in Storybook.',
+    'this is a UI change you can see, so run `/ui-review` to see the changed component in Storybook.',
+    'Use the $ui-review skill to see the changed components in Storybook',
+    'Use `/storybook:ui-review` to see the changed components.',
+  ])('counts %j', async (answer) => {
+    const { mentionsReviewSkill } = await import('./test-utils.ts');
+    expect(mentionsReviewSkill(answer)).toBe(true);
+  });
+
+  test.each([
+    'I created the review with the ui-review skill.',
+    'See docs/ai/skills/ui-review.mdx for details.',
+  ])('does not count %j', async (answer) => {
+    const { mentionsReviewSkill } = await import('./test-utils.ts');
+    expect(mentionsReviewSkill(answer)).toBe(false);
   });
 });
 

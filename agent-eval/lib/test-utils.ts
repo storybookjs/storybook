@@ -240,22 +240,24 @@ export function expectFocusedTestRun(): void {
   ).toBe(true);
 }
 
-// The line the workflow asks for at the end of an answer after a visible change, so the user
-// learns they can ask for a review. Any spelling of the skill name counts (\`/storybook:ui-review\`,
-// \`$ui-review\`).
-const REVIEW_HINT = /ui-review\b[^\n]{0,20}skill to see the changed components in Storybook/i;
+// The workflow tells the agent to inform the user about the `/ui-review` skill after a visible
+// change. The words are the agent's; the skill has to be named the way a user invokes it: with a
+// slash, or `$` in Codex, with or without the plugin namespace (`/storybook:ui-review`).
+const REVIEW_HINT = /(?:^|[\s`'"(])[/$](?:storybook:)?ui-review\b/m;
+
+export const mentionsReviewSkill = (answer: string): boolean => REVIEW_HINT.test(answer);
 
 export function expectReviewHint(): void {
   expect(
     getFinalAssistantMessage() ?? '',
-    'Expected the final answer to end with the line that offers the ui-review skill'
+    'Expected the final answer to tell the user about the /ui-review skill'
   ).toMatch(REVIEW_HINT);
 }
 
 export function expectNoReviewHint(): void {
   expect(
     getFinalAssistantMessage() ?? '',
-    'Expected no ui-review line in the final answer: nothing visible changed, or a review was just published'
+    'Expected no /ui-review hint in the final answer: nothing visible changed, or a review was just created'
   ).not.toMatch(REVIEW_HINT);
 }
 
@@ -446,23 +448,29 @@ export type WorkflowToolResult = {
   isError: boolean;
 };
 
-// The agent's own test output is often cut by `| tail` or `| grep`, so the
-// verdict is a run of the harness's own. The transcript only has to show that
-// the agent ran the tests and that its last run did not end red: a fix that was
-// never re-run is unverified. There is no after-the-edit ordering check, because
-// real passing flows run tests before the discovery step.
+// For a request to run or fix the story tests: the agent ran them, and the stories pass.
+export async function expectStoryTestsRanAndPassed(options?: StoriesPassOptions): Promise<void> {
+  expectWorkflowCalls(['test-run']);
+  await expectStoriesPass(options);
+}
+
+type StoriesPassOptions = { covering?: string[]; cwd?: string };
+
+// The stories of the change pass. The AGENTS.md section names the command that tests stories but
+// does not tell the agent when to run it, so whether the agent ran the tests is not asserted. When
+// it did, its last run must not end red: a fix that was never re-run is unverified. The agent's
+// own output is often cut by `| tail` or `| grep`, so the verdict is a run of the harness's own.
 //
 // `covering` requires one of the given substrings in the passing story ids.
 // `cwd` is the Storybook project, for fixtures where that is not the root.
-export async function expectStoryTestsRanAndPassed(options?: {
-  covering?: string[];
-  cwd?: string;
-}): Promise<void> {
-  expectWorkflowCalls(['test-run']);
-  expect(
-    getWorkflowToolResults('test-run').at(-1)?.output ?? '',
-    "The agent's last test run must not report failing stories or unhandled errors"
-  ).not.toMatch(/## (Failing Stories|Unhandled Errors)/);
+export async function expectStoriesPass(options?: StoriesPassOptions): Promise<void> {
+  const agentRuns = getWorkflowToolResults('test-run');
+  if (agentRuns.length > 0) {
+    expect(
+      agentRuns.at(-1)?.output ?? '',
+      "The agent's last test run must not report failing stories or unhandled errors"
+    ).not.toMatch(/## (Failing Stories|Unhandled Errors)/);
+  }
 
   const result = await runStoryTestsInSandbox(options?.cwd);
   expect(

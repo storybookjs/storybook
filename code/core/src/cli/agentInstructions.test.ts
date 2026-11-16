@@ -47,7 +47,7 @@ describe('addStorybookAgentInstructions', () => {
 
   it('wraps the section in markers, with the heading, the two skills, the test command and the review line', () => {
     expect(STORYBOOK_AGENT_INSTRUCTIONS).toMatch(
-      /^<!-- BEGIN:storybook-skills -->\n[\s\S]*## Storybook\n[\s\S]*1\. `component-docs`[\s\S]*2\. `write-stories`[\s\S]*3\. To test stories in the CLI run[\s\S]*npx storybook tools test run --changed[\s\S]*4\. .*Use the \/ui-review skill[\s\S]*<!-- END:storybook-skills -->\n$/
+      /^<!-- BEGIN:storybook-skills -->\n[\s\S]*## Storybook\n[\s\S]*1\. `\/component-docs`[\s\S]*2\. `\/write-stories`[\s\S]*3\. To test stories in the CLI run[\s\S]*npx storybook tools test run --changed[\s\S]*4\. .*Use the \/ui-review skill[\s\S]*<!-- END:storybook-skills -->\n$/
     );
   });
 

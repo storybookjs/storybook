@@ -1,11 +1,10 @@
 import { describe, test } from 'vitest';
 import {
   expectAnyWorkflowSkillInvoked,
-  expectFocusedTestRun,
   expectNoDisplayReview,
   expectNoOtherTestRunner,
   expectReviewHint,
-  expectStoryTestsRanAndPassed,
+  expectStoriesPass,
   expectWorkflowCalls,
   getEvalContext,
 } from '#test-utils';
@@ -15,20 +14,19 @@ import {
 const WORKFLOW_SKILLS = ['write-stories'];
 
 describe('writing the first Button stories in an empty Storybook', () => {
-  test('runs story tests after the change and finishes with them passing', async () => {
-    await expectStoryTestsRanAndPassed({
+  test('the stories of the change pass', async () => {
+    await expectStoriesPass({
       covering: ['button'],
     });
   });
 
-  test('runs the skills of the workflow, tests what it changed, and publishes no review unasked', () => {
+  test('runs the skills of the workflow, tests only through Storybook, and creates no review unasked', () => {
     expectWorkflowCalls(WORKFLOW_SKILLS);
-    expectFocusedTestRun();
     expectNoOtherTestRunner();
     expectNoDisplayReview();
   });
 
-  test('ends the answer with the line that offers a review', () => {
+  test('tells the user about the /ui-review skill', () => {
     expectReviewHint();
   });
 

@@ -24,22 +24,22 @@ describe('buildAgentInstructions', () => {
 
       For every change to how the UI looks (you create, change, or delete a component, story, style, theme, or design token), follow these steps in order. First invoke the Storybook skills of steps 1 and 2, before you edit any file. Then follow each skill at its step.
 
-      1. \`component-docs\`: look up the components to reuse, with their props and usage examples, before you edit any file. Also when the user asks about a component's props, API, or usage.
-      2. \`write-stories\`: every component you create or change gets stories.
+      1. \`/component-docs\`: look up the components to reuse, with their props and usage examples, before you edit any file.
+      2. \`/write-stories\`: every component you create or change gets stories, written with the current best practices for this Storybook version and this project.
       3. To test stories in the CLI run:
          \`\`\`sh
          npx storybook tools test run [files...]   # every story, or these story files
          npx storybook tools test run --changed    # the stories your changes affect
          \`\`\`
-      4. Inform the user about the \`ui-review\` skill after a change the user can see: "Use the /ui-review skill to see the changed components in Storybook""
+      4. Inform the user about the \`/ui-review\` skill after a change the user can see: "Use the /ui-review skill to see the changed components in Storybook""
     `);
   });
 
   it('leaves out the test step without addon-vitest', () => {
     const instructions = buildAgentInstructions({ testSupported: false });
 
-    expect(instructions).toContain('2. `write-stories`');
-    expect(instructions).toContain('3. Inform the user about the `ui-review` skill');
+    expect(instructions).toContain('2. `/write-stories`');
+    expect(instructions).toContain('3. Inform the user about the `/ui-review` skill');
     expect(instructions).not.toContain('test run');
   });
 
@@ -47,7 +47,7 @@ describe('buildAgentInstructions', () => {
     const instructions = buildAgentInstructions();
 
     expect(instructions.split('\n').at(-1)).toBe(
-      `4. Inform the user about the \`ui-review\` skill after a change the user can see: "${REVIEW_HINT_LINE}"`
+      `4. Inform the user about the \`/ui-review\` skill after a change the user can see: "${REVIEW_HINT_LINE}"`
     );
     // When to create a review is in the description of the `ui-review` skill.
     expect(instructions).not.toContain('asks for a review');
@@ -74,10 +74,10 @@ describe('buildServerInstructions', () => {
 
       For every change to how the UI looks (you create, change, or delete a component, story, style, theme, or design token), follow these steps in order. First run the Storybook skills of steps 1 and 2, before you edit any file: each in a command of its own, from the package where Storybook is installed, and read its whole output, without \`head\` or \`tail\`. Then follow each skill at its step.
 
-      1. \`npx storybook skills component-docs --mcp\`: look up the components to reuse, with their props and usage examples, before you edit any file. Also when the user asks about a component's props, API, or usage.
-      2. \`npx storybook skills write-stories --mcp\`: every component you create or change gets stories.
+      1. \`npx storybook skills component-docs --mcp\`: look up the components to reuse, with their props and usage examples, before you edit any file.
+      2. \`npx storybook skills write-stories --mcp\`: every component you create or change gets stories, written with the current best practices for this Storybook version and this project.
       3. To test stories, call \`test-run\`: with neither for every story, with \`files\` for these story files, with \`changed: true\` for the stories your changes affect.
-      4. Inform the user about the \`ui-review\` skill after a change the user can see: "Use the /ui-review skill to see the changed components in Storybook"
+      4. Inform the user about the \`/ui-review\` skill after a change the user can see: "Use the /ui-review skill to see the changed components in Storybook"
 
       Run the skill of a step before you call a tool of that step, also when the request is only that step.
 
@@ -113,7 +113,7 @@ describe('buildServerInstructions', () => {
     });
 
     expect(instructions).toContain('1. `npx storybook skills write-stories --mcp`');
-    expect(instructions).toContain('2. Inform the user about the `ui-review` skill');
+    expect(instructions).toContain('2. Inform the user about the `/ui-review` skill');
     expect(instructions).not.toContain('3.');
     expect(instructions).not.toContain('test-run');
     expect(instructions).not.toContain('component-docs');
@@ -135,14 +135,14 @@ describe('buildServerInstructions', () => {
   it('names one step for one toolset', () => {
     expect(buildServerInstructions({ devEnabled: false, testSupported: false, docsEnabled: true }))
       .toMatchInlineSnapshot(`
-      "## Storybook
+        "## Storybook
 
-      For every change to how the UI looks (you create, change, or delete a component, story, style, theme, or design token), follow this step. It has a Storybook skill. Run it before you edit any file, in a command of its own, from the package where Storybook is installed, and read its whole output, without \`head\` or \`tail\`, and follow it.
+        For every change to how the UI looks (you create, change, or delete a component, story, style, theme, or design token), follow this step. It has a Storybook skill. Run it before you edit any file, in a command of its own, from the package where Storybook is installed, and read its whole output, without \`head\` or \`tail\`, and follow it.
 
-      1. \`npx storybook skills component-docs --mcp\`: look up the components to reuse, with their props and usage examples, before you edit any file. Also when the user asks about a component's props, API, or usage.
+        1. \`npx storybook skills component-docs --mcp\`: look up the components to reuse, with their props and usage examples, before you edit any file.
 
-      Run the skill before you call a tool of its step, also when the request is only that step."
-    `);
+        Run the skill before you call a tool of its step, also when the request is only that step."
+      `);
   });
 
   it('names no skill when only the test toolset is on', () => {

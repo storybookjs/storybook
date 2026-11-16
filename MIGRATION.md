@@ -1913,16 +1913,16 @@ The experimental `storybook ai <tool>` commands behind the `STORYBOOK_FEATURE_AI
 
 The `stories` skill is split into four skills:
 
-- `component-docs` looks up the components to reuse, with their props and usage examples, and answers questions about them.
-- `write-stories` has the rules for the stories of your project.
-- `test-stories` runs the story tests.
-- `ui-review` finds the stories a change affects and creates a review of them.
+- `/component-docs` looks up the components to reuse, with their props and usage examples, and answers questions about them.
+- `/write-stories` has the rules for the stories of your project.
+- `/test-stories` runs the story tests.
+- `/ui-review` finds the stories a change affects and creates a review of them.
 
-Run `npx storybook skills <id>` with one of these ids instead of `npx storybook skills stories`, which now exits with code 1. The Claude Code and Codex plugins ship these four skills instead of `stories`. The `write-story` skill is renamed to `write-stories`.
+Run `npx storybook skills <id>` with one of these ids instead of `npx storybook skills stories`, which now exits with code 1. The Claude Code and Codex plugins ship these four skills instead of `/stories`. The `/write-story` skill is renamed to `/write-stories`.
 
-The skills no longer tell agents to run them for every UI change. A section in `AGENTS.md`, between `<!-- BEGIN:storybook-skills -->` and `<!-- END:storybook-skills -->` markers, is the workflow: it tells agents to use `component-docs` and `write-stories` for every UI change, and to run the story tests with `npx storybook tools test run --changed` (a project without `@storybook/addon-vitest` gets no test step). It leaves out `ui-review`: an agent creates a review when you ask for one, and after a visible change it ends its answer with a line that offers the skill. `create storybook` and the `skills` automigration add it when they install the skills, and also to a `CLAUDE.md`, `.claude/CLAUDE.md` or `CLAUDE.local.md` that does not import `AGENTS.md`, because Claude Code reads those instead. `storybook upgrade` replaces the text between the markers when the skills change, and never adds the section back. So remove both markers to keep your own edits, for example to drop that line or to have the agent create a review after every change, or remove the whole section to opt out of the workflow, in each file that has it. Without the section, an agent uses a skill only when you ask for it or when it finds one that fits its task. When `storybook upgrade` updates skills that still include `stories` from an 11.0 prerelease, it removes that skill and adds the section. If you use the Claude Code or Codex plugin, or install the skills yourself, add the section to the `AGENTS.md` of each project yourself:
+The skills no longer tell agents to run them for every UI change. A section in `AGENTS.md`, between `<!-- BEGIN:storybook-skills -->` and `<!-- END:storybook-skills -->` markers, is the workflow: it tells agents to use `/component-docs` and `/write-stories` for every UI change, and to run the story tests with `npx storybook tools test run --changed` (a project without `@storybook/addon-vitest` gets no test step). It leaves out `/ui-review`: an agent creates a review when you ask for one, and after a visible change it ends its answer with a line that offers the skill. `create storybook` and the `skills` automigration add it when they install the skills, and also to a `CLAUDE.md`, `.claude/CLAUDE.md` or `CLAUDE.local.md` that does not import `AGENTS.md`, because Claude Code reads those instead. `storybook upgrade` replaces the text between the markers when the skills change, and never adds the section back. So remove both markers to keep your own edits, for example to drop that line or to have the agent create a review after every change, or remove the whole section to opt out of the workflow, in each file that has it. Without the section, an agent uses a skill only when you ask for it or when it finds one that fits its task. When `storybook upgrade` updates skills that still include `/stories` from an 11.0 prerelease, it removes that skill and adds the section. If you use the Claude Code or Codex plugin, or install the skills yourself, add the section to the `AGENTS.md` of each project yourself:
 
-```md
+````md
 <!-- BEGIN:storybook-skills -->
 <!-- Storybook updates this section on upgrade. Remove both markers to keep your own edits. -->
 
@@ -1930,17 +1930,17 @@ The skills no longer tell agents to run them for every UI change. A section in `
 
 For every change to how the UI looks (you create, change, or delete a component, story, style, theme, or design token), follow these steps in order. First invoke the Storybook skills of steps 1 and 2, before you edit any file. Then follow each skill at its step.
 
-1. `component-docs`: look up the components to reuse, with their props and usage examples, before you edit any file. Also when the user asks about a component's props, API, or usage.
-2. `write-stories`: every component you create or change gets stories.
+1. `/component-docs`: look up the components to reuse, with their props and usage examples, before you edit any file.
+2. `/write-stories`: every component you create or change gets stories, written with the current best practices for this Storybook version and this project.
 3. To test stories in the CLI run:
    ```sh
    npx storybook tools test run [files...]   # every story, or these story files
    npx storybook tools test run --changed    # the stories your changes affect
    ```
-4. Inform the user about the `ui-review` skill after a change the user can see: "Use the /ui-review skill to see the changed components in Storybook"
+4. Inform the user about the `/ui-review` skill after a change the user can see: "Use the /ui-review skill to see the changed components in Storybook"
 
 <!-- END:storybook-skills -->
-```
+````
 
 See [Skills and plugins](docs/ai/skills.mdx) for more details.
 

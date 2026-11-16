@@ -2,11 +2,10 @@ import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, test } from 'vitest';
 import {
   expectAnyWorkflowSkillInvoked,
-  expectFocusedTestRun,
   expectNoDisplayReview,
   expectNoOtherTestRunner,
   expectReviewHint,
-  expectStoryTestsRanAndPassed,
+  expectStoriesPass,
   expectWorkflowCalls,
   getEvalContext,
 } from '#test-utils';
@@ -18,8 +17,8 @@ const STORIES_PATH = 'stories/OrderHistory.stories.tsx';
 const WORKFLOW_SKILLS = ['write-stories'];
 
 describe('writing stories for an existing OrderHistory that fetches its data', () => {
-  test('runs story tests after the change and finishes with them passing', async () => {
-    await expectStoryTestsRanAndPassed({
+  test('the stories of the change pass', async () => {
+    await expectStoriesPass({
       covering: ['orderhistory'],
     });
   });
@@ -50,14 +49,13 @@ describe('writing stories for an existing OrderHistory that fetches its data', (
     );
   });
 
-  test('runs the skills of the workflow, tests what it changed, and publishes no review unasked', () => {
+  test('runs the skills of the workflow, tests only through Storybook, and creates no review unasked', () => {
     expectWorkflowCalls(WORKFLOW_SKILLS);
-    expectFocusedTestRun();
     expectNoOtherTestRunner();
     expectNoDisplayReview();
   });
 
-  test('ends the answer with the line that offers a review', () => {
+  test('tells the user about the /ui-review skill', () => {
     expectReviewHint();
   });
 

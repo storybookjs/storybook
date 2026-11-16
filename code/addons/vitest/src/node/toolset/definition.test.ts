@@ -324,11 +324,10 @@ describe('test API', () => {
 ## Result
 
 Passed: 1 component test passed.
-Accessibility: not checked.
-Before you finish, run every story once: test-run without \`files\`, \`changed\` or \`stories\`.`);
+Accessibility: not checked.`);
     });
 
-    it('tells the CLI agent the command that runs every story after a focused pass', async () => {
+    it('ends a passing focused run with the verdict, not with a run of every story', async () => {
       vi.mocked(runStoryTests).mockResolvedValue(
         completed({
           storyIds: ['button--primary'],
@@ -337,9 +336,7 @@ Before you finish, run every story once: test-run without \`files\`, \`changed\`
         })
       );
 
-      expect((await runTests()).markdown).toContain(
-        'Before you finish, run every story once: `npx storybook tools test run` without arguments.'
-      );
+      expect((await runTests()).markdown).toMatch(/Accessibility: not checked\.$/);
     });
 
     it('summarizes what the file filters and the changes selected in one line', async () => {
@@ -419,7 +416,6 @@ No story found for story ID "missing--story"
 Failed: 1 argument not used; 1 component test passed.
 Accessibility: not checked.
 Fix or leave out the arguments listed above, then run again.`);
-      expect(outcome.markdown).not.toContain('Before you finish');
     });
 
     it('counts only the selected stories that got a verdict, without guessing a cause', async () => {
@@ -507,10 +503,8 @@ File arguments select story files by path, as Vitest filters select test files. 
       expect(outcome.ok).toBe(true);
       expect(outcome.markdown).toBe(`No stories changed, so no tests ran.
 Changed files in the Storybook config directory, which can affect every story: \`.storybook/main.ts\`.
-To test more, pass story files. Before you finish, run every story once: \`npx storybook tools test run\` without arguments.`);
-      expect(mcpOutcome.markdown).toContain(
-        'Before you finish, run every story once: test-run without `files`, `changed` or `stories`.'
-      );
+To test more, pass story files.`);
+      expect(mcpOutcome.markdown).toBe(outcome.markdown);
     });
 
     it('passes when no story file matches the filters under changed, as Vitest does', async () => {
@@ -523,12 +517,8 @@ To test more, pass story files. Before you finish, run every story once: \`npx s
       const outcome = await runTests();
 
       expect(outcome.ok).toBe(true);
-      expect(outcome.markdown).toContain(
-        'No story files found for `src/Button.tsx`, so no tests ran.'
-      );
-      expect(outcome.markdown).toContain(
-        'Before you finish, run every story once: `npx storybook tools test run` without arguments.'
-      );
+      expect(outcome.markdown).toBe(`No story files found for \`src/Button.tsx\`, so no tests ran.
+File arguments select story files by path, as Vitest filters select test files. To test the stories that depend on a changed file, use \`--changed\` without file arguments.`);
     });
 
     it('says when none of the stories the other forms selected changed', async () => {
@@ -564,8 +554,7 @@ To test more, pass story files. Before you finish, run every story once: \`npx s
 ## Result
 
 Passed: 1 component test passed.
-Accessibility: not checked (addon-a11y is not enabled).
-Before you finish, run every story once: test-run without \`files\`, \`changed\` or \`stories\`.`);
+Accessibility: not checked (addon-a11y is not enabled).`);
     });
 
     it('says the accessibility check found nothing rather than staying silent', async () => {

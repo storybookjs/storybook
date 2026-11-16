@@ -598,7 +598,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				          "description": "Test the changed stories, exactly as the stories changed tool lists them: new and modified stories, and the stories that depend on changed files. true for the uncommitted changes, or a git ref (a branch, tag or commit) for what this branch committed since it forked from that ref, plus the uncommitted changes. Combined with files or stories, only the stories that match both run.",
 				        },
 				        "files": {
-				          "description": "Story files to test, as Vitest file filters: each entry selects the story files whose path, relative to the Storybook project directory, contains it (case-insensitive), or that an absolute path or directory points to. Only story files match; to test the stories that depend on a changed component, use \`changed\`.",
+				          "description": "Story files to test: each entry selects the story files whose path, relative to the Storybook project directory, contains it (case-insensitive), or that an absolute path or directory points to. Only story files match; to test the stories that depend on a changed component, use \`changed\`.",
 				          "items": {
 				            "type": "string",
 				          },

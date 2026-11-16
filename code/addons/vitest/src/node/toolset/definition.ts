@@ -163,7 +163,7 @@ Use { absoluteStoryPath + exportName } only when you're currently working in a s
     v.pipe(
       v.array(v.string()),
       v.description(
-        `Story files to test, as Vitest file filters: each entry selects the story files whose path, relative to the Storybook project directory, contains it (case-insensitive), or that an absolute path or directory points to. Only story files match; to test the stories that depend on a changed component, use \`changed\`.`
+        `Story files to test: each entry selects the story files whose path, relative to the Storybook project directory, contains it (case-insensitive), or that an absolute path or directory points to. Only story files match; to test the stories that depend on a changed component, use \`changed\`.`
       )
     )
   ),
@@ -311,7 +311,7 @@ async function getChangedStories(ctx: ToolsetCtx, since?: string): Promise<Chang
       ) {
         throw new OpenServiceGitRefError({
           ...error.data,
-          hint: 'The argument right after `--changed` is its ref, as in Vitest: put file arguments before `--changed`.',
+          hint: '`--changed` reads the argument after it as a git ref: put file arguments before `--changed`.',
         });
       }
       throw error;

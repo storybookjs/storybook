@@ -512,7 +512,7 @@ function formatNoStories(
     // Vitest's filters select test files only; a component file selects nothing here either.
     const filterHint =
       selection?.files?.storyFiles === 0
-        ? `\nFile arguments select story files by path, relative to ${code(process.cwd())}, as Vitest filters select test files. To test the stories that depend on a changed file, use ${argument(ctx, '--changed', 'changed: true')}.`
+        ? `\nFile arguments match story files only, by their path relative to ${code(process.cwd())}. To test the stories that depend on a changed file, use ${argument(ctx, '--changed', 'changed: true')}.`
         : '';
     return `No stories found matching the provided input.
 
@@ -521,7 +521,7 @@ ${notFoundMessages.join('\n')}${filterHint}`;
   if (selection?.files?.storyFiles === 0) {
     // Only under `changed`, which passes with no tests, as in Vitest; otherwise it failed above.
     return `No story files found for ${selection.files.filters.map((filter) => code(displayPath(filter))).join(', ')}, so no tests ran.
-File arguments select story files by path, relative to ${code(process.cwd())}, as Vitest filters select test files. To test the stories that depend on a changed file, use ${argument(ctx, '--changed', 'changed: true')} without file arguments.`;
+File arguments match story files only, by their path relative to ${code(process.cwd())}. To test the stories that depend on a changed file, use ${argument(ctx, '--changed', 'changed: true')} without file arguments.`;
   }
   if (selection?.changed) {
     const what = `${

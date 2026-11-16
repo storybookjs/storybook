@@ -178,7 +178,7 @@ describe('test API', () => {
     const { getChangedStories } = vi.mocked(runStoryTests).mock.lastCall![0];
 
     await expect(getChangedStories!('Button')).rejects.toThrow(
-      '`Button` is not a known git ref. The argument right after `--changed` is its ref, as in Vitest: put file arguments before `--changed`.'
+      '`Button` is not a known git ref. `--changed` reads the argument after it as a git ref: put file arguments before `--changed`.'
     );
 
     await runForMcp({ changed: 'Button' });
@@ -544,7 +544,7 @@ Accessibility: not checked.`);
       expect(outcome.markdown).toBe(`No stories found matching the provided input.
 
 No story files found for \`src/Button.tsx\`.
-File arguments select story files by path, relative to \`${process.cwd()}\`, as Vitest filters select test files. To test the stories that depend on a changed file, use \`--changed\`.`);
+File arguments match story files only, by their path relative to \`${process.cwd()}\`. To test the stories that depend on a changed file, use \`--changed\`.`);
     });
 
     it('passes when no story changed, with what to try next', async () => {
@@ -590,7 +590,7 @@ To test more, pass story files.`);
 
       expect(outcome.ok).toBe(true);
       expect(outcome.markdown).toBe(`No story files found for \`src/Button.tsx\`, so no tests ran.
-File arguments select story files by path, relative to \`${process.cwd()}\`, as Vitest filters select test files. To test the stories that depend on a changed file, use \`--changed\` without file arguments.`);
+File arguments match story files only, by their path relative to \`${process.cwd()}\`. To test the stories that depend on a changed file, use \`--changed\` without file arguments.`);
     });
 
     it('says when none of the stories the other forms selected changed', async () => {

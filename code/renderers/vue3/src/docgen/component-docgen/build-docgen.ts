@@ -75,6 +75,10 @@ const UNRESOLVED_COMPONENT_MESSAGES: Record<
     name: 'No component import found',
     message: `No component file found for the component declared in ${subject}. Import it into the story file.`,
   }),
+  'missing-export': (subject) => ({
+    name: 'No component found',
+    message: `${subject} names an export that its module does not have. Check the name against the module's exports, and any barrel that re-exports it.`,
+  }),
   'unreadable-component-expression': (subject) => ({
     name: 'No component found',
     message: `We could not follow ${subject} to a component. Storybook follows an imported name, a namespace-import property access, or a chain of property accesses and spreads through modules it can resolve.`,

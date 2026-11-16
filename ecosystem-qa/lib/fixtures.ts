@@ -24,6 +24,17 @@ export const ENTRY: CatalogEntry = {
   windows: true,
 };
 
+// A repo that a plan discovered: upstream, pinned at a commit, with no fork to push to.
+export const DISCOVERED: CatalogEntry = {
+  id: 'vue-dsfr',
+  repo: 'dnum-mi/vue-dsfr',
+  ref: 'e'.repeat(40),
+  class: 'tier2',
+  packageManager: 'pnpm',
+  storybookDir: '.',
+  windows: false,
+};
+
 export const finding = (overrides: Partial<Finding> = {}): Finding => ({
   checkId: 'core.hmr.stories-file',
   title: 'New story export never reaches the sidebar',

@@ -12,9 +12,20 @@ import { fs as memfs, vol } from 'memfs';
 import { dirname, join } from 'pathe';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { ENTRY, finding, loaded, VERSION } from './fixtures.ts';
+import { planFiling } from './filing.ts';
+import {
+  asIssue,
+  DISCOVERED,
+  ENTRY,
+  finding,
+  loaded,
+  RUN_URL,
+  single,
+  VERSION,
+} from './fixtures.ts';
+import { groupFindings, toProposal } from './proposals.ts';
 import { downloadedRuns, loadResults, upgraded } from './results.ts';
-import { Finding, type RunResultFile } from './schema.ts';
+import { Finding, type CatalogEntry, type RunResultFile } from './schema.ts';
 
 vi.mock('node:fs', { spy: true });
 
@@ -274,6 +285,57 @@ describe('upgraded', () => {
 
   it('is false when the installed version is unknown', () => {
     expect(upgraded(record({ storybookVersionInstalled: null }))).toBe(false);
+  });
+});
+
+describe('the cycle of a run that left a bundle', () => {
+  const branch = `qa/sb-${VERSION}/linux-claude`;
+  const FORK = { ...DISCOVERED, pushTo: 'storybook-tmp/vue-dsfr', ref: 'qa/base' };
+
+  const loadRunOf = (entry: CatalogEntry) => {
+    const runDir = join(resultsDir, `qa-result-${entry.id}-linux-claude/${entry.id}/linux/claude`);
+    writeRun(runDir, { ...record(), request: { ...record().request, entry } });
+    write(
+      join(runDir, 'cycle.bundle'),
+      `# v2 git bundle\n-${'1'.repeat(40)} start\n${'2'.repeat(40)} refs/heads/${branch}\n\nPACK`
+    );
+    const [result] = loadResults(resultsDir, {
+      version: VERSION,
+      catalog: [entry],
+      warn: () => {},
+    });
+    const [group] = groupFindings([result!]);
+    const steps = planFiling(asIssue(toProposal(single(group), [], { runUrl: RUN_URL })), {
+      repo: 'storybookjs/storybook',
+      evidenceLinks: 'assets',
+    });
+    return { cycle: result?.cycle, steps };
+  };
+
+  it('starts a repo without a push target at its pinned upstream commit and pushes nothing', () => {
+    const { cycle, steps } = loadRunOf(DISCOVERED);
+
+    expect(cycle).toEqual({
+      repo: 'dnum-mi/vue-dsfr',
+      branch,
+      startSha: DISCOVERED.ref,
+      headSha: null,
+      bundle: null,
+    });
+    expect(steps.map((step) => step.kind)).toEqual(['create-issue']);
+    expect(steps.flatMap((step) => (step.kind === 'create-issue' ? [step.body] : []))[0]).toContain(
+      `https://github.com/dnum-mi/vue-dsfr/tree/${DISCOVERED.ref}`
+    );
+  });
+
+  it('pushes the cycle of a tier 2 fork to the fork', () => {
+    const { steps } = loadRunOf(FORK);
+
+    expect(steps[0]).toMatchObject({
+      kind: 'push-cycle',
+      repo: 'storybook-tmp/vue-dsfr',
+      headSha: '2'.repeat(40),
+    });
   });
 });
 

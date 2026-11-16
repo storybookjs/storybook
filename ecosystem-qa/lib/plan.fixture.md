@@ -12,7 +12,7 @@
 
 ### `story-sort-in-main` Story sort moves from the preview file to the main file
 
-- PRs: #36137
+- PRs: [#36137](https://github.com/storybookjs/storybook/pull/36137)
 - Batch: 1
 - Repo `mealdrop`: sets `storySort` in its preview file today
 - Step: Read which automigrations the upgrade ran, and the diff of the main file and the preview file.
@@ -21,7 +21,7 @@
 
 ### `preview-animations` Animations pause only in the preview
 
-- PRs: #31900
+- PRs: [#31900](https://github.com/storybookjs/storybook/pull/31900)
 - Batch: 1
 - Repo `mealdrop`: its stories animate with CSS transitions
 - Step: Open a story with a transition and take a screenshot after the play function ends.
@@ -29,7 +29,7 @@
 
 ### `csf-factory-namespaces` Legacy addon namespaces work in CSF factories
 
-- PRs: #35658
+- PRs: [#35658](https://github.com/storybookjs/storybook/pull/35658)
 - Batch: 1
 - Repo `mealdrop`: owned, so the factories can be enabled in a commit of the cycle
 - Repo `mantine`: a large set of stories with addon parameters
@@ -38,7 +38,7 @@
 
 ### `sidebar-tree` The rebuilt sidebar tree
 
-- PRs: #33422, #35509
+- PRs: [#33422](https://github.com/storybookjs/storybook/pull/33422), [#35509](https://github.com/storybookjs/storybook/pull/35509)
 - Batch: 2
 - Repo `mealdrop`: a small tree with nested groups
 - Repo `primer-react`: a deep tree, and a right-to-left story
@@ -47,25 +47,25 @@
 
 ## Discovered repos
 
-| Id | Repo | Commit | Package manager | Storybook directory | Stars | Last push | Reason |
+| Id | Repo at its commit | Package manager | Storybook directory | Storybook major | Stars | Pushed at | Reason |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `primer-react` | primer/react | 998b471a4ad78c7c23426038ef0c4a5261fc41cf | npm | packages/react | 3936 | 2026-11-16 | a deep sidebar tree that no catalog entry has |
+| `primer-react` | [primer/react](https://github.com/primer/react/tree/998b471a4ad78c7c23426038ef0c4a5261fc41cf) | npm | packages/react | 10 | 3936 | 2026-11-16T14:42:00Z | a deep sidebar tree that no catalog entry has |
 
 ## PRs that need QA
 
 | PR | Area | Title | Decision |
 | --- | --- | --- | --- |
-| #31900 | Preview | Preview: Only pause DocumentTimeline animations in preview-web | `preview-animations` |
-| #33422 | UI | UI: Rebuild Sidebar Tree | `sidebar-tree` |
-| #36137 | Core | Core: Replace preview storySort with chained storySorts in main | `story-sort-in-main` |
-| #36664 | CI | CI: Cancel workflow when format check fails | skip: a change of this repository's CI, no project can see it |
+| [#31900](https://github.com/storybookjs/storybook/pull/31900) | Preview | Preview: Only pause DocumentTimeline animations in preview-web | `preview-animations` |
+| [#33422](https://github.com/storybookjs/storybook/pull/33422) | UI | UI: Rebuild Sidebar Tree | `sidebar-tree` |
+| [#36137](https://github.com/storybookjs/storybook/pull/36137) | Core | Core: Replace preview storySort with chained storySorts in main | `story-sort-in-main` |
+| [#36664](https://github.com/storybookjs/storybook/pull/36664) | CI | CI: Cancel workflow when format check fails | skip: a change of this repository's CI, no project can see it |
 
 ## Undeclared PRs
 
 | PR | Area | Title | Decision |
 | --- | --- | --- | --- |
-| #35618 |  | fix: wait for inline stories before rerendering docs | skip: the monorepo's docs E2E tests cover the timing |
-| #35658 | Core | Core: Accept legacy addon namespaces in CSF factories | `csf-factory-namespaces` |
+| [#35618](https://github.com/storybookjs/storybook/pull/35618) |  | fix: wait for inline stories before rerendering docs | skip: the monorepo's docs E2E tests cover the timing |
+| [#35658](https://github.com/storybookjs/storybook/pull/35658) | Core | Core: Accept legacy addon namespaces in CSF factories | `csf-factory-namespaces` |
 
 ## Groups of maintainer PRs marked qa:skip
 
@@ -78,17 +78,17 @@
 
 | PR | Area | Title | Group |
 | --- | --- | --- | --- |
-| #34799 | Tooling | Tooling: Use pkg.pr.new for canary releases | `tooling` |
-| #35509 | UI | UI: Fix controls expander and select chevron overlap in RTL | `ui` |
+| [#34799](https://github.com/storybookjs/storybook/pull/34799) | Tooling | Tooling: Use pkg.pr.new for canary releases | `tooling` |
+| [#35509](https://github.com/storybookjs/storybook/pull/35509) | UI | UI: Fix controls expander and select chevron overlap in RTL | `ui` |
 
 ## PRs verified by hand
 
 | PR | Area | Title |
 | --- | --- | --- |
-| #36153 | Addon A11y | Addon A11y: Fix vision simulator color filters in Firefox |
+| [#36153](https://github.com/storybookjs/storybook/pull/36153) | Addon A11y | Addon A11y: Fix vision simulator color filters in Firefox |
 
 ## PRs marked qa:skip
 
 | PR | Area | Title |
 | --- | --- | --- |
-| #36189 | Addon Links | Addon Links: Add `hrefToSync` function for synchronous url generation |
+| [#36189](https://github.com/storybookjs/storybook/pull/36189) | Addon Links | Addon Links: Add `hrefToSync` function for synchronous url generation |

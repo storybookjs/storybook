@@ -37,14 +37,18 @@ export const PlanEntry = z.strictObject({
 });
 export type PlanEntry = z.infer<typeof PlanEntry>;
 
+// Every field but the id and the reason is a value of one line of `pin.ts` output, as it prints it.
 export const DiscoveredRepo = z.strictObject({
   id: RepoId,
   repo: CatalogEntry.shape.repo,
   commit: Sha,
   packageManager: CatalogEntry.shape.packageManager,
   storybookDir: Text,
+  major: z.int().positive(),
   stars: z.int().min(0),
-  lastPush: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'expected a date like 2026-11-16'),
+  pushedAt: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/, 'expected a time like 2026-11-16T14:42:00Z'),
   reason: Text,
 });
 export type DiscoveredRepo = z.infer<typeof DiscoveredRepo>;
@@ -86,13 +90,28 @@ const uncode = (cell: string): string => {
   }
   return match[1]!;
 };
-const prCell = (pr: number) => `#${pr}`;
+// GitHub links no bare `#36137` in a Markdown file, so every reference carries its URL.
+const githubLink = (kind: 'pull' | 'issues') => (number: number) =>
+  `[#${number}](https://github.com/storybookjs/storybook/${kind}/${number})`;
+const prCell = githubLink('pull');
+const issueLink = githubLink('issues');
 const unPr = (cell: string): number => {
-  const match = /^#(\d+)$/.exec(cell);
-  if (!match) {
-    throw new Error(`expected a PR like #36137, found "${cell}"`);
+  const number = Number(/^\[#(\d+)\]/.exec(cell)?.[1]);
+  if (!number || cell !== prCell(number)) {
+    throw new Error(`expected a PR like ${prCell(36137)}, found "${cell}"`);
   }
-  return Number(match[1]);
+  return number;
+};
+const repoCell = (repo: string, commit: string) =>
+  `[${repo}](https://github.com/${repo}/tree/${commit})`;
+const unRepoCell = (cell: string): { repo: string; commit: string } => {
+  const [, repo = '', commit = ''] = /^\[([^\]]*)\]\(.*\/tree\/([^/)]*)\)$/.exec(cell) ?? [];
+  if (cell !== repoCell(repo, commit)) {
+    throw new Error(
+      `expected a repo linked to its commit like ${repoCell('owner/repo', '<commit>')}, found "${cell}"`
+    );
+  }
+  return { repo, commit };
 };
 const numberOrText = (cell: string): unknown => (/^\d+$/.test(cell) ? Number(cell) : cell);
 const orNull = (cell: string) => (cell === '' ? null : cell);
@@ -152,33 +171,33 @@ const TABLES: { [K in TableKey]: Table<Plan[K][number]> } = {
     heading: 'Discovered repos',
     columns: [
       'Id',
-      'Repo',
-      'Commit',
+      'Repo at its commit',
       'Package manager',
       'Storybook directory',
+      'Storybook major',
       'Stars',
-      'Last push',
+      'Pushed at',
       'Reason',
     ],
     schema: DiscoveredRepo,
     encode: (row) => [
       code(row.id),
-      row.repo,
-      row.commit,
+      repoCell(row.repo, row.commit),
       row.packageManager,
       row.storybookDir,
+      String(row.major),
       String(row.stars),
-      row.lastPush,
+      row.pushedAt,
       row.reason,
     ],
-    decode: ([id, repo, commit, packageManager, storybookDir, stars, lastPush, reason]) => ({
+    decode: ([id, repo, packageManager, storybookDir, major, stars, pushedAt, reason]) => ({
       id: uncode(id!),
-      repo,
-      commit,
+      ...unRepoCell(repo!),
       packageManager,
       storybookDir,
+      major: numberOrText(major!),
       stars: numberOrText(stars!),
-      lastPush,
+      pushedAt,
       reason,
     }),
   },
@@ -503,7 +522,7 @@ export const parsePlan = (text: string): Plan => {
 
 export type Problem = { line: number; message: string };
 
-export type CheckContext = { window?: Window };
+export type CheckContext = { catalog: CatalogEntry[]; window?: Window };
 
 type RuleInput = CheckContext & { plan: Plan; at: PlanLayout; lines: string[] };
 type Rule = (input: RuleInput) => Problem[];
@@ -553,6 +572,55 @@ const discoveredIdsAreUnique: Rule = ({ plan, at }) =>
         ]
       : []
   );
+
+const entryRepos = ({ plan, at }: RuleInput) =>
+  plan.entries.flatMap((entry, index) =>
+    entry.repos.map(({ id }, repo) => ({ id, line: at.entries[index]!.repos[repo]! }))
+  );
+
+const reposAreKnown: Rule = (input) => {
+  const { plan, at, catalog } = input;
+  const cataloged = new Set(catalog.map((entry) => entry.id));
+  const discovered = new Set(plan.discovered.map((repo) => repo.id));
+  return [
+    ...plan.discovered.flatMap((repo, index) =>
+      cataloged.has(repo.id)
+        ? [
+            {
+              line: at.tables.discovered.rows[index]!,
+              message: `\`${repo.id}\` is a catalog id, so it cannot be a discovered repo too`,
+            },
+          ]
+        : []
+    ),
+    ...entryRepos(input)
+      .filter(({ id }) => !cataloged.has(id) && !discovered.has(id))
+      .map(({ id, line }) => ({
+        line,
+        message: `\`${id}\` is no catalog id and no id of "${TABLES.discovered.heading}"`,
+      })),
+  ];
+};
+
+const reposAreCurrent: Rule = (input) => {
+  const { plan, catalog } = input;
+  const oldest = Number(plan.line.split('.')[0]) - 1;
+  const majors = new Map<string, number | undefined>([
+    ...catalog.map((entry) => [entry.id, entry.tags?.storybook] as const),
+    ...plan.discovered.map((repo) => [repo.id, repo.major] as const),
+  ]);
+  return entryRepos(input).flatMap(({ id, line }) => {
+    const major = majors.get(id);
+    return major !== undefined && major < oldest
+      ? [
+          {
+            line,
+            message: `\`${id}\` is on Storybook ${major}, more than one major behind ${plan.line}`,
+          },
+        ]
+      : [];
+  });
+};
 
 const entryPrsHaveRows: Rule = (input) => {
   const { plan, at } = input;
@@ -692,6 +760,8 @@ const RULES: Rule[] = [
   slugsAreUnique,
   versionIsOnLine,
   discoveredIdsAreUnique,
+  reposAreKnown,
+  reposAreCurrent,
   entryPrsHaveRows,
   rowsAreDecided,
   batchesHaveNoGap,
@@ -701,7 +771,7 @@ const RULES: Rule[] = [
   matchesWindow,
 ];
 
-export const checkPlan = (plan: Plan, context: CheckContext = {}): Problem[] => {
+export const checkPlan = (plan: Plan, context: CheckContext): Problem[] => {
   const { lines, at } = layoutPlan(plan);
   return RULES.flatMap((rule) => rule({ ...context, plan, at, lines })).sort(
     (a, b) => a.line - b.line
@@ -711,7 +781,7 @@ export const checkPlan = (plan: Plan, context: CheckContext = {}): Problem[] => 
 // A valid file equals its rendered form, so nothing the parser skipped can stay in it.
 export const checkPlanText = (
   text: string,
-  context: CheckContext = {}
+  context: CheckContext
 ): { plan: Plan; problems: Problem[] } | { plan: null; problems: Problem[] } => {
   let plan: Plan;
   try {
@@ -736,6 +806,17 @@ export const checkPlanText = (
   }
   return { plan, problems: checkPlan(plan, context) };
 };
+
+export const discoveredEntries = (plan: Plan): CatalogEntry[] =>
+  plan.discovered.map((repo): CatalogEntry => ({
+    id: repo.id,
+    repo: repo.repo,
+    ref: repo.commit,
+    class: 'tier2',
+    packageManager: repo.packageManager,
+    storybookDir: repo.storybookDir,
+    windows: false,
+  }));
 
 export const planHash = (text: string): string =>
   createHash('sha256').update(text).digest('hex').slice(0, 12);
@@ -776,6 +857,9 @@ export const PlanDraft = z.strictObject({
 export type PlanDraft = z.infer<typeof PlanDraft>;
 
 export const ENTRIES_PER_RUN = 4;
+
+// The most expensive of 32 static runs on Haiku at low effort. A run of plan entries may cost more.
+export const USD_PER_RUN = 2.59;
 
 // An issue with sub-issues and a QA heading tracks a project, and its PRs share its instructions.
 const trackingIssueOf = (pr: WindowPr) =>
@@ -822,7 +906,7 @@ export const planFromWindow = (window: Window, draft: PlanDraft): Plan => {
   const usedGroups = new Set(maintainerSkips.map((row) => row.group));
   const trackedGroups = [...tracked]
     .filter(([slug]) => usedGroups.has(slug) && !draft.groups.some((group) => group.slug === slug))
-    .map(([slug, number]) => ({ slug, source: `#${number}`, decision: null }));
+    .map(([slug, number]) => ({ slug, source: issueLink(number), decision: null }));
 
   const statusOf = new Map(window.prs.map((pr) => [pr.number, pr.status]));
   const groupable = new Set(maintainerPrs.map((pr) => pr.number));

@@ -6,6 +6,7 @@ import { basename, dirname } from 'pathe';
 import { loadEntries } from './lib/catalog.ts';
 import {
   checkPlanText,
+  draftOfPlan,
   planBatches,
   planFromWindow,
   PlanDraft,
@@ -18,9 +19,13 @@ import { Window } from './lib/window.ts';
 
 const HELP = `Usage: node ecosystem-qa/qa-plan.ts render --window <file> [--draft <file>] --out <file>
        node ecosystem-qa/qa-plan.ts check <file> [--window <file>]
+       node ecosystem-qa/qa-plan.ts draft <file> --window <file> --out <file>
 
 render writes a QA plan from the JSON that window.ts wrote and an optional JSON draft of entries,
 discovered repos, decisions, and groups. A PR without a decision gets an empty cell.
+
+draft writes the draft that render turns into the plan again with that window, so a plan can be
+changed and rendered again. It exits 1 when the plan is not what render writes from that window.
 
 check accepts a plan only in the form that render writes and when every rule holds against the
 catalog, and then prints its entries, batches, runs, and an estimate of its cost. With --window it
@@ -95,6 +100,30 @@ if (extra.length) {
   console.log(
     `About ${(total * USD_PER_RUN).toFixed(2)} dollars: ${plural(total, 'run')} at ${USD_PER_RUN} dollars, what the most expensive static run so far cost.`
   );
+} else if (command === 'draft' && file && values.window && values.out && !values.draft) {
+  const text = readFileSync(file, 'utf8');
+  const { plan, problems } = checkPlanText(text, { catalog: [] });
+  if (!plan) {
+    console.error(`${file}:${problems[0]!.line}: ${problems[0]!.message}`);
+    process.exit(1);
+  }
+  const draft = draftOfPlan(plan);
+  const window = readWindow(values.window);
+  let again: string | undefined;
+  try {
+    again = renderPlan(planFromWindow(window, draft));
+  } catch {
+    again = undefined;
+  }
+  if (again !== text) {
+    console.error(
+      `${file} is not the plan that render writes from ${values.window}. Run check with --window on it.`
+    );
+    process.exit(1);
+  }
+  mkdirSync(dirname(values.out), { recursive: true });
+  writeFileSync(values.out, `${JSON.stringify(draft, null, 2)}\n`);
+  console.log(`Wrote ${values.out}. Change it, then render the plan again.`);
 } else {
   console.error(HELP);
   process.exit(1);

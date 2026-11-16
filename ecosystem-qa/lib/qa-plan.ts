@@ -891,6 +891,21 @@ export const PlanDraft = z.strictObject({
 });
 export type PlanDraft = z.infer<typeof PlanDraft>;
 
+const byPr = <Value>(rows: { pr: number; value: Value | null }[]) =>
+  Object.fromEntries(
+    rows.flatMap(({ pr, value }) => (value === null ? [] : [[String(pr), value]]))
+  );
+
+export const draftOfPlan = (plan: Plan): PlanDraft => ({
+  entries: plan.entries,
+  discovered: plan.discovered,
+  decisions: byPr(
+    [...plan.needed, ...plan.undeclared].map((row) => ({ pr: row.pr, value: row.decision }))
+  ),
+  groups: plan.groups,
+  groupOf: byPr(plan.maintainerSkips.map((row) => ({ pr: row.pr, value: row.group }))),
+});
+
 export const ENTRIES_PER_RUN = 4;
 
 export const USD_PER_RUN = 2.59;

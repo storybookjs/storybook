@@ -143,6 +143,11 @@ node ecosystem-qa/qa-plan.ts check ecosystem-qa/plans/11.0.md --window ecosystem
 
 The draft is optional, and every key of it too: `entries`, `discovered`, `decisions` by PR number, `groups`, and `groupOf`, which puts a maintainer PR into a group by PR number.
 Without a draft, render writes a skeleton in which every row is undecided.
+The draft is not committed, so `draft` writes it again from a plan and its window, to change decisions or render the plan on a newer window, and exits 1 when render would not write that plan from that window:
+
+```sh
+node ecosystem-qa/qa-plan.ts draft ecosystem-qa/plans/11.0.md --window ecosystem-qa/plans/11.0.window.json --out draft.json
+```
 
 The plan has a table of its line, version and window, a section `## Changes to test` with one entry per change, and seven tables.
 "PRs that need QA" and "Undeclared PRs" give every PR a decision, the slugs of the entries that test it or `skip:` with the reason.

@@ -6,6 +6,8 @@ import { loadEntries } from './catalog.ts';
 import {
   type CheckContext,
   checkPlanText,
+  draftOfPlan,
+  ENTRIES_PER_RUN,
   parsePlan,
   type Plan,
   PlanDraft,
@@ -636,6 +638,25 @@ describe('checkPlanText', () => {
         message: 'the window has `v10.5.0` a77777356be2aeaff89d7a2b25254db7b2318392',
       },
     ]);
+  });
+});
+
+describe('draftOfPlan', () => {
+  const window = JSON.parse(
+    readFileSync(new URL('./plan.fixture.window.json', import.meta.url), 'utf8')
+  ) as Window;
+  const rendered = { ...parsePlan(FIXTURE), entriesPerRun: ENTRIES_PER_RUN };
+  const undecided = structuredClone(rendered);
+  undecided.needed[0]!.decision = null;
+  undecided.maintainerSkips[0]!.group = null;
+
+  it.each([
+    ['a finished plan', rendered],
+    ['a plan with an undecided row and an ungrouped PR', undecided],
+  ])('gives for %s the JSON draft from which render writes it again', (_, plan) => {
+    const draft = PlanDraft.parse(JSON.parse(JSON.stringify(draftOfPlan(plan))));
+
+    expect(renderPlan(planFromWindow(window, draft))).toBe(renderPlan(plan));
   });
 });
 

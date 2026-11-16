@@ -1,0 +1,12 @@
+{
+  "ArgsDefaultRender": "<multi-beta></multi-beta>
+<script>
+  document.querySelector('multi-beta').betaLabel = 'Default beta & <changed>';
+</script>",
+  "DomNode": "const DomNode = () => {
+  const el = document.createElement('multi-beta');
+  el.setAttribute('beta-label', String('Beta & <changed>'));
+  return el;
+};",
+  "LitTemplate": "html`<multi-beta beta-label=${'Beta & <changed>'}></multi-beta>`",
+}

@@ -18,7 +18,9 @@ import {
   unwrapExpression,
 } from 'storybook/internal/csf-tools';
 
+import { angularText, inputBinding, textValue } from '../snippet-values.ts';
 import { formatPropInTemplate } from '../template-grammar.ts';
+import type { ArgPrinter } from './story-docs-holes.ts';
 
 /** One story, as much of it as reading the markup it supplies needs. */
 export interface StoryShape {
@@ -32,13 +34,17 @@ export interface StoryShape {
   args: Record<string, Node>;
   /** Source text of everything hiding args from this pass; empty when the merged args are known. */
   unresolvedArgs: string[];
+  // Prints an arg's value where the markup shows it; the value itself when unset.
+  printer?: ArgPrinter;
 }
 
 export { oneLineTextOf };
 
 /** Bindings the generated snippet would carry, which is also what `argsToTemplate` expands to. */
 export interface Bindings {
-  inputs: { name: string; expression: string }[];
+  // `attribute` is the whole `[name]="expression"` binding, as the snippet prints it; `unset` marks
+  // the hole of an input the story does not set, which represents no arg.
+  inputs: { name: string; expression: string; attribute?: string; unset?: true }[];
   outputs: string[];
 }
 
@@ -70,10 +76,16 @@ const bindingAttributes = (
     filter.include ? filter.include.includes(name) : !filter.exclude?.includes(name);
   const representedInputs = inputs.filter(({ name }) => allowed(name));
   const representedOutputs = outputs.filter(allowed);
-  representedInputs.forEach(({ name }) => representedArgs.add(name));
+  representedInputs.forEach(({ name, unset }) => {
+    if (!unset) {
+      representedArgs.add(name);
+    }
+  });
   representedOutputs.forEach((name) => representedArgs.add(name));
   return {
-    inputAttributes: representedInputs.map(({ name, expression }) => `[${name}]="${expression}"`),
+    inputAttributes: representedInputs.map(
+      ({ name, expression, attribute }) => attribute ?? inputBinding(name, expression)
+    ),
     outputAttributes: representedOutputs.map((name) => ({
       name,
       markup: `(${name})="${formatPropInTemplate(name)}($event)"`,
@@ -325,11 +337,15 @@ const substituteExpression = (
   }
   const argName = scope.argBindings.get(expression.name);
   if (argName !== undefined) {
-    const text = shape.unresolvedArgs.length === 0 ? literalText(shape.args[argName]) : undefined;
-    if (text !== undefined) {
-      representedArgs.add(argName);
+    const written =
+      shape.unresolvedArgs.length === 0 ? literalText(shape.args[argName]) : undefined;
+    if (written === undefined) {
+      return undefined;
     }
-    return text;
+    // Printed as the preview prints a changed value; text with `{{` as written.
+    const text = angularText(written) ?? written;
+    representedArgs.add(argName);
+    return shape.printer ? shape.printer.show(argName, 'text', text) : text;
   }
   if (scope.parameterNames.has(expression.name)) {
     return undefined;
@@ -402,11 +418,7 @@ const literalText = (node: Node | undefined): string | undefined => {
   if (unwrapped?.type !== 'Literal') {
     return undefined;
   }
-  const { value } = unwrapped;
-  if (typeof value === 'string') {
-    return value;
-  }
-  return typeof value === 'number' || typeof value === 'boolean' ? String(value) : undefined;
+  return textValue(unwrapped.value);
 };
 
 const isNullLiteral = (node: Node): boolean =>

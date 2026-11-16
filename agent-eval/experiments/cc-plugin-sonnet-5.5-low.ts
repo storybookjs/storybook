@@ -7,7 +7,6 @@ import {
 import {
   commitSandboxBaseline,
   setupSandbox,
-  writeClaudeInAppBrowserMock,
   writeClaudePluginSkills,
   writeStorybookAgentInstructions,
 } from '../lib/templates.ts';
@@ -24,7 +23,6 @@ export default {
   setup: async (sandbox) => {
     await setupSandbox(sandbox, { agent: 'claude-code', integration: 'plugin', model });
     await writeClaudePluginSkills(sandbox);
-    await writeClaudeInAppBrowserMock(sandbox);
     await writeStorybookAgentInstructions(sandbox);
     await commitSandboxBaseline(sandbox);
   },

@@ -91,11 +91,14 @@ export const ToolbarMenuSelect: FC<ToolbarMenuProps> = ({
   React.useEffect(() => {
     if (shortcuts) {
       const length = options.length;
+      // Read the current value when the shortcut fires, so that a globals change does not
+      // re-register the shortcuts.
+      const selectedIndex = () => options.findIndex((i) => i.value === api.getGlobals()[id]);
       void registerShortcuts(api, id, {
         next: {
           ...shortcuts.next,
           action: () => {
-            const idx = options.findIndex((i) => i.value === globals[id]);
+            const idx = selectedIndex();
             const nextIdx = idx < 0 ? 0 : (idx + 1) % length;
             updateGlobals({ [id]: options[nextIdx].value });
           },
@@ -103,7 +106,7 @@ export const ToolbarMenuSelect: FC<ToolbarMenuProps> = ({
         previous: {
           ...shortcuts.previous,
           action: () => {
-            const idx = options.findIndex((i) => i.value === globals[id]);
+            const idx = selectedIndex();
             const previousIdx = idx < 0 ? length - 1 : (idx + length - 1) % length;
             updateGlobals({ [id]: options[previousIdx].value });
           },
@@ -116,7 +119,7 @@ export const ToolbarMenuSelect: FC<ToolbarMenuProps> = ({
         },
       });
     }
-  }, [api, id, shortcuts, globals, options, updateGlobals]);
+  }, [api, id, shortcuts, options, updateGlobals]);
 
   // FIXME: for SB 10 we would want description to become an aria-description, and to add an
   // ariaLabel prop to tools with an automigration switching current description to ariaLabel

@@ -27,7 +27,7 @@ import type {
   VitestError,
 } from '../types.ts';
 import { errorToErrorLike } from '../utils.ts';
-import { VitestManager } from './vitest-manager.ts';
+import { VitestManager, toModuleId } from './vitest-manager.ts';
 
 export type TestManagerOptions = {
   storybookOptions: Options;
@@ -87,7 +87,26 @@ export class TestManager {
 
   public readonly configLoader?: TestManagerOptions['configLoader'];
 
-  public storyIndex: StoryIndex = { v: 5, entries: {} };
+  private _storyIndex: StoryIndex = { v: 5, entries: {} };
+
+  public get storyIndex(): StoryIndex {
+    return this._storyIndex;
+  }
+
+  public set storyIndex(index: StoryIndex) {
+    const previousImportPaths = new Set(
+      Object.values(this._storyIndex.entries).map((entry) => entry.importPath)
+    );
+    this._storyIndex = index;
+    const newImportPaths = new Set(
+      Object.values(index.entries)
+        .map((entry) => entry.importPath)
+        .filter((importPath) => !previousImportPaths.has(importPath))
+    );
+    // Files added to the index may never be reported by Vitest's own watcher (e.g. when they
+    // live outside the Vite root), so make sure Vitest picks them up before the next run
+    this.vitestManager.registerTestFiles([...newImportPaths].map(toModuleId));
+  }
 
   public readonly previewAnnotations: PreviewAnnotation[];
 

@@ -344,6 +344,76 @@ describe('addon shortcut matching', () => {
   });
 });
 
+describe('addon shortcut re-registration', () => {
+  const setup = () => {
+    const store = createMockStore();
+    const fullAPI = { getNavAvailability: () => 'shown' };
+    const { api, state } = initShortcuts({ store, provider: {}, fullAPI });
+    store.setState({ ...state, ui: { enableShortcuts: true }, storyId: 'a', refId: undefined });
+    store.setState.mockClear();
+    return { api, store };
+  };
+  const shortcut = (overrides) => ({
+    label: 'Do it',
+    defaultShortcut: ['O'],
+    actionName: 'doIt',
+    action: vi.fn(),
+    ...overrides,
+  });
+
+  it('writes the binding to the store once and fires the latest action', async () => {
+    const { api, store } = setup();
+    const first = shortcut();
+    const second = shortcut();
+
+    await api.setAddonShortcut('my-addon', first);
+    expect(store.setState).toHaveBeenCalledTimes(1);
+
+    await api.setAddonShortcut('my-addon', second);
+    expect(store.setState).toHaveBeenCalledTimes(1);
+
+    expect(api.handleKeydownEvent({ key: 'O', code: 'KeyO' })).toBe('my-addon-doIt');
+    expect(first.action).not.toHaveBeenCalled();
+    expect(second.action).toHaveBeenCalled();
+  });
+
+  it('keeps a binding the user customised when the addon registers again', async () => {
+    const { api } = setup();
+    await api.setAddonShortcut('my-addon', shortcut());
+    await api.setShortcut('my-addon-doIt', ['P']);
+
+    await api.setAddonShortcut('my-addon', shortcut());
+
+    expect(api.getShortcutKeys()['my-addon-doIt']).toEqual(['P']);
+    expect(api.handleKeydownEvent({ key: 'P', code: 'KeyP' })).toBe('my-addon-doIt');
+  });
+
+  it('writes again when the default binding changes', async () => {
+    const { api, store } = setup();
+    await api.setAddonShortcut('my-addon', shortcut());
+    store.setState.mockClear();
+
+    await api.setAddonShortcut('my-addon', shortcut({ defaultShortcut: ['P'] }));
+
+    expect(store.setState).toHaveBeenCalledTimes(1);
+    expect(api.getShortcutKeys()['my-addon-doIt']).toEqual(['P']);
+    expect(api.getDefaultShortcuts()['my-addon-doIt']).toEqual(['P']);
+  });
+
+  it('writes again when the binding is missing from the store', async () => {
+    const { api, store } = setup();
+    await api.setAddonShortcut('my-addon', shortcut());
+    const { 'my-addon-doIt': _removed, ...rest } = store.getState().shortcuts;
+    store.setState({ shortcuts: rest });
+    store.setState.mockClear();
+
+    await api.setAddonShortcut('my-addon', shortcut());
+
+    expect(store.setState).toHaveBeenCalledTimes(1);
+    expect(api.getShortcutKeys()['my-addon-doIt']).toEqual(['O']);
+  });
+});
+
 describe('focus region shortcuts', () => {
   const setup = ({ navShown = true, panelShown = true } = {}) => {
     const store = createMockStore();

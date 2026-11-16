@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { logger } from 'storybook/internal/node-logger';
@@ -18,6 +20,7 @@ describe('storybookAngularVitest', () => {
 
   afterEach(() => {
     delete process.env[ENV_KEY];
+    vi.doUnmock('@angular/compiler');
   });
 
   it('sets the env var to the serialized options and returns the named plugin', () => {
@@ -65,6 +68,38 @@ describe('storybookAngularVitest', () => {
 
     expect(() => storybookAngularVitest(circular)).toThrow(/non-serializable/);
     expect(process.env[ENV_KEY]).toBeUndefined();
+  });
+
+  it('registers the compiler wrapper as a setup file, not the bare @angular/compiler specifier', () => {
+    const config = (storybookAngularVitest().config as () => { test: { setupFiles: string[] } })();
+
+    // See src/client/vitest-compiler-setup.ts for why it must not be the bare specifier.
+    expect(config.test.setupFiles).toEqual([
+      '@storybook/angular-vite/internal/vitest-compiler-setup',
+    ]);
+  });
+
+  it('maps the setup specifier to the built compiler wrapper', () => {
+    const pkg = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8'));
+
+    expect(pkg.exports['./internal/vitest-compiler-setup']).toBe(
+      './dist/client/vitest-compiler-setup.js'
+    );
+  });
+
+  it('evaluates @angular/compiler once when the setup file is re-imported under fresh URLs', async () => {
+    let evaluations = 0;
+    vi.doMock('@angular/compiler', () => {
+      evaluations++;
+      return {};
+    });
+    const wrapperUrl = new URL('../client/vitest-compiler-setup.ts', import.meta.url).href;
+
+    // The way Vitest's browser tester re-imports setup files.
+    await import(/* @vite-ignore */ `${wrapperUrl}?browserv=1`);
+    await import(/* @vite-ignore */ `${wrapperUrl}?browserv=2`);
+
+    expect(evaluations).toBe(1);
   });
 
   it('exports storybookAngularVitest as a function (export contract)', () => {

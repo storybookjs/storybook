@@ -1,5 +1,5 @@
 import { readFileSync, readdirSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 
 import type {
   DocgenPayload,
@@ -10,6 +10,9 @@ import type {
 export const DOCGEN_SNAPSHOT_DIR = join('services', 'core', 'docgen');
 
 export const SANDBOX_TOKEN = '<sandbox>';
+export const REPO_TOKEN = '<repo>';
+
+const REPO_DIR = resolve(import.meta.dirname, '../../../../..');
 
 // An allow-list rather than an exclude-list because `DocgenPayload` carries an index signature: the
 // Angular provider hangs the raw Compodoc entry off it, over 100KB of mostly `sourceCode` per
@@ -44,10 +47,17 @@ export type SandboxBaseline = Pick<DocgenPayload, (typeof PORTABLE_FIELDS)[numbe
 export type SandboxBaselines = Record<string, SandboxBaseline>;
 
 // Both native and POSIX spelling, so a baseline recorded on one platform verifies on another.
-export const normalizePaths = (value: string, sandboxDir: string): string =>
-  value
-    .replaceAll(sandboxDir, SANDBOX_TOKEN)
-    .replaceAll(sandboxDir.replace(/\\/g, '/'), SANDBOX_TOKEN);
+export const normalizePaths = (value: string, sandboxDir: string, repoDir = REPO_DIR): string =>
+  [
+    [sandboxDir, SANDBOX_TOKEN],
+    [repoDir, REPO_TOKEN],
+  ]
+    .toSorted(([a], [b]) => b.length - a.length)
+    .reduce(
+      (normalized, [dir, token]) =>
+        normalized.replaceAll(dir, token).replaceAll(dir.replace(/\\/g, '/'), token),
+      value
+    );
 
 const normalizeDeep = (value: unknown, sandboxDir: string): unknown => {
   if (typeof value === 'string') {
@@ -82,13 +92,6 @@ export const toBaseline = (payload: DocgenPayload, sandboxDir: string): SandboxB
   return normalizeDeep(baseline, sandboxDir) as SandboxBaseline;
 };
 
-// The monorepo's shared template stories reference their component through a global, so there is no
-// import for the resolver to follow and every one of them is an error payload by construction.
-// Recording them would say something about the template-story harness, not about docgen.
-// Web Components names such a payload after its title and quotes the global in the error instead.
-const isGloballyReferenced = (payload: SandboxBaseline): boolean =>
-  payload.name.startsWith('globalThis') || payload.error?.message.includes('`globalThis.') === true;
-
 export function readStaticDocgen({
   staticDir,
   sandboxDir,
@@ -120,7 +123,7 @@ export function readStaticDocgen({
 
     for (const [id, payload] of Object.entries(components ?? {})) {
       const baseline = toBaseline(payload, sandboxDir);
-      if (!isGloballyReferenced(baseline)) {
+      if (!baseline.error) {
         baselines[id] = baseline;
       }
     }
@@ -130,7 +133,7 @@ export function readStaticDocgen({
     // eslint-disable-next-line local-rules/no-uncategorized-errors
     throw new Error(
       `${docgenDir} yielded no components to record; refusing to record an empty run. ` +
-        `Either the build produced no payloads, or every one of them is globally referenced.`
+        `Either the build produced no payloads, or docgen failed for every one of them.`
     );
   }
 

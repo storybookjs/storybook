@@ -15,6 +15,13 @@ import JsdocTags from './JsdocTags.vue';
   <JsdocTags label="Old label" title="New title" />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import JsdocTags from './JsdocTags.vue';
+</script>
+
+<template>
+  <JsdocTags⟦attr label ~" "⟫ label="Old label"⟧⟦attr title ~" "⟫ title="New title"⟧⟦props * except=["label","title"] ~" "⟫⟧ />
+</template>",
     },
   },
 }

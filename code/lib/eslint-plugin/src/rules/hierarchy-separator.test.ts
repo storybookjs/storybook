@@ -23,9 +23,38 @@ ruleTester.run('hierarchy-separator', rule, {
     "export default { title: 'Examples/Components/Button' } as ComponentMeta<typeof Button>",
     "export default { title: 'Examples.Components' } satisfies Meta<typeof Button>",
     'export default { ...props } as ComponentMeta<typeof Button>',
+    `
+      import preview from '../../.storybook/preview'
+      const meta = preview.meta({ title: 'Examples/Components/Button' })
+    `,
   ],
 
   invalid: [
+    {
+      code: dedent`
+        import preview from '../../.storybook/preview'
+        const meta = preview.meta({ title: 'Examples|Components/Button' })
+      `,
+      output: dedent`
+        import preview from '../../.storybook/preview'
+        const meta = preview.meta({ title: 'Examples/Components/Button' })
+      `,
+      errors: [
+        {
+          type: AST_NODE_TYPES.Property,
+          messageId: 'deprecatedHierarchySeparator',
+          suggestions: [
+            {
+              messageId: 'useCorrectSeparators',
+              output: dedent`
+                import preview from '../../.storybook/preview'
+                const meta = preview.meta({ title: 'Examples/Components/Button' })
+              `,
+            },
+          ],
+        },
+      ],
+    },
     {
       code: "export default { title: 'Examples|Components/Button' }",
       output: "export default { title: 'Examples/Components/Button' }",

@@ -41,13 +41,21 @@ on:
     types: [opened, synchronize, labeled, reopened]
 
 # Group per PR so redundant re-triggers on the same PR cancel each other.
+# Adding a label that is not a CI workflow label (e.g. the review bot's `review:*` labels) gets its
+# own group, so it cannot cancel an in-flight run, and its jobs are skipped below. GitHub applies
+# the concurrency group before the job `if` can skip the run.
+# The CI workflow label list here and in the job `if`s must match the one in `get-parameters`.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}${{ github.event.action == 'labeled' && !contains(fromJSON('["ci:focus","ci:normal","ci:docs","ci:daily","ci:windows"]'), github.event.label.name) && format('-{0}', github.run_id) || '' }}
   cancel-in-progress: true
 
 jobs:
   get-branch:
-    if: github.repository_owner == 'storybookjs'
+    # Only a CI workflow label starts a pipeline; other labels would re-run CI on an unchanged commit.
+    if: >-
+      github.repository_owner == 'storybookjs' &&
+      (github.event.action != 'labeled' ||
+        contains(fromJSON('["ci:focus","ci:normal","ci:docs","ci:daily","ci:windows"]'), github.event.label.name))
     runs-on: ubuntu-latest
     permissions: {}
     steps:
@@ -68,7 +76,10 @@ jobs:
       branch: ${{ steps.get-branch.outputs.branch }}
 
   get-parameters:
-    if: github.repository_owner == 'storybookjs'
+    if: >-
+      github.repository_owner == 'storybookjs' &&
+      (github.event.action != 'labeled' ||
+        contains(fromJSON('["ci:focus","ci:normal","ci:docs","ci:daily","ci:windows"]'), github.event.label.name))
     runs-on: ubuntu-latest
     permissions: {}
     steps:

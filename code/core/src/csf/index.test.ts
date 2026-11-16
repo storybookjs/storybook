@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { combineTags, isExportStory, storyNameFromExport, toId } from './index.ts';
+import {
+  combineTags,
+  isExportStory,
+  isValidPreviewPath,
+  storyNameFromExport,
+  toId,
+} from './index.ts';
 
 describe('toId', () => {
   const testCases: [string, string, string | undefined, string][] = [
@@ -116,5 +122,24 @@ describe('combineTags', () => {
     [['', '!'], []],
   ])('combineTags(%o) -> %o', (tags, expected) => {
     expect(combineTags(...tags)).toEqual(expected);
+  });
+});
+
+describe('isValidPreviewPath', () => {
+  it.each([
+    ['#.storybook/preview', true],
+    ['../../.storybook/preview', true],
+    ['/path/to/.storybook/preview', true],
+    ['./preview', true],
+    ['./preview.ts', true],
+    ['./preview.tsx', true],
+    ['./preview.js', true],
+    ['./preview.jsx', true],
+    ['./preview.mjs', true],
+    ['foo', false],
+    ['#.storybook/bad-preview', false],
+    ['preview', false],
+  ])('isValidPreviewPath("%s") === %s', (path, expected) => {
+    expect(isValidPreviewPath(path)).toBe(expected);
   });
 });

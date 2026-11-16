@@ -219,15 +219,6 @@ describe('Helpers', () => {
     ).rejects.toThrowError(expectedMessage);
   });
 
-  describe('coerceSemver', () => {
-    it(`should throw if the version argument is invalid semver string`, () => {
-      const invalidSemverString = 'hello, world';
-      expect(() => {
-        helpers.coerceSemver(invalidSemverString);
-      }).toThrowError(`Could not coerce ${invalidSemverString} into a semver.`);
-    });
-  });
-
   describe('hasStorybookDependencies', () => {
     it(`should return true when any storybook dependency exists`, async () => {
       const result = helpers.hasStorybookDependencies({

@@ -84,7 +84,6 @@ export const getExternal = async (cwd: string) => {
 
   const runtimeExternal: string[] = [
     'react',
-    'use-sync-external-store',
     'react-dom',
     'react-dom/client',
     '@storybook/icons',
@@ -107,6 +106,7 @@ export const getExternal = async (cwd: string) => {
     // reachable through devDep type imports (e.g. react-docgen-typescript); keeping it
     // external lets treeshaking drop the import when the kept types don't use it.
     'typescript',
+    'typescript-native',
     ...builtinModules.flatMap((m: string) => [m, `node:${m}`]),
   ];
 

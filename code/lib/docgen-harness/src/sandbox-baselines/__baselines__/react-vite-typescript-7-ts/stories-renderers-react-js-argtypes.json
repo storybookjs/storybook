@@ -1,0 +1,814 @@
+{
+  "argTypes": {
+    "arrayOptional": {
+      "description": "",
+      "name": "arrayOptional",
+      "table": {
+        "defaultValue": {
+          "summary": "['array', 'optional']"
+        },
+        "type": {
+          "summary": "string[]"
+        }
+      },
+      "type": {
+        "name": "other",
+        "required": false,
+        "value": "string[]"
+      }
+    },
+    "arrayRequired": {
+      "description": "",
+      "name": "arrayRequired",
+      "table": {
+        "type": {
+          "summary": "string[]"
+        }
+      },
+      "type": {
+        "name": "other",
+        "required": true,
+        "value": "string[]"
+      }
+    },
+    "booleanOptional": {
+      "description": "",
+      "name": "booleanOptional",
+      "table": {
+        "defaultValue": {
+          "summary": "false"
+        },
+        "type": {
+          "summary": "boolean"
+        }
+      },
+      "type": {
+        "name": "boolean",
+        "required": false
+      }
+    },
+    "booleanRequired": {
+      "description": "",
+      "name": "booleanRequired",
+      "table": {
+        "type": {
+          "summary": "boolean"
+        }
+      },
+      "type": {
+        "name": "boolean",
+        "required": true
+      }
+    },
+    "dateOptional": {
+      "description": "",
+      "name": "dateOptional",
+      "table": {
+        "defaultValue": {
+          "summary": "new Date('20 Jan 1983')"
+        },
+        "type": {
+          "summary": "Date"
+        }
+      },
+      "type": {
+        "name": "other",
+        "required": false,
+        "value": "Date"
+      }
+    },
+    "dateRequired": {
+      "description": "",
+      "name": "dateRequired",
+      "table": {
+        "type": {
+          "summary": "Date"
+        }
+      },
+      "type": {
+        "name": "other",
+        "required": true,
+        "value": "Date"
+      }
+    },
+    "functionOptional": {
+      "description": "",
+      "name": "functionOptional",
+      "table": {
+        "defaultValue": {
+          "summary": "() => 'foo'"
+        },
+        "type": {
+          "summary": "() => string"
+        }
+      },
+      "type": {
+        "name": "function",
+        "required": false,
+        "value": "() => string"
+      }
+    },
+    "functionRequired": {
+      "description": "",
+      "name": "functionRequired",
+      "table": {
+        "type": {
+          "summary": "() => string"
+        }
+      },
+      "type": {
+        "name": "function",
+        "required": true,
+        "value": "() => string"
+      }
+    },
+    "globalReference": {
+      "description": "",
+      "name": "globalReference",
+      "table": {
+        "defaultValue": {
+          "summary": "Date"
+        },
+        "type": {
+          "summary": "any"
+        }
+      },
+      "type": {
+        "name": "other",
+        "required": false,
+        "value": "any"
+      }
+    },
+    "importedReference": {
+      "description": "",
+      "name": "importedReference",
+      "table": {
+        "defaultValue": {
+          "summary": "'imported-value'"
+        },
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string",
+        "required": false
+      }
+    },
+    "localReference": {
+      "description": "",
+      "name": "localReference",
+      "table": {
+        "defaultValue": {
+          "summary": "'local-value'"
+        },
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string",
+        "required": false
+      }
+    },
+    "numberOptional": {
+      "description": "",
+      "name": "numberOptional",
+      "table": {
+        "defaultValue": {
+          "summary": "1"
+        },
+        "type": {
+          "summary": "number"
+        }
+      },
+      "type": {
+        "name": "number",
+        "required": false
+      }
+    },
+    "numberRequired": {
+      "description": "Description",
+      "name": "numberRequired",
+      "table": {
+        "type": {
+          "summary": "number"
+        }
+      },
+      "type": {
+        "name": "number",
+        "required": true
+      }
+    },
+    "objectOptional": {
+      "description": "",
+      "name": "objectOptional",
+      "table": {
+        "defaultValue": {
+          "summary": "{ object: 'optional' }"
+        },
+        "type": {
+          "summary": "object"
+        }
+      },
+      "type": {
+        "name": "object",
+        "required": false
+      }
+    },
+    "objectRequired": {
+      "description": "",
+      "name": "objectRequired",
+      "table": {
+        "type": {
+          "summary": "object"
+        }
+      },
+      "type": {
+        "name": "object",
+        "required": true
+      }
+    },
+    "stringGlobalName": {
+      "description": "",
+      "name": "stringGlobalName",
+      "table": {
+        "defaultValue": {
+          "summary": "'top'"
+        },
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string",
+        "required": false
+      }
+    },
+    "stringOptional": {
+      "description": "",
+      "name": "stringOptional",
+      "table": {
+        "defaultValue": {
+          "summary": "'stringOptional'"
+        },
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string",
+        "required": false
+      }
+    },
+    "stringRequired": {
+      "description": "",
+      "name": "stringRequired",
+      "table": {
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string",
+        "required": true
+      }
+    }
+  },
+  "id": "stories-renderers-react-js-argtypes",
+  "jsDocTags": {},
+  "name": "JsFunctionComponentInlineDefaultsComponent",
+  "path": "./src/stories/renderers/react/js-argtypes.stories.jsx",
+  "subcomponents": {
+    "JsDefaultValues": {
+      "argTypes": {
+        "title": {
+          "description": "",
+          "name": "title",
+          "table": {
+            "defaultValue": {
+              "summary": "'Beta'"
+            },
+            "type": {
+              "summary": "string"
+            }
+          },
+          "type": {
+            "name": "string",
+            "required": false
+          }
+        }
+      },
+      "import": "import { component as JsDefaultValuesComponent } from './docgen-components/9626-js-default-values/input.jsx';",
+      "jsDocTags": {},
+      "name": "JsDefaultValues",
+      "path": "<sandbox>/src/stories/renderers/react/docgen-components/9626-js-default-values/input.jsx"
+    },
+    "JsFunctionComponentInlineDefaults": {
+      "argTypes": {
+        "arrayOptional": {
+          "description": "",
+          "name": "arrayOptional",
+          "table": {
+            "defaultValue": {
+              "summary": "['array', 'optional']"
+            },
+            "type": {
+              "summary": "string[]"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": false,
+            "value": "string[]"
+          }
+        },
+        "arrayRequired": {
+          "description": "",
+          "name": "arrayRequired",
+          "table": {
+            "type": {
+              "summary": "string[]"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": true,
+            "value": "string[]"
+          }
+        },
+        "booleanOptional": {
+          "description": "",
+          "name": "booleanOptional",
+          "table": {
+            "defaultValue": {
+              "summary": "false"
+            },
+            "type": {
+              "summary": "boolean"
+            }
+          },
+          "type": {
+            "name": "boolean",
+            "required": false
+          }
+        },
+        "booleanRequired": {
+          "description": "",
+          "name": "booleanRequired",
+          "table": {
+            "type": {
+              "summary": "boolean"
+            }
+          },
+          "type": {
+            "name": "boolean",
+            "required": true
+          }
+        },
+        "dateOptional": {
+          "description": "",
+          "name": "dateOptional",
+          "table": {
+            "defaultValue": {
+              "summary": "new Date('20 Jan 1983')"
+            },
+            "type": {
+              "summary": "Date"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": false,
+            "value": "Date"
+          }
+        },
+        "dateRequired": {
+          "description": "",
+          "name": "dateRequired",
+          "table": {
+            "type": {
+              "summary": "Date"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": true,
+            "value": "Date"
+          }
+        },
+        "functionOptional": {
+          "description": "",
+          "name": "functionOptional",
+          "table": {
+            "defaultValue": {
+              "summary": "() => 'foo'"
+            },
+            "type": {
+              "summary": "() => string"
+            }
+          },
+          "type": {
+            "name": "function",
+            "required": false,
+            "value": "() => string"
+          }
+        },
+        "functionRequired": {
+          "description": "",
+          "name": "functionRequired",
+          "table": {
+            "type": {
+              "summary": "() => string"
+            }
+          },
+          "type": {
+            "name": "function",
+            "required": true,
+            "value": "() => string"
+          }
+        },
+        "globalReference": {
+          "description": "",
+          "name": "globalReference",
+          "table": {
+            "defaultValue": {
+              "summary": "Date"
+            },
+            "type": {
+              "summary": "any"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": false,
+            "value": "any"
+          }
+        },
+        "importedReference": {
+          "description": "",
+          "name": "importedReference",
+          "table": {
+            "defaultValue": {
+              "summary": "'imported-value'"
+            },
+            "type": {
+              "summary": "string"
+            }
+          },
+          "type": {
+            "name": "string",
+            "required": false
+          }
+        },
+        "localReference": {
+          "description": "",
+          "name": "localReference",
+          "table": {
+            "defaultValue": {
+              "summary": "'local-value'"
+            },
+            "type": {
+              "summary": "string"
+            }
+          },
+          "type": {
+            "name": "string",
+            "required": false
+          }
+        },
+        "numberOptional": {
+          "description": "",
+          "name": "numberOptional",
+          "table": {
+            "defaultValue": {
+              "summary": "1"
+            },
+            "type": {
+              "summary": "number"
+            }
+          },
+          "type": {
+            "name": "number",
+            "required": false
+          }
+        },
+        "numberRequired": {
+          "description": "Description",
+          "name": "numberRequired",
+          "table": {
+            "type": {
+              "summary": "number"
+            }
+          },
+          "type": {
+            "name": "number",
+            "required": true
+          }
+        },
+        "objectOptional": {
+          "description": "",
+          "name": "objectOptional",
+          "table": {
+            "defaultValue": {
+              "summary": "{ object: 'optional' }"
+            },
+            "type": {
+              "summary": "object"
+            }
+          },
+          "type": {
+            "name": "object",
+            "required": false
+          }
+        },
+        "objectRequired": {
+          "description": "",
+          "name": "objectRequired",
+          "table": {
+            "type": {
+              "summary": "object"
+            }
+          },
+          "type": {
+            "name": "object",
+            "required": true
+          }
+        },
+        "stringGlobalName": {
+          "description": "",
+          "name": "stringGlobalName",
+          "table": {
+            "defaultValue": {
+              "summary": "'top'"
+            },
+            "type": {
+              "summary": "string"
+            }
+          },
+          "type": {
+            "name": "string",
+            "required": false
+          }
+        },
+        "stringOptional": {
+          "description": "",
+          "name": "stringOptional",
+          "table": {
+            "defaultValue": {
+              "summary": "'stringOptional'"
+            },
+            "type": {
+              "summary": "string"
+            }
+          },
+          "type": {
+            "name": "string",
+            "required": false
+          }
+        },
+        "stringRequired": {
+          "description": "",
+          "name": "stringRequired",
+          "table": {
+            "type": {
+              "summary": "string"
+            }
+          },
+          "type": {
+            "name": "string",
+            "required": true
+          }
+        }
+      },
+      "import": "import { component as JsFunctionComponentInlineDefaultsComponent } from './docgen-components/js-function-component-inline-defaults/input.jsx';",
+      "jsDocTags": {},
+      "name": "JsFunctionComponentInlineDefaults",
+      "path": "<sandbox>/src/stories/renderers/react/docgen-components/js-function-component-inline-defaults/input.jsx"
+    },
+    "JsFunctionComponentInlineDefaultsNoPropTypes": {
+      "argTypes": {
+        "arrayOptional": {
+          "description": "",
+          "name": "arrayOptional",
+          "table": {
+            "defaultValue": {
+              "summary": "['array', 'optional']"
+            },
+            "type": {
+              "summary": "string[]"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": false,
+            "value": "string[]"
+          }
+        },
+        "booleanOptional": {
+          "description": "",
+          "name": "booleanOptional",
+          "table": {
+            "defaultValue": {
+              "summary": "false"
+            },
+            "type": {
+              "summary": "boolean"
+            }
+          },
+          "type": {
+            "name": "boolean",
+            "required": false
+          }
+        },
+        "dateOptional": {
+          "description": "",
+          "name": "dateOptional",
+          "table": {
+            "defaultValue": {
+              "summary": "new Date('20 Jan 1983')"
+            },
+            "type": {
+              "summary": "Date"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": false,
+            "value": "Date"
+          }
+        },
+        "functionOptional": {
+          "description": "",
+          "name": "functionOptional",
+          "table": {
+            "defaultValue": {
+              "summary": "() => 'foo'"
+            },
+            "type": {
+              "summary": "() => string"
+            }
+          },
+          "type": {
+            "name": "function",
+            "required": false,
+            "value": "() => string"
+          }
+        },
+        "globalReference": {
+          "description": "",
+          "name": "globalReference",
+          "table": {
+            "defaultValue": {
+              "summary": "Date"
+            },
+            "type": {
+              "summary": "DateConstructor"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": false,
+            "value": "DateConstructor"
+          }
+        },
+        "importedReference": {
+          "description": "",
+          "name": "importedReference",
+          "table": {
+            "defaultValue": {
+              "summary": "'imported-value'"
+            },
+            "type": {
+              "summary": "string"
+            }
+          },
+          "type": {
+            "name": "string",
+            "required": false
+          }
+        },
+        "localReference": {
+          "description": "",
+          "name": "localReference",
+          "table": {
+            "defaultValue": {
+              "summary": "'local-value'"
+            },
+            "type": {
+              "summary": "string"
+            }
+          },
+          "type": {
+            "name": "string",
+            "required": false
+          }
+        },
+        "numberOptional": {
+          "description": "",
+          "name": "numberOptional",
+          "table": {
+            "defaultValue": {
+              "summary": "1"
+            },
+            "type": {
+              "summary": "number"
+            }
+          },
+          "type": {
+            "name": "number",
+            "required": false
+          }
+        },
+        "objectOptional": {
+          "description": "",
+          "name": "objectOptional",
+          "table": {
+            "defaultValue": {
+              "summary": "{ object: 'optional' }"
+            },
+            "type": {
+              "summary": "{ object: string; }"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": false,
+            "value": "{ object: string; }"
+          }
+        },
+        "stringGlobalName": {
+          "description": "",
+          "name": "stringGlobalName",
+          "table": {
+            "defaultValue": {
+              "summary": "'top'"
+            },
+            "type": {
+              "summary": "string"
+            }
+          },
+          "type": {
+            "name": "string",
+            "required": false
+          }
+        },
+        "stringOptional": {
+          "description": "",
+          "name": "stringOptional",
+          "table": {
+            "defaultValue": {
+              "summary": "'stringOptional'"
+            },
+            "type": {
+              "summary": "string"
+            }
+          },
+          "type": {
+            "name": "string",
+            "required": false
+          }
+        }
+      },
+      "import": "import { component as JsFunctionComponentInlineDefaultsNoPropTypesComponent } from './docgen-components/js-function-component-inline-defaults-no-propTypes/input.jsx';",
+      "jsDocTags": {},
+      "name": "JsFunctionComponentInlineDefaultsNoPropTypes",
+      "path": "<sandbox>/src/stories/renderers/react/docgen-components/js-function-component-inline-defaults-no-propTypes/input.jsx"
+    },
+    "JsReactMemo": {
+      "argTypes": {
+        "label": {
+          "description": "",
+          "name": "label",
+          "table": {
+            "type": {
+              "summary": "string"
+            }
+          },
+          "type": {
+            "name": "string",
+            "required": true
+          }
+        },
+        "onClick": {
+          "description": "",
+          "name": "onClick",
+          "table": {
+            "type": {
+              "summary": "() => void"
+            }
+          },
+          "type": {
+            "name": "function",
+            "required": true,
+            "value": "() => void"
+          }
+        }
+      },
+      "import": "import { component as JsReactMemoComponent } from './docgen-components/9586-js-react-memo/input.jsx';",
+      "jsDocTags": {},
+      "name": "JsReactMemo",
+      "path": "<sandbox>/src/stories/renderers/react/docgen-components/9586-js-react-memo/input.jsx"
+    }
+  }
+}

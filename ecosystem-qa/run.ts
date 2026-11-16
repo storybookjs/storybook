@@ -31,7 +31,7 @@ import { shipsSandcastleFiles } from './lib/clone-guard.ts';
 import { cycleBranchName, cycleRepo, versionLine } from './lib/cycle.ts';
 import { runFake } from './lib/fake-run.ts';
 import { outputOf, watchHost, type Report } from './lib/host-watch.ts';
-import { proxyTheKey, sandboxAddresses, type ProxiedKey } from './lib/key-proxy.ts';
+import { credentialFor, proxyTheKey, sandboxAddresses, type ProxiedKey } from './lib/key-proxy.ts';
 import { forJobLog, liveLine } from './lib/live-log.ts';
 import { memoryGuard } from './lib/memory-guard.ts';
 import { CHECKOUT_GUIDE, guideFor } from './lib/migration-guide.ts';
@@ -82,13 +82,6 @@ the result records fake: true and costs $0.`;
 const DEFAULT_MODEL: Record<Engine, string> = {
   claude: 'claude-haiku-5-5',
   codex: 'gpt-6.1-sol',
-};
-
-// The first variable that is set wins. CLAUDE_CODE_OAUTH_TOKEN (from `claude setup-token`) bills a
-// subscription, for local runs; CI passes the API key.
-const CREDENTIAL_ENV: Record<Engine, string[]> = {
-  claude: ['ANTHROPIC_API_KEY', 'CLAUDE_CODE_OAUTH_TOKEN'],
-  codex: ['CODEX_API_KEY'],
 };
 
 const INSTALL_LIMIT_SECONDS = 25 * 60;
@@ -371,13 +364,6 @@ const planSandbox = (
   }
 };
 
-const credentialOf = (engine: Engine) => {
-  const names = CREDENTIAL_ENV[engine];
-  const name =
-    names.find((name) => process.env[name]) ?? fail(`None of ${names.join(', ')} is set.`);
-  return { name, value: process.env[name]! };
-};
-
 const agentFor = (
   request: RunRequest,
   agentEnv: Record<string, string>,
@@ -408,6 +394,10 @@ const runSandcastle = async (
   startedAt: Date,
   budget: RunBudget
 ): Promise<Outcome> => {
+  const credential = credentialFor(request, process.env);
+  if (typeof credential === 'string') {
+    return fail(credential);
+  }
   const evidenceDir = join(request.outDir, 'evidence');
   writeFileSync(join(evidenceDir, 'budget.json'), budgetRecord(startedAt, budget));
   const cycleBranch = cycleBranchName(request.version, request.os, request.engine);
@@ -485,20 +475,15 @@ const runSandcastle = async (
     }
     // The same signal goes to every repair turn, so the stop is one moment for the whole run.
     const hardStop = AbortSignal.timeout(msUntilHardStop(startedAt, budget));
-    const credential = credentialOf(request.engine);
     const note = (line: string) => {
       console.log(line);
       appendFileSync(logFile, `${line}\n`);
     };
-    if (
-      request.os === 'linux' &&
-      request.sandbox === 'docker' &&
-      credential.name === 'ANTHROPIC_API_KEY'
-    ) {
+    if (credential.proxied) {
       const addresses = sandboxAddresses(
         await outputOf('docker', ['inspect', sandbox.sandboxId ?? ''])
       );
-      keyProxy = await proxyTheKey(process.env, credential.name, {
+      keyProxy = await proxyTheKey(credential.value, {
         host: addresses.gateway,
         callerAddress: addresses.container,
         upstreamOrigin: 'https://api.anthropic.com',

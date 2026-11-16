@@ -10,6 +10,9 @@ import { pipeline } from 'node:stream';
 
 import { z } from 'zod';
 
+import type { Engine } from './schema.ts';
+import type { RunRequest } from './types.ts';
+
 const AGENT_RUN_CALLS = new Set(['POST /v1/messages', 'POST /v1/messages/count_tokens']);
 
 export const PLACEHOLDER_KEY = 'key-proxy-adds-the-real-key';
@@ -88,12 +91,43 @@ export interface ProxiedKey {
   close: () => void;
 }
 
+// The first variable that is set wins. CLAUDE_CODE_OAUTH_TOKEN (from `claude setup-token`) bills a
+// subscription, for local runs; CI passes the API key.
+const CREDENTIAL_ENV: Record<Engine, string[]> = {
+  claude: ['ANTHROPIC_API_KEY', 'CLAUDE_CODE_OAUTH_TOKEN'],
+  codex: ['CODEX_API_KEY'],
+};
+
+export interface Credential {
+  name: string;
+  value: string;
+  proxied: boolean;
+}
+
+export const credentialFor = (
+  request: Pick<RunRequest, 'engine' | 'os' | 'sandbox'>,
+  env: NodeJS.ProcessEnv
+): Credential | string => {
+  const names = CREDENTIAL_ENV[request.engine];
+  const name = names.find((candidate) => env[candidate]);
+  if (!name) {
+    return `None of ${names.join(', ')} is set.`;
+  }
+  const value = env[name]!;
+  const proxied =
+    request.os === 'linux' && request.sandbox === 'docker' && name === 'ANTHROPIC_API_KEY';
+  if (proxied) {
+    // Every process started on the host inherits the environment: the docker CLI that creates the
+    // sandbox and runs the project install in it, the memory guard, and git in the clone.
+    delete env[name];
+  }
+  return { name, value, proxied };
+};
+
 export const proxyTheKey = async (
-  env: NodeJS.ProcessEnv,
-  name: string,
+  apiKey: string,
   options: Omit<KeyProxyOptions, 'apiKey'>
 ): Promise<ProxiedKey> => {
-  const apiKey = env[name]!;
   const proxy = await startKeyProxy({ ...options, apiKey }).catch((error: unknown) => {
     throw (error as NodeJS.ErrnoException).code === 'EADDRNOTAVAIL'
       ? new Error(
@@ -101,9 +135,6 @@ export const proxyTheKey = async (
         )
       : error;
   });
-  // Every process started on the host inherits the environment, git in the clone the sandbox wrote
-  // to included.
-  delete env[name];
   proxy.server.unref();
   return {
     agentEnv: { ANTHROPIC_BASE_URL: proxy.baseUrl, ANTHROPIC_API_KEY: PLACEHOLDER_KEY },

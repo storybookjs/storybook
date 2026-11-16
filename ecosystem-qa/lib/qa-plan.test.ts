@@ -257,7 +257,7 @@ describe('checkPlanText', () => {
     [
       'a link to Linear',
       'a deep sidebar tree that no catalog entry has',
-      'see https://linear.app/storybook/issue/SB-1',
+      'see https://linear.app/example/issue/EX-1',
       '| `primer-react` |',
       'Linear, Notion, or Slack',
     ],

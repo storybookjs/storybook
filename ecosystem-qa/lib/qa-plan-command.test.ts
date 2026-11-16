@@ -6,8 +6,13 @@ import { describe, expect, it } from 'vitest';
 const COMMAND = new URL('../qa-plan.ts', import.meta.url).pathname;
 const FIXTURE = readFileSync(new URL('./plan.fixture.md', import.meta.url));
 
+// Node hands a child a socket for its input, which Linux cannot open as /dev/stdin, so cat turns
+// it into a pipe.
 const qaPlan = (args: string[], input?: Buffer) =>
-  spawnSync(process.execPath, [COMMAND, ...args], { input, encoding: 'utf8' });
+  spawnSync('sh', ['-c', 'cat | "$0" "$@"', process.execPath, COMMAND, ...args], {
+    input: input ?? Buffer.alloc(0),
+    encoding: 'utf8',
+  });
 
 const withByte = (byte: number) => {
   const at = FIXTURE.indexOf('- Step: Open a story');

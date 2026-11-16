@@ -1,12 +1,10 @@
 import { parseAst } from 'rollup/parseAst';
 import { compile } from 'svelte/compiler';
-import { describe, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { extractCompiledASTNodes } from './nodes.ts';
 
 import { SVELTE_CSF_IMPORT_SOURCES } from '../../../constants.ts';
-
-import { StorybookSvelteCSFError } from '../../../utils/error.ts';
 
 function getCompiledAST(moduleScript: string) {
   const { js } = compile(
@@ -22,23 +20,20 @@ function getCompiledAST(moduleScript: string) {
 }
 
 describe(extractCompiledASTNodes.name, () => {
-  it.for(SVELTE_CSF_IMPORT_SOURCES)(
-    'finds defineMeta imported from %s',
-    async (source, { expect }) => {
-      const ast = getCompiledAST(`
+  it.for(SVELTE_CSF_IMPORT_SOURCES)('finds defineMeta imported from %s', async (source) => {
+    const ast = getCompiledAST(`
       import { defineMeta } from '${source}';
       const { Story } = defineMeta({});
     `);
 
-      const nodes = await extractCompiledASTNodes({ ast });
+    const nodes = await extractCompiledASTNodes({ ast });
 
-      expect(nodes.defineMetaImport.local.name).toBe('defineMeta');
-    }
-  );
+    expect(nodes.defineMetaVariableDeclaration.declarations[0].init).toMatchObject({
+      callee: { name: 'defineMeta' },
+    });
+  });
 
-  it('allows a namespace import of @storybook/svelte next to a named defineMeta import', async ({
-    expect,
-  }) => {
+  it('allows a namespace import of @storybook/svelte next to a named defineMeta import', async () => {
     const ast = getCompiledAST(`
       import * as SB from '@storybook/svelte';
       import { composeStories, defineMeta } from '@storybook/svelte';
@@ -47,10 +42,12 @@ describe(extractCompiledASTNodes.name, () => {
 
     const nodes = await extractCompiledASTNodes({ ast });
 
-    expect(nodes.defineMetaImport.local.name).toBe('defineMeta');
+    expect(nodes.defineMetaVariableDeclaration.declarations[0].init).toMatchObject({
+      callee: { name: 'defineMeta' },
+    });
   });
 
-  it('fails with only a namespace import of @storybook/svelte', async ({ expect }) => {
+  it('fails with only a namespace import of @storybook/svelte', async () => {
     const ast = getCompiledAST(`
       import * as SB from '@storybook/svelte';
       const { Story } = SB.defineMeta({});
@@ -65,8 +62,48 @@ describe(extractCompiledASTNodes.name, () => {
 
       In a SvelteKit project, import defineMeta from "@storybook/sveltekit".
 
-      More info: https://github.com/storybookjs/storybook/blob/v${StorybookSvelteCSFError.packageVersion}/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0002
+      More info: https://storybook.js.org/docs/writing-stories?renderer=svelte&ref=error#meta
       ]
     `);
+  });
+  it('finds preview.meta()', async () => {
+    const ast = getCompiledAST(`
+      import preview from '#.storybook/preview';
+      const { Story } = preview.meta({});
+    `);
+
+    const nodes = await extractCompiledASTNodes({ ast });
+
+    expect(nodes.isFactory).toBe(true);
+    expect(nodes.metaIdentifier).toBeUndefined();
+    expect(nodes.storyNames).toEqual(['Story']);
+  });
+
+  it('finds the meta variable of preview.meta()', async () => {
+    const ast = getCompiledAST(`
+      import config from '../.storybook/preview.ts';
+      const meta = config.meta({});
+      const { Story: S } = meta;
+    `);
+
+    const nodes = await extractCompiledASTNodes({ ast });
+
+    expect(nodes.isFactory).toBe(true);
+    expect(nodes.metaIdentifier?.name).toBe('meta');
+    expect(nodes.storyNames).toEqual(['S']);
+  });
+
+  it('finds the Story components of meta.type()', async () => {
+    const ast = getCompiledAST(`
+      import preview from '#.storybook/preview';
+      const meta = preview.type().meta({});
+      const { Story } = meta;
+      const { Story: IconStory } = meta.type();
+      const { Story: SizeStory } = meta.type().type();
+    `);
+
+    const nodes = await extractCompiledASTNodes({ ast });
+
+    expect(nodes.storyNames).toEqual(['Story', 'IconStory', 'SizeStory']);
   });
 });

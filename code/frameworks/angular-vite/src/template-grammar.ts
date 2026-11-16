@@ -1,7 +1,7 @@
 // Imported by the preview renderer and by the dev-server story-docs provider, so this module must
 // stay free of `@angular/core` and of any other runtime-only import.
 
-export const isValidIdentifier = (name: string): boolean => /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(name);
+import { inputBinding, isValidIdentifier } from './snippet-values.ts';
 
 export const formatPropInTemplate = (propertyName: string) =>
   isValidIdentifier(propertyName) ? propertyName : `this['${propertyName}']`;
@@ -84,6 +84,8 @@ export interface TemplateInputBinding {
   name: string;
   // The template expression the `[input]` binding is given, e.g. from `formatInputValue`.
   expression: string;
+  // The whole binding, where it is not `[name]="expression"`, such as the mark of a hole.
+  attribute?: string;
 }
 
 export interface BuildTemplateInput {
@@ -111,13 +113,21 @@ const ELEMENT_AND_ATTRIBUTES = /(\S+)(.*)/;
 // Width past which the bindings go one per line, with the tag's end on a line of its own.
 const MAX_SINGLE_LINE = 80;
 
+// The code as the snippet prints it, which the layout measures. The story-docs build passes its
+// own while it prints a template, where marks stand around each place an arg prints; every other
+// print measures code as it is.
+export type Unmarked = (code: string) => string;
+
+const asWritten: Unmarked = (code) => code;
+
 // Expands a component selector into the element a story renders, carrying its bindings.
 export const buildTemplate = (
   selector: string,
-  { inputs, outputs, innerTemplate = '', selfClosing = false }: BuildTemplateInput
+  { inputs, outputs, innerTemplate = '', selfClosing = false }: BuildTemplateInput,
+  unmarked: Unmarked = asWritten
 ) => {
   const bindings = [
-    ...inputs.map(({ name, expression }) => `[${name}]="${expression}"`),
+    ...inputs.map(({ name, expression, attribute }) => attribute ?? inputBinding(name, expression)),
     ...outputs.map((name) => `(${name})="${formatPropInTemplate(name)}($event)"`),
   ];
 
@@ -139,7 +149,10 @@ export const buildTemplate = (
 
     const inlineTag = `<${element}${attributes}${bindings.map((binding) => ` ${binding}`).join('')}`;
     const inline = closesItself ? `${inlineTag} />` : `${inlineTag}>${innerTemplate}</${element}>`;
-    if (inline.length <= MAX_SINGLE_LINE || bindings.length === 0) {
+    if (
+      unmarked(inline).length <= MAX_SINGLE_LINE ||
+      bindings.every((binding) => unmarked(binding) === '')
+    ) {
       return inline;
     }
 
@@ -228,13 +241,22 @@ const parseMarkup = (markup: string): (MarkupElement | string)[] | undefined => 
   return stack.length === 1 ? root.children : undefined;
 };
 
-// An attribute name with an optional quoted or bare value; quoted values are skipped whole.
-const MARKUP_ATTRIBUTE = /[^\s=]+(?:\s*=\s*(?:"[^"]*"|'[^']*'|\S+))?/g;
+// An attribute name with an optional quoted or bare value; quoted values are skipped whole. The
+// private-use characters after it are the end of the mark around a marked binding.
+const MARKUP_ATTRIBUTE = /[^\s=]+(?:\s*=\s*(?:"[^"]*"|'[^']*'|\S+))?[\uE000-\uF8FF]*/g;
 
-const openTagLines = (node: MarkupElement, pad: string, forceAttrBreak: boolean): string[] => {
+const openTagLines = (
+  node: MarkupElement,
+  pad: string,
+  forceAttrBreak: boolean,
+  unmarked: Unmarked
+): string[] => {
   const inlineOpen = `${pad}${node.rawOpen}`;
   const attrs = node.attrText.match(MARKUP_ATTRIBUTE) ?? [];
-  if ((inlineOpen.length <= MAX_SINGLE_LINE && !forceAttrBreak) || attrs.length === 0) {
+  if (
+    (unmarked(inlineOpen).length <= MAX_SINGLE_LINE && !forceAttrBreak) ||
+    attrs.every((attr) => unmarked(attr) === '')
+  ) {
     return [inlineOpen];
   }
   const bracket = node.closed ? ' />' : '>';
@@ -246,24 +268,29 @@ const openTagLines = (node: MarkupElement, pad: string, forceAttrBreak: boolean)
   ];
 };
 
-const printMarkup = (markup: string, node: MarkupElement | string, depth: number): string[] => {
+const printMarkup = (
+  markup: string,
+  node: MarkupElement | string,
+  depth: number,
+  unmarked: Unmarked
+): string[] => {
   const pad = INDENT.repeat(depth);
   if (typeof node === 'string') {
     return [`${pad}${node}`];
   }
   const hasElementChild = node.children.some((child) => typeof child !== 'string');
   const verbatim = markup.slice(node.start, node.end);
-  if (!hasElementChild && pad.length + verbatim.length <= MAX_SINGLE_LINE) {
+  if (!hasElementChild && pad.length + unmarked(verbatim).length <= MAX_SINGLE_LINE) {
     return [`${pad}${verbatim}`];
   }
   // A childless element broke on length alone, so keeping its attribute run inline gains nothing.
-  const openLines = openTagLines(node, pad, !hasElementChild);
+  const openLines = openTagLines(node, pad, !hasElementChild, unmarked);
   if (node.closed) {
     return openLines;
   }
   return [
     ...openLines,
-    ...node.children.flatMap((child) => printMarkup(markup, child, depth + 1)),
+    ...node.children.flatMap((child) => printMarkup(markup, child, depth + 1, unmarked)),
     `${pad}</${node.tag}>`,
   ];
 };
@@ -273,10 +300,10 @@ const printMarkup = (markup: string, node: MarkupElement | string, depth: number
  * onto their own lines and an over-long attribute run breaks one binding per line. Nothing is
  * added, dropped or reordered, and markup this cannot follow is returned exactly as written.
  */
-export const formatTemplateMarkup = (markup: string): string => {
+export const formatTemplateMarkup = (markup: string, unmarked: Unmarked = asWritten): string => {
   const children = parseMarkup(markup);
   if (!children || children.length === 0) {
     return markup;
   }
-  return children.flatMap((child) => printMarkup(markup, child, 0)).join('\n');
+  return children.flatMap((child) => printMarkup(markup, child, 0, unmarked)).join('\n');
 };

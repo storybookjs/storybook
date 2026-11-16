@@ -1,13 +1,8 @@
 import { existsSync } from 'node:fs';
 import { dirname, sep } from 'node:path';
 
-import { babelParse, types as t } from 'storybook/internal/babel';
-import {
-  findTsconfigPathForPath,
-  getTsconfigPathsBaseDir,
-  supportedExtensions,
-} from 'storybook/internal/common';
-import { extractJSDocInfo } from 'storybook/internal/csf-tools';
+import { supportedExtensions } from 'storybook/internal/common';
+import { parseModule } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 
 import {
@@ -18,11 +13,11 @@ import {
   parse,
 } from 'react-docgen';
 import { dedent } from 'ts-dedent';
-import * as TsconfigPaths from 'tsconfig-paths';
 
-import { type ComponentRef } from './getComponentImports.ts';
+import type { ComponentRef } from './getComponentImports.ts';
 import actualNameHandler from './reactDocgen/actualNameHandler.ts';
 import { ReactDocgenResolveError } from './reactDocgen/docgenResolver.ts';
+import { matchPath } from './resolveComponentPath.ts';
 import exportNameHandler from './reactDocgen/exportNameHandler.ts';
 import { cached, cachedReadFileSync, cachedResolveImport } from './utils.ts';
 
@@ -77,33 +72,6 @@ export function getMatchingDocgen(docgens: DocObj[], component: ComponentRef) {
   return matchingDocgen ?? docgens[0];
 }
 
-export function matchPath(id: string, importerPath?: string) {
-  importerPath ??= process.cwd();
-  const tsconfig = getTsConfig(importerPath);
-
-  if (tsconfig.resultType === 'success') {
-    const match = TsconfigPaths.createMatchPath(
-      getTsconfigPathsBaseDir(tsconfig.configFileAbsolutePath),
-      tsconfig.paths,
-      ['browser', 'module', 'main']
-    );
-    return match(id, undefined, undefined, supportedExtensions) ?? id;
-  }
-  return id;
-}
-
-export const getTsConfig = cached(
-  (path: string) => {
-    // `path` may be a source file (export resolution) or a directory (makeFsImporter basedir).
-    const tsconfigPath = findTsconfigPathForPath(path);
-    if (!tsconfigPath) {
-      return { resultType: 'failed' as const, message: "Couldn't find tsconfig.json" };
-    }
-    return TsconfigPaths.loadConfig(tsconfigPath);
-  },
-  { name: 'getTsConfig' }
-);
-
 export const parseWithReactDocgen = cached(
   (code: string, path: string) => {
     return parse(code, {
@@ -118,20 +86,21 @@ export const parseWithReactDocgen = cached(
 
 const getExportPaths = cached(
   (code: string, filePath: string) => {
-    let ast;
+    let program;
     try {
-      ast = babelParse(code);
+      program = parseModule(code, filePath).program;
     } catch {
       return [];
     }
 
     const basedir = dirname(filePath);
-    const body = ast.program.body;
-    return body
+    return program.body
       .flatMap((statement) =>
-        t.isExportAllDeclaration(statement)
+        statement.type === 'ExportAllDeclaration'
           ? [statement.source.value]
-          : t.isExportNamedDeclaration(statement) && !!statement.source && !statement.declaration
+          : statement.type === 'ExportNamedDeclaration' &&
+              !!statement.source &&
+              !statement.declaration
             ? [statement.source.value]
             : []
       )
@@ -314,10 +283,4 @@ export function getReactDocgenImporter() {
 
     throw new ReactDocgenResolveError(filename);
   });
-}
-
-export function getImportTag(docgen: { description?: string }) {
-  const jsdocComment = docgen?.description;
-  const tags = jsdocComment ? extractJSDocInfo(jsdocComment).tags : undefined;
-  return tags?.import?.[0];
 }

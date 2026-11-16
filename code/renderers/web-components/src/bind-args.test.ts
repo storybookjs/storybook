@@ -8,13 +8,35 @@ import { bindArgs } from './bind-args.ts';
 const X_DEMO_TAG = 'x-demo';
 
 class XDemo extends HTMLElement {
-  static observedAttributes = ['label', 'count', 'is-open', 'disabled', 'has-slot', 'open'];
+  static observedAttributes = [
+    'label',
+    'count',
+    'is-open',
+    'disabled',
+    'has-slot',
+    'open',
+    'value',
+    'name',
+  ];
+
+  defaultValue = '';
 
   items: string[] = [];
+
+  /** Reflects like a Lit `@property({ reflect: true })` that stringifies its value. */
+  get name(): string | null {
+    return this.getAttribute('name');
+  }
+
+  set name(value: unknown) {
+    this.setAttribute('name', String(value));
+  }
 
   open = true;
 
   text = 'initial';
+
+  value = '';
 }
 
 if (!customElements.get(X_DEMO_TAG)) {
@@ -65,10 +87,31 @@ describe('bindArgs', () => {
       expectedProperties: { open: false },
     },
     {
-      name: 'assigns an empty string to a string property',
-      args: { text: '' },
+      name: 'leaves undefined and null declared properties unset and assigns empty strings',
+      args: { name: undefined, items: null, text: '' },
       expected: '<x-demo></x-demo>',
-      expectedProperties: { text: '' },
+      expectedProperties: { name: null, items: [], text: '' },
+    },
+    {
+      name: 'omits an empty observed attribute',
+      args: { label: '' },
+      expected: '<x-demo></x-demo>',
+    },
+    {
+      name: 'leaves a null reflecting property unset',
+      args: { name: null },
+      expected: '<x-demo></x-demo>',
+    },
+    {
+      name: 'assigns a set reflecting property',
+      args: { name: 'demo' },
+      expected: '<x-demo name="demo"></x-demo>',
+    },
+    {
+      name: 'leaves unset unknown keys unassigned',
+      args: { customValue: null },
+      expected: '<x-demo></x-demo>',
+      expectedProperties: { customValue: undefined },
     },
     {
       name: 'assigns unknown arg keys as properties',
@@ -100,21 +143,43 @@ describe('bindArgs', () => {
       expectedRules: ['x-demo::part(panel) { color: red; }', 'x-demo:state(active) { border: 0; }'],
     },
     {
-      name: 'skips null and empty slot, CSS custom property, part and state args',
+      name: 'skips unset slot, CSS custom property, part, state and event args',
       args: {
         'default-slot': null,
         'actions-slot': '',
+        'footer-slot': undefined,
         '--panel-color': null,
+        '--panel-gap': '',
+        '--panel-width': undefined,
         'panel-part': null,
         'active-state': '',
+        'my-change-event': undefined,
       },
       expected: '<x-demo></x-demo>',
+      expectedProperties: { 'my-change-event': undefined },
     },
     {
       name: 'does not assign method args',
       args: { 'reset-method': vi.fn() },
       expected: '<x-demo></x-demo>',
       expectedProperties: { reset: undefined, 'reset-method': undefined },
+    },
+    {
+      name: 'binds -attr keys as attributes while the bare key stays the same-named property',
+      args: { value: 'from property', 'value-attr': 'from attribute' },
+      expected: '<x-demo value="from attribute"></x-demo>',
+      expectedProperties: { value: 'from property', defaultValue: '' },
+    },
+    {
+      name: 'skips non-primitive and unset -attr values',
+      args: { 'value-attr': { text: 'Demo' }, 'label-attr': null },
+      expected: '<x-demo></x-demo>',
+      expectedProperties: { 'value-attr': undefined },
+    },
+    {
+      name: 'binds an undeclared -attr key to its stem attribute',
+      args: { 'data-attr': 'x' },
+      expected: '<x-demo data="x"></x-demo>',
     },
     {
       name: 'binds suffix-looking observed attributes before slots',

@@ -1,13 +1,15 @@
-import { recast } from 'storybook/internal/babel';
 import { extractDeclaredSubcomponents } from 'storybook/internal/common';
 import { storyNameFromExport } from 'storybook/internal/csf/csf-utils';
-import type { ImportRef, StoryReferences } from 'storybook/internal/csf-tools';
 import {
+  type ImportRef,
+  type StoryReferences,
   createStoryArgsResolver,
   extractStoryJSDocInfo,
   loadCsf,
   unresolvedWarning,
 } from 'storybook/internal/csf-tools';
+
+import type { StoryDoc } from 'storybook/internal/types';
 
 import { getCodeSnippet } from './generateCodeSnippet.ts';
 import {
@@ -111,7 +113,7 @@ export async function resolveStoryFileComponents(options: {
   const { storyPath, title, typescriptOptions, docgenEngine } = options;
 
   const storyFile = cachedReadTextFileSync(storyPath);
-  const csf = loadCsf(storyFile, { makeTitle: () => title }).parse();
+  const csf = loadCsf(storyFile, { makeTitle: () => title, fileName: storyPath }).parse();
   const componentName = csf._meta?.component;
 
   const declaredSubcomponents = extractDeclaredSubcomponents(csf);
@@ -134,21 +136,9 @@ export async function resolveStoryFileComponents(options: {
   return { storyPath, storyFile, csf, componentName, allComponents, component, subcomponents };
 }
 
-/** Snippet + metadata for one story, before output-specific shaping. */
-export interface ResolvedStory {
-  id: string;
-  name: string;
-  snippet?: string;
-  description?: string;
-  summary?: string;
-  /** Why the snippet is an incomplete example; see `StoryDoc.warning`. */
-  warning?: string;
-  error?: { name: string; message: string };
-}
-
 /** Every story's snippet, plus the imports they need beyond the components in the file. */
 export interface ExtractedStorySnippets {
-  stories: ResolvedStory[];
+  stories: StoryDoc[];
   imports: ImportRef[];
 }
 
@@ -159,29 +149,40 @@ export interface ExtractedStorySnippets {
  * carrying the manifest tag); omit it to include every story in the file (the docgen provider).
  * Pass `references` to let a story's args resolve names other modules own; without it only the story
  * file itself is read, and anything it reaches for elsewhere is reported as unresolved.
+ * Pass `withTemplate` to give each story the `template` the preview fills with its changed args.
  */
 export function extractStorySnippets(
   csf: ParsedCsf,
   componentName: string | undefined,
   filterStoryIds?: ReadonlySet<string>,
-  references?: StoryReferences
+  references?: StoryReferences,
+  withTemplate = false
 ): ExtractedStorySnippets {
   const imports: ImportRef[] = [];
   const resolver = createStoryArgsResolver(csf, references);
   const stories = Object.entries(csf._stories)
     .filter(([, story]) => !filterStoryIds || filterStoryIds.has(story.id))
-    .map(([storyExport, story]): ResolvedStory => {
+    .map(([storyExport, story]): StoryDoc => {
       const name = story.name ?? storyNameFromExport(storyExport);
       try {
-        const { description, summary } = extractStoryJSDocInfo(csf._storyStatements[storyExport]);
-        const snippet = getCodeSnippet(csf, storyExport, componentName, resolver);
-        imports.push(...snippet.imports);
-        const warning = unresolvedWarning(snippet.unresolved);
+        const { description, summary } = extractStoryJSDocInfo(
+          csf._storyStatements[storyExport],
+          csf.editor
+        );
+        const {
+          snippet,
+          template,
+          imports: needs,
+          unresolved,
+        } = getCodeSnippet(csf, storyExport, componentName, resolver);
+        imports.push(...needs);
+        const warning = unresolvedWarning(unresolved);
 
         return {
           id: story.id,
           name,
-          snippet: recast.print(snippet.node).code,
+          snippet,
+          ...(withTemplate && { template }),
           description,
           summary,
           ...(warning ? { warning } : {}),

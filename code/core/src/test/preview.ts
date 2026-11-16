@@ -94,10 +94,12 @@ export const enhanceContext: LoaderFunction = async (context) => {
   }
 
   try {
-    // userEvent.setup() cannot be called in non browser environment and will attempt to access window.navigator.clipboard
-    // which will throw an error in react native for example.
-    const clipboard = globalThis.window?.navigator?.clipboard;
-    if (clipboard) {
+    // userEvent.setup() needs a DOM, so skip it where there is none, such as React Native.
+    // `navigator.clipboard` does not tell: browsers expose it only in secure contexts.
+    if (globalThis.document && globalThis.HTMLElement) {
+      const { navigator } = globalThis.window;
+      const clipboardDescriptor = Object.getOwnPropertyDescriptor(navigator, 'clipboard');
+
       context.userEvent = instrument(
         { userEvent: uninstrumentedUserEvent.setup() },
         {
@@ -106,11 +108,13 @@ export const enhanceContext: LoaderFunction = async (context) => {
         }
       ).userEvent;
 
-      // Restore original clipboard, which was replaced with a stub by userEvent.setup()
-      Object.defineProperty(globalThis.window.navigator, 'clipboard', {
-        get: () => clipboard,
-        configurable: true,
-      });
+      // userEvent.setup() replaces `navigator.clipboard` with a stub. Put back what was there,
+      // so stories keep the browser clipboard, or keep no clipboard in an insecure context.
+      if (clipboardDescriptor) {
+        Object.defineProperty(navigator, 'clipboard', clipboardDescriptor);
+      } else {
+        Reflect.deleteProperty(navigator, 'clipboard');
+      }
 
       if (!patchedFocus) {
         const originalFocus = HTMLElement.prototype.focus;

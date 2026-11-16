@@ -6,7 +6,7 @@ import { Button, Link, TabList, TabPanel, useTabsState } from 'storybook/interna
 import { CheckIcon, CopyIcon } from '@storybook/icons';
 
 import { useStorybookApi } from 'storybook/manager-api';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import { useCopyButton } from '../../../shared/useCopyButton.ts';
 import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants.ts';
@@ -52,7 +52,9 @@ export const UpgradeBlock: FC<UpgradeBlockProps> = ({ onNavigateToWhatsNew }) =>
       {
         id: 'pnpm',
         title: 'pnpm',
-        children: <UpgradeSnippet command="pnpm dlx storybook@latest upgrade" />,
+        children: (
+          <UpgradeSnippet command="pnpm --allow-build=esbuild dlx storybook@latest upgrade" />
+        ),
       },
     ],
   });

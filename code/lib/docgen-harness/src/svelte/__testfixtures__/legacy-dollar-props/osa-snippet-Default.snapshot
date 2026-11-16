@@ -1,0 +1,7 @@
+<script>
+  import LeoButton from './LeoButton.svelte';
+</script>
+
+<LeoButton kind="outline" size="large" disabled type="button">
+  Press
+</LeoButton>

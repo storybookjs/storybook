@@ -21,6 +21,20 @@ test.describe('navigating', () => {
     expect(sbPage.page.url()).toContain('/docs/example-button--docs');
   });
 
+  test('a URL with the title id of an unattached docs page redirects to the page', async ({
+    page,
+  }) => {
+    await page.goto(`${storybookUrl}?path=/docs/brand-typography`);
+
+    const sbPage = new SbPage(page, expect);
+    await sbPage.waitUntilLoaded();
+
+    await page.waitForFunction(() =>
+      window.document.location.href.match('/docs/brand-typography--docs')
+    );
+    await expect(sbPage.previewIframe().getByRole('heading', { name: 'Monospace' })).toBeVisible();
+  });
+
   test('searching for "typography" surfaces the brand typography docs entry', async ({ page }) => {
     await page.goto(storybookUrl);
 
@@ -40,13 +54,13 @@ test.describe('navigating', () => {
       await page.getByRole('searchbox').fill('Monospace');
 
       const searchItem = page.getByRole('option', {
-        name: 'Docs / Monospace brand / Typography',
+        name: 'Typography / Monospace brand',
         exact: true,
       });
       await expect(searchItem).toBeVisible();
       await expect(
         page.getByRole('option', {
-          name: 'Docs / Sans-serif brand / Typography',
+          name: 'Typography / Sans-serif brand',
           exact: true,
         })
       ).toBeHidden();
@@ -64,7 +78,7 @@ test.describe('navigating', () => {
 
       await page
         .getByRole('option', {
-          name: 'Docs / Monospace brand / Typography',
+          name: 'Typography / Monospace brand',
           exact: true,
         })
         .click();

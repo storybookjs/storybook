@@ -70,9 +70,10 @@ or `--input` key the tool does not declare is an invalid-input error, and the CL
 and lists the valid ones.
 
 `docs` honours the project's `refs`: with composed Storybooks, `docs list` prints one section per
-source and `docs show` / `docs show-story` take `--storybookId`, which defaults to `local`. Remote
-manifests are fetched without credentials and with a 3 second timeout in every mode; a ref that
-cannot be read gets its own error section.
+source and `docs show` / `docs show-story` take `--storybookId`, which defaults to `local`. When that
+source does not have the id, `docs show` shows it from the one other source that has it, and
+otherwise suggests the closest ids. Remote manifests are fetched without credentials and with a 3
+second timeout in every mode; a ref that cannot be read gets its own error section.
 
 ```bash
 npx storybook tools docs list
@@ -84,7 +85,8 @@ npx storybook tools --port 6007 stories preview --stories '[{"storyId":"example-
 
 ## Modes
 
-**Attached.** Discover `~/.storybook/instances/*.json`, connect a Node WebSocket to
+**Attached.** Discover instance records in `$XDG_STATE_HOME/storybook/instances`, or
+`~/.storybook/instances` when unset, reading both when they differ. Connect a Node WebSocket to
 `/storybook-server-channel?token=…` (no Origin), load the instance config as a **leaf** and
 **follower**, set `setDelegatedMode(true)` before the first `registerService`. This path never
 `chdir`s the host process. Two processes never attach across `storybook` installations: when the

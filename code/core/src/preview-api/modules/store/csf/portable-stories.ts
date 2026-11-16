@@ -35,7 +35,6 @@ import { ReporterAPI } from '../reporter-api.ts';
 import { composeConfigs } from './composeConfigs.ts';
 import { composeProjectAnnotationsWithCore } from './composeProjectAnnotationsWithCore.ts';
 import { getCsfFactoryAnnotations } from './csf-factory-utils.ts';
-import { getValuesFromGlobalTypes } from './getValuesFromGlobalTypes.ts';
 import { normalizeComponentAnnotations } from './normalizeComponentAnnotations.ts';
 import { normalizeProjectAnnotations } from './normalizeProjectAnnotations.ts';
 import { normalizeStory } from './normalizeStory.ts';
@@ -131,11 +130,7 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
     normalizeComponentAnnotations<TRenderer>(componentAnnotations);
 
   const storyName =
-    exportsName ||
-    storyAnnotations.storyName ||
-    storyAnnotations.story?.name ||
-    storyAnnotations.name ||
-    DEFAULT_STORY_NAME;
+    exportsName || storyAnnotations.storyName || storyAnnotations.name || DEFAULT_STORY_NAME;
 
   const normalizedStory = normalizeStory<TRenderer>(
     storyName,
@@ -156,10 +151,7 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
     normalizedProjectAnnotations
   );
 
-  const globalsFromGlobalTypes = getValuesFromGlobalTypes(normalizedProjectAnnotations.globalTypes);
-
   const globals = {
-    ...globalsFromGlobalTypes,
     ...normalizedProjectAnnotations.initialGlobals,
     ...story.storyGlobals,
   };

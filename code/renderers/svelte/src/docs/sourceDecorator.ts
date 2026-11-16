@@ -1,4 +1,3 @@
-import { deprecate } from 'storybook/internal/client-logger';
 import { SourceType } from 'storybook/internal/docs-tools';
 import type {
   ArgTypes,
@@ -13,19 +12,9 @@ import type { SvelteComponentDoc } from 'sveltedoc-parser';
 
 import type { SvelteRenderer, SvelteStoryResult } from '../types';
 
-/**
- * Check if the source-code should be generated.
- *
- * @param context StoryContext
- */
-const skipSourceRender = (context: StoryContext<SvelteRenderer>) => {
-  const sourceParams = context?.parameters.docs?.source;
-  const isArgsStory = context?.parameters.__isArgsStory;
-
-  if ((context?.tags ?? []).some((tag) => tag.startsWith('svelte-csf'))) {
-    // skip if Svelte CSF, as the addon does its own source code generation
-    return true;
-  }
+export const skipSourceRender = (context: Pick<StoryContext, 'parameters'>) => {
+  const sourceParams = context.parameters.docs?.source;
+  const isArgsStory = context.parameters.__isArgsStory;
 
   // always render if the user forces it
   if (sourceParams?.type === SourceType.DYNAMIC) {
@@ -164,7 +153,9 @@ function getWrapperProperties(
  * @param context StoryContext
  */
 export const sourceDecorator: DecoratorFunction<SvelteRenderer> = (storyFn, context) => {
-  const skip = skipSourceRender(context);
+  // Svelte CSF stories emit their own snippet
+  const skip =
+    context.tags.some((tag) => tag.startsWith('svelte-csf')) || skipSourceRender(context);
   const story = storyFn();
   const source = useRef<undefined | string>(undefined);
 
@@ -173,7 +164,7 @@ export const sourceDecorator: DecoratorFunction<SvelteRenderer> = (storyFn, cont
       return;
     }
 
-    const { parameters = {}, args = {}, component: ctxComponent } = context || {};
+    const { args = {}, component: ctxComponent } = context || {};
 
     // excludeDecorators from source generation as they'll generate the wrong code
     // instead get the component directly from the original story function instead
@@ -183,10 +174,6 @@ export const sourceDecorator: DecoratorFunction<SvelteRenderer> = (storyFn, cont
     );
     const { wrapper, slotProperty } = getWrapperProperties(component);
     if (wrapper) {
-      if (parameters.component) {
-        deprecate('parameters.component is deprecated. Using context.component instead.');
-      }
-
       component = ctxComponent;
     }
 

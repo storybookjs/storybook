@@ -188,18 +188,19 @@ export abstract class JsPackageManager {
     return false;
   }
 
-  async installDependencies(options?: { force?: boolean }) {
+  async installDependencies(options?: { force?: boolean; legacyPeerDeps?: boolean }) {
     try {
-      await prompt.executeTaskWithSpinner(() => this.runInstall(options), {
+      const executeTask = this.installUsesTerminal
+        ? prompt.executeTask
+        : prompt.executeTaskWithSpinner;
+      await executeTask(() => this.runInstall(options), {
         id: 'install-dependencies',
         intro: 'Installing dependencies...',
         error: 'Installation of dependencies failed!',
         success: 'Dependencies installed',
       });
     } catch (error) {
-      // The spinner only shows a generic message, and callers like the init flow continue without
-      // printing the thrown error. Surface the captured output tail so package-manager errors
-      // (e.g. an npm ERESOLVE) name themselves instead of surfacing later as a missing binary.
+      // Callers like init can continue without printing the thrown error, so surface captured output.
       const tail = getInstallErrorTail(error);
       if (tail) {
         logger.error(tail);
@@ -220,10 +221,17 @@ export abstract class JsPackageManager {
     installContext: 'create' | 'upgrade';
   }): Promise<void> {}
 
-  async dedupeDependencies(options?: { force?: boolean }) {
+  async dedupeDependencies(options?: { force?: boolean; legacyPeerDeps?: boolean }) {
     await prompt.executeTask(
       (_signal) =>
-        this.runInternalCommand('dedupe', [...(options?.force ? ['--force'] : [])], this.cwd),
+        this.runInternalCommand(
+          'dedupe',
+          [
+            ...(options?.force ? ['--force'] : []),
+            ...(options?.legacyPeerDeps ? ['--legacy-peer-deps'] : []),
+          ],
+          this.cwd
+        ),
       {
         intro: 'Deduplicating dependencies...',
         error: 'An error occurred while deduplicating dependencies.',
@@ -332,7 +340,8 @@ export abstract class JsPackageManager {
       return installed;
     }
     const declared = this.getAllDependencies()[packageName];
-    return declared && validRange(declared) ? declared : null;
+    const range = declared && this.getDeclaredRange(packageName, declared);
+    return range && validRange(range) ? range : null;
   }
 
   /**
@@ -481,6 +490,61 @@ export abstract class JsPackageManager {
       changed.push(packageJsonPath);
     }
     return changed;
+  }
+
+  /**
+   * Upgrade a dependency that the project resolves to `installedVersion`. Every package.json that
+   * declares it in `dependencies` or `devDependencies` with a range that `installedVersion`
+   * satisfies gets the version in `specifier`, in the same field. An `npm:` alias of the same
+   * package counts as its range. A catalog reference stays in package.json, and the catalog gets
+   * the new version. When no package.json declares it that way,
+   * the primary package.json gets it in `devDependencies`. The method does not run a package
+   * manager install.
+   *
+   * @example
+   *
+   * ```ts
+   * upgradeDeclaredDependency('typescript@^7.1', '7.0.2');
+   * ```
+   */
+  upgradeDeclaredDependency(specifier: string, installedVersion: string): void {
+    const [dependency, version = 'latest'] = getPackageDetails(specifier);
+    let declared = false;
+    for (const packageJsonPath of this.packageJsonPaths) {
+      const packageJson = JsPackageManager.getPackageJson(packageJsonPath);
+      let modified = false;
+      for (const field of ['dependencies', 'devDependencies'] as const) {
+        const declarations = packageJson[field];
+        const range =
+          declarations?.[dependency] && this.getDeclaredRange(dependency, declarations[dependency]);
+        if (!range || !satisfies(installedVersion, range)) {
+          continue;
+        }
+        declared = true;
+        if (this.writeCatalogUpgrades([specifier], declarations).length > 0) {
+          declarations[dependency] = version;
+          modified = true;
+        }
+      }
+      if (modified) {
+        this.writePackageJson(packageJson, dirname(packageJsonPath));
+      }
+    }
+    if (!declared) {
+      const { packageJson, operationDir } = this.primaryPackageJson;
+      packageJson.devDependencies = { ...packageJson.devDependencies, [dependency]: version };
+      this.writePackageJson(packageJson, operationDir);
+    }
+  }
+
+  /**
+   * The semver range that a package.json declaration stands for, or null when it has none: the
+   * declaration itself, or the range of an `npm:` alias of the same package. PNPMProxy resolves a
+   * catalog reference to the catalog's range.
+   */
+  protected getDeclaredRange(packageName: string, declared: string): string | null {
+    const alias = `npm:${packageName}@`;
+    return declared.startsWith(alias) ? declared.slice(alias.length) : declared;
   }
 
   /**
@@ -682,6 +746,27 @@ export abstract class JsPackageManager {
   }
 
   /**
+   * Get the `peerDependencies` of a published package version. The lookup runs through the
+   * package manager, so the user's registry, auth, proxy, and certificate settings apply.
+   *
+   * @param packageName Name of the package
+   * @param version Exact version to read
+   * @returns The peer dependencies, an empty object if there are none, or `null` if the lookup
+   *   failed
+   */
+  public async getPublishedPeerDependencies(
+    packageName: string,
+    version: string
+  ): Promise<Record<string, string> | null> {
+    try {
+      return (await this.runGetPeerDependencies(`${packageName}@${version}`)) ?? {};
+    } catch (e) {
+      logger.debug(`Failed to fetch the peer dependencies of ${packageName}@${version}: ${e}`);
+      return null;
+    }
+  }
+
+  /**
    * Clear the latest version cache. Useful for testing or when you want to refresh version
    * information.
    *
@@ -756,7 +841,15 @@ export abstract class JsPackageManager {
     const resolutions = this.getResolutions(packageJson, versions);
     this.writePackageJson({ ...packageJson, ...resolutions }, operationDir);
   }
-  protected abstract runInstall(options?: { force?: boolean }): ResultPromise;
+
+  protected abstract runInstall(options?: {
+    force?: boolean;
+    legacyPeerDeps?: boolean;
+  }): ResultPromise;
+
+  protected get installUsesTerminal(): boolean {
+    return false;
+  }
 
   protected abstract runAddDeps(
     dependencies: string[],
@@ -781,6 +874,15 @@ export abstract class JsPackageManager {
   ): // Use generic and conditional type to force `string[]` if fetchAllVersions is true and `string` if false
   Promise<T extends true ? string[] : string>;
 
+  /**
+   * Read the `peerDependencies` field of a published package version from the registry
+   *
+   * @param packageSpec Package name and exact version, e.g. `storybook@11.0.0`
+   */
+  protected abstract runGetPeerDependencies(
+    packageSpec: string
+  ): Promise<Record<string, string> | undefined>;
+
   public abstract getRegistryURL(): Promise<string | undefined>;
 
   public abstract runInternalCommand(
@@ -800,11 +902,9 @@ export abstract class JsPackageManager {
 
   /** Returns the installed version of a specified package */
   public async getInstalledVersion(packageName: string): Promise<string | null> {
-    const cacheKey = packageName;
+    const cacheKey = `${this.instanceDir}::${packageName}`;
 
     try {
-      // Create cache key that includes both working directory and package name for isolation
-
       // Check cache first
       const cachedVersion = JsPackageManager.installedVersionCache.get(cacheKey);
       if (cachedVersion !== undefined) {

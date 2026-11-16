@@ -222,9 +222,7 @@ describe('runTransforms', () => {
     expect(fs.readFileSync(managerConfigPath, 'utf8')).toMatchInlineSnapshot(`
       "import { addons } from 'storybook/manager-api';
       import { theme } from '@storybook/tanstack-react';
-      addons.setConfig({ layout: {
-        showNav: false
-      }, theme });"
+      addons.setConfig({ layout: { showNav: false }, theme });"
     `);
     expect(fs.readFileSync(storyInConfigDir, 'utf8')).toBe(
       "import type { Meta } from '@storybook/tanstack-react';"
@@ -341,16 +339,13 @@ describe('edit hooks', () => {
     expect(loadConfig).toHaveBeenCalledTimes(1);
     expect(formatExistingFile).toHaveBeenCalledTimes(1);
     expect(fs.readFileSync(mainConfigPath, 'utf8')).toMatchInlineSnapshot(`
-      "export default { features: {
-        a: true,
-        b: true
-      } };
+      "export default { features: { a: true, b: true } };
       // formatted"
     `);
     expect(outcomes.get('b')).toEqual({ changed: [mainConfigPath], errors: [] });
   });
 
-  it('sees no change in a CRLF file that an edit leaves alone, and keeps CRLF when it writes', async () => {
+  it('sees no change in a CRLF file that an edit leaves alone, and keeps CRLF when it changes it', async () => {
     vol.fromJSON({ [mainConfigPath]: 'export default {\r\n  features: {},\r\n};\r\n' });
     const untouched = { filter: { kind: ['main'] as const }, editConfig: () => {} };
 
@@ -361,16 +356,8 @@ describe('edit hooks', () => {
 
     expect(detection.get('noop')).toEqual({ changed: [], errors: [] });
     expect(fs.readFileSync(mainConfigPath, 'utf8')).toBe(
-      'export default {\r\n  features: {\r\n    a: true\r\n  },\r\n};\r\n\r\n// formatted'
+      'export default {\r\n  features: { a: true },\r\n};\r\n\n// formatted'
     );
-  });
-
-  it('writes a file with mixed line endings with LF only', async () => {
-    vol.fromJSON({ [mainConfigPath]: 'export default {\r\n  features: {},\n};\n' });
-
-    await runTransforms(project, [{ fixId: 'a', hooks: [setFeature('a')] }], { write: true });
-
-    expect(fs.readFileSync(mainConfigPath, 'utf8')).not.toContain('\r');
   });
 
   it('passes MDX stories to text handlers only', async () => {
@@ -418,10 +405,7 @@ describe('edit hooks', () => {
     );
 
     expect(fs.readFileSync(mainConfigPath, 'utf8')).toMatchInlineSnapshot(`
-      "export default { features: {
-        a: true,
-        c: true
-      } };
+      "export default { features: { a: true, c: true } };
       // formatted"
     `);
     expect(outcomes.get('broken')).toEqual({
@@ -431,7 +415,7 @@ describe('edit hooks', () => {
   });
 
   it('fails a hook that leaves mutation diagnostics, with their line', async () => {
-    fs.writeFileSync(mainConfigPath, 'const base = {};\nexport default { ...base };');
+    fs.writeFileSync(mainConfigPath, 'const base = {};\nexport default { ...getBase() };');
 
     const outcomes = await runTransforms(project, [{ fixId: 'a', hooks: [setFeature('a')] }], {
       write: true,

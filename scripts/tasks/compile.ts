@@ -6,10 +6,10 @@ import { ROOT_DIRECTORY } from '../utils/constants.ts';
 import { exec } from '../utils/exec.ts';
 import { maxConcurrentTasks } from '../utils/maxConcurrentTasks.ts';
 
-// The compile task only actually runs in the build--linux / build--windows
-// jobs, both on xlarge executors (8 vCPUs). os.cpus() reports the Docker
-// host's cores rather than the cgroup limit, so use an explicit value on CI
-// instead of maxConcurrentTasks.
+// The compile task only actually runs in the build--linux / build--windows /
+// node-26-smoke jobs, all on xlarge executors (8 vCPUs). os.cpus() reports the
+// Docker host's cores rather than the cgroup limit, so use an explicit value on
+// CI instead of maxConcurrentTasks.
 const CI_VCPUS = 8;
 
 const parallel = `--parallel=${process.env.CI ? CI_VCPUS : maxConcurrentTasks}`;

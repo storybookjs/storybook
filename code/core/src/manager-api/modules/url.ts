@@ -44,9 +44,11 @@ const parseSerializedParam = (param: string) =>
     param
       .split(';')
       .map((pair) => pair.split(':'))
+      // Drop pairs without a key or without a `:` separator. An empty value (`key:`) is valid: it is
+      // how an empty string arg or global is serialized, so it must be kept.
+      .filter(([key, value]) => key && value !== undefined)
       // Encoding values ensures we don't break already encoded args/globals but also don't encode our own special characters like ; and :.
       .map(([key, value]) => [key, encodeURIComponent(value)])
-      .filter(([key, value]) => key && value)
   );
 
 const mergeSerializedParams = (params: string, extraParams: string) => {

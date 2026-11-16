@@ -8,7 +8,7 @@
     "table": {
       "category": "properties",
       "defaultValue": {
-        "summary": "...",
+        "summary": "false",
       },
       "type": {
         "summary": "boolean",
@@ -28,7 +28,7 @@
     "table": {
       "category": "properties",
       "defaultValue": {
-        "summary": "...",
+        "summary": """",
       },
       "type": {
         "summary": "string",

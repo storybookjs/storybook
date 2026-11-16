@@ -5,13 +5,18 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type * as sbcc from 'storybook/internal/common';
-import { type JsPackageManager, PackageManagerName } from 'storybook/internal/common';
+import {
+  HandledError,
+  type JsPackageManager,
+  PackageManagerName,
+  versions,
+} from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
 import { getStorybookData as sourceGetStorybookData } from '../../../core/src/cli/getStorybookData.ts';
 import { getStorybookData } from './automigrate/helpers/mainConfigFile.ts';
 import type { UpgradeOptions } from './upgrade.ts';
-import { checkVersionConsistency, getStorybookVersion } from './upgrade.ts';
+import { checkVersionConsistency, getStorybookVersion, withNpmForceFallback } from './upgrade.ts';
 import { collectProjects, generateUpgradeSpecs, isSuccessResult } from './util.ts';
 
 const findInstallationsMock =
@@ -40,6 +45,9 @@ vi.mock(import('storybook/internal/node-logger'), async (importOriginal) => {
   return actual;
 });
 
+// Project collection evaluates a real main.js through core's source, so it needs the real
+// importModule instead of the stub from vitest-setup.ts.
+vi.unmock('../../../core/src/shared/utils/module.ts');
 vi.mock('storybook/internal/telemetry');
 vi.mock('./autoblock/index.ts', () => ({
   autoblock: vi.fn(async () => null),
@@ -250,22 +258,35 @@ describe('toUpgradedDependencies', () => {
       ]);
     });
 
-    it('should keep caret ranges for prerelease CLI upgrades that are not canaries', async () => {
+    it('should keep an older alpha exact and add carets for the latest alpha', async () => {
       const deps = {
         '@storybook/react': '^8.0.0',
+        '@storybook/addon-mcp': '^8.0.0',
       };
+      const reactVersion = versions['@storybook/react'];
+      const mcpVersion = versions['@storybook/addon-mcp'];
+      versions['@storybook/react'] = '11.0.0-alpha.5';
+      versions['@storybook/addon-mcp'] = '11.0.0-alpha.5';
 
-      const result = await generateUpgradeSpecs(deps, {
-        packageManager: mockPackageManager,
-        isCanary: false,
-        isCLIOutdated: false,
-        isCLIPrerelease: true,
-        isCLIExactPrerelease: false,
-        isCLIExactLatest: false,
-        storybookVersionSpecifier: '10.6.0-alpha.7',
-      });
+      try {
+        const config = {
+          packageManager: mockPackageManager,
+          isCanary: false,
+          isCLIOutdated: false,
+          isCLIPrerelease: true,
+          isCLIExactLatest: false,
+        };
 
-      expect(result).toEqual(['@storybook/react@^9.0.0']);
+        expect(
+          await generateUpgradeSpecs(deps, { ...config, isCLIExactPrerelease: false })
+        ).toEqual(['@storybook/react@11.0.0-alpha.5', '@storybook/addon-mcp@11.0.0-alpha.5']);
+        expect(await generateUpgradeSpecs(deps, { ...config, isCLIExactPrerelease: true })).toEqual(
+          ['@storybook/react@^11.0.0-alpha.5', '@storybook/addon-mcp@^11.0.0-alpha.5']
+        );
+      } finally {
+        versions['@storybook/react'] = reactVersion;
+        versions['@storybook/addon-mcp'] = mcpVersion;
+      }
     });
 
     it('should treat pkg.pr.new Storybook specifiers as canaries during project collection', async () => {
@@ -345,9 +366,9 @@ describe('toUpgradedDependencies', () => {
       expect(mockPackageManager.latestVersion).toHaveBeenCalledWith('@storybook/addon-designs');
     });
 
-    it('should include satellite dependencies with @next for prerelease version', async () => {
+    it('should add carets to core and satellite dependencies for the latest prerelease', async () => {
       const deps = {
-        '@storybook/react': '^8.0.0',
+        '@storybook/react': '8.0.0',
         '@storybook/addon-designs': '8.0.0',
       };
 
@@ -361,7 +382,7 @@ describe('toUpgradedDependencies', () => {
       });
 
       expect(result).toContainEqual('@storybook/react@^9.0.0');
-      expect(result).toContainEqual('@storybook/addon-designs@9.0.0-beta.1');
+      expect(result).toContainEqual('@storybook/addon-designs@^9.0.0-beta.1');
       expect(mockPackageManager.latestVersion).toHaveBeenCalledWith(
         '@storybook/addon-designs@next'
       );
@@ -559,5 +580,74 @@ describe('Project collection', () => {
     expect(isSuccessResult(results[0]) && results[0].packageManager.type).toBe(
       PackageManagerName.PNPM
     );
+  });
+});
+
+describe('withNpmForceFallback', () => {
+  it('installs without --force for npm when the first install succeeds', async () => {
+    const installDependencies = vi.fn().mockResolvedValue(undefined);
+    const manager = { type: PackageManagerName.NPM } as unknown as JsPackageManager;
+
+    await withNpmForceFallback(manager, installDependencies);
+
+    expect(installDependencies).toHaveBeenCalledTimes(1);
+    expect(installDependencies.mock.calls[0]).toEqual([]);
+  });
+
+  it('retries npm with --legacy-peer-deps on a peer dependency conflict without --force', async () => {
+    const installDependencies = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('npm error code ERESOLVE'))
+      .mockResolvedValue(undefined);
+    const manager = { type: PackageManagerName.NPM } as unknown as JsPackageManager;
+
+    await withNpmForceFallback(manager, installDependencies);
+
+    expect(installDependencies.mock.calls).toEqual([[], [{ legacyPeerDeps: true }]]);
+  });
+
+  it('retries npm with --force only after the --legacy-peer-deps retry fails', async () => {
+    const installDependencies = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('npm error code ERESOLVE'))
+      .mockRejectedValueOnce(new Error('npm error code ERESOLVE'))
+      .mockResolvedValue(undefined);
+    const manager = { type: PackageManagerName.NPM } as unknown as JsPackageManager;
+
+    await withNpmForceFallback(manager, installDependencies);
+
+    expect(installDependencies.mock.calls).toEqual([
+      [],
+      [{ legacyPeerDeps: true }],
+      [{ force: true }],
+    ]);
+  });
+
+  it('rethrows npm failures other than peer dependency conflicts without a second install', async () => {
+    const installDependencies = vi.fn().mockRejectedValue(new Error('npm error code EACCES'));
+    const manager = { type: PackageManagerName.NPM } as unknown as JsPackageManager;
+
+    await expect(withNpmForceFallback(manager, installDependencies)).rejects.toThrow('EACCES');
+    expect(installDependencies).toHaveBeenCalledTimes(1);
+  });
+
+  it('rethrows HandledError without a second install', async () => {
+    const installDependencies = vi
+      .fn()
+      .mockRejectedValue(new HandledError(new Error('npm error code ERESOLVE')));
+    const manager = { type: PackageManagerName.NPM } as unknown as JsPackageManager;
+
+    await expect(withNpmForceFallback(manager, installDependencies)).rejects.toThrow(HandledError);
+    expect(installDependencies).toHaveBeenCalledTimes(1);
+  });
+
+  it('rethrows non-npm install failures without a second install', async () => {
+    const installDependencies = vi.fn().mockRejectedValue(new Error('yarn install failed'));
+    const manager = { type: PackageManagerName.YARN1 } as unknown as JsPackageManager;
+
+    await expect(withNpmForceFallback(manager, installDependencies)).rejects.toThrow(
+      'yarn install failed'
+    );
+    expect(installDependencies).toHaveBeenCalledTimes(1);
   });
 });

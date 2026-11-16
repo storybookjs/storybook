@@ -55,8 +55,6 @@
   export let func: (event: MouseEvent) => number = () => 10;
   /** Snippet contents */
   export let children: Snippet;
-  /** Actual arg types inferred from the component */
-  export let argTypes: Record<string, any> = {};
 </script>
 
 <h1>Docgen: TS - legacy</h1>
@@ -93,6 +91,3 @@
 {#if children}
   {@render children()}
 {/if}
-
-<h2>Arg Types</h2>
-<pre>{JSON.stringify(argTypes, null, 2)}</pre>

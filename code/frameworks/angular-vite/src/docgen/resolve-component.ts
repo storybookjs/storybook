@@ -31,7 +31,7 @@ export function resolveStoryImport(fromFile: string, specifier: string): string 
 export function parseStoryFile(storyFilePath: string, title: string): CsfFile | undefined {
   try {
     const source = readFileSync(storyFilePath, 'utf8');
-    return loadCsf(source, { makeTitle: () => title }).parse();
+    return loadCsf(source, { makeTitle: () => title, fileName: storyFilePath }).parse();
   } catch {
     return undefined;
   }

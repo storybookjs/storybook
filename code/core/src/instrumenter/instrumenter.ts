@@ -574,7 +574,10 @@ export class Instrumenter {
           diff = undefined,
           actual = undefined,
           expected = undefined,
-        } = e.name === 'AssertionError' ? processError(e) : e;
+        } = (e.name === 'AssertionError' ? processError(e) : e) as Pick<
+          NonNullable<Call['exception']>,
+          'showDiff' | 'diff' | 'actual' | 'expected'
+        >;
 
         const exception = { name, message, stack, callId, showDiff, diff, actual, expected };
         this.update({ ...info, status: CallStates.ERROR, exception });

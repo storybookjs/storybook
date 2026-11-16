@@ -25,6 +25,8 @@ import {
   analyzeInline as analyze,
   analyzeWithUnresolvableAngular,
   byName,
+  checkerOrder,
+  checkerUnion,
   componentIn,
   names,
 } from './__testutils__/inline-source.ts';
@@ -605,14 +607,17 @@ describe('the miscellaneous type index', () => {
     const component = soleComponent(meta);
 
     expect(byName(meta.miscellaneous.typealiases, 'Tone').rawtype).toBe(
-      '"info" | "warn" | "legacy"'
+      checkerUnion('"info"', '"warn"', '"legacy"')
     );
 
     const argTypes = extractArgTypesFromData(component, {
       metadataJson: meta,
       ...ANALYZER_EXTRACT_OPTIONS,
     });
-    expect(argTypes.tone.type).toEqual({ name: 'enum', value: ['info', 'warn', 'legacy'] });
+    expect(argTypes.tone.type).toEqual({
+      name: 'enum',
+      value: checkerOrder(['info', 'warn', 'legacy']),
+    });
   });
 
   it('resolves a keyof typeof alias to the keys of the map behind it', () => {
@@ -637,13 +642,15 @@ describe('the miscellaneous type index', () => {
     );
     const component = soleComponent(meta);
 
-    expect(byName(meta.miscellaneous.typealiases, 'IconSize').rawtype).toBe('"sm" | "md" | "lg"');
+    expect(byName(meta.miscellaneous.typealiases, 'IconSize').rawtype).toBe(
+      checkerUnion('"sm"', '"md"', '"lg"')
+    );
 
     const argTypes = extractArgTypesFromData(component, {
       metadataJson: meta,
       ...ANALYZER_EXTRACT_OPTIONS,
     });
-    expect(argTypes.size.type).toEqual({ name: 'enum', value: ['sm', 'md', 'lg'] });
+    expect(argTypes.size.type).toEqual({ name: 'enum', value: checkerOrder(['sm', 'md', 'lg']) });
   });
 
   it('resolves a union alias re-exported through a barrel file', () => {
@@ -1024,6 +1031,46 @@ describe('inheritance', () => {
     expect(byName(child.inputsClass, 'text')).toMatchObject({
       initializer: literal("'child'", 'string'),
     });
+  });
+
+  it('takes the inputs and outputs a compiled .d.ts base component declares in its ɵcmp', () => {
+    const meta = analyze(
+      `
+      import { Component } from '@angular/core';
+
+      import { LibraryButton } from './library-button';
+
+      @Component({ selector: 'sb-own-button', template: '' })
+      export class OwnButtonComponent extends LibraryButton {}
+    `,
+      {
+        'library-button.d.ts': `
+          import * as i0 from '@angular/core';
+
+          export declare class LibraryButton {
+            label: string;
+            size: i0.InputSignal<'sm' | 'md'>;
+            clicked: i0.EventEmitter<string>;
+            static ɵcmp: i0.ɵɵComponentDeclaration<
+              LibraryButton, 'lib-button', never,
+              { "label": { "alias": "label"; "required": true; }; "size": { "alias": "size"; "required": false; "isSignal": true; }; },
+              { "clicked": "pressed"; },
+              never, never, true, never
+            >;
+          }
+        `,
+      }
+    );
+    const component = soleComponent(meta);
+
+    expect(names(component.inputsClass)).toEqual(['label', 'size']);
+    expect(byName(component.inputsClass, 'label')).toMatchObject({
+      type: 'string',
+      required: true,
+    });
+    expect(byName(component.inputsClass, 'size').type).toBe(checkerUnion('"sm"', '"md"'));
+    expect(names(component.outputsClass)).toEqual(['pressed']);
+    expect(component.propertiesClass).toEqual([]);
   });
 
   it('merges multi-level bases with the child winning, and takes plain members from a .d.ts', () => {

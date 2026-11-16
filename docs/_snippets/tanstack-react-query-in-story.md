@@ -1,4 +1,29 @@
+```ts filename="Navbar.stories.ts" renderer="react" language="ts" tabTitle="CSF 4"
+import type { QueryClient } from '@tanstack/react-query';
+
+import preview from '../.storybook/preview';
+
+import { Navbar } from './Navbar';
+
+const meta = preview.meta({
+  component: Navbar,
+});
+
+export const Default = meta.story();
+
+export const LoggedIn = meta.story({
+  beforeEach: async ({ parameters }) => {
+    const qc: QueryClient = parameters.tanstack?.router?.context?.queryClient;
+    qc?.setQueryData(['currentUser'], {
+      id: 'user-1',
+      name: 'Ada Lovelace',
+    });
+  },
+});
+```
+
 ```ts filename="Navbar.stories.ts" renderer="react" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import type { Meta, StoryObj } from '@storybook/tanstack-react';
 import type { QueryClient } from '@tanstack/react-query';
 
@@ -22,28 +47,4 @@ export const LoggedIn: Story = {
     });
   },
 };
-```
-
-```ts filename="Navbar.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-import type { QueryClient } from '@tanstack/react-query';
-
-import preview from '../.storybook/preview';
-
-import { Navbar } from './Navbar';
-
-const meta = preview.meta({
-  component: Navbar,
-});
-
-export const Default = meta.story();
-
-export const LoggedIn = meta.story({
-  beforeEach: async ({ parameters }) => {
-    const qc: QueryClient = parameters.tanstack?.router?.context?.queryClient;
-    qc?.setQueryData(['currentUser'], {
-      id: 'user-1',
-      name: 'Ada Lovelace',
-    });
-  },
-});
 ```

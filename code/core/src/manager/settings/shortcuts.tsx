@@ -11,7 +11,7 @@ import {
   shortcutMatchesShortcut,
   shortcutToHumanString,
 } from 'storybook/manager-api';
-import { keyframes, styled } from 'storybook/theming';
+import { keyframes, styled } from 'storybook/theming/emotion';
 
 import SettingsFooter from './SettingsFooter.tsx';
 
@@ -122,10 +122,10 @@ const shortcutLabels = {
   toolbar: 'Toggle toolbar',
   search: 'Focus search',
   focusNav: 'Focus sidebar',
-  focusIframe: 'Focus canvas',
+  focusIframe: 'Focus preview area',
   focusPanel: 'Focus addons',
-  prevComponent: 'Previous component',
-  nextComponent: 'Next component',
+  prevComponent: 'Previous component or page',
+  nextComponent: 'Next component or page',
   prevStory: 'Previous story',
   nextStory: 'Next story',
   shortcutsPage: 'Go to shortcuts page',
@@ -138,6 +138,7 @@ const shortcutLabels = {
   copyStoryLink: 'Copy story link to clipboard',
   goToPreviousLandmark: 'Go to previous landmark',
   goToNextLandmark: 'Go to next landmark',
+  contextMenu: 'Open actions menu in sidebar',
   // TODO: bring this back once we want to add shortcuts for this
   // copyStoryName: 'Copy story name to clipboard',
 };
@@ -213,8 +214,8 @@ class ShortcutsScreen extends Component<ShortcutsScreenProps, ShortcutsScreenSta
       Array.isArray(key) ? key.at(-1) : key
     ) as string[];
 
-    // Escape stays reserved: overlays across the manager close on it, and a persisted
-    // binding would swallow every Escape press at the document level before they see it.
+    // Escape is reserved. Overlays across the manager close on Escape, and a saved binding
+    // would swallow the key at the document level before an overlay receives it.
     const isReservedKey = normalizedShortcut.length === 1 && normalizedShortcut[0] === 'escape';
 
     // Check we don't match any other shortcuts

@@ -3,13 +3,15 @@ import { createASTIdentifier, type ESTreeAST } from '../../../parser/ast.ts';
 
 interface Params {
   storiesFunctionDeclaration: ESTreeAST.FunctionDeclaration;
+  // The meta of a CSF factories file. Its annotations are in `meta.input`.
+  factoryMeta?: ESTreeAST.Identifier;
   filename?: string;
 }
 
 export function createVariableFromRuntimeStoriesCall(
   params: Params
 ): ESTreeAST.VariableDeclaration {
-  const { storiesFunctionDeclaration } = params;
+  const { storiesFunctionDeclaration, factoryMeta } = params;
 
   return {
     type: 'VariableDeclaration',
@@ -26,7 +28,15 @@ export function createVariableFromRuntimeStoriesCall(
           callee: createASTIdentifier('createRuntimeStories'),
           arguments: [
             createASTIdentifier(storiesFunctionDeclaration.id.name),
-            createASTIdentifier(STORYBOOK_META_IDENTIFIER),
+            factoryMeta
+              ? {
+                  type: 'MemberExpression',
+                  computed: false,
+                  optional: false,
+                  object: factoryMeta,
+                  property: createASTIdentifier('input'),
+                }
+              : createASTIdentifier(STORYBOOK_META_IDENTIFIER),
           ],
         },
       },

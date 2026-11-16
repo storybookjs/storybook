@@ -54,13 +54,13 @@ const CONTROL_KINDS: { arg: string; kind: string; selector: string }[] = [
   },
   { arg: 'default-slot', kind: 'text', selector: 'textarea#control-default-slot' },
   { arg: 'value-part', kind: 'text', selector: 'textarea#control-value-part' },
-  { arg: 'at-max-state', kind: 'text', selector: 'textarea#control-at-max-state' },
 ];
 
 const NO_CONTROL_ROWS: { arg: string; reason: string; row: RegExp }[] = [
   { arg: 'count-changed', reason: 'event', row: /^count-changed/ },
   { arg: 'increment', reason: 'method', row: /^increment/ },
   { arg: 'atMax', reason: 'readonly property', row: /^atMax/ },
+  { arg: 'at-max-state', reason: 'css state', row: /^at-max\b/ },
 ];
 
 const CONTROL_EDITS: {

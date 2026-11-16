@@ -1,4 +1,3 @@
-import { types as t } from 'storybook/internal/babel';
 import {
   ANALOG_VITE_PLUGIN_ANGULAR_VERSION,
   editJsonText,
@@ -86,7 +85,6 @@ const VITE_CONFIG_FILES = ['vite.config', 'vitest.config'].flatMap((basename) =>
 const buildAngularVitestConfig = (
   configDirRelative: string
 ): string => `import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 import { defineConfig } from 'vitest/config';
 
@@ -94,9 +92,6 @@ import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
 import { storybookAngularVitest } from '@storybook/angular-vite/vitest';
 
 import { playwright } from '@vitest/browser-playwright';
-
-const dirname =
-  typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
 
 // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
 export default defineConfig({
@@ -109,7 +104,7 @@ export default defineConfig({
           storybookAngularVitest({}),
           // The plugin will run tests for the stories defined in your Storybook config
           // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
-          storybookTest({ configDir: path.join(dirname, '${configDirRelative}') }),
+          storybookTest({ configDir: path.join(import.meta.dirname, '${configDirRelative}') }),
         ],
         test: {
           name: 'storybook',
@@ -216,9 +211,9 @@ const rewriteWorkspaceJson = (files: FixFiles, paths: string[]) =>
 const addZoneJsImport: FixTransform = {
   filter: { kind: ['preview'] },
   editConfig: (preview, { id }) => {
-    const hasZoneJsImport = preview._ast.program.body.some(
+    const hasZoneJsImport = preview.program.body.some(
       (node) =>
-        t.isImportDeclaration(node) &&
+        node.type === 'ImportDeclaration' &&
         (node.source.value === 'zone.js' || node.source.value.startsWith('zone.js/'))
     );
     if (hasZoneJsImport) {

@@ -22,13 +22,14 @@ const DROPPED_MEMBERS = new Set([
   '(string & {})',
 ]);
 const FUNCTION_RE = /^(new\s+)?(<.*>\s*)?\(.*\)\s*=>/;
+/** Matches a quoted literal (kept verbatim) or a whitespace run (collapsed). */
+const QUOTED_OR_WHITESPACE_RE = /(['"])(?:\\.|(?!\1)[^\\])*\1|\s+/g;
 const UNKNOWN_ARRAY_ELEMENT_TYPE = { name: 'other', value: '' } as const;
 /** Real types nest a handful of levels; the cap only stops pathological input. */
 const MAX_ARRAY_DEPTH = 8;
 
 export function parseTypeText(text: string | undefined, depth = 0): ParsedTypeText | undefined {
-  const trimmed = text?.trim() ?? '';
-  const members = normalizeMembers(trimmed);
+  const members = normalizeMembers(collapseWhitespace(text ?? ''));
 
   if (members.length === 0) {
     return undefined;
@@ -100,6 +101,11 @@ function normalizeMembers(text: string): string[] {
   }
 
   return flattenMembers(text).filter((member) => member && !DROPPED_MEMBERS.has(member));
+}
+
+/** Analyzers such as Stencil's emit multiline `type.text`; matchers below assume one line. */
+function collapseWhitespace(text: string): string {
+  return text.replace(QUOTED_OR_WHITESPACE_RE, (match) => (/^\s/.test(match) ? ' ' : match)).trim();
 }
 
 function flattenMembers(text: string): string[] {

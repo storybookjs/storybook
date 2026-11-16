@@ -68,6 +68,8 @@ enum events {
   SELECT_STORY = 'selectStory',
   STORIES_COLLAPSE_ALL = 'storiesCollapseAll',
   STORIES_EXPAND_ALL = 'storiesExpandAll',
+  // Tell the sidebar to open the context menu of the focused entry
+  SIDEBAR_OPEN_CONTEXT_MENU = 'sidebarOpenContextMenu',
   DOCS_RENDERED = 'docsRendered',
   SHARED_STATE_CHANGED = 'sharedStateChanged',
   SHARED_STATE_SET = 'sharedStateSet',
@@ -137,6 +139,7 @@ export const {
   SHARED_STATE_SET,
   STORIES_COLLAPSE_ALL,
   STORIES_EXPAND_ALL,
+  SIDEBAR_OPEN_CONTEXT_MENU,
   STORY_ARGS_UPDATED,
   STORY_CHANGED,
   STORY_ERRORED,
@@ -179,4 +182,5 @@ export * from './data/request-response.ts';
 export * from './data/save-story.ts';
 export * from './data/whats-new.ts';
 export * from './data/phases.ts';
+export * from './data/preload.ts';
 export * from './data/open-in-editor.ts';

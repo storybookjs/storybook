@@ -8,7 +8,7 @@
  *
  * The renderer preset contributes the descriptor that points here.
  */
-import { createLazyDocgenMiddleware } from 'storybook/internal/common';
+import { createLazyDocgenMiddleware, loadTypeScriptCompilerApi } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import type { DocgenMiddleware } from 'storybook/internal/types';
 
@@ -26,8 +26,9 @@ export const createDocgenProvider = (): DocgenMiddleware =>
   createLazyDocgenMiddleware({
     createManager: async () => {
       try {
-        const typescript = await import('typescript');
-        const manager = new VueComponentMetaManager(typescript.default ?? typescript);
+        const manager = new VueComponentMetaManager(
+          await loadTypeScriptCompilerApi(() => import('typescript'))
+        );
         manager.startWatching();
         return manager;
       } catch (error) {

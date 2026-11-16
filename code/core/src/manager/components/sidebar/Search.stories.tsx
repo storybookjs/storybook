@@ -4,6 +4,7 @@ import type { Meta, StoryFn } from '@storybook/react-vite';
 
 import type { API } from 'storybook/manager-api';
 import { ManagerContext } from 'storybook/manager-api';
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 
 import { IconSymbols } from './IconSymbols.tsx';
 import { Search } from './Search.tsx';
@@ -53,8 +54,6 @@ const baseProps: Omit<SearchProps, 'children'> = {
 
 export const Simple: StoryFn = () => <Search {...baseProps}>{() => null}</Search>;
 
-export const SimpleWithCreateButton: StoryFn = () => <Search {...baseProps}>{() => null}</Search>;
-
 export const FilledIn: StoryFn = () => (
   <Search {...baseProps} initialQuery="Foo bar">
     {() => <SearchResults {...noResults} />}
@@ -75,6 +74,44 @@ export const LastViewed: StoryFn = () => (
     )}
   </Search>
 );
+
+const escapeAbove = fn().mockName('escapeAbove');
+
+/**
+ * Escape never leaves the field: with a query it clears the query, with an empty field it hands
+ * focus to the explorer. Only an Escape from the explorer reaches the ancestors, where the mobile
+ * menu drawer closes on it. Without this ladder the drawer closed on the first press, or kept the
+ * focus trapped in the empty field (the drawer's focus scope returns it there after a blur).
+ */
+export const EscapeWithQueryStaysInSearch: StoryFn = () => (
+  <div
+    onKeyDown={(event) => {
+      if (event.key === 'Escape') {
+        escapeAbove();
+      }
+    }}
+  >
+    <Search {...baseProps} initialQuery="Foo">
+      {() => null}
+    </Search>
+  </div>
+);
+EscapeWithQueryStaysInSearch.play = async ({ canvasElement }) => {
+  escapeAbove.mockClear();
+  const input = within(canvasElement).getByRole('searchbox');
+  await userEvent.click(input);
+  await userEvent.keyboard('{Escape}');
+  await waitFor(() => expect(input).toHaveValue(''));
+  expect(escapeAbove).not.toHaveBeenCalled();
+
+  const explorer = canvasElement.querySelector('#storybook-explorer-menu');
+  await userEvent.keyboard('{Escape}');
+  await waitFor(() => expect(explorer).toHaveFocus());
+  expect(escapeAbove).not.toHaveBeenCalled();
+
+  await userEvent.keyboard('{Escape}');
+  await waitFor(() => expect(escapeAbove).toHaveBeenCalledOnce());
+};
 
 export const ShortcutsDisabled: StoryFn = () => (
   <Search {...baseProps} enableShortcuts={false}>

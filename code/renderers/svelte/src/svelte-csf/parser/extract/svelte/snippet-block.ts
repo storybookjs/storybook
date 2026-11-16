@@ -1,3 +1,5 @@
+import { unwrapExpression } from 'storybook/internal/csf-tools';
+
 import type { SvelteAST } from '../../ast.ts';
 import type { SvelteASTNodes } from './nodes.ts';
 import { extractStoryAttributesNodes } from './story/attributes.ts';
@@ -5,19 +7,6 @@ import { extractStoryAttributesNodes } from './story/attributes.ts';
 import { InvalidStoryTemplateAttributeError } from '../../../utils/error/parser/extract/svelte.ts';
 import { getDefineMetaRenderValue } from '../../analyse/define-meta/render-identifier.ts';
 
-/**
- * For example:
- *
- * ```svelte
- * {#snippet myTemplate()}
- *   <SomeComponent color="red" />
- * {/snippet}
- * <Story template={myTemplate} />
- * ```
- *
- * This function attempts to extract the AST node of the snippet block from the root fragment of `*.svelte` file,
- * which was referenced by the attribute `template`. Following example above - it would be snippet `myTemplate`.
- */
 export function findStoryAttributeTemplateSnippetBlock(options: {
   component: SvelteAST.Component;
   nodes: SvelteASTNodes;
@@ -35,39 +24,17 @@ export function findStoryAttributeTemplateSnippetBlock(options: {
 
   if (template.value === true || Array.isArray(template.value)) {
     throw new InvalidStoryTemplateAttributeError({
-      component: component,
-      templateAttribute: template,
+      component,
       filename,
     });
   }
 
   return findSnippetBlockByName({
-    name: (template.value.expression as any).name,
+    name: (unwrapExpression(template.value.expression) as any).name,
     nodes: nodes,
   });
 }
 
-/**
- * Find and extract the AST node of snippet block referenced with `render` in `defineMeta`.
- *
- * For example:
- *
- * ```svelte
- * <script>
- *   import { defineMeta } from "@storybook/svelte";
- *
- *   const { Story } = defineMeta({
- *     render: myCustomTemplate,
- *   });
- * </script>
- *
- * {#snippet myCustomTemplate()}
- *   ...
- * {/snippet}
- *
- * <Story />
- * ```
- */
 export function findMetaRenderSnippetBlock(options: {
   nodes: SvelteASTNodes;
   filename?: string;
@@ -89,16 +56,7 @@ export function findMetaRenderSnippetBlock(options: {
   });
 }
 
-/**
- * Find AST node of the snippet block from the root of fragment of `*.svelte`.
- * It uses first argument which is an identifier with reference to the snippet block,
- * which should exist at the root fragment of `*.svelte` file.
- */
 function findSnippetBlockByName(options: {
-  /**
-   * Snippet's block expression name to find by.
-   * For example, from the following: `{#snippet template(args)}` - `template`
-   */
   name: string;
   nodes: SvelteASTNodes;
 }): SvelteAST.SnippetBlock | undefined {

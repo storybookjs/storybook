@@ -1,1 +1,9 @@
-undefined
+{
+  "description": undefined,
+  "id": "sveltefixtures-modal",
+  "jsDocTags": {},
+  "name": "Modal",
+  "path": "./input.stories.svelte",
+  "renderer": "svelte",
+  "summary": undefined,
+}

@@ -13,7 +13,7 @@ import { FailedIcon, PassedIcon } from '@storybook/icons';
 
 import { dequal as deepEqual } from 'dequal';
 import { addons, experimental_requestResponse, getService, types } from 'storybook/manager-api';
-import { color } from 'storybook/theming';
+import { color } from 'storybook/theming/emotion';
 
 import { ControlsPanel } from './components/ControlsPanel.tsx';
 import { Title } from './components/Title.tsx';

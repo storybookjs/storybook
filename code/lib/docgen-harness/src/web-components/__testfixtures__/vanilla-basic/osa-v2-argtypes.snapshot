@@ -32,6 +32,7 @@
     },
   },
   "disabled-state": {
+    "control": false,
     "description": "Set while the element is disabled.",
     "name": "disabled",
     "table": {

@@ -4,7 +4,7 @@ import React, { useEffect, useLayoutEffect, useState } from 'react';
 import type { API_Layout, API_ViewMode } from 'storybook/internal/types';
 
 import { useStorybookApi, useStorybookState, type API } from 'storybook/manager-api';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import { isPagesViewMode } from '../../../manager-api/modules/layout.ts';
 
@@ -259,14 +259,14 @@ const LayoutContainer = styled.div<{
   panelPosition: LayoutState['panelPosition'];
   showPanel: boolean;
   showSidebar: boolean;
-}>(({ panelPosition, showPanel, showSidebar }) => ({
+}>(({ theme, panelPosition, showPanel, showSidebar }) => ({
   position: 'relative',
   width: '100%',
   height: ['100vh', '100dvh'],
   overflow: 'hidden',
   display: 'flex',
   flexDirection: 'column',
-  colorScheme: 'light dark',
+  colorScheme: theme.base,
 
   [MEDIA_DESKTOP_BREAKPOINT]: {
     display: 'grid',

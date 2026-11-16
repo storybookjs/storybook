@@ -4,7 +4,6 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import type { IndexEntry } from 'storybook/internal/types';
 import { dedent } from 'ts-dedent';
-import ts from 'typescript';
 
 import { ComponentMetaManager } from '../componentManifest/componentMeta/ComponentMetaManager.ts';
 import type { ComponentDoc } from '../componentManifest/componentMeta/componentMetaExtractor.ts';
@@ -14,7 +13,10 @@ import {
   tsconfigJSON,
   writeFiles,
 } from '../componentManifest/componentMeta/test-helpers.ts';
+import { loadTestTypeScript } from '@storybook/component-meta-typescript/testing';
 import { buildDocgenPayload } from './buildDocgen.ts';
+
+const typescript = await loadTestTypeScript();
 
 let tempDir: string | undefined;
 let componentMetaManager: ComponentMetaManager | undefined;
@@ -64,7 +66,7 @@ describe('buildDocgenPayload', () => {
         `,
       });
 
-      componentMetaManager = new ComponentMetaManager(ts);
+      componentMetaManager = new ComponentMetaManager(typescript);
       const importPath = files['Button.stories.tsx'];
 
       const payload = await buildDocgenPayload(
@@ -111,7 +113,7 @@ describe('buildDocgenPayload', () => {
       `,
     });
 
-    componentMetaManager = new ComponentMetaManager(ts);
+    componentMetaManager = new ComponentMetaManager(typescript);
 
     const payload = await buildDocgenPayload(
       { entry: makeStoryIndexEntry(files['Button.stories.tsx'], 'Forms/Button') },
@@ -147,7 +149,7 @@ describe('buildDocgenPayload', () => {
         `,
       });
 
-      componentMetaManager = new ComponentMetaManager(ts);
+      componentMetaManager = new ComponentMetaManager(typescript);
 
       const payload = await buildDocgenPayload(
         { entry: makeStoryIndexEntry(files['Button.stories.tsx'], 'Forms/Button') },
@@ -182,7 +184,7 @@ describe('buildDocgenPayload', () => {
         `,
       });
 
-      componentMetaManager = new ComponentMetaManager(ts);
+      componentMetaManager = new ComponentMetaManager(typescript);
 
       const payload = await buildDocgenPayload(
         { entry: makeStoryIndexEntry(files['Button.stories.tsx'], 'Forms/Button') },
@@ -198,7 +200,7 @@ describe('buildDocgenPayload', () => {
 
   it('returns undefined when the story file is missing', { timeout: 15_000 }, async () => {
     tempDir = createTempDir('docgen-build');
-    componentMetaManager = new ComponentMetaManager(ts);
+    componentMetaManager = new ComponentMetaManager(typescript);
 
     const payload = await buildDocgenPayload(
       {
@@ -239,7 +241,7 @@ describe('buildDocgenPayload', () => {
         `,
     });
 
-    componentMetaManager = new ComponentMetaManager(ts);
+    componentMetaManager = new ComponentMetaManager(typescript);
 
     const payload = await buildDocgenPayload(
       { entry: makeStoryIndexEntry(files['Card.stories.tsx'], 'Layout/Card') },
@@ -263,4 +265,97 @@ describe('buildDocgenPayload', () => {
       type: { name: 'number', required: false },
     });
   });
+
+  it('extracts argTypes through React.memo', { timeout: 30_000 }, async () => {
+    tempDir = createTempDir('docgen-build');
+
+    const files = writeFiles(tempDir, {
+      'tsconfig.json': tsconfigJSON(),
+      'Button.tsx': dedent`
+        import React from 'react';
+        function Button({ label, onClick }: { label: string; onClick: () => void }) {
+          return <button onClick={onClick}>{label}</button>;
+        }
+        const MemoButton = React.memo(Button);
+        export const component = MemoButton;
+      `,
+      'Button.stories.tsx': dedent`
+        import { component } from './Button';
+        export default { component, title: 'Forms/Button' };
+        export const Primary = () => <component label="hi" onClick={() => {}} />;
+      `,
+    });
+
+    componentMetaManager = new ComponentMetaManager(typescript);
+
+    const payload = await buildDocgenPayload(
+      { entry: makeStoryIndexEntry(files['Button.stories.tsx'], 'Forms/Button') },
+      {
+        componentMetaManager,
+        resolvePath: (p) => (path.isAbsolute(p) ? p : path.join(tempDir!, p)),
+      }
+    );
+
+    expect(Object.keys(payload!.argTypes ?? {}).sort()).toEqual(['label', 'onClick']);
+    expect(payload!.argTypes?.label).toMatchObject({
+      name: 'label',
+      type: { name: 'string', required: true },
+    });
+    expect(payload!.argTypes?.onClick).toMatchObject({
+      name: 'onClick',
+      type: { name: 'function', required: true },
+    });
+  });
+
+  it(
+    'extracts JSDoc-typed argTypes through React.memo in a JavaScript component',
+    { timeout: 30_000 },
+    async () => {
+      tempDir = createTempDir('docgen-build');
+
+      // No tsconfig: a JavaScript project is served by the inferred project, which allows JS.
+      const files = writeFiles(tempDir, {
+        'Button.jsx': dedent`
+          import React from 'react';
+
+          /**
+           * @param {object} props
+           * @param {string} props.label
+           * @param {() => void} props.onClick
+           */
+          function Button({ label, onClick }) {
+            return <button onClick={onClick}>{label}</button>;
+          }
+
+          const MemoButton = React.memo(Button);
+          export const component = MemoButton;
+        `,
+        'Button.stories.jsx': dedent`
+          import { component } from './Button';
+          export default { component, title: 'Forms/Button' };
+          export const Primary = () => <component label="hi" onClick={() => {}} />;
+        `,
+      });
+
+      componentMetaManager = new ComponentMetaManager(typescript);
+
+      const payload = await buildDocgenPayload(
+        { entry: makeStoryIndexEntry(files['Button.stories.jsx'], 'Forms/Button') },
+        {
+          componentMetaManager,
+          resolvePath: (p) => (path.isAbsolute(p) ? p : path.join(tempDir!, p)),
+        }
+      );
+
+      expect(Object.keys(payload!.argTypes ?? {}).sort()).toEqual(['label', 'onClick']);
+      expect(payload!.argTypes?.label).toMatchObject({
+        name: 'label',
+        type: { name: 'string', required: true },
+      });
+      expect(payload!.argTypes?.onClick).toMatchObject({
+        name: 'onClick',
+        type: { name: 'function', required: true },
+      });
+    }
+  );
 });

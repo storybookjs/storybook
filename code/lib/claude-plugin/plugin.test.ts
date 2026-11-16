@@ -75,8 +75,10 @@ const HARNESS_TOOLS = [
 
 const RENDER_HINT = 'Run `yarn nx compile claude-plugin` and commit the Codex skills.';
 
-const storiesSkill = readFileSync(resolve(packageRoot, 'skills/stories/SKILL.md'), 'utf8');
+const readSkill = (name: string) =>
+  readFileSync(resolve(packageRoot, 'skills', name, 'SKILL.md'), 'utf8');
 
+const WORKFLOW_SKILLS = ['component-docs', 'write-stories', 'test-stories', 'ui-review'];
 function readSkillDescription(skill: string) {
   const description = skill.match(/^description: (.*)$/m)?.[1];
   if (description === undefined) {
@@ -96,6 +98,11 @@ describe('canonical skills', () => {
     }
   );
 
+  // A plain YAML scalar ends at `: ` or ` #`, so a strict loader rejects such a description.
+  it.each(claudeSkills)('$name has a description that is valid YAML unquoted', ({ content }) => {
+    expect(readSkillDescription(content)).not.toMatch(/: | #|:$|^[-?:,[\]{}#&*!|>'"%@`]/);
+  });
+
   it.each(claudeSkills)('$name names no harness-specific tool or file', ({ content }) => {
     for (const harnessTool of HARNESS_TOOLS) {
       expect(content).not.toContain(harnessTool);
@@ -103,19 +110,24 @@ describe('canonical skills', () => {
   });
 });
 
-describe('stories skill', () => {
-  it('uses Storybook documentation and treats setup as upgrade approval', () => {
-    expect(storiesSkill).toContain('docs list');
-    expect(storiesSkill).toContain('docs show');
-    expect(storiesSkill.indexOf('docs list')).toBeLessThan(storiesSkill.indexOf('docs show'));
-    expect(storiesSkill).toContain('set up or install Storybook');
+describe('workflow skills', () => {
+  it.each(WORKFLOW_SKILLS)(
+    '%s describes what it does, and leaves when to use it to the agent instructions',
+    (name) => {
+      const description = readSkillDescription(readSkill(name));
+      expect(description).not.toMatch(
+        /FIRST|no exceptions|always|must|\bUse (it )?(when|after)\b/i
+      );
+    }
+  );
+
+  it.each(WORKFLOW_SKILLS)('%s serves its text from the Storybook CLI of the project', (name) => {
+    expect(readSkill(name)).toContain(`\`npx storybook skills ${name}\``);
   });
 
-  it('starts the dev server from the package.json script without shell interpolation', () => {
-    expect(storiesSkill).toContain('preferred package manager');
-    expect(storiesSkill).toContain('existing `package.json` Storybook script');
-    expect(storiesSkill).not.toMatch(/(?:^|[^\w])--port\b|\$\{?PORT\}?|\$env:PORT|%PORT%/i);
-    expect(storiesSkill).not.toContain('--ci');
+  it.each(WORKFLOW_SKILLS)('%s names no other workflow skill', (name) => {
+    const others = WORKFLOW_SKILLS.filter((other) => other !== name);
+    expect(readSkill(name)).not.toMatch(new RegExp(others.join('|')));
   });
 });
 

@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import process from 'process';
 
+import { SbPage } from '../e2e-sandbox/util.ts';
 import { PREVIEW_STORY_TIMEOUT, waitForPreviewReady } from './helpers.ts';
 
 /**
@@ -33,12 +34,14 @@ test.describe('pseudo-states addon', () => {
     const storyARoot = page.frameLocator('#storybook-preview-iframe').locator('#storybook-root');
     await expect(storyARoot).toHaveClass(/pseudo-hover-all/, { timeout: PREVIEW_STORY_TIMEOUT });
 
-    // Navigate via the sidebar so Storybook preserves globals across the URL change.
-    const selectGroup = page.locator('#components-select');
+    // Navigate via the sidebar so Storybook preserves globals across the URL change. The tree is
+    // virtualized, so the rows are scrolled into existence first.
+    const sbPage = new SbPage(page, expect);
+    const selectGroup = await sbPage.revealSidebarRow('components-select');
     if ((await selectGroup.getAttribute('aria-expanded')) !== 'true') {
       await selectGroup.click();
     }
-    await page.locator('#select-component--base').click();
+    await (await sbPage.revealSidebarRow('select-component--base')).click();
     await page.waitForURL((url) => url.search.includes('select-component--base'));
     await waitForPreviewReady(page);
 

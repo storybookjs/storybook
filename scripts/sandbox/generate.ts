@@ -442,9 +442,9 @@ const runGenerators = async (
     if (hasGenerationErrors) {
       console.log('failed:');
       console.log(
-        generationResults
-          .filter((result) => result.status === 'rejected')
-          .map((_, index) => generators[index].name)
+        generationResults.flatMap((result, index) =>
+          result.status === 'rejected' ? [generators[index].name] : []
+        )
       );
       throw new Error(`Some sandboxes failed to generate`, {
         cause: generationResults

@@ -18,6 +18,13 @@ Each framework has three test files:
 - `*-legacy-gaps.test.ts` pins known legacy defects as `test.fails` red markers. They turn into hard requirements once `baseline-path.ts` flips from `'legacy'` to `'osa'`.
 - `*-render.test.ts` smoke-mounts the fixtures.
 
+`vitest.config.native-typescript.ts` runs `angular-component-meta-baselines.test.ts` again with the analyzer on the native API of TypeScript 7.1, held to the same `acm-` snapshots.
+The daily CI tier runs it; the root vitest config leaves it out, so it does not run on every pull request:
+
+```bash
+yarn vitest run --config code/lib/docgen-harness/vitest.config.native-typescript.ts   # from the repo root
+```
+
 vue3 has a second recorder, `vue3-component-meta-baselines.test.ts`, because Vue ships two production docgen engines.
 It drives the opt-in `vue-component-meta` path (`docgen: 'vue-component-meta'` in vue3-vite) over the same fixtures and writes `cm-`-prefixed snapshots.
 
@@ -353,7 +360,8 @@ yarn bench:docgen-perf --engine react-legacy --engine react-osa # a control pair
 yarn bench:docgen-perf --json /tmp/results.json                 # where the results land
 ```
 
-The default run is `react-legacy`, `react-osa`, `vue-docgen-api`, `vue-component-meta` and `compodoc`.
+The default run is `react-legacy`, `react-osa`, `react-osa-native`, `vue-docgen-api`, `vue-component-meta`, `svelte-legacy`, `svelte-component-meta`, `compodoc`, `angular-cm` and `angular-cm-native`.
+The two `-native` engines read types through the native API of TypeScript 7.1, so the daily gate guards that path too.
 Two ids sit outside it and only measure when named: `react-legacy-rdt` (the `react-docgen-typescript` parser) and `vue-component-meta-next` (the version-pair alias).
 A ratio only appears when both sides of a control pair measured in the same invocation, so naming one side gives you a table row and no comparison.
 
@@ -386,7 +394,7 @@ The mechanism is not Vue-specific: an engine entry declares which install it mea
 
 ### The gate and its budgets
 
-Both gates run on CircleCI's daily tier, which is triggered on demand by the `ci:daily` label on a pull request - nothing schedules it, so this is not nightly protection.
+Both gates run on CircleCI's daily tier, which runs nightly on `next` and on demand via the `ci:daily` label on a pull request.
 
 `bench:docgen-perf-gate` runs the suite at the pinned profile, asserts the budgets in `src/perf/docgen-shared/budgets.ts`, and then proves its own failure detection by running a deliberately failing engine and requiring that run to come back non-zero.
 It writes into the sandbox directory by default; CI passes `--out ./perf-results` so the results can be stored as a build artifact.

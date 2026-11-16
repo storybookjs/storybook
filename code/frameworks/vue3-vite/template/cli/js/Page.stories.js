@@ -1,20 +1,21 @@
+import preview from '../../.storybook/preview';
 import { expect, userEvent, within } from 'storybook/test';
 
 import MyPage from './Page.vue';
 
-export default {
+const meta = preview.meta({
   title: 'Example/Page',
   component: MyPage,
   parameters: {
     // More on how to position stories at: https://storybook.js.org/docs/configure/story-layout
     layout: 'fullscreen',
   },
-};
+});
 
-export const LoggedOut = {};
+export const LoggedOut = meta.story();
 
 // More on component testing: https://storybook.js.org/docs/writing-tests/interaction-testing
-export const LoggedIn = {
+export const LoggedIn = meta.story({
   render: () => ({
     components: {
       MyPage,
@@ -31,4 +32,4 @@ export const LoggedIn = {
     const logoutButton = canvas.getByRole('button', { name: /Log out/i });
     await expect(logoutButton).toBeInTheDocument();
   },
-};
+});

@@ -29,6 +29,7 @@ import {
   installDependencyGraphMocks,
   installModuleGraphQueryMock,
 } from './change-detection.test-helpers.ts';
+import { IndexingError, MultipleIndexingError } from '../utils/IndexingError.ts';
 import { ChangeDetectionFailureError, ChangeDetectionUnavailableError } from './errors.ts';
 import type { GitDiffResult } from './GitDiffProvider.ts';
 import { GitDiffProvider } from './GitDiffProvider.ts';
@@ -660,7 +661,7 @@ describe('ChangeDetectionService', () => {
       hasGraph: vi.fn(() => false),
       lookup: vi.fn(() => new Map<string, number>()),
     } as unknown as ModuleGraphEngine;
-    const moduleGraphMock = installModuleGraphQueryMock(engine);
+    const moduleGraphMock = installModuleGraphQueryMock(engine, workingDir);
 
     const { getStatusStoreByTypeId } = createStatusStore({
       universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
@@ -761,6 +762,46 @@ describe('ChangeDetectionService', () => {
       status: 'error',
       error: expect.objectContaining({ message: 'graph build blew up' }),
     });
+    await service.dispose();
+  });
+
+  it('does not log an indexing error again, because the story index generator logs it', async () => {
+    installDependencyGraphMocks(buildReverseIndex([]));
+    const { getStatusStoreByTypeId } = createStatusStore({
+      universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
+      environment: 'server',
+    });
+    const gitDiffProvider = createMockGitDiffProvider();
+    let onGitStateChange: (() => void) | undefined;
+    gitDiffProvider.onGitStateChangeMock.mockImplementation((callback: () => void) => {
+      onGitStateChange = callback;
+    });
+    const getIndex = vi.fn().mockResolvedValue(createStoryIndex([]));
+    const { adapter } = createMockAdapter();
+    const { service, graph } = createWiredChangeDetection({
+      storyIndexGeneratorPromise: Promise.resolve({ getIndex } as never),
+      statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
+      gitDiffProvider,
+      indexBaselineService: createMockStoryIndexBaselineService(),
+      workingDir,
+      debounceMs: 10,
+    });
+
+    graph.start(adapter);
+    service.start();
+    await vi.runAllTimersAsync();
+    getIndex.mockRejectedValue(
+      new MultipleIndexingError([new IndexingError('parse error', ['./src/Button.stories.svelte'])])
+    );
+    getIndex.mockClear();
+
+    onGitStateChange?.();
+    await vi.runAllTimersAsync();
+
+    expect(getIndex).toHaveBeenCalled();
+    expect(logger.error).not.toHaveBeenCalledWith(
+      expect.stringContaining('Change detection failed')
+    );
     await service.dispose();
   });
 

@@ -1,1 +1,128 @@
-{}
+{
+  "config": {
+    "control": {
+      "type": "object",
+    },
+    "description": "Required panel config.",
+    "name": "config",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "PanelConfig",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": true,
+      "value": "PanelConfig",
+    },
+  },
+  "items": {
+    "control": {
+      "type": "object",
+    },
+    "description": "Item labels.",
+    "name": "items",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": "[]",
+      },
+      "type": {
+        "summary": "string[]",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "string[]",
+    },
+  },
+  "lookup": {
+    "control": {
+      "type": "object",
+    },
+    "description": "Lookup table.",
+    "name": "lookup",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "Record<string, number>",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "Record<string, number>",
+    },
+  },
+  "pair": {
+    "control": {
+      "type": "object",
+    },
+    "description": "Numeric pair.",
+    "name": "pair",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "[number, number]",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "[number, number]",
+    },
+  },
+  "state": {
+    "control": {
+      "type": "object",
+    },
+    "description": "Partial state override.",
+    "name": "state",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "Partial<PanelConfig> & { open: boolean; }",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "Partial<PanelConfig> & { open: boolean; }",
+    },
+  },
+  "when": {
+    "control": {
+      "type": "object",
+    },
+    "description": "Activation time.",
+    "name": "when",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "Date",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "Date",
+    },
+  },
+}

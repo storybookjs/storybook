@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
-import { cacheLife, cacheTag } from '@storybook/nextjs-vite/cache.mock';
+import { cacheLife, cacheTag, io, navigation, prefetch } from '@storybook/nextjs-vite/cache.mock';
 
 import { expect } from 'storybook/test';
 
@@ -27,6 +27,10 @@ export const Default: Story = {
   play: async () => {
     await expect(cacheLife).toHaveBeenCalledWith('default');
     await expect(cacheTag).toHaveBeenCalledWith('my-tag');
+
+    expect(io()).toMatchObject({ status: 'fulfilled', value: undefined });
+    await expect(navigation()).resolves.toBeUndefined();
+    await expect(prefetch()).resolves.toBeUndefined();
   },
 };
 

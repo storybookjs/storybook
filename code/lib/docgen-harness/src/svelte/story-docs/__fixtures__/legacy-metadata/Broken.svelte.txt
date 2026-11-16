@@ -1,0 +1,5 @@
+<script lang="ts">
+  export let label: string;
+</script>
+
+{#if label}<button>{label}</div>{/if}

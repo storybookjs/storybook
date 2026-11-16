@@ -43,6 +43,21 @@ describe('next/link mock', () => {
     );
   });
 
+  it('prefixes the hash of a UrlObject href with `#`', () => {
+    expect(renderHref({ href: { pathname: '/blog', query: { page: '2' }, hash: 'list' } })).toBe(
+      '/blog?page=2#list'
+    );
+  });
+
+  it('prefixes the hash of a hash-only UrlObject href with `#`', () => {
+    expect(renderHref({ href: { hash: 'section' } })).toBe('#section');
+  });
+
+  it('does not double up a `#` already on the hash of a UrlObject href', () => {
+    expect(renderHref({ href: { hash: '#x' } })).toBe('#x');
+    expect(renderHref({ href: { pathname: '/blog', hash: '#list' } })).toBe('/blog#list');
+  });
+
   it('calls onClick before preventing default', () => {
     let defaultPreventedWhenHandlerRan: boolean | undefined;
     const onClick = vi.fn((e: React.MouseEvent<HTMLAnchorElement>) => {

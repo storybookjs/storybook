@@ -2,6 +2,7 @@ import type { CsfObject } from 'storybook/internal/csf-tools';
 
 import picocolors from 'picocolors';
 
+import { readForEdit } from '../helpers/edit-parsed-file.ts';
 import type { Fix } from '../types.ts';
 
 const legacyPath = ['parameters', 'componentSubtitle'];
@@ -10,10 +11,10 @@ const subtitlePath = ['parameters', 'docs', 'subtitle'];
 // The Subtitle block read the preview and meta parameters only, and preferred `docs.subtitle`,
 // so an existing one keeps winning.
 const migrate = (object: CsfObject) => {
-  if (!object.get(legacyPath)) {
+  if (!readForEdit(object, legacyPath)) {
     return;
   }
-  if (object.get(subtitlePath)) {
+  if (readForEdit(object, subtitlePath)) {
     object.remove(legacyPath);
   } else {
     object.move(legacyPath, subtitlePath);

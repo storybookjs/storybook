@@ -53,7 +53,7 @@ export type { ActionItem } from './components/ActionBar/ActionBar.tsx';
 export { ErrorFormatter } from './components/ErrorFormatter/ErrorFormatter.tsx';
 
 // Buttons
-export { Button, IconButton } from './components/Button/Button.tsx';
+export { Button } from './components/Button/Button.tsx';
 export type { ButtonProps } from './components/Button/Button.tsx';
 export { ToggleButton } from './components/ToggleButton/ToggleButton.tsx';
 export { Select } from './components/Select/Select.tsx';
@@ -79,20 +79,9 @@ export type { TooltipNoteProps } from './components/tooltip/TooltipNote.tsx';
 export { TooltipProvider } from './components/tooltip/TooltipProvider.tsx';
 export type { TooltipProviderProps } from './components/tooltip/TooltipProvider.tsx';
 
-// Old tooltips - deprecated and to remove in Storybook 11
-export { WithTooltip, WithTooltipPure } from './components/tooltip/lazy-WithTooltip.tsx';
-export { TooltipMessage } from './components/tooltip/TooltipMessage.tsx';
-export {
-  TooltipLinkList,
-  type Link as TooltipLinkListLink,
-} from './components/tooltip/TooltipLinkList.tsx';
-export { default as ListItem } from './components/tooltip/ListItem.tsx';
-
 // Bar, Toolbar and Tabs
-export { Tabs, TabsState, TabBar, TabWrapper } from './components/Tabs/Tabs.tsx';
-export { TabButton } from './components/Tabs/Button.tsx';
 export { Separator, interleaveSeparators } from './components/Bar/Separator.tsx';
-export { Bar, FlexBar, type BarProps } from './components/Bar/Bar.tsx';
+export { Bar, type BarProps } from './components/Bar/Bar.tsx';
 export { EmptyTabContent } from './components/Tabs/EmptyTabContent.tsx';
 export { AddonPanel } from './components/addon-panel/addon-panel.tsx';
 export { Toolbar, AbstractToolbar } from './components/Toolbar/Toolbar.tsx';

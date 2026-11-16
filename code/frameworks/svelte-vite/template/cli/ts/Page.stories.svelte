@@ -1,11 +1,11 @@
 <script module>
-  import { defineMeta } from '@storybook/svelte-vite';
+  import preview from '../../.storybook/preview';
   import { expect, userEvent, waitFor, within } from 'storybook/test';
   import Page from './Page.svelte';
   import { fn } from 'storybook/test';
 
   // More on how to set up stories at: https://storybook.js.org/docs/writing-stories
-  const { Story } = defineMeta({
+  const { Story } = preview.meta({
     title: 'Example/Page',
     component: Page,
     parameters: {

@@ -4,7 +4,7 @@ You can use Storybook's plugin in Claude Code or Claude Desktop to connect agent
 
 ## Requirements
 
-- Storybook 11.0 or later, an 11.0 prerelease (`11.0.0-alpha.x`), or a canary build
+- Storybook 11.0 or later, an 11.0 prerelease (`11.0.0-alpha.x`, `-beta.x` or `-rc.x`), or a canary build
 - [Claude Code](https://claude.ai/code) or [Claude Desktop](https://claude.ai/desktop)
 
 ## Installation
@@ -96,9 +96,27 @@ To remove a plugin:
 
 ## Usage
 
-The plugin includes instructions to help the agent understand how and when to use the [skills](#skills) and [tools](#tools) available to it. As your agent works on UI tasks, it can use the plugin to generate stories, run tests, and preview its work in your Storybook. You can also explicitly call the plugin's skills in prompts (e.g. `/upgrade`) to have the agent perform specific actions.
+The plugin's [skills](#skills) tell the agent how to work with your Storybook: reuse your components, generate stories, run tests, and preview its work. The `AGENTS.md` section below is the [UI workflow](https://storybook.js.org/docs/ai/skills/ui-workflow) that tells the agent which skill to use at which step. Add it to the `AGENTS.md` of each project where the agent should follow it. When you set up Storybook 11 with AI features, or accept the `skills` automigration when you upgrade, Storybook adds it for you (and to your `CLAUDE.md` or `CLAUDE.local.md`, if it does not import `AGENTS.md`):
 
-If you're using Claude Desktop, the agent will use the plugin to automatically open relevant stories or an [agentic review summary](https://storybook.js.org/docs/ai/agentic-review) in the ADE preview, so you can review the agent's work.
+```md
+<!-- BEGIN:storybook-skills -->
+<!-- Storybook updates this section on upgrade. Remove both markers to keep your own edits. -->
+
+## Storybook
+
+For every change to how the UI looks (you create, change, or delete a component, story, style, theme, or design token), follow these steps in order. Each step has a Storybook skill. First invoke the skills of all the steps, before you edit any file. Then follow each skill at its step.
+
+1. `component-docs`: look up the components to reuse, with their props and usage examples, before you edit any file. Also when the user asks about a component's props, API, or usage.
+2. `write-stories`: every component you create or change gets stories.
+3. `test-stories`: run the story tests after every change, the way this skill says, never with a `package.json` test script, and fix what fails. Also when the user asks to run or fix story tests.
+4. `ui-review`: publish a review that shows the user what changed, as your last step. Also when the user asks to see components or stories.
+
+<!-- END:storybook-skills -->
+```
+
+Storybook replaces the text between the markers when you upgrade. The section is the workflow: each step names the skill the agent uses for it. To change the workflow, for example to leave out the review, remove both markers and edit the section. Remove the whole section to stop the agent from following the workflow: it then uses a skill only when you ask for it, or when it finds one that fits its task. You can also call the plugin's skills in prompts (e.g. `/upgrade`) to have the agent perform specific actions. See [Skills and plugins](https://storybook.js.org/docs/ai/skills) for more details.
+
+If you're using Claude Desktop, the agent will use the plugin to automatically open relevant stories or an [agentic review summary](https://storybook.js.org/docs/ai/skills/ui-review) in the ADE preview, so you can review the agent's work.
 
 ## Skills
 
@@ -110,11 +128,23 @@ Initializes Storybook in your project (i.e. runs [`npm create storybook@latest`]
 
 ### `setup`
 
-Sets up your Storybook for agentic workflows, automatically configures your project to correctly render your components, and writes story files for a variety of component types. See the [agentic setup docs](https://storybook.js.org/docs/ai/agentic-setup) for more details.
+Sets up your Storybook for agentic workflows, automatically configures your project to correctly render your components, and writes story files for a variety of component types. See the [agentic setup docs](https://storybook.js.org/docs/ai/skills/setup) for more details.
 
-### `stories`
+### `component-docs`
 
-Instructs the agent to use stories for all UI work.
+Looks up the components of your Storybook, with their props and usage examples, so the agent reuses them instead of building duplicates. Also answers questions about a component's props, API, and usage.
+
+### `write-stories`
+
+The rules for the stories of your project: which states get a story, and how to write the imports, `play` functions, and mocks. See [Write stories](https://storybook.js.org/docs/ai/skills/write-stories).
+
+### `test-stories`
+
+Runs the story tests, with their accessibility checks, and fixes what fails. See [Test stories](https://storybook.js.org/docs/ai/skills/test-stories).
+
+### `ui-review`
+
+Finds the stories a change affects and publishes an [agentic review](https://storybook.js.org/docs/ai/skills/ui-review) of them. Also shows the components or stories you ask to see.
 
 ### `upgrade`
 
@@ -122,4 +152,4 @@ Upgrades your Storybook to the latest version. This is the same as running [`npx
 
 ## Tools
 
-Agents with the plugin get the same tools as the [Storybook MCP server](https://storybook.js.org/docs/ai/mcp/overview#toolsets), through the `storybook tools` CLI.
+Agents with the plugin get the same tools as the [Storybook MCP server](https://storybook.js.org/docs/ai/reference/mcp-server), through the `storybook tools` CLI.

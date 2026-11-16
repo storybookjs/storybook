@@ -1,17 +1,11 @@
-// This plugin is a direct port of https://github.com/IanVS/vite-plugin-turbosnap
-import { relative } from 'node:path';
+// Writes the bundler's module graph as webpack-style stats for TurboSnap.
+
+import { statSync } from 'node:fs';
 
 import type { BuilderStats } from 'storybook/internal/types';
 
-// eslint-disable-next-line depend/ban-dependencies
-import slash from 'slash';
+import { isAbsolute, relative } from 'pathe';
 import type { Plugin } from 'vite';
-
-import {
-  SB_VIRTUAL_FILES,
-  getOriginalVirtualModuleId,
-  getResolvedVirtualModuleId,
-} from '../virtual-file-names.ts';
 
 /*
  * Reason, Module are copied from chromatic types
@@ -29,113 +23,162 @@ interface Module {
 
 type WebpackStatsPluginOptions = {
   workingDir: string;
+  // Records the files registered with `this.addWatchFile()`. Only useful when the stats are written.
+  recordWatchFiles?: boolean;
 };
 
-/**
- * Strips off query params added by rollup/vite to ids, to make paths compatible for comparison with
- * git.
- */
-function stripQueryParams(filePath: string): string {
-  return filePath.split('?')[0];
+const ROLLUP_VIRTUAL_PREFIX = '\0';
+
+function splitQuery(id: string): [path: string, query: string] {
+  const queryIndex = id.indexOf('?');
+  return queryIndex === -1 ? [id, ''] : [id.slice(0, queryIndex), id.slice(queryIndex)];
 }
 
-/** We only care about user code and the node_modules it depends on. Not vite files, or (most) virtual files. */
-function isUserCode(moduleName: string) {
-  if (!moduleName) {
-    return false;
+const STYLESHEET_EXTENSIONS = 'css|scss|sass|less|styl|stylus|pcss|postcss|sss';
+const STYLESHEET_PATH = new RegExp(`\\.(${STYLESHEET_EXTENSIONS})$`);
+// The style block of a single-file component, for example `Foo.vue?vue&type=style&lang.scss`.
+const STYLESHEET_QUERY = new RegExp(`[?&]lang\\.(${STYLESHEET_EXTENSIONS})\\b`);
+
+function isStylesheet(id: string) {
+  const [path, query] = splitQuery(id);
+  return STYLESHEET_PATH.test(path) || STYLESHEET_QUERY.test(query);
+}
+
+// Rollup's `\0` marks an id that is not a file, yet the commonjs plugin embeds a file path in its
+// proxy ids. A `\0` id is treated as a path only when the graph contains that path as a module.
+function createNormalizer(workingDir: string, ids: Iterable<string>) {
+  const filePaths = new Set<string>();
+  for (const id of ids) {
+    if (!id.startsWith(ROLLUP_VIRTUAL_PREFIX)) {
+      filePaths.add(splitQuery(id)[0]);
+    }
   }
 
-  // keep Storybook's virtual files because they import the story files, so they are essential to the module graph
-  if (Object.values(SB_VIRTUAL_FILES).includes(getOriginalVirtualModuleId(moduleName))) {
-    return true;
-  }
+  return function normalize(id: string) {
+    const virtualPrefix = id.startsWith(ROLLUP_VIRTUAL_PREFIX) ? ROLLUP_VIRTUAL_PREFIX : '';
+    const unprefixed = id.slice(virtualPrefix.length);
 
-  return Boolean(
-    !moduleName.startsWith('vite/') &&
-    !moduleName.startsWith('\0') &&
-    moduleName !== 'react/jsx-runtime'
-  );
+    // Turbosnap matches virtual modules by name, and expects the leading forward slash.
+    // Reference: https://github.com/chromaui/chromatic-cli/blob/v11.25.2/node-src/lib/getDependentStoryFiles.ts#L53
+    if (unprefixed.startsWith('virtual:')) {
+      return `/${unprefixed}`;
+    }
+
+    const [path, query] = splitQuery(unprefixed);
+    if (!isAbsolute(path) || (virtualPrefix && !filePaths.has(path))) {
+      return id;
+    }
+
+    return `${virtualPrefix}./${relative(workingDir, path)}${query}`;
+  };
 }
 
 export type WebpackStatsPlugin = Plugin & { storybookGetStats: () => BuilderStats };
 
-export function pluginWebpackStats({ workingDir }: WebpackStatsPluginOptions): WebpackStatsPlugin {
-  /** Convert an absolute path name to a path relative to the vite root, with a starting `./` */
-  function normalize(filename: string) {
-    // Do not try to resolve virtual files
-    if (filename.startsWith('virtual:')) {
-      // We have to append a forward slash because otherwise we break turbosnap.
-      // As soon as the chromatic-cli supports `virtual:` id's without a starting forward slash,
-      // we can remove adding the forward slash here
-      // Reference: https://github.com/chromaui/chromatic-cli/blob/v11.25.2/node-src/lib/getDependentStoryFiles.ts#L53
-      return `/${filename}`;
-    }
-    // ! Maintain backwards compatibility with the old virtual file names
-    // ! to ensure that the stats file doesn't change between the versions
-    // ! Turbosnap is also only compatible with the old virtual file names
-    // ! the old virtual file names did not start with the obligatory \0 character
-    if (Object.values(SB_VIRTUAL_FILES).includes(getOriginalVirtualModuleId(filename))) {
-      // We have to append a forward slash because otherwise we break turbosnap.
-      // As soon as the chromatic-cli supports `virtual:` id's without a starting forward slash,
-      // we can remove adding the forward slash here
-      // Reference: https://github.com/chromaui/chromatic-cli/blob/v11.25.2/node-src/lib/getDependentStoryFiles.ts#L53
-      return `/${getOriginalVirtualModuleId(filename)}`;
-    }
+export function pluginWebpackStats({
+  workingDir,
+  recordWatchFiles = false,
+}: WebpackStatsPluginOptions): WebpackStatsPlugin {
+  const importersById = new Map<string, Set<string>>();
+  const watchFilesById = new Map<string, Set<string>>();
+  const isFileById = new Map<string, boolean>();
 
-    // Otherwise, we need them in the format `./path/to/file.js`.
-    else {
-      const relativePath = relative(workingDir, stripQueryParams(filename));
-      // This seems hacky, got to be a better way to add a `./` to the start of a path.
-      return `./${slash(relativePath)}`;
+  function interceptWatchFiles(plugin: Plugin, hookName: 'load' | 'transform') {
+    const hook = plugin[hookName];
+    if (!hook) {
+      return;
     }
-  }
-
-  /** Helper to create Reason objects out of a list of string paths */
-  function createReasons(importers?: readonly string[]): Reason[] {
-    return (importers || []).map((i) => ({ moduleName: normalize(i) }));
-  }
-
-  /** Helper function to build a `Module` given a filename and list of files that import it */
-  function createStatsMapModule(filename: string, importers?: readonly string[]): Module {
-    return {
-      id: filename,
-      name: filename,
-      reasons: createReasons(importers),
+    const handler = typeof hook === 'function' ? hook : hook.handler;
+    const wrapped = function (this: { addWatchFile(file: string): void }, ...args: unknown[]) {
+      const id = args[hookName === 'load' ? 0 : 1] as string;
+      const context = new Proxy(this, {
+        get(target, key) {
+          if (key === 'addWatchFile') {
+            return (file: string) => {
+              const files = watchFilesById.get(id) ?? new Set<string>();
+              files.add(file);
+              watchFilesById.set(id, files);
+              return target.addWatchFile(file);
+            };
+          }
+          const value = Reflect.get(target, key, target);
+          return typeof value === 'function' ? value.bind(target) : value;
+        },
+      });
+      return Reflect.apply(handler, context, args);
     };
+    try {
+      (plugin as Record<typeof hookName, unknown>)[hookName] =
+        typeof hook === 'function' ? wrapped : { ...hook, handler: wrapped };
+    } catch {
+      // Non-writable hooks keep their original behavior.
+    }
   }
 
-  const statsMap = new Map<string, Module>();
+  function record(id: string, importer?: string) {
+    const importers = importersById.get(id) ?? new Set<string>();
+    importersById.set(id, importers);
+    if (importer !== undefined) {
+      importers.add(importer);
+    }
+  }
 
   return {
     name: 'storybook:rollup-plugin-webpack-stats',
     // We want this to run after the vite build plugins (https://vitejs.dev/guide/api-plugin.html#plugin-ordering)
     enforce: 'post',
-    moduleParsed: function (mod) {
-      if (!isUserCode(mod.id)) {
+    configResolved(config) {
+      // The stats are only read after a build.
+      if (!recordWatchFiles || config.command !== 'build') {
         return;
       }
-      mod.importedIds
-        .concat(mod.dynamicallyImportedIds)
-        .filter((name) => isUserCode(name))
-        .forEach((depIdUnsafe) => {
-          const depId = normalize(depIdUnsafe);
-          if (!statsMap.has(depId)) {
-            statsMap.set(depId, createStatsMapModule(depId, [mod.id]));
-            return;
-          }
-          const m = statsMap.get(depId);
-          if (!m) {
-            return;
-          }
-          m.reasons = (m.reasons ?? [])
-            .concat(createReasons([mod.id]))
-            .filter((r) => r.moduleName !== depId);
-          statsMap.set(depId, m);
-        });
+      // Capture the owning module here because bundlers expose watch files only globally.
+      for (const plugin of config.plugins) {
+        interceptWatchFiles(plugin, 'load');
+        interceptWatchFiles(plugin, 'transform');
+      }
+    },
+    moduleParsed(mod) {
+      record(mod.id);
+      for (const depId of mod.importedIds.concat(mod.dynamicallyImportedIds)) {
+        record(depId, mod.id);
+      }
+      // Tailwind's scanned sources must not become dependencies of a global stylesheet.
+      const keepsOnlyStylesheets = isStylesheet(mod.id);
+      for (const file of watchFilesById.get(mod.id) ?? []) {
+        if (keepsOnlyStylesheets && !isStylesheet(file)) {
+          continue;
+        }
+        const isFile =
+          isFileById.get(file) ??
+          (isAbsolute(file) && statSync(file, { throwIfNoEntry: false })?.isFile() === true);
+        isFileById.set(file, isFile);
+        if (isFile) {
+          record(file, mod.id);
+        }
+      }
     },
 
     storybookGetStats() {
-      const stats = { modules: Array.from(statsMap.values()) };
+      const normalize = createNormalizer(workingDir, importersById.keys());
+      const importerNamesByName = new Map<string, Set<string>>();
+
+      for (const [id, importers] of importersById) {
+        const name = normalize(id);
+        const importerNames = importerNamesByName.get(name) ?? new Set<string>();
+        for (const importer of importers) {
+          importerNames.add(normalize(importer));
+        }
+        importerNames.delete(name);
+        importerNamesByName.set(name, importerNames);
+      }
+
+      const modules: Module[] = Array.from(importerNamesByName, ([name, importerNames]) => ({
+        id: name,
+        name,
+        reasons: Array.from(importerNames, (moduleName) => ({ moduleName })),
+      }));
+      const stats = { modules };
       return { ...stats, toJson: () => stats };
     },
   };

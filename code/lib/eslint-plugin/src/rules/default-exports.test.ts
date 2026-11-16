@@ -32,12 +32,40 @@ ruleTester.run('default-exports', rule, {
       const meta = config.meta({})
     `,
     `
+      import preview from '../../.storybook/preview'
+      const meta = preview.meta({ component: Button })
+    `,
+    `
       import { storiesOf } from '@storybook/react'
       storiesOf('Component', module)
     `,
   ],
 
   invalid: [
+    {
+      // a `.meta()` call on something that is not a preview factory is not a CSF4 meta
+      code: dedent`
+        import { z } from 'zod'
+        const schema = z.object({}).meta({ title: 'Not a meta' })
+      `,
+      output: dedent`
+        import { z } from 'zod'
+        export default {}
+        const schema = z.object({}).meta({ title: 'Not a meta' })
+      `,
+      errors: [
+        {
+          messageId: 'shouldHaveDefaultExport',
+          suggestions: [
+            {
+              messageId: 'fixSuggestion',
+              output:
+                "import { z } from 'zod'\nexport default {}\nconst schema = z.object({}).meta({ title: 'Not a meta' })",
+            },
+          ],
+        },
+      ],
+    },
     {
       code: 'export const Primary = () => <button>hello</button>',
       output: dedent`

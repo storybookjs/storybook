@@ -17,7 +17,6 @@ import type {
   StoryContextForRender as StoryContextForFramework,
   StoryFn as StoryFnForFramework,
   StoryId,
-  StoryKind,
   StoryName,
 } from './csf.ts';
 import type { IndexEntry } from './indexer.ts';
@@ -121,7 +120,6 @@ export type Addon_MakeDecoratorResult = (...args: any) => any;
 
 export interface Addon_AddStoryArgs<StoryFnReturnType = unknown> {
   id: StoryId;
-  kind: StoryKind;
   name: StoryName;
   storyFn: Addon_StoryFn<StoryFnReturnType>;
   parameters: Parameters;
@@ -140,7 +138,6 @@ export type Addon_ClientApiReturnFn<StoryFnReturnType = unknown> = (
 ) => Addon_StoryApi<StoryFnReturnType>;
 
 export interface Addon_StoryApi<StoryFnReturnType = unknown> {
-  kind: StoryKind;
   add: (
     storyName: StoryName,
     storyFn: Addon_StoryFn<StoryFnReturnType>,
@@ -174,7 +171,7 @@ export interface Addon_BaseAnnotations<
   /**
    * Dynamic data that are provided (and possibly updated by) Storybook and its addons.
    *
-   * @see [Arg story inputs](https://storybook.js.org/docs/api/csf#args-story-inputs)
+   * @see [Args](https://storybook.js.org/docs/writing-stories/args)
    */
   args?: Partial<TArgs>;
 
@@ -227,7 +224,7 @@ export interface Addon_Annotations<TArgs, StoryFnReturnType> extends Addon_BaseA
    * includeStories: /.*Story$/;
    * ```
    *
-   * @see [Non-story exports](https://storybook.js.org/docs/api/csf#non-story-exports)
+   * @see [Non-story exports](https://storybook.js.org/docs/writing-stories/csf#non-story-exports)
    */
   includeStories?: string[] | RegExp;
 
@@ -242,7 +239,7 @@ export interface Addon_Annotations<TArgs, StoryFnReturnType> extends Addon_BaseA
    * excludeStories: /.*Data$/;
    * ```
    *
-   * @see [Non-story exports](https://storybook.js.org/docs/api/csf#non-story-exports)
+   * @see [Non-story exports](https://storybook.js.org/docs/writing-stories/csf#non-story-exports)
    */
   excludeStories?: string[] | RegExp;
 }

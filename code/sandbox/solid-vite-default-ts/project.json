@@ -25,5 +25,5 @@
     "chromatic": {},
     "serve": {}
   },
-  "tags": ["ci:merged", "ci:daily"]
+  "tags": ["ci:daily"]
 }

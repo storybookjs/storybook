@@ -18,6 +18,16 @@ const modelValue = ref('Draft text');
   <TemplateVModelExpansion label="Message" v-model="modelValue" />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import { ref } from "vue";
+import TemplateVModelExpansion from './TemplateVModelExpansion.vue';
+
+const modelValue = ref(⟦value modelValue in="script"⟫'Draft text'⟧);
+</script>
+
+<template>
+  <TemplateVModelExpansion⟦attr label ~" "⟫ label="Message"⟧ v-model="modelValue"⟦props * except=["modelValue","label"] ~" "⟫⟧ />
+</template>",
     },
   },
 }

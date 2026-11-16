@@ -9,9 +9,11 @@ import {
   getIncompatibleStorybookPackages,
 } from './getIncompatibleStorybookPackages.ts';
 
-vi.mock('picocolors', () => {
+vi.mock('picocolors', async (importOriginal) => {
+  const { default: actual } = await importOriginal<{ default: typeof import('picocolors') }>();
   return {
     default: {
+      ...actual,
       yellow: (str: string) => str,
       cyan: (str: string) => str,
       bold: (str: string) => str,

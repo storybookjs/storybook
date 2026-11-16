@@ -157,4 +157,59 @@ describe('upgrade-storybook-related-dependencies fix', () => {
       ],
     });
   });
+
+  it.each([
+    ['2.0.7', '<3.0.0', '2.0.8'],
+    ['3.0.0-beta.1', undefined, '3.0.3'],
+    ['3.0.0', undefined, '3.0.3'],
+  ])(
+    'caps msw-storybook-addon %s below its next major with constraint %s',
+    async (beforeVersion, expectedConstraint, afterVersion) => {
+      vi.mocked(docsUtils.getIncompatibleStorybookPackages).mockResolvedValue([]);
+      const latestVersion = vi.fn(async (_packageName: string, constraint?: string) =>
+        constraint === '<3.0.0' ? '2.0.8' : '3.0.3'
+      );
+
+      const result = await check({
+        packageManager: {
+          getAllDependencies: () => ({ 'msw-storybook-addon': beforeVersion }),
+          latestVersion,
+          getInstalledVersion: async () => beforeVersion,
+        },
+      });
+
+      expect(latestVersion).toHaveBeenCalledWith('msw-storybook-addon', expectedConstraint);
+      expect(result).toEqual({
+        upgradable: [{ packageName: 'msw-storybook-addon', beforeVersion, afterVersion }],
+      });
+    }
+  );
+
+  it('upgrades other packages across majors next to a capped msw-storybook-addon', async () => {
+    vi.mocked(docsUtils.getIncompatibleStorybookPackages).mockResolvedValue([]);
+    const latestVersion = vi.fn(async (packageName: string, constraint?: string) => {
+      if (packageName === 'msw-storybook-addon') {
+        return constraint === '<3.0.0' ? '2.0.7' : '3.0.3';
+      }
+      return '2.0.0';
+    });
+
+    const result = await check({
+      packageManager: {
+        getAllDependencies: () => ({
+          'msw-storybook-addon': '2.0.7',
+          '@example/storybook-addon': '1.0.0',
+        }),
+        latestVersion,
+        getInstalledVersion: async (packageName: string) =>
+          packageName === 'msw-storybook-addon' ? '2.0.7' : '1.0.0',
+      },
+    });
+
+    expect(result).toEqual({
+      upgradable: [
+        { packageName: '@example/storybook-addon', beforeVersion: '1.0.0', afterVersion: '2.0.0' },
+      ],
+    });
+  });
 });

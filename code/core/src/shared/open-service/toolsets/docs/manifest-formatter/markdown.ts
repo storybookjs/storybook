@@ -233,12 +233,16 @@ function formatPropsSection(
     const type = propInfo.type ?? 'any';
     const isRequired = propInfo.required ?? true;
     const hasDefault = propInfo.defaultValue !== undefined;
-    const hasDescription = propInfo.description !== undefined;
+    const { description } = propInfo;
 
-    if (hasDescription) {
-      parts.push('  /**');
-      parts.push(`    ${propInfo.description}`);
-      parts.push('  */');
+    if (description !== undefined) {
+      if (description.includes('\n')) {
+        parts.push('  /**');
+        parts.push(`    ${description}`);
+        parts.push('  */');
+      } else {
+        parts.push(`  /** ${description} */`);
+      }
     }
 
     let propLine = `  ${propName}`;
@@ -346,7 +350,10 @@ function formatSubcomponentsSection(
 /**
  * Format a single component manifest into markdown.
  */
-export function formatComponentManifest(componentManifest: ComponentManifest): string {
+export function formatComponentManifest(
+  componentManifest: ComponentManifest,
+  showStoryTool = 'docs show-story'
+): string {
   const parts: string[] = [];
   const parsedDocgen = getParsedDocgen(componentManifest);
   const jsDocTags = getComponentTags(componentManifest, parsedDocgen);
@@ -367,15 +374,17 @@ export function formatComponentManifest(componentManifest: ComponentManifest): s
   parts.push(...formatJsDocTags(jsDocTags, isGenericJsDocTag));
   parts.push(...formatExampleJsDocTags(jsDocTags));
 
-  parts.push(...formatSubcomponentsSection(componentManifest.subcomponents));
-
-  // A framework's own API markdown leads, because it is the component's contract and the stories
-  // below are examples of applying it. The `react*` props section keeps its historical position.
+  // The component's contract leads and the stories below are examples of applying it, so an agent
+  // reading only the head of the output still gets the props.
   const { apiDescription } = componentManifest;
   if (apiDescription) {
     parts.push(apiDescription);
     parts.push('');
+  } else {
+    parts.push(...formatPropsSection(parsedDocgen));
   }
+
+  parts.push(...formatSubcomponentsSection(componentManifest.subcomponents));
 
   // Stories section
   const stories = Array.isArray(componentManifest.stories) ? componentManifest.stories : [];
@@ -416,6 +425,10 @@ export function formatComponentManifest(componentManifest: ComponentManifest): s
         parts.push('### Other Stories');
         parts.push('');
       }
+      parts.push(
+        `Get the code of one of these stories with the ${showStoryTool} tool and its story ID.`
+      );
+      parts.push('');
       for (const story of remainingStories) {
         const summary = extractSummary(story);
         const summaryPart = summary ? `: ${summary}` : '';
@@ -424,10 +437,6 @@ export function formatComponentManifest(componentManifest: ComponentManifest): s
       }
       parts.push('');
     }
-  }
-
-  if (!apiDescription) {
-    parts.push(...formatPropsSection(parsedDocgen));
   }
 
   // Attached docs section
@@ -462,6 +471,9 @@ export function formatDocsManifest(doc: Doc): string {
 			${doc.content ?? ''}`;
 }
 
+const NO_ENTRIES =
+  'No components or docs entries found. A component is listed here once it has a story.';
+
 /**
  * Format a component manifest map into a markdown list.
  * @param manifest - The component manifest map to format
@@ -471,11 +483,16 @@ export function formatManifestsToLists(
   manifests: AllManifests,
   options: ListFormattingOptions = {}
 ): string {
+  const components = Object.values(manifests.componentManifest.components);
+  if (components.length === 0 && Object.keys(manifests.docsManifest?.docs ?? {}).length === 0) {
+    return NO_ENTRIES;
+  }
+
   const parts: string[] = [];
 
   parts.push('# Components');
   parts.push('');
-  for (const component of Object.values(manifests.componentManifest.components)) {
+  for (const component of components) {
     parts.push(formatComponentLine(component));
     if (options.withStoryIds && Array.isArray(component.stories)) {
       for (const story of component.stories) {
@@ -529,6 +546,13 @@ export function formatMultiSourceManifestsToLists(
     }
 
     const components = Object.values(manifests?.componentManifest.components ?? {});
+    const docs = Object.values(manifests?.docsManifest?.docs ?? {});
+    if (components.length === 0 && docs.length === 0) {
+      parts.push(NO_ENTRIES);
+      parts.push('');
+      continue;
+    }
+
     if (components.length > 0) {
       parts.push('## Components');
       parts.push('');
@@ -543,7 +567,6 @@ export function formatMultiSourceManifestsToLists(
       parts.push('');
     }
 
-    const docs = Object.values(manifests?.docsManifest?.docs ?? {});
     if (docs.length > 0) {
       parts.push('## Docs');
       parts.push('');

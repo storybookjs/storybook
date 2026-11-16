@@ -27,7 +27,7 @@ import {
   styled,
   themes,
   useTheme,
-} from 'storybook/theming';
+} from 'storybook/theming/emotion';
 
 import { DocsPageWrapper } from '../addons/docs/src/blocks/components/index.ts';
 import { toHaveLiveRegion } from '../core/src/shared/utils/toHaveLiveRegion.ts';

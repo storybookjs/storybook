@@ -30,10 +30,8 @@ export function decorateStory<TRenderer extends Renderer>(
 export function sanitizeStoryContextUpdate({
   componentId,
   title,
-  kind,
   id,
   name,
-  story,
   parameters,
   initialArgs,
   argTypes,

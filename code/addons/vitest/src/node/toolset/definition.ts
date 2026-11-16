@@ -1,10 +1,18 @@
 import * as v from 'valibot';
 
-import { storyInputArraySchema, type StoryIndexAccess } from 'storybook/internal/core-server';
+import {
+  storyInputArraySchema,
+  type StoryIndexAccess,
+  type StoryInput,
+} from 'storybook/internal/core-server';
 import {
   defineToolset,
-  type ToolsetTelemetryReport,
+  getSkillCommand,
+  type ToolsetCtx,
+  type ToolsetDefinition,
+  type ToolsetMethod,
   type ToolsetOutcome,
+  type ToolsetTelemetryReport,
 } from 'storybook/open-service';
 
 import { countTestRunFailures, formatTestRun, summarizeTestRun } from './format.ts';
@@ -117,7 +125,7 @@ const runInputSchema = v.strictObject({
       v.description(
         `Stories to test for focused feedback. Omit this field to run tests for all available stories.
 Prefer running tests for specific stories while developing to get faster feedback,
-and only omit this when you explicitly need to run all tests for comprehensive verification.
+and omit it once before you finish, to verify every story.
 Prefer { storyId } when you don't already have story file context, since this avoids filesystem discovery.
 Use { storyId } when IDs were discovered from documentation tools.
 Use { absoluteStoryPath + exportName } only when you're currently working in a story file and already know those values.`
@@ -135,15 +143,28 @@ Use { absoluteStoryPath + exportName } only when you're currently working in a s
   ),
 });
 
-type RunInput = v.InferOutput<typeof runInputSchema>;
+// Inferring this from the schema would make the exported toolset type unnameable in declaration
+// output, because core's valibot types live in a private declaration chunk.
+type RunInput = { stories?: StoryInput[]; a11y: boolean };
+
+export type TestToolset = ToolsetDefinition<
+  'test',
+  {
+    run: ToolsetMethod<
+      v.GenericSchema<{ stories?: StoryInput[]; a11y?: boolean }, RunInput>,
+      ToolsetOutcome<TestRunSuccessData, TestRunFailureData>
+    >;
+  }
+>;
 
 /**
  * The accessibility half of this tool's contract only holds when addon-a11y is enabled, so the
  * promise is dropped from the description rather than made and then broken.
  */
-function describeRun(a11yEnabled: boolean): string {
+function describeRun(a11yEnabled: boolean, ctx: ToolsetCtx): string {
+  const skill = getSkillCommand(ctx)('test-stories');
   return (
-    `Run story tests.
+    `Run story tests.${skill ? `\nFirst run ${skill} once and follow it: it has the rules for running the tests and fixing what fails.` : ''}
 Run them after editing anything that changes how the UI looks — components, stories, styles, CSS, themes, colors, or design tokens — shell-level substitutes like typecheck, lint, or package.json test scripts do not replace this.
 Provide stories for focused runs (faster while iterating),
 or omit stories to run all tests for full-project verification.
@@ -220,7 +241,11 @@ export type CreateTestToolsetOptions = {
  * Creates the public test API. Each registration owns a queue because addon-vitest supports one
  * live test run at a time.
  */
-export function createTestToolset({ channel, storyIndex, a11yEnabled }: CreateTestToolsetOptions) {
+export function createTestToolset({
+  channel,
+  storyIndex,
+  a11yEnabled,
+}: CreateTestToolsetOptions): TestToolset {
   const queue = createAsyncQueue();
 
   return defineToolset({
@@ -230,7 +255,7 @@ export function createTestToolset({ channel, storyIndex, a11yEnabled }: CreateTe
       run: {
         input: runInputSchema,
         title: 'Run Storybook tests',
-        description: describeRun(a11yEnabled),
+        description: (ctx) => describeRun(a11yEnabled, ctx),
         handler: async (
           input,
           ctx
@@ -257,5 +282,3 @@ export function createTestToolset({ channel, storyIndex, a11yEnabled }: CreateTe
     },
   });
 }
-
-export type TestToolset = ReturnType<typeof createTestToolset>;

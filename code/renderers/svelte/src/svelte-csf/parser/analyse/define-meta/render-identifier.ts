@@ -1,3 +1,5 @@
+import { unwrapExpression } from 'storybook/internal/csf-tools';
+
 import type { ESTreeAST } from '../../ast.ts';
 import { extractDefineMetaPropertiesNodes } from '../../extract/svelte/define-meta.ts';
 import type { SvelteASTNodes } from '../../extract/svelte/nodes.ts';
@@ -13,13 +15,14 @@ export function getDefineMetaRenderValue(params: Params): ESTreeAST.Identifier |
   const { render } = extractDefineMetaPropertiesNodes({
     nodes,
     properties: ['render'],
+    filename,
   });
 
   if (!render) {
     return;
   }
 
-  const { value } = render;
+  const value = unwrapExpression(render.value);
 
   if (value.type !== 'Identifier') {
     throw new InvalidRenderValueError({

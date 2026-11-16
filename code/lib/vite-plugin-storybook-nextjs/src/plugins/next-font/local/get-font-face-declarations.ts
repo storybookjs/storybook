@@ -20,6 +20,7 @@ export type LoaderOptions = {
   props: {
     src?: string | Array<{ path: string; weight?: string; style?: string }>;
     metaSrc?: LocalFontSrc;
+    display?: 'auto' | 'block' | 'swap' | 'fallback' | 'optional';
   };
   /**
    * Font Family name
@@ -49,6 +50,7 @@ export async function getFontFaceDeclarations(options: LoaderOptions) {
   const {
     weight,
     style,
+    display,
     variable,
     declarations = [],
   } = validateLocalFontFunctionCall('', options.props);
@@ -60,7 +62,7 @@ export async function getFontFaceDeclarations(options: LoaderOptions) {
     6
   )}`;
 
-  const fontDeclarations = declarations
+  const fontDeclarations = [{ prop: 'font-display', value: display }, ...declarations]
     .map(({ prop, value }: { prop: string; value: string }) => `${prop}: ${value};`)
     .join('\n');
 

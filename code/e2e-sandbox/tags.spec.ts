@@ -17,9 +17,9 @@ test.describe('tags', () => {
     await sbPage.navigateToStory('core/tags-add', 'docs');
 
     // Sidebar should include dev and exclude inheritance, autodocs, test
-    await expect(page.locator('#core-tags-add--dev')).toHaveCount(1);
-    await expect(page.locator('#core-tags-add--autodocs')).toHaveCount(0);
-    await expect(page.locator('#core-tags-add--test')).toHaveCount(0);
+    await expect(page.locator('[data-item-id="core-tags-add--dev"]')).toHaveCount(1);
+    await expect(page.locator('[data-item-id="core-tags-add--autodocs"]')).toHaveCount(0);
+    await expect(page.locator('[data-item-id="core-tags-add--test"]')).toHaveCount(0);
 
     // Autodocs should include autodocs and exclude dev, test
     const preview = sbPage.previewRoot();
@@ -36,9 +36,9 @@ test.describe('tags', () => {
     await sbPage.navigateToStory('core/tags-remove', 'docs');
 
     // Sidebar should include inheritance, no-autodocs, no-test. and exclude no-dev
-    await expect(page.locator('#core-tags-remove--no-dev')).toHaveCount(0);
-    await expect(page.locator('#core-tags-remove--no-autodocs')).toHaveCount(1);
-    await expect(page.locator('#core-tags-remove--no-test')).toHaveCount(1);
+    await expect(page.locator('[data-item-id="core-tags-remove--no-dev"]')).toHaveCount(0);
+    await expect(page.locator('[data-item-id="core-tags-remove--no-autodocs"]')).toHaveCount(1);
+    await expect(page.locator('[data-item-id="core-tags-remove--no-test"]')).toHaveCount(1);
 
     // Autodocs should include autodocs and exclude dev, test
     const preview = sbPage.previewRoot();
@@ -48,8 +48,12 @@ test.describe('tags', () => {
     await expect(preview.locator('#anchor--core-tags-remove--no-test')).toHaveCount(1);
 
     // Static sidebar filter: entries tagged !dev must not appear (see no-dev-*.mdx in addons/docs)
-    await expect(page.locator('#addons-docs-docs2-no-dev-unattached--docs')).toHaveCount(0);
-    await expect(page.locator('#addons-docs-docs2-button--no-dev-attached')).toHaveCount(0);
+    await expect(
+      page.locator('[data-item-id="addons-docs-docs2-no-dev-unattached--docs"]')
+    ).toHaveCount(0);
+    await expect(
+      page.locator('[data-item-id="addons-docs-docs2-button--no-dev-attached"]')
+    ).toHaveCount(0);
   });
 
   test.describe('Tag filters tooltip', () => {

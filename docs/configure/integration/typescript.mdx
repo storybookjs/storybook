@@ -6,7 +6,48 @@ sidebar:
 
 Storybook provides an integrated [TypeScript](https://www.typescriptlang.org/) experience, including zero-configuration setup and built-in types for APIs, addons, and stories.
 
-Storybook requires TypeScript 5.9 or 6.x.
+Storybook requires TypeScript 5.9 or newer.
+
+## TypeScript 7
+
+TypeScript 7.0 does not include an API that Storybook can use to read your component types for Controls and the Docs args table. TypeScript 7.1 and newer include one.
+
+<If renderer="react">
+
+React projects can use TypeScript 7.1 or newer as their `typescript` package.
+
+`storybook init` and `storybook upgrade` add `react-docgen` to React projects on TypeScript 7.0, so that they keep their docs. Once your project is on TypeScript 7.1, Storybook no longer uses it, and you can remove it from your devDependencies.
+
+If your project stays on TypeScript 7.0, or another tool in it needs the compiler API of TypeScript 6, such as typescript-eslint, install TypeScript 7 and TypeScript 6 side by side as described below. When the TypeScript 7 package is 7.1 or newer, set [`typescript.docgenSpecifier`](../../api/main-config/main-config-typescript.mdx#docgenspecifier) to `'@typescript/native'`, so Storybook reads your component types with it.
+
+</If>
+
+<If renderer="angular">
+
+Angular's compiler needs TypeScript 6, so install TypeScript 7 and TypeScript 6 side by side as described below. With `@storybook/angular-vite`, when the TypeScript 7 package is 7.1 or newer, set [`typescript.docgenSpecifier`](../../api/main-config/main-config-typescript.mdx#docgenspecifier) to `'@typescript/native'`, so Storybook reads your component types with it.
+
+</If>
+
+<If renderer={['vue', 'web-components', 'svelte']}>
+
+Storybook's docgen for your framework needs the compiler API of TypeScript 6. Other tools that import `typescript`, such as typescript-eslint, need it too.
+
+</If>
+
+To keep `tsc` on TypeScript 7, install TypeScript 7 and TypeScript 6 side by side, using the [setup from the TypeScript team](https://devblogs.microsoft.com/typescript/announcing-typescript-7-0/#running-side-by-side-with-typescript-6.0). The package named `typescript` is then TypeScript 6. npm, Yarn, and pnpm all accept this alias:
+
+```json
+{
+  "devDependencies": {
+    "@typescript/native": "npm:typescript@^7",
+    "typescript": "npm:@typescript/typescript6@^6.0.2"
+  }
+}
+```
+
+`npx tsc` then runs TypeScript 7. If you replace `typescript` and leave out `@typescript/native`, the TypeScript 7 `tsc` binary is gone and only `tsc6` remains.
+
+Your editor uses the package named `typescript` by default, so its language service stays on TypeScript 6 until you select `@typescript/native`.
 
 ## Configure Storybook with TypeScript
 
@@ -94,7 +135,7 @@ If you're using Vue single file components and TypeScript, you can add the offic
 
 ### Storybook doesn't create the required types for external packages
 
-If your project relies on a third-party library and the server does not generate the expected types, you can opt out of server-side docgen and use `react-docgen-typescript` with the required options. For example:
+If your project relies on a third-party library and the server does not generate the expected types, you can opt out of server-side docgen and use `react-docgen-typescript` with the required options. Install its packages first: `@joshwooding/vite-plugin-react-docgen-typescript@^0.7.0` and `react-docgen-typescript` with Vite, or `@storybook/react-docgen-typescript-plugin@1.0.6--canary.9.0c3f3b7.0` (this exact version; the `latest` tag is older) and `react-docgen-typescript` with Webpack. For example:
 
 <CodeSnippets path="storybook-main-prop-filter.md" />
 
@@ -112,7 +153,7 @@ Adjust the path (`../../packages/ui/src/**/*.tsx`) to match your monorepo layout
 
 ### The types are not being generated for my component
 
-If server-side docgen does not generate the expected types, you can use the legacy `react-docgen-typescript` path instead. This requires `features.docgenServer: false`; the example includes that opt-out:
+If server-side docgen does not generate the expected types, you can use the legacy `react-docgen-typescript` path instead. This requires `features.docgenServer: false` and the packages listed above; the example includes the opt-out:
 
 <CodeSnippets path="storybook-main-react-docgen-typescript.md" />
 

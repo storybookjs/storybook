@@ -2,12 +2,7 @@ import React, { useState } from 'react';
 
 import { Addon_TypesEnum, SupportedBuilder } from 'storybook/internal/types';
 
-import {
-  a11yStatusStore,
-  componentTestStatusStore,
-  store,
-  testProviderStore,
-} from '#manager-store';
+import { a11yStatusStore, componentTestStatusStore, store } from '#manager-store';
 import { Tag, addons } from 'storybook/manager-api';
 
 import { GlobalErrorContext, GlobalErrorModal } from './components/GlobalErrorModal.tsx';
@@ -33,14 +28,6 @@ addons.register(ADDON_ID, (api) => {
     });
     a11yStatusStore.onSelect(() => {
       openPanel(A11Y_PANEL_ID);
-    });
-    testProviderStore.onRunAll(() => {
-      store.send({
-        type: 'TRIGGER_RUN',
-        payload: {
-          triggeredBy: 'run-all',
-        },
-      });
     });
     store.subscribe('TEST_RUN_COMPLETED', ({ payload }) => {
       api.emit(STORYBOOK_ADDON_TEST_CHANNEL, { type: 'test-run-completed', payload });

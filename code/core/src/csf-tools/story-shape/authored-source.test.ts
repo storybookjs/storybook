@@ -1,10 +1,10 @@
-import { createStoryArgsResolver, loadCsf } from 'storybook/internal/csf-tools';
-
 import { describe, expect, it } from 'vitest';
 
 import { dedent } from 'ts-dedent';
 
+import { loadCsf } from '../CsfFile.ts';
 import { authoredSource } from './authored-source.ts';
+import { createStoryArgsResolver } from './resolve-story-args.ts';
 
 const authoredSourceOf = (source: string, exportName = 'Default') => {
   const csf = loadCsf(source, { makeTitle: () => 'Example/Button' }).parse();

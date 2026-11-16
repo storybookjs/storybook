@@ -1,12 +1,18 @@
 import { readFileSync, readdirSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 
-import type { DocgenPayload } from '../../../../core/src/shared/open-service/services/docgen/types.ts';
+import type {
+  DocgenPayload,
+  DocgenSubcomponent,
+} from '../../../../core/src/shared/open-service/services/docgen/types.ts';
 
 // Where `build-storybook` writes one docgen snapshot per component under the static output dir.
 export const DOCGEN_SNAPSHOT_DIR = join('services', 'core', 'docgen');
 
 export const SANDBOX_TOKEN = '<sandbox>';
+export const REPO_TOKEN = '<repo>';
+
+const REPO_DIR = resolve(import.meta.dirname, '../../../../..');
 
 // An allow-list rather than an exclude-list because `DocgenPayload` carries an index signature: the
 // Angular provider hangs the raw Compodoc entry off it, over 100KB of mostly `sourceCode` per
@@ -23,16 +29,35 @@ const PORTABLE_FIELDS = [
   'error',
 ] as const satisfies readonly (keyof DocgenPayload)[];
 
+// A subcomponent keeps the same fields, so its `apiDescription` stays out as the component's does.
+const PORTABLE_SUBCOMPONENT_FIELDS = [
+  'name',
+  'path',
+  'description',
+  'summary',
+  'import',
+  'jsDocTags',
+  'argTypes',
+  'error',
+] as const satisfies readonly (keyof DocgenSubcomponent)[];
+
 export type SandboxBaseline = Pick<DocgenPayload, (typeof PORTABLE_FIELDS)[number]>;
 
 // Component id -> recorded payload, key-sorted so a re-record produces a reviewable diff.
 export type SandboxBaselines = Record<string, SandboxBaseline>;
 
 // Both native and POSIX spelling, so a baseline recorded on one platform verifies on another.
-export const normalizePaths = (value: string, sandboxDir: string): string =>
-  value
-    .replaceAll(sandboxDir, SANDBOX_TOKEN)
-    .replaceAll(sandboxDir.replace(/\\/g, '/'), SANDBOX_TOKEN);
+export const normalizePaths = (value: string, sandboxDir: string, repoDir = REPO_DIR): string =>
+  [
+    [sandboxDir, SANDBOX_TOKEN],
+    [repoDir, REPO_TOKEN],
+  ]
+    .toSorted(([a], [b]) => b.length - a.length)
+    .reduce(
+      (normalized, [dir, token]) =>
+        normalized.replaceAll(dir, token).replaceAll(dir.replace(/\\/g, '/'), token),
+      value
+    );
 
 const normalizeDeep = (value: unknown, sandboxDir: string): unknown => {
   if (typeof value === 'string') {
@@ -49,20 +74,23 @@ const normalizeDeep = (value: unknown, sandboxDir: string): unknown => {
   return value;
 };
 
-export const toBaseline = (payload: DocgenPayload, sandboxDir: string): SandboxBaseline =>
+const pick = (value: Record<string, unknown>, fields: readonly string[]) =>
   Object.fromEntries(
-    PORTABLE_FIELDS.filter((field) => payload[field] !== undefined).map((field) => [
-      field,
-      normalizeDeep(payload[field], sandboxDir),
-    ])
-  ) as SandboxBaseline;
+    fields.filter((field) => value[field] !== undefined).map((field) => [field, value[field]])
+  );
 
-// The monorepo's shared template stories reference their component through a global, so there is no
-// import for the resolver to follow and every one of them is an error payload by construction.
-// Recording them would say something about the template-story harness, not about docgen.
-// Web Components names such a payload after its title and quotes the global in the error instead.
-const isGloballyReferenced = (payload: SandboxBaseline): boolean =>
-  payload.name.startsWith('globalThis') || payload.error?.message.includes('`globalThis.') === true;
+export const toBaseline = (payload: DocgenPayload, sandboxDir: string): SandboxBaseline => {
+  const baseline = pick(payload, PORTABLE_FIELDS);
+  if (payload.subcomponents) {
+    baseline.subcomponents = Object.fromEntries(
+      Object.entries(payload.subcomponents).map(([name, subcomponent]) => [
+        name,
+        pick(subcomponent, PORTABLE_SUBCOMPONENT_FIELDS),
+      ])
+    );
+  }
+  return normalizeDeep(baseline, sandboxDir) as SandboxBaseline;
+};
 
 export function readStaticDocgen({
   staticDir,
@@ -95,7 +123,7 @@ export function readStaticDocgen({
 
     for (const [id, payload] of Object.entries(components ?? {})) {
       const baseline = toBaseline(payload, sandboxDir);
-      if (!isGloballyReferenced(baseline)) {
+      if (!baseline.error) {
         baselines[id] = baseline;
       }
     }
@@ -105,7 +133,7 @@ export function readStaticDocgen({
     // eslint-disable-next-line local-rules/no-uncategorized-errors
     throw new Error(
       `${docgenDir} yielded no components to record; refusing to record an empty run. ` +
-        `Either the build produced no payloads, or every one of them is globally referenced.`
+        `Either the build produced no payloads, or docgen failed for every one of them.`
     );
   }
 

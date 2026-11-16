@@ -11,6 +11,8 @@ import BaseLayout from './__tests__/BaseLayout.vue';
 import Button from './__tests__/Button.vue';
 import Decorator2TsVue from './__tests__/Decorator2.vue';
 import DecoratorTsVue from './__tests__/Decorator.vue';
+import GenericComponent from './__tests__/GenericComponent.vue';
+import VaporButton from './__tests__/VaporButton.vue';
 import type { ComponentPropsAndSlots, Decorator, Meta, StoryObj } from './public-types.ts';
 import type { VueRenderer } from './types.ts';
 
@@ -106,6 +108,62 @@ describe('StoryObj', () => {
     expectTypeOf<StoryObj<typeof Button>>().toMatchTypeOf<
       StoryAnnotations<VueRenderer, ButtonProps>
     >();
+  });
+});
+
+describe('Function-typed components (Vapor and generic SFCs)', () => {
+  type VaporButtonProps = ComponentPropsAndSlots<typeof VaporButton>;
+
+  it('Meta accepts the component in every form', () => {
+    const annotated: Meta<typeof VaporButton> = { component: VaporButton };
+    const satisfiesTyped = { component: VaporButton } satisfies Meta<typeof VaporButton>;
+    const satisfiesUntyped = { component: VaporButton } satisfies Meta;
+    const generic = { component: GenericComponent } satisfies Meta<typeof GenericComponent>;
+
+    expectTypeOf(annotated).toMatchTypeOf<Meta<typeof VaporButton>>();
+    expectTypeOf(satisfiesTyped).toMatchTypeOf<Meta<typeof VaporButton>>();
+    expectTypeOf(satisfiesUntyped).toMatchTypeOf<Meta>();
+    expectTypeOf(generic).toMatchTypeOf<Meta<typeof GenericComponent>>();
+  });
+
+  it('✅ Required args may be provided partial in meta and the story', () => {
+    const meta = {
+      component: VaporButton,
+      args: { label: 'good' },
+    } satisfies Meta<typeof VaporButton>;
+
+    const Basic: StoryObj<typeof meta> = { args: { disabled: false } };
+
+    type Expected = StoryAnnotations<
+      VueRenderer,
+      VaporButtonProps,
+      SetOptional<VaporButtonProps, 'label'>
+    >;
+    expectTypeOf(Basic).toMatchTypeOf<Expected>();
+  });
+
+  it('❌ Required args must still be provided', () => {
+    const meta = {
+      component: VaporButton,
+      args: { label: 'good' },
+    } satisfies Meta<typeof VaporButton>;
+
+    // @ts-expect-error disabled not provided ❌
+    const Basic: StoryObj<typeof meta> = {};
+
+    expectTypeOf(Basic).toMatchTypeOf<StoryObj<typeof meta>>();
+  });
+
+  it('Events are inferred from component', () => {
+    const Basic: StoryObj<typeof VaporButton> = {
+      args: {
+        onMyClickEvent: (value) => {
+          expectTypeOf(value).toMatchTypeOf<number>();
+        },
+      },
+    };
+
+    expectTypeOf(Basic).toMatchTypeOf<StoryObj<typeof VaporButton>>();
   });
 });
 

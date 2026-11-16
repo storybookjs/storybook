@@ -1,0 +1,9 @@
+{
+  "description": undefined,
+  "id": "sveltefixtures-checkbox",
+  "jsDocTags": {},
+  "name": "Checkbox",
+  "path": "./input.stories.svelte",
+  "renderer": "svelte",
+  "summary": undefined,
+}

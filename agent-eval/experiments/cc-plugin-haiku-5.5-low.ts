@@ -3,8 +3,8 @@ import { DEFAULT_EXPERIMENT_CONFIG, PLUGIN_STORYBOOK_EVALS } from '../lib/experi
 import {
   commitSandboxBaseline,
   setupSandbox,
-  writeClaudeInAppBrowserMock,
   writeClaudePluginSkills,
+  writeStorybookAgentInstructions,
 } from '../lib/templates.ts';
 
 const model = 'claude-haiku-5-5';
@@ -19,7 +19,7 @@ export default {
   setup: async (sandbox) => {
     await setupSandbox(sandbox, { agent: 'claude-code', integration: 'plugin', model });
     await writeClaudePluginSkills(sandbox);
-    await writeClaudeInAppBrowserMock(sandbox);
+    await writeStorybookAgentInstructions(sandbox);
     await commitSandboxBaseline(sandbox);
   },
 } satisfies ExperimentConfig;

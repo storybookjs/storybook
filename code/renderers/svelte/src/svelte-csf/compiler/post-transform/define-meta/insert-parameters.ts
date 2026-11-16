@@ -1,3 +1,5 @@
+import { logger } from 'storybook/internal/node-logger';
+
 import {
   findASTPropertyIndex,
   findPropertyDescriptionIndex,
@@ -25,29 +27,7 @@ interface Params {
   filename?: string;
 }
 
-/**
- * This function inserts parameters to `defineMeta()`.
- * Attempt to insert JSDoc comment above the `defineMeta()` call.
- *
- * Before:
- *
- * ```js
- * // Some description about the component
- * const { Story } = defineMeta({});
- * ```
- *
- * After:
- * ```js
- * // Some description about the component
- * const { Story } = defineMeta({
- *   parameters: {
- *     docs: {
- *       description: { component: "Some description about the component" },
- *     },
- *   },
- * });
- * ```
- */
+// Copies the JSDoc comment above `defineMeta()` into `parameters.docs.description.component`.
 export function insertDefineMetaParameters(params: Params): void {
   const { nodes, filename } = params;
 
@@ -111,7 +91,7 @@ export function insertDefineMetaParameters(params: Params): void {
       }),
     }) !== -1
   ) {
-    console.warn(
+    logger.warn(
       `Svelte CSF:
         Description was already set in parameters.docs.description.component,
         ignoring JSDoc comment above defineMeta() in:
@@ -133,10 +113,7 @@ export function insertDefineMetaParameters(params: Params): void {
   );
 }
 
-/**
- * Adopted from: https://github.com/storybookjs/storybook/blob/next/code/lib/csf-tools/src/enrichCsf.ts/#L148-L164
- * Adjusted for this addon, because here we use AST format from `estree`, not `babel`.
- */
+// Same as the description extraction in csf-tools' `enrichCsf.ts`, but for `estree` comments instead of Babel ones.
 function extractDescription(leadingComments: ESTreeAST.Comment[]) {
   const comments = leadingComments
     .map((comment) => {

@@ -1,0 +1,11 @@
+[
+  {
+    "id": "mealdrop",
+    "repo": "storybookjs/mealdrop",
+    "ref": "main",
+    "class": "owned",
+    "packageManager": "yarn",
+    "storybookDir": ".",
+    "windows": true
+  }
+]

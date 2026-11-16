@@ -1,8 +1,32 @@
-```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 4"
 <script module>
   import { setContext } from 'svelte';
 
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import preview from '../.storybook/preview';
+
+  import YourComponent from './YourComponent.svelte';
+  import MarginDecorator from './MarginDecorator.svelte';
+
+  const { Story } = preview.meta({
+    component: YourComponent,
+    decorators: [
+      (story, { globals }) => {
+        const marginSize = globals.marginSize === 'small' ? 'small' : 'medium';
+        setContext('marginSize', marginSize);
+        return { Component: MarginDecorator };
+      },
+    ],
+  });
+</script>
+```
+
+```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 3"
+<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
+<script module>
+  import { setContext } from 'svelte';
+
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import YourComponent from './YourComponent.svelte';
   import MarginDecorator from './MarginDecorator.svelte';
@@ -18,24 +42,6 @@
     ],
   });
 </script>
-```
-
-```js filename="YourComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
-import { setContext } from 'svelte';
-
-import YourComponent from './YourComponent.svelte';
-import MarginDecorator from './MarginDecorator.svelte';
-
-export default {
-  component: YourComponent,
-  decorators: [
-    (story, { globals }) => {
-      const marginSize = globals.marginSize === 'small' ? 'small' : 'medium';
-      setContext('marginSize', marginSize);
-      return { Component: MarginDecorator };
-    },
-  ],
-};
 ```
 
 ```svelte filename="MarginDecorator.svelte" renderer="svelte" language="js" tabTitle="Decorator component"
@@ -53,11 +59,35 @@ export default {
 </div>
 ```
 
-```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 4"
 <script module lang="ts">
   import { setContext } from 'svelte';
 
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import preview from '../.storybook/preview';
+
+  import YourComponent from './YourComponent.svelte';
+  import MarginDecorator from './MarginDecorator.svelte';
+
+  const { Story } = preview.meta({
+    component: YourComponent,
+    decorators: [
+      (story, { globals }) => {
+        const marginSize = globals.marginSize === 'small' ? 'small' : 'medium';
+        setContext('marginSize', marginSize);
+        return { Component: MarginDecorator };
+      },
+    ],
+  });
+</script>
+```
+
+```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 3"
+<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
+<script module lang="ts">
+  import { setContext } from 'svelte';
+
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import YourComponent from './YourComponent.svelte';
   import MarginDecorator from './MarginDecorator.svelte';
@@ -73,28 +103,6 @@ export default {
     ],
   });
 </script>
-```
-
-```ts filename="YourComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
-import { setContext } from 'svelte';
-// Replace your-framework with svelte-vite or sveltekit
-import type { Meta } from '@storybook/your-framework';
-
-import YourComponent from './YourComponent.svelte';
-import MarginDecorator from './MarginDecorator.svelte';
-
-const meta = {
-  component: YourComponent,
-  decorators: [
-    (story, { globals }) => {
-      const marginSize = globals.marginSize === 'small' ? 'small' : 'medium';
-      setContext('marginSize', marginSize);
-      return { Component: MarginDecorator };
-    },
-  ],
-} satisfies Meta<typeof YourComponent>;
-
-export default meta;
 ```
 
 ```svelte filename="MarginDecorator.svelte" renderer="svelte" language="ts" tabTitle="Decorator component"

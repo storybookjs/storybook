@@ -3,10 +3,6 @@ import { extractFragmentNodes } from './fragment-nodes.ts';
 
 import type { SvelteAST } from '../../ast.ts';
 
-/**
- * Selected nodes extracted from the Svelte AST via `svelte.compile`,
- * needed for further code analysis/transformation.
- */
 export type SvelteASTNodes = Awaited<ReturnType<typeof extractModuleNodes>> &
   Awaited<ReturnType<typeof extractFragmentNodes>>;
 
@@ -15,9 +11,6 @@ interface Params {
   filename?: string;
 }
 
-/**
- * Pick only required Svelte AST nodes for further usage in this addon.
- */
 export async function extractSvelteASTNodes(params: Params): Promise<SvelteASTNodes> {
   const { ast, filename } = params;
   const { module, fragment } = ast;

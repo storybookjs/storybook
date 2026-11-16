@@ -1,0 +1,26 @@
+## Props
+
+```
+export type JsdocTagsProps = {
+  /**
+   * Old label text.
+   *
+   * @deprecated Use label instead.
+   */
+  oldLabel?: string;
+  /** New label text. */
+  label?: string = "Current label";
+  /**
+   * Example value.
+   *
+   * @example "demo"
+   */
+  example?: string;
+  /**
+   * Internal value.
+   *
+   * @internal
+   */
+  internalValue?: string;
+}
+```

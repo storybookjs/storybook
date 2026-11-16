@@ -26,6 +26,32 @@ describe('JsPackageManager', () => {
     vi.clearAllMocks();
   });
 
+  describe('getInstalledVersion', () => {
+    let first: JsPackageManager;
+    let second: JsPackageManager;
+
+    beforeEach(() => {
+      JsPackageManager.installedVersionCache.clear();
+      // @ts-expect-error Ignore abstract class error
+      first = new JsPackageManager({ configDir: '/project-a/.storybook' });
+      // @ts-expect-error Ignore abstract class error
+      second = new JsPackageManager({ configDir: '/project-b/.storybook' });
+      const installationsOf = (version: string) => ({
+        dependencies: { typescript: [{ version, location: '' }] },
+        duplicatedDependencies: {},
+        infoCommand: '',
+        dedupeCommand: '',
+      });
+      first.findInstallations = vi.fn().mockResolvedValue(installationsOf('6.0.3'));
+      second.findInstallations = vi.fn().mockResolvedValue(installationsOf('7.0.2'));
+    });
+
+    it('keeps the installed version of each project apart', async () => {
+      await expect(first.getInstalledVersion('typescript')).resolves.toBe('6.0.3');
+      await expect(second.getInstalledVersion('typescript')).resolves.toBe('7.0.2');
+    });
+  });
+
   describe('getVersionedPackages method', () => {
     it('should return the latest stable release version when current version is the latest stable release', async () => {
       mockLatestVersion.mockResolvedValue('8.3.0');

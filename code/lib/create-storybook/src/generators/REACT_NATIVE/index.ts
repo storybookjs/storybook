@@ -1,8 +1,13 @@
+import { join } from 'node:path';
+
 import { ProjectType, copyTemplateFiles } from 'storybook/internal/cli';
-import { executeCommand } from 'storybook/internal/common';
+import { executeCommand, versions } from 'storybook/internal/common';
 import { CLI_COLORS, logger, prompt } from 'storybook/internal/node-logger';
 import { SupportedBuilder, SupportedLanguage, SupportedRenderer } from 'storybook/internal/types';
-import { RN_STORYBOOK_DIR } from '../../../../../core/src/shared/constants/config-folder.ts';
+import {
+  applyPreviewImportsMap,
+  RN_STORYBOOK_DIR,
+} from '../../../../../core/src/shared/constants/config-folder.ts';
 
 import { dedent } from 'ts-dedent';
 
@@ -20,6 +25,11 @@ import {
   runMetroCodemodOrFallback,
   type MetroCodemodResult,
 } from './metroConfig.ts';
+import {
+  REACT_NATIVE_ON_DEVICE_PACKAGES,
+  assertReactNativeOnDevicePeers,
+  onDevicePackageSpecifier,
+} from './onDevicePackages.ts';
 
 let lastMetroCodemodResult: MetroCodemodResult | undefined;
 let lastScriptDerivationResult: StorybookPlatformScriptDerivationResult | undefined;
@@ -123,12 +133,13 @@ export default defineGeneratorModule({
     const packagesToResolve = [
       ...peerDependencies,
       ...(needsCrossEnv ? ['cross-env'] : []),
-      '@storybook/addon-ondevice-controls',
-      '@storybook/addon-ondevice-actions',
-      '@storybook/react-native',
-      '@storybook/react-native-ui-lite',
+      ...REACT_NATIVE_ON_DEVICE_PACKAGES.map((packageName) =>
+        onDevicePackageSpecifier(packageName, versions.storybook)
+      ),
       'storybook',
     ];
+
+    await assertReactNativeOnDevicePeers(packageManager, versions.storybook);
 
     const versionedPackages = await packageManager.getVersionedPackages(packagesToResolve, {
       storybookVersionSpecifier: context.storybookVersionSpecifier,
@@ -145,6 +156,16 @@ export default defineGeneratorModule({
     packageManager.addScripts({
       ...scriptDerivationResult.scriptsToAdd,
     });
+
+    // Dual init sets a framework and maps the specifier to `.storybook` itself.
+    if (context.framework == null) {
+      const { packageJson, operationDir } = packageManager.primaryPackageJson;
+      if (
+        applyPreviewImportsMap(packageJson, join(RN_STORYBOOK_DIR, 'preview.tsx'), operationDir)
+      ) {
+        packageManager.writePackageJson(packageJson, operationDir);
+      }
+    }
 
     // Copy React Native templates
     await copyTemplateFiles({

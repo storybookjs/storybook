@@ -1,3 +1,5 @@
+import { logger } from 'storybook/internal/node-logger';
+
 import { dedent } from 'ts-dedent';
 
 import {
@@ -28,10 +30,6 @@ interface Params {
   filename?: string;
 }
 
-/**
- * Attempt to insert HTML comment above the `<Story />` component as a description **into the compiled code**.
- * If the user did explicitly set `parameters.docs.description.story` and the HTML comment exists, then it will log a warning.
- */
 export function insertStoryHTMLCommentAsDescription(params: Params) {
   const { nodes, filename } = params;
   const { svelte, compiled } = nodes;
@@ -109,7 +107,7 @@ export function insertStoryHTMLCommentAsDescription(params: Params) {
       (p) => p.type === 'Property' && p.key.type === 'Literal' && p.key.value === 'name'
     ) as ESTreeAST.Property;
     const name = (propertyName.value as ESTreeAST.Literal).value;
-    console.warn(
+    logger.warn(
       dedent`
         Svelte CSF:
           Description was already set in parameters.docs.description.story

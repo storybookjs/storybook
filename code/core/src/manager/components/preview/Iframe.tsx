@@ -3,7 +3,7 @@ import React from 'react';
 
 import { Zoom } from 'storybook/internal/components';
 
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 const StyledIframe = styled.iframe(({ theme }) => ({
   backgroundColor: theme.background.preview,

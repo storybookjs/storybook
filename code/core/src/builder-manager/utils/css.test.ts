@@ -83,8 +83,11 @@ const stylesOfFiles = async (files: Record<string, string>) => {
   }
 };
 
+const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>';
+// The start of the `url()` that `svg` becomes.
+const pixel = `url("data:image/svg+xml,${svg.replaceAll('"', '\\"')}`;
+
 it('reads a byte order mark, an @import without a semicolon and every form of url()', async () => {
-  const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>';
   const styles = await stylesOfFiles({
     'entry.js': `import './bom.css';\nimport './last-import.css';\nimport './urls.css';`,
     'bom.css': '\uFEFF@charset "UTF-8";\r\n.first { color: red; }\r\n',
@@ -99,7 +102,6 @@ it('reads a byte order mark, an @import without a semicolon and every form of ur
     'pixel (1).svg': svg,
   });
 
-  const pixel = `url("data:image/svg+xml,${svg.replaceAll('"', '\\"')}`;
   expect(styles).toEqual([
     '@charset "UTF-8";\r\n.first { color: red; }\r\n',
     '.other { color: red; }',
@@ -110,6 +112,33 @@ it('reads a byte order mark, an @import without a semicolon and every form of ur
       `.query { background: ${pixel}"); }`,
     ].join('\n'),
   ]);
+});
+
+it('reads an @import without a space, as a minifier writes it, and a path with an escape', async () => {
+  const styles = await stylesOfFiles({
+    'entry.css': String.raw`@import"./other.css";.a{background:url(./a\ b.svg)}.b{background:url("./a\20 b.svg")}`,
+    'a b.svg': svg,
+  });
+
+  expect(styles).toEqual([
+    `.other { color: red; }.a{background:${pixel}")}.b{background:${pixel}")}`,
+  ]);
+});
+
+it('rejects a path that it cannot read, which the browser would look for next to the page', async () => {
+  await expect(
+    stylesOfFiles({ 'entry.css': '.a { background: url(./a b.svg); }' })
+  ).rejects.toThrow('Could not read url(./a b.svg); }');
+});
+
+it('leaves a URL that it cannot read and that names no file', async () => {
+  const css = [
+    `.a { background: url(data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg'/>); }`,
+    String.raw`.b { background: url("data:image/svg+xml,<svg xmlns=\"http://www.w3.org/2000/svg\"/>"); }`,
+    '.c { background: url(); }',
+  ].join('\n');
+
+  expect(await stylesOfFiles({ 'entry.css': css })).toEqual([css]);
 });
 
 const fonts = `@import url('https://fonts.example/css2?family=Inter:wght@400;700');`;

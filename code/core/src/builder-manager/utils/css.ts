@@ -4,22 +4,30 @@ import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'pathe';
 import type { Plugin, PluginContext } from 'rolldown';
 
-// A comment, an `@import` of a stylesheet with its conditions, the `url()` of an asset, or a string.
-// A quoted path may hold spaces and parentheses, and the last `@import` of a file needs no `;`.
+// A comment, an `@import` of a stylesheet with its conditions, the `url()` of an asset, a string, or
+// the start of an `@import` or a `url()` that is none of those. A quoted path may hold spaces and
+// parentheses, a minifier leaves no space after `@import`, and the last one of a file needs no `;`.
 const REFERENCE = new RegExp(
   [
     String.raw`\/\*[\s\S]*?\*\/`,
-    String.raw`@import\s+(?:url\(\s*)?(?:(?<importQuote>["'])(?<quotedImport>(?:(?!\k<importQuote>).)+)\k<importQuote>|(?<bareImport>[^"')\s;]+))\s*\)?(?<condition>[^;]*)(?:;|$)`,
-    String.raw`url\(\s*(?:(?<urlQuote>["'])(?<quotedUrl>(?:(?!\k<urlQuote>).)+)\k<urlQuote>|(?<bareUrl>[^"')\s]+))\s*\)`,
+    String.raw`@import\s*(?:url\(\s*)?(?:(?<importQuote>["'])(?<quotedImport>(?:\\.|(?!\k<importQuote>)[^\\\n])*)\k<importQuote>|(?<bareImport>(?:\\.|[^"'()\s;\\])+))\s*\)?(?<condition>[^;]*)(?:;|$)`,
+    String.raw`url\(\s*(?:(?<urlQuote>["'])(?<quotedUrl>(?:\\.|(?!\k<urlQuote>)[^\\\n])*)\k<urlQuote>|(?<bareUrl>(?:\\.|[^"'()\s\\])+))\s*\)`,
     String.raw`"(?:[^"\\\n]|\\.)*"`,
     String.raw`'(?:[^'\\\n]|\\.)*'`,
+    String.raw`(?:@import(?![\w-])\s*(?:url\(\s*)?|url\(\s*)["']?(?<unread>[^\s;)]*)`,
   ].join('|'),
   'gi'
 );
 
+// An escape is a backslash before a character, or before the hexadecimal number of one.
+const unescape = (path: string) =>
+  path.replace(/\\(?:([\da-f]{1,6})\s?|(.))/gi, (_, hex, character) =>
+    hex ? String.fromCodePoint(parseInt(hex, 16)) : character
+  );
+
 // What may come before an `@import`: a browser ignores one after anything else. A URL may hold a `;`.
 const BEFORE_IMPORTS =
-  /^(?:\s+|\/\*[\s\S]*?\*\/|@(?:charset|import|layer)\s(?:"[^"]*"|'[^']*'|url\((?:"[^"]*"|'[^']*'|[^)"'])*\)|[^;{"'])*;?)*/i;
+  /^(?:\s+|\/\*[\s\S]*?\*\/|@(?:charset|import|layer)(?![\w-])(?:"[^"]*"|'[^']*'|url\((?:"[^"]*"|'[^']*'|[^)"'])*\)|[^;{"'])*;?)*/i;
 
 // The conditions of an `@import`: a layer, a `supports()` and a media query, in that order.
 const CONDITION =
@@ -43,7 +51,7 @@ const bundle = async (context: PluginContext, entry: string) => {
     isConditional: boolean
   ): Promise<string[]> => {
     // A byte order mark would become part of the first selector.
-    const css = (await readFile(file, 'utf-8')).replace(/^﻿/, '');
+    const css = (await readFile(file, 'utf-8')).replace(/^\uFEFF/, '');
     const importsEnd = BEFORE_IMPORTS.exec(css)![0].length;
 
     // CSS resolves a bare path against the stylesheet; a bundler also finds it in a package.
@@ -59,12 +67,20 @@ const bundle = async (context: PluginContext, entry: string) => {
     const parts: string[] = [];
     let end = 0;
     for (const match of css.matchAll(REFERENCE)) {
-      const { quotedImport, bareImport, condition, quotedUrl, bareUrl } = match.groups ?? {};
+      const { quotedImport, bareImport, condition, quotedUrl, bareUrl, unread } =
+        match.groups ?? {};
       const stylesheet = quotedImport ?? bareImport;
-      const reference = stylesheet ?? quotedUrl ?? bareUrl;
-      if (!reference || (stylesheet && match.index >= importsEnd)) {
+      const escaped = stylesheet ?? quotedUrl ?? bareUrl;
+      // A browser ignores an `@import` after a rule.
+      const isIgnored = match[0].startsWith('@') && match.index >= importsEnd;
+      // Left as it is, the browser would look for the file next to the page.
+      if (unread && isBundled(unread) && !isIgnored) {
+        context.error(`Could not read ${css.slice(match.index).split('\n', 1)[0]} in ${file}`);
+      }
+      if (!escaped || isIgnored) {
         continue;
       }
+      const reference = unescape(escaped);
       if (!isBundled(reference)) {
         if (stylesheet && isConditional) {
           context.error(

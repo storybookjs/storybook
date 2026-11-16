@@ -36,7 +36,7 @@ export type Selection = StoryRef | null;
 export interface Match {
   value: string;
   indices: [number, number][];
-  key: 'name' | 'path';
+  key: 'name' | 'path' | 'anchors.title';
   arrayIndex: number;
 }
 

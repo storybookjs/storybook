@@ -106,6 +106,7 @@ export interface SidebarProps extends API_LoadedRefData {
   onMenuClick?: HeadingProps['onMenuClick'];
   indexJson?: StoryIndex;
   isDevelopment?: boolean;
+  docsDefaultName?: string;
 }
 export const Sidebar = React.memo(function Sidebar({
   // @ts-expect-error (non strict)
@@ -123,6 +124,7 @@ export const Sidebar = React.memo(function Sidebar({
   isDevelopment = global.CONFIG_TYPE === 'DEVELOPMENT',
   refs = {},
   onMenuClick,
+  docsDefaultName,
 }: SidebarProps) {
   const selected: Selection = useMemo(
     () => (storyId ? { storyId, refId, anchor } : null),
@@ -178,6 +180,7 @@ export const Sidebar = React.memo(function Sidebar({
         {!isLoading && showReviewWidget ? <ReviewWidget /> : null}
         <Search
           dataset={dataset}
+          docsDefaultName={docsDefaultName}
           enableShortcuts={enableShortcuts}
           searchFieldContent={<Filter />}
           belowSearchContent={<ShowChangesButton />}

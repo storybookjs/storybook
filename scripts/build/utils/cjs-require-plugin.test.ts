@@ -41,20 +41,20 @@ const runModule = async (code: string) => {
 };
 
 describe('require in node output', () => {
-  const requiresOs = `module.exports = require('node:os').EOL;`;
+  const requiresPath = `module.exports = require('node:path').posix.sep;`;
 
   it('runs bundled CommonJS once require is added', async () => {
-    const code = addCjsRequire(await bundleForNode(requiresOs), 'test');
-    await expect(runModule(code!)).resolves.toBe('\n');
+    const code = addCjsRequire(await bundleForNode(requiresPath), 'test');
+    await expect(runModule(code!)).resolves.toBe('/');
   });
 
   it('keeps a hashbang on the first line', async () => {
     const code = addCjsRequire(
-      await bundleForNode(`#!/usr/bin/env node\n${requiresOs}`),
+      await bundleForNode(`#!/usr/bin/env node\n${requiresPath}`),
       'test'
     );
     expect(code!.split('\n')[0]).toBe('#!/usr/bin/env node');
-    await expect(runModule(code!)).resolves.toBe('\n');
+    await expect(runModule(code!)).resolves.toBe('/');
   });
 
   it('leaves output alone when require only appears in comments and strings', async () => {

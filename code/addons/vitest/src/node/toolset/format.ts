@@ -1,4 +1,4 @@
-import { getToolName, type ToolsetCtx } from 'storybook/open-service';
+import type { ToolsetCtx } from 'storybook/open-service';
 
 import { isAbsolute, relative } from 'pathe';
 
@@ -285,17 +285,6 @@ export function displayPath(file: string): string {
   return fromCwd.startsWith('..') ? file : fromCwd;
 }
 
-/**
- * A focused run whose selected stories all stayed out of the run, for example excluded by tags. It
- * passes, as a Vitest run whose tests are all skipped does; the selection line says why.
- */
-function ranNothingSelected(result: TestRunResult): boolean {
-  return (
-    (result.storyIds?.length ?? 0) > 0 &&
-    result.componentTestCount.success + result.componentTestCount.error === 0
-  );
-}
-
 function code(value: string): string {
   return `\`${value}\``;
 }
@@ -368,14 +357,10 @@ function formatNextSteps(
     a11y,
     testsFailed,
     notFound,
-    ranNothing,
-    ctx,
   }: {
     a11y: boolean;
     testsFailed: boolean;
     notFound: boolean;
-    ranNothing: boolean;
-    ctx: ToolsetCtx;
   }
 ): string[] {
   const steps: string[] = [];
@@ -389,13 +374,6 @@ function formatNextSteps(
   }
   if (a11y && countA11yViolations(getA11yReports(result)) > 0) {
     steps.push(A11Y_GUIDANCE);
-  }
-  if (!testsFailed && !notFound && !ranNothing && result.storyIds && ctx.transport !== 'sdk') {
-    const all =
-      ctx.transport === 'cli'
-        ? `\`${getToolName(ctx)('test.run')}\` without arguments`
-        : `${getToolName(ctx)('test.run')} without \`files\`, \`changed\` or \`stories\``;
-    steps.push(`Before you finish, run every story once: ${all}.`);
   }
   return steps;
 }
@@ -414,13 +392,11 @@ function formatResultSection(
     a11yEnabled,
     selection,
     notFound = [],
-    ctx,
   }: {
     a11y: boolean;
     a11yEnabled: boolean;
     selection?: TestRunSelection;
     notFound?: string[];
-    ctx: ToolsetCtx;
   }
 ): string {
   const failures = countTestRunFailures(result, a11y);
@@ -458,11 +434,9 @@ function formatResultSection(
     ...(result.depsReoptimized ? [DEPS_REOPTIMIZED[result.depsReoptimized]] : []),
     formatA11yResult(result, { a11y, a11yEnabled }),
     ...formatNextSteps(result, {
-      ranNothing: ranNothingSelected(result),
       a11y,
       testsFailed: testFailureParts.length > 0,
       notFound: notFound.length > 0,
-      ctx,
     }),
   ];
   return `## Result
@@ -522,15 +496,9 @@ function formatCompletedRun(
   }
 
   // Last, because agents mostly read this report through `tail`.
-  sections.push(formatResultSection(result, { a11y, a11yEnabled, selection, notFound, ctx }));
+  sections.push(formatResultSection(result, { a11y, a11yEnabled, selection, notFound }));
 
   return sections.join('\n\n');
-}
-
-function runEveryStoryBeforeFinishing(ctx: ToolsetCtx): string {
-  return ctx.transport === 'cli'
-    ? `Before you finish, run every story once: ${code(getToolName(ctx)('test.run'))} without arguments.`
-    : `Before you finish, run every story once: ${getToolName(ctx)('test.run')} without ${code('files')}, ${code('changed')} or ${code('stories')}.`;
 }
 
 // How to spell an argument for the transport the agent uses.
@@ -555,18 +523,16 @@ ${notFoundMessages.join('\n')}${filterHint}`;
   if (selection?.files?.storyFiles === 0) {
     // Only under `changed`, which passes with no tests, as in Vitest; otherwise it failed above.
     return `No story files found for ${selection.files.filters.map((filter) => code(displayPath(filter))).join(', ')}, so no tests ran.
-File arguments select story files by path, as Vitest filters select test files. To test the stories that depend on a changed file, use ${argument(ctx, '--changed', 'changed: true')} without file arguments.
-${runEveryStoryBeforeFinishing(ctx)}`;
+File arguments select story files by path, as Vitest filters select test files. To test the stories that depend on a changed file, use ${argument(ctx, '--changed', 'changed: true')} without file arguments.`;
   }
   if (selection?.changed) {
     const what =
       selection.changed.stories > 0 ? 'None of the selected stories changed' : 'No stories changed';
-    // A run that selected nothing passes, as in Vitest, so the agent could otherwise finish without
-    // one test having run.
+    // A run that selected nothing passes, as in Vitest; the last line says how to test anyway.
     return [
       `${what}, so no tests ran.`,
       ...formatChangedConfigFiles(selection.changed),
-      `To test more, pass story files. ${runEveryStoryBeforeFinishing(ctx)}`,
+      'To test more, pass story files.',
     ].join('\n');
   }
   if (selection?.files && selection.stories) {

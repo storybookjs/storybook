@@ -53,6 +53,22 @@ describe('ChangeDetectionResolverFactory', () => {
     });
   });
 
+  describe('package exports conditions', () => {
+    it('resolves a package that exports only `default` without the builder listing it', async () => {
+      const target = write('node_modules/tones/index.js');
+      writeFileSync(
+        join(dir, 'node_modules/tones/package.json'),
+        JSON.stringify({ name: 'tones', exports: { '.': { default: './index.js' } } })
+      );
+      const from = write('src/a.ts');
+      const r = new ChangeDetectionResolverFactory({
+        projectRoot: dir,
+        conditions: ['module', 'browser', 'development', 'import'],
+      });
+      expect(await r.resolve(from, 'tones')).toBe(target);
+    });
+  });
+
   describe('explicit alias (Record form)', () => {
     it('resolves alias to absolute path', async () => {
       const target = write('src/utils/index.ts');

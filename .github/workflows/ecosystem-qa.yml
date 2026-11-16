@@ -252,8 +252,8 @@ jobs:
     runs-on: ${{ matrix.runner }}
     timeout-minutes: ${{ fromJSON(needs.plan.outputs.job_minutes) }}
     permissions: {}
-    # The agent keys live in this environment. The push token lives in ecosystem-qa-file, which only
-    # the file job enters, so no job that runs the agent can read it.
+    # The agent keys live in this environment. The App key lives in ecosystem-qa-file, which only the
+    # file job enters, so no job that runs the agent can read it.
     environment: ecosystem-qa
     strategy:
       fail-fast: false
@@ -559,11 +559,29 @@ jobs:
           pattern: qa-*
           path: ecosystem-qa/results
 
+      - name: Create a storybookjs token
+        id: storybookjs-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.ECOSYSTEM_QA_APP_ID }}
+          private-key: ${{ secrets.ECOSYSTEM_QA_APP_PRIVATE_KEY }}
+          owner: storybookjs
+          permission-contents: write
+
+      - name: Create a storybook-tmp token
+        id: storybook-tmp-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.ECOSYSTEM_QA_APP_ID }}
+          private-key: ${{ secrets.ECOSYSTEM_QA_APP_PRIVATE_KEY }}
+          owner: storybook-tmp
+          permission-contents: write
+
       - name: File issues and push evidence
         env:
           GH_TOKEN: ${{ github.token }}
-          ECOSYSTEM_QA_PUSH_TOKEN: ${{ secrets.ECOSYSTEM_QA_PUSH_TOKEN }}
-          ECOSYSTEM_QA_PUSH_TOKEN_STORYBOOK_TMP: ${{ secrets.ECOSYSTEM_QA_PUSH_TOKEN_STORYBOOK_TMP }}
+          ECOSYSTEM_QA_APP_TOKEN_STORYBOOKJS: ${{ steps.storybookjs-token.outputs.token }}
+          ECOSYSTEM_QA_APP_TOKEN_STORYBOOK_TMP: ${{ steps.storybook-tmp-token.outputs.token }}
         run: >-
           node ecosystem-qa/file.ts --proposals ecosystem-qa/results/qa-proposals/proposals.json
           --repo "$GITHUB_REPOSITORY"

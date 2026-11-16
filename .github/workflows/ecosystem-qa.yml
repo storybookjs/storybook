@@ -126,6 +126,79 @@ jobs:
           node ecosystem-qa/file.ts --proposals ecosystem-qa/results/proposals.json
           --repo "$GITHUB_REPOSITORY" --dry
 
+  # Runs like the agent job, on ubuntu-latest and without the hardening step of the smoke job, so
+  # that its call over Docker's default bridge holds for the agent's sandbox.
+  key-proxy:
+    name: Reach the key proxy from the sandbox
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions: {}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Install the ecosystem-qa workspace
+        run: |
+          corepack enable
+          yarn workspaces focus ecosystem-qa
+
+      - name: Call a stand-in provider through the key proxy from a container
+        run: |
+          node --input-type=module -e '
+            import { deepStrictEqual } from "node:assert";
+            import { execFile } from "node:child_process";
+            import { once } from "node:events";
+            import { createServer } from "node:http";
+            import { promisify } from "node:util";
+            import { PLACEHOLDER_KEY, sandboxAddresses, startKeyProxy } from "./ecosystem-qa/lib/key-proxy.ts";
+
+            // A synchronous exec would block the proxy, which answers from this same process.
+            const run = async (command, ...args) => (await promisify(execFile)(command, args)).stdout.trim();
+            const docker = (...args) => run("docker", ...args);
+            const key = "stand-in-key";
+            const provider = createServer((req, res) => {
+              req.resume();
+              res.end(req.headers["x-api-key"] === key ? "the real key" : "another key");
+            }).listen(0, "127.0.0.1");
+            await once(provider, "listening");
+            const container = await docker("run", "-d", "--entrypoint", "sleep", "curlimages/curl:8.23.0@sha256:3fb7e13e5d179a845c97d78204f3f1064d1907037f26a3ebf91710571151fd93", "600");
+            try {
+              const addresses = sandboxAddresses(await docker("inspect", container));
+              console.log(`Sandbox ${addresses.container}, gateway ${addresses.gateway}`);
+              const proxy = await startKeyProxy({
+                host: addresses.gateway,
+                callerAddress: addresses.container,
+                upstreamOrigin: `http://127.0.0.1:${provider.address().port}`,
+                apiKey: key,
+                log: console.log,
+              });
+              const curl = ["curl", "-sS", "--max-time", "10", "-X", "POST", "-H", `x-api-key: ${PLACEHOLDER_KEY}`, "-w", " %{http_code}"];
+              const answers = [
+                await docker("exec", container, ...curl, `${proxy.baseUrl}/v1/messages?beta=true`),
+                await docker("exec", container, ...curl, `${proxy.baseUrl}/v1/files`),
+                await docker("exec", container, ...curl, "--path-as-is", `${proxy.baseUrl}//example.com/v1/messages`),
+                await run(...curl, `${proxy.baseUrl}/v1/messages`),
+              ];
+              console.log(answers.join("\n"));
+              deepStrictEqual(answers, ["the real key 200", "404", "404", "403"]);
+              proxy.server.close();
+            } finally {
+              await docker("rm", "-f", container);
+              provider.close();
+            }
+          '
+
   plan:
     name: Plan the matrix
     if: ${{ github.event_name == 'workflow_dispatch' }}

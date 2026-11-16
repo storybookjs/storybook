@@ -144,8 +144,9 @@ export type IssueNode = z.infer<typeof IssueNode>;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-// The range also holds old history that the merge of another repository into the monorepo brought
-// in, so a merge commit in the range alone does not make a PR new.
+// GitHub lists merged PRs by date, not by commit, so the pages stop at a date, and a PR merged
+// before it is dropped even when an update listed it early, which keeps the output stable. A
+// release tag sits on a version bump branched off next, so the date reaches back past the start.
 export const MERGED_BEFORE_START_DAYS = 30;
 
 export const windowCutoff = (startDate: string): string =>

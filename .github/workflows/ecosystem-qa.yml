@@ -128,12 +128,13 @@ jobs:
 
   # The key proxy listens on the gateway of Docker's default bridge, so the sandbox must reach that
   # address. This job runs where the agent job runs: on the same runner image and without the runner
-  # hardening step, which the smoke job keeps.
+  # hardening step, which the smoke job keeps. Every container on the default bridge takes the
+  # sandbox's way to the gateway, so a small curl image stands in for the sandbox image.
   key-proxy:
     name: Reach the key proxy from the sandbox
     if: ${{ github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 10
     permissions: {}
     defaults:
       run:
@@ -154,13 +155,7 @@ jobs:
           corepack enable
           yarn workspaces focus ecosystem-qa
 
-      - name: Build the sandbox image
-        run: >-
-          docker build --build-arg AGENT_UID="$(id -u)" --build-arg AGENT_GID="$(id -g)"
-          --build-arg CLAUDE_CODE_VERSION="$CLAUDE_CODE_VERSION" --build-arg CODEX_VERSION="$CODEX_VERSION"
-          -t sb-ecosystem-qa ecosystem-qa
-
-      - name: Call a stand-in provider through the key proxy from the sandbox
+      - name: Call a stand-in provider through the key proxy from a container
         run: |
           node --input-type=module -e '
             import { deepStrictEqual } from "node:assert";
@@ -179,7 +174,7 @@ jobs:
               res.end(req.headers["x-api-key"] === key ? "the real key" : "another key");
             }).listen(0, "127.0.0.1");
             await once(provider, "listening");
-            const container = await docker("run", "-d", "--user", `${process.getuid()}:${process.getgid()}`, "sb-ecosystem-qa");
+            const container = await docker("run", "-d", "--entrypoint", "sleep", "curlimages/curl:8.23.0@sha256:3fb7e13e5d179a845c97d78204f3f1064d1907037f26a3ebf91710571151fd93", "600");
             try {
               const addresses = sandboxAddresses(await docker("inspect", container));
               console.log(`Sandbox ${addresses.container}, gateway ${addresses.gateway}`);
@@ -194,10 +189,11 @@ jobs:
               const answers = [
                 await docker("exec", container, ...curl, `${proxy.url}/v1/messages?beta=true`),
                 await docker("exec", container, ...curl, `${proxy.url}/v1/files`),
+                await docker("exec", container, ...curl, "--path-as-is", `${proxy.url}//example.com/v1/messages`),
                 await run(...curl, `${proxy.url}/v1/messages`),
               ];
               console.log(answers.join("\n"));
-              deepStrictEqual(answers, ["the real key 200", "404", "403"]);
+              deepStrictEqual(answers, ["the real key 200", "404", "404", "403"]);
               proxy.server.close();
             } finally {
               await docker("rm", "-f", container);

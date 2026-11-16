@@ -30,7 +30,7 @@ export const renderTrackingThread = ({
     `The logbook of one QA sweep: the plan \`${file}\` with the hash \`${hash}\`, first run on Storybook ${version}.`,
     '',
     'The workflow adds one comment for each batch it runs, with the runs, their dollars, their checks, and their findings, and edits that comment when it collects the batch again.',
-    'The spend of the sweep is the sum of those comments, and a comment by anyone else, or one that someone else edited, is not part of it.',
+    'The spend of the sweep is the sum of those comments. A comment by anyone else is not part of it, and a comment of the workflow that anyone else edits stops the sweep, because its dollars can no longer be read.',
     '',
   ].join('\n'),
 });
@@ -148,7 +148,8 @@ export const batchCommentOf = <Comment extends Written>(
     (comment) => byHarness(comment.author) && firstLine(comment.body) === batchMarker(report)
   );
 
-export type Spend = { usd: number; runs: number; editedComments: string[] };
+// `unreadable` names each comment of the workflow whose dollars cannot be counted, and why.
+export type Spend = { usd: number; runs: number; unreadable: string[] };
 
 const editedByOther = (comment: Written) => comment.editor !== null && !byHarness(comment.editor);
 
@@ -162,28 +163,31 @@ const ledgerOf = (body: string): LedgerEntry[] =>
 
 export const carriedRuns = (existing: Written | undefined, report: BatchReport): LedgerEntry[] => {
   const reported = new Set(report.lines.map(({ key }) => key));
-  return existing && !editedByOther(existing)
-    ? ledgerOf(existing.body).filter(({ key }) => !reported.has(key))
-    : [];
+  return existing ? ledgerOf(existing.body).filter(({ key }) => !reported.has(key)) : [];
+};
+
+const unreadableOf = (comment: Written, hash: string): string | undefined => {
+  if (editedByOther(comment)) {
+    return `${comment.url}, which someone other than the workflow edited`;
+  }
+  if (BATCH_MARKER.exec(firstLine(comment.body))?.[1] !== hash) {
+    return `${comment.url}, whose first line is not the hidden line of a batch of this plan`;
+  }
+  return undefined;
 };
 
 export const spentUsd = (comments: Written[], hash: string, current?: BatchReport): Spend => {
-  const counted = comments.filter(
-    (comment) =>
-      byHarness(comment.author) && BATCH_MARKER.exec(firstLine(comment.body))?.[1] === hash
-  );
+  const written = comments.filter((comment) => byHarness(comment.author));
+  const counted = written.filter((comment) => unreadableOf(comment, hash) === undefined);
   const ledger = new Map<string, number>();
-  const entries = [
-    ...counted.filter((comment) => !editedByOther(comment)).flatMap(({ body }) => ledgerOf(body)),
-    ...(current?.lines ?? []),
-  ];
+  const entries = [...counted.flatMap(({ body }) => ledgerOf(body)), ...(current?.lines ?? [])];
   for (const { key, usd } of entries) {
     ledger.set(key, Math.max(usd, ledger.get(key) ?? 0));
   }
   return {
     usd: [...ledger.values()].reduce((sum, usd) => sum + usd, 0),
     runs: ledger.size,
-    editedComments: counted.filter(editedByOther).map((comment) => comment.url),
+    unreadable: written.flatMap((comment) => unreadableOf(comment, hash) ?? []),
   };
 };
 
@@ -229,9 +233,9 @@ export const nextStep = ({
       stop: `${notStarted}, because the plan had no tracking discussion before batch ${report.batch}, so the spend of its earlier batches is unknown.`,
     };
   }
-  if (spend.editedComments.length > 0) {
+  if (spend.unreadable.length > 0) {
     return {
-      stop: `${notStarted}, because someone other than the workflow edited ${spend.editedComments.join(', ')}, so its dollars are not counted.`,
+      stop: `${notStarted}, because the spend of this plan cannot be read from ${spend.unreadable.join(', nor from ')}.`,
     };
   }
   if (report.lines.every((line) => line.outcome === 'no result')) {
@@ -327,7 +331,7 @@ export const renderBatchComment = (
           ]
         : ['No findings.']),
     '',
-    `Spent on this plan: ${dollars(spend.usd)} for ${runCount(spend.runs)}, of a cap of ${dollars(capUsd)}. ${'start' in next ? `Batch ${next.start} is started next.` : next.stop}`,
+    `Spent on this plan: ${spend.unreadable.length > 0 ? 'at least ' : ''}${dollars(spend.usd)} for ${runCount(spend.runs)}, of a cap of ${dollars(capUsd)}. ${'start' in next ? `Batch ${next.start} is started next.` : next.stop}`,
     '',
     {
       dry:
@@ -351,12 +355,14 @@ export type TrackInput<Comment extends Written> = {
   expiresOn: string;
 };
 
-export type Tracked<Comment extends Written> = {
-  existing: Comment | undefined;
-  next: NextStep;
-  body: string;
-  stopped: (stop: string) => string;
-};
+export type Tracked<Comment extends Written> =
+  | { refuse: string }
+  | {
+      existing: Comment | undefined;
+      next: NextStep;
+      body: string;
+      stopped: (stop: string) => string;
+    };
 
 export const trackBatch = <Comment extends Written>({
   report,
@@ -367,6 +373,11 @@ export const trackBatch = <Comment extends Written>({
   expiresOn,
 }: TrackInput<Comment>): Tracked<Comment> => {
   const existing = batchCommentOf(comments, report);
+  if (existing && editedByOther(existing)) {
+    return {
+      refuse: `Batch ${report.batch} is not reported again, because someone other than the workflow edited ${existing.url}, and writing over it would hide that edit. Every later batch of this plan stops at that comment.`,
+    };
+  }
   const spend = spentUsd(comments, report.plan.hash, report);
   const next = nextStep({
     report,

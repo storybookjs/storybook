@@ -201,7 +201,7 @@ const thread = place
   ? trackingThreadOf(listDiscussions(repo!, place.categoryId), scope.hash)
   : undefined;
 const comments: DiscussionComment[] = thread ? listDiscussionComments(thread.id) : [];
-const { existing, next, body, stopped } = trackBatch({
+const tracked = trackBatch({
   report,
   comments,
   tracked: thread !== undefined,
@@ -209,6 +209,7 @@ const { existing, next, body, stopped } = trackBatch({
   chain: values.chain,
   expiresOn,
 });
+const { existing, next, body, stopped } = 'refuse' in tracked ? fail(tracked.refuse) : tracked;
 const newThread = renderTrackingThread({
   file: scope.file,
   hash: scope.hash,

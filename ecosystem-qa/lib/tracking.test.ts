@@ -298,11 +298,24 @@ describe('spentUsd', () => {
     expect(rewritten.body).toContain('The spend also counts 1 run of an earlier report');
   });
 
-  it('ignores a comment by another account and a ledger that does not open the comment', () => {
+  it('ignores a comment by another account', () => {
     const forged = posted(batchReport(input({ runs: ['1'] })), PERSON);
-    const buried = comment(`Copied:\n${posted(batchReport(input({ runs: ['2'] }))).body}`);
 
-    expect(spentUsd([forged, buried], HASH)).toEqual({ usd: 0, runs: 0, editedComments: [] });
+    expect(spentUsd([forged], HASH)).toEqual({ usd: 0, runs: 0, unreadable: [] });
+  });
+
+  it('names a comment of the workflow whose first line is not the hidden line of a batch of the plan', () => {
+    const buried = comment(`Copied:\n${posted(batchReport(input({ runs: ['2'] }))).body}`);
+    const otherPlan = comment(posted(first).body.replace(HASH, 'aaaaaaaaaaaa'));
+
+    expect(spentUsd([buried, otherPlan], HASH)).toEqual({
+      usd: 0,
+      runs: 0,
+      unreadable: [
+        `${buried.url}, whose first line is not the hidden line of a batch of this plan`,
+        `${otherPlan.url}, whose first line is not the hidden line of a batch of this plan`,
+      ],
+    });
   });
 
   it('reads none of the visible text, so a changed table changes no sum', () => {
@@ -315,8 +328,12 @@ describe('spentUsd', () => {
     const edited = comment(posted(first).body, HARNESS, PERSON);
     const selfEdited = comment(posted(first).body, HARNESS, HARNESS);
 
-    expect(spentUsd([edited], HASH)).toEqual({ usd: 0, runs: 0, editedComments: [edited.url] });
-    expect(spentUsd([selfEdited], HASH).editedComments).toEqual([]);
+    expect(spentUsd([edited], HASH)).toEqual({
+      usd: 0,
+      runs: 0,
+      unreadable: [`${edited.url}, which someone other than the workflow edited`],
+    });
+    expect(spentUsd([selfEdited], HASH).unreadable).toEqual([]);
   });
 
   it('keeps a ledger line out of the sum when a finding title tries to write one', () => {
@@ -410,7 +427,7 @@ describe('nextStep', () => {
         tracked: true,
       })
     ).toEqual({
-      stop: `Batch 3 was not started, because someone other than the workflow edited ${edited.url}, so its dollars are not counted.`,
+      stop: `Batch 3 was not started, because the spend of this plan cannot be read from ${edited.url}, which someone other than the workflow edited.`,
     });
   });
 
@@ -463,8 +480,20 @@ describe('trackBatch', () => {
         results: [result('mantine', { usd })],
       })
     );
-  const track = (report: BatchReport, comments: Written[], capUsd = 60) =>
-    trackBatch({ report, comments, tracked: true, capUsd, chain: true, expiresOn: '2027-02-14' });
+  const track = (report: BatchReport, comments: Written[], capUsd = 60) => {
+    const tracked = trackBatch({
+      report,
+      comments,
+      tracked: true,
+      capUsd,
+      chain: true,
+      expiresOn: '2027-02-14',
+    });
+    if ('refuse' in tracked) {
+      throw new Error(tracked.refuse);
+    }
+    return tracked;
+  };
 
   it('stops the chain when the spend reaches the cap exactly, and starts it one cent below', () => {
     expect(track(batchTwo(20), [batchOne]).next).toEqual({
@@ -493,6 +522,40 @@ describe('trackBatch', () => {
 
     expect(first.existing).toBeUndefined();
     expect(track(report, [batchOne, reported]).existing).toBe(reported);
+  });
+
+  it.each([
+    ['adds a line above its hidden lines', (body: string) => `Reviewed, thanks.\n\n${body}`],
+    ['removes its first hidden line', (body: string) => body.replace(/^.*\n/, '')],
+    ['changes a hidden line', (body: string) => body.replace('usd=40.000000', 'usd=0.400000')],
+  ])('stops the chain when a person %s of an earlier batch', (_, edit) => {
+    const edited = comment(edit(batchOne.body), HARNESS, PERSON);
+    const tracked = track(batchTwo(1), [edited], 250);
+
+    expect(tracked.next).toEqual({
+      stop: `Batch 3 was not started, because the spend of this plan cannot be read from ${edited.url}, which someone other than the workflow edited.`,
+    });
+    expect(tracked.body).toContain(
+      'Spent on this plan: at least $1.00 for 1 run, of a cap of $250.00.'
+    );
+  });
+
+  it('writes nothing over a comment of the batch that someone else edited', () => {
+    const report = batchTwo(5);
+    const edited = comment(track(report, [batchOne]).body, HARNESS, PERSON);
+
+    expect(
+      trackBatch({
+        report,
+        comments: [batchOne, edited],
+        tracked: true,
+        capUsd: 250,
+        chain: false,
+        expiresOn: '2027-02-14',
+      })
+    ).toEqual({
+      refuse: `Batch 2 is not reported again, because someone other than the workflow edited ${edited.url}, and writing over it would hide that edit. Every later batch of this plan stops at that comment.`,
+    });
   });
 
   it('starts the next batch on the branch, engines and budget of this one', () => {

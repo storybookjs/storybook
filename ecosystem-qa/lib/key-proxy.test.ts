@@ -79,6 +79,34 @@ describe('startKeyProxy', () => {
     expect(log).toEqual(['Key proxy: POST /v1/messages 200']);
   });
 
+  it('drops the authorization header of the caller', async () => {
+    const provider = await standIn((req, res) => {
+      req.resume();
+      res.end();
+    });
+    const { url } = await proxyTo(provider.origin);
+
+    const req = request(`${url}/v1/messages`, {
+      method: 'POST',
+      headers: { authorization: 'Bearer caller-token', 'x-api-key': PLACEHOLDER_KEY },
+    });
+    req.end();
+    await once(req, 'response');
+    expect(provider.seen[0]!.headers).toMatchObject({ 'x-api-key': REAL_KEY });
+    expect(provider.seen[0]!.headers).not.toHaveProperty('authorization');
+  });
+
+  it('answers 502 when the provider cannot be reached', async () => {
+    const gone = createServer().listen(0, '127.0.0.1');
+    await once(gone, 'listening');
+    const { port } = gone.address() as AddressInfo;
+    gone.close();
+    const { url, log } = await proxyTo(`http://127.0.0.1:${port}`);
+
+    expect(await answerOf(`${url}/v1/messages`)).toEqual({ status: 502, body: '' });
+    expect(log).toEqual(['Key proxy: POST /v1/messages 502']);
+  });
+
   it('forwards a token count too', async () => {
     const provider = await standIn((req, res) => {
       req.resume();

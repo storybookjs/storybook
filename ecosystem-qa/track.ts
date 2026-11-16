@@ -20,7 +20,7 @@ import {
   type DiscussionPlace,
 } from './lib/github.ts';
 import { PLANS_BRANCH } from './lib/plan-push.ts';
-import { readPlanScope, wholeNumber } from './lib/plan-scope.ts';
+import { readPlanScope } from './lib/plan-scope.ts';
 import { openIssueOf, QA_LABEL } from './lib/proposals.ts';
 import { planBatches } from './lib/qa-plan.ts';
 import { loadResults } from './lib/results.ts';
@@ -105,6 +105,9 @@ const endChain = (ended: string): never => {
   if (!/^[0-9a-f]{12}$/.test(hash) || !/^([0-9a-f]{12}|gone)$/.test(ended)) {
     fail(`--hash is a plan hash and --ended a plan hash or gone, found "${hash}" and "${ended}".`);
   }
+  if (!/^[1-9]\d*$/.test(batch)) {
+    fail(`--batch must be a whole number from 1, found "${batch}".`);
+  }
   if (!/^\d+$/.test(runs) || !repo) {
     fail(`--ended needs the one run id of --runs and --repo.\n\n${HELP}`);
   }
@@ -117,7 +120,7 @@ const endChain = (ended: string): never => {
   const body = chainEndComment(listDiscussionComments(thread.id), {
     file,
     hash,
-    batch: wholeNumber('--batch', batch),
+    batch: Number(batch),
     run: runs,
     now: ended === 'gone' ? undefined : ended,
   });

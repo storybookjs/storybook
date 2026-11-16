@@ -4,7 +4,7 @@ import { parseArgs } from 'node:util';
 import { loadEntries } from './lib/catalog.ts';
 import { versionLine } from './lib/cycle.ts';
 import { planOfPush } from './lib/plan-push.ts';
-import { readPlanScope, wholeNumber } from './lib/plan-scope.ts';
+import { readPlanScope } from './lib/plan-scope.ts';
 import { planBatches, planHash } from './lib/qa-plan.ts';
 import { planMatrix, sweepMatrix } from './lib/sweep-matrix.ts';
 
@@ -95,7 +95,7 @@ const changedPlan = (): string[] | undefined => {
     'matrix={"include":[]}',
     `plan=${plan}`,
     `plan_hash=${hash}`,
-    `batch=${wholeNumber('--batch', batch)}`,
+    `batch=${/^[1-9]\d*$/.test(batch) ? batch : fail(`--batch must be a whole number from 1, found "${batch}".`)}`,
     `ended=${now ?? 'gone'}`,
   ];
 };

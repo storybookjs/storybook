@@ -322,6 +322,38 @@ describe('runStoryTests', () => {
       expect(result).toMatchObject({ status: 'no-stories', notFoundMessages: [] });
       expect(requested).toEqual([]);
     });
+
+    it('still checks the ref and the story ids when no story file matches', async () => {
+      const { channel, requested } = respondingChannel();
+      const unknownRef = new Error('`nope` is not a known git ref.');
+
+      await expect(
+        runStoryTests({
+          channel,
+          getIndex: async () => index,
+          files: ['src/Button.tsx'],
+          changed: 'nope',
+          getChangedStories: async () => {
+            throw unknownRef;
+          },
+        })
+      ).rejects.toBe(unknownRef);
+
+      const result = await runStoryTests({
+        channel,
+        getIndex: async () => index,
+        files: ['src/Button.tsx'],
+        changed: true,
+        stories: [{ storyId: 'missing--story' }],
+        getChangedStories: async () => ({ storyIds: [], changedConfigFiles: [], pendingFiles: [] }),
+      });
+
+      expect(result).toMatchObject({
+        status: 'no-stories',
+        notFoundMessages: ['No story found for story ID "missing--story"'],
+      });
+      expect(requested).toEqual([]);
+    });
   });
 
   it('maps an error channel response', async () => {

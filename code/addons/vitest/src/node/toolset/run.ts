@@ -190,7 +190,7 @@ export async function runStoryTests({
 }: RunStoryTestsParams): Promise<TestRunOutput> {
   let storyIds: string[] | undefined;
   let selection: TestRunSelection | undefined;
-  let notFoundMessages: string[] = [];
+  const notFoundMessages: string[] = [];
 
   // Each form narrows the selection, as Vitest's file filters, `--changed` and `-t` do together.
   // `undefined` stands for every story.
@@ -207,18 +207,12 @@ export async function runStoryTests({
     if (filters) {
       const matched = filterStoryFiles({ index, filters });
       selection.files = { filters, storyFiles: matched.storyFiles.length };
-      if (matched.storyFiles.length === 0) {
-        // Vitest: "No test files found, exiting with code 1", or code 0 with `--changed`, which
-        // turns on `passWithNoTests`.
-        return {
-          status: 'no-stories',
-          notFoundMessages: changed
-            ? []
-            : [
-                `No story files found for ${filters.map((file) => `\`${displayPath(file)}\``).join(', ')}.`,
-              ],
-          selection,
-        };
+      // Vitest: "No test files found, exiting with code 1", or code 0 with `--changed`, which
+      // turns on `passWithNoTests`. The ref and the story ids below are still checked.
+      if (matched.storyFiles.length === 0 && !changed) {
+        notFoundMessages.push(
+          `No story files found for ${filters.map((file) => `\`${displayPath(file)}\``).join(', ')}.`
+        );
       }
       narrow(matched.storyIds);
     }
@@ -243,9 +237,11 @@ export async function runStoryTests({
     if (stories) {
       selection.stories = stories.length;
       const resolved = findStoryIds(index, stories);
-      notFoundMessages = resolved
-        .filter((story): story is NotFoundStory => !('entry' in story))
-        .map((story) => story.errorMessage);
+      notFoundMessages.push(
+        ...resolved
+          .filter((story): story is NotFoundStory => !('entry' in story))
+          .map((story) => story.errorMessage)
+      );
       narrow(
         resolved
           .filter((story): story is FoundStory => 'entry' in story)

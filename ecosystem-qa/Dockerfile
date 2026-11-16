@@ -1,6 +1,3 @@
-# The version must match the `playwright` version in package.json: the evidence tools load that
-# package from the mounted node_modules and launch the browsers baked into this image. The digest
-# belongs to the default version, so another version needs its own digest as well.
 ARG PLAYWRIGHT_VERSION=1.58.2
 ARG PLAYWRIGHT_DIGEST=sha256:6446946a1d9fd62d9ae501312a2d76a43ee688542b21622056a372959b65d63d
 FROM mcr.microsoft.com/playwright:v${PLAYWRIGHT_VERSION}-noble@${PLAYWRIGHT_DIGEST}

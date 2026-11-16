@@ -13,6 +13,7 @@ const firstLine = (body: string) => body.split(/\r?\n/, 1)[0] ?? '';
 
 const PLAN_MARKER = /^<!-- sb-qa-plan ([0-9a-f]{12}) \S+ -->$/;
 const BATCH_MARKER = /^<!-- sb-qa-batch ([0-9a-f]{12}) batch=(\d+) version=\S+ runs=[\d,]* -->$/;
+const END_MARKER = /^<!-- sb-qa-end ([0-9a-f]{12}) batch=\d+ run=\d+ -->$/;
 const NEXT_LINE = /^Next: (.+)$/;
 const STARTED = /^Batch (\d+) is started\.$/;
 const RUN_LEDGER = /^<!-- sb-qa-run (\S+) usd=(\d+(?:\.\d+)?) -->$/;
@@ -35,6 +36,30 @@ export const renderTrackingThread = ({
     '',
   ].join('\n'),
 });
+
+export type ChainEnd = {
+  file: string;
+  hash: string;
+  batch: number;
+  run: string;
+  // The hash of the plan at the commit of the run, none when the plan is gone.
+  now: string | undefined;
+};
+
+// The comment that ends the chain of a plan in its discussion, none when the discussion says so
+// already for this batch and run.
+export const chainEndComment = (comments: Written[], end: ChainEnd): string | undefined => {
+  const marker = `<!-- sb-qa-end ${end.hash} batch=${end.batch} run=${end.run} -->`;
+  const found = end.now ? `\`${end.file}\` with the hash \`${end.now}\`` : `no \`${end.file}\``;
+  return comments.some((comment) => byHarness(comment.author) && firstLine(comment.body) === marker)
+    ? undefined
+    : [
+        marker,
+        `The chain of this plan ends at batch ${end.batch}, because workflow run ${end.run} found ${found} where this sweep has the hash \`${end.hash}\`, and so ran nothing.`,
+        'A changed plan starts a sweep of its own, with a discussion of its own, when it is pushed.',
+        '',
+      ].join('\n');
+};
 
 export const trackingThreadOf = <Thread extends Written & { number: number }>(
   discussions: Thread[],
@@ -191,7 +216,8 @@ const unreadableOf = (comment: Written, hash: string): string | undefined => {
   if (editedByOther(comment)) {
     return `${comment.url}, which someone other than the workflow edited`;
   }
-  if (BATCH_MARKER.exec(firstLine(comment.body))?.[1] !== hash) {
+  const first = firstLine(comment.body);
+  if (BATCH_MARKER.exec(first)?.[1] !== hash && END_MARKER.exec(first)?.[1] !== hash) {
     return `${comment.url}, whose first line is not the hidden line of a batch of this plan`;
   }
   return undefined;
@@ -199,7 +225,10 @@ const unreadableOf = (comment: Written, hash: string): string | undefined => {
 
 export const spentUsd = (comments: Written[], hash: string, current?: BatchReport): Spend => {
   const written = comments.filter((comment) => byHarness(comment.author));
-  const counted = written.filter((comment) => unreadableOf(comment, hash) === undefined);
+  const counted = written.filter(
+    (comment) =>
+      unreadableOf(comment, hash) === undefined && BATCH_MARKER.test(firstLine(comment.body))
+  );
   const ledger = new Map<string, number>();
   const entries = [...counted.flatMap(({ body }) => ledgerOf(body)), ...(current?.lines ?? [])];
   for (const { key, usd } of entries) {

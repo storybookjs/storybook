@@ -6,6 +6,7 @@ import {
   batchCommentOf,
   batchReport,
   carriedRuns,
+  chainEndComment,
   batchDispatch,
   nextStep,
   renderBatchComment,
@@ -461,6 +462,36 @@ describe('a batch whose collect failed', () => {
       'The findings were not collected, so this run files nothing. The artifacts of this batch expire on 2027-02-14.'
     );
     expect(body).not.toContain('The file job of this run files');
+  });
+});
+
+describe('chainEndComment', () => {
+  const end = { file: '11.0.md', hash: HASH, batch: 3, run: '43900000007', now: 'aaaaaaaaaaaa' };
+
+  it('says at which batch the chain of the plan ended and what the run found', () => {
+    expect(chainEndComment([], end)).toMatchInlineSnapshot(`
+      "<!-- sb-qa-end 3f9c2a7b10de batch=3 run=43900000007 -->
+      The chain of this plan ends at batch 3, because workflow run 43900000007 found \`11.0.md\` with the hash \`aaaaaaaaaaaa\` where this sweep has the hash \`3f9c2a7b10de\`, and so ran nothing.
+      A changed plan starts a sweep of its own, with a discussion of its own, when it is pushed.
+      "
+    `);
+    expect(chainEndComment([], { ...end, now: undefined })).toContain(
+      'because workflow run 43900000007 found no `11.0.md` where this sweep has the hash'
+    );
+  });
+
+  it('says it once for a run, and is no comment the spend cannot read', () => {
+    const said = comment(chainEndComment([], end)!);
+
+    expect(chainEndComment([said], end)).toBeUndefined();
+    expect(chainEndComment([comment(said.body, PERSON)], end)).toBeDefined();
+    expect(spentUsd([said], HASH)).toEqual({
+      usd: 0,
+      runs: 0,
+      batches: [],
+      started: [],
+      unreadable: [],
+    });
   });
 });
 

@@ -2,6 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
 
+import { basename } from 'pathe';
 import { z } from 'zod';
 
 import { loadEntries } from './lib/catalog.ts';
@@ -19,14 +20,15 @@ import {
   type DiscussionPlace,
 } from './lib/github.ts';
 import { PLANS_BRANCH } from './lib/plan-push.ts';
-import { readPlanScope } from './lib/plan-scope.ts';
+import { readPlanScope, wholeNumber } from './lib/plan-scope.ts';
 import { openIssueOf, QA_LABEL } from './lib/proposals.ts';
 import { planBatches } from './lib/qa-plan.ts';
 import { loadResults } from './lib/results.ts';
-import { Proposal } from './lib/schema.ts';
+import { PlanRecord, Proposal } from './lib/schema.ts';
 import {
   batchDispatch,
   batchReport,
+  chainEndComment,
   DEFAULT_CAP_USD,
   renderTrackingThread,
   resultsExpireOn,
@@ -38,6 +40,7 @@ import {
 } from './lib/tracking.ts';
 
 const HELP = `Usage: node ecosystem-qa/track.ts --results <dir> --plan <file> --batch <n> --version <storybook version> --planned <matrix> --repo <owner/name> [--proposals <proposals.json>] [--runs <run id>[,...]] --filing <dry|pending|filed> [--cap-usd <dollars>] [--budget-minutes <n>] [--no-chain] [--print]
+       node ecosystem-qa/track.ts --ended <hash|gone> --plan <file> --batch <n> --hash <hash> --runs <run id> --repo <owner/name> [--print]
 
 Writes the numbers of one batch of a QA plan into the tracking discussion of the plan, in the
 discussion category "${TRACKING_CATEGORY}" of --repo: the runs of --planned that left a result under
@@ -54,7 +57,10 @@ discussion holds no report of an earlier batch or holds one of a later batch, or
 If the dispatch fails, the comment says so in place of the next batch.
 --filing says what the comment says of the filing: dry prints the dispatch that files the batch,
 pending says that the file job of this run files it next, and filed names the issue of each finding.
---print reads GitHub but writes nothing: it prints the discussion, the comment, and the next step.`;
+--print reads GitHub but writes nothing: it prints the discussion, the comment, and the next step.
+
+With --ended, says in the discussion of the plan with the hash --hash that its chain ends at batch
+<n>, because run --runs found the plan --plan with the hash --ended, or gone.`;
 
 const { values } = parseArgs({
   allowNegative: true,
@@ -70,6 +76,8 @@ const { values } = parseArgs({
     'cap-usd': { type: 'string' },
     'budget-minutes': { type: 'string' },
     filing: { type: 'string' },
+    hash: { type: 'string' },
+    ended: { type: 'string' },
     chain: { type: 'boolean', default: true },
     print: { type: 'boolean', default: false },
     help: { type: 'boolean', default: false },
@@ -87,6 +95,45 @@ const fail = (message: string): never => {
 
 const warn = (message: string) =>
   console.warn(process.env.GITHUB_ACTIONS ? `::warning::${message}` : message);
+
+const endChain = (ended: string): never => {
+  const { plan = '', batch = '', hash = '', runs, repo } = values;
+  const file = basename(plan);
+  if (!PlanRecord.shape.file.safeParse(file).success) {
+    fail(`--plan must name a plan file, found "${plan}".`);
+  }
+  if (!/^[0-9a-f]{12}$/.test(hash) || !/^([0-9a-f]{12}|gone)$/.test(ended)) {
+    fail(`--hash is a plan hash and --ended a plan hash or gone, found "${hash}" and "${ended}".`);
+  }
+  if (!/^\d+$/.test(runs) || !repo) {
+    fail(`--ended needs the one run id of --runs and --repo.\n\n${HELP}`);
+  }
+  const place = discussionPlace(repo!, TRACKING_CATEGORY);
+  const thread = trackingThreadOf(listDiscussions(repo!, place.categoryId), hash);
+  if (!thread) {
+    console.log(`No discussion tracks the plan with the hash ${hash}, so nothing is said there.`);
+    process.exit(0);
+  }
+  const body = chainEndComment(listDiscussionComments(thread.id), {
+    file,
+    hash,
+    batch: wholeNumber('--batch', batch),
+    run: runs,
+    now: ended === 'gone' ? undefined : ended,
+  });
+  if (!body) {
+    console.log(`${thread.url} says already that the chain ended here.`);
+  } else if (values.print) {
+    console.log(`New comment in ${thread.url}:\n\n${body}`);
+  } else {
+    console.log(`Added ${addDiscussionComment(thread.id, body).url}`);
+  }
+  return process.exit(0);
+};
+
+if (values.ended !== undefined) {
+  endChain(values.ended);
+}
 
 const { results, version, planned, repo } = values;
 if (!results || !values.plan || !version || !planned || !repo || !values.filing) {

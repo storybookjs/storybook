@@ -200,6 +200,7 @@ jobs:
       plan_hash: ${{ steps.matrix.outputs.plan_hash }}
       chain: ${{ steps.matrix.outputs.chain }}
       skip: ${{ steps.matrix.outputs.skip }}
+      ended: ${{ steps.matrix.outputs.ended }}
       default_branch: ${{ steps.matrix.outputs.default_branch }}
     steps:
       - name: Checkout
@@ -305,9 +306,8 @@ jobs:
           elif [[ -n "$plan" ]]; then
             tier=gate
             outputs="$(node ecosystem-qa/plan.ts --plan "$plan" --batch "$QA_BATCH" --engines "$QA_ENGINES" --outputs ${QA_PLAN_HASH:+--hash "$QA_PLAN_HASH"} ${QA_VERSION:+--version "$QA_VERSION"})"
-            if [[ -z "$outputs" ]]; then
+            if [[ "$outputs" == *$'\n'ended=* ]]; then
               skip=true
-              outputs='matrix={"include":[]}'
             fi
           elif [[ -n "$QA_FROM_RUNS" ]]; then
             outputs=$'matrix={"include":[]}\nversion='"$QA_VERSION"
@@ -681,7 +681,8 @@ jobs:
     # empty report would replace the comment of those runs.
     if: >-
       ${{ !cancelled() && needs.plan.result == 'success' && needs.plan.outputs.plan != ''
-      && (needs.plan.outputs.from_runs == '' || needs.collect.result == 'success') }}
+      && (needs.plan.outputs.ended != '' || needs.plan.outputs.from_runs == ''
+      || needs.collect.result == 'success') }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -704,13 +705,27 @@ jobs:
           corepack enable
           yarn workspaces focus ecosystem-qa
 
+      - name: Say in the tracking discussion that the chain of the plan ended
+        if: ${{ needs.plan.outputs.ended != '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          QA_PLAN: ${{ needs.plan.outputs.plan }}
+          QA_BATCH: ${{ needs.plan.outputs.batch }}
+          QA_PLAN_HASH: ${{ needs.plan.outputs.plan_hash }}
+          QA_ENDED: ${{ needs.plan.outputs.ended }}
+        run: >-
+          node ecosystem-qa/track.ts --ended "$QA_ENDED" --plan "$QA_PLAN" --batch "$QA_BATCH"
+          --hash "$QA_PLAN_HASH" --runs "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY"
+
       - name: Download the run results and proposals
+        if: ${{ needs.plan.outputs.ended == '' }}
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           pattern: qa-*
           path: ecosystem-qa/results
 
       - name: Report the batch and start the next one
+        if: ${{ needs.plan.outputs.ended == '' }}
         env:
           GH_TOKEN: ${{ github.token }}
           QA_RESULTS: ${{ needs.plan.outputs.from_runs != '' && 'ecosystem-qa/results/qa-earlier-results' || 'ecosystem-qa/results' }}

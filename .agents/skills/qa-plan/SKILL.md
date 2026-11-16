@@ -57,7 +57,7 @@ gh pr view 36137 --repo storybookjs/storybook --json body,files --jq '.body, .fi
 ## Step 2: Read the catalog
 
 Read `ecosystem-qa/catalog.json`.
-Each entry has an `id` and `tags`: the `framework` package, the `builder`, the `storybook` major, and the feature addons in `features`.
+Each entry has an `id` and `tags`: the `framework` package, the `builder`, the Storybook `major`, and the feature addons in `features`.
 Choose repos by these tags, for example a Vue repo for a Vue change, two different builders for a builder change, a repo with `vitest` in `features` for an addon-vitest change.
 When an entry needs a repo that has a certain file or setting, such as a `storySort` in its preview file, search the repo for it:
 

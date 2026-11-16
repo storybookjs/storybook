@@ -40,7 +40,7 @@ describe('catalog', () => {
         tags: {
           framework: '@storybook/react-vite',
           builder: 'webpack5',
-          storybook: 10,
+          major: 10,
           features: [],
         },
       },
@@ -52,7 +52,7 @@ describe('catalog', () => {
         tags: {
           framework: '@storybook/react-vite',
           builder: 'vite',
-          storybook: 10,
+          major: 10,
           features: ['i18n'],
         },
       },

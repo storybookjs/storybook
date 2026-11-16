@@ -606,7 +606,7 @@ const reposAreCurrent: Rule = (input) => {
   const { plan, catalog } = input;
   const oldest = Number(plan.line.split('.')[0]) - 1;
   const majors = new Map<string, number | undefined>([
-    ...catalog.map((entry) => [entry.id, entry.tags?.storybook] as const),
+    ...catalog.map((entry) => [entry.id, entry.tags?.major] as const),
     ...plan.discovered.map((repo) => [repo.id, repo.major] as const),
   ]);
   return entryRepos(input).flatMap(({ id, line }) => {

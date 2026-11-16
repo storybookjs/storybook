@@ -304,7 +304,7 @@ describe('checkPlanText', () => {
 
   it('refuses a catalog entry more than one major behind the line', () => {
     const catalog = CATALOG.map((entry) =>
-      entry.id === 'mantine' ? { ...entry, tags: { ...entry.tags!, storybook: 9 } } : entry
+      entry.id === 'mantine' ? { ...entry, tags: { ...entry.tags!, major: 9 } } : entry
     );
 
     expect(problemsOf(FIXTURE, { catalog })).toEqual([

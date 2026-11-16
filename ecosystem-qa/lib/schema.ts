@@ -57,7 +57,7 @@ export const Tags = z
   .strictObject({
     framework: Framework,
     builder: Builder,
-    storybook: z.number().int().positive(),
+    major: z.int().positive(),
     features: z.array(Feature),
   })
   .refine((tags) => tags.builder === builderOf(tags.framework), {

@@ -10,7 +10,7 @@
     "tags": {
       "framework": "@storybook/react-vite",
       "builder": "vite",
-      "storybook": 10,
+      "major": 10,
       "features": ["a11y", "docs", "msw", "test-runner", "vitest"]
     }
   },
@@ -26,7 +26,7 @@
     "tags": {
       "framework": "@storybook/react-vite",
       "builder": "vite",
-      "storybook": 10,
+      "major": 10,
       "features": ["docs", "msw"]
     }
   },
@@ -42,7 +42,7 @@
     "tags": {
       "framework": "@storybook/react-vite",
       "builder": "vite",
-      "storybook": 10,
+      "major": 10,
       "features": ["a11y", "docs", "test-runner"]
     }
   },
@@ -58,7 +58,7 @@
     "tags": {
       "framework": "@storybook/react-webpack5",
       "builder": "webpack5",
-      "storybook": 10,
+      "major": 10,
       "features": ["a11y", "docs", "test-runner"]
     }
   },
@@ -74,7 +74,7 @@
     "tags": {
       "framework": "@storybook/react-vite",
       "builder": "vite",
-      "storybook": 10,
+      "major": 10,
       "features": ["a11y", "docs", "vitest"]
     }
   },
@@ -90,7 +90,7 @@
     "tags": {
       "framework": "@storybook/nextjs",
       "builder": "webpack5",
-      "storybook": 10,
+      "major": 10,
       "features": []
     }
   },
@@ -106,7 +106,7 @@
     "tags": {
       "framework": "@storybook/nextjs-vite",
       "builder": "vite",
-      "storybook": 10,
+      "major": 10,
       "features": ["a11y", "docs", "vitest"]
     }
   },
@@ -122,7 +122,7 @@
     "tags": {
       "framework": "@storybook/vue3-vite",
       "builder": "vite",
-      "storybook": 10,
+      "major": 10,
       "features": ["a11y", "docs", "vitest"]
     }
   },
@@ -138,7 +138,7 @@
     "tags": {
       "framework": "@storybook/angular",
       "builder": "webpack5",
-      "storybook": 10,
+      "major": 10,
       "features": ["a11y", "docs", "test-runner"]
     }
   },
@@ -154,7 +154,7 @@
     "tags": {
       "framework": "@storybook/angular-vite",
       "builder": "vite",
-      "storybook": 10,
+      "major": 10,
       "features": ["a11y", "docs", "test-runner", "vitest"]
     }
   },
@@ -170,7 +170,7 @@
     "tags": {
       "framework": "@storybook/sveltekit",
       "builder": "vite",
-      "storybook": 10,
+      "major": 10,
       "features": ["docs", "vitest"]
     }
   },
@@ -187,7 +187,7 @@
     "tags": {
       "framework": "@storybook/web-components-vite",
       "builder": "vite",
-      "storybook": 10,
+      "major": 10,
       "features": ["a11y", "docs"]
     }
   },
@@ -203,7 +203,7 @@
     "tags": {
       "framework": "@storybook/react-native-web-vite",
       "builder": "vite",
-      "storybook": 10,
+      "major": 10,
       "features": ["a11y", "docs", "vitest"]
     }
   },
@@ -219,7 +219,7 @@
     "tags": {
       "framework": "@storybook/react-vite",
       "builder": "vite",
-      "storybook": 10,
+      "major": 10,
       "features": ["a11y", "docs", "vitest"]
     }
   },
@@ -235,7 +235,7 @@
     "tags": {
       "framework": "@storybook/react-vite",
       "builder": "vite",
-      "storybook": 10,
+      "major": 10,
       "features": ["test-runner"]
     }
   },
@@ -251,7 +251,7 @@
     "tags": {
       "framework": "@storybook/react-webpack5",
       "builder": "webpack5",
-      "storybook": 10,
+      "major": 10,
       "features": ["a11y", "docs"]
     }
   },
@@ -267,7 +267,7 @@
     "tags": {
       "framework": "@storybook/react-vite",
       "builder": "vite",
-      "storybook": 10,
+      "major": 10,
       "features": ["docs"]
     }
   },
@@ -283,7 +283,7 @@
     "tags": {
       "framework": "@storybook/react-webpack5",
       "builder": "webpack5",
-      "storybook": 10,
+      "major": 10,
       "features": ["docs"]
     }
   },
@@ -299,7 +299,7 @@
     "tags": {
       "framework": "@storybook/react-vite",
       "builder": "vite",
-      "storybook": 8,
+      "major": 8,
       "features": ["a11y", "docs", "test-runner"]
     }
   },
@@ -315,7 +315,7 @@
     "tags": {
       "framework": "@storybook/react-webpack5",
       "builder": "webpack5",
-      "storybook": 9,
+      "major": 9,
       "features": ["docs"]
     }
   },
@@ -331,7 +331,7 @@
     "tags": {
       "framework": "@storybook/nextjs-vite",
       "builder": "vite",
-      "storybook": 10,
+      "major": 10,
       "features": ["a11y", "docs"]
     }
   },
@@ -347,7 +347,7 @@
     "tags": {
       "framework": "@storybook/vue3-vite",
       "builder": "vite",
-      "storybook": 10,
+      "major": 10,
       "features": ["a11y", "docs", "test-runner", "vitest"]
     }
   },
@@ -363,7 +363,7 @@
     "tags": {
       "framework": "@storybook/vue3-vite",
       "builder": "vite",
-      "storybook": 10,
+      "major": 10,
       "features": ["docs", "msw"]
     }
   },
@@ -379,7 +379,7 @@
     "tags": {
       "framework": "@storybook/vue3-vite",
       "builder": "vite",
-      "storybook": 10,
+      "major": 10,
       "features": ["a11y", "docs", "vitest"]
     }
   },
@@ -395,7 +395,7 @@
     "tags": {
       "framework": "@storybook/vue3-vite",
       "builder": "vite",
-      "storybook": 10,
+      "major": 10,
       "features": ["a11y", "docs", "vitest"]
     }
   },
@@ -411,7 +411,7 @@
     "tags": {
       "framework": "@storybook/angular",
       "builder": "webpack5",
-      "storybook": 10,
+      "major": 10,
       "features": ["a11y", "docs"]
     }
   },
@@ -427,7 +427,7 @@
     "tags": {
       "framework": "@storybook/angular",
       "builder": "webpack5",
-      "storybook": 10,
+      "major": 10,
       "features": ["a11y", "docs"]
     }
   },
@@ -443,7 +443,7 @@
     "tags": {
       "framework": "@storybook/angular",
       "builder": "webpack5",
-      "storybook": 10,
+      "major": 10,
       "features": ["a11y", "docs"]
     }
   },
@@ -459,7 +459,7 @@
     "tags": {
       "framework": "@storybook/angular-vite",
       "builder": "vite",
-      "storybook": 10,
+      "major": 10,
       "features": ["a11y", "docs"]
     }
   },
@@ -475,7 +475,7 @@
     "tags": {
       "framework": "@storybook/svelte-vite",
       "builder": "vite",
-      "storybook": 10,
+      "major": 10,
       "features": ["a11y", "docs", "vitest"]
     }
   },
@@ -491,7 +491,7 @@
     "tags": {
       "framework": "@storybook/svelte-vite",
       "builder": "vite",
-      "storybook": 10,
+      "major": 10,
       "features": ["a11y", "docs"]
     }
   },
@@ -507,7 +507,7 @@
     "tags": {
       "framework": "@storybook/svelte-vite",
       "builder": "vite",
-      "storybook": 10,
+      "major": 10,
       "features": ["a11y", "docs"]
     }
   },
@@ -523,7 +523,7 @@
     "tags": {
       "framework": "@storybook/sveltekit",
       "builder": "vite",
-      "storybook": 10,
+      "major": 10,
       "features": ["docs", "msw"]
     }
   },
@@ -539,7 +539,7 @@
     "tags": {
       "framework": "@storybook/web-components-vite",
       "builder": "vite",
-      "storybook": 10,
+      "major": 10,
       "features": ["docs", "vitest"]
     }
   },
@@ -555,7 +555,7 @@
     "tags": {
       "framework": "@storybook/web-components-vite",
       "builder": "vite",
-      "storybook": 10,
+      "major": 10,
       "features": ["docs"]
     }
   },
@@ -571,7 +571,7 @@
     "tags": {
       "framework": "@storybook/html-vite",
       "builder": "vite",
-      "storybook": 10,
+      "major": 10,
       "features": ["a11y", "docs"]
     }
   },
@@ -587,7 +587,7 @@
     "tags": {
       "framework": "@storybook/web-components-vite",
       "builder": "vite",
-      "storybook": 7,
+      "major": 7,
       "features": ["a11y", "docs"]
     }
   },
@@ -603,7 +603,7 @@
     "tags": {
       "framework": "@storybook/react-native-web-vite",
       "builder": "vite",
-      "storybook": 10,
+      "major": 10,
       "features": []
     }
   }

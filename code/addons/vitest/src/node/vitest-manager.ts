@@ -61,14 +61,21 @@ export class VitestManager {
 
   async startVitest({ coverage }: { coverage: boolean }) {
     const { createVitest, version } = await import('vitest/node');
-    this.testNameSeparator = Number.parseInt(version, 10) >= 5 ? ' > ' : ' ';
+    const vitestMajor = Number.parseInt(version, 10);
+    this.testNameSeparator = vitestMajor >= 5 ? ' > ' : ' ';
+
+    // Vitest 5 imports a bare specifier from `@vitest/istanbul-lib-report`. In a pnpm workspace
+    // that file can live in another package, which cannot resolve this addon. An absolute path is
+    // imported directly. `import.meta.resolve` returns a file URL, and `path.isAbsolute` does not
+    // treat that as a file path. Vitest 4 still loads the reporter with `require()`, so it keeps
+    // the package name.
+    const coverageReporterId =
+      vitestMajor >= 5
+        ? fileURLToPath(import.meta.resolve('@storybook/addon-vitest/internal/coverage-reporter'))
+        : '@storybook/addon-vitest/internal/coverage-reporter';
 
     const storybookCoverageReporter: [string, StorybookCoverageReporterOptions] = [
-      // `@vitest/istanbul-lib-report` imports a bare specifier from its own file. In a pnpm
-      // workspace that file can live in another package, which cannot resolve this addon.
-      // An absolute path is imported directly. `import.meta.resolve` returns a file URL, and
-      // `path.isAbsolute` does not treat that as a file path.
-      fileURLToPath(import.meta.resolve('@storybook/addon-vitest/internal/coverage-reporter')),
+      coverageReporterId,
       {
         // A function, not the manager itself: Vitest deep-clones coverage options when coverage
         // is toggled at runtime, and the reporter must reach the live manager.

@@ -3,15 +3,27 @@ import { createHash } from 'node:crypto';
 import { z } from 'zod';
 
 import { SEMVER } from './cycle.ts';
-import { CatalogEntry } from './schema.ts';
+import { CatalogEntry, CheckId } from './schema.ts';
 import { needsGroup, type Window, type WindowPr } from './window.ts';
 
-const Text = z.string().regex(/^\S(?:[^\n\r]*\S)?$/, 'expected one line of text');
-// `plan.` and the slug make a check id, which may have at most 80 characters.
+// GitHub shows neither an HTML comment nor a control character, so either would hide text from
+// the reviewer that the agent still reads.
+const Text = z
+  .string()
+  .regex(/^\S(?:[^\n\r]*\S)?$/, 'expected one line of text')
+  .regex(/^[^\p{Cc}\p{Zl}\p{Zp}]*$/u, 'expected no control character or line separator')
+  .refine((text) => !text.includes('<!--'), 'expected no HTML comment');
+const RepoDir = Text.refine(
+  (dir) => !dir.startsWith('/') && !dir.includes('\\') && !dir.split('/').includes('..'),
+  'expected a relative path inside the repository'
+);
 const Slug = z
   .string()
-  .max(75)
-  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'expected lower case letters, digits, and hyphens');
+  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'expected lower case letters, digits, and hyphens')
+  .refine(
+    (slug) => CheckId.safeParse(planCheckId(slug)).success,
+    'expected a slug short enough for the check id plan.<slug>'
+  );
 const RepoId = CatalogEntry.shape.id;
 const Sha = z.string().regex(/^[0-9a-f]{40}$/, 'expected a full commit SHA');
 const PrNumber = z.int().positive();
@@ -37,13 +49,12 @@ export const PlanEntry = z.strictObject({
 });
 export type PlanEntry = z.infer<typeof PlanEntry>;
 
-// Every field but the id and the reason is a value of one line of `pin.ts` output, as it prints it.
 export const DiscoveredRepo = z.strictObject({
   id: RepoId,
   repo: CatalogEntry.shape.repo,
   commit: Sha,
   packageManager: CatalogEntry.shape.packageManager,
-  storybookDir: Text,
+  storybookDir: RepoDir,
   major: z.int().positive(),
   stars: z.int().min(0),
   pushedAt: z
@@ -93,7 +104,7 @@ const uncode = (cell: string): string => {
 // GitHub links no bare `#36137` in a Markdown file, so every reference carries its URL.
 const githubLink = (kind: 'pull' | 'issues') => (number: number) =>
   `[#${number}](https://github.com/storybookjs/storybook/${kind}/${number})`;
-const prCell = githubLink('pull');
+export const prCell = githubLink('pull');
 const issueLink = githubLink('issues');
 const unPr = (cell: string): number => {
   const number = Number(/^\[#(\d+)\]/.exec(cell)?.[1]);
@@ -380,11 +391,6 @@ type RawEntry = {
   expected?: string;
 };
 
-/**
- * Read a plan file into its model.
- *
- * @throws {PlanSyntaxError} With the line at which the file stops following the format.
- */
 export const parsePlan = (text: string): Plan => {
   const lines = text.replace(/\n$/, '').split('\n');
   let i = 0;
@@ -537,22 +543,35 @@ const decisionRows = ({ plan, at }: RuleInput) =>
 const unknownSlugs = (decision: Decision, slugs: Set<string>): string[] =>
   decision && 'entries' in decision ? decision.entries.filter((slug) => !slugs.has(slug)) : [];
 
-const slugsAreUnique: Rule = ({ plan, at }) => {
-  const seen = (items: { slug: string }[], lineOf: (index: number) => number, what: string) => {
-    const first = new Set<string>();
-    return items.flatMap(({ slug }, index) => {
-      if (first.has(slug)) {
-        return [{ line: lineOf(index), message: `${what} \`${slug}\` is used twice` }];
-      }
-      first.add(slug);
-      return [];
-    });
-  };
-  return [
-    ...seen(plan.entries, (index) => at.entries[index]!.heading, 'the slug'),
-    ...seen(plan.groups, (index) => at.tables.groups.rows[index]!, 'the group'),
-  ];
-};
+const duplicates = <Key>(keys: Key[], lines: number[], message: (key: Key) => string): Problem[] =>
+  keys.flatMap((key, index) =>
+    keys.indexOf(key) < index ? [{ line: lines[index]!, message: message(key) }] : []
+  );
+
+const WINDOW_TABLES = ['needed', 'undeclared', 'maintainerSkips', 'verified', 'skipped'] as const;
+
+const namesAreUnique: Rule = ({ plan, at }) => [
+  ...duplicates(
+    plan.entries.map((entry) => entry.slug),
+    at.entries.map((entry) => entry.heading),
+    (slug) => `the slug \`${slug}\` is used twice`
+  ),
+  ...duplicates(
+    plan.groups.map((group) => group.slug),
+    at.tables.groups.rows,
+    (slug) => `the group \`${slug}\` is used twice`
+  ),
+  ...duplicates(
+    plan.discovered.map((repo) => repo.id),
+    at.tables.discovered.rows,
+    (id) => `the id \`${id}\` is used twice`
+  ),
+  ...duplicates(
+    WINDOW_TABLES.flatMap((key) => plan[key].map((row) => row.pr)),
+    WINDOW_TABLES.flatMap((key) => at.tables[key].rows),
+    (pr) => `#${pr} has a row already`
+  ),
+];
 
 const versionIsOnLine: Rule = ({ plan, at }) => {
   const [, major, minor] = SEMVER.exec(plan.version)!;
@@ -560,18 +579,6 @@ const versionIsOnLine: Rule = ({ plan, at }) => {
     ? []
     : [{ line: at.meta.version, message: `version ${plan.version} is not on line ${plan.line}` }];
 };
-
-const discoveredIdsAreUnique: Rule = ({ plan, at }) =>
-  plan.discovered.flatMap((repo, index) =>
-    plan.discovered.findIndex((other) => other.id === repo.id) < index
-      ? [
-          {
-            line: at.tables.discovered.rows[index]!,
-            message: `the id \`${repo.id}\` is used twice`,
-          },
-        ]
-      : []
-  );
 
 const entryRepos = ({ plan, at }: RuleInput) =>
   plan.entries.flatMap((entry, index) =>
@@ -606,7 +613,7 @@ const reposAreCurrent: Rule = (input) => {
   const { plan, catalog } = input;
   const oldest = Number(plan.line.split('.')[0]) - 1;
   const majors = new Map<string, number | undefined>([
-    ...catalog.map((entry) => [entry.id, entry.tags?.storybook] as const),
+    ...catalog.map((entry) => [entry.id, entry.tags?.major] as const),
     ...plan.discovered.map((repo) => [repo.id, repo.major] as const),
   ]);
   return entryRepos(input).flatMap(({ id, line }) => {
@@ -648,23 +655,30 @@ const entryPrsHaveRows: Rule = (input) => {
 };
 
 const rowsAreDecided: Rule = (input) => {
-  const slugs = new Set(input.plan.entries.map((entry) => entry.slug));
-  return decisionRows(input).flatMap(({ row, line }) =>
-    row.decision === null
-      ? [{ line, message: `#${row.pr} has no decision` }]
-      : unknownSlugs(row.decision, slugs).map((slug) => ({
-          line,
-          message: `#${row.pr} names \`${slug}\`, which is no entry of this plan`,
-        }))
-  );
+  const entries = new Map(input.plan.entries.map((entry) => [entry.slug, entry]));
+  return decisionRows(input).flatMap(({ row, line }) => {
+    if (row.decision === null) {
+      return [{ line, message: `#${row.pr} has no decision` }];
+    }
+    return ('entries' in row.decision ? row.decision.entries : []).flatMap((slug) => {
+      const entry = entries.get(slug);
+      if (!entry) {
+        return [{ line, message: `#${row.pr} names \`${slug}\`, which is no entry of this plan` }];
+      }
+      return entry.prs.includes(row.pr)
+        ? []
+        : [{ line, message: `#${row.pr} names \`${slug}\`, whose PRs do not list it` }];
+    });
+  });
 };
 
 const batchesHaveNoGap: Rule = ({ plan, at }) => {
-  const batches = new Set(plan.entries.map((entry) => entry.batch));
-  const missing = planBatches(plan).find((batch) => !batches.has(batch));
-  if (missing === undefined) {
+  const batches = [...new Set(plan.entries.map((entry) => entry.batch))].sort((a, b) => a - b);
+  const gap = batches.findIndex((batch, index) => batch !== index + 1);
+  if (gap === -1) {
     return [];
   }
+  const missing = gap + 1;
   const index = plan.entries.findIndex((entry) => entry.batch > missing);
   return [{ line: at.entries[index]!.batch, message: `batch ${missing} has no entry` }];
 };
@@ -694,7 +708,7 @@ const groupsAreDecided: Rule = ({ plan, at }) => {
   ];
 };
 
-const PRIVATE_LINK = /\b(?:linear\.app|notion\.so|notion\.site|(?:[\w-]+\.)*slack\.com)\b/i;
+const PRIVATE_LINK = /\b(?:linear\.app|notion\.(?:so|site|com)|(?:[\w-]+\.)*slack\.com)\b/i;
 
 const noPrivateLinks: Rule = ({ lines }) =>
   lines.flatMap((text, index) =>
@@ -703,22 +717,41 @@ const noPrivateLinks: Rule = ({ lines }) =>
       : []
   );
 
-const URL_HOST = /\b[a-z][\w+.-]*:\/\/(?:[^\s/@]*@)?([^\s/:?#`'")<>\]]+)/gi;
+// Without a scheme, a top-level domain is what tells a host such as example.com from a file name
+// such as README.md or a directory such as ui.kit, so a domain that is also a file extension of a
+// project (md, sh) is not on the list.
+const HOST_TLDS = [
+  ...['com', 'net', 'org', 'edu', 'gov', 'io', 'dev', 'app', 'ai', 'co', 'me', 'info', 'biz'],
+  ...['xyz', 'site', 'online', 'page', 'link', 'cloud', 'tech', 'ly', 'to', 'gg', 'tv', 'fm'],
+  ...['us', 'uk', 'de', 'fr', 'eu', 'nl', 'ru', 'cn', 'jp', 'ch', 'se', 'es', 'it', 'be', 'at'],
+  ...['ca', 'au', 'br'],
+];
 
-const stepsStayOnLocalhost: Rule = ({ plan, at }) =>
+const HOST = String.raw`(?:[^\s/\\@]*@)?([^\s/\\:?#\x60'",;)<>\]]+)`;
+const OFF_HOST = new RegExp(
+  [
+    String.raw`\b(?:https?|wss?|ftp):[\\/]*${HOST}`,
+    String.raw`\b[a-z][\w+.-]*:\/\/${HOST}`,
+    String.raw`(?<![\w:\\/])\/\/${HOST}`,
+    String.raw`(?<![\w.\\/-])((?:[a-z0-9-]+\.)+(?:${HOST_TLDS.join('|')})|\d{1,3}(?:\.\d{1,3}){3})(?![\w-]|\.\w)`,
+  ].join('|'),
+  'gi'
+);
+
+const textStaysOnLocalhost: Rule = ({ plan, at }) =>
   plan.entries.flatMap((entry, index) => {
     const layout = at.entries[index]!;
     return [
+      { text: entry.title, line: layout.heading },
+      ...entry.repos.map((repo, n) => ({ text: repo.reason, line: layout.repos[n]! })),
       ...entry.steps.map((text, step) => ({ text, line: layout.steps[step]! })),
       { text: entry.expected, line: layout.expected },
     ].flatMap(({ text, line }) =>
-      [...text.matchAll(URL_HOST)]
-        .filter((match) => match[1]!.toLowerCase() !== 'localhost')
+      [...text.matchAll(OFF_HOST)]
+        .filter((match) => match.slice(1).find(Boolean)!.toLowerCase() !== 'localhost')
         .map((match) => ({ line, message: `${match[0]} is a URL other than localhost` }))
     );
   });
-
-const WINDOW_TABLES = ['needed', 'undeclared', 'maintainerSkips', 'verified', 'skipped'] as const;
 
 const matchesWindow: Rule = ({ plan, at, window }) => {
   if (!window) {
@@ -743,7 +776,12 @@ const matchesWindow: Rule = ({ plan, at, window }) => {
         }
         return other.title === row.title && other.area === row.area
           ? []
-          : [{ line, message: `#${row.pr} has the area and title "${other.title}" in the window` }];
+          : [
+              {
+                line,
+                message: `#${row.pr} has the area "${other.area ?? ''}" and the title "${other.title}" in the window`,
+              },
+            ];
       }),
       ...[...want.keys()]
         .filter((pr) => !have.has(pr))
@@ -757,9 +795,8 @@ const matchesWindow: Rule = ({ plan, at, window }) => {
 };
 
 const RULES: Rule[] = [
-  slugsAreUnique,
+  namesAreUnique,
   versionIsOnLine,
-  discoveredIdsAreUnique,
   reposAreKnown,
   reposAreCurrent,
   entryPrsHaveRows,
@@ -767,7 +804,7 @@ const RULES: Rule[] = [
   batchesHaveNoGap,
   groupsAreDecided,
   noPrivateLinks,
-  stepsStayOnLocalhost,
+  textStaysOnLocalhost,
   matchesWindow,
 ];
 
@@ -778,7 +815,6 @@ export const checkPlan = (plan: Plan, context: CheckContext): Problem[] => {
   );
 };
 
-// A valid file equals its rendered form, so nothing the parser skipped can stay in it.
 export const checkPlanText = (
   text: string,
   context: CheckContext
@@ -818,17 +854,28 @@ export const discoveredEntries = (plan: Plan): CatalogEntry[] =>
     windows: false,
   }));
 
-export const planHash = (text: string): string =>
-  createHash('sha256').update(text).digest('hex').slice(0, 12);
+export const planHash = (content: string | Uint8Array): string =>
+  createHash('sha256').update(content).digest('hex').slice(0, 12);
 
 export const planCheckId = (slug: string): string => `plan.${slug}`;
+
+export const renderPlanChecks = (entries: PlanEntry[], repo: string): string =>
+  entries
+    .map((entry) => {
+      const { reason } = entry.repos.find(({ id }) => id === repo)!;
+      return [
+        `- \`${planCheckId(entry.slug)}\` (plan): ${entry.title}. Why this repo: ${reason}.`,
+        ...entry.steps.map((step, index) => `  ${index + 1}. ${step}`),
+        `  Expected: ${entry.expected}`,
+      ].join('\n');
+    })
+    .join('\n');
 
 export const planBatches = (plan: Plan): number[] =>
   Array.from({ length: Math.max(0, ...plan.entries.map((entry) => entry.batch)) }, (_, i) => i + 1);
 
 export type PlanRun = { repo: string; part: number; entries: string[] };
 
-// The parts of one repo run in parallel jobs, each upgrading the repo once for its entries.
 export const planRuns = (plan: Plan, batch: number): PlanRun[] => {
   const slugsOfRepo = new Map<string, string[]>();
   for (const entry of plan.entries.filter((candidate) => candidate.batch === batch)) {
@@ -858,10 +905,8 @@ export type PlanDraft = z.infer<typeof PlanDraft>;
 
 export const ENTRIES_PER_RUN = 4;
 
-// The most expensive of 32 static runs on Haiku at low effort. A run of plan entries may cost more.
 export const USD_PER_RUN = 2.59;
 
-// An issue with sub-issues and a QA heading tracks a project, and its PRs share its instructions.
 const trackingIssueOf = (pr: WindowPr) =>
   pr.issues
     .map((issue) =>
@@ -869,11 +914,6 @@ const trackingIssueOf = (pr: WindowPr) =>
     )
     .find((issue) => issue !== null);
 
-/**
- * Build the plan of a window, with the entries and decisions of a draft.
- *
- * @throws {Error} When the draft decides a PR that the window does not hold in that role.
- */
 export const planFromWindow = (window: Window, draft: PlanDraft): Plan => {
   const version = window.to.replace(/^v/, '');
   const [, major, minor] = SEMVER.exec(version) ?? [];

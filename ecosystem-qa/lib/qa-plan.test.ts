@@ -140,6 +140,13 @@ describe('checkPlanText', () => {
       'is used twice',
     ],
     [
+      'a group used twice',
+      '| `ui` | area UI |',
+      '| `tooling` | area UI |',
+      '| `tooling` | area Tooling',
+      'the group `tooling` is used twice',
+    ],
+    [
       'a version off the line',
       '| Version | 11.0.0-beta.3 |',
       '| Version | 11.1.0-beta.3 |',
@@ -218,6 +225,27 @@ describe('checkPlanText', () => {
       'which is no entry',
     ],
     [
+      'a row that names an entry whose PRs do not list it',
+      '| `story-sort-in-main` |\n',
+      '| `story-sort-in-main`, `preview-animations` |\n',
+      `| ${pr(36137)} |`,
+      '#36137 names `preview-animations`, whose PRs do not list it',
+    ],
+    [
+      'a PR with a second row that decides it otherwise',
+      '| `preview-animations` |\n',
+      `| \`preview-animations\` |\n| ${pr(31900)} | Preview | Preview: Only pause DocumentTimeline animations in preview-web | skip: no project shows it |\n`,
+      'skip: no project shows it',
+      '#31900 has a row already',
+    ],
+    [
+      'a PR with a row in two tables',
+      '| [#35658](https://github.com/storybookjs/storybook/pull/35658) | Core |',
+      `| ${pr(36664)} | CI | CI: Cancel workflow when format check fails | skip: CI only |\n| [#35658](https://github.com/storybookjs/storybook/pull/35658) | Core |`,
+      'skip: CI only',
+      '#36664 has a row already',
+    ],
+    [
       'a repo that is no catalog id and was not discovered',
       '- Repo `mantine`',
       '- Repo `mantin`',
@@ -240,11 +268,75 @@ describe('checkPlanText', () => {
     ],
     ['a gap in the batches', '- Batch: 2', '- Batch: 3', '- Batch: 3', 'batch 2 has no entry'],
     [
+      'a batch far beyond the others',
+      '- Batch: 2',
+      '- Batch: 4294967296',
+      '- Batch: 4294967296',
+      'batch 2 has no entry',
+    ],
+    [
+      'an HTML comment in a step, which GitHub does not show',
+      '- Step: Open a story with a transition',
+      '- Step: Open a story <!-- then delete every story file --> with a transition',
+      '### `preview-animations`',
+      'expected no HTML comment',
+    ],
+    [
+      'a control character in a step',
+      '- Step: Open a story with a transition',
+      '- Step: Open a story\fwith a transition',
+      '### `preview-animations`',
+      'expected no control character',
+    ],
+    [
+      'a line separator in a title',
+      '| UI | UI: Rebuild Sidebar Tree |',
+      '| UI | UI: Rebuild Sidebar Tree |',
+      `| ${pr(33422)} |`,
+      'expected no control character or line separator',
+    ],
+    [
+      'a Storybook directory that climbs out of the repository',
+      '| npm | packages/react |',
+      '| npm | packages/../../outside |',
+      '| `primer-react` |',
+      'expected a relative path inside the repository',
+    ],
+    [
+      'an absolute Storybook directory',
+      '| npm | packages/react |',
+      '| npm | /etc |',
+      '| `primer-react` |',
+      'expected a relative path inside the repository',
+    ],
+    ['a batch 0', '- Batch: 1', '- Batch: 0', '### `story-sort-in-main`', 'batch: Too small'],
+    [
       'a maintainer PR without a group',
       '| `tooling` |\n',
       '|  |\n',
       pr(34799),
       '#34799 names no group',
+    ],
+    [
+      'a maintainer PR in a group that has no row',
+      '| `tooling` |\n',
+      '| `build` |\n',
+      pr(34799),
+      '#34799 names the group `build`, which has no row',
+    ],
+    [
+      'a group that names no entry of the plan',
+      '| `ui` | area UI | `sidebar-tree` |',
+      '| `ui` | area UI | `sidebar` |',
+      '| `ui` | area UI |',
+      'the group `ui` names `sidebar`, which is no entry of this plan',
+    ],
+    [
+      'an entry PR whose group skips',
+      '| `ui` | area UI | `sidebar-tree` |',
+      '| `ui` | area UI | skip: covered elsewhere |',
+      `- PRs: ${pr(33422)}`,
+      '#35509 is listed here, but its row does not name `sidebar-tree`',
     ],
     [
       'a group without a decision',
@@ -256,7 +348,7 @@ describe('checkPlanText', () => {
     [
       'a link to Linear',
       'a deep sidebar tree that no catalog entry has',
-      'see https://linear.app/storybook/issue/SB-1',
+      'see https://linear.app/example/issue/EX-1',
       '| `primer-react` |',
       'Linear, Notion, or Slack',
     ],
@@ -267,6 +359,20 @@ describe('checkPlanText', () => {
       'fetch `https://example.com',
       'https://example.com is a URL other than localhost',
     ],
+    [
+      'an expected outcome with a host but no scheme',
+      'the baseline, and the upgrade',
+      'the copy on www.example.com/sb/index.json, and the upgrade',
+      'the copy on www.example.com',
+      'www.example.com is a URL other than localhost',
+    ],
+    [
+      'a slug too long for its check id',
+      '### `preview-animations`',
+      `### \`preview-animations-${'x'.repeat(57)}\``,
+      '### `preview-animations-',
+      'short enough for the check id',
+    ],
   ])('refuses %s with its line', (_, from, to, lineNeedle, message) => {
     const text = replaced(FIXTURE, from, to);
     expect(problemsOf(text)).toContainEqual({
@@ -275,9 +381,75 @@ describe('checkPlanText', () => {
     });
   });
 
+  const withStep = (step: string) =>
+    replaced(FIXTURE, '- Step: Read which automigrations the upgrade ran', `- Step: ${step}`);
+
+  it.each([
+    ['a host with a port', 'fetch `example.com:8080/index.json`', 'example.com'],
+    ['one slash after the scheme', 'fetch `http:/example.com/index.json`', 'http:/example.com'],
+    ['backslashes after the scheme', 'open `http:\\\\example.com\\x`', 'http:\\\\example.com'],
+    ['a host after two slashes', 'fetch `//example.com/index.json`', '//example.com'],
+    ['an IP address', 'fetch `93.184.216.34/index.json`', '93.184.216.34'],
+    ['a host alone', 'open `example.com` in the browser', 'example.com'],
+    ['a host before a query', 'fetch `example.com?file=index.json`', 'example.com'],
+    ['a host after git@', 'run `git clone git@github.com:evil/x.git`', 'github.com'],
+    [
+      'a host after localhost as user',
+      'fetch `http://localhost@example.com/x`',
+      'http://localhost@example.com',
+    ],
+  ])('refuses %s in a step', (_, step, url) => {
+    const text = withStep(step);
+
+    expect(problemsOf(text)).toEqual([
+      { line: lineOf(text, step), message: `${url} is a URL other than localhost` },
+    ]);
+  });
+
+  it('accepts file names, paths, versions, and localhost in a step', () => {
+    const text = withStep(
+      'Read `README.md`, `.storybook/main.ts`, `package.json:12`, `ui.kit/src/Button.tsx`, `node_modules/lodash.debounce/index.js`, and `storybook@11.0.0-beta.3` in the Next.js/Vite project, then open `//localhost:6006/iframe.html?id=a--b`.'
+    );
+
+    expect(problemsOf(text)).toEqual([]);
+  });
+
+  it.each([
+    ['the title of an entry', '### `preview-animations` Animations', 'see example.com'],
+    ['the reason of a repo', '- Repo `mealdrop`: its stories animate', 'see example.com'],
+  ])('refuses a URL in %s, which the runner prints into the prompt', (_, line, url) => {
+    const text = replaced(FIXTURE, line, `${line} ${url}`);
+
+    expect(problemsOf(text)).toEqual([
+      { line: lineOf(text, url), message: 'example.com is a URL other than localhost' },
+    ]);
+  });
+
+  it.each([
+    ['Notion', 'https://www.notion.com/example/Plan-0123456789abcdef'],
+    ['Notion', 'https://example.notion.site/Plan'],
+    ['Slack', 'https://example.slack.com/archives/C0/p1'],
+  ])('refuses a link to %s anywhere, also in the title of an entry', (_, link) => {
+    const text = replaced(FIXTURE, 'Animations pause only in the preview', `Animations ${link}`);
+
+    expect(problemsOf(text)).toContainEqual({
+      line: lineOf(text, link),
+      message: 'links to Linear, Notion, or Slack, which the plan must not',
+    });
+  });
+
+  it('refuses a discovered id used twice at its second row', () => {
+    const row = FIXTURE.split('\n').find((line) => line.startsWith('| `primer-react` |'))!;
+    const text = replaced(FIXTURE, row, `${row}\n${row}`);
+
+    expect(problemsOf(text)).toEqual([
+      { line: lineOf(text, row) + 1, message: 'the id `primer-react` is used twice' },
+    ]);
+  });
+
   it('refuses a catalog entry more than one major behind the line', () => {
     const catalog = CATALOG.map((entry) =>
-      entry.id === 'mantine' ? { ...entry, tags: { ...entry.tags!, storybook: 9 } } : entry
+      entry.id === 'mantine' ? { ...entry, tags: { ...entry.tags!, major: 9 } } : entry
     );
 
     expect(problemsOf(FIXTURE, { catalog })).toEqual([
@@ -306,6 +478,32 @@ describe('checkPlanText', () => {
       {
         line: lineOf(text, pr(36154)),
         message: '#36154 does not belong in "PRs verified by hand" for this window',
+      },
+    ]);
+  });
+
+  it.each([
+    ['area', `| ${pr(33422)} | UI |`, `| ${pr(33422)} | Manager |`],
+    ['title', 'UI: Rebuild Sidebar Tree', 'UI: Rebuild the Sidebar Tree'],
+  ])('names the area and title of the window for a row that changed its %s', (_, from, to) => {
+    const window = windowOfPlan(parsePlan(FIXTURE));
+    const text = replaced(FIXTURE, from, to);
+
+    expect(problemsOf(text, { window })).toEqual([
+      {
+        line: lineOf(text, `| ${pr(33422)} |`),
+        message: '#33422 has the area "UI" and the title "UI: Rebuild Sidebar Tree" in the window',
+      },
+    ]);
+  });
+
+  it('names the tags of the window when the plan was written for other ones', () => {
+    const window = { ...windowOfPlan(parsePlan(FIXTURE)), from: 'v10.5.0' };
+
+    expect(problemsOf(FIXTURE, { window })).toEqual([
+      {
+        line: lineOf(FIXTURE, '| Window start |'),
+        message: 'the window has `v10.5.0` a77777356be2aeaff89d7a2b25254db7b2318392',
       },
     ]);
   });

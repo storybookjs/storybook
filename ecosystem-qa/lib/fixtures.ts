@@ -24,7 +24,6 @@ export const ENTRY: CatalogEntry = {
   windows: true,
 };
 
-// A repo that a plan discovered: upstream, pinned at a commit, with no fork to push to.
 export const DISCOVERED: CatalogEntry = {
   id: 'vue-dsfr',
   repo: 'dnum-mi/vue-dsfr',

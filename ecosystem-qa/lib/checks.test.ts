@@ -111,7 +111,24 @@ describe('check registry', () => {
     expect(extended.length).toBeGreaterThan(must.length);
   });
 
-  it.each(['must', 'extended'] as const)('lists the %s tier by phase', (tier) => {
+  it('runs the gate in every must run', () => {
+    expect(checksFor('must')).toEqual(expect.arrayContaining(checksFor('gate')));
+  });
+
+  it.each(['upgrade.md', 'plan-checks.md'])(
+    'has in the gate every check id that prompts/%s names outside the checklist',
+    (file) => {
+      const prompt = readFileSync(new URL(`../prompts/${file}`, import.meta.url), 'utf8');
+      const gate = new Set<string>(checksFor('gate').map((check) => check.id));
+      expect(backticked(prompt).filter((id) => isCheckId(id) && !gate.has(id))).toEqual([]);
+    }
+  );
+
+  it('leaves the prefix plan. to the checks of a QA plan', () => {
+    expect(CHECK_IDS.filter((id) => id.startsWith('plan.'))).toEqual([]);
+  });
+
+  it.each(['gate', 'must', 'extended'] as const)('lists the %s tier by phase', (tier) => {
     const order = ['upgrade', 'dev', 'build', 'test'];
     const phases = checksFor(tier).map((check) => order.indexOf(check.phase));
     expect(phases).toEqual(phases.toSorted((a, b) => a - b));

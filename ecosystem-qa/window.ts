@@ -1,7 +1,8 @@
 import { execFileSync, spawnSync } from 'node:child_process';
-import { writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
 
+import { dirname } from 'pathe';
 import { z } from 'zod';
 
 import { ghParse } from './lib/github.ts';
@@ -12,6 +13,7 @@ import {
   needsGroup,
   PullNode,
   QaStatus,
+  readMergedPulls,
   Window,
   windowCutoff,
   windowPr,
@@ -19,10 +21,12 @@ import {
 
 const HELP = `Usage: node ecosystem-qa/window.ts --from <tag> --to <tag> --out <file>
 
-Writes every PR merged into next between two tags to --out as JSON, sorted by number: its QA status,
-its area, its manual testing section, who wrote it as GitHub's author association, and the issues
-it closes or names in its body, each with its parent issue, its number of sub-issues, and whether it
-has a heading for QA or testing. Prints the count of each status. Reads git and GitHub only.`;
+Writes every PR whose merge commit is between two tags, whatever branch it was merged into, to --out
+as JSON, sorted by number, and leaves out the release PRs. For each PR: its QA status, its area,
+its manual testing section, who wrote it as GitHub's author association, and the issues it closes
+or names in its body, each with its parent issue, its number of sub-issues, and whether it has a
+heading for QA or testing. Prints the count of each status. Reads GitHub, and fetches a tag that
+the local repository lacks.`;
 
 const { values } = parseArgs({
   options: {
@@ -62,10 +66,10 @@ const cutoff = windowCutoff(git('log', '-1', '--format=%cI', fromSha));
 
 const PULLS_QUERY = `query($cursor: String) {
   repository(owner: "storybookjs", name: "storybook") {
-    pullRequests(states: MERGED, baseRefName: "next", first: 100, after: $cursor, orderBy: { field: UPDATED_AT, direction: DESC }) {
+    pullRequests(states: MERGED, first: 100, after: $cursor, orderBy: { field: UPDATED_AT, direction: DESC }) {
       pageInfo { hasNextPage endCursor }
       nodes {
-        number title body updatedAt mergedAt authorAssociation
+        number title body updatedAt mergedAt authorAssociation baseRefName
         mergeCommit { oid }
         labels(first: 50) { nodes { name } }
         closingIssuesReferences(first: 25) { nodes { number repository { nameWithOwner } } }
@@ -94,21 +98,7 @@ const readPage = (cursor: string | null) =>
     ...(cursor ? ['-f', `cursor=${cursor}`] : []),
   ]).data.repository.pullRequests;
 
-const pulls: PullNode[] = [];
-for (let cursor: string | null = null; ;) {
-  const page = readPage(cursor);
-  pulls.push(...page.nodes);
-  // Every update comes after the merge, so past the cutoff no PR of the window is left.
-  const oldest = page.nodes.at(-1)?.updatedAt;
-  if (!page.pageInfo.hasNextPage || !oldest || Date.parse(oldest) < Date.parse(cutoff)) {
-    break;
-  }
-  cursor = page.pageInfo.endCursor;
-}
-// A PR updated while the pages are read moves up the list and shifts the next page by one.
-const inRange = [...new Map(pulls.map((pr) => [pr.number, pr])).values()].filter((pr) =>
-  inWindow(pr, commits, cutoff)
-);
+const inRange = readMergedPulls(readPage, cutoff).filter((pr) => inWindow(pr, commits, cutoff));
 
 const ISSUE_FIELDS = 'number title body subIssues { totalCount }';
 const ISSUES_PER_QUERY = 100;
@@ -120,9 +110,8 @@ const NotFoundOnly = z.object({
   errors: z.array(z.object({ type: z.literal('NOT_FOUND'), message: z.string() })),
 });
 
-// A number in a body can name nothing. GitHub then answers that alias with null and an error, and gh
-// exits 1 and prints the error's message on stderr, which is noise here. Any other line of stderr,
-// the GH_DEBUG trace included, still reaches the terminal.
+// GitHub answers an alias whose number names nothing with null and a NOT_FOUND error, and gh then
+// exits 1 and prints the messages on stderr, the first one after `gh: `.
 const askIssues = (args: string[]): unknown => {
   const { status, stdout, stderr, error } = spawnSync('gh', args, {
     encoding: 'utf8',
@@ -185,6 +174,7 @@ const window = Window.parse({
   toSha,
   prs: inRange.map((pr) => windowPr(pr, issues)).sort((a, b) => a.number - b.number),
 });
+mkdirSync(dirname(out), { recursive: true });
 writeFileSync(out, `${JSON.stringify(window, null, 2)}\n`);
 
 const counts = QaStatus.options.map(

@@ -2,9 +2,16 @@ import { once } from 'node:events';
 import { createServer, request, type IncomingMessage, type ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
 
-import { afterEach, describe, expect, it } from 'vitest';
+import { claudeCode } from '@ai-hero/sandcastle';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { PLACEHOLDER_KEY, sandboxAddresses, startKeyProxy } from './key-proxy.ts';
+import {
+  credentialFor,
+  PLACEHOLDER_KEY,
+  proxyTheKey,
+  sandboxAddresses,
+  startKeyProxy,
+} from './key-proxy.ts';
 import { redactSecrets } from './redact.ts';
 
 const REAL_KEY = 'sk-ant-real-key-0123456789';
@@ -172,6 +179,21 @@ describe('startKeyProxy', () => {
     await closed;
   });
 
+  it('logs a caller that goes away before the answer as such, not as a provider failure', async () => {
+    const provider = await standIn((req) => req.resume());
+    const { url, log } = await proxyTo(provider.origin);
+
+    const caller = request(`${url}/v1/messages`, { method: 'POST' });
+    caller.on('error', () => {});
+    caller.write('{"model":');
+    await vi.waitFor(() => expect(provider.seen).toHaveLength(1));
+    caller.destroy();
+
+    await vi.waitFor(() =>
+      expect(log).toEqual(['Key proxy: POST /v1/messages closed by the caller'])
+    );
+  });
+
   it('breaks off the answer to the caller when the provider breaks off its own', async () => {
     const provider = await standIn((req, res) => {
       req.resume();
@@ -217,6 +239,101 @@ describe('startKeyProxy against a hostile caller', () => {
 
     expect((await answerOf(url, 'POST', 'http://[')).status).toBe(404);
     expect((await answerOf(`${url}/v1/messages`)).status).toBe(200);
+  });
+});
+
+describe('credentialFor', () => {
+  const proxyPath = { engine: 'claude', os: 'linux', sandbox: 'docker' } as const;
+
+  it('takes the key out of the environment on the proxy path, as it reads it', () => {
+    const env = { ANTHROPIC_API_KEY: REAL_KEY, PATH: '/usr/bin' };
+
+    expect(credentialFor(proxyPath, env)).toEqual({
+      name: 'ANTHROPIC_API_KEY',
+      value: REAL_KEY,
+      proxied: true,
+    });
+    expect(env).toEqual({ PATH: '/usr/bin' });
+  });
+
+  it.each([
+    ['macOS', { ...proxyPath, os: 'macos' }, 'ANTHROPIC_API_KEY'],
+    ['bwrap', { ...proxyPath, sandbox: 'bwrap' }, 'ANTHROPIC_API_KEY'],
+    ['the subscription token', proxyPath, 'CLAUDE_CODE_OAUTH_TOKEN'],
+    ['Codex', { ...proxyPath, engine: 'codex' }, 'CODEX_API_KEY'],
+  ] as const)(
+    'leaves the key in the environment for %s, which runs without the proxy',
+    (_, request, name) => {
+      const env = { [name]: REAL_KEY };
+
+      expect(credentialFor(request, env)).toEqual({ name, value: REAL_KEY, proxied: false });
+      expect(env).toEqual({ [name]: REAL_KEY });
+    }
+  );
+
+  it('names the variables it looked for when none is set', () => {
+    expect(credentialFor(proxyPath, { CODEX_API_KEY: REAL_KEY })).toBe(
+      'None of ANTHROPIC_API_KEY, CLAUDE_CODE_OAUTH_TOKEN is set.'
+    );
+  });
+});
+
+describe('proxyTheKey', () => {
+  const proxied = async (upstreamOrigin: string, host = '127.0.0.1') => {
+    const proxy = await proxyTheKey(REAL_KEY, {
+      host,
+      callerAddress: '127.0.0.1',
+      upstreamOrigin,
+      log: () => {},
+    });
+    closers.push(proxy.close);
+    return proxy;
+  };
+
+  it('hands the agent the proxy and a placeholder, and sends the real key to the provider', async () => {
+    const provider = await standIn((req, res) => {
+      req.resume();
+      res.end();
+    });
+
+    const { agentEnv } = await proxied(provider.origin);
+
+    expect(agentEnv).toEqual({
+      ANTHROPIC_BASE_URL: expect.stringMatching(/^http:\/\/127\.0\.0\.1:\d+$/),
+      ANTHROPIC_API_KEY: PLACEHOLDER_KEY,
+    });
+    expect((await answerOf(`${agentEnv.ANTHROPIC_BASE_URL}/v1/messages`)).status).toBe(200);
+    expect(provider.seen[0]!.headers['x-api-key']).toBe(REAL_KEY);
+  });
+
+  it('stops answering once closed', async () => {
+    const provider = await standIn((req, res) => {
+      req.resume();
+      res.end();
+    });
+    const proxy = await proxied(provider.origin);
+    await answerOf(`${proxy.agentEnv.ANTHROPIC_BASE_URL}/v1/messages`);
+
+    proxy.close();
+
+    await expect(answerOf(`${proxy.agentEnv.ANTHROPIC_BASE_URL}/v1/messages`)).rejects.toThrow();
+  });
+
+  it('finds the key in the variables Sandcastle exports for the agent, where it went before the proxy', async () => {
+    const proxy = await proxied('http://127.0.0.1:9');
+    const clean = 'HOME=/home/agent\nCI=false\n';
+
+    expect(proxy.reaches(clean, claudeCode('m', { env: { ANTHROPIC_API_KEY: REAL_KEY } }))).toBe(
+      true
+    );
+    expect(proxy.reaches(`ANTHROPIC_API_KEY=${REAL_KEY}\n`, claudeCode('m', {}))).toBe(true);
+    expect(proxy.reaches(clean, claudeCode('m', { env: proxy.agentEnv }))).toBe(false);
+  });
+
+  it('names a Docker daemon in a VM when the gateway is not an address of this machine', async () => {
+    await expect(proxied('http://127.0.0.1:9', '192.0.2.1')).rejects.toThrow(
+      'The Docker daemon runs in a VM'
+    );
   });
 });
 

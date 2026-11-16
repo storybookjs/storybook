@@ -25,6 +25,7 @@ import {
   type IssueHit,
   type QaIssue,
 } from './proposals.ts';
+import { parsePlan } from './qa-plan.ts';
 
 const OPTIONS = { runUrl: RUN_URL };
 const issueFor = (group: FindingGroup | undefined) =>
@@ -631,5 +632,34 @@ describe('renderIssueBody', () => {
 
     expect(body).toContain(`- ${VERSION}: linux, claude (claude-sonnet-5-5), sandbox docker`);
     expect(body).toContain(`- ${VERSION}: windows, codex (gpt-5.4), sandbox none`);
+  });
+});
+
+describe('the plan entry of an issue', () => {
+  const plan = parsePlan(readFileSync(new URL('./plan.fixture.md', import.meta.url), 'utf8'));
+  const bodyOf = (checkId: string) => {
+    const run = loaded('linux', 'claude', [finding({ checkId })]);
+    run.result.request.plan = {
+      file: 'plan.fixture.md',
+      hash: '0123456789ab',
+      batch: 1,
+      part: 1,
+      entries: [{ id: 'story-sort-in-main', prs: [1] }],
+    };
+    const [group] = groupFindings([run]);
+    return renderIssueBody(asIssue(toProposal(single(group), [], { ...OPTIONS, plan })), byName);
+  };
+
+  it('names the entry and links its PRs as the plan file has them, not as the record does', () => {
+    const body = bodyOf('plan.story-sort-in-main');
+
+    expect(body).toContain(
+      'Plan entry `story-sort-in-main`, Story sort moves from the preview file to the main file: [#36137](https://github.com/storybookjs/storybook/pull/36137)\n\n<!-- sb-qa-metadata -->'
+    );
+    expect(body).not.toContain('pull/1)');
+  });
+
+  it('gives a static finding no entry line', () => {
+    expect(bodyOf('upgrade.command')).not.toContain('Plan entry');
   });
 });

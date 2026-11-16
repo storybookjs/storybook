@@ -6,6 +6,8 @@ import { join } from 'pathe';
 import { loadEntries } from './catalog.ts';
 import { cycleRef, versionLine } from './cycle.ts';
 import { fingerprint } from './fingerprint.ts';
+import type { PlanScope } from './plan-scope.ts';
+import { planCheckId, prCell, type Plan } from './qa-plan.ts';
 import { loadResults, type LoadedResult } from './results.ts';
 import { redactSecrets } from './redact.ts';
 import { sanitizeFinding, sanitizeTitle } from './sanitize.ts';
@@ -129,14 +131,15 @@ export const groupFindings = (results: LoadedResult[]): FindingGroup[] => {
   return [...groups.values()];
 };
 
-// Load the results of the catalog's runs of `version` under `resultsDir` and merge their findings by fingerprint.
 export const loadFindingGroups = (
   resultsDir: string,
-  version: string
+  version: string,
+  plan?: PlanScope
 ): { loaded: LoadedResult[]; groups: FindingGroup[] } => {
   const loaded = loadResults(resultsDir, {
     version,
-    catalog: loadEntries(),
+    catalog: loadEntries(plan?.plan),
+    ...(plan ? { plan } : {}),
     warn: (message) => console.warn(`::warning::${message}`),
   });
   return { loaded, groups: groupFindings(loaded) };
@@ -445,6 +448,10 @@ export const renderIssueBody = (
     '',
     ...sourceLines(proposal),
     '',
+    ...(proposal.planEntries ?? []).flatMap(({ slug, title, prs }) => [
+      `Plan entry \`${slug}\`, ${title}: ${prs.map(prCell).join(', ')}`,
+      '',
+    ]),
     ...relatedLines(proposal.related),
     metadataBlock(proposal),
     '',
@@ -579,13 +586,19 @@ export interface ProposalOptions {
   runUrl: string;
   // When the tested version was published; an issue closed as completed after it counts as known.
   publishedAt?: string | undefined;
+  plan?: Plan | undefined;
 }
+
+const planEntriesOf = (members: FindingGroup[], plan: Plan | undefined) =>
+  (plan?.entries ?? [])
+    .filter((entry) => members.some((member) => member.finding.checkId === planCheckId(entry.slug)))
+    .map(({ slug, title, prs }) => ({ slug, title, prs }));
 
 // Build the one proposal for a cluster from its lead, matching `issues` by any member's fingerprint.
 export const toProposal = (
   { lead, members, existingIssue, skip }: Cluster,
   issues: QaIssue[],
-  { runUrl, publishedAt }: ProposalOptions
+  { runUrl, publishedAt, plan }: ProposalOptions
 ): Proposal => {
   const { primary } = lead;
   const { version } = primary.result.request;
@@ -644,10 +657,12 @@ export const toProposal = (
       ...(decision.reason ? { reason: decision.reason } : {}),
     };
   }
+  const planEntries = planEntriesOf(members, plan);
   return {
     kind: 'issue',
     ...report,
     ...(decision.previousIssue !== undefined ? { previousIssue: decision.previousIssue } : {}),
+    ...(planEntries.length > 0 ? { planEntries } : {}),
     system: systemText(primary),
     assetDir: `assets/${version}/${lead.fingerprint}`,
     evidence: evidenceFiles(lead),

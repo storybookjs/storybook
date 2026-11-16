@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 
 import { CHECK_IDS } from '../checks.ts';
-import { AgentOutput, agentOutput } from './schema.ts';
+import { AgentOutput, agentOutput, CheckResult } from './schema.ts';
 
 const answer = (storybookVersionBefore: unknown) => ({
   storybookVersionBefore,
@@ -50,4 +50,28 @@ describe('agentOutput', () => {
     expect(agentOutput(ids).safeParse(reporting(...ids)).success).toBe(true);
     expect(agentOutput(ids).safeParse(reporting(...ids, 'build.static')).success).toBe(false);
   });
+
+  it('accepts the plan checks it was given and rejects one it was not', () => {
+    const planRun = [...ids, 'plan.story-sort-in-main'] as const;
+
+    expect(agentOutput(planRun).safeParse(reporting(...planRun)).success).toBe(true);
+    expect(
+      agentOutput(planRun).safeParse(reporting(...planRun, 'plan.preview-animations')).success
+    ).toBe(false);
+  });
+});
+
+describe('CheckResult', () => {
+  const check = (id: string) => CheckResult.safeParse({ id, label: id, state: 'pass' }).success;
+
+  it('accepts the id of a plan check in a run record', () => {
+    expect(check('plan.story-sort-in-main')).toBe(true);
+  });
+
+  it.each(['plan.story`sort', 'plan.story sort', 'plan.Story-sort', `plan.${'a'.repeat(76)}`])(
+    'rejects %j as the id of a check',
+    (id) => {
+      expect(check(id)).toBe(false);
+    }
+  );
 });

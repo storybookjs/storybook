@@ -1,6 +1,9 @@
-# The tag must match the `playwright` version in package.json: the evidence tools load that package
-# from the mounted node_modules and launch the browsers baked into this image.
-FROM mcr.microsoft.com/playwright:v1.58.2-noble
+# The version must match the `playwright` version in package.json: the evidence tools load that
+# package from the mounted node_modules and launch the browsers baked into this image.
+ARG PLAYWRIGHT_VERSION=1.58.2
+FROM mcr.microsoft.com/playwright:v${PLAYWRIGHT_VERSION}-noble
+
+ARG PLAYWRIGHT_VERSION
 
 RUN apt-get update && apt-get install -y --no-install-recommends build-essential curl git jq \
   && rm -rf /var/lib/apt/lists/*
@@ -40,6 +43,14 @@ RUN curl -fsSL https://claude.ai/install.sh | bash -s "$CLAUDE_CODE_VERSION" \
 # Some projects refuse to install without it.
 RUN curl -fsSL https://mise.run | MISE_VERSION="$MISE_VERSION" MISE_INSTALL_PATH=/home/agent/.local/bin/mise sh \
   && mise --version
+
+# Docker's seccomp profile denies the user namespaces of Chromium's own sandbox, which the
+# Playwright MCP server turns on, so the server gets --no-sandbox.
+ARG BROWSER_MCP="/home/agent/.npm-global/bin/playwright run-mcp-server --headless --browser chromium --no-sandbox --isolated --viewport-size 1280x800 --output-dir /home/agent/qa-evidence/browser"
+RUN PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm install -g "playwright@$PLAYWRIGHT_VERSION" \
+  && claude mcp add --scope user playwright -- $BROWSER_MCP \
+  && codex mcp add playwright -- $BROWSER_MCP \
+  && claude mcp list && codex mcp list
 
 WORKDIR /home/agent
 ENTRYPOINT ["sleep", "infinity"]

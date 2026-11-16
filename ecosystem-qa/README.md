@@ -37,7 +37,7 @@ ANTHROPIC_API_KEY=... node ecosystem-qa/run.ts --repo mealdrop --version 11.0.0-
 
 Pick the sandbox for your machine:
 
-- `--sandbox docker` wherever Docker runs, with the image built first: `docker build --build-arg AGENT_UID=$(id -u) --build-arg AGENT_GID=$(id -g) -t sb-ecosystem-qa ecosystem-qa`. This is the one sandbox that covers every check, and the one CI uses. The image carries `n`, a C/C++ compiler and `mise`, and before the install the runner switches to the Node version the project asks for and writes what happened as the first line of `install.log`. Only this sandbox can switch Node: with any other, a catalog entry's `node` is ignored and the runner prints a warning. A failed install does not end the run: the exit status and log go to the evidence directory, and the agent repairs the environment before it starts. The runner limits this run's container to 85% of the Docker daemon's memory and writes what it did to `memory-limit.txt` in the evidence directory, so a build that takes everything is ended inside the container and the agent sees exit status 137; without the limit the host starves, and a GitHub runner then ends the job with "lost communication" and no result.
+- `--sandbox docker` wherever Docker runs, with the image built first: `docker build --build-arg AGENT_UID=$(id -u) --build-arg AGENT_GID=$(id -g) -t sb-ecosystem-qa ecosystem-qa`. This is the one sandbox that covers every check, and the one CI uses. The image carries `n`, a C/C++ compiler, `mise`, and the Playwright MCP server, which Claude Code and Codex load from their user config, so the agent can click and type in a page and save its screenshots to `browser/` in the evidence directory. Before the install the runner switches to the Node version the project asks for and writes what happened as the first line of `install.log`. Only this sandbox can switch Node: with any other, a catalog entry's `node` is ignored and the runner prints a warning. A failed install does not end the run: the exit status and log go to the evidence directory, and the agent repairs the environment before it starts. The runner limits this run's container to 85% of the Docker daemon's memory and writes what it did to `memory-limit.txt` in the evidence directory, so a build that takes everything is ended inside the container and the agent sees exit status 137; without the limit the host starves, and a GitHub runner then ends the job with "lost communication" and no result.
 - `--sandbox seatbelt` on macOS covers the upgrade, build and CLI checks only. Its profile denies Chromium the Mach port it registers at launch, so screenshots and HMR checks come back `skip`, and the agent's shells inherit launchd's 256 open-file limit, which breaks the file watcher.
 - `--sandbox bwrap` on Linux.
 - `--sandbox none` runs the agent on the host with your environment. `run.ts` refuses it for a repo that is not `owned`, except on Windows for a repo the catalog marks `windows`: there no sandbox exists, and the mark is the reviewed list of exceptions. The release-age gates below are off here too, so an install the agent runs on your machine skips the project's own gate. The Windows cells in CI use this mode, on a runner that is discarded after the job.
@@ -60,12 +60,12 @@ Every entry carries `tags`: the framework package, its builder, the Storybook ma
 To pin a repo, probe it without cloning anything:
 
 ```sh
-node ecosystem-qa/pin.ts dnum-mi/vue-dsfr > pins.jsonl
+node ecosystem-qa/pin.ts dnum-mi/vue-dsfr >> pins.jsonl
 ```
 
 It prints one line of JSON with the commit, the package manager, each Storybook directory with its version range, framework packages and feature addons, the stars, the last push and the archived flag.
 GitHub truncates the file tree of a very large repository, and then `--dir` names the Storybook directory to read.
-`tools/fork-tier2.sh pins.jsonl` forks every tier 2 entry with a `pushTo` into `storybook-tmp` and creates its `qa/base` at the commit of its line, and `--dry` prints the calls without making any write.
+With a line in `pins.jsonl` for every tier 2 entry, `ecosystem-qa/tools/fork-tier2.sh pins.jsonl` forks each one with a `pushTo` into `storybook-tmp` and creates its `qa/base` at the commit of its line, and `--dry` before the file prints the calls without making any write.
 Run it twice and the second run changes nothing; it stops where a `qa/base` exists at another commit, because it never moves one.
 
 Then collect and look at the proposals without filing anything:
@@ -113,29 +113,30 @@ ECOSYSTEM_QA_FAKE=1 node ecosystem-qa/run.ts --repo mealdrop --version 11.0.0-be
 
 A QA plan names what a sweep tests beyond the fixed checks: the changes of a release line, each with the repos to try it on, the steps and the expected outcome.
 It is one Markdown file in `ecosystem-qa/plans/`, named after its line, such as `11.0.md`, and a person reviews and merges it like code.
+The window it was written from is committed next to it as `11.0.window.json`, and the smoke job checks every plan with `--window` against the window file next to it, so a plan PR in which a row was deleted or moved by hand fails without a call to GitHub.
 An agent writes it with the `/qa-plan` skill in `.agents/skills/qa-plan/`, which runs the commands below and opens the plan PR.
 
 ```
 window.ts ──> window.json ──> qa-plan.ts render ──> plans/<line>.md ──> qa-plan.ts check
-   │ PRs merged into next      │ + draft.json:          │ edited by hand     │ format, rules,
-   │ between two tags          │ entries, decisions     │                    │ catalog, window
+   │ PRs whose merge commit    │ + draft.json:          │ edited by hand     │ format, rules,
+   │ is between two tags       │ entries, decisions     │                    │ catalog, window
 ```
 
-`window.ts` lists every PR that was merged into `next` between two tags:
+`window.ts` lists every PR whose merge commit is in `next` between two tags, whatever branch the PR was merged into, so a PR merged into the branch of another PR is in the window too:
 
 ```sh
-node ecosystem-qa/window.ts --from v10.6.0 --to v11.0.0-beta.3 --out window.json
+node ecosystem-qa/window.ts --from v10.6.0 --to v11.0.0-beta.3 --out ecosystem-qa/plans/11.0.window.json
 ```
 
 For each PR it records the QA status from its labels, the area that the title prefix names, the manual testing section of its body, the author association, and the issues the PR closes or names, with their parent issue and whether they have a heading for QA or testing.
-It keeps a PR only when its merge commit is between the two tags and it was merged at most 30 days before the first tag.
-It reads git and GitHub and writes nothing else.
+It keeps a PR only when its merge commit is between the two tags and it was merged at most 30 days before the first tag, and it leaves out the release PRs, whose base is `next-release` or `latest-release`.
+It reads GitHub, fetches a tag that the local repository lacks, and writes nothing but the file of `--out`, whose directory it creates.
 
 `qa-plan.ts render` writes the plan from the window and a JSON draft, and `check` validates it:
 
 ```sh
-node ecosystem-qa/qa-plan.ts render --window window.json --draft draft.json --out ecosystem-qa/plans/11.0.md
-node ecosystem-qa/qa-plan.ts check ecosystem-qa/plans/11.0.md --window window.json
+node ecosystem-qa/qa-plan.ts render --window ecosystem-qa/plans/11.0.window.json --draft draft.json --out ecosystem-qa/plans/11.0.md
+node ecosystem-qa/qa-plan.ts check ecosystem-qa/plans/11.0.md --window ecosystem-qa/plans/11.0.window.json
 ```
 
 The draft is optional, and every key of it too: `entries`, `discovered`, `decisions` by PR number, `groups`, and `groupOf`, which puts a maintainer PR into a group by PR number.
@@ -166,12 +167,23 @@ A repo with more entries in one batch than `Entries per run` runs them in severa
 `check` accepts a file only when it equals what render would write for what it read, so a line that is not in the format fails at its line number.
 It then holds the plan against these rules and prints each problem as `<file>:<line>: <message>`:
 
-- Every slug and group is unique, and the version is on the plan's line.
+- Every slug, group, and discovered id is unique, every PR has one row in one table, and the version is on the plan's line.
+- Every text field is one line without an HTML comment, a control character, or a line separator, because GitHub shows none of them to the reviewer.
+- The Storybook directory of a discovered repo is a relative path inside the repository, without `..` or a leading `/`.
 - Every repo of an entry is a catalog id or a discovered repo, and a discovered repo never takes a catalog id.
 - No repo of an entry is more than one major behind the plan's line, by the `tags` of its catalog entry or the major of its discovered row.
-- Every PR of an entry has a row that names the entry, every row has a decision, and every decision names entries that exist.
+- Every PR of an entry has a row that names the entry, or a row in a group whose decision names it, every row has a decision, and every decision names entries that exist. An entry lists every PR whose row in "PRs that need QA" or "Undeclared PRs" names it; a PR of a group may stay out of the entries its group names.
+- The batches are numbered from 1 without a gap.
 - Every maintainer PR marked `qa:skip` with a product label names a group, and every group has a decision.
-- The file holds no link to Linear, Notion or Slack, and no step or expected outcome holds a URL other than `localhost`.
+- The file holds no link to `linear.app`, `notion.so`, `notion.site`, `notion.com`, or a `slack.com` host.
+- No entry title, repo reason, step, or expected outcome names a host other than `localhost`, because the runner prints all four into the agent's prompt. A host is refused in these forms:
+  - after any scheme and `//`, such as `https://example.com` or `http://localhost@example.com`;
+  - after `http`, `https`, `ws`, `wss`, or `ftp` and a colon with any number of slashes or backslashes, such as `http:/example.com` or `http:\\example.com`;
+  - after `//` alone, such as `//example.com`;
+  - an IPv4 address, such as `93.184.216.34`, `127.0.0.1` included;
+  - a dotted name that ends in one of the top-level domains of `HOST_TLDS` in `lib/qa-plan.ts`, such as `com`, `org`, `io`, or `dev`, alone or followed by a port, a path, a query, or a fragment: `example.com`, `example.com:8080/x`, `git@github.com:x`.
+
+  A dotted name with another ending passes, so `README.md`, `ui.kit/src`, `the Next.js/Vite project`, and `package.json:12` are fine, and so are a host on a domain outside that list, such as `example.zone/x`, and a package that `npx` fetches. The reviewer reads for those.
 - With `--window`, the tables hold exactly the PRs of the window, with their titles and areas.
 
 A plan that passes prints its hash, which names the cycle, its batches with their runs, and about what it costs, priced at the most expensive static run so far.
@@ -192,6 +204,41 @@ Each of its fields but the id and the reason is a value of one line of `pin.ts` 
 `loadEntries(plan)` in `lib/catalog.ts` returns the catalog with each discovered repo as an entry without a push target: at its upstream commit, on Linux only, and with nothing pushed.
 It parses the catalog and the discovered repos as one list, so a discovered repo cannot reuse a catalog id.
 
+### Run the checks of a plan
+
+`run.ts --plan <file> --batch <n> --part <n>` runs one run of `planRuns`: the entries of that batch on `--repo`, at most `Entries per run` of them, with `--part` 1 by default.
+
+```sh
+ECOSYSTEM_QA_FAKE=1 node ecosystem-qa/run.ts --repo mealdrop --version 11.0.0-beta.3 --engine claude \
+  --fake --sandbox none --plan ecosystem-qa/lib/plan.fixture.md --batch 1 --part 2 \
+  --out ecosystem-qa/results/mealdrop/linux/claude/part-2
+```
+
+The run reports the five checks of the tier `gate` first, the upgrade and the dev server that the prompt's steps run in any case, and then one check `plan.<slug>` for each entry of its part, in plan order.
+`--tier must` or `--tier extended` runs those tiers in place of the gate.
+The checklist gets the steps, the expected outcome and the reason for the repo of each entry, and the rules of `prompts/plan-checks.md`, which also say how the agent works in the browser.
+The answer schema names the ids of this run only, so the agent cannot report a check the plan does not have.
+`--repo` may name a discovered repo of the plan, which the runner resolves through `loadEntries(plan)`.
+
+The run ends with exit 1 before anything is cloned when the plan is not in its rendered form or fails `checkPlan`, when the plan has no such batch, when the batch lists no entry or no such part for the repo, or when `--version` is not on the plan's line.
+`request.plan` in `result.json` records the plan file, its hash, the batch, the part, and the slug and PRs of each entry.
+
+### Collect the results of a plan batch
+
+`collect.ts`, `group.ts`, `missing-runs.ts` and `fetch-runs.ts` take the same `--plan <file> --batch <n>`, and load the discovered repos of the plan with the catalog.
+
+```sh
+node ecosystem-qa/collect.ts --results ecosystem-qa/results --version 11.0.0-beta.3 --out ecosystem-qa/results/proposals.json \
+  --repo storybookjs/storybook --plan ecosystem-qa/lib/plan.fixture.md --batch 1
+```
+
+They read each part under `<id>/<os>/<engine>/part-<n>`, or in the artifact `qa-result-<id>-<os>-<engine>-part-<n>`.
+A record of another plan or batch, a record of a plan run when no plan is given, and a record with a check id that is neither in `checks.ts` nor an entry of its part of the plan are ignored with a warning.
+The plan file decides which entries a part has, never `request.plan`, because a run that executed code of a public repository wrote the record.
+For the same reason the issue body of a plan check takes the entry and its PRs from the plan file, in a line above the list of related findings.
+`collect.ts` prints the plan checks of each result by state, so a tail of checks that the budget left as `skip` is visible.
+A job of a plan run in the matrix that `missing-runs.ts` reads names its `part`, and a missing one is named by its repo and part.
+
 ## Run it in CI
 
 Start the `Ecosystem QA` workflow by hand and pick the repos, version, engines and operating systems.
@@ -202,11 +249,16 @@ The agent keys live in the `ecosystem-qa` environment, and the push token in `ec
 
 A Claude Code run in the Docker sandbox on Linux with `ANTHROPIC_API_KEY` keeps the key out of the sandbox.
 `run.ts` starts a proxy on the gateway of Docker's default bridge, gives the agent that address as `ANTHROPIC_BASE_URL` and a placeholder as its key, and puts the real key on each request it forwards to the Anthropic API.
-The proxy forwards only `POST /v1/messages` and `POST /v1/messages/count_tokens`, answers only the sandbox container's address, and writes one line for each request, with method, path and status, to the job log and to `run.log`.
-Before the agent starts, the runner reads the environment of the sandbox, ends the run when the real key is in it, and writes `The sandbox holds no provider key.` otherwise.
-Everywhere else the key still reaches the agent: Codex, a run without a sandbox (the Windows cells), a run on macOS, and a run with `CLAUDE_CODE_OAUTH_TOKEN`.
+`run.ts` deletes the key from its own environment as soon as it reads it, before the sandbox exists, so neither the docker CLI that runs the project install nor any other process it starts inherits it.
+The proxy forwards only `POST /v1/messages` and `POST /v1/messages/count_tokens`, answers only the sandbox container's address, and writes one line for each request that Node's HTTP parser accepts, with method, path and status, or `closed by the caller` when the caller goes away first, to the job log and to `run.log`.
+Before the agent starts, the runner reads the environment of the sandbox and the variables that Sandcastle exports in front of the agent's command, ends the run when the real key is in either, and writes `Neither the environment of the sandbox nor the variables Sandcastle exports for the agent hold the provider key.` otherwise.
+Where the Docker daemon runs in a VM, as Docker Desktop does on Linux too, the bridge gateway is no address of the host, so the proxy cannot listen there and the run ends with an error that says so.
+Every other run still hands the real key to the agent: Codex, any run on macOS or on Windows (the Windows cells run without a sandbox), a run on Linux in bwrap or without a sandbox, and a run with `CLAUDE_CODE_OAUTH_TOKEN` and no `ANTHROPIC_API_KEY`.
+The proxy limits where the key goes, not what it spends.
+Any code in the sandbox, the project's install scripts and tests included, can send requests on the real key to those two paths for as long as the run lasts, with any model and any body, and the harness does not count that spend.
+The backstop is a spend limit on the key's workspace at the provider, which only the owner of the key can set.
 The `Reach the key proxy from the sandbox` job of a pull request checks on the runner image of the agent job that a container on the default bridge gets through the proxy to a stand-in for the provider.
-Each runner uploads `qa-result-<id>-<os>-<engine>` with `result.json`, the run log, the raw agent stream, the session, the evidence and the cycle branch bundle.
+Each runner uploads `qa-result-<id>-<os>-<engine>`, or `qa-result-<id>-<os>-<engine>-part-<n>` with its results under `part-<n>` for a job of a plan with a part, with `result.json`, the run log, the raw agent stream, the session, the evidence and the cycle branch bundle.
 `run.ts` writes the status, wall time, tokens, dollars, free disk and every check to the Step Summary.
 
 The collect job runs `group.ts` with the key from the `ecosystem-qa` environment, then collects with its `groups.json` and uploads both files as `qa-proposals`.
@@ -228,6 +280,7 @@ That is how a pull request against `qa/plans` that adds a plan gets its red or g
 
 `<out>/result.json` is the record of one run, and every later stage reads only these files.
 Next to it are `run.log`, `agent-stream.jsonl` (the token counts come from here), `session.jsonl`, `evidence/` and `cycle.bundle` when the agent committed.
+`evidence/checklist.md` is the checklist the agent got, as the prompt shows it.
 A run needs an output directory of its own: `run.ts` stops when `--out` holds anything, so that the log, the agent stream and the evidence of an earlier run are never read as this run's.
 The runner keeps the sandbox open until it has an answer it can use.
 The answer is the `<qa-result>` block in the last message of the agent.

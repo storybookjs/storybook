@@ -61,7 +61,7 @@ node ecosystem-qa/window.ts --from v10.6.0 --to v11.0.0-beta.3 --out /tmp/qa-pla
 ```
 
 It prints the count of each QA status and of the maintainer PRs that need a group.
-The window holds every PR whose merge commit is between the two tags, also one that was merged into the branch of another PR, and no release PR.
+The window holds every PR whose merge commit is between the two tags, also one that was merged into the branch of another PR, even when that branch was rebased later, and no release PR.
 Each PR in `window.json` carries its `status`, `area`, `labels`, `authorAssociation`, `manualTesting` section, and linked `issues`, but no body.
 
 For an overview of what the window changes, read the migration guide at the end tag first:

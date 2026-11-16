@@ -14,6 +14,8 @@ const firstLine = (body: string) => body.split(/\r?\n/, 1)[0] ?? '';
 
 const PLAN_MARKER = /^<!-- sb-qa-plan ([0-9a-f]{12}) \S+ -->$/;
 const BATCH_MARKER = /^<!-- sb-qa-batch ([0-9a-f]{12}) batch=(\d+) version=\S+ runs=[\d,]* -->$/;
+const NEXT_LINE = /^Next: (.+)$/;
+const STARTED = /^Batch (\d+) is started\.$/;
 const RUN_LEDGER = /^<!-- sb-qa-run (\S+) usd=(\d+(?:\.\d+)?) -->$/;
 
 export type TrackedPlan = { file: string; hash: string; line: string; version: string };
@@ -148,9 +150,16 @@ export const batchCommentOf = <Comment extends Written>(
     (comment) => byHarness(comment.author) && firstLine(comment.body) === batchMarker(report)
   );
 
-// `batches` are the batches with a counted comment, and `unreadable` names each comment of the
-// workflow whose dollars cannot be counted, and why.
-export type Spend = { usd: number; runs: number; batches: number[]; unreadable: string[] };
+// `batches` are the batches with a counted comment, `started` the batches that a counted comment
+// started, and `unreadable` names each comment of the workflow whose dollars cannot be counted, and
+// why.
+export type Spend = {
+  usd: number;
+  runs: number;
+  batches: number[];
+  started: number[];
+  unreadable: string[];
+};
 
 const editedByOther = (comment: Written) => comment.editor !== null && !byHarness(comment.editor);
 
@@ -166,6 +175,13 @@ export const carriedRuns = (existing: Written | undefined, report: BatchReport):
   const reported = new Set(report.lines.map(({ key }) => key));
   return existing ? ledgerOf(existing.body).filter(({ key }) => !reported.has(key)) : [];
 };
+
+// The sentence on what came after the batch, as the first report of the batch decided it.
+const nextOf = (body: string): string | undefined =>
+  body
+    .split(/\r?\n/)
+    .map((line) => NEXT_LINE.exec(line)?.[1])
+    .find((next) => next !== undefined);
 
 const unreadableOf = (comment: Written, hash: string): string | undefined => {
   if (editedByOther(comment)) {
@@ -189,6 +205,10 @@ export const spentUsd = (comments: Written[], hash: string, current?: BatchRepor
     usd: [...ledger.values()].reduce((sum, usd) => sum + usd, 0),
     runs: ledger.size,
     batches: counted.map(({ body }) => Number(BATCH_MARKER.exec(firstLine(body))![2])),
+    started: counted.flatMap(({ body }) => {
+      const started = STARTED.exec(nextOf(body) ?? '')?.[1];
+      return started ? [Number(started)] : [];
+    }),
     unreadable: written.flatMap((comment) => unreadableOf(comment, hash) ?? []),
   };
 };
@@ -210,22 +230,25 @@ export type StepInput = {
   spend: Spend;
   capUsd: number;
   chain: boolean;
-  reportedBefore: boolean;
+  // The comment of an earlier report of the same batch and runs.
+  reported: Written | undefined;
 };
 
 const dollars = (usd: number) => `$${usd.toFixed(2)}`;
 
 const runCount = (count: number) => (count === 1 ? '1 run' : `${count} runs`);
 
-export const nextStep = ({ report, spend, capUsd, chain, reportedBefore }: StepInput): NextStep => {
+export const nextStep = ({ report, spend, capUsd, chain, reported }: StepInput): NextStep => {
   const next = report.batch + 1;
   const notStarted = `Batch ${next} was not started`;
   if (report.batch >= report.batches) {
     return { stop: `Batch ${report.batch} is the last batch of the plan.` };
   }
-  if (reportedBefore) {
+  if (reported) {
     return {
-      stop: `Batch ${next} is not started from this report, because batch ${report.batch} was reported before and its first report decided that.`,
+      stop:
+        nextOf(reported.body) ??
+        `Batch ${next} is not started from this report, because batch ${report.batch} was reported before.`,
     };
   }
   if (!chain) {
@@ -246,6 +269,11 @@ export const nextStep = ({ report, spend, capUsd, chain, reportedBefore }: StepI
   if (ahead !== undefined) {
     return {
       stop: `${notStarted}, because this discussion holds a report of batch ${ahead} already, so another run of the plan went on from here.`,
+    };
+  }
+  if (spend.started.includes(next)) {
+    return {
+      stop: `${notStarted} again, because an earlier report of batch ${report.batch} started it already.`,
     };
   }
   if (report.lines.every((line) => line.outcome === 'no result')) {
@@ -341,7 +369,9 @@ export const renderBatchComment = (
           ]
         : ['No findings.']),
     '',
-    `Spent on this plan: ${incomplete(report, spend) ? 'at least ' : ''}${dollars(spend.usd)} for ${runCount(spend.runs)}, of a cap of ${dollars(capUsd)}. ${'start' in next ? `Batch ${next.start} is started next.` : next.stop}`,
+    `Spent on this plan: ${incomplete(report, spend) ? 'at least ' : ''}${dollars(spend.usd)} for ${runCount(spend.runs)}, of a cap of ${dollars(capUsd)}.`,
+    '',
+    `Next: ${('start' in next ? `Batch ${next.start} is started.` : next.stop).replace(/\s+/g, ' ')}`,
     '',
     {
       dry:
@@ -392,7 +422,7 @@ export const trackBatch = <Comment extends Written>({
     spend,
     capUsd,
     chain,
-    reportedBefore: existing !== undefined,
+    reported: existing,
   });
   const context = { spend, capUsd, expiresOn, carried: carriedRuns(existing, report) };
   return {

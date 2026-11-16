@@ -149,7 +149,9 @@ describe('batchReport and renderBatchComment', () => {
 
       - new issue: [SB 11 QA]: Dev server crashes
 
-      Spent on this plan: $6.43 for 3 runs, of a cap of $250.00. Batch 2 is started next.
+      Spent on this plan: $6.43 for 3 runs, of a cap of $250.00.
+
+      Next: Batch 2 is started.
 
       Dry run, so nothing was filed. To file this batch, run \`gh workflow run ecosystem-qa.yml --ref qa/plans -f plan=11.0.md -f batch=1 -f plan_hash=3f9c2a7b10de -f version=11.0.0-beta.3 -f from_runs=43900000001 -f dry=false\` before its artifacts expire on 2027-02-14.
       "
@@ -301,7 +303,13 @@ describe('spentUsd', () => {
   it('ignores a comment by another account', () => {
     const forged = posted(batchReport(input({ runs: ['1'] })), PERSON);
 
-    expect(spentUsd([forged], HASH)).toEqual({ usd: 0, runs: 0, batches: [], unreadable: [] });
+    expect(spentUsd([forged], HASH)).toEqual({
+      usd: 0,
+      runs: 0,
+      batches: [],
+      started: [],
+      unreadable: [],
+    });
   });
 
   it('names a comment of the workflow whose first line is not the hidden line of a batch of the plan', () => {
@@ -312,6 +320,7 @@ describe('spentUsd', () => {
       usd: 0,
       runs: 0,
       batches: [],
+      started: [],
       unreadable: [
         `${buried.url}, whose first line is not the hidden line of a batch of this plan`,
         `${otherPlan.url}, whose first line is not the hidden line of a batch of this plan`,
@@ -333,6 +342,7 @@ describe('spentUsd', () => {
       usd: 0,
       runs: 0,
       batches: [],
+      started: [],
       unreadable: [`${edited.url}, which someone other than the workflow edited`],
     });
     expect(spentUsd([selfEdited], HASH).unreadable).toEqual([]);
@@ -359,7 +369,7 @@ describe('nextStep', () => {
     overrides: Partial<BatchInput> = {},
     capUsd = 250,
     chain = true,
-    reportedBefore = false
+    reported?: Written
   ) => {
     const report = batchReport(input(overrides));
     return nextStep({
@@ -367,7 +377,7 @@ describe('nextStep', () => {
       spend: spentUsd([], HASH, report),
       capUsd,
       chain,
-      reportedBefore,
+      reported,
     });
   };
 
@@ -391,13 +401,11 @@ describe('nextStep', () => {
     });
   });
 
-  it('starts no batch twice when a batch is reported again, whether or not the run chains', () => {
-    const stop = {
-      stop: 'Batch 2 is not started from this report, because batch 1 was reported before and its first report decided that.',
-    };
+  it('repeats what the first report of a batch said comes next, and starts nothing again', () => {
+    const first = posted(batchReport(input()));
 
-    expect(step({}, 250, true, true)).toEqual(stop);
-    expect(step({}, 250, false, true)).toEqual(stop);
+    expect(step({}, 250, true, first)).toEqual({ stop: 'Batch 2 is started.' });
+    expect(step({}, 0.1, false, first)).toEqual({ stop: 'Batch 2 is started.' });
   });
 
   it('stops when the batch left no result', () => {
@@ -416,7 +424,7 @@ describe('nextStep', () => {
         spend: spentUsd([edited], HASH, report),
         capUsd: 250,
         chain: true,
-        reportedBefore: false,
+        reported: undefined,
       })
     ).toEqual({
       stop: `Batch 3 was not started, because the spend of this plan cannot be read from ${edited.url}, which someone other than the workflow edited.`,
@@ -462,7 +470,7 @@ describe('trackBatch', () => {
   const batchOne = posted(
     batchReport(input({ planned: [job('mealdrop')], results: [result('mealdrop', { usd: 40 })] }))
   );
-  const batchTwo = (usd: number) =>
+  const batchTwo = (usd: number, overrides: Partial<BatchInput> = {}) =>
     batchReport(
       input({
         batch: 2,
@@ -470,6 +478,7 @@ describe('trackBatch', () => {
         runs: ['43900000002'],
         planned: [job('mantine')],
         results: [result('mantine', { usd })],
+        ...overrides,
       })
     );
   const track = (report: BatchReport, comments: Written[], capUsd = 60) => {
@@ -574,6 +583,42 @@ describe('trackBatch', () => {
     expect(track(lateFirst, [batchOne, second], 250).next).toEqual({
       stop: 'Batch 2 was not started, because this discussion holds a report of batch 2 already, so another run of the plan went on from here.',
     });
+  });
+
+  it('keeps the reason the chain stopped when the batch is reported again, for example when it is filed', () => {
+    const report = batchTwo(25);
+    const capped = comment(track(report, [batchOne]).body);
+    const filed = batchTwo(25, { filing: 'filed' });
+    const again = trackBatch({
+      report: filed,
+      comments: [batchOne, capped],
+      capUsd: 1000,
+      chain: false,
+      expiresOn: '2027-02-14',
+    });
+
+    expect(again).toMatchObject({
+      existing: capped,
+      next: { stop: 'Batch 3 was not started, because $65.00 is spent and the cap is $60.00.' },
+    });
+    expect('body' in again && again.body).toContain(
+      'Next: Batch 3 was not started, because $65.00 is spent and the cap is $60.00.'
+    );
+  });
+
+  it('starts no second chain from a second run of the same batch', () => {
+    const first = comment(track(batchTwo(1), [batchOne]).body);
+    const rerun = batchTwo(1, { runs: ['5'] });
+
+    expect(track(rerun, [batchOne, first]).next).toEqual({
+      stop: 'Batch 3 was not started again, because an earlier report of batch 2 started it already.',
+    });
+  });
+
+  it('starts a batch again after the report that stopped it, when a second run of the batch chains', () => {
+    const lost = comment(track(batchTwo(1, { results: [] }), [batchOne]).body);
+
+    expect(track(batchTwo(1, { runs: ['6'] }), [batchOne, lost]).next).toEqual({ start: 3 });
   });
 
   it('starts the next batch on the branch, engines and budget of this one', () => {

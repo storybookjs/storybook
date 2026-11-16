@@ -229,7 +229,7 @@ if (values.print) {
   console.log(existing ? `Edit of comment ${existing.url}:\n` : 'New comment:\n');
   console.log(body);
   console.log(
-    'start' in next ? `Next: gh ${dispatch(next.start).join(' ')}` : `Next: none. ${next.stop}`
+    'start' in next ? `Dispatch: gh ${dispatch(next.start).join(' ')}` : 'Dispatch: none.'
   );
   process.exit(0);
 }

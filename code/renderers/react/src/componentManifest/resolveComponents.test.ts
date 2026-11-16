@@ -116,6 +116,114 @@ describe('resolveStoryFileComponents', () => {
     }
   );
 
+  // Base UI's layout: a namespace over a parts module that renames each component it re-exports.
+  const givenPartsProject = (stories: string) => {
+    tempDir = createTempDir('resolve-components');
+    vi.spyOn(process, 'cwd').mockReturnValue(tempDir);
+    return writeFiles(tempDir, {
+      'tsconfig.json': tsconfigJSON(),
+      'acc/AccordionHeader.tsx': dedent`
+        import React from 'react';
+        export const AccordionHeader = (_props: { level: number }) => <h3 />;
+      `,
+      'acc/AccordionRoot.tsx': dedent`
+        import React from 'react';
+        export const AccordionRoot = (_props: { multiple: boolean }) => <div />;
+      `,
+      'acc/index.parts.ts': dedent`
+        export { AccordionHeader as Header } from './AccordionHeader';
+        export { AccordionRoot as Root } from './AccordionRoot';
+      `,
+      'acc/index.ts': `export * as Accordion from './index.parts';`,
+      'Accordion.stories.tsx': stories,
+    });
+  };
+
+  it.each<DocgenEngine>(['react-docgen', 'react-docgen-typescript'])(
+    'documents a member that a parts module renames, with %s',
+    { timeout: 30_000 },
+    async (docgenEngine) => {
+      const files = givenPartsProject(dedent`
+        import { Accordion } from './acc';
+        export default { component: Accordion.Root };
+        export const Primary = {};
+      `);
+
+      const resolved = await resolveStoryFileComponents({
+        storyPath: files['Accordion.stories.tsx'],
+        title: 'Accordion',
+        docgenEngine,
+      });
+
+      expect(docName(docgenEngine, resolved.component)).toBe('AccordionRoot');
+    }
+  );
+
+  it.each<DocgenEngine>(['react-docgen', 'react-docgen-typescript'])(
+    'reports a member the namespace does not export instead of documenting another, with %s',
+    { timeout: 30_000 },
+    async (docgenEngine) => {
+      const files = givenPartsProject(dedent`
+        import { Accordion } from './acc';
+        export default { component: Accordion.Nope };
+        export const Primary = {};
+      `);
+
+      const resolved = await resolveStoryFileComponents({
+        storyPath: files['Accordion.stories.tsx'],
+        title: 'Accordion',
+        docgenEngine,
+      });
+
+      const error =
+        docgenEngine === 'react-docgen'
+          ? resolved.component?.reactDocgen?.type === 'error'
+            ? resolved.component.reactDocgen.error
+            : undefined
+          : resolved.component?.reactDocgenTypescriptError;
+      expect(error).toMatchObject({ name: 'Component export not found' });
+      expect(docName(docgenEngine, resolved.component)).toBeUndefined();
+    }
+  );
+
+  it(
+    'documents the same file as the import lines when `ui.js` sits next to `ui.tsx`',
+    { timeout: 30_000 },
+    async () => {
+      tempDir = createTempDir('resolve-components');
+      vi.spyOn(process, 'cwd').mockReturnValue(tempDir);
+      const files = writeFiles(tempDir, {
+        'tsconfig.json': tsconfigJSON(),
+        'ui.tsx': dedent`
+          import React from 'react';
+          export const Button = (_props: { label: string }) => <button />;
+        `,
+        'ui.js': dedent`
+          import React from 'react';
+          export const Button = (_props) => React.createElement('button');
+        `,
+        'Button.stories.tsx': dedent`
+          import { Button } from './ui';
+          export default { component: Button };
+          export const Primary = {};
+        `,
+      });
+
+      const resolved = await resolveStoryFileComponents({
+        storyPath: files['Button.stories.tsx'],
+        title: 'Button',
+        docgenEngine: 'react-docgen',
+      });
+
+      expect(resolved.component?.path).toBe(files['ui.js']);
+      expect(
+        resolved.component?.reactDocgen?.type === 'success'
+          ? Object.keys(resolved.component.reactDocgen.data.props ?? {})
+          : undefined
+      ).toEqual([]);
+    }
+  );
+
   // A namespace named after one of its own components, as `export * as Menu` over a file that
   // exports `Menu` and `Item`.
   const givenMenuProject = (stories: string) => {
@@ -193,13 +301,7 @@ describe('resolveStoryFileComponents', () => {
         docgenEngine,
       });
 
-      const doc =
-        docgenEngine === 'react-docgen'
-          ? resolved.component?.reactDocgen?.type === 'success'
-            ? resolved.component.reactDocgen.data.displayName
-            : undefined
-          : resolved.component?.reactDocgenTypescript?.displayName;
-      expect(doc).toBe('Button');
+      expect(docName(docgenEngine, resolved.component)).toBe('Button');
       // React's own lookup cannot read `${configDir}`, so `path` falls back to core's file.
       expect(resolved.component).toMatchObject({
         importId: '@/ui',

@@ -1,5 +1,4 @@
 import { byHarness, type Actor } from './github.ts';
-import { PLANS_BRANCH } from './plan-push.ts';
 import { USD_PER_RUN } from './qa-plan.ts';
 import { CheckResult, type Proposal, type RunResultFile } from './schema.ts';
 
@@ -7,13 +6,16 @@ export const TRACKING_CATEGORY = 'QA sweeps';
 
 export const DEFAULT_CAP_USD = 250;
 
-export type Written = { url: string; body: string; author: Actor; editor: Actor };
+export type Written = { id: string; url: string; body: string; author: Actor; editor: Actor };
 
 // A body written in the browser comes back with CRLF line ends.
 const firstLine = (body: string) => body.split(/\r?\n/, 1)[0] ?? '';
 
 const PLAN_MARKER = /^<!-- sb-qa-plan ([0-9a-f]{12}) \S+ -->$/;
-const BATCH_MARKER = /^<!-- sb-qa-batch ([0-9a-f]{12}) batch=\d+ version=\S+ runs=[\d,]* -->$/;
+const BATCH_MARKER = /^<!-- sb-qa-batch ([0-9a-f]{12}) batch=(\d+) version=\S+ runs=[\d,]* -->$/;
+const END_MARKER = /^<!-- sb-qa-end ([0-9a-f]{12}) batch=\d+ run=\d+ -->$/;
+const NEXT_LINE = /^Next: (.+)$/;
+const STARTED = /^Batch (\d+) is started\.$/;
 const RUN_LEDGER = /^<!-- sb-qa-run (\S+) usd=(\d+(?:\.\d+)?) -->$/;
 
 export type TrackedPlan = { file: string; hash: string; line: string; version: string };
@@ -30,10 +32,34 @@ export const renderTrackingThread = ({
     `The logbook of one QA sweep: the plan \`${file}\` with the hash \`${hash}\`, first run on Storybook ${version}.`,
     '',
     'The workflow adds one comment for each batch it runs, with the runs, their dollars, their checks, and their findings, and edits that comment when it collects the batch again.',
-    'The spend of the sweep is the sum of those comments, and a comment by anyone else, or one that someone else edited, is not part of it.',
+    'The spend of the sweep is the sum of those comments. A comment by anyone else is not part of it, and a comment of the workflow that anyone else edits stops the sweep, because its dollars can no longer be read.',
     '',
   ].join('\n'),
 });
+
+export type ChainEnd = {
+  file: string;
+  hash: string;
+  batch: number;
+  run: string;
+  // The hash of the plan at the commit of the run, none when the plan is gone.
+  now: string | undefined;
+};
+
+// The comment that ends the chain of a plan in its discussion, none when the discussion says so
+// already for this batch and run.
+export const chainEndComment = (comments: Written[], end: ChainEnd): string | undefined => {
+  const marker = `<!-- sb-qa-end ${end.hash} batch=${end.batch} run=${end.run} -->`;
+  const found = end.now ? `\`${end.file}\` with the hash \`${end.now}\`` : `no \`${end.file}\``;
+  return comments.some((comment) => byHarness(comment.author) && firstLine(comment.body) === marker)
+    ? undefined
+    : [
+        marker,
+        `The chain of this plan ends at batch ${end.batch}, because workflow run ${end.run} found ${found} where this sweep has the hash \`${end.hash}\`, and so ran nothing.`,
+        'A changed plan starts a sweep of its own, with a discussion of its own, when it is pushed.',
+        '',
+      ].join('\n');
+};
 
 export const trackingThreadOf = <Thread extends Written & { number: number }>(
   discussions: Thread[],
@@ -64,10 +90,15 @@ export type PlannedJob = { repo: string; part: number; os: string; engine: strin
 
 export type BatchInput = {
   plan: { file: string; hash: string };
+  // The branch the batch ran on, which every later dispatch of the plan runs on too.
+  ref: string;
   batch: number;
   batches: number;
   version: string;
   runs: string[];
+  // The attempt of the workflow run in `runs` that reports its own batch, which "Re-run failed
+  // jobs" raises while the run id stays.
+  attempt: number;
   filing: Filing;
   planned: PlannedJob[];
   results: ReportedResult[];
@@ -84,6 +115,7 @@ export type RunLine = {
 
 export type BatchReport = Omit<BatchInput, 'planned' | 'results'> & {
   planned: number;
+  engines: string;
   lines: RunLine[];
   checks: { state: CheckState; count: number }[];
 };
@@ -111,12 +143,13 @@ const resultLine = (result: ReportedResult): RunLine => {
   };
 };
 
-export const batchReport = ({ planned, results, ...input }: BatchInput): BatchReport => {
+export const batchReport = ({ planned, results, runs, ...input }: BatchInput): BatchReport => {
+  const sorted = runs.toSorted((a, b) => Number(a) - Number(b));
   const finished = new Set(results.map((result) => jobKey(jobOf(result))));
   const lost = planned
     .filter((job) => !finished.has(jobKey(job)))
     .map((job): RunLine => ({
-      key: `${jobKey(job)}/lost-${input.runs.join('+')}`,
+      key: `${jobKey(job)}/lost-${sorted.join('+')}${input.attempt > 1 ? `-attempt-${input.attempt}` : ''}`,
       job,
       outcome: 'no result',
       usd: USD_PER_RUN,
@@ -125,7 +158,9 @@ export const batchReport = ({ planned, results, ...input }: BatchInput): BatchRe
   const states = results.flatMap((result) => result.checks.map((check) => check.state));
   return {
     ...input,
+    runs: sorted,
     planned: planned.length,
+    engines: [...new Set(planned.map(({ engine }) => engine))].toSorted().join(','),
     lines: [...results.map(resultLine), ...lost],
     checks: CheckResult.shape.state.options
       .map((state) => ({ state, count: states.filter((seen) => seen === state).length }))
@@ -144,7 +179,16 @@ export const batchCommentOf = <Comment extends Written>(
     (comment) => byHarness(comment.author) && firstLine(comment.body) === batchMarker(report)
   );
 
-export type Spend = { usd: number; runs: number; editedComments: string[] };
+// `batches` are the batches with a counted comment, `started` the batches that a counted comment
+// started, and `unreadable` names each comment of the workflow whose dollars cannot be counted, and
+// why.
+export type Spend = {
+  usd: number;
+  runs: number;
+  batches: number[];
+  started: number[];
+  unreadable: string[];
+};
 
 const editedByOther = (comment: Written) => comment.editor !== null && !byHarness(comment.editor);
 
@@ -158,30 +202,56 @@ const ledgerOf = (body: string): LedgerEntry[] =>
 
 export const carriedRuns = (existing: Written | undefined, report: BatchReport): LedgerEntry[] => {
   const reported = new Set(report.lines.map(({ key }) => key));
-  return existing && !editedByOther(existing)
-    ? ledgerOf(existing.body).filter(({ key }) => !reported.has(key))
-    : [];
+  return existing ? ledgerOf(existing.body).filter(({ key }) => !reported.has(key)) : [];
+};
+
+const nextOf = (body: string): string | undefined =>
+  body
+    .split(/\r?\n/)
+    .map((line) => NEXT_LINE.exec(line)?.[1])
+    .find((next) => next !== undefined);
+
+const unreadableOf = (comment: Written, hash: string): string | undefined => {
+  if (editedByOther(comment)) {
+    return `${comment.url}, which someone other than the workflow edited`;
+  }
+  const first = firstLine(comment.body);
+  if (BATCH_MARKER.exec(first)?.[1] !== hash && END_MARKER.exec(first)?.[1] !== hash) {
+    return `${comment.url}, whose first line is not the hidden line of a batch of this plan`;
+  }
+  return undefined;
 };
 
 export const spentUsd = (comments: Written[], hash: string, current?: BatchReport): Spend => {
-  const counted = comments.filter(
+  const written = comments.filter((comment) => byHarness(comment.author));
+  const counted = written.filter(
     (comment) =>
-      byHarness(comment.author) && BATCH_MARKER.exec(firstLine(comment.body))?.[1] === hash
+      unreadableOf(comment, hash) === undefined && BATCH_MARKER.test(firstLine(comment.body))
   );
   const ledger = new Map<string, number>();
-  const entries = [
-    ...counted.filter((comment) => !editedByOther(comment)).flatMap(({ body }) => ledgerOf(body)),
-    ...(current?.lines ?? []),
-  ];
+  const entries = [...counted.flatMap(({ body }) => ledgerOf(body)), ...(current?.lines ?? [])];
   for (const { key, usd } of entries) {
     ledger.set(key, Math.max(usd, ledger.get(key) ?? 0));
   }
   return {
     usd: [...ledger.values()].reduce((sum, usd) => sum + usd, 0),
     runs: ledger.size,
-    editedComments: counted.filter(editedByOther).map((comment) => comment.url),
+    batches: counted.map(({ body }) => Number(BATCH_MARKER.exec(firstLine(body))![2])),
+    started: counted.flatMap(({ body }) => {
+      const started = STARTED.exec(nextOf(body) ?? '')?.[1];
+      return started ? [Number(started)] : [];
+    }),
+    unreadable: written.flatMap((comment) => unreadableOf(comment, hash) ?? []),
   };
 };
+
+const missingBatches = ({ batch }: BatchReport, { batches }: Spend): number[] =>
+  Array.from({ length: batch - 1 }, (_, index) => index + 1).filter(
+    (earlier) => !batches.includes(earlier)
+  );
+
+const incomplete = (report: BatchReport, spend: Spend) =>
+  spend.unreadable.length > 0 || missingBatches(report, spend).length > 0;
 
 export type NextStep = { start: number } | { stop: string };
 
@@ -190,44 +260,50 @@ export type StepInput = {
   spend: Spend;
   capUsd: number;
   chain: boolean;
-  reportedBefore: boolean;
-  // False after an edit took the marker out of the discussion, which hides the earlier spend.
-  tracked: boolean;
+  // The comment of an earlier report of the same batch and runs.
+  reported: Written | undefined;
 };
 
 const dollars = (usd: number) => `$${usd.toFixed(2)}`;
 
 const runCount = (count: number) => (count === 1 ? '1 run' : `${count} runs`);
 
-export const nextStep = ({
-  report,
-  spend,
-  capUsd,
-  chain,
-  reportedBefore,
-  tracked,
-}: StepInput): NextStep => {
+export const nextStep = ({ report, spend, capUsd, chain, reported }: StepInput): NextStep => {
   const next = report.batch + 1;
   const notStarted = `Batch ${next} was not started`;
   if (report.batch >= report.batches) {
     return { stop: `Batch ${report.batch} is the last batch of the plan.` };
   }
-  if (reportedBefore) {
+  if (reported) {
     return {
-      stop: `Batch ${next} is not started from this report, because batch ${report.batch} was reported before and its first report decided that.`,
+      stop:
+        nextOf(reported.body) ??
+        `Batch ${next} is not started from this report, because batch ${report.batch} was reported before.`,
     };
   }
   if (!chain) {
     return { stop: `${notStarted}, because this run does not chain.` };
   }
-  if (!tracked && report.batch > 1) {
+  if (spend.unreadable.length > 0) {
     return {
-      stop: `${notStarted}, because the plan had no tracking discussion before batch ${report.batch}, so the spend of its earlier batches is unknown.`,
+      stop: `${notStarted}, because the spend of this plan cannot be read from ${spend.unreadable.join(', nor from ')}.`,
     };
   }
-  if (spend.editedComments.length > 0) {
+  const missing = missingBatches(report, spend);
+  if (missing.length > 0) {
     return {
-      stop: `${notStarted}, because someone other than the workflow edited ${spend.editedComments.join(', ')}, so its dollars are not counted.`,
+      stop: `${notStarted}, because this discussion holds no report of ${missing.length === 1 ? 'batch' : 'batches'} ${missing.slice(0, -1).join(', ')}${missing.length > 1 ? ' and ' : ''}${missing.at(-1)}, so the spend of the plan is unknown.`,
+    };
+  }
+  const ahead = spend.batches.find((batch) => batch >= next);
+  if (ahead !== undefined) {
+    return {
+      stop: `${notStarted}, because this discussion holds a report of batch ${ahead} already, so another run of the plan went on from here.`,
+    };
+  }
+  if (spend.started.includes(next)) {
+    return {
+      stop: `${notStarted} again, because an earlier report of batch ${report.batch} started it already.`,
     };
   }
   if (report.lines.every((line) => line.outcome === 'no result')) {
@@ -269,8 +345,36 @@ export type CommentContext = {
   spend: Spend;
   capUsd: number;
   next: NextStep;
-  expiresOn: string;
+  // The day the first result artifact of the runs expires, none when they hold no result artifact.
+  expiresOn: string | undefined;
   carried: LedgerEntry[];
+};
+
+const filingOf = (report: BatchReport, expiresOn: string | undefined, fileCommand: string) => {
+  const expiry = expiresOn ? ` The artifacts of this batch expire on ${expiresOn}.` : '';
+  const unfiled =
+    report.findings?.filter(({ kind, issue }) => kind === 'issue' && issue === undefined).length ??
+    0;
+  switch (report.filing) {
+    case 'dry':
+      if (report.runs.length === 0) {
+        return 'Dry run of local results, so nothing was filed, and no workflow run holds them to file.';
+      }
+      return expiresOn
+        ? `Dry run, so nothing was filed. To file this batch, run \`${fileCommand}\` before its artifacts expire on ${expiresOn}.`
+        : `Dry run, so nothing was filed, and workflow run ${report.runs.join(', ')} holds no result artifact to file.`;
+    case 'pending':
+      return report.findings === null
+        ? `The findings were not collected, so this run files nothing.${expiry}`
+        : `The file job of this run files the batch next and then names each issue here.${expiry}`;
+    case 'filed':
+      if (report.findings === null) {
+        return `The findings were not collected, so nothing was filed.${expiry}`;
+      }
+      return unfiled > 0
+        ? `${unfiled === 1 ? '1 new issue was' : `${unfiled} new issues were`} not filed, and the log of the file job says why.${expiry}`
+        : `Filed.${expiry}`;
+  }
 };
 
 export const renderBatchComment = (
@@ -280,11 +384,12 @@ export const renderBatchComment = (
   const lost = report.lines.filter((line) => line.outcome === 'no result').length;
   const fileCommand = [
     'gh workflow run ecosystem-qa.yml',
-    `--ref ${PLANS_BRANCH}`,
+    `--ref ${report.ref}`,
     `-f plan=${report.plan.file}`,
     `-f batch=${report.batch}`,
     `-f plan_hash=${report.plan.hash}`,
     `-f version=${report.version}`,
+    `-f engines=${report.engines}`,
     `-f from_runs=${report.runs.join(',')}`,
     '-f dry=false',
   ].join(' ');
@@ -295,7 +400,7 @@ export const renderBatchComment = (
     ),
     `### Batch ${report.batch} of ${report.batches} on Storybook ${report.version}`,
     '',
-    `${report.planned} runs planned, ${report.lines.length - lost} finished, ${lost} without a result, ${report.runs.length > 0 ? `from workflow run ${report.runs.join(', ')}` : 'from local results'}.`,
+    `${runCount(report.planned)} planned, ${report.lines.length - lost} finished, ${lost} without a result, ${report.runs.length > 0 ? `from workflow run ${report.runs.join(', ')}` : 'from local results'}.`,
     '',
     '| Run | Outcome | Dollars |',
     '| --- | --- | --- |',
@@ -323,16 +428,85 @@ export const renderBatchComment = (
           ]
         : ['No findings.']),
     '',
-    `Spent on this plan: ${dollars(spend.usd)} for ${runCount(spend.runs)}, of a cap of ${dollars(capUsd)}. ${'start' in next ? `Batch ${next.start} is started next.` : next.stop}`,
+    `Spent on this plan: ${incomplete(report, spend) ? 'at least ' : ''}${dollars(spend.usd)} for ${runCount(spend.runs)}, of a cap of ${dollars(capUsd)}.`,
     '',
-    {
-      dry:
-        report.runs.length > 0
-          ? `Dry run, so nothing was filed. To file this batch, run \`${fileCommand}\` before its artifacts expire on ${expiresOn}.`
-          : 'Dry run of local results, so nothing was filed, and no workflow run holds them to file.',
-      pending: `The file job of this run files the batch next and then names each issue here. The artifacts of this batch expire on ${expiresOn}.`,
-      filed: `Filed. The artifacts of this batch expire on ${expiresOn}.`,
-    }[report.filing],
+    `Next: ${('start' in next ? `Batch ${next.start} is started.` : next.stop).replace(/\s+/g, ' ')}`,
+    '',
+    filingOf(report, expiresOn, fileCommand),
     '',
   ].join('\n');
 };
+
+export type TrackInput<Comment extends Written> = {
+  report: BatchReport;
+  // Every comment of the tracking discussion of the plan, none when it has no discussion yet.
+  comments: Comment[];
+  capUsd: number;
+  chain: boolean;
+  expiresOn: string | undefined;
+};
+
+export type Tracked<Comment extends Written> =
+  | { refuse: string }
+  | {
+      existing: Comment | undefined;
+      next: NextStep;
+      body: string;
+      stopped: (stop: string) => string;
+    };
+
+export const trackBatch = <Comment extends Written>({
+  report,
+  comments,
+  capUsd,
+  chain,
+  expiresOn,
+}: TrackInput<Comment>): Tracked<Comment> => {
+  const existing = batchCommentOf(comments, report);
+  if (existing && editedByOther(existing)) {
+    return {
+      refuse: `Batch ${report.batch} is not reported again, because someone other than the workflow edited ${existing.url}, and writing over it would hide that edit. Every later batch of this plan stops at that comment.`,
+    };
+  }
+  const spend = spentUsd(comments, report.plan.hash, report);
+  const next = nextStep({
+    report,
+    spend,
+    capUsd,
+    chain,
+    reported: existing,
+  });
+  const context = { spend, capUsd, expiresOn, carried: carriedRuns(existing, report) };
+  return {
+    existing,
+    next,
+    body: renderBatchComment(report, { ...context, next }),
+    stopped: (stop) => renderBatchComment(report, { ...context, next: { stop } }),
+  };
+};
+
+export const batchDispatch = (
+  report: BatchReport,
+  { repo, batch, budgetMinutes }: { repo: string; batch: number; budgetMinutes?: string }
+): string[] => [
+  'workflow',
+  'run',
+  'ecosystem-qa.yml',
+  '--repo',
+  repo,
+  '--ref',
+  report.ref,
+  '-f',
+  `plan=${report.plan.file}`,
+  '-f',
+  `batch=${batch}`,
+  '-f',
+  `plan_hash=${report.plan.hash}`,
+  '-f',
+  'chain=true',
+  '-f',
+  `version=${report.version}`,
+  '-f',
+  `engines=${report.engines}`,
+  ...(budgetMinutes ? ['-f', `budget_minutes=${budgetMinutes}`] : []),
+];

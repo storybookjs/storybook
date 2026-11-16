@@ -1,4 +1,4 @@
-import type { IndexEntry } from 'storybook/internal/types';
+import type { Args, IndexEntry } from 'storybook/internal/types';
 
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -12,6 +12,10 @@ import type {
   ManifestClassField,
   ManifestDeclaration,
 } from '../component-docgen/manifest/types.ts';
+import { type SnippetTemplate, fillTemplate, stripHoles } from 'storybook/internal/docs-tools';
+
+import { printHole } from '../../docs/print-hole.ts';
+import type { HtmlSnippetTemplate } from '../../snippet-holes.ts';
 import { buildStoryDocsPayload, type BuildStoryDocsContext } from './build-story-docs.ts';
 
 const declaration = {
@@ -123,7 +127,20 @@ const firstStory = async (
     }
   );
   expect(result).toBeDefined();
-  return Object.values(result!.stories)[0];
+  // The template is next's snippet with holes; these cases are about the snippet.
+  const { template: _template, ...story } = Object.values(result!.stories)[0];
+  return story;
+};
+
+// The template of the first story, and its snippet.
+const firstTemplate = async (source: string) => {
+  const { storyPath } = writeFixture(source);
+  const result = await buildStoryDocsPayload(
+    { entry: { ...entry, importPath: storyPath } },
+    { getDocgenPayload: getDocgenPayload(), resolvePath: (path) => path }
+  );
+  const { snippet, template, warning } = Object.values(result!.stories)[0];
+  return { snippet, template, warning };
 };
 
 describe('buildStoryDocsPayload', () => {
@@ -170,7 +187,7 @@ describe('buildStoryDocsPayload', () => {
       },
     },
     {
-      name: 'render fallback warning',
+      name: 'render that reads no arg',
       source: `
         export default { title: 'Example/TestElement', component: 'test-element' };
         export const Primary = {
@@ -181,9 +198,7 @@ describe('buildStoryDocsPayload', () => {
       expected: {
         id: 'example-testelement--primary',
         name: 'Primary',
-        snippet: '<test-element label="Fallback"></test-element>',
-        warning:
-          "Incomplete snippet: `() => document.createElement('test-element')` could not be resolved statically.",
+        snippet: "document.createElement('test-element')",
       },
     },
     {
@@ -199,7 +214,7 @@ describe('buildStoryDocsPayload', () => {
       expected: {
         id: 'example-testelement--primary',
         name: 'Primary',
-        snippet: '<test-element label="Template" count="2"></test-element>',
+        snippet: "html`<test-element label=${'Template'} count=${2}></test-element>`",
       },
     },
     {
@@ -220,9 +235,12 @@ describe('buildStoryDocsPayload', () => {
       expected: {
         id: 'example-testelement--primary',
         name: 'Primary',
-        snippet: `<test-element label="Aliased" count="7" heading="Head">
-  <b>Aliased</b>
-</test-element>`,
+        snippet: `const Primary = () => {
+  const { label, count: n } = { label: 'Aliased', count: 7, heading: 'Head' };
+  const heading = 'Head';
+  const tag = html\`<b>\${label}</b>\`;
+  return html\`<test-element label=\${label} count=\${n} .heading=\${heading}>\${tag}</test-element>\`;
+};`,
       },
     },
     {
@@ -239,7 +257,7 @@ describe('buildStoryDocsPayload', () => {
       expected: {
         id: 'example-testelement--primary',
         name: 'Primary',
-        snippet: '<test-element label="Meta render"></test-element>',
+        snippet: "html`<test-element label=${'Meta render'}></test-element>`",
       },
     },
     {
@@ -273,11 +291,11 @@ describe('buildStoryDocsPayload', () => {
       expected: {
         id: 'example-testelement--primary',
         name: 'Primary',
-        snippet: '<test-element label="csf2"></test-element>',
+        snippet: "html`<test-element label=${'csf2'}></test-element>`",
       },
     },
     {
-      name: 'unbound args warning for render template',
+      name: 'render that reads some args',
       source: `
         import { html } from 'lit';
         export default { title: 'Example/TestElement', component: 'test-element' };
@@ -289,27 +307,24 @@ describe('buildStoryDocsPayload', () => {
       expected: {
         id: 'example-testelement--primary',
         name: 'Primary',
-        snippet: '<test-element label="Bound"></test-element>',
-        warning: 'Incomplete snippet: args not bound by the render template: `count`.',
+        snippet: "html`<test-element label=${'Bound'}></test-element>`",
       },
     },
     {
-      name: 'unresolved template expression arg is not unbound',
+      name: 'call that reads an arg',
       source: `
         import { html } from 'lit';
-        import { classMap } from 'lit/directives/class-map.js';
+        import { compute } from './compute';
         export default { title: 'Example/TestElement', component: 'test-element' };
         export const Primary = {
           args: { active: true },
-          render: (args) => html\`<test-element class=\${classMap({ active: Boolean(args.active) })}></test-element>\`,
+          render: (args) => html\`<test-element class=\${compute(args.active)}></test-element>\`,
         };
       `,
       expected: {
         id: 'example-testelement--primary',
         name: 'Primary',
-        snippet: '<test-element></test-element>',
-        warning:
-          'Incomplete snippet: `classMap({ active: Boolean(args.active) })` could not be resolved statically.',
+        snippet: 'html`<test-element class=${compute(true)}></test-element>`',
       },
     },
     {
@@ -720,4 +735,195 @@ describe('buildStoryDocsPayload', () => {
       expect({ snippet: story.snippet, warning: story.warning }).toEqual(expected);
     }
   );
+});
+
+describe('the template', () => {
+  const fill = (template: SnippetTemplate | undefined, initialArgs: Args, changed: Args) =>
+    fillTemplate(
+      template as HtmlSnippetTemplate,
+      { initialArgs, unmappedArgs: { ...initialArgs, ...changed } },
+      printHole
+    );
+
+  it('wraps each value an arg prints in a hole, with one for each declared arg it leaves unset', async () => {
+    const { snippet, template } = await firstTemplate(`
+      export default { title: 'Example/TestElement', component: 'test-element', args: { label: 'Meta' } };
+      export const Primary = { args: { count: 2, disabled: true, 'default-slot': 'Hi' } };
+    `);
+    expect(snippet).toBe('<test-element label="Meta" count="2" disabled>Hi</test-element>');
+    expect(stripHoles(template!)).toBe(snippet);
+    const initialArgs = { label: 'Meta', count: 2, disabled: true, 'default-slot': 'Hi' };
+    expect(fill(template, initialArgs, { label: 'Changed', variant: 'primary', theme: 'x' })).toBe(
+      '<test-element label="Changed" count="2" disabled variant="primary">Hi</test-element>'
+    );
+    expect(fill(template, initialArgs, { '--accent': 'red', 'panel-part': 'color: red' })).toBe(
+      '<style>\n  test-element::part(panel) { color: red }\n</style>\n<test-element label="Meta" count="2" disabled style="--accent: red;">Hi</test-element>'
+    );
+  });
+
+  it('shows an arg the server cannot read once a control changes it', async () => {
+    const { snippet, template } = await firstTemplate(`
+      export default { title: 'Example/TestElement', component: 'test-element' };
+      export const Primary = { args: { label: makeLabel(), count: 2 } };
+    `);
+    expect(snippet).toBe('<test-element count="2"></test-element>');
+    const initialArgs = { label: 'Made', count: 2 };
+    expect(fill(template, initialArgs, {})).toBe(snippet);
+    expect(fill(template, initialArgs, { label: 'Changed' })).toBe(
+      '<test-element count="2" label="Changed"></test-element>'
+    );
+  });
+
+  it('sets a property without an attribute a control changes in a script', async () => {
+    const { snippet, template } = await firstTemplate(`
+      export default { title: 'Example/TestElement', component: 'test-element' };
+      export const Primary = { args: { label: 'Go', items: ['a'] } };
+    `);
+    expect(snippet).toBe('<test-element label="Go"></test-element>');
+    expect(fill(template, { label: 'Go', items: ['a'] }, {})).toBe(snippet);
+    expect(fill(template, { label: 'Go', items: ['a'] }, { items: ['a', '</script>'] })).toBe(
+      [
+        '<test-element label="Go"></test-element>',
+        '<script>',
+        "  document.querySelector('test-element').items = ['a', '<\\/script>'];",
+        '</script>',
+      ].join('\n')
+    );
+    expect(fill(template, { label: 'Go', items: ['a'] }, { items: undefined })).toBe(snippet);
+  });
+
+  it("prints the render's lit code with the args it reads filled in", async () => {
+    const { snippet, template } = await firstTemplate(`
+      import { html } from 'lit';
+      import { classMap } from 'lit/directives/class-map.js';
+      import { isLarge } from './sizes';
+      export default { title: 'Example/TestElement', component: 'test-element' };
+      export const Primary = {
+        args: { label: 'Go', size: 'lg', items: [1], user: { name: 'Bob' }, open: true },
+        render: ({ label, size, items, user, open }) => html\`<test-element
+          label=\${label}
+          title="Hi \${user.name}"
+          class=\${classMap({ large: isLarge(size) })}
+          .items=\${items}
+          ?open=\${open}
+        >\${label}: \${open ? 'open' : 'closed'}</test-element>\`,
+      };
+    `);
+    expect(snippet).toBe(
+      [
+        'html`<test-element',
+        "  label=${'Go'}",
+        '  title="Hi ${({ name: \'Bob\' }).name}"',
+        "  class=${classMap({ large: isLarge('lg') })}",
+        '  .items=${[1]}',
+        '  ?open=${true}',
+        ">${'Go'}: ${true ? 'open' : 'closed'}</test-element>`",
+      ].join('\n')
+    );
+    const initialArgs = { label: 'Go', size: 'lg', items: [1], user: { name: 'Bob' }, open: true };
+    const changed = {
+      label: 'a "b" `c`',
+      size: 'sm',
+      items: [1, 2],
+      user: { name: '<Ann>' },
+      open: false,
+    };
+    expect(fill(template, initialArgs, changed)).toBe(
+      [
+        'html`<test-element',
+        '  label=${\'a "b" `c`\'}',
+        '  title="Hi ${({ name: \'<Ann>\' }).name}"',
+        "  class=${classMap({ large: isLarge('sm') })}",
+        '  .items=${[1, 2]}',
+        '  ?open=${false}',
+        ">${'a \"b\" `c`'}: ${false ? 'open' : 'closed'}</test-element>`",
+      ].join('\n')
+    );
+  });
+
+  it('prints a block body as the story, and a string template with its text', async () => {
+    const { snippet, template } = await firstTemplate(`
+      export default { title: 'Example/TestElement', component: 'test-element' };
+      export const Primary = {
+        args: { label: 'Go' },
+        render: (args) => {
+          const label = args.label.toUpperCase();
+          return \`<test-element label="\${args.label}">\${label}</test-element>\`;
+        },
+      };
+    `);
+    expect(snippet).toBe(
+      [
+        'const Primary = () => {',
+        "  const label = ('Go').toUpperCase();",
+        '  return `<test-element label="${\'Go\'}">${label}</test-element>`;',
+        '};',
+      ].join('\n')
+    );
+    expect(fill(template, { label: 'Go' }, { label: 'Stop' })).toBe(
+      [
+        'const Primary = () => {',
+        "  const label = ('Stop').toUpperCase();",
+        '  return `<test-element label="${\'Stop\'}">${label}</test-element>`;',
+        '};',
+      ].join('\n')
+    );
+  });
+
+  it('cannot follow an undeclared arg whose key names a category', async () => {
+    const { template } = await firstTemplate(`
+      export default { title: 'Example/TestElement', component: 'test-element' };
+      export const Primary = { args: { label: 'Go', '--undeclared': 'red' } };
+    `);
+    expect(() =>
+      fill(template, { label: 'Go', '--undeclared': 'red' }, { '--undeclared': 'blue' })
+    ).toThrow('The snippet cannot show the current value of the `--undeclared` arg.');
+  });
+
+  it('wraps a value an arrow returns or a minus reads in parentheses, so any value keeps its meaning', async () => {
+    const { snippet, template } = await firstTemplate(`
+      import { html } from 'lit';
+      export default { title: 'Example/TestElement', component: 'test-element' };
+      export const Primary = {
+        args: { count: 2, config: null },
+        render: (args) => html\`<test-element count=\${1-args.count} .get=\${() => args.config}></test-element>\`,
+      };
+    `);
+    expect(snippet).toBe('html`<test-element count=${1-(2)} .get=${() => (null)}></test-element>`');
+    expect(fill(template, { count: 2, config: null }, { count: -2, config: { a: 1 } })).toBe(
+      'html`<test-element count=${1-(-2)} .get=${() => ({ a: 1 })}></test-element>`'
+    );
+  });
+
+  it('prints the args the render reads as a whole, with no template to follow them', async () => {
+    const { snippet, template } = await firstTemplate(`
+      import { html } from 'lit';
+      export default { title: 'Example/TestElement', component: 'test-element' };
+      export const Primary = {
+        args: { label: 'Go' },
+        render: (args) => {
+          const { label } = args;
+          return html\`<test-element label=\${label}></test-element>\`;
+        },
+      };
+    `);
+    expect(snippet).toBe(
+      [
+        'const Primary = () => {',
+        "  const { label } = { label: 'Go' };",
+        '  return html`<test-element label=${label}></test-element>`;',
+        '};',
+      ].join('\n')
+    );
+    expect(template).toBeUndefined();
+  });
+
+  it('is not there where next prints no snippet', async () => {
+    const { snippet, template } = await firstTemplate(`
+      export default { title: 'Example/TestElement', component: 'test-element' };
+      export const Primary = { args: { label: makeLabel() } };
+    `);
+    expect(snippet).toBeUndefined();
+    expect(template).toBeUndefined();
+  });
 });

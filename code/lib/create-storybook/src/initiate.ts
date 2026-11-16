@@ -138,7 +138,7 @@ export async function doInitiate(options: CommandOptions): Promise<
     selectedFeatures.delete(Feature.AI);
   }
 
-  await executeTypeScriptDependency({
+  const typeScriptDependency = await executeTypeScriptDependency({
     options,
     packageManager,
     framework,
@@ -165,6 +165,7 @@ export async function doInitiate(options: CommandOptions): Promise<
     dependencyCollector,
     skipInstall: !!options.skipInstall,
     selectedFeatures,
+    upgradedDependencies: typeScriptDependency === 'upgraded',
   });
 
   // After dependencies are installed, we must not use the dependency collector anymore

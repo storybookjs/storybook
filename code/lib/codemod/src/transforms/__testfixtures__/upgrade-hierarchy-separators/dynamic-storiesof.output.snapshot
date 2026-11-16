@@ -1,9 +1,0 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`upgrade-hierarchy-separators transforms correctly using "dynamic-storiesof.input.js" data 1`] = `
-"import { storiesOf } from '@storybook/react';
-
-const foo = 'some|generated/path';
-
-storiesOf(foo, module).add('foobar', () => <>hmm</>);"
-`;

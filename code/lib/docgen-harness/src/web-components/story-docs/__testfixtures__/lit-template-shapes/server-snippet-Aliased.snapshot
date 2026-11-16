@@ -1,3 +1,8 @@
-<lit-template-shapes label="Aliased" count="7" heading="Head">
-  <b>Aliased</b>
-</lit-template-shapes>
+const Aliased = () => {
+  const { label, count: n } = { label: 'Aliased', count: 7, heading: 'Head' };
+  const heading = 'Head';
+  const tag = html`<b>${label}</b>`;
+  return html`<lit-template-shapes label=${label} count=${n} .heading=${heading}
+    >${tag}</lit-template-shapes
+  >`;
+};

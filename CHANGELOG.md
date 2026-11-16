@@ -1,3 +1,8 @@
+## 10.6.7
+
+- Community: Support prerelease community frameworks in init - [#37203](https://github.com/storybookjs/storybook/pull/37203), thanks @Sidnioulz!
+- MCP: Publish the composition schema a hosted Storybook actually serves - [#37290](https://github.com/storybookjs/storybook/pull/37290), thanks @Sidnioulz!
+
 ## 10.6.6
 
 - Core: Let StackBlitz embed the dev server again - [#37176](https://github.com/storybookjs/storybook/pull/37176), thanks @kasperpeulen!

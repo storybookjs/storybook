@@ -141,6 +141,14 @@ const createTestRunnerStore = async ({ channel, options }: ResponderOptions): Pr
     }));
     testProviderStore.setState('test-provider-state:crashed');
   });
+  testProviderStore.onRunAll(() => {
+    store.send({
+      type: 'TRIGGER_RUN',
+      payload: {
+        triggeredBy: 'run-all',
+      },
+    });
+  });
   testProviderStore.onClearAll(() => {
     store.setState((s) => ({
       ...s,

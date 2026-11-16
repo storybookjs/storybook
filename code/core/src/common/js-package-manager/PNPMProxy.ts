@@ -239,14 +239,10 @@ export class PNPMProxy extends JsPackageManager {
     };
   }
 
-  override async getDeclaredVersionSpecifier(packageName: string): Promise<string | null> {
-    const specifier = await super.getDeclaredVersionSpecifier(packageName);
-    if (specifier) {
-      return specifier;
-    }
-    const catalogName = this.#getCatalogName(this.getAllDependencies()[packageName]);
+  protected override getDeclaredRange(packageName: string, declared: string): string | null {
+    const catalogName = this.#getCatalogName(declared);
     if (catalogName === null) {
-      return null;
+      return super.getDeclaredRange(packageName, declared);
     }
     const workspace = this.#readWorkspaceYaml();
     if (!workspace) {

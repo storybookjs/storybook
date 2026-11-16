@@ -41,5 +41,17 @@ RUN curl -fsSL https://claude.ai/install.sh | bash -s "$CLAUDE_CODE_VERSION" \
 RUN curl -fsSL https://mise.run | MISE_VERSION="$MISE_VERSION" MISE_INSTALL_PATH=/home/agent/.local/bin/mise sh \
   && mise --version
 
+# The agents click and type through the Playwright MCP server, which the `playwright` package
+# carries. Its version must equal the image tag, or the server finds no browser it can launch.
+# Docker's seccomp profile denies the user namespaces of Chromium's own sandbox, and the server
+# turns that sandbox on, so it gets --no-sandbox. Screenshots land in the evidence directory that
+# run.ts mounts.
+ARG PLAYWRIGHT_VERSION=1.58.2
+ARG BROWSER_MCP="/home/agent/.npm-global/bin/playwright run-mcp-server --headless --browser chromium --no-sandbox --isolated --viewport-size 1280x800 --output-dir /home/agent/qa-evidence/browser"
+RUN PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm install -g "playwright@$PLAYWRIGHT_VERSION" \
+  && claude mcp add --scope user playwright -- $BROWSER_MCP \
+  && codex mcp add playwright -- $BROWSER_MCP \
+  && claude mcp list && codex mcp list
+
 WORKDIR /home/agent
 ENTRYPOINT ["sleep", "infinity"]

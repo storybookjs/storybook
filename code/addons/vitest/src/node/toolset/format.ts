@@ -508,7 +508,7 @@ File arguments match story files only, by their path relative to ${code(process.
   if (selection?.files && selection.stories) {
     return 'None of the given story IDs is in the matched story files, so no tests ran.';
   }
-  return 'No stories were given, so no tests ran. Pass files or story IDs, or neither to run every story test.';
+  return 'No stories were given, so no tests ran.';
 }
 
 /**

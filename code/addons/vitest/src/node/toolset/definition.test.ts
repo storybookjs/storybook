@@ -916,9 +916,7 @@ No story found for story ID "gone--story"`);
       const outcome = await runForMcp({ stories: [] });
 
       expect(outcome.ok).toBe(true);
-      expect(outcome.markdown).toBe(
-        'No stories were given, so no tests ran. Pass files or story IDs, or neither to run every story test.'
-      );
+      expect(outcome.markdown).toBe('No stories were given, so no tests ran.');
     });
 
     it('flags a failed run as a failure while still rendering the error line', async () => {

@@ -24,8 +24,8 @@ import { seatbelt } from '@ai-hero/sandcastle/sandboxes/seatbelt';
 import { basename, dirname, join, relative, resolve } from 'pathe';
 import { z } from 'zod';
 
-import { checksFor, renderChecklist } from './checks.ts';
 import { answerAfterRepairs, answerOfFinishedAgent, type Reading } from './lib/answer.ts';
+import { checklistOf, type Checklist } from './lib/checklist.ts';
 import { loadEntries } from './lib/catalog.ts';
 import { shipsSandcastleFiles } from './lib/clone-guard.ts';
 import { cycleBranchName, cycleRepo, versionLine } from './lib/cycle.ts';
@@ -36,10 +36,8 @@ import { forJobLog, liveLine } from './lib/live-log.ts';
 import { memoryGuard } from './lib/memory-guard.ts';
 import { CHECKOUT_GUIDE, guideFor } from './lib/migration-guide.ts';
 import { plannedRun, readPlanScope, refuse, type PlannedRun } from './lib/plan-scope.ts';
-import { planCheckId, renderPlanChecks } from './lib/qa-plan.ts';
 import { budgetRecord, msUntilHardStop, parseBudget, type RunBudget } from './lib/run-budget.ts';
 import {
-  agentOutput,
   Effort,
   Engine,
   SandboxKind,
@@ -135,7 +133,6 @@ const HOST_OS: Partial<Record<NodeJS.Platform, Os>> = {
 
 const QA_DIR = fileURLToPath(new URL('.', import.meta.url));
 const PROMPT_FILE = join(QA_DIR, 'prompts/upgrade.md');
-const PLAN_PROMPT_FILE = join(QA_DIR, 'prompts/plan-checks.md');
 const DOCKER_HOME = '/home/agent';
 // Where Sandcastle's Docker sandbox mounts the worktree.
 const DOCKER_WORKSPACE = `${DOCKER_HOME}/workspace`;
@@ -167,27 +164,6 @@ const planOfRun = (
   const planned = plannedRun(scope, { repo, version, part: values.part });
   return typeof planned === 'string' ? refuse(planned) : { ...planned, tier: scope.tier };
 };
-
-const checklistOf = (tier: Tier, planned: PlannedRun | undefined, repo: string) => {
-  const fixed = checksFor(tier);
-  const planChecks = (planned?.entries ?? []).map((entry) => ({
-    id: planCheckId(entry.slug),
-    label: entry.title,
-  }));
-  return {
-    checks: [...fixed.map(({ id, label }) => ({ id, label })), ...planChecks],
-    planIds: planChecks.map(({ id }) => id),
-    text: planned
-      ? [
-          `${renderChecklist(fixed)}\n${renderPlanChecks(planned.entries, repo)}`,
-          readFileSync(PLAN_PROMPT_FILE, 'utf8').trim(),
-        ].join('\n\n')
-      : renderChecklist(fixed),
-    fakeFailure:
-      planChecks[0]?.id ?? fixed.find(({ id }) => id === 'core.story-render')?.id ?? fixed[0]!.id,
-  };
-};
-type Checklist = ReturnType<typeof checklistOf>;
 
 const git = (cwd: string, ...args: string[]) =>
   execFileSync('git', args, { cwd, encoding: 'utf8' }).trim();
@@ -516,12 +492,7 @@ const runSandcastle = async (
       report,
     }),
   });
-  // One list for the schema, the checklist and the count the prompt names.
-  const { checks, planIds } = checklist;
-  const answerSchema = agentOutput(
-    checks.map((check) => check.id) as [string, ...string[]],
-    planIds
-  );
+  const { checks, answerSchema } = checklist;
 
   try {
     const guide = await guideFor(request.version, {

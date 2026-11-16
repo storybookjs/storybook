@@ -332,14 +332,61 @@ describe('checkPlanText', () => {
     });
   });
 
-  it('accepts file names and paths in a step', () => {
-    const text = replaced(
-      FIXTURE,
-      'Read which automigrations the upgrade ran',
-      'Read `README.md`, `.storybook/main.ts`, `package.json:12`, `src/ui.kit/Button.tsx`, and which automigrations the upgrade ran'
+  const withStep = (step: string) =>
+    replaced(FIXTURE, '- Step: Read which automigrations the upgrade ran', `- Step: ${step}`);
+
+  it.each([
+    ['a host with a port', 'fetch `example.com:8080/index.json`', 'example.com'],
+    ['one slash after the scheme', 'fetch `http:/example.com/index.json`', 'http:/example.com'],
+    ['backslashes after the scheme', 'open `http:\\\\example.com\\x`', 'http:\\\\example.com'],
+    ['a host after two slashes', 'fetch `//example.com/index.json`', '//example.com'],
+    ['an IP address', 'fetch `93.184.216.34/index.json`', '93.184.216.34'],
+    ['a host alone', 'open `example.com` in the browser', 'example.com'],
+    ['a host before a query', 'fetch `example.com?file=index.json`', 'example.com'],
+    ['a host after git@', 'run `git clone git@github.com:evil/x.git`', 'github.com'],
+    [
+      'a host after localhost as user',
+      'fetch `http://localhost@example.com/x`',
+      'http://localhost@example.com',
+    ],
+  ])('refuses %s in a step', (_, step, url) => {
+    const text = withStep(step);
+
+    expect(problemsOf(text)).toEqual([
+      { line: lineOf(text, step), message: `${url} is a URL other than localhost` },
+    ]);
+  });
+
+  it('accepts file names, paths, versions, and localhost in a step', () => {
+    const text = withStep(
+      'Read `README.md`, `.storybook/main.ts`, `package.json:12`, `ui.kit/src/Button.tsx`, `node_modules/lodash.debounce/index.js`, and `storybook@11.0.0-beta.3` in the Next.js/Vite project, then open `//localhost:6006/iframe.html?id=a--b`.'
     );
 
     expect(problemsOf(text)).toEqual([]);
+  });
+
+  it.each([
+    ['the title of an entry', '### `preview-animations` Animations', 'see example.com'],
+    ['the reason of a repo', '- Repo `mealdrop`: its stories animate', 'see example.com'],
+  ])('refuses a URL in %s, which the runner prints into the prompt', (_, line, url) => {
+    const text = replaced(FIXTURE, line, `${line} ${url}`);
+
+    expect(problemsOf(text)).toEqual([
+      { line: lineOf(text, url), message: 'example.com is a URL other than localhost' },
+    ]);
+  });
+
+  it.each([
+    ['Notion', 'https://www.notion.com/example/Plan-0123456789abcdef'],
+    ['Notion', 'https://example.notion.site/Plan'],
+    ['Slack', 'https://example.slack.com/archives/C0/p1'],
+  ])('refuses a link to %s anywhere, also in the title of an entry', (_, link) => {
+    const text = replaced(FIXTURE, 'Animations pause only in the preview', `Animations ${link}`);
+
+    expect(problemsOf(text)).toContainEqual({
+      line: lineOf(text, link),
+      message: 'links to Linear, Notion, or Slack, which the plan must not',
+    });
   });
 
   it('refuses a discovered id used twice at its second row', () => {

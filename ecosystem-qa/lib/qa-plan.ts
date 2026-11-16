@@ -694,7 +694,7 @@ const groupsAreDecided: Rule = ({ plan, at }) => {
   ];
 };
 
-const PRIVATE_LINK = /\b(?:linear\.app|notion\.so|notion\.site|(?:[\w-]+\.)*slack\.com)\b/i;
+const PRIVATE_LINK = /\b(?:linear\.app|notion\.(?:so|site|com)|(?:[\w-]+\.)*slack\.com)\b/i;
 
 const noPrivateLinks: Rule = ({ lines }) =>
   lines.flatMap((text, index) =>
@@ -703,18 +703,38 @@ const noPrivateLinks: Rule = ({ lines }) =>
       : []
   );
 
-const URL_HOST = /\b[a-z][\w+.-]*:\/\/(?:[^\s/@]*@)?([^\s/:?#`'")<>\]]+)/gi;
-const BARE_HOST = /(?<![\w.@/:-])((?:[a-z0-9-]+\.)+[a-z]{2,})(?=\/)/gi;
+// Without a scheme, a top-level domain is what tells a host such as example.com from a file name
+// such as README.md or a directory such as ui.kit, so a domain that is also a file extension of a
+// project (md, sh) is not on the list.
+const HOST_TLDS = [
+  ...['com', 'net', 'org', 'edu', 'gov', 'io', 'dev', 'app', 'ai', 'co', 'me', 'info', 'biz'],
+  ...['xyz', 'site', 'online', 'page', 'link', 'cloud', 'tech', 'ly', 'to', 'gg', 'tv', 'fm'],
+  ...['us', 'uk', 'de', 'fr', 'eu', 'nl', 'ru', 'cn', 'jp', 'ch', 'se', 'es', 'it', 'be', 'at'],
+  ...['ca', 'au', 'br'],
+];
 
-const stepsStayOnLocalhost: Rule = ({ plan, at }) =>
+const HOST = String.raw`(?:[^\s/\\@]*@)?([^\s/\\:?#\x60'",;)<>\]]+)`;
+const OFF_HOST = new RegExp(
+  [
+    String.raw`\b(?:https?|wss?|ftp):[\\/]*${HOST}`,
+    String.raw`\b[a-z][\w+.-]*:\/\/${HOST}`,
+    String.raw`(?<![\w:\\/])\/\/${HOST}`,
+    String.raw`(?<![\w.\\/-])((?:[a-z0-9-]+\.)+(?:${HOST_TLDS.join('|')})|\d{1,3}(?:\.\d{1,3}){3})(?![\w-]|\.\w)`,
+  ].join('|'),
+  'gi'
+);
+
+const textStaysOnLocalhost: Rule = ({ plan, at }) =>
   plan.entries.flatMap((entry, index) => {
     const layout = at.entries[index]!;
     return [
+      { text: entry.title, line: layout.heading },
+      ...entry.repos.map((repo, n) => ({ text: repo.reason, line: layout.repos[n]! })),
       ...entry.steps.map((text, step) => ({ text, line: layout.steps[step]! })),
       { text: entry.expected, line: layout.expected },
     ].flatMap(({ text, line }) =>
-      [...text.matchAll(URL_HOST), ...text.matchAll(BARE_HOST)]
-        .filter((match) => match[1]!.toLowerCase() !== 'localhost')
+      [...text.matchAll(OFF_HOST)]
+        .filter((match) => match.slice(1).find(Boolean)!.toLowerCase() !== 'localhost')
         .map((match) => ({ line, message: `${match[0]} is a URL other than localhost` }))
     );
   });
@@ -772,7 +792,7 @@ const RULES: Rule[] = [
   batchesHaveNoGap,
   groupsAreDecided,
   noPrivateLinks,
-  stepsStayOnLocalhost,
+  textStaysOnLocalhost,
   matchesWindow,
 ];
 

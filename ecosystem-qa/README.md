@@ -171,7 +171,15 @@ It then holds the plan against these rules and prints each problem as `<file>:<l
 - No repo of an entry is more than one major behind the plan's line, by the `tags` of its catalog entry or the major of its discovered row.
 - Every PR of an entry has a row that names the entry, or a row in a group whose decision names it, every row has a decision, and every decision names entries that exist.
 - Every maintainer PR marked `qa:skip` with a product label names a group, and every group has a decision.
-- The file holds no link to Linear, Notion or Slack, and no step or expected outcome holds a URL other than `localhost`, with or without its scheme.
+- The file holds no link to `linear.app`, `notion.so`, `notion.site`, `notion.com`, or a `slack.com` host.
+- No entry title, repo reason, step, or expected outcome names a host other than `localhost`, because the runner prints all four into the agent's prompt. A host is refused in these forms:
+  - after any scheme and `//`, such as `https://example.com` or `http://localhost@example.com`;
+  - after `http`, `https`, `ws`, `wss`, or `ftp` and a colon with any number of slashes or backslashes, such as `http:/example.com` or `http:\\example.com`;
+  - after `//` alone, such as `//example.com`;
+  - an IPv4 address, such as `93.184.216.34`, `127.0.0.1` included;
+  - a dotted name that ends in one of the top-level domains of `HOST_TLDS` in `lib/qa-plan.ts`, such as `com`, `org`, `io`, or `dev`, alone or followed by a port, a path, a query, or a fragment: `example.com`, `example.com:8080/x`, `git@github.com:x`.
+
+  A dotted name with another ending passes, so `README.md`, `ui.kit/src`, `the Next.js/Vite project`, and `package.json:12` are fine, and so are a host on a domain outside that list, such as `example.zone/x`, and a package that `npx` fetches. The reviewer reads for those.
 - With `--window`, the tables hold exactly the PRs of the window, with their titles and areas.
 
 A plan that passes prints its hash, which names the cycle, its batches with their runs, and about what it costs, priced at the most expensive static run so far.

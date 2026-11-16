@@ -402,7 +402,7 @@ export const services = async (_value: void, options: Options): Promise<void> =>
       storyIndex,
       git: {
         getRepoRoot: () => gitDiffProvider.getRepoRoot(),
-        getChangedFiles: () => gitDiffProvider.getChangedFiles(),
+        getChangedFiles: (since) => gitDiffProvider.getChangedFiles(since),
       },
       changeStatuses: { getAll: getSyncedStatuses },
       // Real paths, because git reports the repo root as one; on Windows the cwd can differ in case.

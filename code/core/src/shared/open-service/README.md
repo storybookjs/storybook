@@ -158,6 +158,11 @@ Adapters resolve one toolset with `getToolset(id)` or take the whole set via
 `getRegisteredToolsets()`; `@storybook/addon-mcp`, `@storybook/mcp`, and the `storybook tools` CLI
 consume them today.
 
+A toolset method may call a method of another toolset through `getToolset(id)`, which is typed for
+the core toolsets: `test.run` calls `stories.changed` for its `changed` input, so both select the
+same stories. The adapters validate input, not the handler, so the calling method's own input
+schema has to cover what it passes on.
+
 Telemetry classification belongs in Storybook-owned telemetry calls, not on the generic toolset
 definition. A handler returns at most one usage report on its outcome, `telemetry: { payload }`.
 `invokeToolsetMethod` — the one way every surface runs a method — names the report after the
@@ -194,9 +199,10 @@ Methods marked `requiresDevServer` intercept only in **local** mode (start-your-
 guidance). In attached mode they run caller-side. `stories.preview` reads the recorded origin from
 the instance record. See [cli/tools/README.md](../../cli/tools/README.md).
 
-A method may name one array-of-paths input as `fileArguments` (`test.run` names `files`). The
-`storybook tools` CLI fills it from bare arguments, those that exist resolved against the directory the command runs
-in, as test runners take files. MCP and the SDK ignore the trait.
+A method may name one array input as `positional` (`test.run` names `files`). The
+`storybook tools` CLI then takes that key as bare arguments too, and passes the values as typed:
+`test run Button` is `test run --files Button`. MCP and the SDK have no bare arguments and ignore
+the trait.
 
 ### Query
 

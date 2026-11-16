@@ -1,0 +1,7 @@
+<script>
+  import Avatar from './Avatar.svelte';
+</script>
+
+<Avatar size={48} initials="AL" />
+
+warning: The render function is not reflected in this snippet.

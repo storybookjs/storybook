@@ -8,7 +8,7 @@ import { dedent } from 'ts-dedent';
 import { shortenPath } from '../util.ts';
 import { createBlocker } from './types.ts';
 
-const removedSimulations = ['protanomaly', 'deuteranomaly'];
+const removedSimulations = ['protanomaly', 'deuteranomaly', 'tritanomaly'];
 const mentionsRemovedSimulation = new RegExp(removedSimulations.join('|'));
 const maxListedFiles = 10;
 
@@ -62,18 +62,18 @@ export const blocker = createBlocker({
     return {
       title: 'Vision simulations removed from the accessibility addon',
       message: dedent`
-        The Vision Simulator no longer offers the \`protanomaly\` and \`deuteranomaly\` simulations.
-        These files still set one of them through the \`vision\` global:
+        The Vision Simulator no longer offers the \`protanomaly\`, \`deuteranomaly\` and \`tritanomaly\`
+        simulations. These files still set one of them through the \`vision\` global:
 
         ${listed.join('\n')}
 
-        Remove the global, or replace it with \`protanopia\` or \`deuteranopia\`, which simulate the most
-        severe form of each condition.
+        Remove the global, or replace it with \`protanopia\`, \`deuteranopia\` or \`tritanopia\`, which
+        simulate the most severe form of each condition.
 
         This is a manual migration. Storybook cannot choose for you, because the replacement renders
         differently and changes the visual snapshots of these stories.
       `,
-      link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#addon-a11y-removed-protanomaly-and-deuteranomaly-vision-simulations',
+      link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#addon-a11y-removed-anomaly-vision-simulations',
     };
   },
 });

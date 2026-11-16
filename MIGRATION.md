@@ -94,7 +94,7 @@
   - [`core/module-graph` query aliases removed](#coremodule-graph-query-aliases-removed)
   - [ExternalDocs and ExternalDocsContainer are removed](#externaldocs-and-externaldocscontainer-are-removed)
   - [CSF `.story` annotations removed](#csf-story-annotations-removed)
-  - [Addon A11y: Removed protanomaly and deuteranomaly vision simulations](#addon-a11y-removed-protanomaly-and-deuteranomaly-vision-simulations)
+  - [Addon A11y: Removed anomaly vision simulations](#addon-a11y-removed-anomaly-vision-simulations)
   - [`argTypeTargetsV7` feature flag removed](#argtypetargetsv7-feature-flag-removed)
   - [`disallowImplicitActionsInRenderV8` feature flag removed](#disallowimplicitactionsinrenderv8-feature-flag-removed)
   - [JavaScript init templates use JSDoc types instead of `propTypes`](#javascript-init-templates-use-jsdoc-types-instead-of-proptypes)
@@ -2669,7 +2669,7 @@ If the value is not a static object, move the fields yourself. This includes a v
 
 `storybook migrate csf-2-to-3` still lifts a static `Story.story = { ... }` into a CSF 3 story object. It does not rewrite the dynamic cases above. The old `csf-hoist-story-annotations` codemod no longer ships.
 
-### Addon A11y: Removed protanomaly and deuteranomaly vision simulations
+### Addon A11y: Removed anomaly vision simulations
 
 The Vision Simulator was updated to match the simulations offered by Chrome DevTool, to use the best available academic research for each simulator and to get rid of redundant entries. The `protanomaly`, `deuteranomaly` and `tritanomaly` entries are less severe forms of `protanopia`, `deuteranopia` and `tritanopia`, so they were removed.
 

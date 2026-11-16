@@ -30,7 +30,7 @@ beforeEach(() => {
 });
 
 describe('blocks', () => {
-  test.each(['protanomaly', 'deuteranomaly'])(
+  test.each(['protanomaly', 'deuteranomaly', 'tritanomaly'])(
     'when a story pins the removed %s simulation',
     async (vision) => {
       await expect(
@@ -145,10 +145,11 @@ describe('log', () => {
     });
 
     expect(title).toBe('Vision simulations removed from the accessibility addon');
+    expect(message).toContain('`protanomaly`, `deuteranomaly` and `tritanomaly`');
     expect(message).toContain('- /elsewhere/src/Story9.stories.ts');
     expect(message).not.toContain('Story10.stories.ts');
     expect(message).toContain('- and 2 more');
-    expect(message).toContain('`protanopia` or `deuteranopia`');
-    expect(link).toContain('#addon-a11y-removed-protanomaly-and-deuteranomaly-vision-simulations');
+    expect(message).toContain('`protanopia`, `deuteranopia` or `tritanopia`');
+    expect(link).toContain('#addon-a11y-removed-anomaly-vision-simulations');
   });
 });

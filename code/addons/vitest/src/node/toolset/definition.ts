@@ -327,7 +327,7 @@ export function createTestToolset({
     methods: {
       run: {
         input: runInputSchema,
-        fileArguments: 'files',
+        positional: 'files',
         title: 'Run Storybook tests',
         description: (ctx) => describeRun(a11yEnabled, ctx),
         handler: async (

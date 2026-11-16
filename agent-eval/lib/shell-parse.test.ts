@@ -111,7 +111,7 @@ describe('storybook tools arguments after the tool name', () => {
         ['npx storybook tools test run', ...tokens.map(shellQuote)].join(' '),
       ]);
       const parsed = parseToolsTokens(tokens);
-      // The dispatcher appends bare arguments to `files`, the `fileArguments` key of `test run`.
+      // The dispatcher appends bare arguments to `files`, the `positional` key of `test run`.
       const args =
         parsed.ok && parsed.positionals.length > 0
           ? {

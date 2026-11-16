@@ -23,7 +23,7 @@ export type ParsedToolsTokens =
       /** `true` from `--attach`, `false` from `--no-attach`. */
       attach?: boolean;
       args: Record<string, unknown>;
-      /** Bare arguments, in order; the tool decides whether it takes them (`fileArguments`). */
+      /** Bare arguments, in order; the tool decides whether it takes them (`positional`). */
       positionals: string[];
     }
   | { ok: false; error: string };
@@ -35,7 +35,7 @@ export type ParsedToolsTokens =
  *   `JSON.parse`, falling back to the raw string.
  * - A bare `--key` (no value) becomes `true`.
  * - Tokens that are not flags or flag values are positionals, as is everything after `--`. Only a
- *   tool that declares `fileArguments` takes them; the dispatcher rejects them for the rest.
+ *   tool that declares `positional` takes them; the dispatcher rejects them for the rest.
  * - `--input '<object>'` is an escape hatch providing the raw argument object; explicit `--key`
  *   flags override its entries.
  * - `--json` switches the output to the outcome's structured data as JSON.
@@ -103,7 +103,7 @@ export function parseToolsTokens(
     }
 
     // `-c`, `-p` and other short options belong before the toolset name; here they would read as
-    // file names. A file that starts with `-` goes after `--`.
+    // bare arguments. A bare argument that starts with `-` goes after `--`.
     if (token.startsWith('-') && !token.startsWith('--')) {
       return {
         ok: false,
@@ -123,8 +123,8 @@ export function parseToolsTokens(
       value = key.slice(equalsIndex + 1);
       key = key.slice(0, equalsIndex);
     } else if (i < tokens.length && !tokens[i].startsWith('--')) {
-      // A bare token after a flag is its value, so file arguments go before the flags or after
-      // `--`: in `--a11y false a.tsx`, `false` is the value and `a.tsx` a file.
+      // A bare token after a flag is its value, so bare arguments go before the flags or after
+      // `--`: in `--a11y false a.tsx`, `false` is the value and `a.tsx` a bare argument.
       value = tokens[i];
       i += 1;
     }

@@ -122,13 +122,12 @@ export type ToolsetMethod<
    */
   requiresDevServer?: true;
   /**
-   * The input key, an array of file paths or path patterns, that the `storybook tools` CLI fills
-   * from bare arguments, as test runners take files: `npx storybook tools test run Button`. The CLI
-   * resolves each one that exists against the directory the command runs in before the call, so the
-   * handler receives absolute paths for files; patterns pass as typed. Other transports ignore the
-   * trait and pass the key as is.
+   * The input key, an array, that the `storybook tools` CLI also takes as bare arguments:
+   * `npx storybook tools test run Button Card` is `--files Button Card`. The CLI passes the values
+   * as typed; what they mean is up to the handler. Other transports have no bare arguments and
+   * ignore the trait.
    */
-  fileArguments?: Extract<keyof StandardSchemaV1.InferInput<TSchema>, string>;
+  positional?: Extract<keyof StandardSchemaV1.InferInput<TSchema>, string>;
   handler: (
     input: StandardSchemaV1.InferOutput<TSchema>,
     context: ToolsetCtx

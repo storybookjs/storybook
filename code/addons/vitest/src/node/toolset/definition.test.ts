@@ -148,7 +148,7 @@ describe('test API', () => {
   });
 
   it('lets the CLI fill files from bare arguments', () => {
-    expect(toolset.methods.run.fileArguments).toBe('files');
+    expect(toolset.methods.run.positional).toBe('files');
   });
 
   it('renders the same per-story report for the CLI consumer as for MCP', async () => {

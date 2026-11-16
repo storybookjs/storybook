@@ -6,7 +6,17 @@ import { SEMVER } from './cycle.ts';
 import { CatalogEntry, CheckId } from './schema.ts';
 import { needsGroup, type Window, type WindowPr } from './window.ts';
 
-const Text = z.string().regex(/^\S(?:[^\n\r]*\S)?$/, 'expected one line of text');
+// GitHub shows neither an HTML comment nor a control character, so either would hide text from
+// the reviewer that the agent still reads.
+const Text = z
+  .string()
+  .regex(/^\S(?:[^\n\r]*\S)?$/, 'expected one line of text')
+  .regex(/^[^\p{Cc}\p{Zl}\p{Zp}]*$/u, 'expected no control character or line separator')
+  .refine((text) => !text.includes('<!--'), 'expected no HTML comment');
+const RepoDir = Text.refine(
+  (dir) => !dir.startsWith('/') && !dir.includes('\\') && !dir.split('/').includes('..'),
+  'expected a relative path inside the repository'
+);
 const Slug = z
   .string()
   .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'expected lower case letters, digits, and hyphens')
@@ -44,7 +54,7 @@ export const DiscoveredRepo = z.strictObject({
   repo: CatalogEntry.shape.repo,
   commit: Sha,
   packageManager: CatalogEntry.shape.packageManager,
-  storybookDir: Text,
+  storybookDir: RepoDir,
   major: z.int().positive(),
   stars: z.int().min(0),
   pushedAt: z
@@ -533,28 +543,33 @@ const decisionRows = ({ plan, at }: RuleInput) =>
 const unknownSlugs = (decision: Decision, slugs: Set<string>): string[] =>
   decision && 'entries' in decision ? decision.entries.filter((slug) => !slugs.has(slug)) : [];
 
-const duplicates = (keys: string[], lineOf: (index: number) => number, what: string) =>
+const duplicates = <Key>(keys: Key[], lines: number[], message: (key: Key) => string): Problem[] =>
   keys.flatMap((key, index) =>
-    keys.indexOf(key) < index
-      ? [{ line: lineOf(index), message: `${what} \`${key}\` is used twice` }]
-      : []
+    keys.indexOf(key) < index ? [{ line: lines[index]!, message: message(key) }] : []
   );
+
+const WINDOW_TABLES = ['needed', 'undeclared', 'maintainerSkips', 'verified', 'skipped'] as const;
 
 const namesAreUnique: Rule = ({ plan, at }) => [
   ...duplicates(
     plan.entries.map((entry) => entry.slug),
-    (index) => at.entries[index]!.heading,
-    'the slug'
+    at.entries.map((entry) => entry.heading),
+    (slug) => `the slug \`${slug}\` is used twice`
   ),
   ...duplicates(
     plan.groups.map((group) => group.slug),
-    (index) => at.tables.groups.rows[index]!,
-    'the group'
+    at.tables.groups.rows,
+    (slug) => `the group \`${slug}\` is used twice`
   ),
   ...duplicates(
     plan.discovered.map((repo) => repo.id),
-    (index) => at.tables.discovered.rows[index]!,
-    'the id'
+    at.tables.discovered.rows,
+    (id) => `the id \`${id}\` is used twice`
+  ),
+  ...duplicates(
+    WINDOW_TABLES.flatMap((key) => plan[key].map((row) => row.pr)),
+    WINDOW_TABLES.flatMap((key) => at.tables[key].rows),
+    (pr) => `#${pr} has a row already`
   ),
 ];
 
@@ -640,23 +655,30 @@ const entryPrsHaveRows: Rule = (input) => {
 };
 
 const rowsAreDecided: Rule = (input) => {
-  const slugs = new Set(input.plan.entries.map((entry) => entry.slug));
-  return decisionRows(input).flatMap(({ row, line }) =>
-    row.decision === null
-      ? [{ line, message: `#${row.pr} has no decision` }]
-      : unknownSlugs(row.decision, slugs).map((slug) => ({
-          line,
-          message: `#${row.pr} names \`${slug}\`, which is no entry of this plan`,
-        }))
-  );
+  const entries = new Map(input.plan.entries.map((entry) => [entry.slug, entry]));
+  return decisionRows(input).flatMap(({ row, line }) => {
+    if (row.decision === null) {
+      return [{ line, message: `#${row.pr} has no decision` }];
+    }
+    return ('entries' in row.decision ? row.decision.entries : []).flatMap((slug) => {
+      const entry = entries.get(slug);
+      if (!entry) {
+        return [{ line, message: `#${row.pr} names \`${slug}\`, which is no entry of this plan` }];
+      }
+      return entry.prs.includes(row.pr)
+        ? []
+        : [{ line, message: `#${row.pr} names \`${slug}\`, whose PRs do not list it` }];
+    });
+  });
 };
 
 const batchesHaveNoGap: Rule = ({ plan, at }) => {
-  const batches = new Set(plan.entries.map((entry) => entry.batch));
-  const missing = planBatches(plan).find((batch) => !batches.has(batch));
-  if (missing === undefined) {
+  const batches = [...new Set(plan.entries.map((entry) => entry.batch))].sort((a, b) => a - b);
+  const gap = batches.findIndex((batch, index) => batch !== index + 1);
+  if (gap === -1) {
     return [];
   }
+  const missing = gap + 1;
   const index = plan.entries.findIndex((entry) => entry.batch > missing);
   return [{ line: at.entries[index]!.batch, message: `batch ${missing} has no entry` }];
 };
@@ -686,7 +708,7 @@ const groupsAreDecided: Rule = ({ plan, at }) => {
   ];
 };
 
-const PRIVATE_LINK = /\b(?:linear\.app|notion\.so|notion\.site|(?:[\w-]+\.)*slack\.com)\b/i;
+const PRIVATE_LINK = /\b(?:linear\.app|notion\.(?:so|site|com)|(?:[\w-]+\.)*slack\.com)\b/i;
 
 const noPrivateLinks: Rule = ({ lines }) =>
   lines.flatMap((text, index) =>
@@ -695,23 +717,41 @@ const noPrivateLinks: Rule = ({ lines }) =>
       : []
   );
 
-const URL_HOST = /\b[a-z][\w+.-]*:\/\/(?:[^\s/@]*@)?([^\s/:?#`'")<>\]]+)/gi;
-const BARE_HOST = /(?<![\w.@/:-])((?:[a-z0-9-]+\.)+[a-z]{2,})(?=\/)/gi;
+// Without a scheme, a top-level domain is what tells a host such as example.com from a file name
+// such as README.md or a directory such as ui.kit, so a domain that is also a file extension of a
+// project (md, sh) is not on the list.
+const HOST_TLDS = [
+  ...['com', 'net', 'org', 'edu', 'gov', 'io', 'dev', 'app', 'ai', 'co', 'me', 'info', 'biz'],
+  ...['xyz', 'site', 'online', 'page', 'link', 'cloud', 'tech', 'ly', 'to', 'gg', 'tv', 'fm'],
+  ...['us', 'uk', 'de', 'fr', 'eu', 'nl', 'ru', 'cn', 'jp', 'ch', 'se', 'es', 'it', 'be', 'at'],
+  ...['ca', 'au', 'br'],
+];
 
-const stepsStayOnLocalhost: Rule = ({ plan, at }) =>
+const HOST = String.raw`(?:[^\s/\\@]*@)?([^\s/\\:?#\x60'",;)<>\]]+)`;
+const OFF_HOST = new RegExp(
+  [
+    String.raw`\b(?:https?|wss?|ftp):[\\/]*${HOST}`,
+    String.raw`\b[a-z][\w+.-]*:\/\/${HOST}`,
+    String.raw`(?<![\w:\\/])\/\/${HOST}`,
+    String.raw`(?<![\w.\\/-])((?:[a-z0-9-]+\.)+(?:${HOST_TLDS.join('|')})|\d{1,3}(?:\.\d{1,3}){3})(?![\w-]|\.\w)`,
+  ].join('|'),
+  'gi'
+);
+
+const textStaysOnLocalhost: Rule = ({ plan, at }) =>
   plan.entries.flatMap((entry, index) => {
     const layout = at.entries[index]!;
     return [
+      { text: entry.title, line: layout.heading },
+      ...entry.repos.map((repo, n) => ({ text: repo.reason, line: layout.repos[n]! })),
       ...entry.steps.map((text, step) => ({ text, line: layout.steps[step]! })),
       { text: entry.expected, line: layout.expected },
     ].flatMap(({ text, line }) =>
-      [...text.matchAll(URL_HOST), ...text.matchAll(BARE_HOST)]
-        .filter((match) => match[1]!.toLowerCase() !== 'localhost')
+      [...text.matchAll(OFF_HOST)]
+        .filter((match) => match.slice(1).find(Boolean)!.toLowerCase() !== 'localhost')
         .map((match) => ({ line, message: `${match[0]} is a URL other than localhost` }))
     );
   });
-
-const WINDOW_TABLES = ['needed', 'undeclared', 'maintainerSkips', 'verified', 'skipped'] as const;
 
 const matchesWindow: Rule = ({ plan, at, window }) => {
   if (!window) {
@@ -764,7 +804,7 @@ const RULES: Rule[] = [
   batchesHaveNoGap,
   groupsAreDecided,
   noPrivateLinks,
-  stepsStayOnLocalhost,
+  textStaysOnLocalhost,
   matchesWindow,
 ];
 
@@ -814,8 +854,8 @@ export const discoveredEntries = (plan: Plan): CatalogEntry[] =>
     windows: false,
   }));
 
-export const planHash = (text: string): string =>
-  createHash('sha256').update(text).digest('hex').slice(0, 12);
+export const planHash = (content: string | Uint8Array): string =>
+  createHash('sha256').update(content).digest('hex').slice(0, 12);
 
 export const planCheckId = (slug: string): string => `plan.${slug}`;
 

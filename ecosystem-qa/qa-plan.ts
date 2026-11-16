@@ -1,7 +1,7 @@
-import { readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
 
-import { basename } from 'pathe';
+import { basename, dirname } from 'pathe';
 
 import { loadEntries } from './lib/catalog.ts';
 import {
@@ -46,9 +46,12 @@ const readWindow = (file: string) => Window.parse(readJson(file));
 const plural = (count: number, one: string, many = `${one}s`) =>
   `${count} ${count === 1 ? one : many}`;
 
-const [command, file] = positionals;
+const [command, file, ...extra] = positionals;
 
-if (command === 'render' && values.window && values.out && !file) {
+if (extra.length) {
+  console.error(`${command} takes one file, and was given ${extra.length + 1}.\n\n${HELP}`);
+  process.exit(1);
+} else if (command === 'render' && values.window && values.out && !file) {
   const draft = PlanDraft.parse(values.draft ? readJson(values.draft) : {});
   let text: string;
   try {
@@ -57,11 +60,12 @@ if (command === 'render' && values.window && values.out && !file) {
     console.error(error instanceof Error ? error.message : error);
     process.exit(1);
   }
+  mkdirSync(dirname(values.out), { recursive: true });
   writeFileSync(values.out, text);
   console.log(`Wrote ${values.out}. Run check on it before you open the plan PR.`);
 } else if (command === 'check' && file && !values.draft && !values.out) {
-  const text = readFileSync(file, 'utf8');
-  const { plan, problems } = checkPlanText(text, {
+  const bytes = readFileSync(file);
+  const { plan, problems } = checkPlanText(bytes.toString('utf8'), {
     catalog: loadEntries(),
     window: values.window ? readWindow(values.window) : undefined,
   });
@@ -76,7 +80,7 @@ if (command === 'render' && values.window && values.out && !file) {
   const runs = batches.map((batch) => planRuns(plan, batch));
   const total = runs.flat().length;
   console.log(
-    `${basename(file)}: plan ${planHash(text)} for ${plan.line} at ${plan.version}, ${plural(plan.entries.length, 'entry', 'entries')}, ${plural(batches.length, 'batch', 'batches')}, ${plural(plan.discovered.length, 'discovered repo')}.`
+    `${basename(file)}: plan ${planHash(bytes)} for ${plan.line} at ${plan.version}, ${plural(plan.entries.length, 'entry', 'entries')}, ${plural(batches.length, 'batch', 'batches')}, ${plural(plan.discovered.length, 'discovered repo')}.`
   );
   for (const [index, batch] of batches.entries()) {
     const batchRuns = runs[index]!;

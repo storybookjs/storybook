@@ -119,7 +119,6 @@ export const sweepMatrix = (
 
 interface Run {
   repo: string;
-  // The part of a plan batch on the repo, for a job of a plan run.
   part?: number | undefined;
   os: string;
   engine: string;

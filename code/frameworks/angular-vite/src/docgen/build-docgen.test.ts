@@ -522,6 +522,20 @@ describe('buildDocgenPayload', () => {
     });
   });
 
+  it('reports a member the barrel does not export, rather than documenting another class', () => {
+    givenStoryFile(`
+      import { UI } from './ui';
+      export default { title: 'Button', component: UI.Nope };
+    `);
+    const manager = managerReturning(metaFor(componentEntry()));
+
+    const payload = buildDocgenPayload({ entry }, context(manager));
+
+    expect(payload?.error?.name).toBe('AngularComponentMetaNotFound');
+    expect(payload?.error?.message).toContain('"./icon.component" has no export "Nope"');
+    expect(manager.extractComponentMeta).not.toHaveBeenCalled();
+  });
+
   describe('component reached through another module', () => {
     it('follows a property access on a namespace import to the component it names', () => {
       givenStoryFile(`

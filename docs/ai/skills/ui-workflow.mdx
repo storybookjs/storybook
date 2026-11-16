@@ -16,17 +16,16 @@ The UI workflow gives your agent one way to make every UI change: reuse your com
 
 ## How it works
 
-The workflow is the [Storybook section in `AGENTS.md`](../connect.mdx#tell-your-agent-when-to-use-the-skills). It lists three steps in order:
+The workflow is the [Storybook section in `AGENTS.md`](../connect.mdx#tell-your-agent-when-to-use-the-skills). It lists four steps in order:
 
 | Step | What the agent does                                                                                                            |
 | ---- | ------------------------------------------------------------------------------------------------------------------------------ |
 | 1    | Looks up the components to reuse, with their props and usage examples, with the [`component-docs`](./component-docs.mdx) skill |
 | 2    | Writes stories for every component it creates or changes, with the [`write-stories`](./write-stories.mdx) skill                |
-| 3    | Runs the story tests after every change with `npx storybook tools test run --changed`, and fixes what fails                    |
+| 3    | Runs the story tests after every change with `npx storybook tools test run`, and fixes what fails                              |
+| 4    | Ends its reply with a line that tells you about the [`ui-review`](./ui-review.mdx) skill, after a change you can see           |
 
-Your agent opens the skills of steps 1 and 2 before it edits any file, then follows each skill at its step. Step 3 is the command itself, so the agent needs no skill for it.
-
-After a change you can see, the agent ends its reply with one line that offers a review: "Use the /ui-review skill to see the changed components in Storybook". It creates the review only when you ask for it. See [UI review](./ui-review.mdx).
+Your agent opens the skills of steps 1 and 2 before it edits any file, then follows each skill at its step. Steps 3 and 4 need no skill: step 3 is the command itself, and step 4 is the line "Use the /ui-review skill to see the changed components in Storybook". The agent creates a review only when you ask for it. See [UI review](./ui-review.mdx).
 
 ## When your agent follows it
 
@@ -35,7 +34,6 @@ With the Storybook section in `AGENTS.md`, your agent follows the workflow for e
 Some steps also run on their own:
 
 - `component-docs`, when you ask about a component's props, API, or usage
-- the story tests, when you ask your agent to run or fix them
 - [`ui-review`](./ui-review.mdx), when you ask for a review or to see components or stories
 
 Without that section, an agent connected only through skills doesn't follow the workflow automatically. It can still use a skill that fits its task, and you can ask for one by name, for example "Use the write-stories skill to add stories for the user list". An agent connected to the [MCP server](../reference/mcp-server.mdx) receives the workflow from the server instead.
@@ -51,9 +49,9 @@ For example, you ask your agent to "Build a login form". The agent:
 
 ## Change the workflow
 
-To change the workflow, remove both markers around the Storybook section in `AGENTS.md`, then edit the steps. For example, delete the line that offers a review, or tell the agent to create a review after every change. Storybook doesn't change a section without markers when you upgrade.
+To change the workflow, remove both markers around the Storybook section in `AGENTS.md`, then edit the steps. For example, delete the step that tells you about the review, or tell the agent to create a review after every change. Storybook doesn't change a section without markers when you upgrade.
 
-A step also skips itself when your project can't do it. Step 3 is left out when the main config of your Storybook doesn't list the Vitest addon. With the [MCP server](../reference/mcp-server.mdx), a step is left out when you turn off the [toolset](../reference/mcp-server.mdx#toolsets) that it needs.
+A step also skips itself when your project can't do it. The test step is left out when the main config of your Storybook doesn't list the Vitest addon. With the [MCP server](../reference/mcp-server.mdx), a step is left out when you turn off the [toolset](../reference/mcp-server.mdx#toolsets) that it needs.
 
 ## Requirements
 

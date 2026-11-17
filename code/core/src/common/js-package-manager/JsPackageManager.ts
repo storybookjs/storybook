@@ -1037,15 +1037,42 @@ export abstract class JsPackageManager {
     return this.packageJsonPaths[0] ?? resolve(this.cwd, 'package.json');
   }
 
-  /** The package.json beside the closest lockfile, or the primary one before the first install. */
+  /** Find the package.json whose `workspaces` include `packageJsonPath`, if any. */
+  protected findWorkspaceRootPackageJsonPath(packageJsonPath: string): string | undefined {
+    return this.packageJsonPaths.find((ancestorPath) => {
+      const workspaces = JsPackageManager.getPackageJson(ancestorPath).workspaces;
+      const patterns = Array.isArray(workspaces) ? workspaces : workspaces?.packages;
+      if (!patterns?.length) {
+        return false;
+      }
+      return globSync(
+        patterns
+          .filter((pattern: string) => !pattern.startsWith('!'))
+          .map((pattern: string) => `${pattern}/package.json`),
+        {
+          cwd: dirname(ancestorPath),
+          absolute: true,
+          ignore: patterns
+            .filter((pattern: string) => pattern.startsWith('!'))
+            .map((pattern: string) => `${pattern.slice(1)}/package.json`),
+        }
+      )
+        .map(normalize)
+        .includes(normalize(packageJsonPath));
+    });
+  }
+
+  /** The package.json beside the closest lockfile, else the workspace root, else the primary one. */
   #findRootPackageJsonPath(): string {
     const lockfilePath = find.any(LOCK_FILES, {
       cwd: this.primaryPackageJson.operationDir,
       last: getProjectRoot(),
     });
-    return lockfilePath
-      ? join(dirname(lockfilePath), 'package.json')
-      : this.primaryPackageJson.packageJsonPath;
+    if (lockfilePath) {
+      return join(dirname(lockfilePath), 'package.json');
+    }
+    const { packageJsonPath } = this.primaryPackageJson;
+    return this.findWorkspaceRootPackageJsonPath(packageJsonPath) ?? packageJsonPath;
   }
 
   /** List all package.json files starting from the given directory and stopping at the project root. */

@@ -1,4 +1,5 @@
-import { resolve } from 'node:path';
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { join, resolve } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -126,6 +127,39 @@ describe('JsPackageManager', () => {
       });
 
       expect(jsPackageManager.getOverrideSources()).toEqual(expected);
+    });
+
+    it('reads the workspace root without a lockfile', async () => {
+      const root = await mkdtemp(join(process.cwd(), '.overrides-workspace-'));
+      const app = join(root, 'packages', 'app');
+      try {
+        await mkdir(app, { recursive: true });
+        await writeFile(
+          join(root, 'package.json'),
+          JSON.stringify({ workspaces: ['packages/*'], overrides: { storybook: '10.5.3' } })
+        );
+        await writeFile(
+          join(app, 'package.json'),
+          JSON.stringify({ devDependencies: { storybook: '10.5.3' } })
+        );
+        vi.spyOn(find, 'any').mockReturnValue(undefined);
+        vi.spyOn(JsPackageManager, 'getPackageJson');
+
+        // @ts-expect-error Ignore abstract class error
+        const manager: JsPackageManager = new JsPackageManager({
+          configDir: join(app, '.storybook'),
+        });
+
+        expect(manager.getOverrideSources()).toEqual([
+          {
+            path: join(root, 'package.json'),
+            field: 'overrides',
+            overrides: { storybook: '10.5.3' },
+          },
+        ]);
+      } finally {
+        await rm(root, { recursive: true, force: true });
+      }
     });
   });
 

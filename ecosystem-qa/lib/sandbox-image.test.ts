@@ -1,5 +1,13 @@
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
@@ -33,7 +41,8 @@ describe('playwrightProblem', () => {
 describe.skipIf(process.platform === 'win32')('run.ts with --sandbox docker', () => {
   let dir: string;
   beforeEach(() => {
-    dir = mkdtempSync(join(tmpdir(), 'ecosystem-qa-image-'));
+    // run.ts names the clone by its real path, and macOS links the temporary directory elsewhere.
+    dir = realpathSync(mkdtempSync(join(tmpdir(), 'ecosystem-qa-image-')));
     // A run that gets past the image check stops here instead of cloning from GitHub.
     mkdirSync(join(dir, 'clone'));
   });
@@ -48,7 +57,15 @@ describe.skipIf(process.platform === 'win32')('run.ts with --sandbox docker', ()
         ...['--repo', 'mealdrop', '--version', '11.0.0', '--engine', 'claude'],
         ...['--sandbox', 'docker', '--out', join(dir, 'out'), '--clone-dir', join(dir, 'clone')],
       ],
-      { encoding: 'utf8', env: { ...process.env, PATH: `${dir}${delimiter}${process.env.PATH}` } }
+      {
+        encoding: 'utf8',
+        // A run without an agent key ends before the clone too, so this one gets a stand-in.
+        env: {
+          ...process.env,
+          ANTHROPIC_API_KEY: 'stand-in-key',
+          PATH: `${dir}${delimiter}${process.env.PATH}`,
+        },
+      }
     );
     return {
       status: run.status,

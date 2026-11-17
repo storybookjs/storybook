@@ -242,7 +242,7 @@ describe('getIncompatiblePackagesSummary', () => {
       Please consider updating your packages or contacting the maintainers for compatibility details.
 
       For more details on compatibility guidance, see:
-      https://github.com/storybookjs/storybook/issues/32836"
+      https://github.com/storybookjs/storybook/issues/36283"
     `);
   });
 });

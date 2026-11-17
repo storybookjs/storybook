@@ -9,7 +9,6 @@ interface StorySortToMainOptions {
   storySort: CsfValue | undefined;
   // Why the preview cannot give up `storySort` safely; the main config then stays untouched too.
   previewProblem?: string;
-  previewConfigPath: string;
 }
 
 const storySortPath = ['parameters', 'options', 'storySort'];
@@ -17,9 +16,9 @@ const migrationLink =
   'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storysort-in-the-preview-replaced-by-storysorts-in-main';
 
 const fail = (reason: string, file?: string): never => {
-  const where = file ? ` in ${file}` : '';
+  const where = file ? ` from ${file}` : '';
   throw new HandledError(
-    `Cannot automigrate storySort${where}: ${reason}. Storybook no longer reads parameters.options.storySort from the preview. Move it to storySorts in the main config manually and remove the preview property. See ${migrationLink}`
+    `Cannot automigrate storySort${where}: ${reason}. Storybook no longer reads parameters.options.storySort from the preview. Move it to storySorts in the main config manually and remove the preview property.`
   );
 };
 
@@ -41,13 +40,18 @@ export const storySortToMain: Fix<StorySortToMainOptions> = {
     const storySort = preview.getValue(storySortPath);
     // The main config is visited first, so its hook learns here whether the preview edit will fail.
     preview.remove(storySortPath);
-    return { storySort, previewProblem: firstProblem(preview), previewConfigPath };
+    const previewProblem =
+      firstProblem(preview) ??
+      (storySort === null || typeof storySort !== 'object'
+        ? 'storySort must be a statically readable object or array'
+        : undefined);
+    return { storySort, previewProblem };
   },
 
   prompt: () =>
     `Move ${picocolors.cyan('parameters.options.storySort')} from preview to ${picocolors.cyan('storySorts')} in main?`,
 
-  transform: ({ result: { storySort, previewProblem, previewConfigPath } }) => [
+  transform: ({ previewConfigPath, result: { storySort, previewProblem } }) => [
     {
       filter: { kind: ['main'] },
       editConfig: (main) => {
@@ -60,9 +64,6 @@ export const storySortToMain: Fix<StorySortToMainOptions> = {
         }
         if (existing.kind === 'value') {
           fail('The main config already defines storySorts');
-        }
-        if (storySort === null || typeof storySort !== 'object') {
-          fail('storySort must be a statically readable object or array');
         }
         main.set(['storySorts'], [storySort]);
         const mainProblem = firstProblem(main);

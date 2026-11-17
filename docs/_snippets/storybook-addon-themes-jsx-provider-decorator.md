@@ -62,68 +62,6 @@ export default definePreview({
 });
 ```
 
-```ts filename=".storybook/preview.tsx" renderer="solid" language="ts" tabTitle="CSF 4"
-import { Renderer, definePreview } from 'storybook-solidjs-vite';
-
-import addonThemes from '@storybook/addon-themes';
-
-import { ThemeProvider, createGlobalStyle } from 'styled-components';
-
-import { darkTheme, lightTheme } from '../src/themes';
-
-const GlobalStyles = createGlobalStyle`
-  body {
-    font-family: "Nunito Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
-  }
-`;
-
-export default definePreview({
-  addons: [addonThemes()],
-  decorators: [
-    addonThemes.withThemeFromJSXProvider<Renderer>({
-      themes: {
-        light: lightTheme,
-        dark: darkTheme,
-      },
-      defaultTheme: 'light',
-      Provider: ThemeProvider,
-      GlobalStyles,
-    }),
-  ],
-});
-```
-
-```js filename=".storybook/preview.jsx" renderer="solid" language="js" tabTitle="CSF 4"
-import { definePreview } from 'storybook-solidjs-vite';
-
-import addonThemes from '@storybook/addon-themes';
-
-import { ThemeProvider, createGlobalStyle } from 'styled-components';
-
-import { darkTheme, lightTheme } from '../src/themes';
-
-const GlobalStyles = createGlobalStyle`
-  body {
-    font-family: "Nunito Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
-  }
-`;
-
-export default definePreview({
-  addons: [addonThemes()],
-  decorators: [
-    addonThemes.withThemeFromJSXProvider({
-      themes: {
-        light: lightTheme,
-        dark: darkTheme,
-      },
-      defaultTheme: 'light',
-      Provider: ThemeProvider,
-      GlobalStyles,
-    }),
-  ],
-});
-```
-
 ```ts filename=".storybook/preview.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
 // ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.

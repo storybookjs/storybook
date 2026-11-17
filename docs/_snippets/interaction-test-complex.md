@@ -213,29 +213,33 @@ export const Submits = meta.story({
 />
 ```
 
-```ts filename="EventForm.stories.ts" renderer="vue" language="ts" tabTitle="CSF 4"
-import { fn, expect, mocked } from 'storybook/test';
+```svelte filename="EventForm.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 3"
+<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
+<script module>
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
+  import { fn, expect } from 'storybook/test';
 
-import preview from '../.storybook/preview';
+  import { users } from '../mocks/users';
+  import EventForm from './EventForm.svelte';
 
-import { users } from '../mocks/users';
-import EventForm from './EventForm.vue';
+  const { Story } = defineMeta({
+    component: EventForm,
+  });
+</script>
 
-const meta = preview.meta({
-  component: EventForm,
-  // Mock functions so we can manipulate and spy on them
-  args: {
+<Story
+  name="Submits"
+  args={{
+    // Mock functions so we can manipulate and spy on them
     getUsers: fn(),
     onSubmit: fn(),
-  },
-});
-
-export const Submits = meta.story({
-  beforeEach: async ({ args }) => {
+  }}
+  beforeEach={async ({ args }) => {
     // Manipulate `getUsers` mock to return mocked value
-    mocked(args.getUsers).mockResolvedValue(users);
-  },
-  play: async ({ args, canvas, userEvent }) => {
+    args.getUsers.mockResolvedValue(users);
+  }}
+  play={async ({ args, canvas, userEvent }) => {
     const usersList = canvas.getAllByRole('listitem');
     await expect(usersList).toHaveLength(4);
     await expect(canvas.getAllByText('VIP')).toHaveLength(2);
@@ -252,8 +256,8 @@ export const Submits = meta.story({
       userCount: 4,
       data: expect.anything(),
     });
-  },
-});
+  }}
+/>
 ```
 
 ```svelte filename="EventForm.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 4"
@@ -301,13 +305,60 @@ export const Submits = meta.story({
 />
 ```
 
-```js filename="EventForm.stories.js" renderer="react" language="js" tabTitle="CSF 4"
+```svelte filename="EventForm.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 3"
+<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
+<script module>
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
+  import { fn, expect } from 'storybook/test';
+
+  import { users } from '../mocks/users';
+  import EventForm from './EventForm.svelte';
+
+  const { Story } = defineMeta({
+    component: EventForm,
+  });
+</script>
+
+<Story
+  name="Submits"
+  args={{
+    // Mock functions so we can manipulate and spy on them
+    getUsers: fn(),
+    onSubmit: fn(),
+  }}
+  beforeEach={async ({ args }) => {
+    // Manipulate `getUsers` mock to return mocked value
+    args.getUsers.mockResolvedValue(users);
+  }}
+  play={async ({ args, canvas, userEvent }) => {
+    const usersList = canvas.getAllByRole('listitem');
+    await expect(usersList).toHaveLength(4);
+    await expect(canvas.getAllByText('VIP')).toHaveLength(2);
+
+    const titleInput = await canvas.findByLabelText('Enter a title for your event');
+    await userEvent.type(titleInput, 'Holiday party');
+
+    const submitButton = canvas.getByRole('button', { name: 'Plan event' });
+    await userEvent.click(submitButton);
+
+    // Spy on `onSubmit` to verify that it is called correctly
+    await expect(args.onSubmit).toHaveBeenCalledWith({
+      name: 'Holiday party',
+      userCount: 4,
+      data: expect.anything(),
+    });
+  }}
+/>
+```
+
+```ts filename="EventForm.stories.ts" renderer="vue" language="ts" tabTitle="CSF 4"
 import { fn, expect, mocked } from 'storybook/test';
 
 import preview from '../.storybook/preview';
 
 import { users } from '../mocks/users';
-import { EventForm } from './EventForm';
+import EventForm from './EventForm.vue';
 
 const meta = preview.meta({
   component: EventForm,
@@ -344,7 +395,7 @@ export const Submits = meta.story({
 });
 ```
 
-```ts filename="EventForm.stories.ts" renderer="solid" language="ts" tabTitle="CSF 4"
+```js filename="EventForm.stories.js" renderer="react" language="js" tabTitle="CSF 4"
 import { fn, expect, mocked } from 'storybook/test';
 
 import preview from '../.storybook/preview';
@@ -430,96 +481,6 @@ export const Submits = meta.story({
 });
 ```
 
-```js filename="EventForm.stories.js" renderer="solid" language="js" tabTitle="CSF 4"
-import { fn, expect, mocked } from 'storybook/test';
-
-import preview from '../.storybook/preview';
-
-import { users } from '../mocks/users';
-import { EventForm } from './EventForm';
-
-const meta = preview.meta({
-  component: EventForm,
-  // Mock functions so we can manipulate and spy on them
-  args: {
-    getUsers: fn(),
-    onSubmit: fn(),
-  },
-});
-
-export const Submits = meta.story({
-  beforeEach: async ({ args }) => {
-    // Manipulate `getUsers` mock to return mocked value
-    mocked(args.getUsers).mockResolvedValue(users);
-  },
-  play: async ({ args, canvas, userEvent }) => {
-    const usersList = canvas.getAllByRole('listitem');
-    await expect(usersList).toHaveLength(4);
-    await expect(canvas.getAllByText('VIP')).toHaveLength(2);
-
-    const titleInput = await canvas.findByLabelText('Enter a title for your event');
-    await userEvent.type(titleInput, 'Holiday party');
-
-    const submitButton = canvas.getByRole('button', { name: 'Plan event' });
-    await userEvent.click(submitButton);
-
-    // Spy on `onSubmit` to verify that it is called correctly
-    await expect(args.onSubmit).toHaveBeenCalledWith({
-      name: 'Holiday party',
-      userCount: 4,
-      data: expect.anything(),
-    });
-  },
-});
-```
-
-```svelte filename="EventForm.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 3"
-<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
-<script module>
-  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-  import { defineMeta } from '@storybook/your-framework';
-  import { fn, expect } from 'storybook/test';
-
-  import { users } from '../mocks/users';
-  import EventForm from './EventForm.svelte';
-
-  const { Story } = defineMeta({
-    component: EventForm,
-  });
-</script>
-
-<Story
-  name="Submits"
-  args={{
-    // Mock functions so we can manipulate and spy on them
-    getUsers: fn(),
-    onSubmit: fn(),
-  }}
-  beforeEach={async ({ args }) => {
-    // Manipulate `getUsers` mock to return mocked value
-    args.getUsers.mockResolvedValue(users);
-  }}
-  play={async ({ args, canvas, userEvent }) => {
-    const usersList = canvas.getAllByRole('listitem');
-    await expect(usersList).toHaveLength(4);
-    await expect(canvas.getAllByText('VIP')).toHaveLength(2);
-
-    const titleInput = await canvas.findByLabelText('Enter a title for your event');
-    await userEvent.type(titleInput, 'Holiday party');
-
-    const submitButton = canvas.getByRole('button', { name: 'Plan event' });
-    await userEvent.click(submitButton);
-
-    // Spy on `onSubmit` to verify that it is called correctly
-    await expect(args.onSubmit).toHaveBeenCalledWith({
-      name: 'Holiday party',
-      userCount: 4,
-      data: expect.anything(),
-    });
-  }}
-/>
-```
-
 ```ts filename="EventForm.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 // ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import type { Meta, StoryObj } from '@storybook/angular';
@@ -564,53 +525,6 @@ export const Submits: Story = {
     });
   },
 };
-```
-
-```svelte filename="EventForm.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 3"
-<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
-<script module>
-  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-  import { defineMeta } from '@storybook/your-framework';
-  import { fn, expect } from 'storybook/test';
-
-  import { users } from '../mocks/users';
-  import EventForm from './EventForm.svelte';
-
-  const { Story } = defineMeta({
-    component: EventForm,
-  });
-</script>
-
-<Story
-  name="Submits"
-  args={{
-    // Mock functions so we can manipulate and spy on them
-    getUsers: fn(),
-    onSubmit: fn(),
-  }}
-  beforeEach={async ({ args }) => {
-    // Manipulate `getUsers` mock to return mocked value
-    args.getUsers.mockResolvedValue(users);
-  }}
-  play={async ({ args, canvas, userEvent }) => {
-    const usersList = canvas.getAllByRole('listitem');
-    await expect(usersList).toHaveLength(4);
-    await expect(canvas.getAllByText('VIP')).toHaveLength(2);
-
-    const titleInput = await canvas.findByLabelText('Enter a title for your event');
-    await userEvent.type(titleInput, 'Holiday party');
-
-    const submitButton = canvas.getByRole('button', { name: 'Plan event' });
-    await userEvent.click(submitButton);
-
-    // Spy on `onSubmit` to verify that it is called correctly
-    await expect(args.onSubmit).toHaveBeenCalledWith({
-      name: 'Holiday party',
-      userCount: 4,
-      data: expect.anything(),
-    });
-  }}
-/>
 ```
 
 ```ts filename="EventForm.stories.ts" renderer="common" language="ts" tabTitle="CSF 3"

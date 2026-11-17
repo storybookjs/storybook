@@ -161,52 +161,6 @@ export default definePreview({
 });
 ```
 
-```ts filename=".storybook/preview.tsx" renderer="solid" language="ts" tabTitle="CSF 4"
-import { definePreview } from 'storybook-solidjs-vite';
-import addonDocs from '@storybook/addon-docs';
-
-export default definePreview({
-  addons: [addonDocs()],
-  parameters: {
-    docs: {
-      toc: {
-        contentsSelector: '.sbdocs-content',
-        headingSelector: 'h1, h2, h3',
-        ignoreSelector: '#primary',
-        title: 'Table of Contents',
-        disable: false,
-        unsafeTocbotOptions: {
-          orderedList: false,
-        },
-      },
-    },
-  },
-});
-```
-
-```js filename=".storybook/preview.jsx" renderer="solid" language="js" tabTitle="CSF 4"
-import { definePreview } from 'storybook-solidjs-vite';
-import addonDocs from '@storybook/addon-docs';
-
-export default definePreview({
-  addons: [addonDocs()],
-  parameters: {
-    docs: {
-      toc: {
-        contentsSelector: '.sbdocs-content',
-        headingSelector: 'h1, h2, h3',
-        ignoreSelector: '#primary',
-        title: 'Table of Contents',
-        disable: false,
-        unsafeTocbotOptions: {
-          orderedList: false,
-        },
-      },
-    },
-  },
-});
-```
-
 ```ts filename=".storybook/preview.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
 // ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.

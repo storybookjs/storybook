@@ -66,18 +66,22 @@ const meta = preview.meta({
 </script>
 ```
 
-```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
+```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 3"
+<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
+<script module>
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
-import Button from './Button.vue';
+  import Button from './Button.svelte';
 
-const meta = preview.meta({
-  component: Button,
-  parameters: {
-    // 👇 Remove this once all stories pass accessibility tests
-    // a11y: { test: 'todo' },
-  },
-});
+  const { Story } = defineMeta({
+    component: Button,
+    parameters: {
+      // 👇 Remove this once all stories pass accessibility tests
+      // a11y: { test: 'todo' },
+    },
+  });
+</script>
 ```
 
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 4"
@@ -96,10 +100,28 @@ const meta = preview.meta({
 </script>
 ```
 
-```js filename="Button.stories.js" renderer="react" language="js" tabTitle="CSF 4"
+```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 3"
+<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
+<script module>
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
+
+  import Button from './Button.svelte';
+
+  const { Story } = defineMeta({
+    component: Button,
+    parameters: {
+      // 👇 Remove this once all stories pass accessibility tests
+      // a11y: { test: 'todo' },
+    },
+  });
+</script>
+```
+
+```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
-import { Button } from './Button';
+import Button from './Button.vue';
 
 const meta = preview.meta({
   component: Button,
@@ -110,7 +132,7 @@ const meta = preview.meta({
 });
 ```
 
-```ts filename="Button.stories.ts" renderer="solid" language="ts" tabTitle="CSF 4"
+```js filename="Button.stories.js" renderer="react" language="js" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 import { Button } from './Button';
@@ -138,38 +160,6 @@ const meta = preview.meta({
 });
 ```
 
-```js filename="Button.stories.js" renderer="solid" language="js" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
-
-import { Button } from './Button';
-
-const meta = preview.meta({
-  component: Button,
-  parameters: {
-    // 👇 Remove this once all stories pass accessibility tests
-    // a11y: { test: 'todo' },
-  },
-});
-```
-
-```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 3"
-<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
-<script module>
-  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-  import { defineMeta } from '@storybook/your-framework';
-
-  import Button from './Button.svelte';
-
-  const { Story } = defineMeta({
-    component: Button,
-    parameters: {
-      // 👇 Remove this once all stories pass accessibility tests
-      // a11y: { test: 'todo' },
-    },
-  });
-</script>
-```
-
 ```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 // ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import { Meta } from '@storybook/angular';
@@ -184,24 +174,6 @@ const meta: Meta<Button> = {
   },
 };
 export default meta;
-```
-
-```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 3"
-<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
-<script module>
-  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-  import { defineMeta } from '@storybook/your-framework';
-
-  import Button from './Button.svelte';
-
-  const { Story } = defineMeta({
-    component: Button,
-    parameters: {
-      // 👇 Remove this once all stories pass accessibility tests
-      // a11y: { test: 'todo' },
-    },
-  });
-</script>
 ```
 
 ```ts filename="Button.stories.ts" renderer="common" language="ts" tabTitle="CSF 3"

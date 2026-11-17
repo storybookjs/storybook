@@ -211,67 +211,6 @@ export default defineMain({
 });
 ```
 
-```ts filename=".storybook/main.ts" renderer="solid" language="ts" tabTitle="CSF 4"
-import type { Indexer } from 'storybook/internal/types';
-
-import { defineMain } from 'storybook-solidjs-vite/node';
-
-const combosIndexer: Indexer = {
-  test: /\.stories\.[tj]sx?$/,
-  createIndex: async (fileName, { makeTitle }) => {
-    // 👇 Grab title from fileName
-    const title = fileName.match(/\/(.*)\.stories/)[1];
-
-    // Read file and generate entries ...
-    const entries = [];
-
-    return entries.map((entry) => ({
-      type: 'story',
-      // 👇 Use makeTitle to format the title
-      title: `${makeTitle(title)} Custom`,
-      importPath: fileName,
-      exportName: entry.name,
-    }));
-  },
-};
-
-export default defineMain({
-  framework: { name: 'storybook-solidjs-vite' },
-  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|ts|tsx)'],
-  experimental_indexers: async (existingIndexers) => [...existingIndexers, combosIndexer],
-});
-```
-
-```js filename=".storybook/main.ts" renderer="solid" language="js" tabTitle="CSF 4"
-import { defineMain } from 'storybook-solidjs-vite/node';
-
-const combosIndexer = {
-  test: /\.stories\.[tj]sx?$/,
-  createIndex: async (fileName, { makeTitle }) => {
-    // 👇 Grab title from fileName
-    const title = fileName.match(/\/(.*)\.stories/)[1];
-
-    // Read file and generate entries ...
-    let entries = [];
-    // Read file and generate entries...
-
-    return entries.map((entry) => ({
-      type: 'story',
-      // 👇 Use makeTitle to format the title
-      title: `${makeTitle(title)} Custom`,
-      importPath: fileName,
-      exportName: entry.name,
-    }));
-  },
-};
-
-export default defineMain({
-  framework: { name: 'storybook-solidjs-vite' },
-  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|ts|tsx)'],
-  experimental_indexers: async (existingIndexers) => [...existingIndexers, combosIndexer],
-});
-```
-
 ```ts filename=".storybook/main.ts" renderer="common" language="ts" tabTitle="CSF 3"
 // ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.

@@ -52,29 +52,33 @@ const meta = preview.meta({
 </script>
 ```
 
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 3"
+<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
+<script module>
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
+
+  import MyComponent from './MyComponent.svelte';
+
+  const { Story } = defineMeta({
+    component: MyComponent,
+    tags: ['autodocs'],
+    parameters: {
+      docs: {
+        toc: {
+          disable: true, // 👈 Disables the table of contents
+        },
+      },
+    },
+  });
+</script>
+```
+
 ```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 const meta = preview.meta({
   component: 'my-component',
-  tags: ['autodocs'],
-  parameters: {
-    docs: {
-      toc: {
-        disable: true, // 👈 Disables the table of contents
-      },
-    },
-  },
-});
-```
-
-```js filename="MyComponent.stories.js" renderer="react" language="js" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
-
-import { MyComponent } from './MyComponent';
-
-const meta = preview.meta({
-  component: MyComponent,
   tags: ['autodocs'],
   parameters: {
     docs: {
@@ -106,7 +110,47 @@ const meta = preview.meta({
 </script>
 ```
 
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 3"
+<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
+<script module>
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
+
+  import MyComponent from './MyComponent.svelte';
+
+  const { Story } = defineMeta({
+    component: MyComponent,
+    tags: ['autodocs'],
+    parameters: {
+      docs: {
+        toc: {
+          disable: true, // 👈 Disables the table of contents
+        },
+      },
+    },
+  });
+</script>
+```
+
 ```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+  tags: ['autodocs'],
+  parameters: {
+    docs: {
+      toc: {
+        disable: true, // 👈 Disables the table of contents
+      },
+    },
+  },
+});
+```
+
+```js filename="MyComponent.stories.js" renderer="react" language="js" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 import { MyComponent } from './MyComponent';
@@ -142,82 +186,6 @@ const meta = preview.meta({
 });
 ```
 
-```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
-
-import MyComponent from './MyComponent.vue';
-
-const meta = preview.meta({
-  component: MyComponent,
-  tags: ['autodocs'],
-  parameters: {
-    docs: {
-      toc: {
-        disable: true, // 👈 Disables the table of contents
-      },
-    },
-  },
-});
-```
-
-```ts filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
-
-import { MyComponent } from './MyComponent';
-
-const meta = preview.meta({
-  component: MyComponent,
-  tags: ['autodocs'],
-  parameters: {
-    docs: {
-      toc: {
-        disable: true, // 👈 Disables the table of contents
-      },
-    },
-  },
-});
-```
-
-```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 3"
-<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
-<script module>
-  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-  import { defineMeta } from '@storybook/your-framework';
-
-  import MyComponent from './MyComponent.svelte';
-
-  const { Story } = defineMeta({
-    component: MyComponent,
-    tags: ['autodocs'],
-    parameters: {
-      docs: {
-        toc: {
-          disable: true, // 👈 Disables the table of contents
-        },
-      },
-    },
-  });
-</script>
-```
-
-```js filename="MyComponent.stories.js" renderer="solid" language="js" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
-
-import { MyComponent } from './MyComponent';
-
-const meta = preview.meta({
-  component: MyComponent,
-  tags: ['autodocs'],
-  parameters: {
-    docs: {
-      toc: {
-        disable: true, // 👈 Disables the table of contents
-      },
-    },
-  },
-});
-```
-
 ```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 // ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import type { Meta } from '@storybook/angular';
@@ -239,26 +207,22 @@ const meta: Meta<MyComponent> = {
 export default meta;
 ```
 
-```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 3"
-<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
-<script module>
-  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-  import { defineMeta } from '@storybook/your-framework';
+```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
 
-  import MyComponent from './MyComponent.svelte';
+import MyComponent from './MyComponent.vue';
 
-  const { Story } = defineMeta({
-    component: MyComponent,
-    tags: ['autodocs'],
-    parameters: {
-      docs: {
-        toc: {
-          disable: true, // 👈 Disables the table of contents
-        },
+const meta = preview.meta({
+  component: MyComponent,
+  tags: ['autodocs'],
+  parameters: {
+    docs: {
+      toc: {
+        disable: true, // 👈 Disables the table of contents
       },
     },
-  });
-</script>
+  },
+});
 ```
 
 ```ts filename="MyComponent.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"

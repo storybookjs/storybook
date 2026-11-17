@@ -43,6 +43,25 @@ const meta = preview.meta({
 </script>
 ```
 
+```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 3"
+<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
+<script module>
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
+
+  import Button from './Button.svelte';
+
+  const { Story } = defineMeta({
+    /* 👇 The title prop is optional.
+    * See https://storybook.js.org/docs/configure/#configure-story-loading
+    * to learn how to generate automatic titles
+    */
+    title: 'Button',
+    component: Button,
+  });
+</script>
+```
+
 ```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
@@ -53,21 +72,6 @@ const meta = preview.meta({
    */
   title: 'Button',
   component: 'demo-button',
-});
-```
-
-```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
-
-import { Button } from './Button';
-
-const meta = preview.meta({
-  /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'Button',
-  component: Button,
 });
 ```
 
@@ -88,25 +92,29 @@ const meta = preview.meta({
 </script>
 ```
 
+```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 3"
+<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
+<script module>
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
+
+  import Button from './Button.svelte';
+
+  const { Story } = defineMeta({
+    /* 👇 The title prop is optional.
+    * See https://storybook.js.org/docs/configure/#configure-story-loading
+    * to learn how to generate automatic titles
+    */
+    title: 'Button',
+    component: Button,
+  });
+</script>
+```
+
 ```ts filename="Button.stories.ts" renderer="react" language="ts" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 import { Button } from './Button';
-
-const meta = preview.meta({
-  /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'Button',
-  component: Button,
-});
-```
-
-```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
-
-import Button from './Button.vue';
 
 const meta = preview.meta({
   /* 👇 The title prop is optional.
@@ -146,7 +154,22 @@ const meta: Meta<ButtonArgs> = {
 export default meta;
 ```
 
-```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF 4"
+```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  /* 👇 The title prop is optional.
+   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * to learn how to generate automatic titles
+   */
+  title: 'Button',
+  component: Button,
+});
+```
+
+```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 import Button from './Button.vue';
@@ -161,10 +184,10 @@ const meta = preview.meta({
 });
 ```
 
-```ts filename="Button.stories.ts" renderer="solid" language="ts" tabTitle="CSF 4"
+```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
-import { Button } from './Button';
+import Button from './Button.vue';
 
 const meta = preview.meta({
   /* 👇 The title prop is optional.
@@ -174,40 +197,6 @@ const meta = preview.meta({
   title: 'Button',
   component: Button,
 });
-```
-
-```js filename="Button.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
-
-import { Button } from './Button';
-
-const meta = preview.meta({
-  /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'Button',
-  component: Button,
-});
-```
-
-```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 3"
-<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
-<script module>
-  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-  import { defineMeta } from '@storybook/your-framework';
-
-  import Button from './Button.svelte';
-
-  const { Story } = defineMeta({
-    /* 👇 The title prop is optional.
-    * See https://storybook.js.org/docs/configure/#configure-story-loading
-    * to learn how to generate automatic titles
-    */
-    title: 'Button',
-    component: Button,
-  });
-</script>
 ```
 
 ```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
@@ -226,25 +215,6 @@ const meta: Meta<Button> = {
 };
 
 export default meta;
-```
-
-```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 3"
-<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
-<script module>
-  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-  import { defineMeta } from '@storybook/your-framework';
-
-  import Button from './Button.svelte';
-
-  const { Story } = defineMeta({
-    /* 👇 The title prop is optional.
-    * See https://storybook.js.org/docs/configure/#configure-story-loading
-    * to learn how to generate automatic titles
-    */
-    title: 'Button',
-    component: Button,
-  });
-</script>
 ```
 
 ```ts filename="Button.stories.ts" renderer="common" language="ts" tabTitle="CSF 3"

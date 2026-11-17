@@ -57,31 +57,34 @@ export const Basic = meta.story({
 />
 ```
 
+```svelte filename="Page.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 3"
+<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
+<script module>
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
+
+  import Page from './Page.svelte';
+
+  const { Story } = defineMeta({
+    component: Page,
+    // 👇 Runs after each story in this file
+    async afterEach(context) {
+      console.log(`✅ Tested ${context.name} story`);
+    },
+  });
+</script>
+
+<Story name="Default" play={async ({ canvas }) => {
+  // ...
+  }}
+/>
+```
+
 ```js filename="Page.stories.js" renderer="web-components" language="js" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 const meta = preview.meta({
   component: 'my-page',
-  // 👇 Runs after each story in this file
-  async afterEach(context) {
-    console.log(`✅ Tested ${context.name} story`);
-  },
-});
-
-export const Basic = meta.story({
-  async play({ canvas }) {
-    // ...
-  },
-});
-```
-
-```js filename="Page.stories.js" renderer="react" language="js" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
-
-import { Page } from './Page';
-
-const meta = preview.meta({
-  component: Page,
   // 👇 Runs after each story in this file
   async afterEach(context) {
     console.log(`✅ Tested ${context.name} story`);
@@ -116,7 +119,50 @@ export const Basic = meta.story({
 />
 ```
 
+```svelte filename="Page.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 3"
+<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
+<script module>
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
+
+  import Page from './Page.svelte';
+
+  const { Story } = defineMeta({
+    component: Page,
+    // 👇 Runs after each story in this file
+    async afterEach(context) {
+      console.log(`✅ Tested ${context.name} story`);
+    },
+  });
+</script>
+
+<Story name="Default" play={async ({ canvas }) => {
+  // ...
+  }}
+/>
+```
+
 ```ts filename="Page.stories.ts" renderer="react" language="ts" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
+import { Page } from './Page';
+
+const meta = preview.meta({
+  component: Page,
+  // 👇 Runs after each story in this file
+  async afterEach(context) {
+    console.log(`✅ Tested ${context.name} story`);
+  },
+});
+
+export const Basic = meta.story({
+  async play({ canvas }) {
+    // ...
+  },
+});
+```
+
+```js filename="Page.stories.js" renderer="react" language="js" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 import { Page } from './Page';
@@ -176,69 +222,6 @@ export const Basic = meta.story({
 });
 ```
 
-```ts filename="Page.stories.ts" renderer="solid" language="ts" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
-
-import { Page } from './Page';
-
-const meta = preview.meta({
-  component: Page,
-  // 👇 Runs after each story in this file
-  async afterEach(context) {
-    console.log(`✅ Tested ${context.name} story`);
-  },
-});
-
-export const Basic = meta.story({
-  async play({ canvas }) {
-    // ...
-  },
-});
-```
-
-```js filename="Page.stories.js" renderer="solid" language="js" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
-
-import { Page } from './Page';
-
-const meta = preview.meta({
-  component: Page,
-  // 👇 Runs after each story in this file
-  async afterEach(context) {
-    console.log(`✅ Tested ${context.name} story`);
-  },
-});
-
-export const Basic = meta.story({
-  async play({ canvas }) {
-    // ...
-  },
-});
-```
-
-```svelte filename="Page.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 3"
-<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
-<script module>
-  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-  import { defineMeta } from '@storybook/your-framework';
-
-  import Page from './Page.svelte';
-
-  const { Story } = defineMeta({
-    component: Page,
-    // 👇 Runs after each story in this file
-    async afterEach(context) {
-      console.log(`✅ Tested ${context.name} story`);
-    },
-  });
-</script>
-
-<Story name="Default" play={async ({ canvas }) => {
-  // ...
-  }}
-/>
-```
-
 ```ts filename="Page.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 // ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import type { Meta, StoryObj } from '@storybook/angular';
@@ -261,29 +244,6 @@ export const Basic: Story = {
     // ...
   },
 };
-```
-
-```svelte filename="Page.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 3"
-<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
-<script module>
-  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-  import { defineMeta } from '@storybook/your-framework';
-
-  import Page from './Page.svelte';
-
-  const { Story } = defineMeta({
-    component: Page,
-    // 👇 Runs after each story in this file
-    async afterEach(context) {
-      console.log(`✅ Tested ${context.name} story`);
-    },
-  });
-</script>
-
-<Story name="Default" play={async ({ canvas }) => {
-  // ...
-  }}
-/>
 ```
 
 ```ts filename="Page.stories.ts" renderer="common" language="ts" tabTitle="CSF 3"

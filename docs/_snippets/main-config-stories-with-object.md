@@ -126,42 +126,6 @@ export default defineMain({
 });
 ```
 
-```ts filename=".storybook/main.ts" renderer="solid" language="ts" tabTitle="CSF 4"
-import { defineMain } from 'storybook-solidjs-vite/node';
-
-export default defineMain({
-  framework: { name: 'storybook-solidjs-vite' },
-  stories: [
-    {
-      // 👇 Sets the directory containing your stories
-      directory: '../packages/components',
-      // 👇 Storybook will load all files that match this glob
-      files: '*.stories.*',
-      // 👇 Used when generating automatic titles for your stories
-      titlePrefix: 'MyComponents',
-    },
-  ],
-});
-```
-
-```js filename=".storybook/main.js" renderer="solid" language="js" tabTitle="CSF 4"
-import { defineMain } from 'storybook-solidjs-vite/node';
-
-export default defineMain({
-  framework: { name: 'storybook-solidjs-vite' },
-  stories: [
-    {
-      // 👇 Sets the directory containing your stories
-      directory: '../packages/components',
-      // 👇 Storybook will load all files that match this glob
-      files: '*.stories.*',
-      // 👇 Used when generating automatic titles for your stories
-      titlePrefix: 'MyComponents',
-    },
-  ],
-});
-```
-
 ```ts filename=".storybook/main.ts" renderer="common" language="ts" tabTitle="CSF 3"
 // ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.

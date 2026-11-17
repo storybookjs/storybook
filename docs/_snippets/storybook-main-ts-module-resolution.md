@@ -66,13 +66,13 @@ export default defineMain({
 });
 ```
 
-```js filename=".storybook/main.js" renderer="solid" language="js" tabTitle="CSF 4"
-import { defineMain } from 'storybook-solidjs-vite/node';
-
+```js filename=".storybook/main.js" renderer="common" language="js" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import TsconfigPathsPlugin from 'tsconfig-paths-webpack-plugin';
 
-export default defineMain({
-  framework: { name: 'storybook-solidjs-vite' },
+export default {
+  // Replace your-framework with the framework you are using, e.g. react-webpack5, nextjs, angular, etc.
+  framework: '@storybook/your-framework',
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   webpackFinal: async (config) => {
     if (config.resolve) {
@@ -85,29 +85,7 @@ export default defineMain({
     }
     return config;
   },
-});
-```
-
-```ts filename=".storybook/main.ts" renderer="solid" language="ts" tabTitle="CSF 4"
-import { defineMain } from 'storybook-solidjs-vite/node';
-
-import TsconfigPathsPlugin from 'tsconfig-paths-webpack-plugin';
-
-export default defineMain({
-  framework: { name: 'storybook-solidjs-vite' },
-  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
-  webpackFinal: async (config) => {
-    if (config.resolve) {
-      config.resolve.plugins = [
-        ...(config.resolve.plugins || []),
-        new TsconfigPathsPlugin({
-          extensions: config.resolve.extensions,
-        }),
-      ];
-    }
-    return config;
-  },
-});
+};
 ```
 
 ```ts filename=".storybook/main.ts" renderer="common" language="ts" tabTitle="CSF 3"
@@ -134,26 +112,4 @@ const config: StorybookConfig = {
 };
 
 export default config;
-```
-
-```js filename=".storybook/main.js" renderer="common" language="js" tabTitle="CSF 3"
-// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
-import TsconfigPathsPlugin from 'tsconfig-paths-webpack-plugin';
-
-export default {
-  // Replace your-framework with the framework you are using, e.g. react-webpack5, nextjs, angular, etc.
-  framework: '@storybook/your-framework',
-  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
-  webpackFinal: async (config) => {
-    if (config.resolve) {
-      config.resolve.plugins = [
-        ...(config.resolve.plugins || []),
-        new TsconfigPathsPlugin({
-          extensions: config.resolve.extensions,
-        }),
-      ];
-    }
-    return config;
-  },
-};
 ```

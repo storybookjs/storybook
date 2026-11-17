@@ -90,32 +90,33 @@ export const Text = {
 };
 ```
 
-```jsx filename="Button.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
-
+```js filename="Button.stories.js|jsx" renderer="solid" language="js"
 import { Button } from './Button';
 
-const meta = preview.meta({
+export default {
   component: Button,
-});
+};
 
-export const Text = meta.story({
+export const Text = {
   args: {},
-});
+};
 ```
 
-```tsx filename="Button.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
+```tsx filename="Button.stories.ts|tsx" renderer="solid" language="ts"
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
 import { Button } from './Button';
 
-const meta = preview.meta({
+const meta = {
   component: Button,
-});
+} satisfies Meta<typeof Button>;
 
-export const Text = meta.story({
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Text: Story = {
   args: {},
-});
+};
 ```
 
 ```js filename="Button.stories.js" renderer="svelte" language="js"
@@ -279,37 +280,6 @@ export default meta;
 type Story = StoryObj;
 
 export const Text: Story = {
-  args: {},
-};
-```
-
-```tsx filename="Button.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 3"
-// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
-import type { Meta, StoryObj } from 'storybook-solidjs-vite';
-
-import { Button } from './Button';
-
-const meta = {
-  component: Button,
-} satisfies Meta<typeof Button>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const Text: Story = {
-  args: {},
-};
-```
-
-```js filename="Button.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 3"
-// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
-import { Button } from './Button';
-
-export default {
-  component: Button,
-};
-
-export const Text = {
   args: {},
 };
 ```

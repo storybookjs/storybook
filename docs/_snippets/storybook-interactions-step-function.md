@@ -155,57 +155,11 @@ export const Submitted = meta.story({
 });
 ```
 
-```js filename="MyComponent.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
-
-import MyComponent from './MyComponent';
-
-const meta = preview.meta({
-  component: MyComponent,
-});
-
-export const Submitted = meta.story({
-  play: async ({ args, canvas, step }) => {
-    await step('Enter email and password', async () => {
-      await userEvent.type(canvas.getByTestId('email'), 'hi@example.com');
-      await userEvent.type(canvas.getByTestId('password'), 'supersecret');
-    });
-
-    await step('Submit form', async () => {
-      await userEvent.click(canvas.getByRole('button'));
-    });
-  },
-});
-```
-
-```ts filename="MyComponent.stories.ts" renderer="solid" language="ts" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
-
-import MyComponent from './MyComponent';
-
-const meta = preview.meta({
-  component: MyComponent,
-});
-
-export const Submitted = meta.story({
-  play: async ({ args, canvas, step }) => {
-    await step('Enter email and password', async () => {
-      await userEvent.type(canvas.getByTestId('email'), 'hi@example.com');
-      await userEvent.type(canvas.getByTestId('password'), 'supersecret');
-    });
-
-    await step('Submit form', async () => {
-      await userEvent.click(canvas.getByRole('button'));
-    });
-  },
-});
-```
-
-```ts filename="MyComponent.stories.ts" renderer="common" language="ts" tabTitle="CSF 3"
+```js filename="MyComponent.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
 // ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 // ...rest of story file
 
-export const Submitted: Story = {
+export const Submitted = {
   play: async ({ args, canvas, step, userEvent }) => {
     await step('Enter email and password', async () => {
       await userEvent.type(canvas.getByTestId('email'), 'hi@example.com');
@@ -219,11 +173,11 @@ export const Submitted: Story = {
 };
 ```
 
-```js filename="MyComponent.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
+```ts filename="MyComponent.stories.ts" renderer="common" language="ts" tabTitle="CSF 3"
 // ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 // ...rest of story file
 
-export const Submitted = {
+export const Submitted: Story = {
   play: async ({ args, canvas, step, userEvent }) => {
     await step('Enter email and password', async () => {
       await userEvent.type(canvas.getByTestId('email'), 'hi@example.com');

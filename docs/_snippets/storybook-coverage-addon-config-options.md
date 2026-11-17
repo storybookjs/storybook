@@ -165,52 +165,6 @@ export default defineMain({
 });
 ```
 
-```ts filename=".storybook/main.ts" renderer="solid" language="ts" tabTitle="CSF 4"
-import { defineMain } from 'storybook-solidjs-vite/node';
-
-// For Vite support add the following import
-// import type { AddonOptionsVite } from '@storybook/addon-coverage';
-import type { AddonOptionsWebpack } from '@storybook/addon-coverage';
-
-const coverageConfig: AddonOptionsWebpack = {
-  istanbul: {
-    include: ['**/stories/**'],
-    exclude: ['**/exampleDirectory/**'],
-  },
-};
-
-export default defineMain({
-  stories: [],
-  addons: [
-    // Other Storybook addons
-    {
-      name: '@storybook/addon-coverage',
-      options: coverageConfig,
-    },
-  ],
-});
-```
-
-```js filename=".storybook/main.js" renderer="solid" language="js" tabTitle="CSF 4"
-import { defineMain } from 'storybook-solidjs-vite/node';
-
-export default defineMain({
-  stories: [],
-  addons: [
-    // Other Storybook addons
-    {
-      name: '@storybook/addon-coverage',
-      options: {
-        istanbul: {
-          include: ['**/stories/**'],
-          exclude: ['**/exampleDirectory/**'],
-        },
-      },
-    },
-  ],
-});
-```
-
 ```ts filename=".storybook/main.ts" renderer="common" language="ts" tabTitle="CSF 3"
 // ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 // For Vite support add the following import

@@ -46,28 +46,31 @@ const meta = preview.meta({
 </script>
 ```
 
+```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 3"
+<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
+<script module>
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
+
+  import Button from './Button.svelte';
+
+  const { Story } = defineMeta({
+    component: Button,
+    /*
+     * All stories in this file will:
+     * - Be included in the docs page
+     * - Not appear in Storybook's sidebar
+     */
+    tags: ['autodocs', '!dev'],
+  });
+</script>
+```
+
 ```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 const meta = preview.meta({
   component: 'demo-button',
-  /*
-   * All stories in this file will:
-   * - Be included in the docs page
-   * - Not appear in Storybook's sidebar
-   */
-  tags: ['autodocs', '!dev'],
-});
-```
-
-```js filename="Button.stories.js" renderer="react" language="js" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
-
-import { Button } from './Button';
-
-const meta = preview.meta({
-  component: Button,
-
   /*
    * All stories in this file will:
    * - Be included in the docs page
@@ -95,71 +98,6 @@ const meta = preview.meta({
 </script>
 ```
 
-```ts filename="Button.stories.ts" renderer="react" language="ts" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
-
-import { Button } from './Button';
-
-const meta = preview.meta({
-  component: Button,
-  /*
-   * All stories in this file will:
-   * - Be included in the docs page
-   * - Not appear in Storybook's sidebar
-   */
-  tags: ['autodocs', '!dev'],
-});
-```
-
-```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
-
-import Button from './Button.vue';
-
-const meta = preview.meta({
-  component: Button,
-  /*
-   * All stories in this file will:
-   * - Be included in the docs page
-   * - Not appear in Storybook's sidebar
-   */
-  tags: ['autodocs', '!dev'],
-});
-```
-
-```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
-
-import Button from './Button.vue';
-
-const meta = preview.meta({
-  component: Button,
-
-  /*
-   * All stories in this file will:
-   * - Be included in the docs page
-   * - Not appear in Storybook's sidebar
-   */
-  tags: ['autodocs', '!dev'],
-});
-```
-
-```ts filename="Button.stories.ts" renderer="solid" language="ts" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
-
-import { Button } from './Button';
-
-const meta = preview.meta({
-  component: Button,
-  /*
-   * All stories in this file will:
-   * - Be included in the docs page
-   * - Not appear in Storybook's sidebar
-   */
-  tags: ['autodocs', '!dev'],
-});
-```
-
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 3"
 <!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
 <script module>
@@ -180,7 +118,23 @@ const meta = preview.meta({
 </script>
 ```
 
-```js filename="Button.stories.js" renderer="solid" language="js" tabTitle="CSF 4"
+```ts filename="Button.stories.ts" renderer="react" language="ts" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+  /*
+   * All stories in this file will:
+   * - Be included in the docs page
+   * - Not appear in Storybook's sidebar
+   */
+  tags: ['autodocs', '!dev'],
+});
+```
+
+```js filename="Button.stories.js" renderer="react" language="js" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 import { Button } from './Button';
@@ -188,6 +142,22 @@ import { Button } from './Button';
 const meta = preview.meta({
   component: Button,
 
+  /*
+   * All stories in this file will:
+   * - Be included in the docs page
+   * - Not appear in Storybook's sidebar
+   */
+  tags: ['autodocs', '!dev'],
+});
+```
+
+```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
+import Button from './Button.vue';
+
+const meta = preview.meta({
+  component: Button,
   /*
    * All stories in this file will:
    * - Be included in the docs page
@@ -215,24 +185,21 @@ const meta: Meta<Button> = {
 export default meta;
 ```
 
-```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 3"
-<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
-<script module>
-  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-  import { defineMeta } from '@storybook/your-framework';
+```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
 
-  import Button from './Button.svelte';
+import Button from './Button.vue';
 
-  const { Story } = defineMeta({
-    component: Button,
-    /*
-     * All stories in this file will:
-     * - Be included in the docs page
-     * - Not appear in Storybook's sidebar
-     */
-    tags: ['autodocs', '!dev'],
-  });
-</script>
+const meta = preview.meta({
+  component: Button,
+
+  /*
+   * All stories in this file will:
+   * - Be included in the docs page
+   * - Not appear in Storybook's sidebar
+   */
+  tags: ['autodocs', '!dev'],
+});
 ```
 
 ```ts filename="Button.stories.ts" renderer="common" language="ts" tabTitle="CSF 3"

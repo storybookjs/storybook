@@ -134,20 +134,18 @@ export const FilledForm = meta.story({
 });
 ```
 
-```js filename="LoginForm.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 4"
+```js filename="LoginForm.stories.js|jsx" renderer="solid" language="js"
 import { expect } from 'storybook/test';
-
-import preview from '../.storybook/preview';
 
 import { LoginForm } from './LoginForm';
 
-const meta = preview.meta({
+export default {
   component: LoginForm,
-});
+};
 
-export const EmptyForm = meta.story();
+export const EmptyForm = {};
 
-export const FilledForm = meta.story({
+export const FilledForm = {
   play: async ({ canvas, userEvent }) => {
     // 👇 Simulate interactions with the component
     await userEvent.type(canvas.getByTestId('email'), 'email@provider.com');
@@ -164,23 +162,26 @@ export const FilledForm = meta.story({
       ),
     ).toBeInTheDocument();
   },
-});
+};
 ```
 
-```ts filename="LoginForm.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 4"
-import { expect } from 'storybook/test';
+```tsx filename="LoginForm.stories.ts|tsx" renderer="solid" language="ts"
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
-import preview from '../.storybook/preview';
+import { expect } from 'storybook/test';
 
 import { LoginForm } from './LoginForm';
 
-const meta = preview.meta({
+const meta = {
   component: LoginForm,
-});
+} satisfies Meta<typeof LoginForm>;
+export default meta;
 
-export const EmptyForm = meta.story();
+type Story = StoryObj<typeof meta>;
 
-export const FilledForm = meta.story({
+export const EmptyForm: Story = {};
+
+export const FilledForm: Story = {
   play: async ({ canvas, userEvent }) => {
     // 👇 Simulate interactions with the component
     await userEvent.type(canvas.getByTestId('email'), 'email@provider.com');
@@ -197,7 +198,7 @@ export const FilledForm = meta.story({
       ),
     ).toBeInTheDocument();
   },
-});
+};
 ```
 
 ```svelte filename="LoginForm.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 4"
@@ -701,75 +702,6 @@ export const FilledForm: Story = {
 ```
 
 ```js filename="LoginForm.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
-// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
-import { expect } from 'storybook/test';
-
-import { LoginForm } from './LoginForm';
-
-export default {
-  component: LoginForm,
-};
-
-export const EmptyForm = {};
-
-export const FilledForm = {
-  play: async ({ canvas, userEvent }) => {
-    // 👇 Simulate interactions with the component
-    await userEvent.type(canvas.getByTestId('email'), 'email@provider.com');
-
-    await userEvent.type(canvas.getByTestId('password'), 'a-random-password');
-
-    // See https://storybook.js.org/docs/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
-    await userEvent.click(canvas.getByRole('button'));
-
-    // 👇 Assert DOM structure
-    await expect(
-      canvas.getByText(
-        'Everything is perfect. Your account is ready and we should probably get you started!',
-      ),
-    ).toBeInTheDocument();
-  },
-};
-```
-
-```tsx filename="LoginForm.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 3"
-// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
-import type { Meta, StoryObj } from 'storybook-solidjs-vite';
-
-import { expect } from 'storybook/test';
-
-import { LoginForm } from './LoginForm';
-
-const meta = {
-  component: LoginForm,
-} satisfies Meta<typeof LoginForm>;
-export default meta;
-
-type Story = StoryObj<typeof meta>;
-
-export const EmptyForm: Story = {};
-
-export const FilledForm: Story = {
-  play: async ({ canvas, userEvent }) => {
-    // 👇 Simulate interactions with the component
-    await userEvent.type(canvas.getByTestId('email'), 'email@provider.com');
-
-    await userEvent.type(canvas.getByTestId('password'), 'a-random-password');
-
-    // See https://storybook.js.org/docs/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
-    await userEvent.click(canvas.getByRole('button'));
-
-    // 👇 Assert DOM structure
-    await expect(
-      canvas.getByText(
-        'Everything is perfect. Your account is ready and we should probably get you started!',
-      ),
-    ).toBeInTheDocument();
-  },
-};
-```
-
-```js filename="LoginForm.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 3"
 // ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import { expect } from 'storybook/test';
 

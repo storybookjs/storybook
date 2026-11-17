@@ -177,20 +177,19 @@ export const OneItem = Empty.extend({
 });
 ```
 
-```jsx filename="List.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
-
+```jsx filename="List.stories.js|jsx" renderer="solid" language="js"
 import { List } from './List';
 import { ListItem } from './ListItem';
 
 //👇 Imports a specific story from ListItem stories
 import { Unchecked } from './ListItem.stories';
 
-const meta = preview.meta({
+export default {
   component: List,
-});
+};
 
-export const Empty = meta.story({
+//👇 The ListTemplate construct will be spread to the existing stories.
+const ListTemplate = {
   render: ({ items, ...args }) => {
     return (
       <List>
@@ -200,20 +199,25 @@ export const Empty = meta.story({
       </List>
     );
   },
+};
+
+export const Empty = {
+  ...ListTemplate,
   args: {
     items: [],
   },
-});
+};
 
-export const OneItem = Empty.extend({
+export const OneItem = {
+  ...ListTemplate,
   args: {
-    items: [{ ...Unchecked.input.args }],
+    items: [{ ...Unchecked.args }],
   },
-});
+};
 ```
 
-```tsx filename="List.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
+```tsx filename="List.stories.ts|tsx" renderer="solid" language="ts"
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
 import { List } from './List';
 import { ListItem } from './ListItem';
@@ -221,11 +225,15 @@ import { ListItem } from './ListItem';
 //👇 Imports a specific story from ListItem stories
 import { Unchecked } from './ListItem.stories';
 
-const meta = preview.meta({
+const meta = {
   component: List,
-});
+} satisfies Meta<typeof List>;
 
-export const Empty = meta.story({
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+//👇 The ListTemplate construct will be spread to the existing stories.
+const ListTemplate: Story = {
   render: ({ items, ...args }) => {
     return (
       <List>
@@ -235,16 +243,21 @@ export const Empty = meta.story({
       </List>
     );
   },
+};
+
+export const Empty = {
+  ...ListTemplate,
   args: {
     items: [],
   },
-});
+};
 
-export const OneItem = Empty.extend({
+export const OneItem = {
+  ...ListTemplate,
   args: {
-    items: [{ ...Unchecked.input.args }],
+    items: [{ ...Unchecked.args }],
   },
-});
+};
 ```
 
 ```svelte filename="List.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 4"
@@ -759,91 +772,6 @@ export const OneItem = {
 ```
 
 ```jsx filename="List.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
-// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
-import { List } from './List';
-import { ListItem } from './ListItem';
-
-//👇 Imports a specific story from ListItem stories
-import { Unchecked } from './ListItem.stories';
-
-export default {
-  component: List,
-};
-
-//👇 The ListTemplate construct will be spread to the existing stories.
-const ListTemplate = {
-  render: ({ items, ...args }) => {
-    return (
-      <List>
-        {items.map((item) => (
-          <ListItem {...item} />
-        ))}
-      </List>
-    );
-  },
-};
-
-export const Empty = {
-  ...ListTemplate,
-  args: {
-    items: [],
-  },
-};
-
-export const OneItem = {
-  ...ListTemplate,
-  args: {
-    items: [{ ...Unchecked.args }],
-  },
-};
-```
-
-```tsx filename="List.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 3"
-// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
-import type { Meta, StoryObj } from 'storybook-solidjs-vite';
-
-import { List } from './List';
-import { ListItem } from './ListItem';
-
-//👇 Imports a specific story from ListItem stories
-import { Unchecked } from './ListItem.stories';
-
-const meta = {
-  component: List,
-} satisfies Meta<typeof List>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-//👇 The ListTemplate construct will be spread to the existing stories.
-const ListTemplate: Story = {
-  render: ({ items, ...args }) => {
-    return (
-      <List>
-        {items.map((item) => (
-          <ListItem {...item} />
-        ))}
-      </List>
-    );
-  },
-};
-
-export const Empty = {
-  ...ListTemplate,
-  args: {
-    items: [],
-  },
-};
-
-export const OneItem = {
-  ...ListTemplate,
-  args: {
-    items: [{ ...Unchecked.args }],
-  },
-};
-```
-
-```jsx filename="List.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 3"
 // ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import { List } from './List';
 import { ListItem } from './ListItem';

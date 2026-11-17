@@ -252,11 +252,13 @@ export default defineMain({
 });
 ```
 
-```ts filename=".storybook/main.ts" renderer="solid" language="ts" tabTitle="Webpack (CSF 4)"
-import { defineMain } from 'storybook-solidjs-vite/node';
+```ts filename=".storybook/main.ts" renderer="common" language="ts" tabTitle="Webpack (CSF 3)"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+// Replace your-framework with the framework you are using (e.g., nextjs, react-webpack5)
+import type { StorybookConfig } from '@storybook/your-framework';
 
-export default defineMain({
-  framework: { name: 'storybook-solidjs-vite' },
+const config: StorybookConfig = {
+  framework: '@storybook/your-framework',
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   webpackFinal: async (config) => {
     if (config.resolve) {
@@ -274,14 +276,16 @@ export default defineMain({
 
     return config;
   },
-});
+};
+
+export default config;
 ```
 
-```js filename=".storybook/main.js" renderer="solid" language="js" tabTitle="Webpack (CSF 4)"
-import { defineMain } from 'storybook-solidjs-vite/node';
-
-export default defineMain({
-  framework: { name: 'storybook-solidjs-vite' },
+```js filename=".storybook/main.js" renderer="common" language="js" tabTitle="Webpack (CSF 3)"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+export default {
+  // Replace your-framework with the framework you are using (e.g., nextjs, react-webpack5)
+  framework: '@storybook/your-framework',
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   webpackFinal: async (config) => {
     if (config.resolve) {
@@ -299,57 +303,7 @@ export default defineMain({
 
     return config;
   },
-});
-```
-
-```ts filename=".storybook/main.ts" renderer="solid" language="ts" tabTitle="Vite (CSF 4)"
-import { defineMain } from 'storybook-solidjs-vite/node';
-
-export default defineMain({
-  framework: { name: 'storybook-solidjs-vite' },
-  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
-  viteFinal: async (config) => {
-    if (config.resolve) {
-      config.resolve.alias = {
-        ...config.resolve?.alias,
-        // 👇 External module
-        lodash: import.meta.resolve('./lodash.mock'),
-        // 👇 Internal modules
-        '@/api': import.meta.resolve('./api.mock.ts'),
-        '@/app/actions': import.meta.resolve('./app/actions.mock.ts'),
-        '@/lib/session': import.meta.resolve('./lib/session.mock.ts'),
-        '@/lib/db': import.meta.resolve('./lib/db.mock.ts'),
-      };
-    }
-
-    return config;
-  },
-});
-```
-
-```js filename=".storybook/main.js" renderer="solid" language="js" tabTitle="Vite (CSF 4)"
-import { defineMain } from 'storybook-solidjs-vite/node';
-
-export default defineMain({
-  framework: { name: 'storybook-solidjs-vite' },
-  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
-  viteFinal: async (config) => {
-    if (config.resolve) {
-      config.resolve.alias = {
-        ...config.resolve?.alias,
-        // 👇 External module
-        lodash: import.meta.resolve('./lodash.mock'),
-        // 👇 Internal modules
-        '@/api': import.meta.resolve('./api.mock.ts'),
-        '@/app/actions': import.meta.resolve('./app/actions.mock.ts'),
-        '@/lib/session': import.meta.resolve('./lib/session.mock.ts'),
-        '@/lib/db': import.meta.resolve('./lib/db.mock.ts'),
-      };
-    }
-
-    return config;
-  },
-});
+};
 ```
 
 ```ts filename=".storybook/main.ts" renderer="common" language="ts" tabTitle="Vite (CSF 3)"
@@ -398,60 +352,6 @@ export default {
         '@/app/actions': import.meta.resolve('./app/actions.mock.ts'),
         '@/lib/session': import.meta.resolve('./lib/session.mock.ts'),
         '@/lib/db': import.meta.resolve('./lib/db.mock.ts'),
-      };
-    }
-
-    return config;
-  },
-};
-```
-
-```ts filename=".storybook/main.ts" renderer="common" language="ts" tabTitle="Webpack (CSF 3)"
-// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
-// Replace your-framework with the framework you are using (e.g., nextjs, react-webpack5)
-import type { StorybookConfig } from '@storybook/your-framework';
-
-const config: StorybookConfig = {
-  framework: '@storybook/your-framework',
-  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
-  webpackFinal: async (config) => {
-    if (config.resolve) {
-      config.resolve.alias = {
-        ...config.resolve.alias,
-        // 👇 External module
-        lodash: import.meta.resolve('./lodash.mock'),
-        // 👇 Internal modules
-        '@/api$': import.meta.resolve('./api.mock.ts'),
-        '@/app/actions$': import.meta.resolve('./app/actions.mock.ts'),
-        '@/lib/session$': import.meta.resolve('./lib/session.mock.ts'),
-        '@/lib/db$': import.meta.resolve('./lib/db.mock.ts'),
-      };
-    }
-
-    return config;
-  },
-};
-
-export default config;
-```
-
-```js filename=".storybook/main.js" renderer="common" language="js" tabTitle="Webpack (CSF 3)"
-// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
-export default {
-  // Replace your-framework with the framework you are using (e.g., nextjs, react-webpack5)
-  framework: '@storybook/your-framework',
-  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
-  webpackFinal: async (config) => {
-    if (config.resolve) {
-      config.resolve.alias = {
-        ...config.resolve.alias,
-        // 👇 External module
-        lodash: import.meta.resolve('./lodash.mock'),
-        // 👇 Internal modules
-        '@/api$': import.meta.resolve('./api.mock.ts'),
-        '@/app/actions$': import.meta.resolve('./app/actions.mock.ts'),
-        '@/lib/session$': import.meta.resolve('./lib/session.mock.ts'),
-        '@/lib/db$': import.meta.resolve('./lib/db.mock.ts'),
       };
     }
 

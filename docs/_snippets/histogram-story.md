@@ -163,42 +163,43 @@ export const Basic = meta.story({
 });
 ```
 
-```js filename="Histogram.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
-
+```js filename="Histogram.stories.js|jsx" renderer="solid" language="js"
 import { Histogram } from './Histogram';
 
-const meta = preview.meta({
+export default {
   component: Histogram,
-});
+};
 
-export const Basic = meta.story({
+export const Basic = {
   args: {
     dataType: 'latency',
     showHistogramLabels: true,
     histogramAccentColor: '#1EA7FD',
     label: 'Latency distribution',
   },
-});
+};
 ```
 
-```ts filename="Histogram.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
+```ts filename="Histogram.stories.ts|tsx" renderer="solid" language="ts"
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
 import { Histogram } from './Histogram';
 
-const meta = preview.meta({
+const meta = {
   component: Histogram,
-});
+} satisfies Meta<typeof Histogram>;
 
-export const Basic = meta.story({
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Basic: Story = {
   args: {
     dataType: 'latency',
     showHistogramLabels: true,
     histogramAccentColor: '#1EA7FD',
     label: 'Latency distribution',
   },
-});
+};
 ```
 
 ```svelte filename="Histogram.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 4"
@@ -516,47 +517,6 @@ export const Basic: Story = {
 ```
 
 ```js filename="Histogram.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
-// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
-import { Histogram } from './Histogram';
-
-export default {
-  component: Histogram,
-};
-
-export const Basic = {
-  args: {
-    dataType: 'latency',
-    showHistogramLabels: true,
-    histogramAccentColor: '#1EA7FD',
-    label: 'Latency distribution',
-  },
-};
-```
-
-```ts filename="Histogram.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 3"
-// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
-import type { Meta, StoryObj } from 'storybook-solidjs-vite';
-
-import { Histogram } from './Histogram';
-
-const meta = {
-  component: Histogram,
-} satisfies Meta<typeof Histogram>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const Basic: Story = {
-  args: {
-    dataType: 'latency',
-    showHistogramLabels: true,
-    histogramAccentColor: '#1EA7FD',
-    label: 'Latency distribution',
-  },
-};
-```
-
-```js filename="Histogram.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 3"
 // ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import { Histogram } from './Histogram';
 

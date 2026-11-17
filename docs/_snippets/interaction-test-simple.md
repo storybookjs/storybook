@@ -100,25 +100,28 @@ export const Opens = meta.story({
 />
 ```
 
-```ts filename="Dialog.stories.ts" renderer="vue" language="ts" tabTitle="CSF 4"
-import { fn, expect } from 'storybook/test';
+```svelte filename="Dialog.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 3"
+<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
+<script module>
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
-import preview from '../.storybook/preview';
+  import Dialog from './Dialog.svelte';
 
-import Dialog from './Dialog.vue';
+  const { Story } = defineMeta({
+    component: Dialog,
+  });
+</script>
 
-const meta = preview.meta({
-  component: Dialog,
-});
-
-export const Opens = meta.story({
-  play: async ({ canvas, userEvent }) => {
+<Story
+  name="Opens"
+  play={async ({ canvas, userEvent }) => {
     // Click on a button and assert that a dialog appears
     const button = canvas.getByRole('button', { name: 'Open Modal' });
     await userEvent.click(button);
     await expect(canvas.getByRole('dialog')).toBeInTheDocument();
-  },
-});
+  }}
+/>
 ```
 
 ```svelte filename="Dialog.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 4"
@@ -143,12 +146,36 @@ export const Opens = meta.story({
 />
 ```
 
-```js filename="Dialog.stories.js" renderer="react" language="js" tabTitle="CSF 4"
+```svelte filename="Dialog.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 3"
+<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
+<script module>
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
+
+  import Dialog from './Dialog.svelte';
+
+  const { Story } = defineMeta({
+    component: Dialog,
+  });
+</script>
+
+<Story
+  name="Opens"
+  play={async ({ canvas, userEvent }) => {
+    // Click on a button and assert that a dialog appears
+    const button = canvas.getByRole('button', { name: 'Open Modal' });
+    await userEvent.click(button);
+    await expect(canvas.getByRole('dialog')).toBeInTheDocument();
+  }}
+/>
+```
+
+```ts filename="Dialog.stories.ts" renderer="vue" language="ts" tabTitle="CSF 4"
 import { fn, expect } from 'storybook/test';
 
 import preview from '../.storybook/preview';
 
-import { Dialog } from './Dialog';
+import Dialog from './Dialog.vue';
 
 const meta = preview.meta({
   component: Dialog,
@@ -164,7 +191,7 @@ export const Opens = meta.story({
 });
 ```
 
-```ts filename="Dialog.stories.ts" renderer="solid" language="ts" tabTitle="CSF 4"
+```js filename="Dialog.stories.js" renderer="react" language="js" tabTitle="CSF 4"
 import { fn, expect } from 'storybook/test';
 
 import preview from '../.storybook/preview';
@@ -206,51 +233,6 @@ export const Opens = meta.story({
 });
 ```
 
-```js filename="Dialog.stories.js" renderer="solid" language="js" tabTitle="CSF 4"
-import { fn, expect } from 'storybook/test';
-
-import preview from '../.storybook/preview';
-
-import { Dialog } from './Dialog';
-
-const meta = preview.meta({
-  component: Dialog,
-});
-
-export const Opens = meta.story({
-  play: async ({ canvas, userEvent }) => {
-    // Click on a button and assert that a dialog appears
-    const button = canvas.getByRole('button', { name: 'Open Modal' });
-    await userEvent.click(button);
-    await expect(canvas.getByRole('dialog')).toBeInTheDocument();
-  },
-});
-```
-
-```svelte filename="Dialog.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 3"
-<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
-<script module>
-  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-  import { defineMeta } from '@storybook/your-framework';
-
-  import Dialog from './Dialog.svelte';
-
-  const { Story } = defineMeta({
-    component: Dialog,
-  });
-</script>
-
-<Story
-  name="Opens"
-  play={async ({ canvas, userEvent }) => {
-    // Click on a button and assert that a dialog appears
-    const button = canvas.getByRole('button', { name: 'Open Modal' });
-    await userEvent.click(button);
-    await expect(canvas.getByRole('dialog')).toBeInTheDocument();
-  }}
-/>
-```
-
 ```ts filename="Dialog.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 // ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import type { Meta, StoryObj } from '@storybook/angular';
@@ -273,30 +255,6 @@ export const Opens: Story = {
     await expect(canvas.getByRole('dialog')).toBeInTheDocument();
   },
 };
-```
-
-```svelte filename="Dialog.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 3"
-<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
-<script module>
-  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-  import { defineMeta } from '@storybook/your-framework';
-
-  import Dialog from './Dialog.svelte';
-
-  const { Story } = defineMeta({
-    component: Dialog,
-  });
-</script>
-
-<Story
-  name="Opens"
-  play={async ({ canvas, userEvent }) => {
-    // Click on a button and assert that a dialog appears
-    const button = canvas.getByRole('button', { name: 'Open Modal' });
-    await userEvent.click(button);
-    await expect(canvas.getByRole('dialog')).toBeInTheDocument();
-  }}
-/>
 ```
 
 ```ts filename="Dialog.stories.ts" renderer="common" language="ts" tabTitle="CSF 3"

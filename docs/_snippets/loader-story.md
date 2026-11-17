@@ -121,27 +121,30 @@ export const Primary = meta.story({
 });
 ```
 
-```jsx filename="TodoItem.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
-
+```jsx filename="TodoItem.stories.js|jsx" renderer="solid" language="js"
 import { TodoItem } from './TodoItem';
 
-const meta = preview.meta({
+/*
+ *👇 Render functions are a framework specific feature to allow you control on how the component renders.
+ * See https://storybook.js.org/docs/writing-stories/csf
+ * to learn how to use render functions.
+ */
+export default {
   component: TodoItem,
   render: (args, { loaded: { todo } }) => <TodoItem {...args} {...todo} />,
-});
+};
 
-export const Primary = meta.story({
+export const Primary = {
   loaders: [
     async () => ({
       todo: await (await fetch('https://jsonplaceholder.typicode.com/todos/1')).json(),
     }),
   ],
-});
+};
 ```
 
-```tsx filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
+```tsx filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts"
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
 import { TodoItem } from './TodoItem';
 
@@ -150,18 +153,21 @@ import { TodoItem } from './TodoItem';
  * See https://storybook.js.org/docs/writing-stories/csf
  * to learn how to use render functions.
  */
-const meta = preview.meta({
+const meta = {
   component: TodoItem,
   render: (args, { loaded: { todo } }) => <TodoItem {...args} {...todo} />,
-});
+} satisfies Meta<typeof TodoItem>;
 
-export const Primary = meta.story({
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Primary: Story = {
   loaders: [
     async () => ({
       todo: await (await fetch('https://jsonplaceholder.typicode.com/todos/1')).json(),
     }),
   ],
-});
+};
 ```
 
 ```svelte filename="TodoItem.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 4"
@@ -536,57 +542,6 @@ export const Primary: Story = {
 ```
 
 ```jsx filename="TodoItem.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
-// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
-import { TodoItem } from './TodoItem';
-
-/*
- *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/writing-stories/csf
- * to learn how to use render functions.
- */
-export default {
-  component: TodoItem,
-  render: (args, { loaded: { todo } }) => <TodoItem {...args} {...todo} />,
-};
-
-export const Primary = {
-  loaders: [
-    async () => ({
-      todo: await (await fetch('https://jsonplaceholder.typicode.com/todos/1')).json(),
-    }),
-  ],
-};
-```
-
-```tsx filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 3"
-// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
-import type { Meta, StoryObj } from 'storybook-solidjs-vite';
-
-import { TodoItem } from './TodoItem';
-
-/*
- *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/writing-stories/csf
- * to learn how to use render functions.
- */
-const meta = {
-  component: TodoItem,
-  render: (args, { loaded: { todo } }) => <TodoItem {...args} {...todo} />,
-} satisfies Meta<typeof TodoItem>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const Primary: Story = {
-  loaders: [
-    async () => ({
-      todo: await (await fetch('https://jsonplaceholder.typicode.com/todos/1')).json(),
-    }),
-  ],
-};
-```
-
-```jsx filename="TodoItem.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 3"
 // ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import { TodoItem } from './TodoItem';
 

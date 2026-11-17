@@ -18,7 +18,86 @@
 />
 ```
 
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 3"
+<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
+<script module>
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
+
+  import MyComponent from './MyComponent.svelte';
+
+  const { Story } = defineMeta({
+    component: MyComponent,
+  });
+</script>
+
+<Story
+  name="ExampleStory"
+  args={{
+    propertyA: import.meta.env.STORYBOOK_DATA_KEY,
+    propertyB: import.meta.env.VITE_CUSTOM_VAR,
+  }}
+/>
+```
+
 ```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'my-component',
+});
+
+export const ExampleStory = meta.story({
+  args: {
+    propertyA: import.meta.env.STORYBOOK_DATA_KEY,
+    propertyB: import.meta.env.VITE_CUSTOM_VAR,
+  },
+});
+```
+
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 4"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
+
+  import MyComponent from './MyComponent.svelte';
+
+  const { Story } = preview.meta({
+    component: MyComponent,
+  });
+</script>
+
+<Story
+  name="ExampleStory"
+  args={{
+    propertyA: import.meta.env.STORYBOOK_DATA_KEY,
+    propertyB: import.meta.env.VITE_CUSTOM_VAR,
+  }}
+/>
+```
+
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 3"
+<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
+<script module>
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
+
+  import MyComponent from './MyComponent.svelte';
+
+  const { Story } = defineMeta({
+    component: MyComponent,
+  });
+</script>
+
+<Story
+  name="ExampleStory"
+  args={{
+    propertyA: import.meta.env.STORYBOOK_DATA_KEY,
+    propertyB: import.meta.env.VITE_CUSTOM_VAR,
+  }}
+/>
+```
+
+```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 const meta = preview.meta({
@@ -50,62 +129,10 @@ export const ExampleStory = meta.story({
 });
 ```
 
-```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 4"
-<script module lang="ts">
-  import preview from '../.storybook/preview';
-
-  import MyComponent from './MyComponent.svelte';
-
-  const { Story } = preview.meta({
-    component: MyComponent,
-  });
-</script>
-
-<Story
-  name="ExampleStory"
-  args={{
-    propertyA: import.meta.env.STORYBOOK_DATA_KEY,
-    propertyB: import.meta.env.VITE_CUSTOM_VAR,
-  }}
-/>
-```
-
-```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
-
-const meta = preview.meta({
-  component: 'my-component',
-});
-
-export const ExampleStory = meta.story({
-  args: {
-    propertyA: import.meta.env.STORYBOOK_DATA_KEY,
-    propertyB: import.meta.env.VITE_CUSTOM_VAR,
-  },
-});
-```
-
 ```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 import { MyComponent } from './MyComponent';
-
-const meta = preview.meta({
-  component: MyComponent,
-});
-
-export const ExampleStory = meta.story({
-  args: {
-    propertyA: import.meta.env.STORYBOOK_DATA_KEY,
-    propertyB: import.meta.env.VITE_CUSTOM_VAR,
-  },
-});
-```
-
-```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
-
-import MyComponent from './MyComponent.vue';
 
 const meta = preview.meta({
   component: MyComponent,
@@ -136,10 +163,10 @@ export const ExampleStory = meta.story({
 });
 ```
 
-```tsx filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 4"
+```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
-import { MyComponent } from './MyComponent';
+import MyComponent from './MyComponent.vue';
 
 const meta = preview.meta({
   component: MyComponent,
@@ -151,67 +178,6 @@ export const ExampleStory = meta.story({
     propertyB: import.meta.env.VITE_CUSTOM_VAR,
   },
 });
-```
-
-```js filename="MyComponent.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
-
-import { MyComponent } from './MyComponent';
-
-const meta = preview.meta({
-  component: MyComponent,
-});
-
-export const ExampleStory = meta.story({
-  args: {
-    propertyA: import.meta.env.STORYBOOK_DATA_KEY,
-    propertyB: import.meta.env.VITE_CUSTOM_VAR,
-  },
-});
-```
-
-```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 3"
-<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
-<script module>
-  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-  import { defineMeta } from '@storybook/your-framework';
-
-  import MyComponent from './MyComponent.svelte';
-
-  const { Story } = defineMeta({
-    component: MyComponent,
-  });
-</script>
-
-<Story
-  name="ExampleStory"
-  args={{
-    propertyA: import.meta.env.STORYBOOK_DATA_KEY,
-    propertyB: import.meta.env.VITE_CUSTOM_VAR,
-  }}
-/>
-```
-
-```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 3"
-<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
-<script module>
-  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-  import { defineMeta } from '@storybook/your-framework';
-
-  import MyComponent from './MyComponent.svelte';
-
-  const { Story } = defineMeta({
-    component: MyComponent,
-  });
-</script>
-
-<Story
-  name="ExampleStory"
-  args={{
-    propertyA: import.meta.env.STORYBOOK_DATA_KEY,
-    propertyB: import.meta.env.VITE_CUSTOM_VAR,
-  }}
-/>
 ```
 
 ```tsx filename="MyComponent.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"

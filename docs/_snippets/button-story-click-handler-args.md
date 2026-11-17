@@ -145,44 +145,45 @@ export const Text = {
 };
 ```
 
-```jsx filename="Button.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 4"
+```jsx filename="Button.stories.js|jsx" renderer="solid" language="js"
 import { action } from 'storybook/actions';
-
-import preview from '../.storybook/preview';
 
 import { Button } from './Button';
 
-const meta = preview.meta({
+export default {
   component: Button,
-});
+};
 
-export const Text = meta.story({
+export const Text = {
   args: {
     label: 'Hello',
     onClick: action('clicked'),
   },
   render: ({ label, onClick }) => <Button label={label} onClick={onClick} />,
-});
+};
 ```
 
-```tsx filename="Button.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 4"
-import { action } from 'storybook/actions';
+```tsx filename="Button.stories.ts|tsx" renderer="solid" language="ts"
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
-import preview from '../.storybook/preview';
+import { action } from 'storybook/actions';
 
 import { Button } from './Button';
 
-const meta = preview.meta({
+const meta = {
   component: Button,
-});
+} satisfies Meta<typeof Button>;
 
-export const Text = meta.story({
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Text = {
   args: {
     label: 'Hello',
     onClick: action('clicked'),
   },
   render: ({ label, onClick }) => <Button label={label} onClick={onClick} />,
-});
+};
 ```
 
 ```js filename="Button.stories.js" renderer="svelte" language="js"
@@ -442,48 +443,5 @@ export const Text: Story = {
     label: 'Hello',
     onClick: action('clicked'),
   },
-};
-```
-
-```tsx filename="Button.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 3"
-// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
-import type { Meta, StoryObj } from 'storybook-solidjs-vite';
-
-import { action } from 'storybook/actions';
-
-import { Button } from './Button';
-
-const meta = {
-  component: Button,
-} satisfies Meta<typeof Button>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const Text = {
-  args: {
-    label: 'Hello',
-    onClick: action('clicked'),
-  },
-  render: ({ label, onClick }) => <Button label={label} onClick={onClick} />,
-};
-```
-
-```jsx filename="Button.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 3"
-// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
-import { action } from 'storybook/actions';
-
-import { Button } from './Button';
-
-export default {
-  component: Button,
-};
-
-export const Text = {
-  args: {
-    label: 'Hello',
-    onClick: action('clicked'),
-  },
-  render: ({ label, onClick }) => <Button label={label} onClick={onClick} />,
 };
 ```

@@ -73,44 +73,6 @@ const meta = preview.meta({
 });
 ```
 
-```ts filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
-
-// ❌ Don't use the package's index file to import the component.
-// import { MyComponent } from '@component-package';
-
-// ✅ Use the component's export to import it directly.
-import { MyComponent } from '@component-package/src/MyComponent';
-
-const meta = preview.meta({
-  /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'MyComponent',
-  component: MyComponent,
-});
-```
-
-```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
-
-// ❌ Don't use the package's index file to import the component.
-// import { MyComponent } from '@component-package';
-
-// ✅ Use the component's export to import it directly.
-import MyComponent from '@component-package/src/MyComponent.vue';
-
-const meta = preview.meta({
-  /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'MyComponent',
-  component: MyComponent,
-});
-```
-
 ```ts filename="MyComponent.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
 // ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
@@ -134,13 +96,14 @@ const meta = {
 export default meta;
 ```
 
-```js filename="MyComponent.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 4"
+```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
+
 // ❌ Don't use the package's index file to import the component.
 // import { MyComponent } from '@component-package';
 
 // ✅ Use the component's export to import it directly.
-import { MyComponent } from '@component-package/src/MyComponent';
+import MyComponent from '@component-package/src/MyComponent.vue';
 
 const meta = preview.meta({
   /* 👇 The title prop is optional.

@@ -286,48 +286,6 @@ const meta = preview.meta({
 });
 ```
 
-```ts filename="Button.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
-
-import { Button } from './Button';
-
-const meta = preview.meta({
-  component: Button,
-  argTypes: {
-    // Assigns the argTypes to the Colors category
-    backgroundColor: {
-      control: 'color',
-      table: {
-        category: 'Colors',
-      },
-    },
-    primary: {
-      table: {
-        category: 'Colors',
-      },
-    },
-    // Assigns the argType to the Text category
-    label: {
-      table: {
-        category: 'Text',
-      },
-    },
-    // Assigns the argType to the Events category
-    onClick: {
-      table: {
-        category: 'Events',
-      },
-    },
-    // Assigns the argType to the Sizes category
-    size: {
-      table: {
-        category: 'Sizes',
-      },
-    },
-  },
-});
-```
-
 ```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 // ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import type { Meta } from '@storybook/angular';
@@ -371,48 +329,6 @@ const meta: Meta<Button> = {
 };
 
 export default meta;
-```
-
-```js filename="Button.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
-
-import { Button } from './Button';
-
-const meta = preview.meta({
-  component: Button,
-  argTypes: {
-    // Assigns the argTypes to the Colors category
-    backgroundColor: {
-      control: 'color',
-      table: {
-        category: 'Colors',
-      },
-    },
-    primary: {
-      table: {
-        category: 'Colors',
-      },
-    },
-    // Assigns the argType to the Text category
-    label: {
-      table: {
-        category: 'Text',
-      },
-    },
-    // Assigns the argType to the Events category
-    onClick: {
-      table: {
-        category: 'Events',
-      },
-    },
-    // Assigns the argType to the Sizes category
-    size: {
-      table: {
-        category: 'Sizes',
-      },
-    },
-  },
-});
 ```
 
 ```ts filename="Button.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"

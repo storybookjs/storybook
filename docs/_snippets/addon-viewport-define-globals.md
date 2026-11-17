@@ -61,23 +61,29 @@ export const OnPhone = meta.story({
 />
 ```
 
-```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
+```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 3"
+<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
+<script module>
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
-const meta = preview.meta({
-  component: 'demo-button',
-  globals: {
-    // 👇 Set viewport for all component stories
-    viewport: { value: 'tablet', isRotated: false },
-  },
-});
+  import Button from './Button.svelte';
 
-export const OnPhone = meta.story({
-  globals: {
-    // 👇 Override viewport for this story
-    viewport: { value: 'mobile1', isRotated: false },
-  },
-});
+  const { Story } = defineMeta({
+    component: Button,
+    globals: {
+      // 👇 Set viewport for all component stories
+      viewport: { value: "tablet", isRotated: false },
+    },
+  });
+</script>
+
+<Story
+  name="OnPhone"
+  globals={{
+    viewport: { value: "mobile1", isRotated: false },
+  }}
+/>
 ```
 
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 4"
@@ -101,6 +107,50 @@ export const OnPhone = meta.story({
     viewport: { value: "mobile1", isRotated: false },
   }}
 />
+```
+
+```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 3"
+<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
+<script module>
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
+
+  import Button from './Button.svelte';
+
+  const { Story } = defineMeta({
+    component: Button,
+    globals: {
+      // 👇 Set viewport for all component stories
+      viewport: { value: "tablet", isRotated: false },
+    },
+  });
+</script>
+
+<Story
+  name="OnPhone"
+  globals={{
+    viewport: { value: "mobile1", isRotated: false },
+  }}
+/>
+```
+
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-button',
+  globals: {
+    // 👇 Set viewport for all component stories
+    viewport: { value: 'tablet', isRotated: false },
+  },
+});
+
+export const OnPhone = meta.story({
+  globals: {
+    // 👇 Override viewport for this story
+    viewport: { value: 'mobile1', isRotated: false },
+  },
+});
 ```
 
 ```ts filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 4"
@@ -187,73 +237,6 @@ export const OnPhone = meta.story({
 });
 ```
 
-```ts filename="Button.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
-
-import { Button } from './Button';
-
-const meta = preview.meta({
-  component: Button,
-  globals: {
-    // 👇 Set viewport for all component stories
-    viewport: { value: 'tablet', isRotated: false },
-  },
-});
-
-export const OnPhone = meta.story({
-  globals: {
-    // 👇 Override viewport for this story
-    viewport: { value: 'mobile1', isRotated: false },
-  },
-});
-```
-
-```js filename="Button.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
-
-import { Button } from './Button';
-
-const meta = preview.meta({
-  component: Button,
-  globals: {
-    // 👇 Set viewport for all component stories
-    viewport: { value: 'tablet', isRotated: false },
-  },
-});
-
-export const OnPhone = meta.story({
-  globals: {
-    // 👇 Override viewport for this story
-    viewport: { value: 'mobile1', isRotated: false },
-  },
-});
-```
-
-```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 3"
-<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
-<script module>
-  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-  import { defineMeta } from '@storybook/your-framework';
-
-  import Button from './Button.svelte';
-
-  const { Story } = defineMeta({
-    component: Button,
-    globals: {
-      // 👇 Set viewport for all component stories
-      viewport: { value: "tablet", isRotated: false },
-    },
-  });
-</script>
-
-<Story
-  name="OnPhone"
-  globals={{
-    viewport: { value: "mobile1", isRotated: false },
-  }}
-/>
-```
-
 ```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 // ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import type { Meta, StoryObj } from '@storybook/angular';
@@ -277,31 +260,6 @@ export const OnPhone: Story = {
     viewport: { value: 'mobile1', isRotated: false },
   },
 };
-```
-
-```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 3"
-<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
-<script module>
-  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-  import { defineMeta } from '@storybook/your-framework';
-
-  import Button from './Button.svelte';
-
-  const { Story } = defineMeta({
-    component: Button,
-    globals: {
-      // 👇 Set viewport for all component stories
-      viewport: { value: "tablet", isRotated: false },
-    },
-  });
-</script>
-
-<Story
-  name="OnPhone"
-  globals={{
-    viewport: { value: "mobile1", isRotated: false },
-  }}
-/>
 ```
 
 ```ts filename="Button.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"

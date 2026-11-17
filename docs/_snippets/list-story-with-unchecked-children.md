@@ -36,42 +36,43 @@ export const OneItem = meta.story({
 });
 ```
 
-```jsx filename="List.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
-
+```jsx filename="List.stories.js|jsx" renderer="solid" language="js"
 import { List } from './List';
 
 //👇 Instead of importing ListItem, we import the stories
 import { Unchecked } from './ListItem.stories';
 
-const meta = preview.meta({
+export default {
   component: List,
-});
+};
 
-export const OneItem = meta.story({
+export const OneItem = {
   args: {
-    children: <Unchecked {...Unchecked.input.args} />,
+    children: <Unchecked {...Unchecked.args} />,
   },
-});
+};
 ```
 
-```tsx filename="List.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
+```tsx filename="List.stories.ts|tsx" renderer="solid" language="ts"
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
 import { List } from './List';
 
 //👇 Instead of importing ListItem, we import the stories
 import { Unchecked } from './ListItem.stories';
 
-const meta = preview.meta({
+const meta = {
   component: List,
-});
+} satisfies Meta<typeof List>;
 
-export const OneItem = meta.story({
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const OneItem: Story = {
   args: {
-    children: <Unchecked {...Unchecked.input.args} />,
+    children: <Unchecked {...Unchecked.args} />,
   },
-});
+};
 ```
 
 ```tsx filename="List.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
@@ -99,47 +100,6 @@ export const OneItem: Story = {
 ```
 
 ```jsx filename="List.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
-// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
-import { List } from './List';
-
-//👇 Instead of importing ListItem, we import the stories
-import { Unchecked } from './ListItem.stories';
-
-export default {
-  component: List,
-};
-
-export const OneItem = {
-  args: {
-    children: <Unchecked {...Unchecked.args} />,
-  },
-};
-```
-
-```tsx filename="List.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 3"
-// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
-import type { Meta, StoryObj } from 'storybook-solidjs-vite';
-
-import { List } from './List';
-
-//👇 Instead of importing ListItem, we import the stories
-import { Unchecked } from './ListItem.stories';
-
-const meta = {
-  component: List,
-} satisfies Meta<typeof List>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const OneItem: Story = {
-  args: {
-    children: <Unchecked {...Unchecked.args} />,
-  },
-};
-```
-
-```jsx filename="List.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 3"
 // ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import { List } from './List';
 

@@ -191,58 +191,6 @@ export default definePreview({
 });
 ```
 
-```tsx filename=".storybook/preview.tsx" renderer="solid" language="ts" tabTitle="CSF 4"
-import { definePreview } from 'storybook-solidjs-vite';
-
-import addonDocs from '@storybook/addon-docs';
-import { DocsContainer } from '@storybook/addon-docs/blocks';
-
-const ExampleContainer = ({ children, ...props }) => {
-  return <DocsContainer {...props}>{children}</DocsContainer>;
-};
-
-export default definePreview({
-  addons: [addonDocs()],
-  parameters: {
-    controls: {
-      matchers: {
-        color: /(background|color)$/i,
-        date: /Date$/,
-      },
-    },
-    docs: {
-      container: ExampleContainer,
-    },
-  },
-});
-```
-
-```jsx filename=".storybook/preview.jsx" renderer="solid" language="js" tabTitle="CSF 4"
-import { definePreview } from 'storybook-solidjs-vite';
-
-import addonDocs from '@storybook/addon-docs';
-import { DocsContainer } from '@storybook/addon-docs/blocks';
-
-const ExampleContainer = ({ children, ...props }) => {
-  return <DocsContainer {...props}>{children}</DocsContainer>;
-};
-
-export default definePreview({
-  addons: [addonDocs()],
-  parameters: {
-    controls: {
-      matchers: {
-        color: /(background|color)$/i,
-        date: /Date$/,
-      },
-    },
-    docs: {
-      container: ExampleContainer,
-    },
-  },
-});
-```
-
 ```tsx filename=".storybook/preview.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
 // ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import * as React from 'react';

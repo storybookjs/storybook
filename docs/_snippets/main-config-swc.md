@@ -36,42 +36,6 @@ export default defineMain({
 });
 ```
 
-```ts filename=".storybook/main.ts" renderer="solid" language="ts" tabTitle="CSF 4"
-import type { Options } from '@swc/core';
-
-import { defineMain } from 'storybook-solidjs-vite/node';
-
-export default defineMain({
-  framework: {
-    name: 'storybook-solidjs-vite',
-    options: {},
-  },
-  swc: (config: Options, options): Options => {
-    return {
-      ...config,
-      // Apply your custom SWC configuration
-    };
-  },
-});
-```
-
-```js filename=".storybook/main.js" renderer="solid" language="js" tabTitle="CSF 4"
-import { defineMain } from 'storybook-solidjs-vite/node';
-
-export default defineMain({
-  framework: {
-    name: 'storybook-solidjs-vite',
-    options: {},
-  },
-  swc: (config, options) => {
-    return {
-      ...config,
-      // Apply your custom SWC configuration
-    };
-  },
-});
-```
-
 ```ts filename=".storybook/main.ts" renderer="common" language="ts" tabTitle="CSF 3"
 // ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import type { Options } from '@swc/core';

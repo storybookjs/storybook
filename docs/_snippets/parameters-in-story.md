@@ -68,16 +68,23 @@ export const Primary = meta.story({
 />
 ```
 
-```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
+```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 3"
+<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
+<script module>
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
-const meta = preview.meta({
-  component: 'demo-button',
-});
+  import Button from './Button.svelte';
 
-export const Primary = meta.story({
-  // 👇 Story-level parameters
-  parameters: {
+  const { Story } = defineMeta({
+    component: Button,
+  });
+</script>
+
+<!-- 👇 Story-level parameters-->
+<Story
+  name="Primary"
+  parameters={{
     backgrounds: {
       options: {
         red: { name: 'Red', value: '#f00' },
@@ -85,17 +92,15 @@ export const Primary = meta.story({
         blue: { name: 'Blue', value: '#00f' },
       },
     },
-  },
-});
+  }}
+/>
 ```
 
-```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 4"
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
-import { Button } from './Button';
-
 const meta = preview.meta({
-  component: Button,
+  component: 'demo-button',
 });
 
 export const Primary = meta.story({
@@ -138,7 +143,58 @@ export const Primary = meta.story({
 />
 ```
 
+```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 3"
+<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
+<script module>
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
+
+  import Button from './Button.svelte';
+
+  const { Story } = defineMeta({
+    component: Button,
+  });
+</script>
+
+<!-- 👇 Story-level parameters-->
+<Story
+  name="Primary"
+  parameters={{
+    backgrounds: {
+      options: {
+        red: { name: 'Red', value: '#f00' },
+        green: { name: 'Green', value: '#0f0' },
+        blue: { name: 'Blue', value: '#00f' },
+      },
+    },
+  }}
+/>
+```
+
 ```ts filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const Primary = meta.story({
+  // 👇 Story-level parameters
+  parameters: {
+    backgrounds: {
+      options: {
+        red: { name: 'Red', value: '#f00' },
+        green: { name: 'Green', value: '#0f0' },
+        blue: { name: 'Blue', value: '#00f' },
+      },
+    },
+  },
+});
+```
+
+```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 import { Button } from './Button';
@@ -207,80 +263,6 @@ export const Primary = meta.story({
 });
 ```
 
-```ts filename="Button.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
-
-import { Button } from './Button';
-
-const meta = preview.meta({
-  component: Button,
-});
-
-export const Primary = meta.story({
-  // 👇 Story-level parameters
-  parameters: {
-    backgrounds: {
-      options: {
-        red: { name: 'Red', value: '#f00' },
-        green: { name: 'Green', value: '#0f0' },
-        blue: { name: 'Blue', value: '#00f' },
-      },
-    },
-  },
-});
-```
-
-```js filename="Button.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
-
-import { Button } from './Button';
-
-const meta = preview.meta({
-  component: Button,
-});
-
-export const Primary = meta.story({
-  // 👇 Story-level parameters
-  parameters: {
-    backgrounds: {
-      options: {
-        red: { name: 'Red', value: '#f00' },
-        green: { name: 'Green', value: '#0f0' },
-        blue: { name: 'Blue', value: '#00f' },
-      },
-    },
-  },
-});
-```
-
-```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 3"
-<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
-<script module>
-  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-  import { defineMeta } from '@storybook/your-framework';
-
-  import Button from './Button.svelte';
-
-  const { Story } = defineMeta({
-    component: Button,
-  });
-</script>
-
-<!-- 👇 Story-level parameters-->
-<Story
-  name="Primary"
-  parameters={{
-    backgrounds: {
-      options: {
-        red: { name: 'Red', value: '#f00' },
-        green: { name: 'Green', value: '#0f0' },
-        blue: { name: 'Blue', value: '#00f' },
-      },
-    },
-  }}
-/>
-```
-
 ```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 // ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import type { Meta, StoryObj } from '@storybook/angular';
@@ -306,34 +288,6 @@ export const Primary: Story = {
     },
   },
 };
-```
-
-```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 3"
-<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
-<script module>
-  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-  import { defineMeta } from '@storybook/your-framework';
-
-  import Button from './Button.svelte';
-
-  const { Story } = defineMeta({
-    component: Button,
-  });
-</script>
-
-<!-- 👇 Story-level parameters-->
-<Story
-  name="Primary"
-  parameters={{
-    backgrounds: {
-      options: {
-        red: { name: 'Red', value: '#f00' },
-        green: { name: 'Green', value: '#0f0' },
-        blue: { name: 'Blue', value: '#00f' },
-      },
-    },
-  }}
-/>
 ```
 
 ```ts filename="Button.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"

@@ -166,38 +166,39 @@ export const Primary = meta.story({
 });
 ```
 
-```js filename="Button.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
-
+```js filename="Button.stories.js|jsx" renderer="solid" language="js"
 import { Button } from './Button';
 
-const meta = preview.meta({
+export default {
   component: Button,
-});
+};
 
-export const Primary = meta.story({
+export const Primary = {
   args: {
     label: 'Button',
     primary: true,
   },
-});
+};
 ```
 
-```ts filename="Button.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
+```tsx filename="Button.stories.ts|tsx" renderer="solid" language="ts"
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
 import { Button } from './Button';
 
-const meta = preview.meta({
+const meta = {
   component: Button,
-});
+} satisfies Meta<typeof Button>;
 
-export const Primary = meta.story({
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Primary: Story = {
   args: {
     primary: true,
     label: 'Button',
   },
-});
+};
 ```
 
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 4"
@@ -489,43 +490,6 @@ export const Primary: Story = {
 ```
 
 ```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
-// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
-import { Button } from './Button';
-
-export default {
-  component: Button,
-};
-
-export const Primary = {
-  args: {
-    label: 'Button',
-    primary: true,
-  },
-};
-```
-
-```tsx filename="Button.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 3"
-// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
-import type { Meta, StoryObj } from 'storybook-solidjs-vite';
-
-import { Button } from './Button';
-
-const meta = {
-  component: Button,
-} satisfies Meta<typeof Button>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const Primary: Story = {
-  args: {
-    primary: true,
-    label: 'Button',
-  },
-};
-```
-
-```js filename="Button.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 3"
 // ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import { Button } from './Button';
 

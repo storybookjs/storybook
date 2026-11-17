@@ -52,29 +52,33 @@ export const ExampleStory = meta.story({
   }} />
 ```
 
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 3"
+<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
+<script module>
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
+
+  import MyComponent from './MyComponent.svelte';
+
+  const { Story } = defineMeta({
+    component: MyComponent,
+  });
+</script>
+
+<Story
+  name="ExampleStory"
+  play={async ({ canvas, userEvent }) => {
+    // Starts querying from the component's root element
+    await userEvent.type(canvas.getByTestId('example-element'), 'something');
+    await userEvent.click(canvas.getByRole('button'));
+  }} />
+```
+
 ```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 const meta = preview.meta({
   component: 'demo-my-component',
-});
-
-export const ExampleStory = meta.story({
-  play: async ({ canvas, userEvent }) => {
-    // Starts querying from the component's root element
-    await userEvent.type(canvas.getByTestId('example-element'), 'something');
-    await userEvent.click(canvas.getByRole('button'));
-  },
-});
-```
-
-```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
-
-import { MyComponent } from './MyComponent';
-
-const meta = preview.meta({
-  component: MyComponent,
 });
 
 export const ExampleStory = meta.story({
@@ -106,7 +110,47 @@ export const ExampleStory = meta.story({
   }} />
 ```
 
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 3"
+<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
+<script module>
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
+
+  import MyComponent from './MyComponent.svelte';
+
+  const { Story } = defineMeta({
+    component: MyComponent,
+  });
+</script>
+
+<Story
+  name="ExampleStory"
+  play={async ({ canvas, userEvent }) => {
+    // Starts querying from the component's root element
+    await userEvent.type(canvas.getByTestId('example-element'), 'something');
+    await userEvent.click(canvas.getByRole('button'));
+  }} />
+```
+
 ```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+export const ExampleStory = meta.story({
+  play: async ({ canvas, userEvent }) => {
+    // Starts querying from the component's root element
+    await userEvent.type(canvas.getByTestId('example-element'), 'something');
+    await userEvent.click(canvas.getByRole('button'));
+  },
+});
+```
+
+```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 import { MyComponent } from './MyComponent';
@@ -160,64 +204,6 @@ export const ExampleStory = meta.story({
 });
 ```
 
-```ts filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
-
-import { MyComponent } from './MyComponent';
-
-const meta = preview.meta({
-  component: MyComponent,
-});
-
-export const ExampleStory = meta.story({
-  play: async ({ canvas, userEvent }) => {
-    // Starts querying from the component's root element
-    await userEvent.type(canvas.getByTestId('example-element'), 'something');
-    await userEvent.click(canvas.getByRole('button'));
-  },
-});
-```
-
-```js filename="MyComponent.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
-
-import { MyComponent } from './MyComponent';
-
-const meta = preview.meta({
-  component: MyComponent,
-});
-
-export const ExampleStory = meta.story({
-  play: async ({ canvas, userEvent }) => {
-    // Starts querying from the component's root element
-    await userEvent.type(canvas.getByTestId('example-element'), 'something');
-    await userEvent.click(canvas.getByRole('button'));
-  },
-});
-```
-
-```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 3"
-<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
-<script module>
-  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-  import { defineMeta } from '@storybook/your-framework';
-
-  import MyComponent from './MyComponent.svelte';
-
-  const { Story } = defineMeta({
-    component: MyComponent,
-  });
-</script>
-
-<Story
-  name="ExampleStory"
-  play={async ({ canvas, userEvent }) => {
-    // Starts querying from the component's root element
-    await userEvent.type(canvas.getByTestId('example-element'), 'something');
-    await userEvent.click(canvas.getByRole('button'));
-  }} />
-```
-
 ```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 // ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import type { Meta, StoryObj } from '@storybook/angular';
@@ -238,28 +224,6 @@ export const ExampleStory: Story = {
     await userEvent.click(canvas.getByRole('button'));
   },
 };
-```
-
-```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 3"
-<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
-<script module>
-  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-  import { defineMeta } from '@storybook/your-framework';
-
-  import MyComponent from './MyComponent.svelte';
-
-  const { Story } = defineMeta({
-    component: MyComponent,
-  });
-</script>
-
-<Story
-  name="ExampleStory"
-  play={async ({ canvas, userEvent }) => {
-    // Starts querying from the component's root element
-    await userEvent.type(canvas.getByTestId('example-element'), 'something');
-    await userEvent.click(canvas.getByRole('button'));
-  }} />
 ```
 
 ```ts filename="MyComponent.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"

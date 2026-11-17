@@ -86,6 +86,40 @@ const meta = preview.meta({
 </script>
 ```
 
+```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 3"
+<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
+<script module>
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
+
+  import Button from './Button.svelte';
+
+  import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from './icons';
+
+  const arrows = { ArrowUp, ArrowDown, ArrowLeft, ArrowRight };
+
+  const { Story } = defineMeta({
+    component: Button,
+    argTypes: {
+      arrow: {
+        options: Object.keys(arrows), // An array of serializable values
+        mapping: arrows, // Maps serializable option values to complex arg values
+        control: {
+          type: 'select', // Type 'select' is automatically inferred when 'options' is defined
+          labels: {
+            // 'labels' maps option values to string labels
+            ArrowUp: 'Up',
+            ArrowDown: 'Down',
+            ArrowLeft: 'Left',
+            ArrowRight: 'Right',
+          },
+        },
+      },
+    },
+  });
+</script>
+```
+
 ```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 4"
 import { html } from 'lit';
 
@@ -106,36 +140,6 @@ const meta = preview.meta({
       mapping: arrows, // Maps serializable option values to complex arg values
       control: {
         type: 'select', // Type 'select' is automatically inferred when 'options' is defined
-      },
-    },
-  },
-});
-```
-
-```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
-
-import { Button } from './Button';
-
-import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from './icons';
-
-const arrows = { ArrowUp, ArrowDown, ArrowLeft, ArrowRight };
-
-const meta = preview.meta({
-  component: Button,
-  argTypes: {
-    arrow: {
-      options: Object.keys(arrows), // An array of serializable values
-      mapping: arrows, // Maps serializable option values to complex arg values
-      control: {
-        type: 'select', // Type 'select' is automatically inferred when 'options' is defined
-        labels: {
-          // 'labels' maps option values to string labels
-          ArrowUp: 'Up',
-          ArrowDown: 'Down',
-          ArrowLeft: 'Left',
-          ArrowRight: 'Right',
-        },
       },
     },
   },
@@ -174,7 +178,71 @@ const meta = preview.meta({
 </script>
 ```
 
+```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 3"
+<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
+<script module>
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
+
+  import Button from './Button.svelte';
+
+  import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from './icons';
+
+  const arrows = { ArrowUp, ArrowDown, ArrowLeft, ArrowRight };
+
+  const { Story } = defineMeta({
+    component: Button,
+    argTypes: {
+      arrow: {
+        options: Object.keys(arrows), // An array of serializable values
+        mapping: arrows, // Maps serializable option values to complex arg values
+        control: {
+          type: 'select', // Type 'select' is automatically inferred when 'options' is defined
+          labels: {
+            // 'labels' maps option values to string labels
+            ArrowUp: 'Up',
+            ArrowDown: 'Down',
+            ArrowLeft: 'Left',
+            ArrowRight: 'Right',
+          },
+        },
+      },
+    },
+  });
+</script>
+```
+
 ```ts filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+
+import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from './icons';
+
+const arrows = { ArrowUp, ArrowDown, ArrowLeft, ArrowRight };
+
+const meta = preview.meta({
+  component: Button,
+  argTypes: {
+    arrow: {
+      options: Object.keys(arrows), // An array of serializable values
+      mapping: arrows, // Maps serializable option values to complex arg values
+      control: {
+        type: 'select', // Type 'select' is automatically inferred when 'options' is defined
+        labels: {
+          // 'labels' maps option values to string labels
+          ArrowUp: 'Up',
+          ArrowDown: 'Down',
+          ArrowLeft: 'Left',
+          ArrowRight: 'Right',
+        },
+      },
+    },
+  },
+});
+```
+
+```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 import { Button } from './Button';
@@ -264,100 +332,6 @@ const meta = preview.meta({
 });
 ```
 
-```ts filename="Button.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
-
-import { Button } from './Button';
-
-import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from './icons';
-
-const arrows = { ArrowUp, ArrowDown, ArrowLeft, ArrowRight };
-
-const meta = preview.meta({
-  component: Button,
-  argTypes: {
-    arrow: {
-      options: Object.keys(arrows), // An array of serializable values
-      mapping: arrows, // Maps serializable option values to complex arg values
-      control: {
-        type: 'select', // Type 'select' is automatically inferred when 'options' is defined
-        labels: {
-          // 'labels' maps option values to string labels
-          ArrowUp: 'Up',
-          ArrowDown: 'Down',
-          ArrowLeft: 'Left',
-          ArrowRight: 'Right',
-        },
-      },
-    },
-  },
-});
-```
-
-```js filename="Button.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
-
-import { Button } from './Button';
-
-import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from './icons';
-
-const arrows = { ArrowUp, ArrowDown, ArrowLeft, ArrowRight };
-
-const meta = preview.meta({
-  component: Button,
-  argTypes: {
-    arrow: {
-      options: Object.keys(arrows), // An array of serializable values
-      mapping: arrows, // Maps serializable option values to complex arg values
-      control: {
-        type: 'select', // Type 'select' is automatically inferred when 'options' is defined
-        labels: {
-          // 'labels' maps option values to string labels
-          ArrowUp: 'Up',
-          ArrowDown: 'Down',
-          ArrowLeft: 'Left',
-          ArrowRight: 'Right',
-        },
-      },
-    },
-  },
-});
-```
-
-```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 3"
-<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
-<script module>
-  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-  import { defineMeta } from '@storybook/your-framework';
-
-  import Button from './Button.svelte';
-
-  import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from './icons';
-
-  const arrows = { ArrowUp, ArrowDown, ArrowLeft, ArrowRight };
-
-  const { Story } = defineMeta({
-    component: Button,
-    argTypes: {
-      arrow: {
-        options: Object.keys(arrows), // An array of serializable values
-        mapping: arrows, // Maps serializable option values to complex arg values
-        control: {
-          type: 'select', // Type 'select' is automatically inferred when 'options' is defined
-          labels: {
-            // 'labels' maps option values to string labels
-            ArrowUp: 'Up',
-            ArrowDown: 'Down',
-            ArrowLeft: 'Left',
-            ArrowRight: 'Right',
-          },
-        },
-      },
-    },
-  });
-</script>
-```
-
 ```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 // ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import type { Meta } from '@storybook/angular';
@@ -389,40 +363,6 @@ const meta: Meta<Button> = {
 };
 
 export default meta;
-```
-
-```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 3"
-<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
-<script module>
-  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-  import { defineMeta } from '@storybook/your-framework';
-
-  import Button from './Button.svelte';
-
-  import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from './icons';
-
-  const arrows = { ArrowUp, ArrowDown, ArrowLeft, ArrowRight };
-
-  const { Story } = defineMeta({
-    component: Button,
-    argTypes: {
-      arrow: {
-        options: Object.keys(arrows), // An array of serializable values
-        mapping: arrows, // Maps serializable option values to complex arg values
-        control: {
-          type: 'select', // Type 'select' is automatically inferred when 'options' is defined
-          labels: {
-            // 'labels' maps option values to string labels
-            ArrowUp: 'Up',
-            ArrowDown: 'Down',
-            ArrowLeft: 'Left',
-            ArrowRight: 'Right',
-          },
-        },
-      },
-    },
-  });
-</script>
 ```
 
 ```ts filename="Button.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"

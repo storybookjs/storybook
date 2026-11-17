@@ -65,35 +65,34 @@ export const Secondary = meta.story({
 <Story name="Secondary" args={{...primaryArgs, primary: false}} />
 ```
 
+```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 3"
+<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
+<script module>
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
+
+  import Button from './Button.svelte';
+
+  const { Story } = defineMeta({
+    component: Button,
+  });
+
+  const primaryArgs = {
+    primary: true,
+    label: 'Button',
+  }
+</script>
+
+<Story name="Primary" args={primaryArgs} />
+
+<Story name="Secondary" args={{...primaryArgs, primary: false}} />
+```
+
 ```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 const meta = preview.meta({
   component: 'demo-button',
-});
-
-export const Primary = meta.story({
-  args: {
-    primary: true,
-    label: 'Button',
-  },
-});
-
-export const Secondary = meta.story({
-  args: {
-    ...Primary.input.args,
-    primary: false,
-  },
-});
-```
-
-```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
-
-import { Button } from './Button';
-
-const meta = preview.meta({
-  component: Button,
 });
 
 export const Primary = meta.story({
@@ -132,7 +131,54 @@ export const Secondary = meta.story({
 <Story name="Secondary" args={{...primaryArgs, primary: false}} />
 ```
 
+```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 3"
+<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
+<script module>
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
+
+  import Button from './Button.svelte';
+
+  const { Story } = defineMeta({
+    component: Button,
+  });
+
+  const primaryArgs = {
+    primary: true,
+    label: 'Button',
+  }
+</script>
+
+<Story name="Primary" args={primaryArgs} />
+
+<Story name="Secondary" args={{...primaryArgs, primary: false}} />
+```
+
 ```ts filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const Primary = meta.story({
+  args: {
+    primary: true,
+    label: 'Button',
+  },
+});
+
+export const Secondary = meta.story({
+  args: {
+    ...Primary.input.args,
+    primary: false,
+  },
+});
+```
+
+```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 import { Button } from './Button';
@@ -204,77 +250,6 @@ export const Secondary = meta.story({
 });
 ```
 
-```ts filename="Button.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
-
-import { Button } from './Button';
-
-const meta = preview.meta({
-  component: Button,
-});
-
-export const Primary = meta.story({
-  args: {
-    primary: true,
-    label: 'Button',
-  },
-});
-
-export const Secondary = meta.story({
-  args: {
-    ...Primary.input.args,
-    primary: false,
-  },
-});
-```
-
-```js filename="Button.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
-
-import { Button } from './Button';
-
-const meta = preview.meta({
-  component: Button,
-});
-
-export const Primary = meta.story({
-  args: {
-    primary: true,
-    label: 'Button',
-  },
-});
-
-export const Secondary = meta.story({
-  args: {
-    ...Primary.input.args,
-    primary: false,
-  },
-});
-```
-
-```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 3"
-<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
-<script module>
-  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-  import { defineMeta } from '@storybook/your-framework';
-
-  import Button from './Button.svelte';
-
-  const { Story } = defineMeta({
-    component: Button,
-  });
-
-  const primaryArgs = {
-    primary: true,
-    label: 'Button',
-  }
-</script>
-
-<Story name="Primary" args={primaryArgs} />
-
-<Story name="Secondary" args={{...primaryArgs, primary: false}} />
-```
-
 ```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 // ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import type { Meta, StoryObj } from '@storybook/angular';
@@ -301,29 +276,6 @@ export const Secondary: Story = {
     primary: false,
   },
 };
-```
-
-```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 3"
-<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
-<script module>
-  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-  import { defineMeta } from '@storybook/your-framework';
-
-  import Button from './Button.svelte';
-
-  const { Story } = defineMeta({
-    component: Button,
-  });
-
-  const primaryArgs = {
-    primary: true,
-    label: 'Button',
-  }
-</script>
-
-<Story name="Primary" args={primaryArgs} />
-
-<Story name="Secondary" args={{...primaryArgs, primary: false}} />
 ```
 
 ```ts filename="Button.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"

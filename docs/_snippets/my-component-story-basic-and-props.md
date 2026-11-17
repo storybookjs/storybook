@@ -110,6 +110,39 @@ export const WithProp = {
 };
 ```
 
+```jsx filename="MyComponent.story.js|jsx" renderer="solid" language="js"
+import { MyComponent } from './MyComponent';
+
+export default {
+  component: MyComponent,
+};
+
+export const Basic = {};
+
+export const WithProp = {
+  render: () => <MyComponent prop="value" />,
+};
+```
+
+```tsx filename="MyComponent.story.ts|tsx" renderer="solid" language="ts"
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
+
+import { MyComponent } from './MyComponent';
+
+const meta = {
+  component: MyComponent,
+} satisfies Meta<typeof MyComponent>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Basic: Story = {};
+
+export const WithProp: Story = {
+  render: () => <MyComponent prop="value" />,
+};
+```
+
 ```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 4"
 <script module>
   import preview from '../.storybook/preview';
@@ -358,72 +391,5 @@ export const Basic = {};
 
 export const WithProp = {
   render: () => html`<my-component prop="value" />`,
-};
-```
-
-```jsx filename="MyComponent.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
-
-import { MyComponent } from './MyComponent';
-
-const meta = preview.meta({
-  component: MyComponent,
-});
-
-export const Basic = meta.story();
-
-export const WithProp = meta.story({
-  render: () => <MyComponent prop="value" />,
-});
-```
-
-```tsx filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
-
-import { MyComponent } from './MyComponent';
-
-const meta = preview.meta({
-  component: MyComponent,
-});
-
-export const Basic = meta.story();
-
-export const WithProp = meta.story({
-  render: () => <MyComponent prop="value" />,
-});
-```
-
-```tsx filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 3"
-// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
-import type { Meta, StoryObj } from 'storybook-solidjs-vite';
-
-import { MyComponent } from './MyComponent';
-
-const meta = {
-  component: MyComponent,
-} satisfies Meta<typeof MyComponent>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const Basic: Story = {};
-
-export const WithProp: Story = {
-  render: () => <MyComponent prop="value" />,
-};
-```
-
-```jsx filename="MyComponent.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 3"
-// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
-import { MyComponent } from './MyComponent';
-
-export default {
-  component: MyComponent,
-};
-
-export const Basic = {};
-
-export const WithProp = {
-  render: () => <MyComponent prop="value" />,
 };
 ```

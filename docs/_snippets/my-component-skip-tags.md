@@ -98,21 +98,25 @@ export const SkipStory = meta.story({
 });
 ```
 
-```ts filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
+```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+import type { Meta, StoryObj } from '@storybook/angular';
 
-import { MyComponent } from './MyComponent';
+import { MyComponent } from './my-component.component';
 
-const meta = preview.meta({
+const meta: Meta<MyComponent> = {
   component: MyComponent,
   //👇 Provides the `skip-test` tag to all stories in this file
   tags: ['skip-test'],
-});
+};
 
-export const SkipStory = meta.story({
+export default meta;
+type Story = StoryObj<MyComponent>;
+
+export const SkipStory: Story = {
   //👇 Adds the `skip-test` tag to this story to allow it to be skipped in the tests when enabled in the test-runner configuration
   tags: ['skip-test'],
-});
+};
 ```
 
 ```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF 4"
@@ -130,39 +134,17 @@ export const SkipStory = meta.story({
 });
 ```
 
-```js filename="MyComponent.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
-
+```js filename="MyComponent.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import { MyComponent } from './MyComponent';
 
-const meta = preview.meta({
-  component: MyComponent,
-  //👇 Provides the `skip-test` tag to all stories in this file
-  tags: ['skip-test'],
-});
-
-export const SkipStory = meta.story({
-  //👇 Adds the `skip-test` tag to this story to allow it to be skipped in the tests when enabled in the test-runner configuration
-  tags: ['skip-test'],
-});
-```
-
-```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
-// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
-import type { Meta, StoryObj } from '@storybook/angular';
-
-import { MyComponent } from './my-component.component';
-
-const meta: Meta<MyComponent> = {
+export default {
   component: MyComponent,
   //👇 Provides the `skip-test` tag to all stories in this file
   tags: ['skip-test'],
 };
 
-export default meta;
-type Story = StoryObj<MyComponent>;
-
-export const SkipStory: Story = {
+export const SkipStory = {
   //👇 Adds the `skip-test` tag to this story to allow it to be skipped in the tests when enabled in the test-runner configuration
   tags: ['skip-test'],
 };
@@ -185,22 +167,6 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const SkipStory: Story = {
-  //👇 Adds the `skip-test` tag to this story to allow it to be skipped in the tests when enabled in the test-runner configuration
-  tags: ['skip-test'],
-};
-```
-
-```js filename="MyComponent.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
-// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
-import { MyComponent } from './MyComponent';
-
-export default {
-  component: MyComponent,
-  //👇 Provides the `skip-test` tag to all stories in this file
-  tags: ['skip-test'],
-};
-
-export const SkipStory = {
   //👇 Adds the `skip-test` tag to this story to allow it to be skipped in the tests when enabled in the test-runner configuration
   tags: ['skip-test'],
 };

@@ -81,43 +81,43 @@ export const Example = meta.story({
 });
 ```
 
-```js filename="MyComponent.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
-
+```js filename="MyComponent.stories.js|jsx" renderer="solid" language="js"
 import { MyComponent } from './MyComponent';
 
-const meta = preview.meta({
+export default {
   component: MyComponent,
-});
+};
 
-export const Example = meta.story({
+export const Example = {
   parameters: {
     design: {
       type: 'figma',
       url: 'https://www.figma.com/file/Sample-File',
     },
   },
-});
+};
 ```
 
-```ts filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
+```tsx filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts"
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
 import { MyComponent } from './MyComponent';
 
-// More on default export: https://storybook.js.org/docs/writing-stories/#default-export
-const meta = preview.meta({
+const meta = {
   component: MyComponent,
-});
+} satisfies Meta<typeof MyComponent>;
 
-export const Example = meta.story({
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Example: Story = {
   parameters: {
     design: {
       type: 'figma',
       url: 'https://www.figma.com/file/Sample-File',
     },
   },
-});
+};
 ```
 
 ```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 4"
@@ -396,47 +396,6 @@ export const Example: Story = {
 import { MyComponent } from './MyComponent';
 
 // More on default export: https://storybook.js.org/docs/writing-stories/#default-export
-export default {
-  component: MyComponent,
-};
-
-export const Example = {
-  parameters: {
-    design: {
-      type: 'figma',
-      url: 'https://www.figma.com/file/Sample-File',
-    },
-  },
-};
-```
-
-```tsx filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 3"
-// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
-import type { Meta, StoryObj } from 'storybook-solidjs-vite';
-
-import { MyComponent } from './MyComponent';
-
-const meta = {
-  component: MyComponent,
-} satisfies Meta<typeof MyComponent>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const Example: Story = {
-  parameters: {
-    design: {
-      type: 'figma',
-      url: 'https://www.figma.com/file/Sample-File',
-    },
-  },
-};
-```
-
-```js filename="MyComponent.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 3"
-// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
-import { MyComponent } from './MyComponent';
-
 export default {
   component: MyComponent,
 };

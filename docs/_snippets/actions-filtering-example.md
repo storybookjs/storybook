@@ -186,59 +186,6 @@ export default definePreview({
 });
 ```
 
-```ts filename=".storybook/preview.tsx" renderer="solid" language="ts" tabTitle="CSF 4"
-import { definePreview } from 'storybook-solidjs-vite';
-
-import { action } from 'storybook/actions';
-import { spyOn } from 'storybook/test';
-
-const originalConsoleLog = console.log;
-
-export default definePreview({
-  async beforeEach() {
-    spyOn(console, 'log')
-      // Disable automatic logging in the actions panel
-      .mockName('')
-      .mockImplementation((args) => {
-        // Check if the log message matches a certain pattern
-        if (someCondition(args)) {
-          // Manually log an action
-          action('console.log')(args);
-        }
-
-        // Call the original console.log function
-        originalConsoleLog(...args);
-      });
-  },
-});
-```
-
-```js filename=".storybook/preview.jsx" renderer="solid" language="js" tabTitle="CSF 4"
-import { definePreview } from 'storybook-solidjs-vite';
-
-import { action } from 'storybook/actions';
-import { spyOn } from 'storybook/test';
-
-const originalConsoleLog = console.log;
-export default definePreview({
-  async beforeEach() {
-    spyOn(console, 'log')
-      // Disable automatic logging in the actions panel
-      .mockName('')
-      .mockImplementation((args) => {
-        // Check if the log message matches a certain pattern
-        if (someCondition(args)) {
-          // Manually log an action
-          action('console.log')(args);
-        }
-
-        // Call the original console.log function
-        originalConsoleLog(...args);
-      });
-  },
-});
-```
-
 ```ts filename=".storybook/preview.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
 // ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, svelte)

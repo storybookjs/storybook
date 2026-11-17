@@ -134,14 +134,12 @@ export const StoryWithLocale = meta.story({
 });
 ```
 
-```js filename="MyComponent.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
-
+```js filename="MyComponent.stories.js|jsx" renderer="solid" language="js"
 import { MyComponent } from './MyComponent';
 
-const meta = preview.meta({
+export default {
   component: MyComponent,
-});
+};
 
 const getCaptionForLocale = (locale) => {
   switch (locale) {
@@ -158,22 +156,25 @@ const getCaptionForLocale = (locale) => {
   }
 };
 
-export const StoryWithLocale = meta.story({
+export const StoryWithLocale = {
   render: (args, { globals: { locale } }) => {
     const caption = getCaptionForLocale(locale);
     return <p>{caption}</p>;
   },
-});
+};
 ```
 
-```tsx filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
+```tsx filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts"
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
 import { MyComponent } from './MyComponent';
 
-const meta = preview.meta({
+const meta = {
   component: MyComponent,
-});
+} satisfies Meta<typeof MyComponent>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
 
 const getCaptionForLocale = (locale) => {
   switch (locale) {
@@ -190,12 +191,12 @@ const getCaptionForLocale = (locale) => {
   }
 };
 
-export const StoryWithLocale = meta.story({
+export const StoryWithLocale = {
   render: (args, { globals: { locale } }) => {
     const caption = getCaptionForLocale(locale);
     return <p>{caption}</p>;
   },
-});
+};
 ```
 
 ```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 4"
@@ -662,73 +663,6 @@ export const StoryWithLocale = {
 ```
 
 ```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
-// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
-import { MyComponent } from './MyComponent';
-
-export default {
-  component: MyComponent,
-};
-
-const getCaptionForLocale = (locale) => {
-  switch (locale) {
-    case 'es':
-      return 'Hola!';
-    case 'fr':
-      return 'Bonjour!';
-    case 'kr':
-      return '안녕하세요!';
-    case 'zh':
-      return '你好!';
-    default:
-      return 'Hello!';
-  }
-};
-
-export const StoryWithLocale = {
-  render: (args, { globals: { locale } }) => {
-    const caption = getCaptionForLocale(locale);
-    return <p>{caption}</p>;
-  },
-};
-```
-
-```tsx filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 3"
-// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
-import type { Meta, StoryObj } from 'storybook-solidjs-vite';
-
-import { MyComponent } from './MyComponent';
-
-const meta = {
-  component: MyComponent,
-} satisfies Meta<typeof MyComponent>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-const getCaptionForLocale = (locale) => {
-  switch (locale) {
-    case 'es':
-      return 'Hola!';
-    case 'fr':
-      return 'Bonjour!';
-    case 'kr':
-      return '안녕하세요!';
-    case 'zh':
-      return '你好!';
-    default:
-      return 'Hello!';
-  }
-};
-
-export const StoryWithLocale = {
-  render: (args, { globals: { locale } }) => {
-    const caption = getCaptionForLocale(locale);
-    return <p>{caption}</p>;
-  },
-};
-```
-
-```js filename="MyComponent.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 3"
 // ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import { MyComponent } from './MyComponent';
 

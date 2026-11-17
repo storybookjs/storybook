@@ -47,27 +47,32 @@ export const ExampleStory = meta.story({
 />
 ```
 
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 3"
+<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
+<script module>
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
+
+  import MyComponent from './MyComponent.svelte';
+
+  const { Story } = defineMeta({
+    component: MyComponent,
+  });
+</script>
+
+<Story
+  name="ExampleStory"
+  args={{
+    propertyA: process.env.STORYBOOK_DATA_KEY
+  }}
+/>
+```
+
 ```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 const meta = preview.meta({
   component: 'my-component',
-});
-
-export const ExampleStory = meta.story({
-  args: {
-    propertyA: process.env.STORYBOOK_DATA_KEY,
-  },
-});
-```
-
-```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
-
-import { MyComponent } from './MyComponent';
-
-const meta = preview.meta({
-  component: MyComponent,
 });
 
 export const ExampleStory = meta.story({
@@ -96,70 +101,6 @@ export const ExampleStory = meta.story({
 />
 ```
 
-```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
-
-import { MyComponent } from './MyComponent';
-
-const meta = preview.meta({
-  component: MyComponent,
-});
-
-export const ExampleStory = meta.story({
-  args: {
-    propertyA: process.env.STORYBOOK_DATA_KEY,
-  },
-});
-```
-
-```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
-
-import MyComponent from './MyComponent.vue';
-
-const meta = preview.meta({
-  component: MyComponent,
-});
-
-export const ExampleStory = meta.story({
-  args: {
-    propertyA: process.env.STORYBOOK_DATA_KEY,
-  },
-});
-```
-
-```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
-
-import MyComponent from './MyComponent.vue';
-
-const meta = preview.meta({
-  component: MyComponent,
-});
-
-export const ExampleStory = meta.story({
-  args: {
-    propertyA: process.env.STORYBOOK_DATA_KEY,
-  },
-});
-```
-
-```ts filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
-
-import { MyComponent } from './MyComponent';
-
-const meta = preview.meta({
-  component: MyComponent,
-});
-
-export const ExampleStory = meta.story({
-  args: {
-    propertyA: process.env.STORYBOOK_DATA_KEY,
-  },
-});
-```
-
 ```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 3"
 <!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
 <script module>
@@ -181,10 +122,42 @@ export const ExampleStory = meta.story({
 />
 ```
 
-```js filename="MyComponent.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 4"
+```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+export const ExampleStory = meta.story({
+  args: {
+    propertyA: process.env.STORYBOOK_DATA_KEY,
+  },
+});
+```
+
+```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+export const ExampleStory = meta.story({
+  args: {
+    propertyA: process.env.STORYBOOK_DATA_KEY,
+  },
+});
+```
+
+```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
+import MyComponent from './MyComponent.vue';
 
 const meta = preview.meta({
   component: MyComponent,
@@ -217,25 +190,20 @@ export const ExampleStory: Story = {
 };
 ```
 
-```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 3"
-<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
-<script module>
-  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-  import { defineMeta } from '@storybook/your-framework';
+```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
 
-  import MyComponent from './MyComponent.svelte';
+import MyComponent from './MyComponent.vue';
 
-  const { Story } = defineMeta({
-    component: MyComponent,
-  });
-</script>
+const meta = preview.meta({
+  component: MyComponent,
+});
 
-<Story
-  name="ExampleStory"
-  args={{
-    propertyA: process.env.STORYBOOK_DATA_KEY
-  }}
-/>
+export const ExampleStory = meta.story({
+  args: {
+    propertyA: process.env.STORYBOOK_DATA_KEY,
+  },
+});
 ```
 
 ```ts filename="MyComponent.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"

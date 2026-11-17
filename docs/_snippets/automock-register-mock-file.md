@@ -105,36 +105,6 @@ export default definePreview({
 });
 ```
 
-```ts filename=".storybook/preview.tsx" renderer="solid" language="ts" tabTitle="CSF 4"
-import { definePreview } from 'storybook-solidjs-vite';
-
-import { sb } from 'storybook/test';
-
-// 👇 Replaces imports of this module with imports to `../lib/__mocks__/session.ts`
-sb.mock(import('../lib/session.ts'));
-// 👇 Replaces imports of this module with imports to `../__mocks__/uuid.ts`
-sb.mock(import('uuid'));
-
-export default definePreview({
-  // ...
-});
-```
-
-```js filename=".storybook/preview.jsx" renderer="solid" language="js" tabTitle="CSF 4"
-import { definePreview } from 'storybook-solidjs-vite';
-
-import { sb } from 'storybook/test';
-
-// 👇 Replaces imports of this module with imports to `../lib/__mocks__/session.ts`
-sb.mock('../lib/session.js');
-// 👇 Replaces imports of this module with imports to `../__mocks__/uuid.ts`
-sb.mock('uuid');
-
-export default definePreview({
-  // ...
-});
-```
-
 ```ts filename=".storybook/preview.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
 // ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, vue3-vite, sveltekit)

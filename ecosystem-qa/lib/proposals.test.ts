@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   asIssue,
+  ENTRY,
   finding,
   issueOn,
   loaded,
@@ -125,6 +126,26 @@ describe('groupFindings', () => {
     const body = renderIssueBody(hmr, byName);
     expect(body).toContain(`https://github.com/storybookjs/mealdrop/tree/${'b'.repeat(40)}`);
     expect(body).toMatch(/os: linux, windows\nengine: claude, codex/);
+  });
+
+  it('merges the same failure from an owned and a tier 1 project into one group', () => {
+    const owned = loaded('linux', 'claude', [finding()]);
+    const fork = loaded('linux', 'claude', [finding()]);
+    fork.result = {
+      ...fork.result,
+      request: {
+        ...fork.result.request,
+        entry: {
+          ...ENTRY,
+          id: 'twenty',
+          repo: 'twentyhq/twenty',
+          class: 'tier1',
+          pushTo: 'storybook-tmp/twenty',
+        },
+      },
+    };
+
+    expect(groupFindings([owned, fork])).toHaveLength(1);
   });
 
   it('labels a finding windows only when every run that saw it was on Windows', () => {

@@ -93,6 +93,13 @@ describe('checkPackageCompatibility', () => {
       '0.0.0-pr-1-sha-abc',
       false,
     ],
+    [
+      'accepts a prerelease of a minor the range does not list',
+      '^0.0.0-0 || ^10.1.0-0 || ^11.0.0-0',
+      '11.1.0-alpha.1',
+      false,
+    ],
+    ['accepts a prerelease within a plain range', '^10.0.0', '10.7.0-alpha.1', false],
   ])('%s', async (_, range, currentStorybookVersion, hasIncompatibleDependencies) => {
     vi.mocked(packageManagerMock.getModulePackageJSON).mockResolvedValueOnce({
       name: 'my-storybook-package',

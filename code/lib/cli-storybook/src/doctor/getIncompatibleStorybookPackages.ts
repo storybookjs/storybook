@@ -61,7 +61,7 @@ export const checkPackageCompatibility = async (
           // We can't check compatibility for 0.x packages, so we skip ranges that only allow 0.x
           versionRange.split('||').some((part) => !/^[~^]?0\./.test(part.trim())) &&
           semver.validRange(versionRange) &&
-          !semver.satisfies(currentStorybookVersion, versionRange)
+          !semver.satisfies(currentStorybookVersion, versionRange, { includePrerelease: true })
         );
       });
 

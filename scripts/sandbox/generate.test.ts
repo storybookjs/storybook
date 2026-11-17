@@ -1,11 +1,11 @@
 import * as fs from 'node:fs/promises';
-import { join, resolve } from 'node:path';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // eslint-disable-next-line depend/ban-dependencies
 import { execaCommand } from 'execa';
 import { fs as memoryFs, vol } from 'memfs';
+import { join, resolve } from 'pathe';
 
 import { temporaryDirectory } from '../../code/core/src/common/utils/cli.ts';
 import { sbInit } from './generate.ts';

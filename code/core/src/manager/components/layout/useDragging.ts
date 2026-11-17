@@ -108,6 +108,7 @@ function applyResizeKeyboard(
 
 export function useDragging({
   setState,
+  showSidebar,
   showPanel,
   isDesktop,
   navSize,
@@ -115,6 +116,7 @@ export function useDragging({
   panelPosition,
 }: {
   setState: Dispatch<SetStateAction<LayoutState>>;
+  showSidebar: boolean;
   showPanel: boolean;
   isDesktop: boolean;
   navSize: number;
@@ -336,7 +338,8 @@ export function useDragging({
       sidebarResizer?.removeEventListener('keydown', onSidebarKeyDown);
     };
   }, [
-    // we need to rerun this effect when the panel is shown/hidden or when changing between mobile/desktop to re-attach the event listeners
+    // Reattach listeners when the resize handles are remounted.
+    showSidebar,
     showPanel,
     isDesktop,
     setState,

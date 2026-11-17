@@ -151,11 +151,14 @@ test.describe('addon panel', () => {
     await sbPage.deepLinkToStory(storybookUrl, 'addons/docs/codePanel', 'default');
     await expect(codeTab).toBeVisible();
     await sbPage.viewAddonPanel('Code');
-    await expect(sbPage.panelContent()).toContainText('Button');
+    // Each renderer prints the snippet its own way, and some fall back to the story as written, so
+    // the story's label is what every snippet shares; the component name is not.
+    await expect(sbPage.panelContent()).toContainText('e2eStoryDocsBefore');
     await expect(sbPage.panelContent()).not.toContainText('Custom code');
 
     await sbPage.navigateToStory('addons/docs/codePanel', 'custom-code');
     await expect(sbPage.panelContent()).toContainText('Custom code');
+    await expect(sbPage.panelContent()).not.toContainText('e2eStoryDocsBefore');
 
     await sbPage.navigateToStory('addons/docs/codePanel', 'without-panel');
     await expect(codeTab).toBeHidden();

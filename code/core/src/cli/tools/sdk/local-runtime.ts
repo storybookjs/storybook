@@ -43,7 +43,7 @@ export type ToolsRuntime = {
  *
  * Graph hosting and change-detection scanning stay lazy: the module-graph engine starts from its
  * `status` query `load` (via `_waitForSettledEngine`), and the status service starts from the first
- * `getChangeDetectionReadiness` call. Help, docs, and test-run never touch either path. A missing
+ * `getChangeDetectionReadiness` call. Help, docs, and test-run without `--changed` never touch either path. A missing
  * adapter settles the graph as unavailable instead of making unrelated tools fail.
  *
  * Requires `process.cwd()` to already be the target project. The `services` preset samples it for

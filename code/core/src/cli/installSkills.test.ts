@@ -191,7 +191,7 @@ describe('installSkills', () => {
       )
     );
     expect(logger.log).toHaveBeenCalledWith(
-      'Remove the Storybook skills with: npx skills@latest remove'
+      'If you want to remove the Storybook skills, run "npx skills@latest remove"'
     );
   });
 

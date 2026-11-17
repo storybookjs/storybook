@@ -420,16 +420,6 @@ describe('expectStoryTestsRanAndPassed', () => {
     );
   });
 
-  test('expectStoriesPass does not require that the agent ran the tests', async () => {
-    givenRun({
-      commands: [],
-      stdout: testRunDocument({ 'example-badge--accent': 'status-value:success' }),
-    });
-    const { expectStoriesPass } = await loadTestUtils();
-
-    await expectStoriesPass({ covering: ['badge'] });
-  });
-
   test('judges the tests by a run in the sandbox, not by the tail-cut transcript output', async () => {
     givenRun({
       commands: [tailCutTestRun],

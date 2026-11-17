@@ -4,7 +4,7 @@ import {
   expectNoOtherTestRunner,
   expectWorkflowCalls,
   expectReviewHint,
-  expectStoriesPass,
+  expectStoryTestsRanAndPassed,
   getEvalContext,
 } from '#test-utils';
 import { readFileSync } from 'node:fs';
@@ -21,8 +21,8 @@ describe('changing a shared accent token and testing its consumer stories', () =
     expect(colors, 'Expected the old accent value #2563eb to be gone').not.toMatch(/#2563eb/i);
   });
 
-  test('the stories of the change pass', async () => {
-    await expectStoriesPass({
+  test('runs story tests after the change and finishes with them passing', async () => {
+    await expectStoryTestsRanAndPassed({
       covering: ['badge', 'statuspill'],
     });
   });

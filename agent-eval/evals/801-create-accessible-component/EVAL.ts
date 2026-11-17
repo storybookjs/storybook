@@ -3,7 +3,7 @@ import {
   expectNoDisplayReview,
   expectNoOtherTestRunner,
   expectReviewHint,
-  expectStoriesPass,
+  expectStoryTestsRanAndPassed,
   expectWorkflowCalls,
   getEvalContext,
 } from '#test-utils';
@@ -14,8 +14,8 @@ import { describe, test } from 'vitest';
 const WORKFLOW_SKILLS = ['component-docs', 'write-stories'];
 
 describe('creating an accessible ToggleSwitch', () => {
-  test('the stories of the change pass', async () => {
-    await expectStoriesPass({
+  test('runs story tests after the change and finishes with them passing', async () => {
+    await expectStoryTestsRanAndPassed({
       covering: ['toggleswitch'],
     });
   });

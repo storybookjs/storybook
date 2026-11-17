@@ -959,8 +959,9 @@ export const LUNA_TEST_RULE =
   '- Do not add or run tests unless the user asks you to test or verify implementation.';
 export const SOL_TEST_RULES = '^- (Do not write tests for reversible|Run tests appropriate)';
 
-// Luna's own rule makes it skip `test-run` on most UI tasks. With Sol's rules, the Luna experiments
-// stand in for Sol in CI at a fraction of the cost.
+// Luna's own rule tells it not to run tests unless asked. With Sol's rules it still runs the story
+// tests after only some UI changes, where Sol runs them after every one, so the Luna experiments
+// are a cheap local check and CI runs Sol.
 export async function writeCodexLunaTestRules(sandbox: Sandbox, model: string): Promise<void> {
   // The harness installs the same CLI after `setup`; installing it here first lets the script
   // read the catalog of the binary that runs. Retried once, as the harness retries its install.
@@ -995,6 +996,19 @@ export async function writeCodexLunaTestRules(sandbox: Sandbox, model: string): 
   await sandbox.writeFiles({
     [CODEX_CONFIG_PATH]: `model_instructions_file = ${JSON.stringify(result.stdout.trim())}\n\n${rest}`,
   });
+  await trustCodexProject(sandbox);
+}
+
+// Codex reads a project's `.codex/config.toml` only when the user trusts the project, so without
+// this it starts without the MCP server and the instructions that the config names.
+async function trustCodexProject(sandbox: Sandbox): Promise<void> {
+  const result = await sandbox.runCommand('bash', [
+    '-c',
+    'mkdir -p ~/.codex && { grep -qs \'^trust_level = "trusted"\' ~/.codex/config.toml || printf \'[projects."%s"]\\ntrust_level = "trusted"\\n\' "$(pwd -P)" >> ~/.codex/config.toml; }',
+  ]);
+  if (result.exitCode !== 0) {
+    throw new Error(`Failed to trust the project in Codex: ${result.stderr || result.stdout}`);
+  }
 }
 
 async function appendCodexConfig(sandbox: Sandbox, section: string): Promise<void> {
@@ -1013,6 +1027,7 @@ async function appendCodexConfig(sandbox: Sandbox, section: string): Promise<voi
   await sandbox.writeFiles({
     [CODEX_CONFIG_PATH]: config,
   });
+  await trustCodexProject(sandbox);
 }
 
 // The section that `create storybook` and `storybook upgrade` add next to the skills, which makes

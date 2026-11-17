@@ -5,7 +5,7 @@ import {
   expectNoOtherTestRunner,
   expectStoryDiscoveryBeforeReview,
   expectStoryIdsInDisplayReview,
-  expectStoriesPass,
+  expectStoryTestsRanAndPassed,
   expectWorkflowCalls,
   getEvalContext,
 } from '#test-utils';
@@ -16,8 +16,8 @@ import { describe, test } from 'vitest';
 const WORKFLOW_SKILLS = ['component-docs', 'write-stories', 'ui-review'];
 
 describe('editing ReviewCard and creating the review the user asks for', () => {
-  test('the stories of the change pass', async () => {
-    await expectStoriesPass({
+  test('runs story tests after the change and finishes with them passing', async () => {
+    await expectStoryTestsRanAndPassed({
       covering: ['reviewcard'],
     });
   });

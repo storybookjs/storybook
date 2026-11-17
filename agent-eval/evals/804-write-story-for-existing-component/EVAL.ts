@@ -4,7 +4,7 @@ import {
   expectNoDisplayReview,
   expectNoOtherTestRunner,
   expectReviewHint,
-  expectStoriesPass,
+  expectStoryTestsRanAndPassed,
   expectWorkflowCalls,
   getEvalContext,
 } from '#test-utils';
@@ -14,8 +14,8 @@ import {
 const WORKFLOW_SKILLS = ['write-stories'];
 
 describe('writing stories for an existing AlertBanner', () => {
-  test('the stories of the change pass', async () => {
-    await expectStoriesPass({
+  test('runs story tests after the change and finishes with them passing', async () => {
+    await expectStoryTestsRanAndPassed({
       covering: ['alertbanner'],
     });
   });

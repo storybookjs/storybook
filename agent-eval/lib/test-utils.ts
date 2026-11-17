@@ -447,29 +447,24 @@ export type WorkflowToolResult = {
   isError: boolean;
 };
 
-// For a request to run or fix the story tests: the agent ran them, and the stories pass.
-export async function expectStoryTestsRanAndPassed(options?: StoriesPassOptions): Promise<void> {
-  expectWorkflowCalls(['test-run']);
-  await expectStoriesPass(options);
-}
-
-type StoriesPassOptions = { covering?: string[]; cwd?: string };
-
-// The stories of the change pass. The AGENTS.md section names the command that tests stories but
-// does not tell the agent when to run it, so whether the agent ran the tests is not asserted. When
-// it did, its last run must not end red: a fix that was never re-run is unverified. The agent's
-// own output is often cut by `| tail` or `| grep`, so the verdict is a run of the harness's own.
+// The AGENTS.md section names the command that tests stories. When to run it is up to the agent
+// and its own harness, and the agents of the default experiments (Haiku in Claude Code, Sol in
+// Codex) do test after a change. So the transcript has to show that the agent ran the story
+// tests, and that its last run did not end red: a fix that was never re-run is unverified. The
+// agent's own output is often cut by `| tail` or `| grep`, so the verdict is a run of the
+// harness's own. There is no after-the-edit ordering check.
 //
 // `covering` requires one of the given substrings in the passing story ids.
 // `cwd` is the Storybook project, for fixtures where that is not the root.
-export async function expectStoriesPass(options?: StoriesPassOptions): Promise<void> {
-  const agentRuns = getWorkflowToolResults('test-run');
-  if (agentRuns.length > 0) {
-    expect(
-      agentRuns.at(-1)?.output ?? '',
-      "The agent's last test run must not report failing stories or unhandled errors"
-    ).not.toMatch(/## (Failing Stories|Unhandled Errors)/);
-  }
+export async function expectStoryTestsRanAndPassed(options?: {
+  covering?: string[];
+  cwd?: string;
+}): Promise<void> {
+  expectWorkflowCalls(['test-run']);
+  expect(
+    getWorkflowToolResults('test-run').at(-1)?.output ?? '',
+    "The agent's last test run must not report failing stories or unhandled errors"
+  ).not.toMatch(/## (Failing Stories|Unhandled Errors)/);
 
   const result = await runStoryTestsInSandbox(options?.cwd);
   expect(

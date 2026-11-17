@@ -5,7 +5,7 @@ import {
   expectNoDisplayReview,
   expectNoOtherTestRunner,
   expectReviewHint,
-  expectStoriesPass,
+  expectStoryTestsRanAndPassed,
   expectWorkflowCalls,
   getEvalContext,
 } from '#test-utils';
@@ -27,8 +27,8 @@ describe('creating a Callout in a monorepo UI package', () => {
     ).toBe(true);
   });
 
-  test('the stories of the change pass', async () => {
-    await expectStoriesPass({
+  test('runs story tests after the change and finishes with them passing', async () => {
+    await expectStoryTestsRanAndPassed({
       covering: ['callout'],
       cwd: 'packages/ui',
     });

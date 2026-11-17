@@ -905,17 +905,18 @@ export const manualChecksOf = (plan: Plan, at: PlanLayout): ManualCheckRow[] => 
 ];
 
 // The manual checks go into an issue, where a mention notifies a person and a reference posts on a
-// PR, and a check that points to a PR cannot be followed without that PR open.
-const NOTIFIES = /(?:^|[^\w`])@[a-z\d]|#\d/i;
+// PR, and a check that points to a PR cannot be followed without that PR open. Whether GitHub
+// links a form depends on its parser, so none of them may stand anywhere, in a code span either.
+const REFERENCE = /(?<!\w)@[a-z\d]|#\d|GH-\d/i;
 
 const manualChecksStayInert: Rule = ({ plan, at }) =>
   manualChecksOf(plan, at).flatMap(({ manual, why, line }) =>
-    [manual, why].some((text) => NOTIFIES.test(outsideCodeSpans(text)))
+    [manual, why].some((text) => REFERENCE.test(text))
       ? [
           {
             line,
             message:
-              'a manual check names no person, PR, or issue outside a code span: write out what to do, and put a package name such as `@storybook/react` in backticks',
+              'a manual check names no person, PR, or issue, in a code span either: write out what to do, and name a package in words, such as "the Storybook React package"',
           },
         ]
       : []

@@ -20,7 +20,7 @@ describe('renderManualChecklist', () => {
     expect(tasks).toEqual([
       expect.stringContaining('- [ ] On Windows 11, make a React project with the webpack builder'),
       expect.stringContaining('- [ ] On Windows 11, in a Vite project whose main file sets'),
-      expect.stringContaining('- [ ] In a React project with `@storybook/addon-links`'),
+      expect.stringContaining('- [ ] In a React project with the Storybook Links addon'),
     ]);
   });
 
@@ -35,7 +35,7 @@ describe('renderManualChecklist', () => {
       '- [ ] On Windows 11, make a React projec',
       '- [ ] On Windows 11, in a Vite project w',
       '## No repo of the catalog has the state ',
-      '- [ ] In a React project with `@storyboo',
+      '- [ ] In a React project with the Storyb',
     ]);
   });
 

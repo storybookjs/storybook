@@ -1,10 +1,19 @@
 import { expect, test } from '@playwright/test';
 import process from 'process';
 
-import { SbPage } from './util.ts';
+import { SbPage, isReactSandbox } from './util.ts';
 
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:8001';
 const templateName = process.env.STORYBOOK_TEMPLATE_NAME || '';
+
+// The codePanel demo story sets `component: globalThis.__TEMPLATE_COMPONENTS__.Button` — a
+// runtime global with no static import, so one stories file serves every renderer. Non-React
+// docgen cannot resolve that component statically (build-story-docs.ts reports "No static
+// snippet: the component's import could not be resolved statically"), so the Code panel falls
+// back to the story's serialized CSF, where the story's args are the only story-specific text.
+// React renders the story-view snippet at runtime from the rendered element (jsxDecorator
+// SNIPPET_RENDERED), so the component source is present there.
+const defaultSnippetSource = isReactSandbox(templateName) ? 'Button' : 'e2eStoryDocsBefore';
 
 // The addon panel pre-renders every panel and re-renders them all when a story is prepared. Panels
 // rely on that: the Controls panel reads the current story through the API in its render function
@@ -151,7 +160,7 @@ test.describe('addon panel', () => {
     await sbPage.deepLinkToStory(storybookUrl, 'addons/docs/codePanel', 'default');
     await expect(codeTab).toBeVisible();
     await sbPage.viewAddonPanel('Code');
-    await expect(sbPage.panelContent()).toContainText('Button');
+    await expect(sbPage.panelContent()).toContainText(defaultSnippetSource);
     await expect(sbPage.panelContent()).not.toContainText('Custom code');
 
     await sbPage.navigateToStory('addons/docs/codePanel', 'custom-code');

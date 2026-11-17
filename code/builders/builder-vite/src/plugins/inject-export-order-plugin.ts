@@ -26,14 +26,16 @@ export async function injectExportOrderPlugin() {
         try {
           [, exports] = await parse(code);
         } catch (error) {
-          const hint = /\.[jt]s$/.test(id)
+          const { message, idx } = error as Error & { idx?: number };
+          // Vite transpiles JSX only in .jsx/.tsx, and JSX in .ts already fails in esbuild
+          const hint = id.endsWith('.js')
             ? ' If the file contains JSX, rename it to use the .jsx or .tsx extension.'
             : '';
-          this.error({
-            message: `Failed to parse the story file: ${(error as Error).message}.${hint}`,
-            pos: (error as { idx?: number }).idx,
-            cause: error,
-          });
+          // Rollup only adds the location and code frame for a separate `pos` argument
+          this.error(
+            { message: `Failed to parse the story file: ${message}.${hint}`, cause: error },
+            idx
+          );
         }
 
         const exportNames = exports.map((e) => code.substring(e.s, e.e));

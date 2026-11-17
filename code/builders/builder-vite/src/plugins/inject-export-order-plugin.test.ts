@@ -5,12 +5,12 @@ import { injectExportOrderPlugin } from './inject-export-order-plugin.ts';
 
 const transform = async (code: string, id: string) => {
   const plugin = await injectExportOrderPlugin();
-  const context: Pick<Rollup.TransformPluginContext, 'error'> = {
-    error(error) {
-      throw error;
+  const context = {
+    error(error: Rollup.RollupError, pos?: number) {
+      throw { ...error, pos };
     },
-  };
-  return plugin.transform.handler.call(context as Rollup.TransformPluginContext, code, id);
+  } as Rollup.TransformPluginContext;
+  return plugin.transform.handler.call(context, code, id);
 };
 
 describe('injectExportOrderPlugin', () => {

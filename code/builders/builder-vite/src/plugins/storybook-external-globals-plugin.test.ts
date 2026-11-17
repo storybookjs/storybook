@@ -2,9 +2,12 @@ import { expect, it, vi } from 'vitest';
 
 vi.mock('storybook/internal/preview/globals', { spy: true });
 
+import type { Options } from 'storybook/internal/types';
+
 import {
   ensurePreviewRuntimePrecedesGlobals,
   rewriteImport,
+  storybookExternalGlobalsPlugin,
 } from './storybook-external-globals-plugin.ts';
 
 const packageName = '@storybook/package';
@@ -97,6 +100,17 @@ it('does not import the runtime from the bundled preview runtime', () => {
   expect(
     ensurePreviewRuntimePrecedesGlobals(code, 'C:\\pkg\\dist\\preview\\_chunks\\runtime-abc.js?v=1')
   ).toBe(code);
+});
+
+it('leaves code it cannot parse to the plugins that report syntax errors', async () => {
+  const plugin = await storybookExternalGlobalsPlugin({
+    presets: { apply: async () => ({}) },
+  } as unknown as Options);
+  const code =
+    "import { fn } from 'storybook/test';\nexport const Primary = () => <button>Hi</button>;";
+
+  const transform = plugin.transform as { handler: (code: string, id: string) => unknown };
+  await expect(transform.handler(code, '/src/Button.stories.js')).resolves.toBeUndefined();
 });
 
 it('rewriteImport', () => {

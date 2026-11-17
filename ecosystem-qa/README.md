@@ -317,10 +317,11 @@ And it stops, and the comment says "at least" of the spend, when the record of t
 
 - A comment that the workflow wrote was edited by anyone else, or reports no batch of the plan.
 - The discussion holds no report of an earlier batch, such as after a comment was deleted or a batch was skipped.
-- The comments of the workflow hold fewer runs than the spend that one of them was written with, which is what a deleted comment leaves.
+- The comments of the workflow hold fewer runs than the spend that one of them was written with, which is what a deleted comment leaves, and each comment written after that carries the missing runs in its hidden line, so a filing or a batch started by hand stops again.
 - The plan has more than one discussion, for example after its first line was edited, the next batch started a new one, and the line was put back.
 - The first report of a batch comes from a later attempt of its workflow run, whose earlier attempts reported nothing because they were cancelled or their `track` job failed before it wrote.
 
+Once a comment of the workflow says "at least", every later comment of the plan says it too, also when the batch is reported again or the missing report was collected since.
 A deleted comment stays unseen when no comment that is left was written after it, such as the newest comment, or the only comment of a batch that is deleted before another run of that batch reports.
 The attempts of a run that another run collects with `from_runs` are not known, so they are not checked.
 A run that wrote no comment, because it was cancelled or its `track` job did not write, is in no record, and a new run of the same batch chains on without its spend.
@@ -328,10 +329,11 @@ Run its failed jobs again, or collect it alone with `from_runs`, before you disp
 The cap is checked before each next batch starts, so the spend of a plan can pass it by at most one batch.
 
 The comment says what comes next on a line `Next:`.
-When the chain stops before the last batch, the line below it prints the dispatch that starts the next batch by hand, such as `gh workflow run ecosystem-qa.yml --ref qa/plans -f plan=11.0.md -f batch=2 -f plan_hash=e526520a70c0 -f chain=true -f version=11.0.0-beta.3 -f engines=claude`.
+When the chain stops before the last batch, and neither a report of a later batch nor an earlier start of the next one stopped it, the line below it prints the dispatch that starts the next batch by hand, such as `gh workflow run ecosystem-qa.yml --ref qa/plans -f plan=11.0.md -f batch=2 -f plan_hash=e526520a70c0 -f chain=true -f version=11.0.0-beta.3 -f engines=claude`.
 Run it once the reason is gone: after the jobs of a batch that left no result were run again and finished, after a dispatch that failed, after the cap was raised, or once you know what the record of the spend is short of.
 The batch it starts reports and chains like any other, and stops again for a reason that stays, such as a second discussion or a comment that is gone.
-A report of the same batch again keeps both lines as the first report wrote them, so a re-run never starts a batch itself.
+A report of the same batch again keeps the `Next:` line as the first report wrote it, so a re-run never starts a batch itself.
+It prints the line below it again from its own run, so the line of a batch that was filed leaves out the `budget_minutes` of the batch.
 The `track` job starts the next batch before it writes the comment, so the comment says `Batch 2 is started.` only after the dispatch went through, and otherwise that the dispatch failed.
 The `track` jobs of one plan share a concurrency group of the plan's hash, so two reports never create two discussions or start the next batch twice.
 A third report that queues while one waits cancels the waiting one, and its run then reports nothing.

@@ -997,7 +997,7 @@ describe('checkPlanText', () => {
       [
         'a link without text',
         '[](https://example.com/the-reason)',
-        'expected no Markdown link: write the address out',
+        'expected no Markdown link or image: write the address out',
       ],
     ])
   )(
@@ -1022,6 +1022,114 @@ describe('checkPlanText', () => {
     );
 
     expect(problemsOf(text, { window: WINDOW })).toEqual([]);
+  });
+
+  const HIDING_FORMS = [
+    ['a link without text', '[](/QXA-QXB-delete-the-repository)'],
+    ['a link that hides its address', '[the docs](/delete-the-repository)'],
+    ['an image', '![](/delete-the-repository.png)'],
+  ];
+  const TEXT_FIELDS: [string, (form: string) => [string, string], string][] = [
+    [
+      'an entry title',
+      (form) => ['### `preview-animations` Animations', `### \`preview-animations\` ${form}`],
+      '### `preview-animations`',
+    ],
+    [
+      'a repo reason',
+      (form) => ['its stories animate with CSS transitions', `its stories animate ${form}`],
+      '### `preview-animations`',
+    ],
+    [
+      'a step',
+      (form) => ['- Step: Open a story with a transition', `- Step: Open ${form}`],
+      '### `preview-animations`',
+    ],
+    [
+      'an expected outcome',
+      (form) => ['- Expected: The screenshot shows', `- Expected: ${form} The screenshot shows`],
+      '### `preview-animations`',
+    ],
+    [
+      'a manual check',
+      (form) => ['open the static build: the stories', `open ${form}: the stories`],
+      `| ${pr(37344)} |`,
+    ],
+    [
+      'the reason of a manual check',
+      (form) => [`| ${WINDOWS_WHY} |`, `| ${WINDOWS_WHY} ${form} |`],
+      `| ${pr(37344)} |`,
+    ],
+    [
+      'a reason for no QA',
+      (form) => ['docs E2E tests cover the timing |', `docs E2E tests cover ${form} |`],
+      "| the monorepo's docs E2E tests cover",
+    ],
+    ['a group source', (form) => ['| `ui` | area UI |', `| \`ui\` | area ${form} |`], '| `ui` |'],
+    [
+      'the manual check of a group',
+      (form) => ['click it: it opens that story.', `click ${form}: it opens that story.`],
+      '| `addon-links` |',
+    ],
+    [
+      'the reason of a manual group',
+      (form) => [`Why: ${WINDOWS_WHY} |`, `Why: ${WINDOWS_WHY} ${form} |`],
+      '| `windows` |',
+    ],
+    [
+      'the reason of a group without QA',
+      (form) => ['none: no effect that a project can show', `none: no effect ${form}`],
+      '| `tooling` |',
+    ],
+    [
+      'the reason of a discovered repo',
+      (form) => ['a deep sidebar tree that no catalog entry has', `a deep sidebar tree ${form}`],
+      '| `primer-react` |',
+    ],
+  ];
+
+  it.each(
+    TEXT_FIELDS.flatMap(([field, edit, lineNeedle]) =>
+      HIDING_FORMS.map(([name, form]) => [`${name} in ${field}`, ...edit(form!), lineNeedle])
+    )
+  )(
+    'refuses %s, which GitHub shows without the text the agent reads',
+    (_, from, to, lineNeedle) => {
+      const text = edited(from!, to!);
+
+      expect(problemsOf(text)).toContainEqual({
+        line: lineOf(text, lineNeedle!),
+        message: expect.stringContaining('expected no Markdown link or image'),
+      });
+    }
+  );
+
+  const ISSUE_LINK = '[#36128](https://github.com/storybookjs/storybook/issues/36128)';
+
+  it.each([
+    ['an issue', ISSUE_LINK],
+    ['a PR', pr(36128)],
+  ])('accepts a group source that links %s as the plan links a PR', (_, link) => {
+    expect(
+      problemsOf(edited('| `ui` | area UI |', `| \`ui\` | area UI, ${link} |`), { window: WINDOW })
+    ).toEqual([]);
+  });
+
+  it.each([
+    [
+      'a link whose text and address name other numbers',
+      '[#36128](https://github.com/storybookjs/storybook/issues/36129)',
+    ],
+    ['a link to another repository', '[#36128](https://github.com/storybookjs/other/issues/36128)'],
+    ['the issue link as an image', `!${ISSUE_LINK}`],
+    ['a link inside the issue link', `[${ISSUE_LINK}](/delete-the-repository)`],
+  ])('refuses a group source with %s', (_, link) => {
+    const text = edited('| `ui` | area UI |', `| \`ui\` | area UI, ${link} |`);
+
+    expect(problemsOf(text)).toContainEqual({
+      line: lineOf(text, '| `ui` |'),
+      message: expect.stringContaining('expected no Markdown link or image'),
+    });
   });
 
   const REFERENCE_FORMS = [

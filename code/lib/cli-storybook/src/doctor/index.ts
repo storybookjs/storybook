@@ -318,31 +318,25 @@ export async function getDoctorDiagnostics({
     'storybook',
   ]);
 
-  // If we found incompatible packages, we let the users fix that first
-  // If they run doctor again and there are still issues, we show the other warnings
-  if (!incompatiblePackagesMessage) {
-    const mismatchingVersionMessage = getMismatchingVersionsWarnings(installationMetadata);
+  const mismatchingVersionMessage = getMismatchingVersionsWarnings(installationMetadata);
 
-    if (mismatchingVersionMessage) {
+  if (mismatchingVersionMessage) {
+    results.push({
+      type: DiagType.MISMATCHING_VERSIONS,
+      title: 'Diagnostics',
+      message: mismatchingVersionMessage,
+      project: { configDir },
+    });
+  } else {
+    const list = getDuplicatedDepsWarnings(installationMetadata, incompatibleStorybookPackagesList);
+
+    if (list?.length) {
       results.push({
-        type: DiagType.MISMATCHING_VERSIONS,
-        title: 'Diagnostics',
-        message: mismatchingVersionMessage,
+        type: DiagType.DUPLICATED_DEPENDENCIES,
+        title: 'Duplicated dependencies found',
+        message: list.join('\n'),
         project: { configDir },
       });
-    } else {
-      const list = installationMetadata
-        ? getDuplicatedDepsWarnings(installationMetadata)
-        : getDuplicatedDepsWarnings();
-
-      if (Array.isArray(list) && list.length > 0) {
-        results.push({
-          type: DiagType.DUPLICATED_DEPENDENCIES,
-          title: 'Duplicated dependencies found',
-          message: list.join('\n'),
-          project: { configDir },
-        });
-      }
     }
   }
 

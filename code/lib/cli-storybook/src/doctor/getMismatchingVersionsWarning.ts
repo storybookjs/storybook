@@ -4,6 +4,8 @@ import type { InstallationMetadata } from 'storybook/internal/common';
 import picocolors from 'picocolors';
 import semver from 'semver';
 
+import { hasMultipleVersions } from './hasMultipleVersions.ts';
+
 function getPrimaryVersion(name: string | undefined, installationMetadata?: InstallationMetadata) {
   if (!name) {
     return undefined;
@@ -33,7 +35,12 @@ export function getMismatchingVersionsWarnings(
     const cliVersion = getPrimaryVersion('storybook', installationMetadata);
     const frameworkVersion = getPrimaryVersion(frameworkPackageName, installationMetadata);
 
-    if (!cliVersion || !frameworkVersion || semver.eq(cliVersion, frameworkVersion)) {
+    if (
+      !cliVersion ||
+      !frameworkVersion ||
+      semver.eq(cliVersion, frameworkVersion) ||
+      hasMultipleVersions(installationMetadata.duplicatedDependencies?.storybook ?? [])
+    ) {
       return undefined;
     }
 

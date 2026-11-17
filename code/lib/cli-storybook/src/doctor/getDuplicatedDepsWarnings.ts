@@ -2,7 +2,9 @@ import { frameworkPackages, rendererPackages } from 'storybook/internal/common';
 import type { InstallationMetadata } from 'storybook/internal/common';
 
 import picocolors from 'picocolors';
+import semver from 'semver';
 
+import type { AnalysedPackage } from './getIncompatibleStorybookPackages.ts';
 import { hasMultipleVersions } from './hasMultipleVersions.ts';
 
 export const messageDivider = '\n\n';
@@ -29,8 +31,8 @@ export const allowList = [
 
 // These packages definitely will cause issues if they're duplicated
 export const disallowList = [
-  Object.keys(rendererPackages),
-  Object.keys(frameworkPackages),
+  ...Object.keys(rendererPackages),
+  ...Object.keys(frameworkPackages),
   'storybook',
   '@storybook/instrumenter',
   '@storybook/core-server',
@@ -38,8 +40,34 @@ export const disallowList = [
   '@storybook/preview',
 ];
 
+/** Names the incompatible packages whose Storybook range keeps each stale `storybook` copy installed. */
+const getStaleStorybookSources = (
+  versions: string[] = [],
+  incompatiblePackages: AnalysedPackage[] = []
+) =>
+  versions.flatMap((version) => {
+    const sources = incompatiblePackages.filter(
+      ({ hasIncompatibleDependencies, packageStorybookVersion }) =>
+        hasIncompatibleDependencies &&
+        packageStorybookVersion &&
+        semver.satisfies(version, packageStorybookVersion, { includePrerelease: true })
+    );
+    return sources.length
+      ? [
+          `storybook ${version} is installed for ${sources
+            .map(({ packageName, packageStorybookVersion }) =>
+              picocolors.bold(`${packageName} (${packageStorybookVersion})`)
+            )
+            .join(', ')}. De-duplicating won't remove it: update or remove ${
+            sources.length > 1 ? 'these packages' : 'that package'
+          }.`,
+        ]
+      : [];
+  });
+
 export function getDuplicatedDepsWarnings(
-  installationMetadata?: InstallationMetadata
+  installationMetadata?: InstallationMetadata,
+  incompatiblePackages?: AnalysedPackage[]
 ): string[] | undefined {
   try {
     if (
@@ -89,6 +117,12 @@ export function getDuplicatedDepsWarnings(
         )} The following dependencies are duplicated and WILL cause unexpected behavior:`
       );
       messages.push(critical.join(messageDivider), '\n');
+      messages.push(
+        ...getStaleStorybookSources(
+          installationMetadata.duplicatedDependencies.storybook,
+          incompatiblePackages
+        )
+      );
     }
 
     if (trivial.length > 0) {

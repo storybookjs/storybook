@@ -369,32 +369,54 @@ describe('NPM Proxy', () => {
       });
     });
 
-    it('retries with --depth=0 when the deep listing exits non-zero (e.g. peer dependency issues)', async () => {
+    it('keeps the deep listing when npm exits non-zero but still prints the tree (e.g. an invalid peer)', async () => {
+      mockedExecuteCommand.mockReset();
+      mockedExecuteCommand.mockResolvedValueOnce({
+        exitCode: 1,
+        failed: true,
+        stdout: JSON.stringify({
+          error: { code: 'ELSPROBLEMS' },
+          dependencies: {
+            storybook: { version: '11.0.0-beta.2' },
+            '@storybook/addon-docs': {
+              version: '11.0.0-beta.2',
+              dependencies: { storybook: { version: '10.6.7', invalid: true } },
+            },
+          },
+        }),
+      } as any);
+
+      const installations = await npmProxy.findInstallations(['@storybook/*', 'storybook']);
+
+      expect(mockedExecuteCommand).toHaveBeenCalledTimes(1);
+      expect(mockedExecuteCommand).toHaveBeenCalledWith(
+        expect.objectContaining({ args: ['ls', '--json', '--depth=99'], reject: false })
+      );
+      expect(installations?.duplicatedDependencies).toEqual({
+        storybook: ['10.6.7', '11.0.0-beta.2'],
+      });
+    });
+
+    it('retries with --depth=0 when the deep listing is cut off at the output limit', async () => {
       mockedExecuteCommand.mockReset();
       mockedExecuteCommand
-        .mockRejectedValueOnce(new Error('npm error code ELSPROBLEMS'))
         .mockResolvedValueOnce({
-          stdout: JSON.stringify({
-            dependencies: {
-              '@storybook/react': { version: '1.2.3' },
-            },
-          }),
+          failed: true,
+          isMaxBuffer: true,
+          stdout: '{"dependencies":{"@storybook/react":{"version":"1.2',
+        } as any)
+        .mockResolvedValueOnce({
+          stdout: JSON.stringify({ dependencies: { '@storybook/react': { version: '1.2.3' } } }),
         } as any);
 
       const installations = await npmProxy.findInstallations(['@storybook/*']);
 
       expect(mockedExecuteCommand).toHaveBeenNthCalledWith(
-        1,
-        expect.objectContaining({ args: ['ls', '--json', '--depth=99'] })
-      );
-      expect(mockedExecuteCommand).toHaveBeenNthCalledWith(
         2,
         expect.objectContaining({ args: ['ls', '--json', '--depth=0'] })
       );
       expect(installations).toMatchObject({
-        dependencies: {
-          '@storybook/react': [{ version: '1.2.3' }],
-        },
+        dependencies: { '@storybook/react': [{ version: '1.2.3' }] },
       });
     });
 

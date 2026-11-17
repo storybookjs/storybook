@@ -238,6 +238,35 @@ describe('BUN Proxy', () => {
     });
   });
 
+  describe('findInstallations', () => {
+    it('keeps the deep listing when npm exits non-zero but still prints the tree (e.g. an invalid peer)', async () => {
+      mockedExecuteCommand.mockResolvedValueOnce({
+        exitCode: 1,
+        failed: true,
+        stdout: JSON.stringify({
+          error: { code: 'ELSPROBLEMS' },
+          dependencies: {
+            storybook: { version: '11.0.0-beta.2' },
+            '@storybook/addon-docs': {
+              version: '11.0.0-beta.2',
+              dependencies: { storybook: { version: '10.6.7', invalid: true } },
+            },
+          },
+        }),
+      } as any);
+
+      const installations = await bunProxy.findInstallations(['@storybook/*', 'storybook']);
+
+      expect(mockedExecuteCommand).toHaveBeenCalledTimes(1);
+      expect(mockedExecuteCommand).toHaveBeenCalledWith(
+        expect.objectContaining({ args: ['ls', '--json', '--depth=99'], reject: false })
+      );
+      expect(installations?.duplicatedDependencies).toEqual({
+        storybook: ['10.6.7', '11.0.0-beta.2'],
+      });
+    });
+  });
+
   describe('getPublishedPeerDependencies', () => {
     const readPeers = () =>
       bunProxy.getPublishedPeerDependencies('@storybook/react-native', '11.0.0-next.0');

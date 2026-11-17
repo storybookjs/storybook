@@ -1,6 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { JsPackageManager } from 'storybook/internal/common';
+import { JsPackageManager } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import { MainFileMissingError } from 'storybook/internal/server-errors';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
@@ -10,6 +10,7 @@ import { doctor, getDoctorDiagnostics } from './index.ts';
 import { DiagnosticType } from './types.ts';
 
 const getStorybookData = vi.spyOn(mainConfigFile, 'getStorybookData');
+const hasStorybookDependency = vi.spyOn(JsPackageManager, 'hasStorybookDependency');
 
 const projectData = {
   configDir: '.storybook',
@@ -43,6 +44,93 @@ describe('getDoctorDiagnostics', () => {
 
     expect(results).toHaveLength(1);
     expect(results[0].message).toContain('Unable to determine Storybook version');
+  });
+
+  describe('installed versions', () => {
+    beforeEach(() => {
+      hasStorybookDependency.mockReturnValue(true);
+    });
+    afterEach(() => hasStorybookDependency.mockReset());
+
+    const diagnose = (
+      installed: Record<string, string[]>,
+      addonPeerRange = '^11.0.0-0'
+    ): ReturnType<typeof getDoctorDiagnostics> =>
+      getDoctorDiagnostics({
+        ...projectData,
+        storybookVersion: '11.0.0-beta.2',
+        packageManager: {
+          packageJsonPaths: ['package.json'],
+          getAllDependencies: () => ({
+            storybook: '^11.0.0-beta.2',
+            'storybook-addon-tag-badges': '^3.1.0',
+          }),
+          getModulePackageJSON: async (name: string) => ({
+            name,
+            version: '3.1.0',
+            peerDependencies: { storybook: addonPeerRange },
+          }),
+          findInstallations: async () => ({
+            dependencies: Object.fromEntries(
+              Object.entries(installed).map(([name, versions]) => [
+                name,
+                versions.map((version) => ({ version, location: '' })),
+              ])
+            ),
+            duplicatedDependencies: Object.fromEntries(
+              Object.entries(installed)
+                .filter(([, versions]) => versions.length > 1)
+                .map(([name, versions]) => [name, [...versions].sort()])
+            ),
+            infoCommand: 'npm ls',
+            dedupeCommand: 'npm dedupe',
+          }),
+        } as unknown as JsPackageManager,
+      });
+
+    it.each([
+      ['the stale copy is listed first', ['10.6.7', '11.0.0-beta.2'], ['11.0.0-beta.2', '10.6.7']],
+      ['the current copy is listed first', ['11.0.0-beta.2', '10.6.7'], ['11.0.0-beta.2']],
+    ])(
+      'reports a critical duplicate next to the incompatible addon that installs it when %s',
+      async (_, storybook, framework) => {
+        const results = await diagnose(
+          { storybook, '@storybook/react-vite': framework },
+          '^10.0.0'
+        );
+
+        expect(results.map(({ type }) => type)).toEqual([
+          DiagnosticType.INCOMPATIBLE_PACKAGES,
+          DiagnosticType.DUPLICATED_DEPENDENCIES,
+        ]);
+        expect(results[1].message).toContain('Critical:');
+        expect(results[1].message).toContain('10.6.7, 11.0.0-beta.2');
+        expect(results[1].message).toContain('storybook 10.6.7 is installed for');
+        expect(results[1].message).toContain('storybook-addon-tag-badges (^10.0.0)');
+      }
+    );
+
+    it('counts a duplicated framework as critical', async () => {
+      const results = await diagnose({
+        storybook: ['11.0.0-beta.2'],
+        '@storybook/react-vite': ['11.0.0-beta.2', '10.6.7'],
+      });
+
+      expect(results.map(({ type }) => type)).toEqual([DiagnosticType.DUPLICATED_DEPENDENCIES]);
+      expect(results[0].message).toContain('Critical:');
+      expect(results[0].message).not.toContain('is installed for');
+    });
+
+    it('reports the stale framework of a partial upgrade, not only its duplicated renderer', async () => {
+      const results = await diagnose({
+        storybook: ['11.0.0'],
+        '@storybook/react': ['11.0.0', '10.6.7'],
+        '@storybook/react-vite': ['10.6.7'],
+      });
+
+      expect(results.map(({ type }) => type)).toEqual([DiagnosticType.MISMATCHING_VERSIONS]);
+      expect(results[0].message).toContain('@storybook/react-vite');
+    });
   });
 });
 

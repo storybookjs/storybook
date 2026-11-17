@@ -85,6 +85,32 @@ export function setProjectAnnotations<TRenderer extends Renderer = Renderer>(
 
 const cleanups: CleanupCallback[] = [];
 
+/**
+ * Executes all registered cleanup callbacks for portable stories in reverse order and clears the
+ * registry.
+ *
+ * Use this in test teardown hooks (e.g. Vitest's `afterEach`) to unmount any mounted story, trigger
+ * component and hook teardowns, and remove temporary DOM containers.
+ */
+export async function cleanupStories(): Promise<void> {
+  const callbacks = [...cleanups].reverse();
+  cleanups.length = 0;
+  const errors: unknown[] = [];
+  for (const callback of callbacks) {
+    try {
+      await callback();
+    } catch (error) {
+      errors.push(error);
+    }
+  }
+  if (errors.length === 1) {
+    throw errors[0];
+  }
+  if (errors.length > 1) {
+    throw new AggregateError(errors, 'Cleanups failed with multiple errors');
+  }
+}
+
 export function composeStory<TRenderer extends Renderer = Renderer, TArgs extends Args = Args>(
   storyAnnotations: LegacyStoryAnnotationsOrFn<TRenderer>,
   componentAnnotations: ComponentAnnotations<TRenderer, TArgs>,
@@ -245,12 +271,7 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
       storyName,
       load: async () => {
         // First run any registered cleanup function
-
-        // First run any registered cleanup function
-        for (const callback of [...cleanups].reverse()) {
-          await callback();
-        }
-        cleanups.length = 0;
+        await cleanupStories();
 
         const context = initializeContext();
         const hookContext = hideArgTypes(context);
@@ -314,10 +335,7 @@ async function runStory<TRenderer extends Renderer>(
   story: PreparedStory<TRenderer>,
   context: StoryContextForRender<TRenderer>
 ) {
-  for (const callback of [...cleanups].reverse()) {
-    await callback();
-  }
-  cleanups.length = 0;
+  await cleanupStories();
   const hookContext = hideArgTypes(context);
 
   if (!context.canvasElement) {

@@ -146,6 +146,14 @@ describe('a file that is not in its rendered form', () => {
     ]);
   });
 
+  it('names a line after the last entry as one that belongs to no entry', () => {
+    const text = `${FIXTURE}A note.\n`;
+
+    expect(problemsOf(text)).toEqual([
+      { line: lineOf(text, 'A note.'), message: 'unexpected line after the last entry' },
+    ]);
+  });
+
   it('fails without its final newline', () => {
     expect(problemsOf(FIXTURE.trimEnd())).toEqual([
       {
@@ -340,6 +348,27 @@ describe('checkPlanText', () => {
       'none: see https://example.com/x',
       '| `tooling` |',
       'https://example.com/x has the host example.com, not localhost',
+    ],
+    [
+      'the manual check of a group with a URL of another host',
+      'click it: it opens that story.',
+      'open https://example.com/x: it opens that story.',
+      '| `addon-links` |',
+      'https://example.com/x has the host example.com, not localhost',
+    ],
+    [
+      'a manual check that holds " Why: ", which would split its cell in a group',
+      'open the static build: the stories',
+      'open the static build Why: the stories',
+      `| ${pr(37344)} |`,
+      'check: expected no "Why:"',
+    ],
+    [
+      'a group that lists a PR twice',
+      ` | ${pr(34799)} |`,
+      ` | ${pr(34799)}, ${pr(34799)} |`,
+      '| `tooling` |',
+      'prs: a PR is listed twice',
     ],
     [
       'a manual check that mentions a person',
@@ -905,6 +934,26 @@ describe('checkPlanText', () => {
     });
   });
 
+  it.each([[['qa:skip']], [['maintenance', 'qa:skip']], [['dependencies', 'ci', 'qa:skip']]])(
+    'refuses a PR marked qa:skip with the labels %j that is in no group',
+    (labels) => {
+      const skipped = windowPr({
+        number: 40000,
+        title: 'Build: Bump a tool',
+        status: 'skip',
+        labels,
+      });
+      const window = { ...WINDOW, prs: [...WINDOW.prs, skipped] };
+
+      expect(problemsOf(FIXTURE, { window })).toEqual([
+        {
+          line: lineOf(FIXTURE, '## Groups of PRs marked qa:skip'),
+          message: '#40000 of the window is in no row of "Groups of PRs marked qa:skip"',
+        },
+      ]);
+    }
+  );
+
   it('takes a PR marked qa:needed and one without a QA label in one row', () => {
     const text = edited(`| ${pr(35618)} |`, `| ${pr(35618)}, ${pr(36664)} |`).replace(
       `\n| a change of this repository's CI, no project can see it | ${pr(36664)} |`,
@@ -1124,6 +1173,22 @@ describe('planFromWindow', () => {
     expect(planFromWindow(windowOf([needed, other, undecided]), draft).manual).toEqual([
       { check: manual.manual, why: manual.why, prs: [1, 3] },
       { check: null, why: null, prs: [4] },
+    ]);
+  });
+
+  it('keeps one check with two reasons in two rows, so neither reason is lost', () => {
+    const other = windowPr({ number: 3, title: 'CLI: Other', area: 'CLI' });
+    const check = 'On Windows 11, run `npx storybook dev`.';
+    const draft = PlanDraft.parse({
+      decisions: {
+        '1': { manual: check, why: 'only Windows' },
+        '3': { manual: check, why: 'a race' },
+      },
+    });
+
+    expect(planFromWindow(windowOf([needed, other]), draft).manual).toEqual([
+      { check, why: 'only Windows', prs: [1] },
+      { check, why: 'a race', prs: [3] },
     ]);
   });
 

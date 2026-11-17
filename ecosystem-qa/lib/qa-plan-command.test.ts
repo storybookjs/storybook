@@ -59,6 +59,46 @@ describe('qa-plan.ts draft', () => {
   });
 });
 
+describe('qa-plan.ts manual', () => {
+  const PLAN = new URL('./plan.fixture.md', import.meta.url).pathname;
+  const WINDOW = new URL('./plan.fixture.window.json', import.meta.url).pathname;
+
+  it('prints the checklist of a plan that passes check with its window', () => {
+    const { status, stdout } = qaPlan(['manual', '/dev/stdin', '--window', WINDOW], FIXTURE);
+
+    expect(status).toBe(0);
+    expect(stdout).toContain('- [ ] On Windows 11');
+  });
+
+  it('prints no checklist for a plan that fails check', () => {
+    const broken = FIXTURE.toString('utf8').replace(
+      "| the monorepo's docs E2E tests cover the timing |",
+      '| - |'
+    );
+    const { status, stdout, stderr } = qaPlan(
+      ['manual', '/dev/stdin', '--window', WINDOW],
+      Buffer.from(broken)
+    );
+
+    expect(status).toBe(1);
+    expect(stdout).toBe('');
+    expect(stderr).toContain('expected at least three letters');
+  });
+
+  it('prints no checklist for a plan that leaves a PR of the window without a place', () => {
+    const window = JSON.parse(readFileSync(WINDOW, 'utf8'));
+    window.prs.push({ ...window.prs[0], number: 40000 });
+    const { status, stdout, stderr } = qaPlan(
+      ['manual', PLAN, '--window', '/dev/stdin'],
+      Buffer.from(JSON.stringify(window))
+    );
+
+    expect(status).toBe(1);
+    expect(stdout).toBe('');
+    expect(stderr).toContain('#40000 of the window is');
+  });
+});
+
 describe('qa-plan.ts ledger', () => {
   it('prints a row for each PR of the window, also one that the plan does not name', () => {
     const window = new URL('./plan.fixture.window.json', import.meta.url).pathname;

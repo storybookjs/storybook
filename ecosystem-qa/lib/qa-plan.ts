@@ -10,7 +10,7 @@ import type { QaStatus, Window, WindowPr } from './window.ts';
 // block, and a character reference, a blank or filler character, or an empty tag shows a cell as
 // empty. Where a code span or a link starts depends on GitHub's parser, so the rule holds for the
 // whole text, inside code spans too.
-const Text = z
+const PlainText = z
   .string()
   .regex(/^\S(?:.*\S)?$/, 'expected one line of text')
   .regex(/^[ -~]*$/, 'expected printable ASCII only')
@@ -19,11 +19,22 @@ const Text = z
     /^(?!.*&(?:#\d+|#x[\da-f]+|[a-z][a-z\d]*);)/i,
     'expected no character reference such as "&nbsp;"'
   );
-// A reason or a check shows as blank when it is a link without text, which three letters of its URL
-// would not reveal.
-const Reason = Text.regex(/^(?!.*\]\()/, 'expected no Markdown link: write the address out').refine(
+// A link or an image shows its text or nothing, while the agent reads its address too.
+const NO_LINK = 'expected no Markdown link or image: write the address out';
+const Text = PlainText.regex(/^(?!.*\]\()/, NO_LINK);
+const Reason = Text.refine(
   (text) => (text.match(/[a-z]/gi)?.length ?? 0) >= 3,
   'expected at least three letters'
+);
+// A group source may link the issue or PR it comes from, in the form the plan links a PR.
+const Source = PlainText.refine(
+  (source) =>
+    !source
+      .replace(/!?\[#(\d+)\]\([^)]*\)/g, (link, number) =>
+        [prCell, issueLink].some((cell) => cell(Number(number)) === link) ? '' : link
+      )
+      .includes(']('),
+  NO_LINK
 );
 const RepoDir = Text.refine(
   (dir) => !dir.startsWith('/') && !dir.includes('\\') && !dir.split('/').includes('..'),
@@ -104,7 +115,7 @@ type ManualRow = z.infer<typeof ManualRow>;
 const NoQaRow = z.strictObject({ reason: Reason, prs: SomePrs });
 type NoQaRow = z.infer<typeof NoQaRow>;
 
-const GroupOfDraft = z.strictObject({ slug: Slug, source: Text, decision: Decision });
+const GroupOfDraft = z.strictObject({ slug: Slug, source: Source, decision: Decision });
 const GroupOfDraftInput = GroupOfDraft.extend({ decision: DraftDecision.nullable() });
 const Group = GroupOfDraft.extend({ prs: PrList });
 // The PRs marked qa:skip that the draft has not put into a group yet share one row without a group.
@@ -899,8 +910,9 @@ export const manualChecksOf = (plan: Plan, at: PlanLayout): ManualCheckRow[] => 
 
 // The manual checks go into an issue, where a mention notifies a person and a reference posts on a
 // PR, and a check that points to a PR cannot be followed without that PR open. Whether GitHub
-// links a form depends on its parser, so none of them may stand anywhere, in a code span either.
-const REFERENCE = /(?<!\w)@[a-z\d]|#\d|GH-\d/i;
+// links a form depends on its parser, so none of them may stand anywhere, in a code span either. An
+// `@` after a letter or a digit cannot follow markup, so it starts no mention.
+const REFERENCE = /(?<![a-z\d])@|#\d|GH-\d|(?:pull|issues)\/\d/i;
 
 const manualChecksStayInert: Rule = ({ plan, at }) =>
   manualChecksOf(plan, at).flatMap(({ manual, why, line }) =>

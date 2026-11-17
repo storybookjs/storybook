@@ -467,6 +467,14 @@ export const renderBatchComment = (
   { spend, short, capUsd, next, expiresOn, carried }: CommentContext
 ): string => {
   const lost = report.lines.filter((line) => line.outcome === 'no result').length;
+  // The total carries the runs of a comment that is gone, so a later write cannot forget them.
+  const gone =
+    spend.held.runs < spend.written.runs
+      ? {
+          usd: Math.max(0, spend.written.usd - spend.held.usd),
+          runs: spend.written.runs - spend.held.runs,
+        }
+      : { usd: 0, runs: 0 };
   const fileCommand = [
     'gh workflow run ecosystem-qa.yml',
     `--ref ${report.ref}`,
@@ -483,7 +491,7 @@ export const renderBatchComment = (
     ...[...report.lines, ...carried].map(
       ({ key, usd }) => `<!-- sb-qa-run ${key} usd=${usd.toFixed(6)} -->`
     ),
-    `<!-- sb-qa-total usd=${spend.usd.toFixed(6)} runs=${spend.runs} -->`,
+    `<!-- sb-qa-total usd=${(spend.usd + gone.usd).toFixed(6)} runs=${spend.runs + gone.runs} -->`,
     `### Batch ${report.batch} of ${report.batches} on Storybook ${report.version}`,
     '',
     `${runCount(report.planned)} planned, ${report.lines.length - lost} finished, ${lost} without a result, ${report.runs.length > 0 ? `from workflow run ${report.runs.join(', ')}` : 'from local results'}.`,

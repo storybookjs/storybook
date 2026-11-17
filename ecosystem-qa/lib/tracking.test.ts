@@ -875,6 +875,36 @@ describe('trackBatch', () => {
     });
   });
 
+  it('keeps stopping the chain for a comment that is gone after the workflow writes again, by a filing or a start by hand', () => {
+    const again = (filing: BatchInput['filing']) =>
+      batchReport(
+        input({
+          runs: ['43900000009'],
+          filing,
+          planned: [job('mealdrop')],
+          results: [result('mealdrop', { usd: 35, startedAt: '2026-11-17T09:00:00Z' })],
+        })
+      );
+    const second = comment(track(again('dry'), [batchOne], 250, { chain: false }).body);
+    const refiled = comment(track(again('filed'), [second], 250, { chain: false }).body);
+    const stopped = track(batchTwo(1), [refiled], 250);
+    const batchThree = batchReport(
+      input({ batch: 3, batches: 4, runs: ['43900000003'], planned: [job('primer-react')] })
+    );
+    const byHand = track(batchThree, [refiled, comment(stopped.body)], 250);
+
+    expect(stopped.next).toEqual({
+      stop: 'Batch 3 was not started, because the comments of this discussion hold $35.00 for 1 run, where one of them was written with $75.00 for 2 runs, so a comment of the workflow is gone.',
+      resume: 3,
+    });
+    expect(stopped.body).toContain('Spent on this plan: at least $36.00 for 2 runs');
+    expect(byHand.next).toEqual({
+      stop: 'Batch 4 was not started, because the comments of this discussion hold $36.00 for 2 runs, where one of them was written with $76.00 for 3 runs, so a comment of the workflow is gone.',
+      resume: 4,
+    });
+    expect(byHand.body).toContain('Spent on this plan: at least $');
+  });
+
   it('stops the chain and names the discussions when the plan has more than one', () => {
     const discussions = [
       'https://github.com/storybookjs/storybook/discussions/1',

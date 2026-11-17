@@ -261,6 +261,8 @@ When the pull fails, or the `image` job failed, the runner builds the image itse
 The package is private when the first push creates it, and the pull fails until a person makes it public in the package settings.
 `run.ts` reads the image's `org.js.storybook.ecosystem-qa.playwright` label before it clones, and ends the run when that version is not the Playwright of the workspace, because the evidence tools would find no browser in the image.
 The Dockerfile takes that version as `PLAYWRIGHT_VERSION` and pins the base image by `PLAYWRIGHT_DIGEST`, and the build fails when the two disagree; a Playwright upgrade changes both and the `playwright` pin in `package.json`.
+The image's tag is a hash of inputs anyone can read, and the `image` job builds nothing when the tag exists, so whoever can write the package chooses the image that the agents run in, with their keys.
+The access settings of the package decide who that is, so read them after the first push.
 The agent keys live in the `ecosystem-qa` environment, and the push token in `ecosystem-qa-file`, which only the filing job enters.
 
 A Claude Code run in the Docker sandbox on Linux with `ANTHROPIC_API_KEY` keeps the key out of the sandbox.

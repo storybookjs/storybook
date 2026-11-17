@@ -32,8 +32,7 @@ const Scroller = styled.div(({ theme }) => ({
   minHeight: 0,
   overflowY: 'auto',
   overflowX: 'hidden',
-  // One column sized against the frame rather than the scroller, so that the content ends at the
-  // same place whether or not the scrollbar takes width from the scroller.
+  // One column grid to keep content width stable regardless of whether a scrollbar is rendered.
   display: 'grid',
   gridTemplateColumns: `min(100%, 100cqw - ${SCROLLBAR_GUTTER}px)`,
   alignContent: 'start',

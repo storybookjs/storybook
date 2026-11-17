@@ -275,6 +275,14 @@ The run reports the five checks of the tier `gate` first, the upgrade and the de
 `--tier must` or `--tier extended` runs those tiers in place of the gate, and the collect of the batch then needs the same `--tier`.
 The checklist gets the steps, the expected outcome and the reason for the repo of each entry, and the rules of `prompts/plan-checks.md`, which also say how the agent works in the browser.
 The answer schema names the ids of this run only, so the agent cannot report a check the plan does not have.
+
+A plan check tests the project as it is after the upgrade, and the agent never creates the state a check needs:
+
+- Forbidden: adding a setting, a file, a dependency, or code so that an upgrade step, an automigration, or a removal has something to act on, or so that the project looks as if it used something it does not use. When the project does not have what the entry describes, the agent reports the check as `skip` and names in its note what the project lacks.
+- Allowed: what a user of the released version does to see the result, such as starting the dev server, building, opening a page, clicking, or reading a file, and a step of the entry that turns on a new opt-in feature of the tested version, such as a feature flag in the Storybook main file. That step is its own step of the plan, so the reviewer sees it, and the agent does exactly what it says. The agent never decides on its own to turn something on.
+
+So a repo is listed for an entry only when it has that state at its pinned commit.
+A plan check reported as `skip` opens no proposal: the answer schema accepts a finding only for a check that is `fail`, and `collect.ts` makes proposals from findings alone.
 `--repo` may name a discovered repo of the plan, which the runner resolves through `loadEntries(plan)`.
 
 The run ends with exit 1 before anything is cloned when the plan is not in its rendered form or fails `checkPlan`, when the plan has no such batch, when the batch lists no entry or no such part for the repo, or when `--version` is not on the plan's line.

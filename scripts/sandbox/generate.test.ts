@@ -3,27 +3,25 @@ import { join, resolve } from 'node:path';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+// eslint-disable-next-line depend/ban-dependencies
+import { execaCommand } from 'execa';
 import { fs as memoryFs, vol } from 'memfs';
 
 import { temporaryDirectory } from '../../code/core/src/common/utils/cli.ts';
 import { sbInit } from './generate.ts';
 
-const { launch } = vi.hoisted(() => ({
-  launch: vi.fn<(command: string, options: { env: NodeJS.ProcessEnv }) => Promise<void>>(),
-}));
-vi.mock('execa', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('execa')>()),
-  execaCommand: launch,
-}));
+vi.mock('execa', { spy: true });
 vi.mock('node:fs/promises', { spy: true });
-vi.mock('../../code/core/src/common/utils/cli.ts', () => ({ temporaryDirectory: vi.fn() }));
+vi.mock('../../code/core/src/common/utils/cli.ts', { spy: true });
 
 const configHome = resolve('sandbox-config');
 const personalConfig = resolve('personal-config');
 const settingsFile = (root: string) => join(root, 'storybook', 'settings.json');
 const personalSettings = JSON.stringify({ version: 1, init: { skipOnboarding: true } });
+let settingsAtInit: unknown;
 
 beforeEach(() => {
+  settingsAtInit = undefined;
   vol.reset();
   vol.mkdirSync(configHome, { recursive: true });
   vol.mkdirSync(join(personalConfig, 'storybook'), { recursive: true });
@@ -32,19 +30,17 @@ beforeEach(() => {
   vi.mocked(fs.mkdir).mockImplementation(memoryFs.promises.mkdir as never);
   vi.mocked(fs.writeFile).mockImplementation(memoryFs.promises.writeFile as never);
   vi.mocked(fs.rm).mockImplementation(memoryFs.promises.rm as never);
+  vi.mocked(execaCommand, { partial: true }).mockImplementation(async () => {
+    const file = settingsFile(configHome);
+    settingsAtInit = JSON.parse(vol.readFileSync(file, 'utf8') as string);
+    vol.writeFileSync(file, JSON.stringify({ version: 1, init: { skipOnboarding: false } }));
+    return {};
+  });
 });
 
 describe('sandbox init', () => {
   it('runs with fresh settings while preserving template flags and the registry environment', async () => {
     const registry = 'http://localhost:6001/';
-    launch.mockImplementationOnce(async (command, { env }) => {
-      expect(command).toContain('--yes --no-dev --package-manager=yarn2');
-      expect(env.npm_config_registry).toBe(registry);
-      expect(env.XDG_CONFIG_HOME).toBe(configHome);
-      const file = settingsFile(configHome);
-      expect(JSON.parse(vol.readFileSync(file, 'utf8') as string)).toEqual({ version: 1 });
-      vol.writeFileSync(file, JSON.stringify({ version: 1, init: { skipOnboarding: false } }));
-    });
 
     await sbInit(
       resolve('project'),
@@ -52,14 +48,23 @@ describe('sandbox init', () => {
       ['--no-dev', '--package-manager=yarn2']
     );
 
-    expect(launch).toHaveBeenCalledOnce();
+    expect(execaCommand).toHaveBeenCalledExactlyOnceWith(
+      expect.stringContaining('--yes --no-dev --package-manager=yarn2'),
+      expect.objectContaining({
+        env: expect.objectContaining({
+          XDG_CONFIG_HOME: configHome,
+          npm_config_registry: registry,
+        }),
+      })
+    );
+    expect(settingsAtInit).toEqual({ version: 1 });
     expect(vol.readFileSync(settingsFile(personalConfig), 'utf8')).toBe(personalSettings);
     expect(vol.existsSync(configHome)).toBe(false);
   });
 
   it('cleans up the settings directory when init fails', async () => {
     const error = new Error('init failed');
-    launch.mockRejectedValueOnce(error);
+    vi.mocked(execaCommand).mockRejectedValueOnce(error);
 
     await expect(sbInit(resolve('project'))).rejects.toBe(error);
 
@@ -72,7 +77,7 @@ describe('sandbox init', () => {
 
     await expect(sbInit(resolve('project'))).rejects.toBe(error);
 
-    expect(launch).not.toHaveBeenCalled();
+    expect(execaCommand).not.toHaveBeenCalled();
     expect(vol.existsSync(configHome)).toBe(false);
   });
 });

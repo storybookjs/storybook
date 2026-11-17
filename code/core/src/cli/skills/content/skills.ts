@@ -27,7 +27,7 @@ export const SKILLS: Record<SkillId, { blurb: string }> = {
   },
   'ui-review': {
     blurb:
-      'When the user asks for a review or to see stories: find the stories a change affects and create a review that shows them.',
+      'When the user asks for a review, or to see components, stories, or their states: find the stories and create a review that shows them.',
   },
   setup: {
     blurb: 'Setup instructions to write stories for the real components in this project.',

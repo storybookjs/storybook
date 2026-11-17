@@ -1,6 +1,6 @@
 ---
 name: component-docs
-description: Run this skill yourself when the user asks about a component's props, API, or usage. It looks up the components of a project with Storybook, with their props and the usage examples of their stories, which the source of a component does not show, to answer such a question or to reuse existing components instead of building duplicates.
+description: Run this skill yourself when the user asks about a component's props, API, or usage. It looks up the components of a project with Storybook, with their props and usage examples as Storybook documents them, to answer such a question or to reuse existing components instead of building duplicates.
 ---
 
 Prerequisites:

@@ -24,7 +24,7 @@ You can also ask for the skill by name, for example "Use the /write-stories skil
 
 - **One story for each state.** The agent writes a story for each state the component can reach, such as variants, loading, empty, error, and disabled, with realistic props.
 - **Play functions.** An interactive component also gets a [play function](../../writing-stories/play-function.mdx) that interacts with it and checks the result.
-- **Network mocks.** A story never calls a real service. When your project has MSW set up for Storybook, the agent mocks [network requests](../../writing-stories/mocking-data-and-modules/mocking-network-requests.mdx) with it. When it doesn't, the agent adds no dependency: it writes the stories that need no network, and tells you which stories would need a network mock.
+- **Network mocks.** A story never calls a real service. When your project has MSW set up for Storybook, the agent mocks [network requests](../../writing-stories/mocking-data-and-modules/mocking-network-requests.mdx) with it. When it doesn't, the agent adds no dependency: it writes the stories that send no request, and tells you which stories would need a network mock. A component that fetches when it renders gets no story until MSW is set up, also not for its loading state.
 - **Module mocks.** For other dependencies, the agent uses [module mocks](../../writing-stories/mocking-data-and-modules/mocking-modules.mdx).
 
 The agent follows your project's conventions. It writes stories in the [story format](../../writing-stories/csf/index.mdx) that your project uses, and it doesn't rewrite your existing stories to match its own rules.

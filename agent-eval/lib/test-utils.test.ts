@@ -571,6 +571,9 @@ describe('recommendsReviewSkill', () => {
     'Use the /ui-review skill to see the changed components in Storybook',
     'The rename is done. You can use the /ui-review skill to see the changed components in Storybook.',
     'I did not run `/ui-review`, because nothing visible changed. You can use the /ui-review skill to see the components.',
+    'If you want to see it, use the /ui-review skill.',
+    "The UI didn't change, but you can use /ui-review to double-check.",
+    'No visual changes here; use the /ui-review skill to see the components in Storybook.',
   ])('counts %j', async (answer) => {
     const { recommendsReviewSkill } = await import('./test-utils.ts');
     expect(recommendsReviewSkill(answer)).toBe(true);
@@ -582,6 +585,8 @@ describe('recommendsReviewSkill', () => {
     "I didn't suggest `/ui-review`, since this change adds no visible UI yet.",
     "This is a rename with no change to how the UI looks, so those steps don't seem to apply. Tell me if you want stories or a `/ui-review` for it anyway.",
     'Nothing visible changed, so no `/ui-review` is needed.',
+    "`/ui-review` isn't needed, since nothing visible changed.",
+    'I skipped /ui-review because the change is not visible.',
   ])('does not count %j', async (answer) => {
     const { recommendsReviewSkill } = await import('./test-utils.ts');
     expect(recommendsReviewSkill(answer)).toBe(false);

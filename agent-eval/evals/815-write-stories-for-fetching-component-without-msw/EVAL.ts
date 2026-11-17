@@ -49,7 +49,8 @@ describe('writing stories for a fetching OrderHistory in a project without MSW',
       const stories = readFileSync(`src/components/${file}`, 'utf8');
       // A file with only a meta renders nothing.
       const rendersOrderHistory =
-        /from ['"]\.\/OrderHistory['"]/.test(stories) && /^export const /m.test(stories);
+        /from ['"]\.\/OrderHistory(?:\.[jt]sx?)?['"]/.test(stories) &&
+        /^export const /m.test(stories);
       expect(
         rendersOrderHistory,
         `Expected ${file} to have no story that renders OrderHistory without a network mock`

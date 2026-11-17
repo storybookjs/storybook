@@ -1006,8 +1006,8 @@ async function trustCodexProject(sandbox: Sandbox): Promise<void> {
     '-c',
     [
       'mkdir -p ~/.codex',
-      'grep -qs \'^trust_level = "trusted"\' ~/.codex/config.toml && exit 0',
       'for project in "$(pwd -P)" /workspace; do',
+      '  grep -qsF "[projects.\\"$project\\"]" ~/.codex/config.toml && continue',
       '  printf \'[projects."%s"]\\ntrust_level = "trusted"\\n\\n\' "$project" >> ~/.codex/config.toml',
       'done',
     ].join('\n'),

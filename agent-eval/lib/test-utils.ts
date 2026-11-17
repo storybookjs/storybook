@@ -256,19 +256,15 @@ export function expectReviewHint(): void {
   ).toMatch(REVIEW_HINT);
 }
 
-// A sentence that names the skill recommends it, unless it says the opposite before the name:
-// that the agent left the review out ("I didn't suggest `/ui-review`, nothing visible changed"),
-// or would make one on request ("tell me if you want a `/ui-review` anyway").
-const DECLINES = /\b(?:not|no|without|if|unless)\b|n['’]t\b/i;
+// A clause that names the skill recommends it, unless the clause says the opposite: that the
+// agent left the review out ("I didn't suggest `/ui-review`", "`/ui-review` isn't needed"), or
+// would make one on request ("tell me if you want a `/ui-review` anyway"). Clauses, not
+// sentences: "the UI didn't change, but you can use /ui-review" recommends it.
+const DECLINES = /\b(?:not|no|without|if|unless|skipped)\b|n['’]t\b/i;
+const CLAUSE_END = /(?<=[.!?])\s+|\n+|[,;:]\s+|\s+[—–]\s+|\s+(?=but\b)/i;
 
 export const recommendsReviewSkill = (answer: string): boolean =>
-  answer
-    .split(/(?<=[.!?])\s+|\n+/)
-    .some(
-      (sentence) =>
-        REVIEW_HINT.test(sentence) &&
-        !DECLINES.test(sentence.slice(0, sentence.search(REVIEW_HINT)))
-    );
+  answer.split(CLAUSE_END).some((clause) => REVIEW_HINT.test(clause) && !DECLINES.test(clause));
 
 export function expectNoReviewHint(): void {
   const answer = getFinalAssistantMessage() ?? '';

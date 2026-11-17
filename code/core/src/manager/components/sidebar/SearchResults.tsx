@@ -96,12 +96,18 @@ const RecentlyOpenedTitle = styled.div(({ theme }) => ({
   alignItems: 'center',
 
   '.search-result-recentlyOpened-clear': {
-    visibility: 'hidden',
+    opacity: 0,
   },
 
-  '&:hover': {
+  '&:hover, &:focus-within': {
     '.search-result-recentlyOpened-clear': {
-      visibility: 'visible',
+      opacity: 1,
+    },
+  },
+
+  '@media (hover: none)': {
+    '.search-result-recentlyOpened-clear': {
+      opacity: 1,
     },
   },
 }));

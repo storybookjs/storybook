@@ -54,17 +54,6 @@ export const mentionedIssues = (body: string): number[] => {
   return [...new Set(numbers)].sort((a, b) => a - b);
 };
 
-const AuthorAssociation = z.enum([
-  'COLLABORATOR',
-  'CONTRIBUTOR',
-  'FIRST_TIMER',
-  'FIRST_TIME_CONTRIBUTOR',
-  'MANNEQUIN',
-  'MEMBER',
-  'NONE',
-  'OWNER',
-]);
-
 const IssueFacts = z.strictObject({
   number: z.number(),
   title: z.string(),
@@ -84,7 +73,6 @@ export const WindowPr = z.strictObject({
   area: z.string().nullable(),
   status: QaStatus,
   labels: z.array(z.string()),
-  authorAssociation: AuthorAssociation,
   manualTesting: z.string().nullable(),
   issues: z.array(LinkedIssue),
 });
@@ -99,18 +87,12 @@ export const Window = z.strictObject({
 });
 export type Window = z.infer<typeof Window>;
 
-const MAINTAINERS = new Set(['OWNER', 'MEMBER']);
-
-export const needsGroup = (pr: WindowPr): boolean =>
-  pr.status === 'skip' && MAINTAINERS.has(pr.authorAssociation);
-
 export const PullNode = z.object({
   number: z.number(),
   title: z.string(),
   body: z.string(),
   updatedAt: z.string(),
   mergedAt: z.string(),
-  authorAssociation: AuthorAssociation,
   baseRefName: z.string(),
   headRefName: z.string(),
   isCrossRepository: z.boolean(),
@@ -188,7 +170,7 @@ export const PULLS_QUERY = `query($cursor: String) {
     pullRequests(states: MERGED, first: 100, after: $cursor, orderBy: { field: UPDATED_AT, direction: DESC }) {
       pageInfo { hasNextPage endCursor }
       nodes {
-        number title body updatedAt mergedAt authorAssociation baseRefName headRefName isCrossRepository
+        number title body updatedAt mergedAt baseRefName headRefName isCrossRepository
         mergeCommit { oid }
         labels(first: 50) { nodes { name } }
         closingIssuesReferences(first: 25) { nodes { number repository { nameWithOwner } } }
@@ -246,7 +228,6 @@ export const windowPr = (pr: PullNode, issues: Map<number, IssueNode>): WindowPr
     area: areaOf(pr.title),
     status: qaStatus(labels),
     labels,
-    authorAssociation: pr.authorAssociation,
     manualTesting: manualTesting(pr.body),
     issues: issueNumbersOf(pr).flatMap((number) => {
       const issue = issues.get(number);

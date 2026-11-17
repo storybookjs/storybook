@@ -5,7 +5,6 @@ import {
   type IssueNode,
   MANUAL_TESTING_CAP,
   manualTesting,
-  needsGroup,
   PullNode,
   PULLS_QUERY,
   type PullsPage,
@@ -25,7 +24,6 @@ const pull = (extra: object = {}): PullNode =>
     body: '',
     updatedAt: '2026-10-02T10:00:00Z',
     mergedAt: '2026-10-01T10:00:00Z',
-    authorAssociation: 'MEMBER',
     baseRefName: 'next',
     headRefName: 'story-sort-in-main',
     isCrossRepository: false,
@@ -58,36 +56,29 @@ describe('qaStatus', () => {
   });
 });
 
-describe('needsGroup', () => {
-  const prOf = (authorAssociation: string) => windowPr(pull({ authorAssociation }), new Map());
+describe('windowPr', () => {
+  // GitHub answers the author association by what the reading token may see, and a bot or an
+  // outside author marks PRs qa:skip too, so the window keeps nothing of who wrote a PR.
+  it.each(['MEMBER', 'CONTRIBUTOR', 'NONE'])(
+    'records the same fields for a PR whose author GitHub associates as %s',
+    (authorAssociation) => {
+      const pr = windowPr(
+        pull({ authorAssociation, author: { login: 'obvious-autobuild', __typename: 'Bot' } }),
+        new Map()
+      );
 
-  it('selects a qa:skip PR that a maintainer wrote', () => {
-    expect(needsGroup(prOf('MEMBER'))).toBe(true);
-    expect(needsGroup(prOf('OWNER'))).toBe(true);
-  });
-
-  it('leaves out the same PR from a contributor or an outside collaborator', () => {
-    expect(needsGroup(prOf('CONTRIBUTOR'))).toBe(false);
-    expect(needsGroup(prOf('COLLABORATOR'))).toBe(false);
-  });
-
-  it.each([[['qa:skip', 'build']], [['qa:skip', 'documentation']], [['qa:skip']]])(
-    'selects a maintainer PR labelled %j, since a product change can carry any label',
-    (labels) => {
-      const pr = windowPr(pull({ labels: { nodes: labels.map((name) => ({ name })) } }), new Map());
-
-      expect(needsGroup(pr)).toBe(true);
+      expect(Object.keys(pr)).toEqual([
+        'number',
+        'title',
+        'area',
+        'status',
+        'labels',
+        'manualTesting',
+        'issues',
+      ]);
+      expect(pr.status).toBe('skip');
     }
   );
-
-  it('leaves out a maintainer PR that is not marked qa:skip', () => {
-    const pr = windowPr(
-      pull({ labels: { nodes: [{ name: 'qa:needed' }, { name: 'bug' }] } }),
-      new Map()
-    );
-
-    expect(needsGroup(pr)).toBe(false);
-  });
 });
 
 describe('areaOf', () => {

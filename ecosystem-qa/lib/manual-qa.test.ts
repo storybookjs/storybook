@@ -20,6 +20,7 @@ describe('renderManualChecklist', () => {
     expect(tasks).toEqual([
       expect.stringContaining('- [ ] On Windows 11, make a React project with the webpack builder'),
       expect.stringContaining('- [ ] On Windows 11, in a Vite project whose main file sets'),
+      expect.stringContaining('- [ ] In a React project with `@storybook/addon-links`'),
     ]);
   });
 

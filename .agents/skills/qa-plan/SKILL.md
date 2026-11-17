@@ -67,9 +67,9 @@ Run from the repository root:
 node ecosystem-qa/window.ts --from v10.6.0 --to v11.0.0-beta.3 --out /tmp/qa-plan-11.0/window.json
 ```
 
-It prints the count of each QA status and of the core team PRs that need a group.
+It prints the count of each QA status.
 The window holds every PR whose merge commit is between the two tags, also one that was merged into the branch of another PR, even when that branch was rebased later, and no release PR.
-Each PR in `window.json` carries its `status`, `area`, `labels`, `authorAssociation`, `manualTesting` section, and linked `issues`, but no body.
+Each PR in `window.json` carries its `status`, `area`, `labels`, `manualTesting` section, and linked `issues`, but no body.
 
 For an overview of what the window changes, read the migration guide at the end tag first:
 
@@ -105,10 +105,12 @@ gh api -H 'Accept: application/vnd.github.raw' 'repos/storybook-tmp/vue-dsfr/con
 
 Read the `package.json` of the Storybook directory and of the repository root, because a monorepo often pins its tools at the root.
 
-## Step 3: Group the core team PRs marked qa:skip
+## Step 3: Group the PRs marked qa:skip
 
-The core team marks a PR `qa:skip` when its project gets tested as a whole.
-Each such PR needs a group whatever its other labels, because a product change labelled only `build` or `documentation` can hide among them, and `render` lists it with the PRs of its group in "Groups of core team PRs marked qa:skip", or in the row without a group.
+A PR is marked `qa:skip` when its project gets tested as a whole.
+Each such PR needs a group, whatever its other labels and whoever wrote it, a person or a bot, because a product change labelled only `build` or `documentation` can hide among them, and `render` lists it with the PRs of its group in "Groups of PRs marked qa:skip", or in the row without a group.
+Read the whole file list of each PR, past the first 100 files, before you give its group `none`: a PR that changes a file under `code/` that is no test, story, or documentation can change what a project sees, whatever its title and labels say.
+A change and its revert in the same window go together into a group whose decision is `none`, as replaced.
 
 - When a PR's linked issue is, or has as parent, a tracking issue with sub-issues and a QA or testing heading, `render` puts the PR into the group `issue-<number>` by itself. Read that issue with `gh issue view <number> --repo storybookjs/storybook`, and take the steps of its entry from its QA section. Most PRs have no such issue, so expect `render` to leave most groups to you.
 - Group the rest yourself by feature, from the title, the labels, and the linked issues, and fetch a body only when those are not enough. A group is one feature that its PRs share, such as `wc-docgen`. When no feature ties a PR to others, group it by its area.
@@ -119,7 +121,7 @@ Each such PR needs a group whatever its other labels, because a product change l
 ## Step 4: Write the draft
 
 Write `draft.json` with a decision for every PR of the window marked `qa:needed` (`needed`) or without a QA label (`undeclared`), and for every group.
-A PR of the window that is `verified` or a contributor's `skip` gets no decision.
+A PR of the window that is `verified` gets no decision, and every `skip` PR gets its decision through its group.
 The draft has five keys, all optional:
 
 ```json
@@ -153,7 +155,7 @@ The draft has five keys, all optional:
 - `decisions` maps a PR number to `{ "entries": [<slugs>] }`, `{ "manual": "<check>", "why": "<why the sweep cannot test it>" }`, or `{ "none": "<reason>" }`.
   When an entry tests only part of a PR, list the PR in the entry's `prs` and give it the manual decision, whose check covers the part that no entry tests.
 - `groups` holds every group with its decision, in the same three forms. In the plan a group's manual decision reads `manual: <check> Why: <why>`, so a check never holds ` Why: `. Add the groups that `render` made from a tracking issue under their slug `issue-<number>`, with their decision.
-- `groupOf` maps each core team PR to its group, except the PRs that `render` grouped by a tracking issue.
+- `groupOf` maps each PR marked `qa:skip` to its group, except the PRs that `render` grouped by a tracking issue.
 - `discovered` holds the repos of step 5.
 
 A window of hundreds of PRs makes a draft of hundreds of decisions and group rows.
@@ -203,7 +205,7 @@ node ecosystem-qa/qa-plan.ts check /tmp/qa-plan-11.0/11.0.md --window /tmp/qa-pl
 ```
 
 `render` fails when the draft decides or groups a PR that the window does not hold in that role, when a decision names other entries than the ones whose `prs` list the PR, and when it gives no QA to a PR that an entry lists.
-`check` prints each problem as `<file>:<line>: <message>`, one for the row of PRs still undecided and one for the row of core team PRs without a group, so render and check early with a partial draft to see what is left.
+`check` prints each problem as `<file>:<line>: <message>`, one for the row of PRs still undecided and one for the row of PRs marked `qa:skip` without a group, so render and check early with a partial draft to see what is left.
 Fix the draft, never the rendered file, and render again until `check` exits 0.
 Run no formatter on the plan file: `check` refuses every byte that differs from what `render` writes.
 It then prints the plan's hash, its batches with their runs, and what the sweep costs. Keep that output for the PR body.

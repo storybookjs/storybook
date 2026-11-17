@@ -129,7 +129,8 @@ When that branch was rebased or squashed before its PR merged, the merge commit 
 node ecosystem-qa/window.ts --from v10.6.0 --to v11.0.0-beta.3 --out ecosystem-qa/plans/11.0.window.json
 ```
 
-For each PR it records the QA status from its labels, the area that the title prefix names, the manual testing section of its body, the author association, and the issues the PR closes or names, with their parent issue and whether they have a heading for QA or testing.
+For each PR it records the QA status from its labels, the area that the title prefix names, the manual testing section of its body, and the issues the PR closes or names, with their parent issue and whether they have a heading for QA or testing.
+It records nothing about who wrote a PR, so it needs no special token: any token that can read this public repository writes the same window.
 It keeps a PR only when it was merged at most 30 days before the first tag, and it leaves out the release PRs, whose base is `next-release` or `latest-release`.
 So a PR merged into the branch of another PR more than 30 days before the first tag is dropped even when that branch reaches `next` inside the window, which happens when a long-lived stack merges late.
 It reads GitHub, fetches a tag that the local repository lacks, and writes nothing but the file of `--out`, whose directory it creates.
@@ -141,7 +142,7 @@ node ecosystem-qa/qa-plan.ts render --window ecosystem-qa/plans/11.0.window.json
 node ecosystem-qa/qa-plan.ts check ecosystem-qa/plans/11.0.md --window ecosystem-qa/plans/11.0.window.json
 ```
 
-The draft is optional, and every key of it too: `entries`, `discovered`, `decisions` by PR number, `groups`, and `groupOf`, which puts a core team PR into a group by PR number.
+The draft is optional, and every key of it too: `entries`, `discovered`, `decisions` by PR number, `groups`, and `groupOf`, which puts a PR marked `qa:skip` into a group by PR number.
 Without a draft, render writes a skeleton in which every PR is undecided.
 The draft is not committed, so `draft` writes it again from a plan and its window, to change decisions or render the plan on a newer window, and exits 1 when render would not write that plan from that window:
 
@@ -157,7 +158,7 @@ The plan holds only what a person decides, in the order a reviewer reads it:
 | `## Changes to test` | entry | Entry (slug and title), Batch, Repos, PRs (their count) |
 | `## PRs that need manual QA` | check | Check, Why the sweep cannot test it, PRs |
 | `## PRs that need no QA` | reason | Reason, PRs |
-| `## Groups of core team PRs marked qa:skip` | group | Group, Source, Decision, PRs |
+| `## Groups of PRs marked qa:skip` | group | Group, Source, Decision, PRs |
 | `## Discovered repos` | repo | see below |
 | `## Steps` | entry | the block of lines below |
 
@@ -175,13 +176,12 @@ Both tables hold both kinds of PR.
 A manual check is for a change that a person has to test because the sweep cannot, such as a fix that only Windows shows, a change of `storybook init`, a Yarn 1 project, a browser's profiler, or a need that no repo of the catalog has.
 It is an instruction that a person can follow without the PR open: the environment it needs, what to do, and what has to be seen.
 No QA is for a change of this repository's CI, build, tests, sandboxes, or documentation site, or a lockfile bump that no published package ships.
-A core team PR marked `qa:skip` is in the PRs of one group, whatever its other labels, and each group has a decision of one of the three kinds.
-A core team PR is one whose author GitHub associates with the organization as `OWNER` or `MEMBER`.
-The core team marks a PR `qa:skip` when its project gets tested as a whole, and a product change labelled only `build` or `documentation` needs that decision as much as one labelled `bug`.
+Every PR marked `qa:skip` is in the PRs of one group, whatever its other labels and whoever wrote it, and each group has a decision of one of the three kinds.
+A PR is marked `qa:skip` when its project gets tested as a whole, by a person or by a bot that writes PRs, and a product change labelled only `build` or `documentation` needs that decision as much as one labelled `bug`.
 A row with empty cells before its PRs holds the PRs that are not decided or not grouped yet.
 Render puts the undecided PRs into such a row of `## PRs that need manual QA`.
 A plan or a draft that still says `skip` is refused, with a message that asks for `manual` or `none`.
-The PRs verified by hand and the other PRs marked `qa:skip` need no decision, so the plan does not list them.
+The PRs verified by hand need no decision, so the plan does not list them.
 Render derives the overview of `## Changes to test` from the entries, so a reviewer reads it first and opens an entry under `## Steps` only when he doubts it.
 Every PR is a link to the PR, because GitHub links no bare `#36137` in a Markdown file.
 
@@ -232,12 +232,12 @@ It then holds the plan against these rules and prints each problem as `<file>:<l
 - Every repo of an entry is a catalog id or a discovered repo, and a discovered repo never takes a catalog id.
 - No repo of an entry is more than one major behind the plan's line, by the `tags` of its catalog entry or the major of its discovered row.
 - A PR of an entry has no row of no QA and no row without a decision, and when it is in a group, the decision of that group names the entry. It may have one row of manual QA for the part that no entry tests. A PR of a group may stay out of the entries its group names.
-- Every row of manual QA has a check and a reason why the sweep cannot test it, every row of no QA has a reason, every core team PR is in a group, every group has a decision, and every decision names entries that exist. A cell that still says `skip:` is refused.
+- Every row of manual QA has a check and a reason why the sweep cannot test it, every row of no QA has a reason, every PR marked `qa:skip` is in a group, every group has a decision, and every decision names entries that exist. A cell that still says `skip:` is refused.
 - A manual check and its reason name no person, PR, or issue outside a code span, because the checklist of `manual` goes into an issue, where `@name` notifies a person and `#123` posts on a PR, and because a check that points to a PR cannot be followed without that PR open.
 - The batches are numbered from 1 without a gap.
 - The file holds no link to `linear.app`, `notion.so`, `notion.site`, `notion.com`, or a `slack.com` host.
 - No entry title, repo reason, step, expected outcome, manual check, reason of a manual check, or reason of no QA holds a URL with a scheme whose host is other than `localhost`, `127.0.0.1`, or `[::1]`. The runner prints the first four into the agent's prompt, and the others are read by the person who follows them. `check` takes every URL that starts with a scheme, also one glued to other text such as `see:http://example.com` or `-xhttp://example.com`, apart with Node's URL parser, and refuses it when the host is another one or when the parser cannot read it: `https://example.com`, `http:/example.com`, `http://localhost;.example.com`, and `http://localhost].example.com` are refused. It reads a backslash once as the parser does, as a slash, and once as curl does, as a character, so `http://localhost\@example.com` is refused too. It does not look for a host without a scheme, such as `example.com/x` or `//example.com`. A scheme glued to letters before it takes them in, so `-xhttp:/example.com` has the scheme `xhttp`, which the parser does not know, and no host, and passes. The check is one layer of four: the reviewer reads every plan before it is merged, the prompt of a plan run forbids every URL other than `localhost`, and the browser tool of the sandbox image blocks direct requests to another host, although it follows a redirect and lets a WebSocket through.
-- With `--window`, every PR of the window marked `qa:needed` or without a QA label is in the PRs of an entry or in one row of manual QA or of no QA, every core team PR marked `qa:skip` is in one group, and the plan names no PR that the window does not hold in that role.
+- With `--window`, every PR of the window marked `qa:needed` or without a QA label is in the PRs of an entry or in one row of manual QA or of no QA, every PR marked `qa:skip` is in one group, and the plan names no PR that the window does not hold in that role.
 
 `render` refuses a draft whose decision of a PR names other entries than the ones that list it, or gives no QA to a PR that an entry lists, because the file decides a PR by its place and cannot hold both.
 A manual decision of a PR that an entry lists puts the PR into that entry and into the row of its check.

@@ -135,7 +135,7 @@ export function buildServerInstructions(inputs: ServerInstructionsInputs): strin
   // descriptions only on use, so the triggers that skill descriptions carry are here.
   const triggers = [
     inputs.devEnabled &&
-      '`npx storybook skills ui-review --mcp` when the user asks for a review or to see stories',
+      '`npx storybook skills ui-review --mcp` when the user asks for a review, or to see or be shown components, stories, or their states in Storybook',
     inputs.docsEnabled &&
       "`npx storybook skills component-docs --mcp` when the user asks about a component's props, API, or usage",
   ].filter(Boolean);

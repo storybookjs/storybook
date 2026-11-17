@@ -722,9 +722,9 @@ const noPrivateLinks: Rule = ({ lines }) =>
 
 const LOOPBACK = new Set(['localhost', '127.0.0.1', '[::1]']);
 
-// A scheme starts after any character that cannot be part of one, so `see:http://x` holds a second
-// URL. Punctuation at the end belongs to the sentence around the URL.
-const URL_AT = /(?<![a-z\d+.-])(?=([a-z][a-z\d+.-]*:[^ ]*))/gi;
+// A scheme starts at the first letter of every run of letters, so `see:http://x`, `1.http://x`, and
+// `-xhttp://x` each hold a URL. Punctuation at the end belongs to the sentence around the URL.
+const URL_AT = /(?<![a-z])(?=([a-z][a-z\d+.-]*:[^ ]*))/gi;
 const TRAILING_PUNCTUATION = /[.,;:!?'"`)\]}>]+$/;
 
 // The URL parser reads a backslash as a slash and curl reads it as a character, so

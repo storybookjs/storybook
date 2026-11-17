@@ -57,9 +57,9 @@ RUN curl -fsSL https://mise.run | MISE_VERSION="$MISE_VERSION" MISE_INSTALL_PATH
 
 # Docker's seccomp profile denies the user namespaces of Chromium's own sandbox, which the
 # Playwright MCP server turns on, so the server gets --no-sandbox. A plan step may only open
-# localhost. The browser server blocks every request to a host other than `localhost` and
-# `127.0.0.1`. It is no security boundary: a redirect from `localhost` to another host is still
-# followed.
+# localhost. The browser server blocks direct requests to a host other than `localhost` and
+# `127.0.0.1`. It follows a redirect from `localhost` to another host and lets a WebSocket to
+# another host through, so it is no security boundary.
 ARG BROWSER_MCP="/home/agent/.npm-global/bin/playwright run-mcp-server --headless --browser chromium --no-sandbox --isolated --viewport-size 1280x800 --allowed-origins localhost:*;127.0.0.1:* --output-dir /home/agent/qa-evidence/browser"
 RUN set -f && PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm install -g "playwright@$PLAYWRIGHT_VERSION" \
   && claude mcp add --scope user playwright -- $BROWSER_MCP \

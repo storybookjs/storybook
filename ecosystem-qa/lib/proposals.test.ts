@@ -326,7 +326,7 @@ describe('toProposal for a cluster', () => {
       {
         fingerprint: build!.fingerprint,
         checkId: 'build.static',
-        title: 'Build fails `@someone` ### Injected &lt;!-- x',
+        title: '`Build fails @someone ### Injected <!-- x`',
         sources: [expect.objectContaining({ os: 'windows', engine: 'codex' })],
       },
     ]);
@@ -334,7 +334,7 @@ describe('toProposal for a cluster', () => {
 
   it('lists the other members inline with a neutralised title in the issue and the comment', () => {
     const line =
-      'Also seen as:\n\n- `build.static` on storybookjs/mealdrop (windows, codex): Build fails `@someone` ### Injected &lt;!-- x\n';
+      'Also seen as:\n\n- `build.static` on storybookjs/mealdrop (windows, codex): `Build fails @someone ### Injected <!-- x`\n';
     const comment = toProposal(
       cluster(),
       [issueOn(hmr, { number: 9, labels: ['bug'], state: 'open' })],
@@ -659,7 +659,7 @@ describe('the plan entry of an issue', () => {
     const body = bodyOf('plan.story-sort-in-main');
 
     expect(body).toContain(
-      'Plan entry `story-sort-in-main`, Story sort moves from the preview file to the main file: [#36137](https://github.com/storybookjs/storybook/pull/36137)\n\n<!-- sb-qa-metadata -->'
+      'Plan entry `story-sort-in-main`, `Story sort moves from the preview file to the main file`: [#36137](https://github.com/storybookjs/storybook/pull/36137)\n\n<!-- sb-qa-metadata -->'
     );
     expect(body).not.toContain('pull/1)');
   });
@@ -668,24 +668,58 @@ describe('the plan entry of an issue', () => {
     expect(bodyOf('upgrade.command')).not.toContain('Plan entry');
   });
 
-  it('prints a title of the plan so that it mentions, references and hides nothing', () => {
-    const plan = {
-      ...fixturePlan,
-      entries: fixturePlan.entries.map((entry) =>
-        entry.slug === 'story-sort-in-main'
-          ? {
-              ...entry,
-              title:
-                'Sort for @storybookjs/core and _@octocat_ &#64;octocat, see #1 and <!-- hidden',
-            }
-          : entry
-      ),
-    };
+  it.each([
+    [
+      'Sort for @storybookjs/core and _@octocat_ &#64;octocat, see #1 and <!-- hidden',
+      '`Sort for @storybookjs/core and _@octocat_ &#64;octocat, see #1 and <!-- hidden`',
+    ],
+    ['The sort moves @octocat@storybookjs/core', '`The sort moves @octocat@storybookjs/core`'],
+    [
+      'The sort moves \\@x and @storybookjs/core now',
+      '`The sort moves \\@x and @storybookjs/core now`',
+    ],
+    ['The sort moves #1@octocat', '`The sort moves #1@octocat`'],
+    ['Sort @octocat-@octocat @octocat.@octocat', '`Sort @octocat-@octocat @octocat.@octocat`'],
+    ['The sort moves @octocat#5', '`The sort moves @octocat#5`'],
+    ['The sort moves #1#2 and GH-3#4', '`The sort moves #1#2 and GH-3#4`'],
+    ['The sort moves \\#5 and \\GH-6', '`The sort moves \\#5 and \\GH-6`'],
+    ['The sort moves see /#5 and x/#6 and /GH-7', '`The sort moves see /#5 and x/#6 and /GH-7`'],
+    ['The sort moves /storybookjs/storybook#5', '`The sort moves /storybookjs/storybook#5`'],
+    [
+      'The sort moves storybookjs/storybook/issues/55',
+      '`The sort moves storybookjs/storybook/issues/55`',
+    ],
+    [
+      'Sort github.com/storybookjs/storybook/issues/39',
+      '`Sort github.com/storybookjs/storybook/issues/39`',
+    ],
+    ['The `storySort` option moves @octocat', '``The `storySort` option moves @octocat``'],
+    ['Sort ```@octocat``` #5', '````Sort ```@octocat``` #5````'],
+    ['`storySort` moves to `main`', '`` `storySort` moves to `main` ``'],
+  ])(
+    'prints the title %j as one code span on the entry line and the related line',
+    (title, span) => {
+      const plan = {
+        ...fixturePlan,
+        entries: fixturePlan.entries.map((entry) =>
+          entry.slug === 'story-sort-in-main' ? { ...entry, title } : entry
+        ),
+      };
+      const [lead, other] = groupFindings([
+        planRun('plan.story-sort-in-main'),
+        loaded('windows', 'codex', [finding({ checkId: 'core.dev-server', title })]),
+      ]);
+      const body = renderIssueBody(
+        asIssue(toProposal({ lead: lead!, members: [lead!, other!] }, [], { ...OPTIONS, plan })),
+        byName
+      );
 
-    expect(bodyOf('plan.story-sort-in-main', plan)).toContain(
-      'Plan entry `story-sort-in-main`, Sort for `@storybookjs/core` and _`@octocat_` &amp;`#64`;octocat, see `#1` and &lt;!-- hidden: '
-    );
-  });
+      expect(body).toContain(`\nPlan entry \`story-sort-in-main\`, ${span}: [#36137](`);
+      expect(body).toContain(
+        `\n- \`core.dev-server\` on storybookjs/mealdrop (windows, codex): ${span}\n`
+      );
+    }
+  );
 
   it('puts the entry line above the related findings', () => {
     const [lead, other] = groupFindings([
@@ -702,7 +736,7 @@ describe('the plan entry of an issue', () => {
     );
 
     expect(body).toContain(
-      '- `core.dev-server` on storybookjs/mealdrop (windows, codex): Other &amp;`#64`;octocat'
+      '- `core.dev-server` on storybookjs/mealdrop (windows, codex): `Other &#64;octocat`'
     );
     expect(body.indexOf('Plan entry `story-sort-in-main`')).toBeGreaterThan(-1);
     expect(body.indexOf('Plan entry `story-sort-in-main`')).toBeLessThan(

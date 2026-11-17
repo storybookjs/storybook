@@ -19,6 +19,7 @@ const STARTED = /^Batch (\d+) is started\.$/;
 const RUN_LEDGER = /^<!-- sb-qa-run (\S+) usd=(\d+(?:\.\d+)?) -->$/;
 const TOTAL_LINE = /^<!-- sb-qa-total usd=(\d+(?:\.\d+)?) runs=(\d+) -->$/;
 const RESUME_LINE = /^To start batch (\d+) by hand /;
+const SHORT_SPEND = /^Spent on this plan: at least /m;
 
 export type TrackedPlan = { file: string; hash: string; line: string; version: string };
 
@@ -335,7 +336,7 @@ const shortfall = ({ report, spend, reported, discussions }: StepInput): string 
     return `the comments of this discussion hold ${spendOf(spend.held)}, where one of them was written with ${spendOf(spend.written)}, so a comment of the workflow is gone`;
   }
   if (report.attempt > 1 && !reported) {
-    return `attempt ${report.attempt} of workflow run ${report.runs.join(', ')} is its first report here, so what its earlier attempts spent is unknown`;
+    return `attempt ${report.attempt} of workflow run ${report.runs.join(', ')} is its first report here, so what its earlier attempts spent, and whether one of them started batch ${report.batch + 1}, is unknown`;
   }
   return undefined;
 };
@@ -467,6 +468,14 @@ export const renderBatchComment = (
   { spend, short, capUsd, next, expiresOn, carried }: CommentContext
 ): string => {
   const lost = report.lines.filter((line) => line.outcome === 'no result').length;
+  // The total carries the runs of a comment that is gone, so a later write cannot forget them.
+  const gone =
+    spend.held.runs < spend.written.runs
+      ? {
+          usd: Math.max(0, spend.written.usd - spend.held.usd),
+          runs: spend.written.runs - spend.held.runs,
+        }
+      : { usd: 0, runs: 0 };
   const fileCommand = [
     'gh workflow run ecosystem-qa.yml',
     `--ref ${report.ref}`,
@@ -483,7 +492,7 @@ export const renderBatchComment = (
     ...[...report.lines, ...carried].map(
       ({ key, usd }) => `<!-- sb-qa-run ${key} usd=${usd.toFixed(6)} -->`
     ),
-    `<!-- sb-qa-total usd=${spend.usd.toFixed(6)} runs=${spend.runs} -->`,
+    `<!-- sb-qa-total usd=${(spend.usd + gone.usd).toFixed(6)} runs=${spend.runs + gone.runs} -->`,
     `### Batch ${report.batch} of ${report.batches} on Storybook ${report.version}`,
     '',
     `${runCount(report.planned)} planned, ${report.lines.length - lost} finished, ${lost} without a result, ${report.runs.length > 0 ? `from workflow run ${report.runs.join(', ')}` : 'from local results'}.`,
@@ -574,7 +583,9 @@ export const trackBatch = <Comment extends Written>({
   const next = nextStep(step);
   const context = {
     spend: step.spend,
-    short: shortfall(step) !== undefined,
+    short:
+      shortfall(step) !== undefined ||
+      comments.some((comment) => byHarness(comment.author) && SHORT_SPEND.test(comment.body)),
     capUsd,
     expiresOn,
     carried: carriedRuns(existing, report),

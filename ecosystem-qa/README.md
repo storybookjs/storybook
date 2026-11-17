@@ -323,6 +323,8 @@ And it stops, and the comment says "at least" of the spend, when the record of t
 
 A deleted comment stays unseen when no comment that is left was written after it, such as the newest comment, or the only comment of a batch that is deleted before another run of that batch reports.
 The attempts of a run that another run collects with `from_runs` are not known, so they are not checked.
+A run that wrote no comment, because it was cancelled or its `track` job did not write, is in no record, and a new run of the same batch chains on without its spend.
+Run its failed jobs again, or collect it alone with `from_runs`, before you dispatch the batch again.
 The cap is checked before each next batch starts, so the spend of a plan can pass it by at most one batch.
 
 The comment says what comes next on a line `Next:`.

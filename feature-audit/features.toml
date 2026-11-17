@@ -1,0 +1,1782 @@
+# Storybook feature map
+#
+# This file is the editable source of truth for the feature audit. Every leaf
+# `[[feature]]` claims a set of repository paths via `include`/`exclude` globs
+# (repo-root-relative, `**` = any depth, `*` = within one segment). A file is
+# assigned to exactly one feature: when several match, the most specific
+# pattern (most literal characters) wins. `compute_metrics.py` reports files
+# that no feature claims and files claimed by more than one feature with the
+# same specificity, so the map can be tightened iteratively.
+#
+# `usefulness` is a 1-4 judgement (1 low, 2 medium, 3 high, 4 mission-critical)
+# with a one-line rationale. `reach` (0-1) is the estimated share of installs
+# that exercise the feature, with its own one-line justification; when absent it
+# is derived from npm downloads of the feature's packages. External signals
+# (`issue_labels`, `npm`) link the feature to the captured data under signals/.
+#
+# Globs may name paths that no longer exist (e.g. code/addons/review/**); they
+# contribute nothing to line counts but let churn from the last 12 months be
+# attributed to the feature that absorbed them.
+
+[meta]
+commit = "db128150dc9"
+captured = "2026-10-20"
+scan_roots = ["code", "scripts", "agent-eval", "test-storybooks"]
+churn_since = "2025-10-20"
+churn_bulk_commit_threshold = 40 # commits touching more files are release/bulk edits and ignored
+
+[weights]
+# cost = src_loc
+#      + test_loc × (test + stories + fixture loc)
+#      + Σ over third-party deps of (dependency_base + dependency_per_release × min(releases_12mo, dependency_release_cap)
+#                                     + dependency_stale_penalty if unpublished for dependency_stale_days or deprecated)
+#      + fix_pr × severity-weighted bug-fix PRs + maintenance_pr × maintenance/build/dependency PRs + churn × raw commits
+#      + internal_fan_out × number of other features this feature imports from
+test_loc = 0.25
+dependency_base = 150
+dependency_per_release = 1.0
+dependency_release_cap = 200
+dependency_stale_penalty = 150
+dependency_stale_days = 730
+fix_pr = 120          # the 1x rate for a bug-fix PR (triage, review, release); multiplied by severity, see [churn]
+maintenance_pr = 40   # dependency bumps, cleanups, build/CI changes
+churn = 0             # raw commits; superseded by PR categories, kept as a knob
+internal_fan_out = 0  # coupling term; reported as fan-in/fan-out regardless
+
+[usefulness]
+# Four hypotheses are computed side by side; see ranking.md.
+# "Base" = how many times more valuable each usefulness level is than the level below it.
+# Base 3: low 1, medium 3, high 9, mission-critical 27. Base 2: 1/2/4/8. Base 4: 1/4/16/64.
+geometric_base = 3
+geometric_bases_side_by_side = [2, 4]
+# Reach is an explicit `reach` on the feature, else npm downloads of the feature's packages divided
+# by downloads of `reach_reference_package`, else `reach_default` by score; floored at reach_floor.
+reach_reference_package = "storybook"
+reach_default = { "4" = 1.0, "3" = 0.5, "2" = 0.2, "1" = 0.05 }
+reach_floor = 0.01
+# Inherited usefulness: a feature inherits the highest score of any feature that genuinely depends
+# on it. Importers listed here wire everything together (presets register every addon, the shell
+# mounts every widget, the CLI/init/upgrade touch every package) and are ignored, as are
+# maintainer-only features. An edge counts only with at least `inheritance_min_imports` import
+# statements. Set `inheritance_transitive = false` for one-hop inheritance.
+inheritance_exclude_importers = ["config-and-presets", "manager-shell", "cli-core", "init", "upgrade-automigrate", "dev-server", "static-build", "builder-manager", "addon-management", "telemetry"]
+inheritance_min_imports = 3
+inheritance_transitive = true
+inheritance_ignore_same_group = true  # a sub-feature carved out of a parent must not inherit from it
+
+[churn]
+# PR label → category. Rules are tried in order; the first category whose labels (or subject
+# patterns) match wins. Categories listed in ignore_categories are dropped entirely.
+bulk_files_threshold = 60
+ignore_categories = ["release"]
+infer_category_from_issues = true  # an unlabelled PR that closes a bug-labelled issue counts as a fix
+# Bug-fix PRs are weighted by their sev:* label (own label first, else the closed issue's);
+# `fix_pr` in [weights] is the 1x rate. Unlabelled fixes count 1x.
+severity_multipliers = { "sev:S1" = 4.0, "sev:S2" = 2.0, "sev:S3" = 1.0, "sev:S4" = 0.5, "none" = 1.0 }
+categories = [
+  { category = "release", labels = ["release"], subject_patterns = ["version-non-patch", "version-patch", "changeset-release"] },
+  { category = "fix", labels = ["bug", "security", "performance issue", "flaky-test"] },
+  { category = "feature", labels = ["feature request", "RFC:accepted", "RFC:implemented", "experiment"] },
+  { category = "maintenance", labels = ["maintenance", "dependencies", "cleanup", "tech debt", "tech-debt", "technical debt", "refactoring", "build", "code-quality"] },
+  { category = "docs", labels = ["documentation", "ci:docs"] },
+]
+
+# ---------------------------------------------------------------------------
+# Macro groups
+# ---------------------------------------------------------------------------
+
+[[group]]
+id = "preview"
+name = "Story model & preview runtime"
+description = "How stories are declared (CSF), parsed, indexed, loaded and rendered inside the preview iframe, including the per-framework renderers."
+
+[[group]]
+id = "docgen"
+name = "Docgen & component metadata"
+description = "Extracting props, types and descriptions from components for controls, docs and AI consumers."
+
+[[group]]
+id = "node"
+name = "Node core: config, server, build"
+description = "Loading .storybook config and presets, the dev server, static builds, the manager bundler and shared Node infrastructure."
+
+[[group]]
+id = "builders"
+name = "Builders & frameworks"
+description = "Vite and webpack builder integrations and the per-framework packages that glue renderer, builder and app-framework conventions together."
+
+[[group]]
+id = "manager"
+name = "Manager UI"
+description = "The Storybook shell: layout, sidebar, canvas toolbar, settings, theming and the shared component library."
+
+[[group]]
+id = "addons"
+name = "Essential & bundled addons"
+description = "Addons shipped in core (actions, controls, viewport, docs, ...) and the first-party addon packages."
+
+[[group]]
+id = "testing"
+name = "Testing"
+description = "Interaction testing, the Vitest addon and story-level test infrastructure."
+
+[[group]]
+id = "ai"
+name = "AI & agent integration"
+description = "MCP server, toolsets, the tools CLI, agent skills, agentic review and the evaluation harness."
+
+[[group]]
+id = "cli"
+name = "CLI & lifecycle"
+description = "storybook init/upgrade/add/doctor, automigrations, codemods and the ESLint plugin."
+
+[[group]]
+id = "repo"
+name = "Repository tooling & test infrastructure"
+maintainer_only = true
+description = "Not user-facing: build scripts, sandbox templates, e2e suites and the internal Storybook."
+
+# ---------------------------------------------------------------------------
+# preview
+# ---------------------------------------------------------------------------
+
+[[feature]]
+id = "csf"
+group = "preview"
+name = "Component Story Format types & utilities"
+include = ["code/core/src/csf/**"]
+usefulness = 4
+rationale = "CSF is the story contract everything else consumes."
+reach = 1.0
+reach_rationale = "Every story is CSF."
+issue_labels = ["csf", "csf factories"]
+
+[[feature]]
+id = "csf-tools"
+group = "preview"
+name = "AST story/config tooling (CsfFile, ConfigFile, story-shape)"
+include = ["code/core/src/csf-tools/**"]
+exclude = ["code/core/src/csf-tools/vitest-plugin/**"]
+usefulness = 4
+rationale = "Powers indexing, automigrations, save-story and AI tools without executing user code."
+reach = 1.0
+reach_rationale = "Indexing parses every story file on every run."
+issue_labels = ["story index"]
+
+[[feature]]
+id = "parsers"
+group = "preview"
+name = "Parser stacks (Babel + oxc)"
+include = ["code/core/src/babel/**", "code/core/src/oxc-parser/**"]
+usefulness = 4
+rationale = "Foundation for csf-tools; two parser stacks coexist, which is itself a cost signal."
+reach = 1.0
+reach_rationale = "Runs for every indexed file."
+
+[[feature]]
+id = "preview-store"
+group = "preview"
+name = "Story store (args, globals, parameters, decorators, loaders, hooks)"
+include = ["code/core/src/preview-api/modules/store/**"]
+exclude = ["code/core/src/preview-api/modules/store/csf/portable-stories*"]
+usefulness = 4
+rationale = "Prepares and composes every story that renders."
+reach = 1.0
+reach_rationale = "Prepares every rendered story."
+issue_labels = ["args", "decorators", "preview-api"]
+
+[[feature]]
+id = "preview-runtime"
+group = "preview"
+name = "Preview runtime (Preview, selection, render loop, URL, addons API)"
+include = [
+  "code/core/src/preview-api/modules/preview-web/**",
+  "code/core/src/preview-api/modules/addons/**",
+  "code/core/src/preview-api/*",
+  "code/core/src/preview/**",
+  "code/core/src/preview-errors.ts",
+  "code/e2e-sandbox/preview-api.spec.ts",
+  "code/e2e-sandbox/storybook-hooks.spec.ts",
+  "code/e2e-internal/iframe-messaging.spec.ts",
+]
+exclude = [
+  "code/core/src/preview-api/modules/preview-web/setupStoryFreezer*",
+  "code/core/src/preview-api/modules/preview-web/setupContentResizeBroadcast*",
+  "code/core/src/preview-api/modules/preview-web/embedMode*",
+  "code/core/src/preview-api/modules/preview-web/getEmbedResizeViewport*",
+  "code/core/src/preview-api/modules/preview-web/docs-context/**",
+  "code/core/src/preview-api/modules/preview-web/emitTransformCode*",
+]
+usefulness = 4
+rationale = "The render loop itself."
+reach = 1.0
+reach_rationale = "The render loop of every preview."
+issue_labels = ["preview-api", "canvas", "hmr"]
+
+[[feature]]
+id = "embed-mode"
+group = "preview"
+name = "Embed mode (story freezer, resize broadcast, remote iframe embed)"
+include = [
+  "code/core/src/preview-api/modules/preview-web/setupStoryFreezer*",
+  "code/core/src/preview-api/modules/preview-web/setupContentResizeBroadcast*",
+  "code/core/src/preview-api/modules/preview-web/embedMode*",
+  "code/core/src/preview-api/modules/preview-web/getEmbedResizeViewport*",
+  "code/core/src/shared/constants/iframe-resize*",
+]
+usefulness = 2
+rationale = "Recent capability for embedding stories elsewhere (insecureRemoteIframeEmbed flag); niche today."
+reach = 0.02
+reach_rationale = "Opt-in flag shipped this year; few known adopters."
+flags = ["insecureRemoteIframeEmbed"]
+
+[[feature]]
+id = "story-indexing"
+group = "preview"
+name = "Story indexing (StoryIndexGenerator, index.json, watchers)"
+include = [
+  "code/core/src/core-server/utils/StoryIndexGenerator*",
+  "code/core/src/core-server/utils/watch-story-specifiers*",
+  "code/core/src/core-server/utils/index-json*",
+  "code/core/src/core-server/utils/summarizeIndex*",
+  "code/core/src/core-server/utils/autoName*",
+  "code/core/src/core-server/utils/IndexingError*",
+  "code/core/src/core-server/utils/remove-mdx-entries*",
+  "code/core/src/core-server/utils/__tests__/**",
+  "code/core/src/core-server/utils/__mockdata__/**",
+  "code/core/src/core-server/build-index*",
+  "code/core/src/cli/buildIndex.ts",
+  "code/core/src/shared/story-index/**",
+  "code/core/src/shared/utils/story-index-filters*",
+  "code/core/src/common/utils/normalize-stories*",
+  "code/core/src/core-server/utils/get-stories-paths-from-config*",
+  "code/core/src/common/utils/get-story-id*",
+  "code/core/src/common/utils/glob-to-regexp*",
+  "code/e2e-sandbox/json-files.spec.ts",
+]
+usefulness = 4
+rationale = "The sidebar, docs and tests all start from the index."
+reach = 1.0
+reach_rationale = "Every dev server and build indexes."
+issue_labels = ["story index"]
+
+[[feature]]
+id = "module-mocking"
+group = "preview"
+name = "Module mocking (sb.mock, vite mocker, Next.js export mocks)"
+include = [
+  "code/core/src/mocking-utils/**",
+  "code/builders/builder-vite/src/plugins/vite-mock/**",
+  "code/builders/builder-vite/src/plugins/vite-inject-mocker/**",
+  "code/frameworks/nextjs/src/export-mocks/**",
+  "code/lib/cli-storybook/src/automigrate/fixes/csf-next-mocked-args*",
+  "code/e2e-sandbox/module-mocking.spec.ts",
+  "code/e2e-sandbox/sb-module-mocking.spec.ts",
+]
+usefulness = 3
+rationale = "Needed for realistic stories of connected components; Vite-only today."
+reach = 0.2
+reach_rationale = "Vite projects that mock modules; a minority of story authors."
+
+[[feature]]
+id = "portable-stories"
+group = "preview"
+name = "Portable stories (composeStories)"
+include = [
+  "code/core/src/preview-api/modules/store/csf/portable-stories*",
+  "code/renderers/*/src/portable-stories*",
+  "code/frameworks/*/src/portable-stories*",
+  "code/frameworks/*/src/client/portable-stories*",
+  "code/core/src/telemetry/get-portable-stories-usage.ts",
+  "test-storybooks/portable-stories-kitchen-sink/**",
+]
+usefulness = 3
+rationale = "Reuse of stories in external test runners; superseded for most users by the Vitest addon."
+reach = 0.1
+reach_rationale = "Telemetry-tracked but niche; most story testing moved to the Vitest addon."
+issue_labels = ["portable stories"]
+
+[[feature]]
+id = "renderer-react"
+group = "preview"
+name = "React renderer"
+include = ["code/renderers/react/**"]
+exclude = [
+  "code/renderers/react/src/docs/**",
+  "code/renderers/react/src/docgen/**",
+  "code/renderers/react/src/componentManifest/**",
+  "code/renderers/react/src/extractProps*",
+  "code/renderers/react/src/extractArgTypes*",
+  "code/renderers/react/src/entry-preview-docs*",
+  "code/renderers/react/src/entry-preview-argtypes*",
+  "code/renderers/react/src/enrichCsf*",
+  "code/renderers/react/src/portable-stories*",
+]
+usefulness = 4
+rationale = "Largest user base by far."
+issue_labels = ["react", "rsc"]
+npm = ["@storybook/react"]
+
+[[feature]]
+id = "renderer-vue3"
+group = "preview"
+name = "Vue 3 renderer"
+include = ["code/renderers/vue3/**"]
+exclude = ["code/renderers/vue3/src/docgen/**", "code/renderers/vue3/src/entry-preview-docs*", "code/renderers/vue3/src/portable-stories*"]
+usefulness = 3
+rationale = "Second-largest framework community."
+issue_labels = ["vue3", "vue"]
+npm = ["@storybook/vue3"]
+
+[[feature]]
+id = "renderer-svelte"
+group = "preview"
+name = "Svelte renderer"
+include = ["code/renderers/svelte/**"]
+exclude = [
+  "code/renderers/svelte/src/svelte-csf/**",
+  "code/renderers/svelte/src/docs/**",
+  "code/renderers/svelte/src/docgen/**",
+  "code/renderers/svelte/src/extractArgTypes*",
+  "code/renderers/svelte/src/extractComponentDescription*",
+  "code/renderers/svelte/src/entry-preview-docs*",
+  "code/renderers/svelte/src/portable-stories*",
+]
+usefulness = 3
+rationale = "Healthy community; Svelte 5 runes support is actively demanded."
+issue_labels = ["svelte"]
+npm = ["@storybook/svelte"]
+
+[[feature]]
+id = "svelte-csf"
+group = "preview"
+name = "Svelte CSF (.stories.svelte) compiler"
+include = ["code/renderers/svelte/src/svelte-csf/**", "code/lib/cli-storybook/src/automigrate/fixes/addon-svelte-csf-to-core*"]
+usefulness = 2
+rationale = "A second story format for one framework, valued by its community and quiet in churn (confirmed by Steve, 2026-10-21)."
+npm = ["@storybook/addon-svelte-csf"]
+
+[[feature]]
+id = "renderer-web-components"
+group = "preview"
+name = "Web Components (Lit) renderer"
+include = ["code/renderers/web-components/**"]
+exclude = [
+  "code/renderers/web-components/src/docgen/**",
+  "code/renderers/web-components/src/docs/**",
+  "code/renderers/web-components/src/entry-preview-docs*",
+  "code/renderers/web-components/src/entry-preview-argtypes*",
+  "code/renderers/web-components/src/portable-stories*",
+]
+usefulness = 2
+rationale = "Design-system teams value it; ~1M downloads/month."
+issue_labels = ["web-components", "lit"]
+npm = ["@storybook/web-components"]
+
+[[feature]]
+id = "renderer-html"
+group = "preview"
+name = "HTML renderer"
+include = ["code/renderers/html/**"]
+usefulness = 2
+rationale = "Small and cheap; the fallback for framework-less projects."
+issue_labels = ["html"]
+npm = ["@storybook/html"]
+
+[[feature]]
+id = "renderer-preact"
+group = "preview"
+name = "Preact renderer"
+include = ["code/renderers/preact/**"]
+usefulness = 1
+rationale = "~270k downloads/month and a thin wrapper, but a distinct support surface."
+issue_labels = ["preact"]
+npm = ["@storybook/preact"]
+
+[[feature]]
+id = "renderer-server"
+group = "preview"
+name = "Server renderer + server-webpack5 framework"
+include = [
+  "code/renderers/server/**",
+  "code/frameworks/server-webpack5/**",
+  "code/presets/server-webpack/**",
+  "test-storybooks/server-kitchen-sink/**",
+  "code/lib/create-storybook/src/generators/SERVER/**",
+]
+usefulness = 1
+rationale = "Niche (server-rendered HTML snippets); webpack-only; ~440k downloads/month mostly transitive."
+issue_labels = ["server"]
+npm = ["@storybook/server", "@storybook/server-webpack5", "@storybook/preset-server-webpack"]
+
+# ---------------------------------------------------------------------------
+# docgen
+# ---------------------------------------------------------------------------
+
+[[feature]]
+id = "docgen-core"
+group = "docgen"
+name = "Docgen server, component-meta (TS program) & docs-tools"
+include = [
+  "code/core/src/shared/open-service/services/docgen/**",
+  "code/core/src/component-meta/**",
+  "code/core/src/docs-tools/**",
+  "code/core/src/common/utils/lazy-docgen-middleware*",
+  "code/lib/cli-storybook/src/automigrate/fixes/docgen-server*",
+  "code/e2e-internal/docgen-hot-update.spec.ts",
+  "code/e2e-sandbox/docgen-hot-update.spec.ts",
+]
+usefulness = 4
+rationale = "Foundation of the agent stack and of controls/docs for React, Vue and Angular (re-scored by Steve, 2026-10-21)."
+reach = 0.6
+reach_rationale = "Default-on wherever a provider exists: React, Vue 3 and Angular-Vite installs."
+issue_labels = ["docgen"]
+flags = ["docgenServer", "experimentalReactComponentMeta"]
+
+[[feature]]
+id = "docgen-react"
+group = "docgen"
+name = "React docgen (react-docgen, react-docgen-typescript, component-meta TS program, JSX source decorator)"
+include = [
+  "code/renderers/react/src/componentManifest/componentMeta/**",
+  "code/renderers/react/src/componentManifest/componentMetaManagerSingleton*",
+  "code/renderers/react/src/docs/**",
+  "code/renderers/react/src/docgen/**",
+  "code/renderers/react/src/extractProps*",
+  "code/renderers/react/src/extractArgTypes*",
+  "code/renderers/react/src/entry-preview-docs*",
+  "code/renderers/react/src/entry-preview-argtypes*",
+  "code/renderers/react/src/enrichCsf*",
+  "code/frameworks/react-vite/src/plugins/**",
+]
+usefulness = 4
+rationale = "Controls and ArgTypes for the biggest audience depend on it; three extraction backends coexist (react-docgen, react-docgen-typescript, component-meta)."
+reach = 0.9
+reach_rationale = "React share of installs; nearly all of them show ArgTypes."
+issue_labels = ["docgen", "argtypes"]
+
+[[feature]]
+id = "docgen-vue3"
+group = "docgen"
+name = "Vue 3 docgen (vue-component-meta, vue-docgen-api)"
+include = ["code/renderers/vue3/src/docgen/**", "code/renderers/vue3/src/entry-preview-docs*", "code/frameworks/vue3-vite/src/plugins/**"]
+usefulness = 3
+rationale = "Two extraction back-ends maintained in parallel; 6.7k lines for one framework."
+reach = 0.05
+reach_rationale = "Vue 3 share of installs."
+issue_labels = ["docgen", "vue3"]
+
+[[feature]]
+id = "docgen-svelte"
+group = "docgen"
+name = "Svelte docgen"
+include = [
+  "code/renderers/svelte/src/docs/**",
+  "code/renderers/svelte/src/docgen/**",
+  "code/renderers/svelte/src/extractArgTypes*",
+  "code/renderers/svelte/src/extractComponentDescription*",
+  "code/renderers/svelte/src/entry-preview-docs*",
+  "code/frameworks/svelte-vite/src/plugins/**",
+]
+usefulness = 2
+rationale = "Provider exists but is unexported; sveltedoc-parser is lightly maintained upstream."
+reach = 0.02
+reach_rationale = "Svelte share of installs; provider unexported."
+
+[[feature]]
+id = "docgen-web-components"
+group = "docgen"
+name = "Web Components docgen (custom-elements manifest)"
+include = [
+  "code/renderers/web-components/src/docgen/**",
+  "code/renderers/web-components/src/docs/**",
+  "code/renderers/web-components/src/entry-preview-docs*",
+  "code/renderers/web-components/src/entry-preview-argtypes*",
+]
+usefulness = 3
+rationale = "Design-system teams on Lit depend on it; CEM is the ecosystem standard and worth owning (re-scored by Steve, 2026-10-21)."
+reach = 0.01
+reach_rationale = "Web Components share of installs."
+
+[[feature]]
+id = "docgen-angular"
+group = "docgen"
+name = "Angular docgen (angular-cm analyzer, Compodoc)"
+include = [
+  "code/frameworks/angular-vite/src/docgen/**",
+  "code/frameworks/angular-vite/src/compodoc/**",
+  "code/frameworks/angular-vite/src/compodoc-config*",
+  "code/frameworks/angular-vite/src/props-table*",
+  "code/frameworks/angular-vite/src/template-grammar*",
+  "code/frameworks/angular-vite/src/client/docs/**",
+  "code/frameworks/angular-vite/src/client/compodoc*",
+  "code/frameworks/angular/src/client/docs/**",
+  "code/frameworks/angular/src/client/compodoc*",
+  "code/lib/angular-cm/**",
+  "code/lib/angular-compodoc/**",
+  "code/lib/cli-storybook/src/automigrate/fixes/angular-vite-remove-compodoc*",
+  "scripts/combine-compodoc.ts",
+]
+usefulness = 3
+rationale = "Angular users need it; two generations (Compodoc, angular-cm) coexist during the transition."
+reach = 0.03
+reach_rationale = "Angular share of installs, webpack and Vite together."
+issue_labels = ["angular", "docgen"]
+
+[[feature]]
+id = "docgen-harness"
+group = "docgen"
+name = "Docgen harness (cross-framework comparison & perf fixtures)"
+include = ["code/lib/docgen-harness/**"]
+maintainer_only = true
+usefulness = 2
+rationale = "Internal verification tooling; 10k lines of fixtures and perf scaffolding."
+
+[[feature]]
+id = "component-manifests"
+group = "docgen"
+name = "Component manifests (components/docs manifest generation)"
+include = [
+  "code/core/src/core-server/utils/manifests/**",
+  "code/renderers/react/src/componentManifest/**",
+  "code/addons/docs/src/manifest.ts",
+  "code/addons/docs/src/extract-docs-summary*",
+  "code/core/src/core-server/utils/analyze-mdx*",
+  "code/core/src/common/utils/resolve-meta-component*",
+  "code/core/src/common/utils/subcomponents*",
+  "code/core/src/common/utils/select-component-entry*",
+  "code/core/src/common/utils/component-id*",
+  "code/lib/cli-storybook/src/automigrate/fixes/web-components-runtime-manifest*",
+]
+exclude = ["code/renderers/react/src/componentManifest/componentMeta/**", "code/renderers/react/src/componentManifest/componentMetaManagerSingleton*"]
+usefulness = 4
+rationale = "Core technology behind the agent APIs, which are the project's most important bet (re-scored by Steve, 2026-10-21)."
+reach = 0.05
+reach_rationale = "Behind the componentsManifest flag; consumed by agents."
+issue_labels = ["manifest"]
+flags = ["componentsManifest"]
+
+# ---------------------------------------------------------------------------
+# node
+# ---------------------------------------------------------------------------
+
+[[feature]]
+id = "config-and-presets"
+group = "node"
+name = "Config loading, presets system, shared Node utilities, public types"
+include = [
+  "code/core/src/common/**",
+  "code/core/src/core-server/load*",
+  "code/core/src/core-server/presets/**",
+  "code/core/src/core-server/utils/constants.ts",
+  "code/core/src/core-server/utils/metadata*",
+  "code/core/src/core-server/utils/get-builders*",
+  "code/core/src/types/**",
+  "code/core/src/typings.d.ts",
+  "code/core/src/shared/constants/config-folder*",
+  "code/core/src/shared/constants/extensions*",
+  "code/core/src/shared/constants/environments-support*",
+  "code/core/src/shared/utils/paths*",
+  "code/core/src/shared/utils/module*",
+  "code/core/src/shared/utils/get-monorepo-type*",
+  "code/core/src/shared/utils/ecosystem-identifier*",
+  "code/core/src/shared/utils/local-hosts*",
+  "code/core/src/shared/useCopyButton.ts",
+]
+exclude = ["code/core/src/common/js-package-manager/**"]
+usefulness = 4
+rationale = "Every Storybook run starts here; presets are the extension model."
+reach = 1.0
+reach_rationale = "Every run loads config and presets."
+issue_labels = ["configuration", "presets", "typescript", "monorepos"]
+
+[[feature]]
+id = "dev-server"
+group = "node"
+name = "Dev server (polka middleware, statics, host validation, server channel)"
+include = [
+  "code/core/src/core-server/dev-server*",
+  "code/core/src/core-server/build-dev.ts",
+  "code/core/src/core-server/index.ts",
+  "code/core/src/core-server/standalone*",
+  "code/core/src/core-server/typings.d.ts",
+  "code/core/src/core-server/__for-testing__/**",
+  "code/core/src/core-server/server-channel/**",
+  "code/core/src/core-server/utils/server-statics*",
+  "code/core/src/core-server/utils/server-address*",
+  "code/core/src/core-server/utils/server-init*",
+  "code/core/src/core-server/utils/open-browser/**",
+  "code/core/src/core-server/utils/getHostValidationMiddleware*",
+  "code/core/src/core-server/utils/host-validation-warning*",
+  "code/core/src/core-server/utils/getSecurityHeadersMiddleware*",
+  "code/core/src/core-server/utils/getAccessControlMiddleware*",
+  "code/core/src/core-server/utils/get-caching-middleware*",
+  "code/core/src/core-server/utils/get-server-channel*",
+  "code/core/src/core-server/utils/watchConfig*",
+  "code/core/src/core-server/utils/event-senders*",
+  "code/core/src/core-server/utils/output-startup-information*",
+  "code/core/src/core-server/utils/middleware*",
+  "code/core/src/core-server/utils/validate-token*",
+  "code/core/src/core-server/utils/warnWhenUsingArgTypesRegex*",
+  "code/core/src/core-server/utils/strip-comments-and-strings*",
+  "code/core/src/cli/dev.ts",
+  "code/e2e-sandbox/static-dirs.spec.ts",
+]
+usefulness = 4
+rationale = "The `storybook dev` command."
+reach = 1.0
+reach_rationale = "Every `storybook dev`."
+issue_labels = ["security"]
+
+[[feature]]
+id = "static-build"
+group = "node"
+name = "Static build (`storybook build`)"
+include = [
+  "code/core/src/core-server/build-static*",
+  "code/core/src/core-server/utils/copy-all-static-files*",
+  "code/core/src/core-server/utils/output-stats*",
+  "code/core/src/core-server/utils/summarizeStats*",
+  "code/core/src/core-server/utils/build-or-throw*",
+  "code/core/src/cli/build.ts",
+]
+usefulness = 4
+rationale = "Publishing and CI both depend on it."
+reach = 0.8
+reach_rationale = "Most projects build for CI or publishing at least occasionally."
+issue_labels = ["build-storybook"]
+flags = ["developmentModeForBuild"]
+
+[[feature]]
+id = "builder-manager"
+group = "node"
+name = "Manager bundler (esbuild) and globals maps"
+include = [
+  "code/core/src/builder-manager/**",
+  "code/core/src/manager/globals/**",
+  "code/core/src/manager/globals.ts",
+  "code/core/src/manager/globals-runtime.ts",
+  "code/core/src/preview/globals*",
+]
+usefulness = 4
+rationale = "Builds the manager and every addon's manager entry."
+reach = 1.0
+reach_rationale = "Every manager is bundled by it."
+issue_labels = ["builder-manager"]
+
+[[feature]]
+id = "channels-events-errors"
+group = "node"
+name = "Channels, core events and error catalogues"
+include = [
+  "code/core/src/channels/**",
+  "code/core/src/core-events/**",
+  "code/core/src/server-errors.ts",
+  "code/core/src/manager-errors.ts",
+  "code/core/src/storybook-error.ts",
+  "code/core/src/__tests/**",
+]
+usefulness = 4
+rationale = "Manager/preview transport and the structured error system."
+reach = 1.0
+reach_rationale = "Manager/preview transport in every session."
+
+[[feature]]
+id = "logging"
+group = "node"
+name = "Node & client loggers (clack prompts, task output)"
+include = ["code/core/src/node-logger/**", "code/core/src/client-logger/**"]
+usefulness = 3
+rationale = "Infrastructure; the prompt UI layer adds weight beyond plain logging."
+reach = 1.0
+reach_rationale = "Every CLI run."
+
+[[feature]]
+id = "telemetry"
+group = "node"
+name = "Telemetry & project metadata collection"
+include = [
+  "code/core/src/telemetry/**",
+  "code/core/src/core-server/withTelemetry*",
+  "code/core/src/core-server/utils/doTelemetry*",
+  "code/core/src/cli/tools/sdk/command-telemetry*",
+  "code/addons/mcp/src/telemetry.ts",
+  "scripts/event-log-checker.ts",
+  "scripts/event-log-collector.ts",
+]
+exclude = ["code/core/src/telemetry/get-portable-stories-usage.ts", "code/core/src/telemetry/detect-agent.ts"]
+usefulness = 3
+rationale = "No user value but the maintainers' main signal for prioritisation."
+reach = 0.9
+reach_rationale = "Opt-out; most installs keep it on."
+issue_labels = ["telemetry"]
+
+[[feature]]
+id = "package-manager"
+group = "node"
+name = "Package manager abstraction (npm, yarn 1/2, pnpm, bun)"
+include = ["code/core/src/common/js-package-manager/**"]
+usefulness = 3
+rationale = "Needed by init, upgrade, add and automigrations; five proxies to keep in sync."
+reach = 0.6
+reach_rationale = "Exercised by init, upgrade and add; most projects hit one of them each year."
+issue_labels = ["pnpm", "npm", "yarn", "bun", "dependencies"]
+
+[[feature]]
+id = "universal-store"
+group = "node"
+name = "Universal store, status store, test-provider store"
+include = [
+  "code/core/src/shared/universal-store/**",
+  "code/core/src/shared/status-store/**",
+  "code/core/src/shared/test-provider-store/**",
+  "code/core/src/manager/manager-stores*",
+  "code/core/src/manager-api/stores/**",
+  "code/core/src/core-server/stores/**",
+]
+usefulness = 3
+rationale = "Cross-environment state sync used by statuses, testing and checklist."
+reach = 1.0
+reach_rationale = "Statuses and stores load in every manager."
+
+[[feature]]
+id = "open-service"
+group = "node"
+name = "Open-service framework (schema-driven services, sync, query runtime, toolset registry)"
+include = [
+  "code/core/src/shared/open-service/*",
+  "code/core/src/shared/open-service/sync-test/**",
+  "code/core/src/shared/open-service/sync-simulation/**",
+  "code/core/src/core-server/utils/apply-services-preset-once*",
+  "code/.storybook/open-service-debug-service.ts",
+  "code/e2e-internal/open-service-sync.spec.ts",
+]
+usefulness = 4
+rationale = "Foundation of the agent stack: manifests, toolsets, review and change detection are built on it (re-scored by Steve, 2026-10-21)."
+reach = 0.7
+reach_rationale = "Active wherever the docgen server, MCP or review run; most React/Vue installs."
+
+[[feature]]
+id = "module-graph-service"
+group = "node"
+name = "Module graph service"
+include = ["code/core/src/shared/open-service/services/module-graph/**", "code/core/src/shared/open-service/services/module-graph-index/**"]
+usefulness = 2
+rationale = "Feeds change detection and story lookup; still experimental, no direct user surface (confirmed by Steve, 2026-10-21)."
+reach = 0.3
+reach_rationale = "Runs alongside the docgen server for file tracking; no direct UI."
+
+[[feature]]
+id = "code-snippets-service"
+group = "node"
+name = "Story docs / code examples service (Code panel)"
+include = [
+  "code/core/src/shared/open-service/services/story-docs/**",
+  "code/core/src/shared/open-service/services/extraction-service.server.ts",
+  "code/renderers/react/src/docgen/build-story-docs*",
+  "code/renderers/react/src/docgen/story-docs-preset*",
+  "code/core/src/preview-api/modules/preview-web/emitTransformCode*",
+  "code/addons/docs/src/blocks/blocks/use-service-story-docs*",
+  "code/addons/docs/src/blocks/blocks/useTransformCode*",
+]
+usefulness = 3
+rationale = "Part of the agent-facing substrate: code examples for docs and agents (re-scored by Steve, 2026-10-21)."
+reach = 0.05
+reach_rationale = "Behind experimentalCodeExamples."
+flags = ["experimentalCodeExamples"]
+
+# ---------------------------------------------------------------------------
+# builders & frameworks
+# ---------------------------------------------------------------------------
+
+[[feature]]
+id = "builder-vite"
+group = "builders"
+name = "Vite builder"
+include = ["code/builders/builder-vite/**"]
+exclude = [
+  "code/builders/builder-vite/src/plugins/vite-mock/**",
+  "code/builders/builder-vite/src/plugins/vite-inject-mocker/**",
+  "code/builders/builder-vite/src/change-detection-adapter/**",
+]
+usefulness = 4
+rationale = "71M downloads/month; the default builder."
+issue_labels = ["builder-vite", "vite"]
+npm = ["@storybook/builder-vite"]
+flags = ["experimentalChunkedPreviewRuntime"]
+
+[[feature]]
+id = "builder-webpack5"
+group = "builders"
+name = "Webpack 5 builder + core-webpack"
+include = ["code/builders/builder-webpack5/**", "code/lib/core-webpack/**"]
+usefulness = 3
+rationale = "23M downloads/month, declining; still the only path for Next.js-webpack, Angular-webpack and Ember."
+issue_labels = ["builder-webpack5", "webpack", "configuration babel / webpack"]
+npm = ["@storybook/builder-webpack5", "@storybook/core-webpack"]
+
+[[feature]]
+id = "framework-react-vite"
+group = "builders"
+name = "React + Vite framework"
+include = ["code/frameworks/react-vite/**"]
+exclude = ["code/frameworks/react-vite/src/plugins/**"]
+usefulness = 4
+rationale = "The default React path; 62M downloads/month."
+npm = ["@storybook/react-vite"]
+
+[[feature]]
+id = "framework-react-webpack5"
+group = "builders"
+name = "React + webpack 5 framework (+ preset-react-webpack)"
+include = ["code/frameworks/react-webpack5/**", "code/presets/react-webpack/**"]
+usefulness = 2
+rationale = "~10M downloads/month but a legacy path; SWC/Babel compiler addons live outside the repo."
+issue_labels = ["cra"]
+npm = ["@storybook/react-webpack5", "@storybook/preset-react-webpack"]
+
+[[feature]]
+id = "framework-nextjs"
+group = "builders"
+name = "Next.js (webpack) framework"
+include = ["code/frameworks/nextjs/**", "code/lib/cli-storybook/src/automigrate/fixes/nextjs-to-nextjs-vite*"]
+exclude = ["code/frameworks/nextjs/src/export-mocks/**", "code/frameworks/nextjs/src/portable-stories*"]
+usefulness = 3
+rationale = "10M downloads/month; heaviest dependency list in the repo (38 runtime deps, Babel + SWC)."
+issue_labels = ["nextjs"]
+npm = ["@storybook/nextjs"]
+
+[[feature]]
+id = "framework-nextjs-vite"
+group = "builders"
+name = "Next.js + Vite framework (+ vite-plugin-storybook-nextjs)"
+include = ["code/frameworks/nextjs-vite/**", "code/lib/vite-plugin-storybook-nextjs/**", "code/lib/create-storybook/src/generators/NEXTJS/**"]
+usefulness = 3
+rationale = "12M downloads/month and growing; the recommended Next.js path."
+issue_labels = ["nextjs"]
+npm = ["@storybook/nextjs-vite", "vite-plugin-storybook-nextjs"]
+
+[[feature]]
+id = "framework-vue3-vite"
+group = "builders"
+name = "Vue 3 + Vite framework"
+include = ["code/frameworks/vue3-vite/**", "code/lib/create-storybook/src/generators/VUE3/**", "code/lib/create-storybook/src/generators/NUXT/**"]
+exclude = ["code/frameworks/vue3-vite/src/plugins/**"]
+usefulness = 3
+rationale = "4.3M downloads/month."
+npm = ["@storybook/vue3-vite"]
+
+[[feature]]
+id = "framework-angular"
+group = "builders"
+name = "Angular (webpack) framework"
+include = [
+  "code/frameworks/angular/**",
+  "code/core/src/cli/angular/**",
+  "code/lib/create-storybook/src/generators/ANGULAR/**",
+  "code/lib/cli-storybook/src/automigrate/fixes/angular-to-angular-vite*",
+  "code/lib/cli-storybook/src/automigrate/fixes/angular-workspace*",
+  "code/addons/docs/src/angular/**",
+]
+exclude = ["code/frameworks/angular/src/client/docs/**", "code/frameworks/angular/src/client/compodoc*", "code/frameworks/angular/src/client/portable-stories*"]
+usefulness = 3
+rationale = "2.2M downloads/month, enterprise-heavy; being superseded by angular-vite."
+issue_labels = ["angular"]
+npm = ["@storybook/angular"]
+
+[[feature]]
+id = "framework-angular-vite"
+group = "builders"
+name = "Angular + Vite framework"
+include = ["code/frameworks/angular-vite/**", "code/addons/vitest/src/angular-vitest-postinstall*"]
+exclude = [
+  "code/frameworks/angular-vite/src/docgen/**",
+  "code/frameworks/angular-vite/src/compodoc/**",
+  "code/frameworks/angular-vite/src/compodoc-config*",
+  "code/frameworks/angular-vite/src/props-table*",
+  "code/frameworks/angular-vite/src/template-grammar*",
+  "code/frameworks/angular-vite/src/client/docs/**",
+  "code/frameworks/angular-vite/src/client/compodoc*",
+  "code/frameworks/angular-vite/src/client/portable-stories*",
+]
+usefulness = 3
+rationale = "Strategic replacement for the webpack Angular path; only 490k downloads so far."
+issue_labels = ["angular"]
+npm = ["@storybook/angular-vite"]
+flags = ["angularFilterNonInputControls"]
+
+[[feature]]
+id = "framework-svelte-vite"
+group = "builders"
+name = "Svelte + Vite framework"
+include = ["code/frameworks/svelte-vite/**", "code/lib/create-storybook/src/generators/SVELTE/**"]
+exclude = ["code/frameworks/svelte-vite/src/plugins/**"]
+usefulness = 3
+rationale = "1.5M downloads/month."
+npm = ["@storybook/svelte-vite"]
+
+[[feature]]
+id = "framework-sveltekit"
+group = "builders"
+name = "SvelteKit framework"
+include = ["code/frameworks/sveltekit/**", "code/lib/create-storybook/src/generators/SVELTEKIT/**"]
+usefulness = 2
+rationale = "1.2M downloads/month; thin layer over svelte-vite plus $app mocks."
+issue_labels = ["sveltekit"]
+npm = ["@storybook/sveltekit"]
+
+[[feature]]
+id = "framework-web-components-vite"
+group = "builders"
+name = "Web Components + Vite framework"
+include = ["code/frameworks/web-components-vite/**", "code/lib/create-storybook/src/generators/WEB-COMPONENTS/**", "code/addons/docs/src/web-components/**", "code/e2e-sandbox/framework-web-components.spec.ts"]
+usefulness = 2
+rationale = "Thin; 870k downloads/month."
+npm = ["@storybook/web-components-vite"]
+
+[[feature]]
+id = "framework-html-vite"
+group = "builders"
+name = "HTML + Vite framework"
+include = ["code/frameworks/html-vite/**", "code/lib/create-storybook/src/generators/HTML/**"]
+usefulness = 2
+rationale = "Thin; 520k downloads/month."
+npm = ["@storybook/html-vite"]
+
+[[feature]]
+id = "framework-preact-vite"
+group = "builders"
+name = "Preact + Vite framework"
+include = ["code/frameworks/preact-vite/**", "code/lib/create-storybook/src/generators/PREACT/**"]
+usefulness = 1
+rationale = "Thin; 220k downloads/month."
+npm = ["@storybook/preact-vite"]
+
+[[feature]]
+id = "framework-ember"
+group = "builders"
+name = "Ember framework"
+include = ["code/frameworks/ember/**", "code/lib/create-storybook/src/generators/EMBER/**", "code/addons/docs/src/ember/**", "test-storybooks/ember-cli/**"]
+usefulness = 1
+rationale = "24k downloads/month; webpack-only; no docgen."
+issue_labels = ["ember"]
+npm = ["@storybook/ember"]
+
+[[feature]]
+id = "framework-react-native-web-vite"
+group = "builders"
+name = "React Native Web + Vite framework (+ RN init generators)"
+include = [
+  "code/frameworks/react-native-web-vite/**",
+  "code/lib/create-storybook/src/generators/REACT_NATIVE*/**",
+  "code/lib/cli-storybook/src/automigrate/fixes/rn-ondevice-addons-to-device-addons*",
+]
+usefulness = 2
+rationale = "1.4M downloads/month; the init generator for on-device RN is the bulk of the code."
+issue_labels = ["react-native", "react-native-web"]
+npm = ["@storybook/react-native-web-vite"]
+
+[[feature]]
+id = "framework-tanstack-react"
+group = "builders"
+name = "TanStack Start/Router framework"
+include = ["code/frameworks/tanstack-react/**", "code/lib/create-storybook/src/generators/TANSTACK/**", "code/lib/cli-storybook/src/automigrate/fixes/react-vite-to-tanstack-react*"]
+usefulness = 3
+rationale = "Strategic bet on a rising React meta-framework; the fix churn is the price of tracking a pre-1.0 upstream (re-scored by Steve, 2026-10-21)."
+issue_labels = ["tanstack"]
+npm = ["@storybook/tanstack-react"]
+
+# ---------------------------------------------------------------------------
+# manager
+# ---------------------------------------------------------------------------
+
+[[feature]]
+id = "manager-shell"
+group = "manager"
+name = "Manager shell (layout, panels, mobile, notifications, shortcuts, settings, manager-api core, router)"
+include = [
+  "code/core/src/manager/*",
+  "code/core/src/manager/components/layout/**",
+  "code/core/src/manager/components/container/**",
+  "code/core/src/manager/components/mobile/**",
+  "code/core/src/manager/components/panel/**",
+  "code/core/src/manager/components/notifications/**",
+  "code/core/src/manager/components/error-boundary/**",
+  "code/core/src/manager/components/Focus/**",
+  "code/core/src/manager/components/Optional/**",
+  "code/core/src/manager/components/Shortcut.tsx",
+  "code/core/src/manager/components/TextFlip*",
+  "code/core/src/manager/container/**",
+  "code/core/src/manager/hooks/**",
+  "code/core/src/manager/utils/**",
+  "code/core/src/manager/__tests__/**",
+  "code/core/src/manager/settings/index.tsx",
+  "code/core/src/manager/settings/About*",
+  "code/core/src/manager/settings/Shortcuts*",
+  "code/core/src/manager/settings/shortcuts*",
+  "code/core/src/manager/settings/defaultShortcuts*",
+  "code/core/src/manager/settings/SettingsFooter*",
+  "code/core/src/manager/settings/GuidePage*",
+  "code/core/src/manager/settings/*.stories.tsx",
+  "code/core/src/manager-api/**",
+  "code/core/src/router/**",
+  "code/e2e-sandbox/manager.spec.ts",
+  "code/e2e-internal/internal-storybook.smoke.spec.ts",
+]
+exclude = [
+  "code/core/src/manager/globals*",
+  "code/core/src/manager/manager-stores*",
+  "code/core/src/manager-api/modules/stories.ts",
+  "code/core/src/manager-api/modules/statuses.ts",
+  "code/core/src/manager-api/modules/refs.ts",
+  "code/core/src/manager-api/modules/versions.ts",
+  "code/core/src/manager-api/modules/whatsnew.tsx",
+  "code/core/src/manager-api/modules/tags.ts",
+  "code/core/src/manager-api/modules/globals.ts",
+  "code/core/src/manager-api/modules/open-in-editor.tsx",
+  "code/core/src/manager-api/stores/**",
+  "code/core/src/manager-api/tests/refs*",
+  "code/core/src/manager-api/tests/versions*",
+  "code/core/src/manager-api/tests/whatsnew*",
+  "code/core/src/manager-api/tests/globals*",
+  "code/core/src/manager-api/tests/stories*",
+]
+usefulness = 4
+rationale = "The application frame every addon renders into."
+reach = 1.0
+reach_rationale = "Every session."
+issue_labels = ["ui", "ui: addon panel"]
+
+[[feature]]
+id = "canvas"
+group = "manager"
+name = "Canvas (iframe host, toolbar, zoom, remount, share, addon tools)"
+include = ["code/core/src/manager/components/preview/**"]
+exclude = [
+  "code/core/src/manager/components/preview/tools/open-in-editor*",
+  "code/core/src/manager/components/preview/Viewport*",
+  "code/core/src/manager/components/preview/NumericInput*",
+  "code/core/src/manager/components/preview/SizeInput*",
+]
+usefulness = 4
+rationale = "Where the story is shown."
+reach = 1.0
+reach_rationale = "Every session."
+issue_labels = ["canvas"]
+
+[[feature]]
+id = "open-in-editor"
+group = "manager"
+name = "Open in editor"
+include = ["code/core/src/manager-api/modules/open-in-editor*", "code/core/src/manager/components/preview/tools/open-in-editor*"]
+usefulness = 2
+rationale = "Convenience; depends on launch-editor."
+reach = 0.3
+reach_rationale = "Dev-mode convenience; needs a detectable editor and a click."
+
+[[feature]]
+id = "sidebar-tree"
+group = "manager"
+name = "Sidebar tree (explorer, rows, sticky headers, statuses, keyboard navigation)"
+include = [
+  "code/core/src/manager/components/sidebar/**",
+  "code/core/src/manager-api/modules/stories.ts",
+  "code/core/src/manager-api/modules/statuses.ts",
+  "code/core/src/manager-api/tests/stories*",
+  "code/e2e-internal/sidebar-scrolling.spec.ts",
+  "code/e2e-internal/navigation.spec.ts",
+]
+exclude = [
+  "code/core/src/manager/components/sidebar/Search*",
+  "code/core/src/manager/components/sidebar/ContextMenu*",
+  "code/core/src/manager/components/sidebar/Filter*",
+  "code/core/src/manager/components/sidebar/useFilterData*",
+  "code/core/src/manager/components/sidebar/Ref*",
+  "code/core/src/manager/components/sidebar/ChecklistWidget*",
+  "code/core/src/manager/components/sidebar/useChecklist*",
+  "code/core/src/manager/components/sidebar/TestingWidget*",
+  "code/core/src/manager/components/sidebar/ReviewWidget*",
+  "code/core/src/manager/components/sidebar/ShowChangesButton*",
+]
+usefulness = 4
+rationale = "Primary navigation; the largest single UI surface (excluding the 27k-line mock fixture)."
+reach = 1.0
+reach_rationale = "Every session."
+issue_labels = ["ui"]
+
+[[feature]]
+id = "sidebar-search"
+group = "manager"
+name = "Sidebar search (fuse.js, downshift)"
+include = ["code/core/src/manager/components/sidebar/Search*"]
+usefulness = 3
+rationale = "Daily-use navigation aid; two UI libraries for one widget."
+reach = 0.7
+reach_rationale = "Most users search at least once per session."
+issue_labels = ["ui: search"]
+flags = ["experimentalSearchDocsHeadings"]
+
+[[feature]]
+id = "sidebar-context-menu"
+group = "manager"
+name = "Sidebar context menu"
+include = ["code/core/src/manager/components/sidebar/ContextMenu*"]
+usefulness = 2
+rationale = "Hosts per-story actions (tests, review); modest standalone value."
+reach = 0.3
+reach_rationale = "Used for per-story test and review actions by a minority."
+
+[[feature]]
+id = "tags-filtering"
+group = "manager"
+name = "Tags and sidebar filtering"
+include = [
+  "code/core/src/manager/components/sidebar/Filter*",
+  "code/core/src/manager/components/sidebar/useFilterData*",
+  "code/core/src/manager-api/modules/tags.ts",
+  "code/core/src/shared/constants/tags.ts",
+  "code/lib/cli-storybook/src/automigrate/fixes/tag-filter-api*",
+  "code/lib/cli-storybook/src/automigrate/fixes/sidebar-filters*",
+  "code/e2e-sandbox/tags.spec.ts",
+]
+usefulness = 3
+rationale = "Tags drive autodocs, test selection and visibility."
+reach = 0.4
+reach_rationale = "Tags are universal, the filter panel is new and used by a minority."
+issue_labels = ["tags"]
+
+[[feature]]
+id = "composition"
+group = "manager"
+name = "Storybook composition (refs)"
+include = [
+  "code/core/src/manager-api/modules/refs.ts",
+  "code/core/src/manager-api/tests/refs*",
+  "code/core/src/manager/components/sidebar/Ref*",
+  "code/core/src/core-server/utils/get-refs-from-config*",
+  "code/core/src/common/utils/get-storybook-refs*",
+]
+usefulness = 3
+rationale = "Key for multi-repo design systems; 28 open issues."
+reach = 0.1
+reach_rationale = "Refs are configured by larger organisations only."
+issue_labels = ["composition"]
+
+[[feature]]
+id = "ui-components"
+group = "manager"
+name = "Shared UI component library (storybook/internal/components)"
+include = ["code/core/src/components/**"]
+usefulness = 4
+rationale = "Used by the manager and every addon panel; react-aria migration doubles some primitives."
+reach = 1.0
+reach_rationale = "Every panel renders with it."
+issue_labels = ["components"]
+
+[[feature]]
+id = "manager-theming"
+group = "manager"
+name = "Manager theming (Emotion)"
+include = ["code/core/src/theming/**"]
+usefulness = 3
+rationale = "Brand customisation is common in design-system teams; Emotion is the largest manager runtime dependency."
+reach = 0.5
+reach_rationale = "Dark mode plus custom brand themes."
+issue_labels = ["theming"]
+
+[[feature]]
+id = "onboarding"
+group = "manager"
+name = "Onboarding (tour guide, confetti, survey)"
+include = [
+  "code/core/src/manager/components/TourGuide/**",
+  "code/core/src/manager/components/Particles/**",
+  "code/addons/onboarding/**",
+  "code/core/src/core-server/build-dev.onboarding.test.ts",
+  "code/e2e-sandbox/addon-onboarding.spec.ts",
+]
+usefulness = 2
+rationale = "First-run only; pulls react-joyride and a confetti library into the manager."
+issue_labels = ["addon: onboarding"]
+npm = ["@storybook/addon-onboarding"]
+
+[[feature]]
+id = "checklist"
+group = "manager"
+name = "Setup checklist (sidebar widget + settings page)"
+include = [
+  "code/core/src/shared/checklist-store/**",
+  "code/core/src/core-server/utils/checklist*",
+  "code/core/src/manager/components/sidebar/ChecklistWidget*",
+  "code/core/src/manager/components/sidebar/useChecklist*",
+  "code/core/src/manager/settings/Checklist/**",
+  "code/core/src/shared/utils/ai-checklist-flags*",
+]
+usefulness = 1
+rationale = "Onboarding nag with short-lived value per project; its fix rate costs more than it converts (re-scored by Steve, 2026-10-21)."
+reach = 0.5
+reach_rationale = "Shown to every 10.x install; acted on by some."
+
+[[feature]]
+id = "update-notifications"
+group = "manager"
+name = "Version check, What's New, upgrade banner"
+include = [
+  "code/core/src/core-server/utils/update-check*",
+  "code/core/src/core-server/utils/versionStatus*",
+  "code/core/src/core-server/utils/whats-new*",
+  "code/core/src/manager-api/modules/versions.ts",
+  "code/core/src/manager-api/modules/whatsnew.tsx",
+  "code/core/src/manager-api/tests/versions*",
+  "code/core/src/manager-api/tests/whatsnew*",
+  "code/core/src/manager/settings/whats_new*",
+  "code/core/src/manager/components/upgrade/**",
+]
+usefulness = 2
+rationale = "Marketing/upgrade nudges; low cost."
+reach = 0.9
+reach_rationale = "Version banner in every dev session that is behind."
+
+[[feature]]
+id = "change-detection"
+group = "manager"
+name = "Change detection (git diff → changed stories)"
+include = [
+  "code/core/src/core-server/change-detection/**",
+  "code/core/src/manager/components/sidebar/ShowChangesButton*",
+  "code/builders/builder-vite/src/change-detection-adapter/**",
+  "code/core/src/shared/open-service/toolsets/stories/changed*",
+  "code/lib/cli-storybook/src/automigrate/fixes/remove-change-detection-flag*",
+  "code/e2e-sandbox/change-detection.spec.ts",
+]
+usefulness = 3
+rationale = "Foundation for agent and CI workflows that only touch what changed; on by default where supported (re-scored by Steve, 2026-10-21)."
+reach = 0.1
+reach_rationale = "Needs git plus the docgen server; shipped this year."
+
+# ---------------------------------------------------------------------------
+# addons
+# ---------------------------------------------------------------------------
+
+[[feature]]
+id = "actions"
+group = "addons"
+name = "Actions"
+include = ["code/core/src/actions/**", "code/e2e-sandbox/addon-actions.spec.ts"]
+usefulness = 3
+rationale = "Default event logging; react-inspector dependency."
+reach = 0.9
+reach_rationale = "fn() spies are in every template; most stories log actions."
+issue_labels = ["addon: actions"]
+
+[[feature]]
+id = "backgrounds"
+group = "addons"
+name = "Backgrounds"
+include = ["code/core/src/backgrounds/**", "code/e2e-sandbox/addon-backgrounds.spec.ts"]
+usefulness = 3
+rationale = "Small and widely used."
+reach = 0.6
+reach_rationale = "Common for checking components on dark surfaces."
+issue_labels = ["addon: backgrounds"]
+
+[[feature]]
+id = "controls"
+group = "addons"
+name = "Controls (panel + ArgsTable/control widgets shared with docs)"
+include = ["code/core/src/controls/**", "code/addons/docs/src/blocks/controls/**", "code/e2e-sandbox/addon-controls.spec.ts", "code/lib/cli-storybook/src/automigrate/fixes/argtypes-default-value*"]
+exclude = ["code/core/src/controls/components/SaveStory*"]
+usefulness = 4
+rationale = "The interactive heart of Storybook; 84 open issues."
+reach = 0.95
+reach_rationale = "The panel nearly everyone uses."
+issue_labels = ["addon: controls", "argtypes", "block: argstable"]
+
+[[feature]]
+id = "save-story"
+group = "addons"
+name = "Save story from controls"
+include = ["code/core/src/core-server/utils/save-story/**", "code/core/src/controls/components/SaveStory*"]
+usefulness = 2
+rationale = "Writes CSF back to disk; handy but not core to the loop."
+reach = 0.1
+reach_rationale = "Occasional use when iterating on args."
+
+[[feature]]
+id = "highlight"
+group = "addons"
+name = "Highlight"
+include = ["code/core/src/highlight/**"]
+usefulness = 2
+rationale = "Used by a11y and measure; little direct user value."
+reach = 0.2
+reach_rationale = "Mostly indirect via a11y and measure; little direct use."
+issue_labels = ["addon: highlight"]
+
+[[feature]]
+id = "measure"
+group = "addons"
+name = "Measure"
+include = ["code/core/src/measure/**"]
+usefulness = 1
+rationale = "Browser devtools do this better; 2 open issues."
+reach = 0.05
+reach_rationale = "Rarely opened; devtools do this better."
+issue_labels = ["addon: measure"]
+
+[[feature]]
+id = "outline"
+group = "addons"
+name = "Outline"
+include = ["code/core/src/outline/**"]
+usefulness = 1
+rationale = "Debug CSS outlines; trivially replaceable."
+reach = 0.05
+reach_rationale = "Rarely opened."
+issue_labels = ["addon: outline"]
+
+[[feature]]
+id = "toolbar-globals"
+group = "addons"
+name = "Toolbars & globals"
+include = ["code/core/src/toolbar/**", "code/core/src/manager-api/modules/globals.ts", "code/core/src/manager-api/tests/globals*", "code/e2e-sandbox/addon-toolbars.spec.ts"]
+usefulness = 3
+rationale = "Theme/locale switching idiom for most teams."
+reach = 0.4
+reach_rationale = "Theme and locale switchers in design-system Storybooks."
+issue_labels = ["addon: toolbars"]
+
+[[feature]]
+id = "viewport"
+group = "addons"
+name = "Viewport"
+include = [
+  "code/core/src/viewport/**",
+  "code/core/src/manager/components/preview/Viewport*",
+  "code/core/src/manager/components/preview/NumericInput*",
+  "code/core/src/manager/components/preview/SizeInput*",
+  "code/e2e-sandbox/addon-viewport.spec.ts",
+]
+usefulness = 3
+rationale = "Responsive checks are a daily task."
+reach = 0.7
+reach_rationale = "Responsive checks are a daily task for most."
+issue_labels = ["addon: viewport"]
+
+[[feature]]
+id = "docs-blocks"
+group = "addons"
+name = "Docs: autodocs, doc blocks, DocsRenderer"
+include = [
+  "code/addons/docs/**",
+  "code/core/src/preview-api/modules/preview-web/docs-context/**",
+  "code/e2e-sandbox/addon-docs.spec.ts",
+  "code/e2e-internal/story-docs.spec.ts",
+  "code/lib/cli-storybook/src/automigrate/fixes/component-subtitle*",
+]
+exclude = [
+  "code/addons/docs/src/blocks/controls/**",
+  "code/addons/docs/src/manifest.ts",
+  "code/addons/docs/src/extract-docs-summary*",
+  "code/addons/docs/src/mdx-*",
+  "code/addons/docs/src/compiler/**",
+  "code/addons/docs/src/mdx-service/**",
+  "code/addons/docs/src/csf-plugin/**",
+  "code/addons/docs/src/angular/**",
+  "code/addons/docs/src/ember/**",
+  "code/addons/docs/src/web-components/**",
+  "code/addons/docs/src/blocks/blocks/use-service-story-docs*",
+  "code/addons/docs/src/blocks/blocks/useTransformCode*",
+  "code/addons/docs/template/**",
+]
+usefulness = 4
+rationale = "75M downloads/month; 175 open issues, the most of any label."
+issue_labels = ["addon: docs", "block: source", "block: other", "block: description", "documentation"]
+npm = ["@storybook/addon-docs"]
+
+[[feature]]
+id = "mdx"
+group = "addons"
+name = "MDX compilation & CSF plugin"
+include = [
+  "code/addons/docs/src/mdx-*",
+  "code/addons/docs/src/compiler/**",
+  "code/addons/docs/src/mdx-service/**",
+  "code/addons/docs/src/csf-plugin/**",
+  "code/addons/docs/template/**",
+]
+usefulness = 3
+rationale = "Hand-written docs pages; 41 open mdx issues."
+reach = 0.4
+reach_rationale = "Hand-written MDX pages exist in a large minority of projects."
+issue_labels = ["mdx"]
+
+[[feature]]
+id = "a11y"
+group = "addons"
+name = "Accessibility addon (axe-core, vision simulator)"
+include = ["code/addons/a11y/**", "code/core/src/cli/skills/addon-a11y.ts", "code/e2e-sandbox/addon-a11y.spec.ts"]
+usefulness = 3
+rationale = "49M downloads/month; integrated with the test widget."
+issue_labels = ["addon: a11y", "accessibility"]
+npm = ["@storybook/addon-a11y"]
+
+[[feature]]
+id = "links"
+group = "addons"
+name = "Links addon"
+include = ["code/addons/links/**"]
+usefulness = 2
+rationale = "28M downloads/month is template inertia; tiny code."
+issue_labels = ["addon: links"]
+npm = ["@storybook/addon-links"]
+
+[[feature]]
+id = "themes"
+group = "addons"
+name = "Themes addon (component theme switching decorators)"
+include = ["code/addons/themes/**"]
+usefulness = 2
+rationale = "16M downloads/month; small decorators."
+issue_labels = ["addon: themes"]
+npm = ["@storybook/addon-themes"]
+
+[[feature]]
+id = "pseudo-states"
+group = "addons"
+name = "Pseudo states addon"
+include = ["code/addons/pseudo-states/**", "code/e2e-internal/addon-pseudo-states.spec.ts"]
+usefulness = 2
+rationale = "4.4M downloads/month; CSS rewriting is brittle across frameworks."
+issue_labels = ["addon: pseudo-states"]
+npm = ["storybook-addon-pseudo-states"]
+
+# ---------------------------------------------------------------------------
+# testing
+# ---------------------------------------------------------------------------
+
+[[feature]]
+id = "interaction-testing"
+group = "testing"
+name = "Interaction testing (storybook/test, instrumenter, interactions panel)"
+include = [
+  "code/core/src/instrumenter/**",
+  "code/core/src/component-testing/**",
+  "code/core/src/test/**",
+  "code/core/src/shared/utils/toHaveLiveRegion*",
+  "code/core/src/shared/utils/categorize-render-errors*",
+  "code/e2e-sandbox/component-tests.spec.ts",
+]
+usefulness = 4
+rationale = "play functions are the testing story; depends on Testing Library and Vitest expect/spy."
+reach = 0.5
+reach_rationale = "play functions are in roughly half of projects."
+issue_labels = ["addon: interactions", "test utilities"]
+
+[[feature]]
+id = "vitest-addon"
+group = "testing"
+name = "Vitest addon (browser-mode runner, testing widget, coverage)"
+include = [
+  "code/addons/vitest/**",
+  "code/core/src/csf-tools/vitest-plugin/**",
+  "code/core/src/core-server/utils/wait-for-idle-vitest*",
+  "code/core/src/cli/AddonVitestService*",
+  "code/core/src/cli/skills/addon-vitest.ts",
+  "code/core/src/manager/components/sidebar/TestingWidget*",
+  "code/core/src/shared/utils/analyze-test-results*",
+  "code/core/src/shared/utils/to-story-test-result*",
+  "code/core/src/shared/utils/test-result-types*",
+  "code/lib/cli-storybook/src/automigrate/fixes/vitest-setup-file*",
+  "code/vitest.config.storybook.ts",
+  "code/.storybook/vitest.preview.ts",
+]
+exclude = ["code/addons/vitest/src/node/toolset/**", "code/addons/vitest/src/angular-vitest-postinstall*"]
+usefulness = 4
+rationale = "22M downloads/month; the strategic replacement for test-runner."
+issue_labels = ["addon: vitest", "addon: coverage", "test-runner"]
+npm = ["@storybook/addon-vitest"]
+
+[[feature]]
+id = "ghost-stories"
+group = "testing"
+name = "Ghost stories (auto-generated stories for untested components)"
+include = ["code/core/src/core-server/utils/ghost-stories/**", "code/core/src/core-server/utils/get-dummy-args-from-argtypes*"]
+usefulness = 2
+rationale = "Experimental; surfaces coverage gaps but generates synthetic args."
+reach = 0.05
+reach_rationale = "Experimental."
+
+# ---------------------------------------------------------------------------
+# ai
+# ---------------------------------------------------------------------------
+
+[[feature]]
+id = "mcp"
+group = "ai"
+name = "MCP server (addon-mcp + @storybook/mcp)"
+include = ["code/addons/mcp/**", "code/lib/mcp/**", "code/e2e-sandbox/addon-mcp.spec.ts", "test-storybooks/mcp/**"]
+exclude = ["code/addons/mcp/src/telemetry.ts"]
+usefulness = 4
+rationale = "The front door of the agent APIs; mission-critical alongside manifests and skills (re-scored by Steve, 2026-10-21)."
+issue_labels = ["MCP", "mcp", "agentic-workflows"]
+npm = ["@storybook/addon-mcp", "@storybook/mcp"]
+
+[[feature]]
+id = "toolsets"
+group = "ai"
+name = "Agent toolsets (docs access, stories, test)"
+include = ["code/core/src/shared/open-service/toolsets/**", "code/addons/vitest/src/node/toolset/**"]
+exclude = ["code/core/src/shared/open-service/toolsets/review/**", "code/core/src/shared/open-service/toolsets/stories/changed*"]
+usefulness = 4
+rationale = "The capabilities the agent APIs expose; mission-critical (re-scored by Steve, 2026-10-21)."
+reach = 0.1
+reach_rationale = "Same audience as MCP."
+
+[[feature]]
+id = "tools-cli"
+group = "ai"
+name = "`storybook tools` CLI, SDK, attach/child-host runtime, instance registry"
+include = [
+  "code/core/src/cli/tools/**",
+  "code/core/src/core-server/utils/runtime-instance-registry*",
+  "code/core/src/shared/constants/agent-provenance*",
+  "code/core/src/shared/utils/agent-environment*",
+  "code/core/src/telemetry/detect-agent*",
+  "code/e2e-internal/tools-attach.spec.ts",
+]
+exclude = ["code/core/src/cli/tools/sdk/command-telemetry*"]
+usefulness = 4
+rationale = "The second agent transport, as critical as MCP (re-scored by Steve, 2026-10-21)."
+reach = 0.05
+reach_rationale = "Agents that use the CLI rather than MCP."
+
+[[feature]]
+id = "agent-skills"
+group = "ai"
+name = "Agent skills, instructions, Claude/Codex plugins"
+include = [
+  "code/core/src/cli/skills/**",
+  "code/core/src/cli/installSkills*",
+  "code/core/src/cli/agentInstructions*",
+  "code/core/src/shared/utils/ai-prompts*",
+  "code/lib/claude-plugin/**",
+  "code/lib/codex-plugin/**",
+  "code/lib/cli-storybook/src/automigrate/fixes/skills*",
+]
+exclude = ["code/core/src/cli/skills/addon-a11y.ts", "code/core/src/cli/skills/addon-vitest.ts"]
+usefulness = 4
+rationale = "Mission-critical: the instructions that make the agent APIs usable; as central as manifests (re-scored by Steve, 2026-10-21)."
+reach = 0.1
+reach_rationale = "Projects that install the skills or plugins."
+issue_labels = ["agent"]
+
+[[feature]]
+id = "review"
+group = "ai"
+name = "Agentic review mode"
+include = [
+  "code/core/src/shared/open-service/services/review/**",
+  "code/core/src/shared/open-service/toolsets/review/**",
+  "code/core/src/manager/components/review/**",
+  "code/core/src/manager/components/sidebar/ReviewWidget*",
+  "code/core/src/shared/review/**",
+  "code/lib/cli-storybook/src/automigrate/fixes/remove-experimental-review*",
+  "code/addons/review/**",
+  "scripts/display-review.ts",
+]
+usefulness = 2
+rationale = "Experimental workflow that has not yet proven demand; 5 issues is little feedback for 4.5k lines (confirmed by Steve, 2026-10-21)."
+reach = 0.02
+reach_rationale = "Experimental review mode; few users."
+issue_labels = ["ui: review"]
+
+[[feature]]
+id = "agent-eval"
+group = "ai"
+name = "AI evaluation harnesses (agent-eval + scripts/eval)"
+include = ["agent-eval/**", "scripts/eval/**"]
+maintainer_only = true
+usefulness = 2
+rationale = "Internal quality gate for AI features: benchmarks agents setting up Storybook and writing stories; ~36k lines outside code/."
+
+# ---------------------------------------------------------------------------
+# cli
+# ---------------------------------------------------------------------------
+
+[[feature]]
+id = "cli-core"
+group = "cli"
+name = "CLI entry points, dispatcher, project detection, global settings"
+include = [
+  "code/core/src/bin/**",
+  "code/core/src/cli/*",
+  "code/lib/cli-storybook/src/bin/**",
+  "code/lib/cli-storybook/src/index.ts",
+  "code/lib/cli-storybook/src/util*",
+  "code/lib/cli-storybook/src/warn*",
+  "code/lib/cli-storybook/test/**",
+  "code/lib/cli-storybook/src/link.ts",
+  "code/lib/cli-storybook/src/*.d.ts",
+  "code/lib/cli-storybook/*",
+  "code/lib/cli-sb/**",
+]
+exclude = [
+  "code/core/src/cli/dev.ts",
+  "code/core/src/cli/build.ts",
+  "code/core/src/cli/buildIndex.ts",
+  "code/core/src/cli/eslintPlugin*",
+  "code/core/src/cli/AddonVitestService*",
+  "code/core/src/cli/installSkills*",
+  "code/core/src/cli/agentInstructions*",
+]
+usefulness = 4
+rationale = "Everything reachable from `npx storybook`."
+reach = 1.0
+reach_rationale = "Every install runs the CLI; @storybook/cli downloads measure the legacy package, not usage."
+issue_labels = ["cli"]
+npm = ["@storybook/cli", "sb"]
+
+[[feature]]
+id = "init"
+group = "cli"
+name = "`storybook init` / create-storybook (generators, prompts, scaffolding)"
+include = ["code/lib/create-storybook/**"]
+exclude = [
+  "code/lib/create-storybook/src/generators/REACT_NATIVE*/**",
+  "code/lib/create-storybook/src/generators/SERVER/**",
+  "code/lib/create-storybook/src/generators/NEXTJS/**",
+  "code/lib/create-storybook/src/generators/VUE3/**",
+  "code/lib/create-storybook/src/generators/NUXT/**",
+  "code/lib/create-storybook/src/generators/ANGULAR/**",
+  "code/lib/create-storybook/src/generators/SVELTE/**",
+  "code/lib/create-storybook/src/generators/SVELTEKIT/**",
+  "code/lib/create-storybook/src/generators/WEB-COMPONENTS/**",
+  "code/lib/create-storybook/src/generators/HTML/**",
+  "code/lib/create-storybook/src/generators/PREACT/**",
+  "code/lib/create-storybook/src/generators/EMBER/**",
+  "code/lib/create-storybook/src/generators/TANSTACK/**",
+]
+usefulness = 4
+rationale = "First impression for every new user; 1.7M direct downloads/month."
+reach = 1.0
+reach_rationale = "Every project was initialised; create-storybook downloads undercount npx runs."
+npm = ["create-storybook"]
+
+[[feature]]
+id = "upgrade-automigrate"
+group = "cli"
+name = "`storybook upgrade`, automigrations, autoblockers, codemods"
+include = [
+  "code/lib/cli-storybook/src/automigrate/**",
+  "code/lib/cli-storybook/src/upgrade*",
+  "code/lib/cli-storybook/src/autoblock/**",
+  "code/lib/cli-storybook/src/migrate*",
+  "code/lib/cli-storybook/src/codemod/**",
+  "code/lib/codemod/**",
+  "code/core/src/common/utils/wrap-getAbsolutePath-utils*",
+  "code/core/src/common/utils/get-storybook-version-specifier-from-ancestry*",
+  "code/core/src/common/utils/resolve-storybook-version-specifier*",
+  "code/core/src/common/utils/get-pkg-pr-new-package-specifier*",
+  "code/core/src/common/utils/process-ancestry*",
+]
+usefulness = 4
+rationale = "Upgrade friction is the main churn risk for the project; 24 open automigration issues."
+reach = 0.8
+reach_rationale = "Most projects upgrade at least once a year; codemod downloads undercount this."
+issue_labels = ["automigrations", "codemods"]
+npm = ["@storybook/codemod"]
+
+[[feature]]
+id = "doctor"
+group = "cli"
+name = "`storybook doctor`"
+include = ["code/lib/cli-storybook/src/doctor/**"]
+usefulness = 2
+rationale = "Diagnostics for support; low usage."
+reach = 0.1
+reach_rationale = "Run on request during support."
+
+[[feature]]
+id = "addon-management"
+group = "cli"
+name = "`storybook add`, postinstall hooks, addon config sync"
+include = [
+  "code/lib/cli-storybook/src/add*",
+  "code/lib/cli-storybook/src/postinstallAddon*",
+  "code/core/src/common/utils/sync-main-preview-addons*",
+  "code/core/src/common/utils/setup-addon-in-config*",
+  "code/core/src/common/utils/get-addon-annotations*",
+  "code/core/src/common/utils/get-addon-names*",
+  "code/core/src/common/utils/check-addon-order*",
+  "code/core/src/common/satellite-addons.ts",
+  "code/core/src/core-server/utils/warnOnIncompatibleAddons*",
+]
+usefulness = 3
+rationale = "Addon ecosystem on-ramp."
+reach = 0.5
+reach_rationale = "`storybook add` and postinstall hooks run for about half of projects."
+issue_labels = ["api: addons"]
+
+[[feature]]
+id = "eslint-plugin"
+group = "cli"
+name = "eslint-plugin-storybook"
+include = ["code/lib/eslint-plugin/**", "code/core/src/cli/eslintPlugin*", "code/lib/cli-storybook/src/automigrate/fixes/eslint-plugin*"]
+usefulness = 3
+rationale = "35M downloads/month; cheap relative to reach."
+issue_labels = ["eslint-plugin"]
+npm = ["eslint-plugin-storybook"]
+
+# ---------------------------------------------------------------------------
+# repo
+# ---------------------------------------------------------------------------
+
+[[feature]]
+id = "build-scripts"
+group = "repo"
+name = "Monorepo build, release and CI scripts"
+include = ["scripts/**", "code/core/scripts/**", "code/core/build-config.ts"]
+exclude = ["scripts/eval/**", "scripts/bench/**", "scripts/sandbox/**", "scripts/prepare-sandbox.ts", "scripts/create-nx-sandbox-projects.ts", "scripts/get-sandbox-dir.ts", "scripts/tasks/**", "scripts/combine-compodoc.ts", "scripts/event-log-*", "scripts/display-review.ts"]
+usefulness = 3
+rationale = "Maintainer-only; keeps releases and CI running."
+
+[[feature]]
+id = "sandboxes-templates"
+group = "repo"
+name = "Sandbox templates & generated sandboxes"
+include = [
+  "code/core/template/**",
+  "code/*/*/template/**",
+  "code/sandbox/**",
+  "code/lib/cli-storybook/src/sandbox*",
+  "scripts/sandbox/**",
+  "scripts/prepare-sandbox.ts",
+  "scripts/create-nx-sandbox-projects.ts",
+  "scripts/get-sandbox-dir.ts",
+  "scripts/tasks/**",
+]
+usefulness = 3
+rationale = "Maintainer-only; the per-framework smoke-test corpus."
+
+[[feature]]
+id = "e2e-internal"
+group = "repo"
+name = "E2E suites, internal Storybook, benchmarks, test setup"
+include = [
+  "code/e2e-internal/**",
+  "code/e2e-sandbox/**",
+  "code/.storybook/**",
+  "code/bench/**",
+  "code/__mocks__/**",
+  "code/playwright.config.ts",
+  "code/vitest*.ts",
+  "code/*.ts",
+  "code/core/*.ts",
+  "code/core/vitest.config.ts",
+  "code/core/src/__mocks__/**",
+  "scripts/bench/**",
+  "test-storybooks/**",
+]
+usefulness = 3
+rationale = "Maintainer-only; regression safety net."

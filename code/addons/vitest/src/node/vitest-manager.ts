@@ -43,6 +43,9 @@ export const DOUBLE_SPACES = '  ';
 export const toModuleId = (importPath: string) => path.join(process.cwd(), importPath);
 const getTestName = (name: string) => `${name}${DOUBLE_SPACES}`;
 
+export const getCoverageReporterId = () =>
+  fileURLToPath(import.meta.resolve('@storybook/addon-vitest/internal/coverage-reporter'));
+
 export class VitestManager {
   vitest: Vitest | null = null;
 
@@ -64,7 +67,7 @@ export class VitestManager {
     this.testNameSeparator = Number.parseInt(version, 10) >= 5 ? ' > ' : ' ';
 
     const storybookCoverageReporter: [string, StorybookCoverageReporterOptions] = [
-      fileURLToPath(import.meta.resolve('@storybook/addon-vitest/internal/coverage-reporter')),
+      getCoverageReporterId(),
       {
         // A function, not the manager itself: Vitest deep-clones coverage options when coverage
         // is toggled at runtime, and the reporter must reach the live manager.

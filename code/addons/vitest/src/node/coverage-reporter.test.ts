@@ -1,46 +1,72 @@
 import { execFile } from 'node:child_process';
-import { existsSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import { cpSync, existsSync, mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { promisify } from 'node:util';
 
 import { expect, it, vi } from 'vitest';
 
 import type { ReportNode } from 'istanbul-lib-report';
+import { dirname, join, relative } from 'pathe';
 
 import StorybookCoverageReporter from './coverage-reporter.ts';
 import type { TestManager } from './test-manager.ts';
+import { getCoverageReporterId } from './vitest-manager.ts';
 
 const BUILT = existsSync(new URL('../../dist/node/coverage-reporter.js', import.meta.url));
+const BARE_REPORTER_ID = '@storybook/addon-vitest/internal/coverage-reporter';
 
 it.runIf(process.env.CI)('is built before the loader tests run', () => {
   expect(BUILT).toBe(true);
 });
 
 it.runIf(BUILT).each([
-  ['Vitest 4', "require('istanbul-reports').create", false],
-  ['Vitest 5', "(await import('@vitest/istanbul-lib-report')).createAsync", true],
+  ['Vitest 4', ['istanbul-reports'], 'require'],
+  ['Vitest 5', ['@vitest/istanbul-lib-report', '@vitest/istanbul-lib-coverage'], 'import'],
 ])(
   'loads the built coverage reporter through the %s loader',
-  async (_version, loader, useAbsolutePath) => {
-    // Vitest 5 resolves a bare specifier from `@vitest/istanbul-lib-report`, not from this
-    // package. Pass the same absolute path the addon passes to Vitest.
-    const reporterId = useAbsolutePath
-      ? fileURLToPath(import.meta.resolve('@storybook/addon-vitest/internal/coverage-reporter'))
-      : '@storybook/addon-vitest/internal/coverage-reporter';
+  async (_version, packages, moduleSystem) => {
+    // The loader resolves the reporter from its own directory, which can see this addon here.
+    const directory = mkdtempSync(join(tmpdir(), 'sb-coverage-reporter-'));
+    try {
+      let loaderFile = '';
+      for (const packageName of packages) {
+        const entryFile = fileURLToPath(import.meta.resolve(packageName));
+        let packageDirectory = dirname(entryFile);
+        while (!packageDirectory.endsWith(packageName)) {
+          packageDirectory = dirname(packageDirectory);
+        }
+        cpSync(packageDirectory, join(directory, 'node_modules', packageName), {
+          recursive: true,
+          dereference: true,
+        });
+        if (loaderFile === '') {
+          loaderFile = join(
+            directory,
+            'node_modules',
+            packageName,
+            relative(packageDirectory, entryFile)
+          );
+        }
+      }
+      const loader =
+        moduleSystem === 'import'
+          ? `(await import(${JSON.stringify(pathToFileURL(loaderFile).href)})).createAsync`
+          : `require(${JSON.stringify(loaderFile)}).create`;
 
-    await expect(
-      promisify(execFile)(
-        process.execPath,
-        [
-          '--input-type=module',
-          '--eval',
-          `
+      await expect(
+        promisify(execFile)(
+          process.execPath,
+          [
+            '--input-type=module',
+            '--eval',
+            `
           import { strict as assert } from 'node:assert';
           import { createRequire } from 'node:module';
-          const require = createRequire(import.meta.url);
+          const require = createRequire(${JSON.stringify(loaderFile)});
           const summaries = [];
           const reporter = await (${loader})(
-            ${JSON.stringify(reporterId)},
+            ${JSON.stringify(getCoverageReporterId())},
             {
               getTestManager: () => ({
                 onCoverageCollected: (summary) => summaries.push(summary),
@@ -53,11 +79,18 @@ it.runIf(BUILT).each([
             getCoverageSummary: () => ({ data: { statements: { pct: 87.4 } } }),
           });
           assert.deepEqual(summaries, [{ percentage: 87, status: 'warning' }]);
+          await assert.rejects(
+            async () => (${loader})(${JSON.stringify(BARE_REPORTER_ID)}, {}),
+            /@storybook\\/addon-vitest/
+          );
         `,
-      ],
-      { cwd: fileURLToPath(new URL('../../', import.meta.url)) }
-    )
-    ).resolves.toMatchObject({ stdout: '' });
+          ],
+          { cwd: directory }
+        )
+      ).resolves.toMatchObject({ stdout: '' });
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
   }
 );
 

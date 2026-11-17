@@ -1,0 +1,79 @@
+code/core/src/__tests [0 ext]: 
+    test-only: vitest
+code/core/src/actions [6 ext]: @storybook/global, dequal, polished, react, react-inspector, telejson
+    test-only: @storybook/react-vite, vitest
+code/core/src/babel [6 ext]: @babel/core, @babel/generator, @babel/parser, @babel/traverse, @babel/types, recast
+    test-only: vitest
+code/core/src/backgrounds [2 ext]: @storybook/icons, react
+    test-only: vitest
+code/core/src/bin [7 ext]: commander, esbuild, leven, pathe, picocolors, ts-dedent, valibot
+    test-only: vitest
+code/core/src/builder-manager [7 ext]: @fal-works/esbuild-plugin-global-externals, ejs, esbuild, exsolve, pathe, sirv, slash
+    test-only: vitest
+code/core/src/channels [3 ext]: telejson, tiny-invariant, vitest
+code/core/src/cli [24 ext]: ${typeImport}, @standard-schema/spec, @valibot/to-json-schema, commander, comment-json, detect-indent, empathic, es-toolkit, eslint-plugin-storybook, get-npm-tarball-url, mockdate, modern-tar, msw, msw-storybook-addon, pathe, picocolors, semver, strip-json-comments, tiny-invariant, ts-dedent, valibot, vitest, ws, zod
+    test-only: @eslint/compat, @eslint/eslintrc, @eslint/js, eslint, eslint-config-next, eslint-flat-config-utils, eslint-plugin-cypress, execa, memfs, my-eslint-config, some-other-config-lib, some-plugin, telejson, typescript-eslint
+code/core/src/client-logger [1 ext]: @storybook/global
+    test-only: vitest
+code/core/src/common [23 ext]: @webcontainer/env, detect-indent, empathic, execa, exsolve, glob, globby, lazy-universal-dotenv, oxc-resolver, pathe, picocolors, picomatch, prettier, semver, slash, strip-json-comments, tiny-invariant, tinyglobby, ts-dedent, type-fest, unique-string, vite-plus, yaml
+    test-only: @storybook/addon-a11y, @storybook/components, @storybook/core-common, @storybook/nextjs, @storybook/other-package, @storybook/react, @storybook/test, @storybook/test-runner, custom-addon, memfs, some-other-package, some-unresolvable-package-xyz, vitest
+code/core/src/component-meta [1 ext]: ts-dedent
+    test-only: pathe, typescript, vitest
+code/core/src/component-testing [8 ext]: @devtools-ds/object-inspector, @react-aria/live-announcer, @storybook/global, @storybook/icons, ansi-to-html, polished, react, strip-ansi
+    test-only: @storybook/react-vite, ts-dedent, vitest
+code/core/src/components [20 ext]: @radix-ui/react-scroll-area, @radix-ui/react-slot, @react-aria/overlays, @react-stately/overlays, @react-types/shared, @storybook/global, @storybook/icons, memoizerific, polished, react, react-aria, react-aria-components, react-dom, react-popper-tooltip, react-stately, react-syntax-highlighter, react-textarea-autosize, react-transition-state, ts-dedent, use-resize-observer
+    test-only: @react-stately/tabs, @storybook/react-vite, @testing-library/react, @testing-library/user-event, life, vitest
+code/core/src/controls [4 ext]: @storybook/global, @storybook/icons, dequal, react
+    test-only: @storybook/react-vite
+code/core/src/core-events [0 ext]: 
+    test-only: vitest
+code/core/src/core-server [40 ext]: @discoveryjs/json-ext, @polka/compression, @storybook/global, @storybook/react-webpack5, acorn, acorn-jsx, cross-spawn, dequal, detect-port, diff, empathic, es-toolkit, estree, execa, exsolve, file:, github-slugger, glob, globby, host-validation-middleware, launch-editor, mdast-util-from-markdown, mdast-util-mdx, micromark-extension-mdxjs, open, pathe, picocolors, polka, pretty-hrtime, react-docgen-typescript, semver, sirv, slash, telejson, tiny-invariant, ts-dedent, tsconfig-paths, vitest, watchpack, ws
+    test-only: @babel/parser, @storybook/blocks, @storybook/react-vite, component-package, memfs, prettier, react, valibot
+code/core/src/csf [4 ext]: @ngard/tiny-isequal, @testing-library/dom, @testing-library/user-event, type-fest
+    test-only: expect-type, type-plus, vitest
+code/core/src/csf-tools [5 ext]: bar, baz, comment-parser, tiny-invariant, ts-dedent
+    test-only: @angular/core, @babel/parser, @primer/octicons-react, @primer/react, @storybook/addon-vitest, @storybook/react, @storybook/react-vite, @storybook/react-webpack5, ds, js-yaml, memfs, other-package, some-library, somewhere, source-map, vitest, zod
+code/core/src/docs-tools [3 ext]: comment-parser, es-toolkit, jsdoc-type-pratt-parser
+    test-only: prop-types, react, require-from-string, vitest
+code/core/src/highlight [1 ext]: react
+    test-only: vitest
+code/core/src/instrumenter [2 ext]: @storybook/global, @vitest/utils
+    test-only: vitest
+code/core/src/manager [21 ext]: @emotion/react, @fal-works/esbuild-plugin-global-externals, @react-types/shared, @storybook/global, @storybook/icons, @vitest/utils, browser-dtector, downshift, es-toolkit, fuse.js, memoizerific, polished, qrcode.react, react, react-aria, react-aria-components, react-dom, react-helmet-async, react-joyride, react-transition-state, store2
+    test-only: @storybook/react-vite, @testing-library/react, esbuild, ts-dedent, vitest
+code/core/src/manager-api [12 ext]: @storybook/global, @storybook/icons, copy-to-clipboard, dequal, es-toolkit, memoizerific, picoquery, react, semver, store2, telejson, ts-dedent
+    test-only: @testing-library/react, flush-promises, vitest
+code/core/src/measure [4 ext]: @storybook/global, @storybook/icons, react, tiny-invariant
+    test-only: vitest
+code/core/src/mocking-utils [8 ext]: @vitest/mocker, esbuild, estree, estree-walker, foo, magic-string, oxc-resolver, pathe
+    test-only: <xyz>, <xyz>.js, @babel/parser, vitest
+code/core/src/node-logger [6 ext]: @clack/prompts, execa, npmlog, picocolors, pretty-hrtime, wrap-ansi
+    test-only: vitest
+code/core/src/outline [4 ext]: @storybook/global, @storybook/icons, react, ts-dedent
+    test-only: vitest
+code/core/src/oxc-parser [2 ext]: );
+}
+
+, oxc-parser
+    test-only: vitest
+code/core/src/preview [2 ext]: @storybook/global, browser-dtector
+    test-only: @storybook/react-vite
+code/core/src/preview-api [7 ext]: @storybook/global, ansi-to-html, es-toolkit, memoizerific, picoquery, tiny-invariant, ts-dedent
+    test-only: @storybook/react-vite, react, vitest
+code/core/src/preview-errors.ts [1 ext]: ts-dedent
+code/core/src/router [7 ext]: @storybook/global, es-toolkit, memoizerific, picoquery, react, react-router-dom, ts-dedent
+    test-only: vitest
+code/core/src/server-errors.ts [2 ext]: picocolors, ts-dedent
+code/core/src/shared [22 ext]: @preact/signals-core, @react-aria/live-announcer, @standard-schema/spec, @storybook/addon-docs, @storybook/icons, @storybook/your-framework, deepsignal, es-toolkit, esbuild, exsolve, leven, nanoid, oxc-resolver, p-limit, pathe, react, semver, slash, tiny-invariant, ts-dedent, valibot, vitest
+    test-only: ${entry.importPath}, @/components, @storybook/blocks, @storybook/react-vite, @testing-library/react, @valibot/to-json-schema, memfs, y, zod
+code/core/src/telemetry [11 ext]: empathic, execa, fetch-retry, nanoid, package-manager-detector, semver, slash, std-env, ts-dedent, type-fest, yaml
+    test-only: memfs, vitest
+code/core/src/test [8 ext]: @testing-library/dom, @testing-library/jest-dom, @testing-library/user-event, @vitest/spy, chai, tinyspy, ts-dedent, type-fest
+    test-only: vitest
+code/core/src/theming [9 ext]: @emotion/cache, @emotion/is-prop-valid, @emotion/react, @emotion/styled, @storybook/global, deep-object-diff, memoizerific, polished, ts-dedent
+    test-only: vitest
+code/core/src/toolbar [1 ext]: react
+    test-only: vitest
+code/core/src/types [3 ext]: react, telejson, type-fest
+code/core/src/viewport [2 ext]: @storybook/icons, react
+    test-only: vitest

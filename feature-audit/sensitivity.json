@@ -1,0 +1,467 @@
+{
+ "scanned_head": "00059337f08",
+ "one_at_a_time": [
+  {
+   "scenario": "test_loc \u00d70.5",
+   "spearman_geometric": 0.998,
+   "max_move": 7,
+   "movers": [
+    [
+     "renderer-svelte",
+     64,
+     71
+    ],
+    [
+     "open-service",
+     58,
+     65
+    ],
+    [
+     "sidebar-tree",
+     39,
+     44
+    ]
+   ],
+   "quadrant_flips": []
+  },
+  {
+   "scenario": "test_loc \u00d71.5",
+   "spearman_geometric": 0.998,
+   "max_move": 7,
+   "movers": [
+    [
+     "mcp",
+     71,
+     64
+    ]
+   ],
+   "quadrant_flips": []
+  },
+  {
+   "scenario": "dependency_base \u00d70.5",
+   "spearman_geometric": 0.997,
+   "max_move": 8,
+   "movers": [
+    [
+     "mdx",
+     70,
+     78
+    ],
+    [
+     "toolsets",
+     73,
+     67
+    ],
+    [
+     "viewport",
+     65,
+     60
+    ],
+    [
+     "manager-theming",
+     66,
+     71
+    ]
+   ],
+   "quadrant_flips": []
+  },
+  {
+   "scenario": "dependency_base \u00d71.5",
+   "spearman_geometric": 0.998,
+   "max_move": 7,
+   "movers": [
+    [
+     "manager-theming",
+     66,
+     59
+    ],
+    [
+     "mdx",
+     70,
+     65
+    ]
+   ],
+   "quadrant_flips": []
+  },
+  {
+   "scenario": "dependency_per_release \u00d70.5",
+   "spearman_geometric": 0.999,
+   "max_move": 6,
+   "movers": [
+    [
+     "links",
+     67,
+     73
+    ]
+   ],
+   "quadrant_flips": []
+  },
+  {
+   "scenario": "dependency_per_release \u00d71.5",
+   "spearman_geometric": 0.999,
+   "max_move": 5,
+   "movers": [
+    [
+     "links",
+     67,
+     62
+    ]
+   ],
+   "quadrant_flips": []
+  },
+  {
+   "scenario": "dependency_stale_penalty \u00d70.5",
+   "spearman_geometric": 0.999,
+   "max_move": 4,
+   "movers": [],
+   "quadrant_flips": []
+  },
+  {
+   "scenario": "dependency_stale_penalty \u00d71.5",
+   "spearman_geometric": 0.999,
+   "max_move": 4,
+   "movers": [],
+   "quadrant_flips": []
+  },
+  {
+   "scenario": "fix_pr \u00d70.5",
+   "spearman_geometric": 0.996,
+   "max_move": 9,
+   "movers": [
+    [
+     "init",
+     56,
+     65
+    ],
+    [
+     "dev-server",
+     61,
+     68
+    ],
+    [
+     "viewport",
+     65,
+     71
+    ],
+    [
+     "links",
+     67,
+     61
+    ],
+    [
+     "framework-tanstack-react",
+     19,
+     25
+    ],
+    [
+     "renderer-vue3",
+     42,
+     47
+    ]
+   ],
+   "quadrant_flips": [
+    "module-graph-service",
+    "change-detection"
+   ]
+  },
+  {
+   "scenario": "fix_pr \u00d71.5",
+   "spearman_geometric": 0.997,
+   "max_move": 8,
+   "movers": [
+    [
+     "renderer-svelte",
+     64,
+     72
+    ],
+    [
+     "cli-core",
+     74,
+     68
+    ],
+    [
+     "viewport",
+     65,
+     60
+    ],
+    [
+     "story-indexing",
+     75,
+     70
+    ],
+    [
+     "highlight",
+     52,
+     57
+    ],
+    [
+     "framework-react-webpack5",
+     26,
+     21
+    ]
+   ],
+   "quadrant_flips": []
+  },
+  {
+   "scenario": "maintenance_pr \u00d70.5",
+   "spearman_geometric": 0.999,
+   "max_move": 3,
+   "movers": [],
+   "quadrant_flips": []
+  },
+  {
+   "scenario": "maintenance_pr \u00d71.5",
+   "spearman_geometric": 0.999,
+   "max_move": 3,
+   "movers": [],
+   "quadrant_flips": []
+  },
+  {
+   "scenario": "fix_pr = 0 (no churn pricing)",
+   "spearman_geometric": 0.978,
+   "max_move": 24,
+   "movers": [
+    [
+     "init",
+     56,
+     80
+    ],
+    [
+     "dev-server",
+     61,
+     78
+    ],
+    [
+     "renderer-vue3",
+     42,
+     58
+    ],
+    [
+     "renderer-html",
+     80,
+     66
+    ],
+    [
+     "open-in-editor",
+     82,
+     68
+    ],
+    [
+     "highlight",
+     52,
+     40
+    ]
+   ],
+   "quadrant_flips": [
+    "module-graph-service",
+    "logging",
+    "renderer-vue3",
+    "renderer-react"
+   ]
+  },
+  {
+   "scenario": "dependency_base = 0 (no dependency pricing)",
+   "spearman_geometric": 0.969,
+   "max_move": 22,
+   "movers": [
+    [
+     "sidebar-context-menu",
+     59,
+     81
+    ],
+    [
+     "outline",
+     16,
+     34
+    ],
+    [
+     "open-in-editor",
+     82,
+     100
+    ],
+    [
+     "docgen-svelte",
+     28,
+     46
+    ],
+    [
+     "framework-preact-vite",
+     81,
+     64
+    ],
+    [
+     "update-notifications",
+     23,
+     39
+    ]
+   ],
+   "quadrant_flips": [
+    "module-graph-service",
+    "change-detection"
+   ]
+  },
+  {
+   "scenario": "test_loc = 0 (ignore tests)",
+   "spearman_geometric": 0.988,
+   "max_move": 25,
+   "movers": [
+    [
+     "docgen-harness",
+     6,
+     31
+    ],
+    [
+     "sidebar-tree",
+     39,
+     54
+    ],
+    [
+     "open-service",
+     58,
+     70
+    ],
+    [
+     "renderer-svelte",
+     64,
+     75
+    ],
+    [
+     "csf-tools",
+     55,
+     64
+    ],
+    [
+     "mcp",
+     71,
+     79
+    ]
+   ],
+   "quadrant_flips": [
+    "onboarding",
+    "preview-store"
+   ]
+  },
+  {
+   "scenario": "internal_fan_out = 100",
+   "spearman_geometric": 0.978,
+   "max_move": 42,
+   "movers": [
+    [
+     "framework-preact-vite",
+     81,
+     39
+    ],
+    [
+     "renderer-html",
+     80,
+     66
+    ],
+    [
+     "manager-theming",
+     66,
+     79
+    ],
+    [
+     "framework-html-vite",
+     96,
+     84
+    ],
+    [
+     "links",
+     67,
+     56
+    ],
+    [
+     "save-story",
+     47,
+     37
+    ]
+   ],
+   "quadrant_flips": []
+  },
+  {
+   "scenario": "geometric_base = 2",
+   "spearman_geometric": 0.899,
+   "max_move": 31,
+   "movers": [
+    [
+     "outline",
+     16,
+     47
+    ],
+    [
+     "highlight",
+     52,
+     81
+    ],
+    [
+     "renderer-preact",
+     13,
+     40
+    ],
+    [
+     "framework-ember",
+     9,
+     36
+    ],
+    [
+     "sidebar-context-menu",
+     59,
+     84
+    ],
+    [
+     "embed-mode",
+     51,
+     76
+    ]
+   ],
+   "quadrant_flips": []
+  },
+  {
+   "scenario": "geometric_base = 4",
+   "spearman_geometric": 0.964,
+   "max_move": 29,
+   "movers": [
+    [
+     "framework-preact-vite",
+     81,
+     52
+    ],
+    [
+     "renderer-html",
+     80,
+     60
+    ],
+    [
+     "open-in-editor",
+     82,
+     64
+    ],
+    [
+     "init",
+     56,
+     71
+    ],
+    [
+     "open-service",
+     58,
+     72
+    ],
+    [
+     "links",
+     67,
+     53
+    ]
+   ],
+   "quadrant_flips": []
+  },
+  {
+   "scenario": "inheritance one-hop",
+   "spearman_geometric": 1.0,
+   "max_move": 0,
+   "movers": [],
+   "quadrant_flips": [],
+   "inherited_changes": []
+  }
+ ]
+}

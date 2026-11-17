@@ -1,0 +1,2571 @@
+{
+ "captured": "2026-10-21",
+ "source": "https://registry.npmjs.org/<pkg>",
+ "packages": {
+  "@actions/core": {
+   "latest": "3.0.1",
+   "releases_12mo": 6,
+   "majors_12mo": 2,
+   "days_since_last_publish": 182,
+   "unpacked_size_kb": 84,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@analogjs/vite-plugin-angular": {
+   "latest": "2.9.1",
+   "releases_12mo": 406,
+   "majors_12mo": 3,
+   "days_since_last_publish": 0,
+   "unpacked_size_kb": 851,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@angular-devkit/architect": {
+   "latest": "0.2202.3",
+   "releases_12mo": 159,
+   "majors_12mo": 1,
+   "days_since_last_publish": 5,
+   "unpacked_size_kb": 257,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@angular-devkit/build-angular": {
+   "latest": "22.2.3",
+   "releases_12mo": 159,
+   "majors_12mo": 4,
+   "days_since_last_publish": 5,
+   "unpacked_size_kb": 961,
+   "deprecated": true,
+   "license": "MIT"
+  },
+  "@angular-devkit/core": {
+   "latest": "22.2.3",
+   "releases_12mo": 159,
+   "majors_12mo": 4,
+   "days_since_last_publish": 5,
+   "unpacked_size_kb": 397,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@angular/common": {
+   "latest": "22.2.3",
+   "releases_12mo": 156,
+   "majors_12mo": 4,
+   "days_since_last_publish": 6,
+   "unpacked_size_kb": 9114,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@angular/compiler-cli": {
+   "latest": "22.2.3",
+   "releases_12mo": 156,
+   "majors_12mo": 4,
+   "days_since_last_publish": 6,
+   "unpacked_size_kb": 2670,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@angular/core": {
+   "latest": "22.2.3",
+   "releases_12mo": 156,
+   "majors_12mo": 4,
+   "days_since_last_publish": 6,
+   "unpacked_size_kb": 6893,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@angular/platform-browser": {
+   "latest": "22.2.3",
+   "releases_12mo": 156,
+   "majors_12mo": 4,
+   "days_since_last_publish": 6,
+   "unpacked_size_kb": 305,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@anthropic-ai/claude-agent-sdk": {
+   "latest": "0.3.306",
+   "releases_12mo": 309,
+   "majors_12mo": 1,
+   "days_since_last_publish": 0,
+   "unpacked_size_kb": 4672,
+   "deprecated": false,
+   "license": "SEE LICENSE IN README.md"
+  },
+  "@anthropic-ai/sdk": {
+   "latest": "0.137.0",
+   "releases_12mo": 90,
+   "majors_12mo": 1,
+   "days_since_last_publish": 0,
+   "unpacked_size_kb": 14553,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@babel/core": {
+   "latest": "8.0.7",
+   "releases_12mo": 18,
+   "majors_12mo": 2,
+   "days_since_last_publish": 14,
+   "unpacked_size_kb": 164,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@babel/generator": {
+   "latest": "8.0.6",
+   "releases_12mo": 18,
+   "majors_12mo": 2,
+   "days_since_last_publish": 32,
+   "unpacked_size_kb": 129,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@babel/parser": {
+   "latest": "8.0.7",
+   "releases_12mo": 21,
+   "majors_12mo": 2,
+   "days_since_last_publish": 14,
+   "unpacked_size_kb": 566,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@babel/plugin-syntax-bigint": {
+   "latest": "7.8.3",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 2472,
+   "unpacked_size_kb": 2,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@babel/plugin-syntax-dynamic-import": {
+   "latest": "7.8.3",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 2472,
+   "unpacked_size_kb": 2,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@babel/plugin-syntax-import-assertions": {
+   "latest": "7.29.7",
+   "releases_12mo": 5,
+   "majors_12mo": 2,
+   "days_since_last_publish": 149,
+   "unpacked_size_kb": 6,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@babel/plugin-transform-class-properties": {
+   "latest": "8.0.1",
+   "releases_12mo": 12,
+   "majors_12mo": 2,
+   "days_since_last_publish": 126,
+   "unpacked_size_kb": 4,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@babel/plugin-transform-export-namespace-from": {
+   "latest": "8.0.1",
+   "releases_12mo": 11,
+   "majors_12mo": 2,
+   "days_since_last_publish": 126,
+   "unpacked_size_kb": 7,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@babel/plugin-transform-numeric-separator": {
+   "latest": "8.0.1",
+   "releases_12mo": 12,
+   "majors_12mo": 2,
+   "days_since_last_publish": 126,
+   "unpacked_size_kb": 5,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@babel/plugin-transform-object-rest-spread": {
+   "latest": "8.0.1",
+   "releases_12mo": 12,
+   "majors_12mo": 2,
+   "days_since_last_publish": 126,
+   "unpacked_size_kb": 79,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@babel/plugin-transform-runtime": {
+   "latest": "8.0.6",
+   "releases_12mo": 14,
+   "majors_12mo": 2,
+   "days_since_last_publish": 32,
+   "unpacked_size_kb": 8,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@babel/preset-env": {
+   "latest": "8.0.7",
+   "releases_12mo": 21,
+   "majors_12mo": 2,
+   "days_since_last_publish": 14,
+   "unpacked_size_kb": 36,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@babel/preset-react": {
+   "latest": "8.0.1",
+   "releases_12mo": 12,
+   "majors_12mo": 2,
+   "days_since_last_publish": 126,
+   "unpacked_size_kb": 14,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@babel/preset-typescript": {
+   "latest": "8.0.7",
+   "releases_12mo": 13,
+   "majors_12mo": 2,
+   "days_since_last_publish": 14,
+   "unpacked_size_kb": 9,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@babel/traverse": {
+   "latest": "8.0.7",
+   "releases_12mo": 19,
+   "majors_12mo": 2,
+   "days_since_last_publish": 14,
+   "unpacked_size_kb": 782,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@babel/types": {
+   "latest": "8.0.6",
+   "releases_12mo": 17,
+   "majors_12mo": 2,
+   "days_since_last_publish": 32,
+   "unpacked_size_kb": 1301,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@clack/prompts": {
+   "latest": "1.8.1",
+   "releases_12mo": 16,
+   "majors_12mo": 1,
+   "days_since_last_publish": 37,
+   "unpacked_size_kb": 91,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@devtools-ds/object-inspector": {
+   "latest": "1.2.1",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 1393,
+   "unpacked_size_kb": 142,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@discoveryjs/json-ext": {
+   "latest": "1.1.0",
+   "releases_12mo": 2,
+   "majors_12mo": 1,
+   "days_since_last_publish": 170,
+   "unpacked_size_kb": 179,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@emotion/cache": {
+   "latest": "11.14.0",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 681,
+   "unpacked_size_kb": 238,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@emotion/is-prop-valid": {
+   "latest": "1.4.0",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 411,
+   "unpacked_size_kb": 24,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@emotion/react": {
+   "latest": "11.14.0",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 681,
+   "unpacked_size_kb": 798,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@emotion/styled": {
+   "latest": "11.14.1",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 482,
+   "unpacked_size_kb": 241,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@eslint/js": {
+   "latest": "10.0.1",
+   "releases_12mo": 10,
+   "majors_12mo": 2,
+   "days_since_last_publish": 102,
+   "unpacked_size_kb": 15,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@fal-works/esbuild-plugin-global-externals": {
+   "latest": "2.1.2",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 1919,
+   "unpacked_size_kb": 19,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@google-cloud/bigquery": {
+   "latest": "9.4.0",
+   "releases_12mo": 11,
+   "majors_12mo": 2,
+   "days_since_last_publish": 0,
+   "unpacked_size_kb": 827,
+   "deprecated": false,
+   "license": "Apache-2.0"
+  },
+  "@joshwooding/vite-plugin-react-docgen-typescript": {
+   "latest": "0.9.0",
+   "releases_12mo": 5,
+   "majors_12mo": 1,
+   "days_since_last_publish": 44,
+   "unpacked_size_kb": 170,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@mdx-js/mdx": {
+   "latest": "3.1.1",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 417,
+   "unpacked_size_kb": 160,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@mdx-js/react": {
+   "latest": "3.1.1",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 417,
+   "unpacked_size_kb": 14,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@neoconfetti/react": {
+   "latest": "1.0.0",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 757,
+   "unpacked_size_kb": 21,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@next/env": {
+   "latest": "16.4.2",
+   "releases_12mo": 585,
+   "majors_12mo": 3,
+   "days_since_last_publish": 0,
+   "unpacked_size_kb": 12,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@ngard/tiny-isequal": {
+   "latest": "1.1.0",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 2278,
+   "unpacked_size_kb": 37,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@octokit/graphql": {
+   "latest": "9.0.5",
+   "releases_12mo": 3,
+   "majors_12mo": 1,
+   "days_since_last_publish": 51,
+   "unpacked_size_kb": 28,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@octokit/request": {
+   "latest": "10.0.16",
+   "releases_12mo": 11,
+   "majors_12mo": 1,
+   "days_since_last_publish": 51,
+   "unpacked_size_kb": 46,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@openai/codex-sdk": {
+   "latest": "0.163.0",
+   "releases_12mo": 1016,
+   "majors_12mo": 1,
+   "days_since_last_publish": 0,
+   "unpacked_size_kb": 78,
+   "deprecated": false,
+   "license": "Apache-2.0"
+  },
+  "@playwright/test": {
+   "latest": "1.64.1",
+   "releases_12mo": 559,
+   "majors_12mo": 1,
+   "days_since_last_publish": 0,
+   "unpacked_size_kb": 28,
+   "deprecated": false,
+   "license": "Apache-2.0"
+  },
+  "@pmmmwh/react-refresh-webpack-plugin": {
+   "latest": "0.6.3",
+   "releases_12mo": 2,
+   "majors_12mo": 1,
+   "days_since_last_publish": 55,
+   "unpacked_size_kb": 120,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@polka/compression": {
+   "latest": "1.0.0-next.25",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 761,
+   "unpacked_size_kb": 12,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@preact/signals-core": {
+   "latest": "1.14.4",
+   "releases_12mo": 7,
+   "majors_12mo": 1,
+   "days_since_last_publish": 106,
+   "unpacked_size_kb": 254,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@radix-ui/react-scroll-area": {
+   "latest": "1.4.0",
+   "releases_12mo": 93,
+   "majors_12mo": 1,
+   "days_since_last_publish": 6,
+   "unpacked_size_kb": 222,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@radix-ui/react-slot": {
+   "latest": "1.5.0",
+   "releases_12mo": 65,
+   "majors_12mo": 1,
+   "days_since_last_publish": 9,
+   "unpacked_size_kb": 48,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@radix-ui/react-tabs": {
+   "latest": "1.2.1",
+   "releases_12mo": 93,
+   "majors_12mo": 1,
+   "days_since_last_publish": 6,
+   "unpacked_size_kb": 54,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@react-aria/live-announcer": {
+   "latest": "3.5.1",
+   "releases_12mo": 235,
+   "majors_12mo": 1,
+   "days_since_last_publish": 13,
+   "unpacked_size_kb": 18,
+   "deprecated": false,
+   "license": "Apache-2.0"
+  },
+  "@react-aria/overlays": {
+   "latest": "3.32.1",
+   "releases_12mo": 237,
+   "majors_12mo": 1,
+   "days_since_last_publish": 13,
+   "unpacked_size_kb": 31,
+   "deprecated": false,
+   "license": "Apache-2.0"
+  },
+  "@react-stately/overlays": {
+   "latest": "3.7.1",
+   "releases_12mo": 237,
+   "majors_12mo": 1,
+   "days_since_last_publish": 13,
+   "unpacked_size_kb": 18,
+   "deprecated": false,
+   "license": "Apache-2.0"
+  },
+  "@react-types/shared": {
+   "latest": "3.37.0",
+   "releases_12mo": 241,
+   "majors_12mo": 1,
+   "days_since_last_publish": 13,
+   "unpacked_size_kb": 96,
+   "deprecated": false,
+   "license": "Apache-2.0"
+  },
+  "@rolldown/pluginutils": {
+   "latest": "1.0.1",
+   "releases_12mo": 36,
+   "majors_12mo": 1,
+   "days_since_last_publish": 161,
+   "unpacked_size_kb": 25,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@rollup/pluginutils": {
+   "latest": "5.4.0",
+   "releases_12mo": 1,
+   "majors_12mo": 1,
+   "days_since_last_publish": 144,
+   "unpacked_size_kb": 65,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@standard-schema/spec": {
+   "latest": "1.1.0",
+   "releases_12mo": 1,
+   "majors_12mo": 1,
+   "days_since_last_publish": 309,
+   "unpacked_size_kb": 22,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@storybook/global": {
+   "latest": "5.0.0",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 1411,
+   "unpacked_size_kb": 4,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@storybook/icons": {
+   "latest": "2.2.0",
+   "releases_12mo": 4,
+   "majors_12mo": 1,
+   "days_since_last_publish": 7,
+   "unpacked_size_kb": 336,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@storybook/react-docgen-typescript-plugin": {
+   "latest": "1.0.1",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 1226,
+   "unpacked_size_kb": 66,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@sveltejs/vite-plugin-svelte": {
+   "latest": "7.3.1",
+   "releases_12mo": 14,
+   "majors_12mo": 2,
+   "days_since_last_publish": 28,
+   "unpacked_size_kb": 145,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@tanstack/react-router": {
+   "latest": "1.170.45",
+   "releases_12mo": 235,
+   "majors_12mo": 1,
+   "days_since_last_publish": 4,
+   "unpacked_size_kb": 1011,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@tanstack/react-start": {
+   "latest": "1.169.3",
+   "releases_12mo": 382,
+   "majors_12mo": 1,
+   "days_since_last_publish": 4,
+   "unpacked_size_kb": 104,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@tanstack/router-core": {
+   "latest": "1.171.38",
+   "releases_12mo": 194,
+   "majors_12mo": 1,
+   "days_since_last_publish": 4,
+   "unpacked_size_kb": 3005,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@tanstack/start-client-core": {
+   "latest": "1.170.38",
+   "releases_12mo": 214,
+   "majors_12mo": 1,
+   "days_since_last_publish": 4,
+   "unpacked_size_kb": 519,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@tanstack/start-storage-context": {
+   "latest": "1.167.40",
+   "releases_12mo": 195,
+   "majors_12mo": 1,
+   "days_since_last_publish": 4,
+   "unpacked_size_kb": 10,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@testing-library/dom": {
+   "latest": "10.4.2",
+   "releases_12mo": 1,
+   "majors_12mo": 1,
+   "days_since_last_publish": 37,
+   "unpacked_size_kb": 2409,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@testing-library/jest-dom": {
+   "latest": "7.0.1",
+   "releases_12mo": 3,
+   "majors_12mo": 2,
+   "days_since_last_publish": 72,
+   "unpacked_size_kb": 324,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@testing-library/svelte": {
+   "latest": "5.4.2",
+   "releases_12mo": 12,
+   "majors_12mo": 2,
+   "days_since_last_publish": 120,
+   "unpacked_size_kb": 38,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@testing-library/user-event": {
+   "latest": "14.6.8",
+   "releases_12mo": 6,
+   "majors_12mo": 1,
+   "days_since_last_publish": 8,
+   "unpacked_size_kb": 428,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@tmcp/adapter-valibot": {
+   "latest": "0.1.6",
+   "releases_12mo": 2,
+   "majors_12mo": 1,
+   "days_since_last_publish": 160,
+   "unpacked_size_kb": 9,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@tmcp/transport-http": {
+   "latest": "0.9.0",
+   "releases_12mo": 10,
+   "majors_12mo": 1,
+   "days_since_last_publish": 68,
+   "unpacked_size_kb": 57,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@tmcp/transport-stdio": {
+   "latest": "0.5.0",
+   "releases_12mo": 6,
+   "majors_12mo": 1,
+   "days_since_last_publish": 68,
+   "unpacked_size_kb": 15,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@typescript-eslint/types": {
+   "latest": "8.72.0",
+   "releases_12mo": 542,
+   "majors_12mo": 1,
+   "days_since_last_publish": 0,
+   "unpacked_size_kb": 112,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@typescript-eslint/utils": {
+   "latest": "8.72.0",
+   "releases_12mo": 542,
+   "majors_12mo": 1,
+   "days_since_last_publish": 0,
+   "unpacked_size_kb": 196,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@valibot/to-json-schema": {
+   "latest": "1.8.0",
+   "releases_12mo": 6,
+   "majors_12mo": 1,
+   "days_since_last_publish": 39,
+   "unpacked_size_kb": 163,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@vercel/agent-eval": {
+   "latest": "2.6.0",
+   "releases_12mo": 65,
+   "majors_12mo": 3,
+   "days_since_last_publish": 0,
+   "unpacked_size_kb": 938,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@vitejs/plugin-react": {
+   "latest": "6.1.2",
+   "releases_12mo": 16,
+   "majors_12mo": 2,
+   "days_since_last_publish": 16,
+   "unpacked_size_kb": 45,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@vitejs/plugin-react-swc": {
+   "latest": "4.3.3",
+   "releases_12mo": 8,
+   "majors_12mo": 1,
+   "days_since_last_publish": 83,
+   "unpacked_size_kb": 40,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@vitejs/plugin-vue": {
+   "latest": "6.0.10",
+   "releases_12mo": 9,
+   "majors_12mo": 1,
+   "days_since_last_publish": 11,
+   "unpacked_size_kb": 76,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@vitest/browser-playwright": {
+   "latest": "5.0.5",
+   "releases_12mo": 57,
+   "majors_12mo": 2,
+   "days_since_last_publish": 1,
+   "unpacked_size_kb": 56,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@vitest/mocker": {
+   "latest": "5.0.5",
+   "releases_12mo": 60,
+   "majors_12mo": 3,
+   "days_since_last_publish": 1,
+   "unpacked_size_kb": 195,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@vitest/spy": {
+   "latest": "5.0.5",
+   "releases_12mo": 60,
+   "majors_12mo": 3,
+   "days_since_last_publish": 1,
+   "unpacked_size_kb": 41,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@vitest/utils": {
+   "latest": "5.0.5",
+   "releases_12mo": 60,
+   "majors_12mo": 3,
+   "days_since_last_publish": 1,
+   "unpacked_size_kb": 146,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@volar/language-core": {
+   "latest": "2.4.28",
+   "releases_12mo": 5,
+   "majors_12mo": 1,
+   "days_since_last_publish": 263,
+   "unpacked_size_kb": 31,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@vue/language-core": {
+   "latest": "3.3.13",
+   "releases_12mo": 33,
+   "majors_12mo": 1,
+   "days_since_last_publish": 10,
+   "unpacked_size_kb": 432,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@wc-toolkit/cem-generator": {
+   "latest": "0.2.1",
+   "releases_12mo": 14,
+   "majors_12mo": 1,
+   "days_since_last_publish": 7,
+   "unpacked_size_kb": 144,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@wc-toolkit/cem-generator-lit": {
+   "latest": "0.1.16",
+   "releases_12mo": 16,
+   "majors_12mo": 1,
+   "days_since_last_publish": 7,
+   "unpacked_size_kb": 36,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@webcontainer/env": {
+   "latest": "1.1.1",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 937,
+   "unpacked_size_kb": 10,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "acorn": {
+   "latest": "8.19.0",
+   "releases_12mo": 4,
+   "majors_12mo": 1,
+   "days_since_last_publish": 16,
+   "unpacked_size_kb": 555,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "acorn-jsx": {
+   "latest": "5.3.2",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 1930,
+   "unpacked_size_kb": 24,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "acorn-walk": {
+   "latest": "8.3.5",
+   "releases_12mo": 1,
+   "majors_12mo": 1,
+   "days_since_last_publish": 243,
+   "unpacked_size_kb": 53,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "ansi-to-html": {
+   "latest": "0.7.2",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 1842,
+   "unpacked_size_kb": 78,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "axe-core": {
+   "latest": "4.14.0",
+   "releases_12mo": 206,
+   "majors_12mo": 1,
+   "days_since_last_publish": 0,
+   "unpacked_size_kb": 3350,
+   "deprecated": false,
+   "license": "MPL-2.0"
+  },
+  "browser-dtector": {
+   "latest": "4.1.1",
+   "releases_12mo": 1,
+   "majors_12mo": 1,
+   "days_since_last_publish": 324,
+   "unpacked_size_kb": 42,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "case-sensitive-paths-webpack-plugin": {
+   "latest": "2.4.0",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 2066,
+   "unpacked_size_kb": 25,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "chai": {
+   "latest": "6.3.0",
+   "releases_12mo": 3,
+   "majors_12mo": 1,
+   "days_since_last_publish": 20,
+   "unpacked_size_kb": 146,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "cjs-module-lexer": {
+   "latest": "2.3.0",
+   "releases_12mo": 4,
+   "majors_12mo": 1,
+   "days_since_last_publish": 16,
+   "unpacked_size_kb": 139,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "color-convert": {
+   "latest": "3.1.3",
+   "releases_12mo": 1,
+   "majors_12mo": 1,
+   "days_since_last_publish": 340,
+   "unpacked_size_kb": 47,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "commander": {
+   "latest": "15.0.0",
+   "releases_12mo": 4,
+   "majors_12mo": 2,
+   "days_since_last_publish": 145,
+   "unpacked_size_kb": 203,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "comment-json": {
+   "latest": "5.0.0",
+   "releases_12mo": 6,
+   "majors_12mo": 2,
+   "days_since_last_publish": 192,
+   "unpacked_size_kb": 71,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "comment-parser": {
+   "latest": "1.4.9",
+   "releases_12mo": 8,
+   "majors_12mo": 1,
+   "days_since_last_publish": 42,
+   "unpacked_size_kb": 393,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "copy-to-clipboard": {
+   "latest": "4.0.2",
+   "releases_12mo": 3,
+   "majors_12mo": 1,
+   "days_since_last_publish": 179,
+   "unpacked_size_kb": 33,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "cors": {
+   "latest": "2.8.6",
+   "releases_12mo": 1,
+   "majors_12mo": 1,
+   "days_since_last_publish": 271,
+   "unpacked_size_kb": 19,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "cross-spawn": {
+   "latest": "7.0.6",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 701,
+   "unpacked_size_kb": 16,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "danger": {
+   "latest": "14.0.7",
+   "releases_12mo": 8,
+   "majors_12mo": 2,
+   "days_since_last_publish": 54,
+   "unpacked_size_kb": 1373,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "dataloader": {
+   "latest": "2.2.3",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 686,
+   "unpacked_size_kb": 61,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "deep-object-diff": {
+   "latest": "1.1.9",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 1438,
+   "unpacked_size_kb": 23,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "deepsignal": {
+   "latest": "1.6.0",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 645,
+   "unpacked_size_kb": 280,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "dequal": {
+   "latest": "2.0.3",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 1562,
+   "unpacked_size_kb": 14,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "detect-indent": {
+   "latest": "7.0.2",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 400,
+   "unpacked_size_kb": 10,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "detect-port": {
+   "latest": "2.1.0",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 680,
+   "unpacked_size_kb": 54,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "diff": {
+   "latest": "9.0.0",
+   "releases_12mo": 8,
+   "majors_12mo": 5,
+   "days_since_last_publish": 191,
+   "unpacked_size_kb": 601,
+   "deprecated": false,
+   "license": "BSD-3-Clause"
+  },
+  "diff-match-patch-es": {
+   "latest": "2.0.1",
+   "releases_12mo": 2,
+   "majors_12mo": 1,
+   "days_since_last_publish": 72,
+   "unpacked_size_kb": 80,
+   "deprecated": false,
+   "license": "Apache-2.0"
+  },
+  "downshift": {
+   "latest": "9.4.0",
+   "releases_12mo": 24,
+   "majors_12mo": 1,
+   "days_since_last_publish": 113,
+   "unpacked_size_kb": 2993,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "ejs": {
+   "latest": "7.0.2",
+   "releases_12mo": 6,
+   "majors_12mo": 4,
+   "days_since_last_publish": 3,
+   "unpacked_size_kb": 213,
+   "deprecated": false,
+   "license": "Apache-2.0"
+  },
+  "ember-source": {
+   "latest": "7.3.1",
+   "releases_12mo": 70,
+   "majors_12mo": 3,
+   "days_since_last_publish": 3,
+   "unpacked_size_kb": 6692,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "empathic": {
+   "latest": "2.1.0",
+   "releases_12mo": 2,
+   "majors_12mo": 1,
+   "days_since_last_publish": 32,
+   "unpacked_size_kb": 21,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "entities": {
+   "latest": "8.1.0",
+   "releases_12mo": 3,
+   "majors_12mo": 2,
+   "days_since_last_publish": 43,
+   "unpacked_size_kb": 322,
+   "deprecated": false,
+   "license": "BSD-2-Clause"
+  },
+  "envinfo": {
+   "latest": "7.21.0",
+   "releases_12mo": 2,
+   "majors_12mo": 1,
+   "days_since_last_publish": 328,
+   "unpacked_size_kb": 164,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "es-module-lexer": {
+   "latest": "3.0.4",
+   "releases_12mo": 11,
+   "majors_12mo": 2,
+   "days_since_last_publish": 6,
+   "unpacked_size_kb": 248,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "es-toolkit": {
+   "latest": "1.52.0",
+   "releases_12mo": 456,
+   "majors_12mo": 1,
+   "days_since_last_publish": 0,
+   "unpacked_size_kb": 4133,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "esbuild": {
+   "latest": "0.28.2",
+   "releases_12mo": 12,
+   "majors_12mo": 1,
+   "days_since_last_publish": 73,
+   "unpacked_size_kb": 144,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "esbuild-raw-plugin": {
+   "latest": "0.3.1",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 479,
+   "unpacked_size_kb": 14,
+   "deprecated": false,
+   "license": "MPL-2.0"
+  },
+  "escodegen": {
+   "latest": "2.1.0",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 1209,
+   "unpacked_size_kb": 106,
+   "deprecated": false,
+   "license": "BSD-2-Clause"
+  },
+  "eslint": {
+   "latest": "10.13.0",
+   "releases_12mo": 33,
+   "majors_12mo": 2,
+   "days_since_last_publish": 4,
+   "unpacked_size_kb": 2881,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "esrap": {
+   "latest": "2.4.0",
+   "releases_12mo": 33,
+   "majors_12mo": 1,
+   "days_since_last_publish": 24,
+   "unpacked_size_kb": 121,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "estree-walker": {
+   "latest": "3.0.3",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 1370,
+   "unpacked_size_kb": 17,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "execa": {
+   "latest": "10.2.0",
+   "releases_12mo": 6,
+   "majors_12mo": 2,
+   "days_since_last_publish": 3,
+   "unpacked_size_kb": 415,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "express": {
+   "latest": "5.3.0",
+   "releases_12mo": 7,
+   "majors_12mo": 2,
+   "days_since_last_publish": 12,
+   "unpacked_size_kb": 75,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "exsolve": {
+   "latest": "1.1.3",
+   "releases_12mo": 5,
+   "majors_12mo": 1,
+   "days_since_last_publish": 18,
+   "unpacked_size_kb": 54,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "fast-folder-size": {
+   "latest": "2.4.2",
+   "releases_12mo": 1,
+   "majors_12mo": 1,
+   "days_since_last_publish": 28,
+   "unpacked_size_kb": 19,
+   "deprecated": false,
+   "license": "AWISC"
+  },
+  "fast-glob": {
+   "latest": "3.3.3",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 654,
+   "unpacked_size_kb": 96,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "fetch-retry": {
+   "latest": "6.0.0",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 947,
+   "unpacked_size_kb": 54,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "fork-ts-checker-webpack-plugin": {
+   "latest": "9.1.0",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 565,
+   "unpacked_size_kb": 207,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "fuse.js": {
+   "latest": "7.5.0",
+   "releases_12mo": 15,
+   "majors_12mo": 1,
+   "days_since_last_publish": 73,
+   "unpacked_size_kb": 407,
+   "deprecated": false,
+   "license": "Apache-2.0"
+  },
+  "get-npm-tarball-url": {
+   "latest": "2.1.0",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 1079,
+   "unpacked_size_kb": 8,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "github-slugger": {
+   "latest": "2.0.0",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 1454,
+   "unpacked_size_kb": 16,
+   "deprecated": false,
+   "license": "ISC"
+  },
+  "glob": {
+   "latest": "13.0.6",
+   "releases_12mo": 10,
+   "majors_12mo": 4,
+   "days_since_last_publish": 243,
+   "unpacked_size_kb": 1570,
+   "deprecated": false,
+   "license": "BlueOak-1.0.0"
+  },
+  "globals": {
+   "latest": "17.13.0",
+   "releases_12mo": 15,
+   "majors_12mo": 2,
+   "days_since_last_publish": 20,
+   "unpacked_size_kb": 251,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "globby": {
+   "latest": "16.2.4",
+   "releases_12mo": 8,
+   "majors_12mo": 1,
+   "days_since_last_publish": 62,
+   "unpacked_size_kb": 113,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "host-validation-middleware": {
+   "latest": "0.1.4",
+   "releases_12mo": 2,
+   "majors_12mo": 1,
+   "days_since_last_publish": 200,
+   "unpacked_size_kb": 10,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "html-tags": {
+   "latest": "5.1.0",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 446,
+   "unpacked_size_kb": 6,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "html-webpack-plugin": {
+   "latest": "5.6.8",
+   "releases_12mo": 4,
+   "majors_12mo": 1,
+   "days_since_last_publish": 88,
+   "unpacked_size_kb": 130,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "istanbul-lib-report": {
+   "latest": "3.0.1",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 1183,
+   "unpacked_size_kb": 37,
+   "deprecated": false,
+   "license": "BSD-3-Clause"
+  },
+  "jscodeshift": {
+   "latest": "17.4.0",
+   "releases_12mo": 1,
+   "majors_12mo": 1,
+   "days_since_last_publish": 97,
+   "unpacked_size_kb": 395,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "jsdoc-type-pratt-parser": {
+   "latest": "9.3.0",
+   "releases_12mo": 17,
+   "majors_12mo": 4,
+   "days_since_last_publish": 1,
+   "unpacked_size_kb": 138,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "json5": {
+   "latest": "2.2.3",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 1389,
+   "unpacked_size_kb": 230,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "junit-xml": {
+   "latest": "1.2.0",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 2565,
+   "unpacked_size_kb": 49,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "kill-port": {
+   "latest": "2.0.1",
+   "releases_12mo": 2,
+   "majors_12mo": 1,
+   "days_since_last_publish": 331,
+   "unpacked_size_kb": 171,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "knip": {
+   "latest": "6.42.1",
+   "releases_12mo": 119,
+   "majors_12mo": 2,
+   "days_since_last_publish": 1,
+   "unpacked_size_kb": 2039,
+   "deprecated": false,
+   "license": "ISC"
+  },
+  "knitwork": {
+   "latest": "1.3.0",
+   "releases_12mo": 1,
+   "majors_12mo": 1,
+   "days_since_last_publish": 341,
+   "unpacked_size_kb": 40,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "launch-editor": {
+   "latest": "2.14.2",
+   "releases_12mo": 7,
+   "majors_12mo": 1,
+   "days_since_last_publish": 15,
+   "unpacked_size_kb": 35,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "lazy-universal-dotenv": {
+   "latest": "4.0.0",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 1360,
+   "unpacked_size_kb": 17,
+   "deprecated": false,
+   "license": "Apache-2.0"
+  },
+  "leven": {
+   "latest": "4.1.0",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 405,
+   "unpacked_size_kb": 10,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "lilconfig": {
+   "latest": "3.1.4",
+   "releases_12mo": 1,
+   "majors_12mo": 1,
+   "days_since_last_publish": 4,
+   "unpacked_size_kb": 18,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "lit": {
+   "latest": "3.3.3",
+   "releases_12mo": 2,
+   "majors_12mo": 1,
+   "days_since_last_publish": 160,
+   "unpacked_size_kb": 104,
+   "deprecated": false,
+   "license": "BSD-3-Clause"
+  },
+  "loader-utils": {
+   "latest": "3.3.1",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 867,
+   "unpacked_size_kb": 31,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "lodash-es": {
+   "latest": "4.18.1",
+   "releases_12mo": 4,
+   "majors_12mo": 1,
+   "days_since_last_publish": 202,
+   "unpacked_size_kb": 620,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "magic-string": {
+   "latest": "1.4.3",
+   "releases_12mo": 14,
+   "majors_12mo": 2,
+   "days_since_last_publish": 16,
+   "unpacked_size_kb": 92,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "markdown-to-jsx": {
+   "latest": "9.10.3",
+   "releases_12mo": 62,
+   "majors_12mo": 3,
+   "days_since_last_publish": 35,
+   "unpacked_size_kb": 4922,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "mdast-util-from-markdown": {
+   "latest": "2.1.0",
+   "releases_12mo": 2,
+   "majors_12mo": 1,
+   "days_since_last_publish": 17,
+   "unpacked_size_kb": 103,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "mdast-util-mdx": {
+   "latest": "3.0.0",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 1197,
+   "unpacked_size_kb": 19,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "memfs": {
+   "latest": "4.80.0",
+   "releases_12mo": 55,
+   "majors_12mo": 1,
+   "days_since_last_publish": 21,
+   "unpacked_size_kb": 72,
+   "deprecated": false,
+   "license": "Apache-2.0"
+  },
+  "memoizerific": {
+   "latest": "1.11.3",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 3134,
+   "unpacked_size_kb": 40,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "micromark-extension-mdxjs": {
+   "latest": "3.0.0",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 1098,
+   "unpacked_size_kb": 14,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "micromatch": {
+   "latest": "4.0.8",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 788,
+   "unpacked_size_kb": 55,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "minimatch": {
+   "latest": "10.2.6",
+   "releases_12mo": 33,
+   "majors_12mo": 8,
+   "days_since_last_publish": 85,
+   "unpacked_size_kb": 524,
+   "deprecated": false,
+   "license": "BlueOak-1.0.0"
+  },
+  "modern-tar": {
+   "latest": "0.8.6",
+   "releases_12mo": 18,
+   "majors_12mo": 1,
+   "days_since_last_publish": 6,
+   "unpacked_size_kb": 96,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "module-alias": {
+   "latest": "2.3.4",
+   "releases_12mo": 5,
+   "majors_12mo": 1,
+   "days_since_last_publish": 258,
+   "unpacked_size_kb": 24,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "nanoid": {
+   "latest": "6.0.2",
+   "releases_12mo": 22,
+   "majors_12mo": 3,
+   "days_since_last_publish": 15,
+   "unpacked_size_kb": 14,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "next": {
+   "latest": "16.4.2",
+   "releases_12mo": 580,
+   "majors_12mo": 3,
+   "days_since_last_publish": 0,
+   "unpacked_size_kb": 188006,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "npm-registry-client": {
+   "latest": "8.6.0",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 3022,
+   "unpacked_size_kb": 88,
+   "deprecated": true,
+   "license": "ISC"
+  },
+  "npmlog": {
+   "latest": "7.0.1",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 1463,
+   "unpacked_size_kb": 17,
+   "deprecated": true,
+   "license": "ISC"
+  },
+  "open": {
+   "latest": "11.0.4",
+   "releases_12mo": 5,
+   "majors_12mo": 1,
+   "days_since_last_publish": 36,
+   "unpacked_size_kb": 59,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "ora": {
+   "latest": "9.4.1",
+   "releases_12mo": 5,
+   "majors_12mo": 1,
+   "days_since_last_publish": 121,
+   "unpacked_size_kb": 40,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "oxc-parser": {
+   "latest": "0.155.0",
+   "releases_12mo": 57,
+   "majors_12mo": 1,
+   "days_since_last_publish": 1,
+   "unpacked_size_kb": 2851,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "oxc-resolver": {
+   "latest": "11.24.2",
+   "releases_12mo": 24,
+   "majors_12mo": 1,
+   "days_since_last_publish": 100,
+   "unpacked_size_kb": 60,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "oxfmt": {
+   "latest": "0.74.0",
+   "releases_12mo": 66,
+   "majors_12mo": 1,
+   "days_since_last_publish": 1,
+   "unpacked_size_kb": 8755,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "p-limit": {
+   "latest": "7.3.3",
+   "releases_12mo": 4,
+   "majors_12mo": 1,
+   "days_since_last_publish": 32,
+   "unpacked_size_kb": 16,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "package-manager-detector": {
+   "latest": "1.9.0",
+   "releases_12mo": 4,
+   "majors_12mo": 1,
+   "days_since_last_publish": 16,
+   "unpacked_size_kb": 30,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "pathe": {
+   "latest": "2.0.3",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 616,
+   "unpacked_size_kb": 50,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "picocolors": {
+   "latest": "1.1.1",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 734,
+   "unpacked_size_kb": 6,
+   "deprecated": false,
+   "license": "ISC"
+  },
+  "picomatch": {
+   "latest": "4.0.7",
+   "releases_12mo": 6,
+   "majors_12mo": 3,
+   "days_since_last_publish": 57,
+   "unpacked_size_kb": 92,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "picoquery": {
+   "latest": "2.5.0",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 486,
+   "unpacked_size_kb": 36,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "playwright": {
+   "latest": "1.64.1",
+   "releases_12mo": 560,
+   "majors_12mo": 1,
+   "days_since_last_publish": 0,
+   "unpacked_size_kb": 4916,
+   "deprecated": false,
+   "license": "Apache-2.0"
+  },
+  "playwright-core": {
+   "latest": "1.64.1",
+   "releases_12mo": 559,
+   "majors_12mo": 1,
+   "days_since_last_publish": 0,
+   "unpacked_size_kb": 13336,
+   "deprecated": false,
+   "license": "Apache-2.0"
+  },
+  "polished": {
+   "latest": "4.3.1",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 992,
+   "unpacked_size_kb": 2730,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "polka": {
+   "latest": "0.5.2",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 761,
+   "unpacked_size_kb": 25,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "postcss-load-config": {
+   "latest": "6.0.1",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 870,
+   "unpacked_size_kb": 22,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "preact": {
+   "latest": "11.0.1",
+   "releases_12mo": 23,
+   "majors_12mo": 2,
+   "days_since_last_publish": 13,
+   "unpacked_size_kb": 605,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "prettier": {
+   "latest": "3.9.10",
+   "releases_12mo": 23,
+   "majors_12mo": 2,
+   "days_since_last_publish": 11,
+   "unpacked_size_kb": 9726,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "pretty-bytes": {
+   "latest": "7.2.0",
+   "releases_12mo": 4,
+   "majors_12mo": 1,
+   "days_since_last_publish": 25,
+   "unpacked_size_kb": 25,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "pretty-hrtime": {
+   "latest": "1.0.3",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 3636,
+   "unpacked_size_kb": 0,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "pretty-ms": {
+   "latest": "10.0.0",
+   "releases_12mo": 2,
+   "majors_12mo": 2,
+   "days_since_last_publish": 7,
+   "unpacked_size_kb": 24,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "probe-image-size": {
+   "latest": "7.4.0",
+   "releases_12mo": 2,
+   "majors_12mo": 1,
+   "days_since_last_publish": 67,
+   "unpacked_size_kb": 68,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "prompts": {
+   "latest": "2.4.2",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 1839,
+   "unpacked_size_kb": 182,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "qrcode.react": {
+   "latest": "4.2.0",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 678,
+   "unpacked_size_kb": 112,
+   "deprecated": false,
+   "license": "ISC"
+  },
+  "react": {
+   "latest": "19.3.1",
+   "releases_12mo": 415,
+   "majors_12mo": 2,
+   "days_since_last_publish": 0,
+   "unpacked_size_kb": 174,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "react-aria": {
+   "latest": "3.53.1",
+   "releases_12mo": 241,
+   "majors_12mo": 1,
+   "days_since_last_publish": 11,
+   "unpacked_size_kb": 15378,
+   "deprecated": false,
+   "license": "Apache-2.0"
+  },
+  "react-aria-components": {
+   "latest": "1.22.1",
+   "releases_12mo": 242,
+   "majors_12mo": 2,
+   "days_since_last_publish": 11,
+   "unpacked_size_kb": 6773,
+   "deprecated": false,
+   "license": "Apache-2.0"
+  },
+  "react-colorful": {
+   "latest": "5.8.1",
+   "releases_12mo": 4,
+   "majors_12mo": 1,
+   "days_since_last_publish": 49,
+   "unpacked_size_kb": 398,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "react-docgen": {
+   "latest": "8.0.4",
+   "releases_12mo": 2,
+   "majors_12mo": 1,
+   "days_since_last_publish": 30,
+   "unpacked_size_kb": 227,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "react-docgen-typescript": {
+   "latest": "2.4.0",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 497,
+   "unpacked_size_kb": 257,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "react-dom": {
+   "latest": "19.3.1",
+   "releases_12mo": 415,
+   "majors_12mo": 2,
+   "days_since_last_publish": 0,
+   "unpacked_size_kb": 7879,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "react-element-to-jsx-string": {
+   "latest": "18.0.0",
+   "releases_12mo": 1,
+   "majors_12mo": 1,
+   "days_since_last_publish": 14,
+   "unpacked_size_kb": 209,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "react-helmet-async": {
+   "latest": "3.0.0",
+   "releases_12mo": 1,
+   "majors_12mo": 1,
+   "days_since_last_publish": 232,
+   "unpacked_size_kb": 99,
+   "deprecated": false,
+   "license": "Apache-2.0"
+  },
+  "react-inspector": {
+   "latest": "9.0.0",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 412,
+   "unpacked_size_kb": 254,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "react-joyride": {
+   "latest": "3.2.0",
+   "releases_12mo": 8,
+   "majors_12mo": 1,
+   "days_since_last_publish": 103,
+   "unpacked_size_kb": 703,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "react-popper-tooltip": {
+   "latest": "4.4.2",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 1577,
+   "unpacked_size_kb": 91,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "react-router-dom": {
+   "latest": "7.18.4",
+   "releases_12mo": 144,
+   "majors_12mo": 3,
+   "days_since_last_publish": 35,
+   "unpacked_size_kb": 5,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "react-stately": {
+   "latest": "3.51.0",
+   "releases_12mo": 239,
+   "majors_12mo": 1,
+   "days_since_last_publish": 13,
+   "unpacked_size_kb": 5772,
+   "deprecated": false,
+   "license": "Apache-2.0"
+  },
+  "react-syntax-highlighter": {
+   "latest": "16.1.2",
+   "releases_12mo": 4,
+   "majors_12mo": 1,
+   "days_since_last_publish": 12,
+   "unpacked_size_kb": 2143,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "react-textarea-autosize": {
+   "latest": "8.5.9",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 569,
+   "unpacked_size_kb": 86,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "react-transition-state": {
+   "latest": "2.4.1",
+   "releases_12mo": 5,
+   "majors_12mo": 1,
+   "days_since_last_publish": 1,
+   "unpacked_size_kb": 31,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "recast": {
+   "latest": "0.24.0",
+   "releases_12mo": 11,
+   "majors_12mo": 1,
+   "days_since_last_publish": 72,
+   "unpacked_size_kb": 246,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "rehype-external-links": {
+   "latest": "3.0.0",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 1143,
+   "unpacked_size_kb": 23,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "rehype-slug": {
+   "latest": "6.0.0",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 1146,
+   "unpacked_size_kb": 11,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "resolve": {
+   "latest": "1.22.13",
+   "releases_12mo": 4,
+   "majors_12mo": 2,
+   "days_since_last_publish": 14,
+   "unpacked_size_kb": 160,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "rolldown": {
+   "latest": "1.2.15",
+   "releases_12mo": 60,
+   "majors_12mo": 1,
+   "days_since_last_publish": 0,
+   "unpacked_size_kb": 855,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "rolldown-plugin-dts": {
+   "latest": "0.28.8",
+   "releases_12mo": 72,
+   "majors_12mo": 1,
+   "days_since_last_publish": 0,
+   "unpacked_size_kb": 108,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "rollup": {
+   "latest": "4.64.12",
+   "releases_12mo": 53,
+   "majors_12mo": 4,
+   "days_since_last_publish": 1,
+   "unpacked_size_kb": 2878,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "rxjs": {
+   "latest": "7.8.2",
+   "releases_12mo": 2,
+   "majors_12mo": 1,
+   "days_since_last_publish": 11,
+   "unpacked_size_kb": 4392,
+   "deprecated": false,
+   "license": "Apache-2.0"
+  },
+  "safe-identifier": {
+   "latest": "0.4.2",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 2264,
+   "unpacked_size_kb": 6,
+   "deprecated": false,
+   "license": "ISC"
+  },
+  "semver": {
+   "latest": "7.8.5",
+   "releases_12mo": 7,
+   "majors_12mo": 1,
+   "days_since_last_publish": 123,
+   "unpacked_size_kb": 99,
+   "deprecated": false,
+   "license": "ISC"
+  },
+  "simple-git": {
+   "latest": "4.0.2",
+   "releases_12mo": 16,
+   "majors_12mo": 2,
+   "days_since_last_publish": 24,
+   "unpacked_size_kb": 852,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "sirv": {
+   "latest": "3.0.2",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 412,
+   "unpacked_size_kb": 21,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "slash": {
+   "latest": "5.1.0",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 1260,
+   "unpacked_size_kb": 3,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "sort-package-json": {
+   "latest": "4.1.0",
+   "releases_12mo": 9,
+   "majors_12mo": 2,
+   "days_since_last_publish": 6,
+   "unpacked_size_kb": 62,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "srvx": {
+   "latest": "1.0.6",
+   "releases_12mo": 50,
+   "majors_12mo": 2,
+   "days_since_last_publish": 4,
+   "unpacked_size_kb": 178,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "std-env": {
+   "latest": "4.3.0",
+   "releases_12mo": 5,
+   "majors_12mo": 1,
+   "days_since_last_publish": 22,
+   "unpacked_size_kb": 18,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "store2": {
+   "latest": "2.14.4",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 663,
+   "unpacked_size_kb": 87,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "strip-ansi": {
+   "latest": "7.2.0",
+   "releases_12mo": 1,
+   "majors_12mo": 1,
+   "days_since_last_publish": 236,
+   "unpacked_size_kb": 4,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "strip-json-comments": {
+   "latest": "5.0.3",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 438,
+   "unpacked_size_kb": 8,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "styled-jsx": {
+   "latest": "5.1.7",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 538,
+   "unpacked_size_kb": 1007,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "svelte": {
+   "latest": "5.57.2",
+   "releases_12mo": 103,
+   "majors_12mo": 1,
+   "days_since_last_publish": 14,
+   "unpacked_size_kb": 2878,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "svelte2tsx": {
+   "latest": "0.7.62",
+   "releases_12mo": 17,
+   "majors_12mo": 1,
+   "days_since_last_publish": 4,
+   "unpacked_size_kb": 830,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "sveltedoc-parser": {
+   "latest": "4.2.1",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 1771,
+   "unpacked_size_kb": 158,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "telejson": {
+   "latest": "8.0.0",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 553,
+   "unpacked_size_kb": 140,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "terser-webpack-plugin": {
+   "latest": "5.6.1",
+   "releases_12mo": 7,
+   "majors_12mo": 1,
+   "days_since_last_publish": 146,
+   "unpacked_size_kb": 176,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "tiny-invariant": {
+   "latest": "1.3.3",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 970,
+   "unpacked_size_kb": 14,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "tinyclip": {
+   "latest": "1.0.3",
+   "releases_12mo": 13,
+   "majors_12mo": 2,
+   "days_since_last_publish": 37,
+   "unpacked_size_kb": 8,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "tinyexec": {
+   "latest": "1.3.1",
+   "releases_12mo": 13,
+   "majors_12mo": 1,
+   "days_since_last_publish": 48,
+   "unpacked_size_kb": 26,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "tinyglobby": {
+   "latest": "0.2.17",
+   "releases_12mo": 2,
+   "majors_12mo": 1,
+   "days_since_last_publish": 143,
+   "unpacked_size_kb": 38,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "tinyspy": {
+   "latest": "4.0.6",
+   "releases_12mo": 1,
+   "majors_12mo": 1,
+   "days_since_last_publish": 46,
+   "unpacked_size_kb": 11,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "tmcp": {
+   "latest": "1.20.0",
+   "releases_12mo": 20,
+   "majors_12mo": 1,
+   "days_since_last_publish": 68,
+   "unpacked_size_kb": 413,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "tocbot": {
+   "latest": "4.36.8",
+   "releases_12mo": 2,
+   "majors_12mo": 1,
+   "days_since_last_publish": 159,
+   "unpacked_size_kb": 172,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "trash": {
+   "latest": "10.1.1",
+   "releases_12mo": 3,
+   "majors_12mo": 1,
+   "days_since_last_publish": 237,
+   "unpacked_size_kb": 754,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "tree-kill": {
+   "latest": "1.2.2",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 2505,
+   "unpacked_size_kb": 8,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "ts-dedent": {
+   "latest": "2.3.0",
+   "releases_12mo": 4,
+   "majors_12mo": 1,
+   "days_since_last_publish": 133,
+   "unpacked_size_kb": 27,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "tsconfig-paths": {
+   "latest": "4.2.0",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 1041,
+   "unpacked_size_kb": 211,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "tsconfig-paths-webpack-plugin": {
+   "latest": "4.2.0",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 705,
+   "unpacked_size_kb": 269,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "type-fest": {
+   "latest": "5.10.0",
+   "releases_12mo": 14,
+   "majors_12mo": 1,
+   "days_since_last_publish": 34,
+   "unpacked_size_kb": 567,
+   "deprecated": false,
+   "license": "(MIT OR CC0-1.0)"
+  },
+  "typescript": {
+   "latest": "7.0.2",
+   "releases_12mo": 261,
+   "majors_12mo": 2,
+   "days_since_last_publish": 0,
+   "unpacked_size_kb": 2439,
+   "deprecated": false,
+   "license": "Apache-2.0"
+  },
+  "unique-string": {
+   "latest": "3.0.0",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 2025,
+   "unpacked_size_kb": 3,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "unplugin": {
+   "latest": "3.4.0",
+   "releases_12mo": 8,
+   "majors_12mo": 2,
+   "days_since_last_publish": 35,
+   "unpacked_size_kb": 78,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "use-resize-observer": {
+   "latest": "10.0.0",
+   "releases_12mo": 4,
+   "majors_12mo": 1,
+   "days_since_last_publish": 82,
+   "unpacked_size_kb": 42,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "uuid": {
+   "latest": "14.0.3",
+   "releases_12mo": 8,
+   "majors_12mo": 4,
+   "days_since_last_publish": 11,
+   "unpacked_size_kb": 64,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "valibot": {
+   "latest": "1.5.0",
+   "releases_12mo": 7,
+   "majors_12mo": 1,
+   "days_since_last_publish": 42,
+   "unpacked_size_kb": 1822,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "verdaccio": {
+   "latest": "6.10.6",
+   "releases_12mo": 93,
+   "majors_12mo": 4,
+   "days_since_last_publish": 2,
+   "unpacked_size_kb": 1243,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "vite": {
+   "latest": "8.3.5",
+   "releases_12mo": 78,
+   "majors_12mo": 3,
+   "days_since_last_publish": 0,
+   "unpacked_size_kb": 2327,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "vite-plugin-rnw": {
+   "latest": "0.0.12",
+   "releases_12mo": 11,
+   "majors_12mo": 1,
+   "days_since_last_publish": 93,
+   "unpacked_size_kb": 16,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "vite-tsconfig-paths": {
+   "latest": "6.1.1",
+   "releases_12mo": 11,
+   "majors_12mo": 2,
+   "days_since_last_publish": 54,
+   "unpacked_size_kb": 110,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "vitest": {
+   "latest": "5.0.5",
+   "releases_12mo": 60,
+   "majors_12mo": 3,
+   "days_since_last_publish": 1,
+   "unpacked_size_kb": 2752,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "vitest-axe": {
+   "latest": "0.1.0",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 637,
+   "unpacked_size_kb": 72,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "vue": {
+   "latest": "3.5.44",
+   "releases_12mo": 56,
+   "majors_12mo": 1,
+   "days_since_last_publish": 5,
+   "unpacked_size_kb": 2521,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "vue-component-meta": {
+   "latest": "3.3.13",
+   "releases_12mo": 33,
+   "majors_12mo": 1,
+   "days_since_last_publish": 10,
+   "unpacked_size_kb": 54,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "vue-component-type-helpers": {
+   "latest": "3.3.13",
+   "releases_12mo": 33,
+   "majors_12mo": 1,
+   "days_since_last_publish": 10,
+   "unpacked_size_kb": 6,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "vue-docgen-api": {
+   "latest": "4.79.2",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 811,
+   "unpacked_size_kb": 790,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "wait-on": {
+   "latest": "9.5.1",
+   "releases_12mo": 17,
+   "majors_12mo": 2,
+   "days_since_last_publish": 20,
+   "unpacked_size_kb": 50,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "watchpack": {
+   "latest": "2.6.3",
+   "releases_12mo": 7,
+   "majors_12mo": 1,
+   "days_since_last_publish": 2,
+   "unpacked_size_kb": 115,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "webpack": {
+   "latest": "5.112.0",
+   "releases_12mo": 29,
+   "majors_12mo": 1,
+   "days_since_last_publish": 5,
+   "unpacked_size_kb": 13331,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "webpack-dev-middleware": {
+   "latest": "8.5.0",
+   "releases_12mo": 12,
+   "majors_12mo": 2,
+   "days_since_last_publish": 2,
+   "unpacked_size_kb": 943,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "webpack-hot-middleware": {
+   "latest": "2.26.1",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 992,
+   "unpacked_size_kb": 33,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "webpack-virtual-modules": {
+   "latest": "0.6.2",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 868,
+   "unpacked_size_kb": 45,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "window-size": {
+   "latest": "1.1.1",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 3007,
+   "unpacked_size_kb": 12,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "wrap-ansi": {
+   "latest": "10.0.2",
+   "releases_12mo": 3,
+   "majors_12mo": 1,
+   "days_since_last_publish": 30,
+   "unpacked_size_kb": 25,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "ws": {
+   "latest": "8.22.0",
+   "releases_12mo": 17,
+   "majors_12mo": 4,
+   "days_since_last_publish": 24,
+   "unpacked_size_kb": 148,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "yaml": {
+   "latest": "2.9.1",
+   "releases_12mo": 9,
+   "majors_12mo": 3,
+   "days_since_last_publish": 39,
+   "unpacked_size_kb": 670,
+   "deprecated": false,
+   "license": "ISC"
+  },
+  "yargs": {
+   "latest": "18.2.0",
+   "releases_12mo": 6,
+   "majors_12mo": 3,
+   "days_since_last_publish": 30,
+   "unpacked_size_kb": 231,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "zimmerframe": {
+   "latest": "1.1.5",
+   "releases_12mo": 1,
+   "majors_12mo": 1,
+   "days_since_last_publish": 50,
+   "unpacked_size_kb": 13,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "zod": {
+   "latest": "4.6.7",
+   "releases_12mo": 227,
+   "majors_12mo": 1,
+   "days_since_last_publish": 8,
+   "unpacked_size_kb": 6005,
+   "deprecated": false,
+   "license": "MIT"
+  }
+ }
+}

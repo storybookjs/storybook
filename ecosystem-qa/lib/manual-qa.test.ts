@@ -64,6 +64,32 @@ describe('renderManualChecklist', () => {
     );
   });
 
+  it('makes one item of a check that a row of manual QA and a group share', () => {
+    const check = 'On Windows 11, run `npx storybook dev`.';
+    const plan = {
+      ...PLAN,
+      manual: [{ check, why: 'only Windows', prs: [37344] }],
+      none: [],
+      groups: [
+        {
+          slug: 'windows',
+          source: 'area Windows',
+          decision: { manual: check, why: 'only Windows' },
+          prs: [36664],
+        },
+      ],
+    };
+
+    expect(renderManualChecklist(plan, WINDOW)).toContain(
+      [
+        '- [ ] On Windows 11, run `npx storybook dev`.',
+        '  - [#37344](https://github.com/storybookjs/storybook/pull/37344) `Core: Fix stories failing to load on Windows with the webpack builder`',
+        '  - [#36664](https://github.com/storybookjs/storybook/pull/36664) `CI: Cancel workflow when format check fails`',
+        '',
+      ].join('\n')
+    );
+  });
+
   it('prints a title with a mention, a reference, and backticks as one code span', () => {
     const window = {
       ...WINDOW,

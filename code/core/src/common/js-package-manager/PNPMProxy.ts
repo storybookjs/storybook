@@ -12,13 +12,14 @@ import * as find from 'empathic/find';
 import type { ResultPromise } from 'execa';
 import { coerce, gte, prerelease } from 'semver';
 import { dedent } from 'ts-dedent';
-import { Document, parseDocument } from 'yaml';
+import { Document, isMap, parseDocument } from 'yaml';
 
 import type { ExecuteCommandOptions } from '../utils/command.ts';
 import { executeCommand, executeCommandSync } from '../utils/command.ts';
 import { getProjectRoot } from '../utils/paths.ts';
 import { JsPackageManager, PackageManagerName } from './JsPackageManager.ts';
 import type { PackageJson } from './PackageJson.ts';
+import { type OverrideSource, toOverrides } from './overrides.ts';
 import { hasAllowBuildsDecision, hasPnpm10ListDecision } from './pnpm-build-approvals.ts';
 import type { InstallationMetadata, PackageMetadata } from './types.ts';
 import {
@@ -285,6 +286,17 @@ export class PNPMProxy extends JsPackageManager {
     }
     this.#writeWorkspaceYaml(workspace);
     return upgrades.filter(({ catalog }) => catalog === null).map(({ specifier }) => specifier);
+  }
+
+  /** Adds the `overrides` of `pnpm-workspace.yaml`, which pnpm 10 reads alongside package.json. */
+  override getOverrideSources(): OverrideSource[] {
+    const sources = super.getOverrideSources();
+    const workspace = this.#readWorkspaceYaml();
+    const node = workspace?.doc.get('overrides');
+    const overrides = isMap(node) ? toOverrides(node.toJSON()) : undefined;
+    return workspace && overrides
+      ? [...sources, { path: workspace.path, field: 'overrides', overrides }]
+      : sources;
   }
 
   override applyVersionToRelatedPackages(

@@ -22,6 +22,7 @@ export interface ProjectDoctorData {
 export enum DiagnosticType {
   MISSING_STORYBOOK_DEPENDENCY = 'missing_storybook_dependency',
   INCOMPATIBLE_PACKAGES = 'incompatible_packages',
+  STORYBOOK_OVERRIDES = 'storybook_overrides',
   MISMATCHING_VERSIONS = 'mismatching_versions',
   DUPLICATED_DEPENDENCIES = 'duplicated_dependencies',
   CONFIGURATION_ERROR = 'configuration_error',

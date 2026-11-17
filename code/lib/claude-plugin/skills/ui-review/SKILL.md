@@ -1,6 +1,6 @@
 ---
 name: ui-review
-description: When the user asks for a review or to see stories, create a Storybook review that shows them the stories a UI change affects, or the components and stories they ask to see.
+description: Run this skill yourself when the user asks for a review, or to see or be shown components, stories, or their states in Storybook. It creates a Storybook review, a page that shows them rendered, which a list in text does not, with the stories a UI change affects or the components and stories the user asks to see.
 ---
 
 Prerequisites:

@@ -225,17 +225,20 @@ export function expectNoDisplayReview(): void {
   ).not.toMatch(/[?&]path=\/review\//);
 }
 
-// For a request to test or fix one component (810, 811): a \`test-run\` call with \`changed\` or
-// with story \`files\`. A run of every story alone also tests it, but is not the run that was asked for.
+// For a request to test or fix one component (810, 811): a \`test-run\` call with \`changed\`,
+// with story \`files\`, or with \`stories\` (the MCP tool takes story ids). A run of every story
+// alone also tests it, but is not the run that was asked for.
 export function expectFocusedTestRun(): void {
   const calls = getWorkflowCalls('test-run');
+  const isList = (value: unknown) => Array.isArray(value) && value.length > 0;
   expect(
     calls.some(
       ({ input }) =>
         (input.changed !== undefined && input.changed !== false) ||
-        (Array.isArray(input.files) && input.files.length > 0)
+        isList(input.files) ||
+        isList(input.stories)
     ),
-    `Expected a test-run call with changed or files. Received inputs: ${JSON.stringify(calls.map(({ input }) => input))}`
+    `Expected a test-run call with changed, files or stories. Received inputs: ${JSON.stringify(calls.map(({ input }) => input))}`
   ).toBe(true);
 }
 

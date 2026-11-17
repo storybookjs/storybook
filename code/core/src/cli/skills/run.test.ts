@@ -231,7 +231,7 @@ describe('runSkillsCommand', () => {
     expect(testStories.output).not.toContain('stories-changed');
     expect(testStories.output).toContain('This Storybook has no tool that lists story ids.');
 
-    // A client that turns the toolset on with the `X-MCP-Toolsets` header has the tool.
+    // The skill still names the tool, and says to skip the step when the server does not give it.
     const uiReview = await runSkillsCommand({ tokens: ['ui-review'], mcp: true, target: {} }, d);
     expect(uiReview.output).toContain('When the server does not give you `review-create`, skip');
     expect(uiReview.output).toContain('Call `review-create` with:');

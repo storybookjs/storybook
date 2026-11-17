@@ -28,8 +28,8 @@ export type SkillInputs = ToolAvailability & {
 };
 
 // Reads the `mcpToolsets` preset property of addon-mcp, so `skills --mcp` names only the tools its
-// server registers. An `X-MCP-Toolsets` request header replaces these toolsets for one client; the
-// CLI cannot see that.
+// server registers. An `X-MCP-Toolsets` request header narrows these toolsets for one client and
+// cannot turn on a toolset that `main.ts` turns off; the CLI cannot see the header.
 async function resolveMcpToolsets(options: Options): Promise<McpToolsets> {
   return (
     (await options.presets.apply<McpToolsets | undefined>('mcpToolsets', undefined)) ??

@@ -26,7 +26,7 @@ it.runIf(BUILT).each([
 ])(
   'loads the built coverage reporter through the %s loader',
   async (_version, packages, moduleSystem) => {
-    // The loader resolves the reporter from its own directory, which can see this addon here.
+    // The copy sits outside this package, so a bare specifier cannot resolve the addon.
     const directory = mkdtempSync(join(tmpdir(), 'sb-coverage-reporter-'));
     try {
       let loaderFile = '';

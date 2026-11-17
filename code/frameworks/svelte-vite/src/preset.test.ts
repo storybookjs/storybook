@@ -8,9 +8,8 @@ import { svelteDocgen } from './plugins/svelte-docgen.ts';
 import { viteFinal } from './preset.ts';
 import type { FrameworkOptions } from './types.ts';
 
-vi.mock(
-  'storybook/internal/node-logger',
-  async () => import('../../../core/src/node-logger/index.ts')
+vi.mock('storybook/internal/node-logger', async () =>
+  vi.importActual<typeof import('storybook/internal/node-logger')>('storybook/internal/node-logger')
 );
 vi.mock('./plugins/svelte-docgen.ts', () => ({ svelteDocgen: vi.fn() }));
 vi.mock('./plugins/svelte-csf.ts', () => ({ svelteCsf: () => ({ name: 'svelte-csf' }) }));

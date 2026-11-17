@@ -2,7 +2,6 @@ import { logger } from 'storybook/internal/client-logger';
 import type { GlobalTypes, Globals } from 'storybook/internal/types';
 
 import { DEEPLY_EQUAL, deepDiff } from './args.ts';
-import { getValuesFromGlobalTypes } from './csf/getValuesFromGlobalTypes.ts';
 
 export class GlobalsStore {
   // We use ! here because TS doesn't analyse the .set() function to see if it actually get set
@@ -27,8 +26,7 @@ export class GlobalsStore {
 
     this.allowedGlobalNames = new Set([...Object.keys(globals), ...Object.keys(globalTypes)]);
 
-    const defaultGlobals: Globals = getValuesFromGlobalTypes(globalTypes);
-    this.initialGlobals = { ...defaultGlobals, ...globals };
+    this.initialGlobals = { ...globals };
 
     this.globals = this.initialGlobals;
     if (delta && delta !== DEEPLY_EQUAL) {

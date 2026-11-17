@@ -13,6 +13,27 @@ The Button component is a fundamental building block for user interactions. It c
 
 Buttons should be used for actions that affect the current page or trigger operations. For navigation, consider using a Link component instead.
 
+## Props
+
+\`\`\`
+export type Props = {
+  /** The visual style variant of the button */
+  variant?: "primary" | "secondary" | "tertiary" | "danger" = "primary";
+  /** The size of the button */
+  size?: "small" | "medium" | "large" = "medium";
+  /** Whether the button is disabled */
+  disabled?: boolean = false;
+  /** Whether the button is in a loading state */
+  loading?: boolean = false;
+  /** Whether the button should take up the full width of its container */
+  fullWidth?: boolean = false;
+  /** Callback function when the button is clicked */
+  onClick?: (event: MouseEvent) => void;
+  /** The content of the button */
+  children: ReactNode;
+}
+\`\`\`
+
 ## Stories
 
 ### Primary
@@ -70,42 +91,7 @@ const WithSizes = () => (
 ### Other Stories
 
 - Loading (button--loading): Button in loading state during async operations
-- Danger (button--danger): Danger button for destructive actions
-
-## Props
-
-\`\`\`
-export type Props = {
-  /**
-    The visual style variant of the button
-  */
-  variant?: "primary" | "secondary" | "tertiary" | "danger" = "primary";
-  /**
-    The size of the button
-  */
-  size?: "small" | "medium" | "large" = "medium";
-  /**
-    Whether the button is disabled
-  */
-  disabled?: boolean = false;
-  /**
-    Whether the button is in a loading state
-  */
-  loading?: boolean = false;
-  /**
-    Whether the button should take up the full width of its container
-  */
-  fullWidth?: boolean = false;
-  /**
-    Callback function when the button is clicked
-  */
-  onClick?: (event: MouseEvent) => void;
-  /**
-    The content of the button
-  */
-  children: ReactNode;
-}
-\`\`\`"
+- Danger (button--danger): Danger button for destructive actions"
 `;
 
 exports[`MarkdownFormatter - formatComponentManifest > formats all full fixtures 2`] = `
@@ -123,6 +109,27 @@ The Card component provides a consistent way to present information in a contain
 - Maintain consistent padding and spacing
 - Use elevation to indicate interactive vs static cards
 - Keep content hierarchy clear with proper use of typography
+
+## Props
+
+\`\`\`
+export type Props = {
+  /** The visual style variant of the card */
+  variant?: "elevated" | "outlined" | "flat" = "elevated";
+  /** The amount of internal padding */
+  padding?: "none" | "small" | "medium" | "large" = "medium";
+  /** Whether the entire card is clickable/interactive */
+  clickable?: boolean = false;
+  /** Content to display in the card header */
+  header?: ReactNode;
+  /** Content to display in the card footer */
+  footer?: ReactNode;
+  /** The main content of the card */
+  children: ReactNode;
+  /** Callback function when the card is clicked (requires clickable=true) */
+  onClick?: (event: MouseEvent) => void;
+}
+\`\`\`
 
 ## Stories
 
@@ -192,42 +199,7 @@ const Clickable = () => (
 ### Other Stories
 
 - Variants (card--variants): Card visual variants (elevated, outlined, flat)
-- User Profile (card--user-profile): Complete user profile card example
-
-## Props
-
-\`\`\`
-export type Props = {
-  /**
-    The visual style variant of the card
-  */
-  variant?: "elevated" | "outlined" | "flat" = "elevated";
-  /**
-    The amount of internal padding
-  */
-  padding?: "none" | "small" | "medium" | "large" = "medium";
-  /**
-    Whether the entire card is clickable/interactive
-  */
-  clickable?: boolean = false;
-  /**
-    Content to display in the card header
-  */
-  header?: ReactNode;
-  /**
-    Content to display in the card footer
-  */
-  footer?: ReactNode;
-  /**
-    The main content of the card
-  */
-  children: ReactNode;
-  /**
-    Callback function when the card is clicked (requires clickable=true)
-  */
-  onClick?: (event: MouseEvent) => void;
-}
-\`\`\`"
+- User Profile (card--user-profile): Complete user profile card example"
 `;
 
 exports[`MarkdownFormatter - formatComponentManifest > formats all full fixtures 3`] = `
@@ -242,6 +214,33 @@ The Input component is a foundational form element that wraps the native HTML in
 ## Accessibility
 
 The Input component automatically manages ARIA attributes for labels, descriptions, and error messages to ensure screen reader compatibility.
+
+## Props
+
+\`\`\`
+export type Props = {
+  /** The type of input field */
+  type?: "text" | "email" | "password" | "number" | "tel" | "url" = "text";
+  /** The label text for the input */
+  label?: string;
+  /** Placeholder text shown when the input is empty */
+  placeholder?: string;
+  /** The controlled value of the input */
+  value?: string;
+  /** The initial value for an uncontrolled input */
+  defaultValue?: string;
+  /** Whether the input is disabled */
+  disabled?: boolean = false;
+  /** Whether the input is required */
+  required?: boolean = false;
+  /** Error message to display below the input */
+  error?: string;
+  /** Helper text to display below the input */
+  helperText?: string;
+  /** Callback function when the input value changes */
+  onChange?: (event: ChangeEvent<HTMLInputElement>) => void;
+}
+\`\`\`
 
 ## Stories
 
@@ -290,54 +289,7 @@ const WithHelperText = () => <Input label="Password" type="password" helperText=
 ### Other Stories
 
 - Types (input--types): Various input types (email, tel, url, number)
-- Disabled (input--disabled): Disabled input state
-
-## Props
-
-\`\`\`
-export type Props = {
-  /**
-    The type of input field
-  */
-  type?: "text" | "email" | "password" | "number" | "tel" | "url" = "text";
-  /**
-    The label text for the input
-  */
-  label?: string;
-  /**
-    Placeholder text shown when the input is empty
-  */
-  placeholder?: string;
-  /**
-    The controlled value of the input
-  */
-  value?: string;
-  /**
-    The initial value for an uncontrolled input
-  */
-  defaultValue?: string;
-  /**
-    Whether the input is disabled
-  */
-  disabled?: boolean = false;
-  /**
-    Whether the input is required
-  */
-  required?: boolean = false;
-  /**
-    Error message to display below the input
-  */
-  error?: string;
-  /**
-    Helper text to display below the input
-  */
-  helperText?: string;
-  /**
-    Callback function when the input value changes
-  */
-  onChange?: (event: ChangeEvent<HTMLInputElement>) => void;
-}
-\`\`\`"
+- Disabled (input--disabled): Disabled input state"
 `;
 
 exports[`MarkdownFormatter - formatManifestsToLists > formats the full manifest fixture 1`] = `

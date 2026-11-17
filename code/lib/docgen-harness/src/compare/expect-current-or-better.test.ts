@@ -183,3 +183,22 @@ describe('expectCurrentOrBetter', () => {
     ).toThrow(/lost-representation.*count/s);
   });
 });
+
+it('collects violations without throwing, including an invalid baseline snippet', async () => {
+  const { collectCurrentOrBetterViolations } = await import('./expect-current-or-better.ts');
+  expect(
+    collectCurrentOrBetterViolations({
+      kind: 'argTypes',
+      baseline: { one: { name: 'one' }, two: { name: 'two' } },
+      candidate: {},
+    }).map((v) => v.kind)
+  ).toEqual(['lost-arg', 'lost-arg']);
+  expect(
+    collectCurrentOrBetterViolations({
+      kind: 'snippet',
+      framework: 'svelte',
+      baseline: 'not markup',
+      candidate: '<Button />',
+    })
+  ).toEqual([expect.objectContaining({ kind: 'invalid-comparison' })]);
+});

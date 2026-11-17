@@ -45,8 +45,8 @@ describe('writing the first Button stories in an empty Storybook', () => {
   describe('depending on the current agent and integration', () => {
     const { integration } = getEvalContext();
 
-    test.skipIf(integration === 'mcp')('invokes the stories skill', () => {
-      expectSkillInvoked('stories');
+    test.skipIf(integration === 'mcp')('invokes the ui-workflow skill', () => {
+      expectSkillInvoked('ui-workflow');
     });
 
     test.skipIf(integration !== 'plugin')(

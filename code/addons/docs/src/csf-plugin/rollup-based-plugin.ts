@@ -8,7 +8,11 @@ import type { RollupPlugin } from 'unplugin';
 
 import { STORIES_REGEX } from './constants.ts';
 
-export async function transformCsf(code: string, id: string, options: EnrichCsfOptions) {
+export async function transformCsf(
+  code: string,
+  id: string,
+  options: EnrichCsfOptions
+): Promise<ReturnType<typeof formatCsf> | undefined> {
   if (!STORIES_REGEX.test(id)) {
     return;
   }

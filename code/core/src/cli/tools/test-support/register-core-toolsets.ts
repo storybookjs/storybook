@@ -51,6 +51,7 @@ export function registerCoreToolsetsForTest({
         getChangedFiles: async () => ({ changed: new Set<string>(), new: new Set<string>() }),
       },
       changeStatuses: { getAll: () => ({}) },
+      storybookDirs: { configDir: `${process.cwd()}/.storybook`, getStaticDirs: async () => [] },
     })
   );
   registerToolset(reviewToolset);

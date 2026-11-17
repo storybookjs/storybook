@@ -20,7 +20,7 @@ import { getRegisteredServices, getService } from '../../service-registry.ts';
 import type { ToolsetGetService } from '../../toolset-definition.ts';
 import { createManifestDocsAccess, type RawManifests } from './access-manifest.ts';
 import { createServiceDocsAccess } from './access-service.ts';
-import type { DocsAccess } from './access.ts';
+import { listEntryNames, type DocsAccess } from './access.ts';
 
 export type LocalDocsAccessOptions = {
   storyIndex: { getIndex: () => Promise<StoryIndex> };
@@ -49,5 +49,6 @@ export function createLocalDocsAccess({
   return {
     list: (options) => pick().list(options),
     resolve: (id) => pick().resolve(id),
+    listNames: () => listEntryNames(pick()),
   };
 }

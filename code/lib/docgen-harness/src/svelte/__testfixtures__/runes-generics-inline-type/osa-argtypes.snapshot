@@ -73,9 +73,9 @@
       },
     },
     "type": {
-      "name": "other",
+      "name": "function",
+      "raw": "(value: Value) => void",
       "required": true,
-      "value": "(value: Value) => void",
     },
   },
   "size": {

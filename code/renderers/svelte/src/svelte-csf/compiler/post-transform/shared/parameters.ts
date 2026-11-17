@@ -29,7 +29,7 @@ export const findPropertyParametersIndex = (options: Omit<FindPropertyOptions, '
   });
 };
 
-export const getParametersProperty = (options: Omit<FindPropertyOptions, 'name'>) => {
+const getParametersProperty = (options: Omit<FindPropertyOptions, 'name'>) => {
   const { node } = options;
 
   return node.properties[findPropertyParametersIndex(options)] as ESTreeAST.Property;
@@ -109,7 +109,7 @@ export const findPropertyDocsIndex = (options: Omit<FindPropertyOptions, 'name'>
   });
 };
 
-export const getDocsProperty = (options: Omit<FindPropertyOptions, 'name'>) => {
+const getDocsProperty = (options: Omit<FindPropertyOptions, 'name'>) => {
   return getParametersPropertyValue(options).properties[
     findPropertyDocsIndex(options)
   ] as ESTreeAST.Property;
@@ -145,7 +145,7 @@ export const findPropertyDescriptionIndex = (options: Omit<FindPropertyOptions, 
   });
 };
 
-export const getDescriptionProperty = (options: Omit<FindPropertyOptions, 'name'>) => {
+const getDescriptionProperty = (options: Omit<FindPropertyOptions, 'name'>) => {
   return getDocsPropertyValue(options).properties[
     findPropertyDescriptionIndex(options)
   ] as ESTreeAST.Property;

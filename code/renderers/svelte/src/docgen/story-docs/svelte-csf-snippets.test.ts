@@ -1,3 +1,4 @@
+import { parse } from 'svelte/compiler';
 import { describe, expect, it } from 'vitest';
 import { types as t } from 'storybook/internal/babel';
 
@@ -91,4 +92,54 @@ it('applies explicit overrides separately for each spread element', () => {
       argTypes: {},
     })
   ).toBe('<Panel disabled label="Explicit" /><Panel label={"From args"} disabled />');
+});
+
+it.each([
+  ['<Button>{"args.label"}</Button>', '<Button>{"args.label"}</Button>'],
+  ['<!-- args.label --><Button {... args} />', '<!-- args.label --><Button label="Hello" />'],
+  ['<Button>{args["label"]}</Button>', '<Button>Hello</Button>'],
+  [
+    '<Button>{(() => { const args = { label: "local" }; return args.label; })()}</Button>',
+    '<Button>{(() => { const args = { label: "local" }; return args.label; })()}</Button>',
+  ],
+])('changes only references to the story args in %s', (code, expected) => {
+  const snippet = printSvelteCsfSnippet({ code, args: { label: 'Hello' }, argTypes: {} });
+  expect(snippet).toBe(expected);
+  expect(() => parse(snippet, { modern: true })).not.toThrow();
+});
+
+it.each([
+  ['{#if args.enabled}<Button />{/if}', { enabled: true }, '{#if true}<Button />{/if}'],
+  [
+    '{#each items as args}<Button>{args.label}</Button>{/each}',
+    { label: 'Hello' },
+    '{#each items as args}<Button>{args.label}</Button>{/each}',
+  ],
+  ['<Button {...args}>{args.children}</Button>', { children: 'Hello' }, '<Button>Hello</Button>'],
+])('handles expression and binding contexts in %s', (code, args, expected) => {
+  const snippet = printSvelteCsfSnippet({ code, args, argTypes: {} });
+  expect(snippet).toBe(expected);
+  expect(() => parse(snippet, { modern: true })).not.toThrow();
+});
+
+it.each([
+  '{#await promise then args}<Button label="Local" {...args}>{args.label}</Button>{/await}',
+  '<Provider let:args><Button label="Local" {...args}>{args.label}</Button></Provider>',
+  '<Provider let:value={args}><Button>{args.label}</Button></Provider>',
+  '{#each items as item, args}<Button>{args.label}</Button>{/each}',
+])('keeps block-local args separate from story args in %s', (code) => {
+  const snippet = printSvelteCsfSnippet({ code, args: { label: 'Story' }, argTypes: {} });
+  expect(snippet).toBe(code);
+  expect(() => parse(snippet, { modern: true })).not.toThrow();
+});
+
+it('uses original source offsets in expressions indented with tabs', () => {
+  const snippet = printSvelteCsfSnippet({
+    code: '<Markdown\n\t{...wrapProps({\n\t\theight: args.height,\n\t\t...args\n\t})}\n/>',
+    args: { height: 20 },
+    argTypes: {},
+  });
+  expect(snippet).toContain('height: 20,');
+  expect(snippet).toContain('...args\n\t})}');
+  expect(() => parse(snippet, { modern: true })).not.toThrow();
 });

@@ -1389,24 +1389,6 @@ describe('CsfFile', () => {
       expect(Object.keys(csf._storyAnnotations.A)).toEqual(['x', 'y']);
       expect(Object.keys(csf._storyAnnotations.B)).toEqual(['z']);
     });
-
-    it('v1-style story annotations', () => {
-      const input = dedent`
-        export default { title: 'foo/bar' };
-        export const A = () => {};
-        A.story = {
-          x: 1,
-          y: 2,
-        }
-        export const B = () => {};
-        B.story = {
-          z: 3,
-        }
-    `;
-      const csf = loadCsf(input, { makeTitle }).parse();
-      expect(Object.keys(csf._storyAnnotations.A)).toEqual(['x', 'y']);
-      expect(Object.keys(csf._storyAnnotations.B)).toEqual(['z']);
-    });
   });
 
   describe('CSF3', () => {

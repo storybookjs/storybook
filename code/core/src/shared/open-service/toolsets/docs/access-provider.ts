@@ -57,8 +57,9 @@ export type ProviderDocsAccessOptions = {
   source?: Source;
   /**
    * Resolves a single entry in-process, bypassing the manifest index. The dev server passes this
-   * for its local source when `docgenServer` is on, so one lookup never triggers
-   * docgen extraction for every component.
+   * for its local source when `docgenServer` is on, so a lookup that finds its entry never
+   * triggers docgen extraction for every component. A `docs show` miss still lists the source, to
+   * suggest close ids.
    */
   resolveEntry?: (id: string, source?: Source) => Promise<ResolvedDocsEntry | undefined>;
 };

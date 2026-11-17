@@ -114,9 +114,9 @@
       },
     },
     "type": {
-      "name": "other",
+      "name": "function",
+      "raw": "() => void",
       "required": false,
-      "value": "() => void",
     },
   },
   "scale": {

@@ -102,6 +102,27 @@ describe('PNPMProxy catalogs', () => {
     });
   });
 
+  describe('writeCatalogUpgrades', () => {
+    it('keeps an exact prerelease exact when the catalog used a range', () => {
+      vol.fromJSON({ [WORKSPACE_YAML]: 'catalog:\n  storybook: ^10.6.0\n' });
+
+      const result = pnpmProxy.writeCatalogUpgrades(['storybook@11.0.0-alpha.6'], {
+        storybook: 'catalog:',
+      });
+
+      expect(result).toEqual([]);
+      expect(writtenYaml()).toContain('storybook: 11.0.0-alpha.6');
+    });
+
+    it('keeps the catalog range style for a stable version', () => {
+      vol.fromJSON({ [WORKSPACE_YAML]: 'catalog:\n  storybook: ^10.6.0\n' });
+
+      pnpmProxy.writeCatalogUpgrades(['storybook@11.0.0'], { storybook: 'catalog:' });
+
+      expect(writtenYaml()).toContain('storybook: ^11.0.0');
+    });
+  });
+
   describe('applyVersionToRelatedPackages', () => {
     it('pins directly when the anchor is not declared through a catalog', () => {
       vi.spyOn(pnpmProxy, 'getAllDependencies').mockReturnValue({ vitest: '^3.2.0' });

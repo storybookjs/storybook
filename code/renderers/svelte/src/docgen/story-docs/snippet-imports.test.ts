@@ -1,3 +1,4 @@
+import { parse } from 'svelte/compiler';
 import { describe, expect, it } from 'vitest';
 
 import { babelParse, traverse } from 'storybook/internal/babel';
@@ -196,4 +197,72 @@ it('includes imports and state referenced by directives', () => {
       "<script>\n  import { fade } from 'svelte/transition';\n  import { flip } from 'svelte/animate';\n\n  function tooltip() {}\n</script>",
     unresolved: [],
   });
+});
+
+it('selects declarators without executing unrelated initializers', () => {
+  const result = buildSnippetImportBlock('{label}', {
+    bindings: bindings(''),
+    instanceScript: { code: "const label = 'ok', secret = loadSecret();", typescript: false },
+  });
+  expect(result.block).toContain("const label = 'ok';");
+  expect(result.block).not.toContain('loadSecret');
+  expect(result.unresolvedIdentifiers).toBeUndefined();
+});
+
+it('reports unknown dependencies inside selected initializers', () => {
+  const result = buildSnippetImportBlock('{label}', {
+    bindings: bindings(''),
+    instanceScript: { code: 'const label = loadLabel();', typescript: false },
+  });
+  expect(result.block).toContain('const label = loadLabel();');
+  expect(result.unresolvedIdentifiers).toEqual(['loadLabel']);
+});
+
+it('copies local component aliases and their imported dependencies', () => {
+  const result = buildSnippetImportBlock('<Alias />', {
+    bindings: bindings(''),
+    instanceScript: {
+      code: "import Button from './Button.svelte'; const Alias = Button;",
+      typescript: false,
+    },
+  });
+  expect(result.block).toContain("import Button from './Button.svelte';");
+  expect(result.block).toContain('const Alias = Button;');
+  expect(result.unresolved).toEqual([]);
+});
+
+it('resolves instance bindings before module bindings and keeps dependency scopes', () => {
+  const result = buildSnippetImportBlock('{label}{moduleLabel}', {
+    bindings: bindings(''),
+    moduleScript: { code: "const label = 'module'; const moduleLabel = label;", typescript: false },
+    instanceScript: { code: "let label = 'instance';", typescript: false },
+  });
+  expect(result.block).toContain(
+    "<script module>\n  const label = 'module';\n  const moduleLabel = label;"
+  );
+  expect(result.block).toContain("<script>\n  let label = 'instance';");
+  expect(() => parse(result.block + '\n{label}{moduleLabel}', { modern: true })).not.toThrow();
+});
+
+it('copies exported bindings at declarator granularity', () => {
+  const result = buildSnippetImportBlock('{label}', {
+    bindings: bindings(''),
+    moduleScript: { code: "export const label = 'ok', secret = loadSecret();", typescript: false },
+  });
+  expect(result.block).toContain("const label = 'ok';");
+  expect(result.block).not.toContain('loadSecret');
+  expect(result.unresolvedIdentifiers).toBeUndefined();
+});
+
+it('selects type imports without copying unrelated value specifiers', () => {
+  const result = buildSnippetImportBlock('<Badge>{label}</Badge>', {
+    bindings: bindings("import { Badge } from './ui';"),
+    instanceScript: {
+      code: "import { Badge, type Label } from './ui'; const label: Label = 'ok';",
+      typescript: true,
+    },
+  });
+  expect(result.block?.match(/\bBadge\b/g)).toHaveLength(1);
+  expect(result.block).toContain('type Label');
+  expect(() => parse(result.block + '\n<Badge>{label}</Badge>', { modern: true })).not.toThrow();
 });

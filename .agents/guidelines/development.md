@@ -67,6 +67,7 @@ The pre-commit hook detects AI agents (via `std-env`) and switches from check-on
 ## Troubleshooting
 
 - Build failures are often fixed by rerunning `yarn` and `yarn nx run-many -t compile`.
+- A production compile (`-c production`, `--no-link`) fails on declaration-emit diagnostics such as TS2883 (`cannot be named without a reference to`), which `yarn task check` does not report because it runs without `declaration`. Add an explicit type annotation at the reported location.
 - Large compiles may require more Node.js memory.
 - The internal Storybook UI uses port `6006` by default.
 - Use `--debug` for verbose CLI output.

@@ -4,7 +4,7 @@ import {
   resolveComponentImport,
   type ImportBinding,
 } from 'storybook/internal/csf-tools';
-import { babelParse, traverse, types as t } from 'storybook/internal/babel';
+import { babelParse, babelPrint, traverse, types as t } from 'storybook/internal/babel';
 import { parse } from 'svelte/compiler';
 import { walk } from 'zimmerframe';
 import type { SvelteAST } from '../../svelte-csf/parser/ast.ts';
@@ -15,10 +15,12 @@ export function buildSnippetImportBlock(
     bindings,
     importOverride,
     instanceScript,
+    moduleScript,
   }: {
     bindings: Map<string, ImportBinding>;
     importOverride?: string;
     instanceScript?: { code: string; typescript: boolean };
+    moduleScript?: { code: string; typescript: boolean };
   }
 ): { block?: string; unresolved: string[]; unresolvedIdentifiers?: string[] } {
   bindings = new Map(bindings);
@@ -31,6 +33,7 @@ export function buildSnippetImportBlock(
     },
   });
   const componentNames = new Set(names);
+  names.clear();
   const identifiers = new Set<string>();
   const visitedExpressions = new Set<object>();
   walk<SvelteAST.SvelteNode, null>(ast.fragment, null, {
@@ -153,103 +156,185 @@ export function buildSnippetImportBlock(
       next();
     },
   });
-  const declarations = new Set<t.Statement>();
   const unresolvedIdentifiers = new Set<string>();
-  const instance = babelParse(instanceScript?.code ?? '');
-  traverse(instance, {
-    Program(path) {
-      for (const [name, binding] of collectImportBindings(path)) bindings.set(name, binding);
-      const typeDeclarations = new Map(
-        path
-          .get('body')
-          .filter(
-            (statement) =>
-              t.isTSTypeAliasDeclaration(statement.node) ||
-              t.isTSInterfaceDeclaration(statement.node)
+  const programs = [moduleScript, instanceScript].map((script) => ({
+    script,
+    ast: babelParse(script?.code ?? ''),
+    declarations: new Set<t.Node>(),
+    imports: new Map<string, ImportBinding>(),
+    names: new Set<string>(),
+  }));
+  const contexts: {
+    program: (typeof programs)[number];
+    path: Parameters<typeof collectImportBindings>[0];
+  }[] = [];
+  for (const program of programs)
+    traverse(program.ast, {
+      Program(path) {
+        program.imports = collectImportBindings(path);
+        contexts.push({ program, path });
+        path.stop();
+      },
+    });
+  const typeDeclaration = (path: Parameters<typeof collectImportBindings>[0], name: string) => {
+    for (const statement of path.get('body')) {
+      const declaration = statement.isExportNamedDeclaration()
+        ? statement.get('declaration')
+        : statement;
+      if (
+        (declaration.isTSTypeAliasDeclaration() || declaration.isTSInterfaceDeclaration()) &&
+        declaration.node.id.name === name
+      )
+        return declaration;
+    }
+  };
+  const visit = (name: string, scope = contexts.length - 1) => {
+    if (
+      ['$state', '$derived', '$effect', '$props', '$bindable', '$inspect', '$host'].includes(
+        name
+      ) ||
+      [
+        'undefined',
+        'NaN',
+        'Infinity',
+        'console',
+        'window',
+        'document',
+        'navigator',
+        'location',
+        'history',
+        'localStorage',
+        'sessionStorage',
+        'alert',
+        'confirm',
+        'prompt',
+        'setTimeout',
+        'clearTimeout',
+        'setInterval',
+        'clearInterval',
+        'requestAnimationFrame',
+        'cancelAnimationFrame',
+        'fetch',
+        'URL',
+        'URLSearchParams',
+        'performance',
+        'queueMicrotask',
+        'structuredClone',
+        'Event',
+        'CustomEvent',
+      ].includes(name)
+    )
+      return;
+
+    const context = contexts[scope];
+    if (!context) {
+      if (bindings.has(name)) names.add(name);
+      else unresolvedIdentifiers.add(name);
+      return;
+    }
+    const { program, path } = context;
+    const binding = path.scope.getBinding(name);
+    const type = typeDeclaration(path, name);
+    if (!binding && !type && path.scope.hasBinding(name)) return;
+    if (!binding && !type) {
+      visit(name, scope - 1);
+      return;
+    }
+    if (program.imports.has(name)) {
+      program.names.add(name);
+      return;
+    }
+    if (
+      binding?.path.isImportSpecifier() ||
+      binding?.path.isImportDefaultSpecifier() ||
+      binding?.path.isImportNamespaceSpecifier()
+    ) {
+      program.declarations.add(binding.path.node);
+      return;
+    }
+    const declaration = binding?.path.isVariableDeclarator()
+      ? binding.path
+      : binding?.path.isFunctionDeclaration() || binding?.path.isClassDeclaration()
+        ? binding.path
+        : (binding?.path.getStatementParent() ?? type);
+    if (!declaration || program.declarations.has(declaration.node)) return;
+    program.declarations.add(declaration.node);
+    const dependency = (name: string) => {
+      if (name !== binding?.identifier.name) visit(name, scope);
+    };
+    declaration.traverse({
+      TSTypeReference(reference) {
+        if (
+          t.isIdentifier(reference.node.typeName) &&
+          (path.scope.getBinding(reference.node.typeName.name) ||
+            typeDeclaration(path, reference.node.typeName.name))
+        )
+          dependency(reference.node.typeName.name);
+      },
+      ReferencedIdentifier(reference) {
+        if (reference.findParent((parent) => parent.isTSType())) return;
+        const target = reference.scope.getBinding(reference.node.name);
+        if (!target || target.scope === path.scope) dependency(reference.node.name);
+      },
+    });
+  };
+  for (const name of [...identifiers, ...componentNames].map((name) => name.split('.')[0]))
+    visit(name);
+  if (!programs[0].declarations.size) {
+    for (const name of programs[0].names) {
+      const binding = programs[0].imports.get(name);
+      if (binding) programs[1].imports.set(name, binding);
+      programs[1].names.add(name);
+    }
+    programs[0].names.clear();
+  }
+  const blocks: string[] = [];
+  for (const [index, program] of programs.entries()) {
+    const declarations = program.ast.program.body.flatMap<t.Statement>((item) => {
+      const statement =
+        t.isExportNamedDeclaration(item) && item.declaration ? item.declaration : item;
+      if (t.isImportDeclaration(statement)) {
+        const selected = statement.specifiers.filter((specifier) =>
+          program.declarations.has(specifier)
+        );
+        if (!selected.length) return [];
+        const imported = t.cloneNode(statement);
+        imported.specifiers = selected;
+        return [imported];
+      }
+      if (t.isVariableDeclaration(statement)) {
+        const selected = statement.declarations.filter((declaration) =>
+          program.declarations.has(declaration)
+        );
+        return selected.length ? [t.variableDeclaration(statement.kind, selected)] : [];
+      }
+      return program.declarations.has(statement) ? [statement] : [];
+    });
+    const refs = [...program.names].map((name) => resolveComponentImport(name, program.imports));
+    const statements = buildImportStatements({
+      refs: refs.map((ref) => ({
+        ...ref,
+        importOverride: componentNames.has(ref.componentName) ? importOverride : undefined,
+      })),
+    });
+    const declarationSource = declarations.map((statement) => babelPrint(statement));
+    const lines = [
+      ...statements,
+      ...(statements.length && declarationSource.length ? [''] : []),
+      ...declarationSource,
+    ];
+    if (lines.length)
+      blocks.push(
+        `<script${index === 0 && moduleScript && (programs[1].declarations.size || programs[1].names.size) ? ' module' : ''}${declarationSource.length && program.script?.typescript ? ' lang="ts"' : ''}>\n${lines
+          .map((line) =>
+            line
+              .split('\n')
+              .map((line) => (line ? '  ' + line : ''))
+              .join('\n')
           )
-          .flatMap((statement) =>
-            'id' in statement.node && t.isIdentifier(statement.node.id)
-              ? [[statement.node.id.name, statement] as const]
-              : []
-          )
+          .join('\n')}\n</script>`
       );
-      const visit = (name: string) => {
-        if (bindings.has(name)) {
-          names.add(name);
-          return;
-        }
-        if (
-          ['$state', '$derived', '$effect', '$props', '$bindable', '$inspect', '$host'].includes(
-            name
-          ) ||
-          [
-            'undefined',
-            'NaN',
-            'Infinity',
-            'console',
-            'window',
-            'document',
-            'navigator',
-            'location',
-            'history',
-            'localStorage',
-            'sessionStorage',
-            'alert',
-            'confirm',
-            'prompt',
-            'setTimeout',
-            'clearTimeout',
-            'setInterval',
-            'clearInterval',
-            'requestAnimationFrame',
-            'cancelAnimationFrame',
-            'fetch',
-            'URL',
-            'URLSearchParams',
-            'performance',
-            'queueMicrotask',
-            'structuredClone',
-            'Event',
-            'CustomEvent',
-          ].includes(name)
-        )
-          return;
-        const binding = path.scope.getBinding(name);
-        if (!binding && !typeDeclarations.has(name)) {
-          unresolvedIdentifiers.add(name);
-          return;
-        }
-        const statement = binding?.path.getStatementParent() ?? typeDeclarations.get(name);
-        if (
-          !statement ||
-          !t.isStatement(statement.node) ||
-          t.isImportDeclaration(statement.node) ||
-          declarations.has(statement.node)
-        )
-          return;
-        declarations.add(statement.node);
-        statement.traverse({
-          TSTypeReference(reference) {
-            if (
-              t.isIdentifier(reference.node.typeName) &&
-              typeDeclarations.has(reference.node.typeName.name)
-            )
-              visit(reference.node.typeName.name);
-          },
-          ReferencedIdentifier(reference) {
-            const dependency = reference.scope.getBinding(reference.node.name);
-            if (dependency?.scope === path.scope && dependency !== binding)
-              visit(reference.node.name);
-          },
-        });
-      };
-      for (const name of identifiers) visit(name);
-      path.stop();
-    },
-  });
-  const declarationSource = instance.program.body
-    .filter((statement) => declarations.has(statement))
-    .map((statement) => instanceScript?.code.slice(statement.start ?? 0, statement.end ?? 0) ?? '');
+  }
   const refs = [...names].map((name) => resolveComponentImport(name, bindings));
   const statements = buildImportStatements({
     refs: refs.map((ref) => ({
@@ -257,27 +342,19 @@ export function buildSnippetImportBlock(
       importOverride: componentNames.has(ref.componentName) ? importOverride : undefined,
     })),
   });
-  const unresolved = refs.filter((ref) => !ref.importId).map((ref) => ref.componentName);
-  const lines = [
-    ...statements,
-    ...(declarationSource.length && statements.length ? [''] : []),
-    ...declarationSource,
-  ];
+  if (statements.length) {
+    const imports = statements.map((line) => '  ' + line).join('\n');
+    const last = blocks.length - 1;
+    if (last >= 0 && !blocks[last].startsWith('<script module'))
+      blocks[last] = blocks[last].replace(/(<script[^>]*>\n)/, '$1' + imports + '\n\n');
+    else blocks.push(`<script>\n${imports}\n</script>`);
+  }
+  const unresolved = [...componentNames].filter((name) =>
+    unresolvedIdentifiers.has(name.split('.')[0])
+  );
+  for (const name of unresolved) unresolvedIdentifiers.delete(name.split('.')[0]);
   return {
-    ...(lines.length > 0
-      ? {
-          block: `<script${declarationSource.length && instanceScript?.typescript ? ' lang="ts"' : ''}>\n${lines
-            .map((statement) =>
-              statement
-                ? statement
-                    .split('\n')
-                    .map((line) => `  ${line}`)
-                    .join('\n')
-                : ''
-            )
-            .join('\n')}\n</script>`,
-        }
-      : {}),
+    ...(blocks.length ? { block: blocks.join('\n\n') } : {}),
     unresolved,
     ...(unresolvedIdentifiers.size ? { unresolvedIdentifiers: [...unresolvedIdentifiers] } : {}),
   };

@@ -13,9 +13,9 @@
       },
     },
     "type": {
-      "name": "other",
+      "name": "function",
+      "raw": "(n: number) => string",
       "required": false,
-      "value": "(n: number) => string",
     },
   },
   "onchange": {
@@ -32,9 +32,9 @@
       },
     },
     "type": {
-      "name": "other",
+      "name": "function",
+      "raw": "(value: string) => void",
       "required": false,
-      "value": "(value: string) => void",
     },
   },
   "onclick": {
@@ -51,9 +51,9 @@
       },
     },
     "type": {
-      "name": "other",
+      "name": "function",
+      "raw": "(event: MouseEvent) => void",
       "required": false,
-      "value": "(event: MouseEvent) => void",
     },
   },
 }

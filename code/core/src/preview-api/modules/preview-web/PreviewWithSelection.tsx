@@ -267,7 +267,7 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
   async onUpdateGlobals({ globals }: { globals: Globals }) {
     const currentStory =
       (this.currentRender instanceof StoryRender && this.currentRender.story) || undefined;
-    super.onUpdateGlobals({ globals, currentStory });
+    await super.onUpdateGlobals({ globals, currentStory });
     if (
       this.currentRender instanceof MdxDocsRender ||
       this.currentRender instanceof CsfDocsRender

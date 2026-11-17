@@ -107,6 +107,50 @@ describe('dependenciesVersions blocker', () => {
     expect(result).toBe(false);
   });
 
+  test.each(['4.5.2', '5.4.21', '6.2.2'])('blocks Vite %s before upgrading', async (version) => {
+    const packageManager = createPackageManager({ vite: version });
+
+    const result = await blocker.check(createCheckOptions(packageManager));
+
+    expect(result).toEqual({
+      packageName: 'vite',
+      installedVersion: version,
+      minimumVersion: '6.3.0',
+    });
+
+    if (!result) {
+      throw new Error(`Expected Vite ${version} to be blocked`);
+    }
+
+    const logged = blocker.log(result);
+
+    expect(logged.title).toBe('Vite 6.3 or newer required');
+    expect(logged.message).toContain('Support for Vite < 6.3.0 has been removed.');
+    expect(logged.link).toBe(
+      'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#vite-requires-vite-63-or-higher'
+    );
+  });
+
+  test('blocks Vite prereleases of the floor version', async () => {
+    const result = await blocker.check(
+      createCheckOptions(createPackageManager({ vite: '6.3.0-beta.0' }))
+    );
+
+    expect(result).toEqual({
+      packageName: 'vite',
+      installedVersion: '6.3.0-beta.0',
+      minimumVersion: '6.3.0',
+    });
+  });
+
+  test.each(['6.3.0', '6.4.4', '7.1.2'])('accepts Vite %s', async (version) => {
+    const packageManager = createPackageManager({ vite: version });
+
+    const result = await blocker.check(createCheckOptions(packageManager));
+
+    expect(result).toBe(false);
+  });
+
   test('@angular/core 20 is blocked with message and migration anchor', async () => {
     const packageManager = createPackageManager({ '@angular/core': '20.0.0' });
 

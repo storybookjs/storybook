@@ -122,4 +122,4 @@ Then inspect the clean config:
 cat "$CODEX_HOME/config.toml"
 ```
 
-The config should include a `[marketplaces.storybook]` entry whose `source` points at this package directory. After restarting Codex with your normal config and installing the plugin from the `Storybook` marketplace, the plugin card should show `Build, preview, and test UI components` and the plugin details should list the bundled skills (`init`, `setup`, `stories`, `upgrade`), which delegate to the `storybook skills` / `storybook tools` CLI.
+The config should include a `[marketplaces.storybook]` entry whose `source` points at this package directory. After restarting Codex with your normal config and installing the plugin from the `Storybook` marketplace, the plugin card should show `Build, preview, and test UI components` and the plugin details should list the bundled skills (`component-docs`, `init`, `setup`, `ui-workflow`, `upgrade`), which delegate to the `storybook skills` / `storybook tools` CLI.

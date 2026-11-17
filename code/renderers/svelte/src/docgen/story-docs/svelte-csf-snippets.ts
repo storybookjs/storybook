@@ -1,8 +1,7 @@
 import { babelParse, types as t } from 'storybook/internal/babel';
 import type { ArgTypes } from 'storybook/internal/types';
 
-import { generateCodeToEmit } from './print/svelte-props.ts';
-import { resolveSpreadOverrides } from './spread-overrides.ts';
+import { printTemplate } from './print-template.ts';
 import { readStaticArgs } from './static-args.ts';
 
 export function printSvelteCsfSnippet({
@@ -29,16 +28,5 @@ export function printSvelteCsfSnippet({
       continue;
     }
   }
-  const template = resolveSpreadOverrides(
-    code,
-    new Set([...Object.keys(args), ...Object.keys(expressions)])
-  );
-  return generateCodeToEmit({
-    code: template.code,
-    args,
-    expressions,
-    omitDefaults,
-    spreadOmissions: template.omissions,
-    textSubstitution: 'raw',
-  });
+  return printTemplate({ code, args, expressions, omitDefaults });
 }

@@ -57,7 +57,7 @@
     "!src/**/*"
   ],
   "dependencies": {
-    "ts-dedent": "^2.0.0"
+    "ts-dedent": "^2.2.0"
   },
   "devDependencies": {
     "@storybook/icons": "^2.0.2",

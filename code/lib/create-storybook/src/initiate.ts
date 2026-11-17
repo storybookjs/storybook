@@ -177,7 +177,8 @@ export async function doInitiate(options: CommandOptions): Promise<
     options,
   });
 
-  // Step 8: Install the official Storybook skills for AI agents
+  // Step 8: Install the official Storybook skills for AI agents, and tell agents in AGENTS.md when
+  // to use them
   const hasAiFeature = selectedFeatures.has(Feature.AI);
   if (hasAiFeature) {
     await telemetryService.trackSkills(

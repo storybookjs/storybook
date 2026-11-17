@@ -241,6 +241,9 @@ describe('customize tags type', () => {
         : never,
       Tag[]
     >(true);
+    expectTypeOf<NonNullable<Parameters<typeof meta.story>[0]>['tags']>().toEqualTypeOf<
+      Array<'foo' | 'bar' | (string & {})> | undefined
+    >();
   });
   test('with type method', () => {
     const preview = definePreview({ addons: [] }).type<{
@@ -268,5 +271,17 @@ describe('customize tags type', () => {
         : never,
       Tag[]
     >(true);
+    expectTypeOf<NonNullable<Parameters<typeof meta.story>[0]>['tags']>().toEqualTypeOf<
+      Array<'foo' | 'bar' | (string & {})> | undefined
+    >();
+  });
+  test('with strict tags', () => {
+    const preview = definePreview({ addons: [] }).type<{ tags: Array<'foo' | 'bar'> }>();
+    const meta = preview.meta({});
+    meta.story({ tags: ['foo', 'bar'] });
+    meta.story({
+      // @ts-expect-error 'baz' is not one of the declared tags
+      tags: ['baz'],
+    });
   });
 });

@@ -1,3 +1,6 @@
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
+
 import {
   type JsPackageManager,
   optionalEnvToBoolean,
@@ -8,6 +11,13 @@ import { logger, prompt } from 'storybook/internal/node-logger';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
+import {
+  applyPreviewImportsMap,
+  hasSiblingReactNativeConfig,
+  isReactNativeStorybookPath,
+  previewFileForImports,
+  previewImportTarget,
+} from '../../../../core/src/shared/constants/config-folder.ts';
 import { runCodemod } from '../automigrate/codemod.ts';
 import { getFrameworkPackageName } from '../automigrate/helpers/mainConfigFile.ts';
 import type { CommandFix } from '../automigrate/types.ts';
@@ -70,10 +80,14 @@ export const csfFactories: CommandFix = {
     glob,
   }) {
     const inSandbox = optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX) ?? false;
-    // Defaults to false for users and true in sandbox
-    let useSubPathImports = inSandbox;
+    const isReactNativePreview =
+      isReactNativeStorybookPath(previewConfigPath) ||
+      isReactNativeStorybookPath(configDir) ||
+      hasSiblingReactNativeConfig(configDir, existsSync);
+    // React Native always uses the documented specifier so Metro can alias it.
+    let useSubPathImports = inSandbox || isReactNativePreview;
 
-    if (!yes && !inSandbox) {
+    if (!yes && !inSandbox && !isReactNativePreview) {
       // prompt whether the user wants to use imports map
       logger.logBox(dedent`
         The CSF Factories format can benefit from using absolute imports of your ${picocolors.cyan(previewConfigPath)} file. We can configure that for you, using subpath imports (a node standard), by adjusting the imports property of your package.json.
@@ -95,9 +109,20 @@ export const csfFactories: CommandFix = {
       });
     }
 
-    const { packageJson } = packageManager.primaryPackageJson;
+    const { packageJson, operationDir } = packageManager.primaryPackageJson;
 
-    if (useSubPathImports && !packageJson.imports?.['#*']) {
+    if (isReactNativePreview) {
+      const nativePreviewFile = previewConfigPath ?? join(configDir, 'preview.tsx');
+      const previewFile = previewFileForImports(nativePreviewFile, existsSync);
+      if (previewImportTarget(previewFile, operationDir) == null) {
+        useSubPathImports = false;
+      } else if (applyPreviewImportsMap(packageJson, previewFile, operationDir)) {
+        logger.step(
+          `Adding imports map in ${picocolors.cyan(packageManager.primaryPackageJson.packageJsonPath)}`
+        );
+        packageManager.writePackageJson(packageJson, operationDir);
+      }
+    } else if (useSubPathImports && !packageJson.imports?.['#*']) {
       logger.step(
         `Adding imports map in ${picocolors.cyan(packageManager.primaryPackageJson.packageJsonPath)}`
       );
@@ -105,7 +130,7 @@ export const csfFactories: CommandFix = {
         ...packageJson.imports,
         '#*': ['./*', './*.ts', './*.tsx', './*.js', './*.jsx'],
       };
-      packageManager.writePackageJson(packageJson);
+      packageManager.writePackageJson(packageJson, operationDir);
     }
 
     await runStoriesCodemod({

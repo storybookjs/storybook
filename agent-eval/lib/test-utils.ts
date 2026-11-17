@@ -26,6 +26,7 @@ export type { StorybookWorkflowCall };
 const AGENT_CONTEXT_PATH = '__agent_eval__/agent.json';
 const RESULTS_PATH = '__agent_eval__/results.json';
 const TRANSCRIPT_PATH = '__agent_eval__/transcript.txt';
+const CHECKOUT_REGISTRY_PATH = '__agent_eval__/checkout-registry.json';
 
 type AgentContext = {
   agent?: unknown;
@@ -754,20 +755,28 @@ export function expectSkillInvoked(skillName: string): void {
 
   if (agent === 'claude-code') {
     // Match the skill argument exactly — a substring match would credit any
-    // Skill invocation whose free-text args merely mention the word.
+    // Skill invocation whose free-text args merely mention the word. When
+    // AGENTS.md names a skill, Claude Code sometimes reads its SKILL.md
+    // instead, which loads the same instructions.
+    const skillFile = `/skills/${skillName}/SKILL.md`;
     const invoked = getTranscript().events.some(
       (event) =>
         event.type === 'tool_call' &&
-        event.tool?.originalName === 'Skill' &&
-        isRecord(event.tool.args) &&
-        event.tool.args.skill === skillName
+        isRecord(event.tool?.args) &&
+        ((event.tool.originalName === 'Skill' && event.tool.args.skill === skillName) ||
+          (event.tool.originalName === 'Read' &&
+            typeof event.tool.args.file_path === 'string' &&
+            event.tool.args.file_path.endsWith(skillFile)))
     );
-    expect(invoked, `Expected the ${skillName} skill to be invoked via the Skill tool`).toBe(true);
+    expect(
+      invoked,
+      `Expected the ${skillName} skill to be invoked via the Skill tool, or its SKILL.md to be read`
+    ).toBe(true);
     return;
   }
 
   // The codex plugin names its skill directories without the storybook-
-  // prefix (.agents/skills/init, .agents/skills/stories, …).
+  // prefix (.agents/skills/init, .agents/skills/ui-workflow, …).
   const codexSkillName = skillName.replace(/^storybook-/, '');
   const skillPathPattern = new RegExp(`skills/${codexSkillName}\\b`);
   const read = getShellCommands().some((command) => skillPathPattern.test(command));
@@ -837,6 +846,43 @@ export function expectStorybookDependenciesAtLeast(
       expectAtLeastMinimum(packageName, spec);
     }
   }
+}
+
+// For the evals whose agent installs Storybook itself: the setup serves this checkout's packages from
+// a registry in the sandbox (`evals.checkoutRegistry` in lib/templates.ts), and every Storybook
+// package installed at the checkout's version must have come from it rather than from npm.
+export function expectStorybookInstalledFromCheckout(): void {
+  const registry = parseJson(readFileSync(CHECKOUT_REGISTRY_PATH, 'utf8'));
+  if (
+    !isRecord(registry) ||
+    typeof registry.url !== 'string' ||
+    typeof registry.version !== 'string'
+  ) {
+    throw new Error(`${CHECKOUT_REGISTRY_PATH} must contain the registry url and version`);
+  }
+  const { url, version } = registry;
+
+  expect(existsSync('package-lock.json'), 'Expected Storybook to be installed with npm').toBe(true);
+  const lockfile = parseJson(readFileSync('package-lock.json', 'utf8'));
+  const installed = Object.entries(
+    isRecord(lockfile) && isRecord(lockfile.packages) ? lockfile.packages : {}
+  ).filter(([location]) => /(^|\/)node_modules\/(storybook|@storybook\/[^/]+)$/.test(location));
+
+  const storybook = installed.find(([location]) => location === 'node_modules/storybook')?.[1];
+  expect(
+    isRecord(storybook) ? storybook.version : undefined,
+    'Expected the checkout version of storybook in package-lock.json'
+  ).toBe(version);
+
+  const fromNpm = installed
+    .filter(
+      ([, entry]) =>
+        isRecord(entry) &&
+        entry.version === version &&
+        !(typeof entry.resolved === 'string' && entry.resolved.startsWith(`${url}-/checkout/`))
+    )
+    .map(([location]) => location);
+  expect(fromNpm, 'Expected these packages to come from the checkout registry').toEqual([]);
 }
 
 function parseSemverTriple(spec: string): [number, number, number] | undefined {

@@ -96,6 +96,20 @@ describe('experimental_docgenProvider', () => {
       },
     ]);
   });
+
+  it('passes the preview file to the worker', async () => {
+    vol.fromNestedJSON({ '/workspace/.storybook/preview.ts': '' });
+
+    expect(await experimental_docgenProvider([], optionsWith({}))).toEqual([
+      {
+        moduleSpecifier: expect.stringMatching(/docgen-worker\.js$/),
+        options: {
+          manifestPaths: [],
+          previewFilePath: '/workspace/.storybook/preview.ts',
+        },
+      },
+    ]);
+  });
 });
 
 describe('experimental_manifests', () => {

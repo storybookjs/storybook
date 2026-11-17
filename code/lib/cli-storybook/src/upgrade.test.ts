@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type * as sbcc from 'storybook/internal/common';
-import { type JsPackageManager, PackageManagerName } from 'storybook/internal/common';
+import { type JsPackageManager, PackageManagerName, versions } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
 import { getStorybookData as sourceGetStorybookData } from '../../../core/src/cli/getStorybookData.ts';
@@ -250,22 +250,35 @@ describe('toUpgradedDependencies', () => {
       ]);
     });
 
-    it('should keep caret ranges for prerelease CLI upgrades that are not canaries', async () => {
+    it('should keep an older alpha exact and add carets for the latest alpha', async () => {
       const deps = {
         '@storybook/react': '^8.0.0',
+        '@storybook/addon-mcp': '^8.0.0',
       };
+      const reactVersion = versions['@storybook/react'];
+      const mcpVersion = versions['@storybook/addon-mcp'];
+      versions['@storybook/react'] = '11.0.0-alpha.5';
+      versions['@storybook/addon-mcp'] = '11.0.0-alpha.5';
 
-      const result = await generateUpgradeSpecs(deps, {
-        packageManager: mockPackageManager,
-        isCanary: false,
-        isCLIOutdated: false,
-        isCLIPrerelease: true,
-        isCLIExactPrerelease: false,
-        isCLIExactLatest: false,
-        storybookVersionSpecifier: '10.6.0-alpha.7',
-      });
+      try {
+        const config = {
+          packageManager: mockPackageManager,
+          isCanary: false,
+          isCLIOutdated: false,
+          isCLIPrerelease: true,
+          isCLIExactLatest: false,
+        };
 
-      expect(result).toEqual(['@storybook/react@^9.0.0']);
+        expect(
+          await generateUpgradeSpecs(deps, { ...config, isCLIExactPrerelease: false })
+        ).toEqual(['@storybook/react@11.0.0-alpha.5', '@storybook/addon-mcp@11.0.0-alpha.5']);
+        expect(await generateUpgradeSpecs(deps, { ...config, isCLIExactPrerelease: true })).toEqual(
+          ['@storybook/react@^11.0.0-alpha.5', '@storybook/addon-mcp@^11.0.0-alpha.5']
+        );
+      } finally {
+        versions['@storybook/react'] = reactVersion;
+        versions['@storybook/addon-mcp'] = mcpVersion;
+      }
     });
 
     it('should treat pkg.pr.new Storybook specifiers as canaries during project collection', async () => {
@@ -345,9 +358,9 @@ describe('toUpgradedDependencies', () => {
       expect(mockPackageManager.latestVersion).toHaveBeenCalledWith('@storybook/addon-designs');
     });
 
-    it('should include satellite dependencies with @next for prerelease version', async () => {
+    it('should add carets to core and satellite dependencies for the latest prerelease', async () => {
       const deps = {
-        '@storybook/react': '^8.0.0',
+        '@storybook/react': '8.0.0',
         '@storybook/addon-designs': '8.0.0',
       };
 
@@ -361,7 +374,7 @@ describe('toUpgradedDependencies', () => {
       });
 
       expect(result).toContainEqual('@storybook/react@^9.0.0');
-      expect(result).toContainEqual('@storybook/addon-designs@9.0.0-beta.1');
+      expect(result).toContainEqual('@storybook/addon-designs@^9.0.0-beta.1');
       expect(mockPackageManager.latestVersion).toHaveBeenCalledWith(
         '@storybook/addon-designs@next'
       );

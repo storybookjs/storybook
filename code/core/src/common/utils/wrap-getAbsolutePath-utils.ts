@@ -72,12 +72,20 @@ export function getAbsolutePathWrapperName(config: ConfigFile) {
   return null;
 }
 
+// Relative paths resolve from the config dir; the wrapper's `${value}/package.json` lookup breaks them.
+function isRelativePathSpecifier(value: string) {
+  return value.startsWith('.');
+}
+
 /** Check if the node needs to be wrapped with getAbsolutePath wrapper. */
 export function isGetAbsolutePathWrapperNecessary(
   node: t.Node,
   cb: (node: t.StringLiteral | t.ObjectProperty | t.ArrayExpression) => void = () => {}
 ) {
   if (t.isStringLiteral(node)) {
+    if (isRelativePathSpecifier(node.value)) {
+      return false;
+    }
     // value will be converted from StringLiteral to CallExpression.
     cb(node);
     return true;
@@ -89,7 +97,11 @@ export function isGetAbsolutePathWrapperNecessary(
         t.isObjectProperty(property) && t.isIdentifier(property.key) && property.key.name === 'name'
     ) as t.ObjectProperty;
 
-    if (nameProperty && t.isStringLiteral(nameProperty.value)) {
+    if (
+      nameProperty &&
+      t.isStringLiteral(nameProperty.value) &&
+      !isRelativePathSpecifier(nameProperty.value.value)
+    ) {
       cb(nameProperty);
       return true;
     }

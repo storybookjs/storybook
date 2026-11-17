@@ -1,0 +1,9 @@
+{
+  "id": "button",
+  "name": "Button",
+  "argTypes": {},
+  "stories": {
+    "button--primary": { "snippet": "<Button label=\"Hi\" />" },
+    "button--slow": { "snippet": null }
+  }
+}

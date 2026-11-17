@@ -23,8 +23,6 @@ export const ScrollAreaContext = createContext<RefObject<HTMLDivElement | null> 
 
 const SCROLLBAR_WIDTH = 6;
 
-// Room the content leaves at the end edge for the scrollbar, whether the browser lays the
-// scrollbar out beside the content or draws it over the content.
 export const SCROLLBAR_GUTTER = SCROLLBAR_WIDTH + 3;
 
 const Scroller = styled.div(({ theme }) => ({

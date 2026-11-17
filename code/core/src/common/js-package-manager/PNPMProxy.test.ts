@@ -106,6 +106,67 @@ describe('PNPM Proxy', () => {
     expect(pnpmProxy.type).toEqual('pnpm');
   });
 
+  describe('installed packages in a workspace whose root declares storybook', () => {
+    const CHILD_DIR = `${PROJECT_DIR}/packages/child`;
+
+    beforeEach(() => {
+      JsPackageManager.installedVersionCache.clear();
+      vol.fromJSON({
+        [`${PROJECT_DIR}/node_modules/vitest/package.json`]: JSON.stringify({
+          name: '@voidzero-dev/vite-plus-test',
+          version: '0.1.16',
+          bundledVersions: { vitest: '4.1.2' },
+        }),
+        [`${CHILD_DIR}/node_modules/vitest/package.json`]: JSON.stringify({
+          name: 'vitest',
+          version: '5.0.5',
+        }),
+      });
+      // `empathic/find` reads the real file system, so this walks the memfs tree the same way.
+      vi.mocked(find.up).mockImplementation((name, { cwd = PROJECT_DIR, last } = {}) => {
+        for (let dir = cwd; ; dir = dirname(dir)) {
+          const candidate = join(dir, name);
+          if (vol.existsSync(candidate)) {
+            return candidate;
+          }
+          if (dir === last || dir === dirname(dir)) {
+            return undefined;
+          }
+        }
+      });
+    });
+
+    it('reads a package from the given directory before its parents', async () => {
+      await expect(pnpmProxy.getModulePackageJSON('vitest', CHILD_DIR)).resolves.toMatchObject({
+        name: 'vitest',
+        version: '5.0.5',
+      });
+    });
+
+    it('reads a package from the directory that declares storybook by default', async () => {
+      await expect(pnpmProxy.getModulePackageJSON('vitest')).resolves.toMatchObject({
+        name: '@voidzero-dev/vite-plus-test',
+        version: '0.1.16',
+      });
+    });
+
+    it('reports the version installed in the Storybook project over a root alias', async () => {
+      const childProxy = new PNPMProxy({ configDir: `${CHILD_DIR}/.storybook` });
+      vi.spyOn(childProxy, 'primaryPackageJson', 'get').mockReturnValue({
+        operationDir: PROJECT_DIR,
+        packageJson: { dependencies: {}, devDependencies: { storybook: '11.0.0' } },
+      } as any);
+      childProxy.findInstallations = vi.fn().mockResolvedValue({
+        dependencies: { vitest: [{ version: '5.0.5', location: '' }] },
+        duplicatedDependencies: {},
+        infoCommand: '',
+        dedupeCommand: '',
+      });
+
+      await expect(childProxy.getInstalledVersion('vitest')).resolves.toBe('5.0.5');
+    });
+  });
+
   describe('getRegistryURL', () => {
     it('should return the configured registry URL', async () => {
       const cwd = resolve('fixtures', 'pnpm-project');

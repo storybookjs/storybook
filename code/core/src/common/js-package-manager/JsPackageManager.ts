@@ -161,8 +161,22 @@ export abstract class JsPackageManager {
   /** Returns the command to run the binary of a remote package, as `runPackageCommand` does with `useRemotePkg` */
   abstract getRemoteRunCommand(args: string[]): string;
 
-  /** Get the package.json file for a given module. */
-  abstract getModulePackageJSON(packageName: string, cwd?: string): Promise<PackageJson | null>;
+  /** Get the package.json file for a given module from the nearest `node_modules` at or above `cwd`. */
+  public async getModulePackageJSON(
+    packageName: string,
+    cwd = this.primaryPackageJson.operationDir
+  ): Promise<PackageJson | null> {
+    const packageJsonPath = find.up(join('node_modules', packageName, 'package.json'), {
+      cwd,
+      last: getProjectRoot(),
+    });
+
+    if (!packageJsonPath) {
+      return null;
+    }
+
+    return JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
+  }
 
   isStorybookInMonorepo() {
     const turboJsonPath = find.up(`turbo.json`, { last: getProjectRoot() });
@@ -936,7 +950,10 @@ export abstract class JsPackageManager {
 
       // Package managers report an alias such as Vite+'s `vite` by its own version.
       let version =
-        getBundledVersion(await this.getModulePackageJSON(packageName), packageName) ?? null;
+        getBundledVersion(
+          await this.getModulePackageJSON(packageName, this.instanceDir),
+          packageName
+        ) ?? null;
 
       if (!version) {
         const installations = await this.findInstallations([packageName]);

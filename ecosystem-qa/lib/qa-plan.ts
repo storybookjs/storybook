@@ -910,8 +910,9 @@ export const manualChecksOf = (plan: Plan, at: PlanLayout): ManualCheckRow[] => 
 
 // The manual checks go into an issue, where a mention notifies a person and a reference posts on a
 // PR, and a check that points to a PR cannot be followed without that PR open. Whether GitHub
-// links a form depends on its parser, so none of them may stand anywhere, in a code span either.
-const REFERENCE = /(?<!\w)@[a-z\d]|#\d|GH-\d/i;
+// links a form depends on its parser, so none of them may stand anywhere, in a code span either. An
+// `@` after a letter or a digit cannot follow markup, so it starts no mention.
+const REFERENCE = /(?<![a-z\d])@|#\d|GH-\d|(?:pull|issues)\/\d/i;
 
 const manualChecksStayInert: Rule = ({ plan, at }) =>
   manualChecksOf(plan, at).flatMap(({ manual, why, line }) =>

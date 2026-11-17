@@ -1138,6 +1138,14 @@ describe('checkPlanText', () => {
     ['a PR reference', '#36664'],
     ['a GH reference', 'GH-36664'],
     ['a GH reference in lower case', 'gh-36664'],
+    ['a mention in underscore emphasis', '_@ghost_'],
+    ['a mention in star emphasis', '*@ghost*'],
+    ['a mention in parentheses', '(@ghost)'],
+    ['a mention in strikethrough', '~@ghost~'],
+    ['an at sign before a hyphen', '@-ghost'],
+    ['a path to a PR', 'storybookjs/storybook/pull/36664'],
+    ['an address of a PR', 'github.com/storybookjs/storybook/pull/36664'],
+    ['a path to an issue', 'storybookjs/storybook/issues/36664'],
   ];
 
   it.each(
@@ -1172,6 +1180,15 @@ describe('checkPlanText', () => {
 
     expect(problemsOf(text)).toContainEqual({
       line: lineOf(text, lineNeedle!),
+      message: expect.stringContaining('a manual check names no person, PR, or issue'),
+    });
+  });
+
+  it('refuses a mention at the start of a manual check', () => {
+    const text = edited('| On Windows 11, make a React', '| @ghost on Windows 11, make a React');
+
+    expect(problemsOf(text)).toContainEqual({
+      line: lineOf(text, `| ${pr(37344)} |`),
       message: expect.stringContaining('a manual check names no person, PR, or issue'),
     });
   });

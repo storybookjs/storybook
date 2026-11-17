@@ -1,122 +1,109 @@
+import {
+  typeJsonToText,
+  type ComponentDeclarationJson,
+  type ComponentPropJson,
+  type TypeJson,
+} from 'svelte-docinfo';
+
+import { babelParse, types as t } from 'storybook/internal/babel';
 import type { SBType, StrictArgTypes } from 'storybook/internal/types';
 
-import type { Docgen, Type } from '../svelte2tsx/generate-docgen.ts';
-
-function summary(type: Type | undefined): string | undefined {
-  if (!type) {
-    return undefined;
-  }
-  if ('text' in type) {
-    return type.text;
-  }
-  if ('types' in type) {
-    return type.types
-      .filter((t) => t.type !== 'null')
-      .map(summary)
-      .join(type.type === 'union' ? ' | ' : ' & ');
-  }
-  return type.type;
-}
-
-function storybookType(type: Type | undefined): SBType {
-  if (!type) {
-    return { name: 'other', value: 'unknown' };
-  }
-  switch (type.type) {
-    case 'union':
-    case 'intersection': {
-      const members = type.types.filter((member) => member.type !== 'null');
-      if (members.length === 1) return storybookType(members[0]);
-      return { name: 'other', value: summary(type) ?? 'unknown' };
+function storybookType(text: string, type: TypeJson | undefined): SBType {
+  if (type?.kind === 'literal') return { name: 'literal', value: type.value };
+  if (type?.kind === 'union' || type?.kind === 'intersection') {
+    const members = type.members.filter(
+      (member) =>
+        member.kind !== 'intrinsic' || (member.text !== 'null' && member.text !== 'undefined')
+    );
+    if (members.length === 1) return storybookType(typeJsonToText(members[0]), members[0]);
+    if (type.kind === 'union') {
+      const values = members.flatMap((member) =>
+        member.kind === 'literal' && typeof member.value !== 'boolean' ? [member.value] : []
+      );
+      if (values.length > 0 && values.length === members.length) {
+        return { name: 'enum', value: values };
+      }
     }
-    case 'array':
-    case 'object':
-      return { name: 'other', value: type.text === '{}' ? 'object' : type.text };
-    case 'function':
-      return { name: 'function', raw: type.text };
-    case 'literal':
-      return { name: 'literal', value: type.value };
-    case 'any':
-      return { name: 'other', value: 'any' };
-    case 'null':
-    case 'undefined':
-    case 'void':
-      return { name: 'other', value: type.type };
+    if (type.alias || members.length !== type.members.length) {
+      text = members.map(typeJsonToText).join(type.kind === 'union' ? ' | ' : ' & ');
+    }
+  }
+  const scalar = type?.kind === 'intrinsic' ? type.text : text;
+  switch (scalar) {
+    case 'string':
+    case 'number':
+    case 'boolean':
+    case 'symbol':
+      return { name: scalar };
     default:
-      return { name: type.type };
+      return type?.kind === 'function' || /=>/.test(text)
+        ? { name: 'function', raw: text }
+        : { name: 'other', value: text === '{}' ? 'object' : text };
   }
 }
 
-export function createServerArgTypes(docgen: Docgen): StrictArgTypes {
+function defaultSummary(text: string | undefined, quoted = true): string | undefined {
+  if (text === undefined) return undefined;
+  try {
+    const statement = babelParse(`(${text})`).program.body[0];
+    if (t.isExpressionStatement(statement) && t.isStringLiteral(statement.expression)) {
+      return quoted ? JSON.stringify(statement.expression.value) : statement.expression.value;
+    }
+  } catch {
+    return text;
+  }
+  return text;
+}
+
+function jsDocTags(prop: ComponentPropJson): Record<string, string[]> {
+  return {
+    ...(prop.deprecatedMessage !== undefined ? { deprecated: [prop.deprecatedMessage] } : {}),
+    ...(prop.defaultValue !== undefined
+      ? { default: [defaultSummary(prop.defaultValue, false) ?? prop.defaultValue] }
+      : {}),
+    ...(prop.examples.length > 0 ? { example: prop.examples } : {}),
+    ...(prop.bindable ? { bindable: [''] } : {}),
+  };
+}
+
+export function createServerArgTypes(docgen: ComponentDeclarationJson): StrictArgTypes {
   const argTypes: StrictArgTypes = {};
   for (const prop of docgen.props) {
-    const typeSummary = summary(prop.type);
-    const slot = /^Snippet(?:<|$)/.test(prop.typeText ?? '');
-    const callable =
-      prop.type?.type === 'function' ||
-      (prop.type?.type === 'union' && prop.type.types.some((type) => type.type === 'function'));
-    const literals = prop.type?.type === 'union' ? prop.type.types : [];
-    const values = literals.flatMap((type) =>
-      type.type === 'literal' && typeof type.value !== 'boolean' ? [type.value] : []
-    );
-    const enumValues = values.length > 0 && values.length === literals.length ? values : undefined;
-    const jsDocTags: Record<string, string[]> = {};
-    for (const tag of prop.jsDocTags ?? []) {
-      (jsDocTags[tag.name] ??= []).push(tag.text);
-    }
-    const defaultValue = prop.defaultValue?.text ?? jsDocTags.default?.[0];
+    const slot = /^Snippet(?:<|$)/.test(prop.type ?? '');
+    const type = storybookType(prop.type ?? 'unknown', prop.typeInfo);
+    const callable = type.name === 'function' || prop.returnType !== undefined;
+    const tags = jsDocTags(prop);
     argTypes[prop.name] = {
       name: prop.name,
       description: prop.description,
-      type: {
-        ...(enumValues
-          ? { name: 'enum', value: enumValues }
-          : slot
-            ? { name: 'other', value: typeSummary ?? 'unknown' }
-            : storybookType(prop.type)),
-        required: prop.optional === false && defaultValue === undefined,
-      },
+      type: { ...type, required: !prop.optional && prop.defaultValue === undefined },
       control:
         slot || callable
           ? false
-          : enumValues
-            ? { type: enumValues.length <= 4 ? 'radio' : 'select' }
+          : type.name === 'enum'
+            ? { type: type.value.length <= 4 ? 'radio' : 'select' }
             : {
                 type:
-                  prop.type?.type === 'string'
+                  type.name === 'string'
                     ? 'text'
-                    : prop.type?.type === 'number'
+                    : type.name === 'number'
                       ? 'number'
-                      : prop.type?.type === 'boolean'
+                      : type.name === 'boolean'
                         ? 'boolean'
                         : 'object',
               },
-      ...(enumValues ? { options: enumValues } : {}),
+      ...(type.name === 'enum' ? { options: type.value } : {}),
       table: {
-        type: { summary: typeSummary },
-        defaultValue: { summary: defaultValue },
+        type: { summary: prop.type },
+        defaultValue: { summary: defaultSummary(prop.defaultValue) },
         category: slot
           ? 'slots'
           : callable && /^on[A-Z]|^on[a-z]+$/.test(prop.name)
             ? 'events'
             : 'properties',
-        ...(Object.keys(jsDocTags).length > 0 ? { jsDocTags } : {}),
+        ...(Object.keys(tags).length > 0 ? { jsDocTags: tags } : {}),
       },
     };
-  }
-  for (const [category, members] of [
-    ['events', docgen.events],
-    ['slots', docgen.slots],
-  ] as const) {
-    for (const member of members ?? []) {
-      argTypes[`${category === 'events' ? 'event' : 'slot'}_${member.name}`] = {
-        name: member.name,
-        description: member.description,
-        control: false,
-        ...(category === 'events' ? { action: member.name } : {}),
-        table: { category, type: { summary: member.typeText } },
-      };
-    }
   }
   return argTypes;
 }

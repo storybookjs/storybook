@@ -85,6 +85,7 @@
   ],
   "dependencies": {
     "es-toolkit": "^1.43.0",
+    "svelte-docinfo": "0.13.0",
     "svelte2tsx": "^0.7.55",
     "ts-dedent": "^2.2.0",
     "type-fest": "^5.6.0"

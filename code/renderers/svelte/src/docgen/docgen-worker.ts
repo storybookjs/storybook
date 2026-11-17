@@ -12,11 +12,11 @@ export const createDocgenProvider = (): DocgenMiddleware =>
       } catch {
         return undefined;
       }
-      const [{ createDocgenCache }, { buildDocgenPayload }] = await Promise.all([
-        import('./component-docgen/svelte2tsx/generate-docgen.ts'),
+      const [{ createDocinfoCache }, { buildDocgenPayload }] = await Promise.all([
+        import('./component-docgen/analyze-component.ts'),
         import('./component-docgen/build-docgen.ts'),
       ]);
-      return { cache: createDocgenCache(), buildDocgenPayload };
+      return { cache: createDocinfoCache(), buildDocgenPayload };
     },
     extract: async (manager, input) => manager.buildDocgenPayload(input, manager),
   });

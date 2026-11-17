@@ -476,6 +476,30 @@ describe('checkPlanText', () => {
       'example.com',
     ],
     [
+      'a scheme glued to a short option',
+      'run `curl -xhttp://proxy.example.com:3128 http://localhost:6006/index.json`',
+      'xhttp://proxy.example.com:3128',
+      'proxy.example.com',
+    ],
+    [
+      'a scheme after a digit',
+      'run `curl $1http://example.com/x`',
+      'http://example.com/x',
+      'example.com',
+    ],
+    [
+      'a scheme after a plus',
+      'run `curl +http://example.com/x`',
+      'http://example.com/x',
+      'example.com',
+    ],
+    [
+      'a scheme after a number and a full stop',
+      'fetch the index on port 6006.http://example.com/x',
+      'http://example.com/x',
+      'example.com',
+    ],
+    [
       'a file URL with a host',
       'open `file://example.com/x`',
       'file://example.com/x',

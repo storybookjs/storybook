@@ -4,10 +4,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { logger, prompt } from 'storybook/internal/node-logger';
 
+import * as find from 'empathic/find';
+
 import { invalidateProjectRootCache } from '../utils/paths.ts';
 import { JsPackageManager } from './JsPackageManager.ts';
 
 vi.mock('storybook/internal/node-logger', { spy: true });
+vi.mock('empathic/find', { spy: true });
 
 const mockVersions = vi.hoisted(() => ({
   '@storybook/react': '8.3.0',
@@ -27,6 +30,103 @@ describe('JsPackageManager', () => {
     mockLatestVersion = vi.spyOn(jsPackageManager, 'latestVersion');
 
     vi.clearAllMocks();
+  });
+
+  describe('getOverrideSources', () => {
+    afterEach(() => {
+      vi.mocked(JsPackageManager.getPackageJson).mockRestore();
+      vi.mocked(find.any).mockRestore();
+    });
+
+    it.each<{
+      name: string;
+      input: {
+        lockfile: string | undefined;
+        manifests: Record<
+          string,
+          {
+            overrides?: Record<string, string | Record<string, string>>;
+            resolutions?: Record<string, string>;
+            pnpm?: { overrides: Record<string, string> };
+          }
+        >;
+      };
+      expected: unknown[];
+    }>([
+      {
+        name: 'no override fields',
+        input: { lockfile: '/p/package-lock.json', manifests: { '/p/package.json': {} } },
+        expected: [],
+      },
+      {
+        name: 'each override field, nested scopes included',
+        input: {
+          lockfile: '/p/package-lock.json',
+          manifests: {
+            '/p/package.json': {
+              overrides: { a: { storybook: '10.5.3' } },
+              resolutions: { '**/storybook': '10.5.3' },
+              pnpm: { overrides: { 'a>storybook': '10.5.3' } },
+            },
+          },
+        },
+        expected: [
+          {
+            path: '/p/package.json',
+            field: 'overrides',
+            overrides: { a: { storybook: '10.5.3' } },
+          },
+          {
+            path: '/p/package.json',
+            field: 'resolutions',
+            overrides: { '**/storybook': '10.5.3' },
+          },
+          {
+            path: '/p/package.json',
+            field: 'pnpm.overrides',
+            overrides: { 'a>storybook': '10.5.3' },
+          },
+        ],
+      },
+      {
+        name: 'the manifest beside the lockfile, not the nested package',
+        input: {
+          lockfile: '/p/yarn.lock',
+          manifests: {
+            '/p/package.json': { resolutions: { storybook: '10.5.3' } },
+            '/p/app/package.json': { resolutions: { storybook: '9.0.0' } },
+          },
+        },
+        expected: [
+          { path: '/p/package.json', field: 'resolutions', overrides: { storybook: '10.5.3' } },
+        ],
+      },
+      {
+        name: 'the primary manifest without a lockfile',
+        input: {
+          lockfile: undefined,
+          manifests: {
+            '/p/package.json': { resolutions: { storybook: '10.5.3' } },
+            '/p/app/package.json': { resolutions: { storybook: '9.0.0' } },
+          },
+        },
+        expected: [
+          { path: '/p/app/package.json', field: 'resolutions', overrides: { storybook: '9.0.0' } },
+        ],
+      },
+    ])('$name', ({ input, expected }) => {
+      vi.spyOn(find, 'any').mockReturnValue(input.lockfile);
+      vi.spyOn(JsPackageManager, 'getPackageJson').mockImplementation((path) => ({
+        dependencies: {},
+        devDependencies: {},
+        ...input.manifests[path],
+      }));
+      Object.defineProperty(jsPackageManager, 'primaryPackageJson', {
+        value: { packageJsonPath: '/p/app/package.json', operationDir: '/p/app' },
+      });
+
+      expect(jsPackageManager.getOverrideSources()).toEqual(expected);
+    });
   });
 
   describe('getInstalledVersion', () => {

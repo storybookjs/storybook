@@ -15,8 +15,9 @@ import {
 import { getMismatchingVersionsWarnings } from './getMismatchingVersionsWarning.ts';
 import {
   STORYBOOK_OVERRIDES_TITLE,
+  getStorybookOverrides,
   getStorybookOverridesSummary,
-} from './getStorybookOverridesSummary.ts';
+} from './getStorybookOverrides.ts';
 import { DiagnosticType as DiagType, DiagnosticStatus } from './types.ts';
 import type {
   DiagnosticMessage,
@@ -317,16 +318,17 @@ export async function getDoctorDiagnostics({
     });
   }
 
-  const overridesSummary = getStorybookOverridesSummary({
-    packageManager,
-    targetVersion: storybookVersion,
-  });
+  const overrides = getStorybookOverrides({ packageManager, targetVersion: storybookVersion });
 
-  if (overridesSummary) {
+  if (overrides.length > 0) {
     results.push({
       type: DiagType.STORYBOOK_OVERRIDES,
       title: STORYBOOK_OVERRIDES_TITLE,
-      message: `${overridesSummary}\nThen reinstall your dependencies.`,
+      message: getStorybookOverridesSummary(
+        overrides,
+        storybookVersion,
+        'reinstall your dependencies'
+      ),
       project: { configDir },
     });
   }

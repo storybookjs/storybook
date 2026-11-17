@@ -2,21 +2,21 @@ import { versions } from 'storybook/internal/common';
 
 import {
   STORYBOOK_OVERRIDES_TITLE,
+  getStorybookOverrides,
   getStorybookOverridesSummary,
-} from '../doctor/getStorybookOverridesSummary.ts';
+} from '../doctor/getStorybookOverrides.ts';
 import { createBlocker } from './types.ts';
 
 export const blocker = createBlocker({
   id: 'storybookOverrides',
   async check({ packageManager }) {
-    return (
-      getStorybookOverridesSummary({ packageManager, targetVersion: versions.storybook }) ?? false
-    );
+    const overrides = getStorybookOverrides({ packageManager, targetVersion: versions.storybook });
+    return overrides.length > 0 && overrides;
   },
-  log(summary) {
+  log(overrides) {
     return {
       title: STORYBOOK_OVERRIDES_TITLE,
-      message: `${summary}\nThen run the upgrade again.`,
+      message: getStorybookOverridesSummary(overrides, versions.storybook),
     };
   },
 });

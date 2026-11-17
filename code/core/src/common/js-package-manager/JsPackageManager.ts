@@ -19,6 +19,8 @@ import { getPkgPrNewPackageSpecifier } from '../utils/get-pkg-pr-new-package-spe
 import { findFilesUp, getProjectRoot } from '../utils/paths.ts';
 import storybookPackagesVersions from '../versions.ts';
 import type { PackageJson, PackageJsonWithDepsAndDevDeps } from './PackageJson.ts';
+import { LOCK_FILES } from './constants.ts';
+import { type OverrideSource, toOverrides } from './overrides.ts';
 import type { InstallationMetadata } from './types.ts';
 import { getInstallErrorTail } from './util.ts';
 import { getVitePlusVersions } from './vite-plus-versions.ts';
@@ -355,6 +357,24 @@ export abstract class JsPackageManager {
     _declared: Partial<Record<string, string>>
   ): string[] {
     return specifiers;
+  }
+
+  /**
+   * List the `overrides`, `resolutions` and `pnpm.overrides` fields of the root package.json, the only
+   * manifest whose overrides package managers apply.
+   */
+  public getOverrideSources(): OverrideSource[] {
+    const path = this.#findRootPackageJsonPath();
+    const packageJson = JsPackageManager.getPackageJson(path);
+    const fields: [string, unknown][] = [
+      ['overrides', packageJson.overrides],
+      ['resolutions', packageJson.resolutions],
+      ['pnpm.overrides', packageJson.pnpm?.overrides],
+    ];
+    return fields.flatMap(([field, value]) => {
+      const overrides = toOverrides(value);
+      return overrides ? [{ path, field, overrides }] : [];
+    });
   }
 
   /**
@@ -1015,6 +1035,17 @@ export abstract class JsPackageManager {
 
     // Fall back to cwd package.json
     return this.packageJsonPaths[0] ?? resolve(this.cwd, 'package.json');
+  }
+
+  /** The package.json beside the closest lockfile, or the primary one before the first install. */
+  #findRootPackageJsonPath(): string {
+    const lockfilePath = find.any(LOCK_FILES, {
+      cwd: this.primaryPackageJson.operationDir,
+      last: getProjectRoot(),
+    });
+    return lockfilePath
+      ? join(dirname(lockfilePath), 'package.json')
+      : this.primaryPackageJson.packageJsonPath;
   }
 
   /** List all package.json files starting from the given directory and stopping at the project root. */

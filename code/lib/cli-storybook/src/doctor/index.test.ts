@@ -48,24 +48,24 @@ describe('getDoctorDiagnostics', () => {
 
 describe('getDoctorDiagnostics overrides check', () => {
   const hasStorybookDependency = vi.spyOn(JsPackageManager, 'hasStorybookDependency');
-  const getPackageJson = vi.spyOn(JsPackageManager, 'getPackageJson');
 
   afterAll(() => {
     hasStorybookDependency.mockRestore();
-    getPackageJson.mockRestore();
   });
 
   it('reports overrides pinning Storybook packages outside the installed version', async () => {
     hasStorybookDependency.mockReturnValue(true);
-    getPackageJson.mockReturnValue({
-      dependencies: {},
-      devDependencies: { storybook: '^11.0.0' },
-      overrides: { '@storybook/addon-mcp': { storybook: '~10.5.3' } },
-    });
     const packageManager = {
       packageJsonPaths: ['package.json'],
       getAllDependencies: () => ({ storybook: '^11.0.0' }),
       findInstallations: async () => undefined,
+      getOverrideSources: () => [
+        {
+          path: 'package.json',
+          field: 'overrides',
+          overrides: { '@storybook/addon-mcp': { storybook: '~10.5.3' } },
+        },
+      ],
     } as unknown as JsPackageManager;
 
     const results = await getDoctorDiagnostics({
@@ -78,12 +78,11 @@ describe('getDoctorDiagnostics overrides check', () => {
       .toMatchInlineSnapshot(`
         [
           {
-            "message": "These package.json overrides force Storybook packages to versions that exclude 11.0.0:
+            "message": "These overrides force Storybook packages to versions that exclude 11.0.0:
 
         - package.json: overrides › @storybook/addon-mcp › storybook = ~10.5.3
 
-        Update these entries to 11.0.0 or remove them.
-        Then reinstall your dependencies.",
+        Update these entries to 11.0.0 or remove them, then reinstall your dependencies.",
             "project": {
               "configDir": ".storybook",
             },

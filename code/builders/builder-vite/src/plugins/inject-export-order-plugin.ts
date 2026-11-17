@@ -1,4 +1,4 @@
-import { parse } from 'es-module-lexer';
+import { type ExportSpecifier, parse } from 'es-module-lexer';
 import MagicString from 'magic-string';
 import type { Plugin } from 'vite';
 
@@ -22,7 +22,19 @@ export async function injectExportOrderPlugin() {
         // TODO: Maybe convert `injectExportOrderPlugin` to function that returns object,
         //  and run `await init;` once and then call `parse()` without `await`,
         //  instead of calling `await parse()` every time.
-        const [, exports] = await parse(code);
+        let exports: readonly ExportSpecifier[];
+        try {
+          [, exports] = await parse(code);
+        } catch (error) {
+          const hint = /\.[jt]s$/.test(id)
+            ? ' If the file contains JSX, rename it to use the .jsx or .tsx extension.'
+            : '';
+          this.error({
+            message: `Failed to parse the story file: ${(error as Error).message}.${hint}`,
+            pos: (error as { idx?: number }).idx,
+            cause: error,
+          });
+        }
 
         const exportNames = exports.map((e) => code.substring(e.s, e.e));
 

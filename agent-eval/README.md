@@ -67,6 +67,15 @@ EVAL_ALL=1 yarn eval
 EVAL_ONLY=803-edit-component yarn eval
 ```
 
+Every eval runs once, so one result says little about an eval that passes most
+of the time. `EVAL_RUNS=<n>` runs each selected eval `n` times, to the end, and
+the summary gives the pass rate. Measure it before and after a change to a text
+that an eval covers:
+
+```bash
+EVAL_RUNS=5 EVAL_ONLY=803-edit-component yarn exec agent-eval cc-plugin-haiku-5.5-low
+```
+
 A full `EVAL_ALL=1` run (15 workflow evals × 4 experiments + 4
 lifecycle evals × 2 plugin experiments) costs roughly **$0.45** in agent
 tokens, as measured in November 2026: about $0.007 per eval on

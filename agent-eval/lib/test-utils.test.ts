@@ -566,6 +566,28 @@ describe('mentionsReviewSkill', () => {
   });
 });
 
+describe('recommendsReviewSkill', () => {
+  test.each([
+    'Use the /ui-review skill to see the changed components in Storybook',
+    'The rename is done. You can use the /ui-review skill to see the changed components in Storybook.',
+    'I did not run `/ui-review`, because nothing visible changed. You can use the /ui-review skill to see the components.',
+  ])('counts %j', async (answer) => {
+    const { recommendsReviewSkill } = await import('./test-utils.ts');
+    expect(recommendsReviewSkill(answer)).toBe(true);
+  });
+
+  // What agents wrote after a change nobody can see (eval runs of 2026-11-17).
+  test.each([
+    'I renamed the helper in its definition and in its only caller.',
+    "I didn't suggest `/ui-review`, since this change adds no visible UI yet.",
+    "This is a rename with no change to how the UI looks, so those steps don't seem to apply. Tell me if you want stories or a `/ui-review` for it anyway.",
+    'Nothing visible changed, so no `/ui-review` is needed.',
+  ])('does not count %j', async (answer) => {
+    const { recommendsReviewSkill } = await import('./test-utils.ts');
+    expect(recommendsReviewSkill(answer)).toBe(false);
+  });
+});
+
 describe('findDevServerKillCommands', () => {
   test('flags kill commands naming storybook, a pidfile, or the default port', () => {
     expect(findDevServerKillCommands(['pkill -f storybook'])).toEqual(['pkill -f storybook']);

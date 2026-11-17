@@ -256,11 +256,26 @@ export function expectReviewHint(): void {
   ).toMatch(REVIEW_HINT);
 }
 
+// A sentence that names the skill recommends it, unless it says the opposite before the name:
+// that the agent left the review out ("I didn't suggest `/ui-review`, nothing visible changed"),
+// or would make one on request ("tell me if you want a `/ui-review` anyway").
+const DECLINES = /\b(?:not|no|without|if|unless)\b|n['’]t\b/i;
+
+export const recommendsReviewSkill = (answer: string): boolean =>
+  answer
+    .split(/(?<=[.!?])\s+|\n+/)
+    .some(
+      (sentence) =>
+        REVIEW_HINT.test(sentence) &&
+        !DECLINES.test(sentence.slice(0, sentence.search(REVIEW_HINT)))
+    );
+
 export function expectNoReviewHint(): void {
+  const answer = getFinalAssistantMessage() ?? '';
   expect(
-    getFinalAssistantMessage() ?? '',
-    'Expected no /ui-review hint in the final answer: nothing visible changed, or a review was just created'
-  ).not.toMatch(REVIEW_HINT);
+    recommendsReviewSkill(answer),
+    `Expected the final answer not to recommend /ui-review: nothing visible changed, or a review was just created. Answer:\n${answer}`
+  ).toBe(false);
 }
 
 // Browse request: the review is resolved from the live story index, so the

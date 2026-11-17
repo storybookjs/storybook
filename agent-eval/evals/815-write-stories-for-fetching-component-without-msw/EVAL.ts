@@ -47,10 +47,13 @@ describe('writing stories for a fetching OrderHistory in a project without MSW',
     // Every story of a component that fetches needs a network mock, so without MSW there is none.
     for (const file of readdirSync('src/components').filter((name) => name.includes('.stories.'))) {
       const stories = readFileSync(`src/components/${file}`, 'utf8');
+      // A file with only a meta renders nothing.
+      const rendersOrderHistory =
+        /from ['"]\.\/OrderHistory['"]/.test(stories) && /^export const /m.test(stories);
       expect(
-        stories,
-        `Expected ${file} not to render OrderHistory without a network mock`
-      ).not.toMatch(/from ['"]\.\/OrderHistory['"]/);
+        rendersOrderHistory,
+        `Expected ${file} to have no story that renders OrderHistory without a network mock`
+      ).toBe(false);
       expect(stories, `Expected no module mock or stubbed fetch in ${file}`).not.toMatch(
         /\bsb\.mock\(|\bvi\.mock\(|\bmocked\(|\bspyOn\(|\b(globalThis|global|window)\.fetch\s*=/
       );

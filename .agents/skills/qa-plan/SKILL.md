@@ -151,7 +151,7 @@ The draft has five keys, all optional:
 }
 ```
 
-- `entries` are the changes to test. A slug is lower case letters, digits, and hyphens. `prs` lists every PR whose decision names the entry, which `render` enforces, and the PRs of a group that the entry shows; a PR of a group that the entry does not show, such as one that adds tests, stays out of `prs`. Every text field is one line of printable ASCII outside code spans and link URLs, without `<`, `>`, or a character reference such as `&nbsp;`; put a tag, a file name, or a word that is not ASCII into a code span.
+- `entries` are the changes to test. A slug is lower case letters, digits, and hyphens. `prs` lists every PR whose decision names the entry, which `render` enforces, and the PRs of a group that the entry shows; a PR of a group that the entry does not show, such as one that adds tests, stays out of `prs`. Every text field is one line of printable ASCII, without `<`, `>`, or a named, decimal, or hexadecimal character reference such as `&nbsp;`, also inside code spans and link URLs; say a tag, a comparison, or a word that is not ASCII in words, such as "the style block" or "5.4 or newer".
 - `decisions` maps a PR number to `{ "entries": [<slugs>] }`, `{ "manual": "<check>", "why": "<why the sweep cannot test it>" }`, or `{ "none": "<reason>" }`.
   When an entry tests only part of a PR, list the PR in the entry's `prs` and give it the manual decision, whose check covers the part that no entry tests.
 - `groups` holds every group with its decision, in the same three forms. In the plan a group's manual decision reads `manual: <check> Why: <why>`, so a check never holds ` Why: `. Add the groups that `render` made from a tracking issue under their slug `issue-<number>`, with their decision.

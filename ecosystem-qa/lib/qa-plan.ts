@@ -6,31 +6,22 @@ import { SEMVER } from './cycle.ts';
 import { CatalogEntry, CheckId } from './schema.ts';
 import type { QaStatus, Window, WindowPr } from './window.ts';
 
-const outsideCodeSpans = (text: string) => text.replace(/(`+)[^]*?\1/g, '');
-const prose = (text: string) => outsideCodeSpans(text).replace(/\]\([^()\s]*\)/g, ']');
-
 // GitHub renders a plan's text as Markdown, where a tag can fold every row after it into a closed
 // block, and a character reference, a blank or filler character, or an empty tag shows a cell as
-// empty. Outside code spans and link URLs the text is printable ASCII without them; a control or
-// format character is invisible even inside a code span.
+// empty. Where a code span or a link starts depends on GitHub's parser, so the rule holds for the
+// whole text, inside code spans too.
 const Text = z
   .string()
-  .regex(/^\S(?:[^\n\r]*\S)?$/, 'expected one line of text')
+  .regex(/^\S(?:.*\S)?$/, 'expected one line of text')
+  .regex(/^[ -~]*$/, 'expected printable ASCII only')
+  .regex(/^[^<>]*$/, 'expected no "<" and no ">"')
   .regex(
-    /^[^\p{Cc}\p{Cf}\p{Zl}\p{Zp}]*$/u,
-    'expected no control character, invisible format character, or line separator'
-  )
-  .refine(
-    (text) => /^[ -~]*$/.test(prose(text)),
-    'expected printable ASCII outside code spans and link URLs'
-  )
-  .refine(
-    (text) => !/[<>]|&(?:#\d+|#x[\da-f]+|[a-z][a-z\d]*);/i.test(prose(text)),
-    'expected no "<", no ">", and no character reference such as "&nbsp;" outside code spans'
+    /^(?!.*&(?:#\d+|#x[\da-f]+|[a-z][a-z\d]*);)/i,
+    'expected no character reference such as "&nbsp;"'
   );
 const Reason = Text.refine(
-  (text) => (prose(text).match(/[a-z]/gi)?.length ?? 0) >= 3,
-  'expected at least three letters outside code spans'
+  (text) => (text.match(/[a-z]/gi)?.length ?? 0) >= 3,
+  'expected at least three letters'
 );
 const RepoDir = Text.refine(
   (dir) => !dir.startsWith('/') && !dir.includes('\\') && !dir.split('/').includes('..'),

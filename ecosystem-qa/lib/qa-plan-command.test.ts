@@ -14,22 +14,17 @@ const qaPlan = (args: string[], input?: Buffer) =>
     encoding: 'utf8',
   });
 
-// The byte goes into a code span, the one place where the plan takes a character that is not ASCII.
 const withByte = (byte: number) => {
   const at = FIXTURE.indexOf('sets `storySort`') + 'sets `story'.length;
   return Buffer.concat([FIXTURE.subarray(0, at), Buffer.of(byte), FIXTURE.subarray(at)]);
 };
 
 describe('qa-plan.ts check', () => {
-  it('names two plans by different hashes when only bytes that decode alike differ', () => {
-    const hashes = [0xfe, 0xff].map((byte) => {
-      const { status, stdout } = qaPlan(['check', '/dev/stdin'], withByte(byte));
-      expect(status).toBe(0);
-      return /plan ([0-9a-f]{12}) /.exec(stdout)?.[1];
-    });
+  it.each([0xfe, 0xff])('refuses the byte %d in a code span, which is no ASCII', (byte) => {
+    const { status, stderr } = qaPlan(['check', '/dev/stdin'], withByte(byte));
 
-    expect(hashes[0]).toBeDefined();
-    expect(hashes[0]).not.toBe(hashes[1]);
+    expect(status).toBe(1);
+    expect(stderr).toContain('expected printable ASCII only');
   });
 
   it('refuses a second file instead of checking only the first', () => {

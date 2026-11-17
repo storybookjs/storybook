@@ -1,7 +1,4 @@
-import {
-  expectFocusedTestRun,
-  expectStoryTestsRanAndPassed,
-} from '#test-utils';
+import { expectFocusedTestRun, expectStoryTestsRanAndPassed } from '#test-utils';
 import { readFileSync } from 'node:fs';
 import { describe, expect, test } from 'vitest';
 

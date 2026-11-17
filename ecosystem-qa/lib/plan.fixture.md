@@ -30,13 +30,14 @@
 | the monorepo's docs E2E tests cover the timing | [#35618](https://github.com/storybookjs/storybook/pull/35618) |
 | a change of this repository's CI, no project can see it | [#36664](https://github.com/storybookjs/storybook/pull/36664) |
 
-## Groups of core team PRs marked qa:skip
+## Groups of PRs marked qa:skip
 
 | Group | Source | Decision | PRs |
 | --- | --- | --- | --- |
 | `ui` | area UI | `sidebar-tree` | [#35509](https://github.com/storybookjs/storybook/pull/35509) |
 | `tooling` | area Tooling, no project | none: no effect that a project can show | [#34799](https://github.com/storybookjs/storybook/pull/34799) |
 | `windows` | area Builder Vite | manual: On Windows 11, in a Vite project whose main file sets `staticDirs: ['../public']`, run `npx storybook build`: every file of `public` is in `storybook-static`. Why: a fix that only Windows shows, and the sweep runs on Linux | [#36307](https://github.com/storybookjs/storybook/pull/36307) |
+| `addon-links` | area Addon Links | manual: In a React project with `@storybook/addon-links`, render a link whose `href` is `hrefToSync('Example/Button', 'Primary')` in a story, and click it: it opens that story. Why: no repo of the catalog has the state it acts on | [#36189](https://github.com/storybookjs/storybook/pull/36189) |
 
 ## Discovered repos
 

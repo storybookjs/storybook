@@ -4,10 +4,15 @@ import { z } from 'zod';
 
 import { SEMVER } from './cycle.ts';
 import { CatalogEntry, CheckId } from './schema.ts';
-import { needsGroup, type QaStatus, type Window, type WindowPr } from './window.ts';
+import type { QaStatus, Window, WindowPr } from './window.ts';
 
-// GitHub shows neither an HTML comment nor a control or format character, so each would hide text
-// from the reviewer that the agent still reads.
+const outsideCodeSpans = (text: string) => text.replace(/(`+)[^]*?\1/g, '');
+const prose = (text: string) => outsideCodeSpans(text).replace(/\]\([^()\s]*\)/g, ']');
+
+// GitHub renders a plan's text as Markdown, where a tag can fold every row after it into a closed
+// block, and a character reference, a blank or filler character, or an empty tag shows a cell as
+// empty. Outside code spans and link URLs the text is printable ASCII without them; a control or
+// format character is invisible even inside a code span.
 const Text = z
   .string()
   .regex(/^\S(?:[^\n\r]*\S)?$/, 'expected one line of text')
@@ -15,7 +20,18 @@ const Text = z
     /^[^\p{Cc}\p{Cf}\p{Zl}\p{Zp}]*$/u,
     'expected no control character, invisible format character, or line separator'
   )
-  .refine((text) => !text.includes('<!--'), 'expected no HTML comment');
+  .refine(
+    (text) => /^[ -~]*$/.test(prose(text)),
+    'expected printable ASCII outside code spans and link URLs'
+  )
+  .refine(
+    (text) => !/[<>]|&(?:#\d+|#x[\da-f]+|[a-z][a-z\d]*);/i.test(prose(text)),
+    'expected no "<", no ">", and no character reference such as "&nbsp;" outside code spans'
+  );
+const Reason = Text.refine(
+  (text) => (prose(text).match(/[a-z]/gi)?.length ?? 0) >= 3,
+  'expected at least three letters outside code spans'
+);
 const RepoDir = Text.refine(
   (dir) => !dir.startsWith('/') && !dir.includes('\\') && !dir.split('/').includes('..'),
   'expected a relative path inside the repository'
@@ -33,13 +49,13 @@ const PrNumber = z.int().positive();
 
 // A decision cell of a group holds a manual check and its reason as `manual: <check> Why: <why>`.
 const WHY = ' Why: ';
-const ManualCheck = Text.refine((check) => !check.includes(WHY), `expected no "${WHY.trim()}"`);
+const ManualCheck = Reason.refine((check) => !check.includes(WHY), `expected no "${WHY.trim()}"`);
 
 export const Decision = z
   .union([
     z.strictObject({ entries: z.array(Slug).min(1) }),
-    z.strictObject({ manual: ManualCheck, why: Text }),
-    z.strictObject({ none: Text }),
+    z.strictObject({ manual: ManualCheck, why: Reason }),
+    z.strictObject({ none: Reason }),
   ])
   .nullable();
 export type Decision = z.infer<typeof Decision>;
@@ -63,7 +79,7 @@ export const PlanEntry = z.strictObject({
   prs: SomePrs,
   batch: z.int().min(1),
   repos: z
-    .array(z.strictObject({ id: RepoId, reason: Text }))
+    .array(z.strictObject({ id: RepoId, reason: Reason }))
     .min(1)
     .refine((repos) => unique(repos.map((repo) => repo.id)), 'a repo is listed twice'),
   steps: z.array(Text).min(1),
@@ -82,23 +98,23 @@ export const DiscoveredRepo = z.strictObject({
   pushedAt: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/, 'expected a time like 2026-11-16T14:42:00Z'),
-  reason: Text,
+  reason: Reason,
 });
 export type DiscoveredRepo = z.infer<typeof DiscoveredRepo>;
 
 // The row without a check holds the PRs that no entry tests and the draft has not decided yet.
 const ManualRow = z.union([
-  z.strictObject({ check: ManualCheck, why: Text, prs: SomePrs }),
+  z.strictObject({ check: ManualCheck, why: Reason, prs: SomePrs }),
   z.strictObject({ check: z.null(), why: z.null(), prs: SomePrs }),
 ]);
 type ManualRow = z.infer<typeof ManualRow>;
-const NoQaRow = z.strictObject({ reason: Text, prs: SomePrs });
+const NoQaRow = z.strictObject({ reason: Reason, prs: SomePrs });
 type NoQaRow = z.infer<typeof NoQaRow>;
 
 const GroupOfDraft = z.strictObject({ slug: Slug, source: Text, decision: Decision });
 const GroupOfDraftInput = GroupOfDraft.extend({ decision: DraftDecision.nullable() });
 const Group = GroupOfDraft.extend({ prs: PrList });
-// The core team PRs that the draft has not put into a group yet share one row without a group.
+// The PRs marked qa:skip that the draft has not put into a group yet share one row without a group.
 const GroupRow = z.union([Group, z.strictObject({ slug: z.null(), prs: SomePrs })]);
 type GroupRow = z.infer<typeof GroupRow>;
 
@@ -238,7 +254,7 @@ const TABLES: { [K in TableKey]: Table<Plan[K][number]> } = {
     }),
   },
   groups: {
-    heading: 'Groups of core team PRs marked qa:skip',
+    heading: 'Groups of PRs marked qa:skip',
     columns: ['Group', 'Source', 'Decision', 'PRs'],
     schema: GroupRow,
     encode: (row) =>
@@ -671,7 +687,7 @@ const namesAreUnique: Rule = ({ plan, at }) => [
 ];
 
 // A PR has at most one row. An entry that tests a PR leaves it no row of no QA, but a row of manual
-// QA for the part that no entry tests, and a core team PR keeps its row in a group, whose decision
+// QA for the part that no entry tests, and a PR marked qa:skip keeps its row in a group, whose decision
 // then names every entry that lists the PR.
 const prsHaveOnePlace: Rule = ({ plan, at }) =>
   [...placesOf(plan, at)].flatMap(([pr, places]) => {
@@ -891,7 +907,6 @@ export const manualChecksOf = (plan: Plan, at: PlanLayout): ManualCheckRow[] => 
 // The manual checks go into an issue, where a mention notifies a person and a reference posts on a
 // PR, and a check that points to a PR cannot be followed without that PR open.
 const NOTIFIES = /(?:^|[^\w`])@[a-z\d]|#\d/i;
-const outsideCodeSpans = (text: string) => text.replace(/(`+)[^]*?\1/g, '');
 
 const manualChecksStayInert: Rule = ({ plan, at }) =>
   manualChecksOf(plan, at).flatMap(({ manual, why, line }) =>
@@ -906,15 +921,12 @@ const manualChecksStayInert: Rule = ({ plan, at }) =>
       : []
   );
 
-const WHY_NO_DECISION = {
-  verified: 'verified by hand',
-  skip: 'marked qa:skip and needs no group',
-} as const;
-const needsDecision = (status: QaStatus): status is 'needed' | 'undeclared' =>
-  !(status in WHY_NO_DECISION);
+const VERIFIED = 'verified by hand';
+const needsDecision = (status: QaStatus) => status === 'needed' || status === 'undeclared';
+const needsGroup = (pr: WindowPr) => pr.status === 'skip';
 
 // Each needed or undeclared PR of the window is tested or has a row of manual QA or of no QA, each
-// core team PR that needs a group has a row in a group, and no other PR has a place.
+// PR marked qa:skip has a row in a group, and no other PR has a place.
 const matchesWindow: Rule = ({ plan, at, window }) => {
   if (!window) {
     return [];
@@ -950,16 +962,15 @@ const matchesWindow: Rule = ({ plan, at, window }) => {
               : [
                   {
                     line: place.line,
-                    message: `#${pr.number} is a core team PR marked qa:skip, so it belongs in a group`,
+                    message: `#${pr.number} is marked qa:skip, so it belongs in a group`,
                   },
                 ]
           );
     }
-    const status = pr.status;
-    if (!needsDecision(status)) {
+    if (!needsDecision(pr.status)) {
       return own.map((place) => ({
         line: place.line,
-        message: `#${pr.number} is ${WHY_NO_DECISION[status]} in the window, so the plan does not decide it`,
+        message: `#${pr.number} is ${VERIFIED} in the window, so the plan does not decide it`,
       }));
     }
     if (own.length === 0) {
@@ -975,7 +986,7 @@ const matchesWindow: Rule = ({ plan, at, window }) => {
         ? [
             {
               line: place.line,
-              message: `#${pr.number} is no core team PR marked qa:skip that needs a group`,
+              message: `#${pr.number} is not marked qa:skip, so it belongs in no group`,
             },
           ]
         : []
@@ -1069,9 +1080,9 @@ export const renderLedger = (plan: Plan, window: Window): string => {
     const own = places.get(pr.number) ?? [];
     const where = own.length
       ? own.map(placeText).join('; ')
-      : needsDecision(pr.status)
-        ? 'nowhere'
-        : WHY_NO_DECISION[pr.status];
+      : pr.status === 'verified'
+        ? VERIFIED
+        : 'nowhere';
     return tableRow([String(pr.number), STATUS_LABEL[pr.status], pr.area ?? '', pr.title, where]);
   });
   return [
@@ -1195,10 +1206,10 @@ export const planFromWindow = (window: Window, draft: PlanDraft): Plan => {
   const testedBy = (pr: number) =>
     draft.entries.filter((entry) => entry.prs.includes(pr)).map((entry) => entry.slug);
 
-  const coreTeamPrs = window.prs.filter(needsGroup);
+  const skipPrs = window.prs.filter(needsGroup);
   const tracked = new Map<string, number>();
   const groupOf = new Map(
-    coreTeamPrs.map((pr) => {
+    skipPrs.map((pr) => {
       const issue = trackingIssueOf(pr);
       if (issue) {
         tracked.set(`issue-${issue.number}`, issue.number);
@@ -1216,10 +1227,10 @@ export const planFromWindow = (window: Window, draft: PlanDraft): Plan => {
       .map(([slug, number]) => ({ slug, source: issueLink(number), decision: null })),
   ];
   const membersOf = (slug: string | null) =>
-    coreTeamPrs.filter((pr) => groupOf.get(pr.number) === slug).map((pr) => pr.number);
+    skipPrs.filter((pr) => groupOf.get(pr.number) === slug).map((pr) => pr.number);
 
   const statusOf = new Map(window.prs.map((pr) => [pr.number, pr.status]));
-  const groupable = new Set(coreTeamPrs.map((pr) => pr.number));
+  const groupable = new Set(skipPrs.map((pr) => pr.number));
   const misplaced = [
     ...Object.keys(draft.decisions)
       .filter((pr) => !['needed', 'undeclared'].includes(statusOf.get(Number(pr)) ?? ''))
@@ -1245,10 +1256,7 @@ export const planFromWindow = (window: Window, draft: PlanDraft): Plan => {
     }),
     ...Object.keys(draft.groupOf)
       .filter((pr) => !groupable.has(Number(pr)))
-      .map(
-        (pr) =>
-          `The draft groups #${pr}, which is no core team PR marked qa:skip that needs a group.`
-      ),
+      .map((pr) => `The draft groups #${pr}, which is not marked qa:skip in the window.`),
     ...Object.entries(draft.groupOf)
       .filter(([, slug]) => !groups.some((group) => group.slug === slug))
       .map(

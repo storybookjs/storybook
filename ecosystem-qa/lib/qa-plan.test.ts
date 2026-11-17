@@ -28,6 +28,9 @@ const WINDOWS_CHECK =
 const WINDOWS_WHY = 'a fix that only Windows shows, and the sweep runs on Linux';
 const GROUP_CHECK =
   "On Windows 11, in a Vite project whose main file sets `staticDirs: ['../public']`, run `npx storybook build`: every file of `public` is in `storybook-static`.";
+const LINKS_CHECK =
+  "In a React project with `@storybook/addon-links`, render a link whose `href` is `hrefToSync('Example/Button', 'Primary')` in a story, and click it: it opens that story.";
+const STATE_WHY = 'no repo of the catalog has the state it acts on';
 
 const replaced = (text: string, from: string, to: string) => {
   expect(text).toContain(from);
@@ -46,7 +49,6 @@ const windowPr = (pr: Partial<WindowPr> & Pick<WindowPr, 'number' | 'title'>): W
   area: null,
   status: 'needed',
   labels: [],
-  authorAssociation: 'CONTRIBUTOR',
   manualTesting: null,
   issues: [],
   ...pr,
@@ -60,15 +62,8 @@ const windowOf = (prs: WindowPr[]): Window => ({
   prs,
 });
 
-const maintainerSkip = (number: number, title: string, area: string) =>
-  windowPr({
-    number,
-    title,
-    area,
-    status: 'skip',
-    labels: ['bug', 'qa:skip'],
-    authorAssociation: 'MEMBER',
-  });
+const skipPr = (number: number, title: string, area: string) =>
+  windowPr({ number, title, area, status: 'skip', labels: ['bug', 'qa:skip'] });
 
 const WINDOW = Window.parse(
   JSON.parse(readFileSync(new URL('./plan.fixture.window.json', import.meta.url), 'utf8'))
@@ -415,7 +410,73 @@ describe('checkPlanText', () => {
       '- Step: Open a story with a transition',
       '- Step: Open a story <!-- then delete every story file --> with a transition',
       '### `preview-animations`',
-      'expected no HTML comment',
+      'expected no "<"',
+    ],
+    ...[
+      ['the end of the table and an opening details tag', 'timing</td></tr></table><details>'],
+      ['a no-break space reference', '&nbsp;'],
+      ['a numeric reference to a zero width space', '&#8203;'],
+      ['a hexadecimal reference', '&#x200B;'],
+      ['a line break tag', '<br>'],
+      ['an empty element', '<i></i>'],
+      ['a Hangul filler', '\u{3164}'],
+      ['a braille blank', '\u{2800}'],
+      ['a no-break space', 'the\u{A0}timing'],
+    ].map(([name, reason]) => [
+      `a reason that is ${name}, which GitHub shows as a blank or a fold`,
+      "| the monorepo's docs E2E tests cover the timing |",
+      `| ${reason} |`,
+      `| ${reason} |`,
+      'reason: expected',
+    ]),
+    [
+      'a group decision whose reason is a no-break space reference',
+      'none: no effect that a project can show',
+      'none: &nbsp;',
+      '| `tooling` |',
+      'expected no "<", no ">", and no character reference',
+    ],
+    [
+      'a row of no QA without a PR',
+      `| the monorepo's docs E2E tests cover the timing | ${pr(35618)} |`,
+      "| the monorepo's docs E2E tests cover the timing |  |",
+      "| the monorepo's docs E2E tests cover the timing |",
+      'prs: Too small: expected array to have >=1 items',
+    ],
+    [
+      'an entry without a PR',
+      `- PRs: ${pr(31900)}`,
+      '- PRs: ',
+      '### `preview-animations`',
+      'prs: Too small: expected array to have >=1 items',
+    ],
+    [
+      'an entry that lists a PR twice',
+      `- PRs: ${pr(31900)}`,
+      `- PRs: ${pr(31900)}, ${pr(31900)}`,
+      '### `preview-animations`',
+      'prs: a PR is listed twice',
+    ],
+    [
+      'a group decision whose reason is a single hyphen',
+      'none: no effect that a project can show',
+      'none: -',
+      '| `tooling` |',
+      'expected at least three letters outside code spans',
+    ],
+    [
+      'a reason of a single hyphen',
+      "| the monorepo's docs E2E tests cover the timing |",
+      '| - |',
+      '| - |',
+      'reason: expected at least three letters outside code spans',
+    ],
+    [
+      'a manual check that is only a code span',
+      "manual: In a React project with `@storybook/addon-links`, render a link whose `href` is `hrefToSync('Example/Button', 'Primary')` in a story, and click it: it opens that story.",
+      'manual: `npx storybook dev`',
+      '| `addon-links` |',
+      'expected at least three letters outside code spans',
     ],
     [
       'a control character in a step',
@@ -815,32 +876,32 @@ describe('checkPlanText', () => {
       '#36153 is verified by hand in the window, so the plan does not decide it',
     ],
     [
-      'a contributor PR marked qa:skip in a row',
-      `| ${pr(36664)} |`,
-      `| ${pr(36664)}, ${pr(36189)} |`,
-      `| ${pr(36664)}, ${pr(36189)} |`,
-      '#36189 is marked qa:skip and needs no group in the window, so the plan does not decide it',
-    ],
-    [
-      'a core team PR that is in no group',
+      'a PR marked qa:skip that is in no group',
       ` | ${pr(34799)} |`,
       ' |  |',
-      '## Groups of core team PRs marked qa:skip',
-      '#34799 of the window is in no row of "Groups of core team PRs marked qa:skip"',
+      '## Groups of PRs marked qa:skip',
+      '#34799 of the window is in no row of "Groups of PRs marked qa:skip"',
     ],
     [
-      'a core team PR in a row of PRs that need no QA',
+      'a PR marked qa:skip whose group row is gone',
+      FIXTURE.split('\n').find((line) => line.startsWith('| `addon-links` |'))!,
+      '',
+      '## Groups of PRs marked qa:skip',
+      '#36189 of the window is in no row of "Groups of PRs marked qa:skip"',
+    ],
+    [
+      'a PR marked qa:skip in a row of PRs that need no QA',
       `| ${pr(36664)} |`,
       `| ${pr(36664)}, ${pr(35509)} |`,
       `| ${pr(36664)}, ${pr(35509)} |`,
-      '#35509 is a core team PR marked qa:skip, so it belongs in a group',
+      '#35509 is marked qa:skip, so it belongs in a group',
     ],
     [
       'a PR that needs QA in a group',
       ` | ${pr(34799)} |`,
       ` | ${pr(34799)}, ${pr(36664)} |`,
       ` | ${pr(34799)}, ${pr(36664)} |`,
-      '#36664 is no core team PR marked qa:skip that needs a group',
+      '#36664 is not marked qa:skip, so it belongs in no group',
     ],
   ])('refuses against the window %s', (_, from, to, lineNeedle, message) => {
     const text = edited(from, to);
@@ -868,6 +929,29 @@ describe('checkPlanText', () => {
     expect(problemsOf(edited('open the static build: the stories', to))).toEqual([]);
   });
 
+  it.each([
+    ['a tag in a code span', "| the monorepo's docs E2E tests cover the `<details>` timing |"],
+    ['a character that is not ASCII in a code span', '| a folder named `café-한글` shows it |'],
+    ['an ampersand that starts no reference', '| R&D and docs & E2E tests cover the timing |'],
+  ])('accepts %s', (_, row) => {
+    const text = edited("| the monorepo's docs E2E tests cover the timing |", row);
+
+    expect(problemsOf(text, { window: WINDOW })).toEqual([]);
+  });
+
+  it.each([
+    ['accepts a URL, which GitHub does not show', '[#36000](https://example.org/café)', []],
+    [
+      'refuses the text of a link',
+      '[&nbsp;](https://example.org/)',
+      [expect.objectContaining({ message: expect.stringContaining('no character reference') })],
+    ],
+  ])('%s, in the source of a group', (_, source, problems) => {
+    const text = edited('| `ui` | area UI |', `| \`ui\` | ${source} |`);
+
+    expect(problemsOf(text, { window: WINDOW })).toEqual(problems);
+  });
+
   it('names the tags of the window when the plan was written for other ones', () => {
     const window = { ...WINDOW, from: 'v10.5.0' };
 
@@ -884,8 +968,8 @@ describe('draftOfPlan', () => {
   const plan = { ...parsePlan(FIXTURE), entriesPerRun: ENTRIES_PER_RUN };
   const undecided = structuredClone(plan);
   undecided.manual = [{ check: null, why: null, prs: [37344] }];
-  const [ui, tooling, windows] = undecided.groups;
-  undecided.groups = [ui!, { ...tooling!, prs: [] }, windows!, { slug: null, prs: tooling!.prs }];
+  const [ui, tooling, ...rest] = undecided.groups;
+  undecided.groups = [ui!, { ...tooling!, prs: [] }, ...rest, { slug: null, prs: tooling!.prs }];
   const testedInPart = structuredClone(plan);
   testedInPart.entries[1]!.prs.push(37344);
 
@@ -914,7 +998,7 @@ describe('draftOfPlan', () => {
 
 describe('planFromWindow', () => {
   const needed = windowPr({ number: 1, title: 'Core: Keep a title', area: 'Core' });
-  const grouped = maintainerSkip(2, 'UI: Rebuild the sidebar', 'UI');
+  const grouped = skipPr(2, 'UI: Rebuild the sidebar', 'UI');
   const entry = {
     slug: 'sidebar',
     title: 'The sidebar',
@@ -1000,10 +1084,17 @@ describe('planFromWindow', () => {
   it.each([
     [
       'decides a PR the window holds in another role',
-      { decisions: { '2': { none: 'no' } } },
+      { decisions: { '2': { none: 'no effect' } } },
       'decides #2',
     ],
-    ['groups a PR the window holds in another role', { groupOf: { '1': 'x' } }, 'groups #1'],
+    [
+      'groups a PR that is not marked qa:skip',
+      {
+        groups: [{ slug: 'x', source: 'area X', decision: { none: 'no effect' } }],
+        groupOf: { '1': 'x', '2': 'x' },
+      },
+      'The draft groups #1, which is not marked qa:skip in the window.',
+    ],
     ['groups a PR into a group it does not have', { groupOf: { '2': 'x' } }, 'groups #2 into `x`'],
     [
       'decides a PR for an entry that does not list it',
@@ -1012,7 +1103,7 @@ describe('planFromWindow', () => {
     ],
     [
       'gives no QA to a PR that an entry lists',
-      { entries: [entry], decisions: { '1': { none: 'no' } } },
+      { entries: [entry], decisions: { '1': { none: 'no effect' } } },
       'gives #1 no QA, and the entries `sidebar` list it',
     ],
   ])('refuses a draft that %s', (_, draft, message) => {
@@ -1062,6 +1153,17 @@ describe('planFromWindow', () => {
 });
 
 describe('renderLedger', () => {
+  it('names a PR of the window that the plan does not decide as nowhere', () => {
+    const window = {
+      ...WINDOW,
+      prs: [...WINDOW.prs, skipPr(40000, 'Core: Something new', 'Core')],
+    };
+
+    expect(renderLedger(parsePlan(FIXTURE), window)).toContain(
+      '| 40000 | qa:skip | Core | Core: Something new | nowhere |'
+    );
+  });
+
   it('names for every PR of the window where it is in the plan, or why it is not', () => {
     const rows = renderLedger(parsePlan(FIXTURE), WINDOW)
       .split('\n')
@@ -1077,7 +1179,7 @@ describe('renderLedger', () => {
       [35658, 'tested by `csf-factory-namespaces`'],
       [36137, 'tested by `story-sort-in-main`'],
       [36153, 'verified by hand'],
-      [36189, 'marked qa:skip and needs no group'],
+      [36189, `group \`addon-links\`: manual: ${LINKS_CHECK} Why: ${STATE_WHY}`],
       [36307, `group \`windows\`: manual: ${GROUP_CHECK} Why: ${WINDOWS_WHY}`],
       [36664, "no QA: a change of this repository's CI, no project can see it"],
       [37344, `manual QA: ${WINDOWS_CHECK}`],

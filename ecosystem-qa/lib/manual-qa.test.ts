@@ -20,6 +20,22 @@ describe('renderManualChecklist', () => {
     expect(tasks).toEqual([
       expect.stringContaining('- [ ] On Windows 11, make a React project with the webpack builder'),
       expect.stringContaining('- [ ] On Windows 11, in a Vite project whose main file sets'),
+      expect.stringContaining('- [ ] In a React project with `@storybook/addon-links`'),
+    ]);
+  });
+
+  it('puts the checks of one reason under one heading, in the order the reasons first appear', () => {
+    const outline = renderManualChecklist(PLAN, WINDOW)
+      .split('\n')
+      .filter((line) => /^(## |- \[ \] )/.test(line))
+      .map((line) => line.slice(0, 40));
+
+    expect(outline).toEqual([
+      '## A fix that only Windows shows, and th',
+      '- [ ] On Windows 11, make a React projec',
+      '- [ ] On Windows 11, in a Vite project w',
+      '## No repo of the catalog has the state ',
+      '- [ ] In a React project with `@storyboo',
     ]);
   });
 
@@ -39,8 +55,9 @@ describe('renderManualChecklist', () => {
 
     expect(renderManualChecklist(plan, WINDOW)).toContain(
       [
+        '## Only Windows',
+        '',
         '- [ ] On Windows 11, run `npx storybook dev`.',
-        '  - Why the sweep cannot test it: only Windows',
         '  - [#37344](https://github.com/storybookjs/storybook/pull/37344) `Core: Fix stories failing to load on Windows with the webpack builder`',
         '  - [#36664](https://github.com/storybookjs/storybook/pull/36664) `CI: Cancel workflow when format check fails`',
       ].join('\n')

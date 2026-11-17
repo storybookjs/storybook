@@ -34,15 +34,17 @@ changed and rendered again. It exits 1 when the plan is not what render writes f
 
 check accepts a plan only in the form that render writes and when every rule holds against the
 catalog, and then prints its entries, batches, runs, and an estimate of its cost. With --window it
-also checks that every PR of that window that needs a decision is in exactly one place, and that
-the plan names no other PR. It exits 1 with the line of each problem.
+also checks that every PR of that window marked qa:needed or without a QA label is in the PRs of an
+entry or in one row of manual QA or of no QA, that every PR marked qa:skip is in one group, and
+that the plan names no other PR. Without --window it cannot tell a PR that has no place. It exits 1
+with the line of each problem.
 
 ledger prints where each PR of the window ended up in the plan, with its status, area, and title,
 or writes it to --out.
 
 manual prints the manual checks of a plan that passes check with that window as one Markdown
-checklist for an issue or a discussion, with the title of each PR, or writes it to --out. It
-creates nothing on GitHub.`;
+checklist for an issue or a discussion, in one section for each reason why the sweep cannot test
+them, with the title of each PR, or writes it to --out. It creates nothing on GitHub.`;
 
 const { values, positionals } = parseArgs({
   allowPositionals: true,

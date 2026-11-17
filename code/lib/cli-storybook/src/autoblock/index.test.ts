@@ -50,6 +50,7 @@ const baseOptions: Parameters<typeof autoblock>[0] = {
   },
   mainConfigPath: '.storybook/main.ts',
   packageManager: mockPackageManager,
+  storiesPaths: [],
 };
 
 beforeEach(() => {

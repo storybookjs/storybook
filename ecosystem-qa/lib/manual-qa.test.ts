@@ -20,7 +20,7 @@ describe('renderManualChecklist', () => {
     expect(tasks).toEqual([
       expect.stringContaining('- [ ] On Windows 11, make a React project with the webpack builder'),
       expect.stringContaining('- [ ] On Windows 11, in a Vite project whose main file sets'),
-      expect.stringContaining('- [ ] In a React project with `@storybook/addon-links`'),
+      expect.stringContaining('- [ ] In a React project with the Storybook Links addon'),
     ]);
   });
 
@@ -35,7 +35,7 @@ describe('renderManualChecklist', () => {
       '- [ ] On Windows 11, make a React projec',
       '- [ ] On Windows 11, in a Vite project w',
       '## No repo of the catalog has the state ',
-      '- [ ] In a React project with `@storyboo',
+      '- [ ] In a React project with the Storyb',
     ]);
   });
 
@@ -60,6 +60,32 @@ describe('renderManualChecklist', () => {
         '- [ ] On Windows 11, run `npx storybook dev`.',
         '  - [#37344](https://github.com/storybookjs/storybook/pull/37344) `Core: Fix stories failing to load on Windows with the webpack builder`',
         '  - [#36664](https://github.com/storybookjs/storybook/pull/36664) `CI: Cancel workflow when format check fails`',
+      ].join('\n')
+    );
+  });
+
+  it('makes one item of a check that a row of manual QA and a group share', () => {
+    const check = 'On Windows 11, run `npx storybook dev`.';
+    const plan = {
+      ...PLAN,
+      manual: [{ check, why: 'only Windows', prs: [37344] }],
+      none: [],
+      groups: [
+        {
+          slug: 'windows',
+          source: 'area Windows',
+          decision: { manual: check, why: 'only Windows' },
+          prs: [36664],
+        },
+      ],
+    };
+
+    expect(renderManualChecklist(plan, WINDOW)).toContain(
+      [
+        '- [ ] On Windows 11, run `npx storybook dev`.',
+        '  - [#37344](https://github.com/storybookjs/storybook/pull/37344) `Core: Fix stories failing to load on Windows with the webpack builder`',
+        '  - [#36664](https://github.com/storybookjs/storybook/pull/36664) `CI: Cancel workflow when format check fails`',
+        '',
       ].join('\n')
     );
   });

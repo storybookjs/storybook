@@ -6,31 +6,24 @@ import { SEMVER } from './cycle.ts';
 import { CatalogEntry, CheckId } from './schema.ts';
 import type { QaStatus, Window, WindowPr } from './window.ts';
 
-const outsideCodeSpans = (text: string) => text.replace(/(`+)[^]*?\1/g, '');
-const prose = (text: string) => outsideCodeSpans(text).replace(/\]\([^()\s]*\)/g, ']');
-
 // GitHub renders a plan's text as Markdown, where a tag can fold every row after it into a closed
 // block, and a character reference, a blank or filler character, or an empty tag shows a cell as
-// empty. Outside code spans and link URLs the text is printable ASCII without them; a control or
-// format character is invisible even inside a code span.
+// empty. Where a code span or a link starts depends on GitHub's parser, so the rule holds for the
+// whole text, inside code spans too.
 const Text = z
   .string()
-  .regex(/^\S(?:[^\n\r]*\S)?$/, 'expected one line of text')
+  .regex(/^\S(?:.*\S)?$/, 'expected one line of text')
+  .regex(/^[ -~]*$/, 'expected printable ASCII only')
+  .regex(/^[^<>]*$/, 'expected no "<" and no ">"')
   .regex(
-    /^[^\p{Cc}\p{Cf}\p{Zl}\p{Zp}]*$/u,
-    'expected no control character, invisible format character, or line separator'
-  )
-  .refine(
-    (text) => /^[ -~]*$/.test(prose(text)),
-    'expected printable ASCII outside code spans and link URLs'
-  )
-  .refine(
-    (text) => !/[<>]|&(?:#\d+|#x[\da-f]+|[a-z][a-z\d]*);/i.test(prose(text)),
-    'expected no "<", no ">", and no character reference such as "&nbsp;" outside code spans'
+    /^(?!.*&(?:#\d+|#x[\da-f]+|[a-z][a-z\d]*);)/i,
+    'expected no character reference such as "&nbsp;"'
   );
-const Reason = Text.refine(
-  (text) => (prose(text).match(/[a-z]/gi)?.length ?? 0) >= 3,
-  'expected at least three letters outside code spans'
+// A reason or a check shows as blank when it is a link without text, which three letters of its URL
+// would not reveal.
+const Reason = Text.regex(/^(?!.*\]\()/, 'expected no Markdown link: write the address out').refine(
+  (text) => (text.match(/[a-z]/gi)?.length ?? 0) >= 3,
+  'expected at least three letters'
 );
 const RepoDir = Text.refine(
   (dir) => !dir.startsWith('/') && !dir.includes('\\') && !dir.split('/').includes('..'),
@@ -905,17 +898,18 @@ export const manualChecksOf = (plan: Plan, at: PlanLayout): ManualCheckRow[] => 
 ];
 
 // The manual checks go into an issue, where a mention notifies a person and a reference posts on a
-// PR, and a check that points to a PR cannot be followed without that PR open.
-const NOTIFIES = /(?:^|[^\w`])@[a-z\d]|#\d/i;
+// PR, and a check that points to a PR cannot be followed without that PR open. Whether GitHub
+// links a form depends on its parser, so none of them may stand anywhere, in a code span either.
+const REFERENCE = /(?<!\w)@[a-z\d]|#\d|GH-\d/i;
 
 const manualChecksStayInert: Rule = ({ plan, at }) =>
   manualChecksOf(plan, at).flatMap(({ manual, why, line }) =>
-    [manual, why].some((text) => NOTIFIES.test(outsideCodeSpans(text)))
+    [manual, why].some((text) => REFERENCE.test(text))
       ? [
           {
             line,
             message:
-              'a manual check names no person, PR, or issue outside a code span: write out what to do, and put a package name such as `@storybook/react` in backticks',
+              'a manual check names no person, PR, or issue, in a code span either: write out what to do, and name a package in words, such as "the Storybook React package"',
           },
         ]
       : []

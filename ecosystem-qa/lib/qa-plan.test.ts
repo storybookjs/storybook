@@ -29,7 +29,7 @@ const WINDOWS_WHY = 'a fix that only Windows shows, and the sweep runs on Linux'
 const GROUP_CHECK =
   "On Windows 11, in a Vite project whose main file sets `staticDirs: ['../public']`, run `npx storybook build`: every file of `public` is in `storybook-static`.";
 const LINKS_CHECK =
-  "In a React project with `@storybook/addon-links`, render a link whose `href` is `hrefToSync('Example/Button', 'Primary')` in a story, and click it: it opens that story.";
+  "In a React project with the Storybook Links addon, render a link whose `href` is `hrefToSync('Example/Button', 'Primary')` in a story, and click it: it opens that story.";
 const STATE_WHY = 'no repo of the catalog has the state it acts on';
 
 const replaced = (text: string, from: string, to: string) => {
@@ -143,6 +143,14 @@ describe('a file that is not in its rendered form', () => {
 
     expect(problemsOf(text)).toEqual([
       { line: lineOf(text, 'A note.'), message: 'expected "## Discovered repos"' },
+    ]);
+  });
+
+  it('names a line after the last entry as one that belongs to no entry', () => {
+    const text = `${FIXTURE}A note.\n`;
+
+    expect(problemsOf(text)).toEqual([
+      { line: lineOf(text, 'A note.'), message: 'unexpected line after the last entry' },
     ]);
   });
 
@@ -342,25 +350,46 @@ describe('checkPlanText', () => {
       'https://example.com/x has the host example.com, not localhost',
     ],
     [
+      'the manual check of a group with a URL of another host',
+      'click it: it opens that story.',
+      'open https://example.com/x: it opens that story.',
+      '| `addon-links` |',
+      'https://example.com/x has the host example.com, not localhost',
+    ],
+    [
+      'a manual check that holds " Why: ", which would split its cell in a group',
+      'open the static build: the stories',
+      'open the static build Why: the stories',
+      `| ${pr(37344)} |`,
+      'check: expected no "Why:"',
+    ],
+    [
+      'a group that lists a PR twice',
+      ` | ${pr(34799)} |`,
+      ` | ${pr(34799)}, ${pr(34799)} |`,
+      '| `tooling` |',
+      'prs: a PR is listed twice',
+    ],
+    [
       'a manual check that mentions a person',
       'open the static build: the stories',
       'ask @someone: the stories',
       `| ${pr(37344)} |`,
-      'a manual check names no person, PR, or issue outside a code span',
+      'a manual check names no person, PR, or issue, in a code span either',
     ],
     [
       'a manual check that points to a PR',
       'open the static build: the stories',
       'follow the steps of #37344: the stories',
       `| ${pr(37344)} |`,
-      'a manual check names no person, PR, or issue outside a code span',
+      'a manual check names no person, PR, or issue, in a code span either',
     ],
     [
       'the reason of a manual group that points to an issue',
       `Why: ${WINDOWS_WHY} |`,
       `Why: ${WINDOWS_WHY}, see #36000 |`,
       '| `windows` |',
-      'a manual check names no person, PR, or issue outside a code span',
+      'a manual check names no person, PR, or issue, in a code span either',
     ],
     [
       'a reason with two rows',
@@ -434,7 +463,7 @@ describe('checkPlanText', () => {
       'none: no effect that a project can show',
       'none: &nbsp;',
       '| `tooling` |',
-      'expected no "<", no ">", and no character reference',
+      'expected no character reference',
     ],
     [
       'a row of no QA without a PR',
@@ -462,42 +491,35 @@ describe('checkPlanText', () => {
       'none: no effect that a project can show',
       'none: -',
       '| `tooling` |',
-      'expected at least three letters outside code spans',
+      'expected at least three letters',
     ],
     [
       'a reason of a single hyphen',
       "| the monorepo's docs E2E tests cover the timing |",
       '| - |',
       '| - |',
-      'reason: expected at least three letters outside code spans',
-    ],
-    [
-      'a manual check that is only a code span',
-      "manual: In a React project with `@storybook/addon-links`, render a link whose `href` is `hrefToSync('Example/Button', 'Primary')` in a story, and click it: it opens that story.",
-      'manual: `npx storybook dev`',
-      '| `addon-links` |',
-      'expected at least three letters outside code spans',
+      'reason: expected at least three letters',
     ],
     [
       'a control character in a step',
       '- Step: Open a story with a transition',
       '- Step: Open a story\fwith a transition',
       '### `preview-animations`',
-      'expected no control character',
+      'expected printable ASCII only',
     ],
     [
       'a line separator in a reason',
       "| a change of this repository's CI, no project",
       "| a change of this repository's CI,\u{2028}no project",
       "| a change of this repository's CI,",
-      'or line separator',
+      'expected one line of text',
     ],
     [
       'a line separator in the source of a group',
       '| area UI |',
       '| area\u{2028}UI |',
       '| `ui` |',
-      'or line separator',
+      'expected one line of text',
     ],
     ...[
       ['a byte order mark', '\u{FEFF}'],
@@ -510,7 +532,7 @@ describe('checkPlanText', () => {
       '- Step: Open a story with a transition',
       `- Step: Open a story with${character} a transition`,
       '### `preview-animations`',
-      'invisible format character',
+      'expected printable ASCII only',
     ]),
     [
       'a Storybook directory with a backslash',
@@ -912,6 +934,26 @@ describe('checkPlanText', () => {
     });
   });
 
+  it.each([[['qa:skip']], [['maintenance', 'qa:skip']], [['dependencies', 'ci', 'qa:skip']]])(
+    'refuses a PR marked qa:skip with the labels %j that is in no group',
+    (labels) => {
+      const skipped = windowPr({
+        number: 40000,
+        title: 'Build: Bump a tool',
+        status: 'skip',
+        labels,
+      });
+      const window = { ...WINDOW, prs: [...WINDOW.prs, skipped] };
+
+      expect(problemsOf(FIXTURE, { window })).toEqual([
+        {
+          line: lineOf(FIXTURE, '## Groups of PRs marked qa:skip'),
+          message: '#40000 of the window is in no row of "Groups of PRs marked qa:skip"',
+        },
+      ]);
+    }
+  );
+
   it('takes a PR marked qa:needed and one without a QA label in one row', () => {
     const text = edited(`| ${pr(35618)} |`, `| ${pr(35618)}, ${pr(36664)} |`).replace(
       `\n| a change of this repository's CI, no project can see it | ${pr(36664)} |`,
@@ -921,35 +963,125 @@ describe('checkPlanText', () => {
     expect(problemsOf(text, { window: WINDOW })).toEqual([]);
   });
 
-  it.each([
-    ['a package name in a code span', 'ask `@storybook/react`: the stories'],
-    ['a reference in a code span', 'search the log for `#123`: the stories'],
-    ['an address', 'mail qa@example.org: the stories'],
-  ])('accepts %s in a manual check', (_, to) => {
-    expect(problemsOf(edited('open the static build: the stories', to))).toEqual([]);
-  });
+  const WRAPPERS: [string, (form: string) => string][] = [
+    ['as it is', (form) => form],
+    ['in a code span', (form) => `\`${form}\``],
+    ['between escaped backticks', (form) => `\\\`${form}\\\``],
+    ['after one backtick and before two', (form) => `\`${form}\`\``],
+  ];
+  const wrapped = (forms: string[][]) =>
+    forms.flatMap(([name, form, ...rest]) =>
+      WRAPPERS.map(([where, wrap]) => [`${name} ${where}`, wrap(form!), ...rest])
+    );
 
-  it.each([
-    ['a tag in a code span', "| the monorepo's docs E2E tests cover the `<details>` timing |"],
-    ['a character that is not ASCII in a code span', '| a folder named `café-한글` shows it |'],
-    ['an ampersand that starts no reference', '| R&D and docs & E2E tests cover the timing |'],
-  ])('accepts %s', (_, row) => {
-    const text = edited("| the monorepo's docs E2E tests cover the timing |", row);
+  it.each(
+    wrapped([
+      [
+        'the end of the table and an opening details tag',
+        '</td></tr></table><details><summary>more</summary>',
+        'expected no "<" and no ">"',
+      ],
+      ['a "<" alone', 'a < b', 'expected no "<" and no ">"'],
+      ['a ">" alone', 'b > a', 'expected no "<" and no ">"'],
+      ['a named reference', '&nbsp;', 'expected no character reference such as "&nbsp;"'],
+      ['a decimal reference', '&#8203;', 'expected no character reference such as "&nbsp;"'],
+      ['a hexadecimal reference', '&#x200B;', 'expected no character reference such as "&nbsp;"'],
+      [
+        'an upper case hexadecimal reference',
+        '&#X200B;',
+        'expected no character reference such as "&nbsp;"',
+      ],
+      ['a character that is not ASCII', 'caf\u{E9}', 'expected printable ASCII only'],
+      ['a Hangul filler', '\u{3164}', 'expected printable ASCII only'],
+      ['a zero width space', '\u{200B}', 'expected printable ASCII only'],
+      [
+        'a link without text',
+        '[](https://example.com/the-reason)',
+        'expected no Markdown link: write the address out',
+      ],
+    ])
+  )(
+    'refuses %s in a reason, which GitHub may render as a tag or a character',
+    (_, form, message) => {
+      const text = edited(
+        "| the monorepo's docs E2E tests cover the timing |",
+        `| the monorepo's docs E2E tests cover the timing ${form} |`
+      );
+
+      expect(problemsOf(text)).toContainEqual({
+        line: lineOf(text, "| the monorepo's docs E2E tests cover the timing"),
+        message: `reason: ${message}`,
+      });
+    }
+  );
+
+  it('accepts an ampersand that starts no reference', () => {
+    const text = edited(
+      "| the monorepo's docs E2E tests cover the timing |",
+      '| R&D and docs & E2E tests cover the timing |'
+    );
 
     expect(problemsOf(text, { window: WINDOW })).toEqual([]);
   });
 
-  it.each([
-    ['accepts a URL, which GitHub does not show', '[#36000](https://example.org/café)', []],
-    [
-      'refuses the text of a link',
-      '[&nbsp;](https://example.org/)',
-      [expect.objectContaining({ message: expect.stringContaining('no character reference') })],
-    ],
-  ])('%s, in the source of a group', (_, source, problems) => {
-    const text = edited('| `ui` | area UI |', `| \`ui\` | ${source} |`);
+  const REFERENCE_FORMS = [
+    ['a mention', '@ghost'],
+    ['a team mention', '@storybook/react'],
+    ['a PR reference', '#36664'],
+    ['a GH reference', 'GH-36664'],
+    ['a GH reference in lower case', 'gh-36664'],
+  ];
 
-    expect(problemsOf(text, { window: WINDOW })).toEqual(problems);
+  it.each(
+    wrapped(REFERENCE_FORMS).flatMap(([name, form]) => [
+      [
+        `${name} in a manual check`,
+        'open the static build: the stories',
+        `open ${form}: the stories`,
+        `| ${pr(37344)} |`,
+      ],
+      [
+        `${name} in the reason of a manual check`,
+        `| ${WINDOWS_WHY} | ${pr(37344)}`,
+        `| ${WINDOWS_WHY} ${form} | ${pr(37344)}`,
+        `| ${pr(37344)} |`,
+      ],
+      [
+        `${name} in the manual check of a group`,
+        'click it: it opens that story.',
+        `click ${form}: it opens that story.`,
+        '| `addon-links` |',
+      ],
+      [
+        `${name} in the reason of a manual group`,
+        `Why: ${WINDOWS_WHY} |`,
+        `Why: ${WINDOWS_WHY} ${form} |`,
+        '| `windows` |',
+      ],
+    ])
+  )('refuses %s, which an issue may link', (_, from, to, lineNeedle) => {
+    const text = edited(from!, to!);
+
+    expect(problemsOf(text)).toContainEqual({
+      line: lineOf(text, lineNeedle!),
+      message: expect.stringContaining('a manual check names no person, PR, or issue'),
+    });
+  });
+
+  it.each([
+    ['an address', 'mail qa@example.org: the stories'],
+    ['a package at a version', 'run `npx storybook@11.0.0-beta.3 build`: the stories'],
+  ])('accepts %s in a manual check, which an issue does not link', (_, to) => {
+    expect(problemsOf(edited('open the static build: the stories', to))).toEqual([]);
+  });
+
+  it('refuses a character reference in the text of a link, in the source of a group', () => {
+    const text = edited('| `ui` | area UI |', '| `ui` | [&nbsp;](https://example.org/) |');
+
+    expect(problemsOf(text)).toContainEqual({
+      line: lineOf(text, '| `ui` |'),
+      message: expect.stringContaining('no character reference'),
+    });
   });
 
   it('names the tags of the window when the plan was written for other ones', () => {
@@ -1045,6 +1177,22 @@ describe('planFromWindow', () => {
     expect(planFromWindow(windowOf([needed, other, undecided]), draft).manual).toEqual([
       { check: manual.manual, why: manual.why, prs: [1, 3] },
       { check: null, why: null, prs: [4] },
+    ]);
+  });
+
+  it('keeps one check with two reasons in two rows, so neither reason is lost', () => {
+    const other = windowPr({ number: 3, title: 'CLI: Other', area: 'CLI' });
+    const check = 'On Windows 11, run `npx storybook dev`.';
+    const draft = PlanDraft.parse({
+      decisions: {
+        '1': { manual: check, why: 'only Windows' },
+        '3': { manual: check, why: 'a race' },
+      },
+    });
+
+    expect(planFromWindow(windowOf([needed, other]), draft).manual).toEqual([
+      { check, why: 'only Windows', prs: [1] },
+      { check, why: 'a race', prs: [3] },
     ]);
   });
 

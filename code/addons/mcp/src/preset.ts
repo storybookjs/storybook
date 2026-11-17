@@ -25,6 +25,8 @@ import { DEFAULT_MCP_ENDPOINT } from './constants.ts';
 import { getStoryIndex } from './utils/get-story-index.ts';
 import { toBaseUrl } from './utils/base-url.ts';
 
+const RECHECK_WAIT_MS = 3_000;
+
 export const previewAnnotations: PresetPropertyFn<'previewAnnotations'> = async (
   existingAnnotations = []
 ) => {
@@ -202,7 +204,7 @@ export const experimental_devServer: PresetPropertyFn<
   app!.post(endpoint, async (req, res) => {
     if (rejectDisallowedOrigin(req, res)) return;
     const { currentSources, compositionAuth, manifestAccess, multiSource } = await composition;
-    compositionAuth.startRecheck();
+    await compositionAuth.recheckUnreachableRefs({ waitMs: RECHECK_WAIT_MS });
     const sources = currentSources();
     if (requireAuth(req, res, compositionAuth)) return;
     if (rejectNonJsonBody(req, res)) return;
@@ -229,7 +231,7 @@ export const experimental_devServer: PresetPropertyFn<
     const { currentSources, compositionAuth, manifestAccess, availability, multiSource } =
       await composition;
     if (!req.headers['accept']?.includes('text/html')) {
-      compositionAuth.startRecheck();
+      await compositionAuth.recheckUnreachableRefs({ waitMs: RECHECK_WAIT_MS });
       const sources = currentSources();
       if (requireAuth(req, res, compositionAuth)) return;
 

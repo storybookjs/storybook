@@ -1175,15 +1175,68 @@ describe('CompositionAuth', () => {
         expect.stringMatching(/"A" uses a different OAuth server \(https:\/\/auth-a/)
       );
     });
-  });
 
-  it('logs a failed background re-check instead of rejecting', async () => {
-    const auth = new CompositionAuth();
-    vi.spyOn(auth, 'recheckUnreachableRefs').mockRejectedValue(new Error('boom'));
-    const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {});
+    it('applies a recovered ref while another ref is still hanging', async () => {
+      const auth = new CompositionAuth();
+      const hanging = { id: 'hanging', title: 'Hanging', url: 'https://hanging.example.com' };
+      let down = true;
+      let release!: () => void;
+      vi.stubGlobal(
+        'fetch',
+        routeFetch({
+          [`${PUBLIC_REF.url}/manifests/components.json`]: () => {
+            if (down) throw new TypeError('fetch failed');
+            return new Response(VALID_MANIFEST);
+          },
+          [`${hanging.url}/manifests/components.json`]: () => {
+            if (down) throw new TypeError('fetch failed');
+            return new Promise<Response>((_resolve, reject) => {
+              release = () => reject(new TypeError('fetch failed'));
+            });
+          },
+        })
+      );
+      // Config order puts the hanging ref first.
+      await auth.initialize([hanging, PUBLIC_REF]);
+      const provider = auth.createManifestProvider('http://localhost:6006');
+      const source = auth.buildSources().find((s) => s.id === 'public');
 
-    auth.startRecheck();
+      down = false;
+      await vi.advanceTimersByTimeAsync(5_000);
+      const round = auth.recheckUnreachableRefs();
+      try {
+        await vi.waitFor(() =>
+          expect(provider(undefined, './manifests/components.json', source)).resolves.toBe(
+            VALID_MANIFEST
+          )
+        );
+      } finally {
+        release();
+        await round;
+      }
+    });
 
-    await vi.waitFor(() => expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('boom')));
+    it('logs a failed re-check round instead of rejecting', async () => {
+      const auth = new CompositionAuth();
+      let down = true;
+      vi.stubGlobal(
+        'fetch',
+        routeFetch({
+          [`${PUBLIC_REF.url}/manifests/components.json`]: () => {
+            if (down) throw new TypeError('fetch failed');
+            return new Response(VALID_MANIFEST);
+          },
+        })
+      );
+      await auth.initialize([PUBLIC_REF]);
+      vi.spyOn(logger, 'info').mockImplementation(() => {
+        throw new Error('boom');
+      });
+
+      down = false;
+      await vi.advanceTimersByTimeAsync(5_000);
+      await expect(auth.recheckUnreachableRefs()).resolves.toBeUndefined();
+      expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('boom'));
+    });
   });
 });

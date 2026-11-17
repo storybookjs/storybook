@@ -107,34 +107,67 @@ export class CompositionAuth {
     await this.#checkRefs(this.#refStates);
   }
 
-  // Starts a re-check without waiting for it; the next request sees its outcome.
-  startRecheck(): void {
-    this.recheckUnreachableRefs().catch((error) => {
-      logger.warn(
-        `[addon-mcp] Re-checking composed refs failed: ${error instanceof Error ? error.message : String(error)}`
+  // Concurrent callers share one round of checks. With `waitMs`, waits at most that long for it;
+  // the round keeps going in the background. Never rejects.
+  async recheckUnreachableRefs({ waitMs }: { waitMs?: number } = {}): Promise<void> {
+    if (!this.#recheck) {
+      const due = this.#refStates.filter(
+        ({ status }) => status.kind === 'unreachable' && status.retryAt <= Date.now()
       );
-    });
-  }
+      if (due.length === 0) return;
+      this.#recheck = this.#checkRefs(due)
+        .catch((error) => {
+          logger.warn(
+            `[addon-mcp] Re-checking composed refs failed: ${error instanceof Error ? error.message : String(error)}`
+          );
+        })
+        .finally(() => {
+          this.#recheck = null;
+        });
+    }
+    if (waitMs === undefined) return this.#recheck;
 
-  // Concurrent callers share one round of checks.
-  async recheckUnreachableRefs(): Promise<void> {
-    if (this.#recheck) return this.#recheck;
-    const due = this.#refStates.filter(
-      ({ status }) => status.kind === 'unreachable' && status.retryAt <= Date.now()
-    );
-    if (due.length === 0) return;
-    this.#recheck = this.#checkRefs(due).finally(() => {
-      this.#recheck = null;
-    });
-    await this.#recheck;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    await Promise.race([
+      this.#recheck,
+      new Promise<void>((resolve) => {
+        timer = setTimeout(resolve, waitMs);
+      }),
+    ]);
+    clearTimeout(timer);
   }
 
   async #checkRefs(states: RefState[]): Promise<void> {
-    const outcomes = await Promise.allSettled(states.map(({ ref }) => this.#checkRef(ref.url)));
-    // Apply in config order so response timing cannot choose the OAuth server.
-    for (const [index, state] of states.entries()) {
-      this.#applyCheck(state, outcomes[index]);
-    }
+    const outcomes: Array<PromiseSettledResult<RefCheckResult> | undefined> = [];
+    const applied = new Set<number>();
+    // Each outcome applies as soon as it settles, except that a private ref waits for every ref
+    // before it, so response timing cannot choose the OAuth server.
+    const applySettled = () => {
+      let earlierPending = false;
+      for (const [index, state] of states.entries()) {
+        const outcome = outcomes[index];
+        if (!outcome) {
+          earlierPending = true;
+          continue;
+        }
+        if (applied.has(index)) continue;
+        const isPrivate = outcome.status === 'fulfilled' && typeof outcome.value === 'object';
+        if (isPrivate && earlierPending) continue;
+        this.#applyCheck(state, outcome);
+        applied.add(index);
+      }
+    };
+
+    await Promise.all(
+      states.map(async ({ ref }, index) => {
+        try {
+          outcomes[index] = { status: 'fulfilled', value: await this.#checkRef(ref.url) };
+        } catch (reason) {
+          outcomes[index] = { status: 'rejected', reason };
+        }
+        applySettled();
+      })
+    );
   }
 
   #applyCheck(state: RefState, outcome: PromiseSettledResult<RefCheckResult>): void {

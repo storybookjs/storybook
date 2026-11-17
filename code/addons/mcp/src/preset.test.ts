@@ -343,7 +343,7 @@ describe('experimental_devServer', () => {
     expect(mcpServerHandler).not.toHaveBeenCalled();
   });
 
-  it('answers concurrent requests during a hung retry and challenges for OAuth after recovery', async () => {
+  it('answers concurrent requests within the wait during a hung retry, and challenges for OAuth after recovery', async () => {
     vi.useFakeTimers();
     try {
       const mcpServerHandler = vi
@@ -372,6 +372,9 @@ describe('experimental_devServer', () => {
       const first = mcpHandler({ headers: { 'content-type': 'application/json' } }, before);
       const second = mcpHandler({ headers: { 'content-type': 'application/json' } }, before);
       try {
+        await vi.advanceTimersByTimeAsync(2_999);
+        expect(mcpServerHandler).toHaveBeenCalledTimes(1);
+        await vi.advanceTimersByTimeAsync(1);
         await vi.waitFor(() => expect(mcpServerHandler).toHaveBeenCalledTimes(3));
         expect(retryFetch).toHaveBeenCalledTimes(1);
       } finally {
@@ -396,6 +399,28 @@ describe('experimental_devServer', () => {
           'WWW-Authenticate': expect.stringContaining('/.well-known/oauth-protected-resource'),
         })
       );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('challenges for OAuth in the same request when a private ref recovers within the wait', async () => {
+    vi.useFakeTimers();
+    try {
+      const mcpServerHandler = vi
+        .spyOn(mcpHandlerModule, 'mcpServerHandler')
+        .mockResolvedValue(undefined);
+      vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('fetch failed')));
+      await (experimental_devServer as any)(mockApp, createOptionsWithPrivateRef());
+      await mcpHandler({ headers: { 'content-type': 'application/json' } }, {});
+
+      stubPrivateRefDiscovery();
+      await vi.advanceTimersByTimeAsync(5_000);
+      const res = { writeHead: vi.fn(), end: vi.fn() };
+      await mcpHandler({ headers: { 'content-type': 'application/json' } }, res);
+
+      expect(res.writeHead).toHaveBeenCalledWith(401, expect.anything());
+      expect(mcpServerHandler).toHaveBeenCalledTimes(1);
     } finally {
       vi.useRealTimers();
     }

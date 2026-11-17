@@ -103,17 +103,17 @@ Read the `package.json` of the Storybook directory and of the repository root, b
 ## Step 3: Group the maintainer PRs marked qa:skip
 
 A maintainer marks a PR `qa:skip` when its project gets tested as a whole.
-`render` lists each such PR that carries a product label in "Maintainer PRs marked qa:skip", and each needs a group.
+Each such PR that carries a product label needs a group, and `render` lists it with the PRs of its group in "Groups of maintainer PRs marked qa:skip", or in the row without a group.
 
 - When a PR's linked issue is, or has as parent, a tracking issue with sub-issues and a QA or testing heading, `render` puts the PR into the group `issue-<number>` by itself. Read that issue with `gh issue view <number> --repo storybookjs/storybook`, and take the steps of its entry from its QA section. Most PRs have no such issue, so expect `render` to leave most groups to you.
 - Group the rest yourself by feature, from the title, the labels, and the linked issues, and fetch a body only when those are not enough. A group is one feature that its PRs share, such as `wc-docgen`. When no feature ties a PR to others, group it by its area.
 - The source of a group is one line: a public issue that gathers its PRs, written as `[#36000](https://github.com/storybookjs/storybook/issues/36000)`, or `area <Area>`. When the PRs of a feature span areas and no public issue gathers them, name every area: `area Core, area Docs`. `check` reads any line of text here, so this rule is yours to keep.
 - The area is the prefix of the title. `Docs` is the docs addon, not the documentation site, and a PR with the label `documentation` changes the site.
-- The area of a row is copied from the window, and `check --window` refuses any change to it, so it stays as the author typed it: empty for a title without a prefix, `Revert "Docs` for a revert, `Typescript` next to `TypeScript`. Group by what the area means instead: a revert by the area of the PR it reverts, the spellings of one area together, and a PR without an area by its title. Write the source of such a group with the area as it should read, such as `area TypeScript`.
+- The area in the window is the prefix as the author typed it: empty for a title without a prefix, `Revert "Docs` for a revert, `Typescript` next to `TypeScript`. Group by what the area means instead: a revert by the area of the PR it reverts, the spellings of one area together, and a PR without an area by its title. Write the source of such a group with the area as it should read, such as `area TypeScript`.
 
 ## Step 4: Write the draft
 
-Write `draft.json` with a decision for every PR of "PRs that need QA" (`needed`) and "Undeclared PRs" (`undeclared`), and for every group.
+Write `draft.json` with a decision for every PR of the window marked `qa:needed` (`needed`) or without a QA label (`undeclared`), and for every group.
 A PR of the window that is `verified` or a contributor's `skip` gets no decision.
 The draft has five keys, all optional:
 
@@ -140,7 +140,7 @@ The draft has five keys, all optional:
 }
 ```
 
-- `entries` are the changes to test. A slug is lower case letters, digits, and hyphens. `prs` lists every PR whose decision names the entry, which `check` enforces, and the PRs of a group that the entry shows; a PR of a group that the entry does not show, such as one that adds tests, stays out of `prs`. Every text field is one line, without an HTML comment, a control character, or an invisible format character.
+- `entries` are the changes to test. A slug is lower case letters, digits, and hyphens. `prs` lists every PR whose decision names the entry, which `render` enforces, and the PRs of a group that the entry shows; a PR of a group that the entry does not show, such as one that adds tests, stays out of `prs`. Every text field is one line, without an HTML comment, a control character, or an invisible format character.
 - `decisions` maps a PR number to `{ "entries": [<slugs>] }` or `{ "skip": "<reason>" }`.
 - `groups` holds every group with its decision, in the same two forms. Add the groups that `render` made from a tracking issue under their slug `issue-<number>`, with their decision.
 - `groupOf` maps each maintainer PR to its group, except the PRs that `render` grouped by a tracking issue.
@@ -187,8 +187,8 @@ node ecosystem-qa/qa-plan.ts render --window /tmp/qa-plan-11.0/window.json --dra
 node ecosystem-qa/qa-plan.ts check /tmp/qa-plan-11.0/11.0.md --window /tmp/qa-plan-11.0/window.json
 ```
 
-`render` fails when the draft decides or groups a PR that the window does not hold in that role.
-`check` prints each problem as `<file>:<line>: <message>`, one for each row still undecided, so render and check early with a partial draft to see what is left.
+`render` fails when the draft decides or groups a PR that the window does not hold in that role, when a decision names other entries than the ones whose `prs` list the PR, and when it skips a PR that an entry lists.
+`check` prints each problem as `<file>:<line>: <message>`, one for the row of PRs still undecided in each table and one for the row of maintainer PRs without a group, so render and check early with a partial draft to see what is left.
 Fix the draft, never the rendered file, and render again until `check` exits 0.
 Run no formatter on the plan file: `check` refuses every byte that differs from what `render` writes.
 It then prints the plan's hash, its batches with their runs, and what the sweep costs. Keep that output for the PR body.

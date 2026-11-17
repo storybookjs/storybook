@@ -9,14 +9,14 @@ import {
   draftOfPlan,
   ENTRIES_PER_RUN,
   parsePlan,
-  type Plan,
   PlanDraft,
   planFromWindow,
   planRuns,
+  renderLedger,
   renderPlan,
   renderPlanChecks,
 } from './qa-plan.ts';
-import type { Window, WindowPr } from './window.ts';
+import { Window, type WindowPr } from './window.ts';
 
 const FIXTURE = readFileSync(new URL('./plan.fixture.md', import.meta.url), 'utf8');
 
@@ -65,20 +65,19 @@ const maintainerSkip = (number: number, title: string, area: string) =>
     authorAssociation: 'MEMBER',
   });
 
-const windowOfPlan = (plan: Plan): Window =>
-  windowOf([
-    ...plan.needed.map((row) => windowPr({ number: row.pr, title: row.title, area: row.area })),
-    ...plan.undeclared.map((row) =>
-      windowPr({ number: row.pr, title: row.title, area: row.area, status: 'undeclared' })
-    ),
-    ...plan.maintainerSkips.map((row) => maintainerSkip(row.pr, row.title, row.area!)),
-    ...plan.verified.map((row) =>
-      windowPr({ number: row.pr, title: row.title, area: row.area, status: 'verified' })
-    ),
-    ...plan.skipped.map((row) =>
-      windowPr({ number: row.pr, title: row.title, area: row.area, status: 'skip' })
-    ),
-  ]);
+const WINDOW = Window.parse(
+  JSON.parse(readFileSync(new URL('./plan.fixture.window.json', import.meta.url), 'utf8'))
+);
+
+// An edit of an entry changes its row in the overview table too, which render derives from it.
+const rendered = (text: string) => {
+  try {
+    return renderPlan(parsePlan(text));
+  } catch {
+    return text;
+  }
+};
+const edited = (from: string, to: string) => rendered(replaced(FIXTURE, from, to));
 
 describe('the fixture plan', () => {
   it('is in its rendered form and passes every rule', () => {
@@ -86,8 +85,8 @@ describe('the fixture plan', () => {
     expect(problemsOf(FIXTURE)).toEqual([]);
   });
 
-  it('matches a window that holds exactly its PRs', () => {
-    expect(problemsOf(FIXTURE, { window: windowOfPlan(parsePlan(FIXTURE)) })).toEqual([]);
+  it('matches the window it was rendered from', () => {
+    expect(problemsOf(FIXTURE, { window: WINDOW })).toEqual([]);
   });
 
   it('splits the entries of mealdrop in batch 1 into parts of Entries per run', () => {
@@ -112,10 +111,30 @@ describe('the fixture plan', () => {
 
 describe('a file that is not in its rendered form', () => {
   it('fails at the first line that differs', () => {
-    const text = replaced(FIXTURE, `| ${pr(33422)} | UI |`, `| ${pr(33422)} |  UI |`);
+    const text = replaced(FIXTURE, `| a change of this`, `|  a change of this`);
 
     expect(problemsOf(text)).toEqual([
-      { line: lineOf(text, `${pr(33422)} |`), message: expect.stringContaining('rendered form') },
+      { line: lineOf(text, 'a change of this'), message: expect.stringContaining('rendered form') },
+    ]);
+  });
+
+  it('fails at a row of the overview that differs from its entry', () => {
+    const text = replaced(FIXTURE, '| `mealdrop`, `mantine` | 1 |', '| `mantine` | 1 |');
+
+    expect(problemsOf(text)).toEqual([
+      {
+        line: lineOf(text, '| `mantine` | 1 |'),
+        message: expect.stringContaining('| `mealdrop`, `mantine` | 1 |'),
+      },
+    ]);
+  });
+
+  it('fails at an overview row whose entry is gone', () => {
+    const entry = FIXTURE.indexOf('### `sidebar-tree`');
+    const text = `${FIXTURE.slice(0, entry).trimEnd()}\n`;
+
+    expect(problemsOf(text)).toEqual([
+      { line: lineOf(text, '| `sidebar-tree`'), message: expect.stringContaining('rendered form') },
     ]);
   });
 
@@ -150,7 +169,7 @@ describe('checkPlanText', () => {
       'a slug used twice',
       '### `preview-animations`',
       '### `story-sort-in-main`',
-      'Animations pause only',
+      '### `story-sort-in-main` Animations',
       'is used twice',
     ],
     [
@@ -203,18 +222,11 @@ describe('checkPlanText', () => {
       'packageManager',
     ],
     [
-      'an entry PR without a row',
+      'an entry PR that has a row of PRs that are not tested too',
       `- PRs: ${pr(31900)}`,
-      `- PRs: ${pr(31900)}, ${pr(40000)}`,
-      `- PRs: ${pr(31900)}`,
-      '#40000 has no row',
-    ],
-    [
-      'an entry PR whose row names another entry',
-      `- PRs: ${pr(36137)}`,
-      `- PRs: ${pr(36137)}, ${pr(31900)}`,
-      `- PRs: ${pr(36137)}`,
-      'does not name `story-sort-in-main`',
+      `- PRs: ${pr(31900)}, ${pr(36664)}`,
+      `| ${pr(36664)} |`,
+      '#36664 is tested by `preview-animations`, so it has no row of PRs that are not tested',
     ],
     ['a PR without its link', `| ${pr(36664)} |`, '| #36664 |', '| #36664 |', 'expected a PR like'],
     [
@@ -226,38 +238,31 @@ describe('checkPlanText', () => {
     ],
     [
       'a row without a decision',
-      "| skip: a change of this repository's CI, no project can see it |",
+      "| a change of this repository's CI, no project can see it |",
       '|  |',
       pr(36664),
       '#36664 has no decision',
     ],
     [
-      'a row that names no entry',
-      '| `preview-animations` |\n',
-      '| `preview-animation` |\n',
-      `| ${pr(31900)} |`,
-      'which is no entry',
-    ],
-    [
-      'a row that names an entry whose PRs do not list it',
-      '| `story-sort-in-main` |\n',
-      '| `story-sort-in-main`, `preview-animations` |\n',
-      `| ${pr(36137)} |`,
-      '#36137 names `preview-animations`, whose PRs do not list it',
-    ],
-    [
-      'a PR with a second row that decides it otherwise',
-      '| `preview-animations` |\n',
-      `| \`preview-animations\` |\n| ${pr(31900)} | Preview | Preview: Only pause DocumentTimeline animations in preview-web | skip: no project shows it |\n`,
-      'skip: no project shows it',
-      '#31900 has a row already',
-    ],
-    [
       'a PR with a row in two tables',
-      '| [#35658](https://github.com/storybookjs/storybook/pull/35658) | Core |',
-      `| ${pr(36664)} | CI | CI: Cancel workflow when format check fails | skip: CI only |\n| [#35658](https://github.com/storybookjs/storybook/pull/35658) | Core |`,
-      'skip: CI only',
+      `| ${pr(35618)} |`,
+      `| ${pr(35618)} |\n| CI only | ${pr(36664)} |`,
+      '| CI only |',
       '#36664 has a row already',
+    ],
+    [
+      'a reason with two rows',
+      `| ${pr(35618)} |`,
+      `| ${pr(35618)} |\n| the monorepo's docs E2E tests cover the timing | ${pr(35658)} |`,
+      `| ${pr(35658)} |`,
+      'has a row already',
+    ],
+    [
+      'a maintainer PR in a group and in a row of PRs that are not tested',
+      `| ${pr(35618)} |`,
+      `| ${pr(35618)} |\n| CI only | ${pr(34799)} |`,
+      '| `tooling` |',
+      '#34799 has a row already',
     ],
     [
       'a repo that is no catalog id and was not discovered',
@@ -303,10 +308,17 @@ describe('checkPlanText', () => {
       'expected no control character',
     ],
     [
-      'a line separator in a title',
-      '| UI | UI: Rebuild Sidebar Tree |',
-      '| UI | UI: Rebuild Sidebar Tree |',
-      `| ${pr(33422)} |`,
+      'a line separator in a reason',
+      "| a change of this repository's CI, no project",
+      "| a change of this repository's CI,\u{2028}no project",
+      "| a change of this repository's CI,",
+      'or line separator',
+    ],
+    [
+      'a line separator in the source of a group',
+      '| area UI |',
+      '| area\u{2028}UI |',
+      '| `ui` |',
       'or line separator',
     ],
     ...[
@@ -346,17 +358,17 @@ describe('checkPlanText', () => {
     ['a batch 0', '- Batch: 1', '- Batch: 0', '### `story-sort-in-main`', 'batch: Too small'],
     [
       'a maintainer PR without a group',
-      '| `tooling` |\n',
-      '|  |\n',
-      pr(34799),
-      '#34799 names no group',
+      `| \`tooling\` | area Tooling, no project | skip: no effect that a project can show | ${pr(34799)} |`,
+      `|  |  |  | ${pr(34799)} |`,
+      `| ${pr(34799)} |`,
+      '#34799 is in no group',
     ],
     [
-      'a maintainer PR in a group that has no row',
-      '| `tooling` |\n',
-      '| `build` |\n',
-      pr(34799),
-      '#34799 names the group `build`, which has no row',
+      'a second row of maintainer PRs without a group',
+      `| \`tooling\` | area Tooling, no project | skip: no effect that a project can show | ${pr(34799)} |`,
+      `|  |  |  | ${pr(34799)} |\n|  |  |  | ${pr(35509)} |`,
+      `|  |  |  | ${pr(35509)} |`,
+      'a second row of PRs without a group',
     ],
     [
       'a group that names no entry of the plan',
@@ -370,7 +382,7 @@ describe('checkPlanText', () => {
       '| `ui` | area UI | `sidebar-tree` |',
       '| `ui` | area UI | skip: covered elsewhere |',
       `- PRs: ${pr(33422)}`,
-      '#35509 is listed here, but its row does not name `sidebar-tree`',
+      '#35509 is listed here, but its group `ui` does not name `sidebar-tree`',
     ],
     [
       'a group without a decision',
@@ -408,7 +420,7 @@ describe('checkPlanText', () => {
       'short enough for the check id',
     ],
   ])('refuses %s with its line', (_, from, to, lineNeedle, message) => {
-    const text = replaced(FIXTURE, from, to);
+    const text = edited(from, to);
     expect(problemsOf(text)).toContainEqual({
       line: lineOf(text, lineNeedle),
       message: expect.stringContaining(message),
@@ -589,11 +601,11 @@ describe('checkPlanText', () => {
     ['the title of an entry', '### `preview-animations` Animations'],
     ['the reason of a repo', '- Repo `mealdrop`: its stories animate'],
   ])('refuses a URL in %s, which the runner prints into the prompt', (_, line) => {
-    const text = replaced(FIXTURE, line, `${line} see https://example.com`);
+    const text = edited(line, `${line} see https://example.com`);
 
     expect(problemsOf(text)).toEqual([
       {
-        line: lineOf(text, 'see https://example.com'),
+        line: lineOf(text, `${line} see https://example.com`),
         message: 'https://example.com has the host example.com, not localhost',
       },
     ]);
@@ -605,10 +617,11 @@ describe('checkPlanText', () => {
     ['Notion', 'https://example.notion.site/Plan'],
     ['Slack', 'https://example.slack.com/archives/C0/p1'],
   ])('refuses a link to %s anywhere, also in the title of an entry', (_, link) => {
-    const text = replaced(FIXTURE, 'Animations pause only in the preview', `Animations ${link}`);
+    const heading = '### `preview-animations` Animations';
+    const text = edited(`${heading} pause only in the preview`, `${heading} ${link}`);
 
     expect(problemsOf(text)).toContainEqual({
-      line: lineOf(text, link),
+      line: lineOf(text, `${heading} ${link}`),
       message: 'links to Linear, Notion, or Slack, which the plan must not',
     });
   });
@@ -635,45 +648,88 @@ describe('checkPlanText', () => {
     ]);
   });
 
-  it('names a PR of the window that has no row, and a row that is not in the window', () => {
-    const plan = parsePlan(FIXTURE);
-    const window = windowOfPlan(plan);
-    window.prs.push(windowPr({ number: 40000, title: 'Core: Something new', area: 'Core' }));
-    const text = replaced(FIXTURE, pr(36153), pr(36154));
+  it('names a PR of the window that is in no place, and a place of a PR that is not in the window', () => {
+    const window = {
+      ...WINDOW,
+      prs: [...WINDOW.prs, windowPr({ number: 40000, title: 'Core: Something new', area: 'Core' })],
+    };
+    const text = replaced(FIXTURE, pr(36664), pr(36665));
+    const heading = '## PRs that need QA and are not tested';
 
     expect(problemsOf(text, { window })).toEqual([
       {
-        line: lineOf(text, '## PRs that need QA'),
-        message: '#40000 of the window has no row in "PRs that need QA"',
+        line: lineOf(text, heading),
+        message: `#36664 of the window is in no entry and no row of "${heading.slice(3)}"`,
       },
       {
-        line: lineOf(text, '## PRs verified by hand'),
-        message: '#36153 of the window has no row in "PRs verified by hand"',
+        line: lineOf(text, heading),
+        message: `#40000 of the window is in no entry and no row of "${heading.slice(3)}"`,
       },
-      {
-        line: lineOf(text, pr(36154)),
-        message: '#36154 does not belong in "PRs verified by hand" for this window',
-      },
+      { line: lineOf(text, pr(36665)), message: '#36665 is not in the window' },
     ]);
   });
 
   it.each([
-    ['area', `| ${pr(33422)} | UI |`, `| ${pr(33422)} | Manager |`],
-    ['title', 'UI: Rebuild Sidebar Tree', 'UI: Rebuild the Sidebar Tree'],
-  ])('names the area and title of the window for a row that changed its %s', (_, from, to) => {
-    const window = windowOfPlan(parsePlan(FIXTURE));
-    const text = replaced(FIXTURE, from, to);
+    [
+      'an entry PR that the window does not hold',
+      `- PRs: ${pr(31900)}`,
+      `- PRs: ${pr(31900)}, ${pr(40000)}`,
+      `- PRs: ${pr(31900)}`,
+      '#40000 is not in the window',
+    ],
+    [
+      'an entry PR that was verified by hand',
+      `- PRs: ${pr(31900)}`,
+      `- PRs: ${pr(31900)}, ${pr(36153)}`,
+      `- PRs: ${pr(31900)}`,
+      '#36153 is verified by hand in the window, so the plan does not decide it',
+    ],
+    [
+      'a contributor PR marked qa:skip in a row',
+      `| ${pr(36664)} |`,
+      `| ${pr(36664)}, ${pr(36189)} |`,
+      `| ${pr(36664)}, ${pr(36189)} |`,
+      '#36189 is marked qa:skip and needs no group in the window, so the plan does not decide it',
+    ],
+    [
+      'an undeclared PR in the table of PRs that need QA',
+      `| ${pr(36664)} |`,
+      `| ${pr(36664)}, ${pr(35618)} |`,
+      `| ${pr(36664)}, ${pr(35618)} |`,
+      '#35618 belongs in "Undeclared PRs that are not tested"',
+    ],
+    [
+      'a maintainer PR that is in no group',
+      ` | ${pr(34799)} |`,
+      ' |  |',
+      '## Groups of maintainer PRs marked qa:skip',
+      '#34799 of the window is in no row of "Groups of maintainer PRs marked qa:skip"',
+    ],
+    [
+      'a maintainer PR in a row of PRs that are not tested',
+      `| ${pr(36664)} |`,
+      `| ${pr(36664)}, ${pr(35509)} |`,
+      `| ${pr(36664)}, ${pr(35509)} |`,
+      '#35509 is a maintainer PR marked qa:skip, so it belongs in a group',
+    ],
+    [
+      'a PR that needs QA in a group',
+      ` | ${pr(34799)} |`,
+      ` | ${pr(34799)}, ${pr(36664)} |`,
+      ` | ${pr(34799)}, ${pr(36664)} |`,
+      '#36664 is no maintainer PR marked qa:skip that needs a group',
+    ],
+  ])('refuses against the window %s', (_, from, to, lineNeedle, message) => {
+    const text = edited(from, to);
 
-    expect(problemsOf(text, { window })).toEqual([
-      {
-        line: lineOf(text, `| ${pr(33422)} |`),
-        message: '#33422 has the area "UI" and the title "UI: Rebuild Sidebar Tree" in the window',
-      },
-    ]);
+    expect(problemsOf(text, { window: WINDOW })).toContainEqual({
+      line: lineOf(text, lineNeedle),
+      message,
+    });
   });
 
   it('names the tags of the window when the plan was written for other ones', () => {
-    const window = { ...windowOfPlan(parsePlan(FIXTURE)), from: 'v10.5.0' };
+    const window = { ...WINDOW, from: 'v10.5.0' };
 
     expect(problemsOf(FIXTURE, { window })).toEqual([
       {
@@ -685,60 +741,108 @@ describe('checkPlanText', () => {
 });
 
 describe('draftOfPlan', () => {
-  const window = JSON.parse(
-    readFileSync(new URL('./plan.fixture.window.json', import.meta.url), 'utf8')
-  ) as Window;
-  const rendered = { ...parsePlan(FIXTURE), entriesPerRun: ENTRIES_PER_RUN };
-  const undecided = structuredClone(rendered);
-  undecided.needed[0]!.decision = null;
-  undecided.maintainerSkips[0]!.group = null;
+  const plan = { ...parsePlan(FIXTURE), entriesPerRun: ENTRIES_PER_RUN };
+  const undecided = structuredClone(plan);
+  undecided.needed[0]!.reason = null;
+  const [ui, tooling] = undecided.groups;
+  undecided.groups = [ui!, { ...tooling!, prs: [] }, { slug: null, prs: tooling!.prs }];
 
   it.each([
-    ['a finished plan', rendered],
+    ['a finished plan', plan],
     ['a plan with an undecided row and an ungrouped PR', undecided],
-  ])('gives for %s the JSON draft from which render writes it again', (_, plan) => {
-    const draft = PlanDraft.parse(JSON.parse(JSON.stringify(draftOfPlan(plan))));
+  ])('gives for %s the JSON draft from which render writes it again', (_, it) => {
+    const draft = PlanDraft.parse(JSON.parse(JSON.stringify(draftOfPlan(it))));
 
-    expect(renderPlan(planFromWindow(window, draft))).toBe(renderPlan(plan));
+    expect(renderPlan(planFromWindow(WINDOW, draft))).toBe(renderPlan(it));
+  });
+
+  it('decides a PR for every entry that lists it, and leaves a grouped PR to its group', () => {
+    expect(draftOfPlan(plan).decisions).toEqual({
+      '31900': { entries: ['preview-animations'] },
+      '33422': { entries: ['sidebar-tree'] },
+      '35618': { skip: "the monorepo's docs E2E tests cover the timing" },
+      '35658': { entries: ['csf-factory-namespaces'] },
+      '36137': { entries: ['story-sort-in-main'] },
+      '36664': { skip: "a change of this repository's CI, no project can see it" },
+    });
   });
 });
 
 describe('planFromWindow', () => {
-  const needed = windowPr({ number: 1, title: 'Core: Keep `a | b` in a title', area: 'Core' });
+  const needed = windowPr({ number: 1, title: 'Core: Keep a title', area: 'Core' });
   const grouped = maintainerSkip(2, 'UI: Rebuild the sidebar', 'UI');
+  const entry = {
+    slug: 'sidebar',
+    title: 'The sidebar',
+    prs: [1],
+    batch: 1,
+    repos: [{ id: 'mealdrop', reason: 'a sidebar' }],
+    steps: ['Open the sidebar.'],
+    expected: 'It opens.',
+  };
 
-  it('keeps a pipe and a backtick of a title through render and parse', () => {
-    const text = renderPlan(planFromWindow(windowOf([needed]), PlanDraft.parse({})));
+  it('keeps a pipe and a backtick of a reason through render and parse', () => {
+    const draft = PlanDraft.parse({ decisions: { '1': { skip: 'only `a | b` shows it' } } });
+    const text = renderPlan(planFromWindow(windowOf([needed]), draft));
 
-    expect(parsePlan(text).needed[0]!.title).toBe('Core: Keep `a | b` in a title');
-    expect(checkPlanText(text, { catalog: CATALOG }).plan).not.toBeNull();
+    expect(parsePlan(text).needed[0]!.reason).toBe('only `a | b` shows it');
+    expect(problemsOf(text)).toEqual([]);
   });
 
-  it('leaves every row of a skeleton undecided, so the check names each of them', () => {
+  it('leaves every PR of a skeleton undecided, so the check names each of them', () => {
     const text = renderPlan(planFromWindow(windowOf([needed, grouped]), PlanDraft.parse({})));
 
     expect(problemsOf(text).map((problem) => problem.message)).toEqual([
       '#1 has no decision',
-      '#2 names no group',
+      '#2 is in no group',
     ]);
   });
 
-  it('takes decisions and groups from the draft', () => {
+  it('puts PRs with one reason into one row', () => {
+    const other = windowPr({ number: 3, title: 'CI: Other', area: 'CI' });
     const draft = PlanDraft.parse({
-      decisions: { '1': { skip: 'only CI can see it' } },
-      groups: [{ slug: 'sidebar', source: 'area UI', decision: { skip: 'covered by E2E' } }],
-      groupOf: { '2': 'sidebar' },
+      decisions: { '1': { skip: 'only CI can see it' }, '3': { skip: 'only CI can see it' } },
     });
-    const text = renderPlan(planFromWindow(windowOf([needed, grouped]), draft));
 
-    expect(problemsOf(text)).toEqual([]);
+    expect(planFromWindow(windowOf([needed, other]), draft).needed).toEqual([
+      { reason: 'only CI can see it', prs: [1, 3] },
+    ]);
   });
 
-  it('refuses a draft that decides a PR the window holds in another role', () => {
-    const draft = PlanDraft.parse({ decisions: { '2': { skip: 'no' } }, groupOf: { '1': 'x' } });
+  it('takes entries, decisions and groups from the draft', () => {
+    const window = windowOf([needed, grouped]);
+    const draft = PlanDraft.parse({
+      entries: [{ ...entry, prs: [1, 2] }],
+      decisions: { '1': { entries: ['sidebar'] } },
+      groups: [{ slug: 'ui', source: 'area UI', decision: { entries: ['sidebar'] } }],
+      groupOf: { '2': 'ui' },
+    });
+    const text = renderPlan(planFromWindow(window, draft));
 
-    expect(() => planFromWindow(windowOf([needed, grouped]), draft)).toThrow(
-      /decides #2[^]*groups #1/
+    expect(problemsOf(text, { window })).toEqual([]);
+  });
+
+  it.each([
+    [
+      'decides a PR the window holds in another role',
+      { decisions: { '2': { skip: 'no' } } },
+      'decides #2',
+    ],
+    ['groups a PR the window holds in another role', { groupOf: { '1': 'x' } }, 'groups #1'],
+    ['groups a PR into a group it does not have', { groupOf: { '2': 'x' } }, 'groups #2 into `x`'],
+    [
+      'decides a PR for an entry that does not list it',
+      { entries: [{ ...entry, prs: [3] }], decisions: { '1': { entries: ['sidebar'] } } },
+      'decides #1 for `sidebar`, and the entries that list it are none',
+    ],
+    [
+      'skips a PR that an entry lists',
+      { entries: [entry], decisions: { '1': { skip: 'no' } } },
+      'skips #1, which the entries `sidebar` list',
+    ],
+  ])('refuses a draft that %s', (_, draft, message) => {
+    expect(() => planFromWindow(windowOf([needed, grouped]), PlanDraft.parse(draft))).toThrow(
+      message
     );
   });
 
@@ -758,13 +862,35 @@ describe('planFromWindow', () => {
     };
     const plan = planFromWindow(windowOf([tracked]), PlanDraft.parse({}));
 
-    expect(plan.maintainerSkips[0]!.group).toBe('issue-31202');
     expect(plan.groups).toEqual([
       {
         slug: 'issue-31202',
         source: '[#31202](https://github.com/storybookjs/storybook/issues/31202)',
         decision: null,
+        prs: [2],
       },
+    ]);
+  });
+});
+
+describe('renderLedger', () => {
+  it('names for every PR of the window where it is in the plan, or why it is not', () => {
+    const rows = renderLedger(parsePlan(FIXTURE), WINDOW)
+      .split('\n')
+      .filter((line) => /^\| \d/.test(line))
+      .map((line) => line.slice(2, -2).split(' | '));
+
+    expect(rows.map(([number, , , , where]) => [Number(number), where])).toEqual([
+      [31900, 'tested by `preview-animations`'],
+      [33422, 'tested by `sidebar-tree`'],
+      [34799, 'group `tooling`: skip: no effect that a project can show'],
+      [35509, 'tested by `sidebar-tree`; group `ui`: `sidebar-tree`'],
+      [35618, "not tested: the monorepo's docs E2E tests cover the timing"],
+      [35658, 'tested by `csf-factory-namespaces`'],
+      [36137, 'tested by `story-sort-in-main`'],
+      [36153, 'verified by hand'],
+      [36189, 'marked qa:skip and needs no group'],
+      [36664, "not tested: a change of this repository's CI, no project can see it"],
     ]);
   });
 });

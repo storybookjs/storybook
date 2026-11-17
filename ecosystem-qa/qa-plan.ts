@@ -12,6 +12,7 @@ import {
   PlanDraft,
   planHash,
   planRuns,
+  renderLedger,
   renderPlan,
   USD_PER_RUN,
 } from './lib/qa-plan.ts';
@@ -20,6 +21,7 @@ import { Window } from './lib/window.ts';
 const HELP = `Usage: node ecosystem-qa/qa-plan.ts render --window <file> [--draft <file>] --out <file>
        node ecosystem-qa/qa-plan.ts check <file> [--window <file>]
        node ecosystem-qa/qa-plan.ts draft <file> --window <file> --out <file>
+       node ecosystem-qa/qa-plan.ts ledger <file> --window <file> [--out <file>]
 
 render writes a QA plan from the JSON that window.ts wrote and an optional JSON draft of entries,
 discovered repos, decisions, and groups. A PR without a decision gets an empty cell.
@@ -29,8 +31,11 @@ changed and rendered again. It exits 1 when the plan is not what render writes f
 
 check accepts a plan only in the form that render writes and when every rule holds against the
 catalog, and then prints its entries, batches, runs, and an estimate of its cost. With --window it
-also checks that the tables hold exactly the PRs of that window. It exits 1 with the line of each
-problem.`;
+also checks that every PR of that window that needs a decision is in exactly one place, and that
+the plan names no other PR. It exits 1 with the line of each problem.
+
+ledger prints where each PR of the window ended up in the plan, with its status, area, and title,
+or writes it to --out.`;
 
 const { values, positionals } = parseArgs({
   allowPositionals: true,
@@ -124,6 +129,20 @@ if (extra.length) {
   mkdirSync(dirname(values.out), { recursive: true });
   writeFileSync(values.out, `${JSON.stringify(draft, null, 2)}\n`);
   console.log(`Wrote ${values.out}. Change it, then render the plan again.`);
+} else if (command === 'ledger' && file && values.window && !values.draft) {
+  const { plan, problems } = checkPlanText(readFileSync(file, 'utf8'), { catalog: [] });
+  if (!plan) {
+    console.error(`${file}:${problems[0]!.line}: ${problems[0]!.message}`);
+    process.exit(1);
+  }
+  const ledger = renderLedger(plan, readWindow(values.window));
+  if (values.out) {
+    mkdirSync(dirname(values.out), { recursive: true });
+    writeFileSync(values.out, ledger);
+    console.log(`Wrote ${values.out}.`);
+  } else {
+    process.stdout.write(ledger);
+  }
 } else {
   console.error(HELP);
   process.exit(1);

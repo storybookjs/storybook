@@ -53,10 +53,23 @@ describe('qa-plan.ts draft', () => {
   });
 
   it('refuses a plan in which a row was deleted by hand, whose draft would bring it back', () => {
-    const row = rendered.split('\n').find((line) => line.startsWith('| [#36153]'))!;
+    const row = rendered
+      .split('\n')
+      .find((line) => line.startsWith("| a change of this repository's CI"))!;
     const { status, stderr } = draft(rendered.replace(`${row}\n`, ''));
 
     expect(status).toBe(1);
     expect(stderr).toContain(`/dev/stdin is not the plan that render writes from ${WINDOW}.`);
+  });
+});
+
+describe('qa-plan.ts ledger', () => {
+  it('prints a row for each PR of the window, also one that the plan does not name', () => {
+    const window = new URL('./plan.fixture.window.json', import.meta.url).pathname;
+    const { status, stdout } = qaPlan(['ledger', '/dev/stdin', '--window', window], FIXTURE);
+
+    expect(status).toBe(0);
+    expect(stdout).toContain('| 36153 | qa:success | Addon A11y |');
+    expect(stdout.split('\n').filter((line) => /^\| \d/.test(line))).toHaveLength(10);
   });
 });

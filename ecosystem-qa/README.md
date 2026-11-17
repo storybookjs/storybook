@@ -142,20 +142,39 @@ node ecosystem-qa/qa-plan.ts check ecosystem-qa/plans/11.0.md --window ecosystem
 ```
 
 The draft is optional, and every key of it too: `entries`, `discovered`, `decisions` by PR number, `groups`, and `groupOf`, which puts a maintainer PR into a group by PR number.
-Without a draft, render writes a skeleton in which every row is undecided.
+Without a draft, render writes a skeleton in which every PR is undecided.
 The draft is not committed, so `draft` writes it again from a plan and its window, to change decisions or render the plan on a newer window, and exits 1 when render would not write that plan from that window:
 
 ```sh
 node ecosystem-qa/qa-plan.ts draft ecosystem-qa/plans/11.0.md --window ecosystem-qa/plans/11.0.window.json --out draft.json
 ```
 
-The plan has a table of its line, version and window, a section `## Changes to test` with one entry per change, and seven tables.
-"PRs that need QA" and "Undeclared PRs" give every PR a decision, the slugs of the entries that test it or `skip:` with the reason.
-A maintainer PR marked `qa:skip` that carries a product label belongs to a group in "Maintainer PRs marked qa:skip", and each group has a decision.
-"PRs verified by hand" and "PRs marked qa:skip" only record the rest of the window.
+The plan holds only what a person decides, in the order a reviewer reads it:
+
+| Section | One row for each | Columns |
+| --- | --- | --- |
+| Field table | field | Line, version, window start and end, entries per run |
+| `## Changes to test` | entry | Entry (slug and title), Batch, Repos, PRs (their count) |
+| `## PRs that need QA and are not tested` | reason | Reason, PRs |
+| `## Undeclared PRs that are not tested` | reason | Reason, PRs |
+| `## Groups of maintainer PRs marked qa:skip` | group | Group, Source, Decision, PRs |
+| `## Discovered repos` | repo | see below |
+| `## Steps` | entry | the block of lines below |
+
+A PR marked `qa:needed` or without a QA label is decided by its place: the PRs of one or more entries test it, or one row of the two tables of PRs that are not tested names its reason.
+A maintainer PR marked `qa:skip` that carries a product label is in the PRs of one group, and each group has a decision, the entries that test it or `skip:` with the reason.
+A row with an empty first cell holds the PRs that are not decided or not grouped yet.
+The PRs verified by hand and the other PRs marked `qa:skip` need no decision, so the plan does not list them.
+Render derives the overview of `## Changes to test` from the entries, so a reviewer reads it first and opens an entry under `## Steps` only when he doubts it.
 Every PR is a link to the PR, because GitHub links no bare `#36137` in a Markdown file.
 
-An entry is a block of lines:
+`ledger` prints where each PR of the window ended up, with its status, area, and title, for someone who looks one PR up. It is not committed:
+
+```sh
+node ecosystem-qa/qa-plan.ts ledger ecosystem-qa/plans/11.0.md --window ecosystem-qa/plans/11.0.window.json --out ledger.md
+```
+
+An entry under `## Steps` is a block of lines:
 
 ```markdown
 ### `story-sort-in-main` Story sort moves from the preview file to the main file
@@ -171,20 +190,22 @@ An entry is a block of lines:
 Its check id is `plan.` with the slug, and its batch decides when it runs: batch 1 first, and the batches are numbered without a gap.
 A repo with more entries in one batch than `Entries per run` runs them in several parts, in parallel.
 
-`check` accepts a file only when it equals what render would write for what it read, so a line that is not in the format fails at its line number.
+`check` accepts a file only when it equals what render would write for what it read, so a line that is not in the format, or an overview row that differs from its entry, fails at its line number.
 It then holds the plan against these rules and prints each problem as `<file>:<line>: <message>`:
 
-- Every slug, group, and discovered id is unique, every PR has one row in one table, and the version is on the plan's line.
+- Every slug, group, discovered id, and reason of a table is unique, every PR has at most one row in one table, and the version is on the plan's line.
 - Every text field is one line without an HTML comment, a control character, an invisible format character such as a zero width space or a byte order mark, or a line separator, because GitHub shows none of them to the reviewer.
 - The Storybook directory of a discovered repo is a relative path inside the repository, without `..` or a leading `/`.
 - Every repo of an entry is a catalog id or a discovered repo, and a discovered repo never takes a catalog id.
 - No repo of an entry is more than one major behind the plan's line, by the `tags` of its catalog entry or the major of its discovered row.
-- Every PR of an entry has a row that names the entry, or a row in a group whose decision names it, every row has a decision, and every decision names entries that exist. An entry lists every PR whose row in "PRs that need QA" or "Undeclared PRs" names it; a PR of a group may stay out of the entries its group names.
+- A PR of an entry has no row of PRs that are not tested, and when it is in a group, the decision of that group names the entry. A PR of a group may stay out of the entries its group names.
+- Every row of PRs that are not tested has a reason, every maintainer PR is in a group, every group has a decision, and every decision names entries that exist.
 - The batches are numbered from 1 without a gap.
-- Every maintainer PR marked `qa:skip` with a product label names a group, and every group has a decision.
 - The file holds no link to `linear.app`, `notion.so`, `notion.site`, `notion.com`, or a `slack.com` host.
 - No entry title, repo reason, step, or expected outcome holds a URL with a scheme whose host is other than `localhost`, `127.0.0.1`, or `[::1]`, because the runner prints all four into the agent's prompt. `check` takes every URL that starts with a scheme, also one glued to other text such as `see:http://example.com` or `-xhttp://example.com`, apart with Node's URL parser, and refuses it when the host is another one or when the parser cannot read it: `https://example.com`, `http:/example.com`, `http://localhost;.example.com`, and `http://localhost].example.com` are refused. It reads a backslash once as the parser does, as a slash, and once as curl does, as a character, so `http://localhost\@example.com` is refused too. It does not look for a host without a scheme, such as `example.com/x` or `//example.com`. A scheme glued to letters before it takes them in, so `-xhttp:/example.com` has the scheme `xhttp`, which the parser does not know, and no host, and passes. The check is one layer of four: the reviewer reads every plan before it is merged, the prompt of a plan run forbids every URL other than `localhost`, and the browser tool of the sandbox image blocks direct requests to another host, although it follows a redirect and lets a WebSocket through.
-- With `--window`, the tables hold exactly the PRs of the window, with their titles and areas.
+- With `--window`, every PR of the window marked `qa:needed` or without a QA label is in the PRs of an entry or in one row of its own table of PRs that are not tested, every maintainer PR marked `qa:skip` with a product label is in one group, and the plan names no PR that the window does not hold in that role.
+
+`render` refuses a draft whose decision of a PR names other entries than the ones that list it, or skips a PR that an entry lists, because the file decides a PR by its place and cannot hold both.
 
 A plan that passes prints its hash, which names the cycle, its batches with their runs, and about what it costs, priced at the most expensive static run so far.
 A run of plan entries can cost more than that.

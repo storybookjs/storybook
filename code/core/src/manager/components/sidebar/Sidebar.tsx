@@ -26,17 +26,20 @@ import { Search } from './Search.tsx';
 import { SearchResults } from './SearchResults.tsx';
 import { ShowChangesButton } from './ShowChangesButton.tsx';
 import { SidebarBottom } from './SidebarBottom.tsx';
+import { SCROLLBAR_GUTTER, SidebarScrollArea } from './SidebarScrollArea.tsx';
 import type { CombinedDataset, Selection } from './types.ts';
 import { useLastViewed } from './useLastViewed.ts';
 
 export const DEFAULT_REF_ID = 'storybook_internal';
 
-const SearchResultsContainer = styled.div({
-  overflowY: 'auto',
+const ScrollRegion = styled.div({
   flex: '1 1 auto',
   minHeight: 0,
-  // Reserve room under sidebar to match the height of the TestProvider.
-  paddingBottom: 'var(--sidebar-bottom-height, 0px)',
+  display: 'flex',
+  flexDirection: 'column',
+  // Reach into the end padding, so that the scrollbar sits by the sidebar's edge while the
+  // content, which leaves the gutter free, ends in line with the search field.
+  marginInlineEnd: -SCROLLBAR_GUTTER,
 });
 
 const Container = styled.header(({ theme }) => ({
@@ -194,7 +197,7 @@ export const Sidebar = React.memo(function Sidebar({
             getItemProps,
             highlightedIndex,
           }) => (
-            <>
+            <ScrollRegion>
               {
                 <Explorer
                   dataset={dataset}
@@ -208,7 +211,7 @@ export const Sidebar = React.memo(function Sidebar({
               {isSearchResultRendered && (
                 // The search results need their own scroll container. The sidebar has no outer
                 // scroller.
-                <SearchResultsContainer>
+                <SidebarScrollArea data-testid="search-results-scroll-area">
                   <SearchResults
                     query={query}
                     results={results}
@@ -220,9 +223,9 @@ export const Sidebar = React.memo(function Sidebar({
                     isLoading={isLoading}
                     clearLastViewed={lastViewedProps.clearLastViewed}
                   />
-                </SearchResultsContainer>
+                </SidebarScrollArea>
               )}
-            </>
+            </ScrollRegion>
           )}
         </Search>
       </Stack>

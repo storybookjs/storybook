@@ -21,11 +21,22 @@ import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants.ts';
  */
 export const ScrollAreaContext = createContext<RefObject<HTMLDivElement | null> | null>(null);
 
+const SCROLLBAR_WIDTH = 6;
+
+// Room the content leaves at the end edge for the scrollbar, whether the browser lays the
+// scrollbar out beside the content or draws it over the content.
+export const SCROLLBAR_GUTTER = SCROLLBAR_WIDTH + 3;
+
 const Scroller = styled.div(({ theme }) => ({
   flex: '1 1 auto',
   minHeight: 0,
   overflowY: 'auto',
   overflowX: 'hidden',
+  // One column sized against the frame rather than the scroller, so that the content ends at the
+  // same place whether or not the scrollbar takes width from the scroller.
+  display: 'grid',
+  gridTemplateColumns: `min(100%, 100cqw - ${SCROLLBAR_GUTTER}px)`,
+  alignContent: 'start',
   // Reserve room under the floating sidebar-bottom widget (its measured height, published as a
   // CSS variable) so the last rows can scroll clear of it. 0 when no widget is mounted.
   paddingBottom: 'var(--sidebar-bottom-height, 0px)',
@@ -45,11 +56,11 @@ const Scroller = styled.div(({ theme }) => ({
     scrollbarColor: 'var(--scrollbar-thumb) transparent',
   },
   '&::-webkit-scrollbar': {
-    width: 6,
+    width: SCROLLBAR_WIDTH,
     background: 'transparent',
   },
   '&::-webkit-scrollbar-thumb': {
-    borderRadius: 6,
+    borderRadius: SCROLLBAR_WIDTH,
     backgroundColor: 'var(--scrollbar-thumb)',
   },
   '&::-webkit-scrollbar-thumb:hover': {
@@ -63,6 +74,7 @@ const Frame = styled.div(({ theme }) => ({
   minHeight: 0,
   display: 'flex',
   flexDirection: 'column',
+  containerType: 'inline-size',
   // The opaque backing of a sticky row, and the colour the fade below resolves to.
   '--sticky-row-background': theme.background.content,
   [MEDIA_DESKTOP_BREAKPOINT]: {
@@ -87,8 +99,14 @@ const SCROLLBAR_FADE_DURATION = 200;
 // The shown thumb is the muted text color at half opacity, like the shared ScrollArea thumb.
 const SCROLLBAR_THUMB_ALPHA = 0.5;
 
-/** Wraps the tree blocks in the sidebar's one scroll area and shares it with them. */
-export function SidebarScrollArea({ children, ...props }: { children: ReactNode }) {
+/** Wraps sidebar content in a scroll area, and shares that area with the trees inside. */
+export function SidebarScrollArea({
+  children,
+  ...props
+}: {
+  children: ReactNode;
+  'data-testid'?: string;
+}) {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const isPointerOver = useRef(false);
   const isFocusWithin = useRef(false);

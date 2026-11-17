@@ -107,6 +107,30 @@ describe('Panel container', () => {
     expect(tabTitles()).toContain('Flagged');
   });
 
+  // The Controls panel, and third-party panels like it, read the current story through the API
+  // in their render function rather than through a hook. They see a prepared story only because
+  // the container re-renders every panel on STORY_PREPARED.
+  it('re-renders every panel when a story is prepared', () => {
+    const storyReadingPanel = {
+      title: 'Story',
+      render: () => (
+        <output>
+          {(mocks.getCurrentStoryData() as { id?: string } | undefined)?.id ?? 'none'}
+        </output>
+      ),
+    };
+    mocks.getElements.mockReturnValue({ 'storybook/internal/story': storyReadingPanel });
+    renderPanel();
+
+    expect(screen.getByRole('status').textContent).toBe('none');
+
+    prepareStory({ type: 'story', id: 'first', parameters: {} });
+    expect(screen.getByRole('status').textContent).toBe('first');
+
+    prepareStory({ type: 'story', id: 'second', parameters: {} });
+    expect(screen.getByRole('status').textContent).toBe('second');
+  });
+
   it('keeps statically disabled panels hidden before and after a story is prepared', () => {
     renderPanel();
 

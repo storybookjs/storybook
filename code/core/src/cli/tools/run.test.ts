@@ -603,9 +603,24 @@ Run \`npx storybook tools docs show --help\` for the expected arguments.`);
   });
 
   it('rejects any flag for a tool that takes no arguments', async () => {
+    clearToolsetRegistry();
+    registerToolset(
+      defineToolset({
+        id: 'echo',
+        description: 'Echo tools.',
+        methods: {
+          ping: {
+            title: 'Ping',
+            description: 'Takes no arguments.',
+            input: v.strictObject({}),
+            handler: async () => ({ ok: true as const, data: {}, markdown: 'pong' }),
+          },
+        },
+      })
+    );
     const { deps } = makeDeps();
 
-    const result = await run(['stories', 'changed', '--verbose'], deps);
+    const result = await run(['echo', 'ping', '--verbose'], deps);
 
     expect(result.outcome).toEqual({ kind: 'intercept', reason: 'invalid-arguments' });
     expect(result.output).toContain('- Unknown flag `--verbose`.');
@@ -773,6 +788,17 @@ describe('outcome mapping', () => {
               return { ok: true, data: {}, markdown: 'result' };
             },
           },
+          files: {
+            title: 'files',
+            input: v.strictObject({ files: v.optional(v.array(v.string())) }),
+            description: 'file echo',
+            positional: 'files',
+            handler: async (input: { files?: string[] }) => ({
+              ok: true,
+              data: input,
+              markdown: JSON.stringify(input),
+            }),
+          },
           input: {
             title: 'input',
             input: v.strictObject({ a: v.optional(v.number()), b: v.optional(v.number()) }),
@@ -876,6 +902,67 @@ describe('outcome mapping', () => {
     );
 
     expect(JSON.parse(result.output)).toEqual({ a: 1, b: 2 });
+  });
+
+  describe('positional arguments', () => {
+    it('passes bare arguments as the positional key, as typed', async () => {
+      const { deps } = makeDeps();
+
+      // This test file exists, and still reaches the tool as the relative path that was typed.
+      const result = await run(
+        ['echo', 'files', 'src/cli/tools/run.test.ts', './Button/', 'Button', '--json'],
+        deps
+      );
+
+      expect(result.exitCode).toBe(0);
+      expect(JSON.parse(result.output)).toEqual({
+        files: ['src/cli/tools/run.test.ts', './Button/', 'Button'],
+      });
+    });
+
+    it('appends bare arguments to the values given with the flag', async () => {
+      const { deps } = makeDeps();
+
+      const result = await run(
+        ['echo', 'files', '--files', '["/abs/A.tsx"]', '--json', '--', 'B.tsx'],
+        deps
+      );
+
+      expect(JSON.parse(result.output)).toEqual({ files: ['/abs/A.tsx', 'B.tsx'] });
+    });
+
+    it('reads a single flag value as a list of one, as it reads one bare argument', async () => {
+      const { deps } = makeDeps();
+
+      const result = await run(['echo', 'files', '--files', 'A.tsx', '--json'], deps);
+
+      expect(JSON.parse(result.output)).toEqual({ files: ['A.tsx'] });
+    });
+
+    it('rejects bare arguments for a tool without a positional key, without calling it', async () => {
+      const { deps } = makeDeps();
+
+      const result = await run(['echo', 'input', 'button'], deps);
+
+      expect(result).toMatchObject({
+        exitCode: 1,
+        outcome: { kind: 'intercept', reason: 'invalid-arguments' },
+      });
+      expect(result.output).toContain(
+        'Unexpected argument `button`. `npx storybook tools echo input` takes no bare arguments'
+      );
+    });
+
+    it('shows the positional key in the tool help', async () => {
+      const { deps } = makeDeps();
+
+      const result = await run(['echo', 'files', '--help'], deps);
+
+      expect(result.output).toContain(
+        'Usage: npx storybook tools echo files [files...] [--key value ...]'
+      );
+      expect(result.output).toContain('Bare arguments are `--files` values.');
+    });
   });
 });
 

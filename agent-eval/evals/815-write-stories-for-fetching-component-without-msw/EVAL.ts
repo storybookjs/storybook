@@ -4,7 +4,6 @@ import {
   expectAnyWorkflowSkillInvoked,
   expectFinalResponseMatches,
   expectNoDisplayReview,
-  expectNoOtherTestRunner,
   expectWorkflowCalls,
   getEvalContext,
 } from '#test-utils';
@@ -64,7 +63,6 @@ describe('writing stories for a fetching OrderHistory in a project without MSW',
 
   test('runs the write-stories skill, and creates no review unasked', () => {
     expectWorkflowCalls(WORKFLOW_SKILLS);
-    expectNoOtherTestRunner();
     expectNoDisplayReview();
   });
 

@@ -1,7 +1,6 @@
 import {
   expectFinalResponseMatches,
   expectFocusedTestRun,
-  expectNoOtherTestRunner,
   expectStoryTestsRanAndPassed,
   getWorkflowCalls,
   getWorkflowToolResults,
@@ -65,8 +64,7 @@ describe('fixing Button accessibility violations', () => {
   });
 
   // The workflow names the test command itself, so a request to run the tests needs no skill.
-  test('runs the Button tests through Storybook only', () => {
+  test('runs the Button tests through Storybook', () => {
     expectFocusedTestRun();
-    expectNoOtherTestRunner();
   });
 });

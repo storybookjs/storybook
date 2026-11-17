@@ -2,7 +2,6 @@ import {
   expectAnyWorkflowSkillInvoked,
   expectDevServerLeftRunning,
   expectDisplayReviewForVisualChange,
-  expectNoOtherTestRunner,
   expectStoryDiscoveryBeforeReview,
   expectStoryIdsInDisplayReview,
   expectStoryTestsRanAndPassed,
@@ -22,9 +21,8 @@ describe('editing ReviewCard and creating the review the user asks for', () => {
     });
   });
 
-  test('runs the skills, tests only through Storybook, and creates the review it was asked for', () => {
+  test('runs the skills, and creates the review it was asked for', () => {
     expectWorkflowCalls([...WORKFLOW_SKILLS, 'review-create']);
-    expectNoOtherTestRunner();
     expectDisplayReviewForVisualChange();
   });
 

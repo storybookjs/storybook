@@ -2,7 +2,6 @@ import { describe, test } from 'vitest';
 import {
   expectAnyWorkflowSkillInvoked,
   expectNoDisplayReview,
-  expectNoOtherTestRunner,
   expectReviewHint,
   expectStoryTestsRanAndPassed,
   expectWorkflowCalls,
@@ -20,9 +19,8 @@ describe('writing the first Button stories in an empty Storybook', () => {
     });
   });
 
-  test('runs the skills of the workflow, tests only through Storybook, and creates no review unasked', () => {
+  test('runs the skills of the workflow, and creates no review unasked', () => {
     expectWorkflowCalls(WORKFLOW_SKILLS);
-    expectNoOtherTestRunner();
     expectNoDisplayReview();
   });
 

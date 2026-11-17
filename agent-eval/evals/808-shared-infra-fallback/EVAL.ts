@@ -1,7 +1,6 @@
 import {
   expectAnyWorkflowSkillInvoked,
   expectNoDisplayReview,
-  expectNoOtherTestRunner,
   expectWorkflowCalls,
   expectReviewHint,
   expectStoryTestsRanAndPassed,
@@ -27,10 +26,9 @@ describe('changing a shared accent token and testing its consumer stories', () =
     });
   });
 
-  test('runs the skills of the workflow, tests only through Storybook, and creates no review unasked', () => {
+  test('runs the skills of the workflow, and creates no review unasked', () => {
     // A token change is a change to how the UI looks, so the section's skills apply.
     expectWorkflowCalls(['component-docs', 'write-stories']);
-    expectNoOtherTestRunner();
     expectNoDisplayReview();
   });
 

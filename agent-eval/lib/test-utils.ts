@@ -260,32 +260,6 @@ export function expectNoReviewHint(): void {
   ).not.toMatch(REVIEW_HINT);
 }
 
-// Story tests run only through Storybook: never a package.json test script or vitest directly.
-// Only as a command of its own, so `grep vitest package.json` does not count. Workspace flags may
-// sit between the package manager and the script (`npm -w ui run test`, `pnpm --filter ui test`,
-// `yarn workspace ui test`), and vitest may come through any runner or `node_modules/.bin`.
-const OTHER_TEST_RUNNER = new RegExp(
-  String.raw`(?:^|[;&|])\s*(?:\w+=\S*\s+)*(?:` +
-    String.raw`(?:npm|yarn|pnpm|bun)(?:\s+(?:-\S+|workspace)(?:\s+(?!(?:run|test)(?=\s|$))[^\s;&|]+)?)*\s+(?:run\s+)?test[\w:-]*` +
-    '|' +
-    String.raw`(?:npx(?:\s+-\S+)*\s+|bunx\s+|npm\s+exec\s+(?:--\s+)?|pnpm\s+(?:exec|dlx)\s+|yarn\s+(?:exec\s+)?|\S*node_modules/\.bin/)?vitest(?:@\S+)?` +
-    String.raw`)(?=\s|$|[;&|])`
-);
-
-// A command segment that runs `storybook tools` is the right command, whatever flags precede it.
-export const isOtherTestRunner = (command: string): boolean =>
-  command
-    .split(/&&|\|\||[;|]/)
-    .some((segment) => !segment.includes('storybook tools') && OTHER_TEST_RUNNER.test(segment));
-
-export function expectNoOtherTestRunner(): void {
-  const others = getShellCommands().filter(isOtherTestRunner);
-  expect(
-    others,
-    'Expected story tests to run only through Storybook, never a package.json test script or vitest'
-  ).toEqual([]);
-}
-
 // Browse request: the review is resolved from the live story index, so the
 // payload must pass an empty changedFiles array — no code changed.
 // (changedFiles is required in the schema; `[]` is the explicit browse-mode

@@ -1,5 +1,5 @@
 import { rmSync } from 'node:fs';
-import { join } from 'node:path';
+import { join } from 'pathe';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -69,27 +69,35 @@ const baseOptions: UpgradeOptions = {
 const useProjects = (...projects: CollectProjectsSuccessResult[]) =>
   vi.mocked(getProjects).mockResolvedValue({ allProjects: projects, selectedProjects: projects });
 
+// Shared setup for the suites below: reset mocks and give every external mock a safe
+// default, so each suite only overrides what it exercises. `rmSync` is stubbed to a
+// no-op so tests never delete the real cache directory under this working tree.
+beforeEach(() => {
+  vi.clearAllMocks();
+  useProjects(project('/repo/a/.storybook'));
+  vi.mocked(runAutomigrations).mockResolvedValue({
+    automigrationResults: {},
+    detectedAutomigrations: [],
+  });
+  vi.mocked(runMultiProjectDoctor).mockResolvedValue({});
+  vi.mocked(displayDoctorResults).mockReturnValue(false);
+  vi.mocked(isCI).mockReturnValue(false);
+  for (const method of ['info', 'step', 'log', 'warn', 'debug'] as const) {
+    vi.mocked(logger[method]).mockImplementation(() => {});
+  }
+  vi.mocked(prompt.taskLog).mockReturnValue({
+    message: vi.fn(),
+    success: vi.fn(),
+    error: vi.fn(),
+  } as unknown as ReturnType<typeof prompt.taskLog>);
+  vi.mocked(hasStorybookSkills).mockResolvedValue(true);
+  vi.mocked(installSkills).mockResolvedValue({ result: 'installed', source: 'refresh' });
+  vi.mocked(rmSync).mockImplementation(() => {});
+});
+
 describe('upgrade: refreshing the skills', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
     useProjects(project('/repo/a/.storybook'), project('/repo/b/.storybook'));
-    vi.mocked(runAutomigrations).mockResolvedValue({
-      automigrationResults: {},
-      detectedAutomigrations: [],
-    });
-    vi.mocked(runMultiProjectDoctor).mockResolvedValue({});
-    vi.mocked(displayDoctorResults).mockReturnValue(false);
-    vi.mocked(isCI).mockReturnValue(false);
-    for (const method of ['info', 'step', 'log', 'warn', 'debug'] as const) {
-      vi.mocked(logger[method]).mockImplementation(() => {});
-    }
-    vi.mocked(prompt.taskLog).mockReturnValue({
-      message: vi.fn(),
-      success: vi.fn(),
-      error: vi.fn(),
-    } as unknown as ReturnType<typeof prompt.taskLog>);
-    vi.mocked(hasStorybookSkills).mockResolvedValue(true);
-    vi.mocked(installSkills).mockResolvedValue({ result: 'installed', source: 'refresh' });
   });
 
   const skillsInUpgradeEvents = () =>
@@ -184,28 +192,6 @@ describe('upgrade: refreshing the skills', () => {
 
 describe('upgrade: cache directory cleanup', () => {
   const storybookCacheDirectory = join(process.cwd(), 'node_modules', '.cache', 'storybook');
-
-  beforeEach(() => {
-    vi.clearAllMocks();
-    useProjects(project('/repo/a/.storybook'));
-    vi.mocked(runAutomigrations).mockResolvedValue({
-      automigrationResults: {},
-      detectedAutomigrations: [],
-    });
-    vi.mocked(runMultiProjectDoctor).mockResolvedValue({});
-    vi.mocked(displayDoctorResults).mockReturnValue(false);
-    vi.mocked(isCI).mockReturnValue(false);
-    for (const method of ['info', 'step', 'log', 'warn', 'debug'] as const) {
-      vi.mocked(logger[method]).mockImplementation(() => {});
-    }
-    vi.mocked(prompt.taskLog).mockReturnValue({
-      message: vi.fn(),
-      success: vi.fn(),
-      error: vi.fn(),
-    } as unknown as ReturnType<typeof prompt.taskLog>);
-    vi.mocked(hasStorybookSkills).mockResolvedValue(true);
-    vi.mocked(installSkills).mockResolvedValue({ result: 'installed', source: 'refresh' });
-  });
 
   it('removes the Storybook cache directory on upgrade', async () => {
     await upgrade(baseOptions);

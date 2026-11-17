@@ -170,6 +170,7 @@ A decision is one of three kinds:
 | It needs no QA | a row of `## PRs that need no QA` | `none: <reason>` | `{ "none": "<reason>" }` |
 
 A PR marked `qa:needed` or without a QA label is decided by its place: the PRs of one or more entries test it, or one row of one of the two tables names its manual check or its reason.
+A PR that the entries test only in part is in their PRs and in one row of manual QA, whose check covers the rest; in the draft its decision is the manual one.
 Both tables hold both kinds of PR.
 A manual check is for a change that a person has to test because the sweep cannot, such as a fix that only Windows shows, a change of `storybook init`, a Yarn 1 project, a browser's profiler, or a need that no repo of the catalog has.
 It is an instruction that a person can follow without the PR open: the environment it needs, what to do, and what has to be seen.
@@ -230,7 +231,7 @@ It then holds the plan against these rules and prints each problem as `<file>:<l
 - The Storybook directory of a discovered repo is a relative path inside the repository, without `..` or a leading `/`.
 - Every repo of an entry is a catalog id or a discovered repo, and a discovered repo never takes a catalog id.
 - No repo of an entry is more than one major behind the plan's line, by the `tags` of its catalog entry or the major of its discovered row.
-- A PR of an entry has no row of manual QA or of no QA, and when it is in a group, the decision of that group names the entry. A PR of a group may stay out of the entries its group names.
+- A PR of an entry has no row of no QA and no row without a decision, and when it is in a group, the decision of that group names the entry. It may have one row of manual QA for the part that no entry tests. A PR of a group may stay out of the entries its group names.
 - Every row of manual QA has a check and a reason why the sweep cannot test it, every row of no QA has a reason, every core team PR is in a group, every group has a decision, and every decision names entries that exist. A cell that still says `skip:` is refused.
 - A manual check and its reason name no person, PR, or issue outside a code span, because the checklist of `manual` goes into an issue, where `@name` notifies a person and `#123` posts on a PR, and because a check that points to a PR cannot be followed without that PR open.
 - The batches are numbered from 1 without a gap.
@@ -238,7 +239,8 @@ It then holds the plan against these rules and prints each problem as `<file>:<l
 - No entry title, repo reason, step, expected outcome, manual check, reason of a manual check, or reason of no QA holds a URL with a scheme whose host is other than `localhost`, `127.0.0.1`, or `[::1]`. The runner prints the first four into the agent's prompt, and the others are read by the person who follows them. `check` takes every URL that starts with a scheme, also one glued to other text such as `see:http://example.com` or `-xhttp://example.com`, apart with Node's URL parser, and refuses it when the host is another one or when the parser cannot read it: `https://example.com`, `http:/example.com`, `http://localhost;.example.com`, and `http://localhost].example.com` are refused. It reads a backslash once as the parser does, as a slash, and once as curl does, as a character, so `http://localhost\@example.com` is refused too. It does not look for a host without a scheme, such as `example.com/x` or `//example.com`. A scheme glued to letters before it takes them in, so `-xhttp:/example.com` has the scheme `xhttp`, which the parser does not know, and no host, and passes. The check is one layer of four: the reviewer reads every plan before it is merged, the prompt of a plan run forbids every URL other than `localhost`, and the browser tool of the sandbox image blocks direct requests to another host, although it follows a redirect and lets a WebSocket through.
 - With `--window`, every PR of the window marked `qa:needed` or without a QA label is in the PRs of an entry or in one row of manual QA or of no QA, every core team PR marked `qa:skip` is in one group, and the plan names no PR that the window does not hold in that role.
 
-`render` refuses a draft whose decision of a PR names other entries than the ones that list it, or gives manual QA or no QA to a PR that an entry lists, because the file decides a PR by its place and cannot hold both.
+`render` refuses a draft whose decision of a PR names other entries than the ones that list it, or gives no QA to a PR that an entry lists, because the file decides a PR by its place and cannot hold both.
+A manual decision of a PR that an entry lists puts the PR into that entry and into the row of its check.
 
 A plan that passes prints its hash, which names the cycle, its batches with their runs, and about what it costs, priced at the most expensive static run so far.
 A run of plan entries can cost more than that.

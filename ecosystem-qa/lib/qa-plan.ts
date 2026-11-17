@@ -670,8 +670,9 @@ const namesAreUnique: Rule = ({ plan, at }) => [
   ),
 ];
 
-// A PR is tested by entries or has one row, never both, except that a core team PR keeps its row
-// in a group, whose decision then names every entry that lists the PR.
+// A PR has at most one row. An entry that tests a PR leaves it no row of no QA, but a row of manual
+// QA for the part that no entry tests, and a core team PR keeps its row in a group, whose decision
+// then names every entry that lists the PR.
 const prsHaveOnePlace: Rule = ({ plan, at }) =>
   [...placesOf(plan, at)].flatMap(([pr, places]) => {
     const rows = places.filter((place) => place.kind !== 'entry');
@@ -682,7 +683,7 @@ const prsHaveOnePlace: Rule = ({ plan, at }) =>
         message: `#${pr} has a row already, at line ${row!.line}`,
       })),
       ...places.flatMap((place) => {
-        if (place.kind !== 'entry' || !row) {
+        if (place.kind !== 'entry' || !row || (row.kind === 'manual' && row.row.check !== null)) {
           return [];
         }
         if (row.kind !== 'group') {
@@ -1225,10 +1226,12 @@ export const planFromWindow = (window: Window, draft: PlanDraft): Plan => {
       .map((pr) => `The draft decides #${pr}, which is no needed or undeclared PR of the window.`),
     ...Object.entries(draft.decisions).flatMap(([pr, decision]) => {
       const slugs = testedBy(Number(pr));
-      if (!('entries' in decision)) {
-        const kind = 'manual' in decision ? 'manual QA' : 'no QA';
+      if ('manual' in decision) {
+        return [];
+      }
+      if ('none' in decision) {
         return slugs.length
-          ? [`The draft gives #${pr} ${kind}, and the entries ${slugList(slugs)} list it.`]
+          ? [`The draft gives #${pr} no QA, and the entries ${slugList(slugs)} list it.`]
           : [];
       }
       const same =
@@ -1261,7 +1264,7 @@ export const planFromWindow = (window: Window, draft: PlanDraft): Plan => {
   const add = <Row extends { prs: number[] }>(rows: Map<string, Row>, key: string, row: Row) =>
     rows.set(key, { ...row, prs: [...(rows.get(key)?.prs ?? []), ...row.prs] });
   for (const pr of window.prs) {
-    if (!needsDecision(pr.status) || testedBy(pr.number).length > 0) {
+    if (!needsDecision(pr.status)) {
       continue;
     }
     const decision = draft.decisions[pr.number];
@@ -1270,7 +1273,7 @@ export const planFromWindow = (window: Window, draft: PlanDraft): Plan => {
     } else if (decision && 'manual' in decision) {
       const { manual: check, why } = decision;
       add(manual, JSON.stringify([check, why]), { check, why, prs: [pr.number] });
-    } else {
+    } else if (testedBy(pr.number).length === 0) {
       add(manual, '', { check: null, why: null, prs: [pr.number] });
     }
   }

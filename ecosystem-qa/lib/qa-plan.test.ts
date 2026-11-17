@@ -234,11 +234,11 @@ describe('checkPlanText', () => {
       '#36664 is tested by `preview-animations`, so it has no row in "PRs that need no QA"',
     ],
     [
-      'an entry PR that has a row of manual QA too',
-      `- PRs: ${pr(31900)}`,
-      `- PRs: ${pr(31900)}, ${pr(37344)}`,
+      'a PR in two rows of manual QA',
       `| ${pr(37344)} |`,
-      '#37344 is tested by `preview-animations`, so it has no row in "PRs that need manual QA"',
+      `| ${pr(37344)} |\n| ${GROUP_CHECK} | ${WINDOWS_WHY} | ${pr(37344)} |`,
+      `| ${GROUP_CHECK} |`,
+      '#37344 has a row already',
     ],
     ['a PR without its link', `| ${pr(36664)} |`, '| #36664 |', '| #36664 |', 'expected a PR like'],
     [
@@ -541,6 +541,24 @@ describe('checkPlanText', () => {
     expect(problemsOf(text)).toContainEqual({
       line: lineOf(text, lineNeedle),
       message: expect.stringContaining(message),
+    });
+  });
+
+  const testedInPart = edited(`- PRs: ${pr(31900)}`, `- PRs: ${pr(31900)}, ${pr(37344)}`);
+
+  it('accepts a PR that an entry tests in part and a row of manual QA holds for the rest', () => {
+    expect(problemsOf(testedInPart, { window: WINDOW })).toEqual([]);
+  });
+
+  it('refuses an entry PR in the row of PRs without a decision', () => {
+    const text = rendered(
+      replaced(testedInPart, `| ${WINDOWS_CHECK} | ${WINDOWS_WHY} |`, '|  |  |')
+    );
+
+    expect(problemsOf(text)).toContainEqual({
+      line: lineOf(text, `|  |  | ${pr(37344)} |`),
+      message:
+        '#37344 is tested by `preview-animations`, so it has no row in "PRs that need manual QA"',
     });
   });
 
@@ -868,10 +886,13 @@ describe('draftOfPlan', () => {
   undecided.manual = [{ check: null, why: null, prs: [37344] }];
   const [ui, tooling, windows] = undecided.groups;
   undecided.groups = [ui!, { ...tooling!, prs: [] }, windows!, { slug: null, prs: tooling!.prs }];
+  const testedInPart = structuredClone(plan);
+  testedInPart.entries[1]!.prs.push(37344);
 
   it.each([
     ['a finished plan', plan],
     ['a plan with an undecided row and an ungrouped PR', undecided],
+    ['a plan with a PR that an entry tests in part and a row of manual QA holds', testedInPart],
   ])('gives for %s the JSON draft from which render writes it again', (_, it) => {
     const draft = PlanDraft.parse(JSON.parse(JSON.stringify(draftOfPlan(it))));
 
@@ -994,15 +1015,23 @@ describe('planFromWindow', () => {
       { entries: [entry], decisions: { '1': { none: 'no' } } },
       'gives #1 no QA, and the entries `sidebar` list it',
     ],
-    [
-      'gives manual QA to a PR that an entry lists',
-      { entries: [entry], decisions: { '1': { manual: 'Open it.', why: 'only Windows' } } },
-      'gives #1 manual QA, and the entries `sidebar` list it',
-    ],
   ])('refuses a draft that %s', (_, draft, message) => {
     expect(() => planFromWindow(windowOf([needed, grouped]), PlanDraft.parse(draft))).toThrow(
       message
     );
+  });
+
+  it('puts a PR that an entry tests in part into the entry and into its row of manual QA', () => {
+    const manual = { manual: 'On Windows 11, open the sidebar.', why: 'only Windows' };
+    const window = windowOf([needed]);
+    const plan = planFromWindow(
+      window,
+      PlanDraft.parse({ entries: [entry], decisions: { '1': manual } })
+    );
+
+    expect(plan.entries[0]!.prs).toEqual([1]);
+    expect(plan.manual).toEqual([{ check: manual.manual, why: manual.why, prs: [1] }]);
+    expect(problemsOf(renderPlan(plan), { window })).toEqual([]);
   });
 
   it('puts a PR whose issue belongs to a tracking issue with QA steps into its group', () => {

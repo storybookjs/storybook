@@ -151,6 +151,7 @@ The draft has five keys, all optional:
 
 - `entries` are the changes to test. A slug is lower case letters, digits, and hyphens. `prs` lists every PR whose decision names the entry, which `render` enforces, and the PRs of a group that the entry shows; a PR of a group that the entry does not show, such as one that adds tests, stays out of `prs`. Every text field is one line, without an HTML comment, a control character, or an invisible format character.
 - `decisions` maps a PR number to `{ "entries": [<slugs>] }`, `{ "manual": "<check>", "why": "<why the sweep cannot test it>" }`, or `{ "none": "<reason>" }`.
+  When an entry tests only part of a PR, list the PR in the entry's `prs` and give it the manual decision, whose check covers the part that no entry tests.
 - `groups` holds every group with its decision, in the same three forms. In the plan a group's manual decision reads `manual: <check> Why: <why>`, so a check never holds ` Why: `. Add the groups that `render` made from a tracking issue under their slug `issue-<number>`, with their decision.
 - `groupOf` maps each core team PR to its group, except the PRs that `render` grouped by a tracking issue.
 - `discovered` holds the repos of step 5.
@@ -201,7 +202,7 @@ node ecosystem-qa/qa-plan.ts render --window /tmp/qa-plan-11.0/window.json --dra
 node ecosystem-qa/qa-plan.ts check /tmp/qa-plan-11.0/11.0.md --window /tmp/qa-plan-11.0/window.json
 ```
 
-`render` fails when the draft decides or groups a PR that the window does not hold in that role, when a decision names other entries than the ones whose `prs` list the PR, and when it gives manual QA or no QA to a PR that an entry lists.
+`render` fails when the draft decides or groups a PR that the window does not hold in that role, when a decision names other entries than the ones whose `prs` list the PR, and when it gives no QA to a PR that an entry lists.
 `check` prints each problem as `<file>:<line>: <message>`, one for the row of PRs still undecided and one for the row of core team PRs without a group, so render and check early with a partial draft to see what is left.
 Fix the draft, never the rendered file, and render again until `check` exits 0.
 Run no formatter on the plan file: `check` refuses every byte that differs from what `render` writes.

@@ -1,3 +1,6 @@
+import { rmSync } from 'node:fs';
+import { join } from 'node:path';
+
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { hasStorybookSkills, installSkills } from 'storybook/internal/cli';
@@ -14,6 +17,7 @@ import { type CollectProjectsSuccessResult, getProjects } from './util.ts';
 vi.mock('storybook/internal/cli', { spy: true });
 vi.mock('storybook/internal/telemetry');
 vi.mock('storybook/internal/node-logger', { spy: true });
+vi.mock('node:fs', { spy: true });
 vi.mock('./automigrate/multi-project.ts', { spy: true });
 vi.mock('./doctor/index.ts', { spy: true });
 vi.mock('./util.ts', { spy: true });
@@ -175,5 +179,55 @@ describe('upgrade: refreshing the skills', () => {
     await upgrade({ ...baseOptions, dryRun: true });
 
     expect(installSkills).not.toHaveBeenCalled();
+  });
+});
+
+describe('upgrade: cache directory cleanup', () => {
+  const storybookCacheDirectory = join(process.cwd(), 'node_modules', '.cache', 'storybook');
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    useProjects(project('/repo/a/.storybook'));
+    vi.mocked(runAutomigrations).mockResolvedValue({
+      automigrationResults: {},
+      detectedAutomigrations: [],
+    });
+    vi.mocked(runMultiProjectDoctor).mockResolvedValue({});
+    vi.mocked(displayDoctorResults).mockReturnValue(false);
+    vi.mocked(isCI).mockReturnValue(false);
+    for (const method of ['info', 'step', 'log', 'warn', 'debug'] as const) {
+      vi.mocked(logger[method]).mockImplementation(() => {});
+    }
+    vi.mocked(prompt.taskLog).mockReturnValue({
+      message: vi.fn(),
+      success: vi.fn(),
+      error: vi.fn(),
+    } as unknown as ReturnType<typeof prompt.taskLog>);
+    vi.mocked(hasStorybookSkills).mockResolvedValue(true);
+    vi.mocked(installSkills).mockResolvedValue({ result: 'installed', source: 'refresh' });
+  });
+
+  it('removes the Storybook cache directory on upgrade', async () => {
+    await upgrade(baseOptions);
+
+    expect(vi.mocked(rmSync)).toHaveBeenCalledWith(storybookCacheDirectory, {
+      recursive: true,
+      force: true,
+    });
+  });
+
+  it('does not fail the upgrade when removing the cache directory fails', async () => {
+    vi.mocked(rmSync).mockImplementationOnce(() => {
+      throw new Error('EACCES: permission denied');
+    });
+
+    await expect(upgrade(baseOptions)).resolves.toBeUndefined();
+    expect(logger.debug).toHaveBeenCalledWith(expect.stringContaining('cache directory'));
+  });
+
+  it('does not remove the cache directory on a dry run', async () => {
+    await upgrade({ ...baseOptions, dryRun: true });
+
+    expect(vi.mocked(rmSync)).not.toHaveBeenCalledWith(storybookCacheDirectory, expect.anything());
   });
 });

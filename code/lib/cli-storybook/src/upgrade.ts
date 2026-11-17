@@ -1,3 +1,6 @@
+import { rmSync } from 'node:fs';
+import { join } from 'node:path';
+
 import {
   hasStorybookSkills,
   installSkills,
@@ -422,6 +425,19 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
         throw new UpgradeStorybookUnknownCurrentVersionError();
       }
     });
+
+    // Delete the Storybook cache directory on every upgrade, regardless of the version
+    // transition: stale cache state has caused errors on restart after upgrading, and
+    // nothing in it needs to survive an upgrade. Best-effort — a failure must not fail the
+    // upgrade, and a dry run must not touch the filesystem.
+    if (!options.dryRun) {
+      const storybookCacheDirectory = join(process.cwd(), 'node_modules', '.cache', 'storybook');
+      try {
+        rmSync(storybookCacheDirectory, { recursive: true, force: true });
+      } catch (error) {
+        logger.debug(`Failed to remove Storybook cache directory: ${String(error)}`);
+      }
+    }
 
     // Update dependencies in package.jsons for all projects
     if (!options.dryRun) {

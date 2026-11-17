@@ -228,6 +228,7 @@ The draft is not in the repository, so make it again from the plan and the windo
 Take both from the branch of the open plan PR, or from `qa/plans` once the plan is merged:
 
 ```bash
+mkdir -p /tmp/qa-plan-11.0
 git fetch origin qa/plans
 git show origin/qa/plans:ecosystem-qa/plans/11.0.md > /tmp/qa-plan-11.0/old.md
 git show origin/qa/plans:ecosystem-qa/plans/11.0.window.json > /tmp/qa-plan-11.0/old.window.json

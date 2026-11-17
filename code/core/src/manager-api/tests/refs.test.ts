@@ -8,6 +8,7 @@ import { transformStoryIndexToStoriesHash } from '../lib/stories.ts';
 import { getSourceType, init as initRefs } from '../modules/refs.ts';
 import type { State } from '../root.tsx';
 import type Store from '../store.ts';
+import { createCommitLaggingStore } from '../test-utils/store.ts';
 
 const { fetch } = global;
 
@@ -1257,7 +1258,6 @@ describe('Refs API', () => {
           'component-a',
           'component-a--page',
           'component-a--story-2',
-          'component-b',
           'component-b--page',
           'component-c',
           'component-c--story-4',
@@ -1309,7 +1309,7 @@ describe('Refs API', () => {
         const hash = refs.fake.index;
 
         // We need exact key ordering, even if in theory JS doesn't guarantee it
-        expect(Object.keys(hash)).toEqual(['component-a', 'component-a--docs']);
+        expect(Object.keys(hash)).toEqual(['component-a--docs']);
         expect(hash['component-a--docs'].type).toBe('docs');
       });
     });
@@ -1453,5 +1453,28 @@ describe('Refs API', () => {
         title: 'Fake',
       })
     ).rejects.toThrow('Composition: Missing stories.json version');
+  });
+  describe('updateRef', () => {
+    it('keeps an update to another ref that is not committed yet', async () => {
+      const previousRefs = global.REFS;
+      global.REFS = {
+        a: { id: 'a', url: 'https://a.example.com', title: 'A' },
+        b: { id: 'b', url: 'https://b.example.com', title: 'B' },
+      };
+      try {
+        const store = createCommitLaggingStore({ refs: global.REFS } as Partial<State>);
+        const { api } = initRefs({ provider, store } as any, { runCheck: false });
+
+        await Promise.all([
+          api.updateRef('a', { previewInitialized: true }),
+          api.updateRef('b', { previewInitialized: true }),
+        ]);
+
+        expect(api.getRefs().a.previewInitialized).toBe(true);
+        expect(api.getRefs().b.previewInitialized).toBe(true);
+      } finally {
+        global.REFS = previousRefs;
+      }
+    });
   });
 });

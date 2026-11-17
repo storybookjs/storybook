@@ -34,7 +34,6 @@
     "test-storybooks",
     "storybook-static",
     "built-storybooks",
-    "ember-output",
     "**/*.vue",
     "**/*.svelte"
   ],

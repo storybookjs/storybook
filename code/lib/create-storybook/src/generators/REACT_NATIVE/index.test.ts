@@ -5,18 +5,26 @@ import { executeCommand } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 import { SupportedFramework, SupportedLanguage } from 'storybook/internal/types';
 
+import { versions } from 'storybook/internal/common';
+
 import { DependencyCollector } from '../../dependency-collector.ts';
 import { TelemetryService } from '../../services/TelemetryService.ts';
 import reactNativeGenerator from './index.ts';
 import { generateReactNativeEntrypoint } from './generateEntrypoint.ts';
 import { runMetroCodemodOrFallback } from './metroConfig.ts';
 import { detectReactNativeEntrypointTemplateVariant } from './index.ts';
+import {
+  REACT_NATIVE_ON_DEVICE_PACKAGES,
+  assertReactNativeOnDevicePeers,
+  onDevicePackageSpecifier,
+} from './onDevicePackages.ts';
 
 vi.mock('storybook/internal/cli', { spy: true });
 vi.mock('storybook/internal/common', { spy: true });
 vi.mock('storybook/internal/node-logger', { spy: true });
 vi.mock('./generateEntrypoint', { spy: true });
 vi.mock('./metroConfig', { spy: true });
+vi.mock('./onDevicePackages.ts', { spy: true });
 
 describe('REACT_NATIVE generator module', () => {
   const telemetryService = new TelemetryService();
@@ -37,6 +45,7 @@ describe('REACT_NATIVE generator module', () => {
     }) as any;
 
   beforeEach(() => {
+    vi.mocked(assertReactNativeOnDevicePeers).mockResolvedValue(undefined);
     vi.mocked(copyTemplateFiles).mockResolvedValue();
     vi.mocked(generateReactNativeEntrypoint).mockResolvedValue({
       targetPath: '.rnstorybook/index.js',
@@ -71,9 +80,15 @@ describe('REACT_NATIVE generator module', () => {
       language: SupportedLanguage.JAVASCRIPT,
     });
     expect(packageManager.getVersionedPackages).toHaveBeenCalledWith(
-      expect.arrayContaining(['cross-env']),
+      expect.arrayContaining([
+        'cross-env',
+        ...REACT_NATIVE_ON_DEVICE_PACKAGES.map((packageName) =>
+          onDevicePackageSpecifier(packageName, versions.storybook)
+        ),
+      ]),
       { storybookVersionSpecifier: undefined }
     );
+    expect(assertReactNativeOnDevicePeers).toHaveBeenCalledWith(packageManager, versions.storybook);
     expect(packageManager.addScripts).toHaveBeenCalledWith({
       'storybook:ios': 'cross-env STORYBOOK_ENABLED=true react-native run-ios',
       'storybook:android': 'cross-env STORYBOOK_ENABLED=true react-native run-android',

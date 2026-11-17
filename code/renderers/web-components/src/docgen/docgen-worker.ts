@@ -1,4 +1,4 @@
-import { createLazyDocgenMiddleware } from 'storybook/internal/common';
+import { createLazyDocgenMiddleware, loadTypeScriptCompilerApi } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import type { DocgenMiddleware } from 'storybook/internal/types';
 
@@ -16,7 +16,7 @@ export const createDocgenProvider = ({
 }: WebComponentsDocgenOptions): DocgenMiddleware =>
   createLazyDocgenMiddleware({
     createManager: async (): Promise<TagResolver | undefined> => {
-      const sources = await loadSourceManager(previewFilePath);
+      const sources = await loadSourceManager(previewFilePath, manifestPaths.length > 0);
       const [first, ...rest] = [
         ...(manifestPaths.length > 0 ? [new CemManager(manifestPaths)] : []),
         ...(sources ? [sources] : []),
@@ -26,13 +26,22 @@ export const createDocgenProvider = ({
     extract: async (resolver, input) => buildDocgenPayload(input, { resolver }),
   });
 
-/** A failed load must not take manifest docgen down with it. */
-async function loadSourceManager(previewFilePath?: string): Promise<SourceManager | undefined> {
+/**
+ * A failed load must not take manifest docgen down with it, and stays quiet when a manifest supplies
+ * the metadata.
+ */
+async function loadSourceManager(
+  previewFilePath: string | undefined,
+  hasManifest: boolean
+): Promise<SourceManager | undefined> {
   try {
-    const [typescript, generator] = await Promise.all([import('typescript'), loadGenerator()]);
-    return new SourceManager(typescript.default ?? typescript, generator, previewFilePath);
+    const [typescript, generator] = await Promise.all([
+      loadTypeScriptCompilerApi(() => import('typescript')),
+      loadGenerator(),
+    ]);
+    return new SourceManager(typescript, generator, previewFilePath);
   } catch (error) {
-    logger.warn(
+    (hasManifest ? logger.debug : logger.warn)(
       `Web components docgen cannot generate declarations from sources: ${errorMessage(error)}`
     );
     return undefined;

@@ -74,4 +74,19 @@ describe('loadStorybook', () => {
       '/framework/preset',
     ]);
   });
+
+  it('applies caller override presets before the common override preset', async () => {
+    vi.mocked(safeResolveModule).mockReturnValue(undefined);
+
+    await loadStorybook({
+      configDir: '/config',
+      channel: new Channel({}),
+      overridePresets: ['/plugin/preset.js'],
+    });
+
+    expect(vi.mocked(loadAllPresets).mock.calls[1][0].overridePresets).toEqual([
+      '/plugin/preset.js',
+      expect.stringContaining('common-override-preset'),
+    ]);
+  });
 });

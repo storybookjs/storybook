@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { types as t } from 'storybook/internal/babel';
-
 import { dedent } from 'ts-dedent';
 
-import { babelParseFile } from '../CsfFile.ts';
+import { parseExpression, isStringLiteral } from '../estree/ast.ts';
+import { SourceEditor } from '../estree/editor.ts';
 import { isSelfContained } from './resolve-arg-value.ts';
 import {
   type ReferenceContext,
@@ -12,11 +11,15 @@ import {
   resolveArgsRecord,
   resolveBindingMembers,
   resolveReferencedValue,
-  sourceOf,
+  oneLineTextOf,
 } from './resolve-members.ts';
 
+const indexed = (editor: SourceEditor) => {
+  editor.parentOf(editor.program);
+  return editor;
+};
 const moduleOf = (code: string, filePath: string): ReferenceModule => ({
-  program: babelParseFile({ code, filename: filePath }).path,
+  editor: indexed(new SourceEditor(code, filePath)),
   filePath,
 });
 
@@ -41,7 +44,7 @@ const argsOf = (code: string, storyName: string, ctx = contextOf({ 'entry.ts': c
   const record = resolveArgsRecord(story?.properties.args, ctx);
   return {
     args: Object.fromEntries(
-      Object.entries(record.properties).map(([key, node]) => [key, sourceOf(node)])
+      Object.entries(record.properties).map(([key, node]) => [key, oneLineTextOf(node)])
     ),
     unresolved: [...(story?.unresolved ?? []), ...record.unresolved],
   };
@@ -307,6 +310,59 @@ describe('spreads at the story config level', () => {
       args: { label: "'saved'", size: "'small'" },
       unresolved: [],
     });
+  });
+
+  it('reads a story destructured from an object of stories', () => {
+    const code = dedent`
+      const stories = { args: { label: 'outer' }, Inner: { args: { label: 'inner' } } };
+      const { Inner } = stories;
+      export const Story = Inner;
+    `;
+    expect(argsOf(code, 'Story')).toEqual({ args: { label: "'inner'" }, unresolved: [] });
+  });
+
+  it('reads args destructured from a story', () => {
+    const code = dedent`
+      const Primary = { args: { label: 'primary' } };
+      const { args } = Primary;
+      export const Story = { args };
+    `;
+    expect(argsOf(code, 'Story')).toEqual({ args: { label: "'primary'" }, unresolved: [] });
+  });
+
+  it.each([
+    {
+      name: 'spread',
+      args: '{ ...rest, primary: true }',
+      expected: { label: "'Save'", primary: 'true' },
+    },
+    { name: 'named', args: 'rest', expected: { label: "'Save'" } },
+  ])('reads a $name rest element without the keys the pattern names', ({ args, expected }) => {
+    const code = dedent`
+      const defaults = { label: 'Save', size: 'lg' };
+      const { size, ...rest } = defaults;
+      export const Story = { args: ${args} };
+    `;
+    expect(argsOf(code, 'Story')).toEqual({ args: expected, unresolved: [] });
+  });
+
+  it('reports a rest element whose source has an unreadable spread', () => {
+    const code = dedent`
+      const defaults = { label: 'Save', ...buildRest() };
+      const { size, ...rest } = defaults;
+      export const Story = { args: { ...rest } };
+    `;
+    expect(argsOf(code, 'Story')).toEqual({ args: {}, unresolved: ['...rest'] });
+  });
+
+  it('reports a rest element next to a computed key', () => {
+    const code = dedent`
+      const defaults = { label: 'Save', size: 'lg' };
+      const key = 'size';
+      const { [key]: _, ...rest } = defaults;
+      export const Story = { args: { ...rest } };
+    `;
+    expect(argsOf(code, 'Story')).toEqual({ args: {}, unresolved: ['...rest'] });
   });
 
   it('applies assignments through aliases in source order', () => {
@@ -601,6 +657,19 @@ describe('CSF factories', () => {
     });
   });
 
+  it('reports parent args written as a comma expression, which it cannot read', () => {
+    const code = dedent`
+      import preview from './preview';
+      const meta = preview.meta({ component: Button });
+      export const Base = meta.story({ args: (track(), { label: 'base', primary: true }) });
+      export const Extended = Base.extend({ args: { label: 'extended' } });
+    `;
+    expect(argsOf(code, 'Extended')).toEqual({
+      args: { label: "'extended'" },
+      unresolved: ["...(track(), { label: 'base', primary: true })"],
+    });
+  });
+
   it('reports a bare spread of a factory story, which copies its methods and not its config', () => {
     const code = dedent`
       import preview from './preview';
@@ -644,7 +713,7 @@ describe('externalize', () => {
         `,
       },
       'entry.ts',
-      (node) => (t.isStringLiteral(node) ? node : undefined)
+      (node) => (isStringLiteral(node) ? node : undefined)
     );
     expect(argsOf('', 'Reuse', ctx)).toEqual({ args: {}, unresolved: ['...shared'] });
   });
@@ -652,12 +721,9 @@ describe('externalize', () => {
 
 describe('resolveReferencedValue', () => {
   const valueOf = (ctx: ReferenceContext, expression: string) => {
-    const node = (
-      babelParseFile({ code: `(${expression})`, filename: 'probe.ts' }).ast.program
-        .body[0] as t.ExpressionStatement
-    ).expression;
+    const node = parseExpression(expression);
     const resolved = resolveReferencedValue(ctx, node);
-    return resolved && { value: sourceOf(resolved.node), filePath: resolved.ctx.filePath };
+    return resolved && { value: oneLineTextOf(resolved.node), filePath: resolved.ctx.filePath };
   };
 
   it('reads a member of a local object', () => {
@@ -793,6 +859,32 @@ describe('resolveReferencedValue', () => {
       });
       expect(valueOf(ctx, 'config.nested.component')).toBeUndefined();
     });
+  });
+
+  it.each([
+    { name: 'spread', story: `{ args: { ...n } }`, unresolved: ['...n'] },
+    { name: 'named as args', story: `{ args: n }`, unresolved: ['args: n'] },
+  ])(
+    'does not read a destructured object $name after its source wrote into it',
+    ({ story, unresolved }) => {
+      const code = dedent`
+        const d = { n: { x: 1 } };
+        const { n } = d;
+        d.n.x = 2;
+        export const Story = ${story};
+      `;
+      expect(argsOf(code, 'Story')).toEqual({ args: {}, unresolved });
+    }
+  );
+
+  it('does not read a rest element after its source wrote into an object they share', () => {
+    const code = dedent`
+      const d = { n: { x: 1 } };
+      const { ...rest } = d;
+      d.n.x = 2;
+      export const Story = { args: { ...rest } };
+    `;
+    expect(argsOf(code, 'Story')).toEqual({ args: {}, unresolved: ['...rest'] });
   });
 
   it('terminates instead of recursing forever on a self-referential module', () => {

@@ -1,14 +1,20 @@
 import { readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'pathe';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { logger } from 'storybook/internal/node-logger';
 
 import * as find from 'empathic/find';
 import { fs as memfs, vol } from 'memfs';
 
+import { executeCommandSync } from '../utils/command.ts';
 import { getProjectRoot } from '../utils/paths.ts';
+import { JsPackageManager } from './JsPackageManager.ts';
 import { PNPMProxy } from './PNPMProxy.ts';
 
 vi.mock('node:fs', { spy: true });
+vi.mock('../utils/command.ts', { spy: true });
 vi.mock('empathic/find', { spy: true });
 vi.mock('../utils/paths.ts', { spy: true });
 vi.mock('storybook/internal/node-logger', () => ({
@@ -77,6 +83,12 @@ describe('PNPMProxy catalogs', () => {
 
     it('falls back to a plain declared semver range when not a catalog and not installed', async () => {
       vi.spyOn(pnpmProxy, 'getAllDependencies').mockReturnValue({ vitest: '^3.2.0' });
+
+      await expect(pnpmProxy.getDeclaredVersionSpecifier('vitest')).resolves.toBe('^3.2.0');
+    });
+
+    it('falls back to the range of an npm: alias of the same package', async () => {
+      vi.spyOn(pnpmProxy, 'getAllDependencies').mockReturnValue({ vitest: 'npm:vitest@^3.2.0' });
 
       await expect(pnpmProxy.getDeclaredVersionSpecifier('vitest')).resolves.toBe('^3.2.0');
     });
@@ -276,6 +288,130 @@ describe('PNPMProxy catalogs', () => {
       expect(remaining).toEqual(['@storybook/addon-docs@^11.0.0']);
       expect(writtenYaml()).toBe(
         '# Storybook\ncatalog:\n  storybook: ^11.0.0\ncatalogs:\n  sb:\n    "@storybook/react-vite": 11.0.0\n'
+      );
+    });
+  });
+
+  describe('upgradeDeclaredDependency', () => {
+    const PACKAGE_JSON = '/root/packages/app/package.json';
+
+    it('upgrades the catalog entry and keeps the catalog reference in package.json', () => {
+      vol.fromJSON({
+        [WORKSPACE_YAML]: 'catalog:\n  typescript: ~7.0.2\n',
+        [PACKAGE_JSON]: '{\n  "devDependencies": {\n    "typescript": "catalog:"\n  }\n}\n',
+      });
+      JsPackageManager.packageJsonCache.clear();
+      pnpmProxy.packageJsonPaths = [PACKAGE_JSON];
+
+      pnpmProxy.upgradeDeclaredDependency('typescript@^7.1', '7.0.2');
+
+      expect(writtenYaml()).toBe('catalog:\n  typescript: ^7.1\n');
+      expect(vol.toJSON()[PACKAGE_JSON]).toContain('"typescript": "catalog:"');
+    });
+
+    it('leaves a catalog entry that the installed version does not satisfy alone', () => {
+      const ROOT_PACKAGE_JSON = '/root/package.json';
+      vol.fromJSON({
+        [WORKSPACE_YAML]: 'catalog:\n  typescript: ^6.0.3\n',
+        [ROOT_PACKAGE_JSON]: '{\n  "devDependencies": {\n    "typescript": "catalog:"\n  }\n}\n',
+        [PACKAGE_JSON]: '{\n  "devDependencies": {\n    "typescript": "~7.0.2"\n  }\n}\n',
+      });
+      JsPackageManager.packageJsonCache.clear();
+      pnpmProxy.packageJsonPaths = [PACKAGE_JSON, ROOT_PACKAGE_JSON];
+
+      pnpmProxy.upgradeDeclaredDependency('typescript@^7.1', '7.0.2');
+
+      expect(writtenYaml()).toBe('catalog:\n  typescript: ^6.0.3\n');
+      expect(vol.toJSON()[ROOT_PACKAGE_JSON]).toContain('"typescript": "catalog:"');
+      expect(vol.toJSON()[PACKAGE_JSON]).toContain('"typescript": "^7.1"');
+    });
+  });
+
+  describe('allowStorybookBuildScripts', () => {
+    const allowBuildScripts = () => (pnpmProxy as any).allowStorybookBuildScripts();
+    // The package.json being installed lives below the workspace root, on memfs.
+    const PROJECT_DIR = '/root/packages/app';
+    const createdYaml = () => join(PROJECT_DIR, 'pnpm-workspace.yaml');
+
+    beforeEach(() => {
+      vi.mocked(executeCommandSync).mockReturnValue('11.0.0');
+      vi.spyOn(pnpmProxy, 'primaryPackageJson', 'get').mockReturnValue({
+        operationDir: PROJECT_DIR,
+        packageJson: { dependencies: {}, devDependencies: {}, peerDependencies: {} },
+      } as any);
+      vol.mkdirSync(PROJECT_DIR, { recursive: true });
+    });
+
+    it('creates pnpm-workspace.yaml next to the package.json when no workspace file exists', () => {
+      vi.mocked(find.up).mockReturnValue(undefined);
+
+      allowBuildScripts();
+
+      expect(vol.toJSON()).toEqual({ [createdYaml()]: 'allowBuilds:\n  esbuild: true\n' });
+    });
+
+    it('edits the workspace file found up the tree instead of creating one next to package.json', () => {
+      vol.fromJSON({ [WORKSPACE_YAML]: '# ws\npackages:\n  - "packages/*"\n' });
+
+      allowBuildScripts();
+
+      expect(writtenYaml()).toBe(
+        '# ws\npackages:\n  - "packages/*"\nallowBuilds:\n  esbuild: true\n'
+      );
+      expect(vol.toJSON()[createdYaml()]).toBeUndefined();
+    });
+
+    it('does not create a workspace file for readers that only look up catalogs', async () => {
+      vi.spyOn(pnpmProxy, 'getAllDependencies').mockReturnValue({ vitest: 'catalog:' });
+      vi.mocked(find.up).mockReturnValue(undefined);
+
+      await expect(pnpmProxy.getDeclaredVersionSpecifier('vitest')).resolves.toBeNull();
+
+      expect(vol.toJSON()[createdYaml()]).toBeUndefined();
+      expect(writeFileSync).not.toHaveBeenCalled();
+    });
+
+    it('warns and writes nothing when the workspace file is malformed', () => {
+      vol.fromJSON({ [WORKSPACE_YAML]: 'allowBuilds: [\n' });
+
+      allowBuildScripts();
+
+      expect(writtenYaml()).toBe('allowBuilds: [\n');
+      expect(writeFileSync).not.toHaveBeenCalled();
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.stringContaining('Could not allow build scripts of esbuild')
+      );
+    });
+
+    it('fills in an `allowBuilds:` key that was left empty', () => {
+      vol.fromJSON({ [WORKSPACE_YAML]: 'packages:\n  - "packages/*"\nallowBuilds:\n' });
+
+      allowBuildScripts();
+
+      expect(writtenYaml()).toBe('packages:\n  - "packages/*"\nallowBuilds:\n  esbuild: true\n');
+    });
+
+    it('warns instead of throwing when `allowBuilds` holds something other than a map', () => {
+      vol.fromJSON({ [WORKSPACE_YAML]: 'allowBuilds: [esbuild]\n' });
+
+      expect(allowBuildScripts).not.toThrow();
+      expect(writeFileSync).not.toHaveBeenCalled();
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.stringContaining(
+          'Could not allow build scripts of esbuild in /root/pnpm-workspace.yaml'
+        )
+      );
+    });
+
+    it('warns instead of throwing when the workspace file cannot be written', () => {
+      vol.fromJSON({ [WORKSPACE_YAML]: 'packages:\n  - "packages/*"\n' });
+      vi.mocked(writeFileSync).mockImplementation(() => {
+        throw new Error('EACCES: permission denied');
+      });
+
+      expect(allowBuildScripts).not.toThrow();
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.stringContaining('in /root/pnpm-workspace.yaml: Error: EACCES')
       );
     });
   });

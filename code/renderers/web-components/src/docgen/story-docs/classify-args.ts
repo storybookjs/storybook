@@ -37,8 +37,8 @@ export function classifyArg(
       case 'attributes':
         return attributeBinding(
           name,
-          attributeViaField(key, name, declaration),
-          attributeDefault(key, name, declaration)
+          attributeViaField(name, declaration),
+          attributeDefault(name, declaration)
         );
       case 'properties': {
         const attribute = pairedAttribute(name, declaration);
@@ -46,7 +46,7 @@ export function classifyArg(
           ? attributeBinding(
               attribute,
               true,
-              fieldDefault(name, declaration) ?? attributeDefault(name, attribute, declaration)
+              fieldDefault(name, declaration) ?? attributeDefault(attribute, declaration)
             )
           : { kind: 'property', name };
       }
@@ -112,29 +112,25 @@ const attributeDeclaration = (
 ): ManifestAttribute | undefined =>
   declaration.attributes?.find((attribute) => attribute.name === attributeName);
 
-const attributeViaField = (
-  key: string,
-  attributeName: string,
-  declaration: ManifestDeclaration
-): boolean => pairedAttribute(key, declaration) === attributeName;
+const attributeViaField = (attributeName: string, declaration: ManifestDeclaration): boolean =>
+  pairedAttribute(attributeName, declaration) === attributeName;
 
 const attributeDefault = (
-  key: string,
   attributeName: string,
   declaration: ManifestDeclaration
 ): string | undefined => {
   const attribute = attributeDeclaration(attributeName, declaration);
   const fieldName =
-    attribute?.fieldName === key || pairedAttribute(key, declaration) === attributeName
-      ? key
-      : undefined;
+    attribute?.fieldName ??
+    (attributeViaField(attributeName, declaration) ? attributeName : undefined);
   return (fieldName ? fieldDefault(fieldName, declaration) : undefined) ?? attribute?.default;
 };
 
 const eventForArg = (key: string, declaration: ManifestDeclaration): string | undefined => {
   const matches =
     declaration.events?.filter(
-      (event) => key === event.name || key === eventActionName(event.name)
+      // A hand-written manifest may hold an event without a name.
+      (event) => event.name && (key === event.name || key === eventActionName(event.name))
     ) ?? [];
   return matches.length === 1 ? matches[0].name : undefined;
 };

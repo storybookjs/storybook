@@ -6,6 +6,7 @@ import {
 import { telemetry } from 'storybook/internal/telemetry';
 import { Feature } from 'storybook/internal/types';
 
+import type { TypeScriptDependencyResult } from '../commands/TypeScriptDependencyCommand.ts';
 import { VersionService } from './VersionService.ts';
 
 /** Service for tracking telemetry events during Storybook initialization */
@@ -43,6 +44,15 @@ export class TelemetryService {
   ): Promise<void> {
     await telemetry('init-step', {
       step: 'playwright-install',
+      result,
+    });
+  }
+
+  async trackTypeScriptDependency(
+    result: Exclude<TypeScriptDependencyResult, 'not-needed'>
+  ): Promise<void> {
+    await telemetry('init-step', {
+      step: 'typescript-dependency',
       result,
     });
   }

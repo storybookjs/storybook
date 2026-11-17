@@ -1,0 +1,81 @@
+{
+  "files": {
+    "control": {
+      "type": "object",
+    },
+    "description": "Selected files.",
+    "name": "files",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "jsDocTags": {
+        "bindable": [
+          "",
+        ],
+      },
+      "type": {
+        "summary": "FileList",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "FileList",
+    },
+  },
+  "type": {
+    "description": "Input type.",
+    "name": "type",
+    "options": [
+      "email",
+      "file",
+      "text",
+    ],
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": ""email" | "file" | "text"",
+      },
+    },
+    "type": {
+      "name": "enum",
+      "required": false,
+      "value": [
+        "email",
+        "file",
+        "text",
+      ],
+    },
+  },
+  "value": {
+    "control": {
+      "type": "object",
+    },
+    "description": undefined,
+    "name": "value",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "jsDocTags": {
+        "bindable": [
+          "",
+        ],
+      },
+      "type": {
+        "summary": "any",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "any",
+    },
+  },
+}

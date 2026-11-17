@@ -1511,17 +1511,33 @@ describe('buildStoryDocsPayload', () => {
     });
 
     it.each([
-      ['above the arg', `label:\n          // why\n          (value) => value.trim(),`],
-      ['before the arg', `label: /* why */ (value) => value.trim(),`],
-      ['inside the arg', `label: (value) => /* why */ value.trim(),`],
-      ['inside the parameter list', `label: (/* why */ value) => value.trim(),`],
-    ])('leaves a comment %s out of the binding', async (_name, property) => {
+      [
+        'above the arg',
+        `label:\n          // why\n          (value) => value.trim(),`,
+        `label = (value) => value.trim();`,
+      ],
+      [
+        'before the arg',
+        `label: /* why */ (value) => value.trim(),`,
+        `label = (value) => value.trim();`,
+      ],
+      [
+        'inside the arg',
+        `label: (value) => /* why */ value.trim(),`,
+        `label = (value) => /* why */ value.trim();`,
+      ],
+      [
+        'inside the parameter list',
+        `label: (/* why */ value) => value.trim(),`,
+        `label = (/* why */ value) => value.trim();`,
+      ],
+    ])('binds an arg with a comment %s as the arg is written', async (_name, property, field) => {
       const story = await soleStory(`
         import { ButtonComponent } from './button.component';
         export default { title: 'Example/Button', component: ButtonComponent };
         export const Default = { args: { ${property} } };
       `);
-      expect(story.snippet).toContain(`label = (value) => value.trim();`);
+      expect(story.snippet).toContain(field);
     });
   });
 
@@ -1646,7 +1662,7 @@ describe('buildStoryDocsPayload', () => {
     });
 
     it('indents a hoisted value that prints over several lines', async () => {
-      const story = await storyWithArgs(`value: (item) => { return item.id; }`);
+      const story = await storyWithArgs(`value: (item) => {\n  return item.id;\n}`);
 
       expect(story.snippet).toMatchInlineSnapshot(`
         "import { Component } from '@angular/core';
@@ -1700,7 +1716,7 @@ describe('buildStoryDocsPayload', () => {
           template: \`<sb-button [value]="value" />\`,
         })
         export class DemoComponent {
-          value = (text) => text.replace('"', '\\'');
+          value = (text) => text.replace('"', "'");
         }"
       `);
       expect(story.snippet).not.toContain('&quot;');

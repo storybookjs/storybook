@@ -255,6 +255,34 @@ describe('parseTypeText', () => {
       output: { type: { name: 'other', value: 'HTMLElement' }, control: false },
     },
     {
+      input: 'string | undefined',
+      output: { type: { name: 'string' } },
+    },
+    {
+      input: 'number | null',
+      output: { type: { name: 'number' } },
+    },
+    {
+      input: '(() => Promise<void>) | undefined',
+      output: { type: { name: 'function' } },
+    },
+    {
+      input: '(\n    delegate: HTMLElement\n  ) => Promise<void> | void',
+      output: { type: { name: 'function' } },
+    },
+    {
+      input: '{\n    mainAxis?: number;\n    crossAxis?: number;\n    alignmentAxis?: number;\n  }',
+      output: { type: { name: 'object', value: {} } },
+    },
+    {
+      input: "\n  | 'small'\n  | 'medium'\n  | undefined",
+      output: { type: { name: 'enum', value: ['small', 'medium'] } },
+    },
+    {
+      input: "'a  b' | 'c'",
+      output: { type: { name: 'enum', value: ['a  b', 'c'] } },
+    },
+    {
       input: '',
       output: undefined,
     },

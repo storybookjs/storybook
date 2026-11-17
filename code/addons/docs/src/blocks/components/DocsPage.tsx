@@ -4,8 +4,7 @@ import React from 'react';
 import { withReset } from 'storybook/internal/components';
 
 import { transparentize } from 'polished';
-import type { CSSObject } from 'storybook/theming';
-import { styled } from 'storybook/theming';
+import { type CSSObject, styled } from 'storybook/theming/emotion';
 
 /**
  * This selector styles all raw elements inside the DocsPage like this example with a `<div/>`:

@@ -1,7 +1,7 @@
 import React, { type CSSProperties, type FC } from 'react';
 
 import { Badge, Button, Loader } from 'storybook/internal/components';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import {
   hasFixedViewportDimensions,
@@ -343,7 +343,7 @@ export const CollectionGrid: FC<CollectionGridProps> = ({
       <ReviewAllCell role="presentation" data-review-all>
         <ReviewAllShell>
           <ReviewAllFrame>
-            <Button size="medium" onClick={() => onShowAll?.()}>
+            <Button ariaLabel={false} size="medium" onClick={() => onShowAll?.()}>
               Review all {storyIds.length}
             </Button>
           </ReviewAllFrame>

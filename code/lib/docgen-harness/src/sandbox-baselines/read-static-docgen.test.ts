@@ -3,7 +3,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { vol } from 'memfs';
 
 import type { DocgenPayload } from '../../../../core/src/shared/open-service/services/docgen/types.ts';
-import { SANDBOX_TOKEN, readStaticDocgen, toBaseline } from './read-static-docgen.ts';
+import {
+  REPO_TOKEN,
+  SANDBOX_TOKEN,
+  normalizePaths,
+  readStaticDocgen,
+  toBaseline,
+} from './read-static-docgen.ts';
 
 vi.mock('node:fs', async () => {
   const memfs = await vi.importActual<typeof import('memfs')>('memfs');
@@ -65,44 +71,42 @@ describe('readStaticDocgen', () => {
 
   it.each([
     {
-      inputName: 'named after the global',
-      input: { name: 'globalThis.__TEMPLATE_COMPONENTS__.Html', jsDocTags: {} },
-      expectedIds: ['real'],
+      inputName: 'a component referenced through a global',
+      input: {
+        name: 'globalThis.__TEMPLATE_COMPONENTS__.Html',
+        jsDocTags: {},
+        error: { name: 'No component import found', message: 'No component file found' },
+      },
     },
     {
-      inputName: 'quoting the global in its error',
+      inputName: 'a component declared in its story file',
       input: {
-        name: 'args',
+        name: 'ButtonWithState',
         jsDocTags: {},
-        error: {
-          name: 'component-not-a-tag',
-          message:
-            "`meta.component` must be the element's tag name as a string, got `globalThis.__TEMPLATE_COMPONENTS__.Pre`",
-        },
+        error: { name: 'No component import found', message: 'No component file found' },
       },
-      expectedIds: ['real'],
     },
-  ])('skips a globally referenced component $inputName', ({ input, expectedIds }) => {
+  ])('skips $inputName, whose docgen failed', ({ input }) => {
     vol.fromJSON({
-      [`${DOCGEN}/global.json`]: snapshot('global', input),
+      [`${DOCGEN}/failed.json`]: snapshot('failed', input),
       [`${DOCGEN}/real.json`]: snapshot('real', { name: 'ButtonComponent', jsDocTags: {} }),
     });
 
-    expect(Object.keys(readStaticDocgen({ staticDir: STATIC, sandboxDir: SANDBOX }))).toEqual(
-      expectedIds
-    );
+    expect(Object.keys(readStaticDocgen({ staticDir: STATIC, sandboxDir: SANDBOX }))).toEqual([
+      'real',
+    ]);
   });
 
-  it('refuses to record when every component is globally referenced', () => {
+  it('refuses to record when docgen failed for every component', () => {
     vol.fromJSON({
-      [`${DOCGEN}/global.json`]: snapshot('global', {
-        name: 'globalThis.__TEMPLATE_COMPONENTS__.Html',
+      [`${DOCGEN}/failed.json`]: snapshot('failed', {
         jsDocTags: {},
+        error: { name: 'No component found', message: 'Specify meta.component.' },
       }),
     });
 
     expect(() => readStaticDocgen({ staticDir: STATIC, sandboxDir: SANDBOX })).toThrow(
-      /globally referenced/
+      /docgen failed for every one of them/
     );
   });
 });
@@ -127,6 +131,23 @@ describe('toBaseline', () => {
 
     expect(result).not.toHaveProperty('compodoc');
     expect(result).toHaveProperty('argTypes');
+  });
+
+  it("drops a subcomponent's fields that are not part of the portable payload", () => {
+    const result = toBaseline(
+      payload({
+        apiDescription: '## Props',
+        subcomponents: {
+          Icon: { name: 'Icon', path: './Icon.svelte', jsDocTags: {}, apiDescription: '## Props' },
+        },
+      }),
+      SANDBOX
+    );
+
+    expect(result).not.toHaveProperty('apiDescription');
+    expect(result.subcomponents).toEqual({
+      Icon: { name: 'Icon', path: './Icon.svelte', jsDocTags: {} },
+    });
   });
 
   it('omits absent optional fields rather than recording them as undefined', () => {
@@ -162,5 +183,19 @@ describe('toBaseline', () => {
     );
 
     expect(result.error?.message).toBe(`Source: ${SANDBOX_TOKEN}/documentation.json`);
+  });
+});
+
+describe('normalizePaths', () => {
+  it('rewrites a path into the repository, where linked template stories resolve', () => {
+    expect(
+      normalizePaths('/repo/code/renderers/react/input.tsx', '/sandboxes/react', '/repo')
+    ).toBe(`${REPO_TOKEN}/code/renderers/react/input.tsx`);
+  });
+
+  it('rewrites a sandbox inside the repository as the sandbox', () => {
+    expect(
+      normalizePaths('/repo/sandbox/react/src/Button.tsx', '/repo/sandbox/react', '/repo')
+    ).toBe(`${SANDBOX_TOKEN}/src/Button.tsx`);
   });
 });

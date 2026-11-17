@@ -1,0 +1,14 @@
+## Props
+
+```
+export type CardProps = {
+  /** Default body content. */
+  children?: Snippet<[]>;
+  /** Header content. */
+  header?: Snippet<[title: string]>;
+  /** Footer content. */
+  footer: Snippet<[]>;
+  /** Card title. */
+  title?: string = "Card";
+}
+```

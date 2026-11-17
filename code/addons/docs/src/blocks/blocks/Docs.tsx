@@ -3,7 +3,7 @@ import type { ComponentType, PropsWithChildren } from 'react';
 
 import type { Parameters, Renderer } from 'storybook/internal/types';
 
-import type { Theme } from 'storybook/theming';
+import type { Theme } from 'storybook/theming/emotion';
 
 import { DocsContainer } from './DocsContainer';
 import type { DocsContextProps } from './DocsContext';

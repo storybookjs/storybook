@@ -3,6 +3,9 @@ export default {
   // ...
   framework: '@storybook/sveltekit', // 👈 Add this
   // svelteOptions: { ... }, 👈 Remove this
+  addons: [
+    // '@storybook/addon-svelte-csf', 👈 Remove this
+  ],
 };
 ```
 
@@ -13,6 +16,9 @@ const config: StorybookConfig = {
   // ...
   framework: '@storybook/sveltekit', // 👈 Add this
   // svelteOptions: { ... }, 👈 Remove this
+  addons: [
+    // '@storybook/addon-svelte-csf', 👈 Remove this
+  ],
 };
 
 export default config;

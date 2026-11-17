@@ -6,11 +6,13 @@ import { once } from 'storybook/internal/node-logger';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { dedent } from 'ts-dedent';
-import ts from 'typescript';
 
 import type { StoryRef } from '../getComponentImports.ts';
 import { ComponentMetaManager, isFileInDir, sortTSConfigs } from './ComponentMetaManager.ts';
 import { cleanup, createTempDir, tsconfigJSON, writeFiles } from './test-helpers.ts';
+import { DOCGEN_TS_API, loadTestTypeScript } from '@storybook/component-meta-typescript/testing';
+
+const typescript = await loadTestTypeScript();
 
 // ---------------------------------------------------------------------------
 // Unit tests: sortTSConfigs and isFileInDir
@@ -74,21 +76,6 @@ describe('sortTSConfigs', () => {
 });
 
 // ---------------------------------------------------------------------------
-// ComponentMetaManager: TypeScript compiler API guard
-// ---------------------------------------------------------------------------
-
-describe('TypeScript compiler API guard', () => {
-  it('throws a clear error when the resolved `typescript` has no compiler API (e.g. TS 7 preview)', () => {
-    // TypeScript 7's `typescript` package ships only version info from its main entry, so
-    // `import('typescript')` can resolve without `ts.sys`. Constructing with that shape must fail
-    // fast with an actionable message instead of crashing deep in project setup.
-    const versionOnlyTs = { version: '7.0.2', versionMajorMinor: '7.0' } as unknown as typeof ts;
-
-    expect(() => new ComponentMetaManager(versionOnlyTs)).toThrow(/compiler API/);
-  });
-});
-
-// ---------------------------------------------------------------------------
 // ComponentMetaManager: multi-project scenarios
 // ---------------------------------------------------------------------------
 
@@ -120,7 +107,7 @@ describe('multi-project management', () => {
       `,
     });
 
-    manager = new ComponentMetaManager(ts);
+    manager = new ComponentMetaManager(typescript);
 
     const buttonProject = manager.getProjectForFile(path.join(tempDir, 'app/Button.tsx'));
     const cardProject = manager.getProjectForFile(path.join(tempDir, 'lib/Card.tsx'));
@@ -149,7 +136,7 @@ describe('multi-project management', () => {
       `,
     });
 
-    manager = new ComponentMetaManager(ts);
+    manager = new ComponentMetaManager(typescript);
 
     const buttonProject = manager.getProjectForFile(path.join(tempDir, 'app/Button.tsx'));
     const cardProject = manager.getProjectForFile(path.join(tempDir, 'lib/Card.tsx'));
@@ -182,7 +169,7 @@ describe('multi-project management', () => {
       fs.unlinkSync(possibleTsconfig);
     }
 
-    manager = new ComponentMetaManager(ts);
+    manager = new ComponentMetaManager(typescript);
 
     const project = manager.getProjectForFile(path.join(tempDir, 'Button.tsx'));
     expect(project).toBeDefined();
@@ -203,7 +190,7 @@ describe('multi-project management', () => {
       `,
     });
 
-    manager = new ComponentMetaManager(ts);
+    manager = new ComponentMetaManager(typescript);
     const tagPath = path.join(tempDir, 'Tag.tsx');
     const project = manager.getProjectForFile(tagPath);
 
@@ -273,7 +260,7 @@ describe('multi-project management', () => {
         `,
       });
 
-      manager = new ComponentMetaManager(ts);
+      manager = new ComponentMetaManager(typescript);
       const tagPath = files['Tag.tsx'];
 
       // Pin a whole-second mtime so both writes land on the identical timestamp, reproducing a
@@ -326,7 +313,7 @@ describe('multi-project management', () => {
       `,
     });
 
-    manager = new ComponentMetaManager(ts);
+    manager = new ComponentMetaManager(typescript);
     const configPath = files['tsconfig.json'];
 
     // Create project by looking up file
@@ -352,7 +339,7 @@ describe('multi-project management', () => {
       `,
     });
 
-    manager = new ComponentMetaManager(ts);
+    manager = new ComponentMetaManager(typescript);
     const configPath = path.join(tempDir, 'tsconfig.json');
 
     // First lookup (no tsconfig yet — may use inferred or find monorepo root)
@@ -369,61 +356,65 @@ describe('multi-project management', () => {
     expect(project2).toBeDefined();
   });
 
-  it('shares fsFileSnapshots across projects', { timeout: 30_000 }, () => {
-    tempDir = createTempDir();
+  it.skipIf(DOCGEN_TS_API === 'native')(
+    'shares fsFileSnapshots across projects',
+    { timeout: 30_000 },
+    () => {
+      tempDir = createTempDir();
 
-    const files = writeFiles(tempDir, {
-      'app/tsconfig.json': tsconfigJSON(),
-      'app/Button.tsx': dedent`
+      const files = writeFiles(tempDir, {
+        'app/tsconfig.json': tsconfigJSON(),
+        'app/Button.tsx': dedent`
         import React from 'react';
         export const Button = (_props: { label: string }) => <button />;
       `,
-      'app/Button.stories.tsx': dedent`
+        'app/Button.stories.tsx': dedent`
         import { Button } from './Button';
         export default { component: Button };
       `,
-      'lib/tsconfig.json': tsconfigJSON(),
-      'lib/Card.tsx': dedent`
+        'lib/tsconfig.json': tsconfigJSON(),
+        'lib/Card.tsx': dedent`
         import React from 'react';
         export const Card = (_props: { title: string }) => <div />;
       `,
-      'lib/Card.stories.tsx': dedent`
+        'lib/Card.stories.tsx': dedent`
         import { Card } from './Card';
         export default { component: Card };
       `,
-    });
+      });
 
-    manager = new ComponentMetaManager(ts);
+      manager = new ComponentMetaManager(typescript);
 
-    // Access both projects and trigger extraction (populates fsFileSnapshots)
-    const p1 = manager.getProjectForFile(path.join(tempDir, 'app/Button.tsx'));
-    p1.extractPropsFromStories([
-      {
-        storyPath: files['app/Button.stories.tsx'],
-        component: {
-          componentName: 'Button',
-          importName: 'Button',
-          path: files['app/Button.tsx'],
-          isPackage: false,
+      // Access both projects and trigger extraction (populates fsFileSnapshots)
+      const p1 = manager.getProjectForFile(path.join(tempDir, 'app/Button.tsx'));
+      p1.extractPropsFromStories([
+        {
+          storyPath: files['app/Button.stories.tsx'],
+          component: {
+            componentName: 'Button',
+            importName: 'Button',
+            path: files['app/Button.tsx'],
+            isPackage: false,
+          },
         },
-      },
-    ]);
-    const p2 = manager.getProjectForFile(path.join(tempDir, 'lib/Card.tsx'));
-    p2.extractPropsFromStories([
-      {
-        storyPath: files['lib/Card.stories.tsx'],
-        component: {
-          componentName: 'Card',
-          importName: 'Card',
-          path: files['lib/Card.tsx'],
-          isPackage: false,
+      ]);
+      const p2 = manager.getProjectForFile(path.join(tempDir, 'lib/Card.tsx'));
+      p2.extractPropsFromStories([
+        {
+          storyPath: files['lib/Card.stories.tsx'],
+          component: {
+            componentName: 'Card',
+            importName: 'Card',
+            path: files['lib/Card.tsx'],
+            isPackage: false,
+          },
         },
-      },
-    ]);
+      ]);
 
-    // fsFileSnapshots is shared — entries from both projects exist in one map
-    expect(manager.fsFileSnapshots.size).toBeGreaterThan(0);
-  });
+      // fsFileSnapshots is shared — entries from both projects exist in one map
+      expect(manager.fsFileSnapshots.size).toBeGreaterThan(0);
+    }
+  );
 
   it('project references: finds file via referenced project', () => {
     tempDir = createTempDir();
@@ -447,7 +438,7 @@ describe('multi-project management', () => {
       `,
     });
 
-    manager = new ComponentMetaManager(ts);
+    manager = new ComponentMetaManager(typescript);
     const filePath = path.join(tempDir, 'packages/ui/Button.tsx');
     const project = manager.getProjectForFile(filePath);
 
@@ -473,7 +464,7 @@ describe('multi-project management', () => {
       });
 
       // ratio 0 → threshold 0 → heapUsed is always ≥ 0 → recycle fires after every batchExtract.
-      manager = new ComponentMetaManager(ts, 0);
+      manager = new ComponentMetaManager(typescript, 0);
       const componentPath = path.join(tempDir, 'Button.tsx');
       const before = manager.getProjectForFile(componentPath);
 
@@ -519,7 +510,7 @@ describe('multi-project management', () => {
       const onceWarnSpy = vi.spyOn(once, 'warn').mockImplementation(() => undefined);
       try {
         // ratio 0 → threshold 0 → recycle fires on every batchExtract.
-        manager = new ComponentMetaManager(ts, 0);
+        manager = new ComponentMetaManager(typescript, 0);
         const componentPath = path.join(tempDir, 'Button.tsx');
         manager.getProjectForFile(componentPath);
 
@@ -565,7 +556,7 @@ describe('multi-project management', () => {
       });
 
       // ratio Infinity → threshold Infinity → heapUsed is always below it → recycle never fires.
-      manager = new ComponentMetaManager(ts, Number.POSITIVE_INFINITY);
+      manager = new ComponentMetaManager(typescript, Number.POSITIVE_INFINITY);
       const componentPath = path.join(tempDir, 'Button.tsx');
       const before = manager.getProjectForFile(componentPath);
 
@@ -603,7 +594,7 @@ describe('multi-project management', () => {
       `,
     });
 
-    manager = new ComponentMetaManager(ts);
+    manager = new ComponentMetaManager(typescript);
     const componentPath = path.join(tempDir, 'Button.tsx');
     const storyPath = path.join(tempDir, 'Button.stories.tsx');
     const project = manager.getProjectForFile(componentPath);

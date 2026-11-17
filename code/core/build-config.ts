@@ -1,23 +1,66 @@
 import path from 'node:path';
 
+import { normalize } from 'pathe';
 import { x as exec } from 'tinyexec';
 
 import type { BuildEntries } from '../../scripts/build/utils/entry-utils.ts';
+import { convertCommonJsNamespaceDeclaration } from '../../scripts/build/utils/generate-types-rolldown.ts';
+
+import { retargetEmotionTypeQueries } from './scripts/retarget-emotion-type-queries.ts';
 
 const config: BuildEntries = {
-  prebuild: async (cwd) => {
-    await exec('jiti', [path.join(import.meta.dirname, 'scripts', 'generate-source-files.ts')], {
-      nodeOptions: {
-        cwd,
-        env: {
-          ...process.env,
-          NODE_ENV: 'production',
-          FORCE_COLOR: '1',
-        },
-        stdio: 'inherit',
+  extraOutputs: {
+    // SB12: Remove this override, restore './theming' to the create entry's exportEntries, and rebuild.
+    // Remove the legacy-browser contract tests and manager alias, and update the migration guidance.
+    // Addons must import Emotion helpers from 'storybook/theming/emotion'.
+    './theming': {
+      types: './dist/theming/create.d.ts',
+      browser: {
+        code: './src/theming/emotion.ts',
+        default: './dist/theming/emotion.js',
       },
-      throwOnError: true,
-    });
+      code: './src/theming/create.ts',
+      default: './dist/theming/create.js',
+    },
+  },
+  // storybook/test inlines the types of the test libraries it bundles, so they need not be installed.
+  transformDependencyDeclaration({ id, code }) {
+    const posixId = normalize(id);
+    if (posixId.includes('/node_modules/@testing-library/jest-dom/')) {
+      return convertCommonJsNamespaceDeclaration(id, code);
+    }
+    if (posixId.includes('/node_modules/@vitest/expect/')) {
+      // These declarations use Chai's global types (`Chai.Assertion`, ...), from `@types/chai`. The
+      // public types of storybook/test don't expose them (see `test/expect.ts`), but the declarations
+      // they inline mention them. A module-local `Chai` namespace satisfies those mentions without
+      // requiring `@types/chai` or declaring globals in the user's project.
+      const chaiTypes = [...new Set(code.match(/(?<=\bChai\.)\w+/g))];
+      // The members are untyped, e.g. of the experimental `this.assertion` in custom matchers.
+      const stubs = chaiTypes.map((name) => `  interface ${name} { [key: string]: any }`);
+      return `${code}\ndeclare namespace Chai {\n${stubs.join('\n')}\n}\n`;
+    }
+    return null;
+  },
+  transformEmittedDeclarations({ emitDir, packageName }) {
+    retargetEmotionTypeQueries(emitDir, `${packageName}/theming/emotion`);
+  },
+  prebuild: async (cwd) => {
+    await exec(
+      process.execPath,
+      [path.join(import.meta.dirname, 'scripts', 'generate-source-files.ts')],
+      {
+        nodeOptions: {
+          cwd,
+          env: {
+            ...process.env,
+            NODE_ENV: 'production',
+            FORCE_COLOR: '1',
+          },
+          stdio: 'inherit',
+        },
+        throwOnError: true,
+      }
+    );
   },
   entries: {
     node: [
@@ -65,10 +108,6 @@ const config: BuildEntries = {
       {
         exportEntries: ['./internal/csf-tools'],
         entryPoint: './src/csf-tools/index.ts',
-      },
-      {
-        exportEntries: ['./internal/babel'],
-        entryPoint: './src/babel/index.ts',
       },
       {
         exportEntries: ['./internal/bin/dispatcher'],
@@ -179,12 +218,12 @@ const config: BuildEntries = {
         dts: false,
       },
       {
-        exportEntries: ['./theming'],
-        entryPoint: './src/theming/index.ts',
-      },
-      {
         exportEntries: ['./theming/create'],
         entryPoint: './src/theming/create.ts',
+      },
+      {
+        exportEntries: ['./theming/emotion'],
+        entryPoint: './src/theming/emotion.ts',
       },
       {
         exportEntries: ['./internal/components'],

@@ -1,29 +1,31 @@
 import { logger } from 'storybook/internal/node-logger';
 
 import type * as tsModule from 'typescript';
+import type { DocgenTypeChecker, DocgenTypeScript } from '@storybook/component-meta-typescript';
 
 import type { Class, Directive, Injectable, Pipe, Property } from '../types.ts';
 import type { AngularFileMeta } from '../types.ts';
 import { resolvedSymbol, type AnalyzerContext } from './context.ts';
 import type { DocumentedClassKind } from './members.ts';
 import { collectClassMembers } from './class-members.ts';
+import { type ComponentMetadata, readComponentDeclaration } from './component-declaration.ts';
 import { decoratorObjectArg, getDecorators, objectProperty, stringOption } from './decorators.ts';
 import { getJsDocDescription, getJsDocTagsField, hasJsDocTag } from './jsdoc.ts';
 import { TypeIndex } from './type-index.ts';
 
 /** A context over one source file; shared between the file's analysis and its argTypes extraction. */
 export function analyzerContext(
-  ts: typeof tsModule,
+  ts: DocgenTypeScript,
   sourceFile: tsModule.SourceFile,
-  checker: tsModule.TypeChecker
+  checker: DocgenTypeChecker
 ): AnalyzerContext {
   return { ts, checker, types: new TypeIndex(ts, checker), sourceFile };
 }
 
 export function analyzeSourceFile(
-  ts: typeof tsModule,
+  ts: DocgenTypeScript,
   sourceFile: tsModule.SourceFile,
-  checker: tsModule.TypeChecker,
+  checker: DocgenTypeChecker,
   context: AnalyzerContext = analyzerContext(ts, sourceFile, checker)
 ): AngularFileMeta {
   const ctx = context;
@@ -53,6 +55,12 @@ export function analyzeSourceFile(
       logger.debug(`[angular-cm] ${statement.name.text} left out of docgen: an @NgModule`);
       continue;
     }
+    if (kind === 'class' && sourceFile.isDeclarationFile) {
+      logger.debug(
+        `[angular-cm] ${statement.name.text} left out of docgen: a declaration-file class with no compiled ɵcmp`
+      );
+      continue;
+    }
     const name = statement.name.text;
     const file = sourceFile.fileName;
     const members = collectClassMembers(ctx, statement, kind);
@@ -63,13 +71,7 @@ export function analyzeSourceFile(
     };
 
     if (kind === 'component' || kind === 'directive') {
-      const metadata = decoratorObjectArg(
-        ctx,
-        statement,
-        kind === 'component' ? 'Component' : 'Directive'
-      );
-      const selector = metadata && decoratorSelector(ctx, metadata);
-      const standalone = metadata && decoratorStandalone(ctx, metadata);
+      const { selector, standalone } = componentMetadata(ctx, statement, kind);
       const record: Directive & typeof common & { selector?: string; standalone?: boolean } = {
         name,
         type: kind,
@@ -138,7 +140,23 @@ const classify = (ctx: AnalyzerContext, node: tsModule.ClassDeclaration): ClassK
       return kind;
     }
   }
-  return 'class';
+  return readComponentDeclaration(ctx, node) ? 'component' : 'class';
+};
+
+const componentMetadata = (
+  ctx: AnalyzerContext,
+  node: tsModule.ClassDeclaration,
+  kind: 'component' | 'directive'
+): ComponentMetadata => {
+  const declared = readComponentDeclaration(ctx, node);
+  if (declared) {
+    return declared;
+  }
+  const metadata = decoratorObjectArg(ctx, node, kind === 'component' ? 'Component' : 'Directive');
+  return {
+    selector: metadata && decoratorSelector(ctx, metadata),
+    standalone: metadata && decoratorStandalone(ctx, metadata),
+  };
 };
 
 const decoratorSelector = (

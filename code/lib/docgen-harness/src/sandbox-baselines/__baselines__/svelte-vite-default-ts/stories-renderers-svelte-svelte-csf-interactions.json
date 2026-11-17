@@ -1,0 +1,7 @@
+{
+  "argTypes": {},
+  "id": "stories-renderers-svelte-svelte-csf-interactions",
+  "jsDocTags": {},
+  "name": "Interactions",
+  "path": "./src/stories/renderers/svelte/svelte-csf/interactions.stories.svelte"
+}

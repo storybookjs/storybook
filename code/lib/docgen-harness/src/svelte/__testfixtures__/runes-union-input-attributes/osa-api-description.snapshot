@@ -1,0 +1,11 @@
+## Props
+
+```
+export type FileOrTextInputProps = {
+  value?: any; // bind:value={...}
+  /** Selected files. */
+  files?: FileList; // bind:files={...}
+  /** Input type. */
+  type?: "email" | "file" | "text";
+} & Omit<HTMLInputAttributes, "type">
+```

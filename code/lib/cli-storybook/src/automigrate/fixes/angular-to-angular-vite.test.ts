@@ -885,7 +885,7 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
       expect(written.indexOf('storybookAngularVitest({})')).toBeLessThan(
         written.indexOf('storybookTest(')
       );
-      expect(written).toContain("path.join(dirname, '.storybook')");
+      expect(written).toContain("path.join(import.meta.dirname, '.storybook')");
     });
 
     it('does not create a vitest.config.ts when one already exists', async () => {

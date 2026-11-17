@@ -49,7 +49,7 @@ export function isPathlessFileRouteId(id: string): boolean {
 
 type PathInterpolationSegment = string | readonly [1 | 2, string, string, string | undefined];
 
-// the reason we have our own `interpolateStoryPath` is that although this is an exposed API from tanstack, it seems implicitly internal and signature can break accross patches.
+// the reason we have our own `interpolateStoryPath` is that although this is an exposed API from tanstack, it seems implicitly internal and signature can break across patches.
 export function interpolateStoryPath(path: string, params: Record<string, unknown>): string {
   if (interpolatePath.length >= 2) {
     const positionalInterpolatePath = interpolatePath as unknown as (

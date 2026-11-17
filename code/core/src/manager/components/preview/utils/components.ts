@@ -1,6 +1,6 @@
 import { Link } from 'storybook/internal/router';
 
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 export const PreviewContainer = styled.div({
   display: 'flex',

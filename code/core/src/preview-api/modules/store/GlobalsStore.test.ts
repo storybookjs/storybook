@@ -89,6 +89,32 @@ describe('GlobalsStore', () => {
 
       expect(store.get()).toEqual({ arg1: 'new-arg1', arg2: 'new-arg2' });
     });
+
+    it('merges object values into the current globals', () => {
+      const store = new GlobalsStore({
+        globals: {
+          viewport: { value: 'tablet', isRotated: false },
+        },
+        globalTypes: {},
+      });
+
+      store.updateFromPersisted({ viewport: { isRotated: true } });
+
+      expect(store.get()).toEqual({ viewport: { value: 'tablet', isRotated: true } });
+    });
+
+    it('removes an object value key that the persisted globals set to undefined', () => {
+      const store = new GlobalsStore({
+        globals: {
+          viewport: { value: 'tablet', isRotated: false },
+        },
+        globalTypes: {},
+      });
+
+      store.updateFromPersisted({ viewport: { value: undefined } });
+
+      expect(store.get()).toStrictEqual({ viewport: { isRotated: false } });
+    });
   });
 
   describe('second call to set', () => {
@@ -147,6 +173,21 @@ describe('GlobalsStore', () => {
         });
         // However undeclared values aren't persisted
         expect(store.get()).toEqual({ arg1: 'new-arg1', arg2: 'new-arg2' });
+      });
+
+      it('retains an updated value nested in an object global', () => {
+        const store = new GlobalsStore({
+          globals: { viewport: { value: 'tablet', isRotated: false } },
+          globalTypes: {},
+        });
+
+        store.update({ viewport: { value: 'tablet', isRotated: true } });
+        store.set({
+          globals: { viewport: { value: 'tablet', isRotated: false } },
+          globalTypes: {},
+        });
+
+        expect(store.get()).toEqual({ viewport: { value: 'tablet', isRotated: true } });
       });
     });
 

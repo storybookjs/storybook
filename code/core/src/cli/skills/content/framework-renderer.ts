@@ -21,5 +21,7 @@ export const frameworkToRendererMap: Record<string, string> = {
 
   '@storybook/html-vite': '@storybook/html',
 
+  '@storybook-astro/framework': '@storybook-astro/renderer',
+
   'storybook-solidjs-vite': 'storybook-solidjs-vite',
 };

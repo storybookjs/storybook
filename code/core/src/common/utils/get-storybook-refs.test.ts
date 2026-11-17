@@ -1,6 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { checkRef } from './get-storybook-refs.ts';
+import { checkRef, getRefs } from './get-storybook-refs.ts';
+
+// getAutoRefs walks upward from configDir looking for a package manifest to auto-discover refs
+// from. Pin it to nothing so the test cannot pick up refs from the host filesystem.
+vi.mock('empathic/package', () => ({ up: () => undefined }));
 
 describe('checkRef', () => {
   afterEach(() => vi.restoreAllMocks());
@@ -28,6 +32,63 @@ describe('checkRef', () => {
     expect(await checkRef('https://chromatic.com')).toBe(false);
   });
 
+  it('gives up on a ref that does not answer in time', async () => {
+    const fetchSpy = vi
+      .spyOn(global, 'fetch')
+      .mockImplementation(
+        (_url, init) =>
+          new Promise((_resolve, reject) =>
+            init?.signal?.addEventListener('abort', () => reject(init.signal!.reason))
+          )
+      );
+    // Fake timers do not drive `AbortSignal.timeout`, so its signal is stubbed and aborted by hand.
+    const controller = new AbortController();
+    const timeoutSpy = vi.spyOn(AbortSignal, 'timeout').mockReturnValue(controller.signal);
+    const pending = checkRef('https://chromatic.com');
+    controller.abort(new DOMException('timed out', 'TimeoutError'));
+    expect(await pending).toBe(false);
+    expect(timeoutSpy).toHaveBeenCalledWith(3_000);
+    expect(fetchSpy).toHaveBeenCalledWith(
+      'https://chromatic.com/iframe.html',
+      expect.objectContaining({ signal: controller.signal })
+    );
+  });
+
+  it('returns false when the timeout aborts the JSON body after headers arrive', async () => {
+    const controller = new AbortController();
+    vi.spyOn(AbortSignal, 'timeout').mockReturnValue(controller.signal);
+    let body!: ReadableStreamDefaultController<Uint8Array>;
+    const response = new Response(
+      new ReadableStream<Uint8Array>({
+        start(stream) {
+          body = stream;
+          stream.enqueue(new TextEncoder().encode('{"loginUrl":'));
+        },
+      })
+    );
+    const readJson = vi.spyOn(response, 'json');
+    vi.spyOn(global, 'fetch')
+      .mockResolvedValueOnce(new Response('iframe'))
+      .mockImplementationOnce(async (_url, init) => {
+        init?.signal?.addEventListener('abort', () => body.error(init.signal!.reason));
+        return response;
+      });
+
+    const pending = checkRef('https://chromatic.com');
+    await vi.waitFor(() => expect(readJson).toHaveBeenCalledOnce());
+    controller.abort(new DOMException('timed out', 'TimeoutError'));
+
+    expect(await pending).toBe(false);
+  });
+
+  it('keeps non-JSON iframe responses publicly reachable', async () => {
+    vi.spyOn(global, 'fetch').mockImplementation(
+      async () => new Response('<html>Storybook</html>')
+    );
+
+    expect(await checkRef('https://chromatic.com')).toBe(true);
+  });
+
   it('returns false when fetch fails', async () => {
     vi.spyOn(global, 'fetch').mockRejectedValue(new Error('Network error'));
     expect(await checkRef('https://chromatic.com')).toBe(false);
@@ -38,5 +99,29 @@ describe('checkRef', () => {
       .mockResolvedValueOnce({ ok: true, status: 200 } as Response)
       .mockRejectedValueOnce(new TypeError('fetch failed'));
     expect(await checkRef('https://chromatic.com')).toBe(false);
+  });
+});
+
+describe('getRefs', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it('normalizes camelCase ref keys to lowercase and drops the original entry', async () => {
+    vi.spyOn(global, 'fetch').mockResolvedValue({ ok: false, status: 401 } as Response);
+
+    const refs = await getRefs({
+      configDir: 'storybook-get-refs-config-dir',
+      presets: {
+        apply: async () => ({
+          qaWorking: { title: 'QA', url: 'http://localhost:6007' },
+        }),
+      },
+    } as unknown as Parameters<typeof getRefs>[0]);
+
+    expect(Object.keys(refs)).toEqual(['qaworking']);
+    expect(refs.qaworking).toMatchObject({
+      id: 'qaworking',
+      title: 'QA',
+      url: 'http://localhost:6007',
+    });
   });
 });

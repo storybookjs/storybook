@@ -156,7 +156,7 @@ describe('ProjectDetectionCommand', () => {
       const onCancel = vi.mocked(prompt.select).mock.calls[0]?.[1]?.onCancel;
       const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
 
-      await onCancel?.();
+      await onCancel?.('cancel');
 
       expect(mockTelemetryService.trackPromptCancel).toHaveBeenCalledWith('react-native-variant');
       expect(exitSpy).toHaveBeenCalledWith(0);

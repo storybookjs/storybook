@@ -56,8 +56,6 @@
     func?: (event: MouseEvent) => number;
     /** Snippet contents */
     children: Snippet;
-    /** Actual arg types inferred from the component */
-    argTypes: Record<string, any>;
   };
 
   let {
@@ -73,7 +71,6 @@
     unionTypes = 123,
     children,
     func = () => 10,
-    argTypes,
   }: PropsA & PropsB = $props();
 </script>
 
@@ -102,6 +99,3 @@
 {#if children}
   {@render children()}
 {/if}
-
-<h2>Arg Types</h2>
-<pre>{JSON.stringify(argTypes, null, 2)}</pre>

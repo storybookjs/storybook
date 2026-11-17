@@ -3,7 +3,7 @@ npm create storybook@latest --type solid
 ```
 
 ```shell renderer="common" packageManager="pnpm"
-pnpm create storybook@latest --type solid
+pnpm --allow-build=esbuild create storybook@latest --type solid
 ```
 
 ```shell renderer="common" packageManager="yarn"

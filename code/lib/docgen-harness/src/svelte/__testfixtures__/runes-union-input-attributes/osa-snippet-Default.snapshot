@@ -1,0 +1,5 @@
+<script>
+  import FileOrTextInput from './FileOrTextInput.svelte';
+</script>
+
+<FileOrTextInput type="text" placeholder="Name" />

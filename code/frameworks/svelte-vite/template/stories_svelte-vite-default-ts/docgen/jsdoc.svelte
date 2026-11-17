@@ -26,7 +26,6 @@
    * @property {{ a: number } & { b: string }} [intersection] Intersection of types
    * @property {import('svelte').Snippet} children Snippet contents
    * @property {(event: MouseEvent) => number} [func] Event callback function
-   * @property {Record<string, any>} [argTypes] Actual arg types inferred from the component
    */
 
   /** @type {MyProps} */
@@ -50,7 +49,6 @@
     intersection = undefined,
     children,
     func = () => 10,
-    argTypes,
   } = $props();
 </script>
 
@@ -86,6 +84,3 @@
 {#if children}
   {@render children()}
 {/if}
-
-<h2>Arg Types</h2>
-<pre>{JSON.stringify(argTypes, null, 2)}</pre>

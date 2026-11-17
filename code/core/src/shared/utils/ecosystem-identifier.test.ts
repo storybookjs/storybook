@@ -1,8 +1,76 @@
 import { describe, expect, it } from 'vitest';
 
-import { globToRegex, matchesPackagePattern } from './ecosystem-identifier.ts';
+import { VRT_PACKAGES, globToRegex, matchesPackagePattern } from './ecosystem-identifier.ts';
 
 describe('ecosystem-identifier', () => {
+  describe('VRT_PACKAGES', () => {
+    it.each([
+      '@alwaysmeticulous/cli',
+      '@vizzly-testing/vitest',
+      '@lambdatest/smartui-storybook',
+      '@applitools/eyes-selenium',
+      '@percy/cli-extra',
+      '@chromatic-com/playwright',
+      '@alwaysmeticulous/recorder-loader',
+      '@alwaysmeticulous/recorder-plugin',
+      '@applitools/eyes-cypress',
+      '@applitools/eyes-playwright',
+      '@applitools/eyes-storybook',
+      '@argos-ci/cli',
+      '@argos-ci/playwright',
+      '@argos-ci/storybook',
+      '@blazediff/core',
+      '@lambdatest/smartui-cli',
+      '@percy/cli',
+      '@percy/playwright',
+      '@percy/storybook',
+      '@saucelabs/visual',
+      '@saucelabs/visual-playwright',
+      '@visual-regression-tracker/agent-playwright',
+      '@visual-regression-tracker/sdk-js',
+      '@vizzly-testing/cli',
+      '@vizzly-testing/honeydiff',
+      'backstopjs',
+      'chromatic',
+      'happo',
+      'happo.io',
+      'jest-image-snapshot',
+      'loki',
+      'lost-pixel',
+      'reg-cli',
+      'reg-suit',
+      'sherlo',
+      'testplane',
+    ])('matches %s', (name) => {
+      expect(matchesPackagePattern(name, VRT_PACKAGES)).toBe(true);
+    });
+
+    it.each([
+      'diffy',
+      'visualrunner',
+      'odiff-bin',
+      '@wdio/visual-service',
+      '@wdio/cli',
+      '@playwright/test',
+      '@playwright/experimental-ct-react',
+      'playwright',
+      'jest',
+      'some-chromatic-package',
+      'happoXio',
+      '@unrelated/cli',
+      '@percy-extra/cli',
+      '@vizzly-testing-extra/cli',
+      'percy/cli',
+      '@lambdatest/node-tunnel',
+      '@lambdatest/selenium-driver',
+      '@lambdatest/playwright-node-sdk',
+      '@saucelabs/testcomposer',
+      '@saucelabs/bin-wrapper',
+    ])('does not match %s', (name) => {
+      expect(matchesPackagePattern(name, VRT_PACKAGES)).toBe(false);
+    });
+  });
+
   describe('globToRegex', () => {
     it('should convert exact match patterns', () => {
       const regex = globToRegex('jest');

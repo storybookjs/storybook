@@ -10,6 +10,7 @@ import { global } from '@storybook/global';
 import { Helmet } from 'react-helmet-async';
 import { Consumer, addons, type Combo } from 'storybook/manager-api';
 
+import { focusableUIElements } from '../../../manager-api/modules/layout.ts';
 import { useLandmark } from '../../hooks/useLandmark.ts';
 import { isReviewCollectionStoryRoute } from '../../../shared/review/routes.ts';
 import { ReviewToolbarHeader } from '../review/components/ReviewToolbarHeader.tsx';
@@ -100,7 +101,7 @@ const Preview = React.memo<PreviewProps>(function Preview(props) {
             tools={tools}
             toolsExtra={toolsExtra}
           />
-          <S.FrameWrap ref={mainRef} {...landmarkProps}>
+          <S.FrameWrap ref={mainRef} id={focusableUIElements.previewRegion} {...landmarkProps}>
             <h2 id="main-preview-heading" className="sb-sr-only">
               Main preview area
             </h2>

@@ -4,6 +4,8 @@ import type { Status } from './shared/status-store/index.ts';
 import type { StatusTypeId } from './shared/status-store/index.ts';
 import { StorybookError } from './storybook-error.ts';
 
+export { StorybookError } from './storybook-error.ts';
+
 /**
  * If you can't find a suitable category for your error, create one based on the package name/file
  * path of which the error is thrown. For instance: If it's from `storybook/internal/client-logger`,
@@ -65,16 +67,15 @@ export class MissingStoryAfterHmrError extends StorybookError {
 }
 
 export class ImplicitActionsDuringRendering extends StorybookError {
-  constructor(public data: { phase: string; name: string; deprecated: boolean }) {
+  constructor(public data: { phase: string; name: string }) {
     super({
       name: 'ImplicitActionsDuringRendering',
       category: Category.PREVIEW_API,
       code: 2,
       documentation:
-        'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#using-implicit-actions-during-rendering-is-deprecated-for-example-in-the-play-function',
+        'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#disallowimplicitactionsinrenderv8-feature-flag-removed',
       message: dedent`
         We detected that you use an implicit action arg while ${data.phase} of your story.  
-        ${data.deprecated ? `\nThis is deprecated and won't work in Storybook 8 anymore.\n` : ``}
         Please provide an explicit spy to your args like this:
           import { fn } from 'storybook/test';
           ... 

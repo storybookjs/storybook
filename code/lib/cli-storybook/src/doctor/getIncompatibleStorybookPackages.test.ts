@@ -9,9 +9,11 @@ import {
   getIncompatibleStorybookPackages,
 } from './getIncompatibleStorybookPackages.ts';
 
-vi.mock('picocolors', () => {
+vi.mock('picocolors', async (importOriginal) => {
+  const { default: actual } = await importOriginal<{ default: typeof import('picocolors') }>();
   return {
     default: {
+      ...actual,
       yellow: (str: string) => str,
       cyan: (str: string) => str,
       bold: (str: string) => str,
@@ -74,6 +76,41 @@ describe('checkPackageCompatibility', () => {
         hasIncompatibleDependencies: false,
       })
     );
+  });
+
+  it.each([
+    ['ignores a 0.x range', '^0.4.0', '11.0.0', false],
+    [
+      'flags a range whose canary part comes first',
+      '^0.0.0-0 || ^10.0.0 || ^10.3.0-0',
+      '11.0.0-beta.3',
+      true,
+    ],
+    ['accepts a range with a canary part', '^0.0.0-0 || ^10.6.0-0 || ^11.0.0-0', '11.0.0', false],
+    [
+      'accepts a canary through the canary part',
+      '^0.0.0-0 || ^10.0.0',
+      '0.0.0-pr-1-sha-abc',
+      false,
+    ],
+    [
+      'accepts a prerelease of a minor the range does not list',
+      '^0.0.0-0 || ^10.1.0-0 || ^11.0.0-0',
+      '11.1.0-alpha.1',
+      false,
+    ],
+    ['accepts a prerelease within a plain range', '^10.0.0', '10.7.0-alpha.1', false],
+  ])('%s', async (_, range, currentStorybookVersion, hasIncompatibleDependencies) => {
+    vi.mocked(packageManagerMock.getModulePackageJSON).mockResolvedValueOnce({
+      name: 'my-storybook-package',
+      version: '1.0.0',
+      peerDependencies: { storybook: range },
+    });
+    const result = await checkPackageCompatibility('my-storybook-package', {
+      currentStorybookVersion,
+      packageManager: packageManagerMock as JsPackageManager,
+    });
+    expect(result.hasIncompatibleDependencies).toBe(hasIncompatibleDependencies);
   });
 
   it('returns that a package is incompatible and because it is core, can be upgraded', async () => {
@@ -205,7 +242,7 @@ describe('getIncompatiblePackagesSummary', () => {
       Please consider updating your packages or contacting the maintainers for compatibility details.
 
       For more details on compatibility guidance, see:
-      https://github.com/storybookjs/storybook/issues/32836"
+      https://github.com/storybookjs/storybook/issues/36283"
     `);
   });
 });

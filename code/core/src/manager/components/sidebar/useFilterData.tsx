@@ -11,7 +11,7 @@ import type {
 import { global } from '@storybook/global';
 import { BeakerIcon, DocumentIcon, PlayHollowIcon } from '@storybook/icons';
 
-import { color } from 'storybook/theming';
+import { color } from 'storybook/theming/emotion';
 
 import {
   BUILT_IN_TAGS,

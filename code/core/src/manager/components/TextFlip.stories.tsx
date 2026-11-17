@@ -12,7 +12,10 @@ const Counter = ({
 }: { text: string; reverse?: boolean } & ComponentProps<typeof TextFlip>) => {
   const [value, setValue] = useState(Number(text));
   return (
-    <Button onClick={() => setValue(reverse ? value - 1 : value + 1)}>
+    <Button
+      ariaLabel={reverse ? 'Decrease value' : 'Increase value'}
+      onClick={() => setValue(reverse ? value - 1 : value + 1)}
+    >
       <TextFlip text={String(value)} {...props} />
     </Button>
   );
@@ -25,7 +28,7 @@ const meta = preview.meta({
     placeholder: 'This is some long placeholder text',
   },
   render: (args) => (
-    <Button>
+    <Button ariaLabel="Example value">
       <TextFlip {...args} />
     </Button>
   ),

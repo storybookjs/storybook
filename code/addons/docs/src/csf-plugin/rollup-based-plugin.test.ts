@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { SourceMap, type SourceMapPayload } from 'node:module';
 import { resolve } from 'node:path';
 
-import { formatCsf, loadCsf } from 'storybook/internal/csf-tools';
+import { formatCsf } from 'storybook/internal/csf-tools';
 import type { CsfEnricher } from 'storybook/internal/types';
 
 import MagicString from 'magic-string';
@@ -42,17 +42,18 @@ const originalCode = dedent`
   };
 `;
 
-const makeTitle = (title: string) => title || 'default';
-
-const reprint = (code: string) =>
-  formatCsf(
-    loadCsf(code, { makeTitle }).parse(),
-    { sourceMaps: true, sourceFileName: id },
-    code
-  ) as {
-    code: string;
-    map: SourceMapPayload;
+// An earlier transform in the chain, such as `vite-plugin-storybook-test`, that moves code down.
+const earlierTransform = (code: string) => {
+  const edited = new MagicString(code).prepend("import { setup } from 'earlier-transform';\n\n");
+  return {
+    code: edited.toString(),
+    map: edited.generateMap({
+      hires: 'boundary',
+      source: id,
+      includeContent: true,
+    }) as unknown as SourceMapPayload,
   };
+};
 
 const positionOf = (code: string, token: string) => {
   const line = code.split('\n').findIndex((text) => text.includes(token));
@@ -72,7 +73,7 @@ describe('rollupBasedPlugin', () => {
   });
 
   it('maps the output to the transform input instead of the combined sourcemap', async () => {
-    const input = reprint(originalCode);
+    const input = earlierTransform(originalCode);
     const inputPosition = positionOf(input.code, 'play:');
     expect(inputPosition.line).not.toBe(positionOf(originalCode, 'play:').line);
 
@@ -109,6 +110,29 @@ describe('rollupBasedPlugin', () => {
     expect(entry).toMatchObject({ originalLine: positionOf(originalCode, 'play:').line });
     expect(result.map.sourcesContent).toEqual([originalCode]);
   });
+
+  it('prints a CRLF story file with CRLF, maps it line for line and keeps its content as written', async () => {
+    const crlf = originalCode.replaceAll('\n', '\r\n');
+    vol.fromJSON({ [id]: crlf });
+
+    const result = await transformCsf(crlf, id, {});
+    if (typeof result !== 'object') {
+      throw new Error('expected a transform result with a sourcemap');
+    }
+
+    // Every line ends in CRLF, and `originalSource` holds the text with `\n`.
+    expect(result.code.replaceAll('\r\n', '')).not.toMatch(/\r|\n|\\r/);
+    const output = positionOf(result.code, 'play:');
+    const entry = new SourceMap(result.map as unknown as SourceMapPayload).findEntry(
+      output.line,
+      output.column
+    );
+    expect(entry).toMatchObject({
+      originalLine: positionOf(originalCode, 'play:').line,
+      originalColumn: positionOf(originalCode, 'play:').column,
+    });
+    expect(result.map.sourcesContent).toEqual([crlf]);
+  });
 });
 
 describe('transformCsf', () => {
@@ -144,7 +168,7 @@ export const Primary = { args: { label: 'Primary' } };
 
     expect(code).toContain('component: "Button component"');
     expect(code).toContain('story: "The primary button"');
-    expect(code).toContain(`originalSource: "{\\n  args: {\\n    label: 'Primary'\\n  }\\n}"`);
+    expect(code).toContain(`originalSource: "{ args: { label: 'Primary' } }"`);
   });
 
   it('takes the original source from the story file when the code was transformed', async () => {
@@ -153,13 +177,34 @@ export const Primary = { args: { label: 'Primary' } };
     const code = await transform(transformed);
 
     expect(code).toContain(`label: 'Transformed'`);
-    expect(code).toContain(`originalSource: "{\\n  args: {\\n    label: 'Primary'\\n  }\\n}"`);
+    expect(code).toContain(`originalSource: "{ args: { label: 'Primary' } }"`);
+  });
+
+  it('keeps original positions when a hook commits edits before formatting', async () => {
+    enrichCsf.mockImplementation(async (csf) => {
+      const [primary] = csf.objects({ meta: false });
+      primary.set(['parameters', 'docs', 'extra'], true);
+    });
+
+    const result = await transformCsf(source, storyId, { enrichCsf });
+    if (typeof result !== 'object') {
+      throw new Error('expected a transform result with a sourcemap');
+    }
+
+    expect(result.code).toContain('extra: true');
+    const output = positionOf(result.code, 'export const Primary');
+    const entry = new SourceMap(result.map as unknown as SourceMapPayload).findEntry(
+      output.line,
+      output.column
+    );
+    expect(entry).toMatchObject({ originalLine: positionOf(source, 'export const Primary').line });
+    expect(result.map.sourcesContent).toEqual([source]);
   });
 
   it('leaves the source passed to enrichCsf hooks unenriched', async () => {
     expect.assertions(3);
     enrichCsf.mockImplementation(async (csf, csfSource) => {
-      const sourceCode = formatCsf(csfSource) as string;
+      const sourceCode = formatCsf(csfSource);
       expect(sourceCode).toContain('/** Button component */');
       expect(sourceCode).not.toContain('component: "Button component"');
       expect(formatCsf(csf)).toContain('component: "Button component"');

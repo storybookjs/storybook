@@ -21,10 +21,8 @@ jobs:
         ((github.event_name == 'pull_request' &&
           github.event.pull_request.head.repo.full_name == github.repository &&
           (contains(github.event.pull_request.labels.*.name, 'ci:normal') ||
-           contains(github.event.pull_request.labels.*.name, 'ci:merged') ||
            contains(github.event.pull_request.labels.*.name, 'ci:daily'))
-        ) || (github.event_name == 'push' && github.ref == 'refs/heads/next') ||
-        (github.event_name == 'schedule'))
+        ) || (github.event_name == 'schedule'))
 
     runs-on: ubuntu-latest
     env:
@@ -39,17 +37,11 @@ jobs:
         id: tag
         env:
           EVENT_NAME: ${{ github.event_name }}
-          IS_MERGED: ${{ contains(github.event.pull_request.labels.*.name, 'ci:merged') }}
           IS_DAILY: ${{ contains(github.event.pull_request.labels.*.name, 'ci:daily') }}
-          REF: ${{ github.ref }}
         run: |
           tags="normal"
-          if [[ "$EVENT_NAME" == "pull_request" ]]; then
-            if [[ "$IS_MERGED" == "true" ]]; then tags="merged"; fi
-            if [[ "$IS_DAILY" == "true" ]]; then tags="daily"; fi
-          fi
-          if [[ "$EVENT_NAME" == "push" && "$REF" == "refs/heads/next" ]]; then
-            tags="merged"
+          if [[ "$EVENT_NAME" == "pull_request" && "$IS_DAILY" == "true" ]]; then
+            tags="daily"
           fi
           if [[ "$EVENT_NAME" == "schedule" ]]; then
             tags="daily"

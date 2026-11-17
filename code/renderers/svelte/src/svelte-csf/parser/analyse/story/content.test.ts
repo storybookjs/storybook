@@ -1,4 +1,4 @@
-import { describe, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { getStoryContentRawCode } from './content.ts';
 
@@ -8,9 +8,7 @@ import { dedent } from 'ts-dedent';
 
 describe(getStoryContentRawCode.name, () => {
   describe('When a `<Story />` is a self-closing tag...', () => {
-    it('works when `template` attribute was provided with a reference to snippet at the root of fragment', async ({
-      expect,
-    }) => {
+    it('prints the snippet that the `template` attribute references', async () => {
       const code = `
         <script module>
           import { defineMeta } from "@storybook/svelte";
@@ -43,7 +41,7 @@ describe(getStoryContentRawCode.name, () => {
       expect(rawSource).toBe('<SomeComponent {...args} />');
     });
 
-    it('works when `render` is set in `defineMeta`', async ({ expect }) => {
+    it('prints the `render` snippet of `defineMeta`', async () => {
       const code = `
         <script module>
           import { defineMeta } from "@storybook/svelte";
@@ -77,9 +75,7 @@ describe(getStoryContentRawCode.name, () => {
       expect(rawSource).toBe('<SomeComponent {...args} />');
     });
 
-    it('works implicit `template` attribute takes precedence over `render` in `defineMeta`', async ({
-      expect,
-    }) => {
+    it('prints the `template` attribute snippet over the `render` snippet of `defineMeta`', async () => {
       const code = `
         <script module>
           import { defineMeta } from "@storybook/svelte";
@@ -117,9 +113,7 @@ describe(getStoryContentRawCode.name, () => {
       expect(rawSource).toBe(`<SomeComponent wins="templateAttribute" {...args} />`);
     });
 
-    it('works when no `render` in `defineMeta`, no `template` attribute, just a story', async ({
-      expect,
-    }) => {
+    it('prints the meta component with the args without `render` or `template`', async () => {
       const code = `
         <script module>
           import { defineMeta } from "@storybook/svelte";
@@ -147,10 +141,68 @@ describe(getStoryContentRawCode.name, () => {
 
       expect(rawSource).toBe(`<SampleComponent {...args} />`);
     });
+
+    it('prints a member-expression component of a named import of an object', async () => {
+      const code = `
+        <script module>
+          import { defineMeta } from "@storybook/svelte";
+
+          import { Input } from "./input.ts";
+
+          const { Story } = defineMeta({
+            component: Input.Select,
+          });
+        </script>
+
+        <Story name="Default" />
+      `;
+      const ast = getSvelteAST({ code });
+      const svelteASTNodes = await extractSvelteASTNodes({ ast });
+      const { storyComponents } = svelteASTNodes;
+      const component = storyComponents[0].component;
+      const rawSource = getStoryContentRawCode({
+        nodes: {
+          component,
+          svelte: svelteASTNodes,
+        },
+        originalCode: code,
+      });
+
+      expect(rawSource).toBe(`<Input.Select {...args} />`);
+    });
+
+    it('prints a member-expression component of a namespace import', async () => {
+      const code = `
+        <script module>
+          import { defineMeta } from "@storybook/svelte";
+
+          import * as ns from "./components.ts";
+
+          const { Story } = defineMeta({
+            component: ns.Button,
+          });
+        </script>
+
+        <Story name="Default" />
+      `;
+      const ast = getSvelteAST({ code });
+      const svelteASTNodes = await extractSvelteASTNodes({ ast });
+      const { storyComponents } = svelteASTNodes;
+      const component = storyComponents[0].component;
+      const rawSource = getStoryContentRawCode({
+        nodes: {
+          component,
+          svelte: svelteASTNodes,
+        },
+        originalCode: code,
+      });
+
+      expect(rawSource).toBe(`<ns.Button {...args} />`);
+    });
   });
 
   describe('When a `<Story />` is NOT a self-closing tag...', () => {
-    it('works when a static children content provided with asChild', async ({ expect }) => {
+    it('prints the static children of an `asChild` story', async () => {
       const code = `
         <script module>
           import { defineMeta } from "@storybook/svelte";
@@ -181,9 +233,7 @@ describe(getStoryContentRawCode.name, () => {
       expect(rawSource).toBe(`<h1>Static content</h1>`);
     });
 
-    it('works when a static children content provided as a child to the component', async ({
-      expect,
-    }) => {
+    it('wraps the static children in the meta component', async () => {
       const code = `
         <script module>
           import { defineMeta } from "@storybook/svelte";
@@ -216,7 +266,40 @@ describe(getStoryContentRawCode.name, () => {
         </SampleComponent>`);
     });
 
-    it("works when a `template` svelte's snippet block used inside", async ({ expect }) => {
+    it('wraps the children in a member-expression component', async () => {
+      const code = `
+        <script module>
+          import { defineMeta } from "@storybook/svelte";
+
+          import { Input } from "./input.ts";
+
+          const { Story } = defineMeta({
+            component: Input.Select,
+          });
+        </script>
+
+        <Story name="Default">
+          <h1>Static children content</h1>
+        </Story>
+      `;
+      const ast = getSvelteAST({ code });
+      const svelteASTNodes = await extractSvelteASTNodes({ ast });
+      const { storyComponents } = svelteASTNodes;
+      const component = storyComponents[0].component;
+      const rawSource = getStoryContentRawCode({
+        nodes: {
+          component,
+          svelte: svelteASTNodes,
+        },
+        originalCode: code,
+      });
+
+      expect(rawSource).toBe(dedent`<Input.Select {...args}>
+          <h1>Static children content</h1>
+        </Input.Select>`);
+    });
+
+    it('prints the content of a `template` snippet inside the story', async () => {
       const code = `
         <script module>
           import { defineMeta } from "@storybook/svelte";
@@ -249,9 +332,7 @@ describe(getStoryContentRawCode.name, () => {
       expect(rawSource).toBe(`<SomeComponent {...args} />`);
     });
 
-    it("inner `<Story>`'s template content takes precedence over `render` in `defineMeta`", async ({
-      expect,
-    }) => {
+    it("inner `<Story>`'s template content takes precedence over `render` in `defineMeta`", async () => {
       const code = `
         <script module>
           import { defineMeta } from "@storybook/svelte";
@@ -288,9 +369,7 @@ describe(getStoryContentRawCode.name, () => {
       expect(rawSource).toBe(`<SomeComponent wins="inner-template" {...args} />`);
     });
 
-    it('works when a static children content provided without component in defineMeta', async ({
-      expect,
-    }) => {
+    it('prints the static children when `defineMeta` has no component', async () => {
       const code = `
         <script module>
           import { defineMeta } from "@storybook/svelte";

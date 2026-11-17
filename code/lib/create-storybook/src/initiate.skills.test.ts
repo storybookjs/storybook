@@ -19,6 +19,7 @@ import {
   executeGeneratorExecution,
   executePreflightCheck,
   executeProjectDetection,
+  executeTypeScriptDependency,
   executeUserPreferences,
 } from './commands/index.ts';
 import { doInitiate } from './initiate.ts';
@@ -60,6 +61,7 @@ describe('init: the skills step', () => {
       builder: SupportedBuilder.VITE,
       renderer: SupportedRenderer.REACT,
     });
+    vi.mocked(executeTypeScriptDependency).mockResolvedValue('already-installed');
     vi.mocked(
       FeatureCompatibilityService.prototype.validateTestFeatureCompatibility
     ).mockResolvedValue({ compatible: true });

@@ -15,6 +15,7 @@ export type FrameworkOptions = {
    * slots. When disabled, Storybook will skip the docgen processing step during build, which can
    * improve build performance.
    *
+   * @deprecated Builder docgen is removed in Storybook 12. Use `features.docgenServer`.
    * @default true
    */
   docgen?: boolean;

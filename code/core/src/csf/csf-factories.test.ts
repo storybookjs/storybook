@@ -52,6 +52,15 @@ test('addon parameters are inferred', () => {
   });
 });
 
+test('a story keeps the tags that the story it extends removes from the meta', () => {
+  const taggedMeta = preview.meta({ tags: ['autodocs'], render: () => 'hello' });
+  const Parent = taggedMeta.story({ tags: ['!autodocs'] });
+  const Child = Parent.extend({ tags: ['child'] });
+
+  expect(Child.composed.tags).not.toContain('autodocs');
+  expect(Child.composed.tags).toContain('child');
+});
+
 describe('legacy preview annotation namespaces', () => {
   test('keep factory addon types when mixed with factory addons', () => {
     const mixedPreview = definePreview({

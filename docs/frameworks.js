@@ -128,7 +128,7 @@ module.exports = {
         {
           name: 'CSF Stories',
           unsupported: [],
-          path: 'api/csf',
+          path: 'writing-stories/csf',
         },
         {
           name: 'Autodocs',

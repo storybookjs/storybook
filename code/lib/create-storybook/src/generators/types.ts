@@ -147,8 +147,9 @@ export type CommandOptions = {
   agent?: boolean;
   html?: boolean;
   skipInstall?: boolean;
+  /** Add `typescript` for docgen when the project has none; prompts when undefined */
+  installTypescript?: boolean;
   language?: SupportedLanguage;
-  parser?: string;
   /** Automatically answer yes to prompts */
   yes?: boolean;
   builder?: SupportedBuilder;

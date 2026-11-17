@@ -8,6 +8,9 @@ on:
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  # Regex with one capture group that extracts the reproduction link from the issue body.
+  # Shared by the local-link detection step and nissuer so the two can never drift apart.
+  REPRO_LINK_SECTION: '### Reproduction link(.*)### Reproduction steps'
 
 permissions:
   issues: write
@@ -18,7 +21,33 @@ jobs:
     if: github.repository_owner == 'storybookjs'
     runs-on: ubuntu-latest
     steps:
+      # nissuer verifies the reproduction link by fetching it from the runner, so a link to a
+      # local Storybook (http://localhost:6006, http://127.0.0.1:6006, ...) always fails the
+      # check and the issue gets auto-closed. We accept such links, so detect them here and
+      # skip nissuer for the `opened` event, where the reproduction check is the only thing
+      # nissuer does for this repository (no area labels or vulnerability webhook configured).
+      - name: Detect local reproduction link
+        id: repro
+        if: github.event_name == 'issues' && github.event.action == 'opened'
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
+        with:
+          script: |
+            const LOOPBACK_HOSTS = ['localhost', '127.0.0.1', '[::1]'];
+            const body = context.payload.issue?.body ?? '';
+            const sectionRe = new RegExp(process.env.REPRO_LINK_SECTION, 'is');
+            const link = body.match(sectionRe)?.[1]?.trim() ?? '';
+            // Be lenient with links typed without a scheme, such as `localhost:6006`.
+            const withScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(link) ? link : `http://${link}`;
+            const isLocal =
+              URL.canParse(withScheme) && LOOPBACK_HOSTS.includes(new URL(withScheme).hostname);
+            core.info(
+              isLocal
+                ? `Reproduction link points to a local Storybook, skipping nissuer: ${link}`
+                : 'Reproduction link is not local, nissuer will verify it'
+            );
+            core.setOutput('local', String(isLocal));
       - uses: balazsorban44/nissuer@92ef22afd6a75e5e588f5d689a1fd3433f596f82 # v1.10.0
+        if: steps.repro.outputs.local != 'true'
         with:
           label-comments: |
             {
@@ -30,6 +59,6 @@ jobs:
           # every URL and auto-closes valid bug reports (see balazsorban44/nissuer#41, #35810).
           # `$^` is a regex that matches nothing.
           reproduction-blocklist: '$^'
-          reproduction-link-section: '### Reproduction link(.*)### Reproduction steps'
+          reproduction-link-section: ${{ env.REPRO_LINK_SECTION }}
           reproduction-invalid-label: 'needs reproduction'
           reproduction-issue-labels: 'bug,needs triage'

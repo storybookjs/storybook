@@ -13,10 +13,12 @@ import {
   SIDEBAR_FILTER_CHANGED,
   STORY_ARGS_UPDATED,
   STORY_CHANGED,
+  STORY_FINISHED,
   STORY_INDEX_INVALIDATED,
   STORY_MISSING,
   STORY_PREPARED,
   STORY_SPECIFIED,
+  type StoryFinishedPayload,
   UPDATE_STORY_ARGS,
 } from 'storybook/internal/core-events';
 import { sanitize, toId } from 'storybook/internal/csf';
@@ -194,13 +196,14 @@ export interface SubAPI {
   setIndex: (index: API_PreparedStoryIndex) => Promise<void>;
 
   /**
-   * Jumps to the next or previous component in the index.
+   * Jumps to the first entry of the next or previous component, or to the next or previous
+   * unattached docs page.
    *
-   * @param {Direction} direction - The direction to jump. Use -1 to jump to the previous component,
-   *   and 1 to jump to the next component.
+   * @param {Direction} direction - The direction to jump. Use -1 to jump backwards and 1 to jump
+   *   forwards.
    * @returns {void}
    */
-  jumpToComponent: (direction: Direction) => void;
+  jumpToSubtree: (direction: Direction) => void;
   /**
    * Jumps to the next or previous story in the story index.
    *
@@ -581,7 +584,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       // so this strange logic needs to be here until various client code is updated.
       return parameters || undefined;
     },
-    jumpToComponent: (direction) => {
+    jumpToSubtree: (direction) => {
       const { filteredIndex, storyId, refs, refId } = store.getState();
       const story = api.getData(storyId, refId);
 
@@ -675,7 +678,14 @@ export const init: ModuleFn<SubAPI, SubState> = ({
 
       if (!name) {
         // Find the entry (group, component, story or docs) that is referred to
-        const entry = titleOrId ? hash[titleOrId] || hash[sanitize(titleOrId)] : hash[kindSlug];
+        const entry = titleOrId
+          ? hash[titleOrId] ||
+            hash[sanitize(titleOrId)] ||
+            // Unattached docs pages have no entry keyed by their title
+            Object.values(hash).find(
+              (e) => e.type === 'docs' && sanitize(e.title) === sanitize(titleOrId)
+            )
+          : hash[kindSlug];
 
         if (!entry) {
           throw new Error(`Unknown id or title: '${titleOrId}'`);
@@ -1139,7 +1149,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
         const stateHasSelection = state.viewMode && state.storyId;
         const stateSelectionDifferent = state.viewMode !== viewMode || state.storyId !== storyId;
         const { type } = state.index?.[state.storyId] || {};
-        const isStory = !(type === 'root' || type === 'component' || type === 'group');
+        const isLeaf = type === 'story' || type === 'docs';
 
         /**
          * When storybook starts, we want to navigate to the first story. But there are a few
@@ -1172,7 +1182,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
             }
           }
 
-          if (stateHasSelection && stateSelectionDifferent && isStory) {
+          if (stateHasSelection && stateSelectionDifferent && isLeaf) {
             // The manager state is correct, the preview state is lagging behind
             provider.channel?.emit(SET_CURRENT_STORY, {
               storyId: state.storyId,
@@ -1211,7 +1221,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
   provider.channel?.on(
     STORY_PREPARED,
     function handler(this: any, { id, ...update }: StoryPreparedPayload) {
-      const { ref, sourceType } = getEventMetadata(this, fullAPI)!;
+      const { ref } = getEventMetadata(this, fullAPI)!;
       api.updateStory(id, { ...update, prepared: true }, ref);
 
       if (!ref) {
@@ -1221,27 +1231,37 @@ export const init: ModuleFn<SubAPI, SubState> = ({
           store.setState({ hasCalledSetOptions: true });
         }
       }
+    }
+  );
 
-      if (sourceType === 'local') {
+  // Preloading sibling components is a speculative performance optimization. It shouldn't compete
+  // with actual story rendering for resources, so delay it until the story is done loading.
+  provider.channel?.on(
+    STORY_FINISHED,
+    function handler(this: any, { storyId: finishedStoryId }: StoryFinishedPayload) {
+      const { sourceType } = getEventMetadata(this, fullAPI)!;
+      if (sourceType !== 'local') {
+        return;
+      }
+      global.requestIdleCallback(() => {
         const { storyId, index, refId } = store.getState();
-
-        if (!index) {
+        if (!index || storyId !== finishedStoryId) {
           return;
         }
-
-        // create a list of related stories to be preloaded
         const toBePreloaded = Array.from(
           new Set([
             api.findSiblingStoryId(storyId, index, 1, true),
             api.findSiblingStoryId(storyId, index, -1, true),
           ])
         ).filter(Boolean);
-
-        provider.channel?.emit(PRELOAD_ENTRIES, {
-          ids: toBePreloaded,
-          options: { target: refId },
-        });
-      }
+        if (toBePreloaded.length > 0) {
+          provider.channel?.emit(PRELOAD_ENTRIES, {
+            ids: toBePreloaded,
+            source: 'sibling',
+            options: { target: refId },
+          });
+        }
+      });
     }
   );
 

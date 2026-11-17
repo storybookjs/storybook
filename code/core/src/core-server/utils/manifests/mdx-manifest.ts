@@ -7,6 +7,8 @@
  * Mirrors the docgen service contract under `shared/open-service/services/docgen/`.
  */
 
+import { componentIdToStaticName } from '../../../shared/open-service/static-names.ts';
+
 /** A JSON Reference (`{ $ref }`) pointing at a value in another manifest document. */
 export type JsonRef = { $ref: string };
 
@@ -75,9 +77,9 @@ export interface MdxServiceContract {
   };
 }
 
-/** Relative path segment for one component's static snapshot file (`<id>.json`). */
+/** Relative path segment for one component's static snapshot file. */
 export function mdxQueryStaticPath(id: string): string {
-  return `${id}.json`;
+  return `${componentIdToStaticName(id)}.json`;
 }
 
 /** Logical static-store key: `addon-docs/mdx/<id>.json`. */

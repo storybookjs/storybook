@@ -5,7 +5,7 @@ import MagicString from 'magic-string';
 import type { JSDocType, SvelteComponentDoc, SvelteDataItem } from 'sveltedoc-parser';
 import type { PluginOption } from 'vite';
 
-import { type Docgen, type Type, createDocgenCache, generateDocgen } from './generateDocgen.ts';
+import type { Docgen, Type } from '@storybook/svelte/internal/docgen-engine';
 
 /**
  * It access the AST output of _compiled_ Svelte component file. To read the name of the default
@@ -109,7 +109,11 @@ export async function svelteDocgen(): Promise<PluginOption> {
   const cwd = process.cwd();
   const include = /\.svelte$/;
   const exclude = /node_modules\/.*/;
-  const { createFilter } = await import('vite');
+  const [{ createFilter }, { createDocgenCache, generateDocgen }] = await Promise.all([
+    import('vite'),
+    // The engine loads `typescript`, so it is imported only when builder docgen runs.
+    import('@storybook/svelte/internal/docgen-engine'),
+  ]);
 
   const filter = createFilter(include, exclude);
   const sourceFileCache = createDocgenCache();

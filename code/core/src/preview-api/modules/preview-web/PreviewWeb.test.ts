@@ -1422,6 +1422,97 @@ describe('PreviewWeb', () => {
       await preview.onPreloadStories({ ids: ['introduction--docs'] });
       expect(importFn).toHaveBeenCalledWith('./src/ComponentTwo.stories.js');
     });
+
+    it('starts the newest batch once the one in flight finishes', async () => {
+      document.location.search = '?id=component-one--docs&viewMode=docs';
+      const preview = await createAndRenderPreview();
+      await waitForRender();
+
+      vi.mocked(importFn).mockClear();
+      const [gate, openGate] = createGate();
+      vi.mocked(importFn).mockImplementationOnce(() => gate.then(() => componentTwoExports));
+      const inFlight = preview.onPreloadStories({ ids: ['component-two--c'] });
+      await vi.waitFor(() =>
+        expect(importFn).toHaveBeenCalledWith('./src/ComponentTwo.stories.js')
+      );
+
+      const next = preview.onPreloadStories({ ids: ['component-one--e'] });
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(importFn).not.toHaveBeenCalledWith('./src/ExtraComponentOne.stories.js');
+
+      openGate();
+      await Promise.all([inFlight, next]);
+      expect(importFn).toHaveBeenCalledWith('./src/ExtraComponentOne.stories.js');
+    });
+
+    it('drops a batch superseded before it starts', async () => {
+      document.location.search = '?id=component-one--docs&viewMode=docs';
+      const preview = await createAndRenderPreview();
+      await waitForRender();
+
+      vi.mocked(importFn).mockClear();
+      const [gate, openGate] = createGate();
+      vi.mocked(importFn).mockImplementationOnce(() => gate.then(() => componentTwoExports));
+      const inFlight = preview.onPreloadStories({ ids: ['component-two--c'] });
+      await vi.waitFor(() =>
+        expect(importFn).toHaveBeenCalledWith('./src/ComponentTwo.stories.js')
+      );
+
+      const superseded = preview.onPreloadStories({ ids: ['component-one--e'] });
+      const newest = preview.onPreloadStories({ ids: ['introduction--docs'] });
+      openGate();
+      await Promise.all([inFlight, superseded, newest]);
+
+      expect(importFn).toHaveBeenCalledWith('./src/Introduction.mdx');
+      expect(importFn).not.toHaveBeenCalledWith('./src/ExtraComponentOne.stories.js');
+    });
+
+    it('does not let a sibling request replace a waiting hover request', async () => {
+      document.location.search = '?id=component-one--docs&viewMode=docs';
+      const preview = await createAndRenderPreview();
+      await waitForRender();
+
+      vi.mocked(importFn).mockClear();
+      const [gate, openGate] = createGate();
+      vi.mocked(importFn).mockImplementationOnce(() => gate.then(() => componentTwoExports));
+      const inFlight = preview.onPreloadStories({ ids: ['component-two--c'], source: 'hover' });
+      await vi.waitFor(() =>
+        expect(importFn).toHaveBeenCalledWith('./src/ComponentTwo.stories.js')
+      );
+
+      const hover = preview.onPreloadStories({ ids: ['component-one--e'], source: 'hover' });
+      const sibling = preview.onPreloadStories({ ids: ['component-one--a'], source: 'sibling' });
+      openGate();
+      await Promise.all([inFlight, hover, sibling]);
+
+      expect(importFn).toHaveBeenCalledWith('./src/ExtraComponentOne.stories.js');
+      expect(importFn).toHaveBeenCalledWith('./src/ComponentOne.stories.js');
+    });
+
+    it('runs a waiting sibling request after the interactive ones', async () => {
+      document.location.search = '?id=component-one--docs&viewMode=docs';
+      const preview = await createAndRenderPreview();
+      await waitForRender();
+
+      vi.mocked(importFn).mockClear();
+      const [gate, openGate] = createGate();
+      vi.mocked(importFn).mockImplementationOnce(() => gate.then(() => componentTwoExports));
+      const inFlight = preview.onPreloadStories({ ids: ['component-two--c'], source: 'hover' });
+      await vi.waitFor(() =>
+        expect(importFn).toHaveBeenCalledWith('./src/ComponentTwo.stories.js')
+      );
+
+      const sibling = preview.onPreloadStories({ ids: ['component-one--a'], source: 'sibling' });
+      const hover = preview.onPreloadStories({ ids: ['component-one--e'], source: 'hover' });
+      openGate();
+      await Promise.all([inFlight, sibling, hover]);
+
+      expect(vi.mocked(importFn).mock.calls.map(([path]) => path)).toEqual([
+        './src/ComponentTwo.stories.js',
+        './src/ExtraComponentOne.stories.js',
+        './src/ComponentOne.stories.js',
+      ]);
+    });
   });
 
   describe('onResetArgs', () => {
@@ -1701,6 +1792,99 @@ describe('PreviewWeb', () => {
       expect(mockChannel.emit).toHaveBeenCalledWith(STORY_RENDERED, 'component-one--a');
 
       await waitForQuiescence();
+    });
+  });
+
+  describe('concurrent renderSelection calls', () => {
+    it('drops a selection that was superseded while the previous render was tearing down', async () => {
+      const [teardownGate, openTeardownGate] = createGate();
+      const [replacementGate, openReplacementGate] = createGate();
+      let replacementLoadStarted = () => {};
+      const replacementStarted = new Promise<void>((resolve) => {
+        replacementLoadStarted = resolve;
+      });
+
+      document.location.search = '?id=component-one--a';
+      const preview = await createAndRenderPreview();
+
+      teardownrenderToCanvas.mockImplementationOnce(async () => teardownGate);
+      preview.selectionStore.setSelection({
+        storyId: 'component-one--b',
+        viewMode: 'story',
+      });
+      // @ts-expect-error Ignore protected method
+      const selectionB = preview.renderSelection();
+      await vi.waitFor(() => expect(teardownrenderToCanvas).toHaveBeenCalledOnce());
+
+      componentOneExports.default.loaders[0].mockImplementationOnce(async () => {
+        replacementLoadStarted();
+        return replacementGate;
+      });
+      preview.selectionStore.setSelection({
+        storyId: 'component-one--a',
+        viewMode: 'story',
+      });
+      // @ts-expect-error Ignore protected method
+      const selectionA = preview.renderSelection();
+      await replacementStarted;
+
+      mockChannel.emit.mockClear();
+      openTeardownGate();
+      await selectionB;
+
+      expect(mockChannel.emit).not.toHaveBeenCalledWith(
+        STORY_PREPARED,
+        expect.objectContaining({ id: 'component-one--b' })
+      );
+      expect(projectAnnotations.renderToCanvas).toHaveBeenCalledOnce();
+
+      openReplacementGate({ l: 9 });
+      await selectionA;
+    });
+
+    it('tears down a superseded docs render so it cannot be reused without rendering', async () => {
+      const [teardownGate, openTeardownGate] = createGate();
+      const [replacementGate, openReplacementGate] = createGate();
+      let replacementLoadStarted = () => {};
+      const replacementStarted = new Promise<void>((resolve) => {
+        replacementLoadStarted = resolve;
+      });
+
+      document.location.search = '?id=component-one--a';
+      const preview = await createAndRenderPreview();
+
+      teardownrenderToCanvas.mockImplementationOnce(async () => teardownGate);
+      preview.selectionStore.setSelection({
+        storyId: 'component-one--docs',
+        viewMode: 'docs',
+      });
+      // @ts-expect-error Ignore protected method
+      const selectionDocs = preview.renderSelection();
+      await vi.waitFor(() => expect(teardownrenderToCanvas).toHaveBeenCalledOnce());
+
+      componentOneExports.default.loaders[0].mockImplementationOnce(async () => {
+        replacementLoadStarted();
+        return replacementGate;
+      });
+      preview.selectionStore.setSelection({
+        storyId: 'component-one--a',
+        viewMode: 'story',
+      });
+      // @ts-expect-error Ignore protected method
+      const selectionA = preview.renderSelection();
+      await replacementStarted;
+
+      mockChannel.emit.mockClear();
+      openTeardownGate();
+      await selectionDocs;
+
+      expect(mockChannel.emit).not.toHaveBeenCalledWith(
+        DOCS_PREPARED,
+        expect.objectContaining({ id: 'component-one--docs' })
+      );
+
+      openReplacementGate({ l: 9 });
+      await selectionA;
     });
   });
 
@@ -3764,6 +3948,85 @@ describe('PreviewWeb', () => {
   });
 
   describe('onKeydown', () => {
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it('forwards F6 from inputs and keeps the browser from acting on it, so landmarks can be navigated from anywhere in the story', async () => {
+      vi.stubGlobal('parent', {});
+      document.location.search = '?id=component-one--docs&viewMode=docs';
+      const preview = await createAndRenderPreview();
+
+      const event = {
+        key: 'F6',
+        shiftKey: true,
+        preventDefault: vi.fn(),
+        target: { tagName: 'input', getAttribute: vi.fn().mockReturnValue(null) },
+      };
+      preview.onKeydown(event as any);
+
+      expect(event.preventDefault).toHaveBeenCalled();
+      expect(mockChannel.emit).toHaveBeenCalledWith(PREVIEW_KEYDOWN, {
+        event: expect.objectContaining({ key: 'F6', shiftKey: true }),
+      });
+    });
+
+    it('keeps a story from wrapping around its own React Aria landmarks, so F6 moves on to the manager', async () => {
+      vi.stubGlobal('parent', {});
+      document.location.search = '?id=component-one--docs&viewMode=docs';
+      await createAndRenderPreview();
+
+      const wrap = new CustomEvent('react-aria-landmark-navigation', {
+        detail: { direction: 'forward' },
+        bubbles: true,
+        cancelable: true,
+      });
+      globalThis.dispatchEvent(wrap);
+
+      expect(wrap.defaultPrevented).toBe(true);
+    });
+
+    it('lets a story wrap around its own React Aria landmarks when it is the top-level document', async () => {
+      vi.stubGlobal('parent', globalThis.self);
+      document.location.search = '?id=component-one--docs&viewMode=docs';
+      await createAndRenderPreview();
+
+      const wrap = new CustomEvent('react-aria-landmark-navigation', {
+        detail: { direction: 'forward' },
+        bubbles: true,
+        cancelable: true,
+      });
+      globalThis.dispatchEvent(wrap);
+
+      expect(wrap.defaultPrevented).toBe(false);
+    });
+
+    it('sets up its listeners when the global has no addEventListener, as in React Native', async () => {
+      vi.stubGlobal('addEventListener', undefined);
+      document.location.search = '?id=component-one--docs&viewMode=docs';
+
+      await expect(createAndRenderPreview()).resolves.toBeDefined();
+    });
+
+    it('leaves F6 to the browser when the preview is the top-level document', async () => {
+      vi.stubGlobal('parent', globalThis.self);
+      document.location.search = '?id=component-one--docs&viewMode=docs';
+      const preview = await createAndRenderPreview();
+
+      const event = {
+        key: 'F6',
+        preventDefault: vi.fn(),
+        target: { tagName: 'input', getAttribute: vi.fn().mockReturnValue(null) },
+      };
+      preview.onKeydown(event as any);
+
+      expect(event.preventDefault).not.toHaveBeenCalled();
+      expect(mockChannel.emit).not.toHaveBeenCalledWith(
+        PREVIEW_KEYDOWN,
+        expect.objectContaining({})
+      );
+    });
+
     it('emits PREVIEW_KEYDOWN for regular elements', async () => {
       document.location.search = '?id=component-one--docs&viewMode=docs';
       const preview = await createAndRenderPreview();

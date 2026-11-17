@@ -15,6 +15,12 @@ describe('optimizeViteDeps', () => {
     expect(optimizeViteDeps).toContain('react-dom/test-utils');
   });
 
+  it('includes react', () => {
+    // Rationale for this entry lives on the optimizeViteDeps array in preset.ts.
+    // If this test fails, add 'react' back to the optimizeViteDeps array in preset.ts.
+    expect(optimizeViteDeps).toContain('react');
+  });
+
   it('includes react/jsx-runtime', () => {
     // Plugins such as vite-plugin-svgr emit `react/jsx-runtime` imports while transforming non-JS
     // files. The dependency scan does not run those transforms, so the import is only found

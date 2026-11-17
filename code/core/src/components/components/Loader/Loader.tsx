@@ -3,7 +3,7 @@ import React from 'react';
 import { LightningOffIcon } from '@storybook/icons';
 
 import { transparentize } from 'polished';
-import { keyframes, styled } from 'storybook/theming';
+import { keyframes, styled } from 'storybook/theming/emotion';
 
 import { rotate360 } from '../shared/animation.ts';
 

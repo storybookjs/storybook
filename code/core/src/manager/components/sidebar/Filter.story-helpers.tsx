@@ -3,7 +3,7 @@ import React from 'react';
 import { Channel } from 'storybook/internal/channels';
 import type { API_Provider, DecoratorFunction } from 'storybook/internal/types';
 
-import { deepMerge } from '@vitest/utils';
+import { deepMerge } from '@vitest/utils/helpers';
 import type { API, State } from 'storybook/manager-api';
 import { fn } from 'storybook/test';
 

@@ -1,7 +1,12 @@
-import { babelParse, traverse, types as t } from 'storybook/internal/babel';
 import { editJsonText, isStorybookTarget, type JSONEditPath } from 'storybook/internal/cli';
 import type { JsPackageManager } from 'storybook/internal/common';
-import type { ConfigFile } from 'storybook/internal/csf-tools';
+import {
+  type ConfigFile,
+  type ESTree as E,
+  type ESTreeNode as Node,
+  parseModule,
+  walk,
+} from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
@@ -112,13 +117,15 @@ const compodocOptionPaths = (
 
 const DOCUMENTATION_JSON = /(^|[/\\])documentation\.json$/;
 
-const isModuleSource = (literal: t.StringLiteral, parent: t.Node): boolean =>
-  t.isImportDeclaration(parent) ||
-  t.isExportNamedDeclaration(parent) ||
-  t.isExportAllDeclaration(parent) ||
-  (t.isCallExpression(parent) &&
+const isModuleSource = (literal: E.StringLiteral, parent: Node | null): boolean =>
+  parent?.type === 'ImportDeclaration' ||
+  parent?.type === 'ExportNamedDeclaration' ||
+  parent?.type === 'ExportAllDeclaration' ||
+  (parent?.type === 'ImportExpression' && parent.source === literal) ||
+  (parent?.type === 'CallExpression' &&
     parent.arguments[0] === literal &&
-    (t.isImport(parent.callee) || t.isIdentifier(parent.callee, { name: 'require' })));
+    parent.callee.type === 'Identifier' &&
+    parent.callee.name === 'require');
 
 /**
  * A preview counts as wired without a visible `setCompodocJson` call, which projects route through
@@ -128,30 +135,31 @@ const isModuleSource = (literal: t.StringLiteral, parent: t.Node): boolean =>
  * Both markers are ordinary words in a comment or a string, so they are read off the syntax tree
  * rather than the source text.
  */
-const wiresCompodoc = (ast: t.File): boolean => {
+const wiresCompodoc = (program: E.Program): boolean => {
   let wired = false;
 
-  traverse(ast, {
-    Identifier(path) {
-      if (path.node.name === SET_COMPODOC_JSON) {
-        wired = true;
-        path.stop();
-      }
-    },
-    StringLiteral(path) {
-      if (DOCUMENTATION_JSON.test(path.node.value) && isModuleSource(path.node, path.parent)) {
-        wired = true;
-        path.stop();
-      }
-    },
+  walk(program, (node, parent) => {
+    if (wired) {
+      return false;
+    }
+    if (node.type === 'Identifier' && node.name === SET_COMPODOC_JSON) {
+      wired = true;
+    } else if (
+      node.type === 'Literal' &&
+      typeof node.value === 'string' &&
+      DOCUMENTATION_JSON.test(node.value) &&
+      isModuleSource(node as E.StringLiteral, parent)
+    ) {
+      wired = true;
+    }
   });
 
   return wired;
 };
 
-const previewWiresCompodoc = (source: string): boolean => {
+const previewWiresCompodoc = (source: string, fileName: string): boolean => {
   try {
-    return wiresCompodoc(babelParse(source));
+    return wiresCompodoc(parseModule(source, fileName).program);
   } catch {
     return false;
   }
@@ -270,7 +278,7 @@ export function compodocTransforms(): FixTransform[] {
     {
       filter: { kind: ['preview'], code: /setCompodocJson|documentation\.json/ },
       editConfig: (preview, { id }) => {
-        if (wiresCompodoc(preview._ast)) {
+        if (wiresCompodoc(preview.program)) {
           removePreviewWiring(preview, id);
         }
       },
@@ -297,7 +305,8 @@ export const findCompodocSetup = async ({
   const hasFrameworkOptions = COMPODOC_OPTIONS.some((option) => option in (frameworkOptions ?? {}));
 
   const hasPreviewWiring =
-    !!previewConfigPath && previewWiresCompodoc(await files.read(previewConfigPath));
+    !!previewConfigPath &&
+    previewWiresCompodoc(await files.read(previewConfigPath), previewConfigPath);
 
   const documents: { filePath: string; json: any }[] = [];
   for (const filePath of await findWorkspaceJsonFiles(packageManager.packageJsonPaths, [
@@ -412,14 +421,14 @@ const manualRemovalHint = (previewConfigPath: string, reason: string): void =>
   );
 
 const removePreviewWiring = (preview: ConfigFile, previewConfigPath: string): void => {
-  const result = removeTopLevelCall(preview._ast.program, {
+  const result = removeTopLevelCall(preview, {
     callee: SET_COMPODOC_JSON,
     calleeSources: new Set([ADDON_DOCS_ANGULAR]),
   });
   if (!result.removed) {
     manualRemovalHint(
       previewConfigPath,
-      countReferences(preview._ast.program, SET_COMPODOC_JSON) > 0
+      countReferences(preview.editor, SET_COMPODOC_JSON) > 0
         ? result.reason
         : `no ${SET_COMPODOC_JSON} call is visible here, only a documentation.json import`
     );

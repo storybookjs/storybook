@@ -76,6 +76,11 @@ export type AddonContext = DocsServingContext & {
   origin: string;
 
   /**
+   * URL path prefix the Storybook instance is served from, `/` or `/seg/`.
+   */
+  basePath: string;
+
+  /**
    * Whether telemetry collection is disabled.
    */
   disableTelemetry: boolean;

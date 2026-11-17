@@ -46,7 +46,8 @@ vi.mock('@angular-devkit/architect', () => ({
   targetFromTargetString: vi.fn(),
 }));
 
-vi.mock('empathic/package', () => ({
+vi.mock('empathic/package', async (importOriginal) => ({
+  ...(await importOriginal<object>()),
   up: vi.fn(() => null),
 }));
 

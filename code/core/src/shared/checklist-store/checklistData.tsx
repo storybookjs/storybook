@@ -18,7 +18,7 @@ import {
 } from 'storybook/internal/types';
 
 import { type API, Tag, addons, internal_universalTestProviderStore } from 'storybook/manager-api';
-import { ThemeProvider, convert, styled, themes } from 'storybook/theming';
+import { ThemeProvider, convert, styled, themes } from 'storybook/theming/emotion';
 
 import { WandIcon } from '@storybook/icons';
 

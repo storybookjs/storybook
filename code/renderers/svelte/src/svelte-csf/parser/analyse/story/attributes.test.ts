@@ -5,12 +5,9 @@ import { getArrayOfStringsValueFromAttribute, getStringValueFromAttribute } from
 import { getSvelteAST } from '../../ast.ts';
 import { extractSvelteASTNodes } from '../../extract/svelte/nodes.ts';
 import { extractStoryAttributesNodes } from '../../extract/svelte/story/attributes.ts';
-import { StorybookSvelteCSFError } from '../../../utils/error.ts';
 
 describe(getStringValueFromAttribute.name, () => {
-  it("throws error when a `<Story />` 'name' attribute value is not a string", async ({
-    expect,
-  }) => {
+  it("throws error when a `<Story />` 'name' attribute value is not a string", async () => {
     const code = `
         <script module>
           import { defineMeta } from "@storybook/svelte";
@@ -38,8 +35,9 @@ describe(getStringValueFromAttribute.name, () => {
         [SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0001 (AttributeNotStringError): In the stories file: <path not specified>
 
         A '<Story name="undefined" />' has a prop 'name' whose value must be a static literal string.
+        Dynamic values, such as variables, function calls or template strings, are not supported. For example: <Story name="Primary" />
 
-        More info: https://github.com/storybookjs/storybook/blob/v${StorybookSvelteCSFError.packageVersion}/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0001
+        More info: https://storybook.js.org/docs/writing-stories?renderer=svelte&ref=error#defining-stories
         ]
       `);
   });
@@ -76,9 +74,7 @@ describe(getStringValueFromAttribute.name, () => {
 });
 
 describe(getArrayOfStringsValueFromAttribute.name, () => {
-  it("throws error when a `<Story />` 'tags' attribute value is not an array expression", async ({
-    expect,
-  }) => {
+  it("throws error when a `<Story />` 'tags' attribute value is not an array expression", async () => {
     const code = `
         <script module>
           import { defineMeta } from "@storybook/svelte";
@@ -109,16 +105,15 @@ describe(getArrayOfStringsValueFromAttribute.name, () => {
 
       A '<Story name="Default" />' has a prop'tags' whose value was expected to be a static array.
       Instead the value type is '0'.
+      For example: <Story tags={['autodocs', '!dev']} />
 
-      More info: https://github.com/storybookjs/storybook/blob/v${StorybookSvelteCSFError.packageVersion}/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0002
+      More info: https://storybook.js.org/docs/writing-stories/tags?renderer=svelte&ref=error
       ]
     `
     );
   });
 
-  it("throws error when a `<Story />` 'tags' attribute value is not an array of strings only", async ({
-    expect,
-  }) => {
+  it("throws error when a `<Story />` 'tags' attribute value is not an array of strings only", async () => {
     const code = `
         <script module>
           import { defineMeta } from "@storybook/svelte";
@@ -148,15 +143,16 @@ describe(getArrayOfStringsValueFromAttribute.name, () => {
       [SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0003 (AttributeNotArrayOfStringsError): In the stories file: <path not specified>
 
       A '<Story name="Default" />' has attribute 'tags' whose value was expected to be an array expression.
-      All elements in the array must be static literal strings only, but one of the elements is of type 'undefined'.
+      All elements in the array must be static literal strings only, but one of the elements is of type 'Literal'.
+      For example: <Story tags={['autodocs', '!dev']} />
 
-      More info: https://github.com/storybookjs/storybook/blob/v${StorybookSvelteCSFError.packageVersion}/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0003
+      More info: https://storybook.js.org/docs/writing-stories/tags?renderer=svelte&ref=error
       ]
     `
     );
   });
 
-  it("extracts 'tags' attribute when is a correct type - array of strings", async ({ expect }) => {
+  it("extracts 'tags' attribute when is a correct type - array of strings", async () => {
     const ast = getSvelteAST({
       code: `
         <script module>
@@ -181,7 +177,7 @@ describe(getArrayOfStringsValueFromAttribute.name, () => {
     expect(tagsValue).toEqual(['autodocs', '!dev']);
   });
 
-  it("returns empty array when 'tags' attribute is not provided", async ({ expect }) => {
+  it("returns empty array when 'tags' attribute is not provided", async () => {
     const ast = getSvelteAST({
       code: `
         <script module>

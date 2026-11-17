@@ -166,10 +166,6 @@ packages:
     access: $all
     publish: $all
     proxy: npmjs
-  '@storybook/ember-cli-storybook':
-    access: $all
-    publish: $all
-    proxy: npmjs
   '@storybook/addon-webpack5-compiler-swc':
     access: $all
     publish: $all

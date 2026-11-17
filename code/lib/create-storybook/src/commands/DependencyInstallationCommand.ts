@@ -10,6 +10,8 @@ import type { DependencyCollector } from '../dependency-collector.ts';
 type DependencyInstallationCommandParams = {
   skipInstall: boolean;
   selectedFeatures: Set<Feature>;
+  /** Init changed a declared version in package.json, so the install runs without new packages too. */
+  upgradedDependencies?: boolean;
 };
 
 /**
@@ -31,6 +33,7 @@ export class DependencyInstallationCommand {
   async execute({
     skipInstall = false,
     selectedFeatures,
+    upgradedDependencies = false,
   }: DependencyInstallationCommandParams): Promise<{ status: 'success' | 'failed' }> {
     await this.collectAddonDependencies(selectedFeatures);
 
@@ -67,7 +70,7 @@ export class DependencyInstallationCommand {
 
     task.success('Dependencies added to package.json', { showLog: true });
 
-    if (!skipInstall && this.dependencyCollector.hasPackages()) {
+    if (!skipInstall && (this.dependencyCollector.hasPackages() || upgradedDependencies)) {
       try {
         await this.packageManager.installDependencies();
       } catch (err) {

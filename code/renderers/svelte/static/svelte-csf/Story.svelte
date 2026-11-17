@@ -7,7 +7,10 @@
   import { useStoriesExtractor } from '@storybook/svelte/internal/svelte-csf/contexts/extractor';
   import { useStoryRenderer } from '@storybook/svelte/internal/svelte-csf/contexts/renderer';
 
-  import { storyNameToExportName } from '@storybook/svelte/internal/svelte-csf/component-helpers';
+  import {
+    storyNameToExportName,
+    syncStoryArgs,
+  } from '@storybook/svelte/internal/svelte-csf/component-helpers';
   import type { Cmp, StoryProps } from '@storybook/svelte/internal/svelte-csf/component-helpers';
 
   type Props = StoryProps<TArgs, TCmp, TChildren> & { extend?: string };
@@ -60,6 +63,19 @@
   function isSnippet<T extends unknown[]>(value: unknown): value is Snippet<T> {
     return typeof value === 'function';
   }
+
+  // Svelte re-evaluates the `args` prop when the state it reads changes, after the stories were
+  // extracted. Send those changes to Storybook, so that the story renders them.
+  $effect(() => {
+    if (!extractor.isExtracting) {
+      syncStoryArgs({
+        exportName,
+        storyArgs: restProps.args,
+        argSources: renderer.argSources,
+        storyId: renderer.storyContext.id,
+      });
+    }
+  });
 
   $effect(() => {
     if (runsPlay) {

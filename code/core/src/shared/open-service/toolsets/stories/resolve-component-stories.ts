@@ -110,7 +110,7 @@ function toStoryFileKey(importPath: string): string {
  * Map story-index-relative story-file path → story IDs declared in that file. Skips virtual entries.
  * Keys match the `storyFile` values returned by the module graph's `storiesForFiles`.
  */
-function buildStoryIdsByFile(storyIndex: StoryIndex): Map<string, Set<string>> {
+export function buildStoryIdsByFile(storyIndex: StoryIndex): Map<string, Set<string>> {
   const storyIdsByFile = new Map<string, Set<string>>();
   for (const entry of Object.values(storyIndex.entries)) {
     if (entry.type !== 'story' || entry.importPath.startsWith('virtual:')) {

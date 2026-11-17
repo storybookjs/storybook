@@ -842,6 +842,36 @@ test('an arg naming a local const carries the value, not the name', () => {
   `);
 });
 
+test('an arg naming a destructured local const carries the value it destructures', () => {
+  const input = withCSF3(dedent`
+    const defaults = { label: 'Save', size: 'large' };
+    const { label } = defaults;
+    const { size, ...rest } = defaults;
+    export const Destructured: Story = { args: { label } };
+    export const RestSpread: Story = { args: { ...rest, primary: true } };
+    export const PlainConst: Story = { args: { label: 'Plain', size } };
+  `);
+  expect(generateResolved(input)).toMatchInlineSnapshot(`
+    [
+      {
+        "imports": [],
+        "snippet": "const Destructured = () => <Button label="Save">Click me</Button>;",
+        "unresolved": [],
+      },
+      {
+        "imports": [],
+        "snippet": "const RestSpread = () => <Button label="Save" primary>Click me</Button>;",
+        "unresolved": [],
+      },
+      {
+        "imports": [],
+        "snippet": "const PlainConst = () => <Button label="Plain" size="large">Click me</Button>;",
+        "unresolved": [],
+      },
+    ]
+  `);
+});
+
 test('an arg naming an imported value keeps the name and reports the import it needs', () => {
   const input = withCSF3(dedent`
     import { IMPORTED_LABEL } from './constants';

@@ -228,13 +228,14 @@ The draft is not in the repository, so make it again from the plan and the windo
 Take both from the branch of the open plan PR, or from `qa/plans` once the plan is merged:
 
 ```bash
+mkdir -p /tmp/qa-plan-11.0
 git fetch origin qa/plans
 git show origin/qa/plans:ecosystem-qa/plans/11.0.md > /tmp/qa-plan-11.0/old.md
 git show origin/qa/plans:ecosystem-qa/plans/11.0.window.json > /tmp/qa-plan-11.0/old.window.json
 node ecosystem-qa/qa-plan.ts draft /tmp/qa-plan-11.0/old.md --window /tmp/qa-plan-11.0/old.window.json --out /tmp/qa-plan-11.0/draft.json
 ```
 
-`draft` exits 1 when the plan is not what `render` writes from that window, which means someone edited it by hand. Then `check --window` names the line.
+`draft` exits 1 when the plan is not what `render` writes from that window, which means someone edited it by hand. Then `check --window` names each row that differs from the window. When it passes all the same, the edit is in a part that `render` sets and `check` accepts at any value, such as `Entries per run`, which `render` writes as 4, the `Version` cell, or the order of the rows: set it back to what `render` writes.
 For a new end of the window, run step 1 with its tag, then render the draft on the new window.
 `render` names every PR that the draft decides or groups and that the new window holds in another role, and `check` names every new PR without a decision. Decide those in the draft, change what the reviewer asked for, and go on with step 6.
 

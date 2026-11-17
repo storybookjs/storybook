@@ -5,8 +5,7 @@ import Anthropic from '@anthropic-ai/sdk';
 
 import { versionLine } from './lib/cycle.ts';
 import { listQaIssues } from './lib/github.ts';
-import { askClaude, groupingInput, groupingMode, groupWithModel } from './lib/group-model.ts';
-import { identityGrouping } from './lib/grouping.ts';
+import { askClaude, modelGrouping, NO_KEY } from './lib/group-model.ts';
 import { readPlanScope } from './lib/plan-scope.ts';
 import { loadFindingGroups, QA_LABEL } from './lib/proposals.ts';
 import type { Grouping } from './lib/schema.ts';
@@ -20,7 +19,7 @@ The model only groups: no text of its answer reaches an issue. Finding text is s
 Anthropic API with ANTHROPIC_API_KEY; the subscription token of agent runs does not work.
 Without that key a local run groups nothing and leaves each fingerprint on its own, so collect.ts
 makes one proposal per fingerprint. In GitHub Actions a missing key is an error.
-With at most one fingerprint it never calls the model.
+Without a fingerprint it never calls the model.
 --plan, --batch and --tier load the runs of one batch of a QA plan as collect.ts does.`;
 
 const { values } = parseArgs({
@@ -49,34 +48,13 @@ const scope = readPlanScope(values);
 
 const { groups } = loadFindingGroups(results, version, scope);
 
-const NO_KEY =
-  'Grouping needs ANTHROPIC_API_KEY. The subscription token used for agent runs (CLAUDE_CODE_OAUTH_TOKEN) does not work for the Messages API.';
-
-const modelGrouping = async (): Promise<Grouping> => {
-  const ungrouped = identityGrouping(groups.map((group) => group.fingerprint));
-  if (groups.length <= 1) {
-    return ungrouped;
-  }
-  const mode = groupingMode(process.env);
-  if (mode === 'fail') {
-    throw new Error(NO_KEY);
-  }
-  if (mode === 'skip') {
-    console.warn(
-      `ANTHROPIC_API_KEY is not set, so nothing was grouped: each fingerprint stays on its own and becomes its own proposal. ${NO_KEY}`
-    );
-    return ungrouped;
-  }
-  const client = new Anthropic();
-  return groupWithModel(
-    groupingInput(groups, listQaIssues(repo, QA_LABEL)),
-    askClaude((params) => client.beta.messages.create(params))
-  );
-};
-
 let grouping: Grouping;
 try {
-  grouping = await modelGrouping();
+  grouping = await modelGrouping(groups, {
+    env: process.env,
+    issues: () => listQaIssues(repo, QA_LABEL),
+    ask: askClaude((params) => new Anthropic().beta.messages.create(params)),
+  });
 } catch (error) {
   if (error instanceof Anthropic.AuthenticationError) {
     console.error(`The Anthropic API rejected the key (${error.status}). ${NO_KEY}`);

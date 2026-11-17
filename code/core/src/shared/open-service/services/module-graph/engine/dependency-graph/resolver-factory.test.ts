@@ -5,9 +5,12 @@
  * oxc-resolver behavioural differences (e.g. trailing-slash alias keys not working, tsconfig
  * path resolution) rather than just testing our own normalisation logic.
  */
+import { spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+
+import { relative } from 'pathe';
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
@@ -259,6 +262,198 @@ describe('ChangeDetectionResolverFactory', () => {
       const r = new ChangeDetectionResolverFactory({ projectRoot: dir });
       expect(await r.resolve(from, '@mantinex/demo')).toBe(demoTarget);
       expect(await r.resolve(from, '@mantinex/dev-icons')).toBe(iconsTarget);
+    });
+  });
+
+  describe('workspace package shapes', () => {
+    // The conditions the Vite adapter supplies for Storybook's default Vite config.
+    const VITE_CONDITIONS = [
+      'storybook',
+      'stories',
+      'test',
+      'module',
+      'browser',
+      'development',
+      'import',
+    ];
+    const TOKENS_SRC = 'packages/tokens/src/index.ts';
+    const TOKENS_DIST = 'packages/tokens/dist/index.mjs';
+
+    const relativeToDir = (path: string | null) => path && relative(dir, path);
+
+    function workspacePackage(manifest: Record<string, unknown>) {
+      write(TOKENS_SRC);
+      write(TOKENS_DIST);
+      write('packages/tokens/dist/index.prod.mjs');
+      writeFileSync(
+        join(dir, 'packages/tokens/package.json'),
+        JSON.stringify({ name: '@acme/tokens', type: 'module', ...manifest })
+      );
+      mkdirSync(join(dir, 'node_modules/@acme'), { recursive: true });
+      symlinkSync(join(dir, 'packages/tokens'), join(dir, 'node_modules/@acme/tokens'), 'dir');
+      write(
+        'packages/ui/tsconfig.json',
+        JSON.stringify({ compilerOptions: { moduleResolution: 'bundler' } })
+      );
+      return write('packages/ui/src/Button.tsx');
+    }
+
+    describe.each([
+      {
+        shape: '`import` and `require` (tsup, unbuild)',
+        manifest: {
+          exports: {
+            '.': {
+              types: './dist/index.d.ts',
+              import: './dist/index.mjs',
+              require: './dist/index.cjs',
+            },
+          },
+        },
+        exported: TOKENS_DIST,
+      },
+      {
+        shape: '`module`',
+        manifest: { exports: { '.': { module: './dist/index.mjs' } } },
+        exported: TOKENS_DIST,
+      },
+      {
+        shape: 'an `exports` string',
+        manifest: { exports: './dist/index.mjs' },
+        exported: TOKENS_DIST,
+      },
+      { shape: '`main` only', manifest: { main: './dist/index.mjs' }, exported: TOKENS_DIST },
+      {
+        shape: '`development` and `production`',
+        manifest: {
+          exports: {
+            '.': { development: './dist/index.mjs', production: './dist/index.prod.mjs' },
+          },
+        },
+        exported: TOKENS_DIST,
+      },
+      {
+        shape: 'its sources',
+        manifest: { exports: { '.': './src/index.ts' } },
+        exported: TOKENS_SRC,
+      },
+      {
+        shape: 'a `storybook` condition to its sources',
+        manifest: { exports: { '.': { storybook: './src/index.ts', import: './dist/index.mjs' } } },
+        exported: TOKENS_SRC,
+      },
+    ])('a workspace package that exports $shape', ({ manifest, exported }) => {
+      it('resolves through node_modules to what it exports when no tsconfig maps it', async () => {
+        const from = workspacePackage(manifest);
+        const r = new ChangeDetectionResolverFactory({
+          projectRoot: dir,
+          conditions: VITE_CONDITIONS,
+        });
+        expect(relativeToDir(await r.resolve(from, '@acme/tokens'))).toBe(exported);
+      });
+
+      it('resolves to its sources through the tsconfig paths of the importing package', async () => {
+        const from = workspacePackage(manifest);
+        write(
+          'packages/ui/tsconfig.json',
+          JSON.stringify({
+            compilerOptions: {
+              moduleResolution: 'bundler',
+              paths: { '@acme/*': ['../*/src/index.ts'] },
+            },
+          })
+        );
+        const r = new ChangeDetectionResolverFactory({
+          projectRoot: dir,
+          conditions: VITE_CONDITIONS,
+        });
+        expect(relativeToDir(await r.resolve(from, '@acme/tokens'))).toBe(TOKENS_SRC);
+      });
+
+      it.each([
+        { projectRoot: '.', target: './packages/*/src/index.ts' },
+        { projectRoot: 'apps/storybook', target: '../../packages/*/src/index.ts' },
+      ])(
+        'resolves to its sources through the tsconfig paths of the project root ($projectRoot)',
+        async ({ projectRoot, target }) => {
+          const from = workspacePackage(manifest);
+          write(
+            join(projectRoot, 'tsconfig.json'),
+            JSON.stringify({ compilerOptions: { paths: { '@acme/*': [target] } } })
+          );
+          const r = new ChangeDetectionResolverFactory({
+            projectRoot: join(dir, projectRoot),
+            conditions: VITE_CONDITIONS,
+          });
+          expect(relativeToDir(await r.resolve(from, '@acme/tokens'))).toBe(TOKENS_SRC);
+        }
+      );
+    });
+
+    it('resolves to the sources through project root tsconfig paths before dist is built', async () => {
+      write(TOKENS_SRC);
+      writeFileSync(
+        join(dir, 'packages/tokens/package.json'),
+        JSON.stringify({ name: '@acme/tokens', exports: { '.': { import: './dist/index.mjs' } } })
+      );
+      mkdirSync(join(dir, 'node_modules/@acme'), { recursive: true });
+      symlinkSync(join(dir, 'packages/tokens'), join(dir, 'node_modules/@acme/tokens'), 'dir');
+      write(
+        'packages/ui/tsconfig.json',
+        JSON.stringify({ compilerOptions: { moduleResolution: 'bundler' } })
+      );
+      tsconfig({ paths: { '@acme/*': ['./packages/*/src/index.ts'] } });
+      const from = write('packages/ui/src/Button.tsx');
+      const r = new ChangeDetectionResolverFactory({
+        projectRoot: dir,
+        conditions: VITE_CONDITIONS,
+      });
+      expect(relativeToDir(await r.resolve(from, '@acme/tokens'))).toBe(TOKENS_SRC);
+    });
+
+    it('resolves to the sources through project root tsconfig paths when NODE_PATH reaches the package', () => {
+      const from = workspacePackage({ exports: { '.': { import: './dist/index.mjs' } } });
+      tsconfig({ paths: { '@acme/*': ['./packages/*/src/index.ts'] } });
+      const config = { projectRoot: dir, conditions: VITE_CONDITIONS };
+      const script = [
+        `const { ChangeDetectionResolverFactory } = await import(${JSON.stringify(new URL('./resolver-factory.ts', import.meta.url).href)});`,
+        `const resolver = new ChangeDetectionResolverFactory(${JSON.stringify(config)});`,
+        `process.stdout.write(String(await resolver.resolve(${JSON.stringify(from)}, '@acme/tokens')));`,
+      ].join('\n');
+      // pnpm's bin shims export NODE_PATH with the hoisted node_modules of the store, and
+      // oxc-resolver reads it when it loads, so only a fresh process can set it.
+      const child = spawnSync(process.execPath, ['--input-type=module', '--eval', script], {
+        env: { ...process.env, NODE_PATH: join(dir, 'node_modules') },
+        encoding: 'utf8',
+      });
+      expect(child.stderr).not.toMatch(/Error/);
+      expect(relativeToDir(child.stdout)).toBe(TOKENS_SRC);
+    });
+
+    it('resolves to the sources through a Vite alias', async () => {
+      const from = workspacePackage({ exports: { '.': { import: './dist/index.mjs' } } });
+      const r = new ChangeDetectionResolverFactory({
+        projectRoot: dir,
+        alias: [{ find: '@acme/tokens', replacement: join(dir, TOKENS_SRC) }],
+        conditions: VITE_CONDITIONS,
+      });
+      expect(relativeToDir(await r.resolve(from, '@acme/tokens'))).toBe(TOKENS_SRC);
+    });
+
+    it('resolves a path alias that both tsconfigs define through the importing package', async () => {
+      const target = write('packages/ui/src/utils.ts');
+      write('src/utils.ts');
+      tsconfig({ paths: { '@/*': ['./src/*'] } });
+      write(
+        'packages/ui/tsconfig.json',
+        JSON.stringify({ compilerOptions: { paths: { '@/*': ['./src/*'] } } })
+      );
+      const from = write('packages/ui/src/Button.tsx');
+      const r = new ChangeDetectionResolverFactory({
+        projectRoot: dir,
+        conditions: VITE_CONDITIONS,
+      });
+      expect(await r.resolve(from, '@/utils')).toBe(target);
     });
   });
 });

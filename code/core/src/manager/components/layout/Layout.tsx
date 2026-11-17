@@ -110,6 +110,7 @@ const useLayoutSyncingState = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [internalDraggingSizeState, setManagerLayoutState]);
 
+  const showSidebar = api.getNavAvailability() === 'shown';
   const isPagesShown = isPagesViewMode(managerLayoutState.viewMode);
   const isPanelShown = managerLayoutState.viewMode === 'story';
 
@@ -123,6 +124,7 @@ const useLayoutSyncingState = ({
   const { panelResizerRef, sidebarResizerRef, sidebarMaxWidth, panelMaxSize } = useDragging({
     setState: setInternalDraggingSizeState,
     isDesktop,
+    showSidebar,
     navSize: customisedNavSize,
     showPanel: customisedShowPanel,
     rightPanelWidth,
@@ -138,6 +140,7 @@ const useLayoutSyncingState = ({
     sidebarResizerRef,
     sidebarMaxWidth,
     panelMaxSize,
+    showSidebar,
     showPages: isPagesShown,
     showPanel: customisedShowPanel,
     isDragging: internalDraggingSizeState.isDragging,
@@ -154,7 +157,6 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, ...slots }: 
   const api = useStorybookApi();
   // Subscribe to manager state so nav availability re-evaluates on route and layout changes.
   useStorybookState();
-  const showSidebar = api.getNavAvailability() === 'shown';
 
   const {
     navSize,
@@ -165,6 +167,7 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, ...slots }: 
     sidebarResizerRef,
     sidebarMaxWidth,
     panelMaxSize,
+    showSidebar,
     showPages,
     showPanel,
     isDragging,

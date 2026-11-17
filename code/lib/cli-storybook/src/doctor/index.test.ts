@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { JsPackageManager } from 'storybook/internal/common';
+import { JsPackageManager } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import { MainFileMissingError } from 'storybook/internal/server-errors';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
@@ -43,6 +43,40 @@ describe('getDoctorDiagnostics', () => {
 
     expect(results).toHaveLength(1);
     expect(results[0].message).toContain('Unable to determine Storybook version');
+  });
+
+  it('reports a duplicated storybook next to the incompatible addon that installs it', async () => {
+    vi.spyOn(JsPackageManager, 'hasStorybookDependency').mockReturnValue(true);
+    const packageManager = {
+      packageJsonPaths: ['package.json'],
+      getAllDependencies: () => ({
+        storybook: '^11.0.0-beta.2',
+        'storybook-addon-tag-badges': '^3.1.0',
+      }),
+      getModulePackageJSON: async (name: string) => ({
+        name,
+        version: '3.1.0',
+        peerDependencies: { storybook: '^10.0.0' },
+      }),
+      findInstallations: async () => ({
+        dependencies: { storybook: [{ version: '11.0.0-beta.2' }, { version: '10.6.7' }] },
+        duplicatedDependencies: { storybook: ['10.6.7', '11.0.0-beta.2'] },
+        infoCommand: 'npm ls',
+        dedupeCommand: 'npm dedupe',
+      }),
+    } as unknown as JsPackageManager;
+
+    const results = await getDoctorDiagnostics({
+      ...projectData,
+      packageManager,
+      storybookVersion: '11.0.0-beta.2',
+    });
+
+    expect(results.map(({ type }) => type)).toEqual([
+      DiagnosticType.INCOMPATIBLE_PACKAGES,
+      DiagnosticType.DUPLICATED_DEPENDENCIES,
+    ]);
+    expect(results[1].message).toContain('10.6.7, 11.0.0-beta.2');
   });
 });
 

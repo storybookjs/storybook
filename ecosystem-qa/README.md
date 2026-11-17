@@ -98,7 +98,7 @@ It reads `ANTHROPIC_API_KEY`; the subscription token from `claude setup-token` t
 The key is optional on a local run: without it nothing is grouped, each fingerprint stays on its own, and `collect.ts` makes one proposal per fingerprint.
 In GitHub Actions a missing key is an error, because a sweep that files ungrouped creates one issue per fingerprint.
 A key that is set but rejected is an error everywhere.
-With at most one fingerprint it never calls the API.
+Without a fingerprint it never calls the API.
 `collect.ts` works without it: leave out `--groups`, or pass a `groups.json` written by hand.
 
 To exercise collect and file without an agent or an API key, add `--fake`.

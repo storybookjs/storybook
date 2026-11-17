@@ -2,7 +2,7 @@ import type Anthropic from '@anthropic-ai/sdk';
 import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod';
 import { z } from 'zod';
 
-import { checkGrouping } from './grouping.ts';
+import { checkGrouping, identityGrouping } from './grouping.ts';
 import {
   METADATA_MARKER,
   openIssueOf,
@@ -252,4 +252,34 @@ export const groupWithModel = async (
   throw new Error(
     `No grouping fit after ${attempts} attempts. The last one had:\n${bullets(problems)}`
   );
+};
+
+export const NO_KEY =
+  'Grouping needs ANTHROPIC_API_KEY. The subscription token used for agent runs (CLAUDE_CODE_OAUTH_TOKEN) does not work for the Messages API.';
+
+// A lone finding is asked about too, because the model is also what matches a finding to an issue
+// that describes the same defect in other words.
+export const modelGrouping = async (
+  groups: FindingGroup[],
+  {
+    env,
+    issues,
+    ask,
+  }: { env: Record<string, string | undefined>; issues: () => QaIssue[]; ask: Ask }
+): Promise<Grouping> => {
+  const ungrouped = identityGrouping(groups.map((group) => group.fingerprint));
+  if (groups.length === 0) {
+    return ungrouped;
+  }
+  const mode = groupingMode(env);
+  if (mode === 'fail') {
+    throw new Error(NO_KEY);
+  }
+  if (mode === 'skip') {
+    console.warn(
+      `ANTHROPIC_API_KEY is not set, so nothing was grouped: each fingerprint stays on its own and becomes its own proposal. ${NO_KEY}`
+    );
+    return ungrouped;
+  }
+  return groupWithModel(groupingInput(groups, issues()), ask);
 };

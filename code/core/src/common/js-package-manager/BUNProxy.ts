@@ -168,8 +168,8 @@ export class BUNProxy extends JsPackageManager {
   }
 
   public async findInstallations(pattern: string[], { depth = 99 }: { depth?: number } = {}) {
-    const exec = async ({ packageDepth }: { packageDepth: number }) => {
-      return executeCommand({
+    const list = async (packageDepth: number) => {
+      const { stdout } = await executeCommand({
         command: 'npm',
         args: ['ls', '--json', `--depth=${packageDepth}`],
         cwd: this.cwd,
@@ -177,29 +177,21 @@ export class BUNProxy extends JsPackageManager {
         env: {
           FORCE_COLOR: 'false',
         },
+        // npm exits non-zero on peer dependency problems but still prints the full tree
+        reject: false,
       });
+      return this.mapDependencies(JSON.parse(typeof stdout === 'string' ? stdout : ''), pattern);
     };
 
     try {
-      const process = await exec({ packageDepth: depth });
-      const result = await process;
-      const commandResult = typeof result.stdout === 'string' ? result.stdout : '';
-      const parsedOutput = JSON.parse(commandResult);
-
-      return this.mapDependencies(parsedOutput, pattern);
-    } catch (e) {
-      // when --depth is higher than 0, npm can return a non-zero exit code
-      // in case the user's project has peer dependency issues. So we try again with no depth
+      return await list(depth);
+    } catch {
+      // A deep tree can exceed execa's output limit and get cut off; the top level is far smaller
       try {
-        const process = await exec({ packageDepth: 0 });
-        const result = await process;
-        const commandResult = typeof result.stdout === 'string' ? result.stdout : '';
-        const parsedOutput = JSON.parse(commandResult);
-
-        return this.mapDependencies(parsedOutput, pattern);
-      } catch (err) {
+        return await list(0);
+      } catch (e) {
         logger.debug(
-          `An issue occurred while trying to find dependencies metadata using npm: ${err}`
+          `An issue occurred while trying to find dependencies metadata using npm: ${e}`
         );
         return undefined;
       }

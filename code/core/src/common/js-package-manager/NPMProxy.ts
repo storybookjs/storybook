@@ -162,8 +162,8 @@ export class NPMProxy extends JsPackageManager {
   }
 
   public async findInstallations(pattern: string[], { depth = 99 }: { depth?: number } = {}) {
-    const exec = ({ packageDepth }: { packageDepth: number }) => {
-      return executeCommand({
+    const list = async (packageDepth: number) => {
+      const { stdout } = await executeCommand({
         command: 'npm',
         args: ['ls', '--json', `--depth=${packageDepth}`],
         env: {
@@ -171,24 +171,18 @@ export class NPMProxy extends JsPackageManager {
         },
         cwd: this.instanceDir,
         stdio: ['pipe', 'pipe', 'ignore'],
+        // npm exits non-zero on peer dependency problems but still prints the full tree
+        reject: false,
       });
+      return this.mapDependencies(JSON.parse(typeof stdout === 'string' ? stdout : ''), pattern);
     };
 
     try {
-      const childProcess = await exec({ packageDepth: depth });
-      const commandResult = typeof childProcess.stdout === 'string' ? childProcess.stdout : '';
-      const parsedOutput = JSON.parse(commandResult);
-
-      return this.mapDependencies(parsedOutput, pattern);
+      return await list(depth);
     } catch {
-      // when --depth is higher than 0, npm can return a non-zero exit code
-      // in case the user's project has peer dependency issues. So we try again with no depth
+      // A deep tree can exceed execa's output limit and get cut off; the top level is far smaller
       try {
-        const childProcess = await exec({ packageDepth: 0 });
-        const commandResult = typeof childProcess.stdout === 'string' ? childProcess.stdout : '';
-        const parsedOutput = JSON.parse(commandResult);
-
-        return this.mapDependencies(parsedOutput, pattern);
+        return await list(0);
       } catch (e) {
         logger.debug(`Error finding installations for ${pattern.join(', ')}: ${String(e)}`);
         return undefined;

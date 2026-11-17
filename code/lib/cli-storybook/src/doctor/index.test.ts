@@ -105,6 +105,8 @@ describe('getDoctorDiagnostics', () => {
         ]);
         expect(results[1].message).toContain('Critical:');
         expect(results[1].message).toContain('10.6.7, 11.0.0-beta.2');
+        expect(results[1].message).toContain('storybook 10.6.7 is installed for');
+        expect(results[1].message).toContain('storybook-addon-tag-badges (^10.0.0)');
       }
     );
 
@@ -116,6 +118,7 @@ describe('getDoctorDiagnostics', () => {
 
       expect(results.map(({ type }) => type)).toEqual([DiagnosticType.DUPLICATED_DEPENDENCIES]);
       expect(results[0].message).toContain('Critical:');
+      expect(results[0].message).not.toContain('is installed for');
     });
 
     it('reports the stale framework of a partial upgrade, not only its duplicated renderer', async () => {

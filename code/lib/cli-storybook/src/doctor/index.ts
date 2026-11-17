@@ -328,7 +328,7 @@ export async function getDoctorDiagnostics({
       project: { configDir },
     });
   } else {
-    const list = getDuplicatedDepsWarnings(installationMetadata);
+    const list = getDuplicatedDepsWarnings(installationMetadata, incompatibleStorybookPackagesList);
 
     if (list?.length) {
       results.push({

@@ -38,6 +38,16 @@
 - Step: Take a new snapshot and quote the label of the input in the preview iframe as that new snapshot shows it, then join the frames into `controls-typed-label.gif` with the gif tool.
 - Expected: Before typing, the label reads `Input field`, and the new snapshot after typing shows the label `Typed by QA` in the preview iframe.
 
+### `index-title-change-again` Pilot of the sweep, no real finding: A changed story title replaces its entries in the story index again, in a batch that the spend cap refuses
+
+- PRs: [#37335](https://github.com/storybookjs/storybook/pull/37335)
+- Batch: 3
+- Repo `mealdrop`: a story file whose title can change while the dev server runs
+- Step: Start the dev server, fetch `http://localhost:6006/index.json`, and save it as `index-title-change-before.json`.
+- Step: In `src/components/Button/Button.stories.tsx`, change the title `Components/Button` to `Components/QaButton`, wait ten seconds, fetch `http://localhost:6006/index.json` again, and save it as `index-title-change-after.json`.
+- Step: Restore the story file.
+- Expected: The first index has the entry `components-button--default`, and the second has `components-qabutton--default` and no id that starts with `components-button--`.
+
 ## Discovered repos
 
 | Id | Repo at its commit | Package manager | Storybook directory | Storybook major | Stars | Pushed at | Reason |
@@ -166,7 +176,7 @@
 | [#37290](https://github.com/storybookjs/storybook/pull/37290) | MCP | MCP: Publish the composition schema a hosted Storybook actually serves | skip: skipped for the pilot, which only proves that the sweep runs and tests nothing else |
 | [#37294](https://github.com/storybookjs/storybook/pull/37294) | Manager | Manager: Make store reads include writes React has not committed yet | `controls-typed-label` |
 | [#37296](https://github.com/storybookjs/storybook/pull/37296) | Skills | Skills: Split ui-workflow into four skills, with AGENTS.md as the workflow | skip: skipped for the pilot, which only proves that the sweep runs and tests nothing else |
-| [#37335](https://github.com/storybookjs/storybook/pull/37335) | Core | Core: Replace the story index's version counters with replaceable file slots | `index-title-change` |
+| [#37335](https://github.com/storybookjs/storybook/pull/37335) | Core | Core: Replace the story index's version counters with replaceable file slots | `index-title-change`, `index-title-change-again` |
 | [#37344](https://github.com/storybookjs/storybook/pull/37344) | Core | Core: Fix stories failing to load on Windows with the webpack builder | skip: skipped for the pilot, which only proves that the sweep runs and tests nothing else |
 | [#37348](https://github.com/storybookjs/storybook/pull/37348) | CLI | CLI: Default sandbox command to initializing Storybook | skip: skipped for the pilot, which only proves that the sweep runs and tests nothing else |
 | [#37371](https://github.com/storybookjs/storybook/pull/37371) | Core | Core: Watch story files with chokidar | skip: skipped for the pilot, which only proves that the sweep runs and tests nothing else |

@@ -23,6 +23,11 @@ const FIXTURE = readFileSync(new URL('./plan.fixture.md', import.meta.url), 'utf
 const pr = (number: number) =>
   `[#${number}](https://github.com/storybookjs/storybook/pull/${number})`;
 const COMMIT = '998b471a4ad78c7c23426038ef0c4a5261fc41cf';
+const WINDOWS_CHECK =
+  'On Windows 11, make a React project with the webpack builder with `npx create-storybook@11.0.0-beta.3 --type react --builder webpack5`, run `npx storybook dev`, and open `http://localhost:6006`: every story renders and none shows `Cannot find module`. Then run `npx storybook build` and open the static build: the stories render there too.';
+const WINDOWS_WHY = 'a fix that only Windows shows, and the sweep runs on Linux';
+const GROUP_CHECK =
+  "On Windows 11, in a Vite project whose main file sets `staticDirs: ['../public']`, run `npx storybook build`: every file of `public` is in `storybook-static`.";
 
 const replaced = (text: string, from: string, to: string) => {
   expect(text).toContain(from);
@@ -222,11 +227,18 @@ describe('checkPlanText', () => {
       'packageManager',
     ],
     [
-      'an entry PR that has a row of PRs that are not tested too',
+      'an entry PR that has a row of PRs that need no QA too',
       `- PRs: ${pr(31900)}`,
       `- PRs: ${pr(31900)}, ${pr(36664)}`,
       `| ${pr(36664)} |`,
-      '#36664 is tested by `preview-animations`, so it has no row of PRs that are not tested',
+      '#36664 is tested by `preview-animations`, so it has no row in "PRs that need no QA"',
+    ],
+    [
+      'an entry PR that has a row of manual QA too',
+      `- PRs: ${pr(31900)}`,
+      `- PRs: ${pr(31900)}, ${pr(37344)}`,
+      `| ${pr(37344)} |`,
+      '#37344 is tested by `preview-animations`, so it has no row in "PRs that need manual QA"',
     ],
     ['a PR without its link', `| ${pr(36664)} |`, '| #36664 |', '| #36664 |', 'expected a PR like'],
     [
@@ -238,17 +250,122 @@ describe('checkPlanText', () => {
     ],
     [
       'a row without a decision',
+      `| ${WINDOWS_CHECK} | ${WINDOWS_WHY} |`,
+      '|  |  |',
+      pr(37344),
+      '#37344 has no decision',
+    ],
+    [
+      'a manual check without its reason',
+      `| ${WINDOWS_WHY} | ${pr(37344)}`,
+      `|  | ${pr(37344)}`,
+      pr(37344),
+      'expected why the sweep cannot test it next to the check',
+    ],
+    [
+      'a reason of manual QA without its check',
+      `| ${WINDOWS_CHECK} |`,
+      '|  |',
+      pr(37344),
+      'expected the check a person does next to why the sweep cannot test it',
+    ],
+    [
+      'a row of no QA without a reason',
       "| a change of this repository's CI, no project can see it |",
       '|  |',
       pr(36664),
-      '#36664 has no decision',
+      'expected the reason why these PRs need no QA',
     ],
     [
-      'a PR with a row in two tables',
+      'a PR with a row of manual QA and a row of no QA',
       `| ${pr(35618)} |`,
-      `| ${pr(35618)} |\n| CI only | ${pr(36664)} |`,
+      `| ${pr(35618)} |\n| CI only | ${pr(37344)} |`,
       '| CI only |',
-      '#36664 has a row already',
+      '#37344 has a row already',
+    ],
+    [
+      'a check with two rows',
+      `| ${pr(37344)} |`,
+      `| ${pr(37344)} |\n| ${WINDOWS_CHECK} | other | ${pr(36664)} |`,
+      `| other | ${pr(36664)} |`,
+      'the check "On Windows 11, make a React project',
+    ],
+    [
+      'a group decision that still says skip',
+      '| none: no effect that a project can show |',
+      '| skip: no effect that a project can show |',
+      '| `tooling` |',
+      '"skip:" is no decision: choose "manual: <check> Why: <why the sweep cannot test it>" for a check a person does, or "none: <reason>" for a change that needs no QA',
+    ],
+    [
+      'a group that needs no QA without a reason',
+      '| none: no effect that a project can show |',
+      '| none: |',
+      '| `tooling` |',
+      'expected the reason why no QA is needed after "none:"',
+    ],
+    [
+      'a manual group without its reason',
+      ` Why: ${WINDOWS_WHY} |`,
+      ' |',
+      '| `windows` |',
+      'expected a check and its reason, as "manual: <check> Why: <why the sweep cannot test it>"',
+    ],
+    [
+      'a manual group without its check',
+      `| manual: ${GROUP_CHECK} Why:`,
+      '| manual: Why:',
+      '| `windows` |',
+      'expected a check and its reason',
+    ],
+    [
+      'a manual check with a URL of another host',
+      'open `http://localhost:6006`: every story',
+      'open `https://example.com`: every story',
+      `| ${pr(37344)} |`,
+      'https://example.com has the host example.com, not localhost',
+    ],
+    [
+      'a reason of manual QA with a URL of another host',
+      `| ${WINDOWS_WHY} | ${pr(37344)}`,
+      `| ${WINDOWS_WHY}, see https://example.com/ci | ${pr(37344)}`,
+      `| ${pr(37344)} |`,
+      'https://example.com/ci has the host example.com, not localhost',
+    ],
+    [
+      'a reason of no QA with a URL of another host',
+      "a change of this repository's CI, no project can see it",
+      "a change of this repository's CI, see https://example.com/run",
+      pr(36664),
+      'https://example.com/run has the host example.com, not localhost',
+    ],
+    [
+      'a group decision with a URL of another host',
+      'none: no effect that a project can show',
+      'none: see https://example.com/x',
+      '| `tooling` |',
+      'https://example.com/x has the host example.com, not localhost',
+    ],
+    [
+      'a manual check that mentions a person',
+      'open the static build: the stories',
+      'ask @someone: the stories',
+      `| ${pr(37344)} |`,
+      'a manual check names no person, PR, or issue outside a code span',
+    ],
+    [
+      'a manual check that points to a PR',
+      'open the static build: the stories',
+      'follow the steps of #37344: the stories',
+      `| ${pr(37344)} |`,
+      'a manual check names no person, PR, or issue outside a code span',
+    ],
+    [
+      'the reason of a manual group that points to an issue',
+      `Why: ${WINDOWS_WHY} |`,
+      `Why: ${WINDOWS_WHY}, see #36000 |`,
+      '| `windows` |',
+      'a manual check names no person, PR, or issue outside a code span',
     ],
     [
       'a reason with two rows',
@@ -358,14 +475,14 @@ describe('checkPlanText', () => {
     ['a batch 0', '- Batch: 1', '- Batch: 0', '### `story-sort-in-main`', 'batch: Too small'],
     [
       'a maintainer PR without a group',
-      `| \`tooling\` | area Tooling, no project | skip: no effect that a project can show | ${pr(34799)} |`,
+      `| \`tooling\` | area Tooling, no project | none: no effect that a project can show | ${pr(34799)} |`,
       `|  |  |  | ${pr(34799)} |`,
       `| ${pr(34799)} |`,
       '#34799 is in no group',
     ],
     [
       'a second row of maintainer PRs without a group',
-      `| \`tooling\` | area Tooling, no project | skip: no effect that a project can show | ${pr(34799)} |`,
+      `| \`tooling\` | area Tooling, no project | none: no effect that a project can show | ${pr(34799)} |`,
       `|  |  |  | ${pr(34799)} |\n|  |  |  | ${pr(35509)} |`,
       `|  |  |  | ${pr(35509)} |`,
       'a second row of PRs without a group',
@@ -378,15 +495,15 @@ describe('checkPlanText', () => {
       'the group `ui` names `sidebar`, which is no entry of this plan',
     ],
     [
-      'an entry PR whose group skips',
+      'an entry PR whose group needs no QA',
       '| `ui` | area UI | `sidebar-tree` |',
-      '| `ui` | area UI | skip: covered elsewhere |',
+      '| `ui` | area UI | none: covered elsewhere |',
       `- PRs: ${pr(33422)}`,
       '#35509 is listed here, but its group `ui` does not name `sidebar-tree`',
     ],
     [
       'a group without a decision',
-      '| `tooling` | area Tooling, no project | skip: no effect that a project can show |',
+      '| `tooling` | area Tooling, no project | none: no effect that a project can show |',
       '| `tooling` | area Tooling, no project |  |',
       '| `tooling` | area',
       'has no decision',
@@ -654,17 +771,12 @@ describe('checkPlanText', () => {
       prs: [...WINDOW.prs, windowPr({ number: 40000, title: 'Core: Something new', area: 'Core' })],
     };
     const text = replaced(FIXTURE, pr(36664), pr(36665));
-    const heading = '## PRs that need QA and are not tested';
+    const heading = '## PRs that need manual QA';
+    const nowhere = 'in no entry and no row of "PRs that need manual QA" or "PRs that need no QA"';
 
     expect(problemsOf(text, { window })).toEqual([
-      {
-        line: lineOf(text, heading),
-        message: `#36664 of the window is in no entry and no row of "${heading.slice(3)}"`,
-      },
-      {
-        line: lineOf(text, heading),
-        message: `#40000 of the window is in no entry and no row of "${heading.slice(3)}"`,
-      },
+      { line: lineOf(text, heading), message: `#36664 of the window is ${nowhere}` },
+      { line: lineOf(text, heading), message: `#40000 of the window is ${nowhere}` },
       { line: lineOf(text, pr(36665)), message: '#36665 is not in the window' },
     ]);
   });
@@ -692,32 +804,25 @@ describe('checkPlanText', () => {
       '#36189 is marked qa:skip and needs no group in the window, so the plan does not decide it',
     ],
     [
-      'an undeclared PR in the table of PRs that need QA',
-      `| ${pr(36664)} |`,
-      `| ${pr(36664)}, ${pr(35618)} |`,
-      `| ${pr(36664)}, ${pr(35618)} |`,
-      '#35618 belongs in "Undeclared PRs that are not tested"',
-    ],
-    [
-      'a maintainer PR that is in no group',
+      'a core team PR that is in no group',
       ` | ${pr(34799)} |`,
       ' |  |',
-      '## Groups of maintainer PRs marked qa:skip',
-      '#34799 of the window is in no row of "Groups of maintainer PRs marked qa:skip"',
+      '## Groups of core team PRs marked qa:skip',
+      '#34799 of the window is in no row of "Groups of core team PRs marked qa:skip"',
     ],
     [
-      'a maintainer PR in a row of PRs that are not tested',
+      'a core team PR in a row of PRs that need no QA',
       `| ${pr(36664)} |`,
       `| ${pr(36664)}, ${pr(35509)} |`,
       `| ${pr(36664)}, ${pr(35509)} |`,
-      '#35509 is a maintainer PR marked qa:skip, so it belongs in a group',
+      '#35509 is a core team PR marked qa:skip, so it belongs in a group',
     ],
     [
       'a PR that needs QA in a group',
       ` | ${pr(34799)} |`,
       ` | ${pr(34799)}, ${pr(36664)} |`,
       ` | ${pr(34799)}, ${pr(36664)} |`,
-      '#36664 is no maintainer PR marked qa:skip that needs a group',
+      '#36664 is no core team PR marked qa:skip that needs a group',
     ],
   ])('refuses against the window %s', (_, from, to, lineNeedle, message) => {
     const text = edited(from, to);
@@ -726,6 +831,23 @@ describe('checkPlanText', () => {
       line: lineOf(text, lineNeedle),
       message,
     });
+  });
+
+  it('takes a PR marked qa:needed and one without a QA label in one row', () => {
+    const text = edited(`| ${pr(35618)} |`, `| ${pr(35618)}, ${pr(36664)} |`).replace(
+      `\n| a change of this repository's CI, no project can see it | ${pr(36664)} |`,
+      ''
+    );
+
+    expect(problemsOf(text, { window: WINDOW })).toEqual([]);
+  });
+
+  it.each([
+    ['a package name in a code span', 'ask `@storybook/react`: the stories'],
+    ['a reference in a code span', 'search the log for `#123`: the stories'],
+    ['an address', 'mail qa@example.org: the stories'],
+  ])('accepts %s in a manual check', (_, to) => {
+    expect(problemsOf(edited('open the static build: the stories', to))).toEqual([]);
   });
 
   it('names the tags of the window when the plan was written for other ones', () => {
@@ -743,9 +865,9 @@ describe('checkPlanText', () => {
 describe('draftOfPlan', () => {
   const plan = { ...parsePlan(FIXTURE), entriesPerRun: ENTRIES_PER_RUN };
   const undecided = structuredClone(plan);
-  undecided.needed[0]!.reason = null;
-  const [ui, tooling] = undecided.groups;
-  undecided.groups = [ui!, { ...tooling!, prs: [] }, { slug: null, prs: tooling!.prs }];
+  undecided.manual = [{ check: null, why: null, prs: [37344] }];
+  const [ui, tooling, windows] = undecided.groups;
+  undecided.groups = [ui!, { ...tooling!, prs: [] }, windows!, { slug: null, prs: tooling!.prs }];
 
   it.each([
     ['a finished plan', plan],
@@ -760,10 +882,11 @@ describe('draftOfPlan', () => {
     expect(draftOfPlan(plan).decisions).toEqual({
       '31900': { entries: ['preview-animations'] },
       '33422': { entries: ['sidebar-tree'] },
-      '35618': { skip: "the monorepo's docs E2E tests cover the timing" },
+      '35618': { none: "the monorepo's docs E2E tests cover the timing" },
       '35658': { entries: ['csf-factory-namespaces'] },
       '36137': { entries: ['story-sort-in-main'] },
-      '36664': { skip: "a change of this repository's CI, no project can see it" },
+      '36664': { none: "a change of this repository's CI, no project can see it" },
+      '37344': { manual: WINDOWS_CHECK, why: WINDOWS_WHY },
     });
   });
 });
@@ -782,11 +905,42 @@ describe('planFromWindow', () => {
   };
 
   it('keeps a pipe and a backtick of a reason through render and parse', () => {
-    const draft = PlanDraft.parse({ decisions: { '1': { skip: 'only `a | b` shows it' } } });
+    const draft = PlanDraft.parse({ decisions: { '1': { none: 'only `a | b` shows it' } } });
     const text = renderPlan(planFromWindow(windowOf([needed]), draft));
 
-    expect(parsePlan(text).needed[0]!.reason).toBe('only `a | b` shows it');
+    expect(parsePlan(text).none[0]!.reason).toBe('only `a | b` shows it');
     expect(problemsOf(text)).toEqual([]);
+  });
+
+  it.each([
+    ['a PR', { decisions: { '1': { skip: 'only CI can see it' } } }, ['decisions', '1']],
+    [
+      'a group',
+      { groups: [{ slug: 'ci', source: 'area CI', decision: { skip: 'only CI' } }] },
+      ['groups', 0, 'decision'],
+    ],
+  ])('refuses a draft that still skips %s', (_, draft, path) => {
+    const result = PlanDraft.safeParse(draft);
+
+    expect(result.error?.issues).toEqual([
+      expect.objectContaining({
+        path,
+        message:
+          '"skip" is no decision: choose "manual" with the check a person does, or "none" with the reason no QA is needed',
+      }),
+    ]);
+  });
+
+  it('puts PRs with one manual check into one row, apart from the PRs without a decision', () => {
+    const other = windowPr({ number: 3, title: 'CLI: Other', area: 'CLI' });
+    const undecided = windowPr({ number: 4, title: 'CLI: Third', area: 'CLI' });
+    const manual = { manual: 'On Windows 11, run `npx storybook dev`.', why: 'only Windows' };
+    const draft = PlanDraft.parse({ decisions: { '1': manual, '3': manual } });
+
+    expect(planFromWindow(windowOf([needed, other, undecided]), draft).manual).toEqual([
+      { check: manual.manual, why: manual.why, prs: [1, 3] },
+      { check: null, why: null, prs: [4] },
+    ]);
   });
 
   it('leaves every PR of a skeleton undecided, so the check names each of them', () => {
@@ -801,10 +955,10 @@ describe('planFromWindow', () => {
   it('puts PRs with one reason into one row', () => {
     const other = windowPr({ number: 3, title: 'CI: Other', area: 'CI' });
     const draft = PlanDraft.parse({
-      decisions: { '1': { skip: 'only CI can see it' }, '3': { skip: 'only CI can see it' } },
+      decisions: { '1': { none: 'only CI can see it' }, '3': { none: 'only CI can see it' } },
     });
 
-    expect(planFromWindow(windowOf([needed, other]), draft).needed).toEqual([
+    expect(planFromWindow(windowOf([needed, other]), draft).none).toEqual([
       { reason: 'only CI can see it', prs: [1, 3] },
     ]);
   });
@@ -825,7 +979,7 @@ describe('planFromWindow', () => {
   it.each([
     [
       'decides a PR the window holds in another role',
-      { decisions: { '2': { skip: 'no' } } },
+      { decisions: { '2': { none: 'no' } } },
       'decides #2',
     ],
     ['groups a PR the window holds in another role', { groupOf: { '1': 'x' } }, 'groups #1'],
@@ -836,9 +990,14 @@ describe('planFromWindow', () => {
       'decides #1 for `sidebar`, and the entries that list it are none',
     ],
     [
-      'skips a PR that an entry lists',
-      { entries: [entry], decisions: { '1': { skip: 'no' } } },
-      'skips #1, which the entries `sidebar` list',
+      'gives no QA to a PR that an entry lists',
+      { entries: [entry], decisions: { '1': { none: 'no' } } },
+      'gives #1 no QA, and the entries `sidebar` list it',
+    ],
+    [
+      'gives manual QA to a PR that an entry lists',
+      { entries: [entry], decisions: { '1': { manual: 'Open it.', why: 'only Windows' } } },
+      'gives #1 manual QA, and the entries `sidebar` list it',
     ],
   ])('refuses a draft that %s', (_, draft, message) => {
     expect(() => planFromWindow(windowOf([needed, grouped]), PlanDraft.parse(draft))).toThrow(
@@ -883,14 +1042,16 @@ describe('renderLedger', () => {
     expect(rows.map(([number, , , , where]) => [Number(number), where])).toEqual([
       [31900, 'tested by `preview-animations`'],
       [33422, 'tested by `sidebar-tree`'],
-      [34799, 'group `tooling`: skip: no effect that a project can show'],
+      [34799, 'group `tooling`: none: no effect that a project can show'],
       [35509, 'tested by `sidebar-tree`; group `ui`: `sidebar-tree`'],
-      [35618, "not tested: the monorepo's docs E2E tests cover the timing"],
+      [35618, "no QA: the monorepo's docs E2E tests cover the timing"],
       [35658, 'tested by `csf-factory-namespaces`'],
       [36137, 'tested by `story-sort-in-main`'],
       [36153, 'verified by hand'],
       [36189, 'marked qa:skip and needs no group'],
-      [36664, "not tested: a change of this repository's CI, no project can see it"],
+      [36307, `group \`windows\`: manual: ${GROUP_CHECK} Why: ${WINDOWS_WHY}`],
+      [36664, "no QA: a change of this repository's CI, no project can see it"],
+      [37344, `manual QA: ${WINDOWS_CHECK}`],
     ]);
   });
 });

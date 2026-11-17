@@ -17,24 +17,26 @@
 | `csf-factory-namespaces` Legacy addon namespaces work in CSF factories | 1 | `mealdrop`, `mantine` | 1 |
 | `sidebar-tree` The rebuilt sidebar tree | 2 | `mealdrop`, `primer-react` | 2 |
 
-## PRs that need QA and are not tested
+## PRs that need manual QA
 
-| Reason | PRs |
-| --- | --- |
-| a change of this repository's CI, no project can see it | [#36664](https://github.com/storybookjs/storybook/pull/36664) |
+| Check | Why the sweep cannot test it | PRs |
+| --- | --- | --- |
+| On Windows 11, make a React project with the webpack builder with `npx create-storybook@11.0.0-beta.3 --type react --builder webpack5`, run `npx storybook dev`, and open `http://localhost:6006`: every story renders and none shows `Cannot find module`. Then run `npx storybook build` and open the static build: the stories render there too. | a fix that only Windows shows, and the sweep runs on Linux | [#37344](https://github.com/storybookjs/storybook/pull/37344) |
 
-## Undeclared PRs that are not tested
+## PRs that need no QA
 
 | Reason | PRs |
 | --- | --- |
 | the monorepo's docs E2E tests cover the timing | [#35618](https://github.com/storybookjs/storybook/pull/35618) |
+| a change of this repository's CI, no project can see it | [#36664](https://github.com/storybookjs/storybook/pull/36664) |
 
-## Groups of maintainer PRs marked qa:skip
+## Groups of core team PRs marked qa:skip
 
 | Group | Source | Decision | PRs |
 | --- | --- | --- | --- |
 | `ui` | area UI | `sidebar-tree` | [#35509](https://github.com/storybookjs/storybook/pull/35509) |
-| `tooling` | area Tooling, no project | skip: no effect that a project can show | [#34799](https://github.com/storybookjs/storybook/pull/34799) |
+| `tooling` | area Tooling, no project | none: no effect that a project can show | [#34799](https://github.com/storybookjs/storybook/pull/34799) |
+| `windows` | area Builder Vite | manual: On Windows 11, in a Vite project whose main file sets `staticDirs: ['../public']`, run `npx storybook build`: every file of `public` is in `storybook-static`. Why: a fix that only Windows shows, and the sweep runs on Linux | [#36307](https://github.com/storybookjs/storybook/pull/36307) |
 
 ## Discovered repos
 

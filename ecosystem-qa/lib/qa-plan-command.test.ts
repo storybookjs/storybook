@@ -70,6 +70,6 @@ describe('qa-plan.ts ledger', () => {
 
     expect(status).toBe(0);
     expect(stdout).toContain('| 36153 | qa:success | Addon A11y |');
-    expect(stdout.split('\n').filter((line) => /^\| \d/.test(line))).toHaveLength(10);
+    expect(stdout.split('\n').filter((line) => /^\| \d/.test(line))).toHaveLength(12);
   });
 });

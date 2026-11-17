@@ -31,10 +31,27 @@ const RepoId = CatalogEntry.shape.id;
 const Sha = z.string().regex(/^[0-9a-f]{40}$/, 'expected a full commit SHA');
 const PrNumber = z.int().positive();
 
+// A decision cell of a group holds a manual check and its reason as `manual: <check> Why: <why>`.
+const WHY = ' Why: ';
+const ManualCheck = Text.refine((check) => !check.includes(WHY), `expected no "${WHY.trim()}"`);
+
 export const Decision = z
-  .union([z.strictObject({ entries: z.array(Slug).min(1) }), z.strictObject({ skip: Text })])
+  .union([
+    z.strictObject({ entries: z.array(Slug).min(1) }),
+    z.strictObject({ manual: ManualCheck, why: Text }),
+    z.strictObject({ none: Text }),
+  ])
   .nullable();
 export type Decision = z.infer<typeof Decision>;
+type ManualDecision = Extract<Decision, { manual: string }>;
+
+const SKIP_IS_GONE =
+  '"skip" is no decision: choose "manual" with the check a person does, or "none" with the reason no QA is needed';
+const DraftDecision = z
+  .custom((value) => !(value && typeof value === 'object' && 'skip' in value), {
+    error: SKIP_IS_GONE,
+  })
+  .pipe(Decision.unwrap());
 
 const unique = (values: unknown[]) => new Set(values).size === values.length;
 const PrList = z.array(PrNumber).refine(unique, 'a PR is listed twice');
@@ -69,13 +86,19 @@ export const DiscoveredRepo = z.strictObject({
 });
 export type DiscoveredRepo = z.infer<typeof DiscoveredRepo>;
 
-// A row without a reason holds the PRs that no entry tests and the draft has not decided yet.
-const NotTested = z.strictObject({ reason: Text.nullable(), prs: SomePrs });
-type NotTested = z.infer<typeof NotTested>;
+// The row without a check holds the PRs that no entry tests and the draft has not decided yet.
+const ManualRow = z.union([
+  z.strictObject({ check: ManualCheck, why: Text, prs: SomePrs }),
+  z.strictObject({ check: z.null(), why: z.null(), prs: SomePrs }),
+]);
+type ManualRow = z.infer<typeof ManualRow>;
+const NoQaRow = z.strictObject({ reason: Text, prs: SomePrs });
+type NoQaRow = z.infer<typeof NoQaRow>;
 
 const GroupOfDraft = z.strictObject({ slug: Slug, source: Text, decision: Decision });
+const GroupOfDraftInput = GroupOfDraft.extend({ decision: DraftDecision.nullable() });
 const Group = GroupOfDraft.extend({ prs: PrList });
-// The maintainer PRs that the draft has not put into a group yet share one row without a group.
+// The core team PRs that the draft has not put into a group yet share one row without a group.
 const GroupRow = z.union([Group, z.strictObject({ slug: z.null(), prs: SomePrs })]);
 type GroupRow = z.infer<typeof GroupRow>;
 
@@ -91,15 +114,14 @@ const Meta = z.strictObject({
 
 export const Plan = Meta.extend({
   entries: z.array(PlanEntry),
-  needed: z.array(NotTested),
-  undeclared: z.array(NotTested),
+  manual: z.array(ManualRow),
+  none: z.array(NoQaRow),
   groups: z.array(GroupRow),
   discovered: z.array(DiscoveredRepo),
 });
 export type Plan = z.infer<typeof Plan>;
 
 type TableKey = Exclude<keyof Plan, keyof z.infer<typeof Meta> | 'entries'>;
-type NotTestedKey = 'needed' | 'undeclared';
 
 const code = (value: string) => `\`${value}\``;
 const uncode = (cell: string): string => {
@@ -134,28 +156,48 @@ const unRepoCell = (cell: string): { repo: string; commit: string } => {
   }
   return { repo, commit };
 };
+const fail = (message: string): never => {
+  throw new Error(message);
+};
 const numberOrText = (cell: string): unknown => (/^\d+$/.test(cell) ? Number(cell) : cell);
 const orNull = (cell: string) => (cell === '' ? null : cell);
 
-const decisionCell = (decision: Decision): string =>
-  decision === null
-    ? ''
-    : 'skip' in decision
-      ? `skip: ${decision.skip}`
-      : decision.entries.map(code).join(', ');
+const decisionCell = (decision: Decision): string => {
+  if (decision === null) {
+    return '';
+  }
+  if ('entries' in decision) {
+    return decision.entries.map(code).join(', ');
+  }
+  return 'manual' in decision
+    ? `manual: ${decision.manual}${WHY}${decision.why}`
+    : `none: ${decision.none}`;
+};
+const MANUAL_CELL = `"manual: <check>${WHY}<why the sweep cannot test it>"`;
 const unDecision = (cell: string): unknown => {
   if (cell === '') {
     return null;
   }
-  const skip = /^skip: (.*)$/.exec(cell);
-  if (skip) {
-    return { skip: skip[1] };
+  const [, kind, rest = ''] = /^(skip|manual|none):\s*(.*)$/.exec(cell) ?? [];
+  if (kind === 'skip') {
+    throw new Error(
+      `"skip:" is no decision: choose ${MANUAL_CELL} for a check a person does, or "none: <reason>" for a change that needs no QA`
+    );
+  }
+  if (kind === 'none') {
+    return rest ? { none: rest } : fail('expected the reason why no QA is needed after "none:"');
+  }
+  if (kind === 'manual') {
+    const at = rest.indexOf(WHY);
+    return at > 0 && rest.length > at + WHY.length
+      ? { manual: rest.slice(0, at), why: rest.slice(at + WHY.length) }
+      : fail(`expected a check and its reason, as ${MANUAL_CELL}`);
   }
   try {
     return { entries: cell.split(/,\s*/).map(uncode) };
   } catch {
     throw new Error(
-      `expected entry slugs in backticks, "skip: <reason>", or an empty cell, found "${cell}"`
+      `expected entry slugs in backticks, ${MANUAL_CELL}, "none: <reason>", or an empty cell, found "${cell}"`
     );
   }
 };
@@ -168,19 +210,35 @@ type Table<Row> = {
   decode: (cells: string[]) => unknown;
 };
 
-const notTestedTable = (heading: string): Table<NotTested> => ({
-  heading,
-  columns: ['Reason', 'PRs'],
-  schema: NotTested,
-  encode: (row) => [row.reason ?? '', prsCell(row.prs)],
-  decode: ([reason, prs]) => ({ reason: orNull(reason!), prs: unPrs(prs!) }),
-});
-
 const TABLES: { [K in TableKey]: Table<Plan[K][number]> } = {
-  needed: notTestedTable('PRs that need QA and are not tested'),
-  undeclared: notTestedTable('Undeclared PRs that are not tested'),
+  manual: {
+    heading: 'PRs that need manual QA',
+    columns: ['Check', 'Why the sweep cannot test it', 'PRs'],
+    schema: ManualRow,
+    encode: (row) => [row.check ?? '', row.why ?? '', prsCell(row.prs)],
+    decode: ([check, why, prs]) => {
+      if (!check !== !why) {
+        fail(
+          check
+            ? 'expected why the sweep cannot test it next to the check'
+            : 'expected the check a person does next to why the sweep cannot test it'
+        );
+      }
+      return { check: orNull(check!), why: orNull(why!), prs: unPrs(prs!) };
+    },
+  },
+  none: {
+    heading: 'PRs that need no QA',
+    columns: ['Reason', 'PRs'],
+    schema: NoQaRow,
+    encode: (row) => [row.reason, prsCell(row.prs)],
+    decode: ([reason, prs]) => ({
+      reason: reason || fail('expected the reason why these PRs need no QA'),
+      prs: unPrs(prs!),
+    }),
+  },
   groups: {
-    heading: 'Groups of maintainer PRs marked qa:skip',
+    heading: 'Groups of core team PRs marked qa:skip',
     columns: ['Group', 'Source', 'Decision', 'PRs'],
     schema: GroupRow,
     encode: (row) =>
@@ -541,11 +599,10 @@ type Rule = (input: RuleInput) => Problem[];
 // Every place of a PR in the plan: the entries that test it, and its one row in a table.
 type Place = { line: number } & (
   | { kind: 'entry'; slug: string }
-  | { kind: NotTestedKey; reason: string | null }
+  | { kind: 'manual'; row: ManualRow }
+  | { kind: 'none'; row: NoQaRow }
   | { kind: 'group'; group: GroupRow }
 );
-
-const NOT_TESTED_KEYS: NotTestedKey[] = ['needed', 'undeclared'];
 
 const placesOf = (plan: Plan, at: PlanLayout): Map<number, Place[]> => {
   const places = new Map<number, Place[]>();
@@ -555,11 +612,12 @@ const placesOf = (plan: Plan, at: PlanLayout): Map<number, Place[]> => {
       put(pr, { kind: 'entry', slug: entry.slug, line: at.entries[index]!.prs })
     )
   );
-  for (const kind of NOT_TESTED_KEYS) {
-    plan[kind].forEach(({ reason, prs }, index) =>
-      prs.forEach((pr) => put(pr, { kind, reason, line: at.tables[kind].rows[index]! }))
-    );
-  }
+  plan.manual.forEach((row, index) =>
+    row.prs.forEach((pr) => put(pr, { kind: 'manual', row, line: at.tables.manual.rows[index]! }))
+  );
+  plan.none.forEach((row, index) =>
+    row.prs.forEach((pr) => put(pr, { kind: 'none', row, line: at.tables.none.rows[index]! }))
+  );
   plan.groups.forEach((group, index) =>
     group.prs.forEach((pr) =>
       put(pr, { kind: 'group', group, line: at.tables.groups.rows[index]! })
@@ -597,19 +655,22 @@ const namesAreUnique: Rule = ({ plan, at }) => [
     at.tables.discovered.rows,
     (id) => `the id \`${id}\` is used twice`
   ),
-  ...NOT_TESTED_KEYS.flatMap((key) =>
-    duplicates(
-      plan[key].map((row) => row.reason),
-      at.tables[key].rows,
-      (reason) =>
-        reason === null
-          ? 'a second row of PRs without a decision'
-          : `the reason "${reason}" has a row already`
-    )
+  ...duplicates(
+    plan.manual.map((row) => row.check),
+    at.tables.manual.rows,
+    (check) =>
+      check === null
+        ? 'a second row of PRs without a decision'
+        : `the check "${check}" has a row already`
+  ),
+  ...duplicates(
+    plan.none.map((row) => row.reason),
+    at.tables.none.rows,
+    (reason) => `the reason "${reason}" has a row already`
   ),
 ];
 
-// A PR is tested by entries or has one row, never both, except that a maintainer PR keeps its row
+// A PR is tested by entries or has one row, never both, except that a core team PR keeps its row
 // in a group, whose decision then names every entry that lists the PR.
 const prsHaveOnePlace: Rule = ({ plan, at }) =>
   [...placesOf(plan, at)].flatMap(([pr, places]) => {
@@ -628,7 +689,7 @@ const prsHaveOnePlace: Rule = ({ plan, at }) =>
           return [
             {
               line: row.line,
-              message: `#${pr} is tested by \`${place.slug}\`, so it has no row of PRs that are not tested`,
+              message: `#${pr} is tested by \`${place.slug}\`, so it has no row in "${TABLES[row.kind].heading}"`,
             },
           ];
         }
@@ -701,17 +762,15 @@ const reposAreCurrent: Rule = (input) => {
 };
 
 const rowsAreDecided: Rule = ({ plan, at }) =>
-  NOT_TESTED_KEYS.flatMap((key) =>
-    plan[key].flatMap(({ reason, prs }, index) =>
-      reason === null
-        ? [
-            {
-              line: at.tables[key].rows[index]!,
-              message: `${prList(prs)} ${prs.length === 1 ? 'has' : 'have'} no decision`,
-            },
-          ]
-        : []
-    )
+  plan.manual.flatMap(({ check, prs }, index) =>
+    check === null
+      ? [
+          {
+            line: at.tables.manual.rows[index]!,
+            message: `${prList(prs)} ${prs.length === 1 ? 'has' : 'have'} no decision`,
+          },
+        ]
+      : []
   );
 
 const batchesHaveNoGap: Rule = ({ plan, at }) => {
@@ -780,25 +839,81 @@ const offLocalhost = (text: string): string[] =>
     return readings.includes(null) ? [`${url} is a URL that the URL parser cannot read`] : [];
   });
 
-const textStaysOnLocalhost: Rule = ({ plan, at }) =>
-  plan.entries.flatMap((entry, index) => {
-    const layout = at.entries[index]!;
-    return [
-      { text: entry.title, line: layout.heading },
-      ...entry.repos.map((repo, n) => ({ text: repo.reason, line: layout.repos[n]! })),
-      ...entry.steps.map((text, step) => ({ text, line: layout.steps[step]! })),
-      { text: entry.expected, line: layout.expected },
-    ].flatMap(({ text, line }) => offLocalhost(text).map((message) => ({ line, message })));
-  });
+const textsOf = (decision: Decision): string[] => {
+  if (decision === null || 'entries' in decision) {
+    return [];
+  }
+  return 'manual' in decision ? [decision.manual, decision.why] : [decision.none];
+};
+
+const decisionTexts = ({ plan, at }: RuleInput) => [
+  ...plan.manual.flatMap((row, index) =>
+    [row.check ?? '', row.why ?? ''].map((text) => ({ text, line: at.tables.manual.rows[index]! }))
+  ),
+  ...plan.none.map((row, index) => ({ text: row.reason, line: at.tables.none.rows[index]! })),
+  ...plan.groups.flatMap((group, index) =>
+    group.slug === null
+      ? []
+      : textsOf(group.decision).map((text) => ({ text, line: at.tables.groups.rows[index]! }))
+  ),
+];
+
+const textStaysOnLocalhost: Rule = (input) =>
+  [
+    ...input.plan.entries.flatMap((entry, index) => {
+      const layout = input.at.entries[index]!;
+      return [
+        { text: entry.title, line: layout.heading },
+        ...entry.repos.map((repo, n) => ({ text: repo.reason, line: layout.repos[n]! })),
+        ...entry.steps.map((text, step) => ({ text, line: layout.steps[step]! })),
+        { text: entry.expected, line: layout.expected },
+      ];
+    }),
+    ...decisionTexts(input),
+  ].flatMap(({ text, line }) => offLocalhost(text).map((message) => ({ line, message })));
+
+export type ManualCheckRow = ManualDecision & { line: number; prs: number[] };
+
+export const manualChecksOf = (plan: Plan, at: PlanLayout): ManualCheckRow[] => [
+  ...plan.manual.flatMap((row, index) =>
+    row.check === null
+      ? []
+      : [{ manual: row.check, why: row.why, prs: row.prs, line: at.tables.manual.rows[index]! }]
+  ),
+  ...plan.groups.flatMap((group, index) =>
+    group.slug !== null && group.decision && 'manual' in group.decision
+      ? [{ ...group.decision, prs: group.prs, line: at.tables.groups.rows[index]! }]
+      : []
+  ),
+];
+
+// The manual checks go into an issue, where a mention notifies a person and a reference posts on a
+// PR, and a check that points to a PR cannot be followed without that PR open.
+const NOTIFIES = /(?:^|[^\w`])@[a-z\d]|#\d/i;
+const outsideCodeSpans = (text: string) => text.replace(/(`+)[^]*?\1/g, '');
+
+const manualChecksStayInert: Rule = ({ plan, at }) =>
+  manualChecksOf(plan, at).flatMap(({ manual, why, line }) =>
+    [manual, why].some((text) => NOTIFIES.test(outsideCodeSpans(text)))
+      ? [
+          {
+            line,
+            message:
+              'a manual check names no person, PR, or issue outside a code span: write out what to do, and put a package name such as `@storybook/react` in backticks',
+          },
+        ]
+      : []
+  );
 
 const WHY_NO_DECISION = {
   verified: 'verified by hand',
   skip: 'marked qa:skip and needs no group',
 } as const;
-const needsDecision = (status: QaStatus): status is NotTestedKey => !(status in WHY_NO_DECISION);
+const needsDecision = (status: QaStatus): status is 'needed' | 'undeclared' =>
+  !(status in WHY_NO_DECISION);
 
-// Each needed or undeclared PR of the window is tested or has a row in its own table, each
-// maintainer PR that needs a group has a row in a group, and no other PR has a place.
+// Each needed or undeclared PR of the window is tested or has a row of manual QA or of no QA, each
+// core team PR that needs a group has a row in a group, and no other PR has a place.
 const matchesWindow: Rule = ({ plan, at, window }) => {
   if (!window) {
     return [];
@@ -834,38 +949,35 @@ const matchesWindow: Rule = ({ plan, at, window }) => {
               : [
                   {
                     line: place.line,
-                    message: `#${pr.number} is a maintainer PR marked qa:skip, so it belongs in a group`,
+                    message: `#${pr.number} is a core team PR marked qa:skip, so it belongs in a group`,
                   },
                 ]
           );
     }
-    const key = pr.status;
-    if (!needsDecision(key)) {
+    const status = pr.status;
+    if (!needsDecision(status)) {
       return own.map((place) => ({
         line: place.line,
-        message: `#${pr.number} is ${WHY_NO_DECISION[key]} in the window, so the plan does not decide it`,
+        message: `#${pr.number} is ${WHY_NO_DECISION[status]} in the window, so the plan does not decide it`,
       }));
     }
-    const heading = TABLES[key].heading;
     if (own.length === 0) {
       return [
         {
-          line: at.tables[key].heading,
-          message: `#${pr.number} of the window is in no entry and no row of "${heading}"`,
+          line: at.tables.manual.heading,
+          message: `#${pr.number} of the window is in no entry and no row of "${TABLES.manual.heading}" or "${TABLES.none.heading}"`,
         },
       ];
     }
     return rows.flatMap((place) =>
-      place.kind === key
-        ? []
-        : place.kind === 'group'
-          ? [
-              {
-                line: place.line,
-                message: `#${pr.number} is no maintainer PR marked qa:skip that needs a group`,
-              },
-            ]
-          : [{ line: place.line, message: `#${pr.number} belongs in "${heading}"` }]
+      place.kind === 'group'
+        ? [
+            {
+              line: place.line,
+              message: `#${pr.number} is no core team PR marked qa:skip that needs a group`,
+            },
+          ]
+        : []
     );
   });
   const strangers = [...places]
@@ -887,6 +999,7 @@ const RULES: Rule[] = [
   groupsAreDecided,
   noPrivateLinks,
   textStaysOnLocalhost,
+  manualChecksStayInert,
   matchesWindow,
 ];
 
@@ -940,8 +1053,10 @@ const placeText = (place: Place): string => {
       return place.group.slug === null
         ? 'in no group yet'
         : `group \`${place.group.slug}\`: ${decisionCell(place.group.decision) || 'no decision yet'}`;
-    default:
-      return place.reason === null ? 'no decision yet' : `not tested: ${place.reason}`;
+    case 'manual':
+      return place.row.check === null ? 'no decision yet' : `manual QA: ${place.row.check}`;
+    case 'none':
+      return `no QA: ${place.row.reason}`;
   }
 };
 
@@ -1021,8 +1136,8 @@ const PrKey = z.string().regex(/^[1-9]\d*$/, 'expected a PR number');
 export const PlanDraft = z.strictObject({
   entries: z.array(PlanEntry).default([]),
   discovered: z.array(DiscoveredRepo).default([]),
-  decisions: z.record(PrKey, Decision.unwrap()).default({}),
-  groups: z.array(GroupOfDraft).default([]),
+  decisions: z.record(PrKey, DraftDecision).default({}),
+  groups: z.array(GroupOfDraftInput).default([]),
   groupOf: z.record(PrKey, Slug).default({}),
 });
 export type PlanDraft = z.infer<typeof PlanDraft>;
@@ -1037,10 +1152,13 @@ export const draftOfPlan = (plan: Plan): PlanDraft => {
       decisions.set(pr, { entries: [...slugs, entry.slug] });
     }
   }
-  for (const { reason, prs } of [...plan.needed, ...plan.undeclared]) {
-    if (reason !== null) {
-      prs.forEach((pr) => decisions.set(pr, { skip: reason }));
+  for (const row of plan.manual) {
+    if (row.check !== null) {
+      row.prs.forEach((pr) => decisions.set(pr, { manual: row.check, why: row.why }));
     }
+  }
+  for (const { reason, prs } of plan.none) {
+    prs.forEach((pr) => decisions.set(pr, { none: reason }));
   }
   const named = plan.groups.flatMap((group) => (group.slug === null ? [] : [group]));
   return {
@@ -1076,10 +1194,10 @@ export const planFromWindow = (window: Window, draft: PlanDraft): Plan => {
   const testedBy = (pr: number) =>
     draft.entries.filter((entry) => entry.prs.includes(pr)).map((entry) => entry.slug);
 
-  const maintainerPrs = window.prs.filter(needsGroup);
+  const coreTeamPrs = window.prs.filter(needsGroup);
   const tracked = new Map<string, number>();
   const groupOf = new Map(
-    maintainerPrs.map((pr) => {
+    coreTeamPrs.map((pr) => {
       const issue = trackingIssueOf(pr);
       if (issue) {
         tracked.set(`issue-${issue.number}`, issue.number);
@@ -1097,19 +1215,20 @@ export const planFromWindow = (window: Window, draft: PlanDraft): Plan => {
       .map(([slug, number]) => ({ slug, source: issueLink(number), decision: null })),
   ];
   const membersOf = (slug: string | null) =>
-    maintainerPrs.filter((pr) => groupOf.get(pr.number) === slug).map((pr) => pr.number);
+    coreTeamPrs.filter((pr) => groupOf.get(pr.number) === slug).map((pr) => pr.number);
 
   const statusOf = new Map(window.prs.map((pr) => [pr.number, pr.status]));
-  const groupable = new Set(maintainerPrs.map((pr) => pr.number));
+  const groupable = new Set(coreTeamPrs.map((pr) => pr.number));
   const misplaced = [
     ...Object.keys(draft.decisions)
       .filter((pr) => !['needed', 'undeclared'].includes(statusOf.get(Number(pr)) ?? ''))
       .map((pr) => `The draft decides #${pr}, which is no needed or undeclared PR of the window.`),
     ...Object.entries(draft.decisions).flatMap(([pr, decision]) => {
       const slugs = testedBy(Number(pr));
-      if ('skip' in decision) {
+      if (!('entries' in decision)) {
+        const kind = 'manual' in decision ? 'manual QA' : 'no QA';
         return slugs.length
-          ? [`The draft skips #${pr}, which the entries ${slugList(slugs)} list.`]
+          ? [`The draft gives #${pr} ${kind}, and the entries ${slugList(slugs)} list it.`]
           : [];
       }
       const same =
@@ -1125,7 +1244,7 @@ export const planFromWindow = (window: Window, draft: PlanDraft): Plan => {
       .filter((pr) => !groupable.has(Number(pr)))
       .map(
         (pr) =>
-          `The draft groups #${pr}, which is no maintainer PR marked qa:skip that needs a group.`
+          `The draft groups #${pr}, which is no core team PR marked qa:skip that needs a group.`
       ),
     ...Object.entries(draft.groupOf)
       .filter(([, slug]) => !groups.some((group) => group.slug === slug))
@@ -1137,17 +1256,24 @@ export const planFromWindow = (window: Window, draft: PlanDraft): Plan => {
     throw new Error(misplaced.join('\n'));
   }
 
-  const notTested = (status: NotTestedKey): NotTested[] => {
-    const prsOfReason = new Map<string | null, number[]>();
-    for (const pr of window.prs) {
-      if (pr.status === status && testedBy(pr.number).length === 0) {
-        const decision = draft.decisions[pr.number];
-        const reason = decision && 'skip' in decision ? decision.skip : null;
-        prsOfReason.set(reason, [...(prsOfReason.get(reason) ?? []), pr.number]);
-      }
+  const manual = new Map<string, ManualRow>();
+  const none = new Map<string, NoQaRow>();
+  const add = <Row extends { prs: number[] }>(rows: Map<string, Row>, key: string, row: Row) =>
+    rows.set(key, { ...row, prs: [...(rows.get(key)?.prs ?? []), ...row.prs] });
+  for (const pr of window.prs) {
+    if (!needsDecision(pr.status) || testedBy(pr.number).length > 0) {
+      continue;
     }
-    return [...prsOfReason].map(([reason, prs]) => ({ reason, prs }));
-  };
+    const decision = draft.decisions[pr.number];
+    if (decision && 'none' in decision) {
+      add(none, decision.none, { reason: decision.none, prs: [pr.number] });
+    } else if (decision && 'manual' in decision) {
+      const { manual: check, why } = decision;
+      add(manual, JSON.stringify([check, why]), { check, why, prs: [pr.number] });
+    } else {
+      add(manual, '', { check: null, why: null, prs: [pr.number] });
+    }
+  }
   const ungrouped = membersOf(null);
 
   return Plan.parse({
@@ -1157,8 +1283,8 @@ export const planFromWindow = (window: Window, draft: PlanDraft): Plan => {
     end: { tag: window.to, sha: window.toSha },
     entriesPerRun: ENTRIES_PER_RUN,
     entries: draft.entries,
-    needed: notTested('needed'),
-    undeclared: notTested('undeclared'),
+    manual: [...manual.values()],
+    none: [...none.values()],
     groups: [
       ...groups.map((group) => ({ ...group, prs: membersOf(group.slug) })),
       ...(ungrouped.length ? [{ slug: null, prs: ungrouped }] : []),

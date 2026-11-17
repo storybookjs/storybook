@@ -2,8 +2,10 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
 
 import { basename, dirname } from 'pathe';
+import { z } from 'zod';
 
 import { loadEntries } from './lib/catalog.ts';
+import { renderManualChecklist } from './lib/manual-qa.ts';
 import {
   checkPlanText,
   draftOfPlan,
@@ -22,6 +24,7 @@ const HELP = `Usage: node ecosystem-qa/qa-plan.ts render --window <file> [--draf
        node ecosystem-qa/qa-plan.ts check <file> [--window <file>]
        node ecosystem-qa/qa-plan.ts draft <file> --window <file> --out <file>
        node ecosystem-qa/qa-plan.ts ledger <file> --window <file> [--out <file>]
+       node ecosystem-qa/qa-plan.ts manual <file> --window <file> [--out <file>]
 
 render writes a QA plan from the JSON that window.ts wrote and an optional JSON draft of entries,
 discovered repos, decisions, and groups. A PR without a decision gets an empty cell.
@@ -35,7 +38,11 @@ also checks that every PR of that window that needs a decision is in exactly one
 the plan names no other PR. It exits 1 with the line of each problem.
 
 ledger prints where each PR of the window ended up in the plan, with its status, area, and title,
-or writes it to --out.`;
+or writes it to --out.
+
+manual prints the manual checks of a plan that passes check with that window as one Markdown
+checklist for an issue or a discussion, with the title of each PR, or writes it to --out. It
+creates nothing on GitHub.`;
 
 const { values, positionals } = parseArgs({
   allowPositionals: true,
@@ -62,7 +69,12 @@ if (extra.length) {
   console.error(`${command} takes one file, and was given ${extra.length + 1}.\n\n${HELP}`);
   process.exit(1);
 } else if (command === 'render' && values.window && values.out && !file) {
-  const draft = PlanDraft.parse(values.draft ? readJson(values.draft) : {});
+  const parsed = PlanDraft.safeParse(values.draft ? readJson(values.draft) : {});
+  if (!parsed.success) {
+    console.error(`${values.draft} is no draft:\n${z.prettifyError(parsed.error)}`);
+    process.exit(1);
+  }
+  const draft = parsed.data;
   let text: string;
   try {
     text = renderPlan(planFromWindow(readWindow(values.window), draft));
@@ -142,6 +154,26 @@ if (extra.length) {
     console.log(`Wrote ${values.out}.`);
   } else {
     process.stdout.write(ledger);
+  }
+} else if (command === 'manual' && file && values.window && !values.draft) {
+  const window = readWindow(values.window);
+  const { plan, problems } = checkPlanText(readFileSync(file, 'utf8'), {
+    catalog: loadEntries(),
+    window,
+  });
+  if (!plan || problems.length) {
+    for (const problem of problems) {
+      console.error(`${file}:${problem.line}: ${problem.message}`);
+    }
+    process.exit(1);
+  }
+  const checklist = renderManualChecklist(plan, window);
+  if (values.out) {
+    mkdirSync(dirname(values.out), { recursive: true });
+    writeFileSync(values.out, checklist);
+    console.log(`Wrote ${values.out}.`);
+  } else {
+    process.stdout.write(checklist);
   }
 } else {
   console.error(HELP);

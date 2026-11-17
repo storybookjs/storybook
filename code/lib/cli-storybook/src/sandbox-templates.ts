@@ -444,13 +444,10 @@ export const baseTemplates = {
       renderer: 'storybook-solidjs-vite',
       builder: '@storybook/builder-vite',
     },
-    // `chromatic` is skipped: the published storybook-solidjs-vite imports
-    // `storybook/internal/babel`, which Storybook 11 removed, so its preset fails to load and
-    // the built Storybook renders no stories ("Expected your framework's preset to export a
-    // `renderToCanvas` field"). Creating and building the sandbox still pass.
-    // Fix: https://github.com/solidjs-community/storybook/pull/76
-    // Re-enable once storybook-solidjs-vite releases a version that works with Storybook 11.
-    skipTasks: ['e2e-tests', 'e2e-tests-dev', 'bench', 'vitest-integration', 'chromatic'],
+    // During a Storybook prerelease, init installs the `next` dist-tag of storybook-solidjs-vite,
+    // whose releases are often younger than the age gate.
+    minAgeGateExemptions: ['storybook-solidjs-vite'],
+    skipTasks: ['e2e-tests', 'e2e-tests-dev', 'bench', 'vitest-integration'],
   },
   'astro-vite/default-ts': {
     name: 'Astro Latest (Vite | TypeScript)',

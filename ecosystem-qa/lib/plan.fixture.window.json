@@ -182,6 +182,16 @@
       "issues": []
     },
     {
+      "number": 36307,
+      "title": "Builder Vite: Static assets copy to handle Windows paths",
+      "area": "Builder Vite",
+      "status": "skip",
+      "labels": ["bug", "ci:daily", "qa:skip"],
+      "authorAssociation": "MEMBER",
+      "manualTesting": "1. Run Windows CI\n2. See it passing ✅",
+      "issues": []
+    },
+    {
       "number": 36664,
       "title": "CI: Cancel workflow when format check fails",
       "area": "CI",
@@ -189,6 +199,24 @@
       "labels": ["build", "ci:normal", "qa:needed"],
       "authorAssociation": "MEMBER",
       "manualTesting": "1. Run CI on a temporary branch with a deliberate formatting error and the existing `WORKFLOW_CANCELER` credential available.\n2. Confirm `format-check` fails, runs `Cancel current workflow`, and stops the remaining workflow jobs.\n3. Fix the formatting error and rerun. Confirm the cancellation step is skipped and the other jobs proceed normally.",
+      "issues": []
+    },
+    {
+      "number": 37344,
+      "title": "Core: Fix stories failing to load on Windows with the webpack builder",
+      "area": "Core",
+      "status": "needed",
+      "labels": [
+        "bug",
+        "builder-webpack5",
+        "ci:focus",
+        "ci:windows",
+        "core",
+        "qa:needed",
+        "windows"
+      ],
+      "authorAssociation": "MEMBER",
+      "manualTesting": "This needs a Windows machine. It has not been run on Windows with this fix yet; the unit tests simulate the platform.\n\n1. On Windows, create a webpack-based project, for example `npx create-storybook@next --type react --builder webpack5` in a new React project, or take any existing Next.js project that uses `@storybook/nextjs`.\n2. With 11.0.0-beta.1, run `npx storybook dev`. Every story shows `Cannot find module './<path>.stories.tsx'`.\n3. Install the canary of this PR and run `npx storybook dev` again. The stories render.\n4. Run `npx storybook build` and open the static build. The stories render there as well.",
       "issues": []
     }
   ]

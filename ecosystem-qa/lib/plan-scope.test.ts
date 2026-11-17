@@ -16,7 +16,7 @@ describe('planScopeOf', () => {
   it('names the plan by its file and the hash of its bytes, at the tier gate unless told', () => {
     expect(batchOne).toMatchObject({
       file: 'plan.fixture.md',
-      hash: 'd7d8fc893d31',
+      hash: '85bb0cf0c388',
       batch: 1,
       tier: 'gate',
     });
@@ -49,7 +49,7 @@ describe('planScopeOf', () => {
     );
 
     expect(scopeOf({ batch: '1' }, Buffer.from(text))).toMatch(
-      new RegExp(`^${PATH} is not a plan that can run, line 53: `)
+      new RegExp(`^${PATH} is not a plan that can run, line 55: `)
     );
   });
 
@@ -65,7 +65,7 @@ describe('plannedRun', () => {
     expect(plannedRun(batchOne, { repo: 'mealdrop', version: '11.0.0-beta.3' })).toMatchObject({
       record: {
         file: 'plan.fixture.md',
-        hash: 'd7d8fc893d31',
+        hash: '85bb0cf0c388',
         batch: 1,
         part: 1,
         entries: [

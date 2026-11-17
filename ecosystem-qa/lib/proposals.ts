@@ -326,7 +326,7 @@ const sourceLines = (proposal: IssueProposal | CommentProposal, withVersion = fa
 // A title in a body is one code span, in which GitHub renders no mention, reference, link or markup.
 // The fence is one backtick longer than any run in the title, padded when the title starts or ends
 // with one, and a blank line would end the span, so whitespace collapses first.
-const inlineTitle = (title: string): string => {
+export const inlineTitle = (title: string): string => {
   const text = capTitle(title.replace(/\s+/g, ' ').trim());
   const longestRun = Math.max(0, ...(text.match(/`+/g) ?? []).map((run) => run.length));
   const marker = '`'.repeat(longestRun + 1);

@@ -117,7 +117,7 @@ if (extra.length) {
   }
   if (again !== text) {
     console.error(
-      `${file} is not the plan that render writes from ${values.window}. Run check with --window on it.`
+      `${file} is not the plan that render writes from ${values.window}. check --window names each row that differs from the window; when it passes, set Entries per run, Version, and the order of the rows back to what render writes.`
     );
     process.exit(1);
   }

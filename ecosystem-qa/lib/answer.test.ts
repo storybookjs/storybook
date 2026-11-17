@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 
@@ -11,6 +14,61 @@ const run = (...lines: string[]) =>
 const answer = (n: unknown) => `<qa-result>\n${JSON.stringify({ n })}\n</qa-result>`;
 
 describe('answerOfFinishedAgent', () => {
+  // The reader finds a turn by two status lines of Sandcastle. If an upgrade renames them, every
+  // recovery would quietly find nothing, so this reads them from the Sandcastle that is installed.
+  it('looks for the status lines the installed Sandcastle writes', () => {
+    const bundle = readFileSync(fileURLToPath(import.meta.resolve('@ai-hero/sandcastle')), 'utf8');
+
+    expect(bundle).toContain('display.status(label("Agent started")');
+    expect(bundle).toContain('display.status(label("Agent stopped")');
+  });
+
+  // The lines Sandcastle 0.13.0 wrote around the two turns of a real run (ring-ui on 11.0.0-beta.3,
+  // whose first answer was sent back for repair), with the answers shortened.
+  it('reads the last turn of a log in the format Sandcastle writes', () => {
+    const log = [
+      '',
+      '--- Run started: 2026-11-16T10:12:22.082Z ---',
+      'Iteration 1/1',
+      'Setting up sandbox',
+      'Setting up sandbox done (0.2s)',
+      'Agent started',
+      'Bash(node "/home/runner/work/storybook/storybook/ecosystem-qa/tools/budget.mjs" "/home/agent/qa-evidence")',
+      answer(1),
+      '<promise>COMPLETE</promise>Nothing to act on: the QA run is finished.',
+      'Agent stopped',
+      'Capturing session',
+      'Syncing 1 commit to host',
+      'Syncing 1 commit to host done (0.0s)',
+      'Collecting commits',
+      'Collecting commits done (0.0s)',
+      'Reached max iterations (1).',
+      'Run complete: reached 1 iteration(s) without completion signal.',
+      'Context window: 200k',
+      '',
+      '--- Run started: 2026-11-16T10:34:16.933Z ---',
+      'Iteration 1/1',
+      'Setting up sandbox',
+      'Setting up sandbox done (0.2s)',
+      'Resuming session',
+      'Agent started',
+      answer(2),
+      '<promise>COMPLETE</promise>',
+      'Agent stopped',
+      'Capturing session',
+      'No commits to sync out',
+      'No commits to sync out done (0.0s)',
+      'Collecting commits',
+      'Collecting commits done (0.0s)',
+      'Agent signaled completion after 1 iteration(s).',
+      'Run complete: agent finished after 1 iteration(s).',
+      'Context window: 201k',
+      '',
+    ].join('\n');
+
+    expect(answerOfFinishedAgent(log, schema)).toEqual({ n: 2 });
+  });
+
   it('returns the answer of an agent that stopped before the sandbox failed', () => {
     const log = run('Agent started', answer(2), 'Agent stopped', 'Collecting commits');
 

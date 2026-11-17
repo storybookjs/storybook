@@ -375,14 +375,13 @@ CSF Next (CSF factories) stories are written as `preview.meta({...})` and `meta.
 | BLD-6 | `npx storybook build --stats-json` in a Vite project. | `preview-stats.json` contains virtual and proxy modules. | 11.0 ; M: Vite: `preview-stats.json` contains the full bundler graph | manual: bug bash or feature session | Stats output |
 | BLD-7 | Embed a story from the served build in an `<iframe>` on another origin. | It renders; only the dev server restricts embedding. | 11.0 ; M: `storybook dev` now blocks remote iframe embedding | manual: bug bash or feature session | Embedding a build |
 
-## Portable stories and the test runner
+## Portable stories
 
 | Row | Probe | Pass when | Since | Agent | Check |
 | ------ | ----- | --------- | ----- | ----- | ----- |
 | PS-1 | In a plain Vitest test, `composeStories` a stories file and render one story. | The story renders with its args and project annotations. | pre-9 ; `docs/api/portable-stories/portable-stories-vitest.mdx` | manual: bug bash or feature session | Portable stories in Vitest |
 | PS-2 | Use `fn()`, `expect` and `userEvent` from `storybook/test` in a `play` function. | They work; a mock called with `new` needs a `function` or `class` implementation. | 11.0 ; M: `storybook/test` is based on Vitest 5 and no longer installs its test libraries | manual: bug bash or feature session; e2e: `e2e-sandbox/component-tests.spec.ts` | `storybook/test` APIs |
 | PS-3 | In a project that does not list `@testing-library/dom` in `package.json`, run `npm ls @testing-library/dom` (`pnpm why`, `yarn why` or `bun why` for the other package managers). | `storybook` is not among the packages that depend on it, so a direct import fails to resolve unless another package, such as `@testing-library/svelte`, brings it in. | 11.0 ; M: `storybook/test` is based on Vitest 5 and no longer installs its test libraries | test.test-libraries | Test libraries are not installed for you |
-| PS-4 | Run `@storybook/test-runner` against the upgraded Storybook. | It still runs, and prints a warning on every run that it is no longer supported. | 11.0 ; M: Test runner support ended | test.test-runner | Test runner end of support |
 
 ## Sources
 

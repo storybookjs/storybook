@@ -24,8 +24,8 @@ let a11yEnabled: boolean | undefined;
 
 const initializeMCPServer = async (
   options: Options,
-  multiSource?: boolean,
-  toolsets?: AddonOptionsOutput['toolsets']
+  toolsets: AddonOptionsOutput['toolsets'],
+  multiSource?: boolean
 ) => {
   const core = await options.presets.apply('core', {});
   disableTelemetry = core?.disableTelemetry ?? false;
@@ -44,13 +44,11 @@ const initializeMCPServer = async (
     adapter: new ValibotJsonSchemaAdapter(),
     get instructions() {
       return buildServerInstructions({
-        devEnabled: server?.ctx.custom?.toolsets?.dev ?? toolsets?.dev ?? true,
+        devEnabled: server?.ctx.custom?.toolsets?.dev ?? toolsets.dev,
         testSupported:
-          (server?.ctx.custom?.toolsets?.test ?? toolsets?.test ?? true) &&
-          availability.testSupported,
+          (server?.ctx.custom?.toolsets?.test ?? toolsets.test) && availability.testSupported,
         docsEnabled:
-          (server?.ctx.custom?.toolsets?.docs ?? toolsets?.docs ?? true) &&
-          availability.docsEnabled,
+          (server?.ctx.custom?.toolsets?.docs ?? toolsets.docs) && availability.docsEnabled,
       });
     },
     capabilities: {
@@ -136,8 +134,8 @@ export const mcpServerHandler = async ({
   if (!initialize) {
     initialize = initializeMCPServer(
       options,
-      sources?.some((s) => s.url),
-      addonOptions.toolsets
+      addonOptions.toolsets,
+      sources?.some((s) => s.url)
     );
   }
   await initialize;
@@ -233,15 +231,10 @@ export function getToolsets(
   request: Request,
   addonOptions: AddonOptionsOutput
 ): AddonOptionsOutput['toolsets'] {
-  const configuredToolsets: AddonOptionsOutput['toolsets'] = {
-    dev: addonOptions.toolsets?.dev ?? true,
-    docs: addonOptions.toolsets?.docs ?? true,
-    test: addonOptions.toolsets?.test ?? true,
-  };
   const toolsetHeader = request.headers.get('X-MCP-Toolsets');
   if (!toolsetHeader || toolsetHeader.trim() === '') {
-    // If no header is present, return the configured addon options
-    return configuredToolsets;
+    // If no header is present, return the addon options as-is
+    return addonOptions.toolsets;
   }
 
   // If the toolsets header is present, default to everything being disabled
@@ -260,7 +253,7 @@ export function getToolsets(
     const trimmedToolset = enabledToolset.trim();
     if (trimmedToolset in toolsets) {
       const key = trimmedToolset as keyof typeof toolsets;
-      toolsets[key] = configuredToolsets[key];
+      toolsets[key] = addonOptions.toolsets[key];
     }
   }
   return toolsets;

@@ -1,3 +1,5 @@
+import { defineToolset, registerToolset } from 'storybook/open-service';
+import * as v from 'valibot';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { registerCoreToolsetsForTest } from './test-support/register-core-toolsets.ts';
 import {
@@ -243,7 +245,7 @@ describe('mcpServerHandler', () => {
     handlerOptions: { sources?: any[] } = {}
   ): Promise<string[]> {
     const host = `localhost:${port}`;
-    const addonOptions = { toolsets: { dev: true, docs: true } };
+    const addonOptions = { toolsets: { dev: true, docs: true, test: true } };
 
     const initReq = createMockIncomingMessage({
       method: 'POST',
@@ -304,6 +306,7 @@ describe('mcpServerHandler', () => {
         toolsets: {
           dev: true,
           docs: true,
+          test: true,
         },
       },
       compositionAuth: new CompositionAuth(),
@@ -361,7 +364,7 @@ describe('mcpServerHandler', () => {
       origin: 'http://localhost:6006',
       basePath: '/',
       options: createMockOptions(),
-      addonOptions: { toolsets: { dev: true, docs: true } },
+      addonOptions: { toolsets: { dev: true, docs: true, test: true } },
       compositionAuth: new CompositionAuth(),
     });
 
@@ -462,6 +465,7 @@ describe('mcpServerHandler', () => {
         toolsets: {
           dev: true,
           docs: true,
+          test: true,
         },
       },
       compositionAuth: new CompositionAuth(),
@@ -508,7 +512,7 @@ describe('mcpServerHandler', () => {
       basePath: '/',
       options: mockOptions as any,
       addonOptions: {
-        toolsets: { dev: true, docs: true },
+        toolsets: { dev: true, docs: true, test: true },
       },
       compositionAuth: new CompositionAuth(),
     });
@@ -533,7 +537,7 @@ describe('mcpServerHandler', () => {
       basePath: '/',
       options: mockOptions as any,
       addonOptions: {
-        toolsets: { dev: true, docs: true },
+        toolsets: { dev: true, docs: true, test: true },
       },
       compositionAuth: new CompositionAuth(),
     });
@@ -586,11 +590,35 @@ describe('mcpServerHandler', () => {
     const port = 6013;
     const host = `localhost:${port}`;
     const addonOptions = { toolsets: { dev: false, docs: true, test: false } };
+    const allToolsetsOn = { toolsets: { dev: true, docs: true, test: true } };
+
+    // The `test` toolset belongs to `@storybook/addon-vitest`, so the shared setup leaves it out.
+    // Register a stub and report that addon as enabled (below), so `test-run` is registered
+    // whenever the `test` toolset is on and its absence here is down to the option alone.
+    beforeEach(() => {
+      registerToolset(
+        defineToolset({
+          id: 'test',
+          description: 'stub',
+          methods: {
+            run: {
+              input: v.strictObject({}),
+              title: 'Storybook Tests',
+              description: 'run',
+              handler: async () => ({ ok: true, data: {}, markdown: '' }),
+            },
+          },
+        }) as any
+      );
+    });
 
     function createDocsEnabledOptions() {
       const applyMock = vi.fn(async (key: string, defaultValue?: unknown) => {
         if (key === 'core') {
           return { disableTelemetry: false };
+        }
+        if (key === 'isAddonVitestEnabled') {
+          return true;
         }
         if (key === 'features') {
           return { componentsManifest: true };
@@ -604,7 +632,12 @@ describe('mcpServerHandler', () => {
     }
 
     // Sends one JSON-RPC request through the handler and returns the parsed response.
-    async function send(mockOptions: unknown, body: object, toolsetsHeader?: string) {
+    async function send(
+      mockOptions: unknown,
+      body: object,
+      toolsetsHeader?: string,
+      options: typeof addonOptions = addonOptions
+    ) {
       const req = createMockIncomingMessage({
         method: 'POST',
         headers: {
@@ -621,7 +654,7 @@ describe('mcpServerHandler', () => {
         origin: `http://${host}`,
         basePath: '/',
         options: mockOptions,
-        addonOptions,
+        addonOptions: options,
         compositionAuth: new CompositionAuth(),
       });
       const line = getResponseData()
@@ -629,6 +662,24 @@ describe('mcpServerHandler', () => {
         .find((l) => l.startsWith('data: '));
       return JSON.parse(line!.replace(/^data: /, '').trim());
     }
+
+    it('registers every tool, and lists every workflow step, when all toolsets are on', async () => {
+      const mockOptions = createDocsEnabledOptions();
+      const init = await send(mockOptions, createMCPInitializeRequest(), undefined, allToolsetsOn);
+      expect(init.result.instructions).toContain('ui-review');
+      expect(init.result.instructions).toContain('test-stories');
+
+      const tools = await send(
+        mockOptions,
+        { jsonrpc: '2.0', id: 2, method: 'tools/list', params: {} },
+        undefined,
+        allToolsetsOn
+      );
+      const toolNames = tools.result.tools.map((t: { name: string }) => t.name);
+      expect(toolNames).toContain('stories-changed');
+      expect(toolNames).toContain('review-create');
+      expect(toolNames).toContain('test-run');
+    });
 
     it.each([undefined, 'dev', 'dev,test,docs'])(
       'does not register their tools or resources (X-MCP-Toolsets: %s)',
@@ -660,6 +711,19 @@ describe('mcpServerHandler', () => {
         );
         expect(call.result.isError).toBe(true);
         expect(call.result.content[0].text).toContain('stories-changed not found');
+
+        const testCall = await send(
+          mockOptions,
+          {
+            jsonrpc: '2.0',
+            id: 5,
+            method: 'tools/call',
+            params: { name: 'test-run', arguments: {} },
+          },
+          toolsetsHeader
+        );
+        expect(testCall.result.isError).toBe(true);
+        expect(testCall.result.content[0].text).toContain('test-run not found');
 
         const resources = await send(
           mockOptions,

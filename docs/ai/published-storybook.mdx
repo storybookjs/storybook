@@ -4,13 +4,13 @@ sidebar:
   order: 4
 ---
 
-<If notRenderer={['react', 'vue', 'angular', 'svelte', 'web-components']}>
+<If notRenderer={['react', 'vue', 'angular', 'svelte', 'web-components', 'solid']}>
 
 A published Storybook can share your component docs with agents anywhere, such as the agents of teams that use your design system. It needs a [components manifest](./reference/manifests.mdx), which your framework doesn't generate yet. See [framework support](./reference/manifests.mdx#framework-support).
 
 </If>
 
-<If renderer={['react', 'vue', 'angular', 'svelte', 'web-components']}>
+<If renderer={['react', 'vue', 'angular', 'svelte', 'web-components', 'solid']}>
 
 Your agent can look up components from a Storybook that doesn't run on your machine, such as your team's published design system. A published Storybook can serve an MCP server with the docs tools, so agents anywhere can find your components and their props and usage.
 

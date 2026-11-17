@@ -211,7 +211,7 @@ export const Sidebar = React.memo(function Sidebar({
               {isSearchResultRendered && (
                 // The search results need their own scroll container. The sidebar has no outer
                 // scroller.
-                <SidebarScrollArea data-testid="search-results-scroll-area">
+                <SidebarScrollArea>
                   <SearchResults
                     query={query}
                     results={results}

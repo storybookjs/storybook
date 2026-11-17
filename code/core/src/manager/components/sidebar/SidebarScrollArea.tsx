@@ -100,13 +100,7 @@ const SCROLLBAR_FADE_DURATION = 200;
 const SCROLLBAR_THUMB_ALPHA = 0.5;
 
 /** Wraps sidebar content in a scroll area, and shares that area with the trees inside. */
-export function SidebarScrollArea({
-  children,
-  ...props
-}: {
-  children: ReactNode;
-  'data-testid'?: string;
-}) {
+export function SidebarScrollArea({ children, ...props }: { children: ReactNode }) {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const isPointerOver = useRef(false);
   const isFocusWithin = useRef(false);

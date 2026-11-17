@@ -250,6 +250,15 @@ describe('ArgsStore', () => {
         )
       );
       expect(store.get('id')).toEqual({ inferredDate: urlDate, typedDate: urlDate });
+
+      store.updateFromPersisted(
+        story,
+        parseArgsParam('inferredDate:1704164645000;typedDate:1704164645000')
+      );
+      expect(store.get('id')).toEqual({
+        inferredDate: 1704164645000,
+        typedDate: 1704164645000,
+      });
     });
 
     // Server docgen keeps `argTypes` annotation-only, so a plain `args` entry arrives here without
@@ -268,8 +277,14 @@ describe('ArgsStore', () => {
         } as unknown as PreparedStory;
         store.setInitial(story);
 
-        store.updateFromPersisted(story, { a: 'Hello world', b: '42', c: urlDate });
+        store.updateFromPersisted(
+          story,
+          parseArgsParam('a:Hello+world;b:42.0;c:!date(2024-01-02T03:04:05.000Z)')
+        );
         expect(store.get('id')).toEqual({ a: 'Hello world', b: 42, c: urlDate });
+
+        store.updateFromPersisted(story, parseArgsParam('c:1704164645000'));
+        expect(store.get('id')).toEqual({ a: 'Hello world', b: 42, c: 1704164645000 });
       });
     });
   });

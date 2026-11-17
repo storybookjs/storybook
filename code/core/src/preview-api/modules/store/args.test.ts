@@ -79,7 +79,7 @@ describe('mapArgsToTypes', () => {
     expect(mapArgsToTypes({ a: 'yes' }, { a: { type: booleanType } })).toStrictEqual({ a: false });
   });
 
-  it('maps dates across date, inferred object, and legacy docgen other argTypes', () => {
+  it('maps dates', () => {
     const validDate = new Date('2024-01-02T03:04:05.000Z');
     const invalidDate = new Date('not-a-date');
 
@@ -91,6 +91,11 @@ describe('mapArgsToTypes', () => {
     });
     expect(mapArgsToTypes({ a: invalidDate }, { a: { type: dateType } })).toStrictEqual({});
     expect(mapArgsToTypes({ a: 'not-a-date' }, { a: { type: dateType } })).toStrictEqual({});
+  });
+
+  it('keeps Date args for inferred object types', () => {
+    const validDate = new Date('2024-01-02T03:04:05.000Z');
+    const invalidDate = new Date('not-a-date');
 
     expect(
       mapArgsToTypes({ a: validDate }, { a: { type: { name: 'object', value: {} } } })
@@ -98,6 +103,11 @@ describe('mapArgsToTypes', () => {
     expect(
       mapArgsToTypes({ a: invalidDate }, { a: { type: { name: 'object', value: {} } } })
     ).toStrictEqual({});
+  });
+
+  it('keeps Date args for other Date types', () => {
+    const validDate = new Date('2024-01-02T03:04:05.000Z');
+    const invalidDate = new Date('not-a-date');
 
     expect(
       mapArgsToTypes({ a: validDate }, { a: { type: { name: 'other', value: 'Date' } } })
@@ -105,9 +115,18 @@ describe('mapArgsToTypes', () => {
     expect(
       mapArgsToTypes(
         { a: validDate },
+        { a: { type: { name: 'other', value: 'instanceOf(Date)' } } }
+      )
+    ).toStrictEqual({ a: validDate });
+    expect(
+      mapArgsToTypes(
+        { a: validDate },
         { a: { type: { name: 'other', value: 'CustomDate' }, control: { type: 'date' } } }
       )
     ).toStrictEqual({ a: validDate });
+    expect(
+      mapArgsToTypes({ a: invalidDate }, { a: { type: { name: 'other', value: 'Date' } } })
+    ).toStrictEqual({});
   });
 
   it('maps sparse arrays', () => {

@@ -62,6 +62,7 @@ export type DownshiftItem = SearchResult | ExpandType;
 export type SearchChildrenFn = (args: {
   query: string;
   results: DownshiftItem[];
+  isRecentlyOpened: boolean;
   // Whether the nav explorer should be visible in the UI. When the search input is
   // focused, it gets replaced with a list of recently viewed stories. When there
   // is a search query, it gets replaced by the search results.

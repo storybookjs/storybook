@@ -1,5 +1,5 @@
 import type { FC, MouseEventHandler, PropsWithChildren, ReactNode } from 'react';
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
 
 import { Button } from 'storybook/internal/components';
 import { PRELOAD_ENTRIES } from 'storybook/internal/core-events';
@@ -186,9 +186,18 @@ const Result: FC<
 
   const api = useStorybookApi();
   useEffect(() => {
-    if (api && props.isHighlighted && item.type === 'component') {
+    if (!api || !props.isHighlighted) {
+      return;
+    }
+    if (item.type === 'component') {
       api.emit(PRELOAD_ENTRIES, {
         ids: [item.children[0]],
+        source: 'search',
+        options: { target: item.refId },
+      });
+    } else if (item.type === 'story' || item.type === 'docs') {
+      api.emit(PRELOAD_ENTRIES, {
+        ids: [item.id.split('#')[0]],
         source: 'search',
         options: { target: item.refId },
       });
@@ -229,6 +238,7 @@ const Result: FC<
 export const SearchResults: FC<{
   query: string;
   results: DownshiftItem[];
+  isRecentlyOpened: boolean;
   closeMenu: (cb?: () => void) => void;
   getMenuProps: ControllerStateAndHelpers<DownshiftItem>['getMenuProps'];
   getItemProps: ControllerStateAndHelpers<DownshiftItem>['getItemProps'];
@@ -239,6 +249,7 @@ export const SearchResults: FC<{
 }> = React.memo(function SearchResults({
   query,
   results,
+  isRecentlyOpened,
   closeMenu,
   getMenuProps,
   getItemProps,
@@ -248,6 +259,10 @@ export const SearchResults: FC<{
   clearLastViewed,
 }) {
   const api = useStorybookApi();
+  const closeMenuRef = useRef(closeMenu);
+  useLayoutEffect(() => {
+    closeMenuRef.current = closeMenu;
+  });
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
       if (!enableShortcuts || isLoading || event.repeat) {
@@ -260,20 +275,20 @@ export const SearchResults: FC<{
           return; // handled by downshift
         }
         event.preventDefault();
-        closeMenu();
+        closeMenuRef.current();
       }
     };
 
     document.addEventListener('keydown', handleEscape);
     return () => document.removeEventListener('keydown', handleEscape);
-  }, [closeMenu, enableShortcuts, isLoading]);
+  }, [enableShortcuts, isLoading]);
 
   const mouseOverHandler: MouseEventHandler = useCallback((event) => {
     if (!api) {
       return;
     }
     const currentTarget = event.currentTarget as HTMLElement;
-    const storyId = currentTarget.getAttribute('data-id');
+    const [storyId] = (currentTarget.getAttribute('data-id') ?? '').split('#');
     const refId = currentTarget.getAttribute('data-refid');
     // @ts-expect-error (non strict)
     const item = api.resolveStory(storyId, refId === 'storybook_internal' ? undefined : refId);
@@ -282,6 +297,12 @@ export const SearchResults: FC<{
       api.emit(PRELOAD_ENTRIES, {
         // @ts-expect-error (TODO)
         ids: [item.isLeaf ? item.id : item.children[0]],
+        source: 'search',
+        options: { target: refId },
+      });
+    } else if (item?.type === 'story' || item?.type === 'docs') {
+      api.emit(PRELOAD_ENTRIES, {
+        ids: [item.id],
         source: 'search',
         options: { target: refId },
       });
@@ -295,8 +316,11 @@ export const SearchResults: FC<{
   };
 
   return (
-    <ResultsList {...getMenuProps()} key="results-list">
-      {results.length > 0 && !query && (
+    <ResultsList
+      {...getMenuProps(isRecentlyOpened ? { 'aria-label': 'Recently opened' } : undefined)}
+      key="results-list"
+    >
+      {results.length > 0 && isRecentlyOpened && (
         <RecentlyOpenedTitle className="search-result-recentlyOpened">
           Recently opened
           <Button
@@ -312,10 +336,17 @@ export const SearchResults: FC<{
       )}
       {results.length === 0 && query && (
         <li>
-          <NoResults>
-            <strong>No components found</strong>
-            <small>Find components by name or path.</small>
-          </NoResults>
+          {isRecentlyOpened ? (
+            <NoResults>
+              <strong>No recently opened items found</strong>
+              <small>Turn off recently opened to search all components.</small>
+            </NoResults>
+          ) : (
+            <NoResults>
+              <strong>No components found</strong>
+              <small>Find components by name or path.</small>
+            </NoResults>
+          )}
         </li>
       )}
       {results.map((result: DownshiftItem, index) => {

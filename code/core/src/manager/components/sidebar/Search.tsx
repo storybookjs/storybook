@@ -1,10 +1,12 @@
-import React, { type ReactNode, useCallback, useRef, useState } from 'react';
+import React, { type ReactNode, useCallback, useMemo, useRef, useState } from 'react';
 
-import { Button } from 'storybook/internal/components';
+import { Button, ToggleButton } from 'storybook/internal/components';
 import { REVIEW_STATUS_TYPE_ID } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
-import { CloseIcon, SearchIcon } from '@storybook/icons';
+import { CloseIcon, SearchIcon, TimeIcon } from '@storybook/icons';
+
+import { announce } from '@react-aria/live-announcer';
 
 import type { DownshiftState, StateChangeOptions } from 'downshift';
 import Downshift from 'downshift';
@@ -15,7 +17,7 @@ import { styled } from 'storybook/theming/emotion';
 
 import { useLandmark } from '../../hooks/useLandmark.ts';
 import { getGroupStatus, getMostCriticalStatusValue } from '../../utils/status.tsx';
-import { scrollIntoView, searchItem } from '../../utils/tree.ts';
+import { recentlyOpenedItem, scrollIntoView, searchItem } from '../../utils/tree.ts';
 import { useLayout } from '../layout/LayoutProvider.tsx';
 import { DEFAULT_REF_ID } from './Sidebar.tsx';
 import type {
@@ -24,7 +26,7 @@ import type {
   SearchChildrenFn,
   SearchItem,
   SearchResult,
-  Selection,
+  StoryRef,
 } from './types.ts';
 import { isExpandType, isSearchResult } from './types.ts';
 
@@ -72,6 +74,7 @@ const SearchField = styled.div<{ isMobile: boolean }>(({ theme, isMobile }) => (
   flexGrow: 1,
   height: isMobile ? 36 : 32,
   width: '100%',
+  containerType: 'inline-size',
   boxShadow: `${theme.button.border} 0 0 0 1px inset`,
   borderRadius: theme.appBorderRadius + 2,
 
@@ -128,7 +131,7 @@ const Input = styled.input<{ isMobile: boolean }>(({ theme, isMobile }) => ({
     },
 }));
 
-const FocusKey = styled.code(({ theme }) => ({
+const FocusKey = styled.code<{ $hideWhenNarrow: boolean }>(({ theme, $hideWhenNarrow }) => ({
   margin: 5,
   marginTop: 6,
   height: 16,
@@ -143,6 +146,12 @@ const FocusKey = styled.code(({ theme }) => ({
   alignItems: 'center',
   gap: 4,
   flexShrink: 0,
+
+  ...($hideWhenNarrow && {
+    '@container (max-width: 239px)': {
+      display: 'none',
+    },
+  }),
 }));
 
 const FocusKeyCmd = styled.span({
@@ -168,7 +177,7 @@ export type SearchProps = {
   children: SearchChildrenFn;
   dataset: CombinedDataset;
   enableShortcuts?: boolean;
-  getLastViewed: () => Selection[];
+  lastViewed: StoryRef[];
   initialQuery?: string;
   searchFieldContent?: ReactNode;
   belowSearchContent?: ReactNode;
@@ -178,7 +187,7 @@ export const Search = React.memo<SearchProps>(function Search({
   children,
   dataset,
   enableShortcuts = true,
-  getLastViewed,
+  lastViewed,
   initialQuery = '',
   searchFieldContent,
   belowSearchContent,
@@ -189,7 +198,34 @@ export const Search = React.memo<SearchProps>(function Search({
   const menuRef = useRef<HTMLDivElement>(null);
   const [inputPlaceholder, setPlaceholder] = useState('Find components');
   const [allComponents, showAllComponents] = useState(false);
+  const [isRecentlyOpenedPressed, setRecentlyOpenedPressed] = useState(false);
   const searchShortcut = api ? shortcutToHumanString(api.getShortcutKeys().search) : '/';
+
+  const recentlyOpened = useMemo(() => {
+    const results: SearchResult[] = [];
+    const ids = new Set<string>();
+
+    for (const storyRef of lastViewed) {
+      const ref = dataset.hash[storyRef.refId];
+      const item = ref && recentlyOpenedItem(storyRef, ref);
+      if (!item) {
+        continue;
+      }
+
+      const key = `${storyRef.refId}::${item.id}`;
+      if (!ids.has(key)) {
+        ids.add(key);
+        results.push({ item, matches: [], score: 0 });
+      }
+      if (results.length === DEFAULT_MAX_SEARCH_RESULTS) {
+        break;
+      }
+    }
+
+    return results;
+  }, [dataset, lastViewed]);
+
+  const isRecentlyOpenedShown = isRecentlyOpenedPressed && recentlyOpened.length > 0;
 
   const makeFuse = useCallback(() => {
     const list: SearchItem[] = [];
@@ -399,43 +435,33 @@ export const Search = React.memo<SearchProps>(function Search({
         reset,
       }) => {
         const input = inputValue ? inputValue.trim() : '';
-        let results: DownshiftItem[] = input ? getResults(input) : [];
-
-        const lastViewed = !input && getLastViewed();
-        if (lastViewed && lastViewed.length) {
-          // @ts-expect-error (non strict)
-          results = lastViewed.reduce((acc, { storyId, refId, anchor }) => {
-            const data = dataset.hash[refId];
-            if (data && data.index && data.index[storyId]) {
-              const story = data.index[storyId];
-              const item = story.type === 'story' ? data.index[story.parent] : story;
-              const entryId = anchor ? `${item.id}#${anchor}` : item.id;
-              // prevent duplicates
-              // @ts-expect-error (non strict)
-              if (!acc.some((res) => res.item.refId === refId && res.item.id === entryId)) {
-                const baseItem = searchItem(item, dataset.hash[refId]);
-                let resultItem = baseItem;
-                if (anchor && item.type === 'docs') {
-                  const matchingAnchor = item.anchors?.find((a) => a.id === anchor);
-                  if (matchingAnchor) {
-                    const namePostfix =
-                      baseItem.path?.[0] === matchingAnchor.title
-                        ? ''
-                        : ` / ${matchingAnchor.title}`;
-                    resultItem = {
-                      ...baseItem,
-                      id: entryId,
-                      name: `${item.name}${namePostfix}`,
-                    };
-                  }
-                }
-                // @ts-expect-error (non strict)
-                acc.push({ item: resultItem, matches: [], score: 0 });
-              }
-            }
-            return acc;
-          }, []);
+        let view: 'tree' | 'recent' | 'search' | 'pinned' = 'tree';
+        if (isRecentlyOpenedShown) {
+          view = 'pinned';
+        } else if (isOpen) {
+          view = input ? 'search' : 'recent';
         }
+
+        const findRecentlyOpened = () =>
+          input
+            ? (new Fuse(
+                recentlyOpened.map(({ item }) => item),
+                options
+              ).search(input) as SearchResult[])
+            : recentlyOpened;
+        const results: DownshiftItem[] =
+          view === 'search' ? getResults(input) : findRecentlyOpened();
+
+        const closeResults = () => {
+          setRecentlyOpenedPressed(false);
+          closeMenu();
+        };
+        const closeResultsOnEscape = (event: React.KeyboardEvent) => {
+          if (event.key === 'Escape' && view !== 'tree') {
+            event.stopPropagation();
+            closeResults();
+          }
+        };
 
         const inputId = 'storybook-explorer-searchfield';
         const inputProps = getInputProps({
@@ -462,6 +488,7 @@ export const Search = React.memo<SearchProps>(function Search({
             e.stopPropagation();
             // @ts-expect-error (non strict)
             if (inputValue.length === 0) {
+              setRecentlyOpenedPressed(false);
               menuRef.current?.focus();
             }
           },
@@ -474,7 +501,7 @@ export const Search = React.memo<SearchProps>(function Search({
         return (
           <>
             <ScreenReaderLabel {...labelProps}>Search for components</ScreenReaderLabel>
-            <SearchBar ref={searchLandmarkRef} {...landmarkProps}>
+            <SearchBar ref={searchLandmarkRef} {...landmarkProps} onKeyDown={closeResultsOnEscape}>
               <SearchField
                 {...getRootProps({ refKey: '' }, { suppressRefError: true })}
                 isMobile={isMobile}
@@ -485,7 +512,7 @@ export const Search = React.memo<SearchProps>(function Search({
                 </IconWrapper>
                 <Input {...inputProps} isMobile={isMobile} />
                 {!isMobile && enableShortcuts && !isOpen && (
-                  <FocusKey>
+                  <FocusKey $hideWhenNarrow={recentlyOpened.length > 0}>
                     {searchShortcut === '⌘ K' ? (
                       <>
                         <FocusKeyCmd>⌘</FocusKeyCmd>K
@@ -510,20 +537,51 @@ export const Search = React.memo<SearchProps>(function Search({
                       <CloseIcon />
                     </Button>
                   )}
+                  {recentlyOpened.length > 0 && (
+                    <ToggleButton
+                      padding="small"
+                      variant="ghost"
+                      ariaLabel="Recently opened"
+                      pressed={isRecentlyOpenedShown}
+                      onClick={() => {
+                        if (!isRecentlyOpenedShown) {
+                          const { length } = findRecentlyOpened();
+                          announce(
+                            `Showing ${length} recently opened ${length === 1 ? 'item' : 'items'}`,
+                            'polite'
+                          );
+                          setRecentlyOpenedPressed(true);
+                        } else if (input) {
+                          setRecentlyOpenedPressed(false);
+                          openMenu();
+                        } else {
+                          closeResults();
+                        }
+                      }}
+                    >
+                      <TimeIcon />
+                    </ToggleButton>
+                  )}
                   {searchFieldContent}
                 </Actions>
               </SearchField>
             </SearchBar>
-            {!isOpen && belowSearchContent}
+            {view === 'tree' && belowSearchContent}
             {/* Programmatically focusable (focusableUIElements.storyListMenu). */}
-            <FocusContainer tabIndex={-1} id="storybook-explorer-menu" ref={menuRef}>
+            <FocusContainer
+              tabIndex={-1}
+              id="storybook-explorer-menu"
+              ref={menuRef}
+              onKeyDown={closeResultsOnEscape}
+            >
               {children({
                 query: input,
                 results,
-                isNavVisible: !isOpen && document.activeElement !== inputRef.current,
-                isNavReachable: !isOpen || input.length === 0,
-                isSearchResultRendered: isOpen,
-                closeMenu,
+                isRecentlyOpened: view === 'pinned' || view === 'recent',
+                isNavVisible: view === 'tree' && document.activeElement !== inputRef.current,
+                isNavReachable: view === 'tree' || view === 'recent',
+                isSearchResultRendered: view !== 'tree',
+                closeMenu: closeResults,
                 getMenuProps,
                 getItemProps,
                 highlightedIndex,

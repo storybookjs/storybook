@@ -13,15 +13,13 @@ import { SearchResults } from './SearchResults.tsx';
 import { noResults } from './SearchResults.stories.tsx';
 import { DEFAULT_REF_ID } from './Sidebar.tsx';
 import { index } from './mockdata.large.ts';
-import type { Selection } from './types.ts';
 
 const refId = DEFAULT_REF_ID;
 const data = { [refId]: { id: refId, url: '/', index, previewInitialized: true, allStatuses: {} } };
 const dataset = { hash: data, entries: Object.entries(data) };
-const getLastViewed = () =>
-  Object.values(index)
-    .filter((item, i) => item.type === 'component' && item.parent && i % 20 === 0)
-    .map((component) => ({ storyId: component.id, refId }));
+const lastViewed = Object.values(index)
+  .filter((item, i) => item.type === 'story' && i % 20 === 0)
+  .map((story) => ({ storyId: story.id, refId }));
 
 const meta = {
   component: Search,
@@ -49,7 +47,7 @@ export default meta;
 
 const baseProps: Omit<SearchProps, 'children'> = {
   dataset,
-  getLastViewed: () => [] as Selection[],
+  lastViewed: [],
 };
 
 export const Simple: StoryFn = () => <Search {...baseProps}>{() => null}</Search>;
@@ -61,11 +59,20 @@ export const FilledIn: StoryFn = () => (
 );
 
 export const LastViewed: StoryFn = () => (
-  <Search {...baseProps} getLastViewed={getLastViewed}>
-    {({ query, results, closeMenu, getMenuProps, getItemProps, highlightedIndex }) => (
+  <Search {...baseProps} lastViewed={lastViewed}>
+    {({
+      query,
+      results,
+      isRecentlyOpened,
+      closeMenu,
+      getMenuProps,
+      getItemProps,
+      highlightedIndex,
+    }) => (
       <SearchResults
         query={query}
         results={results}
+        isRecentlyOpened={isRecentlyOpened}
         closeMenu={closeMenu}
         getMenuProps={getMenuProps}
         getItemProps={getItemProps}

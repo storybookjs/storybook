@@ -162,7 +162,9 @@ The plan holds only what a person decides, in the order a reviewer reads it:
 | `## Steps` | entry | the block of lines below |
 
 A PR marked `qa:needed` or without a QA label is decided by its place: the PRs of one or more entries test it, or one row of the two tables of PRs that are not tested names its reason.
-A maintainer PR marked `qa:skip` that carries a product label is in the PRs of one group, and each group has a decision, the entries that test it or `skip:` with the reason.
+A maintainer PR marked `qa:skip` is in the PRs of one group, whatever its other labels, and each group has a decision, the entries that test it or `skip:` with the reason.
+A maintainer PR is one whose author GitHub associates with the organization as `OWNER` or `MEMBER`.
+A maintainer marks a PR `qa:skip` when its project gets tested as a whole, and a product change labelled only `build` or `documentation` needs that decision as much as one labelled `bug`.
 A row with an empty first cell holds the PRs that are not decided or not grouped yet.
 The PRs verified by hand and the other PRs marked `qa:skip` need no decision, so the plan does not list them.
 Render derives the overview of `## Changes to test` from the entries, so a reviewer reads it first and opens an entry under `## Steps` only when he doubts it.
@@ -203,7 +205,7 @@ It then holds the plan against these rules and prints each problem as `<file>:<l
 - The batches are numbered from 1 without a gap.
 - The file holds no link to `linear.app`, `notion.so`, `notion.site`, `notion.com`, or a `slack.com` host.
 - No entry title, repo reason, step, or expected outcome holds a URL with a scheme whose host is other than `localhost`, `127.0.0.1`, or `[::1]`, because the runner prints all four into the agent's prompt. `check` takes every URL that starts with a scheme, also one glued to other text such as `see:http://example.com` or `-xhttp://example.com`, apart with Node's URL parser, and refuses it when the host is another one or when the parser cannot read it: `https://example.com`, `http:/example.com`, `http://localhost;.example.com`, and `http://localhost].example.com` are refused. It reads a backslash once as the parser does, as a slash, and once as curl does, as a character, so `http://localhost\@example.com` is refused too. It does not look for a host without a scheme, such as `example.com/x` or `//example.com`. A scheme glued to letters before it takes them in, so `-xhttp:/example.com` has the scheme `xhttp`, which the parser does not know, and no host, and passes. The check is one layer of four: the reviewer reads every plan before it is merged, the prompt of a plan run forbids every URL other than `localhost`, and the browser tool of the sandbox image blocks direct requests to another host, although it follows a redirect and lets a WebSocket through.
-- With `--window`, every PR of the window marked `qa:needed` or without a QA label is in the PRs of an entry or in one row of its own table of PRs that are not tested, every maintainer PR marked `qa:skip` with a product label is in one group, and the plan names no PR that the window does not hold in that role.
+- With `--window`, every PR of the window marked `qa:needed` or without a QA label is in the PRs of an entry or in one row of its own table of PRs that are not tested, every maintainer PR marked `qa:skip` is in one group, and the plan names no PR that the window does not hold in that role.
 
 `render` refuses a draft whose decision of a PR names other entries than the ones that list it, or skips a PR that an entry lists, because the file decides a PR by its place and cannot hold both.
 

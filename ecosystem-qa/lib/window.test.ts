@@ -61,8 +61,9 @@ describe('qaStatus', () => {
 describe('needsGroup', () => {
   const prOf = (authorAssociation: string) => windowPr(pull({ authorAssociation }), new Map());
 
-  it('selects a qa:skip PR with a product label that a maintainer wrote', () => {
+  it('selects a qa:skip PR that a maintainer wrote', () => {
     expect(needsGroup(prOf('MEMBER'))).toBe(true);
+    expect(needsGroup(prOf('OWNER'))).toBe(true);
   });
 
   it('leaves out the same PR from a contributor or an outside collaborator', () => {
@@ -70,9 +71,18 @@ describe('needsGroup', () => {
     expect(needsGroup(prOf('COLLABORATOR'))).toBe(false);
   });
 
-  it('leaves out a maintainer PR without a product label', () => {
+  it.each([[['qa:skip', 'build']], [['qa:skip', 'documentation']], [['qa:skip']]])(
+    'selects a maintainer PR labelled %j, since a product change can carry any label',
+    (labels) => {
+      const pr = windowPr(pull({ labels: { nodes: labels.map((name) => ({ name })) } }), new Map());
+
+      expect(needsGroup(pr)).toBe(true);
+    }
+  );
+
+  it('leaves out a maintainer PR that is not marked qa:skip', () => {
     const pr = windowPr(
-      pull({ labels: { nodes: [{ name: 'qa:skip' }, { name: 'build' }] } }),
+      pull({ labels: { nodes: [{ name: 'qa:needed' }, { name: 'bug' }] } }),
       new Map()
     );
 

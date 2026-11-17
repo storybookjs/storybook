@@ -23,6 +23,7 @@
     "**/agent-eval/templates/*/public/mockServiceWorker.js",
     "ecosystem-qa/results/**",
     "ecosystem-qa/work/**",
+    "ecosystem-qa/plans/*.window.json",
     "storybook-static",
     "built-storybooks",
     "code/core/assets",

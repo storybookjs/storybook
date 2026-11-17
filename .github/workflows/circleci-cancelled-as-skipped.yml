@@ -1,0 +1,36 @@
+name: Show cancelled CircleCI jobs as skipped
+
+# CircleCI reports a cancelled job as an `error` commit status, which GitHub shows as a failure.
+# Commit statuses have no skipped state, so this re-posts the same context as `success` with a
+# "Skipped" description. Statuses posted with GITHUB_TOKEN do not trigger this workflow again.
+on:
+  status:
+
+permissions: {}
+
+jobs:
+  mark-skipped:
+    # `circleci-completion` stays as reported: it is the merge gate, and a cancelled run must not pass it.
+    if: >-
+      github.repository_owner == 'storybookjs' &&
+      github.event.state == 'error' &&
+      startsWith(github.event.context, 'ci/circleci: ') &&
+      github.event.context != 'ci/circleci: circleci-completion' &&
+      contains(github.event.description, 'canceled')
+    runs-on: ubuntu-latest
+    permissions:
+      statuses: write # to re-post the cancelled job's status
+    steps:
+      - name: Re-post status as skipped
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.event.sha }}
+          CONTEXT: ${{ github.event.context }}
+          TARGET_URL: ${{ github.event.target_url }}
+        run: |
+          gh api --method POST "repos/$REPO/statuses/$SHA" \
+            -f state=success \
+            -f context="$CONTEXT" \
+            -f target_url="$TARGET_URL" \
+            -f description='Skipped: the CircleCI workflow was cancelled'

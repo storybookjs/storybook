@@ -13,15 +13,11 @@ import {
 
 vi.mock('storybook/internal/common', { spy: true });
 
-const packageManagerWith = (
-  dependencies: Record<string, string>,
-  installed: Record<string, string> = {}
-) =>
+const packageManagerWith = (dependencies: Record<string, string>) =>
   ({
     isDependencyInstalled: (name: string) => name in dependencies,
-    getDeclaredVersionSpecifier: async (name: string, options?: { preferDeclared?: boolean }) =>
-      (options?.preferDeclared ? dependencies[name] : (installed[name] ?? dependencies[name])) ??
-      null,
+    getDeclaredVersionSpecifier: async (name: string) => dependencies[name] ?? null,
+    getNearestDeclaredRange: (name: string) => dependencies[name] ?? null,
     addDependencies: vi.fn().mockResolvedValue(undefined),
     upgradeDeclaredDependency: vi.fn(),
   }) as unknown as JsPackageManager;
@@ -230,20 +226,24 @@ describe('typescript-compiler-api', () => {
     await expect(checkTs('@storybook/preact-vite', { typescript: '^7.0.2' })).resolves.toBeNull();
   });
 
-  it('uses the declared version when another installed copy is TypeScript 7', async () => {
-    const packageManager = packageManagerWith({ typescript: '6.0.2' }, { typescript: '7.0.2' });
+  it('uses the installed TypeScript 6 when the app declares TypeScript 7', async () => {
+    vi.mocked(readTypeScriptPackageForDocgen).mockReturnValueOnce({
+      version: '6.0.2',
+      packageDir: '/project/node_modules/typescript',
+    });
 
     await expect(
       checkFix(typescriptCompilerApi, {
         mainConfig: { framework: '@storybook/vue3-vite' } as StorybookConfigRaw,
-        packageManager,
+        packageManager: packageManagerWith({ typescript: '7.0.2' }),
+        configDir: '/project/.storybook',
         ...upgrade,
       } as CheckOptions)
     ).resolves.toBeNull();
   });
 
   it('uses the installed TypeScript when the declared range is broad', async () => {
-    vi.mocked(readTypeScriptPackageForDocgen).mockReturnValue({
+    vi.mocked(readTypeScriptPackageForDocgen).mockReturnValueOnce({
       version: '7.0.2',
       packageDir: '/project/node_modules/typescript',
     });

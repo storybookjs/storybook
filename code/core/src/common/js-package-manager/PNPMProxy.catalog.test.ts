@@ -65,9 +65,7 @@ describe('PNPMProxy catalogs', () => {
         [WORKSPACE_YAML]: 'catalog:\n  typescript: 6.0.2\n',
       });
 
-      await expect(
-        pnpmProxy.getDeclaredVersionSpecifier('typescript', { preferDeclared: true })
-      ).resolves.toBe('6.0.2');
+      await expect(pnpmProxy.getNearestDeclaredRange('typescript')).toBe('6.0.2');
     });
 
     it('uses the app declaration before a root declaration with real manifests', async () => {
@@ -79,9 +77,7 @@ describe('PNPMProxy catalogs', () => {
         '/root/package.json': JSON.stringify({ devDependencies: { typescript: '7.0.2' } }),
       });
 
-      await expect(
-        pnpmProxy.getDeclaredVersionSpecifier('typescript', { preferDeclared: true })
-      ).resolves.toBe('6.0.2');
+      await expect(pnpmProxy.getNearestDeclaredRange('typescript')).toBe('6.0.2');
     });
 
     it('reads the default catalog when declared as "catalog:" and not installed', async () => {

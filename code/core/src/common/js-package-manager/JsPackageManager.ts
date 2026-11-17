@@ -333,39 +333,35 @@ export abstract class JsPackageManager {
    * Resolve the effective version/range of a declared dependency: the installed version if present,
    * otherwise the declared semver range. Returns null when the package is not declared or only a
    * non-semver specifier is declared. PNPMProxy additionally resolves pnpm `catalog:` references.
-   *
-   * Pass `preferDeclared` when the caller needs the project's own constraint: in a monorepo the
-   * first installed copy can belong to another workspace or catalog and report a different version.
    */
-  public async getDeclaredVersionSpecifier(
-    packageName: string,
-    { preferDeclared }: { preferDeclared?: boolean } = {}
-  ): Promise<string | null> {
-    if (!preferDeclared) {
-      const installed = await this.getInstalledVersion(packageName);
-      if (installed) {
-        return installed;
-      }
+  public async getDeclaredVersionSpecifier(packageName: string): Promise<string | null> {
+    const installed = await this.getInstalledVersion(packageName);
+    if (installed) {
+      return installed;
     }
-    let declared: string | undefined;
-    if (preferDeclared) {
-      // getAllDependencies() merges nearest-first paths with Object.assign, so a root declaration
-      // overwrites the app's. Walk nearest-first and keep the first declaration instead.
-      for (const packageJsonPath of this.packageJsonPaths) {
-        const packageJson = JsPackageManager.getPackageJson(packageJsonPath);
-        declared =
-          packageJson.peerDependencies?.[packageName] ??
-          packageJson.devDependencies?.[packageName] ??
-          packageJson.dependencies?.[packageName];
-        if (declared) {
-          break;
-        }
-      }
-    } else {
-      declared = this.getAllDependencies()[packageName];
-    }
+    const declared = this.getAllDependencies()[packageName];
     const range = declared && this.getDeclaredRange(packageName, declared);
     return range && validRange(range) ? range : null;
+  }
+
+  /**
+   * Resolve the semver range declared in the package.json nearest to the command, or null when it
+   * has none. Unlike `getAllDependencies`, which merges manifests with the root winning, this keeps
+   * the workspace closest to the project. PNPMProxy resolves a `catalog:` reference to its range.
+   */
+  public getNearestDeclaredRange(packageName: string): string | null {
+    for (const packageJsonPath of this.packageJsonPaths) {
+      const packageJson = JsPackageManager.getPackageJson(packageJsonPath);
+      const declared =
+        packageJson.peerDependencies?.[packageName] ??
+        packageJson.devDependencies?.[packageName] ??
+        packageJson.dependencies?.[packageName];
+      if (declared) {
+        const range = this.getDeclaredRange(packageName, declared);
+        return range && validRange(range) ? range : null;
+      }
+    }
+    return null;
   }
 
   /**

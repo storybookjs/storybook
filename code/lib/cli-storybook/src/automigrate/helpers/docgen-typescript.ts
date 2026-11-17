@@ -13,29 +13,24 @@ export async function getDocgenTypeScriptVersion({
 > {
   const specifier = (mainConfig.typescript as { docgenSpecifier?: string } | undefined)
     ?.docgenSpecifier;
-  if (!specifier) {
-    // Docgen loads the TypeScript installed in this project. A broad declared range or a root
-    // declaration can hide an installed TypeScript 7, so read the installed copy first.
-    if (configDir) {
-      try {
-        return {
-          version: readTypeScriptPackageForDocgen({ specifier: 'typescript', configDir }).version,
-        };
-      } catch {
-        // Fall back to the declared constraint when no installed copy can be resolved.
-      }
+  const effectiveSpecifier = specifier ?? 'typescript';
+  // Docgen loads the resolved TypeScript package. Read it first; a declared range can hide a newer
+  // installed TypeScript 7, especially when another workspace owns the copy being executed.
+  if (configDir) {
+    try {
+      const { version } = readTypeScriptPackageForDocgen({
+        specifier: effectiveSpecifier,
+        configDir,
+      });
+      return { version, ...(specifier ? { specifier } : {}) };
+    } catch {
+      // An unreadable custom specifier leaves TypeScript unknown; only the default falls back to
+      // the project's nearest declared constraint.
     }
-    const version = coerce(
-      await packageManager.getDeclaredVersionSpecifier('typescript', { preferDeclared: true })
-    )?.version;
-    return version ? { version } : undefined;
   }
-  if (!configDir) {
+  if (specifier) {
     return undefined;
   }
-  try {
-    return { version: readTypeScriptPackageForDocgen({ specifier, configDir }).version, specifier };
-  } catch {
-    return undefined;
-  }
+  const version = coerce(packageManager.getNearestDeclaredRange('typescript'))?.version;
+  return version ? { version } : undefined;
 }

@@ -38,40 +38,6 @@ export const disallowList = [
   '@storybook/preview',
 ];
 
-function classifyDuplicates(duplicatedDependencies: Record<string, string[]> = {}) {
-  return Object.entries(duplicatedDependencies).reduce<{
-    critical: string[];
-    trivial: string[];
-  }>(
-    (acc, [dep, packageVersions]) => {
-      if (allowList.includes(dep)) {
-        return acc;
-      }
-
-      const hasMultipleMajorVersions = hasMultipleVersions(packageVersions);
-
-      if (disallowList.includes(dep) && hasMultipleMajorVersions) {
-        acc.critical.push(
-          `${picocolors.bold(picocolors.red(dep))}:\n${packageVersions.join(', ')}`
-        );
-      } else {
-        acc.trivial.push(`${picocolors.yellow(dep)}:\n${packageVersions.join(', ')}`);
-      }
-
-      return acc;
-    },
-    { critical: [], trivial: [] }
-  );
-}
-
-export function hasCriticalDuplicates(installationMetadata?: InstallationMetadata): boolean {
-  try {
-    return classifyDuplicates(installationMetadata?.duplicatedDependencies).critical.length > 0;
-  } catch {
-    return false;
-  }
-}
-
 export function getDuplicatedDepsWarnings(
   installationMetadata?: InstallationMetadata
 ): string[] | undefined {
@@ -86,7 +52,31 @@ export function getDuplicatedDepsWarnings(
 
     const messages: string[] = [];
 
-    const { critical, trivial } = classifyDuplicates(installationMetadata.duplicatedDependencies);
+    const { critical, trivial } = Object.entries(
+      installationMetadata?.duplicatedDependencies
+    ).reduce<{
+      critical: string[];
+      trivial: string[];
+    }>(
+      (acc, [dep, packageVersions]) => {
+        if (allowList.includes(dep)) {
+          return acc;
+        }
+
+        const hasMultipleMajorVersions = hasMultipleVersions(packageVersions);
+
+        if (disallowList.includes(dep) && hasMultipleMajorVersions) {
+          acc.critical.push(
+            `${picocolors.bold(picocolors.red(dep))}:\n${packageVersions.join(', ')}`
+          );
+        } else {
+          acc.trivial.push(`${picocolors.yellow(dep)}:\n${packageVersions.join(', ')}`);
+        }
+
+        return acc;
+      },
+      { critical: [], trivial: [] }
+    );
 
     if (critical.length === 0 && trivial.length === 0) {
       return messages;

@@ -7,7 +7,7 @@ import { dedent } from 'ts-dedent';
 
 import { getStorybookData } from '../automigrate/helpers/mainConfigFile.ts';
 import { shortenPath } from '../util.ts';
-import { getDuplicatedDepsWarnings, hasCriticalDuplicates } from './getDuplicatedDepsWarnings.ts';
+import { getDuplicatedDepsWarnings } from './getDuplicatedDepsWarnings.ts';
 import {
   getIncompatiblePackagesSummary,
   getIncompatibleStorybookPackages,
@@ -318,9 +318,7 @@ export async function getDoctorDiagnostics({
     'storybook',
   ]);
 
-  const mismatchingVersionMessage = hasCriticalDuplicates(installationMetadata)
-    ? undefined
-    : getMismatchingVersionsWarnings(installationMetadata);
+  const mismatchingVersionMessage = getMismatchingVersionsWarnings(installationMetadata);
 
   if (mismatchingVersionMessage) {
     results.push({
@@ -332,7 +330,7 @@ export async function getDoctorDiagnostics({
   } else {
     const list = getDuplicatedDepsWarnings(installationMetadata);
 
-    if (Array.isArray(list) && list.length > 0) {
+    if (list?.length) {
       results.push({
         type: DiagType.DUPLICATED_DEPENDENCIES,
         title: 'Duplicated dependencies found',

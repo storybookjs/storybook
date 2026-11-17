@@ -118,14 +118,15 @@ describe('getDoctorDiagnostics', () => {
       expect(results[0].message).toContain('Critical:');
     });
 
-    it('reports a mismatch when no critical package is duplicated', async () => {
+    it('reports the stale framework of a partial upgrade, not only its duplicated renderer', async () => {
       const results = await diagnose({
-        storybook: ['11.0.0-beta.2'],
+        storybook: ['11.0.0'],
+        '@storybook/react': ['11.0.0', '10.6.7'],
         '@storybook/react-vite': ['10.6.7'],
-        '@storybook/icons': ['2.0.0', '2.0.1'],
       });
 
       expect(results.map(({ type }) => type)).toEqual([DiagnosticType.MISMATCHING_VERSIONS]);
+      expect(results[0].message).toContain('@storybook/react-vite');
     });
   });
 });

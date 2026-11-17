@@ -103,7 +103,7 @@ Read the `package.json` of the Storybook directory and of the repository root, b
 ## Step 3: Group the maintainer PRs marked qa:skip
 
 A maintainer marks a PR `qa:skip` when its project gets tested as a whole.
-Each such PR that carries a product label needs a group, and `render` lists it with the PRs of its group in "Groups of maintainer PRs marked qa:skip", or in the row without a group.
+Each such PR needs a group whatever its other labels, because a product change labelled only `build` or `documentation` can hide among them, and `render` lists it with the PRs of its group in "Groups of maintainer PRs marked qa:skip", or in the row without a group.
 
 - When a PR's linked issue is, or has as parent, a tracking issue with sub-issues and a QA or testing heading, `render` puts the PR into the group `issue-<number>` by itself. Read that issue with `gh issue view <number> --repo storybookjs/storybook`, and take the steps of its entry from its QA section. Most PRs have no such issue, so expect `render` to leave most groups to you.
 - Group the rest yourself by feature, from the title, the labels, and the linked issues, and fetch a body only when those are not enough. A group is one feature that its PRs share, such as `wc-docgen`. When no feature ties a PR to others, group it by its area.

@@ -100,12 +100,9 @@ export const Window = z.strictObject({
 export type Window = z.infer<typeof Window>;
 
 const MAINTAINERS = new Set(['OWNER', 'MEMBER']);
-const PRODUCT_LABELS = new Set(['bug', 'feature request', 'maintenance', 'BREAKING CHANGE']);
 
 export const needsGroup = (pr: WindowPr): boolean =>
-  pr.status === 'skip' &&
-  MAINTAINERS.has(pr.authorAssociation) &&
-  pr.labels.some((label) => PRODUCT_LABELS.has(label));
+  pr.status === 'skip' && MAINTAINERS.has(pr.authorAssociation);
 
 export const PullNode = z.object({
   number: z.number(),

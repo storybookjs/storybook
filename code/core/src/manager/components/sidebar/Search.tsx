@@ -321,7 +321,12 @@ export const Search = React.memo<SearchProps>(function Search({
   const stateReducer = useCallback(
     (state: DownshiftState<DownshiftItem>, changes: StateChangeOptions<DownshiftItem>) => {
       switch (changes.type) {
-        case Downshift.stateChangeTypes.blurInput: {
+        case Downshift.stateChangeTypes.changeInput: {
+          return { ...changes, selectedItem: null };
+        }
+
+        case Downshift.stateChangeTypes.blurInput:
+        case Downshift.stateChangeTypes.touchEnd: {
           return {
             ...changes,
             // Prevent clearing the input on blur
@@ -343,7 +348,7 @@ export const Search = React.memo<SearchProps>(function Search({
           }
           // When pressing escape a second time return to the tree view
           // The onKeyDown handler will also blur the input in this case
-          return { ...changes, isOpen: false, selectedItem: null };
+          return { ...changes, inputValue: '', isOpen: false, selectedItem: null };
         }
 
         case Downshift.stateChangeTypes.clickItem:

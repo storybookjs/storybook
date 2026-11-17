@@ -26,7 +26,10 @@ import { csfIndexer } from '../presets/common-preset.ts';
 import type { StoryIndexGeneratorOptions } from './StoryIndexGenerator.ts';
 import { StoryIndexGenerator } from './StoryIndexGenerator.ts';
 
-vi.mock('node:fs', { spy: true });
+vi.mock('node:fs', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:fs')>();
+  return { ...actual, existsSync: vi.fn(actual.existsSync) };
+});
 vi.mock('node:fs/promises', { spy: true });
 
 vi.mock('../utils/constants', () => {

@@ -104,9 +104,9 @@ function reactToSolidSource(source: string, attrs: Record<string, string>): stri
   result = result.replace(/\/\/ Replace your-framework[^\n]*\n/g, '');
   result = result.replace(/\/\* Replace your-framework[^*]*\*\/\n/g, '');
 
-  result = result.replace(/@storybook\/your-framework\/node/g, 'storybook-solidjs-vite');
+  result = result.replace(/@storybook\/your-framework\/node/g, 'storybook-solidjs-vite/node');
   result = result.replace(/@storybook\/your-framework/g, 'storybook-solidjs-vite');
-  result = result.replace(/@storybook\/react-vite\/node/g, 'storybook-solidjs-vite');
+  result = result.replace(/@storybook\/react-vite\/node/g, 'storybook-solidjs-vite/node');
   result = result.replace(/@storybook\/react-vite/g, 'storybook-solidjs-vite');
   result = result.replace(/@storybook\/react-webpack5/g, 'storybook-solidjs-vite');
   result = result.replace(/@storybook\/react\b/g, 'storybook-solidjs-vite');
@@ -144,7 +144,7 @@ function reactToSolidSource(source: string, attrs: Record<string, string>): stri
     });
   }
 
-  if (attrs.filename?.includes('/main.') && attrs.tabTitle?.includes('CSF Next')) {
+  if (attrs.filename?.includes('/main.') && attrs.tabTitle?.includes('CSF 4')) {
     result = result.replace(
       /framework:\s*'storybook-solidjs-vite'/,
       "framework: { name: 'storybook-solidjs-vite' }"
@@ -173,7 +173,6 @@ async function processFile(filePath: string, dryRun: boolean) {
   }
 
   const toAdd: string[] = [];
-  let needsJsComment = false;
 
   for (const react of reactSnippets) {
     const { language, tabTitle, filename } = react.attributes;
@@ -186,21 +185,13 @@ async function processFile(filePath: string, dryRun: boolean) {
 
     const solidSource = reactToSolidSource(react.source, react.attributes);
     toAdd.push(formatSnippetBlock(react.attributes, solidSource));
-
-    if (tabTitle?.includes('CSF Next') && language === 'js') {
-      needsJsComment = true;
-    }
   }
 
   if (!toAdd.length) {
     return { filePath, added: 0, skipped: 'covered' };
   }
 
-  let append = '';
-  if (needsJsComment) {
-    append += '\n<!-- JS snippets still needed while providing both CSF 3 & Next -->\n';
-  }
-  append += toAdd.map((b) => `\n${b}`).join('\n') + '\n';
+  const append = toAdd.map((b) => `\n${b}`).join('\n') + '\n';
 
   if (!dryRun) {
     await fs.writeFile(filePath, content.trimEnd() + append, 'utf-8');

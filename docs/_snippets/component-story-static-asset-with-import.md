@@ -98,47 +98,46 @@ export const WithAnImage = meta.story({
 });
 ```
 
-```js filename="MyComponent.stories.js|jsx" renderer="solid" language="js"
-import imageFile from './static/image.png';
+```js filename="MyComponent.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
 
 import { MyComponent } from './MyComponent';
 
-export default {
+import imageFile from './static/image.png';
+
+const meta = preview.meta({
   component: MyComponent,
-};
+});
 
 const image = {
   src: imageFile,
   alt: 'my image',
 };
 
-export const WithAnImage = {
+export const WithAnImage = meta.story({
   render: () => <img src={image.src} alt={image.alt} />,
-};
+});
 ```
 
-```tsx filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts"
-import type { Meta, StoryObj } from 'storybook-solidjs-vite';
+```tsx filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
 
 import imageFile from './static/image.png';
 
 import { MyComponent } from './MyComponent';
 
-const meta = {
+const meta = preview.meta({
   component: MyComponent,
-} satisfies Meta<typeof MyComponent>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
+});
 
 const image = {
   src: imageFile,
   alt: 'my image',
 };
 
-export const WithAnImage: Story = {
+export const WithAnImage = meta.story({
   render: () => <img src={image.src} alt={image.alt} />,
-};
+});
 ```
 
 ```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 4"
@@ -481,44 +480,47 @@ export const WithAnImage = {
 };
 ```
 
-```tsx filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
+```tsx filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
 import imageFile from './static/image.png';
 
 import { MyComponent } from './MyComponent';
 
-const meta = preview.meta({
+const meta = {
   component: MyComponent,
-});
+} satisfies Meta<typeof MyComponent>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
 
 const image = {
   src: imageFile,
   alt: 'my image',
 };
 
-export const WithAnImage = meta.story({
+export const WithAnImage: Story = {
   render: () => <img src={image.src} alt={image.alt} />,
-});
+};
 ```
 
-```js filename="MyComponent.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
+```js filename="MyComponent.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+import imageFile from './static/image.png';
 
 import { MyComponent } from './MyComponent';
 
-import imageFile from './static/image.png';
-
-const meta = preview.meta({
+export default {
   component: MyComponent,
-});
+};
 
 const image = {
   src: imageFile,
   alt: 'my image',
 };
 
-export const WithAnImage = meta.story({
+export const WithAnImage = {
   render: () => <img src={image.src} alt={image.alt} />,
-});
+};
 ```

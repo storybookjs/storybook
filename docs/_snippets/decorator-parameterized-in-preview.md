@@ -92,8 +92,10 @@ export default definePreview({
 });
 ```
 
-```jsx filename=".storybook/preview.jsx" renderer="solid" language="js"
-export default {
+```js filename=".storybook/preview.jsx" renderer="solid" language="js" tabTitle="CSF 4"
+import { definePreview } from 'storybook-solidjs-vite';
+
+export default definePreview({
   decorators: [
     // 👇 Defining the decorator in the preview file applies it to all stories
     (Story, { parameters }) => {
@@ -119,13 +121,13 @@ export default {
       }
     },
   ],
-};
+});
 ```
 
-```tsx filename=".storybook/preview.tsx" renderer="solid" language="ts"
-import type { Preview } from 'storybook-solidjs-vite';
+```tsx filename=".storybook/preview.tsx" renderer="solid" language="ts" tabTitle="CSF 4"
+import { definePreview } from 'storybook-solidjs-vite';
 
-const preview: Preview = {
+export default definePreview({
   decorators: [
     // 👇 Defining the decorator in the preview file applies it to all stories
     (Story, { parameters }) => {
@@ -151,9 +153,7 @@ const preview: Preview = {
       }
     },
   ],
-};
-
-export default preview;
+});
 ```
 
 ```js filename=".storybook/preview.js" renderer="vue" language="js" tabTitle="CSF 4"
@@ -536,10 +536,11 @@ const preview = {
 export default preview;
 ```
 
-```tsx filename=".storybook/preview.tsx" renderer="solid" language="ts" tabTitle="CSF 4"
-import { definePreview } from 'storybook-solidjs-vite';
+```tsx filename=".storybook/preview.tsx" renderer="solid" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+import type { Preview } from 'storybook-solidjs-vite';
 
-export default definePreview({
+const preview: Preview = {
   decorators: [
     // 👇 Defining the decorator in the preview file applies it to all stories
     (Story, { parameters }) => {
@@ -565,13 +566,14 @@ export default definePreview({
       }
     },
   ],
-});
+};
+
+export default preview;
 ```
 
-```js filename=".storybook/preview.jsx" renderer="solid" language="js" tabTitle="CSF 4"
-import { definePreview } from 'storybook-solidjs-vite';
-
-export default definePreview({
+```jsx filename=".storybook/preview.jsx" renderer="solid" language="js" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+export default {
   decorators: [
     // 👇 Defining the decorator in the preview file applies it to all stories
     (Story, { parameters }) => {
@@ -597,5 +599,5 @@ export default definePreview({
       }
     },
   ],
-});
+};
 ```

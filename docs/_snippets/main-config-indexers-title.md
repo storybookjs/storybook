@@ -214,7 +214,7 @@ export default defineMain({
 ```ts filename=".storybook/main.ts" renderer="solid" language="ts" tabTitle="CSF 4"
 import type { Indexer } from 'storybook/internal/types';
 
-import { defineMain } from 'storybook-solidjs-vite';
+import { defineMain } from 'storybook-solidjs-vite/node';
 
 const combosIndexer: Indexer = {
   test: /\.stories\.[tj]sx?$/,
@@ -243,7 +243,7 @@ export default defineMain({
 ```
 
 ```js filename=".storybook/main.ts" renderer="solid" language="js" tabTitle="CSF 4"
-import { defineMain } from 'storybook-solidjs-vite';
+import { defineMain } from 'storybook-solidjs-vite/node';
 
 const combosIndexer = {
   test: /\.stories\.[tj]sx?$/,

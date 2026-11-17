@@ -206,17 +206,18 @@ export const Example = {
 };
 ```
 
-```jsx filename="MyComponent.stories.js|jsx" renderer="solid" language="js"
+```jsx filename="MyComponent.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
 import { Layout } from './Layout';
 import { MyComponent } from './MyComponent';
 
-export default {
-  title: 'MyComponent',
+const meta = preview.meta({
   component: MyComponent,
-};
+});
 
 // This story uses a render function to fully control how the component renders.
-export const Example = {
+export const Example = meta.story({
   render: () => (
     <Layout>
       <header>
@@ -227,24 +228,21 @@ export const Example = {
       </article>
     </Layout>
   ),
-};
+});
 ```
 
-```tsx filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts"
-import type { Meta, StoryObj } from 'storybook-solidjs-vite';
+```tsx filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
 
 import { Layout } from './Layout';
 import { MyComponent } from './MyComponent';
 
-const meta = {
+const meta = preview.meta({
   component: MyComponent,
-} satisfies Meta<typeof MyComponent>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
+});
 
 // This story uses a render function to fully control how the component renders.
-export const Example: Story = {
+export const Example = meta.story({
   render: () => (
     <Layout>
       <header>
@@ -255,7 +253,7 @@ export const Example: Story = {
       </article>
     </Layout>
   ),
-};
+});
 ```
 
 ```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF 4"
@@ -588,18 +586,22 @@ export const Example: Story = {
 </Story>
 ```
 
-```tsx filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
+```tsx filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
 import { Layout } from './Layout';
 import { MyComponent } from './MyComponent';
 
-const meta = preview.meta({
+const meta = {
   component: MyComponent,
-});
+} satisfies Meta<typeof MyComponent>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
 
 // This story uses a render function to fully control how the component renders.
-export const Example = meta.story({
+export const Example: Story = {
   render: () => (
     <Layout>
       <header>
@@ -610,21 +612,21 @@ export const Example = meta.story({
       </article>
     </Layout>
   ),
-});
+};
 ```
 
-```jsx filename="MyComponent.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
-
+```jsx filename="MyComponent.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import { Layout } from './Layout';
 import { MyComponent } from './MyComponent';
 
-const meta = preview.meta({
+export default {
+  title: 'MyComponent',
   component: MyComponent,
-});
+};
 
 // This story uses a render function to fully control how the component renders.
-export const Example = meta.story({
+export const Example = {
   render: () => (
     <Layout>
       <header>
@@ -635,5 +637,5 @@ export const Example = meta.story({
       </article>
     </Layout>
   ),
-});
+};
 ```

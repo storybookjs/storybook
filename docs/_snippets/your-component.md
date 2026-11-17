@@ -148,39 +148,37 @@ export const Basic = meta.story({
 });
 ```
 
-```js filename="YourComponent.stories.js|jsx" renderer="solid" language="js"
+```js filename="YourComponent.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
 import { YourComponent } from './YourComponent';
 
-//👇 This default export determines where your story goes in the story list
-export default {
+const meta = preview.meta({
   component: YourComponent,
-};
+});
 
-export const Basic = {
+export const Basic = meta.story({
   args: {
     //👇 The args you need here will depend on your component
   },
-};
+});
 ```
 
-```tsx filename="YourComponent.stories.ts|tsx" renderer="solid" language="ts"
-import type { Meta, StoryObj } from 'storybook-solidjs-vite';
+```ts filename="YourComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
 
 import { YourComponent } from './YourComponent';
 
 //👇 This default export determines where your story goes in the story list
-const meta = {
+const meta = preview.meta({
   component: YourComponent,
-} satisfies Meta<typeof YourComponent>;
+});
 
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const Basic: Story = {
+export const Basic = meta.story({
   args: {
     //👇 The args you need here will depend on your component
   },
-};
+});
 ```
 
 ```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 4"
@@ -487,35 +485,39 @@ export const Basic = {
 };
 ```
 
-```ts filename="YourComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
+```tsx filename="YourComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
 import { YourComponent } from './YourComponent';
 
 //👇 This default export determines where your story goes in the story list
-const meta = preview.meta({
+const meta = {
   component: YourComponent,
-});
+} satisfies Meta<typeof YourComponent>;
 
-export const Basic = meta.story({
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Basic: Story = {
   args: {
     //👇 The args you need here will depend on your component
   },
-});
+};
 ```
 
-```js filename="YourComponent.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
-
+```js filename="YourComponent.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import { YourComponent } from './YourComponent';
 
-const meta = preview.meta({
+//👇 This default export determines where your story goes in the story list
+export default {
   component: YourComponent,
-});
+};
 
-export const Basic = meta.story({
+export const Basic = {
   args: {
     //👇 The args you need here will depend on your component
   },
-});
+};
 ```

@@ -110,39 +110,6 @@ export const WithProp = {
 };
 ```
 
-```jsx filename="MyComponent.story.js|jsx" renderer="solid" language="js"
-import { MyComponent } from './MyComponent';
-
-export default {
-  component: MyComponent,
-};
-
-export const Basic = {};
-
-export const WithProp = {
-  render: () => <MyComponent prop="value" />,
-};
-```
-
-```tsx filename="MyComponent.story.ts|tsx" renderer="solid" language="ts"
-import type { Meta, StoryObj } from 'storybook-solidjs-vite';
-
-import { MyComponent } from './MyComponent';
-
-const meta = {
-  component: MyComponent,
-} satisfies Meta<typeof MyComponent>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const Basic: Story = {};
-
-export const WithProp: Story = {
-  render: () => <MyComponent prop="value" />,
-};
-```
-
 ```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 4"
 <script module>
   import preview from '../.storybook/preview';

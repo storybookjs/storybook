@@ -169,7 +169,7 @@ export default defineMain({
 ```
 
 ```ts filename=".storybook/main.ts" renderer="solid" language="ts" tabTitle="CSF 4"
-import { defineMain } from 'storybook-solidjs-vite';
+import { defineMain } from 'storybook-solidjs-vite/node';
 
 import remarkGfm from 'remark-gfm';
 
@@ -193,7 +193,7 @@ export default defineMain({
 ```
 
 ```js filename=".storybook/main.js" renderer="solid" language="js" tabTitle="CSF 4"
-import { defineMain } from 'storybook-solidjs-vite';
+import { defineMain } from 'storybook-solidjs-vite/node';
 
 import remarkGfm from 'remark-gfm';
 

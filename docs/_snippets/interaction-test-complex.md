@@ -345,7 +345,7 @@ export const Submits = meta.story({
 ```
 
 ```ts filename="EventForm.stories.ts" renderer="solid" language="ts" tabTitle="CSF 4"
-import { fn, expect } from 'storybook/test';
+import { fn, expect, mocked } from 'storybook/test';
 
 import preview from '../.storybook/preview';
 
@@ -354,17 +354,17 @@ import { EventForm } from './EventForm';
 
 const meta = preview.meta({
   component: EventForm,
-});
-
-export const Submits = meta.story({
   // Mock functions so we can manipulate and spy on them
   args: {
     getUsers: fn(),
     onSubmit: fn(),
   },
+});
+
+export const Submits = meta.story({
   beforeEach: async ({ args }) => {
     // Manipulate `getUsers` mock to return mocked value
-    args.getUsers.mockResolvedValue(users);
+    mocked(args.getUsers).mockResolvedValue(users);
   },
   play: async ({ args, canvas, userEvent }) => {
     const usersList = canvas.getAllByRole('listitem');
@@ -431,7 +431,7 @@ export const Submits = meta.story({
 ```
 
 ```js filename="EventForm.stories.js" renderer="solid" language="js" tabTitle="CSF 4"
-import { fn, expect } from 'storybook/test';
+import { fn, expect, mocked } from 'storybook/test';
 
 import preview from '../.storybook/preview';
 
@@ -440,17 +440,17 @@ import { EventForm } from './EventForm';
 
 const meta = preview.meta({
   component: EventForm,
-});
-
-export const Submits = meta.story({
   // Mock functions so we can manipulate and spy on them
   args: {
     getUsers: fn(),
     onSubmit: fn(),
   },
+});
+
+export const Submits = meta.story({
   beforeEach: async ({ args }) => {
     // Manipulate `getUsers` mock to return mocked value
-    args.getUsers.mockResolvedValue(users);
+    mocked(args.getUsers).mockResolvedValue(users);
   },
   play: async ({ args, canvas, userEvent }) => {
     const usersList = canvas.getAllByRole('listitem');

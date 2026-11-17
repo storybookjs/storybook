@@ -138,26 +138,28 @@ export const Combo = meta.story({
 });
 ```
 
-```jsx filename="Button.stories.jsx" renderer="solid" language="js"
+```jsx filename="Button.stories.jsx" renderer="solid" language="js" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
 import { Button } from './Button';
 
-export default {
+const meta = preview.meta({
   component: Button,
-};
+});
 
-export const Variant1 = {
+export const Variant1 = meta.story({
   // 👇 This story will not appear in Storybook's sidebar or docs page
   tags: ['!dev', '!autodocs'],
   args: { variant: 1 },
-};
+});
 
-export const Variant2 = {
+export const Variant2 = meta.story({
   // 👇 This story will not appear in Storybook's sidebar or docs page
   tags: ['!dev', '!autodocs'],
   args: { variant: 2 },
-};
+});
 
-export const Combo = {
+export const Combo = meta.story({
   // 👇 This story should not be tested, but will appear in the sidebar and docs page
   tags: ['!test'],
   render: () => (
@@ -166,34 +168,31 @@ export const Combo = {
       <Button variant={2} />
     </>
   ),
-};
+});
 ```
 
-```tsx filename="Button.stories.tsx" renderer="solid" language="ts"
-import type { Meta, StoryObj } from 'storybook-solidjs-vite';
+```tsx filename="Button.stories.tsx" renderer="solid" language="ts" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
 
 import { Button } from './Button';
 
-const meta = {
+const meta = preview.meta({
   component: Button,
-} satisfies Meta<typeof Button>;
-export default meta;
+});
 
-type Story = StoryObj<typeof meta>;
-
-export const Variant1: Story = {
+export const Variant1 = meta.story({
   // 👇 This story will not appear in Storybook's sidebar or docs page
   tags: ['!dev', '!autodocs'],
   args: { variant: 1 },
-};
+});
 
-export const Variant2: Story = {
+export const Variant2 = meta.story({
   // 👇 This story will not appear in Storybook's sidebar or docs page
   tags: ['!dev', '!autodocs'],
   args: { variant: 2 },
-};
+});
 
-export const Combo: Story = {
+export const Combo = meta.story({
   // 👇 This story should not be tested, but will appear in the sidebar and docs page
   tags: ['!test'],
   render: () => (
@@ -202,7 +201,7 @@ export const Combo: Story = {
       <Button variant={2} />
     </>
   ),
-};
+});
 ```
 
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 4"
@@ -693,28 +692,32 @@ export const Combo = {
 };
 ```
 
-```tsx filename="Button.stories.tsx" renderer="solid" language="ts" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
+```tsx filename="Button.stories.tsx" renderer="solid" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
 import { Button } from './Button';
 
-const meta = preview.meta({
+const meta = {
   component: Button,
-});
+} satisfies Meta<typeof Button>;
+export default meta;
 
-export const Variant1 = meta.story({
+type Story = StoryObj<typeof meta>;
+
+export const Variant1: Story = {
   // 👇 This story will not appear in Storybook's sidebar or docs page
   tags: ['!dev', '!autodocs'],
   args: { variant: 1 },
-});
+};
 
-export const Variant2 = meta.story({
+export const Variant2: Story = {
   // 👇 This story will not appear in Storybook's sidebar or docs page
   tags: ['!dev', '!autodocs'],
   args: { variant: 2 },
-});
+};
 
-export const Combo = meta.story({
+export const Combo: Story = {
   // 👇 This story should not be tested, but will appear in the sidebar and docs page
   tags: ['!test'],
   render: () => (
@@ -723,31 +726,30 @@ export const Combo = meta.story({
       <Button variant={2} />
     </>
   ),
-});
+};
 ```
 
-```jsx filename="Button.stories.jsx" renderer="solid" language="js" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
-
+```jsx filename="Button.stories.jsx" renderer="solid" language="js" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import { Button } from './Button';
 
-const meta = preview.meta({
+export default {
   component: Button,
-});
+};
 
-export const Variant1 = meta.story({
+export const Variant1 = {
   // 👇 This story will not appear in Storybook's sidebar or docs page
   tags: ['!dev', '!autodocs'],
   args: { variant: 1 },
-});
+};
 
-export const Variant2 = meta.story({
+export const Variant2 = {
   // 👇 This story will not appear in Storybook's sidebar or docs page
   tags: ['!dev', '!autodocs'],
   args: { variant: 2 },
-});
+};
 
-export const Combo = meta.story({
+export const Combo = {
   // 👇 This story should not be tested, but will appear in the sidebar and docs page
   tags: ['!test'],
   render: () => (
@@ -756,5 +758,5 @@ export const Combo = meta.story({
       <Button variant={2} />
     </>
   ),
-});
+};
 ```

@@ -210,7 +210,8 @@ const meta = preview.meta({
       if: { arg: 'image', truthy: false },
     },
     image: {
-      control: { type: 'select', options: ['foo.jpg', 'bar.jpg'] },
+      control: 'select',
+      options: ['foo.jpg', 'bar.jpg'],
       if: { arg: 'label', truthy: false },
     },
   },
@@ -231,7 +232,8 @@ const meta = preview.meta({
       if: { arg: 'image', truthy: false },
     },
     image: {
-      control: { type: 'select', options: ['foo.jpg', 'bar.jpg'] },
+      control: 'select',
+      options: ['foo.jpg', 'bar.jpg'],
       if: { arg: 'label', truthy: false },
     },
   },

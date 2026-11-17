@@ -121,31 +121,30 @@ const meta = preview.meta({
 export const Empty = meta.story();
 ```
 
-```js filename="List.stories.js|jsx" renderer="solid" language="js"
+```js filename="List.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
 import { List } from './List';
 
-export default {
+const meta = preview.meta({
   component: List,
-};
+});
 
 // Always an empty list, not super interesting
-export const Empty = {};
+export const Empty = meta.story();
 ```
 
-```tsx filename="List.stories.ts|tsx" renderer="solid" language="ts"
-import type { Meta, StoryObj } from 'storybook-solidjs-vite';
+```ts filename="List.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
 
 import { List } from './List';
 
-const meta = {
+const meta = preview.meta({
   component: List,
-} satisfies Meta<typeof List>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
+});
 
 // Always an empty list, not super interesting
-export const Empty: Story = {};
+export const Empty = meta.story();
 ```
 
 ```svelte filename="List.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 4"
@@ -378,28 +377,31 @@ export default {
 export const Empty = {};
 ```
 
-```ts filename="List.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
+```tsx filename="List.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
 import { List } from './List';
 
-const meta = preview.meta({
+const meta = {
   component: List,
-});
+} satisfies Meta<typeof List>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
 
 // Always an empty list, not super interesting
-export const Empty = meta.story();
+export const Empty: Story = {};
 ```
 
-```js filename="List.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
-
+```js filename="List.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import { List } from './List';
 
-const meta = preview.meta({
+export default {
   component: List,
-});
+};
 
 // Always an empty list, not super interesting
-export const Empty = meta.story();
+export const Empty = {};
 ```

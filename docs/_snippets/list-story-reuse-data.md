@@ -183,30 +183,32 @@ export const ManyItems = meta.story({
 });
 ```
 
-```jsx filename="List.stories.js|jsx" renderer="solid" language="js"
+```jsx filename="List.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
 import { List } from './List';
 import { ListItem } from './ListItem';
 
 //👇 We're importing the necessary stories from ListItem
 import { Selected, Unselected } from './ListItem.stories';
 
-export default {
+const meta = preview.meta({
   component: List,
-};
+});
 
-export const ManyItems = {
+export const ManyItems = meta.story({
   render: (args) => (
     <List {...args}>
-      <ListItem {...Selected.args} />
-      <ListItem {...Unselected.args} />
-      <ListItem {...Unselected.args} />
+      <ListItem {...Selected.input.args} />
+      <ListItem {...Unselected.input.args} />
+      <ListItem {...Unselected.input.args} />
     </List>
   ),
-};
+});
 ```
 
-```tsx filename="List.stories.ts|tsx" renderer="solid" language="ts"
-import type { Meta, StoryObj } from 'storybook-solidjs-vite';
+```tsx filename="List.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
 
 import { List } from './List';
 import { ListItem } from './ListItem';
@@ -214,22 +216,19 @@ import { ListItem } from './ListItem';
 //👇 We're importing the necessary stories from ListItem
 import { Selected, Unselected } from './ListItem.stories';
 
-const meta = {
+const meta = preview.meta({
   component: List,
-} satisfies Meta<typeof List>;
+});
 
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const ManyItems: Story = {
+export const ManyItems = meta.story({
   render: (args) => (
     <List {...args}>
-      <ListItem {...Selected.args} />
-      <ListItem {...Unselected.args} />
-      <ListItem {...Unselected.args} />
+      <ListItem {...Selected.input.args} />
+      <ListItem {...Unselected.input.args} />
+      <ListItem {...Unselected.input.args} />
     </List>
   ),
-};
+});
 ```
 
 ```svelte filename="List.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 4"
@@ -531,10 +530,9 @@ export const ManyItems = {
 };
 ```
 
-```tsx filename="List.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 4"
-import * as React from 'react';
-
-import preview from '../.storybook/preview';
+```tsx filename="List.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
 import { List } from './List';
 import { ListItem } from './ListItem';
@@ -542,43 +540,43 @@ import { ListItem } from './ListItem';
 //👇 We're importing the necessary stories from ListItem
 import { Selected, Unselected } from './ListItem.stories';
 
-const meta = preview.meta({
+const meta = {
   component: List,
-});
+} satisfies Meta<typeof List>;
 
-export const ManyItems = meta.story({
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const ManyItems: Story = {
   render: (args) => (
     <List {...args}>
-      <ListItem {...Selected.input.args} />
-      <ListItem {...Unselected.input.args} />
-      <ListItem {...Unselected.input.args} />
+      <ListItem {...Selected.args} />
+      <ListItem {...Unselected.args} />
+      <ListItem {...Unselected.args} />
     </List>
   ),
-});
+};
 ```
 
-```jsx filename="List.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 4"
-import * as React from 'react';
-
-import preview from '../.storybook/preview';
-
+```jsx filename="List.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import { List } from './List';
 import { ListItem } from './ListItem';
 
 //👇 We're importing the necessary stories from ListItem
 import { Selected, Unselected } from './ListItem.stories';
 
-const meta = preview.meta({
+export default {
   component: List,
-});
+};
 
-export const ManyItems = meta.story({
+export const ManyItems = {
   render: (args) => (
     <List {...args}>
-      <ListItem {...Selected.input.args} />
-      <ListItem {...Unselected.input.args} />
-      <ListItem {...Unselected.input.args} />
+      <ListItem {...Selected.args} />
+      <ListItem {...Unselected.args} />
+      <ListItem {...Unselected.args} />
     </List>
   ),
-});
+};
 ```

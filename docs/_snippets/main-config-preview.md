@@ -201,7 +201,7 @@ export default defineMain({
 ```
 
 ```ts filename=".storybook/main.ts" renderer="solid" language="ts" tabTitle="Body (CSF 4)"
-import { defineMain } from 'storybook-solidjs-vite';
+import { defineMain } from 'storybook-solidjs-vite/node';
 
 export default defineMain({
   previewBody: (body) => `
@@ -214,7 +214,7 @@ export default defineMain({
 ```
 
 ```js filename=".storybook/main.js" renderer="solid" language="js" tabTitle="Body (CSF 4)"
-import { defineMain } from 'storybook-solidjs-vite';
+import { defineMain } from 'storybook-solidjs-vite/node';
 
 export default defineMain({
   previewBody: (body) => `
@@ -227,7 +227,7 @@ export default defineMain({
 ```
 
 ```ts filename=".storybook/main.ts" renderer="solid" language="ts" tabTitle="Head (CSF 4)"
-import { defineMain } from 'storybook-solidjs-vite';
+import { defineMain } from 'storybook-solidjs-vite/node';
 
 export default defineMain({
   previewHead: (head) => `
@@ -242,7 +242,7 @@ export default defineMain({
 ```
 
 ```js filename=".storybook/main.js" renderer="solid" language="js" tabTitle="Head (CSF 4)"
-import { defineMain } from 'storybook-solidjs-vite';
+import { defineMain } from 'storybook-solidjs-vite/node';
 
 export default defineMain({
   previewHead: (head) => `

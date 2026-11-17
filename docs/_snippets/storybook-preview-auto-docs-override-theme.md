@@ -150,7 +150,7 @@ export default definePreview({
 ```ts filename=".storybook/preview.tsx" renderer="solid" language="ts" tabTitle="CSF 4"
 import { definePreview } from 'storybook-solidjs-vite';
 import addonDocs from '@storybook/addon-docs';
-import { ensure, themes } from 'storybook/theming';
+import { themes } from 'storybook/theming';
 
 export default definePreview({
   addons: [addonDocs()],
@@ -162,7 +162,7 @@ export default definePreview({
       },
     },
     docs: {
-      theme: ensure(themes.dark), // The replacement theme to use
+      theme: themes.dark, // The replacement theme to use
     },
   },
 });
@@ -171,7 +171,7 @@ export default definePreview({
 ```js filename=".storybook/preview.jsx" renderer="solid" language="js" tabTitle="CSF 4"
 import { definePreview } from 'storybook-solidjs-vite';
 import addonDocs from '@storybook/addon-docs';
-import { ensure, themes } from 'storybook/theming';
+import { themes } from 'storybook/theming';
 
 export default definePreview({
   addons: [addonDocs()],
@@ -183,7 +183,7 @@ export default definePreview({
       },
     },
     docs: {
-      theme: ensure(themes.dark), // The replacement theme to use
+      theme: themes.dark, // The replacement theme to use
     },
   },
 });

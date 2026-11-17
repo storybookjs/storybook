@@ -48,7 +48,7 @@ export default defineMain({
 ```
 
 ```ts filename=".storybook/main.js|ts" renderer="solid" language="ts"
-import { defineMain } from 'storybook-solidjs-vite';
+import { defineMain } from 'storybook-solidjs-vite/node';
 
 export default defineMain({
   framework: 'storybook-solidjs-vite',

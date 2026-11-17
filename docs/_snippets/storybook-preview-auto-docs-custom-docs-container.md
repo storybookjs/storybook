@@ -192,8 +192,6 @@ export default definePreview({
 ```
 
 ```tsx filename=".storybook/preview.tsx" renderer="solid" language="ts" tabTitle="CSF 4"
-import * as React from 'react';
-
 import { definePreview } from 'storybook-solidjs-vite';
 
 import addonDocs from '@storybook/addon-docs';
@@ -220,8 +218,6 @@ export default definePreview({
 ```
 
 ```jsx filename=".storybook/preview.jsx" renderer="solid" language="js" tabTitle="CSF 4"
-import * as React from 'react';
-
 import { definePreview } from 'storybook-solidjs-vite';
 
 import addonDocs from '@storybook/addon-docs';

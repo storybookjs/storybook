@@ -46,43 +46,6 @@ export default definePreview({
 });
 ```
 
-```jsx filename=".storybook/preview.js" renderer="solid" language="js"
-import { normal as NavigationNormal } from '../components/Navigation.stories';
-import GlobalContainerContext from '../components/lib/GlobalContainerContext';
-
-const context = {
-  NavigationContainer: NavigationNormal,
-};
-
-const AppDecorator = (storyFn) => {
-  return (
-    <GlobalContainerContext.Provider value={context}>{storyFn()}</GlobalContainerContext.Provider>
-  );
-};
-export const decorators = [AppDecorator];
-```
-
-```tsx filename=".storybook/preview.ts" renderer="solid" language="ts"
-import { normal as NavigationNormal } from '../components/Navigation.stories';
-import GlobalContainerContext from '../components/lib/GlobalContainerContext';
-
-const context = {
-  NavigationContainer: NavigationNormal,
-};
-
-const AppDecorator = (storyFn) => {
-  return (
-    <GlobalContainerContext.Provider value={context}>{storyFn()}</GlobalContainerContext.Provider>
-  );
-};
-
-const preview: Preview = {
-  decorators: [AppDecorator],
-};
-
-export default preview;
-```
-
 ```tsx filename=".storybook/preview.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
 // ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import * as React from 'react';
@@ -131,8 +94,6 @@ export default { decorators: [AppDecorator] };
 ```
 
 ```jsx filename=".storybook/preview.jsx" renderer="solid" language="js" tabTitle="CSF 4"
-import * as React from 'react';
-
 import { definePreview } from 'storybook-solidjs-vite';
 
 import { normal as NavigationNormal } from '../components/Navigation.stories';
@@ -143,9 +104,7 @@ const context = {
 };
 
 const AppDecorator = (storyFn) => {
-  return (
-    <GlobalContainerContext.Provider value={context}>{storyFn()}</GlobalContainerContext.Provider>
-  );
+  return <GlobalContainerContext value={context}>{storyFn()}</GlobalContainerContext>;
 };
 
 export default definePreview({
@@ -154,8 +113,6 @@ export default definePreview({
 ```
 
 ```tsx filename=".storybook/preview.tsx" renderer="solid" language="ts" tabTitle="CSF 4"
-import * as React from 'react';
-
 import { definePreview } from 'storybook-solidjs-vite';
 
 import { normal as NavigationNormal } from '../components/Navigation.stories';
@@ -166,9 +123,7 @@ const context = {
 };
 
 const AppDecorator = (storyFn) => {
-  return (
-    <GlobalContainerContext.Provider value={context}>{storyFn()}</GlobalContainerContext.Provider>
-  );
+  return <GlobalContainerContext value={context}>{storyFn()}</GlobalContainerContext>;
 };
 
 export default definePreview({
@@ -178,8 +133,6 @@ export default definePreview({
 
 ```tsx filename=".storybook/preview.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 3"
 // ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
-import * as React from 'react';
-
 import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
 import { normal as NavigationNormal } from '../components/Navigation.stories';
@@ -190,9 +143,7 @@ const context = {
 };
 
 const AppDecorator = (storyFn) => {
-  return (
-    <GlobalContainerContext.Provider value={context}>{storyFn()}</GlobalContainerContext.Provider>
-  );
+  return <GlobalContainerContext value={context}>{storyFn()}</GlobalContainerContext>;
 };
 
 const preview: Preview = {
@@ -204,8 +155,6 @@ export default preview;
 
 ```jsx filename=".storybook/preview.js|jsx" renderer="solid" language="js" tabTitle="CSF 3"
 // ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
-import * as React from 'react';
-
 import { normal as NavigationNormal } from '../components/Navigation.stories';
 import GlobalContainerContext from '../components/lib/GlobalContainerContext';
 
@@ -214,9 +163,7 @@ const context = {
 };
 
 const AppDecorator = (storyFn) => {
-  return (
-    <GlobalContainerContext.Provider value={context}>{storyFn()}</GlobalContainerContext.Provider>
-  );
+  return <GlobalContainerContext value={context}>{storyFn()}</GlobalContainerContext>;
 };
 
 export default { decorators: [AppDecorator] };

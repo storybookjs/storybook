@@ -396,8 +396,7 @@ export default mergeConfig(
               // The location of your Storybook config, main.js|ts
               configDir: path.join(dirname, '.storybook'),
               // This should match your package.json script to run Storybook
-              // The --no-open flag will skip the automatic opening of a browser
-              storybookScript: 'yarn storybook --no-open',
+              storybookScript: 'yarn storybook',
             }),
           ],
           test: {
@@ -410,7 +409,6 @@ export default mergeConfig(
               headless: true,
               instances: [{ browser: 'chromium' }],
             },
-            setupFiles: ['./.storybook/vitest.setup.ts'],
           },
         },
       ],
@@ -444,8 +442,7 @@ export default mergeConfig(
               // The location of your Storybook config, main.js|ts
               configDir: path.join(dirname, '.storybook'),
               // This should match your package.json script to run Storybook
-              // The --no-open flag will skip the automatic opening of a browser
-              storybookScript: 'yarn storybook --no-open',
+              storybookScript: 'yarn storybook',
             }),
           ],
           test: {
@@ -458,7 +455,6 @@ export default mergeConfig(
               headless: true,
               instances: [{ browser: 'chromium' }],
             },
-            setupFiles: ['./.storybook/vitest.setup.ts'],
           },
         },
       ],

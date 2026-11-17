@@ -44,34 +44,6 @@ export default definePreview({
 });
 ```
 
-```jsx filename=".storybook/preview.js" renderer="solid" language="js"
-export default {
-  decorators: [
-    (Story) => (
-      <div style={{ margin: '3em' }}>
-        <Story />
-      </div>
-    ),
-  ],
-};
-```
-
-```js filename=".storybook/preview.tsx" renderer="solid" language="ts"
-import type { Preview } from 'storybook-solidjs-vite';
-
-const preview: Preview = {
-  decorators: [
-    (Story) => (
-      <div style={{ margin: '3em' }}>
-        <Story />
-      </div>
-    ),
-  ],
-};
-
-export default preview;
-```
-
 ```js filename=".storybook/preview.js" renderer="svelte" language="js"
 import MarginDecorator from './MarginDecorator.svelte';
 
@@ -271,4 +243,22 @@ export default {
     ),
   ],
 };
+```
+
+```tsx filename=".storybook/preview.tsx" renderer="solid" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+import type { Preview } from 'storybook-solidjs-vite';
+
+const preview: Preview = {
+  decorators: [
+    (Story) => (
+      <div style={{ margin: '3em' }}>
+        {/* 👇 Decorators in Storybook also accept a function. Replace <Story/> with Story() to enable it  */}
+        <Story />
+      </div>
+    ),
+  ],
+};
+
+export default preview;
 ```

@@ -171,7 +171,7 @@ export default defineMain({
 ```
 
 ```ts filename=".storybook/main.ts" renderer="solid" language="ts" tabTitle="With Webpack (CSF 4)"
-import { defineMain } from 'storybook-solidjs-vite';
+import { defineMain } from 'storybook-solidjs-vite/node';
 
 export default defineMain({
   framework: { name: 'storybook-solidjs-vite' },
@@ -196,7 +196,7 @@ export default defineMain({
 ```
 
 ```js filename=".storybook/main.js" renderer="solid" language="js" tabTitle="With Webpack (CSF 4)"
-import { defineMain } from 'storybook-solidjs-vite';
+import { defineMain } from 'storybook-solidjs-vite/node';
 
 export default defineMain({
   framework: { name: 'storybook-solidjs-vite' },
@@ -221,7 +221,7 @@ export default defineMain({
 ```
 
 ```ts filename=".storybook/main.ts" renderer="solid" language="ts" tabTitle="With Vite (CSF 4)"
-import { defineMain } from 'storybook-solidjs-vite';
+import { defineMain } from 'storybook-solidjs-vite/node';
 
 import graphql from 'vite-plugin-graphql-loader';
 
@@ -238,7 +238,7 @@ export default defineMain({
 ```
 
 ```js filename=".storybook/main.js" renderer="solid" language="js" tabTitle="With Vite (CSF 4)"
-import { defineMain } from 'storybook-solidjs-vite';
+import { defineMain } from 'storybook-solidjs-vite/node';
 
 import graphql from 'vite-plugin-graphql-loader';
 

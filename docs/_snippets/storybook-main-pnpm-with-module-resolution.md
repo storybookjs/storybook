@@ -159,7 +159,7 @@ export default defineMain({
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { defineMain } from 'storybook-solidjs-vite';
+import { defineMain } from 'storybook-solidjs-vite/node';
 
 const getAbsolutePath = (packageName: string) =>
   dirname(fileURLToPath(import.meta.resolve(join(packageName, 'package.json'))));
@@ -181,7 +181,7 @@ export default defineMain({
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { defineMain } from 'storybook-solidjs-vite';
+import { defineMain } from 'storybook-solidjs-vite/node';
 
 const getAbsolutePath = (packageName) =>
   dirname(fileURLToPath(import.meta.resolve(join(packageName, 'package.json'))));

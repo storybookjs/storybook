@@ -821,6 +821,7 @@ export const StyledHighlight = meta.story({
     (storyFn) => {
       const emit = useChannel({});
       emit(HIGHLIGHT, {
+        id: 'my-highlight',
         selectors: ['h2', 'a', '.storybook-button'],
         styles: {
           backgroundColor: `color-mix(in srgb, hotpink, transparent 90%)`,
@@ -863,6 +864,7 @@ export const StyledHighlight = meta.story({
     (storyFn) => {
       const emit = useChannel({});
       emit(HIGHLIGHT, {
+        id: 'my-highlight',
         selectors: ['h2', 'a', '.storybook-button'],
         styles: {
           backgroundColor: `color-mix(in srgb, hotpink, transparent 90%)`,
@@ -909,6 +911,7 @@ export const StyledHighlight: Story = {
     (storyFn) => {
       const emit = useChannel({});
       emit(HIGHLIGHT, {
+        id: 'my-highlight',
         selectors: ['h2', 'a', '.storybook-button'],
         styles: {
           backgroundColor: `color-mix(in srgb, hotpink, transparent 90%)`,
@@ -950,6 +953,7 @@ export const StyledHighlight = {
     (storyFn) => {
       const emit = useChannel({});
       emit(HIGHLIGHT, {
+        id: 'my-highlight',
         selectors: ['h2', 'a', '.storybook-button'],
         styles: {
           backgroundColor: `color-mix(in srgb, hotpink, transparent 90%)`,

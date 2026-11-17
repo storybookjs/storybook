@@ -125,10 +125,12 @@ export const Basic = meta.story({
 });
 ```
 
-```jsx filename="Button.stories.js|jsx" renderer="solid" language="js"
+```jsx filename="Button.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
 import { Button } from './Button';
 
-export default {
+const meta = preview.meta({
   /* 👇 The title prop is optional.
    * See https://storybook.js.org/docs/configure/#configure-story-loading
    * to learn how to generate automatic titles
@@ -141,19 +143,19 @@ export default {
       data: 'This data is passed to the addon',
     },
   },
-};
+});
 
-export const Basic = {
+export const Basic = meta.story({
   render: () => <Button>Hello</Button>,
-};
+});
 ```
 
-```tsx filename="Button.stories.ts|tsx" renderer="solid" language="ts"
-import type { Meta, StoryObj } from 'storybook-solidjs-vite';
+```tsx filename="Button.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
 
 import { Button } from './Button';
 
-const meta = {
+const meta = preview.meta({
   /* 👇 The title prop is optional.
    * See https://storybook.js.org/docs/configure/#configure-story-loading
    * to learn how to generate automatic titles
@@ -163,22 +165,19 @@ const meta = {
   //👇 Creates specific parameters for the story
   parameters: {
     myAddon: {
-      data: 'this data is passed to the addon',
+      data: 'This data is passed to the addon',
     },
   },
-} satisfies Meta<typeof Button>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
+});
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
  * See https://storybook.js.org/docs/writing-stories/csf
  * to learn how to use render functions.
  */
-export const Basic: Story = {
+export const Basic = meta.story({
   render: () => <Button>Hello</Button>,
-};
+});
 ```
 
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 4"
@@ -581,14 +580,13 @@ export const Basic = {
 };
 ```
 
-```tsx filename="Button.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 4"
-import * as React from 'react';
-
-import preview from '../.storybook/preview';
+```tsx filename="Button.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
 import { Button } from './Button';
 
-const meta = preview.meta({
+const meta = {
   /* 👇 The title prop is optional.
    * See https://storybook.js.org/docs/configure/#configure-story-loading
    * to learn how to generate automatic titles
@@ -598,29 +596,29 @@ const meta = preview.meta({
   //👇 Creates specific parameters for the story
   parameters: {
     myAddon: {
-      data: 'This data is passed to the addon',
+      data: 'this data is passed to the addon',
     },
   },
-});
+} satisfies Meta<typeof Button>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/writing-stories/csf
  * to learn how to use render functions.
  */
-export const Basic = meta.story({
+export const Basic: Story = {
   render: () => <Button>Hello</Button>,
-});
+};
 ```
 
-```jsx filename="Button.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 4"
-import * as React from 'react';
-
-import preview from '../.storybook/preview';
-
+```jsx filename="Button.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import { Button } from './Button';
 
-const meta = preview.meta({
+export default {
   /* 👇 The title prop is optional.
    * See https://storybook.js.org/docs/configure/#configure-story-loading
    * to learn how to generate automatic titles
@@ -633,9 +631,9 @@ const meta = preview.meta({
       data: 'This data is passed to the addon',
     },
   },
-});
+};
 
-export const Basic = meta.story({
+export const Basic = {
   render: () => <Button>Hello</Button>,
-});
+};
 ```

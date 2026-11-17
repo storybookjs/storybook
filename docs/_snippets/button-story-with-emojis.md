@@ -202,34 +202,31 @@ export const Tertiary = meta.story({
 });
 ```
 
-```tsx filename="Button.stories.ts|tsx" renderer="solid" language="ts"
-import type { Meta, StoryObj } from 'storybook-solidjs-vite';
+```tsx filename="Button.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
 
 import { Button } from './Button';
 
-const meta = {
+const meta = preview.meta({
   component: Button,
-} satisfies Meta<typeof Button>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
+});
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
  * See https://storybook.js.org/docs/writing-stories/csf
  * to learn how to use render functions.
  */
-export const Primary: Story = {
+export const Primary = meta.story({
   render: () => <Button backgroundColor="#ff0" label="Button" />,
-};
+});
 
-export const Secondary: Story = {
+export const Secondary = meta.story({
   render: () => <Button backgroundColor="#ff0" label="😄👍😍💯" />,
-};
+});
 
-export const Tertiary: Story = {
+export const Tertiary = meta.story({
   render: () => <Button backgroundColor="#ff0" label="📚📕📈🤓" />,
-};
+});
 ```
 
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 4"
@@ -659,7 +656,7 @@ const meta = preview.meta({
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/writing-stories/csf
  * to learn how to use render functions.
  */
 export const Primary = meta.story({
@@ -675,31 +672,35 @@ export const Tertiary = meta.story({
 });
 ```
 
-```tsx filename="Button.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
+```tsx filename="Button.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
 import { Button } from './Button';
 
-const meta = preview.meta({
+const meta = {
   component: Button,
-});
+} satisfies Meta<typeof Button>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/writing-stories/csf
  * to learn how to use render functions.
  */
-export const Primary = meta.story({
+export const Primary: Story = {
   render: () => <Button backgroundColor="#ff0" label="Button" />,
-});
+};
 
-export const Secondary = meta.story({
+export const Secondary: Story = {
   render: () => <Button backgroundColor="#ff0" label="😄👍😍💯" />,
-});
+};
 
-export const Tertiary = meta.story({
+export const Tertiary: Story = {
   render: () => <Button backgroundColor="#ff0" label="📚📕📈🤓" />,
-});
+};
 ```
 
 ```jsx filename="Button.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 3"
@@ -712,7 +713,7 @@ export default {
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/writing-stories/csf
  * to learn how to use render functions.
  */
 export const Primary = {

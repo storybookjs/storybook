@@ -515,6 +515,7 @@ export const Highlighted = meta.story({
     (storyFn) => {
       const emit = useChannel({});
       emit(HIGHLIGHT, {
+        id: 'my-highlight',
         selectors: ['h2', 'a', '.storybook-button'],
       });
       return storyFn();
@@ -540,6 +541,7 @@ export const Highlighted = meta.story({
     (storyFn) => {
       const emit = useChannel({});
       emit(HIGHLIGHT, {
+        id: 'my-highlight',
         selectors: ['h2', 'a', '.storybook-button'],
       });
       return storyFn();
@@ -569,6 +571,7 @@ export const Highlighted: Story = {
     (storyFn) => {
       const emit = useChannel({});
       emit(HIGHLIGHT, {
+        id: 'my-highlight',
         selectors: ['h2', 'a', '.storybook-button'],
       });
       return storyFn();
@@ -593,6 +596,7 @@ export const Highlighted = {
     (storyFn) => {
       const emit = useChannel({});
       emit(HIGHLIGHT, {
+        id: 'my-highlight',
         selectors: ['h2', 'a', '.storybook-button'],
       });
       return storyFn();

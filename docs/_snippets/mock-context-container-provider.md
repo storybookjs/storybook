@@ -35,9 +35,9 @@ const context = {
 
 export const AppProfilePage = () => {
   return (
-    <ProfilePageContext.Provider value={context}>
+    <ProfilePageContext value={context}>
       <ProfilePageContainer />
-    </ProfilePageContext.Provider>
+    </ProfilePageContext>
   );
 };
 ```

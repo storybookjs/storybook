@@ -61,10 +61,12 @@ const meta = preview.meta({
 });
 ```
 
-```jsx filename="YourComponent.stories.js|jsx" renderer="solid" language="js"
+```jsx filename="YourComponent.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
 import { YourComponent } from './YourComponent';
 
-export default {
+const meta = preview.meta({
   component: YourComponent,
   decorators: [
     (Story) => (
@@ -74,15 +76,15 @@ export default {
       </div>
     ),
   ],
-};
+});
 ```
 
-```tsx filename="YourComponent.stories.ts|tsx" renderer="solid" language="ts"
-import type { Meta } from 'storybook-solidjs-vite';
+```tsx filename="YourComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
 
 import { YourComponent } from './YourComponent';
 
-const meta = {
+const meta = preview.meta({
   component: YourComponent,
   decorators: [
     (Story) => (
@@ -92,9 +94,7 @@ const meta = {
       </div>
     ),
   ],
-} satisfies Meta<typeof YourComponent>;
-
-export default meta;
+});
 ```
 
 ```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 4"
@@ -287,12 +287,13 @@ export default {
 };
 ```
 
-```tsx filename="YourComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
+```tsx filename="YourComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+import type { Meta } from 'storybook-solidjs-vite';
 
 import { YourComponent } from './YourComponent';
 
-const meta = preview.meta({
+const meta = {
   component: YourComponent,
   decorators: [
     (Story) => (
@@ -302,15 +303,16 @@ const meta = preview.meta({
       </div>
     ),
   ],
-});
+} satisfies Meta<typeof YourComponent>;
+
+export default meta;
 ```
 
-```jsx filename="YourComponent.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
-
+```jsx filename="YourComponent.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import { YourComponent } from './YourComponent';
 
-const meta = preview.meta({
+export default {
   component: YourComponent,
   decorators: [
     (Story) => (
@@ -320,5 +322,5 @@ const meta = preview.meta({
       </div>
     ),
   ],
-});
+};
 ```

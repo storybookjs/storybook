@@ -100,43 +100,42 @@ export const LoggedIn = meta.story({
 });
 ```
 
-```js filename="Page.stories.js|jsx" renderer="solid" language="js"
+```js filename="Page.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
 import { Page } from './Page';
 
 //👇 Imports all Header stories
 import * as HeaderStories from './Header.stories';
 
-export default {
+const meta = preview.meta({
   component: Page,
-};
+});
 
-export const LoggedIn = {
+export const LoggedIn = meta.story({
   args: {
-    ...HeaderStories.LoggedIn.args,
+    ...HeaderStories.LoggedIn.input.args,
   },
-};
+});
 ```
 
-```tsx filename="Page.stories.ts|tsx" renderer="solid" language="ts"
-import type { Meta, StoryObj } from 'storybook-solidjs-vite';
+```ts filename="Page.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
 
 import { Page } from './Page';
 
 //👇 Imports all Header stories
 import * as HeaderStories from './Header.stories';
 
-const meta = {
+const meta = preview.meta({
   component: Page,
-} satisfies Meta<typeof Page>;
+});
 
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const LoggedIn: Story = {
+export const LoggedIn = meta.story({
   args: {
-    ...HeaderStories.LoggedIn.args,
+    ...HeaderStories.LoggedIn.input.args,
   },
-};
+});
 ```
 
 ```svelte filename="Page.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 4"
@@ -447,40 +446,43 @@ export const LoggedIn = {
 };
 ```
 
-```ts filename="Page.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
+```tsx filename="Page.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
 import { Page } from './Page';
 
 //👇 Imports all Header stories
 import * as HeaderStories from './Header.stories';
 
-const meta = preview.meta({
+const meta = {
   component: Page,
-});
+} satisfies Meta<typeof Page>;
 
-export const LoggedIn = meta.story({
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const LoggedIn: Story = {
   args: {
-    ...HeaderStories.LoggedIn.input.args,
+    ...HeaderStories.LoggedIn.args,
   },
-});
+};
 ```
 
-```js filename="Page.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
-
+```js filename="Page.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import { Page } from './Page';
 
 //👇 Imports all Header stories
 import * as HeaderStories from './Header.stories';
 
-const meta = preview.meta({
+export default {
   component: Page,
-});
+};
 
-export const LoggedIn = meta.story({
+export const LoggedIn = {
   args: {
-    ...HeaderStories.LoggedIn.input.args,
+    ...HeaderStories.LoggedIn.args,
   },
-});
+};
 ```

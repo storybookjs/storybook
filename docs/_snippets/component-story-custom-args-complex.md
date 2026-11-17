@@ -156,12 +156,12 @@ export const ExampleStory = meta.story({
 });
 ```
 
-```jsx filename="YourComponent.stories.js|jsx" renderer="solid" language="js"
-import { createSignal, createEffect } from 'solid-js';
+```jsx filename="YourComponent.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
 
 import { YourComponent } from './your-component';
 
-export default {
+const meta = preview.meta({
   component: YourComponent,
   //👇 Creates specific argTypes with options
   argTypes: {
@@ -173,38 +173,33 @@ export default {
       options: ['Another Item One', 'Another Item Two', 'Another Item Three'],
     },
   },
-};
+});
 
 const someFunction = (valuePropertyA, valuePropertyB) => {
   // Do some logic here
 };
 
-export const ExampleStory = {
+export const ExampleStory = meta.story({
   render: (args) => {
-    const [someFunctionResult, setSomeFunctionResult] = createSignal();
+    const { propertyA, propertyB } = args;
+    //👇 Assigns the function result to a variable
+    const someFunctionResult = someFunction(propertyA, propertyB);
 
-    //👇 Assigns the function result to a signal
-    createEffect(() => {
-      setSomeFunctionResult(someFunction(args.propertyA, args.propertyB));
-    });
-
-    return <YourComponent {...args} someProperty={someFunctionResult()} />;
+    return <YourComponent {...args} someProperty={someFunctionResult} />;
   },
   args: {
     propertyA: 'Item One',
     propertyB: 'Another Item One',
   },
-};
+});
 ```
 
-```tsx filename="YourComponent.stories.ts|tsx" renderer="solid" language="ts"
-import type { Meta, StoryObj } from 'storybook-solidjs-vite';
-
-import { createSignal, createEffect } from 'solid-js';
+```tsx filename="YourComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
 
 import { YourComponent } from './your-component';
 
-const meta = {
+const meta = preview.meta({
   component: YourComponent,
   //👇 Creates specific argTypes with options
   argTypes: {
@@ -216,31 +211,25 @@ const meta = {
       options: ['Another Item One', 'Another Item Two', 'Another Item Three'],
     },
   },
-} satisfies Meta<typeof YourComponent>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
+});
 
 const someFunction = (valuePropertyA, valuePropertyB) => {
   // Do some logic here
 };
 
-export const ExampleStory: Story = {
+export const ExampleStory = meta.story({
   render: (args) => {
-    const [someFunctionResult, setSomeFunctionResult] = createSignal();
+    const { propertyA, propertyB } = args;
+    //👇 Assigns the function result to a variable
+    const someFunctionResult = someFunction(propertyA, propertyB);
 
-    //👇 Assigns the function result to a signal
-    createEffect(() => {
-      setSomeFunctionResult(someFunction(args.propertyA, args.propertyB));
-    });
-
-    return <YourComponent {...args} someProperty={someFunctionResult()} />;
+    return <YourComponent {...args} someProperty={someFunctionResult} />;
   },
   args: {
     propertyA: 'Item One',
     propertyB: 'Another Item One',
   },
-};
+});
 ```
 
 ```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 4"
@@ -861,12 +850,15 @@ export const ExampleStory = {
 };
 ```
 
-```tsx filename="YourComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
+```tsx filename="YourComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
+
+import { createMemo } from 'solid-js';
 
 import { YourComponent } from './your-component';
 
-const meta = preview.meta({
+const meta = {
   component: YourComponent,
   //👇 Creates specific argTypes with options
   argTypes: {
@@ -878,33 +870,36 @@ const meta = preview.meta({
       options: ['Another Item One', 'Another Item Two', 'Another Item Three'],
     },
   },
-});
+} satisfies Meta<typeof YourComponent>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
 
 const someFunction = (valuePropertyA, valuePropertyB) => {
   // Do some logic here
 };
 
-export const ExampleStory = meta.story({
+export const ExampleStory: Story = {
   render: (args) => {
-    const { propertyA, propertyB } = args;
-    //👇 Assigns the function result to a variable
-    const someFunctionResult = someFunction(propertyA, propertyB);
+    //👇 Derives the function result from the args
+    const someFunctionResult = createMemo(() => someFunction(args.propertyA, args.propertyB));
 
-    return <YourComponent {...args} someProperty={someFunctionResult} />;
+    return <YourComponent {...args} someProperty={someFunctionResult()} />;
   },
   args: {
     propertyA: 'Item One',
     propertyB: 'Another Item One',
   },
-});
+};
 ```
 
-```jsx filename="YourComponent.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 4"
-import preview from '../.storybook/preview';
+```jsx filename="YourComponent.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+import { createMemo } from 'solid-js';
 
 import { YourComponent } from './your-component';
 
-const meta = preview.meta({
+export default {
   component: YourComponent,
   //👇 Creates specific argTypes with options
   argTypes: {
@@ -916,23 +911,22 @@ const meta = preview.meta({
       options: ['Another Item One', 'Another Item Two', 'Another Item Three'],
     },
   },
-});
+};
 
 const someFunction = (valuePropertyA, valuePropertyB) => {
   // Do some logic here
 };
 
-export const ExampleStory = meta.story({
+export const ExampleStory = {
   render: (args) => {
-    const { propertyA, propertyB } = args;
-    //👇 Assigns the function result to a variable
-    const someFunctionResult = someFunction(propertyA, propertyB);
+    //👇 Derives the function result from the args
+    const someFunctionResult = createMemo(() => someFunction(args.propertyA, args.propertyB));
 
-    return <YourComponent {...args} someProperty={someFunctionResult} />;
+    return <YourComponent {...args} someProperty={someFunctionResult()} />;
   },
   args: {
     propertyA: 'Item One',
     propertyB: 'Another Item One',
   },
-});
+};
 ```

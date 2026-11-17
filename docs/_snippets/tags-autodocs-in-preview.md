@@ -80,7 +80,6 @@ export default definePreview({
 ```ts filename=".storybook/preview.tsx" renderer="solid" language="ts" tabTitle="CSF 4"
 import { definePreview } from 'storybook-solidjs-vite';
 import addonDocs from '@storybook/addon-docs';
-import addonDocs from '@storybook/addon-docs';
 
 export default definePreview({
   addons: [addonDocs()],

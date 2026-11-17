@@ -120,60 +120,48 @@ export const OneItem = meta.story({
 });
 ```
 
-```jsx filename="List.stories.js|jsx" renderer="solid" language="js"
+```jsx filename="List.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
 import { List } from './List';
 import { ListItem } from './ListItem';
 
-export default {
-  /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'List',
+const meta = preview.meta({
   component: List,
-  subcomponents: { ListItem }, //👈 Adds the ListItem component as a subcomponent
-};
+  subcomponents: { ListItem }, // 👈 Adds the ListItem component as a subcomponent
+});
 
-export const Empty = {};
+export const Empty = meta.story();
 
-export const OneItem = {
+export const OneItem = meta.story({
   render: (args) => (
     <List {...args}>
       <ListItem />
     </List>
   ),
-};
+});
 ```
 
-```tsx filename="List.stories.ts|tsx" renderer="solid" language="ts"
-import type { Meta, StoryObj } from 'storybook-solidjs-vite';
+```tsx filename="List.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
 
 import { List } from './List';
 import { ListItem } from './ListItem';
 
-const meta = {
-  /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'List',
+const meta = preview.meta({
   component: List,
-  //👈 Adds the ListItem component as a subcomponent
-  subcomponents: { ListItem },
-} satisfies Meta<typeof List>;
+  subcomponents: { ListItem }, //👈 Adds the ListItem component as a subcomponent
+});
 
-export default meta;
-type Story = StoryObj<typeof meta>;
+export const Empty = meta.story();
 
-export const Empty: Story = {};
-
-export const OneItem: Story = {
+export const OneItem = meta.story({
   render: (args) => (
     <List {...args}>
       <ListItem />
     </List>
   ),
-};
+});
 ```
 
 ```svelte filename="List.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 4"
@@ -536,50 +524,60 @@ export const OneItem = {
 };
 ```
 
-```tsx filename="List.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 4"
-import * as React from 'react';
-
-import preview from '../.storybook/preview';
+```tsx filename="List.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
 import { List } from './List';
 import { ListItem } from './ListItem';
 
-const meta = preview.meta({
+const meta = {
+  /* 👇 The title prop is optional.
+   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * to learn how to generate automatic titles
+   */
+  title: 'List',
   component: List,
-  subcomponents: { ListItem }, //👈 Adds the ListItem component as a subcomponent
-});
+  //👈 Adds the ListItem component as a subcomponent
+  subcomponents: { ListItem },
+} satisfies Meta<typeof List>;
 
-export const Empty = meta.story();
+export default meta;
+type Story = StoryObj<typeof meta>;
 
-export const OneItem = meta.story({
+export const Empty: Story = {};
+
+export const OneItem: Story = {
   render: (args) => (
     <List {...args}>
       <ListItem />
     </List>
   ),
-});
+};
 ```
 
-```jsx filename="List.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 4"
-import * as React from 'react';
-
-import preview from '../.storybook/preview';
-
+```jsx filename="List.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import { List } from './List';
 import { ListItem } from './ListItem';
 
-const meta = preview.meta({
+export default {
+  /* 👇 The title prop is optional.
+   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * to learn how to generate automatic titles
+   */
+  title: 'List',
   component: List,
-  subcomponents: { ListItem }, // 👈 Adds the ListItem component as a subcomponent
-});
+  subcomponents: { ListItem }, //👈 Adds the ListItem component as a subcomponent
+};
 
-export const Empty = meta.story();
+export const Empty = {};
 
-export const OneItem = meta.story({
+export const OneItem = {
   render: (args) => (
     <List {...args}>
       <ListItem />
     </List>
   ),
-});
+};
 ```

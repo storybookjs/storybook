@@ -200,7 +200,7 @@ export function DocumentScreen() {
       <Match when={status() === 'error'}>
         <p>There was an error fetching the data!</p>
       </Match>
-      <Match when={user} keyed>
+      <Match when={status() === 'success'}>
         <PageLayout user={data().user}>
           <DocumentHeader document={data().document} />
           <DocumentList documents={data().subdocuments} />
@@ -468,9 +468,7 @@ customElements.define('demo-document-screen', DocumentScreen);
 ```
 
 ```ts filename="YourPage.tsx" renderer="solid" language="ts"
-import { createSignal } from 'solid-js';
-
-import React, { useState, useEffect } from 'react';
+import { createSignal, Match, Switch } from 'solid-js';
 
 import { PageLayout } from './PageLayout';
 import { DocumentHeader } from './DocumentHeader';
@@ -478,26 +476,25 @@ import { DocumentList } from './DocumentList';
 
 // Example hook to retrieve data from an external endpoint
 function useFetchData() {
-  const [status, setStatus] = useState<string>('idle');
-  const [data, setData] = useState<any[]>([]);
-  useEffect(() => {
-    setStatus('loading');
-    fetch('https://your-restful-endpoint')
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error(res.statusText);
-        }
-        return res;
-      })
-      .then((res) => res.json())
-      .then((data) => {
-        setStatus('success');
-        setData(data);
-      })
-      .catch(() => {
-        setStatus('error');
-      });
-  }, []);
+  const [status, setStatus] = createSignal<string>('idle');
+  const [data, setData] = createSignal<any>({});
+
+  setStatus('loading');
+  fetch('https://your-restful-endpoint')
+    .then((res) => {
+      if (!res.ok) {
+        throw new Error(res.statusText);
+      }
+      return res;
+    })
+    .then((res) => res.json())
+    .then((data) => {
+      setStatus('success');
+      setData(data);
+    })
+    .catch(() => {
+      setStatus('error');
+    });
 
   return {
     status,
@@ -508,19 +505,21 @@ function useFetchData() {
 export function DocumentScreen() {
   const { status, data } = useFetchData();
 
-  const { user, document, subdocuments } = data;
-
-  if (status === 'loading') {
-    return <p>Loading...</p>;
-  }
-  if (status === 'error') {
-    return <p>There was an error fetching the data!</p>;
-  }
   return (
-    <PageLayout user={user}>
-      <DocumentHeader document={document} />
-      <DocumentList documents={subdocuments} />
-    </PageLayout>
+    <Switch>
+      <Match when={status() === 'loading'}>
+        <p>Loading...</p>
+      </Match>
+      <Match when={status() === 'error'}>
+        <p>There was an error fetching the data!</p>
+      </Match>
+      <Match when={status() === 'success'}>
+        <PageLayout user={data().user}>
+          <DocumentHeader document={data().document} />
+          <DocumentList documents={data().subdocuments} />
+        </PageLayout>
+      </Match>
+    </Switch>
   );
 }
 ```

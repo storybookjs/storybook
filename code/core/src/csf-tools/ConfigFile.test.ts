@@ -2133,6 +2133,119 @@ describe('ConfigFile', () => {
     });
   });
 
+  describe('getKeys', () => {
+    const getKeys = (source: string, path: string[]) => loadConfig(source).parse().getKeys(path);
+    const keys = (...names: string[]) => ({ keys: names, computed: [], external: false });
+
+    it.each([
+      ['an object literal', 'export default { globalTypes: { a: 1, b: 2 } };', ['a', 'b']],
+      [
+        'computed keys named through constants, template literals and bigints',
+        "const key = 'a';\nexport default { globalTypes: { [key]: 1, [`b`]: 2, 3n: 3 } };",
+        ['a', 'b', '3'],
+      ],
+    ])('lists %s', (_case, source, names) => {
+      expect(getKeys(source, ['globalTypes'])).toEqual(keys(...names));
+    });
+
+    it.each([
+      [
+        'a quoted member of a local object',
+        "const shared = { 'd-e': { y: 1 } };\nexport const globalTypes = { d: shared['d-e'] };",
+      ],
+    ])('reads the value %s defines', (_case, source) => {
+      expect(getKeys(source, ['globalTypes', 'd'])).toEqual(keys('y'));
+    });
+
+    it.each([
+      [
+        'an imported spread',
+        "import shared from './shared';\nexport const globalTypes = { a: 1, ...shared };",
+      ],
+      [
+        'a spread of the object itself',
+        'var types = { ...types, a: 1 };\nexport const globalTypes = types;',
+      ],
+    ])('marks %s as external', (_case, source) => {
+      expect(getKeys(source, ['globalTypes'])).toEqual({
+        keys: ['a'],
+        computed: [],
+        external: true,
+      });
+    });
+
+    it.each([
+      [
+        'an object literal',
+        'export const globalTypes = { [getName()]: { a: 1 }, [name]: value };',
+        [keys('a'), undefined],
+      ],
+      [
+        'the object itself',
+        'var types = { [getName()]: types };\nexport const globalTypes = types;',
+        [undefined],
+      ],
+    ])('holds what a member with a key it cannot name holds in %s', (_case, source, computed) => {
+      expect(getKeys(source, ['globalTypes'])).toEqual({ keys: [], computed, external: false });
+    });
+
+    it.each([
+      [
+        'a CommonJS config held by an alias',
+        'const config = { globalTypes: { a: 1 } };\nconst preview = config;\nmodule.exports = preview;',
+      ],
+      [
+        'a named export after a default export that sets the field to null',
+        'export default { globalTypes: null };\nexport const globalTypes = { a: 1 };',
+      ],
+    ])('reads the config field of %s', (_case, source) => {
+      expect(getKeys(source, ['globalTypes'])).toEqual(keys('a'));
+    });
+
+    it.each([
+      [
+        'a key no member defines',
+        'export default { globalTypes: { a: 1 } };',
+        ['globalTypes', 'b'],
+      ],
+      [
+        'an imported value',
+        "import types from './types';\nexport const globalTypes = types;",
+        ['globalTypes'],
+      ],
+      [
+        'a factory config that refers to itself',
+        'const preview = definePreview(preview);\nexport default preview;',
+        ['globalTypes'],
+      ],
+    ])('returns undefined for %s', (_case, source, path) => {
+      expect(getKeys(source, path)).toBeUndefined();
+    });
+
+    it('reads an object that every level spreads twice once', () => {
+      const levels = Array.from(
+        { length: 40 },
+        (_, level) => `const l${level + 1} = { ...l${level}, ...l${level} };`
+      );
+      const source = ['const l0 = { a: 1 };', ...levels, 'export const globalTypes = l40;'].join(
+        '\n'
+      );
+
+      expect(getKeys(source, ['globalTypes'])).toEqual(keys('a'));
+    });
+
+    it('neither edits nor reports', () => {
+      const config = loadConfig(
+        "import shared from './shared';\nexport default { ...shared };"
+      ).parse();
+
+      config.getKeys(['globalTypes', 'direction']);
+
+      expect(config.changed).toBe(false);
+      expect(config.mutationDiagnostics).toEqual([]);
+    });
+  });
+
   describe('inspectList', () => {
     it.each([
       ['an array literal', "export default { addons: ['a'] };", ['addons'], "['a']"],

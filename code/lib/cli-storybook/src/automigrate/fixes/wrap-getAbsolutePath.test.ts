@@ -294,6 +294,18 @@ describe('wrapGetAbsolutePath', () => {
       expect(writeFile).not.toHaveBeenCalled();
     });
 
+    it('does not rewrite a framework constant that another export also uses', async () => {
+      const writeFile = vi.mocked((await import('node:fs/promises')).writeFile);
+
+      await runFix(wrapGetAbsolutePath, {
+        mainConfigPath: require.resolve('./__test__/main-config-with-shared-framework-constant.js'),
+        storiesPaths: [],
+        result: {},
+      } as unknown as Omit<RunOptions<object>, 'files'>);
+
+      expect(writeFile).not.toHaveBeenCalled();
+    });
+
     it('does not re-wrap relative entries in a config that already declares a wrapper', async () => {
       const writeFile = vi.mocked((await import('node:fs/promises')).writeFile);
 

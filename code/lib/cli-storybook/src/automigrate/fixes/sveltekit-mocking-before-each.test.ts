@@ -612,6 +612,56 @@ describe('sveltekit-mocking-before-each', () => {
   });
 
   describe('preview', () => {
+    it('leaves a typed preview factory behind an alias unchanged and reports it', async () => {
+      const source = dedent`
+        import { definePreview } from '@storybook/sveltekit';
+
+        const config = definePreview({
+          parameters: {
+            sveltekit_experimental: { state: { page: { status: 418 } } },
+          },
+        } satisfies Parameters<typeof definePreview>[0]);
+
+        const preview = config;
+        export default preview;
+      `;
+      const { failures, preview } = await migrate({ preview: source });
+
+      expect(failures).toHaveLength(1);
+      expect(failures[0]).toContain('Migrate it by hand:');
+      expect(preview).toBe(source);
+    });
+
+    it('adds beforeEach inside a typed preview factory exported through a variable', async () => {
+      const { failures, preview } = await migrate({
+        preview: dedent`
+          import { definePreview } from '@storybook/sveltekit';
+
+          const preview = definePreview({
+            parameters: {
+              sveltekit_experimental: { state: { page: { status: 418 } } },
+            },
+          } satisfies Parameters<typeof definePreview>[0]);
+
+          export default preview;
+        `,
+      });
+
+      expect(failures).toEqual([]);
+      expect(preview).toMatchInlineSnapshot(`
+        "import { definePreview } from '@storybook/sveltekit';
+        import { page } from '$app/state';
+
+        const preview = definePreview({
+          beforeEach() {
+            page.status = 418;
+          },
+        } satisfies Parameters<typeof definePreview>[0]);
+
+        export default preview;"
+      `);
+    });
+
     it('migrates a preview object, and one made of named exports', async () => {
       const objectPreview = await migrate({
         preview: dedent`

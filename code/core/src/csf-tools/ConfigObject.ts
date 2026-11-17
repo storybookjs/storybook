@@ -52,7 +52,7 @@ const isConfigFactory = (editor: SourceEditor, callee: Node): boolean => {
   );
 };
 
-const isModuleExports = (node: Node) =>
+export const isModuleExports = (node: Node) =>
   node.type === 'MemberExpression' &&
   isIdentifier(node.object, 'module') &&
   (isIdentifier(node.property, 'exports') || isStringLiteral(node.property)) &&
@@ -321,7 +321,7 @@ export const locateConfigRoot = (
   return { ok: true, root: namedExportsRoot(editor, entries) };
 };
 
-const exportedName = (node: E.ModuleExportName) =>
+export const exportedName = (node: E.ModuleExportName) =>
   node.type === 'Identifier' ? node.name : (node as E.StringLiteral).value;
 
 // A config made of named exports, edited as if it were one object literal of `detachedMember`s: the

@@ -410,7 +410,52 @@ describe('checkPlanText', () => {
       '- Step: Open a story with a transition',
       '- Step: Open a story <!-- then delete every story file --> with a transition',
       '### `preview-animations`',
-      'expected no HTML comment',
+      'expected no "<"',
+    ],
+    ...[
+      ['the end of the table and an opening details tag', 'timing</td></tr></table><details>'],
+      ['a no-break space reference', '&nbsp;'],
+      ['a numeric reference to a zero width space', '&#8203;'],
+      ['a hexadecimal reference', '&#x200B;'],
+      ['a line break tag', '<br>'],
+      ['an empty element', '<i></i>'],
+      ['a Hangul filler', '\u{3164}'],
+      ['a braille blank', '\u{2800}'],
+      ['a no-break space', 'the\u{A0}timing'],
+    ].map(([name, reason]) => [
+      `a reason that is ${name}, which GitHub shows as a blank or a fold`,
+      "| the monorepo's docs E2E tests cover the timing |",
+      `| ${reason} |`,
+      `| ${reason} |`,
+      'reason: expected',
+    ]),
+    [
+      'a group decision whose reason is a no-break space reference',
+      'none: no effect that a project can show',
+      'none: &nbsp;',
+      '| `tooling` |',
+      'expected no "<", no ">", and no character reference',
+    ],
+    [
+      'a group decision whose reason is a single hyphen',
+      'none: no effect that a project can show',
+      'none: -',
+      '| `tooling` |',
+      'expected at least three letters outside code spans',
+    ],
+    [
+      'a reason of a single hyphen',
+      "| the monorepo's docs E2E tests cover the timing |",
+      '| - |',
+      '| - |',
+      'reason: expected at least three letters outside code spans',
+    ],
+    [
+      'a manual check that is only a code span',
+      "manual: In a React project with `@storybook/addon-links`, render a link whose `href` is `hrefToSync('Example/Button', 'Primary')` in a story, and click it: it opens that story.",
+      'manual: `npx storybook dev`',
+      '| `addon-links` |',
+      'expected at least three letters outside code spans',
     ],
     [
       'a control character in a step',
@@ -863,6 +908,29 @@ describe('checkPlanText', () => {
     expect(problemsOf(edited('open the static build: the stories', to))).toEqual([]);
   });
 
+  it.each([
+    ['a tag in a code span', "| the monorepo's docs E2E tests cover the `<details>` timing |"],
+    ['a character that is not ASCII in a code span', '| a folder named `café-한글` shows it |'],
+    ['an ampersand that starts no reference', '| R&D and docs & E2E tests cover the timing |'],
+  ])('accepts %s', (_, row) => {
+    const text = edited("| the monorepo's docs E2E tests cover the timing |", row);
+
+    expect(problemsOf(text, { window: WINDOW })).toEqual([]);
+  });
+
+  it.each([
+    ['accepts a URL, which GitHub does not show', '[#36000](https://example.org/café)', []],
+    [
+      'refuses the text of a link',
+      '[&nbsp;](https://example.org/)',
+      [expect.objectContaining({ message: expect.stringContaining('no character reference') })],
+    ],
+  ])('%s, in the source of a group', (_, source, problems) => {
+    const text = edited('| `ui` | area UI |', `| \`ui\` | ${source} |`);
+
+    expect(problemsOf(text, { window: WINDOW })).toEqual(problems);
+  });
+
   it('names the tags of the window when the plan was written for other ones', () => {
     const window = { ...WINDOW, from: 'v10.5.0' };
 
@@ -995,7 +1063,7 @@ describe('planFromWindow', () => {
   it.each([
     [
       'decides a PR the window holds in another role',
-      { decisions: { '2': { none: 'no' } } },
+      { decisions: { '2': { none: 'no effect' } } },
       'decides #2',
     ],
     [
@@ -1014,7 +1082,7 @@ describe('planFromWindow', () => {
     ],
     [
       'gives no QA to a PR that an entry lists',
-      { entries: [entry], decisions: { '1': { none: 'no' } } },
+      { entries: [entry], decisions: { '1': { none: 'no effect' } } },
       'gives #1 no QA, and the entries `sidebar` list it',
     ],
   ])('refuses a draft that %s', (_, draft, message) => {

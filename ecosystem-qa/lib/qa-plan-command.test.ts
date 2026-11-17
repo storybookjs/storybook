@@ -14,9 +14,10 @@ const qaPlan = (args: string[], input?: Buffer) =>
     encoding: 'utf8',
   });
 
+// The byte goes into a code span, the one place where the plan takes a character that is not ASCII.
 const withByte = (byte: number) => {
-  const at = FIXTURE.indexOf('- Step: Open a story');
-  return Buffer.concat([FIXTURE.subarray(0, at + 8), Buffer.of(byte), FIXTURE.subarray(at + 8)]);
+  const at = FIXTURE.indexOf('sets `storySort`') + 'sets `story'.length;
+  return Buffer.concat([FIXTURE.subarray(0, at), Buffer.of(byte), FIXTURE.subarray(at)]);
 };
 
 describe('qa-plan.ts check', () => {

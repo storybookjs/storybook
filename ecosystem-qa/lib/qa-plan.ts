@@ -6,8 +6,13 @@ import { SEMVER } from './cycle.ts';
 import { CatalogEntry, CheckId } from './schema.ts';
 import type { QaStatus, Window, WindowPr } from './window.ts';
 
-// GitHub shows neither an HTML comment nor a control or format character, so each would hide text
-// from the reviewer that the agent still reads.
+const outsideCodeSpans = (text: string) => text.replace(/(`+)[^]*?\1/g, '');
+const prose = (text: string) => outsideCodeSpans(text).replace(/\]\([^()\s]*\)/g, ']');
+
+// GitHub renders a plan's text as Markdown, where a tag can fold every row after it into a closed
+// block, and a character reference, a blank or filler character, or an empty tag shows a cell as
+// empty. Outside code spans and link URLs the text is printable ASCII without them; a control or
+// format character is invisible even inside a code span.
 const Text = z
   .string()
   .regex(/^\S(?:[^\n\r]*\S)?$/, 'expected one line of text')
@@ -15,7 +20,18 @@ const Text = z
     /^[^\p{Cc}\p{Cf}\p{Zl}\p{Zp}]*$/u,
     'expected no control character, invisible format character, or line separator'
   )
-  .refine((text) => !text.includes('<!--'), 'expected no HTML comment');
+  .refine(
+    (text) => /^[ -~]*$/.test(prose(text)),
+    'expected printable ASCII outside code spans and link URLs'
+  )
+  .refine(
+    (text) => !/[<>]|&(?:#\d+|#x[\da-f]+|[a-z][a-z\d]*);/i.test(prose(text)),
+    'expected no "<", no ">", and no character reference such as "&nbsp;" outside code spans'
+  );
+const Reason = Text.refine(
+  (text) => (prose(text).match(/[a-z]/gi)?.length ?? 0) >= 3,
+  'expected at least three letters outside code spans'
+);
 const RepoDir = Text.refine(
   (dir) => !dir.startsWith('/') && !dir.includes('\\') && !dir.split('/').includes('..'),
   'expected a relative path inside the repository'
@@ -33,13 +49,13 @@ const PrNumber = z.int().positive();
 
 // A decision cell of a group holds a manual check and its reason as `manual: <check> Why: <why>`.
 const WHY = ' Why: ';
-const ManualCheck = Text.refine((check) => !check.includes(WHY), `expected no "${WHY.trim()}"`);
+const ManualCheck = Reason.refine((check) => !check.includes(WHY), `expected no "${WHY.trim()}"`);
 
 export const Decision = z
   .union([
     z.strictObject({ entries: z.array(Slug).min(1) }),
-    z.strictObject({ manual: ManualCheck, why: Text }),
-    z.strictObject({ none: Text }),
+    z.strictObject({ manual: ManualCheck, why: Reason }),
+    z.strictObject({ none: Reason }),
   ])
   .nullable();
 export type Decision = z.infer<typeof Decision>;
@@ -63,7 +79,7 @@ export const PlanEntry = z.strictObject({
   prs: SomePrs,
   batch: z.int().min(1),
   repos: z
-    .array(z.strictObject({ id: RepoId, reason: Text }))
+    .array(z.strictObject({ id: RepoId, reason: Reason }))
     .min(1)
     .refine((repos) => unique(repos.map((repo) => repo.id)), 'a repo is listed twice'),
   steps: z.array(Text).min(1),
@@ -82,17 +98,17 @@ export const DiscoveredRepo = z.strictObject({
   pushedAt: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/, 'expected a time like 2026-11-16T14:42:00Z'),
-  reason: Text,
+  reason: Reason,
 });
 export type DiscoveredRepo = z.infer<typeof DiscoveredRepo>;
 
 // The row without a check holds the PRs that no entry tests and the draft has not decided yet.
 const ManualRow = z.union([
-  z.strictObject({ check: ManualCheck, why: Text, prs: SomePrs }),
+  z.strictObject({ check: ManualCheck, why: Reason, prs: SomePrs }),
   z.strictObject({ check: z.null(), why: z.null(), prs: SomePrs }),
 ]);
 type ManualRow = z.infer<typeof ManualRow>;
-const NoQaRow = z.strictObject({ reason: Text, prs: SomePrs });
+const NoQaRow = z.strictObject({ reason: Reason, prs: SomePrs });
 type NoQaRow = z.infer<typeof NoQaRow>;
 
 const GroupOfDraft = z.strictObject({ slug: Slug, source: Text, decision: Decision });
@@ -891,7 +907,6 @@ export const manualChecksOf = (plan: Plan, at: PlanLayout): ManualCheckRow[] => 
 // The manual checks go into an issue, where a mention notifies a person and a reference posts on a
 // PR, and a check that points to a PR cannot be followed without that PR open.
 const NOTIFIES = /(?:^|[^\w`])@[a-z\d]|#\d/i;
-const outsideCodeSpans = (text: string) => text.replace(/(`+)[^]*?\1/g, '');
 
 const manualChecksStayInert: Rule = ({ plan, at }) =>
   manualChecksOf(plan, at).flatMap(({ manual, why, line }) =>

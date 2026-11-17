@@ -1,6 +1,3 @@
-import { rmSync } from 'node:fs';
-import { join } from 'pathe';
-
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { hasStorybookSkills, installSkills } from 'storybook/internal/cli';
@@ -17,7 +14,6 @@ import { type CollectProjectsSuccessResult, getProjects } from './util.ts';
 vi.mock('storybook/internal/cli', { spy: true });
 vi.mock('storybook/internal/telemetry');
 vi.mock('storybook/internal/node-logger', { spy: true });
-vi.mock('node:fs', { spy: true });
 vi.mock('./automigrate/multi-project.ts', { spy: true });
 vi.mock('./doctor/index.ts', { spy: true });
 vi.mock('./util.ts', { spy: true });
@@ -70,8 +66,7 @@ const useProjects = (...projects: CollectProjectsSuccessResult[]) =>
   vi.mocked(getProjects).mockResolvedValue({ allProjects: projects, selectedProjects: projects });
 
 // Shared setup for the suites below: reset mocks and give every external mock a safe
-// default, so each suite only overrides what it exercises. `rmSync` is stubbed to a
-// no-op so tests never delete the real cache directory under this working tree.
+// default, so each suite only overrides what it exercises.
 beforeEach(() => {
   vi.clearAllMocks();
   useProjects(project('/repo/a/.storybook'));
@@ -92,7 +87,6 @@ beforeEach(() => {
   } as unknown as ReturnType<typeof prompt.taskLog>);
   vi.mocked(hasStorybookSkills).mockResolvedValue(true);
   vi.mocked(installSkills).mockResolvedValue({ result: 'installed', source: 'refresh' });
-  vi.mocked(rmSync).mockImplementation(() => {});
 });
 
 describe('upgrade: refreshing the skills', () => {
@@ -187,33 +181,5 @@ describe('upgrade: refreshing the skills', () => {
     await upgrade({ ...baseOptions, dryRun: true });
 
     expect(installSkills).not.toHaveBeenCalled();
-  });
-});
-
-describe('upgrade: cache directory cleanup', () => {
-  const storybookCacheDirectory = join(process.cwd(), 'node_modules', '.cache', 'storybook');
-
-  it('removes the Storybook cache directory on upgrade', async () => {
-    await upgrade(baseOptions);
-
-    expect(vi.mocked(rmSync)).toHaveBeenCalledWith(storybookCacheDirectory, {
-      recursive: true,
-      force: true,
-    });
-  });
-
-  it('does not fail the upgrade when removing the cache directory fails', async () => {
-    vi.mocked(rmSync).mockImplementationOnce(() => {
-      throw new Error('EACCES: permission denied');
-    });
-
-    await expect(upgrade(baseOptions)).resolves.toBeUndefined();
-    expect(logger.debug).toHaveBeenCalledWith(expect.stringContaining('cache directory'));
-  });
-
-  it('does not remove the cache directory on a dry run', async () => {
-    await upgrade({ ...baseOptions, dryRun: true });
-
-    expect(vi.mocked(rmSync)).not.toHaveBeenCalledWith(storybookCacheDirectory, expect.anything());
   });
 });

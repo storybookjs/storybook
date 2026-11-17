@@ -354,6 +354,20 @@ async function sendMultiUpgradeTelemetry(options: MultiUpgradeTelemetryOptions) 
   }
 }
 
+/**
+ * Deletes the shared Storybook cache directory at `node_modules/.cache/storybook`.
+ * Best-effort: a removal failure is logged and swallowed so it can never fail the
+ * upgrade. Callers must skip this on dry runs.
+ */
+function removeStorybookCacheDirectory(): void {
+  const storybookCacheDirectory = join(process.cwd(), 'node_modules', '.cache', 'storybook');
+  try {
+    rmSync(storybookCacheDirectory, { recursive: true, force: true });
+  } catch (error) {
+    logger.debug(`Failed to remove Storybook cache directory: ${String(error)}`);
+  }
+}
+
 export async function upgrade(options: UpgradeOptions): Promise<void> {
   if (options.features && options.skipAutomigrations) {
     logger.error(
@@ -426,21 +440,13 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
       }
     });
 
-    // Delete the Storybook cache directory on every upgrade, regardless of the version
-    // transition: stale cache state has caused errors on restart after upgrading, and
-    // nothing in it needs to survive an upgrade. Best-effort — a failure must not fail the
-    // upgrade, and a dry run must not touch the filesystem.
     if (!options.dryRun) {
-      const storybookCacheDirectory = join(process.cwd(), 'node_modules', '.cache', 'storybook');
-      try {
-        rmSync(storybookCacheDirectory, { recursive: true, force: true });
-      } catch (error) {
-        logger.debug(`Failed to remove Storybook cache directory: ${String(error)}`);
-      }
-    }
+      // Delete the Storybook cache directory on every upgrade, regardless of the version
+      // transition: stale cache state has caused errors on restart after upgrading, and
+      // nothing in it needs to survive an upgrade.
+      removeStorybookCacheDirectory();
 
-    // Update dependencies in package.jsons for all projects
-    if (!options.dryRun) {
+      // Update dependencies in package.jsons for all projects
       for (const project of storybookProjects) {
         try {
           await project.packageManager.precheckStorybookPackageInstall({

@@ -19,6 +19,7 @@ const STARTED = /^Batch (\d+) is started\.$/;
 const RUN_LEDGER = /^<!-- sb-qa-run (\S+) usd=(\d+(?:\.\d+)?) -->$/;
 const TOTAL_LINE = /^<!-- sb-qa-total usd=(\d+(?:\.\d+)?) runs=(\d+) -->$/;
 const RESUME_LINE = /^To start batch (\d+) by hand /;
+const SHORT_SPEND = /^Spent on this plan: at least /m;
 
 export type TrackedPlan = { file: string; hash: string; line: string; version: string };
 
@@ -582,7 +583,9 @@ export const trackBatch = <Comment extends Written>({
   const next = nextStep(step);
   const context = {
     spend: step.spend,
-    short: shortfall(step) !== undefined,
+    short:
+      shortfall(step) !== undefined ||
+      comments.some((comment) => byHarness(comment.author) && SHORT_SPEND.test(comment.body)),
     capUsd,
     expiresOn,
     carried: carriedRuns(existing, report),

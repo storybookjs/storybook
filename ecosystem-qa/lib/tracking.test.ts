@@ -847,6 +847,18 @@ describe('trackBatch', () => {
     );
   });
 
+  it('keeps saying "at least" when a batch whose spend may be short is reported again, for example when it is filed', () => {
+    const stopped = comment(track(batchTwo(1, { attempt: 2 }), [batchOne], 250).body);
+    const filed = track(batchTwo(1, { attempt: 2, filing: 'filed' }), [batchOne, stopped], 250, {
+      chain: false,
+    });
+
+    expect(filed.existing).toBe(stopped);
+    expect(filed.body).toContain(
+      'Spent on this plan: at least $41.00 for 2 runs, of a cap of $250.00.\n\nNext: Batch 3 was not started, because attempt 2 of workflow run 43900000002 is its first report here, so what its earlier attempts spent is unknown.'
+    );
+  });
+
   it('stops the chain when a comment is gone that a later comment counted, also when its batch has another', () => {
     const again = batchReport(
       input({

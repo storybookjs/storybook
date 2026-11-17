@@ -2,9 +2,9 @@ import * as fs from 'node:fs/promises';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import ts from 'typescript';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { createDocinfoCache } from '../../../../renderers/svelte/src/docgen/component-docgen/analyze-component.ts';
 import { buildDocgenPayload } from '../../../../renderers/svelte/src/docgen/component-docgen/build-docgen.ts';
 import { buildStoryDocsPayload } from '../../../../renderers/svelte/src/docgen/story-docs/build-story-docs.ts';
 import { createIndexer } from '../../../../renderers/svelte/src/svelte-csf/indexer/index.ts';
@@ -13,11 +13,16 @@ import {
   generateDocgen,
 } from '../../../../renderers/svelte/src/docgen/component-docgen/svelte2tsx/generate-docgen.ts';
 
+vi.mock('node:fs/promises', { spy: true });
+
 const fixtureDir = fileURLToPath(
   new URL('./story-docs/__fixtures__/legacy-metadata/', import.meta.url)
 );
 
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+  vi.mocked(fs.readFile).mockReset();
+  vi.restoreAllMocks();
+});
 
 const payload = (storyFile = 'input.stories.ts') =>
   buildDocgenPayload(
@@ -32,7 +37,7 @@ const payload = (storyFile = 'input.stories.ts') =>
         importPath: join(fixtureDir, storyFile),
       },
     },
-    { cache: createDocgenCache() }
+    { cache: createDocinfoCache() }
   );
 
 describe('server metadata for legacy components', () => {
@@ -90,8 +95,8 @@ it('keeps the native attribute filter for legacy engine consumers', () => {
 
 it('returns an extraction error for malformed templates', async () => {
   const broken = await fs.readFile(join(fixtureDir, 'Broken.svelte.txt'), 'utf8');
-  const readSource = ts.sys.readFile;
-  vi.spyOn(ts.sys, 'readFile').mockImplementation((filename, encoding) =>
+  const { readFile: readSource } = await vi.importActual<typeof fs>('node:fs/promises');
+  vi.spyOn(fs, 'readFile').mockImplementation(async (filename, encoding) =>
     filename === join(fixtureDir, 'Metadata.svelte') ? broken : readSource(filename, encoding)
   );
   const result = await payload();

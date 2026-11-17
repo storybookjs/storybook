@@ -11138,6 +11138,7 @@ __metadata:
     rollup: "npm:^4.43.0"
     svelte: "npm:^5.39.5"
     svelte-check: "npm:^4.4.8"
+    svelte-docinfo: "npm:0.13.0"
     svelte2tsx: "npm:^0.7.55"
     sveltedoc-parser: "npm:^4.2.1"
     ts-dedent: "npm:^2.2.0"
@@ -34226,6 +34227,29 @@ __metadata:
   bin:
     svelte-check: bin/svelte-check
   checksum: 10c0/1292b545925e187dd76a4c4eef049a2900780059060e8d66c8d9d4833d0c47ddde2c2f38bad13078bcee7d518781f35b6be2cedef4d077903fa5f01473af1e5a
+  languageName: node
+  linkType: hard
+
+"svelte-docinfo@npm:0.13.0":
+  version: 0.13.0
+  resolution: "svelte-docinfo@npm:0.13.0"
+  dependencies:
+    "@jridgewell/trace-mapping": "npm:^0.3.25"
+    commander: "npm:^14.0.3"
+    picomatch: "npm:^4.0.4"
+    tinyglobby: "npm:^0.2.15"
+    valibot: "npm:^1.4.0"
+  peerDependencies:
+    svelte: ^5.0.0
+    svelte2tsx: ^0.7.30
+    typescript: ^5.9.3 || ^6
+    vite: ^6 || ^7 || ^8
+  peerDependenciesMeta:
+    vite:
+      optional: true
+  bin:
+    svelte-docinfo: dist/main.js
+  checksum: 10c0/ac7d39a6cc56730a016f4f503a3a8f9e8cc38c012e993b40b2e8c7f72e243ed6e999e536967cb00ace1c578ee61795e5872c356c629e8b482dbed0af1f539921
   languageName: node
   linkType: hard
 

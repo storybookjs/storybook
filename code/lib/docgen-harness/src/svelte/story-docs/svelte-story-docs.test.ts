@@ -10,7 +10,7 @@ import type { IndexEntry } from 'storybook/internal/types';
 
 import { buildStoryDocsPayload } from '../../../../../renderers/svelte/src/docgen/story-docs/build-story-docs.ts';
 import { buildDocgenPayload } from '../../../../../renderers/svelte/src/docgen/component-docgen/build-docgen.ts';
-import { createDocgenCache } from '../../../../../renderers/svelte/src/docgen/component-docgen/svelte2tsx/generate-docgen.ts';
+import { createDocinfoCache } from '../../../../../renderers/svelte/src/docgen/component-docgen/analyze-component.ts';
 import { createIndexer } from '../../../../../renderers/svelte/src/svelte-csf/indexer/index.ts';
 import { expectCurrentOrBetter } from '../../compare/expect-current-or-better.ts';
 import {
@@ -21,7 +21,7 @@ import {
 
 const fixturesDir = join(dirname(fileURLToPath(import.meta.url)), '../__testfixtures__');
 const indexer = createIndexer();
-const docgenContext = { cache: createDocgenCache() };
+const docgenContext = { cache: createDocinfoCache() };
 const DECLARED_OMISSIONS: Record<string, readonly string[]> = {
   'runes-basic-props/Default': ['count', 'primary'],
   'runes-callbacks/Default': ['onclick', 'onchange'],
@@ -225,7 +225,7 @@ it('extracts props for a SvelteKit component resolved through jsconfig paths', a
         ),
       },
     },
-    { cache: createDocgenCache() }
+    { cache: createDocinfoCache() }
   );
   expect(payload?.error).toBeUndefined();
   expect(payload?.argTypes?.label).toMatchObject({ name: 'label', type: { name: 'string' } });

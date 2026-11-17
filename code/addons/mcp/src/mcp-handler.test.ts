@@ -320,8 +320,10 @@ describe('mcpServerHandler', () => {
       id: 1,
       result: {
         protocolVersion: '2025-06-18',
+        // No list-changed notifications: a client that waits for them never gets an answer.
         capabilities: {
-          tools: { listChanged: true },
+          tools: { listChanged: false },
+          resources: { listChanged: false },
         },
         serverInfo: {
           name: '@storybook/addon-mcp',

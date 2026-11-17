@@ -25,9 +25,17 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
           SHA: ${{ github.event.sha }}
+          STATUS_ID: ${{ github.event.id }}
           CONTEXT: ${{ github.event.context }}
           TARGET_URL: ${{ github.event.target_url }}
         run: |
+          # A restarted run may have reported this context since; never overwrite its newer status.
+          latest=$(gh api --paginate "repos/$REPO/commits/$SHA/statuses?per_page=100" \
+            --jq '.[] | select(.context == env.CONTEXT) | .id' | head -n 1)
+          if [ "$latest" != "$STATUS_ID" ]; then
+            echo "A newer status replaced the cancellation; leaving it alone."
+            exit 0
+          fi
           gh api --method POST "repos/$REPO/statuses/$SHA" \
             -f state=pending \
             -f context="$CONTEXT" \

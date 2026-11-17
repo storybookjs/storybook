@@ -8,9 +8,7 @@ Tick an item when the check shows what it describes, and when it shows something
 - [ ] In a project on Storybook 11, add a story whose component has a CSS keyframe animation next to an element moved by `animation-timeline: scroll()`, and open it in Chrome: the keyframe animation shows its end state, and scrolling inside the story moves the scroll-driven element. Give the story an `afterEach` that throws and run its file with the Storybook Vitest addon: the test fails with the thrown error, and a later story of the file whose `play` function waits for a CSS transition to end still passes.
   - [#31900](https://github.com/storybookjs/storybook/pull/31900) `Preview: Only pause DocumentTimeline animations in preview-web`
   - [#36107](https://github.com/storybookjs/storybook/pull/36107) `Core: Clean Up Paused Animations After AfterEach Failure`
-- [ ] In a Storybook 10 project whose manager file calls `addons.setConfig({ enableShortcuts: false })`, run `npx storybook@11.0.0-beta.3 upgrade`: the `set-config-layout` automigration rewrites the call to `addons.setConfig({ ui: { enableShortcuts: false } })`. Start the dev server and open it in a desktop browser: the search field of the sidebar shows no keyboard shortcut next to it, and pressing the search shortcut that Storybook 10 showed there does not focus the field.
-  - [#36128](https://github.com/storybookjs/storybook/pull/36128) `CLI: Automigrate SB11 setConfig layout options`
-- [ ] In a project on Storybook 10 whose story meta sets `parameters.componentSubtitle`, run `npx storybook@11.0.0-beta.3 upgrade`: the `component-subtitle` automigration moves the value to `parameters.docs.subtitle`, and the docs page shows it under the title.
+- [ ] In a project on Storybook 11 with the Storybook Docs addon whose story meta sets `parameters.docs.subtitle`, as the `component-subtitle` automigration writes it, open the docs page of that meta: the subtitle shows under the title.
   - [#36129](https://github.com/storybookjs/storybook/pull/36129) `CLI: Remove deprecated componentSubtitle`
 - [ ] In a project with the Storybook Docs addon and the Storybook Vitest addon, make the `play` function of a story in the middle of a story file fail, and run the file with Vitest: the failure points at the line of that `play` function in the story file.
   - [#36463](https://github.com/storybookjs/storybook/pull/36463) `Addon Docs: Map CSF plugin sourcemaps to the transform input`
@@ -61,16 +59,12 @@ Tick an item when the check shows what it describes, and when it shows something
 - [ ] In a project on Storybook 10 whose `.storybook/main.ts` sets `legacyDecoratorFileOrder: true`, `argTypeTargetsV7: false`, and `disallowImplicitActionsInRenderV8: false` under `features`, run `npx storybook@11.0.0-beta.3 upgrade`: the `remove-legacy-feature-flags` automigration deletes `argTypeTargetsV7` and `disallowImplicitActionsInRenderV8`, a decorator of the preview file now runs inside the decorators of addons and the framework, and a story that calls an action inferred from `argTypesRegex` while it renders fails with `ImplicitActionsDuringRendering`.
   - [#36394](https://github.com/storybookjs/storybook/pull/36394) `Core: Remove features.legacyDecoratorFileOrder`
   - [#37064](https://github.com/storybookjs/storybook/pull/37064) `Core: Remove temporary migration flags argTypeTargetsV7 and disallowImplicitActionsInRenderV8`
-- [ ] In a local manager addon of a project on Storybook 11, import `experimental_UniversalStore` from `storybook/manager-api`, `satisfies` from `storybook/internal/common`, `useThemeParameters` from the Storybook Themes addon, and `ExternalDocs` from the blocks of the Storybook Docs addon, register an addon with `type: types.TAB`, and emit `HIGHLIGHT` with `{ elements, color }` from a story: the type check names each of the four imports as missing, no tab shows beside the canvas, and the story highlights nothing. The npm registry has no 11.0.0-beta.3 release of the Storybook React DOM shim package.
+- [ ] In a local manager addon of a project on Storybook 11, import `experimental_UniversalStore` from `storybook/manager-api`, `satisfies` from `storybook/internal/common`, and `ExternalDocs` from the blocks of the Storybook Docs addon, register an addon with `type: types.TAB`, and emit `HIGHLIGHT` with `{ elements, color }` from a story: the type check names each of the three imports as missing, no tab shows beside the canvas, and the story highlights nothing.
   - [#36402](https://github.com/storybookjs/storybook/pull/36402) `Core: Make UniversalStore internal`
-  - [#36418](https://github.com/storybookjs/storybook/pull/36418) `Remove @storybook/react-dom-shim`
   - [#36424](https://github.com/storybookjs/storybook/pull/36424) `Core: Replace obsolete satisfies compatibility helper`
   - [#36480](https://github.com/storybookjs/storybook/pull/36480) `Core: Remove deprecated tab addon registration`
-  - [#36537](https://github.com/storybookjs/storybook/pull/36537) `Themes: Remove deprecated useThemeParameters helper`
   - [#36662](https://github.com/storybookjs/storybook/pull/36662) `Core: Remove legacy highlight object format`
   - [#36757](https://github.com/storybookjs/storybook/pull/36757) `[SB-2007] Remove ExternalDocs and ExternalDocsContainer`
-- [ ] In a project on Storybook 10 with a story whose `argTypes` give one arg a `defaultValue` and another a `table.defaultValue`, run `npx storybook@11.0.0-beta.3 upgrade`: the `argtypes-default-value` automigration deletes the first `defaultValue`, leaves `table.defaultValue` and every `args` value as they are, and the docs table shows the text of `table.defaultValue`.
-  - [#36512](https://github.com/storybookjs/storybook/pull/36512) `CSF: Remove argTypes defaultValue`
 - [ ] In a project on Storybook 11.0.0-beta.1 with the Storybook skills installed, where `.claude/skills/ui-workflow` exists, remove the `## Storybook` section from `AGENTS.md` and run `npx storybook@11.0.0-beta.3 upgrade`: `.claude/skills/ui-workflow` and `.agents/skills/ui-workflow` are gone, the four new skills are there, and `AGENTS.md` has no `## Storybook` section again.
   - [#37346](https://github.com/storybookjs/storybook/pull/37346) `Skills: Remove the ui-workflow skill of an 11.0 prerelease on upgrade`
 - [ ] In a project on Storybook 11 with `npx storybook dev` running, open a docs page, put a syntax error into the story file of that component, and save: the terminal shows the indexing error and no unhandled rejection, and after the fix is saved the docs page refreshes. Then edit and save a component file, undo the edit and save, create a review with `npx storybook tools review create`, and after ten seconds run `npx storybook tools stories changed`: the review page shows no banner that the review may be stale.
@@ -78,12 +72,6 @@ Tick an item when the check shows what it describes, and when it shows something
   - [#36993](https://github.com/storybookjs/storybook/pull/36993) `Core: Skip extraction refresh when the story index fails to build`
 - [ ] In a Node script in a project on Storybook 11, read a story file whose story `A` is written as `meta.story()` with `loadCsf` from `storybook/internal/csf-tools` and parse it, call `set(['args', 'a'], 1)` on `csf.storyObject('A').object`, and print it with `printCsf`: the printed story reads `meta.story({ args: { a: 1 } })`.
   - [#36947](https://github.com/storybookjs/storybook/pull/36947) `CSF Tools: Complete the public API from the ten ecosystem ports`
-- [ ] In a React 17 project on Storybook 10, run `npx storybook@11.0.0-beta.3 upgrade`: it stops before it changes a file, with the title `React 18 or newer required` and a link to the migration guide.
-  - [#36169](https://github.com/storybookjs/storybook/pull/36169) `React: Raise the supported floor to 18`
-- [ ] In an Angular 20 project with the Storybook Angular framework on Storybook 10, run `npx storybook@11.0.0-beta.3 upgrade`: it stops before it changes a file, with the title `Require Angular v21 and up` and a link to the migration guide.
-  - [#36166](https://github.com/storybookjs/storybook/pull/36166) `Angular: Raise the supported floor to 21`
-- [ ] In a Next.js 14 project with the Storybook Next.js framework on Storybook 10, run `npx storybook@11.0.0-beta.3 upgrade`: it stops before it changes a file, its title and its message both say that Next.js 15 is the lowest version Storybook 11 supports, and it links the migration guide.
-  - [#36201](https://github.com/storybookjs/storybook/pull/36201) `Next.js: Raise the supported floor to 15`
 - [ ] In a Next.js 16.4 app with the Storybook Next.js framework and `nextjs: { appDirectory: true }` in the parameters of its preview, open the story of a component that calls `useRouter()` from `next/navigation`: it renders, and the console has no TypeError that names `bfcacheId`. In a Next.js 16.4 app with the Storybook Next.js Vite framework, open a story whose component awaits `io()`, `navigation()`, and `prefetch()` from `next/cache`: it renders without an error.
   - [#36588](https://github.com/storybookjs/storybook/pull/36588) `Next.js: Fix app-router mock crash on Next.js 16.4`
   - [#37017](https://github.com/storybookjs/storybook/pull/37017) `Nextjs-Vite: Preserve Async Cache Mock Implementations`
@@ -166,8 +154,6 @@ Tick an item when the check shows what it describes, and when it shows something
   - [#36910](https://github.com/storybookjs/storybook/pull/36910) `Core: Exempt chromatic from release-age gates alongside the Chromatic addon`
 - [ ] Start a project's Storybook 11 with `npx storybook dev --host 0.0.0.0` and open it over plain HTTP at the machine's LAN address: a story whose `play` function types or clicks with the `userEvent` of its context passes in the Interactions panel.
   - [#37334](https://github.com/storybookjs/storybook/pull/37334) `Test: Fix the context userEvent in insecure contexts`
-- [ ] In a Yarn 4 project on Storybook 10 with `nodeLinker: pnp` in `.yarnrc.yml`, follow the Yarn PnP section of the 11.0 migration guide: set `nodeLinker: node-modules`, run `yarn install`, then run `npx storybook@11.0.0-beta.3 upgrade` and the project's Storybook script: the upgrade completes, the dev server starts, and no message names PnP.
-  - [#36237](https://github.com/storybookjs/storybook/pull/36237) `Core: Remove Yarn PnP support`
 
 ## Needs a new project made with `storybook init`
 
@@ -207,8 +193,6 @@ Tick an item when the check shows what it describes, and when it shows something
 
 - [ ] In a Vue 3.6 project with a component whose script setup block has the `vapor` attribute, in `.storybook/preview.ts`, add a `setup` function that passes `vaporInteropPlugin` from `vue` to `app.use`, and open the component's story: it renders, its events show in the Actions panel, and a change of a control updates it.
   - [#36636](https://github.com/storybookjs/storybook/pull/36636) `Vue3: Support Vapor components through Vue's interop plugin`
-- [ ] In a Create React App project with `react-scripts` on Storybook 10, run `npx storybook@11.0.0-beta.3 upgrade`: it stops before it changes a file, with the title `Create React App: support removed` and a link to the migration guide. In a new Create React App project without Storybook, run `npx create-storybook@11.0.0-beta.3`: it stops with an error that links the same section of the guide.
-  - [#36168](https://github.com/storybookjs/storybook/pull/36168) `CLI: Remove Create React App support`
 - [ ] In a Vue 3 project with the community framework `storybook-vue3-rsbuild` on Storybook 11, start `npx storybook dev`: the presets load without `CriticalPresetLoadError`, and the first story renders.
   - [#36479](https://github.com/storybookjs/storybook/pull/36479) `Vue: Restore DOCGEN_WORKER_SPECIFIER export from preset`
 

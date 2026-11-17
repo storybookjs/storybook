@@ -437,6 +437,27 @@ describe('checkPlanText', () => {
       'expected no "<", no ">", and no character reference',
     ],
     [
+      'a row of no QA without a PR',
+      `| the monorepo's docs E2E tests cover the timing | ${pr(35618)} |`,
+      "| the monorepo's docs E2E tests cover the timing |  |",
+      "| the monorepo's docs E2E tests cover the timing |",
+      'prs: Too small: expected array to have >=1 items',
+    ],
+    [
+      'an entry without a PR',
+      `- PRs: ${pr(31900)}`,
+      '- PRs: ',
+      '### `preview-animations`',
+      'prs: Too small: expected array to have >=1 items',
+    ],
+    [
+      'an entry that lists a PR twice',
+      `- PRs: ${pr(31900)}`,
+      `- PRs: ${pr(31900)}, ${pr(31900)}`,
+      '### `preview-animations`',
+      'prs: a PR is listed twice',
+    ],
+    [
       'a group decision whose reason is a single hyphen',
       'none: no effect that a project can show',
       'none: -',
@@ -1132,6 +1153,17 @@ describe('planFromWindow', () => {
 });
 
 describe('renderLedger', () => {
+  it('names a PR of the window that the plan does not decide as nowhere', () => {
+    const window = {
+      ...WINDOW,
+      prs: [...WINDOW.prs, skipPr(40000, 'Core: Something new', 'Core')],
+    };
+
+    expect(renderLedger(parsePlan(FIXTURE), window)).toContain(
+      '| 40000 | qa:skip | Core | Core: Something new | nowhere |'
+    );
+  });
+
   it('names for every PR of the window where it is in the plan, or why it is not', () => {
     const rows = renderLedger(parsePlan(FIXTURE), WINDOW)
       .split('\n')

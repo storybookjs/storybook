@@ -959,9 +959,8 @@ export const LUNA_TEST_RULE =
   '- Do not add or run tests unless the user asks you to test or verify implementation.';
 export const SOL_TEST_RULES = '^- (Do not write tests for reversible|Run tests appropriate)';
 
-// Luna's own rule tells it not to run tests unless asked. With Sol's rules it still runs the story
-// tests after only some UI changes, where Sol runs them after every one, so the Luna experiments
-// are a cheap local check and CI runs Sol.
+// Luna's own rule makes it skip `test-run` on most UI tasks. With Sol's rules, the Luna experiments
+// stand in for Sol in CI at a fraction of the cost.
 export async function writeCodexLunaTestRules(sandbox: Sandbox, model: string): Promise<void> {
   // The harness installs the same CLI after `setup`; installing it here first lets the script
   // read the catalog of the binary that runs. Retried once, as the harness retries its install.
@@ -1000,11 +999,18 @@ export async function writeCodexLunaTestRules(sandbox: Sandbox, model: string): 
 }
 
 // Codex reads a project's `.codex/config.toml` only when the user trusts the project, so without
-// this it starts without the MCP server and the instructions that the config names.
+// this it starts without the MCP server and the instructions that the config names. The harness
+// copies a Vercel sandbox to `/workspace` before the agent runs, so that path is trusted too.
 async function trustCodexProject(sandbox: Sandbox): Promise<void> {
   const result = await sandbox.runCommand('bash', [
     '-c',
-    'mkdir -p ~/.codex && { grep -qs \'^trust_level = "trusted"\' ~/.codex/config.toml || printf \'[projects."%s"]\\ntrust_level = "trusted"\\n\' "$(pwd -P)" >> ~/.codex/config.toml; }',
+    [
+      'mkdir -p ~/.codex',
+      'grep -qs \'^trust_level = "trusted"\' ~/.codex/config.toml && exit 0',
+      'for project in "$(pwd -P)" /workspace; do',
+      '  printf \'[projects."%s"]\\ntrust_level = "trusted"\\n\\n\' "$project" >> ~/.codex/config.toml',
+      'done',
+    ].join('\n'),
   ]);
   if (result.exitCode !== 0) {
     throw new Error(`Failed to trust the project in Codex: ${result.stderr || result.stdout}`);

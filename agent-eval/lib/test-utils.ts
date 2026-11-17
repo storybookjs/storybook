@@ -448,11 +448,11 @@ export type WorkflowToolResult = {
 };
 
 // The AGENTS.md section names the command that tests stories. When to run it is up to the agent
-// and its own harness, and the agents of the default experiments (Haiku in Claude Code, Sol in
-// Codex) do test after a change. So the transcript has to show that the agent ran the story
-// tests, and that its last run did not end red: a fix that was never re-run is unverified. The
-// agent's own output is often cut by `| tail` or `| grep`, so the verdict is a run of the
-// harness's own. There is no after-the-edit ordering check.
+// and its own harness, and the agents of the evals do test after a change: Haiku in Claude Code,
+// and Luna in Codex with the test rules of Sol. So the transcript has to show that the agent ran
+// the story tests, and that its last run did not end red: a fix that was never re-run is
+// unverified. The agent's own output is often cut by `| tail` or `| grep`, so the verdict is a
+// run of the harness's own. There is no after-the-edit ordering check.
 //
 // `covering` requires one of the given substrings in the passing story ids.
 // `cwd` is the Storybook project, for fixtures where that is not the root.

@@ -68,9 +68,10 @@ EVAL_ONLY=803-edit-component yarn eval
 ```
 
 A full `EVAL_ALL=1` run (15 workflow evals × 4 experiments + 4
-lifecycle evals × 2 plugin experiments) costs roughly **$4** in agent
+lifecycle evals × 2 plugin experiments) costs roughly **$0.45** in agent
 tokens, as measured in November 2026: about $0.007 per eval on
-Haiku 5.5 low and about $0.11 per eval on gpt-6.1-sol low. The budget guardrail is **$75 per full run** — check the
+Haiku 5.5 low and on gpt-6-luna low with Sol's test rules, against about
+$0.11 per eval on gpt-6.1-sol low. The budget guardrail is **$75 per full run** — check the
 usage metadata in the results playground before growing the eval set past it
 (see [storybookjs/mcp#324](https://github.com/storybookjs/mcp/pull/324)).
 
@@ -163,15 +164,17 @@ via `ANTHROPIC_API_KEY`; Codex experiments use the direct Codex API via
 
 - `cc-mcp-haiku-5.5-low`: Claude Code (Haiku 5.5 at low effort) with project-local Storybook MCP config in `.mcp.json` and the Storybook MCP server instructions in `AGENTS.md` (none with `EVAL_STORYBOOK_LATEST=1`).
 - `cc-plugin-haiku-5.5-low`: Claude Code (Haiku 5.5 at low effort) with Storybook plugin skills copied to `.claude/skills`, and the Storybook section that `create storybook` writes in `AGENTS.md`.
-- `codex-mcp-gpt-6.1-sol-low`: Codex (gpt-6.1-sol at low reasoning effort) with project-local Storybook MCP config in `.codex/config.toml` and the Storybook MCP server instructions in `AGENTS.md` (none with `EVAL_STORYBOOK_LATEST=1`).
-- `codex-plugin-gpt-6.1-sol-low`: Codex (gpt-6.1-sol at low reasoning effort) with Storybook plugin skills copied to `.agents/skills`, and the Storybook section that `create storybook` writes in `AGENTS.md`.
+- `codex-mcp-gpt-6-luna-low`: Codex (gpt-6-luna at low reasoning effort) with project-local Storybook MCP config in `.codex/config.toml` and the Storybook MCP server instructions in `AGENTS.md` (none with `EVAL_STORYBOOK_LATEST=1`).
+- `codex-plugin-gpt-6-luna-low`: Codex (gpt-6-luna at low reasoning effort) with Storybook plugin skills copied to `.agents/skills`, and the Storybook section that `create storybook` writes in `AGENTS.md`.
 
-These four are the default set: a bare `yarn eval`, which is what CI runs, runs them and they have to stay green. Five more experiments run only when you name them by their exact file name (a glob does not select them), for example `yarn exec agent-eval cc-plugin-sonnet-5.5-low`:
+The two Codex experiments give gpt-6-luna the test rules of gpt-6.1-sol in its system prompt: Luna's own rules say not to run tests unless asked. They stand in for gpt-6.1-sol in CI at about 1/12 of the cost.
+
+These four are the default set: a bare `yarn eval`, which is what CI runs, runs them and they have to stay green. Five more experiments run only when you name them by their exact file name (a glob does not select them), for example `yarn exec agent-eval codex-plugin-gpt-6.1-sol-low`:
 
 - `cc-plugin-sonnet-5.5-low`: Claude Code (Sonnet 5.5 at low effort).
 - `cc-plugin-opus-5.5-medium`: Claude Code (Opus 5.5 at medium effort).
 - `codex-plugin-gpt-6.1-sol-medium`: Codex (gpt-6.1-sol at medium reasoning effort).
-- `codex-mcp-gpt-6-luna-low` and `codex-plugin-gpt-6-luna-low`: Codex (gpt-6-luna at low reasoning effort), set up like the two Sol experiments, at about 1/12 of the cost. They give gpt-6-luna the test rules of gpt-6.1-sol in its system prompt, because Luna's own rules say not to run tests unless asked. Luna still runs the story tests after only some UI changes, where Sol runs them after every one, so the evals that expect a test run fail on Luna.
+- `codex-mcp-gpt-6.1-sol-low` and `codex-plugin-gpt-6.1-sol-low`: Codex (gpt-6.1-sol at low reasoning effort, with its own system prompt), set up like the two Luna experiments: MCP config and server instructions, or plugin skills.
 
 ## Running evals in CI
 

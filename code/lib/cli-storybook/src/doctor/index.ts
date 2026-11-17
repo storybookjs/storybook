@@ -7,7 +7,7 @@ import { dedent } from 'ts-dedent';
 
 import { getStorybookData } from '../automigrate/helpers/mainConfigFile.ts';
 import { shortenPath } from '../util.ts';
-import { getDuplicatedDepsWarnings } from './getDuplicatedDepsWarnings.ts';
+import { getDuplicatedDepsWarnings, hasCriticalDuplicates } from './getDuplicatedDepsWarnings.ts';
 import {
   getIncompatiblePackagesSummary,
   getIncompatibleStorybookPackages,
@@ -318,7 +318,9 @@ export async function getDoctorDiagnostics({
     'storybook',
   ]);
 
-  const mismatchingVersionMessage = getMismatchingVersionsWarnings(installationMetadata);
+  const mismatchingVersionMessage = hasCriticalDuplicates(installationMetadata)
+    ? undefined
+    : getMismatchingVersionsWarnings(installationMetadata);
 
   if (mismatchingVersionMessage) {
     results.push({
@@ -328,9 +330,7 @@ export async function getDoctorDiagnostics({
       project: { configDir },
     });
   } else {
-    const list = installationMetadata
-      ? getDuplicatedDepsWarnings(installationMetadata)
-      : getDuplicatedDepsWarnings();
+    const list = getDuplicatedDepsWarnings(installationMetadata);
 
     if (Array.isArray(list) && list.length > 0) {
       results.push({

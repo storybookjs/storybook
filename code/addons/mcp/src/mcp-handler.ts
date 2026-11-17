@@ -233,14 +233,19 @@ export function getToolsets(
   request: Request,
   addonOptions: AddonOptionsOutput
 ): AddonOptionsOutput['toolsets'] {
+  const configuredToolsets: AddonOptionsOutput['toolsets'] = {
+    dev: addonOptions.toolsets?.dev ?? true,
+    docs: addonOptions.toolsets?.docs ?? true,
+    test: addonOptions.toolsets?.test ?? true,
+  };
   const toolsetHeader = request.headers.get('X-MCP-Toolsets');
   if (!toolsetHeader || toolsetHeader.trim() === '') {
-    // If no header is present, return the addon options as-is
-    return addonOptions.toolsets;
+    // If no header is present, return the configured addon options
+    return configuredToolsets;
   }
 
-  // If the toolsets headers are present, default to everything being disabled
-  // except for the ones explicitly enabled in the header
+  // If the toolsets header is present, default to everything being disabled
+  // and enable only requested toolsets that are also enabled in addonOptions.
   const toolsets: AddonOptionsOutput['toolsets'] = {
     dev: false,
     docs: false,
@@ -254,7 +259,8 @@ export function getToolsets(
   for (const enabledToolset of enabledToolsets) {
     const trimmedToolset = enabledToolset.trim();
     if (trimmedToolset in toolsets) {
-      toolsets[trimmedToolset as keyof typeof toolsets] = true;
+      const key = trimmedToolset as keyof typeof toolsets;
+      toolsets[key] = configuredToolsets[key];
     }
   }
   return toolsets;

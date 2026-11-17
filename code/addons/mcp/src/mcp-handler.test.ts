@@ -671,6 +671,15 @@ describe('mcpServerHandler', () => {
       }
     );
 
+    it('leaves their workflow steps out of the instructions, whatever the header asks for', async () => {
+      const mockOptions = createDocsEnabledOptions();
+      const init = await send(mockOptions, createMCPInitializeRequest(), 'dev,test,docs');
+
+      expect(init.result.instructions).toContain('component-docs');
+      expect(init.result.instructions).not.toContain('ui-review');
+      expect(init.result.instructions).not.toContain('test-stories');
+    });
+
     it('keeps the tools of the toolsets that stay on', async () => {
       const mockOptions = createDocsEnabledOptions();
       await send(mockOptions, createMCPInitializeRequest());
@@ -736,9 +745,9 @@ describe('getToolsets', () => {
     });
     const addonOptions = {
       toolsets: {
-        dev: false,
-        docs: false,
-        test: false,
+        dev: true,
+        docs: true,
+        test: true,
       },
     };
 
@@ -759,9 +768,9 @@ describe('getToolsets', () => {
     });
     const addonOptions = {
       toolsets: {
-        dev: false,
-        docs: false,
-        test: false,
+        dev: true,
+        docs: true,
+        test: true,
       },
     };
 
@@ -782,9 +791,9 @@ describe('getToolsets', () => {
     });
     const addonOptions = {
       toolsets: {
-        dev: false,
-        docs: false,
-        test: false,
+        dev: true,
+        docs: true,
+        test: true,
       },
     };
 
@@ -795,6 +804,26 @@ describe('getToolsets', () => {
       docs: true,
       test: false,
     });
+  });
+
+  it('should not turn on a toolset that addonOptions turns off', () => {
+    const addonOptions = {
+      toolsets: {
+        dev: false,
+        docs: true,
+        test: false,
+      },
+    };
+
+    const all = new Request('http://localhost:6006/mcp', {
+      headers: { 'X-MCP-Toolsets': 'dev,test,docs' },
+    });
+    expect(getToolsets(all, addonOptions)).toEqual({ dev: false, docs: true, test: false });
+
+    const devOnly = new Request('http://localhost:6006/mcp', {
+      headers: { 'X-MCP-Toolsets': 'dev' },
+    });
+    expect(getToolsets(devOnly, addonOptions)).toEqual({ dev: false, docs: false, test: false });
   });
 
   it('should return addon options when header is present with empty value', () => {

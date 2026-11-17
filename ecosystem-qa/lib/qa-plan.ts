@@ -19,7 +19,9 @@ const Text = z
     /^(?!.*&(?:#\d+|#x[\da-f]+|[a-z][a-z\d]*);)/i,
     'expected no character reference such as "&nbsp;"'
   );
-const Reason = Text.refine(
+// A reason or a check shows as blank when it is a link without text, which three letters of its URL
+// would not reveal.
+const Reason = Text.regex(/^(?!.*\]\()/, 'expected no Markdown link: write the address out').refine(
   (text) => (text.match(/[a-z]/gi)?.length ?? 0) >= 3,
   'expected at least three letters'
 );

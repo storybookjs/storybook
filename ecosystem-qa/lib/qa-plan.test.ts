@@ -968,7 +968,6 @@ describe('checkPlanText', () => {
     ['in a code span', (form) => `\`${form}\``],
     ['between escaped backticks', (form) => `\\\`${form}\\\``],
     ['after one backtick and before two', (form) => `\`${form}\`\``],
-    ['in what looks like the URL of a link', (form) => `](${form})`],
   ];
   const wrapped = (forms: string[][]) =>
     forms.flatMap(([name, form, ...rest]) =>
@@ -995,6 +994,11 @@ describe('checkPlanText', () => {
       ['a character that is not ASCII', 'caf\u{E9}', 'expected printable ASCII only'],
       ['a Hangul filler', '\u{3164}', 'expected printable ASCII only'],
       ['a zero width space', '\u{200B}', 'expected printable ASCII only'],
+      [
+        'a link without text',
+        '[](https://example.com/the-reason)',
+        'expected no Markdown link: write the address out',
+      ],
     ])
   )(
     'refuses %s in a reason, which GitHub may render as a tag or a character',

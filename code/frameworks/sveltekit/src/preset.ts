@@ -7,6 +7,8 @@ import type { PresetProperty, PresetPropertyFn } from 'storybook/internal/types'
 import { withoutVitePlugins } from '@storybook/builder-vite';
 import { viteFinal as svelteViteFinal } from '@storybook/svelte-vite/preset';
 
+import type { PluginOption } from 'vite';
+
 import { configOverrides } from './plugins/config-overrides.ts';
 import { devPublicEnv } from './plugins/dev-public-env.ts';
 import { guardServerModules } from './plugins/guard-server-modules.ts';
@@ -34,17 +36,46 @@ export const staticDirs: PresetPropertyFn<'staticDirs'> = async (values = [], op
   return existsSync(assetsDir) ? [...values, { from: assetsDir, to: '/' }] : values;
 };
 
+function withoutKitSsrMiddleware(plugin: PluginOption): PluginOption {
+  if (Array.isArray(plugin)) {
+    return plugin.map(withoutKitSsrMiddleware);
+  }
+  if (
+    !plugin ||
+    !('name' in plugin) ||
+    plugin.name !== 'vite-plugin-sveltekit-setup' ||
+    !plugin.configureServer
+  ) {
+    return plugin;
+  }
+
+  const hook =
+    typeof plugin.configureServer === 'function'
+      ? { handler: plugin.configureServer }
+      : plugin.configureServer;
+  return {
+    ...plugin,
+    configureServer: {
+      ...hook,
+      async handler(server) {
+        // Kit sets up its files and watchers here. Its returned hook installs the app's SSR handler.
+        await hook.handler.call(this, server);
+      },
+    },
+  };
+}
+
 export const viteFinal: NonNullable<StorybookConfig['viteFinal']> = async (config, options) => {
   const baseConfig = await svelteViteFinal(config, options);
+  const plugins = await withoutVitePlugins(baseConfig.plugins ?? [], [
+    'vite-plugin-sveltekit-compile',
+    'vite-plugin-sveltekit-guard',
+  ]);
 
   return {
     ...baseConfig,
     plugins: [
-      // disable specific plugins that are not compatible with Storybook
-      ...(await withoutVitePlugins(baseConfig.plugins ?? [], [
-        'vite-plugin-sveltekit-compile',
-        'vite-plugin-sveltekit-guard',
-      ])),
+      ...plugins.map(withoutKitSsrMiddleware),
       configOverrides(),
       syncSvelteKit(),
       devPublicEnv(),

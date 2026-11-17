@@ -8,6 +8,7 @@ import {
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { PassThrough } from 'node:stream';
 import { CompositionAuth } from './auth/index.ts';
+import { PREVIEW_STORIES_RESOURCE_URI } from './tools/preview-stories.ts';
 
 // Test helpers to reduce boilerplate
 function createMockIncomingMessage(options: {
@@ -579,6 +580,110 @@ describe('mcpServerHandler', () => {
 
     expect(toolNames).toContain('stories-changed');
     expect(toolNames).toContain('review-create');
+  });
+
+  describe('toolsets turned off in addonOptions', () => {
+    const port = 6013;
+    const host = `localhost:${port}`;
+    const addonOptions = { toolsets: { dev: false, docs: true, test: false } };
+
+    function createDocsEnabledOptions() {
+      const applyMock = vi.fn(async (key: string, defaultValue?: unknown) => {
+        if (key === 'core') {
+          return { disableTelemetry: false };
+        }
+        if (key === 'features') {
+          return { componentsManifest: true };
+        }
+        if (key === 'experimental_manifests') {
+          return { components: { v: 1, components: {} } };
+        }
+        return defaultValue;
+      });
+      return createMockOptions({ port, presets: { apply: applyMock } });
+    }
+
+    // Sends one JSON-RPC request through the handler and returns the parsed response.
+    async function send(mockOptions: unknown, body: object, toolsetsHeader?: string) {
+      const req = createMockIncomingMessage({
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          host,
+          ...(toolsetsHeader ? { 'X-MCP-Toolsets': toolsetsHeader } : {}),
+        },
+        body,
+      });
+      const { response, getResponseData } = createMockServerResponse();
+      await mcpServerHandler({
+        req,
+        res: response,
+        origin: `http://${host}`,
+        basePath: '/',
+        options: mockOptions,
+        addonOptions,
+        compositionAuth: new CompositionAuth(),
+      });
+      const line = getResponseData()
+        .body.split('\n')
+        .find((l) => l.startsWith('data: '));
+      return JSON.parse(line!.replace(/^data: /, '').trim());
+    }
+
+    it.each([undefined, 'dev', 'dev,test,docs'])(
+      'does not register their tools or resources (X-MCP-Toolsets: %s)',
+      async (toolsetsHeader) => {
+        const mockOptions = createDocsEnabledOptions();
+        await send(mockOptions, createMCPInitializeRequest(), toolsetsHeader);
+
+        const tools = await send(
+          mockOptions,
+          { jsonrpc: '2.0', id: 2, method: 'tools/list', params: {} },
+          toolsetsHeader
+        );
+        const toolNames = tools.result.tools.map((t: { name: string }) => t.name);
+        expect(toolNames).not.toContain('stories-preview');
+        expect(toolNames).not.toContain('stories-changed');
+        expect(toolNames).not.toContain('review-create');
+        expect(toolNames).not.toContain('test-run');
+
+        // `tools/list` hides a tool whose toolset is off; `tools/call` must refuse it as well.
+        const call = await send(
+          mockOptions,
+          {
+            jsonrpc: '2.0',
+            id: 3,
+            method: 'tools/call',
+            params: { name: 'stories-changed', arguments: {} },
+          },
+          toolsetsHeader
+        );
+        expect(call.result.isError).toBe(true);
+        expect(call.result.content[0].text).toContain('stories-changed not found');
+
+        const resources = await send(
+          mockOptions,
+          { jsonrpc: '2.0', id: 4, method: 'resources/list', params: {} },
+          toolsetsHeader
+        );
+        const resourceUris = resources.result.resources.map((r: { uri: string }) => r.uri);
+        expect(resourceUris).not.toContain(PREVIEW_STORIES_RESOURCE_URI);
+      }
+    );
+
+    it('keeps the tools of the toolsets that stay on', async () => {
+      const mockOptions = createDocsEnabledOptions();
+      await send(mockOptions, createMCPInitializeRequest());
+
+      const tools = await send(mockOptions, {
+        jsonrpc: '2.0',
+        id: 2,
+        method: 'tools/list',
+        params: {},
+      });
+      const toolNames = tools.result.tools.map((t: { name: string }) => t.name);
+      expect(toolNames).toEqual(['docs-list', 'docs-show', 'docs-show-story']);
+    });
   });
 });
 

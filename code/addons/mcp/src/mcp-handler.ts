@@ -22,7 +22,11 @@ let initialize: Promise<McpServer<any, AddonContext>> | undefined;
 let disableTelemetry: boolean | undefined;
 let a11yEnabled: boolean | undefined;
 
-const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
+const initializeMCPServer = async (
+  options: Options,
+  multiSource?: boolean,
+  toolsets?: AddonOptionsOutput['toolsets']
+) => {
   const core = await options.presets.apply('core', {});
   disableTelemetry = core?.disableTelemetry ?? false;
 
@@ -40,9 +44,13 @@ const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
     adapter: new ValibotJsonSchemaAdapter(),
     get instructions() {
       return buildServerInstructions({
-        devEnabled: server?.ctx.custom?.toolsets?.dev ?? true,
-        testSupported: (server?.ctx.custom?.toolsets?.test ?? true) && availability.testSupported,
-        docsEnabled: (server?.ctx.custom?.toolsets?.docs ?? true) && availability.docsEnabled,
+        devEnabled: server?.ctx.custom?.toolsets?.dev ?? toolsets?.dev ?? true,
+        testSupported:
+          (server?.ctx.custom?.toolsets?.test ?? toolsets?.test ?? true) &&
+          availability.testSupported,
+        docsEnabled:
+          (server?.ctx.custom?.toolsets?.docs ?? toolsets?.docs ?? true) &&
+          availability.docsEnabled,
       });
     },
     capabilities: {
@@ -66,7 +74,7 @@ const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
     });
   }
 
-  await registerAddonMcpTools(server, { availability, multiSource });
+  await registerAddonMcpTools(server, { availability, multiSource, toolsets });
 
   transport = new HttpTransport(server, { path: null, allowedOrigins: true });
 
@@ -128,7 +136,8 @@ export const mcpServerHandler = async ({
   if (!initialize) {
     initialize = initializeMCPServer(
       options,
-      sources?.some((s) => s.url)
+      sources?.some((s) => s.url),
+      addonOptions.toolsets
     );
   }
   await initialize;

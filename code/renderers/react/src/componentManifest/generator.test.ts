@@ -963,6 +963,310 @@ test('generator preserves @import override when reactComponentMeta is enabled', 
   expect(batchExtract).toHaveBeenCalled();
 });
 
+test('generator preserves @import override for non-meta components rendered in stories', async () => {
+  vol.fromJSON(
+    {
+      ['./package.json']: JSON.stringify({ name: '@acme/ui' }),
+      ['./src/stories/Dialog.stories.tsx']: dedent`
+        import React from 'react';
+        import type { Meta } from '@storybook/react';
+        import { Dialog } from './Dialog';
+        import { Button } from './Button';
+
+        const meta = {
+          title: 'Feedback/Dialog',
+          component: Dialog,
+        } satisfies Meta<typeof Dialog>;
+        export default meta;
+
+        export const Confirm = () => (
+          <Dialog open>
+            <Button>Save</Button>
+          </Dialog>
+        );
+      `,
+      ['./src/stories/Dialog.tsx']: dedent`
+        import React from 'react';
+        export const Dialog = ({ open, children }: { open?: boolean; children?: React.ReactNode }) => <div>{children}</div>;
+      `,
+      ['./src/stories/Button.tsx']: dedent`
+        import React from 'react';
+        export const Button = ({ children }: { children?: React.ReactNode }) => <button>{children}</button>;
+      `,
+    },
+    '/app'
+  );
+
+  const batchExtract = vi
+    .spyOn(ComponentMetaManager.prototype, 'batchExtract')
+    .mockImplementation((entries) => {
+      for (const entry of entries) {
+        if (entry.component?.componentName === 'Dialog') {
+          entry.component.reactComponentMeta = {
+            displayName: 'Dialog',
+            exportName: 'Dialog',
+            filePath: '/app/src/stories/Dialog.tsx',
+            description: 'A dialog component',
+            props: {},
+          };
+          entry.component.componentJsDocTags = {
+            import: ["import { Dialog } from '@acme/ui/components';"],
+          };
+          entry.component.importOverride = "import { Dialog } from '@acme/ui/components';";
+        } else if (entry.component?.componentName === 'Button') {
+          entry.component.reactComponentMeta = {
+            displayName: 'Button',
+            exportName: 'Button',
+            filePath: '/app/src/stories/Button.tsx',
+            description: 'A button component',
+            props: {},
+          };
+          entry.component.componentJsDocTags = {
+            import: ["import { Button } from '@acme/ui/components';"],
+          };
+          entry.component.importOverride = "import { Button } from '@acme/ui/components';";
+        }
+      }
+    });
+
+  const presets = {
+    apply: async (extension: string, config?: unknown) => {
+      if (extension === 'typescript') {
+        return {};
+      }
+      if (extension === 'features') {
+        return { experimentalReactComponentMeta: true };
+      }
+      return config;
+    },
+  } as NonNullable<ManifestOptions['presets']>;
+
+  const manifestEntries: ManifestEntries = [
+    {
+      type: 'story',
+      subtype: 'story',
+      id: 'feedback-dialog--confirm',
+      name: 'Confirm',
+      title: 'Feedback/Dialog',
+      importPath: './src/stories/Dialog.stories.tsx',
+      componentPath: './src/stories/Dialog.tsx',
+      tags: [Tag.DEV, Tag.TEST, Tag.MANIFEST],
+      exportName: 'Confirm',
+    },
+  ];
+
+  const result = await runManifestsWithOptions(manifestEntries, { presets });
+  const dialog = result?.components?.components?.['feedback-dialog'] as any;
+
+  expect(batchExtract).toHaveBeenCalled();
+  // Both components with the same @import target must be merged cleanly into a single import statement:
+  expect(dialog?.import).toBe("import { Button, Dialog } from '@acme/ui/components';");
+  // Button must NOT be added to subcomponents or props documentation:
+  expect(dialog?.subcomponents?.Button).toBeUndefined();
+  expect(dialog?.subcomponents).toBeUndefined();
+});
+
+test('generator falls back to package import when secondary component has no @import override', async () => {
+  vol.fromJSON(
+    {
+      ['./package.json']: JSON.stringify({ name: '@acme/ui' }),
+      ['./src/stories/Dialog.stories.tsx']: dedent`
+        import React from 'react';
+        import type { Meta } from '@storybook/react';
+        import { Dialog } from './Dialog';
+        import { Button } from './Button';
+
+        const meta = {
+          title: 'Feedback/Dialog',
+          component: Dialog,
+        } satisfies Meta<typeof Dialog>;
+        export default meta;
+
+        export const Confirm = () => (
+          <Dialog open>
+            <Button>Save</Button>
+          </Dialog>
+        );
+      `,
+      ['./src/stories/Dialog.tsx']: dedent`
+        import React from 'react';
+        export const Dialog = ({ open, children }: { open?: boolean; children?: React.ReactNode }) => <div>{children}</div>;
+      `,
+      ['./src/stories/Button.tsx']: dedent`
+        import React from 'react';
+        export const Button = ({ children }: { children?: React.ReactNode }) => <button>{children}</button>;
+      `,
+    },
+    '/app'
+  );
+
+  const batchExtract = vi
+    .spyOn(ComponentMetaManager.prototype, 'batchExtract')
+    .mockImplementation((entries) => {
+      for (const entry of entries) {
+        if (entry.component?.componentName === 'Dialog') {
+          entry.component.reactComponentMeta = {
+            displayName: 'Dialog',
+            exportName: 'Dialog',
+            filePath: '/app/src/stories/Dialog.tsx',
+            description: 'A dialog component',
+            props: {},
+          };
+          entry.component.componentJsDocTags = {
+            import: ["import { Dialog } from '@acme/ui/components';"],
+          };
+          entry.component.importOverride = "import { Dialog } from '@acme/ui/components';";
+        } else if (entry.component?.componentName === 'Button') {
+          // Button has no @import tag
+          entry.component.reactComponentMeta = {
+            displayName: 'Button',
+            exportName: 'Button',
+            filePath: '/app/src/stories/Button.tsx',
+            description: 'A button component',
+            props: {},
+          };
+        }
+      }
+    });
+
+  const presets = {
+    apply: async (extension: string, config?: unknown) => {
+      if (extension === 'typescript') {
+        return {};
+      }
+      if (extension === 'features') {
+        return { experimentalReactComponentMeta: true };
+      }
+      return config;
+    },
+  } as NonNullable<ManifestOptions['presets']>;
+
+  const manifestEntries: ManifestEntries = [
+    {
+      type: 'story',
+      subtype: 'story',
+      id: 'feedback-dialog--confirm',
+      name: 'Confirm',
+      title: 'Feedback/Dialog',
+      importPath: './src/stories/Dialog.stories.tsx',
+      componentPath: './src/stories/Dialog.tsx',
+      tags: [Tag.DEV, Tag.TEST, Tag.MANIFEST],
+      exportName: 'Confirm',
+    },
+  ];
+
+  const result = await runManifestsWithOptions(manifestEntries, { presets });
+  const dialog = result?.components?.components?.['feedback-dialog'] as any;
+
+  expect(batchExtract).toHaveBeenCalled();
+  // Dialog gets @acme/ui/components override, Button falls back to package name @acme/ui:
+  expect(dialog?.import).toBe(
+    "import { Button } from '@acme/ui';\nimport { Dialog } from '@acme/ui/components';"
+  );
+});
+
+test('generator handles components with @import overrides from different packages', async () => {
+  vol.fromJSON(
+    {
+      ['./package.json']: JSON.stringify({ name: '@acme/ui' }),
+      ['./src/stories/Dialog.stories.tsx']: dedent`
+        import React from 'react';
+        import type { Meta } from '@storybook/react';
+        import { Dialog } from './Dialog';
+        import { Icon } from './Icon';
+
+        const meta = {
+          title: 'Feedback/Dialog',
+          component: Dialog,
+        } satisfies Meta<typeof Dialog>;
+        export default meta;
+
+        export const Confirm = () => (
+          <Dialog open>
+            <Icon name="check" />
+          </Dialog>
+        );
+      `,
+      ['./src/stories/Dialog.tsx']: dedent`
+        import React from 'react';
+        export const Dialog = ({ open, children }: { open?: boolean; children?: React.ReactNode }) => <div>{children}</div>;
+      `,
+      ['./src/stories/Icon.tsx']: dedent`
+        import React from 'react';
+        export const Icon = ({ name }: { name: string }) => <span>{name}</span>;
+      `,
+    },
+    '/app'
+  );
+
+  const batchExtract = vi
+    .spyOn(ComponentMetaManager.prototype, 'batchExtract')
+    .mockImplementation((entries) => {
+      for (const entry of entries) {
+        if (entry.component?.componentName === 'Dialog') {
+          entry.component.reactComponentMeta = {
+            displayName: 'Dialog',
+            exportName: 'Dialog',
+            filePath: '/app/src/stories/Dialog.tsx',
+            description: 'A dialog component',
+            props: {},
+          };
+          entry.component.componentJsDocTags = {
+            import: ["import { Dialog } from '@acme/ui/components';"],
+          };
+          entry.component.importOverride = "import { Dialog } from '@acme/ui/components';";
+        } else if (entry.component?.componentName === 'Icon') {
+          entry.component.reactComponentMeta = {
+            displayName: 'Icon',
+            exportName: 'Icon',
+            filePath: '/app/src/stories/Icon.tsx',
+            description: 'An icon component',
+            props: {},
+          };
+          entry.component.componentJsDocTags = {
+            import: ["import { Icon } from '@acme/icons';"],
+          };
+          entry.component.importOverride = "import { Icon } from '@acme/icons';";
+        }
+      }
+    });
+
+  const presets = {
+    apply: async (extension: string, config?: unknown) => {
+      if (extension === 'typescript') {
+        return {};
+      }
+      if (extension === 'features') {
+        return { experimentalReactComponentMeta: true };
+      }
+      return config;
+    },
+  } as NonNullable<ManifestOptions['presets']>;
+
+  const manifestEntries: ManifestEntries = [
+    {
+      type: 'story',
+      subtype: 'story',
+      id: 'feedback-dialog--confirm',
+      name: 'Confirm',
+      title: 'Feedback/Dialog',
+      importPath: './src/stories/Dialog.stories.tsx',
+      componentPath: './src/stories/Dialog.tsx',
+      tags: [Tag.DEV, Tag.TEST, Tag.MANIFEST],
+      exportName: 'Confirm',
+    },
+  ];
+
+  const result = await runManifestsWithOptions(manifestEntries, { presets });
+  const dialog = result?.components?.components?.['feedback-dialog'] as any;
+
+  expect(batchExtract).toHaveBeenCalled();
+  // Each component uses its own distinct @import package source:
+  expect(dialog?.import).toBe(
+    "import { Dialog } from '@acme/ui/components';\nimport { Icon } from '@acme/icons';"
+  );
+});
+
 test('generator falls back to title-based matching when meta.component aliases a compound member', async () => {
   vol.fromJSON(
     {

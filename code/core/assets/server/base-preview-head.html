@@ -483,8 +483,14 @@
   /* globals window */
   try {
     if (window.top !== window) {
-      window.__REACT_DEVTOOLS_GLOBAL_HOOK__ = window.top.__REACT_DEVTOOLS_GLOBAL_HOOK__;
-      window.__VUE_DEVTOOLS_GLOBAL_HOOK__ = window.top.__VUE_DEVTOOLS_GLOBAL_HOOK__;
+      // Copying an absent hook still creates the key, and hook detection tests for the key rather
+      // than its value, so an unguarded assignment reads as "already installed".
+      if (window.top.__REACT_DEVTOOLS_GLOBAL_HOOK__) {
+        window.__REACT_DEVTOOLS_GLOBAL_HOOK__ = window.top.__REACT_DEVTOOLS_GLOBAL_HOOK__;
+      }
+      if (window.top.__VUE_DEVTOOLS_GLOBAL_HOOK__) {
+        window.__VUE_DEVTOOLS_GLOBAL_HOOK__ = window.top.__VUE_DEVTOOLS_GLOBAL_HOOK__;
+      }
       window.top.__VUE_DEVTOOLS_CONTEXT__ = window.document;
     }
   } catch (e) {

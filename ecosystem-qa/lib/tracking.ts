@@ -336,7 +336,7 @@ const shortfall = ({ report, spend, reported, discussions }: StepInput): string 
     return `the comments of this discussion hold ${spendOf(spend.held)}, where one of them was written with ${spendOf(spend.written)}, so a comment of the workflow is gone`;
   }
   if (report.attempt > 1 && !reported) {
-    return `attempt ${report.attempt} of workflow run ${report.runs.join(', ')} is its first report here, so what its earlier attempts spent is unknown`;
+    return `attempt ${report.attempt} of workflow run ${report.runs.join(', ')} is its first report here, so what its earlier attempts spent, and whether one of them started batch ${report.batch + 1}, is unknown`;
   }
   return undefined;
 };

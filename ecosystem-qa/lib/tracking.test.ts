@@ -838,7 +838,7 @@ describe('trackBatch', () => {
     const reported = comment(track(batchTwo(1), [batchOne], 250).body);
 
     expect(tracked.next).toEqual({
-      stop: 'Batch 3 was not started, because attempt 2 of workflow run 43900000002 is its first report here, so what its earlier attempts spent is unknown.',
+      stop: 'Batch 3 was not started, because attempt 2 of workflow run 43900000002 is its first report here, so what its earlier attempts spent, and whether one of them started batch 3, is unknown.',
       resume: 3,
     });
     expect(tracked.body).toContain('Spent on this plan: at least $41.00 for 2 runs');
@@ -855,7 +855,7 @@ describe('trackBatch', () => {
 
     expect(filed.existing).toBe(stopped);
     expect(filed.body).toContain(
-      'Spent on this plan: at least $41.00 for 2 runs, of a cap of $250.00.\n\nNext: Batch 3 was not started, because attempt 2 of workflow run 43900000002 is its first report here, so what its earlier attempts spent is unknown.'
+      'Spent on this plan: at least $41.00 for 2 runs, of a cap of $250.00.\n\nNext: Batch 3 was not started, because attempt 2 of workflow run 43900000002 is its first report here, so what its earlier attempts spent, and whether one of them started batch 3, is unknown.'
     );
   });
 

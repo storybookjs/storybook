@@ -22,21 +22,32 @@ const isValidIdentifier = (name: string): boolean => /^[a-zA-Z_$][a-zA-Z0-9_$]*$
 export const formatPropInTemplate = (propertyName: string) =>
   isValidIdentifier(propertyName) ? propertyName : `this['${propertyName}']`;
 
+// An input can be set by its template name (alias) or by its class property name; the alias wins.
+const resolveInputs = (ngComponentInputsOutputs: ComponentInputsOutputs, props: ICollection) =>
+  ngComponentInputsOutputs.inputs.flatMap(({ propName, templateName }) => {
+    if (templateName in props) {
+      return [{ bindingName: templateName, propKey: templateName }];
+    }
+    if (propName in props) {
+      return [{ bindingName: templateName, propKey: propName }];
+    }
+    return [];
+  });
+
 const separateInputsOutputsAttributes = (
   ngComponentInputsOutputs: ComponentInputsOutputs,
   props: ICollection = {}
 ) => {
-  const inputs = ngComponentInputsOutputs.inputs
-    .filter((i) => i.templateName in props)
-    .map((i) => i.templateName);
+  const inputs = resolveInputs(ngComponentInputsOutputs, props);
   const outputs = ngComponentInputsOutputs.outputs
     .filter((o) => o.templateName in props)
     .map((o) => o.templateName);
+  const boundKeys = [...inputs.map((i) => i.propKey), ...outputs];
 
   return {
     inputs,
     outputs,
-    otherProps: Object.keys(props).filter((k) => ![...inputs, ...outputs].includes(k)),
+    otherProps: Object.keys(props).filter((k) => !boundKeys.includes(k)),
   };
 };
 
@@ -71,7 +82,7 @@ export const computesTemplateFromComponent = (
 
   const templateInputs =
     initialInputs.length > 0
-      ? ` ${initialInputs.map((i) => `[${i}]="${formatPropInTemplate(i)}"`).join(' ')}`
+      ? ` ${initialInputs.map((i) => `[${i.bindingName}]="${formatPropInTemplate(i.propKey)}"`).join(' ')}`
       : '';
   const templateOutputs =
     initialOutputs.length > 0
@@ -163,11 +174,11 @@ export const computesTemplateSourceFromComponent = (
   const templateInputs =
     initialInputs.length > 0
       ? ` ${initialInputs
-          .map((propertyName) =>
+          .map(({ bindingName, propKey }) =>
             createAngularInputProperty({
-              propertyName,
-              value: initialProps?.[propertyName],
-              argType: argTypes?.[propertyName],
+              propertyName: bindingName,
+              value: initialProps?.[propKey],
+              argType: argTypes?.[propKey],
             })
           )
           .join(' ')}`

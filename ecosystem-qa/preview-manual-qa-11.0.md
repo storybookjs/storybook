@@ -32,11 +32,17 @@ Tick an item when the check shows what it describes, and when it shows something
 
 - [ ] In a new React Vite project on pnpm 12 whose `pnpm-workspace.yaml` sets `minimumReleaseAge` longer than the age of 11.0.0-beta.3, run `npx create-storybook@11.0.0-beta.3`: before it changes a file it asks about the release age, and choosing to stop prints a command for an older release that the setting allows.
   - [#36352](https://github.com/storybookjs/storybook/pull/36352) `CLI: Restore pnpm minimumReleaseAge prechecks`
+- [ ] In a React Native app whose Storybook config is only in `.rnstorybook`, with no web `.storybook`, run `npx storybook@11.0.0-beta.3 automigrate csf-factories --config-dir .rnstorybook --yes`: the converted stories import `preview` from `#.storybook/preview`, and `imports` in `package.json` maps `#.storybook/preview` to the preview file in `.rnstorybook`.
+  - [#36623](https://github.com/storybookjs/storybook/pull/36623) `CLI: Keep React Native stories on #.storybook/preview`, the part that the plan entry `rn-csf-factories-preview-import` does not test
 - [ ] In a browser that has opened a project on Storybook 10.3 with tag filters selected in its sidebar, upgrade the project to Storybook 11 and open it in the same browser: the sidebar applies none of the old tag filters, the local storage entry of the manager store holds neither `includedTagFilters` nor `excludedTagFilters`, and filters selected again apply and survive a reload.
   - [#36678](https://github.com/storybookjs/storybook/pull/36678) `Manager: Remove persisted tag-filter state migration [SB-2022]`
   - [#36909](https://github.com/storybookjs/storybook/pull/36909) `Manager: Delete v10.3 tag filters from local storage`
+- [ ] In a React project on pnpm with `enableGlobalVirtualStore: true` in `pnpm-workspace.yaml` whose preview file imports `storybook/theming`, run `npx storybook build --test`, which leaves the Docs addon out, and open the built Storybook: the build succeeds and the stories render.
+  - [#36841](https://github.com/storybookjs/storybook/pull/36841) `React: Alias preview React from the renderer preset`
 - [ ] In a pnpm project whose `node_modules` pnpm wants to rebuild, for example after a switch to a pnpm version with another store layout, run `npx storybook@11.0.0-beta.3 upgrade` in a terminal: pnpm asks whether to remove the modules directories, an answer of `y` lets the install finish, and the upgrade completes.
   - [#36928](https://github.com/storybookjs/storybook/pull/36928) `CLI: Preserve pnpm terminal for install confirmation`
+- [ ] Before 2026-11-20 15:44 UTC, while Storybook 11.0.0-beta.3 is younger than seven days, in a Yarn 4 project with `npmMinimalAgeGate: 7d` in `.yarnrc.yml` and the Chromatic addon, run `npx storybook@11.0.0-beta.3 upgrade`: the install succeeds, and `npmPreapprovedPackages` in `.yarnrc.yml` lists `chromatic` next to the Chromatic addon. From that time on the prerelease is older than the gate, the upgrade leaves `npmPreapprovedPackages` alone, and the check cannot be done.
+  - [#36910](https://github.com/storybookjs/storybook/pull/36910) `Core: Exempt chromatic from release-age gates alongside the Chromatic addon`
 - [ ] Start a project's Storybook 11 with `npx storybook dev --host 0.0.0.0` and open it over plain HTTP at the machine's LAN address: a story whose `play` function types or clicks with the `userEvent` of its context passes in the Interactions panel.
   - [#37334](https://github.com/storybookjs/storybook/pull/37334) `Test: Fix the context userEvent in insecure contexts`
 
@@ -61,13 +67,10 @@ Tick an item when the check shows what it describes, and when it shows something
   - [#36310](https://github.com/storybookjs/storybook/pull/36310) `CLI: Fix vitest ERESOLVE on fresh Next.js apps.`
   - [#36823](https://github.com/storybookjs/storybook/pull/36823) `Core: Exit 1 when a prompt aborts or stdin ends mid-run`
 
-## The SvelteKit repos of the plan are below the SvelteKit 3 floor, so no probe run reaches Storybook 11 on SvelteKit
+## No repo of the catalog has the state it acts on
 
 - [ ] In a SvelteKit 3 project on Storybook 11, make `.storybook/preview.ts` export `definePreview` of the Storybook SvelteKit framework with the docs addon in `addons`, and write a `.stories.ts` file whose meta is `preview.meta` of a Svelte component with one story and one `.extend` of it: both stories render, and `npx vitest --project storybook --run` passes them.
   - [#36669](https://github.com/storybookjs/storybook/pull/36669) `Svelte: Add CSF factories with definePreview`, the part that the plan entry `svelte-csf-factories` does not test
-
-## No repo of the catalog has the state it acts on
-
 - [ ] In a TanStack Router project on Storybook 11 with the Storybook Vitest addon, add a story whose component throws while it renders and a story whose route has its own `errorComponent`: the test of the first story fails with the thrown error, and the second renders its `errorComponent` and passes.
   - [#36715](https://github.com/storybookjs/storybook/pull/36715) `TanStack React: Surface story render errors to Storybook`, the part that the plan entry `tanstack-render-error` does not test
 - [ ] In a folder with a `package.json` and no Storybook config, run `npx storybook@11.0.0-beta.3 add` with the scoped name of the Storybook accessibility addon and `--yes`, then `echo $?`: it prints that it cannot find the main config file, and the exit status is 1.
@@ -76,6 +79,12 @@ Tick an item when the check shows what it describes, and when it shows something
   - [#36792](https://github.com/storybookjs/storybook/pull/36792) `Core: Floor ts-dedent to ^2.2.0 so a CJS-only hoist cannot break the Vite preview graph`
 - [ ] In a new Vite React TypeScript project with TypeScript 7.1 installed, run `npx create-storybook@11.0.0-beta.3`, start Storybook, and open the docs of Example/Button: it starts without a TypeScript warning, and the args table lists `primary`, `backgroundColor`, `size`, `label`, and `onClick` with their descriptions. Do the same in a new Angular CLI project.
   - [#37004](https://github.com/storybookjs/storybook/pull/37004) `Docgen: Run React and Angular docgen on the TypeScript 7.1 native API`
+- [ ] In a project on Storybook 11, register a local manager addon with `type: types.TAB`, and emit `HIGHLIGHT` with `{ elements, color }` and no `id` from a story: no tab shows beside the canvas, and the browser console warns `Ignoring highlight without an id` and the story highlights nothing.
+  - [#36402](https://github.com/storybookjs/storybook/pull/36402) `Core: Make UniversalStore internal`, the part that the plan entry `removed-manager-apis` does not test
+  - [#36424](https://github.com/storybookjs/storybook/pull/36424) `Core: Replace obsolete satisfies compatibility helper`, the part that the plan entry `removed-manager-apis` does not test
+  - [#36480](https://github.com/storybookjs/storybook/pull/36480) `Core: Remove deprecated tab addon registration`, the part that the plan entry `removed-manager-apis` does not test
+  - [#36662](https://github.com/storybookjs/storybook/pull/36662) `Core: Remove legacy highlight object format`
+  - [#36757](https://github.com/storybookjs/storybook/pull/36757) `[SB-2007] Remove ExternalDocs and ExternalDocsContainer`, the part that the plan entry `removed-manager-apis` does not test
 - [ ] In a project on Storybook 11.0.0-beta.1 with the Storybook skills installed, where `.claude/skills/ui-workflow` exists, remove the `## Storybook` section from `AGENTS.md` and run `npx storybook@11.0.0-beta.3 upgrade`: `.claude/skills/ui-workflow` and `.agents/skills/ui-workflow` are gone, the four new skills are there, and `AGENTS.md` has no `## Storybook` section again.
   - [#37346](https://github.com/storybookjs/storybook/pull/37346) `Skills: Remove the ui-workflow skill of an 11.0 prerelease on upgrade`
 - [ ] In a Vite project on Storybook 11 without the Storybook Vitest addon whose `vitest.config.ts` sets `test.projects` to a variable that holds an array of projects, run `npx storybook add` with the scoped name of the Storybook Vitest addon: `test.projects` still lists the existing projects, and the `storybook` project is a new item of that same list.

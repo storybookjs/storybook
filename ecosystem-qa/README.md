@@ -301,6 +301,7 @@ ECOSYSTEM_QA_FAKE=1 node ecosystem-qa/run.ts --repo mealdrop --version 11.0.0-be
 ```
 
 The `macos` in the path is the operating system of the machine that runs it, and `linux` or `windows` on another one: the collect ignores a record in the directory of another system.
+`track.ts` then lists the Linux jobs that the plan plans as runs without a result, because a plan runs on Linux.
 
 The run reports the five checks of the tier `gate` first, the upgrade and the dev server that the prompt's steps run in any case, and then one check `plan.<slug>` for each entry of its part, in plan order.
 `--tier must` or `--tier extended` runs those tiers in place of the gate, and the collect of the batch then needs the same `--tier`.
@@ -344,7 +345,7 @@ A job of a plan run in the matrix that `missing-runs.ts` reads names its `part`,
 
 ## Run it in CI
 
-Start the `Ecosystem QA` workflow by hand and pick the repos, version, engines and operating systems.
+Start the `Ecosystem QA` workflow by hand and pick the repos, version, engines and operating systems, or merge a plan into `qa/plans` as the next section describes.
 `repo` takes catalog ids separated by commas, and `owned`, `tier1` or `tier2` for every repo of that class, so `owned,tier1,tier2` with `linux,windows` is a whole static sweep in one run.
 `plan.ts` turns the inputs into one job for each repo, operating system and engine, and a repo runs on Windows only when the catalog marks it `windows`.
 Linux runs the agent in `docker()`; Windows runs it with `noSandbox()`, and the API key is the only secret in that job.
@@ -354,7 +355,7 @@ Each runner uploads `qa-result-<id>-<os>-<engine>`, or `qa-result-<id>-<os>-<eng
 
 The collect job runs `group.ts` with the key from the `ecosystem-qa` environment, then collects with its `groups.json` and uploads both files as `qa-proposals`.
 To collect again without running any agent, set `from_runs` to a comma-separated list of earlier run ids: the job fetches their `qa-result-*` artifacts with `fetch-runs.ts`, the result that was uploaded last winning where two runs hold the same repo, OS and engine, and groups and collects those.
-It takes only runs of this workflow that were started by hand, on the default branch or on the branch the collecting run itself runs on, and stops before it downloads anything when one of the ids is anything else.
+It takes only runs of this workflow that were started by hand, on the default branch or on the branch the collecting run itself runs on, and runs that a push to `qa/plans` started, and stops before it downloads anything when one of the ids is anything else.
 The branch is the name the run was started under, not the code it ran.
 So a sweep that ran on a feature branch has to be collected and filed from that branch before the branch is merged: once the branch is gone, no run can collect it.
 In a sweep the collect job gets the plan and, before it groups anything, runs `missing-runs.ts`, which names every planned run that left no result it can read, as a warning and in the Step Summary: a job whose runner was lost uploads nothing, and the sweep would otherwise read as complete with one run fewer.
@@ -363,6 +364,91 @@ Any run of the repository can upload an artifact with the name of a result, also
 It uploads them again as `qa-earlier-results`, so the filing job finds their evidence and cycle bundles.
 To split a wrong merge, or to collect when the model is unavailable, paste a `groups.json` document into `groups`; the job uses it instead of asking the model.
 Two requests over the same findings can group a borderline pair differently, so start the run that files with the `groups.json` of the dry run you reviewed.
+
+### Sweep a plan from `qa/plans`
+
+A plan that is merged into the branch `qa/plans` starts its sweep, and each batch starts the next one once its numbers are in the tracking discussion.
+
+```text
+push to qa/plans ──> plan job ─────────> runner jobs ──────> collect ──> track ──> gh workflow run
+                     plan.ts --push      one per repo and               track.ts   batch n+1, same
+                     plan.ts --outputs   part, tier gate                           plan_hash
+```
+
+A maintainer sets up three things once, before the first plan is merged:
+
+- The discussion category `QA sweeps`, under the edit button of Categories on the Discussions tab. Without it the `track` job fails with a message that names it, and no batch starts the next one.
+- The branch `qa/plans` in the deployment branches of the environments `ecosystem-qa` and `ecosystem-qa-file`, so that its runs get the agent keys and its filings the push tokens.
+- The repository variable `ECOSYSTEM_QA_CYCLE_CAP_USD`, the spend cap of one plan in dollars, when the cap should not be 250.
+
+The plan job is the only job that reads the inputs and the event, and every other job reads its outputs.
+For a push it diffs the plans directory over the commits of the push, and only a path that is a plan file in `ecosystem-qa/plans/` is ever read.
+A push that adds or changes one plan runs batch 1 of it as a dry run.
+A push that adds or changes no plan ends with a green plan job that says so.
+So does the push that creates the branch, which runs no plan even when it carries one.
+A push that adds or changes a Markdown file in `ecosystem-qa/plans/` whose name is not the name of a plan, such as one with a space or a letter outside ASCII, ends in the plan job and names the file.
+A push that adds or changes two plans ends in the plan job and names both.
+
+A dispatch by hand runs one batch of a plan with `plan` set to its file name, such as `11.0.md`, and `batch` set to its number.
+It starts the next batch only when `chain` is set.
+`version` is the version of the plan's header when it is empty, and must be on the plan's line when it is not; a sweep without a plan needs it.
+A run with a plan runs the tier `gate` and the checks of its batch, on Linux, with `repo`, `os` and `tier` left out.
+When `plan_hash` is given and the plan at that commit has another hash or is gone, the plan job ends green with a notice and runs nothing, and the `track` job adds a comment to the discussion of the plan as it was, which says that the run ran nothing for that batch and what it found.
+A dispatched batch of a plan has a concurrency group of its plan, batch and `from_runs`, and the batch 1 that a push starts has a group of its commit, so a chained batch never waits behind the batch that started it.
+
+The `track` job runs `track.ts` for every run with a plan that was not cancelled, also when the collect failed, except a collect of earlier runs that failed, which has nothing to report.
+The first batch of a plan creates the discussion `[SB 11 QA] Dynamic sweep 11.0.md`, with a hidden marker of the plan's hash in its first line.
+Each batch adds one comment, for its batch, version and source runs: the runs planned, finished and without a result, the dollars of each, the checks by state, and one line for each finding.
+Collecting the same runs again edits that comment and starts no batch.
+The spend of a plan is the sum of the dollars in the comments that the workflow wrote, and a run without a result or without a price counts as the flat price `USD_PER_RUN` of `lib/qa-plan.ts`.
+A run is counted once however often it is reported, and a job that leaves no result is counted once for each attempt of its workflow run that reports it, so a "Re-run failed jobs" that loses it again costs one more flat price.
+Two cases count too much, and stay so because they err on the safe side: a job lost in two runs that are collected together is priced a third time, and a re-run of only the `file` or `track` job prices each lost job once more.
+Each batch comment also carries, in a hidden line, the spend of the plan that it was written with.
+A changed plan has another hash, so it starts a cycle of its own with a new discussion and a spend of zero.
+
+The chain stops after the last batch, when a run does not chain, when a batch left no result, and when the spend reaches the cap.
+It also stops when the discussion holds a report of a later batch, or when an earlier report of the same batch started the next one already.
+And it stops, and the comment says "at least" of the spend, when the record of the spend is short or may be:
+
+- A comment that the workflow wrote was edited by anyone else, or reports no batch of the plan.
+- The discussion holds no report of an earlier batch, such as after a comment was deleted or a batch was skipped.
+- The comments of the workflow hold fewer runs than the spend that one of them was written with, which is what a deleted comment leaves, and each comment written after that carries the missing runs in its hidden line, so a filing or a batch started by hand stops again.
+- The plan has more than one discussion, for example after its first line was edited, the next batch started a new one, and the line was put back.
+- The first report of a batch comes from a later attempt of its workflow run, whose earlier attempts reported nothing because they were cancelled or their `track` job failed before it wrote.
+
+Once a comment of the workflow says "at least", every later comment of the plan says it too, also when the batch is reported again or the missing report was collected since.
+A deleted comment stays unseen when no comment that is left was written after it, such as the newest comment, or the only comment of a batch that is deleted before another run of that batch reports.
+The attempts of a run that another run collects with `from_runs` are not known, so they are not checked.
+A run that wrote no comment, because it was cancelled or its `track` job did not write, is in no record, and a new run of the same batch chains on without its spend.
+Run its failed jobs again, or collect it alone with `from_runs`, before you dispatch the batch again.
+The cap is checked before each next batch starts, so the spend of a plan can pass it by at most one batch.
+
+The comment says what comes next on a line `Next:`.
+When the chain stops before the last batch, and neither a report of a later batch nor an earlier start of the next one stopped it, the line below it prints the dispatch that starts the next batch by hand, such as `gh workflow run ecosystem-qa.yml --ref qa/plans -f plan=11.0.md -f batch=2 -f plan_hash=e526520a70c0 -f chain=true -f version=11.0.0-beta.3 -f engines=claude`.
+Run it once the reason is gone: after the jobs of a batch that left no result were run again and finished, after a dispatch that failed, after the cap was raised, or once you know what the record of the spend is short of.
+The batch it starts reports and chains like any other, and stops again for a reason that stays, such as a second discussion or a comment that is gone.
+A report of the same batch again keeps the `Next:` line as the first report wrote it, so a re-run never starts a batch itself.
+It prints the line below it again from its own run, so the line of a batch that was filed leaves out the `budget_minutes` of the batch.
+The `track` job starts the next batch before it writes the comment, so the comment says `Batch 2 is started.` only after the dispatch went through, and otherwise that the dispatch failed.
+The `track` jobs of one plan share a concurrency group of the plan's hash, so two reports never create two discussions or start the next batch twice.
+A third report that queues while one waits cancels the waiting one, and its run then reports nothing.
+The workflow never writes over a comment that someone else edited, so the `track` job of that batch fails and names the comment.
+Edit nothing the workflow wrote in the discussion, and write notes as comments of your own.
+The `track` job uses the job token with `discussions: write` and `actions: write` to start the next batch, and no environment.
+
+A chained batch is always a dry run, so a person files each batch by hand with the dispatch that its comment prints.
+That dispatch carries the plan's hash, so it runs nothing once the plan changed.
+In a run that files, the `file` job runs after the `track` job, and then edits the comment of the batch so that each finding names its issue.
+Its last line says `Filed.` only when the file step succeeded, and otherwise that the filing did not finish.
+
+To see what a batch would write without writing it, run `track.ts --print` on its results, here the fake run and collect of the fixture plan above:
+
+```sh
+node ecosystem-qa/track.ts --print --filing dry --results ecosystem-qa/results \
+  --plan ecosystem-qa/lib/plan.fixture.md --batch 1 --version 11.0.0-beta.3 \
+  --planned "$(node ecosystem-qa/plan.ts --plan ecosystem-qa/lib/plan.fixture.md --batch 1)" \
+  --proposals ecosystem-qa/results/proposals.json --repo storybookjs/storybook
+```
 
 A pull request that touches `ecosystem-qa/` or the workflow runs only the smoke job: typecheck, tests, `qa-plan.ts check` on the fixture plan and on every plan in `ecosystem-qa/plans/`, and a fake run through collect and a dry filing, with no environment and no secrets.
 That is how a pull request against `qa/plans` that adds a plan gets its red or green check.
@@ -408,8 +494,10 @@ A run whose agent did not finish is never read this way.
 
 ## Dry mode
 
-Dry mode is the default.
+Dry mode is the default, and a push to `qa/plans` is always a dry run.
 The filer writes each proposal, with its full issue body and the evidence it would upload, to the Step Summary and changes nothing.
+Dry mode files no finding, but a batch with a plan still reports its numbers in the tracking discussion.
+Its comment prints the dispatch that files the batch, with `from_runs` and `dry` set to false, and the day its result artifacts expire, after which the batch can no longer be filed.
 Without dry mode it pushes the evidence to the `qa-assets` branch with the job token, pushes the upgraded state to the catalog repo with the push token of the target's org, and files the issue in milestone 11.
 That is `ECOSYSTEM_QA_PUSH_TOKEN` for `storybookjs` and `ECOSYSTEM_QA_PUSH_TOKEN_STORYBOOK_TMP` for `storybook-tmp`, both from the `ecosystem-qa-file` environment.
 The upgraded state lands under `refs/qa/`, never as a branch: a branch push would start the catalog repo's own workflows and run the agent's commits with that repo's secrets before anyone read the diff.

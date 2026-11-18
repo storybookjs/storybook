@@ -1,4 +1,4 @@
-import { type ExportSpecifier, parse } from 'es-module-lexer';
+import { type ExportSpecifier, type ParseError, parse } from 'es-module-lexer';
 import MagicString from 'magic-string';
 import type { Plugin } from 'vite';
 
@@ -26,16 +26,16 @@ export async function injectExportOrderPlugin() {
         try {
           [, exports] = await parse(code);
         } catch (error) {
-          const { message, idx } = error as Error & { idx?: number };
-          // Vite transpiles JSX only in .jsx/.tsx, and JSX in .ts already fails in esbuild
+          const { idx } = error as ParseError;
+          // Vite transpiles JSX only in .jsx/.tsx, and JSX in .ts already fails in esbuild.
+          // The hint uses Vite's wording so dev and build give the same advice.
           const hint = id.endsWith('.js')
-            ? ' If the file contains JSX, rename it to use the .jsx or .tsx extension.'
+            ? ' If you are using JSX, make sure to name the file with the .jsx or .tsx extension.'
             : '';
-          // Rollup only adds the location and code frame for a separate `pos` argument
-          this.error(
-            { message: `Failed to parse the story file: ${message}.${hint}`, cause: error },
-            idx
-          );
+          // Raise here rather than returning undefined: in `storybook build` the file reaches
+          // Rollup's own parser next, and its error has no JSX hint.
+          // Rollup adds the file, location and code frame from the separate `pos` argument.
+          this.error({ message: `Failed to parse the story file.${hint}`, cause: error }, idx);
         }
 
         const exportNames = exports.map((e) => code.substring(e.s, e.e));

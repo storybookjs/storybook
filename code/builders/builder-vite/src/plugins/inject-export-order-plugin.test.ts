@@ -31,7 +31,7 @@ describe('injectExportOrderPlugin', () => {
       )
     ).rejects.toMatchObject({
       message:
-        'Failed to parse the story file: Parse error @:2:50. If the file contains JSX, rename it to use the .jsx or .tsx extension.',
+        'Failed to parse the story file. If you are using JSX, make sure to name the file with the .jsx or .tsx extension.',
       pos: 85,
     });
   });
@@ -40,7 +40,7 @@ describe('injectExportOrderPlugin', () => {
     await expect(
       transform('export const Primary = () => <button>Hi</button>;', '/src/Button.stories.jsx')
     ).rejects.toMatchObject({
-      message: 'Failed to parse the story file: Parse error @:1:50.',
+      message: 'Failed to parse the story file.',
     });
   });
 });

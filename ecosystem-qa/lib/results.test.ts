@@ -430,6 +430,29 @@ describe('loadResults of a plan batch', () => {
 
     expect(loadWith(scope()).warnings).toEqual([expect.stringMatching(/disagrees .* on part/)]);
   });
+
+  const baselinesOf = (plan: PlanScope, checkId: string) => {
+    writeRun(
+      partDir(1),
+      record({
+        ...planRun({ ...partOne, batch: plan.batch }, checkId),
+        findings: (['pass', 'fail'] as const).map((baseline) =>
+          finding({ checkId, baseline, evidence: { logs: [] } })
+        ),
+      })
+    );
+    return loadResults(resultsDir, { version: VERSION, catalog: [ENTRY], plan, warn: () => {} })
+      .flatMap(({ result }) => result.findings)
+      .map(({ baseline }) => baseline);
+  };
+
+  it('takes a probe finding as not captured on the baseline, whatever its record says', () => {
+    expect(baselinesOf(scope(3), 'plan.animation-probe')).toEqual(['not-captured', 'not-captured']);
+  });
+
+  it('keeps the baseline of a normal finding as its record says', () => {
+    expect(baselinesOf(scope(), 'plan.story-sort-in-main')).toEqual(['pass', 'fail']);
+  });
 });
 
 describe('evidence names in a finding', () => {

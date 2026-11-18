@@ -237,8 +237,16 @@ A probe is an entry with a line `- Probe:` after `- Batch:`, the draft's `probe`
 It tests behaviour that is new or fixed in the line, which no project can hold before the upgrade, on a repo that the plan has already.
 It adds new files, such as a story, a component for it, a script, or a local addon, and at most one option of a config file that is the behaviour under test or that the added files need to load.
 It never changes or removes a line the project has, never writes what an upgrade step reads, such as what an automigration acts on, what a blocker or a floor checks, or what the package manager detection reads, and never stands in for a framework, a builder, a package manager, an addon the check is about, or a framework version.
+The checklist gives the agent the probe line as `Probe: after the upgrade, add <probe line>.` right under the first line of the check, with the directory `<slug>-added/` of the evidence, where it keeps a copy of each added file and a diff of each file it added a line to.
 The line reads after the word "add", so `check` refuses a probe line that starts with "add" or "adds" in any case.
+`prompts/plan-checks.md` takes only that line for the mark of a probe, and tells the agent to add exactly that after the upgrade, change and remove no line the project has, remove the added files and restore the file it added a line to before the next check, and start the reproduction steps of a finding with adding the probe's files.
+It also tells the agent that a probe has no baseline and that nothing of it is done before the upgrade, and that "probe" in the other instructions means a command that gathers evidence.
 `check` refuses `Probe:`, in any case, with spaces before the colon, and with the colon escaped as `Probe\:`, which GitHub shows as `Probe:`, in every other line of the plan, so no title, reason, step, or expected outcome reads as that mark.
+Whatever a run's record says, the loader takes the baseline of a finding whose check is a probe of the plan as not captured, so no later step reads it as pre-existing.
+The issue of a finding from a probe opens with a paragraph that says it comes from a probe, what the run added, and where the copy is, with the entry taken from the plan file by the check id. Its baseline line says that a probe has no baseline because the run adds it after the upgrade, and its reproduction section says that the steps start from the linked commit plus the added files, which that commit does not hold.
+A comment that adds such a finding to an existing issue opens with the same paragraph.
+The title starts with `[SB 11 QA probe]:` instead of `[SB 11 QA]:`, so the dry filing, the filing report, the issue list, the batch comment of the tracking discussion, and collect's console show the mark too.
+The fingerprint and the repeat rule do not read the title. The grouping model reads the titles of the filed issues, which carry the mark for a probe, and the titles of the new findings, which do not.
 
 A change takes the first of these that fits: a normal entry on a repo of the plan that has the state at its pin, a probe, a discovered repo, a manual check, and no QA with the reason.
 
@@ -259,6 +267,7 @@ It then holds the plan against these rules and prints each problem as `<file>:<l
 - With `--window`, every PR of the window marked `qa:needed` or without a QA label is in the PRs of an entry or in one row of manual QA or of no QA, every PR marked `qa:skip` is in one group, and the plan names no PR that the window does not hold in that role.
 
 Without `--window`, `check` knows no PR's QA status, so it accepts a plan in which a PR of the window has no place at all, an entry lists a PR that the window does not hold or that was verified by hand, one edit drops a tested PR from the PRs of its entry, a PR marked `qa:skip` sits only in an entry, or a PR marked `qa:needed` sits in a group that names its entry.
+`plan.ts` and `run.ts` read a plan through `lib/plan-scope.ts`, which checks it without a window, so the smoke job's `check --window` is the check that keeps such a plan from being merged.
 
 `render` refuses a draft whose decision of a PR names other entries than the ones that list it, or gives no QA to a PR that an entry lists, because the file decides a PR by its place and cannot hold both.
 A manual decision of a PR that an entry lists puts the PR into that entry and into the row of its check.
@@ -297,6 +306,15 @@ The run reports the five checks of the tier `gate` first, the upgrade and the de
 `--tier must` or `--tier extended` runs those tiers in place of the gate, and the collect of the batch then needs the same `--tier`.
 The checklist gets the steps, the expected outcome and the reason for the repo of each entry, and the rules of `prompts/plan-checks.md`, which also say how the agent works in the browser.
 The answer schema names the ids of this run only, so the agent cannot report a check the plan does not have.
+
+A plan check tests the project as it is after the upgrade, and the agent never creates the state a check needs:
+
+- Forbidden: adding a setting, a file, a dependency, or code so that an upgrade step, an automigration, or a removal has something to act on, or so that the project looks as if it used something it does not use. When the project does not have what the entry describes, the agent reports the check as `skip` and names in its note what the project lacks.
+- Allowed: what a user of the released version does to see the result, such as starting the dev server, building, opening a page, clicking, or reading a file, and a step of the entry that turns on a new opt-in feature of the tested version, such as a feature flag in the Storybook main file. That step is its own step of the plan, so the reviewer sees it, and the agent does exactly what it says. The agent never decides on its own to turn something on.
+- Allowed for a probe: after the upgrade, exactly what its `Probe:` line names, new files and at most one option in the file it names. The agent copies the files, and a diff of that file, to `<slug>-added/` in the evidence, and removes the files and restores that file before the next check, so the state the run records is the project after the upgrade.
+
+So a repo is listed for an entry only when it has that state at its pinned commit.
+A plan check reported as `skip` opens no proposal: the answer schema accepts a finding only for a check that is `fail`, and `collect.ts` makes proposals from findings alone.
 `--repo` may name a discovered repo of the plan, which the runner resolves through `loadEntries(plan)`.
 
 The run ends with exit 1 before anything is cloned when the plan is not in its rendered form or fails `checkPlan`, when the plan has no such batch, when the batch lists no entry or no such part for the repo, or when `--version` is not on the plan's line.

@@ -120,6 +120,22 @@ describe('agentOutput', () => {
       ]);
     });
 
+    it('refuses a finding on a plan check that the project could not run, so it opens no issue', () => {
+      const output = failing(plan);
+      const skipped = {
+        ...output,
+        checks: output.checks.map((check) =>
+          check.id === plan
+            ? { ...check, state: 'skip', note: 'No storySort in .storybook/preview.ts' }
+            : check
+        ),
+        findings: [finding(plan)],
+      };
+
+      expect(problems(skipped)).toEqual([`finding for "${plan}" needs that check to be "fail"`]);
+      expect(problems({ ...skipped, findings: [] })).toEqual([]);
+    });
+
     it('leaves a static fail without a finding and a static check without a note alone', () => {
       expect(problems(failing('core.dev-server'))).toEqual([]);
     });

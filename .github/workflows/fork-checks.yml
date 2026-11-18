@@ -53,7 +53,7 @@ jobs:
   test:
     strategy:
       matrix:
-        os: [windows-latest, ubuntu-latest]
+        os: [windows-latest, ubuntu-24.04]
     runs-on: ${{ matrix.os }}
     name: Core Unit Tests, ${{ matrix.os }}
     if: github.repository_owner != 'storybookjs'

@@ -116,9 +116,13 @@ function createDocsManifestRefEntry(
   return {
     id: entry.id,
     name: entry.name,
-    title: entry.title,
     mdx: { $ref: mdxManifestRef(componentId, entry.id) },
   };
+}
+
+/** A standalone docs page is listed by its title, so its shallow row carries it. */
+function createStandaloneDocsManifestRefEntry(entry: DocsIndexEntry): DocsManifestRefEntry {
+  return { ...createDocsManifestRefEntry(entry, entry.id), title: entry.title };
 }
 
 /** Builds the unattached `docs` map (standalone docs keyed by their own id). */
@@ -211,9 +215,12 @@ export const manifests: PresetPropertyFn<
 
   const existingManifestsWithDocs = existingManifests as ManifestsWithDocs;
   const build: DocBuilder = useMdxService ? createDocsManifestRefEntry : createDocsManifestEntry;
+  const buildStandalone: DocBuilder = useMdxService
+    ? createStandaloneDocsManifestRefEntry
+    : createDocsManifestEntry;
 
   const [unattachedDocs, updatedComponents] = await Promise.all([
-    buildUnattachedDocs(unattachedEntries, build),
+    buildUnattachedDocs(unattachedEntries, buildStandalone),
     applyAttachedDocs(attachedEntries, existingManifestsWithDocs.components, build),
   ]);
 

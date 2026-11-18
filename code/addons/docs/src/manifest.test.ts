@@ -259,7 +259,6 @@ describe('experimental_manifests', () => {
     expect(result.components?.components.example.docs?.['example--docs']).toEqual({
       id: 'example--docs',
       name: 'docs',
-      title: 'Example',
       mdx: {
         $ref: '../services/addon-docs/mdx/example.json#/components/example/docs/example--docs',
       },

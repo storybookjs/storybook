@@ -53,11 +53,15 @@ export interface MdxRefDocument {
   components: Record<string, MdxPayload>;
 }
 
-/** Shallow docs index row: id, name, title, optional summary, and a `$ref` to the full MDX payload. */
+/**
+ * Shallow docs index row: id, name, optional summary, and a `$ref` to the full MDX payload.
+ *
+ * `title` is set on standalone docs pages only: an attached doc is listed under its component.
+ */
 export interface DocsManifestRefEntry {
   id: string;
   name: string;
-  title: string;
+  title?: string;
   summary?: string;
   mdx: JsonRef;
   path?: never;

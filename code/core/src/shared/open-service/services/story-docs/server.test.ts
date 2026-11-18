@@ -14,7 +14,19 @@ import { readAllComponents } from '../component-state-key.ts';
 import { registerTestModuleGraphService } from '../module-graph/module-graph.test-helpers.ts';
 import { storyDocsServiceDef } from './definition.ts';
 import { registerStoryDocsService, subscribeStoryDocsToModuleGraphChanges } from './server.ts';
+import type { SnippetTemplate } from '../../../../docs-tools/snippetTemplate.ts';
 import type { StoryDocsPayload, StoryDocsProvider } from './types.ts';
+
+// `<Button label="…" />` with its label in a hole.
+const buttonTemplate = (
+  text = 'label="Hi"',
+  name = 'label'
+): SnippetTemplate<{ kind: 'attr'; name: string }> => [
+  '<Button ',
+  { kind: 'attr', name, arg: 'label', text },
+  ' />',
+];
+const vegaTemplate: SnippetTemplate = ['<Vega', { kind: 'attrs', spread: true, text: '' }, ' />'];
 
 afterEach(() => {
   clearRegistry();
@@ -67,6 +79,81 @@ describe('story-docs open service', () => {
     await expect(service.commands.extractStoryDocs({ id: 'button' })).resolves.toEqual(payload);
     expect(service.queries.storyDocs.get({ id: 'button' })).toEqual(payload);
     expect(provider).toHaveBeenCalledWith({ entry });
+  });
+
+  it('keeps a template only while it prints the snippet and has the shape of one', async () => {
+    const entry = makeStoryEntry('button--primary', 'Button');
+    const story = (id: string, snippet: string, template: unknown) => ({
+      id: `button--${id}`,
+      name: 'Primary',
+      snippet,
+      template: template as SnippetTemplate,
+    });
+    const stories = [
+      story('kept', '<Button label="Hi" />', buttonTemplate()),
+      story('brackets', '<Button label="⟦x⟧" />', ['<Button label="⟦x⟧" />']),
+      story('other-snippet', '<Button label="Hi" />  ', [...buttonTemplate('label="Hey"'), '  ']),
+      story('string', '<Button label="Hi" />', '<Button ⟦attr label label⟫label="Hi"⟧ />'),
+      story('no-arg', '<Button label="Hi" />', [
+        '<Button ',
+        { kind: 'attr', text: 'label="Hi"' },
+        ' />',
+      ]),
+    ];
+    const templatesWith = async (liveSnippets: boolean) => {
+      clearRegistry();
+      const service = registerStoryDocsService({
+        getIndex: makeGetIndex([entry]),
+        storyDocsProvider: async () =>
+          makeStoryDocsPayload({ stories: Object.fromEntries(stories.map((s) => [s.id, s])) }),
+        liveSnippets,
+      });
+      const payload = await service.commands.extractStoryDocs({ id: 'button' });
+      return Object.values(payload!.stories).map((doc) => doc.template);
+    };
+
+    expect(await templatesWith(true)).toEqual([
+      stories[0]!.template,
+      stories[1]!.template,
+      undefined,
+      undefined,
+      undefined,
+    ]);
+    // Without live snippets, agents and the components manifest read no templates.
+    expect(await templatesWith(false)).toEqual(stories.map(() => undefined));
+  });
+
+  it('updates a subscription to a template when only the template changes', async () => {
+    let name = 'label';
+    const service = registerStoryDocsService({
+      getIndex: makeGetIndex([makeStoryEntry('button--primary', 'Button')]),
+      storyDocsProvider: async () =>
+        makeStoryDocsPayload({
+          stories: {
+            'button--primary': {
+              id: 'button--primary',
+              name: 'Primary',
+              snippet: '<Button label="Hi" />',
+              template: buttonTemplate('label="Hi"', name),
+            },
+          },
+        }),
+      liveSnippets: true,
+    });
+    await service.commands.extractStoryDocs({ id: 'button' });
+    const selected: unknown[] = [];
+    const unsubscribe = service.queries.storyDocs.subscribe(
+      { id: 'button' },
+      (payload) => payload?.stories['button--primary']?.template,
+      (state) => selected.push(state.data)
+    );
+
+    // A server update that changes the template but not the snippet.
+    name = 'title';
+    await service.commands.extractStoryDocs({ id: 'button' });
+    unsubscribe();
+
+    expect(selected.at(-1)).toEqual(buttonTemplate('label="Hi"', 'title'));
   });
 
   describe('storyDocs query', () => {
@@ -162,7 +249,10 @@ describe('story-docs open service', () => {
       stories: Object.fromEntries(
         entries
           .filter((story) => story.importPath === entry.importPath)
-          .map((story) => [story.id, { id: story.id, name: story.name, snippet: '<Vega />' }])
+          .map((story) => [
+            story.id,
+            { id: story.id, name: story.name, snippet: '<Vega />', template: vegaTemplate },
+          ])
       ),
     });
 
@@ -183,10 +273,11 @@ describe('story-docs open service', () => {
       expect(payload).toMatchObject({ id: 'vega', name: 'Vega', path: chart });
     });
 
-    it('gives every snippet the import block of its own file', async () => {
+    it('gives every snippet and template the import block of its own file', async () => {
       const service = registerStoryDocsService({
         getIndex: makeGetIndex(entries),
         storyDocsProvider: extractFile,
+        liveSnippets: true,
       });
 
       const payload = await service.commands.extractStoryDocs({ id: 'vega' });
@@ -198,6 +289,10 @@ describe('story-docs open service', () => {
       expect(payload!.stories['vega--heatmap']!.snippet).toBe(
         `import { Vega } from '${ranges}';\n\n<Vega />`
       );
+      expect(payload!.stories['vega--heatmap']!.template).toEqual([
+        `import { Vega } from '${ranges}';\n\n<Vega`,
+        ...vegaTemplate.slice(1),
+      ]);
     });
 
     it('reports the error of a file that fails on the stories of that file', async () => {

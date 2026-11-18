@@ -27,7 +27,7 @@ You can then get started [writing stories](../whats-a-story.mdx), [running tests
     },
     {
       name: 'Vite',
-      range: '≥ 5',
+      range: '≥ 6.3',
       icon: '/images/logos/builders/vite.svg',
     },
   ]}
@@ -48,6 +48,18 @@ You will find the output in the configured `outputDir` (default is `storybook-st
 ## Writing native Svelte stories
 
 The Svelte frameworks ship with built-in support for writing stories for your Svelte components using the template syntax, via Svelte CSF.
+
+## Component documentation
+
+Storybook 11 reads Svelte component props on the server by default, with [`svelte2tsx`](https://github.com/sveltejs/language-tools/tree/master/packages/svelte2tsx) and [`typescript`](../../configure/integration/typescript.mdx) 5.9 or 6 (including in JavaScript projects, where it reads JSDoc comments). New projects need no docgen configuration.
+
+<Callout variant="info">
+
+The Storybook 10 builder-based docgen is still available, but it is deprecated. It will be removed in Storybook 12. To use it, set [`features.docgenServer: false`](../../api/main-config/main-config-features.mdx#docgenserver) in your main config. See the [`docgen`](#docgen) option.
+
+Projects on TypeScript 7 get no docgen, because both server-side and builder-based docgen need TypeScript 5.9 or 6. See [TypeScript 7](../../configure/integration/typescript.mdx#typescript-7) to install TypeScript 6 and 7 side by side.
+
+</Callout>
 
 ## FAQ
 
@@ -83,10 +95,18 @@ Type: `boolean`
 
 Default: `true`
 
-Enables or disables automatic documentation generation for component properties. When disabled, Storybook will skip the docgen processing step during build, which can improve build performance.
+Turns builder docgen on or off. Builder docgen reads your components in the Vite build, and Storybook only uses it when [`docgenServer`](../../api/main-config/main-config-features.mdx#docgenserver) is off. Like the server, it needs a usable `typescript` package. `docgenServer` is on by default, so this option has no effect unless you turn the server off. See [Component documentation](#component-documentation).
+
+<Callout variant="warning">
+
+Builder docgen is deprecated and will be removed in Storybook 12. Storybook warns when it runs, because your `.storybook/main.ts` sets `docgenServer: false`. Remove that setting to use server-side docgen.
+
+</Callout>
+
+To turn docgen off completely, turn off both `docgenServer` and builder docgen:
 
 <CodeSnippets path="svelte-framework-options-docgen.md" />
 
-#### When to disable docgen
+##### When to turn docgen off completely
 
-Disabling docgen can improve build performance for large projects, but [argTypes won't be inferred automatically](../../api/arg-types.mdx#automatic-argtype-inference), which will prevent features like [Controls](../../essentials/controls.mdx) and [docs](../../writing-docs/autodocs.mdx) from working as expected. To use those features, you will need to [define `argTypes` manually](../../api/arg-types.mdx#manually-specifying-argtypes).
+Turning docgen off can improve build performance for large projects, but [argTypes won't be inferred automatically](../../api/arg-types.mdx#automatic-argtype-inference), which will prevent features like [Controls](../../essentials/controls.mdx) and [docs](../../writing-docs/autodocs.mdx) from working as expected. To use those features, you will need to [define `argTypes` manually](../../api/arg-types.mdx#manually-specifying-argtypes).

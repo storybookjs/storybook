@@ -4,7 +4,6 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import type { IndexEntry } from 'storybook/internal/types';
 import { dedent } from 'ts-dedent';
-import ts from 'typescript';
 
 import { ComponentMetaManager } from '../componentManifest/componentMeta/ComponentMetaManager.ts';
 import type { ComponentDoc } from '../componentManifest/componentMeta/componentMetaExtractor.ts';
@@ -14,7 +13,10 @@ import {
   tsconfigJSON,
   writeFiles,
 } from '../componentManifest/componentMeta/test-helpers.ts';
+import { loadTestTypeScript } from '@storybook/component-meta-typescript/testing';
 import { buildDocgenPayload } from './buildDocgen.ts';
+
+const typescript = await loadTestTypeScript();
 
 let tempDir: string | undefined;
 let componentMetaManager: ComponentMetaManager | undefined;
@@ -64,7 +66,7 @@ describe('buildDocgenPayload', () => {
         `,
       });
 
-      componentMetaManager = new ComponentMetaManager(ts);
+      componentMetaManager = new ComponentMetaManager(typescript);
       const importPath = files['Button.stories.tsx'];
 
       const payload = await buildDocgenPayload(
@@ -111,7 +113,7 @@ describe('buildDocgenPayload', () => {
       `,
     });
 
-    componentMetaManager = new ComponentMetaManager(ts);
+    componentMetaManager = new ComponentMetaManager(typescript);
 
     const payload = await buildDocgenPayload(
       { entry: makeStoryIndexEntry(files['Button.stories.tsx'], 'Forms/Button') },
@@ -147,7 +149,7 @@ describe('buildDocgenPayload', () => {
         `,
       });
 
-      componentMetaManager = new ComponentMetaManager(ts);
+      componentMetaManager = new ComponentMetaManager(typescript);
 
       const payload = await buildDocgenPayload(
         { entry: makeStoryIndexEntry(files['Button.stories.tsx'], 'Forms/Button') },
@@ -182,7 +184,7 @@ describe('buildDocgenPayload', () => {
         `,
       });
 
-      componentMetaManager = new ComponentMetaManager(ts);
+      componentMetaManager = new ComponentMetaManager(typescript);
 
       const payload = await buildDocgenPayload(
         { entry: makeStoryIndexEntry(files['Button.stories.tsx'], 'Forms/Button') },
@@ -198,7 +200,7 @@ describe('buildDocgenPayload', () => {
 
   it('returns undefined when the story file is missing', { timeout: 15_000 }, async () => {
     tempDir = createTempDir('docgen-build');
-    componentMetaManager = new ComponentMetaManager(ts);
+    componentMetaManager = new ComponentMetaManager(typescript);
 
     const payload = await buildDocgenPayload(
       {
@@ -239,7 +241,7 @@ describe('buildDocgenPayload', () => {
         `,
     });
 
-    componentMetaManager = new ComponentMetaManager(ts);
+    componentMetaManager = new ComponentMetaManager(typescript);
 
     const payload = await buildDocgenPayload(
       { entry: makeStoryIndexEntry(files['Card.stories.tsx'], 'Layout/Card') },
@@ -264,6 +266,42 @@ describe('buildDocgenPayload', () => {
     });
   });
 
+  it(
+    'documents a component and subcomponent a barrel exports as namespace members',
+    { timeout: 30_000 },
+    async () => {
+      tempDir = createTempDir('docgen-build');
+
+      const files = writeFiles(tempDir, {
+        'tsconfig.json': tsconfigJSON(),
+        'ui.tsx': dedent`
+          import React from 'react';
+          export const Icon = (_props: { glyph: string }) => <i />;
+          export const Button = (_props: { label: string }) => <button />;
+        `,
+        'lib.ts': `export * as UI from './ui';`,
+        'Button.stories.tsx': dedent`
+          import { UI } from './lib';
+          export default { component: UI.Button, subcomponents: { Icon: UI.Icon }, title: 'Button' };
+          export const Primary = {};
+        `,
+      });
+
+      componentMetaManager = new ComponentMetaManager(typescript);
+
+      const payload = await buildDocgenPayload(
+        { entry: makeStoryIndexEntry(files['Button.stories.tsx'], 'Button') },
+        {
+          componentMetaManager,
+          resolvePath: (p) => (path.isAbsolute(p) ? p : path.join(tempDir!, p)),
+        }
+      );
+
+      expect(Object.keys(payload?.argTypes ?? {})).toEqual(['label']);
+      expect(Object.keys(payload?.subcomponents?.Icon?.argTypes ?? {})).toEqual(['glyph']);
+    }
+  );
+
   it('extracts argTypes through React.memo', { timeout: 30_000 }, async () => {
     tempDir = createTempDir('docgen-build');
 
@@ -284,7 +322,7 @@ describe('buildDocgenPayload', () => {
       `,
     });
 
-    componentMetaManager = new ComponentMetaManager(ts);
+    componentMetaManager = new ComponentMetaManager(typescript);
 
     const payload = await buildDocgenPayload(
       { entry: makeStoryIndexEntry(files['Button.stories.tsx'], 'Forms/Button') },
@@ -335,7 +373,7 @@ describe('buildDocgenPayload', () => {
         `,
       });
 
-      componentMetaManager = new ComponentMetaManager(ts);
+      componentMetaManager = new ComponentMetaManager(typescript);
 
       const payload = await buildDocgenPayload(
         { entry: makeStoryIndexEntry(files['Button.stories.jsx'], 'Forms/Button') },

@@ -63,4 +63,22 @@ describe('run', () => {
     );
     expect(exitSpy).not.toHaveBeenCalled();
   });
+
+  test('sandbox command initializes Storybook by default', async () => {
+    mockSandbox.mockResolvedValueOnce(undefined);
+
+    await run(['node', 'storybook', 'sandbox']);
+
+    expect(mockSandbox).toHaveBeenCalledWith(expect.objectContaining({ init: true }));
+    expect(exitSpy).not.toHaveBeenCalled();
+  });
+
+  test('sandbox command skips initialization with --no-init', async () => {
+    mockSandbox.mockResolvedValueOnce(undefined);
+
+    await run(['node', 'storybook', 'sandbox', '--no-init']);
+
+    expect(mockSandbox).toHaveBeenCalledWith(expect.objectContaining({ init: false }));
+    expect(exitSpy).not.toHaveBeenCalled();
+  });
 });

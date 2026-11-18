@@ -19,6 +19,8 @@ import { getPkgPrNewPackageSpecifier } from '../utils/get-pkg-pr-new-package-spe
 import { findFilesUp, getProjectRoot } from '../utils/paths.ts';
 import storybookPackagesVersions from '../versions.ts';
 import type { PackageJson, PackageJsonWithDepsAndDevDeps } from './PackageJson.ts';
+import { LOCK_FILES } from './constants.ts';
+import { type OverrideSource, toOverrides } from './overrides.ts';
 import type { InstallationMetadata } from './types.ts';
 import { getInstallErrorTail } from './util.ts';
 import { getVitePlusVersions } from './vite-plus-versions.ts';
@@ -135,7 +137,7 @@ export abstract class JsPackageManager {
     this.instanceDir = options?.configDir
       ? isAbsolute(options?.configDir)
         ? dirname(options?.configDir)
-        : dirname(join(this.cwd, options?.configDir))
+        : resolve(this.cwd, dirname(options?.configDir))
       : this.cwd;
     this.packageJsonPaths = JsPackageManager.listAllPackageJsonPaths(
       this.instanceDir,
@@ -340,7 +342,8 @@ export abstract class JsPackageManager {
       return installed;
     }
     const declared = this.getAllDependencies()[packageName];
-    return declared && validRange(declared) ? declared : null;
+    const range = declared && this.getDeclaredRange(packageName, declared);
+    return range && validRange(range) ? range : null;
   }
 
   /**
@@ -354,6 +357,24 @@ export abstract class JsPackageManager {
     _declared: Partial<Record<string, string>>
   ): string[] {
     return specifiers;
+  }
+
+  /**
+   * List the `overrides`, `resolutions` and `pnpm.overrides` fields of the root package.json, the only
+   * manifest whose overrides package managers apply.
+   */
+  public getOverrideSources(): OverrideSource[] {
+    const path = this.#findRootPackageJsonPath();
+    const packageJson = JsPackageManager.getPackageJson(path);
+    const fields: [string, unknown][] = [
+      ['overrides', packageJson.overrides],
+      ['resolutions', packageJson.resolutions],
+      ['pnpm.overrides', packageJson.pnpm?.overrides],
+    ];
+    return fields.flatMap(([field, value]) => {
+      const overrides = toOverrides(value);
+      return overrides ? [{ path, field, overrides }] : [];
+    });
   }
 
   /**
@@ -489,6 +510,61 @@ export abstract class JsPackageManager {
       changed.push(packageJsonPath);
     }
     return changed;
+  }
+
+  /**
+   * Upgrade a dependency that the project resolves to `installedVersion`. Every package.json that
+   * declares it in `dependencies` or `devDependencies` with a range that `installedVersion`
+   * satisfies gets the version in `specifier`, in the same field. An `npm:` alias of the same
+   * package counts as its range. A catalog reference stays in package.json, and the catalog gets
+   * the new version. When no package.json declares it that way,
+   * the primary package.json gets it in `devDependencies`. The method does not run a package
+   * manager install.
+   *
+   * @example
+   *
+   * ```ts
+   * upgradeDeclaredDependency('typescript@^7.1', '7.0.2');
+   * ```
+   */
+  upgradeDeclaredDependency(specifier: string, installedVersion: string): void {
+    const [dependency, version = 'latest'] = getPackageDetails(specifier);
+    let declared = false;
+    for (const packageJsonPath of this.packageJsonPaths) {
+      const packageJson = JsPackageManager.getPackageJson(packageJsonPath);
+      let modified = false;
+      for (const field of ['dependencies', 'devDependencies'] as const) {
+        const declarations = packageJson[field];
+        const range =
+          declarations?.[dependency] && this.getDeclaredRange(dependency, declarations[dependency]);
+        if (!range || !satisfies(installedVersion, range)) {
+          continue;
+        }
+        declared = true;
+        if (this.writeCatalogUpgrades([specifier], declarations).length > 0) {
+          declarations[dependency] = version;
+          modified = true;
+        }
+      }
+      if (modified) {
+        this.writePackageJson(packageJson, dirname(packageJsonPath));
+      }
+    }
+    if (!declared) {
+      const { packageJson, operationDir } = this.primaryPackageJson;
+      packageJson.devDependencies = { ...packageJson.devDependencies, [dependency]: version };
+      this.writePackageJson(packageJson, operationDir);
+    }
+  }
+
+  /**
+   * The semver range that a package.json declaration stands for, or null when it has none: the
+   * declaration itself, or the range of an `npm:` alias of the same package. PNPMProxy resolves a
+   * catalog reference to the catalog's range.
+   */
+  protected getDeclaredRange(packageName: string, declared: string): string | null {
+    const alias = `npm:${packageName}@`;
+    return declared.startsWith(alias) ? declared.slice(alias.length) : declared;
   }
 
   /**
@@ -959,6 +1035,44 @@ export abstract class JsPackageManager {
 
     // Fall back to cwd package.json
     return this.packageJsonPaths[0] ?? resolve(this.cwd, 'package.json');
+  }
+
+  /** Find the package.json whose `workspaces` include `packageJsonPath`, if any. */
+  protected findWorkspaceRootPackageJsonPath(packageJsonPath: string): string | undefined {
+    return this.packageJsonPaths.find((ancestorPath) => {
+      const workspaces = JsPackageManager.getPackageJson(ancestorPath).workspaces;
+      const patterns = Array.isArray(workspaces) ? workspaces : workspaces?.packages;
+      if (!patterns?.length) {
+        return false;
+      }
+      return globSync(
+        patterns
+          .filter((pattern: string) => !pattern.startsWith('!'))
+          .map((pattern: string) => `${pattern}/package.json`),
+        {
+          cwd: dirname(ancestorPath),
+          absolute: true,
+          ignore: patterns
+            .filter((pattern: string) => pattern.startsWith('!'))
+            .map((pattern: string) => `${pattern.slice(1)}/package.json`),
+        }
+      )
+        .map(normalize)
+        .includes(normalize(packageJsonPath));
+    });
+  }
+
+  /** The package.json beside the closest lockfile, else the workspace root, else the primary one. */
+  #findRootPackageJsonPath(): string {
+    const lockfilePath = find.any(LOCK_FILES, {
+      cwd: this.primaryPackageJson.operationDir,
+      last: getProjectRoot(),
+    });
+    if (lockfilePath) {
+      return join(dirname(lockfilePath), 'package.json');
+    }
+    const { packageJsonPath } = this.primaryPackageJson;
+    return this.findWorkspaceRootPackageJsonPath(packageJsonPath) ?? packageJsonPath;
   }
 
   /** List all package.json files starting from the given directory and stopping at the project root. */

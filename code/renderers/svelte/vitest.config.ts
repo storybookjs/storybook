@@ -8,7 +8,7 @@ import { vitestCommonConfig } from '../../vitest.shared.ts';
 export default defineConfig(
   mergeConfig(vitestCommonConfig, {
     plugins: [
-      import('@sveltejs/vite-plugin-svelte').then(({ svelte }) => svelte()),
+      import('@sveltejs/vite-plugin-svelte').then(({ svelte }) => svelte({ configFile: false })),
       svelteCsf(),
       // @ts-expect-error -- types don't match our TS module resolution setting
       import('@testing-library/svelte/vite').then(({ svelteTesting }) => svelteTesting()),
@@ -23,6 +23,8 @@ export default defineConfig(
     },
     test: {
       environment: 'happy-dom',
+      // Svelte's runtime keeps component state across files when a worker is reused.
+      isolate: true,
       setupFiles: ['./vitest-setup.ts'],
     },
   })

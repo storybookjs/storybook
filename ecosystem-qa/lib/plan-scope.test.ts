@@ -16,7 +16,7 @@ describe('planScopeOf', () => {
   it('names the plan by its file and the hash of its bytes, at the tier gate unless told', () => {
     expect(batchOne).toMatchObject({
       file: 'plan.fixture.md',
-      hash: '5ad105c7fc7b',
+      hash: 'b54ac8664678',
       batch: 1,
       tier: 'gate',
     });
@@ -35,7 +35,7 @@ describe('planScopeOf', () => {
   });
 
   it('refuses a batch the plan does not have', () => {
-    expect(scopeOf({ batch: '3' })).toBe(`${PATH} has no batch 3, only 1 to 2.`);
+    expect(scopeOf({ batch: '4' })).toBe(`${PATH} has no batch 4, only 1 to 3.`);
   });
 
   it('refuses an unknown tier', () => {
@@ -49,7 +49,7 @@ describe('planScopeOf', () => {
     );
 
     expect(scopeOf({ batch: '1' }, Buffer.from(text))).toMatch(
-      new RegExp(`^${PATH} is not a plan that can run, line 19: `)
+      new RegExp(`^${PATH} is not a plan that can run, line 57: `)
     );
   });
 
@@ -65,7 +65,7 @@ describe('plannedRun', () => {
     expect(plannedRun(batchOne, { repo: 'mealdrop', version: '11.0.0-beta.3' })).toMatchObject({
       record: {
         file: 'plan.fixture.md',
-        hash: '5ad105c7fc7b',
+        hash: 'b54ac8664678',
         batch: 1,
         part: 1,
         entries: [

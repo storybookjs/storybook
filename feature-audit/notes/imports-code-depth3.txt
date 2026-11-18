@@ -1,0 +1,188 @@
+code/.storybook/bench [2 ext]: , xe(Ae, JSON.stringify(H))),
+              N.s && (x.append(, , xe(Ae, JSON.stringify(H)), 
+    test-only: @storybook/react-vite, react
+code/.storybook/main.ts [3 ext]: @storybook/react-vite, @vitejs/plugin-react, vite
+code/.storybook/manager.tsx [1 ext]: es-toolkit
+code/.storybook/open-service-debug-service.ts [1 ext]: valibot
+code/.storybook/preview.tsx [11 ext]: @storybook/addon-a11y, @storybook/addon-docs, @storybook/addon-themes, @storybook/addon-vitest, @storybook/global, @storybook/react-vite, lodash-es, prettier, react, storybook-addon-pseudo-states, uuid
+code/.storybook/services-preset.ts [0 ext]: 
+code/.storybook/storybook.setup.ts [1 ext]: vitest
+code/.storybook/vitest.preview.ts [2 ext]: @storybook/react-vite, vitest
+code/__mocks__/fs [0 ext]: 
+    test-only: vitest
+code/__mocks__/fs-extra.ts [0 ext]: 
+    test-only: vitest
+code/__mocks__/fs.ts [0 ext]: 
+    test-only: vitest
+code/addons/a11y [7 ext]: @radix-ui/react-tabs, @storybook/global, @storybook/icons, axe-core, react, vitest, vitest-axe
+    test-only: @testing-library/react
+code/addons/docs [22 ext]: @mdx-js/mdx, @mdx-js/react, @rollup/pluginutils, @storybook/addon-docs, @storybook/icons, color-convert, es-toolkit, github-slugger, markdown-to-jsx, polished, react, react-aria, react-colorful, rehype-external-links, rehype-slug, telejson, tocbot, ts-dedent, unplugin, valibot, vite, vitest
+    test-only: @storybook/angular, @storybook/blocks, @storybook/react, @storybook/react-vite, @testing-library/react, magic-string, memfs, react-dom, tiny-invariant
+code/addons/links [3 ext]: @storybook/global, react, vitest
+    test-only: @storybook/addon-links, @testing-library/react, @testing-library/user-event
+code/addons/mcp [6 ext]: @standard-schema/spec, @tmcp/adapter-valibot, @tmcp/transport-http, tmcp, valibot, vitest
+code/addons/onboarding [5 ext]: @neoconfetti/react, @storybook/icons, react, react-dom, vitest
+    test-only: @storybook/react-vite
+code/addons/pseudo-states [3 ext]: @storybook/icons, react, vitest
+    test-only: @storybook/react-vite, react-dom
+code/addons/themes [3 ext]: @storybook/icons, react, vitest
+    test-only: @storybook/addon-themes, @storybook/global
+code/addons/vitest [21 ext]: @react-aria/live-announcer, @storybook/addon-vitest, @storybook/builder-vite, @storybook/icons, @storybook/react-vite, @vitest/browser-playwright, empathic, es-toolkit, istanbul-lib-report, micromatch, pathe, picocolors, react, sirv, slash, tree-kill, ts-dedent, valibot, virtual:, vite, vitest
+    test-only: @analogjs/vite-plugin-angular, @nx/vite, @storybook/global, @vitejs/plugin-react, @vitest/istanbul-lib-report, istanbul-reports, vite-tsconfig-paths
+code/builders/builder-vite [13 ext]: ${PROJECT_ANNOTATIONS_VIRTUAL_ID}, ${SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE}, ${previewRuntimePath}, empathic, es-module-lexer, knitwork, magic-string, pathe, picocolors, slash, ts-dedent, vite, vitest
+    test-only: ${packageName}, C:, virtual:, virtual:story.js
+code/builders/builder-webpack5 [23 ext]: ${entry}, @storybook/core-webpack, @storybook/global, case-sensitive-paths-webpack-plugin, cjs-module-lexer, es-module-lexer, esbuild, fork-ts-checker-webpack-plugin, html-webpack-plugin, magic-string, pathe, pretty-hrtime, semver, sirv, slash, terser-webpack-plugin, vitest, webpack, webpack-dev-middleware, webpack-hot-middleware, webpack-virtual-modules, {{csfImportPath}}, {{storiesFilename}}
+    test-only: memfs
+code/core/build-config.ts [1 ext]: tinyexec
+code/core/scripts [4 ext]: es-toolkit, oxfmt, rolldown, ts-dedent
+code/core/src [143 ext]: ${typeImport}, );
+}
+
+, @babel/core, @babel/generator, @babel/parser, @babel/traverse, @babel/types, @clack/prompts, @devtools-ds/object-inspector, @discoveryjs/json-ext, @emotion/cache, @emotion/is-prop-valid, @emotion/react, @emotion/styled, @fal-works/esbuild-plugin-global-externals, @ngard/tiny-isequal, @polka/compression, @preact/signals-core, @radix-ui/react-scroll-area, @radix-ui/react-slot, @react-aria/live-announcer, @react-aria/overlays, @react-stately/overlays, @react-types/shared, @standard-schema/spec, @storybook/addon-docs, @storybook/global, @storybook/icons, @storybook/react-webpack5, @storybook/your-framework, @testing-library/dom, @testing-library/jest-dom, @testing-library/user-event, @valibot/to-json-schema, @vitest/mocker, @vitest/spy, @vitest/utils, @webcontainer/env, acorn, acorn-jsx, ansi-to-html, bar, baz, browser-dtector, chai, commander, comment-json, comment-parser, copy-to-clipboard, cross-spawn, deep-object-diff, deepsignal, dequal, detect-indent, detect-port, diff, downshift, ejs, empathic, es-toolkit, esbuild, eslint-plugin-storybook, estree, estree-walker, execa, exsolve, fetch-retry, file:, foo, fuse.js, get-npm-tarball-url, github-slugger, glob, globby, host-validation-middleware, jsdoc-type-pratt-parser, launch-editor, lazy-universal-dotenv, leven, magic-string, mdast-util-from-markdown, mdast-util-mdx, memoizerific, micromark-extension-mdxjs, mockdate, modern-tar, msw, msw-storybook-addon, nanoid, npmlog, open, oxc-parser, oxc-resolver, p-limit, package-manager-detector, pathe, picocolors, picomatch, picoquery, polished, polka, prettier, pretty-hrtime, qrcode.react, react, react-aria, react-aria-components, react-docgen-typescript, react-dom, react-helmet-async, react-inspector, react-joyride, react-popper-tooltip, react-router-dom, react-stately, react-syntax-highlighter, react-textarea-autosize, react-transition-state, recast, semver, sirv, slash, std-env, store2, strip-ansi, strip-json-comments, telejson, tiny-invariant, tinyglobby, tinyspy, ts-dedent, tsconfig-paths, type-fest, unique-string, use-resize-observer, valibot, vite-plus, vitest, watchpack, wrap-ansi, ws, yaml, zod
+    test-only: ${entry.importPath}, <xyz>, <xyz>.js, @/components, @angular/core, @eslint/compat, @eslint/eslintrc, @eslint/js, @primer/octicons-react, @primer/react, @react-stately/tabs, @storybook/addon-a11y, @storybook/addon-vitest, @storybook/blocks, @storybook/components, @storybook/core-common, @storybook/nextjs, @storybook/other-package, @storybook/react, @storybook/react-vite, @storybook/test, @storybook/test-runner, @testing-library/react, component-package, custom-addon, ds, eslint, eslint-config-next, eslint-flat-config-utils, eslint-plugin-cypress, expect-type, flush-promises, js-yaml, life, memfs, my-eslint-config, other-package, prop-types, require-from-string, some-library, some-other-config-lib, some-other-package, some-plugin, some-unresolvable-package-xyz, somewhere, source-map, type-plus, typescript, typescript-eslint, y
+code/core/template [0 ext]: 
+    test-only: @storybook/global, @storybook/react, lodash-es, react, uuid
+code/core/vitest.config.ts [1 ext]: vitest
+code/e2e-internal/addon-pseudo-states.spec.ts [0 ext]: 
+    test-only: @playwright/test
+code/e2e-internal/docgen-hot-update.spec.ts [0 ext]: 
+    test-only: @playwright/test
+code/e2e-internal/helpers.ts [1 ext]: @playwright/test
+code/e2e-internal/iframe-messaging.spec.ts [0 ext]: 
+    test-only: @playwright/test
+code/e2e-internal/internal-storybook.smoke.spec.ts [0 ext]: 
+    test-only: @playwright/test
+code/e2e-internal/navigation.spec.ts [0 ext]: 
+    test-only: @playwright/test
+code/e2e-internal/open-service-sync.spec.ts [0 ext]: 
+    test-only: @playwright/test
+code/e2e-internal/playwright.config.ts [1 ext]: @playwright/test
+code/e2e-internal/sidebar-scrolling.spec.ts [0 ext]: 
+    test-only: @playwright/test
+code/e2e-internal/story-docs.spec.ts [0 ext]: 
+    test-only: @playwright/test
+code/e2e-internal/tools-attach.spec.ts [0 ext]: 
+    test-only: @playwright/test
+code/e2e-sandbox/addon-a11y.spec.ts [0 ext]: 
+    test-only: @playwright/test
+code/e2e-sandbox/addon-actions.spec.ts [0 ext]: 
+    test-only: @playwright/test
+code/e2e-sandbox/addon-backgrounds.spec.ts [0 ext]: 
+    test-only: @playwright/test
+code/e2e-sandbox/addon-controls.spec.ts [0 ext]: 
+    test-only: @playwright/test
+code/e2e-sandbox/addon-docs.spec.ts [0 ext]: 
+    test-only: @playwright/test, ts-dedent
+code/e2e-sandbox/addon-mcp.spec.ts [0 ext]: 
+    test-only: @playwright/test
+code/e2e-sandbox/addon-onboarding.spec.ts [0 ext]: 
+    test-only: @playwright/test
+code/e2e-sandbox/addon-toolbars.spec.ts [0 ext]: 
+    test-only: @playwright/test
+code/e2e-sandbox/addon-viewport.spec.ts [0 ext]: 
+    test-only: @playwright/test
+code/e2e-sandbox/change-detection.spec.ts [0 ext]: 
+    test-only: @playwright/test
+code/e2e-sandbox/component-tests.spec.ts [0 ext]: 
+    test-only: @playwright/test
+code/e2e-sandbox/docgen-hot-update.spec.ts [0 ext]: 
+    test-only: @playwright/test
+code/e2e-sandbox/framework-nextjs.spec.ts [0 ext]: 
+    test-only: @playwright/test
+code/e2e-sandbox/framework-svelte.spec.ts [0 ext]: 
+    test-only: @playwright/test
+code/e2e-sandbox/framework-vue3.spec.ts [0 ext]: 
+    test-only: @playwright/test
+code/e2e-sandbox/framework-web-components.spec.ts [0 ext]: 
+    test-only: @playwright/test
+code/e2e-sandbox/json-files.spec.ts [0 ext]: 
+    test-only: @playwright/test
+code/e2e-sandbox/manager.spec.ts [0 ext]: 
+    test-only: @playwright/test
+code/e2e-sandbox/module-mocking.spec.ts [0 ext]: 
+    test-only: @playwright/test
+code/e2e-sandbox/preview-api.spec.ts [0 ext]: 
+    test-only: @playwright/test
+code/e2e-sandbox/sb-module-mocking.spec.ts [0 ext]: 
+    test-only: @playwright/test
+code/e2e-sandbox/static-dirs.spec.ts [0 ext]: 
+    test-only: @playwright/test
+code/e2e-sandbox/storybook-hooks.spec.ts [0 ext]: 
+    test-only: @playwright/test
+code/e2e-sandbox/storybook.setup.ts [1 ext]: @playwright/test
+code/e2e-sandbox/tags.spec.ts [0 ext]: 
+    test-only: @playwright/test
+code/e2e-sandbox/util.ts [1 ext]: @playwright/test
+code/frameworks/angular [18 ext]: @angular-devkit/architect, @angular-devkit/build-angular, @angular-devkit/core, @angular/common, @angular/compiler-cli, @angular/core, @angular/platform-browser, @storybook/builder-webpack5, @storybook/global, empathic, pathe, rxjs, telejson, ts-dedent, tsconfig-paths-webpack-plugin, type-fest, vitest, webpack
+    test-only: @angular/forms, @angular/platform-browser-dynamic, @storybook/angular
+code/frameworks/angular-vite [17 ext]: @analogjs/vite-plugin-angular, @angular-devkit/architect, @angular-devkit/core, @angular/common, @angular/core, @angular/platform-browser, @storybook/angular-cm, @storybook/builder-vite, @storybook/global, empathic, rxjs, telejson, ts-dedent, type-fest, typescript, vite, vitest
+    test-only: @angular/compiler, @angular/forms, @angular/platform-browser-dynamic, @angular/router, @storybook/angular-vite, lit, memfs
+code/frameworks/ember [7 ext]: @babel/core, @storybook/builder-webpack5, @storybook/global, ember-source, empathic, ts-dedent, vitest
+    test-only: @storybook/addon-links, ember-cli-htmlbars
+code/frameworks/html-vite [2 ext]: @storybook/builder-vite, @storybook/html
+    test-only: @storybook/html-vite
+code/frameworks/nextjs [29 ext]: @babel/core, @babel/plugin-syntax-bigint, @babel/plugin-syntax-dynamic-import, @babel/plugin-syntax-import-assertions, @babel/plugin-transform-class-properties, @babel/plugin-transform-export-namespace-from, @babel/plugin-transform-numeric-separator, @babel/plugin-transform-object-rest-spread, @babel/plugin-transform-runtime, @babel/preset-env, @babel/preset-react, @babel/preset-typescript, @babel/types, @pmmmwh/react-refresh-webpack-plugin, @storybook/builder-webpack5, @storybook/nextjs, @storybook/react, loader-utils, next, probe-image-size, react, sb-original, semver, something, styled-jsx, tsconfig-paths, tsconfig-paths-webpack-plugin, vitest, webpack
+    test-only: @next/font, prop-types, react-dom, storybook-nextjs-font-loader?{\\
+code/frameworks/nextjs-vite [13 ext]: @storybook/builder-vite, @storybook/nextjs-vite, @storybook/react, @storybook/react-vite, lilconfig, next, postcss-load-config, react, sb-original, semver, styled-jsx, vite-plugin-storybook-nextjs, vitest
+    test-only: prop-types, react-dom
+code/frameworks/preact-vite [3 ext]: @storybook/builder-vite, @storybook/preact, vitest
+    test-only: preact
+code/frameworks/react-native-web-vite [6 ext]: @storybook/react, @storybook/react-vite, vite, vite-plugin-rnw, vite-tsconfig-paths, vitest
+    test-only: @storybook/react-native-web-vite, prop-types, react, react-native
+code/frameworks/react-vite [10 ext]: @joshwooding/vite-plugin-react-docgen-typescript, @rollup/pluginutils, @storybook/builder-vite, @storybook/react, magic-string, react-docgen, resolve, tsconfig-paths, vite, vitest
+    test-only: @storybook/react-vite, prop-types, react
+code/frameworks/react-webpack5 [3 ext]: @storybook/builder-webpack5, @storybook/react, vitest
+    test-only: @storybook/react-webpack5, prop-types, react
+code/frameworks/server-webpack5 [2 ext]: @storybook/server, vitest
+code/frameworks/svelte-vite [12 ext]: @rolldown/pluginutils, @storybook/builder-vite, @storybook/svelte, @sveltejs/vite-plugin-svelte, estree, magic-string, svelte, svelte2tsx, sveltedoc-parser, typescript, vite, vitest
+    test-only: @storybook/svelte-vite
+code/frameworks/sveltekit [8 ext]: @storybook/builder-vite, @storybook/svelte, @storybook/svelte-vite, @storybook/sveltekit, @sveltejs/vite-plugin-svelte, svelte, vite, vitest
+    test-only: $app, memfs
+code/frameworks/tanstack-react [13 ext]: @babel/types, @storybook/builder-vite, @storybook/react, @storybook/react-vite, @tanstack/react-router, @tanstack/react-start, @tanstack/router-core, @tanstack/start-client-core, @tanstack/start-storage-context, pathe, react, vite, vitest
+    test-only: @storybook/tanstack-react, @testing-library/react
+code/frameworks/vue3-vite [5 ext]: @storybook/builder-vite, @storybook/vue3, magic-string, vite, vitest
+    test-only: @storybook/vue3-vite, vue, vue-component-meta
+code/frameworks/web-components-vite [3 ext]: @storybook/builder-vite, @storybook/web-components, vitest
+    test-only: @storybook/web-components-vite, lit
+code/lib/angular-cm [3 ext]: @angular/core, typescript, vitest
+code/lib/angular-compodoc [3 ext]: @storybook/global, entities, vitest
+code/lib/claude-plugin [2 ext]: tinyexec, vitest
+code/lib/cli-sb [1 ext]: vitest
+code/lib/cli-storybook [23 ext]: @storybook/addon-vitest, @storybook/angular-vite, @storybook/codemod, @storybook/tanstack-react, @vitest/browser-playwright, commander, create-storybook, cross-spawn, empathic, envinfo, globby, jscodeshift, leven, p-limit, pathe, picocolors, semver, slash, tiny-invariant, tinyclip, ts-dedent, vitest, …
+    test-only: ${specifier}, @storybook/addon-a11y, @storybook/addon-docs, @storybook/addon-svelte-csf, @storybook/addon-themes, @storybook/angular, @storybook/manager-api, @storybook/nextjs-vite, @storybook/react, @storybook/react-vite, @storybook/sveltekit, @storybook/vue3-vite, @storybook/web-components, @storybook/web-components-vite, @tanstack/react-router, custom-elements-manifest, framer-motion, internal-types, memfs, react, some-other-package
+code/lib/codemod [8 ext]: cross-spawn, es-toolkit, jscodeshift, pathe, prettier, tiny-invariant, tinyglobby, vitest
+    test-only: @storybook/react, ansi-regex, ts-dedent
+code/lib/codex-plugin [2 ext]: tinyexec, vitest
+code/lib/core-webpack [2 ext]: ts-dedent, vitest
+    test-only: webpack
+code/lib/create-storybook [15 ext]: ${frameworkPackage}, @react-native-async-storage/async-storage, @storybook/addon-docs, @storybook/react-native, @storybook/react-native-ui-lite, commander, empathic, expo, picocolors, react-native, semver, std-env, tiny-invariant, ts-dedent, vitest
+    test-only: @storybook/react-vite, @storybook/react-webpack5, metro-config, oxfmt, somewhere
+code/lib/docgen-harness [10 ext]: @angular/core, @storybook/angular-cm, @sveltejs/vite-plugin-svelte, @testing-library/svelte, @vitejs/plugin-vue, typescript, vitest, vue-component-meta, vue-docgen-api, zod
+    test-only: @bench/heavy-ui, @bench/types, @microsoft/fast-element, @stencil/core, @storybook/angular-compodoc, @storybook/angular-vite, @storybook/global, @storybook/svelte, @storybook/vue3, @storybook/vue3-vite, @testing-library/vue, lit, memfs, rxjs, svelte, vue
+code/lib/eslint-plugin [10 ext]: @typescript-eslint/rule-tester, @typescript-eslint/types, @typescript-eslint/utils, eslint, minimatch, oxfmt, prompts, tinyexec, ts-dedent, vitest
+    test-only: @storybook/jest, @storybook/react, @storybook/react-vite, @storybook/test, @storybook/testing-library, @storybook/vue3, @storybook/vue3-webpack5, @storybook/web-components, @storybook/web-components-vite, react, some-other-package
+code/lib/mcp [8 ext]: @tmcp/adapter-valibot, @tmcp/transport-http, @tmcp/transport-stdio, react-docgen-typescript, srvx, tmcp, valibot, vitest
+    test-only: @/components, @modelcontextprotocol/sdk, tinyexec
+code/lib/vite-plugin-storybook-nextjs [16 ext]: ${imagePath}?ignore, @next/env, @rollup/pluginutils, magic-string, module-alias, next, pathe, probe-image-size, react, rollup, sb-original, semver, ts-dedent, vite, vite-tsconfig-paths, vitest
+    test-only: memfs
+code/playwright.config.ts [2 ext]: @playwright/test, dotenv
+code/presets/react-webpack [7 ext]: @storybook/core-webpack, @storybook/react-docgen-typescript-plugin, magic-string, react-docgen, resolve, tsconfig-paths, webpack
+    test-only: vitest
+code/presets/server-webpack [4 ext]: @storybook/core-webpack, safe-identifier, ts-dedent, vitest
+    test-only: yaml
+code/renderers/html [3 ext]: @storybook/global, ts-dedent, vitest
+    test-only: @storybook/html
+code/renderers/preact [5 ext]: @storybook/global, preact, ts-dedent, type-fest, vitest
+    test-only: expect-type, react
+code/renderers/react [24 ext]: @design-system/button, @storybook/global, @volar/language-core, acorn, acorn-jsx, acorn-walk, empathic, es-toolkit, escodegen, estree, html-tags, memfs, pathe, react, react-docgen, react-docgen-typescript, react-dom, react-element-to-jsx-string, resolve, ts-dedent, tsconfig-paths, type-fest, typescript, vitest
+    test-only: @babel/core, @ds/button, @ds/header, @primer/octicons-react, @primer/react, @scope/ui, @storybook/addon-docs, @storybook/react, @storybook/react-vite, @testing-library/react, expect-type, my-preset, prop-types, require-from-string, ui, ~
+code/renderers/server [4 ext]: @storybook/global, ts-dedent, vitest, yaml
+code/renderers/svelte [15 ext]: ${StorybookSvelteCSFError.importSource}, @storybook/svelte, @sveltejs/vite-plugin-svelte, @testing-library/svelte, es-toolkit, esrap, estree, magic-string, rollup, svelte, sveltedoc-parser, ts-dedent, type-fest, vitest, zimmerframe
+    test-only: ${SVELTE_CSF_RENDERER_IMPORT_SOURCE}, ${source}, @storybook/global, @storybook/svelte-vite, vite, zod
+code/renderers/vue3 [10 ext]: @storybook/global, @vitejs/plugin-vue, @vue/language-core, type-fest, typescript, vitest, vue, vue-component-meta, vue-component-type-helpers, vue-docgen-api
+    test-only: @example/C.vue, @storybook/vue3, @testing-library/vue, @ui/AliasedButton.vue, expect-type, memfs
+code/renderers/web-components [10 ext]: @storybook/global, @wc-toolkit/cem-generator, @wc-toolkit/cem-generator-lit, es-toolkit, lit, pathe, ts-dedent, type-fest, typescript, vitest
+    test-only: @storybook/web-components, cross-spawn, lit-element, memfs, tmp
+code/vitest-setup.ts [2 ext]: ts-dedent, vitest
+code/vitest.config.storybook.ts [4 ext]: @storybook/addon-vitest, @vitest/browser-playwright, vite-plugin-inspect, vitest
+code/vitest.shared.ts [2 ext]: vite, vitest

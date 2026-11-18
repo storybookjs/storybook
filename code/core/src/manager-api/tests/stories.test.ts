@@ -1266,6 +1266,24 @@ describe('stories API', () => {
       api.selectStory('a');
       expect(navigate).toHaveBeenCalledWith('/story/a--2', undefined);
     });
+    it('selects the first child of a component whose stories are all filtered out', () => {
+      const initialState = {
+        path: '/story/b-c--1',
+        storyId: 'b-c--1',
+        viewMode: 'story',
+        filters: { onlyB: (entry: API_PreparedIndexEntry) => entry.title !== 'a' },
+      };
+      const moduleArgs = createMockModuleArgs({ initialState });
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { navigate, store } = moduleArgs;
+
+      api.setIndex({ v: 5, entries: navigationEntries });
+      expect(store.getState().filteredIndex).not.toHaveProperty('a');
+
+      // As when opening the component from "Recently opened", which ignores the filters
+      api.selectStory('a');
+      expect(navigate).toHaveBeenCalledWith('/story/a--1', undefined);
+    });
     describe('deprecated api', () => {
       it('allows navigating to a combination of title + name', () => {
         const initialState = { path: '/story/a--1', storyId: 'a--1', viewMode: 'story' };

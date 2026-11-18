@@ -67,8 +67,11 @@ const Stack = styled.div({
   minHeight: 0,
 });
 
+// Like a composed Storybook's ref, the main entry carries both indexes: `filteredIndex` for the
+// tree and the search results, and `index`, which ignores the filters, for "Recently opened".
 const useCombination = (
   index: SidebarProps['index'],
+  filteredIndex: SidebarProps['filteredIndex'],
   indexError: SidebarProps['indexError'],
   previewInitialized: SidebarProps['previewInitialized'],
   allStatuses: StatusesByStoryIdAndTypeId,
@@ -78,7 +81,7 @@ const useCombination = (
     () => ({
       [DEFAULT_REF_ID]: {
         index,
-        filteredIndex: index,
+        filteredIndex,
         indexError,
         previewInitialized,
         allStatuses,
@@ -88,7 +91,7 @@ const useCombination = (
       },
       ...refs,
     }),
-    [refs, index, indexError, previewInitialized, allStatuses]
+    [refs, index, filteredIndex, indexError, previewInitialized, allStatuses]
   );
   // @ts-expect-error (non strict)
   return useMemo(() => ({ hash, entries: Object.entries(hash) }), [hash]);
@@ -113,6 +116,7 @@ export const Sidebar = React.memo(function Sidebar({
   refId = DEFAULT_REF_ID,
   anchor,
   index,
+  filteredIndex = index,
   indexJson,
   indexError,
   allStatuses,
@@ -128,7 +132,14 @@ export const Sidebar = React.memo(function Sidebar({
     () => (storyId ? { storyId, refId, anchor } : null),
     [storyId, refId, anchor]
   );
-  const dataset = useCombination(index, indexError, previewInitialized, allStatuses, refs);
+  const dataset = useCombination(
+    index,
+    filteredIndex,
+    indexError,
+    previewInitialized,
+    allStatuses,
+    refs
+  );
   const isLoading = !index && !indexError;
   const hasEntries = Object.keys(indexJson?.entries ?? {}).length > 0;
   const lastViewedProps = useLastViewed(selected);

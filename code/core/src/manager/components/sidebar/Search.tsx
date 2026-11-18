@@ -194,7 +194,10 @@ export const Search = React.memo<SearchProps>(function Search({
   const makeFuse = useCallback(() => {
     const list: SearchItem[] = [];
 
-    for (const [refId, { index, allStatuses }] of dataset.entries) {
+    for (const [refId, ref] of dataset.entries) {
+      // Search follows the filters, as the tree does. "Recently opened" below does not.
+      const index = ref.filteredIndex ?? ref.index;
+      const { allStatuses } = ref;
       if (!index) {
         continue;
       }
@@ -400,6 +403,8 @@ export const Search = React.memo<SearchProps>(function Search({
         if (lastViewed && lastViewed.length) {
           // @ts-expect-error (non strict)
           results = lastViewed.reduce((acc, { storyId, refId, anchor }) => {
+            // Look recently opened items up in `index`, which ignores the filters: a filter should
+            // not hide what the user has just opened.
             const data = dataset.hash[refId];
             if (data && data.index && data.index[storyId]) {
               const story = data.index[storyId];

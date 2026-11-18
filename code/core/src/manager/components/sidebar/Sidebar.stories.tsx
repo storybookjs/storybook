@@ -162,12 +162,14 @@ const mobileLayoutDecorator: DecoratorFunction = (storyFn, { args, globals, titl
   </ManagerContext.Provider>
 );
 
+// Like a loaded ref, it holds both indexes: `index` and the filtered `filteredIndex`.
 const refs: Record<string, RefType> = {
   optimized: {
     id: 'optimized',
     title: 'This is a ref',
     url: 'https://example.com',
     type: 'lazy',
+    index,
     filteredIndex: index,
     previewInitialized: true,
     allStatuses: {},
@@ -179,6 +181,7 @@ const indexError = new Error('Failed to load index');
 const refsError = {
   optimized: {
     ...refs.optimized,
+    index: undefined,
     // @ts-expect-error (non strict)
     filteredIndex: undefined as IndexHash,
     indexError,
@@ -189,6 +192,7 @@ const refsEmpty = {
   optimized: {
     ...refs.optimized,
     // type: 'auto-inject',
+    index: {} as IndexHash,
     filteredIndex: {} as IndexHash,
   },
 };
@@ -324,6 +328,21 @@ export const WithRefs: Story = {
     refs,
   },
   play: waitForChecklistWidget,
+};
+
+/** The search results include the matching entries of a composed Storybook. */
+export const WithRefsSearching: Story = {
+  args: {
+    refs,
+  },
+  play: async ({ canvasElement }) => {
+    await waitForChecklistWidget();
+    const canvas = within(canvasElement);
+    await userEvent.type(await canvas.findByRole('searchbox'), 'Child A2');
+    await waitFor(() =>
+      expect(canvasElement.querySelector('[role="option"][data-refid="optimized"]')).not.toBeNull()
+    );
+  },
 };
 
 export const WithRefsNarrow: Story = {
@@ -481,6 +500,35 @@ export const Searching: Story = {
     const search = await canvas.findByPlaceholderText('Find components');
     userEvent.clear(search);
     userEvent.type(search, 'B2');
+  },
+};
+
+// A filter (a tag, for example) hides Child A2, the component of the current story.
+const hiddenComponentId = 'root-1-child-a2';
+const indexWithoutChildA2 = Object.fromEntries(
+  Object.entries(index)
+    .filter(([id]) => !id.startsWith(hiddenComponentId))
+    .map(([id, entry]): [string, IndexHash[string]] => [
+      id,
+      'children' in entry && entry.children
+        ? { ...entry, children: entry.children.filter((c) => !c.startsWith(hiddenComponentId)) }
+        : entry,
+    ])
+);
+
+/**
+ * The tree follows the filters, but "Recently opened" does not: it still lists the current story's
+ * component, which the filters hide.
+ */
+export const RecentlyOpenedIgnoresFilters: Story = {
+  args: { filteredIndex: indexWithoutChildA2 },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await waitFor(() => expect(canvasElement.querySelector('[data-item-id]')).not.toBeNull());
+    expect(canvasElement.querySelector(`[data-item-id="${hiddenComponentId}"]`)).toBeNull();
+
+    await userEvent.click(await canvas.findByRole('searchbox'));
+    await expect(await canvas.findByRole('option', { name: /Child A2/ })).toBeVisible();
   },
 };
 

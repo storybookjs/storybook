@@ -1,3 +1,4 @@
+export { LOCK_FILES } from './constants.ts';
 export * from './JsPackageManagerFactory.ts';
 export * from './JsPackageManager.ts';
 export * from './overrides.ts';

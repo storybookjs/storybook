@@ -474,16 +474,11 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
         task.error(`Failed to upgrade dependencies: ${String(err)}`);
       }
 
-      // Projects the user left out of the upgrade keep their version on purpose.
-      const upgradedPackageJsonPaths = new Set(
-        storybookProjects.flatMap((project) => project.packageManager.packageJsonPaths)
+      await warnAboutOutdatedStorybookPackageJsons(
+        storybookProjects[0].currentCLIVersion,
+        storybookProjects,
+        allProjects
       );
-      await warnAboutOutdatedStorybookPackageJsons(storybookProjects[0].currentCLIVersion, {
-        ignore: allProjects
-          .filter((project) => !storybookProjects.includes(project))
-          .flatMap((project) => project.packageManager.packageJsonPaths)
-          .filter((path) => !upgradedPackageJsonPaths.has(path)),
-      });
     }
 
     // Read before the automigrations, so skills that the skills automigration installs are not

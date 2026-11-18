@@ -102,39 +102,27 @@ test.describe('addon panel', () => {
 
     const sbPage = new SbPage(page, expect);
 
+    await sbPage.deepLinkToStory(storybookUrl, 'core/parameters-actions', 'basic');
+    await sbPage.waitUntilLoaded();
+
     // The withActions decorator attaches its DOM listeners via the preview's hook system, which
     // runs effects on the storyRendered event - after the story is already painted and clickable.
     // A click in that window is silently dropped (the Actions badge then counts too low), which
-    // made this test flaky under CI load. Track storyRendered in the preview frame and wait for it
-    // before interacting. The flag is mirrored to the top window (same origin) so waitForFunction
-    // can poll it from the main frame.
-    await page.context().addInitScript(() => {
-      type DiagGlobals = {
-        __STORYBOOK_ADDONS_CHANNEL__?: { on: (event: string, callback: () => void) => void };
-        __previewStoryRendered?: boolean;
-      };
-      const register = () => {
-        const g = globalThis as DiagGlobals;
-        const top = globalThis.top as unknown as DiagGlobals | null;
-        const channel = g.__STORYBOOK_ADDONS_CHANNEL__;
-        if (channel?.on && top) {
-          channel.on('storyRendered', () => {
-            top.__previewStoryRendered = true;
-          });
-        } else {
-          setTimeout(register, 50);
-        }
-      };
-      if (globalThis !== globalThis.top) {
-        register();
-      }
-    });
+    // made this test flaky under CI load. The channel calls its storyRendered listeners before
+    // recording the event in last(), so once last('storyRendered') reports this story's id the
+    // listeners are guaranteed to be attached. Poll through the iframe element: the frame object
+    // identity changes when the manager re-navigates the preview during a deep link.
+    await page.waitForFunction((storyId) => {
+      const iframe = document.querySelector<HTMLIFrameElement>('#storybook-preview-iframe');
+      const channel = (
+        iframe?.contentWindow as
+          | (Window & { __STORYBOOK_ADDONS_CHANNEL__?: { last: (name: string) => unknown[] } })
+          | null
+          | undefined
+      )?.__STORYBOOK_ADDONS_CHANNEL__;
+      return channel?.last('storyRendered')?.[0] === storyId;
+    }, 'core-parameters-actions--basic');
 
-    await sbPage.deepLinkToStory(storybookUrl, 'core/parameters-actions', 'basic');
-    await sbPage.waitUntilLoaded();
-    await page.waitForFunction(
-      () => (globalThis as { __previewStoryRendered?: boolean }).__previewStoryRendered === true
-    );
     await sbPage.viewAddonPanel('Actions');
 
     const button = sbPage.previewRoot().getByRole('button');

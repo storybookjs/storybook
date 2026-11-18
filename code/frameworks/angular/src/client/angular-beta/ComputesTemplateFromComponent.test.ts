@@ -772,4 +772,25 @@ describe('with aliased inputs', () => {
     });
     expect(source).toEqual(`<doc-aliased [background-color]="'blue'"></doc-aliased>`);
   });
+
+  it('binds only the alias when an arg is set under both names', () => {
+    const source = computesTemplateFromComponent(AliasedInputComponent, {
+      backgroundColor: 'blue',
+      'background-color': 'red',
+    });
+    expect(source).toEqual(
+      `<doc-aliased [background-color]="this['background-color']"></doc-aliased>`
+    );
+  });
+
+  it('leaves a property name that is another input alias to that input', () => {
+    @Component({ selector: 'doc-crossed', template: '', standalone: true })
+    class CrossedAliasComponent {
+      @Input('bar') foo = '';
+      @Input('foo') baz = '';
+    }
+
+    const source = computesTemplateFromComponent(CrossedAliasComponent, { foo: 'x' });
+    expect(source).toEqual(`<doc-crossed [foo]="foo"></doc-crossed>`);
+  });
 });

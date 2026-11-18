@@ -80,13 +80,19 @@ const unique = (values: unknown[]) => new Set(values).size === values.length;
 const PrList = z.array(PrNumber).refine(unique, 'a PR is listed twice');
 const SomePrs = z.array(PrNumber).min(1).refine(unique, 'a PR is listed twice');
 
+// The checklist and the issue print the line after the word "add".
+const Probe = Text.refine(
+  (probe) => !/^adds?\s/i.test(probe),
+  'expected the line to name what is added, because it reads after "add": drop the leading "add" or "adds"'
+);
+
 export const PlanEntry = z.strictObject({
   slug: Slug,
   title: Text,
   prs: SomePrs,
   batch: z.int().min(1),
   // What the run adds to the project after the upgrade, and where.
-  probe: Text.optional(),
+  probe: Probe.optional(),
   repos: z
     .array(z.strictObject({ id: RepoId, reason: Reason }))
     .min(1)
@@ -221,13 +227,13 @@ const unDecision = (cell: string): unknown => {
       `"skip:" is no decision: choose ${MANUAL_CELL} for a check a person does, or "none: <reason>" for a change that needs no QA`
     );
   }
-  if (kind === 'none') {
-    return rest ? { none: rest } : fail('expected the reason why no QA is needed after "none:"');
-  }
   for (const separator of [WHY, REST]) {
     if (cell.split(separator).length > 2) {
       fail(`expected "${separator.trim()}" once in the decision, found it twice`);
     }
+  }
+  if (kind === 'none') {
+    return rest ? { none: rest } : fail('expected the reason why no QA is needed after "none:"');
   }
   if (kind === 'manual') {
     return unManual(rest, MANUAL_CELL);
@@ -472,7 +478,7 @@ const ENTRY_FIELDS: [RegExp, (raw: RawEntry, value: string, key?: string) => voi
   [
     /^- Probe: (.*)$/,
     (raw, value) => {
-      const probe = Text.safeParse(value);
+      const probe = Probe.safeParse(value);
       raw.probe = probe.success ? probe.data : fail(`probe: ${firstIssue(probe.error)}`);
     },
   ],
@@ -863,7 +869,8 @@ const probesHaveOwnBatches: Rule = ({ plan, at }) =>
 // The run and a reader take a text that says "Probe:" for the mark of a probe, so the token stands
 // only in the "- Probe:" line of one. An overview row repeats its entry's title, which is checked
 // at the entry's heading.
-const PROBE_TOKEN = /probe\s*:/i;
+// GitHub shows `Probe\:` as `Probe:`.
+const PROBE_TOKEN = /probe\s*\\?:/i;
 const probeTokenMarksProbesOnly: Rule = ({ lines, at }) => {
   const exempt = new Set([...at.overview, ...at.entries.flatMap(({ probe }) => probe ?? [])]);
   return lines.flatMap((text, index) => {
@@ -1206,6 +1213,12 @@ export const planCheckId = (slug: string): string => `plan.${slug}`;
 
 // Where the run keeps a copy of the files that a probe added, inside its evidence directory.
 export const probeCopyDir = (slug: string): string => `${slug}-added`;
+
+export const isProbeCheck = (
+  entries: Pick<PlanEntry, 'slug' | 'probe'>[] = [],
+  checkId: string
+): boolean =>
+  entries.some(({ slug, probe }) => probe !== undefined && planCheckId(slug) === checkId);
 
 export const renderPlanChecks = (entries: PlanEntry[], repo: string): string =>
   entries

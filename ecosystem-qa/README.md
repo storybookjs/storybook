@@ -238,11 +238,15 @@ It tests behaviour that is new or fixed in the line, which no project can hold b
 It adds new files, such as a story, a component for it, a script, or a local addon, and at most one option of a config file that is the behaviour under test or that the added files need to load.
 It never changes or removes a line the project has, never writes what an upgrade step reads, such as what an automigration acts on, what a blocker or a floor checks, or what the package manager detection reads, and never stands in for a framework, a builder, a package manager, an addon the check is about, or a framework version.
 The checklist gives the agent the probe line as `Probe: after the upgrade, add <probe line>.` right under the first line of the check, with the directory `<slug>-added/` of the evidence, where it keeps a copy of each added file and a diff of each file it added a line to.
+The line reads after the word "add", so `check` refuses a probe line that starts with "add" or "adds" in any case.
 `prompts/plan-checks.md` takes only that line for the mark of a probe, and tells the agent to add exactly that after the upgrade, change and remove no line the project has, remove the added files and restore the file it added a line to before the next check, and start the reproduction steps of a finding with adding the probe's files.
-`check` refuses `Probe:`, in any case and with spaces before the colon, in every other line of the plan, so no title, reason, step, or expected outcome reads as that mark.
-The issue of a finding from a probe opens with a paragraph that says it comes from a probe, what the run added, and where the copy is, with the entry taken from the plan file by the check id. Its reproduction section says that the steps start from the linked commit plus the added files, which that commit does not hold.
+It also tells the agent that a probe has no baseline and that nothing of it is done before the upgrade, and that "probe" in the other instructions means a command that gathers evidence.
+`check` refuses `Probe:`, in any case, with spaces before the colon, and with the colon escaped as `Probe\:`, which GitHub shows as `Probe:`, in every other line of the plan, so no title, reason, step, or expected outcome reads as that mark.
+Whatever a run's record says, the loader takes the baseline of a finding whose check is a probe of the plan as not captured, so no later step reads it as pre-existing.
+The issue of a finding from a probe opens with a paragraph that says it comes from a probe, what the run added, and where the copy is, with the entry taken from the plan file by the check id. Its baseline line says that a probe has no baseline because the run adds it after the upgrade, and its reproduction section says that the steps start from the linked commit plus the added files, which that commit does not hold.
 A comment that adds such a finding to an existing issue opens with the same paragraph.
-The title of the issue carries no mark, because the grouping model reads the titles of the filed issues to decide which one a new finding belongs to.
+The title starts with `[SB 11 QA probe]:` instead of `[SB 11 QA]:`, so the dry filing, the filing report, the issue list, the batch comment of the tracking discussion, and collect's console show the mark too.
+The fingerprint and the repeat rule do not read the title. The grouping model reads the titles of the filed issues, which carry the mark for a probe, and the titles of the new findings, which do not.
 
 A change takes the first of these that fits: a normal entry on a repo of the plan that has the state at its pin, a probe, a discovered repo, a manual check, and no QA with the reason.
 

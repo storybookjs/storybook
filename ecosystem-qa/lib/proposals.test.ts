@@ -13,6 +13,7 @@ import {
   VERSION,
 } from './fixtures.ts';
 import {
+  alreadyReported,
   groupFindings,
   hitsFor,
   openHit,
@@ -26,11 +27,18 @@ import {
   type QaIssue,
 } from './proposals.ts';
 import { parsePlan } from './qa-plan.ts';
+import type { CommentProposal, Finding, Proposal } from './schema.ts';
 
 const OPTIONS = { runUrl: RUN_URL };
 const issueFor = (group: FindingGroup | undefined) =>
   asIssue(toProposal(single(group), [], OPTIONS));
 const byName = (name: string) => `https://assets.example/${name}`;
+const asComment = (proposal: Proposal): CommentProposal => {
+  if (proposal.kind !== 'comment') {
+    throw new Error(`expected a comment, got ${proposal.kind}`);
+  }
+  return proposal;
+};
 
 describe('hitsFor', () => {
   const issue = (number: number, body: string, comments: string[] = []): QaIssue => ({
@@ -639,8 +647,12 @@ describe('the plan entry of an issue', () => {
   const fixturePlan = parsePlan(
     readFileSync(new URL('./plan.fixture.md', import.meta.url), 'utf8')
   );
-  const planRun = (checkId: string, headSha?: string | null) => {
-    const run = loaded('linux', 'claude', [finding({ checkId })], headSha);
+  const planRun = (
+    checkId: string,
+    headSha?: string | null,
+    baseline: Finding['baseline'] = 'pass'
+  ) => {
+    const run = loaded('linux', 'claude', [finding({ checkId, baseline })], headSha);
     run.result.request.plan = {
       file: 'plan.fixture.md',
       hash: '0123456789ab',
@@ -650,10 +662,45 @@ describe('the plan entry of an issue', () => {
     };
     return run;
   };
-  const bodyOf = (checkId: string, plan = fixturePlan, headSha?: string | null) => {
-    const [group] = groupFindings([planRun(checkId, headSha)]);
+  const bodyOf = (
+    checkId: string,
+    plan = fixturePlan,
+    headSha?: string | null,
+    baseline?: Finding['baseline']
+  ) => {
+    const [group] = groupFindings([planRun(checkId, headSha, baseline)]);
     return renderIssueBody(asIssue(toProposal(single(group), [], { ...OPTIONS, plan })), byName);
   };
+  const baselineLineOf = (body: string) =>
+    body.split('\n').find((line) => line.startsWith('**Baseline:**'));
+
+  it.each(['pass', 'fail'] as const)(
+    'says that a probe finding has no baseline when its record says %s',
+    (baseline) => {
+      expect(baselineLineOf(bodyOf('plan.animation-probe', fixturePlan, undefined, baseline))).toBe(
+        '**Baseline:** A probe has no baseline, because the run adds it to the project only after the upgrade.'
+      );
+    }
+  );
+
+  it('says that a normal finding that failed on the baseline is pre-existing', () => {
+    expect(baselineLineOf(bodyOf('plan.story-sort-in-main', fixturePlan, undefined, 'fail'))).toBe(
+      '**Baseline:** The same probe also failed before the upgrade, so this is pre-existing.'
+    );
+  });
+
+  it('marks the title of a probe finding and keeps its fingerprint and its issue', () => {
+    const [group] = groupFindings([planRun('plan.animation-probe')]);
+    const filed = [issueOn(group!, { number: 9, labels: ['bug'], state: 'open' })];
+    const marked = toProposal(single(group), filed, { ...OPTIONS, plan: fixturePlan });
+    const unmarked = toProposal(single(group), filed, OPTIONS);
+
+    expect(marked.title).toBe(`[SB 11 QA probe]: ${group!.finding.title}`);
+    expect(unmarked.title).toBe(`[SB 11 QA]: ${group!.finding.title}`);
+    expect([marked.kind, marked.fingerprint]).toEqual(['comment', unmarked.fingerprint]);
+    expect(asComment(marked).existingIssue).toBe(9);
+    expect(alreadyReported(asComment(marked), [renderCommentBody(asComment(unmarked))])).toBe(true);
+  });
 
   it('names the entry and links its PRs as the plan file has them, not as the record does', () => {
     const body = bodyOf('plan.story-sort-in-main');

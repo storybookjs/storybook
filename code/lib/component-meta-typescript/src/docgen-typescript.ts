@@ -8,6 +8,7 @@ export type DocgenTypeChecker = Pick<
   | 'getDeclaredTypeOfSymbol'
   | 'getExportsOfModule'
   | 'getMergedSymbol'
+  | 'getPropertiesOfType'
   | 'getPropertyOfType'
   | 'getResolvedSignature'
   | 'getShorthandAssignmentValueSymbol'
@@ -15,9 +16,11 @@ export type DocgenTypeChecker = Pick<
   | 'getSymbolAtLocation'
   | 'getTypeArguments'
   | 'getTypeAtLocation'
+  | 'getTypeFromTypeNode'
   | 'getTypeOfSymbol'
   | 'getTypeOfSymbolAtLocation'
   | 'getVoidType'
+  | 'isTupleType'
   | 'resolveName'
   | 'typeToString'
 >;
@@ -96,6 +99,7 @@ export const DOCGEN_NODE_GUARDS = [
   'isStringLiteral',
   'isStringLiteralLike',
   'isTupleTypeNode',
+  'isTemplateLiteralTypeNode',
   'isTypeAliasDeclaration',
   'isTypeAssertionExpression',
   'isTypeLiteralNode',
@@ -122,7 +126,7 @@ export interface DocgenTypeScript extends DocgenNodeGuards {
   readonly ScriptTarget: Pick<typeof ts.ScriptTarget, 'Latest'>;
   readonly SymbolFlags: Pick<
     typeof ts.SymbolFlags,
-    'Alias' | 'All' | 'EnumMember' | 'Optional' | 'Property'
+    'Alias' | 'All' | 'Enum' | 'EnumMember' | 'Optional' | 'Property'
   >;
   readonly SyntaxKind: Pick<
     typeof ts.SyntaxKind,

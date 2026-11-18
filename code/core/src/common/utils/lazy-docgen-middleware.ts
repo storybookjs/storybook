@@ -1,3 +1,5 @@
+import { logger } from 'storybook/internal/node-logger';
+
 import type {
   DocgenMiddleware,
   DocgenPayload,
@@ -31,6 +33,29 @@ export interface LazyDocgenMiddlewareOptions<TManager> {
    * Defaults to `{ ...downstream, ...own }`.
    */
   merge?: (own: DocgenPayload, downstream: DocgenPayload | undefined) => DocgenPayload;
+}
+
+export async function groupComponentFilesByProject<TProject>(
+  manager: { groupFilesByProject(files: string[]): Map<TProject, string[]> },
+  inputs: DocgenProviderInput[],
+  resolveComponentFiles: (input: DocgenProviderInput) => string[] | Promise<string[]>
+): Promise<Map<TProject, string[]> | undefined> {
+  if (inputs.length < 2) {
+    return undefined;
+  }
+  const files = await Promise.all(
+    inputs.map((input) =>
+      Promise.resolve()
+        .then(() => resolveComponentFiles(input))
+        .catch((): string[] => [])
+    )
+  );
+  try {
+    return manager.groupFilesByProject(files.flat());
+  } catch (err) {
+    logger.debug(`[component-meta] Grouping the batch files failed: ${err}`);
+    return undefined;
+  }
 }
 
 /** Extract the inputs one after another, settling each on its own. */

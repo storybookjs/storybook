@@ -3,7 +3,7 @@ import type { DocgenPayload, DocgenProvider, IndexEntry } from 'storybook/intern
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { buildDocgenPayload } from './component-docgen/build-docgen.ts';
+import { buildDocgenPayload, resolveComponentPaths } from './component-docgen/build-docgen.ts';
 import { createDocgenProvider } from './docgen-worker.ts';
 
 vi.mock('./component-docgen/build-docgen.ts', { spy: true });
@@ -64,4 +64,31 @@ describe('createDocgenProvider', () => {
       ]);
     }
   );
+
+  it('hands the component files of every input to each extraction as one batch', async () => {
+    vi.mocked(resolveComponentPaths).mockImplementation(async ({ entry }) => [
+      `/components/${entry.title}.svelte`,
+    ]);
+    const provider = createDocgenProvider()(downstream);
+
+    await provider([
+      { entry: entryFor('./Button.stories.svelte') },
+      { entry: { ...entryFor('./Card.stories.svelte'), title: 'Card' } },
+    ]);
+
+    const [[, first], [, second]] = vi.mocked(buildDocgenPayload).mock.calls;
+    expect(second.batchFiles).toBe(first.batchFiles);
+    expect([...(first.batchFiles?.values() ?? [])]).toEqual([
+      ['/components/Button.svelte', '/components/Card.svelte'],
+    ]);
+  });
+
+  it('extracts a single input without a batch', async () => {
+    const provider = createDocgenProvider()(downstream);
+
+    await provider([{ entry: entryFor('./Button.stories.svelte') }]);
+
+    expect(resolveComponentPaths).not.toHaveBeenCalled();
+    expect(vi.mocked(buildDocgenPayload).mock.calls[0][1].batchFiles).toBeUndefined();
+  });
 });

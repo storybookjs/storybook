@@ -13,8 +13,11 @@ import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 
 import { dirname, join } from 'pathe';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { once } from 'storybook/internal/node-logger';
+
+import { createDocgenCache, generateDocgen } from '../svelte2tsx/generate-docgen.ts';
 import { SvelteComponentMetaManager } from './svelte-project-manager.ts';
 
 const require = createRequire(import.meta.url);
@@ -244,5 +247,158 @@ describe('library props in the server docgen', () => {
     });
 
     expect(docgen.typeParams).toBe('T extends string');
+  });
+});
+
+describe('SvelteComponentMetaManager batches', () => {
+  const outsideTsconfig = () => {
+    const root = project({
+      'tsconfig.json': TSCONFIG,
+      'src/Button.svelte': component('{ label: string }'),
+      'other/Alert.svelte': component('{ title: string }'),
+      'other/Badge.svelte': component('{ count: number }'),
+      'other/Chip.svelte': component('{ tone: string }'),
+    });
+    return ['Alert', 'Badge', 'Chip'].map((name) => join(root, `other/${name}.svelte`));
+  };
+
+  it('gives the project every component of a batch in one call at its first extraction', () => {
+    const paths = outsideTsconfig();
+    const componentMetaManager = new SvelteComponentMetaManager();
+    const batchFiles = componentMetaManager.groupFilesByProject(paths);
+    const [project] = batchFiles.keys();
+    const ensureFiles = vi.spyOn(project, 'ensureFiles');
+
+    const first = componentMetaManager.generateDocgen(paths[0], { server: true }, batchFiles);
+
+    expect(ensureFiles).toHaveBeenNthCalledWith(1, paths);
+    expect(paths.map((path) => project.hasSourceFile(path))).toEqual([true, true, true]);
+    expect(first.props.map((prop) => prop.name)).toEqual(['title']);
+    expect(
+      paths
+        .slice(1)
+        .map((path) =>
+          componentMetaManager
+            .generateDocgen(path, { server: true }, batchFiles)
+            .props.map((prop) => prop.name)
+        )
+    ).toEqual([['count'], ['tone']]);
+  });
+
+  describe('under heap pressure', () => {
+    beforeEach(() => {
+      vi.spyOn(once, 'warn').mockImplementation(() => undefined);
+      vi.spyOn(process, 'memoryUsage').mockReturnValueOnce({
+        heapUsed: Number.POSITIVE_INFINITY,
+      } as NodeJS.MemoryUsage);
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it('drops the batch when recycling its projects', () => {
+      const paths = outsideTsconfig();
+      const componentMetaManager = new SvelteComponentMetaManager();
+      const batchFiles = componentMetaManager.groupFilesByProject(paths);
+
+      componentMetaManager.generateDocgen(paths[0], { server: true }, batchFiles);
+
+      expect(batchFiles.size).toBe(0);
+    });
+  });
+});
+
+describe('server docgen in declaration order', () => {
+  it('lists union members and props as declared, whatever the program extracted before', () => {
+    const root = project({
+      'tsconfig.json': TSCONFIG,
+      'src/Sizes.svelte': component(`{ size?: 'sm' | 'md' | 'lg'; tone?: 'quiet' | 'loud' }`),
+      'src/Avatar.svelte': `<script lang="ts">
+  interface Base { label?: string; tone?: 'loud' | 'quiet'; ring?: 'thin' | 'thick' }
+  type Props = Omit<Base, 'label'> & { size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl'; count?: 3 | 1 | 2 };
+  let { ...rest }: Props = $props();
+</script>
+`,
+    });
+    const avatar = join(root, 'src/Avatar.svelte');
+    const shared = new SvelteComponentMetaManager();
+    shared.generateDocgen(join(root, 'src/Sizes.svelte'), { server: true });
+
+    const afterSizes = shared.generateDocgen(avatar, { server: true });
+    const alone = new SvelteComponentMetaManager().generateDocgen(avatar, { server: true });
+
+    expect(afterSizes).toEqual(alone);
+    expect(afterSizes.props.map(({ name, typeText }) => `${name}: ${typeText}`))
+      .toMatchInlineSnapshot(`
+        [
+          "tone: "loud" | "quiet" | undefined",
+          "ring: "thin" | "thick" | undefined",
+          "size: "xs" | "sm" | "md" | "lg" | "xl" | undefined",
+          "count: 3 | 1 | 2 | undefined",
+        ]
+      `);
+  });
+
+  it('lists the members a prop reads through keys, elements, aliases and enums as declared', () => {
+    const root = project({
+      'tsconfig.json': TSCONFIG,
+      'src/tone.ts': `export enum Tone { Warn = 'warn', Info = 'info' }\n`,
+      'src/Warmup.svelte': component(
+        `{ size?: 'sm' | 'xl' | 'md'; tone?: 'loud' | 'quiet'; placement?: 'bottom-end' | 'top-start'; status?: 'custom' }`
+      ),
+      'src/Computed.svelte': `<script lang="ts">
+  import type { Tone } from './tone';
+  type Side = 'top' | 'bottom';
+  const sizes = { md: 1, xl: 2, sm: 3 } as const;
+  const tones = ['quiet', 'loud'] as const;
+  let { ...rest }: {
+    size?: keyof typeof sizes;
+    tone?: (typeof tones)[number];
+    placement?: Side | \`\${Side}-\${'start' | 'end'}\`;
+    status?: Tone | 'custom';
+  } = $props();
+</script>
+`,
+    });
+    const computed = join(root, 'src/Computed.svelte');
+    const shared = new SvelteComponentMetaManager();
+    shared.generateDocgen(join(root, 'src/Warmup.svelte'), { server: true });
+
+    const afterWarmup = shared.generateDocgen(computed, { server: true });
+    const alone = new SvelteComponentMetaManager().generateDocgen(computed, { server: true });
+
+    expect(afterWarmup).toEqual(alone);
+    expect(afterWarmup.props.map(({ name, typeText }) => `${name}: ${typeText}`))
+      .toMatchInlineSnapshot(`
+        [
+          "size: "md" | "xl" | "sm" | undefined",
+          "tone: "quiet" | "loud" | undefined",
+          "placement: Side | "top-start" | "top-end" | "bottom-start" | "bottom-end" | undefined",
+          "status: Tone | "custom" | undefined",
+        ]
+      `);
+  });
+});
+
+describe('legacy docgen', () => {
+  it('keeps union members and props in the order the checker prints them', () => {
+    const root = project({
+      'tsconfig.json': TSCONFIG,
+      'src/Placement.svelte': `<script lang="ts">
+  type Side = 'top' | 'bottom';
+  let { ...rest }: { early?: 'top' | 'left'; placement?: 'left' | Side } = $props();
+</script>
+`,
+    });
+
+    const docgen = generateDocgen(join(root, 'src/Placement.svelte'), createDocgenCache());
+
+    expect(docgen.props.map(({ name, typeText }) => `${name}: ${typeText}`)).toMatchInlineSnapshot(`
+      [
+        "early: "top" | "left" | undefined",
+        "placement: "left" | Side | undefined",
+      ]
+    `);
   });
 });

@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { afterAll, describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it, vi } from 'vitest';
 
 import { DOCGEN_TS_API, loadTestTypeScript } from '@storybook/component-meta-typescript/testing';
 
@@ -389,5 +389,62 @@ describe('AngularComponentMetaManager', () => {
     const names = inputsOf(after).map((input) => input.name);
     expect(names).toContain('muted');
     expect(names).not.toContain('disabled');
+  });
+});
+
+describe('AngularComponentMetaManager batches', () => {
+  it('gives the project every component of a batch in one call at its first extraction', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'sb-acm-batch-'));
+    scratchDirs.push(dir);
+    const components = ['Alert', 'Badge', 'Chip'];
+    const paths = await Promise.all(
+      components.map(async (name) => {
+        const filePath = normalize(join(dir, `${name.toLowerCase()}.component.ts`));
+        await writeFile(
+          filePath,
+          [
+            "import { Component, Input } from '@angular/core';",
+            '',
+            `@Component({ selector: 'sb-${name.toLowerCase()}', template: '<i></i>' })`,
+            `export class ${name}Component {`,
+            `  @Input() ${name.toLowerCase()}Label = '';`,
+            '}',
+            '',
+          ].join('\n')
+        );
+        return filePath;
+      })
+    );
+    const batchManager = new AngularComponentMetaManager(await loadTestTypeScript());
+    try {
+      const batchFiles = batchManager.groupFilesByProject(paths);
+      const [project] = batchFiles.keys();
+      const ensureFiles = vi.spyOn(project, 'ensureFiles');
+
+      const first = batchManager.extractComponentMeta(
+        paths[0],
+        { exportName: 'AlertComponent' },
+        batchFiles
+      );
+
+      expect(ensureFiles).toHaveBeenNthCalledWith(1, paths);
+      expect(paths.map((filePath) => project.hasSourceFile(filePath))).toEqual([true, true, true]);
+      expect(inputsOf(first).map((input) => input.name)).toEqual(['alertLabel']);
+      expect(
+        paths
+          .slice(1)
+          .map((filePath, index) =>
+            inputsOf(
+              batchManager.extractComponentMeta(
+                filePath,
+                { exportName: `${components[index + 1]}Component` },
+                batchFiles
+              )
+            ).map((input) => input.name)
+          )
+      ).toEqual([['badgeLabel'], ['chipLabel']]);
+    } finally {
+      batchManager.dispose();
+    }
   });
 });

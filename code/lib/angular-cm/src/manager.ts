@@ -111,13 +111,14 @@ export class AngularComponentMetaManager extends ComponentMetaManager<
    */
   extractComponentMeta(
     componentPath: string,
-    names: ComponentNames
+    names: ComponentNames,
+    batchFiles?: Map<ManagedProject, string[]>
   ): AngularComponentMetaResult | undefined {
-    return this.getProjectForFile(componentPath).extract(componentPath, names);
+    return this.getProjectForFile(componentPath, batchFiles).extract(componentPath, names);
   }
 
   /** Release cached projects under heap pressure; with no batch surface, call it per payload. */
-  recycleIfHeapPressured(): void {
-    this.recycleProjectsIfHeapPressured();
+  recycleIfHeapPressured(batchFiles?: Map<ManagedProject, string[]>): void {
+    this.recycleProjectsIfHeapPressured(batchFiles);
   }
 }

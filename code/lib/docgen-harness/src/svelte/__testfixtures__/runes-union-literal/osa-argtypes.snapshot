@@ -52,8 +52,8 @@
     "name": "size",
     "options": [
       "small",
-      "large",
       "medium",
+      "large",
     ],
     "table": {
       "category": "properties",
@@ -61,7 +61,7 @@
         "summary": ""medium"",
       },
       "type": {
-        "summary": ""small" | "large" | "medium"",
+        "summary": ""small" | "medium" | "large"",
       },
     },
     "type": {
@@ -69,8 +69,8 @@
       "required": false,
       "value": [
         "small",
-        "large",
         "medium",
+        "large",
       ],
     },
   },

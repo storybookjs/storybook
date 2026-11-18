@@ -1,6 +1,7 @@
 import {
   createLazyDocgenMiddleware,
   extractEach,
+  groupComponentFilesByProject,
   type TypeScriptSpecifierForDocgen,
 } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
@@ -10,7 +11,7 @@ import type { ParsingLogger } from '@storybook/angular-cm';
 import { AngularComponentMetaManager } from '@storybook/angular-cm';
 import { loadDocgenTypeScript } from '@storybook/component-meta-typescript';
 import type { AngularDocgenOptions } from './build-docgen.ts';
-import { buildDocgenPayload } from './build-docgen.ts';
+import { buildDocgenPayload, resolveComponentPaths } from './build-docgen.ts';
 
 const workerLogger: ParsingLogger = {
   warn: (message) => logger.warn(`[storybook-angular-vite] ${message}`),
@@ -45,13 +46,22 @@ const createManager = async (
 export const createDocgenProvider = (options: AngularDocgenOptions): DocgenMiddleware =>
   createLazyDocgenMiddleware({
     createManager: () => createManager(options.typeScriptSpecifier),
-    extract: (manager, inputs) =>
-      extractEach(inputs, async (input) => {
-        const ours = buildDocgenPayload(input, { manager, options, logger: workerLogger });
+    extract: async (manager, inputs) => {
+      const batchFiles = await groupComponentFilesByProject(manager, inputs, resolveComponentPaths);
+      return extractEach(inputs, async (input) => {
+        const ours = buildDocgenPayload(input, {
+          manager: {
+            extractComponentMeta: (componentPath, names) =>
+              manager.extractComponentMeta(componentPath, names, batchFiles),
+          },
+          options,
+          logger: workerLogger,
+        });
         // A batch can hold every component, so heap pressure is checked after each one.
-        manager.recycleIfHeapPressured();
+        manager.recycleIfHeapPressured(batchFiles);
         return ours;
-      }),
+      });
+    },
     // Replacing another provider's payload with our own error would let this link veto the rest of
     // the chain for a component it knows nothing about.
     merge: (own, downstream) => (own.error ? (downstream ?? own) : { ...downstream, ...own }),

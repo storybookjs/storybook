@@ -1,5 +1,5 @@
 import type ts from 'typescript';
-import type { Node } from 'typescript-native/ast';
+import type { Node, TypeNode } from 'typescript-native/ast';
 import type { InterfaceType, Type as NativeType, TypeReference } from 'typescript-native/sync';
 
 import type { DocgenTypeChecker } from '../docgen-typescript.ts';
@@ -14,6 +14,7 @@ const CACHED_QUERIES = [
   'getDeclaredTypeOfSymbol',
   'getExportsOfModule',
   'getMergedSymbol',
+  'getPropertiesOfType',
   'getPropertyOfType',
   'getResolvedSignature',
   'getShorthandAssignmentValueSymbol',
@@ -21,7 +22,9 @@ const CACHED_QUERIES = [
   'getSymbolAtLocation',
   'getTypeArguments',
   'getTypeAtLocation',
+  'getTypeFromTypeNode',
   'getTypeOfSymbol',
+  'isTupleType',
   'resolveName',
 ] as const satisfies readonly (keyof DocgenTypeChecker)[];
 
@@ -53,6 +56,12 @@ export function createDocgenChecker(facades: NativeFacades): DocgenTypeChecker {
     getExportsOfModule: (symbol) =>
       checker.getExportsOfModule(unwrapSymbol(symbol)).map((exported) => facades.symbol(exported)),
     getMergedSymbol: (symbol) => facades.symbol(checker.getMergedSymbol(unwrapSymbol(symbol))),
+    getPropertiesOfType: (type) => {
+      const native = unwrapType(type);
+      return native
+        ? checker.getPropertiesOfType(native).map((property) => facades.symbol(property))
+        : [];
+    },
     getPropertyOfType: (type, name) => {
       const native = unwrapType(type);
       return native && facades.symbol(checker.getPropertyOfType(native, name));
@@ -70,10 +79,16 @@ export function createDocgenChecker(facades: NativeFacades): DocgenTypeChecker {
         .getTypeArguments(unwrapNativeType(type) as TypeReference)
         .map((argument) => facades.type(argument)),
     getTypeAtLocation: (node) => facades.type(checker.getTypeAtLocation(asNode(node))),
+    getTypeFromTypeNode: (node) =>
+      facades.type(checker.getTypeFromTypeNode(node as unknown as TypeNode)),
     getTypeOfSymbol: (symbol) => facades.type(checker.getTypeOfSymbol(unwrapSymbol(symbol))),
     getTypeOfSymbolAtLocation: (symbol, node) =>
       facades.type(facades.typeOfSymbolAtLocation(unwrapSymbol(symbol), asNode(node))),
     getVoidType: () => facades.type(checker.getVoidType()),
+    isTupleType: (type) => {
+      const native = unwrapType(type);
+      return !!native && checker.isTupleType(native);
+    },
     // The native API takes `meaning` before `location`.
     resolveName: (name, location, meaning, excludeGlobals) =>
       facades.symbol(

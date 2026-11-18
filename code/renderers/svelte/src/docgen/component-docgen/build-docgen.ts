@@ -18,9 +18,15 @@ import {
   resolveStoryComponent,
   resolveStorySubcomponents,
 } from './resolve-component/resolve-component.ts';
-import type { SvelteComponentMetaManager } from './component-meta/svelte-project-manager.ts';
+import type {
+  SvelteComponentMetaManager,
+  SvelteDocgenProject,
+} from './component-meta/svelte-project-manager.ts';
 
-export type BuildDocgenContext = { componentMetaManager: SvelteComponentMetaManager };
+export type BuildDocgenContext = {
+  componentMetaManager: SvelteComponentMetaManager;
+  batchFiles?: Map<SvelteDocgenProject, string[]>;
+};
 
 // The resolver follows symlinks, so a component path is taken relative to the story file as the
 // index wrote it; then a symlinked story folder, as in linked sandboxes, gives the same path.
@@ -78,13 +84,26 @@ export async function buildDocgenPayload(
   }
 }
 
+export async function resolveComponentPaths(input: DocgenProviderInput): Promise<string[]> {
+  const component = await resolveStoryComponent(input.entry);
+  if (!component) {
+    return [];
+  }
+  const subcomponents = await resolveStorySubcomponents(input.entry).catch(() => ({}));
+  return [component, ...Object.values(subcomponents)].map(({ componentPath }) => componentPath);
+}
+
 async function componentDocs(componentPath: string, name: string, context: BuildDocgenContext) {
   const source = await readFile(componentPath, 'utf8');
   const documentationSource = await preprocess(source, { style: () => ({ code: '' }) });
-  const docgen = context.componentMetaManager.generateDocgen(componentPath, {
-    server: true,
-    documentationSource: documentationSource.code,
-  });
+  const docgen = context.componentMetaManager.generateDocgen(
+    componentPath,
+    {
+      server: true,
+      documentationSource: documentationSource.code,
+    },
+    context.batchFiles
+  );
   return {
     ...extractComponentDescription(undefined, docgen.description, docgen.jsDocTags),
     argTypes: createServerArgTypes(docgen),

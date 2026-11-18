@@ -101,9 +101,10 @@ export class VueComponentMetaProject implements ComponentMetaProjectBase {
 
   /** Push files the program does not know yet into the checker (inferred-project inclusion). */
   ensureFiles(fileNames: string[]): void {
+    const program = this.checker.getProgram();
     for (const fileName of fileNames) {
       const normalized = slash(fileName);
-      if (this.hasSourceFile(normalized)) {
+      if (program?.getSourceFile(normalized)) {
         continue;
       }
       const text = tryReadFile(normalized);
@@ -271,16 +272,19 @@ export class VueComponentMetaManager extends ComponentMetaManager<
    * present and fresh. Extraction only ever feeds the checker the component file — the story file
    * is parsed separately with babel and never enters the TS program.
    */
-  getCheckerForFile(componentPath: string): ComponentMetaChecker {
-    const project = this.getProjectForFile(componentPath);
+  getCheckerForFile(
+    componentPath: string,
+    batchFiles?: Map<VueComponentMetaProject, string[]>
+  ): ComponentMetaChecker {
+    const project = this.getProjectForFile(componentPath, batchFiles);
     project.ensureFiles([componentPath]);
     project.ensureFresh([componentPath]);
     return project.checker;
   }
 
   /** Post-extraction heap check; Vue has no batch surface, so callers invoke this per payload. */
-  recycleIfHeapPressured(): void {
-    this.recycleProjectsIfHeapPressured();
+  recycleIfHeapPressured(batchFiles?: Map<VueComponentMetaProject, string[]>): void {
+    this.recycleProjectsIfHeapPressured(batchFiles);
   }
 }
 

@@ -31,6 +31,7 @@ import type { ComponentMetaChecker } from 'vue-component-meta';
 import { buildApiDescription } from './api-description/api-description.ts';
 import { createNamedTypeDetailResolver } from './arg-types/named-type-detail.ts';
 import { type MetaSource, collectComponentMetaSources } from './component-meta/component-meta.ts';
+import { orderMetaByDeclaration } from './component-meta/declaration-order.ts';
 import { followReExport } from './resolve-component/follow-re-export.ts';
 import {
   type UnresolvedComponentReason,
@@ -142,7 +143,14 @@ async function extractVueComponentDocgen(
     declaredExport.path,
     context.typescript
   );
-  const componentMeta = metaSources.find((meta) => meta.exportName === declaredExport.exportName);
+  const collected = metaSources.find((meta) => meta.exportName === declaredExport.exportName);
+  const componentMeta =
+    collected &&
+    orderMetaByDeclaration(collected, {
+      checker,
+      typescript: context.typescript,
+      componentPath: declaredExport.path,
+    });
   if (!componentMeta) {
     return {
       error: {
@@ -232,6 +240,37 @@ async function buildSubcomponentDocgen(
   }
 }
 
+// Import paths in the index are relative to the project root the server runs from.
+const resolveStoryPath = (
+  storyFilePath: string,
+  { resolvePath }: Pick<BuildDocgenContext, 'resolvePath'>
+) => (resolvePath ? resolvePath(storyFilePath) : join(process.cwd(), storyFilePath));
+
+export async function resolveComponentPaths(
+  input: DocgenProviderInput,
+  context: Pick<BuildDocgenContext, 'resolvePath'> = {}
+): Promise<string[]> {
+  const storyFilePath = getStoryImportPathFromEntry(input.entry);
+  if (!storyFilePath) {
+    return [];
+  }
+  const storyPath = resolveStoryPath(storyFilePath, context);
+  try {
+    const csf = loadCsf(await readFile(storyPath, 'utf8'), {
+      makeTitle: () => input.entry.title,
+      fileName: storyPath,
+    }).parse();
+    return [undefined, ...extractDeclaredSubcomponents(csf).map(({ node }) => node)].flatMap(
+      (componentNode) => {
+        const resolved = resolveMetaComponent(csf, storyPath, componentNode);
+        return 'component' in resolved ? [resolved.component.path] : [];
+      }
+    );
+  } catch {
+    return [];
+  }
+}
+
 /**
  * Builds a {@link DocgenPayload} for the component one CSF story file documents.
  */
@@ -244,10 +283,7 @@ export async function buildDocgenPayload(
     return undefined;
   }
 
-  // Import paths in the index are relative to the project root the server runs from.
-  const resolvePath =
-    context.resolvePath ?? ((importPath: string) => join(process.cwd(), importPath));
-  const storyPath = resolvePath(storyFilePath);
+  const storyPath = resolveStoryPath(storyFilePath, context);
 
   let storyFile: string;
   try {

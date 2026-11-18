@@ -1,6 +1,7 @@
 import {
   createLazyDocgenMiddleware,
   extractEach,
+  groupComponentFilesByProject,
   loadTypeScriptCompilerApi,
 } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
@@ -18,13 +19,14 @@ export const createDocgenProvider = (): DocgenMiddleware =>
     createManager: async () => {
       try {
         await loadTypeScriptCompilerApi(() => import('typescript'));
-        const [{ SvelteComponentMetaManager }, { buildDocgenPayload }] = await Promise.all([
-          import('./component-docgen/component-meta/svelte-project-manager.ts'),
-          import('./component-docgen/build-docgen.ts'),
-        ]);
+        const [{ SvelteComponentMetaManager }, { buildDocgenPayload, resolveComponentPaths }] =
+          await Promise.all([
+            import('./component-docgen/component-meta/svelte-project-manager.ts'),
+            import('./component-docgen/build-docgen.ts'),
+          ]);
         const componentMetaManager = new SvelteComponentMetaManager();
         componentMetaManager.startWatching();
-        return { componentMetaManager, buildDocgenPayload };
+        return { componentMetaManager, buildDocgenPayload, resolveComponentPaths };
       } catch (error) {
         logger.warn(
           `Svelte docgen is unavailable: its engine could not be loaded. ${
@@ -34,6 +36,14 @@ export const createDocgenProvider = (): DocgenMiddleware =>
         return undefined;
       }
     },
-    extract: (context, inputs) =>
-      extractEach(inputs, (input) => context.buildDocgenPayload(input, context)),
+    extract: async (context, inputs) => {
+      const batchFiles = await groupComponentFilesByProject(
+        context.componentMetaManager,
+        inputs,
+        context.resolveComponentPaths
+      );
+      return extractEach(inputs, (input) =>
+        context.buildDocgenPayload(input, { ...context, batchFiles })
+      );
+    },
   });

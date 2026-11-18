@@ -80,6 +80,40 @@ const withoutOwnSnapshots = (
   return rest;
 };
 
+type DocgenResult = Awaited<ReturnType<typeof chain>>[number];
+
+const sortMembers = (body: string) => {
+  const members: string[] = [];
+  let member: string[] = [];
+  for (const line of body.split('\n')) {
+    member.push(line);
+    if (!/^\s*(\/\*\*|\*)/.test(line)) {
+      members.push(member.join('\n'));
+      member = [];
+    }
+  }
+  return [...members, ...member].toSorted().join('\n');
+};
+
+const withMembersInAnyOrder = (result: DocgenResult): DocgenResult =>
+  result.status === 'fulfilled' && result.value?.apiDescription
+    ? {
+        ...result,
+        value: {
+          ...result.value,
+          apiDescription: result.value.apiDescription.replace(
+            /(?<=\{\n)[\s\S]*?(?=\n\})/g,
+            sortMembers
+          ),
+        },
+      }
+    : result;
+
+const propOrder = (result: DocgenResult) =>
+  result.status === 'fulfilled'
+    ? [Object.keys(result.value?.argTypes ?? {}), result.value?.apiDescription]
+    : result;
+
 const readFixtureFile = (fixtureCase: string, fileName: string): string =>
   readFileSync(join(fixturesDir, fixtureCase, fileName), 'utf8');
 
@@ -182,4 +216,33 @@ it('preserves component argTypes and description through a plain CSF barrel impo
   expect(barrel?.description).toEqual(direct?.description);
   expect(barrel?.name).toEqual(direct?.name);
   expect(barrel?.error).toBeUndefined();
+});
+
+describe('one call for every fixture', () => {
+  let oneAtATime: DocgenResult[];
+  let inOneCall: DocgenResult[];
+
+  beforeAll(async () => {
+    vi.spyOn(process, 'cwd').mockReturnValue(fixturesDir);
+    const inputs = fixtureCases.map((fixtureCase) => ({
+      entry: { ...entries.get(fixtureCase)!, importPath: `./${fixtureCase}/input.stories.svelte` },
+    }));
+    oneAtATime = [];
+    for (const input of inputs) {
+      oneAtATime.push(...(await chain([input])));
+    }
+    const reversed = await createDocgenProvider()(async (all) =>
+      all.map(() => ({ status: 'fulfilled', value: undefined }))
+    )(inputs.toReversed());
+    inOneCall = reversed.toReversed();
+    vi.restoreAllMocks();
+  }, 120_000);
+
+  it('documents every fixture with the same props and types as one at a time', () => {
+    expect(inOneCall.map(withMembersInAnyOrder)).toEqual(oneAtATime.map(withMembersInAnyOrder));
+  });
+
+  it.fails('lists the props of every fixture in the same order as one at a time', () => {
+    expect(inOneCall.map(propOrder)).toEqual(oneAtATime.map(propOrder));
+  });
 });

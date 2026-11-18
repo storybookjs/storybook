@@ -10,7 +10,9 @@ import {
 import { tmpdir } from 'node:os';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { join, normalize } from 'pathe';
+import { join, normalize, resolve } from 'pathe';
+
+import { logger } from 'storybook/internal/node-logger';
 
 import { ComponentMetaManager } from './ComponentMetaManager.ts';
 import type { ComponentMetaProjectBase, FileChange } from './types.ts';
@@ -108,5 +110,108 @@ describe('ComponentMetaManager file watching', () => {
       .filter(({ filename }) => filename === 'src/Card.ts')
       .map(({ eventType }) => eventType);
     expect(cardEvents).toContain('rename');
+  });
+});
+
+describe('ComponentMetaManager batch files', () => {
+  const root = resolve('/project');
+  const tsconfig = join(root, 'app', 'tsconfig.json');
+  const button = join(root, 'app', 'Button.ts');
+  const card = join(root, 'lib', 'Card.ts');
+  const icon = join(root, 'lib', 'Icon.ts');
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  const setup = () => {
+    const commandLine = { fileNames: [button] };
+    const configured = { ...createProject(button), getCommandLine: () => commandLine };
+    const inferred = createProject(join(root, 'none.ts'));
+    const manager = new ComponentMetaManager(
+      { sys: { fileExists: (file) => file === tsconfig, directoryExists: () => false } },
+      {
+        parseCommandLine: () => commandLine,
+        createConfiguredProject: () => configured,
+        createInferredProject: () => inferred,
+      }
+    );
+    const batchFiles = manager.groupFilesByProject(
+      [button, card, icon].map((file) => ({ projectFile: file, files: [file] }))
+    );
+    return { manager, configured, inferred, batchFiles };
+  };
+
+  it('groups the files by project without adding any of them yet', () => {
+    const { configured, inferred, batchFiles } = setup();
+
+    expect(batchFiles).toEqual(
+      new Map([
+        [configured, [button]],
+        [inferred, [card, icon]],
+      ])
+    );
+    expect(configured.ensureFiles).not.toHaveBeenCalled();
+    expect(inferred.ensureFiles).not.toHaveBeenCalled();
+  });
+
+  it('gives a project all its files of the batch in one call, at its first lookup', () => {
+    const { manager, inferred, batchFiles } = setup();
+
+    manager.getProjectForFile(card, batchFiles);
+    manager.getProjectForFile(icon, batchFiles);
+
+    expect(inferred.ensureFiles.mock.calls).toEqual([[[card, icon]], [[card]], [[icon]]]);
+    expect(batchFiles.has(inferred)).toBe(false);
+  });
+
+  it('keeps the batch of a project that has not been looked up', () => {
+    const { manager, configured, batchFiles } = setup();
+
+    manager.getProjectForFile(card, batchFiles);
+
+    expect(configured.ensureFiles).not.toHaveBeenCalled();
+    expect(batchFiles.get(configured)).toEqual([button]);
+  });
+
+  it('adds a file outside every tsconfig on its own when there is no batch', () => {
+    const { manager, inferred } = setup();
+
+    manager.getProjectForFile(card);
+
+    expect(inferred.ensureFiles).toHaveBeenCalledExactlyOnceWith([card]);
+  });
+
+  it('groups plain files the same way as groups of one file', () => {
+    const { manager, batchFiles } = setup();
+
+    expect(manager.groupFilesByProject([button, card, icon])).toEqual(batchFiles);
+  });
+
+  it('matches a file added to a tsconfig project after an earlier lookup', () => {
+    const { manager, configured, inferred } = setup();
+    const chip = join(root, 'app', 'Chip.ts');
+    expect(manager.getProjectForFile(chip)).toBe(inferred);
+
+    configured.getCommandLine().fileNames.push(chip);
+
+    expect(manager.getProjectForFile(chip)).toBe(configured);
+  });
+
+  describe('when handing a project the batch fails', () => {
+    beforeEach(() => {
+      vi.spyOn(logger, 'debug').mockImplementation(() => undefined);
+    });
+
+    it('returns the project and lets the extraction add its own file', () => {
+      const { manager, inferred, batchFiles } = setup();
+      inferred.ensureFiles.mockImplementationOnce(() => {
+        throw new Error('TypeScript dropped the program');
+      });
+
+      expect(manager.getProjectForFile(card, batchFiles)).toBe(inferred);
+      expect(inferred.ensureFiles).toHaveBeenLastCalledWith([card]);
+      expect(logger.debug).toHaveBeenCalledOnce();
+    });
   });
 });

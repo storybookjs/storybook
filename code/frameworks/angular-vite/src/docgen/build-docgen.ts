@@ -114,6 +114,27 @@ const errorPayload = (
   message: string
 ): AngularDocgenPayload => ({ ...base, jsDocTags: {}, error: { name, message } });
 
+// The index writes `importPath` relative to the Storybook working directory, the worker's cwd.
+const resolveStoryPath = (
+  storyImportPath: string,
+  { resolvePath }: Pick<BuildDocgenContext, 'resolvePath'>
+) => (resolvePath ? resolvePath(storyImportPath) : resolve(process.cwd(), storyImportPath));
+
+export const resolveComponentPaths = (
+  input: DocgenProviderInput,
+  context: Pick<BuildDocgenContext, 'resolvePath'> = {}
+): string[] => {
+  const storyImportPath = getStoryImportPathFromEntry(input.entry);
+  if (!storyImportPath) {
+    return [];
+  }
+  const resolved = resolveStoryComponent(
+    resolveStoryPath(storyImportPath, context),
+    input.entry.title
+  );
+  return 'component' in resolved && resolved.component.path ? [resolved.component.path] : [];
+};
+
 // `undefined` means "no Angular component here", so callers fall through to the next provider,
 // while a payload carrying `error` means "mine, but extraction failed".
 export const buildDocgenPayload = (
@@ -126,10 +147,7 @@ export const buildDocgenPayload = (
     return undefined;
   }
 
-  // The index writes `importPath` relative to the Storybook working directory, the worker's cwd.
-  const resolvePath =
-    context.resolvePath ?? ((importPath: string) => resolve(process.cwd(), importPath));
-  const storyFilePath = resolvePath(storyImportPath);
+  const storyFilePath = resolveStoryPath(storyImportPath, context);
   const resolved = resolveStoryComponent(storyFilePath, input.entry.title);
   if ('reason' in resolved) {
     // A story file with no `component` at all documents no Angular component, so the next provider

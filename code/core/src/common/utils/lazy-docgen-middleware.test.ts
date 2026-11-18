@@ -4,7 +4,11 @@ import type {
   DocgenPayload,
   DocgenProviderInput,
 } from '../../shared/open-service/services/docgen/types.ts';
-import { createLazyDocgenMiddleware, extractEach } from './lazy-docgen-middleware.ts';
+import {
+  createLazyDocgenMiddleware,
+  extractEach,
+  groupComponentFilesByProject,
+} from './lazy-docgen-middleware.ts';
 
 const DOWNSTREAM: DocgenPayload = {
   id: 'button',
@@ -169,5 +173,66 @@ describe('extractEach', () => {
       { status: 'rejected', reason: error },
       fulfilled(undefined),
     ]);
+  });
+});
+
+describe('groupComponentFilesByProject', () => {
+  const groupFilesByProject = vi.fn((files: string[]) => new Map([['project', files]]));
+
+  it('groups the component files of every input, each under its own project file', async () => {
+    const batchFiles = await groupComponentFilesByProject(
+      { groupFilesByProject },
+      [input('Button'), input('Card')],
+      async ({ entry }) =>
+        entry.title === 'Card' ? ['/src/Card.vue', '/src/CardHeader.vue'] : ['/src/Button.vue']
+    );
+
+    expect(groupFilesByProject).toHaveBeenCalledExactlyOnceWith([
+      '/src/Button.vue',
+      '/src/Card.vue',
+      '/src/CardHeader.vue',
+    ]);
+    expect(batchFiles).toEqual(
+      new Map([['project', ['/src/Button.vue', '/src/Card.vue', '/src/CardHeader.vue']]])
+    );
+  });
+
+  it('has no batch for a single input', async () => {
+    const resolve = vi.fn(async () => ['/src/Button.vue']);
+
+    await expect(
+      groupComponentFilesByProject({ groupFilesByProject }, [input('Button')], resolve)
+    ).resolves.toBeUndefined();
+    expect(resolve).not.toHaveBeenCalled();
+    expect(groupFilesByProject).not.toHaveBeenCalled();
+  });
+
+  it('leaves out an input whose component files cannot be resolved', async () => {
+    const batchFiles = await groupComponentFilesByProject(
+      { groupFilesByProject },
+      [input('Button'), input('Card')],
+      ({ entry }) => {
+        if (entry.title === 'Card') {
+          throw new Error('Card.stories.ts cannot be parsed');
+        }
+        return ['/src/Button.vue'];
+      }
+    );
+
+    expect(batchFiles).toEqual(new Map([['project', ['/src/Button.vue']]]));
+  });
+
+  it('has no batch when grouping the files fails', async () => {
+    const failing = () => {
+      throw new Error('TypeScript dropped the program');
+    };
+
+    await expect(
+      groupComponentFilesByProject(
+        { groupFilesByProject: failing },
+        [input('Button'), input('Card')],
+        async () => ['/src/Button.vue']
+      )
+    ).resolves.toBeUndefined();
   });
 });

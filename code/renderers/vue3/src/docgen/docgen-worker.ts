@@ -11,12 +11,13 @@
 import {
   createLazyDocgenMiddleware,
   extractEach,
+  groupComponentFilesByProject,
   loadTypeScriptCompilerApi,
 } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import type { DocgenMiddleware } from 'storybook/internal/types';
 
-import { buildDocgenPayload } from './component-docgen/build-docgen.ts';
+import { buildDocgenPayload, resolveComponentPaths } from './component-docgen/build-docgen.ts';
 import { VueComponentMetaManager } from './component-docgen/component-meta/vue-project-manager.ts';
 
 /**
@@ -44,15 +45,17 @@ export const createDocgenProvider = (): DocgenMiddleware =>
         return undefined;
       }
     },
-    extract: (manager, inputs) =>
-      extractEach(inputs, async (input) => {
+    extract: async (manager, inputs) => {
+      const batchFiles = await groupComponentFilesByProject(manager, inputs, resolveComponentPaths);
+      return extractEach(inputs, async (input) => {
         const ours = await buildDocgenPayload(input, {
-          getChecker: (componentPath) => manager.getCheckerForFile(componentPath),
+          getChecker: (componentPath) => manager.getCheckerForFile(componentPath, batchFiles),
           typescript: manager.typeScriptModule,
         });
         // Volar programs hold large type caches and a batch can hold every component, so heap
         // pressure is checked after each extraction.
-        manager.recycleIfHeapPressured();
+        manager.recycleIfHeapPressured(batchFiles);
         return ours;
-      }),
+      });
+    },
   });

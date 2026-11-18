@@ -8,7 +8,7 @@ import { cycleRef, versionLine } from './cycle.ts';
 import { fingerprint } from './fingerprint.ts';
 import { loadResults, type LoadedResult } from './results.ts';
 import { redactSecrets } from './redact.ts';
-import { sanitizeFinding, sanitizeTitle } from './sanitize.ts';
+import { capTitle, sanitizeFinding, sanitizeTitle } from './sanitize.ts';
 import type {
   CommentProposal,
   Cycle,
@@ -320,9 +320,18 @@ const sourceLines = (proposal: IssueProposal | CommentProposal, withVersion = fa
     return `- ${withVersion ? `${version}: ` : ''}${where}`;
   });
 
-// A title in a body is inline markdown: a newline would start a block and a lone `<` an HTML comment.
-const inlineTitle = (title: string): string =>
-  sanitizeTitle(title.replace(/\s+/g, ' ')).replaceAll('<', '&lt;');
+// A title in a body is one code span, in which GitHub renders no mention, reference, link or markup.
+// The fence is one backtick longer than any run in the title, padded when the title starts or ends
+// with one, and a blank line would end the span, so whitespace collapses first.
+export const inlineTitle = (title: string): string =>
+  codeSpan(capTitle(title.replace(/\s+/g, ' ').trim()));
+
+const codeSpan = (text: string): string => {
+  const longestRun = Math.max(0, ...(text.match(/`+/g) ?? []).map((run) => run.length));
+  const marker = '`'.repeat(longestRun + 1);
+  const pad = text.startsWith('`') || text.endsWith('`') ? ' ' : '';
+  return `${marker}${pad}${text}${pad}${marker}`;
+};
 
 const RELATED_HEADING = 'Also seen as:';
 

@@ -325,7 +325,7 @@ describe('toProposal for a cluster', () => {
       {
         fingerprint: build!.fingerprint,
         checkId: 'build.static',
-        title: 'Build fails `@someone` ### Injected &lt;!-- x',
+        title: '`Build fails @someone ### Injected <!-- x`',
         sources: [expect.objectContaining({ os: 'windows', engine: 'codex' })],
       },
     ]);
@@ -333,7 +333,7 @@ describe('toProposal for a cluster', () => {
 
   it('lists the other members inline with a neutralised title in the issue and the comment', () => {
     const line =
-      'Also seen as:\n\n- `build.static` on storybookjs/mealdrop (windows, codex): Build fails `@someone` ### Injected &lt;!-- x\n';
+      'Also seen as:\n\n- `build.static` on storybookjs/mealdrop (windows, codex): `Build fails @someone ### Injected <!-- x`\n';
     const comment = toProposal(
       cluster(),
       [issueOn(hmr, { number: 9, labels: ['bug'], state: 'open' })],

@@ -129,7 +129,7 @@ describe('buildDocgenPayload', () => {
       `,
       });
 
-      componentMetaManager = new ComponentMetaManager(ts);
+      componentMetaManager = new ComponentMetaManager(typescript);
       const payload = await buildDocgenPayload(
         { entry: makeStoryIndexEntry(files['Button.stories.tsx'], 'Forms/Button') },
         {

@@ -246,3 +246,17 @@ export const ArrayMultiReadonly: Story = {
   },
   ...argTypeMultiSelect,
 };
+
+// Under `dir="rtl"` the chevron's logical inset resolves to the left edge — the
+// inline end — so it stays clear of the option text. Only the single `select`
+// renders a chevron, so `multi-select` is unaffected.
+export const Rtl: Story = {
+  ...Array,
+  decorators: [
+    (Story) => (
+      <div dir="rtl">
+        <Story />
+      </div>
+    ),
+  ],
+};

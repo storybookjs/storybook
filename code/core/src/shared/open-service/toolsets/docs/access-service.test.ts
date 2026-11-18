@@ -181,14 +181,14 @@ beforeEach(() => {
 });
 
 describe('createServiceDocsAccess listNames', () => {
-  it('names components by their title and standalone docs by their index name, without docgen', async () => {
+  it('names components and standalone docs by their title, without docgen', async () => {
     const names = await createAccess().listNames!();
 
     expect(names).toEqual([
       { id: 'zebra', name: 'zebra' },
       { id: 'alpha', name: 'alpha' },
       { id: 'only-docs', name: 'only-docs' },
-      { id: 'guide--docs', name: 'Guide' },
+      { id: 'guide--docs', name: 'guide' },
     ]);
     expect(docgenForAllComponents).not.toHaveBeenCalled();
   });
@@ -265,7 +265,9 @@ describe('createServiceDocsAccess list', () => {
 
     expect(manifests.docsManifest).toEqual({
       v: 1,
-      docs: { 'guide--docs': { id: 'guide--docs', name: 'Guide', summary: 'Intro' } },
+      docs: {
+        'guide--docs': { id: 'guide--docs', name: 'Guide', title: 'guide', summary: 'Intro' },
+      },
     });
   });
 
@@ -276,7 +278,7 @@ describe('createServiceDocsAccess list', () => {
 
     expect(manifests.docsManifest).toEqual({
       v: 1,
-      docs: { 'guide--docs': { id: 'guide--docs', name: 'Guide' } },
+      docs: { 'guide--docs': { id: 'guide--docs', name: 'Guide', title: 'guide' } },
     });
   });
 

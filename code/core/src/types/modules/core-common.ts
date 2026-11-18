@@ -222,7 +222,10 @@ export interface ModuleResolveConfig {
    * terminal.
    */
   alias?: Record<string, string> | Array<{ find: string | RegExp; replacement: string }>;
-  /** Conditions for package `exports` resolution. */
+  /**
+   * Conditions for package `exports` resolution, as the builder applies them to an ESM import:
+   * `import` included and placeholders such as Vite's `development|production` replaced.
+   */
   conditions?: string[];
 }
 

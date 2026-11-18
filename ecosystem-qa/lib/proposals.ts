@@ -7,7 +7,7 @@ import { loadEntries } from './catalog.ts';
 import { cycleRef, versionLine } from './cycle.ts';
 import { fingerprint } from './fingerprint.ts';
 import type { PlanScope } from './plan-scope.ts';
-import { planCheckId, prCell, probeCopyDir, type Plan } from './qa-plan.ts';
+import { isProbeCheck, planCheckId, prCell, probeCopyDir, type Plan } from './qa-plan.ts';
 import { loadResults, type LoadedResult } from './results.ts';
 import { redactSecrets } from './redact.ts';
 import { capTitle, sanitizeFinding, sanitizeTitle } from './sanitize.ts';
@@ -310,6 +310,8 @@ const BASELINE_TEXT: Record<Finding['baseline'], string> = {
   'not-captured': 'The probe was not run before the upgrade, so regression is unverified.',
   'not-applicable': 'Not applicable: the upgrade itself performs the failing step.',
 };
+const PROBE_BASELINE_TEXT =
+  'A probe has no baseline, because the run adds it to the project only after the upgrade.';
 
 export const fence = (text: string, info = '') => {
   const longestRun = Math.max(0, ...(text.match(/`+/g) ?? []).map((run) => run.length));
@@ -450,7 +452,7 @@ export const renderIssueBody = (
     fence(finding.actual, 'text'),
     '',
     ...(finding.errorText ? [fence(finding.errorText), ''] : []),
-    `**Baseline:** ${BASELINE_TEXT[finding.baseline]}`,
+    `**Baseline:** ${isProbeCheck(proposal.planEntries, finding.checkId) ? PROBE_BASELINE_TEXT : BASELINE_TEXT[finding.baseline]}`,
     '',
     '### Reproduction link',
     '',
@@ -647,7 +649,7 @@ export const toProposal = (
   }
   const common = {
     fingerprint: lead.fingerprint,
-    title: `[SB ${major} QA]: ${sanitizeTitle(lead.finding.title)}`,
+    title: `[SB ${major} QA${isProbeCheck(plan?.entries, lead.finding.checkId) ? ' probe' : ''}]: ${sanitizeTitle(lead.finding.title)}`,
     sources: sourcesOf(members),
     related: members
       .filter((member) => member !== lead)

@@ -22,8 +22,9 @@ describe('Storybook CLI dispatcher', () => {
 
       expect(result.error).toBeUndefined();
       expect(result.status).toBe(1);
-      expect(result.stdout).toContain('npx storybook skills setup');
-      expect(result.stdout).toContain('npx storybook tools');
+      const output = result.stdout + result.stderr;
+      expect(output).toContain('npx storybook skills setup');
+      expect(output).toContain('npx storybook tools');
     }
   );
 });

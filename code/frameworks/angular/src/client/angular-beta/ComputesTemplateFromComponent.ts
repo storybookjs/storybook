@@ -7,6 +7,7 @@ import type { ComponentInputsOutputs } from './utils/NgComponentAnalyzer.ts';
 import {
   getComponentDecoratorMetadata,
   getComponentInputsOutputs,
+  resolveInputArgs,
 } from './utils/NgComponentAnalyzer.ts';
 
 /**
@@ -22,34 +23,15 @@ const isValidIdentifier = (name: string): boolean => /^[a-zA-Z_$][a-zA-Z0-9_$]*$
 export const formatPropInTemplate = (propertyName: string) =>
   isValidIdentifier(propertyName) ? propertyName : `this['${propertyName}']`;
 
-// An input can be set by its template name (alias) or by its class property name; the alias wins.
-const resolveInputs = (ngComponentInputsOutputs: ComponentInputsOutputs, props: ICollection) =>
-  ngComponentInputsOutputs.inputs.flatMap(({ propName, templateName }) => {
-    if (templateName in props) {
-      return [{ bindingName: templateName, propKey: templateName }];
-    }
-    if (propName in props) {
-      return [{ bindingName: templateName, propKey: propName }];
-    }
-    return [];
-  });
-
 const separateInputsOutputsAttributes = (
   ngComponentInputsOutputs: ComponentInputsOutputs,
   props: ICollection = {}
-) => {
-  const inputs = resolveInputs(ngComponentInputsOutputs, props);
-  const outputs = ngComponentInputsOutputs.outputs
+) => ({
+  inputs: resolveInputArgs(ngComponentInputsOutputs.inputs, props).bindings,
+  outputs: ngComponentInputsOutputs.outputs
     .filter((o) => o.templateName in props)
-    .map((o) => o.templateName);
-  const boundKeys = [...inputs.map((i) => i.propKey), ...outputs];
-
-  return {
-    inputs,
-    outputs,
-    otherProps: Object.keys(props).filter((k) => !boundKeys.includes(k)),
-  };
-};
+    .map((o) => o.templateName),
+});
 
 /**
  * Converts a component into a template with inputs/outputs present in initial props

@@ -224,6 +224,11 @@ const unDecision = (cell: string): unknown => {
   if (kind === 'none') {
     return rest ? { none: rest } : fail('expected the reason why no QA is needed after "none:"');
   }
+  for (const separator of [WHY, REST]) {
+    if (cell.split(separator).length > 2) {
+      fail(`expected "${separator.trim()}" once in the decision, found it twice`);
+    }
+  }
   if (kind === 'manual') {
     return unManual(rest, MANUAL_CELL);
   }
@@ -363,6 +368,7 @@ const STEPS_HEADING = '## Steps';
 
 export type PlanLayout = {
   meta: Record<MetaKey, number>;
+  overview: number[];
   entries: {
     heading: number;
     prs: number;
@@ -400,7 +406,7 @@ export const layoutPlan = (plan: Plan): { lines: string[]; at: PlanLayout } => {
   add(OVERVIEW_HEADING);
   add('');
   tableHead(OVERVIEW_COLUMNS).forEach(add);
-  plan.entries.forEach((entry) => add(tableRow(overviewCells(entry))));
+  const overview = plan.entries.map((entry) => add(tableRow(overviewCells(entry))));
 
   const tables = Object.fromEntries(
     TABLE_KEYS.map((key) => {
@@ -431,7 +437,7 @@ export const layoutPlan = (plan: Plan): { lines: string[]; at: PlanLayout } => {
     };
   });
 
-  return { lines, at: { meta, entries, tables } };
+  return { lines, at: { meta, overview, entries, tables } };
 };
 
 export const renderPlan = (plan: Plan): string => `${layoutPlan(plan).lines.join('\n')}\n`;
@@ -854,6 +860,26 @@ const probesHaveOwnBatches: Rule = ({ plan, at }) =>
     ];
   });
 
+// The run and a reader take a text that says "Probe:" for the mark of a probe, so the token stands
+// only in the "- Probe:" line of one. An overview row repeats its entry's title, which is checked
+// at the entry's heading.
+const PROBE_TOKEN = /probe\s*:/i;
+const probeTokenMarksProbesOnly: Rule = ({ lines, at }) => {
+  const exempt = new Set([...at.overview, ...at.entries.flatMap(({ probe }) => probe ?? [])]);
+  return lines.flatMap((text, index) => {
+    const line = index + 1;
+    const token = exempt.has(line) ? undefined : PROBE_TOKEN.exec(text)?.[0];
+    return token === undefined
+      ? []
+      : [
+          {
+            line,
+            message: `holds "${token}", which marks a probe and stands only in the "- Probe:" line of one: reword the text`,
+          },
+        ];
+  });
+};
+
 const groupsAreDecided: Rule = ({ plan, at }) => {
   const slugs = new Set(plan.entries.map((entry) => entry.slug));
   return plan.groups.flatMap((group, index) => {
@@ -1075,6 +1101,7 @@ const RULES: Rule[] = [
   rowsAreDecided,
   batchesHaveNoGap,
   probesHaveOwnBatches,
+  probeTokenMarksProbesOnly,
   groupsAreDecided,
   noPrivateLinks,
   textStaysOnLocalhost,
@@ -1189,7 +1216,7 @@ export const renderPlanChecks = (entries: PlanEntry[], repo: string): string =>
         ...(entry.probe === undefined
           ? []
           : [
-              `  Probe: after the upgrade, add ${entry.probe}. Copy each added file to \`${probeCopyDir(entry.slug)}/\` in the evidence directory, and remove what you added before the next check.`,
+              `  Probe: after the upgrade, add ${entry.probe}. Keep a copy of each added file, and a diff of each file you added a line to, in \`${probeCopyDir(entry.slug)}/\` in the evidence directory. Before the next check, remove the added files and restore each file you added a line to.`,
             ]),
         ...entry.steps.map((step, index) => `  ${index + 1}. ${step}`),
         `  Expected: ${entry.expected}`,

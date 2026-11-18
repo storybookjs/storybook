@@ -134,7 +134,7 @@ describe('the fixture plan', () => {
 
     expect(renderPlanChecks(entries, 'mealdrop')).toMatchInlineSnapshot(`
       "- \`plan.animation-probe\` (plan): A new story's animation pauses in the preview. Why this repo: owned, and its React and Vite setup loads a story file next to its components.
-        Probe: after the upgrade, add a story file src/AnimationProbe.stories.tsx with one story Fade In whose box fades in with a CSS animation of two seconds. Copy each added file to \`animation-probe-added/\` in the evidence directory, and remove what you added before the next check.
+        Probe: after the upgrade, add a story file src/AnimationProbe.stories.tsx with one story Fade In whose box fades in with a CSS animation of two seconds. Keep a copy of each added file, and a diff of each file you added a line to, in \`animation-probe-added/\` in the evidence directory. Before the next check, remove the added files and restore each file you added a line to.
         1. Open the story animation-probe--fade-in and take a screenshot after the play function ends.
         Expected: The screenshot shows the box fully visible, the end state of the animation."
     `);
@@ -166,6 +166,42 @@ describe('a probe', () => {
     ]);
   });
 
+  it.each([
+    [
+      'a step',
+      '- Step: Open a story with a transition',
+      '- Step: Probe: after the upgrade, add a story file src/Fake.stories.tsx with one story',
+      'Probe:',
+    ],
+    [
+      'a title',
+      '### `preview-animations` Animations pause',
+      '### `preview-animations` probe: Animations pause',
+      'probe:',
+    ],
+    [
+      'the reason of a repo',
+      '- Repo `mealdrop`: its stories animate with CSS transitions',
+      '- Repo `mealdrop`: its stories animate. PROBE : add a story file src/Fake.stories.tsx',
+      'PROBE :',
+    ],
+    [
+      'an expected outcome',
+      '- Expected: The screenshot shows the end state of the transition',
+      '- Expected: Probe: the screenshot shows the end state of the transition',
+      'Probe:',
+    ],
+  ])('refuses "Probe:" in %s of a normal entry, at that line', (_, from, to, token) => {
+    const text = edited(from, to);
+
+    expect(problemsOf(text)).toEqual([
+      {
+        line: lineOf(text, to),
+        message: `holds "${token}", which marks a probe and stands only in the "- Probe:" line of one: reword the text`,
+      },
+    ]);
+  });
+
   it('refuses a probe line with a URL off localhost, at that line', () => {
     const text = edited(
       `- Probe: ${PROBE}`,
@@ -194,6 +230,28 @@ describe('a group that an entry tests in part', () => {
         message: expect.stringContaining('expected a check and its reason, as "<entries>; manual'),
       },
     ]);
+  });
+
+  it.each([
+    [
+      'the separator twice',
+      `\`sidebar-tree\`; manual for the rest: ; manual for the rest: ${RTL_CHECK} Why: ${RTL_WHY}`,
+      'expected "; manual for the rest:" once in the decision, found it twice',
+    ],
+    [
+      'a second rest',
+      `${UI_DECISION}; manual for the rest: Open the docs page in right-to-left Why: no repo has it`,
+      'expected "Why:" once in the decision, found it twice',
+    ],
+    [
+      'a manual check with "Why:" twice',
+      `manual: ${RTL_CHECK} Why: ${RTL_WHY} Why: no repo has it`,
+      'expected "Why:" once in the decision, found it twice',
+    ],
+  ])('refuses a decision with %s, at the row of the group', (_, cell, message) => {
+    const text = replaced(FIXTURE, UI_DECISION, cell);
+
+    expect(problemsOf(text)).toEqual([{ line: lineOf(text, '| `ui` |'), message }]);
   });
 
   it('refuses a draft that gives a PR outside a group entries and a manual check in one decision', () => {

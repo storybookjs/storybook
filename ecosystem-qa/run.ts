@@ -50,6 +50,7 @@ import { writeStepSummary } from './lib/step-summary.ts';
 import type { Outcome, RunRequest } from './lib/types.ts';
 import { redactTree } from './lib/redact.ts';
 import { upgraded } from './lib/results.ts';
+import { sandboxImageProblem } from './lib/sandbox-image.ts';
 import { unsandboxedRefusal } from './lib/sandbox-policy.ts';
 import { stopChildren } from './lib/stop-children.ts';
 import { usageFromStream } from './lib/usage.ts';
@@ -199,6 +200,11 @@ const parseRequest = () => {
   const refusal = sandbox === 'none' && !values.fake ? unsandboxedRefusal(entry, os) : undefined;
   if (refusal) {
     return fail(refusal);
+  }
+  const imageProblem =
+    sandbox === 'docker' && !values.fake ? sandboxImageProblem(values.image) : undefined;
+  if (imageProblem) {
+    return fail(imageProblem);
   }
   const outDir = resolve(out);
   // A run owns its output directory: the log, the agent stream and the evidence of an earlier run

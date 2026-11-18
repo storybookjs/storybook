@@ -1,9 +1,16 @@
-# The tag must match the `playwright` version in package.json: the evidence tools load that package
-# from the mounted node_modules and launch the browsers baked into this image.
-FROM mcr.microsoft.com/playwright:v1.58.2-noble
+ARG PLAYWRIGHT_VERSION=1.58.2
+ARG PLAYWRIGHT_DIGEST=sha256:6446946a1d9fd62d9ae501312a2d76a43ee688542b21622056a372959b65d63d
+FROM mcr.microsoft.com/playwright:v${PLAYWRIGHT_VERSION}-noble@${PLAYWRIGHT_DIGEST}
+
+ARG PLAYWRIGHT_VERSION
+LABEL org.opencontainers.image.source="https://github.com/storybookjs/storybook"
+LABEL org.js.storybook.ecosystem-qa.playwright="$PLAYWRIGHT_VERSION"
 
 RUN apt-get update && apt-get install -y --no-install-recommends build-essential curl git jq \
   && rm -rf /var/lib/apt/lists/*
+
+# A reference with a digest ignores its tag, so the label is only true when the base says so too.
+RUN jq -e --arg version "$PLAYWRIGHT_VERSION" '.driverVersion == $version' /ms-playwright/.docker-info
 
 # The base image's Node is older than what current projects' dependencies accept.
 ARG N_VERSION=11.0.0

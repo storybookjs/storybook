@@ -102,7 +102,14 @@ Start the `Ecosystem QA` workflow by hand and pick the repos, version, engines a
 `repo` takes catalog ids separated by commas, and `owned` or `tier1` for every repo of that class, so `owned,tier1` with `linux,windows` is a whole static sweep in one run.
 `plan.ts` turns the inputs into one job for each repo, operating system and engine, and a repo runs on Windows only when the catalog marks it `windows`.
 Linux runs the agent in `docker()`; Windows runs it with `noSandbox()`, and the API key is the only secret in that job.
-The agent keys live in the `ecosystem-qa` environment, and the push token in `ecosystem-qa-file`, which only the filing job enters.
+When the sweep has a Linux job, the `image` job runs first, on the runner label of the Linux jobs.
+It names the sandbox image by a hash of the Dockerfile, the two agent CLI versions and the runner's uid and gid, and builds and pushes it to `ghcr.io/storybookjs/ecosystem-qa-sandbox` only when no image has that tag yet.
+It prints the image with its digest, and each Linux runner pulls that digest without a login and tags it `sb-ecosystem-qa`.
+When the pull fails, or the `image` job failed, the runner builds the image itself as before, so a registry outage only costs time.
+The package is private when the first push creates it, and the pull fails until a person makes it public in the package settings.
+`run.ts` reads the image's `org.js.storybook.ecosystem-qa.playwright` label before it clones, and ends the run when that version is not the Playwright of the workspace, because the evidence tools would find no browser in the image.
+The Dockerfile takes that version as `PLAYWRIGHT_VERSION` and pins the base image by `PLAYWRIGHT_DIGEST`, and the build fails when the two disagree; a Playwright upgrade changes both and the `playwright` pin in `package.json`.
+The agent keys live in the `ecosystem-qa` environment, and the key of the filing App in `ecosystem-qa-file`, which only the filing job enters.
 Each runner uploads `qa-result-<id>-<os>-<engine>` with `result.json`, the run log, the raw agent stream, the session, the evidence and the cycle branch bundle.
 `run.ts` writes the status, wall time, tokens, dollars, free disk and every check to the Step Summary.
 
@@ -119,6 +126,22 @@ To split a wrong merge, or to collect when the model is unavailable, paste a `gr
 Two requests over the same findings can group a borderline pair differently, so start the run that files with the `groups.json` of the dry run you reviewed.
 
 A pull request that touches `ecosystem-qa/` or the workflow runs only the smoke job: typecheck, tests and a fake run through collect and a dry filing, with no environment and no secrets.
+
+### Set up by hand
+
+The workflow needs these things, which only an admin of the repository and the orgs can create:
+
+- The package `ecosystem-qa-sandbox` of `storybookjs` is public, so the runners pull it without a login. The first push of the `image` job creates it as private, and until then every runner builds the image.
+- A GitHub App with write access to contents and nothing else, installed on `storybookjs` for `mealdrop` only, and on `storybook-tmp` for the forks of the catalog.
+- The App's id as the variable `ECOSYSTEM_QA_APP_ID`, and its private key as the secret `ECOSYSTEM_QA_APP_PRIVATE_KEY`, both in the environment `ecosystem-qa-file`.
+- A required reviewer on `ecosystem-qa-file`, with self-review allowed, so every filing that is not dry waits for a person.
+
+A filing that is not dry fails at its first token step until the App, its installations, its id and its key exist.
+That holds from the moment this workflow is on the branch a sweep is dispatched from, so create them before the merge, or file what is pending before it.
+An App that one org owns can be installed on the other org only when the App is public, so the App is either public, or each org has its own App and the workflow needs a second id and key.
+The image's tag is a hash of inputs anyone can read, and the `image` job builds nothing when the tag exists, so whoever can write the package chooses the image that the agents run in, with their keys.
+The access settings of the package decide who that is, so read them after the first push.
+Once one filing has pushed as the App, the two personal push tokens that the filing job used before can be deleted from `ecosystem-qa-file` and revoked.
 
 ## Where results land
 
@@ -164,7 +187,9 @@ A run whose agent did not finish is never read this way.
 Dry mode is the default.
 The filer writes each proposal, with its full issue body and the evidence it would upload, to the Step Summary and changes nothing.
 Without dry mode it pushes the evidence to the `qa-assets` branch with the job token, pushes the upgraded state to the catalog repo with the push token of the target's org, and files the issue in milestone 11.
-That is `ECOSYSTEM_QA_PUSH_TOKEN` for `storybookjs` and `ECOSYSTEM_QA_PUSH_TOKEN_STORYBOOK_TMP` for `storybook-tmp`, both from the `ecosystem-qa-file` environment.
+The push token is an installation token of a GitHub App, which the filing job mints for each org directly before it files, with write access to contents and nothing else, and only for the repositories of that org that `catalog.json` pushes to.
+`file.ts` reads it as `ECOSYSTEM_QA_APP_TOKEN_STORYBOOKJS` for `storybookjs` and `ECOSYSTEM_QA_APP_TOKEN_STORYBOOK_TMP` for `storybook-tmp`.
+The dry filing runs in another job, so it mints no token and needs no App.
 The upgraded state lands under `refs/qa/`, never as a branch: a branch push would start the catalog repo's own workflows and run the agent's commits with that repo's secrets before anyone read the diff.
 The issue body carries the fetch command, and the one push that turns the ref into a branch once a person has looked at it.
 The collector proposes one finding per root cause: `--groups groups.json` lists which fingerprints belong together, and without it every fingerprint is its own group.

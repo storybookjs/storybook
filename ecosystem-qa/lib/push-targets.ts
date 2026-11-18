@@ -1,7 +1,7 @@
-// A fine-grained token belongs to one owner, so each org the filer may push to has its own secret.
+// An installation token of the App belongs to one owner, so each org the filer may push to has its own.
 const PUSH_TOKEN_ENV = {
-  storybookjs: 'ECOSYSTEM_QA_PUSH_TOKEN',
-  'storybook-tmp': 'ECOSYSTEM_QA_PUSH_TOKEN_STORYBOOK_TMP',
+  storybookjs: 'ECOSYSTEM_QA_APP_TOKEN_STORYBOOKJS',
+  'storybook-tmp': 'ECOSYSTEM_QA_APP_TOKEN_STORYBOOK_TMP',
 } as const;
 
 const ownerOf = (repo: string): string => repo.split('/')[0] ?? '';

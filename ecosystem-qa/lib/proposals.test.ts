@@ -861,6 +861,50 @@ describe('the plan entry of an issue', () => {
     expect(bodyOf('upgrade.command')).not.toContain('Plan entry');
   });
 
+  const commentOf = (checkId: string) => {
+    const [group] = groupFindings([planRun(checkId)]);
+    const proposal = toProposal(
+      single(group),
+      [issueOn(group, { number: 9, labels: ['bug'], state: 'open' })],
+      { ...OPTIONS, plan: fixturePlan }
+    );
+    return proposal.kind === 'comment' ? renderCommentBody(proposal) : '';
+  };
+
+  it('opens the comment on a known issue for a probe finding with what the run added', () => {
+    expect(commentOf('plan.animation-probe').split('\n\n')[0]).toBe(
+      'This finding comes from a probe, not from the project as it is: after the upgrade the run added `a story file src/AnimationProbe.stories.tsx with one story Fade In whose box fades in with a CSS animation of two seconds` to the project for the plan entry `animation-probe`. The copy of what it added is in `animation-probe-added/` of the evidence in the artifact of the run.'
+    );
+  });
+
+  it('leaves the comment on a known issue for a normal finding as it was', () => {
+    expect(commentOf('plan.story-sort-in-main')).toMatchInlineSnapshot(`
+      "Seen again by the ecosystem QA agent on:
+
+      - 11.0.0-beta.0: linux, claude (claude-sonnet-5-5), sandbox docker
+
+      \`\`\`text
+      index.json keeps the old entries until restart
+      \`\`\`
+
+      <!-- sb-qa-metadata -->
+      \`\`\`yaml
+      fingerprint: fc116bca3d94fb6d
+      storybook: 11.0.0-beta.0
+      repo: storybookjs/mealdrop
+      sha: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+      cycleRef: refs/qa/sb-11.0.0-beta.0/linux-claude
+      os: linux
+      engine: claude
+      model: claude-sonnet-5-5
+      sightings: 20a0f1c23fda
+      seen: 11.0.0-beta.0 storybookjs/mealdrop linux claude
+      run: https://github.com/storybookjs/storybook/actions/runs/1
+      \`\`\`
+      "
+    `);
+  });
+
   it.each([
     [
       'Sort for @storybookjs/core and _@octocat_ &#64;octocat, see #1 and <!-- hidden',

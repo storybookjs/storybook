@@ -241,6 +241,7 @@ The checklist gives the agent the probe line as `Probe: after the upgrade, add <
 `prompts/plan-checks.md` takes only that line for the mark of a probe, and tells the agent to add exactly that after the upgrade, change and remove no line the project has, remove the added files and restore the file it added a line to before the next check, and start the reproduction steps of a finding with adding the probe's files.
 `check` refuses `Probe:`, in any case and with spaces before the colon, in every other line of the plan, so no title, reason, step, or expected outcome reads as that mark.
 The issue of a finding from a probe opens with a paragraph that says it comes from a probe, what the run added, and where the copy is, with the entry taken from the plan file by the check id. Its reproduction section says that the steps start from the linked commit plus the added files, which that commit does not hold.
+A comment that adds such a finding to an existing issue opens with the same paragraph.
 The title of the issue carries no mark, because the grouping model reads the titles of the filed issues to decide which one a new finding belongs to.
 
 A change takes the first of these that fits: a normal entry on a repo of the plan that has the state at its pin, a probe, a discovered repo, a manual check, and no QA with the reason.

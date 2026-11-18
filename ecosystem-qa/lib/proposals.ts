@@ -402,6 +402,16 @@ const reproLines = (raw: Finding, capped: Finding): string[] => {
   ];
 };
 
+const probeLines = ({ planEntries }: IssueProposal | CommentProposal): string[] =>
+  (planEntries ?? []).flatMap(({ slug, probe }) =>
+    probe === undefined
+      ? []
+      : [
+          `This finding comes from a probe, not from the project as it is: after the upgrade the run added ${probe} to the project for the plan entry \`${slug}\`. The copy of what it added is in \`${probeCopyDir(slug)}/\` of the evidence in the artifact of the run.`,
+          '',
+        ]
+  );
+
 // Render the bug-template issue body, linking each evidence file through `evidenceUrl`.
 //
 // Every field the agent wrote is capped and rendered inside a fence, so none of it can mention,
@@ -422,14 +432,7 @@ export const renderIssueBody = (
     image(finding.evidence.png, 'Screenshot of the actual result'),
     image(finding.evidence.gif, 'Recording of the actual result'),
   ].filter(Boolean);
-  const probes = (proposal.planEntries ?? []).flatMap(({ slug, probe }) =>
-    probe === undefined
-      ? []
-      : [
-          `This finding comes from a probe, not from the project as it is: after the upgrade the run added ${probe} to the project for the plan entry \`${slug}\`. The copy of what it added is in \`${probeCopyDir(slug)}/\` of the evidence in the artifact of the run.`,
-          '',
-        ]
-  );
+  const probes = probeLines(proposal);
   const logs = finding.evidence.logs.map((log) => {
     const url = evidenceUrl(log);
     return url ? `- [${log}](${url})` : `- ${keptOut(log)}`;
@@ -485,6 +488,7 @@ export const renderIssueBody = (
 
 export const renderCommentBody = (proposal: CommentProposal): string =>
   [
+    ...probeLines(proposal),
     ...(proposal.reason === 'fixed-later'
       ? [
           `This issue was fixed after ${unique(proposal.sources.map((source) => source.version))} was published, so that version does not have the fix yet and the report below is expected. It is recorded here so that later runs recognise these findings. No new issue was filed.`,
@@ -670,6 +674,7 @@ export const toProposal = (
       reason: decision.reason,
     };
   }
+  const planEntries = planEntriesOf(members, plan);
   const report = {
     ...common,
     sightings: sightingsOf(members),
@@ -678,6 +683,7 @@ export const toProposal = (
     finding: lead.finding,
     cycle: primary.cycle,
     runUrl,
+    ...(planEntries.length > 0 ? { planEntries } : {}),
   };
   if (decision.kind === 'comment') {
     return {
@@ -687,12 +693,10 @@ export const toProposal = (
       ...(decision.reason ? { reason: decision.reason } : {}),
     };
   }
-  const planEntries = planEntriesOf(members, plan);
   return {
     kind: 'issue',
     ...report,
     ...(decision.previousIssue !== undefined ? { previousIssue: decision.previousIssue } : {}),
-    ...(planEntries.length > 0 ? { planEntries } : {}),
     system: systemText(primary),
     assetDir: `assets/${version}/${lead.fingerprint}`,
     evidence: evidenceFiles(lead),

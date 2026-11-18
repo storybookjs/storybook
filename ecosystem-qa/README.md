@@ -173,6 +173,7 @@ A decision is one of three kinds:
 A PR marked `qa:needed` or without a QA label is decided by its place: the PRs of one or more entries test it, or one row of one of the two tables names its manual check or its reason.
 A PR that the entries test only in part is in their PRs and in one row of manual QA, whose check covers the rest; in the draft its decision is the manual one.
 A group that the entries test only in part names them before its manual check, as `` `slug`; manual for the rest: <check> Why: <why> ``, and as `{ "entries": ["slug"], "manual": "<check>", "why": "<why>" }` in the draft, which a PR outside a group never takes.
+A decision holds ` Why: ` and `; manual for the rest: ` once each at most, and `check` refuses the row of one that holds either twice, since the second would print as part of the check or its reason.
 `ledger` names such a PR as tested by the entry and as manual for the rest, and `manual` prints it under its check with the entry that tests the other part.
 Both tables hold both kinds of PR.
 A manual check is for a change that a person has to test because the sweep cannot, such as a fix that only Windows shows, a change of `storybook init`, a Yarn 1 project, a browser's profiler, or a need that no repo of the catalog has.
@@ -236,8 +237,11 @@ A probe is an entry with a line `- Probe:` after `- Batch:`, the draft's `probe`
 It tests behaviour that is new or fixed in the line, which no project can hold before the upgrade, on a repo that the plan has already.
 It adds new files, such as a story, a component for it, a script, or a local addon, and at most one option of a config file that is the behaviour under test or that the added files need to load.
 It never changes or removes a line the project has, never writes what an upgrade step reads, such as what an automigration acts on, what a blocker or a floor checks, or what the package manager detection reads, and never stands in for a framework, a builder, a package manager, an addon the check is about, or a framework version.
-The checklist gives the agent the probe line with the directory `<slug>-added/` of the evidence, where it keeps a copy of each added file, and `prompts/plan-checks.md` tells it to add exactly that after the upgrade, change nothing the project has, and remove what it added before the next check.
-The issue of a finding from a probe says, under the line of the entry, that the run added the probe line to the project after the upgrade, that the project does not hold it, and where the copy is, with the entry taken from the plan file by the check id.
+The checklist gives the agent the probe line as `Probe: after the upgrade, add <probe line>.` right under the first line of the check, with the directory `<slug>-added/` of the evidence, where it keeps a copy of each added file and a diff of each file it added a line to.
+`prompts/plan-checks.md` takes only that line for the mark of a probe, and tells the agent to add exactly that after the upgrade, change and remove no line the project has, remove the added files and restore the file it added a line to before the next check, and start the reproduction steps of a finding with adding the probe's files.
+`check` refuses `Probe:`, in any case and with spaces before the colon, in every other line of the plan, so no title, reason, step, or expected outcome reads as that mark.
+The issue of a finding from a probe opens with a paragraph that says it comes from a probe, what the run added, and where the copy is, with the entry taken from the plan file by the check id. Its reproduction section says that the steps start from the linked commit plus the added files, which that commit does not hold.
+The title of the issue carries no mark, because the grouping model reads the titles of the filed issues to decide which one a new finding belongs to.
 
 A change takes the first of these that fits: a normal entry on a repo of the plan that has the state at its pin, a probe, a discovered repo, a manual check, and no QA with the reason.
 
@@ -303,7 +307,7 @@ A plan check tests the project as it is after the upgrade, and the agent never c
 
 - Forbidden: adding a setting, a file, a dependency, or code so that an upgrade step, an automigration, or a removal has something to act on, or so that the project looks as if it used something it does not use. When the project does not have what the entry describes, the agent reports the check as `skip` and names in its note what the project lacks.
 - Allowed: what a user of the released version does to see the result, such as starting the dev server, building, opening a page, clicking, or reading a file, and a step of the entry that turns on a new opt-in feature of the tested version, such as a feature flag in the Storybook main file. That step is its own step of the plan, so the reviewer sees it, and the agent does exactly what it says. The agent never decides on its own to turn something on.
-- Allowed for a probe: after the upgrade, exactly what its `Probe:` line names, which the agent copies to `<slug>-added/` in the evidence and removes before the next check, so the state the run records is the project after the upgrade.
+- Allowed for a probe: after the upgrade, exactly what its `Probe:` line names, new files and at most one option in the file it names. The agent copies the files, and a diff of that file, to `<slug>-added/` in the evidence, and removes the files and restores that file before the next check, so the state the run records is the project after the upgrade.
 
 So a repo is listed for an entry only when it has that state at its pinned commit.
 A plan check reported as `skip` opens no proposal: the answer schema accepts a finding only for a check that is `fail`, and `collect.ts` makes proposals from findings alone.

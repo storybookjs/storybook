@@ -1,5 +1,5 @@
 import { readFileSync, writeFileSync } from 'node:fs';
-import { resolve } from 'pathe';
+import { dirname, join, resolve } from 'pathe';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -61,13 +61,25 @@ describe('PNPM Proxy', () => {
   const WORKSPACE_YAML = `${PROJECT_DIR}/pnpm-workspace.yaml`;
   const workspaceYaml = () => vol.toJSON()[WORKSPACE_YAML];
 
-  const useMemfsProject = (proxy: PNPMProxy, packageJson: Record<string, unknown> = {}) => {
-    vi.mocked(getProjectRoot).mockReturnValue(PROJECT_DIR);
-    vi.mocked(find.up).mockImplementation((name) =>
-      name === 'pnpm-workspace.yaml' && vol.existsSync(WORKSPACE_YAML) ? WORKSPACE_YAML : undefined
-    );
+  const useMemfsProject = (
+    proxy: PNPMProxy,
+    packageJson: Record<string, unknown> = {},
+    projectRoot = PROJECT_DIR
+  ) => {
+    vi.mocked(getProjectRoot).mockReturnValue(projectRoot);
+    vi.mocked(find.up).mockImplementation((name, options) => {
+      for (let dir = options?.cwd ?? projectRoot; ; dir = dirname(dir)) {
+        const file = join(dir, name);
+        if (vol.existsSync(file)) {
+          return file;
+        }
+        if (dir === options?.last || dir === dirname(dir)) {
+          return undefined;
+        }
+      }
+    });
     vi.spyOn(proxy, 'primaryPackageJson', 'get').mockReturnValue({
-      operationDir: PROJECT_DIR,
+      operationDir: projectRoot,
       packageJson: { dependencies: {}, devDependencies: {}, peerDependencies: {}, ...packageJson },
     } as any);
   };
@@ -239,6 +251,22 @@ describe('PNPM Proxy', () => {
       expect(workspaceYaml()).toBe(
         '# my workspace\npackages:\n  - "packages/*"\n\ncatalog:\n  react: ^19 # pinned\nallowBuilds:\n  esbuild: true\n'
       );
+    });
+
+    it('allows esbuild at the workspace root when the Storybook project root is a workspace package', async () => {
+      const packageJsonPath = `${PROJECT_DIR}/packages/app/package.json`;
+      vol.fromJSON({
+        [WORKSPACE_YAML]: 'packages:\n  - "packages/*"\n',
+        [packageJsonPath]: '{}',
+      });
+      useMemfsProject(pnpmProxy, {}, dirname(packageJsonPath));
+
+      await install();
+
+      expect(vol.toJSON()).toEqual({
+        [WORKSPACE_YAML]: 'packages:\n  - "packages/*"\nallowBuilds:\n  esbuild: true\n',
+        [packageJsonPath]: '{}',
+      });
     });
 
     it('leaves a decision the user already recorded alone', async () => {

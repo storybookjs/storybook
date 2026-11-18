@@ -54,6 +54,9 @@ export async function renderToCanvas(
   { storyFn, forceRemount, showMain, showException, storyContext, id }: RenderContext<VueRenderer>,
   canvasElement: VueRenderer['canvasElement']
 ) {
+  // The errorHandler reports errors from the mount or update below, which a later showMain would hide.
+  showMain();
+
   const existingApp = map.get(canvasElement);
 
   // if the story is already rendered and we are not forcing a remount, we just update the reactive args
@@ -115,7 +118,6 @@ export async function renderToCanvas(
   await runSetupFunctions(vueApp, storyContext);
   vueApp.mount(canvasElement);
 
-  showMain();
   return () => {
     teardown(vueApp, canvasElement);
   };

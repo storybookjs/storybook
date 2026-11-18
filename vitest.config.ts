@@ -40,6 +40,7 @@ const projects = [
   'code/frameworks/*/vitest.config.ts',
   'code/lib/*/vitest.config.ts',
   'code/core/vitest.config.ts',
+  'code/core/vitest.config.rolldown-oldest.ts',
   'code/builders/*/vitest.config.ts',
   'code/presets/*/vitest.config.ts',
   'code/renderers/*/vitest.config.ts',

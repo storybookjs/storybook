@@ -3,7 +3,7 @@ import type { ImportEdge } from './types.ts';
 /**
  * Matches `import` or `export ... from` declarations in an MDX source.
  * oxc-parser does not understand MDX, so we fall back to a regex. This only captures
- * literal-string specifiers — enough for change detection to resolve them with oxc-resolver.
+ * literal-string specifiers — enough for change detection to resolve them.
  */
 const MDX_IMPORT_REGEX =
   /(?:import\s+(?:[\s\S]*?\s+from\s+)?|export\s+[\s\S]*?\s+from\s+)['"]([^'"]+)['"]/g;

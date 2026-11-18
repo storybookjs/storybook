@@ -35,6 +35,10 @@
       {
         "paths": [
           {
+            "name": "rolldown/experimental",
+            "message": "`rolldown/experimental` may change in a minor release. Import the resolver from `common/utils/module-resolver.ts`, the one file that may import it."
+          },
+          {
             "name": "react-aria",
             "message": "Don't import from the react-aria root, but use the react-aria/HookOrComponent entrypoints which are optimised for tree-shaking",
             "allowTypeImports": false
@@ -97,6 +101,12 @@
       "files": ["**/*.ts", "**/*.tsx"],
       "rules": {
         "local-rules/no-untracked-service-state-key-check": "error"
+      }
+    },
+    {
+      "files": ["core/src/common/utils/module-resolver.ts"],
+      "rules": {
+        "no-restricted-imports": "off"
       }
     },
     {

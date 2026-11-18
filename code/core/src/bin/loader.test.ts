@@ -1,4 +1,4 @@
-import { readdirSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import os from 'node:os';
 
@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { deprecate } from 'storybook/internal/node-logger';
 
-import { transformSync } from 'esbuild';
+import { transformSync } from 'rolldown/utils';
 
 import {
   addExtensionsToRelativeImports,
@@ -19,7 +19,7 @@ import {
 vi.mock('node:fs');
 vi.mock('node:fs/promises');
 vi.mock('storybook/internal/node-logger');
-vi.mock('esbuild');
+vi.mock('rolldown/utils', { spy: true });
 
 describe('loader', () => {
   beforeEach(() => {
@@ -33,12 +33,11 @@ describe('loader', () => {
       nextLoad.mockReset();
       vi.mocked(transformSync).mockReturnValue({
         code: 'const x = 1;',
-        map: '',
-        warnings: [],
+        errors: [],
       } as any);
     });
 
-    it('transforms a plain .ts URL with esbuild', () => {
+    it('transforms a plain .ts URL', () => {
       const path =
         os.platform() === 'win32' ? 'file:///C:/project/main.ts' : 'file:///project/main.ts';
       const result = load(path, {} as any, nextLoad);
@@ -51,7 +50,7 @@ describe('loader', () => {
     it('still transforms a .ts URL with a cache-busting query string appended', () => {
       // Regression test: importModule appends `?<timestamp>` to bust the module cache when
       // skipCache is set. That must not cause this loader to skip the file and fall through to
-      // Node's native handling, which does not elide type-only named imports the way esbuild does.
+      // Node's native handling, which does not elide type-only named imports as the transform does.
       const path =
         os.platform() === 'win32'
           ? 'file:///C:/project/main.ts?1234567890'
@@ -62,6 +61,51 @@ describe('loader', () => {
       expect(transformSync).toHaveBeenCalled();
       expect(nextLoad).not.toHaveBeenCalled();
       expect(result).toMatchObject({ format: 'module', shortCircuit: true });
+    });
+
+    it('throws the syntax errors of a .ts file', () => {
+      vi.mocked(transformSync).mockRestore();
+      vi.mocked(readFileSync).mockReturnValue('const a: = 1;');
+
+      const path =
+        os.platform() === 'win32' ? 'file:///C:/project/main.ts' : 'file:///project/main.ts';
+      expect(() => load(path, {} as any, nextLoad)).toThrow(SyntaxError);
+    });
+
+    it('keeps a `using` declaration for Node.js to run, without an import of a helper', () => {
+      vi.mocked(transformSync).mockRestore();
+      vi.mocked(readFileSync).mockReturnValue(
+        'export function f(resource: Disposable) { using r = resource; return r; }'
+      );
+
+      const path =
+        os.platform() === 'win32' ? 'file:///C:/project/main.ts' : 'file:///project/main.ts';
+      expect(load(path, {} as any, nextLoad).source).toMatchInlineSnapshot(`
+        "export function f(resource) {
+        	using r = resource;
+        	return r;
+        }
+        "
+      `);
+    });
+
+    it('does not read an import in a comment, which the transform keeps', () => {
+      vi.mocked(transformSync).mockRestore();
+      vi.mocked(readFileSync).mockReturnValue(
+        [
+          `const emoji = '🦋'; // import { old } from './old-config';`,
+          `/* import('./legacy') */`,
+          `export { emoji } from './real.ts';`,
+        ].join('\n')
+      );
+
+      const path =
+        os.platform() === 'win32' ? 'file:///C:/project/main.ts' : 'file:///project/main.ts';
+      const { source } = load(path, {} as any, nextLoad);
+
+      expect(deprecate).not.toHaveBeenCalled();
+      expect(source).toContain(`from "./real.ts"`);
+      expect(source).not.toContain('old-config');
     });
 
     it('delegates non-TS URLs to nextLoad', () => {

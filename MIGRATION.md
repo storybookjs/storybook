@@ -98,6 +98,7 @@
   - [`argTypeTargetsV7` feature flag removed](#argtypetargetsv7-feature-flag-removed)
   - [`disallowImplicitActionsInRenderV8` feature flag removed](#disallowimplicitactionsinrenderv8-feature-flag-removed)
   - [JavaScript init templates use JSDoc types instead of `propTypes`](#javascript-init-templates-use-jsdoc-types-instead-of-proptypes)
+  - [Storybook depends on Rolldown instead of esbuild](#storybook-depends-on-rolldown-instead-of-esbuild)
 - [From version 10.6.1 to 10.6.2](#from-version-1061-to-1062)
   - [`storybook dev` now blocks remote iframe embedding](#storybook-dev-now-blocks-remote-iframe-embedding-1)
   - [Storybook now restricts iframe messaging](#storybook-now-restricts-iframe-messaging-1)
@@ -1687,7 +1688,7 @@ Storybook no longer bundles Babel or recast to read and write story and config f
 - Code that a migration or `storybook add` inserts follows the file: string quotes and indentation are inferred from it, new imports go after the existing imports in the order they are added, and a statement put first in a file stays below its header comments.
 - The Vitest config that `@storybook/addon-vitest` writes reads the config directory from `import.meta.dirname`.
 - Story files read string-literal keys and ignore computed identifier keys. `export default { 'title': 'X' }` now gives story ids under `X`, where Babel used the automatic title, and `export default { [title]: 'X' }` no longer sets the title.
-- On StackBlitz WebContainers, which have no native `oxc-parser` binding, `oxc-parser` downloads `@oxc-parser/binding-wasm32-wasi` itself with `pnpm`. On any other host without a native binding, Storybook fails with a "Cannot find native binding" error whose cause names the missing packages; install `@oxc-parser/binding-wasm32-wasi` in the project at the exact version of `oxc-parser`.
+- On StackBlitz WebContainers, which have no native Rolldown binding, Rolldown downloads `@rolldown/binding-wasm32-wasi` itself with `pnpm`. On any other host without a native binding, Storybook fails with a "Cannot find native binding" error whose cause names the missing packages; install `@rolldown/binding-wasm32-wasi` in the project at the exact version of `rolldown`.
 
 #### Community packages that need a release
 
@@ -2722,6 +2723,18 @@ The `remove-legacy-feature-flags` automigration deletes both it and the `argType
 `storybook init` for React JavaScript projects now writes `Button.jsx` and `Header.jsx` templates whose props are typed with JSDoc, and no longer adds the `prop-types` package. React 19 no longer checks `propTypes` on function components, and `React.PropTypes` moved to the separate `prop-types` package in React 15.5.
 
 Server-side docgen, the default in Storybook 11, reads the JSDoc types, so a new project's Docs args table shows the same types and descriptions as the TypeScript template. The deprecated builder docgen (`react-docgen`, active only when `features.docgenServer` is `false`) does not: without `propTypes` it reports no prop types or descriptions for these templates and folds the JSDoc `@param` lines into the component description. Install the `typescript` package and remove `docgenServer: false` to use server-side docgen.
+
+### Storybook depends on Rolldown instead of esbuild
+
+`storybook` no longer depends on `esbuild`, `oxc-parser` and `oxc-resolver`. Its only native dependency is now `rolldown`, the bundler inside Vite 8, so a Vite 8 project installs about 18 MB less.
+
+- If your project uses the `esbuild` that Storybook installed, add `esbuild` to your own dependencies.
+- Rolldown has no native binary for `linux-riscv64` and `linux-arm-musleabihf`, which Storybook supported before.
+- CSS that a manager entry imports, such as `.storybook/manager.ts` or the manager entry of an addon, is added to the page in `<style>` elements instead of a linked stylesheet. CSS modules (`import styles from './x.module.css'`) now fail the build.
+- Decorators and the `accessor` keyword in a manager entry are no longer compiled. In a browser that cannot run them, that entry fails with a syntax error in the console, and the other entries load.
+- In a manager entry, `require('pkg')` of a package with a `main` and a `module` field now gives the ES module, such as `{ default: … }`, instead of the value of `main`.
+- A TypeScript config file such as `.storybook/main.ts` must be an ES module. `module.exports =` and `export =` are no longer converted to `export default`.
+- A TypeScript config file only has its types removed. A `using` declaration needs a Node.js version that runs it, and decorators and the `accessor` keyword are no longer compiled.
 
 ## From version 10.6.1 to 10.6.2
 

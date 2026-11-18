@@ -4,6 +4,7 @@ import remapping, { type SourceMapInput } from '@jridgewell/remapping';
 import MagicString, { SourceMap } from 'magic-string';
 
 import {
+  type Comment,
   type E,
   type Node,
   type ParsedModule,
@@ -149,7 +150,7 @@ export class SourceEditor {
     return this._module.program;
   }
 
-  get comments() {
+  get comments(): Comment[] {
     return this._module.comments;
   }
 
@@ -653,7 +654,7 @@ const SPACE_ON_LINE = /[^\S\n]/;
 // The comments from `index` on with only `space` around them, and the end of that run.
 const triviaAfter = (editor: SourceEditor, index: number, space = SPACE) => {
   const { code } = editor;
-  const comments: E.Comment[] = [];
+  const comments: Comment[] = [];
   let end = index;
   while (end < code.length) {
     const comment = commentAt(editor, end, 'start');
@@ -670,9 +671,12 @@ const triviaAfter = (editor: SourceEditor, index: number, space = SPACE) => {
 };
 
 // The comments up to `index` with only whitespace around them, and the start of that run.
-export const triviaBefore = (editor: SourceEditor, index: number) => {
+export const triviaBefore = (
+  editor: SourceEditor,
+  index: number
+): { comments: Comment[]; start: number } => {
   const { code } = editor;
-  const comments: E.Comment[] = [];
+  const comments: Comment[] = [];
   let start = index;
   while (start > 0) {
     const comment = commentAt(editor, start, 'end');
@@ -1336,7 +1340,7 @@ const leadingDirectives = (editor: SourceEditor) =>
 const FILE_PRAGMA =
   /^!|@(license|preserve|flow|jsx\w*|(vitest|jest)-environment|ts-nocheck)\b|^\s*eslint-(disable|env)(?![\w-])|^\/\s*<reference\b/;
 
-const isJSDoc = (comment: E.Comment) => comment.type === 'Block' && comment.value.startsWith('*');
+const isJSDoc = (comment: Comment) => comment.type === 'Block' && comment.value.startsWith('*');
 
 /**
  * Comments before the file's first statement that form the file header, such as a license. The
@@ -1344,7 +1348,7 @@ const isJSDoc = (comment: E.Comment) => comment.type === 'Block' && comment.valu
  * `@ts-expect-error` directly above the statement belong to it instead, as does everything from
  * such a directive on, unless they are pragmas.
  */
-export const headerComments = (editor: SourceEditor): E.Comment[] => {
+export const headerComments = (editor: SourceEditor): Comment[] => {
   const { code } = editor;
   const directives = leadingDirectives(editor);
   const first = editor.program.body[directives.length];
@@ -1355,7 +1359,7 @@ export const headerComments = (editor: SourceEditor): E.Comment[] => {
   const leading = editor.comments.filter(
     (comment) => comment.start >= from && comment.end <= first.start
   );
-  const isDirective = (comment: E.Comment) => NEXT_LINE_DIRECTIVE.test(comment.value);
+  const isDirective = (comment: Comment) => NEXT_LINE_DIRECTIVE.test(comment.value);
   // JSDoc documents a declaration; above an import it is a file header such as a license.
   const ownsJSDoc = first.type !== 'ImportDeclaration';
   let owned = leading.length;
@@ -1453,7 +1457,7 @@ export const insertAfterImports = (editor: SourceEditor, text: string) => {
 
 // A statement leads with the comments between it and the end of the statement before it. The
 // file header above the first statement is not part of it.
-const leadingComments = (editor: SourceEditor, statement: Span): E.Comment[] => {
+const leadingComments = (editor: SourceEditor, statement: Span): Comment[] => {
   const previous = editor.program.body.findLast((node) => node.end <= statement.start);
   const from = previous ? statementEnd(editor, previous) : 0;
   const header = new Set(previous ? [] : headerComments(editor));

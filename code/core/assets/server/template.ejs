@@ -56,10 +56,6 @@
         display: none !important;
       }
     </style>
-
-    <% files.css.forEach(file => { %>
-    <link href="<%= file %>" rel="stylesheet" />
-    <% }); %>
   </head>
   <body>
     <div id="root"></div>
@@ -74,14 +70,13 @@
     </script>
     <% } %>
 
-    <script type="module">
-      import './sb-manager/globals-runtime.js';
+    <script type="module" src="./sb-manager/globals-runtime.js"></script>
 
-      <% files.js.forEach(file => { %>
-        import '<%= file %>';
-      <% }); %>
+    <%# Each entry is a script of its own, so one that the browser cannot parse or fetch stops no other. %>
+    <% files.js.forEach(file => { %>
+    <script type="module" src="<%= file %>"></script>
+    <% }); %>
 
-      import './sb-manager/runtime.js';
-    </script>
+    <script type="module" src="./sb-manager/runtime.js"></script>
   </body>
 </html>

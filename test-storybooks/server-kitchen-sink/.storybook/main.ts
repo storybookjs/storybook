@@ -15,4 +15,4 @@ const mainConfig: StorybookConfig = {
   framework: '@storybook/server-webpack5',
 };
 
-module.exports = mainConfig;
+export default mainConfig;

@@ -1,0 +1,4 @@
+.rule {
+  color: blue;
+}
+@import './other.css';

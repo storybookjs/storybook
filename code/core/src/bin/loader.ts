@@ -1,6 +1,6 @@
 /**
  * This is an isolated file that is registered as a loader in Node. It is used to convert TS to ESM
- * using esbuild. Do _not_ import from other modules in core unless strictly necessary, as it will
+ * using Rolldown. Do _not_ import from other modules in core unless strictly necessary, as it will
  * cause the dist to get huge.
  */
 import { readFileSync, readdirSync } from 'node:fs';
@@ -9,10 +9,8 @@ import { fileURLToPath } from 'node:url';
 
 import { deprecate } from 'storybook/internal/node-logger';
 
-import { transformSync } from 'esbuild';
+import { parseSync, transformSync } from 'rolldown/utils';
 import { dedent } from 'ts-dedent';
-
-import { NODE_TARGET } from '../shared/constants/environments-support.ts';
 
 type LoadHookSync = (url: string, context: any, nextLoad: any) => any;
 
@@ -136,13 +134,26 @@ export function addExtensionsToRelativeImports(source: string, filePath: string)
   return result;
 }
 
+// Replaces each comment by spaces. The transform keeps comments, and the patterns of
+// `addExtensionsToRelativeImports` would read an import in one.
+function withoutComments(code: string, filePath: string): string {
+  let result = '';
+  let end = 0;
+  for (const comment of parseSync(filePath, code, { lang: 'js' }).comments) {
+    const text = code.slice(comment.start, comment.end);
+    result += code.slice(end, comment.start) + text.replace(/[^\n]/g, ' ');
+    end = comment.end;
+  }
+  return result + code.slice(end);
+}
+
 export const load: LoadHookSync = (url, context, nextLoad) => {
   // Strip any query string (e.g. the cache-busting `?<timestamp>` importModule appends for
   // skipCache) before checking the extension, otherwise a cache-busted URL like
-  // `file:///main.ts?123` no longer ends with `.ts` and silently skips the esbuild transform below.
+  // `file:///main.ts?123` no longer ends with `.ts` and silently skips the transform below.
   const urlWithoutQuery = url.split('?')[0];
 
-  /** Convert TS to ESM using esbuild */
+  /** Convert TS to ESM using Rolldown */
   if (
     urlWithoutQuery.endsWith('.ts') ||
     urlWithoutQuery.endsWith('.tsx') ||
@@ -153,15 +164,18 @@ export const load: LoadHookSync = (url, context, nextLoad) => {
   ) {
     const filePath = fileURLToPath(url);
     const rawSource = readFileSync(filePath, 'utf-8');
-    const transformedSource = transformSync(rawSource, {
-      loader: 'ts',
-      target: NODE_TARGET,
-      format: 'esm',
-      platform: 'neutral',
-    });
+    // No `target`: lowered syntax imports helpers from `@oxc-project/runtime`, which is not
+    // installed. No tsconfig: Rolldown would compile with the options of the nearest one.
+    const { code, errors } = transformSync(filePath, rawSource, { lang: 'ts', tsconfig: false });
+    if (errors.length > 0) {
+      throw new SyntaxError(errors.map((error) => error.message).join('\n'));
+    }
 
     // Add extensions to relative imports so Node.js ESM can resolve them
-    const sourceWithExtensions = addExtensionsToRelativeImports(transformedSource.code, filePath);
+    const sourceWithExtensions = addExtensionsToRelativeImports(
+      withoutComments(code, filePath),
+      filePath
+    );
 
     return {
       format: 'module',

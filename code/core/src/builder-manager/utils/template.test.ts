@@ -22,7 +22,6 @@ const renderManagerHtml = (customHead = '') =>
     Promise.resolve('favicon.svg'),
     Promise.resolve(customHead),
     [],
-    [],
     Promise.resolve({}),
     Promise.resolve({}),
     Promise.resolve('info'),

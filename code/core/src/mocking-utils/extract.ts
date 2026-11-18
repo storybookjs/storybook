@@ -4,9 +4,9 @@ import { logger } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
 import type { CoreConfig } from 'storybook/internal/types';
 
-import { transformSync } from 'esbuild';
 import { walk } from 'estree-walker';
 import { basename, normalize } from 'pathe';
+import { transformSync } from 'rolldown/utils';
 
 import { parseModule } from '../csf-tools/estree/ast.ts';
 import { type InputSourceMap, SourceEditor } from '../csf-tools/estree/editor.ts';
@@ -123,7 +123,13 @@ export function extractMockCalls(
 ): MockCall[] {
   try {
     const previewConfigCode = readFileSync(options.previewConfigPath, 'utf-8');
-    const { code: jsCode } = transformSync(previewConfigCode, { loader: 'tsx', format: 'esm' });
+    const { code: jsCode, errors } = transformSync(options.previewConfigPath, previewConfigCode, {
+      lang: 'tsx',
+      tsconfig: false,
+    });
+    if (errors.length > 0) {
+      throw new SyntaxError(errors.map((error) => error.message).join('\n'));
+    }
     const ast = parseModule(jsCode, options.previewConfigPath).program;
     const mocks: MockCall[] = [];
 

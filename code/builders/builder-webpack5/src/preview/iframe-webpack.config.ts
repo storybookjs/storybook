@@ -15,7 +15,6 @@ import { type BuilderOptions } from '@storybook/core-webpack';
 
 // @ts-expect-error (I removed this on purpose, because it's incorrect)
 import CaseSensitivePathsPlugin from 'case-sensitive-paths-webpack-plugin';
-import type { TransformOptions as EsbuildOptions } from 'esbuild';
 import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import TerserWebpackPlugin from 'terser-webpack-plugin';
@@ -24,6 +23,7 @@ import type { Configuration } from 'webpack';
 import VirtualModulePlugin from 'webpack-virtual-modules';
 
 import type { TypescriptOptions } from '../types.ts';
+import { fastMinify } from './fast-minify.ts';
 import {
   developmentPreviewChunkFilename,
   productionPreviewChunkFilename,
@@ -243,13 +243,10 @@ export default async (
             minimize: true,
             minimizer: options.build?.test?.esbuildMinify
               ? [
-                  new TerserWebpackPlugin<EsbuildOptions>({
-                    parallel: true,
-                    minify: TerserWebpackPlugin.esbuildMinify,
-                    terserOptions: {
-                      sourcemap: !options.build?.test?.disableSourcemaps,
-                      treeShaking: !options.build?.test?.disableTreeShaking,
-                    },
+                  new TerserWebpackPlugin<{ module?: boolean }>({
+                    // A function that imports cannot be sent to a worker, and Rolldown has its own threads.
+                    parallel: false,
+                    minify: fastMinify,
                   }),
                 ]
               : [

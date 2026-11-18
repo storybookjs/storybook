@@ -69,6 +69,11 @@ declare class AnsiToHtml {
   toHtml: (ansi: string) => string;
 }
 
+declare module 'oxc-parser/src-js/generated/visit/keys.js' {
+  const visitorKeys: Record<string, readonly string[]>;
+  export default visitorKeys;
+}
+
 declare module '*.md';
 declare module '*.mdx';
 declare module '*.png';

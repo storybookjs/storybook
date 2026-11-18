@@ -1,11 +1,10 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 
-import { join } from 'pathe';
+import { join, relative } from 'pathe';
+import { build } from 'rolldown';
 import { describe, expect, it } from 'vitest';
 
-import { globalExternals } from '@fal-works/esbuild-plugin-global-externals';
-import { build } from 'esbuild';
-
+import { globalExternals } from '../../builder-manager/utils/global-externals.ts';
 import { globalsModuleInfoMap } from './globals-module-info.ts';
 
 const CODE = join(import.meta.dirname, '../../../..');
@@ -55,22 +54,24 @@ describe('built-in manager entries', () => {
   it.runIf(built.length > 0).each(built.map((entry) => [entry.slice(CODE.length + 1), entry]))(
     '%s bundles no test library',
     async (_, entry) => {
-      // Like the manager builder: its globals and esbuild options.
-      const { metafile } = await build({
-        entryPoints: [entry],
-        absWorkingDir: CODE,
-        bundle: true,
+      // Like the manager builder: its globals, resolve conditions and kept modules.
+      const { output } = await build({
+        input: entry,
         write: false,
-        metafile: true,
-        format: 'iife',
         platform: 'browser',
-        conditions: ['browser', 'module', 'default'],
+        treeshake: false,
+        resolve: { conditionNames: ['browser', 'module', 'default'] },
         plugins: [globalExternals(globalsModuleInfoMap)],
         logLevel: 'silent',
+        output: { format: 'iife' },
       });
+      const inputs = output
+        .flatMap((file) => (file.type === 'chunk' ? file.moduleIds : []))
+        .filter((id) => !id.startsWith('\0'))
+        .map((id) => relative(CODE, id));
 
       expect(
-        Object.keys(metafile.inputs).filter(bundlesTestLibrary),
+        inputs.filter(bundlesTestLibrary),
         'modules that bundle a test library in this manager entry'
       ).toEqual([]);
     }

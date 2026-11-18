@@ -37,7 +37,6 @@ export const renderHTML = async (
   title: Promise<string | false>,
   favicon: Promise<string>,
   customHead: Promise<string | false>,
-  cssFiles: string[],
   jsFiles: string[],
   features: Promise<Record<string, any>>,
   refs: Promise<Record<string, Ref>>,
@@ -57,7 +56,7 @@ export const renderHTML = async (
 
   return render(templateRef, {
     title: titleRef ? `${titleRef} - Storybook` : 'Storybook',
-    files: { js: jsFiles, css: cssFiles },
+    files: { js: jsFiles },
     favicon: customHeadHasFavicon(headRef) ? '' : await favicon,
     globals: {
       FEATURES: JSON.stringify(await features, null, 2),

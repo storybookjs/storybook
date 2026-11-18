@@ -1,11 +1,9 @@
-import type { ModuleInfo } from '@fal-works/esbuild-plugin-global-externals';
-
 import Exports from './exports.ts';
 import { globalPackages, globalsNameReferenceMap } from './globals.ts';
 
 /*
  * We create a map of a module's name to a ModuleInfo.
- * Which is a config object for a esbuild-plugin, to swap a import of a module to a reference of a global variable.
+ * Which is a config object for a bundler plugin, to swap a import of a module to a reference of a global variable.
  * To get this plugin to do the best job it can, it needs to know all the exports in the ModuleInfo config object.
  * We generate this information via a script into `exports.ts`.
  *
@@ -21,6 +19,13 @@ import { globalPackages, globalsNameReferenceMap } from './globals.ts';
  * This `globals-module-info.ts` file is consumed by the `builder-manager` package,
  * The `runtime.ts` file is used inside the manager's browser code runtime.
  */
+
+interface ModuleInfo {
+  type: 'esm';
+  varName: string;
+  namedExports: readonly string[];
+  defaultExport: true;
+}
 
 const duplicatedKeys = [
   'storybook/theming',
@@ -50,5 +55,5 @@ export const globalsModuleInfoMap = globalPackages.reduce(
     }
     return acc;
   },
-  {} as Required<Record<keyof typeof globalsNameReferenceMap, Required<ModuleInfo>>>
+  {} as Record<keyof typeof globalsNameReferenceMap, ModuleInfo>
 );

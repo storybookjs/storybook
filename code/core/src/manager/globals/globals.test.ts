@@ -1,41 +1,51 @@
 import { fileURLToPath } from 'node:url';
 import { createContext, runInContext } from 'node:vm';
 
+import { type Plugin, build } from 'rolldown';
 import { beforeAll, describe, expect, it } from 'vitest';
 
-import { globalExternals } from '@fal-works/esbuild-plugin-global-externals';
-import { build } from 'esbuild';
-
+import { globalExternals } from '../../builder-manager/utils/global-externals.ts';
 import { globalsModuleInfoMap } from './globals-module-info.ts';
 import { globalsNameReferenceMap } from './globals.ts';
+
+const bundle = async (
+  input: string,
+  name: string,
+  options: { mode: string; plugins: Plugin[]; minify?: boolean }
+) => {
+  const { output } = await build({
+    input,
+    write: false,
+    platform: 'browser',
+    logLevel: 'silent',
+    transform: { define: { 'process.env.NODE_ENV': JSON.stringify(options.mode) } },
+    plugins: options.plugins,
+    output: { format: 'iife', name, minify: options.minify },
+  });
+  return output[0].code;
+};
+
+const EMPTY = '\0empty:';
+const ADDON = '\0addon';
 
 let managerBundle: string;
 
 beforeAll(async () => {
-  const result = await build({
-    entryPoints: [fileURLToPath(new URL('./runtime.ts', import.meta.url))],
-    bundle: true,
-    write: false,
-    format: 'iife',
-    globalName: 'manager',
-    platform: 'browser',
-    define: { 'process.env.NODE_ENV': '"production"' },
+  managerBundle = await bundle(fileURLToPath(new URL('./runtime.ts', import.meta.url)), 'manager', {
+    mode: 'production',
     plugins: [
       {
         name: 'unrelated-manager-globals',
-        setup(builder) {
-          builder.onResolve({ filter: /^[^./]/ }, ({ path, kind }) => {
-            if (kind === 'entry-point' || path === 'react' || path.startsWith('react/')) {
-              return;
-            }
-            return { path, namespace: 'empty' };
-          });
-          builder.onLoad({ filter: /.*/, namespace: 'empty' }, () => ({ contents: 'export {}' }));
+        resolveId(id, importer) {
+          const isPackage = importer && /^[^./]/.test(id) && !id.startsWith(EMPTY);
+          return isPackage && id !== 'react' && !id.startsWith('react/') ? EMPTY + id : null;
+        },
+        load(id) {
+          return id.startsWith(EMPTY) ? 'module.exports = {};' : null;
         },
       },
     ],
   });
-  managerBundle = result.outputFiles[0].text;
 });
 
 describe.each(['development', 'production'])('%s manager entries', (mode) => {
@@ -53,33 +63,36 @@ describe.each(['development', 'production'])('%s manager entries', (mode) => {
           const { jsxDEV } = require('react/jsx-dev-runtime');
         `;
 
-    const result = await build({
-      stdin: {
-        contents: `
-          ${imports}
-          export const ref = React.createRef();
-          export const classic = React.createElement('span', { children: 'classic' });
-          export const single = jsx('button', { ref, children: 'single' }, 'single');
-          export const multiple = jsxs(Fragment, { children: [classic, single] });
-          export const development = jsxDEV('button', { ref, children: 'development' }, 'dev', false, { fileName: 'addon.tsx', lineNumber: 1 }, undefined);
-        `,
-        resolveDir: import.meta.dirname,
-      },
-      bundle: true,
-      write: false,
-      format: 'iife',
-      globalName: 'addon',
-      platform: 'browser',
+    const addonBundle = await bundle(ADDON, 'addon', {
+      mode,
       minify: mode === 'production',
-      define: { 'process.env.NODE_ENV': JSON.stringify(mode) },
       plugins: [
+        {
+          name: 'addon',
+          resolveId(id) {
+            return id === ADDON ? ADDON : null;
+          },
+          load(id) {
+            return id === ADDON
+              ? `
+                ${imports}
+                export const ref = React.createRef();
+                export const classic = React.createElement('span', { children: 'classic' });
+                export const single = jsx('button', { ref, children: 'single' }, 'single');
+                export const multiple = jsxs(Fragment, { children: [classic, single] });
+                export const development = jsxDEV('button', { ref, children: 'development' }, 'dev', false, { fileName: 'addon.tsx', lineNumber: 1 }, undefined);
+              `
+              : null;
+          },
+        },
         globalExternals(globalsModuleInfoMap),
         {
           name: 'no-project-react',
-          setup(builder) {
-            builder.onResolve({ filter: /^react(?:\/|$)/ }, ({ path }) => {
-              throw new Error(`Unexpected project dependency: ${path}`);
-            });
+          resolveId(id) {
+            if (/^react(?:\/|$)/.test(id)) {
+              throw new Error(`Unexpected project dependency: ${id}`);
+            }
+            return null;
           },
         },
       ],
@@ -91,7 +104,7 @@ describe.each(['development', 'production'])('%s manager entries', (mode) => {
     for (const [name, value] of Object.entries(globalsNameReferenceMap)) {
       context[value] = globals[name];
     }
-    runInContext(result.outputFiles[0].text, context);
+    runInContext(addonBundle, context);
 
     const { classic, single, multiple, development, ref } = context.addon;
     expect([classic, single, multiple, development].every(globals.react.isValidElement)).toBe(true);

@@ -10,12 +10,12 @@ import type { VueRenderer } from './types.ts';
 
 const makeRenderContext = ({
   storyFn,
-  showMain = vi.fn(),
-  showException = vi.fn(),
+  showMain,
+  showException,
 }: {
   storyFn: RenderContext<VueRenderer>['storyFn'];
-  showMain?: RenderContext<VueRenderer>['showMain'];
-  showException?: RenderContext<VueRenderer>['showException'];
+  showMain: RenderContext<VueRenderer>['showMain'];
+  showException: RenderContext<VueRenderer>['showException'];
 }) =>
   ({
     storyFn,
@@ -28,29 +28,44 @@ const makeRenderContext = ({
   }) as unknown as RenderContext<VueRenderer>;
 
 describe('renderToCanvas', () => {
-  // Regression test for the vue3-vite---typescript---dev daily CI failure: the docs Story
-  // block (code/addons/docs/src/blocks/components/Story.tsx) clears its error state when
-  // showMain arrives, so a showMain sent after showException erases the error from the page.
-  // Vue hands setup/render throws to config.errorHandler without making mount fail, so the
-  // renderer must not report success afterwards.
-  it('does not send showMain after the story failed to mount', async () => {
+  // A story that throws must not also report success: the docs Story block clears its error
+  // state when showMain arrives, which would erase the error. Vue hands setup/render throws
+  // to config.errorHandler without making mount fail, so the renderer tracks that itself.
+  it.each([
+    [
+      'setup()',
+      () =>
+        defineComponent({
+          setup() {
+            throw new Error('Story did something wrong in setup');
+          },
+          render: () => h('div'),
+        }),
+    ],
+    [
+      'render()',
+      () =>
+        defineComponent({
+          render() {
+            throw new Error('Story did something wrong in render');
+          },
+        }),
+    ],
+  ])('does not send showMain after the story failed in %s', async (_phase, storyFn) => {
     const showMain = vi.fn();
     const showException = vi.fn();
 
-    const storyFn = () =>
-      defineComponent({
-        setup() {
-          throw new Error('Story did something wrong');
-        },
-        render: () => h('div'),
-      });
-
-    await renderToCanvas(
+    const teardown = await renderToCanvas(
       makeRenderContext({ storyFn, showMain, showException }),
       document.createElement('div')
     );
+    teardown();
 
-    expect(showException).toHaveBeenCalled();
+    expect(showException).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: expect.stringContaining('Story did something wrong'),
+      })
+    );
     expect(showMain).not.toHaveBeenCalled();
   });
 });

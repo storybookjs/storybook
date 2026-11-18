@@ -81,13 +81,28 @@ export const ToolbarComp = React.memo<ToolData>(function ToolbarComp({
   tools,
   toolsExtra,
 }) {
+  return isShown && (tools.length > 0 || toolsExtra.length > 0) ? (
+    <ToolbarContent tools={tools} toolsExtra={toolsExtra} />
+  ) : null;
+});
+
+/**
+ * The toolbar section is its own component so that `useLandmark` only runs while the section is
+ * mounted. Calling it from the parent while the toolbar is hidden registers a landmark whose
+ * `ref.current` is null, and `@react-aria/landmark` then crashes on that null node the next time a
+ * landmark is registered, for example when the sidebar is shown again.
+ */
+const ToolbarContent = React.memo<Omit<ToolData, 'isShown'>>(function ToolbarContent({
+  tools,
+  toolsExtra,
+}) {
   const sectionRef = useRef<HTMLElement>(null);
   const { landmarkProps } = useLandmark(
     { 'aria-labelledby': 'sb-preview-toolbar-title', role: 'region' },
     sectionRef
   );
 
-  return isShown && (tools.length > 0 || toolsExtra.length > 0) ? (
+  return (
     <StyledSection
       className="sb-bar"
       key="toolbar"
@@ -103,7 +118,7 @@ export const ToolbarComp = React.memo<ToolData>(function ToolbarComp({
         <Tools key="right" list={toolsExtra} />
       </StyledToolbar>
     </StyledSection>
-  ) : null;
+  );
 });
 
 export const Tools = React.memo<{ list: Addon_BaseType[] }>(function Tools({ list }) {

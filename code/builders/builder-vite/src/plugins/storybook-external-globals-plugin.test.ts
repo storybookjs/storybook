@@ -1,10 +1,15 @@
+import type { Options } from 'storybook/internal/types';
+
 import { expect, it, vi } from 'vitest';
+
+import type { Plugin } from 'vite';
 
 vi.mock('storybook/internal/preview/globals', { spy: true });
 
 import {
   ensurePreviewRuntimePrecedesGlobals,
   rewriteImport,
+  storybookExternalGlobalsPlugin,
 } from './storybook-external-globals-plugin.ts';
 
 const packageName = '@storybook/package';
@@ -76,6 +81,39 @@ const cases = [
     output: `const { Afternoon } = ${globals[packageName]}`,
   },
 ];
+
+const optimizedChunk = `
+var require_client_logger = __commonJS({
+  "node_modules/.cache/sb-vite-plugin-externals/client-logger.js"(exports, module) {
+    module.exports = __STORYBOOK_MODULE_CLIENT_LOGGER__;
+  }
+});
+var import_client_logger = __toESM(require_client_logger(), 1);
+`;
+
+const transform = async (mode: 'dev' | 'build', code: string, id: string) => {
+  const options = { presets: { apply: async () => undefined } } as unknown as Options;
+  const { transform: hook } = (await storybookExternalGlobalsPlugin(options)) as Plugin;
+  const { filter, handler } = hook as Extract<typeof hook, { handler: unknown }>;
+
+  return (filter!.code as RegExp).test(code)
+    ? handler.call({ environment: { mode } } as ThisParameterType<typeof handler>, code, id)
+    : undefined;
+};
+
+it('calls preview setup in a dev module that reads a global through an inlined alias', async () => {
+  const result = await transform('dev', optimizedChunk, '/proj/node_modules/.vite/deps/chunk.js');
+  const code = typeof result === 'string' ? result : result?.code;
+
+  expect(code?.indexOf('__sbInitializePreviewGlobals();')).toBeLessThan(
+    code!.indexOf('__STORYBOOK_MODULE_CLIENT_LOGGER__')
+  );
+  expect(code).toContain(optimizedChunk);
+});
+
+it('leaves a module that only reads a global alone in builds', async () => {
+  expect(await transform('build', optimizedChunk, '/proj/src/chunk.js')).toBeUndefined();
+});
 
 it('calls preview setup before a rewritten global', () => {
   const code = ensurePreviewRuntimePrecedesGlobals(

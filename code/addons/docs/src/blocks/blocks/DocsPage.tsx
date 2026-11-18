@@ -12,7 +12,8 @@ import { usePrimaryStory } from './usePrimaryStory.ts';
 
 export const DocsPage: FC = () => {
   const primaryStory = usePrimaryStory();
-  const isSingleStory = useDocsStories().every((story) => story.id === primaryStory?.id);
+  const otherStories = useDocsStories().filter((story) => story.id !== primaryStory?.id);
+  const isSingleStory = otherStories.length === 0;
 
   return (
     <>

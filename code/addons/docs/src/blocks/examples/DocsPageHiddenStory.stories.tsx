@@ -6,6 +6,7 @@ import { EmptyExample } from './EmptyExample.tsx';
 const meta = {
   title: 'examples/DocsPage with a hidden story',
   component: EmptyExample,
+  parameters: { chromatic: { disableSnapshot: true } },
 } satisfies Meta<typeof EmptyExample>;
 export default meta;
 

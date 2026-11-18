@@ -294,6 +294,54 @@ describe('createServiceDocsAccess list', () => {
 });
 
 describe('createServiceDocsAccess resolve', () => {
+  it('keeps attached documentation when every story of its component is excluded', async () => {
+    index = {
+      ...fullIndex,
+      entries: {
+        ...fullIndex.entries,
+        'alpha--primary': storyEntry('alpha--primary', 'Primary', []),
+        'alpha--secondary': storyEntry('alpha--secondary', 'Secondary', []),
+      },
+    };
+    const access = createAccess();
+    const listing = await access.list({ withStoryIds: true });
+    expect(listing.componentManifest.components.alpha).not.toHaveProperty('stories');
+    expect(await access.resolve('alpha')).toMatchObject({
+      component: {
+        stories: [],
+        docs: { 'alpha--docs': { content: '# Alpha' } },
+      },
+    });
+  });
+
+  it('filters individual stories using the current index without changing the shared payload', async () => {
+    const access = createAccess();
+    index = {
+      ...fullIndex,
+      entries: {
+        ...fullIndex.entries,
+        'alpha--secondary': storyEntry('alpha--secondary', 'Secondary', ['dev']),
+      },
+    };
+
+    const listing = await access.list({ withStoryIds: true });
+    expect(listing.componentManifest.components.alpha.stories).toEqual([
+      { id: 'alpha--primary', name: 'Primary', snippet: '<Alpha />' },
+    ]);
+    expect(await access.resolve('alpha')).toMatchObject({
+      component: {
+        import: "import { Alpha } from './alpha'",
+        stories: [{ id: 'alpha--primary', name: 'Primary', snippet: '<Alpha />' }],
+      },
+    });
+    expect(Object.keys(alphaStoryDocs.stories)).toEqual(['alpha--primary', 'alpha--secondary']);
+
+    index = fullIndex;
+    expect(await access.resolve('alpha')).toMatchObject({
+      component: { stories: Object.values(alphaStoryDocs.stories) },
+    });
+  });
+
   it('assembles a component from docgen, story docs, and attached MDX', async () => {
     const entry = await createAccess().resolve('alpha');
 

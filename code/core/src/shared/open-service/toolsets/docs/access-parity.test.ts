@@ -46,6 +46,15 @@ const storyIndex = {
       type: 'docs',
       tags: [Tag.MANIFEST, Tag.UNATTACHED_MDX],
     },
+    'button--dark': {
+      id: 'button--dark',
+      title: 'Button',
+      name: 'Dark',
+      importPath: './src/Button.stories.tsx',
+      type: 'story',
+      subtype: 'story',
+      tags: ['dev', 'test'],
+    },
   },
 } as unknown as StoryIndex;
 
@@ -86,6 +95,7 @@ const storyDocsPayload = {
   import: "import { Button } from './Button'",
   stories: {
     'button--primary': { id: 'button--primary', name: 'Primary', snippet: '<Button />' },
+    'button--dark': { id: 'button--dark', name: 'Dark', snippet: '<Button dark />' },
   },
 };
 
@@ -181,6 +191,21 @@ async function renderShow(toolset: ReturnType<typeof createDocsToolset>, id: str
 }
 
 describe('docs tools render the same text in both docgen modes', () => {
+  it.each(['cli', 'mcp'] as const)(
+    'does not expose an excluded story through %s',
+    async (transport) => {
+      const toolset = serviceToolset();
+      const context = { ...ctx, transport };
+      const shown = await toolset.methods.show.handler({ id: 'button' }, context);
+      expect(shown.markdown).toContain('Primary');
+      expect(shown.markdown).not.toContain('Dark');
+      const story = await toolset.methods.showStory.handler({ storyId: 'button--dark' }, context);
+      expect(story.ok).toBe(false);
+      expect(story.markdown).not.toContain('<Button dark />');
+      expect(story.markdown).toContain('Primary');
+    }
+  );
+
   it.each([false, true])('list with withStoryIds=%s', async (withStoryIds) => {
     expect(await renderList(serviceToolset(), withStoryIds)).toBe(
       await renderList(manifestToolset(), withStoryIds)

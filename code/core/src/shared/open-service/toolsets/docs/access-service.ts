@@ -13,7 +13,10 @@
 import type { StoryIndex } from 'storybook/internal/types';
 
 import { getComponentIdFromEntry } from '../../../../common/utils/component-id.ts';
-import { selectComponentEntriesByComponentId } from '../../../../common/utils/select-component-entry.ts';
+import {
+  isEligibleStoryEntry,
+  selectComponentEntriesByComponentId,
+} from '../../../../common/utils/select-component-entry.ts';
 import {
   OpenServiceDocgenMissingComponentError,
   OpenServiceMissingServiceError,
@@ -32,7 +35,7 @@ import {
   type CoreDocgenComponent,
 } from './manifest-formatter/adapt-core-manifest.ts';
 import type { ComponentManifestV1, DocV1 } from './manifest-formatter/manifest-types.ts';
-import { selectAttachedDocs, type MdxPayload } from './map.ts';
+import { selectAttachedDocs, selectManifestStories, type MdxPayload } from './map.ts';
 
 /** Stable addon-docs MDX service id. Kept local so the docs toolset does not import core-server. */
 const MDX_SERVICE_ID = 'addon-docs/mdx';
@@ -96,6 +99,7 @@ function classifyIndex(index: StoryIndex): DocsClassification {
   return {
     componentIds: [...selected.keys()],
     storyBasedIds,
+    storyIds: new Set(entries.filter(isEligibleStoryEntry).map((entry) => entry.id)),
     unattachedDocs,
     attachedDocsByComponent,
   };
@@ -175,7 +179,12 @@ export function createServiceDocsAccess({
         ...(payload?.description !== undefined ? { description: payload.description } : {}),
         ...(payload?.summary !== undefined ? { summary: payload.summary } : {}),
         ...(classification.storyBasedIds.has(id) && withStoryIds
-          ? { stories: adaptCoreStories(storiesById.get(id)?.stories) ?? [] }
+          ? {
+              stories:
+                adaptCoreStories(
+                  selectManifestStories(storiesById.get(id)?.stories ?? {}, classification.storyIds)
+                ) ?? [],
+            }
           : {}),
       };
     }
@@ -225,7 +234,9 @@ export function createServiceDocsAccess({
       ...docgenPayload,
       id,
       name: docgenPayload?.name ?? id,
-      ...(storyDocsPayload?.stories ? { stories: storyDocsPayload.stories } : {}),
+      ...(storyDocsPayload?.stories
+        ? { stories: selectManifestStories(storyDocsPayload.stories, classification.storyIds) }
+        : {}),
       ...(storyDocsPayload?.import ? { import: storyDocsPayload.import } : {}),
       ...(docs ? { docs } : {}),
     };

@@ -170,8 +170,8 @@ describe('planMatrix', () => {
   });
 
   it('names the batches the plan has when asked for another', () => {
-    expect(jobsOf(99)).toEqual({ problems: ['The plan has no batch 99, only 1 to 2'] });
-    expect(jobsOf(0)).toEqual({ problems: ['The plan has no batch 0, only 1 to 2'] });
+    expect(jobsOf(99)).toEqual({ problems: ['The plan has no batch 99, only 1 to 3'] });
+    expect(jobsOf(0)).toEqual({ problems: ['The plan has no batch 0, only 1 to 3'] });
   });
 
   it('refuses an engine the workflow has no runner for, and no engine at all', () => {

@@ -1,6 +1,8 @@
 export const PLANS_BRANCH = 'qa/plans';
 
-const PLAN_FILE = /^ecosystem-qa\/plans\/[^/]+\.md$/;
+const PLAN_FILE = /^ecosystem-qa\/plans\/[\w.-]+\.md$/;
+// git quotes a path that holds a quote, a tab, a newline or a byte it is told to escape.
+const IN_PLANS = /^"?ecosystem-qa\/plans\//;
 
 export type PushPlan =
   | { kind: 'run'; file: string }
@@ -17,15 +19,25 @@ const changeOf = (line: string): Change => {
   return { status: code.charAt(0), score, path: paths.at(-1) ?? '' };
 };
 
+const addsOrChanges = ({ status, score }: Change) =>
+  'AMT'.includes(status) || ('RC'.includes(status) && score < 100);
+
 export const planOfPush = (nameStatus: string): PushPlan => {
   const changes = nameStatus
     .split('\n')
     .filter((line) => line.trim() !== '')
     .map(changeOf)
-    .filter((change) => PLAN_FILE.test(change.path));
-  const plans = changes.filter(
-    ({ status, score }) => 'AMT'.includes(status) || ('RC'.includes(status) && score < 100)
+    .filter((change) => IN_PLANS.test(change.path));
+  const misnamed = changes.filter(
+    (change) => addsOrChanges(change) && /\.md"?$/.test(change.path) && !PLAN_FILE.test(change.path)
   );
+  if (misnamed.length > 0) {
+    return {
+      kind: 'error',
+      reason: `The push adds or changes ${misnamed.map(({ path }) => path).join(', ')}, ${misnamed.length === 1 ? 'whose name is' : 'whose names are'} not the name of a plan, so no sweep starts. A plan is a file in ecosystem-qa/plans/ whose name has only letters, digits, dots, underscores and hyphens and ends in .md.`,
+    };
+  }
+  const plans = changes.filter((change) => PLAN_FILE.test(change.path) && addsOrChanges(change));
   if (plans.length > 1) {
     return {
       kind: 'error',
@@ -36,11 +48,12 @@ export const planOfPush = (nameStatus: string): PushPlan => {
   if (plan) {
     return { kind: 'run', file: plan.path };
   }
+  const plansTouched = changes.filter((change) => PLAN_FILE.test(change.path));
   return {
     kind: 'skip',
     reason:
-      changes.length > 0
-        ? `The push only deletes or renames plans: ${changes.map(({ path }) => path).join(', ')}.`
+      plansTouched.length > 0
+        ? `The push only deletes or renames plans: ${plansTouched.map(({ path }) => path).join(', ')}.`
         : 'The push adds or changes no plan.',
   };
 };

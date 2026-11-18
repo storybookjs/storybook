@@ -8,6 +8,7 @@ import {
   groupingInput,
   groupingMode,
   groupWithModel,
+  modelGrouping,
   toGrouping,
   type GroupingInput,
 } from './group-model.ts';
@@ -244,6 +245,32 @@ describe('groupWithModel', () => {
       'group 1 names #8, which is not a listed QA issue'
     );
     expect(ask).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('modelGrouping', () => {
+  it('lands a lone finding on the open issue it resembles', async () => {
+    const groups = groupFindings([
+      loaded('linux', 'claude', [
+        finding({ checkId: 'build.static', title: 'Build fails', errorText: 'ENOSPC' }),
+      ]),
+    ]);
+    const [lone] = groups.map((group) => group.fingerprint);
+    const issue: QaIssue = {
+      number: 7,
+      title: 'Static build fails with ENOSPC',
+      state: 'open',
+      labels: [],
+      comments: [],
+      body: 'x',
+    };
+    const ask = vi.fn(async () =>
+      JSON.stringify({ groups: [{ members: [lone], existingIssue: 7 }] })
+    );
+
+    await expect(
+      modelGrouping(groups, { env: { ANTHROPIC_API_KEY: 'key' }, issues: () => [issue], ask })
+    ).resolves.toEqual({ groups: [{ members: [lone], existingIssue: 7 }] });
   });
 });
 

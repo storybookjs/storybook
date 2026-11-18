@@ -9,7 +9,6 @@ import { ghParse } from './lib/github.ts';
 import {
   IssueNode,
   issueNumbersOf,
-  needsGroup,
   PullNode,
   PULLS_QUERY,
   QaStatus,
@@ -25,7 +24,7 @@ const HELP = `Usage: node ecosystem-qa/window.ts --from <tag> --to <tag> --out <
 Writes every PR whose merge commit is between two tags, whatever branch it was merged into, and every
 PR merged into the branch of such a PR before that PR merged, to --out as JSON, sorted by number,
 and leaves out the release PRs. For each PR: its QA status, its area,
-its manual testing section, who wrote it as GitHub's author association, and the issues it closes
+its manual testing section, and the issues it closes
 or names in its body, each with its parent issue, its number of sub-issues, and whether it has a
 heading for QA or testing. Prints the count of each status. Reads GitHub, and fetches a tag that
 the local repository lacks.`;
@@ -169,5 +168,5 @@ const counts = QaStatus.options.map(
   (status) => `${window.prs.filter((pr) => pr.status === status).length} ${status}`
 );
 console.log(
-  `${window.prs.length} PRs: ${counts.join(', ')}. ${window.prs.filter(needsGroup).length} maintainer PRs marked qa:skip need a group.`
+  `${window.prs.length} PRs: ${counts.join(', ')}. Each PR marked qa:skip needs a group.`
 );

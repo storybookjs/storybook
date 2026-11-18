@@ -2,8 +2,10 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
 
 import { basename, dirname } from 'pathe';
+import { z } from 'zod';
 
 import { loadEntries } from './lib/catalog.ts';
+import { renderManualChecklist } from './lib/manual-qa.ts';
 import {
   checkPlanText,
   draftOfPlan,
@@ -12,6 +14,7 @@ import {
   PlanDraft,
   planHash,
   planRuns,
+  renderLedger,
   renderPlan,
   USD_PER_RUN,
 } from './lib/qa-plan.ts';
@@ -20,6 +23,8 @@ import { Window } from './lib/window.ts';
 const HELP = `Usage: node ecosystem-qa/qa-plan.ts render --window <file> [--draft <file>] --out <file>
        node ecosystem-qa/qa-plan.ts check <file> [--window <file>]
        node ecosystem-qa/qa-plan.ts draft <file> --window <file> --out <file>
+       node ecosystem-qa/qa-plan.ts ledger <file> --window <file> [--out <file>]
+       node ecosystem-qa/qa-plan.ts manual <file> --window <file> [--out <file>]
 
 render writes a QA plan from the JSON that window.ts wrote and an optional JSON draft of entries,
 discovered repos, decisions, and groups. A PR without a decision gets an empty cell.
@@ -28,9 +33,18 @@ draft writes the draft that render turns into the plan again with that window, s
 changed and rendered again. It exits 1 when the plan is not what render writes from that window.
 
 check accepts a plan only in the form that render writes and when every rule holds against the
-catalog, and then prints its entries, batches, runs, and an estimate of its cost. With --window it
-also checks that the tables hold exactly the PRs of that window. It exits 1 with the line of each
-problem.`;
+catalog, among them that a batch holds probes only or no probe, and then prints its entries,
+batches, runs, and an estimate of its cost. With --window it also checks that every PR of that window marked qa:needed or without a QA label is in the PRs of an
+entry or in one row of manual QA or of no QA, that every PR marked qa:skip is in one group, and
+that the plan names no other PR. Without --window it cannot tell a PR that has no place. It exits 1
+with the line of each problem.
+
+ledger prints where each PR of the window ended up in the plan, with its status, area, and title,
+or writes it to --out.
+
+manual prints the manual checks of a plan that passes check with that window as one Markdown
+checklist for an issue or a discussion, in one section for each reason why the sweep cannot test
+them, with the title of each PR, or writes it to --out. It creates nothing on GitHub.`;
 
 const { values, positionals } = parseArgs({
   allowPositionals: true,
@@ -57,7 +71,12 @@ if (extra.length) {
   console.error(`${command} takes one file, and was given ${extra.length + 1}.\n\n${HELP}`);
   process.exit(1);
 } else if (command === 'render' && values.window && values.out && !file) {
-  const draft = PlanDraft.parse(values.draft ? readJson(values.draft) : {});
+  const parsed = PlanDraft.safeParse(values.draft ? readJson(values.draft) : {});
+  if (!parsed.success) {
+    console.error(`${values.draft} is no draft:\n${z.prettifyError(parsed.error)}`);
+    process.exit(1);
+  }
+  const draft = parsed.data;
   let text: string;
   try {
     text = renderPlan(planFromWindow(readWindow(values.window), draft));
@@ -117,13 +136,47 @@ if (extra.length) {
   }
   if (again !== text) {
     console.error(
-      `${file} is not the plan that render writes from ${values.window}. Run check with --window on it.`
+      `${file} is not the plan that render writes from ${values.window}. check --window names each row that differs from the window; when it passes, set Entries per run, Version, and the order of the rows back to what render writes.`
     );
     process.exit(1);
   }
   mkdirSync(dirname(values.out), { recursive: true });
   writeFileSync(values.out, `${JSON.stringify(draft, null, 2)}\n`);
   console.log(`Wrote ${values.out}. Change it, then render the plan again.`);
+} else if (command === 'ledger' && file && values.window && !values.draft) {
+  const { plan, problems } = checkPlanText(readFileSync(file, 'utf8'), { catalog: [] });
+  if (!plan) {
+    console.error(`${file}:${problems[0]!.line}: ${problems[0]!.message}`);
+    process.exit(1);
+  }
+  const ledger = renderLedger(plan, readWindow(values.window));
+  if (values.out) {
+    mkdirSync(dirname(values.out), { recursive: true });
+    writeFileSync(values.out, ledger);
+    console.log(`Wrote ${values.out}.`);
+  } else {
+    process.stdout.write(ledger);
+  }
+} else if (command === 'manual' && file && values.window && !values.draft) {
+  const window = readWindow(values.window);
+  const { plan, problems } = checkPlanText(readFileSync(file, 'utf8'), {
+    catalog: loadEntries(),
+    window,
+  });
+  if (!plan || problems.length) {
+    for (const problem of problems) {
+      console.error(`${file}:${problem.line}: ${problem.message}`);
+    }
+    process.exit(1);
+  }
+  const checklist = renderManualChecklist(plan, window);
+  if (values.out) {
+    mkdirSync(dirname(values.out), { recursive: true });
+    writeFileSync(values.out, checklist);
+    console.log(`Wrote ${values.out}.`);
+  } else {
+    process.stdout.write(checklist);
+  }
 } else {
   console.error(HELP);
   process.exit(1);

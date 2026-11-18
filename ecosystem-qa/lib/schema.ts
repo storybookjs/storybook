@@ -269,7 +269,7 @@ export const RunResultFile = z.strictObject({
     outputTokens: z.number(),
     cacheReadTokens: z.number().optional(),
     cacheWriteTokens: z.number().optional(),
-    usd: z.number().nullable(),
+    usd: z.number().nonnegative().nullable(),
     model: ModelId,
     priceSource: z.enum(['agent', 'table']),
   }),
@@ -375,6 +375,19 @@ const ReportBase = {
   finding: Finding,
   cycle: Cycle,
   runUrl: z.string(),
+  planEntries: z
+    .array(
+      z.strictObject({
+        slug: PlanRecord.shape.entries.element.shape.id,
+        // Already safe to print inline: the plan's title, sanitized when the proposal was built.
+        title: z.string().min(1),
+        prs: PlanRecord.shape.entries.element.shape.prs,
+        // A code span of the plan's probe line, safe to print inline like the title.
+        probe: z.string().min(1).optional(),
+      })
+    )
+    .min(1)
+    .optional(),
 };
 
 export const Proposal = z.discriminatedUnion('kind', [
@@ -386,17 +399,6 @@ export const Proposal = z.discriminatedUnion('kind', [
     evidence: z.array(EvidenceFile),
     // A closed issue this cluster matched: the bug came back, so it is filed anew and linked.
     previousIssue: z.number().int().optional(),
-    planEntries: z
-      .array(
-        z.strictObject({
-          slug: PlanRecord.shape.entries.element.shape.id,
-          // Already safe to print inline: the plan's title, sanitized when the proposal was built.
-          title: z.string().min(1),
-          prs: PlanRecord.shape.entries.element.shape.prs,
-        })
-      )
-      .min(1)
-      .optional(),
   }),
   z.strictObject({
     kind: z.literal('comment'),

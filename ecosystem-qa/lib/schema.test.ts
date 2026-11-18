@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 
 import { CHECK_IDS } from '../checks.ts';
-import { AgentOutput, agentOutput, CheckResult } from './schema.ts';
+import { loaded } from './fixtures.ts';
+import { AgentOutput, agentOutput, CheckResult, RunResultFile } from './schema.ts';
 
 const answer = (storybookVersionBefore: unknown) => ({
   storybookVersionBefore,
@@ -101,15 +102,57 @@ describe('agentOutput', () => {
       ).toEqual([]);
     });
 
+    it('counts only a finding of the failed plan check itself', () => {
+      const output = failing(plan, 'Another order');
+      const bothFail = {
+        ...output,
+        checks: output.checks.map((check) =>
+          check.id === 'core.dev-server' ? { ...check, state: 'fail' } : check
+        ),
+        findings: [finding('core.dev-server')],
+      };
+
+      expect(problems(bothFail)).toEqual([`plan check "${plan}" is "fail" and needs a finding`]);
+    });
+
     it('asks for a note on every state, a pass included', () => {
       expect(problems(reporting(...ids, plan))).toEqual([
         `plan check "${plan}" needs a note with what you saw`,
       ]);
     });
 
+    it('refuses a finding on a plan check that the project could not run, so it opens no issue', () => {
+      const output = failing(plan);
+      const skipped = {
+        ...output,
+        checks: output.checks.map((check) =>
+          check.id === plan
+            ? { ...check, state: 'skip', note: 'No storySort in .storybook/preview.ts' }
+            : check
+        ),
+        findings: [finding(plan)],
+      };
+
+      expect(problems(skipped)).toEqual([`finding for "${plan}" needs that check to be "fail"`]);
+      expect(problems({ ...skipped, findings: [] })).toEqual([]);
+    });
+
     it('leaves a static fail without a finding and a static check without a note alone', () => {
       expect(problems(failing('core.dev-server'))).toEqual([]);
     });
+  });
+});
+
+describe('RunResultFile', () => {
+  const record = (usd: number | null) => {
+    const { result } = loaded('linux', 'claude', []);
+    return RunResultFile.safeParse({ ...result, usage: { ...result.usage, usd } }).success;
+  };
+
+  it('takes a run without a price, and rejects a price below zero', () => {
+    expect(record(1.25)).toBe(true);
+    expect(record(null)).toBe(true);
+    expect(record(-0.01)).toBe(false);
   });
 });
 

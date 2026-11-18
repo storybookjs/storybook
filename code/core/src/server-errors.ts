@@ -663,6 +663,27 @@ export class OpenServiceModuleGraphUnavailableError extends StorybookError {
 }
 
 /**
+ * A tool was asked for the changes since a git ref that git cannot compare with HEAD.
+ *
+ * Agent-facing: the message names the ref and, where there is one, the recovery.
+ */
+export class OpenServiceGitRefError extends StorybookError {
+  constructor(public data: { ref: string; reason: 'unknown' | 'no-merge-base' | 'no-git' }) {
+    super({
+      name: 'OpenServiceGitRefError',
+      category: Category.CORE_COMMON,
+      code: 36,
+      message: {
+        unknown: `\`${data.ref}\` is not a known git ref.`,
+        'no-merge-base': `\`${data.ref}\` and HEAD have no common commit in this clone. In a shallow clone, fetch more history first: \`git fetch --unshallow\`.`,
+        'no-git': `Cannot list the changes since \`${data.ref}\`: this project is not in a git repository, or git is not available.`,
+      }[data.reason],
+      agentFacing: true,
+    });
+  }
+}
+
+/**
  * A toolset method returned data its own published `outputSchema` rejects.
  *
  * Always a bug in the method: the schema is the contract adapters publish to their clients, so the

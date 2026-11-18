@@ -17,7 +17,8 @@ export interface ResolvedVueComponent {
 export type UnresolvedComponentReason =
   | 'no-meta-component'
   | 'no-component-import'
-  | 'unreadable-component-expression';
+  | 'unreadable-component-expression'
+  | 'missing-export';
 
 const resolveComponent = createMetaComponentResolver({ extensions: ['.vue'] });
 

@@ -1,6 +1,5 @@
-import { realpathSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
-import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
+import { resolve } from 'node:path';
 
 import { preprocess } from 'svelte/compiler';
 
@@ -9,7 +8,11 @@ import type {
   DocgenProviderInput,
   DocgenSubcomponent,
 } from 'storybook/internal/types';
-import { getComponentIdFromEntry, getStoryImportPathFromEntry } from 'storybook/internal/common';
+import {
+  componentPathFromStory,
+  getComponentIdFromEntry,
+  getStoryImportPathFromEntry,
+} from 'storybook/internal/common';
 import { extractComponentDescription } from 'storybook/internal/csf-tools';
 
 import { buildApiDescription } from './api-description/api-description.ts';
@@ -21,14 +24,6 @@ import {
 import type { SvelteComponentMetaManager } from './component-meta/svelte-project-manager.ts';
 
 export type BuildDocgenContext = { componentMetaManager: SvelteComponentMetaManager };
-
-// The resolver follows symlinks, so a component path is taken relative to the story file as the
-// index wrote it; then a symlinked story folder, as in linked sandboxes, gives the same path.
-function pathFromStory(storyPath: string, componentPath: string): string {
-  const fromStory = relative(dirname(realpathSync(resolve(storyPath))), componentPath);
-  const path = join(dirname(storyPath), fromStory).replaceAll('\\', '/');
-  return isAbsolute(path) || path.startsWith('../') ? path : `./${path}`;
-}
 
 export async function buildDocgenPayload(
   input: DocgenProviderInput,
@@ -54,7 +49,7 @@ export async function buildDocgenPayload(
       try {
         subcomponents[name] = {
           name,
-          path: pathFromStory(path, subcomponent.componentPath),
+          path: componentPathFromStory(path, resolve(path), subcomponent.componentPath),
           ...(await componentDocs(subcomponent.componentPath, name, context)),
         };
       } catch {

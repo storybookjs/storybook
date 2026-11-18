@@ -113,6 +113,11 @@ export type StoriesRepository<TCmp extends Cmp> = {
   stories: Map<string, RegisteredStoryProps<TCmp>>;
 };
 
+// For each arg that the rendered story gets from a `<Story>`: that `<Story>`, which is the story
+// itself or the nearest story it extends that sets the arg, and a copy of the value the arg had
+// when the stories were extracted
+export type ArgSources = Record<string, { exportName: string; value: unknown }>;
+
 export interface StoryRendererContextProps<TCmp extends Cmp> {
   // The `<Story>` that renders its content, which is the one of a parent story when the story
   // extends a story and has no content of its own
@@ -123,6 +128,7 @@ export interface StoryRendererContextProps<TCmp extends Cmp> {
   // stories were extracted, for the other `<Story>` components
   asChildExportName: string | undefined;
   asChild: boolean;
+  argSources: ArgSources;
   args: NonNullable<StoryAnnotations<Record<string, any>, TCmp>['args']>;
   storyContext: StoryContext<Record<string, any>>;
   metaRenderSnippet?: Snippet<

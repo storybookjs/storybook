@@ -13,6 +13,7 @@ vi.mock('vite', { spy: true });
 interface FakeViteDevServer {
   config: {
     root: string;
+    isProduction?: boolean;
     resolve?: {
       alias?: unknown;
       conditions?: string[];
@@ -46,23 +47,32 @@ describe('createViteChangeDetectionAdapter', () => {
     vi.restoreAllMocks();
   });
 
-  it('snapshots projectRoot, alias and conditions from server.config in getResolveConfig()', async () => {
-    const alias = [{ find: '@', replacement: '/repo/src' }];
-    const conditions = ['import', 'module', 'default'];
-    const { server } = createFakeServer({
-      root: '/repo',
-      resolve: { alias, conditions },
-    });
+  it.each([
+    { isProduction: false, modeCondition: 'development' },
+    { isProduction: true, modeCondition: 'production' },
+  ])(
+    'snapshots projectRoot, alias and the conditions Vite matches for an ESM import (isProduction: $isProduction)',
+    async ({ isProduction, modeCondition }) => {
+      const alias = [{ find: '@', replacement: '/repo/src' }];
+      const { server } = createFakeServer({
+        root: '/repo',
+        isProduction,
+        resolve: {
+          alias,
+          conditions: ['storybook', 'module', 'browser', 'development|production'],
+        },
+      });
 
-    const adapter = createViteChangeDetectionAdapter(server);
-    const config = await adapter.getResolveConfig();
+      const adapter = createViteChangeDetectionAdapter(server);
+      const config = await adapter.getResolveConfig();
 
-    expect(config).toEqual({
-      projectRoot: '/repo',
-      alias,
-      conditions,
-    });
-  });
+      expect(config).toEqual({
+        projectRoot: '/repo',
+        alias,
+        conditions: ['storybook', 'module', 'browser', modeCondition, 'import'],
+      });
+    }
+  );
 
   it('forwards chokidar `add` events as kind: "add"', () => {
     const { server, watcher } = createFakeServer();

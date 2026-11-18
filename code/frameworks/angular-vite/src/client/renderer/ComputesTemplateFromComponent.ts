@@ -17,9 +17,16 @@ const separateInputsOutputsAttributes = (
   ngComponentInputsOutputs: ComponentInputsOutputs,
   props: ICollection = {}
 ) => ({
-  inputs: ngComponentInputsOutputs.inputs
-    .filter((i) => i.templateName in props)
-    .map((i) => i.templateName),
+  // An input can be set by its template name (alias) or by its class property name; the alias wins.
+  inputs: ngComponentInputsOutputs.inputs.flatMap(({ propName, templateName }) => {
+    if (templateName in props) {
+      return [{ bindingName: templateName, propKey: templateName }];
+    }
+    if (propName in props) {
+      return [{ bindingName: templateName, propKey: propName }];
+    }
+    return [];
+  }),
   outputs: ngComponentInputsOutputs.outputs
     .filter((o) => o.templateName in props)
     .map((o) => o.templateName),
@@ -49,7 +56,10 @@ export const computesTemplateFromComponent = (
   );
 
   return buildTemplate(ngComponentMetadata.selector, {
-    inputs: inputs.map((name) => ({ name, expression: formatPropInTemplate(name) })),
+    inputs: inputs.map(({ bindingName, propKey }) => ({
+      name: bindingName,
+      expression: formatPropInTemplate(propKey),
+    })),
     outputs,
     innerTemplate,
   });
@@ -77,7 +87,10 @@ export const computesTemplateSourceFromComponent = (
   );
 
   return buildTemplate(ngComponentMetadata.selector, {
-    inputs: inputs.map((name) => ({ name, expression: formatInputValue(initialProps?.[name]) })),
+    inputs: inputs.map(({ bindingName, propKey }) => ({
+      name: bindingName,
+      expression: formatInputValue(initialProps?.[propKey]),
+    })),
     outputs,
   });
 };

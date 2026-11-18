@@ -664,6 +664,28 @@ describe('the plan entry of an issue', () => {
     expect(body).not.toContain('pull/1)');
   });
 
+  it('says under the entry of a probe what the run added and where its copy is, and nothing for a normal entry', () => {
+    expect(bodyOf('plan.animation-probe')).toContain(
+      "Plan entry `animation-probe`, `A new story's animation pauses in the preview`: [#31900](https://github.com/storybookjs/storybook/pull/31900)\n\nThis entry is a probe: after the upgrade the run added `a story file src/AnimationProbe.stories.tsx with one story Fade In whose box fades in with a CSS animation of two seconds` to the project, which the project itself does not hold. The copy of the added files is in `animation-probe-added/` of the evidence in the artifact of the run.\n\n<!-- sb-qa-metadata -->"
+    );
+    expect(bodyOf('plan.story-sort-in-main')).not.toContain('This entry is a probe');
+  });
+
+  it('prints a probe line as one code span, where GitHub renders no mention', () => {
+    const plan = {
+      ...fixturePlan,
+      entries: fixturePlan.entries.map((entry) =>
+        entry.slug === 'animation-probe'
+          ? { ...entry, probe: 'a story that pings @octocat' }
+          : entry
+      ),
+    };
+
+    expect(bodyOf('plan.animation-probe', plan)).toContain(
+      'the run added `a story that pings @octocat` to the project'
+    );
+  });
+
   it('gives a static finding no entry line', () => {
     expect(bodyOf('upgrade.command')).not.toContain('Plan entry');
   });

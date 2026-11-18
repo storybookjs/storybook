@@ -7,7 +7,7 @@ import { loadEntries } from './catalog.ts';
 import { cycleRef, versionLine } from './cycle.ts';
 import { fingerprint } from './fingerprint.ts';
 import type { PlanScope } from './plan-scope.ts';
-import { planCheckId, prCell, type Plan } from './qa-plan.ts';
+import { planCheckId, prCell, probeCopyDir, type Plan } from './qa-plan.ts';
 import { loadResults, type LoadedResult } from './results.ts';
 import { redactSecrets } from './redact.ts';
 import { capTitle, sanitizeFinding, sanitizeTitle } from './sanitize.ts';
@@ -326,8 +326,10 @@ const sourceLines = (proposal: IssueProposal | CommentProposal, withVersion = fa
 // A title in a body is one code span, in which GitHub renders no mention, reference, link or markup.
 // The fence is one backtick longer than any run in the title, padded when the title starts or ends
 // with one, and a blank line would end the span, so whitespace collapses first.
-export const inlineTitle = (title: string): string => {
-  const text = capTitle(title.replace(/\s+/g, ' ').trim());
+export const inlineTitle = (title: string): string =>
+  codeSpan(capTitle(title.replace(/\s+/g, ' ').trim()));
+
+const codeSpan = (text: string): string => {
   const longestRun = Math.max(0, ...(text.match(/`+/g) ?? []).map((run) => run.length));
   const marker = '`'.repeat(longestRun + 1);
   const pad = text.startsWith('`') || text.endsWith('`') ? ' ' : '';
@@ -455,9 +457,15 @@ export const renderIssueBody = (
     '',
     ...sourceLines(proposal),
     '',
-    ...(proposal.planEntries ?? []).flatMap(({ slug, title, prs }) => [
+    ...(proposal.planEntries ?? []).flatMap(({ slug, title, prs, probe }) => [
       `Plan entry \`${slug}\`, ${title}: ${prs.map(prCell).join(', ')}`,
       '',
+      ...(probe === undefined
+        ? []
+        : [
+            `This entry is a probe: after the upgrade the run added ${probe} to the project, which the project itself does not hold. The copy of the added files is in \`${probeCopyDir(slug)}/\` of the evidence in the artifact of the run.`,
+            '',
+          ]),
     ]),
     ...relatedLines(proposal.related),
     metadataBlock(proposal),
@@ -599,7 +607,12 @@ export interface ProposalOptions {
 const planEntriesOf = (members: FindingGroup[], plan: Plan | undefined) =>
   (plan?.entries ?? [])
     .filter((entry) => members.some((member) => member.finding.checkId === planCheckId(entry.slug)))
-    .map(({ slug, title, prs }) => ({ slug, title: inlineTitle(title), prs }));
+    .map(({ slug, title, prs, probe }) => ({
+      slug,
+      title: inlineTitle(title),
+      prs,
+      ...(probe === undefined ? {} : { probe: codeSpan(probe) }),
+    }));
 
 // Build the one proposal for a cluster from its lead, matching `issues` by any member's fingerprint.
 export const toProposal = (

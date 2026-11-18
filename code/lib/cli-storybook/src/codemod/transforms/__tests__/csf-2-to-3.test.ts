@@ -535,6 +535,49 @@ describe('csf-2-to-3', () => {
         expect.stringContaining('Kept A in Component.stories.jsx as a CSF 2 story')
       );
     });
+
+    it('moves what a function called by the annotations reads above the story', async () => {
+      await expect(
+        jsTransform(dedent`
+          export default { title: 'Cat' };
+          export const A = (args) => <Cat {...args} />;
+          A.args = makeArgs();
+          function makeArgs() {
+            return { age };
+          }
+          const age = 2;
+        `)
+      ).resolves.toMatchInlineSnapshot(`
+        export default { title: "Cat" };
+        function makeArgs() {
+          return { age };
+        }
+        const age = 2;
+        export const A = {
+          render: (args) => <Cat {...args} />,
+          args: makeArgs(),
+        };
+      `);
+    });
+
+    it('keeps a story as a function when its annotations read the story itself', async () => {
+      await expect(
+        jsTransform(dedent`
+          export default { title: 'Cat' };
+          export const A = (args) => <Cat {...args} />;
+          A.args = { name: 'Fluffy' };
+          A.parameters = { copy: { ...A.args } };
+        `)
+      ).resolves.toMatchInlineSnapshot(`
+        export default { title: "Cat" };
+        export const A = (args) => <Cat {...args} />;
+        A.args = { name: "Fluffy" };
+        A.parameters = { copy: { ...A.args } };
+      `);
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.stringContaining('Kept A in Component.stories.jsx as a CSF 2 story')
+      );
+    });
   });
 
   describe('typescript', () => {

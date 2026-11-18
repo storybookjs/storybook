@@ -320,14 +320,13 @@ export default async function transform(
     if (init.type !== 'ArrowFunctionExpression' && !template) {
       return;
     }
-    const values = Object.values(csf._storyAnnotations[key]);
     const isSingle = isSingleConstExport(csf._storyStatements[key]);
     // The annotations move up into the story, so what they read has to be declared above it. The
     // declarations that can move there do, and a story that would still read a later one is kept.
-    const readsLater = isSingle && readsLaterBinding(editor, decl, values);
-    const dependencies = readsLater ? eagerDependencies(csf, key) : [];
+    const dependencies = isSingle ? eagerDependencies(csf, key) : undefined;
     const replaceExport =
-      isSingle && !!dependencies && !readsLaterBinding(editor, decl, values, dependencies);
+      !!dependencies &&
+      !readsLaterBinding(editor, decl, Object.values(csf._storyAnnotations[key]), dependencies);
     const updateType = replaceExport && !keepStoryTypes;
 
     // Do change the type of no-arg stories without annotations to StoryFn when applicable
@@ -335,7 +334,7 @@ export default async function transform(
       importHelper.updateTypeTo(id, 'StoryFn', updateType);
       return;
     }
-    if (readsLater && !replaceExport) {
+    if (isSingle && !replaceExport) {
       logger.warn(
         `Kept ${key} in ${info.path} as a CSF 2 story, as its annotations read code below it that cannot move above it.`
       );

@@ -33,7 +33,11 @@ Migrating to the Vitest addon replaces the previous Jest-based test-runner with 
 
 ### Comparison to the Vitest addon
 
-The test-runner required a running Storybook instance to test your stories, because it visited each one, executed the play function, and listened for results. The Vitest addon uses a Vitest plugin to transform your stories into tests using Vite and portable stories, so it does not need a running Storybook to test them. Because of this reliance on Vite, the Vitest addon only works with Storybook frameworks that use Vite (and [Next.js](../../../get-started/frameworks/nextjs-vite.mdx)), whereas the test-runner could be used with any Storybook framework.
+The test-runner required a running Storybook instance to test your stories, because it visited each one, executed the play function, and listened for results.
+
+The Vitest addon uses a Vitest plugin to transform your stories into tests using Vite and portable stories, so it does not need a running Storybook to test them.
+
+Because of this reliance on Vite, the Vitest addon only works with Storybook frameworks that use Vite, whereas the test-runner could be used with any Storybook framework.
 
 | Feature                                                  | test-runner              | Vitest addon       |
 | -------------------------------------------------------- | ------------------------ | ------------------ |
@@ -58,7 +62,7 @@ The test-runner was only a CLI tool. It did not have a UI for running tests, nor
 
 Additionally, the test-runner ran your stories as orchestrated tests in Jest, and that orchestration came with some complexity. The Vitest addon transforms your stories into real tests and then runs them using Vitest, which is simpler and more configurable.
 
-Finally, because of the simpler architecture and the use of Vitest, the Vitest addon should be faster than the test-runner for most projects. We'll do more benchmarking to quantify this in the future.
+Finally, because of the simpler architecture and the use of Vitest, the Vitest addon is faster than the test-runner for most projects.
 
 ## Is my project eligible to upgrade?
 

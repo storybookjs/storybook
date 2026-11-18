@@ -6,10 +6,10 @@ several usefulness hypotheses and presented as decision views (2×2, sunset list
 list) plus a sensitivity analysis. The feature map was drawn at commit `db128150dc9` (2026-10-20);
 each generated file records the HEAD it was scanned at, since the checkout moves.
 
-**This folder is untracked and was wiped once already** (2026-10-21, by a tree clean run from
-another session). A tarball backup is written to
-`~/.claude/projects/-home-steve-Development-storybook/feature-audit-backup.tar.gz` at the end of
-each pipeline run; commit the folder on a branch if you want it to survive `git clean`.
+The folder is committed on its own branch so that it survives `git clean` and checkout moves. The
+pipeline runs in a bare checkout: without `node_modules`, third-party dependencies are detected from
+the registry snapshot in `signals/npm-packages.json` (the ranking header says so when that happens),
+so run `yarn` first when the snapshot may be behind the source.
 
 ## Files
 

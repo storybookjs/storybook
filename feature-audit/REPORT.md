@@ -1,10 +1,67 @@
 # Storybook feature audit: inventory, cost, usefulness and ranking
 
 Feature map drawn 2026-10-20 at commit `db128150dc9`; the model and scores were refined over four
-rounds on 2026-10-21. Each generated file (`metrics.json`, `ranking.md`, `quadrants.md`,
-`sensitivity.md`) records the HEAD it was scanned at. The sections are newest first: round 4
-supersedes the numbers in earlier rounds where they overlap; the round-1 analysis is kept because its
-inventory and qualitative themes still hold.
+rounds on 2026-10-21 and the scan was refreshed on 2026-11-18. Each generated file (`metrics.json`,
+`ranking.md`, `quadrants.md`, `sensitivity.md`) records the HEAD it was scanned at. The sections are
+newest first: the refresh supersedes round 4 where the numbers overlap, round 4 supersedes earlier
+rounds; the round-1 analysis is kept because its inventory and qualitative themes still hold.
+
+## Refresh (2026-11-18): same model, four more weeks of code
+
+Scanned at `01c60e170`. The model, weights and scores are those of round 4; only the code moved.
+The merged-PR signal still ends at its 2026-10-21 capture (refreshing it needs GitHub API access),
+so every fix and maintenance count below is unchanged and the cost moves are code and dependency
+moves only. The npm registry snapshot was extended with the six packages that appeared in the
+source since (`@jridgewell/remapping`, `@jridgewell/sourcemap-codec`, `chokidar`,
+`is-inside-container`, `typescript-native`, `wsl-utils`).
+
+### Feature map
+
+- The 101 features are unchanged. Five globs were added so that coverage is back to 100%: the new
+  `@storybook/component-meta-typescript` package (the TypeScript layer of component-meta, shared by
+  the Angular analyzer and the docgen harness) belongs to docgen core; the build-time story-docs
+  summary belongs to the code-examples service; helpers directly under the open-service `services/`
+  directory belong to the open-service framework; the shared file watcher belongs to the dev server;
+  the `storybook info` and `link` commands belong to the CLI core.
+- The coverage report in `ranking.md` now lists the unassigned files themselves, so a later refresh
+  shows exactly what to map.
+- The pipeline runs in a checkout without `node_modules`: third-party imports then count when the
+  registry snapshot knows the package, and the ranking header says so. Without that fallback the
+  dependency term silently dropped to zero.
+
+### What moved (run at `01c60e170`, versus round 4 at `00059337f08`)
+
+- **Totals**: 843.5k cost points (816k), 51% code, 22% dependencies, 27% churn. Source lines
+  325.2k (308.6k at round 1), non-source 426k. 283 distinct third-party packages (285).
+- **Largest cost moves**: CSF tooling +8.2k (source 7.2k → 12.8k, dependencies 3 → 8: a new
+  estree editor and scope layer that imports `oxc-parser`, `@babel/traverse`, `magic-string` and
+  `prettier` directly, plus a golden corpus); upgrade and automigrations +3.6k (the SvelteKit
+  mocking migration pipeline, while it dropped `jscodeshift` and three other packages); Svelte docgen +3.4k
+  (source 1.1k → 3.7k: Svelte CSF components and subcomponents are resolved through core); docgen
+  core +2.8k (the TypeScript layer). The AI evaluation harness fell 3.9k, the UI component library
+  2.8k and the parsers 1.5k.
+- **The low-usefulness, high-cost quadrant now holds four features**: agentic review, the Svelte CSF
+  compiler, the setup checklist and, new, Svelte docgen, whose cost doubled and which enters at
+  7th-worst on the geometric scale. The median user-facing cost is 5,968.
+- **Worst 20 under all four hypotheses**: the AI evaluation harness, review, Angular docgen and the
+  Angular webpack framework. Svelte CSF and TanStack leave that set only because the inherited
+  hypothesis moves them (26th and 20th); on the three other scales they are still in the worst 20.
+  The checklist remains second or third on every scale except reach (66th).
+- **Inherited usefulness has a new edge to watch**: Svelte docgen imports the Svelte CSF compiler
+  from 14 places and is imported by the Svelte renderer (score 3), so both Svelte features now
+  inherit 3; one-hop inheritance returns Svelte CSF to 2. This is coupling introduced by the
+  resolve-through-core work, not evidence of adoption, and the inherited column should be read with
+  that in mind for these two.
+- **Groups**: the AI group still has the worst cost per usefulness (33.2k), but the five worst
+  groups are within 1.4k of each other (manager UI 32.5k, preview runtime 32.4k, builders and
+  frameworks 32.4k, Node core 31.8k); testing remains the best value (9.9k).
+- **Simplification list**: CSF tooling joins the top ten (replacing the package-manager proxies);
+  the rest of the list is unchanged: config-and-presets, the Vitest addon, the manager shell, the
+  upgrade pipeline, the UI library, docs blocks, the sidebar tree, init and component manifests.
+- **Sensitivity**: unchanged in character. Every ±50% weight change keeps Spearman ≥ 0.997; base 2
+  gives 0.898. Six user-facing features change quadrant in some scenario (change detection, the
+  module graph service, the story store, the Vue 3 renderer, the Vite builder, the manager
+  bundler); none of the four low-usefulness, high-cost features does.
 
 ## Round 4 (2026-10-21): maintainer re-scoring, issue-derived severity, scale shown side by side
 

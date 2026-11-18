@@ -420,6 +420,7 @@ name = "Docgen server, component-meta (TS program) & docs-tools"
 include = [
   "code/core/src/shared/open-service/services/docgen/**",
   "code/core/src/component-meta/**",
+  "code/lib/component-meta-typescript/**",
   "code/core/src/docs-tools/**",
   "code/core/src/common/utils/lazy-docgen-middleware*",
   "code/lib/cli-storybook/src/automigrate/fixes/docgen-server*",
@@ -613,6 +614,7 @@ include = [
   "code/core/src/core-server/utils/get-caching-middleware*",
   "code/core/src/core-server/utils/get-server-channel*",
   "code/core/src/core-server/utils/watchConfig*",
+  "code/core/src/core-server/utils/watch-files*",
   "code/core/src/core-server/utils/event-senders*",
   "code/core/src/core-server/utils/output-startup-information*",
   "code/core/src/core-server/utils/middleware*",
@@ -745,6 +747,7 @@ group = "node"
 name = "Open-service framework (schema-driven services, sync, query runtime, toolset registry)"
 include = [
   "code/core/src/shared/open-service/*",
+  "code/core/src/shared/open-service/services/*",
   "code/core/src/shared/open-service/sync-test/**",
   "code/core/src/shared/open-service/sync-simulation/**",
   "code/core/src/core-server/utils/apply-services-preset-once*",
@@ -773,6 +776,7 @@ name = "Story docs / code examples service (Code panel)"
 include = [
   "code/core/src/shared/open-service/services/story-docs/**",
   "code/core/src/shared/open-service/services/extraction-service.server.ts",
+  "code/core/src/core-server/utils/summarizeStoryDocs*",
   "code/renderers/react/src/docgen/build-story-docs*",
   "code/renderers/react/src/docgen/story-docs-preset*",
   "code/core/src/preview-api/modules/preview-web/emitTransformCode*",
@@ -1616,7 +1620,8 @@ include = [
   "code/lib/cli-storybook/src/util*",
   "code/lib/cli-storybook/src/warn*",
   "code/lib/cli-storybook/test/**",
-  "code/lib/cli-storybook/src/link.ts",
+  "code/lib/cli-storybook/src/link*",
+  "code/lib/cli-storybook/src/info*",
   "code/lib/cli-storybook/src/*.d.ts",
   "code/lib/cli-storybook/*",
   "code/lib/cli-sb/**",

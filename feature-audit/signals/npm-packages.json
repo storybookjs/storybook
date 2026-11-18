@@ -1,5 +1,5 @@
 {
- "captured": "2026-10-21",
+ "captured": "2026-11-18",
  "source": "https://registry.npmjs.org/<pkg>",
  "packages": {
   "@actions/core": {
@@ -341,6 +341,24 @@
    "majors_12mo": 1,
    "days_since_last_publish": 44,
    "unpacked_size_kb": 170,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@jridgewell/remapping": {
+   "latest": "2.3.5",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 463,
+   "unpacked_size_kb": 58,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "@jridgewell/sourcemap-codec": {
+   "latest": "1.6.0",
+   "releases_12mo": 2,
+   "majors_12mo": 1,
+   "days_since_last_publish": 82,
+   "unpacked_size_kb": 94,
    "deprecated": false,
    "license": "MIT"
   },
@@ -902,6 +920,15 @@
    "deprecated": false,
    "license": "MIT"
   },
+  "chokidar": {
+   "latest": "6.0.0",
+   "releases_12mo": 2,
+   "majors_12mo": 2,
+   "days_since_last_publish": 29,
+   "unpacked_size_kb": 197,
+   "deprecated": false,
+   "license": "MIT"
+  },
   "cjs-module-lexer": {
    "latest": "2.3.0",
    "releases_12mo": 4,
@@ -1322,6 +1349,15 @@
    "majors_12mo": 1,
    "days_since_last_publish": 88,
    "unpacked_size_kb": 130,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "is-inside-container": {
+   "latest": "1.0.0",
+   "releases_12mo": 0,
+   "majors_12mo": 0,
+   "days_since_last_publish": 1372,
+   "unpacked_size_kb": 3,
    "deprecated": false,
    "license": "MIT"
   },
@@ -2315,6 +2351,15 @@
    "deprecated": false,
    "license": "Apache-2.0"
   },
+  "typescript-native": {
+   "latest": "0.0.1",
+   "releases_12mo": 2,
+   "majors_12mo": 1,
+   "days_since_last_publish": 7,
+   "unpacked_size_kb": 1,
+   "deprecated": false,
+   "license": "ISC"
+  },
   "unique-string": {
    "latest": "3.0.0",
    "releases_12mo": 0,
@@ -2528,6 +2573,15 @@
    "majors_12mo": 4,
    "days_since_last_publish": 24,
    "unpacked_size_kb": 148,
+   "deprecated": false,
+   "license": "MIT"
+  },
+  "wsl-utils": {
+   "latest": "1.0.1",
+   "releases_12mo": 4,
+   "majors_12mo": 2,
+   "days_since_last_publish": 49,
+   "unpacked_size_kb": 16,
    "deprecated": false,
    "license": "MIT"
   },

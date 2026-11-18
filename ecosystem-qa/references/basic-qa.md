@@ -147,7 +147,7 @@ The rows below are the 11.0 automigrations a typical project triggers; mark the 
 
 | Row | Probe | Pass when | Since | Agent | Check |
 | ------ | ----- | --------- | ----- | ----- | ----- |
-| CLI-25 | `npx storybook ai setup` | It exits 1 and says to run `npx storybook skills setup` and `npx storybook tools` instead. | 11.0 ; M: `storybook ai` command removed | manual: no monorepo test yet | `storybook ai` points at its replacement |
+| CLI-25 | `npx storybook ai setup` | It exits 1 and says to run `npx storybook skills setup` and `npx storybook tools` instead. | 11.0 ; M: `storybook ai` command removed | monorepo: `code/core/src/bin/dispatcher.test.ts` | `storybook ai` points at its replacement |
 | CLI-26 | `npx storybook dev --preview-url http://localhost:1234` and `--force-build-preview` | Neither points Storybook at an external preview: the command is rejected, or it starts and loads its own `iframe.html`. | 11.0 ; M: `--preview-url` and `--force-build-preview` removed | manual: no monorepo test yet | Removed dev flags fail clearly |
 | CLI-27 | `npx storybook automigrate --renderer react` and `npx storybook automigrate remove-essentials` | `--renderer` fails as an unknown option, and the removed id is not found. | 11.0 ; M: Automigrations for Storybook 10 and earlier removed | manual: no monorepo test yet | Removed automigrate options fail clearly |
 

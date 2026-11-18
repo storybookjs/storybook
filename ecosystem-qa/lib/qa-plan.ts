@@ -85,6 +85,8 @@ export const PlanEntry = z.strictObject({
   title: Text,
   prs: SomePrs,
   batch: z.int().min(1),
+  // What the run adds to the project after the upgrade, and where.
+  probe: Text.optional(),
   repos: z
     .array(z.strictObject({ id: RepoId, reason: Reason }))
     .min(1)
@@ -327,7 +329,7 @@ const TABLE_KEYS = Object.keys(TABLES) as TableKey[];
 
 const OVERVIEW_COLUMNS = ['Entry', 'Batch', 'Repos', 'PRs'] as const;
 const overviewCells = (entry: PlanEntry) => [
-  `${code(entry.slug)} ${entry.title}`,
+  `${entry.probe === undefined ? '' : 'Probe: '}${code(entry.slug)} ${entry.title}`,
   String(entry.batch),
   entry.repos.map((repo) => code(repo.id)).join(', '),
   String(entry.prs.length),
@@ -365,6 +367,7 @@ export type PlanLayout = {
     heading: number;
     prs: number;
     batch: number;
+    probe?: number;
     repos: number[];
     steps: number[];
     expected: number;
@@ -421,6 +424,7 @@ export const layoutPlan = (plan: Plan): { lines: string[]; at: PlanLayout } => {
       heading,
       prs: add(`- PRs: ${prsCell(entry.prs)}`),
       batch: add(`- Batch: ${entry.batch}`),
+      ...(entry.probe === undefined ? {} : { probe: add(`- Probe: ${entry.probe}`) }),
       repos: entry.repos.map((repo) => add(`- Repo ${code(repo.id)}: ${repo.reason}`)),
       steps: entry.steps.map((step) => add(`- Step: ${step}`)),
       expected: add(`- Expected: ${entry.expected}`),
@@ -460,6 +464,13 @@ const ENTRY_FIELDS: [RegExp, (raw: RawEntry, value: string, key?: string) => voi
     },
   ],
   [
+    /^- Probe: (.*)$/,
+    (raw, value) => {
+      const probe = Text.safeParse(value);
+      raw.probe = probe.success ? probe.data : fail(`probe: ${firstIssue(probe.error)}`);
+    },
+  ],
+  [
     /^- Repo `([^`]+)`: (.*)$/,
     (raw, id, reason) => {
       raw.repos.push({ id, reason });
@@ -483,6 +494,7 @@ type RawEntry = {
   title: string;
   prs?: unknown;
   batch?: unknown;
+  probe?: string;
   repos: { id: string; reason?: string }[];
   steps: string[];
   expected?: string;
@@ -611,7 +623,9 @@ export const parsePlan = (text: string): Plan => {
       const line = lines[i]!;
       const field = ENTRY_FIELDS.find(([pattern]) => pattern.test(line));
       if (!field) {
-        fail('expected one of "- PRs:", "- Batch:", "- Repo `<id>`:", "- Step:", "- Expected:"');
+        fail(
+          'expected one of "- PRs:", "- Batch:", "- Probe:", "- Repo `<id>`:", "- Step:", "- Expected:"'
+        );
       }
       const [pattern, apply] = field!;
       const [, value, extra] = pattern.exec(line)!;
@@ -823,6 +837,23 @@ const batchesHaveNoGap: Rule = ({ plan, at }) => {
   return [{ line: at.entries[index]!.batch, message: `batch ${missing} has no entry` }];
 };
 
+// A run that tests the project itself never holds the files of a probe.
+const probesHaveOwnBatches: Rule = ({ plan, at }) =>
+  plan.entries.flatMap((entry, index) => {
+    const first = plan.entries.find((other) => other.batch === entry.batch)!;
+    const isProbe = (it: PlanEntry) => it.probe !== undefined;
+    if (isProbe(first) === isProbe(entry)) {
+      return [];
+    }
+    const [probe, other] = isProbe(entry) ? [entry, first] : [first, entry];
+    return [
+      {
+        line: at.entries[index]!.batch,
+        message: `batch ${entry.batch} holds the probe \`${probe.slug}\` and the entry \`${other.slug}\`, which is no probe: a batch holds probes only or no probe`,
+      },
+    ];
+  });
+
 const groupsAreDecided: Rule = ({ plan, at }) => {
   const slugs = new Set(plan.entries.map((entry) => entry.slug));
   return plan.groups.flatMap((group, index) => {
@@ -906,6 +937,7 @@ const textStaysOnLocalhost: Rule = (input) =>
       const layout = input.at.entries[index]!;
       return [
         { text: entry.title, line: layout.heading },
+        ...(entry.probe === undefined ? [] : [{ text: entry.probe, line: layout.probe! }]),
         ...entry.repos.map((repo, n) => ({ text: repo.reason, line: layout.repos[n]! })),
         ...entry.steps.map((text, step) => ({ text, line: layout.steps[step]! })),
         { text: entry.expected, line: layout.expected },
@@ -1042,6 +1074,7 @@ const RULES: Rule[] = [
   reposAreCurrent,
   rowsAreDecided,
   batchesHaveNoGap,
+  probesHaveOwnBatches,
   groupsAreDecided,
   noPrivateLinks,
   textStaysOnLocalhost,
@@ -1144,12 +1177,20 @@ export const planHash = (content: string | Uint8Array): string =>
 
 export const planCheckId = (slug: string): string => `plan.${slug}`;
 
+// Where the run keeps a copy of the files that a probe added, inside its evidence directory.
+export const probeCopyDir = (slug: string): string => `${slug}-added`;
+
 export const renderPlanChecks = (entries: PlanEntry[], repo: string): string =>
   entries
     .map((entry) => {
       const { reason } = entry.repos.find(({ id }) => id === repo)!;
       return [
         `- \`${planCheckId(entry.slug)}\` (plan): ${entry.title}. Why this repo: ${reason}.`,
+        ...(entry.probe === undefined
+          ? []
+          : [
+              `  Probe: after the upgrade, add ${entry.probe}. Copy each added file to \`${probeCopyDir(entry.slug)}/\` in the evidence directory, and remove what you added before the next check.`,
+            ]),
         ...entry.steps.map((step, index) => `  ${index + 1}. ${step}`),
         `  Expected: ${entry.expected}`,
       ].join('\n');

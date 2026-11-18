@@ -33,8 +33,8 @@ draft writes the draft that render turns into the plan again with that window, s
 changed and rendered again. It exits 1 when the plan is not what render writes from that window.
 
 check accepts a plan only in the form that render writes and when every rule holds against the
-catalog, and then prints its entries, batches, runs, and an estimate of its cost. With --window it
-also checks that every PR of that window marked qa:needed or without a QA label is in the PRs of an
+catalog, among them that a batch holds probes only or no probe, and then prints its entries,
+batches, runs, and an estimate of its cost. With --window it also checks that every PR of that window marked qa:needed or without a QA label is in the PRs of an
 entry or in one row of manual QA or of no QA, that every PR marked qa:skip is in one group, and
 that the plan names no other PR. Without --window it cannot tell a PR that has no place. It exits 1
 with the line of each problem.

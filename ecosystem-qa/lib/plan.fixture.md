@@ -16,6 +16,7 @@
 | `preview-animations` Animations pause only in the preview | 1 | `mealdrop` | 1 |
 | `csf-factory-namespaces` Legacy addon namespaces work in CSF factories | 1 | `mealdrop`, `mantine` | 1 |
 | `sidebar-tree` The rebuilt sidebar tree | 2 | `mealdrop`, `primer-react` | 2 |
+| Probe: `animation-probe` A new story's animation pauses in the preview | 3 | `mealdrop` | 1 |
 
 ## PRs that need manual QA
 
@@ -81,3 +82,12 @@
 - Repo `primer-react`: a deep tree, and a right-to-left story
 - Step: Start the dev server, open `http://localhost:6006`, and take a screenshot of the expanded sidebar.
 - Expected: Every group of `/index.json` shows in the sidebar, in the same order.
+
+### `animation-probe` A new story's animation pauses in the preview
+
+- PRs: [#31900](https://github.com/storybookjs/storybook/pull/31900)
+- Batch: 3
+- Probe: a story file src/AnimationProbe.stories.tsx with one story Fade In whose box fades in with a CSS animation of two seconds
+- Repo `mealdrop`: owned, and its React and Vite setup loads a story file next to its components
+- Step: Open the story animation-probe--fade-in and take a screenshot after the play function ends.
+- Expected: The screenshot shows the box fully visible, the end state of the animation.

@@ -11,22 +11,14 @@ import type { ComponentInputsOutputs } from './utils/NgComponentAnalyzer.ts';
 import {
   getComponentDecoratorMetadata,
   getComponentInputsOutputs,
+  resolveInputArgs,
 } from './utils/NgComponentAnalyzer.ts';
 
 const separateInputsOutputsAttributes = (
   ngComponentInputsOutputs: ComponentInputsOutputs,
   props: ICollection = {}
 ) => ({
-  // An input can be set by its template name (alias) or by its class property name; the alias wins.
-  inputs: ngComponentInputsOutputs.inputs.flatMap(({ propName, templateName }) => {
-    if (templateName in props) {
-      return [{ bindingName: templateName, propKey: templateName }];
-    }
-    if (propName in props) {
-      return [{ bindingName: templateName, propKey: propName }];
-    }
-    return [];
-  }),
+  inputs: resolveInputArgs(ngComponentInputsOutputs.inputs, props).bindings,
   outputs: ngComponentInputsOutputs.outputs
     .filter((o) => o.templateName in props)
     .map((o) => o.templateName),

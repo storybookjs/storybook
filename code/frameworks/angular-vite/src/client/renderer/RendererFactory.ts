@@ -1,6 +1,7 @@
 import { AbstractRenderer } from './AbstractRenderer.ts';
 import { CanvasRenderer } from './CanvasRenderer.ts';
 import { DocsRenderer } from './DocsRenderer.ts';
+import { TestBedRenderer } from './TestBedRenderer.ts';
 
 type RenderType = 'canvas' | 'docs';
 export class RendererFactory {
@@ -8,7 +9,10 @@ export class RendererFactory {
 
   private rendererMap = new Map<string, AbstractRenderer>();
 
-  public async getRendererInstance(targetDOMNode: HTMLElement): Promise<AbstractRenderer> {
+  public async getRendererInstance(
+    targetDOMNode: HTMLElement,
+    useTestBedRenderer = false
+  ): Promise<AbstractRenderer> {
     const targetId = targetDOMNode.id;
 
     const renderType = getRenderType(targetDOMNode);
@@ -21,7 +25,7 @@ export class RendererFactory {
 
     let renderer = this.rendererMap.get(targetId);
     if (!renderer) {
-      renderer = this.buildRenderer(renderType);
+      renderer = this.buildRenderer(renderType, useTestBedRenderer);
       this.rendererMap.set(targetId, renderer);
     }
 
@@ -29,11 +33,13 @@ export class RendererFactory {
     return renderer;
   }
 
-  private buildRenderer(renderType: RenderType) {
+  private buildRenderer(renderType: RenderType, useTestBedRenderer: boolean) {
     if (renderType === 'docs') {
+      // A docs page renders several stories with potentially different application configs,
+      // which cannot share the single TestBed environment injector.
       return new DocsRenderer();
     }
-    return new CanvasRenderer();
+    return useTestBedRenderer ? new TestBedRenderer() : new CanvasRenderer();
   }
 }
 

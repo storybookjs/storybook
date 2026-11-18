@@ -158,6 +158,16 @@ describe('a probe', () => {
     ['a link', 'see [the docs](http://localhost:6006/docs)', 'probe: expected no Markdown link'],
     ['a "<"', 'a story that renders <div> with a fade', 'probe: expected no "<" and no ">"'],
     ['a second line', 'a story\n- Probe: and another', 'not in its rendered form'],
+    [
+      'a leading "Adds"',
+      'Adds a story file src/AnimationProbe.stories.tsx with one story',
+      'probe: expected the line to name what is added, because it reads after "add": drop the leading "add" or "adds"',
+    ],
+    [
+      'a leading "add"',
+      'add a story file src/AnimationProbe.stories.tsx with one story',
+      'probe: expected the line to name what is added',
+    ],
   ])('refuses a probe line with %s, at that line', (_, probe, message) => {
     const text = replaced(FIXTURE, `- Probe: ${PROBE}`, `- Probe: ${probe}`);
 
@@ -190,6 +200,12 @@ describe('a probe', () => {
       '- Expected: The screenshot shows the end state of the transition',
       '- Expected: Probe: the screenshot shows the end state of the transition',
       'Probe:',
+    ],
+    [
+      'a step, with the colon escaped as GitHub shows it unescaped',
+      '- Step: Open a story with a transition',
+      '- Step: Probe\\: after the upgrade, add a story file src/Fake.stories.tsx',
+      'Probe\\:',
     ],
   ])('refuses "Probe:" in %s of a normal entry, at that line', (_, from, to, token) => {
     const text = edited(from, to);
@@ -246,6 +262,11 @@ describe('a group that an entry tests in part', () => {
     [
       'a manual check with "Why:" twice',
       `manual: ${RTL_CHECK} Why: ${RTL_WHY} Why: no repo has it`,
+      'expected "Why:" once in the decision, found it twice',
+    ],
+    [
+      'no QA and "Why:" twice',
+      'none: no effect Why: a project Why: can show',
       'expected "Why:" once in the decision, found it twice',
     ],
   ])('refuses a decision with %s, at the row of the group', (_, cell, message) => {

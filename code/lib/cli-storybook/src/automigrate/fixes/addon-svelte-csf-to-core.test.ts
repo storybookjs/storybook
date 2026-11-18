@@ -20,15 +20,10 @@ import {
 vi.mock('node:fs/promises', { spy: true });
 vi.mock('storybook/internal/common', { spy: true });
 vi.mock('storybook/internal/node-logger', { spy: true });
-// The pipeline globs the config directory; real globby, reading the in-memory file system.
-vi.mock('globby', async (importOriginal) => {
-  const { globby } = await importOriginal<typeof import('globby')>();
-  const { fs: memoryFs } = await import('memfs');
-  return {
-    globby: (patterns: string, options: object) =>
-      globby(patterns, { ...options, fs: memoryFs as never }),
-  };
-});
+// The pipeline globs the config directory; real tinyglobby, reading the in-memory file system.
+vi.mock('tinyglobby', async (importOriginal) =>
+  (await import('./__test__/memfs-tinyglobby.ts')).memfsTinyglobby(importOriginal)
+);
 
 const MAIN = resolve('/project/.storybook/main.ts');
 const DECORATORS = resolve('/project/.storybook/decorators.ts');

@@ -102,8 +102,39 @@ test.describe('addon panel', () => {
 
     const sbPage = new SbPage(page, expect);
 
+    // The withActions decorator attaches its DOM listeners via the preview's hook system, which
+    // runs effects on the storyRendered event - after the story is already painted and clickable.
+    // A click in that window is silently dropped (the Actions badge then counts too low), which
+    // made this test flaky under CI load. Track storyRendered in the preview frame and wait for it
+    // before interacting. The flag is mirrored to the top window (same origin) so waitForFunction
+    // can poll it from the main frame.
+    await page.context().addInitScript(() => {
+      type DiagGlobals = {
+        __STORYBOOK_ADDONS_CHANNEL__?: { on: (event: string, callback: () => void) => void };
+        __previewStoryRendered?: boolean;
+      };
+      const register = () => {
+        const g = globalThis as DiagGlobals;
+        const top = globalThis.top as unknown as DiagGlobals | null;
+        const channel = g.__STORYBOOK_ADDONS_CHANNEL__;
+        if (channel?.on && top) {
+          channel.on('storyRendered', () => {
+            top.__previewStoryRendered = true;
+          });
+        } else {
+          setTimeout(register, 50);
+        }
+      };
+      if (globalThis !== globalThis.top) {
+        register();
+      }
+    });
+
     await sbPage.deepLinkToStory(storybookUrl, 'core/parameters-actions', 'basic');
     await sbPage.waitUntilLoaded();
+    await page.waitForFunction(
+      () => (globalThis as { __previewStoryRendered?: boolean }).__previewStoryRendered === true
+    );
     await sbPage.viewAddonPanel('Actions');
 
     const button = sbPage.previewRoot().getByRole('button');

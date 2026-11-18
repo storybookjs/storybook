@@ -22,8 +22,16 @@ import {
   unwrapExpression,
 } from 'storybook/internal/csf-tools';
 import { prependToTemplate } from 'storybook/internal/docs-tools';
-import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
+import type {
+  IndexEntry,
+  StoryDoc,
+  StoryDocsPayload,
+  StoryDocsProviderInput,
+} from 'storybook/internal/types';
 
+import { parseSvelteSource } from '../../svelte-csf/indexer/parser.ts';
+import { extractComponentComment } from '../component-docgen/component-comment.ts';
+import { resolveStoryComponent } from '../component-docgen/resolve-component/resolve-component.ts';
 import { printTemplate } from './print-template.ts';
 import { buildSnippetImportBlock } from './snippet-imports.ts';
 import { type StoryFile, readSvelteCsfFile } from './svelte-csf-file.ts';
@@ -59,7 +67,10 @@ export async function buildStoryDocsPayload(
     component && /^[A-Z][\w$]*(?:\.[\w$]+)*$/.test(textOf(component))
       ? textOf(component)
       : undefined;
-  const importStatement = meta ? jsDocTagsForNode(meta, csf.editor).import?.[0] : undefined;
+  const importStatement =
+    componentName &&
+    ((meta && jsDocTagsForNode(meta, csf.editor).import?.[0]) ??
+      (await componentImportTag(input.entry)));
   const context: StoryContext = {
     file,
     bindings: collectImportBindings(csf.program),
@@ -97,6 +108,17 @@ export async function buildStoryDocsPayload(
     path,
     stories,
   };
+}
+
+async function componentImportTag(entry: IndexEntry): Promise<string | undefined> {
+  try {
+    const component = await resolveStoryComponent(entry);
+    if (!component) return undefined;
+    const { ast } = parseSvelteSource(await readFile(component.componentPath, 'utf8'));
+    return extractComponentComment(ast)?.tags.import?.[0];
+  } catch {
+    return undefined;
+  }
 }
 
 interface StoryContext {

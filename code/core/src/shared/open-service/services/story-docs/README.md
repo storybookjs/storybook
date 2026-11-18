@@ -112,5 +112,12 @@ second import block would produce source that does not parse. New providers shou
 and leave `import` unset; the field stays until React and Vue move over, and goes away with them.
 
 The component `@import` JSDoc override tag is honored only where a provider already reads the
-component source. Angular reads it from the docgen payload's JSDoc tags; React and Vue derive
-imports from resolved import paths and package name rewriting only.
+component source. Angular and Vue read it from the docgen payload's JSDoc tags; React derives
+imports from resolved import paths and package name rewriting only. Svelte reads it from the
+`@component` comment of the component file, and an `@import` on the meta wins over it. A member
+such as `UI.Tag` keeps its namespace, imported from the tag's source when the tag names the member
+and nothing else in the snippet reads the namespace.
+
+Reading `core/docgen` from a story-docs build has a cost: a static build extracts each component a
+second time, and in dev the stored docgen can still be the one from before an edit, because both
+services refresh on the same module graph change.

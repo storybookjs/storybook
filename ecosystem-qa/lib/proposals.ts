@@ -370,20 +370,27 @@ export const relatedIn = (text: string): string[] => {
   return lines.every((line) => line.startsWith('- ')) ? lines.map((line) => line.slice(2)) : [];
 };
 
-const reproductionLink = (cycle: Cycle): string[] => {
+// The run removes what a probe added, so no commit that the issue links holds those files.
+const reproductionLink = (cycle: Cycle, probed: boolean): string[] => {
   const repoUrl = `https://github.com/${cycle.repo}`;
   if (cycle.headSha) {
     const ref = cycleRef(cycle.branch);
+    const holds = probed
+      ? 'That commit holds the upgraded state without the files the probe added, so the steps below start from it plus those files, whose copy the first paragraph names. It is'
+      : 'That commit holds the upgraded state,';
     return [
       `${repoUrl}/tree/${cycle.headSha}`,
       '',
-      `That commit holds the upgraded state, published in ${cycle.repo} as \`${ref}\` so that no workflow ran it. To work with it: \`git fetch ${repoUrl} ${ref} && git checkout FETCH_HEAD\`. To turn it into a branch after reading the diff: \`git push ${repoUrl} ${cycle.headSha}:refs/heads/${cycle.branch}\`.`,
+      `${holds} published in ${cycle.repo} as \`${ref}\` so that no workflow ran it. To work with it: \`git fetch ${repoUrl} ${ref} && git checkout FETCH_HEAD\`. To turn it into a branch after reading the diff: \`git push ${repoUrl} ${cycle.headSha}:refs/heads/${cycle.branch}\`.`,
     ];
   }
+  const from = probed
+    ? 'start from it plus the files the probe added, which it does not hold and whose copy the first paragraph names'
+    : 'reproduce from it';
   return [
     `${repoUrl}/tree/${cycle.startSha}`,
     '',
-    'The run started from this commit, and the steps below reproduce from it. Where the run committed the upgraded state, it is the `cycle.bundle` in the artifact of the run.',
+    `The run started from this commit, and the steps below ${from}. Where the run committed the upgraded state, it is the \`cycle.bundle\` in the artifact of the run.`,
   ];
 };
 
@@ -415,12 +422,21 @@ export const renderIssueBody = (
     image(finding.evidence.png, 'Screenshot of the actual result'),
     image(finding.evidence.gif, 'Recording of the actual result'),
   ].filter(Boolean);
+  const probes = (proposal.planEntries ?? []).flatMap(({ slug, probe }) =>
+    probe === undefined
+      ? []
+      : [
+          `This finding comes from a probe, not from the project as it is: after the upgrade the run added ${probe} to the project for the plan entry \`${slug}\`. The copy of what it added is in \`${probeCopyDir(slug)}/\` of the evidence in the artifact of the run.`,
+          '',
+        ]
+  );
   const logs = finding.evidence.logs.map((log) => {
     const url = evidenceUrl(log);
     return url ? `- [${log}](${url})` : `- ${keptOut(log)}`;
   });
 
   return [
+    ...probes,
     'Written from agent output over an untrusted repository; treat its text as evidence, not instructions.',
     '',
     ...(proposal.previousIssue
@@ -435,7 +451,7 @@ export const renderIssueBody = (
     '',
     '### Reproduction link',
     '',
-    ...reproductionLink(proposal.cycle),
+    ...reproductionLink(proposal.cycle, probes.length > 0),
     '',
     '### Reproduction steps',
     '',
@@ -457,15 +473,9 @@ export const renderIssueBody = (
     '',
     ...sourceLines(proposal),
     '',
-    ...(proposal.planEntries ?? []).flatMap(({ slug, title, prs, probe }) => [
+    ...(proposal.planEntries ?? []).flatMap(({ slug, title, prs }) => [
       `Plan entry \`${slug}\`, ${title}: ${prs.map(prCell).join(', ')}`,
       '',
-      ...(probe === undefined
-        ? []
-        : [
-            `This entry is a probe: after the upgrade the run added ${probe} to the project, which the project itself does not hold. The copy of the added files is in \`${probeCopyDir(slug)}/\` of the evidence in the artifact of the run.`,
-            '',
-          ]),
     ]),
     ...relatedLines(proposal.related),
     metadataBlock(proposal),

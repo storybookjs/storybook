@@ -980,6 +980,33 @@ describe('CompositionAuth', () => {
       vi.useRealTimers();
     });
 
+    it('accepts a large manifest that takes several seconds to arrive', async () => {
+      const auth = new CompositionAuth();
+      // Node's `AbortSignal.timeout` ignores fake timers, so swap in one that follows them.
+      vi.spyOn(AbortSignal, 'timeout').mockImplementation((ms) => {
+        const controller = new AbortController();
+        setTimeout(() => controller.abort(new DOMException('timed out', 'TimeoutError')), ms);
+        return controller.signal;
+      });
+      vi.stubGlobal(
+        'fetch',
+        routeFetch({
+          [`${PUBLIC_REF.url}/manifests/components.json`]: (init) =>
+            new Promise((resolve, reject) => {
+              init?.signal?.addEventListener('abort', () => reject(init.signal!.reason));
+              setTimeout(() => resolve(new Response(VALID_MANIFEST)), 8_000);
+            }),
+        })
+      );
+
+      const pending = auth.initialize([PUBLIC_REF]);
+      await vi.advanceTimersByTimeAsync(8_000);
+      await pending;
+
+      expect(logger.warn).not.toHaveBeenCalled();
+      expect(auth.buildSources().map((source) => source.id)).toEqual(['local', 'public']);
+    });
+
     it('picks up the OAuth flow of a private ref that was down at boot', async () => {
       const auth = new CompositionAuth();
       const routes = privateRefRoutes(PRIVATE_REF.url);

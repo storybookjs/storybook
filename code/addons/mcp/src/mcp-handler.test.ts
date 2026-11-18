@@ -591,6 +591,7 @@ describe('mcpServerHandler', () => {
     const host = `localhost:${port}`;
     const addonOptions = { toolsets: { dev: false, docs: true, test: false } };
     const allToolsetsOn = { toolsets: { dev: true, docs: true, test: true } };
+    const docsToolsetOff = { toolsets: { dev: true, docs: false, test: true } };
 
     // The `test` toolset belongs to `@storybook/addon-vitest`, so the shared setup leaves it out.
     // Register a stub and report that addon as enabled (below), so `test-run` is registered
@@ -608,7 +609,7 @@ describe('mcpServerHandler', () => {
               handler: async () => ({ ok: true, data: {}, markdown: '' }),
             },
           },
-        }) as any
+        })
       );
     });
 
@@ -732,6 +733,40 @@ describe('mcpServerHandler', () => {
         );
         const resourceUris = resources.result.resources.map((r: { uri: string }) => r.uri);
         expect(resourceUris).not.toContain(PREVIEW_STORIES_RESOURCE_URI);
+      }
+    );
+
+    it.each([undefined, 'dev,test,docs'])(
+      'does not register the docs tools when only the docs toolset is off (X-MCP-Toolsets: %s)',
+      async (toolsetsHeader) => {
+        const mockOptions = createDocsEnabledOptions();
+        await send(mockOptions, createMCPInitializeRequest(), toolsetsHeader, docsToolsetOff);
+
+        const tools = await send(
+          mockOptions,
+          { jsonrpc: '2.0', id: 2, method: 'tools/list', params: {} },
+          toolsetsHeader,
+          docsToolsetOff
+        );
+        const toolNames = tools.result.tools.map((t: { name: string }) => t.name);
+        expect(toolNames).toContain('stories-changed');
+        expect(toolNames).not.toContain('docs-list');
+        expect(toolNames).not.toContain('docs-show');
+        expect(toolNames).not.toContain('docs-show-story');
+
+        const call = await send(
+          mockOptions,
+          {
+            jsonrpc: '2.0',
+            id: 3,
+            method: 'tools/call',
+            params: { name: 'docs-list', arguments: {} },
+          },
+          toolsetsHeader,
+          docsToolsetOff
+        );
+        expect(call.result.isError).toBe(true);
+        expect(call.result.content[0].text).toContain('docs-list not found');
       }
     );
 

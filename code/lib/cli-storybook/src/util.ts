@@ -154,7 +154,7 @@ const getVersionModifier = (versionSpecifier: string): VersionModifier => {
  * @param version - Version string to check
  * @returns True if the version is a canary release
  */
-const isCanaryVersion = (version: string): boolean =>
+export const isCanaryVersion = (version: string): boolean =>
   version.startsWith('0.0.0') ||
   version.startsWith('portal:') ||
   version.startsWith('workspace:') ||

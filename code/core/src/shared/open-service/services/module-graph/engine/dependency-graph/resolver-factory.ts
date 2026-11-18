@@ -81,18 +81,23 @@ class AliasNormalizer {
  * converts resolver errors to `null` (with a debug log) — the caller treats
  * unresolvable specifiers as opaque-leaf edges.
  */
+interface Resolvers {
+  // Aliases, tsconfig `paths` and relative files, without `node_modules` or `NODE_PATH` lookup.
+  paths: OxcResolverFactory;
+  packages: OxcResolverFactory;
+}
+
 export class ChangeDetectionResolverFactory {
-  private readonly factory: OxcResolverFactory;
-  private readonly requireFactory: OxcResolverFactory;
+  private readonly importResolvers: Resolvers;
+  private readonly requireResolvers: Resolvers;
   private readonly aliasNormalizer = new AliasNormalizer();
   /**
    * Virtual entry point placed directly in the project root.
    *
-   * Used as the fallback `from` path when the primary resolution fails.
-   * Resolving from here guarantees that `resolveFileAsync`'s tsconfig
-   * walk-up reaches the root `tsconfig.json` before any intermediate
-   * per-package tsconfig — so workspace-level `paths` mappings are
-   * consulted even when the per-package tsconfig does not extend root.
+   * Resolving from here makes `resolveFileAsync`'s tsconfig walk-up reach the
+   * root `tsconfig.json` before any intermediate per-package tsconfig, so
+   * workspace-level `paths` mappings apply even when the per-package tsconfig
+   * does not extend root.
    */
   private readonly projectRootEntry: string;
 
@@ -106,10 +111,20 @@ export class ChangeDetectionResolverFactory {
       conditionNames,
       extensions: DEFAULT_EXTENSIONS,
     };
-    this.factory = new OxcResolverFactory(options);
-    this.requireFactory = config.requireConditions
-      ? this.factory.cloneWithOptions({ ...options, conditionNames: config.requireConditions })
-      : this.factory;
+    const cache = new OxcResolverFactory(options);
+    const resolversFor = (conditions: string[]): Resolvers => ({
+      paths: cache.cloneWithOptions({
+        ...options,
+        conditionNames: conditions,
+        modules: [],
+        nodePath: false,
+      }),
+      packages: cache.cloneWithOptions({ ...options, conditionNames: conditions }),
+    });
+    this.importResolvers = resolversFor(conditionNames);
+    this.requireResolvers = config.requireConditions
+      ? resolversFor(config.requireConditions)
+      : this.importResolvers;
 
     this.projectRootEntry = join(config.projectRoot, '__sb_resolver_root__.ts');
   }
@@ -118,13 +133,12 @@ export class ChangeDetectionResolverFactory {
    * Resolves `specifier` from the file at `from` (must be an absolute path), with the conditions
    * the builder applies to an edge of this `kind`.
    *
-   * Two-pass strategy:
-   * 1. Resolve from `from` — handles per-package tsconfig paths and local node_modules.
-   * 2. On failure, retry from the project root — picks up root-level tsconfig `paths`
-   *    (e.g. workspace package aliases) that intermediate per-package tsconfigs may
-   *    not inherit, as well as root-level node_modules symlinks.
+   * Aliases and tsconfig `paths` win over package resolution: first those of `from`, then those
+   * of the project root, which maps workspace packages to their sources even when the
+   * per-package tsconfig does not extend it. Only then does package resolution run through
+   * `node_modules`, from `from` and then from the project root.
    *
-   * Returns the absolute resolved path, or `null` if both passes fail.
+   * Returns the absolute resolved path, or `null` if every attempt fails.
    * Never throws — internal errors are converted to `null` and a debug-level log
    * line is emitted.
    */
@@ -133,32 +147,27 @@ export class ChangeDetectionResolverFactory {
     specifier: string,
     kind: ImportEdge['kind'] = 'static'
   ): Promise<string | null> {
-    const factory = kind === 'require' ? this.requireFactory : this.factory;
+    const { paths, packages } = kind === 'require' ? this.requireResolvers : this.importResolvers;
+    const origins = from === this.projectRootEntry ? [from] : [from, this.projectRootEntry];
     try {
-      const result = await factory.resolveFileAsync(from, specifier);
-      if (result.path) {
-        return result.path;
+      for (const origin of origins) {
+        const { path } = await paths.resolveFileAsync(origin, specifier);
+        if (path) {
+          return path;
+        }
       }
 
-      // Fallback: retry from the project root so that root-level tsconfig paths
-      // and root node_modules are consulted.  Skip the fallback when `from` is
-      // already the virtual root entry to avoid a redundant second attempt.
-      if (from !== this.projectRootEntry) {
-        const rootResult = await factory.resolveFileAsync(this.projectRootEntry, specifier);
-        if (rootResult.path) {
-          return rootResult.path;
+      let error: string | undefined;
+      for (const origin of origins) {
+        const result = await packages.resolveFileAsync(origin, specifier);
+        if (result.path) {
+          return result.path;
         }
-        if (result.error ?? rootResult.error) {
-          logger.debug(
-            `ChangeDetectionResolverFactory: '${specifier}' from '${from}' unresolved (${result.error ?? rootResult.error})`
-          );
-        }
-        return null;
+        error ??= result.error;
       }
-
-      if (result.error) {
+      if (error) {
         logger.debug(
-          `ChangeDetectionResolverFactory: '${specifier}' from '${from}' unresolved (${result.error})`
+          `ChangeDetectionResolverFactory: '${specifier}' from '${from}' unresolved (${error})`
         );
       }
       return null;

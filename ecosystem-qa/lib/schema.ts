@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { CHECK_IDS, type CheckId } from '../checks.ts';
+import { CHECK_IDS, TIERS } from '../checks.ts';
 import { cycleRepo, SEMVER } from './cycle.ts';
 import { canPushTo } from './push-targets.ts';
 
@@ -114,7 +114,11 @@ export const Catalog = z
     message: 'catalog ids must be unique',
   });
 
-const CheckId = z.enum(CHECK_IDS);
+// A static id of checks.ts or the id of a plan entry; `agentOutput` narrows it to the ids of one run.
+export const CheckId = z
+  .string()
+  .max(80)
+  .regex(/^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$/);
 
 const Version = z.string().regex(SEMVER);
 
@@ -153,14 +157,19 @@ export const Finding = z.strictObject({
 });
 export type Finding = z.infer<typeof Finding>;
 
-export const Tier = z.enum(['must', 'extended']);
+export const Tier = z.enum(TIERS);
+export type Tier = z.infer<typeof Tier>;
 
-// The answer schema for one run: every check of the tier exactly once, findings only on failures.
-//
-// The agent reads the schema next to the checklist, so the schema names the ids of the tier only,
+// The agent reads the schema next to the checklist, so the schema names the ids of the run only,
 // in the order given: one list of ids in one order.
-export const agentOutput = (ids: readonly CheckId[]) => {
-  const id = z.enum(ids);
+//
+// A plan check is read by the person who triages the plan, so each one carries a note, and a
+// `fail` carries a finding even when the agent doubts the plan's expectation.
+export const agentOutput = (
+  ids: readonly [string, ...string[]],
+  planIds: readonly string[] = []
+) => {
+  const id = z.enum(z.tuple([CheckId], CheckId).parse(ids));
   return z
     .strictObject({
       storybookVersionBefore: Version.nullable(),
@@ -180,6 +189,28 @@ export const agentOutput = (ids: readonly CheckId[]) => {
           });
         }
       }
+      for (const [index, check] of output.checks.entries()) {
+        if (!planIds.includes(check.id)) {
+          continue;
+        }
+        if (!check.note?.trim()) {
+          ctx.addIssue({
+            code: 'custom',
+            path: ['checks', index, 'note'],
+            message: `plan check "${check.id}" needs a note with what you saw`,
+          });
+        }
+        if (
+          check.state === 'fail' &&
+          !output.findings.some((finding) => finding.checkId === check.id)
+        ) {
+          ctx.addIssue({
+            code: 'custom',
+            path: ['findings'],
+            message: `plan check "${check.id}" is "fail" and needs a finding`,
+          });
+        }
+      }
       for (const [index, finding] of output.findings.entries()) {
         const check = output.checks.find((candidate) => candidate.id === finding.checkId);
         if (check?.state !== 'fail') {
@@ -195,8 +226,25 @@ export const agentOutput = (ids: readonly CheckId[]) => {
 
 export const AgentOutput = agentOutput(CHECK_IDS);
 
+export const PlanRecord = z.strictObject({
+  file: z.string().regex(/^[\w.-]+\.md$/),
+  hash: z.string().regex(/^[0-9a-f]{12}$/),
+  batch: z.int().min(1),
+  part: z.int().min(1),
+  entries: z
+    .array(
+      z.strictObject({
+        id: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+        prs: z.array(z.int().positive()).min(1),
+      })
+    )
+    .min(1),
+});
+export type PlanRecord = z.infer<typeof PlanRecord>;
+
 export const RunRequestRecord = z.strictObject({
   entry: CatalogEntry,
+  plan: PlanRecord.optional(),
   version: z.string(),
   engine: Engine,
   model: ModelId,
@@ -327,6 +375,19 @@ const ReportBase = {
   finding: Finding,
   cycle: Cycle,
   runUrl: z.string(),
+  planEntries: z
+    .array(
+      z.strictObject({
+        slug: PlanRecord.shape.entries.element.shape.id,
+        // Already safe to print inline: the plan's title, sanitized when the proposal was built.
+        title: z.string().min(1),
+        prs: PlanRecord.shape.entries.element.shape.prs,
+        // A code span of the plan's probe line, safe to print inline like the title.
+        probe: z.string().min(1).optional(),
+      })
+    )
+    .min(1)
+    .optional(),
 };
 
 export const Proposal = z.discriminatedUnion('kind', [

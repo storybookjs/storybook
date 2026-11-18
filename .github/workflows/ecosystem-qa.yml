@@ -141,6 +141,29 @@ jobs:
           node ecosystem-qa/file.ts --proposals ecosystem-qa/results/proposals.json
           --repo "$GITHUB_REPOSITORY" --dry
 
+      - name: Run a fake run of the first part of batch 1 of the fixture plan
+        env:
+          ECOSYSTEM_QA_FAKE: '1'
+        run: >-
+          node ecosystem-qa/run.ts --repo mealdrop --version "$QA_VERSION" --engine claude --fake
+          --sandbox none --plan ecosystem-qa/lib/plan.fixture.md --batch 1 --part 1
+          --out ecosystem-qa/plan-results/mealdrop/linux/claude/part-1
+
+      - name: Collect the proposals of the plan run
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          node ecosystem-qa/collect.ts --results ecosystem-qa/plan-results --version "$QA_VERSION"
+          --out ecosystem-qa/plan-results/proposals.json --repo "$GITHUB_REPOSITORY"
+          --plan ecosystem-qa/lib/plan.fixture.md --batch 1
+
+      - name: Write the proposals of the plan run to the Step Summary
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          node ecosystem-qa/file.ts --proposals ecosystem-qa/plan-results/proposals.json
+          --repo "$GITHUB_REPOSITORY" --dry
+
   plan:
     name: Plan the matrix
     if: ${{ github.event_name == 'workflow_dispatch' }}
@@ -245,6 +268,8 @@ jobs:
       QA_ENGINE: ${{ matrix.engine }}
       QA_OS: ${{ matrix.os }}
       QA_SANDBOX: ${{ matrix.sandbox }}
+      # The parts of one repo in a batch of a plan run in parallel, so each has its own directory.
+      QA_RUN_DIR: ecosystem-qa/results/${{ matrix.repo }}/${{ matrix.os }}/${{ matrix.engine }}${{ matrix.part && format('/part-{0}', matrix.part) || '' }}
       QA_TIER: ${{ inputs.tier }}
       QA_BUDGET_MINUTES: ${{ inputs.budget_minutes }}
     steps:
@@ -306,7 +331,7 @@ jobs:
           CODEX_API_KEY: ${{ matrix.engine == 'codex' && secrets.ECOSYSTEM_QA_OPENAI_API_KEY || '' }}
         run: >-
           node ecosystem-qa/run.ts --repo "$QA_REPO" --version "$QA_VERSION" --engine "$QA_ENGINE"
-          --sandbox "$QA_SANDBOX" --out "ecosystem-qa/results/$QA_REPO/$QA_OS/$QA_ENGINE"
+          --sandbox "$QA_SANDBOX" --out "$QA_RUN_DIR"
           --clone-dir "$RUNNER_TEMP/qa-work/$QA_REPO" --tier "$QA_TIER"
           ${QA_BUDGET_MINUTES:+--budget-minutes "$QA_BUDGET_MINUTES"}
 
@@ -336,7 +361,7 @@ jobs:
         if: ${{ always() && steps.redact.outcome == 'success' }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: qa-result-${{ matrix.repo }}-${{ matrix.os }}-${{ matrix.engine }}
+          name: qa-result-${{ matrix.repo }}-${{ matrix.os }}-${{ matrix.engine }}${{ matrix.part && format('-part-{0}', matrix.part) || '' }}
           path: ecosystem-qa/results/
           retention-days: 14
           if-no-files-found: warn
@@ -344,7 +369,7 @@ jobs:
       - name: Note a run that wrote no result in the Step Summary
         if: ${{ always() }}
         run: |
-          if [[ ! -f "ecosystem-qa/results/$QA_REPO/$QA_OS/$QA_ENGINE/result.json" ]]; then
+          if [[ ! -f "$QA_RUN_DIR/result.json" ]]; then
             echo "### $QA_REPO on $QA_OS with $QA_ENGINE: no result.json was written" >> "$GITHUB_STEP_SUMMARY"
           fi
 

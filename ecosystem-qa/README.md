@@ -37,7 +37,7 @@ ANTHROPIC_API_KEY=... node ecosystem-qa/run.ts --repo mealdrop --version 11.0.0-
 
 Pick the sandbox for your machine:
 
-- `--sandbox docker` wherever Docker runs, with the image built first: `docker build --build-arg AGENT_UID=$(id -u) --build-arg AGENT_GID=$(id -g) -t sb-ecosystem-qa ecosystem-qa`. This is the one sandbox that covers every check, and the one CI uses. The image carries `n`, a C/C++ compiler and `mise`, and before the install the runner switches to the Node version the project asks for and writes what happened as the first line of `install.log`. Only this sandbox can switch Node: with any other, a catalog entry's `node` is ignored and the runner prints a warning. A failed install does not end the run: the exit status and log go to the evidence directory, and the agent repairs the environment before it starts. The runner limits this run's container to 85% of the Docker daemon's memory and writes what it did to `memory-limit.txt` in the evidence directory, so a build that takes everything is ended inside the container and the agent sees exit status 137; without the limit the host starves, and a GitHub runner then ends the job with "lost communication" and no result.
+- `--sandbox docker` wherever Docker runs, with the image built first: `docker build --build-arg AGENT_UID=$(id -u) --build-arg AGENT_GID=$(id -g) -t sb-ecosystem-qa ecosystem-qa`. This is the one sandbox that covers every check, and the one CI uses. The image carries `n`, a C/C++ compiler, `mise`, and the Playwright MCP server, which Claude Code and Codex load from their user config, so the agent can click and type in a page and save its screenshots to `browser/` in the evidence directory. The browser server blocks direct requests to a host other than `localhost` and `127.0.0.1`. It follows a redirect from `localhost` to another host and lets a WebSocket to another host through, so it is no security boundary. The image denies the agent the browser tools that run a script in the page or install a browser. Claude Code in the sandbox also starts the MCP servers that the tested project names in its own configuration, such as a `.mcp.json`, so that list covers the browser server of the image only. It keeps an agent from a mistake and does not contain a project. Before the install the runner switches to the Node version the project asks for and writes what happened as the first line of `install.log`. Only this sandbox can switch Node: with any other, a catalog entry's `node` is ignored and the runner prints a warning. A failed install does not end the run: the exit status and log go to the evidence directory, and the agent repairs the environment before it starts. The runner limits this run's container to 85% of the Docker daemon's memory and writes what it did to `memory-limit.txt` in the evidence directory, so a build that takes everything is ended inside the container and the agent sees exit status 137; without the limit the host starves, and a GitHub runner then ends the job with "lost communication" and no result.
 - `--sandbox seatbelt` on macOS covers the upgrade, build and CLI checks only. Its profile denies Chromium the Mach port it registers at launch, so screenshots and HMR checks come back `skip`, and the agent's shells inherit launchd's 256 open-file limit, which breaks the file watcher.
 - `--sandbox bwrap` on Linux.
 - `--sandbox none` runs the agent on the host with your environment. `run.ts` refuses it for a repo that is not `owned`, except on Windows for a repo the catalog marks `windows`: there no sandbox exists, and the mark is the reviewed list of exceptions. The release-age gates below are off here too, so an install the agent runs on your machine skips the project's own gate. The Windows cells in CI use this mode, on a runner that is discarded after the job.
@@ -98,7 +98,7 @@ It reads `ANTHROPIC_API_KEY`; the subscription token from `claude setup-token` t
 The key is optional on a local run: without it nothing is grouped, each fingerprint stays on its own, and `collect.ts` makes one proposal per fingerprint.
 In GitHub Actions a missing key is an error, because a sweep that files ungrouped creates one issue per fingerprint.
 A key that is set but rejected is an error everywhere.
-With at most one fingerprint it never calls the API.
+Without a fingerprint it never calls the API.
 `collect.ts` works without it: leave out `--groups`, or pass a `groups.json` written by hand.
 
 To exercise collect and file without an agent or an API key, add `--fake`.
@@ -237,8 +237,16 @@ A probe is an entry with a line `- Probe:` after `- Batch:`, the draft's `probe`
 It tests behaviour that is new or fixed in the line, which no project can hold before the upgrade, on a repo that the plan has already.
 It adds new files, such as a story, a component for it, a script, or a local addon, and at most one option of a config file that is the behaviour under test or that the added files need to load.
 It never changes or removes a line the project has, never writes what an upgrade step reads, such as what an automigration acts on, what a blocker or a floor checks, or what the package manager detection reads, and never stands in for a framework, a builder, a package manager, an addon the check is about, or a framework version.
+The checklist gives the agent the probe line as `Probe: after the upgrade, add <probe line>.` right under the first line of the check, with the directory `<slug>-added/` of the evidence, where it keeps a copy of each added file and a diff of each file it added a line to.
 The line reads after the word "add", so `check` refuses a probe line that starts with "add" or "adds" in any case.
+`prompts/plan-checks.md` takes only that line for the mark of a probe, and tells the agent to add exactly that after the upgrade, change and remove no line the project has, remove the added files and restore the file it added a line to before the next check, and start the reproduction steps of a finding with adding the probe's files.
+It also tells the agent that a probe has no baseline and that nothing of it is done before the upgrade, and that "probe" in the other instructions means a command that gathers evidence.
 `check` refuses `Probe:`, in any case, with spaces before the colon, and with the colon escaped as `Probe\:`, which GitHub shows as `Probe:`, in every other line of the plan, so no title, reason, step, or expected outcome reads as that mark.
+Whatever a run's record says, the loader takes the baseline of a finding whose check is a probe of the plan as not captured, so no later step reads it as pre-existing.
+The issue of a finding from a probe opens with a paragraph that says it comes from a probe, what the run added, and where the copy is, with the entry taken from the plan file by the check id. Its baseline line says that a probe has no baseline because the run adds it after the upgrade, and its reproduction section says that the steps start from the linked commit plus the added files, which that commit does not hold.
+A comment that adds such a finding to an existing issue opens with the same paragraph.
+The title starts with `[SB 11 QA probe]:` instead of `[SB 11 QA]:`, so the dry filing, the filing report, the issue list, the batch comment of the tracking discussion, and collect's console show the mark too.
+The fingerprint and the repeat rule do not read the title. The grouping model reads the titles of the filed issues, which carry the mark for a probe, and the titles of the new findings, which do not.
 
 A change takes the first of these that fits: a normal entry on a repo of the plan that has the state at its pin, a probe, a discovered repo, a manual check, and no QA with the reason.
 
@@ -259,6 +267,7 @@ It then holds the plan against these rules and prints each problem as `<file>:<l
 - With `--window`, every PR of the window marked `qa:needed` or without a QA label is in the PRs of an entry or in one row of manual QA or of no QA, every PR marked `qa:skip` is in one group, and the plan names no PR that the window does not hold in that role.
 
 Without `--window`, `check` knows no PR's QA status, so it accepts a plan in which a PR of the window has no place at all, an entry lists a PR that the window does not hold or that was verified by hand, one edit drops a tested PR from the PRs of its entry, a PR marked `qa:skip` sits only in an entry, or a PR marked `qa:needed` sits in a group that names its entry.
+`plan.ts` and `run.ts` read a plan through `lib/plan-scope.ts`, which checks it without a window, so the smoke job's `check --window` is the check that keeps such a plan from being merged.
 
 `render` refuses a draft whose decision of a PR names other entries than the ones that list it, or gives no QA to a PR that an entry lists, because the file decides a PR by its place and cannot hold both.
 A manual decision of a PR that an entry lists puts the PR into that entry and into the row of its check.
@@ -281,6 +290,58 @@ Each of its fields but the id and the reason is a value of one line of `pin.ts` 
 `loadEntries(plan)` in `lib/catalog.ts` returns the catalog with each discovered repo as an entry without a push target: at its upstream commit, on Linux only, and with nothing pushed.
 It parses the catalog and the discovered repos as one list, so a discovered repo cannot reuse a catalog id.
 
+### Run the checks of a plan
+
+`run.ts --plan <file> --batch <n> --part <n>` runs one run of `planRuns`: the entries of that batch on `--repo`, at most `Entries per run` of them, with `--part` 1 by default.
+
+```sh
+ECOSYSTEM_QA_FAKE=1 node ecosystem-qa/run.ts --repo mealdrop --version 11.0.0-beta.3 --engine claude \
+  --fake --sandbox none --plan ecosystem-qa/lib/plan.fixture.md --batch 1 --part 2 \
+  --out ecosystem-qa/results/mealdrop/macos/claude/part-2
+```
+
+The `macos` in the path is the operating system of the machine that runs it, and `linux` or `windows` on another one: the collect ignores a record in the directory of another system.
+
+The run reports the five checks of the tier `gate` first, the upgrade and the dev server that the prompt's steps run in any case, and then one check `plan.<slug>` for each entry of its part, in plan order.
+`--tier must` or `--tier extended` runs those tiers in place of the gate, and the collect of the batch then needs the same `--tier`.
+The checklist gets the steps, the expected outcome and the reason for the repo of each entry, and the rules of `prompts/plan-checks.md`, which also say how the agent works in the browser.
+The answer schema names the ids of this run only, so the agent cannot report a check the plan does not have.
+
+A plan check tests the project as it is after the upgrade, and the agent never creates the state a check needs:
+
+- Forbidden: adding a setting, a file, a dependency, or code so that an upgrade step, an automigration, or a removal has something to act on, or so that the project looks as if it used something it does not use. When the project does not have what the entry describes, the agent reports the check as `skip` and names in its note what the project lacks.
+- Allowed: what a user of the released version does to see the result, such as starting the dev server, building, opening a page, clicking, or reading a file, and a step of the entry that turns on a new opt-in feature of the tested version, such as a feature flag in the Storybook main file. That step is its own step of the plan, so the reviewer sees it, and the agent does exactly what it says. The agent never decides on its own to turn something on.
+- Allowed for a probe: after the upgrade, exactly what its `Probe:` line names, new files and at most one option in the file it names. The agent copies the files, and a diff of that file, to `<slug>-added/` in the evidence, and removes the files and restores that file before the next check, so the state the run records is the project after the upgrade.
+
+So a repo is listed for an entry only when it has that state at its pinned commit.
+A plan check reported as `skip` opens no proposal: the answer schema accepts a finding only for a check that is `fail`, and `collect.ts` makes proposals from findings alone.
+`--repo` may name a discovered repo of the plan, which the runner resolves through `loadEntries(plan)`.
+
+The run ends with exit 1 before anything is cloned when the plan is not in its rendered form or fails `checkPlan`, when the plan has no such batch, when the batch lists no entry or no such part for the repo, or when `--version` is not on the plan's line.
+`request.plan` in `result.json` records the plan file, its hash, the batch, the part, and the slug and PRs of each entry.
+
+### Collect the results of a plan batch
+
+`collect.ts`, `group.ts`, `missing-runs.ts` and `fetch-runs.ts` take the same `--plan <file> --batch <n>`, and load the discovered repos of the plan with the catalog.
+The first three also take the `--tier` of the runs, `gate` by default.
+
+```sh
+node ecosystem-qa/collect.ts --results ecosystem-qa/results --version 11.0.0-beta.3 --out ecosystem-qa/results/proposals.json \
+  --repo storybookjs/storybook --plan ecosystem-qa/lib/plan.fixture.md --batch 1
+```
+
+They read each part under `<id>/<os>/<engine>/part-<n>`, or in the artifact `qa-result-<id>-<os>-<engine>-part-<n>`.
+These records are ignored with a warning:
+
+- a record of another plan, batch or tier, and a record of a plan run when no plan is given,
+- a record of a repo or a part that the batch does not have,
+- a record with a check id that is neither a check of the tier nor an entry of its part of the plan.
+
+The plan file and the flags of the collect decide which runs, tier and entries a batch has, never `request`, because a run that executed code of a public repository wrote the record.
+For the same reason the issue body of a plan check takes the entry and its PRs from the plan file, in a line above the list of related findings.
+`collect.ts` prints the plan checks of each result by state, so a tail of checks that the budget left as `skip` is visible.
+A job of a plan run in the matrix that `missing-runs.ts` reads names its `part`, and a missing one is named by its repo and part.
+
 ## Run it in CI
 
 Start the `Ecosystem QA` workflow by hand and pick the repos, version, engines and operating systems.
@@ -288,7 +349,7 @@ Start the `Ecosystem QA` workflow by hand and pick the repos, version, engines a
 `plan.ts` turns the inputs into one job for each repo, operating system and engine, and a repo runs on Windows only when the catalog marks it `windows`.
 Linux runs the agent in `docker()`; Windows runs it with `noSandbox()`, and the API key is the only secret in that job.
 The agent keys live in the `ecosystem-qa` environment, and the push token in `ecosystem-qa-file`, which only the filing job enters.
-Each runner uploads `qa-result-<id>-<os>-<engine>` with `result.json`, the run log, the raw agent stream, the session, the evidence and the cycle branch bundle.
+Each runner uploads `qa-result-<id>-<os>-<engine>`, or `qa-result-<id>-<os>-<engine>-part-<n>` with its results under `part-<n>` for a job of a plan with a part, with `result.json`, the run log, the raw agent stream, the session, the evidence and the cycle branch bundle.
 `run.ts` writes the status, wall time, tokens, dollars, free disk and every check to the Step Summary.
 
 The collect job runs `group.ts` with the key from the `ecosystem-qa` environment, then collects with its `groups.json` and uploads both files as `qa-proposals`.
@@ -310,6 +371,7 @@ That is how a pull request against `qa/plans` that adds a plan gets its red or g
 
 `<out>/result.json` is the record of one run, and every later stage reads only these files.
 Next to it are `run.log`, `agent-stream.jsonl` (the token counts come from here), `session.jsonl`, `evidence/` and `cycle.bundle` when the agent committed.
+`evidence/checklist.md` is the checklist the agent got, as the prompt shows it.
 A run needs an output directory of its own: `run.ts` stops when `--out` holds anything, so that the log, the agent stream and the evidence of an earlier run are never read as this run's.
 The runner keeps the sandbox open until it has an answer it can use.
 The answer is the `<qa-result>` block in the last message of the agent.

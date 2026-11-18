@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import { z } from 'zod';
 
 import { SEMVER } from './cycle.ts';
-import { CatalogEntry } from './schema.ts';
+import { CatalogEntry, CheckId } from './schema.ts';
 import type { QaStatus, Window, WindowPr } from './window.ts';
 
 // GitHub renders a plan's text as Markdown, where a tag can fold every row after it into a closed
@@ -42,8 +42,11 @@ const RepoDir = Text.refine(
 );
 const Slug = z
   .string()
-  .max(75)
-  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'expected lower case letters, digits, and hyphens');
+  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'expected lower case letters, digits, and hyphens')
+  .refine(
+    (slug) => CheckId.safeParse(planCheckId(slug)).success,
+    'expected a slug short enough for the check id plan.<slug>'
+  );
 const RepoId = CatalogEntry.shape.id;
 const Sha = z.string().regex(/^[0-9a-f]{40}$/, 'expected a full commit SHA');
 const PrNumber = z.int().positive();
@@ -1207,6 +1210,32 @@ export const planHash = (content: string | Uint8Array): string =>
   createHash('sha256').update(content).digest('hex').slice(0, 12);
 
 export const planCheckId = (slug: string): string => `plan.${slug}`;
+
+// Where the run keeps a copy of the files that a probe added, inside its evidence directory.
+export const probeCopyDir = (slug: string): string => `${slug}-added`;
+
+export const isProbeCheck = (
+  entries: Pick<PlanEntry, 'slug' | 'probe'>[] = [],
+  checkId: string
+): boolean =>
+  entries.some(({ slug, probe }) => probe !== undefined && planCheckId(slug) === checkId);
+
+export const renderPlanChecks = (entries: PlanEntry[], repo: string): string =>
+  entries
+    .map((entry) => {
+      const { reason } = entry.repos.find(({ id }) => id === repo)!;
+      return [
+        `- \`${planCheckId(entry.slug)}\` (plan): ${entry.title}. Why this repo: ${reason}.`,
+        ...(entry.probe === undefined
+          ? []
+          : [
+              `  Probe: after the upgrade, add ${entry.probe}. Keep a copy of each added file, and a diff of each file you added a line to, in \`${probeCopyDir(entry.slug)}/\` in the evidence directory. Before the next check, remove the added files and restore each file you added a line to.`,
+            ]),
+        ...entry.steps.map((step, index) => `  ${index + 1}. ${step}`),
+        `  Expected: ${entry.expected}`,
+      ].join('\n');
+    })
+    .join('\n');
 
 export const planBatches = (plan: Plan): number[] =>
   Array.from({ length: Math.max(0, ...plan.entries.map((entry) => entry.batch)) }, (_, i) => i + 1);

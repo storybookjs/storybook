@@ -40,8 +40,8 @@ export const sanitizeTitle = (text: string): string =>
       isStorybookLink(url) ? match : `${label} (link removed)`
     )
     .replace(LINK, (url) => (isStorybookLink(url) ? url : '(link removed)'))
-    .replace(/(^|[^\w`])(@[a-z0-9][\w.-]*(?:\/[\w.-]+)?)/gi, '$1`$2`')
-    .replace(/(^|[^\w`&/])((?:[\w.-]+\/[\w.-]+)?#\d+)\b/g, '$1`$2`');
+    .replace(/(^|[^a-z0-9`])(@[a-z0-9][\w.-]*(?:\/[\w.-]+)?)/gi, '$1`$2`')
+    .replace(/(^|[^a-z0-9`&/])((?:[\w.-]+\/[\w.-]+)?#\d+|GH-\d+)(?![a-z0-9])/gi, '$1`$2`');
 
 // Cap the prose fields of a finding for an issue body, where each one is rendered inside a fence.
 //

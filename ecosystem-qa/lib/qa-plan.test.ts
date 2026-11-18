@@ -14,6 +14,7 @@ import {
   planRuns,
   renderLedger,
   renderPlan,
+  renderPlanChecks,
 } from './qa-plan.ts';
 import { Window, type WindowPr } from './window.ts';
 
@@ -103,6 +104,17 @@ describe('the fixture plan', () => {
     ]);
   });
 
+  it('gives the agent the reason for the repo, every step and the expected outcome of an entry', () => {
+    const plan = parsePlan(FIXTURE);
+    const entries = plan.entries.filter(({ slug }) => slug === 'csf-factory-namespaces');
+
+    expect(renderPlanChecks(entries, 'mantine')).toMatchInlineSnapshot(`
+      "- \`plan.csf-factory-namespaces\` (plan): Legacy addon namespaces work in CSF factories. Why this repo: a large set of stories with addon parameters.
+        1. Run \`npx storybook doctor\` and build Storybook.
+        Expected: The build ends with exit 0 and the doctor output names no addon namespace."
+    `);
+  });
+
   it('reads a probe and a group that an entry tests in part, as render writes them', () => {
     const plan = parsePlan(FIXTURE);
 
@@ -114,6 +126,18 @@ describe('the fixture plan', () => {
     expect(FIXTURE).toContain(
       "| Probe: `animation-probe` A new story's animation pauses in the preview | 3 |"
     );
+  });
+
+  it('tells the agent what a probe adds, after the upgrade, and where the copy goes', () => {
+    const plan = parsePlan(FIXTURE);
+    const entries = plan.entries.filter(({ slug }) => slug === 'animation-probe');
+
+    expect(renderPlanChecks(entries, 'mealdrop')).toMatchInlineSnapshot(`
+      "- \`plan.animation-probe\` (plan): A new story's animation pauses in the preview. Why this repo: owned, and its React and Vite setup loads a story file next to its components.
+        Probe: after the upgrade, add a story file src/AnimationProbe.stories.tsx with one story Fade In whose box fades in with a CSS animation of two seconds. Keep a copy of each added file, and a diff of each file you added a line to, in \`animation-probe-added/\` in the evidence directory. Before the next check, remove the added files and restore each file you added a line to.
+        1. Open the story animation-probe--fade-in and take a screenshot after the play function ends.
+        Expected: The screenshot shows the box fully visible, the end state of the animation."
+    `);
   });
 });
 
@@ -762,6 +786,13 @@ describe('checkPlanText', () => {
       'the copy on https://www.example.com/sb/index.json, and the upgrade',
       'the copy on https://www.example.com',
       'has the host www.example.com, not localhost',
+    ],
+    [
+      'a slug too long for its check id',
+      '### `preview-animations`',
+      `### \`preview-animations-${'x'.repeat(57)}\``,
+      '### `preview-animations-',
+      'short enough for the check id',
     ],
   ])('refuses %s with its line', (_, from, to, lineNeedle, message) => {
     const text = edited(from, to);

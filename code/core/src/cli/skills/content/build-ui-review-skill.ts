@@ -28,7 +28,6 @@ The review needs a running Storybook dev server:
 
 export function buildUiReviewSkill(inputs: UiReviewSkillInputs): string {
   const v = skillVocabulary(inputs.transport);
-  // A client can turn the toolset on for itself with a request header, which this text cannot see.
   const toolsetOff = inputs.toolsetOff
     ? `\n\nThe \`main.ts\` of this project turns the \`dev\` toolset of the Storybook MCP server off. When the server does not give you ${v.name('review.create')}, skip this step.`
     : '';

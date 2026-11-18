@@ -16,7 +16,6 @@ export function buildComponentDocsSkill(inputs: ComponentDocsSkillInputs): strin
 This Storybook has no component docs to look up. Skip this step, and read the source files of the components you use instead.`;
   }
   const list = v.name('docs.list');
-  // A client can turn the toolset on for itself with a request header, which this text cannot see.
   const toolsetOff = inputs.toolsetOff
     ? `\n\nThe \`main.ts\` of this project turns the \`docs\` toolset of the Storybook MCP server off. When the server does not give you ${list}, skip this step.`
     : '';

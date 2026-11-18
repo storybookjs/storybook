@@ -18,7 +18,6 @@ export function buildTestStoriesSkill(inputs: TestStoriesSkillInputs): string {
 
 This project cannot run story tests: it has no \`@storybook/addon-vitest\`. Skip this step.`;
   }
-  // A client can turn the toolset on for itself with a request header, which this text cannot see.
   const toolsetOff = inputs.toolsetOff
     ? `\n\nThe \`main.ts\` of this project turns the \`test\` toolset of the Storybook MCP server off. When the server does not give you ${v.name('test.run')}, skip this step.`
     : '';

@@ -59,7 +59,10 @@ export async function storybookExternalGlobalsPlugin(options: Options): Promise<
   const { mergeAlias } = await import('vite');
 
   const globalsList = Object.keys(externals);
-  const globalsCodeFilter = new RegExp(globalsList.map(escapeKeys).join('|'));
+  const globalReferences = Object.values(externals);
+  const globalsCodeFilter = new RegExp(
+    [...globalsList, ...globalReferences].map(escapeKeys).join('|')
+  );
 
   return {
     name: 'storybook:external-globals-plugin',
@@ -97,7 +100,12 @@ export async function storybookExternalGlobalsPlugin(options: Options): Promise<
     transform: {
       filter: { code: globalsCodeFilter },
       async handler(code: string, id: string) {
-        if (globalsList.every((glob) => !code.includes(glob))) {
+        // Optimized deps inline the dev-only alias files, so they read a global without an import.
+        const readsInlinedGlobal =
+          this.environment.mode === 'dev' &&
+          globalReferences.some((reference) => code.includes(reference));
+
+        if (!readsInlinedGlobal && globalsList.every((glob) => !code.includes(glob))) {
           return undefined;
         }
 
@@ -116,7 +124,10 @@ export async function storybookExternalGlobalsPlugin(options: Options): Promise<
 
         const rewritten = src.toString();
         return {
-          code: didRewrite ? ensurePreviewRuntimePrecedesGlobals(rewritten, id) : rewritten,
+          code:
+            didRewrite || readsInlinedGlobal
+              ? ensurePreviewRuntimePrecedesGlobals(rewritten, id)
+              : rewritten,
           map: null,
         };
       },

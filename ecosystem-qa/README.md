@@ -155,7 +155,7 @@ The plan holds only what a person decides, in the order a reviewer reads it:
 | Section | One row for each | Columns |
 | --- | --- | --- |
 | Field table | field | Line, version, window start and end, entries per run |
-| `## Changes to test` | entry | Entry (slug and title), Batch, Repos, PRs (their count) |
+| `## Changes to test` | entry | Entry (`Probe:` for a probe, slug and title), Batch, Repos, PRs (their count) |
 | `## PRs that need manual QA` | check | Check, Why the sweep cannot test it, PRs |
 | `## PRs that need no QA` | reason | Reason, PRs |
 | `## Groups of PRs marked qa:skip` | group | Group, Source, Decision, PRs |
@@ -172,6 +172,8 @@ A decision is one of three kinds:
 
 A PR marked `qa:needed` or without a QA label is decided by its place: the PRs of one or more entries test it, or one row of one of the two tables names its manual check or its reason.
 A PR that the entries test only in part is in their PRs and in one row of manual QA, whose check covers the rest; in the draft its decision is the manual one.
+A group that the entries test only in part names them before its manual check, as `` `slug`; manual for the rest: <check> Why: <why> ``, and as `{ "entries": ["slug"], "manual": "<check>", "why": "<why>" }` in the draft, which a PR outside a group never takes.
+`ledger` names such a PR as tested by the entry and as manual for the rest, and `manual` prints it under its check with the entry that tests the other part.
 Both tables hold both kinds of PR.
 A manual check is for a change that a person has to test because the sweep cannot, such as a fix that only Windows shows, a change of `storybook init`, a Yarn 1 project, a browser's profiler, or a need that no repo of the catalog has.
 It is an instruction that a person can follow without the PR open: the environment it needs, what to do, and what has to be seen.
@@ -224,6 +226,21 @@ An entry under `## Steps` is a block of lines:
 Its check id is `plan.` with the slug, and its batch decides when it runs: batch 1 first, and the batches are numbered without a gap.
 A repo with more entries in one batch than `Entries per run` runs them in several parts, in parallel.
 
+A probe is an entry with a line `- Probe:` after `- Batch:`, the draft's `probe`, which says in one line what the run adds to the project after the upgrade and where:
+
+```markdown
+- Batch: 3
+- Probe: a story file src/AnimationProbe.stories.tsx with one story Fade In whose box fades in with a CSS animation of two seconds
+```
+
+It tests behaviour that is new or fixed in the line, which no project can hold before the upgrade, on a repo that the plan has already.
+It adds new files, such as a story, a component for it, a script, or a local addon, and at most one option of a config file that is the behaviour under test or that the added files need to load.
+It never changes or removes a line the project has, never writes what an upgrade step reads, such as what an automigration acts on, what a blocker or a floor checks, or what the package manager detection reads, and never stands in for a framework, a builder, a package manager, an addon the check is about, or a framework version.
+The checklist gives the agent the probe line with the directory `<slug>-added/` of the evidence, where it keeps a copy of each added file, and `prompts/plan-checks.md` tells it to add exactly that after the upgrade, change nothing the project has, and remove what it added before the next check.
+The issue of a finding from a probe says, under the line of the entry, that the run added the probe line to the project after the upgrade, that the project does not hold it, and where the copy is, with the entry taken from the plan file by the check id.
+
+A change takes the first of these that fits: a normal entry on a repo of the plan that has the state at its pin, a probe, a discovered repo, a manual check, and no QA with the reason.
+
 `check` accepts a file only when it equals what render would write for what it read, so a line that is not in the format, or an overview row that differs from its entry, fails at its line number.
 It then holds the plan against these rules and prints each problem as `<file>:<line>: <message>`:
 
@@ -235,9 +252,9 @@ It then holds the plan against these rules and prints each problem as `<file>:<l
 - A PR of an entry has no row of no QA and no row without a decision, and when it is in a group, the decision of that group names the entry. It may have one row of manual QA for the part that no entry tests. A PR of a group may stay out of the entries its group names.
 - Every row of manual QA has a check and a reason why the sweep cannot test it, every row of no QA has a reason, every PR marked `qa:skip` is in a group, every group has a decision, and every decision names entries that exist. A cell that still says `skip:` is refused.
 - A manual check and its reason name no person, PR, or issue, in a code span either, because the checklist of `manual` goes into an issue, where `@name` or `@org/team` notifies people and `#123` or `GH-123` posts on a PR, and because a check that points to a PR cannot be followed without that PR open. `check` refuses every `@` that does not follow a letter or a digit, whatever comes after it, since `_@name_` is a mention in emphasis, and every `#`, `GH-`, `pull/`, or `issues/` before a digit, since `storybookjs/storybook/pull/123` links that PR. Name a package in words, such as the Storybook Vitest addon; `npx storybook@11.0.0` and `qa@example.org` stay, since an issue links no `@` after a letter or a digit.
-- The batches are numbered from 1 without a gap.
+- The batches are numbered from 1 without a gap, and a batch holds probes only or no probe, so a run that tests the project itself never holds the files of a probe.
 - The file holds no link to `linear.app`, `notion.so`, `notion.site`, `notion.com`, or a `slack.com` host.
-- No entry title, repo reason, step, expected outcome, manual check, reason of a manual check, or reason of no QA holds a URL with a scheme whose host is other than `localhost`, `127.0.0.1`, or `[::1]`. The runner prints the first four into the agent's prompt, and the others are read by the person who follows them. `check` takes every URL that starts with a scheme, also one glued to other text such as `see:http://example.com` or `-xhttp://example.com`, apart with Node's URL parser, and refuses it when the host is another one or when the parser cannot read it: `https://example.com`, `http:/example.com`, `http://localhost;.example.com`, and `http://localhost].example.com` are refused. It reads a backslash once as the parser does, as a slash, and once as curl does, as a character, so `http://localhost\@example.com` is refused too. It does not look for a host without a scheme, such as `example.com/x` or `//example.com`. A scheme glued to letters before it takes them in, so `-xhttp:/example.com` has the scheme `xhttp`, which the parser does not know, and no host, and passes. The check is one layer of four: the reviewer reads every plan before it is merged, the prompt of a plan run forbids every URL other than `localhost`, and the browser tool of the sandbox image blocks direct requests to another host, although it follows a redirect and lets a WebSocket through.
+- No entry title, probe line, repo reason, step, expected outcome, manual check, reason of a manual check, or reason of no QA holds a URL with a scheme whose host is other than `localhost`, `127.0.0.1`, or `[::1]`. The runner prints the first five into the agent's prompt, and the others are read by the person who follows them. `check` takes every URL that starts with a scheme, also one glued to other text such as `see:http://example.com` or `-xhttp://example.com`, apart with Node's URL parser, and refuses it when the host is another one or when the parser cannot read it: `https://example.com`, `http:/example.com`, `http://localhost;.example.com`, and `http://localhost].example.com` are refused. It reads a backslash once as the parser does, as a slash, and once as curl does, as a character, so `http://localhost\@example.com` is refused too. It does not look for a host without a scheme, such as `example.com/x` or `//example.com`. A scheme glued to letters before it takes them in, so `-xhttp:/example.com` has the scheme `xhttp`, which the parser does not know, and no host, and passes. The check is one layer of four: the reviewer reads every plan before it is merged, the prompt of a plan run forbids every URL other than `localhost`, and the browser tool of the sandbox image blocks direct requests to another host, although it follows a redirect and lets a WebSocket through.
 - With `--window`, every PR of the window marked `qa:needed` or without a QA label is in the PRs of an entry or in one row of manual QA or of no QA, every PR marked `qa:skip` is in one group, and the plan names no PR that the window does not hold in that role.
 
 Without `--window`, `check` knows no PR's QA status, so it accepts a plan in which a PR of the window has no place at all, an entry lists a PR that the window does not hold or that was verified by hand, one edit drops a tested PR from the PRs of its entry, a PR marked `qa:skip` sits only in an entry, or a PR marked `qa:needed` sits in a group that names its entry.
@@ -286,6 +303,7 @@ A plan check tests the project as it is after the upgrade, and the agent never c
 
 - Forbidden: adding a setting, a file, a dependency, or code so that an upgrade step, an automigration, or a removal has something to act on, or so that the project looks as if it used something it does not use. When the project does not have what the entry describes, the agent reports the check as `skip` and names in its note what the project lacks.
 - Allowed: what a user of the released version does to see the result, such as starting the dev server, building, opening a page, clicking, or reading a file, and a step of the entry that turns on a new opt-in feature of the tested version, such as a feature flag in the Storybook main file. That step is its own step of the plan, so the reviewer sees it, and the agent does exactly what it says. The agent never decides on its own to turn something on.
+- Allowed for a probe: after the upgrade, exactly what its `Probe:` line names, which the agent copies to `<slug>-added/` in the evidence and removes before the next check, so the state the run records is the project after the upgrade.
 
 So a repo is listed for an entry only when it has that state at its pinned commit.
 A plan check reported as `skip` opens no proposal: the answer schema accepts a finding only for a check that is `fail`, and `collect.ts` makes proposals from findings alone.

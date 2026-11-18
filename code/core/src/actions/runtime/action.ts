@@ -26,21 +26,34 @@ const isReactSyntheticEvent = (e: unknown): e is SyntheticEvent =>
     findProto(e, (proto) => /^Synthetic(?:Base)?Event$/.test(proto.constructor.name)) &&
     typeof (e as SyntheticEvent).persist === 'function'
   );
-const serializeArg = <T extends object>(a: T) => {
+const isWindow = (value: unknown): value is Window =>
+  typeof value === 'object' && value != null && (value as object).constructor?.name === 'Window';
+
+// Drop Window references so channel serialization cannot reach `__STORYBOOK_STORY_STORE__`.
+const detachWindow = (value: Window) => Object.create(value.constructor.prototype);
+
+const serializeArg = (a: unknown): any => {
+  if (Array.isArray(a)) {
+    return a.map(serializeArg);
+  }
   if (isReactSyntheticEvent(a)) {
     const e: SyntheticEvent = Object.create(
-      a.constructor.prototype,
+      Object.getPrototypeOf(a),
       Object.getOwnPropertyDescriptors(a)
     );
     e.persist();
     const viewDescriptor = Object.getOwnPropertyDescriptor(e, 'view');
-    // don't send the entire window object over.
-    const view: unknown = viewDescriptor?.value;
-    if (typeof view === 'object' && view?.constructor.name === 'Window') {
+    if (viewDescriptor && isWindow(viewDescriptor.value)) {
       Object.defineProperty(e, 'view', {
         ...viewDescriptor,
-        value: Object.create(view.constructor.prototype),
+        value: detachWindow(viewDescriptor.value),
       });
+    }
+    if (e.nativeEvent && isWindow(e.nativeEvent.view)) {
+      e.nativeEvent = {
+        ...e.nativeEvent,
+        view: detachWindow(e.nativeEvent.view),
+      };
     }
     return e;
   }

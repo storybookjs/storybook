@@ -1,3 +1,4 @@
+import { stringify } from 'telejson';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { ImplicitActionsDuringRendering } from 'storybook/internal/preview-errors';
@@ -13,6 +14,37 @@ const createChannel = () => {
   return channel;
 };
 const getChannelData = (channel) => channel.emit.mock.calls[0][1].data.args;
+const getEmittedAction = (channel) => channel.emit.mock.calls[0][1];
+
+const createStoryStoreProxy = (onAccess) =>
+  new Proxy(
+    {},
+    {
+      get: (_, method) => {
+        onAccess(String(method));
+        return undefined;
+      },
+    }
+  );
+
+const createWindowWithStoryStore = (onAccess) => {
+  function Window() {}
+  const win = Object.create(Window.prototype);
+  Object.defineProperty(win, 'constructor', { value: Window });
+  win.__STORYBOOK_STORY_STORE__ = createStoryStoreProxy(onAccess);
+  return win;
+};
+
+const createReactSyntheticEvent = (win) => {
+  function SyntheticEvent() {}
+  const event = Object.create(SyntheticEvent.prototype);
+  event.persist = vi.fn();
+  event.view = win;
+  event.nativeEvent = { view: win, type: 'click', target: {} };
+  event.type = 'click';
+  event.target = { tagName: 'BUTTON' };
+  return event;
+};
 
 describe('Action', () => {
   it('with one argument', () => {
@@ -137,5 +169,54 @@ describe('Implicit actions during rendering', () => {
     action('test-action', { implicit: true })('one');
 
     expect(getChannelData(channel)).toEqual('one');
+  });
+});
+
+describe('React event serialization', () => {
+  it('does not touch the deprecated story store when serializing a synthetic event', () => {
+    const channel = createChannel();
+    const storyStoreAccesses = [];
+    const win = createWindowWithStoryStore((method) => storyStoreAccesses.push(method));
+    const event = createReactSyntheticEvent(win);
+
+    action('clicked')(event);
+
+    const emitted = getEmittedAction(channel);
+    expect(emitted.data.args.view).not.toBe(win);
+    expect(emitted.data.args.nativeEvent.view).not.toBe(win);
+
+    stringify(
+      {
+        key: 'storybook-channel',
+        event: { type: 'storybook/actions/action-event', args: [emitted] },
+      },
+      { maxDepth: 10 }
+    );
+
+    expect(storyStoreAccesses).toEqual([]);
+  });
+
+  it('does not touch the deprecated story store when a mock passes args as an array', () => {
+    const channel = createChannel();
+    const storyStoreAccesses = [];
+    const win = createWindowWithStoryStore((method) => storyStoreAccesses.push(method));
+    const event = createReactSyntheticEvent(win);
+
+    // loaders call `action(name)(args)` with the mock's args array
+    action('onClick')([event]);
+
+    const emitted = getEmittedAction(channel);
+    expect(emitted.data.args[0].view).not.toBe(win);
+    expect(emitted.data.args[0].nativeEvent.view).not.toBe(win);
+
+    stringify(
+      {
+        key: 'storybook-channel',
+        event: { type: 'storybook/actions/action-event', args: [emitted] },
+      },
+      { maxDepth: 10 }
+    );
+
+    expect(storyStoreAccesses).toEqual([]);
   });
 });

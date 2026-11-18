@@ -31,15 +31,25 @@ const config: BuildEntries = {
         entryPoint: './src/entry-preview-rsc.tsx',
         dts: false,
       },
-      {
-        exportEntries: ['./experimental-playwright'],
-        entryPoint: './src/playwright.ts',
-      },
     ],
     node: [
       {
+        // Builder docgen package checks, shared with `@storybook/react-vite` and
+        // `@storybook/preset-react-webpack`.
+        exportEntries: ['./internal/builder-docgen'],
+        entryPoint: './src/builder-docgen.ts',
+      },
+      {
         exportEntries: ['./preset'],
         entryPoint: './src/preset.ts',
+        dts: false,
+      },
+      {
+        // Worker-target docgen module imported by core's docgen worker. Exposed as an internal
+        // export so the preset resolves it via import.meta.resolve (package map) instead of a
+        // hard-coded dist path.
+        exportEntries: ['./internal/docgen-worker'],
+        entryPoint: './src/docgen/docgen-worker.ts',
         dts: false,
       },
     ],

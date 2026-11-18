@@ -1,0 +1,143 @@
+import { readFileSync, readdirSync } from 'node:fs';
+import { join, resolve } from 'node:path';
+
+import type {
+  DocgenPayload,
+  DocgenSubcomponent,
+} from '../../../../core/src/shared/open-service/services/docgen/types.ts';
+
+// Where `build-storybook` writes one docgen snapshot per component under the static output dir.
+export const DOCGEN_SNAPSHOT_DIR = join('services', 'core', 'docgen');
+
+export const SANDBOX_TOKEN = '<sandbox>';
+export const REPO_TOKEN = '<repo>';
+
+const REPO_DIR = resolve(import.meta.dirname, '../../../../..');
+
+// An allow-list rather than an exclude-list because `DocgenPayload` carries an index signature: the
+// Angular provider hangs the raw Compodoc entry off it, over 100KB of mostly `sourceCode` per
+// sandbox, none of it part of the contract this baseline guards.
+const PORTABLE_FIELDS = [
+  'id',
+  'name',
+  'path',
+  'description',
+  'summary',
+  'jsDocTags',
+  'argTypes',
+  'subcomponents',
+  'error',
+] as const satisfies readonly (keyof DocgenPayload)[];
+
+// A subcomponent keeps the same fields, so its `apiDescription` stays out as the component's does.
+const PORTABLE_SUBCOMPONENT_FIELDS = [
+  'name',
+  'path',
+  'description',
+  'summary',
+  'import',
+  'jsDocTags',
+  'argTypes',
+  'error',
+] as const satisfies readonly (keyof DocgenSubcomponent)[];
+
+export type SandboxBaseline = Pick<DocgenPayload, (typeof PORTABLE_FIELDS)[number]>;
+
+// Component id -> recorded payload, key-sorted so a re-record produces a reviewable diff.
+export type SandboxBaselines = Record<string, SandboxBaseline>;
+
+// Both native and POSIX spelling, so a baseline recorded on one platform verifies on another.
+export const normalizePaths = (value: string, sandboxDir: string, repoDir = REPO_DIR): string =>
+  [
+    [sandboxDir, SANDBOX_TOKEN],
+    [repoDir, REPO_TOKEN],
+  ]
+    .toSorted(([a], [b]) => b.length - a.length)
+    .reduce(
+      (normalized, [dir, token]) =>
+        normalized.replaceAll(dir, token).replaceAll(dir.replace(/\\/g, '/'), token),
+      value
+    );
+
+const normalizeDeep = (value: unknown, sandboxDir: string): unknown => {
+  if (typeof value === 'string') {
+    return normalizePaths(value, sandboxDir);
+  }
+  if (Array.isArray(value)) {
+    return value.map((item) => normalizeDeep(item, sandboxDir));
+  }
+  if (value !== null && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, item]) => [key, normalizeDeep(item, sandboxDir)])
+    );
+  }
+  return value;
+};
+
+const pick = (value: Record<string, unknown>, fields: readonly string[]) =>
+  Object.fromEntries(
+    fields.filter((field) => value[field] !== undefined).map((field) => [field, value[field]])
+  );
+
+export const toBaseline = (payload: DocgenPayload, sandboxDir: string): SandboxBaseline => {
+  const baseline = pick(payload, PORTABLE_FIELDS);
+  if (payload.subcomponents) {
+    baseline.subcomponents = Object.fromEntries(
+      Object.entries(payload.subcomponents).map(([name, subcomponent]) => [
+        name,
+        pick(subcomponent, PORTABLE_SUBCOMPONENT_FIELDS),
+      ])
+    );
+  }
+  return normalizeDeep(baseline, sandboxDir) as SandboxBaseline;
+};
+
+export function readStaticDocgen({
+  staticDir,
+  sandboxDir,
+}: {
+  staticDir: string;
+  sandboxDir: string;
+}): SandboxBaselines {
+  const docgenDir = join(staticDir, DOCGEN_SNAPSHOT_DIR);
+
+  let files: string[];
+  try {
+    files = readdirSync(docgenDir).filter((file) => file.endsWith('.json'));
+  } catch (cause) {
+    // eslint-disable-next-line local-rules/no-uncategorized-errors
+    throw new Error(
+      `No docgen snapshots at ${docgenDir}.\n` +
+        `Build the sandbox first, and check that its framework supports server docgen, ` +
+        `features.componentsManifest is enabled, and features.docgenServer is not disabled.`,
+      { cause }
+    );
+  }
+
+  const baselines: SandboxBaselines = {};
+  for (const file of files) {
+    const path = join(docgenDir, file);
+    const { components } = JSON.parse(readFileSync(path, 'utf8')) as {
+      components?: Record<string, DocgenPayload>;
+    };
+
+    for (const [id, payload] of Object.entries(components ?? {})) {
+      const baseline = toBaseline(payload, sandboxDir);
+      if (!baseline.error) {
+        baselines[id] = baseline;
+      }
+    }
+  }
+
+  if (Object.keys(baselines).length === 0) {
+    // eslint-disable-next-line local-rules/no-uncategorized-errors
+    throw new Error(
+      `${docgenDir} yielded no components to record; refusing to record an empty run. ` +
+        `Either the build produced no payloads, or docgen failed for every one of them.`
+    );
+  }
+
+  return Object.fromEntries(
+    Object.entries(baselines).sort(([a], [b]) => a.localeCompare(b))
+  ) as SandboxBaselines;
+}

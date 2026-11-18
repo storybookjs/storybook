@@ -1,0 +1,30 @@
+version = 1
+name = "storybook"
+
+[setup]
+script = "yarn install && yarn nx run-many -t compile"
+
+[[actions]]
+name = "Compile"
+icon = "tool"
+command = "yarn nx run-many -t compile"
+
+[[actions]]
+name = "Check"
+icon = "tool"
+command = "yarn nx run-many -t check"
+
+[[actions]]
+name = "Unit Tests"
+icon = "test"
+command = "yarn test"
+
+[[actions]]
+name = "Internal UI"
+icon = "run"
+command = "yarn --cwd code storybook:ui"
+
+[[actions]]
+name = "Format"
+icon = "tool"
+command = "yarn --cwd code fmt:write"

@@ -3,7 +3,6 @@
 <!-- RULE-CATEGORIES:START -->
 
 **Included in these configurations**: <ul><li>addon-interactions</li><li>flat/addon-interactions</li><li>recommended</li><li>flat/recommended</li></ul>
-
 <!-- RULE-CATEGORIES:END -->
 
 ## Rule Details
@@ -15,7 +14,7 @@ Examples of **incorrect** code for this rule:
 
 ```js
 // wrong import!
-import { within } from "@testing-library/react";
+import { within } from '@testing-library/react';
 
 Default.play = async (context) => {
   const canvas = within(context.canvasElement);
@@ -26,9 +25,9 @@ Examples of **correct** code for this rule:
 
 ```js
 // correct import.
-import { within } from "storybook/test";
+import { within } from 'storybook/test';
 // or this, which is now considered legacy
-import { within } from "@storybook/testing-library";
+import { within } from '@storybook/testing-library';
 
 Default.play = async (context) => {
   const canvas = within(context.canvasElement);

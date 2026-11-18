@@ -1,13 +1,13 @@
 import React from 'react';
 
-import type { Combo, StoriesHash } from 'storybook/manager-api';
+import type { Combo, IndexHash } from 'storybook/manager-api';
 import { Consumer, experimental_useStatusStore } from 'storybook/manager-api';
 
 import type { SidebarProps as SidebarComponentProps } from '../components/sidebar/Sidebar.tsx';
 import { Sidebar as SidebarComponent } from '../components/sidebar/Sidebar.tsx';
 import { useMenu } from './Menu.tsx';
 
-export type Item = StoriesHash[keyof StoriesHash];
+export type Item = IndexHash[keyof IndexHash];
 
 interface SidebarProps {
   onMenuClick?: SidebarComponentProps['onMenuClick'];
@@ -20,6 +20,7 @@ const Sidebar = React.memo(function Sideber({ onMenuClick }: SidebarProps) {
       viewMode,
       storyId,
       refId,
+      location,
       layout: { showToolbar },
       // FIXME: This is the actual `index.json` index where the `index` below
       // is actually the stories hash. We should fix this up and make it consistent.
@@ -44,6 +45,7 @@ const Sidebar = React.memo(function Sideber({ onMenuClick }: SidebarProps) {
       refs,
       storyId,
       refId,
+      anchor: location?.hash ? location.hash.slice(1) : undefined,
       viewMode,
       showToolbar,
       isPanelShown: api.getIsPanelShown(),

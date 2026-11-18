@@ -1,13 +1,16 @@
 import fs from 'node:fs/promises';
-import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 
 import { dedent } from 'ts-dedent';
 import { z } from 'zod';
 
+import { migrateLegacySettings } from '../common/utils/migrate-legacy-settings.ts';
+import { getStorybookConfigDir } from '../common/utils/storybook-config-dir.ts';
 import { invariant } from '../common/utils/utils.ts';
 
-const DEFAULT_SETTINGS_PATH = join(homedir(), '.storybook', 'settings.json');
+const SETTINGS_FILE = 'settings.json';
+
+const getDefaultSettingsPath = () => join(getStorybookConfigDir(), SETTINGS_FILE);
 
 const VERSION = 1;
 
@@ -29,6 +32,7 @@ const userSettingSchema = z.object({
       items: z
         .object({
           accessibilityTests: statusValue,
+          aiSetup: statusValue,
           autodocs: statusValue,
           ciTests: statusValue,
           controls: statusValue,
@@ -44,6 +48,7 @@ const userSettingSchema = z.object({
           onboardingSurvey: statusValue,
           organizeStories: statusValue,
           publishStorybook: statusValue,
+          shareStorybook: statusValue,
           renderComponent: statusValue,
           runTests: statusValue,
           viewports: statusValue,
@@ -58,9 +63,19 @@ const userSettingSchema = z.object({
 });
 
 let settings: Settings | undefined;
-export async function globalSettings(filePath = DEFAULT_SETTINGS_PATH) {
+export async function globalSettings(filePath = getDefaultSettingsPath()) {
   if (settings) {
     return settings;
+  }
+
+  if (filePath === getDefaultSettingsPath()) {
+    try {
+      await migrateLegacySettings();
+    } catch (err) {
+      console.warn(dedent`
+        Unable to migrate legacy global settings to ${filePath}
+        Reason: ${(err as Error).message ?? err}`);
+    }
   }
 
   try {

@@ -7,9 +7,11 @@ import type { TSSigType, TSType } from './types.ts';
 // Type guards for narrowing TSType discriminant unions
 type TSLiteralType = Extract<TSType, { name: 'literal' }>;
 type TSUndefinedType = Extract<TSType, { name: 'undefined' }>;
+type TSNullType = Extract<TSType, { name: 'null' }>;
 
 const isLiteral = (type: TSType): type is TSLiteralType => type.name === 'literal';
 const isUndefined = (type: TSType): type is TSUndefinedType => type.name === 'undefined';
+const isNull = (type: TSType): type is TSNullType => type.name === 'null';
 
 const convertSig = (type: TSSigType) => {
   switch (type.type) {
@@ -49,16 +51,22 @@ export const convert = (type: TSType): SBType | void => {
     case 'signature':
       return { ...base, ...convertSig(type) };
     case 'union': {
+      // `undefined` members (typically from optional props) are dropped from the options,
+      // while `null` members (emitted by react-docgen as `{ name: 'null' }`, not as literals)
+      // are kept as a selectable `null` option. At least one literal is required so that
+      // e.g. `string | null` is not misclassified as an enum.
       const nonUndefinedElements = type.elements.filter((element) => !isUndefined(element));
-      const allLiterals = nonUndefinedElements.length > 0 && nonUndefinedElements.every(isLiteral);
+      const isLiteralEnum =
+        nonUndefinedElements.some(isLiteral) &&
+        nonUndefinedElements.every((element) => isLiteral(element) || isNull(element));
 
-      if (allLiterals) {
-        // TypeScript can't infer from .every(), so we filter again with the type guard
-        const literalElements = nonUndefinedElements.filter(isLiteral);
+      if (isLiteralEnum) {
         return {
           ...base,
           name: 'enum',
-          value: literalElements.map((element) => parseLiteral(element.value)),
+          value: nonUndefinedElements.map((element) =>
+            isLiteral(element) ? parseLiteral(element.value) : null
+          ),
         };
       }
       return { ...base, name, value: type.elements.map(convert) };

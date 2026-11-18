@@ -4,8 +4,7 @@ import React from 'react';
 import { withReset } from 'storybook/internal/components';
 
 import { transparentize } from 'polished';
-import type { CSSObject } from 'storybook/theming';
-import { styled } from 'storybook/theming';
+import { type CSSObject, styled } from 'storybook/theming/emotion';
 
 /**
  * This selector styles all raw elements inside the DocsPage like this example with a `<div/>`:
@@ -110,6 +109,7 @@ export const DocsContent = styled.div(({ theme }) => {
     maxWidth: 1000,
     width: '100%',
     minWidth: 0,
+    flex: 1,
     [toGlobalSelector('a')]: {
       ...reset,
       fontSize: 'inherit',
@@ -440,7 +440,7 @@ export const DocsWrapper = styled.div(({ theme }) => ({
   display: 'flex',
   flexDirection: 'row-reverse',
   justifyContent: 'center',
-  padding: '4rem 20px',
+  padding: '4rem 40px',
   minHeight: '100vh',
   boxSizing: 'border-box',
   gap: '3rem',
@@ -451,11 +451,14 @@ export const DocsWrapper = styled.div(({ theme }) => ({
 interface DocsPageWrapperProps {
   children?: React.ReactNode;
   toc?: React.ReactNode;
+  lang?: string;
 }
 
-export const DocsPageWrapper: FC<DocsPageWrapperProps> = ({ children, toc }) => (
+export const DocsPageWrapper: FC<DocsPageWrapperProps> = ({ children, toc, lang = 'en' }) => (
   <DocsWrapper className="sbdocs sbdocs-wrapper">
     {toc}
-    <DocsContent className="sbdocs sbdocs-content">{children}</DocsContent>
+    <DocsContent className="sbdocs sbdocs-content" lang={lang}>
+      {children}
+    </DocsContent>
   </DocsWrapper>
 );

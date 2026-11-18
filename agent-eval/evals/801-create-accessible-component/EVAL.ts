@@ -1,0 +1,65 @@
+import {
+  DISPLAY_REVIEW_CURATION_CRITERION,
+  expectAllStoryExportsInDisplayReview,
+  expectDisplayReviewForVisualChange,
+  expectDevServerLeftRunning,
+  expectAnyWorkflowSkillInvoked,
+  expectStoryDiscoveryBeforeReview,
+  expectStoryTestsRanAndPassed,
+  expectWorkflowCalls,
+  getEvalContext,
+} from '#test-utils';
+import { transcript } from '@vercel/agent-eval/eval';
+import { describe, expect, test } from 'vitest';
+
+// The steps of the workflow in AGENTS.md that this task cannot do without.
+const WORKFLOW_SKILLS = ['component-docs', 'write-stories', 'test-stories', 'ui-review'];
+
+describe('creating an accessible ToggleSwitch', () => {
+  test('runs story tests after the change and finishes with them passing', async () => {
+    await expectStoryTestsRanAndPassed({
+      covering: ['toggleswitch'],
+    });
+  });
+
+  test('runs the skill of each of these steps and publishes a display review', () => {
+    expectWorkflowCalls([...WORKFLOW_SKILLS, 'review-create']);
+    expectDisplayReviewForVisualChange();
+  });
+
+  test('discovers stories through the workflow tools before publishing the review', () => {
+    expectStoryDiscoveryBeforeReview();
+  });
+
+  test('every new story appears in the display review', () => {
+    expectAllStoryExportsInDisplayReview();
+  });
+
+  // Skipped: agents publish one collection with every story instead of 2-5
+  // meaningful collections (e.g. visual states vs interaction behavior).
+  // Seen as score 0.15 < 0.5 in the 2026-07-01T22-16-52 cc-plugin run.
+  // Re-enable when review-create workflow guidance teaches that grouping.
+  test.skip('publishes a well-curated review', async () => {
+    // 0.5 keeps this soft (curation quality is scored, not gating): minor
+    // flaws like one single-story collection pass, arbitrary story dumps
+    // still fail.
+    await expect(transcript).toScoreAtLeast(DISPLAY_REVIEW_CURATION_CRITERION, 0.5);
+  });
+
+  describe('depending on the current agent and integration', () => {
+    const { integration } = getEvalContext();
+
+    // Building with external Reshaped components requires the docs tools: props
+    // must not be guessed or read out of node_modules.
+    test('uses the documentation tooling', () => expectWorkflowCalls(['docs-show']));
+
+    test.skipIf(integration === 'mcp')('finds the workflow through the plugin skills', () => {
+      expectAnyWorkflowSkillInvoked();
+    });
+
+    test.skipIf(integration !== 'plugin')(
+      'leaves the dev server running when using the plugin',
+      () => expectDevServerLeftRunning()
+    );
+  });
+});

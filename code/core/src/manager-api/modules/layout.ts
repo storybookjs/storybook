@@ -4,15 +4,17 @@ import type {
   API_LayoutCustomisations,
   API_PanelPositions,
   API_UI,
+  API_ViewMode,
 } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
 import { pick, toMerged } from 'es-toolkit/object';
 import { isEqual as deepEqual } from 'es-toolkit/predicate';
-import type { ThemeVars } from 'storybook/theming';
 import { create } from 'storybook/theming/create';
+import type { ThemeVars } from 'storybook/theming/emotion';
 
+import { isReviewManagerRoute } from '../../shared/review/routes.ts';
 import merge from '../lib/merge.ts';
 import type { ModuleFn } from '../lib/types.tsx';
 import type { State } from '../root.tsx';
@@ -34,6 +36,16 @@ export interface SubState {
   selectedPanel: string | undefined;
   theme: ThemeVars;
 }
+
+/**
+ * Availability of the sidebar/nav: 'unavailable' means the current route suppresses the nav
+ * entirely (review routes), otherwise it is 'shown' or 'hidden' based on the layout state.
+ */
+export type NavAvailability = 'shown' | 'hidden' | 'unavailable';
+
+/** True when the route renders a full-screen page (e.g. settings) instead of the preview canvas. */
+export const isPagesViewMode = (viewMode: API_ViewMode): boolean =>
+  viewMode !== undefined && viewMode !== 'story' && viewMode !== 'docs' && viewMode !== 'review';
 
 export interface SubAPI {
   /**
@@ -65,6 +77,15 @@ export interface SubAPI {
    */
   toggleNav: (toggled?: boolean) => void;
   /**
+   * Sets the open/closed state of the mobile navigation drawer directly, without going through the
+   * `toggleNav` desktop/mobile branching. Use this to imperatively open or close the drawer (e.g.
+   * resetting it to closed when leaving the mobile layout). `toggleNav` remains the toggle
+   * entry-point.
+   *
+   * @param show - Whether the mobile navigation drawer should be open.
+   */
+  setMobileNavigation: (show: boolean) => void;
+  /**
    * Toggles the visibility of the toolbar in the Storybook UI.
    *
    * @param toggled - Optional boolean value to set the toolbar visibility to. If not provided, it
@@ -87,6 +108,11 @@ export interface SubAPI {
   getIsPanelShown: () => boolean;
   /** GetIsNavShown - Returns the current visibility of the navigation bar in the Storybook UI. */
   getIsNavShown: () => boolean;
+  /**
+   * GetNavAvailability - Returns whether the sidebar/nav is shown, hidden (but can be shown by the
+   * user), or unavailable because the current route suppresses it entirely (review routes).
+   */
+  getNavAvailability: () => NavAvailability;
   /**
    * GetShowToolbarWithCustomisations - Returns the current visibility of the toolbar, taking into
    * account customisations requested by the end user via a layoutCustomisations function.
@@ -111,11 +137,15 @@ export interface SubAPI {
    * @param options.select - Whether to call select() on the element after focusing it.
    * @param options.poll - Whether to poll for the element if it is not immediately available.
    *   Defaults to true. When true, polls every 50ms for up to 500ms.
+   * @param options.signal - Aborting it stops polling, resolving to false without focusing the
+   *   element even if it appears afterwards.
    * @returns Whether the element was successfully focused. Returns a Promise when polling.
    */
   focusOnUIElement: (
     elementId?: string,
-    options?: boolean | { forceFocus?: boolean; select?: boolean; poll?: boolean }
+    options?:
+      | boolean
+      | { forceFocus?: boolean; select?: boolean; poll?: boolean; signal?: AbortSignal }
   ) => boolean | Promise<boolean>;
 }
 
@@ -132,7 +162,6 @@ export const getDefaultLayoutState: () => SubState = () => {
     },
     layout: {
       initialActive: ActiveTabs.CANVAS,
-      showToolbar: true,
       navSize: DEFAULT_NAV_SIZE,
       bottomPanelHeight: DEFAULT_BOTTOM_PANEL_HEIGHT,
       rightPanelWidth: DEFAULT_RIGHT_PANEL_WIDTH,
@@ -142,9 +171,13 @@ export const getDefaultLayoutState: () => SubState = () => {
         rightPanelWidth: DEFAULT_RIGHT_PANEL_WIDTH,
       },
       panelPosition: 'bottom',
-      showTabs: true,
+      showNav: true,
+      showPanel: true,
+      showToolbar: true,
+      showMobileNavigation: false,
     },
     layoutCustomisations: {
+      showPanel: undefined,
       showSidebar: undefined,
       showToolbar: undefined,
     },
@@ -155,6 +188,7 @@ export const getDefaultLayoutState: () => SubState = () => {
 
 export const focusableUIElements = {
   addonPanel: 'storybook-panel-region',
+  previewRegion: 'storybook-preview-region',
   storySearchField: 'storybook-explorer-searchfield',
   storyListMenu: 'storybook-explorer-menu',
   storyPanelRoot: 'storybook-panel-root',
@@ -191,6 +225,46 @@ const getRecentVisibleSizes = (layoutState: API_Layout) => {
         : layoutState.recentVisibleSizes.rightPanelWidth,
   };
 };
+
+const applyLayoutOptions = (
+  layoutState: API_Layout,
+  options: Partial<API_Layout> | undefined,
+  singleStory: boolean
+) => {
+  const { showPanel, showNav } = options ?? {};
+  const layoutKeys = Object.keys(layoutState) as (keyof API_Layout)[];
+  const nextLayoutState = toMerged(layoutState, pick(options ?? {}, layoutKeys));
+
+  // singleStory always hides the sidebar; otherwise honor showSidebar.
+  if (showNav === false || singleStory) {
+    nextLayoutState.recentVisibleSizes = getRecentVisibleSizes(nextLayoutState);
+    nextLayoutState.navSize = 0;
+  } else if (showNav === true) {
+    nextLayoutState.navSize = nextLayoutState.recentVisibleSizes.navSize;
+  }
+
+  if (showPanel === false) {
+    nextLayoutState.recentVisibleSizes = getRecentVisibleSizes(nextLayoutState);
+    nextLayoutState.bottomPanelHeight = 0;
+    nextLayoutState.rightPanelWidth = 0;
+  } else if (showPanel === true) {
+    nextLayoutState.bottomPanelHeight = nextLayoutState.recentVisibleSizes.bottomPanelHeight;
+    nextLayoutState.rightPanelWidth = nextLayoutState.recentVisibleSizes.rightPanelWidth;
+  }
+
+  return nextLayoutState;
+};
+
+const applyUiOptions = (uiState: API_UI, options: Partial<API_UI> | undefined) => {
+  const uiKeys = Object.keys(uiState) as (keyof API_UI)[];
+  return toMerged(uiState, pick(options ?? {}, uiKeys));
+};
+
+/**
+ * Whether the viewport is at or above the manager's desktop breakpoint (600px). Below it the
+ * sidebar is rendered as a drawer owned by the manager UI rather than the desktop nav.
+ */
+export const isDesktopViewport = () => global.matchMedia?.('(min-width: 600px)')?.matches ?? true;
 
 export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory }) => {
   const api = {
@@ -279,6 +353,19 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
     },
 
     toggleNav(nextState?: boolean) {
+      // On mobile the sidebar is a drawer owned by the manager UI, not the desktop nav size, so
+      // toggle the drawer's dedicated state instead of resizing the hidden desktop nav. No
+      // persistence option: the drawer is ephemeral UI and must not be written to storage.
+      if (!isDesktopViewport()) {
+        return store.setState((state: State) => ({
+          layout: {
+            ...state.layout,
+            showMobileNavigation:
+              typeof nextState === 'boolean' ? nextState : !state.layout.showMobileNavigation,
+          },
+        }));
+      }
+
       return store.setState(
         (state: State) => {
           if (state.singleStory) {
@@ -310,6 +397,12 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
         },
         { persistence: 'session' }
       );
+    },
+
+    setMobileNavigation(show: boolean) {
+      return store.setState((state: State) => ({
+        layout: { ...state.layout, showMobileNavigation: show },
+      }));
     },
 
     toggleToolbar(toggled?: boolean) {
@@ -366,7 +459,9 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
      */
     focusOnUIElement(
       elementId?: string,
-      options?: boolean | { forceFocus?: boolean; select?: boolean; poll?: boolean }
+      options?:
+        | boolean
+        | { forceFocus?: boolean; select?: boolean; poll?: boolean; signal?: AbortSignal }
     ): boolean | Promise<boolean> {
       // See RFC https://github.com/storybookjs/storybook/discussions/32983 for
       // ways to make this API more robust to focus-trap race conditions.
@@ -375,6 +470,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
         forceFocus = false,
         select = false,
         poll = true,
+        signal,
       } = typeof options === 'boolean' ? { select: options } : (options ?? {});
 
       if (!elementId) {
@@ -395,6 +491,15 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
         ) {
           element.setAttribute('tabindex', '-1');
           element.focus();
+          // Only focusable for this one visit, as react-aria does for landmarks. Otherwise a later
+          // pointer click on the element's blank space would focus it and draw its focus ring.
+          if (element === document.activeElement) {
+            element.addEventListener('blur', () => element.removeAttribute('tabindex'), {
+              once: true,
+            });
+          } else {
+            element.removeAttribute('tabindex');
+          }
         }
 
         if (element !== document.activeElement && element.id !== document.activeElement?.id) {
@@ -411,7 +516,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
         return true;
       }
 
-      if (!poll) {
+      if (!poll || signal?.aborted) {
         return false;
       }
 
@@ -421,41 +526,42 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
         const maxDuration = 500;
         const pollInterval = 50;
 
+        const stop = (success: boolean) => {
+          clearInterval(intervalId);
+          resolve(success);
+        };
+
         const intervalId = setInterval(() => {
           const elapsed = Date.now() - startTime;
 
           if (attemptFocus()) {
-            clearInterval(intervalId);
-            resolve(true);
+            stop(true);
             return;
           }
 
           if (elapsed >= maxDuration) {
-            clearInterval(intervalId);
-            resolve(false);
+            stop(false);
           }
         }, pollInterval);
+
+        signal?.addEventListener('abort', () => stop(false), { once: true });
       });
     },
 
     getInitialOptions() {
-      const { theme, selectedPanel, layoutCustomisations, ...options } = provider.getConfig();
+      const userConfig = provider.getConfig();
       const defaultLayoutState = getDefaultLayoutState();
+
+      const { theme, selectedPanel, layoutCustomisations } = userConfig;
 
       return {
         ...defaultLayoutState,
-        layout: {
-          ...toMerged(
-            defaultLayoutState.layout,
-            pick(options, Object.keys(defaultLayoutState.layout))
-          ),
-          ...(singleStory && { navSize: 0 }),
-        },
+        layout: applyLayoutOptions(defaultLayoutState.layout, userConfig.layout, !!singleStory),
         layoutCustomisations: {
           ...defaultLayoutState.layoutCustomisations,
           ...(layoutCustomisations ?? {}),
         },
-        ui: toMerged(defaultLayoutState.ui, pick(options, Object.keys(defaultLayoutState.ui))),
+        ui: applyUiOptions(defaultLayoutState.ui, userConfig.ui),
         selectedPanel: selectedPanel || defaultLayoutState.selectedPanel,
         theme: theme || defaultLayoutState.theme,
       };
@@ -469,6 +575,13 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
     },
     getIsNavShown() {
       return getIsNavShown(store.getState());
+    },
+    getNavAvailability(): NavAvailability {
+      const state = store.getState();
+      if (isReviewManagerRoute(state.path, state.customQueryParams)) {
+        return 'unavailable';
+      }
+      return getIsNavShown(state) ? 'shown' : 'hidden';
     },
 
     getShowToolbarWithCustomisations(showToolbar: boolean) {
@@ -513,18 +626,9 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
         return;
       }
 
-      const updatedLayout = {
-        ...layout,
-        ...(options.layout || {}),
-        ...pick(options, Object.keys(layout)),
-        ...(singleStory && { navSize: 0 }),
-      };
+      const updatedLayout = applyLayoutOptions(layout, options.layout, !!singleStory);
 
-      const updatedUi = {
-        ...ui,
-        ...options.ui,
-        ...toMerged(options.ui || {}, pick(options, Object.keys(ui))),
-      };
+      const updatedUi = applyUiOptions(ui, options.ui);
 
       const updatedTheme = {
         ...theme,
@@ -553,6 +657,11 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
   };
 
   const persisted = pick(store.getState(), ['layout', 'selectedPanel']);
+
+  // The mobile drawer is ephemeral UI: a session that persisted it open must not restore it open.
+  if (persisted.layout) {
+    persisted.layout = { ...persisted.layout, showMobileNavigation: false };
+  }
 
   provider.channel?.on(SET_CONFIG, () => {
     api.setOptions(merge(api.getInitialOptions(), persisted));

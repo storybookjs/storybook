@@ -2,8 +2,10 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { defineMain } from '@storybook/react-vite/node';
+import type { Options } from 'storybook/internal/types';
 
 import react from '@vitejs/plugin-react';
+import type { InlineConfig } from 'vite';
 
 import { BROWSER_TARGETS } from '../core/src/shared/constants/environments-support.ts';
 
@@ -12,8 +14,9 @@ const currentDirPath = dirname(currentFilePath);
 
 const componentsPath = join(currentDirPath, '../core/src/components/index.ts');
 const managerApiPath = join(currentDirPath, '../core/src/manager-api/index.mock.ts');
+const previewApiPath = join(currentDirPath, '../core/src/preview-api/index.ts');
 const themingCreatePath = join(currentDirPath, '../core/src/theming/create.ts');
-const themingPath = join(currentDirPath, '../core/src/theming/index.ts');
+const themingEmotionPath = join(currentDirPath, '../core/src/theming/emotion.ts');
 const imageContextPath = join(currentDirPath, '../frameworks/nextjs/src/image-context.ts');
 
 const config = defineMain({
@@ -34,6 +37,10 @@ const config = defineMain({
     {
       directory: '../core/src/preview',
       titlePrefix: 'preview',
+    },
+    {
+      directory: '../core/src/shared',
+      titlePrefix: 'core/shared',
     },
     {
       directory: '../core/src/components/brand',
@@ -107,6 +114,11 @@ const config = defineMain({
       titlePrefix: 'addons/vitest',
       files: 'stories.tsx',
     },
+    {
+      directory: '../renderers/react/src/__test__',
+      titlePrefix: 'renderer/react',
+      files: '@(ReactDomClient|RenderToCanvas).stories.tsx',
+    },
   ],
   addons: [
     '@storybook/addon-onboarding',
@@ -115,8 +127,10 @@ const config = defineMain({
     '@storybook/addon-designs',
     '@storybook/addon-vitest',
     '@storybook/addon-a11y',
+    '@storybook/addon-mcp',
     'storybook-addon-pseudo-states',
     '@chromatic-com/storybook',
+    './services-preset.ts',
   ],
   previewAnnotations: [
     './core/template/stories/preview.ts',
@@ -147,26 +161,35 @@ const config = defineMain({
   features: {
     developmentModeForBuild: true,
     experimentalTestSyntax: true,
+    experimentalReactComponentMeta: true,
+    experimentalSearchDocsHeadings: true,
+    experimentalLiveServerSnippets: true,
   },
   staticDirs: [{ from: './bench/bundle-analyzer', to: '/bundle-analyzer' }],
-  viteFinal: async (viteConfig, { configType }) => {
+  viteFinal: async (viteConfig: InlineConfig, { configType }: Options) => {
     const { mergeConfig } = await import('vite');
 
     return mergeConfig(viteConfig, {
       resolve: {
-        alias: {
-          ...(configType === 'DEVELOPMENT'
-            ? {
+        alias:
+          configType === 'DEVELOPMENT'
+            ? [
+                { find: 'storybook/internal/components', replacement: componentsPath },
+                { find: 'storybook/manager-api', replacement: managerApiPath },
+                { find: 'storybook/preview-api', replacement: previewApiPath },
+                { find: 'storybook/theming/create', replacement: themingCreatePath },
+                { find: 'storybook/theming/emotion', replacement: themingEmotionPath },
+                // addon-designs still imports styled/css/jsx from storybook/theming.
+                { find: /^storybook\/theming$/, replacement: themingEmotionPath },
+                { find: 'sb-original/image-context', replacement: imageContextPath },
+              ]
+            : {
+                // The components dist bundle inlines react-aria; resolving to source keeps the
+                // preview on a single react-aria copy so FocusScopes can nest across modules.
                 'storybook/internal/components': componentsPath,
                 'storybook/manager-api': managerApiPath,
-                'storybook/theming/create': themingCreatePath,
-                'storybook/theming': themingPath,
-                'sb-original/image-context': imageContextPath,
-              }
-            : {
-                'storybook/manager-api': managerApiPath,
-              }),
-        },
+                'storybook/preview-api': previewApiPath,
+              },
       },
       plugins: [react()],
       build: {
@@ -177,12 +200,17 @@ const config = defineMain({
       server: {
         watch: {
           // Something odd happens with tsconfig and nx which causes Storybook to keep reloading, so we ignore them
-          ignored: ['**/.nx/cache/**', '**/tsconfig.json'],
+          ignored: [
+            '**/.nx/cache/**',
+            '**/tsconfig.json',
+            // Internal e2e writes traces under code/playwright-results while the dev server is running.
+            '**/playwright-results/**',
+            '**/playwright-report/**',
+          ],
         },
       },
     } satisfies typeof viteConfig);
   },
-  // logLevel: 'debug',
 });
 
 export default config;

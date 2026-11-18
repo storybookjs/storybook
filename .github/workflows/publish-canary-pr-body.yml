@@ -1,0 +1,104 @@
+###################################################################################################
+#                                                                                                 #
+#                                            ██                                                   #
+#                                          ██░░██                                                 #
+#  ░░          ░░                        ██░░░░░░██                            ░░░░               #
+#                                      ██░░░░░░░░░░██                                             #
+#                                      ██░░░░░░░░░░██                                             #
+#                                    ██░░░░░░░░░░░░░░██                                           #
+#                                  ██░░░░░░██████░░░░░░██                                         #
+#                                  ██░░░░░░██████░░░░░░██                                         #
+#                                ██░░░░░░░░██████░░░░░░░░██                                       #
+#                                ██░░░░░░░░██████░░░░░░░░██                                       #
+#                              ██░░░░░░░░░░██████░░░░░░░░░░██                                     #
+#                            ██░░░░░░░░░░░░██████░░░░░░░░░░░░██                                   #
+#                            ██░░░░░░░░░░░░██████░░░░░░░░░░░░██                                   #
+#                          ██░░░░░░░░░░░░░░██████░░░░░░░░░░░░░░██                                 #
+#                          ██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██                                 #
+#                        ██░░░░░░░░░░░░░░░░██████░░░░░░░░░░░░░░░░██                               #
+#                        ██░░░░░░░░░░░░░░░░██████░░░░░░░░░░░░░░░░██                               #
+#                      ██░░░░░░░░░░░░░░░░░░██████░░░░░░░░░░░░░░░░░░██                             #
+#        ░░            ██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██                             #
+#                        ██████████████████████████████████████████                               #
+#                                                                                                 #
+#                                                                                                 #
+#   SECURITY WARNING: This workflow uses `workflow_run`, which GitHub treats as a privileged      #
+#   trigger (write token, even when the triggering run was a fork pull_request). Keep it          #
+#   equivalent to Danger's `pull_request_target` rules:                                           #
+#                                                                                                 #
+# - Never check out `github.event.workflow_run.head_sha`. That is the untrusted PR commit.        #
+#   This job checks out `github.sha` (the default-branch copy of this workflow).                  #
+# - Never download, unpack, or execute artifacts / scripts from the triggering run.               #
+# - Never write to the GitHub Actions cache.                                                      #
+# - Reconstruct canary URLs from GitHub metadata, not from PR-supplied files. For                #
+#   pull_request, use workflow_run.head_sha and `/commits/{sha}/pulls` (head must match).         #
+#   For workflow_dispatch, head_sha is the dropdown branch — use the canary-ref step name         #
+#   written by this repo's workflow from the maintainer inputs. Do not download artifacts.        #
+# - Always set explicit permissions so GITHUB_TOKEN cannot do more than patch the matching PR.    #
+#                                                                                                 #
+###################################################################################################
+
+name: Update Canary PR Body
+
+# Fork `pull_request` runs get a read-only GITHUB_TOKEN, so publish-canary.yml cannot patch the
+# PR body. `workflow_run` re-runs this file from the default branch after that job finishes, with
+# a write token, without executing the PR's code.
+#
+# Why this is still secure:
+# - The YAML and the Node script come from the default branch, not the PR (same trust model as
+#   Danger checking out base.sha).
+# - The publish job stays on `pull_request` with contents:read only. It has no secrets and does
+#   not write to the PR.
+# - This job never checks out the PR, never uses its artifacts, and never runs yarn/npm from it.
+# - Install snippets for pull_request runs are built from `workflow_run.head_sha`. A fork
+#   cannot aim this token at a different PR: we look up PRs for that SHA and require the
+#   open PR's head to equal it. Manual dispatches use the canary-ref step, not head_sha.
+#
+on:
+  # zizmor: ignore[dangerous-triggers]  # default-branch checkout only; see security warning above
+  workflow_run:
+    workflows: ['Publish Canary Packages']
+    types: [completed]
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.workflow_run.id }}
+  cancel-in-progress: true
+
+jobs:
+  update-canary-pr-body:
+    name: Update Canary PR Body
+    if: |
+      github.repository_owner == 'storybookjs' &&
+      contains(fromJSON('["pull_request", "workflow_dispatch"]'), github.event.workflow_run.event) &&
+      contains(fromJSON('["success", "failure"]'), github.event.workflow_run.conclusion)
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          # github.sha is the default-branch commit for workflow_run. Do not use
+          # github.event.workflow_run.head_sha — that is the untrusted PR commit.
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Update canary heading and install commands
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+          ACTOR: ${{ github.event.workflow_run.actor.login }}
+        run: |
+          node .github/scripts/update-canary-pr-body-from-run.ts \
+            --repo "$REPOSITORY" \
+            --run-id "$RUN_ID" \
+            --actor "${ACTOR:-unknown}"

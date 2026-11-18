@@ -1,0 +1,302 @@
+import { transformImports } from 'storybook/internal/common';
+import { logger, prompt } from 'storybook/internal/node-logger';
+import { writeText } from 'tinyclip';
+import picocolors from 'picocolors';
+import { dedent } from 'ts-dedent';
+
+import { assertMainConfigNamesFramework } from '../helpers/main-config-framework.ts';
+import type { Fix } from '../types.ts';
+
+export const REACT_VITE_PACKAGE = '@storybook/react-vite';
+export const TANSTACK_REACT_PACKAGE = '@storybook/tanstack-react';
+const DOCS_URL = 'https://storybook.js.org/docs/get-started/frameworks/tanstack-react';
+
+const TANSTACK_ROUTER_PACKAGES = [
+  '@tanstack/react-router',
+  '@tanstack/router-core',
+  '@tanstack/start',
+  '@tanstack/react-start',
+];
+const TANSTACK_ROUTER_IMPORT = new RegExp(
+  `from\\s+['"](${TANSTACK_ROUTER_PACKAGES.join('|')})['"]`
+);
+const TANSTACK_ROUTER_DECORATOR_MARKERS = [
+  'createMemoryHistory',
+  'createRootRoute',
+  'createRouter',
+  'RouterProvider',
+];
+
+const scriptFile = /\.[cm]?[jt]sx?$/;
+
+const buildAiMigrationPrompt = (previewConfigPath?: string) =>
+  dedent`
+    You are migrating a Storybook project from the "${REACT_VITE_PACKAGE}" framework to the
+    "${TANSTACK_REACT_PACKAGE}" framework. The framework swap in .storybook/main.* and the
+    package.json dependency change have already been performed by the Storybook automigration
+    CLI — do not redo those. Your job is to clean up the user-land code that the CLI cannot
+    safely transform.
+
+    Reference documentation:
+    ${DOCS_URL}
+
+    # Background
+
+    "${TANSTACK_REACT_PACKAGE}" is a TanStack Router-aware Storybook framework built on top
+    of @storybook/react-vite. It mounts every story inside a TanStack Router (in-memory
+    history) automatically. Manual router setup that users previously wired into a
+    decorator is now redundant and must be removed — leaving it in place creates a nested
+    router and breaks stories.
+
+    Telltale signs of a manual decorator that must be removed (any of these in
+    preview / decorator / story files):
+      - imports from "@tanstack/react-router", "@tanstack/router-core",
+        "@tanstack/start", or "@tanstack/react-start" used to construct a router
+      - calls to createMemoryHistory(...), createRootRoute(...), createRouter(...)
+      - JSX usage of <RouterProvider router={...} />
+      - a decorator function (e.g. const withRouter = (Story) => <RouterProvider .../>)
+        wired into "decorators: [...]" of a meta or preview
+
+    # The replacement APIs from "${TANSTACK_REACT_PACKAGE}"
+
+    All of the following are exported from "${TANSTACK_REACT_PACKAGE}" — re-exporting the
+    @storybook/react primitives plus the TanStack-specific additions. Use these instead of
+    a hand-rolled router decorator. Only opt in when a story actually needs a specific
+    route — by default the framework's auto-router is enough.
+
+    1) Preview-level default route (CSF factories — recommended).
+
+       In ${previewConfigPath ?? '.storybook/preview.*'}:
+
+         import { definePreview } from '@storybook/tanstack-react';
+         import { routeTree } from '../src/routeTree.gen'; // or a custom Route
+
+         export default definePreview({
+           // optional — registers a default route for every story in the project
+           route: routeTree,
+           parameters: { /* ... */ },
+         });
+
+    2) Per-meta route via "parameters.tanstack.router" (works with both CSF factories
+       and CSF3). Most TanStack-Router-decorator removals translate to this:
+
+         // CSF factories style (preferred when the project already uses preview.meta):
+         import preview from '#.storybook/preview';
+         import { Route } from './Page';
+
+         const meta = preview.meta({
+           title: 'Example/Page',
+           parameters: {
+             tanstack: {
+               router: {
+                 route: Route,
+               },
+             },
+           },
+         });
+
+         export const Default = meta.story();
+
+         // CSF3 style:
+         import type { Meta, StoryObj } from '@storybook/tanstack-react';
+         import { Route } from './Page';
+
+         const meta = {
+           title: 'Example/Page',
+           parameters: {
+             tanstack: { router: { route: Route } },
+           },
+         } satisfies Meta<typeof Route>;
+
+         export default meta;
+         export const Default: StoryObj<typeof meta> = {};
+
+    3) Per-story override — same shape, but on a single story's "parameters" instead of
+       the meta. Useful when one story needs a different route than the others.
+
+    4) Additional "parameters.tanstack.router" fields you can use when needed:
+         - "path"           initial pathname (e.g. '/users/$id')
+         - "params"         URL params object (typed against the route)
+         - "query"          search params object (typed against the route)
+         - "routeOverrides" map of route id -> { loader / beforeLoad / validateSearch / ... }
+                            for mocking specific routes in the registered tree
+         - "useRouterContext" function that returns a custom router context per story
+
+       Do NOT introduce any of these unless the original decorator was clearly setting up
+       that exact behavior. Remove the decorator first; only port over the bits that were
+       actually doing work.
+
+    5) Type imports. If the project uses CSF3 types, switch them from "@storybook/react"
+       (or "@storybook/react-vite") to "@storybook/tanstack-react":
+
+         - import type { Meta, StoryObj } from '@storybook/react';
+         + import type { Meta, StoryObj } from '@storybook/tanstack-react';
+
+       The TanStack-aware "Meta" infers TanStack parameter types from the route in
+       "component" / parameters, giving type-safe params/query.
+
+    # Tasks (perform in order, in the user's repository)
+
+    1. Open ${previewConfigPath ?? '.storybook/preview.*'} and remove any TanStack Router
+       decorator from the "decorators" array. The decorator may be:
+         - defined inline in this file, or
+         - imported from another module (commonly .storybook/decorators.ts,
+           .storybook/withRouter.tsx, or similar) — in that case remove BOTH the
+           import + usage here AND delete the decorator definition at its source.
+       If the source decorator file becomes empty after removal, delete the file.
+
+       Confirm "definePreview" is imported from "@storybook/tanstack-react" (not
+       "@storybook/react" or "@storybook/react-vite"). If the project has a single
+       project-wide route to register, pass it via "definePreview({ route })".
+
+    2. Search the whole repository (not just .storybook/) for any *.stories.* file that
+       declares a per-story or per-meta TanStack Router decorator and remove it. If the
+       removed decorator was setting up a specific route, port that to
+       "parameters.tanstack.router" using the APIs above (route / path / params / query /
+       routeOverrides — whichever applies).
+
+    3. Drop now-unused imports of: RouterProvider, createRouter, createMemoryHistory,
+       createRootRoute, Outlet (from "@tanstack/react-router" / "@tanstack/router-core" /
+       "@tanstack/start" / "@tanstack/react-start"). Keep imports that are still
+       legitimately used elsewhere in the file (Link, useNavigate, createRoute when used
+       to build a Route passed to "parameters.tanstack.router.route", etc.).
+
+    4. Update story-type imports from "@storybook/react" / "@storybook/react-vite" to
+       "@storybook/tanstack-react" wherever the story uses TanStack router parameters,
+       so the types pick up the TanStack additions.
+
+    5. Preserve CSF factories syntax. If the file uses
+       "definePreview({...})" / "preview.meta({...})" / "meta.story(...)", keep that shape;
+       only mutate the affected fields. Do not rewrite CSF1/CSF2/CSF3 -> CSF factories or
+       vice versa.
+
+    6. Preserve all other decorators, parameters, args, argTypes, loaders, beforeEach,
+       tags, and globals exactly as they were. Only the TanStack Router decorator is
+       being removed.
+
+    7. Do not edit .storybook/main.*, package.json, or any lockfile — those are already
+       handled by the automigration CLI.
+
+    # Verification checklist before finishing
+
+      - No remaining manual "RouterProvider", "createRouter", "createMemoryHistory",
+        "createRootRoute" usage in preview, .storybook/**, or *.stories.*.
+      - "decorators" arrays no longer contain the removed TanStack Router decorator.
+      - All previously imported router symbols that are no longer referenced are gone.
+      - Story files importing TanStack-aware types use "@storybook/tanstack-react".
+      - TypeScript still compiles. Storybook still loads. Stories that don't need a
+        specific route now rely on the framework's default in-memory router; stories
+        that do specify a route do so via "parameters.tanstack.router".
+  `;
+
+const MIGRATED_OR_NOT = new RegExp(`${REACT_VITE_PACKAGE}|${TANSTACK_REACT_PACKAGE}`);
+
+export const reactViteToTanstackReact: Fix<{ hasTanstackRouterDecorator: boolean }> = {
+  id: 'react-vite-to-tanstack-react',
+  link: DOCS_URL,
+  defaultSelected: false,
+
+  async check({ packageManager, files, previewConfigPath, storiesPaths }) {
+    const allDeps = packageManager.getAllDependencies();
+    if (!allDeps[REACT_VITE_PACKAGE] || !TANSTACK_ROUTER_PACKAGES.some((pkg) => allDeps[pkg])) {
+      return null;
+    }
+
+    const candidates = [...(previewConfigPath ? [previewConfigPath] : []), ...storiesPaths].filter(
+      (file) => scriptFile.test(file)
+    );
+
+    for (const file of candidates) {
+      // An unreadable file is reported by the apply pass, not by this check.
+      const content = await files.read(file).catch(() => '');
+      if (
+        TANSTACK_ROUTER_IMPORT.test(content) &&
+        TANSTACK_ROUTER_DECORATOR_MARKERS.some((marker) => content.includes(marker))
+      ) {
+        return { hasTanstackRouterDecorator: true };
+      }
+    }
+    return { hasTanstackRouterDecorator: false };
+  },
+
+  prompt() {
+    return `Migrate from ${REACT_VITE_PACKAGE} to ${TANSTACK_REACT_PACKAGE} (TanStack Router-aware framework)`;
+  },
+
+  transform: () => [
+    {
+      filter: { kind: ['main'] },
+      handler: (code) => code.replaceAll(REACT_VITE_PACKAGE, TANSTACK_REACT_PACKAGE),
+    },
+    {
+      filter: { kind: ['preview', 'manager', 'config', 'story'], id: scriptFile },
+      handler: (code) => transformImports(code, { [REACT_VITE_PACKAGE]: TANSTACK_REACT_PACKAGE }),
+    },
+  ],
+
+  async run({
+    result,
+    files,
+    mainConfigPath,
+    previewConfigPath,
+    packageManager,
+    storybookVersion,
+    yes,
+  }) {
+    await assertMainConfigNamesFramework(files, mainConfigPath, MIGRATED_OR_NOT, {
+      from: REACT_VITE_PACKAGE,
+      to: TANSTACK_REACT_PACKAGE,
+    });
+    logger.step(`Migrating from ${REACT_VITE_PACKAGE} to ${TANSTACK_REACT_PACKAGE}...`);
+
+    await packageManager.removeDependencies([REACT_VITE_PACKAGE]);
+    await packageManager.addDependencies({ type: 'devDependencies', skipInstall: true }, [
+      `${TANSTACK_REACT_PACKAGE}@${storybookVersion}`,
+    ]);
+
+    if (result.hasTanstackRouterDecorator) {
+      logger.logBox(
+        dedent`
+          We detected what looks like a manual TanStack Router decorator in
+          ${picocolors.cyan(previewConfigPath ?? '.storybook/preview')}.
+
+          ${picocolors.bold(TANSTACK_REACT_PACKAGE)} wraps every story in a TanStack Router
+          automatically (see ${picocolors.yellow(DOCS_URL)}), so that decorator is no longer needed and should be removed.
+        `
+      );
+
+      const wantsAiPrompt =
+        yes ||
+        (await prompt.confirm({
+          message:
+            'Would you like a ready-to-paste AI prompt to help remove the now-unused TanStack Router decorator?',
+          initialValue: true,
+        }));
+
+      if (wantsAiPrompt) {
+        const aiPrompt = buildAiMigrationPrompt(previewConfigPath);
+        const separator = picocolors.dim('─'.repeat(60));
+        // Headless Linux and CI often lack a clipboard helper such as `xclip`.
+        const copied = await writeText(aiPrompt).then(
+          () => true,
+          () => false
+        );
+
+        // Printed even when copied, so a coding agent running the migration can read it from stdout.
+        logger.logBox(
+          dedent`${
+            copied
+              ? 'AI migration prompt copied to clipboard. Full prompt below:'
+              : 'Clipboard not available in this environment. Copy the AI migration prompt below manually:'
+          }
+
+            ${separator}
+            ${aiPrompt}
+            ${separator}`
+        );
+      }
+    }
+    logger.step('Migration completed successfully!');
+    logger.log(`For more information, see: ${DOCS_URL}`);
+  },
+};

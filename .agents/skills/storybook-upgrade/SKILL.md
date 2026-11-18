@@ -2,6 +2,8 @@
 name: storybook-upgrade
 description: Upgrade Storybook to a specific version (canary or release). Use this when upgrading Storybook packages in an external app, reproduction, or test project.
 allowed-tools: Bash
+metadata:
+  internal: true
 ---
 
 # Storybook Upgrade
@@ -26,7 +28,7 @@ npx storybook@<VERSION> upgrade
 ### Upgrade to canary version
 
 ```bash
-npx storybook@0.0.0-pr-33526-sha-a2e09fa2 upgrade
+npx --yes --allow-remote=all https://pkg.pr.new/storybook@<SHA> upgrade
 ```
 
 ### Upgrade to latest stable

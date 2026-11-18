@@ -2,12 +2,12 @@ import type { FC, FocusEvent, SyntheticEvent } from 'react';
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 import { Button, Form, ToggleButton } from 'storybook/internal/components';
-import { announce, destroyAnnouncer } from '@react-aria/live-announcer';
 
+import { announce, destroyAnnouncer } from '@react-aria/live-announcer';
 import { AddIcon, EditIcon, SubtractIcon } from '@storybook/icons';
 
 import { cloneDeep } from 'es-toolkit/object';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import { getControlId, getControlSetterButtonId } from './helpers';
 import { JsonTree } from './react-editable-json-tree';
@@ -127,7 +127,7 @@ const Input = styled.input(({ theme, placeholder }) => ({
   },
 }));
 
-const RawButtonWrapper = styled.div({
+const RawButton = styled(ToggleButton)({
   alignSelf: 'flex-start',
   order: 2,
   marginRight: -10,
@@ -139,26 +139,20 @@ const RawInput = styled(Form.Textarea)(({ theme }) => ({
   fontFamily: theme.typography.fonts.mono,
   fontSize: '12px',
   lineHeight: '18px',
+  '&::placeholder': {
+    fontFamily: theme.typography.fonts.base,
+    fontSize: '13px',
+  },
+  '&:placeholder-shown': {
+    padding: '7px 10px',
+  },
 }));
 
 const RawInputWrapper = styled.div({
-  position: 'relative',
   flex: 1,
   display: 'grid',
   gap: 6,
 });
-
-const RawInputLabel = styled.span(({ theme }) => ({
-  position: 'absolute',
-  top: 7,
-  left: 6,
-  color: theme.textMutedColor,
-  fontFamily: theme.typography.fonts.mono,
-  fontSize: '12px',
-  lineHeight: '18px',
-  cursor: 'text',
-  pointerEvents: 'none',
-}));
 
 const ErrorMessage = styled.p(({ theme }) => ({
   margin: 0,
@@ -182,16 +176,25 @@ const selectValue = (event: SyntheticEvent<HTMLInputElement>) => {
 
 export type ObjectProps = ControlProps<ObjectValue> & ObjectConfig;
 
-export const ObjectControl: FC<ObjectProps> = ({ name, storyId, value, onChange, argType }) => {
+export const ObjectControl: FC<ObjectProps> = ({
+  name,
+  storyId,
+  controlsId,
+  value,
+  onChange,
+  argType,
+  required,
+}) => {
   const data = useMemo(() => value && cloneDeep(value), [value]);
   const hasData = data !== null && data !== undefined;
   const [showRaw, setShowRaw] = useState(!hasData);
-  const [isRawFocused, setIsRawFocused] = useState(false);
+  const hadDataRef = useRef(hasData);
 
   const [parseError, setParseError] = useState<Error | null>(null);
   const readonly = !!argType?.table?.readonly;
-  const controlId = getControlId(name, storyId);
-  const jsonErrorId = `${controlId}-error`;
+  const isArray = argType?.type?.name === 'array';
+  const rawInputId = getControlId(name, storyId, controlsId);
+  const jsonErrorId = `${rawInputId}-error`;
 
   const validateRaw = useCallback((raw: string) => {
     try {
@@ -220,9 +223,16 @@ export const ObjectControl: FC<ObjectProps> = ({ name, storyId, value, onChange,
 
   const [forceVisible, setForceVisible] = useState(false);
   const onForceVisible = useCallback(() => {
-    onChange({});
+    onChange(isArray ? [] : {});
     setForceVisible(true);
-  }, [onChange, setForceVisible]);
+  }, [isArray, onChange, setForceVisible]);
+
+  useEffect(() => {
+    if (!hadDataRef.current && hasData && showRaw && !forceVisible) {
+      setShowRaw(false);
+    }
+    hadDataRef.current = hasData;
+  }, [forceVisible, hasData, showRaw]);
 
   const htmlElRef = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
@@ -236,7 +246,6 @@ export const ObjectControl: FC<ObjectProps> = ({ name, storyId, value, onChange,
     return JSON.stringify(data ?? '', null, 2) ?? '';
   }, [data]);
   const [rawValue, setRawValue] = useState(jsonString);
-  const isRawEmpty = rawValue.length === 0;
 
   useEffect(() => {
     if (showRaw) {
@@ -247,8 +256,6 @@ export const ObjectControl: FC<ObjectProps> = ({ name, storyId, value, onChange,
   useLayoutEffect(() => {
     setRawValue(jsonString);
   }, [jsonString, showRaw]);
-
-  const rawJsonEditorLabel = `Edit ${name} as JSON`;
 
   useEffect(() => {
     if (parseError) {
@@ -265,22 +272,22 @@ export const ObjectControl: FC<ObjectProps> = ({ name, storyId, value, onChange,
       <Button
         ariaLabel={false}
         disabled={readonly}
-        id={getControlSetterButtonId(name, storyId)}
+        id={getControlSetterButtonId(name, storyId, controlsId)}
         onClick={onForceVisible}
       >
-        Set object
+        {isArray ? 'Set array' : 'Set object'}
       </Button>
     );
   }
 
   const rawJSONForm = (
     <RawInputWrapper>
-      <label htmlFor={controlId} className="sb-sr-only">
-        {rawJsonEditorLabel}
+      <label htmlFor={rawInputId} className="sb-sr-only">
+        Edit {name} as JSON
       </label>
       <RawInput
         ref={htmlElRef}
-        id={controlId}
+        id={rawInputId}
         minRows={3}
         name={name}
         value={rawValue}
@@ -289,20 +296,15 @@ export const ObjectControl: FC<ObjectProps> = ({ name, storyId, value, onChange,
           setRawValue(nextRawValue);
           validateRaw(nextRawValue);
         }}
-        onFocus={() => setIsRawFocused(true)}
-        onBlur={(event: FocusEvent<HTMLTextAreaElement>) => {
-          setIsRawFocused(false);
-          updateRaw(event.target.value);
-        }}
+        onBlur={(event: FocusEvent<HTMLTextAreaElement>) => updateRaw(event.target.value)}
+        placeholder="Edit JSON string..."
         autoFocus={forceVisible}
         valid={parseError ? 'error' : undefined}
         aria-invalid={!!parseError}
         aria-describedby={parseError ? jsonErrorId : undefined}
         readOnly={readonly}
+        aria-required={required || undefined}
       />
-      {!readonly && !isRawFocused && isRawEmpty && (
-        <RawInputLabel aria-hidden="true">{rawJsonEditorLabel}</RawInputLabel>
-      )}
       {parseError && (
         <ErrorMessage id={jsonErrorId}>Invalid JSON: {parseError.message}</ErrorMessage>
       )}
@@ -319,25 +321,22 @@ export const ObjectControl: FC<ObjectProps> = ({ name, storyId, value, onChange,
   return (
     <Wrapper>
       {isObjectOrArray && (
-        <>
-          <RawButtonWrapper>
-            <ToggleButton
-              pressed={showRaw}
-              ariaLabel={`Edit ${name} as JSON`}
-              ariaDescription="Toggle between the structured object editor and the raw JSON editor."
-              tooltip={tooltip}
-              variant="ghost"
-              padding="small"
-              size="small"
-              onClick={(e) => {
-                e.preventDefault();
-                setShowRaw((isRaw) => !isRaw);
-              }}
-            >
-              <EditIcon />
-            </ToggleButton>
-          </RawButtonWrapper>
-        </>
+        <RawButton
+          disabled={readonly}
+          pressed={showRaw}
+          ariaLabel={`Edit ${name} as JSON`}
+          ariaDescription="Toggle between the structured object editor and the raw JSON editor."
+          tooltip={tooltip}
+          onClick={(e: SyntheticEvent) => {
+            e.preventDefault();
+            setShowRaw((isRaw) => !isRaw);
+          }}
+          variant="ghost"
+          padding="small"
+          size="small"
+        >
+          <EditIcon />
+        </RawButton>
       )}
       {!showRaw ? (
         <JsonTree
@@ -362,7 +361,7 @@ export const ObjectControl: FC<ObjectProps> = ({ name, storyId, value, onChange,
               <SubtractIcon />
             </ActionButton>
           }
-          inputElement={(_: any, __: any, ___: any, key: string) =>
+          inputElement={(_: unknown, __: unknown, ___: unknown, key: string) =>
             key ? <Input onFocus={selectValue} onBlur={dispatchEnterKey} /> : <Input />
           }
           fallback={rawJSONForm}

@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
+import { hasCoreAnnotations } from '../../../../csf/core-annotations.ts';
+import { definePreview } from '../../../../csf/csf-factories.ts';
 import { processCSFFile } from './processCSFFile.ts';
 
 it('returns a CSFFile object with meta and stories', () => {
@@ -133,6 +135,26 @@ it('filters exports using excludeStories regex', () => {
   );
 
   expect(Object.keys(stories)).toEqual(['component--y', 'component--w']);
+});
+
+describe('CSF4 factory files', () => {
+  it('sets projectAnnotations to the core-composed preview exactly once', () => {
+    const preview = definePreview({ renderToCanvas: () => {} });
+    const meta = preview.meta({ title: 'Component' });
+    const Primary = meta.story();
+
+    const csfFile = processCSFFile(
+      { default: meta, Primary },
+      './path/to/component.js',
+      'Component'
+    );
+
+    // Factory stories carry their own project annotations (the preview's composed result), which
+    // already contain the core annotations exactly once and are flagged as such. This is what lets
+    // them bypass the (potentially doubled) store-level projectAnnotations.
+    expect(csfFile.projectAnnotations).toBe(preview.composed);
+    expect(hasCoreAnnotations(csfFile.projectAnnotations)).toBe(true);
+  });
 });
 
 describe('moduleExports', () => {

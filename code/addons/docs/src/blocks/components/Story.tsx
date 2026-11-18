@@ -1,11 +1,11 @@
-/* eslint-disable react/destructuring-assignment */
+/* oxlint-disable react-classic/destructuring-assignment */
 import type { FunctionComponent } from 'react';
 import React, { useEffect, useRef, useState } from 'react';
 
 import { ErrorFormatter, Loader } from 'storybook/internal/components';
 import type { DocsContextProps, PreparedStory } from 'storybook/internal/types';
 
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import { getStoryHref } from '../getStoryHref';
 import { IFrame } from './IFrame';
@@ -51,7 +51,7 @@ const InlineStory: FunctionComponent<InlineStoryProps> = (props) => {
       story,
       element,
       {
-        showMain: () => {},
+        showMain: () => setError(undefined),
         showError: ({ title, description }: { title: string; description: string }) =>
           setError(new Error(`${title} - ${description}`)),
         showException: (err: Error) => setError(err),
@@ -66,23 +66,30 @@ const InlineStory: FunctionComponent<InlineStoryProps> = (props) => {
     };
   }, [autoplay, renderStoryToElement, story]);
 
-  if (error) {
-    return (
-      <pre>
-        <ErrorFormatter error={error} />
-      </pre>
-    );
-  }
-
   return (
     <>
-      {height ? (
-        <style>{`#${storyBlockIdFromId(
-          props
-        )} { min-height: ${height}; transform: translateZ(0); overflow: auto }`}</style>
-      ) : null}
-      {showLoader && <StorySkeleton />}
-      <div ref={storyRef as any} id={`${storyBlockIdFromId(props)}-inner`} data-name={story.name} />
+      {error ? (
+        <pre>
+          <ErrorFormatter error={error} />
+        </pre>
+      ) : (
+        <>
+          {height ? (
+            <style>{`#${storyBlockIdFromId(
+              props
+            )} { min-height: ${height}; transform: translateZ(0); overflow: auto }`}</style>
+          ) : null}
+          {showLoader && <StorySkeleton />}
+        </>
+      )}
+      {/* Stays mounted and laid out while the error shows, so a recovering story renders here at its real size */}
+      <div
+        ref={storyRef as any}
+        id={`${storyBlockIdFromId(props)}-inner`}
+        data-name={story.name}
+        lang={story.parameters?.htmlLang || 'en'}
+        style={error ? { visibility: 'hidden' } : undefined}
+      />
     </>
   );
 };

@@ -1,0 +1,8 @@
+{
+  "component": undefined,
+  "stories": {
+    "AllArgs": undefined,
+    "Default": "Default story docs description.",
+    "TemplateReference": "Template reference story docs description.",
+  },
+}

@@ -1,0 +1,42 @@
+{
+  "count": {
+    "control": {
+      "type": "number",
+    },
+    "description": undefined,
+    "name": "count",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": "1",
+      },
+      "type": {
+        "summary": "number",
+      },
+    },
+    "type": {
+      "name": "number",
+      "required": false,
+    },
+  },
+  "label": {
+    "control": {
+      "type": "text",
+    },
+    "description": undefined,
+    "name": "label",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": true,
+    },
+  },
+}

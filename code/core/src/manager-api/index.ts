@@ -1,7 +1,7 @@
 export * from './root.tsx';
 
-export { UniversalStore as experimental_UniversalStore } from '../shared/universal-store/index.ts';
-export { useUniversalStore as experimental_useUniversalStore } from '../shared/universal-store/use-universal-store-manager.ts';
+export { UniversalStore as internal_UniversalStore } from '../shared/universal-store/index.ts';
+export { useUniversalStore as internal_useUniversalStore } from '../shared/universal-store/use-universal-store-manager.ts';
 export { MockUniversalStore as experimental_MockUniversalStore } from '../shared/universal-store/mock.ts';
 
 export {
@@ -24,3 +24,11 @@ export {
 } from './stores/checklist.ts';
 
 export { Tag } from '../shared/constants/tags.ts';
+
+/** OPEN SERVICE API (manager relay hub + React hooks; types on `storybook/open-service`) */
+export {
+  getService,
+  registerService,
+  useServiceCommand,
+  useServiceQuery,
+} from '../shared/open-service/manager.ts';

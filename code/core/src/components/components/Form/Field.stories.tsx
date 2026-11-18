@@ -1,7 +1,7 @@
 import React from 'react';
 
 import { fn } from 'storybook/test';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import { Field as FieldComponent } from './Field.tsx';
 import { Input as InputComponent } from './Input.tsx';

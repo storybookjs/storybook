@@ -1,0 +1,24 @@
+{
+  "argTypes": {
+    "children": {
+      "control": false,
+      "name": "children",
+      "table": {
+        "category": "slots",
+        "defaultValue": {},
+        "type": {
+          "summary": "Snippet<[]>"
+        }
+      },
+      "type": {
+        "name": "other",
+        "required": true,
+        "value": "Snippet<[]>"
+      }
+    }
+  },
+  "id": "stories-renderers-svelte-svelte-csf-test-required-snippet",
+  "jsDocTags": {},
+  "name": "RequiredSnippet",
+  "path": "./src/stories/renderers/svelte/svelte-csf/test/required-snippet.stories.svelte"
+}

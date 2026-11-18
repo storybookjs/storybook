@@ -3,8 +3,8 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 export const exportedConstant = 'An exported constant';
 
 export enum ButtonAccent {
-  'Normal' = 'Normal',
-  'High' = 'High',
+  Normal = 'Normal',
+  High = 'High',
 }
 
 export interface ISomeInterface {
@@ -24,26 +24,26 @@ export class InputComponent<T> {
   public appearance: 'primary' | 'secondary' = 'secondary';
 
   @Input()
-  public counter: number;
+  public counter?: number;
 
   /** Specify the accent-type of the button */
   @Input()
-  public accent: ButtonAccent;
+  public accent?: ButtonAccent;
 
   /** To test source-generation with overridden propertyname */
-  @Input('color') public foregroundColor: string;
+  @Input('color') public foregroundColor?: string;
 
   /** Sets the button to a disabled state. */
   @Input()
   public isDisabled = false;
 
   @Input()
-  public label: string;
+  public label?: string;
 
-  @Input('aria-label') public ariaLabel: string;
+  @Input('aria-label') public ariaLabel?: string;
 
   /** Specifies some arbitrary object */
-  @Input() public someDataObject: ISomeInterface;
+  @Input() public someDataObject?: ISomeInterface;
 
   @Output()
   public onClick = new EventEmitter<Event>();

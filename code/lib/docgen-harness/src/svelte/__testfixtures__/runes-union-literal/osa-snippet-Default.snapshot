@@ -1,0 +1,5 @@
+<script>
+  import UnionLiteral from './UnionLiteral.svelte';
+</script>
+
+<UnionLiteral level={1} tone={null} mode="auto" />

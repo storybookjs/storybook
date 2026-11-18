@@ -3,7 +3,6 @@
 <!-- RULE-CATEGORIES:START -->
 
 **Included in these configurations**: <ul><li>addon-interactions</li><li>flat/addon-interactions</li><li>recommended</li><li>flat/recommended</li></ul>
-
 <!-- RULE-CATEGORIES:END -->
 
 ## Rule Details
@@ -24,9 +23,9 @@ Examples of **correct** code for this rule:
 
 ```js
 // Correct import.
-import { expect } from "storybook/test";
+import { expect } from 'storybook/test';
 // or this, which is now considered legacy
-import { expect } from "@storybook/jest";
+import { expect } from '@storybook/jest';
 
 Default.play = async () => {
   // Using imported expect from storybook package

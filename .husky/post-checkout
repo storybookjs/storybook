@@ -1,0 +1,3 @@
+if [ -z "$SKIP_STORYBOOK_GIT_HOOKS" ] && [ "$STORYBOOK_COMPILE_ON_CHECKOUT" = "true" ]; then
+  yarn && yarn task compile -s compile
+fi

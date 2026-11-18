@@ -38,23 +38,28 @@ export function registerIndexJsonRoute({
   configDir?: string;
   normalizedStories: NormalizedStoriesSpecifier[];
 }) {
-  const maybeInvalidate = debounce(() => channel.emit(STORY_INDEX_INVALIDATED), DEBOUNCE, {
-    edges: ['leading', 'trailing'],
-  });
+  const maybeInvalidate = debounce(
+    () => {
+      channel.emit(STORY_INDEX_INVALIDATED);
+    },
+    DEBOUNCE,
+    { edges: ['leading', 'trailing'] }
+  );
+  // The /index.json route reports a generator that failed to start
+  const startedGenerator = storyIndexGeneratorPromise.catch(() => undefined);
+  void startedGenerator.then((generator) => generator?.onInvalidated(maybeInvalidate));
   watchStorySpecifiers(normalizedStories, { workingDir }, async (path, removed) => {
-    (await storyIndexGeneratorPromise).invalidate(path, removed);
-    maybeInvalidate();
+    (await startedGenerator)?.invalidate(path, removed);
   });
   if (configDir) {
     watchConfig(configDir, async (filePath) => {
       if (basename(filePath).startsWith('preview')) {
-        (await storyIndexGeneratorPromise).invalidateAll();
-        maybeInvalidate();
+        (await startedGenerator)?.invalidateAll();
       }
     });
   }
 
-  app.use('/index.json', async (req, res) => {
+  app.use('/index.json', async (_req, res) => {
     try {
       const index = await (await storyIndexGeneratorPromise).getIndex();
       res.setHeader('Content-Type', 'application/json');

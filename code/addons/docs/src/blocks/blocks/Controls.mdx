@@ -1,0 +1,76 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+import * as ControlsStories from './Controls.stories.tsx';
+import * as ExampleStories from '../examples/ControlsParameters.stories';
+import * as SubcomponentsExampleStories from '../examples/ControlsWithSubcomponentsParameters.stories';
+import * as EmptyArgTypesStories from '../examples/EmptyArgTypes.stories';
+
+import { Controls } from './Controls';
+
+<Meta of={ControlsStories} />
+
+# Controls block (MDX)
+
+Each section below uses the `Controls` block the same way as the matching story in `Controls.stories.tsx`.
+
+## OfStory
+
+<Controls of={ExampleStories.NoParameters} />
+
+## IncludeProp
+
+<Controls of={ExampleStories.NoParameters} include={['a']} />
+
+## IncludeParameter
+
+<Controls of={ExampleStories.Include} />
+
+## ExcludeProp
+
+<Controls of={ExampleStories.NoParameters} exclude={['a']} />
+
+## ExcludeParameter
+
+<Controls of={ExampleStories.Exclude} />
+
+## SortProp
+
+<Controls of={ExampleStories.NoParameters} sort="alpha" />
+
+## SortParameter
+
+<Controls of={ExampleStories.Sort} />
+
+## Categories
+
+<Controls of={ExampleStories.Categories} />
+
+## SubcomponentsOfStory
+
+<Controls of={SubcomponentsExampleStories.NoParameters} />
+
+## SubcomponentsIncludeProp
+
+<Controls of={SubcomponentsExampleStories.NoParameters} include={['a', 'f']} />
+
+## SubcomponentsExcludeProp
+
+<Controls of={SubcomponentsExampleStories.NoParameters} exclude={['a', 'c', 'f', 'g']} />
+
+## SubcomponentsSortProp
+
+<Controls of={SubcomponentsExampleStories.NoParameters} sort="alpha" />
+
+## EmptyArgTypes
+
+<Controls of={EmptyArgTypesStories.Default} />
+
+## MultipleControlsOnSamePage
+
+<Controls of={ExampleStories.NoParameters} />
+<Controls of={ExampleStories.Include} />
+
+## MultipleControlsForSameStoryOnSamePage
+
+<Controls of={ExampleStories.NoParameters} />
+<Controls of={ExampleStories.NoParameters} />

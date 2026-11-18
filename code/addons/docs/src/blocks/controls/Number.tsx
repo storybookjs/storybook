@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import { Button, Form } from 'storybook/internal/components';
 
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import { getControlId, getControlSetterButtonId } from './helpers';
 import type { ControlProps, NumberConfig, NumberValue } from './types';
@@ -28,6 +28,7 @@ const FormInput = styled(Form.Input)(({ theme }) => ({
 export const NumberControl: FC<NumberProps> = ({
   name,
   storyId,
+  controlsId,
   value,
   onChange,
   min,
@@ -36,6 +37,7 @@ export const NumberControl: FC<NumberProps> = ({
   onBlur,
   onFocus,
   argType,
+  required,
 }) => {
   const [inputValue, setInputValue] = useState(typeof value === 'number' ? value : '');
   const [forceVisible, setForceVisible] = useState(false);
@@ -103,7 +105,7 @@ export const NumberControl: FC<NumberProps> = ({
         ariaLabel={false}
         variant="outline"
         size="medium"
-        id={getControlSetterButtonId(name, storyId)}
+        id={getControlSetterButtonId(name, storyId, controlsId)}
         onClick={onForceVisible}
         disabled={readonly}
       >
@@ -116,7 +118,7 @@ export const NumberControl: FC<NumberProps> = ({
     <Wrapper>
       <FormInput
         ref={htmlElRef}
-        id={getControlId(name, storyId)}
+        id={getControlId(name, storyId, controlsId)}
         type="number"
         onChange={handleChange}
         size="flex"
@@ -124,6 +126,7 @@ export const NumberControl: FC<NumberProps> = ({
         value={inputValue}
         valid={parseError ? 'error' : undefined}
         autoFocus={forceVisible}
+        aria-required={required || undefined}
         readOnly={readonly}
         {...{ name, min, max, step, onFocus, onBlur }}
       />

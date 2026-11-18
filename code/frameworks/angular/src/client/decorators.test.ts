@@ -1,9 +1,14 @@
+// @vitest-environment happy-dom
+
 import type { Addon_StoryContext } from 'storybook/internal/types';
+import { userEvent, within } from 'storybook/test';
 
 import { vi, expect, describe, it } from 'vitest';
 import { Component } from '@angular/core';
 import { moduleMetadata, applicationConfig } from './decorators.ts';
 import type { AngularRenderer } from './types.ts';
+
+const canvasElement = document.createElement('div');
 
 const defaultContext: Addon_StoryContext<AngularRenderer> = {
   componentId: 'unspecified',
@@ -28,16 +33,16 @@ const defaultContext: Addon_StoryContext<AngularRenderer> = {
   loaded: {},
   originalStoryFn: vi.fn(),
   viewMode: 'story',
-  abortSignal: undefined,
-  canvasElement: undefined,
-  step: undefined,
-  context: undefined,
-  canvas: undefined,
-  userEvent: undefined,
-  mount: undefined,
+  abortSignal: new AbortController().signal,
+  canvasElement,
+  step: vi.fn(),
+  get context() {
+    return defaultContext;
+  },
+  canvas: within(canvasElement),
+  userEvent: userEvent.setup(),
+  mount: vi.fn(),
 };
-
-defaultContext.context = defaultContext;
 
 class MockModule {}
 class MockModuleTwo {}

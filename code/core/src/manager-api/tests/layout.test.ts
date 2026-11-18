@@ -450,7 +450,7 @@ describe('layout API', () => {
     });
 
     it('should not change selectedPanel if it is undefined in the options, but something else has changed', () => {
-      layoutApi.setOptions({ panelPosition: 'right' });
+      layoutApi.setOptions({ layout: { panelPosition: 'right' } });
 
       expect(getLastSetStateArgs()[0].selectedPanel).toBeUndefined();
     });
@@ -467,7 +467,10 @@ describe('layout API', () => {
     it('should not change selectedPanel if it is currently the same, but something else has changed', () => {
       layoutApi.setOptions({});
       // second call is needed to overwrite initial layout
-      layoutApi.setOptions({ panelPosition: 'right', selectedPanel: currentState.selectedPanel });
+      layoutApi.setOptions({
+        layout: { panelPosition: 'right' },
+        selectedPanel: currentState.selectedPanel,
+      });
 
       expect(getLastSetStateArgs()[0].selectedPanel).toBeUndefined();
     });
@@ -486,6 +489,153 @@ describe('layout API', () => {
 
       expect(getLastSetStateArgs()[0].selectedPanel).toEqual(panelName);
     });
+
+    it('should hide the panel when layout.showPanel is false', () => {
+      layoutApi.setSizes({
+        bottomPanelHeight: 200,
+        rightPanelWidth: 250,
+      });
+
+      layoutApi.setOptions({ layout: { showPanel: false } });
+
+      expect(currentState.layout.bottomPanelHeight).toBe(0);
+      expect(currentState.layout.rightPanelWidth).toBe(0);
+      expect(currentState.layout.recentVisibleSizes.bottomPanelHeight).toBe(200);
+      expect(currentState.layout.recentVisibleSizes.rightPanelWidth).toBe(250);
+
+      layoutApi.togglePanel(true);
+
+      expect(currentState.layout.bottomPanelHeight).toBe(200);
+      expect(currentState.layout.rightPanelWidth).toBe(250);
+    });
+
+    it('should hide nav and preserve provided navSize when layout.showNav is false', () => {
+      layoutApi.setOptions({ layout: { navSize: 180, showNav: false } });
+
+      expect(currentState.layout.navSize).toBe(0);
+      expect(currentState.layout.recentVisibleSizes.navSize).toBe(180);
+
+      layoutApi.toggleNav(true);
+
+      expect(currentState.layout.navSize).toBe(180);
+    });
+
+    it('should hide panel and preserve provided sizes when layout.showPanel is false', () => {
+      layoutApi.setOptions({
+        layout: { bottomPanelHeight: 210, rightPanelWidth: 260, showPanel: false },
+      });
+
+      expect(currentState.layout.bottomPanelHeight).toBe(0);
+      expect(currentState.layout.rightPanelWidth).toBe(0);
+      expect(currentState.layout.recentVisibleSizes.bottomPanelHeight).toBe(210);
+      expect(currentState.layout.recentVisibleSizes.rightPanelWidth).toBe(260);
+
+      layoutApi.togglePanel(true);
+
+      expect(currentState.layout.bottomPanelHeight).toBe(210);
+      expect(currentState.layout.rightPanelWidth).toBe(260);
+    });
+
+    it('should ignore top-level layout keys', () => {
+      layoutApi.setOptions({
+        showNav: false,
+        showPanel: false,
+      });
+
+      expect(currentState.layout.navSize).toBe(300);
+      expect(currentState.layout.bottomPanelHeight).toBe(300);
+      expect(currentState.layout.rightPanelWidth).toBe(400);
+    });
+
+    it('should ignore top-level ui keys', () => {
+      layoutApi.setOptions({ enableShortcuts: false });
+      expect(currentState.ui.enableShortcuts).toBe(true);
+    });
+  });
+
+  describe('getInitialOptions', () => {
+    it('should apply layout.showPanel from the initial config', () => {
+      (provider.getConfig as Mock).mockReturnValue({
+        layout: { showPanel: false },
+      });
+
+      const storeWithoutPersistedLayout = {
+        ...store,
+        getState: () => ({ selectedPanel: currentState.selectedPanel }) as unknown as State,
+      } as unknown as Store;
+
+      const { state } = initLayout({
+        store: storeWithoutPersistedLayout,
+        provider,
+        singleStory: false,
+      } as unknown as ModuleArgs);
+
+      expect(state.layout.bottomPanelHeight).toBe(0);
+      expect(state.layout.rightPanelWidth).toBe(0);
+      expect(state.layout.recentVisibleSizes.bottomPanelHeight).toBe(300);
+      expect(state.layout.recentVisibleSizes.rightPanelWidth).toBe(400);
+    });
+
+    it('should apply layout.showNav from the initial config', () => {
+      (provider.getConfig as Mock).mockReturnValue({
+        layout: { showNav: false },
+      });
+
+      const storeWithoutPersistedLayout = {
+        ...store,
+        getState: () => ({ selectedPanel: currentState.selectedPanel }) as unknown as State,
+      } as unknown as Store;
+
+      const { state } = initLayout({
+        store: storeWithoutPersistedLayout,
+        provider,
+        singleStory: false,
+      } as unknown as ModuleArgs);
+
+      expect(state.layout.navSize).toBe(0);
+      expect(state.layout.recentVisibleSizes.navSize).toBe(300);
+    });
+
+    it('should ignore top-level layout config keys', () => {
+      (provider.getConfig as Mock).mockReturnValue({
+        showPanel: false,
+        showNav: false,
+      });
+
+      const storeWithoutPersistedLayout = {
+        ...store,
+        getState: () => ({ selectedPanel: currentState.selectedPanel }) as unknown as State,
+      } as unknown as Store;
+
+      const { state } = initLayout({
+        store: storeWithoutPersistedLayout,
+        provider,
+        singleStory: false,
+      } as unknown as ModuleArgs);
+
+      expect(state.layout.navSize).toBe(300);
+      expect(state.layout.bottomPanelHeight).toBe(300);
+      expect(state.layout.rightPanelWidth).toBe(400);
+    });
+
+    it('should ignore top-level ui config keys', () => {
+      (provider.getConfig as Mock).mockReturnValue({
+        enableShortcuts: false,
+      });
+
+      const storeWithoutPersistedLayout = {
+        ...store,
+        getState: () => ({ selectedPanel: currentState.selectedPanel }) as unknown as State,
+      } as unknown as Store;
+
+      const { state } = initLayout({
+        store: storeWithoutPersistedLayout,
+        provider,
+        singleStory: false,
+      } as unknown as ModuleArgs);
+
+      expect(state.ui.enableShortcuts).toBe(true);
+    });
   });
 
   describe('state getters', () => {
@@ -503,6 +653,31 @@ describe('layout API', () => {
       layoutApi.toggleFullscreen();
 
       expect(layoutApi.getIsNavShown()).toBe(true);
+    });
+
+    it('should get nav availability with getNavAvailability', () => {
+      expect(layoutApi.getNavAvailability()).toBe('shown');
+
+      layoutApi.toggleNav();
+
+      expect(layoutApi.getNavAvailability()).toBe('hidden');
+
+      layoutApi.toggleNav();
+
+      Object.assign(currentState, { path: '/review/', customQueryParams: {} });
+
+      expect(layoutApi.getNavAvailability()).toBe('unavailable');
+
+      Object.assign(currentState, {
+        path: '/story/foo--bar',
+        customQueryParams: { collection: '0' },
+      });
+
+      expect(layoutApi.getNavAvailability()).toBe('unavailable');
+
+      Object.assign(currentState, { path: '/story/foo--bar', customQueryParams: {} });
+
+      expect(layoutApi.getNavAvailability()).toBe('shown');
     });
 
     it('should get panelShwon with getIsPanelShown', () => {
@@ -628,6 +803,61 @@ describe('layout API', () => {
       expect(element.select).not.toHaveBeenCalled();
     });
 
+    it('should force focus with a tabindex that is removed again on blur', () => {
+      const listeners: Record<string, () => void> = {};
+      const attributes: Record<string, string> = {};
+      const element = {
+        id: 'landmark',
+        focus: vi.fn(() => {
+          if ('tabindex' in attributes) {
+            mockActiveElement = element;
+          }
+        }),
+        getAttribute: (name: string) => attributes[name] ?? null,
+        setAttribute: (name: string, value: string) => {
+          attributes[name] = value;
+        },
+        removeAttribute: (name: string) => {
+          delete attributes[name];
+        },
+        addEventListener: vi.fn((type: string, listener: () => void) => {
+          listeners[type] = listener;
+        }),
+      };
+      mockGetElementById.mockImplementation((id: string) => (id === 'landmark' ? element : null));
+
+      expect(focusLayoutApi.focusOnUIElement('landmark', { forceFocus: true, poll: false })).toBe(
+        true
+      );
+      expect(attributes.tabindex).toBe('-1');
+
+      listeners.blur();
+      expect(attributes.tabindex).toBeUndefined();
+    });
+
+    it('should remove the forced tabindex again when focus still fails', () => {
+      const attributes: Record<string, string> = {};
+      const element = {
+        id: 'trapped',
+        focus: vi.fn(),
+        getAttribute: (name: string) => attributes[name] ?? null,
+        setAttribute: (name: string, value: string) => {
+          attributes[name] = value;
+        },
+        removeAttribute: (name: string) => {
+          delete attributes[name];
+        },
+        addEventListener: vi.fn(),
+      };
+      mockGetElementById.mockImplementation((id: string) => (id === 'trapped' ? element : null));
+
+      expect(focusLayoutApi.focusOnUIElement('trapped', { forceFocus: true, poll: false })).toBe(
+        false
+      );
+      expect(attributes.tabindex).toBeUndefined();
+      expect(element.addEventListener).not.toHaveBeenCalled();
+    });
+
     it('should return false without polling when element does not exist and poll is false', () => {
       const result = focusLayoutApi.focusOnUIElement('nonexistent-element', { poll: false });
       expect(result).toBe(false);
@@ -664,6 +894,37 @@ describe('layout API', () => {
       expect(element.focus).toHaveBeenCalled();
 
       vi.useRealTimers();
+    });
+
+    it('should stop polling and resolve to false once the signal is aborted', async () => {
+      vi.useFakeTimers();
+      const controller = new AbortController();
+      const element = { id: 'late-element', focus: vi.fn(), select: vi.fn() };
+
+      const result = focusLayoutApi.focusOnUIElement('late-element', {
+        signal: controller.signal,
+      });
+      expect(result).toBeInstanceOf(Promise);
+
+      controller.abort();
+      mockGetElementById.mockImplementation((id: string) =>
+        id === 'late-element' ? element : null
+      );
+      await vi.advanceTimersByTimeAsync(150);
+
+      await expect(result).resolves.toBe(false);
+      expect(element.focus).not.toHaveBeenCalled();
+
+      vi.useRealTimers();
+    });
+
+    it('should not start polling with an already aborted signal', () => {
+      const controller = new AbortController();
+      controller.abort();
+
+      expect(focusLayoutApi.focusOnUIElement('late-element', { signal: controller.signal })).toBe(
+        false
+      );
     });
 
     it('should resolve to false when element never appears during polling', async () => {

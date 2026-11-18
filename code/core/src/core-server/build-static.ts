@@ -17,6 +17,11 @@ import { global } from '@storybook/global';
 import { join, relative, resolve } from 'pathe';
 import picocolors from 'picocolors';
 
+import {
+  getRegisteredServices,
+  writeOpenServiceStaticFiles,
+} from '../shared/open-service/server.ts';
+import { applyServicesPresetOnce } from './utils/apply-services-preset-once.ts';
 import { resolvePackageDir } from '../shared/utils/module.ts';
 import type { StoryIndexGenerator } from './utils/StoryIndexGenerator.ts';
 import { buildOrThrow } from './utils/build-or-throw.ts';
@@ -27,12 +32,16 @@ import { writeManifests } from './utils/manifests/manifests.ts';
 import { extractStorybookMetadata } from './utils/metadata.ts';
 import { outputStats } from './utils/output-stats.ts';
 import { summarizeIndex } from './utils/summarizeIndex.ts';
+import { summarizeStoryDocs } from './utils/summarizeStoryDocs.ts';
 
 export type BuildStaticStandaloneOptions = CLIOptions &
   LoadOptions &
   BuilderOptions & { outputDir: string };
 
 export async function buildStaticStandalone(options: BuildStaticStandaloneOptions) {
+  // lets a Vite plugin loaded through vite.config.ts tell a CLI run from an embedded one
+  process.env.STORYBOOK_CLI = 'true';
+
   options.configType = 'PRODUCTION';
 
   if (options.outputDir === '') {
@@ -41,6 +50,8 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
 
   options.outputDir = resolve(options.outputDir);
   options.configDir = resolve(options.configDir);
+  // Static builds are not mounted by a host server, so they have no base path.
+  options.basePath = '/';
 
   logger.step(`Cleaning outputDir: ${picocolors.cyan(relative(process.cwd(), options.outputDir))}`);
   if (options.outputDir === '/') {
@@ -56,7 +67,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   const frameworkName = typeof framework === 'string' ? framework : framework?.name;
   if (frameworkName) {
     corePresets.push(join(frameworkName, 'preset'));
-  } else if (!options.ignorePreview) {
+  } else {
     logger.warn(`you have not specified a framework in your ${options.configDir}/main.js`);
   }
 
@@ -112,7 +123,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   ]);
 
   const invokedBy = process.env.STORYBOOK_INVOKED_BY;
-  if (!core?.disableTelemetry && invokedBy) {
+  if (invokedBy) {
     // NOTE: we don't await this event to avoid slowing things down.
     // This could result in telemetry events being lost.
     telemetry('test-run', { runner: invokedBy, watch: false }, { configDir: options.configDir });
@@ -129,6 +140,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   const effects: Promise<void>[] = [];
 
   global.FEATURES = features;
+  await applyServicesPresetOnce(presets);
 
   if (!options.previewOnly) {
     await buildOrThrow(async () =>
@@ -143,24 +155,31 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   }
 
   const coreServerPublicDir = join(resolvePackageDir('storybook'), 'assets/browser');
-  effects.push(cp(coreServerPublicDir, options.outputDir, { recursive: true }));
+  effects.push(cp(coreServerPublicDir, options.outputDir, { recursive: true, force: true }));
 
-  let storyIndexGeneratorPromise: Promise<StoryIndexGenerator | undefined> =
-    Promise.resolve(undefined);
-  if (!options.ignorePreview) {
-    storyIndexGeneratorPromise = presets.apply<StoryIndexGenerator>('storyIndexGenerator');
+  const hasRegisteredServices = getRegisteredServices().length > 0;
+  const shouldWriteManifests = features?.componentsManifest;
 
+  if (hasRegisteredServices || shouldWriteManifests) {
     effects.push(
-      writeIndexJson(
-        join(options.outputDir, 'index.json'),
-        storyIndexGeneratorPromise as Promise<StoryIndexGenerator>
-      )
-    );
+      (async () => {
+        if (hasRegisteredServices) {
+          logger.info('Building open services..');
+          await writeOpenServiceStaticFiles(options.outputDir);
+        }
 
-    if (features?.componentsManifest) {
-      effects.push(writeManifests(options.outputDir, presets));
-    }
+        if (shouldWriteManifests) {
+          // Ref-based components.json reads docgen snapshots from outputDir/services/ — manifests
+          // must run after open-service static files are written.
+          await writeManifests(options.outputDir, presets);
+        }
+      })()
+    );
   }
+
+  const storyIndexGeneratorPromise = presets.apply<StoryIndexGenerator>('storyIndexGenerator');
+
+  effects.push(writeIndexJson(join(options.outputDir, 'index.json'), storyIndexGeneratorPromise));
 
   if (!core?.disableProjectJson) {
     effects.push(
@@ -172,56 +191,54 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
     logConfig('Preview webpack config', await previewBuilder.getConfig(fullOptions));
   }
 
-  if (options.ignorePreview) {
-    logger.info(`Not building preview`);
-  } else {
-    logger.info('Building preview..');
-  }
+  logger.info('Building preview..');
 
   const startTime = process.hrtime();
   await Promise.all([
-    ...(options.ignorePreview
-      ? []
-      : [
-          previewBuilder
-            .build({
-              startTime,
-              options: fullOptions,
-            })
-            .then(async (previewStats) => {
-              logger.trace({ message: 'Preview built', time: process.hrtime(startTime) });
+    previewBuilder
+      .build({
+        startTime,
+        options: fullOptions,
+      })
+      .then(async (previewStats) => {
+        logger.trace({ message: 'Preview built', time: process.hrtime(startTime) });
 
-              const statsOption = options.webpackStatsJson || options.statsJson;
-              if (statsOption) {
-                const target = statsOption === true ? options.outputDir : statsOption;
-                await outputStats(target, previewStats);
-              }
-            })
-            .catch((error) => {
-              logger.error('Failed to build the preview');
-              process.exitCode = 1;
-              throw error;
-            }),
-        ]),
+        const statsOption = options.webpackStatsJson || options.statsJson;
+        if (statsOption) {
+          const target = statsOption === true ? options.outputDir : statsOption;
+          await outputStats(target, previewStats);
+        }
+      })
+      .catch((error) => {
+        logger.error('Failed to build the preview');
+        process.exitCode = 1;
+        throw error;
+      }),
     ...effects,
   ]);
 
   // Now the code has successfully built, we can count this as a 'build' event.
   // NOTE: we don't send the 'build' event for test runs as we want to be as fast as possible.
-  if (!core?.disableTelemetry && !options.test) {
+  if (!options.test) {
     try {
-      const generator = await storyIndexGeneratorPromise;
-      const storyIndex = await generator?.getIndex();
-      const payload: any = {
-        precedingUpgrade: await getPrecedingUpgrade(),
-      };
-      if (storyIndex) {
-        Object.assign(payload, {
-          storyIndex: summarizeIndex(storyIndex),
-        });
-      }
-
-      await telemetry('build', payload, { configDir: options.configDir });
+      await telemetry(
+        'build',
+        async () => {
+          const generator = await storyIndexGeneratorPromise;
+          const storyIndex = await generator?.getIndex();
+          const payload: any = {
+            precedingUpgrade: await getPrecedingUpgrade(),
+          };
+          if (storyIndex) {
+            payload.storyIndex = summarizeIndex(storyIndex);
+            if (features?.docgenServer) {
+              payload.storyDocs = await summarizeStoryDocs(storyIndex, options.outputDir);
+            }
+          }
+          return payload;
+        },
+        { configDir: options.configDir }
+      );
     } catch (e) {
       // Telemetry failures should not fail the build process
       logger.debug?.(`Build telemetry failed: ${e instanceof Error ? e.message : String(e)}`);

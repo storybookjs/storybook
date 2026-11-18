@@ -1,0 +1,143 @@
+{
+  "big": {
+    "description": "Large numeric identifier.",
+    "name": "big",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "TSBigIntKeyword",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "TSBigIntKeyword",
+    },
+  },
+  "config": {
+    "description": "Arbitrary configuration object.",
+    "name": "config",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "{ theme: string; dense: boolean }",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "{ theme: string; dense: boolean }",
+    },
+  },
+  "count": {
+    "description": "How many times the label repeats.",
+    "name": "count",
+    "table": {
+      "category": "props",
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "1",
+      },
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "number",
+      },
+    },
+    "type": {
+      "name": "number",
+      "required": false,
+    },
+  },
+  "enabled": {
+    "description": "Whether the control is enabled.",
+    "name": "enabled",
+    "table": {
+      "category": "props",
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "false",
+      },
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "boolean",
+      },
+    },
+    "type": {
+      "name": "boolean",
+      "required": false,
+    },
+  },
+  "formatter": {
+    "description": "Formats the count for display.",
+    "name": "formatter",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "TSFunctionType",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "TSFunctionType",
+    },
+  },
+  "label": {
+    "description": "The main label text.",
+    "name": "label",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": true,
+    },
+  },
+  "tags": {
+    "description": "Plain string tags rendered after the label.",
+    "name": "tags",
+    "table": {
+      "category": "props",
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "() => []",
+      },
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "string[]",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "Array([object Object])",
+    },
+  },
+  "token": {
+    "description": "Unique token for the instance.",
+    "name": "token",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "symbol",
+      },
+    },
+    "type": {
+      "name": "symbol",
+      "required": false,
+    },
+  },
+}

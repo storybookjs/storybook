@@ -6,4 +6,4 @@ export * from './portable-stories.ts';
 
 export * from './preview.ts';
 
-export type { VueTypes } from './types.ts';
+export type { VueDocgenInfo, VueDocgenInfoEntry, VueDocgenPlugin, VueTypes } from './types.ts';

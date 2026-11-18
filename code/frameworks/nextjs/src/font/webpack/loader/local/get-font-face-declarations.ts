@@ -24,6 +24,7 @@ export async function getFontFaceDeclarations(
   const {
     weight,
     style,
+    display,
     variable,
     declarations = [],
   } = validateLocalFontFunctionCall('', options.props);
@@ -35,7 +36,7 @@ export async function getFontFaceDeclarations(
     6
   )}`;
 
-  const fontDeclarations = declarations
+  const fontDeclarations = [{ prop: 'font-display', value: display }, ...declarations]
     .map(({ prop, value }: { prop: string; value: string }) => `${prop}: ${value};`)
     .join('\n');
 

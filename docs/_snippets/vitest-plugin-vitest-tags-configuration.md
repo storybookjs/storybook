@@ -20,23 +20,3 @@ export default defineConfig({
   },
 });
 ```
-
-```ts filename="vitest.workspace.ts" renderer="common" tabTitle="Vitest 3"
-export default defineWorkspace([
-  // ...
-  {
-    // ...
-    {
-      plugins: [
-        storybookTest({
-          // ...
-          tags: {
-            include: ['test'],
-            exclude: ['experimental'],
-          },
-        }),
-      ],
-    },
-  },
-]);
-```

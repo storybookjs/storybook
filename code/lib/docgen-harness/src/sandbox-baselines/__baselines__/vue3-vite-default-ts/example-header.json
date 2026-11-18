@@ -1,0 +1,85 @@
+{
+  "argTypes": {
+    "createAccount": {
+      "control": {
+        "disable": true
+      },
+      "description": "",
+      "name": "createAccount",
+      "table": {
+        "category": "events",
+        "type": {
+          "summary": "[]"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "[]"
+      }
+    },
+    "login": {
+      "control": {
+        "disable": true
+      },
+      "description": "",
+      "name": "login",
+      "table": {
+        "category": "events",
+        "type": {
+          "summary": "[]"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "[]"
+      }
+    },
+    "logout": {
+      "control": {
+        "disable": true
+      },
+      "description": "",
+      "name": "logout",
+      "table": {
+        "category": "events",
+        "type": {
+          "summary": "[]"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "[]"
+      }
+    },
+    "user": {
+      "description": "",
+      "name": "user",
+      "table": {
+        "category": "props",
+        "type": {
+          "summary": "{ name: string; } | null"
+        }
+      },
+      "type": {
+        "name": "union",
+        "required": true,
+        "value": [
+          {
+            "name": "other",
+            "required": false,
+            "value": "null"
+          },
+          {
+            "name": "object",
+            "required": false,
+            "value": {}
+          }
+        ]
+      }
+    }
+  },
+  "id": "example-header",
+  "jsDocTags": {},
+  "name": "MyHeader",
+  "path": "./src/stories/Header.stories.ts"
+}

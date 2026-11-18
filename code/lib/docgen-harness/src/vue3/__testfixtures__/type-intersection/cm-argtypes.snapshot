@@ -1,0 +1,18 @@
+{
+  "mixed": {
+    "description": "Combined shape contributed by the intersection.",
+    "name": "mixed",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "SharedProps & { extra: boolean; }",
+      },
+    },
+    "type": {
+      "name": "object",
+      "required": true,
+      "value": {},
+    },
+  },
+}

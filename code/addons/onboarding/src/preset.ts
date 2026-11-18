@@ -12,12 +12,6 @@ type Event = {
 };
 
 export const experimental_serverChannel = async (channel: Channel, options: Options) => {
-  const { disableTelemetry } = await options.presets.apply<CoreConfig>('core', {});
-
-  if (disableTelemetry) {
-    return channel;
-  }
-
   channel.on(ADDON_ONBOARDING_CHANNEL, ({ type, ...event }: Event) => {
     if (type === 'telemetry') {
       telemetry('addon-onboarding', { ...event, addonVersion });

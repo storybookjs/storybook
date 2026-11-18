@@ -1,14 +1,19 @@
 import type { ProjectType } from 'storybook/internal/cli';
 import { globalSettings } from 'storybook/internal/cli';
-import { type JsPackageManager, isCI } from 'storybook/internal/common';
+import { isCI } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
-import type { SupportedBuilder, SupportedFramework } from 'storybook/internal/types';
+import type {
+  SupportedBuilder,
+  SupportedFramework,
+  SupportedRenderer,
+} from 'storybook/internal/types';
 import { Feature } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
 import type { CommandOptions } from '../generators/types.ts';
+import { createPromptCancelOptions } from '../prompt-cancel.ts';
 import { FeatureCompatibilityService } from '../services/FeatureCompatibilityService.ts';
 import { TelemetryService } from '../services/TelemetryService.ts';
 
@@ -28,7 +33,11 @@ export interface UserPreferencesOptions {
   skipPrompt?: boolean;
   framework: SupportedFramework | null;
   builder: SupportedBuilder;
+  renderer: SupportedRenderer;
   projectType: ProjectType;
+  isTestFeatureAvailable: boolean;
+  isAiAvailable: boolean;
+  isAiSetupAvailable: boolean;
 }
 
 /**
@@ -45,9 +54,7 @@ export interface UserPreferencesOptions {
 export class UserPreferencesCommand {
   constructor(
     private readonly commandOptions: CommandOptions,
-    packageManager: JsPackageManager,
-    private readonly featureService = new FeatureCompatibilityService(packageManager),
-    private readonly telemetryService = new TelemetryService(commandOptions.disableTelemetry)
+    private readonly telemetryService = new TelemetryService()
   ) {}
 
   /** Execute user preferences gathering */
@@ -55,11 +62,6 @@ export class UserPreferencesCommand {
     // Display version information
     const isInteractive = process.stdout.isTTY && !isCI();
     const skipPrompt = !isInteractive || !!this.commandOptions.yes;
-
-    const isTestFeatureAvailable = await this.isTestFeatureAvailable(
-      options.framework,
-      options.builder
-    );
 
     // Get new user preference
     const newUser = await this.promptNewUser(skipPrompt);
@@ -76,14 +78,20 @@ export class UserPreferencesCommand {
     // Get install type
     const installType: InstallType =
       !newUser && !this.commandOptions.features
-        ? await this.promptInstallType(skipPrompt, isTestFeatureAvailable)
+        ? await this.promptInstallType(skipPrompt, options.isTestFeatureAvailable)
         : 'recommended';
+
+    const useAi = options.isAiAvailable
+      ? await this.promptAiSetup(skipPrompt, options.isAiSetupAvailable)
+      : false;
 
     const selectedFeatures = this.determineFeatures(
       installType,
       newUser,
-      isTestFeatureAvailable,
-      options.projectType
+      options.isTestFeatureAvailable,
+      options.projectType,
+      useAi,
+      options.isAiSetupAvailable
     );
 
     return { newUser, selectedFeatures };
@@ -116,19 +124,22 @@ export class UserPreferencesCommand {
       settings.value.init ||= {};
       settings.value.init.skipOnboarding = !!skipOnboarding;
     } else {
-      isNewUser = await prompt.select({
-        message: 'New to Storybook?',
-        options: [
-          {
-            label: `${picocolors.bold('Yes:')} Help me with onboarding`,
-            value: true,
-          },
-          {
-            label: `${picocolors.bold('No:')} Skip onboarding & don't ask again`,
-            value: false,
-          },
-        ],
-      });
+      isNewUser = await prompt.select(
+        {
+          message: 'New to Storybook?',
+          options: [
+            {
+              label: `${picocolors.bold('Yes:')} Help me with onboarding`,
+              value: true,
+            },
+            {
+              label: `${picocolors.bold('No:')} Skip onboarding & don't ask again`,
+              value: false,
+            },
+          ],
+        },
+        createPromptCancelOptions(this.telemetryService, 'new-user-ask-onboarding')
+      );
 
       settings.value.init ||= {};
       settings.value.init.skipOnboarding = !isNewUser;
@@ -159,19 +170,22 @@ export class UserPreferencesCommand {
       : `Recommended: Component development and docs`;
 
     if (!skipPrompt) {
-      installType = await prompt.select({
-        message: 'What configuration should we install?',
-        options: [
-          {
-            label: recommendedLabel,
-            value: 'recommended',
-          },
-          {
-            label: `Minimal: Just the essentials for component development.`,
-            value: 'light',
-          },
-        ],
-      });
+      installType = await prompt.select(
+        {
+          message: 'What configuration should we install?',
+          options: [
+            {
+              label: recommendedLabel,
+              value: 'recommended',
+            },
+            {
+              label: `Minimal: Just the essentials for component development.`,
+              value: 'light',
+            },
+          ],
+        },
+        createPromptCancelOptions(this.telemetryService, 'install-type')
+      );
     }
 
     await this.telemetryService.trackInstallType(installType);
@@ -184,7 +198,9 @@ export class UserPreferencesCommand {
     installType: InstallType,
     newUser: boolean,
     isTestFeatureAvailable: boolean,
-    projectType: ProjectType
+    projectType: ProjectType,
+    useAi: boolean,
+    isAiSetupAvailable: boolean
   ): Set<Feature> {
     const features = new Set<Feature>();
 
@@ -200,28 +216,51 @@ export class UserPreferencesCommand {
       }
     }
 
+    if (useAi) {
+      features.add(Feature.AI);
+    }
+
+    if (useAi && isAiSetupAvailable) {
+      if (isTestFeatureAvailable) {
+        features.add(Feature.TEST);
+      }
+
+      // We leave onboarding for sandboxes as we test onboarding in CI
+      if (!process.env.IN_STORYBOOK_SANDBOX) {
+        features.delete(Feature.ONBOARDING);
+      }
+    }
+
     return features;
   }
 
-  /** Validate test feature compatibility and prompt user if issues found */
-  private async isTestFeatureAvailable(
-    framework: SupportedFramework | null,
-    builder: SupportedBuilder
-  ): Promise<boolean> {
-    const result = await this.featureService.validateTestFeatureCompatibility(
-      framework,
-      builder,
-      process.cwd()
-    );
+  /** Prompt user about AI-assisted Storybook setup */
+  private async promptAiSetup(skipPrompt: boolean, isAiSetupAvailable: boolean): Promise<boolean> {
+    const useAi = skipPrompt
+      ? true
+      : await prompt.confirm(
+          {
+            message: isAiSetupAvailable
+              ? 'Do you want AI features, like skills and prompts, in your Storybook?'
+              : 'Do you want AI features, like skills, in your Storybook?',
+            initialValue: true,
+          },
+          createPromptCancelOptions(this.telemetryService, 'ai-setup')
+        );
 
-    return result.compatible;
+    if (useAi && isAiSetupAvailable) {
+      await this.telemetryService.trackAiSetupNudge({ skipPrompt });
+    }
+
+    return useAi;
   }
 }
 
 export const executeUserPreferences = ({
   options,
-  packageManager,
   ...restOptions
-}: UserPreferencesOptions & { options: CommandOptions; packageManager: JsPackageManager }) => {
-  return new UserPreferencesCommand(options, packageManager).execute(restOptions);
+}: UserPreferencesOptions & {
+  options: CommandOptions;
+}) => {
+  return new UserPreferencesCommand(options).execute(restOptions);
 };

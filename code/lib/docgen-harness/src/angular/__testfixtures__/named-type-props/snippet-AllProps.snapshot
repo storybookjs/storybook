@@ -1,0 +1,7 @@
+<sb-named-type-props
+    [user]="{name: 'Ada Lovelace', age: 36}"
+    [status]="'green'"
+    [tree]="{label: 'root'}"
+    [id]="'sb-1'"
+    [config]="{collapsed: false}">
+</sb-named-type-props>

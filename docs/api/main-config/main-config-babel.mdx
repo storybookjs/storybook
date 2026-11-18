@@ -1,8 +1,7 @@
 ---
-title: 'babel'
+title: babel
 sidebar:
   order: 5
-  title: babel
 ---
 
 Parent: [main.js|ts configuration](./main-config.mdx)
@@ -13,15 +12,11 @@ Customize Storybook's [Babel](https://babeljs.io/) setup.
 
 <Callout variant="info" icon="💡">
 
-  [Addon authors](../../addons/writing-presets.mdx#babel) should use [`babelDefault`](./main-config-babel-default.mdx) instead, which is applied to the preview config before any user presets have been applied.
+[Addon authors](../../addons/writing-presets.mdx#babel) should use [`babelDefault`](./main-config-babel-default.mdx) instead, which is applied to the preview config before any user presets have been applied.
 
 </Callout>
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="main-config-babel.md" />
-
-{/* prettier-ignore-end */}
 
 ## `Babel.Config`
 
@@ -29,8 +24,8 @@ The options provided by [Babel](https://babeljs.io/docs/options) are only applic
 
 <Callout variant="info">
 
-  If you have an existing Babel configuration file (e.g., `.babelrc`), it will be automatically detected and used by Storybook without any additional configuration required.
-  
+If you have an existing Babel configuration file (e.g., `.babelrc`), it will be automatically detected and used by Storybook without any additional configuration required.
+
 </Callout>
 
 ## `Options`

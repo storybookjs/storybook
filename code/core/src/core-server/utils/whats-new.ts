@@ -1,5 +1,3 @@
-import { writeFile } from 'node:fs/promises';
-
 import type { Channel } from 'storybook/internal/channels';
 import { findConfigFile, loadMainConfig } from 'storybook/internal/common';
 import type { WhatsNewCache, WhatsNewData } from 'storybook/internal/core-events';
@@ -10,7 +8,7 @@ import {
   TELEMETRY_ERROR,
   TOGGLE_WHATS_NEW_NOTIFICATIONS,
 } from 'storybook/internal/core-events';
-import { printConfig, readConfig } from 'storybook/internal/csf-tools';
+import { readConfig, writeConfig } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
 import type { CoreConfig, Options } from 'storybook/internal/types';
@@ -33,11 +31,7 @@ export type WhatsNewResponse = {
 const WHATS_NEW_CACHE = 'whats-new-cache';
 const WHATS_NEW_URL = 'https://storybook.js.org/whats-new/v1';
 
-export function initializeWhatsNew(
-  channel: Channel,
-  options: OptionsWithRequiredCache,
-  coreOptions: CoreConfig
-) {
+export function initializeWhatsNew(channel: Channel, options: OptionsWithRequiredCache) {
   channel.on(SET_WHATS_NEW_CACHE, async (data: WhatsNewCache) => {
     const cache: WhatsNewCache = await options.cache.get(WHATS_NEW_CACHE).catch((e) => {
       logger.verbose(e);
@@ -80,7 +74,6 @@ export function initializeWhatsNew(
   channel.on(
     TOGGLE_WHATS_NEW_NOTIFICATIONS,
     async ({ disableWhatsNewNotifications }: { disableWhatsNewNotifications: boolean }) => {
-      const isTelemetryEnabled = coreOptions.disableTelemetry !== true;
       try {
         const mainPath = findConfigFile('main', options.configDir);
         invariant(mainPath, `unable to find Storybook main file in ${options.configDir}`);
@@ -91,41 +84,33 @@ export function initializeWhatsNew(
             `Unable to parse Storybook main file while trying to read 'core' property`
           );
         }
-        main.setFieldValue(['core', 'disableWhatsNewNotifications'], disableWhatsNewNotifications);
-        await writeFile(mainPath, printConfig(main).code);
-        if (isTelemetryEnabled) {
-          await telemetry('core-config', { disableWhatsNewNotifications });
-        }
+        main.set(['core', 'disableWhatsNewNotifications'], disableWhatsNewNotifications);
+        await writeConfig(main, mainPath);
+        await telemetry('core-config', { disableWhatsNewNotifications });
       } catch (error) {
         invariant(error instanceof Error);
-        if (isTelemetryEnabled) {
-          await sendTelemetryError(error, 'core-config', {
-            cliOptions: options,
-            presetOptions: {
-              ...options,
-              corePresets: [],
-              overridePresets: [],
-            },
-            skipPrompt: true,
-          });
-        }
+        await sendTelemetryError(error, 'core-config', {
+          cliOptions: options,
+          presetOptions: {
+            ...options,
+            corePresets: [],
+            overridePresets: [],
+          },
+          skipPrompt: true,
+        });
       }
     }
   );
 
   channel.on(TELEMETRY_ERROR, async (error) => {
-    const isTelemetryEnabled = coreOptions.disableTelemetry !== true;
-
-    if (isTelemetryEnabled) {
-      await sendTelemetryError(error, 'browser', {
-        cliOptions: options,
-        presetOptions: {
-          ...options,
-          corePresets: [],
-          overridePresets: [],
-        },
-        skipPrompt: true,
-      });
-    }
+    await sendTelemetryError(error, 'browser', {
+      cliOptions: options,
+      presetOptions: {
+        ...options,
+        corePresets: [],
+        overridePresets: [],
+      },
+      skipPrompt: true,
+    });
   });
 }

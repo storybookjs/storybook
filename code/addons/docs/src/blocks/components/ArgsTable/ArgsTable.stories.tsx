@@ -3,8 +3,8 @@ import React from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { action } from 'storybook/actions';
-import { expect, fireEvent } from 'storybook/test';
-import { styled } from 'storybook/theming';
+import { expect, fireEvent, within } from 'storybook/test';
+import { styled } from 'storybook/theming/emotion';
 
 import * as ArgRow from './ArgRow.stories';
 import { ArgsTable, ArgsTableError } from './ArgsTable';
@@ -197,10 +197,33 @@ export const Error = {
   },
 };
 
-export const Empty = {
-  args: {},
+const expectEmptyState = async (canvasElement: HTMLElement) => {
+  const canvas = within(canvasElement);
+
+  await expect(await canvas.findByText('This story has no controls')).toBeVisible();
+  await expect(
+    await canvas.findByText(/Storybook couldn't find or generate any controls for this story/i)
+  ).toBeVisible();
+  const learnMoreLink = await canvas.findByRole('link', {
+    name: /Read docs/i,
+  });
+
+  await expect(learnMoreLink).toBeVisible();
+  await expect(learnMoreLink).toHaveAttribute(
+    'href',
+    'https://storybook.js.org/docs/essentials/controls?ref=ui'
+  );
+};
+
+export const Empty: Story = {
+  args: {
+    rows: {},
+  },
   parameters: {
     layout: 'centered',
+  },
+  play: async ({ canvasElement }) => {
+    await expectEmptyState(canvasElement);
   },
 };
 
@@ -211,6 +234,9 @@ export const EmptyInsideAddonPanel: Story = {
   },
   parameters: {
     layout: 'centered',
+  },
+  play: async ({ canvasElement }) => {
+    await expectEmptyState(canvasElement);
   },
 };
 

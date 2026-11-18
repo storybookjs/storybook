@@ -1,0 +1,93 @@
+import * as fs from 'node:fs/promises';
+import { join } from 'node:path';
+
+import * as v from 'valibot';
+
+import {
+  getInstanceRegistryDir,
+  getLegacyStorybookConfigDir,
+} from '../../../common/utils/storybook-config-dir.ts';
+import { type StorybookInstanceRecord, StorybookInstanceRecordSchema } from './types.ts';
+
+/**
+ * Errno codes for which we degrade to "no instance" rather than throwing. The command is meant to
+ * fail-soft for environmental issues; a noisy stack trace would be worse UX than the
+ * missing-instance repair instructions.
+ */
+const SOFT_REGISTRY_ERRORS = new Set(['ENOENT', 'EACCES', 'EPERM', 'ENOTDIR']);
+
+/**
+ * Read all Storybook instance records from `registryDir` and, when it differs, from
+ * `legacyRegistryDir` too — a dev server started before `XDG_STATE_HOME` was set (or one from an
+ * older Storybook) still writes there.
+ *
+ * Each file is expected to be a single JSON object matching {@link StorybookInstanceRecord}.
+ * Records whose PID is no longer alive are filtered out (and their files removed). Malformed files
+ * are skipped silently — the command should degrade to "no instance" rather than fail loudly.
+ */
+export async function readRegistry(
+  registryDir: string = getInstanceRegistryDir(),
+  legacyRegistryDir: string = join(getLegacyStorybookConfigDir(), 'instances')
+): Promise<StorybookInstanceRecord[]> {
+  if (registryDir === legacyRegistryDir) {
+    return readRegistryDir(registryDir);
+  }
+
+  const [current, legacy] = await Promise.all([
+    readRegistryDir(registryDir),
+    readRegistryDir(legacyRegistryDir),
+  ]);
+
+  return [...current, ...legacy];
+}
+
+async function readRegistryDir(registryDir: string): Promise<StorybookInstanceRecord[]> {
+  let entries: string[];
+  try {
+    entries = await fs.readdir(registryDir);
+  } catch (error) {
+    if (SOFT_REGISTRY_ERRORS.has((error as NodeJS.ErrnoException).code ?? '')) {
+      return [];
+    }
+    throw error;
+  }
+
+  const records = await Promise.all(
+    entries
+      .filter((name) => name.endsWith('.json'))
+      .map(async (name) => {
+        try {
+          const raw = await fs.readFile(join(registryDir, name), 'utf-8');
+          const parsed = v.safeParse(StorybookInstanceRecordSchema, JSON.parse(raw));
+          if (!parsed.success) {
+            return null;
+          }
+          if (!isProcessAlive(parsed.output.pid)) {
+            await fs.rm(join(registryDir, name), { force: true }).catch(() => {});
+            return null;
+          }
+          return parsed.output;
+        } catch {
+          return null;
+        }
+      })
+  );
+
+  return records.filter((r): r is StorybookInstanceRecord => r !== null);
+}
+
+/**
+ * Liveness check by sending signal 0. `EPERM` means the PID exists but we lack permission to
+ * signal it (foreign user), which still counts as alive.
+ */
+function isProcessAlive(pid: number): boolean {
+  if (!Number.isInteger(pid) || pid <= 0) {
+    return false;
+  }
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return (error as NodeJS.ErrnoException).code === 'EPERM';
+  }
+}

@@ -2,6 +2,7 @@
 export enum SupportedFramework {
   // CORE
   ANGULAR = 'angular',
+  ANGULAR_VITE = 'angular-vite',
   EMBER = 'ember',
   HTML_VITE = 'html-vite',
   NEXTJS = 'nextjs',
@@ -13,9 +14,11 @@ export enum SupportedFramework {
   SERVER_WEBPACK5 = 'server-webpack5',
   SVELTE_VITE = 'svelte-vite',
   SVELTEKIT = 'sveltekit',
+  TANSTACK_REACT = 'tanstack-react',
   VUE3_VITE = 'vue3-vite',
   WEB_COMPONENTS_VITE = 'web-components-vite',
   // COMMUNITY
+  ASTRO = 'astro',
   HTML_RSBUILD = 'html-rsbuild',
   NUXT = 'nuxt',
   QWIK = 'qwik',

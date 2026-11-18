@@ -1,9 +1,8 @@
 import type { FC, PropsWithChildren, ReactElement, ReactNode } from 'react';
 
-import type { State } from '../../manager-api/index.ts';
 import type { RenderData as RouterData } from '../../router/types.ts';
 import type { ThemeVars } from '../../theming/types.ts';
-import type { API_LayoutCustomisations, API_SidebarOptions } from './api.ts';
+import type { API_Layout, API_LayoutCustomisations, API_SidebarOptions, API_UI } from './api.ts';
 import type { API_HashEntry, API_StoryEntry } from './api-stories.ts';
 import type {
   Args,
@@ -15,10 +14,9 @@ import type {
   Parameters,
   PartialStoryFn as PartialStoryFnForFramework,
   Renderer,
-  StoryContext as StoryContextForFramework,
+  StoryContextForRender as StoryContextForFramework,
   StoryFn as StoryFnForFramework,
   StoryId,
-  StoryKind,
   StoryName,
 } from './csf.ts';
 import type { IndexEntry } from './indexer.ts';
@@ -29,7 +27,7 @@ export type Addon_Types = Exclude<
 >;
 
 export interface Addon_ArgType<TArg = unknown> extends InputType {
-  defaultValue?: TArg;
+  defaultValue?: TArg & never;
 }
 
 export type Addons_ArgTypes<TArgs = Args> = {
@@ -41,9 +39,10 @@ export type Addons_ArgTypes<TArgs = Args> = {
 
 export type Addon_Comparator<T> = ((a: T, b: T) => boolean) | ((a: T, b: T) => number);
 export type Addon_StorySortMethod = 'configure' | 'alphabetical';
+export type Addon_StorySortOrder = (string | Addon_StorySortOrder)[];
 export interface Addon_StorySortObjectParameter {
   method?: Addon_StorySortMethod;
-  order?: any[];
+  order?: Addon_StorySortOrder;
   locales?: string;
   includeNames?: boolean;
 }
@@ -56,12 +55,12 @@ export type Addon_StorySortParameter = Addon_StorySortComparator | Addon_StorySo
 export type Addon_StorySortComparatorV7 = Addon_Comparator<IndexEntry>;
 export type Addon_StorySortParameterV7 =
   | Addon_StorySortComparatorV7
-  | Addon_StorySortObjectParameter;
+  | Addon_StorySortObjectParameter
+  | Addon_StorySortOrder;
 
 // TODO: remove all these types, they belong in the renderer and csf-package
 
 export interface Addon_OptionsParameter extends Object {
-  storySort?: Addon_StorySortParameter;
   theme?: {
     base: string;
     brandTitle?: string;
@@ -70,7 +69,6 @@ export interface Addon_OptionsParameter extends Object {
 }
 
 export interface Addon_OptionsParameterV7 extends Object {
-  storySort?: Addon_StorySortParameterV7;
   theme?: {
     base: string;
     brandTitle?: string;
@@ -122,7 +120,6 @@ export type Addon_MakeDecoratorResult = (...args: any) => any;
 
 export interface Addon_AddStoryArgs<StoryFnReturnType = unknown> {
   id: StoryId;
-  kind: StoryKind;
   name: StoryName;
   storyFn: Addon_StoryFn<StoryFnReturnType>;
   parameters: Parameters;
@@ -141,7 +138,6 @@ export type Addon_ClientApiReturnFn<StoryFnReturnType = unknown> = (
 ) => Addon_StoryApi<StoryFnReturnType>;
 
 export interface Addon_StoryApi<StoryFnReturnType = unknown> {
-  kind: StoryKind;
   add: (
     storyName: StoryName,
     storyFn: Addon_StoryFn<StoryFnReturnType>,
@@ -175,13 +171,13 @@ export interface Addon_BaseAnnotations<
   /**
    * Dynamic data that are provided (and possibly updated by) Storybook and its addons.
    *
-   * @see [Arg story inputs](https://storybook.js.org/docs/api/csf#args-story-inputs)
+   * @see [Args](https://storybook.js.org/docs/writing-stories/args)
    */
   args?: Partial<TArgs>;
 
   /**
-   * ArgTypes encode basic metadata for args, such as `name`, `description`, `defaultValue` for an
-   * arg. These get automatically filled in by Storybook Docs.
+   * ArgTypes encode basic metadata for args, such as `name` and `description`. These get
+   * automatically filled in by Storybook Docs.
    *
    * @see [Arg types](https://storybook.js.org/docs/api/arg-types)
    */
@@ -228,7 +224,7 @@ export interface Addon_Annotations<TArgs, StoryFnReturnType> extends Addon_BaseA
    * includeStories: /.*Story$/;
    * ```
    *
-   * @see [Non-story exports](https://storybook.js.org/docs/api/csf#non-story-exports)
+   * @see [Non-story exports](https://storybook.js.org/docs/writing-stories/csf#non-story-exports)
    */
   includeStories?: string[] | RegExp;
 
@@ -243,7 +239,7 @@ export interface Addon_Annotations<TArgs, StoryFnReturnType> extends Addon_BaseA
    * excludeStories: /.*Data$/;
    * ```
    *
-   * @see [Non-story exports](https://storybook.js.org/docs/api/csf#non-story-exports)
+   * @see [Non-story exports](https://storybook.js.org/docs/writing-stories/csf#non-story-exports)
    */
   excludeStories?: string[] | RegExp;
 }
@@ -359,17 +355,8 @@ export interface Addon_BaseType {
    * Do not prefix with `storybook`, this is reserved for core storybook feature and core addons.
    */
   id?: string;
-  /**
-   * This component will wrap your `render` function.
-   *
-   * With it you can determine if you want your addon to be rendered or not.
-   *
-   * This is to facilitate addons keeping state, and keep listening for events even when they are
-   * not currently on screen/rendered.
-   */
-  route?: (routeOptions: RouterData) => string;
   /** This will determine the value of `active` prop of your render function. */
-  match?: (matchOptions: RouterData & { tabId?: string }) => boolean;
+  match?: (matchOptions: RouterData) => boolean;
   /**
    * The actual contents of your addon.
    *
@@ -386,8 +373,6 @@ export interface Addon_BaseType {
   paramKey?: string;
   /** @unstable */
   disabled?: boolean | ((parameters: API_StoryEntry['parameters']) => boolean);
-  /** @unstable */
-  hidden?: boolean;
 }
 
 export interface Addon_PageType {
@@ -447,6 +432,8 @@ export interface Addon_TestProviderType {
   id: string;
   render: () => ReactNode;
   sidebarContextMenu?: (options: { context: API_HashEntry }) => ReactNode;
+  /** Called when the user clears all statuses. The provider should clear its own status stores. */
+  clear?: () => void;
 }
 
 type Addon_TypeBaseNames = Exclude<
@@ -478,26 +465,17 @@ export interface Addon_ToolbarConfig {
 }
 export interface Addon_Config {
   theme?: ThemeVars;
-  layoutCustomisations?: {
-    showPanel?: API_LayoutCustomisations['showPanel'];
-    showSidebar?: API_LayoutCustomisations['showSidebar'];
-    showToolbar?: API_LayoutCustomisations['showToolbar'];
-  };
+  layout?: Partial<API_Layout>;
+  layoutCustomisations?: Partial<API_LayoutCustomisations>;
   toolbar?: {
     [id: string]: Addon_ToolbarConfig;
   };
   sidebar?: API_SidebarOptions;
+  ui?: Partial<API_UI>;
   [key: string]: any;
 }
 
 export enum Addon_TypesEnum {
-  /**
-   * This API is used to create a tab the toolbar above the canvas, This API might be removed in the
-   * future.
-   *
-   * @unstable
-   */
-  TAB = 'tab',
   /** This adds panels to the addons side panel. */
   PANEL = 'panel',
   /** This adds items in the toolbar above the canvas - on the left side. */

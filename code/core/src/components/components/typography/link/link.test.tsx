@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { AnchorHTMLAttributes } from 'react';
 import React from 'react';
 
-import { ThemeProvider, convert, themes } from 'storybook/theming';
+import { ThemeProvider, convert, themes } from 'storybook/theming/emotion';
 
 import type { LinkProps } from './link.tsx';
 import { Link } from './link.tsx';

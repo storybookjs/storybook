@@ -1,0 +1,6 @@
+{
+  "name": "addon-without-exports-map",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./index.js"
+}

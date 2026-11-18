@@ -62,7 +62,6 @@ describe('story extraction', () => {
 
     expect(result).toMatchInlineSnapshot(`
       {
-        "dependents": [],
         "entries": [
           {
             "componentPath": undefined,
@@ -129,7 +128,6 @@ describe('story extraction', () => {
 
     expect(result).toMatchInlineSnapshot(`
       {
-        "dependents": [],
         "entries": [
           {
             "componentPath": undefined,
@@ -181,7 +179,6 @@ describe('story extraction', () => {
 
     expect(result).toMatchInlineSnapshot(`
       {
-        "dependents": [],
         "entries": [
           {
             "componentPath": undefined,
@@ -235,7 +232,6 @@ describe('story extraction', () => {
 
     expect(result).toMatchInlineSnapshot(`
       {
-        "dependents": [],
         "entries": [
           {
             "componentPath": undefined,
@@ -309,7 +305,6 @@ describe('story extraction', () => {
 
     expect(result).toMatchInlineSnapshot(`
       {
-        "dependents": [],
         "entries": [
           {
             "componentPath": undefined,
@@ -394,7 +389,6 @@ describe('story extraction', () => {
 
     expect(result).toMatchInlineSnapshot(`
       {
-        "dependents": [],
         "entries": [
           {
             "componentPath": undefined,
@@ -450,7 +444,6 @@ describe('docs entries from story extraction', () => {
 
     expect(result).toMatchInlineSnapshot(`
       {
-        "dependents": [],
         "entries": [
           {
             "id": "a--docs",

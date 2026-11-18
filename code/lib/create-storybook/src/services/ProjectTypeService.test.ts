@@ -29,7 +29,6 @@ describe('ProjectTypeService', () => {
     it('logs a helpful message when framework cannot be detected', async () => {
       const service = new ProjectTypeService(pm);
       const options = { html: false } as unknown as CommandOptions;
-      // @ts-expect-error accessing private for test
       vi.spyOn(service, 'detectProjectType').mockResolvedValue(ProjectType.UNDETECTED);
 
       await expect(service.autoDetectProjectType(options)).rejects.toThrowError(
@@ -68,6 +67,20 @@ describe('ProjectTypeService', () => {
       expect(result).toBe(ProjectType.NEXTJS);
     });
 
+    it('detects VUE3 when vue is the next tag and nothing is installed', async () => {
+      (pm as any).primaryPackageJson.packageJson = {
+        dependencies: { vue: 'next' },
+      };
+      (pm.getDeclaredVersionSpecifier as any) = vi.fn(async () => null);
+      const service = new ProjectTypeService(pm);
+      // @ts-expect-error private method spy
+      vi.spyOn(service, 'isNxProject').mockReturnValue(false);
+
+      await expect(service.autoDetectProjectType({ html: false } as CommandOptions)).resolves.toBe(
+        ProjectType.VUE3
+      );
+    });
+
     it('detects VUE3 when vue major is 3', async () => {
       (pm as any).primaryPackageJson.packageJson = {
         dependencies: { vue: '^3.2.0' },
@@ -77,6 +90,57 @@ describe('ProjectTypeService', () => {
       vi.spyOn(service, 'isNxProject').mockReturnValue(false);
       const result = await service.autoDetectProjectType({ html: false } as CommandOptions);
       expect(result).toBe(ProjectType.VUE3);
+    });
+
+    it('detects VUE3 when pnpm resolves a Vue catalog range to version 3', async () => {
+      (pm as any).primaryPackageJson.packageJson = {
+        dependencies: { vue: 'catalog:' },
+      };
+      (pm.getDeclaredVersionSpecifier as any) = vi.fn(async () => '3.5.44');
+      const service = new ProjectTypeService(pm);
+      // @ts-expect-error private method spy
+      vi.spyOn(service, 'isNxProject').mockReturnValue(false);
+
+      const result = await service.autoDetectProjectType({ html: false } as CommandOptions);
+
+      expect(result).toBe(ProjectType.VUE3);
+      expect(pm.getDeclaredVersionSpecifier).toHaveBeenCalledWith('vue');
+    });
+
+    it('resolves catalog ranges for any dependency with a version matcher', async () => {
+      (pm as any).primaryPackageJson.packageJson = {
+        dependencies: { 'example-renderer': 'catalog:renderers' },
+      };
+      (pm.getDeclaredVersionSpecifier as any) = vi.fn(async () => '^3.1.0');
+      const service = new ProjectTypeService(pm);
+      vi.spyOn(service, 'getSupportedTemplates').mockReturnValue([
+        {
+          preset: ProjectType.REACT,
+          dependencies: { 'example-renderer': (version) => version === '^3.1.0' },
+          matcherFunction: ({ dependencies }) => dependencies?.some(Boolean) ?? false,
+        },
+      ]);
+      // @ts-expect-error private method spy
+      vi.spyOn(service, 'isNxProject').mockReturnValue(false);
+
+      await expect(service.autoDetectProjectType({ html: false } as CommandOptions)).resolves.toBe(
+        ProjectType.REACT
+      );
+      expect(pm.getDeclaredVersionSpecifier).toHaveBeenCalledWith('example-renderer');
+    });
+
+    it('does not detect VUE3 when the Vue catalog resolves to version 2', async () => {
+      (pm as any).primaryPackageJson.packageJson = {
+        dependencies: { vue: 'catalog:legacy' },
+      };
+      (pm.getDeclaredVersionSpecifier as any) = vi.fn(async () => '2.7.16');
+      const service = new ProjectTypeService(pm);
+      // @ts-expect-error private method spy
+      vi.spyOn(service, 'isNxProject').mockReturnValue(false);
+
+      await expect(
+        service.autoDetectProjectType({ html: false } as CommandOptions)
+      ).rejects.toThrowError('Storybook failed to detect your project type');
     });
 
     it('detects SVELTEKIT via @sveltejs/kit', async () => {
@@ -101,6 +165,17 @@ describe('ProjectTypeService', () => {
       expect(result).toBe(ProjectType.WEB_COMPONENTS);
     });
 
+    it('detects ASTRO via astro, ahead of the UI library it integrates', async () => {
+      (pm as any).primaryPackageJson.packageJson = {
+        dependencies: { astro: '^5.5.3', '@astrojs/react': '^4.2.3', react: '^19.0.0' },
+      };
+      const service = new ProjectTypeService(pm);
+      // @ts-expect-error private method spy
+      vi.spyOn(service, 'isNxProject').mockReturnValue(false);
+      const result = await service.autoDetectProjectType({ html: false } as CommandOptions);
+      expect(result).toBe(ProjectType.ASTRO);
+    });
+
     it('detects SOLID via solid-js', async () => {
       (pm as any).primaryPackageJson.packageJson = {
         dependencies: { 'solid-js': '^1.8.0' },
@@ -112,15 +187,15 @@ describe('ProjectTypeService', () => {
       expect(result).toBe(ProjectType.SOLID);
     });
 
-    it('detects REACT_SCRIPTS via dependency', async () => {
+    it('falls back to REACT for a CRA project (react-scripts no longer detected)', async () => {
       (pm as any).primaryPackageJson.packageJson = {
-        dependencies: { 'react-scripts': '^5.0.0' },
+        dependencies: { react: '^18.0.0', 'react-dom': '^18.0.0', 'react-scripts': '^5.0.0' },
       };
       const service = new ProjectTypeService(pm);
       // @ts-expect-error private method spy
       vi.spyOn(service, 'isNxProject').mockReturnValue(false);
       const result = await service.autoDetectProjectType({ html: false } as CommandOptions);
-      expect(result).toBe(ProjectType.REACT_SCRIPTS);
+      expect(result).toBe(ProjectType.REACT);
     });
 
     it('detects ANGULAR via @angular/core', async () => {
@@ -189,6 +264,39 @@ describe('ProjectTypeService', () => {
       expect(result).toBe(ProjectType.REACT_NATIVE);
     });
 
+    it('detects REACT_NATIVE via peerDependencies', async () => {
+      (pm as any).primaryPackageJson.packageJson = {
+        peerDependencies: { react: '^18.0.0', 'react-native': '^0.76.0' },
+      };
+      const service = new ProjectTypeService(pm);
+      // @ts-expect-error private method spy
+      vi.spyOn(service, 'isNxProject').mockReturnValue(false);
+      const result = await service.autoDetectProjectType({ html: false } as CommandOptions);
+      expect(result).toBe(ProjectType.REACT_NATIVE);
+    });
+
+    it('detects REACT_NATIVE via peerDependencies react-native-scripts', async () => {
+      (pm as any).primaryPackageJson.packageJson = {
+        peerDependencies: { react: '^18.0.0', 'react-native-scripts': '^5.0.0' },
+      };
+      const service = new ProjectTypeService(pm);
+      // @ts-expect-error private method spy
+      vi.spyOn(service, 'isNxProject').mockReturnValue(false);
+      const result = await service.autoDetectProjectType({ html: false } as CommandOptions);
+      expect(result).toBe(ProjectType.REACT_NATIVE);
+    });
+
+    it('detects REACT_NATIVE via expo dependency', async () => {
+      (pm as any).primaryPackageJson.packageJson = {
+        dependencies: { expo: '^52.0.0' },
+      };
+      const service = new ProjectTypeService(pm);
+      // @ts-expect-error private method spy
+      vi.spyOn(service, 'isNxProject').mockReturnValue(false);
+      const result = await service.autoDetectProjectType({ html: false } as CommandOptions);
+      expect(result).toBe(ProjectType.REACT_NATIVE);
+    });
+
     it('detects NUXT via nuxt', async () => {
       (pm as any).primaryPackageJson.packageJson = {
         dependencies: { nuxt: '^3.0.0' },
@@ -198,6 +306,111 @@ describe('ProjectTypeService', () => {
       vi.spyOn(service, 'isNxProject').mockReturnValue(false);
       const result = await service.autoDetectProjectType({ html: false } as CommandOptions);
       expect(result).toBe(ProjectType.NUXT);
+    });
+
+    describe('Remix', () => {
+      beforeEach(() => {
+        // @ts-expect-error private method spy
+        vi.spyOn(ProjectTypeService.prototype, 'isNxProject').mockReturnValue(false);
+      });
+
+      const detect = (packageJson: Record<string, unknown>) => {
+        (pm as any).primaryPackageJson.packageJson = packageJson;
+        return new ProjectTypeService(pm).autoDetectProjectType({ html: false } as CommandOptions);
+      };
+
+      it('detects Remix 3 as the HTML renderer', async () => {
+        await expect(detect({ dependencies: { remix: '^3.0.0' } })).resolves.toBe(ProjectType.HTML);
+      });
+
+      it('detects Remix 3 from devDependencies', async () => {
+        await expect(detect({ devDependencies: { remix: '3.0.0' } })).resolves.toBe(
+          ProjectType.HTML
+        );
+      });
+
+      it('prefers the HTML renderer when Remix 3 is installed next to React', async () => {
+        await expect(detect({ dependencies: { remix: '^3.0.0', react: '^19.0.0' } })).resolves.toBe(
+          ProjectType.HTML
+        );
+      });
+
+      it('does not treat Remix 2 (@remix-run/dev) as Remix 3', async () => {
+        await expect(
+          detect({ dependencies: { '@remix-run/dev': '^2.15.0', react: '^18.2.0' } })
+        ).resolves.toBe(ProjectType.REACT);
+      });
+
+      it('does not treat remix@2 as Remix 3', async () => {
+        await expect(detect({ dependencies: { remix: '^2.0.0', react: '^18.2.0' } })).resolves.toBe(
+          ProjectType.REACT
+        );
+      });
+
+      it.each(['latest', 'next'])(
+        'detects Remix 3 when %s is installed as version 3',
+        async (tag) => {
+          (pm.getDeclaredVersionSpecifier as any) = vi.fn(async () => '3.2.0');
+
+          await expect(detect({ dependencies: { remix: tag } })).resolves.toBe(ProjectType.HTML);
+          expect(pm.getDeclaredVersionSpecifier).toHaveBeenCalledWith('remix');
+        }
+      );
+
+      it('does not treat a remix dist-tag as Remix 3 when version 2 is installed', async () => {
+        (pm.getDeclaredVersionSpecifier as any) = vi.fn(async () => '2.15.0');
+
+        await expect(detect({ dependencies: { remix: 'latest', react: '^18.2.0' } })).resolves.toBe(
+          ProjectType.REACT
+        );
+      });
+    });
+
+    it('detects REACT via peerDependencies', async () => {
+      (pm as any).primaryPackageJson.packageJson = {
+        peerDependencies: { react: '^18.0.0' },
+      };
+      const service = new ProjectTypeService(pm);
+      // @ts-expect-error private method spy
+      vi.spyOn(service, 'isNxProject').mockReturnValue(false);
+      const result = await service.autoDetectProjectType({ html: false } as CommandOptions);
+      expect(result).toBe(ProjectType.REACT);
+    });
+
+    it('detects REACT via devDependencies', async () => {
+      (pm as any).primaryPackageJson.packageJson = {
+        devDependencies: { react: '^18.0.0' },
+      };
+      const service = new ProjectTypeService(pm);
+      // @ts-expect-error private method spy
+      vi.spyOn(service, 'isNxProject').mockReturnValue(false);
+      const result = await service.autoDetectProjectType({ html: false } as CommandOptions);
+      expect(result).toBe(ProjectType.REACT);
+    });
+
+    it('prefers REACT_NATIVE over REACT when markers are split across dependency sections', async () => {
+      (pm as any).primaryPackageJson.packageJson = {
+        dependencies: { 'react-native': '^0.76.0' },
+        peerDependencies: { react: '^18.0.0' },
+      };
+      const service = new ProjectTypeService(pm);
+      // @ts-expect-error private method spy
+      vi.spyOn(service, 'isNxProject').mockReturnValue(false);
+      const result = await service.autoDetectProjectType({ html: false } as CommandOptions);
+      expect(result).toBe(ProjectType.REACT_NATIVE);
+    });
+
+    it('does not detect REACT from react-dom alone', async () => {
+      (pm as any).primaryPackageJson.packageJson = {
+        peerDependencies: { 'react-dom': '^18.0.0' },
+      };
+      const service = new ProjectTypeService(pm);
+      // @ts-expect-error private method spy
+      vi.spyOn(service, 'isNxProject').mockReturnValue(false);
+
+      await expect(
+        service.autoDetectProjectType({ html: false } as CommandOptions)
+      ).rejects.toThrowError('Storybook failed to detect your project type');
     });
   });
 
@@ -232,7 +445,7 @@ describe('ProjectTypeService', () => {
       await expect(service.detectLanguage()).resolves.toBe('typescript');
     });
 
-    it('warns and returns javascript when TS/tooling versions incompatible', async () => {
+    it('returns javascript when TS/tooling versions are incompatible', async () => {
       (pm.getAllDependencies as any) = vi.fn(() => ({ typescript: '^4.8.0' }));
       (pm.getModulePackageJSON as any) = vi.fn(async (name: string) => {
         const versions: Record<string, string> = {
@@ -244,10 +457,107 @@ describe('ProjectTypeService', () => {
         };
         return { version: versions[name] } as any;
       });
-      const warnSpy = vi.spyOn(logger, 'warn');
       const service = new ProjectTypeService(pm);
       await expect(service.detectLanguage()).resolves.toBe('javascript');
-      expect(warnSpy).toHaveBeenCalled();
+    });
+
+    it('returns javascript when only one tool is incompatible', async () => {
+      (pm.getAllDependencies as any) = vi.fn(() => ({ typescript: '^5.0.0' }));
+      (pm.getModulePackageJSON as any) = vi.fn(async (name: string) => {
+        const versions: Record<string, string> = {
+          typescript: '5.2.0',
+          prettier: '2.6.2', // only prettier is below 2.8.0
+          '@babel/plugin-transform-typescript': '7.23.0',
+          '@typescript-eslint/parser': '6.7.0',
+          'eslint-plugin-storybook': '0.7.0',
+        };
+        return { version: versions[name] } as any;
+      });
+      const service = new ProjectTypeService(pm);
+      await expect(service.detectLanguage()).resolves.toBe('javascript');
+    });
+
+    it('returns typescript with canary eslint-plugin-storybook versions', async () => {
+      (pm.getAllDependencies as any) = vi.fn(() => ({ typescript: '^5.0.0' }));
+      (pm.getModulePackageJSON as any) = vi.fn(async (name: string) => {
+        const versions: Record<string, string> = {
+          typescript: '5.2.0',
+          prettier: '3.3.0',
+          '@babel/plugin-transform-typescript': '7.23.0',
+          '@typescript-eslint/parser': '6.7.0',
+          'eslint-plugin-storybook': '0.0.0-pr-34552-sha-a34e9165',
+        };
+        return { version: versions[name] } as any;
+      });
+      const service = new ProjectTypeService(pm);
+      await expect(service.detectLanguage()).resolves.toBe('typescript');
+    });
+  });
+
+  describe('detectIncompatiblePackageVersions', () => {
+    it('returns empty array when all tooling is compatible', async () => {
+      (pm.getModulePackageJSON as any) = vi.fn(async (name: string) => {
+        const versions: Record<string, string> = {
+          typescript: '5.2.0',
+          prettier: '3.3.0',
+          '@babel/plugin-transform-typescript': '7.23.0',
+          '@typescript-eslint/parser': '6.7.0',
+          'eslint-plugin-storybook': '0.7.0',
+        };
+        return { version: versions[name] } as any;
+      });
+      const service = new ProjectTypeService(pm);
+      const reasons = await service.detectIncompatiblePackageVersions();
+      expect(reasons).toEqual([]);
+    });
+
+    it('returns specific reasons for each incompatible package', async () => {
+      (pm.getModulePackageJSON as any) = vi.fn(async (name: string) => {
+        const versions: Record<string, string> = {
+          typescript: '4.8.4',
+          prettier: '2.7.1',
+          '@babel/plugin-transform-typescript': '7.19.0',
+          '@typescript-eslint/parser': '5.43.0',
+          'eslint-plugin-storybook': '0.6.7',
+        };
+        return { version: versions[name] } as any;
+      });
+      const service = new ProjectTypeService(pm);
+      const reasons = await service.detectIncompatiblePackageVersions();
+      expect(reasons).toContainEqual(expect.stringContaining('typescript 4.8.4 is below 4.9.0'));
+      expect(reasons).toContainEqual(expect.stringContaining('prettier 2.7.1 is below 2.8.0'));
+    });
+
+    it('returns only the specific failing package', async () => {
+      (pm.getModulePackageJSON as any) = vi.fn(async (name: string) => {
+        const versions: Record<string, string> = {
+          typescript: '5.2.0',
+          prettier: '2.6.2', // only prettier is below 2.8.0
+          '@babel/plugin-transform-typescript': '7.23.0',
+          '@typescript-eslint/parser': '6.7.0',
+          'eslint-plugin-storybook': '0.7.0',
+        };
+        return { version: versions[name] } as any;
+      });
+      const service = new ProjectTypeService(pm);
+      const reasons = await service.detectIncompatiblePackageVersions();
+      expect(reasons).toEqual([expect.stringContaining('prettier 2.6.2 is below 2.8.0')]);
+    });
+
+    it('treats canary eslint-plugin-storybook versions as compatible', async () => {
+      (pm.getModulePackageJSON as any) = vi.fn(async (name: string) => {
+        const versions: Record<string, string> = {
+          typescript: '5.2.0',
+          prettier: '3.3.0',
+          '@babel/plugin-transform-typescript': '7.23.0',
+          '@typescript-eslint/parser': '6.7.0',
+          'eslint-plugin-storybook': '0.0.0-pr-34552-sha-a34e9165',
+        };
+        return { version: versions[name] } as any;
+      });
+      const service = new ProjectTypeService(pm);
+      const reasons = await service.detectIncompatiblePackageVersions();
+      expect(reasons).toEqual([]);
     });
   });
 });

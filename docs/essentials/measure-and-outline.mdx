@@ -2,7 +2,6 @@
 title: 'Measure & outline'
 sidebar:
   order: 6
-  title: Measure & outline
 ---
 
 Storybook's measure and outline features give you the necessary tooling to inspect and visually debug CSS layout and alignment issues within your stories. It makes it easy to catch UI bugs early in development.
@@ -16,7 +15,9 @@ Instead, you can quickly visualize each component's measurements by clicking the
 ![Measure feature enabled displaying the component's dimensions](../_assets/essentials/addon-measure.png)
 
 <Callout variant="info" icon="💡">
-  Alternatively you can press the `m` key on your keyboard to toggle measure on and off.
+
+Alternatively you can press the `m` key on your keyboard to toggle measure on and off.
+
 </Callout>
 
 ## Outline
@@ -26,6 +27,14 @@ When building your layouts, checking the visual alignment of all components can 
 Click the outline button in the toolbar to toggle the outlines associated with all your UI elements, allowing you to spot bugs and broken layouts instantly.
 
 ![Outline feature enabled on the component's story](../_assets/essentials/addon-outline.png)
+
+## Disable the features
+
+If you want to turn off measure or outline for a story, you can do so by configuring the `measure` or `outline` parameter, like so:
+
+<CodeSnippets path="addon-measure-and-outline-disabled.md" />
+
+To disable either feature across your entire Storybook instead, [do so in your main configuration file](./index.mdx#disabling-features).
 
 ## API
 
@@ -37,6 +46,6 @@ These features contribute the following [parameters](../writing-stories/paramete
 
 Type: `boolean`
 
-Disable the feature's behavior. If you wish to disable the feature for the entire Storybook, you should [do so in your main configuration file](./index.mdx#disabling-features).
+Removes the tool from the toolbar and disables the feature's behavior. If you wish to disable the feature for the entire Storybook, you should [do so in your main configuration file](./index.mdx#disabling-features).
 
 This parameter is most useful to allow overriding at more specific levels. For example, if this parameter is set to `true` at the project level, it could then be re-enabled by setting it to `false` at the meta (component) or story level.

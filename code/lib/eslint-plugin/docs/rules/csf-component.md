@@ -3,7 +3,6 @@
 <!-- RULE-CATEGORIES:START -->
 
 **Included in these configurations**: <ul><li>csf</li><li>flat/csf</li><li>csf-strict</li><li>flat/csf-strict</li></ul>
-
 <!-- RULE-CATEGORIES:END -->
 
 ## Rule Details
@@ -14,7 +13,7 @@ Examples of **incorrect** code for this rule:
 
 ```js
 export default {
-  title: "Button",
+  title: 'Button',
 };
 ```
 
@@ -22,7 +21,7 @@ Examples of **correct** code for this rule:
 
 ```js
 export default {
-  title: "Button",
+  title: 'Button',
   component: Button,
 };
 ```

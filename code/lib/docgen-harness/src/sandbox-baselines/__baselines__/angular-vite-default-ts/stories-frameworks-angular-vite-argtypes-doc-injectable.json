@@ -1,0 +1,39 @@
+{
+  "argTypes": {
+    "auth": {
+      "description": "Auth headers to use.",
+      "name": "auth",
+      "table": {
+        "category": "properties",
+        "defaultValue": {},
+        "type": {
+          "summary": "any"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "empty-enum"
+      }
+    },
+    "getPosts": {
+      "description": "Get posts from Backend.",
+      "name": "getPosts",
+      "table": {
+        "category": "methods",
+        "defaultValue": {},
+        "type": {
+          "summary": "() => unknown[]"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "void"
+      }
+    }
+  },
+  "description": "This is an Angular Injectable example that has a Prop Table.",
+  "id": "stories-frameworks-angular-vite-argtypes-doc-injectable",
+  "jsDocTags": {},
+  "name": "DocInjectableService",
+  "path": "./src/stories/frameworks/angular-vite/argTypes/doc-injectable/doc-injectable.stories.ts"
+}

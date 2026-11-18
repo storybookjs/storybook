@@ -1,0 +1,3 @@
+<template>
+  <OptionsApiEmits :step="2" />
+</template>

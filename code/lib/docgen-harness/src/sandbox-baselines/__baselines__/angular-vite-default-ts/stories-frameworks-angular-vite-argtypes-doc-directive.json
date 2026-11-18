@@ -1,0 +1,39 @@
+{
+  "argTypes": {
+    "hasGrayBackground": {
+      "description": "Will apply gray background color if set to true.",
+      "name": "hasGrayBackground",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {
+          "summary": false
+        },
+        "type": {
+          "summary": "boolean"
+        }
+      },
+      "type": {
+        "name": "boolean"
+      }
+    },
+    "ngAfterViewInit": {
+      "name": "ngAfterViewInit",
+      "table": {
+        "category": "methods",
+        "defaultValue": {},
+        "type": {
+          "summary": "() => void"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "void"
+      }
+    }
+  },
+  "description": "This is an Angular Directive example that has a Prop Table.",
+  "id": "stories-frameworks-angular-vite-argtypes-doc-directive",
+  "jsDocTags": {},
+  "name": "DocDirective",
+  "path": "./src/stories/frameworks/angular-vite/argTypes/doc-directive/doc-directive.stories.ts"
+}

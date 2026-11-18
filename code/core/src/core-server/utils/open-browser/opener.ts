@@ -5,13 +5,16 @@
  * directory of this source tree.
  */
 import { execSync } from 'node:child_process';
-import { join } from 'node:path';
+import { accessSync, constants } from 'node:fs';
 
 import { logger } from 'storybook/internal/node-logger';
 
 import spawn from 'cross-spawn';
-import open, { type App } from 'open';
+import isInsideContainer from 'is-inside-container';
+import open, { type Options } from 'open';
+import { delimiter, join } from 'pathe';
 import picocolors from 'picocolors';
+import { isWsl } from 'wsl-utils';
 
 import { resolvePackageDir } from '../../../common/index.ts';
 import { StorybookError } from '../../../storybook-error.ts';
@@ -73,6 +76,56 @@ function getBrowserEnv():
   return { action: Actions.BROWSER, value, args };
 }
 
+function isExecutable(command: string) {
+  const candidates = command.includes('/')
+    ? [command]
+    : (process.env.PATH ?? '').split(delimiter).map((dir) => join(dir, command));
+
+  return candidates.some((candidate) => {
+    try {
+      accessSync(candidate, constants.X_OK);
+      return true;
+    } catch {
+      return false;
+    }
+  });
+}
+
+// Returns the command that `open` would spawn on Linux when it cannot be found, so Storybook can
+// say what is missing (#32949, #24191). `open` is bundled, so it cannot reach the copy of
+// `xdg-open` that it ships with. The conditions mirror `open`: macOS, Windows and WSL (outside a
+// container) use other launchers.
+function getMissingLinuxCommand(app?: string) {
+  if (process.platform === 'darwin' || process.platform === 'win32') {
+    return undefined;
+  }
+  if (isWsl && !isInsideContainer() && !app) {
+    return undefined;
+  }
+
+  const command = app ?? 'xdg-open';
+  return isExecutable(command) ? undefined : command;
+}
+
+function warnMissingLinuxCommand(url: string, command: string) {
+  const hint =
+    command === 'xdg-open'
+      ? 'Install xdg-utils, or set the BROWSER environment variable.'
+      : 'Check the BROWSER environment variable.';
+  logger.warn(`Could not open ${url} in a browser, because "${command}" was not found. ${hint}`);
+}
+
+// `open` spawns without an error listener, so a failing spawn (for example a missing PowerShell
+// on WSL) would crash Storybook with an unhandled 'error' event. Calling it after an `await` keeps
+// the spawn inside the microtask queue, so the listener below is attached before Node emits it.
+export async function openSafely(url: string, options?: Options) {
+  await Promise.resolve();
+  const child = await open(url, options);
+  child.once('error', (error) => {
+    logger.warn(`Could not open ${url} in a browser: ${error.message}`);
+  });
+}
+
 export class BrowserEnvError extends StorybookError {
   constructor(message: string) {
     super({
@@ -119,11 +172,7 @@ function executeShellScript(scriptPath: string, url: string) {
   return true;
 }
 
-function startBrowserProcess(
-  browser: App | readonly App[] | undefined,
-  url: string,
-  args: string[]
-) {
+function startBrowserProcess(browser: string | undefined, url: string, args: string[]) {
   // If we're on OS X, the user hasn't specifically
   // requested a different browser, we can try opening
   // Chrome with AppleScript. This lets us reuse an
@@ -181,26 +230,26 @@ function startBrowserProcess(
   // In this case, instead of passing `open` to `opn` (which won't work),
   // just ignore it (thus ensuring the intended behavior, i.e. opening the system browser):
   // https://github.com/facebook/create-react-app/pull/1690#issuecomment-283518768
-  // @ts-expect-error - browser is a string
   if (process.platform === 'darwin' && browser === 'open') {
     browser = undefined;
   }
 
-  // If there are arguments, they must be passed as array with the browser
-  if (typeof browser === 'string' && args.length > 0) {
-    // @ts-expect-error - browser is a string
-    browser = [browser].concat(args);
+  const missingCommand = getMissingLinuxCommand(browser);
+  if (missingCommand) {
+    warnMissingLinuxCommand(url, missingCommand);
+    // Handled: returning false would mean BROWSER=none, and throwing would retry with `open`.
+    return true;
   }
 
   // Fallback to open
   // (It will always open new tab)
-  try {
-    const options = { app: browser, wait: false, url: true };
-    open(url, options).catch(() => {}); // Prevent `unhandledRejection` error.
-    return true;
-  } catch {
-    return false;
-  }
+  const options = {
+    app: browser ? { name: browser, arguments: args } : undefined,
+    wait: false,
+    url: true,
+  };
+  openSafely(url, options).catch(() => {}); // Prevent `unhandledRejection` error.
+  return true;
 }
 
 /**
@@ -211,7 +260,6 @@ export function openBrowser(url: string) {
   const { action, value, args } = getBrowserEnv();
   // Returns win32 on PowerShell and Linux on WSL. Matches conditions when `sh` can be invoked.
   const canRunShell = process.platform !== 'win32';
-  const browserTarget = value as unknown as App | readonly App[] | undefined;
 
   switch (action) {
     case Actions.NONE: {
@@ -230,7 +278,7 @@ export function openBrowser(url: string) {
       );
     }
     case Actions.BROWSER: {
-      return startBrowserProcess(browserTarget, url, args);
+      return startBrowserProcess(value, url, args);
     }
     default: {
       throw new BrowserEnvError('Not implemented.');

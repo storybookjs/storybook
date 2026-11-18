@@ -31,7 +31,7 @@ type Options = {
   verbose: boolean;
 };
 
-const validateOptions = (options: { [key: string]: any }): options is Options => {
+const validateOptions = (options: unknown): options is Options => {
   optionsSchema.parse(options);
   return true;
 };
@@ -58,7 +58,7 @@ export const run = async (
   });
 
   const changesToRelease = changes.filter(
-    ({ labels }) => intersection(Object.keys(RELEASED_LABELS), labels).length > 0
+    ({ labels }) => intersection(Object.keys(RELEASED_LABELS), labels ?? []).length > 0
   );
 
   const hasChangesToRelease = changesToRelease.length > 0;

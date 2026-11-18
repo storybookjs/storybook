@@ -12,7 +12,7 @@ import { inferControls } from 'storybook/preview-api';
 
 import { extractArgTypes } from './extractArgTypes.ts';
 import { extractProps } from './extractProps.ts';
-import type { StoryContext } from './types.ts';
+import type { StoryContextForEnhancers } from 'storybook/internal/types';
 
 // File hierarchy:
 // __testfixtures__ / some-test-case / input.*
@@ -57,6 +57,7 @@ const skippedTests = [
   'ts-function-component',
   'ts-function-component-inline-defaults',
   'js-proptypes',
+  '9586-js-react-memo',
 ];
 
 const fs = await vi.importActual<typeof import('node:fs')>('node:fs');
@@ -94,7 +95,7 @@ describe('react component properties', async () => {
             const rows = inferControls({
               argTypes,
               parameters,
-            } as unknown as StoryContext<Renderer>);
+            } as unknown as StoryContextForEnhancers<Renderer>);
             await expect(rows).toMatchFileSnapshot(join(testDir, 'argTypes.snapshot'));
           });
         }

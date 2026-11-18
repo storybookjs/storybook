@@ -1,0 +1,38 @@
+{
+  "argTypes": {
+    "color": {
+      "name": "color",
+      "table": {
+        "category": "properties",
+        "defaultValue": {
+          "summary": "#1e88e5"
+        },
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string"
+      }
+    },
+    "name": {
+      "name": "name",
+      "table": {
+        "category": "properties",
+        "defaultValue": {
+          "summary": "Joe Bar"
+        },
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string"
+      }
+    }
+  },
+  "id": "stories-frameworks-angular-vite-basics-component-without-selector-without-selector",
+  "jsDocTags": {},
+  "name": "WithoutSelectorComponent",
+  "path": "./src/stories/frameworks/angular-vite/basics/component-without-selector/without-selector.stories.ts"
+}

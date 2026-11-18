@@ -1,10 +1,10 @@
 import type { CleanupCallback } from 'storybook/internal/csf';
-import { getCoreAnnotations } from 'storybook/internal/csf';
 import {
   CalledExtractOnStoreError,
   MissingStoryFromCsfFileError,
 } from 'storybook/internal/preview-errors';
 import type {
+  ComponentTitle,
   CSFFile,
   IndexEntry,
   ModuleExports,
@@ -18,6 +18,7 @@ import type {
   StoryContextForEnhancers,
   StoryId,
   StoryIndex,
+  StoryName,
 } from 'storybook/internal/types';
 
 import { omitBy, pick } from 'es-toolkit/object';
@@ -28,7 +29,7 @@ import { ArgsStore } from './ArgsStore.ts';
 import { GlobalsStore } from './GlobalsStore.ts';
 import { StoryIndexStore } from './StoryIndexStore.ts';
 import {
-  composeConfigs,
+  composeProjectAnnotationsWithCore,
   normalizeProjectAnnotations,
   prepareContext,
   prepareMeta,
@@ -44,9 +45,31 @@ export function picky<T extends Record<string, any>, K extends keyof T>(
   return omitBy(pick(obj, keys), (v) => v === undefined);
 }
 
+/**
+ * Compose and normalize the project annotations for the store, prepending the core annotations via
+ * {@link composeProjectAnnotationsWithCore} (CSF4 previews are detected and not double-composed).
+ */
+function composeProjectAnnotations<TRenderer extends Renderer>(
+  projectAnnotations: ProjectAnnotations<TRenderer>
+): NormalizedProjectAnnotations<TRenderer> {
+  return normalizeProjectAnnotations(composeProjectAnnotationsWithCore([projectAnnotations]));
+}
+
 // TODO -- what are reasonable values for these?
 const CSF_CACHE_SIZE = 1000;
 const STORY_CACHE_SIZE = 10000;
+
+/**
+ * The serialized story an external tool (such as the Chromatic CLI) reads via `extract()`.
+ * Keeps the deprecated `kind`/`story` fields for those extractors; everything else uses `title`/`name`.
+ */
+export type ExtractedStory<TRenderer extends Renderer = Renderer> =
+  StoryContextForEnhancers<TRenderer> & {
+    /** @deprecated Use `title`. Kept for external extractors such as the Chromatic CLI. */
+    kind: ComponentTitle;
+    /** @deprecated Use `name`. Kept for external extractors such as the Chromatic CLI. */
+    story: StoryName;
+  };
 
 export class StoryStore<TRenderer extends Renderer> {
   public storyIndex: StoryIndexStore;
@@ -78,9 +101,7 @@ export class StoryStore<TRenderer extends Renderer> {
   ) {
     this.storyIndex = new StoryIndexStore(storyIndex);
 
-    this.projectAnnotations = normalizeProjectAnnotations(
-      composeConfigs([...getCoreAnnotations(), projectAnnotations])
-    );
+    this.projectAnnotations = composeProjectAnnotations(projectAnnotations);
     const { initialGlobals, globalTypes } = this.projectAnnotations;
 
     this.args = new ArgsStore();
@@ -98,6 +119,9 @@ export class StoryStore<TRenderer extends Renderer> {
 
   setProjectAnnotations(projectAnnotations: ProjectAnnotations<TRenderer>) {
     // By changing `this.projectAnnotations, we implicitly invalidate the `prepareStoryWithCache`
+    // NOTE: unlike the constructor, this does not prepend the core annotations: the project
+    // annotations passed here (from `getProjectAnnotations()`) are only ever re-normalized, never
+    // re-composed with core, so there's no risk of doubling them on HMR updates.
     this.projectAnnotations = normalizeProjectAnnotations(projectAnnotations);
     const { initialGlobals, globalTypes } = projectAnnotations;
     this.userGlobals.set({ globals: initialGlobals, globalTypes });
@@ -282,7 +306,7 @@ export class StoryStore<TRenderer extends Renderer> {
 
   extract(
     options: { includeDocsOnly?: boolean } = { includeDocsOnly: false }
-  ): Record<StoryId, StoryContextForEnhancers<TRenderer>> {
+  ): Record<StoryId, ExtractedStory<TRenderer>> {
     const { cachedCSFFiles } = this;
 
     console.log('extract: extracting stories', cachedCSFFiles);
@@ -306,9 +330,6 @@ export class StoryStore<TRenderer extends Renderer> {
 
         acc[storyId] = Object.entries(story).reduce(
           (storyAcc, [key, value]) => {
-            if (key === 'story' && entry.subtype === 'test') {
-              return { ...storyAcc, story: entry.parentName };
-            }
             if (key === 'moduleExport') {
               return storyAcc;
             }
@@ -328,6 +349,8 @@ export class StoryStore<TRenderer extends Renderer> {
               ...story.storyGlobals,
             },
             storyId: entry.parent ? entry.parent : storyId,
+            kind: story.title,
+            story: entry.subtype === 'test' ? entry.parentName : story.name,
           }
         );
         return acc;

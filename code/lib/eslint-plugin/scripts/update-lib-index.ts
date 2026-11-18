@@ -21,6 +21,8 @@ export async function update() {
  * This file has been automatically generated,
  * in order to update its content execute "yarn update"
  */
+import { name, version } from '../package.json'
+
 // configs
 ${categoryIds
   .map((categoryId) => `import ${camelize(categoryId)} from './configs/${categoryId}.ts'`)
@@ -49,8 +51,14 @@ export const rules = {
     ${rules.map((rule) => `'${rule.name}': ${camelize(rule.name)}`).join(',\n')}
 };
 
+export const meta = {
+  name,
+  version,
+};
+
 export default {
   configs,
+  meta,
   rules,
 }
 `;

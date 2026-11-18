@@ -1,70 +1,87 @@
-import { access, cp, rm } from 'node:fs/promises';
+import { accessSync } from 'node:fs';
+import { cp, rm } from 'node:fs/promises';
 import path, { join } from 'node:path';
 import { promisify } from 'node:util';
 
 import dirSize from 'fast-folder-size';
 
 import { now, saveBench } from '../bench/utils.ts';
-import type { Task, TaskKey } from '../task.ts';
-import { ROOT_DIRECTORY, SANDBOX_DIRECTORY } from '../utils/constants.ts';
+import type { PassedOptionValues, Task, TaskKey, TemplateDetails } from '../task.ts';
+import { ROOT_DIRECTORY } from '../utils/constants.ts';
+import { exec } from '../utils/exec.ts';
 import { isNxTaskExecution } from '../utils/nx.ts';
 
 const logger = console;
 
-const pathExists = async (path: string) => {
+const pathExists = (path: string) => {
   try {
-    await access(path);
+    accessSync(path);
     return true;
   } catch {
     return false;
   }
 };
 
+const sanitizeOptions = (details: TemplateDetails, options: PassedOptionValues) => {
+  if (options.link && !options.forceLink && details.template.inDevelopment) {
+    logger.log(
+      `The ${options.template} has inDevelopment property enabled, therefore the sandbox for that template cannot be linked. Enabling --no-link mode... Pass --force-link to use link mode anyway, but be aware the sandbox may partially or completely not work.`
+    );
+
+    options.link = false;
+  }
+  if (options.link && !options.forceLink && details.template.preferNoLink) {
+    logger.log(
+      `The ${options.template} has preferNoLink property enabled. Defaulting to --no-link mode. Pass --force-link to use link mode anyway, but be aware the sandbox may partially or completely not work.`
+    );
+
+    options.link = false;
+  }
+};
+
+// If the selected task requires the sandbox to exist, we check it. Else we always assume it needs to be created
+// This avoids issues where you want to overwrite a sandbox and it will stop because it already exists
+const tasksAfterSandbox: TaskKey[] = [
+  'vitest-integration',
+  'e2e-tests',
+  'e2e-tests-dev',
+  'smoke-test',
+  'dev',
+  'build',
+  'serve',
+  'chromatic',
+  'bench',
+  'check-sandbox',
+];
+
+const isSandboxReady = (sandboxDir: string, selectedTask: TaskKey) =>
+  tasksAfterSandbox.includes(selectedTask) && pathExists(sandboxDir);
+
 export const sandbox: Task = {
   description: 'Create the sandbox from a template',
-  dependsOn: ({ template, key }, { link }) => {
-    if ('inDevelopment' in template && template.inDevelopment) {
-      if (pathExists(join(SANDBOX_DIRECTORY, key))) {
+  dependsOn: (details, options) => {
+    // Must sanitize options here too to ensure we run the right prerequisite tasks.
+    sanitizeOptions(details, options);
+
+    if ('inDevelopment' in details.template && details.template.inDevelopment) {
+      if (isSandboxReady(details.sandboxDir, options.task)) {
         return ['run-registry'];
       }
 
       return ['run-registry', 'generate'];
     }
 
-    if (link) {
+    if (options.link) {
       return ['compile'];
     }
 
     return ['run-registry'];
   },
   async ready({ sandboxDir }, { task: selectedTask }) {
-    // If the selected task requires the sandbox to exist, we check it. Else we always assume it needs to be created
-    // This avoids issues where you want to overwrite a sandbox and it will stop because it already exists
-    const tasksAfterSandbox: TaskKey[] = [
-      'vitest-integration',
-      'test-runner',
-      'test-runner-dev',
-      'e2e-tests',
-      'e2e-tests-dev',
-      'smoke-test',
-      'dev',
-      'build',
-      'serve',
-      'chromatic',
-      'bench',
-      'check-sandbox',
-    ];
-    const isSelectedTaskAfterSandboxCreation = tasksAfterSandbox.includes(selectedTask);
-    return isSelectedTaskAfterSandboxCreation && pathExists(sandboxDir);
+    return isSandboxReady(sandboxDir, selectedTask);
   },
   async run(details, options) {
-    if (options.link && details.template.inDevelopment) {
-      logger.log(
-        `The ${options.template} has inDevelopment property enabled, therefore the sandbox for that template cannot be linked. Enabling --no-link mode..`
-      );
-
-      options.link = false;
-    }
+    sanitizeOptions(details, options);
 
     if (!(await this.ready(details, options))) {
       logger.info('🗑  Removing old sandbox dir');
@@ -76,6 +93,7 @@ export const sandbox: Task = {
       install,
       addGlobalMocks,
       addStories,
+      addStaticDirs,
       extendMain,
       extendPreview,
       init,
@@ -122,12 +140,12 @@ export const sandbox: Task = {
     startTime = now();
     await install(details, options);
     const generateTime = now() - startTime;
-    const generateSize = await promisify(dirSize)(join(details.sandboxDir, 'node_modules'));
+    const generateSize = (await promisify(dirSize)(join(details.sandboxDir, 'node_modules'))) ?? 0;
 
     startTime = now();
     await init(details, options);
     const initTime = now() - startTime;
-    const initSize = await promisify(dirSize)(join(details.sandboxDir, 'node_modules'));
+    const initSize = (await promisify(dirSize)(join(details.sandboxDir, 'node_modules'))) ?? 0;
 
     await saveBench(
       'sandbox',
@@ -161,9 +179,14 @@ export const sandbox: Task = {
       debug: options.debug,
       dryRun: options.dryRun,
       extraDeps,
+      extraDevDeps: details.template.modifications?.extraDevDependencies,
+      removeDeps: details.template.modifications?.removeDependencies,
+      removeDevDeps: details.template.modifications?.removeDevDependencies,
+      resolutions: details.template.modifications?.resolutions,
     });
 
     await extendMain(details, options);
+    await addStaticDirs(details, options);
 
     await setImportMap(details.sandboxDir);
 
@@ -174,6 +197,20 @@ export const sandbox: Task = {
 
     await rm(path.join(details.sandboxDir, 'node_modules'), { force: true, recursive: true });
     await packageManager.installDependencies();
+
+    // After sb init the kept before-storybook lockfile can leave nested copies
+    // of shared packages (notably react under @storybook/addon-docs). Collapse
+    // those before we cache/run the sandbox.
+    await exec(
+      'yarn dedupe',
+      { cwd: details.sandboxDir },
+      {
+        dryRun: options.dryRun,
+        debug: options.debug,
+        startMessage: '🧶 Deduplicating dependencies',
+        errorMessage: '🚨 yarn dedupe failed',
+      }
+    );
 
     await runMigrations(details, options);
 

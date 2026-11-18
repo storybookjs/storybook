@@ -7,7 +7,7 @@ import { CloseAltIcon } from '@storybook/icons';
 
 import { darken, lighten, transparentize } from 'polished';
 import type { Step, TooltipRenderProps } from 'react-joyride';
-import { color, styled } from 'storybook/theming';
+import { color, styled } from 'storybook/theming/emotion';
 
 const ONBOARDING_ARROW_STYLE_ID = 'storybook-onboarding-arrow-style';
 
@@ -155,7 +155,9 @@ export const TourTooltip: FC<TooltipProps> = ({
           {index + 1} of {size}
         </Count>
         {!step.hideNextButton && (
-          <NextButton {...primaryProps}>{index + 1 === size ? 'Done' : 'Next'}</NextButton>
+          <NextButton ariaLabel={false} {...primaryProps}>
+            {index + 1 === size ? 'Done' : 'Next'}
+          </NextButton>
         )}
       </TooltipFooter>
     </TooltipBody>

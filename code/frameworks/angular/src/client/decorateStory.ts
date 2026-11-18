@@ -1,5 +1,9 @@
 import { sanitizeStoryContextUpdate } from 'storybook/preview-api';
-import type { DecoratorFunction, LegacyStoryFn, StoryContext } from 'storybook/internal/types';
+import type {
+  DecoratorFunction,
+  LegacyStoryFn,
+  StoryContextForRender,
+} from 'storybook/internal/types';
 
 import { computesTemplateFromComponent } from './angular-beta/ComputesTemplateFromComponent.ts';
 import type { AngularRenderer } from './types.ts';
@@ -10,7 +14,7 @@ export default function decorateStory(
 ): LegacyStoryFn<AngularRenderer> {
   const returnDecorators = [cleanArgsDecorator, ...decorators].reduce(
     (previousStoryFn: LegacyStoryFn<AngularRenderer>, decorator) =>
-      (context: StoryContext<AngularRenderer>) => {
+      (context: StoryContextForRender<AngularRenderer>) => {
         const decoratedStory = decorator((update) => {
           return previousStoryFn({
             ...context,
@@ -30,7 +34,7 @@ export { decorateStory };
 
 const prepareMain = (
   story: AngularRenderer['storyResult'],
-  context: StoryContext<AngularRenderer>
+  context: StoryContextForRender<AngularRenderer>
 ): AngularRenderer['storyResult'] => {
   let { template } = story;
 

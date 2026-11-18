@@ -5,12 +5,10 @@ import { MINIMAL_VIEWPORTS } from 'storybook/viewport';
 import type { ViewportMap } from 'storybook/viewport';
 
 declare global {
-  // eslint-disable-next-line no-var
   var __vitest_browser__: boolean;
 }
 
 export interface ViewportsParam {
-  defaultViewport?: string;
   viewports?: ViewportMap;
   options?: ViewportMap;
   disable?: boolean;
@@ -54,19 +52,14 @@ const parseDimension = (value: string, dimension: 'width' | 'height') => {
 };
 
 export const setViewport = async (parameters: Parameters = {}, globals: Globals = {}) => {
-  let defaultViewport;
   const viewportsParam: ViewportsParam = parameters.viewport ?? {};
   const viewportsGlobal: ViewportsGlobal = globals.viewport ?? {};
   const isDisabled = viewportsParam.disable || viewportsParam.disabled;
 
-  // Support new setting from globals, else use the one from parameters
-  if (viewportsGlobal.value && !isDisabled) {
-    defaultViewport = viewportsGlobal.value;
-  } else if (!isDisabled) {
-    defaultViewport = viewportsParam.defaultViewport;
-  }
+  // Support new setting from globals
+  const selectedViewport = !isDisabled ? viewportsGlobal.value : undefined;
 
-  const { page } = await import('@vitest/browser/context').catch(() => ({
+  const { page } = await import('vitest/browser').catch(() => ({
     page: null,
   }));
 
@@ -83,8 +76,8 @@ export const setViewport = async (parameters: Parameters = {}, globals: Globals 
   let viewportWidth = DEFAULT_VIEWPORT_DIMENSIONS.width;
   let viewportHeight = DEFAULT_VIEWPORT_DIMENSIONS.height;
 
-  if (defaultViewport && defaultViewport in options) {
-    const { styles } = options[defaultViewport];
+  if (selectedViewport && selectedViewport in options) {
+    const { styles } = options[selectedViewport];
     if (styles?.width && styles?.height) {
       const { width, height } = styles;
       viewportWidth = parseDimension(width, 'width');

@@ -49,6 +49,7 @@ describe('parse-vitest-report', () => {
         successRateWithoutEmptyRender: 1.0,
         uniqueErrorCount: 0,
         categorizedErrors: {},
+        cssCheck: 'not-run',
       });
     });
 
@@ -94,9 +95,9 @@ describe('parse-vitest-report', () => {
     it('should categorize errors and include them in the summary', () => {
       const mockVitestResults = {
         success: false,
-        numTotalTests: 4,
+        numTotalTests: 5,
         numPassedTests: 1,
-        numFailedTests: 3,
+        numFailedTests: 4,
         testResults: [
           {
             assertionResults: [
@@ -136,7 +137,7 @@ describe('parse-vitest-report', () => {
 
       const result = parseVitestResults(mockVitestResults);
 
-      expect(result.summary?.total).toBe(4);
+      expect(result.summary?.total).toBe(5);
       expect(result.summary?.passed).toBe(1);
       expect(result.summary?.uniqueErrorCount).toBe(3);
       expect(result.summary?.categorizedErrors).toEqual({
@@ -260,6 +261,37 @@ describe('parse-vitest-report', () => {
 
       expect(result.summary?.total).toBe(0);
       expect(result.summary?.successRate).toBe(0);
+    });
+
+    it('surfaces the CssCheck story outcome via summary.cssCheck', () => {
+      const mockVitestResults = {
+        success: false,
+        numTotalTests: 2,
+        numPassedTests: 1,
+        numFailedTests: 1,
+        testResults: [
+          {
+            assertionResults: [
+              {
+                fullName: 'components-button--primary',
+                status: 'passed',
+                meta: { storyId: 'components-button--primary' },
+                failureMessages: [],
+              },
+              {
+                fullName: 'components-button--css-check',
+                status: 'failed',
+                meta: { storyId: 'components-button--css-check' },
+                failureMessages: ['Error: expected rgb(37, 99, 235) but got rgba(0, 0, 0, 0)'],
+              },
+            ],
+          },
+        ],
+      };
+
+      const result = parseVitestResults(mockVitestResults);
+
+      expect(result.summary?.cssCheck).toBe('fail');
     });
   });
 });

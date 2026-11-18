@@ -1,28 +1,25 @@
 ---
-title: 'Meta'
+title: Meta
 sidebar:
   order: 8
-  title: Meta
 ---
 
 The `Meta` block is used to [attach](#attached-vs-unattached) a custom MDX docs page alongside a component’s list of stories. It doesn’t render any content, but serves two purposes in an MDX file:
 
-* Attaches the MDX file to a component and its stories, or
-* Controls the location of the unattached docs entry in the sidebar.
+- Attaches the MDX file to a component and its stories, or
+- Controls the location of the unattached docs entry in the sidebar.
 
-{/* prettier-ignore-start */}
-
-```md title="ButtonDocs.mdx"
+```mdx title="ButtonDocs.mdx"
 import { Meta } from '@storybook/addon-docs/blocks';
 import * as ButtonStories from './Button.stories';
 
 <Meta of={ButtonStories} />
 ```
 
-{/* prettier-ignore-end */}
-
 <Callout variant="info" icon="💡">
-  The Meta block doesn’t render anything visible.
+
+The Meta block doesn’t render anything visible.
+
 </Callout>
 
 ## Meta
@@ -45,17 +42,14 @@ Type: `string`
 
 Sets the name of the [attached](#attached-vs-unattached) doc entry. You can attach more than one MDX file to the same component in the sidebar by setting different names for each file's `Meta`.
 
-{/* prettier-ignore-start */}
-
-```md title="Component.mdx"
+```mdx title="Component.mdx"
 import { Meta } from '@storybook/addon-docs/blocks';
 import * as ComponentStories from './component.stories';
 
 {/* This MDX file is now called "Special Docs" */}
+
 <Meta of={ComponentStories} name="Special Docs" />
 ```
-
-{/* prettier-ignore-end */}
 
 ### `of`
 
@@ -63,16 +57,12 @@ Type: CSF file exports
 
 Specifies which CSF file is [attached](#attached-vs-unattached) to this MDX file. Pass the **full set of exports** from the CSF file (not the default export!).
 
-{/* prettier-ignore-start */}
-
-```md title="ButtonDocs.mdx"
+```mdx title="ButtonDocs.mdx"
 import { Meta, Story } from '@storybook/addon-docs/blocks';
 import * as ButtonStories from './Button.stories';
 
 <Meta of={ButtonStories} />
 ```
-
-{/* prettier-ignore-end */}
 
 Attaching an MDX file to a component’s stories with the `of` prop serves two purposes:
 
@@ -81,7 +71,7 @@ Attaching an MDX file to a component’s stories with the `of` prop serves two p
 
 <Callout variant="info" icon="💡">
 
-  The `of` prop is optional. If you don’t want to attach a specific CSF file to this MDX file, you can either use the `title` prop to control the location, or emit `Meta` entirely, and let [autotitle](../../configure/user-interface/sidebar-and-urls.mdx#csf-30-auto-titles) decide where it goes.
+The `of` prop is optional. If you don’t want to attach a specific CSF file to this MDX file, you can either use the `title` prop to control the location, or emit `Meta` entirely, and let [autotitle](../../configure/user-interface/sidebar-and-urls.mdx#csf-30-auto-titles) decide where it goes.
 
 </Callout>
 
@@ -92,22 +82,18 @@ Type: `string`
 Sets the title of an [unattached](#attached-vs-unattached) MDX file.
 
 {/* prettier-ignore-start */}
-
-```md
-{/* Introduction.mdx */}
-
+```mdx title="Introduction.mdx"
 import { Meta } from '@storybook/addon-docs/blocks';
 
 {/* Override the docs entry's location in the sidebar with title */}
 <Meta title="path/to/Introduction" />
 ```
-
 {/* prettier-ignore-end */}
 
 <Callout variant="info" icon="💡">
 
-  If you want to change the sorting of the docs entry with the component’s stories, use [Story Sorting](../../writing-stories/naming-components-and-hierarchy.mdx#sorting-stories), or add specific MDX files to your `stories` field in `main.js` in order.
-  
+If you want to change the sorting of the docs entry with the component’s stories, use [Story Sorting](../../writing-stories/naming-components-and-hierarchy.mdx#sorting-stories), or add specific MDX files to your `stories` field in `main.js` in order.
+
 </Callout>
 
 ## Attached vs. unattached

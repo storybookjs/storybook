@@ -88,16 +88,18 @@ const nameSpiesAndWrapActionsInSpies: LoaderFunction = ({ initialArgs }) => {
 
 let patchedFocus = false;
 
-const enhanceContext: LoaderFunction = async (context) => {
+export const enhanceContext: LoaderFunction = async (context) => {
   if (globalThis.HTMLElement && context.canvasElement instanceof globalThis.HTMLElement) {
     context.canvas = within(context.canvasElement);
   }
 
   try {
-    // userEvent.setup() cannot be called in non browser environment and will attempt to access window.navigator.clipboard
-    // which will throw an error in react native for example.
-    const clipboard = globalThis.window?.navigator?.clipboard;
-    if (clipboard) {
+    // userEvent.setup() needs a DOM, so skip it where there is none, such as React Native.
+    // `navigator.clipboard` does not tell: browsers expose it only in secure contexts.
+    if (globalThis.document && globalThis.HTMLElement) {
+      const { navigator } = globalThis.window;
+      const clipboardDescriptor = Object.getOwnPropertyDescriptor(navigator, 'clipboard');
+
       context.userEvent = instrument(
         { userEvent: uninstrumentedUserEvent.setup() },
         {
@@ -106,18 +108,18 @@ const enhanceContext: LoaderFunction = async (context) => {
         }
       ).userEvent;
 
-      // Restore original clipboard, which was replaced with a stub by userEvent.setup()
-      Object.defineProperty(globalThis.window.navigator, 'clipboard', {
-        get: () => clipboard,
-        configurable: true,
-      });
+      // userEvent.setup() replaces `navigator.clipboard` with a stub. Put back what was there,
+      // so stories keep the browser clipboard, or keep no clipboard in an insecure context.
+      if (clipboardDescriptor) {
+        Object.defineProperty(navigator, 'clipboard', clipboardDescriptor);
+      } else {
+        Reflect.deleteProperty(navigator, 'clipboard');
+      }
 
       if (!patchedFocus) {
-        // Must save a real, original `focus` method outside of the patch beforehand
         const originalFocus = HTMLElement.prototype.focus;
         let currentFocus = HTMLElement.prototype.focus;
-
-        // Use a Set to track elements that are currently undergoing a focus operation
+        const noopFocus = () => {};
         const focusingElements = new Set<HTMLElement>();
 
         Object.defineProperties(HTMLElement.prototype, {
@@ -127,20 +129,39 @@ const enhanceContext: LoaderFunction = async (context) => {
               currentFocus = newFocus;
             },
             get() {
-              // 'this' here refers to the DOM element being operated on
+              /*
+               * Focus libraries (react-aria, Zag) read `HTMLElement.prototype.focus` to capture
+               * and wrap it. That invokes this getter with the prototype as `this`, so DOM
+               * brand-checked properties must not be read until the receiver is validated.
+               *
+               * Nodes in a removed iframe have no browsing context; the instrumented focus would
+               * throw during React commit, so those get a no-op instead.
+               *
+               * During reentrancy, return the native method to break loops from wrappers that
+               * call back into focus on the same element synchronously. The marker is cleared on
+               * the next task so it covers the full synchronous call chain.
+               */
+              if (this === HTMLElement.prototype) {
+                return currentFocus;
+              }
+
+              let browsingContext;
+              try {
+                browsingContext = this.ownerDocument?.defaultView;
+              } catch {
+                return currentFocus;
+              }
+              if (!browsingContext) {
+                return noopFocus;
+              }
+
               if (focusingElements.has(this)) {
-                // Recursive call detected; to break the loop, return the original focus method.
                 return originalFocus;
               }
 
-              // Add protection marker
               focusingElements.add(this);
-
-              // Use setTimeout(..., 0) to defer the "remove marker" operation to the next event loop.
-              // This ensures the marker persists for the entire synchronous call chain (including all recursive calls).
               setTimeout(() => focusingElements.delete(this), 0);
 
-              // Return the focus method that should currently be used
               return currentFocus;
             },
           },

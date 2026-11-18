@@ -1,0 +1,467 @@
+import { join, normalize } from 'pathe';
+
+import { dequal } from 'dequal';
+import { logger } from 'storybook/internal/node-logger';
+import type { Status, StatusStoreByTypeId, StoryIndex } from 'storybook/internal/types';
+import { CHANGE_DETECTION_STATUS_TYPE_ID } from 'storybook/internal/types';
+
+import { getService } from '../../shared/open-service/server.ts';
+import {
+  mergeStatusValues,
+  storyFileChangeStatuses,
+} from '../../shared/open-service/services/module-graph/change-statuses.ts';
+import { getStoryIdsByAbsolutePath } from '../../shared/open-service/services/module-graph/story-files.ts';
+import type {
+  ErrorLike,
+  ModuleGraphStatus,
+} from '../../shared/open-service/services/module-graph/types.ts';
+import { storyIndexPathToAbsolutePath } from '../../shared/open-service/services/module-graph/types.ts';
+import { MultipleIndexingError } from '../utils/IndexingError.ts';
+import type { StoryIndexGenerator } from '../utils/StoryIndexGenerator.ts';
+import { ChangeDetectionFailureError, ChangeDetectionUnavailableError } from './errors.ts';
+import { GitDiffProvider } from './GitDiffProvider.ts';
+import { extractBaselineEntryIds, IndexBaselineService } from './IndexBaselineService.ts';
+import { resetChangeDetectionReadiness, setChangeDetectionReadiness } from './readiness.ts';
+
+const CHANGE_DETECTION_DEBOUNCE_MS = 200;
+
+function errorLikeToError(errorLike: ErrorLike): Error {
+  const error = new Error(errorLike.message, {
+    cause: errorLike.cause ? errorLikeToError(errorLike.cause) : undefined,
+  });
+  error.name = errorLike.name ?? error.name;
+  if (errorLike.stack) {
+    error.stack = errorLike.stack;
+  }
+  return error;
+}
+
+function isSameStatus(a: Status | undefined, b: Status): boolean {
+  if (!a) {
+    return false;
+  }
+
+  return (
+    a.storyId === b.storyId &&
+    a.typeId === b.typeId &&
+    a.value === b.value &&
+    a.title === b.title &&
+    a.description === b.description &&
+    a.sidebarContextMenu === b.sidebarContextMenu &&
+    dequal(a.data, b.data)
+  );
+}
+
+export { mergeStatusValues };
+
+export function mergeChangeDetectionStatuses(
+  existing: Status | undefined,
+  incoming: Status
+): Status {
+  return {
+    ...incoming,
+    value: mergeStatusValues(existing?.value, incoming.value),
+    title: incoming.title || existing?.title || '',
+    description: incoming.description || existing?.description || '',
+    sidebarContextMenu: incoming.sidebarContextMenu ?? existing?.sidebarContextMenu ?? false,
+  };
+}
+
+export function buildIndexBaselineStatuses(
+  storyIndex: StoryIndex,
+  baselineEntryIds: Set<string>
+): Map<string, Status> {
+  const statuses = new Map<string, Status>();
+  if (baselineEntryIds.size === 0) {
+    return statuses;
+  }
+
+  for (const entryId of extractBaselineEntryIds(storyIndex)) {
+    if (baselineEntryIds.has(entryId)) {
+      continue;
+    }
+
+    statuses.set(entryId, {
+      storyId: entryId,
+      typeId: CHANGE_DETECTION_STATUS_TYPE_ID,
+      value: 'status-value:new',
+      title: '',
+      description: '',
+      sidebarContextMenu: false,
+    });
+  }
+
+  return statuses;
+}
+
+/**
+ * Publishes change-detection story statuses to the status store. It resolves git-changed files,
+ * maps them to affected stories through the `core/module-graph` open service, and emits
+ * `modified`/`affected`/`new` statuses (plus index-baseline `new` entries).
+ */
+export class ChangeDetectionService {
+  private disposed = false;
+  private debounceTimer: ReturnType<typeof setTimeout> | undefined;
+  private scanInFlight = false;
+  private rerunAfterCurrentScan = false;
+  private readinessResolved = false;
+  private statusPipelineStarted = false;
+  private previousStatuses = new Map<string, Status>();
+  private gitDiffProvider: GitDiffProvider | undefined;
+  private indexBaselineService: IndexBaselineService | undefined;
+  private unsubscribeModuleGraphStatus: (() => void) | undefined;
+  private unsubscribeFileActivity: (() => void) | undefined;
+  private readonly workingDir: string;
+  private readonly debounceMs: number;
+
+  constructor(
+    private readonly options: {
+      storyIndexGeneratorPromise: Promise<StoryIndexGenerator>;
+      statusStore: StatusStoreByTypeId;
+      gitDiffProvider?: GitDiffProvider;
+      indexBaselineService?: IndexBaselineService;
+      workingDir?: string;
+      debounceMs?: number;
+    }
+  ) {
+    this.gitDiffProvider = options.gitDiffProvider;
+    this.indexBaselineService = options.indexBaselineService;
+    this.workingDir = options.workingDir ?? process.cwd();
+    this.debounceMs = options.debounceMs ?? CHANGE_DETECTION_DEBOUNCE_MS;
+    resetChangeDetectionReadiness();
+  }
+
+  private getModuleGraph() {
+    return getService('core/module-graph', { internal: true });
+  }
+
+  private onGraphReady(): void {
+    if (this.disposed) {
+      return;
+    }
+
+    this.startStatusPipeline();
+  }
+
+  private onGraphChange(): void {
+    if (this.disposed) {
+      return;
+    }
+
+    this.scheduleScan(this.debounceMs);
+  }
+
+  private onGraphError(error: Error): void {
+    if (this.disposed) {
+      return;
+    }
+
+    this.resolveReadiness({ status: 'error', error });
+    void this.dispose().catch(() => undefined);
+  }
+
+  private onGraphUnavailable(reason: string, error?: Error): void {
+    if (this.disposed) {
+      return;
+    }
+
+    logger.warn(`Change detection unavailable: ${reason}`);
+    this.resolveReadiness({ status: 'unavailable', reason, error });
+    void this.dispose();
+  }
+
+  private onModuleGraphStatus(status: ModuleGraphStatus): void {
+    if (this.disposed) {
+      return;
+    }
+
+    if (status.value === 'ready') {
+      this.onGraphReady();
+      return;
+    }
+
+    if (status.value === 'error') {
+      this.onGraphError(errorLikeToError(status.error));
+      return;
+    }
+
+    if (status.value === 'unavailable') {
+      this.onGraphUnavailable(
+        status.reason,
+        status.error ? errorLikeToError(status.error) : undefined
+      );
+    }
+  }
+
+  start(): void {
+    const moduleGraph = this.getModuleGraph();
+    this.unsubscribeModuleGraphStatus = moduleGraph.queries.status.subscribe(
+      undefined,
+      ({ data }) => {
+        if (data !== undefined) {
+          this.onModuleGraphStatus(data as ModuleGraphStatus);
+        }
+      }
+    );
+    // Watch file activity (not graphRevision): out-of-graph / path-mismatched edits still need a
+    // git rescan, while graphRevision stays in-graph-only for review staleness.
+    this.unsubscribeFileActivity = moduleGraph.queries.fileActivityRevision.subscribe(
+      undefined,
+      ({ data }) => {
+        if ((data ?? 0) > 0) {
+          this.onGraphChange();
+        }
+      }
+    );
+
+    void moduleGraph.queries.status
+      .loaded(undefined)
+      .then((status) => {
+        this.onModuleGraphStatus(status as ModuleGraphStatus);
+      })
+      .catch((error) => {
+        this.onGraphError(error instanceof Error ? error : new Error(String(error)));
+      });
+  }
+
+  /**
+   * Wires the git-diff-driven status pipeline. Runs once the dependency graph is ready (so the
+   * initial scan and every git-state-change scan read a populated reverse index).
+   */
+  private startStatusPipeline(): void {
+    if (this.disposed || this.statusPipelineStarted) {
+      return;
+    }
+    this.statusPipelineStarted = true;
+
+    void this.getIndexBaselineService().start();
+
+    this.getGitDiffProvider().onGitStateChange(() => {
+      if (this.disposed) {
+        return;
+      }
+
+      this.scheduleScan(this.debounceMs);
+      void this.getIndexBaselineService()
+        .handleGitStateChange()
+        .catch(() => undefined);
+    });
+
+    // Initial scan surfaces git-pending diffs immediately.
+    this.scheduleScan(0);
+  }
+
+  async dispose(): Promise<void> {
+    if (this.disposed) {
+      return;
+    }
+    this.disposed = true;
+    this.rerunAfterCurrentScan = false;
+
+    if (this.debounceTimer) {
+      clearTimeout(this.debounceTimer);
+      this.debounceTimer = undefined;
+    }
+
+    this.gitDiffProvider?.dispose();
+    this.unsubscribeModuleGraphStatus?.();
+    this.unsubscribeModuleGraphStatus = undefined;
+    this.unsubscribeFileActivity?.();
+    this.unsubscribeFileActivity = undefined;
+  }
+
+  private scheduleScan(delayMs: number): void {
+    if (this.debounceTimer) {
+      clearTimeout(this.debounceTimer);
+    }
+
+    this.debounceTimer = setTimeout(() => {
+      this.debounceTimer = undefined;
+      void this.scan();
+    }, delayMs);
+  }
+
+  private async scan(): Promise<void> {
+    if (this.disposed) {
+      return;
+    }
+
+    // Drain the graph's patch chain before reading it. Without this, a scan triggered mid-patch
+    // (between a story's removeStory and the re-walk's recordEdges) reads a transiently empty
+    // reverse index and publishes incorrect statuses.
+    const moduleGraph = this.getModuleGraph();
+    const status = await moduleGraph.queries.status.loaded(undefined);
+
+    if (this.disposed || status.value !== 'ready') {
+      return;
+    }
+
+    if (this.scanInFlight) {
+      this.rerunAfterCurrentScan = true;
+      return;
+    }
+
+    this.scanInFlight = true;
+
+    try {
+      const nextStatuses = await this.buildStatuses();
+      if (this.disposed) {
+        return;
+      }
+
+      this.applyStatusStorePatch(nextStatuses);
+      this.resolveReadiness({ status: 'ready' });
+    } catch (error) {
+      if (this.disposed) {
+        return;
+      }
+
+      if (error instanceof ChangeDetectionUnavailableError) {
+        logger.warn(`Change detection unavailable: ${error.message}`);
+        this.resolveReadiness({
+          status: 'unavailable',
+          reason: error.message,
+          error,
+        });
+        await this.dispose();
+      } else if (error instanceof ChangeDetectionFailureError) {
+        logger.error(`Change detection failed: ${error.message}`);
+        this.resolveReadiness({
+          status: 'error',
+          error,
+        });
+      } else {
+        const failure = new ChangeDetectionFailureError(
+          error instanceof Error ? error.message : String(error),
+          { cause: error instanceof Error ? error : undefined }
+        );
+        // The story index generator logs its own errors
+        if (!(error instanceof MultipleIndexingError)) {
+          logger.error(`Change detection failed: ${failure.message}`);
+        }
+        this.resolveReadiness({
+          status: 'error',
+          error: failure,
+        });
+      }
+    } finally {
+      this.scanInFlight = false;
+
+      if (!this.disposed && this.rerunAfterCurrentScan) {
+        this.rerunAfterCurrentScan = false;
+        void this.scan();
+      }
+    }
+  }
+
+  private async buildStatuses(): Promise<Map<string, Status>> {
+    const gitDiffProvider = this.getGitDiffProvider();
+    const [changes, repoRoot, storyIndexGenerator, baselineEntryIds] = await Promise.all([
+      gitDiffProvider.getChangedFiles(),
+      gitDiffProvider.getRepoRoot(),
+      this.options.storyIndexGeneratorPromise,
+      this.getIndexBaselineService().getBaselineEntryIds(),
+    ]);
+
+    const changedFiles = new Set(
+      Array.from(changes.changed).map((path) => normalize(join(repoRoot, path)))
+    );
+    const newFiles = new Set(
+      Array.from(changes.new).map((path) => normalize(join(repoRoot, path)))
+    );
+    const scannedFiles = new Set([...changedFiles, ...newFiles]);
+
+    const storyIndex = await storyIndexGenerator.getIndex();
+    const baselineStatuses = buildIndexBaselineStatuses(storyIndex, baselineEntryIds);
+    const storyIdsByFile = getStoryIdsByAbsolutePath(storyIndex, this.workingDir);
+    const statuses = new Map<string, Status>();
+    const scannedFilesArray = [...scannedFiles];
+    const lookupResults = await this.getModuleGraph().commands.storiesForFiles({
+      files: scannedFilesArray,
+    });
+
+    const storyFileStatuses = storyFileChangeStatuses(
+      scannedFilesArray.map((changedFile, i) => {
+        const stories = lookupResults[i].map(({ storyFile, depth }) => ({
+          storyFile: storyIndexPathToAbsolutePath(storyFile, this.workingDir),
+          depth,
+        }));
+        // The index can hold a story file before the graph does.
+        if (storyIdsByFile.has(changedFile)) {
+          stories.push({ storyFile: changedFile, depth: 0 });
+        }
+        return { isNew: newFiles.has(changedFile), stories };
+      })
+    );
+
+    for (const [storyFile, value] of storyFileStatuses) {
+      storyIdsByFile.get(storyFile)?.forEach((storyId) => {
+        statuses.set(storyId, {
+          storyId,
+          typeId: CHANGE_DETECTION_STATUS_TYPE_ID,
+          value,
+          title: '',
+          description: '',
+          sidebarContextMenu: false,
+        });
+      });
+    }
+
+    baselineStatuses.forEach((status, storyId) => {
+      statuses.set(storyId, mergeChangeDetectionStatuses(statuses.get(storyId), status));
+    });
+
+    return statuses;
+  }
+
+  private getGitDiffProvider(): GitDiffProvider {
+    this.gitDiffProvider ??= new GitDiffProvider(this.workingDir);
+    return this.gitDiffProvider;
+  }
+
+  private getIndexBaselineService(): IndexBaselineService {
+    this.indexBaselineService ??= new IndexBaselineService({
+      storyIndexGeneratorPromise: this.options.storyIndexGeneratorPromise,
+      gitDiffProvider: this.getGitDiffProvider(),
+      onBaselineUpdated: () => this.scheduleScan(this.debounceMs),
+    });
+    return this.indexBaselineService;
+  }
+
+  private applyStatusStorePatch(nextStatuses: Map<string, Status>): void {
+    const removedStoryIds = Array.from(this.previousStatuses.keys()).filter(
+      (storyId) => !nextStatuses.has(storyId)
+    );
+    const changedStatuses = Array.from(nextStatuses.values()).filter(
+      (status) => !isSameStatus(this.previousStatuses.get(status.storyId), status)
+    );
+
+    if (removedStoryIds.length === 0 && changedStatuses.length === 0) {
+      return;
+    }
+
+    if (removedStoryIds.length > 0) {
+      this.options.statusStore.unset(removedStoryIds);
+    }
+
+    if (changedStatuses.length > 0) {
+      this.options.statusStore.set(changedStatuses);
+    }
+
+    this.previousStatuses = new Map(nextStatuses);
+  }
+
+  private resolveReadiness(
+    readiness:
+      | { status: 'ready' }
+      | { status: 'unavailable'; reason: string; error?: Error }
+      | { status: 'error'; error: Error }
+  ): void {
+    if (this.readinessResolved) {
+      return;
+    }
+
+    this.readinessResolved = true;
+    setChangeDetectionReadiness(readiness);
+  }
+}

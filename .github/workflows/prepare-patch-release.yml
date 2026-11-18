@@ -15,18 +15,25 @@ concurrency:
   group: ${{ github.workflow }}
   cancel-in-progress: true
 
+permissions: {}
+
 jobs:
   prepare-patch-pull-request:
     name: Prepare patch pull request
     if: github.repository_owner == 'storybookjs'
     runs-on: ubuntu-latest
     environment: Release
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
     defaults:
       run:
         working-directory: scripts
     steps:
       - name: Checkout main
-        uses: actions/checkout@v4
+        # zizmor: ignore[artipacked]  # git push --force origin uses persisted GH_TOKEN credentials
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: main
           token: ${{ secrets.GH_TOKEN }}
@@ -45,10 +52,11 @@ jobs:
         if: steps.check-frozen.outputs.frozen == 'true' && github.event_name != 'workflow_dispatch'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_ID: ${{ github.run_id }}
         # From https://stackoverflow.com/a/75809743
         run: |
-          gh run cancel ${{ github.run_id }}
-          gh run watch ${{ github.run_id }}
+          gh run cancel "$RUN_ID"
+          gh run watch "$RUN_ID"
 
       - name: Check for unreleased changes
         id: unreleased-changes
@@ -75,10 +83,11 @@ jobs:
         if: steps.pick-patches.outputs.no-patch-prs == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_ID: ${{ github.run_id }}
         # From https://stackoverflow.com/a/75809743
         run: |
-          gh run cancel ${{ github.run_id }}
-          gh run watch ${{ github.run_id }}
+          gh run cancel "$RUN_ID"
+          gh run watch "$RUN_ID"
 
       - name: Bump version deferred
         id: bump-version
@@ -95,77 +104,101 @@ jobs:
 
       - name: Set version output
         id: versions
+        env:
+          BUMP_CURRENT: ${{ steps.bump-version.outputs.current-version }}
+          BUMP_NEXT: ${{ steps.bump-version.outputs.next-version }}
+          CUR_CURRENT: ${{ steps.current-version.outputs.current-version }}
         run: |
-          echo "current=${{ steps.bump-version.outputs.current-version || steps.current-version.outputs.current-version }}" >> "$GITHUB_OUTPUT"
-          echo "next=${{ steps.bump-version.outputs.next-version || steps.current-version.outputs.current-version }}" >> "$GITHUB_OUTPUT"
+          echo "current=${BUMP_CURRENT:-$CUR_CURRENT}" >> "$GITHUB_OUTPUT"
+          echo "next=${BUMP_NEXT:-$CUR_CURRENT}" >> "$GITHUB_OUTPUT"
 
       - name: Write changelog
         if: steps.unreleased-changes.outputs.has-changes-to-release == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NEXT_VERSION: ${{ steps.versions.outputs.next }}
         run: |
-          yarn release:write-changelog ${{ steps.versions.outputs.next }} --unpicked-patches --verbose
+          yarn release:write-changelog "$NEXT_VERSION" --unpicked-patches --verbose
 
       - name: 'Commit changes to branch: version-patch-from-${{ steps.versions.outputs.current }}'
         working-directory: .
+        env:
+          CURRENT_VERSION: ${{ steps.versions.outputs.current }}
+          NEXT_VERSION: ${{ steps.versions.outputs.next }}
         run: |
           git config --global user.name 'storybook-bot'
           git config --global user.email '32066757+storybook-bot@users.noreply.github.com'
-          git checkout -b version-patch-from-${{ steps.versions.outputs.current }}
+          git checkout -b "version-patch-from-${CURRENT_VERSION}"
           git add .
-          git commit --allow-empty --no-verify -m "Write changelog for ${{ steps.versions.outputs.next }} [skip ci]"
-          git push --force origin version-patch-from-${{ steps.versions.outputs.current }}
+          git commit --allow-empty --no-verify -m "Write changelog for ${NEXT_VERSION} [skip ci]"
+          git push --force origin "version-patch-from-${CURRENT_VERSION}"
 
       - name: Generate PR description
         id: description
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: yarn release:generate-pr-description --unpicked-patches --manual-cherry-picks='${{ steps.pick-patches.outputs.failed-cherry-picks }}' ${{ steps.unreleased-changes.outputs.has-changes-to-release == 'true' && format('{0}={1} {2}={3}', '--current-version', steps.versions.outputs.current, '--next-version', steps.versions.outputs.next) || '' }} --verbose
+          HAS_CHANGES: ${{ steps.unreleased-changes.outputs.has-changes-to-release }}
+          CURRENT_VERSION: ${{ steps.versions.outputs.current }}
+          NEXT_VERSION: ${{ steps.versions.outputs.next }}
+          FAILED_PICKS: ${{ steps.pick-patches.outputs.failed-cherry-picks }}
+        run: |
+          ARGS=(--unpicked-patches --manual-cherry-picks="$FAILED_PICKS")
+          if [[ "$HAS_CHANGES" == "true" ]]; then
+            ARGS+=(--current-version "$CURRENT_VERSION" --next-version "$NEXT_VERSION")
+          fi
+          yarn release:generate-pr-description "${ARGS[@]}" --verbose
 
       - name: Create or update pull request with release
         if: steps.unreleased-changes.outputs.has-changes-to-release == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          NEXT_VERSION: ${{ steps.versions.outputs.next }}
+          CURRENT_VERSION: ${{ steps.versions.outputs.current }}
+          DESCRIPTION: ${{ steps.description.outputs.description }}
         run: |
           if PR_STATE=$(gh pr view --json state --jq .state 2>/dev/null) && [[ -n "$PR_STATE" && "$PR_STATE" == *"OPEN"* ]]; then
             gh pr edit \
-              --repo "${{github.repository }}" \
-              --title "Release: Patch ${{ steps.versions.outputs.next }}" \
-              --body "${{ steps.description.outputs.description }}"
+              --repo "$REPO" \
+              --title "Release: Patch ${NEXT_VERSION}" \
+              --body "$DESCRIPTION"
           else
             gh pr create \
-              --repo "${{github.repository }}" \
-              --title "Release: Patch ${{ steps.versions.outputs.next }}" \
+              --repo "$REPO" \
+              --title "Release: Patch ${NEXT_VERSION}" \
               --label "release" \
               --base latest-release \
-              --head version-patch-from-${{ steps.versions.outputs.current }} \
-              --body "${{ steps.description.outputs.description }}"
+              --head "version-patch-from-${CURRENT_VERSION}" \
+              --body "$DESCRIPTION"
           fi
 
       - name: Create or update pull request without release
         if: steps.unreleased-changes.outputs.has-changes-to-release == 'false'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          CURRENT_VERSION: ${{ steps.versions.outputs.current }}
+          DESCRIPTION: ${{ steps.description.outputs.description }}
         run: |
           if PR_STATE=$(gh pr view --json state --jq .state 2>/dev/null) && [[ -n "$PR_STATE" && "$PR_STATE" == *"OPEN"* ]]; then
             gh pr edit \
-              --repo "${{github.repository }}"\
+              --repo "$REPO" \
               --title "Release: Merge patches to \`main\` (without version bump)" \
-              --body "${{ steps.description.outputs.description }}"
+              --body "$DESCRIPTION"
           else
             gh pr create \
-              --repo "${{github.repository }}"\
+              --repo "$REPO" \
               --title "Release: Merge patches to \`main\` (without version bump)" \
               --label "release" \
               --base latest-release \
-              --head version-patch-from-${{ steps.versions.outputs.current }} \
-              --body "${{ steps.description.outputs.description }}"
+              --head "version-patch-from-${CURRENT_VERSION}" \
+              --body "$DESCRIPTION"
           fi
 
       - name: Report job failure to Discord
         if: failure()
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_MONITORING_URL }}
-        uses: Ilshidur/action-discord@d2594079a10f1d6739ee50a2471f0ca57418b554
+        uses: Ilshidur/action-discord@d2594079a10f1d6739ee50a2471f0ca57418b554 # v0.4.0
         with:
           args: 'The GitHub Action for preparing the release pull request bumping from v${{ steps.versions.outputs.current }} to v${{ steps.versions.outputs.next }} (triggered by ${{ github.triggering_actor }}) failed! See run at: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'

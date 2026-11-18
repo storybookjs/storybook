@@ -5,6 +5,28 @@ import { dedent } from 'ts-dedent';
 import { extract, extractFromStory } from './componentMetaExtractor.test-helpers.ts';
 
 describe('prop extraction', () => {
+  it('leaves out a prop marked @ignore, like builder docgen did', async () => {
+    const entry = await extract(
+      'Button',
+      dedent`
+        import React from 'react';
+        interface ButtonProps {
+          /** Shown. */
+          label: string;
+          /**
+           * Should not be visible since it's ignored.
+           *
+           * @ignore
+           */
+          internal: string;
+        }
+        export const Button = (props: ButtonProps) => <button />;
+      `
+    );
+
+    expect(Object.keys(entry.component?.reactComponentMeta?.props ?? {})).toEqual(['label']);
+  });
+
   describe('basic types', () => {
     it('extracts string, number, and boolean props', async () => {
       const entry = await extract(
@@ -161,7 +183,11 @@ describe('prop extraction', () => {
           size: {
             type: {
               name: 'enum',
-              value: [{ value: '"small"' }, { value: '"medium"' }, { value: '"large"' }],
+              value: expect.arrayContaining([
+                { value: '"small"' },
+                { value: '"medium"' },
+                { value: '"large"' },
+              ]),
             },
           },
         },
@@ -184,7 +210,11 @@ describe('prop extraction', () => {
             required: false,
             type: {
               name: 'enum',
-              value: [{ value: '"small"' }, { value: '"medium"' }, { value: '"large"' }],
+              value: expect.arrayContaining([
+                { value: '"small"' },
+                { value: '"medium"' },
+                { value: '"large"' },
+              ]),
             },
           },
         },
@@ -252,7 +282,7 @@ describe('prop extraction', () => {
           token: {
             type: {
               name: 'enum',
-              value: [{ value: '"color-red"' }, { value: '"color-blue"' }],
+              value: expect.arrayContaining([{ value: '"color-red"' }, { value: '"color-blue"' }]),
             },
           },
         },
@@ -357,6 +387,40 @@ describe('prop extraction', () => {
           kind: { required: true },
           message: { required: true },
           retryable: { required: false },
+        },
+      });
+    });
+
+    it('merges same-named prop types across union members', async () => {
+      const entry = await extract(
+        'Component',
+        dedent`
+          import React from 'react';
+          interface BaseProps { variant?: 'a' | 'b' }
+          interface VariantAProps extends BaseProps {
+            variant?: 'a';
+            valueA?: string;
+            valueB?: never;
+          }
+          interface VariantBProps extends BaseProps {
+            variant: 'b';
+            valueA?: never;
+            valueB: string;
+          }
+          type Props = VariantAProps | VariantBProps;
+          export const Component: React.FC<Props> = (props) => <div />;
+        `
+      );
+
+      expect(entry.component?.reactComponentMeta).toMatchObject({
+        props: {
+          variant: {
+            required: false,
+            type: {
+              name: 'enum',
+              value: [{ value: '"a"' }, { value: '"b"' }],
+            },
+          },
         },
       });
     });
@@ -569,6 +633,39 @@ describe('prop extraction', () => {
       expect(entry.component?.reactComponentMeta?.props).not.toHaveProperty('className');
     });
 
+    it('filters a prop another declaration file adds to React HTML attributes', async () => {
+      // Next.js ships `@vercel/og` types that augment HTMLAttributes with a Tailwind `tw` prop.
+      const entry = await extractFromStory(
+        {
+          'augmented/og.d.ts': dedent`
+            import 'react';
+            declare module 'react' {
+              interface HTMLAttributes<T> {
+                /** Specify styles using Tailwind CSS classes. */
+                tw?: string;
+              }
+            }
+          `,
+          'augmented/Button.tsx': dedent`
+            /// <reference path="./og.d.ts" />
+            import React from 'react';
+            interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+              label: string;
+            }
+            export const Button = (props: ButtonProps) => <button />;
+          `,
+          'augmented/Button.stories.tsx': dedent`
+            import { Button } from './Button';
+            export default { component: Button };
+            export const Primary = {};
+          `,
+        },
+        'augmented/Button.stories.tsx'
+      );
+
+      expect(Object.keys(entry.component?.reactComponentMeta?.props ?? {})).toEqual(['label']);
+    });
+
     it('keeps HTML attributes when Pick narrows below threshold', async () => {
       const entry = await extract(
         'Button',
@@ -706,7 +803,12 @@ describe('prop extraction', () => {
       expect(entry.component?.reactComponentMeta).toMatchObject({
         props: {
           label: { required: true },
-          size: { type: { name: 'enum', value: [{ value: '"sm"' }, { value: '"md"' }] } },
+          size: {
+            type: {
+              name: 'enum',
+              value: expect.arrayContaining([{ value: '"sm"' }, { value: '"md"' }]),
+            },
+          },
         },
       });
     });

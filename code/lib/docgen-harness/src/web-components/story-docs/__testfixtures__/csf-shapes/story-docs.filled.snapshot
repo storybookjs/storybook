@@ -1,0 +1,26 @@
+{
+  "ImportedItems": "<csf-shapes label="Meta &amp; &lt;changed>"></csf-shapes>",
+  "Listener": "<csf-shapes label="Meta &amp; &lt;changed>"></csf-shapes>
+<script>
+  {
+    const host = document.currentScript.previousElementSibling;
+    host.addEventListener('shape-change', () => {});
+  }
+</script>",
+  "PartsAndCss": "<style>
+  csf-shapes::part(panel) { color: red; & <changed> }
+  csf-shapes:state(active) { outline: 1px solid; & <changed> }
+</style>
+<csf-shapes label="Meta &amp; &lt;changed>" style="--csf-shapes-accent: teal &amp; &lt;changed>;"></csf-shapes>",
+  "RenderFallback": "document.createElement('csf-shapes')",
+  "Slots": "<csf-shapes label="Meta &amp; &lt;changed>">
+  Body <b>text</b> & <changed>
+  <span slot="actions"><button>Go</button> & <changed></span>
+</csf-shapes>",
+  "SpreadArgs": "<csf-shapes label="Shared &amp; &lt;changed>" count="3"></csf-shapes>",
+  "UnknownArg": "<csf-shapes label="Meta &amp; &lt;changed>"></csf-shapes>
+<script>
+  document.querySelector('csf-shapes').nope = 2;
+</script>",
+  "Unset": "<csf-shapes></csf-shapes>",
+}

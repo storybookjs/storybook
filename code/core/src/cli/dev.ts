@@ -1,14 +1,11 @@
 import { cache } from 'storybook/internal/common';
 import { buildDevStandalone, withTelemetry } from 'storybook/internal/core-server';
-import { logger, instance as npmLog } from 'storybook/internal/node-logger';
+import { logger } from 'storybook/internal/node-logger';
 import type { CLIOptions, PackageJson } from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';
 
 function printError(error: any) {
-  // this is a weird bugfix, somehow 'node-pre-gyp' is polluting the npmLog header
-  npmLog.heading = '';
-
   if (error instanceof Error) {
     if ((error as any).error) {
       logger.error((error as any).error);
@@ -47,9 +44,8 @@ export const dev = async (cliOptions: CLIOptions) => {
     ...cliOptions,
     configDir: cliOptions.configDir || './.storybook',
     configType: 'DEVELOPMENT',
-    ignorePreview: !!cliOptions.previewUrl && !cliOptions.forceBuildPreview,
     cache: cache as any,
-    packageJson: packageJson as unknown as PackageJson, // type-fest types are wrong here because we're on an outdated version of the package
+    packageJson: packageJson,
   } as Options;
 
   await withTelemetry(

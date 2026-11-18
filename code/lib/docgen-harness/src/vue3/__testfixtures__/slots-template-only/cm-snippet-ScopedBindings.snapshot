@@ -1,0 +1,5 @@
+<template>
+  <TemplateOnlySlots>
+    <template #item="{ entry, index }"><em>{{ index }}: {{ entry }}</em></template>
+  </TemplateOnlySlots>
+</template>

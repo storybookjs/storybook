@@ -1,0 +1,5 @@
+const DomNode = () => {
+  const el = document.createElement('multi-beta');
+  el.setAttribute('beta-label', String('Beta'));
+  return el;
+};

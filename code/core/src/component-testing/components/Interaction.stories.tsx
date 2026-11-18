@@ -42,7 +42,7 @@ export default {
     childCallIds: undefined,
     toggleCollapsed: () => {},
   },
-} as Meta<typeof Interaction>;
+} satisfies Meta<typeof Interaction>;
 
 export const Render: Story = {
   args: {
@@ -84,6 +84,32 @@ export const Done: Story = {
         name: 'Go to interaction row: toHaveBeenCalled. Status: passed.',
       })
     ).toBeInTheDocument();
+  },
+};
+
+export const PreventsFocusLossOnPointerDown: Story = {
+  tags: ['vitest'],
+  args: Done.args,
+  render: (args) => (
+    <>
+      <li style={{ listStyleType: 'none', padding: 8 }}>
+        <input data-testid="test-input" />
+      </li>
+      <Interaction {...args} />
+    </>
+  ),
+  play: async ({ canvas }) => {
+    const input = canvas.getByTestId('test-input');
+    input.focus();
+    await expect(input).toHaveFocus();
+
+    await userEvent.pointer({
+      target: canvas.getByRole('button', {
+        name: 'Go to interaction row: toHaveBeenCalled. Status: passed.',
+      }),
+      keys: '[MouseLeft]',
+    });
+    await expect(input).toHaveFocus();
   },
 };
 

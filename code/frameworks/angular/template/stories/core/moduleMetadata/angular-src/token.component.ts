@@ -8,10 +8,10 @@ export const DEFAULT_NAME = new InjectionToken<string>('TokenComponent.DefaultNa
   selector: 'storybook-simple-token-component',
   template: `
     <h3>{{ name }}</h3>
-<p>Items:</p>
-<ul>
-  <li *ngFor="let item of items">{{ item }}</li>
-</ul>
+    <p>Items:</p>
+    <ul>
+      <li *ngFor="let item of items">{{ item }}</li>
+    </ul>
   `,
 })
 export class TokenComponent {

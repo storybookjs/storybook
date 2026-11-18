@@ -1,3 +1,5 @@
+import { fileURLToPath } from 'node:url';
+
 import type { Options } from 'storybook/internal/types';
 
 import { createFilter } from '@rollup/pluginutils';
@@ -36,7 +38,9 @@ export async function mdxPlugin(options: Options): Promise<Plugin> {
         const mdxLoaderOptions: CompileOptions = await presets.apply('mdxLoaderOptions', {
           ...mdxPluginOptions,
           mdxCompileOptions: {
-            providerImportSource: import.meta.resolve('@storybook/addon-docs/mdx-react-shim'),
+            providerImportSource: fileURLToPath(
+              import.meta.resolve('@storybook/addon-docs/mdx-react-shim')
+            ),
             ...mdxPluginOptions?.mdxCompileOptions,
             rehypePlugins: [
               ...(mdxPluginOptions?.mdxCompileOptions?.rehypePlugins ?? []),

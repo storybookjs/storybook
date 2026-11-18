@@ -58,10 +58,10 @@ export const checkPackageCompatibility = async (
         // prevent issues with "tag" based versions e.g. "latest" or "next" instead of actual numbers
         return (
           versionRange &&
-          // We can't check compatibility for 0.x packages, so we skip them
-          !/^[~^]?0\./.test(versionRange) &&
+          // We can't check compatibility for 0.x packages, so we skip ranges that only allow 0.x
+          versionRange.split('||').some((part) => !/^[~^]?0\./.test(part.trim())) &&
           semver.validRange(versionRange) &&
-          !semver.satisfies(currentStorybookVersion, versionRange)
+          !semver.satisfies(currentStorybookVersion, versionRange, { includePrerelease: true })
         );
       });
 
@@ -103,11 +103,6 @@ export const checkPackageCompatibility = async (
 export const getIncompatibleStorybookPackages = async (
   context: Context
 ): Promise<AnalysedPackage[]> => {
-  if (context.currentStorybookVersion.includes('0.0.0')) {
-    // We can't know if a Storybook canary version is compatible with other packages, so we skip it
-    return [];
-  }
-
   const allDeps = context.packageManager.getAllDependencies();
   const storybookLikeDeps = Object.keys(allDeps).filter((dep) => dep.includes('storybook'));
   if (storybookLikeDeps.length === 0 && !context.skipErrors) {
@@ -159,7 +154,7 @@ export const getIncompatiblePackagesSummary = (
     summaryMessage.push(
       '\nPlease consider updating your packages or contacting the maintainers for compatibility details.',
       '\nFor more details on compatibility guidance, see:',
-      'https://github.com/storybookjs/storybook/issues/32836'
+      'https://github.com/storybookjs/storybook/issues/36283'
     );
 
     if (incompatiblePackages.some((dep) => dep.availableCoreUpdate)) {

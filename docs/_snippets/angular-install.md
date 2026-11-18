@@ -1,11 +1,11 @@
-```shell renderer="angular" language="js" packageManager="npm"
+```shell renderer="angular" packageManager="npm"
 npm install --save-dev @storybook/angular
 ```
 
-```shell renderer="angular" language="js" packageManager="pnpm"
+```shell renderer="angular" packageManager="pnpm"
 pnpm add --save-dev @storybook/angular
 ```
 
-```shell renderer="angular" language="js" packageManager="yarn"
+```shell renderer="angular" packageManager="yarn"
 yarn add --dev @storybook/angular
 ```

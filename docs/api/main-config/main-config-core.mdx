@@ -1,8 +1,7 @@
 ---
-title: 'core'
+title: core
 sidebar:
   order: 8
-  title: core
 ---
 
 Parent: [main.js|ts configuration](./main-config.mdx)
@@ -32,13 +31,17 @@ Type: `string[] | true`
 
 Default: `[]`
 
-Configures the allowed hosts for the Storybook dev server, used for Origin and Host header validation. Storybook's localhost and local network (or [`--host`](../cli-options.mdx#dev)) addresses are always allowed. Use this when accessing your local Storybook instance through a reverse proxy (e.g. your webapp dev server). Set to `true` to disable hostname validation (insecure).
-
-{/* prettier-ignore-start */}
+Configures the allowed hosts for the Storybook dev server. Storybook validates the `Host` header of every request, and the `Origin` header of WebSocket connections and requests to the [MCP server](../../ai/reference/mcp-server.mdx), against this list. Storybook's localhost (or [`--host`](../cli-options.mdx#dev)) address is always allowed. Use this when accessing your local Storybook instance through a reverse proxy (e.g. your webapp dev server). Set to `true` to disable hostname validation (insecure).
 
 <CodeSnippets path="main-config-core-allowed-hosts.md" />
 
-{/* prettier-ignore-end */}
+<Callout variant="warning">
+
+Host validation protects the dev server from DNS rebinding. In a DNS rebinding attack, a website you visit points its own domain at your machine, and your browser sends that website's requests to your local Storybook. With host validation disabled, the website can read your stories and source files. It can also write files in your project through the WebSocket channel.
+
+Host validation does not protect Storybook from other machines on your network. Anyone who can reach the dev server over the network has the same access. The dev server listens on localhost only unless you pass [`--host`](../cli-options.mdx#dev). Only expose it to a network you trust.
+
+</Callout>
 
 ## `builder`
 
@@ -55,16 +58,14 @@ Type:
 Configures Storybook's builder, [Vite](../../builders/vite.mdx) or [Webpack](../../builders/webpack.mdx).
 
 <Callout variant="info" icon="💡">
-  With the new [Framework API](../new-frameworks.mdx), [`framework.options.builder`](./main-config-framework.mdx#optionsbuilder) is now the preferred way to configure the builder.
 
-  You should only use `core.builder.options` if you need to configure a builder that is not part of a framework.
+With the new [Framework API](../new-frameworks.mdx), [`framework.options.builder`](./main-config-framework.mdx#optionsbuilder) is now the preferred way to configure the builder.
+
+You should only use `core.builder.options` if you need to configure a builder that is not part of a framework.
+
 </Callout>
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="main-config-core-builder.md" />
-
-{/* prettier-ignore-end */}
 
 ## `channelOptions`
 
@@ -85,7 +86,6 @@ Configures the channel used by Storybook to communicate between the manager and 
 
 Only two properties are likely to be used:
 
-
 ### `channelOptions.maxDepth`
 
 Type: `number`
@@ -102,14 +102,10 @@ Enable CORS headings to run document in a "secure context". See [SharedArrayBuff
 
 This enables these headers in development-mode:
 
-* `Cross-Origin-Opener-Policy: same-origin`
-* `Cross-Origin-Embedder-Policy: require-corp`
-
-{/* prettier-ignore-start */}
+- `Cross-Origin-Opener-Policy: same-origin`
+- `Cross-Origin-Embedder-Policy: require-corp`
 
 <CodeSnippets path="main-config-core-cross-origin-isolated.md" />
-
-{/* prettier-ignore-end */}
 
 ## `disableProjectJson`
 
@@ -117,11 +113,7 @@ Type: `boolean`
 
 Disables the generation of `project.json`, a file containing Storybook metadata
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="main-config-core-disable-project-json.md" />
-
-{/* prettier-ignore-end */}
 
 ## `disableTelemetry`
 
@@ -129,11 +121,7 @@ Type: `boolean`
 
 Disables Storybook's [telemetry collection](../../configure/telemetry.mdx).
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="main-config-core-disable-telemetry.md" />
-
-{/* prettier-ignore-end */}
 
 ## `disableWebpackDefaults`
 
@@ -141,11 +129,7 @@ Type: `boolean`
 
 Disables Storybook's default Webpack configuration.
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="main-config-core-disable-webpack-defaults.md" />
-
-{/* prettier-ignore-end */}
 
 ## `disableWhatsNewNotifications`
 
@@ -153,11 +137,7 @@ Type: `boolean`
 
 Disables the "What's New" notifications in the UI for new Storybook versions and ecosystem updates (e.g., [addons](https://storybook.js.org/integrations/), [content](https://storybook.js.org/blog/), etc.).
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="main-config-core-disable-update-notifications.md" />
-
-{/* prettier-ignore-end */}
 
 ## `enableCrashReports`
 
@@ -165,11 +145,7 @@ Type: `boolean`
 
 Enable crash reports to be sent to Storybook [telemetry](../../configure/telemetry.mdx).
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="main-config-core-enable-crash-reports.md" />
-
-{/* prettier-ignore-end */}
 
 ## `renderer`
 

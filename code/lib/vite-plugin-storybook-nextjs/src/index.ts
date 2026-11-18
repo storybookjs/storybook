@@ -1,0 +1,222 @@
+import { dirname, resolve } from 'pathe';
+
+import { createRequire } from 'node:module';
+import type { NextConfigComplete } from 'next/dist/server/config-shared.js';
+import type { PluginOption } from 'vite';
+import tsconfigPaths from 'vite-tsconfig-paths';
+
+import { vitePluginNextEnv } from './plugins/next-env/plugin.ts';
+import { vitePluginNextFont } from './plugins/next-font/plugin.ts';
+import { vitePluginNextSwc } from './plugins/next-swc/plugin.ts';
+
+import './polyfills/promise-with-resolvers.ts';
+import nextLoadJsConfig from 'next/dist/build/load-jsconfig.js';
+import {
+  PHASE_DEVELOPMENT_SERVER,
+  PHASE_PRODUCTION_BUILD,
+  PHASE_TEST,
+} from 'next/dist/shared/lib/constants.js';
+import { vitePluginNextDynamic } from './plugins/next-dynamic/plugin.ts';
+import { type NextImagePluginOptions, vitePluginNextImage } from './plugins/next-image/plugin.ts';
+import { vitePluginNextMocks } from './plugins/next-mocks/plugin.ts';
+import {
+  getExecutionEnvironment,
+  getNextjsMajorVersion,
+  getViteMajorVersion,
+  isVitestEnv,
+} from './utils.ts';
+import { loadNextConfig } from './utils/next-config.ts';
+
+const require = createRequire(import.meta.url);
+const compiledReactDir = dirname(require.resolve('next/dist/compiled/react'));
+const compiledReactDomDir = dirname(require.resolve('next/dist/compiled/react-dom'));
+
+const loadJsConfig: typeof nextLoadJsConfig =
+  // biome-ignore lint/suspicious/noExplicitAny: CJS support
+  (nextLoadJsConfig as any).default || nextLoadJsConfig;
+
+export type PluginOptions = {
+  /**
+   * Provide the path to your Next.js project directory
+   * @default process.cwd()
+   */
+  dir?: string;
+  /**
+   * Control which image files are handled by the next-image plugin.
+   * @see https://github.com/storybookjs/storybook/blob/next/code/lib/vite-plugin-storybook-nextjs/README.md#faq-includingexcluding-images
+   */
+  image?: NextImagePluginOptions;
+};
+
+function VitePlugin({ dir = process.cwd(), image }: PluginOptions = {}): PluginOption[] {
+  const resolvedDir = resolve(dir);
+  const isVite8orNewer = getViteMajorVersion() >= 8;
+  const nextConfigResolver = Promise.withResolvers<NextConfigComplete>();
+
+  const nodeEnv = process.env.NODE_ENV;
+  const phase =
+    nodeEnv === 'development'
+      ? PHASE_DEVELOPMENT_SERVER
+      : nodeEnv === 'test'
+        ? PHASE_TEST
+        : PHASE_PRODUCTION_BUILD;
+
+  loadNextConfig(phase, resolvedDir).then(nextConfigResolver.resolve, nextConfigResolver.reject);
+
+  return [
+    isVite8orNewer
+      ? null
+      : nextConfigResolver.promise.then(async (nextConfig) => {
+          const loadedJSConfig = await loadJsConfig(resolvedDir, nextConfig);
+          const { enforce, ...tsconfigPathConfig } = tsconfigPaths({
+            root: resolvedDir,
+            ...(loadedJSConfig.jsConfigPath ? { projects: [loadedJSConfig.jsConfigPath] } : {}),
+          });
+
+          return {
+            ...tsconfigPathConfig,
+          };
+        }),
+    {
+      name: 'vite-plugin-storybook-nextjs',
+      enforce: 'pre' as const,
+      async config(config) {
+        const isNext16orNewer = getNextjsMajorVersion() >= 16;
+        const nextConfig = await nextConfigResolver.promise;
+
+        const executionEnvironment = getExecutionEnvironment(config);
+        const resolveConfig = {
+          ...(isVite8orNewer ? { tsconfigPaths: true } : {}),
+          ...(!isVitestEnv && {
+            alias: [
+              {
+                find: /^react$/,
+                replacement: require.resolve('next/dist/compiled/react'),
+              },
+              {
+                find: /^react\/jsx-runtime$/,
+                replacement: require.resolve('next/dist/compiled/react/jsx-runtime'),
+              },
+              {
+                find: /^react\/jsx-dev-runtime$/,
+                replacement: require.resolve('next/dist/compiled/react/jsx-dev-runtime'),
+              },
+              {
+                find: /^react-dom$/,
+                replacement: require.resolve('next/dist/compiled/react-dom'),
+              },
+              {
+                find: /^react-dom\/server$/,
+                replacement: require.resolve('next/dist/compiled/react-dom/server.browser.js'),
+              },
+              {
+                find: /^react-dom\/test-utils$/,
+                replacement:
+                  require.resolve('next/dist/compiled/react-dom/cjs/react-dom-test-utils.production.js'),
+              },
+              {
+                find: /^react-dom\/client$/,
+                replacement: require.resolve('next/dist/compiled/react-dom/client.js'),
+              },
+              {
+                find: /^react-dom\/cjs\/react-dom\.development\.js$/,
+                replacement:
+                  require.resolve('next/dist/compiled/react-dom/cjs/react-dom.development.js'),
+              },
+            ],
+          }),
+        };
+
+        return {
+          ...(Object.keys(resolveConfig).length > 0 ? { resolve: resolveConfig } : {}),
+          optimizeDeps: {
+            include: [
+              'next/dist/shared/lib/app-router-context.shared-runtime',
+              'next/dist/shared/lib/head-manager-context.shared-runtime',
+              'next/dist/shared/lib/hooks-client-context.shared-runtime',
+              'next/dist/shared/lib/router-context.shared-runtime',
+              'next/dist/client/components/redirect-boundary',
+              'next/dist/client/head-manager',
+              'next/dist/client/components/is-next-router-error',
+              'next/dist/shared/lib/segment',
+              'next/dist/shared/lib/app-router-context.shared-runtime.js',
+              'next/dist/shared/lib/head-manager-context.shared-runtime.js',
+              'next/dist/shared/lib/hooks-client-context.shared-runtime.js',
+              'next/dist/shared/lib/router-context.shared-runtime.js',
+              'next/dist/client/components/redirect-boundary.js',
+              'next/dist/client/head-manager.js',
+              'next/dist/client/components/is-next-router-error.js',
+              'next/dist/shared/lib/segment.js',
+              'styled-jsx',
+              'styled-jsx/style',
+              'sb-original/image-context',
+              'sb-original/default-loader',
+              'next/dist/compiled/react',
+              'next/image',
+              'next/legacy/image',
+              'react/jsx-dev-runtime',
+              // Required for pnpm setups, since styled-jsx is a transitive dependency of Next.js and not directly listed.
+              // Refer to this pnpm issue for more details:
+              // https://github.com/vitejs/vite/issues/16293
+              'next > styled-jsx/style',
+              ...(nextConfig.compiler?.emotion ? ['@emotion/react/jsx-dev-runtime'] : []),
+              ...(isNext16orNewer ? [] : ['next/config']),
+              // Next.js 16 ships internal re-export chains that Vite's esbuild
+              // pre-bundler fails to resolve in dev mode, causing missing exports
+              // like ServerInsertedHTMLContext and RedirectStatusCode. Forcing
+              // these modules to be pre-bundled fixes the resolution.
+              // See: https://github.com/storybookjs/storybook/issues/34688
+              ...(isNext16orNewer
+                ? ['next/navigation', 'next/dist/client/components/redirect-error']
+                : []),
+            ],
+          },
+          test: {
+            alias: {
+              'next/dist/compiled/react': compiledReactDir,
+              'next/dist/compiled/react-dom': compiledReactDomDir,
+              'react/jsx-dev-runtime':
+                require.resolve('next/dist/compiled/react/jsx-dev-runtime.js'),
+              'react/jsx-runtime': require.resolve('next/dist/compiled/react/jsx-runtime.js'),
+
+              react: require.resolve('next/dist/compiled/react'),
+
+              'react-dom/server': require.resolve(
+                executionEnvironment === 'node'
+                  ? 'next/dist/compiled/react-dom/server.js'
+                  : 'next/dist/compiled/react-dom/server.browser.js'
+              ),
+
+              'react-dom/test-utils':
+                require.resolve('next/dist/compiled/react-dom/cjs/react-dom-test-utils.production.js'),
+
+              'react-dom/cjs/react-dom.development.js':
+                require.resolve('next/dist/compiled/react-dom/cjs/react-dom.development.js'),
+
+              'react-dom/client': require.resolve('next/dist/compiled/react-dom/client.js'),
+
+              'react-dom': require.resolve('next/dist/compiled/react-dom'),
+            },
+          },
+        };
+      },
+      configResolved(config) {
+        if (isVitestEnv && !config.test?.browser?.enabled) {
+          // biome-ignore lint/style/noNonNullAssertion: test is available in the config
+          config.test!.setupFiles = [
+            require.resolve('./mocks/storybook.global.js'),
+            ...(config.test?.setupFiles ?? []),
+          ];
+        }
+      },
+    },
+    vitePluginNextFont(),
+    vitePluginNextSwc(dir, nextConfigResolver),
+    vitePluginNextEnv(dir, nextConfigResolver),
+    vitePluginNextImage(nextConfigResolver, image),
+    vitePluginNextMocks(),
+    vitePluginNextDynamic(),
+  ];
+}
+
+export default VitePlugin;

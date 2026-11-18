@@ -11,9 +11,10 @@ import {
 } from 'storybook/internal/components';
 
 import { global } from '@storybook/global';
-import { ChevronDownIcon, LockIcon, SyncIcon } from '@storybook/icons';
+import { ChevronDownIcon, LockIcon, SweepIcon, SyncIcon } from '@storybook/icons';
 
-import { styled } from 'storybook/theming';
+import { useStorybookApi } from 'storybook/manager-api';
+import { styled } from 'storybook/theming/emotion';
 
 import { useLayout } from '../layout/LayoutProvider.tsx';
 import { Contained, Loader } from './Loader.tsx';
@@ -42,26 +43,11 @@ const Text = styled.div(({ theme }) => ({
   },
 }));
 
-const ErrorDisplay = styled.pre<{ isMobile: boolean }>(
-  {
-    boxSizing: 'border-box',
-    borderRadius: 8,
-    overflow: 'auto',
-    whiteSpace: 'pre',
-  },
-  ({ isMobile }) =>
-    isMobile
-      ? {
-          maxWidth: 'calc(100vw - 40px)',
-        }
-      : {
-          minWidth: 420,
-          maxWidth: 640,
-        },
-  ({ theme }) => ({
-    color: theme.color.dark,
-  })
-);
+const ErrorDisplay = styled.pre(({ theme }) => ({
+  borderRadius: 8,
+  maxWidth: 640,
+  color: theme.color.dark,
+}));
 
 export const AuthBlock: FC<{ loginUrl: string; id: string }> = ({ loginUrl, id }) => {
   const [isAuthAttempted, setAuthAttempted] = useState(false);
@@ -106,7 +92,7 @@ export const AuthBlock: FC<{ loginUrl: string; id: string }> = ({ loginUrl, id }
           <Fragment>
             <Text>Sign in to browse this Storybook.</Text>
             <div>
-              <Button size="small" variant="outline" onClick={open}>
+              <Button ariaLabel={false} size="small" variant="outline" onClick={open}>
                 <LockIcon />
                 Sign in
               </Button>
@@ -132,7 +118,7 @@ export const ErrorBlock: FC<{ error: Error }> = ({ error }) => {
             offset={isMobile ? 0 : 8}
             placement={isMobile ? 'bottom-end' : 'bottom-start'}
             popover={
-              <ErrorDisplay isMobile={isMobile}>
+              <ErrorDisplay>
                 <ErrorFormatter error={error} />
               </ErrorDisplay>
             }
@@ -157,52 +143,82 @@ const WideSpaced = styled(Spaced)({
   flex: 1,
 });
 
-export const EmptyBlock = ({ isMain, hasEntries }: { isMain: boolean; hasEntries: boolean }) => (
-  <Contained>
-    <FlexSpaced col={1}>
-      <WideSpaced>
-        {hasEntries ? (
-          <NoResults>
-            <strong>No stories found</strong>
-            <small>Your selected filters did not match any stories.</small>
-          </NoResults>
-        ) : isMain ? (
-          <Text>
-            Oh no! Your Storybook is empty. This can happen when:
-            <ul>
-              <li>
-                Your{' '}
-                <Link
-                  href="https://storybook.js.org/docs/api/main-config/main-config-stories?ref=ui"
-                  cancel={false}
-                  target="_blank"
+export const EmptyBlock = ({
+  isMain,
+  hasEntries,
+  activeFilterCount,
+}: {
+  isMain: boolean;
+  hasEntries: boolean;
+  activeFilterCount: number;
+}) => {
+  const api = useStorybookApi();
+
+  return (
+    <Contained>
+      <FlexSpaced col={1}>
+        <WideSpaced>
+          {hasEntries ? (
+            <NoResults>
+              <strong>No stories found</strong>
+              {activeFilterCount > 0 ? (
+                <small>Your selected filters did not match any stories.</small>
+              ) : (
+                <small>Try adding some stories!</small>
+              )}
+              {activeFilterCount > 0 ? (
+                <Button
+                  ariaLabel={false}
+                  size="small"
+                  variant="outline"
+                  onClick={async () => {
+                    await api.setAllTagFilters([], []);
+                    await api.resetStatusFilters();
+                  }}
                 >
-                  stories glob configuration
-                </Link>{' '}
-                does not match any files.{' '}
-              </li>
-              <li>
-                You have{' '}
-                <Link
-                  href="https://storybook.js.org/docs/writing-stories?ref=ui"
-                  cancel={false}
-                  target="_blank"
-                >
-                  no stories defined
-                </Link>{' '}
-                in your story files.{' '}
-              </li>
-            </ul>
-          </Text>
-        ) : (
-          <Text>
-            This composed Storybook is empty. Perhaps no stories match your selected filters.
-          </Text>
-        )}
-      </WideSpaced>
-    </FlexSpaced>
-  </Contained>
-);
+                  <SweepIcon />
+                  Clear filters
+                </Button>
+              ) : null}
+            </NoResults>
+          ) : isMain ? (
+            <Text>
+              Oh no! Your Storybook is empty. This can happen when:
+              <ul>
+                <li>
+                  Your{' '}
+                  <Link
+                    href="https://storybook.js.org/docs/api/main-config/main-config-stories?ref=ui"
+                    cancel={false}
+                    target="_blank"
+                  >
+                    stories glob configuration
+                  </Link>{' '}
+                  does not match any files.{' '}
+                </li>
+                <li>
+                  You have{' '}
+                  <Link
+                    href="https://storybook.js.org/docs/writing-stories?ref=ui"
+                    cancel={false}
+                    target="_blank"
+                  >
+                    no stories defined
+                  </Link>{' '}
+                  in your story files.{' '}
+                </li>
+              </ul>
+            </Text>
+          ) : (
+            <Text>
+              This composed Storybook is empty. Perhaps no stories match your selected filters.
+            </Text>
+          )}
+        </WideSpaced>
+      </FlexSpaced>
+    </Contained>
+  );
+};
 
 export const LoaderBlock: FC<{ isMain: boolean }> = ({ isMain }) => (
   <Contained>

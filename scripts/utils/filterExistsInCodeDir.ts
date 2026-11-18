@@ -21,4 +21,4 @@ export const filterExistsInCodeDir = async (packageDirs: string[], pathToCheck: 
         (await pathExists(resolve(CODE_DIRECTORY, join(p, pathToCheck)))) ? p : null
       )
     )
-  ).filter(Boolean);
+  ).filter((p) => p !== null);

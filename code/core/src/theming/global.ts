@@ -22,81 +22,92 @@ export const srOnlyStyles = {
   border: 0,
 };
 
-export const createReset = memoize(1)(
-  ({ typography }: { typography: Typography }): Return => ({
-    body: {
-      fontFamily: typography.fonts.base,
-      fontSize: typography.size.s3,
-      margin: 0,
+export const srOnlyUnsetStyles = {
+  position: 'unset' as const,
+  width: 'unset' as const,
+  height: 'unset' as const,
+  padding: 'unset' as const,
+  margin: 'unset' as const,
+  overflow: 'unset' as const,
+  whiteSpace: 'unset' as const,
+  clip: 'unset' as const,
+  clipPath: 'unset' as const,
+  border: 'unset' as const,
+};
 
-      WebkitFontSmoothing: 'antialiased',
-      MozOsxFontSmoothing: 'grayscale',
-      WebkitTapHighlightColor: 'rgba(0, 0, 0, 0)',
-      WebkitOverflowScrolling: 'touch',
-    },
+export const createReset = memoize(1)(({ typography }: { typography: Typography }): Return => ({
+  body: {
+    fontFamily: typography.fonts.base,
+    fontSize: typography.size.s3,
+    margin: 0,
 
-    '*': {
-      boxSizing: 'border-box',
-    },
+    WebkitFontSmoothing: 'antialiased',
+    MozOsxFontSmoothing: 'grayscale',
+    WebkitTapHighlightColor: 'rgba(0, 0, 0, 0)',
+    WebkitOverflowScrolling: 'touch',
+  },
 
-    'h1, h2, h3, h4, h5, h6': {
-      fontWeight: typography.weight.regular,
-      margin: 0,
-      padding: 0,
-    },
+  '*': {
+    boxSizing: 'border-box',
+  },
 
-    'button, input, textarea, select': {
-      fontFamily: 'inherit',
-      fontSize: 'inherit',
-      boxSizing: 'border-box',
-    },
+  'h1, h2, h3, h4, h5, h6': {
+    fontWeight: typography.weight.regular,
+    margin: 0,
+    padding: 0,
+  },
 
-    sub: {
-      fontSize: '0.8em',
-      bottom: '-0.2em',
-    },
+  'button, input, textarea, select': {
+    fontFamily: 'inherit',
+    fontSize: 'inherit',
+    boxSizing: 'border-box',
+  },
 
-    sup: {
-      fontSize: '0.8em',
-      top: '-0.2em',
-    },
-    'b, strong': {
-      fontWeight: typography.weight.bold,
-    },
+  sub: {
+    fontSize: '0.8em',
+    bottom: '-0.2em',
+  },
 
-    hr: {
-      border: 'none',
-      borderTop: '1px solid silver',
-      clear: 'both',
-      marginBottom: '1.25rem',
-    },
+  sup: {
+    fontSize: '0.8em',
+    top: '-0.2em',
+  },
+  'b, strong': {
+    fontWeight: typography.weight.bold,
+  },
 
-    code: {
-      fontFamily: typography.fonts.mono,
-      WebkitFontSmoothing: 'antialiased',
-      MozOsxFontSmoothing: 'grayscale',
-      display: 'inline-block',
-      paddingLeft: 2,
-      paddingRight: 2,
-      verticalAlign: 'baseline',
+  hr: {
+    border: 'none',
+    borderTop: '1px solid silver',
+    clear: 'both',
+    marginBottom: '1.25rem',
+  },
 
-      color: 'inherit',
-    },
+  code: {
+    fontFamily: typography.fonts.mono,
+    WebkitFontSmoothing: 'antialiased',
+    MozOsxFontSmoothing: 'grayscale',
+    display: 'inline-block',
+    paddingLeft: 2,
+    paddingRight: 2,
+    verticalAlign: 'baseline',
 
-    pre: {
-      fontFamily: typography.fonts.mono,
-      WebkitFontSmoothing: 'antialiased',
-      MozOsxFontSmoothing: 'grayscale',
-      lineHeight: '18px',
-      padding: '11px 1rem',
-      whiteSpace: 'pre-wrap',
+    color: 'inherit',
+  },
 
-      color: 'inherit',
-      borderRadius: 3,
-      margin: '1rem 0',
-    },
-  })
-);
+  pre: {
+    fontFamily: typography.fonts.mono,
+    WebkitFontSmoothing: 'antialiased',
+    MozOsxFontSmoothing: 'grayscale',
+    lineHeight: '18px',
+    padding: '11px 1rem',
+    whiteSpace: 'pre-wrap',
+
+    color: 'inherit',
+    borderRadius: 3,
+    margin: '1rem 0',
+  },
+}));
 
 export const createGlobal = memoize(1)(({
   color,
@@ -125,8 +136,6 @@ export const createGlobal = memoize(1)(({
       borderTop: `1px solid ${color.border}`,
     },
 
-    '.sb-sr-only, .sb-hidden-until-focus:not(:focus)': srOnlyStyles,
-
     '.sb-hidden-until-focus': {
       opacity: 0,
       transition: 'opacity 150ms ease-out',
@@ -140,11 +149,20 @@ export const createGlobal = memoize(1)(({
       position: 'relative',
     },
 
-    '[data-sb-landmark]:focus-visible': {
+    // After the landmark rule, which has the same specificity: a visually hidden landmark (the
+    // sidebar's explorer while the search results show) must still leave the flow, or it keeps its
+    // flex share of the column and pushes the content below it down.
+    '.sb-sr-only, .sb-hidden-until-focus:not(:focus)': srOnlyStyles,
+
+    // Landmarks cannot be reached with a pointer, only moved to from keyboard-driven flows
+    // (landmark navigation, skip links, shortcuts), so plain `:focus` is the keyboard case.
+    // `:focus-visible` would miss it for a shortcut relayed from the preview iframe, where the
+    // manager document has had no keyboard interaction of its own.
+    '[data-sb-landmark]:focus': {
       outline: 'none',
     },
 
-    '[data-sb-landmark]:focus-visible::after': {
+    '[data-sb-landmark]:focus::after': {
       outline: `2px solid ${color.primary}`,
       outlineOffset: '-2px',
     },

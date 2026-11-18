@@ -1,0 +1,7 @@
+{
+  "argTypes": {},
+  "id": "example-page",
+  "jsDocTags": {},
+  "name": "MyPage",
+  "path": "./src/stories/Page.stories.ts"
+}

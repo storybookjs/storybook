@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 
 import { logger } from 'storybook/internal/client-logger';
 
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import { getControlId } from '../helpers';
 import type { ControlProps, NormalizedOptionsConfig, OptionsMultiSelection } from '../types';
@@ -57,11 +57,13 @@ type CheckboxProps = ControlProps<OptionsMultiSelection> & CheckboxConfig;
 export const CheckboxControl: FC<CheckboxProps> = ({
   name,
   storyId,
+  controlsId,
   options,
   value,
   onChange,
   isInline,
   argType,
+  required,
 }) => {
   if (!options) {
     logger.warn(`Checkbox with no options: ${name}`);
@@ -89,11 +91,14 @@ export const CheckboxControl: FC<CheckboxProps> = ({
     setSelected(selectedKeys(value || [], options));
   }, [value]);
 
-  const controlId = getControlId(name, storyId);
+  const controlId = getControlId(name, storyId, controlsId);
 
   return (
     <Wrapper $isInline={isInline}>
-      <legend className="sb-sr-only">{name}</legend>
+      <legend className="sb-sr-only">
+        {name}
+        {required ? ' (required)' : ''}
+      </legend>
       {Object.keys(options).map((key, index) => {
         const id = `${controlId}-${index}`;
         return (

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { getAddonNames } from './get-addon-names.ts';
+import { getAddonNames, normalizeAddonName } from './get-addon-names.ts';
 
 describe('getAddonNames', () => {
   it('should extract addon names from simple strings', () => {
@@ -92,5 +92,25 @@ describe('getAddonNames', () => {
       '@storybook/addon-outline',
       '@storybook/addon-controls',
     ]);
+  });
+});
+
+describe('normalizeAddonName', () => {
+  it('returns the bare name for a string entry', () => {
+    expect(normalizeAddonName('@storybook/addon-mcp')).toBe('@storybook/addon-mcp');
+  });
+
+  it('returns the name for an object entry', () => {
+    expect(normalizeAddonName({ name: '@storybook/addon-mcp' })).toBe('@storybook/addon-mcp');
+  });
+
+  it('resolves an absolute path to its bare package name', () => {
+    expect(normalizeAddonName('/sandbox/project/node_modules/@storybook/addon-mcp')).toBe(
+      '@storybook/addon-mcp'
+    );
+  });
+
+  it('returns undefined for relative local addon paths', () => {
+    expect(normalizeAddonName('./local-addon')).toBeUndefined();
   });
 });

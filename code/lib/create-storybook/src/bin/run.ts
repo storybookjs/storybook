@@ -1,5 +1,5 @@
 import { ProjectType } from 'storybook/internal/cli';
-import { PackageManagerName, isCI, optionalEnvToBoolean } from 'storybook/internal/common';
+import { PackageManagerName, optionalEnvToBoolean } from 'storybook/internal/common';
 import { logTracker, logger } from 'storybook/internal/node-logger';
 import { addToGlobalContext } from 'storybook/internal/telemetry';
 import { Feature, SupportedBuilder } from 'storybook/internal/types';
@@ -9,6 +9,7 @@ import { Option, program } from 'commander';
 import { version } from '../../package.json';
 import type { CommandOptions } from '../generators/types.ts';
 import { initiate } from '../initiate.ts';
+import { isAgent, detectAgent } from 'std-env';
 
 addToGlobalContext('cliVersion', version);
 
@@ -35,22 +36,17 @@ const createStorybookProgram = program
   .option('--enable-crash-reports', 'Enable sending crash reports to telemetry data')
   .option('-f --force', 'Force add Storybook')
   .option('-s --skip-install', 'Skip installing deps')
+  .option(
+    '--install-typescript',
+    'Add TypeScript, which docgen needs, when the project has none, without asking'
+  )
+  .option('--no-install-typescript', 'Do not add TypeScript when the project has none')
   .addOption(
     new Option('--package-manager <type>', 'Force package manager for installing deps').choices(
       Object.values(PackageManagerName)
     )
   )
-  // TODO: Remove in SB11
-  .option('--use-pnp', 'Enable pnp mode for Yarn 2+')
-  .addOption(
-    new Option('--parser <type>', 'jscodeshift parser').choices([
-      'babel',
-      'babylon',
-      'flow',
-      'ts',
-      'tsx',
-    ])
-  )
+  .addOption(new Option('--parser <type>', 'Ignored').hideHelp())
   .addOption(
     new Option('--type <type>', 'Add Storybook for a specific project type').choices(
       Object.values(ProjectType).filter(
@@ -73,6 +69,8 @@ const createStorybookProgram = program
     '--no-dev',
     'Complete the initialization of Storybook without launching the Storybook development server'
   )
+  .option('--agent', 'Force agent mode (non-interactive, logs AI setup instructions)')
+  .option('--no-agent', 'Force disable agent mode even when an AI agent is detected')
   .option(
     '--logfile [path]',
     'Write all debug logs to the specified file at the end of the run. Defaults to debug-storybook.log when [path] is not provided'
@@ -89,6 +87,7 @@ const createStorybookProgram = program
   )
   .hook('preAction', async (self) => {
     const options = self.opts();
+    const resolvedAgent = options.agent ?? isAgent;
 
     if (options.debug) {
       logger.setLogLevel('debug');
@@ -98,7 +97,7 @@ const createStorybookProgram = program
       logger.setLogLevel(options.loglevel);
     }
 
-    if (options.logfile) {
+    if (options.logfile || resolvedAgent) {
       logTracker.enableLogWriting();
     }
   })
@@ -112,14 +111,23 @@ const createStorybookProgram = program
 
 createStorybookProgram
   .action(async (options) => {
-    const isNeitherCiNorSandbox =
-      !isCI() && !optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX);
     options.debug = options.debug ?? false;
-    options.dev = options.dev ?? isNeitherCiNorSandbox;
+    options.dev = options.dev ?? false;
 
     if (options.features === false) {
       // Ensure features are treated as empty when --no-features is set
       options.features = [];
+    }
+
+    const resolvedAgent = options.agent ?? isAgent;
+    options.agent = resolvedAgent;
+
+    if (resolvedAgent) {
+      const agent = detectAgent();
+      const agentName = agent ? agent.name : 'unknown';
+      logger.log(
+        `This command is running via an AI agent: ${agentName}. Proceeding with agentic installation flow.`
+      );
     }
 
     await initiate(options as CommandOptions).catch(() => process.exit(1));

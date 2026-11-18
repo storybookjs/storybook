@@ -8,6 +8,7 @@ import { MockUniversalStore } from './mock.ts';
 import type { ChannelEvent } from './types.ts';
 
 vi.mock('./instances');
+vi.mock('./first-party-store-ids');
 
 const mockChannelListeners = new Map<string, Set<(...args: any[]) => void>>();
 
@@ -638,7 +639,7 @@ You should reuse the existing instance instead of trying to create a new one.`);
         `);
       });
 
-      it('should throw when creating a follower without an existing leader', async () => {
+      it('should keep syncing until a leader answers, however late', async () => {
         // Act - create a follower without a leader
         const follower = UniversalStore.create({
           id: 'env1:test',
@@ -688,12 +689,39 @@ You should reuse the existing instance instead of trying to create a new one.`);
           ]
         `);
 
-        // Assert - eventually the follower.untilReady() promise should throw an error when the timeout is reached
-        vi.advanceTimersToNextTimer();
-        await expect(follower.untilReady()).rejects.toThrowErrorMatchingInlineSnapshot(
-          `[TypeError: No existing state found for follower with id: 'env1:test'. Make sure a leader with the same id exists before creating a follower.]`
+        // Act - no leader answers for a long time
+        const onReady = vi.fn();
+        follower.untilReady().then(onReady);
+        await vi.advanceTimersByTimeAsync(60_000);
+
+        // Assert - the follower should still be waiting
+        expect(follower.status).toBe(UniversalStore.Status.SYNCING);
+        expect(onReady).not.toHaveBeenCalled();
+
+        // Act - the leader answers
+        mockChannel.emit('UNIVERSAL_STORE:env2:test', {
+          event: {
+            type: UniversalStore.InternalEventType.EXISTING_STATE_RESPONSE,
+            payload: { count: 1 },
+          },
+          eventInfo: {
+            actor: {
+              id: 'leader',
+              type: UniversalStore.ActorType.LEADER,
+              environment: UniversalStore.Environment.SERVER,
+            },
+          },
+        });
+
+        // Assert - the follower should take the leader's state and become ready
+        await vi.waitFor(
+          () => {
+            expect(onReady).toHaveBeenCalled();
+          },
+          { timeout: 200 }
         );
-        expect(follower.status).toBe(UniversalStore.Status.ERROR);
+        expect(follower.status).toBe(UniversalStore.Status.READY);
+        expect(follower.getState()).toEqual({ count: 1 });
       });
 
       it('should emit a FOLLOWER_CREATED event when a follower is created', async () => {

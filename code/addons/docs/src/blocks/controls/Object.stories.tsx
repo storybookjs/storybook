@@ -1,3 +1,5 @@
+import React, { useEffect, useState } from 'react';
+
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { destroyAnnouncer } from '@react-aria/live-announcer';
 
@@ -52,7 +54,7 @@ export const EmptyObject: Story = {
 
 export const EmptyArray: Story = {
   args: {
-    value: {},
+    value: [],
   },
 };
 
@@ -65,6 +67,54 @@ export const Null: Story = {
 export const Undefined: Story = {
   args: {
     value: undefined,
+  },
+  play: async ({ canvas, args, userEvent }) => {
+    const button = canvas.getByRole('button', { name: 'Set object' });
+    await expect(button).toBeVisible();
+    await userEvent.click(button);
+    await expect(args.onChange).toHaveBeenCalledWith({});
+  },
+};
+
+export const UndefinedArray: Story = {
+  args: {
+    value: undefined,
+    argType: { type: { name: 'array', value: { name: 'string' } } },
+  },
+  play: async ({ canvas, args, userEvent }) => {
+    const button = canvas.getByRole('button', { name: 'Set array' });
+    await expect(button).toBeVisible();
+    await userEvent.click(button);
+    await expect(args.onChange).toHaveBeenCalledWith([]);
+  },
+};
+
+export const DelayedObject: Story = {
+  render: (args) => {
+    const [value, setValue] = useState<object | undefined>(undefined);
+
+    useEffect(() => {
+      setTimeout(() => {
+        setValue({
+          name: 'Michael',
+          nested: { someBool: true, someNumber: 22 },
+        });
+      }, 1_000);
+    }, []);
+
+    return <ObjectControl {...args} value={value} />;
+  },
+  parameters: {
+    withRawArg: false,
+  },
+  play: async ({ canvas }) => {
+    // The value renders after a 1s delay, which races findByText's default 1s timeout
+    await canvas.findByText('"Michael"', undefined, { timeout: 5000 });
+    await waitFor(() => {
+      expect(
+        canvas.queryByRole('textbox', { name: 'Edit object as JSON' })
+      ).not.toBeInTheDocument();
+    });
   },
 };
 

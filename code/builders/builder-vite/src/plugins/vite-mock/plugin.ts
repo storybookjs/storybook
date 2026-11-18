@@ -1,7 +1,6 @@
 import { readFileSync } from 'node:fs';
 
 import {
-  babelParser,
   extractMockCalls,
   findMockRedirect,
   getAutomockCode,
@@ -56,7 +55,7 @@ export function viteMockPlugin(options: MockPluginOptions): Plugin[] {
       },
 
       buildStart() {
-        mockCalls = extractMockCalls(options, babelParser, viteConfig.root, findMockRedirect);
+        mockCalls = extractMockCalls(options, viteConfig.root, findMockRedirect);
       },
 
       configureServer(server) {
@@ -65,7 +64,7 @@ export function viteMockPlugin(options: MockPluginOptions): Plugin[] {
             // Store the old mocks before updating
             const oldMockCalls = mockCalls;
             // Re-extract mocks to get the latest list
-            mockCalls = extractMockCalls(options, babelParser, viteConfig.root, findMockRedirect);
+            mockCalls = extractMockCalls(options, viteConfig.root, findMockRedirect);
 
             // Invalidate the preview file
             const previewMod = server.moduleGraph.getModuleById(options.previewConfigPath);
@@ -144,11 +143,11 @@ export function viteMockPlugin(options: MockPluginOptions): Plugin[] {
 
             try {
               if (!call.redirectPath) {
-                const automockedCode = getAutomockCode(code, call.spy, babelParser as any);
+                const automockedCode = getAutomockCode(code, call.spy, id);
 
                 return {
                   code: automockedCode.toString(),
-                  map: automockedCode.generateMap(),
+                  map: automockedCode.generateMap().toString(),
                 };
               }
             } catch (e) {
@@ -167,7 +166,7 @@ export function viteMockPlugin(options: MockPluginOptions): Plugin[] {
         handler(code, id) {
           if (id === normalizedPreviewConfigPath) {
             try {
-              return rewriteSbMockImportCalls(code);
+              return rewriteSbMockImportCalls(code, id);
             } catch (e) {
               logger.debug(`Could not transform sb.mock(import(...)) calls in ${id}: ${e}`);
               return null;

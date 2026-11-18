@@ -5,8 +5,7 @@
   "targets": {
     "jest": {},
     "vitest": {},
-    "playwright-ct": {},
     "cypress": {}
   },
-  "tags": ["ci:normal", "ci:merged", "ci:daily"]
+  "tags": ["ci:normal", "ci:daily"]
 }

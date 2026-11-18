@@ -1,4 +1,4 @@
-import type { PlayFunctionContext } from 'storybook/internal/types';
+import type { StoryContext } from 'storybook/internal/types';
 
 import { global as globalThis } from '@storybook/global';
 
@@ -11,7 +11,7 @@ export default {
 };
 
 export const Default = {
-  play: async ({ title }: PlayFunctionContext<any>) => {
+  play: async ({ title }: StoryContext<any>) => {
     await expect(title).toBe('core/manual title');
   },
 };

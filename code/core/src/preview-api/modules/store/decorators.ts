@@ -3,7 +3,7 @@ import type {
   LegacyStoryFn,
   PartialStoryFn,
   Renderer,
-  StoryContext,
+  StoryContextForRender,
   StoryContextUpdate,
 } from 'storybook/internal/types';
 
@@ -30,10 +30,8 @@ export function decorateStory<TRenderer extends Renderer>(
 export function sanitizeStoryContextUpdate({
   componentId,
   title,
-  kind,
   id,
   name,
-  story,
   parameters,
   initialArgs,
   argTypes,
@@ -43,7 +41,7 @@ export function sanitizeStoryContextUpdate({
 }
 
 type ContextStore<TRenderer extends Renderer> = {
-  value?: StoryContext<TRenderer>;
+  value?: StoryContextForRender<TRenderer>;
 };
 
 export function defaultDecorateStory<TRenderer extends Renderer>(

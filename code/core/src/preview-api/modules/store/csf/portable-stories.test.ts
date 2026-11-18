@@ -1,13 +1,16 @@
 // @vitest-environment node
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, onTestFinished, vi } from 'vitest';
 
 import type { ProjectAnnotations } from 'storybook/internal/csf';
+import { ArgTypesRemovedFromStoryContextError } from 'storybook/internal/preview-errors';
 import type {
   ComponentAnnotations as Meta,
   Store_CSFExports,
   StoryAnnotationsOrFn as Story,
 } from 'storybook/internal/types';
 
+import { getCoreAnnotations } from '../../../../csf/core-annotations.ts';
+import { definePreview } from '../../../../csf/csf-factories.ts';
 import { Tag } from '../../../../shared/constants/tags.ts';
 import * as defaultExportAnnotations from './__mocks__/defaultExportAnnotations.mockfile.ts';
 import * as namedExportAnnotations from './__mocks__/namedExportAnnotations.mockfile.ts';
@@ -66,6 +69,25 @@ describe('composeStory', () => {
     );
   });
 
+  it('injects the core annotations once for plain (CSF3) project annotations', () => {
+    const coreLoaderCount = getCoreAnnotations().flatMap((it) => (it as any).loaders ?? []).length;
+    const finalAnnotations = setProjectAnnotations([{ render: () => {} }]);
+
+    expect(coreLoaderCount).toBeGreaterThan(0);
+    expect(finalAnnotations.loaders).toHaveLength(coreLoaderCount);
+  });
+
+  it('does NOT double the core annotations for a CSF4 composed preview (addon-vitest path)', () => {
+    // addon-vitest's setup file calls setProjectAnnotations(getProjectAnnotations()), where the
+    // CSF4 codegen returns the already-core-composed `definePreview().composed`.
+    const composed = definePreview({ renderToCanvas: () => {} }).composed;
+    const coreLoaderCount = getCoreAnnotations().flatMap((it) => (it as any).loaders ?? []).length;
+
+    const finalAnnotations = setProjectAnnotations(composed);
+
+    expect(finalAnnotations.loaders).toHaveLength(coreLoaderCount);
+  });
+
   it('should compose project annotations in all module formats', () => {
     setProjectAnnotations([defaultExportAnnotations, namedExportAnnotations]);
 
@@ -103,7 +125,7 @@ describe('composeStory', () => {
     const projectAnnotations = {
       parameters: { injected: true },
       globalTypes: {
-        locale: { defaultValue: 'en' },
+        locale: {},
       },
       decorators: [decoratorFromProjectAnnotations],
       tags: ['projectTag'],
@@ -158,6 +180,36 @@ describe('composeStory', () => {
         },
       })
     );
+  });
+
+  it('hides argTypes from the play function but passes them to the render function', async () => {
+    const hookContexts: any[] = [];
+    const renderContexts: any[] = [];
+    const Story: Story = {
+      argTypes: { label: { name: 'label' } },
+      render: (_args, context) => {
+        renderContexts.push(context);
+      },
+      play: async (context) => {
+        hookContexts.push(context);
+      },
+    };
+
+    const composedStory = composeStory(Story, meta, {
+      mount: (context) => async () => {
+        context.renderToCanvas();
+        return context.canvas;
+      },
+      renderToCanvas: ({ storyFn }) => {
+        storyFn();
+      },
+    });
+    await composedStory.run({ canvasElement: {} });
+
+    expect(hookContexts).toHaveLength(1);
+    expect(() => hookContexts[0].argTypes).toThrow(ArgTypesRemovedFromStoryContextError);
+    expect(renderContexts).toHaveLength(1);
+    expect(renderContexts[0].argTypes).toMatchObject({ label: { name: 'label' } });
   });
 
   it('should merge parameters with correct precedence in all combinations', async () => {
@@ -227,21 +279,20 @@ describe('composeStory', () => {
     );
   });
 
-  it('should provide globals based on globalTypes', async () => {
+  it('should seed globals from initialGlobals only; globalTypes declarations do not seed', async () => {
     const storyAnnotations = { render: () => {} };
-    const metaAnnotations: Meta = { globals: { language: 'de' } };
+    const metaAnnotations: Meta = {};
     const projectAnnotations: ProjectAnnotations = {
       initialGlobals: { language: 'nl' },
       globalTypes: {
-        theme: {
-          name: 'Theme',
-          defaultValue: 'light',
-        },
+        theme: {},
       },
     };
 
     const composed = composeStory(storyAnnotations, metaAnnotations, projectAnnotations);
-    expect(composed.globals.theme).toEqual('light');
+    // theme is declared but never seeded; language comes from initialGlobals alone
+    expect(composed.globals.theme).toBeUndefined();
+    expect(composed.globals.language).toEqual('nl');
   });
 
   it('should call and compose loaders data', async () => {
@@ -493,5 +544,18 @@ describe('composeStories', () => {
       );
       expect(Object.keys(result)).not.toContain('mockData');
     });
+  });
+});
+
+describe('setProjectAnnotations', () => {
+  it('throws once addon-vitest has applied the project annotations', () => {
+    onTestFinished(() => {
+      delete globalThis.__STORYBOOK_ADDON_VITEST_PROJECT_ANNOTATIONS_APPLIED__;
+    });
+    globalThis.__STORYBOOK_ADDON_VITEST_PROJECT_ANNOTATIONS_APPLIED__ = true;
+
+    expect(() => setProjectAnnotations({})).toThrow(
+      'setProjectAnnotations() was called from a Vitest setup file'
+    );
   });
 });

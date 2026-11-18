@@ -1,4 +1,4 @@
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 export const NoResults = styled.div(({ theme }) => ({
   display: 'flex',
@@ -13,5 +13,9 @@ export const NoResults = styled.div(({ theme }) => ({
   small: {
     color: theme.textMutedColor,
     fontSize: `${theme.typography.size.s1}px`,
+  },
+  button: {
+    marginTop: 8,
+    alignSelf: 'center',
   },
 }));

@@ -1,0 +1,18 @@
+## Props
+
+```
+export type ComplexTypesProps = {
+  /** Required panel config. */
+  config: PanelConfig;
+  /** Item labels. */
+  items?: string[] = [];
+  /** Lookup table. */
+  lookup?: Record<string, number>;
+  /** Numeric pair. */
+  pair?: [number, number];
+  /** Partial state override. */
+  state?: Partial<PanelConfig> & { open: boolean; };
+  /** Activation time. */
+  when?: Date;
+}
+```

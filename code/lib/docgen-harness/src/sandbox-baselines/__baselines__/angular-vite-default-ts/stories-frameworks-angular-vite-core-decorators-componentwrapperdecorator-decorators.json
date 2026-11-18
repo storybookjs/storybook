@@ -1,0 +1,53 @@
+{
+  "argTypes": {
+    "childPrivateText": {
+      "name": "childPrivateText",
+      "table": {
+        "category": "properties",
+        "defaultValue": {
+          "summary": ""
+        },
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string"
+      }
+    },
+    "childText": {
+      "name": "childText",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {
+          "summary": ""
+        },
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string"
+      }
+    },
+    "onClickChild": {
+      "action": "onClickChild",
+      "name": "onClickChild",
+      "table": {
+        "category": "outputs",
+        "defaultValue": {},
+        "type": {
+          "summary": "EventEmitter"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "void"
+      }
+    }
+  },
+  "id": "stories-frameworks-angular-vite-core-decorators-componentwrapperdecorator-decorators",
+  "jsDocTags": {},
+  "name": "ChildComponent",
+  "path": "./src/stories/frameworks/angular-vite/core/decorators/componentWrapperDecorator/decorators.stories.ts"
+}

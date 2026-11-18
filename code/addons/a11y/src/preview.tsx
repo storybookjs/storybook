@@ -20,6 +20,7 @@ export const afterEach: AfterEach<any> = async ({
 }) => {
   const a11yParameter: A11yParameters | undefined = parameters.a11y;
   const a11yGlobals = globals.a11y;
+  // we do not run a11y checks as part of ghost stories runs
   const isGhostStories = !!globals.ghostStories;
 
   const shouldRunEnvironmentIndependent =
@@ -39,8 +40,20 @@ export const afterEach: AfterEach<any> = async ({
   };
 
   if (shouldRunEnvironmentIndependent && viewMode === 'story') {
+    const isStandalone = getIsVitestStandaloneRun();
     try {
-      const result = await run(a11yParameter, storyId);
+      const result = await run(
+        isStandalone
+          ? {
+              ...a11yParameter,
+              options: {
+                ...a11yParameter?.options,
+                resultTypes: a11yParameter?.options?.resultTypes ?? ['violations', 'incomplete'],
+              },
+            }
+          : a11yParameter,
+        storyId
+      );
 
       if (result) {
         const hasViolations = (result?.violations.length ?? 0) > 0;
@@ -60,7 +73,7 @@ export const afterEach: AfterEach<any> = async ({
          *   issues. This is a temporary solution. Later, portable stories and Storybook should
          *   implement proper try catch handling.
          */
-        if (getIsVitestStandaloneRun()) {
+        if (isStandalone) {
           if (hasViolations && getMode() === 'failed') {
             if (!vitestMatchersExtended) {
               // @ts-expect-error (unknown why vitest-axe is not typed correctly)
@@ -88,7 +101,7 @@ export const afterEach: AfterEach<any> = async ({
         status: 'failed',
       });
 
-      if (getIsVitestStandaloneRun()) {
+      if (isStandalone) {
         throw e;
       }
     }

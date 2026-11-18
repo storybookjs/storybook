@@ -3,6 +3,9 @@ import { addons } from 'storybook/manager-api';
 
 addons.setConfig({
   sidebar: {
+    renderAriaLabel: ({ name, type }) => `${type} ${name}`,
     renderLabel: ({ name, type }) => (type === 'story' ? name : startCase(name)),
   },
 });
+
+import '../core/src/shared/open-service/sync-test/manager.tsx';

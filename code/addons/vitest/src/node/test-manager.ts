@@ -1,14 +1,17 @@
+import type { TestError } from 'vitest';
 import type { TestResult, TestState } from 'vitest/node';
 
-import type { experimental_UniversalStore } from 'storybook/internal/core-server';
+import type { internal_UniversalStore } from 'storybook/internal/core-server';
 import type {
   Options,
+  PreviewAnnotation,
   StatusStoreByTypeId,
   StatusValue,
+  StoryIndex,
   TestProviderStoreById,
 } from 'storybook/internal/types';
 
-import type { A11yReport } from '@storybook/addon-a11y';
+import type { BuilderOptions } from '@storybook/builder-vite';
 
 import { throttle } from 'es-toolkit/function';
 import type { Report } from 'storybook/preview-api';
@@ -16,6 +19,7 @@ import type { Report } from 'storybook/preview-api';
 import { STATUS_TYPE_ID_A11Y, STATUS_TYPE_ID_COMPONENT_TEST, storeOptions } from '../constants.ts';
 import type {
   CurrentRun,
+  RunConfig,
   RunTrigger,
   StoreEvent,
   StoreState,
@@ -23,17 +27,40 @@ import type {
   VitestError,
 } from '../types.ts';
 import { errorToErrorLike } from '../utils.ts';
-import { VitestManager } from './vitest-manager.ts';
+import { VitestManager, toModuleId } from './vitest-manager.ts';
 
 export type TestManagerOptions = {
   storybookOptions: Options;
-  store: experimental_UniversalStore<StoreState, StoreEvent>;
+  configLoader?: BuilderOptions['configLoader'];
+  store: internal_UniversalStore<StoreState, StoreEvent>;
   componentTestStatusStore: StatusStoreByTypeId;
   a11yStatusStore: StatusStoreByTypeId;
   testProviderStore: TestProviderStoreById;
+  previewAnnotations: PreviewAnnotation[];
   onError?: (message: string, error: Error) => void;
   onReady?: () => void;
 };
+
+/** Matches the banner that vitest-plugin/setup-file.ts prepends to the message of failed stories. */
+const DEBUG_BANNER_RE =
+  /\n?(?:\x1B\[\d+m)?Click to debug the error directly in Storybook: [^\n]*\n+/g;
+
+/**
+ * `error.stack` holds the raw browser stack, pointing at the Vite URLs of Storybook's pre-bundled
+ * internals. Vitest replaces it with `error.stacks`: source-mapped frames with Storybook's
+ * instrumentation filtered out, matching what its own terminal output shows.
+ */
+function formatError(error: TestError): string {
+  if (!error.stacks?.length) {
+    return error.stack || error.message || '';
+  }
+  const message = (error.message ?? '').replace(DEBUG_BANNER_RE, '');
+  const frames = error.stacks.map(
+    ({ method, file, line, column }) =>
+      `    at ${method || '<anonymous>'} (${file}:${line}:${column})`
+  );
+  return [message, ...frames].join('\n');
+}
 
 const testStateToStatusValueMap: Record<TestState | 'warning', StatusValue> = {
   pending: 'status-value:pending',
@@ -58,11 +85,44 @@ export class TestManager {
 
   public storybookOptions: Options;
 
+  public readonly configLoader?: TestManagerOptions['configLoader'];
+
+  private _storyIndex: StoryIndex = { v: 5, entries: {} };
+
+  public get storyIndex(): StoryIndex {
+    return this._storyIndex;
+  }
+
+  public set storyIndex(index: StoryIndex) {
+    const previousImportPaths = new Set(
+      Object.values(this._storyIndex.entries).map((entry) => entry.importPath)
+    );
+    this._storyIndex = index;
+    const newImportPaths = new Set(
+      Object.values(index.entries)
+        .map((entry) => entry.importPath)
+        .filter((importPath) => !previousImportPaths.has(importPath))
+    );
+    // Files added to the index may never be reported by Vitest's own watcher (e.g. when they
+    // live outside the Vite root), so make sure Vitest picks them up before the next run
+    this.vitestManager.registerTestFiles([...newImportPaths].map(toModuleId));
+  }
+
+  public readonly previewAnnotations: PreviewAnnotation[];
+
   private batchedTestCaseResults: {
     storyId: string;
     testResult: TestResult;
     reports?: Report[];
   }[] = [];
+
+  private runComponentTestStatuses: CurrentRun['componentTestStatuses'] = [];
+
+  private runA11yStatuses: CurrentRun['a11yStatuses'] = [];
+
+  private runReports: CurrentRun['reports'] = {};
+
+  private runA11yReports: CurrentRun['a11yReports'] = {};
 
   constructor(options: TestManagerOptions) {
     this.store = options.store;
@@ -71,6 +131,8 @@ export class TestManager {
     this.testProviderStore = options.testProviderStore;
     this.onReady = options.onReady;
     this.storybookOptions = options.storybookOptions;
+    this.configLoader = options.configLoader;
+    this.previewAnnotations = options.previewAnnotations;
 
     this.vitestManager = new VitestManager(this);
 
@@ -79,7 +141,9 @@ export class TestManager {
     this.store
       .untilReady()
       .then(() => {
-        return this.vitestManager.startVitest({ coverage: this.store.getState().config.coverage });
+        return this.vitestManager.startVitest({
+          coverage: this.store.getState().config.coverage,
+        });
       })
       .then(() => this.onReady?.())
       .catch((e) => {
@@ -129,11 +193,16 @@ export class TestManager {
   }: {
     storyIds?: string[];
     triggeredBy: RunTrigger;
-    configOverride?: StoreState['config'];
+    configOverride?: RunConfig;
     callback: () => Promise<void>;
   }) {
     this.componentTestStatusStore.unset(storyIds);
     this.a11yStatusStore.unset(storyIds);
+
+    this.runComponentTestStatuses = [];
+    this.runA11yStatuses = [];
+    this.runReports = {};
+    this.runA11yReports = {};
 
     const runConfig = configOverride ?? this.store.getState().config;
 
@@ -147,15 +216,17 @@ export class TestManager {
         config: runConfig,
       },
     }));
-    // set the config at the start of a test run,
-    // so that changing the config during the test run does not affect the currently running test run
-    process.env.VITEST_STORYBOOK_CONFIG = JSON.stringify(runConfig);
-
     await this.testProviderStore.runWithState(async () => {
       await callback();
       this.store.send({
         type: 'TEST_RUN_COMPLETED',
-        payload: this.store.getState().currentRun,
+        payload: {
+          ...this.store.getState().currentRun,
+          componentTestStatuses: this.runComponentTestStatuses,
+          a11yStatuses: this.runA11yStatuses,
+          a11yReports: this.runA11yReports,
+          reports: this.runReports,
+        },
       });
       if (this.store.getState().currentRun.unhandledErrors.length > 0) {
         throw new Error('Tests completed but there are unhandled errors');
@@ -195,7 +266,7 @@ export class TestManager {
       return true;
     }
 
-    const entry = this.store.getState().index.entries[storyId];
+    const entry = this.storyIndex.entries[storyId];
     return entry?.type === 'story' && !!entry.parent && requestedStoryIds.includes(entry.parent);
   }
 
@@ -205,13 +276,12 @@ export class TestManager {
    * This function:
    *
    * 1. Takes all batched test case results and clears the batch
-   * 2. Updates the store state with new test counts (component tests and a11y tests)
-   * 3. Adjusts the totalTestCount if more tests were run than initially anticipated
-   * 4. Creates status objects for component tests and updates the component test status store
-   * 5. Creates status objects for a11y tests (if any) and updates the a11y status store
+   * 2. Updates the status stores with the just-processed batch
+   * 3. Accumulates full-run statuses and reports locally so the per-flush store payload stays bounded
+   * 4. Updates the synced store with counts only
    *
-   * The throttling (500ms) is necessary as the channel would otherwise get overwhelmed with events,
-   * eventually causing the manager and dev server to lose connection.
+   * The throttling (500ms) still batches channel traffic. Full-run arrays stay off the synced store
+   * until run end, so a late flush cannot re-serialize the whole run.
    */
   throttledFlushTestCaseResults = throttle(() => {
     const testCaseResultsToFlush = this.batchedTestCaseResults;
@@ -222,21 +292,26 @@ export class TestManager {
       typeId: STATUS_TYPE_ID_COMPONENT_TEST,
       value: testStateToStatusValueMap[testResult.state],
       title: 'Component tests',
-      description: testResult.errors?.map((error) => error.stack || error.message).join('\n') ?? '',
+      description: testResult.errors?.map(formatError).join('\n') ?? '',
       sidebarContextMenu: false,
     }));
 
     this.componentTestStatusStore.set(componentTestStatuses);
 
     const a11yReportsByStoryId: CurrentRun['a11yReports'] = {};
+    const reportsByStoryId: CurrentRun['reports'] = {};
     const a11yStatuses: typeof componentTestStatuses = [];
 
     for (const { storyId, reports } of testCaseResultsToFlush) {
+      if (reports?.length) {
+        reportsByStoryId[storyId] = reports;
+      }
+
       const storyA11yReports = reports?.filter((r) => r.type === 'a11y');
       if (!storyA11yReports?.length) {
         continue;
       }
-      a11yReportsByStoryId[storyId] = storyA11yReports.map((r) => r.result) as A11yReport[];
+      a11yReportsByStoryId[storyId] = storyA11yReports.map((report) => report.result);
       for (const a11yReport of storyA11yReports) {
         a11yStatuses.push({
           storyId,
@@ -252,6 +327,15 @@ export class TestManager {
     if (a11yStatuses.length > 0) {
       this.a11yStatusStore.set(a11yStatuses);
     }
+
+    if (componentTestStatuses.length > 0) {
+      this.runComponentTestStatuses.push(...componentTestStatuses);
+    }
+    if (a11yStatuses.length > 0) {
+      this.runA11yStatuses.push(...a11yStatuses);
+    }
+    Object.assign(this.runReports, reportsByStoryId);
+    Object.assign(this.runA11yReports, a11yReportsByStoryId);
 
     this.store.setState((s) => {
       let { success: ctSuccess, error: ctError } = s.currentRun.componentTestCount;
@@ -281,16 +365,11 @@ export class TestManager {
         currentRun: {
           ...s.currentRun,
           componentTestCount: { success: ctSuccess, error: ctError },
-          a11yCount: { success: a11ySuccess, warning: a11yWarning, error: a11yError },
-          componentTestStatuses: s.currentRun.componentTestStatuses.concat(componentTestStatuses),
-          a11yStatuses: s.currentRun.a11yStatuses.concat(a11yStatuses),
-          a11yReports: {
-            ...s.currentRun.a11yReports,
-            ...a11yReportsByStoryId,
+          a11yCount: {
+            success: a11ySuccess,
+            warning: a11yWarning,
+            error: a11yError,
           },
-          // in some cases successes and errors can exceed the anticipated totalTestCount
-          // e.g. when testing more tests than the stories we know about upfront
-          // in those cases, we set the totalTestCount to the sum of successes and errors
           totalTestCount:
             finishedTestCount > (s.currentRun.totalTestCount ?? 0)
               ? finishedTestCount

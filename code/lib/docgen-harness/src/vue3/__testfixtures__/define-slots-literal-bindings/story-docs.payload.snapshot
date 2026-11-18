@@ -1,0 +1,14 @@
+{
+  "id": "define-slots-literal-bindings",
+  "name": "DefineSlotsLiteralBindings",
+  "path": "__PATH__",
+  "stories": {
+    "forms-define-slots-literal-bindings--scoped-icon-binding": {
+      "description": undefined,
+      "id": "forms-define-slots-literal-bindings--scoped-icon-binding",
+      "name": "Scoped Icon Binding",
+      "summary": undefined,
+      "warning": "No static snippet: a slot function could not be resolved statically.",
+    },
+  },
+}

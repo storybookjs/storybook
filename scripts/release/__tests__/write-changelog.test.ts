@@ -31,8 +31,6 @@ beforeEach(() => {
 
 const STABLE_CHANGELOG_PATH = join(__dirname, '..', '..', '..', 'CHANGELOG.md');
 const PRERELEASE_CHANGELOG_PATH = join(__dirname, '..', '..', '..', 'CHANGELOG.prerelease.md');
-const LATEST_VERSION_PATH = join(__dirname, '..', '..', '..', 'docs', 'versions', 'latest.json');
-const NEXT_VERSION_PATH = join(__dirname, '..', '..', '..', 'docs', 'versions', 'next.json');
 
 const EXISTING_STABLE_CHANGELOG = dedent`## 7.0.0
 
@@ -54,7 +52,7 @@ describe('Write changelog', () => {
 
     await writeChangelog(['7.0.1'], {});
 
-    expect(fsp.writeFile).toHaveBeenCalledTimes(2);
+    expect(fsp.writeFile).toHaveBeenCalledTimes(1);
     expect(fsp.writeFile.mock.calls[0][0]).toBe(STABLE_CHANGELOG_PATH);
     expect(fsp.writeFile.mock.calls[0][1]).toMatchInlineSnapshot(`
       "## 7.0.1
@@ -66,10 +64,6 @@ describe('Write changelog', () => {
 
       - Core: Some change"
     `);
-    expect(fsp.writeFile.mock.calls[1][0]).toBe(LATEST_VERSION_PATH);
-    expect(fsp.writeFile.mock.calls[1][1]).toMatchInlineSnapshot(
-      `"{"version":"7.0.1","info":{"plain":"- React: Make it reactive\\n- CLI: Not UI"}}"`
-    );
   });
 
   it('should escape double quotes for json files', async () => {
@@ -84,7 +78,7 @@ describe('Write changelog', () => {
 
     await writeChangelog(['7.0.1'], {});
 
-    expect(fsp.writeFile).toHaveBeenCalledTimes(2);
+    expect(fsp.writeFile).toHaveBeenCalledTimes(1);
     expect(fsp.writeFile.mock.calls[0][0]).toBe(STABLE_CHANGELOG_PATH);
     expect(fsp.writeFile.mock.calls[0][1]).toMatchInlineSnapshot(`
       "## 7.0.1
@@ -97,10 +91,6 @@ describe('Write changelog', () => {
 
       - Core: Some change"
     `);
-    expect(fsp.writeFile.mock.calls[1][0]).toBe(LATEST_VERSION_PATH);
-    expect(fsp.writeFile.mock.calls[1][1]).toMatchInlineSnapshot(
-      `"{"version":"7.0.1","info":{"plain":"- React: Make it reactive\\n- Revert \\\\\\"CLI: Not UI\\\\\\"\\n- CLI: Not UI"}}"`
-    );
   });
 
   it('should write to prerelease changelogs and version files in docs', async () => {
@@ -114,7 +104,7 @@ describe('Write changelog', () => {
 
     await writeChangelog(['7.1.0-alpha.21'], {});
 
-    expect(fsp.writeFile).toHaveBeenCalledTimes(2);
+    expect(fsp.writeFile).toHaveBeenCalledTimes(1);
     expect(fsp.writeFile.mock.calls[0][0]).toBe(PRERELEASE_CHANGELOG_PATH);
     expect(fsp.writeFile.mock.calls[0][1]).toMatchInlineSnapshot(`
       "## 7.1.0-alpha.21
@@ -126,9 +116,5 @@ describe('Write changelog', () => {
 
       - CLI: Super fast now"
     `);
-    expect(fsp.writeFile.mock.calls[1][0]).toBe(NEXT_VERSION_PATH);
-    expect(fsp.writeFile.mock.calls[1][1]).toMatchInlineSnapshot(
-      `"{"version":"7.1.0-alpha.21","info":{"plain":"- React: Make it reactive\\n- CLI: Not UI"}}"`
-    );
   });
 });

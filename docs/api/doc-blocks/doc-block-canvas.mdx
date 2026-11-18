@@ -1,19 +1,16 @@
 ---
-title: 'Canvas'
+title: Canvas
 sidebar:
   order: 2
-  title: Canvas
 ---
 
-The `Canvas` block is a wrapper around a [`Story`](./doc-block-story.mdx), featuring a toolbar that allows you to interact with its content while automatically providing the required [`Source`](./doc-block-source.mdx) snippets.
+The `Canvas` block is a wrapper around a [`Story`](./doc-block-story.mdx), featuring a toolbar that allows you to interact with its content while automatically providing the required [`Source`](./doc-block-source.mdx) snippets.
 
 ![Screenshot of Canvas block](../../_assets/api/doc-block-canvas.png)
 
 When using the Canvas block in MDX, it references a story with the `of` prop:
 
-{/* prettier-ignore-start */}
-
-```md title="ButtonDocs.mdx"
+```mdx title="ButtonDocs.mdx"
 import { Meta, Canvas } from '@storybook/addon-docs/blocks';
 import * as ButtonStories from './Button.stories';
 
@@ -22,10 +19,10 @@ import * as ButtonStories from './Button.stories';
 <Canvas of={ButtonStories.Primary} />
 ```
 
-{/* prettier-ignore-end */}
-
 <Callout variant="info" icon="💡">
-  In previous versions of Storybook it was possible to pass in arbitrary components as children to `Canvas`. That is deprecated and the `Canvas` block now only supports a single story.
+
+In previous versions of Storybook it was possible to pass in arbitrary components as children to `Canvas`. That is deprecated and the `Canvas` block now only supports a single story.
+
 </Callout>
 
 ## Canvas
@@ -35,34 +32,25 @@ import { Canvas } from '@storybook/addon-docs/blocks';
 ```
 
 <details>
-  <summary>Configuring with props <strong>and</strong> parameters</summary>
+<summary>Configuring with props <strong>and</strong> parameters</summary>
 
-  ℹ️ Like most blocks, the `Canvas` block is configured with props in MDX. Many of those props derive their default value from a corresponding [parameter](../../writing-stories/parameters.mdx) in the block's namespace, `parameters.docs.canvas`.
+ℹ️ Like most blocks, the `Canvas` block is configured with props in MDX. Many of those props derive their default value from a corresponding [parameter](../../writing-stories/parameters.mdx) in the block's namespace, `parameters.docs.canvas`.
 
-  The following `sourceState` configurations are equivalent:
+The following `sourceState` configurations are equivalent:
 
-  {/* prettier-ignore-start */}
+<CodeSnippets path="api-doc-block-canvas-parameter.md" />
 
-  <CodeSnippets path="api-doc-block-canvas-parameter.md" />
+```mdx title="ButtonDocs.mdx"
+<Canvas of={ButtonStories.Basic} sourceState="shown" />
+```
 
-  {/* prettier-ignore-end */}
+The example above applied the parameter at the [story](../../writing-stories/parameters.mdx#story-parameters) level, but it could also be applied at the [component](../../writing-stories/parameters.mdx#component-parameters) (or meta) level or [project](../../writing-stories/parameters.mdx#global-parameters) level.
 
-  {/* prettier-ignore-start */}
-
-  ```md title="ButtonDocs.mdx"
-  <Canvas of={ButtonStories.Basic} sourceState="shown" />
-  ```
-
-  {/* prettier-ignore-end */}
-
-  The example above applied the parameter at the [story](../../writing-stories/parameters.mdx#story-parameters) level, but it could also be applied at the [component](../../writing-stories/parameters.mdx#component-parameters) (or meta) level or [project](../../writing-stories/parameters.mdx#global-parameters) level.
 </details>
 
 ### `additionalActions`
 
 Type:
-
-{/* prettier-ignore-start */}
 
 ```ts
 Array<{
@@ -73,21 +61,18 @@ Array<{
 }>;
 ```
 
-{/* prettier-ignore-end */}
-
 Default: `parameters.docs.canvas.additionalActions`
 
 Provides any additional custom actions to show in the bottom right corner. These are simple buttons that do anything you specify in the `onClick` function.
 
-{/* prettier-ignore-start */}
-
-```md title="ButtonDocs.mdx"
+```mdx title="ButtonDocs.mdx"
 import { Meta, Story, Canvas, SourceState } from '@storybook/addon-docs/blocks';
 import * as ButtonStories from './Button.stories';
 
 <Meta of={ButtonStories} />
 
 {/* With an additional action */}
+
 <Canvas
   additionalActions={[
     {
@@ -95,16 +80,14 @@ import * as ButtonStories from './Button.stories';
       onClick: () => {
         window.open(
           'https://github.com/storybookjs/storybook/blob/next/code/ui/blocks/src/examples/Button.stories.tsx',
-          '_blank'
+          '_blank',
         );
       },
-    }
+    },
   ]}
   of={ButtonStories.Primary}
 />
 ```
-
-{/* prettier-ignore-end */}
 
 ### `className`
 
@@ -122,9 +105,9 @@ Default: `parameters.layout` or `parameters.docs.canvas.layout` or `'padded'`
 
 Specifies how the canvas should layout the story.
 
-* **centered**: Center the story within the canvas
-* **padded**: (default) Add padding to the story
-* **fullscreen**: Show the story as-is, without padding
+- **centered**: Center the story within the canvas
+- **padded**: (default) Add padding to the story
+- **fullscreen**: Show the story as-is, without padding
 
 In addition to the `parameters.docs.canvas.layout` property or the `layout` prop, the `Canvas` block will respect the `parameters.layout` value that defines [how a story is laid out](../../configure/story-layout.mdx) in the regular story view.
 
@@ -137,8 +120,7 @@ Specifies the CSF file to which the story is associated.
 You can render a story from a CSF file that you haven’t attached to the MDX file (via `Meta`) by using the `meta` prop. Pass the **full set of exports** from the CSF file (not the default export!).
 
 {/* prettier-ignore-start */}
-
-```md title="ButtonDocs.mdx"
+```mdx title="ButtonDocs.mdx"
 import { Meta, Canvas } from '@storybook/addon-docs/blocks';
 import * as ButtonStories from './Button.stories';
 import * as HeaderStories from './Header.stories';
@@ -149,7 +131,6 @@ import * as HeaderStories from './Header.stories';
     it can render Header stories too */}
 <Canvas of={HeaderStories.LoggedIn} meta={HeaderStories} />
 ```
-
 {/* prettier-ignore-end */}
 
 ### `of`
@@ -165,7 +146,9 @@ Type: `SourceProps['code'] | SourceProps['format'] | SourceProps['language'] | S
 Specifies the props passed to the inner `Source` block. For more information, see the `Source` Doc Block [documentation](./doc-block-source.mdx).
 
 <Callout variant="info" icon="💡">
-  The dark prop is ignored, as the `Source` block is always rendered in dark mode when shown as part of a `Canvas` block.
+
+The dark prop is ignored, as the `Source` block is always rendered in dark mode when shown as part of a `Canvas` block.
+
 </Callout>
 
 ### `sourceState`
@@ -176,9 +159,9 @@ Default: `parameters.docs.canvas.sourceState` or `'hidden'`
 
 Specifies the initial state of the source panel.
 
-* **hidden**: the source panel is hidden by default
-* **shown**: the source panel is shown by default
-* **none**: the source panel is not available and the button to show it is not rendered
+- **hidden**: the source panel is hidden by default
+- **shown**: the source panel is shown by default
+- **none**: the source panel is not available and the button to show it is not rendered
 
 ### `story`
 

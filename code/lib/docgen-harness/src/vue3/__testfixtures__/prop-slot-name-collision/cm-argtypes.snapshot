@@ -1,0 +1,31 @@
+{
+  "default": {
+    "description": "",
+    "name": "default",
+    "table": {
+      "category": "slots",
+      "type": {
+        "summary": "{}",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "{}",
+    },
+  },
+  "icon": {
+    "description": "Icon class rendered when the icon slot is empty.",
+    "name": "icon",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": false,
+    },
+  },
+}

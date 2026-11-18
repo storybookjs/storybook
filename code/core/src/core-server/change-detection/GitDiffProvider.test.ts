@@ -131,6 +131,8 @@ describe('GitDiffProvider', () => {
   let untrackedResult: ExecaMockResult;
   let stagedAddedResult: ExecaMockResult;
   let intentToAddResult: ExecaMockResult;
+  let headCommitResult: ExecaMockResult;
+  let statusPorcelainResult: ExecaMockResult;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -140,6 +142,8 @@ describe('GitDiffProvider', () => {
     untrackedResult = resolved('src/Button.css\n');
     stagedAddedResult = resolved('src/NewButton.stories.tsx\n');
     intentToAddResult = resolved('');
+    headCommitResult = resolved('abc123\n');
+    statusPorcelainResult = resolved('');
 
     vi.mocked(execa).mockImplementation(((_command: string | URL, ...rest: unknown[]) => {
       const args = Array.isArray(rest[0]) ? rest[0] : [];
@@ -157,7 +161,11 @@ describe('GitDiffProvider', () => {
                   ? stagedAddedResult
                   : gitArgs === 'diff --name-only --diff-filter=A'
                     ? intentToAddResult
-                    : undefined;
+                    : gitArgs === 'rev-parse HEAD'
+                      ? headCommitResult
+                      : gitArgs === 'status --porcelain'
+                        ? statusPorcelainResult
+                        : undefined;
 
       if (!result) {
         throw new Error(`Unexpected git args: ${gitArgs}`);
@@ -192,6 +200,27 @@ describe('GitDiffProvider', () => {
       changed: new Set(['src/Button.tsx']),
       new: new Set(['src/Button.css', 'src/NewButton.stories.tsx', 'src/IntentToAdd.ts']),
     });
+  });
+
+  it('returns the current HEAD commit hash', async () => {
+    headCommitResult = resolved('deadbeef\n');
+    const provider = new GitDiffProvider('/repo');
+
+    await expect(provider.getHeadCommit()).resolves.toBe('deadbeef');
+  });
+
+  it('returns true when working tree is clean', async () => {
+    statusPorcelainResult = resolved('');
+    const provider = new GitDiffProvider('/repo');
+
+    await expect(provider.isWorkingTreeClean()).resolves.toBe(true);
+  });
+
+  it('returns false when working tree has changes', async () => {
+    statusPorcelainResult = resolved(' M src/Button.tsx\n?? src/NewButton.stories.tsx\n');
+    const provider = new GitDiffProvider('/repo');
+
+    await expect(provider.isWorkingTreeClean()).resolves.toBe(false);
   });
 
   it('throws a typed unavailable error when git cannot find a repository', async () => {

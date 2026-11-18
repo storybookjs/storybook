@@ -1,4 +1,4 @@
-import type { ComponentProps, FC } from 'react';
+import type { ComponentProps, FC, ReactNode, SyntheticEvent } from 'react';
 import React, { useState } from 'react';
 
 import { ActionList, Button, PopoverProvider, ToggleButton } from 'storybook/internal/components';
@@ -6,12 +6,31 @@ import { ActionList, Button, PopoverProvider, ToggleButton } from 'storybook/int
 import { CloseIcon, CogIcon } from '@storybook/icons';
 
 import { transparentize } from 'polished';
-import { type Theme, css, styled } from 'storybook/theming';
+import { useStorybookApi } from 'storybook/manager-api';
+import { type Theme, css, styled } from 'storybook/theming/emotion';
 
-import type { useMenu } from '../../container/Menu.tsx';
 import { useLayout } from '../layout/LayoutProvider.tsx';
 
-export type MenuList = ReturnType<typeof useMenu>;
+export interface MenuItem {
+  id: string;
+  title?: ReactNode;
+  center?: ReactNode;
+  right?: ReactNode;
+  icon?: ReactNode;
+  input?: ReactNode;
+  active?: boolean;
+  disabled?: boolean;
+  href?: string;
+  onClick?: (
+    event: SyntheticEvent,
+    item: Pick<MenuItem, 'id' | 'active' | 'disabled' | 'title' | 'href'>
+  ) => void;
+  closeOnClick?: boolean;
+  internal?: boolean;
+  autoFocus?: boolean;
+}
+
+export type MenuList = MenuItem[][];
 
 const buttonStyleAdditions = ({
   highlighted,
@@ -26,13 +45,16 @@ const buttonStyleAdditions = ({
   overflow: visible;
   margin-top: 0;
   z-index: 1;
-  ${isMobile &&
-  `
+  ${
+    isMobile &&
+    `
     width: 36px;
     height: 36px;
-  `}
-  ${highlighted &&
   `
+  }
+  ${
+    highlighted &&
+    `
     &:before,
     &:after {
       content: '';
@@ -56,7 +78,8 @@ const buttonStyleAdditions = ({
     &:focus-visible:after {
       box-shadow: 0 0 0 2px ${transparentize(0.88, theme.color.secondary)};
     }
-  `}
+  `
+  }
 `;
 
 const Container = styled.div({
@@ -82,77 +105,91 @@ const MenuButtonGroup = styled.div({
   gap: 6,
 });
 
-const SidebarMenuList: FC<{
-  menu: MenuList;
-  onHide: () => void;
-}> = ({ menu, onHide }) => (
-  <Container>
-    {menu
-      .filter((links) => links.length)
-      .flatMap((links) => (
-        <ActionList key={links.map((link) => link.id).join('_')}>
-          {links.map((link) => {
-            const linkContent = (
-              <>
-                {(link.icon || link.input) && (
-                  <ActionList.Icon>{link.icon || link.input}</ActionList.Icon>
-                )}
-                {(link.title || link.center) && (
-                  <ActionList.Text>{link.title || link.center}</ActionList.Text>
-                )}
-                {link.right}
-              </>
-            );
+export type SidebarMenuItem = MenuItem | { id: string; content: ReactNode };
 
-            return (
-              <ActionList.Item key={link.id} active={link.active}>
-                <ActionList.Action
-                  asChild={!!link.href}
-                  ariaLabel={false}
-                  id={`list-item-${link.id}`}
-                  disabled={link.disabled}
-                  onClick={(e) => {
-                    // Prevent interaction with disabled links
-                    if (link.disabled) {
-                      e.preventDefault();
-                      return;
-                    }
-                    // Prevent browser navigation for internal links, where we'll use our
-                    // router API instead, but want to show an `href` for UX/SEO purposes.
-                    if (link.href && link.internal) {
-                      e.preventDefault();
-                    }
-                    link.onClick?.(e, {
-                      id: link.id,
-                      active: link.active,
-                      disabled: link.disabled,
-                      title: link.title,
-                      href: link.href,
-                    });
-                    if (link.closeOnClick) {
-                      onHide();
-                    }
-                  }}
-                >
-                  {link.href ? (
-                    <a
-                      href={link.href}
-                      target={link.internal ? undefined : '_blank'}
-                      rel={link.internal ? 'canonical' : 'noreferrer'}
-                    >
-                      {linkContent}
-                    </a>
-                  ) : (
-                    linkContent
+export const SidebarMenuList: FC<{
+  menu: SidebarMenuItem[][];
+  onHide: () => void;
+}> = ({ menu, onHide }) => {
+  const hasIcons = menu.some((links) =>
+    links.some((link) => !('content' in link) && (link.icon || link.input))
+  );
+
+  return (
+    <Container>
+      {menu
+        .filter((links) => links.length)
+        .flatMap((links) => (
+          <ActionList key={links.map((link) => link.id).join('_')}>
+            {links.map((link) => {
+              if ('content' in link) {
+                return <li key={link.id}>{link.content}</li>;
+              }
+
+              const linkContent = (
+                <>
+                  {hasIcons && <ActionList.Icon>{link.icon || link.input}</ActionList.Icon>}
+                  {(link.title || link.center) && (
+                    <ActionList.Text>
+                      {link.title}
+                      {link.center && <small>{link.center}</small>}
+                    </ActionList.Text>
                   )}
-                </ActionList.Action>
-              </ActionList.Item>
-            );
-          })}
-        </ActionList>
-      ))}
-  </Container>
-);
+                  {link.right}
+                </>
+              );
+
+              return (
+                <ActionList.Item key={link.id} active={link.active}>
+                  <ActionList.Action
+                    asChild={!!link.href}
+                    ariaLabel={false}
+                    id={`list-item-${link.id}`}
+                    disabled={link.disabled}
+                    autoFocus={link.autoFocus}
+                    onClick={(e) => {
+                      // Prevent interaction with disabled links
+                      if (link.disabled) {
+                        e.preventDefault();
+                        return;
+                      }
+                      // Prevent browser navigation for internal links, where we'll use our
+                      // router API instead, but want to show an `href` for UX/SEO purposes.
+                      if (link.href && link.internal) {
+                        e.preventDefault();
+                      }
+                      link.onClick?.(e, {
+                        id: link.id,
+                        active: link.active,
+                        disabled: link.disabled,
+                        title: link.title,
+                        href: link.href,
+                      });
+                      if (link.closeOnClick) {
+                        onHide();
+                      }
+                    }}
+                  >
+                    {link.href ? (
+                      <a
+                        href={link.href}
+                        target={link.internal ? undefined : '_blank'}
+                        rel={link.internal ? 'canonical' : 'noreferrer'}
+                      >
+                        {linkContent}
+                      </a>
+                    ) : (
+                      linkContent
+                    )}
+                  </ActionList.Action>
+                </ActionList.Item>
+              );
+            })}
+          </ActionList>
+        ))}
+    </Container>
+  );
+};
 
 export interface SidebarMenuProps {
   menu: MenuList;
@@ -162,7 +199,8 @@ export interface SidebarMenuProps {
 
 export const SidebarMenu: FC<SidebarMenuProps> = ({ menu, isHighlighted, onClick }) => {
   const [isTooltipVisible, setIsTooltipVisible] = useState(false);
-  const { isMobile, setMobileMenuOpen } = useLayout();
+  const { isMobile } = useLayout();
+  const api = useStorybookApi();
 
   if (isMobile) {
     return (
@@ -188,7 +226,7 @@ export const SidebarMenu: FC<SidebarMenuProps> = ({ menu, isHighlighted, onClick
           variant="ghost"
           ariaLabel="Close menu"
           highlighted={false}
-          onClick={() => setMobileMenuOpen(false)}
+          onClick={() => api.setMobileNavigation(false)}
           isMobile={true}
         >
           <CloseIcon />

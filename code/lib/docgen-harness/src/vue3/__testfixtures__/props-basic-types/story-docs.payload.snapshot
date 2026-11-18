@@ -1,0 +1,67 @@
+{
+  "id": "props-basic-types",
+  "name": "PropsBasicTypes",
+  "path": "__PATH__",
+  "stories": {
+    "forms-props-basic-types--props-as-written": {
+      "description": undefined,
+      "id": "forms-props-basic-types--props-as-written",
+      "name": "Props As Written",
+      "snippet": "<script lang="ts" setup>
+import PropsBasicTypes from './PropsBasicTypes.vue';
+</script>
+
+<template>
+  <PropsBasicTypes :count="2" enabled label="Hello" />
+</template>",
+      "summary": undefined,
+      "template": "<script lang="ts" setup>
+import PropsBasicTypes from './PropsBasicTypes.vue';
+</script>
+
+<template>
+  <PropsBasicTypes⟦attr count ~" "⟫ :count="2"⟧⟦attr enabled ~" "⟫ enabled⟧⟦attr label ~" "⟫ label="Hello"⟧⟦props * except=["label","count","enabled"] ~" "⟫⟧ />
+</template>",
+    },
+    "forms-props-basic-types--unrepresentable-args": {
+      "description": undefined,
+      "id": "forms-props-basic-types--unrepresentable-args",
+      "name": "Unrepresentable Args",
+      "snippet": "<script lang="ts" setup>
+import PropsBasicTypes from './PropsBasicTypes.vue';
+
+const big = BigInt('9007199254740993');
+
+const config = { theme: 'dark', dense: true };
+
+const formatter = (value: number) => `#${value}`;
+
+const tags = ['alpha', 'beta'];
+
+const token = Symbol('fixture');
+</script>
+
+<template>
+  <PropsBasicTypes :big="big" :config="config" :formatter="formatter" label="Formatted" :tags="tags" :token="token" />
+</template>",
+      "summary": undefined,
+      "template": "<script lang="ts" setup>
+import PropsBasicTypes from './PropsBasicTypes.vue';
+
+const big = ⟦value big in="script"⟫BigInt('9007199254740993')⟧;
+
+const config = ⟦value config in="script"⟫{ theme: 'dark', dense: true }⟧;
+
+const formatter = ⟦value formatter in="script"⟫(value: number) => `#${value}`⟧;
+
+const tags = ⟦value tags in="script"⟫['alpha', 'beta']⟧;
+
+const token = ⟦value token in="script"⟫Symbol('fixture')⟧;
+</script>
+
+<template>
+  <PropsBasicTypes :big="big" :config="config" :formatter="formatter"⟦attr label ~" "⟫ label="Formatted"⟧ :tags="tags" :token="token"⟦props * except=["label","tags","config","formatter","token","big"] ~" "⟫⟧ />
+</template>",
+    },
+  },
+}

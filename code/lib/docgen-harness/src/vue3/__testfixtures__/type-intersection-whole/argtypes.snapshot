@@ -1,0 +1,17 @@
+{
+  "default": {
+    "description": undefined,
+    "name": "default",
+    "table": {
+      "category": "slots",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": undefined,
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "",
+    },
+  },
+}

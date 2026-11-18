@@ -1,8 +1,7 @@
 ---
-title: 'Highlight'
+title: Highlight
 sidebar:
   order: 4
-  title: Highlight
 ---
 
 Storybook's Highlight feature is a helpful tool for visually debugging your components. It allows you to highlight specific DOM nodes within your story when used directly or enhancing addons such as the [Accessibility addon](../writing-tests/accessibility-testing.mdx) to inform you of accessibility issues within your components.
@@ -11,30 +10,26 @@ Storybook's Highlight feature is a helpful tool for visually debugging your comp
 
 ## Highlighting DOM Elements
 
-To highlight DOM elements with the feature, you'll need to emit the `HIGHLIGHT` event from within a story or an addon. The event payload must contain a `selectors` property assigned to an array of selectors matching the elements you want to highlight. For example:
-
-{/* prettier-ignore-start */}
+To highlight DOM elements with the feature, you'll need to emit the `HIGHLIGHT` event from within a story or an addon. The event payload must contain an `id` property that uniquely identifies the highlight and a `selectors` property assigned to an array of selectors matching the elements you want to highlight. For example:
 
 <CodeSnippets path="component-story-highlight.md" />
 
-{/* prettier-ignore-end */}
-
 <Callout variant="info" icon="💡">
-  We recommend choosing the most specific selector possible to avoid highlighting elements other addons use. This is because the feature tries to match selectors against the entire DOM tree.
+
+We recommend choosing the most specific selector possible to avoid highlighting elements other addons use. This is because the feature tries to match selectors against the entire DOM tree.
+
 </Callout>
 
 ### Customize style
 
 By default, highlighted elements contain a standard outline style applied to the selected elements. However, you can enable your custom style by extending the payload object with additional properties to customize the appearance of the highlighted elements. For example:
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="highlight-custom-style.md" />
 
-{/* prettier-ignore-end */}
-
 <Callout variant="info">
-  These properties are optional, and you can use them to customize the appearance of the highlighted elements. The `hoverStyles` and `focusStyles` properties are recommended for use with the `menu` property. Pseudo-classes and pseudo-elements are not supported.
+
+These properties are optional, and you can use them to customize the appearance of the highlighted elements. The `hoverStyles` and `focusStyles` properties are recommended for use with the `menu` property. Pseudo-classes and pseudo-elements are not supported.
+
 </Callout>
 
 ### Highlight menu
@@ -43,11 +38,7 @@ The Highlight feature includes a built-in debugging option, allowing you to sele
 
 ![Menu with custom items](../_assets/essentials/highlight-menu.png)
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="highlight-menu.md" />
-
-{/* prettier-ignore-end */ }
 
 When enabled, the menu will be displayed when you click on the selected element matching your provided selectors. However, if you don't want to show any information, you can omit the items or set the `menu` property to an empty array to show the default menu.
 
@@ -57,35 +48,25 @@ When enabled, the menu will be displayed when you click on the selected element 
 
 If you need to remove a highlight from a specific element, you can do so by emitting the `REMOVE_HIGHLIGHT` event and providing the `id` of the highlight you want to remove. For example:
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="highlight-remove.md" />
 
-{/* prettier-ignore-end */}
-
 <Callout variant="info">
-  The `emit` function derived from the `useChannel` API hook creates a communication channel in Storybook's UI to listen for events and update the UI accordingly. The Highlight feature uses this channel to listen to custom events and update the highlighted elements (if any) accordingly.
+
+The `emit` function derived from the `useChannel` API hook creates a communication channel in Storybook's UI to listen for events and update the UI accordingly. The Highlight feature uses this channel to listen to custom events and update the highlighted elements (if any) accordingly.
+
 </Callout>
 
 ## Reset highlighted elements
 
 Out of the box, Storybook automatically removes highlighted elements when transitioning between stories. However, if you need to clear them manually, you can emit the `RESET_HIGHLIGHT` event from within a story or an addon. This removes all highlights, even ones created by other addons. For example:
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="highlight-reset.md" />
-
-{/* prettier-ignore-end */}
 
 ## Scroll element into view
 
 The Highlight feature allows you to scroll an element into view and highlight it. To enable it, emit the `SCROLL_INTO_VIEW` event from within a story or an addon. The event payload must contain a `selector` property to target the element you want to scroll into view. When the element is visible, it will be highlighted for a brief moment.
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="highlight-scroll-into-view.md" />
-
-{/* prettier-ignore-end */}
 
 ## API
 
@@ -106,19 +87,25 @@ This parameter is most useful to allow overriding at more specific levels. For e
 This feature contributes the following exports to Storybook:
 
 ```js
-import { HIGHLIGHT, REMOVE_HIGHLIGHT, RESET_HIGHLIGHT, SCROLL_INTO_VIEW } from 'storybook/highlight';
+import {
+  HIGHLIGHT,
+  HIGHLIGHT_MENU_CLICK,
+  REMOVE_HIGHLIGHT,
+  RESET_HIGHLIGHT,
+  SCROLL_INTO_VIEW,
+} from 'storybook/highlight';
 ```
 
 #### `HIGHLIGHT`
 
-An event to highlight DOM elements. The event payload must contain a `selectors` property assigned to an array of selectors matching the elements you want to highlight. It can be extended with an optional object containing additional configuration options. See the [usage example](#highlighting-dom-elements) above.
+An event to highlight DOM elements. The event payload must contain an `id` property and a `selectors` property assigned to an array of selectors matching the elements you want to highlight. Payloads without an `id` are ignored. It can be extended with an optional object containing additional configuration options. See the [usage example](#highlighting-dom-elements) above.
 
 ```ts
 import { HIGHLIGHT, type HighlightOptions } from 'storybook/highlight';
 
 channel.emit(
   HIGHLIGHT,
-  options // The available configuration options inheriting from the HighlightOptions API
+  options, // The available configuration options inheriting from the HighlightOptions API
 );
 ```
 
@@ -126,8 +113,8 @@ The `options` object contains the following properties:
 
 ```ts
 interface HighlightOptions {
-  /** Unique identifier for the highlight, required if you want to remove the highlight later */
-  id?: string;
+  /** Unique identifier for the highlight, used to remove it later and to attribute menu clicks */
+  id: string;
   /** HTML selectors of the elements */
   selectors: string[];
   /** Priority of the highlight, higher takes precedence, defaults to 0 */
@@ -152,17 +139,21 @@ interface HighlightMenuItem {
   /** Description of the menu item */
   description?: string;
   /** Icon for the menu item, left side */
-  iconLeft?: "chevronLeft" | "chevronRight" | "info" | "shareAlt";
+  iconLeft?: 'chevronLeft' | 'chevronRight' | 'info' | 'shareAlt';
   /** Icon for the menu item, right side */
-  iconRight?: "chevronLeft" | "chevronRight" | "info" | "shareAlt";
-  /** Name for a channel event to trigger when the menu item is clicked */
-  clickEvent?: string;
+  iconRight?: 'chevronLeft' | 'chevronRight' | 'info' | 'shareAlt';
+  /** Render the item as a button which emits `HIGHLIGHT_MENU_CLICK` when clicked */
+  clickable?: boolean;
   /** HTML selectors for which this menu item should show (subset of HighlightOptions['selectors']) */
   selectors?: HighlightOptions['selectors'];
 }
 ```
 
-Menu items can specify a `clickEvent` to be emitted on the channel when the item is clicked. The channel event will receive two arguments: the menu item `id` and a `ClickEventDetails` object with the following properties:
+Menu items that set `clickable` emit a [`HIGHLIGHT_MENU_CLICK`](#highlight_menu_click) event on the channel when clicked. The event includes the `id` of the highlight, so your listener can tell its own menu items apart from those of other addons.
+
+#### `HIGHLIGHT_MENU_CLICK`
+
+An event emitted when a `clickable` [menu item](#highlight-menu) is clicked. Listeners receive three arguments: the `id` of the highlight the menu belongs to, the `id` of the clicked menu item, and a `ClickEventDetails` object describing the clicked element:
 
 ```ts
 interface ClickEventDetails {
@@ -173,32 +164,42 @@ interface ClickEventDetails {
   height: number;
   // Selector(s) which matched the element
   selectors: string[];
-  // DOM element details
+  // Element name, without its attributes or content
   element: {
-    attributes: Record<string, string>;
     localName: string;
     tagName: string;
-    outerHTML: string;
   };
 }
 ```
 
-To listen for this event (assuming `clickEvent: 'MY_CLICK_EVENT'`):
+<Callout variant="warning">
+
+The highlight `id` and menu item `id` are not a security boundary. Any addon, and any page that can post messages to the preview, can emit a `HIGHLIGHT` payload that reuses your addon's highlight `id` with any menu item `id`, and a click on it will trigger your listener. Consider whether calling your listener can be used to trigger harmful side effects.
+
+</Callout>
+
+To listen for this event (assuming the highlight was created with `id: 'my-highlight'`):
 
 ```ts
-import type { ClickEventDetails } from 'storybook/highlight';
+import { HIGHLIGHT_MENU_CLICK, type ClickEventDetails } from 'storybook/highlight';
 
-const handleClickEvent = (itemId: string, details: ClickEventDetails) => {
+const handleMenuClick = (highlightId: string, itemId: string, details: ClickEventDetails) => {
+  if (highlightId !== 'my-highlight') {
+    return;
+  }
   // Handle the menu item click event
-}
+};
 
 // When you have a channel instance:
-channel.on('MY_CLICK_EVENT', handleClickEvent)
+channel.on(HIGHLIGHT_MENU_CLICK, handleMenuClick);
 
 // Or from a decorator:
-useChannel({
-  MY_CLICK_EVENT: handleClickEvent,
-}, [handleClickEvent])
+useChannel(
+  {
+    [HIGHLIGHT_MENU_CLICK]: handleMenuClick,
+  },
+  [handleMenuClick],
+);
 ```
 
 #### `REMOVE_HIGHLIGHT`
@@ -210,7 +211,7 @@ import { REMOVE_HIGHLIGHT } from 'storybook/highlight';
 
 channel.emit(
   REMOVE_HIGHLIGHT,
-  id // The id of the previously created highlight to be removed
+  id, // The id of the previously created highlight to be removed
 );
 ```
 

@@ -1,3 +1,5 @@
+import { workflows } from './types.ts';
+
 /** These are parameters that the CircleCI API is called with. */
 export const parameters = {
   ghBaseBranch: {
@@ -10,10 +12,15 @@ export const parameters = {
     description: 'The PR number',
     type: 'string',
   },
+  ghTrustedAuthor: {
+    default: 'false',
+    description:
+      'Whether the pipeline is allowed to persist to shared caches (team member PRs and push events only)',
+    type: 'string',
+  },
   workflow: {
     default: 'skipped',
-    description: 'Which workflow to run',
-    enum: ['normal', 'merged', 'daily', 'skipped', 'docs'] as const,
-    type: 'enum',
+    description: `Which workflows to run, comma-separated, out of ${workflows.join(', ')} (e.g. \`normal,windows\`)`,
+    type: 'string',
   },
 };

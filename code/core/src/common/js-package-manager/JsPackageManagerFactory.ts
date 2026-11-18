@@ -1,6 +1,8 @@
-import { basename, parse, relative } from 'node:path';
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 import * as find from 'empathic/find';
+import * as walk from 'empathic/walk';
 
 import { executeCommandSync } from '../utils/command.ts';
 import { getProjectRoot } from '../utils/paths.ts';
@@ -18,6 +20,7 @@ import {
   PNPM_LOCKFILE,
   YARN_LOCKFILE,
 } from './constants.ts';
+import { findClosestLockfile, inferPackageManagerFromUserAgent } from './lockfile.ts';
 
 type PackageManagerProxy =
   | typeof NPMProxy
@@ -53,36 +56,8 @@ export class JsPackageManagerFactory {
    * @throws Error if no usable package manager is found
    */
   public static getPackageManagerType(cwd = process.cwd()): PackageManagerName {
-    const root = getProjectRoot();
-
-    const lockFiles = [
-      find.up(YARN_LOCKFILE, { cwd, last: root }),
-      find.up(PNPM_LOCKFILE, { cwd, last: root }),
-      find.up(NPM_LOCKFILE, { cwd, last: root }),
-      find.up(BUN_LOCKFILE, { cwd, last: root }),
-      find.up(BUN_LOCKFILE_BINARY, { cwd, last: root }),
-    ]
-      .filter(Boolean)
-      .sort((a, b) => {
-        const dirA = parse(a as string).dir;
-        const dirB = parse(b as string).dir;
-
-        const compare = relative(dirA, dirB);
-
-        if (dirA === dirB) {
-          return 0;
-        }
-
-        if (compare.startsWith('..')) {
-          return -1;
-        }
-
-        return 1;
-      });
-
     // Option 1: We try to infer the package manager from the closest lockfile
-    const closestLockfilePath = lockFiles[0];
-    const closestLockfile = closestLockfilePath && basename(closestLockfilePath);
+    const closestLockfile = findClosestLockfile(cwd);
 
     const yarnVersion = getYarnVersion(cwd);
 
@@ -170,33 +145,9 @@ export class JsPackageManagerFactory {
     [PackageManagerName.BUN]: BUNProxy,
   };
 
-  /**
-   * Infer the package manager based on the command the user is running. Each package manager sets
-   * the `npm_config_user_agent` environment variable with its name and version e.g. "npm/7.24.0"
-   * Which is really useful when invoking commands via npx/pnpx/yarn create/etc.
-   */
+  /** @see {@link inferPackageManagerFromUserAgent} */
   private static inferPackageManagerFromUserAgent(): PackageManagerName | undefined {
-    const userAgent = process.env.npm_config_user_agent;
-    if (userAgent) {
-      const packageSpec = userAgent.split(' ')[0];
-      const [pkgMgrName, pkgMgrVersion] = packageSpec.split('/');
-
-      if (pkgMgrName === 'pnpm') {
-        return PackageManagerName.PNPM;
-      }
-
-      if (pkgMgrName === 'npm') {
-        return PackageManagerName.NPM;
-      }
-
-      if (pkgMgrName === 'yarn') {
-        return pkgMgrVersion?.startsWith('1.')
-          ? PackageManagerName.YARN1
-          : PackageManagerName.YARN2;
-      }
-    }
-
-    return undefined;
+    return inferPackageManagerFromUserAgent();
   }
 }
 
@@ -249,7 +200,63 @@ function hasPNPM(cwd?: string) {
   }
 }
 
+/**
+ * Walk upward from `cwd` to `root`, checking each package.json for a
+ * `packageManager` field specifying yarn.  Returns 1 or 2 when found,
+ * or undefined only after every ancestor has been checked.
+ *
+ * This avoids a common monorepo pitfall where the closest package.json
+ * (a workspace package) lacks `packageManager` while the repo-root
+ * package.json declares it.
+ */
+function getYarnVersionFromPackageJson(cwd?: string, root?: string): 1 | 2 | undefined {
+  const effectiveRoot = root ?? getProjectRoot();
+  const directories = walk.up(cwd ?? process.cwd(), { last: effectiveRoot });
+
+  for (const dir of directories) {
+    const packageJsonPath = join(dir, 'package.json');
+    if (!existsSync(packageJsonPath)) {
+      continue;
+    }
+
+    try {
+      const content = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
+      const packageManager: unknown = content.packageManager;
+      if (typeof packageManager === 'string') {
+        const match = packageManager.match(/^yarn@(\d+)\./);
+        if (match) {
+          return match[1] === '1' ? 1 : 2;
+        }
+      }
+    } catch {
+      // Ignore parse errors and continue walking
+    }
+  }
+
+  return undefined;
+}
+
+/**
+ * Check whether a `.yarnrc.yml` file exists in the project tree.
+ * This file only exists in Yarn Berry (v2+) projects.
+ */
+function hasYarnBerryConfig(cwd?: string, root?: string): boolean {
+  return find.up('.yarnrc.yml', { cwd, last: root }) !== undefined;
+}
+
 function getYarnVersion(cwd?: string): 1 | 2 | undefined {
+  const root = getProjectRoot();
+
+  // 1. Check packageManager field in closest package.json (highest priority)
+  const versionFromPackageJson = getYarnVersionFromPackageJson(cwd, root);
+  if (versionFromPackageJson !== undefined) {
+    return versionFromPackageJson;
+  }
+
+  // 2. Check for .yarnrc.yml (Berry-only config file)
+  const hasBerryConfig = hasYarnBerryConfig(cwd, root);
+
+  // 3. Run yarn --version
   try {
     const yarnVersion = executeCommandSync({
       command: 'yarn',
@@ -259,8 +266,20 @@ function getYarnVersion(cwd?: string): 1 | 2 | undefined {
         Object.entries(process.env).filter(([, value]) => value !== undefined)
       ) as Record<string, string>,
     });
-    return /^1\.+/.test(yarnVersion.trim()) ? 1 : 2;
+
+    if (/^1\./.test(yarnVersion.trim())) {
+      // yarn --version reports 1.x, but .yarnrc.yml means it's actually Berry; happens if the user's global Yarn is used because they forgot to enable corepack
+      return hasBerryConfig ? 2 : 1;
+    }
+
+    return 2;
   } catch (err) {
+    // 4. yarn command failed — fall back to .yarnrc.yml presence
+    if (hasBerryConfig) {
+      return 2;
+    }
+
+    // 5. No yarn command and no .yarnrc.yml
     return undefined;
   }
 }

@@ -1,11 +1,11 @@
-```sh renderer="common" language="js" packageManager="npm"
+```sh renderer="common" packageManager="npm"
 npm run start
 ```
 
-```shell renderer="common" language="js" packageManager="pnpm"
+```shell renderer="common" packageManager="pnpm"
 pnpm run start
 ```
 
-```sh renderer="common" language="js" packageManager="yarn"
+```sh renderer="common" packageManager="yarn"
 yarn start
 ```

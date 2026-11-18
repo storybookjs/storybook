@@ -1,12 +1,22 @@
-import type { IncludeExcludeOptions } from 'storybook/internal/csf';
-import { isExportStory } from 'storybook/internal/csf';
+import type { IncludeExcludeOptions } from './csf-helpers.ts';
+import {
+  findVarInitialization,
+  isCsfFactoryCall,
+  isExportStory,
+  isValidPreviewPath,
+  unwrapExpression,
+} from './csf-helpers.ts';
 
-import type { TSESLint, TSESTree } from '@typescript-eslint/utils';
-import { ASTUtils } from '@typescript-eslint/utils';
+import type { TSESTree } from '@typescript-eslint/types';
+import type { TSESLint } from '@typescript-eslint/utils';
 
 import {
+  ASTUtils,
+  isCallExpression,
   isFunctionDeclaration,
   isIdentifier,
+  isImportDeclaration,
+  isMemberExpression,
   isObjectExpression,
   isSpreadElement,
   isTSAsExpression,
@@ -15,31 +25,159 @@ import {
   isVariableDeclarator,
 } from './ast.ts';
 
+type RuleContext = Readonly<TSESLint.RuleContext<string, readonly unknown[]>>;
+
 export const docsUrl = (ruleName: string) =>
   `https://github.com/storybookjs/storybook/blob/next/code/lib/eslint-plugin/docs/rules/${ruleName}.md`;
 
+const getScope = (context: RuleContext, node: TSESTree.Node) =>
+  // Compatibility implementation for eslint v8.x and v9.x or later
+  // see https://eslint.org/blog/2023/09/preparing-custom-rules-eslint-v9/#context.getscope()
+  context.sourceCode.getScope ? context.sourceCode.getScope(node) : context.getScope();
+
+/**
+ * Peel the TS wrappers csf-tools peels off meta and story initializers: `x as T`, `x satisfies T`,
+ * and `x satisfies T as U` — deliberately not `!` or deeper nesting, which csf-tools rejects.
+ */
+export const unwrapCsfTSWrappers = (node: TSESTree.Node): TSESTree.Node => {
+  if (isTSAsExpression(node) && isTSSatisfiesExpression(node.expression)) {
+    return node.expression.expression;
+  }
+  if (isTSAsExpression(node) || isTSSatisfiesExpression(node)) {
+    return node.expression;
+  }
+  return node;
+};
+
 export const getMetaObjectExpression = (
   node: TSESTree.ExportDefaultDeclaration,
-  context: Readonly<TSESLint.RuleContext<string, readonly unknown[]>>
+  context: RuleContext
 ) => {
-  let meta: TSESTree.ExportDefaultDeclaration['declaration'] | null = node.declaration;
-  const { sourceCode } = context;
+  let meta: TSESTree.Node | null = node.declaration;
   if (isIdentifier(meta)) {
-    // Compatibility implementation for eslint v8.x and v9.x or later
-    // see https://eslint.org/blog/2023/09/preparing-custom-rules-eslint-v9/#context.getscope()
-    const scope = sourceCode.getScope ? sourceCode.getScope(node) : context.getScope();
-    const variable = ASTUtils.findVariable(scope, meta.name);
+    const variable = ASTUtils.findVariable(getScope(context, node), meta.name);
     const decl = variable && variable.defs.find((def) => isVariableDeclarator(def.node));
     if (decl && isVariableDeclarator(decl.node)) {
       meta = decl.node.init;
     }
   }
-  if (isTSAsExpression(meta) || isTSSatisfiesExpression(meta)) {
-    meta = meta.expression;
+  if (meta) {
+    meta = unwrapCsfTSWrappers(meta);
   }
 
   return isObjectExpression(meta) ? meta : null;
 };
+
+/**
+ * Initializer of the constant an identifier refers to in actual scope, mirroring how csf-tools
+ * resolves a factory argument: a single `VariableDeclarator` that is never reassigned.
+ */
+export const resolveConstantInit = (
+  context: RuleContext,
+  identifier: TSESTree.Identifier
+): TSESTree.Expression | null => {
+  const variable = ASTUtils.findVariable(getScope(context, identifier), identifier.name);
+  const def = variable?.defs.length === 1 ? variable.defs[0] : undefined;
+  if (!def || !isVariableDeclarator(def.node) || !def.node.init) {
+    return null;
+  }
+  if (variable?.references.some((ref) => ref.isWrite() && !ref.init)) {
+    return null;
+  }
+  return def.node.init;
+};
+
+/** csf-tools' top-level variable lookup, run over the ESLint program. */
+export const findTopLevelVariableInit = (
+  context: RuleContext,
+  name: string
+): TSESTree.Expression | null =>
+  findVarInitialization(name, context.sourceCode.ast as never) as TSESTree.Expression | null;
+
+export interface FactoryMetaCall {
+  /** False when the root is named `preview` but imported from a non-preview path (csf-tools errors). */
+  validPreviewImport: boolean;
+  /** The meta object csf-tools can read statically; null means it falls back to an empty meta. */
+  metaObject: TSESTree.ObjectExpression | null;
+}
+
+/**
+ * Interpret a call as a CSF factory meta call (`preview.meta({ ... })`), mirroring csf-tools: the
+ * root of the callee chain must be an identifier imported from a `.storybook/preview` path, and the
+ * argument resolves through TS assertions and a constant local variable. Returns null for calls
+ * csf-tools ignores (member `.meta()` calls on anything else, e.g. Zod schemas).
+ */
+export const parseFactoryMetaCall = (
+  node: TSESTree.CallExpression,
+  context: RuleContext
+): FactoryMetaCall | null => {
+  const { callee } = node;
+  if (
+    !isMemberExpression(callee) ||
+    callee.computed ||
+    !isIdentifier(callee.property) ||
+    callee.property.name !== 'meta'
+  ) {
+    return null;
+  }
+
+  // `preview.meta()` and `preview.type<...>().meta()` both root at `preview`
+  let root: TSESTree.Node = callee.object;
+  if (isCallExpression(root) && isMemberExpression(root.callee)) {
+    root = root.callee.object;
+  }
+  if (!isIdentifier(root)) {
+    return null;
+  }
+
+  const variable = ASTUtils.findVariable(getScope(context, root), root.name);
+  const importDeclaration = variable?.defs
+    .map((def) => def.parent)
+    .find((parent) => isImportDeclaration(parent));
+  if (!importDeclaration || typeof importDeclaration.source.value !== 'string') {
+    return null;
+  }
+
+  if (!isValidPreviewPath(importDeclaration.source.value)) {
+    return root.name === 'preview' ? { validPreviewImport: false, metaObject: null } : null;
+  }
+
+  const [argument] = node.arguments;
+  let resolved: TSESTree.Node | null = argument ?? null;
+  if (argument && isIdentifier(argument)) {
+    resolved = resolveConstantInit(context, argument) ?? argument;
+  }
+  const unwrapped = resolved && unwrapExpression(resolved);
+  return {
+    validPreviewImport: true,
+    metaObject: unwrapped && isObjectExpression(unwrapped) ? unwrapped : null,
+  };
+};
+
+/** The statically readable meta object of a CSF factory meta call, when the call is one. */
+export const getFactoryMetaObjectExpression = (
+  node: TSESTree.CallExpression,
+  context: RuleContext
+): TSESTree.ObjectExpression | null => {
+  const factoryMeta = parseFactoryMetaCall(node, context);
+  return factoryMeta?.validPreviewImport ? factoryMeta.metaObject : null;
+};
+
+/** csf-tools' factory story detection (`meta.story()` / `meta.extend()`), over the ESLint AST. */
+export const isCsfFactoryStoryCall = (
+  node: TSESTree.Node | null | undefined
+): node is TSESTree.CallExpression => isCsfFactoryCall(node as never);
+
+/**
+ * Whether an exported identifier produces a story in a factory file: only `meta.story()` /
+ * `meta.extend()` declarations do, while `export { X }` specifiers are indexed regardless of their
+ * initializer.
+ */
+export const isFactoryStoryExport = (id: TSESTree.Identifier) =>
+  id.parent?.type === 'ExportSpecifier' ||
+  (isVariableDeclarator(id.parent) &&
+    !!id.parent.init &&
+    isCsfFactoryStoryCall(unwrapExpression(id.parent.init)));
 
 export const getDescriptor = (
   metaDeclaration: TSESTree.ObjectExpression,
@@ -76,6 +214,20 @@ export const getDescriptor = (
       return property.value.value;
     default:
       throw new Error(`Unexpected descriptor: ${type}`);
+  }
+};
+
+/** Include/exclude story filters of a meta object; empty when the descriptors are unreadable. */
+export const getNonStoryExportsConfig = (
+  meta: TSESTree.ObjectExpression
+): IncludeExcludeOptions => {
+  try {
+    return {
+      includeStories: getDescriptor(meta, 'includeStories'),
+      excludeStories: getDescriptor(meta, 'excludeStories'),
+    };
+  } catch {
+    return {};
   }
 };
 

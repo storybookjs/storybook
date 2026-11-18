@@ -80,9 +80,19 @@ export type StoryIndexEntry = BaseIndexEntry & {
   parentName?: StoryName; // exists only on tests
 };
 
+/** An in-page navigation target within a rendered docs page. */
+export interface DocsAnchor {
+  /** The exact DOM element id of the anchor, e.g. the slug of a heading. */
+  id: string;
+  /** The human-readable text of the anchor, e.g. the heading text. */
+  title: string;
+}
+
 export type DocsIndexEntry = BaseIndexEntry & {
   storiesImports: Path[];
   type: 'docs';
+  /** Only present when the `experimentalSearchDocsHeadings` feature is enabled. */
+  anchors?: DocsAnchor[];
 };
 
 export type IndexEntry = StoryIndexEntry | DocsIndexEntry;
@@ -154,16 +164,6 @@ export interface V3CompatIndexEntry extends Omit<StoryIndexEntry, 'type' | 'tags
   kind: ComponentTitle;
   story: StoryName;
   parameters: Parameters;
-}
-
-export interface StoryIndexV2 {
-  v: number;
-  stories: Record<
-    StoryId,
-    Omit<V3CompatIndexEntry, 'title' | 'name' | 'importPath'> & {
-      name?: StoryName;
-    }
-  >;
 }
 
 export interface StoryIndexV3 {

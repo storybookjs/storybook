@@ -1,40 +1,84 @@
+import { spawnSync } from 'node:child_process';
 import { createRequire } from 'node:module';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { importModule } from '../../../core/src/shared/utils/module.ts';
 import type { PostinstallOptions } from './add.ts';
 
 const DIR_CWD = process.cwd();
-const require = createRequire(DIR_CWD);
+// createRequire treats a bare directory as a file path and resolves from its parent,
+// so anchor it to a file inside the project instead.
+const require = createRequire(join(DIR_CWD, 'package.json'));
+
+const NO_HOOK_EXIT_CODE = 3;
+const RESOLVE_IN_CHILD = `
+try {
+  process.stdout.write(require.resolve(process.argv[1], { paths: [process.cwd()] }));
+} catch (error) {
+  process.exit(error.code === 'ERR_PACKAGE_PATH_NOT_EXPORTED' ? ${NO_HOOK_EXIT_CODE} : 1);
+}`;
 
 export const postinstallAddon = async (addonName: string, options: PostinstallOptions) => {
   const hookPath = `${addonName}/postinstall`;
-  let modulePath: string;
+  const logger = options.logger;
+  let modulePath: string | undefined;
   try {
-    modulePath = import.meta.resolve(hookPath, DIR_CWD);
-  } catch (e) {
+    // Resolve from the user's project: import.meta.resolve would resolve relative to THIS file,
+    // which points at the wrong copy (or none at all) when the CLI runs from a different tree
+    // than the project, e.g. via npx or in a monorepo.
+    modulePath = require.resolve(hookPath, { paths: [DIR_CWD] });
+  } catch {
+    // When the addon was installed while this process was already running (the upgrade command
+    // installs dependencies mid-run), Node's module resolution has cached the earlier lookup and
+    // keeps failing. A fresh child process resolves from a clean cache.
+    const result = spawnSync(process.execPath, ['-e', RESOLVE_IN_CHILD, hookPath], {
+      cwd: DIR_CWD,
+      encoding: 'utf8',
+      timeout: 30_000,
+    });
+    if (result.status === NO_HOOK_EXIT_CODE) {
+      return;
+    }
+    if (result.status === 0 && result.stdout.trim()) {
+      modulePath = result.stdout.trim();
+    }
+  }
+
+  if (!modulePath) {
     try {
-      modulePath = require.resolve(hookPath, { paths: [DIR_CWD] });
-    } catch (e) {
+      modulePath = import.meta.resolve(hookPath);
+    } catch {
+      logger.warn(
+        `Could not resolve the postinstall hook of ${addonName}, skipping its configuration. Run \`npx storybook add ${addonName}\` to set it up manually.`
+      );
       return;
     }
   }
 
+  // Prefer the module resolved from the user's project (modulePath): a bare `import(hookPath)`
+  // resolves relative to THIS file, which points at the wrong copy (or none at all) when the CLI
+  // runs from a different tree than the project, e.g. via npx or in a monorepo.
+  const moduleFilePath = modulePath.startsWith('file:') ? fileURLToPath(modulePath) : modulePath;
+
   let moduledLoaded: any;
   try {
-    moduledLoaded = await import(hookPath)
+    moduledLoaded = await import(pathToFileURL(moduleFilePath).href)
+      .catch(() => importModule(moduleFilePath))
+      .catch(() => require(moduleFilePath))
+      .catch(() => import(hookPath))
       .catch(() => importModule(hookPath))
-      .catch(() => importModule(modulePath))
-      .catch(() => importModule(fileURLToPath(modulePath)))
-      .catch(() => require(hookPath))
-      .catch(() => require(modulePath))
-      .catch(() => require(fileURLToPath(modulePath)));
+      .catch(() => require(hookPath));
   } catch (e) {
+    logger.warn(
+      `Could not load the postinstall hook of ${addonName} (${String(
+        e
+      )}), skipping its configuration. Run \`npx storybook add ${addonName}\` to set it up manually.`
+    );
     return;
   }
 
   const postinstall = moduledLoaded?.default || moduledLoaded?.postinstall || moduledLoaded;
-  const logger = options.logger;
 
   if (!postinstall || typeof postinstall !== 'function') {
     logger.error(`Error finding postinstall function for ${addonName}`);
@@ -45,5 +89,26 @@ export const postinstallAddon = async (addonName: string, options: PostinstallOp
     await postinstall(options);
   } catch (e) {
     throw e;
+  }
+};
+
+/**
+ * Run the postinstall (configuration) step for a list of core addons that an automigration added
+ * but deferred. This must be called AFTER dependencies are installed, since each addon's postinstall
+ * hook is resolved from the installed package on disk. A failure for one addon is logged and does
+ * not abort the rest.
+ */
+export const configureDeferredAddons = async (
+  addons: string[],
+  options: PostinstallOptions
+): Promise<void> => {
+  for (const addon of addons) {
+    try {
+      await postinstallAddon(addon, options);
+    } catch (e) {
+      options.logger.warn(
+        `Could not configure ${addon}: ${e}. Run \`npx storybook add ${addon}\` to set it up manually.`
+      );
+    }
   }
 };

@@ -1,45 +1,116 @@
-import * as fs from 'node:fs';
 import * as path from 'node:path';
 
+import { extractDeclaredSubcomponents } from 'storybook/internal/common';
 import { loadCsf } from 'storybook/internal/csf-tools';
 
+import { afterAll } from 'vitest';
+
+import type { ComponentMetaProjectBase } from 'storybook/internal/component-meta';
+
+import { vol } from 'memfs';
 import ts from 'typescript';
 
-import { findMatchingComponent } from '../generator.ts';
 import { type StoryRef, getComponents } from '../getComponentImports.ts';
-import { ComponentMetaProject } from './ComponentMetaProject.ts';
+import { findMatchingComponent } from '../resolveComponents.ts';
+import { ComponentMetaProject, type ReactComponentMetaProject } from './ComponentMetaProject.ts';
+import { NativeComponentMetaProject } from './native/native-component-meta-project.ts';
+import { createNativeDocgenTypeScript } from '@storybook/component-meta-typescript';
 import { createTempProject, writeFiles } from './test-helpers.ts';
+import {
+  DOCGEN_TS_API,
+  loadTestNativeTypeScriptModules,
+} from '@storybook/component-meta-typescript/testing';
+
+type SharedProject = ReactComponentMetaProject & ComponentMetaProjectBase;
 
 /**
- * Shared LanguageService across all tests — avoids re-parsing @types/react per test. First
- * getProgram() is ~300ms, subsequent incremental rebuilds are ~5ms.
+ * Shared project across all tests — avoids re-parsing @types/react per test. First getProgram() is
+ * ~300ms, subsequent incremental rebuilds are ~5ms.
  */
 const { projectDir, configPath } = createTempProject({});
-const fsFileSnapshots = new Map<string, [number | undefined, ts.IScriptSnapshot | undefined]>();
-const sharedProject = new ComponentMetaProject(
-  ts,
-  ts.parseJsonSourceFileConfigFileContent(
-    ts.readJsonConfigFile(configPath, ts.sys.readFile),
-    ts.sys,
-    projectDir,
-    {},
-    configPath
-  ),
-  configPath,
-  fsFileSnapshots
-);
+const sharedProject: SharedProject = await (async () => {
+  if (DOCGEN_TS_API === 'native') {
+    const modules = await loadTestNativeTypeScriptModules();
+    const api = new modules.sync.API({ cwd: projectDir });
+    const { fileNames, options, projectReferences } = api.parseConfigFile(configPath);
+    const project = new NativeComponentMetaProject(
+      api,
+      createNativeDocgenTypeScript(modules, api),
+      { fileNames: [...fileNames], options, projectReferences },
+      configPath
+    );
+    afterAll(() => {
+      project.dispose();
+      api.close();
+    });
+    return project;
+  }
+  const fsFileSnapshots = new Map<string, [number | undefined, ts.IScriptSnapshot | undefined]>();
+  return new ComponentMetaProject(
+    ts,
+    ts.parseJsonSourceFileConfigFileContent(
+      ts.readJsonConfigFile(configPath, ts.sys.readFile),
+      ts.sys,
+      projectDir,
+      {},
+      configPath
+    ),
+    configPath,
+    fsFileSnapshots
+  );
+})();
+
+/** Reads a project file from the in-memory mirror populated by {@link withProject}. */
+export function readProjectFile(filePath: string): string {
+  return vol.readFileSync(filePath, 'utf-8') as string;
+}
+
+/** Resets the memfs mirror between tests. */
+export function resetProjectVolume(): void {
+  vol.reset();
+}
 
 /** Write files into the shared project, invalidate caches, and run a callback. */
 export async function withProject<T>(
   files: Record<string, string>,
-  fn: (project: ComponentMetaProject, filePaths: Record<string, string>) => T | Promise<T>
+  fn: (project: SharedProject, filePaths: Record<string, string>) => T | Promise<T>
 ): Promise<T> {
+  vol.reset();
   const filePaths = writeFiles(projectDir, files);
-  for (const fp of Object.values(filePaths)) {
-    fsFileSnapshots.delete(fp);
-  }
-  (sharedProject as any).projectVersion++;
+  vol.fromNestedJSON(
+    Object.fromEntries(Object.entries(filePaths).map(([name, filePath]) => [filePath, files[name]]))
+  );
+  // Report every rewritten path as changed: the tracker evicts its snapshots and bumps versions,
+  // which stays correct even when consecutive writes land within one mtime tick.
+  sharedProject.onFilesChanged(
+    Object.values(filePaths).map((filePath) => ({ filePath, type: 'changed' as const }))
+  );
   return fn(sharedProject, filePaths);
+}
+
+/** Parses a story file and resolves declared subcomponents for extraction tests. */
+export async function loadDeclaredSubcomponentComponents({
+  filePaths,
+  storyFileName,
+  title,
+}: {
+  filePaths: Record<string, string>;
+  storyFileName: string;
+  title: string;
+}) {
+  const storyPath = filePaths[storyFileName];
+  const csf = loadCsf(readProjectFile(storyPath), { makeTitle: () => title }).parse();
+  const declaredSubcomponents = extractDeclaredSubcomponents(csf);
+  const components = await getComponents({
+    csf,
+    storyFilePath: storyPath,
+    docgenEngine: 'react-component-meta',
+    additionalComponentNames: declaredSubcomponents.map(
+      (subcomponent) => subcomponent.componentName
+    ),
+  });
+
+  return { storyPath, csf, declaredSubcomponents, components };
 }
 
 /**
@@ -54,7 +125,7 @@ export async function extractFromStory(
   return withProject(files, async (project, filePaths) => {
     const storyPath = filePaths[storyFileName];
     const title = path.basename(storyFileName).replace(/\.stories\.\w+$/, '');
-    const csf = loadCsf(fs.readFileSync(storyPath, 'utf-8'), {
+    const csf = loadCsf(readProjectFile(storyPath), {
       makeTitle: () => title,
     }).parse();
 

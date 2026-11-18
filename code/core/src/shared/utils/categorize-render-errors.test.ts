@@ -68,6 +68,23 @@ describe('categorize-render-errors', () => {
           expect(
             categorizeError('Hooks can only be called inside React function components.').category
           ).toBe(ERROR_CATEGORIES.HOOK_USAGE_ERROR);
+
+          expect(
+            categorizeError(
+              'Too many re-renders. React limits the number of renders to prevent an infinite loop.'
+            ).category
+          ).toBe(ERROR_CATEGORIES.HOOK_USAGE_ERROR);
+
+          expect(
+            categorizeError(
+              'Maximum update depth exceeded. This can happen when a component calls setState inside useEffect.'
+            ).category
+          ).toBe(ERROR_CATEGORIES.HOOK_USAGE_ERROR);
+
+          expect(
+            categorizeError('useMyHook is a hook and must be called inside a function component.')
+              .category
+          ).toBe(ERROR_CATEGORIES.HOOK_USAGE_ERROR);
         });
       });
 
@@ -183,12 +200,34 @@ describe('categorize-render-errors', () => {
           expect(categorizeError('Portal root not found').category).toBe(
             ERROR_CATEGORIES.MISSING_PORTAL_ROOT
           );
+
+          expect(categorizeError('Target container is not a DOM element.').category).toBe(
+            ERROR_CATEGORIES.MISSING_PORTAL_ROOT
+          );
         });
       });
 
       describe('MISSING_PROVIDER', () => {
         it('should categorize useContext null errors', () => {
           expect(categorizeError('useContext returned null or undefined').category).toBe(
+            ERROR_CATEGORIES.MISSING_PROVIDER
+          );
+        });
+
+        it('should categorize context not found errors', () => {
+          expect(categorizeError('context not found').category).toBe(
+            ERROR_CATEGORIES.MISSING_PROVIDER
+          );
+
+          expect(categorizeError('No provider found for context').category).toBe(
+            ERROR_CATEGORIES.MISSING_PROVIDER
+          );
+
+          expect(categorizeError('Component cannot be rendered without a provider').category).toBe(
+            ERROR_CATEGORIES.MISSING_PROVIDER
+          );
+
+          expect(categorizeError('context is null').category).toBe(
             ERROR_CATEGORIES.MISSING_PROVIDER
           );
         });
@@ -221,6 +260,32 @@ describe('categorize-render-errors', () => {
           );
 
           expect(categorizeError('Failed to render component').category).toBe(
+            ERROR_CATEGORIES.COMPONENT_RENDER_ERROR
+          );
+
+          expect(categorizeError('MyComponent is not a function').category).toBe(
+            ERROR_CATEGORIES.COMPONENT_RENDER_ERROR
+          );
+
+          expect(categorizeError('null is not an object (evaluating foo.bar)').category).toBe(
+            ERROR_CATEGORIES.COMPONENT_RENDER_ERROR
+          );
+
+          expect(categorizeError('ReferenceError: MyVar is not defined').category).toBe(
+            ERROR_CATEGORIES.COMPONENT_RENDER_ERROR
+          );
+
+          expect(
+            categorizeError('Element type is invalid: expected a string but got: undefined.')
+              .category
+          ).toBe(ERROR_CATEGORIES.COMPONENT_RENDER_ERROR);
+
+          expect(
+            categorizeError('Objects are not valid as a React child (found: object with keys {}).')
+              .category
+          ).toBe(ERROR_CATEGORIES.COMPONENT_RENDER_ERROR);
+
+          expect(categorizeError('Maximum call stack size exceeded').category).toBe(
             ERROR_CATEGORIES.COMPONENT_RENDER_ERROR
           );
         });

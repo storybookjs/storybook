@@ -1,0 +1,37 @@
+{
+  "id": "slots",
+  "name": "SlotsPanel",
+  "path": "__PATH__",
+  "stories": {
+    "forms-slots--primary": {
+      "description": undefined,
+      "id": "forms-slots--primary",
+      "name": "Primary",
+      "snippet": "<script lang="ts" setup>
+import SlotsPanel from './SlotsPanel.vue';
+</script>
+
+<template>
+  <SlotsPanel :footer="42">
+    Body copy
+    <template #header>
+      Header copy
+    </template>
+  </SlotsPanel>
+</template>",
+      "summary": undefined,
+      "template": "<script lang="ts" setup>
+import SlotsPanel from './SlotsPanel.vue';
+</script>
+
+<template>
+  <SlotsPanel⟦attr footer ~" "⟫ :footer="42"⟧⟦props * except=["default","header","footer"] ~" "⟫⟧>
+    ⟦text default slot=true⟫Body copy⟧
+    <template #header>
+      ⟦text header slot=true⟫Header copy⟧
+    </template>
+  </SlotsPanel>
+</template>",
+    },
+  },
+}

@@ -5,7 +5,6 @@ import { describe, it } from 'vitest';
 import type { KeyboardEventHandler, ReactElement, ReactNode } from 'react';
 import React from 'react';
 
-import { satisfies } from 'storybook/internal/common';
 import type { Canvas } from 'storybook/internal/csf';
 import type { Args, StoryAnnotations, StrictArgs } from 'storybook/internal/types';
 
@@ -24,10 +23,10 @@ const Button: (props: ButtonProps) => ReactElement = () => <></>;
 
 describe('Args can be provided in multiple ways', () => {
   it('✅ All required args may be provided in meta', () => {
-    const meta = satisfies<Meta<typeof Button>>()({
+    const meta = {
       component: Button,
       args: { label: 'good', disabled: false },
-    });
+    } satisfies Meta<typeof Button>;
 
     type Story = StoryObj<typeof meta>;
     const Basic: Story = {};
@@ -38,10 +37,10 @@ describe('Args can be provided in multiple ways', () => {
   });
 
   it('✅ Required args may be provided partial in meta and the story', () => {
-    const meta = satisfies<Meta<typeof Button>>()({
+    const meta = {
       component: Button,
       args: { label: 'good' },
-    });
+    } satisfies Meta<typeof Button>;
     const Basic: StoryObj<typeof meta> = {
       args: { disabled: false },
     };
@@ -52,7 +51,7 @@ describe('Args can be provided in multiple ways', () => {
 
   it('❌ The combined shape of meta args and story args must match the required args.', () => {
     {
-      const meta = satisfies<Meta<typeof Button>>()({ component: Button });
+      const meta = { component: Button } satisfies Meta<typeof Button>;
       const Basic: StoryObj<typeof meta> = {
         // @ts-expect-error disabled not provided ❌
         args: { label: 'good' },
@@ -62,10 +61,10 @@ describe('Args can be provided in multiple ways', () => {
       expectTypeOf(Basic).toEqualTypeOf<Expected>();
     }
     {
-      const meta = satisfies<Meta<typeof Button>>()({
+      const meta = {
         component: Button,
         args: { label: 'good' },
-      });
+      } satisfies Meta<typeof Button>;
       // @ts-expect-error disabled not provided ❌
       const Basic: StoryObj<typeof meta> = {};
 
@@ -73,7 +72,7 @@ describe('Args can be provided in multiple ways', () => {
       expectTypeOf(Basic).toEqualTypeOf<Expected>();
     }
     {
-      const meta = satisfies<Meta<ButtonProps>>()({ component: Button });
+      const meta = { component: Button } satisfies Meta<ButtonProps>;
       const Basic: StoryObj<typeof meta> = {
         // @ts-expect-error disabled not provided ❌
         args: { label: 'good' },
@@ -102,10 +101,10 @@ it('✅ Void functions are not changed', () => {
 
   const Cmp: (props: CmpProps) => ReactElement = () => <></>;
 
-  const meta = satisfies<Meta<CmpProps>>()({
+  const meta = {
     component: Cmp,
     args: { label: 'good' },
-  });
+  } satisfies Meta<CmpProps>;
 
   const Basic: StoryObj<typeof meta> = {
     args: {
@@ -128,7 +127,7 @@ describe('Story args can be inferred', () => {
   it('Correct args are inferred when type is widened for render function', () => {
     type Props = ButtonProps & { theme: ThemeData };
 
-    const meta = satisfies<Meta<Props>>()({
+    const meta = {
       component: Button,
       args: { disabled: false },
       render: (args, { component }) => {
@@ -141,7 +140,7 @@ describe('Story args can be inferred', () => {
           </Theme>
         );
       },
-    });
+    } satisfies Meta<Props>;
 
     const Basic: StoryObj<typeof meta> = { args: { theme: 'light', label: 'good' } };
 
@@ -159,11 +158,11 @@ describe('Story args can be inferred', () => {
   it('Correct args are inferred when type is widened for decorators', () => {
     type Props = ButtonProps & { decoratorArg: number };
 
-    const meta = satisfies<Meta<Props>>()({
+    const meta = {
       component: Button,
       args: { disabled: false },
       decorators: [withDecorator],
-    });
+    } satisfies Meta<Props>;
 
     const Basic: StoryObj<typeof meta> = { args: { decoratorArg: 0, label: 'good' } };
 
@@ -195,11 +194,11 @@ describe('Story args can be inferred', () => {
       </>
     );
 
-    const meta = satisfies<Meta<Props>>()({
+    const meta = {
       component: Button,
       args: { disabled: false },
       decorators: [withDecorator, secondDecorator, thirdDecorator, fourthDecorator],
-    });
+    } satisfies Meta<Props>;
 
     const Basic: StoryObj<typeof meta> = {
       args: { decoratorArg: 0, decoratorArg2: '', label: 'good' },

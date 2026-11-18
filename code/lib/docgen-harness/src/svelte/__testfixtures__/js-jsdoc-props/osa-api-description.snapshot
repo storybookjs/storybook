@@ -1,0 +1,8 @@
+## Props
+
+```
+export type JsJsdocPropsProps = {
+  label: string;
+  count?: number = 1;
+}
+```

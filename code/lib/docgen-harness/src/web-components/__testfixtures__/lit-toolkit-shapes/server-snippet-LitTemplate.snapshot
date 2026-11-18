@@ -1,0 +1,7 @@
+html`<lit-toolkit-shapes
+  size=${'large'}
+  level=${2}
+  .tags=${['b']}
+  label=${'Shaped'}
+  @toolkit-resize=${() => {}}
+></lit-toolkit-shapes>`

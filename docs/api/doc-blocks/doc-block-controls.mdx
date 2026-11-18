@@ -1,23 +1,22 @@
 ---
-title: 'Controls'
+title: Controls
 sidebar:
   order: 4
-  title: Controls
 ---
 
 The `Controls` block can be used to show a dynamic table of args for a given story, as a way to document its interface, and to allow you to change the args for a (separately) rendered story (via the [`Story`](./doc-block-story.mdx) or [`Canvas`](./doc-block-canvas.mdx) blocks).
 
 <Callout variant="info" icon="💡">
-  If you’re looking for a static table that shows a component's arg types with no controls, see the [`ArgTypes`](./doc-block-argtypes.mdx) block instead.
+
+If you’re looking for a static table that shows a component's arg types with no controls, see the [`ArgTypes`](./doc-block-argtypes.mdx) block instead.
+
 </Callout>
 
 ![Screenshot of Controls block](../../_assets/api/doc-block-controls.png)
 
-{/* prettier-ignore-start */}
-
-```md title="ButtonDocs.mdx"
+```mdx title="ButtonDocs.mdx"
 import { Meta, Canvas, Controls } from '@storybook/addon-docs/blocks';
-import * as ButtonStories from './Button.stories'
+import * as ButtonStories from './Button.stories';
 
 <Meta of={ButtonStories} />
 
@@ -26,11 +25,9 @@ import * as ButtonStories from './Button.stories'
 <Controls of={ButtonStories.Primary} />
 ```
 
-{/* prettier-ignore-end */}
-
 <Callout variant="warning">
 
-  The Controls doc block will only have functioning UI controls if you haven't turned off inline stories with the [`inline`](./doc-block-story.mdx#inline) configuration option.
+The Controls doc block will only have functioning UI controls if you haven't turned off inline stories with the [`inline`](./doc-block-story.mdx#inline) configuration option.
 
 </Callout>
 
@@ -41,32 +38,25 @@ import { Controls } from '@storybook/addon-docs/blocks';
 ```
 
 <details>
-  <summary>Configuring with props <strong>and</strong> parameters</summary>
+<summary>Configuring with props <strong>and</strong> parameters</summary>
 
-  ℹ️ Like most blocks, the `Controls` block is configured with props in MDX. Many of those props derive their default value from a corresponding [parameter](../../writing-stories/parameters.mdx) in the block's namespace, `parameters.docs.controls`.
+ℹ️ Like most blocks, the `Controls` block is configured with props in MDX. Many of those props derive their default value from a corresponding [parameter](../../writing-stories/parameters.mdx) in the block's namespace, `parameters.docs.controls`.
 
-  The following `exclude` configurations are equivalent:
+The following `exclude` configurations are equivalent:
 
-  {/* prettier-ignore-start */}
+<CodeSnippets path="api-doc-block-controls-parameter.md" />
 
-  <CodeSnippets path="api-doc-block-controls-parameter.md" />
+```mdx title="ButtonDocs.mdx"
+<Controls of={ButtonStories} exclude={['style']} />
+```
 
-  {/* prettier-ignore-end */}
+The example above applied the parameter at the [component](../../writing-stories/parameters.mdx#component-parameters) (or meta) level, but it could also be applied at the [project](../../writing-stories/parameters.mdx#global-parameters) or [story](../../writing-stories/parameters.mdx#story-parameters) level.
 
-  {/* prettier-ignore-start */}
-
-  ```md title="ButtonDocs.mdx"
-  <Controls of={ButtonStories} exclude={['style']} />
-  ```
-
-  {/* prettier-ignore-end */}
-
-  The example above applied the parameter at the [component](../../writing-stories/parameters.mdx#component-parameters) (or meta) level, but it could also be applied at the [project](../../writing-stories/parameters.mdx#global-parameters) or [story](../../writing-stories/parameters.mdx#story-parameters) level.
 </details>
 
 <Callout variant="info" icon="💡">
 
- This API configures the `Controls` blocks used within docs pages. To configure the Controls panel, see the [feature documentation](../../essentials/controls.mdx). To configure individual controls, specify [argTypes](../arg-types.mdx#control) for each.
+This API configures the `Controls` blocks used within docs pages. To configure the Controls panel, see the [feature documentation](../../essentials/controls.mdx). To configure individual controls, specify [argTypes](../arg-types.mdx#control) for each.
 
 </Callout>
 
@@ -100,6 +90,6 @@ Default: `parameters.docs.controls.sort` or `'none'`
 
 Specifies how the controls are sorted.
 
-* **none**: Unsorted, displayed in the same order the controls are processed in
-* **alpha**: Sorted alphabetically, by the arg type's name
-* **requiredFirst**: Same as `alpha`, with any required controls displayed first
+- **none**: Unsorted, displayed in the same order the controls are processed in
+- **alpha**: Sorted alphabetically, by the arg type's name
+- **requiredFirst**: Same as `alpha`, with any required controls displayed first

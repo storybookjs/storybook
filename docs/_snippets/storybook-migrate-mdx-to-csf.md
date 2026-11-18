@@ -1,14 +1,11 @@
-```shell renderer="common" language="js" packageManager="npm"
-# Convert stories in MDX to CSF
+```shell renderer="common" packageManager="npm"
 npx storybook@latest migrate mdx-to-csf --glob "src/**/*.stories.mdx"
 ```
 
-```sh renderer="common" language="js" packageManager="pnpm"
-# Convert stories in MDX to CSF
+```sh renderer="common" packageManager="pnpm"
 pnpm dlx storybook@latest migrate mdx-to-csf --glob "src/**/*.stories.mdx"
 ```
 
-```sh renderer="common" language="js" packageManager="yarn"
-# Convert stories in MDX to CSF
+```sh renderer="common" packageManager="yarn"
 yarn dlx storybook@latest migrate mdx-to-csf --glob "src/**/*.stories.mdx"
 ```

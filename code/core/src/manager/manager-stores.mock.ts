@@ -1,7 +1,4 @@
-import {
-  experimental_MockUniversalStore,
-  experimental_useUniversalStore,
-} from 'storybook/manager-api';
+import { experimental_MockUniversalStore, internal_useUniversalStore } from 'storybook/manager-api';
 import * as testUtils from 'storybook/test';
 
 import {
@@ -33,7 +30,7 @@ export const {
     UNIVERSAL_STATUS_STORE_OPTIONS,
     testUtils
   ) as unknown as UniversalStore<StatusesByStoryIdAndTypeId, StatusStoreEvent>,
-  useUniversalStore: experimental_useUniversalStore,
+  useUniversalStore: internal_useUniversalStore,
   environment: 'manager',
 });
 
@@ -46,7 +43,7 @@ export const {
     UNIVERSAL_TEST_PROVIDER_STORE_OPTIONS,
     testUtils
   ) as unknown as UniversalStore<TestProviderStateByProviderId, TestProviderStoreEvent>,
-  useUniversalStore: experimental_useUniversalStore,
+  useUniversalStore: internal_useUniversalStore,
 });
 
 export const internal_universalChecklistStore = new experimental_MockUniversalStore<

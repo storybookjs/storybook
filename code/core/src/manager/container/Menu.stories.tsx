@@ -1,10 +1,12 @@
 import React from 'react';
 
-import { Button, PopoverProvider, TooltipLinkList } from 'storybook/internal/components';
+import { Button, PopoverProvider } from 'storybook/internal/components';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { action } from 'storybook/actions';
+import { fn } from 'storybook/test';
+import { SidebarMenuList } from '../components/sidebar/Menu.tsx';
 
 import { initialState } from '../../shared/checklist-store/checklistData.state.ts';
 import { Shortcut } from '../components/Shortcut.tsx';
@@ -13,7 +15,8 @@ import { internal_universalChecklistStore as mockStore } from '../manager-stores
 const onLinkClick = action('onLinkClick');
 
 export default {
-  component: TooltipLinkList,
+  component: SidebarMenuList,
+  args: { onHide: fn() },
   decorators: [
     (storyFn) => (
       <div
@@ -46,53 +49,57 @@ export default {
     });
   },
   excludeStories: ['links'],
-} satisfies Meta<typeof TooltipLinkList>;
+} satisfies Meta<typeof SidebarMenuList>;
 
-type Story = StoryObj<typeof TooltipLinkList>;
+type Story = StoryObj<typeof SidebarMenuList>;
 
 export const WithShortcuts = {
   args: {
-    links: [
-      {
-        id: '1',
-        title: 'Link 1',
-        center: 'This is an addition description',
-        right: <Shortcut keys={['⌘']} />,
-        href: 'http://google.com',
-        onClick: onLinkClick,
-      },
-      {
-        id: '2',
-        title: 'Link 2',
-        center: 'This is an addition description',
-        right: <Shortcut keys={['⌘', 'K']} />,
-        href: 'http://google.com',
-        onClick: onLinkClick,
-      },
+    menu: [
+      [
+        {
+          id: '1',
+          title: 'Link 1',
+          center: 'This is an addition description',
+          right: <Shortcut keys={['⌘']} />,
+          href: 'http://google.com',
+          onClick: onLinkClick,
+        },
+        {
+          id: '2',
+          title: 'Link 2',
+          center: 'This is an addition description',
+          right: <Shortcut keys={['⌘', 'K']} />,
+          href: 'http://google.com',
+          onClick: onLinkClick,
+        },
+      ],
     ],
   },
 } satisfies Story;
 
 export const WithShortcutsActive = {
   args: {
-    links: [
-      {
-        id: '1',
-        title: 'Link 1',
-        center: 'This is an addition description',
-        active: true,
-        right: <Shortcut keys={['⌘']} />,
-        href: 'http://google.com',
-        onClick: onLinkClick,
-      },
-      {
-        id: '2',
-        title: 'Link 2',
-        center: 'This is an addition description',
-        right: <Shortcut keys={['⌘', 'K']} />,
-        href: 'http://google.com',
-        onClick: onLinkClick,
-      },
+    menu: [
+      [
+        {
+          id: '1',
+          title: 'Link 1',
+          center: 'This is an addition description',
+          active: true,
+          right: <Shortcut keys={['⌘']} />,
+          href: 'http://google.com',
+          onClick: onLinkClick,
+        },
+        {
+          id: '2',
+          title: 'Link 2',
+          center: 'This is an addition description',
+          right: <Shortcut keys={['⌘', 'K']} />,
+          href: 'http://google.com',
+          onClick: onLinkClick,
+        },
+      ],
     ],
   },
 } satisfies Story;

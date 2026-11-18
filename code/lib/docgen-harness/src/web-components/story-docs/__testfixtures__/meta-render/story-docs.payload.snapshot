@@ -1,0 +1,31 @@
+{
+  "id": "webcomponentsstorydocs-meta-render",
+  "name": "meta-render",
+  "path": "__PATH__",
+  "stories": {
+    "webcomponentsstorydocs-meta-render--csf-2-function": {
+      "id": "webcomponentsstorydocs-meta-render--csf-2-function",
+      "name": "Csf 2 Function",
+      "snippet": "html`<meta-render label=${'csf2'}></meta-render>`",
+      "template": "html`<meta-render label=${⟦code label⟫'csf2'⟧}></meta-render>`",
+    },
+    "webcomponentsstorydocs-meta-render--dom-override": {
+      "id": "webcomponentsstorydocs-meta-render--dom-override",
+      "name": "Dom Override",
+      "snippet": "document.createElement('meta-render')",
+      "template": "document.createElement('meta-render')",
+    },
+    "webcomponentsstorydocs-meta-render--from-meta": {
+      "id": "webcomponentsstorydocs-meta-render--from-meta",
+      "name": "From Meta",
+      "snippet": "html`<meta-render label=${'from-meta'}></meta-render>`",
+      "template": "html`<meta-render label=${⟦code label⟫'from-meta'⟧}></meta-render>`",
+    },
+    "webcomponentsstorydocs-meta-render--override": {
+      "id": "webcomponentsstorydocs-meta-render--override",
+      "name": "Override",
+      "snippet": "html`<meta-render label=${'override'} class="override"></meta-render>`",
+      "template": "html`<meta-render label=${⟦code label⟫'override'⟧} class="override"></meta-render>`",
+    },
+  },
+}

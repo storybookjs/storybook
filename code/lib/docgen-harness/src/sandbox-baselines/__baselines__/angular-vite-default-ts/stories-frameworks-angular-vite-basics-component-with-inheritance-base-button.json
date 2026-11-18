@@ -1,0 +1,21 @@
+{
+  "argTypes": {
+    "label": {
+      "name": "label",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {},
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string"
+      }
+    }
+  },
+  "id": "stories-frameworks-angular-vite-basics-component-with-inheritance-base-button",
+  "jsDocTags": {},
+  "name": "BaseButtonComponent",
+  "path": "./src/stories/frameworks/angular-vite/basics/component-with-inheritance/base-button.stories.ts"
+}

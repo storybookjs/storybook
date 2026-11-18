@@ -1,0 +1,7 @@
+{
+  "argTypes": {},
+  "id": "stories-frameworks-angular-vite-basics-browser-target-styles-banner-component",
+  "jsDocTags": {},
+  "name": "BrowserTargetBannerComponent",
+  "path": "./src/stories/frameworks/angular-vite/basics/browser-target-styles/banner.component.stories.ts"
+}

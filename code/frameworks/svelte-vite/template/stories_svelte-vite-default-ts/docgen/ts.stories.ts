@@ -5,10 +5,8 @@ import TS from './ts.svelte';
 const meta = {
   component: TS,
   tags: ['autodocs'],
-  render: (args, { argTypes }) => ({
-    Component: TS,
-    props: { ...args, argTypes },
-  }),
+  // These stories exist for the docgen sandbox baselines; the canvas shows no docgen output.
+  parameters: { chromatic: { disableSnapshot: true } },
 } satisfies Meta<typeof TS>;
 
 export default meta;

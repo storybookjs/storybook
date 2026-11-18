@@ -1,14 +1,12 @@
 import type { ComponentProps } from 'react';
 import React, { useContext } from 'react';
 
-import { deprecate } from 'storybook/internal/client-logger';
-
 import { CrossIcon } from '@storybook/icons';
 
-import { Heading } from 'react-aria-components/patched-dist/Heading';
-import { Text } from 'react-aria-components/patched-dist/Text';
+import { Heading } from 'react-aria-components/Heading';
+import { Text } from 'react-aria-components/Text';
 import type { TransitionStatus } from 'react-transition-state';
-import { keyframes, styled } from 'storybook/theming';
+import { keyframes, styled } from 'storybook/theming/emotion';
 
 import { Button } from '../Button/Button.tsx';
 // Import the ModalContext from the main Modal component
@@ -58,14 +56,14 @@ const slideFromBottom = keyframes({
   },
   to: {
     opacity: 1,
-    maxHeight: '80vh',
+    maxHeight: '80dvh',
   },
 });
 
 const slideToBottom = keyframes({
   from: {
     opacity: 1,
-    maxHeight: '80vh',
+    maxHeight: '80dvh',
   },
   to: {
     opacity: 0,
@@ -135,6 +133,7 @@ export const Container = styled.div<{
           },
         }
       : {
+          position: 'fixed',
           bottom: '0',
           left: '0',
           right: '0',
@@ -199,25 +198,6 @@ export const Close = ({ asChild, children, onClick, ...props }: CloseProps) => {
     >
       <CrossIcon />
     </Button>
-  );
-};
-
-export const Dialog = {
-  Close: () => {
-    deprecate('Modal.Dialog.Close is deprecated, please use Modal.Close instead.');
-    return <Close data-deprecated="Modal.Dialog.Close" />;
-  },
-};
-
-export const CloseButton = ({ ariaLabel, ...props }: React.ComponentProps<typeof Button>) => {
-  deprecate('Modal.CloseButton is deprecated, please use Modal.Close instead.');
-
-  return (
-    <Close asChild>
-      <Button ariaLabel={ariaLabel || 'Close'} data-deprecated="Modal.CloseButton" {...props}>
-        <CrossIcon />
-      </Button>
-    </Close>
   );
 };
 

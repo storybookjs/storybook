@@ -5,7 +5,7 @@ import { Button } from 'storybook/internal/components';
 import { ChevronDownIcon, ChevronUpIcon } from '@storybook/icons';
 
 import { transparentize } from 'polished';
-import { styled, typography } from 'storybook/theming';
+import { styled, typography } from 'storybook/theming/emotion';
 
 import { type Call, CallStates, type ControlStates } from '../../instrumenter/types.ts';
 import { INTERNAL_RENDER_CALL_ID } from '../constants.ts';
@@ -274,6 +274,7 @@ export const Interaction = ({
           })}
           call={call}
           onClick={() => controls.goto(call.id)}
+          onPointerDown={(e) => e.preventDefault()}
           disabled={isNavigationDisabled}
           onMouseEnter={() => controlStates.goto && setIsHovered(true)}
           onMouseLeave={() => controlStates.goto && setIsHovered(false)}

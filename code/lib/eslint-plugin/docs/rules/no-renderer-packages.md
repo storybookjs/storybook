@@ -3,7 +3,6 @@
 <!-- RULE-CATEGORIES:START -->
 
 **Included in these configurations**: <ul><li>recommended</li><li>flat/recommended</li></ul>
-
 <!-- RULE-CATEGORIES:END -->
 
 ## Rule Details
@@ -24,19 +23,19 @@ Examples of **incorrect** code for this rule:
 
 ```js
 // Don't import renderer packages directly
-import { something } from "@storybook/react";
-import { something } from "@storybook/vue3";
-import { something } from "@storybook/web-components";
+import { something } from '@storybook/react';
+import { something } from '@storybook/vue3';
+import { something } from '@storybook/web-components';
 ```
 
 Examples of **correct** code for this rule:
 
 ```js
 // Do use the appropriate framework package for your build tool
-import { something } from "@storybook/react-vite"; // For Vite
-import { something } from "@storybook/vue3-vite"; // For Vite
-import { something } from "@storybook/web-components-vite"; // For Vite
-import { something } from "@storybook/nextjs"; // For Next.js
+import { something } from '@storybook/react-vite'; // For Vite
+import { something } from '@storybook/vue3-vite'; // For Vite
+import { something } from '@storybook/web-components-vite'; // For Vite
+import { something } from '@storybook/nextjs'; // For Next.js
 ```
 
 ## When Not To Use It

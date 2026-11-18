@@ -3,13 +3,20 @@ export default {
   tags: ['autodocs'],
   parameters: {
     chromatic: { disableSnapshot: true },
-    docs: {
-      codePanel: true,
-    },
   },
 };
 
-export const Default = { args: { label: 'Default' } };
+/** Default story for the Code panel demo and story-docs e2e (`code/e2e-internal/story-docs.spec.ts`). */
+export const Default = {
+  args: { label: 'e2eStoryDocsBefore' },
+  parameters: {
+    docs: {
+      canvas: {
+        sourceState: 'shown',
+      },
+    },
+  },
+};
 
 export const CustomCode = {
   args: { label: 'Custom code' },

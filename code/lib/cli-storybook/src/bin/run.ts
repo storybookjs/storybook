@@ -3,7 +3,6 @@ import {
   HandledError,
   JsPackageManagerFactory,
   PackageManagerName,
-  isCI,
   optionalEnvToBoolean,
   removeAddon as remove,
   versions,
@@ -12,16 +11,17 @@ import { withTelemetry } from 'storybook/internal/core-server';
 import { CLI_COLORS, logTracker, logger } from 'storybook/internal/node-logger';
 import { addToGlobalContext, telemetry } from 'storybook/internal/telemetry';
 
-import { Option, program } from 'commander';
-import envinfo from 'envinfo';
+import { InvalidArgumentError, Option, program } from 'commander';
 import leven from 'leven';
 import picocolors from 'picocolors';
 
 import { version } from '../../package.json';
 import { add } from '../add.ts';
 import { doAutomigrate } from '../automigrate/index.ts';
+import { resolveRequestedFeatures } from '../automigrate/fixes/experimental-features.ts';
 import { doctor } from '../doctor/index.ts';
 import { link } from '../link.ts';
+import { info } from '../info.ts';
 import { migrate } from '../migrate.ts';
 import { sandbox } from '../sandbox.ts';
 import { type UpgradeOptions, upgrade } from '../upgrade.ts';
@@ -93,26 +93,25 @@ command('init')
   .description('Initialize Storybook into your project')
   .option('-f --force', 'Force add Storybook')
   .option('-s --skip-install', 'Skip installing deps')
+  .option(
+    '--install-typescript',
+    'Add TypeScript, which docgen needs, when the project has none, without asking'
+  )
+  .option('--no-install-typescript', 'Do not add TypeScript when the project has none')
   .addOption(
     new Option('--package-manager <type>', 'Force package manager for installing deps').choices(
       Object.values(PackageManagerName)
     )
   )
-  // TODO: Remove in SB11
-  .option('--use-pnp', 'Enable PnP mode for Yarn 2+')
-  .option('-p --parser <babel | babylon | flow | ts | tsx>', 'jscodeshift parser')
+  .addOption(new Option('-p --parser <parser>', 'Ignored').hideHelp())
   .option('-t --type <type>', 'Add Storybook for a specific project type')
   .option('-y --yes', 'Answer yes to all prompts')
   .option('-b --builder <webpack5 | vite>', 'Builder library')
   .option('-l --linkable', 'Prepare installation for link (contributor helper)')
-  .option(
-    '--dev',
-    'Launch the development server after completing initialization. Enabled by default (default: true)',
-    !isCI() && !optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX)
-  )
+  .option('--dev', 'Launch the development server after completing initialization')
   .option(
     '--no-dev',
-    'Complete the initialization of Storybook without launching the Storybook development server'
+    'Do not launch the Storybook development server after completing initialization (default)'
   );
 
 command('add <addon>')
@@ -128,16 +127,14 @@ command('add <addon>')
   .option('-y --yes', 'Skip prompting the user')
   .option('--skip-doctor', 'Skip doctor check')
   .action((addonName: string, options: any) => {
-    withTelemetry('add', { cliOptions: options }, async () => {
+    return withTelemetry('add', { cliOptions: options }, async () => {
       logger.intro(`Setting up your project for ${addonName}`);
 
       await add(addonName, options);
 
-      if (!options.disableTelemetry) {
-        await telemetry('add', { addon: addonName, source: 'cli' });
-      }
+      await telemetry('add', { addon: addonName, source: 'cli' });
       logger.outro('Done!');
-    }).catch(handleCommandFailure);
+    }).catch(handleCommandFailure(options.logfile));
   });
 
 command('remove <addon>')
@@ -161,9 +158,7 @@ command('remove <addon>')
         packageManager,
         skipInstall: options.skipInstall,
       });
-      if (!options.disableTelemetry) {
-        await telemetry('remove', { addon: addonName, source: 'cli' });
-      }
+      await telemetry('remove', { addon: addonName, source: 'cli' });
       logger.outro('Done!');
     }).catch(handleCommandFailure(options.logfile))
   );
@@ -176,9 +171,26 @@ command('upgrade')
     )
   )
   .option('-y --yes', 'Skip prompting the user')
+  .addOption(
+    new Option(
+      '--features <list>',
+      'Comma-separated list of experimental feature flags to enable during the upgrade'
+    ).argParser((value) => {
+      try {
+        resolveRequestedFeatures(value);
+      } catch (error) {
+        throw new InvalidArgumentError(error instanceof Error ? error.message : String(error));
+      }
+      return value;
+    })
+  )
   .option('-f --force', 'force the upgrade, skipping autoblockers')
   .option('-n --dry-run', 'Only check for upgrades, do not install')
   .option('-s --skip-check', 'Skip postinstall version and automigration checks')
+  .option(
+    '--skip-automigrations',
+    'Skip running automigrations entirely (only update package versions and install)'
+  )
   .option(
     '-c, --config-dir <dir-name...>',
     'Directory(ies) where to load Storybook configurations from'
@@ -197,35 +209,17 @@ command('upgrade')
 
 command('info')
   .description('Prints debugging information about the local environment')
-  .action(async () => {
-    logger.log(picocolors.bold('\nStorybook Environment Info:'));
-    const pkgManager = JsPackageManagerFactory.getPackageManager();
-    const activePackageManager = pkgManager.type.replace(/\d/, ''); // 'yarn1' -> 'yarn'
-    const output = await envinfo.run({
-      System: ['OS', 'CPU', 'Shell'],
-      Binaries: ['Node', 'Yarn', 'npm', 'pnpm'],
-      Browsers: ['Chrome', 'Edge', 'Firefox', 'Safari'],
-      npmPackages: '{@storybook/*,*storybook*,sb,chromatic}',
-      npmGlobalPackages: '{@storybook/*,*storybook*,sb,chromatic}',
-    });
-    const activePackageManagerLine = output.match(new RegExp(`${activePackageManager}:.*`, 'i'));
-    logger.log(
-      output.replace(
-        activePackageManagerLine,
-        picocolors.bold(`${activePackageManagerLine} <----- active`)
-      )
-    );
-  });
+  .action((options) => info().catch(handleCommandFailure(options.logfile)));
 
 command('migrate [migration]')
   .description('Run a Storybook codemod migration on your source files')
   .option('-l --list', 'List available migrations')
   .option('-g --glob <glob>', 'Glob for files upon which to apply the migration', '**/*.js')
-  .option('-p --parser <babel | babylon | flow | ts | tsx>', 'jscodeshift parser')
+  .addOption(new Option('-p --parser <parser>', 'Ignored').hideHelp())
   .option('-c, --config-dir <dir-name>', 'Directory where to load Storybook configurations from')
   .option(
     '-n --dry-run',
-    'Dry run: verify the migration exists and show the files to which it will be applied'
+    'Dry run: verify the migration exists and show how many files it would change'
   )
   .option(
     '-r --rename <from-to>',
@@ -243,11 +237,11 @@ command('sandbox [filterValue]')
   .alias('repro') // for backwards compatibility
   .description('Create a sandbox from a set of possible templates')
   .option('-o --output <outDir>', 'Define an output directory')
-  .option('--no-init', 'Whether to download a template without an initialized Storybook', false)
+  .option('--no-init', 'Whether to download a template without an initialized Storybook')
   .action((filterValue, options) => {
     logger.intro(`Creating a Storybook sandbox...`);
-    sandbox({ filterValue, ...options })
-      .catch(handleCommandFailure)
+    return sandbox({ filterValue, ...options })
+      .catch(handleCommandFailure(options.logfile))
       .finally(() => {
         logger.outro('Done!');
       });
@@ -273,10 +267,6 @@ command('automigrate [fixId]')
   .option('-l --list', 'List available migrations')
   .option('-c, --config-dir <dir-name>', 'Directory of Storybook configurations to migrate')
   .option('-s --skip-install', 'Skip installing deps')
-  .option(
-    '--renderer <renderer-pkg-name>',
-    'The renderer package for the framework Storybook is using.'
-  )
   .option('--skip-doctor', 'Skip doctor check')
   .option('--glob <pattern>', 'Glob pattern for story files (for csf-factories codemod)')
   .action(async (fixId, options) => {
@@ -314,4 +304,6 @@ program.on('command:*', ([invalidCmd]) => {
   process.exit(1);
 });
 
-program.usage('<command> [options]').version(String(version)).parse(process.argv);
+program.usage('<command> [options]').version(String(version));
+
+export const run = (argv: string[] = process.argv) => program.parseAsync(argv);

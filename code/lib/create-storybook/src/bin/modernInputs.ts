@@ -3,6 +3,7 @@ export type Framework = (typeof supportedFrameworks)[number];
 // TODO: sync this/pull this from core
 export const supportedFrameworks = [
   'angular',
+  'astro',
   'ember',
   'html-vite',
   'nextjs',
@@ -38,6 +39,7 @@ export const supportedFrameworksPackages = {
   'web-components-vite': '@storybook/web-components-vite',
 
   angular: '@storybook/angular',
+  astro: '@storybook-astro/framework',
   ember: '@storybook/ember',
   nextjs: '@storybook/nextjs',
   'nextjs-vite': '@storybook/nextjs-vite',
@@ -62,6 +64,7 @@ export const supportedFrameworksNames = {
   'vue3-vite': 'Vue 3 with Vite',
   'web-components-vite': 'Web Components with Vite',
   angular: 'Angular',
+  astro: 'Astro',
   ember: 'Ember',
   nextjs: 'NextJS',
   'nextjs-vite': 'NextJS with Vite',

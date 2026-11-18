@@ -1,11 +1,13 @@
-```jsx filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
+```jsx filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 4"
 import React, { useState } from 'react';
+
+import preview from '../.storybook/preview';
 
 import { Button } from './Button';
 
-export default {
+const meta = preview.meta({
   component: Button,
-};
+});
 
 const ButtonWithHooks = () => {
   // Sets the hooks for both the label and primary props
@@ -22,12 +24,44 @@ const ButtonWithHooks = () => {
   return <Button primary={isPrimary} onClick={handleOnChange} label={value} />;
 };
 
-export const Primary = {
+export const Primary = meta.story({
   render: () => <ButtonWithHooks />,
+});
+```
+
+```tsx filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 4"
+import React, { useState } from 'react';
+
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+const ButtonWithHooks = () => {
+  // Sets the hooks for both the label and primary props
+  const [value, setValue] = useState('Secondary');
+  const [isPrimary, setIsPrimary] = useState(false);
+
+  // Sets a click handler to change the label's value
+  const handleOnChange = () => {
+    if (!isPrimary) {
+      setIsPrimary(true);
+      setValue('Primary');
+    }
+  };
+  return <Button primary={isPrimary} onClick={handleOnChange} label={value} />;
 };
+
+export const Primary = meta.story({
+  render: () => <ButtonWithHooks />,
+});
 ```
 
 ```tsx filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import React, { useState } from 'react';
 
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
@@ -62,16 +96,15 @@ export const Primary = {
 } satisfies Story;
 ```
 
-```tsx filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```jsx filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import React, { useState } from 'react';
-
-import preview from '../.storybook/preview';
 
 import { Button } from './Button';
 
-const meta = preview.meta({
+export default {
   component: Button,
-});
+};
 
 const ButtonWithHooks = () => {
   // Sets the hooks for both the label and primary props
@@ -88,42 +121,9 @@ const ButtonWithHooks = () => {
   return <Button primary={isPrimary} onClick={handleOnChange} label={value} />;
 };
 
-export const Primary = meta.story({
+export const Primary = {
   render: () => <ButtonWithHooks />,
-});
-```
-
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```jsx filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
-import React, { useState } from 'react';
-
-import preview from '../.storybook/preview';
-
-import { Button } from './Button';
-
-const meta = preview.meta({
-  component: Button,
-});
-
-const ButtonWithHooks = () => {
-  // Sets the hooks for both the label and primary props
-  const [value, setValue] = useState('Secondary');
-  const [isPrimary, setIsPrimary] = useState(false);
-
-  // Sets a click handler to change the label's value
-  const handleOnChange = () => {
-    if (!isPrimary) {
-      setIsPrimary(true);
-      setValue('Primary');
-    }
-  };
-  return <Button primary={isPrimary} onClick={handleOnChange} label={value} />;
 };
-
-export const Primary = meta.story({
-  render: () => <ButtonWithHooks />,
-});
 ```
 
 ```jsx filename="Button.stories.js|jsx" renderer="solid" language="js"

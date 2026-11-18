@@ -1,18 +1,30 @@
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-import { ProjectType } from 'storybook/internal/cli';
+import {
+  ProjectType,
+  detectIncompatiblePackageVersions,
+  detectLanguage,
+} from 'storybook/internal/cli';
 import { HandledError, getProjectRoot } from 'storybook/internal/common';
 import type { JsPackageManager, PackageJsonWithMaybeDeps } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import { NxProjectDetectedError } from 'storybook/internal/server-errors';
-import { SupportedLanguage } from 'storybook/internal/types';
+import type { SupportedLanguage } from 'storybook/internal/types';
 
 import * as find from 'empathic/find';
 import semver from 'semver';
 import { dedent } from 'ts-dedent';
 
 import type { CommandOptions } from '../generators/types.ts';
+
+// `remix` >=3 is Remix 3. `@remix-run/dev` is Remix 2 and stays on the React path.
+function isRemix3VersionRange(versionRange: string | null | undefined): boolean {
+  if (!versionRange || !semver.validRange(versionRange)) {
+    return false;
+  }
+  return (semver.minVersion(versionRange)?.major ?? 0) >= 3;
+}
 
 type TemplateMatcher = {
   files?: boolean[];
@@ -37,10 +49,25 @@ export class ProjectTypeService {
   getSupportedTemplates(): TemplateConfiguration[] {
     return [
       {
+        preset: ProjectType.ASTRO,
+        dependencies: ['astro'],
+        matcherFunction: ({ dependencies }) => {
+          return dependencies?.every(Boolean) ?? true;
+        },
+      },
+      {
         preset: ProjectType.NUXT,
         dependencies: ['nuxt'],
         matcherFunction: ({ dependencies }) => {
           return dependencies?.every(Boolean) ?? true;
+        },
+      },
+      {
+        preset: ProjectType.TANSTACK_REACT,
+        dependencies: ['@tanstack/react-start', '@tanstack/react-router'],
+        peerDependencies: ['@tanstack/react-start', '@tanstack/react-router'],
+        matcherFunction: ({ dependencies, peerDependencies }) => {
+          return (dependencies?.some(Boolean) || peerDependencies?.some(Boolean)) ?? false;
         },
       },
       {
@@ -76,19 +103,10 @@ export class ProjectTypeService {
       },
       {
         preset: ProjectType.REACT_NATIVE,
-        dependencies: ['react-native', 'react-native-scripts'],
-        matcherFunction: ({ dependencies }) => {
-          return dependencies?.some(Boolean) ?? false;
-        },
-      },
-      {
-        preset: ProjectType.REACT_SCRIPTS,
-        // For projects using a custom/forked `react-scripts` package.
-        files: ['/node_modules/.bin/react-scripts'],
-        // For standard CRA projects
-        dependencies: ['react-scripts'],
-        matcherFunction: ({ dependencies, files }) => {
-          return (dependencies?.every(Boolean) || files?.every(Boolean)) ?? false;
+        dependencies: ['react-native', 'react-native-scripts', 'expo'],
+        peerDependencies: ['react-native', 'react-native-scripts', 'expo'],
+        matcherFunction: ({ dependencies, peerDependencies }) => {
+          return (dependencies?.some(Boolean) || peerDependencies?.some(Boolean)) ?? false;
         },
       },
       {
@@ -134,13 +152,23 @@ export class ProjectTypeService {
           return dependencies?.every(Boolean) ?? true;
         },
       },
+      {
+        preset: ProjectType.HTML,
+        dependencies: {
+          remix: (versionRange) => isRemix3VersionRange(versionRange),
+        },
+        matcherFunction: ({ dependencies }) => {
+          return dependencies?.every(Boolean) ?? false;
+        },
+      },
       // DO NOT MOVE ANY TEMPLATES BELOW THIS LINE
       // React is part of every Template, after Storybook is initialized once
       {
         preset: ProjectType.REACT,
         dependencies: ['react'],
-        matcherFunction: ({ dependencies }) => {
-          return dependencies?.every(Boolean) ?? true;
+        peerDependencies: ['react'],
+        matcherFunction: ({ dependencies, peerDependencies }) => {
+          return (dependencies?.some(Boolean) || peerDependencies?.some(Boolean)) ?? false;
         },
       },
     ];
@@ -198,64 +226,12 @@ export class ProjectTypeService {
   }
 
   async detectLanguage(): Promise<SupportedLanguage> {
-    let language = SupportedLanguage.JAVASCRIPT;
+    return detectLanguage(this.jsPackageManager);
+  }
 
-    if (existsSync('jsconfig.json')) {
-      return language;
-    }
-
-    const isTypescriptDirectDependency = !!this.jsPackageManager.getAllDependencies().typescript;
-
-    const getModulePackageJSONVersion = async (pkg: string) => {
-      return (await this.jsPackageManager.getModulePackageJSON(pkg))?.version ?? null;
-    };
-
-    const [
-      typescriptVersion,
-      prettierVersion,
-      babelPluginTransformTypescriptVersion,
-      typescriptEslintParserVersion,
-      eslintPluginStorybookVersion,
-    ] = await Promise.all([
-      getModulePackageJSONVersion('typescript'),
-      getModulePackageJSONVersion('prettier'),
-      getModulePackageJSONVersion('@babel/plugin-transform-typescript'),
-      getModulePackageJSONVersion('@typescript-eslint/parser'),
-      getModulePackageJSONVersion('eslint-plugin-storybook'),
-    ]);
-
-    const satisfies = (version: string | null, range: string) => {
-      if (!version) {
-        return false;
-      }
-      return semver.satisfies(version, range, { includePrerelease: true });
-    };
-
-    if (isTypescriptDirectDependency && typescriptVersion) {
-      if (
-        satisfies(typescriptVersion, '>=4.9.0') &&
-        (!prettierVersion || semver.gte(prettierVersion, '2.8.0')) &&
-        (!babelPluginTransformTypescriptVersion ||
-          satisfies(babelPluginTransformTypescriptVersion, '>=7.20.0')) &&
-        (!typescriptEslintParserVersion || satisfies(typescriptEslintParserVersion, '>=5.44.0')) &&
-        (!eslintPluginStorybookVersion || satisfies(eslintPluginStorybookVersion, '>=0.6.8'))
-      ) {
-        language = SupportedLanguage.TYPESCRIPT;
-      } else {
-        logger.warn(
-          'Detected TypeScript < 4.9 or incompatible tooling, populating with JavaScript examples'
-        );
-      }
-    } else {
-      // No direct dependency on TypeScript, but could be a transitive dependency
-      // This is eg the case for Nuxt projects, which support a recent version of TypeScript
-      // Check for tsconfig.json (https://www.typescriptlang.org/docs/handbook/tsconfig-json.html)
-      if (existsSync('tsconfig.json')) {
-        language = SupportedLanguage.TYPESCRIPT;
-      }
-    }
-
-    return language;
+  /** Check installed tooling versions for TypeScript compatibility constraints */
+  async detectIncompatiblePackageVersions(): Promise<string[]> {
+    return detectIncompatiblePackageVersions(this.jsPackageManager);
   }
 
   private eqMajor(versionRange: string, major: number) {
@@ -281,13 +257,13 @@ export class ProjectTypeService {
     }
   }
 
-  private detectFrameworkPreset(packageJson: PackageJsonWithMaybeDeps): ProjectType | null {
-    const result = [...this.getSupportedTemplates(), this.getUnsupportedTemplate()].find(
-      (framework) => {
-        return this.getProjectType(packageJson, framework) !== null;
+  private async detectFrameworkPreset(packageJson: PackageJsonWithMaybeDeps): Promise<ProjectType> {
+    for (const framework of [...this.getSupportedTemplates(), this.getUnsupportedTemplate()]) {
+      if ((await this.getProjectType(packageJson, framework)) !== null) {
+        return framework.preset;
       }
-    );
-    return result ? result.preset : ProjectType.UNDETECTED;
+    }
+    return ProjectType.UNDETECTED;
   }
 
   /** Template that matches unsupported frameworks */
@@ -301,10 +277,10 @@ export class ProjectTypeService {
     };
   }
 
-  private getProjectType(
+  private async getProjectType(
     packageJson: PackageJsonWithMaybeDeps,
     framework: TemplateConfiguration
-  ): ProjectType | null {
+  ): Promise<ProjectType | null> {
     const matcher: TemplateMatcher = {
       dependencies: [false],
       peerDependencies: [false],
@@ -321,8 +297,8 @@ export class ProjectTypeService {
     }
 
     if (dependencySearches.length > 0) {
-      matcher.dependencies = dependencySearches.map(([name, matchFn]) =>
-        this.hasDependency(packageJson, name, matchFn)
+      matcher.dependencies = await Promise.all(
+        dependencySearches.map(([name, matchFn]) => this.hasDependency(packageJson, name, matchFn))
       );
     }
 
@@ -347,14 +323,18 @@ export class ProjectTypeService {
     return matcherFunction(matcher) ? preset : null;
   }
 
-  private hasDependency(
+  private async hasDependency(
     packageJson: PackageJsonWithMaybeDeps,
     name: string,
     matcher?: (version: string) => boolean
-  ) {
+  ): Promise<boolean> {
     const version = packageJson.dependencies?.[name] || packageJson.devDependencies?.[name];
     if (version && typeof matcher === 'function') {
-      return matcher(version);
+      // Tags (`latest`, `next`) and `catalog:` are not ranges. Matchers need the installed version.
+      const resolvedVersion = semver.validRange(version)
+        ? version
+        : await this.jsPackageManager.getDeclaredVersionSpecifier(name);
+      return matcher(resolvedVersion ?? version);
     }
     return !!version;
   }

@@ -1,6 +1,8 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, normalize, resolve } from 'node:path';
 
+import { normalize as normalizePathPosix } from 'pathe';
+
 import { logger, prompt } from 'storybook/internal/node-logger';
 
 import detectIndent from 'detect-indent';
@@ -364,7 +366,9 @@ export abstract class JsPackageManager {
    * manifest whose overrides package managers apply.
    */
   public getOverrideSources(): OverrideSource[] {
-    const path = this.#findRootPackageJsonPath();
+    // Override sources cross package-manager boundaries; expose POSIX-normalized paths so
+    // callers comparing against pathe-style paths match on Windows too.
+    const path = normalizePathPosix(this.#findRootPackageJsonPath());
     const packageJson = JsPackageManager.getPackageJson(path);
     const fields: [string, unknown][] = [
       ['overrides', packageJson.overrides],
@@ -1069,10 +1073,13 @@ export abstract class JsPackageManager {
       last: getProjectRoot(),
     });
     if (lockfilePath) {
-      return join(dirname(lockfilePath), 'package.json');
+      // node:path join is platform-native; normalize so manifest lookups keyed on POSIX
+      // spellings keep matching on Windows.
+      return normalizePathPosix(join(dirname(lockfilePath), 'package.json'));
     }
     const { packageJsonPath } = this.primaryPackageJson;
-    return this.findWorkspaceRootPackageJsonPath(packageJsonPath) ?? packageJsonPath;
+    const workspaceRoot = this.findWorkspaceRootPackageJsonPath(packageJsonPath);
+    return normalizePathPosix(workspaceRoot ?? packageJsonPath);
   }
 
   /** List all package.json files starting from the given directory and stopping at the project root. */

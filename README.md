@@ -61,6 +61,7 @@ Storybook is a frontend workshop for building UI components and pages in isolati
 ## Table of contents
 
 - 🚀 [Getting Started](#getting-started)
+- 🤖 [AI](#ai)
 - 📒 [Projects](#projects)
   - 🛠 [Supported Frameworks](#supported-frameworks)
   - 🔗 [Addons](#addons)
@@ -91,6 +92,44 @@ Documentation can be found on [Storybook's docs site](https://storybook.js.org/d
 View the [Storybook Showcase](https://storybook.js.org/showcase?ref=readme) to see how leading teams use Storybook.
 
 Use [storybook.new](https://storybook.new) to quickly create an example project in Stackblitz.
+
+## AI
+
+Storybook helps your coding agent build UI that fits your project. Your agent reuses the components you already have, writes stories for what it builds, tests its work, and gives you a review to check the result.
+
+### Skills and the CLI
+
+Run this command in the root of your project to install Storybook's skills:
+
+```sh
+npx storybook automigrate skills
+```
+
+Skills are short instruction files in your repository that tell your agent what to do at each step of a UI change. They work with any agent that can run shell commands, and they get their instructions from your installed Storybook, so they match your framework and your Storybook version. Installing Storybook with `npm create storybook@latest` offers to add them too.
+
+Your agent then works with your Storybook through the `storybook tools` command:
+
+| Command                           |                                                                             |
+| --------------------------------- | --------------------------------------------------------------------------- |
+| `storybook tools docs list`       | List all components and docs entries                                        |
+| `storybook tools docs show`       | Show the props and usage examples of a component                            |
+| `storybook tools stories changed` | List the stories that are new, modified, or affected by uncommitted changes |
+| `storybook tools test run`        | Run story tests, with accessibility checks if set up                        |
+| `storybook tools review create`   | Publish a review of the stories that a change affects                       |
+
+Most tools run without a dev server. See [Connect your agent](https://storybook.js.org/docs/ai/connect?ref=readme) to get started, and the [CLI options](https://storybook.js.org/docs/api/cli-options?ref=readme#tools) for all the tools. If you want your agent to call Storybook through MCP tools instead of CLI commands, the [MCP addon](code/addons/mcp/) serves the same tools from your dev server.
+
+These features are available for React, Vue 3, Angular, Svelte, and Web Components. Check the [supported frameworks](https://storybook.js.org/docs/ai/connect?ref=readme#supported-frameworks) for yours.
+
+### Published Storybooks
+
+When you [publish your Storybook with Chromatic](https://storybook.js.org/docs/sharing/publish-storybook?ref=readme#publish-storybook-with-chromatic), Chromatic also publishes its MCP server, at your published Storybook's URL followed by `/mcp`:
+
+```
+https://<branch>--<app-id>.chromatic.com/mcp
+```
+
+Agents that connect to it can look up your components, with their props and usage examples, without running your Storybook. This lets the teams that build with your design system reuse its components from their own repositories. See [Use a published Storybook](https://storybook.js.org/docs/ai/published-storybook?ref=readme) and [Chromatic's setup guide](https://chromatic.com/docs/storybook-mcp/) to connect an agent.
 
 ## Projects
 
@@ -125,24 +164,21 @@ See the [frameworks documentation](https://storybook.js.org/docs/get-started/fra
 
 [Addons](https://storybook.js.org/docs/configure/user-interface/storybook-addons?ref=readme) extend Storybook with features for component design, documentation, testing, interactivity, and so on. Add one to your project with `npx storybook add <package>`.
 
-| Addons                                                                                  |                                                                           | Downloads                                                                                                                                                                                      |
-| --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [docs](code/addons/docs/)                                                               | Add high quality documentation to your components                         | [![docs](https://img.shields.io/npm/dm/@storybook/addon-docs?style=flat-square&color=eee)](code/addons/docs/)                                                                                  |
-| [a11y](code/addons/a11y/)                                                               | Test components for user accessibility in Storybook                       | [![a11y](https://img.shields.io/npm/dm/@storybook/addon-a11y?style=flat-square&color=eee)](code/addons/a11y/)                                                                                  |
-| [links](code/addons/links/)                                                             | Create links between stories                                              | [![links](https://img.shields.io/npm/dm/@storybook/addon-links?style=flat-square&color=eee)](code/addons/links/)                                                                               |
-| [vitest](code/addons/vitest/)                                                           | Test components by running their stories in Vitest browser mode           | [![vitest](https://img.shields.io/npm/dm/@storybook/addon-vitest?style=flat-square&color=eee)](code/addons/vitest/)                                                                            |
-| [visual tests](https://github.com/chromaui/addon-visual-tests)                          | Catch unexpected visual changes in your stories using Chromatic           | [![visual tests](https://img.shields.io/npm/dm/@chromatic-com/storybook?style=flat-square&color=eee)](https://github.com/chromaui/addon-visual-tests)                                          |
-| [themes](code/addons/themes/)                                                           | Switch between themes from the toolbar                                    | [![themes](https://img.shields.io/npm/dm/@storybook/addon-themes?style=flat-square&color=eee)](code/addons/themes/)                                                                            |
-| [onboarding](code/addons/onboarding/)                                                   | Guide new users through writing their first story                         | [![onboarding](https://img.shields.io/npm/dm/@storybook/addon-onboarding?style=flat-square&color=eee)](code/addons/onboarding/)                                                                |
-| [msw](https://github.com/mswjs/msw-storybook-addon)                                     | Mock API requests in stories using Mock Service Worker                    | [![msw](https://img.shields.io/npm/dm/msw-storybook-addon?style=flat-square&color=eee)](https://github.com/mswjs/msw-storybook-addon)                                                          |
-| [mcp](code/addons/mcp/)                                                                 | Help AI agents write and test stories for your components                 | [![mcp](https://img.shields.io/npm/dm/@storybook/addon-mcp?style=flat-square&color=eee)](code/addons/mcp/)                                                                                     |
-| [designs](https://github.com/storybookjs/addon-designs)                                 | Embed Figma files and other design previews alongside your story          | [![designs](https://img.shields.io/npm/dm/@storybook/addon-designs?style=flat-square&color=eee)](https://github.com/storybookjs/addon-designs)                                                 |
-| [pseudo-states](code/addons/pseudo-states/)                                             | Toggle CSS pseudo states such as `:hover` and `:focus` on your components | [![pseudo-states](https://img.shields.io/npm/dm/storybook-addon-pseudo-states?style=flat-square&color=eee)](code/addons/pseudo-states/)                                                        |
-| [webpack5-compiler-swc](https://github.com/storybookjs/addon-webpack5-compiler-swc)     | Compile your code with SWC in Webpack-based Storybooks                    | [![webpack5-compiler-swc](https://img.shields.io/npm/dm/@storybook/addon-webpack5-compiler-swc?style=flat-square&color=eee)](https://github.com/storybookjs/addon-webpack5-compiler-swc)       |
-| [styling-webpack](https://github.com/storybookjs/addon-styling-webpack)                 | Configure popular styling tools in Webpack-based Storybooks               | [![styling-webpack](https://img.shields.io/npm/dm/@storybook/addon-styling-webpack?style=flat-square&color=eee)](https://github.com/storybookjs/addon-styling-webpack)                         |
-| [dark-mode](https://github.com/hipstersmoothie/storybook-dark-mode)                     | Toggle between light and dark mode in Storybook                           | [![dark-mode](https://img.shields.io/npm/dm/storybook-dark-mode?style=flat-square&color=eee)](https://github.com/hipstersmoothie/storybook-dark-mode)                                          |
-| [webpack5-compiler-babel](https://github.com/storybookjs/addon-webpack5-compiler-babel) | Compile your code with Babel in Webpack-based Storybooks                  | [![webpack5-compiler-babel](https://img.shields.io/npm/dm/@storybook/addon-webpack5-compiler-babel?style=flat-square&color=eee)](https://github.com/storybookjs/addon-webpack5-compiler-babel) |
-| [tag-badges](https://github.com/Sidnioulz/storybook-addon-tag-badges)                   | Display story tags as badges in the sidebar and toolbar                   | [![tag-badges](https://img.shields.io/npm/dm/storybook-addon-tag-badges?style=flat-square&color=eee)](https://github.com/Sidnioulz/storybook-addon-tag-badges)                                 |
+| Addons                                                                |                                                                           | Downloads                                                                                                                                                      |
+| --------------------------------------------------------------------- | ------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [docs](code/addons/docs/)                                             | Add high quality documentation to your components                         | [![docs](https://img.shields.io/npm/dm/@storybook/addon-docs?style=flat-square&color=eee)](code/addons/docs/)                                                  |
+| [a11y](code/addons/a11y/)                                             | Test components for user accessibility in Storybook                       | [![a11y](https://img.shields.io/npm/dm/@storybook/addon-a11y?style=flat-square&color=eee)](code/addons/a11y/)                                                  |
+| [links](code/addons/links/)                                           | Create links between stories                                              | [![links](https://img.shields.io/npm/dm/@storybook/addon-links?style=flat-square&color=eee)](code/addons/links/)                                               |
+| [vitest](code/addons/vitest/)                                         | Test components by running their stories in Vitest browser mode           | [![vitest](https://img.shields.io/npm/dm/@storybook/addon-vitest?style=flat-square&color=eee)](code/addons/vitest/)                                            |
+| [visual tests](https://github.com/chromaui/addon-visual-tests)        | Catch unexpected visual changes in your stories using Chromatic           | [![visual tests](https://img.shields.io/npm/dm/@chromatic-com/storybook?style=flat-square&color=eee)](https://github.com/chromaui/addon-visual-tests)          |
+| [themes](code/addons/themes/)                                         | Switch between themes from the toolbar                                    | [![themes](https://img.shields.io/npm/dm/@storybook/addon-themes?style=flat-square&color=eee)](code/addons/themes/)                                            |
+| [onboarding](code/addons/onboarding/)                                 | Guide new users through writing their first story                         | [![onboarding](https://img.shields.io/npm/dm/@storybook/addon-onboarding?style=flat-square&color=eee)](code/addons/onboarding/)                                |
+| [msw](https://github.com/mswjs/msw-storybook-addon)                   | Mock API requests in stories using Mock Service Worker                    | [![msw](https://img.shields.io/npm/dm/msw-storybook-addon?style=flat-square&color=eee)](https://github.com/mswjs/msw-storybook-addon)                          |
+| [mcp](code/addons/mcp/)                                               | Help AI agents write and test stories for your components                 | [![mcp](https://img.shields.io/npm/dm/@storybook/addon-mcp?style=flat-square&color=eee)](code/addons/mcp/)                                                     |
+| [designs](https://github.com/storybookjs/addon-designs)               | Embed Figma files and other design previews alongside your story          | [![designs](https://img.shields.io/npm/dm/@storybook/addon-designs?style=flat-square&color=eee)](https://github.com/storybookjs/addon-designs)                 |
+| [pseudo-states](code/addons/pseudo-states/)                           | Toggle CSS pseudo states such as `:hover` and `:focus` on your components | [![pseudo-states](https://img.shields.io/npm/dm/storybook-addon-pseudo-states?style=flat-square&color=eee)](code/addons/pseudo-states/)                        |
+| [dark-mode](https://github.com/hipstersmoothie/storybook-dark-mode)   | Toggle between light and dark mode in Storybook                           | [![dark-mode](https://img.shields.io/npm/dm/storybook-dark-mode?style=flat-square&color=eee)](https://github.com/hipstersmoothie/storybook-dark-mode)          |
+| [tag-badges](https://github.com/Sidnioulz/storybook-addon-tag-badges) | Display story tags as badges in the sidebar and toolbar                   | [![tag-badges](https://img.shields.io/npm/dm/storybook-addon-tag-badges?style=flat-square&color=eee)](https://github.com/Sidnioulz/storybook-addon-tag-badges) |
 
 To test your components, start with the [Vitest addon](code/addons/vitest/). It turns every story into a test that runs in a real browser, and you can run those tests from the Storybook UI, the command line, or CI.
 

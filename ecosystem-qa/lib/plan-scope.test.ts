@@ -16,7 +16,7 @@ describe('planScopeOf', () => {
   it('names the plan by its file and the hash of its bytes, at the tier gate unless told', () => {
     expect(batchOne).toMatchObject({
       file: 'plan.fixture.md',
-      hash: '8b618330bb61',
+      hash: 'b4870f4eb3b4',
       batch: 1,
       tier: 'gate',
     });
@@ -65,7 +65,7 @@ describe('plannedRun', () => {
     expect(plannedRun(batchOne, { repo: 'mealdrop', version: '11.0.0-beta.3' })).toMatchObject({
       record: {
         file: 'plan.fixture.md',
-        hash: '8b618330bb61',
+        hash: 'b4870f4eb3b4',
         batch: 1,
         part: 1,
         entries: [

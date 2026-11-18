@@ -10,6 +10,13 @@ const sentenceCase = (text: string) => `${text[0]!.toUpperCase()}${text.slice(1)
 // so it goes in as one code span, where GitHub renders no mention or reference.
 export const renderManualChecklist = (plan: Plan, window: Window): string => {
   const titleOf = new Map(window.prs.map((pr) => [pr.number, pr.title]));
+  const testedPart = (pr: number) => {
+    const slugs = plan.entries.filter((entry) => entry.prs.includes(pr)).map((entry) => entry.slug);
+    const named = slugs.map((slug) => `\`${slug}\``).join(', ');
+    return slugs.length === 0
+      ? ''
+      : `, the part that the plan ${slugs.length === 1 ? `entry ${named} does` : `entries ${named} do`} not test`;
+  };
   const sections = new Map<string, Map<string, number[]>>();
   for (const { why, manual, prs } of manualChecksOf(plan, layoutPlan(plan).at)) {
     const checks = sections.get(why) ?? new Map<string, number[]>();
@@ -27,7 +34,7 @@ export const renderManualChecklist = (plan: Plan, window: Window): string => {
       '',
       ...[...checks].flatMap(([manual, prs]) => [
         `- [ ] ${manual}`,
-        ...prs.map((pr) => `  - ${prCell(pr)} ${inlineTitle(titleOf.get(pr)!)}`),
+        ...prs.map((pr) => `  - ${prCell(pr)} ${inlineTitle(titleOf.get(pr)!)}${testedPart(pr)}`),
       ]),
     ]),
     '',

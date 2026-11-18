@@ -51,27 +51,30 @@ const RepoId = CatalogEntry.shape.id;
 const Sha = z.string().regex(/^[0-9a-f]{40}$/, 'expected a full commit SHA');
 const PrNumber = z.int().positive();
 
-// A decision cell of a group holds a manual check and its reason as `manual: <check> Why: <why>`.
+// A decision cell of a group holds a manual check and its reason as `manual: <check> Why: <why>`,
+// after the entries that test the group in part as `<entries>; manual for the rest: <check> Why: <why>`.
 const WHY = ' Why: ';
+const REST = '; manual for the rest: ';
 const ManualCheck = Reason.refine((check) => !check.includes(WHY), `expected no "${WHY.trim()}"`);
+const TestedBy = z.strictObject({ entries: z.array(Slug).min(1) });
+const ByHand = z.strictObject({ manual: ManualCheck, why: Reason });
+const NoQa = z.strictObject({ none: Reason });
 
-export const Decision = z
-  .union([
-    z.strictObject({ entries: z.array(Slug).min(1) }),
-    z.strictObject({ manual: ManualCheck, why: Reason }),
-    z.strictObject({ none: Reason }),
-  ])
-  .nullable();
+// A PR outside a group that an entry tests in part needs no decision of both kinds: the entries
+// list it, and its decision is the manual check of the rest.
+const PrDecision = z.union([TestedBy, ByHand, NoQa]);
+export const Decision = z.union([TestedBy, ByHand, TestedBy.extend(ByHand.shape), NoQa]).nullable();
 export type Decision = z.infer<typeof Decision>;
-type ManualDecision = Extract<Decision, { manual: string }>;
 
 const SKIP_IS_GONE =
   '"skip" is no decision: choose "manual" with the check a person does, or "none" with the reason no QA is needed';
-const DraftDecision = z
-  .custom((value) => !(value && typeof value === 'object' && 'skip' in value), {
-    error: SKIP_IS_GONE,
-  })
-  .pipe(Decision.unwrap());
+const withoutSkip = <T extends z.ZodType>(schema: T) =>
+  z
+    .custom((value) => !(value && typeof value === 'object' && 'skip' in value), {
+      error: SKIP_IS_GONE,
+    })
+    .pipe(schema);
+const DraftDecision = withoutSkip(PrDecision);
 
 const unique = (values: unknown[]) => new Set(values).size === values.length;
 const PrList = z.array(PrNumber).refine(unique, 'a PR is listed twice');
@@ -116,7 +119,9 @@ const NoQaRow = z.strictObject({ reason: Reason, prs: SomePrs });
 type NoQaRow = z.infer<typeof NoQaRow>;
 
 const GroupOfDraft = z.strictObject({ slug: Slug, source: Source, decision: Decision });
-const GroupOfDraftInput = GroupOfDraft.extend({ decision: DraftDecision.nullable() });
+const GroupOfDraftInput = GroupOfDraft.extend({
+  decision: withoutSkip(Decision.unwrap()).nullable(),
+});
 const Group = GroupOfDraft.extend({ prs: PrList });
 // The PRs marked qa:skip that the draft has not put into a group yet share one row without a group.
 const GroupRow = z.union([Group, z.strictObject({ slug: z.null(), prs: SomePrs })]);
@@ -186,14 +191,24 @@ const decisionCell = (decision: Decision): string => {
   if (decision === null) {
     return '';
   }
-  if ('entries' in decision) {
-    return decision.entries.map(code).join(', ');
+  if ('none' in decision) {
+    return `none: ${decision.none}`;
   }
-  return 'manual' in decision
-    ? `manual: ${decision.manual}${WHY}${decision.why}`
-    : `none: ${decision.none}`;
+  const manual = 'manual' in decision ? `${decision.manual}${WHY}${decision.why}` : '';
+  if (!('entries' in decision)) {
+    return `manual: ${manual}`;
+  }
+  const entries = decision.entries.map(code).join(', ');
+  return manual ? `${entries}${REST}${manual}` : entries;
 };
 const MANUAL_CELL = `"manual: <check>${WHY}<why the sweep cannot test it>"`;
+const PART_CELL = `"<entries>${REST}<check>${WHY}<why the sweep cannot test it>"`;
+const unManual = (text: string, form: string) => {
+  const at = text.indexOf(WHY);
+  return at > 0 && text.length > at + WHY.length
+    ? { manual: text.slice(0, at), why: text.slice(at + WHY.length) }
+    : fail(`expected a check and its reason, as ${form}`);
+};
 const unDecision = (cell: string): unknown => {
   if (cell === '') {
     return null;
@@ -208,18 +223,21 @@ const unDecision = (cell: string): unknown => {
     return rest ? { none: rest } : fail('expected the reason why no QA is needed after "none:"');
   }
   if (kind === 'manual') {
-    const at = rest.indexOf(WHY);
-    return at > 0 && rest.length > at + WHY.length
-      ? { manual: rest.slice(0, at), why: rest.slice(at + WHY.length) }
-      : fail(`expected a check and its reason, as ${MANUAL_CELL}`);
+    return unManual(rest, MANUAL_CELL);
   }
+  const at = cell.indexOf(REST);
+  const slugs = at === -1 ? cell : cell.slice(0, at);
+  let entries: string[];
   try {
-    return { entries: cell.split(/,\s*/).map(uncode) };
+    entries = slugs.split(/,\s*/).map(uncode);
   } catch {
     throw new Error(
-      `expected entry slugs in backticks, ${MANUAL_CELL}, "none: <reason>", or an empty cell, found "${cell}"`
+      `expected entry slugs in backticks, ${PART_CELL}, ${MANUAL_CELL}, "none: <reason>", or an empty cell, found "${cell}"`
     );
   }
+  return at === -1
+    ? { entries }
+    : { entries, ...unManual(cell.slice(at + REST.length), PART_CELL) };
 };
 
 type Table<Row> = {
@@ -861,10 +879,13 @@ const offLocalhost = (text: string): string[] =>
   });
 
 const textsOf = (decision: Decision): string[] => {
-  if (decision === null || 'entries' in decision) {
+  if (decision === null) {
     return [];
   }
-  return 'manual' in decision ? [decision.manual, decision.why] : [decision.none];
+  if ('none' in decision) {
+    return [decision.none];
+  }
+  return 'manual' in decision ? [decision.manual, decision.why] : [];
 };
 
 const decisionTexts = ({ plan, at }: RuleInput) => [
@@ -893,7 +914,7 @@ const textStaysOnLocalhost: Rule = (input) =>
     ...decisionTexts(input),
   ].flatMap(({ text, line }) => offLocalhost(text).map((message) => ({ line, message })));
 
-export type ManualCheckRow = ManualDecision & { line: number; prs: number[] };
+export type ManualCheckRow = { manual: string; why: string; line: number; prs: number[] };
 
 export const manualChecksOf = (plan: Plan, at: PlanLayout): ManualCheckRow[] => [
   ...plan.manual.flatMap((row, index) =>
@@ -903,7 +924,14 @@ export const manualChecksOf = (plan: Plan, at: PlanLayout): ManualCheckRow[] => 
   ),
   ...plan.groups.flatMap((group, index) =>
     group.slug !== null && group.decision && 'manual' in group.decision
-      ? [{ ...group.decision, prs: group.prs, line: at.tables.groups.rows[index]! }]
+      ? [
+          {
+            manual: group.decision.manual,
+            why: group.decision.why,
+            prs: group.prs,
+            line: at.tables.groups.rows[index]!,
+          },
+        ]
       : []
   ),
 ];

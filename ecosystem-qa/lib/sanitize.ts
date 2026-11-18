@@ -25,12 +25,15 @@ const isStorybookLink = (candidate: string): boolean => {
   }
 };
 
+// Cap a title and redact its secrets, for a place where nothing of it renders.
+export const capTitle = (text: string): string => cap(redactSecrets(text), LIMITS.title);
+
 // Make a line of agent prose safe for an issue title: capped, no HTML, no links off storybookjs,
 // and every mention and issue reference inside a code span.
 //
 // Backticks become quotes first, so the only code spans are the ones added here.
 export const sanitizeTitle = (text: string): string =>
-  cap(redactSecrets(text), LIMITS.title)
+  capTitle(text)
     .replaceAll('`', "'")
     .replace(/<[^>]*>/g, '')
     .replace(/\[([^\]]*)\]\(([^)\s]*)\)/g, (match, label: string, url: string) =>

@@ -53,7 +53,20 @@ A model missing from that table gives `usd: null`.
 The agent judges a break against the migration guide of the version under test: `run.ts` loads `MIGRATION.md` at the tag `v<version>` of storybookjs/storybook, so a sweep from a branch behind `next` does not read an old guide.
 A version without such a tag, a canary for example, gets the guide of this checkout, and `migrationGuide` in `result.json` says which one was read.
 The repo is cloned under the temp directory (`<tmpdir>/ecosystem-qa/work/<id>`) by default, outside the monorepo so no monorepo config file sits above it, and the run stops if that directory already exists. Pass `--clone-dir` to put it elsewhere.
-Tier 1 entries are forks under `storybook-tmp` whose `qa/base` branch is pinned at an upstream commit, and the runner fetches that start commit only, without its history.
+Tier 1 entries, and tier 2 entries with a `pushTo`, are forks under `storybook-tmp` whose `qa/base` branch is pinned at an upstream commit, and the runner fetches that start commit only, without its history.
+An entry without `pushTo` that is not owned is a repo that a QA plan discovered: its `ref` is a full upstream commit, it never runs on Windows, and nothing is pushed for it, so the upgraded state of such a run stays in the `cycle.bundle` of its artifact.
+Every entry carries `tags`: the framework package, its builder, the Storybook major and the feature addons of its Storybook directory, as `pin.ts` prints them for the pinned commit.
+
+To pin a repo, probe it without cloning anything:
+
+```sh
+node ecosystem-qa/pin.ts dnum-mi/vue-dsfr >> pins.jsonl
+```
+
+It prints one line of JSON with the commit, the package manager, each Storybook directory with its version range, framework packages and feature addons, the stars, the last push and the archived flag.
+GitHub truncates the file tree of a very large repository, and then `--dir` names the Storybook directory to read.
+With a line in `pins.jsonl` for every tier 2 entry, `ecosystem-qa/tools/fork-tier2.sh pins.jsonl` forks each one with a `pushTo` into `storybook-tmp` and creates its `qa/base` at the commit of its line, and `--dry` before the file prints the calls without making any write.
+Run it twice and the second run changes nothing; it stops where a `qa/base` exists at another commit, because it never moves one.
 
 Then collect and look at the proposals without filing anything:
 
@@ -96,10 +109,182 @@ ECOSYSTEM_QA_FAKE=1 node ecosystem-qa/run.ts --repo mealdrop --version 11.0.0-be
   --engine claude --fake --sandbox none --out ecosystem-qa/results/mealdrop/macos/claude
 ```
 
+## Write a QA plan
+
+A QA plan names what a sweep tests beyond the fixed checks: the changes of a release line, each with the repos to try it on, the steps and the expected outcome.
+It is one Markdown file in `ecosystem-qa/plans/`, named after its line, such as `11.0.md`, and a person reviews and merges it like code.
+The window it was written from is committed next to it as `11.0.window.json`, and the smoke job checks every plan with `--window` against the window file next to it and fails a plan that has none, so a plan PR in which a row was deleted or moved by hand fails without a call to GitHub.
+An agent writes it with the `/qa-plan` skill in `.agents/skills/qa-plan/`, which runs the commands below and opens the plan PR.
+
+```
+window.ts ──> window.json ──> qa-plan.ts render ──> plans/<line>.md ──> qa-plan.ts check
+   │ PRs whose merge commit    │ + draft.json:          │ edited by hand     │ format, rules,
+   │ is between two tags       │ entries, decisions     │                    │ catalog, window
+```
+
+`window.ts` lists every PR whose merge commit is in `next` between two tags, whatever branch the PR was merged into, so a PR merged into the branch of another PR is in the window too.
+When that branch was rebased or squashed before its PR merged, the merge commit of the PR merged into it is not in `next`, so `window.ts` also keeps a PR whose base is the head branch of a kept PR from this repository and that was merged before that PR:
+
+```sh
+node ecosystem-qa/window.ts --from v10.6.0 --to v11.0.0-beta.3 --out ecosystem-qa/plans/11.0.window.json
+```
+
+For each PR it records the QA status from its labels, the area that the title prefix names, the manual testing section of its body, and the issues the PR closes or names, with their parent issue and whether they have a heading for QA or testing.
+It records nothing about who wrote a PR, so it needs no special token: any token that can read this public repository writes the same window.
+It keeps a PR only when it was merged at most 30 days before the first tag, and it leaves out the release PRs, whose base is `next-release` or `latest-release`.
+So a PR merged into the branch of another PR more than 30 days before the first tag is dropped even when that branch reaches `next` inside the window, which happens when a long-lived stack merges late.
+It reads GitHub, fetches a tag that the local repository lacks, and writes nothing but the file of `--out`, whose directory it creates.
+
+`qa-plan.ts render` writes the plan from the window and a JSON draft, and `check` validates it:
+
+```sh
+node ecosystem-qa/qa-plan.ts render --window ecosystem-qa/plans/11.0.window.json --draft draft.json --out ecosystem-qa/plans/11.0.md
+node ecosystem-qa/qa-plan.ts check ecosystem-qa/plans/11.0.md --window ecosystem-qa/plans/11.0.window.json
+```
+
+The draft is optional, and every key of it too: `entries`, `discovered`, `decisions` by PR number, `groups`, and `groupOf`, which puts a PR marked `qa:skip` into a group by PR number.
+Without a draft, render writes a skeleton in which every PR is undecided.
+The draft is not committed, so `draft` writes it again from a plan and its window, to change decisions or render the plan on a newer window, and exits 1 when render would not write that plan from that window:
+
+```sh
+node ecosystem-qa/qa-plan.ts draft ecosystem-qa/plans/11.0.md --window ecosystem-qa/plans/11.0.window.json --out draft.json
+```
+
+The plan holds only what a person decides, in the order a reviewer reads it:
+
+| Section | One row for each | Columns |
+| --- | --- | --- |
+| Field table | field | Line, version, window start and end, entries per run |
+| `## Changes to test` | entry | Entry (`Probe:` for a probe, slug and title), Batch, Repos, PRs (their count) |
+| `## PRs that need manual QA` | check | Check, Why the sweep cannot test it, PRs |
+| `## PRs that need no QA` | reason | Reason, PRs |
+| `## Groups of PRs marked qa:skip` | group | Group, Source, Decision, PRs |
+| `## Discovered repos` | repo | see below |
+| `## Steps` | entry | the block of lines below |
+
+A decision is one of three kinds:
+
+| Kind | In a PR table | In a group's Decision cell | In the draft |
+| --- | --- | --- | --- |
+| The sweep tests it | the PRs of the entries | `` `slug`, `other-slug` `` | `{ "entries": ["slug"] }` |
+| A person tests it by hand | a row of `## PRs that need manual QA` | `manual: <check> Why: <why the sweep cannot test it>` | `{ "manual": "<check>", "why": "<why>" }` |
+| It needs no QA | a row of `## PRs that need no QA` | `none: <reason>` | `{ "none": "<reason>" }` |
+
+A PR marked `qa:needed` or without a QA label is decided by its place: the PRs of one or more entries test it, or one row of one of the two tables names its manual check or its reason.
+A PR that the entries test only in part is in their PRs and in one row of manual QA, whose check covers the rest; in the draft its decision is the manual one.
+A group that the entries test only in part names them before its manual check, as `` `slug`; manual for the rest: <check> Why: <why> ``, and as `{ "entries": ["slug"], "manual": "<check>", "why": "<why>" }` in the draft, which a PR outside a group never takes.
+A decision holds ` Why: ` and `; manual for the rest: ` once each at most, and `check` refuses the row of one that holds either twice, since the second would print as part of the check or its reason.
+`ledger` names such a PR as tested by the entry and as manual for the rest, and `manual` prints it under its check with the entry that tests the other part.
+Both tables hold both kinds of PR.
+A manual check is for a change that a person has to test because the sweep cannot, such as a fix that only Windows shows, a change of `storybook init`, a Yarn 1 project, a browser's profiler, or a need that no repo of the catalog has.
+It is an instruction that a person can follow without the PR open: the environment it needs, what to do, and what has to be seen.
+No QA is for a change of this repository's CI, build, tests, sandboxes, or documentation site, or a lockfile bump that no published package ships.
+Every PR marked `qa:skip` is in the PRs of one group, whatever its other labels and whoever wrote it, and each group has a decision of one of the three kinds.
+A PR is marked `qa:skip` when its project gets tested as a whole, by a person or by a bot that writes PRs, and a product change labelled only `build` or `documentation` needs that decision as much as one labelled `bug`.
+A row with empty cells before its PRs holds the PRs that are not decided or not grouped yet.
+Render puts the undecided PRs into such a row of `## PRs that need manual QA`.
+A plan or a draft that still says `skip` is refused, with a message that asks for `manual` or `none`.
+The PRs verified by hand need no decision, so the plan does not list them.
+Render derives the overview of `## Changes to test` from the entries, so a reviewer reads it first and opens an entry under `## Steps` only when he doubts it.
+Every PR is a link to the PR, because GitHub links no bare `#36137` in a Markdown file.
+
+`ledger` prints where each PR of the window ended up, with its status, area, and title, for someone who looks one PR up. It is not committed:
+
+```sh
+node ecosystem-qa/qa-plan.ts ledger ecosystem-qa/plans/11.0.md --window ecosystem-qa/plans/11.0.window.json --out ledger.md
+```
+
+`manual` prints the manual checks of a plan as one Markdown checklist for an issue or a discussion: a title line with the line and the version, two sentences on what the list is and what to do with a finding, and one section for each reason why the sweep cannot test a check, headed by that reason, with one task for each manual check of the PR table and of the groups that gives it, followed by its PRs.
+Checks that share a reason share its words, so write a reason in the words of one already in the plan when it means the same, such as `shows on Windows only` or `no repo of the catalog has the state it acts on`.
+Each PR is a link followed by its title from the window, as one code span, so that a mention or a reference in a title stays text.
+It refuses a plan that fails `check` with that window, and it creates nothing on GitHub:
+
+```sh
+node ecosystem-qa/qa-plan.ts manual ecosystem-qa/plans/11.0.md --window ecosystem-qa/plans/11.0.window.json --out manual.md
+```
+
+A maintainer turns it into an issue with one command:
+
+```sh
+gh issue create --repo storybookjs/storybook --title "Manual QA for Storybook 11.0 at 11.0.0-beta.3" --body-file manual.md
+```
+
+Never put the label `internal-qa` on that issue: `collect.ts` reads every issue with that label as a finding of the sweep.
+
+An entry under `## Steps` is a block of lines:
+
+```markdown
+### `story-sort-in-main` Story sort moves from the preview file to the main file
+
+- PRs: [#36137](https://github.com/storybookjs/storybook/pull/36137)
+- Batch: 1
+- Repo `mealdrop`: sets `storySort` in its preview file today
+- Step: Read which automigrations the upgrade ran, and the diff of the main file and the preview file.
+- Step: Start the dev server and fetch `http://localhost:6006/index.json`.
+- Expected: The order of `/index.json` is the order of the baseline, and the upgrade output names a sort that it could not move.
+```
+
+Its check id is `plan.` with the slug, and its batch decides when it runs: batch 1 first, and the batches are numbered without a gap.
+A repo with more entries in one batch than `Entries per run` runs them in several parts, in parallel.
+
+A probe is an entry with a line `- Probe:` after `- Batch:`, the draft's `probe`, which says in one line what the run adds to the project after the upgrade and where:
+
+```markdown
+- Batch: 3
+- Probe: a story file src/AnimationProbe.stories.tsx with one story Fade In whose box fades in with a CSS animation of two seconds
+```
+
+It tests behaviour that is new or fixed in the line, which no project can hold before the upgrade, on a repo that the plan has already.
+It adds new files, such as a story, a component for it, a script, or a local addon, and at most one option of a config file that is the behaviour under test or that the added files need to load.
+It never changes or removes a line the project has, never writes what an upgrade step reads, such as what an automigration acts on, what a blocker or a floor checks, or what the package manager detection reads, and never stands in for a framework, a builder, a package manager, an addon the check is about, or a framework version.
+The line reads after the word "add", so `check` refuses a probe line that starts with "add" or "adds" in any case.
+`check` refuses `Probe:`, in any case, with spaces before the colon, and with the colon escaped as `Probe\:`, which GitHub shows as `Probe:`, in every other line of the plan, so no title, reason, step, or expected outcome reads as that mark.
+
+A change takes the first of these that fits: a normal entry on a repo of the plan that has the state at its pin, a probe, a discovered repo, a manual check, and no QA with the reason.
+
+`check` accepts a file only when it equals what render would write for what it read, so a line that is not in the format, or an overview row that differs from its entry, fails at its line number.
+It then holds the plan against these rules and prints each problem as `<file>:<line>: <message>`:
+
+- Every slug, group, discovered id, manual check, and reason of a table is unique, every PR has at most one row in one table, and the version is on the plan's line.
+- Every text field is plain text, because GitHub renders the plan as Markdown, where `</td></tr></table><details>` in one reason folds every row after it into a closed block, and `&nbsp;`, `<br>`, `<i></i>`, or a filler character such as U+3164 shows a reason as blank. A text field is one line of printable ASCII, without `<`, `>`, or an `&` that starts a named, decimal, or hexadecimal character reference such as `&nbsp;`, `&#8203;`, or `&#x200B;`. The rule holds inside code spans and link URLs too, because where GitHub ends a code span or a link depends on its parser: `` \`</details>\` `` between escaped backticks is no code span. Write such a character in words instead: a folder named with accented and Korean letters, a version 5.4 or newer. No text field holds a Markdown link or image, since GitHub shows only its text, or nothing, while the agent reads the address too. A group source may link the issue or PR it comes from in the form the plan links a PR, `[#123](https://github.com/storybookjs/storybook/issues/123)`. Every reason and every manual check holds at least three letters.
+- The Storybook directory of a discovered repo is a relative path inside the repository, without `..` or a leading `/`.
+- Every repo of an entry is a catalog id or a discovered repo, and a discovered repo never takes a catalog id.
+- No repo of an entry is more than one major behind the plan's line, by the `tags` of its catalog entry or the major of its discovered row.
+- A PR of an entry has no row of no QA and no row without a decision, and when it is in a group, the decision of that group names the entry. It may have one row of manual QA for the part that no entry tests. A PR of a group may stay out of the entries its group names.
+- Every row of manual QA has a check and a reason why the sweep cannot test it, every row of no QA has a reason, every PR marked `qa:skip` is in a group, every group has a decision, and every decision names entries that exist. A cell that still says `skip:` is refused.
+- A manual check and its reason name no person, PR, or issue, in a code span either, because the checklist of `manual` goes into an issue, where `@name` or `@org/team` notifies people and `#123` or `GH-123` posts on a PR, and because a check that points to a PR cannot be followed without that PR open. `check` refuses every `@` that does not follow a letter or a digit, whatever comes after it, since `_@name_` is a mention in emphasis, and every `#`, `GH-`, `pull/`, or `issues/` before a digit, since `storybookjs/storybook/pull/123` links that PR. Name a package in words, such as the Storybook Vitest addon; `npx storybook@11.0.0` and `qa@example.org` stay, since an issue links no `@` after a letter or a digit.
+- The batches are numbered from 1 without a gap, and a batch holds probes only or no probe, so a run that tests the project itself never holds the files of a probe.
+- The file holds no link to `linear.app`, `notion.so`, `notion.site`, `notion.com`, or a `slack.com` host.
+- No entry title, probe line, repo reason, step, expected outcome, manual check, reason of a manual check, or reason of no QA holds a URL with a scheme whose host is other than `localhost`, `127.0.0.1`, or `[::1]`. The runner prints the first five into the agent's prompt, and the others are read by the person who follows them. `check` takes every URL that starts with a scheme, also one glued to other text such as `see:http://example.com` or `-xhttp://example.com`, apart with Node's URL parser, and refuses it when the host is another one or when the parser cannot read it: `https://example.com`, `http:/example.com`, `http://localhost;.example.com`, and `http://localhost].example.com` are refused. It reads a backslash once as the parser does, as a slash, and once as curl does, as a character, so `http://localhost\@example.com` is refused too. It does not look for a host without a scheme, such as `example.com/x` or `//example.com`. A scheme glued to letters before it takes them in, so `-xhttp:/example.com` has the scheme `xhttp`, which the parser does not know, and no host, and passes. The check is one layer of four: the reviewer reads every plan before it is merged, the prompt of a plan run forbids every URL other than `localhost`, and the browser tool of the sandbox image blocks direct requests to another host, although it follows a redirect and lets a WebSocket through.
+- With `--window`, every PR of the window marked `qa:needed` or without a QA label is in the PRs of an entry or in one row of manual QA or of no QA, every PR marked `qa:skip` is in one group, and the plan names no PR that the window does not hold in that role.
+
+Without `--window`, `check` knows no PR's QA status, so it accepts a plan in which a PR of the window has no place at all, an entry lists a PR that the window does not hold or that was verified by hand, one edit drops a tested PR from the PRs of its entry, a PR marked `qa:skip` sits only in an entry, or a PR marked `qa:needed` sits in a group that names its entry.
+
+`render` refuses a draft whose decision of a PR names other entries than the ones that list it, or gives no QA to a PR that an entry lists, because the file decides a PR by its place and cannot hold both.
+A manual decision of a PR that an entry lists puts the PR into that entry and into the row of its check.
+
+A plan that passes prints its hash, which names the cycle, its batches with their runs, and about what it costs, priced at the most expensive static run so far.
+A run of plan entries can cost more than that.
+
+A repo that no catalog entry covers goes into "Discovered repos".
+Each of its fields but the id and the reason is a value of one line of `pin.ts` output for the commit to test, copied as printed:
+
+| Column | From the `pin.ts` line |
+| --- | --- |
+| Repo at its commit | `repo`, linked to `commit` |
+| Package manager | `packageManager` |
+| Storybook directory | `storybookDirs[].dir` |
+| Storybook major | `major` of that directory |
+| Stars | `stars` |
+| Pushed at | `pushedAt` |
+
+`loadEntries(plan)` in `lib/catalog.ts` returns the catalog with each discovered repo as an entry without a push target: at its upstream commit, on Linux only, and with nothing pushed.
+It parses the catalog and the discovered repos as one list, so a discovered repo cannot reuse a catalog id.
+
 ## Run it in CI
 
 Start the `Ecosystem QA` workflow by hand and pick the repos, version, engines and operating systems.
-`repo` takes catalog ids separated by commas, and `owned` or `tier1` for every repo of that class, so `owned,tier1` with `linux,windows` is a whole static sweep in one run.
+`repo` takes catalog ids separated by commas, and `owned`, `tier1` or `tier2` for every repo of that class, so `owned,tier1,tier2` with `linux,windows` is a whole static sweep in one run.
 `plan.ts` turns the inputs into one job for each repo, operating system and engine, and a repo runs on Windows only when the catalog marks it `windows`.
 Linux runs the agent in `docker()`; Windows runs it with `noSandbox()`, and the API key is the only secret in that job.
 The agent keys live in the `ecosystem-qa` environment, and the push token in `ecosystem-qa-file`, which only the filing job enters.
@@ -118,7 +303,8 @@ It uploads them again as `qa-earlier-results`, so the filing job finds their evi
 To split a wrong merge, or to collect when the model is unavailable, paste a `groups.json` document into `groups`; the job uses it instead of asking the model.
 Two requests over the same findings can group a borderline pair differently, so start the run that files with the `groups.json` of the dry run you reviewed.
 
-A pull request that touches `ecosystem-qa/` or the workflow runs only the smoke job: typecheck, tests and a fake run through collect and a dry filing, with no environment and no secrets.
+A pull request that touches `ecosystem-qa/` or the workflow runs only the smoke job: typecheck, tests, `qa-plan.ts check` on the fixture plan and on every plan in `ecosystem-qa/plans/`, and a fake run through collect and a dry filing, with no environment and no secrets.
+That is how a pull request against `qa/plans` that adds a plan gets its red or green check.
 
 ## Where results land
 

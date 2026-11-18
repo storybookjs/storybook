@@ -346,7 +346,7 @@ describe('toProposal for a cluster', () => {
       {
         fingerprint: build!.fingerprint,
         checkId: 'build.static',
-        title: 'Build fails `@someone` ### Injected &lt;!-- x',
+        title: '`Build fails @someone ### Injected <!-- x`',
         sources: [expect.objectContaining({ os: 'windows', engine: 'codex' })],
       },
     ]);
@@ -354,7 +354,7 @@ describe('toProposal for a cluster', () => {
 
   it('lists the other members inline with a neutralised title in the issue and the comment', () => {
     const line =
-      'Also seen as:\n\n- `build.static` on storybookjs/mealdrop (windows, codex): Build fails `@someone` ### Injected &lt;!-- x\n';
+      'Also seen as:\n\n- `build.static` on storybookjs/mealdrop (windows, codex): `Build fails @someone ### Injected <!-- x`\n';
     const comment = toProposal(
       cluster(),
       [issueOn(hmr, { number: 9, labels: ['bug'], state: 'open' })],
@@ -610,13 +610,13 @@ describe('renderIssueBody', () => {
     expect(body).toContain(`sha: ${'b'.repeat(40)}\ncycleRef: refs/qa/sb-${VERSION}/linux-claude`);
   });
 
-  it('links the start commit and says so when the agent made no commits', () => {
+  it('links the start commit and points to the run artifact when no head was pushed', () => {
     const [group] = groupFindings([loaded('linux', 'claude', [finding()], null)]);
 
     const body = renderIssueBody(issueFor(group), byName);
 
     expect(body).toContain(`https://github.com/storybookjs/mealdrop/tree/${'a'.repeat(40)}`);
-    expect(body).toContain('The upgraded state was not committed.');
+    expect(body).toContain('the `cycle.bundle` in the artifact of the run');
     expect(body).not.toContain('holds the upgraded state');
     expect(body).toContain(`sha: ${'a'.repeat(40)}\ncycleRef: none`);
   });

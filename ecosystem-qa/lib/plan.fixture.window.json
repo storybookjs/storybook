@@ -1,0 +1,211 @@
+{
+  "from": "v10.6.0",
+  "fromSha": "a77777356be2aeaff89d7a2b25254db7b2318392",
+  "to": "v11.0.0-beta.3",
+  "toSha": "e0ecb3ec6ba3648e9e5d2cf74002adec6aefe561",
+  "prs": [
+    {
+      "number": 31900,
+      "title": "Preview: Only pause DocumentTimeline animations in preview-web",
+      "area": "Preview",
+      "status": "needed",
+      "labels": ["bug", "ci:normal", "qa:needed", "sev:S3"],
+      "manualTesting": "1. Check out this branch and run `yarn nx run-many -t compile`\n2. Run the internal Storybook with `cd code && yarn storybook:ui`\n3. Open `preview/Animations`:\n   - `FadeIn`: the content is visible and not mid-fade.\n   - `Infinite`: the rotation is frozen on its first frame, not spinning.\n   - `Scroll`: scrolling the story moves the red progress bar. On `next` the bar is stuck at full width because the scroll-timeline animation was snapped to its end.\n   - `Transition`: the focused button is fully blue, not mid-transition.\n4. For the original report, run the repro from #31877 and confirm the button is visible.",
+      "issues": [
+        {
+          "number": 31877,
+          "title": "[Bug]: pausing animations indiscriminately breaks view-, and scroll-timeline animations",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": true,
+          "parent": null
+        }
+      ]
+    },
+    {
+      "number": 33422,
+      "title": "UI: Rebuild Sidebar Tree",
+      "area": "UI",
+      "status": "needed",
+      "labels": ["accessibility", "bug", "ci:normal", "patch:done", "qa:needed"],
+      "manualTesting": "1. `cd code && yarn storybook:ui`\n2. Navigate the sidebar with the keyboard: arrows move, Enter/Space toggle branches and select stories, the chevron buttons toggle without selecting, ctrl/⌘+shift+U opens the row actions menu for the focused row.\n3. Scroll a large expanded tree: ancestor rows stick to the top, clicking a sticky row scrolls its real row into place.\n4. Hover the tree: indent lines appear, and the hovered or focused row's own lines take the accent colour. The children of the selected story's parent keep one line visible even when the tree is not hovered.\n5. Compose a ref (`refs` in `main.ts`) and confirm the ref tree expands, selects, and scrolls within its own section.\n6. Check status icons and the filter panel with a test provider (addon-vitest) running.",
+      "issues": [
+        {
+          "number": 24186,
+          "title": "[Bug]: Keyboard Focus indicator is not visible on selected link (like-Custom Properties) under MGTP’ page. ",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": true,
+          "parent": null
+        },
+        {
+          "number": 31267,
+          "title": "[A11y]: Sidebar is not accessible",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": true,
+          "parent": null
+        }
+      ]
+    },
+    {
+      "number": 34799,
+      "title": "Tooling: Use pkg.pr.new for canary releases",
+      "area": "Tooling",
+      "status": "skip",
+      "labels": ["ci:canary", "ci:normal", "maintenance", "qa:skip"],
+      "manualTesting": "Do this **outside** the Storybook monorepo. Yarn in this repo intercepts `npx` and will not exercise the canary CLI.\n\nWait until the **Canary Release** heading on this PR says Released. Copy the two `npx` commands from that section. Run each command as its own shell invocation (do not chain them after `npx storybook@latest` in one line). On npm 12, keep `--allow-remote=all`.\n\nWhat should change: Storybook dependencies in `package.json` must be `https://pkg.pr.new/...` URLs with the same SHA as the command. The bug this PR fixes is the canary CLI installing ordinary npm versions such as `10.6.0-alpha.7`.",
+      "issues": []
+    },
+    {
+      "number": 35509,
+      "title": "UI: Fix controls expander and select chevron overlap in RTL",
+      "area": "UI",
+      "status": "skip",
+      "labels": ["addon: docs", "bug", "ci:normal", "qa:skip", "sev:S3", "ui"],
+      "manualTesting": "1. Run the internal Storybook (`cd code && yarn storybook:ui`) or a sandbox.\n2. **Args table section row:** open *addons/docs → blocks → components → ArgsTable → SectionRow → Section Rtl* and *Collapsed Rtl*. The chevron sits inside the cell on the inline-start (right) edge, the outer corners of the row are rounded, and there is no seam in the middle of the row. Compare with *Section* and *Collapsed* — it is a clean mirror.\n3. **Select control:** open *components → Form → Select → Rtl*. The dropdown chevron sits on the inline-end (left) side, clear of the value text.\n4. Optionally, in any story with an args table, run `document.documentElement.dir = 'rtl'` in the preview DevTools console. Arg names line up on the right with the same indent as on the left in LTR, and the select controls lay out correctly.",
+      "issues": [
+        {
+          "number": 35481,
+          "title": "[Bug]: Storybook UI controls and table category chevrons overlap text when dir=\"rtl\" is applied globally",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": true,
+          "parent": null
+        }
+      ]
+    },
+    {
+      "number": 35618,
+      "title": "fix: wait for inline stories before rerendering docs",
+      "area": null,
+      "status": "undeclared",
+      "labels": [
+        "agent-scan:automated",
+        "bug",
+        "ci:canary",
+        "ci:normal",
+        "core",
+        "preview-api",
+        "review:verified",
+        "sev:S3"
+      ],
+      "manualTesting": "1. Run a local Storybook from this branch with the backgrounds toolbar enabled and an autodocs page containing at least two inline stories.\n2. Open that component's Docs page.\n3. Switch between toolbar backgrounds several times.\n4. Verify every inline story applies the selected background/global, the docs page does not repeatedly reload, and no missing event-source errors appear in the manager console.",
+      "issues": [
+        {
+          "number": 29007,
+          "title": "[Bug]: Backgrounds toolbar addon causes multiple rerenders and errors when switching backgrounds on a docs page with over 4 stories",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": true,
+          "parent": null
+        }
+      ]
+    },
+    {
+      "number": 35658,
+      "title": "Core: Accept legacy addon namespaces in CSF factories",
+      "area": "Core",
+      "status": "undeclared",
+      "labels": ["Stale", "agent-scan:automated", "bug", "ci:normal", "core", "csf", "sev:S3"],
+      "manualTesting": "1. In a React Storybook project using CSF factories, register a third-party addon whose `/preview` entry is imported as a namespace.\n2. Run `npx storybook automigrate csf-factories`.\n3. Run the project's TypeScript check and confirm the generated `definePreview({ addons: [...] })` configuration no longer collapses decorators, render functions, and parameters to `never`.\n4. Start Storybook and confirm the third-party preview annotations are still composed at runtime.",
+      "issues": [
+        {
+          "number": 35571,
+          "title": "CSF factories codemod injects incompatible addon namespaces into definePreview, collapsing all preview types to never",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": true,
+          "parent": null
+        }
+      ]
+    },
+    {
+      "number": 36137,
+      "title": "Core: Replace preview storySort with chained storySorts in main",
+      "area": "Core",
+      "status": "needed",
+      "labels": ["BREAKING CHANGE", "ci:normal", "qa:needed"],
+      "manualTesting": "1. Generate a sandbox: `yarn task sandbox --template react-vite/default-ts --start-from auto`.\n2. In the sandbox's `.storybook/main.ts`, add `storySorts: [{ order: ['Example', ['Header', '*']] }]`.\n3. Start Storybook and confirm that the sidebar lists `Example/Header` first.\n4. Change it to `storySorts: [{ order: ['Configure your project'] }, { method: 'alphabetical' }]` and restart.\n   Confirm that the docs page comes first and the remaining entries are alphabetical.\n5. Remove `storySorts` from main and add `parameters: { options: { storySort: { order: ['Example', ['Page', '*']] } } }` to `.storybook/preview.ts`.\n   Restart and confirm that the sidebar is in import order.\n6. Run `npx storybook automigrate story-sort-to-main` and accept.\n   Confirm that `.storybook/main.ts` now has `storySorts: [{ order: ['Example', ['Page', '*']] }]` and that the preview no longer mentions `storySort`.\n7. Revert both files, add `storySorts: [{ order: ['Other'] }]` to main as well, and run the command again.\n   Confirm that the command reports that main already defines storySorts and that neither file changed.",
+      "issues": [
+        {
+          "number": 30429,
+          "title": "Move storySort from preview.js to main.js",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": true,
+          "parent": null
+        }
+      ]
+    },
+    {
+      "number": 36153,
+      "title": "Addon A11y: Fix vision simulator color filters in Firefox",
+      "area": "Addon A11y",
+      "status": "verified",
+      "labels": ["bug", "ci:normal", "patch:done", "patch:yes", "qa:success"],
+      "manualTesting": "**This needs verifying in Firefox specifically, which CI does not cover.**\n\n1. Build and start the internal Storybook:\n   ```bash\n   yarn nx run-many -t compile\n   cd code && yarn storybook:ui\n   ```\n2. Open http://localhost:6006 **in Firefox** and select any colorful story.\n3. Open the Vision filter dropdown in the toolbar (the accessibility icon) and step through every option. Each of Deuteranomaly, Deuteranopia, Protanomaly, Protanopia, Tritanomaly, Tritanopia and Achromatopsia should visibly change the canvas colors. Before this PR, only Blurred vision and Grayscale had any effect in Firefox.\n4. Choose \"Reset color filter\" and confirm the canvas returns to normal.\n5. Open the same story in isolation (`/iframe.html?id=<story-id>&globals=vision:achromatopsia`) and confirm the filter still applies. This is the behavior #33418 added and it must not regress.\n6. Repeat steps 2–4 **in Chrome** and compare against `next`. The filtered colors should look identical to the current behavior, not lighter or washed out. This is the part most worth scrutiny, since it is the intended-invariant rather than the fix itself.\n7. Confirm a story that pins `globals: { vision: ... }` still locks the dropdown (from #33599).\n\nAreas most likely to regress: the injected SVG is now rendered rather than `display: none`, so it is worth confirming it introduces no layout shift or stray scrollbar (it is `position: absolute`, 0×0, `overflow: hidden`), and that it produces no new axe violations in the a11y panel (it carries `aria-hidden=\"true\"`).",
+      "issues": [
+        {
+          "number": 5959,
+          "title": "Colorblindness Emulation broken in Firefox",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": true,
+          "parent": null
+        }
+      ]
+    },
+    {
+      "number": 36189,
+      "title": "Addon Links: Add `hrefToSync` function for synchronous url generation",
+      "area": "Addon Links",
+      "status": "skip",
+      "labels": [
+        "addon: links",
+        "agent-scan:human",
+        "ci:normal",
+        "feature request",
+        "qa:skip",
+        "sev:S4"
+      ],
+      "manualTesting": "1. Run `yarn storybook:ui` inside the core folder.\n2. Navigate to the addons section in the sidebar and find the Links addon.\n3. Click on the template story `hrefToSync` and verify that the canvas displays the generated url.\n4. You can also run the Vitest suite `vitest run utils.test.ts` and `yarn test link.test.tsx` to confirm the new synchronous unit test passes and legacy async tests remain unaffected.",
+      "issues": []
+    },
+    {
+      "number": 36307,
+      "title": "Builder Vite: Static assets copy to handle Windows paths",
+      "area": "Builder Vite",
+      "status": "skip",
+      "labels": ["bug", "ci:daily", "qa:skip"],
+      "manualTesting": "1. Run Windows CI\n2. See it passing ✅",
+      "issues": []
+    },
+    {
+      "number": 36664,
+      "title": "CI: Cancel workflow when format check fails",
+      "area": "CI",
+      "status": "needed",
+      "labels": ["build", "ci:normal", "qa:needed"],
+      "manualTesting": "1. Run CI on a temporary branch with a deliberate formatting error and the existing `WORKFLOW_CANCELER` credential available.\n2. Confirm `format-check` fails, runs `Cancel current workflow`, and stops the remaining workflow jobs.\n3. Fix the formatting error and rerun. Confirm the cancellation step is skipped and the other jobs proceed normally.",
+      "issues": []
+    },
+    {
+      "number": 37344,
+      "title": "Core: Fix stories failing to load on Windows with the webpack builder",
+      "area": "Core",
+      "status": "needed",
+      "labels": [
+        "bug",
+        "builder-webpack5",
+        "ci:focus",
+        "ci:windows",
+        "core",
+        "qa:needed",
+        "windows"
+      ],
+      "manualTesting": "This needs a Windows machine. It has not been run on Windows with this fix yet; the unit tests simulate the platform.\n\n1. On Windows, create a webpack-based project, for example `npx create-storybook@next --type react --builder webpack5` in a new React project, or take any existing Next.js project that uses `@storybook/nextjs`.\n2. With 11.0.0-beta.1, run `npx storybook dev`. Every story shows `Cannot find module './<path>.stories.tsx'`.\n3. Install the canary of this PR and run `npx storybook dev` again. The stories render.\n4. Run `npx storybook build` and open the static build. The stories render there as well.",
+      "issues": []
+    }
+  ]
+}

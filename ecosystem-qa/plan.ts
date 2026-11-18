@@ -1,6 +1,6 @@
 import { parseArgs } from 'node:util';
 
-import { loadCatalog } from './lib/catalog.ts';
+import { loadEntries } from './lib/catalog.ts';
 import { sweepMatrix } from './lib/sweep-matrix.ts';
 
 const HELP = `Usage: node ecosystem-qa/plan.ts --repos <id or class>[,...] --os <linux|windows>[,...] --engines <claude|codex>[,...]
@@ -28,7 +28,7 @@ if (!repos || !os || !engines) {
   process.exit(1);
 }
 
-const matrix = sweepMatrix(loadCatalog(), { repos, oses: os, engines });
+const matrix = sweepMatrix(loadEntries(), { repos, oses: os, engines });
 if ('problems' in matrix) {
   console.error(matrix.problems.join('\n'));
   process.exit(1);

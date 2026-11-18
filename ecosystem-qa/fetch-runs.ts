@@ -5,7 +5,7 @@ import { parseArgs } from 'node:util';
 
 import { join } from 'pathe';
 
-import { loadCatalog } from './lib/catalog.ts';
+import { loadEntries } from './lib/catalog.ts';
 import {
   oldestFirst,
   RunArtifactPages,
@@ -69,7 +69,7 @@ if (problems.length > 0) {
   process.exit(1);
 }
 
-const catalog = loadCatalog();
+const catalog = loadEntries();
 const downloads: string[] = [];
 let unread: string[] = [];
 try {

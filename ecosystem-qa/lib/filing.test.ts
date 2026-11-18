@@ -520,7 +520,7 @@ describe('renderDry', () => {
     expect(summary).toContain(`<code>${hmr!.fingerprint}</code> and 1 more</summary>`);
     expect(summary).toContain('Silenced with it:');
     expect(summary).toContain(
-      '- `build.static` on storybookjs/mealdrop (linux, claude): Build fails'
+      '- `build.static` on storybookjs/mealdrop (linux, claude): `Build fails`'
     );
   });
 
@@ -542,7 +542,7 @@ describe('renderDry', () => {
     ]);
     expect(summary).toContain('Skip: skipped by hand: by design.');
     expect(summary).toContain(
-      '- `build.static` on storybookjs/mealdrop (linux, claude): Build fails'
+      '- `build.static` on storybookjs/mealdrop (linux, claude): `Build fails`'
     );
   });
 

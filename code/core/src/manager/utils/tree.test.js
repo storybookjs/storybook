@@ -88,6 +88,11 @@ describe('isStoryHoistable', () => {
     const output = utils.isStoryHoistable('Footer', 'footer.component');
     expect(output).toEqual(true);
   });
+
+  it('return true when both names have a .component suffix', () => {
+    const output = utils.isStoryHoistable('Footer.component', 'footer.component');
+    expect(output).toEqual(true);
+  });
 });
 
 describe('hoistSingleStoryComponents', () => {

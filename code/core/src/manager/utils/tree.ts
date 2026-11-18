@@ -90,11 +90,9 @@ export const getStateType = (
 export const removeNoiseFromName = (storyName: string) => storyName.replaceAll(/(\s|-|_)/gi, '');
 
 export const isStoryHoistable = (storyName: string, componentName: string) => {
-  const normalizedStoryName = removeNoiseFromName(storyName).toLowerCase();
-  const normalizedComponentName = removeNoiseFromName(
-    componentName.replace(/\.component$/i, '')
-  ).toLowerCase();
-  return normalizedStoryName === normalizedComponentName;
+  const normalizeName = (name: string) =>
+    removeNoiseFromName(name.replace(/\.component$/i, '')).toLowerCase();
+  return normalizeName(storyName) === normalizeName(componentName);
 };
 
 export const hoistSingleStoryComponents = (data: IndexHash): IndexHash => {

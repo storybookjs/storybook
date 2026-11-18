@@ -222,8 +222,16 @@ export interface ModuleResolveConfig {
    * terminal.
    */
   alias?: Record<string, string> | Array<{ find: string | RegExp; replacement: string }>;
-  /** Conditions for package `exports` resolution. */
+  /**
+   * Conditions for package `exports` resolution, as the builder applies them to an ESM import:
+   * `import` included and placeholders such as Vite's `development|production` replaced.
+   */
   conditions?: string[];
+  /**
+   * The conditions the builder applies to a CommonJS `require()`, with `require` in place of
+   * `import`. Defaults to `conditions`.
+   */
+  requireConditions?: string[];
 }
 
 export type PackageJson = PackageJsonFromTypeFest & Record<string, any>;

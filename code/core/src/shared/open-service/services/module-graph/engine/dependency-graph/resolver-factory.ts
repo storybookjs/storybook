@@ -1,11 +1,13 @@
 import { join } from 'pathe';
 
 import { ResolverFactory as OxcResolverFactory } from 'oxc-resolver';
+import type { NapiResolveOptions } from 'oxc-resolver';
 
 import { defaultResolveConditionNames } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
 import type { ModuleResolveConfig } from '../adapters/types.ts';
+import type { ImportEdge } from '../parser-registry/types.ts';
 
 const DEFAULT_EXTENSIONS = ['.tsx', '.ts', '.d.ts', '.jsx', '.js', '.mjs', '.cjs', '.json'];
 
@@ -81,6 +83,7 @@ class AliasNormalizer {
  */
 export class ChangeDetectionResolverFactory {
   private readonly factory: OxcResolverFactory;
+  private readonly requireFactory: OxcResolverFactory;
   private readonly aliasNormalizer = new AliasNormalizer();
   /**
    * Virtual entry point placed directly in the project root.
@@ -97,18 +100,23 @@ export class ChangeDetectionResolverFactory {
     const alias = this.aliasNormalizer.normalize(config.alias);
     const conditionNames = config.conditions ?? defaultResolveConditionNames;
 
-    this.factory = new OxcResolverFactory({
+    const options: NapiResolveOptions = {
       tsconfig: 'auto',
       alias,
       conditionNames,
       extensions: DEFAULT_EXTENSIONS,
-    });
+    };
+    this.factory = new OxcResolverFactory(options);
+    this.requireFactory = config.requireConditions
+      ? this.factory.cloneWithOptions({ ...options, conditionNames: config.requireConditions })
+      : this.factory;
 
     this.projectRootEntry = join(config.projectRoot, '__sb_resolver_root__.ts');
   }
 
   /**
-   * Resolves `specifier` from the file at `from` (must be an absolute path).
+   * Resolves `specifier` from the file at `from` (must be an absolute path), with the conditions
+   * the builder applies to an edge of this `kind`.
    *
    * Two-pass strategy:
    * 1. Resolve from `from` — handles per-package tsconfig paths and local node_modules.
@@ -120,9 +128,14 @@ export class ChangeDetectionResolverFactory {
    * Never throws — internal errors are converted to `null` and a debug-level log
    * line is emitted.
    */
-  async resolve(from: string, specifier: string): Promise<string | null> {
+  async resolve(
+    from: string,
+    specifier: string,
+    kind: ImportEdge['kind'] = 'static'
+  ): Promise<string | null> {
+    const factory = kind === 'require' ? this.requireFactory : this.factory;
     try {
-      const result = await this.factory.resolveFileAsync(from, specifier);
+      const result = await factory.resolveFileAsync(from, specifier);
       if (result.path) {
         return result.path;
       }
@@ -131,7 +144,7 @@ export class ChangeDetectionResolverFactory {
       // and root node_modules are consulted.  Skip the fallback when `from` is
       // already the virtual root entry to avoid a redundant second attempt.
       if (from !== this.projectRootEntry) {
-        const rootResult = await this.factory.resolveFileAsync(this.projectRootEntry, specifier);
+        const rootResult = await factory.resolveFileAsync(this.projectRootEntry, specifier);
         if (rootResult.path) {
           return rootResult.path;
         }

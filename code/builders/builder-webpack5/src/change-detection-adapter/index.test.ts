@@ -75,23 +75,36 @@ describe('createWebpackChangeDetectionAdapter', () => {
           'development',
           'browser',
         ],
+        requireConditions: [
+          'storybook',
+          'stories',
+          'test',
+          'require',
+          'module',
+          'webpack',
+          'development',
+          'browser',
+        ],
       },
       {
         name: 'a top-level list without "..."',
         resolve: { conditionNames: ['custom'] },
         conditions: ['custom'],
+        requireConditions: ['custom'],
       },
       {
         name: 'an ESM list without "..."',
         resolve: { byDependency: { esm: { conditionNames: ['esm-only'] } } },
         conditions: ['esm-only'],
+        requireConditions: ['require', 'module', 'webpack', 'development', 'browser'],
       },
     ])(
-      'returns the conditions webpack matches for an ESM import, given $name',
-      async ({ resolve, conditions }) => {
+      'returns the conditions webpack matches for an ESM import and a `require()`, given $name',
+      async ({ resolve, conditions, requireConditions }) => {
         const adapter = createWebpackChangeDetectionAdapter(createCompiler({ resolve }));
         const config = await adapter.getResolveConfig();
         expect(config.conditions).toEqual(conditions);
+        expect(config.requireConditions).toEqual(requireConditions);
       }
     );
 

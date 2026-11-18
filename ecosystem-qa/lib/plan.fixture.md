@@ -16,6 +16,7 @@
 | `preview-animations` Animations pause only in the preview | 1 | `mealdrop` | 1 |
 | `csf-factory-namespaces` Legacy addon namespaces work in CSF factories | 1 | `mealdrop`, `mantine` | 1 |
 | `sidebar-tree` The rebuilt sidebar tree | 2 | `mealdrop`, `primer-react` | 2 |
+| Probe: `animation-probe` A new story's animation pauses in the preview | 3 | `mealdrop` | 1 |
 
 ## PRs that need manual QA
 
@@ -34,7 +35,7 @@
 
 | Group | Source | Decision | PRs |
 | --- | --- | --- | --- |
-| `ui` | area UI | `sidebar-tree` | [#35509](https://github.com/storybookjs/storybook/pull/35509) |
+| `ui` | area UI | `sidebar-tree`; manual for the rest: In a story with a select control, set the page direction to right-to-left and open the controls panel: the chevron of the select does not overlap its text. Why: the sidebar entry shows the tree only, and no repo of the catalog has a select control in a right-to-left story | [#35509](https://github.com/storybookjs/storybook/pull/35509) |
 | `tooling` | area Tooling, no project | none: no effect that a project can show | [#34799](https://github.com/storybookjs/storybook/pull/34799) |
 | `windows` | area Builder Vite | manual: On Windows 11, in a Vite project whose main file sets `staticDirs: ['../public']`, run `npx storybook build`: every file of `public` is in `storybook-static`. Why: a fix that only Windows shows, and the sweep runs on Linux | [#36307](https://github.com/storybookjs/storybook/pull/36307) |
 | `addon-links` | area Addon Links | manual: In a React project with the Storybook Links addon, render a link whose `href` is `hrefToSync('Example/Button', 'Primary')` in a story, and click it: it opens that story. Why: no repo of the catalog has the state it acts on | [#36189](https://github.com/storybookjs/storybook/pull/36189) |
@@ -81,3 +82,12 @@
 - Repo `primer-react`: a deep tree, and a right-to-left story
 - Step: Start the dev server, open `http://localhost:6006`, and take a screenshot of the expanded sidebar.
 - Expected: Every group of `/index.json` shows in the sidebar, in the same order.
+
+### `animation-probe` A new story's animation pauses in the preview
+
+- PRs: [#31900](https://github.com/storybookjs/storybook/pull/31900)
+- Batch: 3
+- Probe: a story file src/AnimationProbe.stories.tsx with one story Fade In whose box fades in with a CSS animation of two seconds
+- Repo `mealdrop`: owned, and its React and Vite setup loads a story file next to its components
+- Step: Open the story animation-probe--fade-in and take a screenshot after the play function ends.
+- Expected: The screenshot shows the box fully visible, the end state of the animation.

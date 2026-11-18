@@ -31,6 +31,13 @@ const GROUP_CHECK =
 const LINKS_CHECK =
   "In a React project with the Storybook Links addon, render a link whose `href` is `hrefToSync('Example/Button', 'Primary')` in a story, and click it: it opens that story.";
 const STATE_WHY = 'no repo of the catalog has the state it acts on';
+const RTL_CHECK =
+  'In a story with a select control, set the page direction to right-to-left and open the controls panel: the chevron of the select does not overlap its text.';
+const RTL_WHY =
+  'the sidebar entry shows the tree only, and no repo of the catalog has a select control in a right-to-left story';
+const PROBE =
+  'a story file src/AnimationProbe.stories.tsx with one story Fade In whose box fades in with a CSS animation of two seconds';
+const UI_DECISION = `\`sidebar-tree\`; manual for the rest: ${RTL_CHECK} Why: ${RTL_WHY}`;
 
 const replaced = (text: string, from: string, to: string) => {
   expect(text).toContain(from);
@@ -106,6 +113,95 @@ describe('the fixture plan', () => {
         1. Run \`npx storybook doctor\` and build Storybook.
         Expected: The build ends with exit 0 and the doctor output names no addon namespace."
     `);
+  });
+
+  it('reads a probe and a group that an entry tests in part, as render writes them', () => {
+    const plan = parsePlan(FIXTURE);
+
+    expect(plan.entries.find(({ slug }) => slug === 'animation-probe')?.probe).toBe(PROBE);
+    expect(plan.entries.filter((entry) => entry.probe !== undefined)).toHaveLength(1);
+    expect(plan.groups.find((group) => group.slug === 'ui')).toMatchObject({
+      decision: { entries: ['sidebar-tree'], manual: RTL_CHECK, why: RTL_WHY },
+    });
+    expect(FIXTURE).toContain(
+      "| Probe: `animation-probe` A new story's animation pauses in the preview | 3 |"
+    );
+  });
+
+  it('tells the agent what a probe adds, after the upgrade, and where the copy goes', () => {
+    const plan = parsePlan(FIXTURE);
+    const entries = plan.entries.filter(({ slug }) => slug === 'animation-probe');
+
+    expect(renderPlanChecks(entries, 'mealdrop')).toMatchInlineSnapshot(`
+      "- \`plan.animation-probe\` (plan): A new story's animation pauses in the preview. Why this repo: owned, and its React and Vite setup loads a story file next to its components.
+        Probe: after the upgrade, add a story file src/AnimationProbe.stories.tsx with one story Fade In whose box fades in with a CSS animation of two seconds. Copy each added file to \`animation-probe-added/\` in the evidence directory, and remove what you added before the next check.
+        1. Open the story animation-probe--fade-in and take a screenshot after the play function ends.
+        Expected: The screenshot shows the box fully visible, the end state of the animation."
+    `);
+  });
+});
+
+describe('a probe', () => {
+  it('refuses a batch that holds a probe and a normal entry, at the batch line of the one that differs', () => {
+    const text = edited('- Batch: 3', '- Batch: 2');
+
+    expect(problemsOf(text)).toEqual([
+      {
+        line: lineOf(text, '- Probe: ') - 1,
+        message:
+          'batch 2 holds the probe `animation-probe` and the entry `sidebar-tree`, which is no probe: a batch holds probes only or no probe',
+      },
+    ]);
+  });
+
+  it.each([
+    ['a link', 'see [the docs](http://localhost:6006/docs)', 'probe: expected no Markdown link'],
+    ['a "<"', 'a story that renders <div> with a fade', 'probe: expected no "<" and no ">"'],
+    ['a second line', 'a story\n- Probe: and another', 'not in its rendered form'],
+  ])('refuses a probe line with %s, at that line', (_, probe, message) => {
+    const text = replaced(FIXTURE, `- Probe: ${PROBE}`, `- Probe: ${probe}`);
+
+    expect(problemsOf(text)).toEqual([
+      { line: lineOf(text, '- Probe: '), message: expect.stringContaining(message) },
+    ]);
+  });
+
+  it('refuses a probe line with a URL off localhost, at that line', () => {
+    const text = edited(
+      `- Probe: ${PROBE}`,
+      '- Probe: a story that loads https://example.com/x.css'
+    );
+
+    expect(problemsOf(text)).toEqual([
+      {
+        line: lineOf(text, '- Probe: '),
+        message: 'https://example.com/x.css has the host example.com, not localhost',
+      },
+    ]);
+  });
+});
+
+describe('a group that an entry tests in part', () => {
+  it.each([
+    ['without its reason', `\`sidebar-tree\`; manual for the rest: ${RTL_CHECK}`],
+    ['with an empty check', '`sidebar-tree`; manual for the rest:  Why: no repo has it'],
+  ])('refuses a manual rest %s, at the row of the group', (_, cell) => {
+    const text = replaced(FIXTURE, UI_DECISION, cell);
+
+    expect(problemsOf(text)).toEqual([
+      {
+        line: lineOf(text, '| `ui` |'),
+        message: expect.stringContaining('expected a check and its reason, as "<entries>; manual'),
+      },
+    ]);
+  });
+
+  it('refuses a draft that gives a PR outside a group entries and a manual check in one decision', () => {
+    expect(
+      PlanDraft.safeParse({
+        decisions: { '37344': { entries: ['sidebar-tree'], manual: RTL_CHECK, why: RTL_WHY } },
+      }).success
+    ).toBe(false);
   });
 });
 
@@ -572,14 +668,14 @@ describe('checkPlanText', () => {
     ],
     [
       'a group that names no entry of the plan',
-      '| `ui` | area UI | `sidebar-tree` |',
-      '| `ui` | area UI | `sidebar` |',
+      '| `ui` | area UI | `sidebar-tree`;',
+      '| `ui` | area UI | `sidebar`;',
       '| `ui` | area UI |',
       'the group `ui` names `sidebar`, which is no entry of this plan',
     ],
     [
       'an entry PR whose group needs no QA',
-      '| `ui` | area UI | `sidebar-tree` |',
+      `| \`ui\` | area UI | ${UI_DECISION} |`,
       '| `ui` | area UI | none: covered elsewhere |',
       `- PRs: ${pr(33422)}`,
       '#35509 is listed here, but its group `ui` does not name `sidebar-tree`',
@@ -1242,7 +1338,7 @@ describe('draftOfPlan', () => {
 
   it('decides a PR for every entry that lists it, and leaves a grouped PR to its group', () => {
     expect(draftOfPlan(plan).decisions).toEqual({
-      '31900': { entries: ['preview-animations'] },
+      '31900': { entries: ['preview-animations', 'animation-probe'] },
       '33422': { entries: ['sidebar-tree'] },
       '35618': { none: "the monorepo's docs E2E tests cover the timing" },
       '35658': { entries: ['csf-factory-namespaces'] },
@@ -1444,10 +1540,10 @@ describe('renderLedger', () => {
       .map((line) => line.slice(2, -2).split(' | '));
 
     expect(rows.map(([number, , , , where]) => [Number(number), where])).toEqual([
-      [31900, 'tested by `preview-animations`'],
+      [31900, 'tested by `preview-animations`; tested by `animation-probe`'],
       [33422, 'tested by `sidebar-tree`'],
       [34799, 'group `tooling`: none: no effect that a project can show'],
-      [35509, 'tested by `sidebar-tree`; group `ui`: `sidebar-tree`'],
+      [35509, `tested by \`sidebar-tree\`; group \`ui\`: ${UI_DECISION}`],
       [35618, "no QA: the monorepo's docs E2E tests cover the timing"],
       [35658, 'tested by `csf-factory-namespaces`'],
       [36137, 'tested by `story-sort-in-main`'],

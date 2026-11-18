@@ -20,8 +20,20 @@ describe('renderManualChecklist', () => {
     expect(tasks).toEqual([
       expect.stringContaining('- [ ] On Windows 11, make a React project with the webpack builder'),
       expect.stringContaining('- [ ] On Windows 11, in a Vite project whose main file sets'),
+      expect.stringContaining('- [ ] In a story with a select control'),
       expect.stringContaining('- [ ] In a React project with the Storybook Links addon'),
     ]);
+  });
+
+  it('names the entry that tests a PR in part next to the PR of its manual check', () => {
+    const checklist = renderManualChecklist(PLAN, WINDOW);
+
+    expect(checklist).toContain(
+      '  - [#35509](https://github.com/storybookjs/storybook/pull/35509) `UI: Fix controls expander and select chevron overlap in RTL`, the part that the plan entry `sidebar-tree` does not test\n'
+    );
+    expect(checklist).toContain(
+      '  - [#36307](https://github.com/storybookjs/storybook/pull/36307) `Builder Vite: Static assets copy to handle Windows paths`\n'
+    );
   });
 
   it('puts the checks of one reason under one heading, in the order the reasons first appear', () => {
@@ -34,6 +46,8 @@ describe('renderManualChecklist', () => {
       '## A fix that only Windows shows, and th',
       '- [ ] On Windows 11, make a React projec',
       '- [ ] On Windows 11, in a Vite project w',
+      '## The sidebar entry shows the tree only',
+      '- [ ] In a story with a select control, ',
       '## No repo of the catalog has the state ',
       '- [ ] In a React project with the Storyb',
     ]);

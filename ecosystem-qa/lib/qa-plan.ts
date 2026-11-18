@@ -51,27 +51,30 @@ const RepoId = CatalogEntry.shape.id;
 const Sha = z.string().regex(/^[0-9a-f]{40}$/, 'expected a full commit SHA');
 const PrNumber = z.int().positive();
 
-// A decision cell of a group holds a manual check and its reason as `manual: <check> Why: <why>`.
+// A decision cell of a group holds a manual check and its reason as `manual: <check> Why: <why>`,
+// after the entries that test the group in part as `<entries>; manual for the rest: <check> Why: <why>`.
 const WHY = ' Why: ';
+const REST = '; manual for the rest: ';
 const ManualCheck = Reason.refine((check) => !check.includes(WHY), `expected no "${WHY.trim()}"`);
+const TestedBy = z.strictObject({ entries: z.array(Slug).min(1) });
+const ByHand = z.strictObject({ manual: ManualCheck, why: Reason });
+const NoQa = z.strictObject({ none: Reason });
 
-export const Decision = z
-  .union([
-    z.strictObject({ entries: z.array(Slug).min(1) }),
-    z.strictObject({ manual: ManualCheck, why: Reason }),
-    z.strictObject({ none: Reason }),
-  ])
-  .nullable();
+// A PR outside a group that an entry tests in part needs no decision of both kinds: the entries
+// list it, and its decision is the manual check of the rest.
+const PrDecision = z.union([TestedBy, ByHand, NoQa]);
+export const Decision = z.union([TestedBy, ByHand, TestedBy.extend(ByHand.shape), NoQa]).nullable();
 export type Decision = z.infer<typeof Decision>;
-type ManualDecision = Extract<Decision, { manual: string }>;
 
 const SKIP_IS_GONE =
   '"skip" is no decision: choose "manual" with the check a person does, or "none" with the reason no QA is needed';
-const DraftDecision = z
-  .custom((value) => !(value && typeof value === 'object' && 'skip' in value), {
-    error: SKIP_IS_GONE,
-  })
-  .pipe(Decision.unwrap());
+const withoutSkip = <T extends z.ZodType>(schema: T) =>
+  z
+    .custom((value) => !(value && typeof value === 'object' && 'skip' in value), {
+      error: SKIP_IS_GONE,
+    })
+    .pipe(schema);
+const DraftDecision = withoutSkip(PrDecision);
 
 const unique = (values: unknown[]) => new Set(values).size === values.length;
 const PrList = z.array(PrNumber).refine(unique, 'a PR is listed twice');
@@ -82,6 +85,8 @@ export const PlanEntry = z.strictObject({
   title: Text,
   prs: SomePrs,
   batch: z.int().min(1),
+  // What the run adds to the project after the upgrade, and where.
+  probe: Text.optional(),
   repos: z
     .array(z.strictObject({ id: RepoId, reason: Reason }))
     .min(1)
@@ -116,7 +121,9 @@ const NoQaRow = z.strictObject({ reason: Reason, prs: SomePrs });
 type NoQaRow = z.infer<typeof NoQaRow>;
 
 const GroupOfDraft = z.strictObject({ slug: Slug, source: Source, decision: Decision });
-const GroupOfDraftInput = GroupOfDraft.extend({ decision: DraftDecision.nullable() });
+const GroupOfDraftInput = GroupOfDraft.extend({
+  decision: withoutSkip(Decision.unwrap()).nullable(),
+});
 const Group = GroupOfDraft.extend({ prs: PrList });
 // The PRs marked qa:skip that the draft has not put into a group yet share one row without a group.
 const GroupRow = z.union([Group, z.strictObject({ slug: z.null(), prs: SomePrs })]);
@@ -186,14 +193,24 @@ const decisionCell = (decision: Decision): string => {
   if (decision === null) {
     return '';
   }
-  if ('entries' in decision) {
-    return decision.entries.map(code).join(', ');
+  if ('none' in decision) {
+    return `none: ${decision.none}`;
   }
-  return 'manual' in decision
-    ? `manual: ${decision.manual}${WHY}${decision.why}`
-    : `none: ${decision.none}`;
+  const manual = 'manual' in decision ? `${decision.manual}${WHY}${decision.why}` : '';
+  if (!('entries' in decision)) {
+    return `manual: ${manual}`;
+  }
+  const entries = decision.entries.map(code).join(', ');
+  return manual ? `${entries}${REST}${manual}` : entries;
 };
 const MANUAL_CELL = `"manual: <check>${WHY}<why the sweep cannot test it>"`;
+const PART_CELL = `"<entries>${REST}<check>${WHY}<why the sweep cannot test it>"`;
+const unManual = (text: string, form: string) => {
+  const at = text.indexOf(WHY);
+  return at > 0 && text.length > at + WHY.length
+    ? { manual: text.slice(0, at), why: text.slice(at + WHY.length) }
+    : fail(`expected a check and its reason, as ${form}`);
+};
 const unDecision = (cell: string): unknown => {
   if (cell === '') {
     return null;
@@ -208,18 +225,21 @@ const unDecision = (cell: string): unknown => {
     return rest ? { none: rest } : fail('expected the reason why no QA is needed after "none:"');
   }
   if (kind === 'manual') {
-    const at = rest.indexOf(WHY);
-    return at > 0 && rest.length > at + WHY.length
-      ? { manual: rest.slice(0, at), why: rest.slice(at + WHY.length) }
-      : fail(`expected a check and its reason, as ${MANUAL_CELL}`);
+    return unManual(rest, MANUAL_CELL);
   }
+  const at = cell.indexOf(REST);
+  const slugs = at === -1 ? cell : cell.slice(0, at);
+  let entries: string[];
   try {
-    return { entries: cell.split(/,\s*/).map(uncode) };
+    entries = slugs.split(/,\s*/).map(uncode);
   } catch {
     throw new Error(
-      `expected entry slugs in backticks, ${MANUAL_CELL}, "none: <reason>", or an empty cell, found "${cell}"`
+      `expected entry slugs in backticks, ${PART_CELL}, ${MANUAL_CELL}, "none: <reason>", or an empty cell, found "${cell}"`
     );
   }
+  return at === -1
+    ? { entries }
+    : { entries, ...unManual(cell.slice(at + REST.length), PART_CELL) };
 };
 
 type Table<Row> = {
@@ -309,7 +329,7 @@ const TABLE_KEYS = Object.keys(TABLES) as TableKey[];
 
 const OVERVIEW_COLUMNS = ['Entry', 'Batch', 'Repos', 'PRs'] as const;
 const overviewCells = (entry: PlanEntry) => [
-  `${code(entry.slug)} ${entry.title}`,
+  `${entry.probe === undefined ? '' : 'Probe: '}${code(entry.slug)} ${entry.title}`,
   String(entry.batch),
   entry.repos.map((repo) => code(repo.id)).join(', '),
   String(entry.prs.length),
@@ -347,6 +367,7 @@ export type PlanLayout = {
     heading: number;
     prs: number;
     batch: number;
+    probe?: number;
     repos: number[];
     steps: number[];
     expected: number;
@@ -403,6 +424,7 @@ export const layoutPlan = (plan: Plan): { lines: string[]; at: PlanLayout } => {
       heading,
       prs: add(`- PRs: ${prsCell(entry.prs)}`),
       batch: add(`- Batch: ${entry.batch}`),
+      ...(entry.probe === undefined ? {} : { probe: add(`- Probe: ${entry.probe}`) }),
       repos: entry.repos.map((repo) => add(`- Repo ${code(repo.id)}: ${repo.reason}`)),
       steps: entry.steps.map((step) => add(`- Step: ${step}`)),
       expected: add(`- Expected: ${entry.expected}`),
@@ -442,6 +464,13 @@ const ENTRY_FIELDS: [RegExp, (raw: RawEntry, value: string, key?: string) => voi
     },
   ],
   [
+    /^- Probe: (.*)$/,
+    (raw, value) => {
+      const probe = Text.safeParse(value);
+      raw.probe = probe.success ? probe.data : fail(`probe: ${firstIssue(probe.error)}`);
+    },
+  ],
+  [
     /^- Repo `([^`]+)`: (.*)$/,
     (raw, id, reason) => {
       raw.repos.push({ id, reason });
@@ -465,6 +494,7 @@ type RawEntry = {
   title: string;
   prs?: unknown;
   batch?: unknown;
+  probe?: string;
   repos: { id: string; reason?: string }[];
   steps: string[];
   expected?: string;
@@ -593,7 +623,9 @@ export const parsePlan = (text: string): Plan => {
       const line = lines[i]!;
       const field = ENTRY_FIELDS.find(([pattern]) => pattern.test(line));
       if (!field) {
-        fail('expected one of "- PRs:", "- Batch:", "- Repo `<id>`:", "- Step:", "- Expected:"');
+        fail(
+          'expected one of "- PRs:", "- Batch:", "- Probe:", "- Repo `<id>`:", "- Step:", "- Expected:"'
+        );
       }
       const [pattern, apply] = field!;
       const [, value, extra] = pattern.exec(line)!;
@@ -805,6 +837,23 @@ const batchesHaveNoGap: Rule = ({ plan, at }) => {
   return [{ line: at.entries[index]!.batch, message: `batch ${missing} has no entry` }];
 };
 
+// A run that tests the project itself never holds the files of a probe.
+const probesHaveOwnBatches: Rule = ({ plan, at }) =>
+  plan.entries.flatMap((entry, index) => {
+    const first = plan.entries.find((other) => other.batch === entry.batch)!;
+    const isProbe = (it: PlanEntry) => it.probe !== undefined;
+    if (isProbe(first) === isProbe(entry)) {
+      return [];
+    }
+    const [probe, other] = isProbe(entry) ? [entry, first] : [first, entry];
+    return [
+      {
+        line: at.entries[index]!.batch,
+        message: `batch ${entry.batch} holds the probe \`${probe.slug}\` and the entry \`${other.slug}\`, which is no probe: a batch holds probes only or no probe`,
+      },
+    ];
+  });
+
 const groupsAreDecided: Rule = ({ plan, at }) => {
   const slugs = new Set(plan.entries.map((entry) => entry.slug));
   return plan.groups.flatMap((group, index) => {
@@ -861,10 +910,13 @@ const offLocalhost = (text: string): string[] =>
   });
 
 const textsOf = (decision: Decision): string[] => {
-  if (decision === null || 'entries' in decision) {
+  if (decision === null) {
     return [];
   }
-  return 'manual' in decision ? [decision.manual, decision.why] : [decision.none];
+  if ('none' in decision) {
+    return [decision.none];
+  }
+  return 'manual' in decision ? [decision.manual, decision.why] : [];
 };
 
 const decisionTexts = ({ plan, at }: RuleInput) => [
@@ -885,6 +937,7 @@ const textStaysOnLocalhost: Rule = (input) =>
       const layout = input.at.entries[index]!;
       return [
         { text: entry.title, line: layout.heading },
+        ...(entry.probe === undefined ? [] : [{ text: entry.probe, line: layout.probe! }]),
         ...entry.repos.map((repo, n) => ({ text: repo.reason, line: layout.repos[n]! })),
         ...entry.steps.map((text, step) => ({ text, line: layout.steps[step]! })),
         { text: entry.expected, line: layout.expected },
@@ -893,7 +946,7 @@ const textStaysOnLocalhost: Rule = (input) =>
     ...decisionTexts(input),
   ].flatMap(({ text, line }) => offLocalhost(text).map((message) => ({ line, message })));
 
-export type ManualCheckRow = ManualDecision & { line: number; prs: number[] };
+export type ManualCheckRow = { manual: string; why: string; line: number; prs: number[] };
 
 export const manualChecksOf = (plan: Plan, at: PlanLayout): ManualCheckRow[] => [
   ...plan.manual.flatMap((row, index) =>
@@ -903,7 +956,14 @@ export const manualChecksOf = (plan: Plan, at: PlanLayout): ManualCheckRow[] => 
   ),
   ...plan.groups.flatMap((group, index) =>
     group.slug !== null && group.decision && 'manual' in group.decision
-      ? [{ ...group.decision, prs: group.prs, line: at.tables.groups.rows[index]! }]
+      ? [
+          {
+            manual: group.decision.manual,
+            why: group.decision.why,
+            prs: group.prs,
+            line: at.tables.groups.rows[index]!,
+          },
+        ]
       : []
   ),
 ];
@@ -1014,6 +1074,7 @@ const RULES: Rule[] = [
   reposAreCurrent,
   rowsAreDecided,
   batchesHaveNoGap,
+  probesHaveOwnBatches,
   groupsAreDecided,
   noPrivateLinks,
   textStaysOnLocalhost,
@@ -1116,12 +1177,20 @@ export const planHash = (content: string | Uint8Array): string =>
 
 export const planCheckId = (slug: string): string => `plan.${slug}`;
 
+// Where the run keeps a copy of the files that a probe added, inside its evidence directory.
+export const probeCopyDir = (slug: string): string => `${slug}-added`;
+
 export const renderPlanChecks = (entries: PlanEntry[], repo: string): string =>
   entries
     .map((entry) => {
       const { reason } = entry.repos.find(({ id }) => id === repo)!;
       return [
         `- \`${planCheckId(entry.slug)}\` (plan): ${entry.title}. Why this repo: ${reason}.`,
+        ...(entry.probe === undefined
+          ? []
+          : [
+              `  Probe: after the upgrade, add ${entry.probe}. Copy each added file to \`${probeCopyDir(entry.slug)}/\` in the evidence directory, and remove what you added before the next check.`,
+            ]),
         ...entry.steps.map((step, index) => `  ${index + 1}. ${step}`),
         `  Expected: ${entry.expected}`,
       ].join('\n');

@@ -393,6 +393,8 @@ export const Proposal = z.discriminatedUnion('kind', [
           // Already safe to print inline: the plan's title, sanitized when the proposal was built.
           title: z.string().min(1),
           prs: PlanRecord.shape.entries.element.shape.prs,
+          // A code span of the plan's probe line, safe to print inline like the title.
+          probe: z.string().min(1).optional(),
         })
       )
       .min(1)

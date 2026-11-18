@@ -101,6 +101,26 @@ describe('ChangeDetectionResolverFactory', () => {
       const r = new ChangeDetectionResolverFactory({ projectRoot: dir, conditions: ['import'] });
       expect(await r.resolve(from, 'dual', 'require')).toBe(esm);
     });
+
+    it('resolves a `require()` of a package import with the require conditions', async () => {
+      const esm = write('src/esm.mjs');
+      const cjs = write('src/cjs.cjs');
+      writeFileSync(
+        join(dir, 'package.json'),
+        JSON.stringify({
+          name: 'app',
+          imports: { '#tone': { import: './src/esm.mjs', default: './src/cjs.cjs' } },
+        })
+      );
+      const from = write('src/a.ts');
+      const r = new ChangeDetectionResolverFactory({
+        projectRoot: dir,
+        conditions: ['import'],
+        requireConditions: ['require'],
+      });
+      expect(await r.resolve(from, '#tone')).toBe(esm);
+      expect(await r.resolve(from, '#tone', 'require')).toBe(cjs);
+    });
   });
 
   describe('explicit alias (Record form)', () => {

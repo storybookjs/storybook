@@ -4,8 +4,10 @@ import {
   JsPackageManager,
   getPkgPrNewPackageSpecifier,
   getProjectRoot,
+  getStorybookConfiguration,
   isPkgPrNewVersionSpecifier,
   isSatelliteAddon,
+  supportedExtensions,
   versions,
 } from 'storybook/internal/common';
 import {
@@ -20,11 +22,14 @@ import {
 } from 'storybook/internal/server-errors';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
+import { readFile } from 'node:fs/promises';
+
 import * as walk from 'empathic/walk';
 // eslint-disable-next-line depend/ban-dependencies
 import { globby, globbySync } from 'globby';
+import { dirname, relative, resolve } from 'pathe';
 import picocolors from 'picocolors';
-import { lt, prerelease, rsort } from 'semver';
+import { lt, major, minVersion, prerelease, rsort, satisfies, validRange } from 'semver';
 
 import { autoblock } from './autoblock/index.ts';
 import type { AutoblockerResult } from './autoblock/types.ts';
@@ -89,6 +94,14 @@ interface VersionModifier {
 
 /** Glob pattern for finding Storybook directories */
 const STORYBOOK_DIR_PATTERN = ['**/.storybook', '**/.rnstorybook'];
+
+const PACKAGE_JSON_PATTERN = '**/package.json';
+
+/** Splits a package.json script into the commands it chains. */
+const SCRIPT_COMMAND_SEPARATOR = /&&|\|\||[;|]/;
+
+const isStorybookBin = (arg: string) =>
+  arg === 'storybook' || arg.startsWith('storybook@') || /[\\/]\.bin[\\/]storybook$/.test(arg);
 
 // ============================================================================
 // UTILITY FUNCTIONS
@@ -213,8 +226,9 @@ const validateUpgradeCompatibility = (
 export const findStorybookProjects = async (cwd: string = process.cwd()): Promise<string[]> => {
   try {
     logger.debug(`Finding Storybook projects...`);
-    // Find all .storybook directories, accounting for custom config dirs later
-    const storybookDirs = await globby(STORYBOOK_DIR_PATTERN, {
+    // One walk finds both the .storybook directories and the package.json files whose scripts can
+    // name config directories with other names.
+    const entries = await globby([...STORYBOOK_DIR_PATTERN, PACKAGE_JSON_PATTERN], {
       cwd,
       dot: true,
       gitignore: true,
@@ -222,17 +236,198 @@ export const findStorybookProjects = async (cwd: string = process.cwd()): Promis
       // like `**/**/node_modules/`, so never rely on .gitignore to skip them.
       ignore: ['**/node_modules/**'],
       absolute: true,
-      onlyDirectories: true,
+      onlyFiles: false,
+      objectMode: true,
       followSymbolicLinks: false,
     });
 
-    logger.debug(`Found ${storybookDirs.length} Storybook projects`);
+    const storybookDirs = entries
+      .filter((entry) => entry.dirent.isDirectory() && entry.name !== 'package.json')
+      .map((entry) => entry.path);
+    const packageJsonPaths = entries
+      .filter((entry) => entry.dirent.isFile() && entry.name === 'package.json')
+      .map((entry) => entry.path);
 
-    return storybookDirs;
+    const scriptConfigDirs = await findConfigDirsInScripts(packageJsonPaths);
+    const projects = [...new Set([...storybookDirs, ...scriptConfigDirs])];
+
+    logger.debug(`Found ${projects.length} Storybook projects`);
+
+    return projects;
   } catch (error) {
     logger.error('Failed to find Storybook projects');
     throw error;
   }
+};
+
+/**
+ * Returns the config directories that a package.json's scripts pass to `storybook` with `-c` or
+ * `--config-dir`, as written in the scripts.
+ *
+ * @example
+ *
+ * ```typescript
+ * getConfigDirsFromScripts({ 'storybook:dev': 'storybook dev -c ./storybook -p 6006' });
+ * // Returns: ['./storybook']
+ * ```
+ */
+export const getConfigDirsFromScripts = (scripts: Record<string, unknown> = {}): string[] =>
+  Object.values(scripts).flatMap((script) => {
+    if (typeof script !== 'string') {
+      return [];
+    }
+    return script.split(SCRIPT_COMMAND_SEPARATOR).flatMap((command) => {
+      const args = command.trim().split(/\s+/);
+      const binIndex = args.findIndex(isStorybookBin);
+      if (binIndex === -1) {
+        return [];
+      }
+      const configDir = getStorybookConfiguration(
+        args.slice(binIndex + 1).join(' '),
+        '-c',
+        '--config-dir'
+      );
+      return configDir ? [configDir] : [];
+    });
+  });
+
+const hasMainConfig = async (configDir: string) => {
+  try {
+    const mainConfigs = await globby(`main{${supportedExtensions.join(',')}}`, { cwd: configDir });
+    return mainConfigs.length > 0;
+  } catch {
+    // The directory doesn't exist, as with `-c $CONFIG_DIR`
+    return false;
+  }
+};
+
+/** Finds the config directories, with a main config, that the given package.json scripts name. */
+const findConfigDirsInScripts = async (packageJsonPaths: string[]): Promise<string[]> => {
+  const configDirs = await Promise.all(
+    packageJsonPaths.map(async (packageJsonPath) => {
+      try {
+        const { scripts } = JSON.parse(await readFile(packageJsonPath, 'utf8'));
+        const candidates = [
+          ...new Set(
+            getConfigDirsFromScripts(scripts).map((configDir) =>
+              resolve(dirname(packageJsonPath), configDir)
+            )
+          ),
+        ];
+        const found = await Promise.all(
+          candidates.map(async (configDir) => ((await hasMainConfig(configDir)) ? configDir : null))
+        );
+        return found.filter((configDir): configDir is string => configDir !== null);
+      } catch (error) {
+        logger.debug(`Could not read the scripts of ${packageJsonPath}: ${String(error)}`);
+        return [];
+      }
+    })
+  );
+  return configDirs.flat();
+};
+
+/** A package.json that still declares Storybook packages on an older major than the CLI. */
+export interface OutdatedStorybookPackageJson {
+  readonly packageJsonPath: string;
+  /** The outdated dependencies, as `name@range` */
+  readonly dependencies: string[];
+}
+
+/**
+ * Finds package.json files that declare a Storybook package with a range that excludes `version`
+ * and only allows older majors, such as `storybook@^10.6.6` after an upgrade to 11. Ranges that
+ * aren't semver ranges (`workspace:`, `catalog:`, `file:`, ...) are skipped.
+ *
+ * @param version - The Storybook version the upgrade installed
+ * @param options.cwd - Directory to search from
+ * @param options.ignore - package.json paths to skip, such as those of projects left out of the
+ *   upgrade on purpose
+ */
+export const findOutdatedStorybookPackageJsons = async (
+  version: string,
+  { cwd = getProjectRoot(), ignore = [] }: { cwd?: string; ignore?: readonly string[] } = {}
+): Promise<OutdatedStorybookPackageJson[]> => {
+  const targetMajor = major(version);
+  const ignored = new Set(ignore.map((path) => resolve(path)));
+  const packageJsonPaths = await globby(PACKAGE_JSON_PATTERN, {
+    cwd,
+    gitignore: true,
+    ignore: ['**/node_modules/**'],
+    absolute: true,
+    followSymbolicLinks: false,
+  });
+
+  const results = await Promise.all(
+    packageJsonPaths
+      .filter((packageJsonPath) => !ignored.has(resolve(packageJsonPath)))
+      .map(async (packageJsonPath): Promise<OutdatedStorybookPackageJson | null> => {
+        let packageJson: PackageJsonWithDepsAndDevDeps;
+        try {
+          packageJson = JSON.parse(await readFile(packageJsonPath, 'utf8'));
+        } catch {
+          return null;
+        }
+        const declared = {
+          ...packageJson.peerDependencies,
+          ...packageJson.devDependencies,
+          ...packageJson.dependencies,
+        };
+        const dependencies = Object.entries(declared)
+          .filter(([name, range]) => {
+            if (!(name in versions) || typeof range !== 'string' || !validRange(range)) {
+              return false;
+            }
+            const lowest = minVersion(range);
+            return (
+              lowest !== null &&
+              lowest.major < targetMajor &&
+              !satisfies(version, range, { includePrerelease: true })
+            );
+          })
+          .map(([name, range]) => `${name}@${range}`);
+        return dependencies.length > 0 ? { packageJsonPath, dependencies } : null;
+      })
+  );
+
+  return results.filter((result): result is OutdatedStorybookPackageJson => result !== null);
+};
+
+/**
+ * Warns about package.json files that still declare an older Storybook major after an upgrade.
+ * They usually belong to a Storybook that upgrade didn't find, and leave a second Storybook core in
+ * the install.
+ */
+export const warnAboutOutdatedStorybookPackageJsons = async (
+  version: string,
+  options?: { cwd?: string; ignore?: readonly string[] }
+): Promise<OutdatedStorybookPackageJson[]> => {
+  let outdated: OutdatedStorybookPackageJson[] = [];
+  try {
+    outdated = await findOutdatedStorybookPackageJsons(version, options);
+  } catch (error) {
+    logger.debug(`Could not check for outdated Storybook dependencies: ${String(error)}`);
+    return [];
+  }
+
+  if (outdated.length > 0) {
+    const root = options?.cwd ?? getProjectRoot();
+    const list = outdated
+      .map(
+        ({ packageJsonPath, dependencies }) =>
+          `- ${picocolors.cyan(relative(root, packageJsonPath))}: ${dependencies.join(', ')}`
+      )
+      .join('\n');
+    logger.warn(
+      [
+        `These package.json files still declare Storybook packages from an older major than ${version}. Your install can end up with two Storybook versions:`,
+        list,
+        `If they belong to another Storybook, upgrade it as well, for example with ${picocolors.cyan('storybook upgrade --config-dir <its config directory>')}.`,
+      ].join('\n')
+    );
+  }
+
+  return outdated;
 };
 
 /**

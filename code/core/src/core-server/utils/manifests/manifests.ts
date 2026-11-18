@@ -7,7 +7,7 @@ import {
 import { logger } from 'storybook/internal/node-logger';
 import type { Manifests, Presets } from 'storybook/internal/types';
 
-import { join } from 'pathe';
+import { dirname, join } from 'pathe';
 import type { Polka } from 'polka';
 import invariant from 'tiny-invariant';
 
@@ -18,7 +18,6 @@ import { getOwn } from '../../../shared/open-service/plain-object.ts';
 import { readAllComponents } from '../../../shared/open-service/services/component-state-key.ts';
 import type { DocgenPayload } from '../../../shared/open-service/services/docgen/types.ts';
 import type { StoryDocsPayload } from '../../../shared/open-service/services/story-docs/types.ts';
-import { storyDocsQueryStaticPath } from '../../../shared/open-service/services/story-docs/paths.ts';
 import { selectManifestStories } from '../../../shared/open-service/toolsets/docs/map.ts';
 import {
   buildComponentsRefManifest,
@@ -26,7 +25,7 @@ import {
   loadDocgenPayloadsFromDisk,
   loadStoryDocsPayloadsFromDisk,
   mergeManifestPayloads,
-  toComponentManifestIndexEntries,
+  buildComponentManifestIndex,
 } from './components-ref-manifest.ts';
 import {
   createDiskLoader,
@@ -306,31 +305,18 @@ async function writeDocgenServerManifests(
   ]);
 
   if (manifestComponentIds.length > 0) {
-    const entries = toComponentManifestIndexEntries(
+    const { entries, storyFiles } = buildComponentManifestIndex(
       manifestComponentIds,
+      manifestStoryIds,
       docgenPayloads,
       storyDocsPayloads,
       attachedDocsWithSummaries
     );
     await Promise.all(
-      Object.entries(entries).map(async ([id, entry]) => {
-        const payload = getOwn(storyDocsPayloads, id);
-        if (!payload) {
-          return;
-        }
-        const stories = selectManifestStories(payload.stories, manifestStoryIds);
-        if (Object.keys(stories).length === Object.keys(payload.stories).length) {
-          return;
-        }
-        // The service snapshot also supplies Code panel snippets for excluded stories.
-        const directory = join(manifestsDir, 'stories');
-        const filename = storyDocsQueryStaticPath(id);
-        await mkdir(directory, { recursive: true });
-        await writeFile(
-          join(directory, filename),
-          JSON.stringify({ ...payload, stories }, null, 2)
-        );
-        entry.stories = { $ref: `./stories/${filename}` };
+      Object.entries(storyFiles).map(async ([path, payload]) => {
+        const outputPath = join(manifestsDir, path);
+        await mkdir(dirname(outputPath), { recursive: true });
+        await writeFile(outputPath, JSON.stringify(payload, null, 2));
       })
     );
     await writeFile(

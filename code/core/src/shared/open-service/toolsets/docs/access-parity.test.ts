@@ -16,7 +16,7 @@ import { Tag } from '../../../constants/tags.ts';
 import type { ToolsetCtx } from '../../toolset-definition.ts';
 import {
   buildComponentsRefManifest,
-  toComponentManifestIndexEntries,
+  buildComponentManifestIndex,
 } from '../../../../core-server/utils/manifests/components-ref-manifest.ts';
 import { createManifestDocsAccess } from './access-manifest.ts';
 import { createProviderDocsAccess } from './access-provider.ts';
@@ -326,11 +326,12 @@ describe('docs tools render the same text in dev and from a built Storybook', ()
   function staticAccess() {
     const files: Record<string, object> = {
       './manifests/components.json': buildComponentsRefManifest(
-        toComponentManifestIndexEntries(
+        buildComponentManifestIndex(
           [componentId],
+          new Set(Object.keys(componentlessIndex.entries)),
           {},
           { [componentId]: componentlessStoryDocs }
-        )
+        ).entries
       ),
       [`./services/core/story-docs/${componentId}.json`]: {
         components: { [componentId]: componentlessStoryDocs },

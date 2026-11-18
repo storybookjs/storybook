@@ -35,6 +35,16 @@ describe('checklistOf', () => {
     ).toEqual(planIds.map((id) => `plan check "${id}" needs a note with what you saw`));
   });
 
+  it.each([
+    'Never add a setting, a file, a dependency, or code so that an upgrade step, an automigration, or a removal has something to act on, or so that the project looks as if it used something it does not use.',
+    'When the project does not have what the entry describes, for example no `storySort` in its preview file, report the check as `skip` and say in the note what the project lacks and which file or search showed it.',
+    'The one exception is a step of the entry that turns on a new opt-in feature of the tested version, such as a feature flag in the Storybook main file: do exactly what that step says and nothing more.',
+    'You never decide yourself to turn something on. You do it only when a step of the entry says so.',
+    '- `skip`: this project does not have what the entry describes, as rule 4 says, or as for every other check.',
+  ])('tells the agent of a plan run: %s', (rule) => {
+    expect(checklistOf('gate', planned, 'mealdrop').text).toContain(rule);
+  });
+
   it('asks a static run for no note', () => {
     const { checks, answerSchema } = checklistOf('must', undefined, 'mealdrop');
 

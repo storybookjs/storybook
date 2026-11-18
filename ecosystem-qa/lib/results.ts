@@ -5,7 +5,7 @@ import { isAbsolute, join, relative } from 'pathe';
 import { CHECK_IDS, checksFor } from '../checks.ts';
 import { cycleBranchName, cycleRepo, publishedCycleBranch, readBundleHeader } from './cycle.ts';
 import type { PlanScope } from './plan-scope.ts';
-import { planCheckId, planRuns } from './qa-plan.ts';
+import { isProbeCheck, planCheckId, planRuns } from './qa-plan.ts';
 import {
   Engine,
   Os,
@@ -222,6 +222,13 @@ const keepPublishable = (
   };
 };
 
+// The run adds a probe only after the upgrade, so its finding has no baseline whatever the record
+// says, and nothing reads it as pre-existing.
+const dropProbeBaseline = (finding: Finding, scope: PlanScope | undefined): Finding =>
+  isProbeCheck(scope?.plan.entries, finding.checkId)
+    ? { ...finding, baseline: 'not-captured' }
+    : finding;
+
 const readCycle = (
   dir: string,
   key: RunKey,
@@ -308,7 +315,9 @@ const loadRun = (
     result: {
       ...parsed.data,
       request: { ...request, entry: key.entry },
-      findings: parsed.data.findings.map((finding) => keepPublishable(finding, evidenceDir, warn)),
+      findings: parsed.data.findings.map((finding) =>
+        dropProbeBaseline(keepPublishable(finding, evidenceDir, warn), plan)
+      ),
     },
     cycle: readCycle(dir, key, parsed.data.startSha, warn),
     evidenceDir,

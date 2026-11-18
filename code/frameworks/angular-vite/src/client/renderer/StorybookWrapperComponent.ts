@@ -20,9 +20,12 @@ const getNonInputsOutputsProps = (
   ngComponentInputsOutputs: ComponentInputsOutputs,
   props: ICollection = {}
 ) => {
-  const inputs = ngComponentInputsOutputs.inputs
-    .filter((i) => i.templateName in props)
-    .map((i) => i.templateName);
+  // An input can be set by its template name (alias) or by its class property name.
+  const inputs = ngComponentInputsOutputs.inputs.flatMap(({ propName, templateName }) => {
+    if (templateName in props) return [templateName];
+    if (propName in props) return [propName];
+    return [];
+  });
   const outputs = ngComponentInputsOutputs.outputs
     .filter((o) => o.templateName in props)
     .map((o) => o.templateName);

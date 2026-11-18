@@ -83,6 +83,11 @@ describe('isStoryHoistable', () => {
     const output = utils.isStoryHoistable('Butto Story', 'ButtonStory');
     expect(output).toEqual(false);
   });
+
+  it('return true for Angular component names with a .component suffix', () => {
+    const output = utils.isStoryHoistable('Footer', 'footer.component');
+    expect(output).toEqual(true);
+  });
 });
 
 describe('hoistSingleStoryComponents', () => {

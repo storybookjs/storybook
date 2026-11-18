@@ -90,15 +90,15 @@ Vue's interop between Vapor and regular components covers props, events and slot
 
 ### Component documentation
 
-<Callout variant="info">
+Storybook reads your components' props, events, slots, and JSDoc comments, a step called docgen, to generate [controls](../../essentials/controls.mdx) and [automatic documentation](../../writing-docs/autodocs.mdx). This framework supports three docgen engines:
 
-Storybook 11 reads Vue component props on the server by default. To keep the Storybook 10 bundler-based `docgen` setup, set `features.docgenServer: false`. That old setup will be removed in Storybook 12.
+| Docgen engine        | Runs         | Status               |
+| -------------------- | ------------ | -------------------- |
+| `vue-component-meta` | Server-side  | Recommended, default |
+| `vue-component-meta` | Builder-side | Deprecated           |
+| `vue-docgen-api`     | Builder-side | Deprecated           |
 
-</Callout>
-
-[`vue-component-meta`](https://github.com/vuejs/language-tools/tree/master/packages/component-meta) is a tool maintained by the Vue team that extracts metadata from Vue components. Storybook can use it to generate the [controls](../../essentials/controls.mdx) for your stories and documentation. It's a more full-featured alternative to `vue-docgen-api` and is recommended for most projects.
-
-New projects do not need any docgen configuration. To migrate an existing project that selects `vue-component-meta`, remove the legacy framework option and let Storybook use the server:
+[`vue-component-meta`](https://github.com/vuejs/language-tools/tree/master/packages/component-meta) is maintained by the Vue team, and new projects need no docgen configuration. The builder-side engines run inside the Vite build only when you set `features.docgenServer: false`, are selected with the [`docgen`](#docgen) option, and will be removed in Storybook 12. To migrate an existing project that selects `vue-component-meta`, remove the legacy framework option and let Storybook use the server:
 
 ```diff title=".storybook/main.ts"
  import type { StorybookConfig } from '@storybook/vue3-vite';

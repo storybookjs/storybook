@@ -229,13 +229,18 @@ The Svelte frameworks ship with built-in support for writing stories for your Sv
 
 ## Component documentation
 
-Storybook 11 reads Svelte component props on the server by default, with [`svelte2tsx`](https://github.com/sveltejs/language-tools/tree/master/packages/svelte2tsx) and [`typescript`](../../configure/integration/typescript.mdx) 5.9 or 6 (including in JavaScript projects, where it reads JSDoc comments). New projects need no docgen configuration.
+Storybook reads your components' props and JSDoc comments, a step called docgen, to generate [controls](../../essentials/controls.mdx) and [automatic documentation](../../writing-docs/autodocs.mdx). This framework supports one docgen engine, which can run in two places:
+
+| Docgen engine | Runs         | Status               |
+| ------------- | ------------ | -------------------- |
+| `svelte2tsx`  | Server-side  | Recommended, default |
+| `svelte2tsx`  | Builder-side | Deprecated           |
+
+[`svelte2tsx`](https://github.com/sveltejs/language-tools/tree/master/packages/svelte2tsx) needs [`typescript`](../../configure/integration/typescript.mdx) 5.9 or 6 in both places, even in JavaScript projects, where it reads types from JSDoc comments. New projects need no docgen configuration. Projects on TypeScript 7 get no docgen; see [TypeScript 7](../../configure/integration/typescript.mdx#typescript-7) to install TypeScript 6 and 7 side by side.
 
 <Callout variant="info">
 
-The Storybook 10 builder-based docgen is still available, but it is deprecated. It will be removed in Storybook 12. To use it, set [`features.docgenServer: false`](../../api/main-config/main-config-features.mdx#docgenserver) in your main config. See the [`docgen`](#docgen) option.
-
-Projects on TypeScript 7 get no docgen, because both server-side and builder-based docgen need TypeScript 5.9 or 6. See [TypeScript 7](../../configure/integration/typescript.mdx#typescript-7) to install TypeScript 6 and 7 side by side.
+The builder-side engine runs inside the Vite build and will be removed in Storybook 12. To use it, set [`features.docgenServer: false`](../../api/main-config/main-config-features.mdx#docgenserver) in your main config. See the [`docgen`](#docgen) option.
 
 </Callout>
 

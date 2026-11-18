@@ -112,6 +112,8 @@ Two engines can read them, and which one you get depends on a single feature fla
 
 |                       | [`docgenServer`](../../api/main-config/main-config-features.mdx#docgenserver) on, the default      | flag off                             |
 | --------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------ |
+| Docgen engine         | `angular-component-meta`, server-side                                                              | Compodoc, builder-side               |
+| Status                | Recommended, default                                                                               | Deprecated                           |
 | Reads your components | on the Storybook server, from your TypeScript sources                                              | in the browser, from Compodoc output |
 | Compodoc              | never runs, and is not a dependency                                                                | runs on demand                       |
 | `documentation.json`  | never generated, never read                                                                        | generated and read                   |

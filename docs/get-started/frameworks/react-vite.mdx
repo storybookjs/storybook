@@ -47,11 +47,19 @@ You will find the output in the configured `outputDir` (default is `storybook-st
 
 ## Component documentation
 
-Storybook 11 reads React component props on the server by default, with the [`typescript`](../../configure/integration/typescript.mdx) package (TypeScript 5.9 or 6, even in JavaScript projects, where it reads types from JSDoc comments). New projects need no docgen configuration and no extra packages.
+Storybook reads your components' props and JSDoc comments, a step called docgen, to generate [controls](../../essentials/controls.mdx) and [automatic documentation](../../writing-docs/autodocs.mdx). This framework supports three docgen engines:
+
+| Docgen engine             | Runs         | Status               |
+| ------------------------- | ------------ | -------------------- |
+| `react-component-meta`    | Server-side  | Recommended, default |
+| `react-docgen`            | Builder-side | Deprecated           |
+| `react-docgen-typescript` | Builder-side | Deprecated           |
+
+`react-component-meta` reads props on the Storybook server with the [`typescript`](../../configure/integration/typescript.mdx) package (TypeScript 5.9 or 6, even in JavaScript projects, where it reads types from JSDoc comments). New projects need no docgen configuration and no extra packages.
 
 <Callout variant="info">
 
-The Storybook 10 builder-based docgen is still available, but it is deprecated. It will be removed in Storybook 12. To use it:
+The builder-side engines run inside the Vite build and will be removed in Storybook 12. To use one:
 
 1. Set [`features.docgenServer: false`](../../api/main-config/main-config-features.mdx#docgenserver) in your main config.
 2. Set the package you want to use in [`typescript.reactDocgen`](../../api/main-config/main-config-typescript.mdx#reactdocgen). The default is `'react-docgen'`.

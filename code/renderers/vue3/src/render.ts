@@ -96,6 +96,7 @@ export async function renderToCanvas(
     },
   });
 
+  let failedToRender = false;
   vueApp.config.errorHandler = (e: unknown, instance, info) => {
     const preview = (window as Record<string, any>)
       .__STORYBOOK_PREVIEW__ as PreviewWeb<VueRenderer>;
@@ -109,13 +110,19 @@ export async function renderToCanvas(
         throw e;
       }, 0);
     } else {
+      failedToRender = true;
       showException(e as Error);
     }
   };
   await runSetupFunctions(vueApp, storyContext);
   vueApp.mount(canvasElement);
 
-  showMain();
+  // Vue hands setup/render errors to the errorHandler without making mount fail, so this
+  // line is reached even when showException was just sent. showMain must not follow it:
+  // the docs Story block clears its error state on showMain, which would erase the error.
+  if (!failedToRender) {
+    showMain();
+  }
   return () => {
     teardown(vueApp, canvasElement);
   };

@@ -116,6 +116,7 @@ function createDocsManifestRefEntry(
   return {
     id: entry.id,
     name: entry.name,
+    title: entry.title,
     mdx: { $ref: mdxManifestRef(componentId, entry.id) },
   };
 }

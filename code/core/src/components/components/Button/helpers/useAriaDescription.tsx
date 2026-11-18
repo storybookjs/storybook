@@ -1,6 +1,6 @@
 import React, { type ReactElement } from 'react';
 
-import { useId } from '@react-aria/utils';
+import { useId } from 'react-aria/useId';
 
 /**
  * Provides a way to create an accessible description for an element. Returns a hidden element that

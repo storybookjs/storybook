@@ -112,6 +112,10 @@ the fields to change and provide migration-specific error guidance.
   Angular `compodoc: false` controls only the legacy Compodoc run and is not a server opt-out.
 - A static build and an extract-all pass every entry of the run to providers in one call, as the array of inputs.
   A provider built on `ComponentMetaManager` should group the files of all inputs with `groupFilesByProject()` and give each project its files before its first extraction: a file a TypeScript project has not seen rebuilds its program, so adding files one component at a time rebuilds it per component.
+  Providers that extract each component from its own project group with `groupComponentFilesByProject()` and pass the result to `getProjectForFile()`, which hands a project its files on its first lookup.
+  A checker shared by many components orders union members and mapped-type keys by when it first met each type.
+  Extractors list the literal members of a prop's union, and props declared together, in declaration order with the helpers in `storybook/internal/component-meta`.
+  Props declared in different places, members a declaration does not spell out, and the printed text of a union that names more than one alias or enum can still change order with what was extracted before.
 
 ## Agent-facing skills
 

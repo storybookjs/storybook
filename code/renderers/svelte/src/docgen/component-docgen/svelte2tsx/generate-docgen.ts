@@ -1,6 +1,12 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import {
+  getDeclaredLiterals,
+  orderPropertiesByDeclaration,
+  orderUnionMembers,
+  printUnionMembers,
+} from 'storybook/internal/component-meta';
 import { extractJSDocInfo } from 'storybook/internal/csf-tools';
 
 import svelte2tsx, { internalHelpers } from 'svelte2tsx';
@@ -77,7 +83,53 @@ type DefaultValue = {
 /** The default text for an initializer the extractor cannot print, such as `id = slugify()`. */
 export const UNPRINTABLE_DEFAULT = '...';
 
-function convertType(type: ts.Type, checker: ts.TypeChecker): Type | undefined {
+function declaredLiterals(checker: ts.TypeChecker, property: ts.Symbol): (string | number)[] {
+  return (property.declarations ?? []).flatMap((declaration) =>
+    (ts.isPropertySignature(declaration) || ts.isPropertyDeclaration(declaration)) &&
+    declaration.type
+      ? getDeclaredLiterals(ts, checker, declaration.type)
+      : []
+  );
+}
+
+interface PropOrder {
+  props(properties: ts.Symbol[]): ts.Symbol[];
+  of(prop: ts.Symbol): {
+    members(members: ts.Type[]): ts.Type[];
+    text(type: ts.Type, printed: string): string;
+  };
+}
+
+const CHECKER_ORDER: PropOrder = {
+  props: (properties) => properties,
+  of: () => ({ members: (members) => members, text: (_type, printed) => printed }),
+};
+
+function declarationOrder(checker: ts.TypeChecker): PropOrder {
+  return {
+    props: (properties) => orderPropertiesByDeclaration(properties),
+    of(prop) {
+      let declared: (string | number)[] | undefined;
+      const members = (list: ts.Type[]) =>
+        orderUnionMembers(ts, list, (declared ??= declaredLiterals(checker, prop)));
+      return {
+        members,
+        text: (type, printed) =>
+          type.isUnion()
+            ? printUnionMembers(ts, members(type.types), printed, (member) =>
+                checker.typeToString(member, undefined, ts.TypeFormatFlags.NoTruncation)
+              )
+            : printed,
+      };
+    },
+  };
+}
+
+function convertType(
+  type: ts.Type,
+  checker: ts.TypeChecker,
+  orderMembers: (members: ts.Type[]) => ts.Type[] = (members) => members
+): Type | undefined {
   // TypeScript compiler uses bit flags to represent type information.
   // Note the use of the bitwise AND (&) operator here.
   // See examples at: https://github.com/search?q=repo%3Amicrosoft%2FTypeScript+TypeFlags.&type=code
@@ -131,7 +183,7 @@ function convertType(type: ts.Type, checker: ts.TypeChecker): Type | undefined {
   }
   if (type.isUnion()) {
     // TypeA | TypeB
-    const types = type.types
+    const types = orderMembers(type.types)
       .map((t) => convertType(t, checker))
       .filter((t) => {
         return t !== undefined && t.type !== 'undefined';
@@ -673,7 +725,8 @@ export function extractDocgen(
       if (retObjProp.name === 'props') {
         const decl = signature.getDeclaration();
         propsType = checker.getTypeOfSymbolAtLocation(retObjProp, decl);
-        const props = propsType.getProperties();
+        const order = options.server ? declarationOrder(checker) : CHECKER_ORDER;
+        const props = order.props(propsType.getProperties());
         const bulkProps = bulkLibraryProps(props);
         // `value = $bindable()` makes the `value` of `HTMLInputAttributes` part of the component's API.
         const bindable = bindableNames(renderFunction);
@@ -707,12 +760,18 @@ export function extractDocgen(
 
           // Check if this prop is optional
           const optional = (prop.flags & ts.SymbolFlags.Optional) !== 0;
+          const typeText = checker.typeToString(
+            propType,
+            undefined,
+            ts.TypeFormatFlags.NoTruncation
+          );
+          const { members: orderMembers, text: printInOrder } = order.of(prop);
           propMap.set(name, {
             name,
             optional,
             description,
-            type: convertType(propType, checker),
-            typeText: checker.typeToString(propType, undefined, ts.TypeFormatFlags.NoTruncation),
+            type: convertType(propType, checker, orderMembers),
+            typeText: printInOrder(propType, typeText),
             jsDocTags: prop.getJsDocTags(checker).map((tag) => ({
               name: tag.name,
               text: ts.displayPartsToString(tag.text),

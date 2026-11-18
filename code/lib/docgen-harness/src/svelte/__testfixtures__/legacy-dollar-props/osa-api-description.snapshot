@@ -2,10 +2,10 @@
 
 ```
 export type LeoButtonProps = {
-  id?: string | null;
   class?: ClassValue | null;
+  id?: string | null;
   disabled?: boolean | null;
-  type?: "button" | "submit" | "reset" | null;
+  type?: "submit" | "reset" | "button" | null;
   /** Button kind. */
   kind?: "filled" | "outline" = "filled";
   /** Button size. */

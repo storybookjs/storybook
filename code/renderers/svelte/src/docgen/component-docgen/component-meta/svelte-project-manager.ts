@@ -168,9 +168,13 @@ export class SvelteComponentMetaManager extends ComponentMetaManager<
     super(ts, createSvelteProjectFactory(createDocgenCache()));
   }
 
-  generateDocgen(componentPath: string, options: DocgenOptions): Docgen {
-    const docgen = this.getProjectForFile(componentPath).docgen(componentPath, options);
-    this.recycleProjectsIfHeapPressured();
+  generateDocgen(
+    componentPath: string,
+    options: DocgenOptions,
+    batchFiles?: Map<SvelteDocgenProject, string[]>
+  ): Docgen {
+    const docgen = this.getProjectForFile(componentPath, batchFiles).docgen(componentPath, options);
+    this.recycleProjectsIfHeapPressured(batchFiles);
     return docgen;
   }
 }

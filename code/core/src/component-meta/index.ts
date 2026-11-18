@@ -1,4 +1,17 @@
 export { ComponentMetaManager, isFileInDir, sortTSConfigs } from './ComponentMetaManager.ts';
+export {
+  getDeclaredLiterals,
+  orderPropertiesByDeclaration,
+  orderUnionMembers,
+  printUnionMembers,
+} from './declaration-order.ts';
+export type {
+  DeclarationOrderChecker,
+  DeclarationOrderFlags,
+  DeclarationOrderHost,
+  DeclaredSymbolLike,
+  UnionMemberLike,
+} from './declaration-order.ts';
 export { extractComponentJsDocInfo, resolveExportedSymbol } from './jsdoc-info.ts';
 export type {
   ComponentJsDocInfo,

@@ -160,26 +160,7 @@ export class ComponentMetaManager extends BaseComponentMetaManager<
     }
 
     // The batch's projects are disposed, and holding them keeps their language service hosts.
-    if (this.recycleProjectsIfHeapPressured()) {
-      batchFiles?.clear();
-    }
-  }
-
-  // Not before the project's first extraction: the projects share their source files, and a
-  // program built between this project's program and its first type check leaves imports of those
-  // files unresolved.
-  private addBatchFiles(
-    project: ManagedProject,
-    batchFiles: Map<ManagedProject, string[]> | undefined
-  ): void {
-    const files = batchFiles?.get(project) ?? [];
-    batchFiles?.delete(project);
-    try {
-      project.ensureFiles(files);
-    } catch (err) {
-      // The native TypeScript backend can throw here. The extraction then adds its own files.
-      logger.debug(`[reactComponentMeta] Adding the batch files failed: ${err}`);
-    }
+    this.recycleProjectsIfHeapPressured(batchFiles);
   }
 }
 

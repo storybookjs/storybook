@@ -240,7 +240,28 @@ describe('prop extraction', () => {
       });
     });
 
-    it('lists computed enum members by value', async () => {
+    it('lists the members a prop reads through keyof or an indexed access as declared', async () => {
+      const entry = await extract(
+        'Button',
+        dedent`
+          import React from 'react';
+          const sizes = { md: 1, xl: 2, sm: 3 } as const;
+          interface Theme { fallback: 'loud'; tone: 'quiet' | 'loud' }
+          interface Props {
+            first: 'loud' | 'sm' | 'xl';
+            size: keyof typeof sizes;
+            tone: Theme['tone'];
+          }
+          export const Button = (props: Props) => <button />;
+        `
+      );
+
+      const props = entry.component?.reactComponentMeta?.props;
+      expect(props?.size.type.raw).toBe('"md" | "xl" | "sm"');
+      expect(props?.tone.type.raw).toBe('"quiet" | "loud"');
+    });
+
+    it('lists the members of a template literal in the order it spells them out', async () => {
       const entry = await extract(
         'Button',
         dedent`
@@ -255,7 +276,7 @@ describe('prop extraction', () => {
       );
 
       expect(entry.component?.reactComponentMeta?.props.placement.type.raw).toBe(
-        '"top" | "bottom" | "bottom-end" | "bottom-start" | "top-end" | "top-start"'
+        '"top" | "bottom" | "top-start" | "top-end" | "bottom-start" | "bottom-end"'
       );
     });
 

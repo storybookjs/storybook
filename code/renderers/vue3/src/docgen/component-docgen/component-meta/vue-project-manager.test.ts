@@ -1,8 +1,11 @@
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { afterAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { once } from 'storybook/internal/node-logger';
 import type { IndexEntry } from 'storybook/internal/types';
 
 import ts from 'typescript';
@@ -316,5 +319,103 @@ describe('VueComponentMetaManager', () => {
     project.getCommandLine();
     expect(getCommandLine).toHaveBeenCalledOnce();
     expect(checker.updateFile).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('VueComponentMetaManager batches', () => {
+  const dirs: string[] = [];
+  afterEach(async () => {
+    await Promise.all(dirs.splice(0).map((dir) => rm(dir, { recursive: true, force: true })));
+  });
+
+  const writeComponents = async (names: string[]) => {
+    const dir = await mkdtemp(join(tmpdir(), 'sb-vue-batch-'));
+    dirs.push(dir);
+    return Promise.all(
+      names.map(async (name) => {
+        const file = join(dir, `${name}.vue`);
+        await writeFile(
+          file,
+          `<script setup lang="ts">defineProps<{ ${name.toLowerCase()}: string }>();</script><template><i/></template>`
+        );
+        return file;
+      })
+    );
+  };
+
+  it('builds as many programs for a batch of five components as for a batch of two', async () => {
+    const { performance } = ts as typeof ts & {
+      performance: { enable(): void; disable(): void; getCount(markName: string): number };
+    };
+    const programBuilds = async (names: string[]) => {
+      const files = await writeComponents(names);
+      const batchManager = new VueComponentMetaManager(ts);
+      const before = performance.getCount('beforeProgram');
+      try {
+        const batchFiles = batchManager.groupFilesByProject(files);
+        for (const file of files) {
+          batchManager.getCheckerForFile(file, batchFiles).getProgram();
+        }
+        return performance.getCount('beforeProgram') - before;
+      } finally {
+        batchManager.dispose();
+      }
+    };
+    performance.enable();
+    try {
+      expect(await programBuilds(['Alert', 'Badge', 'Chip', 'Dot', 'Tag'])).toBe(
+        await programBuilds(['Alert', 'Badge'])
+      );
+    } finally {
+      performance.disable();
+    }
+  });
+
+  it('reads the program once to add any number of files', () => {
+    const checker = {
+      getProgram: vi.fn(() => ({ getSourceFile: () => undefined })),
+      updateFile: vi.fn(),
+    } as unknown as ComponentMetaChecker;
+    const project = new VueComponentMetaProject(
+      checker,
+      { options: {}, fileNames: [], errors: [] },
+      undefined
+    );
+
+    project.ensureFiles([
+      join(fixturesDir, 'Button.vue'),
+      join(referencesDir, 'src/RefButton.vue'),
+    ]);
+
+    expect(checker.getProgram).toHaveBeenCalledOnce();
+    expect(checker.updateFile).toHaveBeenCalledTimes(2);
+  });
+
+  describe('under heap pressure', () => {
+    beforeEach(() => {
+      vi.spyOn(once, 'warn').mockImplementation(() => undefined);
+      vi.spyOn(process, 'memoryUsage').mockReturnValueOnce({
+        heapUsed: Number.POSITIVE_INFINITY,
+      } as NodeJS.MemoryUsage);
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it('drops the batch when recycling its projects', async () => {
+      const files = await writeComponents(['Alert', 'Badge']);
+      const batchManager = new VueComponentMetaManager(ts);
+      try {
+        const batchFiles = batchManager.groupFilesByProject(files);
+        batchManager.getCheckerForFile(files[0]);
+
+        batchManager.recycleIfHeapPressured(batchFiles);
+
+        expect(batchFiles.size).toBe(0);
+      } finally {
+        batchManager.dispose();
+      }
+    });
   });
 });

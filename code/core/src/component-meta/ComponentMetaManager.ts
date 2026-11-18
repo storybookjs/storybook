@@ -52,6 +52,7 @@ export class ComponentMetaManager<
   // Per root tsconfig, the tsconfigs its project references reach, in the order a lookup tries
   // them. Walking the references stats every referenced path, which is too slow per lookup.
   private referencedTsConfigs = new Map<string, string[]>();
+  private fileNameSets = new WeakMap<string[], { length: number; names: Set<string> }>();
 
   // Our own file watching layer
   private watching = false;
@@ -88,17 +89,24 @@ export class ComponentMetaManager<
   // https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/language-server/lib/project/typescriptProject.ts#L70-L79
   // ---------------------------------------------------------------------------
 
-  getProjectForFile(fileName: string): P {
+  getProjectForFile(fileName: string, batchFiles?: Map<P, string[]>): P {
+    const project = this.matchProject(fileName);
+    this.addBatchFiles(project, batchFiles);
+    if (project === this.inferredProject) {
+      project.ensureFiles([fileName]);
+    }
+    return project;
+  }
+
+  private matchProject(fileName: string): P {
     const tsconfig = this.findMatchTSConfig(fileName);
     if (tsconfig) {
       // Adapted from:
       // https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/language-server/lib/project/typescriptProject.ts#L71-L77
       // Always go through getOrCreateConfiguredProject — never raw map lookup.
-      return (
-        this.getOrCreateConfiguredProject(tsconfig) ?? this.getOrCreateInferredProject(fileName)
-      );
+      return this.getOrCreateConfiguredProject(tsconfig) ?? this.getOrCreateInferredProject();
     }
-    return this.getOrCreateInferredProject(fileName);
+    return this.getOrCreateInferredProject();
   }
 
   /**
@@ -113,8 +121,17 @@ export class ComponentMetaManager<
    * A file goes to the project that extracts it, which is not always the project it belongs to: a
    * component can live under another tsconfig than the story that imports it.
    */
-  groupFilesByProject(groups: { projectFile: string; files: string[] }[]): Map<P, string[]> {
-    const groupsByProjectFile = Map.groupBy(groups, (g) => g.projectFile);
+  groupFilesByProject(groups: { projectFile: string; files: string[] }[]): Map<P, string[]>;
+  groupFilesByProject(files: string[]): Map<P, string[]>;
+  groupFilesByProject(
+    groups: { projectFile: string; files: string[] }[] | string[]
+  ): Map<P, string[]> {
+    const groupsByProjectFile = Map.groupBy(
+      groups.map((group) =>
+        typeof group === 'string' ? { projectFile: group, files: [group] } : group
+      ),
+      (g) => g.projectFile
+    );
     // A tsconfig is found only when a file below it is looked up, and it can include files outside
     // its directory. Find every tsconfig of the batch first, so each file gets the project its
     // extraction picks, whatever the order of the groups.
@@ -123,7 +140,7 @@ export class ComponentMetaManager<
     }
     const filesByProject = new Map<P, Set<string>>();
     for (const [projectFile, projectFileGroups] of groupsByProjectFile) {
-      const project = this.getProjectForFile(projectFile);
+      const project = this.matchProject(projectFile);
       const files = filesByProject.get(project) ?? new Set<string>();
       filesByProject.set(project, files);
       for (const group of projectFileGroups) {
@@ -136,14 +153,14 @@ export class ComponentMetaManager<
   /**
    * Reclaim the shared program(s)' resident type-resolution cache when heap usage approaches the V8
    * limit, preventing the next extraction's spike from OOMing the dev server. Callers with a
-   * batch-extraction surface invoke this after each batch. Returns whether it recycled.
+   * batch-extraction surface invoke this after each batch, and a recycle drops `batchFiles`.
    */
-  protected recycleProjectsIfHeapPressured(): boolean {
+  protected recycleProjectsIfHeapPressured(batchFiles?: Map<P, string[]>): void {
     if (this.configProjects.size === 0 && !this.inferredProject) {
-      return false;
+      return;
     }
     if (process.memoryUsage().heapUsed < this.heapRecycleThresholdBytes) {
-      return false;
+      return;
     }
 
     // We crossed the heap-pressure threshold. Recycling reclaims the type cache and usually prevents
@@ -166,7 +183,33 @@ export class ComponentMetaManager<
     this.referencedTsConfigs.clear();
     this.inferredProject = undefined;
     this.factory.recycle?.();
-    return true;
+    batchFiles?.clear();
+  }
+
+  // Not before the project's first extraction: the projects share their source files, and a
+  // program built between this project's program and its first type check leaves imports of those
+  // files unresolved.
+  protected addBatchFiles(project: P, batchFiles: Map<P, string[]> | undefined): void {
+    const files = batchFiles?.get(project);
+    if (!batchFiles || !files) {
+      return;
+    }
+    batchFiles.delete(project);
+    try {
+      project.ensureFiles(files);
+    } catch (err) {
+      // The native TypeScript backend can throw here. The extraction then adds its own files.
+      logger.debug(`[component-meta] Adding the batch files failed: ${err}`);
+    }
+  }
+
+  private fileNameSet(fileNames: string[]): Set<string> {
+    let cached = this.fileNameSets.get(fileNames);
+    if (cached?.length !== fileNames.length) {
+      cached = { length: fileNames.length, names: new Set(fileNames) };
+      this.fileNameSets.set(fileNames, cached);
+    }
+    return cached.names;
   }
 
   // ---------------------------------------------------------------------------
@@ -232,9 +275,8 @@ export class ComponentMetaManager<
     // https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/language-server/lib/project/typescriptProject.ts#L149-L158
     const findDirectIncludeTsconfig = () => {
       return findTSConfig((tsconfig) => {
-        const commandLine = getCommandLine(tsconfig);
-        const fileNames = new Set(commandLine?.fileNames ?? []);
-        return fileNames.has(fileName);
+        const fileNames = getCommandLine(tsconfig)?.fileNames;
+        return !!fileNames && this.fileNameSet(fileNames).has(fileName);
       });
     };
 
@@ -367,12 +409,10 @@ export class ComponentMetaManager<
   // https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/language-server/lib/project/typescriptProject.ts#L258-L284
   // ---------------------------------------------------------------------------
 
-  private getOrCreateInferredProject(fileName: string): P {
+  private getOrCreateInferredProject(): P {
     if (!this.inferredProject) {
       this.inferredProject = this.factory.createInferredProject();
     }
-
-    this.inferredProject.ensureFiles([fileName]);
 
     return this.inferredProject;
   }

@@ -2,10 +2,10 @@
 
 ```
 export type FileOrTextInputProps = {
-  value?: any; // bind:value={...}
   /** Selected files. */
   files?: FileList; // bind:files={...}
+  value?: any; // bind:value={...}
   /** Input type. */
-  type?: "email" | "file" | "text";
+  type?: "file" | "text" | "email";
 } & Omit<HTMLInputAttributes, "type">
 ```

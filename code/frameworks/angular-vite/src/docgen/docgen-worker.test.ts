@@ -3,7 +3,7 @@ import type { DocgenPayload, DocgenProvider, IndexEntry } from 'storybook/intern
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { buildDocgenPayload } from './build-docgen.ts';
+import { buildDocgenPayload, resolveComponentPaths } from './build-docgen.ts';
 import { createDocgenProvider } from './docgen-worker.ts';
 
 // A structural fake keeps these tests runnable without a real TypeScript-backed analyzer.
@@ -12,6 +12,7 @@ const { analyzer } = vi.hoisted(() => {
     startWatching = vi.fn();
     recycleIfHeapPressured = vi.fn();
     extractComponentMeta = vi.fn();
+    groupFilesByProject = (files: string[]) => state.groupFilesByProject(files);
     typescript: unknown;
 
     constructor(typescript: unknown) {
@@ -29,6 +30,7 @@ const { analyzer } = vi.hoisted(() => {
     instances: [] as InstanceType<typeof FakeAngularComponentMetaManager>[],
     constructions: 0,
     failConstruction: false,
+    groupFilesByProject: vi.fn<(files: string[]) => Map<unknown, string[]>>(),
   };
   return { analyzer: state };
 });
@@ -37,13 +39,18 @@ vi.mock('@storybook/angular-cm', () => ({
   AngularComponentMetaManager: analyzer.FakeAngularComponentMetaManager,
 }));
 // These tests cover the middleware chain, not payload building.
-vi.mock('./build-docgen.ts', () => ({ buildDocgenPayload: vi.fn() }));
+vi.mock('./build-docgen.ts', () => ({
+  buildDocgenPayload: vi.fn(),
+  resolveComponentPaths: vi.fn(() => []),
+}));
 vi.mock(import('storybook/internal/node-logger'), { spy: true });
 
 beforeEach(() => {
   analyzer.instances = [];
   analyzer.constructions = 0;
   analyzer.failConstruction = false;
+  analyzer.groupFilesByProject.mockReset();
+  vi.mocked(resolveComponentPaths).mockReset();
 });
 
 afterEach(() => {
@@ -206,7 +213,7 @@ describe('createDocgenProvider', () => {
     });
   });
 
-  it('threads a structured-cloneable options bag and the manager into the payload builder', async () => {
+  it('threads a structured-cloneable options bag and the analyzer into the payload builder', async () => {
     vi.mocked(buildDocgenPayload).mockReturnValue(ours);
 
     await createDocgenProvider(structuredClone({ propsTable: 'inputs' } as const))(passthrough)([
@@ -216,7 +223,7 @@ describe('createDocgenProvider', () => {
     expect(buildDocgenPayload).toHaveBeenCalledExactlyOnceWith(
       { entry },
       {
-        manager: analyzer.instances[0],
+        manager: { extractComponentMeta: expect.any(Function) },
         options: { propsTable: 'inputs' },
         logger: expect.objectContaining({
           warn: expect.any(Function),
@@ -224,6 +231,65 @@ describe('createDocgenProvider', () => {
         }),
       }
     );
+    const [[, { manager }]] = vi.mocked(buildDocgenPayload).mock.calls;
+    manager.extractComponentMeta('/button.component.ts', { exportName: 'ButtonComponent' });
+    expect(analyzer.instances[0].extractComponentMeta).toHaveBeenCalledExactlyOnceWith(
+      '/button.component.ts',
+      { exportName: 'ButtonComponent' },
+      undefined
+    );
+  });
+
+  describe('with several components in one call', () => {
+    const batchFiles = new Map([['project', ['/Button.component.ts', '/Card.component.ts']]]);
+    const inputs = [{ entry }, { entry: { ...entry, id: 'card--default', title: 'Card' } }];
+
+    beforeEach(() => {
+      vi.mocked(buildDocgenPayload).mockReturnValue(ours);
+      vi.mocked(resolveComponentPaths).mockImplementation(({ entry: { title } }) => [
+        `/${title}.component.ts`,
+      ]);
+      analyzer.groupFilesByProject.mockReturnValue(batchFiles);
+    });
+
+    it('hands them to the analyzer as one batch', async () => {
+      await createDocgenProvider({ propsTable: 'api' })(passthrough)(inputs);
+
+      expect(analyzer.groupFilesByProject).toHaveBeenCalledExactlyOnceWith([
+        '/Button.component.ts',
+        '/Card.component.ts',
+      ]);
+      for (const [, { manager }] of vi.mocked(buildDocgenPayload).mock.calls) {
+        manager.extractComponentMeta('/button.component.ts', { exportName: 'ButtonComponent' });
+      }
+      const [analyzerInstance] = analyzer.instances;
+      expect(analyzerInstance.extractComponentMeta.mock.calls.map(([, , batch]) => batch)).toEqual([
+        batchFiles,
+        batchFiles,
+      ]);
+      expect(analyzerInstance.recycleIfHeapPressured.mock.calls).toEqual([
+        [batchFiles],
+        [batchFiles],
+      ]);
+    });
+
+    describe('when grouping them fails', () => {
+      beforeEach(() => {
+        analyzer.groupFilesByProject.mockImplementation(() => {
+          throw new Error('TypeScript dropped the program');
+        });
+      });
+
+      it('extracts them without a batch', async () => {
+        await expect(
+          createDocgenProvider({ propsTable: 'api' })(passthrough)(inputs)
+        ).resolves.toEqual([fulfilled(ours), fulfilled(ours)]);
+        expect(analyzer.instances[0].recycleIfHeapPressured.mock.calls).toEqual([
+          [undefined],
+          [undefined],
+        ]);
+      });
+    });
   });
 
   it('passes through permanently when the analyzer cannot be created', async () => {

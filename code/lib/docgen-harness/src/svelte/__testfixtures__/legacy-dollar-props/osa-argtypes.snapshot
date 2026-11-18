@@ -155,9 +155,9 @@
     "description": undefined,
     "name": "type",
     "options": [
-      "button",
       "submit",
       "reset",
+      "button",
     ],
     "table": {
       "category": "properties",
@@ -165,16 +165,16 @@
         "summary": undefined,
       },
       "type": {
-        "summary": ""button" | "submit" | "reset"",
+        "summary": ""submit" | "reset" | "button"",
       },
     },
     "type": {
       "name": "enum",
       "required": false,
       "value": [
-        "button",
         "submit",
         "reset",
+        "button",
       ],
     },
   },

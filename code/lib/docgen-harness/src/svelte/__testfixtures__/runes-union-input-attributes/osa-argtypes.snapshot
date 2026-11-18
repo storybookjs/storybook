@@ -29,9 +29,9 @@
     "description": "Input type.",
     "name": "type",
     "options": [
-      "email",
       "file",
       "text",
+      "email",
     ],
     "table": {
       "category": "properties",
@@ -39,16 +39,16 @@
         "summary": undefined,
       },
       "type": {
-        "summary": ""email" | "file" | "text"",
+        "summary": ""file" | "text" | "email"",
       },
     },
     "type": {
       "name": "enum",
       "required": false,
       "value": [
-        "email",
         "file",
         "text",
+        "email",
       ],
     },
   },

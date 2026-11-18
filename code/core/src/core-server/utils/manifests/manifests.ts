@@ -1,7 +1,7 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 
 import {
-  isEligibleStoryEntry,
+  selectManifestStoryIds,
   selectComponentEntriesByComponentId,
 } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
@@ -18,7 +18,7 @@ import { getOwn } from '../../../shared/open-service/plain-object.ts';
 import { readAllComponents } from '../../../shared/open-service/services/component-state-key.ts';
 import type { DocgenPayload } from '../../../shared/open-service/services/docgen/types.ts';
 import type { StoryDocsPayload } from '../../../shared/open-service/services/story-docs/types.ts';
-import { selectManifestStories } from '../../../shared/open-service/toolsets/docs/map.ts';
+import { selectManifestStories } from '../../../shared/open-service/services/story-docs/select-manifest-stories.ts';
 import {
   buildComponentsRefManifest,
   type ComponentManifestWithStoryDocs,
@@ -64,7 +64,7 @@ function mergeServicePayloads(
   docgenPayloads: Record<string, DocgenPayload>,
   storyDocsPayloads: Record<string, StoryDocsPayload>,
   componentIds: string[],
-  storyIds: ReadonlySet<string>
+  manifestStoryIds: ReadonlySet<string>
 ): Record<string, ComponentManifestWithStoryDocs> {
   return Object.fromEntries(
     componentIds.flatMap((id) => {
@@ -72,7 +72,7 @@ function mergeServicePayloads(
       const payload = getOwn(storyDocsPayloads, id);
       const storyDocs = payload && {
         ...payload,
-        stories: selectManifestStories(payload.stories, storyIds),
+        stories: selectManifestStories(payload.stories, manifestStoryIds),
       };
       if (!docgen) {
         // A componentless component (its story file names no `meta.component`, so no docgen
@@ -137,10 +137,6 @@ type ManifestEntries = Awaited<ReturnType<typeof getManifestEntries>>;
  */
 function getManifestComponentIds(manifestEntries: ManifestEntries) {
   return Array.from(selectComponentEntriesByComponentId(manifestEntries).keys());
-}
-
-function getManifestStoryIds(manifestEntries: ManifestEntries) {
-  return new Set(manifestEntries.filter(isEligibleStoryEntry).map((entry) => entry.id));
 }
 
 /** Loads all manifests from the `experimental_manifests` preset for the given manifest entries. */
@@ -226,7 +222,7 @@ async function renderComponentsHtmlFromService(
       readAllComponents(allDocgenPayloads),
       readAllComponents(allStoryDocsPayloads),
       manifestComponentIds,
-      getManifestStoryIds(manifestEntries)
+      selectManifestStoryIds(manifestEntries)
     ),
     manifestComponentIds,
     docsByComponentId
@@ -273,7 +269,7 @@ async function writeDocgenServerManifests(
   docsManifest?: DocsManifest
 ) {
   const manifestComponentIds = getManifestComponentIds(manifestEntries);
-  const manifestStoryIds = getManifestStoryIds(manifestEntries);
+  const manifestStoryIds = selectManifestStoryIds(manifestEntries);
   const hasOtherManifests = Object.keys(manifests).some((name) => name !== 'components');
   const shouldWriteHtml = manifestComponentIds.length > 0 || !!docsManifest;
 

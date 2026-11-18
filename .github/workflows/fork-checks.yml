@@ -53,6 +53,7 @@ jobs:
   test:
     strategy:
       matrix:
+        # The pinned Playwright has no Chromium build for Ubuntu 26.04.
         os: [windows-latest, ubuntu-24.04]
     runs-on: ${{ matrix.os }}
     name: Core Unit Tests, ${{ matrix.os }}

@@ -1,9 +1,4 @@
-import type { StoryDocsById } from '../../services/story-docs/types.ts';
 import type { DocsClassification } from './classify-services.ts';
-
-export function selectManifestStories(stories: StoryDocsById, storyIds: ReadonlySet<string>) {
-  return Object.fromEntries(Object.entries(stories).filter(([id]) => storyIds.has(id)));
-}
 
 export type MdxDoc = {
   id: string;

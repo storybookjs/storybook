@@ -14,7 +14,7 @@ import type { StoryIndex } from 'storybook/internal/types';
 
 import { getComponentIdFromEntry } from '../../../../common/utils/component-id.ts';
 import {
-  isEligibleStoryEntry,
+  selectManifestStoryIds,
   selectComponentEntriesByComponentId,
 } from '../../../../common/utils/select-component-entry.ts';
 import {
@@ -25,6 +25,7 @@ import { Tag } from '../../../constants/tags.ts';
 import { readComponent } from '../../services/component-state-key.ts';
 import type { DocgenService } from '../../services/docgen/definition.ts';
 import type { StoryDocsService } from '../../services/story-docs/definition.ts';
+import { selectManifestStories } from '../../services/story-docs/select-manifest-stories.ts';
 import type { ToolsetGetService } from '../../toolset-definition.ts';
 import { toShallowManifests, type DocsAccess, type ResolvedDocsEntry } from './access.ts';
 import type { DocsClassification } from './classify-services.ts';
@@ -35,7 +36,7 @@ import {
   type CoreDocgenComponent,
 } from './manifest-formatter/adapt-core-manifest.ts';
 import type { ComponentManifestV1, DocV1 } from './manifest-formatter/manifest-types.ts';
-import { selectAttachedDocs, selectManifestStories, type MdxPayload } from './map.ts';
+import { selectAttachedDocs, type MdxPayload } from './map.ts';
 
 /** Stable addon-docs MDX service id. Kept local so the docs toolset does not import core-server. */
 const MDX_SERVICE_ID = 'addon-docs/mdx';
@@ -99,7 +100,7 @@ function classifyIndex(index: StoryIndex): DocsClassification {
   return {
     componentIds: [...selected.keys()],
     storyBasedIds,
-    storyIds: new Set(entries.filter(isEligibleStoryEntry).map((entry) => entry.id)),
+    manifestStoryIds: selectManifestStoryIds(entries),
     unattachedDocs,
     attachedDocsByComponent,
   };
@@ -182,7 +183,10 @@ export function createServiceDocsAccess({
           ? {
               stories:
                 adaptCoreStories(
-                  selectManifestStories(storiesById.get(id)?.stories ?? {}, classification.storyIds)
+                  selectManifestStories(
+                    storiesById.get(id)?.stories ?? {},
+                    classification.manifestStoryIds
+                  )
                 ) ?? [],
             }
           : {}),
@@ -235,7 +239,12 @@ export function createServiceDocsAccess({
       id,
       name: docgenPayload?.name ?? id,
       ...(storyDocsPayload?.stories
-        ? { stories: selectManifestStories(storyDocsPayload.stories, classification.storyIds) }
+        ? {
+            stories: selectManifestStories(
+              storyDocsPayload.stories,
+              classification.manifestStoryIds
+            ),
+          }
         : {}),
       ...(storyDocsPayload?.import ? { import: storyDocsPayload.import } : {}),
       ...(docs ? { docs } : {}),

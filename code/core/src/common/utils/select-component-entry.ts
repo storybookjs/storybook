@@ -29,6 +29,14 @@ export function isEligibleStoryEntry(entry: IndexEntry): boolean {
   return entry.type === 'story' && entry.subtype === 'story';
 }
 
+export function selectManifestStoryIds(entries: IndexEntry[]): Set<string> {
+  return new Set(
+    entries
+      .filter((entry) => isEligibleStoryEntry(entry) && entry.tags?.includes(Tag.MANIFEST))
+      .map((entry) => entry.id)
+  );
+}
+
 /**
  * CSF story file path used for component resolution — the story entry's `importPath`, or the first
  * `storiesImports` entry for attached MDX docs (same rule as the React component manifest generator).

@@ -411,6 +411,7 @@ describe('manifests', () => {
       });
       const html = await readFile('/output/manifests/components.html', 'utf8');
       expect(html).toContain('Primary');
+      expect(html).toContain('&lt;Button /&gt;');
       expect(html).not.toContain('&lt;Button hidden /&gt;');
       expect(await readFile(snapshotPath, 'utf8')).toBe(snapshot);
       expect(JSON.parse(snapshot).components.button.stories['button--hidden'].snippet).toBe(
@@ -426,9 +427,113 @@ describe('manifests', () => {
       const response = createResponse();
       await routes.get('/manifests/components.html')!({}, response);
       expect(response.end).toHaveBeenCalledWith(expect.stringContaining('Primary'));
+      expect(response.end).toHaveBeenCalledWith(expect.stringContaining('&lt;Button /&gt;'));
       expect(response.end).not.toHaveBeenCalledWith(
         expect.stringContaining('&lt;Button hidden /&gt;')
       );
+      expect(logger.error).not.toHaveBeenCalled();
+    });
+
+    it('keeps attached docs without a story ref when every story is excluded', async () => {
+      mockPresets = setupMockPresets({ docgenServer: true });
+      const docs = {
+        'button--docs': {
+          id: 'button--docs',
+          name: 'Docs',
+          mdx: {
+            $ref: '../services/addon-docs/mdx/button.json#/components/button/docs/button--docs',
+          },
+        },
+      };
+      const component = {
+        id: 'button',
+        name: 'Button',
+        path: './button.stories.tsx',
+        jsDocTags: {},
+        stories: [],
+        docs,
+      };
+      mockManifests = {
+        components: {
+          v: 0,
+          components: { button: component },
+          meta: { docgen: 'react-component-meta', durationMs: 0 },
+        },
+      };
+      mockGetIndex.mockResolvedValue({
+        v: 5,
+        entries: {
+          'button--hidden': {
+            type: 'story',
+            subtype: 'story',
+            id: 'button--hidden',
+            name: 'Hidden',
+            title: 'Button',
+            importPath: './button.stories.tsx',
+            tags: ['dev'],
+          },
+          'button--docs': {
+            type: 'docs',
+            id: 'button--docs',
+            name: 'Docs',
+            title: 'Button',
+            importPath: './button.mdx',
+            storiesImports: ['./button.stories.tsx'],
+            tags: [Tag.MANIFEST, Tag.ATTACHED_MDX],
+          },
+        },
+      });
+      const snapshotPath = '/output/services/core/story-docs/button.json';
+      const snapshot = JSON.stringify({
+        components: {
+          button: {
+            id: 'button',
+            name: 'Button',
+            path: './button.stories.tsx',
+            stories: {
+              'button--hidden': { id: 'button--hidden', name: 'Hidden', snippet: '<Button />' },
+            },
+          },
+        },
+      });
+      vol.fromJSON({
+        [snapshotPath]: snapshot,
+        '/output/services/addon-docs/mdx/button.json': JSON.stringify({
+          components: {
+            button: {
+              id: 'button',
+              name: 'Button',
+              docs: {
+                'button--docs': {
+                  id: 'button--docs',
+                  name: 'Docs',
+                  title: 'Button',
+                  path: './button.mdx',
+                  content: '# Button documentation',
+                },
+              },
+            },
+          },
+        }),
+      });
+
+      await writeManifests('/output', mockPresets);
+
+      const manifest = JSON.parse(await readFile('/output/manifests/components.json', 'utf8'));
+      expect(manifest.components.button).not.toHaveProperty('stories');
+      expect(manifest.components.button.docs).toEqual(docs);
+      expect(Object.keys(vol.toJSON())).not.toContain('/output/manifests/stories/button.json');
+      expect(await readFile(snapshotPath, 'utf8')).toBe(snapshot);
+      const access = createProviderDocsAccess({
+        manifestProvider: async (_request, path) => readFile(`/output/${path}`, 'utf8'),
+      });
+      const listing = await access.list({ withStoryIds: true });
+      expect(listing.componentManifest.components.button).not.toHaveProperty('stories');
+      const resolved = await access.resolve('button');
+      expect(resolved).toMatchObject({
+        component: { docs: { 'button--docs': { content: '# Button documentation' } } },
+      });
+      expect(resolved).not.toHaveProperty('component.stories');
       expect(logger.error).not.toHaveBeenCalled();
     });
 

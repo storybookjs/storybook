@@ -13,7 +13,7 @@ import {
 import type { StoryDocsPayload } from '../../../shared/open-service/services/story-docs/types.ts';
 import { getOwn } from '../../../shared/open-service/plain-object.ts';
 import { readComponent } from '../../../shared/open-service/services/component-state-key.ts';
-import { selectManifestStories } from '../../../shared/open-service/toolsets/docs/map.ts';
+import { selectManifestStories } from '../../../shared/open-service/services/story-docs/select-manifest-stories.ts';
 import type { ComponentManifest, ComponentsManifest } from '../../../types/modules/core-common.ts';
 
 import { join } from 'pathe';
@@ -128,7 +128,7 @@ export async function loadStoryDocsPayloadsFromDisk(
 
 export function buildComponentManifestIndex(
   componentIds: string[],
-  storyIds: ReadonlySet<string>,
+  manifestStoryIds: ReadonlySet<string>,
   docgenPayloads: Record<string, DocgenPayload>,
   storyDocsPayloads: Record<string, StoryDocsPayload> = {},
   docsByComponentId: Record<string, Record<string, DocsManifestEntry>> = {}
@@ -145,10 +145,10 @@ export function buildComponentManifestIndex(
     const docs = getOwn(docsByComponentId, id);
     let storiesRef: JsonRef | undefined;
     if (storyDocs) {
-      const stories = selectManifestStories(storyDocs.stories, storyIds);
+      const stories = selectManifestStories(storyDocs.stories, manifestStoryIds);
       if (Object.keys(stories).length === Object.keys(storyDocs.stories).length) {
         storiesRef = { $ref: storyDocsManifestRef(id) };
-      } else {
+      } else if (Object.keys(stories).length > 0) {
         // The service snapshot also supplies Code panel snippets for excluded stories.
         const path = `stories/${storyDocsQueryStaticPath(id)}`;
         storyFiles[path] = { ...storyDocs, stories };

@@ -89,10 +89,30 @@ export const getStateType = (
 
 export const removeNoiseFromName = (storyName: string) => storyName.replaceAll(/(\s|-|_)/gi, '');
 
+const angularComponentSuffix = /\.component$/i;
+
+const stripAngularComponentSuffix = (name: string) => name.replace(angularComponentSuffix, '');
+
+const normalizeHoistName = (name: string) => removeNoiseFromName(name);
+
 export const isStoryHoistable = (storyName: string, componentName: string) => {
-  const normalizeName = (name: string) =>
-    removeNoiseFromName(name.replace(/\.component$/i, '')).toLowerCase();
-  return normalizeName(storyName) === normalizeName(componentName);
+  if (normalizeHoistName(storyName) === normalizeHoistName(componentName)) {
+    return true;
+  }
+
+  const storyNameWithoutSuffix = stripAngularComponentSuffix(storyName);
+  const componentNameWithoutSuffix = stripAngularComponentSuffix(componentName);
+
+  if (storyNameWithoutSuffix === storyName && componentNameWithoutSuffix === componentName) {
+    return false;
+  }
+
+  // Angular titles such as `footer.component` should match `Footer`, but without the suffix
+  // the existing comparison stays case-sensitive so auto-titled kebab-case stories do not hoist.
+  return (
+    normalizeHoistName(storyNameWithoutSuffix).toLowerCase() ===
+    normalizeHoistName(componentNameWithoutSuffix).toLowerCase()
+  );
 };
 
 export const hoistSingleStoryComponents = (data: IndexHash): IndexHash => {

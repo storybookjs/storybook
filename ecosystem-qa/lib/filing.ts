@@ -8,7 +8,7 @@ import {
   renderCommentBody,
   renderIssueBody,
 } from './proposals.ts';
-import type { CommentProposal, Cycle, EvidenceFile, Proposal } from './schema.ts';
+import type { CommentProposal, Cycle, EvidenceFile, FiledIssues, Proposal } from './schema.ts';
 
 export const ASSETS_BRANCH = 'qa-assets';
 // Well under GitHub's 100 MB push limit, and small enough that a release cycle's evidence does not
@@ -199,7 +199,23 @@ export interface FilingOutcome {
   proposal: Proposal;
   state: 'done' | 'skipped' | 'failed';
   detail: string;
+  // The issue that holds the finding of an issue proposal: the one it created, or the one it found
+  // the finding filed as.
+  issue?: number;
 }
+
+export const filedIssues = (outcomes: FilingOutcome[]): FiledIssues =>
+  Object.fromEntries(
+    outcomes.flatMap(({ proposal, issue }) =>
+      issue === undefined ? [] : [[proposal.fingerprint, issue]]
+    )
+  );
+
+// `gh issue create` prints the URL of the issue it created.
+export const createdIssue = (printed: string): number | undefined => {
+  const number = /\/issues\/(\d+)$/.exec(printed)?.[1];
+  return number === undefined ? undefined : Number(number);
+};
 
 const cell = (text: string) => text.replaceAll('|', '\\|').replaceAll('\n', ' ');
 

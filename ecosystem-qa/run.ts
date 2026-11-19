@@ -153,7 +153,7 @@ const parsedFlag = <T>(schema: z.ZodType<T>, flag: string, value: unknown): T =>
 };
 
 const planOfRun = (
-  values: { plan?: string; batch?: string; part?: string; tier?: string },
+  values: { plan?: string; batch?: string; part?: string; tier?: string; build?: string },
   repo: string,
   version: string
 ): (PlannedRun & { tier: Tier }) | undefined => {
@@ -164,7 +164,7 @@ const planOfRun = (
   if (!scope) {
     return undefined;
   }
-  const planned = plannedRun(scope, { repo, version, part: values.part });
+  const planned = plannedRun(scope, { repo, version, build: values.build, part: values.part });
   return typeof planned === 'string' ? refuse(planned) : { ...planned, tier: scope.tier };
 };
 

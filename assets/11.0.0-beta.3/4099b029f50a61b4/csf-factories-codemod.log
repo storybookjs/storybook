@@ -1,0 +1,31 @@
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+[90m┌[39m  Running csf-factories automigration
+[90m│[39m
+[32m◇[39m  Running migration [35mcsf-factories[39m..
+[90m│[39m
+[32m◇[39m  Applying codemod on your stories, this might take some time...
+[90m│[39m
+[90m│[39m  Summary: [32m10 transformed[39m, [33m0 unmodified[39m, [31m0 errors[39m
+[90m│[39m
+[32m◇[39m  Applying codemod on your main config...
+[90m│[39m
+[90m│[39m  Summary: [32m1 transformed[39m, [33m0 unmodified[39m, [31m0 errors[39m
+[90m│[39m
+[32m◇[39m  Applying codemod on your preview config...
+[90m│[39m
+[90m│[39m  Summary: [32m1 transformed[39m, [33m0 unmodified[39m, [31m0 errors[39m
+[90m│[39m
+[90m│[39m  Synchronizing addons from main config in [36mpreview.jsx[39m:
+[90m│[39m  [35m@storybook/addon-docs[39m, [35m@storybook/addon-a11y[39m
+│ ┌──────────────────────────────────────────────────────────────────────────┐
+│ │  You can now run Storybook with the new CSF 4 format.                    │
+│ │                                                                          │
+│ │  For more info, check out the docs:                                      │
+│ │  [33mhttps://storybook.js.org/docs/writing-stories/csf/upgrade?ref=upgrade[39m   │
+│ └──────────────────────────────────────────────────────────────────────────┘
+[90m│[39m
+[90m└[39m  Done
+
+exit=0

@@ -1,0 +1,399 @@
+diff --git a/storybook/main.ts b/storybook/main.ts
+index c02ea8b..a949ee2 100644
+--- a/storybook/main.ts
++++ b/storybook/main.ts
+@@ -1,8 +1,8 @@
++import { defineMain } from '@storybook/react-vite/node';
+ import path from 'node:path';
+ import { fileURLToPath } from 'node:url';
+ import { type InlineConfig, type PluginOption, mergeConfig } from 'vite';
+ import react from '@vitejs/plugin-react';
+-import type { StorybookConfig } from '@storybook/react-vite';
+ import dsTokenFallbacks from '@wordpress/theme-build-tools/postcss-plugins/postcss-ds-token-fallbacks';
+ import dsTokenFallbacksJs from '@wordpress/theme-build-tools/vite-plugins/vite-ds-token-fallbacks';
+ import { statusIndexer } from './status-indexer.js';
+@@ -47,7 +47,7 @@ const stories = [
+ 	'../packages/admin-ui/src/**/stories/*.story.@(ts|tsx|mts|cts)',
+ ];
+ 
+-const config: StorybookConfig = {
++export default defineMain( {
+ 	core: {
+ 		disableTelemetry: true,
+ 	},
+@@ -281,6 +281,7 @@ const config: StorybookConfig = {
+ 		//
+ 		// See: https://github.com/storybookjs/storybook/issues/34824
+ 		experimentalReactComponentMeta: true,
++		experimentalLiveServerSnippets: true,
+ 	},
+ 	typescript: {
+ 		reactDocgen: 'react-docgen-typescript',
+@@ -497,6 +498,4 @@ const config: StorybookConfig = {
+ 			},
+ 		} satisfies InlineConfig );
+ 	},
+-};
+-
+-export default config;
++} );
+diff --git a/storybook/preview.jsx b/storybook/preview.jsx
+index 8cff7dc..d73a2a8 100644
+--- a/storybook/preview.jsx
++++ b/storybook/preview.jsx
+@@ -1,3 +1,4 @@
++import { definePreview } from '@storybook/react-vite';
+ import {
+ 	Controls,
+ 	Description,
+@@ -13,6 +14,8 @@ import { WithDesignSystemTheme } from './decorators/with-design-system-theme';
+ import { ComponentStatusIndicator } from './components/component-status-indicator';
+ import { handlePreloadError } from './load-error-recovery';
+ import theme from './theme';
++import addonDocs from '@storybook/addon-docs';
++import addonA11y from '@storybook/addon-a11y';
+ 
+ if ( typeof window !== 'undefined' ) {
+ 	window.addEventListener( 'vite:preloadError', handlePreloadError, {
+@@ -20,94 +23,94 @@ if ( typeof window !== 'undefined' ) {
+ 	} );
+ }
+ 
+-export const globalTypes = {
+-	direction: {
+-		name: 'RTL',
+-		description: 'Simulate an RTL language.',
+-		defaultValue: 'ltr',
+-		toolbar: {
+-			icon: 'globe',
+-			items: [
+-				{ value: 'ltr', title: 'LTR' },
+-				{ value: 'rtl', title: 'RTL' },
+-			],
++export default definePreview( {
++	globalTypes: {
++		direction: {
++			name: 'RTL',
++			description: 'Simulate an RTL language.',
++			defaultValue: 'ltr',
++			toolbar: {
++				icon: 'globe',
++				items: [
++					{ value: 'ltr', title: 'LTR' },
++					{ value: 'rtl', title: 'RTL' },
++				],
++			},
+ 		},
+-	},
+-	css: {
+-		name: 'Global CSS',
+-		description:
+-			'Inject global CSS that may be loaded in certain contexts.',
+-		defaultValue: 'basic',
+-		toolbar: {
+-			icon: 'document',
+-			items: [
+-				{ value: 'none', title: 'None' },
+-				{ value: 'basic', title: 'Font only' },
+-				{
+-					value: 'wordpress',
+-					title: 'WordPress (common, forms, dashicons)',
+-				},
+-			],
++		css: {
++			name: 'Global CSS',
++			description:
++				'Inject global CSS that may be loaded in certain contexts.',
++			defaultValue: 'basic',
++			toolbar: {
++				icon: 'document',
++				items: [
++					{ value: 'none', title: 'None' },
++					{ value: 'basic', title: 'Font only' },
++					{
++						value: 'wordpress',
++						title: 'WordPress (common, forms, dashicons)',
++					},
++				],
++			},
+ 		},
+-	},
+-	maxWidthWrapper: {
+-		name: 'Max-Width Wrapper',
+-		description: 'Wrap the component in a div with a max-width.',
+-		defaultValue: 'none',
+-		toolbar: {
+-			icon: 'outline',
+-			items: [
+-				{ value: 'none', title: 'None' },
+-				{ value: 'wordpress-sidebar', title: 'WP Sidebar' },
+-				{ value: 'small-container', title: 'Small container' },
+-				{ value: 'large-container', title: 'Large container' },
+-			],
++		maxWidthWrapper: {
++			name: 'Max-Width Wrapper',
++			description: 'Wrap the component in a div with a max-width.',
++			defaultValue: 'none',
++			toolbar: {
++				icon: 'outline',
++				items: [
++					{ value: 'none', title: 'None' },
++					{ value: 'wordpress-sidebar', title: 'WP Sidebar' },
++					{ value: 'small-container', title: 'Small container' },
++					{ value: 'large-container', title: 'Large container' },
++				],
++			},
+ 		},
++		dsColorTheme: {},
++		dsPrimaryColor: {},
++		dsBackgroundColor: {},
++		dsCursorControl: {},
++		dsCornerRadius: {},
+ 	},
+-	dsColorTheme: {},
+-	dsPrimaryColor: {},
+-	dsBackgroundColor: {},
+-	dsCursorControl: {},
+-	dsCornerRadius: {},
+-};
+-
+-export const decorators = [
+-	WithGlobalCSS,
+-	WithRTL,
+-	WithMaxWidthWrapper,
+-	WithDesignSystemTheme,
+-];
+-
+-export const parameters = {
+-	a11y: {
+-		test: 'error',
+-	},
+-	controls: {
+-		expanded: true,
+-		sort: 'requiredFirst',
+-	},
+-	backgrounds: {
+-		disable: true,
+-	},
+-	docs: {
+-		theme,
++	decorators: [
++		WithGlobalCSS,
++		WithRTL,
++		WithMaxWidthWrapper,
++		WithDesignSystemTheme,
++	],
++	parameters: {
++		a11y: {
++			test: 'error',
++		},
+ 		controls: {
++			expanded: true,
+ 			sort: 'requiredFirst',
+ 		},
+-		// Flips the order of the description and the primary component story
+-		// so the component is always visible before the fold.
+-		page: () => (
+-			<>
+-				<Title />
+-				<Subtitle />
+-				<ComponentStatusIndicator />
+-				<Primary />
+-				<Description />
+-				<Controls />
+-				<Stories includePrimary={ false } />
+-			</>
+-		),
++		backgrounds: {
++			disable: true,
++		},
++		docs: {
++			theme,
++			controls: {
++				sort: 'requiredFirst',
++			},
++			// Flips the order of the description and the primary component story
++			// so the component is always visible before the fold.
++			page: () => (
++				<>
++					<Title />
++					<Subtitle />
++					<ComponentStatusIndicator />
++					<Primary />
++					<Description />
++					<Controls />
++					<Stories includePrimary={ false } />
++				</>
++			),
++		},
+ 	},
+-};
+-
+-export const tags = [ 'autodocs', '!manifest' ];
++	tags: [ 'autodocs', '!manifest' ],
++	addons: [addonDocs(), addonA11y()],
++} );
+diff --git a/storybook/stories/design-system/tokens/motion.story.tsx b/storybook/stories/design-system/tokens/motion.story.tsx
+index 7c91108..afc55ce 100644
+--- a/storybook/stories/design-system/tokens/motion.story.tsx
++++ b/storybook/stories/design-system/tokens/motion.story.tsx
+@@ -1,4 +1,4 @@
+-import type { Meta, StoryObj } from '@storybook/react-vite';
++import preview from '../../../preview';
+ import { useState, useCallback } from '@wordpress/element';
+ import { Button, InputControl, SelectControl, Stack } from '@wordpress/ui';
+ 
+@@ -235,7 +235,7 @@ function MotionDemo() {
+ 	);
+ }
+ 
+-const meta: Meta< typeof MotionDemo > = {
++const meta = preview.meta( {
+ 	title: 'Design System/Tokens/Motion',
+ 	component: MotionDemo,
+ 	tags: [ 'docs-only' ],
+@@ -243,7 +243,6 @@ const meta: Meta< typeof MotionDemo > = {
+ 		controls: { hideNoControlsWarning: true },
+ 		docs: { canvas: { sourceState: 'shown' } },
+ 	},
+-};
+-export default meta;
++} );
+ 
+-export const Default: StoryObj< typeof MotionDemo > = {};
++export const Default = meta.story();
+diff --git a/storybook/stories/icons/library.story.tsx b/storybook/stories/icons/library.story.tsx
+index 1fadc49..0e6cf05 100644
+--- a/storybook/stories/icons/library.story.tsx
++++ b/storybook/stories/icons/library.story.tsx
+@@ -1,4 +1,4 @@
+-import type { Meta, StoryObj } from '@storybook/react-vite';
++import preview from '../../preview';
+ import { useArgs } from 'storybook/preview-api';
+ import {
+ 	useEffect,
+@@ -22,7 +22,7 @@ import {
+ } from './manifest';
+ import styles from './library.module.scss';
+ 
+-const meta: Meta = {
++const meta = preview.type< { args: LibraryArgs } >().meta( {
+ 	component: Icon,
+ 	id: 'icons-icon',
+ 	title: 'Design System/Icons/Icon',
+@@ -36,8 +36,7 @@ const meta: Meta = {
+ 		collection: { control: false },
+ 		icon: { control: false },
+ 	},
+-};
+-export default meta;
++} );
+ 
+ const COLLECTION_DESCRIPTIONS: Record< Collection, ReactElement > = {
+ 	all: (
+@@ -164,7 +163,7 @@ const LibraryExample = ( {
+ 	);
+ };
+ 
+-export const Library: StoryObj< LibraryArgs > = {
++export const Library = meta.story( {
+ 	args: {
+ 		filter: '',
+ 		collection: 'all',
+@@ -178,4 +177,4 @@ export const Library: StoryObj< LibraryArgs > = {
+ 			/>
+ 		);
+ 	},
+-};
++} );
+diff --git a/storybook/stories/playground/index.story.jsx b/storybook/stories/playground/index.story.jsx
+index aaa12a9..0b3a71d 100644
+--- a/storybook/stories/playground/index.story.jsx
++++ b/storybook/stories/playground/index.story.jsx
+@@ -1,3 +1,4 @@
++import preview from '../../preview';
+ import { registerCoreBlocks } from '@wordpress/block-library';
+ import EditorFullPage from './fullpage';
+ import EditorBox from './box';
+@@ -6,44 +7,48 @@ import EditorZoomOut from './zoom-out';
+ 
+ registerCoreBlocks();
+ 
+-export default {
++const meta = preview.meta( {
+ 	title: 'Playground/Block Editor',
+ 	parameters: {
+ 		sourceLink: 'storybook/stories/playground',
+ 	},
+-};
++} );
+ 
+-export const _default = ( _args, { globals } ) => {
+-	return <EditorFullPage direction={ globals.direction } />;
+-};
+-
+-_default.parameters = {
+-	sourceLink: 'storybook/stories/playground/fullpage/index.jsx',
+-};
+-
+-export const Box = ( _args, { globals } ) => {
+-	return <EditorBox direction={ globals.direction } />;
+-};
+-
+-Box.parameters = {
+-	sourceLink: 'storybook/stories/playground/box/index.jsx',
+-};
+-
+-export const UndoRedo = ( _args, { globals } ) => {
+-	return <EditorWithUndoRedo direction={ globals.direction } />;
+-};
++export const _default = meta.story( {
++	render: ( _args, { globals } ) => {
++		return <EditorFullPage direction={ globals.direction } />;
++	},
++	parameters: {
++		sourceLink: 'storybook/stories/playground/fullpage/index.jsx',
++	},
++} );
+ 
+-UndoRedo.parameters = {
+-	sourceLink: 'storybook/stories/playground/with-undo-redo/index.jsx',
+-};
++export const Box = meta.story( {
++	render: ( _args, { globals } ) => {
++		return <EditorBox direction={ globals.direction } />;
++	},
++	parameters: {
++		sourceLink: 'storybook/stories/playground/box/index.jsx',
++	},
++} );
+ 
+-export const ZoomOut = ( props, { globals } ) => {
+-	return <EditorZoomOut { ...props } direction={ globals.direction } />;
+-};
++export const UndoRedo = meta.story( {
++	render: ( _args, { globals } ) => {
++		return <EditorWithUndoRedo direction={ globals.direction } />;
++	},
++	parameters: {
++		sourceLink: 'storybook/stories/playground/with-undo-redo/index.jsx',
++	},
++} );
+ 
+-ZoomOut.parameters = {
+-	sourceLink: 'storybook/stories/playground/zoom-out/index.jsx',
+-};
+-ZoomOut.argTypes = {
+-	zoomLevel: { control: { type: 'range', min: 10, max: 100, step: 5 } },
+-};
++export const ZoomOut = meta.story( {
++	render: ( props, { globals } ) => {
++		return <EditorZoomOut { ...props } direction={ globals.direction } />;
++	},
++	parameters: {
++		sourceLink: 'storybook/stories/playground/zoom-out/index.jsx',
++	},
++	argTypes: {
++		zoomLevel: { control: { type: 'range', min: 10, max: 100, step: 5 } },
++	},
++} );

@@ -1,0 +1,435 @@
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> gutenberg@24.4.0-rc.1 pretypecheck
+> npm run --workspace @wordpress/build-scripts generate-worker-placeholders --
+
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> @wordpress/build-scripts@0.0.0 generate-worker-placeholders
+> node ./packages/generate-worker-placeholders.mjs
+
+🔧 Generating worker placeholders...
+
+   ✔ All worker placeholders already exist
+
+🎉 Worker placeholder generation complete! (31ms)
+
+> gutenberg@24.4.0-rc.1 typecheck
+> npm run --workspace @wordpress/build-scripts typecheck -- storybook/tsconfig.json
+
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> @wordpress/build-scripts@0.0.0 typecheck
+> node ./typecheck.mjs storybook/tsconfig.json
+
+storybook/addons/design-system-theme/manager.ts:13:2 - error TS2305: Module '"storybook/internal/components"' has no exported member 'WithTooltip'.
+
+13  WithTooltip,
+    ~~~~~~~~~~~
+
+storybook/addons/design-system-theme/manager.ts:14:2 - error TS2305: Module '"storybook/internal/components"' has no exported member 'TooltipMessage'.
+
+14  TooltipMessage,
+    ~~~~~~~~~~~~~~
+
+storybook/addons/design-system-theme/manager.ts:15:2 - error TS2305: Module '"storybook/internal/components"' has no exported member 'TooltipLinkList'.
+
+15  TooltipLinkList,
+    ~~~~~~~~~~~~~~~
+
+storybook/addons/design-system-theme/manager.ts:17:10 - error TS2305: Module '"storybook/theming"' has no exported member 'useTheme'.
+
+17 import { useTheme } from 'storybook/theming';
+            ~~~~~~~~
+
+storybook/decorators/with-global-css.jsx:2:25 - error TS2307: Cannot find module '../global-basic.scss?inline' or its corresponding type declarations.
+
+2 import basicStyles from '../global-basic.scss?inline';
+                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+storybook/decorators/with-global-css.jsx:3:29 - error TS2307: Cannot find module '../global-wordpress.scss?inline' or its corresponding type declarations.
+
+3 import wordPressStyles from '../global-wordpress.scss?inline';
+                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+storybook/decorators/with-global-css.jsx:41:32 - error TS7006: Parameter 'Story' implicitly has an 'any' type.
+
+41 export const WithGlobalCSS = ( Story, context ) => {
+                                  ~~~~~
+
+storybook/decorators/with-global-css.jsx:41:39 - error TS7006: Parameter 'context' implicitly has an 'any' type.
+
+41 export const WithGlobalCSS = ( Story, context ) => {
+                                         ~~~~~~~
+
+storybook/decorators/with-global-css.jsx:43:3 - error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ none: { lazyStyles: never[]; externalStyles: never[]; classes: never[]; }; basic: { lazyStyles: any[]; externalStyles: never[]; classes: never[]; }; wordpress: { lazyStyles: any[]; externalStyles: string[]; classes: string[]; }; }'.
+
+43   config[ context.globals.css ];
+     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+storybook/decorators/with-global-css.jsx:49:28 - error TS7006: Parameter 'stylesheet' implicitly has an 'any' type.
+
+49    { externalStyles.map( ( stylesheet ) => (
+                              ~~~~~~~~~~
+
+storybook/decorators/with-max-width-wrapper.jsx:10:38 - error TS7006: Parameter 'Story' implicitly has an 'any' type.
+
+10 export const WithMaxWidthWrapper = ( Story, context ) => {
+                                        ~~~~~
+
+storybook/decorators/with-max-width-wrapper.jsx:10:45 - error TS7006: Parameter 'context' implicitly has an 'any' type.
+
+10 export const WithMaxWidthWrapper = ( Story, context ) => {
+                                               ~~~~~~~
+
+storybook/decorators/with-max-width-wrapper.jsx:16:19 - error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ none: number; 'wordpress-sidebar': number; 'small-container': number; 'large-container': number; }'.
+
+16  const maxWidth = maxWidthWrapperMap[ context.globals.maxWidthWrapper ];
+                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+storybook/decorators/with-rtl.jsx:3:20 - error TS6307: File '/home/agent/workspace/storybook/package-styles/config.js' is not listed within the file list of project '/home/agent/workspace/storybook/tsconfig.json'. Projects must list all files or use an 'include' pattern.
+
+3 import CONFIG from '../package-styles/config';
+                     ~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+storybook/decorators/with-rtl.jsx:6:26 - error TS7006: Parameter 'Story' implicitly has an 'any' type.
+
+6 export const WithRTL = ( Story, context ) => {
+                           ~~~~~
+
+storybook/decorators/with-rtl.jsx:6:33 - error TS7006: Parameter 'context' implicitly has an 'any' type.
+
+6 export const WithRTL = ( Story, context ) => {
+                                  ~~~~~~~
+
+storybook/decorators/with-rtl.jsx:8:14 - error TS2554: Expected 1 arguments, but got 0.
+
+8  const ref = useRef();
+               ~~~~~~
+
+  node_modules/.store/@types/react@19.3.0-8Cb6klKRzlU2xvNuV7s80Q/node_modules/@types/react/index.d.ts:1744:24 - An argument for 'initialValue' was not provided.
+    1744     function useRef<T>(initialValue: T): RefObject<T>;
+                                ~~~~~~~~~~~~~~~
+
+storybook/decorators/with-rtl.jsx:10:13 - error TS2345: Argument of type '() => () => number | undefined' is not assignable to parameter of type 'EffectCallback'.
+  Type '() => number | undefined' is not assignable to type 'void | Destructor'.
+    Type '() => number | undefined' is not assignable to type 'Destructor'.
+      Type 'number | undefined' is not assignable to type 'void | { [UNDEFINED_VOID_ONLY]: never; }'.
+        Type 'number' is not assignable to type 'void | { [UNDEFINED_VOID_ONLY]: never; }'.
+
+10  useEffect( () => {
+               ~~~~~~~
+
+storybook/decorators/with-rtl.jsx:33:8 - error TS7034: Variable 'stylesToUse' implicitly has type 'any[]' in some locations where its type cannot be determined.
+
+33  const stylesToUse = [];
+          ~~~~~~~~~~~
+
+storybook/decorators/with-rtl.jsx:37:25 - error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ componentIdMatcher: RegExp; ltr: any[]; rtl: any[]; }'.
+
+37    stylesToUse.push( ...item[ context.globals.direction ] );
+                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+storybook/decorators/with-rtl.jsx:41:18 - error TS7005: Variable 'stylesToUse' implicitly has an 'any[]' type.
+
+41  useSharedStyle( stylesToUse.join( '\n' ) );
+                    ~~~~~~~~~~~
+
+storybook/main.ts:121:28 - error TS7006: Parameter 'orderArray' implicitly has an 'any' type.
+
+121    const getOrderIndex = ( orderArray, name ) => {
+                               ~~~~~~~~~~
+
+storybook/main.ts:121:40 - error TS7006: Parameter 'name' implicitly has an 'any' type.
+
+121    const getOrderIndex = ( orderArray, name ) => {
+                                           ~~~~
+
+storybook/main.ts:135:29 - error TS7006: Parameter 'orderArray' implicitly has an 'any' type.
+
+135    const getNestedOrder = ( orderArray, name ) => {
+                                ~~~~~~~~~~
+
+storybook/main.ts:135:41 - error TS7006: Parameter 'name' implicitly has an 'any' type.
+
+135    const getNestedOrder = ( orderArray, name ) => {
+                                            ~~~~
+
+storybook/main.ts:150:27 - error TS7006: Parameter 'entry' implicitly has an 'any' type.
+
+150    const isMdxAtDepth = ( entry, path, depth ) =>
+                              ~~~~~
+
+storybook/main.ts:150:34 - error TS7006: Parameter 'path' implicitly has an 'any' type.
+
+150    const isMdxAtDepth = ( entry, path, depth ) =>
+                                     ~~~~
+
+storybook/main.ts:150:40 - error TS7006: Parameter 'depth' implicitly has an 'any' type.
+
+150    const isMdxAtDepth = ( entry, path, depth ) =>
+                                           ~~~~~
+
+storybook/main.ts:228:26 - error TS7006: Parameter 'entry' implicitly has an 'any' type.
+
+228    const getPriority = ( entry ) => {
+                             ~~~~~
+
+storybook/package-styles/config.js:1:28 - error TS2307: Cannot find module '../package-styles/block-editor-ltr.lazy.scss?inline' or its corresponding type declarations.
+
+1 import blockEditorLtr from '../package-styles/block-editor-ltr.lazy.scss?inline';
+                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+storybook/package-styles/config.js:2:28 - error TS2307: Cannot find module '../package-styles/block-editor-rtl.lazy.scss?inline' or its corresponding type declarations.
+
+2 import blockEditorRtl from '../package-styles/block-editor-rtl.lazy.scss?inline';
+                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+storybook/package-styles/config.js:3:29 - error TS2307: Cannot find module '../package-styles/block-library-ltr.lazy.scss?inline' or its corresponding type declarations.
+
+3 import blockLibraryLtr from '../package-styles/block-library-ltr.lazy.scss?inline';
+                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+storybook/package-styles/config.js:4:29 - error TS2307: Cannot find module '../package-styles/block-library-rtl.lazy.scss?inline' or its corresponding type declarations.
+
+4 import blockLibraryRtl from '../package-styles/block-library-rtl.lazy.scss?inline';
+                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+storybook/package-styles/config.js:5:27 - error TS2307: Cannot find module '../package-styles/components-ltr.lazy.scss?inline' or its corresponding type declarations.
+
+5 import componentsLtr from '../package-styles/components-ltr.lazy.scss?inline';
+                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+storybook/package-styles/config.js:6:27 - error TS2307: Cannot find module '../package-styles/components-rtl.lazy.scss?inline' or its corresponding type declarations.
+
+6 import componentsRtl from '../package-styles/components-rtl.lazy.scss?inline';
+                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+storybook/package-styles/config.js:7:25 - error TS2307: Cannot find module '../package-styles/commands-ltr.lazy.scss?inline' or its corresponding type declarations.
+
+7 import commandsLtr from '../package-styles/commands-ltr.lazy.scss?inline';
+                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+storybook/package-styles/config.js:8:25 - error TS2307: Cannot find module '../package-styles/commands-rtl.lazy.scss?inline' or its corresponding type declarations.
+
+8 import commandsRtl from '../package-styles/commands-rtl.lazy.scss?inline';
+                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+storybook/package-styles/config.js:9:23 - error TS2307: Cannot find module '../package-styles/editor-ltr.lazy.scss?inline' or its corresponding type declarations.
+
+9 import editorLtr from '../package-styles/editor-ltr.lazy.scss?inline';
+                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+storybook/package-styles/config.js:10:23 - error TS2307: Cannot find module '../package-styles/editor-rtl.lazy.scss?inline' or its corresponding type declarations.
+
+10 import editorRtl from '../package-styles/editor-rtl.lazy.scss?inline';
+                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+storybook/package-styles/config.js:11:30 - error TS2307: Cannot find module '../package-styles/format-library-ltr.lazy.scss?inline' or its corresponding type declarations.
+
+11 import formatLibraryLtr from '../package-styles/format-library-ltr.lazy.scss?inline';
+                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+storybook/package-styles/config.js:12:30 - error TS2307: Cannot find module '../package-styles/format-library-rtl.lazy.scss?inline' or its corresponding type declarations.
+
+12 import formatLibraryRtl from '../package-styles/format-library-rtl.lazy.scss?inline';
+                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+storybook/package-styles/config.js:13:25 - error TS2307: Cannot find module '../package-styles/edit-site-ltr.lazy.scss?inline' or its corresponding type declarations.
+
+13 import editSiteLtr from '../package-styles/edit-site-ltr.lazy.scss?inline';
+                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+storybook/package-styles/config.js:14:25 - error TS2307: Cannot find module '../package-styles/edit-site-rtl.lazy.scss?inline' or its corresponding type declarations.
+
+14 import editSiteRtl from '../package-styles/edit-site-rtl.lazy.scss?inline';
+                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+storybook/package-styles/config.js:15:26 - error TS2307: Cannot find module '../package-styles/dataviews-ltr.lazy.scss?inline' or its corresponding type declarations.
+
+15 import dataviewsLtr from '../package-styles/dataviews-ltr.lazy.scss?inline';
+                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+storybook/package-styles/config.js:16:26 - error TS2307: Cannot find module '../package-styles/dataviews-rtl.lazy.scss?inline' or its corresponding type declarations.
+
+16 import dataviewsRtl from '../package-styles/dataviews-rtl.lazy.scss?inline';
+                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+storybook/package-styles/config.js:17:23 - error TS2307: Cannot find module '../package-styles/fields-ltr.lazy.scss?inline' or its corresponding type declarations.
+
+17 import fieldsLtr from '../package-styles/fields-ltr.lazy.scss?inline';
+                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+storybook/package-styles/config.js:18:23 - error TS2307: Cannot find module '../package-styles/fields-rtl.lazy.scss?inline' or its corresponding type declarations.
+
+18 import fieldsRtl from '../package-styles/fields-rtl.lazy.scss?inline';
+                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+storybook/package-styles/config.js:19:28 - error TS2307: Cannot find module '../package-styles/image-editor-ltr.lazy.scss?inline' or its corresponding type declarations.
+
+19 import imageEditorLtr from '../package-styles/image-editor-ltr.lazy.scss?inline';
+                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+storybook/package-styles/config.js:20:28 - error TS2307: Cannot find module '../package-styles/image-editor-rtl.lazy.scss?inline' or its corresponding type declarations.
+
+20 import imageEditorRtl from '../package-styles/image-editor-rtl.lazy.scss?inline';
+                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+storybook/package-styles/config.js:21:28 - error TS2307: Cannot find module '../package-styles/media-editor-ltr.lazy.scss?inline' or its corresponding type declarations.
+
+21 import mediaEditorLtr from '../package-styles/media-editor-ltr.lazy.scss?inline';
+                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+storybook/package-styles/config.js:22:28 - error TS2307: Cannot find module '../package-styles/media-editor-rtl.lazy.scss?inline' or its corresponding type declarations.
+
+22 import mediaEditorRtl from '../package-styles/media-editor-rtl.lazy.scss?inline';
+                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+storybook/package-styles/config.js:23:28 - error TS2307: Cannot find module '../package-styles/media-fields-ltr.lazy.scss?inline' or its corresponding type declarations.
+
+23 import mediaFieldsLtr from '../package-styles/media-fields-ltr.lazy.scss?inline';
+                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+storybook/package-styles/config.js:24:28 - error TS2307: Cannot find module '../package-styles/media-fields-rtl.lazy.scss?inline' or its corresponding type declarations.
+
+24 import mediaFieldsRtl from '../package-styles/media-fields-rtl.lazy.scss?inline';
+                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+storybook/package-styles/config.js:25:26 - error TS2307: Cannot find module '../package-styles/design-tokens.lazy.scss?inline' or its corresponding type declarations.
+
+25 import designTokens from '../package-styles/design-tokens.lazy.scss?inline';
+                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+storybook/preview.jsx:10:31 - error TS6307: File '/home/agent/workspace/storybook/decorators/with-global-css.jsx' is not listed within the file list of project '/home/agent/workspace/storybook/tsconfig.json'. Projects must list all files or use an 'include' pattern.
+
+10 import { WithGlobalCSS } from './decorators/with-global-css';
+                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+storybook/preview.jsx:11:37 - error TS6307: File '/home/agent/workspace/storybook/decorators/with-max-width-wrapper.jsx' is not listed within the file list of project '/home/agent/workspace/storybook/tsconfig.json'. Projects must list all files or use an 'include' pattern.
+
+11 import { WithMaxWidthWrapper } from './decorators/with-max-width-wrapper';
+                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+storybook/preview.jsx:12:25 - error TS6307: File '/home/agent/workspace/storybook/decorators/with-rtl.jsx' is not listed within the file list of project '/home/agent/workspace/storybook/tsconfig.json'. Projects must list all files or use an 'include' pattern.
+
+12 import { WithRTL } from './decorators/with-rtl';
+                           ~~~~~~~~~~~~~~~~~~~~~~~
+
+storybook/preview.jsx:16:19 - error TS6307: File '/home/agent/workspace/storybook/theme.js' is not listed within the file list of project '/home/agent/workspace/storybook/tsconfig.json'. Projects must list all files or use an 'include' pattern.
+
+16 import theme from './theme';
+                     ~~~~~~~~~
+
+storybook/preview.jsx:31:4 - error TS2353: Object literal may only specify known properties, and 'defaultValue' does not exist in type 'ToolbarArgType'.
+
+31    defaultValue: 'ltr',
+      ~~~~~~~~~~~~
+
+storybook/preview.jsx:44:4 - error TS2353: Object literal may only specify known properties, and 'defaultValue' does not exist in type 'ToolbarArgType'.
+
+44    defaultValue: 'basic',
+      ~~~~~~~~~~~~
+
+storybook/preview.jsx:60:4 - error TS2353: Object literal may only specify known properties, and 'defaultValue' does not exist in type 'ToolbarArgType'.
+
+60    defaultValue: 'none',
+      ~~~~~~~~~~~~
+
+storybook/status-indexer.ts:61:39 - error TS2345: Argument of type 'Node' is not assignable to parameter of type 'Node | undefined'.
+  Type 'AccessorProperty' is not assignable to type 'Node | undefined'.
+    Type 'AccessorProperty' is not assignable to type 'AnyTypeAnnotation | ArgumentPlaceholder | ArrayExpression | ArrayPattern | ArrayTypeAnnotation | ... 231 more ... | YieldExpression'.
+      Type 'AccessorProperty' is not assignable to type 'ClassProperty'.
+        Types of property 'type' are incompatible.
+          Type 'AccessorPropertyType' is not assignable to type '"ClassProperty"'.
+            Type '"AccessorProperty"' is not assignable to type '"ClassProperty"'.
+
+61   const status = readComponentStatus( csf._metaAnnotations.parameters );
+                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+storybook/stories/design-system/theme-example-application.story.tsx:1:21 - error TS6307: File '/home/agent/workspace/storybook/preview.jsx' is not listed within the file list of project '/home/agent/workspace/storybook/tsconfig.json'. Projects must list all files or use an 'include' pattern.
+  The file is in the program because:
+    Imported via '../../preview' from file '/home/agent/workspace/storybook/stories/design-system/theme-example-application.story.tsx'
+    Imported via '../../../preview' from file '/home/agent/workspace/storybook/stories/design-system/patterns/copy-from-menu.story.tsx'
+    Imported via '../../../preview' from file '/home/agent/workspace/storybook/stories/design-system/patterns/copy-to-clipboard.story.tsx'
+    Imported via '../../../preview' from file '/home/agent/workspace/storybook/stories/design-system/patterns/save-and-submit.story.tsx'
+    Imported via '../../../preview' from file '/home/agent/workspace/storybook/stories/design-system/tokens/motion.story.tsx'
+    Imported via '../../preview' from file '/home/agent/workspace/storybook/stories/icons/library.story.tsx'
+
+1 import preview from '../../preview';
+                      ~~~~~~~~~~~~~~~
+
+  storybook/stories/design-system/patterns/copy-from-menu.story.tsx:1:21 - File is included via import here.
+    1 import preview from '../../../preview';
+                          ~~~~~~~~~~~~~~~~~~
+
+  storybook/stories/design-system/patterns/copy-to-clipboard.story.tsx:1:21 - File is included via import here.
+    1 import preview from '../../../preview';
+                          ~~~~~~~~~~~~~~~~~~
+
+  storybook/stories/design-system/patterns/save-and-submit.story.tsx:1:21 - File is included via import here.
+    1 import preview from '../../../preview';
+                          ~~~~~~~~~~~~~~~~~~
+
+  storybook/stories/design-system/tokens/motion.story.tsx:1:21 - File is included via import here.
+    1 import preview from '../../../preview';
+                          ~~~~~~~~~~~~~~~~~~
+
+  storybook/stories/icons/library.story.tsx:1:21 - File is included via import here.
+    1 import preview from '../../preview';
+                          ~~~~~~~~~~~~~~~
+
+storybook/stories/design-system/tokens/motion.story.tsx:243:15 - error TS2353: Object literal may only specify known properties, and 'hideNoControlsWarning' does not exist in type '{ disable?: boolean | undefined; disableSaveFromUI?: boolean | undefined; exclude?: string[] | RegExp | undefined; expanded?: boolean | undefined; include?: string[] | RegExp | undefined; matchers?: { ...; } | undefined; presetColors?: (string | { ...; })[] | undefined; sort?: "alpha" | ... 2 more ... | undefined; }'.
+
+243   controls: { hideNoControlsWarning: true },
+                  ~~~~~~~~~~~~~~~~~~~~~
+
+storybook/stories/icons/library.story.tsx:31:15 - error TS2353: Object literal may only specify known properties, and 'hideNoControlsWarning' does not exist in type '{ disable?: boolean | undefined; disableSaveFromUI?: boolean | undefined; exclude?: string[] | RegExp | undefined; expanded?: boolean | undefined; include?: string[] | RegExp | undefined; matchers?: { ...; } | undefined; presetColors?: (string | { ...; })[] | undefined; sort?: "alpha" | ... 2 more ... | undefined; }'.
+
+31   controls: { hideNoControlsWarning: true },
+                 ~~~~~~~~~~~~~~~~~~~~~
+
+storybook/stories/icons/library.story.tsx:166:36 - error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Argument of type '{ args: { filter: string; collection: string; }; render: (args: LibraryArgs & { key?: Key | null | undefined; ref?: Ref<Element> | undefined; children?: ReactNode; ... 487 more ...; size?: number | undefined; } & Required<...>) => Element; }' is not assignable to parameter of type 'never'.
+
+166 export const Library = meta.story( {
+                                       ~
+167  args: {
+    ~~~~~~~~
+... 
+179  },
+    ~~~
+180 } );
+    ~
+
+  node_modules/.store/@storybook/react@11.0.0-beta.3-lSDReDDeI3bYRwLcJxcTOQ/node_modules/@storybook/react/dist/chunk-6b3AvPEC.d.ts:282:3 - The last overload is declared here.
+    282   story(..._args: Partial<T['args']> extends StoryArgs<T['args'], TMetaArgKeys> ? [] : [never]): ReactStory<T, {}>;
+          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+Found 66 errors in 11 files.
+
+Errors  Files
+     4  storybook/addons/design-system-theme/manager.ts:13
+     6  storybook/decorators/with-global-css.jsx:2
+     3  storybook/decorators/with-max-width-wrapper.jsx:10
+     8  storybook/decorators/with-rtl.jsx:3
+     8  storybook/main.ts:121
+    25  storybook/package-styles/config.js:1
+     7  storybook/preview.jsx:10
+     1  storybook/status-indexer.ts:61
+     1  storybook/stories/design-system/theme-example-application.story.tsx:1
+     1  storybook/stories/design-system/tokens/motion.story.tsx:243
+     2  storybook/stories/icons/library.story.tsx:31
+
+
+❌ Type check failed. Try cleaning up first: `npm run clean:package-types`
+   Run `npm run typecheck -- --verbose` to see which project an error without a file came from.
+npm error Lifecycle script `typecheck` failed with error:
+npm error code 1
+npm error path /home/agent/workspace/tools/build-scripts
+npm error workspace @wordpress/build-scripts@0.0.0
+npm error location /home/agent/workspace/tools/build-scripts
+npm error command failed
+npm error command sh -c node ./typecheck.mjs storybook/tsconfig.json
+exit=1

@@ -41,7 +41,7 @@ When the command says a sighting is gone, work from what stays and say in your v
    gh pr view <PR of the plan entry> --repo storybookjs/storybook
    ```
 
-   `--out` has to be empty or missing, and outside the repository.
+   `--out` has to be empty or missing, and outside the repository, because the runs of steps 4 and 7 clone the repo into it.
    It refuses an issue without the label or the metadata block.
    For each downloaded result the brief names its `result.json`, the plan entry with its expected outcome, the evidence with the files of the failing check and every `-cause.md` first, and the `run.ts` command that runs its part again.
    Read the session and the run log through `grep` and `head`, never whole.
@@ -79,7 +79,7 @@ When the command says a sighting is gone, work from what stays and say in your v
 
 4. Reproduce on the real project, in a sandbox, on the released prerelease, with the `run again` command of the brief.
    It is `ecosystem-qa/run.ts` with `--sandbox docker`, the only path that runs a third-party repo in a sandbox, as "Run it locally" and "Run the checks of a plan" in `ecosystem-qa/README.md` say.
-   It clones the repo at its pinned commit, upgrades it, and has an agent run every entry of the part again, which the brief lists.
+   It clones the repo at its pinned commit into `before-clone` next to `before`, under the `--out` of step 1, upgrades it, and has an agent run every entry of the part again, which the brief lists.
    The sweep of 2026-11-19 made 67 runs for 15.18 dollars, so a part costs about a quarter of a dollar and under ten minutes on the sweep's model.
    It is a real run all the same: ask the person first, and use their key.
    A finding on Windows has no sandbox outside CI: stop and say so.
@@ -100,7 +100,7 @@ When the command says a sighting is gone, work from what stays and say in your v
    It exists for a fix already on `next`, at the merge commit.
    Otherwise open the draft PR of step 8 first and ask the person to add the `ci:canary` label to it; never add a label yourself.
    The build of the PR's head exists once the canary workflow finished: `curl -I https://pkg.pr.new/storybook@<full SHA>` answers 200.
-   Then run the command of step 4 again, with `--build <full SHA>` in place of `--version` and `--out /tmp/qa-issue-<N>/after`, as the brief says.
+   Then run the `run a build` command of the brief, with the full SHA in place of `<full SHA>`; it has its own `--out` and `--clone-dir`, so it runs after step 4 as printed.
    Done when the check of the issue is `fail` in `before/result.json` and `pass` in `after/result.json`, and no other check is worse.
    Until then, say in the PR that the fix is not proven on the project and why; when step 4 did not run, say that the failure was not run again on the project, and give the evidence of the sweep's own run instead.
    A unit test alone is not that proof, so never write that it is.

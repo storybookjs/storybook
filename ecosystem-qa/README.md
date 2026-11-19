@@ -563,7 +563,8 @@ Into `--out`, which has to be empty, it downloads the evidence of the fingerprin
 It lists the evidence files of the failing check and every `-cause.md` first, then the rest.
 For a result of a plan it saves the plan file at the commit that the run checked out under `plans/<run>/`, and prints the entry of the finding with the line where it starts, its probe, the reason of the repo, its steps, and its expected outcome.
 It prints the `run.ts` command that runs the part of the result again in the Docker sandbox, with the repo, version, engine, model, effort and tier that the result recorded, and the plan, batch and part, and says which entries of the part run again.
-The same command with `--build <full SHA>` in place of `--version` runs the build of a fix, as "Prove a fix on a build" below says.
+Below it, the `run a build` command runs the same with `--build <full SHA>` in place of `--version`, as "Prove a fix on a build" below says.
+Each of the two writes to its own directory under `--out`, `before` or `after`, and clones into another, `before-clone` or `after-clone`, so they run one after the other, and neither meets a clone that an earlier run left in the default place.
 A discovered repo is in no catalog, so it reads the id from the plan of the version line at the commit that the run checked out.
 A sighting whose artifact expired is named as gone, and the rest is still fetched.
 It exits 1 for an issue without the `internal-qa` label or without the metadata block.
@@ -579,10 +580,12 @@ Everything else is what a run of a release does: the clone at the pin, the basel
 
 ```sh
 node ecosystem-qa/run.ts --repo mealdrop --version 11.0.0-beta.3 --engine claude --sandbox docker \
-  --plan plan.md --batch 1 --part 2 --out /tmp/qa-fix/before
+  --plan plan.md --batch 1 --part 2 --out /tmp/qa-fix/before --clone-dir /tmp/qa-fix/before-clone
 node ecosystem-qa/run.ts --repo mealdrop --build <full commit SHA> --engine claude --sandbox docker \
-  --plan plan.md --batch 1 --part 2 --out /tmp/qa-fix/after
+  --plan plan.md --batch 1 --part 2 --out /tmp/qa-fix/after --clone-dir /tmp/qa-fix/after-clone
 ```
+
+A run keeps its clone and refuses a clone directory that exists, so each of the two names its own with `--clone-dir`.
 
 The run takes the full 40-character SHA, and refuses before it clones anything a commit that pkg.pr.new has no build of.
 The version of the run is the one in the `package.json` of the build, usually the last prerelease, so the plan's line rule and the check `upgrade.installed-version` compare with what the build installs.

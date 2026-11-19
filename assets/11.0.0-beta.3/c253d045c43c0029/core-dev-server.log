@@ -1,0 +1,96 @@
+
+[90m┌[39m  storybook v11.0.0-beta.3
+[90m│[39m
+[33m▲[39m  You are currently using Storybook [1m11.0.0-beta.3[22m but you have packages
+[90m│[39m  which are incompatible with it:
+
+[90m│[39m  - storybook-vue3-rsbuild@3.6.3 which depends on ^10.6.6
+[90m│[39m  Repo: https://storybook.rsbuild.rs
+
+[90m│[39m  Please consider updating your packages or contacting the maintainers
+[90m│[39m  for compatibility details.
+
+[90m│[39m  For more details on compatibility guidance, see:
+[90m│[39m  https://github.com/storybookjs/storybook/issues/32836
+[90m│[39m
+[31m■[39m  [38;2;241;97;97mSB_CORE-SERVER_0002 (CriticalPresetLoadError): Storybook failed to
+[90m│[39m  load the following preset:
+[90m│[39m  /home/agent/workspace/node_modules/.pnpm/storybook-vue3-rsbuild@3.6.3_@babel+preset-env@7.29.7_@rsbuild+core@2.2.12_@rspack+core_fb33dc191bd824a05c10d8118f157e04/node_modules/storybook-vue3-rsbuild/preset.
+
+[90m│[39m  Please check whether your setup is correct, the Storybook dependencies
+[90m│[39m  (and their peer dependencies) are installed correctly and there are no
+[90m│[39m  package version clashes.
+
+[90m│[39m  If you believe this is a bug, please open an issue on Github.
+
+[90m│[39m  Error [ERR_PACKAGE_PATH_NOT_EXPORTED]: Package subpath
+[90m│[39m  './internal/babel' is not defined by "exports" in
+[90m│[39m  /home/agent/workspace/node_modules/.pnpm/@storybook+vue3@10.6.7_storybook@11.0.0-beta.3_typescript@5.9.3_vue@3.5.43/node_modules/storybook/package.json
+[90m│[39m  imported from
+[90m│[39m  /home/agent/workspace/node_modules/.pnpm/@storybook+vue3@10.6.7_storybook@11.0.0-beta.3_typescript@5.9.3_vue@3.5.43/node_modules/@storybook/vue3/dist/_node-chunks/chunk-KCIXSUMQ.js
+[90m│[39m  at exportsNotFound (node:internal/modules/esm/resolve:314:10)
+[90m│[39m  at packageExportsResolve (node:internal/modules/esm/resolve:662:9)
+[90m│[39m  at packageResolve (node:internal/modules/esm/resolve:774:12)
+[90m│[39m  at moduleResolve (node:internal/modules/esm/resolve:859:18)
+[90m│[39m  at defaultResolve (node:internal/modules/esm/resolve:992:11)
+[90m│[39m  at nextResolve (node:internal/modules/esm/hooks:785:28)
+[90m│[39m  at AsyncLoaderHooksOnLoaderHookWorker.resolve
+[90m│[39m  (node:internal/modules/esm/hooks:269:30)
+[90m│[39m  at handleMessage (node:internal/modules/esm/worker:251:24)
+[90m│[39m  at checkForMessages (node:internal/modules/esm/worker:193:28)
+[90m│[39m  at process.<anonymous> (node:internal/modules/esm/worker:212:5)
+
+[90m│[39m  More info:
+[90m│[39m  [39m
+[90m│[39m  at loadPreset
+[90m│[39m  (file:///home/agent/workspace/node_modules/.pnpm/storybook@11.0.0-beta.3_@types+react@19.3.0_prettier@3.9.9_react-dom@19.3.0_react@19.3.0/node_modules/storybook/dist/_node-chunks/chunk-UVYV3XXW.js:5729:13)
+[90m│[39m  at async loadPresets
+[90m│[39m  (file:///home/agent/workspace/node_modules/.pnpm/storybook@11.0.0-beta.3_@types+react@19.3.0_prettier@3.9.9_react-dom@19.3.0_react@19.3.0/node_modules/storybook/dist/_node-chunks/chunk-UVYV3XXW.js:5742:20)
+[90m│[39m  at async getPresets
+[90m│[39m  (file:///home/agent/workspace/node_modules/.pnpm/storybook@11.0.0-beta.3_@types+react@19.3.0_prettier@3.9.9_react-dom@19.3.0_react@19.3.0/node_modules/storybook/dist/_node-chunks/chunk-UVYV3XXW.js:5772:23)
+[90m│[39m  at async buildDevStandalone
+[90m│[39m  (file:///home/agent/workspace/node_modules/.pnpm/storybook@11.0.0-beta.3_@types+react@19.3.0_prettier@3.9.9_react-dom@19.3.0_react@19.3.0/node_modules/storybook/dist/core-server/index.js:11791:52)
+[90m│[39m  at async withTelemetry
+[90m│[39m  (file:///home/agent/workspace/node_modules/.pnpm/storybook@11.0.0-beta.3_@types+react@19.3.0_prettier@3.9.9_react-dom@19.3.0_react@19.3.0/node_modules/storybook/dist/_node-chunks/chunk-QAT5O6HR.js:3592:12)
+[90m│[39m  at async dev
+[90m│[39m  (file:///home/agent/workspace/node_modules/.pnpm/storybook@11.0.0-beta.3_@types+react@19.3.0_prettier@3.9.9_react-dom@19.3.0_react@19.3.0/node_modules/storybook/dist/bin/core.js:4022:3)
+[90m│[39m  at async _Command.<anonymous>
+[90m│[39m  (file:///home/agent/workspace/node_modules/.pnpm/storybook@11.0.0-beta.3_@types+react@19.3.0_prettier@3.9.9_react-dom@19.3.0_react@19.3.0/node_modules/storybook/dist/bin/core.js:4124:3)
+[90m│[39m
+[33m▲[39m  Broken build, fix the error above.
+[90m│[39m  You may need to refresh the browser.
+[90m│[39m
+[33m▲[39m  Failed to load preset:
+[90m│[39m  {"name":"/home/agent/workspace/node_modules/.pnpm/storybook-addon-rslib@3.6.3_@rsbuild+core@2.2.12_@rslib+core@1.0.3_storybook-builder-rsbuild@3.6.3_typescript@5.9.3/node_modules/storybook-addon-rslib/dist/preset.js"}
+[90m│[39m  on level 2
+[90m│[39m
+[31m■[39m  file:///home/agent/workspace/node_modules/.pnpm/storybook-builder-rsbuild@3.6.3_@rsbuild+core@2.2.12_@rspack+core@2.2.8_react-dom@19.3._0b61bc1a9e9576a596ef168ae1339ea6/node_modules/storybook-builder-rsbuild/dist/index.js:17
+[90m│[39m  import { babelParser, extractMockCalls, findMockRedirect,
+[90m│[39m  getIsExternal, getMockerRuntime, resolveExternalModule,
+[90m│[39m  resolveWithExtensions } from "storybook/internal/mocking-utils";
+[90m│[39m  ^^^^^^^^^^^
+[90m│[39m  [38;2;241;97;97mSyntaxError: The requested module 'storybook/internal/mocking-utils'
+[90m│[39m  does not provide an export named 'babelParser'[39m
+[90m│[39m  at #asyncInstantiate (node:internal/modules/esm/module_job:327:21)
+[90m│[39m  at async ModuleJob.run (node:internal/modules/esm/module_job:431:5)
+[90m│[39m  at async node:internal/modules/esm/loader:633:26
+[90m│[39m  at async importModule
+[90m│[39m  (file:///home/agent/workspace/node_modules/.pnpm/storybook@11.0.0-beta.3_@types+react@19.3.0_prettier@3.9.9_react-dom@19.3.0_react@19.3.0/node_modules/storybook/dist/_node-chunks/chunk-ULDJP73Z.js:754:11)
+[90m│[39m  at async loadPreset
+[90m│[39m  (file:///home/agent/workspace/node_modules/.pnpm/storybook@11.0.0-beta.3_@types+react@19.3.0_prettier@3.9.9_react-dom@19.3.0_react@19.3.0/node_modules/storybook/dist/_node-chunks/chunk-UVYV3XXW.js:5694:72)
+[90m│[39m  at async loadPresets
+[90m│[39m  (file:///home/agent/workspace/node_modules/.pnpm/storybook@11.0.0-beta.3_@types+react@19.3.0_prettier@3.9.9_react-dom@19.3.0_react@19.3.0/node_modules/storybook/dist/_node-chunks/chunk-UVYV3XXW.js:5742:20)
+[90m│[39m  at async loadPreset
+[90m│[39m  (file:///home/agent/workspace/node_modules/.pnpm/storybook@11.0.0-beta.3_@types+react@19.3.0_prettier@3.9.9_react-dom@19.3.0_react@19.3.0/node_modules/storybook/dist/_node-chunks/chunk-UVYV3XXW.js:5711:12)
+[90m│[39m  at async loadPresets
+[90m│[39m  (file:///home/agent/workspace/node_modules/.pnpm/storybook@11.0.0-beta.3_@types+react@19.3.0_prettier@3.9.9_react-dom@19.3.0_react@19.3.0/node_modules/storybook/dist/_node-chunks/chunk-UVYV3XXW.js:5742:20)
+[90m│[39m  at async loadPreset
+[90m│[39m  (file:///home/agent/workspace/node_modules/.pnpm/storybook@11.0.0-beta.3_@types+react@19.3.0_prettier@3.9.9_react-dom@19.3.0_react@19.3.0/node_modules/storybook/dist/_node-chunks/chunk-UVYV3XXW.js:5712:12)
+[90m│[39m  at async loadPresets
+[90m│[39m  (file:///home/agent/workspace/node_modules/.pnpm/storybook@11.0.0-beta.3_@types+react@19.3.0_prettier@3.9.9_react-dom@19.3.0_react@19.3.0/node_modules/storybook/dist/_node-chunks/chunk-UVYV3XXW.js:5742:20)
+[90m│[39m
+[90m│[39m  Debug logs are written to:
+[90m│[39m  /home/agent/workspace/rslib/vue-storybook/debug-storybook.log
+[90m│[39m
+[90m└[39m  Storybook exited with an error
+

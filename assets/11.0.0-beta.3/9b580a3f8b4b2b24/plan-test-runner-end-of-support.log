@@ -1,0 +1,13 @@
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+[test-runner] Storybook snapshots will be saved to /home/agent/workspace/frontend/__snapshots__
+[33m[test-storybook] Official support for Test Runner has ended. See migration guide at https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#test-runner-support-removed.[0m
+[33m[test-storybook] Detected Vite-based Storybook project: You might benefit from migrating to the Vitest addon. A modern, faster, and more feature-rich testing solution for Storybook:
+https://storybook.js.org/docs/writing-tests/integrations/vitest-addon/migration-guide?ref=test-runner-migration[0m
+(node:6796) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+[31m[test-storybook][0m previewConfig.getFieldValue is not a function 
+
+TypeError: previewConfig.getFieldValue is not a function
+    at extractTagsFromPreview (file:///home/agent/workspace/node_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/test-storybook.js:19038:30)
+    at async main (file:///home/agent/workspace/node_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/test-storybook.js:19118:42)
+exit=1

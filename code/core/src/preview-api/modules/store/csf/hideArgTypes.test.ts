@@ -10,6 +10,7 @@ const createContext = () => {
     id: 'component--a',
     args: { label: 'hello' },
     argTypes: { label: { name: 'label' } },
+    uninferredArgTypes: {},
     loaded: {},
   } as unknown as StoryContextForRender;
   context.context = context;
@@ -22,6 +23,12 @@ describe('hideArgTypes', () => {
 
     expect(() => hidden.argTypes).toThrow(ArgTypesRemovedFromStoryContextError);
     expect(() => hidden.argTypes).toThrow(/Story: component--a/);
+  });
+
+  it('throws when the uninferred argTypes are read', () => {
+    const hidden = hideArgTypes(createContext());
+
+    expect(() => (hidden as any).uninferredArgTypes).toThrow(ArgTypesRemovedFromStoryContextError);
   });
 
   it('omits argTypes from enumeration and membership checks', () => {

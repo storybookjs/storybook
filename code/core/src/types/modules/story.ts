@@ -113,13 +113,15 @@ export type PreparedStory<TRenderer extends Renderer = Renderer> =
     renderToCanvas?: ProjectAnnotations<TRenderer>['renderToCanvas'];
     usesMount: boolean;
     storyGlobals: Globals;
-  };
+  } & Pick<PreparedMeta<TRenderer>, 'uninferredArgTypes'>;
 
 export type PreparedMeta<TRenderer extends Renderer = Renderer> = Omit<
   StoryContextForEnhancers<TRenderer>,
   'name' | 'story'
 > & {
   moduleExport: ModuleExport;
+  /** The argTypes before the second-pass enhancers infer types and controls from args. */
+  uninferredArgTypes: StrictArgTypes;
 };
 
 export type BoundStory<TRenderer extends Renderer = Renderer> = PreparedStory<TRenderer> & {

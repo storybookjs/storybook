@@ -337,7 +337,7 @@ export class ArgTypesRemovedFromStoryContextError extends StorybookError {
 
         Story: ${data.storyId}
 
-        With server-side docgen the preview only holds the arg types you declared yourself, so this object was incomplete while looking complete.
+        With server-side docgen the preview does not hold the arg types extracted from your component, so this object was incomplete while looking complete.
         - Read \`args\` for the values passed to the story.
         - Inspect the resolved arg types in the Controls panel or the ArgTypes doc block.`,
     });

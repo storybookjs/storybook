@@ -37,6 +37,7 @@ type ResolvedArgTypes = {
   storyId?: string;
   initialArgs?: Args;
   argTypes?: StrictArgTypes;
+  uninferredArgTypes?: StrictArgTypes;
   component?: Renderer['component'];
   subcomponents?: Record<string, Renderer['component']>;
   filterProps: ArgTypesParameters;
@@ -56,33 +57,38 @@ function useResolveArgTypes(props: ArgTypesProps): ResolvedArgTypes {
       component,
       projectAnnotations: { parameters },
     } = resolved;
+    const argTypes = extractComponentArgTypes(component, parameters as Parameters);
     resolvedArgTypes = {
       parameters: parameters as Parameters,
       // Bare `of={Component}` has no story/meta annotations; the docgen service is addressed by
       // component id, recovered by searching only the CSF files this docs page imports.
       componentId: context.getComponentId(component),
-      argTypes: extractComponentArgTypes(component, parameters as Parameters),
+      argTypes,
+      uninferredArgTypes: argTypes,
       component,
     };
   } else if (resolved.type === 'meta') {
-    const { id, argTypes, parameters, initialArgs, component, subcomponents } =
+    const { id, argTypes, uninferredArgTypes, parameters, initialArgs, component, subcomponents } =
       resolved.preparedMeta;
     resolvedArgTypes = {
       parameters,
       componentId: id.split('--')[0],
       initialArgs,
       argTypes,
+      uninferredArgTypes,
       component,
       subcomponents,
     };
   } else {
-    const { id, argTypes, parameters, initialArgs, component, subcomponents } = resolved.story;
+    const { id, argTypes, uninferredArgTypes, parameters, initialArgs, component, subcomponents } =
+      resolved.story;
     resolvedArgTypes = {
       parameters,
       componentId: id.split('--')[0],
       storyId: id,
       initialArgs,
       argTypes,
+      uninferredArgTypes,
       component,
       subcomponents,
     };
@@ -171,7 +177,7 @@ const DocgenServiceArgTypes: FC<ArgTypesProps> = (props) => {
 };
 
 const DocgenServiceArgTypesRows: FC<ResolvedArgTypes & { componentId: string }> = ({
-  argTypes,
+  uninferredArgTypes,
   parameters,
   componentId,
   storyId,
@@ -183,7 +189,7 @@ const DocgenServiceArgTypesRows: FC<ResolvedArgTypes & { componentId: string }> 
     storyId,
     parameters,
     initialArgs,
-    customArgTypes: argTypes,
+    customArgTypes: uninferredArgTypes,
   });
 
   if (isInitialLoading) {

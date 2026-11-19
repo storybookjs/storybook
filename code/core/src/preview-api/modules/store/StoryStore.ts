@@ -330,7 +330,7 @@ export class StoryStore<TRenderer extends Renderer> {
 
         acc[storyId] = Object.entries(story).reduce(
           (storyAcc, [key, value]) => {
-            if (key === 'moduleExport') {
+            if (key === 'moduleExport' || key === 'uninferredArgTypes') {
               return storyAcc;
             }
             if (typeof value === 'function') {

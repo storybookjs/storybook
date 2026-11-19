@@ -35,7 +35,9 @@ import { global } from '@storybook/global';
 import { toMerged } from 'es-toolkit/object';
 
 import { addons } from '../addons/index.ts';
+import { composeConfigs } from '../store/csf/composeConfigs.ts';
 import type { StoryStore } from '../store/index.ts';
+import { inferArgTypes } from '../store/inferArgTypes.ts';
 import { PreviewWeb } from './PreviewWeb.tsx';
 import {
   componentOneExports,
@@ -452,6 +454,23 @@ describe('PreviewWeb', () => {
           },
           args: { foo: 'a', one: 1 },
         });
+      });
+
+      it('emits STORY_PREPARED without inferred argTypes under docgenServer', async () => {
+        const features = global.FEATURES;
+        global.FEATURES = { docgenServer: true };
+        document.location.search = '?id=component-two--c';
+        await createAndRenderPreview({
+          getProjectAnnotations: () =>
+            composeConfigs([projectAnnotations, { argTypesEnhancers: [inferArgTypes] }]),
+        }).finally(() => {
+          global.FEATURES = features;
+        });
+
+        expect(mockChannel.emit).toHaveBeenCalledWith(
+          STORY_PREPARED,
+          expect.objectContaining({ id: 'component-two--c', argTypes: {} })
+        );
       });
 
       it('emits GLOBALS_UPDATED with initial global values', async () => {

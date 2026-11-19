@@ -11,18 +11,7 @@ import { inferArgTypes } from '../../preview-api/modules/store/inferArgTypes.ts'
 import { inferControls } from '../../preview-api/modules/store/inferControls.ts';
 import { combineParameters } from '../../preview-api/modules/store/parameters.ts';
 
-/**
- * Builds the Controls/ArgTypes table shape from server docgen and custom argTypes.
- *
- * Mirrors the legacy `prepareStory` enhancer chain when `docgenServer` is enabled:
- * server docgen stands in for `enhanceArgTypes`, user annotations from `customArgTypes` layer on
- * top, then `inferArgTypes` and `inferControls` run the second pass that `prepareStory` skips.
- *
- * Callers source custom argTypes from the prepared meta/story they already hold — the docs blocks
- * resolve it locally through `useOf` (as `StrictArgTypes`), the manager Controls panel reads it
- * from the `STORY_PREPARED` channel via `useArgTypes` (as the looser `ArgTypes`); both are
- * accepted here and normalized by the inference passes below.
- */
+/** Builds the Controls/ArgTypes table shape from server docgen and custom argTypes. */
 export function mergeServiceArgTypes({
   payload,
   storyId,

@@ -1105,7 +1105,7 @@ No automigration is needed. Existing boolean settings retain their meaning, and 
 
 The story context passed to loaders, `beforeEach`, `play`, `afterEach` and `step` callbacks no longer contains `argTypes`. Reading it throws an error that links here.
 
-With server-side docgen (`features.docgenServer`), the preview no longer infers arg types from components or args. `context.argTypes` in these hooks only ever contained the arg types you declared by hand, so it looked complete but was not.
+With server-side docgen (`features.docgenServer`), the preview no longer holds the arg types extracted from your component. `context.argTypes` in these hooks only contained the arg types you declared or that were inferred from `args`, so it looked complete but was not.
 
 ```ts
 // Before
@@ -1129,7 +1129,7 @@ export const Primary: Story = {
 
 - Use `args` for the values passed to the story. Iterate `Object.keys(args)` instead of `Object.keys(argTypes)`.
 - To see the resolved arg types, including those inferred from your component, use the Controls panel or the `ArgTypes` doc block.
-- In portable stories, `composeStory(Story, meta).argTypes` still exposes the story's declared arg types outside of the lifecycle hooks.
+- In portable stories, `composeStory(Story, meta).argTypes` still exposes the story's declared arg types, plus those inferred from `args`, outside of the lifecycle hooks.
 
 Decorators and `render` functions keep receiving `argTypes`, because renderers rely on them while rendering. Their context type is the new `StoryContextForRender`; the `StoryContext` type no longer declares `argTypes`. Custom decorator or render helpers that annotate their context parameter as `StoryContext` and read `argTypes` should switch to `StoryContextForRender`.
 

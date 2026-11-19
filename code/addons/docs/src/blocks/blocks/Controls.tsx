@@ -165,7 +165,7 @@ const LegacyControls: FC<ControlsStoryProps> = ({ story, context, ...props }) =>
 };
 
 const DocgenServiceControls: FC<ControlsStoryProps> = ({ story, context, ...props }) => {
-  const { parameters, argTypes } = story;
+  const { parameters, uninferredArgTypes } = story;
   const filterProps = getControlsFilterProps(story, props);
   const interactiveState = useControlsInteractiveState(story, context);
   const { rows: serviceRows, isInitialLoading } = useDocgenServiceRows({
@@ -173,7 +173,7 @@ const DocgenServiceControls: FC<ControlsStoryProps> = ({ story, context, ...prop
     storyId: story.id,
     parameters,
     initialArgs: story.initialArgs,
-    customArgTypes: argTypes,
+    customArgTypes: uninferredArgTypes,
   });
 
   if (isInitialLoading) {

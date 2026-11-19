@@ -18,7 +18,6 @@ import type {
   StrictArgTypes,
 } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
 import { global as globalThis } from '@storybook/global';
 
 import { Tag } from '../../../../shared/constants/tags.ts';
@@ -182,7 +181,7 @@ function preparePartialAnnotations<TRenderer extends Renderer>(
   storyAnnotations: NormalizedStoryAnnotations<TRenderer> | undefined,
   componentAnnotations: NormalizedComponentAnnotations<TRenderer>,
   projectAnnotations: NormalizedProjectAnnotations<TRenderer>
-): Omit<StoryContextForEnhancers<TRenderer>, 'name' | 'story'> {
+): Omit<PreparedMeta<TRenderer>, 'moduleExport'> {
   // NOTE: in the current implementation we are doing everything once, up front, rather than doing
   // anything at render time. The assumption is that as we don't load all the stories at once, this
   // will have a limited cost. If this proves misguided, we can refactor it.
@@ -262,20 +261,21 @@ function preparePartialAnnotations<TRenderer extends Renderer>(
     storyGlobals,
   };
 
-  contextForEnhancers.argTypes = argTypesEnhancers
-    .filter((enhancer) => {
-      // Server docgen merges component prop metadata at UI read time (`mergeServiceArgTypes`).
-      // Second-pass enhancers run there instead so `customArgTypes` stays annotation-only.
-      if (global.FEATURES?.docgenServer && enhancer.secondPass) {
-        return false;
-      }
-      return true;
-    })
-    .reduce(
+  const applyEnhancers = (enhancers: typeof argTypesEnhancers, argTypes: StrictArgTypes) =>
+    enhancers.reduce(
       (accumulatedArgTypes, enhancer) =>
         enhancer({ ...contextForEnhancers, argTypes: accumulatedArgTypes }),
-      contextForEnhancers.argTypes
+      argTypes
     );
+
+  const uninferredArgTypes = applyEnhancers(
+    argTypesEnhancers.filter((enhancer) => !enhancer.secondPass),
+    passedArgTypes
+  );
+  contextForEnhancers.argTypes = applyEnhancers(
+    argTypesEnhancers.filter((enhancer) => enhancer.secondPass),
+    uninferredArgTypes
+  );
 
   const initialArgsBeforeEnhancers = { ...passedArgs };
 
@@ -292,7 +292,7 @@ function preparePartialAnnotations<TRenderer extends Renderer>(
 
   const { name, ...withoutStoryIdentifiers } = contextForEnhancers;
 
-  return withoutStoryIdentifiers;
+  return { ...withoutStoryIdentifiers, uninferredArgTypes };
 }
 
 // the context is prepared before invoking the render function, instead of here directly

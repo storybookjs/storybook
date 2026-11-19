@@ -36,6 +36,7 @@ import type {
   ViewMode,
 } from 'storybook/internal/types';
 
+import { global } from '@storybook/global';
 import invariant from 'tiny-invariant';
 
 import { Tag } from '../../../shared/constants/tags.ts';
@@ -494,6 +495,7 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
         parameters,
         initialArgs,
         argTypes,
+        uninferredArgTypes,
         unmappedArgs,
         initialGlobals,
         userGlobals,
@@ -505,7 +507,7 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
         id: storyId,
         parameters,
         initialArgs,
-        argTypes,
+        argTypes: global.FEATURES?.docgenServer ? uninferredArgTypes : argTypes,
         args: unmappedArgs,
       });
       // We need to update globals whenever we go in or out of an overridden story.

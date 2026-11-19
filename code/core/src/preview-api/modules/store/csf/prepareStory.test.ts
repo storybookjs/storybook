@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import type {
   ArgsEnhancer,
@@ -716,15 +716,7 @@ describe('prepareStory', () => {
     expect(renderMock).toHaveBeenCalledWith({}, expect.objectContaining({ argsByTarget: {} }));
   });
 
-  describe('with `FEATURES.docgenServer`', () => {
-    beforeEach(() => {
-      vi.stubGlobal('FEATURES', { docgenServer: true });
-    });
-
-    afterEach(() => {
-      vi.unstubAllGlobals();
-    });
-
+  describe('uninferredArgTypes', () => {
     it('infers argTypes from args for the story, and keeps the uninferred argTypes apart', () => {
       const { argTypes, uninferredArgTypes } = prepareStory(
         {

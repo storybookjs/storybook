@@ -496,6 +496,7 @@ A run whose agent did not finish is never read this way.
 
 Dry mode is the default, and a push to `qa/plans` is always a dry run.
 The filer writes each proposal, with its full issue body and the evidence it would upload, to the Step Summary and changes nothing.
+Above the proposals the summary prints the dispatch that files them from the same results, with `from_runs` set to the runs that hold them, `dry` set to false, and the branch, `version` and `groups` of the run, or for a batch of a plan the same dispatch as its comment, and the day the result artifacts expire.
 Dry mode files no finding, but a batch with a plan still reports its numbers in the tracking discussion.
 Its comment prints the dispatch that files the batch, with `from_runs` and `dry` set to false, and the day its result artifacts expire, after which the batch can no longer be filed.
 Without dry mode it pushes the evidence to the `qa-assets` branch with the job token, pushes the upgraded state to the catalog repo with the push token of the target's org, and files the issue in milestone 11.

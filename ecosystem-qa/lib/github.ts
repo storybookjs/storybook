@@ -27,6 +27,14 @@ export const ghParse = <T>(schema: z.ZodType<T>, args: string[]): T =>
 export const pages = <T extends z.ZodType>(item: T, path: string): z.infer<T>[] =>
   ghParse(z.array(z.array(item)), ['api', '--paginate', '--slurp', path]).flat();
 
+export const listRunArtifacts = (repo: string, runId: string) =>
+  ghParse(
+    z.array(
+      z.object({ artifacts: z.array(z.object({ name: z.string(), expires_at: z.string() })) })
+    ),
+    ['api', '--paginate', '--slurp', `repos/${repo}/actions/runs/${runId}/artifacts?per_page=100`]
+  ).flatMap((page) => page.artifacts);
+
 // The filing job writes with the workflow token, so its comments come from this account. Anyone can
 // comment on an issue, so no other comment may tie a fingerprint to it.
 const HARNESS_LOGIN = 'github-actions[bot]';

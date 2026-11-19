@@ -1,0 +1,152 @@
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+[90m┌[39m  Storybook upgrade - v11.0.0-beta.3
+[90m│[39m
+[90m│[39m  Detecting projects...
+(node:1340) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/agent/workspace/.storybook/main.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /home/agent/workspace/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[90m│[39m
+[90m│[39m  Detecting projects: 1 projects
+[90m│[39m
+[90m│[39m  1 project detected
+[90m│[39m
+[34m●[39m  Upgrading from [1m10.5.10[22m to [1m11.0.0-beta.3[22m
+[90m│[39m
+[90m│[39m  /package.json
+[90m│[39m
+[90m│[39m  Updated package versions in package.json files
+[90m│[39m
+[90m│[39m  Checking automigrations for /.storybook...
+[90m│[39m
+
+[90m│[39m  Automigrations detected:
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m argtypes-default-value[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m skills[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m typescript-dependency[39m
+[90m│[39m
+[90m│[39m  3 automigration(s) detected
+[90m│[39m
+[90m│[39m  Running all detected automigrations:
+[90m│[39m
+[90m│[39m  - argtypes-default-value (/.storybook)
+[90m│[39m
+[90m│[39m  - skills (/.storybook)
+[90m│[39m
+[90m│[39m  - typescript-dependency (/.storybook)
+│ ┌─typescript-dependency (/.storybook)────────────────────────────────────────┐
+│ │  Add typescript@^6 to devDependencies, so Storybook can read your          │
+│ │  component types for Controls and the Docs args table                      │
+│ └────────────────────────────────────────────────────────────────────────────┘
+[90m│[39m
+[90m│[39m  [36mnpx skills@latest add storybookjs/skills#v11.0.0-beta.3 --yes --agent[39m
+[90m│[39m  [36mclaude-code universal --copy[39m
+[90m│[39m
+[90m│[39m  Added a Storybook section to AGENTS.md that tells agents when to use
+[90m│[39m  the skills. Storybook keeps it current on upgrade: remove its markers
+[90m│[39m  to keep your own edits, or remove the section to opt out of the
+[90m│[39m  workflow.
+[90m│[39m
+[90m│[39m  Remove the Storybook skills with: npx skills@latest remove
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m argtypes-default-value[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m skills[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m typescript-dependency[39m
+[90m│[39m
+[90m│[39m  Completed automigrations for /.storybook
+[90m│[39m
+[90m│[39m  Installing dependencies...
+[90m│[39m
+[31m■[39m  [31mInstallation of dependencies failed![39m
+[90m│[39m
+[31m■[39m  npm error Found: react@17.0.2
+[90m│[39m  npm error node_modules/react
+[90m│[39m  npm error   react@"~17.0.2" from the root project
+[90m│[39m  npm error
+[90m│[39m  npm error Could not resolve dependency:
+[90m│[39m  npm error peer react@"^18.0.0 || ^19.0.0" from
+[90m│[39m  @storybook/react-webpack5@11.0.0-beta.3
+[90m│[39m  npm error node_modules/@storybook/react-webpack5
+[90m│[39m  npm error   dev @storybook/react-webpack5@"^11.0.0-beta.3" from the
+[90m│[39m  root project
+[90m│[39m  npm error
+[90m│[39m  npm error Fix the upstream dependency conflict, or retry this command
+[90m│[39m  with --force or --legacy-peer-deps to accept an incorrect (and
+[90m│[39m  potentially broken) dependency resolution.
+[90m│[39m  npm error
+[90m│[39m  npm error
+[90m│[39m  npm error For a full report see:
+[90m│[39m  npm error
+[90m│[39m  /home/agent/.npm/_logs/2026-11-19T08_01_28_278Z-eresolve-report.txt
+[90m│[39m  npm error A complete log of this run can be found in:
+[90m│[39m  /home/agent/.npm/_logs/2026-11-19T08_01_28_278Z-debug-0.log
+[90m│[39m
+[33m▲[39m  Peer dependency conflict detected; retrying with --legacy-peer-deps
+[90m│[39m
+[90m│[39m  Installing dependencies...
+[90m│[39m
+[90m│[39m  Installing dependencies...: > wevoteusa@1.0.0 prepare
+[90m│[39m
+[90m│[39m  Installing dependencies...: > wevoteusa@1.0.0 snyk-pr
+[90m│[39m
+[90m│[39m  Installing dependencies...: Applied Snyk patches.
+[90m│[39m
+[90m│[39m  Installing dependencies...: added 23 packages, remove
+[90m│[39m
+[90m│[39m  Installing dependencies...: 396 packages are looking
+[90m│[39m
+[90m│[39m  Installing dependencies...: 72 vulnerabilities (4 low
+[90m│[39m
+[90m│[39m  Dependencies installed
+[90m│[39m
+[32m◇[39m  Checking the health of your project(s)..
+[90m│[39m
+[33m▲[39m  /.storybook: 1 issue found
+│ ┌─[33mIncompatible Packages[39m──────────────────────────────────────────────────────┐
+│ │  You are currently using Storybook [1m11.0.0-beta.3[22m but you have packages     │
+│ │  which are incompatible with it:                                           │
+│ │                                                                            │
+│ │  - @storybook/addon-webpack5-compiler-swc@4.0.3 which depends on ^9.0.0    │
+│ │  || ^10.0.0-0 || ^10.1.0-0 || ^10.2.0-0 || ^10.3.0-0 || ^10.4.0-0          │
+│ │                                                                            │
+│ │  Please consider updating your packages or contacting the maintainers for  │
+│ │   compatibility details.                                                   │
+│ │                                                                            │
+│ │  For more details on compatibility guidance, see:                          │
+│ │  https://github.com/storybookjs/storybook/issues/32836                     │
+│ └────────────────────────────────────────────────────────────────────────────┘
+[90m│[39m
+[32m◇[39m  Storybook doctor is complete!
+[90m│[39m
+[90m│[39m  You can always recheck the health of your project(s) by running:
+[90m│[39m  [36mnpx storybook doctor[39m
+[90m│[39m
+[32m◇[39m  [33mYour project(s) have been upgraded successfully, but some issues were[39m
+[90m│[39m  [33mfound which need your attention, please check Storybook doctor logs[39m
+[90m│[39m  [33mabove.[39m
+[90m│[39m
+[90m│[39m  If you want to learn more about the automigrations that executed in
+[90m│[39m  your project(s), please check the following links:
+[90m│[39m  • argtypes-default-value:
+[90m│[39m  https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#argtypes-defaultvalue-removed
+[90m│[39m  • skills: https://github.com/storybookjs/skills
+[90m│[39m  • typescript-dependency:
+[90m│[39m  https://storybook.js.org/docs/configure/integration/typescript
+[90m│[39m
+[90m│[39m  For a full list of changes, please check our migration guide:
+[90m│[39m  [36mhttps://storybook.js.org/docs/releases/migration-guide?ref=upgrade[39m
+[90m│[39m
+[90m└[39m  Storybook upgrade completed!
+
+[90m│[39m
+[90m│[39m  Debug logs are written to: /home/agent/workspace/debug-storybook.log
+[90m│[39m
+[90m└[39m  [32mDone![39m
+

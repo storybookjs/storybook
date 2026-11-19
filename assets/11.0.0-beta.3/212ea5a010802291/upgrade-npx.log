@@ -1,0 +1,571 @@
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn exec The following package was not found and will be installed: storybook@11.0.0-beta.3
+.../mwnah4o1-rh                          | Progress: resolved 0, reused 1, downloaded 0, added 0
+Packages are copied from the content-addressable store to the virtual store.
+  Content-addressable store is at: /home/agent/workspace/.pnpm-store/v11
+  Virtual store is at:             ../../../../../.cache/pnpm/dlx/4b038f974d0e2f7b2338ff0a12b7fc2d/mwnah4o1-rh/node_modules/.pacquet
+.../mwnah4o1-rh                          | Progress: resolved 13, reused 17, downloaded 2, added 13, done
+.../esbuild@0.28.2/node_modules/esbuild postinstall$ node install.js
+.../esbuild@0.28.2/node_modules/esbuild postinstall: Done
+
+dependencies:
++ @storybook/cli 11.0.0-beta.3
+
+
+[90m┌[39m  Storybook upgrade - v11.0.0-beta.3
+[90m│[39m
+[90m│[39m  Detecting projects...
+[90m│[39m
+[90m│[39m  Detecting projects: 1 projects
+[90m│[39m
+[90m│[39m  1 project detected
+[90m│[39m
+[34m●[39m  Upgrading from [1m10.5.10[22m to [1m11.0.0-beta.3[22m
+[90m│[39m
+[90m│[39m  /packages/frontend/@n8n/storybook/package.json
+[90m│[39m  /package.json
+[90m│[39m  /packages/frontend/@n8n/design-system/package.json
+[90m│[39m
+[90m│[39m  Updated package versions in package.json files
+[90m│[39m
+[90m│[39m  Checking automigrations for
+[90m│[39m  /packages/frontend/@n8n/storybook/.storybook...
+[90m│[39m
+
+[90m│[39m  Automigrations detected:
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m upgrade-storybook-related-dependencies[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m story-sort-to-main[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m skills[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m typescript-compiler-api[39m
+[90m│[39m
+[90m│[39m  4 automigration(s) detected
+[90m│[39m
+[90m│[39m  Running all detected automigrations:
+[90m│[39m
+[90m│[39m  - upgrade-storybook-related-dependencies
+[90m│[39m  (/packages/frontend/@n8n/storybook/.storybook)
+[90m│[39m
+[90m│[39m  - story-sort-to-main (/packages/frontend/@n8n/storybook/.storybook)
+[90m│[39m
+[90m│[39m  - skills (/packages/frontend/@n8n/storybook/.storybook)
+[90m│[39m
+[90m│[39m  - typescript-compiler-api
+[90m│[39m  (/packages/frontend/@n8n/storybook/.storybook)
+│ ┌─typescript-compiler-api (/packages/frontend/@n8n/storybook/.storybook)─────┐
+│ │  TypeScript 7 has no compiler API, so Storybook cannot read your           │
+│ │  component types. In package.json, replace the [36mtypescript[39m devDependency    │
+│ │  with [36m"@typescript/native": "npm:typescript@^7.0.2"[39m and [36m"typescript": [39m     │
+│ │  [36m"npm:@typescript/typescript6@^6.0.2"[39m. This is not automigrated.           │
+│ └────────────────────────────────────────────────────────────────────────────┘
+[90m│[39m
+[90m│[39m  [36mpnpm --allow-build=esbuild dlx skills@latest add[39m
+[90m│[39m  [36mstorybookjs/skills#v11.0.0-beta.3 --yes --agent claude-code universal[39m
+[90m│[39m  [36m--copy[39m
+[90m│[39m
+[90m│[39m  Added a Storybook section to AGENTS.md that tells agents when to use
+[90m│[39m  the skills. Storybook keeps it current on upgrade: remove its markers
+[90m│[39m  to keep your own edits, or remove the section to opt out of the
+[90m│[39m  workflow.
+[90m│[39m
+[90m│[39m  Remove the Storybook skills with: pnpm --allow-build=esbuild dlx
+[90m│[39m  skills@latest remove
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m upgrade-storybook-related-dependencies[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m story-sort-to-main[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m skills[39m
+[90m│[39m
+[90m│[39m  Completed automigrations for
+[90m│[39m  /packages/frontend/@n8n/storybook/.storybook
+[90m│[39m
+[90m│[39m  Installing dependencies...
+[90m│[39m
+[90m│[39m  Installing dependencies...: Scope: all 100 workspace
+[90m│[39m
+[90m│[39m  Installing dependencies...: ✓ Lockfile at ../../../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../../../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: Downloading lefthook-linu
+[90m│[39m
+[90m│[39m  Installing dependencies...: Downloading @biomejs/cli-
+[90m│[39m
+[90m│[39m  Installing dependencies...: Downloading @turbo/linux-
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../../../@n8n/agents
+[90m│[39m
+[90m│[39m  Installing dependencies...: Downloading @typescript/t
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../../../@n8n/agents
+[90m│[39m
+[90m│[39m  Installing dependencies...: Downloading @oxlint-tsgol
+[90m│[39m
+[90m│[39m  Installing dependencies...: Downloading @oxlint/bindi
+[90m│[39m
+[90m│[39m  Installing dependencies...: Downloading @rolldown/bin
+[90m│[39m
+[90m│[39m  Installing dependencies...: Downloading js-tiktoken@1
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../../../@n8n/ai-utilitie
+[90m│[39m
+[90m│[39m  Installing dependencies...: Downloading pdfjs-dist@6.
+[90m│[39m
+[90m│[39m  Installing dependencies...: Downloading @napi-rs/canv
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../../../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: Downloading @rolldown/bin
+[90m│[39m
+[90m│[39m  Installing dependencies...: Downloading typescript@4.
+[90m│[39m
+[90m│[39m  Installing dependencies...: Downloading selenium-webd
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../../../@n8n/engine
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../../../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: Downloading isolated-vm@7
+[90m│[39m
+[90m│[39m  Installing dependencies...: Downloading @rolldown/bin
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../../../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: Downloading agent-browser
+[90m│[39m
+[90m│[39m  Installing dependencies...: Downloading chromadb-js-b
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../../../@n8n/nodes-langc
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../../../@n8n/typeorm
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../../../cli
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../../../cli
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../../../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../../../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: Downloading element-plus@
+[90m│[39m
+[90m│[39m  Installing dependencies...: Downloading @iconify/json
+[90m│[39m
+[90m│[39m  Installing dependencies...: Downloading @iconify/json
+[90m│[39m
+[90m│[39m  Installing dependencies...: Downloading @sentry/cli-l
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../../../nodes-base
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../../../nodes-base
+[90m│[39m
+[90m│[39m  Installing dependencies...: Downloading @napi-rs/imag
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../../../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../../../..
+[90m│[39m
+[31m■[39m  [31mInstallation of dependencies failed![39m
+[90m│[39m
+[31m■[39m  ../../../@n8n/nodes-langchain            | [WARN] deprecated
+[90m│[39m  @xata.io/client@0.28.4
+[90m│[39m  ../../../@n8n/typeorm                    | [WARN] deprecated
+[90m│[39m  sinon@15.2.0
+[90m│[39m  ../../../cli                             | [WARN] deprecated
+[90m│[39m  @types/uuid@11.0.0
+[90m│[39m  ../../../cli                             | [WARN] deprecated
+[90m│[39m  prom-client@15.1.3
+[90m│[39m  ../../../..                              | Progress: resolved 0,
+[90m│[39m  reused 1, downloaded 2274, added 0
+[90m│[39m  ../../../..                              | Progress: resolved 0,
+[90m│[39m  reused 1, downloaded 2410, added 0
+[90m│[39m  Downloading element-plus@2.4.3: 0.00 B/8.38 MB
+[90m│[39m  Downloading @iconify/json@2.2.488: 0.00 B/89.73 MB
+[90m│[39m  Downloading @iconify/json@2.2.488: 28.84 MB/89.73 MB
+[90m│[39m  Downloading @sentry/cli-linux-x64@2.55.0: 0.00 B/7.80 MB
+[90m│[39m  ../../../nodes-base                      | [WARN] deprecated gm@1.25.1
+[90m│[39m  ../../../nodes-base                      | [WARN] deprecated
+[90m│[39m  alasql@4.4.0
+[90m│[39m  Downloading @napi-rs/image-linux-x64-gnu@1.15.0: 0.00 B/6.86 MB
+[90m│[39m  ../../../..                              | Progress: resolved 0,
+[90m│[39m  reused 10, downloaded 2953, added 0
+[90m│[39m  ../../../..                              | Progress: resolved 0,
+[90m│[39m  reused 10, downloaded 3077, added 0
+[90m│[39m
+[31m■[39m  [38;2;241;97;97mSB_CLI_INIT_0010 (PackageInstallFailedError): Failed to install
+[90m│[39m  dependencies using pnpm.
+
+[90m│[39m  Command failed with exit code 1: pnpm install
+[90m│[39m  Error: ERR_PNPM_NO_MATCHING_VERSION
+
+[90m│[39m  × installing dependencies
+[90m│[39m  ╰─▶ Failed to resolve dependency tree: No matching version found for
+[90m│[39m  @storybook/builder-vite@^11.0.0 while fetching it from https://
+[90m│[39m  registry.npmjs.org/
+[90m│[39m  help: The latest release of @storybook/builder-vite is "10.6.7".
+
+[90m│[39m  Other releases are:
+[90m│[39m  * canary: 0.0.0-pr-36141-sha-6ddbeb4a
+[90m│[39m  * future: 7.1.0-alpha.29
+[90m│[39m  * next: 11.0.0-beta.3
+[90m│[39m  * pr-22631: 7.1.1-pr-22631-1689802540-351503cb.0
+[90m│[39m  * pr-23508: 7.1.1-pr-23508-1689802571-5ec8c1c3.0
+[90m│[39m  * tag-for-publishing-older-releases: 8.2.10
+[90m│[39m  * v7: 7.6.24
+[90m│[39m  * v7-canary: 0.0.0-pr-34011-sha-c45b0f3f
+[90m│[39m  * v8: 8.6.19
+[90m│[39m  * v8-canary: 0.0.0-pr-34009-sha-c90626e7
+[90m│[39m  * v9: 9.1.21
+[90m│[39m  * v9-canary: 0.0.0-pr-35198-sha-9d05c353
+
+[90m│[39m  If you need the full list of all 2432 published versions run "pnpm
+[90m│[39m  view @storybook/builder-vite versions".
+
+[90m│[39m  Scope: all 100 workspace projects
+[90m│[39m  ✓ Lockfile at ../../../../pnpm-lock.yaml passes supply-chain policies
+[90m│[39m  (verified 1m ago)
+[90m│[39m  ../../../..                              | [WARN] deprecated
+[90m│[39m  eslint@9.29.0
+[90m│[39m  Downloading lefthook-linux-x64@1.13.6: 0.00 B/5.89 MB
+[90m│[39m  Downloading @biomejs/cli-linux-x64@1.9.0: 0.00 B/10.52 MB
+[90m│[39m  Downloading @turbo/linux-64@2.11.4: 0.00 B/17.94 MB
+[90m│[39m  ../../../@n8n/agents                     | [WARN] deprecated
+[90m│[39m  @opentelemetry/sdk-trace-base@2.10.0
+[90m│[39m  Downloading @typescript/typescript-linux-x64@7.0.2: 0.00 B/9.66 MB
+[90m│[39m  ../../../@n8n/agents                     | [WARN] deprecated
+[90m│[39m  @opentelemetry/sdk-trace-node@2.10.0
+[90m│[39m  Downloading @oxlint-tsgolint/linux-x64@0.21.1: 0.00 B/12.94 MB
+[90m│[39m  Downloading @oxlint/binding-linux-x64-gnu@1.78.0: 0.00 B/6.73 MB
+[90m│[39m  Downloading @rolldown/binding-linux-x64-gnu@1.2.14: 0.00 B/8.27 MB
+[90m│[39m  Downloading js-tiktoken@1.0.21: 0.00 B/10.23 MB
+[90m│[39m  ../../../@n8n/ai-utilities               | [WARN] deprecated
+[90m│[39m  @langchain/community@1.1.27
+[90m│[39m  Downloading pdfjs-dist@6.3.289: 0.00 B/8.50 MB
+[90m│[39m  Downloading @napi-rs/canvas-linux-x64-gnu@1.0.11: 0.00 B/14.22 MB
+[90m│[39m  ../../../..                              | Progress: resolved 0,
+[90m│[39m  reused 1, downloaded 1061, added 0
+[90m│[39m  Downloading @rolldown/binding-linux-x64-gnu@1.1.5: 0.00 B/7.79 MB
+[90m│[39m  Downloading typescript@4.9.5: 0.00 B/11.62 MB
+[90m│[39m  Downloading selenium-webdriver@4.39.0: 0.00 B/8.78 MB
+[90m│[39m  ../../../@n8n/engine                     | [WARN] deprecated
+[90m│[39m  supertest@7.1.1
+[90m│[39m  ../../../..                              | Progress: resolved 0,
+[90m│[39m  reused 1, downloaded 1518, added 0
+[90m│[39m  Downloading isolated-vm@7.0.2: 0.00 B/10.50 MB
+[90m│[39m  Downloading @rolldown/binding-linux-x64-gnu@1.0.0-beta.50: 0.00 B/8.38
+[90m│[39m  MB
+[90m│[39m  ../../../..                              | Progress: resolved 0,
+[90m│[39m  reused 1, downloaded 1705, added 0
+[90m│[39m  Downloading agent-browser@0.26.0: 0.00 B/32.61 MB
+[90m│[39m  Downloading chromadb-js-bindings-linux-x64-gnu@1.2.0: 0.00 B/18.05 MB
+[90m│[39m  ../../../@n8n/nodes-langchain            | [WARN] deprecated
+[90m│[39m  @xata.io/client@0.28.4
+[90m│[39m  ../../../@n8n/typeorm                    | [WARN] deprecated
+[90m│[39m  sinon@15.2.0
+[90m│[39m  ../../../cli                             | [WARN] deprecated
+[90m│[39m  @types/uuid@11.0.0
+[90m│[39m  ../../../cli                             | [WARN] deprecated
+[90m│[39m  prom-client@15.1.3
+[90m│[39m  ../../../..                              | Progress: resolved 0,
+[90m│[39m  reused 1, downloaded 2274, added 0
+[90m│[39m  ../../../..                              | Progress: resolved 0,
+[90m│[39m  reused 1, downloaded 2410, added 0
+[90m│[39m  Downloading element-plus@2.4.3: 0.00 B/8.38 MB
+[90m│[39m  Downloading @iconify/json@2.2.488: 0.00 B/89.73 MB
+[90m│[39m  Downloading @iconify/json@2.2.488: 28.84 MB/89.73 MB
+[90m│[39m  Downloading @sentry/cli-linux-x64@2.55.0: 0.00 B/7.80 MB
+[90m│[39m  ../../../nodes-base                      | [WARN] deprecated gm@1.25.1
+[90m│[39m  ../../../nodes-base                      | [WARN] deprecated
+[90m│[39m  alasql@4.4.0
+[90m│[39m  Downloading @napi-rs/image-linux-x64-gnu@1.15.0: 0.00 B/6.86 MB
+[90m│[39m  ../../../..                              | Progress: resolved 0,
+[90m│[39m  reused 10, downloaded 2953, added 0
+[90m│[39m  ../../../..                              | Progress: resolved 0,
+[90m│[39m  reused 10, downloaded 3077, added 0
+[90m│[39m  Command failed with exit code 1: pnpm install
+
+[90m│[39m  Error: ERR_PNPM_NO_MATCHING_VERSION
+
+[90m│[39m  × installing dependencies
+[90m│[39m  ╰─▶ Failed to resolve dependency tree: No matching version found for
+[90m│[39m  @storybook/builder-vite@^11.0.0 while fetching it from https://
+[90m│[39m  registry.npmjs.org/
+[90m│[39m  help: The latest release of @storybook/builder-vite is "10.6.7".
+
+[90m│[39m  Other releases are:
+[90m│[39m  * canary: 0.0.0-pr-36141-sha-6ddbeb4a
+[90m│[39m  * future: 7.1.0-alpha.29
+[90m│[39m  * next: 11.0.0-beta.3
+[90m│[39m  * pr-22631: 7.1.1-pr-22631-1689802540-351503cb.0
+[90m│[39m  * pr-23508: 7.1.1-pr-23508-1689802571-5ec8c1c3.0
+[90m│[39m  * tag-for-publishing-older-releases: 8.2.10
+[90m│[39m  * v7: 7.6.24
+[90m│[39m  * v7-canary: 0.0.0-pr-34011-sha-c45b0f3f
+[90m│[39m  * v8: 8.6.19
+[90m│[39m  * v8-canary: 0.0.0-pr-34009-sha-c90626e7
+[90m│[39m  * v9: 9.1.21
+[90m│[39m  * v9-canary: 0.0.0-pr-35198-sha-9d05c353
+
+[90m│[39m  If you need the full list of all 2432 published versions run "pnpm
+[90m│[39m  view @storybook/builder-vite versions".
+
+[90m│[39m  Scope: all 100 workspace projects
+[90m│[39m  ✓ Lockfile at ../../../../pnpm-lock.yaml passes supply-chain policies
+[90m│[39m  (verified 1m ago)
+[90m│[39m  ../../../..                              | [WARN] deprecated
+[90m│[39m  eslint@9.29.0
+[90m│[39m  Downloading lefthook-linux-x64@1.13.6: 0.00 B/5.89 MB
+[90m│[39m  Downloading @biomejs/cli-linux-x64@1.9.0: 0.00 B/10.52 MB
+[90m│[39m  Downloading @turbo/linux-64@2.11.4: 0.00 B/17.94 MB
+[90m│[39m  ../../../@n8n/agents                     | [WARN] deprecated
+[90m│[39m  @opentelemetry/sdk-trace-base@2.10.0
+[90m│[39m  Downloading @typescript/typescript-linux-x64@7.0.2: 0.00 B/9.66 MB
+[90m│[39m  ../../../@n8n/agents                     | [WARN] deprecated
+[90m│[39m  @opentelemetry/sdk-trace-node@2.10.0
+[90m│[39m  Downloading @oxlint-tsgolint/linux-x64@0.21.1: 0.00 B/12.94 MB
+[90m│[39m  Downloading @oxlint/binding-linux-x64-gnu@1.78.0: 0.00 B/6.73 MB
+[90m│[39m  Downloading @rolldown/binding-linux-x64-gnu@1.2.14: 0.00 B/8.27 MB
+[90m│[39m  Downloading js-tiktoken@1.0.21: 0.00 B/10.23 MB
+[90m│[39m  ../../../@n8n/ai-utilities               | [WARN] deprecated
+[90m│[39m  @langchain/community@1.1.27
+[90m│[39m  Downloading pdfjs-dist@6.3.289: 0.00 B/8.50 MB
+[90m│[39m  Downloading @napi-rs/canvas-linux-x64-gnu@1.0.11: 0.00 B/14.22 MB
+[90m│[39m  ../../../..                              | Progress: resolved 0,
+[90m│[39m  reused 1, downloaded 1061, added 0
+[90m│[39m  Downloading @rolldown/binding-linux-x64-gnu@1.1.5: 0.00 B/7.79 MB
+[90m│[39m  Downloading typescript@4.9.5: 0.00 B/11.62 MB
+[90m│[39m  Downloading selenium-webdriver@4.39.0: 0.00 B/8.78 MB
+[90m│[39m  ../../../@n8n/engine                     | [WARN] deprecated
+[90m│[39m  supertest@7.1.1
+[90m│[39m  ../../../..                              | Progress: resolved 0,
+[90m│[39m  reused 1, downloaded 1518, added 0
+[90m│[39m  Downloading isolated-vm@7.0.2: 0.00 B/10.50 MB
+[90m│[39m  Downloading @rolldown/binding-linux-x64-gnu@1.0.0-beta.50: 0.00 B/8.38
+[90m│[39m  MB
+[90m│[39m  ../../../..                              | Progress: resolved 0,
+[90m│[39m  reused 1, downloaded 1705, added 0
+[90m│[39m  Downloading agent-browser@0.26.0: 0.00 B/32.61 MB
+[90m│[39m  Downloading chromadb-js-bindings-linux-x64-gnu@1.2.0: 0.00 B/18.05 MB
+[90m│[39m  ../../../@n8n/nodes-langchain            | [WARN] deprecated
+[90m│[39m  @xata.io/client@0.28.4
+[90m│[39m  ../../../@n8n/typeorm                    | [WARN] deprecated
+[90m│[39m  sinon@15.2.0
+[90m│[39m  ../../../cli                             | [WARN] deprecated
+[90m│[39m  @types/uuid@11.0.0
+[90m│[39m  ../../../cli                             | [WARN] deprecated
+[90m│[39m  prom-client@15.1.3
+[90m│[39m  ../../../..                              | Progress: resolved 0,
+[90m│[39m  reused 1, downloaded 2274, added 0
+[90m│[39m  ../../../..                              | Progress: resolved 0,
+[90m│[39m  reused 1, downloaded 2410, added 0
+[90m│[39m  Downloading element-plus@2.4.3: 0.00 B/8.38 MB
+[90m│[39m  Downloading @iconify/json@2.2.488: 0.00 B/89.73 MB
+[90m│[39m  Downloading @iconify/json@2.2.488: 28.84 MB/89.73 MB
+[90m│[39m  Downloading @sentry/cli-linux-x64@2.55.0: 0.00 B/7.80 MB
+[90m│[39m  ../../../nodes-base                      | [WARN] deprecated gm@1.25.1
+[90m│[39m  ../../../nodes-base                      | [WARN] deprecated
+[90m│[39m  alasql@4.4.0
+[90m│[39m  Downloading @napi-rs/image-linux-x64-gnu@1.15.0: 0.00 B/6.86 MB
+[90m│[39m  ../../../..                              | Progress: resolved 0,
+[90m│[39m  reused 10, downloaded 2953, added 0
+[90m│[39m  ../../../..                              | Progress: resolved 0,
+[90m│[39m  reused 10, downloaded 3077, added 0[39m
+[90m│[39m  at categorizeExecaError
+[90m│[39m  (file:///home/agent/.cache/pnpm/dlx/4b038f974d0e2f7b2338ff0a12b7fc2d/mwnah4o1-rh/node_modules/.pacquet/storybook@11.0.0-beta.3_react@19.3.1/node_modules/storybook/dist/_node-chunks/chunk-UVYV3XXW.js:7511:717)
+[90m│[39m  at categorize
+[90m│[39m  (file:///home/agent/.cache/pnpm/dlx/4b038f974d0e2f7b2338ff0a12b7fc2d/mwnah4o1-rh/node_modules/.pacquet/storybook@11.0.0-beta.3_react@19.3.1/node_modules/storybook/dist/_node-chunks/chunk-UVYV3XXW.js:7521:31)
+[90m│[39m  at
+[90m│[39m  file:///home/agent/.cache/pnpm/dlx/4b038f974d0e2f7b2338ff0a12b7fc2d/mwnah4o1-rh/node_modules/.pacquet/storybook@11.0.0-beta.3_react@19.3.1/node_modules/storybook/dist/_node-chunks/chunk-UVYV3XXW.js:7524:61
+[90m│[39m
+[34m●[39m  Storybook collects completely anonymous usage telemetry. We use it to
+[90m│[39m  shape Storybook's roadmap and prioritize features. You can learn more,
+[90m│[39m  including how to opt out, at https://storybook.js.org/telemetry
+[90m│[39m
+[31m■[39m  SB_CLI_INIT_0010 (PackageInstallFailedError): Failed to install
+[90m│[39m  dependencies using pnpm.
+
+[90m│[39m  Command failed with exit code 1: pnpm install
+[90m│[39m  Error: ERR_PNPM_NO_MATCHING_VERSION
+
+[90m│[39m  × installing dependencies
+[90m│[39m  ╰─▶ Failed to resolve dependency tree: No matching version found for
+[90m│[39m  @storybook/builder-vite@^11.0.0 while fetching it from https://
+[90m│[39m  registry.npmjs.org/
+[90m│[39m  help: The latest release of @storybook/builder-vite is "10.6.7".
+
+[90m│[39m  Other releases are:
+[90m│[39m  * canary: 0.0.0-pr-36141-sha-6ddbeb4a
+[90m│[39m  * future: 7.1.0-alpha.29
+[90m│[39m  * next: 11.0.0-beta.3
+[90m│[39m  * pr-22631: 7.1.1-pr-22631-1689802540-351503cb.0
+[90m│[39m  * pr-23508: 7.1.1-pr-23508-1689802571-5ec8c1c3.0
+[90m│[39m  * tag-for-publishing-older-releases: 8.2.10
+[90m│[39m  * v7: 7.6.24
+[90m│[39m  * v7-canary: 0.0.0-pr-34011-sha-c45b0f3f
+[90m│[39m  * v8: 8.6.19
+[90m│[39m  * v8-canary: 0.0.0-pr-34009-sha-c90626e7
+[90m│[39m  * v9: 9.1.21
+[90m│[39m  * v9-canary: 0.0.0-pr-35198-sha-9d05c353
+
+[90m│[39m  If you need the full list of all 2432 published versions run "pnpm
+[90m│[39m  view @storybook/builder-vite versions".
+
+[90m│[39m  Scope: all 100 workspace projects
+[90m│[39m  ✓ Lockfile at ../../../../pnpm-lock.yaml passes supply-chain policies
+[90m│[39m  (verified 1m ago)
+[90m│[39m  ../../../..                              | [WARN] deprecated
+[90m│[39m  eslint@9.29.0
+[90m│[39m  Downloading lefthook-linux-x64@1.13.6: 0.00 B/5.89 MB
+[90m│[39m  Downloading @biomejs/cli-linux-x64@1.9.0: 0.00 B/10.52 MB
+[90m│[39m  Downloading @turbo/linux-64@2.11.4: 0.00 B/17.94 MB
+[90m│[39m  ../../../@n8n/agents                     | [WARN] deprecated
+[90m│[39m  @opentelemetry/sdk-trace-base@2.10.0
+[90m│[39m  Downloading @typescript/typescript-linux-x64@7.0.2: 0.00 B/9.66 MB
+[90m│[39m  ../../../@n8n/agents                     | [WARN] deprecated
+[90m│[39m  @opentelemetry/sdk-trace-node@2.10.0
+[90m│[39m  Downloading @oxlint-tsgolint/linux-x64@0.21.1: 0.00 B/12.94 MB
+[90m│[39m  Downloading @oxlint/binding-linux-x64-gnu@1.78.0: 0.00 B/6.73 MB
+[90m│[39m  Downloading @rolldown/binding-linux-x64-gnu@1.2.14: 0.00 B/8.27 MB
+[90m│[39m  Downloading js-tiktoken@1.0.21: 0.00 B/10.23 MB
+[90m│[39m  ../../../@n8n/ai-utilities               | [WARN] deprecated
+[90m│[39m  @langchain/community@1.1.27
+[90m│[39m  Downloading pdfjs-dist@6.3.289: 0.00 B/8.50 MB
+[90m│[39m  Downloading @napi-rs/canvas-linux-x64-gnu@1.0.11: 0.00 B/14.22 MB
+[90m│[39m  ../../../..                              | Progress: resolved 0,
+[90m│[39m  reused 1, downloaded 1061, added 0
+[90m│[39m  Downloading @rolldown/binding-linux-x64-gnu@1.1.5: 0.00 B/7.79 MB
+[90m│[39m  Downloading typescript@4.9.5: 0.00 B/11.62 MB
+[90m│[39m  Downloading selenium-webdriver@4.39.0: 0.00 B/8.78 MB
+[90m│[39m  ../../../@n8n/engine                     | [WARN] deprecated
+[90m│[39m  supertest@7.1.1
+[90m│[39m  ../../../..                              | Progress: resolved 0,
+[90m│[39m  reused 1, downloaded 1518, added 0
+[90m│[39m  Downloading isolated-vm@7.0.2: 0.00 B/10.50 MB
+[90m│[39m  Downloading @rolldown/binding-linux-x64-gnu@1.0.0-beta.50: 0.00 B/8.38
+[90m│[39m  MB
+[90m│[39m  ../../../..                              | Progress: resolved 0,
+[90m│[39m  reused 1, downloaded 1705, added 0
+[90m│[39m  Downloading agent-browser@0.26.0: 0.00 B/32.61 MB
+[90m│[39m  Downloading chromadb-js-bindings-linux-x64-gnu@1.2.0: 0.00 B/18.05 MB
+[90m│[39m  ../../../@n8n/nodes-langchain            | [WARN] deprecated
+[90m│[39m  @xata.io/client@0.28.4
+[90m│[39m  ../../../@n8n/typeorm                    | [WARN] deprecated
+[90m│[39m  sinon@15.2.0
+[90m│[39m  ../../../cli                             | [WARN] deprecated
+[90m│[39m  @types/uuid@11.0.0
+[90m│[39m  ../../../cli                             | [WARN] deprecated
+[90m│[39m  prom-client@15.1.3
+[90m│[39m  ../../../..                              | Progress: resolved 0,
+[90m│[39m  reused 1, downloaded 2274, added 0
+[90m│[39m  ../../../..                              | Progress: resolved 0,
+[90m│[39m  reused 1, downloaded 2410, added 0
+[90m│[39m  Downloading element-plus@2.4.3: 0.00 B/8.38 MB
+[90m│[39m  Downloading @iconify/json@2.2.488: 0.00 B/89.73 MB
+[90m│[39m  Downloading @iconify/json@2.2.488: 28.84 MB/89.73 MB
+[90m│[39m  Downloading @sentry/cli-linux-x64@2.55.0: 0.00 B/7.80 MB
+[90m│[39m  ../../../nodes-base                      | [WARN] deprecated gm@1.25.1
+[90m│[39m  ../../../nodes-base                      | [WARN] deprecated
+[90m│[39m  alasql@4.4.0
+[90m│[39m  Downloading @napi-rs/image-linux-x64-gnu@1.15.0: 0.00 B/6.86 MB
+[90m│[39m  ../../../..                              | Progress: resolved 0,
+[90m│[39m  reused 10, downloaded 2953, added 0
+[90m│[39m  ../../../..                              | Progress: resolved 0,
+[90m│[39m  reused 10, downloaded 3077, added 0
+[90m│[39m  Command failed with exit code 1: pnpm install
+
+[90m│[39m  Error: ERR_PNPM_NO_MATCHING_VERSION
+
+[90m│[39m  × installing dependencies
+[90m│[39m  ╰─▶ Failed to resolve dependency tree: No matching version found for
+[90m│[39m  @storybook/builder-vite@^11.0.0 while fetching it from https://
+[90m│[39m  registry.npmjs.org/
+[90m│[39m  help: The latest release of @storybook/builder-vite is "10.6.7".
+
+[90m│[39m  Other releases are:
+[90m│[39m  * canary: 0.0.0-pr-36141-sha-6ddbeb4a
+[90m│[39m  * future: 7.1.0-alpha.29
+[90m│[39m  * next: 11.0.0-beta.3
+[90m│[39m  * pr-22631: 7.1.1-pr-22631-1689802540-351503cb.0
+[90m│[39m  * pr-23508: 7.1.1-pr-23508-1689802571-5ec8c1c3.0
+[90m│[39m  * tag-for-publishing-older-releases: 8.2.10
+[90m│[39m  * v7: 7.6.24
+[90m│[39m  * v7-canary: 0.0.0-pr-34011-sha-c45b0f3f
+[90m│[39m  * v8: 8.6.19
+[90m│[39m  * v8-canary: 0.0.0-pr-34009-sha-c90626e7
+[90m│[39m  * v9: 9.1.21
+[90m│[39m  * v9-canary: 0.0.0-pr-35198-sha-9d05c353
+
+[90m│[39m  If you need the full list of all 2432 published versions run "pnpm
+[90m│[39m  view @storybook/builder-vite versions".
+
+[90m│[39m  Scope: all 100 workspace projects
+[90m│[39m  ✓ Lockfile at ../../../../pnpm-lock.yaml passes supply-chain policies
+[90m│[39m  (verified 1m ago)
+[90m│[39m  ../../../..                              | [WARN] deprecated
+[90m│[39m  eslint@9.29.0
+[90m│[39m  Downloading lefthook-linux-x64@1.13.6: 0.00 B/5.89 MB
+[90m│[39m  Downloading @biomejs/cli-linux-x64@1.9.0: 0.00 B/10.52 MB
+[90m│[39m  Downloading @turbo/linux-64@2.11.4: 0.00 B/17.94 MB
+[90m│[39m  ../../../@n8n/agents                     | [WARN] deprecated
+[90m│[39m  @opentelemetry/sdk-trace-base@2.10.0
+[90m│[39m  Downloading @typescript/typescript-linux-x64@7.0.2: 0.00 B/9.66 MB
+[90m│[39m  ../../../@n8n/agents                     | [WARN] deprecated
+[90m│[39m  @opentelemetry/sdk-trace-node@2.10.0
+[90m│[39m  Downloading @oxlint-tsgolint/linux-x64@0.21.1: 0.00 B/12.94 MB
+[90m│[39m  Downloading @oxlint/binding-linux-x64-gnu@1.78.0: 0.00 B/6.73 MB
+[90m│[39m  Downloading @rolldown/binding-linux-x64-gnu@1.2.14: 0.00 B/8.27 MB
+[90m│[39m  Downloading js-tiktoken@1.0.21: 0.00 B/10.23 MB
+[90m│[39m  ../../../@n8n/ai-utilities               | [WARN] deprecated
+[90m│[39m  @langchain/community@1.1.27
+[90m│[39m  Downloading pdfjs-dist@6.3.289: 0.00 B/8.50 MB
+[90m│[39m  Downloading @napi-rs/canvas-linux-x64-gnu@1.0.11: 0.00 B/14.22 MB
+[90m│[39m  ../../../..                              | Progress: resolved 0,
+[90m│[39m  reused 1, downloaded 1061, added 0
+[90m│[39m  Downloading @rolldown/binding-linux-x64-gnu@1.1.5: 0.00 B/7.79 MB
+[90m│[39m  Downloading typescript@4.9.5: 0.00 B/11.62 MB
+[90m│[39m  Downloading selenium-webdriver@4.39.0: 0.00 B/8.78 MB
+[90m│[39m  ../../../@n8n/engine                     | [WARN] deprecated
+[90m│[39m  supertest@7.1.1
+[90m│[39m  ../../../..                              | Progress: resolved 0,
+[90m│[39m  reused 1, downloaded 1518, added 0
+[90m│[39m  Downloading isolated-vm@7.0.2: 0.00 B/10.50 MB
+[90m│[39m  Downloading @rolldown/binding-linux-x64-gnu@1.0.0-beta.50: 0.00 B/8.38
+[90m│[39m  MB
+[90m│[39m  ../../../..                              | Progress: resolved 0,
+[90m│[39m  reused 1, downloaded 1705, added 0
+[90m│[39m  Downloading agent-browser@0.26.0: 0.00 B/32.61 MB
+[90m│[39m  Downloading chromadb-js-bindings-linux-x64-gnu@1.2.0: 0.00 B/18.05 MB
+[90m│[39m  ../../../@n8n/nodes-langchain            | [WARN] deprecated
+[90m│[39m  @xata.io/client@0.28.4
+[90m│[39m  ../../../@n8n/typeorm                    | [WARN] deprecated
+[90m│[39m  sinon@15.2.0
+[90m│[39m  ../../../cli                             | [WARN] deprecated
+[90m│[39m  @types/uuid@11.0.0
+[90m│[39m  ../../../cli                             | [WARN] deprecated
+[90m│[39m  prom-client@15.1.3
+[90m│[39m  ../../../..                              | Progress: resolved 0,
+[90m│[39m  reused 1, downloaded 2274, added 0
+[90m│[39m  ../../../..                              | Progress: resolved 0,
+[90m│[39m  reused 1, downloaded 2410, added 0
+[90m│[39m  Downloading element-plus@2.4.3: 0.00 B/8.38 MB
+[90m│[39m  Downloading @iconify/json@2.2.488: 0.00 B/89.73 MB
+[90m│[39m  Downloading @iconify/json@2.2.488: 28.84 MB/89.73 MB
+[90m│[39m  Downloading @sentry/cli-linux-x64@2.55.0: 0.00 B/7.80 MB
+[90m│[39m  ../../../nodes-base                      | [WARN] deprecated gm@1.25.1
+[90m│[39m  ../../../nodes-base                      | [WARN] deprecated
+[90m│[39m  alasql@4.4.0
+[90m│[39m  Downloading @napi-rs/image-linux-x64-gnu@1.15.0: 0.00 B/6.86 MB
+[90m│[39m  ../../../..                              | Progress: resolved 0,
+[90m│[39m  reused 10, downloaded 2953, added 0
+[90m│[39m  ../../../..                              | Progress: resolved 0,
+[90m│[39m  reused 10, downloaded 3077, added 0
+[90m│[39m
+[90m│[39m  Debug logs are written to:
+[90m│[39m  /home/agent/workspace/packages/frontend/@n8n/storybook/debug-storybook.log
+[90m│[39m
+[90m└[39m  
+

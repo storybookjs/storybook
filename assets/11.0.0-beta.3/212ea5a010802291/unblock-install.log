@@ -1,0 +1,57 @@
+Scope: all 100 workspace projects
+✓ Lockfile passes supply-chain policies (verified 2m ago)
+.                                        | [WARN] deprecated eslint@9.29.0
+packages/@n8n/agents                     | [WARN] deprecated @opentelemetry/sdk-trace-base@2.10.0
+packages/@n8n/agents                     | [WARN] deprecated @opentelemetry/sdk-trace-node@2.10.0
+packages/@n8n/ai-utilities               | [WARN] deprecated @langchain/community@1.1.27
+packages/@n8n/engine                     | [WARN] deprecated supertest@7.1.1
+packages/@n8n/nodes-langchain            | [WARN] deprecated @xata.io/client@0.28.4
+packages/@n8n/typeorm                    | [WARN] deprecated sinon@15.2.0
+packages/cli                             | [WARN] deprecated @types/uuid@11.0.0
+packages/cli                             | [WARN] deprecated prom-client@15.1.3
+Progress: resolved 0, reused 2753, downloaded 28, added 0
+packages/nodes-base                      | [WARN] deprecated alasql@4.4.0
+packages/nodes-base                      | [WARN] deprecated gm@1.25.1
+Packages are hard linked from the content-addressable store to the virtual store.
+  Content-addressable store is at: /home/agent/workspace/node_modules/.pnpm-store/v11
+  Virtual store is at:             node_modules/.pnpm
+[WARN] 48 deprecated subdependencies found: @aws-sdk/middleware-websocket@3.936.0, @aws-sdk/protocol-http@3.374.0, @aws-sdk/signature-v4@3.374.0, @opentelemetry/propagator-jaeger@2.10.0, @opentelemetry/sdk-trace-base@2.12.0, @opentelemetry/sdk-trace-web@2.12.0, @otplib/plugin-crypto@12.0.1, @otplib/plugin-thirty-two@12.0.1, @otplib/preset-default@12.0.1, @sinonjs/text-encoding@0.7.3, @smithy/core@3.33.2, @smithy/core@3.34.1, @smithy/smithy-client@4.12.7, @yuku-codegen/binding-darwin-arm64@0.6.1, @yuku-codegen/binding-darwin-x64@0.6.1, @yuku-codegen/binding-freebsd-x64@0.6.1, @yuku-codegen/binding-linux-arm-gnu@0.6.1, @yuku-codegen/binding-linux-arm-musl@0.6.1, @yuku-codegen/binding-linux-arm64-gnu@0.6.1, @yuku-codegen/binding-linux-arm64-musl@0.6.1, @yuku-codegen/binding-linux-x64-gnu@0.6.1, @yuku-codegen/binding-linux-x64-musl@0.6.1, @yuku-codegen/binding-win32-arm64@0.6.1, @yuku-codegen/binding-win32-x64@0.6.1, @yuku-parser/binding-darwin-arm64@0.6.1, @yuku-parser/binding-darwin-x64@0.6.1, @yuku-parser/binding-freebsd-x64@0.6.1, @yuku-parser/binding-linux-arm-gnu@0.6.1, @yuku-parser/binding-linux-arm-musl@0.6.1, @yuku-parser/binding-linux-arm64-gnu@0.6.1, @yuku-parser/binding-linux-arm64-musl@0.6.1, @yuku-parser/binding-linux-x64-gnu@0.6.1, @yuku-parser/binding-linux-x64-musl@0.6.1, @yuku-parser/binding-win32-arm64@0.6.1, @yuku-parser/binding-win32-x64@0.6.1, axios-retry@4.5.0, cron-parser@4.9.0, crypto-js@4.2.0, glob@10.5.0, glob@11.1.0, glob@9.3.5, node-domexception@1.0.0, prebuild-install@7.1.3, q@2.0.3, sourcemap-codec@1.4.8, superagent@10.2.1, whatwg-encoding@3.1.1, yaeti@0.0.6
+Progress: resolved 1548, reused 3117, downloaded 28, added 1545
+Packages: +3181
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Progress: resolved 3181, reused 3117, downloaded 28, added 3181, done
+.../node_modules/isolated-vm install$ node-gyp-build 'node-gyp rebuild -j 4 --release -v' || node-gyp rebuild --release -j max
+.../node_modules/isolated-vm install: Done
+. preinstall$ node scripts/block-npm-install.js
+. preinstall: Done
+. prepare$ node scripts/prepare.mjs
+. prepare: Done
+[WARN] Issues with peer dependencies found. Run "pnpm peers check" to list them.
+
+devDependencies:
++ @biomejs/biome 1.9.0
++ @dotenvx/dotenvx 1.55.1
++ @n8n/eslint-config link:packages/@n8n/eslint-config
++ @n8n/module-cli link:packages/@n8n/module-cli
++ @stryker-mutator/core 10.1.1
++ @stryker-mutator/vitest-runner 10.1.1
++ @types/node 20.19.41
++ @types/supertest 6.0.3
++ cross-env 7.0.3
++ eslint 9.29.0
++ jscpd 5.2.0
++ knip 6.35.1
++ lefthook 1.13.6
++ nodemon 3.0.1
++ npm-run-all2 7.0.2
++ prettier 3.6.2
++ rimraf 5.0.1
++ stylelint 16.23.0
++ tsc-alias 1.8.10
++ tsc-watch 6.2.0
++ turbo 2.11.4
++ typescript 6.0.2
++ yaml 2.8.3
++ zx 8.8.5
+
+Done in 7.9s using pnpm v12.4.2

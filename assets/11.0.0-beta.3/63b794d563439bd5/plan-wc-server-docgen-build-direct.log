@@ -1,0 +1,202 @@
+$ pnpm util:prep-build-reqs && vite build
+$ pnpm util:copy-assets
+$ pnpm util:copy-icons
+$ cpy "../ui-icons/js/*.json" "src/components/icon/assets/" --flat
+[36mvite v7.3.6 [32mbuilding client environment for production...[36m[39m
+[typescript] Type checked in 26.771s
+[@arcgis/api-extractor] Extracted 144 @public files in 0.148s
+transforming...
+[32m✓[39m 384 modules transformed.
+rendering chunks...
+computing gzip size...
+[2mdist/[22m[36mchunks/array.js                                               [39m[1m[2m  0.18 kB[22m[1m[22m[2m │ gzip:  0.16 kB[22m
+[2mdist/[22m[36mindex.js                                                      [39m[1m[2m  0.19 kB[22m[1m[22m[2m │ gzip:  0.17 kB[22m
+[2mdist/[22m[36mchunks/label.js                                               [39m[1m[2m  0.20 kB[22m[1m[22m[2m │ gzip:  0.18 kB[22m
+[2mdist/[22m[36mchunks/dynamicClasses.js                                      [39m[1m[2m  0.23 kB[22m[1m[22m[2m │ gzip:  0.18 kB[22m
+[2mdist/[22m[36mchunks/useT9n.js                                              [39m[1m[2m  0.25 kB[22m[1m[22m[2m │ gzip:  0.19 kB[22m
+[2mdist/[22m[36mchunks/key.js                                                 [39m[1m[2m  0.26 kB[22m[1m[22m[2m │ gzip:  0.21 kB[22m
+[2mdist/[22m[36mchunks/resources10.js                                         [39m[1m[2m  0.28 kB[22m[1m[22m[2m │ gzip:  0.21 kB[22m
+[2mdist/[22m[36mchunks/resources28.js                                         [39m[1m[2m  0.28 kB[22m[1m[22m[2m │ gzip:  0.22 kB[22m
+[2mdist/[22m[36mchunks/resources17.js                                         [39m[1m[2m  0.30 kB[22m[1m[22m[2m │ gzip:  0.23 kB[22m
+[2mdist/[22m[36mchunks/resources16.js                                         [39m[1m[2m  0.33 kB[22m[1m[22m[2m │ gzip:  0.22 kB[22m
+[2mdist/[22m[36mchunks/guid.js                                                [39m[1m[2m  0.35 kB[22m[1m[22m[2m │ gzip:  0.27 kB[22m
+[2mdist/[22m[36mchunks/resources22.js                                         [39m[1m[2m  0.36 kB[22m[1m[22m[2m │ gzip:  0.26 kB[22m
+[2mdist/[22m[36mchunks/resources18.js                                         [39m[1m[2m  0.37 kB[22m[1m[22m[2m │ gzip:  0.25 kB[22m
+[2mdist/[22m[36mchunks/resources31.js                                         [39m[1m[2m  0.38 kB[22m[1m[22m[2m │ gzip:  0.26 kB[22m
+[2mdist/[22m[36mchunks/screen-reader.js                                       [39m[1m[2m  0.39 kB[22m[1m[22m[2m │ gzip:  0.27 kB[22m
+[2mdist/[22m[36mchunks/resources.js                                           [39m[1m[2m  0.39 kB[22m[1m[22m[2m │ gzip:  0.26 kB[22m
+[2mdist/[22m[36mchunks/header.js                                              [39m[1m[2m  0.40 kB[22m[1m[22m[2m │ gzip:  0.28 kB[22m
+[2mdist/[22m[36mchunks/resources29.js                                         [39m[1m[2m  0.43 kB[22m[1m[22m[2m │ gzip:  0.26 kB[22m
+[2mdist/[22m[36mchunks/resources19.js                                         [39m[1m[2m  0.43 kB[22m[1m[22m[2m │ gzip:  0.20 kB[22m
+[2mdist/[22m[36mchunks/component.js                                           [39m[1m[2m  0.43 kB[22m[1m[22m[2m │ gzip:  0.27 kB[22m
+[2mdist/[22m[36mchunks/resources4.js                                          [39m[1m[2m  0.44 kB[22m[1m[22m[2m │ gzip:  0.29 kB[22m
+[2mdist/[22m[36mchunks/resources21.js                                         [39m[1m[2m  0.44 kB[22m[1m[22m[2m │ gzip:  0.28 kB[22m
+[2mdist/[22m[36mchunks/text.js                                                [39m[1m[2m  0.47 kB[22m[1m[22m[2m │ gzip:  0.32 kB[22m
+[2mdist/[22m[36mchunks/resources23.js                                         [39m[1m[2m  0.53 kB[22m[1m[22m[2m │ gzip:  0.31 kB[22m
+[2mdist/[22m[36mchunks/resources12.js                                         [39m[1m[2m  0.54 kB[22m[1m[22m[2m │ gzip:  0.31 kB[22m
+[2mdist/[22m[36mchunks/resources2.js                                          [39m[1m[2m  0.56 kB[22m[1m[22m[2m │ gzip:  0.31 kB[22m
+[2mdist/[22m[36mchunks/useCancelable.js                                       [39m[1m[2m  0.57 kB[22m[1m[22m[2m │ gzip:  0.32 kB[22m
+[2mdist/[22m[36mchunks/Heading.js                                             [39m[1m[2m  0.60 kB[22m[1m[22m[2m │ gzip:  0.36 kB[22m
+[2mdist/[22m[36mchunks/resources11.js                                         [39m[1m[2m  0.63 kB[22m[1m[22m[2m │ gzip:  0.34 kB[22m
+[2mdist/[22m[36mchunks/resources24.js                                         [39m[1m[2m  0.64 kB[22m[1m[22m[2m │ gzip:  0.34 kB[22m
+[2mdist/[22m[36mchunks/aria.js                                                [39m[1m[2m  0.65 kB[22m[1m[22m[2m │ gzip:  0.36 kB[22m
+[2mdist/[22m[36mchunks/Validation.js                                          [39m[1m[2m  0.66 kB[22m[1m[22m[2m │ gzip:  0.39 kB[22m
+[2mdist/[22m[36mchunks/resources5.js                                          [39m[1m[2m  0.68 kB[22m[1m[22m[2m │ gzip:  0.37 kB[22m
+[2mdist/[22m[36mchunks/resources30.js                                         [39m[1m[2m  0.70 kB[22m[1m[22m[2m │ gzip:  0.38 kB[22m
+[2mdist/[22m[36mchunks/responsive.js                                          [39m[1m[2m  0.74 kB[22m[1m[22m[2m │ gzip:  0.31 kB[22m
+[2mdist/[22m[36mchunks/resources13.js                                         [39m[1m[2m  0.74 kB[22m[1m[22m[2m │ gzip:  0.39 kB[22m
+[2mdist/[22m[36mchunks/resources3.js                                          [39m[1m[2m  0.77 kB[22m[1m[22m[2m │ gzip:  0.37 kB[22m
+[2mdist/[22m[36mchunks/ClearButton.js                                         [39m[1m[2m  0.77 kB[22m[1m[22m[2m │ gzip:  0.44 kB[22m
+[2mdist/[22m[36mchunks/resources26.js                                         [39m[1m[2m  0.78 kB[22m[1m[22m[2m │ gzip:  0.35 kB[22m
+[2mdist/[22m[36mchunks/resources25.js                                         [39m[1m[2m  0.79 kB[22m[1m[22m[2m │ gzip:  0.39 kB[22m
+[2mdist/[22m[36mchunks/useFormTrigger.js                                      [39m[1m[2m  0.82 kB[22m[1m[22m[2m │ gzip:  0.42 kB[22m
+[2mdist/[22m[36mchunks/resources8.js                                          [39m[1m[2m  0.84 kB[22m[1m[22m[2m │ gzip:  0.41 kB[22m
+[2mdist/[22m[36mchunks/openCloseComponent.js                                  [39m[1m[2m  0.84 kB[22m[1m[22m[2m │ gzip:  0.35 kB[22m
+[2mdist/[22m[36mcomponents/calcite-option-group/customElement.js              [39m[1m[2m  0.85 kB[22m[1m[22m[2m │ gzip:  0.48 kB[22m
+[2mdist/[22m[36mchunks/resources7.js                                          [39m[1m[2m  0.88 kB[22m[1m[22m[2m │ gzip:  0.42 kB[22m
+[2mdist/[22m[36mchunks/resources33.js                                         [39m[1m[2m  0.90 kB[22m[1m[22m[2m │ gzip:  0.43 kB[22m
+[2mdist/[22m[36mchunks/resources32.js                                         [39m[1m[2m  0.94 kB[22m[1m[22m[2m │ gzip:  0.43 kB[22m
+[2mdist/[22m[36mchunks/resources27.js                                         [39m[1m[2m  0.95 kB[22m[1m[22m[2m │ gzip:  0.44 kB[22m
+[2mdist/[22m[36mchunks/sortable.js                                            [39m[1m[2m  0.96 kB[22m[1m[22m[2m │ gzip:  0.46 kB[22m
+[2mdist/[22m[36mchunks/filter.js                                              [39m[1m[2m  0.98 kB[22m[1m[22m[2m │ gzip:  0.48 kB[22m
+[2mdist/[22m[36mchunks/resources20.js                                         [39m[1m[2m  1.01 kB[22m[1m[22m[2m │ gzip:  0.47 kB[22m
+[2mdist/[22m[36mchunks/resources15.js                                         [39m[1m[2m  1.06 kB[22m[1m[22m[2m │ gzip:  0.49 kB[22m
+[2mdist/[22m[36mchunks/math.js                                                [39m[1m[2m  1.08 kB[22m[1m[22m[2m │ gzip:  0.57 kB[22m
+[2mdist/[22m[36mchunks/useTopLayer.js                                         [39m[1m[2m  1.15 kB[22m[1m[22m[2m │ gzip:  0.49 kB[22m
+[2mdist/[22m[36mchunks/FloatingArrow.js                                       [39m[1m[2m  1.16 kB[22m[1m[22m[2m │ gzip:  0.57 kB[22m
+[2mdist/[22m[36mchunks/InternalLabel.js                                       [39m[1m[2m  1.28 kB[22m[1m[22m[2m │ gzip:  0.54 kB[22m
+[2mdist/[22m[36mcomponents/calcite-carousel-item/customElement.js             [39m[1m[2m  1.29 kB[22m[1m[22m[2m │ gzip:  0.65 kB[22m
+[2mdist/[22m[36mchunks/resources6.js                                          [39m[1m[2m  1.29 kB[22m[1m[22m[2m │ gzip:  0.54 kB[22m
+[2mdist/[22m[36mchunks/observers.js                                           [39m[1m[2m  1.51 kB[22m[1m[22m[2m │ gzip:  0.56 kB[22m
+[2mdist/[22m[36mchunks/usePreventDocumentScroll.js                            [39m[1m[2m  1.62 kB[22m[1m[22m[2m │ gzip:  0.48 kB[22m
+[2mdist/[22m[36mchunks/resources14.js                                         [39m[1m[2m  1.75 kB[22m[1m[22m[2m │ gzip:  0.55 kB[22m
+[2mdist/[22m[36mchunks/resources9.js                                          [39m[1m[2m  1.82 kB[22m[1m[22m[2m │ gzip:  0.70 kB[22m
+[2mdist/[22m[36mchunks/useFocusable.js                                        [39m[1m[2m  1.92 kB[22m[1m[22m[2m │ gzip:  0.67 kB[22m
+[2mdist/[22m[36mchunks/resources34.js                                         [39m[1m[2m  2.28 kB[22m[1m[22m[2m │ gzip:  0.78 kB[22m
+[2mdist/[22m[36mchunks/utils2.js                                              [39m[1m[2m  2.30 kB[22m[1m[22m[2m │ gzip:  0.95 kB[22m
+[2mdist/[22m[36mchunks/useInteractive.js                                      [39m[1m[2m  2.36 kB[22m[1m[22m[2m │ gzip:  0.78 kB[22m
+[2mdist/[22m[36mchunks/utils4.js                                              [39m[1m[2m  2.49 kB[22m[1m[22m[2m │ gzip:  0.92 kB[22m
+[2mdist/[22m[36mcomponents/calcite-option/customElement.js                    [39m[1m[2m  2.77 kB[22m[1m[22m[2m │ gzip:  0.98 kB[22m
+[2mdist/[22m[36mcomponents/calcite-scrim/customElement.js                     [39m[1m[2m  3.00 kB[22m[1m[22m[2m │ gzip:  1.24 kB[22m
+[2mdist/[22m[36mcomponents/calcite-fab/customElement.js                       [39m[1m[2m  3.12 kB[22m[1m[22m[2m │ gzip:  1.15 kB[22m
+[2mdist/[22m[36mcomponents/calcite-label/customElement.js                     [39m[1m[2m  3.14 kB[22m[1m[22m[2m │ gzip:  1.07 kB[22m
+[2mdist/[22m[36mcomponents/calcite-progress/customElement.js                  [39m[1m[2m  3.18 kB[22m[1m[22m[2m │ gzip:  1.24 kB[22m
+[2mdist/[22m[36mchunks/useInlineEdit.js                                       [39m[1m[2m  3.23 kB[22m[1m[22m[2m │ gzip:  1.09 kB[22m
+[2mdist/[22m[36mchunks/utils.js                                               [39m[1m[2m  3.44 kB[22m[1m[22m[2m │ gzip:  1.16 kB[22m
+[2mdist/[22m[36mcomponents/calcite-tab/customElement.js                       [39m[1m[2m  3.64 kB[22m[1m[22m[2m │ gzip:  1.43 kB[22m
+[2mdist/[22m[36mcomponents/calcite-input-message/customElement.js             [39m[1m[2m  3.85 kB[22m[1m[22m[2m │ gzip:  1.24 kB[22m
+[2mdist/[22m[36mcomponents/calcite-list-item-group/customElement.js           [39m[1m[2m  4.08 kB[22m[1m[22m[2m │ gzip:  1.24 kB[22m
+[2mdist/[22m[36mcomponents/calcite-stack/customElement.js                     [39m[1m[2m  4.36 kB[22m[1m[22m[2m │ gzip:  1.23 kB[22m
+[2mdist/[22m[36mcomponents/calcite-accordion/customElement.js                 [39m[1m[2m  4.54 kB[22m[1m[22m[2m │ gzip:  1.34 kB[22m
+[2mdist/[22m[36mchunks/useSortable.js                                         [39m[1m[2m  4.64 kB[22m[1m[22m[2m │ gzip:  1.21 kB[22m
+[2mdist/[22m[36mcomponents/calcite-avatar/customElement.js                    [39m[1m[2m  4.73 kB[22m[1m[22m[2m │ gzip:  1.75 kB[22m
+[2mdist/[22m[36mcomponents/calcite-menu/customElement.js                      [39m[1m[2m  4.97 kB[22m[1m[22m[2m │ gzip:  1.55 kB[22m
+[2mdist/[22m[36mcomponents/calcite-link/customElement.js                      [39m[1m[2m  5.12 kB[22m[1m[22m[2m │ gzip:  1.87 kB[22m
+[2mdist/[22m[36mchunks/runtime.js                                             [39m[1m[2m  5.19 kB[22m[1m[22m[2m │ gzip:  2.05 kB[22m
+[2mdist/[22m[36mcomponents/calcite-autocomplete-item-group/customElement.js   [39m[1m[2m  5.23 kB[22m[1m[22m[2m │ gzip:  1.44 kB[22m
+[2mdist/[22m[36mcomponents/calcite-card-group/customElement.js                [39m[1m[2m  5.30 kB[22m[1m[22m[2m │ gzip:  1.66 kB[22m
+[2mdist/[22m[36mchunks/useFocusTrap.js                                        [39m[1m[2m  5.53 kB[22m[1m[22m[2m │ gzip:  1.54 kB[22m
+[2mdist/[22m[36mcomponents/calcite-combobox-item-group/customElement.js       [39m[1m[2m  5.54 kB[22m[1m[22m[2m │ gzip:  1.45 kB[22m
+[2mdist/[22m[36mcomponents/calcite-icon/customElement.js                      [39m[1m[2m  5.69 kB[22m[1m[22m[2m │ gzip:  2.05 kB[22m
+[2mdist/[22m[36mchunks/date.js                                                [39m[1m[2m  5.70 kB[22m[1m[22m[2m │ gzip:  1.80 kB[22m
+[2mdist/[22m[36mcomponents/calcite-navigation-user/customElement.js           [39m[1m[2m  5.75 kB[22m[1m[22m[2m │ gzip:  1.50 kB[22m
+[2mdist/[22m[36mcomponents/calcite-swatch-group/customElement.js              [39m[1m[2m  5.76 kB[22m[1m[22m[2m │ gzip:  1.72 kB[22m
+[2mdist/[22m[36mcomponents/calcite-chip-group/customElement.js                [39m[1m[2m  5.91 kB[22m[1m[22m[2m │ gzip:  1.83 kB[22m
+[2mdist/[22m[36mchunks/useLabel.js                                            [39m[1m[2m  6.03 kB[22m[1m[22m[2m │ gzip:  1.61 kB[22m
+[2mdist/[22m[36mcomponents/calcite-tile-group/customElement.js                [39m[1m[2m  6.43 kB[22m[1m[22m[2m │ gzip:  1.97 kB[22m
+[2mdist/[22m[36mcomponents/calcite-dropdown-group/customElement.js            [39m[1m[2m  6.46 kB[22m[1m[22m[2m │ gzip:  1.74 kB[22m
+[2mdist/[22m[36mcomponents/calcite-filter/customElement.js                    [39m[1m[2m  6.49 kB[22m[1m[22m[2m │ gzip:  1.95 kB[22m
+[2mdist/[22m[36mcomponents/calcite-tabs/customElement.js                      [39m[1m[2m  6.55 kB[22m[1m[22m[2m │ gzip:  1.88 kB[22m
+[2mdist/[22m[36mcomponents/calcite-autocomplete-item/customElement.js         [39m[1m[2m  6.70 kB[22m[1m[22m[2m │ gzip:  1.91 kB[22m
+[2mdist/[22m[36mcomponents/calcite-flow/customElement.js                      [39m[1m[2m  6.97 kB[22m[1m[22m[2m │ gzip:  2.07 kB[22m
+[2mdist/[22m[36mcomponents/calcite-text/customElement.js                      [39m[1m[2m  7.11 kB[22m[1m[22m[2m │ gzip:  2.17 kB[22m
+[2mdist/[22m[36mcomponents/calcite-segmented-control-item/customElement.js    [39m[1m[2m  7.19 kB[22m[1m[22m[2m │ gzip:  1.93 kB[22m
+[2mdist/[22m[36mcomponents/calcite-graph/customElement.js                     [39m[1m[2m  7.44 kB[22m[1m[22m[2m │ gzip:  2.29 kB[22m
+[2mdist/[22m[36mcomponents/calcite-navigation-logo/customElement.js           [39m[1m[2m  7.63 kB[22m[1m[22m[2m │ gzip:  1.88 kB[22m
+[2mdist/[22m[36mcomponents/calcite-radio-button-group/customElement.js        [39m[1m[2m  8.49 kB[22m[1m[22m[2m │ gzip:  2.16 kB[22m
+[2mdist/[22m[36mcomponents/calcite-table-header/customElement.js              [39m[1m[2m  8.51 kB[22m[1m[22m[2m │ gzip:  2.33 kB[22m
+[2mdist/[22m[36mcomponents/calcite-switch/customElement.js                    [39m[1m[2m  8.75 kB[22m[1m[22m[2m │ gzip:  2.23 kB[22m
+[2mdist/[22m[36mchunks/dom.js                                                 [39m[1m[2m  8.75 kB[22m[1m[22m[2m │ gzip:  2.49 kB[22m
+[2mdist/[22m[36mchunks/floating-ui.js                                         [39m[1m[2m  8.78 kB[22m[1m[22m[2m │ gzip:  2.71 kB[22m
+[2mdist/[22m[36mcomponents/calcite-date-picker-day/customElement.js           [39m[1m[2m  8.81 kB[22m[1m[22m[2m │ gzip:  2.31 kB[22m
+[2mdist/[22m[36mcomponents/calcite-table-cell/customElement.js                [39m[1m[2m  8.86 kB[22m[1m[22m[2m │ gzip:  2.27 kB[22m
+[2mdist/[22m[36mcomponents/calcite-tooltip/customElement.js                   [39m[1m[2m  9.10 kB[22m[1m[22m[2m │ gzip:  2.41 kB[22m
+[2mdist/[22m[36mcomponents/calcite-loader/customElement.js                    [39m[1m[2m  9.42 kB[22m[1m[22m[2m │ gzip:  2.43 kB[22m
+[2mdist/[22m[36mchunks/utils3.js                                              [39m[1m[2m  9.51 kB[22m[1m[22m[2m │ gzip:  2.80 kB[22m
+[2mdist/[22m[36mcomponents/calcite-block-section/customElement.js             [39m[1m[2m  9.98 kB[22m[1m[22m[2m │ gzip:  2.61 kB[22m
+[2mdist/[22m[36mcomponents/calcite-flow-item/customElement.js                 [39m[1m[2m 10.09 kB[22m[1m[22m[2m │ gzip:  2.48 kB[22m
+[2mdist/[22m[36mcomponents/calcite-action-group/customElement.js              [39m[1m[2m 10.14 kB[22m[1m[22m[2m │ gzip:  2.76 kB[22m
+[2mdist/[22m[36mcomponents/calcite-sort-handle/customElement.js               [39m[1m[2m 10.18 kB[22m[1m[22m[2m │ gzip:  2.61 kB[22m
+[2mdist/[22m[36mcomponents/calcite-checkbox/customElement.js                  [39m[1m[2m 10.21 kB[22m[1m[22m[2m │ gzip:  2.72 kB[22m
+[2mdist/[22m[36mcomponents/calcite-dropdown-item/customElement.js             [39m[1m[2m 10.42 kB[22m[1m[22m[2m │ gzip:  2.58 kB[22m
+[2mdist/[22m[36mcomponents/calcite-color-picker-hex-input/customElement.js    [39m[1m[2m 10.89 kB[22m[1m[22m[2m │ gzip:  2.96 kB[22m
+[2mdist/[22m[36mcomponents/calcite-inline-editable/customElement.js           [39m[1m[2m 11.15 kB[22m[1m[22m[2m │ gzip:  2.68 kB[22m
+[2mdist/[22m[36mcomponents/calcite-navigation/customElement.js                [39m[1m[2m 11.17 kB[22m[1m[22m[2m │ gzip:  2.48 kB[22m
+[2mdist/[22m[36mcomponents/calcite-segmented-control/customElement.js         [39m[1m[2m 11.18 kB[22m[1m[22m[2m │ gzip:  3.01 kB[22m
+[2mdist/[22m[36mcomponents/calcite-combobox-item/customElement.js             [39m[1m[2m 11.58 kB[22m[1m[22m[2m │ gzip:  3.08 kB[22m
+[2mdist/[22m[36mcomponents/calcite-split-button/customElement.js              [39m[1m[2m 12.02 kB[22m[1m[22m[2m │ gzip:  2.36 kB[22m
+[2mdist/[22m[36mcomponents/calcite-tree/customElement.js                      [39m[1m[2m 12.07 kB[22m[1m[22m[2m │ gzip:  2.86 kB[22m
+[2mdist/[22m[36mcomponents/calcite-tile/customElement.js                      [39m[1m[2m 12.12 kB[22m[1m[22m[2m │ gzip:  2.97 kB[22m
+[2mdist/[22m[36mcomponents/calcite-swatch/customElement.js                    [39m[1m[2m 12.42 kB[22m[1m[22m[2m │ gzip:  3.56 kB[22m
+[2mdist/[22m[36mchunks/useForm.js                                             [39m[1m[2m 12.82 kB[22m[1m[22m[2m │ gzip:  3.20 kB[22m
+[2mdist/[22m[36mcomponents/calcite-table-row/customElement.js                 [39m[1m[2m 13.20 kB[22m[1m[22m[2m │ gzip:  3.11 kB[22m
+[2mdist/[22m[36mcomponents/calcite-block-group/customElement.js               [39m[1m[2m 13.47 kB[22m[1m[22m[2m │ gzip:  3.23 kB[22m
+[2mdist/[22m[36mcomponents/calcite-popover/customElement.js                   [39m[1m[2m 13.55 kB[22m[1m[22m[2m │ gzip:  3.45 kB[22m
+[2mdist/[22m[36mcomponents/calcite-stepper/customElement.js                   [39m[1m[2m 13.61 kB[22m[1m[22m[2m │ gzip:  3.46 kB[22m
+[2mdist/[22m[36mcomponents/calcite-shell/customElement.js                     [39m[1m[2m 14.22 kB[22m[1m[22m[2m │ gzip:  3.31 kB[22m
+[2mdist/[22m[36mcomponents/calcite-notice/customElement.js                    [39m[1m[2m 14.32 kB[22m[1m[22m[2m │ gzip:  2.83 kB[22m
+[2mdist/[22m[36mcomponents/calcite-action-menu/customElement.js               [39m[1m[2m 14.60 kB[22m[1m[22m[2m │ gzip:  3.70 kB[22m
+[2mdist/[22m[36mcomponents/calcite-select/customElement.js                    [39m[1m[2m 14.86 kB[22m[1m[22m[2m │ gzip:  3.56 kB[22m
+[2mdist/[22m[36mcomponents/calcite-rating/customElement.js                    [39m[1m[2m 15.21 kB[22m[1m[22m[2m │ gzip:  4.11 kB[22m
+[2mdist/[22m[36mcomponents/calcite-pagination/customElement.js                [39m[1m[2m 15.37 kB[22m[1m[22m[2m │ gzip:  3.61 kB[22m
+[2mdist/[22m[36mchunks/locale.js                                              [39m[1m[2m 15.86 kB[22m[1m[22m[2m │ gzip:  4.46 kB[22m
+[2mdist/[22m[36mcomponents/calcite-radio-button/customElement.js              [39m[1m[2m 15.98 kB[22m[1m[22m[2m │ gzip:  3.47 kB[22m
+[2mdist/[22m[36mcomponents/calcite-card/customElement.js                      [39m[1m[2m 16.50 kB[22m[1m[22m[2m │ gzip:  3.42 kB[22m
+[2mdist/[22m[36mcomponents/calcite-action/customElement.js                    [39m[1m[2m 16.95 kB[22m[1m[22m[2m │ gzip:  3.61 kB[22m
+[2mdist/[22m[36mcomponents/calcite-date-picker/customElement.js               [39m[1m[2m 18.31 kB[22m[1m[22m[2m │ gzip:  3.93 kB[22m
+[2mdist/[22m[36mcomponents/calcite-accordion-item/customElement.js            [39m[1m[2m 18.33 kB[22m[1m[22m[2m │ gzip:  3.95 kB[22m
+[2mdist/[22m[36mcomponents/calcite-meter/customElement.js                     [39m[1m[2m 18.39 kB[22m[1m[22m[2m │ gzip:  4.10 kB[22m
+[2mdist/[22m[36mchunks/manager.js                                             [39m[1m[2m 19.00 kB[22m[1m[22m[2m │ gzip:  3.50 kB[22m
+[2mdist/[22m[36mcomponents/calcite-tree-item/customElement.js                 [39m[1m[2m 19.00 kB[22m[1m[22m[2m │ gzip:  4.43 kB[22m
+[2mdist/[22m[36mcomponents/calcite-date-picker-month/customElement.js         [39m[1m[2m 19.20 kB[22m[1m[22m[2m │ gzip:  4.27 kB[22m
+[2mdist/[22m[36mcomponents/calcite-input-time-zone/customElement.js           [39m[1m[2m 19.26 kB[22m[1m[22m[2m │ gzip:  5.13 kB[22m
+[2mdist/[22m[36mcomponents/calcite-date-picker-month-header/customElement.js  [39m[1m[2m 19.29 kB[22m[1m[22m[2m │ gzip:  4.57 kB[22m
+[2mdist/[22m[36mcomponents/calcite-tab-nav/customElement.js                   [39m[1m[2m 20.24 kB[22m[1m[22m[2m │ gzip:  4.67 kB[22m
+[2mdist/[22m[36mcomponents/calcite-time-picker/customElement.js               [39m[1m[2m 20.68 kB[22m[1m[22m[2m │ gzip:  3.83 kB[22m
+[2mdist/[22m[36mcomponents/calcite-dropdown/customElement.js                  [39m[1m[2m 21.21 kB[22m[1m[22m[2m │ gzip:  4.99 kB[22m
+[2mdist/[22m[36mcomponents/calcite-tab-title/customElement.js                 [39m[1m[2m 21.58 kB[22m[1m[22m[2m │ gzip:  4.65 kB[22m
+[2mdist/[22m[36mcomponents/calcite-alert/customElement.js                     [39m[1m[2m 21.61 kB[22m[1m[22m[2m │ gzip:  4.67 kB[22m
+[2mdist/[22m[36mcomponents/calcite-menu-item/customElement.js                 [39m[1m[2m 21.67 kB[22m[1m[22m[2m │ gzip:  4.22 kB[22m
+[2mdist/[22m[36mcomponents/calcite-stepper-item/customElement.js              [39m[1m[2m 22.27 kB[22m[1m[22m[2m │ gzip:  4.08 kB[22m
+[2mdist/[22m[36mcomponents/calcite-text-area/customElement.js                 [39m[1m[2m 22.48 kB[22m[1m[22m[2m │ gzip:  5.10 kB[22m
+[2mdist/[22m[36mcomponents/calcite-block/customElement.js                     [39m[1m[2m 22.87 kB[22m[1m[22m[2m │ gzip:  4.99 kB[22m
+[2mdist/[22m[36mcomponents/calcite-table/customElement.js                     [39m[1m[2m 24.14 kB[22m[1m[22m[2m │ gzip:  5.40 kB[22m
+[2mdist/[22m[36mcomponents/calcite-autocomplete/customElement.js              [39m[1m[2m 25.56 kB[22m[1m[22m[2m │ gzip:  5.93 kB[22m
+[2mdist/[22m[36mloader.js                                                     [39m[1m[2m 25.77 kB[22m[1m[22m[2m │ gzip:  4.58 kB[22m
+[2mdist/[22m[36mcomponents/calcite-sheet/customElement.js                     [39m[1m[2m 26.14 kB[22m[1m[22m[2m │ gzip:  5.37 kB[22m
+[2mdist/[22m[36mcomponents/calcite-chip/customElement.js                      [39m[1m[2m 27.35 kB[22m[1m[22m[2m │ gzip:  4.39 kB[22m
+[2mdist/[22m[36mcomponents/calcite-panel/customElement.js                     [39m[1m[2m 27.69 kB[22m[1m[22m[2m │ gzip:  5.77 kB[22m
+[2mdist/[22m[36mcomponents/calcite-carousel/customElement.js                  [39m[1m[2m 29.59 kB[22m[1m[22m[2m │ gzip:  6.30 kB[22m
+[2mdist/[22m[36mchunks/useTime.js                                             [39m[1m[2m 29.77 kB[22m[1m[22m[2m │ gzip:  5.60 kB[22m
+[2mdist/[22m[36mcomponents/calcite-dialog/customElement.js                    [39m[1m[2m 29.92 kB[22m[1m[22m[2m │ gzip:  5.97 kB[22m
+[2mdist/[22m[36mcomponents/calcite-input-time-picker/customElement.js         [39m[1m[2m 30.21 kB[22m[1m[22m[2m │ gzip:  6.00 kB[22m
+[2mdist/[22m[36mcomponents/calcite-list/customElement.js                      [39m[1m[2m 30.33 kB[22m[1m[22m[2m │ gzip:  6.50 kB[22m
+[2mdist/[22m[36mcomponents/calcite-button/customElement.js                    [39m[1m[2m 31.78 kB[22m[1m[22m[2m │ gzip:  4.73 kB[22m
+[2mdist/[22m[36mcomponents/calcite-shell-panel/customElement.js               [39m[1m[2m 34.12 kB[22m[1m[22m[2m │ gzip:  5.94 kB[22m
+[2mdist/[22m[36mcomponents/calcite-list-item/customElement.js                 [39m[1m[2m 35.60 kB[22m[1m[22m[2m │ gzip:  6.71 kB[22m
+[2mdist/[22m[36mcomponents/calcite-action-bar/customElement.js                [39m[1m[2m 36.85 kB[22m[1m[22m[2m │ gzip:  7.63 kB[22m
+[2mdist/[22m[36mcomponents/calcite-input-text/customElement.js                [39m[1m[2m 38.26 kB[22m[1m[22m[2m │ gzip:  7.09 kB[22m
+[2mdist/[22m[36mcomponents/calcite-slider/customElement.js                    [39m[1m[2m 46.60 kB[22m[1m[22m[2m │ gzip:  9.68 kB[22m
+[2mdist/[22m[36mcomponents/calcite-color-picker/customElement.js              [39m[1m[2m 47.83 kB[22m[1m[22m[2m │ gzip: 10.45 kB[22m
+[2mdist/[22m[36mcomponents/calcite-input-date-picker/customElement.js         [39m[1m[2m 51.88 kB[22m[1m[22m[2m │ gzip:  9.97 kB[22m
+[2mdist/[22m[36mcomponents/calcite-input-number/customElement.js              [39m[1m[2m 57.22 kB[22m[1m[22m[2m │ gzip: 10.11 kB[22m
+[2mdist/[22m[36mcomponents/calcite-input/customElement.js                     [39m[1m[2m 61.15 kB[22m[1m[22m[2m │ gzip: 10.73 kB[22m
+[2mdist/[22m[36mcomponents/calcite-combobox/customElement.js                  [39m[1m[2m 73.38 kB[22m[1m[22m[2m │ gzip: 14.75 kB[22m
+[2mdist/[22m[36mchunks/useSizeOverride.js                                     [39m[1m[2m148.69 kB[22m[1m[22m[2m │ gzip: 35.01 kB[22m
+[2mdist/[22m[36m*                                                           2,038.21 kB[22m[1m[22m [2m│ gzip: 473.82 kB[22m[1m[22m
+[@arcgis/lumina:buildCdn] CDN was built in 993ms
+[32m✓ built in 35.00s[39m
+$ pnpm util:generate-t9n-docs-json && pnpm util:generate-supported-browsers-json
+$ node support/generate-t9n-docs-json.ts
+$ node support/generate-supported-browsers-json.ts
+exit 0

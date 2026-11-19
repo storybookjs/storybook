@@ -1,0 +1,34 @@
+Error loading main config, trying fallback
+node:internal/modules/cjs/loader:1564
+  const err = new Error(message);
+              ^
+
+Error: Cannot find module '@storybook/your-framework-here/node'
+Require stack:
+- /home/agent/workspace/apps/storybook-react-native/.rnstorybook/main.ts
+- /home/agent/workspace/node_modules/@storybook/react-native/scripts/require-interop.js
+- /home/agent/workspace/node_modules/@storybook/react-native/scripts/generate.js
+- /home/agent/workspace/node_modules/@storybook/react-native/scripts/get-stories.js
+- /home/agent/workspace/node_modules/@storybook/react-native/bin/get-stories.js
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1564:15)
+    at Module._resolveFilename (/home/agent/workspace/node_modules/esbuild-register/dist/node.js:4794:36)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1142:10)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+    at Module._load (node:internal/modules/cjs/loader:1341:5)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+    at Module.require (node:internal/modules/cjs/loader:1674:12)
+    at require (node:internal/modules/helpers:157:16)
+    at Object.<anonymous> (/home/agent/workspace/apps/storybook-react-native/.rnstorybook/main.ts:1:28) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    '/home/agent/workspace/apps/storybook-react-native/.rnstorybook/main.ts',
+    '/home/agent/workspace/node_modules/@storybook/react-native/scripts/require-interop.js',
+    '/home/agent/workspace/node_modules/@storybook/react-native/scripts/generate.js',
+    '/home/agent/workspace/node_modules/@storybook/react-native/scripts/get-stories.js',
+    '/home/agent/workspace/node_modules/@storybook/react-native/bin/get-stories.js'
+  ]
+}
+
+Node.js v24.22.3
+exit 1

@@ -6,6 +6,7 @@ import { z } from 'zod';
 
 import { loadEntries } from './lib/catalog.ts';
 import { renderManualChecklist } from './lib/manual-qa.ts';
+import { diffPlans } from './lib/plan-diff.ts';
 import {
   checkPlanText,
   draftOfPlan,
@@ -25,6 +26,7 @@ const HELP = `Usage: node ecosystem-qa/qa-plan.ts render --window <file> [--draf
        node ecosystem-qa/qa-plan.ts draft <file> --window <file> --out <file>
        node ecosystem-qa/qa-plan.ts ledger <file> --window <file> [--out <file>]
        node ecosystem-qa/qa-plan.ts manual <file> --window <file> [--out <file>]
+       node ecosystem-qa/qa-plan.ts diff <before> <after> --window <file> [--moved <prs>]
 
 render writes a QA plan from the JSON that window.ts wrote and an optional JSON draft of entries,
 discovered repos, decisions, and groups. A PR without a decision gets an empty cell.
@@ -44,7 +46,13 @@ or writes it to --out.
 
 manual prints the manual checks of a plan that passes check with that window as one Markdown
 checklist for an issue or a discussion, in one section for each reason why the sweep cannot test
-them, with the title of each PR, or writes it to --out. It creates nothing on GitHub.`;
+them, with the title of each PR, or writes it to --out. It creates nothing on GitHub.
+
+diff prints what differs between two plans of that window: each PR whose place changed, with where
+it was and where it is, the entries removed, added, and changed, with their batch and repos and
+whether they are probes, the discovered repos removed and added, and the manual checks removed and
+added. It exits 1 with a line for each PR that moved and that --moved, a comma-separated list of PR
+numbers, does not name.`;
 
 const { values, positionals } = parseArgs({
   allowPositionals: true,
@@ -52,6 +60,7 @@ const { values, positionals } = parseArgs({
     window: { type: 'string' },
     draft: { type: 'string' },
     out: { type: 'string' },
+    moved: { type: 'string' },
     help: { type: 'boolean', default: false },
   },
 });
@@ -65,10 +74,23 @@ const readWindow = (file: string) => Window.parse(readJson(file));
 const plural = (count: number, one: string, many = `${one}s`) =>
   `${count} ${count === 1 ? one : many}`;
 
-const [command, file, ...extra] = positionals;
+const readPlan = (file: string) => {
+  const { plan, problems } = checkPlanText(readFileSync(file, 'utf8'), { catalog: [] });
+  if (!plan) {
+    console.error(`${file}:${problems[0]!.line}: ${problems[0]!.message}`);
+    process.exit(1);
+  }
+  return plan;
+};
 
-if (extra.length) {
-  console.error(`${command} takes one file, and was given ${extra.length + 1}.\n\n${HELP}`);
+const [command, ...files] = positionals;
+const [file, after] = files;
+const fileCount = command === 'diff' ? 2 : 1;
+
+if (files.length > fileCount) {
+  console.error(
+    `${command} takes ${fileCount === 1 ? 'one file' : 'two files'}, and was given ${files.length}.\n\n${HELP}`
+  );
   process.exit(1);
 } else if (command === 'render' && values.window && values.out && !file) {
   const parsed = PlanDraft.safeParse(values.draft ? readJson(values.draft) : {});
@@ -144,12 +166,7 @@ if (extra.length) {
   writeFileSync(values.out, `${JSON.stringify(draft, null, 2)}\n`);
   console.log(`Wrote ${values.out}. Change it, then render the plan again.`);
 } else if (command === 'ledger' && file && values.window && !values.draft) {
-  const { plan, problems } = checkPlanText(readFileSync(file, 'utf8'), { catalog: [] });
-  if (!plan) {
-    console.error(`${file}:${problems[0]!.line}: ${problems[0]!.message}`);
-    process.exit(1);
-  }
-  const ledger = renderLedger(plan, readWindow(values.window));
+  const ledger = renderLedger(readPlan(file), readWindow(values.window));
   if (values.out) {
     mkdirSync(dirname(values.out), { recursive: true });
     writeFileSync(values.out, ledger);
@@ -177,6 +194,27 @@ if (extra.length) {
   } else {
     process.stdout.write(checklist);
   }
+} else if (
+  command === 'diff' &&
+  file &&
+  after &&
+  values.window &&
+  !values.draft &&
+  !values.out &&
+  /^(\d+(,\d+)*)?$/.test(values.moved ?? '')
+) {
+  const { moved, lines } = diffPlans(readPlan(file), readPlan(after), readWindow(values.window));
+  console.log(
+    lines.length
+      ? lines.join('\n')
+      : 'No PR moved, and no entry, discovered repo, or manual check differs.'
+  );
+  const named = new Set(values.moved?.split(',').map(Number));
+  const unnamed = moved.filter((pr) => !named.has(pr));
+  for (const pr of unnamed) {
+    console.error(`#${pr} moved, and --moved does not name it.`);
+  }
+  process.exitCode = unnamed.length ? 1 : 0;
 } else {
   console.error(HELP);
   process.exit(1);

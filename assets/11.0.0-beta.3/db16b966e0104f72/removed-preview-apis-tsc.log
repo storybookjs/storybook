@@ -1,0 +1,8 @@
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+qa-probe/removed-preview-apis.ts(1,10): error TS2305: Module '"storybook/preview-api"' has no exported member 'mockChannel'.
+qa-probe/removed-preview-apis.ts(2,15): error TS2724: '"storybook/internal/csf"' has no exported member named 'StoryKind'. Did you mean 'StoryId'?
+qa-probe/removed-preview-apis.ts(2,26): error TS2305: Module '"storybook/internal/csf"' has no exported member 'AnyFramework'.
+qa-probe/removed-preview-apis.ts(2,40): error TS2724: '"storybook/internal/csf"' has no exported member named 'StoryContextForLoaders'. Did you mean 'StoryContextForRender'?
+qa-probe/removed-preview-apis.ts(2,64): error TS2305: Module '"storybook/internal/csf"' has no exported member 'PlayFunctionContext'.
+qa-probe/removed-preview-apis.ts(3,15): error TS2305: Module '"storybook/manager-api"' has no exported member 'StoriesHash'.
+tsc exit 1

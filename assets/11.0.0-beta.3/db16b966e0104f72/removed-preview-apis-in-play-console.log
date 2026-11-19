@@ -1,0 +1,10 @@
+Browser console (error level) on http://localhost:6006/?path=/story/qa-probe-argtypes--in-play, read twice (reloaded once):
+[ERROR] SB_PREVIEW_API_0017 (ArgTypesRemovedFromStoryContextError): `argTypes` is no longer part of the story context passed to loaders, beforeEach, play and afterEach.
+Story: qa-probe-argtypes--in-play
+With server-side docgen the preview only holds the arg types you declared yourself, so this object was incomplete while looking complete.
+- Read `args` for the values passed to the story.
+- Inspect the resolved arg types in the Controls panel or the ArgTypes doc block.
+More info: https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#argtypes-removed-from-loaders-beforeeach-play-and-aftereach
+    at Object.get (.../runtime-lYY6FRc3.js:1785:34)
+    at play (http://localhost:6006/src/components/Badge/Badge.qaprobe.stories.tsx:14:40)
+Interactions tab after the play error (both reads): "Story status: Pass", "Interaction steps" list empty, no error text.

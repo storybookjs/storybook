@@ -211,6 +211,39 @@ describe('JsPackageManager', () => {
 
       await expect(packageManager.getInstalledVersion('vitest')).resolves.toBe('4.1.2');
     });
+
+    describe('when the installations cannot be listed', () => {
+      beforeEach(() => {
+        first.findInstallations = vi.fn().mockResolvedValue(undefined);
+        first.getModulePackageJSON = vi.fn().mockResolvedValue({ version: '6.0.3' });
+        second.findInstallations = vi.fn().mockResolvedValue(undefined);
+        second.getModulePackageJSON = vi.fn().mockResolvedValue(null);
+      });
+
+      it('returns the version of the package that resolves from the project', async () => {
+        await expect(first.getInstalledVersion('typescript')).resolves.toBe('6.0.3');
+      });
+
+      it('returns null when the package does not resolve either', async () => {
+        await expect(second.getInstalledVersion('typescript')).resolves.toBeNull();
+      });
+    });
+
+    describe('when the listing succeeds without the package', () => {
+      beforeEach(() => {
+        first.findInstallations = vi.fn().mockResolvedValue({
+          dependencies: {},
+          duplicatedDependencies: {},
+          infoCommand: '',
+          dedupeCommand: '',
+        });
+        first.getModulePackageJSON = vi.fn().mockResolvedValue({ version: '6.0.3' });
+      });
+
+      it('returns null, whatever copy resolves from the project', async () => {
+        await expect(first.getInstalledVersion('typescript')).resolves.toBeNull();
+      });
+    });
   });
 
   describe('getVersionedPackages method', () => {

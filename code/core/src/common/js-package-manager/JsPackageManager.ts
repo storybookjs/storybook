@@ -948,17 +948,17 @@ export abstract class JsPackageManager {
 
       logger.debug(`Getting installed version for ${packageName}...`);
 
+      const resolvedPackageJson = await this.getModulePackageJSON(packageName, this.instanceDir);
       // Package managers report an alias such as Vite+'s `vite` by its own version.
-      let version =
-        getBundledVersion(
-          await this.getModulePackageJSON(packageName, this.instanceDir),
-          packageName
-        ) ?? null;
+      let version = getBundledVersion(resolvedPackageJson, packageName) ?? null;
 
       if (!version) {
         const installations = await this.findInstallations([packageName]);
         if (installations) {
           version = Object.entries(installations.dependencies)[0]?.[1]?.[0].version || null;
+        } else {
+          // A listing that failed says nothing about the package, so trust the copy that resolves.
+          version = resolvedPackageJson?.version ?? null;
         }
       }
 

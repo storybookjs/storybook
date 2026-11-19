@@ -1,0 +1,515 @@
+commit 3bb1b8f7805e6f7341f6e7a4d7020c5f0faffc30
+Author: Storybook Ecosystem QA <ecosystem-qa@storybook.js.org>
+Date:   Thu Nov 19 08:06:17 2026 +0000
+
+    qa: upgrade storybook to 11.0.0-beta.3
+
+diff --git a/pnpm-workspace.yaml b/pnpm-workspace.yaml
+index 5457bb7f4..1b6b810ed 100644
+--- a/pnpm-workspace.yaml
++++ b/pnpm-workspace.yaml
+@@ -1,48 +1,48 @@
+ packages:
+-    - '.'
+-    - common/esbuilder
+-    - common/hogvm/typescript
+-    - common/plugin_transpiler
+-    - common/storybook
+-    - common/replay-shared
+-    - common/replay-headless
+-    - common/tailwind
+-    - packages/llm-normalizer
+-    - packages/owners-yaml
+-    - packages/personhog-proto
+-    - packages/quill
+-    - packages/quill/apps/*
+-    - packages/quill/packages/*
+-    - frontend
+-    - hog
+-    - playwright
+-    - nodejs
+-    - nodejs/src/scripts
+-    - products/*
+-    # products/desktop is a nested standalone workspace (own lockfile, catalog,
+-    # overrides, Node version); the root install must not absorb it.
+-    - '!products/desktop'
+-    # products/mobile is the standalone Expo app: its own lockfile and React 19,
+-    # so the root install must not absorb it either.
+-    - '!products/mobile'
+-    - docs/onboarding
+-    - services/agent-proxy
+-    - services/credentials-service
+-    - services/oauth-proxy
+-    - services/mcp
+-    - services/stripe-app
+-    - tools/*
+-    - '!tools/hedgebox-dummy'
+-    - rust/common/hogvm/node
+-    - rust/replay-anonymizer-node
+-    - rust/ai-research/replay-core-v4-node
++  - '.'
++  - common/esbuilder
++  - common/hogvm/typescript
++  - common/plugin_transpiler
++  - common/storybook
++  - common/replay-shared
++  - common/replay-headless
++  - common/tailwind
++  - packages/llm-normalizer
++  - packages/owners-yaml
++  - packages/personhog-proto
++  - packages/quill
++  - packages/quill/apps/*
++  - packages/quill/packages/*
++  - frontend
++  - hog
++  - playwright
++  - nodejs
++  - nodejs/src/scripts
++  - products/*
++  # products/desktop is a nested standalone workspace (own lockfile, catalog,
++  # overrides, Node version); the root install must not absorb it.
++  - '!products/desktop'
++  # products/mobile is the standalone Expo app: its own lockfile and React 19,
++  # so the root install must not absorb it either.
++  - '!products/mobile'
++  - docs/onboarding
++  - services/agent-proxy
++  - services/credentials-service
++  - services/oauth-proxy
++  - services/mcp
++  - services/stripe-app
++  - tools/*
++  - '!tools/hedgebox-dummy'
++  - rust/common/hogvm/node
++  - rust/replay-anonymizer-node
++  - rust/ai-research/replay-core-v4-node
+ 
+ blockExoticSubdeps: true
+ trustPolicy: no-downgrade
+ # Maintenance releases published without the provenance of an earlier release.
+ trustPolicyExclude:
+-    - semver@5.7.2 || 6.3.1
+-    - undici-types@6.21.0
++  - semver@5.7.2 || 6.3.1
++  - undici-types@6.21.0
+ # `pnpm run` must not start an install, because Docker builds install a filtered subset.
+ verifyDepsBeforeRun: false
+ # Installs without a terminal (flox activation, agent hooks, CI) abort when pnpm asks before
+@@ -53,213 +53,213 @@ fetchRetries: 3
+ 
+ # Fix React versions across the monorepo.
+ overrides:
+-    axios: ^1.15.0
+-    '@modelcontextprotocol/sdk': ^1.29.0
+-    '@types/react': 18.3.31
+-    '@types/react-dom': 18.3.7
+-    cipher-base: '>=1.0.5'
+-    d3-geo: '>=3.1.0'
+-    d3-selection: '>=3.0.0'
+-    d3-zoom: '>=3.0.0'
+-    form-data: '>=4.0.4'
+-    node-forge: '>=1.4.0'
+-    pbkdf2: '>=3.1.3'
+-    react: 18.3.1
+-    react-dom: 18.3.1
+-    sha.js: '>=2.4.12'
+-    typescript: 6.0.3
+-    ultimate-express>uWebSockets.js: '-'
+-    fast-xml-parser@^4: '>=4.5.4'
+-    fast-xml-parser@^5: '>=5.3.5'
+-    jest-playwright-preset>playwright-core: 1.60.0
+-    '@smithy/node-http-handler': 4.4.9
+-    '@smithy/core': 3.24.6
+-    rolldown: 1.1.4
+-    '@tiptap/core': 3.20.6
+-    '@tiptap/extensions': 3.20.6
+-    '@tiptap/html': 3.20.6
+-    '@tiptap/markdown': 3.20.6
+-    '@tiptap/pm': 3.20.6
+-    '@tiptap/react': 3.20.6
+-    '@tiptap/starter-kit': 3.20.6
+-    '@tiptap/suggestion': 3.20.6
+-    '@tiptap/extension-blockquote': 3.20.6
+-    '@tiptap/extension-bold': 3.20.6
+-    '@tiptap/extension-bubble-menu': 3.20.6
+-    '@tiptap/extension-bullet-list': 3.20.6
+-    '@tiptap/extension-code': 3.20.6
+-    '@tiptap/extension-code-block': 3.20.6
+-    '@tiptap/extension-code-block-lowlight': 3.20.6
+-    '@tiptap/extension-collaboration': 3.20.6
+-    '@tiptap/extension-color': 3.20.6
+-    '@tiptap/extension-document': 3.20.6
+-    '@tiptap/extension-drag-handle': 3.20.6
+-    '@tiptap/extension-drag-handle-react': 3.20.6
+-    '@tiptap/extension-dropcursor': 3.20.6
+-    '@tiptap/extension-floating-menu': 3.20.6
+-    '@tiptap/extension-gapcursor': 3.20.6
+-    '@tiptap/extension-hard-break': 3.20.6
+-    '@tiptap/extension-heading': 3.20.6
+-    '@tiptap/extension-horizontal-rule': 3.20.6
+-    '@tiptap/extension-image': 3.20.6
+-    '@tiptap/extension-italic': 3.20.6
+-    '@tiptap/extension-link': 3.20.6
+-    '@tiptap/extension-list': 3.20.6
+-    '@tiptap/extension-list-item': 3.20.6
+-    '@tiptap/extension-list-keymap': 3.20.6
+-    '@tiptap/extension-node-range': 3.20.6
+-    '@tiptap/extension-ordered-list': 3.20.6
+-    '@tiptap/extension-paragraph': 3.20.6
+-    '@tiptap/extension-placeholder': 3.20.6
+-    '@tiptap/extension-strike': 3.20.6
+-    '@tiptap/extension-table': 3.20.6
+-    '@tiptap/extension-table-of-contents': 3.20.6
+-    '@tiptap/extension-text': 3.20.6
+-    '@tiptap/extension-text-align': 3.20.6
+-    '@tiptap/extension-text-style': 3.20.6
+-    '@tiptap/extension-underline': 3.20.6
++  axios: ^1.15.0
++  '@modelcontextprotocol/sdk': ^1.29.0
++  '@types/react': 18.3.31
++  '@types/react-dom': 18.3.7
++  cipher-base: '>=1.0.5'
++  d3-geo: '>=3.1.0'
++  d3-selection: '>=3.0.0'
++  d3-zoom: '>=3.0.0'
++  form-data: '>=4.0.4'
++  node-forge: '>=1.4.0'
++  pbkdf2: '>=3.1.3'
++  react: 18.3.1
++  react-dom: 18.3.1
++  sha.js: '>=2.4.12'
++  typescript: 6.0.3
++  ultimate-express>uWebSockets.js: '-'
++  fast-xml-parser@^4: '>=4.5.4'
++  fast-xml-parser@^5: '>=5.3.5'
++  jest-playwright-preset>playwright-core: 1.60.0
++  '@smithy/node-http-handler': 4.4.9
++  '@smithy/core': 3.24.6
++  rolldown: 1.1.4
++  '@tiptap/core': 3.20.6
++  '@tiptap/extensions': 3.20.6
++  '@tiptap/html': 3.20.6
++  '@tiptap/markdown': 3.20.6
++  '@tiptap/pm': 3.20.6
++  '@tiptap/react': 3.20.6
++  '@tiptap/starter-kit': 3.20.6
++  '@tiptap/suggestion': 3.20.6
++  '@tiptap/extension-blockquote': 3.20.6
++  '@tiptap/extension-bold': 3.20.6
++  '@tiptap/extension-bubble-menu': 3.20.6
++  '@tiptap/extension-bullet-list': 3.20.6
++  '@tiptap/extension-code': 3.20.6
++  '@tiptap/extension-code-block': 3.20.6
++  '@tiptap/extension-code-block-lowlight': 3.20.6
++  '@tiptap/extension-collaboration': 3.20.6
++  '@tiptap/extension-color': 3.20.6
++  '@tiptap/extension-document': 3.20.6
++  '@tiptap/extension-drag-handle': 3.20.6
++  '@tiptap/extension-drag-handle-react': 3.20.6
++  '@tiptap/extension-dropcursor': 3.20.6
++  '@tiptap/extension-floating-menu': 3.20.6
++  '@tiptap/extension-gapcursor': 3.20.6
++  '@tiptap/extension-hard-break': 3.20.6
++  '@tiptap/extension-heading': 3.20.6
++  '@tiptap/extension-horizontal-rule': 3.20.6
++  '@tiptap/extension-image': 3.20.6
++  '@tiptap/extension-italic': 3.20.6
++  '@tiptap/extension-link': 3.20.6
++  '@tiptap/extension-list': 3.20.6
++  '@tiptap/extension-list-item': 3.20.6
++  '@tiptap/extension-list-keymap': 3.20.6
++  '@tiptap/extension-node-range': 3.20.6
++  '@tiptap/extension-ordered-list': 3.20.6
++  '@tiptap/extension-paragraph': 3.20.6
++  '@tiptap/extension-placeholder': 3.20.6
++  '@tiptap/extension-strike': 3.20.6
++  '@tiptap/extension-table': 3.20.6
++  '@tiptap/extension-table-of-contents': 3.20.6
++  '@tiptap/extension-text': 3.20.6
++  '@tiptap/extension-text-align': 3.20.6
++  '@tiptap/extension-text-style': 3.20.6
++  '@tiptap/extension-underline': 3.20.6
+ 
+ patchedDependencies:
+-    # avsc reads a varint of any length. Past about 150 bytes its float path returns NaN, which passes
+-    # every length check and corrupts the buffer pool all decoders share. The patch rejects a varint
+-    # longer than 10 bytes, as the Avro spec requires. Remove it after an avsc release does the same.
+-    avsc@5.7.9: patches/avsc@5.7.9.patch
+-    # The drag library changes a body-wide selection style, which stalls dense dashboards.
+-    # Remove this patch after an upstream release avoids that style change, or after the grid
+-    # passes enableUserSelectHack=false to both drag and resize.
+-    # Track https://github.com/react-grid-layout/react-draggable/issues/709.
+-    react-draggable@4.5.0: patches/react-draggable@4.5.0.patch
+-    # A dragged or resized grid item repaints only when its memoized props change, which with stable tile
+-    # children means once per grid cell, so the tile trails the pointer. The patch writes the item's position to
+-    # its node on each move, so the tile body does not re-render. Remove it after an upstream release moves the
+-    # item on its own.
+-    react-grid-layout@2.3.0: patches/react-grid-layout@2.3.0.patch
+-    # Browser process shims must not select v86's Node-only scheduler.
+-    v86@0.5.458: patches/v86@0.5.458.patch
+-    jest-junit@16.0.0: patches/jest-junit@16.0.0.patch
+-    '@connectrpc/connect-node@2.1.1': patches/@connectrpc__connect-node@2.1.1.patch
+-    heatmap.js@2.0.5: patches/heatmap.js@2.0.5.patch
+-    dayjs@1.11.11: patches/dayjs@1.11.11.patch
+-    html-to-image@1.11.13: patches/html-to-image@1.11.13.patch
+-    kea@4.0.0-pre.6: patches/kea@4.0.0-pre.6.patch
+-    # A mounted tooltip root must not keep its closed popup's detached DOM alive.
+-    '@base-ui/react@1.9.0': patches/@base-ui__react@1.9.0.patch
+-    # A fixed visually hidden element must sit outside the viewport, or Chrome gives each one its own GPU layer.
+-    # Upstream set margin 0 to fix RTL overflow (mui/base-ui#5661), which brought them back inside.
+-    '@base-ui/utils@0.5.0': patches/@base-ui__utils@0.5.0.patch
++  # avsc reads a varint of any length. Past about 150 bytes its float path returns NaN, which passes
++  # every length check and corrupts the buffer pool all decoders share. The patch rejects a varint
++  # longer than 10 bytes, as the Avro spec requires. Remove it after an avsc release does the same.
++  avsc@5.7.9: patches/avsc@5.7.9.patch
++  # The drag library changes a body-wide selection style, which stalls dense dashboards.
++  # Remove this patch after an upstream release avoids that style change, or after the grid
++  # passes enableUserSelectHack=false to both drag and resize.
++  # Track https://github.com/react-grid-layout/react-draggable/issues/709.
++  react-draggable@4.5.0: patches/react-draggable@4.5.0.patch
++  # A dragged or resized grid item repaints only when its memoized props change, which with stable tile
++  # children means once per grid cell, so the tile trails the pointer. The patch writes the item's position to
++  # its node on each move, so the tile body does not re-render. Remove it after an upstream release moves the
++  # item on its own.
++  react-grid-layout@2.3.0: patches/react-grid-layout@2.3.0.patch
++  # Browser process shims must not select v86's Node-only scheduler.
++  v86@0.5.458: patches/v86@0.5.458.patch
++  jest-junit@16.0.0: patches/jest-junit@16.0.0.patch
++  '@connectrpc/connect-node@2.1.1': patches/@connectrpc__connect-node@2.1.1.patch
++  heatmap.js@2.0.5: patches/heatmap.js@2.0.5.patch
++  dayjs@1.11.11: patches/dayjs@1.11.11.patch
++  html-to-image@1.11.13: patches/html-to-image@1.11.13.patch
++  kea@4.0.0-pre.6: patches/kea@4.0.0-pre.6.patch
++  # A mounted tooltip root must not keep its closed popup's detached DOM alive.
++  '@base-ui/react@1.9.0': patches/@base-ui__react@1.9.0.patch
++  # A fixed visually hidden element must sit outside the viewport, or Chrome gives each one its own GPU layer.
++  # Upstream set margin 0 to fix RTL overflow (mui/base-ui#5661), which brought them back inside.
++  '@base-ui/utils@0.5.0': patches/@base-ui__utils@0.5.0.patch
+ 
+ # Dependencies that require preinstall scripts. Add entries with caution.
+ allowBuilds:
+-    '@modelcontextprotocol/ext-apps': true
+-    '@mongodb-js/zstd': true
+-    '@parcel/watcher': true
+-    chartjs-plugin-stacked100: true
+-    '@swc/core': true
+-    core-js: true
+-    core-js-pure: true
+-    cpu-features: true
+-    esbuild: true
+-    lmdb: true
+-    lz4: true
+-    msgpackr-extract: true
+-    msw: true
+-    node-gyp: true
+-    node-rdkafka: true
+-    protobufjs: true
+-    re2: true
+-    sharp: true
+-    ssh2: true
+-    unrs-resolver: true
+-    workerd: true
+-    # These install without their build scripts.
+-    '@datadog/pprof': false
+-    ffmpeg-static: false
+-    free-email-domains: false
+-    # Optional dependency of code-inspector-plugin, used only by its AI terminal, which we do not enable.
+-    node-pty: false
+-    puppeteer: false
++  '@modelcontextprotocol/ext-apps': true
++  '@mongodb-js/zstd': true
++  '@parcel/watcher': true
++  chartjs-plugin-stacked100: true
++  '@swc/core': true
++  core-js: true
++  core-js-pure: true
++  cpu-features: true
++  esbuild: true
++  lmdb: true
++  lz4: true
++  msgpackr-extract: true
++  msw: true
++  node-gyp: true
++  node-rdkafka: true
++  protobufjs: true
++  re2: true
++  sharp: true
++  ssh2: true
++  unrs-resolver: true
++  workerd: true
++  # These install without their build scripts.
++  '@datadog/pprof': false
++  ffmpeg-static: false
++  free-email-domains: false
++  # Optional dependency of code-inspector-plugin, used only by its AI terminal, which we do not enable.
++  node-pty: false
++  puppeteer: false
+ 
+ catalog:
+-    # Kea ecosystem - state management
+-    kea: ^4.0.0-pre.6
+-    kea-disposables: ^1.0.0
+-    kea-forms: ^3.2.0
+-    kea-loaders: ^3.1.1
+-    kea-localstorage: ^3.1.0
+-    kea-router: ^3.4.2
+-    kea-subscriptions: ^3.0.1
+-    kea-test-utils: ^0.2.4
+-    kea-waitfor: ^0.2.1
+-    kea-window-values: ^3.0.1
+-    # PostHog packages
+-    '@posthog/icons': ^0.39.0
+-    '@posthog/brand': 0.17.0
+-    '@posthog/react': ^1.11.3
+-    posthog-js: ^1.447.12
+-    # Build tools
+-    '@parcel/packager-ts': 2.16.4
+-    '@parcel/transformer-typescript-types': 2.16.4
+-    typescript: 6.0.3
+-    oxfmt: ^0.57.0
+-    vite: ^8.1.4
+-    '@vitejs/plugin-react': ^6.2.1
+-    # Testing
+-    jest: ^29.7.0
+-    jest-junit: ^16.0.0
+-    '@types/jest': ^29.5.12
+-    '@types/node': ^26.6.6
+-    '@playwright/test': 1.60.0
+-    # Storybook
+-    '@storybook/react': ^10.6.1
+-    '@storybook/react-vite': ^10.6.1
+-    storybook: ^10.6.1
+-    # Common utilities
+-    fast-equals: ^6.0.0
+-    fuse.js: ^7.1.0
+-    query-selector-shadow-dom: ^1.0.0
+-    '@types/query-selector-shadow-dom': ^1.0.4
+-    ts-pattern: '4.3'
+-    use-debounce: ^9.0.4
+-    # React types
+-    '@types/react': ^18.3.31
+-    '@types/react-dom': ^18.3.7
+-    '@base-ui/react': 1.9.0
+-    # Other shared
+-    husky: ^7.0.4
+-    lint-staged: ~15.4.3
+-    concurrently: ^10.0.6
+-    yaml: ^2.9.1
++  # Kea ecosystem - state management
++  kea: ^4.0.0-pre.6
++  kea-disposables: ^1.0.0
++  kea-forms: ^3.2.0
++  kea-loaders: ^3.1.1
++  kea-localstorage: ^3.1.0
++  kea-router: ^3.4.2
++  kea-subscriptions: ^3.0.1
++  kea-test-utils: ^0.2.4
++  kea-waitfor: ^0.2.1
++  kea-window-values: ^3.0.1
++  # PostHog packages
++  '@posthog/icons': ^0.39.0
++  '@posthog/brand': 0.17.0
++  '@posthog/react': ^1.11.3
++  posthog-js: ^1.447.12
++  # Build tools
++  '@parcel/packager-ts': 2.16.4
++  '@parcel/transformer-typescript-types': 2.16.4
++  typescript: 6.0.3
++  oxfmt: ^0.57.0
++  vite: ^8.1.4
++  '@vitejs/plugin-react': ^6.2.1
++  # Testing
++  jest: ^29.7.0
++  jest-junit: ^16.0.0
++  '@types/jest': ^29.5.12
++  '@types/node': ^26.6.6
++  '@playwright/test': 1.60.0
++  # Storybook
++  '@storybook/react': ^11.0.0-beta.3
++  '@storybook/react-vite': ^11.0.0-beta.3
++  storybook: ^11.0.0-beta.3
++  # Common utilities
++  fast-equals: ^6.0.0
++  fuse.js: ^7.1.0
++  query-selector-shadow-dom: ^1.0.0
++  '@types/query-selector-shadow-dom': ^1.0.4
++  ts-pattern: '4.3'
++  use-debounce: ^9.0.4
++  # React types
++  '@types/react': ^18.3.31
++  '@types/react-dom': ^18.3.7
++  '@base-ui/react': 1.9.0
++  # Other shared
++  husky: ^7.0.4
++  lint-staged: ~15.4.3
++  concurrently: ^10.0.6
++  yaml: ^2.9.1
+ 
+ # PostHog packages are released by our own workflows. posthog-js is also
+ # uploaded to the browser SDK CDN from the posthog-js release workflow, so
+ # dependency automation should not delay these package updates.
+ minimumReleaseAge: 10080
+ minimumReleaseAgeExclude:
+-    - posthog-js
+-    - posthog-js-lite
+-    - posthog-node
+-    - '@posthog/*'
+-    - kea@4.0.0-pre.6
+-    - kea-router@3.4.2
+-    - kea-typegen@3.8.3
+-    - '@earendil-works/*'
+-    - typebox
+-    - chartjs-plugin-stacked100@1.7.1
+-    - torph@0.0.5
+-    - oxfmt@0.57.0
+-    - '@oxfmt/*'
+-    - bloommx@1.0.3
+-    - '@shadcn/react'
+-    - mermaid@11.15.0
+-    - kea-typegen
+-    - '@typescript/native-preview'
+-    - '@typescript/native-preview-darwin-arm64'
+-    - '@typescript/native-preview-darwin-x64'
+-    - '@typescript/native-preview-linux-arm'
+-    - '@typescript/native-preview-linux-arm64'
+-    - '@typescript/native-preview-linux-x64'
+-    - '@typescript/native-preview-win32-arm64'
+-    - '@typescript/native-preview-win32-x64'
+-    - shiki
+-    - shadcn
+-    - '@shikijs/*'
++  - posthog-js
++  - posthog-js-lite
++  - posthog-node
++  - '@posthog/*'
++  - kea@4.0.0-pre.6
++  - kea-router@3.4.2
++  - kea-typegen@3.8.3
++  - '@earendil-works/*'
++  - typebox
++  - chartjs-plugin-stacked100@1.7.1
++  - torph@0.0.5
++  - oxfmt@0.57.0
++  - '@oxfmt/*'
++  - bloommx@1.0.3
++  - '@shadcn/react'
++  - mermaid@11.15.0
++  - kea-typegen
++  - '@typescript/native-preview'
++  - '@typescript/native-preview-darwin-arm64'
++  - '@typescript/native-preview-darwin-x64'
++  - '@typescript/native-preview-linux-arm'
++  - '@typescript/native-preview-linux-arm64'
++  - '@typescript/native-preview-linux-x64'
++  - '@typescript/native-preview-win32-arm64'
++  - '@typescript/native-preview-win32-x64'
++  - shiki
++  - shadcn
++  - '@shikijs/*'
+packages:$
+    - '.'$
+    - common/esbuilder$
+packages:$
+  - '.'$
+  - common/esbuilder$

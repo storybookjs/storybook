@@ -1,0 +1,17 @@
+plan.svelte-csf-and-docgen evidence (state after upgrade, before the live-snippet flag was set = upgrade.log; after = this file)
+
+1. upgrade.log, addon-svelte-csf-to-core: lists 46 changed .stories.svelte files and .storybook/main.ts. It says "Change other files that import the addon by hand." without naming any file.
+2. git diff ae03bc2..HEAD for package.json: @storybook/addon-svelte-csf removed from devDependencies.
+3. .storybook/main.ts: addon-svelte-csf entry removed by the automigration.
+4. Non-rewritten files still importing @storybook/addon-svelte-csf before the manual step (named here, not in upgrade.log):
+   js/statustracker/static/Toast.stories.svelte, js/core/src/Login.stories.svelte,
+   js/dataframe/Standalone.stories.svelte, js/dataframe/Dataframe.stories.svelte.
+   Changed by hand in Step 3 (commit "qa: apply migration notes").
+5. features.experimentalLiveServerSnippets: true added to .storybook/main.ts (plan step 2), uncommitted.
+6. Story index: baseline 133 entries, after 133 entries, same ids (plan-index-3.json vs baseline-index.json).
+7. Browser, story layout-elements-accordion--accordion-layout:
+   - Controls: rows "label  Open Me!" (text) and "open  False/True" (boolean).
+   - Code tab (before control change): "<script> import Accordion from './Index.svelte'; ... </script> <Accordion {...wrapProps(args)}> <Button elem_id="btn" size="lg">test</Button> </Accordion>"
+   - Controls: label text changed to "QA live"; URL became ...&args=label:QA+live; iframe button reads "QA live".
+   - Code tab after change: same text, no "QA live" anywhere in the snippet.
+   Screenshot: svelte-csf-and-docgen.png (copy of browser/svelte-csf-and-docgen-after.png).

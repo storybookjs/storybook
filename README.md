@@ -1,12 +1,10 @@
 <p align="center">
   <a href="https://storybook.js.org/?ref=readme">
     <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://user-images.githubusercontent.com/263385/199832481-bbbf5961-6a26-481d-8224-51258cce9b33.png">
-      <img src="https://user-images.githubusercontent.com/321738/63501763-88dbf600-c4cc-11e9-96cd-94adadc2fd72.png" alt="Storybook" width="400" />
+      <source media="(prefers-color-scheme: dark)" srcset="https://user-images.githubusercontent.com/263385/199832481-bbbf5961-6a26-481d-8224-51258cce9b33.png#gh-dark-mode-only">
+      <img src="https://user-images.githubusercontent.com/321738/63501763-88dbf600-c4cc-11e9-96cd-94adadc2fd72.png#gh-light-mode-only" alt="Storybook" width="400" />
     </picture>
-    
   </a>
-  
 </p>
 
 <p align="center">Build bulletproof UI components faster</p>
@@ -14,33 +12,28 @@
 <br/>
 
 <p align="center">
-  <a href="https://circleci.com/gh/storybookjs/storybook">
-    <img src="https://circleci.com/gh/storybookjs/storybook.svg?style=shield" alt="Build Status on CircleCI" />
-  </a>
-  <a href="https://codecov.io/gh/storybookjs/storybook">
-    <img src="https://codecov.io/gh/storybookjs/storybook/branch/main/graph/badge.svg" alt="codecov" />
-  </a>
   <a href="https://github.com/storybookjs/storybook/blob/main/LICENSE">
-    <img src="https://img.shields.io/github/license/storybookjs/storybook.svg" alt="License" />
-  </a>
-  <br/>
-  <a href="https://discord.gg/storybook">
-    <img src="https://img.shields.io/badge/discord-join-7289DA.svg?logo=discord&longCache=true&style=flat" />
-  </a>
-  <a href="https://storybook.js.org/community/?ref=readme">
-    <img src="https://img.shields.io/badge/community-join-4BC424.svg" alt="Storybook Community" />
+    <img src="https://img.shields.io/github/license/storybookjs/storybook.svg?color=FFAE00" alt="License" />
   </a>
   <a href="#backers">
-    <img src="https://opencollective.com/storybook/backers/badge.svg" alt="Backers on Open Collective" />
+    <img src="https://opencollective.com/storybook/backers/badge.svg?color=66BF3C" alt="Backers on Open Collective" />
   </a>
   <a href="#sponsors">
-    <img src="https://opencollective.com/storybook/tiers/sponsors/badge.svg" alt="Sponsors on Open Collective" />
+    <img src="https://opencollective.com/storybook/tiers/sponsors/badge.svg?color=006DEB" alt="Sponsors on Open Collective" />
   </a>
-  <a href="https://x.com/intent/follow?screen_name=storybookjs">
-    <img src="https://img.shields.io/twitter/follow/storybookjs?color=blue&logo=x" alt="Follow Storybook on X" />
+  <a href="https://www.npmjs.com/package/storybook">
+    <img src="https://img.shields.io/npm/dw/storybook?style=flat&logo=npm&color=CB3837" alt="NPM downloads per week" />
   </a>
-  <a href="https://api.securityscorecards.dev/projects/github.com/storybookjs/storybook">
-    <img src="https://api.securityscorecards.dev/projects/github.com/storybookjs/storybook/badge" alt="OpenSSF Scorecard"/>
+  <img src="https://img.shields.io/github/stars/storybookjs/storybook?style=flat&logo=github&color=181717" alt="" />
+  <br />
+  <a href="https://discord.gg/storybook">
+    <img src="https://img.shields.io/badge/discord-join-7289DA.svg?logo=discord&longCache=true&style=flat" alt="Join our Discord" />
+  </a>
+  <a href="https://storybook.js.org/community/?ref=readme">
+    <img src="https://img.shields.io/badge/community-join-6F2CAC.svg" alt="Storybook Community" />
+  </a>
+  <a href="https://bsky.app/profile/storybook.js.org">
+    <img src="https://img.shields.io/badge/bluesky-join-1185FE?style=shield&logo=bluesky&longCache=true&style=flat" alt="Follow Storybook on BlueSky" />
   </a>
 </p>
 
@@ -54,8 +47,8 @@ Storybook is a frontend workshop for building UI components and pages in isolati
 
 <p align="center">
   View README for:<br/>
-  <a href="https://github.com/storybookjs/storybook/blob/main/README.md" title="latest"><img alt="latest" src="https://img.shields.io/npm/v/@storybook/react/latest?style=for-the-badge&logo=storybook&logoColor=ffffff&color=66BF3C" /></a>
-  <a href="https://github.com/storybookjs/storybook/blob/next/README.md" title="next"><img alt="next" src="https://img.shields.io/npm/v/@storybook/react/next?style=for-the-badge&logo=storybook&logoColor=ffffff&color=1EA7FD" /></a>
+  <a href="https://github.com/storybookjs/storybook/blob/main/README.md" title="latest"><img alt="latest" src="https://img.shields.io/npm/v/@storybook/react/latest?style=flat&logo=storybook&logoColor=ffffff&color=FF4785" /></a>
+  <a href="https://github.com/storybookjs/storybook/blob/next/README.md" title="next"><img alt="next" src="https://img.shields.io/npm/v/@storybook/react/next?style=flat&logo=storybook&logoColor=ffffff&color=2A0481" /></a>
 </p>
 
 ## Table of contents

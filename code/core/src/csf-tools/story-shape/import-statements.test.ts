@@ -419,5 +419,149 @@ describe('buildImportStatements', () => {
         ]
       `);
     });
+
+    it('preserves namespace binding when a member has a compatible named @import override', () => {
+      const iconCheck: ImportRef = {
+        importId: './icons',
+        importName: 'Check',
+        localImportName: 'Icons',
+        namespace: 'Icons',
+        member: 'Check',
+        importOverride: `import { Check } from '@acme/icons';`,
+      };
+      expect(buildImportStatements({ refs: [iconCheck] })).toEqual([
+        "import * as Icons from '@acme/icons';",
+      ]);
+    });
+
+    it('merges multiple namespace members from the same override source into a single namespace import', () => {
+      const iconCheck: ImportRef = {
+        importId: './icons',
+        importName: 'Check',
+        localImportName: 'Icons',
+        namespace: 'Icons',
+        member: 'Check',
+        importOverride: `import { Check } from '@acme/icons';`,
+      };
+      const iconClose: ImportRef = {
+        importId: './icons',
+        importName: 'Close',
+        localImportName: 'Icons',
+        namespace: 'Icons',
+        member: 'Close',
+        importOverride: `import { Close } from '@acme/icons';`,
+      };
+      expect(buildImportStatements({ refs: [iconCheck, iconClose] })).toEqual([
+        "import * as Icons from '@acme/icons';",
+      ]);
+    });
+
+    it('falls back to the original namespace source when members have different override sources', () => {
+      const iconCheck: ImportRef = {
+        importId: './icons',
+        importName: 'Check',
+        localImportName: 'Icons',
+        namespace: 'Icons',
+        member: 'Check',
+        importOverride: `import { Check } from '@acme/icons/check';`,
+      };
+      const iconClose: ImportRef = {
+        importId: './icons',
+        importName: 'Close',
+        localImportName: 'Icons',
+        namespace: 'Icons',
+        member: 'Close',
+        importOverride: `import { Close } from '@acme/icons/close';`,
+      };
+      expect(buildImportStatements({ refs: [iconCheck, iconClose] })).toEqual([
+        "import * as Icons from './icons';",
+      ]);
+    });
+
+    it('produces identical fallback imports when different-source namespace refs are reversed', () => {
+      const iconCheck: ImportRef = {
+        importId: './icons',
+        importName: 'Check',
+        localImportName: 'Icons',
+        namespace: 'Icons',
+        member: 'Check',
+        importOverride: `import { Check } from '@acme/icons/check';`,
+      };
+      const iconClose: ImportRef = {
+        importId: './icons',
+        importName: 'Close',
+        localImportName: 'Icons',
+        namespace: 'Icons',
+        member: 'Close',
+        importOverride: `import { Close } from '@acme/icons/close';`,
+      };
+      expect(buildImportStatements({ refs: [iconClose, iconCheck] })).toEqual([
+        "import * as Icons from './icons';",
+      ]);
+    });
+
+    it('falls back to the original namespace source when a member has a default @import override', () => {
+      const iconCheck: ImportRef = {
+        importId: './icons',
+        importName: 'Check',
+        localImportName: 'Icons',
+        namespace: 'Icons',
+        member: 'Check',
+        importOverride: `import Check from '@acme/icons';`,
+      };
+      expect(buildImportStatements({ refs: [iconCheck] })).toEqual([
+        "import * as Icons from './icons';",
+      ]);
+    });
+
+    it('does not produce duplicate bindings when namespace overrides are specified', () => {
+      const iconCheck: ImportRef = {
+        importId: './icons',
+        importName: 'Check',
+        localImportName: 'Icons',
+        namespace: 'Icons',
+        member: 'Check',
+        importOverride: `import * as Icons from '@acme/icons';`,
+      };
+      const iconClose: ImportRef = {
+        importId: './icons',
+        importName: 'Close',
+        localImportName: 'Icons',
+        namespace: 'Icons',
+        member: 'Close',
+        importOverride: `import * as Icons from '@acme/icons';`,
+      };
+      expect(buildImportStatements({ refs: [iconCheck, iconClose] })).toEqual([
+        "import * as Icons from '@acme/icons';",
+      ]);
+    });
+
+    it('preserves existing standalone named and default imports alongside namespace imports', () => {
+      const button: ImportRef = {
+        importId: './button',
+        importName: 'Button',
+        localImportName: 'Button',
+        importOverride: `import { Button } from '@acme/ui/components';`,
+      };
+      const dialog: ImportRef = {
+        importId: './dialog',
+        importName: 'default',
+        localImportName: 'Dialog',
+        importOverride: `import Dialog from '@acme/ui/dialog';`,
+      };
+      const iconCheck: ImportRef = {
+        importId: './icons',
+        importName: 'Check',
+        localImportName: 'Icons',
+        namespace: 'Icons',
+        member: 'Check',
+        importOverride: `import { Check } from '@acme/icons';`,
+      };
+      expect(buildImportStatements({ refs: [button, dialog, iconCheck] })).toEqual([
+        "import { Button } from '@acme/ui/components';",
+        "import Dialog from '@acme/ui/dialog';",
+        "import * as Icons from '@acme/icons';",
+      ]);
+    });
   });
 });

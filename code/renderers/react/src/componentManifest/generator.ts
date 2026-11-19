@@ -13,7 +13,7 @@ import {
   buildReactComponentDocgenFromResolved,
 } from './buildReactComponentDocgen.ts';
 import { getSharedComponentMetaManager } from './componentMetaManagerSingleton.ts';
-import { type ComponentRef, type TypescriptOptions } from './getComponentImports.ts';
+import { type TypescriptOptions } from './getComponentImports.ts';
 import { invalidateParser } from './reactDocgenTypescript.ts';
 import { resolveStoryFileComponents } from './resolveComponents.ts';
 import { invalidateCache } from './utils.ts';

@@ -11,6 +11,8 @@ export interface ImportRef {
   localImportName?: string;
   /** Local identifier of the `import * as` binding this ref reaches through. */
   namespace?: string;
+  /** Accessed member of a compound name, e.g. `Root` for `Accordion.Root`. */
+  member?: string;
   /** Import statement replacing the derived source and specifier, e.g. from an `@import` tag. */
   importOverride?: string;
   /** Whether `importId` already resolves as a package, which suppresses `packageName` rewriting. */
@@ -21,8 +23,6 @@ export interface ImportRef {
 export interface ComponentImportRef extends ImportRef {
   /** Component as written in the story file, e.g. `Button` or `Accordion.Root`. */
   componentName: string;
-  /** Accessed member of a compound name, e.g. `Root` for `Accordion.Root`. */
-  member?: string;
 }
 
 /**
@@ -125,18 +125,49 @@ function addSingle(list: string[], name: string) {
   addUniqueBy(list, name, (n) => n === name);
 }
 
+function getCompatibleOverrideSource(ref: ImportRef): string | null {
+  if (!ref.importOverride) {
+    return null;
+  }
+  const parsed = parseImportOverride(ref.importOverride);
+  if (!parsed || !parsed.source) {
+    return null;
+  }
+  // A default import exposes `Icons.default`, not `Icons.<member>`, so it cannot satisfy namespace access.
+  if (parsed.specifier?.kind === 'default') {
+    return null;
+  }
+  // A namespace override is only compatible if the bound identifier matches the accessed namespace.
+  if (parsed.specifier?.kind === 'namespace') {
+    return parsed.specifier.local === ref.namespace ? parsed.source : null;
+  }
+  // A named override is compatible if the imported export matches the accessed member.
+  if (parsed.specifier?.kind === 'named') {
+    const memberName = ref.member ?? ref.importName;
+    if (memberName && memberName !== '*' && parsed.specifier.imported !== memberName) {
+      return null;
+    }
+    return parsed.source;
+  }
+  return parsed.source;
+}
+
 function collectSpecifier(
   bucket: Bucket,
   ref: ImportRef,
   source: string,
-  override: ParsedOverride | undefined
+  override: ParsedOverride | undefined,
+  declaredNamespaces?: Set<string>
 ) {
   const rewritten = source !== ref.importId;
 
   if (override?.specifier) {
     const { specifier } = override;
     if (specifier.kind === 'namespace') {
-      addSingle(bucket.namespaces, specifier.local);
+      if (!declaredNamespaces?.has(specifier.local)) {
+        declaredNamespaces?.add(specifier.local);
+        addSingle(bucket.namespaces, specifier.local);
+      }
       return;
     }
     if (!ref.localImportName) {
@@ -157,7 +188,10 @@ function collectSpecifier(
     if (member && member !== '*' && !member.includes('.')) {
       addNamed(bucket, member, member);
     } else {
-      addSingle(bucket.namespaces, ref.namespace);
+      if (!declaredNamespaces?.has(ref.namespace)) {
+        declaredNamespaces?.add(ref.namespace);
+        addSingle(bucket.namespaces, ref.namespace);
+      }
     }
     return;
   }
@@ -241,9 +275,50 @@ export function buildImportStatements({
   packageName?: string;
 }): string[] {
   const buckets = new Map<string, Bucket>();
+  const declaredNamespaces = new Set<string>();
+
+  // Group namespace references to make deterministic, ref-order-independent decisions.
+  const namespaceRefs = new Map<string, ImportRef[]>();
+  refs.forEach((ref) => {
+    if (ref.importId && ref.namespace) {
+      const list = namespaceRefs.get(ref.namespace) ?? [];
+      list.push(ref);
+      namespaceRefs.set(ref.namespace, list);
+    }
+  });
+
+  // For any namespace whose members carry an override, determine whether all members
+  // agree on a compatible target source, or safely fall back to the original source.
+  const namespaceTargetSources = new Map<string, string>();
+  namespaceRefs.forEach((nsRefs, ns) => {
+    if (nsRefs.some((ref) => ref.importOverride)) {
+      const originalSource = nsRefs[0].importId!;
+      const firstCompatible = getCompatibleOverrideSource(nsRefs[0]);
+      if (firstCompatible !== null) {
+        const allSame = nsRefs.every((ref) => getCompatibleOverrideSource(ref) === firstCompatible);
+        namespaceTargetSources.set(ns, allSame ? firstCompatible : originalSource);
+      } else {
+        namespaceTargetSources.set(ns, originalSource);
+      }
+    }
+  });
 
   refs.forEach((ref) => {
     if (!ref.importId) {
+      return;
+    }
+
+    if (ref.namespace && namespaceTargetSources.has(ref.namespace)) {
+      const source = namespaceTargetSources.get(ref.namespace)!;
+      let bucket = buckets.get(source);
+      if (!bucket) {
+        bucket = { source, defaults: [], namespaces: [], named: [] };
+        buckets.set(source, bucket);
+      }
+      if (!declaredNamespaces.has(ref.namespace)) {
+        declaredNamespaces.add(ref.namespace);
+        addSingle(bucket.namespaces, ref.namespace);
+      }
       return;
     }
 
@@ -256,7 +331,7 @@ export function buildImportStatements({
       buckets.set(source, bucket);
     }
 
-    collectSpecifier(bucket, ref, source, override);
+    collectSpecifier(bucket, ref, source, override, declaredNamespaces);
   });
 
   return Array.from(buckets.values()).flatMap(printBucket);

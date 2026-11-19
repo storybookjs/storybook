@@ -1159,6 +1159,9 @@ test('generator falls back to package import when secondary component has no @im
   const dialog = result?.components?.components?.['feedback-dialog'] as any;
 
   expect(batchExtract).toHaveBeenCalled();
+  expect(
+    batchExtract.mock.calls[0][0].map((entry) => entry.component?.componentName)
+  ).toContain('Button');
   // Dialog gets @acme/ui/components override, Button falls back to package name @acme/ui:
   expect(dialog?.import).toBe(
     "import { Button } from '@acme/ui';\nimport { Dialog } from '@acme/ui/components';"
@@ -1264,6 +1267,108 @@ test('generator handles components with @import overrides from different package
   // Each component uses its own distinct @import package source:
   expect(dialog?.import).toBe(
     "import { Dialog } from '@acme/ui/components';\nimport { Icon } from '@acme/icons';"
+  );
+});
+
+test('generator preserves namespace import when secondary component accessed via namespace has @import override', async () => {
+  vol.fromJSON(
+    {
+      ['./package.json']: JSON.stringify({ name: '@acme/ui' }),
+      ['./src/stories/Dialog.stories.tsx']: dedent`
+        import React from 'react';
+        import type { Meta } from '@storybook/react';
+        import { Dialog } from './Dialog';
+        import * as Icons from './Icons';
+
+        const meta = {
+          title: 'Feedback/Dialog',
+          component: Dialog,
+        } satisfies Meta<typeof Dialog>;
+        export default meta;
+
+        export const Confirm = () => (
+          <Dialog open>
+            <Icons.Check />
+          </Dialog>
+        );
+      `,
+      ['./src/stories/Dialog.tsx']: dedent`
+        import React from 'react';
+        export const Dialog = ({ open, children }: { open?: boolean; children?: React.ReactNode }) => <div>{children}</div>;
+      `,
+      ['./src/stories/Icons.tsx']: dedent`
+        import React from 'react';
+        export const Check = () => <span>check</span>;
+      `,
+    },
+    '/app'
+  );
+
+  const batchExtract = vi
+    .spyOn(ComponentMetaManager.prototype, 'batchExtract')
+    .mockImplementation((entries) => {
+      for (const entry of entries) {
+        if (entry.component?.componentName === 'Dialog') {
+          entry.component.reactComponentMeta = {
+            displayName: 'Dialog',
+            exportName: 'Dialog',
+            filePath: '/app/src/stories/Dialog.tsx',
+            description: 'A dialog component',
+            props: {},
+          };
+          entry.component.componentJsDocTags = {
+            import: ["import { Dialog } from '@acme/ui/components';"],
+          };
+          entry.component.importOverride = "import { Dialog } from '@acme/ui/components';";
+        } else if (entry.component?.componentName === 'Icons.Check') {
+          entry.component.reactComponentMeta = {
+            displayName: 'Check',
+            exportName: 'Check',
+            filePath: '/app/src/stories/Icons.tsx',
+            description: 'Check icon component',
+            props: {},
+          };
+          entry.component.componentJsDocTags = {
+            import: ["import { Check } from '@acme/icons';"],
+          };
+          entry.component.importOverride = "import { Check } from '@acme/icons';";
+        }
+      }
+    });
+
+  const presets = {
+    apply: async (extension: string, config?: unknown) => {
+      if (extension === 'typescript') {
+        return {};
+      }
+      if (extension === 'features') {
+        return { experimentalReactComponentMeta: true };
+      }
+      return config;
+    },
+  } as NonNullable<ManifestOptions['presets']>;
+
+  const manifestEntries: ManifestEntries = [
+    {
+      type: 'story',
+      subtype: 'story',
+      id: 'feedback-dialog--confirm',
+      name: 'Confirm',
+      title: 'Feedback/Dialog',
+      importPath: './src/stories/Dialog.stories.tsx',
+      componentPath: './src/stories/Dialog.tsx',
+      tags: [Tag.DEV, Tag.TEST, Tag.MANIFEST],
+      exportName: 'Confirm',
+    },
+  ];
+
+  const result = await runManifestsWithOptions(manifestEntries, { presets });
+  const dialog = result?.components?.components?.['feedback-dialog'] as any;
+
+  expect(batchExtract).toHaveBeenCalled();
+  // Preserves namespace binding `import * as Icons` instead of emitting `import { Check as Icons }`:
+  expect(dialog?.import).toBe(
+    "import { Dialog } from '@acme/ui/components';\nimport * as Icons from '@acme/icons';"
   );
 });
 

@@ -1,6 +1,6 @@
 ---
 name: qa-plan
-description: Write the QA plan of a Storybook release line for the ecosystem QA sweep, from the PRs merged into next since the last minor, and open it as a PR against qa/plans for a person to review. Use when asked to write, redo, or update a QA plan, or for /qa-plan.
+description: Write the QA plan of a Storybook release line for the ecosystem QA sweep, from the PRs merged into next since the last minor, and open it as a PR against qa/plans for a person to review. Use when asked to write or redo a QA plan, or for /qa-plan.
 allowed-tools: Bash, Read, Write, Edit
 metadata:
   internal: true
@@ -12,6 +12,7 @@ A QA plan decides, for every PR of a release window, what the ecosystem QA sweep
 The scripts collect the window, write the plan file, and check it.
 You decide every row, write the entries, and open the plan PR.
 A person reviews the plan in one sitting and merges it, and that merge starts the sweep.
+To change a plan that exists, follow `.agents/skills/qa-plan-iterate/SKILL.md` instead.
 
 `ecosystem-qa/README.md`, section "Write a QA plan", describes the format and every rule that `check` enforces.
 Read that section once before step 1.
@@ -26,6 +27,7 @@ To know what a run does before and around your steps, read `ecosystem-qa/prompts
   - **Entries.** A PR becomes an entry when an agent can show its effect on a real project of the catalog, as that project is at its pinned commit, with a command, a fetch of a URL, a screenshot, or a click and typed text in the browser.
   - **`manual`.** A change that a person has to test because the sweep cannot: it shows only on Windows or macOS, because the sweep runs on Linux, only in a new project made with `storybook init`, only in a Yarn 1 project, only in a browser's profiler, or no repo of the catalog has what it needs. The decision holds the check a person does and one line on why the sweep cannot test it.
   - **`none`.** A change that needs no QA: this repository's CI, build, tests, sandboxes, or documentation site, an internal tool or eval, or a lockfile bump that no published package ships. The decision holds a reason of one line.
+  - **A choice.** When a person takes out of the tests a change that the sweep could test, the decision says that it is a choice, names who chose by role, and gives their reason in their own words, whatever the order of preference below says. A manual check takes the why `a choice of the release lead, which the sweep could test`, with the role of whoever chose, so that `manual` prints these checks in a section of their own, and the check ends with the reason, as in `The release lead took it out of the sweep: <reason>.` A decision of no QA reads `none: a choice of the release lead, which the sweep could test: <reason>`. A choice without a stated reason is asked for, never made up, and never dressed up as something the sweep cannot do.
   - `skip` is no decision any more, and `render` and `check` refuse it.
 - **Order of preference.** Take the first of these that fits a change:
   1. A repo of the plan has the state at its pinned commit: a normal entry.
@@ -198,6 +200,8 @@ The check and its reason name no person, PR, or issue, in a code span either, be
 - no repo of the catalog has the state it acts on
 - needs a timing or a race that no run can arrange
 - only a person can judge what it shows
+- a choice of the release lead, which the sweep could test, with the role of whoever chose, as the rule "A choice" says
+
 A step in the browser follows these limits, which a real run in the sandbox proved:
 
 - It may open a Storybook URL on `localhost`, click a button, a tab, a sidebar item, or a control by its visible name or label, type into a field, press keys, read text from the manager and from the preview iframe, and take screenshots.
@@ -267,23 +271,3 @@ The body holds:
 The body names no PR or issue, neither as `#number` nor as a link, because every reference posts a mention on that PR and the plan holds hundreds.
 Never merge the PR. Merging it starts the sweep, so only the reviewer merges it.
 
-## Update a plan
-
-A plan changes when a newer prerelease moves the end of its window, or when the reviewer asks for other decisions.
-The draft is not in the repository, so make it again from the plan and the window it was rendered from.
-Take both from the branch of the open plan PR, or from `qa/plans` once the plan is merged:
-
-```bash
-mkdir -p /tmp/qa-plan-11.0
-git fetch origin qa/plans
-git show origin/qa/plans:ecosystem-qa/plans/11.0.md > /tmp/qa-plan-11.0/old.md
-git show origin/qa/plans:ecosystem-qa/plans/11.0.window.json > /tmp/qa-plan-11.0/old.window.json
-node ecosystem-qa/qa-plan.ts draft /tmp/qa-plan-11.0/old.md --window /tmp/qa-plan-11.0/old.window.json --out /tmp/qa-plan-11.0/draft.json
-```
-
-`draft` exits 1 when the plan is not what `render` writes from that window, which means someone edited it by hand. Then `check --window` names each row that differs from the window. When it passes all the same, the edit is in a part that `render` sets and `check` accepts at any value, such as `Entries per run`, which `render` writes as 4, the `Version` cell, or the order of the rows: set it back to what `render` writes.
-For a new end of the window, run step 1 with its tag, then render the draft on the new window.
-`render` names every PR that the draft decides or groups and that the new window holds in another role, and `check` names every new PR without a decision. Decide those in the draft, change what the reviewer asked for, and go on with step 6.
-
-Commit the new plan and window on the branch of the open plan PR, and push to it, so the review goes on in that PR. Replace the output of `check` and the counts in its body.
-When the plan is merged already, open a new PR from `qa/plans` as in step 7, with the title `Ecosystem QA: Update the plan for Storybook <line>`.

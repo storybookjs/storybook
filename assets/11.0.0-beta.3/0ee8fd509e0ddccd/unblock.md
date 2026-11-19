@@ -1,0 +1,2 @@
+- upgrade.command: .yarnrc.yml `nodeLinker: pnp` changed to `nodeLinker: node-modules`, then `yarn install` (non-immutable), as the Yarn PnP section of /home/agent/qa-input/MIGRATION.md (## From version 10.x to 11.0.0, "Yarn PnP support removed") says. Install output: install-node-modules.log.
+- core.dev-server: .storybook/github-link.ts IconButton replaced by Button variant=ghost, padding=small, ariaLabel (per MIGRATION.md IconButton row). Cause: core.dev-server-cause.md

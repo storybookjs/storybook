@@ -1,0 +1,92 @@
+➤ YN0000: · Yarn 4.17.1
+➤ YN0000: ┌ Resolution step
+➤ YN0000: └ Completed in 0s 357ms
+➤ YN0000: ┌ Post-resolution validation
+➤ YN0060: │ @types/react is listed by your project with version 19.2.14 (p238287), which doesn't satisfy what @blueprintjs/core and other dependencies request (^18.0.0).
+➤ YN0060: │ @types/react is listed by your project with version 19.2.14 (p5a2030), which doesn't satisfy what @blueprintjs/core and other dependencies request (^18.0.0).
+➤ YN0060: │ @types/react is listed by your project with version 19.2.14 (p6022d8), which doesn't satisfy what @blueprintjs/core and other dependencies request (^18.0.0).
+➤ YN0060: │ @types/react is listed by your project with version 19.2.14 (p8200d8), which doesn't satisfy what @blueprintjs/core and other dependencies request (^18.0.0).
+➤ YN0060: │ @types/react is listed by your project with version 19.2.14 (pb85082), which doesn't satisfy what @blueprintjs/core and other dependencies request (^18.0.0).
+➤ YN0060: │ @types/react is listed by your project with version 19.2.14 (pe204db), which doesn't satisfy what @blueprintjs/core and other dependencies request (^18.0.0).
+➤ YN0060: │ @types/react is listed by your project with version 19.2.14 (pf5808a), which doesn't satisfy what @blueprintjs/core and other dependencies request (^18.0.0).
+➤ YN0060: │ mapbox-gl is listed by your project with version 3.18.1 (p1a8bc8), which doesn't satisfy what mapbox-gl-controls requests (>=1.0.0 <3.0.0).
+➤ YN0060: │ mapbox-gl is listed by your project with version 3.18.1 (pf1a0be), which doesn't satisfy what mapbox-gl-controls requests (>=1.0.0 <3.0.0).
+➤ YN0060: │ react is listed by your project with version 19.1.0 (p3d997b), which doesn't satisfy what @blueprintjs/core and other dependencies request (but they have non-overlapping ranges!).
+➤ YN0060: │ react is listed by your project with version 19.1.0 (p467a6e), which doesn't satisfy what @blueprintjs/core and other dependencies request (but they have non-overlapping ranges!).
+➤ YN0060: │ react-dom is listed by your project with version 19.1.0 (pb9905e), which doesn't satisfy what @blueprintjs/core and other dependencies request (but they have non-overlapping ranges!).
+➤ YN0060: │ react-dom is listed by your project with version 19.1.0 (pf41e40), which doesn't satisfy what @blueprintjs/core and other dependencies request (^18.0.0).
+➤ YN0060: │ typescript is listed by your project with version 6.0.2 (pc77e96), which doesn't satisfy what madge and other dependencies request (^5.4.4).
+➤ YN0002: │ @macrostrat/column-components@workspace:packages/column-components doesn't provide react (p5df928), requested by @blueprintjs/core and other dependencies.
+➤ YN0002: │ @macrostrat/column-components@workspace:packages/column-components doesn't provide react-dom (pbf6247), requested by @blueprintjs/core and other dependencies.
+➤ YN0002: │ @macrostrat/column-creator@workspace:packages/column-creator doesn't provide @types/react (p9f1401), requested by @blueprintjs/core and other dependencies.
+➤ YN0002: │ @macrostrat/column-creator@workspace:packages/column-creator doesn't provide react (p7aadda), requested by @blueprintjs/core and other dependencies.
+➤ YN0002: │ @macrostrat/column-creator@workspace:packages/column-creator doesn't provide react-dom (pfcc4e9), requested by @blueprintjs/core and other dependencies.
+➤ YN0002: │ @macrostrat/column-views@workspace:packages/column-views [456f3] doesn't provide react-dom (pe91ed4), requested by @blueprintjs/core and other dependencies.
+➤ YN0002: │ @macrostrat/column-views@workspace:packages/column-views doesn't provide @types/react (p03e57a), requested by @blueprintjs/core and other dependencies.
+➤ YN0002: │ @macrostrat/column-views@workspace:packages/column-views doesn't provide react (pc1fc60), requested by @blueprintjs/core and other dependencies.
+➤ YN0002: │ @macrostrat/column-views@workspace:packages/column-views doesn't provide react-dom (pad02ad), requested by @blueprintjs/core and other dependencies.
+➤ YN0002: │ @macrostrat/cross-section-utils@workspace:packages/cross-section-utils doesn't provide react (pb6029b), requested by @macrostrat/hyper.
+➤ YN0002: │ @macrostrat/data-components@workspace:packages/data-components [dbb37] doesn't provide react-dom (p5b3d19), requested by @blueprintjs/core and other dependencies.
+➤ YN0002: │ @macrostrat/data-components@workspace:packages/data-components doesn't provide react (p68103f), requested by @blueprintjs/core and other dependencies.
+➤ YN0002: │ @macrostrat/data-components@workspace:packages/data-components doesn't provide react-dom (paf3c0d), requested by @blueprintjs/core and other dependencies.
+➤ YN0002: │ @macrostrat/data-provider@workspace:packages/data-provider [2508f] doesn't provide react-dom (p7f8c0d), requested by @macrostrat/ui-components.
+➤ YN0002: │ @macrostrat/data-provider@workspace:packages/data-provider [4f945] doesn't provide react-dom (p11a223), requested by @macrostrat/ui-components.
+➤ YN0002: │ @macrostrat/data-provider@workspace:packages/data-provider doesn't provide react (pbb059e), requested by @macrostrat/hyper and other dependencies.
+➤ YN0002: │ @macrostrat/data-provider@workspace:packages/data-provider doesn't provide react-dom (p1f594d), requested by @macrostrat/ui-components.
+➤ YN0002: │ @macrostrat/data-sheet@workspace:packages/data-sheet [456f3] doesn't provide react-dom (p6dfa14), requested by @blueprintjs/core and other dependencies.
+➤ YN0002: │ @macrostrat/data-sheet@workspace:packages/data-sheet [456f3] doesn't provide storybook (p1e1e1f), requested by @storybook/react-vite.
+➤ YN0002: │ @macrostrat/data-sheet@workspace:packages/data-sheet [456f3] doesn't provide typescript (pa978e9), requested by @storybook/react-vite.
+➤ YN0002: │ @macrostrat/data-sheet@workspace:packages/data-sheet [456f3] doesn't provide vite (pdc47f8), requested by @storybook/react-vite.
+➤ YN0002: │ @macrostrat/data-sheet@workspace:packages/data-sheet doesn't provide @types/react (pecb697), requested by @blueprintjs/core and other dependencies.
+➤ YN0002: │ @macrostrat/data-sheet@workspace:packages/data-sheet doesn't provide react (p4a30d7), requested by @blueprintjs/core and other dependencies.
+➤ YN0002: │ @macrostrat/data-sheet@workspace:packages/data-sheet doesn't provide react-dom (p8822d3), requested by @blueprintjs/core and other dependencies.
+➤ YN0002: │ @macrostrat/data-sheet@workspace:packages/data-sheet doesn't provide storybook (pd54334), requested by @storybook/react-vite.
+➤ YN0002: │ @macrostrat/data-sheet@workspace:packages/data-sheet doesn't provide typescript (pbafb2c), requested by @storybook/react-vite.
+➤ YN0002: │ @macrostrat/data-sheet@workspace:packages/data-sheet doesn't provide vite (pd8c6d0), requested by @storybook/react-vite.
+➤ YN0002: │ @macrostrat/feedback-components@workspace:packages/feedback-components doesn't provide @types/react (pc86182), requested by @blueprintjs/core and other dependencies.
+➤ YN0002: │ @macrostrat/feedback-components@workspace:packages/feedback-components doesn't provide react (pafceb7), requested by @blueprintjs/core and other dependencies.
+➤ YN0002: │ @macrostrat/feedback-components@workspace:packages/feedback-components doesn't provide react-dom (p456424), requested by @blueprintjs/core and other dependencies.
+➤ YN0002: │ @macrostrat/form-components@workspace:packages/form-components doesn't provide react (p4ac4d2), requested by @blueprintjs/core and other dependencies.
+➤ YN0002: │ @macrostrat/form-components@workspace:packages/form-components doesn't provide react-dom (p1a0934), requested by @blueprintjs/core and other dependencies.
+➤ YN0002: │ @macrostrat/map-interface@workspace:packages/map-interface doesn't provide react (p1f9769), requested by @blueprintjs/core and other dependencies.
+➤ YN0002: │ @macrostrat/map-interface@workspace:packages/map-interface doesn't provide react-dom (pae2ef4), requested by @blueprintjs/core and other dependencies.
+➤ YN0002: │ @macrostrat/map-styles@workspace:packages/map-styles doesn't provide @types/node (p6e6b73), requested by ts-node.
+➤ YN0002: │ @macrostrat/map-styles@workspace:packages/map-styles doesn't provide react (p0ee54b), requested by @macrostrat/ui-components.
+➤ YN0002: │ @macrostrat/map-styles@workspace:packages/map-styles doesn't provide react-dom (p0357ca), requested by @macrostrat/ui-components.
+➤ YN0002: │ @macrostrat/map-styles@workspace:packages/map-styles doesn't provide typescript (pa14256), requested by ts-node.
+➤ YN0002: │ @macrostrat/map-views@workspace:packages/map-views [dbb37] doesn't provide react-dom (pb5aebc), requested by @blueprintjs/core and other dependencies.
+➤ YN0002: │ @macrostrat/map-views@workspace:packages/map-views doesn't provide @types/react (p376fe1), requested by @blueprintjs/core and other dependencies.
+➤ YN0002: │ @macrostrat/map-views@workspace:packages/map-views doesn't provide react (p325b14), requested by @blueprintjs/core and other dependencies.
+➤ YN0002: │ @macrostrat/map-views@workspace:packages/map-views doesn't provide react-dom (p634d0e), requested by @blueprintjs/core and other dependencies.
+➤ YN0002: │ @macrostrat/mapbox-react@workspace:packages/mapbox-react doesn't provide react (p2755a6), requested by @blueprintjs/core and other dependencies.
+➤ YN0002: │ @macrostrat/mapbox-react@workspace:packages/mapbox-react doesn't provide react-dom (p3d49ef), requested by @blueprintjs/core and other dependencies.
+➤ YN0002: │ @macrostrat/scoped-store@workspace:packages/scoped-store doesn't provide react (p8a2790), requested by @macrostrat/hyper and other dependencies.
+➤ YN0002: │ @macrostrat/static-map-utils@workspace:packages/static-map-utils doesn't provide react (p38c9f7), requested by @macrostrat/hyper and other dependencies.
+➤ YN0002: │ @macrostrat/static-map-utils@workspace:packages/static-map-utils doesn't provide react-dom (p4e2066), requested by @macrostrat/mapbox-react and other dependencies.
+➤ YN0002: │ @macrostrat/style-system@workspace:packages/style-system doesn't provide react (p2dd4a0), requested by @blueprintjs/core.
+➤ YN0002: │ @macrostrat/style-system@workspace:packages/style-system doesn't provide react-dom (pd9bfd0), requested by @blueprintjs/core.
+➤ YN0002: │ @macrostrat/svg-map-components@workspace:packages/svg-map-components doesn't provide @types/react (p9cc8ee), requested by @types/react-dom.
+➤ YN0002: │ @macrostrat/svg-map-components@workspace:packages/svg-map-components doesn't provide react (pc553c8), requested by @macrostrat/hyper and other dependencies.
+➤ YN0002: │ @macrostrat/svg-map-components@workspace:packages/svg-map-components doesn't provide react-dom (pd75d42), requested by @macrostrat/ui-components.
+➤ YN0002: │ @macrostrat/timescale@workspace:packages/timescale doesn't provide react (p7665c6), requested by @macrostrat/data-provider and other dependencies.
+➤ YN0002: │ @macrostrat/timescale@workspace:packages/timescale doesn't provide react-dom (p155e14), requested by @macrostrat/ui-components.
+➤ YN0002: │ @macrostrat/ui-components@workspace:packages/ui-components [4d569] doesn't provide @babel/runtime (pea8ca7), requested by @uiw/react-color.
+➤ YN0002: │ @macrostrat/ui-components@workspace:packages/ui-components [b0615] doesn't provide @babel/runtime (pf8ef92), requested by @uiw/react-color.
+➤ YN0002: │ @macrostrat/ui-components@workspace:packages/ui-components [b4196] doesn't provide @babel/runtime (p3aa82b), requested by @uiw/react-color.
+➤ YN0002: │ @macrostrat/ui-components@workspace:packages/ui-components doesn't provide @babel/runtime (p0bdc12), requested by @uiw/react-color.
+➤ YN0002: │ @macrostrat/ui-components@workspace:packages/ui-components doesn't provide react (p807b16), requested by @blueprintjs/core and other dependencies.
+➤ YN0002: │ @macrostrat/ui-components@workspace:packages/ui-components doesn't provide react-dom (p27f086), requested by @blueprintjs/core and other dependencies.
+➤ YN0002: │ @macrostrat/vite-plugin-hyperstyles@workspace:toolchain/vite-plugin-hyperstyles doesn't provide react (p1a40a1), requested by @macrostrat/hyper.
+➤ YN0002: │ @macrostrat/web-components@workspace:. doesn't provide rollup (p45284d), requested by @mdx-js/rollup.
+➤ YN0086: │ Some peer dependencies are incorrectly met by your project; run yarn explain peer-requirements <hash> for details, where <hash> is the six-letter p-prefixed code.
+➤ YN0086: │ Some peer dependencies are incorrectly met by dependencies; run yarn explain peer-requirements for details.
+➤ YN0000: └ Completed
+➤ YN0000: ┌ Fetch step
+➤ YN0000: └ Completed in 1s 162ms
+➤ YN0000: ┌ Link step
+➤ YN0007: │ esbuild@npm:0.25.6 must be built because it never has been before or the last one failed
+➤ YN0007: │ esbuild@npm:0.27.1 must be built because it never has been before or the last one failed
+➤ YN0007: │ esbuild@npm:0.28.1 must be built because it never has been before or the last one failed
+➤ YN0000: └ Completed in 12s 414ms
+➤ YN0000: · Done with warnings in 14s 103ms
+exit 0

@@ -8,12 +8,14 @@ import {
 	startStorybook,
 	stopStorybook,
 } from './helpers';
+import { startRefFixtures, type RefFixtures } from './ref-fixtures.ts';
 
 const PORT = 6009;
 const MCP_ENDPOINT = `http://localhost:${PORT}/mcp`;
 const STARTUP_TIMEOUT = 60_000;
 
 let storybookProcess: ReturnType<typeof x> | null = null;
+let fixtures: RefFixtures | null = null;
 
 async function mcpRequest(method: string, params: any = {}) {
 	const response = await fetch(MCP_ENDPOINT, {
@@ -32,13 +34,16 @@ async function mcpRequest(method: string, params: any = {}) {
 describe('MCP Composition + Docgen Server E2E Tests', () => {
 	beforeAll(async () => {
 		await killPort(PORT);
-		storybookProcess = startStorybook('.storybook-composition-docgen-server', PORT);
+		fixtures = await startRefFixtures();
+		({ storybookProcess } = await startStorybook('.storybook-composition-docgen-server', PORT, fixtures.env));
 		await waitForMcpEndpoint(MCP_ENDPOINT);
 	}, STARTUP_TIMEOUT);
 
 	afterAll(async () => {
 		await stopStorybook(storybookProcess);
 		storybookProcess = null;
+		await fixtures?.close();
+		fixtures = null;
 	});
 
 	describe('Multi-Source Documentation', () => {
@@ -109,7 +114,7 @@ describe('MCP Composition + Docgen Server E2E Tests', () => {
 			expect(text).not.toContain('no-manifest');
 		});
 
-		it('should require storybookId in multi-source mode', async () => {
+		it('should default docs-show to the local source when storybookId is omitted', async () => {
 			const response = await mcpRequest('tools/call', {
 				name: 'docs-show',
 				arguments: {
@@ -117,8 +122,11 @@ describe('MCP Composition + Docgen Server E2E Tests', () => {
 				},
 			});
 
-			expect(response.result.isError).toBe(true);
-			expect(response.result.content[0].text).toContain('storybookId');
+			expect(response.result.isError).toBeFalsy();
+			const text = response.result.content[0].text;
+			expect(text).toContain('ID: example-button');
+			// Only the local Button carries this attached doc; the storybook-ui ref has its own Button.
+			expect(text).toContain('🍌-emoji');
 		});
 	});
 

@@ -3,7 +3,7 @@ import React from 'react';
 import { Channel } from 'storybook/internal/channels';
 import type { API_Provider, DecoratorFunction } from 'storybook/internal/types';
 
-import { deepMerge } from '@vitest/utils';
+import { deepMerge } from '@vitest/utils/helpers';
 import type { API, State } from 'storybook/manager-api';
 import { fn } from 'storybook/test';
 
@@ -55,8 +55,8 @@ export class MockAPIWrapper<SubAPI, SubState> extends React.Component<{
 
     // Mock other submodules we depend on.
     const fullAPI = {
-      experimental_setFilter: fn().mockName('API::experimental_setFilter'),
-      experimental_setFilters: fn().mockName('API::experimental_setFilters'),
+      setFilter: fn().mockName('API::setFilter'),
+      setFilters: fn().mockName('API::setFilters'),
       getRefs: fn().mockName('API::getRefs').mockReturnValue({}),
       setRef: fn().mockName('API::setRef'),
       updateRef: fn().mockName('API::updateRef'),

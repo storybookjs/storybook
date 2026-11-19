@@ -16,7 +16,6 @@ export interface PreviewProps {
   storyId: StoryId;
   entry: LeafEntry;
   options: {
-    showTabs: boolean;
     showToolbar: boolean;
   };
   id?: string;
@@ -26,10 +25,8 @@ export interface PreviewProps {
   description: string;
   baseUrl: string;
   withLoader: boolean;
-  tabs: Addon_BaseType[];
   tools: Addon_BaseType[];
   toolsExtra: Addon_BaseType[];
-  tabId: string | undefined;
   wrappers: Addon_WrapperType[];
 }
 

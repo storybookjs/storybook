@@ -1,0 +1,5 @@
+<Modal
+  id="plain-modal"
+  open
+  confirmType="secondary"
+  error=""/>

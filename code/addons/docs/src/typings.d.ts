@@ -6,7 +6,6 @@ declare var FEATURES: import('storybook/internal/types').StorybookConfigRaw['fea
 declare var __DOCS_CONTEXT__: import('react').Context<
   import('storybook/internal/types').DocsContextProps<import('storybook/internal/types').Renderer>
 >;
-declare var PREVIEW_URL: string | undefined;
 declare var LOGLEVEL: 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'silent' | undefined;
 declare var TAGS_OPTIONS: import('storybook/internal/types').TagsOptions;
 

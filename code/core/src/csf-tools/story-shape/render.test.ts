@@ -1,28 +1,36 @@
 import { describe, expect, it } from 'vitest';
 
-import { recast } from 'storybook/internal/babel';
-
 import { dedent } from 'ts-dedent';
 
 import { loadCsf } from '../CsfFile.ts';
-import { resolveRenderFunction } from './render.ts';
+import type { Node } from '../estree/ast.ts';
+import { textOf } from '../estree/ast.ts';
+import type { SourceEditor } from '../estree/editor.ts';
+import { resolveEffectiveRender, resolveRenderFunction } from './render.ts';
 import { normalizeStoryDeclaration } from './normalize-story.ts';
 
 /** Resolves `render` on story `A`, the way a snippet generator would. */
 const resolveStoryRender = (code: string) => {
   const source = `export default { title: 'T' };\n${dedent(code)}`;
   const csf = loadCsf(source, { makeTitle: (title) => title ?? 'title' }).parse();
-  const declaration = csf._storyDeclarationPath['A'];
-  const normalized = normalizeStoryDeclaration(declaration);
+  editor = csf.editor;
+  const normalized = normalizeStoryDeclaration(csf._storyExports['A'], csf.editor);
 
   return resolveRenderFunction(
-    normalized.type === 'config' ? normalized.path : undefined,
-    declaration
+    normalized.type === 'config' ? normalized.node : undefined,
+    csf.editor
   );
 };
 
+let editor: SourceEditor;
+
+const printed = (node: Node) => {
+  const parent = editor.parentOf(node);
+  return textOf(parent?.type === 'Property' && parent.method ? parent : node);
+};
+
 const printedBody = (resolution: ReturnType<typeof resolveStoryRender>) =>
-  resolution.kind === 'resolved' ? recast.print(resolution.path.node).code : undefined;
+  resolution.kind === 'resolved' ? printed(resolution.node) : undefined;
 
 describe('resolveRenderFunction', () => {
   it('reports a story with no render property as missing', () => {
@@ -108,7 +116,7 @@ describe('resolveRenderFunction', () => {
     expect(resolution.kind).toBe('unresolved');
     expect(
       resolution.kind === 'unresolved' && resolution.shadowedRender
-        ? recast.print(resolution.shadowedRender.node).code
+        ? printed(resolution.shadowedRender)
         : undefined
     ).toBe('() => 1');
   });
@@ -137,5 +145,67 @@ describe('resolveRenderFunction', () => {
     expect(() => resolveStoryRender(`export const A = { render: { nested: true } };`)).toThrow(
       /Expected render to be an arrow function or function expression/
     );
+  });
+});
+
+describe('resolveEffectiveRender', () => {
+  it.each([
+    {
+      name: 'resolves a CSF2 function story',
+      code: `export const A = () => 1;`,
+      expected: '() => 1',
+    },
+    {
+      name: 'prefers story render over meta render',
+      code: `
+        export default { title: 'T', render: () => 'meta' };
+        export const A = { render: () => 'story' };
+      `,
+      expected: `() => 'story'`,
+    },
+    {
+      name: 'falls back to meta render when story render is missing',
+      code: `
+        export default { title: 'T', render: () => 'meta' };
+        export const A = { args: {} };
+      `,
+      expected: `() => 'meta'`,
+    },
+    {
+      name: 'does not fall back when story render is unresolved',
+      code: `
+        export default { title: 'T', render: () => 'meta' };
+        export const A = { render: ImportedTemplate };
+      `,
+      expected: undefined,
+    },
+  ])('$name', ({ code, expected }) => {
+    const source = code.includes('export default')
+      ? code
+      : `export default { title: 'T' };\n${code}`;
+    const csf = loadCsf(dedent(source), { makeTitle: (title) => title ?? 'title' }).parse();
+    editor = csf.editor;
+    const resolution = resolveEffectiveRender(csf, 'A');
+    expect(printedBody(resolution)).toBe(expected);
+  });
+
+  it('reports an invalid story render as unresolved without falling back to the meta render', () => {
+    const csf = loadCsf(
+      dedent`
+        export default { title: 'T', render: () => 'meta' };
+        export const A = { render: { nested: true } };
+      `,
+      { makeTitle: (title) => title ?? 'title' }
+    ).parse();
+
+    expect(resolveEffectiveRender(csf, 'A')).toEqual({ kind: 'unresolved' });
+  });
+
+  it('propagates errors that are not invalid render values', () => {
+    const csf = loadCsf(`export default { title: 'T' };`, {
+      makeTitle: (title) => title ?? 'title',
+    }).parse();
+
+    expect(() => resolveEffectiveRender(csf, 'A')).toThrow();
   });
 });

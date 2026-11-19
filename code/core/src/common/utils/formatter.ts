@@ -1,3 +1,7 @@
+import { createRequire } from 'node:module';
+import { resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
+
 // Prettier interface definition
 // Note: We want to avoid importing prettier directly to prevent bundling its type import
 // because prettier is an optional peer dependency and might not be available
@@ -43,6 +47,18 @@ export async function getPrettier(): Promise<Prettier> {
   }
 }
 
+/** The Prettier the project of `filePath` installed, if any. */
+async function getProjectPrettier(filePath: string): Promise<Prettier | undefined> {
+  try {
+    const prettierPath = createRequire(resolve(filePath)).resolve('prettier');
+    const module = await import(pathToFileURL(prettierPath).href);
+    // Node exposes a CommonJS Prettier, such as prettier@3's index.cjs, only as the default export.
+    return 'resolveConfig' in module ? module : module.default;
+  } catch {
+    return undefined;
+  }
+}
+
 /**
  * Format the content of a file using prettier. If prettier is not available in the user's project,
  * it will fallback to use editorconfig settings if available and formats the file by a
@@ -50,11 +66,13 @@ export async function getPrettier(): Promise<Prettier> {
  */
 export async function formatFileContent(filePath: string, content: string): Promise<string> {
   try {
-    const { resolveConfig, format } = await getPrettier();
+    // The Prettier next to the file first: a CLI run through npx has none of its own.
+    const prettier = (await getProjectPrettier(filePath)) ?? (await getPrettier());
+    const { resolveConfig, format } = prettier;
     const config = await resolveConfig(filePath);
 
     if (!config || Object.keys(config).length === 0) {
-      return await formatWithEditorConfig(filePath, content);
+      return await formatWithEditorConfig(prettier, filePath, content);
     }
 
     const result = await format(content, {
@@ -68,9 +86,11 @@ export async function formatFileContent(filePath: string, content: string): Prom
   }
 }
 
-async function formatWithEditorConfig(filePath: string, content: string): Promise<string> {
-  const { resolveConfig, format } = await getPrettier();
-
+async function formatWithEditorConfig(
+  { resolveConfig, format }: Prettier,
+  filePath: string,
+  content: string
+): Promise<string> {
   const config = await resolveConfig(filePath, { editorconfig: true });
 
   if (!config || Object.keys(config).length === 0) {
@@ -81,4 +101,22 @@ async function formatWithEditorConfig(filePath: string, content: string): Promis
     ...(config as any),
     filepath: filePath,
   });
+}
+
+/**
+ * Format an edit of an existing file the way the project formats it: with the Prettier the project
+ * installed and its Prettier config. Without such a config the content is returned as is, since
+ * Prettier's defaults would restyle the whole file.
+ */
+export async function formatExistingFile(filePath: string, content: string): Promise<string> {
+  try {
+    const prettier = await getProjectPrettier(filePath);
+    if (!prettier) {
+      return content;
+    }
+    const config = await prettier.resolveConfig(filePath);
+    return config ? await prettier.format(content, { ...config, filepath: filePath }) : content;
+  } catch {
+    return content;
+  }
 }

@@ -1,6 +1,6 @@
 import { Button } from 'storybook/internal/components';
 
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import preview from '../../../../../.storybook/preview.tsx';
 import { TooltipNote } from './TooltipNote.tsx';
@@ -35,5 +35,12 @@ export const Base = meta.story({
 export const Sentence = meta.story({
   args: {
     note: 'LocalComponent is declared in the story file, so the snippet references it without importing it.',
+  },
+});
+
+export const WithShortcut = meta.story({
+  args: {
+    note: 'Actions',
+    shortcut: '⌘ ⇧ U',
   },
 });

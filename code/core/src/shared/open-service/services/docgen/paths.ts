@@ -1,12 +1,19 @@
+import { encodePointer } from '../../service-channel.ts';
+import { componentIdToStaticName } from '../../static-names.ts';
+import { toComponentStateKey } from '../component-state-key.ts';
+
 /** Open-service id for the docgen service (also the on-disk directory under `services/`). */
 export const DOCGEN_SERVICE_ID = 'core/docgen';
 
 /**
  * Relative path segment for one component's static snapshot file, as returned by the `docgen`
  * query's `staticPath`. Must stay aligned with {@link docgenServiceDef} and manifest `$ref`s.
+ *
+ * The filename derives through {@link componentIdToStaticName} so non-ASCII component ids cannot
+ * produce snapshot files that Windows tar tooling cannot extract.
  */
 export function docgenQueryStaticPath(id: string): string {
-  return `${id}.json`;
+  return `${componentIdToStaticName(id)}.json`;
 }
 
 /** Logical static-store key: `core/docgen/<id>.json`. */
@@ -16,7 +23,7 @@ export function docgenStaticStorePath(id: string): string {
 
 /** JSON Pointer from a docgen snapshot file root to one component payload in service state. */
 export function docgenPayloadJsonPointer(id: string): string {
-  return `/components/${id}`;
+  return encodePointer(['components', toComponentStateKey(id)]);
 }
 
 /**

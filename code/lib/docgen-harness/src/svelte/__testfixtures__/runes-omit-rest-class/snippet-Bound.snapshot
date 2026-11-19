@@ -1,0 +1,7 @@
+<Input
+  bind:value
+  bind:input={el}
+  placeholder={`multi\nline`}
+  error={null}
+  font="mono" disabled
+/>

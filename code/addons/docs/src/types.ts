@@ -9,7 +9,7 @@ import type {
   Renderer,
 } from 'storybook/internal/types';
 
-import type { ThemeVars } from 'storybook/theming';
+import type { ThemeVars } from 'storybook/theming/emotion';
 
 import type { DocsContainerProps } from './blocks/blocks';
 import type { TocParameters } from './blocks/components';
@@ -188,7 +188,7 @@ export interface DocsParameters {
     canvas?: Partial<CanvasBlockParameters>;
 
     /**
-     * Enable the Code panel.
+     * Show the Code panel by default. Set to `false` to hide it.
      *
      * @see https://storybook.js.org/docs/writing-docs/code-panel
      */

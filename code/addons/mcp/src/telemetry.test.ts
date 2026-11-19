@@ -51,21 +51,6 @@ describe('collectTelemetry', () => {
     });
   });
 
-  it('reports the storybook ai CLI channel as the cli transport', async () => {
-    vi.mocked(telemetry).mockResolvedValue(undefined);
-
-    const cliServer = Object.assign(Object.create(mockServer), {
-      ctx: { ...mockServer.ctx, custom: { cliClient: true } },
-    }) as any;
-
-    await collectTelemetry({ event: 'test-event', server: cliServer });
-
-    expect(telemetry).toHaveBeenCalledWith(
-      'addon-mcp',
-      expect.objectContaining({ transport: 'cli' })
-    );
-  });
-
   it('should pass through additional payload fields', async () => {
     vi.mocked(telemetry).mockResolvedValue(undefined);
 

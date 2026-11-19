@@ -8,6 +8,10 @@
         "summary": "ButtonKind.Primary",
       },
       "type": {
+        "detail": "ButtonKind {
+  Primary = 'primary'
+  Secondary = 'secondary'
+}",
         "summary": "ButtonKind",
       },
     },

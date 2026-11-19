@@ -9,7 +9,6 @@ import { esMain } from '../utils/esmain.ts';
 import { getCurrentVersion } from './get-current-version.ts';
 import type { Change } from './utils/get-changes.ts';
 import { LABELS_BY_IMPORTANCE, RELEASED_LABELS, getChanges } from './utils/get-changes.ts';
-import type { PullRequestInfo } from './utils/get-github-info.ts';
 
 program
   .name('generate-pr-description')
@@ -34,17 +33,9 @@ const optionsSchema = z.object({
     .string()
     .default('[]')
     .transform((val) => JSON.parse(val))
-    .refine((val) => Array.isArray(val)),
+    .pipe(z.array(z.string())),
   verbose: z.boolean().optional(),
 });
-
-type Options = {
-  currentVersion?: string;
-  nextVersion?: string;
-  unpickedPatches?: boolean;
-  manualCherryPicks?: string[];
-  verbose: boolean;
-};
 
 const CHANGE_TITLES_TO_IGNORE = [
   /^bump version.*/i,
@@ -60,7 +51,7 @@ export const mapToChangelist = ({
   unpickedPatches,
 }: {
   changes: Change[];
-  unpickedPatches: boolean;
+  unpickedPatches?: boolean;
 }): string => {
   return changes
     .filter((change) => {
@@ -72,7 +63,7 @@ export const mapToChangelist = ({
       return true;
     })
     .sort((a, b) => {
-      const isReleasable = (pr: PullRequestInfo) =>
+      const isReleasable = (pr: Change) =>
         (pr.labels ?? []).some((label) => Object.keys(RELEASED_LABELS).includes(label));
       return Number(isReleasable(b)) - Number(isReleasable(a));
     })
@@ -234,7 +225,7 @@ export const generateNonReleaseDescription = (
 
 export const run = async (rawOptions: unknown) => {
   const { nextVersion, unpickedPatches, verbose, manualCherryPicks, ...options } =
-    optionsSchema.parse(rawOptions) as Options;
+    optionsSchema.parse(rawOptions);
 
   if (!nextVersion) {
     console.log(
@@ -258,7 +249,7 @@ export const run = async (rawOptions: unknown) => {
     verbose,
   });
 
-  const hasCherryPicks = manualCherryPicks?.length > 0;
+  const hasCherryPicks = manualCherryPicks.length > 0;
 
   const description = nextVersion
     ? generateReleaseDescription({

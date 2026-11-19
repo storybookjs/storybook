@@ -104,6 +104,48 @@ describe('PropertyExtractor', () => {
       expect(applicationProviders.flat(Number.MAX_VALUE)).toEqual([]);
     });
 
+    it.each([
+      ['_BrowserAnimationsModule', 'BrowserAnimationsModule'],
+      ['_NoopAnimationsModule', 'NoopAnimationsModule'],
+      ['BrowserAnimationsModule$1', 'BrowserAnimationsModule'],
+      ['NoopAnimationsModule$1', 'NoopAnimationsModule'],
+    ])(
+      'should warn, remove a renamed %s from imports and add no providers',
+      async (mangledName, expectedModuleName) => {
+        const MangledModule = class {};
+        Object.defineProperty(MangledModule, 'name', { value: mangledName });
+
+        const metadata = {
+          imports: [MangledModule],
+        };
+        const { imports, providers, applicationProviders } = await analyzeMetadata(metadata);
+        expect(imports.flat(Number.MAX_VALUE)).toEqual([CommonModule]);
+        expect(providers.flat(Number.MAX_VALUE)).toEqual([]);
+        expect(applicationProviders.flat(Number.MAX_VALUE)).toEqual([]);
+        expect(consoleWarnSpy).toHaveBeenCalledWith(
+          expect.stringContaining(`"${expectedModuleName}"`)
+        );
+      }
+    );
+
+    it('should not remove a module that is not a legacy animations module even if its name starts with an underscore', async () => {
+      class _BrowserAnimationsModuleWrapper {}
+
+      const metadata = {
+        imports: [_BrowserAnimationsModuleWrapper],
+      };
+      const { imports, providers, applicationProviders } = await analyzeMetadata(metadata);
+      expect(imports.flat(Number.MAX_VALUE)).toEqual([
+        CommonModule,
+        _BrowserAnimationsModuleWrapper,
+      ]);
+      expect(providers.flat(Number.MAX_VALUE)).toEqual([]);
+      expect(applicationProviders.flat(Number.MAX_VALUE)).toEqual([]);
+      expect(consoleWarnSpy).not.toHaveBeenCalledWith(
+        expect.stringContaining('BrowserAnimationsModule')
+      );
+    });
+
     it('should not destructure Angular official module', async () => {
       const metadata = {
         imports: [WithOfficialModule],

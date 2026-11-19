@@ -5,6 +5,7 @@ import path from 'node:path';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 
 import { dedent } from 'ts-dedent';
+import ts from 'typescript';
 
 import {
   invalidateParser,
@@ -105,6 +106,36 @@ describe('parseWithReactDocgenTypescript', () => {
 
     expect(docs).toHaveLength(1);
     expect(docs[0].props.severity?.defaultValue?.value).toBe('info');
+  });
+
+  test('extracts repeated JSDoc tags as one value per occurrence', async () => {
+    const dir = createTempProject({
+      'tsconfig.json': JSON.stringify({
+        compilerOptions: { jsx: 'react-jsx', strict: true },
+        include: ['*.tsx'],
+      }),
+      'Button.tsx': dedent`
+        /**
+         * Primary UI component
+         * @example a
+         * @example b
+         * @summary For clicks
+         * @import import { Button } from 'ds';
+         */
+        export function Button() {
+          return null;
+        }
+      `,
+    });
+
+    const docs = await parseWithReactDocgenTypescript(path.join(dir, 'Button.tsx'));
+
+    expect(docs).toHaveLength(1);
+    // RDT's own `tags` collapses repeats; our symbol-based map must not.
+    expect(docs[0].tags?.example).toBe('a\nb');
+    expect(docs[0].componentJsDocTags?.example).toEqual(['a', 'b']);
+    expect(docs[0].componentJsDocTags?.summary).toEqual(['For clicks']);
+    expect(docs[0].componentJsDocTags?.import).toEqual(["import { Button } from 'ds';"]);
   });
 
   test('round-trips through manifest JSON serialization', async () => {
@@ -254,6 +285,41 @@ describe('parseWithReactDocgenTypescript', () => {
     expect(docs[0].props.label.required).toBe(true);
     expect(docs[0].props.primary).toBeDefined();
     expect(docs[0].description).toBe('Primary UI component for user interaction');
+  });
+
+  test('parses the tsconfig once per parser lifetime, not once per component file', async () => {
+    const components = ['Alpha', 'Beta', 'Gamma'];
+    const dir = createTempProject({
+      'tsconfig.json': JSON.stringify({
+        compilerOptions: { jsx: 'react-jsx', strict: true },
+        include: ['*.tsx'],
+      }),
+      ...Object.fromEntries(
+        components.map((name) => [
+          `${name}.tsx`,
+          dedent`
+            export function ${name}(props: { label: string }) {
+              return null;
+            }
+          `,
+        ])
+      ),
+    });
+    const readFile = vi.spyOn(ts.sys, 'readFile');
+    const tsconfigReads = () =>
+      readFile.mock.calls.filter(([fileName]) => path.basename(fileName) === 'tsconfig.json')
+        .length;
+
+    for (const name of components) {
+      const docs = await parseWithReactDocgenTypescript(path.join(dir, `${name}.tsx`));
+      expect(docs[0].exportName).toBe(name);
+    }
+    expect(tsconfigReads()).toBe(1);
+
+    invalidateParser();
+    invalidateCache();
+    await parseWithReactDocgenTypescript(path.join(dir, 'Alpha.tsx'));
+    expect(tsconfigReads()).toBe(2);
   });
 });
 

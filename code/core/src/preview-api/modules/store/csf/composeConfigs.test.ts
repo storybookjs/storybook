@@ -1,14 +1,6 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
-import { global } from '@storybook/global';
+import { describe, expect, it, vi } from 'vitest';
 
 import { composeConfigs } from './composeConfigs.ts';
-
-vi.mock('@storybook/global', () => ({
-  global: {
-    FEATURES: {},
-  },
-}));
 
 describe('composeConfigs', () => {
   it('sets default (empty) values for fields', () => {
@@ -362,30 +354,5 @@ describe('composeConfigs', () => {
     expect(fn).toHaveBeenNthCalledWith(1, 'Label3', expect.anything());
     expect(fn).toHaveBeenNthCalledWith(2, 'Label2', expect.anything());
     expect(fn).toHaveBeenNthCalledWith(3, 'Label1', expect.anything());
-  });
-
-  describe('FEATURES.legacyDecoratorFileOrder set to true', () => {
-    beforeEach(() => {
-      global.FEATURES!.legacyDecoratorFileOrder = true;
-    });
-
-    afterEach(() => {
-      global.FEATURES!.legacyDecoratorFileOrder = false;
-    });
-
-    it('should merge decorators in the order they are defined file-wise', () => {
-      expect(
-        composeConfigs([
-          {
-            decorators: ['1', '2'],
-          },
-          {
-            decorators: ['3', '4'],
-          },
-        ])
-      ).toMatchObject({
-        decorators: ['1', '2', '3', '4'],
-      });
-    });
   });
 });

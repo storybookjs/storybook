@@ -4,8 +4,6 @@ import PropsGeneric from './PropsGeneric.vue';
 
 const meta = {
   title: 'VueFixtures/PropsGeneric',
-  // @ts-expect-error - a generic SFC (generic="T") is a component factory Meta cannot model
-  // (TS2559); when this directive turns unused the friction is fixed - restore normal typing.
   component: PropsGeneric,
 } satisfies Meta<typeof PropsGeneric>;
 

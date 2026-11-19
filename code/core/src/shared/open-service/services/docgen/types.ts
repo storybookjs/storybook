@@ -29,7 +29,7 @@ export type DocgenJsDocTags = Record<string, string[]>;
  * Docgen payload returned by `core/docgen`'s `docgen` query.
  *
  * Component-only fields (props, descriptions, subcomponents). Story snippets and file-level
- * imports live in `core/story-docs` when `experimentalDocgenServer` is enabled.
+ * imports live in `core/story-docs` when `docgenServer` is enabled.
  */
 export interface DocgenPayload {
   id: string;
@@ -57,6 +57,7 @@ export interface DocgenPayload {
 /** Component-level summary + docgen for one subcomponent. */
 export interface DocgenSubcomponent {
   name: string;
+  /** The file that declares the subcomponent, or the story file when it does not resolve. */
   path: string;
   description?: string;
   summary?: string;

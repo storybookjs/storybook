@@ -216,7 +216,7 @@ function isInterruptionError(error: unknown): boolean {
  * Commands that report a `canceled` event when the user interrupts them with Ctrl+C. Other
  * commands simply die on SIGINT without telemetry.
  */
-const CANCELLATION_TRACKED_EVENTS: EventType[] = ['init', 'ai-command'];
+const CANCELLATION_TRACKED_EVENTS: EventType[] = ['init'];
 
 export async function withTelemetry<T>(
   eventType: EventType,

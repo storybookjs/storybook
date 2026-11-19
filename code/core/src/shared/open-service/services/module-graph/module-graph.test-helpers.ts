@@ -3,7 +3,6 @@ import { vi } from 'vitest';
 import type { StoryIndex } from 'storybook/internal/types';
 
 import { registerService } from '../../server.ts';
-import { registerModuleGraphIndexService } from '../module-graph-index/server.ts';
 import { moduleGraphServiceDef } from './definition.ts';
 import type { ChangeDetectionAdapter, FileChangeEvent } from './engine/adapters/types.ts';
 import { DependencyGraphBuilder } from './engine/dependency-graph/dependency-graph-builder.ts';
@@ -104,12 +103,7 @@ export function installDependencyGraphMocks(reverseIndex: ReverseIndexImpl): {
   patchSpy: ReturnType<typeof vi.fn>;
   buildSpy: ReturnType<typeof vi.fn>;
 } {
-  // Default patch "moves" the reverse index (bump revision, leave contents empty) so engine
-  // tests that do not customize the spy still exercise the indexChanged mirror path.
-  const patchSpy = vi.fn(async () => {
-    reverseIndex.record('/__patch_touch__', '/__patch_touch__', 0);
-    reverseIndex.removeStory('/__patch_touch__');
-  });
+  const patchSpy = vi.fn(async () => undefined);
   const buildSpy = vi.fn(async () => ({ reverseIndex, graph: new Map() }));
 
   vi.mocked(ChangeDetectionResolverFactory).mockImplementation(function () {
@@ -127,10 +121,8 @@ export function installDependencyGraphMocks(reverseIndex: ReverseIndexImpl): {
   return { patchSpy, buildSpy };
 }
 
-// Registers cold index + hot module-graph for unit tests without a live engine.
+// Registers module-graph for unit tests without a live engine.
 export function registerTestModuleGraphService(workingDir = process.cwd()) {
-  registerModuleGraphIndexService(workingDir);
-
   return registerService(
     {
       ...moduleGraphServiceDef,

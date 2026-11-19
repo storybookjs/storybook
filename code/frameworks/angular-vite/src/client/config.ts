@@ -16,7 +16,7 @@ export const parameters: Parameters = {
   docs: {
     story: { inline: true },
     extractArgTypes: (component: Component | Directive) =>
-      global.FEATURES?.experimentalDocgenServer === true ? {} : extractArgTypes(component),
+      global.FEATURES?.docgenServer === true ? {} : extractArgTypes(component),
     extractComponentDescription,
   },
 };

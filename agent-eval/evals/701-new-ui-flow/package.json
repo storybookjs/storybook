@@ -1,0 +1,11 @@
+{
+  "name": "701-new-ui-order-history-flow",
+  "description": "Agentic reference, new-UI workflow (Order history page).",
+  "type": "module",
+  "evals": {
+    "externalRepo": {
+      "repo": "yannbf/mealdrop",
+      "ref": "refs/tags/agentic-reference/droppy-70pc-v4"
+    }
+  }
+}

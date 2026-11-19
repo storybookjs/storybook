@@ -177,7 +177,6 @@ const DocgenServiceArgTypesRows: FC<ResolvedArgTypes & { componentId: string }> 
   storyId,
   initialArgs,
   filterProps,
-  component,
 }) => {
   const { rows: serviceRows, isInitialLoading } = useDocgenServiceRows({
     componentId,
@@ -196,7 +195,7 @@ const DocgenServiceArgTypesRows: FC<ResolvedArgTypes & { componentId: string }> 
   }
 
   return renderArgTypesTables({
-    mainName: getComponentName(component) ?? serviceRows.serviceComponentName,
+    mainName: serviceRows.serviceComponentName,
     mainRows: serviceRows.mainRows,
     subcomponentRows: serviceRows.subcomponentRows,
     docsLang: parameters?.docs?.lang,
@@ -205,7 +204,7 @@ const DocgenServiceArgTypesRows: FC<ResolvedArgTypes & { componentId: string }> 
 };
 
 const ArgTypesImpl: FC<ArgTypesProps> = (props) => {
-  return globalThis.FEATURES?.experimentalDocgenServer ? (
+  return globalThis.FEATURES?.docgenServer ? (
     <DocgenServiceArgTypes {...props} />
   ) : (
     <LegacyArgTypes {...props} />

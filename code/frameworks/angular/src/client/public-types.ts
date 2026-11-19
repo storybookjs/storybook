@@ -20,7 +20,7 @@ export type { AngularRenderer };
 /**
  * Metadata to configure the stories for a component.
  *
- * @see [Default export](https://storybook.js.org/docs/api/csf#default-export)
+ * @see [Meta](https://storybook.js.org/docs/writing-stories/csf#meta)
  */
 export type Meta<TArgs = Args> = ComponentAnnotations<
   AngularRenderer,
@@ -30,7 +30,7 @@ export type Meta<TArgs = Args> = ComponentAnnotations<
 /**
  * Story function that represents a CSFv2 component example.
  *
- * @see [Named Story exports](https://storybook.js.org/docs/api/csf#named-story-exports)
+ * @see [Stories](https://storybook.js.org/docs/writing-stories/csf#stories)
  */
 export type StoryFn<TArgs = Args> = AnnotatedStoryFn<
   AngularRenderer,
@@ -40,7 +40,7 @@ export type StoryFn<TArgs = Args> = AnnotatedStoryFn<
 /**
  * Story object that represents a CSFv3 component example.
  *
- * @see [Named Story exports](https://storybook.js.org/docs/api/csf#named-story-exports)
+ * @see [Stories](https://storybook.js.org/docs/writing-stories/csf#stories)
  */
 export type StoryObj<TArgs = Args> = StoryAnnotations<
   AngularRenderer,
@@ -100,9 +100,9 @@ type TransformOutputSignalType<T> = {
 type TransformModelSignalType<T> = {
   [K in keyof T]: T[K] extends ModelSignal<infer E> ? E : T[K];
 } & {
-  [K in keyof T as T[K] extends ModelSignal<infer _E>
-    ? `${K & string}Change`
-    : never]: T[K] extends ModelSignal<infer E> ? (e: E) => void : never;
+  [
+    K in keyof T as T[K] extends ModelSignal<infer _E> ? `${K & string}Change` : never
+  ]: T[K] extends ModelSignal<infer E> ? (e: E) => void : never;
 };
 
 type TransformEventType<T> = {

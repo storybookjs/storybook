@@ -3,10 +3,10 @@ import {
   createRoute,
   RootRoute,
   createRootRouteWithContext,
-  interpolatePath,
   joinPaths,
 } from '@tanstack/react-router';
 
+import { interpolateStoryPath } from './path-utils.ts';
 import type { RouteTreeOverrides } from './types.ts';
 
 const MAX_PARENT_WALK = 50;
@@ -248,7 +248,7 @@ export function resolveStoryLeaf(
     if (bound) {
       const boundCandidate = mountPathFor(bound);
       const boundInterpolated = params
-        ? interpolatePath({ path: boundCandidate, params }).interpolatedPath
+        ? interpolateStoryPath(boundCandidate, params)
         : boundCandidate;
       if (boundCandidate === path || boundInterpolated === path) {
         return bound;
@@ -264,9 +264,7 @@ export function resolveStoryLeaf(
       }
       const candidate = mountPathFor(route);
       const isLiteral = candidate === path;
-      const interpolated = params
-        ? interpolatePath({ path: candidate, params }).interpolatedPath
-        : candidate;
+      const interpolated = params ? interpolateStoryPath(candidate, params) : candidate;
       if (!isLiteral && interpolated !== path) {
         continue;
       }

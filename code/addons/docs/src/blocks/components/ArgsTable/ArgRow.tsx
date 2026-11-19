@@ -5,8 +5,7 @@ import { codeCommon } from 'storybook/internal/components';
 
 import Markdown from 'markdown-to-jsx';
 import { transparentize } from 'polished';
-import type { CSSObject } from 'storybook/theming';
-import { srOnlyStyles, srOnlyUnsetStyles, styled } from 'storybook/theming';
+import { type CSSObject, srOnlyStyles, srOnlyUnsetStyles, styled } from 'storybook/theming/emotion';
 
 import type { ArgControlProps } from './ArgControl';
 import { ArgControl } from './ArgControl';
@@ -78,7 +77,7 @@ const TypeWithJsDoc = styled.div<{ hasDescription: boolean }>(({ theme, hasDescr
 }));
 
 const StyledTd = styled.td<{ expandable: boolean }>(({ expandable }) => ({
-  paddingLeft: expandable ? '40px !important' : '20px !important',
+  paddingInlineStart: expandable ? '40px !important' : '20px !important',
 }));
 
 // When a row has no usable control, the "Setup controls" link is hidden and a placeholder dash is
@@ -110,7 +109,7 @@ export const ArgRow: FC<ArgRowProps> = (props) => {
   const { name, description } = row;
   const table = (row.table || {}) as TableAnnotation;
   const type = table.type || toSummary(row.type);
-  const defaultValue = table.defaultValue || row.defaultValue;
+  const defaultValue = table.defaultValue;
   const required = row.type?.required;
   const hasDescription = description != null && description !== '';
 

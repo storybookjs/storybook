@@ -32,7 +32,7 @@ export const Markdown = {
     \`\`\`
     
     \`\`\`
-    code block with with no language
+    code block with no language
     const a = fn({
       b: 2,
     });

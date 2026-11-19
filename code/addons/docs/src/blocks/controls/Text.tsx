@@ -3,7 +3,7 @@ import React, { useCallback, useState } from 'react';
 
 import { Button, Form } from 'storybook/internal/components';
 
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import { getControlId, getControlSetterButtonId } from './helpers';
 import type { ControlProps, TextConfig, TextValue } from './types';

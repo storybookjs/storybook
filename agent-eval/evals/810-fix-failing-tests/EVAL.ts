@@ -1,4 +1,9 @@
-import { expectStoryTestsRanAndPassed } from '#test-utils';
+import {
+  expectAnyWorkflowSkillInvoked,
+  expectStoryTestsRanAndPassed,
+  expectWorkflowCalls,
+  getEvalContext,
+} from '#test-utils';
 import { readFileSync } from 'node:fs';
 import { describe, expect, test } from 'vitest';
 
@@ -10,8 +15,8 @@ describe('fixing failing Button story tests', () => {
   // A single test-run call is enough: agents may spot the initial
   // failure through any channel, as long as the fix is verified through the
   // tool.
-  test('finishes with the story tests passing', () => {
-    expectStoryTestsRanAndPassed({ covering: ['button'] });
+  test('finishes with the story tests passing', async () => {
+    await expectStoryTestsRanAndPassed({ covering: ['button'] });
   });
 
   // The tests should turn green through the real fix (wiring onClick through
@@ -25,4 +30,15 @@ describe('fixing failing Button story tests', () => {
       /toHaveBeenCalled/
     );
   });
+
+  test('runs the test-stories skill for a request to run the story tests', () => {
+    expectWorkflowCalls(['test-stories']);
+  });
+
+  test.skipIf(getEvalContext().integration === 'mcp')(
+    'finds the workflow through the plugin skills',
+    () => {
+      expectAnyWorkflowSkillInvoked();
+    }
+  );
 });

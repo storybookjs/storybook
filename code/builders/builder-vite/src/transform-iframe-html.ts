@@ -1,11 +1,11 @@
 import { normalizeStories } from 'storybook/internal/common';
-import type { DocsOptions, Options, TagsOptions } from 'storybook/internal/types';
+import type { DocsOptions, Options, SecurityConfig, TagsOptions } from 'storybook/internal/types';
 
 import { SB_VIRTUAL_FILES } from './virtual-file-names.ts';
 
 export type PreviewHtml = string | undefined;
 
-export async function transformIframeHtml(html: string, options: Options) {
+export async function transformIframeHtml(html: string, options: Options, base = '/') {
   const { configType, features, presets } = options;
   const build = await presets.apply('build');
   const frameworkOptions = await presets.apply<Record<string, any> | null>('frameworkOptions');
@@ -14,6 +14,7 @@ export async function transformIframeHtml(html: string, options: Options) {
   const logLevel = await presets.apply('logLevel', undefined);
   const docsOptions = await presets.apply<DocsOptions>('docs');
   const tagsOptions = await presets.apply<TagsOptions>('tags');
+  const security = await presets.apply<SecurityConfig | undefined>('security');
 
   const coreOptions = await presets.apply('core');
   const stories = normalizeStories(await options.presets.apply('stories', [], options), {
@@ -26,6 +27,7 @@ export async function transformIframeHtml(html: string, options: Options) {
 
   const otherGlobals = {
     ...(build?.test?.disableBlocks ? { __STORYBOOK_BLOCKS_EMPTY_MODULE__: {} } : {}),
+    ...(security?.insecureIframeMessaging ? { INSECURE_IFRAME_MESSAGING: true } : {}),
   };
 
   const transformedHtml = html
@@ -52,7 +54,7 @@ export async function transformIframeHtml(html: string, options: Options) {
   if (configType === 'DEVELOPMENT') {
     return transformedHtml.replace(
       'virtual:/@storybook/builder-vite/vite-app.js',
-      `/@id/__x00__${SB_VIRTUAL_FILES.VIRTUAL_APP_FILE}`
+      `${base}@id/__x00__${SB_VIRTUAL_FILES.VIRTUAL_APP_FILE}`
     );
   }
 

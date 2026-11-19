@@ -6,10 +6,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Command } from 'commander';
 
+import type { ProjectInfo } from './project-info.ts';
+import { recordSetupRun } from './record-setup-run.ts';
 import { registerSkillsCommand } from './register.ts';
 import { runSkillsCommand } from './run.ts';
 
 vi.mock('./run.ts', { spy: true });
+vi.mock('./record-setup-run.ts', () => ({ recordSetupRun: vi.fn() }));
 vi.mock('storybook/internal/core-server', () => ({
   withTelemetry: vi.fn(async (_event, _options, run: () => Promise<unknown>) => run()),
   experimental_loadStorybook: vi.fn(),
@@ -47,7 +50,7 @@ beforeEach(() => {
   vi.mocked(runSkillsCommand).mockResolvedValue({
     output: 'ok',
     exitCode: 0,
-    skill: 'stories',
+    skill: 'ui-review',
   });
   vi.mocked(withTelemetry).mockImplementation(async (_eventType, _options, run) => run());
   vi.mocked(telemetry).mockResolvedValue(undefined);
@@ -73,14 +76,30 @@ afterEach(() => {
 describe('registerSkillsCommand', () => {
   it('passes a bare skill id through as tokens', async () => {
     const { program } = buildProgram();
-    await parse(program, ['skills', 'stories']);
+    await parse(program, ['skills', 'ui-review']);
 
     expect(vi.mocked(runSkillsCommand).mock.calls[0]?.[0]).toEqual({
-      tokens: ['stories'],
+      tokens: ['ui-review'],
       help: undefined,
       all: undefined,
+      mcp: undefined,
       target: { cwd: undefined, configDir: undefined },
     });
+  });
+
+  it('forwards `--mcp` and records it in telemetry', async () => {
+    const { program } = buildProgram();
+    await parse(program, ['skills', 'ui-review', '--mcp']);
+
+    expect(vi.mocked(runSkillsCommand).mock.calls[0]?.[0]).toMatchObject({
+      tokens: ['ui-review'],
+      mcp: true,
+    });
+    expect(telemetry).toHaveBeenCalledWith(
+      'skills-get',
+      { skill: 'ui-review', mcp: true },
+      expect.anything()
+    );
   });
 
   it('forwards `--all` as a flag, not a token', async () => {
@@ -99,22 +118,43 @@ describe('registerSkillsCommand', () => {
     expect(telemetry).toHaveBeenCalledWith('skills-get', { skill: 'all' }, expect.anything());
   });
 
+  it('records the setup run when the setup skill was served', async () => {
+    const setupRun = { projectInfo: { configDir: '.storybook' } as ProjectInfo, prompt: 'setup' };
+    vi.mocked(runSkillsCommand).mockResolvedValue({
+      output: '# Storybook Setup',
+      exitCode: 0,
+      skill: 'setup',
+      setupRun,
+    });
+    const { program } = buildProgram();
+    await parse(program, ['skills', 'setup']);
+
+    expect(recordSetupRun).toHaveBeenCalledWith(setupRun);
+  });
+
+  it('does not record a setup run for other skills', async () => {
+    const { program } = buildProgram();
+    await parse(program, ['skills', 'ui-review']);
+
+    expect(recordSetupRun).not.toHaveBeenCalled();
+  });
+
   it('does not intercept `help` as commander help', async () => {
     const { program } = buildProgram();
-    await parse(program, ['skills', 'help', 'stories']);
+    await parse(program, ['skills', 'help', 'ui-review']);
 
     expect(vi.mocked(runSkillsCommand).mock.calls[0]?.[0]).toMatchObject({
-      tokens: ['help', 'stories'],
+      tokens: ['help', 'ui-review'],
     });
   });
 
   it('forwards `-h` after a skill id', async () => {
     vi.mocked(runSkillsCommand).mockResolvedValue({ output: 'usage', exitCode: 0 });
     const { program } = buildProgram();
-    await parse(program, ['skills', 'write-story', '-h']);
+    await parse(program, ['skills', 'write-stories', '-h']);
 
     expect(vi.mocked(runSkillsCommand).mock.calls[0]?.[0]).toMatchObject({
-      tokens: ['write-story'],
+      tokens: ['write-stories'],
       help: true,
     });
     expect(telemetry).not.toHaveBeenCalled();

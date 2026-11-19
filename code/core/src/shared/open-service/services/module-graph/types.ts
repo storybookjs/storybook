@@ -4,11 +4,6 @@ import { normalize } from 'pathe';
 
 import { slash } from '../../../utils/paths.ts';
 
-import type { ReverseIndex } from './engine/dependency-graph/types.ts';
-
-/** JSON-serializable reverse index shape stored in open-service state. */
-export type StoriesByFileRecord = Record<string, Record<string, number>>;
-
 export type ErrorLike = {
   message: string;
   name?: string;
@@ -27,10 +22,12 @@ export type ModuleGraphServiceState = {
   workingDir: string;
   status: ModuleGraphStatus;
   graphRevision: number;
+  /** Newest time (unix ms) a file change that advanced {@link graphRevision} was made. */
+  graphChangedAt: number;
   /**
    * Monotonic counter advanced on every processed file-change event, including out-of-graph
    * paths that do not advance {@link graphRevision}. Change detection watches this to rescan
-   * git; review staleness keeps watching {@link graphRevision} (in-graph only).
+   * git; review staleness watches {@link graphChangedAt} (in-graph only).
    */
   fileActivityRevision: number;
   /**
@@ -42,7 +39,7 @@ export type ModuleGraphServiceState = {
   latestChangedStoryFiles: string[];
   /**
    * Change-detection scan readiness. Distinct from {@link status}: the graph can be ready while
-   * scanning is disabled or has failed. `pending` is the value before the first scan settles.
+   * git is unusable or scanning has failed. `pending` is the value before the first scan settles.
    */
   changeDetectionReadiness: ChangeDetectionReadinessState;
 };
@@ -111,15 +108,15 @@ export function storyIndexPathToAbsolutePath(path: string, workingDir: string): 
   return slash(normalize(posix.join(slash(workingDir), path)));
 }
 
-export function reverseIndexToStoriesByFile(
-  index: ReverseIndex,
+export function lookupStoriesForFiles(
+  engine: { lookup(file: string): Map<string, number> },
+  files: string[],
   workingDir: string
-): StoriesByFileRecord {
-  const result: StoriesByFileRecord = {};
-  for (const [dep, stories] of index) {
-    result[toStoryIndexPath(dep, workingDir)] = Object.fromEntries(
-      Array.from(stories, ([storyFile, depth]) => [toStoryIndexPath(storyFile, workingDir), depth])
-    );
-  }
-  return result;
+) {
+  return files.map((file) =>
+    Array.from(
+      engine.lookup(storyIndexPathToAbsolutePath(file, workingDir)),
+      ([storyFile, depth]) => ({ storyFile: toStoryIndexPath(storyFile, workingDir), depth })
+    )
+  );
 }

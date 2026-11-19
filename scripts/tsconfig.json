@@ -21,7 +21,6 @@
     "lib": ["ESNext"],
     "types": ["node"],
     "strict": true,
-    "strictNullChecks": false,
     "forceConsistentCasingInFileNames": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
@@ -29,6 +28,6 @@
     "noFallthroughCasesInSwitch": true,
     "resolveJsonModule": true
   },
-  "exclude": ["dist", "**/dist", "node_modules", "**/node_modules"],
+  "exclude": ["dist", "**/dist", "node_modules", "**/node_modules", "sandbox/fixtures"],
   "include": ["./**/*", "./.eslintrc.cjs"]
 }

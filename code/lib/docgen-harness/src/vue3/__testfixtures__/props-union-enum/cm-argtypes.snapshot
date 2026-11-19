@@ -1,6 +1,5 @@
 {
   "size": {
-    "defaultValue": undefined,
     "description": "The visual size of the control.",
     "name": "size",
     "table": {
@@ -21,7 +20,6 @@
     },
   },
   "status": {
-    "defaultValue": undefined,
     "description": "Loose value that accepts several primitive shapes.",
     "name": "status",
     "table": {

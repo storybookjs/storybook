@@ -1,0 +1,56 @@
+{
+  "config": {
+    "control": false,
+    "description": "Rendering options for the list.",
+    "name": "config",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": "{ dense: false, theme: 'light' }",
+      },
+      "type": {
+        "summary": "PanelConfig",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "PanelConfig",
+    },
+  },
+  "items": {
+    "description": "Items rendered by the list.",
+    "name": "items",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": "[]",
+      },
+      "type": {
+        "summary": "Item[]",
+      },
+    },
+    "type": {
+      "name": "array",
+      "value": {
+        "name": "other",
+        "value": "Item",
+      },
+    },
+  },
+  "label": {
+    "description": "Visible label for the list.",
+    "name": "label",
+    "table": {
+      "category": "attributes",
+      "defaultValue": {
+        "summary": "'Items'",
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+}

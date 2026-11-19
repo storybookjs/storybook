@@ -1,4 +1,25 @@
+```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './my-component.component';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+export const Basic = meta.story();
+
+export const WithProp = meta.story({
+  render: () => ({
+    props: {
+      prop: 'value',
+    },
+  }),
+});
+```
+
 ```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import type { Meta, StoryObj } from '@storybook/angular';
 
 import { MyComponent } from './my-component.component';
@@ -21,10 +42,10 @@ export const WithProp: Story = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```jsx filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
-import { MyComponent } from './my-component.component';
+import { MyComponent } from './MyComponent';
 
 const meta = preview.meta({
   component: MyComponent,
@@ -33,29 +54,28 @@ const meta = preview.meta({
 export const Basic = meta.story();
 
 export const WithProp = meta.story({
-  render: () => ({
-    props: {
-      prop: 'value',
-    },
-  }),
+  render: () => <MyComponent prop="value" />,
 });
 ```
 
-```jsx filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
+```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
 import { MyComponent } from './MyComponent';
 
-export default {
+const meta = preview.meta({
   component: MyComponent,
-};
+});
 
-export const Basic = {};
+export const Basic = meta.story();
 
-export const WithProp = {
+export const WithProp = meta.story({
   render: () => <MyComponent prop="value" />,
-};
+});
 ```
 
 ```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -75,36 +95,19 @@ export const WithProp: Story = {
 };
 ```
 
-```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
+```jsx filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import { MyComponent } from './MyComponent';
 
-const meta = preview.meta({
+export default {
   component: MyComponent,
-});
+};
 
-export const Basic = meta.story();
+export const Basic = {};
 
-export const WithProp = meta.story({
+export const WithProp = {
   render: () => <MyComponent prop="value" />,
-});
-```
-
-```jsx filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-import { MyComponent } from './MyComponent';
-
-const meta = preview.meta({
-  component: MyComponent,
-});
-
-export const Basic = meta.story();
-
-export const WithProp = meta.story({
-  render: () => <MyComponent prop="value" />,
-});
+};
 ```
 
 ```jsx filename="MyComponent.story.js|jsx" renderer="solid" language="js"
@@ -140,9 +143,31 @@ export const WithProp: Story = {
 };
 ```
 
-```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 4"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import preview from '../.storybook/preview';
+
+  import MyComponent from './MyComponent.svelte';
+
+  const { Story } = preview.meta({
+    component: MyComponent,
+  });
+</script>
+
+<Story name="Basic">
+  <MyComponent />
+</Story>
+
+<Story name="WithProp">
+  <MyComponent prop="value" />
+</Story>
+```
+
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 3"
+<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
+<script module>
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import MyComponent from './MyComponent.svelte';
 
@@ -160,33 +185,31 @@ export const WithProp: Story = {
 </Story>
 ```
 
-```js filename="MyComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
-import MyComponent from './MyComponent.svelte';
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 4"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
 
-export default {
-  component: MyComponent,
-};
+  import MyComponent from './MyComponent.svelte';
 
-export const Basic = {};
+  const { Story } = preview.meta({
+    component: MyComponent,
+  });
+</script>
 
-/*
- *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
- * to learn how to use render functions.
- */
-export const WithProp = {
-  render: () => ({
-    Component: MyComponent,
-    props: {
-      prop: 'value',
-    },
-  }),
-};
+<Story name="Basic">
+  <MyComponent />
+</Story>
+
+<Story name="WithProp">
+  <MyComponent prop="value" />
+</Story>
 ```
 
-```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 3"
+<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import MyComponent from './MyComponent.svelte';
 
@@ -204,59 +227,56 @@ export const WithProp = {
 </Story>
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
-// Replace your-framework with svelte-vite or sveltekit
-import type { Meta, StoryObj } from '@storybook/your-framework';
+```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
 
-import MyComponent from './MyComponent.svelte';
-
-const meta = {
-  component: MyComponent,
-} satisfies Meta<typeof MyComponent>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const Basic: Story = {};
-
-/*
- *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
- * to learn how to use render functions.
- */
-export const WithProp: Story = {
-  render: () => ({
-    Component: MyComponent,
-    props: {
-      prop: 'value',
-    },
-  }),
-};
-```
-
-```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
 import MyComponent from './MyComponent.vue';
 
-export default {
+const meta = preview.meta({
   component: MyComponent,
-};
+});
 
-export const Basic = {
+export const Basic = meta.story({
   render: () => ({
     components: { MyComponent },
     template: '<MyComponent />',
   }),
-};
+});
 
-export const WithProp = {
+export const WithProp = meta.story({
   render: () => ({
     components: { MyComponent },
     template: '<MyComponent prop="value" />',
   }),
-};
+});
+```
+
+```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
+import MyComponent from './MyComponent.vue';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+export const Basic = meta.story({
+  render: () => ({
+    components: { MyComponent },
+    template: '<MyComponent />',
+  }),
+});
+
+export const WithProp = meta.story({
+  render: () => ({
+    components: { MyComponent },
+    template: '<MyComponent prop="value" />',
+  }),
+});
 ```
 
 ```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import MyComponent from './MyComponent.vue';
@@ -283,70 +303,63 @@ export const WithProp: Story = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
+```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import MyComponent from './MyComponent.vue';
-
-const meta = preview.meta({
-  component: MyComponent,
-});
-
-export const Basic = meta.story({
-  render: () => ({
-    components: { MyComponent },
-    template: '<MyComponent />',
-  }),
-});
-
-export const WithProp = meta.story({
-  render: () => ({
-    components: { MyComponent },
-    template: '<MyComponent prop="value" />',
-  }),
-});
-```
-
-```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-import MyComponent from './MyComponent.vue';
-
-const meta = preview.meta({
-  component: MyComponent,
-});
-
-export const Basic = meta.story({
-  render: () => ({
-    components: { MyComponent },
-    template: '<MyComponent />',
-  }),
-});
-
-export const WithProp = meta.story({
-  render: () => ({
-    components: { MyComponent },
-    template: '<MyComponent prop="value" />',
-  }),
-});
-```
-
-```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
-import { html } from 'lit';
 
 export default {
-  title: 'Path/To/MyComponent',
-  component: 'my-component',
+  component: MyComponent,
 };
 
-export const Basic = {};
+export const Basic = {
+  render: () => ({
+    components: { MyComponent },
+    template: '<MyComponent />',
+  }),
+};
 
 export const WithProp = {
-  render: () => html`<my-component prop="value" />`,
+  render: () => ({
+    components: { MyComponent },
+    template: '<MyComponent prop="value" />',
+  }),
 };
+```
+
+```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF 4"
+import { html } from 'lit';
+
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'my-component',
+});
+
+export const Basic = meta.story();
+
+export const WithProp = meta.story({
+  render: () => html`<my-component prop="value" />`,
+});
+```
+
+```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 4"
+import { html } from 'lit';
+
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'my-component',
+});
+
+export const Basic = meta.story();
+
+export const WithProp = meta.story({
+  render: () => html`<my-component prop="value" />`,
+});
 ```
 
 ```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 import { html } from 'lit';
@@ -365,34 +378,18 @@ export const WithProp: Story = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import { html } from 'lit';
 
-import preview from '../.storybook/preview';
-
-const meta = preview.meta({
+export default {
+  title: 'Path/To/MyComponent',
   component: 'my-component',
-});
+};
 
-export const Basic = meta.story();
+export const Basic = {};
 
-export const WithProp = meta.story({
+export const WithProp = {
   render: () => html`<my-component prop="value" />`,
-});
-```
-
-```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
-import { html } from 'lit';
-
-import preview from '../.storybook/preview';
-
-const meta = preview.meta({
-  component: 'my-component',
-});
-
-export const Basic = meta.story();
-
-export const WithProp = meta.story({
-  render: () => html`<my-component prop="value" />`,
-});
+};
 ```

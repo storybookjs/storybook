@@ -42,7 +42,7 @@ export default {
     childCallIds: undefined,
     toggleCollapsed: () => {},
   },
-} as Meta<typeof Interaction>;
+} satisfies Meta<typeof Interaction>;
 
 export const Render: Story = {
   args: {

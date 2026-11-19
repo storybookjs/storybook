@@ -1,9 +1,14 @@
-import { STORY_FILE_TEST_REGEXP, getStoryImportPathFromEntry } from 'storybook/internal/common';
+import {
+  getStoryImportPathFromEntry,
+  STORY_FILE_TEST_REGEXP,
+  type TypeScriptSpecifierForDocgen,
+} from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import type { DocgenMiddleware, DocgenProvider } from 'storybook/internal/types';
 
 import type { ParsingLogger } from '@storybook/angular-cm';
 import { AngularComponentMetaManager } from '@storybook/angular-cm';
+import { loadDocgenTypeScript } from '@storybook/component-meta-typescript';
 import type { AngularDocgenOptions } from './build-docgen.ts';
 import { buildDocgenPayload } from './build-docgen.ts';
 
@@ -12,12 +17,15 @@ const workerLogger: ParsingLogger = {
   debug: (message) => logger.debug(`[storybook-angular-vite] ${message}`),
 };
 
-const createManager = async (): Promise<AngularComponentMetaManager | undefined> => {
+const createManager = async (
+  typeScriptSpecifier: TypeScriptSpecifierForDocgen | undefined
+): Promise<AngularComponentMetaManager | undefined> => {
   try {
     // Imported at first use so the analyzer sees the TypeScript version the project builds with,
     // which this package deliberately does not ship.
-    const typescript = await import('typescript');
-    const manager = new AngularComponentMetaManager(typescript.default ?? typescript);
+    const manager = new AngularComponentMetaManager(
+      await loadDocgenTypeScript(typeScriptSpecifier)
+    );
     manager.startWatching();
     return manager;
   } catch (error) {
@@ -44,7 +52,7 @@ export const createDocgenProvider = (options: AngularDocgenOptions): DocgenMiddl
         return nextDocgen(input);
       }
 
-      const manager = await (managerPromise ??= createManager());
+      const manager = await (managerPromise ??= createManager(options.typeScriptSpecifier));
       if (!manager) {
         return nextDocgen(input);
       }

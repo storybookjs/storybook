@@ -7,8 +7,8 @@ import React, {
   useState,
 } from 'react';
 
-import { useId } from '@react-aria/utils';
-import { styled } from 'storybook/theming';
+import { useId } from 'react-aria/useId';
+import { styled } from 'storybook/theming/emotion';
 
 const CollapsibleContent = styled.div<{ collapsed?: boolean }>(({ collapsed = false }) => ({
   blockSize: collapsed ? 0 : 'auto',

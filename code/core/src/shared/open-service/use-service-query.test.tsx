@@ -201,9 +201,7 @@ describe('useServiceQuery', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(renderCount).toBe(countBeforeSuccess + 1);
 
-    // The hook does not dedup: even a new-reference, deeply-equal emission re-renders. (The runtime
-    // dedups its own emissions; the hook deliberately trusts that rather than re-checking equality,
-    // which previously masked mutations of deeply-nested state.)
+    // The hook does not dedup: the runtime dedups its own emissions, and the hook trusts that.
     const countAfterSuccess = renderCount;
     subscribers[0](successState({ k: 'v' }));
     await waitFor(() => expect(renderCount).toBe(countAfterSuccess + 1));

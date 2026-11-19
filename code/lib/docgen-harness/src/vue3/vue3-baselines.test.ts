@@ -6,8 +6,7 @@ import { describe, expect, it } from 'vitest';
 
 import { parse } from 'vue-docgen-api';
 
-import { extractArgTypes } from '../../../../renderers/vue3/src/extractArgTypes.ts';
-import { generateSourceCode } from '../../../../renderers/vue3/src/docs/sourceDecorator.ts';
+import { extractArgTypes, generateSourceCode } from '@storybook/vue3/internal/docgen';
 import { expectCurrentOrBetter } from '../compare/expect-current-or-better.ts';
 import { recordArgTypesSnapshot } from '../compare/record-argtypes-snapshot.ts';
 import { BASELINE_PATH } from './baseline-path.ts';

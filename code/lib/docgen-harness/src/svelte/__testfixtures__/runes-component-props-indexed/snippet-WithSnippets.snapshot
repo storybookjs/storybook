@@ -1,0 +1,8 @@
+<Modal id="modal-snippets" open confirmType="primary">
+  {#snippet content()}
+    <p>Body</p>
+  {/snippet}
+  {#snippet footer()}
+    <small>Footer</small>
+  {/snippet}
+</Modal>

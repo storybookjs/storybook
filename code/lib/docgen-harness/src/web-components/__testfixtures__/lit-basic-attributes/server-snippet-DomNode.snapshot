@@ -1,0 +1,12 @@
+const DomNode = () => {
+  const el = document.createElement('lit-basic-attributes');
+  el.setAttribute('label', String('Open panel'));
+  el.setAttribute('count', String(7));
+  if (false) {
+    el.setAttribute('disabled', '');
+  }
+  if (true) {
+    el.setAttribute('is-open', '');
+  }
+  return el;
+};

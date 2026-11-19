@@ -1,5 +1,5 @@
 import * as domTestingLibrary from '@testing-library/dom';
-import type { FireFunction, FireObject } from '@testing-library/dom/types/events';
+import type { FireFunction, FireObject } from '@testing-library/dom';
 import * as _userEvent from '@testing-library/user-event';
 
 import { once } from 'storybook/internal/client-logger';

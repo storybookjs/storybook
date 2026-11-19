@@ -5,7 +5,10 @@ import { DEFAULT_PROFILE, QUICK_PROFILE, type SuiteProfile } from './config.ts';
 
 const savesPerScenario = (profile: SuiteProfile): Array<{ name: string; saves: number }> => [
   ...profile.react.map((scenario) => ({ name: `react/${scenario.shape}`, saves: scenario.saves })),
-  ...profile.vue.map((scenario) => ({ name: `vue/${scenario.name}`, saves: scenario.saves })),
+  ...[...profile.workspace, ...profile.svelte].map((scenario) => ({
+    name: `workspace/${scenario.name}`,
+    saves: scenario.saves,
+  })),
 ];
 
 describe.each([

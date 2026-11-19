@@ -162,5 +162,3 @@ function getAddonsStore(): AddonStore {
 }
 
 export const addons = getAddonsStore();
-
-export { mockChannel };

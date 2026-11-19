@@ -3,9 +3,9 @@ import { x } from 'tinyexec';
 import { mcpRequest, waitForMcpEndpoint, killPort, startStorybook, stopStorybook } from './helpers';
 
 /**
- * The git-unusable scenario (not a git repository, or git itself broken) with `changeDetection`
- * on: change detection legitimately answers "no changes detected", exactly as it did before the
- * toolset swap — the tool must stay in the agent's repertoire instead of erroring.
+ * The git-unusable scenario (not a git repository, or git itself broken): change detection
+ * legitimately answers "no changes detected", exactly as it did before the toolset swap — the
+ * tool must stay in the agent's repertoire instead of erroring.
  */
 
 const PORT = 6011;
@@ -18,7 +18,7 @@ describe('MCP endpoint when git is unusable', () => {
 	beforeAll(async () => {
 		await killPort(PORT);
 		// GIT_DIR pointing nowhere makes every git invocation fail, without touching the repo.
-		storybookProcess = startStorybook('.storybook', PORT, { GIT_DIR: '/nonexistent' });
+		({ storybookProcess } = await startStorybook('.storybook', PORT, { GIT_DIR: '/nonexistent' }));
 		await waitForMcpEndpoint(MCP_ENDPOINT);
 	}, STARTUP_TIMEOUT);
 

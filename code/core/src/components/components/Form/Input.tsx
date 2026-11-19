@@ -1,8 +1,8 @@
 import React, { type HTMLProps } from 'react';
 import { forwardRef } from 'react';
 
-import { useId } from '@react-aria/utils';
-import { styled } from 'storybook/theming';
+import { useId } from 'react-aria/useId';
+import { styled } from 'storybook/theming/emotion';
 
 import {
   type Alignments,

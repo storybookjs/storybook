@@ -1,0 +1,4 @@
+<Callbacks
+  onclick={<handler>}
+  onchange={<handler>}
+  format={<handler>}/>

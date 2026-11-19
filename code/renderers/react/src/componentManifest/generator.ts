@@ -1,5 +1,6 @@
 import {
   getStoryImportPathFromEntry,
+  getTypeScriptSpecifierForDocgen,
   selectComponentEntriesByComponentId,
 } from 'storybook/internal/common';
 import type { IndexEntry } from 'storybook/internal/types';
@@ -27,7 +28,7 @@ export const manifests: PresetPropertyFn<
     (await presets?.apply<Partial<TypescriptOptions>>('typescript', {})) ?? {};
   const features = await presets?.apply('features', {});
 
-  if (features?.experimentalDocgenServer) {
+  if (features?.docgenServer) {
     /**
      * Docgen payloads live in the open service when this flag is on; core reads them via JSON refs
      * and the HTML debugger. We still emit an empty `components` manifest so renderer-owned metadata
@@ -53,7 +54,9 @@ export const manifests: PresetPropertyFn<
 
   const startTime = performance.now();
   const manager =
-    docgenEngine === 'react-component-meta' ? await getSharedComponentMetaManager() : undefined;
+    docgenEngine === 'react-component-meta'
+      ? await getSharedComponentMetaManager(await getTypeScriptSpecifierForDocgen(options))
+      : undefined;
 
   const entriesByUniqueComponent = [
     ...selectComponentEntriesByComponentId(manifestEntries).values(),

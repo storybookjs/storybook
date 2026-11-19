@@ -1,49 +1,42 @@
 import {
   expectDisplayReviewForBrowseRequest,
-  expectPreviewBrowserStarted,
-  expectPreviewStoriesWithFinalLinks,
+  expectDevServerLeftRunning,
+  expectAnyWorkflowSkillInvoked,
   expectStoryIdsInDisplayReview,
-  expectValidStorybookLaunchConfig,
+  expectWorkflowCalls,
   getEvalContext,
-  isReviewEnabled,
 } from '#test-utils';
 import { describe, test } from 'vitest';
 
 describe('browsing existing ReviewCard Storybook states', () => {
-  const review = isReviewEnabled();
-
-  describe.runIf(review)('when review is enabled', () => {
-    test('publishes a display review for a browse request without changed files', () => {
-      expectDisplayReviewForBrowseRequest();
-    });
-
-    // The prompt asks for ALL ReviewCard states; the fixture is untouched by a
-    // browse request, so the three story ids are stable and must all be shown.
-    test('the review shows every existing ReviewCard story', () => {
-      expectStoryIdsInDisplayReview([
-        'reviewcard--default',
-        'reviewcard--with-long-comment',
-        'reviewcard--low-rating',
-      ]);
-    });
+  test('publishes a display review for a browse request without changed files', () => {
+    expectDisplayReviewForBrowseRequest();
   });
 
-  describe.runIf(!review)('when review is disabled', () => {
-    test('previews the existing ReviewCard stories for a browse request', () => {
-      expectPreviewStoriesWithFinalLinks({ covering: ['reviewcard'] });
-    });
+  // The prompt asks for ALL ReviewCard states; the fixture is untouched by a
+  // browse request, so the three story ids are stable and must all be shown.
+  test('the review shows every existing ReviewCard story', () => {
+    expectStoryIdsInDisplayReview([
+      'reviewcard--default',
+      'reviewcard--with-long-comment',
+      'reviewcard--low-rating',
+    ]);
   });
 
   describe('depending on the current agent and integration', () => {
-    const { agent, integration } = getEvalContext();
+    const { integration } = getEvalContext();
 
-    test.skipIf(agent !== 'claude-code' || integration !== 'plugin')(
-      'keeps the pre-existing Storybook launch config valid',
-      () => expectValidStorybookLaunchConfig()
-    );
+    test('runs the ui-review skill for a request to see stories', () => {
+      expectWorkflowCalls(['ui-review']);
+    });
 
-    test.skipIf(integration !== 'plugin')('opens the preview browser when using the plugin', () =>
-      expectPreviewBrowserStarted()
+    test.skipIf(integration === 'mcp')('finds the workflow through the plugin skills', () => {
+      expectAnyWorkflowSkillInvoked();
+    });
+
+    test.skipIf(integration !== 'plugin')(
+      'leaves the dev server running when using the plugin',
+      () => expectDevServerLeftRunning()
     );
   });
 });

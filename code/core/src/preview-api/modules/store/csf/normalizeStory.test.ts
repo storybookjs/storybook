@@ -4,8 +4,6 @@ import type { Renderer, StoryAnnotationsOrFn } from 'storybook/internal/types';
 
 import { normalizeStory } from './normalizeStory.ts';
 
-vi.mock('storybook/internal/client-logger');
-
 describe('normalizeStory', () => {
   describe('id generation', () => {
     it('respects component id', () => {
@@ -178,67 +176,6 @@ describe('normalizeStory', () => {
             "name": "story name",
             "parameters": {
               "storyParam": "val",
-            },
-            "tags": [],
-          }
-        `);
-        expect(moduleExport).toBe(storyObj);
-      });
-
-      it('prefers new annotations to legacy, but combines', () => {
-        const storyObj: StoryAnnotationsOrFn<Renderer> = {
-          name: 'story name',
-          parameters: { storyParam: 'val' },
-          decorators: [() => {}],
-          loaders: [async () => ({})],
-          args: { storyArg: 'val' },
-          argTypes: { storyArgType: { type: 'string' } },
-          story: {
-            parameters: { storyParam2: 'legacy' },
-            decorators: [() => {}],
-            loaders: [async () => ({})],
-            args: { storyArg2: 'legacy' },
-            argTypes: { storyArgType2: { type: 'string' } },
-          },
-        };
-        const meta = { id: 'title', title: 'title' };
-        const { moduleExport, ...normalized } = normalizeStory('storyExport', storyObj, meta);
-        expect(normalized).toMatchInlineSnapshot(`
-          {
-            "afterEach": [],
-            "argTypes": {
-              "storyArgType": {
-                "name": "storyArgType",
-                "type": {
-                  "name": "string",
-                },
-              },
-              "storyArgType2": {
-                "name": "storyArgType2",
-                "type": {
-                  "name": "string",
-                },
-              },
-            },
-            "args": {
-              "storyArg": "val",
-              "storyArg2": "legacy",
-            },
-            "beforeEach": [],
-            "decorators": [
-              [Function],
-              [Function],
-            ],
-            "globals": {},
-            "id": "title--story-export",
-            "loaders": [
-              [Function],
-              [Function],
-            ],
-            "name": "story name",
-            "parameters": {
-              "storyParam": "val",
-              "storyParam2": "legacy",
             },
             "tags": [],
           }

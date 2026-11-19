@@ -6,7 +6,7 @@
  * (`EvalData` / `schemaVersion`). When agent SDKs or transcript formats change, revisit the
  * parsers and migrations together.
  */
-import { execFileSync } from 'node:child_process';
+import { gh, ghJson } from '../utils/gh.ts';
 import { mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
@@ -788,9 +788,9 @@ function upsertProject(db: DatabaseSync, project: Project) {
       project_dir = excluded.project_dir
   `).run(project.githubSlug, project.name, project.branch, project.projectDir ?? null);
 
-  const row = db.prepare('SELECT id FROM projects WHERE github_slug = ?').get(project.githubSlug) as
-    | { id?: unknown }
-    | undefined;
+  const row = db
+    .prepare('SELECT id FROM projects WHERE github_slug = ?')
+    .get(project.githubSlug) as { id?: unknown } | undefined;
 
   return getRequiredInteger(row?.id, `projects.id for ${project.githubSlug}`);
 }
@@ -877,11 +877,7 @@ function fetchRepositoryBlob(repoSlug: string, filePath: string, ref: string) {
 
 function runGhJsonOrThrow<T>(args: string[]): T {
   try {
-    const stdout = execFileSync('gh', args, {
-      encoding: 'utf8',
-      maxBuffer: 50 * 1024 * 1024,
-    }).trim();
-    return JSON.parse(stdout) as T;
+    return ghJson<T>(args);
   } catch (error) {
     throw new Error(`gh ${args.join(' ')} failed: ${formatError(error)}`);
   }
@@ -889,10 +885,7 @@ function runGhJsonOrThrow<T>(args: string[]): T {
 
 function runGhBytes(args: string[], fallback: Buffer | null) {
   try {
-    return execFileSync('gh', args, {
-      encoding: 'buffer',
-      maxBuffer: 50 * 1024 * 1024,
-    });
+    return gh(args) as Buffer;
   } catch (error) {
     logger.logError(`gh ${args.join(' ')} failed: ${formatError(error)}`);
     return fallback;

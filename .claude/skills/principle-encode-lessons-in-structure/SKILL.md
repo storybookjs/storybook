@@ -1,1 +1,0 @@
-@../../../.agents/skills/principle-encode-lessons-in-structure/SKILL.md

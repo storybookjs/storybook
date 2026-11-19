@@ -1,0 +1,34 @@
+{
+  "customElementsManifest": {
+    "declaration": {
+      "attributes": [
+        {
+          "name": "beta-label",
+        },
+      ],
+      "customElement": true,
+      "description": "Second element defined by the same module.",
+      "kind": "class",
+      "members": [
+        {
+          "description": "Beta label.",
+          "kind": "field",
+          "name": "betaLabel",
+        },
+      ],
+      "name": "MultiBeta",
+      "superclass": {
+        "name": "HTMLElement",
+      },
+      "tagName": "multi-beta",
+    },
+    "manifestPath": "custom-elements.json",
+  },
+  "description": "Second element defined by the same module.",
+  "id": "vanilla-multi-definition",
+  "jsDocTags": {},
+  "name": "multi-beta",
+  "path": "./input.stories.ts",
+  "renderer": "web-components",
+  "summary": undefined,
+}

@@ -1,0 +1,170 @@
+{
+  "argTypes": {
+    "--demo-wc-card-back-color": {
+      "description": "Font color for back",
+      "name": "--demo-wc-card-back-color",
+      "table": {
+        "category": "css custom properties",
+        "defaultValue": {},
+        "type": {}
+      },
+      "type": {
+        "name": "string"
+      }
+    },
+    "--demo-wc-card-front-color": {
+      "description": "Font color for front",
+      "name": "--demo-wc-card-front-color",
+      "table": {
+        "category": "css custom properties",
+        "defaultValue": {},
+        "type": {}
+      },
+      "type": {
+        "name": "string"
+      }
+    },
+    "--demo-wc-card-header-font-size": {
+      "description": "Header font size",
+      "name": "--demo-wc-card-header-font-size",
+      "table": {
+        "category": "css custom properties",
+        "defaultValue": {},
+        "type": {}
+      },
+      "type": {
+        "name": "string"
+      }
+    },
+    "back-part": {
+      "description": "Back of the card",
+      "name": "back",
+      "table": {
+        "category": "css shadow parts"
+      },
+      "type": {
+        "name": "string"
+      }
+    },
+    "back-side": {
+      "description": "Indicates that the back of the card is shown",
+      "name": "back-side",
+      "table": {
+        "category": "attributes",
+        "defaultValue": {
+          "summary": "false"
+        },
+        "type": {
+          "summary": "boolean"
+        }
+      },
+      "type": {
+        "name": "boolean"
+      }
+    },
+    "backSide": {
+      "description": "Indicates that the back of the card is shown",
+      "name": "backSide",
+      "table": {
+        "category": "properties",
+        "defaultValue": {
+          "summary": "false"
+        },
+        "type": {
+          "summary": "boolean"
+        }
+      },
+      "type": {
+        "name": "boolean"
+      }
+    },
+    "front-part": {
+      "description": "Front of the card",
+      "name": "front",
+      "table": {
+        "category": "css shadow parts"
+      },
+      "type": {
+        "name": "string"
+      }
+    },
+    "header": {
+      "description": "Header message",
+      "name": "header",
+      "table": {
+        "category": "attributes",
+        "defaultValue": {
+          "summary": "'Your Message'"
+        },
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string"
+      }
+    },
+    "prefix-slot": {
+      "description": "Label prefix",
+      "name": "prefix",
+      "table": {
+        "category": "slots"
+      },
+      "type": {
+        "name": "string"
+      }
+    },
+    "rows": {
+      "description": "Data rows",
+      "name": "rows",
+      "table": {
+        "category": "attributes",
+        "defaultValue": {
+          "summary": "[]"
+        },
+        "type": {
+          "summary": "array"
+        }
+      },
+      "type": {
+        "name": "array",
+        "value": {
+          "name": "other",
+          "value": ""
+        }
+      }
+    },
+    "side-changed-event": {
+      "control": false,
+      "description": "Fires whenever it switches between front/back",
+      "name": "side-changed",
+      "table": {
+        "category": "events",
+        "type": {
+          "summary": "CustomEvent"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "CustomEvent"
+      }
+    },
+    "toggle-method": {
+      "name": "toggle",
+      "table": {
+        "category": "methods",
+        "type": {
+          "summary": "()"
+        }
+      },
+      "type": {
+        "name": "function"
+      }
+    }
+  },
+  "description": "This is a container looking like a card with a back and front side you can switch",
+  "id": "stories-renderers-web-components-demo-wc-card",
+  "jsDocTags": {},
+  "name": "demo-wc-card",
+  "path": "./src/stories/renderers/web-components/demo-wc-card.stories.js"
+}

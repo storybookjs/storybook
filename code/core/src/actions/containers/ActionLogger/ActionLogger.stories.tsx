@@ -5,7 +5,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { API, State } from 'storybook/manager-api';
 import { ManagerContext } from 'storybook/manager-api';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import type { ActionDisplay } from '../../models/index.ts';
 import { EVENT_ID } from '../../constants.ts';
@@ -94,10 +94,10 @@ const meta = {
   args: {
     active: true,
   },
-} as Meta<typeof ActionLogger>;
+} satisfies Meta<typeof ActionLogger>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<Meta<typeof ActionLogger>>;
 
 export const Empty: Story = {};
 

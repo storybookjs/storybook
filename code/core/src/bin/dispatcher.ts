@@ -5,10 +5,10 @@ import { pathToFileURL } from 'node:url';
 import { logger } from 'storybook/internal/node-logger';
 
 import { join } from 'pathe';
-import { getProcessAncestry } from 'process-ancestry';
 import { dedent } from 'ts-dedent';
 
 import { MIN_SUPPORTED_NODE_DESCRIPTION, isNodeVersionSupported } from '../common/node-version.ts';
+import { getProcessAncestry } from '../common/utils/process-ancestry.ts';
 import versions from '../common/versions.ts';
 import { resolvePackageDir } from '../shared/utils/module.ts';
 
@@ -17,14 +17,13 @@ import { resolvePackageDir } from '../shared/utils/module.ts';
  *
  * This function serves as the main entry point for Storybook CLI operations.
  *
- * - Core Storybook commands (dev, build, index, ai, tools, skills) are routed to the core binary at
- *   storybook/dist/bin/core.js — `ai`, `tools`, and `skills` are bundled because agent workflows
- *   invoke them repeatedly and must never wait on an npx download
+ * - Core Storybook commands (dev, build, index, tools, skills) are routed to the core binary at
+ *   storybook/dist/bin/core.js — `tools` and `skills` are bundled because agent workflows invoke
+ *   them repeatedly and must never wait on an npx download
  * - Init is routed to the create-storybook package via the detected package manager
  * - External CLI tools (upgrade, doctor, etc.) are routed to @storybook/cli the same way
  */
-const [major, minor, patch] = process.versions.node.split('.').map(Number);
-if (!isNodeVersionSupported(major, minor, patch)) {
+if (!isNodeVersionSupported(process.versions.node)) {
   logger.error(
     dedent`To run Storybook, you need Node.js version ${MIN_SUPPORTED_NODE_DESCRIPTION}.
     You are currently running Node.js ${process.version}. Please upgrade your Node.js installation.`
@@ -33,18 +32,25 @@ if (!isNodeVersionSupported(major, minor, patch)) {
 }
 
 async function run() {
-  // TODO: remove try/catch in SB 11 where Node 22 is the minimum supported version
-  try {
-    Module.enableCompileCache?.();
-  } catch {}
+  Module.enableCompileCache();
 
   const args = process.argv.slice(2);
 
-  if (args[0] === 'ai' || (args[0] === 'tools' && !args.includes('--no-attach'))) {
+  // Agents that learned `storybook ai setup` from Storybook 10 docs keep calling it, and the generic
+  // "Did you mean add?" fallback would steer them to the wrong command. Remove in Storybook 12.
+  if (args[0] === 'ai') {
+    logger.error(
+      dedent`The \`storybook ai\` command was removed in Storybook 11.
+      Run \`npx storybook skills setup\` instead of \`storybook ai setup\`, and \`npx storybook tools\` for the other \`ai\` subcommands.`
+    );
+    process.exit(1);
+  }
+
+  if (args[0] === 'tools' && !args.includes('--no-attach')) {
     process.env.STORYBOOK_ATTACHED_TOOLS = 'true';
   }
 
-  if (['dev', 'build', 'index', 'ai', 'tools', 'skills'].includes(args[0])) {
+  if (['dev', 'build', 'index', 'tools', 'skills'].includes(args[0])) {
     const coreBin = pathToFileURL(join(resolvePackageDir('storybook'), 'dist/bin/core.js')).href;
     await import(coreBin);
     return;

@@ -25,6 +25,7 @@ type FontOptions = {
   fontFamily: string;
   props: {
     src?: string | Array<{ path: string; weight?: string; style?: string }>;
+    display?: 'auto' | 'block' | 'swap' | 'fallback' | 'optional';
   };
   source: string;
 };

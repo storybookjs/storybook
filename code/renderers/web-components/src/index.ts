@@ -9,7 +9,7 @@ export * from './framework-api.ts';
 export * from './portable-stories.ts';
 export * from './preview.ts';
 
-export type { WebComponentsTypes } from './types.ts';
+export type { WebComponentsFrameworkOptions, WebComponentsTypes } from './types.ts';
 
 // TODO: disable HMR and do full page loads because of customElements.define
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment

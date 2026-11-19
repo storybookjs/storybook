@@ -1,8 +1,6 @@
 import type { ModuleExports, NormalizedProjectAnnotations } from 'storybook/internal/types';
 import type { Renderer } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
-
 import { combineParameters } from '../parameters.ts';
 import { composeBeforeAllHooks } from './beforeAll.ts';
 import { normalizeArrays } from './normalizeArrays.ts';
@@ -17,12 +15,11 @@ export function getField<TFieldType = any>(
 
 export function getArrayField<TFieldType = any>(
   moduleExportList: ModuleExports[],
-  field: string,
-  options: { reverseFileOrder?: boolean } = {}
+  field: string
 ): TFieldType[] {
   return getField(moduleExportList, field).reduce((prev: any, cur: any) => {
     const normalized = normalizeArrays(cur);
-    return options.reverseFileOrder ? [...normalized, ...prev] : [...prev, ...normalized];
+    return [...prev, ...normalized];
   }, []);
 }
 
@@ -49,9 +46,7 @@ export function composeConfigs<TRenderer extends Renderer>(
 
   return {
     parameters: combineParameters(...getField(moduleExportList, 'parameters')),
-    decorators: getArrayField(moduleExportList, 'decorators', {
-      reverseFileOrder: !(global.FEATURES?.legacyDecoratorFileOrder ?? false),
-    }),
+    decorators: getArrayField([...moduleExportList].reverse(), 'decorators'),
     args: getObjectField(moduleExportList, 'args'),
     argsEnhancers: getArrayField(moduleExportList, 'argsEnhancers'),
     argTypes: getObjectField(moduleExportList, 'argTypes'),

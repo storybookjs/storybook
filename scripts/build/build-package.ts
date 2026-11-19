@@ -17,12 +17,9 @@ import { join, relative } from 'pathe';
 import picocolors from 'picocolors';
 import prettyTime from 'pretty-hrtime';
 
-import { buildEntries, hasPrebuild, isBuildEntries } from './entry-configs.ts';
-import { measure } from './utils/entry-utils.ts';
+import { type BuildEntries, measure } from './utils/entry-utils.ts';
 import { generateBundle } from './utils/generate-bundle.ts';
 import { generatePackageJsonFile } from './utils/generate-package-json.ts';
-import { generateTypesFiles } from './utils/generate-types.ts';
-import { generateTypesFiles as generateTypesFilesRolldown } from './utils/generate-types-rolldown.ts';
 
 const {
   values: {
@@ -52,6 +49,11 @@ if (dtsResolver !== 'tsc' && dtsResolver !== 'oxc' && dtsResolver !== 'hybrid') 
 }
 const resolvedDtsResolver: 'tsc' | 'oxc' | 'hybrid' = dtsResolver;
 
+if (dtsBundler !== 'rolldown-tsgo' && dtsBundler !== 'rolldown') {
+  throw new Error(`Invalid --dts-bundler: ${dtsBundler} (expected 'rolldown-tsgo' or 'rolldown')`);
+}
+const resolvedDtsBundler: 'rolldown-tsgo' | 'rolldown' = dtsBundler;
+
 async function run() {
   const DIR_ROOT = join(import.meta.dirname, '..', '..');
   const DIR_CWD = cwd ? join(DIR_ROOT, cwd) : process.cwd();
@@ -80,43 +82,31 @@ async function run() {
 
   const name = pkg.name;
 
-  if (!isBuildEntries(name)) {
-    throw new Error(`TODO BETTER ERROR: No build entries found for package ${pkg.name}`);
-  }
-
-  const entry = buildEntries[name];
+  const { default: entry } = (await import(
+    pathToFileURL(join(DIR_CWD, 'build-config.ts')).href
+  )) as { default: BuildEntries };
 
   let prebuildTime: Awaited<ReturnType<typeof measure>> | undefined;
 
-  if (hasPrebuild(entry)) {
+  if (entry.prebuild) {
+    const { prebuild } = entry;
     console.log(`Running prebuild script`);
-    prebuildTime = await measure(() => entry.prebuild(DIR_CWD));
+    prebuildTime = await measure(() => prebuild(DIR_CWD));
   }
 
   await generatePackageJsonFile(DIR_CWD, entry);
 
   const [bundleTime, typesTime] = await Promise.all([
     measure(async () => generateBundle({ cwd: DIR_CWD, entry, name, isWatch })),
+    // The d.ts toolchain (typescript, rolldown, rolldown-plugin-dts) is imported lazily: dev
+    // builds never need it, and in production its import no longer delays the esbuild start.
     measure(async () => {
       if (isProduction) {
-        switch (entry.dtsBundler ?? dtsBundler) {
-          case 'rolldown':
-            await generateTypesFilesRolldown(DIR_CWD, entry, {
-              tsgo: false,
-              resolver: resolvedDtsResolver,
-            });
-            break;
-          case 'rolldown-tsgo':
-            await generateTypesFilesRolldown(DIR_CWD, entry, {
-              tsgo: true,
-              resolver: resolvedDtsResolver,
-            });
-            break;
-          case 'rollup':
-          default:
-            await generateTypesFiles(DIR_CWD, entry);
-            break;
-        }
+        const { generateTypesFiles } = await import('./utils/generate-types-rolldown.ts');
+        await generateTypesFiles(DIR_CWD, entry, {
+          tsgo: (entry.dtsBundler ?? resolvedDtsBundler) === 'rolldown-tsgo',
+          resolver: resolvedDtsResolver,
+        });
       }
     }),
   ]);

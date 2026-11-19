@@ -86,7 +86,7 @@ describe('bootstrapToolsRuntime', () => {
           ok: {
             title: 'ok',
             description: 'ok',
-            input: v.object({}),
+            input: v.strictObject({}),
             handler: async () => ({ ok: true as const, data: {}, markdown: '' }),
           },
         },

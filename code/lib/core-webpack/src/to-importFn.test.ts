@@ -212,6 +212,27 @@ describe('toImportFn - webpackIncludeRegexp', () => {
     expect(isNotMatchedForValidPaths).toEqual([]);
     expect(isMatchedForInvalidPaths).toEqual([]);
   });
+
+  it('matches native Windows paths on Windows', () => {
+    const originalPlatform = process.platform;
+    Object.defineProperty(process, 'platform', { value: 'win32', configurable: true });
+
+    try {
+      const regex = webpackIncludeRegexp(
+        normalizeStoriesEntry('../src/**/*.stories.tsx', {
+          configDir: '/Users/user/code/.storybook',
+          workingDir: '/Users/user/code/',
+        })
+      );
+
+      expect(regex.test('C:\\Users\\user\\code\\src\\components\\Button.stories.tsx')).toBe(true);
+      expect(regex.test('C:\\Users\\user\\code\\src\\node_modules\\pkg\\Button.stories.tsx')).toBe(
+        false
+      );
+    } finally {
+      Object.defineProperty(process, 'platform', { value: originalPlatform, configurable: true });
+    }
+  });
 });
 
 describe('toImportFn - generated code', () => {

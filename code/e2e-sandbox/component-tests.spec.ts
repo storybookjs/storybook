@@ -13,7 +13,6 @@ test.describe('interactions', () => {
   });
 
   test('should have interactions', async ({ page }) => {
-    // templateName is e.g. 'vue-cli/default-js'
     test.skip(
       /^(lit)/i.test(`${templateName}`),
       `Skipping ${templateName}, which does not support interactions`
@@ -45,7 +44,6 @@ test.describe('interactions', () => {
   });
 
   test('should step through interactions', async ({ page, browserName }) => {
-    // templateName is e.g. 'vue-cli/default-js'
     test.skip(
       /^(lit)/i.test(`${templateName}`),
       `Skipping ${templateName}, which does not support interactions`

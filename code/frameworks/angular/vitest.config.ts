@@ -9,6 +9,9 @@ export default mergeConfig(
     test: {
       globals: true,
       setupFiles: ['src/test-setup.ts'],
+      typecheck: {
+        enabled: true,
+      },
     },
   })
 );

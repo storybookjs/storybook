@@ -1,12 +1,15 @@
 /// <reference types="node" />
-import npmLog from 'npmlog';
 import prettyTime from 'pretty-hrtime';
 
 import * as newLogger from './logger/logger.ts';
 
 export { prompt } from './prompts/index.ts';
 export { logTracker } from './logger/log-tracker.ts';
-export type { SpinnerInstance, TaskLogInstance } from './prompts/prompt-provider-base.ts';
+export type {
+  SpinnerInstance,
+  TaskLogInstance,
+  PromptCancelReason,
+} from './prompts/prompt-provider-base.ts';
 export { protectUrls, createHyperlink } from './wrap-utils.ts';
 export { CLI_COLORS } from './logger/colors.ts';
 export { ConsoleLogger, StyledConsoleLogger } from './logger/console.ts';
@@ -14,23 +17,7 @@ export { ConsoleLogger, StyledConsoleLogger } from './logger/console.ts';
 export type { BoxOptions, LogLevel } from './logger/logger.ts';
 export type { LogMessageOptions } from '@clack/prompts';
 
-// The default is stderr, which can cause some tools (like rush.js) to think
-// there are issues with the build: https://github.com/storybookjs/storybook/issues/14621
-npmLog.stream = process.stdout;
-
-const toNpmLogLevel = (level: newLogger.LogLevel): string => {
-  switch (level) {
-    case 'trace':
-      return 'silly';
-    case 'debug':
-      return 'verbose';
-    default:
-      return level;
-  }
-};
-
 const setLoggerLevel = (level: newLogger.LogLevel = 'info'): void => {
-  npmLog.level = toNpmLogLevel(level);
   newLogger.setLogLevel(level);
 };
 
@@ -89,8 +76,6 @@ export const logger = {
     newLogger.error(msg.replaceAll(process.cwd(), '.'));
   },
 };
-
-export { npmLog as instance };
 
 const logged = new Set();
 export const once = (type: 'verbose' | 'info' | 'warn' | 'error') => (message: string) => {

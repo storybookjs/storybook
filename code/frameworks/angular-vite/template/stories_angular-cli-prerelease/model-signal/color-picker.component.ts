@@ -7,7 +7,9 @@ import { Component, model } from '@angular/core';
   template: `
     <div>
       <span data-testid="current-color">{{ color() }}</span>
-      <button type="button" data-testid="emit-green" (click)="color.set('#00FF00')">Set green</button>
+      <button type="button" data-testid="emit-green" (click)="color.set('#00FF00')">
+        Set green
+      </button>
     </div>
   `,
   styleUrls: ['./color-picker.css'],

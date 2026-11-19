@@ -180,6 +180,36 @@ beforeEach(() => {
   });
 });
 
+describe('createServiceDocsAccess listNames', () => {
+  it('names components and standalone docs by their title, without docgen', async () => {
+    const names = await createAccess().listNames!();
+
+    expect(names).toEqual([
+      { id: 'zebra', name: 'zebra' },
+      { id: 'alpha', name: 'alpha' },
+      { id: 'only-docs', name: 'only-docs' },
+      { id: 'guide--docs', name: 'guide' },
+    ]);
+    expect(docgenForAllComponents).not.toHaveBeenCalled();
+  });
+
+  it('names a component by the last segment of its title, without spaces', async () => {
+    index = {
+      v: 5,
+      entries: {
+        'forms-text-field--primary': {
+          ...storyEntry('forms-text-field--primary', 'Primary', ['manifest']),
+          title: 'Forms/Text Field',
+        },
+      },
+    };
+
+    expect(await createAccess().listNames!()).toEqual([
+      { id: 'forms-text-field', name: 'TextField' },
+    ]);
+  });
+});
+
 describe('createServiceDocsAccess list', () => {
   it('lists manifest-tagged components in story-index order', async () => {
     const manifests = await createAccess().list({ withStoryIds: false });
@@ -235,7 +265,9 @@ describe('createServiceDocsAccess list', () => {
 
     expect(manifests.docsManifest).toEqual({
       v: 1,
-      docs: { 'guide--docs': { id: 'guide--docs', name: 'Guide', summary: 'Intro' } },
+      docs: {
+        'guide--docs': { id: 'guide--docs', name: 'Guide', title: 'guide', summary: 'Intro' },
+      },
     });
   });
 
@@ -246,7 +278,7 @@ describe('createServiceDocsAccess list', () => {
 
     expect(manifests.docsManifest).toEqual({
       v: 1,
-      docs: { 'guide--docs': { id: 'guide--docs', name: 'Guide' } },
+      docs: { 'guide--docs': { id: 'guide--docs', name: 'Guide', title: 'guide' } },
     });
   });
 

@@ -3,7 +3,7 @@ import {
   STORY_ARGS_UPDATED,
   UPDATE_STORY_ARGS,
 } from 'storybook/internal/core-events';
-import type { PartialStoryFn, PlayFunctionContext, StoryContext } from 'storybook/internal/types';
+import type { PartialStoryFn, StoryContext } from 'storybook/internal/types';
 
 import { global as globalThis } from '@storybook/global';
 
@@ -46,7 +46,7 @@ export const Inheritance = {
       a: 'story',
     },
   },
-  play: async ({ canvasElement }: PlayFunctionContext<any>) => {
+  play: async ({ canvasElement }: StoryContext<any>) => {
     // NOTE: these stories don't test project-level args inheritance as it is too problematic
     // to have an arg floating around that will apply too *all* other stories in our sandboxes.
     await expect(JSON.parse(within(canvasElement).getByTestId('pre').innerText)).toEqual({
@@ -68,7 +68,7 @@ export const Targets = {
     a: { target: 'elsewhere' },
   },
   parameters: { argNames: ['a', 'b'] },
-  play: async ({ canvasElement }: PlayFunctionContext<any>) => {
+  play: async ({ canvasElement }: StoryContext<any>) => {
     // Check that `a` doesn't end up set
     await expect(JSON.parse(within(canvasElement).getByTestId('pre').innerText)).toEqual({
       b: 'b',
@@ -82,7 +82,7 @@ export const Events = {
     test: 'initial',
   },
   parameters: { argNames: ['test'] },
-  play: async ({ canvasElement, id }: PlayFunctionContext<any>) => {
+  play: async ({ canvasElement, id }: StoryContext<any>) => {
     const channel = globalThis.__STORYBOOK_ADDONS_CHANNEL__;
     await channel.emit(RESET_STORY_ARGS, { storyId: id });
     await new Promise((resolve) => channel.once(STORY_ARGS_UPDATED, resolve));

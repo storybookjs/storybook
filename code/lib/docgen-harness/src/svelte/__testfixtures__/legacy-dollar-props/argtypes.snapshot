@@ -1,0 +1,68 @@
+{
+  "kind": {
+    "control": {
+      "type": "radio",
+    },
+    "description": "Button kind.",
+    "name": "kind",
+    "options": [
+      "filled",
+      "outline",
+    ],
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": ""filled"",
+      },
+      "type": {
+        "summary": ""filled" | "outline"",
+      },
+    },
+    "type": {
+      "name": ""filled" | "outline"",
+      "required": false,
+    },
+  },
+  "onClick": {
+    "control": null,
+    "description": "Click callback.",
+    "name": "onClick",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "(e: MouseEvent) => void",
+      },
+    },
+    "type": {
+      "name": "(e: MouseEvent) => void",
+      "required": false,
+    },
+  },
+  "size": {
+    "control": {
+      "type": "radio",
+    },
+    "description": "Button size.",
+    "name": "size",
+    "options": [
+      "small",
+      "large",
+    ],
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": ""small"",
+      },
+      "type": {
+        "summary": ""small" | "large"",
+      },
+    },
+    "type": {
+      "name": ""small" | "large"",
+      "required": false,
+    },
+  },
+}

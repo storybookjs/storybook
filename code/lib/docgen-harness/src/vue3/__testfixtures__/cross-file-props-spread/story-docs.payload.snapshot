@@ -15,6 +15,13 @@ import CrossFilePropsSpread from './CrossFilePropsSpread.vue';
   <CrossFilePropsSpread label="Text label" :optional="false" value="hello" />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import CrossFilePropsSpread from './CrossFilePropsSpread.vue';
+</script>
+
+<template>
+  <CrossFilePropsSpread⟦attr label ~" "⟫ label="Text label"⟧⟦attr optional ~" "⟫ :optional="false"⟧⟦attr value ~" "⟫ value="hello"⟧⟦props * except=["value","label","optional"] ~" "⟫⟧ />
+</template>",
     },
   },
 }

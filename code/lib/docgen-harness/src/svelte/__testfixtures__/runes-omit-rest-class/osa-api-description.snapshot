@@ -1,0 +1,18 @@
+## Props
+
+```
+export type InputProps = {
+  /** CSS class string. */
+  class?: string & (ClassValue | null) = "";
+  /** Input element reference. */
+  input?: HTMLInputElement; // bind:input={...}
+  /** Current input value. */
+  value?: any = ""; // bind:value={...}
+  /** Font family choice. */
+  font?: "mono" | "normal" = "normal";
+  /** Value change callback. */
+  onchange?: (v: string, valid: boolean) => void;
+  /** Validation function or functions. */
+  validate?: Validator | Validator[];
+} & Omit<HTMLInputAttributes, "onchange" | "oninput">
+```

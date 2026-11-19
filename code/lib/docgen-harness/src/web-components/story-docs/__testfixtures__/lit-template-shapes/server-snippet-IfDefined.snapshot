@@ -1,0 +1,4 @@
+html`<lit-template-shapes
+  label=${ifDefined(undefined)}
+  count=${ifDefined(4)}
+></lit-template-shapes>`

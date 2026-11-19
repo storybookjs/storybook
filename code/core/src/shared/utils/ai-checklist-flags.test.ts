@@ -90,7 +90,7 @@ describe('ai-checklist-flags', () => {
     });
 
     it('returns false when the cached configDir is for a sibling monorepo project', async () => {
-      // Regression: running `storybook ai setup` in one repo must not flip
+      // Regression: running `storybook skills setup` in one repo must not flip
       // another repo's checklist to "done".
       mockCacheStore.set('ai-setup-ran', {
         timestamp: Date.now(),

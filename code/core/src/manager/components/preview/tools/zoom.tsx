@@ -7,7 +7,7 @@ import type { Addon_BaseType } from 'storybook/internal/types';
 import { UndoIcon, ZoomIcon } from '@storybook/icons';
 
 import { types, useStorybookApi } from 'storybook/manager-api';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import { Shortcut } from '../../Shortcut.tsx';
 import { NumericInput } from '../NumericInput.tsx';
@@ -68,6 +68,7 @@ export const Zoom = memo<{
 
   return (
     <PopoverProvider
+      ariaLabel="Zoom controls"
       padding="none"
       onVisibleChange={(isVisible) => {
         if (isVisible) {
@@ -83,7 +84,13 @@ export const Zoom = memo<{
                 ref={inputRef}
                 unit="%"
                 before={
-                  <ActionList.Button size="small" padding="small" readOnly aria-hidden>
+                  <ActionList.Button
+                    ariaLabel={false}
+                    size="small"
+                    padding="small"
+                    readOnly
+                    aria-hidden
+                  >
                     <ZoomIcon />
                   </ActionList.Button>
                 }
@@ -263,6 +270,6 @@ export const zoomTool: Addon_BaseType = {
   title: 'zoom',
   id: 'zoom',
   type: types.TOOL,
-  match: ({ viewMode, tabId }) => viewMode === 'story' && !tabId,
+  match: ({ viewMode }) => viewMode === 'story',
   render: () => <ZoomConsumer>{(zoomContext) => <ZoomWrapper {...zoomContext} />}</ZoomConsumer>,
 };

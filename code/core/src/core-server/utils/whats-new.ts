@@ -1,5 +1,3 @@
-import { writeFile } from 'node:fs/promises';
-
 import type { Channel } from 'storybook/internal/channels';
 import { findConfigFile, loadMainConfig } from 'storybook/internal/common';
 import type { WhatsNewCache, WhatsNewData } from 'storybook/internal/core-events';
@@ -10,7 +8,7 @@ import {
   TELEMETRY_ERROR,
   TOGGLE_WHATS_NEW_NOTIFICATIONS,
 } from 'storybook/internal/core-events';
-import { printConfig, readConfig } from 'storybook/internal/csf-tools';
+import { readConfig, writeConfig } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
 import type { CoreConfig, Options } from 'storybook/internal/types';
@@ -86,8 +84,8 @@ export function initializeWhatsNew(channel: Channel, options: OptionsWithRequire
             `Unable to parse Storybook main file while trying to read 'core' property`
           );
         }
-        main.setFieldValue(['core', 'disableWhatsNewNotifications'], disableWhatsNewNotifications);
-        await writeFile(mainPath, printConfig(main).code);
+        main.set(['core', 'disableWhatsNewNotifications'], disableWhatsNewNotifications);
+        await writeConfig(main, mainPath);
         await telemetry('core-config', { disableWhatsNewNotifications });
       } catch (error) {
         invariant(error instanceof Error);

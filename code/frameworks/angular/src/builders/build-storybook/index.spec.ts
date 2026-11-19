@@ -1,7 +1,7 @@
 import { Architect, createBuilder } from '@angular-devkit/architect';
 import { TestingArchitectHost } from '@angular-devkit/architect/testing';
 import { schema } from '@angular-devkit/core';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildStaticStandalone } from 'storybook/internal/core-server';
 import { JsPackageManagerFactory } from 'storybook/internal/common';
 
@@ -72,6 +72,7 @@ describe('Build Storybook Builder', () => {
     );
 
     // Manually add the builder, as angular uses `require` calls in addBuilderFromPackage which bypass mocking
+    assert(schema.isJsonSchema(buildSchema));
     architectHost.addBuilder('@storybook/angular:build-storybook', handler, '', buildSchema);
   });
 

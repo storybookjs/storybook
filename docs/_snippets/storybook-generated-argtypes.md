@@ -3,7 +3,6 @@ const argTypes = {
   label: {
     name: 'label',
     type: { name: 'string', required: false },
-    defaultValue: 'Hello',
     description: 'demo description',
     table: {
       type: { summary: 'string' },

@@ -5,8 +5,7 @@ import { type Template } from '../code/lib/cli-storybook/src/sandbox-templates.t
 import * as templates from '../code/lib/cli-storybook/src/sandbox-templates.ts';
 
 // @ts-expect-error somehow TS thinks there is a default export
-const { allTemplates, merged, daily, normal } = (templates.default ||
-  templates) as typeof templates;
+const { allTemplates, daily, normal } = (templates.default || templates) as typeof templates;
 
 const projectJson = (
   name: string,
@@ -62,16 +61,6 @@ const projectJson = (
       : {
           'e2e-tests-dev': {},
         }),
-    ...(template.skipTasks && template.skipTasks.includes('test-runner')
-      ? {}
-      : {
-          'test-runner': {},
-        }),
-    ...(template.skipTasks && template.skipTasks.includes('test-runner-dev')
-      ? {}
-      : {
-          'test-runner-dev': {},
-        }),
   },
   tags,
 });
@@ -89,7 +78,6 @@ await Promise.all(
     console.log();
     const tags = [
       ...(normal.includes(key as any) && !value.inDevelopment ? ['ci:normal'] : []),
-      ...(merged.includes(key as any) && !value.inDevelopment ? ['ci:merged'] : []),
       ...(daily.includes(key as any) && !value.inDevelopment ? ['ci:daily'] : []),
     ];
     ensureDirectoryExistence(full);

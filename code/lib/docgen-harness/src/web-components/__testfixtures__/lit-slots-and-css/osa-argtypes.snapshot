@@ -1,0 +1,64 @@
+{
+  "--slot-panel-color": {
+    "description": "Panel text color.",
+    "name": "--slot-panel-color",
+    "table": {
+      "category": "css custom properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": undefined,
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+  "actions-slot": {
+    "description": "Action controls.",
+    "name": "actions",
+    "table": {
+      "category": "slots",
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+  "default-slot": {
+    "description": "Default body content.",
+    "name": "default",
+    "table": {
+      "category": "slots",
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+  "heading": {
+    "description": "Heading above the projected content.",
+    "name": "heading",
+    "table": {
+      "category": "attributes",
+      "defaultValue": {
+        "summary": "'Details'",
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+  "panel-part": {
+    "description": "Outer panel.",
+    "name": "panel",
+    "table": {
+      "category": "css shadow parts",
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+}

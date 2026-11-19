@@ -10,7 +10,7 @@ import { PopOutIcon } from '@storybook/icons';
 
 import { Consumer, types } from 'storybook/manager-api';
 import type { Combo } from 'storybook/manager-api';
-import { styled, useTheme } from 'storybook/theming';
+import { styled, useTheme } from 'storybook/theming/emotion';
 
 const mapper = ({ api, state }: Combo) => {
   const { storyId, refId } = state;
@@ -85,7 +85,7 @@ export const isolationModeTool: Addon_BaseType = {
   title: 'isolation mode',
   id: 'isolationMode',
   type: types.TOOLEXTRA,
-  match: ({ viewMode, tabId }) => viewMode === 'story' && !tabId,
+  match: ({ viewMode }) => viewMode === 'story',
   render: () => (
     <Consumer filter={mapper}>
       {({ api, storyId, refId }) => {

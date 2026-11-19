@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { resolveDevCommandOptions } from './dev-options.ts';
 
@@ -12,10 +12,6 @@ const getErrorMessage = (callback: () => unknown) => {
 };
 
 describe('resolveDevCommandOptions', () => {
-  afterEach(() => {
-    vi.unstubAllEnvs();
-  });
-
   it('preserves truthy getEnvConfig-style env overrides for existing dev options', () => {
     expect(
       resolveDevCommandOptions(
@@ -98,65 +94,23 @@ describe('resolveDevCommandOptions', () => {
     });
   });
 
-  it('defaults browser opening to false for Claude preview launches', () => {
-    expect(
-      resolveDevCommandOptions(
-        { open: true },
-        { env: { CLAUDE_AGENT_SDK_VERSION: '0.1.0' }, agent: null }
-      )
-    ).toMatchObject({
+  it('does not open the browser by default', () => {
+    expect(resolveDevCommandOptions({}, { env: {} })).toMatchObject({
       open: false,
     });
   });
 
-  it('keeps the browser opening default outside Claude preview', () => {
-    expect(resolveDevCommandOptions({ open: true }, { env: {}, agent: null })).toMatchObject({
-      open: true,
-    });
-  });
-
-  it.each([
-    ['CLAUDECODE', '1'],
-    ['CODEX_SANDBOX', '1'],
-    ['CODEX_THREAD_ID', '1'],
-    ['CURSOR_AGENT', '1'],
-    ['AI_AGENT', 'my-custom-agent'],
-  ])('suppresses browser opening when %s marks an AI agent environment', (name, value) => {
-    vi.stubEnv(name, value);
-
+  it('opens the browser when requested', () => {
     expect(resolveDevCommandOptions({ open: true }, { env: {} })).toMatchObject({
-      open: false,
-    });
-  });
-
-  it('lets callers opt out of ambient agent detection with agent: null', () => {
-    vi.stubEnv('CLAUDECODE', '1');
-
-    expect(resolveDevCommandOptions({ open: true }, { env: {}, agent: null })).toMatchObject({
       open: true,
     });
   });
 
-  it('keeps explicit --port precedence over PORT in agent shells outside Claude preview', () => {
-    vi.stubEnv('CLAUDECODE', '1');
-
-    expect(resolveDevCommandOptions({ port: '7007' }, { env: { PORT: '6123' } })).toMatchObject({
-      open: false,
-      port: 7007,
-    });
-  });
-
-  it('keeps Claude preview PORT precedence when an agent environment is also detected', () => {
-    vi.stubEnv('CLAUDECODE', '1');
-
+  it('honors an explicit browser request from Claude preview launches', () => {
     expect(
-      resolveDevCommandOptions(
-        { port: '7007' },
-        { env: { CLAUDE_AGENT_SDK_VERSION: '0.1.0', PORT: '6123' } }
-      )
+      resolveDevCommandOptions({ open: true }, { env: { CLAUDE_AGENT_SDK_VERSION: '0.1.0' } })
     ).toMatchObject({
-      open: false,
-      port: 6123,
+      open: true,
     });
   });
 

@@ -1,0 +1,7 @@
+{
+  "name": "814-write-stories-for-fetching-component",
+  "type": "module",
+  "evals": {
+    "template": "reshaped-storybook"
+  }
+}

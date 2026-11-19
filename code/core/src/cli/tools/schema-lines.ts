@@ -1,7 +1,4 @@
-/**
- * Renders JSON Schema nodes as the indented bullet lines both CLIs print under `Arguments:`, so
- * `storybook tools` and `storybook ai` describe the same schema identically.
- */
+/** Renders JSON Schema nodes as the indented bullet lines `storybook tools` prints under `Arguments:`. */
 import * as v from 'valibot';
 
 /**
@@ -44,9 +41,22 @@ function schemaTypeLabel(schema: JsonSchemaNode): string | undefined {
     return item?.type ? `array of ${item.type}` : 'array';
   }
   if (schema.anyOf || schema.oneOf) {
-    return 'one of';
+    return plainUnionLabel(schema) ?? 'one of';
   }
   return schema.type;
+}
+
+/** A union of plain types reads as its types, `boolean or string`, with no option lines. */
+function plainUnionLabel(schema: JsonSchemaNode): string | undefined {
+  const variants = schema.anyOf ?? schema.oneOf ?? [];
+  const isPlain = variants.every(
+    (variant) =>
+      variant.type !== undefined &&
+      variant.type !== 'object' &&
+      variant.type !== 'array' &&
+      !variant.description
+  );
+  return isPlain ? variants.map((variant) => variant.type).join(' or ') : undefined;
 }
 
 function schemaChildLines(schema: JsonSchemaNode, indent: string, depth: number): string[] {
@@ -69,7 +79,7 @@ function schemaChildLines(schema: JsonSchemaNode, indent: string, depth: number)
   }
 
   const variants = schema.anyOf ?? schema.oneOf;
-  if (variants) {
+  if (variants && !plainUnionLabel(schema)) {
     variants.forEach((variant, index) => {
       const suffix = variant.description ? `: ${variant.description}` : '';
       lines.push(`${indent}option ${index + 1}${suffix}`);

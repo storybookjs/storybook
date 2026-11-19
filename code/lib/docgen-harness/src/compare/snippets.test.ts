@@ -414,3 +414,77 @@ describe('compareSnippet (web-components)', () => {
     expect(webComponents(baseline, candidate)).toEqual(expected);
   });
 });
+
+describe('compareSnippet (svelte)', () => {
+  const svelte = (baseline: string, candidate: string) =>
+    compareSnippet({ framework: 'svelte', baseline, candidate });
+
+  it('counts a snippet child as passing the prop of the same name', () => {
+    expect(
+      svelte(
+        '<Modal open footer={snippet} />',
+        '<Modal open>\n{#snippet footer()}<small>Footer</small>{/snippet}\n</Modal>'
+      )
+    ).toEqual([]);
+  });
+
+  it.each([
+    '',
+    "<script>\n  import Panel from './Panel.svelte';\n</script>\n\n",
+    '<script lang="ts">\n  const items: Array<Item> = [];\n</script>\n\n',
+  ])('compares markup after the leading script block %s', (script) => {
+    const baseline = '<Panel label="Save" count={3} />';
+    expect(svelte(baseline, `${script}<Panel count={3} label="Save" />`)).toEqual([]);
+    expect(svelte(`${script}${baseline}`, '<Panel label="Save" />')).toEqual([
+      expect.objectContaining({ arg: 'count', kind: 'lost-representation' }),
+    ]);
+    expect(svelte(baseline, `${script}<Panel label="Save" />`)).toEqual([
+      expect.objectContaining({ arg: 'count', kind: 'lost-representation' }),
+    ]);
+  });
+
+  it.each([
+    {
+      baseline: '<Panel label="Save" count={3} />',
+      candidate: '<Panel count={3} label="Save" />',
+      expected: [],
+    },
+    {
+      baseline: '<Panel label="Save" />',
+      candidate: '<Card label="Save" />',
+      expected: [expect.objectContaining({ arg: 'snippet', kind: 'changed-root' })],
+    },
+    {
+      baseline: '<Panel label="Save" count={3} />',
+      candidate: '<Panel label="Save" />',
+      expected: [expect.objectContaining({ arg: 'count', kind: 'lost-representation' })],
+    },
+    {
+      baseline: '<Panel primary />',
+      candidate: '<Panel primary={true} />',
+      expected: [],
+    },
+    {
+      baseline: '<Panel onclick={() => { if (a > b) return true; }} config={{"a": 1}} />',
+      candidate: '<Panel onclick={() => false} config={{"a": 2}} />',
+      expected: [],
+    },
+    {
+      baseline: String.raw`<Panel value="a\\" count={3} />`,
+      candidate: String.raw`<Panel count={3} value="a\\" />`,
+      expected: [],
+    },
+    {
+      baseline: String.raw`<Panel value="a\"b" count={3} />`,
+      candidate: String.raw`<Panel value="a\"b" />`,
+      expected: [expect.objectContaining({ arg: 'count', kind: 'lost-representation' })],
+    },
+    {
+      baseline: '<Panel label="Save"><Child count={3} /></Panel>',
+      candidate: '<Panel label="Save"></Panel>',
+      expected: [],
+    },
+  ])('compares $baseline', ({ baseline, candidate, expected }) => {
+    expect(svelte(baseline, candidate)).toEqual(expected);
+  });
+});

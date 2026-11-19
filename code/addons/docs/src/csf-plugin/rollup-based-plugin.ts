@@ -8,16 +8,11 @@ import type { RollupPlugin } from 'unplugin';
 
 import { STORIES_REGEX } from './constants.ts';
 
-type TransformPluginContext = {
-  getCombinedSourcemap: () => any;
-};
-
 export async function transformCsf(
-  this: TransformPluginContext,
   code: string,
   id: string,
   options: EnrichCsfOptions
-) {
+): Promise<ReturnType<typeof formatCsf> | undefined> {
   if (!STORIES_REGEX.test(id)) {
     return;
   }
@@ -25,13 +20,17 @@ export async function transformCsf(
   const sourceCode = await readFile(id, 'utf-8');
   try {
     const makeTitle = (userTitle: string) => userTitle || 'default';
-    const csf = loadCsf(code, { makeTitle }).parse();
-    const csfSource = loadCsf(sourceCode, { makeTitle }).parse();
+    const csf = loadCsf(code, { makeTitle, fileName: id }).parse();
+    // Enrichment edits the source text and leaves the parsed nodes untouched, so `csf` can double as
+    // the source. An `enrichCsf` hook may print the edited file, so it gets a separate parse.
+    const csfSource =
+      code === sourceCode && !options.enrichCsf
+        ? csf
+        : loadCsf(sourceCode, { makeTitle, fileName: id }).parse();
     await enrichCsf(csf, csfSource, options);
-    const inputSourceMap = this.getCombinedSourcemap();
-    return formatCsf(csf, { sourceMaps: true, inputSourceMap }, code);
+    return formatCsf(csf, { sourceMaps: true, sourceFileName: id });
   } catch (err: unknown) {
-    // This can be called on legacy storiesOf files, so ignore CSF parse errors.
+    // Any .stories file that fails to parse (legacy or broken) passes through unmodified so doc generation does not crash.
     const message = err instanceof Error ? err.message : String(err);
     if (!message.startsWith('CSF:')) {
       logger.warn(message);
@@ -44,7 +43,7 @@ export function rollupBasedPlugin(options: EnrichCsfOptions): Partial<RollupPlug
   return {
     name: 'plugin-csf',
     async transform(code, id) {
-      return transformCsf.call(this, code, id, options);
+      return transformCsf(code, id, options);
     },
   };
 }

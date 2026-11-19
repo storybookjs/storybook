@@ -1,5 +1,6 @@
 export enum ProjectType {
   ANGULAR = 'angular',
+  ASTRO = 'astro',
   EMBER = 'ember',
   HTML = 'html',
   NEXTJS = 'nextjs',

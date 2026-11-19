@@ -62,9 +62,11 @@ export type StoriesWithPartialProps<TRenderer extends Renderer, TModule> = {
   // 1. pick the keys K of T that have properties that are Story<AnyProps>
   // 2. infer the actual prop type for each Story
   // 3. reconstruct Story with Partial. Story<Props> -> Story<Partial<Props>>
-  [K in keyof TModule as TModule[K] extends StoryAnnotationsOrFn<infer _, infer _TProps>
-    ? K
-    : never]: TModule[K] extends StoryAnnotationsOrFn<infer _, infer TProps>
+  [
+    K in keyof TModule as TModule[K] extends StoryAnnotationsOrFn<infer _, infer _TProps>
+      ? K
+      : never
+  ]: TModule[K] extends StoryAnnotationsOrFn<infer _, infer TProps>
     ? ComposedStoryFn<TRenderer, Partial<TProps>>
     : unknown;
 };

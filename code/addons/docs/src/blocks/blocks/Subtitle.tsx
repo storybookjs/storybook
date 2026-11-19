@@ -1,7 +1,6 @@
 import type { FunctionComponent, ReactNode } from 'react';
 import React from 'react';
 
-import { deprecate } from 'storybook/internal/client-logger';
 import { InvalidBlockOfPropError } from 'storybook/internal/preview-errors';
 
 import { Subtitle as PureSubtitle } from '../components';
@@ -17,9 +16,6 @@ interface SubtitleProps {
    */
   of?: Of;
 }
-
-const DEPRECATION_MIGRATION_LINK =
-  'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#subtitle-block-and-parameterscomponentsubtitle';
 
 const SubtitleImpl: FunctionComponent<SubtitleProps> = (props) => {
   const { of, children } = props;
@@ -38,15 +34,7 @@ const SubtitleImpl: FunctionComponent<SubtitleProps> = (props) => {
     }
   }
 
-  const { componentSubtitle, docs } = preparedMeta?.parameters || {};
-
-  if (componentSubtitle) {
-    deprecate(
-      `Using 'parameters.componentSubtitle' property to subtitle stories is deprecated. See ${DEPRECATION_MIGRATION_LINK}`
-    );
-  }
-
-  const content = children || docs?.subtitle || componentSubtitle;
+  const content = children || preparedMeta?.parameters?.docs?.subtitle;
 
   return content ? (
     <PureSubtitle className="sbdocs-subtitle sb-unstyled">{content}</PureSubtitle>

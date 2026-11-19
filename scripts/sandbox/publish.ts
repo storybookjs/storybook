@@ -27,7 +27,7 @@ const emptyDir = async (dir: string): Promise<void> => {
 };
 
 interface PublishOptions {
-  remote?: string;
+  remote: string;
   push?: boolean;
   branch?: string;
 }
@@ -115,7 +115,7 @@ const publish = async (options: PublishOptions & { tmpFolder: string }) => {
 
 program
   .description('Create a sandbox from a set of possible templates')
-  .option('--remote <remote>', 'Choose the remote to push the contents to')
+  .requiredOption('--remote <remote>', 'Choose the remote to push the contents to')
   .option('--branch <branch>', 'Choose which branch on the remote')
   .option('--push', 'Whether to push the contents to the remote', false)
   .option('--force-push', 'Whether to force push the changes into the repros repository', false);

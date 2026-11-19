@@ -1,12 +1,13 @@
+import type { SnippetTemplate } from '../../../../docs-tools/snippetTemplate.ts';
 import type { Options } from '../../../../types/modules/core-common.ts';
 import type { IndexEntry } from '../../../../types/modules/indexer.ts';
 
 /**
  * Caller-facing input to a story-docs provider middleware.
  *
- * `entry` is the authoritative story-index entry for the requested component, selected with the
- * same rules as the React component manifest generator (`selectComponentEntriesByComponentId` in
- * `storybook/internal/common`).
+ * `entry` is a story-index entry of the CSF file to extract. A component whose stories are spread
+ * over several files is extracted once per file, so a provider must not assume `entry` is the one
+ * `selectComponentEntriesByComponentId` (in `storybook/internal/common`) selects for the component.
  */
 export interface StoryDocsProviderInput {
   entry: IndexEntry;
@@ -28,10 +29,18 @@ export interface StoryDoc {
   /**
    * What a static pass could not resolve, in the source text it was written as. Next to a
    * `snippet` it marks the example as partial; on its own it says why no static snippet could be
-   * produced at all. An `error` means the provider itself failed.
+   * produced at all. A filled template leaves out the same code, so it is shown with it too. An
+   * `error` means the provider itself failed.
    */
   warning?: string;
   error?: StoryDocsError;
+  /**
+   * The static `snippet` split into code and holes, each a place an arg prints with what the
+   * snippet prints there; see `SnippetTemplate`. Joining its segments gives the snippet. Once the
+   * args differ from the story's initial args, the preview fills it through the renderer's
+   * `parameters.docs.source.printHole`, so the snippet follows the controls.
+   */
+  template?: SnippetTemplate;
 }
 
 /** Story docs keyed by story id for O(1) lookup and fine-grained open-service subscriptions. */

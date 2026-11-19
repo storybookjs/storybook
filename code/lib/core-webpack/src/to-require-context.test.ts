@@ -273,7 +273,7 @@ describe('toRequireContext', () => {
       const regex = new RegExp(match);
 
       function isMatched(filePath: string) {
-        const relativePath = `./${relative(base, filePath)}`;
+        const relativePath = `./${relative(base, filePath).replace(/\\/g, '/')}`;
 
         const baseIncluded = filePath.includes(base);
         const matched = regex.test(relativePath);

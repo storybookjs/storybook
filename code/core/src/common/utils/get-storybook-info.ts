@@ -16,6 +16,7 @@ import {
 import invariant from 'tiny-invariant';
 
 import { RN_STORYBOOK_DIR } from '../../shared/constants/config-folder.ts';
+import { storybookConfigExtensions } from '../../shared/constants/extensions.ts';
 import { JsPackageManager } from '../js-package-manager/JsPackageManager.ts';
 import { frameworkToBuilder } from './framework.ts';
 import { getAddonNames } from './get-addon-names.ts';
@@ -39,6 +40,7 @@ export const rendererPackages: Record<string, SupportedRenderer> = {
   // community (outside of monorepo)
   'storybook-framework-qwik': SupportedRenderer.QWIK,
   'storybook-solidjs-vite': SupportedRenderer.SOLID,
+  '@storybook-astro/renderer': SupportedRenderer.ASTRO,
 };
 
 export const frameworkPackages: Record<string, SupportedFramework> = {
@@ -66,6 +68,7 @@ export const frameworkPackages: Record<string, SupportedFramework> = {
   'storybook-web-components-rsbuild': SupportedFramework.WEB_COMPONENTS_RSBUILD,
   'storybook-html-rsbuild': SupportedFramework.HTML_RSBUILD,
   '@storybook-vue/nuxt': SupportedFramework.NUXT,
+  '@storybook-astro/framework': SupportedFramework.ASTRO,
 };
 
 export const builderPackages: Record<string, SupportedBuilder> = {
@@ -107,12 +110,10 @@ const getStorybookVersionSpecifier = (configDir: string) => {
   return undefined;
 };
 
-const validConfigExtensions = ['ts', 'js', 'tsx', 'jsx', 'mjs', 'cjs'];
-
 export const findConfigFile = (prefix: string, configDir: string) => {
   const filePrefix = join(configDir, prefix);
-  const extension = validConfigExtensions.find((ext: string) => existsSync(`${filePrefix}.${ext}`));
-  return extension ? `${filePrefix}.${extension}` : null;
+  const extension = storybookConfigExtensions.find((ext) => existsSync(`${filePrefix}${ext}`));
+  return extension ? `${filePrefix}${extension}` : null;
 };
 
 export const getConfigInfo = (configDir?: string) => {

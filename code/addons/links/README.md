@@ -70,15 +70,14 @@ export const index = () => (
     <option>third</option>
   </select>
 );
-export const first = () => <LinkTo story="index">Go back</LinkTo>;
-export const second = () => <LinkTo story="index">Go back</LinkTo>;
-export const third = () => <LinkTo story="index">Go back</LinkTo>;
+export const first = () => <LinkTo name="index">Go back</LinkTo>;
+export const second = () => <LinkTo name="index">Go back</LinkTo>;
+export const third = () => <LinkTo name="index">Go back</LinkTo>;
 ```
 
 ## hrefTo function
 
 If you want to get an URL for a particular story, you may use `hrefTo` function. It returns a promise, which resolves to string containing a relative URL:
-
 ```js
 import { hrefTo } from '@storybook/addon-links';
 import { action } from 'storybook/actions';
@@ -91,6 +90,22 @@ export const log = () => {
   hrefTo('Href', 'log').then(action('URL of this story'));
 
   return <span>See action logger</span>;
+};
+```
+
+## hrefToSync function
+
+If you want to render native links to other stories so you can middle-click or command-click to open them in a new tab, you can use the `hrefToSync` function. This returns a string containing the URL immediately:
+```js
+import { hrefToSync } from '@storybook/addon-links';
+
+export default {
+    title: 'HrefSync',
+};
+
+export const log = () => {
+    const url = hrefToSync('HrefSync', 'log');
+    return <a href={url}>Link to this story</a>;
 };
 ```
 
@@ -126,18 +141,17 @@ export default {
   title: 'Link',
 };
 
-export const first = () => <LinkTo story="second">Go to Second</LinkTo>;
-export const second = () => <LinkTo story="first">Go to First</LinkTo>;
+export const first = () => <LinkTo name="second">Go to Second</LinkTo>;
+export const second = () => <LinkTo name="first">Go to First</LinkTo>;
 ```
 
-It accepts all the props the `a` element does, plus `story` and `kind`. It the `kind` prop is omitted, the current kind will be preserved.
+It accepts all the props the `a` element does, plus `title` and `name`. If the `title` prop is omitted, the current component's title will be used.
 
 ```mdx
 <LinkTo
-  kind="Toggle"
-  story="off"
+  title="Toggle"
+  name="off"
   target="_blank"
-  title="link to second story"
   style={{ color: '#1474f3' }}
 >
   Go to Second

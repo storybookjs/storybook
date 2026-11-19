@@ -1,5 +1,6 @@
 import { promises as fs } from 'node:fs';
 import { join } from 'node:path';
+import { stripVTControlCharacters } from 'node:util';
 
 import type { LogLevel } from './logger.ts';
 
@@ -55,7 +56,7 @@ class LogTracker {
     this.#logs.push({
       timestamp: new Date(),
       level,
-      message,
+      message: stripVTControlCharacters(message),
       metadata,
     });
   }

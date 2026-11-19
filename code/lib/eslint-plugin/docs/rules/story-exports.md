@@ -3,7 +3,6 @@
 <!-- RULE-CATEGORIES:START -->
 
 **Included in these configurations**: <ul><li>recommended</li><li>flat/recommended</li><li>csf</li><li>flat/csf</li><li>csf-strict</li><li>flat/csf-strict</li></ul>
-
 <!-- RULE-CATEGORIES:END -->
 
 ## Rule Details

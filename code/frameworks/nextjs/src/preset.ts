@@ -1,6 +1,4 @@
 // https://storybook.js.org/docs/react/addons/writing-presets
-import { existsSync } from 'node:fs';
-import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { getProjectRoot } from 'storybook/internal/common';
@@ -8,13 +6,14 @@ import { deprecate, logger } from 'storybook/internal/node-logger';
 import type { PresetProperty } from 'storybook/internal/types';
 
 import type { ConfigItem, PluginItem, TransformOptions } from '@babel/core';
-import { loadPartialConfig } from '@babel/core';
+import { loadPartialConfigAsync } from '@babel/core';
 
+import { findBabelConfigFile } from './babel/babel-config-file.ts';
 import nextBabelPreset from './babel/preset.ts';
 import { configureConfig } from './config/webpack.ts';
 import TransformFontImports from './font/babel/index.ts';
 import type { FrameworkOptions, StorybookConfig } from './types.ts';
-import { isNextVersionGte } from './utils.ts';
+import { isNextVersionGte, resolveNextConfig } from './utils.ts';
 
 // Soft-deprecated in Storybook 11, removed in Storybook 12. `deprecate` warns once per process,
 // so calling it at module scope is safe even when the preset module gets re-evaluated.
@@ -34,10 +33,7 @@ export const core: PresetProperty<'core'> = async (config, options) => {
   // (see next/dist/server/config-utils.js) before @storybook/builder-webpack5
   // starts to use it. Without this, webpack's file system cache (fsCache: true)
   // does not work.
-  await configureConfig({
-    // Pass in a dummy webpack config object for now, since we don't want to
-    // modify the real one yet. We pass in the real one in webpackFinal.
-    baseConfig: {},
+  await resolveNextConfig({
     nextConfigPath: typeof framework === 'string' ? undefined : framework.options.nextConfigPath,
   });
 
@@ -67,7 +63,7 @@ export const previewAnnotations: PresetProperty<'previewAnnotations'> = (entry =
 };
 
 export const babel: PresetProperty<'babel'> = async (baseConfig: TransformOptions) => {
-  const configPartial = loadPartialConfig({
+  const configPartial = await loadPartialConfigAsync({
     ...baseConfig,
     filename: `${getProjectRoot()}/__fake__.js`,
   });
@@ -123,7 +119,7 @@ export const babel: PresetProperty<'babel'> = async (baseConfig: TransformOption
 
   // We need to re-apply the default storybook babel override from:
   // https://github.com/storybookjs/storybook/blob/next/code/core/src/core-server/presets/common-preset.ts
-  // Because it get lost in the loadPartialConfig call above.
+  // Because it get lost in the loadPartialConfigAsync call above.
   // See https://github.com/storybookjs/storybook/issues/28467
   const shouldRemoveBugfixes =
     globalThis?.FEATURES &&
@@ -151,9 +147,12 @@ export const babel: PresetProperty<'babel'> = async (baseConfig: TransformOption
 
 export const webpackFinal: StorybookConfig['webpackFinal'] = async (baseConfig, options) => {
   const { nextConfigPath } = await options.presets.apply<FrameworkOptions>('frameworkOptions');
+  const { executor } = await import('@storybook/builder-webpack5');
+  const webpackInstance = await executor.get(options);
   const nextConfig = await configureConfig({
     baseConfig,
     nextConfigPath,
+    webpackInstance,
   });
 
   // Use dynamic imports to ensure these modules that use webpack load after
@@ -172,9 +171,7 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (baseConfig, 
   const { configureSWCLoader } = await import('./swc/loader.ts');
   const { configureBabelLoader } = await import('./babel/loader.ts');
 
-  const babelRCPath = join(getProjectRoot(), '.babelrc');
-  const babelConfigPath = join(getProjectRoot(), 'babel.config.js');
-  const hasBabelConfig = existsSync(babelRCPath) || existsSync(babelConfigPath);
+  const hasBabelConfig = !!findBabelConfigFile(getProjectRoot());
   const isDevelopment = options.configType !== 'PRODUCTION';
 
   const useSWC = nextConfig.experimental?.forceSwcTransforms || !hasBabelConfig;
@@ -185,7 +182,7 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (baseConfig, 
   configureCss(baseConfig, nextConfig);
   configureImages(baseConfig, nextConfig);
   configureStyledJsx(baseConfig);
-  configureNodePolyfills(baseConfig);
+  configureNodePolyfills(baseConfig, webpackInstance);
   configureAliases(baseConfig);
 
   if (isDevelopment) {

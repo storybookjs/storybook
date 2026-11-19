@@ -26,13 +26,13 @@ export const uniqueArray = (arr: any[]) => {
 };
 
 export class PropertyExtractor implements NgModuleMetadata {
-  declarations?: any[] = [];
-  imports?: any[];
-  providers?: Provider[];
-  applicationProviders?: Array<Provider | ReturnType<typeof importProvidersFrom>>;
+  declarations: any[] = [];
+  imports: any[] = [];
+  providers: Provider[] = [];
+  applicationProviders: Array<Provider | ReturnType<typeof importProvidersFrom>> = [];
 
   constructor(
-    private metadata: NgModuleMetadata,
+    private metadata: NgModuleMetadata | undefined,
     private component?: any
   ) {}
 
@@ -87,7 +87,7 @@ export class PropertyExtractor implements NgModuleMetadata {
    * - Extracts providers from ModuleWithProviders
    * - Returns a new NgModuleMetadata object
    */
-  private analyzeMetadata = async (metadata: NgModuleMetadata) => {
+  private analyzeMetadata = async (metadata: NgModuleMetadata | undefined) => {
     const declarations = [...(metadata?.declarations || [])];
     const providers = [...(metadata?.providers || [])];
     const applicationProviders: Provider[] = [];
@@ -118,7 +118,12 @@ export class PropertyExtractor implements NgModuleMetadata {
       return [true];
     }
 
-    const ngModuleName = (ngModule as unknown as { name?: string } | undefined)?.name;
+    // Bundlers may rename the class binding, so compare the normalized name:
+    // a leading underscore run (e.g. `_BrowserAnimationsModule`) or a numeric suffix
+    // (e.g. `BrowserAnimationsModule$1`, as emitted by Vite 8's Rolldown bundler).
+    const ngModuleName = (ngModule as unknown as { name?: string } | undefined)?.name
+      ?.replace(/^_+/, '')
+      .replace(/\$\d+$/, '');
 
     if (ngModuleName === 'BrowserAnimationsModule' || ngModuleName === 'NoopAnimationsModule') {
       const provideFn =

@@ -5,6 +5,11 @@
  */
 export { isExportStory, storyNameFromExport, type IncludeExcludeOptions } from './export-story.ts';
 
+const PREVIEW_FILE_REGEX = /\/preview(.(js|jsx|mjs|ts|tsx))?$/;
+
+/** Whether an import path points at a `.storybook/preview` file, making it a CSF factory source. */
+export const isValidPreviewPath = (filepath: string) => PREVIEW_FILE_REGEX.test(filepath);
+
 /**
  * Remove punctuation and illegal characters from a story ID, so it is safe to use in URLs and CSS
  * selectors.
@@ -52,12 +57,16 @@ export const parseKind = (kind: string, { rootSeparator, groupSeparator }: Separ
   };
 };
 
-/** Combine a set of project / meta / story tags, removing duplicates and handling negations. */
+/**
+ * Combine a set of project / meta / story tags, removing duplicates, handling negations and
+ * ignoring empty or whitespace-only tags.
+ */
 export const combineTags = (...tags: string[]): string[] => {
   const result = tags.reduce((acc, tag) => {
     if (tag.startsWith('!')) {
       acc.delete(tag.slice(1));
-    } else {
+    } else if (tag.trim()) {
+      // Skip empty tags, they would show up as blank entries in the tag filter.
       acc.add(tag);
     }
     return acc;

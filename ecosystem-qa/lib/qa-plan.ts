@@ -661,14 +661,14 @@ type RuleInput = CheckContext & { plan: Plan; at: PlanLayout; lines: string[] };
 type Rule = (input: RuleInput) => Problem[];
 
 // Every place of a PR in the plan: the entries that test it, and its one row in a table.
-type Place = { line: number } & (
+export type Place = { line: number } & (
   | { kind: 'entry'; slug: string }
   | { kind: 'manual'; row: ManualRow }
   | { kind: 'none'; row: NoQaRow }
   | { kind: 'group'; group: GroupRow }
 );
 
-const placesOf = (plan: Plan, at: PlanLayout): Map<number, Place[]> => {
+export const placesOf = (plan: Plan, at: PlanLayout): Map<number, Place[]> => {
   const places = new Map<number, Place[]>();
   const put = (pr: number, place: Place) => places.set(pr, [...(places.get(pr) ?? []), place]);
   plan.entries.forEach((entry, index) =>

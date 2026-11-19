@@ -475,6 +475,8 @@ The `track` job uses the job token with `discussions: write` and `actions: write
 A chained batch is always a dry run, so a person files each batch by hand with the dispatch that its comment prints.
 That dispatch carries the plan's hash, so it runs nothing once the plan changed.
 In a run that files, the `file` job runs after the `track` job, and then edits the comment of the batch so that each finding names its issue.
+The file step writes the issue that each finding created or was found filed as into a file that the last step reads, because GitHub's listing of the `internal-qa` issues can miss an issue created a second before.
+When the file step left no such file, the comment names the issues of that listing.
 Its last line says `Filed.` only when the file step succeeded, and otherwise that the filing did not finish.
 
 To see what a batch would write without writing it, run `track.ts --print` on its results, here the fake run and collect of the fixture plan above:

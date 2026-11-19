@@ -24,7 +24,7 @@ import { readPlanScope } from './lib/plan-scope.ts';
 import { openIssueOf, QA_LABEL } from './lib/proposals.ts';
 import { planBatches } from './lib/qa-plan.ts';
 import { loadResults } from './lib/results.ts';
-import { PlanRecord, Proposal } from './lib/schema.ts';
+import { FiledIssues, PlanRecord, Proposal } from './lib/schema.ts';
 import {
   attemptOf,
   batchDispatch,
@@ -41,7 +41,7 @@ import {
   trackingThreadsOf,
 } from './lib/tracking.ts';
 
-const HELP = `Usage: node ecosystem-qa/track.ts --results <dir> --plan <file> --batch <n> --version <storybook version> --planned <matrix> --repo <owner/name> [--proposals <proposals.json>] [--runs <run id>[,...]] --filing <dry|pending|filed|failed> [--cap-usd <dollars>] [--budget-minutes <n>] [--no-chain] [--print]
+const HELP = `Usage: node ecosystem-qa/track.ts --results <dir> --plan <file> --batch <n> --version <storybook version> --planned <matrix> --repo <owner/name> [--proposals <proposals.json>] [--runs <run id>[,...]] --filing <dry|pending|filed|failed> [--filed <filed.json>] [--cap-usd <dollars>] [--budget-minutes <n>] [--no-chain] [--print]
        node ecosystem-qa/track.ts --ended <hash|gone> --plan <file> --batch <n> --hash <hash> --runs <run id> --repo <owner/name> [--print]
 
 Writes the numbers of one batch of a QA plan into the tracking discussion of the plan, in the
@@ -59,7 +59,8 @@ It writes the comment after the dispatch, and if the dispatch fails, the comment
 the next batch. A comment that starts no batch prints the dispatch that starts it by hand.
 --filing says what the comment says of the filing: dry prints the dispatch that files the batch,
 pending says that the file job of this run files it next, filed names the issue of each finding,
-and failed says that the filing did not finish.
+and failed says that the filing did not finish. A filed or failed comment names the issues of
+--filed, which file.ts --filed wrote, and without that file the open internal-qa issues.
 --print reads GitHub but writes nothing: it prints the discussion, the comment, and the next step.
 
 With --ended, says in the discussion of the plan with the hash --hash that run --runs ran nothing for
@@ -79,6 +80,7 @@ const { values } = parseArgs({
     'cap-usd': { type: 'string' },
     'budget-minutes': { type: 'string' },
     filing: { type: 'string' },
+    filed: { type: 'string' },
     hash: { type: 'string' },
     ended: { type: 'string' },
     chain: { type: 'boolean', default: true },
@@ -179,12 +181,18 @@ if (!proposals) {
   warn(`No proposals at ${values.proposals ?? 'no --proposals'}, so the comment lists no finding.`);
 }
 
+// GitHub's listing of the label can miss an issue created a second before, so the issues that
+// file.ts handed over win, and the listing names the issues of a filing that handed none over.
+const issuesOfFindings = () =>
+  values.filed && existsSync(values.filed)
+    ? new Map(Object.entries(FiledIssues.parse(JSON.parse(readFileSync(values.filed, 'utf8')))))
+    : openIssueOf(
+        listQaIssues(repo!, QA_LABEL),
+        proposals!.map(({ fingerprint }) => fingerprint)
+      );
 const filed =
   proposals && (filing === 'filed' || filing === 'failed')
-    ? openIssueOf(
-        listQaIssues(repo!, QA_LABEL),
-        proposals.map(({ fingerprint }) => fingerprint)
-      )
+    ? issuesOfFindings()
     : new Map<string, number>();
 
 const report = batchReport({

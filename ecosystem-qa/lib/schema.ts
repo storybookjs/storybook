@@ -418,3 +418,8 @@ export const Proposal = z.discriminatedUnion('kind', [
 export type Proposal = z.infer<typeof Proposal>;
 export type IssueProposal = Extract<Proposal, { kind: 'issue' }>;
 export type CommentProposal = Extract<Proposal, { kind: 'comment' }>;
+
+// What file.ts hands to the comment of the batch: the fingerprint of each issue proposal it filed,
+// to the issue that holds its finding.
+export const FiledIssues = z.record(z.string(), z.number().int().positive());
+export type FiledIssues = z.infer<typeof FiledIssues>;

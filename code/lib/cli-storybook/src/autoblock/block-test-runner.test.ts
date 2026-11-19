@@ -43,7 +43,7 @@ describe('testRunner blocker', () => {
     const log = blocker.log(true);
 
     expect(log.title).toBe('Test runner: support removed');
-    expect(log.message).toContain('Migrate to the Vitest addon');
+    expect(log.message).toContain('Replace it with the Vitest addon');
     expect(log.message).toContain('Keep using Storybook 10');
     expect(log.link).toBe(
       'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#test-runner-support-removed'

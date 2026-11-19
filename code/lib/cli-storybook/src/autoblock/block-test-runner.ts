@@ -16,7 +16,7 @@ export const blocker = createBlocker({
         @storybook/test-runner is incompatible with Storybook 11+.
 
         You have two options to proceed:
-        1. Migrate to the Vitest addon (\`@storybook/addon-vitest\`) and remove @storybook/test-runner:
+        1. Replace it with the Vitest addon (@storybook/addon-vitest):
            https://storybook.js.org/docs/writing-tests/integrations/vitest-addon/migration-guide
         2. Keep using Storybook 10 with the test runner
       `,

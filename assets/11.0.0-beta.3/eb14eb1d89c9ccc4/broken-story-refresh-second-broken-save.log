@@ -1,0 +1,188 @@
+[90m│[39m  [43mVite[49m [32mhmr update[39m
+[90m│[39m  [32m[39m[2m/@id/__x00__virtual:/@storybook/builder-vite/vite-app.js[22m
+[90m│[39m
+[31m■[39m  [43mVite[49m [31mInternal server error: Transform failed with 1 error:
+
+[90m│[39m  [31m[PARSE_ERROR] Error:[0m Expected `,` or `}` but found `;`
+[90m│[39m  [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m
+[90m│[39m  src/components/actions/Button/Button.qaprobe-refresh.stories.tsx:17:2
+[90m│[39m  [38;5;246m][0m
+[90m│[39m  [38;5;246m│[0m
+[90m│[39m  [38;5;246m14 │[0m [38;5;249me[0m[38;5;249mx[0m[38;5;249mp[0m[38;5;249mo[0m[38;5;249mr[0m[38;5;249mt[0m[38;5;249m [0m[38;5;249mc[0m[38;5;249mo[0m[38;5;249mn[0m[38;5;249ms[0m[38;5;249mt[0m[38;5;249m [0m[38;5;249mP[0m[38;5;249mr[0m[38;5;249mi[0m[38;5;249mm[0m[38;5;249ma[0m[38;5;249mr[0m[38;5;249my[0m[38;5;249m:[0m[38;5;249m [0m[38;5;249mS[0m[38;5;249mt[0m[38;5;249mo[0m[38;5;249mr[0m[38;5;249my[0m[38;5;249m [0m[38;5;249m=[0m[38;5;249m [0m{
+[90m│[39m  [38;5;240m│[0m                               ┬
+[90m│[39m  [38;5;240m│[0m                               ╰── Opened here
+[90m│[39m  [38;5;240m│[0m
+[90m│[39m  [38;5;246m17 │[0m [38;5;249m}[0m;
+[90m│[39m  [38;5;240m│[0m  ┬
+[90m│[39m  [38;5;240m│[0m  ╰── `,` or `}` expected
+[90m│[39m  [38;5;246m────╯[0m
+[90m│[39m  [39m
+[90m│[39m  Plugin: [35mvite:oxc[39m
+[90m│[39m  File:
+[90m│[39m  [36m./src/components/actions/Button/Button.qaprobe-refresh.stories.tsx[39m
+[90m│[39m  at transformWithOxc
+[90m│[39m  (file://./node_modules/vite/dist/node/chunks/node.js:3340:19)
+[90m│[39m  at TransformPluginContext.transform
+[90m│[39m  (file://./node_modules/vite/dist/node/chunks/node.js:3408:26)
+[90m│[39m  at EnvironmentPluginContainer.transform
+[90m│[39m  (file://./node_modules/vite/dist/node/chunks/node.js:30179:51)
+[90m│[39m  at async loadAndTransform
+[90m│[39m  (file://./node_modules/vite/dist/node/chunks/node.js:24509:26)
+[90m│[39m  at async viteTransformMiddleware
+[90m│[39m  (file://./node_modules/vite/dist/node/chunks/node.js:24303:20)
+[90m│[39m
+[31m■[39m  [43mVite[49m [2m[console.error] [22mTypeError: Failed to fetch dynamically imported
+[90m│[39m  module:
+[90m│[39m  http://localhost:6006/src/components/actions/Button/Button.qaprobe-refresh.stories.tsx?t=1795083701811
+[90m│[39m  [43mVite[49m [32mhmr update[39m
+[90m│[39m  [32m[39m[2m/@id/__x00__virtual:/@storybook/builder-vite/vite-app.js[22m
+[90m│[39m
+[33m▲[39m  🚨 Unable to index
+[90m│[39m  ./src/components/actions/Button/Button.qaprobe-refresh.stories.tsx:
+[90m│[39m  EstreeParseError: Expected `,` or `}` but found `;` (17:1) in
+[90m│[39m  /home/agent/workspace/src/components/actions/Button/Button.qaprobe-refresh.stories.tsx
+[90m│[39m  at parseWith
+[90m│[39m  (file:///home/agent/workspace/node_modules/storybook/dist/_node-chunks/chunk-4VIM7RID.js:76:14)
+[90m│[39m  at parseWithParentheses
+[90m│[39m  (file:///home/agent/workspace/node_modules/storybook/dist/_node-chunks/chunk-4VIM7RID.js:99:118)
+[90m│[39m  at parseModule
+[90m│[39m  (file:///home/agent/workspace/node_modules/storybook/dist/_node-chunks/chunk-4VIM7RID.js:93:16)
+[90m│[39m  at new SourceEditor
+[90m│[39m  (file:///home/agent/workspace/node_modules/storybook/dist/_node-chunks/chunk-CWGOETQ2.js:2211:100)
+[90m│[39m  at new CsfFile
+[90m│[39m  (file:///home/agent/workspace/node_modules/storybook/dist/_node-chunks/chunk-6HGKLOH7.js:650:19)
+[90m│[39m  at loadCsf
+[90m│[39m  (file:///home/agent/workspace/node_modules/storybook/dist/_node-chunks/chunk-6HGKLOH7.js:1278:33)
+[90m│[39m  at Object.createIndex
+[90m│[39m  (file:///home/agent/workspace/node_modules/storybook/dist/core-server/presets/common-preset.js:2202:114)
+[90m│[39m  at async _StoryIndexGenerator.extractStories
+[90m│[39m  (file:///home/agent/workspace/node_modules/storybook/dist/core-server/index.js:19150:23)
+[90m│[39m  at async _StoryIndexGenerator.extract
+[90m│[39m  (file:///home/agent/workspace/node_modules/storybook/dist/core-server/index.js:19102:84)
+[90m│[39m  at async
+[90m│[39m  file:///home/agent/workspace/node_modules/storybook/dist/core-server/index.js:19096:190
+[90m│[39m
+[31m■[39m  [43mVite[49m [31mInternal server error: Unable to index[39m
+[90m│[39m  [31m./src/components/actions/Button/Button.qaprobe-refresh.stories.tsx[39m
+[90m│[39m  at _StoryIndexGenerator.buildIndex
+[90m│[39m  (file://./node_modules/storybook/dist/core-server/index.js:19374:13)
+[90m│[39m  at _StoryIndexGenerator.computeIndexAndStats
+[90m│[39m  (file://./node_modules/storybook/dist/core-server/index.js:19337:34)
+[90m│[39m
+[31m■[39m  [43mVite[49m [2m[console.error] [22m[vite] Failed to reload
+[90m│[39m  /@id/__x00__virtual:/@storybook/builder-vite/storybook-stories.js.
+[90m│[39m  This could be due to syntax errors or importing non-existent modules.
+[90m│[39m  (see errors above)
+[90m│[39m
+[31m■[39m  [43mVite[49m [31m[Unhandled rejection] [1mTypeError[22m: Cannot read properties of
+[90m│[39m  undefined (reading 'importFn')
+[90m│[39m  [39m>
+[90m│[39m  ../../../@id/__x00__virtual:/@storybook/builder-vite/vite-app.js:24:73
+[90m│[39m  > ../../../@vite/client:71:83
+[90m│[39m  > ../../../@vite/client:222:52
+[90m│[39m  > ../../../@vite/client:200:55
+[90m│[39m  > HMRClient.queueUpdate ../../../@vite/client:200:33
+[90m│[39m  > handleMessage ../../../@vite/client:942:4
+
+[90m│[39m
+[31m■[39m  [43mVite[49m [2m[console.error] [22mError loading story index:
+[90m│[39m
+[31m■[39m  [43mVite[49m [2m[console.error] [22mSB_PREVIEW_API_0006 (StoryIndexFetchError): Error
+[90m│[39m  fetching `/index.json`:
+
+[90m│[39m  Unable to index
+[90m│[39m  ./src/components/actions/Button/Button.qaprobe-refresh.stories.tsx:
+[90m│[39m  EstreeParseError: Expected `,` or `}` but found `;` (17:1) in
+[90m│[39m  ./src/components/actions/Button/Button.qaprobe-refresh.stories.tsx
+[90m│[39m  at parseWith
+[90m│[39m  (file://./node_modules/storybook/dist/_node-chunks/chunk-4VIM7RID.js:76:14)
+[90m│[39m  at parseWithParentheses
+[90m│[39m  (file://./node_modules/storybook/dist/_node-chunks/chunk-4VIM7RID.js:99:118)
+[90m│[39m  at parseModule
+[90m│[39m  (file://./node_modules/storybook/dist/_node-chunks/chunk-4VIM7RID.js:93:16)
+[90m│[39m  at new SourceEditor
+[90m│[39m  (file://./node_modules/storybook/dist/_node-chunks/chunk-CWGOETQ2.js:2211:100)
+[90m│[39m  at new CsfFile
+[90m│[39m  (file://./node_modules/storybook/dist/_node-chunks/chunk-6HGKLOH7.js:650:19)
+[90m│[39m  at loadCsf
+[90m│[39m  (file://./node_modules/storybook/dist/_node-chunks/chunk-6HGKLOH7.js:1278:33)
+[90m│[39m  at Object.createIndex
+[90m│[39m  (file://./node_modules/storybook/dist/core-server/presets/common-preset.js:2202:114)
+[90m│[39m  at async _StoryIndexGenerator.extractStories
+[90m│[39m  (file://./node_modules/storybook/dist/core-server/index.js:19150:23)
+[90m│[39m  at async _StoryIndexGenerator.extract
+[90m│[39m  (file://./node_modules/storybook/dist/core-server/index.js:19102:84)
+[90m│[39m  at async
+[90m│[39m  file://./node_modules/storybook/dist/core-server/index.js:19096:190
+
+[90m│[39m  If you are in development, this likely indicates a problem with your
+[90m│[39m  Storybook process,
+[90m│[39m  check the terminal for errors.
+
+[90m│[39m  If you are in a deployed Storybook, there may have been an issue
+[90m│[39m  deploying the full Storybook
+[90m│[39m  build.
+[90m│[39m  at PreviewWeb.getStoryIndexFromServer
+[90m│[39m  (http://localhost:6006/node_modules/storybook/dist/preview/_chunks/runtime-lYY6FRc3.js?v=ef8cf082:2915:10)
+[90m│[39m  at async PreviewWeb.onStoryIndexChanged
+[90m│[39m  (http://localhost:6006/node_modules/storybook/dist/preview/_chunks/runtime-lYY6FRc3.js?v=ef8cf082:2951:24)
+[90m│[39m
+[31m■[39m  [43mVite[49m [31m[Unhandled rejection] [1mSB_PREVIEW_API_0006 (StoryIndexFetchError)[22m:
+[90m│[39m  Error fetching `/index.json`:
+
+[90m│[39m  Unable to index
+[90m│[39m  ./src/components/actions/Button/Button.qaprobe-refresh.stories.tsx:
+[90m│[39m  EstreeParseError: Expected `,` or `}` but found `;` (17:1) in
+[90m│[39m  ./src/components/actions/Button/Button.qaprobe-refresh.stories.tsx
+[90m│[39m  at parseWith
+[90m│[39m  (file://./node_modules/storybook/dist/_node-chunks/chunk-4VIM7RID.js:76:14)
+[90m│[39m  at parseWithParentheses
+[90m│[39m  (file://./node_modules/storybook/dist/_node-chunks/chunk-4VIM7RID.js:99:118)
+[90m│[39m  at parseModule
+[90m│[39m  (file://./node_modules/storybook/dist/_node-chunks/chunk-4VIM7RID.js:93:16)
+[90m│[39m  at new SourceEditor
+[90m│[39m  (file://./node_modules/storybook/dist/_node-chunks/chunk-CWGOETQ2.js:2211:100)
+[90m│[39m  at new CsfFile
+[90m│[39m  (file://./node_modules/storybook/dist/_node-chunks/chunk-6HGKLOH7.js:650:19)
+[90m│[39m  at loadCsf
+[90m│[39m  (file://./node_modules/storybook/dist/_node-chunks/chunk-6HGKLOH7.js:1278:33)
+[90m│[39m  at Object.createIndex
+[90m│[39m  (file://./node_modules/storybook/dist/core-server/presets/common-preset.js:2202:114)
+[90m│[39m  at async _StoryIndexGenerator.extractStories
+[90m│[39m  (file://./node_modules/storybook/dist/core-server/index.js:19150:23)
+[90m│[39m  at async _StoryIndexGenerator.extract
+[90m│[39m  (file://./node_modules/storybook/dist/core-server/index.js:19102:84)
+[90m│[39m  at async
+[90m│[39m  file://./node_modules/storybook/dist/core-server/index.js:19096:190
+
+[90m│[39m  If you are in development, this likely indicates a problem with your
+[90m│[39m  Storybook process,
+[90m│[39m  check the terminal for errors.
+
+[90m│[39m  If you are in a deployed Storybook, there may have been an issue
+[90m│[39m  deploying the full Storybook
+[90m│[39m  build.
+[90m│[39m  [39m> parseWith
+[90m│[39m  node_modules/storybook/dist/_node-chunks/chunk-4VIM7RID.js:76:14
+[90m│[39m  > parseWithParentheses
+[90m│[39m  node_modules/storybook/dist/_node-chunks/chunk-4VIM7RID.js:99:118
+[90m│[39m  > parseModule
+[90m│[39m  node_modules/storybook/dist/_node-chunks/chunk-4VIM7RID.js:93:16
+[90m│[39m  > new SourceEditor
+[90m│[39m  node_modules/storybook/dist/_node-chunks/chunk-CWGOETQ2.js:2211:100
+[90m│[39m  > new CsfFile
+[90m│[39m  node_modules/storybook/dist/_node-chunks/chunk-6HGKLOH7.js:650:19
+[90m│[39m  > loadCsf
+[90m│[39m  node_modules/storybook/dist/_node-chunks/chunk-6HGKLOH7.js:1278:33
+[90m│[39m  > Object.createIndex
+[90m│[39m  node_modules/storybook/dist/core-server/presets/common-preset.js:2202:114
+[90m│[39m  > _StoryIndexGenerator.extractStories
+[90m│[39m  node_modules/storybook/dist/core-server/index.js:19150:23
+[90m│[39m  > _StoryIndexGenerator.extract
+[90m│[39m  node_modules/storybook/dist/core-server/index.js:19102:84
+[90m│[39m  > node_modules/storybook/dist/core-server/index.js:19096:190
+[90m│[39m  > PreviewWeb.getStoryIndexFromServer
+[90m│[39m  node_modules/storybook/dist/preview/_chunks/runtime-lYY6FRc3.js?v=ef8cf082:2915:10
+[90m│[39m  > PreviewWeb.onStoryIndexChanged
+[90m│[39m  node_modules/storybook/dist/preview/_chunks/runtime-lYY6FRc3.js?v=ef8cf082:2951:24
+

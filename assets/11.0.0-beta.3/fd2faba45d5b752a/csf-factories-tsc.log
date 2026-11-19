@@ -1,0 +1,373 @@
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+.storybook/preview.tsx(159,5): error TS2717: Subsequent property declarations must have the same type.  Property 'userEvent' must be of type 'UserEvent', but here has type 'UserEvent'.
+.storybook/preview.tsx(163,3): error TS2322: Type '{ viewport: { value: string; }; theme: string; }' is not assignable to type 'undefined'.
+.storybook/preview.tsx(167,3): error TS2322: Type '{ viewport: { options: any; }; a11y: { test: string; }; controls: { matchers: { color: RegExp; date: RegExp; }; }; docs: { toc: true; source: { excludeDecorators: true; }; container: (props: DocsContainerProps) => React.JSX.Element; }; }' is not assignable to type 'undefined'.
+.storybook/preview.tsx(213,16): error TS2322: Type 'Decorator' is not assignable to type 'DecoratorFunction$2<never, { [x: string]: any; }>'.
+  Type 'Element' is not assignable to type 'never'.
+.storybook/preview.tsx(213,28): error TS2322: Type 'Decorator' is not assignable to type 'DecoratorFunction$2<never, { [x: string]: any; }>'.
+  Type 'Element' is not assignable to type 'never'.
+.storybook/preview.tsx(213,39): error TS2322: Type 'Decorator' is not assignable to type 'DecoratorFunction$2<never, { [x: string]: any; }>'.
+  Type 'Element' is not assignable to type 'never'.
+src/components/AnimatedIllustration/AnimatedIllustration.stories.tsx(8,3): error TS2322: Type '{ layout: string; storyshots: { disable: true; }; chromatic: { delay: number; }; }' is not assignable to type 'undefined'.
+src/components/AnimatedIllustration/AnimatedIllustration.stories.tsx(14,18): error TS2322: Type 'Element' is not assignable to type 'never'.
+src/components/AnimatedIllustration/AnimatedIllustration.stories.tsx(23,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '{ animation: string; }' is not assignable to type 'never'.
+src/components/AnimatedIllustration/AnimatedIllustration.stories.tsx(29,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '{ animation: string; }' is not assignable to type 'never'.
+src/components/Badge/Badge.stories.tsx(8,3): error TS2322: Type '{ design: { type: string; url: string; }; }' is not assignable to type 'undefined'.
+src/components/Badge/Badge.stories.tsx(17,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '{ text: string; }' is not assignable to type 'never'.
+src/components/Breadcrumb/Breadcrumb.stories.tsx(11,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '{ items: { label: string; }[]; }' is not assignable to type 'never'.
+src/components/Breadcrumb/Breadcrumb.stories.tsx(17,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '{ items: ({ label: string; href: string; } | { label: string; })[]; }' is not assignable to type 'never'.
+src/components/Button/Button.stories.tsx(10,5): error TS2322: Type 'string' is not assignable to type 'undefined'.
+src/components/Button/Button.stories.tsx(12,3): error TS2322: Type '{ design: { type: string; url: string; }; }' is not assignable to type 'undefined'.
+src/components/Button/Button.stories.tsx(23,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '{ disabled: true; }' is not assignable to type 'never'.
+src/components/Button/Button.stories.tsx(33,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '{ clear: true; }' is not assignable to type 'never'.
+src/components/Button/Button.stories.tsx(39,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '{ icon: string; 'aria-label': string; }' is not assignable to type 'never'.
+src/components/Button/Button.stories.tsx(46,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '{ icon: string; children: JSX.Element; }' is not assignable to type 'never'.
+src/components/Carousel/Carousel.stories.tsx(25,5): error TS2322: Type '{ mobile: number; tablet: number; desktop: number; }' is not assignable to type 'undefined'.
+src/components/Carousel/Carousel.stories.tsx(26,5): error TS2322: Type 'Element[]' is not assignable to type 'undefined'.
+src/components/Carousel/Carousel.stories.tsx(28,3): error TS2322: Type '{ layout: string; }' is not assignable to type 'undefined'.
+src/components/Carousel/Carousel.stories.tsx(31,3): error TS2322: Type 'string[]' is not assignable to type 'undefined'.
+src/components/Carousel/Carousel.stories.tsx(38,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '{ children: JSX.Element[]; }' is not assignable to type 'never'.
+src/components/Category/Category.stories.tsx(9,5): error TS2322: Type 'string' is not assignable to type 'undefined'.
+src/components/Category/Category.stories.tsx(10,5): error TS2322: Type 'string' is not assignable to type 'undefined'.
+src/components/Category/Category.stories.tsx(13,3): error TS2322: Type 'string[]' is not assignable to type 'undefined'.
+src/components/Category/Category.stories.tsx(14,3): error TS2322: Type '{ design: { type: string; url: string; }; }' is not assignable to type 'undefined'.
+src/components/Category/Category.stories.tsx(25,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '{ round: true; }' is not assignable to type 'never'.
+src/components/ErrorBlock/ErrorBlock.stories.tsx(12,3): error TS2322: Type '{ layout: string; }' is not assignable to type 'undefined'.
+src/components/ErrorBlock/ErrorBlock.stories.tsx(21,5): error TS2322: Type 'Mock<Procedure>' is not assignable to type 'undefined'.
+src/components/ErrorBlock/ErrorBlock.stories.tsx(26,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '{ title: string; body: string; illustration: JSX.Element; buttonText: string; }' is not assignable to type 'never'.
+src/components/ErrorBlock/ErrorBlock.stories.tsx(44,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '{ title: string; body: string; illustration: JSX.Element; buttonText: string; }' is not assignable to type 'never'.
+src/components/Footer/Footer.stories.tsx(8,3): error TS2322: Type '{ layout: string; design: { type: string; url: string; }; }' is not assignable to type 'undefined'.
+src/components/Header/Header.stories.tsx(8,3): error TS2322: Type '{ layout: string; design: { type: string; url: string; }; }' is not assignable to type 'undefined'.
+src/components/Header/Header.stories.tsx(20,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '{ store: { initialState: { cart: { visible: false; items: { id: number; name: string; description: string; price: number; quantity: number; }[]; }; }; }; }' is not assignable to type 'undefined'.
+src/components/Icon/Icon.stories.tsx(41,3): error TS2322: Type '{ name: { options: readonly ["arrow-right", "arrow-left", "cross", "cart", "minus", "plus", "moon", "sun", "star"]; control: { type: string; }; }; size: { control: { type: string; }; }; }' is not assignable to type 'undefined'.
+src/components/Icon/Icon.stories.tsx(57,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '() => JSX.Element' is not assignable to type 'ArgsStoryFn<never, never>'.
+      Type 'Element' is not assignable to type 'never'.
+src/components/Icon/Icon.stories.tsx(74,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '{ name: string; size: number; }' is not assignable to type 'never'.
+src/components/IconButton/IconButton.stories.tsx(8,3): error TS2322: Type '{ design: { type: string; url: string; }; }' is not assignable to type 'undefined'.
+src/components/IconButton/IconButton.stories.tsx(17,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '{ name: string; small: false; 'aria-label': string; }' is not assignable to type 'never'.
+src/components/IconButton/IconButton.stories.tsx(25,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type 'any' is not assignable to type 'never'.
+src/components/IconButton/IconButton.stories.tsx(26,22): error TS2339: Property 'args' does not exist on type '{ render: () => Element; } | (BaseAnnotations<never, never> & { name?: string | undefined; storyName?: string | undefined; play?: PlayFunction<never, never> | undefined; globals?: undefined; } & { ...; } & { ...; })'.
+  Property 'args' does not exist on type '{ render: () => Element; }'.
+src/components/Logo/Logo.stories.tsx(8,3): error TS2322: Type '{ design: { type: string; url: string; }; }' is not assignable to type 'undefined'.
+src/components/Logo/Logo.stories.tsx(19,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '{ large: true; logoOnly: true; }' is not assignable to type 'never'.
+src/components/Logo/Logo.stories.tsx(26,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '{ large: true; logoOnly: true; animated: true; }' is not assignable to type 'never'.
+src/components/Modal/Modal.stories.tsx(10,3): error TS2322: Type '{ docs: { inlineStories: false; iframeHeight: number; }; design: { type: string; url: string; }; }' is not assignable to type 'undefined'.
+src/components/Modal/Modal.stories.tsx(20,18): error TS2322: Type 'Element' is not assignable to type 'never'.
+src/components/Modal/Modal.stories.tsx(28,5): error TS2322: Type 'false' is not assignable to type 'undefined'.
+src/components/Modal/Modal.stories.tsx(34,5): error TS2322: Type 'Mock<Procedure>' is not assignable to type 'undefined'.
+src/components/Modal/Modal.stories.tsx(36,3): error TS2322: Type '() => JSX.Element' is not assignable to type 'ArgsStoryFn<never, never>'.
+  Type 'Element' is not assignable to type 'never'.
+src/components/Modal/Modal.stories.tsx(65,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '{ viewport: { value: string; isRotated: false; }; }' is not assignable to type 'undefined'.
+src/components/PageSection/PageSection.stories.tsx(8,3): error TS2322: Type '{ layout: string; }' is not assignable to type 'undefined'.
+src/components/PageSection/PageSection.stories.tsx(14,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '{ title: string; children: JSX.Element; }' is not assignable to type 'never'.
+src/components/PageSection/PageSection.stories.tsx(21,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type 'any' is not assignable to type 'never'.
+src/components/PageSection/PageSection.stories.tsx(22,22): error TS2339: Property 'args' does not exist on type '{ render: () => Element; } | (BaseAnnotations<never, never> & { name?: string | undefined; storyName?: string | undefined; play?: PlayFunction<never, never> | undefined; globals?: undefined; } & { ...; } & { ...; })'.
+  Property 'args' does not exist on type '{ render: () => Element; }'.
+src/components/RestaurantCard/RestaurantCard.stories.tsx(11,3): error TS2322: Type '{ design: { type: string; url: string; }; }' is not assignable to type 'undefined'.
+src/components/RestaurantCard/RestaurantCard.stories.tsx(20,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '{ rating?: number; specialty: string; photoUrl: string; isClosed?: boolean; categories?: string[]; isLoading?: boolean; isNew?: boolean; name: string; }' is not assignable to type 'never'.
+src/components/RestaurantCard/RestaurantCard.stories.tsx(27,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type 'any' is not assignable to type 'never'.
+src/components/RestaurantCard/RestaurantCard.stories.tsx(28,22): error TS2339: Property 'args' does not exist on type '{ render: () => Element; } | (BaseAnnotations<never, never> & { name?: string | undefined; storyName?: string | undefined; play?: PlayFunction<never, never> | undefined; globals?: undefined; } & { ...; } & { ...; })'.
+  Property 'args' does not exist on type '{ render: () => Element; }'.
+src/components/RestaurantCard/RestaurantCard.stories.tsx(34,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type 'any' is not assignable to type 'never'.
+src/components/RestaurantCard/RestaurantCard.stories.tsx(35,22): error TS2339: Property 'args' does not exist on type '{ render: () => Element; } | (BaseAnnotations<never, never> & { name?: string | undefined; storyName?: string | undefined; play?: PlayFunction<never, never> | undefined; globals?: undefined; } & { ...; } & { ...; })'.
+  Property 'args' does not exist on type '{ render: () => Element; }'.
+src/components/RestaurantCard/RestaurantCard.stories.tsx(44,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type 'any' is not assignable to type 'never'.
+src/components/RestaurantCard/RestaurantCard.stories.tsx(45,22): error TS2339: Property 'args' does not exist on type '{ render: () => Element; } | (BaseAnnotations<never, never> & { name?: string | undefined; storyName?: string | undefined; play?: PlayFunction<never, never> | undefined; globals?: undefined; } & { ...; } & { ...; })'.
+  Property 'args' does not exist on type '{ render: () => Element; }'.
+src/components/Review/Review.stories.tsx(8,3): error TS2322: Type '{ rating: { control: { type: string; min: number; max: number; step: number; }; }; }' is not assignable to type 'undefined'.
+src/components/Review/Review.stories.tsx(18,3): error TS2322: Type '{ design: { type: string; url: string; }; }' is not assignable to type 'undefined'.
+src/components/Review/Review.stories.tsx(29,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '{ rating: number; }' is not assignable to type 'never'.
+src/components/Review/Review.stories.tsx(35,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '{ rating: number; }' is not assignable to type 'never'.
+src/components/Review/Review.stories.tsx(41,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '{ rating: number; }' is not assignable to type 'never'.
+src/components/Review/Review.stories.tsx(47,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '{ rating: number; }' is not assignable to type 'never'.
+src/components/ShoppingCart/OrderSummary/OrderSummary.stories.tsx(13,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '{ cartItems: ({ id: number; name: string; description: string; price: number; quantity: number; } | { description?: undefined; id: number; name: string; price: number; quantity: number; })[]; }' is not assignable to type 'never'.
+src/components/ShoppingCartMenu/ShoppingCartMenu.stories.tsx(14,3): error TS2322: Type '{ docs: { inlineStories: false; iframeHeight: number; }; }' is not assignable to type 'undefined'.
+src/components/ShoppingCartMenu/ShoppingCartMenu.stories.tsx(20,5): error TS2322: Type 'true' is not assignable to type 'undefined'.
+src/components/ShoppingCartMenu/ShoppingCartMenu.stories.tsx(21,5): error TS2322: Type '({ id: number; name: string; description: string; price: number; quantity: number; } | { description?: undefined; id: number; name: string; price: number; quantity: number; })[]' is not assignable to type 'undefined'.
+src/components/ShoppingCartMenu/ShoppingCartMenu.stories.tsx(22,5): error TS2322: Type 'number' is not assignable to type 'undefined'.
+src/components/ShoppingCartMenu/ShoppingCartMenu.stories.tsx(28,5): error TS2322: Type 'Mock<Procedure>' is not assignable to type 'undefined'.
+src/components/ShoppingCartMenu/ShoppingCartMenu.stories.tsx(29,5): error TS2322: Type 'Mock<Procedure>' is not assignable to type 'undefined'.
+src/components/ShoppingCartMenu/ShoppingCartMenu.stories.tsx(34,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '{ cartItems: never[]; totalPrice: number; }' is not assignable to type 'never'.
+src/components/ShoppingCartMenu/ShoppingCartMenu.stories.tsx(43,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '{ viewport: { value: string; isRotated: false; }; }' is not assignable to type 'undefined'.
+src/components/ShoppingCartMenu/ShoppingCartMenu.stories.tsx(49,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '() => JSX.Element' is not assignable to type 'ArgsStoryFn<never, never>'.
+      Type 'Element' is not assignable to type 'never'.
+src/components/Sidebar/Sidebar.stories.tsx(10,3): error TS2322: Type '{ docs: { inlineStories: false; iframeHeight: number; }; design: { type: string; url: string; }; }' is not assignable to type 'undefined'.
+src/components/Sidebar/Sidebar.stories.tsx(20,5): error TS2322: Type 'false' is not assignable to type 'undefined'.
+src/components/Sidebar/Sidebar.stories.tsx(21,5): error TS2322: Type 'string' is not assignable to type 'undefined'.
+src/components/Sidebar/Sidebar.stories.tsx(27,5): error TS2322: Type 'Mock<Procedure>' is not assignable to type 'undefined'.
+src/components/Sidebar/Sidebar.stories.tsx(29,3): error TS2322: Type '() => JSX.Element' is not assignable to type 'ArgsStoryFn<never, never>'.
+  Type 'Element' is not assignable to type 'never'.
+src/components/Sidebar/Sidebar.stories.tsx(59,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '{ viewport: { value: string; isRotated: false; }; }' is not assignable to type 'undefined'.
+src/components/Spinner/Spinner.stories.tsx(8,3): error TS2322: Type '{ layout: string; chromatic: { delay: number; }; design: { type: string; url: string; }; }' is not assignable to type 'undefined'.
+src/components/Spinner/Spinner.stories.tsx(19,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '() => JSX.Element' is not assignable to type 'ArgsStoryFn<never, never>'.
+      Type 'Element' is not assignable to type 'never'.
+src/components/TopBanner/TopBanner.stories.tsx(8,3): error TS2322: Type '{ layout: string; design: { type: string; url: string; }; }' is not assignable to type 'undefined'.
+src/components/TopBanner/TopBanner.stories.tsx(18,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '{ title: string; }' is not assignable to type 'never'.
+src/components/TopBanner/TopBanner.stories.tsx(24,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type 'any' is not assignable to type 'never'.
+src/components/TopBanner/TopBanner.stories.tsx(25,22): error TS2339: Property 'args' does not exist on type '{ render: () => Element; } | (BaseAnnotations<never, never> & { name?: string | undefined; storyName?: string | undefined; play?: PlayFunction<never, never> | undefined; globals?: undefined; } & { ...; } & { ...; })'.
+  Property 'args' does not exist on type '{ render: () => Element; }'.
+src/components/forms/Input.stories.tsx(10,5): error TS2322: Type 'Mock<Procedure>' is not assignable to type 'undefined'.
+src/components/forms/Input.stories.tsx(12,3): error TS2322: Type '{ design: { type: string; url: string; }; }' is not assignable to type 'undefined'.
+src/components/forms/Input.stories.tsx(21,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '{ 'aria-label': string; }' is not assignable to type 'never'.
+src/components/forms/Input.stories.tsx(27,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '{ id: string; label: string; }' is not assignable to type 'never'.
+src/components/forms/Input.stories.tsx(34,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type 'any' is not assignable to type 'never'.
+src/components/forms/Input.stories.tsx(35,24): error TS2339: Property 'args' does not exist on type '{ render: () => Element; } | (BaseAnnotations<never, never> & { name?: string | undefined; storyName?: string | undefined; play?: PlayFunction<never, never> | undefined; globals?: undefined; } & { ...; } & { ...; })'.
+  Property 'args' does not exist on type '{ render: () => Element; }'.
+src/components/forms/Input.stories.tsx(41,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type 'any' is not assignable to type 'never'.
+src/components/forms/Input.stories.tsx(42,24): error TS2339: Property 'args' does not exist on type '{ render: () => Element; } | (BaseAnnotations<never, never> & { name?: string | undefined; storyName?: string | undefined; play?: PlayFunction<never, never> | undefined; globals?: undefined; } & { ...; } & { ...; })'.
+  Property 'args' does not exist on type '{ render: () => Element; }'.
+src/components/forms/Input.stories.tsx(48,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '{ id: string; label: string; value: string; error: string; }' is not assignable to type 'never'.
+src/components/forms/Select.stories.tsx(8,3): error TS2322: Type '{ design: { type: string; url: string; }; }' is not assignable to type 'undefined'.
+src/components/forms/Select.stories.tsx(17,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '{ options: string[]; id: string; 'aria-label': string; }' is not assignable to type 'never'.
+src/components/forms/Select.stories.tsx(25,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type 'any' is not assignable to type 'never'.
+src/components/forms/Select.stories.tsx(26,22): error TS2339: Property 'args' does not exist on type '{ render: () => Element; } | (BaseAnnotations<never, never> & { name?: string | undefined; storyName?: string | undefined; play?: PlayFunction<never, never> | undefined; globals?: undefined; } & { ...; } & { ...; })'.
+  Property 'args' does not exist on type '{ render: () => Element; }'.
+src/components/typography/Body.stories.tsx(8,3): error TS2322: Type '{ children: { controls: string; }; size: { table: { disable: true; }; }; }' is not assignable to type 'undefined'.
+src/components/typography/Body.stories.tsx(15,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '{ children: string; }' is not assignable to type 'never'.
+src/components/typography/Body.stories.tsx(18,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '({ children }: never) => Element' is not assignable to type 'ArgsStoryFn<never, never>'.
+      Type 'Element' is not assignable to type 'never'.
+src/components/typography/Heading.stories.tsx(8,3): error TS2322: Type '{ children: { controls: string; }; level: { table: { disable: true; }; }; }' is not assignable to type 'undefined'.
+src/components/typography/Heading.stories.tsx(15,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '{ children: string; }' is not assignable to type 'never'.
+src/components/typography/Heading.stories.tsx(18,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '({ children }: never) => Element' is not assignable to type 'ArgsStoryFn<never, never>'.
+      Type 'Element' is not assignable to type 'never'.
+src/pages/CategoryDetailPage/CategoryDetailPage.stories.tsx(13,3): error TS2322: Type '{ layout: string; deeplink: { route: string; path: string; }; design: { type: string; url: string; }; }' is not assignable to type 'undefined'.
+src/pages/CategoryDetailPage/CategoryDetailPage.stories.tsx(21,16): error TS2322: Type 'Decorator' is not assignable to type 'DecoratorFunction$2<never, any>'.
+  Type 'Element' is not assignable to type 'never'.
+src/pages/CategoryDetailPage/CategoryDetailPage.stories.tsx(25,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '{ msw: { handlers: HttpHandler[]; }; }' is not assignable to type 'undefined'.
+src/pages/CategoryDetailPage/CategoryDetailPage.stories.tsx(33,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '{ msw: { handlers: HttpHandler[]; }; }' is not assignable to type 'undefined'.
+src/pages/CategoryDetailPage/CategoryDetailPage.stories.tsx(45,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '{ deeplink: { route: string; path: string; }; msw: { handlers: HttpHandler[]; }; design: { type: string; url: string; }; }' is not assignable to type 'undefined'.
+src/pages/CategoryListPage/CategoryListPage.stories.tsx(8,3): error TS2322: Type '{ layout: string; design: { type: string; url: string; }; }' is not assignable to type 'undefined'.
+src/pages/CategoryListPage/components/CategoryList/CategoryList.stories.tsx(13,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '{ categories: { id: string; title: string; photoUrl: string; }[]; }' is not assignable to type 'never'.
+src/pages/CheckoutPage/CheckoutPage.stories.tsx(8,3): error TS2322: Type '{ layout: string; design: { type: string; url: string; }; }' is not assignable to type 'undefined'.
+src/pages/CheckoutPage/CheckoutPage.stories.tsx(20,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '{ store: { initialState: { cart: { visible: false; items: { id: number; name: string; description: string; price: number; quantity: number; }[]; }; }; }; }' is not assignable to type 'undefined'.
+src/pages/CheckoutPage/components/registration-form/MultiStepForm.stories.tsx(8,3): error TS2322: Type '{ design: { type: string; url: string; }; }' is not assignable to type 'undefined'.
+src/pages/CheckoutPage/components/registration-form/StepIndicator.stories.tsx(11,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '{ title: string; amountOfSteps: number; currentStep: number; }' is not assignable to type 'never'.
+src/pages/HomePage/HomePage.stories.tsx(12,3): error TS2322: Type '{ layout: string; design: { type: string; url: string; }; msw: { handlers: HttpHandler[]; }; }' is not assignable to type 'undefined'.
+src/pages/HomePage/components/AwardWinningSection/AwardWinningSection.stories.tsx(8,3): error TS2322: Type '{ layout: string; design: { type: string; url: string; }; }' is not assignable to type 'undefined'.
+src/pages/HomePage/components/Banner/Banner.stories.tsx(8,3): error TS2322: Type '{ layout: string; design: { type: string; url: string; }; }' is not assignable to type 'undefined'.
+src/pages/HomePage/components/Banner/Banner.stories.tsx(20,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '{ viewport: { value: string; isRotated: false; }; }' is not assignable to type 'undefined'.
+src/pages/HomePage/components/CategoriesSection/CategoriesSection.stories.tsx(11,5): error TS2322: Type '{ id: string; title: string; photoUrl: string; }[]' is not assignable to type 'undefined'.
+src/pages/HomePage/components/RestaurantsSection/RestaurantsSection.stories.tsx(15,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '{ title: string; }' is not assignable to type 'never'.
+src/pages/HomePage/components/RestaurantsSection/RestaurantsSection.stories.tsx(18,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '{ msw: { handlers: HttpHandler[]; }; }' is not assignable to type 'undefined'.
+src/pages/HomePage/components/RestaurantsSection/RestaurantsSection.stories.tsx(26,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type 'any' is not assignable to type 'never'.
+src/pages/HomePage/components/RestaurantsSection/RestaurantsSection.stories.tsx(27,22): error TS2339: Property 'args' does not exist on type '{ render: () => Element; } | (BaseAnnotations<never, never> & { name?: string | undefined; storyName?: string | undefined; play?: PlayFunction<never, never> | undefined; globals?: undefined; } & { ...; } & { ...; })'.
+  Property 'args' does not exist on type '{ render: () => Element; }'.
+src/pages/HomePage/components/RestaurantsSection/RestaurantsSection.stories.tsx(29,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '{ msw: { handlers: HttpHandler[]; }; }' is not assignable to type 'undefined'.
+src/pages/RestaurantDetailPage/RestaurantDetailPage.stories.tsx(16,16): error TS2322: Type 'Decorator' is not assignable to type 'DecoratorFunction$2<never, any>'.
+  Type 'Element' is not assignable to type 'never'.
+src/pages/RestaurantDetailPage/RestaurantDetailPage.stories.tsx(17,3): error TS2322: Type '{ layout: string; deeplink: { route: string; path: string; }; msw: { handlers: HttpHandler[]; }; }' is not assignable to type 'undefined'.
+src/pages/RestaurantDetailPage/RestaurantDetailPage.stories.tsx(31,3): error TS2322: Type '() => JSX.Element' is not assignable to type 'ArgsStoryFn<never, never>'.
+  Type 'Element' is not assignable to type 'never'.
+src/pages/RestaurantDetailPage/RestaurantDetailPage.stories.tsx(41,35): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Property 'args' is missing in type '{ play: ({ canvas }: StoryContext$2<never, never>) => Promise<void>; }' but required in type '{ decorators?: DecoratorFunction$2<never, never>[] | DecoratorFunction$2<never, never> | undefined; parameters?: undefined; args: never; ... 10 more ...; globals?: undefined; }'.
+src/pages/RestaurantDetailPage/RestaurantDetailPage.stories.tsx(48,41): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Argument of type '{ render: () => Element; play: (context: StoryContext$2<never, never>) => Promise<void>; } | { decorators?: DecoratorFunction$2<never, never>[] | DecoratorFunction$2<...> | undefined; ... 12 more ...; play: (context: StoryContext$2<...>) => Promise<...>; }' is not assignable to parameter of type '{ decorators?: DecoratorFunction$2<never, never>[] | DecoratorFunction$2<never, never> | undefined; parameters?: undefined; args: never; ... 10 more ...; globals?: undefined; }'.
+      Property 'args' is missing in type '{ render: () => Element; play: (context: StoryContext$2<never, never>) => Promise<void>; }' but required in type '{ decorators?: DecoratorFunction$2<never, never>[] | DecoratorFunction$2<never, never> | undefined; parameters?: undefined; args: never; ... 10 more ...; globals?: undefined; }'.
+src/pages/RestaurantDetailPage/RestaurantDetailPage.stories.tsx(51,11): error TS18046: 'Success.play' is of type 'unknown'.
+src/pages/RestaurantDetailPage/RestaurantDetailPage.stories.tsx(59,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '{ store: { initialState: { cart: { items: ({ id: number; name: string; description: string; price: number; quantity: number; } | { description?: undefined; id: number; name: string; price: number; quantity: number; })[]; }; }; }; }' is not assignable to type 'undefined'.
+src/pages/RestaurantDetailPage/RestaurantDetailPage.stories.tsx(65,60): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Argument of type '{ render: () => Element; beforeEach: () => Promise<void>; } | { decorators?: DecoratorFunction$2<never, never>[] | DecoratorFunction$2<never, never> | undefined; ... 12 more ...; beforeEach: () => Promise<...>; }' is not assignable to parameter of type '{ decorators?: DecoratorFunction$2<never, never>[] | DecoratorFunction$2<never, never> | undefined; parameters?: undefined; args: never; ... 10 more ...; globals?: undefined; }'.
+      Property 'args' is missing in type '{ render: () => ReactTypes['storyResult']; beforeEach: () => Promise<void>; }' but required in type '{ decorators?: DecoratorFunction$2<never, never>[] | DecoratorFunction$2<never, never> | undefined; parameters?: undefined; args: never; ... 10 more ...; globals?: undefined; }'.
+src/pages/RestaurantDetailPage/RestaurantDetailPage.stories.tsx(73,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '{ design: { type: string; url: string; }; msw: { handlers: HttpHandler[]; }; }' is not assignable to type 'undefined'.
+src/pages/RestaurantDetailPage/RestaurantDetailPage.stories.tsx(96,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '{ design: { type: string; url: string; }; msw: { handlers: { error: HttpHandler; }; }; }' is not assignable to type 'undefined'.
+src/pages/RestaurantDetailPage/RestaurantDetailPage.stories.tsx(116,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '{ design: { type: string; url: string; }; msw: { handlers: HttpHandler[]; }; }' is not assignable to type 'undefined'.
+src/pages/RestaurantDetailPage/components/FoodItem/FoodItem.stories.tsx(15,5): error TS2322: Type 'Mock<Procedure>' is not assignable to type 'undefined'.
+src/pages/RestaurantDetailPage/components/FoodItem/FoodItem.stories.tsx(20,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '{ name: string; price: number; description: string; }' is not assignable to type 'never'.
+src/pages/RestaurantDetailPage/components/FoodItem/FoodItem.stories.tsx(28,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type 'any' is not assignable to type 'never'.
+src/pages/RestaurantDetailPage/components/FoodItem/FoodItem.stories.tsx(29,22): error TS2339: Property 'args' does not exist on type '{ render: () => Element; } | (BaseAnnotations<never, never> & { name?: string | undefined; storyName?: string | undefined; play?: PlayFunction<never, never> | undefined; globals?: undefined; } & { ...; } & { ...; })'.
+  Property 'args' does not exist on type '{ render: () => Element; }'.
+src/pages/RestaurantDetailPage/components/FoodItemModal/FoodItemModal.stories.tsx(12,3): error TS2322: Type '{ docs: { inlineStories: false; iframeHeight: number; }; }' is not assignable to type 'undefined'.
+src/pages/RestaurantDetailPage/components/FoodItemModal/FoodItemModal.stories.tsx(18,18): error TS2322: Type 'Element' is not assignable to type 'never'.
+src/pages/RestaurantDetailPage/components/FoodItemModal/FoodItemModal.stories.tsx(31,5): error TS2322: Type 'Mock<Procedure>' is not assignable to type 'undefined'.
+src/pages/RestaurantDetailPage/components/FoodItemModal/FoodItemModal.stories.tsx(32,5): error TS2322: Type 'Mock<Procedure>' is not assignable to type 'undefined'.
+src/pages/RestaurantDetailPage/components/FoodItemModal/FoodItemModal.stories.tsx(33,5): error TS2322: Type 'Mock<Procedure>' is not assignable to type 'undefined'.
+src/pages/RestaurantDetailPage/components/FoodItemModal/FoodItemModal.stories.tsx(34,5): error TS2322: Type 'never[]' is not assignable to type 'undefined'.
+src/pages/RestaurantDetailPage/components/FoodItemModal/FoodItemModal.stories.tsx(36,3): error TS2322: Type '() => JSX.Element' is not assignable to type 'ArgsStoryFn<never, never>'.
+  Type 'Element' is not assignable to type 'never'.
+src/pages/RestaurantDetailPage/components/FoodItemModal/FoodItemModal.stories.tsx(64,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '{ viewport: { value: string; isRotated: false; }; }' is not assignable to type 'undefined'.
+src/pages/RestaurantDetailPage/components/FoodItemModal/FoodItemModal.stories.tsx(70,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '{ viewport: { value: string; isRotated: false; }; }' is not assignable to type 'undefined'.
+src/pages/SuccessPage/SuccessPage.stories.tsx(8,3): error TS2322: Type '{ layout: string; design: { type: string; url: string; }; }' is not assignable to type 'undefined'.
+src/pages/SuccessPage/SuccessPage.stories.tsx(18,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '{ store: { initialState: { order: { items: { id: number; name: string; description: string; price: number; quantity: number; }[]; }; }; }; }' is not assignable to type 'undefined'.
+src/pages/UserFlows.stories.tsx(12,3): error TS2322: Type '{ layout: string; chromatic: { disable: true; }; deeplink: { route: string; path: string; }; msw: { handlers: HttpHandler[]; }; }' is not assignable to type 'undefined'.
+src/pages/UserFlows.stories.tsx(40,16): error TS2322: Type 'Decorator' is not assignable to type 'DecoratorFunction$2<never, any>'.
+  Type 'Element' is not assignable to type 'never'.
+src/pages/UserFlows.stories.tsx(41,3): error TS2322: Type '{ demoMode: { control: { type: string; }; }; }' is not assignable to type 'undefined'.
+src/pages/UserFlows.stories.tsx(46,3): error TS2322: Type 'string[]' is not assignable to type 'undefined'.
+src/pages/UserFlows.stories.tsx(51,46): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Property 'args' is missing in type '{ play: ({ canvasElement, step, userEvent }: StoryContext$2<never, never>) => Promise<void>; }' but required in type '{ decorators?: DecoratorFunction$2<never, never>[] | DecoratorFunction$2<never, never> | undefined; parameters?: undefined; args: never; ... 10 more ...; globals?: undefined; }'.
+src/pages/UserFlows.stories.tsx(60,48): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Property 'args' is missing in type '{ play: (context: StoryContext$2<never, never>) => Promise<void>; }' but required in type '{ decorators?: DecoratorFunction$2<never, never>[] | DecoratorFunction$2<never, never> | undefined; parameters?: undefined; args: never; ... 10 more ...; globals?: undefined; }'.
+src/pages/UserFlows.stories.tsx(62,11): error TS18046: 'ToCategoryListPage.play' is of type 'unknown'.
+src/pages/UserFlows.stories.tsx(72,50): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Property 'args' is missing in type '{ play: (context: StoryContext$2<never, never>) => Promise<void>; }' but required in type '{ decorators?: DecoratorFunction$2<never, never>[] | DecoratorFunction$2<never, never> | undefined; parameters?: undefined; args: never; ... 10 more ...; globals?: undefined; }'.
+src/pages/UserFlows.stories.tsx(74,11): error TS18046: 'ToCategoryDetailPage.play' is of type 'unknown'.
+src/pages/UserFlows.stories.tsx(87,42): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Property 'args' is missing in type '{ play: (context: StoryContext$2<never, never>) => Promise<void>; }' but required in type '{ decorators?: DecoratorFunction$2<never, never>[] | DecoratorFunction$2<never, never> | undefined; parameters?: undefined; args: never; ... 10 more ...; globals?: undefined; }'.
+src/pages/UserFlows.stories.tsx(89,11): error TS18046: 'ToRestaurantDetailPage.play' is of type 'unknown'.
+src/pages/UserFlows.stories.tsx(126,41): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Property 'args' is missing in type '{ play: (context: StoryContext$2<never, never>) => Promise<void>; }' but required in type '{ decorators?: DecoratorFunction$2<never, never>[] | DecoratorFunction$2<never, never> | undefined; parameters?: undefined; args: never; ... 10 more ...; globals?: undefined; }'.
+src/pages/UserFlows.stories.tsx(128,11): error TS18046: 'ToCheckoutPage.play' is of type 'unknown'.
+src/pages/UserFlows.stories.tsx(156,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '{ demoMode: true; }' is not assignable to type 'never'.
+src/templates/PageTemplate.stories.tsx(11,3): error TS2322: Type '{ layout: string; }' is not assignable to type 'undefined'.
+src/templates/PageTemplate.stories.tsx(21,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '{ children: React.JSX.Element; }' is not assignable to type 'never'.
+src/templates/PageTemplate.stories.tsx(29,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '{ store: { initialState: { cart: { items: ({ id: number; name: string; description: string; price: number; quantity: number; } | { description?: undefined; id: number; name: string; price: number; quantity: number; })[]; }; }; }; }' is not assignable to type 'undefined'.
+src/templates/PageTemplate.stories.tsx(37,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '{ type: string; children: React.JSX.Element; }' is not assignable to type 'never'.
+src/templates/PageTemplate.stories.tsx(48,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '{ type: string; children: React.JSX.Element; }' is not assignable to type 'never'.

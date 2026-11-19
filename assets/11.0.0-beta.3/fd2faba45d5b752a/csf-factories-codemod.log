@@ -1,0 +1,44 @@
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+➤ YN0000: · Yarn 4.18.0
+➤ YN0000: ┌ Resolution step
+➤ YN0085: │ + @storybook/cli@npm:11.0.0-beta.3, @emnapi/core@npm:1.11.0, @emnapi/runtime@npm:1.11.0, @emnapi/wasi-threads@npm:1.2.2, @esbuild/aix-ppc64@npm:0.28.2, and 74 more.
+➤ YN0000: └ Completed in 0s 244ms
+➤ YN0000: ┌ Post-resolution validation
+➤ YN0086: │ Some peer dependencies are incorrectly met by dependencies; run yarn explain peer-requirements for details.
+➤ YN0000: └ Completed
+➤ YN0000: ┌ Fetch step
+➤ YN0013: │ 18 packages were added to the project (+ 40.07 MiB).
+➤ YN0000: └ Completed
+➤ YN0000: ┌ Link step
+➤ YN0007: │ esbuild@npm:0.28.2 must be built because it never has been before or the last one failed
+➤ YN0000: └ Completed in 0s 334ms
+➤ YN0000: · Done with warnings in 0s 800ms
+
+
+[90m┌[39m  Running csf-factories automigration
+[90m│[39m
+[32m◇[39m  Running migration [35mcsf-factories[39m..
+[90m│[39m
+[32m◇[39m  Applying codemod on your stories, this might take some time...
+[90m│[39m
+[90m│[39m  Summary: [32m42 transformed[39m, [33m0 unmodified[39m, [31m0 errors[39m
+[90m│[39m
+[32m◇[39m  Applying codemod on your main config...
+[90m│[39m
+[90m│[39m  Summary: [32m1 transformed[39m, [33m0 unmodified[39m, [31m0 errors[39m
+[90m│[39m
+[32m◇[39m  Applying codemod on your preview config...
+[90m│[39m
+[90m│[39m  Summary: [32m1 transformed[39m, [33m0 unmodified[39m, [31m0 errors[39m
+[90m│[39m
+[33m▲[39m  Not synchronizing the preview addons: Cannot mutate mixed default and
+[90m│[39m  named config exports
+│ ┌──────────────────────────────────────────────────────────────────────────┐
+│ │  You can now run Storybook with the new CSF 4 format.                    │
+│ │                                                                          │
+│ │  For more info, check out the docs:                                      │
+│ │  [33mhttps://storybook.js.org/docs/writing-stories/csf/upgrade?ref=upgrade[39m   │
+│ └──────────────────────────────────────────────────────────────────────────┘
+[90m│[39m
+[90m└[39m  Done
+

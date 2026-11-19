@@ -1,0 +1,2 @@
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+.storybook/preview.tsx(215,5): error TS2717: Subsequent property declarations must have the same type.  Property 'userEvent' must be of type 'UserEvent', but here has type 'UserEvent'.

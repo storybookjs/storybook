@@ -1,0 +1,2 @@
+ suite-native-app/storybook/package.json | 3 +++
+ 1 file changed, 3 insertions(+)

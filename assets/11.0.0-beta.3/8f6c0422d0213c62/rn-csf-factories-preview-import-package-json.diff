@@ -1,0 +1,13 @@
+diff --git a/suite-native-app/storybook/package.json b/suite-native-app/storybook/package.json
+index c20f951d..dcb13bea 100644
+--- a/suite-native-app/storybook/package.json
++++ b/suite-native-app/storybook/package.json
+@@ -42,5 +42,8 @@
+     },
+     "devDependencies": {
+         "eslint-plugin-storybook": "11.0.0-beta.3"
++    },
++    "imports": {
++        "#.storybook/preview": "./.storybook/preview.tsx"
+     }
+ }

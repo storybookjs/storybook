@@ -1,0 +1,35 @@
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+➤ YN0000: · Yarn 4.18.0
+➤ YN0000: ┌ Resolution step
+➤ YN0085: │ + @storybook/cli@npm:11.0.0-beta.3, @emnapi/core@npm:1.11.0, @emnapi/runtime@npm:1.11.0, @emnapi/wasi-threads@npm:1.2.2, @esbuild/aix-ppc64@npm:0.28.2, and 74 more.
+➤ YN0000: └ Completed
+➤ YN0000: ┌ Post-resolution validation
+➤ YN0086: │ Some peer dependencies are incorrectly met by dependencies; run yarn explain peer-requirements for details.
+➤ YN0000: └ Completed
+➤ YN0000: ┌ Fetch step
+➤ YN0000: └ Completed
+➤ YN0000: ┌ Link step
+➤ YN0004: │ esbuild@npm:0.28.2 lists build scripts, but all build scripts have been disabled.
+➤ YN0000: └ Completed in 0s 295ms
+➤ YN0000: · Done with warnings in 0s 508ms
+
+
+[90m┌[39m  Running csf-factories automigration
+[90m│[39m
+[32m◇[39m  Running migration [35mcsf-factories[39m..
+[90m│[39m
+[32m◇[39m  Adding imports map in
+[90m│[39m  [36m/home/agent/workspace/suite-native-app/storybook/package.json[39m
+[90m│[39m
+[32m◇[39m  Applying codemod on your stories, this might take some time...
+[90m│[39m
+[31m■[39m  No files found for glob pattern
+[90m│[39m  "**/*.{stories,story}.{js,jsx,ts,tsx,mjs,mjsx,mts,mtsx,svelte}".
+[90m│[39m  Please try a different pattern.
+
+[90m│[39m
+[90m│[39m  Debug logs are written to:
+[90m│[39m  /home/agent/workspace/suite-native-app/storybook/debug-storybook.log
+[90m│[39m
+[90m└[39m  
+

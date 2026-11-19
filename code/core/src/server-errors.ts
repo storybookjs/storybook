@@ -1024,16 +1024,16 @@ export class NoMatchingExportError extends StorybookError {
 
           ${data.detail}
 
-          This usually means an addon was built for an older Storybook and imports an API that no longer exists. Update or remove the package that the file above belongs to. Mismatched Storybook core package versions can also cause this. Run \`npx storybook doctor\` to check for both problems.`
+          Two common causes: an addon or dependency was built for an older Storybook and imports an API that no longer exists, in which case the package the file above belongs to needs updating or removing; or the installed Storybook core package versions don't match. Run \`npx storybook doctor\` to check for both problems.`
         : dedent`
           There was an exports mismatch error when trying to build Storybook.
           Please check whether the versions of your Storybook packages match whenever possible, as this might be the cause.
 
           Problematic example:
-          { "@storybook/react": "7.5.3", "@storybook/react-vite": "7.4.5", "storybook": "7.3.0" }
+          { "@storybook/react-vite": "10.5.0", "storybook": "10.6.4" }
 
           Correct example:
-          { "@storybook/react": "7.5.3", "@storybook/react-vite": "7.5.3", "storybook": "7.5.3" }
+          { "@storybook/react-vite": "10.6.4", "storybook": "10.6.4" }
 
           Please run \`npx storybook doctor\` for guidance on how to fix this issue.`,
     });

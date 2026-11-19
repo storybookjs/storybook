@@ -261,12 +261,7 @@ export const Search = React.memo<SearchProps>(function Search({
       let results: DownshiftItem[] = [];
       const resultIds: Set<string> = new Set();
 
-      const matches = (fuse.search(input) as SearchResult[]).map((result) => ({
-        ...result,
-        matches: resolveHighlightRanges(result.matches ?? [], input),
-      }));
-
-      const distinctResults = matches.filter(({ item }) => {
+      const distinctResults = (fuse.search(input) as SearchResult[]).filter(({ item }) => {
         if (
           !(item.type === 'component' || item.type === 'docs' || item.type === 'story') ||
           // @ts-expect-error (non strict)
@@ -279,7 +274,12 @@ export const Search = React.memo<SearchProps>(function Search({
       });
 
       if (distinctResults.length) {
-        results = distinctResults.slice(0, allComponents ? 1000 : DEFAULT_MAX_SEARCH_RESULTS);
+        results = distinctResults
+          .slice(0, allComponents ? 1000 : DEFAULT_MAX_SEARCH_RESULTS)
+          .map((result) => ({
+            ...result,
+            matches: resolveHighlightRanges(result.matches, input),
+          }));
         if (distinctResults.length > DEFAULT_MAX_SEARCH_RESULTS && !allComponents) {
           results.push({
             showAll: () => showAllComponents(true),

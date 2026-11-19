@@ -131,7 +131,9 @@ describe('qa-plan.ts diff', () => {
     );
 
     expect(status).toBe(0);
-    expect(stdout).toBe('No PR moved, and no entry, discovered repo, or manual check differs.\n');
+    expect(stdout).toBe(
+      'No PR moved, and no entry, discovered repo, manual check, or reason for no QA differs.\n'
+    );
   });
 
   it('prints each PR whose place changed, with where it was and where it is', () => {

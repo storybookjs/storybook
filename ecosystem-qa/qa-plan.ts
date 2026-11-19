@@ -45,7 +45,7 @@ ledger prints where each PR of the window ended up in the plan, with its status,
 or writes it to --out.
 
 manual prints the manual checks of a plan that passes check with that window as one Markdown
-checklist for an issue or a discussion, in one section for each reason why the sweep cannot test
+checklist for an issue or a discussion, in one section for each reason why the sweep does not test
 them, with the title of each PR, or writes it to --out. It creates nothing on GitHub.
 
 diff prints what differs between two plans of that window: each PR whose place changed, with where
@@ -214,7 +214,7 @@ if (files.length > fileCount) {
   console.log(
     lines.length
       ? lines.join('\n')
-      : 'No PR moved, and no entry, discovered repo, or manual check differs.'
+      : 'No PR moved, and no entry, discovered repo, manual check, or reason for no QA differs.'
   );
   for (const pr of unnamed) {
     console.error(`#${pr} moved, and --moved does not name it.`);

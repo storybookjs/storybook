@@ -1,0 +1,8 @@
+HTTP/1.1 200 OK
+Content-Security-Policy: frame-ancestors 'self' http://localhost:* http://*.localhost:* http://127.0.0.1:*
+Cache-Control: no-store
+Content-Type: text/html
+Date: Thu, 19 Nov 2026 08:01:11 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+

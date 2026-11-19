@@ -1,0 +1,255 @@
+diff --git a/storybook/src/stories/Checkbox.stories.svelte b/storybook/src/stories/Checkbox.stories.svelte
+index 5c59f65..0836501 100644
+--- a/storybook/src/stories/Checkbox.stories.svelte
++++ b/storybook/src/stories/Checkbox.stories.svelte
+@@ -15,47 +15,38 @@ const { Story } = defineMeta({
+     content: {
+       control: 'text',
+       description: 'Text to show next to the checkbox',
+-      defaultValue: '',
+     },
+     title: {
+       control: 'text',
+       description: 'tooltip displayed when hovering the checkbox',
+-      defaultValue: '',
+     },
+     checked: {
+       control: 'boolean',
+       description: 'Flag the checkbox as being checked',
+-      defaultValue: false,
+     },
+     disabled: {
+       control: 'boolean',
+       description: 'Flag the checkbox as being disabled',
+-      defaultValue: false,
+     },
+     indeterminate: {
+       control: 'boolean',
+       description: 'Flag the checkbox as being indeterminate',
+-      defaultValue: false,
+     },
+     disabledTooltip: {
+       control: 'text',
+       description: 'Tooltip to show when the checkbox is disabled',
+-      defaultValue: '',
+     },
+     required: {
+       control: 'boolean',
+       description: 'Flag the checkbox as being required',
+-      defaultValue: false,
+     },
+     id: {
+       control: 'text',
+       description: 'Id of the checkbox',
+-      defaultValue: undefined,
+     },
+     name: {
+       control: 'text',
+       description: 'Name of the checkbox',
+-      defaultValue: undefined,
+     },
+   },
+ });
+diff --git a/storybook/src/stories/Dropdown.stories.svelte b/storybook/src/stories/Dropdown.stories.svelte
+index da23509..45f8e2e 100644
+--- a/storybook/src/stories/Dropdown.stories.svelte
++++ b/storybook/src/stories/Dropdown.stories.svelte
+@@ -17,13 +17,11 @@ const { Story } = defineMeta({
+     value: {
+       control: 'text',
+       description: 'Initial value shown in the dropdown',
+-      defaultValue: '',
+     },
+     onchange: onChangeFn,
+     disabled: {
+       control: 'boolean',
+       description: 'Set the dropdown as being disabled',
+-      defaultValue: false,
+     },
+     options: {
+       description: 'Dropdown items',
+diff --git a/storybook/src/stories/Tab.stories.svelte b/storybook/src/stories/Tab.stories.svelte
+index 841214c..fc97b4a 100644
+--- a/storybook/src/stories/Tab.stories.svelte
++++ b/storybook/src/stories/Tab.stories.svelte
+@@ -15,17 +15,14 @@ const { Story } = defineMeta({
+     title: {
+       control: 'text',
+       description: 'Title of the tab',
+-      defaultValue: 'Tab',
+     },
+     url: {
+       control: 'text',
+       description: 'Link to navigate to when tab is clicked',
+-      defaultValue: '',
+     },
+     selected: {
+       control: 'boolean',
+       description: 'Flag the tab as being selected',
+-      defaultValue: false,
+     },
+   },
+ });
+diff --git a/storybook/src/stories/Tooltip.stories.svelte b/storybook/src/stories/Tooltip.stories.svelte
+index 9477918..9f76eef 100644
+--- a/storybook/src/stories/Tooltip.stories.svelte
++++ b/storybook/src/stories/Tooltip.stories.svelte
+@@ -20,47 +20,38 @@ const { Story } = defineMeta({
+     tip: {
+       control: 'text',
+       description: 'Text to show in the tooltip',
+-      defaultValue: 'This is a tooltip',
+     },
+     top: {
+       control: 'boolean',
+       description: 'Flag the tooltip as being at the top',
+-      defaultValue: false,
+     },
+     topLeft: {
+       control: 'boolean',
+       description: 'Flag the tooltip as being at the top left',
+-      defaultValue: false,
+     },
+     topRight: {
+       control: 'boolean',
+       description: 'Flag the tooltip as being at the top right',
+-      defaultValue: false,
+     },
+     right: {
+       control: 'boolean',
+       description: 'Flag the tooltip as being at the right',
+-      defaultValue: false,
+     },
+     bottom: {
+       control: 'boolean',
+       description: 'Flag the tooltip as being at the bottom',
+-      defaultValue: false,
+     },
+     bottomLeft: {
+       control: 'boolean',
+       description: 'Flag the tooltip as being at the bottom left',
+-      defaultValue: false,
+     },
+     bottomRight: {
+       control: 'boolean',
+       description: 'Flag the tooltip as being at the bottom right',
+-      defaultValue: false,
+     },
+     left: {
+       control: 'boolean',
+       description: 'Flag the tooltip as being at the left',
+-      defaultValue: false,
+     },
+   },
+ });
+diff --git a/storybook/src/stories/button/ButtonRow.stories.svelte b/storybook/src/stories/button/ButtonRow.stories.svelte
+index 52a27f1..ef8850e 100644
+--- a/storybook/src/stories/button/ButtonRow.stories.svelte
++++ b/storybook/src/stories/button/ButtonRow.stories.svelte
+@@ -15,7 +15,6 @@ const { Story } = defineMeta({
+   argTypes: {
+     initialFocus: {
+       control: 'select',
+-      defaultValue: 'none',
+       options: ['none', 'first', 'last'],
+       description: 'The enabled action that receives focus when the row mounts.',
+     },
+diff --git a/storybook/src/stories/input/Input.stories.svelte b/storybook/src/stories/input/Input.stories.svelte
+index 904eefc..f9af592 100644
+--- a/storybook/src/stories/input/Input.stories.svelte
++++ b/storybook/src/stories/input/Input.stories.svelte
+@@ -15,37 +15,30 @@ const { Story } = defineMeta({
+     placeholder: {
+       control: 'text',
+       description: 'placeholder text to show if input field is empty',
+-      defaultValue: '',
+     },
+     value: {
+       control: 'text',
+       description: 'initial value',
+-      defaultValue: '',
+     },
+     disabled: {
+       control: 'boolean',
+       description: 'Flag the input as being disabled',
+-      defaultValue: false,
+     },
+     readonly: {
+       control: 'boolean',
+       description: 'if true, the input field cannot be edited',
+-      defaultValue: false,
+     },
+     required: {
+       control: 'boolean',
+       description: 'if true, the input field is required',
+-      defaultValue: false,
+     },
+     clearable: {
+       control: 'boolean',
+       description: 'if true, the input field can be cleared with an icon',
+-      defaultValue: false,
+     },
+     error: {
+       control: 'text',
+       description: 'error message to show if input is invalid',
+-      defaultValue: '',
+     },
+   },
+ });
+diff --git a/storybook/src/stories/progress/Spinner.stories.svelte b/storybook/src/stories/progress/Spinner.stories.svelte
+index 37cdf26..fcf370a 100644
+--- a/storybook/src/stories/progress/Spinner.stories.svelte
++++ b/storybook/src/stories/progress/Spinner.stories.svelte
+@@ -25,7 +25,6 @@ const { Story } = defineMeta({
+     size: {
+       control: 'text',
+       description: 'CSS size value for SVG width and height',
+-      defaultValue: '2em',
+     },
+     class: {
+       control: 'text',
+@@ -38,7 +37,6 @@ const { Story } = defineMeta({
+     label: {
+       control: 'text',
+       description: 'Accessible label for screen readers via aria-label',
+-      defaultValue: 'Loading',
+     },
+     kind: {
+       table: { disable: true },
+diff --git a/storybook/src/stories/screen/EmptyScreen.stories.svelte b/storybook/src/stories/screen/EmptyScreen.stories.svelte
+index 23e0977..fbe3066 100644
+--- a/storybook/src/stories/screen/EmptyScreen.stories.svelte
++++ b/storybook/src/stories/screen/EmptyScreen.stories.svelte
+@@ -16,32 +16,26 @@ const { Story } = defineMeta({
+     icon: {
+       control: 'object',
+       description: 'Icon to show on the screen',
+-      defaultValue: undefined,
+     },
+     title: {
+       control: 'text',
+       description: 'Title of the screen',
+-      defaultValue: 'No title',
+     },
+     message: {
+       control: 'text',
+       description: 'Message to show on the screen',
+-      defaultValue: 'Message',
+     },
+     detail: {
+       control: 'text',
+       description: 'Detail to show on the screen',
+-      defaultValue: '',
+     },
+     commandline: {
+       control: 'text',
+       description: 'Command to show on the screen',
+-      defaultValue: '',
+     },
+     hidden: {
+       control: 'boolean',
+       description: 'Flag the screen as being hidden',
+-      defaultValue: false,
+     },
+   },
+ });

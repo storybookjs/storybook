@@ -1,0 +1,249 @@
+.../mwnc5u66-m1                          | Progress: resolved 0, reused 0, downloaded 1, added 0
+Packages are copied from the content-addressable store to the virtual store.
+  Content-addressable store is at: /home/agent/workspace/.pnpm-store/v11
+  Virtual store is at:             ../../.cache/pnpm/dlx/58ff251e5663eb75501a53820768cb88/mwnc5u66-m1/node_modules/.pnpm
+.../mwnc5u66-m1                          | Progress: resolved 11, reused 0, downloaded 17, added 11, done
+Ignored build scripts: esbuild@0.28.2.
+Run "pnpm approve-builds" to pick which dependencies should be allowed to run scripts.
+
+dependencies:
++ storybook 11.0.0-beta.3
+
+.../mwnc5vb2-p5                          | Progress: resolved 0, reused 1, downloaded 0, added 0
+Packages are copied from the content-addressable store to the virtual store.
+  Content-addressable store is at: /home/agent/workspace/.pnpm-store/v11
+  Virtual store is at:             ../../.cache/pnpm/dlx/82084f7b8d4beed61cb4e7184f6c2e0f/mwnc5vb2-p5/node_modules/.pnpm
+.../mwnc5vb2-p5                          | Progress: resolved 13, reused 17, downloaded 2, added 13, done
+.../mwnc5vb2-p5/node_modules/esbuild postinstall$ node install.js
+.../mwnc5vb2-p5/node_modules/esbuild postinstall: Done
+
+dependencies:
++ @storybook/cli 11.0.0-beta.3
+
+
+[90m┌[39m  Storybook upgrade - v11.0.0-beta.3
+[90m│[39m
+[90m│[39m  Detecting projects...
+[90m│[39m
+[90m│[39m  Detecting projects: 1 projects
+[90m│[39m
+[90m│[39m  1 project detected
+[90m│[39m
+[34m●[39m  Upgrading from [1m10.6.3[22m to [1m11.0.0-beta.3[22m
+[90m│[39m
+[90m│[39m  /storybook/package.json
+[90m│[39m  /package.json
+[90m│[39m
+[90m│[39m  Updated package versions in package.json files
+[90m│[39m
+[90m│[39m  Checking automigrations for /storybook/.storybook...
+[90m│[39m
+
+[90m│[39m  Automigrations detected:
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m addon-svelte-csf-to-core[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m storybookPackageNameConflict[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m skills[39m
+[90m│[39m
+[90m│[39m  3 automigration(s) detected
+[90m│[39m
+[90m│[39m  Running all detected automigrations:
+[90m│[39m
+[90m│[39m  - addon-svelte-csf-to-core (/storybook/.storybook)
+[90m│[39m
+[90m│[39m  - storybookPackageNameConflict (/storybook/.storybook)
+[90m│[39m
+[90m│[39m  - skills (/storybook/.storybook)
+│ ┌─addon-svelte-csf-to-core (/storybook/.storybook)───────────────────────────┐
+│ │  Migrate from [35m@storybook/addon-svelte-csf[39m to the Svelte CSF built into     │
+│ │  your framework                                                            │
+│ │                                                                            │
+│ │  Files that change, besides package.json:                                  │
+│ │  - storybook/.storybook/main.ts                                            │
+│ │  - storybook/src/stories/Checkbox.stories.svelte                           │
+│ │  - storybook/src/stories/ContainerEngineEnvironmentColumn.stories.svelte   │
+│ │  - storybook/src/stories/Dropdown.stories.svelte                           │
+│ │  - storybook/src/stories/DropdownMenu.stories.svelte                       │
+│ │  - storybook/src/stories/ErrorMessage.stories.svelte                       │
+│ │  - storybook/src/stories/Expandable.stories.svelte                         │
+│ │  - storybook/src/stories/Link.stories.svelte                               │
+│ │  - storybook/src/stories/StatusDot.stories.svelte                          │
+│ │  - storybook/src/stories/StatusIcon.stories.svelte                         │
+│ │  - storybook/src/stories/Tab.stories.svelte                                │
+│ │  - storybook/src/stories/Table.stories.svelte                              │
+│ │  - storybook/src/stories/Tooltip.stories.svelte                            │
+│ │  - storybook/src/stories/button/Button.stories.svelte                      │
+│ │  - storybook/src/stories/button/ButtonRow.stories.svelte                   │
+│ │  - storybook/src/stories/button/CloseButton.stories.svelte                 │
+│ │  - storybook/src/stories/icon/ContainerIcon.stories.svelte                 │
+│ │  - storybook/src/stories/icon/StarIcon.stories.svelte                      │
+│ │  - storybook/src/stories/input/Input.stories.svelte                        │
+│ │  - storybook/src/stories/progress/LinearProgress.stories.svelte            │
+│ │  - storybook/src/stories/progress/ProgressBar.stories.svelte               │
+│ │  - storybook/src/stories/progress/Spinner.stories.svelte                   │
+│ │  - storybook/src/stories/screen/EmptyScreen.stories.svelte                 │
+│ │  - storybook/src/stories/screen/FilteredEmptyScreen.stories.svelte         │
+│ │  - storybook/src/stories/toast/Toast.stories.svelte                        │
+│ │                                                                            │
+│ │  Change other files that import the addon by hand.                         │
+│ └────────────────────────────────────────────────────────────────────────────┘
+[90m│[39m
+[90m│[39m  [36mpnpm --allow-build=esbuild dlx skills@latest add[39m
+[90m│[39m  [36mstorybookjs/skills#v11.0.0-beta.3 --yes --agent claude-code universal[39m
+[90m│[39m  [36m--copy[39m
+[90m│[39m
+[90m│[39m  Added a Storybook section to AGENTS.md and CLAUDE.md that tells agents
+[90m│[39m  when to use the skills. Storybook keeps it current on upgrade: remove
+[90m│[39m  its markers to keep your own edits, or remove the section to opt out
+[90m│[39m  of the workflow.
+[90m│[39m
+[90m│[39m  Remove the Storybook skills with: pnpm --allow-build=esbuild dlx
+[90m│[39m  skills@latest remove
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m addon-svelte-csf-to-core[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m skills[39m
+[90m│[39m
+[90m│[39m  Completed automigrations for /storybook/.storybook
+[90m│[39m
+[90m│[39m  Installing dependencies...
+[90m│[39m
+[90m│[39m  Installing dependencies...: Scope: all 25 workspace p
+[90m│[39m
+[90m│[39m  Installing dependencies...: ✓ Lockfile at ../pnpm-loc
+[90m│[39m
+[90m│[39m  Installing dependencies...: ..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../packages/main
+[90m│[39m
+[90m│[39m  Installing dependencies...: ..
+[90m│[39m
+[90m│[39m  Installing dependencies...: Downloading @swc/core-lin
+[90m│[39m
+[90m│[39m  Installing dependencies...: Downloading mermaid@11.17
+[90m│[39m
+[90m│[39m  Installing dependencies...: Downloading cytoscape-fco
+[90m│[39m
+[90m│[39m  Installing dependencies...: Downloading @rspack/bindi
+[90m│[39m
+[90m│[39m  Installing dependencies...: ..
+[90m│[39m
+[90m│[39m  Installing dependencies...: Downloading electron-wins
+[90m│[39m
+[90m│[39m  Installing dependencies...: Downloading @rolldown/bin
+[90m│[39m
+[90m│[39m  Installing dependencies...: Downloading @rolldown/bin
+[90m│[39m
+[90m│[39m  Installing dependencies...: [WARN] 8 deprecated subde
+[90m│[39m
+[90m│[39m  Installing dependencies...: Downloading @fortawesome/
+[90m│[39m
+[90m│[39m  Installing dependencies...: Downloading @biomejs/cli-
+[90m│[39m
+[90m│[39m  Installing dependencies...: Downloading monaco-editor
+[90m│[39m
+[90m│[39m  Installing dependencies...: Downloading dashjs@5.0.3:
+[90m│[39m
+[90m│[39m  Installing dependencies...: Downloading dashjs@5.0.3:
+[90m│[39m
+[90m│[39m  Installing dependencies...: ..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../node_modules/core-js p
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../node_modules/core-js p
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../node_modules/protobufj
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../packages/extension-api
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../packages/extension-api
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../packages/webview-api p
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../extensions/podman/pack
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../packages/api-mocks-vit
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../extensions/docker/pack
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../extensions/podman/pack
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../packages/api-mocks-vit
+[90m│[39m
+[90m│[39m  Installing dependencies...: .. postinstall$ pnpm run
+[90m│[39m
+[90m│[39m  Installing dependencies...: .. postinstall: $ cd ./pa
+[90m│[39m
+[90m│[39m  Installing dependencies...: .. postinstall: [33m(!)
+[90m│[39m
+[90m│[39m  Installing dependencies...: .. postinstall: [36mvite
+[90m│[39m
+[90m│[39m  Installing dependencies...: .. postinstall: transform
+[90m│[39m
+[90m│[39m  Installing dependencies...: .. postinstall: ✓ 200 mod
+[90m│[39m
+[90m│[39m  Installing dependencies...: .. postinstall: rendering
+[90m│[39m
+[90m│[39m  Installing dependencies...: .. postinstall:
+[90m│[39m  .. posti
+[90m│[39m
+[90m│[39m  Installing dependencies...: .. postinstall: [unplugin
+[90m│[39m
+[90m│[39m  Installing dependencies...: .. postinstall: dist/auth
+[90m│[39m
+[90m│[39m  Installing dependencies...: .. postinstall: dist/lear
+[90m│[39m
+[90m│[39m  Installing dependencies...: .. postinstall: [32m✓ bu
+[90m│[39m
+[90m│[39m  Installing dependencies...: .. postinstall: Done
+[90m│[39m
+[90m│[39m  Installing dependencies...: .. prepare$ husky install
+[90m│[39m
+[90m│[39m  Installing dependencies...: .. prepare: husky - insta
+[90m│[39m
+[90m│[39m  Installing dependencies...: .. prepare: HUSKY=0 skip
+[90m│[39m
+[90m│[39m  Installing dependencies...: .. prepare: Done
+[90m│[39m
+[90m│[39m  Installing dependencies...: [WARN] Issues with peer d
+[90m│[39m
+[90m│[39m  Installing dependencies...: devDependencies:
+[90m│[39m  - @story
+[90m│[39m
+[90m│[39m  Installing dependencies...: Done in 17s using pnpm v1
+[90m│[39m
+[90m│[39m  Dependencies installed
+[90m│[39m
+[32m◇[39m  Checking the health of your project(s)..
+[90m│[39m
+[90m│[39m  Your Storybook project looks good!
+[90m│[39m
+[32m◇[39m  [32mYour project(s) have been upgraded successfully! 🎉[39m
+[90m│[39m
+[90m│[39m  If you want to learn more about the automigrations that executed in
+[90m│[39m  your project(s), please check the following links:
+[90m│[39m  • addon-svelte-csf-to-core:
+[90m│[39m  https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#svelte-csf-is-built-into-the-svelte-frameworks
+[90m│[39m  • skills: https://github.com/storybookjs/skills
+[90m│[39m
+[90m│[39m  For a full list of changes, please check our migration guide:
+[90m│[39m  [36mhttps://storybook.js.org/docs/releases/migration-guide?ref=upgrade[39m
+[90m│[39m
+[34m●[39m  Storybook collects completely anonymous usage telemetry. We use it to
+[90m│[39m  shape Storybook's roadmap and prioritize features. You can learn more,
+[90m│[39m  including how to opt out, at https://storybook.js.org/telemetry
+[90m│[39m
+[90m└[39m  Storybook upgrade completed!
+
+Done in 23.3s using pnpm v12.8.1
+Done in 24.8s using pnpm v12.8.1

@@ -432,6 +432,9 @@ A dispatched batch of a plan has a concurrency group of its plan, batch and `fro
 The `track` job runs `track.ts` for every run with a plan that was not cancelled, also when the collect failed, except a collect of earlier runs that failed, which has nothing to report.
 The first batch of a plan creates the discussion `[SB 11 QA] Dynamic sweep 11.0.md`, with a hidden marker of the plan's hash in its first line.
 Each batch adds one comment, for its batch, version and source runs: the runs planned, finished and without a result, the dollars of each, the checks by state, and one line for each finding.
+It ends with what the batch cost and what the plan cost up to that batch, such as `Batch 3 cost $3.24 for 15 runs.` and `The plan cost $13.09 for 56 runs up to batch 3, of a cap of $200.00.`
+Both count the comments of the earlier batches and of this batch up to its own comment, and no later one, so a comment that is written again after later batches, such as when its batch is filed, shows the same cost.
+A batch with more than one report, such as a second run with another version, sums them, a run that two of them hold once, and ends the line of the batch with `in 2 reports`.
 Collecting the same runs again edits that comment and starts no batch.
 The spend of a plan is the sum of the dollars in the comments that the workflow wrote, and a run without a result or without a price counts as the flat price `USD_PER_RUN` of `lib/qa-plan.ts`.
 A run is counted once however often it is reported, and a job that leaves no result is counted once for each attempt of its workflow run that reports it, so a "Re-run failed jobs" that loses it again costs one more flat price.
@@ -441,7 +444,7 @@ A changed plan has another hash, so it starts a cycle of its own with a new disc
 
 The chain stops after the last batch, when a run does not chain, when a batch left no result, and when the spend reaches the cap.
 It also stops when the discussion holds a report of a later batch, or when an earlier report of the same batch started the next one already.
-And it stops, and the comment says "at least" of the spend, when the record of the spend is short or may be:
+And it stops, and the comment says "at least" of the cost of the plan, when the record of the spend is short or may be:
 
 - A comment that the workflow wrote was edited by anyone else, or reports no batch of the plan.
 - The discussion holds no report of an earlier batch, such as after a comment was deleted or a batch was skipped.
@@ -449,7 +452,7 @@ And it stops, and the comment says "at least" of the spend, when the record of t
 - The plan has more than one discussion, for example after its first line was edited, the next batch started a new one, and the line was put back.
 - The first report of a batch comes from a later attempt of its workflow run, whose earlier attempts reported nothing because they were cancelled or their `track` job failed before it wrote.
 
-Once a comment of the workflow says "at least", every later comment of the plan says it too, also when the batch is reported again or the missing report was collected since.
+Once a comment of the workflow says "at least", every comment whose cost counts it says it too, also when the batch is reported again or the missing report was collected since.
 A deleted comment stays unseen when no comment that is left was written after it, such as the newest comment, or the only comment of a batch that is deleted before another run of that batch reports.
 The attempts of a run that another run collects with `from_runs` are not known, so they are not checked.
 A run that wrote no comment, because it was cancelled or its `track` job did not write, is in no record, and a new run of the same batch chains on without its spend.

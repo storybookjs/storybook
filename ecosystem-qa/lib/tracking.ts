@@ -21,7 +21,9 @@ const STARTED = /^Batch (\d+) is started\.$/;
 const RUN_LEDGER = /^<!-- sb-qa-run (\S+) usd=(\d+(?:\.\d+)?) -->$/;
 const TOTAL_LINE = /^<!-- sb-qa-total usd=(\d+(?:\.\d+)?) runs=(\d+) -->$/;
 const RESUME_LINE = /^To start batch (\d+) by hand /;
-const SHORT_SPEND = /^Spent on this plan: at least /m;
+// The first form is the line that the workflow wrote before the cost of a batch had a line of its
+// own, which a discussion may still hold.
+const SHORT_SPEND = /^(?:Spent on this plan:|The plan cost) at least /m;
 
 export type TrackedPlan = { file: string; hash: string; line: string; version: string };
 
@@ -272,20 +274,29 @@ const unreadableOf = (comment: Written, hash: string): string | undefined => {
   return undefined;
 };
 
+// A run that two comments hold counts once, at the higher of their prices.
+const totalOf = (entries: LedgerEntry[]): Total => {
+  const ledger = new Map<string, number>();
+  for (const { key, usd } of entries) {
+    ledger.set(key, Math.max(usd, ledger.get(key) ?? 0));
+  }
+  return { usd: [...ledger.values()].reduce((sum, usd) => sum + usd, 0), runs: ledger.size };
+};
+
+const countedOf = <Comment extends Written>(comments: Comment[], hash: string): Comment[] =>
+  comments.filter(
+    (comment) =>
+      byHarness(comment.author) &&
+      unreadableOf(comment, hash) === undefined &&
+      BATCH_MARKER.test(firstLine(comment.body))
+  );
+
+const batchOf = (comment: Written) => Number(BATCH_MARKER.exec(firstLine(comment.body))![2]);
+
 export const spentUsd = (comments: Written[], hash: string, current?: BatchReport): Spend => {
   const ours = comments.filter((comment) => byHarness(comment.author));
-  const counted = ours.filter(
-    (comment) =>
-      unreadableOf(comment, hash) === undefined && BATCH_MARKER.test(firstLine(comment.body))
-  );
-  const ledger = new Map<string, number>();
-  const add = (entries: LedgerEntry[]): Total => {
-    for (const { key, usd } of entries) {
-      ledger.set(key, Math.max(usd, ledger.get(key) ?? 0));
-    }
-    return { usd: [...ledger.values()].reduce((sum, usd) => sum + usd, 0), runs: ledger.size };
-  };
-  const held = add(counted.flatMap(({ body }) => ledgerOf(body)));
+  const counted = countedOf(comments, hash);
+  const ledger = counted.flatMap(({ body }) => ledgerOf(body));
   const totals = counted.flatMap(({ body }) =>
     body.split(/\r?\n/).flatMap((line) => {
       const match = TOTAL_LINE.exec(line);
@@ -293,15 +304,47 @@ export const spentUsd = (comments: Written[], hash: string, current?: BatchRepor
     })
   );
   return {
-    ...add(current?.lines ?? []),
-    held,
+    ...totalOf([...ledger, ...(current?.lines ?? [])]),
+    held: totalOf(ledger),
     written: totals.toSorted((a, b) => b.runs - a.runs)[0] ?? { usd: 0, runs: 0 },
-    batches: counted.map(({ body }) => Number(BATCH_MARKER.exec(firstLine(body))![2])),
+    batches: counted.map(batchOf),
     started: counted.flatMap(({ body }) => {
       const started = STARTED.exec(nextOf(body) ?? '')?.[1];
       return started ? [Number(started)] : [];
     }),
     unreadable: ours.flatMap((comment) => unreadableOf(comment, hash) ?? []),
+  };
+};
+
+// The comments of the batches before the batch of the report, and of its own batch up to its own
+// comment, so that writing that comment again after later reports leaves its cost as it was.
+const costScope = (comments: Written[], report: BatchReport): Written[] => {
+  const existing = batchCommentOf(comments, report);
+  const until = existing ? comments.indexOf(existing) : comments.length;
+  return countedOf(comments, report.plan.hash).filter(
+    (comment) =>
+      batchOf(comment) < report.batch ||
+      (batchOf(comment) === report.batch && comments.indexOf(comment) <= until)
+  );
+};
+
+// `reports` counts the comments of the batch that `batch` sums, this report's own included.
+export type Cost = { batch: Total & { reports: number }; plan: Total };
+
+export const costOf = (comments: Written[], report: BatchReport): Cost => {
+  const scope = costScope(comments, report);
+  const own = scope.filter((comment) => batchOf(comment) === report.batch);
+  const existing = batchCommentOf(comments, report);
+  const ledger = (counted: Written[]) => [
+    ...counted.flatMap(({ body }) => ledgerOf(body)),
+    ...report.lines,
+  ];
+  return {
+    batch: {
+      ...totalOf(ledger(own)),
+      reports: own.filter((comment) => comment !== existing).length + 1,
+    },
+    plan: totalOf(ledger(scope)),
   };
 };
 
@@ -424,7 +467,8 @@ export const resultsExpireOn = (artifacts: ListedArtifact[]): string | undefined
 
 export type CommentContext = {
   spend: Spend;
-  // The spend may be short of what the plan spent, so the comment says "at least".
+  cost: Cost;
+  // The cost of the plan may be short of what it spent, so the comment says "at least".
   short: boolean;
   capUsd: number;
   next: NextStep;
@@ -551,7 +595,7 @@ export const batchDispatch = (report: BatchReport, batch: number): string[] => [
 
 export const renderBatchComment = (
   report: BatchReport,
-  { spend, short, capUsd, next, expiresOn, carried }: CommentContext
+  { spend, cost, short, capUsd, next, expiresOn, carried }: CommentContext
 ): string => {
   const lost = report.lines.filter((line) => line.outcome === 'no result').length;
   // The total carries the runs of a comment that is gone, so a later write cannot forget them.
@@ -598,7 +642,8 @@ export const renderBatchComment = (
           ]
         : ['No findings.']),
     '',
-    `Spent on this plan: ${short ? 'at least ' : ''}${spendOf(spend)}, of a cap of ${dollars(capUsd)}.`,
+    `Batch ${report.batch} cost ${spendOf(cost.batch)}${cost.batch.reports > 1 ? ` in ${cost.batch.reports} reports` : ''}.`,
+    `The plan cost ${short ? 'at least ' : ''}${spendOf(cost.plan)} up to batch ${report.batch}, of a cap of ${dollars(capUsd)}.`,
     '',
     `Next: ${('start' in next ? `Batch ${next.start} is started.` : next.stop).replace(/\s+/g, ' ')}`,
     ...('resume' in next && next.resume !== undefined
@@ -658,9 +703,10 @@ export const trackBatch = <Comment extends Written>({
   const next = nextStep(step);
   const context = {
     spend: step.spend,
+    cost: costOf(comments, report),
     short:
       shortfall(step) !== undefined ||
-      comments.some((comment) => byHarness(comment.author) && SHORT_SPEND.test(comment.body)),
+      costScope(comments, report).some((comment) => SHORT_SPEND.test(comment.body)),
     capUsd,
     expiresOn,
     carried: carriedRuns(existing, report),

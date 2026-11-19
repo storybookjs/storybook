@@ -1,0 +1,16 @@
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+Browserslist: browsers data (caniuse-lite) is 6 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+
+ RUN  v4.1.5 /home/agent/workspace
+
+10:18:48 AM [vite] [90m[2m(client)[22m[39m Re-optimizing dependencies because lockfile has changed
+10:18:50 AM [vite] [90m[2m(client)[22m[39m [optimizer] bundling dependencies...
+
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+   Start at  10:18:48
+   Duration  5.23s (transform 0ms, setup 2.32s, import 24ms, tests 927ms, environment 0ms)
+
+exit=0

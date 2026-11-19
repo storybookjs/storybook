@@ -1,0 +1,17 @@
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+added 1 package, and audited 590 packages in 1s
+
+155 packages are looking for funding
+  run `npm fund` for details
+
+26 vulnerabilities (3 low, 8 moderate, 12 high, 3 critical)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+exit=0

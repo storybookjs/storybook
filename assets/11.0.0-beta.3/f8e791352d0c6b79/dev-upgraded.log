@@ -1,0 +1,99 @@
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+[90m┌[39m  storybook v11.0.0-beta.3
+[90m│[39m
+[34m●[39m  Starting...
+Browserslist: browsers data (caniuse-lite) is 6 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+│ [38;2;255;71;133m╭[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m╮[39m
+│ [38;2;255;71;133m│[39m   Storybook ready!                                                         [38;2;255;71;133m│[39m
+│ [38;2;255;71;133m│[39m                                                                            [38;2;255;71;133m│[39m
+│ [38;2;255;71;133m│[39m   - Local:                http://127.0.0.1:6006/                           [38;2;255;71;133m│[39m
+│ [38;2;255;71;133m│[39m   - On your network:      run with --host <ip> to expose to local          [38;2;255;71;133m│[39m
+│ [38;2;255;71;133m│[39m   network                                                                  [38;2;255;71;133m│[39m
+│ [38;2;255;71;133m│[39m                                                                            [38;2;255;71;133m│[39m
+│ [38;2;255;71;133m╰[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m╯[39m
+[90m│[39m
+[34m●[39m  [4m156 ms[24m for manager and [4m472 ms[24m for preview
+[90m│[39m
+[31m■[39m  [43mVite[49m [31m(!) Failed to run dependency scan. Skipping dependency[39m
+[90m│[39m  [31mpre-bundling. Error: The following dependencies are imported but could[39m
+[90m│[39m  [31mnot be resolved:
+
+[90m│[39m  [36mts-dedent[31m [37m[2m(imported by ./src/util/storybook/LoremIpsum.tsx)[22m[31m
+
+[90m│[39m  Are they installed?
+[90m│[39m  at file://./node_modules/vite/dist/node/chunks/node.js:31413:33
+[90m│[39m  at async file://./node_modules/vite/dist/node/chunks/node.js:23219:15[39m
+[90m│[39m  [43mVite[49m [32m✨ new dependencies optimized: [33m@floating-ui/react,[39m
+[90m│[39m  [33mclassnames/dedupe, message-tag, storybook/theming[32m[39m
+[90m│[39m  [43mVite[49m [32m✨ optimized dependencies changed. reloading[39m
+[90m│[39m
+[31m■[39m  [43mVite[49m Pre-transform error: Failed to resolve import "ts-dedent" from
+[90m│[39m  "src/util/storybook/LoremIpsum.tsx". Does the file exist?
+[90m│[39m  Plugin: [35mvite:import-analysis[39m
+[90m│[39m  File: [36m./src/util/storybook/LoremIpsum.tsx[39m:5:23
+[90m│[39m  [33m2  |  |* This Source Code Form is subject to the terms of the Mozilla[39m
+[90m│[39m  [33mPublic License, v. 2.0. If a copy of
+[90m│[39m  3  |  |* the MPL was not distributed with this file, You can obtain
+[90m│[39m  one at http://mozilla.org/MPL/2.0/. */
+[90m│[39m  4  |  import { dedent } from "ts-dedent";
+[90m│[39m  |                          ^
+[90m│[39m  5  |  import { classNames as cx } from "../componentUtil.ts";
+[90m│[39m  6  |  var _jsxFileName = "./src/util/storybook/LoremIpsum.tsx";[39m
+[90m│[39m
+[31m■[39m  [43mVite[49m [31mInternal server error: Failed to resolve import "ts-dedent" from[39m
+[90m│[39m  [31m"src/util/storybook/LoremIpsum.tsx". Does the file exist?[39m
+[90m│[39m  Plugin: [35mvite:import-analysis[39m
+[90m│[39m  File: [36m./src/util/storybook/LoremIpsum.tsx[39m:5:23
+[90m│[39m  [33m2  |  |* This Source Code Form is subject to the terms of the Mozilla[39m
+[90m│[39m  [33mPublic License, v. 2.0. If a copy of
+[90m│[39m  3  |  |* the MPL was not distributed with this file, You can obtain
+[90m│[39m  one at http://mozilla.org/MPL/2.0/. */
+[90m│[39m  4  |  import { dedent } from "ts-dedent";
+[90m│[39m  |                          ^
+[90m│[39m  5  |  import { classNames as cx } from "../componentUtil.ts";
+[90m│[39m  6  |  var _jsxFileName = "./src/util/storybook/LoremIpsum.tsx";[39m
+[90m│[39m  at TransformPluginContext._formatLog
+[90m│[39m  (file://./node_modules/vite/dist/node/chunks/node.js:30390:39)
+[90m│[39m  at TransformPluginContext.error
+[90m│[39m  (file://./node_modules/vite/dist/node/chunks/node.js:30387:14)
+[90m│[39m  at normalizeUrl
+[90m│[39m  (file://./node_modules/vite/dist/node/chunks/node.js:27651:18)
+[90m│[39m  at async file://./node_modules/vite/dist/node/chunks/node.js:27714:30
+[90m│[39m  at async Promise.all (index 0)
+[90m│[39m  at async TransformPluginContext.transform
+[90m│[39m  (file://./node_modules/vite/dist/node/chunks/node.js:27682:4)
+[90m│[39m  at async EnvironmentPluginContainer.transform
+[90m│[39m  (file://./node_modules/vite/dist/node/chunks/node.js:30179:14)
+[90m│[39m  at async loadAndTransform
+[90m│[39m  (file://./node_modules/vite/dist/node/chunks/node.js:24509:26)
+[90m│[39m
+[31m■[39m  [43mVite[49m Pre-transform error: Failed to resolve import "ts-dedent" from
+[90m│[39m  "src/util/storybook/LoremIpsum.tsx". Does the file exist?
+[90m│[39m  Plugin: [35mvite:import-analysis[39m
+[90m│[39m  File: [36m./src/util/storybook/LoremIpsum.tsx[39m:5:23
+[90m│[39m  [33m2  |  |* This Source Code Form is subject to the terms of the Mozilla[39m
+[90m│[39m  [33mPublic License, v. 2.0. If a copy of
+[90m│[39m  3  |  |* the MPL was not distributed with this file, You can obtain
+[90m│[39m  one at http://mozilla.org/MPL/2.0/. */
+[90m│[39m  4  |  import { dedent } from "ts-dedent";
+[90m│[39m  |                          ^
+[90m│[39m  5  |  import { classNames as cx } from "../componentUtil.ts";
+[90m│[39m  6  |  var _jsxFileName = "./src/util/storybook/LoremIpsum.tsx";[39m
+[90m│[39m
+[31m■[39m  [43mVite[49m Pre-transform error: Failed to resolve import "ts-dedent" from
+[90m│[39m  "src/util/storybook/LoremIpsum.tsx". Does the file exist?
+[90m│[39m  Plugin: [35mvite:import-analysis[39m
+[90m│[39m  File: [36m./src/util/storybook/LoremIpsum.tsx[39m:5:23
+[90m│[39m  [33m2  |  |* This Source Code Form is subject to the terms of the Mozilla[39m
+[90m│[39m  [33mPublic License, v. 2.0. If a copy of
+[90m│[39m  3  |  |* the MPL was not distributed with this file, You can obtain
+[90m│[39m  one at http://mozilla.org/MPL/2.0/. */
+[90m│[39m  4  |  import { dedent } from "ts-dedent";
+[90m│[39m  |                          ^
+[90m│[39m  5  |  import { classNames as cx } from "../componentUtil.ts";
+[90m│[39m  6  |  var _jsxFileName = "./src/util/storybook/LoremIpsum.tsx";[39m
+[90m│[39m  [43mVite[49m [32m✨ new dependencies optimized: [33mreact-error-boundary[32m[39m
+[90m│[39m  [43mVite[49m [32m✨ optimized dependencies changed. reloading[39m

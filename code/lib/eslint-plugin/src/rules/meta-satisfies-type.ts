@@ -2,12 +2,11 @@
  * @file Meta should be followed by `satisfies Meta`
  * @author Tiger Oakes
  */
-import { AST_NODE_TYPES } from '@typescript-eslint/types';
 import type { TSESTree } from '@typescript-eslint/types';
 import type { TSESLint } from '@typescript-eslint/utils';
 
 import { getMetaObjectExpression } from '../utils/index.ts';
-import { ASTUtils, isTSSatisfiesExpression } from '../utils/ast.ts';
+import { isTSSatisfiesExpression } from '../utils/ast.ts';
 import { createStorybookRule } from '../utils/create-storybook-rule.ts';
 
 //------------------------------------------------------------------------------
@@ -44,14 +43,11 @@ export default createStorybookRule({
       let beforeCount = 0;
       let afterCount = 0;
 
-      if (ASTUtils.isParenthesized(node, sourceCode)) {
-        const bodyOpeningParen = sourceCode.getTokenBefore(node, ASTUtils.isOpeningParenToken);
-        const bodyClosingParen = sourceCode.getTokenAfter(node, ASTUtils.isClosingParenToken);
-
-        if (bodyOpeningParen && bodyClosingParen) {
-          beforeCount = node.range[0] - bodyOpeningParen.range[0];
-          afterCount = bodyClosingParen.range[1] - node.range[1];
-        }
+      const bodyOpeningParen = sourceCode.getTokenBefore(node);
+      const bodyClosingParen = sourceCode.getTokenAfter(node);
+      if (bodyOpeningParen?.value === '(' && bodyClosingParen?.value === ')') {
+        beforeCount = node.range[0] - bodyOpeningParen.range[0];
+        afterCount = bodyClosingParen.range[1] - node.range[1];
       }
 
       return sourceCode.getText(node, beforeCount, afterCount);
@@ -65,7 +61,7 @@ export default createStorybookRule({
 
       switch (parent.type) {
         // {} as Meta
-        case AST_NODE_TYPES.TSAsExpression:
+        case 'TSAsExpression':
           return (fixer) => [
             fixer.replaceText(parent, getTextWithParentheses(meta)),
             fixer.insertTextAfter(
@@ -74,7 +70,7 @@ export default createStorybookRule({
             ),
           ];
         // const meta: Meta = {}
-        case AST_NODE_TYPES.VariableDeclarator: {
+        case 'VariableDeclarator': {
           const { typeAnnotation } = parent.id;
           if (typeAnnotation) {
             return (fixer) => [

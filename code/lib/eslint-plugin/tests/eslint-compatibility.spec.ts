@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
-import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { dirname, join, relative } from 'pathe';
 import { describe, expect, it } from 'vitest';
 
 const srcDir = join(dirname(fileURLToPath(import.meta.url)), '../src');
@@ -16,7 +16,7 @@ const getSourceFiles = (dir: string): string[] =>
   });
 
 describe('ESLint compatibility', () => {
-  it('does not import runtime values from the @typescript-eslint/utils barrel', () => {
+  it('does not import runtime values from @typescript-eslint/types or @typescript-eslint/utils', () => {
     const violations = getSourceFiles(srcDir).flatMap((file) => {
       const source = readFileSync(file, 'utf8');
       const matches = Array.from(
@@ -25,7 +25,7 @@ describe('ESLint compatibility', () => {
       ).filter(
         (statement) =>
           !/^\s*import\s+type\b/.test(statement) &&
-          /\sfrom\s+['"]@typescript-eslint\/utils['"];?\s*$/.test(statement)
+          /\sfrom\s+['"]@typescript-eslint\/(?:types|utils)(?:\/[^'"]+)?['"];?\s*$/.test(statement)
       );
       return matches?.map((statement) => `${relative(srcDir, file)}: ${statement}`) ?? [];
     });

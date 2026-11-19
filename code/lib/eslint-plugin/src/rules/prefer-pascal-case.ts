@@ -14,7 +14,7 @@ import {
   isFactoryStoryExport,
   parseFactoryMetaCall,
 } from '../utils/index.ts';
-import { ASTUtils, isIdentifier, isVariableDeclaration } from '../utils/ast.ts';
+import { findVariable, isIdentifier, isVariableDeclaration } from '../utils/ast.ts';
 import { CategoryId } from '../utils/constants.ts';
 import { createStorybookRule } from '../utils/create-storybook-rule.ts';
 
@@ -104,7 +104,7 @@ export default createStorybookRule({
 
                 const scope = getModuleScope();
                 if (scope) {
-                  const variable = ASTUtils.findVariable(scope, name);
+                  const variable = findVariable(scope, name);
                   const referenceCount = variable?.references?.length || 0;
 
                   for (let i = 0; i < referenceCount; i++) {

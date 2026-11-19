@@ -22,30 +22,38 @@ describe('testRunner blocker', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockPackageManager.isDependencyInstalled.mockReturnValue(false);
-  });
-
-  test('should return true when package.json lists @storybook/test-runner, even if no installation is found', async () => {
-    mockPackageManager.isDependencyInstalled.mockReturnValue(true);
     mockPackageManager.getInstalledVersion.mockResolvedValue(null);
-
-    const result = await blocker.check(createOptions());
-
-    expect(result).toBe(true);
-    expect(mockPackageManager.isDependencyInstalled).toHaveBeenCalledWith('@storybook/test-runner');
   });
 
-  test('should return true when @storybook/test-runner is installed without being listed', async () => {
-    mockPackageManager.getInstalledVersion.mockResolvedValue('0.24.0');
+  describe('when package.json lists @storybook/test-runner', () => {
+    beforeEach(() => {
+      mockPackageManager.isDependencyInstalled.mockReturnValue(true);
+    });
 
-    const result = await blocker.check(createOptions());
+    test('should return true, even if no installation is found', async () => {
+      const result = await blocker.check(createOptions());
 
-    expect(result).toBe(true);
-    expect(mockPackageManager.getInstalledVersion).toHaveBeenCalledWith('@storybook/test-runner');
+      expect(result).toBe(true);
+      expect(mockPackageManager.isDependencyInstalled).toHaveBeenCalledWith(
+        '@storybook/test-runner'
+      );
+    });
+  });
+
+  describe('when @storybook/test-runner is installed without being listed', () => {
+    beforeEach(() => {
+      mockPackageManager.getInstalledVersion.mockResolvedValue('0.24.0');
+    });
+
+    test('should return true', async () => {
+      const result = await blocker.check(createOptions());
+
+      expect(result).toBe(true);
+      expect(mockPackageManager.getInstalledVersion).toHaveBeenCalledWith('@storybook/test-runner');
+    });
   });
 
   test('should return false when the test runner is neither listed nor installed', async () => {
-    mockPackageManager.getInstalledVersion.mockResolvedValue(null);
-
     const result = await blocker.check(createOptions());
 
     expect(result).toBe(false);

@@ -1,0 +1,259 @@
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Packages: +13
++++++++++++++
+Progress: resolved 78, reused 0, downloaded 19, added 13, done
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Packages: +15
++++++++++++++++
+Progress: resolved 80, reused 19, downloaded 2, added 15, done
+.../esbuild@0.28.2/node_modules/esbuild postinstall$ node install.js
+.../esbuild@0.28.2/node_modules/esbuild postinstall: Done
+
+[90m┌[39m  Storybook upgrade - v11.0.0-beta.3
+[90m│[39m
+[90m│[39m  Detecting projects...
+[90m│[39m
+[90m│[39m  Detecting projects: 1 projects
+[90m│[39m
+[90m│[39m  1 project detected
+[90m│[39m
+[34m●[39m  Upgrading from [1m10.5.9[22m to [1m11.0.0-beta.3[22m
+[90m│[39m
+[90m│[39m  /package.json
+[90m│[39m  /js/video/package.json
+[90m│[39m  /js/uploadbutton/package.json
+[90m│[39m  /js/upload/package.json
+[90m│[39m  /js/textbox/package.json
+[90m│[39m  /js/tabs/package.json
+[90m│[39m  /js/storybook/package.json
+[90m│[39m  /js/slider/package.json
+[90m│[39m  /js/sidebar/package.json
+[90m│[39m  /js/row/package.json
+[90m│[39m  /js/radio/package.json
+[90m│[39m  /js/plot/package.json
+[90m│[39m  /js/number/package.json
+[90m│[39m  /js/navbar/package.json
+[90m│[39m  /js/nativeplot/package.json
+[90m│[39m  /js/multimodaltextbox/package.json
+[90m│[39m  /js/markdown/package.json
+[90m│[39m  /js/label/package.json
+[90m│[39m  /js/json/package.json
+[90m│[39m  /js/imageslider/package.json
+[90m│[39m  /js/imageeditor/package.json
+[90m│[39m  /js/image/package.json
+[90m│[39m  /js/html/package.json
+[90m│[39m  /js/highlightedtext/package.json
+[90m│[39m  /js/group/package.json
+[90m│[39m  /js/gallery/package.json
+[90m│[39m  /js/file/package.json
+[90m│[39m  /js/dropdown/package.json
+[90m│[39m  /js/downloadbutton/package.json
+[90m│[39m  /js/column/package.json
+[90m│[39m  /js/colorpicker/package.json
+[90m│[39m  /js/checkboxgroup/package.json
+[90m│[39m  /js/checkbox/package.json
+[90m│[39m  /js/chatbot/package.json
+[90m│[39m  /js/button/package.json
+[90m│[39m  /js/audio/package.json
+[90m│[39m  /js/accordion/package.json
+[90m│[39m
+[90m│[39m  Updated package versions in package.json files
+[90m│[39m
+[90m│[39m  Checking automigrations for /.storybook...
+[90m│[39m
+
+[90m│[39m  Automigrations detected:
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m upgrade-storybook-related-dependencies[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m vitest-setup-file[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m addon-svelte-csf-to-core[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m skills[39m
+[90m│[39m
+[90m│[39m  4 automigration(s) detected
+[90m│[39m
+[90m│[39m  Running all detected automigrations:
+[90m│[39m
+[90m│[39m  - upgrade-storybook-related-dependencies (/.storybook)
+[90m│[39m
+[90m│[39m  - vitest-setup-file (/.storybook)
+[90m│[39m
+[90m│[39m  - addon-svelte-csf-to-core (/.storybook)
+[90m│[39m
+[90m│[39m  - skills (/.storybook)
+│ ┌─addon-svelte-csf-to-core (/.storybook)─────────────────────────────────────┐
+│ │  Migrate from [35m@storybook/addon-svelte-csf[39m to the Svelte CSF built into     │
+│ │  your framework                                                            │
+│ │                                                                            │
+│ │  Files that change, besides package.json:                                  │
+│ │  - .storybook/main.ts                                                      │
+│ │  - js/accordion/Accordion.stories.svelte                                   │
+│ │  - js/audio/Audio.stories.svelte                                           │
+│ │  - js/audio/AudioExample.stories.svelte                                    │
+│ │  - js/button/Button.stories.svelte                                         │
+│ │  - js/chatbot/Chatbot.stories.svelte                                       │
+│ │  - js/checkbox/Checkbox.stories.svelte                                     │
+│ │  - js/checkboxgroup/Checkboxgroup.stories.svelte                           │
+│ │  - js/colorpicker/ColorPicker.stories.svelte                               │
+│ │  - js/colorpicker/ColorPickerExample.stories.svelte                        │
+│ │  - js/column/Column.stories.svelte                                         │
+│ │  - js/downloadbutton/DownloadButton.stories.svelte                         │
+│ │  - js/dropdown/Dropdown.stories.svelte                                     │
+│ │  - js/dropdown/Multiselect.stories.svelte                                  │
+│ │  - js/file/File.stories.svelte                                             │
+│ │  - js/file/FileUpload.stories.svelte                                       │
+│ │  - js/gallery/Gallery.stories.svelte                                       │
+│ │  - js/group/Group.stories.svelte                                           │
+│ │  - js/highlightedtext/HighlightedText.stories.svelte                       │
+│ │  - js/html/HTML.stories.svelte                                             │
+│ │  - js/image/Image.stories.svelte                                           │
+│ │  - js/image/ImageExample.stories.svelte                                    │
+│ │  - js/imageeditor/ImageEditor.stories.svelte                               │
+│ │  - js/imageslider/ImageSlider.stories.svelte                               │
+│ │  - js/json/JSON.stories.svelte                                             │
+│ │  - js/label/Label.stories.svelte                                           │
+│ │  - js/markdown/Markdown.stories.svelte                                     │
+│ │  - js/multimodaltextbox/MultimodalTextbox.stories.svelte                   │
+│ │  - js/multimodaltextbox/MultimodalTextboxExample.stories.svelte            │
+│ │  - js/nativeplot/NativePlot.stories.svelte                                 │
+│ │  - js/navbar/Navbar.stories.svelte                                         │
+│ │  - js/number/Number.stories.svelte                                         │
+│ │  - js/plot/Plot.stories.svelte                                             │
+│ │  - js/radio/Radio.stories.svelte                                           │
+│ │  - js/row/Row.stories.svelte                                               │
+│ │  - js/sidebar/Sidebar.stories.svelte                                       │
+│ │  - js/slider/Slider.stories.svelte                                         │
+│ │  - js/tabs/Tabs.stories.svelte                                             │
+│ │  - js/tabs/Walkthrough.stories.svelte                                      │
+│ │  - js/textbox/Textbox.stories.svelte                                       │
+│ │  - js/textbox/TextboxExample.stories.svelte                                │
+│ │  - js/uploadbutton/UploadButton.stories.svelte                             │
+│ │  - js/video/Video.stories.svelte                                           │
+│ │                                                                            │
+│ │  Change other files that import the addon by hand.                         │
+│ └────────────────────────────────────────────────────────────────────────────┘
+[90m│[39m
+[90m│[39m  [36mpnpm --allow-build=esbuild dlx skills@latest add[39m
+[90m│[39m  [36mstorybookjs/skills#v11.0.0-beta.3 --yes --agent claude-code universal[39m
+[90m│[39m  [36m--copy[39m
+[90m│[39m
+[90m│[39m  Added a Storybook section to AGENTS.md that tells agents when to use
+[90m│[39m  the skills. Storybook keeps it current on upgrade: remove its markers
+[90m│[39m  to keep your own edits, or remove the section to opt out of the
+[90m│[39m  workflow.
+[90m│[39m
+[90m│[39m  Remove the Storybook skills with: pnpm --allow-build=esbuild dlx
+[90m│[39m  skills@latest remove
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m upgrade-storybook-related-dependencies[39m
+[90m│[39m
+[90m│[39m  [31m[31m✕[31m vitest-setup-file[39m
+[90m│[39m
+[90m│[39m  The vitest-setup-file automigration couldn't migrate your Vitest setup
+[90m│[39m  file(s) automatically, but here are instructions for doing it
+[90m│[39m  yourself:
+
+[90m│[39m  1) [36m/home/agent/workspace/.storybook/vitest.setup.ts[39m: no Vitest or Vite
+[90m│[39m  config listing it in "setupFiles" was found, so it was left in place;
+[90m│[39m  delete it and remove its "setupFiles" entry yourself
+
+[90m│[39m  [36m@storybook/addon-vitest[39m applies your project annotations itself: your
+[90m│[39m  [36m.storybook/preview[39m file and the previews of the addons registered in
+[90m│[39m  [36m.storybook/main[39m. [36msetProjectAnnotations[39m replaces those annotations, so
+[90m│[39m  it must not be called from a Vitest setup file. For each file listed
+[90m│[39m  above:
+[90m│[39m  1. If the call only passes your [36m.storybook/preview[39m annotations, delete
+[90m│[39m  the call.
+[90m│[39m  2. If it passes an addon's annotations, register that addon in the
+[90m│[39m  [36maddons[39m field of [36m.storybook/main[39m and delete the call.
+[90m│[39m  3. If it passes custom annotations, move them into [36m.storybook/preview[39m
+[90m│[39m  and delete the call.
+[90m│[39m  4. If nothing else remains in the file, delete it and remove its entry
+[90m│[39m  from [36msetupFiles[39m in your Vitest config.
+[90m│[39m  5. If the file is shared with a Vitest project that uses portable
+[90m│[39m  stories directly, list it only in that project's [36msetupFiles[39m.
+
+[90m│[39m  Read more:
+[90m│[39m  https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#vitest-addon-setprojectannotations-must-not-be-called-in-setup-files
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m addon-svelte-csf-to-core[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m skills[39m
+[90m│[39m
+[90m│[39m  1 automigrations failed for /.storybook
+[90m│[39m
+[90m│[39m  Installing dependencies...
+[90m│[39m
+[90m│[39m  Installing dependencies...: Scope: all 81 workspace p
+[90m│[39m
+[90m│[39m  Installing dependencies...: Progress: resolved 0, reu
+[90m│[39m
+[90m│[39m  Installing dependencies...: WARN  deprecated @types/t
+[90m│[39m
+[90m│[39m  Installing dependencies...: js/spa
+[90m│[39m
+[90m│[39m  Installing dependencies...: Progress: resolved 893, r
+[90m│[39m
+[90m│[39m  Installing dependencies...: Progress: resolved 1318,
+[90m│[39m
+[90m│[39m  Installing dependencies...: WARN  3 deprecated subdep
+[90m│[39m
+[90m│[39m  Installing dependencies...: Packages: +24 -60
+[90m│[39m  +++++++
+[90m│[39m
+[90m│[39m  Installing dependencies...: Progress: resolved 1400,
+[90m│[39m
+[90m│[39m  Installing dependencies...: js/component-test prepare
+[90m│[39m
+[90m│[39m  Installing dependencies...: js/_website prepare$ svel
+[90m│[39m
+[90m│[39m  Installing dependencies...: js/component-test prepare
+[90m│[39m
+[90m│[39m  Installing dependencies...: js/_website prepare: Usin
+[90m│[39m
+[90m│[39m  Installing dependencies...: js/_website prepare: Done
+[90m│[39m
+[90m│[39m  Installing dependencies...: WARN  Issues with peer de
+[90m│[39m
+[90m│[39m  Installing dependencies...: devDependencies:
+[90m│[39m  - @chrom
+[90m│[39m
+[90m│[39m  Installing dependencies...: Done in 4.5s using pnpm v
+[90m│[39m
+[90m│[39m  Dependencies installed
+[90m│[39m
+[32m◇[39m  Checking the health of your project(s)..
+[90m│[39m
+[90m│[39m  Your Storybook project looks good!
+[90m│[39m
+[32m◇[39m  The upgrade is complete, but some projects failed to upgrade or
+[90m│[39m  migrate completely. Please see the debug logs for more details.
+[90m│[39m
+[90m│[39m  [31mFailed to upgrade:[39m
+[90m│[39m  Some automigrations failed or skipped files. Review the upgrade output
+[90m│[39m  for details.
+[90m│[39m  • /.storybook
+[90m│[39m
+[90m│[39m  If you want to learn more about the automigrations that executed in
+[90m│[39m  your project(s), please check the following links:
+[90m│[39m  • upgrade-storybook-related-dependencies: undefined
+[90m│[39m  • vitest-setup-file:
+[90m│[39m  https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#vitest-addon-setprojectannotations-must-not-be-called-in-setup-files
+[90m│[39m  • addon-svelte-csf-to-core:
+[90m│[39m  https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#svelte-csf-is-built-into-the-svelte-frameworks
+[90m│[39m  • skills: https://github.com/storybookjs/skills
+[90m│[39m
+[90m│[39m  For a full list of changes, please check our migration guide:
+[90m│[39m  [36mhttps://storybook.js.org/docs/releases/migration-guide?ref=upgrade[39m
+[90m│[39m
+[34m●[39m  Storybook collects completely anonymous usage telemetry. We use it to
+[90m│[39m  shape Storybook's roadmap and prioritize features. You can learn more,
+[90m│[39m  including how to opt out, at https://storybook.js.org/telemetry
+[90m│[39m
+[90m│[39m  Debug logs are written to: /home/agent/workspace/debug-storybook.log
+[90m│[39m
+[90m└[39m  
+
+EXIT=1

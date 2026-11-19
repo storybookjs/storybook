@@ -1,0 +1,413 @@
+➤ YN0000: · Yarn 4.18.0
+➤ YN0000: ┌ Resolution step
+➤ YN0085: │ + storybook@npm:11.0.0-beta.3, @emnapi/core@npm:1.11.0, @emnapi/runtime@npm:1.11.0, @emnapi/wasi-threads@npm:1.2.2, @esbuild/aix-ppc64@npm:0.28.2, and 72 more.
+➤ YN0000: └ Completed in 1s 14ms
+➤ YN0000: ┌ Post-resolution validation
+➤ YN0086: │ Some peer dependencies are incorrectly met by dependencies; run yarn explain peer-requirements for details.
+➤ YN0000: └ Completed
+➤ YN0000: ┌ Fetch step
+➤ YN0013: │ 16 packages were added to the project (+ 38.11 MiB).
+➤ YN0000: └ Completed in 0s 690ms
+➤ YN0000: ┌ Link step
+➤ YN0092: │ ESM support for PnP uses the experimental loader API and is therefore experimental
+➤ YN0004: │ esbuild@npm:0.28.2 lists build scripts, but all build scripts have been disabled.
+➤ YN0000: └ Completed
+➤ YN0000: · Done with warnings in 1s 810ms
+
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+[90m┌[39m  Storybook upgrade - v11.0.0-beta.3
+[90m│[39m
+[90m│[39m  Detecting projects...
+[90m│[39m
+[90m│[39m  Detecting projects: 1 projects
+[90m│[39m
+[33m▲[39m  Yarn Classic (v1) is supported on a best-effort basis. Storybook works
+[90m│[39m  best with npm, pnpm, or Yarn Berry. For more information, see:
+[90m│[39m  https://storybook.js.org/docs/get-started/install
+[90m│[39m
+[90m│[39m  1 project detected
+[90m│[39m
+[34m●[39m  Upgrading from [1m10.1.11[22m to [1m11.0.0-beta.3[22m
+[90m│[39m
+[90m│[39m  /package.json
+[90m│[39m
+[90m│[39m  Updated package versions in package.json files
+[90m│[39m
+[90m│[39m  Checking automigrations for /.storybook...
+[90m│[39m
+
+[90m│[39m  Automigrations detected:
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m set-config-layout[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m skills[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m typescript-dependency[39m
+[90m│[39m
+[90m│[39m  3 automigration(s) detected
+[90m│[39m
+[90m│[39m  Running all detected automigrations:
+[90m│[39m
+[90m│[39m  - set-config-layout (/.storybook)
+[90m│[39m
+[90m│[39m  - skills (/.storybook)
+[90m│[39m
+[90m│[39m  - typescript-dependency (/.storybook)
+│ ┌─typescript-dependency (/.storybook)────────────────────────────────────────┐
+│ │  Add typescript@^6 to devDependencies, so Storybook can read your          │
+│ │  component types for Controls and the Docs args table                      │
+│ └────────────────────────────────────────────────────────────────────────────┘
+[90m│[39m
+[90m│[39m  [36mnpx skills@latest add storybookjs/skills#v11.0.0-beta.3 --yes --agent[39m
+[90m│[39m  [36mclaude-code universal --copy[39m
+[90m│[39m
+[90m│[39m  Added a Storybook section to AGENTS.md that tells agents when to use
+[90m│[39m  the skills. Storybook keeps it current on upgrade: remove its markers
+[90m│[39m  to keep your own edits, or remove the section to opt out of the
+[90m│[39m  workflow.
+[90m│[39m
+[90m│[39m  Remove the Storybook skills with: npx skills@latest remove
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m set-config-layout[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m skills[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m typescript-dependency[39m
+[90m│[39m
+[90m│[39m  Completed automigrations for /.storybook
+[90m│[39m
+[90m│[39m  Installing dependencies...
+[90m│[39m
+[90m│[39m  Installing dependencies...: yarn install v1.22.22
+[90m│[39m
+[90m│[39m  Installing dependencies...: [1/5] Validating package.
+[90m│[39m
+[90m│[39m  Installing dependencies...: [2/5] Resolving packages.
+[90m│[39m
+[90m│[39m  Installing dependencies...: [3/5] Fetching packages..
+[90m│[39m
+[90m│[39m  Installing dependencies...: [4/5] Linking dependencie
+[90m│[39m
+[90m│[39m  Installing dependencies...: [5/5] Building fresh pack
+[90m│[39m
+[90m│[39m  Installing dependencies...: info Visit https://yarnpk
+[90m│[39m
+[31m■[39m  [31mInstallation of dependencies failed![39m
+[90m│[39m
+[31m■[39m  at Module.<anonymous> (node:internal/modules/cjs/loader:1564:15)
+[90m│[39m  at require$$0.Module._resolveFilename
+[90m│[39m  (/tmp/xfs-d71fc608/dlx-516/.pnp.cjs:6736:54)
+[90m│[39m  at require.resolve
+[90m│[39m  (/home/agent/.cache/node/corepack/v1/yarn/1.22.22/lib/v8-compile-cache.js:162:23)
+[90m│[39m  at
+[90m│[39m  /home/agent/.cache/node/corepack/v1/yarn/1.22.22/lib/cli.js:34245:76
+[90m│[39m  at Generator.next (<anonymous>)
+[90m│[39m  at step
+[90m│[39m  (/home/agent/.cache/node/corepack/v1/yarn/1.22.22/lib/cli.js:310:30)
+[90m│[39m  at /home/agent/.cache/node/corepack/v1/yarn/1.22.22/lib/cli.js:321:13
+
+[90m│[39m  yarn install v1.22.22
+[90m│[39m  [1/5] Validating package.json...
+[90m│[39m  [2/5] Resolving packages...
+[90m│[39m  [3/5] Fetching packages...
+[90m│[39m  [4/5] Linking dependencies...
+[90m│[39m  [5/5] Building fresh packages...
+[90m│[39m  info Visit https://yarnpkg.com/en/docs/cli/install for documentation
+[90m│[39m  about this command.
+[90m│[39m
+[31m■[39m  [38;2;241;97;97mSB_CLI_INIT_0010 (PackageInstallFailedError): Failed to install
+[90m│[39m  dependencies using yarn.
+
+[90m│[39m  Command failed with exit code 1: yarn install
+[90m│[39m  (node:903) [DEP0169] DeprecationWarning: `url.parse()` behavior is not
+[90m│[39m  standardized and prone to errors that have security implications. Use
+[90m│[39m  the WHATWG URL API instead. CVEs are not issued for `url.parse()`
+[90m│[39m  vulnerabilities.
+[90m│[39m  (Use `node --trace-deprecation ...` to show where the warning was
+[90m│[39m  created)
+[90m│[39m  warning " > @icij/murmur@5.2.0" has incorrect peer dependency
+[90m│[39m  "vue-i18n@^9.13.1".
+[90m│[39m  warning "@icij/murmur > @storybook/preset-scss@1.0.3" has unmet peer
+[90m│[39m  dependency "css-loader@*".
+[90m│[39m  warning "@icij/murmur > @storybook/preset-scss@1.0.3" has unmet peer
+[90m│[39m  dependency "sass-loader@*".
+[90m│[39m  warning "@icij/murmur > @storybook/preset-scss@1.0.3" has unmet peer
+[90m│[39m  dependency "style-loader@*".
+[90m│[39m  warning "@icij/eslint-config > eslint-plugin-vitest >
+[90m│[39m  @typescript-eslint/utils@7.18.0" has incorrect peer dependency
+[90m│[39m  "eslint@^8.56.0".
+[90m│[39m  warning "@storybook/addon-docs > @mdx-js/react@3.1.0" has unmet peer
+[90m│[39m  dependency "@types/react@>=16".
+[90m│[39m  warning " > @vitejs/plugin-vue2@2.3.4" has incorrect peer dependency
+[90m│[39m  "vue@^2.7.0-0".
+[90m│[39m  warning " > autoprefixer@10.4.23" has unmet peer dependency
+[90m│[39m  "postcss@^8.1.0".
+[90m│[39m  warning " > storybook-addon-vue-slots@0.9.29" has unmet peer
+[90m│[39m  dependency "@storybook/blocks@^7.0.27".
+[90m│[39m  warning " > storybook-addon-vue-slots@0.9.29" has unmet peer
+[90m│[39m  dependency "@storybook/components@^7.0.27".
+[90m│[39m  warning " > storybook-addon-vue-slots@0.9.29" has unmet peer
+[90m│[39m  dependency "@storybook/core-events@^7.0.27".
+[90m│[39m  warning " > storybook-addon-vue-slots@0.9.29" has unmet peer
+[90m│[39m  dependency "@storybook/preview-api@^7.0.27".
+[90m│[39m  warning " > storybook-addon-vue-slots@0.9.29" has unmet peer
+[90m│[39m  dependency "@storybook/theming@^7.0.27".
+[90m│[39m  warning " > storybook-addon-vue-slots@0.9.29" has unmet peer
+[90m│[39m  dependency "@storybook/types@^7.0.27".
+[90m│[39m  warning " > storybook-addon-vue-slots@0.9.29" has unmet peer
+[90m│[39m  dependency "@storybook/vue3@^7.0.27".
+[90m│[39m  warning " > storybook-vue3-router@7.0.0" has unmet peer dependency
+[90m│[39m  "@storybook/vue3@10.x".
+[90m│[39m  warning Workspaces can only be enabled in private projects.
+[90m│[39m  error Error: ./node_modules/esbuild: Cannot find module 'pnpapi'
+[90m│[39m  Require stack:
+[90m│[39m  - /home/agent/.cache/node/corepack/v1/yarn/1.22.22/lib/cli.js
+[90m│[39m  - /home/agent/.cache/node/corepack/v1/yarn/1.22.22/bin/yarn.js
+[90m│[39m  Require stack:
+[90m│[39m  - /home/agent/.cache/node/corepack/v1/yarn/1.22.22/lib/cli.js
+[90m│[39m  - /home/agent/.cache/node/corepack/v1/yarn/1.22.22/bin/yarn.js
+[90m│[39m  at Module.<anonymous> (node:internal/modules/cjs/loader:1564:15)
+[90m│[39m  at require$0.Module._resolveFilename
+[90m│[39m  (/tmp/xfs-d71fc608/dlx-516/.pnp.cjs:6736:54)
+[90m│[39m  at require.resolve
+[90m│[39m  (/home/agent/.cache/node/corepack/v1/yarn/1.22.22/lib/v8-compile-cache.js:162:23)
+[90m│[39m  at
+[90m│[39m  /home/agent/.cache/node/corepack/v1/yarn/1.22.22/lib/cli.js:34245:76
+[90m│[39m  at Generator.next (<anonymous>)
+[90m│[39m  at step
+[90m│[39m  (/home/agent/.cache/node/corepack/v1/yarn/1.22.22/lib/cli.js:310:30)
+[90m│[39m  at /home/agent/.cache/node/corepack/v1/yarn/1.22.22/lib/cli.js:321:13
+[90m│[39m  yarn install v1.22.22
+[90m│[39m  [1/5] Validating package.json...
+[90m│[39m  [2/5] Resolving packages...
+[90m│[39m  [3/5] Fetching packages...
+[90m│[39m  [4/5] Linking dependencies...
+[90m│[39m  [5/5] Building fresh packages...
+[90m│[39m  info Visit https://yarnpkg.com/en/docs/cli/install for documentation
+[90m│[39m  about this command.
+[90m│[39m  Command failed with exit code 1: yarn install
+
+[90m│[39m  (node:903) [DEP0169] DeprecationWarning: `url.parse()` behavior is not
+[90m│[39m  standardized and prone to errors that have security implications. Use
+[90m│[39m  the WHATWG URL API instead. CVEs are not issued for `url.parse()`
+[90m│[39m  vulnerabilities.
+[90m│[39m  (Use `node --trace-deprecation ...` to show where the warning was
+[90m│[39m  created)
+[90m│[39m  warning " > @icij/murmur@5.2.0" has incorrect peer dependency
+[90m│[39m  "vue-i18n@^9.13.1".
+[90m│[39m  warning "@icij/murmur > @storybook/preset-scss@1.0.3" has unmet peer
+[90m│[39m  dependency "css-loader@*".
+[90m│[39m  warning "@icij/murmur > @storybook/preset-scss@1.0.3" has unmet peer
+[90m│[39m  dependency "sass-loader@*".
+[90m│[39m  warning "@icij/murmur > @storybook/preset-scss@1.0.3" has unmet peer
+[90m│[39m  dependency "style-loader@*".
+[90m│[39m  warning "@icij/eslint-config > eslint-plugin-vitest >
+[90m│[39m  @typescript-eslint/utils@7.18.0" has incorrect peer dependency
+[90m│[39m  "eslint@^8.56.0".
+[90m│[39m  warning "@storybook/addon-docs > @mdx-js/react@3.1.0" has unmet peer
+[90m│[39m  dependency "@types/react@>=16".
+[90m│[39m  warning " > @vitejs/plugin-vue2@2.3.4" has incorrect peer dependency
+[90m│[39m  "vue@^2.7.0-0".
+[90m│[39m  warning " > autoprefixer@10.4.23" has unmet peer dependency
+[90m│[39m  "postcss@^8.1.0".
+[90m│[39m  warning " > storybook-addon-vue-slots@0.9.29" has unmet peer
+[90m│[39m  dependency "@storybook/blocks@^7.0.27".
+[90m│[39m  warning " > storybook-addon-vue-slots@0.9.29" has unmet peer
+[90m│[39m  dependency "@storybook/components@^7.0.27".
+[90m│[39m  warning " > storybook-addon-vue-slots@0.9.29" has unmet peer
+[90m│[39m  dependency "@storybook/core-events@^7.0.27".
+[90m│[39m  warning " > storybook-addon-vue-slots@0.9.29" has unmet peer
+[90m│[39m  dependency "@storybook/preview-api@^7.0.27".
+[90m│[39m  warning " > storybook-addon-vue-slots@0.9.29" has unmet peer
+[90m│[39m  dependency "@storybook/theming@^7.0.27".
+[90m│[39m  warning " > storybook-addon-vue-slots@0.9.29" has unmet peer
+[90m│[39m  dependency "@storybook/types@^7.0.27".
+[90m│[39m  warning " > storybook-addon-vue-slots@0.9.29" has unmet peer
+[90m│[39m  dependency "@storybook/vue3@^7.0.27".
+[90m│[39m  warning " > storybook-vue3-router@7.0.0" has unmet peer dependency
+[90m│[39m  "@storybook/vue3@10.x".
+[90m│[39m  warning Workspaces can only be enabled in private projects.
+[90m│[39m  error Error: ./node_modules/esbuild: Cannot find module 'pnpapi'
+[90m│[39m  Require stack:
+[90m│[39m  - /home/agent/.cache/node/corepack/v1/yarn/1.22.22/lib/cli.js
+[90m│[39m  - /home/agent/.cache/node/corepack/v1/yarn/1.22.22/bin/yarn.js
+[90m│[39m  Require stack:
+[90m│[39m  - /home/agent/.cache/node/corepack/v1/yarn/1.22.22/lib/cli.js
+[90m│[39m  - /home/agent/.cache/node/corepack/v1/yarn/1.22.22/bin/yarn.js
+[90m│[39m  at Module.<anonymous> (node:internal/modules/cjs/loader:1564:15)
+[90m│[39m  at require$0.Module._resolveFilename
+[90m│[39m  (/tmp/xfs-d71fc608/dlx-516/.pnp.cjs:6736:54)
+[90m│[39m  at require.resolve
+[90m│[39m  (/home/agent/.cache/node/corepack/v1/yarn/1.22.22/lib/v8-compile-cache.js:162:23)
+[90m│[39m  at
+[90m│[39m  /home/agent/.cache/node/corepack/v1/yarn/1.22.22/lib/cli.js:34245:76
+[90m│[39m  at Generator.next (<anonymous>)
+[90m│[39m  at step
+[90m│[39m  (/home/agent/.cache/node/corepack/v1/yarn/1.22.22/lib/cli.js:310:30)
+[90m│[39m  at /home/agent/.cache/node/corepack/v1/yarn/1.22.22/lib/cli.js:321:13
+
+[90m│[39m  yarn install v1.22.22
+[90m│[39m  [1/5] Validating package.json...
+[90m│[39m  [2/5] Resolving packages...
+[90m│[39m  [3/5] Fetching packages...
+[90m│[39m  [4/5] Linking dependencies...
+[90m│[39m  [5/5] Building fresh packages...
+[90m│[39m  info Visit https://yarnpkg.com/en/docs/cli/install for documentation
+[90m│[39m  about this command.[39m
+[90m│[39m  at categorizeExecaError
+[90m│[39m  (file:///home/agent/.npm/_npx/b5993b06651b6ae2/node_modules/storybook/dist/_node-chunks/chunk-UVYV3XXW.js:7511:717)
+[90m│[39m  at categorize
+[90m│[39m  (file:///home/agent/.npm/_npx/b5993b06651b6ae2/node_modules/storybook/dist/_node-chunks/chunk-UVYV3XXW.js:7521:31)
+[90m│[39m  at
+[90m│[39m  file:///home/agent/.npm/_npx/b5993b06651b6ae2/node_modules/storybook/dist/_node-chunks/chunk-UVYV3XXW.js:7524:61
+[90m│[39m
+[34m●[39m  Storybook collects completely anonymous usage telemetry. We use it to
+[90m│[39m  shape Storybook's roadmap and prioritize features. You can learn more,
+[90m│[39m  including how to opt out, at https://storybook.js.org/telemetry
+[90m│[39m
+[31m■[39m  SB_CLI_INIT_0010 (PackageInstallFailedError): Failed to install
+[90m│[39m  dependencies using yarn.
+
+[90m│[39m  Command failed with exit code 1: yarn install
+[90m│[39m  (node:903) [DEP0169] DeprecationWarning: `url.parse()` behavior is not
+[90m│[39m  standardized and prone to errors that have security implications. Use
+[90m│[39m  the WHATWG URL API instead. CVEs are not issued for `url.parse()`
+[90m│[39m  vulnerabilities.
+[90m│[39m  (Use `node --trace-deprecation ...` to show where the warning was
+[90m│[39m  created)
+[90m│[39m  warning " > @icij/murmur@5.2.0" has incorrect peer dependency
+[90m│[39m  "vue-i18n@^9.13.1".
+[90m│[39m  warning "@icij/murmur > @storybook/preset-scss@1.0.3" has unmet peer
+[90m│[39m  dependency "css-loader@*".
+[90m│[39m  warning "@icij/murmur > @storybook/preset-scss@1.0.3" has unmet peer
+[90m│[39m  dependency "sass-loader@*".
+[90m│[39m  warning "@icij/murmur > @storybook/preset-scss@1.0.3" has unmet peer
+[90m│[39m  dependency "style-loader@*".
+[90m│[39m  warning "@icij/eslint-config > eslint-plugin-vitest >
+[90m│[39m  @typescript-eslint/utils@7.18.0" has incorrect peer dependency
+[90m│[39m  "eslint@^8.56.0".
+[90m│[39m  warning "@storybook/addon-docs > @mdx-js/react@3.1.0" has unmet peer
+[90m│[39m  dependency "@types/react@>=16".
+[90m│[39m  warning " > @vitejs/plugin-vue2@2.3.4" has incorrect peer dependency
+[90m│[39m  "vue@^2.7.0-0".
+[90m│[39m  warning " > autoprefixer@10.4.23" has unmet peer dependency
+[90m│[39m  "postcss@^8.1.0".
+[90m│[39m  warning " > storybook-addon-vue-slots@0.9.29" has unmet peer
+[90m│[39m  dependency "@storybook/blocks@^7.0.27".
+[90m│[39m  warning " > storybook-addon-vue-slots@0.9.29" has unmet peer
+[90m│[39m  dependency "@storybook/components@^7.0.27".
+[90m│[39m  warning " > storybook-addon-vue-slots@0.9.29" has unmet peer
+[90m│[39m  dependency "@storybook/core-events@^7.0.27".
+[90m│[39m  warning " > storybook-addon-vue-slots@0.9.29" has unmet peer
+[90m│[39m  dependency "@storybook/preview-api@^7.0.27".
+[90m│[39m  warning " > storybook-addon-vue-slots@0.9.29" has unmet peer
+[90m│[39m  dependency "@storybook/theming@^7.0.27".
+[90m│[39m  warning " > storybook-addon-vue-slots@0.9.29" has unmet peer
+[90m│[39m  dependency "@storybook/types@^7.0.27".
+[90m│[39m  warning " > storybook-addon-vue-slots@0.9.29" has unmet peer
+[90m│[39m  dependency "@storybook/vue3@^7.0.27".
+[90m│[39m  warning " > storybook-vue3-router@7.0.0" has unmet peer dependency
+[90m│[39m  "@storybook/vue3@10.x".
+[90m│[39m  warning Workspaces can only be enabled in private projects.
+[90m│[39m  error Error: ./node_modules/esbuild: Cannot find module 'pnpapi'
+[90m│[39m  Require stack:
+[90m│[39m  - /home/agent/.cache/node/corepack/v1/yarn/1.22.22/lib/cli.js
+[90m│[39m  - /home/agent/.cache/node/corepack/v1/yarn/1.22.22/bin/yarn.js
+[90m│[39m  Require stack:
+[90m│[39m  - /home/agent/.cache/node/corepack/v1/yarn/1.22.22/lib/cli.js
+[90m│[39m  - /home/agent/.cache/node/corepack/v1/yarn/1.22.22/bin/yarn.js
+[90m│[39m  at Module.<anonymous> (node:internal/modules/cjs/loader:1564:15)
+[90m│[39m  at require$$0.Module._resolveFilename
+[90m│[39m  (/tmp/xfs-d71fc608/dlx-516/.pnp.cjs:6736:54)
+[90m│[39m  at require.resolve
+[90m│[39m  (/home/agent/.cache/node/corepack/v1/yarn/1.22.22/lib/v8-compile-cache.js:162:23)
+[90m│[39m  at
+[90m│[39m  /home/agent/.cache/node/corepack/v1/yarn/1.22.22/lib/cli.js:34245:76
+[90m│[39m  at Generator.next (<anonymous>)
+[90m│[39m  at step
+[90m│[39m  (/home/agent/.cache/node/corepack/v1/yarn/1.22.22/lib/cli.js:310:30)
+[90m│[39m  at /home/agent/.cache/node/corepack/v1/yarn/1.22.22/lib/cli.js:321:13
+[90m│[39m  yarn install v1.22.22
+[90m│[39m  [1/5] Validating package.json...
+[90m│[39m  [2/5] Resolving packages...
+[90m│[39m  [3/5] Fetching packages...
+[90m│[39m  [4/5] Linking dependencies...
+[90m│[39m  [5/5] Building fresh packages...
+[90m│[39m  info Visit https://yarnpkg.com/en/docs/cli/install for documentation
+[90m│[39m  about this command.
+[90m│[39m  Command failed with exit code 1: yarn install
+
+[90m│[39m  (node:903) [DEP0169] DeprecationWarning: `url.parse()` behavior is not
+[90m│[39m  standardized and prone to errors that have security implications. Use
+[90m│[39m  the WHATWG URL API instead. CVEs are not issued for `url.parse()`
+[90m│[39m  vulnerabilities.
+[90m│[39m  (Use `node --trace-deprecation ...` to show where the warning was
+[90m│[39m  created)
+[90m│[39m  warning " > @icij/murmur@5.2.0" has incorrect peer dependency
+[90m│[39m  "vue-i18n@^9.13.1".
+[90m│[39m  warning "@icij/murmur > @storybook/preset-scss@1.0.3" has unmet peer
+[90m│[39m  dependency "css-loader@*".
+[90m│[39m  warning "@icij/murmur > @storybook/preset-scss@1.0.3" has unmet peer
+[90m│[39m  dependency "sass-loader@*".
+[90m│[39m  warning "@icij/murmur > @storybook/preset-scss@1.0.3" has unmet peer
+[90m│[39m  dependency "style-loader@*".
+[90m│[39m  warning "@icij/eslint-config > eslint-plugin-vitest >
+[90m│[39m  @typescript-eslint/utils@7.18.0" has incorrect peer dependency
+[90m│[39m  "eslint@^8.56.0".
+[90m│[39m  warning "@storybook/addon-docs > @mdx-js/react@3.1.0" has unmet peer
+[90m│[39m  dependency "@types/react@>=16".
+[90m│[39m  warning " > @vitejs/plugin-vue2@2.3.4" has incorrect peer dependency
+[90m│[39m  "vue@^2.7.0-0".
+[90m│[39m  warning " > autoprefixer@10.4.23" has unmet peer dependency
+[90m│[39m  "postcss@^8.1.0".
+[90m│[39m  warning " > storybook-addon-vue-slots@0.9.29" has unmet peer
+[90m│[39m  dependency "@storybook/blocks@^7.0.27".
+[90m│[39m  warning " > storybook-addon-vue-slots@0.9.29" has unmet peer
+[90m│[39m  dependency "@storybook/components@^7.0.27".
+[90m│[39m  warning " > storybook-addon-vue-slots@0.9.29" has unmet peer
+[90m│[39m  dependency "@storybook/core-events@^7.0.27".
+[90m│[39m  warning " > storybook-addon-vue-slots@0.9.29" has unmet peer
+[90m│[39m  dependency "@storybook/preview-api@^7.0.27".
+[90m│[39m  warning " > storybook-addon-vue-slots@0.9.29" has unmet peer
+[90m│[39m  dependency "@storybook/theming@^7.0.27".
+[90m│[39m  warning " > storybook-addon-vue-slots@0.9.29" has unmet peer
+[90m│[39m  dependency "@storybook/types@^7.0.27".
+[90m│[39m  warning " > storybook-addon-vue-slots@0.9.29" has unmet peer
+[90m│[39m  dependency "@storybook/vue3@^7.0.27".
+[90m│[39m  warning " > storybook-vue3-router@7.0.0" has unmet peer dependency
+[90m│[39m  "@storybook/vue3@10.x".
+[90m│[39m  warning Workspaces can only be enabled in private projects.
+[90m│[39m  error Error: ./node_modules/esbuild: Cannot find module 'pnpapi'
+[90m│[39m  Require stack:
+[90m│[39m  - /home/agent/.cache/node/corepack/v1/yarn/1.22.22/lib/cli.js
+[90m│[39m  - /home/agent/.cache/node/corepack/v1/yarn/1.22.22/bin/yarn.js
+[90m│[39m  Require stack:
+[90m│[39m  - /home/agent/.cache/node/corepack/v1/yarn/1.22.22/lib/cli.js
+[90m│[39m  - /home/agent/.cache/node/corepack/v1/yarn/1.22.22/bin/yarn.js
+[90m│[39m  at Module.<anonymous> (node:internal/modules/cjs/loader:1564:15)
+[90m│[39m  at require$$0.Module._resolveFilename
+[90m│[39m  (/tmp/xfs-d71fc608/dlx-516/.pnp.cjs:6736:54)
+[90m│[39m  at require.resolve
+[90m│[39m  (/home/agent/.cache/node/corepack/v1/yarn/1.22.22/lib/v8-compile-cache.js:162:23)
+[90m│[39m  at
+[90m│[39m  /home/agent/.cache/node/corepack/v1/yarn/1.22.22/lib/cli.js:34245:76
+[90m│[39m  at Generator.next (<anonymous>)
+[90m│[39m  at step
+[90m│[39m  (/home/agent/.cache/node/corepack/v1/yarn/1.22.22/lib/cli.js:310:30)
+[90m│[39m  at /home/agent/.cache/node/corepack/v1/yarn/1.22.22/lib/cli.js:321:13
+
+[90m│[39m  yarn install v1.22.22
+[90m│[39m  [1/5] Validating package.json...
+[90m│[39m  [2/5] Resolving packages...
+[90m│[39m  [3/5] Fetching packages...
+[90m│[39m  [4/5] Linking dependencies...
+[90m│[39m  [5/5] Building fresh packages...
+[90m│[39m  info Visit https://yarnpkg.com/en/docs/cli/install for documentation
+[90m│[39m  about this command.
+[90m│[39m
+[90m│[39m  Debug logs are written to: /home/agent/workspace/debug-storybook.log
+[90m│[39m
+[90m└[39m  
+
+exit=1

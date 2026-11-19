@@ -1,0 +1,28 @@
+yarn install v1.22.22
+[1/5] Validating package.json...
+[2/5] Resolving packages...
+(node:1010) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+[3/5] Fetching packages...
+[4/5] Linking dependencies...
+warning " > @icij/murmur@5.2.0" has incorrect peer dependency "vue-i18n@^9.13.1".
+warning "@icij/murmur > @storybook/preset-scss@1.0.3" has unmet peer dependency "css-loader@*".
+warning "@icij/murmur > @storybook/preset-scss@1.0.3" has unmet peer dependency "sass-loader@*".
+warning "@icij/murmur > @storybook/preset-scss@1.0.3" has unmet peer dependency "style-loader@*".
+warning "@icij/eslint-config > eslint-plugin-vitest > @typescript-eslint/utils@7.18.0" has incorrect peer dependency "eslint@^8.56.0".
+warning "@storybook/addon-docs > @mdx-js/react@3.1.0" has unmet peer dependency "@types/react@>=16".
+warning " > @vitejs/plugin-vue2@2.3.4" has incorrect peer dependency "vue@^2.7.0-0".
+warning " > autoprefixer@10.4.23" has unmet peer dependency "postcss@^8.1.0".
+warning " > storybook-addon-vue-slots@0.9.29" has unmet peer dependency "@storybook/blocks@^7.0.27".
+warning " > storybook-addon-vue-slots@0.9.29" has unmet peer dependency "@storybook/components@^7.0.27".
+warning " > storybook-addon-vue-slots@0.9.29" has unmet peer dependency "@storybook/core-events@^7.0.27".
+warning " > storybook-addon-vue-slots@0.9.29" has unmet peer dependency "@storybook/preview-api@^7.0.27".
+warning " > storybook-addon-vue-slots@0.9.29" has unmet peer dependency "@storybook/theming@^7.0.27".
+warning " > storybook-addon-vue-slots@0.9.29" has unmet peer dependency "@storybook/types@^7.0.27".
+warning " > storybook-addon-vue-slots@0.9.29" has unmet peer dependency "@storybook/vue3@^7.0.27".
+warning " > storybook-vue3-router@7.0.0" has unmet peer dependency "@storybook/vue3@10.x".
+warning Workspaces can only be enabled in private projects.
+[5/5] Building fresh packages...
+success Saved lockfile.
+Done in 6.23s.
+exit=0

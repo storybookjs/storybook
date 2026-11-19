@@ -11,6 +11,7 @@ import {
   carriedRuns,
   chainEndComment,
   collectOf,
+  costOf,
   dryFiling,
   batchDispatch,
   nextStep,
@@ -77,6 +78,7 @@ const posted = (report: BatchReport, author = HARNESS) =>
   comment(
     renderBatchComment(report, {
       spend: spentUsd([], HASH, report),
+      cost: costOf([], report),
       capUsd: 250,
       next: { start: 2 },
       expiresOn: '2027-02-14',
@@ -159,7 +161,8 @@ describe('batchReport and renderBatchComment', () => {
 
       - new issue: [SB 11 QA]: Dev server crashes
 
-      Spent on this plan: $6.43 for 3 runs, of a cap of $250.00.
+      Batch 1 cost $6.43 for 3 runs.
+      The plan cost $6.43 for 3 runs up to batch 1, of a cap of $250.00.
 
       Next: Batch 2 is started.
 
@@ -300,6 +303,7 @@ describe('spentUsd', () => {
     const rewritten = comment(
       renderBatchComment(rerun, {
         spend: spentUsd([earlier], HASH, rerun),
+        cost: costOf([earlier], rerun),
         capUsd: 250,
         next: { stop: 'x' },
         expiresOn: '2027-02-14',
@@ -522,6 +526,7 @@ describe('the last line of a batch comment', () => {
   const lastLine = (overrides: Partial<BatchInput>, expiresOn?: string) =>
     renderBatchComment(batchReport(input(overrides)), {
       spend: spentUsd([], HASH),
+      cost: costOf([], batchReport(input(overrides))),
       capUsd: 250,
       next: { start: 2 },
       expiresOn,
@@ -613,6 +618,7 @@ describe('the filing line of a dry run', () => {
     const batch = input({ planned: [{ ...job('mantine'), engine: 'codex' }, job('mealdrop')] });
     const comment = renderBatchComment(batchReport(batch), {
       spend: spentUsd([], HASH),
+      cost: costOf([], batchReport(batch)),
       capUsd: 250,
       next: { start: 2 },
       expiresOn: '2027-02-14',
@@ -706,6 +712,97 @@ describe('trackBatch', () => {
     expect(track(batchTwo(19.99), [batchOne]).next).toEqual({ start: 3 });
   });
 
+  const costLines = (body: string) =>
+    body.split('\n').filter((line) => /^(Batch \d+ cost|The plan cost) /.test(line));
+
+  it('says what the batch cost and what the plan cost up to it', () => {
+    const batchThree = batchReport(
+      input({
+        batch: 3,
+        batches: 4,
+        runs: ['43900000003'],
+        planned: [job('primer-react')],
+        results: [result('primer-react', { usd: 3 })],
+      })
+    );
+    const second = comment(track(batchTwo(5), [batchOne], 250).body);
+
+    expect(costLines(track(batchThree, [batchOne, second], 250).body)).toEqual([
+      'Batch 3 cost $3.00 for 1 run.',
+      'The plan cost $48.00 for 3 runs up to batch 3, of a cap of $250.00.',
+    ]);
+  });
+
+  it('writes the same cost when the batch is reported again after later batches, also one whose cost may be short', () => {
+    const later = (batch: number, attempt = 1) =>
+      batchReport(
+        input({
+          batch,
+          batches: 4,
+          attempt,
+          runs: [`4390000000${batch}`],
+          planned: [job('primer-react')],
+          results: [result('primer-react', { usd: batch })],
+        })
+      );
+    const first = track(batchTwo(5), [batchOne], 250);
+    const second = comment(first.body);
+    const third = comment(track(later(3, 2), [batchOne, second], 250).body);
+    const filed = track(batchTwo(5, { filing: 'filed' }), [batchOne, second, third], 250, {
+      chain: false,
+    });
+
+    expect(costLines(third.body)).toContain(
+      'The plan cost at least $48.00 for 3 runs up to batch 3, of a cap of $250.00.'
+    );
+    expect(filed.existing).toBe(second);
+    expect(costLines(filed.body)).toEqual([
+      'Batch 2 cost $5.00 for 1 run.',
+      'The plan cost $45.00 for 2 runs up to batch 2, of a cap of $250.00.',
+    ]);
+    expect(costLines(filed.body)).toEqual(costLines(first.body));
+  });
+
+  it('sums every report of a batch that ran twice once, and counts a run collected again once', () => {
+    const rerun = batchTwo(3, {
+      version: '11.0.0-beta.4',
+      runs: ['43900000012'],
+      results: [result('mantine', { usd: 3, startedAt: '2026-11-17T09:00:00Z' })],
+    });
+    const both = batchTwo(3, {
+      version: '11.0.0-beta.4',
+      runs: ['43900000002', '43900000012'],
+      results: [
+        result('mantine', { usd: 5 }),
+        result('mantine', { usd: 3, startedAt: '2026-11-17T09:00:00Z' }),
+      ],
+    });
+    const second = comment(track(batchTwo(5), [batchOne], 250).body);
+    const again = track(rerun, [batchOne, second], 250);
+
+    expect(costLines(again.body)).toEqual([
+      'Batch 2 cost $8.00 for 2 runs in 2 reports.',
+      'The plan cost $48.00 for 3 runs up to batch 2, of a cap of $250.00.',
+    ]);
+    expect(costLines(track(both, [batchOne, second, comment(again.body)], 250).body)).toEqual([
+      'Batch 2 cost $8.00 for 2 runs in 3 reports.',
+      'The plan cost $48.00 for 3 runs up to batch 2, of a cap of $250.00.',
+    ]);
+  });
+
+  it('stops at the cap on the cost of the whole plan, not on the cost of the batch', () => {
+    const tracked = track(batchTwo(20), [batchOne]);
+
+    expect(tracked.next).toEqual({
+      stop: 'Batch 3 was not started, because $60.00 is spent and the cap is $60.00.',
+      resume: 3,
+    });
+    expect(costLines(tracked.body)).toEqual([
+      'Batch 2 cost $20.00 for 1 run.',
+      'The plan cost $60.00 for 2 runs up to batch 2, of a cap of $60.00.',
+    ]);
+  });
+
   it('counts a run at the highest price any comment of the plan holds for it', () => {
     const report = (usd: number, runs: string[]) =>
       batchReport(
@@ -741,7 +838,7 @@ describe('trackBatch', () => {
       resume: 3,
     });
     expect(tracked.body).toContain(
-      'Spent on this plan: at least $1.00 for 1 run, of a cap of $250.00.'
+      'The plan cost at least $1.00 for 1 run up to batch 2, of a cap of $250.00.'
     );
   });
 
@@ -782,7 +879,7 @@ describe('trackBatch', () => {
       stop: 'Batch 4 was not started, because this discussion holds no report of batches 1 and 2, so the spend of the plan is unknown.',
       resume: 4,
     });
-    expect(track(batchThree, [second], 250).body).toContain('Spent on this plan: at least $');
+    expect(track(batchThree, [second], 250).body).toContain('The plan cost at least $');
   });
 
   it('starts no batch that a report in the discussion went past already', () => {
@@ -911,9 +1008,9 @@ describe('trackBatch', () => {
       stop: 'Batch 3 was not started, because attempt 2 of workflow run 43900000002 is its first report here, so what its earlier attempts spent, and whether one of them started batch 3, is unknown.',
       resume: 3,
     });
-    expect(tracked.body).toContain('Spent on this plan: at least $41.00 for 2 runs');
+    expect(tracked.body).toContain('The plan cost at least $41.00 for 2 runs');
     expect(track(batchTwo(1, { attempt: 2 }), [batchOne, reported], 250).body).toContain(
-      'Spent on this plan: $41.00 for 2 runs'
+      'The plan cost $41.00 for 2 runs'
     );
   });
 
@@ -925,7 +1022,7 @@ describe('trackBatch', () => {
 
     expect(filed.existing).toBe(stopped);
     expect(filed.body).toContain(
-      'Spent on this plan: at least $41.00 for 2 runs, of a cap of $250.00.\n\nNext: Batch 3 was not started, because attempt 2 of workflow run 43900000002 is its first report here, so what its earlier attempts spent, and whether one of them started batch 3, is unknown.'
+      'Batch 2 cost $1.00 for 1 run.\nThe plan cost at least $41.00 for 2 runs up to batch 2, of a cap of $250.00.\n\nNext: Batch 3 was not started, because attempt 2 of workflow run 43900000002 is its first report here, so what its earlier attempts spent, and whether one of them started batch 3, is unknown.'
     );
   });
 
@@ -949,7 +1046,7 @@ describe('trackBatch', () => {
       stop: 'Batch 3 was not started, because the comments of this discussion hold $35.00 for 1 run, where one of them was written with $75.00 for 2 runs, so a comment of the workflow is gone.',
       resume: 3,
     });
-    expect(tracked.body).toContain('Spent on this plan: at least $36.00 for 2 runs');
+    expect(tracked.body).toContain('The plan cost at least $36.00 for 2 runs');
     expect(track(batchThree, [batchOne, second, third], 250).next).toEqual({ start: 4 });
     expect(track(batchThree, [batchOne, third], 250).next).toEqual({
       stop: 'Batch 4 was not started, because the comments of this discussion hold $41.00 for 2 runs, where one of them was written with $76.00 for 3 runs, so a comment of the workflow is gone.',
@@ -979,12 +1076,12 @@ describe('trackBatch', () => {
       stop: 'Batch 3 was not started, because the comments of this discussion hold $35.00 for 1 run, where one of them was written with $75.00 for 2 runs, so a comment of the workflow is gone.',
       resume: 3,
     });
-    expect(stopped.body).toContain('Spent on this plan: at least $36.00 for 2 runs');
+    expect(stopped.body).toContain('The plan cost at least $36.00 for 2 runs');
     expect(byHand.next).toEqual({
       stop: 'Batch 4 was not started, because the comments of this discussion hold $36.00 for 2 runs, where one of them was written with $76.00 for 3 runs, so a comment of the workflow is gone.',
       resume: 4,
     });
-    expect(byHand.body).toContain('Spent on this plan: at least $');
+    expect(byHand.body).toContain('The plan cost at least $');
   });
 
   it('stops the chain and names the discussions when the plan has more than one', () => {
@@ -998,7 +1095,7 @@ describe('trackBatch', () => {
       stop: `Batch 3 was not started, because the plan has 2 discussions, ${discussions[0]} and ${discussions[1]}, which share its spend.`,
       resume: 3,
     });
-    expect(tracked.body).toContain('Spent on this plan: at least $41.00');
+    expect(tracked.body).toContain('The plan cost at least $41.00');
     expect(track(batchTwo(1), [batchOne], 250, { discussions: [discussions[0]!] }).next).toEqual({
       start: 3,
     });

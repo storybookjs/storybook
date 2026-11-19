@@ -3,7 +3,7 @@ import React from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { action } from 'storybook/actions';
-import { expect, fireEvent, within } from 'storybook/test';
+import { expect, within } from 'storybook/test';
 import { styled } from 'storybook/theming/emotion';
 
 import * as ArgRow from './ArgRow.stories';
@@ -124,18 +124,19 @@ export const AllControls = {
   },
 };
 
+/** Setting an empty Object control opens its raw editor with the seeded value selected. */
 export const AllControlsObjectSet: Story = {
   args: AllControls.args,
-  play: async ({ canvas, canvasElement, step }) => {
-    await step('Switch the object control from empty to filled', async () => {
-      const setObjectButton = canvasElement.querySelector('#set-someObject') as HTMLButtonElement;
+  play: async ({ canvas, canvasElement, userEvent }) => {
+    // Several rows have a "Set object" button, so the one of interest is looked up by its id.
+    await userEvent.click(canvasElement.querySelector('#set-someObject')!);
 
-      await fireEvent.click(setObjectButton);
-
-      const rawInput = canvas.getByRole('textbox', { name: 'Edit someObject as JSON' });
-      await expect(rawInput).toBeVisible();
-      await expect(rawInput).toHaveValue('{}');
+    const rawInput = canvas.getByRole<HTMLTextAreaElement>('textbox', {
+      name: 'Edit someObject as JSON',
     });
+    await expect(rawInput).toHaveValue('{}');
+    await expect(rawInput).toHaveFocus();
+    await expect([rawInput.selectionStart, rawInput.selectionEnd]).toEqual([0, 2]);
   },
 };
 

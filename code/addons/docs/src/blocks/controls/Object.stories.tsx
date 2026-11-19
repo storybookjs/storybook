@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { destroyAnnouncer } from '@react-aria/live-announcer';
 
-import { expect, fireEvent, fn, waitFor, within } from 'storybook/test';
+import { expect, fn, waitFor } from 'storybook/test';
 
 import { ObjectControl } from './Object';
 
@@ -147,6 +147,9 @@ export const Function: Story = {
   args: {
     value: fn(),
   },
+  play: async ({ canvas }) => {
+    await expect(canvas.getByRole('textbox', { name: 'Edit object as JSON' })).toHaveValue('');
+  },
 };
 
 export const Readonly: Story = {
@@ -195,95 +198,90 @@ export const ArraySmallViewport: Story = {
   },
 };
 
+const invalidJson = /^Invalid JSON: /;
+
+/** A parse error is raised when the raw editor is left, not while typing in it. */
 export const JsonEditorValidation: Story = {
   args: {
     value: { label: 'value' },
     onChange: fn(),
   },
-  play: async ({ args, canvasElement, step }) => {
-    const canvas = within(canvasElement);
+  play: async ({ args, canvas, step, userEvent }) => {
+    await userEvent.click(canvas.getByRole('switch', { name: 'Edit object as JSON' }));
+    const rawInput = canvas.getByRole('textbox', { name: 'Edit object as JSON' });
 
-    await step('Open the raw JSON editor and verify it is described', async () => {
-      const editAsJsonButton = canvas.getByRole('switch', { name: 'Edit object as JSON' });
+    await step('Typing invalid JSON raises no error', async () => {
+      await userEvent.clear(rawInput);
+      await userEvent.type(rawInput, '{{"label":');
 
-      await expect(editAsJsonButton).toHaveAttribute('aria-describedby');
-      await fireEvent.click(editAsJsonButton);
-      await expect(
-        canvas.getByRole('textbox', { name: 'Edit object as JSON' })
-      ).toBeInTheDocument();
+      await expect(rawInput).toHaveFocus();
+      await expect(rawInput).not.toHaveAttribute('aria-invalid');
+      await expect(rawInput).not.toHaveAccessibleDescription();
+      await expect(document.body).not.toHaveLiveRegion({ text: invalidJson });
     });
 
-    await step('Show a parse error for invalid JSON', async () => {
-      const rawInput = canvas.getByRole('textbox', { name: 'Edit object as JSON' });
+    await step('Leaving the editor raises the error and announces it politely', async () => {
+      await userEvent.tab();
 
-      rawInput.focus();
-      await fireEvent.change(rawInput, { target: { value: '{"label":' } });
-      rawInput.blur();
-
-      await waitFor(() => {
-        expect(document.body).toHaveLiveRegion({
-          text: 'Invalid JSON: Unexpected end of JSON input',
-        });
-      });
+      await expect(rawInput).not.toHaveFocus();
       await expect(rawInput).toHaveAttribute('aria-invalid', 'true');
-
-      const error = await canvas.findByText('Invalid JSON: Unexpected end of JSON input');
-      await expect(rawInput).toHaveAttribute('aria-describedby', error.getAttribute('id') ?? '');
-
+      await expect(rawInput).toHaveAccessibleDescription(invalidJson);
+      await expect(canvas.getByText(invalidJson)).toBeVisible();
+      await waitFor(() =>
+        expect(document.body).toHaveLiveRegion({ text: invalidJson, level: 'polite' })
+      );
+      await expect(document.body).not.toHaveLiveRegion({ text: invalidJson, level: 'assertive' });
       await expect(args.onChange).not.toHaveBeenCalled();
     });
 
-    await step('Clear the parse error after entering valid JSON', async () => {
-      const rawInput = canvas.getByRole('textbox', { name: 'Edit object as JSON' });
+    await step('The error clears as soon as the JSON is valid again', async () => {
+      await userEvent.type(rawInput, '"updated"}');
 
-      rawInput.focus();
-      await fireEvent.change(rawInput, { target: { value: '{"label":"updated"}' } });
-      rawInput.blur();
+      await expect(rawInput).toHaveFocus();
+      await expect(rawInput).not.toHaveAttribute('aria-invalid');
+      await expect(rawInput).not.toHaveAccessibleDescription();
+      await expect(canvas.queryByText(invalidJson)).not.toBeInTheDocument();
+      await expect(args.onChange).not.toHaveBeenCalled();
+    });
 
-      await waitFor(async () => {
-        await expect(document.body).not.toHaveLiveRegion();
-      });
-      await expect(rawInput).toHaveAttribute('aria-invalid', 'false');
-      await expect(rawInput).not.toHaveAttribute('aria-describedby');
+    await step('Leaving the editor commits valid JSON', async () => {
+      await userEvent.tab();
+
+      await expect(args.onChange).toHaveBeenCalledTimes(1);
       await expect(args.onChange).toHaveBeenCalledWith({ label: 'updated' });
     });
   },
 };
 
+/** Closing the raw editor discards a draft that failed to parse, along with its error. */
 export const JsonEditorErrorReset: Story = {
   args: {
     value: { label: 'value' },
     onChange: fn(),
   },
-  play: async ({ canvas, step }) => {
-    await step('Create a parse error in the raw JSON editor', async () => {
-      const editAsJsonButton = canvas.getByRole('switch', { name: 'Edit object as JSON' });
-      await fireEvent.click(editAsJsonButton);
+  play: async ({ args, canvas, step, userEvent }) => {
+    const toggle = canvas.getByRole('switch', { name: 'Edit object as JSON' });
 
+    await step('Raise a parse error', async () => {
+      await userEvent.click(toggle);
       const rawInput = canvas.getByRole('textbox', { name: 'Edit object as JSON' });
-      rawInput.focus();
-      await fireEvent.change(rawInput, { target: { value: '{"label":' } });
-      rawInput.blur();
+      await userEvent.clear(rawInput);
+      await userEvent.type(rawInput, '{{"label":');
+      await userEvent.tab();
 
-      await waitFor(() => {
-        expect(document.body).toHaveLiveRegion({
-          text: 'Invalid JSON: Unexpected end of JSON input',
-        });
-      });
       await expect(rawInput).toHaveAttribute('aria-invalid', 'true');
     });
 
-    await step('Clear stale parse errors after closing and reopening the editor', async () => {
-      const editAsJsonButton = canvas.getByRole('switch', { name: 'Edit object as JSON' });
-      await fireEvent.click(editAsJsonButton);
-      await fireEvent.click(canvas.getByRole('switch', { name: 'Edit object as JSON' }));
+    await step('Close and reopen the raw editor', async () => {
+      await userEvent.click(toggle);
+      await expect(canvas.queryByText(invalidJson)).not.toBeInTheDocument();
+      await userEvent.click(toggle);
 
       const rawInput = canvas.getByRole('textbox', { name: 'Edit object as JSON' });
-      await waitFor(async () => {
-        await expect(document.body).not.toHaveLiveRegion();
-      });
-      await expect(rawInput).toHaveAttribute('aria-invalid', 'false');
-      await expect(rawInput).not.toHaveAttribute('aria-describedby');
+      await expect(rawInput).toHaveValue(JSON.stringify(args.value, null, 2));
+      await expect(rawInput).not.toHaveAttribute('aria-invalid');
+      await expect(rawInput).not.toHaveAccessibleDescription();
+      await expect(canvas.queryByText(invalidJson)).not.toBeInTheDocument();
     });
   },
 };

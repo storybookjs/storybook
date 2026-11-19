@@ -91,6 +91,7 @@ test('no blocker fires for a @storybook/nextjs project (deprecation stays soft i
     ),
     getInstalledVersion: vi.fn(async () => null),
     isPackageInstalled: vi.fn(async () => false),
+    isDependencyInstalled: vi.fn(() => false),
     getAllDependencies: vi.fn(() => ({ storybook: '10.0.0' })),
     packageJsonPaths: [],
     getOverrideSources: () => [],

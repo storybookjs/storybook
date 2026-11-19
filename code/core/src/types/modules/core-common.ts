@@ -681,9 +681,10 @@ export interface StorybookFeatures {
 
   /**
    * Let story snippets follow the controls. With `docgenServer` on, a snippet in the Code panel,
-   * Canvas › Show code and the MDX `<Source>` block shows the args a control changed.
+   * Canvas › Show code and the MDX `<Source>` block shows the args a control changed. Set it to
+   * `false` to keep snippets static.
    *
-   * @default false
+   * @default true
    * @experimental
    */
   experimentalLiveServerSnippets?: boolean;

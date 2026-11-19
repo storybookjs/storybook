@@ -113,6 +113,40 @@ EscapeWithQueryStaysInSearch.play = async ({ canvasElement }) => {
   await waitFor(() => expect(escapeAbove).toHaveBeenCalledOnce());
 };
 
+/**
+ * Fuse matches fuzzily, and matches each space-separated token of the query on its own. Only the
+ * literal occurrences of the query or of its tokens are highlighted, and a result that has none
+ * still shows its name.
+ */
+export const HighlightsLiteralOccurrences: StoryFn = () => (
+  <Search {...baseProps} initialQuery="buid error">
+    {({ query, results, closeMenu, getMenuProps, getItemProps, highlightedIndex }) => (
+      <SearchResults
+        query={query}
+        results={results}
+        closeMenu={closeMenu}
+        getMenuProps={getMenuProps}
+        getItemProps={getItemProps}
+        highlightedIndex={highlightedIndex}
+      />
+    )}
+  </Search>
+);
+HighlightsLiteralOccurrences.play = async ({ canvasElement }) => {
+  await userEvent.click(within(canvasElement).getByRole('searchbox'));
+
+  const labels = await waitFor(() => {
+    const found = [...canvasElement.querySelectorAll('.search-result-item--label')];
+    expect(found.length).toBeGreaterThan(0);
+    return found;
+  });
+  labels.forEach((label) => expect(label.firstElementChild).not.toHaveTextContent(/^$/));
+
+  const highlights = [...canvasElement.querySelectorAll('mark')].map((mark) => mark.textContent);
+  expect(highlights.length).toBeGreaterThan(0);
+  highlights.forEach((highlight) => expect(highlight).toMatch(/^error$/i));
+};
+
 export const ShortcutsDisabled: StoryFn = () => (
   <Search {...baseProps} enableShortcuts={false}>
     {() => null}

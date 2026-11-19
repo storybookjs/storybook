@@ -49,24 +49,138 @@ describe('SearchResults.utils', () => {
       ]);
     });
 
-    it('should return no indices when the input is not a substring', () => {
+    it('should drop a match in which neither the input nor its tokens occur', () => {
       const matches: Match[] = [
         {
           key: 'name',
-          value: 'Header',
+          value: 'Button',
+          indices: [[0, 5]],
+          arrayIndex: 0,
+        },
+        {
+          key: 'path',
+          value: 'Button Group',
           indices: [
-            [0, 0],
-            [2, 2],
+            [0, 5],
+            [9, 10],
           ],
+          arrayIndex: 1,
+        },
+      ];
+
+      expect(resolveHighlightRanges(matches, 'buton')).toEqual([]);
+    });
+
+    it('should resolve each token of a multi-word input', () => {
+      const matches: Match[] = [
+        {
+          key: 'name',
+          value: 'Primary',
+          indices: [[0, 6]],
+          arrayIndex: 0,
+        },
+        {
+          key: 'path',
+          value: 'Button Group',
+          indices: [
+            [0, 6],
+            [8, 11],
+          ],
+          arrayIndex: 1,
+        },
+      ];
+
+      expect(resolveHighlightRanges(matches, 'button primary')).toEqual([
+        {
+          key: 'name',
+          value: 'Primary',
+          indices: [[0, 6]],
+          arrayIndex: 0,
+        },
+        {
+          key: 'path',
+          value: 'Button Group',
+          indices: [[0, 5]],
+          arrayIndex: 1,
+        },
+      ]);
+    });
+
+    it('should prefer the whole input over its tokens', () => {
+      const matches: Match[] = [
+        {
+          key: 'name',
+          value: 'With Long Label',
+          indices: [[4, 14]],
           arrayIndex: 0,
         },
       ];
 
-      expect(resolveHighlightRanges(matches, 'xyz')).toEqual([
+      expect(resolveHighlightRanges(matches, 'long label')).toEqual([
         {
           key: 'name',
-          value: 'Header',
-          indices: [],
+          value: 'With Long Label',
+          indices: [[5, 14]],
+          arrayIndex: 0,
+        },
+      ]);
+    });
+
+    it('should prefer the longest token when one token starts with another', () => {
+      const matches: Match[] = [
+        {
+          key: 'name',
+          value: 'Button',
+          indices: [[0, 5]],
+          arrayIndex: 0,
+        },
+      ];
+
+      expect(resolveHighlightRanges(matches, 'b butt')).toEqual([
+        {
+          key: 'name',
+          value: 'Button',
+          indices: [[0, 3]],
+          arrayIndex: 0,
+        },
+      ]);
+    });
+
+    it('should resolve an input with a trailing space', () => {
+      const matches: Match[] = [
+        {
+          key: 'name',
+          value: 'Button',
+          indices: [[0, 5]],
+          arrayIndex: 0,
+        },
+      ];
+
+      expect(resolveHighlightRanges(matches, 'Button ')).toEqual([
+        {
+          key: 'name',
+          value: 'Button',
+          indices: [[0, 5]],
+          arrayIndex: 0,
+        },
+      ]);
+    });
+
+    it('should treat regular expression syntax in the input literally', () => {
+      const matches: Match[] = [
+        {
+          key: 'name',
+          value: 'Button (primary)',
+          indices: [[7, 15]],
+          arrayIndex: 0,
+        },
+      ];
+
+      expect(resolveHighlightRanges(matches, '(primary)')).toEqual([
+        {
+          key: 'name',
+          value: 'Button (primary)',
+          indices: [[7, 15]],
           arrayIndex: 0,
         },
       ]);

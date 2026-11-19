@@ -7,6 +7,7 @@ import type { AutoblockOptions } from './types.ts';
 
 describe('testRunner blocker', () => {
   const mockPackageManager = {
+    isDependencyInstalled: vi.fn(),
     getInstalledVersion: vi.fn(),
   };
 
@@ -20,9 +21,20 @@ describe('testRunner blocker', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockPackageManager.isDependencyInstalled.mockReturnValue(false);
   });
 
-  test('should return true when @storybook/test-runner is installed', async () => {
+  test('should return true when package.json lists @storybook/test-runner, even if no installation is found', async () => {
+    mockPackageManager.isDependencyInstalled.mockReturnValue(true);
+    mockPackageManager.getInstalledVersion.mockResolvedValue(null);
+
+    const result = await blocker.check(createOptions());
+
+    expect(result).toBe(true);
+    expect(mockPackageManager.isDependencyInstalled).toHaveBeenCalledWith('@storybook/test-runner');
+  });
+
+  test('should return true when @storybook/test-runner is installed without being listed', async () => {
     mockPackageManager.getInstalledVersion.mockResolvedValue('0.24.0');
 
     const result = await blocker.check(createOptions());
@@ -31,7 +43,7 @@ describe('testRunner blocker', () => {
     expect(mockPackageManager.getInstalledVersion).toHaveBeenCalledWith('@storybook/test-runner');
   });
 
-  test('should return false when the test runner is not installed', async () => {
+  test('should return false when the test runner is neither listed nor installed', async () => {
     mockPackageManager.getInstalledVersion.mockResolvedValue(null);
 
     const result = await blocker.check(createOptions());

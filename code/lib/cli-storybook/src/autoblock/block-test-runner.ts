@@ -5,9 +5,12 @@ import { createBlocker } from './types.ts';
 export const blocker = createBlocker({
   id: 'testRunner',
   async check({ packageManager }) {
-    const testRunnerVersion = await packageManager.getInstalledVersion('@storybook/test-runner');
+    // The installed version lookup reports nothing when the package manager's own command fails.
+    if (packageManager.isDependencyInstalled('@storybook/test-runner')) {
+      return true;
+    }
 
-    return testRunnerVersion !== null;
+    return (await packageManager.getInstalledVersion('@storybook/test-runner')) !== null;
   },
   log() {
     return {

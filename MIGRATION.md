@@ -1433,7 +1433,7 @@ The shortcut keys `prevComponent` and `nextComponent` keep their names, so custo
 
 ### Test runner support removed
 
-[`@storybook/test-runner`](https://github.com/storybookjs/test-runner) is no longer supported and is incompatible with Storybook 11. Replace it before you upgrade.
+[`@storybook/test-runner`](https://github.com/storybookjs/test-runner) is no longer supported and is incompatible with Storybook 11. Replace it before you upgrade: `storybook upgrade` blocks upgrading while `@storybook/test-runner` is installed.
 
 If your Storybook uses a Vite-based framework, we recommend migrating to the Vitest addon by following the [migration guide](https://storybook.js.org/docs/writing-tests/integrations/vitest-addon/migration-guide).
 

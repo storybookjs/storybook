@@ -1,0 +1,21 @@
+commit 5db4a430c9de12f8675927f163c6536db37a2e17
+Author: Storybook Ecosystem QA <ecosystem-qa@storybook.js.org>
+Date:   Thu Nov 19 07:54:47 2026 +0000
+
+    qa: upgrade storybook to 11.0.0-beta.3
+
+diff --git a/.storybook/manager.js b/.storybook/manager.js
+index 617dc6b..db453a7 100644
+--- a/.storybook/manager.js
++++ b/.storybook/manager.js
+@@ -1,6 +1,8 @@
+ import { addons } from 'storybook/manager-api';
+ 
+ addons.setConfig({
+-  // Excalibur will be listening for all key events
+-  enableShortcuts: false
++  ui: {
++    // Excalibur will be listening for all key events
++    enableShortcuts: false
++  }
+ });

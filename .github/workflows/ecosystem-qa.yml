@@ -664,6 +664,7 @@ jobs:
     if: ${{ !cancelled() && needs.collect.result == 'success' && needs.plan.outputs.dry == 'true' }}
     runs-on: ubuntu-latest
     permissions:
+      actions: read # name the day the result artifacts expire
       issues: read # list the internal-qa issues
     steps:
       - name: Checkout
@@ -691,9 +692,17 @@ jobs:
       - name: Write proposals to the Step Summary
         env:
           GH_TOKEN: ${{ github.token }}
+          QA_VERSION: ${{ needs.plan.outputs.version }}
+          QA_FROM_RUNS: ${{ needs.plan.outputs.from_runs }}
+          QA_GROUPS: ${{ needs.plan.outputs.groups }}
+          QA_PLAN: ${{ needs.plan.outputs.plan }}
+          QA_BATCH: ${{ needs.plan.outputs.batch }}
+          QA_PLANNED: ${{ needs.plan.outputs.matrix }}
         run: >-
           node ecosystem-qa/file.ts --proposals ecosystem-qa/results/qa-proposals/proposals.json
-          --repo "$GITHUB_REPOSITORY" --dry
+          --repo "$GITHUB_REPOSITORY" --dry --version "$QA_VERSION" --from-runs "$QA_FROM_RUNS"
+          --run-id "$GITHUB_RUN_ID" ${QA_GROUPS:+--groups "$QA_GROUPS"}
+          ${QA_PLAN:+--plan "$QA_PLAN" --batch "$QA_BATCH" --planned "$QA_PLANNED"}
 
   file:
     name: File issues

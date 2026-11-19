@@ -10,6 +10,8 @@ import {
   batchReport,
   carriedRuns,
   chainEndComment,
+  collectOf,
+  dryFiling,
   batchDispatch,
   nextStep,
   renderBatchComment,
@@ -20,6 +22,7 @@ import {
   trackingThreadsOf,
   type BatchInput,
   type BatchReport,
+  type CollectInput,
   type PlannedJob,
   type ReportedResult,
   type Written,
@@ -571,6 +574,73 @@ describe('the last line of a batch comment', () => {
     );
     expect(lastLine({ filing: 'pending' })).toBe(
       'The file job of this run files the batch next and then names each issue here.'
+    );
+  });
+});
+
+describe('the filing line of a dry run', () => {
+  const sweep = (overrides: Partial<CollectInput> = {}): CollectInput => ({
+    ref: 'valentin/tier1-catalog',
+    version: '11.0.0-beta.3',
+    fromRuns: undefined,
+    runId: '43846197088',
+    groups: undefined,
+    plan: undefined,
+    ...overrides,
+  });
+
+  it('files a sweep with its branch, version and run, and with dry set to false', () => {
+    expect(dryFiling(collectOf(sweep()), '2027-02-14')).toBe(
+      'Dry run, so nothing was filed. To file this sweep, run `gh workflow run ecosystem-qa.yml --ref valentin/tier1-catalog -f version=11.0.0-beta.3 -f from_runs=43846197088 -f dry=false` before its artifacts expire on 2027-02-14.'
+    );
+  });
+
+  it('repeats the groups document of a sweep as one shell word, in a code span that a backtick in it cannot end', () => {
+    const groups = '{"groups":[{"fingerprints":["a"],"skip":"it\'s `next` only"}]}';
+
+    expect(dryFiling(collectOf(sweep({ groups })), '2027-02-14')).toBe(
+      'Dry run, so nothing was filed. To file this sweep, run `` gh workflow run ecosystem-qa.yml --ref valentin/tier1-catalog -f version=11.0.0-beta.3 -f groups=\'{"groups":[{"fingerprints":["a"],"skip":"it\'\\\'\'s `next` only"}]}\' -f from_runs=43846197088 -f dry=false `` before its artifacts expire on 2027-02-14.'
+    );
+  });
+
+  it('names the runs a run collected with from_runs, not the run itself', () => {
+    expect(
+      dryFiling(collectOf(sweep({ fromRuns: '43900000002,43900000001' })), '2027-02-14')
+    ).toContain('-f from_runs=43900000001,43900000002 -f dry=false');
+  });
+
+  it('prints the dispatch of the comment of the batch for a batch of a plan', () => {
+    const batch = input({ planned: [{ ...job('mantine'), engine: 'codex' }, job('mealdrop')] });
+    const comment = renderBatchComment(batchReport(batch), {
+      spend: spentUsd([], HASH),
+      capUsd: 250,
+      next: { start: 2 },
+      expiresOn: '2027-02-14',
+      carried: [],
+      short: false,
+    });
+    const summary = dryFiling(
+      collectOf({
+        ref: batch.ref,
+        version: batch.version,
+        fromRuns: undefined,
+        runId: batch.runs[0],
+        groups: '{"groups":[]}',
+        plan: { scope: { ...batch.plan, batch: batch.batch }, planned: batch.planned },
+      }),
+      '2027-02-14'
+    );
+
+    expect(summary).toContain('-f engines=claude,codex');
+    expect(comment.trimEnd().split('\n').at(-1)).toBe(summary);
+  });
+
+  it('prints no dispatch for local results, nor for runs that hold no result artifact', () => {
+    expect(dryFiling(collectOf(sweep({ runId: undefined })), '2027-02-14')).toBe(
+      'Dry run of local results, so nothing was filed, and no workflow run holds them to file.'
+    );
+    expect(dryFiling(collectOf(sweep()), undefined)).toBe(
+      'Dry run, so nothing was filed, and workflow run 43846197088 holds no result artifact to file.'
     );
   });
 });

@@ -11,9 +11,9 @@ import {
   addDiscussionComment,
   createDiscussion,
   discussionPlace,
-  ghParse,
   listDiscussionComments,
   listDiscussions,
+  listRunArtifacts,
   listQaIssues,
   updateDiscussionComment,
   type DiscussionComment,
@@ -32,13 +32,13 @@ import {
   chainEndComment,
   DEFAULT_CAP_USD,
   findingsOf,
+  PlannedMatrix,
   renderTrackingThread,
   resultsExpireOn,
   startNext,
   TRACKING_CATEGORY,
   trackBatch,
   trackingThreadsOf,
-  type ListedArtifact,
 } from './lib/tracking.ts';
 
 const HELP = `Usage: node ecosystem-qa/track.ts --results <dir> --plan <file> --batch <n> --version <storybook version> --planned <matrix> --repo <owner/name> [--proposals <proposals.json>] [--runs <run id>[,...]] --filing <dry|pending|filed|failed> [--cap-usd <dollars>] [--budget-minutes <n>] [--no-chain] [--print]
@@ -162,12 +162,7 @@ if (!Number.isFinite(capUsd) || capUsd < 0) {
   fail(`--cap-usd must be a number of dollars, found "${values['cap-usd']}".`);
 }
 
-const Planned = z.object({
-  include: z.array(
-    z.object({ repo: z.string(), part: z.int().min(1), os: z.string(), engine: z.string() })
-  ),
-});
-const jobs = Planned.parse(JSON.parse(planned!)).include;
+const jobs = PlannedMatrix.parse(JSON.parse(planned!)).include;
 
 const loaded = loadResults(results!, {
   version: version!,
@@ -207,18 +202,7 @@ const report = batchReport({
   findings: proposals ? findingsOf(proposals, filed) : null,
 });
 
-const ArtifactPages = z.array(
-  z.object({ artifacts: z.array(z.object({ name: z.string(), expires_at: z.string() })) })
-);
-const artifacts: ListedArtifact[] = runs.flatMap((id) =>
-  ghParse(ArtifactPages, [
-    'api',
-    '--paginate',
-    '--slurp',
-    `repos/${repo}/actions/runs/${id}/artifacts?per_page=100`,
-  ]).flatMap((page) => page.artifacts)
-);
-const expiresOn = resultsExpireOn(artifacts);
+const expiresOn = resultsExpireOn(runs.flatMap((id) => listRunArtifacts(repo!, id)));
 
 const placeOf = (): DiscussionPlace | undefined => {
   try {

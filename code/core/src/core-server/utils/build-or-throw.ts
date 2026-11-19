@@ -34,8 +34,11 @@ export async function buildOrThrow<T>(callback: () => Promise<T>): Promise<T> {
     return await callback();
   } catch (err: unknown) {
     if (isEsbuildBuildError(err)) {
-      const noMatchingExportErrors = err.errors.filter((er) =>
-        er.text.includes('No matching export')
+      // `err.errors` entries are not guaranteed to be esbuild Messages: buildOrThrow wraps the
+      // whole dev server and static build, so errors like AggregateError (an `errors` array of
+      // plain Errors) can land here. Guard on the string before matching or formatting.
+      const noMatchingExportErrors = err.errors.filter(
+        (er) => typeof er.text === 'string' && er.text.includes('No matching export')
       );
 
       if (noMatchingExportErrors.length > 0) {

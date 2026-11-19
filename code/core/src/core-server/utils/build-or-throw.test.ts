@@ -87,6 +87,34 @@ describe('buildOrThrow', () => {
     expect(thrown).not.toBeInstanceOf(NoMatchingExportError);
   });
 
+  it('rethrows non-esbuild errors carrying an errors array unchanged (e.g. AggregateError)', async () => {
+    // buildOrThrow wraps the whole dev server and static build, not only esbuild: Node's
+    // AggregateError (connection failures etc.) carries an `errors` array of plain Errors with
+    // no string `text`, and must reach the user as-is rather than crash inside the catch.
+    const aggregateError = new AggregateError(
+      [new Error('connect ECONNREFUSED ::1:6006')],
+      'connect failed'
+    );
+
+    const thrown = await buildOrThrow(async () => {
+      throw aggregateError;
+    }).catch((err) => err);
+
+    expect(thrown).toBe(aggregateError);
+    expect(thrown).not.toBeInstanceOf(NoMatchingExportError);
+  });
+
+  it('rethrows unchanged when the errors array holds Error objects without string text', async () => {
+    const builderError = { errors: [new Error('x')] };
+
+    const thrown = await buildOrThrow(async () => {
+      throw builderError;
+    }).catch((err) => err);
+
+    expect(thrown).toBe(builderError);
+    expect(thrown).not.toBeInstanceOf(NoMatchingExportError);
+  });
+
   it('omits the imported-from line when the builder error carries no location', async () => {
     const builderError = {
       errors: [{ ...noMatchingExportBuilderError, location: null } satisfies Message],

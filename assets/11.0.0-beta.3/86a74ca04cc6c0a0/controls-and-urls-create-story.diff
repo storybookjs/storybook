@@ -1,0 +1,10 @@
+diff --git a/src/components/Category/Category.stories.tsx b/src/components/Category/Category.stories.tsx
+index c499d2d..f955857 100644
+--- a/src/components/Category/Category.stories.tsx
++++ b/src/components/Category/Category.stories.tsx
+@@ -29,3 +29,5 @@ export const Rounded: Story = {
+     round: true,
+   },
+ }
++
++export const QaSaved: Story = { args: { title: 'Burger\n', photoUrl: 'https://images.pexels.com/photos/2147491/pexels-photo-2147491.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=550' } };

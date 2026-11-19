@@ -1,0 +1,5 @@
+Story: components-restaurantcard--default (Controls tab)
+Steps: "remove the array 'categories'" (URL args=categories:!null), then "Set object" on categories
+Control row after Set: "categories Set object" -> after click shows an object control "categories : {" with an empty object body
+Story error:
+TypeError: categories?.map is not a functionat RestaurantCard (http://localhost:6006/src/components/RestaurantCard/RestaurantCard.tsx:223:17)

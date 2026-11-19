@@ -1,8 +1,8 @@
 <p align="center">
   <a href="https://storybook.js.org/?ref=readme">
     <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://user-images.githubusercontent.com/263385/199832481-bbbf5961-6a26-481d-8224-51258cce9b33.png#gh-dark-mode-only">
-      <img src="https://user-images.githubusercontent.com/321738/63501763-88dbf600-c4cc-11e9-96cd-94adadc2fd72.png#gh-light-mode-only" alt="Storybook" width="400" />
+      <source media="(prefers-color-scheme: dark)" srcset="https://user-images.githubusercontent.com/263385/199832481-bbbf5961-6a26-481d-8224-51258cce9b33.png">
+      <img src="https://user-images.githubusercontent.com/321738/63501763-88dbf600-c4cc-11e9-96cd-94adadc2fd72.png" alt="Storybook" width="400" />
     </picture>
   </a>
 </p>
@@ -13,43 +13,31 @@
 
 <p align="center">
   <a href="https://github.com/storybookjs/storybook/blob/main/LICENSE">
-    <img src="https://img.shields.io/github/license/storybookjs/storybook.svg?color=FFAE00" alt="License" />
-  </a>
-  <a href="#backers">
-    <img src="https://opencollective.com/storybook/backers/badge.svg?color=66BF3C" alt="Backers on Open Collective" />
-  </a>
-  <a href="#sponsors">
-    <img src="https://opencollective.com/storybook/tiers/sponsors/badge.svg?color=006DEB" alt="Sponsors on Open Collective" />
+    <img src="https://img.shields.io/github/license/storybookjs/storybook.svg?color=2A0481" alt="License" />
   </a>
   <a href="https://www.npmjs.com/package/storybook">
     <img src="https://img.shields.io/npm/dw/storybook?style=flat&logo=npm&color=CB3837" alt="NPM downloads per week" />
   </a>
   <img src="https://img.shields.io/github/stars/storybookjs/storybook?style=flat&logo=github&color=181717" alt="" />
-  <br />
   <a href="https://discord.gg/storybook">
-    <img src="https://img.shields.io/badge/discord-join-7289DA.svg?logo=discord&longCache=true&style=flat" alt="Join our Discord" />
+    <img src="https://img.shields.io/badge/discord-join-7289DA.svg?logo=discord&longCache=true&style=fla&logoColor=white" alt="Join our Discord" />
   </a>
   <a href="https://storybook.js.org/community/?ref=readme">
-    <img src="https://img.shields.io/badge/community-join-6F2CAC.svg" alt="Storybook Community" />
+    <img src="https://img.shields.io/badge/community-join-FF4785.svg?logo=storybook&logoColor=white" alt="Storybook Community" />
   </a>
   <a href="https://bsky.app/profile/storybook.js.org">
-    <img src="https://img.shields.io/badge/bluesky-join-1185FE?style=shield&logo=bluesky&longCache=true&style=flat" alt="Follow Storybook on BlueSky" />
+    <img src="https://img.shields.io/badge/bluesky-join-1185FE?style=shield&logo=bluesky&longCache=true&style=flat&logoColor=white" alt="Follow Storybook on BlueSky" />
   </a>
 </p>
-
-<p align="center">
-Storybook is a frontend workshop for building UI components and pages in isolation. Thousands of teams use it for UI development, testing, and documentation. Find out more at <a href="https://storybook.js.org/?ref=readme">storybook.js.org</a>!
-</p>
-
 <center>
   <img src="https://raw.githubusercontent.com/storybookjs/storybook/refs/heads/next/media/storybook-intro.gif" alt="Storybook lets you build UI components and pages in isolation, mock hard-to-reach edge cases as stories, and use stories as tests" width="100%" />
 </center>
 
 <p align="center">
-  View README for:<br/>
-  <a href="https://github.com/storybookjs/storybook/blob/main/README.md" title="latest"><img alt="latest" src="https://img.shields.io/npm/v/@storybook/react/latest?style=flat&logo=storybook&logoColor=ffffff&color=FF4785" /></a>
-  <a href="https://github.com/storybookjs/storybook/blob/next/README.md" title="next"><img alt="next" src="https://img.shields.io/npm/v/@storybook/react/next?style=flat&logo=storybook&logoColor=ffffff&color=2A0481" /></a>
+Storybook is a frontend workshop for building UI components and pages in isolation. Thousands of teams use it for UI development, testing, and documentation. Find out more at <a href="https://storybook.js.org/?ref=readme">storybook.js.org</a>!
 </p>
+
+
 
 ## Table of contents
 
@@ -58,20 +46,26 @@ Storybook is a frontend workshop for building UI components and pages in isolati
 - 📒 [Projects](#projects)
   - 🛠 [Supported Frameworks](#supported-frameworks)
   - 🔗 [Addons](#addons)
-- 🏅 [Badges & Presentation materials](#badges--presentation-materials)
 - 👥 [Community](#community)
 - 👏 [Contributing](#contributing)
   - 👨‍💻 [Development scripts](#development-scripts)
   - 💸 [Sponsors](#sponsors)
   - 💵 [Backers](#backers)
+- 🏅 [Badges & Presentation materials](#badges--presentation-materials)
 - 📝 [License](#license)
 
 ## Getting Started
 
-Run this command in the root of an existing project to install and configure Storybook:
+Run this command at the root of an existing project to install and configure Storybook:
 
 ```sh
 npm create storybook@latest
+```
+
+Or paste this prompt into your agent:
+
+```sh
+Set up Storybook for me with npm create storybook@latest and follow its instructions precisely
 ```
 
 Visit [Storybook's website](https://storybook.js.org/?ref=readme) to learn more about Storybook, or follow the [installation guide](https://storybook.js.org/docs/get-started/install?ref=readme) for other package managers and manual setup.
@@ -88,7 +82,7 @@ Use [storybook.new](https://storybook.new) to quickly create an example project 
 
 ## AI
 
-Storybook helps your coding agent build UI that fits your project. Your agent reuses the components you already have, writes stories for what it builds, tests its work, and gives you a review to check the result.
+Storybook makes building UI with agents faster, better and cheaper. Your agent reuses the components you already have, writes stories for what it builds, tests its work by running stories, and gives you a visual review to check the result.
 
 ### Skills and the CLI
 
@@ -98,9 +92,7 @@ Run this command in the root of your project to install Storybook's skills:
 npx storybook automigrate skills
 ```
 
-Skills are short instruction files in your repository that tell your agent what to do at each step of a UI change. They work with any agent that can run shell commands, and they get their instructions from your installed Storybook, so they match your framework and your Storybook version. Installing Storybook with `npm create storybook@latest` offers to add them too.
-
-Your agent then works with your Storybook through the `storybook tools` command:
+Skills are short instruction files in your repository that tell your agent what to do at each step of a UI change. Most AI agents support skills. Your agent learns how to interact with Storybook by reading skill files, and then calls the `storybook tools` command to get work done:
 
 | Command                           |                                                                             |
 | --------------------------------- | --------------------------------------------------------------------------- |
@@ -110,9 +102,9 @@ Your agent then works with your Storybook through the `storybook tools` command:
 | `storybook tools test run`        | Run story tests, with accessibility checks if set up                        |
 | `storybook tools review create`   | Publish a review of the stories that a change affects                       |
 
-Most tools run without a dev server. See [Connect your agent](https://storybook.js.org/docs/ai/connect?ref=readme) to get started, and the [CLI options](https://storybook.js.org/docs/api/cli-options?ref=readme#tools) for all the tools. If you want your agent to call Storybook through MCP tools instead of CLI commands, the [MCP addon](code/addons/mcp/) serves the same tools from your dev server.
+See [Connect your agent](https://storybook.js.org/docs/ai/connect?ref=readme) to get started, and the [CLI options](https://storybook.js.org/docs/api/cli-options?ref=readme#tools) for all the tools. If you want your agent to call Storybook through MCP tools instead of CLI commands, the [MCP addon](code/addons/mcp/) serves the same tools from your dev server.
 
-These features are available for React, Vue 3, Angular, Svelte, and Web Components. Check the [supported frameworks](https://storybook.js.org/docs/ai/connect?ref=readme#supported-frameworks) for yours.
+These features are available for React, Next, TanStack, Vue, Angular, Svelte, Web Components and multiple community frameworks. Check the [supported frameworks](https://storybook.js.org/docs/ai/connect?ref=readme#supported-frameworks) for more details.
 
 ### Published Storybooks
 
@@ -122,7 +114,7 @@ When you [publish your Storybook with Chromatic](https://storybook.js.org/docs/s
 https://<branch>--<app-id>.chromatic.com/mcp
 ```
 
-Agents that connect to it can look up your components, with their props and usage examples, without running your Storybook. This lets the teams that build with your design system reuse its components from their own repositories. See [Use a published Storybook](https://storybook.js.org/docs/ai/published-storybook?ref=readme) and [Chromatic's setup guide](https://chromatic.com/docs/storybook-mcp/) to connect an agent.
+Agents that connect to the MCP server can look up your components, with their props and usage examples, without running Storybook. This lets the teams that build with your design system reuse its components from their own repositories. Chromatic MCP hosting is entirely free. See [Use a published Storybook](https://storybook.js.org/docs/ai/published-storybook?ref=readme) and [Chromatic's setup guide](https://chromatic.com/docs/storybook-mcp/) for more details.
 
 ## Projects
 
@@ -143,7 +135,7 @@ Agents that connect to it can look up your components, with their props and usag
 | [Preact](code/frameworks/preact-vite)                       | [![](https://img.shields.io/npm/v/@storybook/preact-vite/latest?style=flat-square&color=blue&label)](https://www.npmjs.com/package/@storybook/preact-vite)                     | [![Preact](https://img.shields.io/npm/dm/@storybook/preact-vite?style=flat-square&color=eee)](code/frameworks/preact-vite)                               |
 | [HTML](code/frameworks/html-vite)                           | [![](https://img.shields.io/npm/v/@storybook/html-vite/latest?style=flat-square&color=blue&label)](https://www.npmjs.com/package/@storybook/html-vite)                         | [![HTML](https://img.shields.io/npm/dm/@storybook/html-vite?style=flat-square&color=eee)](code/frameworks/html-vite)                                     |
 
-The community maintains frameworks for other libraries:
+The community maintains frameworks for other libraries, including:
 
 | Community framework                                       | Version                                                                                                                                                            | Downloads                                                                                                                                      |
 | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -160,67 +152,58 @@ See the [frameworks documentation](https://storybook.js.org/docs/get-started/fra
 | Addons                                                                |                                                                           | Downloads                                                                                                                                                      |
 | --------------------------------------------------------------------- | ------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [docs](code/addons/docs/)                                             | Add high quality documentation to your components                         | [![docs](https://img.shields.io/npm/dm/@storybook/addon-docs?style=flat-square&color=eee)](code/addons/docs/)                                                  |
-| [a11y](code/addons/a11y/)                                             | Test components for user accessibility in Storybook                       | [![a11y](https://img.shields.io/npm/dm/@storybook/addon-a11y?style=flat-square&color=eee)](code/addons/a11y/)                                                  |
+| [a11y](code/addons/a11y/)                                             | Test that your components are accessible                                  | [![a11y](https://img.shields.io/npm/dm/@storybook/addon-a11y?style=flat-square&color=eee)](code/addons/a11y/)                                                  |
 | [links](code/addons/links/)                                           | Create links between stories                                              | [![links](https://img.shields.io/npm/dm/@storybook/addon-links?style=flat-square&color=eee)](code/addons/links/)                                               |
-| [vitest](code/addons/vitest/)                                         | Test components by running their stories in Vitest browser mode           | [![vitest](https://img.shields.io/npm/dm/@storybook/addon-vitest?style=flat-square&color=eee)](code/addons/vitest/)                                            |
+| [vitest](code/addons/vitest/)                                         | Run your stories as tests in Vitest browser mode                          | [![vitest](https://img.shields.io/npm/dm/@storybook/addon-vitest?style=flat-square&color=eee)](code/addons/vitest/)                                            |
 | [visual tests](https://github.com/chromaui/addon-visual-tests)        | Catch unexpected visual changes in your stories using Chromatic           | [![visual tests](https://img.shields.io/npm/dm/@chromatic-com/storybook?style=flat-square&color=eee)](https://github.com/chromaui/addon-visual-tests)          |
-| [themes](code/addons/themes/)                                         | Switch between themes from the toolbar                                    | [![themes](https://img.shields.io/npm/dm/@storybook/addon-themes?style=flat-square&color=eee)](code/addons/themes/)                                            |
-| [onboarding](code/addons/onboarding/)                                 | Guide new users through writing their first story                         | [![onboarding](https://img.shields.io/npm/dm/@storybook/addon-onboarding?style=flat-square&color=eee)](code/addons/onboarding/)                                |
+| [themes](code/addons/themes/)                                         | Switch your component library themes from the toolbar                     | [![themes](https://img.shields.io/npm/dm/@storybook/addon-themes?style=flat-square&color=eee)](code/addons/themes/)                                            |
 | [msw](https://github.com/mswjs/msw-storybook-addon)                   | Mock API requests in stories using Mock Service Worker                    | [![msw](https://img.shields.io/npm/dm/msw-storybook-addon?style=flat-square&color=eee)](https://github.com/mswjs/msw-storybook-addon)                          |
-| [mcp](code/addons/mcp/)                                               | Help AI agents write and test stories for your components                 | [![mcp](https://img.shields.io/npm/dm/@storybook/addon-mcp?style=flat-square&color=eee)](code/addons/mcp/)                                                     |
+| [mcp](code/addons/mcp/)                                               | Run a MCP server in your local Storybook                                  | [![mcp](https://img.shields.io/npm/dm/@storybook/addon-mcp?style=flat-square&color=eee)](code/addons/mcp/)                                                     |
 | [designs](https://github.com/storybookjs/addon-designs)               | Embed Figma files and other design previews alongside your story          | [![designs](https://img.shields.io/npm/dm/@storybook/addon-designs?style=flat-square&color=eee)](https://github.com/storybookjs/addon-designs)                 |
 | [pseudo-states](code/addons/pseudo-states/)                           | Toggle CSS pseudo states such as `:hover` and `:focus` on your components | [![pseudo-states](https://img.shields.io/npm/dm/storybook-addon-pseudo-states?style=flat-square&color=eee)](code/addons/pseudo-states/)                        |
 | [dark-mode](https://github.com/hipstersmoothie/storybook-dark-mode)   | Toggle between light and dark mode in Storybook                           | [![dark-mode](https://img.shields.io/npm/dm/storybook-dark-mode?style=flat-square&color=eee)](https://github.com/hipstersmoothie/storybook-dark-mode)          |
 | [tag-badges](https://github.com/Sidnioulz/storybook-addon-tag-badges) | Display story tags as badges in the sidebar and toolbar                   | [![tag-badges](https://img.shields.io/npm/dm/storybook-addon-tag-badges?style=flat-square&color=eee)](https://github.com/Sidnioulz/storybook-addon-tag-badges) |
 
-To test your components, start with the [Vitest addon](code/addons/vitest/). It turns every story into a test that runs in a real browser, and you can run those tests from the Storybook UI, the command line, or CI.
-
 Find more in the [addon catalog](https://storybook.js.org/addons?ref=readme), and see the [Addon / Framework Support Table](https://storybook.js.org/docs/configure/integration/frameworks-feature-support?ref=readme).
-
-## Badges & Presentation materials
-
-We have a badge! Link it to your live Storybook example.
-
-![Storybook](https://cdn.jsdelivr.net/gh/storybookjs/brand@main/badge/badge-storybook.svg)
-
-```md
-[![Storybook](https://cdn.jsdelivr.net/gh/storybookjs/brand@main/badge/badge-storybook.svg)](link to site)
-```
-
-If you're looking for material to use in your Storybook presentation, such as logos, video material, and the colors we use, you can find it all on our [brand repo](https://github.com/storybookjs/brand).
 
 ## Community
 
 - Getting help in [the repo's GitHub Discussions](https://github.com/storybookjs/storybook/discussions/new?category=help)
-- Posting on [X](https://x.com/storybookjs) and [Bluesky](https://bsky.app/profile/storybook.js.org)
+- Posting on [Bluesky](https://bsky.app/profile/storybook.js.org)
 - Blogging at [storybook.js.org](https://storybook.js.org/blog/?ref=readme) and [Medium](https://medium.com/storybookjs)
 - Chatting on [Discord](https://discord.gg/storybook)
 - Videos and streams at [YouTube](https://www.youtube.com/channel/UCr7Quur3eIyA_oe8FNYexfg)
 
 ## Contributing
 
-Contributions to Storybook are always welcome!
+Contributions to Storybook are always welcome! 📥 Pull requests and 🌟 Stars and 🕵🏿 Issue reproductions help us out.
 
-- 📥 Pull requests and 🌟 Stars are always welcome.
-- Read our [contributing guide](CONTRIBUTING.md) to get started,
-  or find us on [Discord](https://discord.gg/storybook), we will take the time to guide you.
+Read our [contributing guide](CONTRIBUTING.md) to get started, or find us on [Discord](https://discord.gg/storybook), we will take the time to guide you. We have contributor office hours on Discord every Monday at 3PM CET.
 
 Looking for a first issue to tackle?
 
-- We tag issues with [![Good First Issue](https://img.shields.io/github/issues/storybookjs/storybook/good%20first%20issue.svg)](https://github.com/storybookjs/storybook/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22) when we think they are well suited for people who are new to the codebase or OSS in general.
-- [Talk to us](https://discord.gg/storybook), we'll find something that suits your skills and learning interests.
+- We tag issues with [![Good First Issue](https://img.shields.io/github/issues/storybookjs/storybook/good%20first%20issue.svg)](https://github.com/storybookjs/storybook/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22) when we think they are well suited for people who are new to the codebase or OSS in general
+- [Talk to us](https://discord.gg/storybook), we'll find something that suits your skills and learning interests
 
 ### Development scripts
 
 Storybook is organized as a monorepo. Useful scripts include:
 
-#### `yarn start`
+#### `yarn`
 
-> Runs a sandbox template storybook with test stories
+> Installs dependencies
 
 #### `yarn task`
 
-> As above, but gives you options to customize the sandbox (e.g. selecting other frameworks)
+> Lets you compile the codebase, run tests, create a sandbox, etc
+
+#### `yarn storybook:ui`
+
+> Runs Storybook's own Storybook with our UI components
+
+- `yarn task compile` - builds the whole monorepo, needed once before you build --watch
+- `yarn --cwd code build --watch storybook` - lets you rebuild Storybook's core package in the background as you make change
+- `yarn storybook:ui` - opens our Storybook and detects file changes made by the build script
 
 #### `yarn lint`
 
@@ -239,7 +222,7 @@ Storybook is organized as a monorepo. Useful scripts include:
 
 ### Sponsors
 
-Become a sponsor to have your logo and website URL on our README on Github. \[[Become a sponsor](https://opencollective.com/storybook#sponsor)]
+Become a sponsor to have your logo and website URL on our README on Github. [Become a sponsor](https://opencollective.com/storybook#sponsor).
 
 <a href="https://opencollective.com/storybook/tiers/sponsors/0/website?requireActive=true" target="_blank"><img src="https://opencollective.com/storybook/tiers/sponsors/0/avatar.svg?requireActive=true"></a>
 <a href="https://opencollective.com/storybook/tiers/sponsors/1/website?requireActive=true" target="_blank"><img src="https://opencollective.com/storybook/tiers/sponsors/1/avatar.svg?requireActive=true"></a>
@@ -270,9 +253,21 @@ Become a sponsor to have your logo and website URL on our README on Github. \[[B
 
 ### Backers
 
-By making a recurring donation, you can support us and our work. \[[Become a backer](https://opencollective.com/storybook#backer)]
+By making a recurring donation, you can support us and our work. [Become a backer](https://opencollective.com/storybook#backer).
 
 <a href="https://opencollective.com/storybook"><img src="https://opencollective.com/storybook/tiers/backers.svg?limit=80&button=false&avatarHeight=46&width=750"></a>
+
+## Badges & Presentation materials
+
+We have a badge! Link it to your live Storybook example.
+
+![Storybook](https://cdn.jsdelivr.net/gh/storybookjs/brand@main/badge/badge-storybook.svg)
+
+```md
+[![Storybook](https://cdn.jsdelivr.net/gh/storybookjs/brand@main/badge/badge-storybook.svg)](link to site)
+```
+
+If you're looking for material to use in your Storybook presentation, such as logos, video material, and the colors we use, you can find it all on our [brand repo](https://github.com/storybookjs/brand).
 
 ## License
 

@@ -65,6 +65,21 @@ describe('getGroupStatus', () => {
   it('empty case', () => {
     expect(getGroupStatus({}, {})).toEqual({});
   });
+  it('has no status for a component titled Constructor whose stories have none', () => {
+    const groupStatus = getGroupStatus(
+      {
+        constructor: { type: 'component' as const, id: 'constructor' },
+        'constructor--primary': {
+          type: 'story',
+          id: 'constructor--primary',
+          parent: 'constructor',
+        },
+      },
+      {}
+    );
+
+    expect(groupStatus.constructor).toBeUndefined();
+  });
   it('should return a color', () => {
     expect(
       getGroupStatus(mockDataset.withRoot, {
@@ -274,5 +289,32 @@ describe('getGroupDualStatus', () => {
       },
     });
     expect(dual['comp--a']).toBeUndefined();
+  });
+
+  it('rolls a status up to a component titled Constructor', () => {
+    const constructorData: any = {
+      constructor: {
+        type: 'component',
+        id: 'constructor',
+        name: 'Constructor',
+        depth: 0,
+        children: ['constructor--primary'],
+      },
+      'constructor--primary': {
+        ...data['comp--a'],
+        id: 'constructor--primary',
+        title: 'Constructor',
+        depth: 1,
+        parent: 'constructor',
+      },
+    };
+
+    const dual = getGroupDualStatus(constructorData, {
+      'constructor--primary': {
+        vitest: makeStatus('constructor--primary', 'vitest', 'status-value:error'),
+      },
+    });
+
+    expect(dual).toMatchObject({ constructor: { test: { value: 'status-value:error' } } });
   });
 });

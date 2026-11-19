@@ -1,0 +1,54 @@
+diff --git a/.storybook/main.ts b/.storybook/main.ts
+index 85637c6..8d6a72b 100644
+--- a/.storybook/main.ts
++++ b/.storybook/main.ts
+@@ -1,6 +1,6 @@
+ import path, { dirname } from 'node:path';
+ import { fileURLToPath } from 'node:url';
+-import type { StorybookConfig } from '@storybook/nextjs';
++import type { StorybookConfig } from '@storybook/nextjs-vite';
+ import TsconfigPathsPlugin from 'tsconfig-paths-webpack-plugin';
+ 
+ const __dirname = path.dirname(fileURLToPath(import.meta.url));
+@@ -33,7 +33,7 @@ const config: StorybookConfig = {
+   storySorts: [(a, b) => a.title.localeCompare(b.title, undefined, { numeric: true })],
+   addons: [],
+   framework: {
+-    name: getAbsolutePath('@storybook/nextjs'),
++    name: getAbsolutePath('@storybook/nextjs-vite'),
+     options: {},
+   },
+   webpackFinal: async (config) => {
+diff --git a/.storybook/preview.tsx b/.storybook/preview.tsx
+index 8be2004..6bf29fb 100644
+--- a/.storybook/preview.tsx
++++ b/.storybook/preview.tsx
+@@ -1,6 +1,6 @@
+ import React, { useEffect } from 'react';
+ import { TextAlignLeftIcon, TextAlignRightIcon } from '@phosphor-icons/react';
+-import type { Decorator, Preview } from '@storybook/nextjs';
++import type { Decorator, Preview } from '@storybook/nextjs-vite';
+ import { useGlobals } from 'storybook/preview-api';
+ import { CodeHighlightAdapterProvider, createShikiAdapter } from '@mantine/code-highlight';
+ import { ActionIcon, DirectionProvider, MantineProvider, useDirection } from '@mantine/core';
+diff --git a/package.json b/package.json
+index a90ea9a..d113751 100644
+--- a/package.json
++++ b/package.json
+@@ -146,7 +146,7 @@
+     "@dnd-kit/core": "^6.3.1",
+     "@dnd-kit/sortable": "^10.0.0",
+     "@dnd-kit/utilities": "^3.2.2",
+-    "@storybook/nextjs": "^11.0.0-beta.3",
++    "@storybook/nextjs-vite": "11.0.0-beta.3",
+     "@testing-library/dom": "10.4.2",
+     "@testing-library/jest-dom": "7.0.1",
+     "@testing-library/react": "16.3.3",
+@@ -213,6 +213,7 @@
+     "unified": "^11.0.5",
+     "unist-util-visit": "^5.1.0",
+     "version-next": "^1.0.2",
++    "vite": "^7.0.0",
+     "webpack": "5.102.1",
+     "wrangler": "^4.151.3",
+     "yargs": "^18.2.0",

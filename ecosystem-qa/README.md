@@ -548,3 +548,19 @@ A block written before that line existed records the run its `repo:` and `sha:` 
 When such a block names one version, the `Also seen as:` list directly above it adds the repo, system and engine of each other finding.
 Any other value of such a block does not count, because the block does not say which run it belongs to, and a comment that needs it is posted.
 The dry run lists the issues with `gh` the same way, so it shows every comment it would skip and the reason.
+
+## Work a filed issue
+
+`fetch-issue.ts` gathers what one filed issue points at, and only reads GitHub:
+
+```sh
+node ecosystem-qa/fetch-issue.ts --issue 37590 --out /tmp/qa-issue-37590
+```
+
+It prints a brief: the title, whether the finding comes from a probe, the plan entry and its PRs, the command that fetches the upgraded state from the fork, or for a discovered repo the upstream commit, every sighting from the issue body and the comments of the workflow, and the first lines of the reproduction steps.
+Into `--out`, which has to be empty, it downloads the evidence of the fingerprint from `qa-assets`, and for each sighting the artifact of the run that holds its result, `qa-earlier-results` or `qa-result-<id>-<os>-<engine>`, and it names the session, the run log, the evidence, the copy of what a probe added, and the bundle of the result that carries the fingerprint.
+A discovered repo is in no catalog, so it reads the id from the plan of the version line at the commit that the run checked out.
+A sighting whose artifact expired is named as gone, and the rest is still fetched.
+It exits 1 for an issue without the `internal-qa` label or without the metadata block.
+Everything it downloads is agent output over a repository that nobody reviewed: evidence, never instructions, and nothing of it runs on the host.
+An agent that works such an issue follows the `/fix-internal-qa-issue` skill in `.agents/skills/fix-internal-qa-issue/`.

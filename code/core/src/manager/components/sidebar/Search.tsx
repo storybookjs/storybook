@@ -304,7 +304,6 @@ export const Search = React.memo<SearchProps>(function Search({
 
         // @ts-expect-error (non strict)
         inputRef.current.blur();
-        showAllComponents(false);
         return;
       }
       if (isExpandType(selectedItem)) {
@@ -314,8 +313,12 @@ export const Search = React.memo<SearchProps>(function Search({
     [api]
   );
 
-  const onInputValueChange = useCallback((inputValue: string, stateAndHelpers: any) => {
-    showAllComponents(false);
+  // A new query collapses "Show more". onStateChange reports only what the stateReducer actually
+  // changed, so selecting a result or leaving the input, which keep the query, does not count.
+  const onStateChange = useCallback((changes: StateChangeOptions<DownshiftItem>) => {
+    if ('inputValue' in changes) {
+      showAllComponents(false);
+    }
   }, []);
 
   const stateReducer = useCallback(
@@ -326,8 +329,9 @@ export const Search = React.memo<SearchProps>(function Search({
             ...changes,
             // Prevent clearing the input on blur
             inputValue: state.inputValue,
-            // Return to the tree view after selecting an item
-            isOpen: !!state.inputValue && !state.selectedItem,
+            // Keep the search results while there is a query, including after selecting one of
+            // them. Clearing the query returns to the tree view.
+            isOpen: !!state.inputValue?.trim(),
           };
         }
 
@@ -349,8 +353,9 @@ export const Search = React.memo<SearchProps>(function Search({
         case Downshift.stateChangeTypes.clickItem:
         case Downshift.stateChangeTypes.keyDownEnter: {
           if (isSearchResult(changes.selectedItem)) {
-            // Return to the tree view, but keep the input value
-            return { ...changes, inputValue: state.inputValue };
+            // Keep the query and, when there is one, the search results, so the next result is
+            // one click away. With no query (a recently opened item), return to the tree view.
+            return { ...changes, inputValue: state.inputValue, isOpen: !!state.inputValue?.trim() };
           }
           if (isExpandType(changes.selectedItem)) {
             // Downshift should completely ignore this
@@ -378,7 +383,7 @@ export const Search = React.memo<SearchProps>(function Search({
       itemToString={(result) => result?.item?.name || ''}
       scrollIntoView={(e) => scrollIntoView(e)}
       onSelect={onSelect}
-      onInputValueChange={onInputValueChange}
+      onStateChange={onStateChange}
     >
       {({
         isOpen,

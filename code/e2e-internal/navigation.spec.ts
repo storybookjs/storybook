@@ -46,6 +46,24 @@ test.describe('navigating', () => {
     await expect(page.locator('[data-id="brand-typography"]')).toBeHidden();
   });
 
+  test('opening a search result keeps the query and the search results', async ({ page }) => {
+    await page.goto(storybookUrl);
+
+    const searchField = page.getByRole('searchbox');
+    await expect(searchField).toBeVisible();
+    await searchField.fill('typography');
+
+    const result = page.getByRole('option').and(page.locator('[data-id="brand-typography--docs"]'));
+    await result.click();
+    await page.waitForFunction(() =>
+      window.document.location.href.match('/docs/brand-typography--docs')
+    );
+
+    await expect(searchField).toHaveValue('typography');
+    await expect(result).toBeVisible();
+    await expect(page.locator('[data-id="brand-typography"]')).toBeHidden();
+  });
+
   test.describe('docs story anchor navigation', () => {
     test('a subheading in a story can be searched and renders the subheading in a search result item', async ({
       page,

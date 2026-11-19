@@ -1,0 +1,331 @@
+
+[90m┌[39m  Storybook upgrade - v11.0.0-beta.3
+[90m│[39m
+[90m│[39m  Detecting projects...
+[90m│[39m
+[90m│[39m  Detecting projects: 1 projects
+[90m│[39m
+[90m│[39m  1 project detected
+[90m│[39m
+[34m●[39m  Upgrading from [1m10.5.0[22m to [1m11.0.0-beta.3[22m
+[90m│[39m
+[90m│[39m  /package.json
+[90m│[39m
+[90m│[39m  Updated package versions in package.json files
+[90m│[39m
+[90m│[39m  Checking automigrations for /.storybook...
+[90m│[39m
+
+[90m│[39m  Automigrations detected:
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m addon-svelte-csf-to-core[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m sveltekit-mocking-before-each[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m story-sort-to-main[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m remove-change-detection-flag[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m skills[39m
+[90m│[39m
+[90m│[39m  5 automigration(s) detected
+[90m│[39m
+[90m│[39m  Running all detected automigrations:
+[90m│[39m
+[90m│[39m  - addon-svelte-csf-to-core (/.storybook)
+[90m│[39m
+[90m│[39m  - sveltekit-mocking-before-each (/.storybook)
+[90m│[39m
+[90m│[39m  - story-sort-to-main (/.storybook)
+[90m│[39m
+[90m│[39m  - remove-change-detection-flag (/.storybook)
+[90m│[39m
+[90m│[39m  - skills (/.storybook)
+│ ┌─addon-svelte-csf-to-core (/.storybook)─────────────────────────────────────┐
+│ │  Migrate from [35m@storybook/addon-svelte-csf[39m to the Svelte CSF built into     │
+│ │  your framework                                                            │
+│ │                                                                            │
+│ │  Files that change, besides package.json:                                  │
+│ │  - .storybook/main.ts                                                      │
+│ │  - src/lib/components/accounts/stories/Avatar.stories.svelte               │
+│ │  - src/lib/components/accounts/stories/Mailkey.stories.svelte              │
+│ │  - src/lib/components/accounts/stories/Unverified.stories.svelte           │
+│ │  - src/lib/components/accounts/stories/UserMenu.stories.svelte             │
+│ │  - src/lib/components/addons/stories/AddOnListItem.stories.svelte          │
+│ │  - src/lib/components/addons/stories/AddOnMeta.stories.svelte              │
+│ │  - src/lib/components/addons/stories/AddOnsNavigation.stories.svelte       │
+│ │  - src/lib/components/addons/stories/DocumentList.stories.svelte           │
+│ │  - src/lib/components/addons/stories/History.stories.svelte                │
+│ │  - src/lib/components/addons/stories/HistoryEvent.stories.svelte           │
+│ │  - src/lib/components/addons/stories/Scheduled.stories.svelte              │
+│ │  - src/lib/components/addons/stories/ScheduledEvent.stories.svelte         │
+│ │  - src/lib/components/addons/stories/Selection.stories.svelte              │
+│ │  - src/lib/components/common/stories/Access.stories.svelte                 │
+│ │  - src/lib/components/common/stories/Action.stories.svelte                 │
+│ │  - src/lib/components/common/stories/ApiError.stories.svelte               │
+│ │  - src/lib/components/common/stories/Badge.stories.svelte                  │
+│ │  - src/lib/components/common/stories/Banner.stories.svelte                 │
+│ │  - src/lib/components/common/stories/Button.stories.svelte                 │
+│ │  - src/lib/components/common/stories/Card.stories.svelte                   │
+│ │  - src/lib/components/common/stories/Dropdown.stories.svelte               │
+│ │  - src/lib/components/common/stories/Empty.stories.svelte                  │
+│ │  - src/lib/components/common/stories/Error.stories.svelte                  │
+│ │  - src/lib/components/common/stories/FieldLabel.stories.svelte             │
+│ │  - src/lib/components/common/stories/Flex.stories.svelte                   │
+│ │  - src/lib/components/common/stories/KV.stories.svelte                     │
+│ │  - src/lib/components/common/stories/Logo.stories.svelte                   │
+│ │  - src/lib/components/common/stories/Metadata.stories.svelte               │
+│ │  - src/lib/components/common/stories/NavItem.stories.svelte                │
+│ │  - src/lib/components/common/stories/Paginator.stories.svelte              │
+│ │  - src/lib/components/common/stories/Pin.stories.svelte                    │
+│ │  - src/lib/components/common/stories/RelativeTime.stories.svelte           │
+│ │  - src/lib/components/common/stories/Settings.stories.svelte               │
+│ │  - src/lib/components/common/stories/Tab.stories.svelte                    │
+│ │  - src/lib/components/common/stories/Tip.stories.svelte                    │
+│ │  - src/lib/components/common/stories/Toast.stories.svelte                  │
+│ │  - src/lib/components/common/stories/Tooltip.stories.svelte                │
+│ │  -                                                                         │
+│ │  src/lib/components/documents/search/stories/SearchEditor.stories.svelte   │
+│ │  - src/lib/components/documents/stories/CustomizeEmbed.stories.svelte      │
+│ │  - src/lib/components/documents/stories/Data.stories.svelte                │
+│ │  - src/lib/components/documents/stories/DocumentListItem.stories.svelte    │
+│ │  - src/lib/components/documents/stories/Header.stories.svelte              │
+│ │  - src/lib/components/documents/stories/Highlight.stories.svelte           │
+│ │  - src/lib/components/documents/stories/HighlightGroup.stories.svelte      │
+│ │  - src/lib/components/documents/stories/Metadata.stories.svelte            │
+│ │  - src/lib/components/documents/stories/NoteHighlights.stories.svelte      │
+│ │  - src/lib/components/documents/stories/PageHighlights.stories.svelte      │
+│ │  - src/lib/components/documents/stories/Pending.stories.svelte             │
+│ │  - src/lib/components/documents/stories/Projects.stories.svelte            │
+│ │  - src/lib/components/documents/stories/ResultsList.stories.svelte         │
+│ │  - src/lib/components/documents/stories/Revisions.stories.svelte           │
+│ │  - src/lib/components/documents/stories/Thumbnail.stories.svelte           │
+│ │  - src/lib/components/documents/stories/VisibleFields.stories.svelte       │
+│ │  - src/lib/components/embeds/stories/DocumentEmbed.stories.svelte          │
+│ │  - src/lib/components/forms/stories/AddOnDispatch.stories.svelte           │
+│ │  - src/lib/components/forms/stories/ChangeOwner.stories.svelte             │
+│ │  - src/lib/components/forms/stories/ConfirmDelete.stories.svelte           │
+│ │  - src/lib/components/forms/stories/ConfirmRedaction.stories.svelte        │
+│ │  - src/lib/components/forms/stories/DeleteProject.stories.svelte           │
+│ │  - src/lib/components/forms/stories/Edit.stories.svelte                    │
+│ │  - src/lib/components/forms/stories/EditAccess.stories.svelte              │
+│ │  - src/lib/components/forms/stories/EditData.stories.svelte                │
+│ │  - src/lib/components/forms/stories/EditNote.stories.svelte                │
+│ │  - src/lib/components/forms/stories/EditProject.stories.svelte             │
+│ │  - src/lib/components/forms/stories/InviteCollaborator.stories.svelte      │
+│ │  - src/lib/components/forms/stories/Projects.stories.svelte                │
+│ │  - src/lib/components/forms/stories/RemoveCollaborator.stories.svelte      │
+│ │  - src/lib/components/forms/stories/Reprocess.stories.svelte               │
+│ │  - src/lib/components/forms/stories/RevisionControl.stories.svelte         │
+│ │  - src/lib/components/forms/stories/Search.stories.svelte                  │
+│ │  - src/lib/components/forms/stories/Sections.stories.svelte                │
+│ │  - src/lib/components/forms/stories/Share.stories.svelte                   │
+│ │  - src/lib/components/forms/stories/UpdateCollaborator.stories.svelte      │
+│ │  - src/lib/components/forms/stories/Upload.stories.svelte                  │
+│ │  - src/lib/components/forms/stories/UploadListItem.stories.svelte          │
+│ │  - src/lib/components/forms/stories/UserFeedback.stories.svelte            │
+│ │  - src/lib/components/inputs/stories/AccessLevel.stories.svelte            │
+│ │  - src/lib/components/inputs/stories/Checkbox.stories.svelte               │
+│ │  - src/lib/components/inputs/stories/Dropzone.stories.svelte               │
+│ │  - src/lib/components/inputs/stories/Field.stories.svelte                  │
+│ │  - src/lib/components/inputs/stories/File.stories.svelte                   │
+│ │  - src/lib/components/inputs/stories/KeyValue.stories.svelte               │
+│ │  - src/lib/components/inputs/stories/Language.stories.svelte               │
+│ │  - src/lib/components/inputs/stories/ProjectAccess.stories.svelte          │
+│ │  - src/lib/components/inputs/stories/Select.stories.svelte                 │
+│ │  - src/lib/components/inputs/stories/Switch.stories.svelte                 │
+│ │  - src/lib/components/inputs/stories/Text.stories.svelte                   │
+│ │  - src/lib/components/inputs/stories/Textarea.stories.svelte               │
+│ │  - src/lib/components/layouts/stories/AddOnBrowser.stories.svelte          │
+│ │  - src/lib/components/layouts/stories/AddOnLayout.stories.svelte           │
+│ │  - src/lib/components/layouts/stories/AppLayout.stories.svelte             │
+│ │  - src/lib/components/layouts/stories/DocumentBrowser.stories.svelte       │
+│ │  - src/lib/components/layouts/stories/DocumentLayout.stories.svelte        │
+│ │  - src/lib/components/layouts/stories/EmbedLayout.stories.svelte           │
+│ │  - src/lib/components/layouts/stories/Error.stories.svelte                 │
+│ │  - src/lib/components/layouts/stories/Modal.stories.svelte                 │
+│ │  - src/lib/components/layouts/stories/Project.stories.svelte               │
+│ │  - src/lib/components/layouts/stories/Share.stories.svelte                 │
+│ │  - src/lib/components/layouts/stories/SidebarLayout.stories.svelte         │
+│ │  - src/lib/components/layouts/stories/Toaster.stories.svelte               │
+│ │  - src/lib/components/navigation/stories/Breadcrumbs.stories.svelte        │
+│ │  - src/lib/components/navigation/stories/LanguageMenu.stories.svelte       │
+│ │  - src/lib/components/navigation/stories/OrgMenu.stories.svelte            │
+│ │  - src/lib/components/notes/stories/Note.stories.svelte                    │
+│ │  - src/lib/components/notes/stories/NoteActions.stories.svelte             │
+│ │  - src/lib/components/notes/stories/NoteContent.stories.svelte             │
+│ │  - src/lib/components/notes/stories/NoteExcerpt.stories.svelte             │
+│ │  - src/lib/components/notes/stories/NoteMetadata.stories.svelte            │
+│ │  - src/lib/components/notes/stories/NoteTitle.stories.svelte               │
+│ │  - src/lib/components/premium-credits/stories/CreditMeter.stories.svelte   │
+│ │  - src/lib/components/premium-credits/stories/PremiumBadge.stories.svelte  │
+│ │  - src/lib/components/premium-credits/stories/Price.stories.svelte         │
+│ │  -                                                                         │
+│ │  src/lib/components/premium-credits/stories/UpgradePrompt.stories.svelte   │
+│ │  - src/lib/components/processing/stories/AddOns.stories.svelte             │
+│ │  - src/lib/components/processing/stories/Documents.stories.svelte          │
+│ │  - src/lib/components/processing/stories/Process.stories.svelte            │
+│ │  - src/lib/components/processing/stories/ProcessDropdown.stories.svelte    │
+│ │  - src/lib/components/processing/stories/ProcessSummary.stories.svelte     │
+│ │  - src/lib/components/projects/stories/Collaborators.stories.svelte        │
+│ │  -                                                                         │
+│ │  src/lib/components/projects/stories/CustomizeProjectEmbed.stories.svelte  │
+│ │  - src/lib/components/projects/stories/ProjectHeader.stories.svelte        │
+│ │  - src/lib/components/projects/stories/ProjectListItem.stories.svelte      │
+│ │  - src/lib/components/projects/stories/ProjectShare.stories.svelte         │
+│ │  - src/lib/components/search/stories/InfiniteScrollTrigger.stories.svelte  │
+│ │  - src/lib/components/search/stories/SearchResultsCount.stories.svelte     │
+│ │  - src/lib/components/sidebar/stories/AddOns.stories.svelte                │
+│ │  - src/lib/components/sidebar/stories/DocumentActions.stories.svelte       │
+│ │  - src/lib/components/sidebar/stories/Documents.stories.svelte             │
+│ │  - src/lib/components/sidebar/stories/ProjectActions.stories.svelte        │
+│ │  - src/lib/components/sidebar/stories/Projects.stories.svelte              │
+│ │  - src/lib/components/sidebar/stories/SavedSearchForm.stories.svelte       │
+│ │  - src/lib/components/sidebar/stories/SidebarGroup.stories.svelte          │
+│ │  - src/lib/components/toolbars/stories/AnnotationToolbar.stories.svelte    │
+│ │  - src/lib/components/toolbars/stories/LoadingToolbar.stories.svelte       │
+│ │  - src/lib/components/toolbars/stories/PageToolbar.stories.svelte          │
+│ │  - src/lib/components/toolbars/stories/PaginationToolbar.stories.svelte    │
+│ │  - src/lib/components/toolbars/stories/ReadingToolbar.stories.svelte       │
+│ │  - src/lib/components/toolbars/stories/RedactionToolbar.stories.svelte     │
+│ │  - src/lib/components/viewer/stories/AnnotationLayer.stories.svelte        │
+│ │  - src/lib/components/viewer/stories/Grid.stories.svelte                   │
+│ │  - src/lib/components/viewer/stories/NoteTab.stories.svelte                │
+│ │  - src/lib/components/viewer/stories/Notes.stories.svelte                  │
+│ │  - src/lib/components/viewer/stories/PDF.stories.svelte                    │
+│ │  - src/lib/components/viewer/stories/PDFPage.stories.svelte                │
+│ │  - src/lib/components/viewer/stories/PageActions.stories.svelte            │
+│ │  - src/lib/components/viewer/stories/RedactionLayer.stories.svelte         │
+│ │  - src/lib/components/viewer/stories/Search.stories.svelte                 │
+│ │  - src/lib/components/viewer/stories/Text.stories.svelte                   │
+│ │  - src/lib/components/viewer/stories/Viewer.stories.svelte                 │
+│ │  - src/lib/components/viewer/stories/ViewerActions.stories.svelte          │
+│ │  - src/lib/components/viewer/stories/Zoom.stories.svelte                   │
+│ │  - src/routes/embed/stories/note-embed.stories.svelte                      │
+│ │  - src/routes/embed/stories/page-embed.stories.svelte                      │
+│ │  - src/routes/embed/stories/project-embed.stories.svelte                   │
+│ │                                                                            │
+│ │  Change other files that import the addon by hand.                         │
+│ └────────────────────────────────────────────────────────────────────────────┘
+│ ┌─sveltekit-mocking-before-each (/.storybook)────────────────────────────────┐
+│ │  Rewrite [36mparameters.sveltekit_experimental[39m into [36mbeforeEach[39m code that sets  │
+│ │   up the SvelteKit mocks. Your preview sets the mocks for every story, so  │
+│ │   docs pages with several stories will fail; see [36mhttps://storybook.js.org[39m  │
+│ │  [36m/docs/get-started/frameworks/sveltekit#docs-pages[39m                         │
+│ └────────────────────────────────────────────────────────────────────────────┘
+[90m│[39m
+[90m│[39m  [36mnpx skills@latest add storybookjs/skills#v11.0.0-beta.3 --yes --agent[39m
+[90m│[39m  [36mclaude-code universal --copy[39m
+[90m│[39m
+[90m│[39m  Added a Storybook section to AGENTS.md and CLAUDE.md that tells agents
+[90m│[39m  when to use the skills. Storybook keeps it current on upgrade: remove
+[90m│[39m  its markers to keep your own edits, or remove the section to opt out
+[90m│[39m  of the workflow.
+[90m│[39m
+[90m│[39m  Remove the Storybook skills with: npx skills@latest remove
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m addon-svelte-csf-to-core[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m sveltekit-mocking-before-each (1 file skipped)[39m
+[90m│[39m
+[90m│[39m  [31m[31m✕[31m story-sort-to-main[39m
+[90m│[39m
+[90m│[39m  /home/agent/workspace/.storybook/main.ts: Cannot automigrate
+[90m│[39m  storySort: Cannot mutate mixed default and named config exports.
+[90m│[39m  Storybook no longer reads parameters.options.storySort from the
+[90m│[39m  preview. Move it to storySorts in the main config manually and remove
+[90m│[39m  the preview property.
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m remove-change-detection-flag[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m skills[39m
+[90m│[39m
+[90m│[39m  1 automigrations failed for /.storybook
+[90m│[39m
+[33m▲[39m  2 files could not be migrated automatically. See
+[90m│[39m  [36mautomigrations-summary.md[39m for which ones and why.
+[90m│[39m
+[90m│[39m  Installing dependencies...
+[90m│[39m
+[31m■[39m  [31mInstallation of dependencies failed![39m
+[90m│[39m
+[31m■[39m  npm error   @sveltejs/kit@"^2.55.0" from the root project
+[90m│[39m  npm error
+[90m│[39m  npm error Could not resolve dependency:
+[90m│[39m  npm error peer @sveltejs/kit@"^3.0.0" from
+[90m│[39m  @storybook/sveltekit@11.0.0-beta.3
+[90m│[39m  npm error node_modules/@storybook/sveltekit
+[90m│[39m  npm error   dev @storybook/sveltekit@"^11.0.0-beta.3" from the root
+[90m│[39m  project
+[90m│[39m  npm error
+[90m│[39m  npm error Fix the upstream dependency conflict, or retry
+[90m│[39m  npm error this command with --force or --legacy-peer-deps
+[90m│[39m  npm error to accept an incorrect (and potentially broken) dependency
+[90m│[39m  resolution.
+[90m│[39m  npm error
+[90m│[39m  npm error
+[90m│[39m  npm error For a full report see:
+[90m│[39m  npm error
+[90m│[39m  /home/agent/.npm/_logs/2026-11-19T07_52_46_426Z-eresolve-report.txt
+[90m│[39m  npm error A complete log of this run can be found in:
+[90m│[39m  /home/agent/.npm/_logs/2026-11-19T07_52_46_426Z-debug-0.log
+[90m│[39m
+[33m▲[39m  Peer dependency conflict detected; retrying with --legacy-peer-deps
+[90m│[39m
+[90m│[39m  Installing dependencies...
+[90m│[39m
+[90m│[39m  Installing dependencies...: added 6 packages, removed
+[90m│[39m
+[90m│[39m  Installing dependencies...: 9 vulnerabilities (6 mode
+[90m│[39m
+[90m│[39m  Dependencies installed
+[90m│[39m
+[32m◇[39m  Checking the health of your project(s)..
+[90m│[39m
+[33m▲[39m  /.storybook: 1 issue found
+│ ┌─[33mIncompatible Packages[39m──────────────────────────────────────────────────────┐
+│ │  You are currently using Storybook [1m11.0.0-beta.3[22m but you have packages     │
+│ │  which are incompatible with it:                                           │
+│ │                                                                            │
+│ │  - msw-storybook-addon@3.0.0 which depends on >=9                          │
+│ │                                                                            │
+│ │  Please consider updating your packages or contacting the maintainers for  │
+│ │   compatibility details.                                                   │
+│ │                                                                            │
+│ │  For more details on compatibility guidance, see:                          │
+│ │  https://github.com/storybookjs/storybook/issues/32836                     │
+│ └────────────────────────────────────────────────────────────────────────────┘
+[90m│[39m
+[32m◇[39m  Storybook doctor is complete!
+[90m│[39m
+[90m│[39m  You can always recheck the health of your project(s) by running:
+[90m│[39m  [36mnpx storybook doctor[39m
+[90m│[39m
+[32m◇[39m  The upgrade is complete, but some projects failed to upgrade or
+[90m│[39m  migrate completely. Please see the debug logs for more details.
+[90m│[39m
+[90m│[39m  [31mFailed to upgrade:[39m
+[90m│[39m  Some automigrations failed or skipped files. Review the upgrade output
+[90m│[39m  for details.
+[90m│[39m  • /.storybook
+[90m│[39m
+[90m│[39m  If you want to learn more about the automigrations that executed in
+[90m│[39m  your project(s), please check the following links:
+[90m│[39m  • addon-svelte-csf-to-core:
+[90m│[39m  https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#svelte-csf-is-built-into-the-svelte-frameworks
+[90m│[39m  • sveltekit-mocking-before-each:
+[90m│[39m  https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#sveltekit-sveltekit_experimental-parameters-removed
+[90m│[39m  • story-sort-to-main:
+[90m│[39m  https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storysort-in-the-preview-replaced-by-storysorts-in-main
+[90m│[39m  • remove-change-detection-flag:
+[90m│[39m  https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#changedetection-feature-flag-removed
+[90m│[39m  • skills: https://github.com/storybookjs/skills
+[90m│[39m
+[90m│[39m  For a full list of changes, please check our migration guide:
+[90m│[39m  [36mhttps://storybook.js.org/docs/releases/migration-guide?ref=upgrade[39m
+[90m│[39m
+[90m│[39m  Debug logs are written to: /home/agent/workspace/debug-storybook.log
+[90m│[39m
+[90m└[39m  
+
+exit 1

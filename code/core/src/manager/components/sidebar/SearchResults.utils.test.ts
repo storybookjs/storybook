@@ -29,7 +29,7 @@ describe('SearchResults.utils', () => {
       ]);
     });
 
-    it('should resolve the exact continuous query range', () => {
+    it('should resolve the exact continuous input range', () => {
       const matches: Match[] = [
         {
           key: 'name',
@@ -49,7 +49,7 @@ describe('SearchResults.utils', () => {
       ]);
     });
 
-    it('should return no indices when the query is not a substring', () => {
+    it('should return no indices when the input is not a substring', () => {
       const matches: Match[] = [
         {
           key: 'name',
@@ -72,7 +72,7 @@ describe('SearchResults.utils', () => {
       ]);
     });
 
-    it('should keep the original matches when the query is empty', () => {
+    it('should keep the original matches when the input is empty', () => {
       const matches: Match[] = [
         {
           key: 'name',
@@ -85,7 +85,7 @@ describe('SearchResults.utils', () => {
       expect(resolveHighlightRanges(matches, '')).toEqual(matches);
     });
 
-    it('should resolve all continuous query occurrences', () => {
+    it('should resolve all continuous input occurrences', () => {
       const matches: Match[] = [
         {
           key: 'name',

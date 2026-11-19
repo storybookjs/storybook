@@ -82,6 +82,13 @@ describe('plannedRun', () => {
     );
   });
 
+  it('names the commit of a build whose version is on another line than the plan', () => {
+    const build = 'a'.repeat(40);
+    expect(plannedRun(batchOne, { repo: 'mealdrop', version: '10.6.0', build })).toBe(
+      `plan.fixture.md plans line 11.0, and --build ${build} installs 10.6.0, which is on line 10.6.`
+    );
+  });
+
   it('refuses a repo that the batch does not list', () => {
     expect(plannedRun(batchOne, { repo: 'primer-react', version: '11.0.0-beta.3' })).toBe(
       'Batch 1 of plan.fixture.md lists no entry for primer-react.'

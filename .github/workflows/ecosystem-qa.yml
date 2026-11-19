@@ -543,7 +543,7 @@ jobs:
         with:
           name: qa-result-${{ matrix.repo }}-${{ matrix.os }}-${{ matrix.engine }}${{ matrix.part && format('-part-{0}', matrix.part) || '' }}
           path: ecosystem-qa/results/
-          retention-days: 14
+          retention-days: 90
           if-no-files-found: warn
 
       - name: Note a run that wrote no result in the Step Summary
@@ -622,7 +622,7 @@ jobs:
         with:
           name: qa-earlier-results
           path: ecosystem-qa/results/qa-earlier-results/
-          retention-days: 14
+          retention-days: 90
 
       - name: Use the given grouping
         if: ${{ needs.plan.outputs.groups != '' }}
@@ -655,7 +655,7 @@ jobs:
           path: |
             ecosystem-qa/proposals.json
             ecosystem-qa/groups.json
-          retention-days: 14
+          retention-days: 90
 
   file-dry:
     name: Propose issues (dry run)

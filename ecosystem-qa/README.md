@@ -194,7 +194,7 @@ Every PR is a link to the PR, because GitHub links no bare `#36137` in a Markdow
 node ecosystem-qa/qa-plan.ts ledger ecosystem-qa/plans/11.0.md --window ecosystem-qa/plans/11.0.window.json --out ledger.md
 ```
 
-`manual` prints the manual checks of a plan as one Markdown checklist for an issue or a discussion: a title line with the line and the version, two sentences on what the list is and what to do with a finding, and one section for each reason why the sweep cannot test a check, headed by that reason, with one task for each manual check of the PR table and of the groups that gives it, followed by its PRs.
+`manual` prints the manual checks of a plan as one Markdown checklist for an issue or a discussion: a title line with the line and the version, two sentences on what the list is and what to do with a finding, and one section for each reason why the sweep does not test a check, headed by that reason, with one task for each manual check of the PR table and of the groups that gives it, followed by its PRs.
 Checks that share a reason share its words, so write a reason in the words of one already in the plan when it means the same, such as `shows on Windows only` or `no repo of the catalog has the state it acts on`.
 Each PR is a link followed by its title from the window, as one code span, so that a mention or a reference in a title stays text.
 It refuses a plan that fails `check` with that window, and it creates nothing on GitHub:

@@ -1,0 +1,1309 @@
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+[test-runner] Storybook snapshots will be saved to /home/agent/workspace/frontend/__snapshots__
+[33m[test-storybook] Official support for Test Runner has ended. See migration guide at https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#test-runner-support-removed.[0m
+[33m[test-storybook] Detected Vite-based Storybook project: You might benefit from migrating to the Vitest addon. A modern, faster, and more feature-rich testing solution for Storybook:
+https://storybook.js.org/docs/writing-tests/integrations/vitest-addon/migration-guide?ref=test-runner-migration[0m
+(node:7435) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+[test-runner] Storybook snapshots will be saved to /home/agent/workspace/frontend/__snapshots__
+[test-runner] Storybook snapshots will be saved to /home/agent/workspace/frontend/__snapshots__
+[0m[7m[1m[33m LOGGING RETRY ERRORS [39m[22m[27m[0m [1mScenes-App/Data Warehouse/SQL Editor TopToolsPerServer smoke-test[22m
+[0m[7m[1m[94m RETRY 1 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[94m RETRY 2 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[33m LOGGING RETRY ERRORS [39m[22m[27m[0m [1mScenes-App/Data Warehouse/SQL Editor SaveAsFlowQuill play-test[22m
+[0m[7m[1m[94m RETRY 1 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[94m RETRY 2 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[33m LOGGING RETRY ERRORS [39m[22m[27m[0m [1mScenes-App/Data Warehouse/SQL Editor CustomerImages play-test[22m
+[0m[7m[1m[94m RETRY 1 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[94m RETRY 2 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[33m LOGGING RETRY ERRORS [39m[22m[27m[0m [1mScenes-App/Data Warehouse/SQL Editor HostedTrino smoke-test[22m
+[0m[7m[1m[94m RETRY 1 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[94m RETRY 2 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[33m LOGGING RETRY ERRORS [39m[22m[27m[0m [1mScenes-App/Data Warehouse/SQL Editor HarnessLogoInResults play-test[22m
+[0m[7m[1m[94m RETRY 1 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[94m RETRY 2 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[33m LOGGING RETRY ERRORS [39m[22m[27m[0m [1mScenes-App/Data Warehouse/SQL Editor LoadingInsight smoke-test[22m
+[0m[7m[1m[94m RETRY 1 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[94m RETRY 2 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[33m LOGGING RETRY ERRORS [39m[22m[27m[0m [1mScenes-App/Data Warehouse/SQL Editor ManagedWarehouseConnection smoke-test[22m
+[0m[7m[1m[94m RETRY 1 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[94m RETRY 2 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[33m LOGGING RETRY ERRORS [39m[22m[27m[0m [1mScenes-App/Data Warehouse/SQL Editor EditedView play-test[22m
+[0m[7m[1m[94m RETRY 1 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[94m RETRY 2 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[33m LOGGING RETRY ERRORS [39m[22m[27m[0m [1mScenes-App/Data Warehouse/SQL Editor EditedInsight play-test[22m
+[0m[7m[1m[94m RETRY 1 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[94m RETRY 2 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[33m LOGGING RETRY ERRORS [39m[22m[27m[0m [1mScenes-App/Data Warehouse/SQL Editor EditedInsightSaveAsFlow play-test[22m
+[0m[7m[1m[94m RETRY 1 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[94m RETRY 2 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[33m LOGGING RETRY ERRORS [39m[22m[27m[0m [1mScenes-App/Data Warehouse/SQL Editor EditedInsightSaveAsFlowQuill play-test[22m
+[0m[7m[1m[94m RETRY 1 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[94m RETRY 2 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[33m LOGGING RETRY ERRORS [39m[22m[27m[0m [1mScenes-App/Data Warehouse/SQL Editor EditedInsightLegacySaveMenu play-test[22m
+[0m[7m[1m[94m RETRY 1 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[94m RETRY 2 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[33m LOGGING RETRY ERRORS [39m[22m[27m[0m [1mScenes-App/Data Warehouse/SQL Editor EditedInsightLegacySaveMenuQuill smoke-test[22m
+[0m[7m[1m[94m RETRY 1 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[94m RETRY 2 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[33m LOGGING RETRY ERRORS [39m[22m[27m[0m [1mScenes-App/Data Warehouse/SQL Editor MaterializationSettings smoke-test[22m
+[0m[7m[1m[94m RETRY 1 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[94m RETRY 2 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[33m LOGGING RETRY ERRORS [39m[22m[27m[0m [1mScenes-App/Data Warehouse/SQL Editor SidebarMaterializationStatus smoke-test[22m
+[0m[7m[1m[94m RETRY 1 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[94m RETRY 2 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[33m LOGGING RETRY ERRORS [39m[22m[27m[0m [1mScenes-App/Data Warehouse/SQL Editor BIModeWorksheet smoke-test[22m
+[0m[7m[1m[94m RETRY 1 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[94m RETRY 2 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[33m LOGGING RETRY ERRORS [39m[22m[27m[0m [1mScenes-App/Data Warehouse/SQL Editor BIEmptyWorksheet play-test[22m
+[0m[7m[1m[94m RETRY 1 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[94m RETRY 2 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[33m LOGGING RETRY ERRORS [39m[22m[27m[0m [1mScenes-App/Data Warehouse/SQL Editor BISavedInsight smoke-test[22m
+[0m[7m[1m[94m RETRY 1 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[94m RETRY 2 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[33m LOGGING RETRY ERRORS [39m[22m[27m[0m [1mScenes-App/Data Warehouse/SQL Editor BIEditSavedInsight play-test[22m
+[0m[7m[1m[94m RETRY 1 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[94m RETRY 2 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[33m LOGGING RETRY ERRORS [39m[22m[27m[0m [1mScenes-App/Data Warehouse/SQL Editor BICalculatedMeasureEditor play-test[22m
+[0m[7m[1m[94m RETRY 1 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[94m RETRY 2 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[33m LOGGING RETRY ERRORS [39m[22m[27m[0m [1mScenes-App/Data Warehouse/SQL Editor BIQuickFilters smoke-test[22m
+[0m[7m[1m[94m RETRY 1 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[94m RETRY 2 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[33m LOGGING RETRY ERRORS [39m[22m[27m[0m [1mScenes-App/Data Warehouse/SQL Editor BIQuickFiltersNarrow smoke-test[22m
+[0m[7m[1m[94m RETRY 1 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[94m RETRY 2 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[33m LOGGING RETRY ERRORS [39m[22m[27m[0m [1mScenes-App/Data Warehouse/SQL Editor LazySchema smoke-test[22m
+[0m[7m[1m[94m RETRY 1 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[94m RETRY 2 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[33m LOGGING RETRY ERRORS [39m[22m[27m[0m [1mScenes-App/Data Warehouse/SQL Editor BIDataSourcePicker play-test[22m
+[0m[7m[1m[94m RETRY 1 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[94m RETRY 2 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[33m LOGGING RETRY ERRORS [39m[22m[27m[0m [1mScenes-App/Data Warehouse/SQL Editor BIConnections play-test[22m
+[0m[7m[1m[94m RETRY 1 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[94m RETRY 2 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[33m LOGGING RETRY ERRORS [39m[22m[27m[0m [1mScenes-App/Data Warehouse/SQL Editor BITableAnalysis play-test[22m
+[0m[7m[1m[94m RETRY 1 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[94m RETRY 2 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[33m LOGGING RETRY ERRORS [39m[22m[27m[0m [1mScenes-App/Data Warehouse/SQL Editor BICombinedMeasures play-test[22m
+[0m[7m[1m[94m RETRY 1 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[94m RETRY 2 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[33m LOGGING RETRY ERRORS [39m[22m[27m[0m [1mScenes-App/Data Warehouse/SQL Editor BIMeasureDisplay play-test[22m
+[0m[7m[1m[94m RETRY 1 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[94m RETRY 2 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[33m LOGGING RETRY ERRORS [39m[22m[27m[0m [1mScenes-App/Data Warehouse/SQL Editor BIDrilldown play-test[22m
+[0m[7m[1m[94m RETRY 1 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[94m RETRY 2 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[33m LOGGING RETRY ERRORS [39m[22m[27m[0m [1mScenes-App/Data Warehouse/SQL Editor BIOneClickComparison smoke-test[22m
+[0m[7m[1m[94m RETRY 1 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[94m RETRY 2 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[33m LOGGING RETRY ERRORS [39m[22m[27m[0m [1mScenes-App/Data Warehouse/SQL Editor BIPivotTotals smoke-test[22m
+[0m[7m[1m[94m RETRY 1 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[94m RETRY 2 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[33m LOGGING RETRY ERRORS [39m[22m[27m[0m [1mScenes-App/Data Warehouse/SQL Editor BINamedHierarchy play-test[22m
+[0m[7m[1m[94m RETRY 1 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[94m RETRY 2 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[33m LOGGING RETRY ERRORS [39m[22m[27m[0m [1mScenes-App/Data Warehouse/SQL Editor BICategoryGroups play-test[22m
+[0m[7m[1m[94m RETRY 1 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[94m RETRY 2 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[33m LOGGING RETRY ERRORS [39m[22m[27m[0m [1mScenes-App/Data Warehouse/SQL Editor BINumericBins play-test[22m
+[0m[7m[1m[94m RETRY 1 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[94m RETRY 2 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[33m LOGGING RETRY ERRORS [39m[22m[27m[0m [1mScenes-App/Data Warehouse/SQL Editor BICatalogSource smoke-test[22m
+[0m[7m[1m[94m RETRY 1 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[94m RETRY 2 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[33m LOGGING RETRY ERRORS [39m[22m[27m[0m [1mScenes-App/Data Warehouse/SQL Editor BICatalogSnapshot play-test[22m
+[0m[7m[1m[94m RETRY 1 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[94m RETRY 2 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[33m LOGGING RETRY ERRORS [39m[22m[27m[0m [1mScenes-App/Data Warehouse/SQL Editor BISourcePreviewLargeSample play-test[22m
+[0m[7m[1m[94m RETRY 1 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[94m RETRY 2 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[33m LOGGING RETRY ERRORS [39m[22m[27m[0m [1mScenes-App/Data Warehouse/SQL Editor BIWideTransposedResults play-test[22m
+[0m[7m[1m[94m RETRY 1 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[94m RETRY 2 [39m[22m[27m[0m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[0m[7m[1m[31m FAIL [39m[22m[27m[0m [0m[7m[33m browser: chromium [39m[27m[0m [2m../../frontend/src/scenes/data-warehouse/editor/[22m[1mSQLEditorScene.stories.tsx[22m ([0m[1m[41m580.313 s[49m[22m[0m)
+  [1m● [22mConsole
+
+    [2mconsole.log[22m
+      [test-runner] Storybook snapshots will be saved to /home/agent/workspace/frontend/__snapshots__
+[2m[22m
+[2m      [2mat log ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:43:9)[22m[2m[22m
+
+[1m[31m  [1m● [22m[1mScenes-App/Data Warehouse/SQL Editor › TopToolsPerServer › smoke-test[39m[22m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[1m[31m  [1m● [22m[1mScenes-App/Data Warehouse/SQL Editor › SaveAsFlowQuill › play-test[39m[22m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[1m[31m  [1m● [22m[1mScenes-App/Data Warehouse/SQL Editor › CustomerImages › play-test[39m[22m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[1m[31m  [1m● [22m[1mScenes-App/Data Warehouse/SQL Editor › HostedTrino › smoke-test[39m[22m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[1m[31m  [1m● [22m[1mScenes-App/Data Warehouse/SQL Editor › HarnessLogoInResults › play-test[39m[22m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[1m[31m  [1m● [22m[1mScenes-App/Data Warehouse/SQL Editor › LoadingInsight › smoke-test[39m[22m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[1m[31m  [1m● [22m[1mScenes-App/Data Warehouse/SQL Editor › ManagedWarehouseConnection › smoke-test[39m[22m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[1m[31m  [1m● [22m[1mScenes-App/Data Warehouse/SQL Editor › EditedView › play-test[39m[22m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[1m[31m  [1m● [22m[1mScenes-App/Data Warehouse/SQL Editor › EditedInsight › play-test[39m[22m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[1m[31m  [1m● [22m[1mScenes-App/Data Warehouse/SQL Editor › EditedInsightSaveAsFlow › play-test[39m[22m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[1m[31m  [1m● [22m[1mScenes-App/Data Warehouse/SQL Editor › EditedInsightSaveAsFlowQuill › play-test[39m[22m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[1m[31m  [1m● [22m[1mScenes-App/Data Warehouse/SQL Editor › EditedInsightLegacySaveMenu › play-test[39m[22m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[1m[31m  [1m● [22m[1mScenes-App/Data Warehouse/SQL Editor › EditedInsightLegacySaveMenuQuill › smoke-test[39m[22m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[1m[31m  [1m● [22m[1mScenes-App/Data Warehouse/SQL Editor › MaterializationSettings › smoke-test[39m[22m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[1m[31m  [1m● [22m[1mScenes-App/Data Warehouse/SQL Editor › SidebarMaterializationStatus › smoke-test[39m[22m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[1m[31m  [1m● [22m[1mScenes-App/Data Warehouse/SQL Editor › BIModeWorksheet › smoke-test[39m[22m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[1m[31m  [1m● [22m[1mScenes-App/Data Warehouse/SQL Editor › BIEmptyWorksheet › play-test[39m[22m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[1m[31m  [1m● [22m[1mScenes-App/Data Warehouse/SQL Editor › BISavedInsight › smoke-test[39m[22m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[1m[31m  [1m● [22m[1mScenes-App/Data Warehouse/SQL Editor › BIEditSavedInsight › play-test[39m[22m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[1m[31m  [1m● [22m[1mScenes-App/Data Warehouse/SQL Editor › BICalculatedMeasureEditor › play-test[39m[22m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[1m[31m  [1m● [22m[1mScenes-App/Data Warehouse/SQL Editor › BIQuickFilters › smoke-test[39m[22m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[1m[31m  [1m● [22m[1mScenes-App/Data Warehouse/SQL Editor › BIQuickFiltersNarrow › smoke-test[39m[22m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[1m[31m  [1m● [22m[1mScenes-App/Data Warehouse/SQL Editor › LazySchema › smoke-test[39m[22m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[1m[31m  [1m● [22m[1mScenes-App/Data Warehouse/SQL Editor › BIDataSourcePicker › play-test[39m[22m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[1m[31m  [1m● [22m[1mScenes-App/Data Warehouse/SQL Editor › BIConnections › play-test[39m[22m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[1m[31m  [1m● [22m[1mScenes-App/Data Warehouse/SQL Editor › BITableAnalysis › play-test[39m[22m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[1m[31m  [1m● [22m[1mScenes-App/Data Warehouse/SQL Editor › BICombinedMeasures › play-test[39m[22m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[1m[31m  [1m● [22m[1mScenes-App/Data Warehouse/SQL Editor › BIMeasureDisplay › play-test[39m[22m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[1m[31m  [1m● [22m[1mScenes-App/Data Warehouse/SQL Editor › BIDrilldown › play-test[39m[22m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[1m[31m  [1m● [22m[1mScenes-App/Data Warehouse/SQL Editor › BIOneClickComparison › smoke-test[39m[22m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[1m[31m  [1m● [22m[1mScenes-App/Data Warehouse/SQL Editor › BIPivotTotals › smoke-test[39m[22m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[1m[31m  [1m● [22m[1mScenes-App/Data Warehouse/SQL Editor › BINamedHierarchy › play-test[39m[22m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[1m[31m  [1m● [22m[1mScenes-App/Data Warehouse/SQL Editor › BICategoryGroups › play-test[39m[22m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[1m[31m  [1m● [22m[1mScenes-App/Data Warehouse/SQL Editor › BINumericBins › play-test[39m[22m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[1m[31m  [1m● [22m[1mScenes-App/Data Warehouse/SQL Editor › BICatalogSource › smoke-test[39m[22m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[1m[31m  [1m● [22m[1mScenes-App/Data Warehouse/SQL Editor › BICatalogSnapshot › play-test[39m[22m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[1m[31m  [1m● [22m[1mScenes-App/Data Warehouse/SQL Editor › BISourcePreviewLargeSample › play-test[39m[22m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+
+[1m[31m  [1m● [22m[1mScenes-App/Data Warehouse/SQL Editor › BIWideTransposedResults › play-test[39m[22m
+
+    page.evaluate: TypeError: Cannot read properties of undefined (reading 'storyStore')
+[2m[22m
+[2m      [2mat __getContext ([22m[2mcommon/storybook/<anonymous>[2m:239:43)[22m[2m[22m
+[2m      [2mat eval (eval at evaluate (:302:30)[22m[2mcommon/storybook/, <anonymous>[2m:1:29)[22m[2m[22m
+[2m      [2mat UtilityScript.evaluate ([22m[2mcommon/storybook/<anonymous>[2m:304:16)[22m[2m[22m
+[2m      [2mat UtilityScript.<anonymous> ([22m[2mcommon/storybook/<anonymous>[2m:1:44)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mnode_modules/.pnpm/@storybook+test-runner@0.26.1_@types+node@26.6.6_debug@4.4.3_supports-color@10.2.2__esb_40e70ce82f726d9ca2128c74465cbe36/node_modules/@storybook/test-runner/dist/index.js[2m:7119:15)[22m[2m[22m
+[2m      [2mat getStoryContext ([22m[2mcommon/storybook/.storybook/test-runner.ts[2m:231:36)[22m[2m[22m
+

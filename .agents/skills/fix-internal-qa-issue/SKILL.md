@@ -43,6 +43,7 @@ When the command says a sighting is gone, work from what stays and say in your v
 
    `--out` has to be empty or missing, and outside the repository.
    It refuses an issue without the label or the metadata block.
+   For each downloaded result the brief names its `result.json`, the plan entry with its expected outcome, the evidence with the files of the failing check and every `-cause.md` first, and the `run.ts` command that runs its part again.
    Read the session and the run log through `grep` and `head`, never whole.
    Done when you can say in one sentence what the agent saw, on which repo, version, system, and engine, and what the PR changed.
 
@@ -53,50 +54,57 @@ When the command says a sighting is gone, work from what stays and say in your v
    | --- | --- | --- |
    | A defect of Storybook | Code in `code/` that the evidence leads to | Go on with step 3 |
    | A message, a migration note, or a doc that is missing or wrong | The text in `MIGRATION.md`, `docs/`, or the CLI at the tag `v<version>` | Go on with step 3 |
-   | The plan expected the wrong thing | The plan entry against the released code at the tag, such as #37550 | Propose a comment and a close; name the plan line to change with the `qa-plan` skill |
-   | A problem of the project or of a third-party addon | The file of the project or the addon that causes it | Propose a comment and a close as not planned |
-   | A duplicate | The other issue, with the same cause | Propose a close as a duplicate of it |
+   | The plan expected the wrong thing, such as one outcome for repos that differ | The plan entry of the brief against the released code at the tag | Propose to remove `bug`, the plan line quoted with a diff of the new text, and a close as not planned once the plan changed, because the old line files it again |
+   | A problem of the project or of a third-party package | The file of the project or the package that causes it | Propose to remove `bug`, to add `qa:known`, and a close as not planned, or the next sweep files it again; say that `qa:known` also hides a later regression with the same fingerprint |
+   | A duplicate | The other issue, with the same cause | Propose a close as a duplicate, with this fingerprint added to the `fingerprints:` line of the other issue's body, or the next sweep files it again |
 
    Check a claim against the released code, as in `git show v<version>:MIGRATION.md`.
-   For the last three rows, write the verdict and the proposed label, comment, or close for the person, and stop.
-   Done when the verdict names the file and line that decide it.
-
-3. Reproduce on the real project, in a sandbox, on the released prerelease.
-   The only path that runs a third-party repo in a sandbox is `ecosystem-qa/run.ts` with `--sandbox docker`, as `ecosystem-qa/README.md` says in "Run it locally" and "Run the checks of a plan".
-   It clones the repo at its pinned commit, upgrades it, and has an agent run the check again, so it costs a real run: ask the person first, and use their key.
+   Then check that `next` has the same code and that no PR fixes it yet:
 
    ```bash
-   git fetch origin qa/plans
-   git show <commit of the run>:ecosystem-qa/plans/<request.plan.file> > /tmp/qa-issue-<N>/plan.md
-   node ecosystem-qa/run.ts --repo <id> --version <version of the issue> --engine claude --sandbox docker \
-     --plan /tmp/qa-issue-<N>/plan.md --batch <n> --part <n> --out /tmp/qa-issue-<N>/before
+   git fetch origin next
+   git diff v<version> origin/next -- <file of the deciding lines>
+   gh pr list --repo storybookjs/storybook --state all --search "<N>"
    ```
 
-   The commit of the run is its `head_sha` in `gh api repos/storybookjs/storybook/actions/runs/<run>`.
-   The file, batch, and part are in `request.plan` of the downloaded `result.json`; `run.ts` refuses a batch or part that the plan does not have.
-   A run without `request.plan` was a sweep without a plan: leave out the three flags and pass its `request.tier` as `--tier`.
+   Read a third-party package without installing it: `npm view <package>@<version> dependencies peerDependencies repository.url`, for a `@storybook/*` package `git show v<version>:<path>` in the monorepo, and the package's source at its tag on GitHub.
+   When two rows fit, the verdict is the row of the cause; list anything else you found, such as a plan line or a line of `MIGRATION.md`, after it as a follow-up for the person.
+   The person changes a plan with "Update a plan" of the `qa-plan` skill, because the plan is rendered from a draft.
+   For the last three rows, write the verdict and the proposal for the person, and stop.
+   Done when the verdict names the file and line that decide it.
+
+3. When the defect does not depend on the project, reproduce it first the way a user meets it, inside the monorepo: in the internal Storybook with `.agents/skills/rebuild-restart-storybook/SKILL.md`, or in a sandbox with an explicit template by `.agents/guidelines/sandboxes.md`.
+   Do it before the fix and again after it, and look for the same defect next to the first cause: a test at the first cause can pass while the page is still broken.
+   It costs no agent run and runs no third-party code; the run on the project stays the proof on the real thing.
+
+4. Reproduce on the real project, in a sandbox, on the released prerelease, with the `run again` command of the brief.
+   It is `ecosystem-qa/run.ts` with `--sandbox docker`, the only path that runs a third-party repo in a sandbox, as "Run it locally" and "Run the checks of a plan" in `ecosystem-qa/README.md` say.
+   It clones the repo at its pinned commit, upgrades it, and has an agent run every entry of the part again, which the brief lists.
+   The sweep of 2026-11-19 made 67 runs for 15.18 dollars, so a part costs about a quarter of a dollar and under ten minutes on the sweep's model.
+   It is a real run all the same: ask the person first, and use their key.
    A finding on Windows has no sandbox outside CI: stop and say so.
    Done when the new `result.json` shows the same failure, or you report that it does not.
 
-4. For a probe, the project did not break: the run added files after the upgrade.
+5. For a probe, the project did not break: the run added files after the upgrade.
    `run.ts` with the plan adds them again as the plan's `Probe:` line says; compare them with the copy in `<slug>-added/` of the evidence.
    The PR says that the finding comes from a probe and what it added.
 
-5. Fix in the monorepo by `AGENTS.md` and the guides it points at.
+6. Fix in the monorepo by `AGENTS.md` and the guides it points at.
    Write the test first, at the boundary that owns the behaviour, and see it fail before the fix.
+   A test of `code/core` runs before the packages are compiled with `yarn vitest run --config code/core/vitest.config.ts <file>`.
+   The pre-commit hook lints with the plugin of `code/lib/eslint-plugin`, so run `yarn nx compile eslint-plugin` before the first commit.
    Done when the test fails without the fix and passes with it.
 
-6. Prove the fix on the same project: the released prerelease fails, a build of the fix passes, with the same steps.
-   The before is the run of step 3; the after needs a build of the fix on pkg.pr.new.
+7. Prove the fix on the same project: the released prerelease fails, a build of the fix passes, with the same steps.
+   The before is the run of step 4; the after needs a build of the fix on pkg.pr.new.
    It exists for a fix already on `next`, at the merge commit.
-   Otherwise open the draft PR of step 7 first and ask the person to add the `ci:canary` label to it; never add a label yourself.
+   Otherwise open the draft PR of step 8 first and ask the person to add the `ci:canary` label to it; never add a label yourself.
    The build of the PR's head exists once the canary workflow finished: `curl -I https://pkg.pr.new/storybook@<full SHA>` answers 200.
-   Then run the command of step 3 again, with `--build <full SHA>` in place of `--version` and `--out /tmp/qa-issue-<N>/after`.
-   `run.ts` refuses a commit without a build before it clones anything.
+   Then run the command of step 4 again, with `--build <full SHA>` in place of `--version` and `--out /tmp/qa-issue-<N>/after`, as the brief says.
    Done when the check of the issue is `fail` in `before/result.json` and `pass` in `after/result.json`, and no other check is worse.
-   Until then, say in the PR that the fix is not proven on the project and why.
+   Until then, say in the PR that the fix is not proven on the project and why; when step 4 did not run, say that the failure was not run again on the project, and give the evidence of the sweep's own run instead.
    A unit test alone is not that proof, so never write that it is.
 
-7. Open a draft PR with the `pr` skill in `.agents/skills/pr/SKILL.md`, with `Fixes #<N>` in its body.
-   Put in it the verdict, the before and the after from the real project as captured with the commit of the build, or what step 6 could not prove yet.
+8. Open a draft PR with the `pr` skill in `.agents/skills/pr/SKILL.md`, with `Fixes #<N>` in its body.
+   Put in it the verdict, the reproduction of step 3, and the before and the after from the real project as captured with the commit of the build, or what step 7 could not prove yet.
    Never paste output you did not capture.

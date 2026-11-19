@@ -559,7 +559,11 @@ node ecosystem-qa/fetch-issue.ts --issue 37590 --out /tmp/qa-issue-37590
 ```
 
 It prints a brief: the title, whether the finding comes from a probe, the plan entry and its PRs, the command that fetches the upgraded state from the fork, or for a discovered repo the upstream commit, every sighting from the issue body and the comments of the workflow, and the first lines of the reproduction steps.
-Into `--out`, which has to be empty, it downloads the evidence of the fingerprint from `qa-assets`, and for each sighting the artifact of the run that holds its result, `qa-earlier-results` or `qa-result-<id>-<os>-<engine>`, and it names the session, the run log, the evidence, the copy of what a probe added, and the bundle of the result that carries the fingerprint.
+Into `--out`, which has to be empty, it downloads the evidence of the fingerprint from `qa-assets`, and for each sighting the artifact of the run that holds its result, `qa-earlier-results` or `qa-result-<id>-<os>-<engine>`, and it names the `result.json`, the session, the run log, the evidence, the copy of what a probe added, and the bundle of the result that carries the fingerprint.
+It lists the evidence files of the failing check and every `-cause.md` first, then the rest.
+For a result of a plan it saves the plan file at the commit that the run checked out under `plans/<run>/`, and prints the entry of the finding with the line where it starts, its probe, the reason of the repo, its steps, and its expected outcome.
+It prints the `run.ts` command that runs the part of the result again in the Docker sandbox, with the repo, version, engine, model, effort and tier that the result recorded, and the plan, batch and part, and says which entries of the part run again.
+The same command with `--build <full SHA>` in place of `--version` runs the build of a fix, as "Prove a fix on a build" below says.
 A discovered repo is in no catalog, so it reads the id from the plan of the version line at the commit that the run checked out.
 A sighting whose artifact expired is named as gone, and the rest is still fetched.
 It exits 1 for an issue without the `internal-qa` label or without the metadata block.

@@ -181,11 +181,35 @@ describe('JsPackageManager', () => {
       });
       first.findInstallations = vi.fn().mockResolvedValue(installationsOf('6.0.3'));
       second.findInstallations = vi.fn().mockResolvedValue(installationsOf('7.0.2'));
+      first.getModulePackageJSON = vi
+        .fn()
+        .mockResolvedValue({ name: 'typescript', version: '6.0.3' });
+      second.getModulePackageJSON = vi
+        .fn()
+        .mockResolvedValue({ name: 'typescript', version: '7.0.2' });
     });
 
     it('keeps the installed version of each project apart', async () => {
       await expect(first.getInstalledVersion('typescript')).resolves.toBe('6.0.3');
       await expect(second.getInstalledVersion('typescript')).resolves.toBe('7.0.2');
+    });
+
+    it('reports the version that a package installed under another name bundles', async () => {
+      // @ts-expect-error Ignore abstract class error
+      const packageManager = new JsPackageManager({ configDir: '/project-c/.storybook' });
+      packageManager.findInstallations = vi.fn().mockResolvedValue({
+        dependencies: { vitest: [{ version: '0.1.16', location: '' }] },
+        duplicatedDependencies: {},
+        infoCommand: '',
+        dedupeCommand: '',
+      });
+      packageManager.getModulePackageJSON = vi.fn().mockResolvedValue({
+        name: '@voidzero-dev/vite-plus-test',
+        version: '0.1.16',
+        bundledVersions: { vitest: '4.1.2' },
+      });
+
+      await expect(packageManager.getInstalledVersion('vitest')).resolves.toBe('4.1.2');
     });
 
     describe('when the installations cannot be listed', () => {
@@ -198,7 +222,6 @@ describe('JsPackageManager', () => {
 
       it('returns the version of the package that resolves from the project', async () => {
         await expect(first.getInstalledVersion('typescript')).resolves.toBe('6.0.3');
-        expect(first.getModulePackageJSON).toHaveBeenCalledWith('typescript');
       });
 
       it('returns null when the package does not resolve either', async () => {
@@ -217,9 +240,8 @@ describe('JsPackageManager', () => {
         first.getModulePackageJSON = vi.fn().mockResolvedValue({ version: '6.0.3' });
       });
 
-      it('returns null without reading a copy hoisted from another package', async () => {
+      it('returns null, whatever copy resolves from the project', async () => {
         await expect(first.getInstalledVersion('typescript')).resolves.toBeNull();
-        expect(first.getModulePackageJSON).not.toHaveBeenCalled();
       });
     });
   });

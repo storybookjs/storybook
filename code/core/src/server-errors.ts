@@ -1012,23 +1012,32 @@ export class SvelteViteWithSvelteKitError extends StorybookError {
 }
 
 export class NoMatchingExportError extends StorybookError {
-  constructor(public data: { error: unknown | Error }) {
+  constructor(public data: { error: unknown | Error; detail?: string }) {
     super({
       name: 'NoMatchingExportError',
       category: Category.CORE_SERVER,
       code: 4,
       documentation: '',
-      message: dedent`
-        There was an exports mismatch error when trying to build Storybook.
-        Please check whether the versions of your Storybook packages match whenever possible, as this might be the cause.
-        
-        Problematic example:
-        { "@storybook/react": "7.5.3", "@storybook/react-vite": "7.4.5", "storybook": "7.3.0" }
-        
-        Correct example:
-        { "@storybook/react": "7.5.3", "@storybook/react-vite": "7.5.3", "storybook": "7.5.3" }
-        
-        Please run \`npx storybook doctor\` for guidance on how to fix this issue.`,
+      message: data.detail
+        ? dedent`
+          An import in your Storybook setup could not be resolved while building the manager UI.
+
+          ${data.detail}
+
+          This usually means one of your addons was built for an older Storybook and imports an API that no longer exists. Try updating or removing the addon named above.
+
+          Storybook core packages can also cause this when their versions do not match — \`npx storybook doctor\` checks both.`
+        : dedent`
+          There was an exports mismatch error when trying to build Storybook.
+          Please check whether the versions of your Storybook packages match whenever possible, as this might be the cause.
+
+          Problematic example:
+          { "@storybook/react": "7.5.3", "@storybook/react-vite": "7.4.5", "storybook": "7.3.0" }
+
+          Correct example:
+          { "@storybook/react": "7.5.3", "@storybook/react-vite": "7.5.3", "storybook": "7.5.3" }
+
+          Please run \`npx storybook doctor\` for guidance on how to fix this issue.`,
     });
   }
 }

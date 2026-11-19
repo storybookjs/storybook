@@ -83,6 +83,25 @@ describe('isStoryHoistable', () => {
     const output = utils.isStoryHoistable('Butto Story', 'ButtonStory');
     expect(output).toEqual(false);
   });
+
+  it('return true for Angular component names with a .component suffix', () => {
+    const output = utils.isStoryHoistable('Footer', 'footer.component');
+    expect(output).toEqual(true);
+  });
+
+  it('return true when both names have a .component suffix', () => {
+    const output = utils.isStoryHoistable('Footer.component', 'footer.component');
+    expect(output).toEqual(true);
+  });
+
+  it('return false for case-only differences without a .component suffix', () => {
+    expect(utils.isStoryHoistable('Order Of Hooks', 'order-of-hooks')).toEqual(false);
+    expect(utils.isStoryHoistable('button', 'Button')).toEqual(false);
+  });
+
+  it('return false when .component is not a trailing suffix', () => {
+    expect(utils.isStoryHoistable('Footer', 'footer.componentized')).toEqual(false);
+  });
 });
 
 describe('hoistSingleStoryComponents', () => {

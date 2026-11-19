@@ -17,6 +17,7 @@ import { JsPackageManager, PackageManagerName } from './JsPackageManager.ts';
 import type { PackageJson } from './PackageJson.ts';
 import type { InstallationMetadata, PackageMetadata } from './types.ts';
 import {
+  findPackagesInDependencyTree,
   getAgeInMinutes,
   getErrorLogs,
   getLatestStableVersionAdheringToMinimumAgeGate,
@@ -362,36 +363,25 @@ export class NPMProxy extends JsPackageManager {
     const existingVersions: Record<string, string[]> = {};
     const duplicatedDependencies: Record<string, string[]> = {};
 
-    const recurse = ([name, packageInfo]: [string, NpmDependency]): void => {
-      // transform pattern into regex where `*` is replaced with `.*`
-      if (name && pattern.some((p) => new RegExp(`^${p.replace(/\*/g, '.*')}$`).test(name))) {
-        const value = {
-          version: packageInfo.version,
-          location: '',
-        };
+    findPackagesInDependencyTree(input.dependencies, pattern).forEach(([name, packageInfo]) => {
+      const value = {
+        version: packageInfo.version,
+        location: '',
+      };
 
-        if (!existingVersions[name]?.includes(value.version)) {
-          if (acc[name]) {
-            acc[name].push(value);
-          } else {
-            acc[name] = [value];
-          }
-          existingVersions[name] = sort([...(existingVersions[name] || []), value.version]);
+      if (!existingVersions[name]?.includes(value.version)) {
+        if (acc[name]) {
+          acc[name].push(value);
+        } else {
+          acc[name] = [value];
+        }
+        existingVersions[name] = sort([...(existingVersions[name] || []), value.version]);
 
-          if (existingVersions[name].length > 1) {
-            duplicatedDependencies[name] = existingVersions[name];
-          }
+        if (existingVersions[name].length > 1) {
+          duplicatedDependencies[name] = existingVersions[name];
         }
       }
-
-      // keep walking non-matching nodes: intermediary entries such as workspace
-      // members hide matching dependencies beneath them
-      if (packageInfo.dependencies) {
-        Object.entries(packageInfo.dependencies).forEach(recurse);
-      }
-    };
-
-    Object.entries(input.dependencies).forEach(recurse);
+    });
 
     return {
       dependencies: acc,

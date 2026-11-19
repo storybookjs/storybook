@@ -211,6 +211,26 @@ gh issue create --repo storybookjs/storybook --title "Manual QA for Storybook 11
 
 Never put the label `internal-qa` on that issue: `collect.ts` reads every issue with that label as a finding of the sweep.
 
+`diff` prints what differs between a plan before a change and after it, with the window of both: each PR whose place changed, the entries removed, added, and changed, the discovered repos removed and added, and the manual checks removed and added, each with its PRs.
+A place is the kind of decision and the entries or the group that hold the PR, so a reworded check moves no PR and shows as one check removed and one added.
+`--moved` names the PRs that the change is meant to move, and `diff` exits 1 with a line for each other PR that moved.
+An agent changes a plan that exists with the `/qa-plan-iterate` skill in `.agents/skills/qa-plan-iterate/`, which proves every change with this command.
+Striking the discovered repo `wrfcoin-frontend` from the 11.0 plan prints:
+
+```sh
+node ecosystem-qa/qa-plan.ts diff before.md ecosystem-qa/plans/11.0.md --window ecosystem-qa/plans/11.0.window.json
+```
+
+```
+#37064 moved: tested by `remove-legacy-feature-flags`; group `temporary-migration-flags`, tested by `remove-legacy-feature-flags` -> group `temporary-migration-flags`, manual QA
+Entry removed: `remove-legacy-feature-flags` in batch 2 on `wrfcoin-frontend`
+Discovered repo removed: `wrfcoin-frontend` wrfcoin/frontend
+Manual check added: In a project on Storybook 10 whose main file sets `argTypeTargetsV7: true` under `features`, run `npx storybook@11.0.0-beta.3 upgrade`: the upgrade runs the automigration `remove-legacy-feature-flags`, the main file no longer sets `argTypeTargetsV7` and keeps the other flags, and `npx storybook dev` starts. (#37064)
+#37064 moved, and --moved does not name it.
+```
+
+With `--moved 37064` it prints the same lines but the last, and exits 0.
+
 An entry under `## Steps` is a block of lines:
 
 ```markdown

@@ -1,0 +1,148 @@
+diff --git a/.storybook/main.ts b/.storybook/main.ts
+index 3a4a98c..b42d30d 100644
+--- a/.storybook/main.ts
++++ b/.storybook/main.ts
+@@ -1,14 +1,16 @@
+ import type { StorybookConfig } from '@storybook/angular';
++import { dirname } from 'node:path';
++import { fileURLToPath } from 'node:url';
+ 
+ const config: StorybookConfig = {
+   framework: {
+-    name: '@storybook/angular',
++    name: getAbsolutePath('@storybook/angular'),
+     options: {},
+   },
+ 
+   stories: ['../projects/**/*.@(mdx|stories.@(ts))'],
+ 
+-  addons: ['@storybook/addon-a11y', '@storybook/addon-designs', '@storybook/addon-docs'],
++  addons: [getAbsolutePath('@storybook/addon-a11y'), getAbsolutePath('@storybook/addon-designs'), getAbsolutePath('@storybook/addon-docs')],
+ 
+   staticDirs: [
+     { from: './favicon.ico', to: 'favicon.svg' },
+@@ -45,5 +47,14 @@ const config: StorybookConfig = {
+     ];
+     return config;
+   },
++  storySorts: [{ method: 'alphabetical', order: ['README', 'Theme', 'OEM Theme', 'Guidelines'], includeName: true }],
+ };
+ export default config;
++
++/**
++ * This function is used to resolve the absolute path of a package.
++ * It is needed in projects that are set up within a monorepo.
++ */
++function getAbsolutePath(value: string): any {
++  return dirname(fileURLToPath(import.meta.resolve(`${value}/package.json`)));
++}
+diff --git a/.storybook/preview.ts b/.storybook/preview.ts
+index 035c279..0821c6f 100644
+--- a/.storybook/preview.ts
++++ b/.storybook/preview.ts
+@@ -9,13 +9,6 @@ window.document.body?.classList.add('mat-app-background');
+ window.document.body?.classList.add('mat-typography');
+ 
+ export const parameters = {
+-  options: {
+-    storySort: {
+-      method: 'alphabetical',
+-      order: ['README', 'Theme', 'OEM Theme', 'Guidelines'],
+-      includeName: true,
+-    },
+-  },
+   backgrounds: {
+     options: {
+       default: {
+diff --git a/package.json b/package.json
+index a20903f..a574348 100644
+--- a/package.json
++++ b/package.json
+@@ -76,17 +76,17 @@
+     "@angular/build": "^20.3.37",
+     "@angular/cli": "20.3.37",
+     "@angular/compiler-cli": "20.3.31",
+-    "@chromatic-com/storybook": "5.5.1",
++    "@chromatic-com/storybook": "5.6.0",
+     "@commitlint/cli": "21.2.3",
+     "@commitlint/config-conventional": "21.2.3",
+     "@eslint/eslintrc": "3.3.7",
+     "@eslint/js": "9.39.5",
+     "@semantic-release/changelog": "7.0.0",
+     "@semantic-release/git": "11.0.1",
+-    "@storybook/addon-a11y": "10.6.0",
+-    "@storybook/addon-designs": "11.1.4",
+-    "@storybook/addon-docs": "10.6.0",
+-    "@storybook/angular": "10.6.0",
++    "@storybook/addon-a11y": "^11.0.0-beta.3",
++    "@storybook/addon-designs": "12.0.0",
++    "@storybook/addon-docs": "^11.0.0-beta.3",
++    "@storybook/angular": "^11.0.0-beta.3",
+     "@types/jest": "30.0.0",
+     "@types/json-schema": "^7.0.15",
+     "@types/lodash": "4.17.26",
+@@ -100,7 +100,7 @@
+     "eslint-plugin-import": "2.32.0",
+     "eslint-plugin-prettier": "5.5.6",
+     "eslint-plugin-rxjs-x": "0.9.6",
+-    "eslint-plugin-storybook": "10.6.0",
++    "eslint-plugin-storybook": "^11.0.0-beta.3",
+     "jest": "30.5.1",
+     "jest-environment-jsdom": "30.5.1",
+     "jest-preset-angular": "17.0.0",
+@@ -111,7 +111,7 @@
+     "react-dom": "^19.3.0",
+     "semantic-release": "25.0.9",
+     "sort-package-json": "4.0.0",
+-    "storybook": "^10.6.0",
++    "storybook": "^11.0.0-beta.3",
+     "stylelint": "17.16.0",
+     "stylelint-config-idiomatic-order": "^10.0.0",
+     "stylelint-config-prettier-scss": "^1.0.0",
+diff --git a/projects/ui-particles-angular/src/lib/gio-form-cron/gio-form-cron.stories.ts b/projects/ui-particles-angular/src/lib/gio-form-cron/gio-form-cron.stories.ts
+index 7795b96..855548d 100644
+--- a/projects/ui-particles-angular/src/lib/gio-form-cron/gio-form-cron.stories.ts
++++ b/projects/ui-particles-angular/src/lib/gio-form-cron/gio-form-cron.stories.ts
+@@ -56,14 +56,12 @@ export default {
+   ],
+   argTypes: {
+     disabled: {
+-      defaultValue: false,
+       control: { type: 'boolean' },
+     },
+     initialValue: {
+       control: { type: 'text' },
+     },
+     required: {
+-      defaultValue: false,
+       control: { type: 'boolean' },
+     },
+   },
+diff --git a/projects/ui-particles-angular/src/lib/gio-form-selection-inline/gio-form-selection-inline.stories.ts b/projects/ui-particles-angular/src/lib/gio-form-selection-inline/gio-form-selection-inline.stories.ts
+index f82c1c3..8c64fbe 100644
+--- a/projects/ui-particles-angular/src/lib/gio-form-selection-inline/gio-form-selection-inline.stories.ts
++++ b/projects/ui-particles-angular/src/lib/gio-form-selection-inline/gio-form-selection-inline.stories.ts
+@@ -33,7 +33,6 @@ export default {
+   render: () => ({}),
+   argTypes: {
+     disabled: {
+-      defaultValue: false,
+       control: { type: 'boolean' },
+     },
+   },
+diff --git a/projects/ui-particles-angular/src/lib/gio-form-tags-input/gio-form-tags-input.stories.ts b/projects/ui-particles-angular/src/lib/gio-form-tags-input/gio-form-tags-input.stories.ts
+index 936e44f..11b2b2b 100644
+--- a/projects/ui-particles-angular/src/lib/gio-form-tags-input/gio-form-tags-input.stories.ts
++++ b/projects/ui-particles-angular/src/lib/gio-form-tags-input/gio-form-tags-input.stories.ts
+@@ -43,11 +43,9 @@ export default {
+       control: { type: 'text' },
+     },
+     required: {
+-      defaultValue: false,
+       control: { type: 'boolean' },
+     },
+     disabled: {
+-      defaultValue: false,
+       control: { type: 'boolean' },
+     },
+   },

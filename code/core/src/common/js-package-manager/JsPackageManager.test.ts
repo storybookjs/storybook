@@ -187,6 +187,41 @@ describe('JsPackageManager', () => {
       await expect(first.getInstalledVersion('typescript')).resolves.toBe('6.0.3');
       await expect(second.getInstalledVersion('typescript')).resolves.toBe('7.0.2');
     });
+
+    describe('when the installations cannot be listed', () => {
+      beforeEach(() => {
+        first.findInstallations = vi.fn().mockResolvedValue(undefined);
+        first.getModulePackageJSON = vi.fn().mockResolvedValue({ version: '6.0.3' });
+        second.findInstallations = vi.fn().mockResolvedValue(undefined);
+        second.getModulePackageJSON = vi.fn().mockResolvedValue(null);
+      });
+
+      it('returns the version of the package that resolves from the project', async () => {
+        await expect(first.getInstalledVersion('typescript')).resolves.toBe('6.0.3');
+        expect(first.getModulePackageJSON).toHaveBeenCalledWith('typescript');
+      });
+
+      it('returns null when the package does not resolve either', async () => {
+        await expect(second.getInstalledVersion('typescript')).resolves.toBeNull();
+      });
+    });
+
+    describe('when the listing succeeds without the package', () => {
+      beforeEach(() => {
+        first.findInstallations = vi.fn().mockResolvedValue({
+          dependencies: {},
+          duplicatedDependencies: {},
+          infoCommand: '',
+          dedupeCommand: '',
+        });
+        first.getModulePackageJSON = vi.fn().mockResolvedValue({ version: '6.0.3' });
+      });
+
+      it('returns null without reading a copy hoisted from another package', async () => {
+        await expect(first.getInstalledVersion('typescript')).resolves.toBeNull();
+        expect(first.getModulePackageJSON).not.toHaveBeenCalled();
+      });
+    });
   });
 
   describe('getVersionedPackages method', () => {

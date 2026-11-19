@@ -946,6 +946,9 @@ export abstract class JsPackageManager {
         const installations = await this.findInstallations([packageName]);
         if (installations) {
           version = Object.entries(installations.dependencies)[0]?.[1]?.[0].version || null;
+        } else {
+          // A listing that failed says nothing about the package, so read the copy Node would resolve.
+          version = (await this.getModulePackageJSON(packageName))?.version ?? null;
         }
       }
 

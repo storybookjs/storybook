@@ -44,6 +44,8 @@ concurrency:
   group: agentic-ref-eval
   cancel-in-progress: false
 
+permissions: {}
+
 jobs:
   eval:
     name: Run agentic-reference cases

@@ -12,14 +12,15 @@ env:
   # Shared by the local-link detection step and nissuer so the two can never drift apart.
   REPRO_LINK_SECTION: '### Reproduction link(.*)### Reproduction steps'
 
-permissions:
-  issues: write
+permissions: {}
 
 jobs:
   triage:
     name: Nissuer
     if: github.repository_owner == 'storybookjs'
     runs-on: ubuntu-latest
+    permissions:
+      issues: write # to label, comment on and close issues (nissuer)
     steps:
       # nissuer verifies the reproduction link by fetching it from the runner, so a link to a
       # local Storybook (http://localhost:6006, http://127.0.0.1:6006, ...) always fails the

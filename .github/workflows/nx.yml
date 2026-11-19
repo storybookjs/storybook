@@ -6,10 +6,7 @@ name: nx
 on:
   workflow_dispatch:
 
-permissions:
-  actions: read
-  contents: read
-  statuses: write
+permissions: {}
 
 env:
   NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
@@ -25,6 +22,10 @@ jobs:
         ) || (github.event_name == 'schedule'))
 
     runs-on: ubuntu-latest
+    permissions:
+      actions: read # to find the last successful run (nrwl/nx-set-shas)
+      contents: read
+      statuses: write # to post the Nx Cloud commit statuses
     env:
       ALL_TASKS: compile,check,knip,test,lint,fmt,sandbox,build,e2e-tests,e2e-tests-dev,vitest-integration,check-sandbox,e2e-ui,jest,vitest
     steps:

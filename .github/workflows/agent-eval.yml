@@ -42,6 +42,8 @@ concurrency:
 env:
   VERCEL_PROJECT_NAME: storybook-evals
 
+permissions: {}
+
 jobs:
   eval:
     name: Run agent eval experiments

@@ -4,6 +4,8 @@ on:
   pull_request:
     types: [opened, synchronize, ready_for_review, reopened]
 
+permissions: {}
+
 jobs:
   claude-review:
     # Claude Code reviews are estimated to cost $15-25. use only when necessary and only internally.

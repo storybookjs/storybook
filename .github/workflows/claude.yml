@@ -10,6 +10,8 @@ on:
   pull_request_review:
     types: [submitted]
 
+permissions: {}
+
 jobs:
   claude:
     # Only org OWNERs and MEMBERs may trigger Claude. author_association is set by

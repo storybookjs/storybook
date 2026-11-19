@@ -3,7 +3,7 @@ import React from 'react';
 import type { Meta, StoryFn, StoryObj } from '@storybook/react-vite';
 
 import { action } from 'storybook/actions';
-import { screen } from 'storybook/test';
+import { expect, screen, within } from 'storybook/test';
 import { type Theme, ThemeProvider, useTheme } from 'storybook/theming/emotion';
 
 import { Heading } from './Heading.tsx';
@@ -147,6 +147,40 @@ export const CustomTitle: Story = () => {
       <Heading menu={menuItems} isLoading={false} />
     </ThemeProvider>
   );
+};
+
+export const CustomTitleWithScript: StoryObj<typeof Heading> = {
+  args: { menu: menuItems, isLoading: false },
+  globals: { sb_theme: 'light' },
+  decorators: [
+    (storyFn) => {
+      const theme = useTheme() as Theme;
+      return (
+        <ThemeProvider
+          theme={{
+            ...theme,
+            brand: {
+              title:
+                '<span style="color:red">My custom title</span><img src="x" onerror="window.__brandXss = true"><script>window.__brandXss = true</script>',
+              url: null,
+              image: null,
+              target: undefined,
+            },
+          }}
+        >
+          {storyFn()}
+        </ThemeProvider>
+      );
+    },
+  ],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const title = await canvas.findByText('My custom title');
+
+    await expect(title).toHaveStyle({ color: 'rgb(255, 0, 0)' });
+    await expect(canvasElement.querySelector('script')).toBeNull();
+    await expect(canvasElement.querySelector('img')).not.toHaveAttribute('onerror');
+  },
 };
 
 export const CustomBrandImage: Story = () => {

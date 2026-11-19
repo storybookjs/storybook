@@ -725,8 +725,8 @@ describe('prepareStory', () => {
       vi.unstubAllGlobals();
     });
 
-    it('skips second-pass argTypes enhancers so args are not inferred in prepareStory', () => {
-      const { argTypes } = prepareStory(
+    it('infers argTypes from args for the story, and keeps the uninferred argTypes apart', () => {
+      const { argTypes, uninferredArgTypes } = prepareStory(
         {
           id,
           name,
@@ -741,13 +741,19 @@ describe('prepareStory', () => {
         { render }
       );
 
-      expect(argTypes.backgroundColor).toEqual({ name: 'backgroundColor', control: 'color' });
-      expect(argTypes.size).toBeUndefined();
-      expect(argTypes.label).toBeUndefined();
+      expect(argTypes.label).toMatchObject({ name: 'label', type: { name: 'string' } });
+      expect(argTypes.size).toMatchObject({ name: 'size', type: { name: 'string' } });
+
+      expect(uninferredArgTypes.backgroundColor).toEqual({
+        name: 'backgroundColor',
+        control: 'color',
+      });
+      expect(uninferredArgTypes.size).toBeUndefined();
+      expect(uninferredArgTypes.label).toBeUndefined();
     });
 
-    it('keeps user-authored control overrides without inferring types from args', () => {
-      const { argTypes } = prepareStory(
+    it('keeps user-authored control overrides in the uninferred argTypes', () => {
+      const { uninferredArgTypes: argTypes } = prepareStory(
         {
           id,
           name,

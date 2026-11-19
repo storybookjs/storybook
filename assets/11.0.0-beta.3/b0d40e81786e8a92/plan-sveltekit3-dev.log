@@ -1,0 +1,495 @@
+
+[90m┌[39m  storybook v11.0.0-beta.3
+[90m│[39m
+[33m▲[39m  You are currently using Storybook [1m11.0.0-beta.3[22m but you have packages
+[90m│[39m  which are incompatible with it:
+
+[90m│[39m  - msw-storybook-addon@3.0.0 which depends on >=9
+
+[90m│[39m  Please consider updating your packages or contacting the maintainers
+[90m│[39m  for compatibility details.
+
+[90m│[39m  For more details on compatibility guidance, see:
+[90m│[39m  https://github.com/storybookjs/storybook/issues/32836
+[90m│[39m
+[34m●[39m  Starting...
+[90m│[39m
+[34m●[39m  Initialized composition with 1 remote Storybook(s)
+[90m│[39m
+[34m●[39m  Auth required for:
+[90m│[39m  https://main--6567908438a7a23eba571d04.chromatic.com
+[90m│[39m
+[34m●[39m  Sources: local, chromatic-published-storybook
+config_option_deprecated_alias
+The `config.alias` option is deprecated, and will be removed in a future version of SvelteKit. Use subpath imports instead: https://svelte.dev/docs/kit/$lib
+https://svelte.dev/e/kit/config_option_deprecated_alias
+vite_config_overridden
+The following Vite config options will be overridden by SvelteKit:
+  - base
+https://svelte.dev/e/kit/vite_config_overridden
+[90m│[39m  [43mVite[49m Re-optimizing dependencies because lockfile has changed
+[90m│[39m  [43mVite[49m connected.
+[90m│[39m  [43mVite[49m Forced re-optimization of dependencies
+[90m│[39m
+[31m■[39m  [43mVite[49m [31m(!) Failed to run dependency scan. Skipping dependency[39m
+[90m│[39m  [31mpre-bundling. Error: [31m  Failed to scan for dependencies from entries:
+[90m│[39m  ./src/service-worker.ts
+
+[90m│[39m  [31mBuild failed with 1 error:
+
+[90m│[39m  [plugin vite:dep-scan:resolve]
+[90m│[39m  SvelteKit error: module_removed_service_worker
+[90m│[39m  `$service-worker` has been removed. Use `immutable`, `assets` and
+[90m│[39m  `prerendered` from `$app/manifest`, `version` from `$app/env`, and
+[90m│[39m  `resolve(...)` from `$app/paths` instead:
+[90m│[39m  https://svelte.dev/docs/kit/$service-worker
+[90m│[39m  https://svelte.dev/e/kit/module_removed_service_worker
+[90m│[39m  at aggregateBindingErrorsIntoJsError
+[90m│[39m  (file://./node_modules/rolldown/dist/shared/error-Dsqzw0Oa.mjs:49:18)
+[90m│[39m  at unwrapBindingResult
+[90m│[39m  (file://./node_modules/rolldown/dist/shared/error-Dsqzw0Oa.mjs:19:128)
+[90m│[39m  at scan
+[90m│[39m  (file://./node_modules/rolldown/dist/experimental-index.mjs:241:3)
+[90m│[39m  at async Object.build
+[90m│[39m  (file://./node_modules/vite/dist/node/chunks/node.js:28123:3)
+[90m│[39m  at async scan
+[90m│[39m  (file://./node_modules/vite/dist/node/chunks/node.js:28062:4)
+[90m│[39m  at async file://./node_modules/vite/dist/node/chunks/node.js:35839:15[39m
+│ [38;2;255;71;133m╭[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m╮[39m
+│ [38;2;255;71;133m│[39m   Storybook ready!                                                         [38;2;255;71;133m│[39m
+│ [38;2;255;71;133m│[39m                                                                            [38;2;255;71;133m│[39m
+│ [38;2;255;71;133m│[39m   - Local:                http://127.0.0.1:6006/                           [38;2;255;71;133m│[39m
+│ [38;2;255;71;133m│[39m   - On your network:      run with --host <ip> to expose to local          [38;2;255;71;133m│[39m
+│ [38;2;255;71;133m│[39m   network                                                                  [38;2;255;71;133m│[39m
+│ [38;2;255;71;133m│[39m                                                                            [38;2;255;71;133m│[39m
+│ [38;2;255;71;133m╰[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m╯[39m
+[90m│[39m
+[34m●[39m  [4m629 ms[24m for manager and [4m2.98 s[24m for preview
+[90m│[39m
+[31m■[39m  [43mVite[49m [31m(!) Failed to run dependency scan. Skipping dependency[39m
+[90m│[39m  [31mpre-bundling. Error: [31m  Failed to scan for dependencies from entries:
+[90m│[39m  ./.storybook/preview.ts
+[90m│[39m  ./src/routes/+error.svelte
+[90m│[39m  ./src/routes/+layout.svelte
+[90m│[39m  ./src/routes/+layout.ts
+[90m│[39m  ./src/routes/(app)/+error.svelte
+[90m│[39m  ./src/routes/(app)/+layout.svelte
+[90m│[39m  ./src/routes/(app)/+page.ts
+[90m│[39m  ./src/routes/(pages)/+error.svelte
+[90m│[39m  ./src/routes/embed/+layout.ts
+[90m│[39m  ./src/routes/(app)/add-ons/+error.svelte
+[90m│[39m  ./src/routes/(app)/add-ons/+layout.ts
+[90m│[39m  ./src/routes/(app)/add-ons/+page.svelte
+[90m│[39m  ./src/routes/(app)/add-ons/+page.ts
+[90m│[39m  ./src/routes/(app)/documents/+error.svelte
+[90m│[39m  ./src/routes/(app)/documents/+layout.ts
+[90m│[39m  ./src/routes/(app)/documents/+page.svelte
+[90m│[39m  ./src/routes/(app)/documents/+page.ts
+[90m│[39m  ./src/routes/(app)/projects/+error.svelte
+[90m│[39m  ./src/routes/(app)/projects/+layout.ts
+[90m│[39m  ./src/routes/(app)/projects/+page.svelte
+[90m│[39m  ./src/routes/(app)/projects/+page.ts
+[90m│[39m  ./src/routes/(app)/upload/+error.svelte
+[90m│[39m  ./src/routes/(app)/upload/+page.svelte
+[90m│[39m  ./src/routes/(app)/upload/+page.ts
+[90m│[39m  ./src/routes/(pages)/home/+page.svelte
+[90m│[39m  ./src/routes/embed/stories/note-embed.stories.svelte
+[90m│[39m  ./src/routes/embed/stories/page-embed.stories.svelte
+[90m│[39m  ./src/routes/embed/stories/project-embed.stories.svelte
+[90m│[39m  ./src/lib/components/accounts/stories/Avatar.stories.svelte
+[90m│[39m  ./src/lib/components/accounts/stories/Mailkey.stories.svelte
+[90m│[39m  ./src/lib/components/accounts/stories/Unverified.stories.svelte
+[90m│[39m  ./src/lib/components/accounts/stories/UserMenu.stories.svelte
+[90m│[39m  ./src/lib/components/addons/stories/AddOnListItem.stories.svelte
+[90m│[39m  ./src/lib/components/addons/stories/AddOnMeta.stories.svelte
+[90m│[39m  ./src/lib/components/addons/stories/AddOnsNavigation.stories.svelte
+[90m│[39m  ./src/lib/components/addons/stories/DocumentList.stories.svelte
+[90m│[39m  ./src/lib/components/addons/stories/History.stories.svelte
+[90m│[39m  ./src/lib/components/addons/stories/HistoryEvent.stories.svelte
+[90m│[39m  ./src/lib/components/addons/stories/Scheduled.stories.svelte
+[90m│[39m  ./src/lib/components/addons/stories/ScheduledEvent.stories.svelte
+[90m│[39m  ./src/lib/components/addons/stories/Selection.stories.svelte
+[90m│[39m  ./src/lib/components/common/stories/Access.stories.svelte
+[90m│[39m  ./src/lib/components/common/stories/Action.stories.svelte
+[90m│[39m  ./src/lib/components/common/stories/ApiError.stories.svelte
+[90m│[39m  ./src/lib/components/common/stories/Badge.stories.svelte
+[90m│[39m  ./src/lib/components/common/stories/Banner.stories.svelte
+[90m│[39m  ./src/lib/components/common/stories/Button.stories.svelte
+[90m│[39m  ./src/lib/components/common/stories/Card.stories.svelte
+[90m│[39m  ./src/lib/components/common/stories/Dropdown.stories.svelte
+[90m│[39m  ./src/lib/components/common/stories/Empty.stories.svelte
+[90m│[39m  ./src/lib/components/common/stories/Error.stories.svelte
+[90m│[39m  ./src/lib/components/common/stories/FieldLabel.stories.svelte
+[90m│[39m  ./src/lib/components/common/stories/Flex.stories.svelte
+[90m│[39m  ./src/lib/components/common/stories/KV.stories.svelte
+[90m│[39m  ./src/lib/components/common/stories/Logo.stories.svelte
+[90m│[39m  ./src/lib/components/common/stories/Metadata.stories.svelte
+[90m│[39m  ./src/lib/components/common/stories/NavItem.stories.svelte
+[90m│[39m  ./src/lib/components/common/stories/Paginator.stories.svelte
+[90m│[39m  ./src/lib/components/common/stories/Pin.stories.svelte
+[90m│[39m  ./src/lib/components/common/stories/RelativeTime.stories.svelte
+[90m│[39m  ./src/lib/components/common/stories/Settings.stories.svelte
+[90m│[39m  ./src/lib/components/common/stories/Tab.stories.svelte
+[90m│[39m  ./src/lib/components/common/stories/Tip.stories.svelte
+[90m│[39m  ./src/lib/components/common/stories/Toast.stories.svelte
+[90m│[39m  ./src/lib/components/common/stories/Tooltip.stories.svelte
+[90m│[39m  ./src/lib/components/documents/stories/CustomizeEmbed.stories.svelte
+[90m│[39m  ./src/lib/components/documents/stories/Data.stories.svelte
+[90m│[39m  ./src/lib/components/documents/stories/DocumentListItem.stories.svelte
+[90m│[39m  ./src/lib/components/documents/stories/Header.stories.svelte
+[90m│[39m  ./src/lib/components/documents/stories/Highlight.stories.svelte
+[90m│[39m  ./src/lib/components/documents/stories/HighlightGroup.stories.svelte
+[90m│[39m  ./src/lib/components/documents/stories/Metadata.stories.svelte
+[90m│[39m  ./src/lib/components/documents/stories/NoteHighlights.stories.svelte
+[90m│[39m  ./src/lib/components/documents/stories/PageHighlights.stories.svelte
+[90m│[39m  ./src/lib/components/documents/stories/Pending.stories.svelte
+[90m│[39m  ./src/lib/components/documents/stories/Projects.stories.svelte
+[90m│[39m  ./src/lib/components/documents/stories/ResultsList.stories.svelte
+[90m│[39m  ./src/lib/components/documents/stories/Revisions.stories.svelte
+[90m│[39m  ./src/lib/components/documents/stories/Thumbnail.stories.svelte
+[90m│[39m  ./src/lib/components/documents/stories/VisibleFields.stories.svelte
+[90m│[39m  ./src/lib/components/embeds/stories/DocumentEmbed.stories.svelte
+[90m│[39m  ./src/lib/components/forms/stories/AddOnDispatch.stories.svelte
+[90m│[39m  ./src/lib/components/forms/stories/ChangeOwner.stories.svelte
+[90m│[39m  ./src/lib/components/forms/stories/ConfirmDelete.stories.svelte
+[90m│[39m  ./src/lib/components/forms/stories/ConfirmRedaction.stories.svelte
+[90m│[39m  ./src/lib/components/forms/stories/DeleteProject.stories.svelte
+[90m│[39m  ./src/lib/components/forms/stories/Edit.stories.svelte
+[90m│[39m  ./src/lib/components/forms/stories/EditAccess.stories.svelte
+[90m│[39m  ./src/lib/components/forms/stories/EditData.stories.svelte
+[90m│[39m  ./src/lib/components/forms/stories/EditNote.stories.svelte
+[90m│[39m  ./src/lib/components/forms/stories/EditProject.stories.svelte
+[90m│[39m  ./src/lib/components/forms/stories/InviteCollaborator.stories.svelte
+[90m│[39m  ./src/lib/components/forms/stories/Projects.stories.svelte
+[90m│[39m  ./src/lib/components/forms/stories/RemoveCollaborator.stories.svelte
+[90m│[39m  ./src/lib/components/forms/stories/Reprocess.stories.svelte
+[90m│[39m  ./src/lib/components/forms/stories/RevisionControl.stories.svelte
+[90m│[39m  ./src/lib/components/forms/stories/Search.stories.svelte
+[90m│[39m  ./src/lib/components/forms/stories/Sections.stories.svelte
+[90m│[39m  ./src/lib/components/forms/stories/Share.stories.svelte
+[90m│[39m  ./src/lib/components/forms/stories/UpdateCollaborator.stories.svelte
+[90m│[39m  ./src/lib/components/forms/stories/Upload.stories.svelte
+[90m│[39m  ./src/lib/components/forms/stories/UploadListItem.stories.svelte
+[90m│[39m  ./src/lib/components/forms/stories/UserFeedback.stories.svelte
+[90m│[39m  ./src/lib/components/inputs/stories/AccessLevel.stories.svelte
+[90m│[39m  ./src/lib/components/inputs/stories/Checkbox.stories.svelte
+[90m│[39m  ./src/lib/components/inputs/stories/Dropzone.stories.svelte
+[90m│[39m  ./src/lib/components/inputs/stories/Field.stories.svelte
+[90m│[39m  ./src/lib/components/inputs/stories/File.stories.svelte
+[90m│[39m  ./src/lib/components/inputs/stories/KeyValue.stories.svelte
+[90m│[39m  ./src/lib/components/inputs/stories/Language.stories.svelte
+[90m│[39m  ./src/lib/components/inputs/stories/ProjectAccess.stories.svelte
+[90m│[39m  ./src/lib/components/inputs/stories/Select.stories.svelte
+[90m│[39m  ./src/lib/components/inputs/stories/Switch.stories.svelte
+[90m│[39m  ./src/lib/components/inputs/stories/Text.stories.svelte
+[90m│[39m  ./src/lib/components/inputs/stories/Textarea.stories.svelte
+[90m│[39m  ./src/lib/components/layouts/stories/AddOnBrowser.stories.svelte
+[90m│[39m  ./src/lib/components/layouts/stories/AddOnLayout.stories.svelte
+[90m│[39m  ./src/lib/components/layouts/stories/AppLayout.stories.svelte
+[90m│[39m  ./src/lib/components/layouts/stories/DocumentBrowser.stories.svelte
+[90m│[39m  ./src/lib/components/layouts/stories/DocumentLayout.stories.svelte
+[90m│[39m  ./src/lib/components/layouts/stories/EmbedLayout.stories.svelte
+[90m│[39m  ./src/lib/components/layouts/stories/Error.stories.svelte
+[90m│[39m  ./src/lib/components/layouts/stories/Modal.stories.svelte
+[90m│[39m  ./src/lib/components/layouts/stories/Project.stories.svelte
+[90m│[39m  ./src/lib/components/layouts/stories/Share.stories.svelte
+[90m│[39m  ./src/lib/components/layouts/stories/SidebarLayout.stories.svelte
+[90m│[39m  ./src/lib/components/layouts/stories/Toaster.stories.svelte
+[90m│[39m  ./src/lib/components/navigation/stories/Breadcrumbs.stories.svelte
+[90m│[39m  ./src/lib/components/navigation/stories/LanguageMenu.stories.svelte
+[90m│[39m  ./src/lib/components/navigation/stories/OrgMenu.stories.svelte
+[90m│[39m  ./src/lib/components/notes/stories/Note.stories.svelte
+[90m│[39m  ./src/lib/components/notes/stories/NoteActions.stories.svelte
+[90m│[39m  ./src/lib/components/notes/stories/NoteContent.stories.svelte
+[90m│[39m  ./src/lib/components/notes/stories/NoteExcerpt.stories.svelte
+[90m│[39m  ./src/lib/components/notes/stories/NoteMetadata.stories.svelte
+[90m│[39m  ./src/lib/components/notes/stories/NoteTitle.stories.svelte
+[90m│[39m  ./src/lib/components/premium-credits/stories/CreditMeter.stories.svelte
+[90m│[39m  ./src/lib/components/premium-credits/stories/PremiumBadge.stories.svelte
+[90m│[39m  ./src/lib/components/premium-credits/stories/Price.stories.svelte
+[90m│[39m  ./src/lib/components/premium-credits/stories/UpgradePrompt.stories.svelte
+[90m│[39m  ./src/lib/components/processing/stories/AddOns.stories.svelte
+[90m│[39m  ./src/lib/components/processing/stories/Documents.stories.svelte
+[90m│[39m  ./src/lib/components/processing/stories/Process.stories.svelte
+[90m│[39m  ./src/lib/components/processing/stories/ProcessDropdown.stories.svelte
+[90m│[39m  ./src/lib/components/processing/stories/ProcessSummary.stories.svelte
+[90m│[39m  ./src/lib/components/projects/stories/Collaborators.stories.svelte
+[90m│[39m  ./src/lib/components/projects/stories/CustomizeProjectEmbed.stories.svelte
+[90m│[39m  ./src/lib/components/projects/stories/ProjectHeader.stories.svelte
+[90m│[39m  ./src/lib/components/projects/stories/ProjectListItem.stories.svelte
+[90m│[39m  ./src/lib/components/projects/stories/ProjectShare.stories.svelte
+[90m│[39m  ./src/lib/components/search/stories/InfiniteScrollTrigger.stories.svelte
+[90m│[39m  ./src/lib/components/search/stories/SearchResultsCount.stories.svelte
+[90m│[39m  ./src/lib/components/sidebar/stories/AddOns.stories.svelte
+[90m│[39m  ./src/lib/components/sidebar/stories/DocumentActions.stories.svelte
+[90m│[39m  ./src/lib/components/sidebar/stories/Documents.stories.svelte
+[90m│[39m  ./src/lib/components/sidebar/stories/ProjectActions.stories.svelte
+[90m│[39m  ./src/lib/components/sidebar/stories/Projects.stories.svelte
+[90m│[39m  ./src/lib/components/sidebar/stories/SavedSearchForm.stories.svelte
+[90m│[39m  ./src/lib/components/sidebar/stories/SidebarGroup.stories.svelte
+[90m│[39m  ./src/lib/components/toolbars/stories/AnnotationToolbar.stories.svelte
+[90m│[39m  ./src/lib/components/toolbars/stories/LoadingToolbar.stories.svelte
+[90m│[39m  ./src/lib/components/toolbars/stories/PageToolbar.stories.svelte
+[90m│[39m  ./src/lib/components/toolbars/stories/PaginationToolbar.stories.svelte
+[90m│[39m  ./src/lib/components/toolbars/stories/ReadingToolbar.stories.svelte
+[90m│[39m  ./src/lib/components/toolbars/stories/RedactionToolbar.stories.svelte
+[90m│[39m  ./src/lib/components/viewer/stories/AnnotationLayer.stories.svelte
+[90m│[39m  ./src/lib/components/viewer/stories/Grid.stories.svelte
+[90m│[39m  ./src/lib/components/viewer/stories/NoteTab.stories.svelte
+[90m│[39m  ./src/lib/components/viewer/stories/Notes.stories.svelte
+[90m│[39m  ./src/lib/components/viewer/stories/PDF.stories.svelte
+[90m│[39m  ./src/lib/components/viewer/stories/PDFPage.stories.svelte
+[90m│[39m  ./src/lib/components/viewer/stories/PageActions.stories.svelte
+[90m│[39m  ./src/lib/components/viewer/stories/RedactionLayer.stories.svelte
+[90m│[39m  ./src/lib/components/viewer/stories/Search.stories.svelte
+[90m│[39m  ./src/lib/components/viewer/stories/Text.stories.svelte
+[90m│[39m  ./src/lib/components/viewer/stories/Viewer.stories.svelte
+[90m│[39m  ./src/lib/components/viewer/stories/ViewerActions.stories.svelte
+[90m│[39m  ./src/lib/components/viewer/stories/Zoom.stories.svelte
+[90m│[39m  ./src/routes/(app)/add-ons/runs/+page.svelte
+[90m│[39m  ./src/routes/(app)/documents/[id]/+page.ts
+[90m│[39m  ./src/routes/(app)/documents/[id]-[slug]/+error.svelte
+[90m│[39m  ./src/routes/(app)/documents/[id]-[slug]/+page.svelte
+[90m│[39m  ./src/routes/(app)/documents/[id]-[slug]/+page.ts
+[90m│[39m  ./src/routes/(app)/documents/[id]-[slug].[format]/+page.ts
+[90m│[39m  ./src/routes/(app)/projects/[id]/+page.ts
+[90m│[39m  ./src/routes/(app)/projects/[id]-[slug]/+error.svelte
+[90m│[39m  ./src/routes/(app)/projects/[id]-[slug]/+page.svelte
+[90m│[39m  ./src/routes/(app)/projects/[id]-[slug]/+page.ts
+[90m│[39m  ./src/routes/embed/documents/[id]/+page.ts
+[90m│[39m  ./src/routes/embed/documents/[id]-[slug]/+page.svelte
+[90m│[39m  ./src/routes/embed/documents/[id]-[slug]/+page.ts
+[90m│[39m  ./src/routes/embed/projects/[project_id]-[slug]/+page.svelte
+[90m│[39m  ./src/routes/embed/projects/[project_id]-[slug]/+page.ts
+[90m│[39m  ./src/lib/components/documents/search/stories/SearchEditor.stories.svelte
+[90m│[39m  ./src/routes/(app)/add-ons/[owner]/[repo]/+error.svelte
+[90m│[39m  ./src/routes/(app)/add-ons/[owner]/[repo]/+page.svelte
+[90m│[39m  ./src/routes/(app)/add-ons/[owner]/[repo]/+page.ts
+[90m│[39m  ./src/routes/embed/documents/[id]-[slug]/preview/+page.svelte
+[90m│[39m  ./src/routes/embed/documents/[id]-[slug]/preview/+page.ts
+[90m│[39m  ./src/routes/embed/projects/[project_id]-[slug]/preview/+page.svelte
+[90m│[39m  ./src/routes/embed/projects/[project_id]-[slug]/preview/+page.ts
+[90m│[39m  ./src/routes/(app)/add-ons/[owner]/[repo]/[event]/+page.svelte
+[90m│[39m  ./src/routes/(app)/add-ons/[owner]/[repo]/[event]/+page.ts
+[90m│[39m  ./src/routes/(app)/documents/[id]/annotations/[note_id]/+page.ts
+[90m│[39m  ./src/routes/(app)/documents/[id]/pages/[page]/+page.ts
+[90m│[39m  ./src/routes/(app)/documents/[id]-[slug]/annotations/[note_id]/+page.ts
+[90m│[39m  ./src/routes/(app)/documents/[id]-[slug]/pages/[page]/+page.ts
+[90m│[39m  ./src/routes/embed/documents/[id]/annotations/[note_id]/+page.svelte
+[90m│[39m  ./src/routes/embed/documents/[id]/annotations/[note_id]/+page.ts
+[90m│[39m  ./src/routes/embed/documents/[id]/pages/[page]/+page.svelte
+[90m│[39m  ./src/routes/embed/documents/[id]/pages/[page]/+page.ts
+[90m│[39m  ./src/routes/embed/documents/[id]/annotations/[note_id]/preview/+page.svelte
+[90m│[39m  ./src/routes/embed/documents/[id]/annotations/[note_id]/preview/+page.ts
+[90m│[39m  ./src/routes/embed/documents/[id]/pages/[page]/preview/+page.svelte
+[90m│[39m  ./src/routes/embed/documents/[id]/pages/[page]/preview/+page.ts
+
+[90m│[39m  [31mBuild failed with 1 error:
+
+[90m│[39m  [plugin vite:dep-scan:resolve]
+[90m│[39m  SvelteKit error: module_removed_lib
+[90m│[39m  `$lib` has been removed. Use `#lib` instead:
+[90m│[39m  https://svelte.dev/docs/kit/$lib. To keep using `$lib`, add `alias: {
+[90m│[39m  '$lib': 'src/lib' }` to your SvelteKit config.
+[90m│[39m  https://svelte.dev/e/kit/module_removed_lib
+[90m│[39m  at aggregateBindingErrorsIntoJsError
+[90m│[39m  (file://./node_modules/rolldown/dist/shared/error-Dsqzw0Oa.mjs:49:18)
+[90m│[39m  at unwrapBindingResult
+[90m│[39m  (file://./node_modules/rolldown/dist/shared/error-Dsqzw0Oa.mjs:19:128)
+[90m│[39m  at scan
+[90m│[39m  (file://./node_modules/rolldown/dist/experimental-index.mjs:241:3)
+[90m│[39m  at async Object.build
+[90m│[39m  (file://./node_modules/vite/dist/node/chunks/node.js:28123:3)
+[90m│[39m  at async scan
+[90m│[39m  (file://./node_modules/vite/dist/node/chunks/node.js:28062:4)
+[90m│[39m  at async file://./node_modules/vite/dist/node/chunks/node.js:35839:15[39m
+[90m│[39m
+[31m■[39m  [43mVite[49m Pre-transform error: module_removed_lib
+[90m│[39m  `$lib` has been removed. Use `#lib` instead:
+[90m│[39m  https://svelte.dev/docs/kit/$lib. To keep using `$lib`, add `alias: {
+[90m│[39m  '$lib': 'src/lib' }` to your SvelteKit config.
+[90m│[39m  https://svelte.dev/e/kit/module_removed_lib
+[90m│[39m  Plugin: [35mvite:import-analysis[39m
+[90m│[39m  File: [36m./.storybook/preview.ts[39m:4:7
+[90m│[39m  [33m1  |  import "@/style/kit.css";
+[90m│[39m  2  |  import "$lib/i18n/index.js";
+[90m│[39m  |          ^
+[90m│[39m  3  |  import { mswLoader } from "msw-storybook-addon/csf3";
+[90m│[39m  4  |  import DocumentQueryDecorator from
+[90m│[39m  "$lib/components/storybook/DocumentQueryDecorator.svelte";[39m
+[90m│[39m  [43mVite[49m [32mdependencies optimized: [33mmsw-storybook-addon/csf3, msw/browser[32m[39m
+[90m│[39m  [43mVite[49m [32moptimized dependencies changed. reloading[39m
+[90m│[39m
+[31m■[39m  [43mVite[49m [31mInternal server error: module_removed_lib
+[90m│[39m  `$lib` has been removed. Use `#lib` instead:
+[90m│[39m  https://svelte.dev/docs/kit/$lib. To keep using `$lib`, add `alias: {
+[90m│[39m  '$lib': 'src/lib' }` to your SvelteKit config.
+[90m│[39m  https://svelte.dev/e/kit/module_removed_lib[39m
+[90m│[39m  Plugin: [35mvite:import-analysis[39m
+[90m│[39m  File: [36m./.storybook/preview.ts[39m:4:7
+[90m│[39m  [33m1  |  import "@/style/kit.css";
+[90m│[39m  2  |  import "$lib/i18n/index.js";
+[90m│[39m  |          ^
+[90m│[39m  3  |  import { mswLoader } from "msw-storybook-addon/csf3";
+[90m│[39m  4  |  import DocumentQueryDecorator from
+[90m│[39m  "$lib/components/storybook/DocumentQueryDecorator.svelte";[39m
+[90m│[39m
+[31m■[39m  [43mVite[49m Pre-transform error: module_removed_lib
+[90m│[39m  `$lib` has been removed. Use `#lib` instead:
+[90m│[39m  https://svelte.dev/docs/kit/$lib. To keep using `$lib`, add `alias: {
+[90m│[39m  '$lib': 'src/lib' }` to your SvelteKit config.
+[90m│[39m  https://svelte.dev/e/kit/module_removed_lib
+[90m│[39m  Plugin: [35mvite:import-analysis[39m
+[90m│[39m  File: [36m./.storybook/preview.ts[39m:4:7
+[90m│[39m  [33m1  |  import "@/style/kit.css";
+[90m│[39m  2  |  import "$lib/i18n/index.js";
+[90m│[39m  |          ^
+[90m│[39m  3  |  import { mswLoader } from "msw-storybook-addon/csf3";
+[90m│[39m  4  |  import DocumentQueryDecorator from
+[90m│[39m  "$lib/components/storybook/DocumentQueryDecorator.svelte";[39m
+[90m│[39m
+[31m■[39m  [43mVite[49m [31mInternal server error: module_removed_lib
+[90m│[39m  `$lib` has been removed. Use `#lib` instead:
+[90m│[39m  https://svelte.dev/docs/kit/$lib. To keep using `$lib`, add `alias: {
+[90m│[39m  '$lib': 'src/lib' }` to your SvelteKit config.
+[90m│[39m  https://svelte.dev/e/kit/module_removed_lib[39m
+[90m│[39m  Plugin: [35mvite:import-analysis[39m
+[90m│[39m  File: [36m./.storybook/preview.ts[39m:4:7
+[90m│[39m  [33m1  |  import "@/style/kit.css";
+[90m│[39m  2  |  import "$lib/i18n/index.js";
+[90m│[39m  |          ^
+[90m│[39m  3  |  import { mswLoader } from "msw-storybook-addon/csf3";
+[90m│[39m  4  |  import DocumentQueryDecorator from
+[90m│[39m  "$lib/components/storybook/DocumentQueryDecorator.svelte";[39m
+[90m│[39m
+[31m■[39m  [43mVite[49m [31mInternal server error: module_removed_lib
+[90m│[39m  `$lib` has been removed. Use `#lib` instead:
+[90m│[39m  https://svelte.dev/docs/kit/$lib. To keep using `$lib`, add `alias: {
+[90m│[39m  '$lib': 'src/lib' }` to your SvelteKit config.
+[90m│[39m  https://svelte.dev/e/kit/module_removed_lib[39m
+[90m│[39m  Plugin: [35mvite:import-analysis[39m
+[90m│[39m  File: [36m./.storybook/preview.ts[39m:4:7
+[90m│[39m  [33m1  |  import "@/style/kit.css";
+[90m│[39m  2  |  import "$lib/i18n/index.js";
+[90m│[39m  |          ^
+[90m│[39m  3  |  import { mswLoader } from "msw-storybook-addon/csf3";
+[90m│[39m  4  |  import DocumentQueryDecorator from
+[90m│[39m  "$lib/components/storybook/DocumentQueryDecorator.svelte";[39m
+[90m│[39m
+[31m■[39m  [43mVite[49m [31mInternal server error: module_removed_lib
+[90m│[39m  `$lib` has been removed. Use `#lib` instead:
+[90m│[39m  https://svelte.dev/docs/kit/$lib. To keep using `$lib`, add `alias: {
+[90m│[39m  '$lib': 'src/lib' }` to your SvelteKit config.
+[90m│[39m  https://svelte.dev/e/kit/module_removed_lib[39m
+[90m│[39m  Plugin: [35mvite:import-analysis[39m
+[90m│[39m  File: [36m./.storybook/preview.ts[39m:4:7
+[90m│[39m  [33m1  |  import "@/style/kit.css";
+[90m│[39m  2  |  import "$lib/i18n/index.js";
+[90m│[39m  |          ^
+[90m│[39m  3  |  import { mswLoader } from "msw-storybook-addon/csf3";
+[90m│[39m  4  |  import DocumentQueryDecorator from
+[90m│[39m  "$lib/components/storybook/DocumentQueryDecorator.svelte";[39m
+[90m│[39m
+[31m■[39m  [43mVite[49m [31mInternal server error: module_removed_lib
+[90m│[39m  `$lib` has been removed. Use `#lib` instead:
+[90m│[39m  https://svelte.dev/docs/kit/$lib. To keep using `$lib`, add `alias: {
+[90m│[39m  '$lib': 'src/lib' }` to your SvelteKit config.
+[90m│[39m  https://svelte.dev/e/kit/module_removed_lib[39m
+[90m│[39m  Plugin: [35mvite:import-analysis[39m
+[90m│[39m  File: [36m./.storybook/preview.ts[39m:4:7
+[90m│[39m  [33m1  |  import "@/style/kit.css";
+[90m│[39m  2  |  import "$lib/i18n/index.js";
+[90m│[39m  |          ^
+[90m│[39m  3  |  import { mswLoader } from "msw-storybook-addon/csf3";
+[90m│[39m  4  |  import DocumentQueryDecorator from
+[90m│[39m  "$lib/components/storybook/DocumentQueryDecorator.svelte";[39m
+[90m│[39m  [43mVite[49m [32mhmr update [39m[2m virtual:/@storybook/builder-vite/vite-app.js[22m
+[90m│[39m  [43mVite[49m [32mdependency optimized: [33msvelte-i18n[32m[39m
+[90m│[39m  [43mVite[49m [32moptimized dependencies changed. reloading[39m
+[90m│[39m
+[33m▲[39m  [43mVite[49m [2m[console.warn] [22m[sveltekit] env_module_deprecated
+[90m│[39m  `$env/static/public` is deprecated, use `$app/env/public` instead
+[90m│[39m  https://svelte.dev/e/kit/env_module_deprecated
+[90m│[39m  [43mVite[49m [optimizer] bundling dependencies...
+[90m│[39m  [43mVite[49m [32mdependencies optimized: [33m@storybook/sveltekit, lucene,[39m
+[90m│[39m  [33mmarked-gfm-heading-id, marked, msw, pdfjs-dist/legacy/build/pdf.mjs,[39m
+[90m│[39m  [33msanitize-html, svelte-octicons, virtua/svelte[32m[39m
+[90m│[39m  [43mVite[49m [32moptimized dependencies changed. reloading[39m
+[90m│[39m
+[31m■[39m  [43mVite[49m [2m[console.error] [22mTypeError: Failed to fetch dynamically imported
+[90m│[39m  module:
+[90m│[39m  http://localhost:6006/src/lib/components/viewer/stories/Search.stories.svelte
+[90m│[39m
+[33m▲[39m  [43mVite[49m [2m[console.warn] [22m[sveltekit] env_module_deprecated
+[90m│[39m  `$env/static/public` is deprecated, use `$app/env/public` instead
+[90m│[39m  https://svelte.dev/e/kit/env_module_deprecated
+[90m│[39m  [43mVite[49m [optimizer] bundling dependencies...
+[90m│[39m  [43mVite[49m [optimizer] bundling dependencies...
+[90m│[39m
+[31m■[39m  [43mVite[49m [2m[console.error] [22mError
+[90m│[39m  at BaseExceptionClosure
+[90m│[39m  (http://localhost:6006/node_modules/.cache/storybook/11.0.0-beta.3/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/pdfjs-dist_legacy_build_pdf__mjs.js?v=e4b57385:3503:44)
+[90m│[39m  at
+[90m│[39m  http://localhost:6006/node_modules/.cache/storybook/11.0.0-beta.3/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/pdfjs-dist_legacy_build_pdf__mjs.js?v=e4b57385:3506:2
+[90m│[39m
+[31m■[39m  [43mVite[49m [31m[Unhandled rejection] [1mUnknownErrorException[22m: Failed to fetch
+[90m│[39m  [39m> BaseExceptionClosure
+[90m│[39m  node_modules/pdfjs-dist/legacy/build/pdf.mjs:5321:28
+[90m│[39m  > node_modules/pdfjs-dist/legacy/build/pdf.mjs:5324:2
+
+[90m│[39m  [43mVite[49m [32mdependencies optimized: [33m@floating-ui/dom, svelecte,[39m
+[90m│[39m  [33msvelte-octicons/lib/X16.svelte[32m[39m
+[90m│[39m  [43mVite[49m [32moptimized dependencies changed. reloading[39m
+[90m│[39m
+[33m▲[39m  [43mVite[49m [2m[console.warn] [22m[sveltekit] env_module_deprecated
+[90m│[39m  `$env/static/public` is deprecated, use `$app/env/public` instead
+[90m│[39m  https://svelte.dev/e/kit/env_module_deprecated
+[90m│[39m
+[33m▲[39m  [43mVite[49m [2m[console.warn] [22m[sveltekit] env_module_deprecated
+[90m│[39m  `$env/static/public` is deprecated, use `$app/env/public` instead
+[90m│[39m  https://svelte.dev/e/kit/env_module_deprecated
+[90m│[39m
+[33m▲[39m  [43mVite[49m [2m[console.warn] [22m[sveltekit] app_environment_deprecated
+[90m│[39m  `$app/environment` is deprecated, use `$app/env` instead
+[90m│[39m  https://svelte.dev/e/kit/app_environment_deprecated
+[90m│[39m
+[31m■[39m  [43mVite[49m [2m[console.error] [22mError
+[90m│[39m  at BaseExceptionClosure
+[90m│[39m  (http://localhost:6006/node_modules/.cache/storybook/11.0.0-beta.3/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/pdfjs-dist_legacy_build_pdf__mjs.js?v=a468e295:3503:44)
+[90m│[39m  at
+[90m│[39m  http://localhost:6006/node_modules/.cache/storybook/11.0.0-beta.3/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/pdfjs-dist_legacy_build_pdf__mjs.js?v=a468e295:3506:2
+[90m│[39m
+[31m■[39m  [43mVite[49m [31m[Unhandled rejection] [1mUnknownErrorException[22m: Failed to fetch
+[90m│[39m  [39m> BaseExceptionClosure
+[90m│[39m  node_modules/pdfjs-dist/legacy/build/pdf.mjs:5321:28
+[90m│[39m  > node_modules/pdfjs-dist/legacy/build/pdf.mjs:5324:2
+
+[90m│[39m
+[31m■[39m  [43mVite[49m [2m[console.error] [22mError
+[90m│[39m  at BaseExceptionClosure
+[90m│[39m  (http://localhost:6006/node_modules/.cache/storybook/11.0.0-beta.3/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/pdfjs-dist_legacy_build_pdf__mjs.js?v=a468e295:3503:44)
+[90m│[39m  at
+[90m│[39m  http://localhost:6006/node_modules/.cache/storybook/11.0.0-beta.3/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/pdfjs-dist_legacy_build_pdf__mjs.js?v=a468e295:3506:2
+[90m│[39m
+[31m■[39m  [43mVite[49m [31m[Unhandled rejection] [1mUnknownErrorException[22m: Failed to fetch
+[90m│[39m  [39m> BaseExceptionClosure
+[90m│[39m  node_modules/pdfjs-dist/legacy/build/pdf.mjs:5321:28
+[90m│[39m  > node_modules/pdfjs-dist/legacy/build/pdf.mjs:5324:2
+
+[90m│[39m  [43mVite[49m [32mhmr update [39m[2m virtual:/@storybook/builder-vite/vite-app.js[22m
+[90m│[39m  [43mVite[49m [32mhmr update[39m
+[90m│[39m  [32m[39m[2m virtual:/@storybook/builder-vite/project-annotations.js[22m
+[90m│[39m
+[31m■[39m  [43mVite[49m [31mInternal server error: module_removed_lib
+[90m│[39m  `$lib` has been removed. Use `#lib` instead:
+[90m│[39m  https://svelte.dev/docs/kit/$lib. To keep using `$lib`, add `alias: {
+[90m│[39m  '$lib': 'src/lib' }` to your SvelteKit config.
+[90m│[39m  https://svelte.dev/e/kit/module_removed_lib[39m
+[90m│[39m  Plugin: [35mvite:import-analysis[39m
+[90m│[39m  File: [36m./.storybook/preview.ts[39m:4:7
+[90m│[39m  [33m1  |  import "@/style/kit.css";
+[90m│[39m  2  |  import "$lib/i18n/index.js";
+[90m│[39m  |          ^
+[90m│[39m  3  |  import { mswLoader } from "msw-storybook-addon/csf3";
+[90m│[39m  4  |  import DocumentQueryDecorator from
+[90m│[39m  "$lib/components/storybook/DocumentQueryDecorator.svelte";[39m

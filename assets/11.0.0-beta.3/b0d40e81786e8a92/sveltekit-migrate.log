@@ -1,0 +1,40 @@
+
+HINT: Run "sv --help" to get the full list of commands, add-ons, and examples to one-shot and skip interactive prompts.
+┌  Welcome to the Svelte CLI! (v1.5.0)
+│
+◇  Migration steps ────────────────────────────────────────────────────────────╮
+│                                                                              │
+│  - package-json (Update package.json to be compatible with SvelteKit 3.0)    │
+│  - tsconfig (Extend the generated $app/tsconfig instead of                   │
+│  .svelte-kit/tsconfig.json)                                                  │
+│  - svelte-config (Migrate svelte.config.* to vite.config.*)                  │
+│  - environment (Migrate to explicit environment variables ($app/env))        │
+│  - paths (Migrate deprecated $app/paths APIs and path types)                 │
+│  - external-redirects (Opt external redirects into the new redirect          │
+│  behavior)                                                                   │
+│  - shallow-routing (Migrate shallow routing to goto())                       │
+│  - params (Consolidate parameter matchers into src/params.js or              │
+│  src/params.ts)                                                              │
+│  - imports (Move SvelteKit APIs to their new modules)                        │
+│  - lib-alias (Replace the $lib alias with #lib subpath imports)              │
+│  - app-state (Migrate from "$app/stores" to "$app/state")                    │
+│  - collect-migration-instructions (Collect instructions for non-automated    │
+│  migration tasks; creates MIGRATION_TASKS.md whose instructions you should   │
+│  follow to complete the migration)                                           │
+│                                                                              │
+├──────────────────────────────────────────────────────────────────────────────╯
+[?25l│
+◒  4/12: environment[1G[J◐  5/12: paths[1G[J◓  7/12: shallow-routing[1G[J◑  8/12: params[1G[J◒  10/12: lib-alias[1G[J◐  11/12: app-state[1G[J◇  All tasks applied successfully!
+[?25h[?25l│
+◒  Running npm run format[1G[J◐  Running npm run format[1G[J◓  Running npm run format[1G[J◑  Running npm run format[1G[J◒  Running npm run format[1G[J◐  Running npm run format[1G[J◓  Running npm run format[1G[J◑  Running npm run format[1G[J◒  Running npm run format.[1G[J◐  Running npm run format.[1G[J◓  Running npm run format.[1G[J◑  Running npm run format.[1G[J◒  Running npm run format.[1G[J◐  Running npm run format.[1G[J◓  Running npm run format.[1G[J◑  Running npm run format.[1G[J◒  Running npm run format..[1G[J◐  Running npm run format..[1G[J◓  Running npm run format..[1G[J◑  Running npm run format..[1G[J◒  Running npm run format..[1G[J◐  Running npm run format..[1G[J◓  Running npm run format..[1G[J◑  Running npm run format..[1G[J◒  Running npm run format...[1G[J◐  Running npm run format...[1G[J◓  Running npm run format...[1G[J◑  Running npm run format...[1G[J◒  Running npm run format...[1G[J◐  Running npm run format...[1G[J◓  Running npm run format...[1G[J◑  Running npm run format...[1G[J◒  Running npm run format...[1G[J◐  Running npm run format[1G[J◓  Running npm run format[1G[J◑  Running npm run format[1G[J◒  Running npm run format[1G[J◐  Running npm run format[1G[J◓  Running npm run format[1G[J◑  Running npm run format[1G[J◒  Running npm run format[1G[J◐  Running npm run format.[1G[J◓  Running npm run format.[1G[J◑  Running npm run format.[1G[J◒  Running npm run format.[1G[J◐  Running npm run format.[1G[J◓  Running npm run format.[1G[J◑  Running npm run format.[1G[J◒  Running npm run format.[1G[J◐  Running npm run format..[1G[J◓  Running npm run format..[1G[J◑  Running npm run format..[1G[J◒  Running npm run format..[1G[J◐  Running npm run format..[1G[J◓  Running npm run format..[1G[J◑  Running npm run format..[1G[J◒  Running npm run format..[1G[J◐  Running npm run format...[1G[J◓  Running npm run format...[1G[J◑  Running npm run format...[1G[J◒  Running npm run format...[1G[J◐  Running npm run format...[1G[J◓  Running npm run format...[1G[J◑  Running npm run format...[1G[J◒  Running npm run format...[1G[J◐  Running npm run format...[1G[J◓  Running npm run format[1G[J◑  Running npm run format[1G[J◒  Running npm run format[1G[J◐  Running npm run format[1G[J◓  Running npm run format[1G[J◑  Running npm run format[1G[J◒  Running npm run format[1G[J◐  Running npm run format[1G[J◓  Running npm run format.[1G[J◑  Running npm run format.[1G[J◒  Running npm run format.[1G[J◐  Running npm run format.[1G[J◓  Running npm run format.[1G[J◑  Running npm run format.[1G[J◒  Running npm run format.[1G[J◐  Running npm run format.[1G[J◓  Running npm run format..[1G[J◑  Running npm run format..[1G[J◒  Running npm run format..[1G[J◐  Running npm run format..[1G[J◓  Running npm run format..[1G[J◑  Running npm run format..[1G[J◒  Running npm run format..[1G[J◐  Running npm run format..[1G[J◓  Running npm run format...[1G[J◑  Running npm run format...[1G[J◒  Running npm run format...[1G[J◐  Running npm run format...[1G[J◓  Running npm run format...[1G[J◑  Running npm run format...[1G[J◒  Running npm run format...[1G[J◐  Running npm run format...[1G[J◓  Running npm run format...[1G[J◑  Running npm run format[1G[J◒  Running npm run format[1G[J◐  Running npm run format[1G[J◓  Running npm run format[1G[J◑  Running npm run format[1G[J◒  Running npm run format[1G[J◐  Running npm run format[1G[J◓  Running npm run format[1G[J◑  Running npm run format.[1G[J◒  Running npm run format.[1G[J◐  Running npm run format.[1G[J◓  Running npm run format.[1G[J◑  Running npm run format.[1G[J◒  Running npm run format.[1G[J◐  Running npm run format.[1G[J◓  Running npm run format.[1G[J◑  Running npm run format..[1G[J◒  Running npm run format..[1G[J◐  Running npm run format..[1G[J◓  Running npm run format..[1G[J◑  Running npm run format..[1G[J◒  Running npm run format..[1G[J◐  Running npm run format..[1G[J◓  Running npm run format..[1G[J◑  Running npm run format...[1G[J◒  Running npm run format...[1G[J◐  Running npm run format...[1G[J◓  Running npm run format...[1G[J◑  Running npm run format...[1G[J◒  Running npm run format...[1G[J◐  Running npm run format...[1G[J◓  Running npm run format...[1G[J◑  Running npm run format...[1G[J◒  Running npm run format[1G[J◐  Running npm run format[1G[J◓  Running npm run format[1G[J◑  Running npm run format[1G[J◒  Running npm run format[1G[J◐  Running npm run format[1G[J◓  Running npm run format[1G[J◑  Running npm run format[1G[J◒  Running npm run format.[1G[J◇  Successfully formatted files
+[?25h│
+◇  Next steps ──────────────────────────────────╮
+│                                               │
+│  4 comments to review.                        │
+│  Search for @migration-task to resolve them.  │
+│                                               │
+├───────────────────────────────────────────────╯
+│
+└  You're all set!
+
+exit 0

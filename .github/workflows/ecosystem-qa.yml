@@ -681,7 +681,7 @@ jobs:
           ECOSYSTEM_QA_PUSH_TOKEN_STORYBOOK_TMP: ${{ secrets.ECOSYSTEM_QA_PUSH_TOKEN_STORYBOOK_TMP }}
         run: >-
           node ecosystem-qa/file.ts --proposals ecosystem-qa/results/qa-proposals/proposals.json
-          --repo "$GITHUB_REPOSITORY"
+          --repo "$GITHUB_REPOSITORY" --filed "$RUNNER_TEMP/filed.json"
 
       - name: Name the filed issues in the tracking discussion
         if: ${{ !cancelled() && needs.plan.outputs.plan != '' }}
@@ -700,7 +700,8 @@ jobs:
           --proposals ecosystem-qa/results/qa-proposals/proposals.json
           --plan "$QA_PLAN" --batch "$QA_BATCH" --version "$QA_VERSION" --planned "$QA_PLANNED"
           --runs "${QA_FROM_RUNS:-$GITHUB_RUN_ID}" --repo "$GITHUB_REPOSITORY"
-          ${QA_CAP_USD:+--cap-usd "$QA_CAP_USD"} --filing "$QA_FILING" --no-chain
+          ${QA_CAP_USD:+--cap-usd "$QA_CAP_USD"} --filing "$QA_FILING" --filed "$RUNNER_TEMP/filed.json"
+          --no-chain
 
   track:
     name: Report the batch in its tracking discussion

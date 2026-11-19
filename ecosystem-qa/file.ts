@@ -8,7 +8,9 @@ import { z } from 'zod';
 
 import {
   ASSETS_BRANCH,
+  createdIssue,
   describeStep,
+  filedIssues,
   missingPrerequisites,
   planFiling,
   renderDry,
@@ -34,7 +36,7 @@ import {
   type Collect,
 } from './lib/tracking.ts';
 
-const HELP = `Usage: node ecosystem-qa/file.ts --proposals <proposals.json> --repo <owner/name> [--dry [--version <version>] [--from-runs <run id>[,...]] [--run-id <run id>] [--groups <groups.json document>] [--plan <file> --batch <n> --planned <matrix>]]
+const HELP = `Usage: node ecosystem-qa/file.ts --proposals <proposals.json> --repo <owner/name> [--filed <filed.json>] [--dry [--version <version>] [--from-runs <run id>[,...]] [--run-id <run id>] [--groups <groups.json document>] [--plan <file> --batch <n> --planned <matrix>]]
 
 --dry writes each proposal to $GITHUB_STEP_SUMMARY (stdout when unset) and changes nothing. It
 reads the internal-qa issues with gh, so it shows what filing now would do, skips included.
@@ -47,7 +49,8 @@ Without --dry it checks that the milestones and labels exist, then for each prop
 cycle branch to the catalog repo with the push token of that repo's org, pushes evidence to the
 qa-assets branch of --repo and creates the issue or comment with GH_TOKEN. A failed proposal does
 not stop the others; the filed and failed table goes to the Step Summary and the exit code is 1 if
-any failed.
+any failed. --filed writes the issue that each issue proposal created or was found filed as, for
+track.ts --filed.
 An issue counts as already filed only while it is open and carries the internal-qa label.
 Rerunning is safe: an issue it already created, an identical comment and pushed evidence are
 skipped. When an open issue with one of a proposal's fingerprints appeared after the collect, what
@@ -69,6 +72,7 @@ const { values } = parseArgs({
     plan: { type: 'string' },
     batch: { type: 'string' },
     planned: { type: 'string' },
+    filed: { type: 'string' },
     help: { type: 'boolean', default: false },
   },
 });
@@ -242,12 +246,10 @@ const knownIssue = (proposal: Proposal, issues: QaIssue[]): KnownIssue => {
 };
 
 const fileProposal = (proposal: Proposal, issues: QaIssue[]): FilingOutcome => {
-  const steps = planFiling(proposal, {
-    repo,
-    evidenceLinks: 'assets',
-    ...knownIssue(proposal, issues),
-  });
+  const known = knownIssue(proposal, issues);
+  const steps = planFiling(proposal, { repo, evidenceLinks: 'assets', ...known });
   let detail = '';
+  let issue = known.filedAs;
   for (const step of steps) {
     console.log(`${proposal.fingerprint}: ${describeStep(step, repo)}`);
     try {
@@ -255,8 +257,11 @@ const fileProposal = (proposal: Proposal, issues: QaIssue[]): FilingOutcome => {
     } catch (error) {
       throw new Error(`${step.kind}: ${firstLine(error)}`, { cause: error });
     }
+    if (step.kind === 'create-issue') {
+      issue = createdIssue(detail);
+    }
   }
-  return { proposal, state: steps[0]?.kind === 'skip' ? 'skipped' : 'done', detail };
+  return { proposal, state: steps[0]?.kind === 'skip' ? 'skipped' : 'done', detail, issue };
 };
 
 const checkPrerequisites = () => {
@@ -337,6 +342,9 @@ if (values.dry) {
       return { proposal, state: 'failed', detail: firstLine(error) };
     }
   });
+  if (values.filed) {
+    writeFileSync(values.filed, JSON.stringify(filedIssues(outcomes)));
+  }
   writeStepSummary(renderFilingReport(outcomes));
   process.exitCode = outcomes.some((outcome) => outcome.state === 'failed') ? 1 : 0;
 }

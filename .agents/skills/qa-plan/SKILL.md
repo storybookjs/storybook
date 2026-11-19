@@ -1,6 +1,6 @@
 ---
 name: qa-plan
-description: Write the QA plan of a Storybook release line for the ecosystem QA sweep, from the PRs merged into next since the last minor, and open it as a PR against qa/plans for a person to review. Use when asked to write, redo, or update a QA plan, or for /qa-plan.
+description: Write the QA plan of a Storybook release line for the ecosystem QA sweep, from the PRs merged into next since the last minor, and open it as a PR against qa/plans for a person to review. Use when asked to write or redo a QA plan, or for /qa-plan.
 allowed-tools: Bash, Read, Write, Edit
 metadata:
   internal: true
@@ -12,6 +12,7 @@ A QA plan decides, for every PR of a release window, what the ecosystem QA sweep
 The scripts collect the window, write the plan file, and check it.
 You decide every row, write the entries, and open the plan PR.
 A person reviews the plan in one sitting and merges it, and that merge starts the sweep.
+To change a plan that exists, follow `.agents/skills/qa-plan-iterate/SKILL.md` instead.
 
 `ecosystem-qa/README.md`, section "Write a QA plan", describes the format and every rule that `check` enforces.
 Read that section once before step 1.
@@ -267,23 +268,3 @@ The body holds:
 The body names no PR or issue, neither as `#number` nor as a link, because every reference posts a mention on that PR and the plan holds hundreds.
 Never merge the PR. Merging it starts the sweep, so only the reviewer merges it.
 
-## Update a plan
-
-A plan changes when a newer prerelease moves the end of its window, or when the reviewer asks for other decisions.
-The draft is not in the repository, so make it again from the plan and the window it was rendered from.
-Take both from the branch of the open plan PR, or from `qa/plans` once the plan is merged:
-
-```bash
-mkdir -p /tmp/qa-plan-11.0
-git fetch origin qa/plans
-git show origin/qa/plans:ecosystem-qa/plans/11.0.md > /tmp/qa-plan-11.0/old.md
-git show origin/qa/plans:ecosystem-qa/plans/11.0.window.json > /tmp/qa-plan-11.0/old.window.json
-node ecosystem-qa/qa-plan.ts draft /tmp/qa-plan-11.0/old.md --window /tmp/qa-plan-11.0/old.window.json --out /tmp/qa-plan-11.0/draft.json
-```
-
-`draft` exits 1 when the plan is not what `render` writes from that window, which means someone edited it by hand. Then `check --window` names each row that differs from the window. When it passes all the same, the edit is in a part that `render` sets and `check` accepts at any value, such as `Entries per run`, which `render` writes as 4, the `Version` cell, or the order of the rows: set it back to what `render` writes.
-For a new end of the window, run step 1 with its tag, then render the draft on the new window.
-`render` names every PR that the draft decides or groups and that the new window holds in another role, and `check` names every new PR without a decision. Decide those in the draft, change what the reviewer asked for, and go on with step 6.
-
-Commit the new plan and window on the branch of the open plan PR, and push to it, so the review goes on in that PR. Replace the output of `check` and the counts in its body.
-When the plan is merged already, open a new PR from `qa/plans` as in step 7, with the title `Ecosystem QA: Update the plan for Storybook <line>`.

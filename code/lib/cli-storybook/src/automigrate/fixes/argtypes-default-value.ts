@@ -1,4 +1,11 @@
-import type { CsfObject, ESTree as E } from 'storybook/internal/csf-tools';
+import {
+  type CsfObject,
+  type ESTree as E,
+  type ESTreeNode,
+  type ScopeInfo,
+  staticKey,
+  walk,
+} from 'storybook/internal/csf-tools';
 
 import picocolors from 'picocolors';
 
@@ -15,7 +22,29 @@ const argName = (property: E.ObjectProperty): string | undefined => {
   return undefined;
 };
 
-const strip = (object: CsfObject) => {
+/**
+ * Whether an expression has a `defaultValue` key outside `table`, following names to the
+ * module-level constants of the file. One that another file declares is out of reach.
+ */
+const showsDefaultValue = (node: ESTreeNode, scopes: ScopeInfo, seen = new Set<string>()) => {
+  let found = false;
+  walk(node, (child) => {
+    const key = staticKey(child);
+    found ||= key === 'defaultValue';
+    if (found || key === 'table') {
+      return false;
+    }
+    const name = child.type === 'Identifier' ? child.name : undefined;
+    const binding = name && !seen.has(name) ? scopes.program.lookup(name) : undefined;
+    if (binding?.kind === 'const' && binding.node.type === 'VariableDeclarator') {
+      seen.add(binding.name);
+      found = !!binding.node.init && showsDefaultValue(binding.node.init, scopes, seen);
+    }
+  });
+  return found;
+};
+
+const strip = (object: CsfObject, scopes: ScopeInfo) => {
   const argTypes = readForEdit(object, ['argTypes']);
   if (argTypes?.type !== 'ObjectExpression') {
     return;
@@ -25,8 +54,18 @@ const strip = (object: CsfObject) => {
       continue;
     }
     const name = argName(property);
-    if (name) {
-      object.remove(['argTypes', name, 'defaultValue']);
+    if (!name) {
+      continue;
+    }
+    const path = ['argTypes', name, 'defaultValue'];
+    const found = object.inspect(path);
+    // An arg the editor cannot read, such as `intl: intlArgType(...)`, fails only for a
+    // defaultValue it shows.
+    if (
+      found.kind === 'value' ||
+      (found.kind === 'unreadable' && showsDefaultValue(property.value, scopes))
+    ) {
+      object.remove(path);
     }
   }
 };
@@ -42,9 +81,12 @@ export const argtypesDefaultValue: Fix = {
   transform: () => [
     {
       filter: { kind: ['preview', 'story'], code: 'defaultValue' },
-      editConfig: strip,
+      editConfig: (config) => strip(config, config.editor.scopes),
       editCsf: (csf) => {
-        csf.objects().forEach(strip);
+        // `filter.code` also matches a read such as `args: { dir: dir.defaultValue }`.
+        if (showsDefaultValue(csf.editor.program, csf.editor.scopes)) {
+          csf.objects().forEach((object) => strip(object, csf.editor.scopes));
+        }
       },
     },
   ],

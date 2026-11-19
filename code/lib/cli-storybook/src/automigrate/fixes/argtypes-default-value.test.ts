@@ -249,6 +249,89 @@ describe('argtypes-default-value', () => {
     expect(result.story).toBe(story);
   });
 
+  it('skips args it cannot read when they show no defaultValue', async () => {
+    const result = await migrate({
+      story: [
+        "import { HiddenArgType, intlArgType, PaletteArgType } from './helpers';",
+        "const translations = { label: 'Label' };",
+        'export default {',
+        '  argTypes: {',
+        "    intl: intlArgType(translations, 'Label'),",
+        "    size: { defaultValue: 'M', table: { defaultValue: { summary: 'M' } } },",
+        '  },',
+        '};',
+        'export const Primary = {',
+        '  argTypes: {',
+        "    label: { table: { defaultValue: { summary: 'Hi' } } },",
+        '    prefix: HiddenArgType,',
+        '    ...PaletteArgType,',
+        '  },',
+        '};',
+      ].join('\n'),
+    });
+
+    expect(result.failures).toEqual([]);
+    expect(result.story).not.toContain("defaultValue: 'M'");
+    expect(result.story).toContain("intl: intlArgType(translations, 'Label')");
+    expect(result.story).toContain("summary: 'Hi'");
+  });
+
+  it('fails an arg it cannot read when it shows a defaultValue', async () => {
+    const story = [
+      "import { shared } from './shared';",
+      "export default { argTypes: { label: { defaultValue: 'A' }, ...shared } };",
+    ].join('\n');
+    const result = await migrate({ story });
+
+    expect(result.failures).toEqual([
+      { file: storyPath, kind: 'story', message: expect.stringContaining('argTypes.label') },
+    ]);
+    expect(result.story).toBe(story);
+  });
+
+  it('fails an arg it cannot read when a local constant shows a defaultValue', async () => {
+    for (const arg of ['make(base)', "{ ...base, control: 'text' }"]) {
+      const story = [
+        "const base = { defaultValue: 'A' };",
+        `export default { argTypes: { label: ${arg} } };`,
+      ].join('\n');
+      const result = await migrate({ story });
+
+      expect(result.failures).toEqual([
+        { file: storyPath, kind: 'story', message: expect.stringContaining('argTypes.label') },
+      ]);
+      expect(result.story).toBe(story);
+    }
+  });
+
+  it('skips a file that only reads a defaultValue', async () => {
+    const story = [
+      "import { shared } from './shared';",
+      "import { dir } from './resources';",
+      'export default { ...shared, args: { dir: dir.defaultValue } };',
+      'export const Primary = { args: { dir: dir.defaultValue }, ...shared };',
+    ].join('\n');
+    const result = await migrate({ story });
+
+    expect(result.failures).toEqual([]);
+    expect(result.story).toBe(story);
+  });
+
+  it('skips a story it cannot read when it shows no defaultValue', async () => {
+    const story = [
+      "import { dir } from './resources';",
+      "export default { args: { dir: dir.defaultValue }, argTypes: { dir: { control: 'select' } } };",
+      'function createVariantsStory(layout: string): () => string {',
+      "  return () => `<tile-group layout='${layout}'></tile-group>`;",
+      '}',
+      "export const Horizontal = createVariantsStory('horizontal');",
+    ].join('\n');
+    const result = await migrate({ story });
+
+    expect(result.failures).toEqual([]);
+    expect(result.story).toBe(story);
+  });
+
   it('does not edit an MDX story', async () => {
     const docsPath = resolve('src/Intro.mdx');
     const source = '<Meta argTypes={{ value: { defaultValue: 0 } }} />';

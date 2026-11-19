@@ -31,6 +31,8 @@ export const InteractiveTooltipWrapper: React.FC<{
     return shortcutToHumanString(shortcut);
   }, [shortcut]);
 
+  const ownDescription = children.props['aria-describedby'];
+
   // A shortcut alone still warrants a tooltip: buttons with visible text pass no `tooltip`
   // but their shortcut is only discoverable here.
   return tooltip || shortcutLabel ? (
@@ -39,10 +41,8 @@ export const InteractiveTooltipWrapper: React.FC<{
       tooltip={<TooltipNote note={tooltip} shortcut={shortcutLabel} />}
       disabled={disableAllTooltips}
     >
-      {/* @ts-expect-error: Only null prevents React Aria from describing the button with redundant tooltip text. A description the trigger already carries is kept. */}
-      {React.cloneElement(children, {
-        'aria-describedby': children.props['aria-describedby'] ?? null,
-      })}
+      {/* @ts-expect-error: Only null prevents React Aria from describing the button with redundant tooltip text. */}
+      {React.cloneElement(children, { 'aria-describedby': ownDescription ?? null })}
     </TooltipProvider>
   ) : (
     <>{children}</>

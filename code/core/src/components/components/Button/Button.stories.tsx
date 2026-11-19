@@ -2,7 +2,7 @@ import React from 'react';
 
 import { FaceHappyIcon } from '@storybook/icons';
 
-import { expect, fn, screen, waitFor, within } from 'storybook/test';
+import { expect, fn, screen, waitFor } from 'storybook/test';
 import { styled } from 'storybook/theming/emotion';
 
 import preview from '../../../../../.storybook/preview.tsx';
@@ -407,19 +407,19 @@ export const AriaDescription = meta.story({
     ariaDescription: 'Clicking this button allegedly makes you happy.',
     children: <FaceHappyIcon />,
   },
-  play: async ({ canvasElement, step }) => {
-    const canvas = within(canvasElement);
+  play: async ({ args, canvas, canvasElement, userEvent }) => {
+    const button = canvas.getByRole('button', { name: 'Button' });
+    await expect(button).toHaveAccessibleDescription(args.ariaDescription!);
 
-    await step('preserve aria-describedby alongside the tooltip wrapper', async () => {
-      const button = canvas.getByRole('button', { name: 'Button' });
-      const describedById = button.getAttribute('aria-describedby');
-      const description = describedById ? document.getElementById(describedById) : null;
-
-      await expect(describedById).toBeTruthy();
-      await expect(description?.textContent).toBe(
-        'Clicking this button allegedly makes you happy.'
-      );
-    });
+    await userEvent.keyboard('{Escape}');
+    // React Aria requires pointer modality before the trigger's pointerenter event.
+    await userEvent.hover(canvasElement);
+    await userEvent.hover(button);
+    await expect(await screen.findByRole('tooltip')).toHaveTextContent('Button');
+    // The open tooltip neither replaces the description nor adds its text to it.
+    await expect(button).toHaveAccessibleDescription(args.ariaDescription!);
+    await userEvent.unhover(button);
+    await waitFor(() => expect(screen.queryByRole('tooltip')).not.toBeInTheDocument());
   },
 });
 
@@ -429,22 +429,14 @@ export const AriaDescriptionWithoutTooltip = meta.story({
     ariaDescription: 'Clicking this button allegedly makes you happy.',
     children: 'Button',
   },
-  play: async ({ canvasElement, step }) => {
-    const canvas = within(canvasElement);
-
-    await step('apply aria-describedby even when no tooltip is rendered', async () => {
-      const button = canvas.getByRole('button', { name: 'Button' });
-      const describedById = button.getAttribute('aria-describedby');
-      const description = describedById ? document.getElementById(describedById) : null;
-
-      await expect(describedById).toBeTruthy();
-      await expect(description?.textContent).toBe(
-        'Clicking this button allegedly makes you happy.'
-      );
-    });
+  play: async ({ args, canvas }) => {
+    await expect(canvas.getByRole('button', { name: 'Button' })).toHaveAccessibleDescription(
+      args.ariaDescription!
+    );
   },
 });
 
+/** Buttons that share a description text each get their own description element. */
 export const SharedAriaDescription = meta.story({
   render: () => (
     <Row>
@@ -456,23 +448,15 @@ export const SharedAriaDescription = meta.story({
       </Button>
     </Row>
   ),
-  play: async ({ canvasElement, step }) => {
-    const canvas = within(canvasElement);
+  play: async ({ canvas }) => {
+    const first = canvas.getByRole('button', { name: 'First button' });
+    const second = canvas.getByRole('button', { name: 'Second button' });
 
-    await step('generate unique describedby IDs for repeated descriptions', async () => {
-      const firstButton = canvas.getByRole('button', {
-        name: 'First button',
-      });
-      const secondButton = canvas.getByRole('button', {
-        name: 'Second button',
-      });
-      const firstDescriptionId = firstButton.getAttribute('aria-describedby');
-      const secondDescriptionId = secondButton.getAttribute('aria-describedby');
-
-      await expect(firstDescriptionId).toBeTruthy();
-      await expect(secondDescriptionId).toBeTruthy();
-      await expect(firstDescriptionId).not.toBe(secondDescriptionId);
-    });
+    await expect(first).toHaveAccessibleDescription('Shared description');
+    await expect(second).toHaveAccessibleDescription('Shared description');
+    await expect(first.getAttribute('aria-describedby')).not.toBe(
+      second.getAttribute('aria-describedby')
+    );
   },
 });
 

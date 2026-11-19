@@ -27,6 +27,7 @@ To know what a run does before and around your steps, read `ecosystem-qa/prompts
   - **Entries.** A PR becomes an entry when an agent can show its effect on a real project of the catalog, as that project is at its pinned commit, with a command, a fetch of a URL, a screenshot, or a click and typed text in the browser.
   - **`manual`.** A change that a person has to test because the sweep cannot: it shows only on Windows or macOS, because the sweep runs on Linux, only in a new project made with `storybook init`, only in a Yarn 1 project, only in a browser's profiler, or no repo of the catalog has what it needs. The decision holds the check a person does and one line on why the sweep cannot test it.
   - **`none`.** A change that needs no QA: this repository's CI, build, tests, sandboxes, or documentation site, an internal tool or eval, or a lockfile bump that no published package ships. The decision holds a reason of one line.
+  - **A choice.** When a person takes out of the tests a change that the sweep could test, the decision says that it is a choice, names who chose by role, and gives their reason in their own words, whatever the order of preference below says. A manual check takes the why `a choice of the release lead, which the sweep could test`, with the role of whoever chose, so that `manual` prints these checks in a section of their own, and the check ends with the reason, as in `The release lead took it out of the sweep: <reason>.` A decision of no QA reads `none: a choice of the release lead, which the sweep could test: <reason>`. A choice without a stated reason is asked for, never made up, and never dressed up as something the sweep cannot do.
   - `skip` is no decision any more, and `render` and `check` refuse it.
 - **Order of preference.** Take the first of these that fits a change:
   1. A repo of the plan has the state at its pinned commit: a normal entry.
@@ -199,6 +200,8 @@ The check and its reason name no person, PR, or issue, in a code span either, be
 - no repo of the catalog has the state it acts on
 - needs a timing or a race that no run can arrange
 - only a person can judge what it shows
+- a choice of the release lead, which the sweep could test, with the role of whoever chose, as the rule "A choice" says
+
 A step in the browser follows these limits, which a real run in the sandbox proved:
 
 - It may open a Storybook URL on `localhost`, click a button, a tab, a sidebar item, or a control by its visible name or label, type into a field, press keys, read text from the manager and from the preview iframe, and take screenshots.

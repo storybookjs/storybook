@@ -28,6 +28,8 @@ import {
 import { discoveredEntries, parsePlan, probeCopyDir } from './qa-plan.ts';
 import { RunResultFile, type CatalogEntry } from './schema.ts';
 
+type RunRequest = RunResultFile['request'];
+
 const QUIET: ExecFileSyncOptions = { stdio: ['ignore', 'pipe', 'inherit'] };
 const RAW = ['-H', 'Accept: application/vnd.github.raw'];
 
@@ -87,6 +89,9 @@ const reproSteps = (body: string): string[] => {
 const planEntryLines = (body: string): string[] =>
   body.split('\n').filter((line) => line.startsWith('Plan entry `'));
 
+const planSlugs = (body: string): string[] =>
+  planEntryLines(body).flatMap((line) => /^Plan entry `([^`]+)`/.exec(line)?.[1] ?? []);
+
 const probeParagraph = (body: string): string | undefined => {
   const [first = ''] = body.split('\n');
   return first.startsWith('This finding comes from a probe') ? first : undefined;
@@ -111,20 +116,92 @@ const resultDirsIn = (base: string, id: string, { os, engine }: Sighting): strin
   return [cell, ...parts].filter((dir) => existsSync(join(dir, 'result.json')));
 };
 
-// The checks of a result whose findings carry one of the issue's fingerprints.
-const matchingChecks = (dir: string, entry: CatalogEntry, fingerprints: string[]): string[] => {
-  let record: unknown;
+const readResult = (dir: string): RunResultFile | undefined => {
   try {
-    record = JSON.parse(readFileSync(join(dir, 'result.json'), 'utf8'));
+    const parsed = RunResultFile.safeParse(
+      JSON.parse(readFileSync(join(dir, 'result.json'), 'utf8'))
+    );
+    return parsed.success ? parsed.data : undefined;
   } catch {
-    return [];
+    return undefined;
   }
-  const parsed = RunResultFile.safeParse(record);
-  return parsed.success
-    ? parsed.data.findings
-        .filter((finding) => fingerprints.includes(fingerprint(finding, entry.class)))
-        .map((finding) => finding.checkId)
-    : [];
+};
+
+// The checks of a result whose findings carry one of the issue's fingerprints.
+const matchingChecks = (
+  result: RunResultFile | undefined,
+  entry: CatalogEntry,
+  fingerprints: string[]
+): string[] =>
+  (result?.findings ?? [])
+    .filter((finding) => fingerprints.includes(fingerprint(finding, entry.class)))
+    .map((finding) => finding.checkId);
+
+// The agent names the evidence of a check after its id, with the dot kept or turned into a hyphen,
+// and the evidence of a plan check also after its slug alone.
+const namesOfCheck = (check: string): string[] => [
+  check,
+  check.replace('.', '-'),
+  ...(check.startsWith('plan.') ? [check.slice('plan.'.length)] : []),
+];
+
+const evidenceOrder = (dir: string, checks: string[]): string[] => {
+  const names = readdirSync(dir).map(String).sort();
+  const prefixes = checks.flatMap(namesOfCheck);
+  const leads = (name: string) =>
+    name.endsWith('-cause.md') || prefixes.some((prefix) => name.startsWith(prefix));
+  const first = names.filter(leads);
+  const rest = names.filter((name) => !leads(name));
+  return [
+    ...(first.length > 0 ? [`                first  ${first.join(', ')}`] : []),
+    ...(rest.length > 0 ? [`                then   ${rest.join(', ')}`] : []),
+  ];
+};
+
+const planEntryOf = (plan: SavedPlan, slugs: string[], repo: string): string[] =>
+  slugs.flatMap((slug) => {
+    const entry = parsePlan(plan.text).entries.find((candidate) => candidate.slug === slug);
+    const at = plan.text.split('\n').findIndex((line) => line.startsWith(`### \`${slug}\``));
+    if (!entry || at === -1) {
+      return [`  plan entry    ${plan.shown} has no entry ${slug}`];
+    }
+    const reason = entry.repos.find(({ id }) => id === repo)?.reason;
+    return [
+      `  plan entry    ${plan.shown}, line ${at + 1}: ${slug}, ${entry.title}`,
+      ...(entry.probe ? [`                Probe: ${entry.probe}`] : []),
+      ...(reason ? [`                Repo ${repo}: ${reason}`] : []),
+      ...entry.steps.map((step) => `                Step: ${step}`),
+      `                Expected: ${entry.expected}`,
+    ];
+  });
+
+const rerunLines = (request: RunRequest, plan: SavedPlan | undefined, out: string): string[] => {
+  const scope = request.plan;
+  if (scope && !plan) {
+    return [
+      `  run again     ${scope.file} at the commit of the run is unreadable, so no command can name it`,
+    ];
+  }
+  const flags = [
+    `--repo ${request.entry.id}`,
+    `--version ${request.version}`,
+    `--engine ${request.engine}`,
+    `--model ${request.model}`,
+    `--effort ${request.effort}`,
+    '--sandbox docker',
+    `--tier ${request.tier}`,
+    ...(scope && plan
+      ? [`--plan ${plan.path}`, `--batch ${scope.batch}`, `--part ${scope.part}`]
+      : []),
+    `--out ${join(out, 'before')}`,
+  ];
+  return [
+    `  run again     node ecosystem-qa/run.ts ${flags.join(' ')}`,
+    scope
+      ? `                It runs every entry of part ${scope.part} of batch ${scope.batch} again: ${scope.entries.map(({ id }) => id).join(', ')}.`
+      : `                It runs every check of the tier ${request.tier} again.`,
+    `                With --build <full SHA> in place of --version and --out ${join(out, 'after')}, it runs the build of a fix.`,
+  ];
 };
 
 const bundleLines = (bundle: string, shown: string, upstream: string): string[] => {
@@ -144,22 +221,41 @@ const bundleLines = (bundle: string, shown: string, upstream: string): string[] 
   }
 };
 
-const placeLines = (out: string, dir: string, checks: string[], upstream: string): string[] => {
+interface Shown {
+  dir: string;
+  checks: string[];
+  result: RunResultFile | undefined;
+}
+
+const placeLines = (
+  { dir, checks, result }: Shown,
+  entry: CatalogEntry,
+  slugs: string[],
+  run: string,
+  context: Context
+): string[] => {
+  const { out } = context;
   const line = (label: string, name: string) =>
     existsSync(join(dir, name)) ? [`  ${label.padEnd(12)}  ${relative(out, join(dir, name))}`] : [];
+  const scope = result?.request.plan;
+  const plan = scope ? context.planAt(run, scope.file) : undefined;
   return [
+    ...line('result', 'result.json'),
     ...line('session', 'session.jsonl'),
     ...line('agent stream', 'agent-stream.jsonl'),
     ...line('run log', 'run.log'),
     ...line('evidence', 'evidence'),
+    ...(existsSync(join(dir, 'evidence')) ? evidenceOrder(join(dir, 'evidence'), checks) : []),
     ...checks
       .filter((check) => check.startsWith('plan.'))
       .flatMap((check) =>
         line('probe added', join('evidence', probeCopyDir(check.slice('plan.'.length))))
       ),
     ...(existsSync(join(dir, 'cycle.bundle'))
-      ? bundleLines(join(dir, 'cycle.bundle'), relative(out, join(dir, 'cycle.bundle')), upstream)
+      ? bundleLines(join(dir, 'cycle.bundle'), relative(out, join(dir, 'cycle.bundle')), entry.repo)
       : []),
+    ...(plan ? planEntryOf(plan, slugs, entry.id) : []),
+    ...(result ? rerunLines(result.request, plan, out) : []),
   ];
 };
 
@@ -214,23 +310,33 @@ const artifactsOf = (repo: string, run: string): Artifact[] =>
     `repos/${repo}/actions/runs/${run}/artifacts?per_page=100`,
   ]).flatMap((page) => page.artifacts);
 
-// A discovered repo is in no catalog. Its id is in the plan of its version line at the commit that
-// the run checked out.
-const discoveredIn = (repo: string, run: string, version: string): CatalogEntry[] => {
+// A plan file as the run checked it out, saved below `out` under the name the run recorded, which is
+// the name `run.ts --plan` records again.
+interface SavedPlan {
+  path: string;
+  shown: string;
+  text: string;
+}
+
+const planOfRun = (repo: string, run: string, file: string, out: string): SavedPlan | undefined => {
   const { head_sha } = ghParse(z.object({ head_sha: z.string() }), [
     'api',
     `repos/${repo}/actions/runs/${run}`,
   ]);
+  let text: string;
   try {
-    const plan = ghText([
+    text = ghText([
       'api',
       ...RAW,
-      `repos/${repo}/contents/ecosystem-qa/plans/${versionLine(version)}.md?ref=${head_sha}`,
+      `repos/${repo}/contents/ecosystem-qa/plans/${file}?ref=${head_sha}`,
     ]);
-    return discoveredEntries(parsePlan(plan));
   } catch {
-    return [];
+    return undefined;
   }
+  const dir = join(out, 'plans', run);
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, file), text);
+  return { path: join(dir, file), shown: relative(out, join(dir, file)), text };
 };
 
 interface Context {
@@ -239,19 +345,33 @@ interface Context {
   catalog: CatalogEntry[];
   fingerprints: string[];
   artifacts: (run: string) => Artifact[];
+  planAt: (run: string, file: string) => SavedPlan | undefined;
 }
+
+// A discovered repo is in no catalog. Its id is in the plan of its version line at the commit that
+// the run checked out.
+const discoveredIn = (run: string, version: string, context: Context): CatalogEntry[] => {
+  const plan = context.planAt(run, `${versionLine(version)}.md`);
+  try {
+    return plan ? discoveredEntries(parsePlan(plan.text)) : [];
+  } catch {
+    return [];
+  }
+};
 
 interface Report {
   line: string;
   places: string[];
 }
 
-const entryOf = (sighting: Sighting, { repo, catalog }: Context): CatalogEntry | undefined => {
+const entryOf = (sighting: Sighting, context: Context): CatalogEntry | undefined => {
   const isIt = (entry: CatalogEntry) => cycleRepo(entry) === sighting.repo;
-  return catalog.find(isIt) ?? discoveredIn(repo, sighting.run, sighting.version).find(isIt);
+  return (
+    context.catalog.find(isIt) ?? discoveredIn(sighting.run, sighting.version, context).find(isIt)
+  );
 };
 
-const reportSighting = (sighting: Sighting, context: Context): Report => {
+const reportSighting = (sighting: Sighting, slugs: string[], context: Context): Report => {
   const where = `- ${sighting.version} ${sighting.repo} ${sighting.os} ${sighting.engine}, run ${sighting.run}, from ${sighting.on}`;
   const say = (line: string): Report => ({ line: `${where}: ${line}`, places: [] });
   if (sighting.run === 'unknown') {
@@ -292,9 +412,11 @@ const reportSighting = (sighting: Sighting, context: Context): Report => {
     }
     return resultDirsIn(dir, entry.id, sighting);
   });
-  const matched = dirs
-    .map((dir) => ({ dir, checks: matchingChecks(dir, entry, context.fingerprints) }))
-    .filter(({ checks }) => checks.length > 0);
+  const read = dirs.map((dir) => {
+    const result = readResult(dir);
+    return { dir, result, checks: matchingChecks(result, entry, context.fingerprints) };
+  });
+  const matched = read.filter(({ checks }) => checks.length > 0);
   const downloaded = live.map(
     ({ name, expires_at }) => `${name}, which expires on ${day(expires_at)}`
   );
@@ -304,12 +426,12 @@ const reportSighting = (sighting: Sighting, context: Context): Report => {
       : matched.length === 0
         ? `, in which no result carries the fingerprint, so every result of ${entry.id} is listed`
         : '';
-  const shown = matched.length > 0 ? matched : dirs.map((dir) => ({ dir, checks: [] }));
+  const shown = matched.length > 0 ? matched : read.map((each) => ({ ...each, checks: [] }));
   return {
     line: `${where}: downloaded ${downloaded.join(', ')}${caveat}.`,
-    places: shown.flatMap(({ dir, checks }) => [
-      `- ${entry.id} ${sighting.os} ${sighting.engine}${checks.length > 0 ? `, ${checks.join(', ')}` : ''}:`,
-      ...placeLines(context.out, dir, checks, entry.repo),
+    places: shown.flatMap((each) => [
+      `- ${entry.id} ${sighting.os} ${sighting.engine}${each.checks.length > 0 ? `, ${each.checks.join(', ')}` : ''}:`,
+      ...placeLines(each, entry, slugs, sighting.run, context),
     ]),
   };
 };
@@ -351,6 +473,7 @@ export const fetchIssue = ({ repo, issue: number, out, catalog }: BriefOptions):
     };
   }
   const listed = new Map<string, Artifact[]>();
+  const plans = new Map<string, SavedPlan | undefined>();
   const context: Context = {
     repo,
     out,
@@ -363,9 +486,17 @@ export const fetchIssue = ({ repo, issue: number, out, catalog }: BriefOptions):
       ),
     ],
     artifacts: (run) => listed.get(run) ?? listed.set(run, artifactsOf(repo, run)).get(run)!,
+    planAt: (run, file) => {
+      const key = `${run}/${file}`;
+      if (!plans.has(key)) {
+        plans.set(key, planOfRun(repo, run, file, out));
+      }
+      return plans.get(key);
+    },
   };
   mkdirSync(out, { recursive: true });
-  const reports = sightingsOf(issue).map((sighting) => reportSighting(sighting, context));
+  const slugs = planSlugs(issue.body);
+  const reports = sightingsOf(issue).map((sighting) => reportSighting(sighting, slugs, context));
   const assets = downloadAssets(repo, (fields.get('storybook') ?? '').split(', '), lead, out);
   const probe = probeParagraph(issue.body);
   const entries = planEntryLines(issue.body);

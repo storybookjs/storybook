@@ -212,6 +212,10 @@ describe('fetchIssue', () => {
     expect(printed).toContain(
       '  session       runs/1/qa-result-mealdrop-linux-claude/mealdrop/linux/claude/session.jsonl'
     );
+    expect(printed).toContain(
+      `  run again     node ecosystem-qa/run.ts --repo mealdrop --version ${VERSION} --engine claude --model claude-sonnet-5-5 --effort medium --sandbox docker --tier must --out /out/before`
+    );
+    expect(printed).toContain('                It runs every check of the tier must again.');
     expect(printed).toContain('  1. yarn storybook --port 6006');
     expect(printed.at(-1)).toBe(UNTRUSTED);
     expect(memfs.readFileSync('/out/qa-assets/dev.log', 'utf8')).toBe('the dev log');
@@ -246,6 +250,55 @@ describe('fetchIssue', () => {
       '  probe added   runs/1/qa-earlier-results/mealdrop/linux/claude/part-2/evidence/animation-probe-added'
     );
     expect(printed.join('\n')).not.toContain('part-1');
+  });
+
+  it('saves the plan of the run, prints the entry of the finding, lists the evidence of its check first, and names the command that runs its part again', () => {
+    const probe = loaded('linux', 'claude', [finding({ checkId: 'plan.animation-probe' })]);
+    probe.result.request.plan = {
+      file: '11.0.md',
+      hash: '0123456789ab',
+      batch: 3,
+      part: 1,
+      entries: [{ id: 'animation-probe', prs: [31900] }],
+    };
+    const part = 'mealdrop/linux/claude/part-1';
+    serve({
+      issue: { body: filedBody(probe) },
+      runs: {
+        1: [
+          {
+            name: 'qa-earlier-results',
+            files: {
+              ...resultFiles(probe, part),
+              [`${part}/evidence/baseline-dev.log`]: 'baseline',
+              [`${part}/evidence/core.dev-server-cause.md`]: 'cause',
+              [`${part}/evidence/plan-animation-probe-dev.log`]: 'dev',
+              [`${part}/evidence/animation-probe-shot.png`]: 'png',
+            },
+          },
+        ],
+      },
+    });
+
+    const printed = lines();
+
+    expect(memfs.readFileSync('/out/plans/1/11.0.md', 'utf8')).toBe(PLAN_TEXT);
+    expect(printed).toContain(`  result        runs/1/qa-earlier-results/${part}/result.json`);
+    expect(printed).toContain(
+      '                first  animation-probe-shot.png, core.dev-server-cause.md, plan-animation-probe-dev.log'
+    );
+    expect(printed).toContain('                then   baseline-dev.log, dev.log');
+    const entry = printed.findIndex((line) => line.startsWith('  plan entry'));
+    expect(printed.slice(entry, entry + 8)).toEqual([
+      "  plan entry    plans/1/11.0.md, line 86: animation-probe, A new story's animation pauses in the preview",
+      '                Probe: a story file src/AnimationProbe.stories.tsx with one story Fade In whose box fades in with a CSS animation of two seconds',
+      '                Repo mealdrop: owned, and its React and Vite setup loads a story file next to its components',
+      '                Step: Open the story animation-probe--fade-in and take a screenshot after the play function ends.',
+      '                Expected: The screenshot shows the box fully visible, the end state of the animation.',
+      `  run again     node ecosystem-qa/run.ts --repo mealdrop --version ${VERSION} --engine claude --model claude-sonnet-5-5 --effort medium --sandbox docker --tier must --plan /out/plans/1/11.0.md --batch 3 --part 1 --out /out/before`,
+      '                It runs every entry of part 1 of batch 3 again: animation-probe.',
+      '                With --build <full SHA> in place of --version and --out /out/after, it runs the build of a fix.',
+    ]);
   });
 
   it('finds a discovered repo through the plan of the run and names its bundle as the only upgraded state', () => {

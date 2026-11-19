@@ -214,20 +214,6 @@ export class PNPMProxy extends JsPackageManager {
     }
   }
 
-  public async getModulePackageJSON(packageName: string): Promise<PackageJson | null> {
-    const wantedPath = join('node_modules', packageName, 'package.json');
-    const packageJsonPath = find.up(wantedPath, {
-      cwd: this.primaryPackageJson.operationDir,
-      last: getProjectRoot(),
-    });
-
-    if (!packageJsonPath) {
-      return null;
-    }
-
-    return JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
-  }
-
   protected getResolutions(
     packageJson: PackageJson,
     versions: Record<string, string>
@@ -387,11 +373,9 @@ export class PNPMProxy extends JsPackageManager {
     writeFileSync(path, doc.toString(), 'utf8');
   }
 
+  // pnpm reads the nearest file above the package, even past the VCS and Storybook project roots.
   #findWorkspaceYamlPath(): string | undefined {
-    return find.up('pnpm-workspace.yaml', {
-      cwd: this.primaryPackageJson.operationDir,
-      last: getProjectRoot(),
-    });
+    return find.up('pnpm-workspace.yaml', { cwd: this.primaryPackageJson.operationDir });
   }
 
   // Null when the file is missing or malformed.

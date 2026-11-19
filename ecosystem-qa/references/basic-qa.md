@@ -104,6 +104,7 @@ Search open issues with the `upgrade:11.0` label first, and comment on a match i
 | CLI-16 | Upgrade a `@storybook/nextjs` project. | The upgrade lists `@storybook/nextjs` as deprecated and offers `nextjs-to-nextjs-vite`; every later `storybook dev` logs a deprecation warning. | 11.0 ; M: Next.js: `@storybook/nextjs` is deprecated | manual: wording and whether a message helps | Deprecated frameworks are announced |
 | CLI-17 | Read the "From version 10.x to 11.0.0" section of `MIGRATION.md`, apply each step that applies to the project, and start Storybook. | Storybook starts; every manual step you needed is in the guide. A needed step the guide does not mention is a failure. | 11.0 ; M: From version 10.x to 11.0.0 | upgrade.automigrations | Migration notes cover the rest |
 | CLI-28 | Run the `storybook` and `build-storybook` scripts exactly as `package.json` declares them, with `--ci` added for the dev one. | Both run on the new version; a flag the old version accepted and the new one rejects is a failure. | 11.0 ; source: team practice | upgrade.project-scripts | The project's own scripts still run |
+| CLI-29 | Run the upgrade with `@storybook/test-runner` installed. | The upgrade stops, and offers migrating to the Vitest addon or staying on Storybook 10. | 11.0 ; M: Test runner support removed | manual: wording and whether a message helps | Test runner is blocked |
 
 ### Automigrations
 
@@ -375,14 +376,13 @@ CSF Next (CSF factories) stories are written as `preview.meta({...})` and `meta.
 | BLD-6 | `npx storybook build --stats-json` in a Vite project. | `preview-stats.json` contains virtual and proxy modules. | 11.0 ; M: Vite: `preview-stats.json` contains the full bundler graph | manual: bug bash or feature session | Stats output |
 | BLD-7 | Embed a story from the served build in an `<iframe>` on another origin. | It renders; only the dev server restricts embedding. | 11.0 ; M: `storybook dev` now blocks remote iframe embedding | manual: bug bash or feature session | Embedding a build |
 
-## Portable stories and the test runner
+## Portable stories
 
 | Row | Probe | Pass when | Since | Agent | Check |
 | ------ | ----- | --------- | ----- | ----- | ----- |
 | PS-1 | In a plain Vitest test, `composeStories` a stories file and render one story. | The story renders with its args and project annotations. | pre-9 ; `docs/api/portable-stories/portable-stories-vitest.mdx` | manual: bug bash or feature session | Portable stories in Vitest |
 | PS-2 | Use `fn()`, `expect` and `userEvent` from `storybook/test` in a `play` function. | They work; a mock called with `new` needs a `function` or `class` implementation. | 11.0 ; M: `storybook/test` is based on Vitest 5 and no longer installs its test libraries | manual: bug bash or feature session; e2e: `e2e-sandbox/component-tests.spec.ts` | `storybook/test` APIs |
 | PS-3 | In a project that does not list `@testing-library/dom` in `package.json`, run `npm ls @testing-library/dom` (`pnpm why`, `yarn why` or `bun why` for the other package managers). | `storybook` is not among the packages that depend on it, so a direct import fails to resolve unless another package, such as `@testing-library/svelte`, brings it in. | 11.0 ; M: `storybook/test` is based on Vitest 5 and no longer installs its test libraries | test.test-libraries | Test libraries are not installed for you |
-| PS-4 | Run `@storybook/test-runner` against the upgraded Storybook. | It still runs, and prints a warning on every run that it is no longer supported. | 11.0 ; M: Test runner support ended | test.test-runner | Test runner end of support |
 
 ## Sources
 

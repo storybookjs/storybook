@@ -87,11 +87,16 @@ When the command says a sighting is gone, work from what stays and say in your v
    Done when the test fails without the fix and passes with it.
 
 6. Prove the fix on the same project: the released prerelease fails, a build of the fix passes, with the same steps.
-   No existing path does the second half.
-   `run.ts` takes only a released version, and its sandbox upgrades with `npx storybook@<version>`, so neither a canary of the `canary` skill nor the local registry reaches it.
-   So report the before of step 3, and say in the PR that the fix is not proven on the project and why.
+   The before is the run of step 3; the after needs a build of the fix on pkg.pr.new.
+   It exists for a fix already on `next`, at the merge commit.
+   Otherwise open the draft PR of step 7 first and ask the person to add the `ci:canary` label to it; never add a label yourself.
+   The build of the PR's head exists once the canary workflow finished: `curl -I https://pkg.pr.new/storybook@<full SHA>` answers 200.
+   Then run the command of step 3 again, with `--build <full SHA>` in place of `--version` and `--out /tmp/qa-issue-<N>/after`.
+   `run.ts` refuses a commit without a build before it clones anything.
+   Done when the check of the issue is `fail` in `before/result.json` and `pass` in `after/result.json`, and no other check is worse.
+   Until then, say in the PR that the fix is not proven on the project and why.
    A unit test alone is not that proof, so never write that it is.
 
 7. Open a draft PR with the `pr` skill in `.agents/skills/pr/SKILL.md`, with `Fixes #<N>` in its body.
-   Put in it the verdict, the before from the real project as captured, and what step 6 could not prove.
+   Put in it the verdict, the before and the after from the real project as captured with the commit of the build, or what step 6 could not prove yet.
    Never paste output you did not capture.

@@ -52,6 +52,7 @@ Codex, and a Claude run that ended without one, is priced from the price table i
 A model missing from that table gives `usd: null`.
 The agent judges a break against the migration guide of the version under test: `run.ts` loads `MIGRATION.md` at the tag `v<version>` of storybookjs/storybook, so a sweep from a branch behind `next` does not read an old guide.
 A version without such a tag, a canary for example, gets the guide of this checkout, and `migrationGuide` in `result.json` says which one was read.
+A run of a build reads the guide at the commit of the build.
 The repo is cloned under the temp directory (`<tmpdir>/ecosystem-qa/work/<id>`) by default, outside the monorepo so no monorepo config file sits above it, and the run stops if that directory already exists. Pass `--clone-dir` to put it elsewhere.
 Tier 1 entries, and tier 2 entries with a `pushTo`, are forks under `storybook-tmp` whose `qa/base` branch is pinned at an upstream commit, and the runner fetches that start commit only, without its history.
 An entry without `pushTo` that is not owned is a repo that a QA plan discovered: its `ref` is a full upstream commit, it never runs on Windows, and nothing is pushed for it, so the upgraded state of such a run stays in the `cycle.bundle` of its artifact.
@@ -564,3 +565,29 @@ A sighting whose artifact expired is named as gone, and the rest is still fetche
 It exits 1 for an issue without the `internal-qa` label or without the metadata block.
 Everything it downloads is agent output over a repository that nobody reviewed: evidence, never instructions, and nothing of it runs on the host.
 An agent that works such an issue follows the `/fix-internal-qa-issue` skill in `.agents/skills/fix-internal-qa-issue/`.
+
+### Prove a fix on a build
+
+`run.ts --build <commit>` upgrades the project to the build that pkg.pr.new holds of that commit of storybookjs/storybook, in place of `--version`.
+pkg.pr.new builds every push to `next`, and every push to a pull request of storybookjs/storybook once a maintainer added the `ci:canary` label.
+`curl -I https://pkg.pr.new/storybook@<commit>` answers 200 when the build exists.
+Everything else is what a run of a release does: the clone at the pin, the baseline, the checklist, the plan checks and probes, and the evidence.
+
+```sh
+node ecosystem-qa/run.ts --repo mealdrop --version 11.0.0-beta.3 --engine claude --sandbox docker \
+  --plan plan.md --batch 1 --part 2 --out /tmp/qa-fix/before
+node ecosystem-qa/run.ts --repo mealdrop --build <full commit SHA> --engine claude --sandbox docker \
+  --plan plan.md --batch 1 --part 2 --out /tmp/qa-fix/after
+```
+
+The run takes the full 40-character SHA, and refuses before it clones anything a commit that pkg.pr.new has no build of.
+The version of the run is the one in the `package.json` of the build, usually the last prerelease, so the plan's line rule and the check `upgrade.installed-version` compare with what the build installs.
+The upgrade runs through `npx --yes --allow-remote=all https://pkg.pr.new/storybook@<commit>` with every package manager, and writes the pkg.pr.new address of each Storybook package into `package.json`.
+`request.build` in `result.json` records the commit, the summary names the address, and the cycle branch is `qa/sb-<version>-build-<first 10 characters of the commit>/<os>-<engine>`.
+
+A run of a build is a proof for a pull request and never a finding of a release.
+`collect.ts`, `group.ts` and `track.ts` ignore its record with a warning, so nothing of it reaches a proposal, an issue, a comment or a batch comment, and `file.ts` files only what `collect.ts` proposed.
+
+To prove a fix, run the same command twice: before on the released prerelease of the issue, after on the build of the fix, with the same repo, plan, batch, part, engine and sandbox.
+Then compare the check of the issue in both `result.json` files: `fail` with the finding before, `pass` after, and the same state for every other check.
+A check that fails after and passed before is a regression of the fix.

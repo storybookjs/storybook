@@ -1024,7 +1024,7 @@ export class NoMatchingExportError extends StorybookError {
 
           ${data.detail}
 
-          This usually means an addon was built for an older Storybook and imports an API that no longer exists — try updating or removing it. Storybook core packages can also cause this when their versions do not match — \`npx storybook doctor\` checks both.`
+          This usually means an addon was built for an older Storybook and imports an API that no longer exists. Update or remove the package that the file above belongs to. Mismatched Storybook core package versions can also cause this. Run \`npx storybook doctor\` to check for both problems.`
         : dedent`
           There was an exports mismatch error when trying to build Storybook.
           Please check whether the versions of your Storybook packages match whenever possible, as this might be the cause.

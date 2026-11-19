@@ -1,9 +1,16 @@
+import type { Message } from 'esbuild';
+
 import { NoMatchingExportError } from 'storybook/internal/server-errors';
 
-export interface BuilderErrorMessage {
-  text: string;
-  /** esbuild sets this on errors that point at a source location, e.g. the importing file. */
-  location?: { file?: string };
+/**
+ * Narrows unknown caught errors to esbuild's build-failure shape. Any builder error carrying an
+ * `errors` array is treated as an esbuild-style failure; the text matching below decides whether
+ * it is an exports mismatch.
+ */
+function isEsbuildBuildError(err: unknown): err is { errors: Message[] } {
+  return (
+    typeof err === 'object' && err !== null && Array.isArray((err as { errors?: unknown }).errors)
+  );
 }
 
 /**
@@ -11,7 +18,7 @@ export interface BuilderErrorMessage {
  * the importing file, when esbuild reported a location, into the detail block shown in the
  * NoMatchingExportError card.
  */
-export function formatNoMatchingExportDetail(builderError: BuilderErrorMessage): string {
+function formatNoMatchingExportDetail(builderError: Message): string {
   const lines = [builderError.text.trim()];
   const file = builderError.location?.file;
 
@@ -25,17 +32,20 @@ export function formatNoMatchingExportDetail(builderError: BuilderErrorMessage):
 export async function buildOrThrow<T>(callback: () => Promise<T>): Promise<T> {
   try {
     return await callback();
-  } catch (err: any) {
-    const builderErrors = err?.errors as BuilderErrorMessage[] | undefined;
-    const noMatchingExportError = builderErrors?.find((er) =>
-      er.text?.includes('No matching export')
-    );
+  } catch (err: unknown) {
+    if (isEsbuildBuildError(err)) {
+      const noMatchingExportErrors = err.errors.filter((er) =>
+        er.text.includes('No matching export')
+      );
 
-    if (noMatchingExportError) {
-      throw new NoMatchingExportError({
-        error: err,
-        detail: formatNoMatchingExportDetail(noMatchingExportError),
-      });
+      if (noMatchingExportErrors.length > 0) {
+        throw new NoMatchingExportError({
+          error: err,
+          // Every matched error gets its own block, so a user fixing several removed imports
+          // (or several outdated addons) sees all of them at once instead of one per rebuild.
+          detail: noMatchingExportErrors.map(formatNoMatchingExportDetail).join('\n\n'),
+        });
+      }
     }
 
     throw err;

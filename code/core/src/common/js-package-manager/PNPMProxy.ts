@@ -387,11 +387,9 @@ export class PNPMProxy extends JsPackageManager {
     writeFileSync(path, doc.toString(), 'utf8');
   }
 
+  // pnpm reads the nearest file above the package, even past the VCS and Storybook project roots.
   #findWorkspaceYamlPath(): string | undefined {
-    return find.up('pnpm-workspace.yaml', {
-      cwd: this.primaryPackageJson.operationDir,
-      last: getProjectRoot(),
-    });
+    return find.up('pnpm-workspace.yaml', { cwd: this.primaryPackageJson.operationDir });
   }
 
   // Null when the file is missing or malformed.

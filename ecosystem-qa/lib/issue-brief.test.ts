@@ -213,9 +213,12 @@ describe('fetchIssue', () => {
       '  session       runs/1/qa-result-mealdrop-linux-claude/mealdrop/linux/claude/session.jsonl'
     );
     expect(printed).toContain(
-      `  run again     node ecosystem-qa/run.ts --repo mealdrop --version ${VERSION} --engine claude --model claude-sonnet-5-5 --effort medium --sandbox docker --tier must --out /out/before`
+      `  run again     node ecosystem-qa/run.ts --repo mealdrop --version ${VERSION} --engine claude --model claude-sonnet-5-5 --effort medium --sandbox docker --tier must --out /out/before --clone-dir /out/before-clone`
     );
     expect(printed).toContain('                It runs every check of the tier must again.');
+    expect(printed).toContain(
+      '  run a build   node ecosystem-qa/run.ts --repo mealdrop --build <full SHA> --engine claude --model claude-sonnet-5-5 --effort medium --sandbox docker --tier must --out /out/after --clone-dir /out/after-clone'
+    );
     expect(printed).toContain('  1. yarn storybook --port 6006');
     expect(printed.at(-1)).toBe(UNTRUSTED);
     expect(memfs.readFileSync('/out/qa-assets/dev.log', 'utf8')).toBe('the dev log');
@@ -289,15 +292,16 @@ describe('fetchIssue', () => {
     );
     expect(printed).toContain('                then   baseline-dev.log, dev.log');
     const entry = printed.findIndex((line) => line.startsWith('  plan entry'));
-    expect(printed.slice(entry, entry + 8)).toEqual([
+    expect(printed.slice(entry, entry + 9)).toEqual([
       "  plan entry    plans/1/11.0.md, line 86: animation-probe, A new story's animation pauses in the preview",
       '                Probe: a story file src/AnimationProbe.stories.tsx with one story Fade In whose box fades in with a CSS animation of two seconds',
       '                Repo mealdrop: owned, and its React and Vite setup loads a story file next to its components',
       '                Step: Open the story animation-probe--fade-in and take a screenshot after the play function ends.',
       '                Expected: The screenshot shows the box fully visible, the end state of the animation.',
-      `  run again     node ecosystem-qa/run.ts --repo mealdrop --version ${VERSION} --engine claude --model claude-sonnet-5-5 --effort medium --sandbox docker --tier must --plan /out/plans/1/11.0.md --batch 3 --part 1 --out /out/before`,
+      `  run again     node ecosystem-qa/run.ts --repo mealdrop --version ${VERSION} --engine claude --model claude-sonnet-5-5 --effort medium --sandbox docker --tier must --plan /out/plans/1/11.0.md --batch 3 --part 1 --out /out/before --clone-dir /out/before-clone`,
       '                It runs every entry of part 1 of batch 3 again: animation-probe.',
-      '                With --build <full SHA> in place of --version and --out /out/after, it runs the build of a fix.',
+      '  run a build   node ecosystem-qa/run.ts --repo mealdrop --build <full SHA> --engine claude --model claude-sonnet-5-5 --effort medium --sandbox docker --tier must --plan /out/plans/1/11.0.md --batch 3 --part 1 --out /out/after --clone-dir /out/after-clone',
+      '                It runs the same on the build of a fix, with the full SHA of its commit in place of <full SHA>.',
     ]);
   });
 

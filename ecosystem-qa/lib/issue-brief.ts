@@ -182,25 +182,31 @@ const rerunLines = (request: RunRequest, plan: SavedPlan | undefined, out: strin
       `  run again     ${scope.file} at the commit of the run is unreadable, so no command can name it`,
     ];
   }
-  const flags = [
-    `--repo ${request.entry.id}`,
-    `--version ${request.version}`,
-    `--engine ${request.engine}`,
-    `--model ${request.model}`,
-    `--effort ${request.effort}`,
-    '--sandbox docker',
-    `--tier ${request.tier}`,
-    ...(scope && plan
-      ? [`--plan ${plan.path}`, `--batch ${scope.batch}`, `--part ${scope.part}`]
-      : []),
-    `--out ${join(out, 'before')}`,
-  ];
+  // run.ts keeps its clone and refuses an existing one, so each command clones into a directory of
+  // its own instead of the default one that the first run would leave behind.
+  const command = (target: string, dir: string) =>
+    [
+      'node ecosystem-qa/run.ts',
+      `--repo ${request.entry.id}`,
+      target,
+      `--engine ${request.engine}`,
+      `--model ${request.model}`,
+      `--effort ${request.effort}`,
+      '--sandbox docker',
+      `--tier ${request.tier}`,
+      ...(scope && plan
+        ? [`--plan ${plan.path}`, `--batch ${scope.batch}`, `--part ${scope.part}`]
+        : []),
+      `--out ${join(out, dir)}`,
+      `--clone-dir ${join(out, `${dir}-clone`)}`,
+    ].join(' ');
   return [
-    `  run again     node ecosystem-qa/run.ts ${flags.join(' ')}`,
+    `  run again     ${command(`--version ${request.version}`, 'before')}`,
     scope
       ? `                It runs every entry of part ${scope.part} of batch ${scope.batch} again: ${scope.entries.map(({ id }) => id).join(', ')}.`
       : `                It runs every check of the tier ${request.tier} again.`,
-    `                With --build <full SHA> in place of --version and --out ${join(out, 'after')}, it runs the build of a fix.`,
+    `  run a build   ${command('--build <full SHA>', 'after')}`,
+    '                It runs the same on the build of a fix, with the full SHA of its commit in place of <full SHA>.',
   ];
 };
 

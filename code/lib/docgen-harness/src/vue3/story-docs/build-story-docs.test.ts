@@ -9,6 +9,7 @@ import { sanitize, storyNameFromExport } from 'storybook/internal/csf';
 import {
   type SnippetTemplate,
   UnprintableArgError,
+  argChanges,
   fillTemplate,
   stripHoles,
 } from 'storybook/internal/docs-tools';
@@ -289,7 +290,11 @@ function fill(
   unmappedArgs: Args
 ): string | undefined {
   try {
-    return fillTemplate(vueTemplate(template), { initialArgs, unmappedArgs }, printHole);
+    return fillTemplate(
+      vueTemplate(template),
+      argChanges({ initialArgs, unmappedArgs }),
+      printHole
+    );
   } catch (error) {
     if (error instanceof UnprintableArgError) {
       return undefined;
@@ -378,7 +383,7 @@ describe('vue3 filled story templates', () => {
     const initialArgs = composeStories(sharedValuesStories)[name].args;
     const filled = fillTemplate(
       vueTemplate(story.template!),
-      { initialArgs, unmappedArgs: { ...initialArgs, ...structuredClone(args) } },
+      argChanges({ initialArgs, unmappedArgs: { ...initialArgs, ...structuredClone(args) } }),
       printHole
     );
     const render = sharedValuesStories[name].render!(structuredClone(args), {} as never);

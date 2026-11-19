@@ -37,6 +37,7 @@
     "./client/docs/config": "./dist/client/docs/config.js",
     "./client/preview-prod": "./dist/client/preview-prod.js",
     "./internal/docgen-worker": "./dist/docgen/docgen-worker.js",
+    "./internal/register-print-hole": "./dist/client/docs/register-print-hole.js",
     "./internal/vitest-compiler-setup": "./dist/client/vitest-compiler-setup.js",
     "./node": {
       "types": "./dist/node/index.d.ts",

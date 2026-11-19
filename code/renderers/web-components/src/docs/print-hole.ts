@@ -1,11 +1,9 @@
-import { isDirectiveResult, isTemplateResult } from 'lit/directive-helpers.js';
-
 import {
   type PrintHole,
   UnprintableArgError,
   printValue,
   unknownHoleKind,
-} from 'storybook/internal/docs-tools';
+} from 'storybook/internal/docs-tools/snippets';
 
 import {
   cssDeclarations,
@@ -91,4 +89,10 @@ function printable(arg: string, value: unknown): unknown {
   return value;
 }
 
-const isLitValue = (value: unknown) => isTemplateResult(value) || isDirectiveResult(value);
+// Lit's own `isTemplateResult` and `isDirectiveResult` tests, so the manager, which bundles this
+// printer, does not bundle `lit`.
+const isLitValue = (value: unknown) =>
+  typeof value === 'object' &&
+  value !== null &&
+  (('_$litType$' in value && value._$litType$ !== undefined) ||
+    ('_$litDirective$' in value && value._$litDirective$ !== undefined));

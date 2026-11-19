@@ -11,6 +11,7 @@ import { loadCsf } from 'storybook/internal/csf-tools';
 import {
   type SnippetTemplate,
   UnprintableArgError,
+  argChanges,
   fillTemplate,
   stripHoles,
 } from 'storybook/internal/docs-tools';
@@ -82,7 +83,7 @@ const fillOrSkip = (
   unmappedArgs: Record<string, unknown>
 ) => {
   try {
-    return fillTemplate(template, { initialArgs, unmappedArgs }, printHole);
+    return fillTemplate(template, argChanges({ initialArgs, unmappedArgs }), printHole);
   } catch (error) {
     if (error instanceof UnprintableArgError) {
       return undefined;

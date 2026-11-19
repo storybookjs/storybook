@@ -1,4 +1,4 @@
-import type { HoleRef, SnippetTemplate } from 'storybook/internal/docs-tools';
+import type { HoleRef, SnippetTemplate } from 'storybook/internal/docs-tools/snippets';
 
 // The places a story-docs snippet prints an arg in, which the story-docs build writes holes for and
 // `printHole` prints a changed arg for: in the html of a story without a render, or in the code of a

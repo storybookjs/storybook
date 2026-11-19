@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { type ESTreeNode as Node, parseExpression, staticKey } from 'storybook/internal/csf-tools';
 import {
   UnprintableArgError,
+  argChanges,
   fillTemplate,
   printValue,
   stripHoles,
@@ -76,7 +77,7 @@ const print = (code: string, value: unknown) =>
 const fill = (code: string, value: unknown) =>
   fillTemplate(
     print(code, 'Go').template!,
-    { initialArgs: { x: 'Go' }, unmappedArgs: { x: value } },
+    argChanges({ initialArgs: { x: 'Go' }, unmappedArgs: { x: value } }),
     printHole
   );
 

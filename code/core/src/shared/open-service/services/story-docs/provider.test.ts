@@ -51,7 +51,7 @@ beforeEach(() => {
 
 describe('createWorkerGatedStoryDocsProvider', () => {
   it('returns the next provider unchanged when its docgen worker is not registered', async () => {
-    const next = vi.fn(async () => DOWNSTREAM);
+    const next = { extract: vi.fn(async () => DOWNSTREAM) };
     const preset = createWorkerGatedStoryDocsProvider({
       label: 'Test',
       docgenWorker: WORKER,
@@ -100,9 +100,24 @@ describe('createWorkerGatedStoryDocsProvider', () => {
       storyFileTest,
       build,
     });
-    const provider = await preset(async () => DOWNSTREAM, optionsWith([WORKER]));
+    const provider = await preset({ extract: async () => DOWNSTREAM }, optionsWith([WORKER]));
 
-    await expect(provider({ entry: entryFor(importPath) })).resolves.toEqual(expected);
+    await expect(provider.extract({ entry: entryFor(importPath) })).resolves.toEqual(expected);
+  });
+
+  it("sets its hole printer, and keeps the next provider's when its docgen worker is not registered", async () => {
+    const preset = createWorkerGatedStoryDocsProvider({
+      label: 'Test',
+      docgenWorker: WORKER,
+      build: async () => OURS,
+      printHole: '/test/register-print-hole.js',
+    });
+    const next = { extract: async () => DOWNSTREAM, printHole: '/next/register-print-hole.js' };
+
+    expect((await preset(next, optionsWith([WORKER]))).printHole).toBe(
+      '/test/register-print-hole.js'
+    );
+    expect((await preset(next, optionsWith([]))).printHole).toBe('/next/register-print-hole.js');
   });
 
   it('logs a story file it cannot read and hands it to the next provider', async () => {
@@ -113,9 +128,11 @@ describe('createWorkerGatedStoryDocsProvider', () => {
         throw new Error('parse failed');
       },
     });
-    const provider = await preset(async () => DOWNSTREAM, optionsWith([WORKER]));
+    const provider = await preset({ extract: async () => DOWNSTREAM }, optionsWith([WORKER]));
 
-    await expect(provider({ entry: entryFor('./Button.stories.ts') })).resolves.toBe(DOWNSTREAM);
+    await expect(provider.extract({ entry: entryFor('./Button.stories.ts') })).resolves.toBe(
+      DOWNSTREAM
+    );
     expect(logger.debug).toHaveBeenCalledWith(
       'Test story snippets are unavailable for ./Button.stories.ts: parse failed'
     );

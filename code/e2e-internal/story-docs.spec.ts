@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
 import process from 'process';
 
-import { PREVIEW_STORY_TIMEOUT, waitForPreviewReady } from './helpers.ts';
+import { PREVIEW_STORY_TIMEOUT, dropPreviewSnippets, waitForPreviewReady } from './helpers.ts';
 
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:6006';
 const runsAgainstDevServer = !['build', 'static'].includes(process.env.STORYBOOK_TYPE || 'dev');
@@ -121,6 +121,12 @@ async function gotoCodePanelStory(page: Page) {
   ).toBeVisible({ timeout: PREVIEW_STORY_TIMEOUT });
 }
 
+async function gotoStory(page: Page, path: string) {
+  await page.goto(`${storybookUrl}/?path=${path}`);
+  await expectDocgenServer(page);
+  await waitForPreviewReady(page);
+}
+
 async function gotoAutodocsPage(page: Page) {
   await page.goto(`${storybookUrl}/?path=${docsPath}`);
   await expectDocgenServer(page);
@@ -225,6 +231,78 @@ test.describe('story-docs open service', () => {
       const source = await autodocsDefaultSourceLocator(page);
       await expect(source).toContainText(LIVE_LABEL);
       await expect(source).not.toContainText(E2E_STORY_DOCS_HOT_UPDATE_LABEL_BEFORE);
+    });
+
+    test('the Code panel follows the controls without the snippet the preview sends', async ({
+      page,
+    }) => {
+      await dropPreviewSnippets(page);
+      await gotoCodePanelStory(page);
+
+      await page.getByRole('tab', { name: 'Controls' }).click();
+      await page.locator('#storybook-panel-root textarea[name=label]').fill(LIVE_LABEL);
+      await expectPreviewButtonLabel(page, LIVE_LABEL);
+
+      await openCodePanel(page);
+      await expect(page.getByRole('tabpanel', { name: 'Code' })).toContainText(LIVE_LABEL, {
+        timeout: PREVIEW_STORY_TIMEOUT,
+      });
+    });
+
+    // The manager cannot run a `transform`, so the Code panel shows the preview's snippet.
+    test('the Code panel shows the snippet a story transforms', async ({ page }) => {
+      await gotoStory(page, '/story/addons-docs-examples-stories-for-the-source-block--transform');
+      await page.getByRole('tab', { name: 'Controls' }).click();
+      await page.locator('#storybook-panel-root textarea[name=something]').fill(LIVE_LABEL);
+
+      await openCodePanel(page);
+      const panel = page.getByRole('tabpanel', { name: 'Code' });
+      await expect(panel).toContainText(LIVE_LABEL, { timeout: PREVIEW_STORY_TIMEOUT });
+      await expect(panel).toContainText(
+        'this comment has been added via parameters.docs.source.transform!'
+      );
+    });
+
+    test.describe('args no snippet can show', () => {
+      const storyPath = '/story/addons-docs-examples-live-snippet-args--primary';
+      const staticSnippet = 'tags={new Set(["apple", "pear"])}';
+      const warningFor = (arg: string) =>
+        `The snippet cannot show the current value of the \`${arg}\` arg.`;
+
+      for (const [button, arg] of [
+        ['Add a tag', 'tags'],
+        ['Change onSelect', 'onSelect'],
+      ]) {
+        test(`the Code panel warns about ${arg} and keeps the static snippet`, async ({ page }) => {
+          await gotoStory(page, storyPath);
+          await openCodePanel(page);
+          const panel = page.getByRole('tabpanel', { name: 'Code' });
+          await expect(panel).toContainText(staticSnippet, { timeout: PREVIEW_STORY_TIMEOUT });
+          const warning = panel.getByRole('button', { name: 'Incomplete code snippet' });
+          await expect(warning).toHaveCount(0);
+
+          await previewFrame(page).getByRole('button', { name: button }).click();
+
+          await warning.hover();
+          await expect(page.getByText(warningFor(arg))).toBeVisible();
+          await expect(panel).toContainText(staticSnippet);
+        });
+      }
+
+      test('autodocs warns about a Set and keeps the static snippet', async ({ page }) => {
+        await gotoStory(page, '/docs/addons-docs-examples-live-snippet-args--docs');
+        // The primary story comes first on the page.
+        const docs = previewFrame(page);
+        await docs.getByRole('switch', { name: 'Show code' }).first().click();
+        const source = docs.locator('pre.prismjs').first();
+        await expect(source).toContainText(staticSnippet, { timeout: PREVIEW_STORY_TIMEOUT });
+
+        await docs.getByRole('button', { name: 'Add a tag' }).first().click();
+
+        await docs.getByRole('button', { name: 'Incomplete code snippet' }).first().hover();
+        await expect(docs.getByText(warningFor('tags'))).toBeVisible();
+        await expect(source).toContainText(staticSnippet);
+      });
     });
 
     test('an MDX Source block follows the controls', async ({ page }) => {

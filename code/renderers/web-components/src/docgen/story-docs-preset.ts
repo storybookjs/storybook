@@ -32,4 +32,7 @@ export const experimental_storyDocsProvider = createWorkerGatedStoryDocsProvider
   label: 'Web Components',
   docgenWorker: fileURLToPath(import.meta.resolve(DOCGEN_WORKER_SPECIFIER)),
   build: (input) => buildStoryDocsPayload(input, { getDocgenPayload }),
+  printHole: fileURLToPath(
+    import.meta.resolve('@storybook/web-components/internal/register-print-hole')
+  ),
 });

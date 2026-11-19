@@ -41,6 +41,12 @@ type AllComponentsQuery = { get(): unknown };
 // changed, so a failed refresh is retried on the next index change.
 const pendingIdsByService = new WeakMap<object, Set<string>>();
 
+// Extractions still running, by registered service and component id. A call joins the one running
+// for its component in the same runtime, so a manager and a preview that load it at once extract it
+// once. A refresh never joins, so it reads the files as they are now.
+type RunningExtraction = { state: object; extraction: Promise<unknown> };
+const runningExtractions = new WeakMap<object, Map<string, RunningExtraction>>();
+
 export type ExtractionInput = {
   /** The entry {@link selectComponentEntriesByComponentId} picks for the component. */
   entry: IndexEntry;
@@ -117,10 +123,17 @@ export function subscribeExtractionServiceToModuleGraphChanges<
   const extract = (runtime.commands as Record<string, (input: { id: string }) => Promise<unknown>>)[
     options.extractCommand
   ];
-  const refreshComponent = (id: string) => extract({ id }).catch(() => undefined);
+  const refreshComponent = (id: string) => {
+    runningExtractions.get(runtime)?.delete(id);
+    return extract({ id }).catch(() => undefined);
+  };
 
   const refreshExtracted = async (componentIds: Iterable<string>) => {
-    const idsToRefresh = Array.from(componentIds).filter((id) => query.get({ id }) !== undefined);
+    // An extraction still running read the files before the change, so it is refreshed too.
+    const running = runningExtractions.get(runtime);
+    const idsToRefresh = Array.from(componentIds).filter(
+      (id) => query.get({ id }) !== undefined || running?.has(id)
+    );
     if (idsToRefresh.length === 0) {
       return;
     }
@@ -235,6 +248,7 @@ export function registerExtractionService<
   );
 
   const pendingIds = new Set<string>();
+  const running = new Map<string, RunningExtraction>();
   // The latest extraction of each component in each runtime, so an older one that finishes later
   // does not overwrite its payload. The static build runs these handlers on runtimes of its own.
   const latestRunsByState = new WeakMap<object, Map<string, Promise<void>>>();
@@ -364,13 +378,20 @@ export function registerExtractionService<
     },
     commands: {
       [extractCommand]: {
-        handler: async (input: { id: string }, ctx: CommandCtx<TState>) => {
-          const run = startRun(ctx, input.id);
-          try {
-            return await extractComponent(input.id, ctx, run.isLatest);
-          } finally {
-            await run.settle();
+        handler: (input: { id: string }, ctx: CommandCtx<TState>) => {
+          const joined = running.get(input.id);
+          if (joined?.state === ctx.self.state) {
+            return joined.extraction;
           }
+          const run = startRun(ctx, input.id);
+          const extraction = extractComponent(input.id, ctx, run.isLatest).finally(async () => {
+            if (running.get(input.id)?.extraction === extraction) {
+              running.delete(input.id);
+            }
+            await run.settle();
+          });
+          running.set(input.id, { state: ctx.self.state, extraction });
+          return extraction;
         },
       },
       [extractAllCommand]: {
@@ -389,6 +410,7 @@ export function registerExtractionService<
   // A second registration returns the first instance, whose commands write the first set.
   if (!pendingIdsByService.has(service)) {
     pendingIdsByService.set(service, pendingIds);
+    runningExtractions.set(service, running);
   }
   return service;
 }

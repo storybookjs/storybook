@@ -40,7 +40,7 @@ const entryFor = (importPath: string): IndexEntry => ({
 
 describe('experimental_storyDocsProvider', () => {
   it('passes through when the Svelte docgen worker is not registered', async () => {
-    const next = vi.fn(async () => DOWNSTREAM);
+    const next = { extract: vi.fn(async () => DOWNSTREAM) };
     const others: DocgenProviderDescriptor[] = [{ moduleSpecifier: '/addon/docgen-worker.js' }];
 
     await expect(
@@ -58,11 +58,11 @@ describe('experimental_storyDocsProvider', () => {
     { importPath: './Button.stories.js', builds: true },
   ])('$importPath is built: $builds', async ({ importPath, builds }) => {
     const provider = await experimental_storyDocsProvider(
-      async () => DOWNSTREAM,
+      { extract: async () => DOWNSTREAM },
       svelteWorkerOptions
     );
 
-    await expect(provider({ entry: entryFor(importPath) })).resolves.toBe(DOWNSTREAM);
+    await expect(provider.extract({ entry: entryFor(importPath) })).resolves.toBe(DOWNSTREAM);
     expect(buildStoryDocsPayload).toHaveBeenCalledTimes(builds ? 1 : 0);
   });
 
@@ -78,11 +78,11 @@ describe('experimental_storyDocsProvider', () => {
         },
       });
       const provider = await experimental_storyDocsProvider(
-        async () => DOWNSTREAM,
+        { extract: async () => DOWNSTREAM },
         svelteWorkerOptions
       );
 
-      await expect(provider({ entry: entryFor(importPath) })).resolves.toEqual({
+      await expect(provider.extract({ entry: entryFor(importPath) })).resolves.toEqual({
         id: 'button',
         name: 'Button',
         path: importPath,

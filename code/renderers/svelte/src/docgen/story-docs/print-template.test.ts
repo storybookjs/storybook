@@ -5,6 +5,7 @@ import { type ESTreeNode as Node, parseExpression, staticKey } from 'storybook/i
 
 import {
   type SnippetTemplate,
+  argChanges,
   fillTemplate,
   formatTemplate,
   printValue,
@@ -312,7 +313,7 @@ describe('printTemplate template', () => {
     return written!;
   };
   const fill = (written: SnippetTemplate<SvelteHolePlace>, initialArgs: Args, unmappedArgs: Args) =>
-    fillTemplate(written, { initialArgs, unmappedArgs }, printHole);
+    fillTemplate(written, argChanges({ initialArgs, unmappedArgs }), printHole);
 
   it('wraps each place an arg prints in a hole that holds what it prints there', () => {
     expect(formatTemplate(template('<Panel {...args} />', "{ label: 'Go' }"))).toBe(

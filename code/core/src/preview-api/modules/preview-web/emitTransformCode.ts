@@ -15,7 +15,8 @@ type Transformer =
 export async function emitTransformCode(
   source: string | undefined,
   context: ReducedStoryContext,
-  warning?: string
+  warning?: string,
+  previewOnly = false
 ) {
   const transform = context.parameters?.docs?.source?.transform as Transformer;
   const { id, unmappedArgs } = context;
@@ -23,11 +24,13 @@ export async function emitTransformCode(
   const transformed = transform && source ? transform?.(source, context) : source;
   const result = transformed ? await transformed : undefined;
 
-  // Note: The snippet payload emitted via SNIPPET_RENDERED is already transformed.
+  // Note: The snippet payload emitted via SNIPPET_RENDERED is already transformed. `previewOnly`
+  // tells the manager, which cannot run `transform` and may not hold the same args, to show it.
   addons.getChannel().emit(SNIPPET_RENDERED, {
     id,
     source: result,
     args: unmappedArgs,
     warning,
+    previewOnly: previewOnly || Boolean(transform),
   });
 }

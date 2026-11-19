@@ -21,6 +21,8 @@ export interface WorkerGatedStoryDocsProviderOptions {
   storyFileTest?: RegExp;
   /** Reads one story file; `undefined` hands the story to the next provider. */
   build: (input: StoryDocsProviderInput) => Promise<StoryDocsPayload | undefined>;
+  /** The provider's {@link StoryDocsProvider.printHole}: the printer for the templates `build` writes. */
+  printHole?: string;
 }
 
 /**
@@ -34,6 +36,7 @@ export function createWorkerGatedStoryDocsProvider({
   docgenWorker,
   storyFileTest = STORY_FILE_TEST_REGEXP,
   build,
+  printHole,
 }: WorkerGatedStoryDocsProviderOptions): StoryDocsProviderPreset {
   return async (nextStoryDocs, options): Promise<StoryDocsProvider> => {
     const descriptors = await options.presets.apply<DocgenProviderDescriptor[]>(
@@ -44,10 +47,10 @@ export function createWorkerGatedStoryDocsProvider({
       return nextStoryDocs;
     }
 
-    return async (input) => {
+    const extract: StoryDocsProvider['extract'] = async (input) => {
       const storyImportPath = getStoryImportPathFromEntry(input.entry);
       if (!storyImportPath || !storyFileTest.test(storyImportPath)) {
-        return nextStoryDocs(input);
+        return nextStoryDocs.extract(input);
       }
 
       let ours: StoryDocsPayload | undefined;
@@ -59,13 +62,14 @@ export function createWorkerGatedStoryDocsProvider({
             error instanceof Error ? error.message : String(error)
           }`
         );
-        return nextStoryDocs(input);
+        return nextStoryDocs.extract(input);
       }
 
       if (!ours) {
-        return nextStoryDocs(input);
+        return nextStoryDocs.extract(input);
       }
-      return { ...(await nextStoryDocs(input)), ...ours };
+      return { ...(await nextStoryDocs.extract(input)), ...ours };
     };
+    return { ...nextStoryDocs, extract, ...(printHole && { printHole }) };
   };
 }

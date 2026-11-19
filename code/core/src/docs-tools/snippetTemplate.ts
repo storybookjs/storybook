@@ -10,8 +10,8 @@ import type { Args } from 'storybook/internal/types';
  * is a place an arg prints, with the `text` the static snippet prints there. Joining every segment,
  * with each hole's `text`, gives the static snippet; see {@link stripHoles}.
  *
- * {@link fillTemplate} prints a hole whose arg still holds its initial value as its `text`, so
- * nothing the controls did not change moves. The renderer prints only a changed value, for the
+ * {@link fillTemplate} prints a hole whose arg did not change as its `text`, so nothing the
+ * controls did not change moves. The renderer prints only a changed value, for the
  * place its hole describes.
  *
  * Core does not know any place: a renderer types its own as a union of {@link HolePlace}s, and shares
@@ -53,8 +53,8 @@ export type TemplateHole<Place extends HolePlace = HolePlace> = HoleRef<Place> &
 
 /**
  * Prints an arg value a control changed for the place `hole` describes, or, for a `spread` hole, the
- * args a control set, but those the place already prints. The renderer sets it as
- * `parameters.docs.source.printHole`. It sees only the hole's place, never the code around it.
+ * args a control set, but those the place already prints. The renderer registers it with
+ * {@link registerPrintHole}. It sees only the hole's place, never the code around it.
  *
  * @throws {UnprintableArgError} For a value the snippet cannot show.
  */
@@ -62,6 +62,20 @@ export type PrintHole<Place extends HolePlace = HolePlace> = (
   hole: HoleRef<Place>,
   value: unknown
 ) => string;
+
+// On `globalThis`, not in this module: the manager bundles a renderer's printer module with its own
+// copy of this file.
+const PRINT_HOLE = Symbol.for('storybook/docs-tools/print-hole');
+
+type GlobalWithPrintHole = typeof globalThis & { [PRINT_HOLE]?: PrintHole<any> };
+
+/** Registers the renderer's {@link PrintHole}; see `printHole` of `experimental_storyDocsProvider`. */
+export function registerPrintHole(printHole: PrintHole<any>): void {
+  (globalThis as GlobalWithPrintHole)[PRINT_HOLE] = printHole;
+}
+
+export const getPrintHole = (): PrintHole | undefined =>
+  (globalThis as GlobalWithPrintHole)[PRINT_HOLE];
 
 /** Thrown by a {@link PrintHole} for an arg whose value the snippet cannot show. */
 export class UnprintableArgError extends Error {
@@ -91,29 +105,62 @@ export const stripHoles = (template: SnippetTemplate<any>): string =>
   template.map((segment) => (isHole(segment) ? segment.text : segment)).join('');
 
 /**
- * Fills a template with the args a story renders with before they are mapped: a hole whose arg
- * holds its initial value prints its `text`, and every other hole what `printHole` prints for it,
- * after its `space` unless that is empty. A `spread` hole gets every arg a control set; its
- * renderer leaves out those its place already prints.
+ * How a story's args, before they are mapped, differ from those it is written with: the new value
+ * of each arg that changed, and the args it no longer has.
+ */
+export interface ArgChanges {
+  args: Args;
+  unset?: string[];
+}
+
+/**
+ * How `unmappedArgs` differ from `initialArgs`, as the `liveSnippet` query takes them. An arg set to
+ * `undefined` counts as unset: the args store deletes it on every update.
+ */
+export function argChanges({
+  unmappedArgs,
+  initialArgs,
+}: {
+  unmappedArgs: Args | undefined;
+  initialArgs: Args | undefined;
+}): ArgChanges {
+  const current = definedArgs(unmappedArgs);
+  const initial = definedArgs(initialArgs);
+  return {
+    args: Object.fromEntries(
+      Object.entries(current).filter(
+        ([name, value]) => !(Object.hasOwn(initial, name) && isEqual(value, initial[name]))
+      )
+    ),
+    unset: Object.keys(initial).filter((name) => !Object.hasOwn(current, name)),
+  };
+}
+
+const definedArgs = (args: Args | undefined): Args =>
+  Object.fromEntries(Object.entries(args ?? {}).filter(([, value]) => value !== undefined));
+
+/**
+ * Fills a template with a story's {@link ArgChanges}: a hole whose arg did not change prints its
+ * `text`, and every other hole what `printHole` prints for it, after its `space` unless that is
+ * empty. A `spread` hole gets every changed arg that is set; its renderer leaves out those its place
+ * already prints.
  *
  * @throws {UnprintableArgError} When `printHole` cannot print a value.
  */
 export const fillTemplate = <Place extends HolePlace>(
   // Any template: a payload types its places as `HolePlace`, the renderer's `printHole` as its own.
   template: SnippetTemplate<any>,
-  { unmappedArgs, initialArgs }: { unmappedArgs: Args; initialArgs: Args },
+  { args, unset = [] }: ArgChanges,
   printHole: PrintHole<Place>
 ): string => {
-  const own = (args: Args, name: string) => (Object.hasOwn(args, name) ? args[name] : undefined);
-  const changed = (name: string) => !isEqual(own(unmappedArgs, name), own(initialArgs, name));
-  const added = Object.fromEntries(
-    Object.entries(unmappedArgs).filter(([name, value]) => value !== undefined && changed(name))
-  );
+  const value = (name: string) => (Object.hasOwn(args, name) ? args[name] : undefined);
+  const changed = (name: string) => Object.hasOwn(args, name) || unset.includes(name);
+  const set = Object.fromEntries(Object.entries(args).filter(([, item]) => item !== undefined));
   const print = (hole: TemplateHole<Place>) => {
     if (hole.spread) {
-      return Object.keys(added).length === 0 ? undefined : printHole(ref(hole), added);
+      return Object.keys(set).length === 0 ? undefined : printHole(ref(hole), set);
     }
-    return changed(hole.arg) ? printHole(ref(hole), own(unmappedArgs, hole.arg)) : undefined;
+    return changed(hole.arg) ? printHole(ref(hole), value(hole.arg)) : undefined;
   };
   return template
     .map((segment) => {

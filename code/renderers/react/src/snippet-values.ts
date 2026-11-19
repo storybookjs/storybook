@@ -1,4 +1,4 @@
-import type { HoleMarks } from 'storybook/internal/docs-tools';
+import type { HoleMarks } from 'storybook/internal/docs-tools/snippets';
 
 // How a React story snippet prints one arg's value in each place it can stand. The story-docs
 // provider prints the static snippet with these from the story's code, and the preview's

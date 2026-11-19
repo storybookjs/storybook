@@ -41,6 +41,7 @@
       "default": "./dist/docgen/index.js"
     },
     "./internal/docgen-worker": "./dist/docgen/docgen-worker.js",
+    "./internal/register-print-hole": "./dist/docs/register-print-hole.js",
     "./package.json": "./package.json",
     "./preset": "./dist/preset.js"
   },

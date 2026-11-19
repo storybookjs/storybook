@@ -214,20 +214,6 @@ export class PNPMProxy extends JsPackageManager {
     }
   }
 
-  public async getModulePackageJSON(packageName: string): Promise<PackageJson | null> {
-    const wantedPath = join('node_modules', packageName, 'package.json');
-    const packageJsonPath = find.up(wantedPath, {
-      cwd: this.primaryPackageJson.operationDir,
-      last: getProjectRoot(),
-    });
-
-    if (!packageJsonPath) {
-      return null;
-    }
-
-    return JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
-  }
-
   protected getResolutions(
     packageJson: PackageJson,
     versions: Record<string, string>

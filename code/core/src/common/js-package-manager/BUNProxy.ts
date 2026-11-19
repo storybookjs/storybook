@@ -7,7 +7,6 @@ import {
   MinimumReleaseAgeHandledError,
 } from 'storybook/internal/server-errors';
 
-import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
 import type { ResultPromise } from 'execa';
 import sort from 'semver/functions/sort.js';
@@ -15,7 +14,6 @@ import { dedent } from 'ts-dedent';
 
 import type { ExecuteCommandOptions } from '../utils/command.ts';
 import { executeCommand } from '../utils/command.ts';
-import { getProjectRoot } from '../utils/paths.ts';
 import { JsPackageManager, PackageManagerName } from './JsPackageManager.ts';
 import type { PackageJson } from './PackageJson.ts';
 import type { InstallationMetadata, PackageMetadata } from './types.ts';
@@ -111,21 +109,6 @@ export class BUNProxy extends JsPackageManager {
 
   getPackageCommand(args: string[]): string {
     return `bunx ${args.join(' ')}`;
-  }
-
-  public async getModulePackageJSON(packageName: string): Promise<PackageJson | null> {
-    const wantedPath = join('node_modules', packageName, 'package.json');
-    const packageJsonPath = find.up(wantedPath, {
-      cwd: this.primaryPackageJson.operationDir,
-      last: getProjectRoot(),
-    });
-
-    if (!packageJsonPath) {
-      return null;
-    }
-
-    const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
-    return packageJson;
   }
 
   getInstallArgs(): string[] {

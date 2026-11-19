@@ -18,12 +18,12 @@ import type { ExecuteCommandOptions } from '../utils/command.ts';
 import { getPkgPrNewPackageSpecifier } from '../utils/get-pkg-pr-new-package-specifier.ts';
 import { findFilesUp, getProjectRoot } from '../utils/paths.ts';
 import storybookPackagesVersions from '../versions.ts';
+import { getBundledVersion } from './PackageJson.ts';
 import type { PackageJson, PackageJsonWithDepsAndDevDeps } from './PackageJson.ts';
 import { LOCK_FILES } from './constants.ts';
 import { type OverrideSource, toOverrides } from './overrides.ts';
 import type { InstallationMetadata } from './types.ts';
 import { getInstallErrorTail } from './util.ts';
-import { getVitePlusVersions } from './vite-plus-versions.ts';
 
 export enum PackageManagerName {
   NPM = 'npm',
@@ -161,8 +161,22 @@ export abstract class JsPackageManager {
   /** Returns the command to run the binary of a remote package, as `runPackageCommand` does with `useRemotePkg` */
   abstract getRemoteRunCommand(args: string[]): string;
 
-  /** Get the package.json file for a given module. */
-  abstract getModulePackageJSON(packageName: string, cwd?: string): Promise<PackageJson | null>;
+  /** Get the package.json file for a given module from the nearest `node_modules` at or above `cwd`. */
+  public async getModulePackageJSON(
+    packageName: string,
+    cwd = this.primaryPackageJson.operationDir
+  ): Promise<PackageJson | null> {
+    const packageJsonPath = find.up(join('node_modules', packageName, 'package.json'), {
+      cwd,
+      last: getProjectRoot(),
+    });
+
+    if (!packageJsonPath) {
+      return null;
+    }
+
+    return JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
+  }
 
   isStorybookInMonorepo() {
     const turboJsonPath = find.up(`turbo.json`, { last: getProjectRoot() });
@@ -934,13 +948,12 @@ export abstract class JsPackageManager {
 
       logger.debug(`Getting installed version for ${packageName}...`);
 
-      // When vite-plus is used, packages like vite and vitest are vendored and their node_modules entries report the vite-plus wrapper version (e.g. 0.1.16) instead of the actual vendored version.
-      // Check vite-plus first so we always get the real version when it's available.
-      let version: string | null = null;
-      const vitePlusVersions = await getVitePlusVersions();
-      if (vitePlusVersions?.[packageName]) {
-        version = vitePlusVersions[packageName]!;
-      }
+      // Package managers report an alias such as Vite+'s `vite` by its own version.
+      let version =
+        getBundledVersion(
+          await this.getModulePackageJSON(packageName, this.instanceDir),
+          packageName
+        ) ?? null;
 
       if (!version) {
         const installations = await this.findInstallations([packageName]);

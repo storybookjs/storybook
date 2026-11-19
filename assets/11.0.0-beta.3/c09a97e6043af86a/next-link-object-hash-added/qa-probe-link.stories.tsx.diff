@@ -1,0 +1,19 @@
+--- /dev/null	2026-11-19 09:45:12.170798047 +0000
++++ registry/ui/button-story/qa-probe-link.stories.tsx	2026-11-19 09:49:49.695796567 +0000
+@@ -0,0 +1,16 @@
++import Link from "next/link";
++
++const meta = {
++  title: "QaProbe/NextLink",
++  component: Link,
++};
++
++export default meta;
++
++export const ObjectHref = {
++  render: () => (
++    <Link href={{ pathname: "/blog", query: { page: "2" }, hash: "list" }}>
++      blog page 2
++    </Link>
++  ),
++};

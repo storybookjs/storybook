@@ -3,23 +3,38 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { enhanceContext } from './preview.ts';
 
-const nativeFocus = HTMLElement.prototype.focus;
+describe('focus guard', () => {
+  let guardedFocus: typeof HTMLElement.prototype.focus;
 
-describe('focus instrumentation', () => {
   beforeAll(async () => {
     await enhanceContext({ canvasElement: document.body } as any);
+    guardedFocus = HTMLElement.prototype.focus;
   });
 
   afterEach(() => {
-    HTMLElement.prototype.focus = nativeFocus;
+    HTMLElement.prototype.focus = guardedFocus;
     document.body.innerHTML = '';
   });
 
-  it('hands back the current focus method when read off the prototype', () => {
-    const marker = function focusMarker(this: HTMLElement) {};
-    HTMLElement.prototype.focus = marker;
+  it('keeps focus a writable data property on the prototype', () => {
+    const descriptor = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'focus');
 
-    expect(HTMLElement.prototype.focus).toBe(marker);
+    expect(descriptor?.writable).toBe(true);
+    expect(descriptor?.get).toBeUndefined();
+  });
+
+  it('scopes an instance assignment to that element', () => {
+    const a = document.createElement('button');
+    const b = document.createElement('button');
+    document.body.append(a, b);
+    const ownFocus = vi.fn();
+    a.focus = ownFocus;
+
+    b.focus();
+
+    expect(Object.hasOwn(a, 'focus')).toBe(true);
+    expect(document.activeElement).toBe(b);
+    expect(ownFocus).not.toHaveBeenCalled();
   });
 
   it('supports the capture-and-wrap pattern used by focus-management libraries', () => {
@@ -37,7 +52,7 @@ describe('focus instrumentation', () => {
     expect(document.activeElement).toBe(button);
   });
 
-  it('returns a no-op for nodes without a browsing context', () => {
+  it('skips focus for nodes without a browsing context', () => {
     const detachedDocument = document.implementation.createHTMLDocument();
     const button = detachedDocument.createElement('button');
 

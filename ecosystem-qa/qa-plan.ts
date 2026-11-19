@@ -50,9 +50,10 @@ them, with the title of each PR, or writes it to --out. It creates nothing on Gi
 
 diff prints what differs between two plans of that window: each PR whose place changed, with where
 it was and where it is, the entries removed, added, and changed, with their batch and repos and
-whether they are probes, the discovered repos removed and added, and the manual checks removed and
-added. It exits 1 with a line for each PR that moved and that --moved, a comma-separated list of PR
-numbers, does not name.`;
+whether they are probes, the discovered repos removed and added, and the manual checks and the
+reasons for no QA removed and added. --moved is a comma-separated list of the PRs that the change
+is meant to move. A PR that moved and that --moved does not name is marked so in its line. diff
+exits 1 with a line for each such PR, and for each PR that --moved names and that did not move.`;
 
 const { values, positionals } = parseArgs({
   allowPositionals: true,
@@ -203,18 +204,25 @@ if (files.length > fileCount) {
   !values.out &&
   /^(\d+(,\d+)*)?$/.test(values.moved ?? '')
 ) {
-  const { moved, lines } = diffPlans(readPlan(file), readPlan(after), readWindow(values.window));
+  const named = values.moved ? values.moved.split(',').map(Number) : [];
+  const { lines, unnamed, unmoved } = diffPlans(
+    readPlan(file),
+    readPlan(after),
+    readWindow(values.window),
+    named
+  );
   console.log(
     lines.length
       ? lines.join('\n')
       : 'No PR moved, and no entry, discovered repo, or manual check differs.'
   );
-  const named = new Set(values.moved?.split(',').map(Number));
-  const unnamed = moved.filter((pr) => !named.has(pr));
   for (const pr of unnamed) {
     console.error(`#${pr} moved, and --moved does not name it.`);
   }
-  process.exitCode = unnamed.length ? 1 : 0;
+  for (const pr of unmoved) {
+    console.error(`#${pr} did not move, and --moved names it.`);
+  }
+  process.exitCode = unnamed.length || unmoved.length ? 1 : 0;
 } else {
   console.error(HELP);
   process.exit(1);

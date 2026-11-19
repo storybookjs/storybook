@@ -205,12 +205,42 @@ describe('qa-plan.ts diff', () => {
     );
   });
 
+  it('prints the reasons for no QA removed and added, with their PRs, also a reworded one', () => {
+    const { status, stdout } = diff(
+      [PLAN, '/dev/stdin'],
+      rendered((draft) => {
+        draft.decisions['35618'] = { none: 'the docs E2E tests of this repository cover it' };
+      })
+    );
+
+    expect(status).toBe(0);
+    expect(stdout).toBe(
+      "No-QA reason removed: the monorepo's docs E2E tests cover the timing (#35618)\nNo-QA reason added: the docs E2E tests of this repository cover it (#35618)\n"
+    );
+  });
+
   it('exits 1 with a line for each PR that moved and that --moved does not name', () => {
     const { status, stderr } = diff([PLAN, '/dev/stdin'], untested, '36137');
 
     expect(status).toBe(1);
     expect(stderr).toBe('#37344 moved, and --moved does not name it.\n');
     expect(diff([PLAN, '/dev/stdin'], untested, '36137,37344').status).toBe(0);
+  });
+
+  it('marks in its line a PR that moved and that --moved does not name', () => {
+    const { stdout } = diff([PLAN, '/dev/stdin'], untested, '36137');
+
+    expect(stdout).toContain('#36137 moved: tested by `story-sort-in-main` -> manual QA\n');
+    expect(stdout).toContain('#37344 moved: manual QA -> no QA, and --moved does not name it\n');
+  });
+
+  it('exits 1 with a line for each PR that --moved names and that did not move', () => {
+    const { status, stderr } = diff([PLAN, '/dev/stdin'], untested, '36137,37344,35618,36664');
+
+    expect(status).toBe(1);
+    expect(stderr).toBe(
+      '#35618 did not move, and --moved names it.\n#36664 did not move, and --moved names it.\n'
+    );
   });
 });
 

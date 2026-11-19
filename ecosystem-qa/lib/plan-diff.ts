@@ -67,17 +67,28 @@ const missingFrom = <Item>(items: Item[], others: Item[], key: (item: Item) => s
   return items.filter((item) => !keys.has(key(item)));
 };
 
+const withPrs = (text: string, prs: number[]) =>
+  `${text} (${prs.map((pr) => `#${pr}`).join(', ')})`;
+
 const manualChecks = (plan: Plan) =>
-  manualChecksOf(plan, layoutPlan(plan).at).map(
-    ({ manual, prs }) => `${manual} (${prs.map((pr) => `#${pr}`).join(', ')})`
-  );
+  manualChecksOf(plan, layoutPlan(plan).at).map(({ manual, prs }) => withPrs(manual, prs));
 
-export type PlanDiff = { moved: number[]; lines: string[] };
+const noQaReasons = (plan: Plan) => [
+  ...plan.none.map(({ reason, prs }) => withPrs(reason, prs)),
+  ...plan.groups.flatMap((group) =>
+    group.slug !== null && group.decision && 'none' in group.decision
+      ? [withPrs(group.decision.none, group.prs)]
+      : []
+  ),
+];
 
-export const diffPlans = (before: Plan, after: Plan, window: Window): PlanDiff => {
+export type PlanDiff = { lines: string[]; unnamed: number[]; unmoved: number[] };
+
+export const diffPlans = (before: Plan, after: Plan, window: Window, named: number[]): PlanDiff => {
   const was = placesByPr(before, window);
   const is = placesByPr(after, window);
   const moved = window.prs.map((pr) => pr.number).filter((pr) => was.get(pr) !== is.get(pr));
+  const unnamed = moved.filter((pr) => !named.includes(pr));
   const slug = (entry: PlanEntry) => entry.slug;
   const id = (repo: DiscoveredRepo) => repo.id;
   const changed = after.entries.flatMap((entry) => {
@@ -87,10 +98,16 @@ export const diffPlans = (before: Plan, after: Plan, window: Window): PlanDiff =
   });
   const checksBefore = manualChecks(before);
   const checksAfter = manualChecks(after);
+  const reasonsBefore = noQaReasons(before);
+  const reasonsAfter = noQaReasons(after);
   return {
-    moved,
+    unnamed,
+    unmoved: named.filter((pr) => !moved.includes(pr)),
     lines: [
-      ...moved.map((pr) => `#${pr} moved: ${was.get(pr)} -> ${is.get(pr)}`),
+      ...moved.map(
+        (pr) =>
+          `#${pr} moved: ${was.get(pr)} -> ${is.get(pr)}${unnamed.includes(pr) ? ', and --moved does not name it' : ''}`
+      ),
       ...missingFrom(before.entries, after.entries, slug).map(
         (entry) => `Entry removed: ${entryText(entry)}`
       ),
@@ -113,6 +130,12 @@ export const diffPlans = (before: Plan, after: Plan, window: Window): PlanDiff =
       ),
       ...missingFrom(checksAfter, checksBefore, String).map(
         (check) => `Manual check added: ${check}`
+      ),
+      ...missingFrom(reasonsBefore, reasonsAfter, String).map(
+        (reason) => `No-QA reason removed: ${reason}`
+      ),
+      ...missingFrom(reasonsAfter, reasonsBefore, String).map(
+        (reason) => `No-QA reason added: ${reason}`
       ),
     ],
   };

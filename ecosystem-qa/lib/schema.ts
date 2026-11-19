@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { CHECK_IDS, TIERS } from '../checks.ts';
 import { cycleRepo, SEMVER } from './cycle.ts';
 import { canPushTo } from './push-targets.ts';
+import { BUILD_COMMIT } from './target.ts';
 
 export const RepoClass = z.enum(['owned', 'tier1', 'tier2']);
 export type RepoClass = z.infer<typeof RepoClass>;
@@ -246,6 +247,8 @@ export const RunRequestRecord = z.strictObject({
   entry: CatalogEntry,
   plan: PlanRecord.optional(),
   version: z.string(),
+  // The commit whose pkg.pr.new build the run upgraded to, in place of the release `version`.
+  build: z.string().regex(BUILD_COMMIT).optional(),
   engine: Engine,
   model: ModelId,
   effort: Effort,
@@ -295,7 +298,8 @@ export const RunResultFile = z.strictObject({
   // The error the sandbox raised after the agent had finished, when the answer came from the run log.
   recoveredFrom: z.string().optional(),
   cutShort: z.string().optional(),
-  // The tag whose MIGRATION.md the agent read, or `checkout` for a tested version without a tag.
+  // The tag or build commit whose MIGRATION.md the agent read, or `checkout` for a tested version
+  // without a tag.
   migrationGuide: z.string().optional(),
 });
 export type RunResultFile = z.infer<typeof RunResultFile>;

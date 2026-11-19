@@ -106,6 +106,21 @@ describe('loadResults', () => {
     expect(warnings[0]).toMatch(/disagrees .* on os, version/);
   });
 
+  it('ignores the run of a build, even one that installed the collected version', () => {
+    const commit = '3435e27065c0fd8e123c0251783882de4db00c1f';
+    writeRun(artifactRun(resultsDir), {
+      ...record(),
+      request: { ...record().request, build: commit },
+    });
+
+    const { results, warnings } = load(resultsDir);
+
+    expect(results).toEqual([]);
+    expect(warnings).toEqual([
+      expect.stringContaining(`ran the build of commit ${commit}, which proves a fix`),
+    ]);
+  });
+
   it('takes the repository from the catalog and the head from the bundle, not from the record', () => {
     const runDir = artifactRun(resultsDir);
     const branch = `qa/sb-${VERSION}/linux-claude`;

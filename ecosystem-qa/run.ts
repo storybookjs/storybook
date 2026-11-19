@@ -51,6 +51,7 @@ import { redactTree } from './lib/redact.ts';
 import { upgraded } from './lib/results.ts';
 import { unsandboxedRefusal } from './lib/sandbox-policy.ts';
 import { stopChildren } from './lib/stop-children.ts';
+import { buildUrl, buildVersion, upgradeTarget } from './lib/target.ts';
 import { usageFromStream } from './lib/usage.ts';
 import {
   saveStoppedClaudeSession,
@@ -62,9 +63,12 @@ import {
   type Stop,
 } from './lib/wrap-up.ts';
 
-const HELP = `Usage: node ecosystem-qa/run.ts --repo <catalog id> --version <storybook version> --engine <claude|codex> --sandbox <docker|bwrap|seatbelt|none> --out <dir>
+const HELP = `Usage: node ecosystem-qa/run.ts --repo <catalog id> (--version <storybook version> | --build <commit>) --engine <claude|codex> --sandbox <docker|bwrap|seatbelt|none> --out <dir>
 
 Options:
+  --build <commit>    Upgrade to the pkg.pr.new build of this full commit SHA of storybookjs/storybook
+                      in place of a release; its version is the one in the build. The record is a
+                      proof for a pull request, and collect.ts never makes a finding of it.
   --model <id>        Model id (default: claude-haiku-5-5 for claude, gpt-6.1-sol for codex)
   --effort <level>    low, medium or high (default: low)
   --tier <tier>       must (default without --plan) runs the checks every sweep needs; extended runs
@@ -101,13 +105,6 @@ const INSTALL_COMMAND: Record<CatalogEntry['packageManager'], string> = {
   pnpm: 'pnpm install --frozen-lockfile',
   yarn: 'yarn install --immutable',
   bun: 'bun install --frozen-lockfile',
-};
-
-const STORYBOOK_CLI: Record<CatalogEntry['packageManager'], (version: string) => string> = {
-  npm: (version) => `npx storybook@${version}`,
-  pnpm: (version) => `pnpm dlx storybook@${version}`,
-  yarn: (version) => `yarn dlx storybook@${version}`,
-  bun: (version) => `bunx storybook@${version}`,
 };
 
 // The upgrade must rewrite the lockfile, but GitHub runners set CI and GITHUB_ACTIONS, which make
@@ -171,14 +168,20 @@ const planOfRun = (
   return typeof planned === 'string' ? refuse(planned) : { ...planned, tier: scope.tier };
 };
 
+const versionOfBuild = async (commit: string): Promise<string> => {
+  const found = await buildVersion(commit);
+  return 'version' in found ? found.version : refuse(found.refusal);
+};
+
 const git = (cwd: string, ...args: string[]) =>
   execFileSync('git', args, { cwd, encoding: 'utf8' }).trim();
 
-const parseRequest = () => {
+const parseRequest = async () => {
   const { values } = parseArgs({
     options: {
       repo: { type: 'string' },
       version: { type: 'string' },
+      build: { type: 'string' },
       engine: { type: 'string' },
       sandbox: { type: 'string' },
       out: { type: 'string' },
@@ -202,11 +205,15 @@ const parseRequest = () => {
     process.exit(0);
   }
 
-  const { repo, version, out } = values;
+  const { repo, build, out } = values;
 
-  if (!repo || !version || !out || !values.engine || !values.sandbox) {
-    return fail('Missing one of --repo, --version, --engine, --sandbox, --out.');
+  if (!repo || !(values.version || build) || !out || !values.engine || !values.sandbox) {
+    return fail('Missing one of --repo, --version or --build, --engine, --sandbox, --out.');
   }
+  if (values.version && build) {
+    return fail('Pass --version or --build, not both: a build carries its own version.');
+  }
+  const version = build ? await versionOfBuild(build) : values.version!;
 
   try {
     versionLine(version);
@@ -247,6 +254,7 @@ const parseRequest = () => {
     entry,
     ...(planned ? { plan: planned.record } : {}),
     version,
+    ...(build ? { build } : {}),
     engine,
     model: values.model ?? DEFAULT_MODEL[engine],
     effort: parsedFlag(Effort, 'effort', values.effort),
@@ -450,9 +458,10 @@ const runSandcastle = async (
 ): Promise<Outcome> => {
   const evidenceDir = join(request.outDir, 'evidence');
   writeFileSync(join(evidenceDir, 'budget.json'), budgetRecord(startedAt, budget));
-  const cycleBranch = cycleBranchName(request.version, request.os, request.engine);
-  const startSha = clone(request.entry, cloneDir);
   const { packageManager, storybookDir, repo } = request.entry;
+  const target = upgradeTarget(request, packageManager);
+  const cycleBranch = cycleBranchName(target.cycleName, request.os, request.engine);
+  const startSha = clone(request.entry, cloneDir);
   const stream = createWriteStream(join(request.outDir, 'agent-stream.jsonl'));
 
   let sessionSource: string | undefined;
@@ -498,9 +507,9 @@ const runSandcastle = async (
   const { checks, answerSchema } = checklist;
 
   try {
-    const guide = await guideFor(request.version, {
+    const guide = await guideFor(target.guideRef, {
       checkout: join(request.monorepoDir, 'MIGRATION.md'),
-      saveTo: join(scratchDir(), 'guides', `v${request.version}`, 'MIGRATION.md'),
+      saveTo: join(scratchDir(), 'guides', target.guideRef, 'MIGRATION.md'),
     });
     migrationGuide = guide.ref;
     const plan = planSandbox(request, cloneDir, evidenceDir, image, guide.file);
@@ -592,13 +601,16 @@ const runSandcastle = async (
       promptFile: PROMPT_FILE,
       promptArgs: {
         REPO: repo,
+        TARGET: target.title,
         VERSION: request.version,
         MAJOR: versionLine(request.version).split('.')[0]!,
         STORYBOOK_DIR: storybookDir,
         PACKAGE_MANAGER: packageManager,
         INSTALL_COMMAND: INSTALL_COMMAND[packageManager],
-        UPGRADE_COMMAND: `${STORYBOOK_CLI[packageManager](request.version)} upgrade --yes`,
-        STORYBOOK_CLI: STORYBOOK_CLI[packageManager](request.version),
+        UPGRADE_COMMAND: `${target.cli} upgrade --yes`,
+        UPGRADE_NOTE: target.upgradeNote,
+        STORYBOOK_CLI: target.cli,
+        NPX_CLI: target.npxCli,
         OS: request.os,
         MIGRATION_FILE: plan.migrationFile,
         TOOLS_DIR: plan.toolsDir,
@@ -760,13 +772,15 @@ const engineLabel = ({ request }: RunResultFile) =>
 
 const summarize = (result: RunResultFile, resultPath: string): string => {
   const failed = result.checks.filter((check) => check.state === 'fail').length;
+  const { build } = result.request;
+  const target = upgradeTarget(result.request, result.request.entry.packageManager);
   const usd =
     result.usage.usd === null
       ? 'unpriced'
       : `$${result.usage.usd.toFixed(2)}${result.usage.priceSource === 'table' ? ' (priced from the shared price table, not from the agent)' : ''}`;
   const installed = upgraded(result)
-    ? `Storybook ${result.storybookVersionInstalled} installed`
-    : `The upgrade to ${result.request.version} did not happen; Storybook is on ${result.storybookVersionInstalled ?? 'an unknown version'}`;
+    ? `Storybook ${result.storybookVersionInstalled} installed${build ? ` from ${buildUrl(build)}` : ''}`
+    : `The upgrade to ${target.title} did not happen; Storybook is on ${result.storybookVersionInstalled ?? 'an unknown version'}`;
   const installTime =
     result.timing.installSeconds === undefined
       ? ''
@@ -775,11 +789,11 @@ const summarize = (result: RunResultFile, resultPath: string): string => {
     `${result.request.entry.repo} on ${result.request.os} with ${engineLabel(result)} (${result.request.model}) finished with status ${result.status} in ${result.timing.wallSeconds}s.`,
     `${installed}${installTime}, ${result.checks.length} checks reported, ${failed} failed, ${result.findings.length} findings.`,
     `Usage was ${result.usage.inputTokens} input, ${result.usage.outputTokens} output, ${result.usage.cacheReadTokens ?? 0} cache-read and ${result.usage.cacheWriteTokens ?? 0} cache-write tokens, ${usd}.`,
-    `Cycle branch ${cycleBranchName(result.request.version, result.request.os, result.request.engine)} head ${result.headSha ?? 'has no commits'}.${result.machine.freeDiskMbAtEnd === undefined ? '' : ` ${result.machine.freeDiskMbAtEnd} MB disk free at the end.`} Result: ${resultPath}.`,
+    `Cycle branch ${cycleBranchName(target.cycleName, result.request.os, result.request.engine)} head ${result.headSha ?? 'has no commits'}.${result.machine.freeDiskMbAtEnd === undefined ? '' : ` ${result.machine.freeDiskMbAtEnd} MB disk free at the end.`} Result: ${resultPath}.`,
     ...(result.error ? [`Error: ${result.error}`] : []),
     ...(result.migrationGuide === CHECKOUT_GUIDE
       ? [
-          `The agent read the migration guide of this checkout, because v${result.request.version} is not a tag of storybookjs/storybook.`,
+          `The agent read the migration guide of this checkout, because ${target.guideRef} is not a tag of storybookjs/storybook.`,
         ]
       : []),
     ...(result.cutShort ? [result.cutShort] : []),
@@ -791,7 +805,7 @@ const summarize = (result: RunResultFile, resultPath: string): string => {
   ].join(' ');
 };
 
-const { request, cloneDir, image, budget, checklist } = parseRequest();
+const { request, cloneDir, image, budget, checklist } = await parseRequest();
 const startedAt = new Date();
 mkdirSync(join(request.outDir, 'evidence'), { recursive: true });
 writeFileSync(join(request.outDir, 'evidence/checklist.md'), `${checklist.text}\n`);

@@ -1,0 +1,452 @@
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+[90m┌[39m  storybook v11.0.0-beta.3
+[90m│[39m
+[33m▲[39m  @storybook/nextjs is deprecated and will be removed in Storybook 12.
+[90m│[39m  Migrate to @storybook/nextjs-vite — the automigration is available via
+[90m│[39m  `storybook upgrade` (accept the fix) or `storybook migrate
+[90m│[39m  nextjs-to-nextjs-vite`.
+[90m│[39m
+[34m●[39m  Starting...
+[90m│[39m
+[33m▲[39m  Multiple story files share the component id 'apps-editor':
+[90m│[39m  - ./stories/apps/Editor.stories.js
+[90m│[39m  - ./stories/apps/VersionOrdering.stories.js
+[90m│[39m  The props table and description for this id are generated from
+[90m│[39m  './stories/apps/VersionOrdering.stories.js' only. If these files
+[90m│[39m  document different components, give each file a unique title so every
+[90m│[39m  component keeps its docs.
+[90m│[39m
+[33m▲[39m  Multiple story files share the component id 'subscriptions-addons':
+[90m│[39m  - ./stories/subscriptions/AddonsListing.stories.js
+[90m│[39m  - ./stories/subscriptions/EditAddon.stories.js
+[90m│[39m  The props table and description for this id are generated from
+[90m│[39m  './stories/subscriptions/EditAddon.stories.js' only. If these files
+[90m│[39m  document different components, give each file a unique title so every
+[90m│[39m  component keeps its docs.
+[90m│[39m
+[33m▲[39m  Multiple story files share the component id 'subscriptions-edit':
+[90m│[39m  - ./stories/subscriptions/EditQuotas.stories.js
+[90m│[39m  - ./stories/subscriptions/EditSubscription.stories.js
+[90m│[39m  - ./stories/subscriptions/EditSubscriptionAddons.stories.js
+[90m│[39m  The props table and description for this id are generated from
+[90m│[39m  './stories/subscriptions/EditSubscriptionAddons.stories.js' only. If
+[90m│[39m  these files document different components, give each file a unique
+[90m│[39m  title so every component keeps its docs.
+[90m│[39m
+[34m●[39m  Using implicit CSS loaders
+[90m│[39m
+[34m●[39m  Using SWC as compiler
+[90m│[39m
+[34m●[39m  Using default Webpack5 setup
+<i> [webpack-dev-middleware] wait until bundle finished
+<s> [webpack.Progress] 3% setup watch run
+<s> [webpack.Progress] 3% setup watch run VirtualModulesPlugin
+<s> [webpack.Progress] 3% setup watch run storybook-mock-plugin
+<s> [webpack.Progress] 3% setup watch run DevMiddleware
+<s> [webpack.Progress] 3% setup watch run
+<s> [webpack.Progress] 4% setup normal module factory
+<s> [webpack.Progress] 4% setup normal module factory CaseSensitivePathsPlugin
+<s> [webpack.Progress] 4% setup normal module factory NormalModuleReplacementPlugin
+<s> [webpack.Progress] 4% setup normal module factory storybook-mock-plugin
+<s> [webpack.Progress] 4% setup normal module factory
+<s> [webpack.Progress] 5% setup context module factory
+<s> [webpack.Progress] 5% setup context module factory
+<s> [webpack.Progress] 6% setup before compile
+<s> [webpack.Progress] 6% setup before compile ProgressPlugin
+<s> [webpack.Progress] 6% setup before compile ProgressPlugin
+<s> [webpack.Progress] 6% setup before compile
+<s> [webpack.Progress] 7% setup compile
+<s> [webpack.Progress] 7% setup compile ExternalsPlugin
+<s> [webpack.Progress] 7% setup compile ExternalsPlugin
+<s> [webpack.Progress] 7% setup compile
+<s> [webpack.Progress] 8% setup compilation
+<s> [webpack.Progress] 8% setup compilation HtmlWebpackPlugin
+<s> [webpack.Progress] 8% setup compilation ArrayPushCallbackChunkFormatPlugin
+<s> [webpack.Progress] 8% setup compilation JsonpChunkLoadingPlugin
+<s> [webpack.Progress] 8% setup compilation StartupChunkDependenciesPlugin
+<s> [webpack.Progress] 8% setup compilation ImportScriptsChunkLoadingPlugin
+<s> [webpack.Progress] 8% setup compilation WorkerPlugin
+<s> [webpack.Progress] 8% setup compilation SplitChunksPlugin
+<s> [webpack.Progress] 8% setup compilation RuntimeChunkPlugin
+<s> [webpack.Progress] 8% setup compilation ResolverCachePlugin
+<s> [webpack.Progress] 8% setup compilation
+<s> [webpack.Progress] 9% setup compilation
+<s> [webpack.Progress] 9% setup compilation DefinePlugin
+<s> [webpack.Progress] 9% setup compilation HotModuleReplacementPlugin
+<s> [webpack.Progress] 9% setup compilation ProgressPlugin
+<s> [webpack.Progress] 9% setup compilation DefinePlugin
+<s> [webpack.Progress] 9% setup compilation DefinePlugin
+<s> [webpack.Progress] 9% setup compilation ProvidePlugin
+<s> [webpack.Progress] 9% setup compilation EntryPlugin
+<s> [webpack.Progress] 9% setup compilation DefinePlugin
+<s> [webpack.Progress] 9% setup compilation ProvidePlugin
+<s> [webpack.Progress] 9% setup compilation ReactRefreshPlugin
+<s> [webpack.Progress] 9% setup compilation WebpackInjectMockerRuntimePlugin
+<s> [webpack.Progress] 9% setup compilation ExternalsPlugin
+<s> [webpack.Progress] 9% setup compilation ExternalsPlugin
+<s> [webpack.Progress] 9% setup compilation ChunkPrefetchPreloadPlugin
+<s> [webpack.Progress] 9% setup compilation ModuleInfoHeaderPlugin
+<s> [webpack.Progress] 9% setup compilation SourceMapDevToolPlugin
+<s> [webpack.Progress] 9% setup compilation JavascriptModulesPlugin
+<s> [webpack.Progress] 9% setup compilation JsonModulesPlugin
+<s> [webpack.Progress] 9% setup compilation AssetModulesPlugin
+<s> [webpack.Progress] 9% setup compilation EntryPlugin
+<s> [webpack.Progress] 9% setup compilation EntryPlugin
+<s> [webpack.Progress] 9% setup compilation RuntimePlugin
+<s> [webpack.Progress] 9% setup compilation InferAsyncModulesPlugin
+<s> [webpack.Progress] 9% setup compilation DataUriPlugin
+<s> [webpack.Progress] 9% setup compilation FileUriPlugin
+<s> [webpack.Progress] 9% setup compilation CompatibilityPlugin
+<s> [webpack.Progress] 9% setup compilation HarmonyModulesPlugin
+<s> [webpack.Progress] 9% setup compilation AMDPlugin
+<s> [webpack.Progress] 9% setup compilation RequireJsStuffPlugin
+<s> [webpack.Progress] 9% setup compilation CommonJsPlugin
+<s> [webpack.Progress] 9% setup compilation LoaderPlugin
+<s> [webpack.Progress] 9% setup compilation LoaderPlugin
+<s> [webpack.Progress] 9% setup compilation NodeStuffPlugin
+<s> [webpack.Progress] 9% setup compilation APIPlugin
+<s> [webpack.Progress] 9% setup compilation ExportsInfoApiPlugin
+<s> [webpack.Progress] 9% setup compilation WebpackIsIncludedPlugin
+<s> [webpack.Progress] 9% setup compilation ConstPlugin
+<s> [webpack.Progress] 9% setup compilation UseStrictPlugin
+<s> [webpack.Progress] 9% setup compilation RequireIncludePlugin
+<s> [webpack.Progress] 9% setup compilation RequireEnsurePlugin
+<s> [webpack.Progress] 9% setup compilation RequireContextPlugin
+<s> [webpack.Progress] 9% setup compilation ImportPlugin
+<s> [webpack.Progress] 9% setup compilation ImportMetaContextPlugin
+<s> [webpack.Progress] 9% setup compilation SystemPlugin
+<s> [webpack.Progress] 9% setup compilation ImportMetaPlugin
+<s> [webpack.Progress] 9% setup compilation URLPlugin
+<s> [webpack.Progress] 9% setup compilation DefaultStatsFactoryPlugin
+<s> [webpack.Progress] 9% setup compilation DefaultStatsPresetPlugin
+<s> [webpack.Progress] 9% setup compilation DefaultStatsPrinterPlugin
+<s> [webpack.Progress] 9% setup compilation JavascriptMetaInfoPlugin
+<s> [webpack.Progress] 9% setup compilation EnsureChunkConditionsPlugin
+<s> [webpack.Progress] 9% setup compilation RemoveEmptyChunksPlugin
+<s> [webpack.Progress] 9% setup compilation MergeDuplicateChunksPlugin
+<s> [webpack.Progress] 9% setup compilation SideEffectsFlagPlugin
+<s> [webpack.Progress] 9% setup compilation FlagDependencyExportsPlugin
+<s> [webpack.Progress] 9% setup compilation NamedModuleIdsPlugin
+<s> [webpack.Progress] 9% setup compilation NamedChunkIdsPlugin
+<s> [webpack.Progress] 9% setup compilation DefinePlugin
+<s> [webpack.Progress] 9% setup compilation TemplatedPathPlugin
+<s> [webpack.Progress] 9% setup compilation RecordIdsPlugin
+<s> [webpack.Progress] 9% setup compilation WarnCaseSensitiveModulesPlugin
+<s> [webpack.Progress] 9% setup compilation IgnoreWarningsPlugin
+<s> [webpack.Progress] 9% setup compilation ProgressPlugin
+<s> [webpack.Progress] 9% setup compilation
+<s> [webpack.Progress] 10% building
+<s> [webpack.Progress] 10% building 0/1 entries 0/0 dependencies 0/0 modules
+<s> [webpack.Progress] 10% building import loader ./node_modules/@pmmmwh/react-refresh-webpack-plugin/loader/index.js
+<s> [webpack.Progress] 10% building 0/3 entries 1/3 dependencies 0/1 modules
+<s> [webpack.Progress] 10% building 0/3 entries 315/400 dependencies 14/168 modules
+<s> [webpack.Progress] 12% building 0/3 entries 1173/1245 dependencies 41/329 modules
+<s> [webpack.Progress] 14% building 0/3 entries 2383/2500 dependencies 86/743 modules
+<s> [webpack.Progress] 28% building 1/3 entries 3197/3422 dependencies 111/878 modules
+<s> [webpack.Progress] 28% building 1/3 entries 4630/4700 dependencies 166/1037 modules
+<s> [webpack.Progress] 28% building 1/3 entries 8285/15755 dependencies 178/4500 modules
+<s> [webpack.Progress] 28% building 1/3 entries 11997/15755 dependencies 178/8200 modules
+<s> [webpack.Progress] 28% building 1/3 entries 15400/15755 dependencies 178/11596 modules
+<s> [webpack.Progress] 28% building 1/3 entries 17200/17342 dependencies 278/12219 modules
+<s> [webpack.Progress] 28% building 1/3 entries 18752/18900 dependencies 425/12551 modules
+<s> [webpack.Progress] 28% building 1/3 entries 23458/23500 dependencies 2550/12645 modules
+<s> [webpack.Progress] 33% building 1/3 entries 29108/29200 dependencies 5376/12645 modules
+<s> [webpack.Progress] 47% building 1/3 entries 35657/35700 dependencies 8652/12645 modules
+<s> [webpack.Progress] 58% building 1/3 entries 41200/41410 dependencies 11293/12690 modules
+<s> [webpack.Progress] 58% building 1/3 entries 43200/43545 dependencies 11337/12855 modules
+<s> [webpack.Progress] 59% building 1/3 entries 44800/45134 dependencies 11696/12999 modules
+<s> [webpack.Progress] 60% building 1/3 entries 46598/46700 dependencies 12368/13445 modules
+<s> [webpack.Progress] 63% building 1/3 entries 48863/48900 dependencies 13478/13842 modules
+<s> [webpack.Progress] 64% building 2/3 entries 49034/49064 dependencies 13698/13884 modules
+<s> [webpack.Progress] 65% building 3/3 entries 49324/49324 dependencies 13989/13989 modules
+<s> [webpack.Progress] 65% building
+<s> [webpack.Progress] 69% building finish
+<s> [webpack.Progress] 69% building finish
+<s> [webpack.Progress] 70% sealing finish module graph
+<s> [webpack.Progress] 70% sealing finish module graph ResolverCachePlugin
+<s> [webpack.Progress] 70% sealing finish module graph InferAsyncModulesPlugin
+<s> [webpack.Progress] 70% sealing finish module graph FlagDependencyExportsPlugin
+<s> [webpack.Progress] 70% sealing finish module graph
+<s> [webpack.Progress] 70% sealing plugins
+<s> [webpack.Progress] 70% sealing plugins WarnCaseSensitiveModulesPlugin
+<s> [webpack.Progress] 70% sealing plugins
+<s> [webpack.Progress] 71% sealing dependencies optimization
+<s> [webpack.Progress] 71% sealing dependencies optimization SideEffectsFlagPlugin
+<s> [webpack.Progress] 71% sealing dependencies optimization
+<s> [webpack.Progress] 71% sealing after dependencies optimization
+<s> [webpack.Progress] 71% sealing after dependencies optimization
+<s> [webpack.Progress] 72% sealing chunk graph
+<s> [webpack.Progress] 72% sealing chunk graph
+<s> [webpack.Progress] 73% sealing after chunk graph
+<s> [webpack.Progress] 73% sealing after chunk graph
+<s> [webpack.Progress] 73% sealing optimizing
+<s> [webpack.Progress] 73% sealing optimizing
+<s> [webpack.Progress] 74% sealing module optimization
+<s> [webpack.Progress] 74% sealing module optimization
+<s> [webpack.Progress] 75% sealing after module optimization
+<s> [webpack.Progress] 75% sealing after module optimization
+<s> [webpack.Progress] 75% sealing chunk optimization
+<s> [webpack.Progress] 75% sealing chunk optimization EnsureChunkConditionsPlugin
+<s> [webpack.Progress] 75% sealing chunk optimization RemoveEmptyChunksPlugin
+<s> [webpack.Progress] 75% sealing chunk optimization MergeDuplicateChunksPlugin
+<s> [webpack.Progress] 75% sealing chunk optimization SplitChunksPlugin
+<s> [webpack.Progress] 75% sealing chunk optimization RemoveEmptyChunksPlugin
+<s> [webpack.Progress] 75% sealing chunk optimization
+<s> [webpack.Progress] 76% sealing after chunk optimization
+<s> [webpack.Progress] 76% sealing after chunk optimization
+<s> [webpack.Progress] 77% sealing module and chunk tree optimization
+<s> [webpack.Progress] 77% sealing module and chunk tree optimization PersistentChildCompilerSingletonPlugin
+<s> [webpack.Progress] 77% sealing module and chunk tree optimization
+<s> [webpack.Progress] 77% sealing after module and chunk tree optimization
+<s> [webpack.Progress] 77% sealing after module and chunk tree optimization
+<s> [webpack.Progress] 78% sealing chunk modules optimization
+<s> [webpack.Progress] 78% sealing chunk modules optimization
+<s> [webpack.Progress] 78% sealing after chunk modules optimization
+<s> [webpack.Progress] 78% sealing after chunk modules optimization
+<s> [webpack.Progress] 79% sealing module reviving
+<s> [webpack.Progress] 79% sealing module reviving RecordIdsPlugin
+<s> [webpack.Progress] 79% sealing module reviving
+<s> [webpack.Progress] 80% sealing before module ids
+<s> [webpack.Progress] 80% sealing before module ids
+<s> [webpack.Progress] 80% sealing module ids
+<s> [webpack.Progress] 80% sealing module ids NamedModuleIdsPlugin
+<s> [webpack.Progress] 80% sealing module ids
+<s> [webpack.Progress] 81% sealing module id optimization
+<s> [webpack.Progress] 81% sealing module id optimization
+<s> [webpack.Progress] 82% sealing module id optimization
+<s> [webpack.Progress] 82% sealing module id optimization
+<s> [webpack.Progress] 82% sealing chunk reviving
+<s> [webpack.Progress] 82% sealing chunk reviving RecordIdsPlugin
+<s> [webpack.Progress] 82% sealing chunk reviving
+<s> [webpack.Progress] 83% sealing before chunk ids
+<s> [webpack.Progress] 83% sealing before chunk ids
+<s> [webpack.Progress] 84% sealing chunk ids
+<s> [webpack.Progress] 84% sealing chunk ids NamedChunkIdsPlugin
+<s> [webpack.Progress] 84% sealing chunk ids
+<s> [webpack.Progress] 84% sealing chunk id optimization
+<s> [webpack.Progress] 84% sealing chunk id optimization
+<s> [webpack.Progress] 85% sealing after chunk id optimization
+<s> [webpack.Progress] 85% sealing after chunk id optimization
+<s> [webpack.Progress] 86% sealing record modules
+<s> [webpack.Progress] 86% sealing record modules RecordIdsPlugin
+<s> [webpack.Progress] 86% sealing record modules
+<s> [webpack.Progress] 86% sealing record chunks
+<s> [webpack.Progress] 86% sealing record chunks RecordIdsPlugin
+<s> [webpack.Progress] 86% sealing record chunks
+<s> [webpack.Progress] 87% sealing module hashing
+<s> [webpack.Progress] 87% sealing module hashing
+<s> [webpack.Progress] 87% sealing code generation
+<s> [webpack.Progress] 87% sealing code generation
+<s> [webpack.Progress] 88% sealing runtime requirements
+<s> [webpack.Progress] 88% sealing runtime requirements
+<s> [webpack.Progress] 89% sealing hashing
+<s> [webpack.Progress] 89% sealing hashing
+<s> [webpack.Progress] 89% sealing after hashing
+<s> [webpack.Progress] 89% sealing after hashing
+<s> [webpack.Progress] 90% sealing record hash
+<s> [webpack.Progress] 90% sealing record hash
+<s> [webpack.Progress] 91% sealing module assets processing
+<s> [webpack.Progress] 91% sealing module assets processing
+<s> [webpack.Progress] 91% sealing chunk assets processing
+<s> [webpack.Progress] 91% sealing chunk assets processing
+<s> [webpack.Progress] 92% sealing asset processing
+<s> [webpack.Progress] 92% sealing asset processing HotModuleReplacementPlugin
+<s> [webpack.Progress] 92% sealing asset processing PersistentChildCompilerSingletonPlugin
+<s> [webpack.Progress] 92% sealing asset processing SourceMapDevToolPlugin
+<s> [webpack.Progress] 92% sealing asset processing HtmlWebpackPlugin
+<s> [webpack.Progress] 92% sealing asset processing
+<s> [webpack.Progress] 93% sealing after asset optimization
+<s> [webpack.Progress] 93% sealing after asset optimization
+<s> [webpack.Progress] 93% sealing recording
+<s> [webpack.Progress] 93% sealing recording HotModuleReplacementPlugin
+<s> [webpack.Progress] 93% sealing recording
+<s> [webpack.Progress] 94% sealing after seal
+<s> [webpack.Progress] 94% sealing after seal
+<s> [webpack.Progress] 95% emitting emit
+<s> [webpack.Progress] 95% emitting emit
+<s> [webpack.Progress] 98% emitting after emit
+<s> [webpack.Progress] 98% emitting after emit SizeLimitsPlugin
+<s> [webpack.Progress] 98% emitting after emit
+<s> [webpack.Progress] 99% done plugins
+<s> [webpack.Progress] 99% done plugins CaseSensitivePathsPlugin
+<s> [webpack.Progress] 99% done plugins DevMiddleware
+<s> [webpack.Progress] 99% done plugins webpack-hot-middleware
+<s> [webpack.Progress] 99% done plugins
+<s> [webpack.Progress] 99% 
+
+<s> [webpack.Progress] 99% cache store build dependencies
+<s> [webpack.Progress] 99% cache store build dependencies
+<s> [webpack.Progress] 99% cache begin idle
+<s> [webpack.Progress] 99% cache begin idle
+<s> [webpack.Progress] 100% 
+
+ERROR in ./next-i18next.config.js 4:11-26
+Module not found: Error: Can't resolve 'path' in '/home/agent/workspace'
+
+BREAKING CHANGE: webpack < 5 used to include polyfills for node.js core modules by default.
+This is no longer the case. Verify if you need this module and configure a polyfill for it.
+
+If you want to include a polyfill, you need to:
+	- add a fallback 'resolve.fallback: { "path": require.resolve("path-browserify") }'
+	- install 'path-browserify'
+If you don't want to include a polyfill, you can use an empty module like this:
+	resolve.fallback: { "path": false }
+ @ ./src/__mocks__/i18nProviderWrapper.js 10:0-58 11:94-111
+ @ ./.storybook/preview.js 21:0-68 149:66-85
+ @ ./storybook-config-entry.js 13:464-518 48:2-51:4 48:470-51:3
+
+ERROR in ./node_modules/next-i18next/dist/commonjs/config/createConfig.js 140:17-32
+Module not found: Error: Can't resolve 'path' in '/home/agent/workspace/node_modules/next-i18next/dist/commonjs/config'
+
+BREAKING CHANGE: webpack < 5 used to include polyfills for node.js core modules by default.
+This is no longer the case. Verify if you need this module and configure a polyfill for it.
+
+If you want to include a polyfill, you need to:
+	- add a fallback 'resolve.fallback: { "path": require.resolve("path-browserify") }'
+	- install 'path-browserify'
+If you don't want to include a polyfill, you can use an empty module like this:
+	resolve.fallback: { "path": false }
+ @ ./node_modules/next-i18next/dist/commonjs/serverSideTranslations.js 37:20-52
+ @ ./node_modules/next-i18next/serverSideTranslations.js 1:0-66
+ @ ./src/pages/admin/vice.js 19:0-77 369:24-46
+ @ ./stories/vice/admin/VICEAdmin.stories.js 6:0-45 23:33-42
+ @ ./stories/ lazy ^\.\/.*$ include: (?%21.*node_modules)(?:\/stories(?:\/(?%21\.)(?:(?:(?%21(?:^%7C\/)\.).)*?)\/%7C\/%7C$)(?%21\.)(?=.)[^/]*?\.(mdx%7Cstories\.(js)))$ chunkName: [request] namespace object ./vice/admin/VICEAdmin.stories.js ./vice/admin/VICEAdmin.stories
+ @ ./storybook-stories.js 12:11-16:5
+ @ ./storybook-config-entry.js 10:0-50 31:31-39 43:2-46:4 43:58-46:3 45:31-39
+
+ERROR in ./node_modules/next-i18next/dist/commonjs/serverSideTranslations.js 36:35-50
+Module not found: Error: Can't resolve 'path' in '/home/agent/workspace/node_modules/next-i18next/dist/commonjs'
+
+BREAKING CHANGE: webpack < 5 used to include polyfills for node.js core modules by default.
+This is no longer the case. Verify if you need this module and configure a polyfill for it.
+
+If you want to include a polyfill, you need to:
+	- add a fallback 'resolve.fallback: { "path": require.resolve("path-browserify") }'
+	- install 'path-browserify'
+If you don't want to include a polyfill, you can use an empty module like this:
+	resolve.fallback: { "path": false }
+ @ ./node_modules/next-i18next/serverSideTranslations.js 1:0-66
+ @ ./src/pages/admin/vice.js 19:0-77 369:24-46
+ @ ./stories/vice/admin/VICEAdmin.stories.js 6:0-45 23:33-42
+ @ ./stories/ lazy ^\.\/.*$ include: (?%21.*node_modules)(?:\/stories(?:\/(?%21\.)(?:(?:(?%21(?:^%7C\/)\.).)*?)\/%7C\/%7C$)(?%21\.)(?=.)[^/]*?\.(mdx%7Cstories\.(js)))$ chunkName: [request] namespace object ./vice/admin/VICEAdmin.stories.js ./vice/admin/VICEAdmin.stories
+ @ ./storybook-stories.js 12:11-16:5
+ @ ./storybook-config-entry.js 10:0-50 31:31-39 43:2-46:4 43:58-46:3 45:31-39
+
+ERROR in ./node_modules/next-i18next/dist/esm/config/createConfig.js 101:17-32
+Module not found: Error: Can't resolve 'path' in '/home/agent/workspace/node_modules/next-i18next/dist/esm/config'
+
+BREAKING CHANGE: webpack < 5 used to include polyfills for node.js core modules by default.
+This is no longer the case. Verify if you need this module and configure a polyfill for it.
+
+If you want to include a polyfill, you need to:
+	- add a fallback 'resolve.fallback: { "path": require.resolve("path-browserify") }'
+	- install 'path-browserify'
+If you don't want to include a polyfill, you can use an empty module like this:
+	resolve.fallback: { "path": false }
+ @ ./node_modules/next-i18next/dist/esm/appWithTranslation.js 9:0-53 64:78-90
+ @ ./node_modules/next-i18next/dist/esm/index.js 2:0-78 2:0-78 2:0-78
+ @ ./src/i18n.js 10:4-100 28:0-96 28:0-96 28:0-96 28:0-96 28:0-96
+ @ ./stories/apps/Listing.stories.js 11:0-38 115:12-26 153:8-22
+ @ ./stories/ lazy ^\.\/.*$ include: (?%21.*node_modules)(?:\/stories(?:\/(?%21\.)(?:(?:(?%21(?:^%7C\/)\.).)*?)\/%7C\/%7C$)(?%21\.)(?=.)[^/]*?\.(mdx%7Cstories\.(js)))$ chunkName: [request] namespace object ./apps/Listing.stories.js ./apps/Listing.stories
+ @ ./storybook-stories.js 12:11-16:5
+ @ ./storybook-config-entry.js 10:0-50 31:31-39 43:2-46:4 43:58-46:3 45:31-39
+
+ERROR in ./node_modules/picomatch/lib/constants.js 3:13-28
+Module not found: Error: Can't resolve 'path' in '/home/agent/workspace/node_modules/picomatch/lib'
+
+BREAKING CHANGE: webpack < 5 used to include polyfills for node.js core modules by default.
+This is no longer the case. Verify if you need this module and configure a polyfill for it.
+
+If you want to include a polyfill, you need to:
+	- add a fallback 'resolve.fallback: { "path": require.resolve("path-browserify") }'
+	- install 'path-browserify'
+If you don't want to include a polyfill, you can use an empty module like this:
+	resolve.fallback: { "path": false }
+ @ ./node_modules/picomatch/lib/utils.js 10:4-26
+ @ ./node_modules/micromatch/index.js 6:14-44
+ @ ./src/serviceFacades/instantlaunches.js 8:0-36 600:24-42
+ @ ./src/components/data/listing/TableView.js 36:0-70 459:73-93
+ @ ./stories/data/TableView.stories.js 6:0-68 56:40-49
+ @ ./stories/ lazy ^\.\/.*$ include: (?%21.*node_modules)(?:\/stories(?:\/(?%21\.)(?:(?:(?%21(?:^%7C\/)\.).)*?)\/%7C\/%7C$)(?%21\.)(?=.)[^/]*?\.(mdx%7Cstories\.(js)))$ chunkName: [request] namespace object ./data/TableView.stories.js ./data/TableView.stories
+ @ ./storybook-stories.js 12:11-16:5
+ @ ./storybook-config-entry.js 10:0-50 31:31-39 43:2-46:4 43:58-46:3 45:31-39
+
+ERROR in ./node_modules/picomatch/lib/picomatch.js 3:13-28
+Module not found: Error: Can't resolve 'path' in '/home/agent/workspace/node_modules/picomatch/lib'
+
+BREAKING CHANGE: webpack < 5 used to include polyfills for node.js core modules by default.
+This is no longer the case. Verify if you need this module and configure a polyfill for it.
+
+If you want to include a polyfill, you need to:
+	- add a fallback 'resolve.fallback: { "path": require.resolve("path-browserify") }'
+	- install 'path-browserify'
+If you don't want to include a polyfill, you can use an empty module like this:
+	resolve.fallback: { "path": false }
+ @ ./node_modules/picomatch/index.js 3:0-43
+ @ ./node_modules/micromatch/index.js 5:18-38
+ @ ./src/serviceFacades/instantlaunches.js 8:0-36 600:24-42
+ @ ./src/components/data/listing/TableView.js 36:0-70 459:73-93
+ @ ./stories/data/TableView.stories.js 6:0-68 56:40-49
+ @ ./stories/ lazy ^\.\/.*$ include: (?%21.*node_modules)(?:\/stories(?:\/(?%21\.)(?:(?:(?%21(?:^%7C\/)\.).)*?)\/%7C\/%7C$)(?%21\.)(?=.)[^/]*?\.(mdx%7Cstories\.(js)))$ chunkName: [request] namespace object ./data/TableView.stories.js ./data/TableView.stories
+ @ ./storybook-stories.js 12:11-16:5
+ @ ./storybook-config-entry.js 10:0-50 31:31-39 43:2-46:4 43:58-46:3 45:31-39
+
+ERROR in ./node_modules/picomatch/lib/utils.js 3:13-28
+Module not found: Error: Can't resolve 'path' in '/home/agent/workspace/node_modules/picomatch/lib'
+
+BREAKING CHANGE: webpack < 5 used to include polyfills for node.js core modules by default.
+This is no longer the case. Verify if you need this module and configure a polyfill for it.
+
+If you want to include a polyfill, you need to:
+	- add a fallback 'resolve.fallback: { "path": require.resolve("path-browserify") }'
+	- install 'path-browserify'
+If you don't want to include a polyfill, you can use an empty module like this:
+	resolve.fallback: { "path": false }
+ @ ./node_modules/micromatch/index.js 6:14-44
+ @ ./src/serviceFacades/instantlaunches.js 8:0-36 600:24-42
+ @ ./src/components/data/listing/TableView.js 36:0-70 459:73-93
+ @ ./stories/data/TableView.stories.js 6:0-68 56:40-49
+ @ ./stories/ lazy ^\.\/.*$ include: (?%21.*node_modules)(?:\/stories(?:\/(?%21\.)(?:(?:(?%21(?:^%7C\/)\.).)*?)\/%7C\/%7C$)(?%21\.)(?=.)[^/]*?\.(mdx%7Cstories\.(js)))$ chunkName: [request] namespace object ./data/TableView.stories.js ./data/TableView.stories
+ @ ./storybook-stories.js 12:11-16:5
+ @ ./storybook-config-entry.js 10:0-50 31:31-39 43:2-46:4 43:58-46:3 45:31-39
+
+preview compiled with 7 errors
+[90m│[39m
+[33m▲[39m  Critical dependency: the request of a dependency is an expression
+[90m│[39m
+[31m■[39m  Failed to build the preview
+<s> [webpack.Progress] 99% end closing watch compilation
+<s> [webpack.Progress] 99% end closing watch compilation
+[90m│[39m
+[33m▲[39m  Force closed preview build
+[90m│[39m
+[31m■[39m  [38;2;241;97;97mSB_BUILDER-WEBPACK5_0003 (WebpackCompilationError): There were
+[90m│[39m  problems when compiling your code with Webpack.
+[90m│[39m  Run Storybook with --debug-webpack for more information.[39m
+[90m│[39m  at starter
+[90m│[39m  (file://./node_modules/@storybook/builder-webpack5/dist/index.js:792:11)
+[90m│[39m  at starter.next (<anonymous>)
+[90m│[39m  at Module.start
+[90m│[39m  (file://./node_modules/@storybook/builder-webpack5/dist/index.js:850:34)
+[90m│[39m  at process.processTicksAndRejections
+[90m│[39m  (node:internal/process/task_queues:104:5)
+[90m│[39m  at async storybookDevServer
+[90m│[39m  (file://./node_modules/storybook/dist/core-server/index.js:10915:57)
+[90m│[39m  at async buildOrThrow
+[90m│[39m  (file://./node_modules/storybook/dist/core-server/index.js:6827:12)
+[90m│[39m  at async buildDevStandalone
+[90m│[39m  (file://./node_modules/storybook/dist/core-server/index.js:11859:41)
+[90m│[39m  at async withTelemetry
+[90m│[39m  (file://./node_modules/storybook/dist/_node-chunks/chunk-QAT5O6HR.js:3592:12)
+[90m│[39m  at async dev (file://./node_modules/storybook/dist/bin/core.js:4022:3)
+[90m│[39m  at async _Command.<anonymous>
+[90m│[39m  (file://./node_modules/storybook/dist/bin/core.js:4124:3)
+[90m│[39m
+[33m▲[39m  Broken build, fix the error above.
+[90m│[39m  You may need to refresh the browser.
+[90m│[39m
+[90m│[39m  Debug logs are written to: /home/agent/workspace/debug-storybook.log
+[90m│[39m
+[90m└[39m  Storybook exited with an error
+

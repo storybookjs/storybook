@@ -1,0 +1,117 @@
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+[90m┌[39m  Storybook upgrade - v11.0.0-beta.3
+[90m│[39m
+[90m│[39m  Detecting projects...
+[90m│[39m
+[90m│[39m  Detecting projects: 1 projects
+[90m│[39m
+[90m│[39m  1 project detected
+[90m│[39m
+[34m●[39m  Upgrading from [1m10.6.3[22m to [1m11.0.0-beta.3[22m
+[90m│[39m
+[90m│[39m  /package.json
+[90m│[39m
+[90m│[39m  Updated package versions in package.json files
+[90m│[39m
+[90m│[39m  Checking automigrations for /.storybook...
+[90m│[39m
+
+[90m│[39m  Automigrations detected:
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m nextjs-to-nextjs-vite[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m skills[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m typescript-dependency[39m
+[90m│[39m
+[90m│[39m  3 automigration(s) detected
+[90m│[39m
+[90m│[39m  Running these detected automigrations:
+[90m│[39m
+[90m│[39m  - skills (/.storybook)
+[90m│[39m
+[90m│[39m  - typescript-dependency (/.storybook)
+[90m│[39m
+[90m│[39m  Not run with --yes because they are opt-in (run `storybook automigrate
+[90m│[39m  <id>` to apply one):
+[90m│[39m
+[90m│[39m  - nextjs-to-nextjs-vite (/.storybook)
+│ ┌─typescript-dependency (/.storybook)────────────────────────────────────────┐
+│ │  Add typescript@^6 to devDependencies, so Storybook can read your          │
+│ │  component types for Controls and the Docs args table                      │
+│ └────────────────────────────────────────────────────────────────────────────┘
+[90m│[39m
+[90m│[39m  [36mnpx skills@latest add storybookjs/skills#v11.0.0-beta.3 --yes --agent[39m
+[90m│[39m  [36mclaude-code universal --copy[39m
+[90m│[39m
+[90m│[39m  Added a Storybook section to AGENTS.md and CLAUDE.md that tells agents
+[90m│[39m  when to use the skills. Storybook keeps it current on upgrade: remove
+[90m│[39m  its markers to keep your own edits, or remove the section to opt out
+[90m│[39m  of the workflow.
+[90m│[39m
+[90m│[39m  Remove the Storybook skills with: npx skills@latest remove
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m skills[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m typescript-dependency[39m
+[90m│[39m
+[90m│[39m  Completed automigrations for /.storybook
+[90m│[39m
+[90m│[39m  Installing dependencies...
+[90m│[39m
+[31m■[39m  [31mInstallation of dependencies failed![39m
+[90m│[39m
+[31m■[39m  npm error Found: next@14.2.35
+[90m│[39m  npm error node_modules/next
+[90m│[39m  npm error   next@"^14.2.35" from the root project
+[90m│[39m  npm error
+[90m│[39m  npm error Could not resolve dependency:
+[90m│[39m  npm error peer next@"^15.0.0 || ^16.0.0" from
+[90m│[39m  @storybook/nextjs@11.0.0-beta.3
+[90m│[39m  npm error node_modules/@storybook/nextjs
+[90m│[39m  npm error   dev @storybook/nextjs@"^11.0.0-beta.3" from the root
+[90m│[39m  project
+[90m│[39m  npm error
+[90m│[39m  npm error Fix the upstream dependency conflict, or retry this command
+[90m│[39m  with --force or --legacy-peer-deps to accept an incorrect (and
+[90m│[39m  potentially broken) dependency resolution.
+[90m│[39m  npm error
+[90m│[39m  npm error
+[90m│[39m  npm error For a full report see:
+[90m│[39m  npm error
+[90m│[39m  /home/agent/.npm/_logs/2026-11-19T07_54_43_479Z-eresolve-report.txt
+[90m│[39m  npm error A complete log of this run can be found in:
+[90m│[39m  /home/agent/.npm/_logs/2026-11-19T07_54_43_479Z-debug-0.log
+[90m│[39m
+[33m▲[39m  Peer dependency conflict detected; retrying with --legacy-peer-deps
+[90m│[39m
+[90m│[39m  Installing dependencies...
+[90m│[39m
+[90m│[39m  Installing dependencies...: added 30 packages, remove
+[90m│[39m
+[90m│[39m  Installing dependencies...: 329 packages are looking
+[90m│[39m
+[90m│[39m  Installing dependencies...: 46 vulnerabilities (5 low
+[90m│[39m
+[90m│[39m  Dependencies installed
+[90m│[39m
+[32m◇[39m  Checking the health of your project(s)..
+[90m│[39m
+[90m│[39m  Your Storybook project looks good!
+[90m│[39m
+[32m◇[39m  [32mYour project(s) have been upgraded successfully! 🎉[39m
+[90m│[39m
+[90m│[39m  If you want to learn more about the automigrations that executed in
+[90m│[39m  your project(s), please check the following links:
+[90m│[39m  • skills: https://github.com/storybookjs/skills
+[90m│[39m  • typescript-dependency:
+[90m│[39m  https://storybook.js.org/docs/configure/integration/typescript
+[90m│[39m
+[90m│[39m  For a full list of changes, please check our migration guide:
+[90m│[39m  [36mhttps://storybook.js.org/docs/releases/migration-guide?ref=upgrade[39m
+[90m│[39m
+[90m└[39m  Storybook upgrade completed!
+
+EXIT 0

@@ -34,6 +34,10 @@ describe('buildOrThrow', () => {
     expect(thrown.message).toContain(
       'imported from node_modules/storybook-addon-mock-date/dist/manager.js'
     );
+    // The card must not claim which build (manager or preview) failed: in dev the wrapper
+    // spans both, so the lead wording stays build-neutral.
+    expect(thrown.message).toContain("while building Storybook's UI");
+    expect(thrown.message).not.toContain('manager UI');
   });
 
   it('rethrows errors without a "No matching export" builder error unchanged', async () => {

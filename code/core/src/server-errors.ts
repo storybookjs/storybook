@@ -1020,13 +1020,11 @@ export class NoMatchingExportError extends StorybookError {
       documentation: '',
       message: data.detail
         ? dedent`
-          An import in your Storybook setup could not be resolved while building the manager UI.
+          An import in your Storybook setup could not be resolved while building Storybook's UI.
 
           ${data.detail}
 
-          This usually means one of your addons was built for an older Storybook and imports an API that no longer exists. Try updating or removing the addon named above.
-
-          Storybook core packages can also cause this when their versions do not match — \`npx storybook doctor\` checks both.`
+          This usually means an addon was built for an older Storybook and imports an API that no longer exists — try updating or removing it. Storybook core packages can also cause this when their versions do not match — \`npx storybook doctor\` checks both.`
         : dedent`
           There was an exports mismatch error when trying to build Storybook.
           Please check whether the versions of your Storybook packages match whenever possible, as this might be the cause.

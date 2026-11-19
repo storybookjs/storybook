@@ -1,4 +1,5 @@
 ```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import type { Meta } from '@storybook/angular';
 
 import { MyComponent } from './my-component.component';
@@ -17,14 +18,13 @@ const meta: Meta<MyComponent> = {
 export default meta;
 ```
 
-```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 4"
 <script module>
-  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-  import { defineMeta } from '@storybook/your-framework';
+  import preview from '../.storybook/preview';
 
   import MyComponent from './MyComponent.svelte';
 
-  const { Story } = defineMeta({
+  const { Story } = preview.meta({
     /* 👇 The title prop is optional.
      * See https://storybook.js.org/docs/configure/#configure-story-loading
      * to learn how to generate automatic titles
@@ -41,13 +41,15 @@ export default meta;
 </script>
 ```
 
-```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 3"
+<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
 <script module>
-  import preview from '../.storybook/preview';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import MyComponent from './MyComponent.svelte';
 
-  const { Story } = preview.meta({
+  const { Story } = defineMeta({
     /* 👇 The title prop is optional.
      * See https://storybook.js.org/docs/configure/#configure-story-loading
      * to learn how to generate automatic titles
@@ -79,14 +81,13 @@ export default {
 };
 ```
 
-```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
-<script module>
-  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-  import { defineMeta } from '@storybook/your-framework';
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 4"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
 
   import MyComponent from './MyComponent.svelte';
 
-  const { Story } = defineMeta({
+  const { Story } = preview.meta({
     /* 👇 The title prop is optional.
      * See https://storybook.js.org/docs/configure/#configure-story-loading
      * to learn how to generate automatic titles
@@ -103,13 +104,15 @@ export default {
 </script>
 ```
 
-```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
-<script module lang="ts">
-  import preview from '../.storybook/preview';
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 3"
+<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
+<script module>
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import MyComponent from './MyComponent.svelte';
 
-  const { Story } = preview.meta({
+  const { Story } = defineMeta({
     /* 👇 The title prop is optional.
      * See https://storybook.js.org/docs/configure/#configure-story-loading
      * to learn how to generate automatic titles

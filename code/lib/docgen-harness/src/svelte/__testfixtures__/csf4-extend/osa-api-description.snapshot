@@ -1,0 +1,14 @@
+## Props
+
+```
+export type AlertProps = {
+  /** Alert heading. */
+  title: string;
+  /** Severity level. */
+  level?: "info" | "warning" | "error" = "info";
+  /** Shows a close button. */
+  dismissible?: boolean = false;
+  /** Alert body. */
+  children?: Snippet<[]>;
+}
+```

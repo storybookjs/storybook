@@ -1,6 +1,8 @@
 import { isEqual } from 'es-toolkit/predicate';
 import * as v from 'valibot';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
+
+import { logger, once } from 'storybook/internal/client-logger';
 
 import {
   type RebuiltValue,
@@ -17,6 +19,7 @@ import type { JsonPatchOperation } from './service-channel.ts';
 import { defineService } from './service-definition.ts';
 import { serviceRegistryApi } from './service-registry.ts';
 import { createServiceRuntime } from './service-runtime.ts';
+import { applyStatePatch } from './service-sync.ts';
 import { clearRegistry, registerService } from './server.ts';
 import type { QueryState } from './types.ts';
 
@@ -510,6 +513,46 @@ describe('service runtime', () => {
       }
     });
 
+    it('re-emits a selected object when a snapshot merges a new field value into it in place', () => {
+      const runtime = createServiceRuntime(
+        defineService({
+          id: 'internal-fixture/selected-object',
+          description: 'Holds stories keyed by id.',
+          initialState: {
+            stories: { primary: { snippet: 'v1' } },
+          } as { stories: Record<string, { snippet: string }> },
+          queries: {
+            stories: {
+              description: 'Returns every story.',
+              input: v.void(),
+              output: v.record(v.string(), v.object({ snippet: v.string() })),
+              handler: (_input, ctx) => ctx.self.state.stories,
+            },
+          },
+          commands: {},
+        }),
+        { registryApi: serviceRegistryApi }
+      );
+      const selected: unknown[] = [];
+      runtime.queries.stories.subscribe(
+        undefined,
+        (stories) => stories.primary,
+        collectData(selected)
+      );
+
+      runtime.applyLocal((state) =>
+        applyStatePatch(
+          state,
+          { stories: { primary: { snippet: 'v2' } } },
+          {
+            preserveMissingKeys: false,
+          }
+        )
+      );
+
+      expect(selected).toEqual([{ snippet: 'v1' }, { snippet: 'v2' }]);
+    });
+
     it('preloads distinct values independently by input', async () => {
       const service = registerService(awaitedPreloadValueServiceDef);
       const callsA: Array<string | null> = [];
@@ -538,24 +581,14 @@ describe('service runtime', () => {
       );
     });
 
-    it('resolves .loaded() immediately when state is already populated', async () => {
+    it('resolves .loaded() with the value when state is already populated', async () => {
       const service = registerService(awaitedPreloadValueServiceDef);
-      const preloadValueSpy = vi.spyOn(
-        awaitedPreloadValueServiceDef.commands.preloadValue,
-        'handler'
+
+      await service.queries.preloadedValue.loaded({ entryId: 'entry-a' });
+
+      await expect(service.queries.preloadedValue.loaded({ entryId: 'entry-a' })).resolves.toBe(
+        'preloaded'
       );
-
-      try {
-        await service.queries.preloadedValue.loaded({ entryId: 'entry-a' });
-        preloadValueSpy.mockClear();
-
-        await expect(service.queries.preloadedValue.loaded({ entryId: 'entry-a' })).resolves.toBe(
-          'preloaded'
-        );
-        expect(preloadValueSpy).not.toHaveBeenCalled();
-      } finally {
-        preloadValueSpy.mockRestore();
-      }
     });
 
     it('never fires the load from repeated .get() reads (no implicit background load)', async () => {
@@ -590,6 +623,188 @@ describe('service runtime', () => {
       await vi.waitFor(() => expect(calls).toEqual([null, 'preloaded']));
 
       unsubscribe();
+    });
+  });
+
+  describe('a load that its own write re-runs', () => {
+    afterEach(() => {
+      once.clear();
+      vi.unstubAllGlobals();
+      vi.restoreAllMocks();
+    });
+
+    function createFillServiceDef(id: string, { writes }: { writes: 1 | 2 }) {
+      const inputSchema = v.object({ id: v.string() });
+      return defineService({
+        id,
+        initialState: {} as Record<string, string>,
+        queries: {
+          value: {
+            input: inputSchema,
+            output: v.nullable(v.string()),
+            handler: (input, ctx) => ctx.self.state[`${input.id}:done`] ?? null,
+            load: async (input, ctx) => {
+              if (ctx.self.state[input.id] === undefined) {
+                await ctx.self.commands.fill(input);
+              }
+            },
+          },
+        },
+        commands: {
+          fill: {
+            input: inputSchema,
+            output: v.void(),
+            handler: async (input, ctx) => {
+              ctx.self.setState((state) => {
+                state[input.id] = 'started';
+                if (writes === 1) {
+                  state[`${input.id}:done`] = 'final';
+                }
+              });
+              if (writes === 2) {
+                await Promise.resolve();
+                ctx.self.setState((state) => {
+                  state[`${input.id}:done`] = 'final';
+                });
+              }
+            },
+          },
+        },
+      });
+    }
+
+    it('warns once per service and query when the load drops a later write of its command', async () => {
+      const warn = vi.spyOn(logger, 'warn').mockImplementation(() => undefined);
+      const service = registerService(
+        createFillServiceDef('internal-fixture/self-cancelling-fill', { writes: 2 })
+      );
+
+      service.queries.value.subscribe({ id: 'a' }, () => {});
+      service.queries.value.subscribe({ id: 'b' }, () => {});
+
+      await vi.waitFor(() => expect(warn).toHaveBeenCalled());
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(warn.mock.calls[0][0]).toContain('internal-fixture/self-cancelling-fill.value');
+    });
+
+    it('warns when a status check makes the load run its command a second time', async () => {
+      const warn = vi.spyOn(logger, 'warn').mockImplementation(() => undefined);
+      let builds = 0;
+      const service = registerService(
+        defineService({
+          id: 'internal-fixture/self-cancelling-build',
+          initialState: { status: 'idle', result: null as number | null },
+          queries: {
+            result: {
+              input: v.void(),
+              output: v.nullable(v.number()),
+              handler: (_input, ctx) => ctx.self.state.result,
+              load: async (_input, ctx) => {
+                if (ctx.self.state.status !== 'ready') {
+                  await ctx.self.commands.build(undefined);
+                }
+              },
+            },
+          },
+          commands: {
+            build: {
+              input: v.void(),
+              output: v.void(),
+              handler: async (_input, ctx) => {
+                builds += 1;
+                ctx.self.setState((state) => {
+                  state.status = 'building';
+                });
+                await Promise.resolve();
+                ctx.self.setState((state) => {
+                  state.status = 'ready';
+                  state.result = builds;
+                });
+              },
+            },
+          },
+        })
+      );
+
+      service.queries.result.subscribe(undefined, () => {});
+
+      await vi.waitFor(() => expect(warn).toHaveBeenCalledTimes(1));
+      expect(warn.mock.calls[0][0]).toContain('internal-fixture/self-cancelling-build.result');
+    });
+
+    it('warns when the write that re-ran the load threw after a change', async () => {
+      const warn = vi.spyOn(logger, 'warn').mockImplementation(() => undefined);
+      const service = registerService(
+        defineService({
+          id: 'internal-fixture/self-cancelling-throwing-write',
+          initialState: { status: 'idle', data: null as unknown },
+          queries: {
+            status: {
+              input: v.void(),
+              output: v.string(),
+              handler: (_input, ctx) => ctx.self.state.status,
+              load: async (_input, ctx) => {
+                if (ctx.self.state.status === 'idle') {
+                  await ctx.self.commands.fetch(undefined);
+                }
+              },
+            },
+          },
+          commands: {
+            fetch: {
+              input: v.void(),
+              output: v.void(),
+              handler: async (_input, ctx) => {
+                try {
+                  ctx.self.setState((state) => {
+                    state.status = 'loading';
+                    state.data = JSON.parse('not json');
+                  });
+                } catch {
+                  ctx.self.setState((state) => {
+                    state.status = 'error';
+                  });
+                }
+              },
+            },
+          },
+        })
+      );
+
+      service.queries.status.subscribe(undefined, () => {});
+
+      await vi.waitFor(() => expect(warn).toHaveBeenCalledTimes(1));
+      expect(warn.mock.calls[0][0]).toContain(
+        'internal-fixture/self-cancelling-throwing-write.status'
+      );
+    });
+
+    it('stays silent when the command writes once', async () => {
+      const warn = vi.spyOn(logger, 'warn').mockImplementation(() => undefined);
+      const service = registerService(
+        createFillServiceDef('internal-fixture/self-rerunning-fill', { writes: 1 })
+      );
+      const calls: Array<string | null> = [];
+
+      service.queries.value.subscribe({ id: 'a' }, collectData(calls));
+
+      await vi.waitFor(() => expect(calls).toEqual([null, 'final']));
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      expect(warn).not.toHaveBeenCalled();
+    });
+
+    it('stays silent in a production build', async () => {
+      vi.stubGlobal('CONFIG_TYPE', 'PRODUCTION');
+      const warn = vi.spyOn(logger, 'warn').mockImplementation(() => undefined);
+      const service = registerService(
+        createFillServiceDef('internal-fixture/self-cancelling-fill-production', { writes: 2 })
+      );
+
+      service.queries.value.subscribe({ id: 'a' }, () => {});
+
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      expect(warn).not.toHaveBeenCalled();
     });
   });
 
@@ -765,6 +980,8 @@ describe('service runtime', () => {
     });
 
     it('supersedes an in-flight load when dependencies change again', async () => {
+      const warn = vi.spyOn(logger, 'warn');
+      onTestFinished(() => warn.mockRestore());
       const gates = new Map<number, () => void>();
       const waitForGate = (source: number) =>
         new Promise<void>((resolve) => {
@@ -830,6 +1047,7 @@ describe('service runtime', () => {
       await new Promise((resolve) => setTimeout(resolve, 40));
       expect(calls).toEqual([null, 0, 2]);
 
+      expect(warn).not.toHaveBeenCalled();
       unsubscribe();
     });
 

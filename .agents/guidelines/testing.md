@@ -10,7 +10,7 @@ This document is canonical for testing practice: which kind of test to write, ho
 
 | Suite                     | Command                                                                                                          |
 | ------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| Story tests (components)  | `yarn storybook:vitest`, or `vitest run --config code/vitest.config.storybook.ts <story-file>`                   |
+| Story tests (components)  | `yarn storybook:vitest`, or `vitest run --config code/vitest.config.ts <story-file>`                             |
 | Unit tests                | `yarn test <pattern>` (e.g. `yarn test csf-tools`); the full suite is large, so run focused patterns while iterating |
 | Unit tests in watch mode  | `yarn test:watch`                                                                                                |
 | Visual validation         | Storybook UI or Chromatic                                                                                        |
@@ -19,6 +19,10 @@ This document is canonical for testing practice: which kind of test to write, ho
 | Tools attach coverage     | `cd code && yarn playwright test -c e2e-internal/playwright.config.ts e2e-internal/tools-attach.spec.ts` (same checkout as the running internal UI) |
 
 Fork CI compiles with `--no-link` before unit tests to generate the declarations required by distribution contract tests.
+
+Test runs print console output only for failing tests (`silent: 'passed-only'` in the root `vitest.config.ts`).
+In `code/` packages, `code/vitest-setup.ts` routes direct `process.stdout` and `process.stderr` writes, such as `@clack/prompts` output, through the console, so the same rule applies to them.
+Add `--silent=false` to see the logs of passing tests, for example `yarn test csf-tools --silent=false`.
 
 When writing tests for components:
 

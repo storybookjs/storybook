@@ -1,0 +1,1 @@
+Card({ ...{ label: 'Alpha' }, disabled: true })

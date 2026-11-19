@@ -1,10 +1,12 @@
 import { print } from 'esrap';
+import ts from 'esrap/languages/ts';
 import type MagicString from 'magic-string';
 
 import { insertStoryHTMLCommentAsDescription } from './insert-description.ts';
 import { insertSvelteCSFToStoryParameters } from './insert-svelte-csf.ts';
 
 import type { extractStoriesNodesFromExportDefaultFn } from '../../../parser/extract/compiled/stories.ts';
+import { span } from '../../../parser/ast.ts';
 import type { StoryContent } from '../../../parser/analyse/story/extend.ts';
 import type { SvelteASTNodes } from '../../../parser/extract/svelte/nodes.ts';
 
@@ -22,10 +24,6 @@ interface Params {
   originalCode: string;
 }
 
-/**
- * Transform compiled `<Story />` component when necessary,
- * and print updated AST node of compiled version to original raw source code {@link MagicString}.
- */
 export function transformStory(params: Params): void {
   const { code, nodes, filename, originalCode } = params;
   const { component } = nodes;
@@ -41,7 +39,7 @@ export function transformStory(params: Params): void {
   });
 
   const { compiled } = component;
-  const { start, end } = compiled;
+  const { start, end } = span(compiled);
 
-  code.update(start as number, end as number, print(compiled).code);
+  code.update(start, end, print(compiled, ts()).code);
 }

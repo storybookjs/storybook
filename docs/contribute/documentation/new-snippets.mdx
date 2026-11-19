@@ -28,21 +28,18 @@ The following code block demonstrates how to structure a code snippet in the Sto
 
 ````md title="docs/_snippets/button-group-story.md"
 ```ts filename="ButtonGroup.stories.ts" renderer="vue" language="ts" tabTitle="3"
-import type { Meta, StoryObj } from '@storybook/vue3-vite';
+import preview from '../.storybook/preview';
 
 import ButtonGroup from './ButtonGroup.vue';
 
 //👇 Imports the Button stories
 import * as ButtonStories from './Button.stories';
 
-const meta = {
+const meta = preview.meta({
   component: ButtonGroup,
-}} satisfies Meta<typeof ButtonGroup>;
+});
 
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const Pair: Story = {
+export const Pair = meta.story({
   render: (args) => ({
     components: { ButtonGroup },
     setup() {
@@ -51,10 +48,10 @@ export const Pair: Story = {
     template: '<ButtonGroup v-bind="args" />',
   }),
   args: {
-    buttons: [{ ...ButtonStories.Primary.args }, { ...ButtonStories.Secondary.args }],
+    buttons: [{ ...ButtonStories.Primary.input.args }, { ...ButtonStories.Secondary.input.args }],
     orientation: 'horizontal',
   },
-};
+});
 ```
 ````
 
@@ -144,25 +141,21 @@ Open the file inside the `docs/_snippets` directory and adjust the content to ma
 
 ````md title="docs/_snippets/your-component.md"
 ```ts filename="YourComponent.stories.ts" renderer="react" language="ts"
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import preview from '../.storybook/preview';
 
 import type { YourComponentProps } from './YourComponent';
 
 import { YourComponent } from './YourComponent';
 
-//👇 This default export determines where your story goes in the story list
-const meta = {
+const meta = preview.meta({
   component: YourComponent,
-} satisfies Meta<YourComponentProps>;
+});
 
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const FirstStory: Story = {
+export const FirstStory = meta.story({
   args: {
     //👇 The args you need here will depend on your component
   },
-};
+});
 ```
 ````
 

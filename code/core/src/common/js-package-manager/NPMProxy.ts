@@ -1,5 +1,4 @@
-import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname } from 'node:path';
 
 import { logger, prompt } from 'storybook/internal/node-logger';
 import {
@@ -7,18 +6,13 @@ import {
   MinimumReleaseAgeHandledError,
 } from 'storybook/internal/server-errors';
 
-import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
 import type { ResultPromise } from 'execa';
-// eslint-disable-next-line depend/ban-dependencies
-import { globSync } from 'glob';
-import { normalize } from 'pathe';
 import sort from 'semver/functions/sort.js';
 import { dedent } from 'ts-dedent';
 
 import type { ExecuteCommandOptions } from '../utils/command.ts';
 import { executeCommand } from '../utils/command.ts';
-import { getProjectRoot } from '../utils/paths.ts';
 import { JsPackageManager, PackageManagerName } from './JsPackageManager.ts';
 import type { PackageJson } from './PackageJson.ts';
 import type { InstallationMetadata, PackageMetadata } from './types.ts';
@@ -101,21 +95,6 @@ export class NPMProxy extends JsPackageManager {
 
   getRunCommand(command: string): string {
     return `npm run ${command}`;
-  }
-
-  async getModulePackageJSON(packageName: string): Promise<PackageJson | null> {
-    const wantedPath = join('node_modules', packageName, 'package.json');
-    const packageJsonPath = find.up(wantedPath, {
-      cwd: this.primaryPackageJson.operationDir,
-      last: getProjectRoot(),
-    });
-
-    if (!packageJsonPath) {
-      return null;
-    }
-
-    const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
-    return packageJson;
   }
 
   getInstallArgs(): string[] {
@@ -210,28 +189,8 @@ export class NPMProxy extends JsPackageManager {
 
   protected runInstall(options?: { force?: boolean; legacyPeerDeps?: boolean }) {
     const packageJsonPath = this.packageJsonPaths[0];
-    const workspacePackageJsonPath = this.packageJsonPaths.find((ancestorPath) => {
-      const workspaces = JsPackageManager.getPackageJson(ancestorPath).workspaces;
-      const patterns = Array.isArray(workspaces) ? workspaces : workspaces?.packages;
-      return (
-        packageJsonPath &&
-        patterns?.length &&
-        globSync(
-          patterns
-            .filter((pattern: string) => !pattern.startsWith('!'))
-            .map((pattern: string) => `${pattern}/package.json`),
-          {
-            cwd: dirname(ancestorPath),
-            absolute: true,
-            ignore: patterns
-              .filter((pattern: string) => pattern.startsWith('!'))
-              .map((pattern: string) => `${pattern.slice(1)}/package.json`),
-          }
-        )
-          .map(normalize)
-          .includes(normalize(packageJsonPath))
-      );
-    });
+    const workspacePackageJsonPath =
+      packageJsonPath && this.findWorkspaceRootPackageJsonPath(packageJsonPath);
 
     return executeCommand({
       command: 'npm',

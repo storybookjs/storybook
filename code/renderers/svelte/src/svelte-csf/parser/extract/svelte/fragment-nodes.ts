@@ -6,18 +6,11 @@ import type { SvelteAST } from '../../ast.ts';
 
 interface Result {
   storyComponents: Array<{
-    /** Leading HTML comment as AST nodes which can be used as description for the story. */
+    // The HTML comment right before the story, used as its description
     comment?: SvelteAST.Comment;
-    /** '<Story>' component AST node. */
     component: SvelteAST.Component;
   }>;
-  /**
-   * "First level" _(at the root of fragment)_ snippet blocks AST nodes, which can be used for further transformation.
-   *
-   * For example:
-   * Determining the source code of the `<Story />`.
-   * Based on the `template` as prop from the outer Svelte snippet block definition - e.g. `Story template={template1} />`.
-   */
+  // Snippet blocks at the root of the fragment, which `<Story template={...}>` can reference
   snippetBlocks: SvelteAST.SnippetBlock[];
 }
 
@@ -27,11 +20,6 @@ interface Params {
   moduleNodes: Awaited<ReturnType<typeof extractModuleNodes>>;
 }
 
-/**
- * Extract Svelte AST nodes via `svelte.compile`,
- * and from the fragment aka HTML code.
- * They are needed for further code analysis/transformation.
- */
 export async function extractFragmentNodes(params: Params): Promise<Result> {
   const { walk } = await import('zimmerframe');
 

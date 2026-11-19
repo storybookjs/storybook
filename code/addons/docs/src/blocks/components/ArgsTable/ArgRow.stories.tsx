@@ -381,14 +381,10 @@ export const LongDetail = {
   play: async ({ canvas }) => {
     await canvas.getByRole('button', { name: 'IconName' }).click();
     const dialog = await screen.findByRole('dialog');
-    // The popover content must scroll within the viewport instead of overflowing it.
-    const content = Array.from(dialog.children).find(
-      (child): child is HTMLElement => getComputedStyle(child).overflow === 'auto'
-    );
-    await expect(content).toBeDefined();
-    // The detail content renders after the popover opens, so wait for it to overflow.
-    await waitFor(() => expect(content!.scrollHeight).toBeGreaterThan(content!.clientHeight));
-    const { top, bottom } = content!.getBoundingClientRect();
+    const viewport = dialog.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement;
+    // The detail renders after the popover opens, so wait for it to overflow.
+    await waitFor(() => expect(viewport.scrollHeight).toBeGreaterThan(viewport.clientHeight));
+    const { top, bottom } = dialog.getBoundingClientRect();
     await expect(top).toBeGreaterThanOrEqual(0);
     await expect(bottom).toBeLessThanOrEqual(window.innerHeight);
   },

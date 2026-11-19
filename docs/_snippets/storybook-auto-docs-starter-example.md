@@ -20,7 +20,8 @@ Buttons are often used for form submissions and to toggle elements into view.
 ```
 
 <!-- prettier-ignore -->
-```mdx filename="Button.mdx" renderer="svelte" language="mdx" tabTitle="Svelte CSF"
+```mdx filename="Button.mdx" renderer="svelte" language="mdx" tabTitle="CSF 3"
+{/* ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 */}
 import { Meta, Story } from '@storybook/addon-docs/blocks';
 
 import * as ButtonStories from './Button.stories.svelte';

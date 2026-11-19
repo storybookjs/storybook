@@ -493,7 +493,7 @@ export interface ComponentAnnotations<
    *
    * @example IncludeStories: ['SimpleStory', 'ComplexStory'] includeStories: /.*Story$/
    *
-   * @see [Non-story exports](https://storybook.js.org/docs/api/csf#non-story-exports)
+   * @see [Non-story exports](https://storybook.js.org/docs/writing-stories/csf#non-story-exports)
    */
   includeStories?: StoryDescriptor;
 
@@ -503,7 +503,7 @@ export interface ComponentAnnotations<
    *
    * @example ExcludeStories: ['simpleData', 'complexData'] excludeStories: /.*Data$/
    *
-   * @see [Non-story exports](https://storybook.js.org/docs/api/csf#non-story-exports)
+   * @see [Non-story exports](https://storybook.js.org/docs/writing-stories/csf#non-story-exports)
    */
   excludeStories?: StoryDescriptor;
 

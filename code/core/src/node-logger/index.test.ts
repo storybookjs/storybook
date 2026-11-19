@@ -1,7 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import npmlog from 'npmlog';
-
 import { logger } from './index.ts';
 import * as loggerRaw from './logger/logger.ts';
 
@@ -19,26 +17,6 @@ vi.mock('./logger/logger', () => ({
 
 const loggerMock = vi.mocked(loggerRaw);
 
-vi.mock('npmlog', () => ({
-  default: {
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-    levels: {
-      silly: -Infinity,
-      verbose: 1000,
-      info: 2000,
-      timing: 2500,
-      http: 3000,
-      notice: 3500,
-      warn: 4000,
-      error: 5000,
-      silent: Infinity,
-    },
-    level: 'info',
-  },
-}));
-
 vi.mock('./prompts/prompt-config', () => ({
   isClackEnabled: vi.fn(() => false),
 }));
@@ -52,20 +30,20 @@ describe('node-logger', () => {
     expect(loggerMock.warn).toHaveBeenCalledWith(message);
   });
 
-  it('should sync --loglevel with npmlog', () => {
+  it('should forward --loglevel to the logger', () => {
     logger.setLogLevel('debug');
-    expect(npmlog.level).toBe('verbose');
     expect(loggerMock.setLogLevel).toHaveBeenCalledWith('debug');
 
     logger.setLogLevel('trace');
-    expect(npmlog.level).toBe('silly');
     expect(loggerMock.setLogLevel).toHaveBeenCalledWith('trace');
   });
 
   it('should keep setLevel and setLogLevel consistent', () => {
     logger.setLevel('warn');
-    expect(npmlog.level).toBe('warn');
     expect(loggerMock.setLogLevel).toHaveBeenCalledWith('warn');
+
+    logger.setLogLevel();
+    expect(loggerMock.setLogLevel).toHaveBeenLastCalledWith('info');
   });
 
   it('should have an error method', () => {

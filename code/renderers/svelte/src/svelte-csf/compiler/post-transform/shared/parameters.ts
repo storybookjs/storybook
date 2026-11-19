@@ -11,11 +11,6 @@ interface FindPropertyOptions {
   component?: SvelteAST.Component;
 }
 
-/**
- * In order to be able to access AST node - {@link Property} - from the {@link ObjectExpression},
- * we need to have its index based on the property name, so the key must be an identifier.
- * NOTE: Reminder, it always returns a number and `-1` means not found.
- */
 export function findASTPropertyIndex(options: FindPropertyOptions) {
   const { node, name } = options;
 
@@ -43,25 +38,8 @@ export const getParametersPropertyValue = (
   const { filename, component } = options;
   const property = getParametersProperty(options);
 
-  // NOTE: is a getter property - `get parameters()`
-  // WARN: This is probably a bad idea. Need second opinion.
-  // In the case when attribute _(prop)_ `parameters` was defined by the user in the `<Story />` component,
-  // svelte internally will convert provided value into `Proxy`(?) _(I'm guessing on initial research)_.
-  // This is some sort of reactivity-optimization(?).
-  // The visualization below explains what's going to happen:
-  //
-  // Before:
-  //
-  // ```js
-  // get parameters() {
-  //   return something;
-  // }
-  //
-  // ```js
-  // parameters: {
-  //   ...something,
-  // },
-  //
+  // Svelte compiles a `parameters` prop on `<Story>` to a getter. Rewriting it as `parameters: { ...value }`
+  // lets entries be appended, but evaluates the value once instead of on each read.
   if (
     property.kind === 'get' &&
     property.value.type === 'FunctionExpression' &&
@@ -93,9 +71,7 @@ export const getParametersPropertyValue = (
     return undefined as never;
   }
 
-  // FIXME: This is a dirty workaround.
-  // I couldn't figure out how and where it gets `Object.preventExtension(properties)` enabled, or anything that gives the same effect.
-  // There's no possibility to push an element to 'properties' array - throws an error related to "Object is not extensible".
+  // Rollup's parser returns a frozen `properties` array for an empty object literal, so copy it before appending.
   if (!Object.isExtensible(property.value.properties)) {
     property.value.properties = Array.from(property.value.properties);
   }

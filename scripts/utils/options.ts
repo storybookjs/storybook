@@ -232,8 +232,9 @@ export async function promptOptions<TOptions extends OptionSpecifier>(
     let type: PromptObject['type'] = defaultType;
     // Allow returning `undefined` from `type()` function to fallback to default
     if (typeof passedType === 'function') {
-      type = (...args: Parameters<typeof passedType>) => {
-        const chosenType = passedType(...args);
+      type = (prev, answers, prompt) => {
+        // `prompts` only passes answers to questions it asked, not values given on the command line
+        const chosenType = passedType(prev, { ...values, ...answers }, prompt);
         return chosenType === true ? defaultType : chosenType;
       };
     } else if (typeof passedType !== 'undefined') {

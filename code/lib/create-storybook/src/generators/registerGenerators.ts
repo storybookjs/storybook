@@ -1,4 +1,5 @@
 import angularGenerator from './ANGULAR/index.ts';
+import astroGenerator from './ASTRO/index.ts';
 import emberGenerator from './EMBER/index.ts';
 import { generatorRegistry } from './GeneratorRegistry.ts';
 import htmlGenerator from './HTML/index.ts';
@@ -38,6 +39,7 @@ const setOfGenerators = new Set<GeneratorModule>([
   serverGenerator,
   qwikGenerator,
   tanstackGenerator,
+  astroGenerator,
 ]);
 
 /** Register all framework generators with the central registry */

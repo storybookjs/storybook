@@ -7,7 +7,7 @@ export * from './build-dev.ts';
 export * from './build-index.ts';
 export * from './withTelemetry.ts';
 export { default as build } from './standalone.ts';
-export { mapStaticDir } from './utils/server-statics.ts';
+export { mapStaticDir, useStatics } from './utils/server-statics.ts';
 export { StoryIndexGenerator } from './utils/StoryIndexGenerator.ts';
 export { getStoriesPathsFromConfig } from './utils/get-stories-paths-from-config.ts';
 export type { ComponentArgTypesData } from './utils/get-dummy-args-from-argtypes.ts';
@@ -70,6 +70,7 @@ export {
   type FoundStory,
   type NotFoundStory,
 } from '../shared/open-service/toolsets/stories/find-story-ids.ts';
+export { filterStoryFiles } from '../shared/open-service/toolsets/stories/select-stories.ts';
 export {
   storyInputArraySchema,
   type StoryInput,
@@ -121,9 +122,11 @@ export type {
 export { ChangeDetectionService } from './change-detection/change-detection-service.ts';
 export { resolveChangeDetectionAdapter } from '../shared/open-service/services/module-graph/server.ts';
 export { getBuilders } from './utils/get-builders.ts';
-export { prepareHeadlessUniversalStores } from './utils/get-server-channel.ts';
+export { getServerChannel, prepareHeadlessUniversalStores } from './utils/get-server-channel.ts';
 export { isValidHost, type HostValidationOptions } from './utils/getHostValidationMiddleware.ts';
 export { resetServicesPresetOnce as experimental_resetServicesPresetOnce } from './utils/apply-services-preset-once.ts';
+export { registerIndexJsonRoute } from './utils/index-json.ts';
+export { doTelemetry } from './utils/doTelemetry.ts';
 export {
   getTestProviderStoreById as experimental_getTestProviderStore,
   fullTestProviderStore as internal_fullTestProviderStore,
@@ -144,11 +147,9 @@ export {
   getToolAvailability,
   isModuleGraphSupported,
 } from '../cli/skills/availability.ts';
-export type { ToolAvailability } from '../cli/skills/availability.ts';
+export type { McpToolsets, ToolAvailability } from '../cli/skills/availability.ts';
 export { isAddonA11yEnabled } from '../cli/skills/addon-a11y.ts';
 export { isAddonVitestEnabled } from '../cli/skills/addon-vitest.ts';
-export { resolveSkillInputs } from '../cli/skills/inputs.ts';
-export type { SkillInputs } from '../cli/skills/inputs.ts';
 export { getManifestStatus } from '../cli/skills/manifest-status.ts';
 export type { ManifestFeatures, ManifestStatus } from '../cli/skills/manifest-status.ts';
 

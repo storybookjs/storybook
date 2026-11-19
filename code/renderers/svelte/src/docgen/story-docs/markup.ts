@@ -1,6 +1,8 @@
 import { parse } from 'svelte/compiler';
 
-import type { ESTreeAST } from '../../svelte-csf/parser/ast.ts';
+import { type ESTreeAST, type Span, span } from '../../svelte-csf/parser/ast.ts';
+
+export { span, type Span };
 
 // Parse story markup on its own. Svelte reads TypeScript in markup only when the source has a
 // `<script lang="ts">`, so a TypeScript story file gets one in front, and `offset` maps positions
@@ -38,23 +40,12 @@ export function patternNames(pattern: ESTreeAST.Node | null | undefined): string
   }
 }
 
-export type Span = { start: number; end: number };
 export type Edit = Span & { value: string };
 
-export function span(node: object): Span {
-  if (
-    'start' in node &&
-    typeof node.start === 'number' &&
-    'end' in node &&
-    typeof node.end === 'number'
-  ) {
-    return { start: node.start, end: node.end };
-  }
-  throw new TypeError('Svelte AST node has no source positions');
-}
-
+// Applies `edits` from the end of `code` back, so the offsets of those still to apply hold. Of two
+// that start at one offset, an insertion goes last, after the edit that replaces what follows it.
 export function applyEdits(code: string, edits: Edit[]): string {
-  for (const edit of [...edits].sort((a, b) => b.start - a.start)) {
+  for (const edit of [...edits].sort((a, b) => b.start - a.start || b.end - a.end)) {
     code = code.slice(0, edit.start) + edit.value + code.slice(edit.end);
   }
   return code;

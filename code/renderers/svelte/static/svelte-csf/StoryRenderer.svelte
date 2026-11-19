@@ -4,7 +4,11 @@
   import { useStoryRenderer } from '@storybook/svelte/internal/svelte-csf/contexts/renderer';
   import { emitCode } from '@storybook/svelte/internal/svelte-csf/component-helpers';
 
-  import type { Cmp, StoryContext } from '@storybook/svelte/internal/svelte-csf/component-helpers';
+  import type {
+    ArgSources,
+    Cmp,
+    StoryContext,
+  } from '@storybook/svelte/internal/svelte-csf/component-helpers';
 
   type Props = {
     Stories: Component;
@@ -12,6 +16,7 @@
     playExportName: string | undefined;
     asChildExportName: string | undefined;
     asChild: boolean;
+    argSources: ArgSources;
     args: Record<string, any>;
     storyContext: StoryContext<Record<string, any>>;
     metaRenderSnippet?: Snippet;
@@ -23,6 +28,7 @@
     playExportName,
     asChildExportName,
     asChild,
+    argSources,
     args,
     storyContext,
     metaRenderSnippet,
@@ -36,6 +42,7 @@
       playExportName,
       asChildExportName,
       asChild,
+      argSources,
       args,
       storyContext,
       metaRenderSnippet,
@@ -43,7 +50,6 @@
   });
 
   $effect(() => {
-    // TODO: optimize effect params here, we don't read the whole context in reality
     emitCode({ args, storyContext });
   });
 </script>

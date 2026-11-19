@@ -25,6 +25,7 @@ import {
 export function codeGeneratorPlugin(options: Options) {
   const iframePath = fileURLToPath(importMetaResolve('@storybook/builder-vite/input/iframe.html'));
   let iframeId: string;
+  let base = '/';
   const storyIndexGeneratorPromise: Promise<StoryIndexGenerator> =
     options.presets.apply<StoryIndexGenerator>('storyIndexGenerator');
 
@@ -68,6 +69,7 @@ export function codeGeneratorPlugin(options: Options) {
     },
     configResolved(config) {
       iframeId = `${config.root}/iframe.html`;
+      base = config.base;
     },
     resolveId(source) {
       if (SB_VIRTUAL_FILE_IDS.includes(source)) {
@@ -105,7 +107,7 @@ export function codeGeneratorPlugin(options: Options) {
       if (ctx.path !== '/iframe.html') {
         return undefined;
       }
-      return transformIframeHtml(html, options);
+      return transformIframeHtml(html, options, base);
     },
   } satisfies Plugin;
 }

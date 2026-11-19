@@ -7,6 +7,8 @@
  * Mirrors the docgen service contract under `shared/open-service/services/docgen/`.
  */
 
+import { componentIdToStaticName } from '../../../shared/open-service/static-names.ts';
+
 /** A JSON Reference (`{ $ref }`) pointing at a value in another manifest document. */
 export type JsonRef = { $ref: string };
 
@@ -51,14 +53,15 @@ export interface MdxRefDocument {
   components: Record<string, MdxPayload>;
 }
 
-/** Shallow docs index row: id, name, optional summary, and a `$ref` to the full MDX payload. */
+/** Shallow docs index row: id, name, optional title and summary, and a `$ref` to the full MDX payload. */
 export interface DocsManifestRefEntry {
   id: string;
   name: string;
+  /** Set on standalone docs pages only. */
+  title?: string;
   summary?: string;
   mdx: JsonRef;
   path?: never;
-  title?: never;
   content?: never;
   error?: never;
 }
@@ -75,9 +78,9 @@ export interface MdxServiceContract {
   };
 }
 
-/** Relative path segment for one component's static snapshot file (`<id>.json`). */
+/** Relative path segment for one component's static snapshot file. */
 export function mdxQueryStaticPath(id: string): string {
-  return `${id}.json`;
+  return `${componentIdToStaticName(id)}.json`;
 }
 
 /** Logical static-store key: `addon-docs/mdx/<id>.json`. */

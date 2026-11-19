@@ -1,30 +1,4 @@
-```ts filename="YourPage.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
-import type { Meta, StoryObj } from '@storybook/angular';
-
-import { DocumentScreen } from './your-page.component';
-
-// 👇 Imports the required stories
-import * as PageLayout from './PageLayout.stories';
-import * as DocumentHeader from './DocumentHeader.stories';
-import * as DocumentList from './DocumentList.stories';
-
-const meta: Meta<DocumentScreen> = {
-  component: DocumentScreen,
-};
-
-export default meta;
-type Story = StoryObj<DocumentScreen>;
-
-export const Simple: Story = {
-  args: {
-    user: PageLayout.Simple.args.user,
-    document: DocumentHeader.Simple.args.document,
-    subdocuments: DocumentList.Simple.args.documents,
-  },
-};
-```
-
-```ts filename="YourPage.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="YourPage.stories.ts" renderer="angular" language="ts" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 import { DocumentScreen } from './your-page.component';
@@ -47,34 +21,28 @@ export const Simple = meta.story({
 });
 ```
 
-```svelte filename="YourPage.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
-<script module>
-  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-  import { defineMeta } from '@storybook/your-framework';
+```ts filename="YourPage.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
 
-  import DocumentScreen from './YourPage.svelte';
+// 👇 Imports the required stories
+import * as PageLayout from './PageLayout.stories';
+import * as DocumentHeader from './DocumentHeader.stories';
+import * as DocumentList from './DocumentList.stories';
 
-  // 👇 Imports the required stories
-  import * as PageLayout from './PageLayout.stories.svelte';
-  import * as DocumentHeader from './DocumentHeader.stories.svelte';
-  import * as DocumentList from './DocumentList.stories.svelte';
+const meta = preview.meta({
+  component: 'demo-document-screen',
+});
 
-  const { Story } = defineMeta({
-    component: DocumentScreen,
-  });
-</script>
-
-<Story
-  name="Simple"
-  args={{
-    user: PageLayout.Simple.args.user,
-    document: DocumentHeader.Simple.args.document,
-    subdocuments: DocumentList.Simple.args.documents,
-  }}
-/>
+export const Simple = meta.story({
+  args: {
+    user: PageLayout.Simple.input.args.user,
+    document: DocumentHeader.Simple.input.args.document,
+    subdocuments: DocumentList.Simple.input.args.documents,
+  },
+});
 ```
 
-```svelte filename="YourPage.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+```svelte filename="YourPage.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 4"
 <script module>
   import preview from '../.storybook/preview';
 
@@ -100,28 +68,8 @@ export const Simple = meta.story({
 />
 ```
 
-```js filename="YourPage.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
-import { DocumentScreen } from './YourPage';
-
-// 👇 Imports the required stories
-import * as PageLayout from './PageLayout.stories';
-import * as DocumentHeader from './DocumentHeader.stories';
-import * as DocumentList from './DocumentList.stories';
-
-export default {
-  component: DocumentScreen,
-};
-
-export const Simple = {
-  args: {
-    user: PageLayout.Simple.args.user,
-    document: DocumentHeader.Simple.args.document,
-    subdocuments: DocumentList.Simple.args.documents,
-  },
-};
-```
-
-```svelte filename="YourPage.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+```svelte filename="YourPage.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 3"
+<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
 <script module>
   // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
   import { defineMeta } from '@storybook/your-framework';
@@ -148,7 +96,28 @@ export const Simple = {
 />
 ```
 
-```svelte filename="YourPage.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+```js filename="YourPage.stories.js" renderer="web-components" language="js" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
+// 👇 Imports the required stories
+import * as PageLayout from './PageLayout.stories';
+import * as DocumentHeader from './DocumentHeader.stories';
+import * as DocumentList from './DocumentList.stories';
+
+const meta = preview.meta({
+  component: 'demo-document-screen',
+});
+
+export const Simple = meta.story({
+  args: {
+    user: PageLayout.Simple.input.args.user,
+    document: DocumentHeader.Simple.input.args.document,
+    subdocuments: DocumentList.Simple.input.args.documents,
+  },
+});
+```
+
+```svelte filename="YourPage.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 4"
 <script module lang="ts">
   import preview from '../.storybook/preview';
 
@@ -174,7 +143,155 @@ export const Simple = {
 />
 ```
 
+```svelte filename="YourPage.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 3"
+<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
+<script module>
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
+
+  import DocumentScreen from './YourPage.svelte';
+
+  // 👇 Imports the required stories
+  import * as PageLayout from './PageLayout.stories.svelte';
+  import * as DocumentHeader from './DocumentHeader.stories.svelte';
+  import * as DocumentList from './DocumentList.stories.svelte';
+
+  const { Story } = defineMeta({
+    component: DocumentScreen,
+  });
+</script>
+
+<Story
+  name="Simple"
+  args={{
+    user: PageLayout.Simple.args.user,
+    document: DocumentHeader.Simple.args.document,
+    subdocuments: DocumentList.Simple.args.documents,
+  }}
+/>
+```
+
+```ts filename="YourPage.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
+import { DocumentScreen } from './YourPage';
+
+// 👇 Imports the required stories
+import * as PageLayout from './PageLayout.stories';
+import * as DocumentHeader from './DocumentHeader.stories';
+import * as DocumentList from './DocumentList.stories';
+
+const meta = preview.meta({
+  component: DocumentScreen,
+});
+
+export const Simple = meta.story({
+  args: {
+    user: PageLayout.Simple.input.args.user,
+    document: DocumentHeader.Simple.input.args.document,
+    subdocuments: DocumentList.Simple.input.args.documents,
+  },
+});
+```
+
+```js filename="YourPage.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
+import { DocumentScreen } from './YourPage';
+
+// 👇 Imports the required stories
+import * as PageLayout from './PageLayout.stories';
+import * as DocumentHeader from './DocumentHeader.stories';
+import * as DocumentList from './DocumentList.stories';
+
+const meta = preview.meta({
+  component: DocumentScreen,
+});
+
+export const Simple = meta.story({
+  args: {
+    user: PageLayout.Simple.input.args.user,
+    document: DocumentHeader.Simple.input.args.document,
+    subdocuments: DocumentList.Simple.input.args.documents,
+  },
+});
+```
+
+```ts filename="YourPage.stories.ts" renderer="vue" language="ts" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
+import DocumentScreen from './YourPage.vue';
+
+// 👇 Imports the required stories
+import * as PageLayout from './PageLayout.stories';
+import * as DocumentHeader from './DocumentHeader.stories';
+import * as DocumentList from './DocumentList.stories';
+
+const meta = preview.meta({
+  component: DocumentScreen,
+});
+
+export const Simple = meta.story({
+  args: {
+    user: PageLayout.Simple.input.args.user,
+    document: DocumentHeader.Simple.input.args.document,
+    subdocuments: DocumentList.Simple.input.args.documents,
+  },
+});
+```
+
+```ts filename="YourPage.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+import type { Meta, StoryObj } from '@storybook/angular';
+
+import { DocumentScreen } from './your-page.component';
+
+// 👇 Imports the required stories
+import * as PageLayout from './PageLayout.stories';
+import * as DocumentHeader from './DocumentHeader.stories';
+import * as DocumentList from './DocumentList.stories';
+
+const meta: Meta<DocumentScreen> = {
+  component: DocumentScreen,
+};
+
+export default meta;
+type Story = StoryObj<DocumentScreen>;
+
+export const Simple: Story = {
+  args: {
+    user: PageLayout.Simple.args.user,
+    document: DocumentHeader.Simple.args.document,
+    subdocuments: DocumentList.Simple.args.documents,
+  },
+};
+```
+
+```js filename="YourPage.stories.js" renderer="vue" language="js" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
+import DocumentScreen from './YourPage.vue';
+
+// 👇 Imports the required stories
+import * as PageLayout from './PageLayout.stories';
+import * as DocumentHeader from './DocumentHeader.stories';
+import * as DocumentList from './DocumentList.stories';
+
+const meta = preview.meta({
+  component: DocumentScreen,
+});
+
+export const Simple = meta.story({
+  args: {
+    user: PageLayout.Simple.input.args.user,
+    document: DocumentHeader.Simple.input.args.document,
+    subdocuments: DocumentList.Simple.input.args.documents,
+  },
+});
+```
+
 ```ts filename="YourPage.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -201,14 +318,17 @@ export const Simple: Story = {
 };
 ```
 
-```js filename="YourPage.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
+```js filename="YourPage.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+import { DocumentScreen } from './YourPage';
+
 // 👇 Imports the required stories
 import * as PageLayout from './PageLayout.stories';
 import * as DocumentHeader from './DocumentHeader.stories';
 import * as DocumentList from './DocumentList.stories';
 
 export default {
-  component: 'demo-document-screen',
+  component: DocumentScreen,
 };
 
 export const Simple = {
@@ -221,6 +341,7 @@ export const Simple = {
 ```
 
 ```ts filename="YourPage.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 // 👇 Imports the required stories
@@ -244,140 +365,22 @@ export const Simple: Story = {
 };
 ```
 
-```ts filename="YourPage.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
+```js filename="YourPage.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 // 👇 Imports the required stories
 import * as PageLayout from './PageLayout.stories';
 import * as DocumentHeader from './DocumentHeader.stories';
 import * as DocumentList from './DocumentList.stories';
 
-const meta = preview.meta({
+export default {
   component: 'demo-document-screen',
-});
+};
 
-export const Simple = meta.story({
+export const Simple = {
   args: {
-    user: PageLayout.Simple.input.args.user,
-    document: DocumentHeader.Simple.input.args.document,
-    subdocuments: DocumentList.Simple.input.args.documents,
+    user: PageLayout.Simple.args.user,
+    document: DocumentHeader.Simple.args.document,
+    subdocuments: DocumentList.Simple.args.documents,
   },
-});
-```
-
-```js filename="YourPage.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-// 👇 Imports the required stories
-import * as PageLayout from './PageLayout.stories';
-import * as DocumentHeader from './DocumentHeader.stories';
-import * as DocumentList from './DocumentList.stories';
-
-const meta = preview.meta({
-  component: 'demo-document-screen',
-});
-
-export const Simple = meta.story({
-  args: {
-    user: PageLayout.Simple.input.args.user,
-    document: DocumentHeader.Simple.input.args.document,
-    subdocuments: DocumentList.Simple.input.args.documents,
-  },
-});
-```
-
-```ts filename="YourPage.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-import { DocumentScreen } from './YourPage';
-
-// 👇 Imports the required stories
-import * as PageLayout from './PageLayout.stories';
-import * as DocumentHeader from './DocumentHeader.stories';
-import * as DocumentList from './DocumentList.stories';
-
-const meta = preview.meta({
-  component: DocumentScreen,
-});
-
-export const Simple = meta.story({
-  args: {
-    user: PageLayout.Simple.input.args.user,
-    document: DocumentHeader.Simple.input.args.document,
-    subdocuments: DocumentList.Simple.input.args.documents,
-  },
-});
-```
-
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```js filename="YourPage.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-import { DocumentScreen } from './YourPage';
-
-// 👇 Imports the required stories
-import * as PageLayout from './PageLayout.stories';
-import * as DocumentHeader from './DocumentHeader.stories';
-import * as DocumentList from './DocumentList.stories';
-
-const meta = preview.meta({
-  component: DocumentScreen,
-});
-
-export const Simple = meta.story({
-  args: {
-    user: PageLayout.Simple.input.args.user,
-    document: DocumentHeader.Simple.input.args.document,
-    subdocuments: DocumentList.Simple.input.args.documents,
-  },
-});
-```
-
-```ts filename="YourPage.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-import DocumentScreen from './YourPage.vue';
-
-// 👇 Imports the required stories
-import * as PageLayout from './PageLayout.stories';
-import * as DocumentHeader from './DocumentHeader.stories';
-import * as DocumentList from './DocumentList.stories';
-
-const meta = preview.meta({
-  component: DocumentScreen,
-});
-
-export const Simple = meta.story({
-  args: {
-    user: PageLayout.Simple.input.args.user,
-    document: DocumentHeader.Simple.input.args.document,
-    subdocuments: DocumentList.Simple.input.args.documents,
-  },
-});
-```
-
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```js filename="YourPage.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-import DocumentScreen from './YourPage.vue';
-
-// 👇 Imports the required stories
-import * as PageLayout from './PageLayout.stories';
-import * as DocumentHeader from './DocumentHeader.stories';
-import * as DocumentList from './DocumentList.stories';
-
-const meta = preview.meta({
-  component: DocumentScreen,
-});
-
-export const Simple = meta.story({
-  args: {
-    user: PageLayout.Simple.input.args.user,
-    document: DocumentHeader.Simple.input.args.document,
-    subdocuments: DocumentList.Simple.input.args.documents,
-  },
-});
+};
 ```

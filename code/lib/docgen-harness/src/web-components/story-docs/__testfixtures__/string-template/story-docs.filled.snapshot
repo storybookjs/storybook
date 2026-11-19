@@ -1,0 +1,5 @@
+{
+  "Default": "<string-template label="Default &amp; &lt;changed>"></string-template>",
+  "PlainString": "'<string-template label="static"></string-template>'",
+  "Untagged": "`<string-template label="${'Untagged & <changed>'}" ?fake=${false}></string-template>`",
+}

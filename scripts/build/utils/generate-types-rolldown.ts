@@ -87,6 +87,79 @@ function createTextAssetStubPlugin(): Plugin {
   };
 }
 
+/**
+ * rolldown-plugin-dts only bundles ES module declarations, but some dependencies whose types are
+ * inlined ship CommonJS-style ones: `declare namespace X { ... }`, merged with a `declare const X`,
+ * exported with `export = X` (e.g. `@testing-library/jest-dom/matchers`). This rewrites `export = X`
+ * into a default export of `X` plus a named type export for every type declared in the namespace,
+ * which is how TypeScript lets ES modules import them. Returns `null` for any other shape.
+ */
+export function convertCommonJsNamespaceDeclaration(fileName: string, code: string): string | null {
+  const ts = getTypeScript();
+  const sourceFile = ts.createSourceFile(fileName, code, ts.ScriptTarget.Latest, true);
+  const exportAssignment = sourceFile.statements.find(
+    (statement): statement is TS.ExportAssignment =>
+      ts.isExportAssignment(statement) &&
+      statement.isExportEquals === true &&
+      ts.isIdentifier(statement.expression)
+  );
+  if (!exportAssignment) {
+    return null;
+  }
+  const name = (exportAssignment.expression as TS.Identifier).text;
+  const namespace = sourceFile.statements.find(
+    (statement): statement is TS.ModuleDeclaration =>
+      ts.isModuleDeclaration(statement) &&
+      ts.isIdentifier(statement.name) &&
+      statement.name.text === name &&
+      statement.body !== undefined &&
+      ts.isModuleBlock(statement.body)
+  );
+  if (!namespace) {
+    return null;
+  }
+
+  const typeExports = (namespace.body as TS.ModuleBlock).statements.flatMap((statement) => {
+    if (!ts.isInterfaceDeclaration(statement) && !ts.isTypeAliasDeclaration(statement)) {
+      return [];
+    }
+    const typeName = statement.name.text;
+    const parameters = statement.typeParameters ?? [];
+    const declared = parameters.length
+      ? `<${parameters.map((parameter) => parameter.getText(sourceFile)).join(', ')}>`
+      : '';
+    const applied = parameters.length
+      ? `<${parameters.map((parameter) => parameter.name.text).join(', ')}>`
+      : '';
+    return [`export type ${typeName}${declared} = ${name}.${typeName}${applied};`];
+  });
+
+  return [
+    code.slice(0, exportAssignment.getStart(sourceFile)),
+    `export { ${name} as default };`,
+    ...typeExports,
+    code.slice(exportAssignment.getEnd()),
+  ].join('\n');
+}
+
+function createDependencyDeclarationTransformPlugin(
+  transform: NonNullable<BuildEntries['transformDependencyDeclaration']>
+): Plugin {
+  return {
+    name: 'storybook:dts-dependency-transform',
+    load: {
+      order: 'pre',
+      async handler(rawId) {
+        const id = rawId.split('?')[0];
+        if (!RE_DTS_IMPORTER.test(id) || !/[\\/]node_modules[\\/]/.test(id)) {
+          return null;
+        }
+        return transform({ id, code: await readFile(id, 'utf8') });
+      },
+    },
+  };
+}
+
 function createTypesFallbackResolverPlugin(isExternal: (id: string) => boolean): Plugin {
   const ts = getTypeScript();
   const cache = new Map<string, string | null>();
@@ -295,6 +368,23 @@ async function emitPackageDeclarationsNative(
   copyHandwrittenDeclarations(fileNames, outDir);
 }
 
+/** Maps each export of the package at `cwd` that has a `code` condition to that source file. */
+async function selfReferencePaths(cwd: string): Promise<Record<string, string[]>> {
+  const { name, exports } = JSON.parse(await readFile(join(cwd, 'package.json'), 'utf8')) as {
+    name: string;
+    exports?: unknown;
+  };
+  if (!exports || typeof exports !== 'object') {
+    return {};
+  }
+  return Object.fromEntries(
+    Object.entries(exports).flatMap(([subpath, target]) => {
+      const code = (target as { code?: unknown } | null)?.code;
+      return typeof code === 'string' ? [[join(name, subpath), [join(cwd, code)]]] : [];
+    })
+  );
+}
+
 export async function generateTypesFiles(
   cwd: string,
   data: BuildEntries,
@@ -353,6 +443,13 @@ export async function generateTypesFiles(
   // config.
   const compilerOptions = await resolveTsconfigCompilerOptions(packageTsconfig);
   delete compilerOptions.baseUrl;
+  // tsc emits no declarations for sources it first reaches through node_modules, which is where
+  // the `code` condition sends workspace imports. Other packages resolve to their built `types`;
+  // the package's own exports map straight to its sources.
+  compilerOptions.customConditions = compilerOptions.customConditions?.filter(
+    (condition: string) => condition !== 'code'
+  );
+  compilerOptions.paths = { ...compilerOptions.paths, ...(await selfReferencePaths(cwd)) };
   await writeFile(
     wrapperTsconfig,
     JSON.stringify({
@@ -427,6 +524,9 @@ export async function generateTypesFiles(
         external: isExternal,
         plugins: [
           createTextAssetStubPlugin(),
+          ...(data.transformDependencyDeclaration
+            ? [createDependencyDeclarationTransformPlugin(data.transformDependencyDeclaration)]
+            : []),
           ...(resolver === 'hybrid' ? [createTypesFallbackResolverPlugin(isExternal)] : []),
           dts({
             cwd,

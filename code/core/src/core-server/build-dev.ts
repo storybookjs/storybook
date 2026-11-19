@@ -80,6 +80,9 @@ export async function buildDevStandalone(
       previewConfigPath?: string;
     }
 ): Promise<{ port: number; address: string; networkAddress: string }> {
+  // lets a Vite plugin loaded through vite.config.ts tell a CLI run from an embedded one
+  process.env.STORYBOOK_CLI = 'true';
+
   const { packageJson, versionUpdates } = options;
   let { storybookVersion, previewConfigPath } = options;
   const configDir = resolve(options.configDir);

@@ -1,10 +1,11 @@
 import { print } from 'esrap';
-import { describe, it } from 'vitest';
+import ts from 'esrap/languages/ts';
+import { describe, expect, it } from 'vitest';
 
 import { createExportOrderVariableDeclaration } from './create-export-order.ts';
 
 describe(createExportOrderVariableDeclaration.name, () => {
-  it('correctly creates a variable with named exports order', ({ expect }) => {
+  it('exports the order of the stories by export name', () => {
     const stringified = print(
       createExportOrderVariableDeclaration({
         storiesIdentifiers: [
@@ -12,17 +13,12 @@ describe(createExportOrderVariableDeclaration.name, () => {
           { exportName: 'SomeComponent', name: 'Some Component' },
           { exportName: 'ThisNameIsWeird', name: 'This-Name-Is-Weird' },
         ],
-      })
+      }),
+      ts()
     ).code;
 
     expect(stringified).toMatchInlineSnapshot(
-      `
-			"export const __namedExportsOrder = [
-				"Default",
-				"SomeComponent",
-				"ThisNameIsWeird"
-			];"
-		`
+      `"export const __namedExportsOrder = ['Default', 'SomeComponent', 'ThisNameIsWeird'];"`
     );
   });
 });

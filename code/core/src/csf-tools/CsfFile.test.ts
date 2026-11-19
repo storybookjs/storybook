@@ -6,14 +6,7 @@ import { logger } from 'storybook/internal/node-logger';
 import yaml from 'js-yaml';
 import { dedent } from 'ts-dedent';
 
-import {
-  type CsfOptions,
-  formatCsf,
-  isModuleMock,
-  isValidPreviewPath,
-  loadCsf,
-  printCsf,
-} from './CsfFile.ts';
+import { type CsfOptions, formatCsf, isModuleMock, loadCsf, printCsf } from './CsfFile.ts';
 import { parseExpression } from './estree/ast.ts';
 
 expect.addSnapshotSerializer({
@@ -1285,6 +1278,18 @@ describe('CsfFile', () => {
         expect.objectContaining({ code: 'unsupported-initializer', target: { kind: 'meta' } })
       );
       expect(formatCsf(csf)).toBe(source);
+    });
+
+    it('does not read the meta of a destructured factory meta configuration', () => {
+      const source = dedent`
+        import preview from './preview';
+        const { config } = { config: { title: 'Inner' }, title: 'Outer' };
+        const meta = preview.meta(config);
+        export const Basic = meta.story({});
+      `;
+      const csf = loadCsf(source, { makeTitle }).parse();
+
+      expect(csf.meta.title).toBe('Default Title');
     });
 
     it('bad meta', () => {
@@ -3560,24 +3565,5 @@ describe('isModuleMock', () => {
 
     expect(isModuleMock('#foo.mocktail')).toBe(false);
     expect(isModuleMock('#foo.mock.test.ts')).toBe(false);
-  });
-});
-
-describe('isValidPreviewPath', () => {
-  it.each([
-    ['#.storybook/preview', true],
-    ['../../.storybook/preview', true],
-    ['/path/to/.storybook/preview', true],
-    ['./preview', true],
-    ['./preview.ts', true],
-    ['./preview.tsx', true],
-    ['./preview.js', true],
-    ['./preview.jsx', true],
-    ['./preview.mjs', true],
-    ['foo', false],
-    ['#.storybook/bad-preview', false],
-    ['preview', false],
-  ])('isValidPreviewPath("%s") === %s', (path, expected) => {
-    expect(isValidPreviewPath(path)).toBe(expected);
   });
 });

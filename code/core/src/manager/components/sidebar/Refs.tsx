@@ -50,7 +50,10 @@ const RefHead = styled.div(({ theme }) => ({
   ...iconSwap(['&:hover', '&:has(button:focus-visible)']),
 }));
 
-const RefTitle = styled.span(truncatedLabel);
+const RefTitle = styled.span(({ theme }) => ({
+  ...truncatedLabel,
+  fontSize: theme.typography.size.s2,
+}));
 
 const CollapseButton = styled.button(({ theme }) => ({
   all: 'unset',

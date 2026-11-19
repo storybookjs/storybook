@@ -8,17 +8,26 @@
  * threading itself — it only describes this module to core through the `experimental_docgenProvider`
  * preset.
  *
- * This provider needs no configuration: `react-component-meta` extraction reads nothing from the
- * user's `typescript` options. `ComponentMetaManager` builds its own program, and the only
- * docgen-relevant TS option (`reactDocgenTypescriptOptions`, including `propFilter`) applies solely
- * to the `react-docgen-typescript` engine used by the legacy manifest path — not here.
+ * The only `typescript` option this provider reads is `docgenSpecifier`, the package it loads
+ * TypeScript from. `ComponentMetaManager` builds its own program, and the other docgen-relevant TS
+ * option (`reactDocgenTypescriptOptions`, including `propFilter`) applies solely to the
+ * `react-docgen-typescript` engine used by the legacy manifest path — not here.
  */
-import { createLazyDocgenMiddleware, loadTypeScriptCompilerApi } from 'storybook/internal/common';
+import {
+  type TypeScriptSpecifierForDocgen,
+  createLazyDocgenMiddleware,
+} from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import type { DocgenMiddleware } from 'storybook/internal/types';
 
+import { loadDocgenTypeScript } from '@storybook/component-meta-typescript';
+
 import { ComponentMetaManager } from '../componentManifest/componentMeta/ComponentMetaManager.ts';
 import { buildDocgenPayload } from './buildDocgen.ts';
+
+export interface ReactDocgenOptions {
+  typeScriptSpecifier?: TypeScriptSpecifierForDocgen;
+}
 
 /**
  * Builds the React docgen middleware. Owns one {@link ComponentMetaManager} for the worker's
@@ -26,13 +35,13 @@ import { buildDocgenPayload } from './buildDocgen.ts';
  * created lazily on the first eligible request and memoized; when TypeScript is unavailable the
  * middleware passes through to the rest of the chain.
  */
-export const createDocgenProvider = (): DocgenMiddleware =>
+export const createDocgenProvider = ({
+  typeScriptSpecifier,
+}: ReactDocgenOptions = {}): DocgenMiddleware =>
   createLazyDocgenMiddleware({
     createManager: async () => {
       try {
-        return new ComponentMetaManager(
-          await loadTypeScriptCompilerApi(() => import('typescript'))
-        );
+        return new ComponentMetaManager(await loadDocgenTypeScript(typeScriptSpecifier));
       } catch (err) {
         logger.warn(`React docgen is unavailable. ${err instanceof Error ? err.message : err}`);
         return undefined;

@@ -1,14 +1,13 @@
-```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 4"
 <script module>
   import { setContext } from 'svelte';
 
-  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-  import { defineMeta } from '@storybook/your-framework';
+  import preview from '../.storybook/preview';
 
   import YourComponent from './YourComponent.svelte';
   import MarginDecorator from './MarginDecorator.svelte';
 
-  const { Story } = defineMeta({
+  const { Story } = preview.meta({
     component: YourComponent,
     decorators: [
       (story, { globals }) => {
@@ -21,16 +20,18 @@
 </script>
 ```
 
-```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 3"
+<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
 <script module>
   import { setContext } from 'svelte';
 
-  import preview from '../.storybook/preview';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import YourComponent from './YourComponent.svelte';
   import MarginDecorator from './MarginDecorator.svelte';
 
-  const { Story } = preview.meta({
+  const { Story } = defineMeta({
     component: YourComponent,
     decorators: [
       (story, { globals }) => {
@@ -58,17 +59,16 @@
 </div>
 ```
 
-```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 4"
 <script module lang="ts">
   import { setContext } from 'svelte';
 
-  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-  import { defineMeta } from '@storybook/your-framework';
+  import preview from '../.storybook/preview';
 
   import YourComponent from './YourComponent.svelte';
   import MarginDecorator from './MarginDecorator.svelte';
 
-  const { Story } = defineMeta({
+  const { Story } = preview.meta({
     component: YourComponent,
     decorators: [
       (story, { globals }) => {
@@ -81,16 +81,18 @@
 </script>
 ```
 
-```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 3"
+<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
 <script module lang="ts">
   import { setContext } from 'svelte';
 
-  import preview from '../.storybook/preview';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import YourComponent from './YourComponent.svelte';
   import MarginDecorator from './MarginDecorator.svelte';
 
-  const { Story } = preview.meta({
+  const { Story } = defineMeta({
     component: YourComponent,
     decorators: [
       (story, { globals }) => {

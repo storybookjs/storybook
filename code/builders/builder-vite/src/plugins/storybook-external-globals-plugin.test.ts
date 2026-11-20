@@ -95,8 +95,9 @@ const transform = async (mode: 'dev' | 'build', code: string, id: string) => {
   const options = { presets: { apply: async () => undefined } } as unknown as Options;
   const { transform: hook } = (await storybookExternalGlobalsPlugin(options)) as Plugin;
   const { filter, handler } = hook as Extract<typeof hook, { handler: unknown }>;
+  const { include } = filter!.code as { include: string[] };
 
-  return (filter!.code as RegExp).test(code)
+  return include.some((pattern) => code.includes(pattern))
     ? handler.call({ environment: { mode } } as ThisParameterType<typeof handler>, code, id)
     : undefined;
 };
@@ -111,8 +112,10 @@ it('calls preview setup in a dev module that reads a global through an inlined a
   expect(code).toContain(optimizedChunk);
 });
 
-it('leaves a module that only reads a global alone in builds', async () => {
-  expect(await transform('build', optimizedChunk, '/proj/src/chunk.js')).toBeUndefined();
+it('leaves a module that only reads a global unchanged in builds', async () => {
+  const result = await transform('build', optimizedChunk, '/proj/src/chunk.js');
+
+  expect(typeof result === 'string' ? result : result?.code).toBe(optimizedChunk);
 });
 
 it('calls preview setup before a rewritten global', () => {

@@ -60,9 +60,6 @@ export async function storybookExternalGlobalsPlugin(options: Options): Promise<
 
   const globalsList = Object.keys(externals);
   const globalReferences = Object.values(externals);
-  const globalsCodeFilter = new RegExp(
-    [...globalsList, ...globalReferences].map(escapeKeys).join('|')
-  );
 
   return {
     name: 'storybook:external-globals-plugin',
@@ -98,16 +95,12 @@ export async function storybookExternalGlobalsPlugin(options: Options): Promise<
     },
     // Replace imports with variables destructured from global scope
     transform: {
-      filter: { code: globalsCodeFilter },
+      filter: { code: { include: [...globalsList, ...globalReferences] } },
       async handler(code: string, id: string) {
         // Optimized deps inline the dev-only alias files, so they read a global without an import.
         const readsInlinedGlobal =
           this.environment.mode === 'dev' &&
           globalReferences.some((reference) => code.includes(reference));
-
-        if (!readsInlinedGlobal && globalsList.every((glob) => !code.includes(glob))) {
-          return undefined;
-        }
 
         const [imports] = parse(code);
         const src = new MagicString(code);

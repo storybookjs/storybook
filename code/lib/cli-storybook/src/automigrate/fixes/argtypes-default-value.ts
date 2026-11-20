@@ -1,4 +1,11 @@
-import type { CsfObject, ESTree as E } from 'storybook/internal/csf-tools';
+import {
+  type CsfObject,
+  type ESTree as E,
+  type ESTreeNode,
+  staticKey,
+  unwrapExpression,
+  walk,
+} from 'storybook/internal/csf-tools';
 
 import picocolors from 'picocolors';
 
@@ -13,6 +20,51 @@ const argName = (property: E.ObjectProperty): string | undefined => {
     return property.key.value;
   }
   return undefined;
+};
+
+/** The value written to `argTypes` by `argTypes: …` or `X.argTypes = …`. */
+const argTypesValue = (node: ESTreeNode) => {
+  if (node.type === 'Property' && staticKey(node) === 'argTypes') {
+    return node.value;
+  }
+  if (
+    node.type === 'AssignmentExpression' &&
+    node.left.type === 'MemberExpression' &&
+    !node.left.computed &&
+    node.left.property.type === 'Identifier' &&
+    node.left.property.name === 'argTypes'
+  ) {
+    return node.right;
+  }
+  return undefined;
+};
+
+const hasField = (node: ESTreeNode | null | undefined, key: string) => {
+  const object = unwrapExpression(node);
+  return (
+    object?.type === 'ObjectExpression' &&
+    object.properties.some((property) => staticKey(property as ESTreeNode) === key)
+  );
+};
+
+/**
+ * Whether the file writes a literal `argTypes: { <name>: { defaultValue } }`. Only such a field is
+ * this migration's to remove: `defaultValue` has set no arg since 7.0, so a file without one is not
+ * edited at all, and its argTypes or stories the editor cannot read are not reported.
+ */
+const writesArgTypeDefaultValue = (program: E.Program) => {
+  let found = false;
+  walk(program as ESTreeNode, (node) => {
+    const argTypes = unwrapExpression(argTypesValue(node) as ESTreeNode | undefined);
+    if (argTypes?.type === 'ObjectExpression') {
+      found ||= argTypes.properties.some(
+        (property) =>
+          property.type === 'Property' && hasField(property.value as ESTreeNode, 'defaultValue')
+      );
+    }
+    return !found;
+  });
+  return found;
 };
 
 const strip = (object: CsfObject) => {
@@ -42,9 +94,16 @@ export const argtypesDefaultValue: Fix = {
   transform: () => [
     {
       filter: { kind: ['preview', 'story'], code: 'defaultValue' },
-      editConfig: strip,
+      // An edit reports every argType and story it cannot read, so it runs only when there is work.
+      editConfig: (config) => {
+        if (writesArgTypeDefaultValue(config.program)) {
+          strip(config);
+        }
+      },
       editCsf: (csf) => {
-        csf.objects().forEach(strip);
+        if (writesArgTypeDefaultValue(csf.program)) {
+          csf.objects().forEach(strip);
+        }
       },
     },
   ],

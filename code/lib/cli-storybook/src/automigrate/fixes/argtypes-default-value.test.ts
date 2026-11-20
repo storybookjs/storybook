@@ -99,16 +99,24 @@ describe('argtypes-default-value', () => {
     expect(story).toContain("control: 'number'");
   });
 
-  it('leaves a factory call unchanged when the editor cannot remove it', async () => {
+  it('does not touch a file without a literal argTypes defaultValue, whatever it cannot read', async () => {
+    // Helper calls, spreads, story factories and `table.defaultValue`, without a literal argType one.
     const story = [
-      'const makeArgType = (argType) => argType;',
-      "export default { argTypes: { label: makeArgType({ defaultValue: 'Hi' }) } };",
+      "import { intlArgType, makeArgType, PaletteArgType, generateStory } from '../helpers';",
+      'export default {',
+      '  argTypes: {',
+      "    intl: intlArgType('LinkTranslate'),",
+      "    label: makeArgType({ defaultValue: 'Hi' }),",
+      "    palette: { ...PaletteArgType, table: { defaultValue: { summary: 'neutral' } } },",
+      '  },',
+      '};',
+      "export const Select = generateStory({ name: 'Select' });",
     ].join('\n');
-    const result = await migrate({ story });
+    vol.fromJSON({ [previewConfigPath]: 'export default {};', [storyPath]: story });
 
-    expect(result.failures).toEqual([
-      { file: storyPath, kind: 'story', message: expect.stringContaining('Cannot mutate') },
-    ]);
+    expect(await checkFix(argtypesDefaultValue, options)).toBeNull();
+    const result = await migrate({ story });
+    expect(result.failures).toEqual([]);
     expect(result.story).toBe(story);
   });
 

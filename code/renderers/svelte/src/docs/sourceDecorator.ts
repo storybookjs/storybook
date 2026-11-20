@@ -1,13 +1,5 @@
 import { SourceType } from 'storybook/internal/docs-tools';
-import type {
-  ArgTypes,
-  Args,
-  ArgsStoryFn,
-  DecoratorFunction,
-  StoryContext,
-} from 'storybook/internal/types';
-
-import { getStoryArgTypes } from 'storybook/internal/preview-api';
+import type { Args, ArgsStoryFn, DecoratorFunction, StoryContext } from 'storybook/internal/types';
 
 import { emitTransformCode, useEffect, useRef } from 'storybook/preview-api';
 import type { SvelteComponentDoc } from 'sveltedoc-parser';
@@ -28,14 +20,8 @@ export const skipSourceRender = (context: Pick<StoryContext, 'parameters'>) => {
   return !isArgsStory || sourceParams?.code || sourceParams?.type === SourceType.CODE;
 };
 
-function toSvelteProperty(key: string, value: any, argTypes: ArgTypes): string | null {
-  if (value === undefined || value === null) {
-    return null;
-  }
-
-  const argType = argTypes[key];
-
-  if (argType && argType.action) {
+function toSvelteProperty(key: string, value: any): string | null {
+  if (value === undefined || value === null || value.isAction) {
     return null;
   }
 
@@ -83,13 +69,11 @@ function getComponentName(component: any): string | null {
  *
  * @param component Component
  * @param args Args
- * @param argTypes ArgTypes
  * @param slotProperty Property used to simulate a slot
  */
 export function generateSvelteSource(
   component: any,
   args: Args,
-  argTypes: ArgTypes,
   slotProperty?: string | null
 ): string | null {
   const name = getComponentName(component);
@@ -100,7 +84,7 @@ export function generateSvelteSource(
 
   const propsArray = Object.entries(args)
     .filter(([k]) => k !== slotProperty)
-    .map(([k, v]) => toSvelteProperty(k, v, argTypes))
+    .map(([k, v]) => toSvelteProperty(k, v))
     .filter((p) => p);
 
   const props = propsArray.join(' ');
@@ -179,12 +163,7 @@ export const sourceDecorator: DecoratorFunction<SvelteRenderer> = (storyFn, cont
       component = ctxComponent;
     }
 
-    const generated = generateSvelteSource(
-      component,
-      args,
-      getStoryArgTypes(context),
-      slotProperty
-    );
+    const generated = generateSvelteSource(component, args, slotProperty);
 
     if (generated && source.current !== generated) {
       emitTransformCode(generated, context);

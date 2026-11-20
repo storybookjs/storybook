@@ -150,12 +150,7 @@ describe('svelte legacy baselines', () => {
         // The composed args include the preview args, as in Storybook's source decorator.
         const { args } = composeModuleStory(plain, story, exportName);
         const snippetComponent = getPlainCsfSnippetComponent(plain.meta, story, args);
-        const snippet = generateSvelteSource(
-          snippetComponent,
-          args,
-          argTypes as StrictArgTypes,
-          null
-        );
+        const snippet = generateSvelteSource(snippetComponent, args, null);
         expect(snippet, `${fixtureCase}/plain-csf-snippet-${exportName}.snapshot`).not.toBeNull();
         if (snippet === null) {
           throw new Error(

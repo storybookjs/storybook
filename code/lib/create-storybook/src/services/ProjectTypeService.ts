@@ -80,13 +80,14 @@ export class ProjectTypeService {
           return dependencies?.some(Boolean) ?? false;
         },
       },
-      {
-        preset: ProjectType.EMBER,
-        dependencies: ['ember-cli'],
-        matcherFunction: ({ dependencies }) => {
-          return dependencies?.every(Boolean) ?? true;
-        },
-      },
+      // TODO(SB 11.1): re-enable Ember support once the community ember-storybook package supports SB11 — https://github.com/ember-integrations/ember-storybook/issues/123 (also merge https://github.com/ember-integrations/ember-storybook/pull/122) and it is released.
+      // {
+      //   preset: ProjectType.EMBER,
+      //   dependencies: ['ember-cli'],
+      //   matcherFunction: ({ dependencies }) => {
+      //     return dependencies?.every(Boolean) ?? true;
+      //   },
+      // },
       {
         preset: ProjectType.NEXTJS,
         dependencies: ['next'],

@@ -4,7 +4,8 @@ export type Framework = (typeof supportedFrameworks)[number];
 export const supportedFrameworks = [
   'angular',
   'astro',
-  'ember',
+  // TODO(SB 11.1): re-enable Ember support once the community ember-storybook package supports SB11 — https://github.com/ember-integrations/ember-storybook/issues/123 (also merge https://github.com/ember-integrations/ember-storybook/pull/122) and it is released.
+  // 'ember',
   'html-vite',
   'nextjs',
   'nextjs-vite',
@@ -40,7 +41,8 @@ export const supportedFrameworksPackages = {
 
   angular: '@storybook/angular',
   astro: '@storybook-astro/framework',
-  ember: '@storybook/ember',
+  // TODO(SB 11.1): re-enable Ember support once the community ember-storybook package supports SB11 — https://github.com/ember-integrations/ember-storybook/issues/123 (also merge https://github.com/ember-integrations/ember-storybook/pull/122) and it is released.
+  // ember: '@storybook/ember',
   nextjs: '@storybook/nextjs',
   'nextjs-vite': '@storybook/nextjs-vite',
 
@@ -65,7 +67,8 @@ export const supportedFrameworksNames = {
   'web-components-vite': 'Web Components with Vite',
   angular: 'Angular',
   astro: 'Astro',
-  ember: 'Ember',
+  // TODO(SB 11.1): re-enable Ember support once the community ember-storybook package supports SB11 — https://github.com/ember-integrations/ember-storybook/issues/123 (also merge https://github.com/ember-integrations/ember-storybook/pull/122) and it is released.
+  // ember: 'Ember',
   nextjs: 'NextJS',
   'nextjs-vite': 'NextJS with Vite',
   nuxt: 'Nuxt',

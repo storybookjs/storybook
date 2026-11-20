@@ -1,51 +1,11 @@
-import { type CsfObject, type ESTreeNode, staticKey, walk } from 'storybook/internal/csf-tools';
+import { type CsfObject, anyKey } from 'storybook/internal/csf-tools';
 
 import picocolors from 'picocolors';
 
-import { readForEdit } from '../helpers/edit-parsed-file.ts';
 import type { Fix } from '../types.ts';
 
-// The key of `key: value` or `Story.key = value`.
-const keyOf = (node: ESTreeNode) =>
-  staticKey(node) ??
-  (node.type === 'AssignmentExpression' &&
-  node.left.type === 'MemberExpression' &&
-  !node.left.computed &&
-  node.left.property.type === 'Identifier'
-    ? node.left.property.name
-    : undefined);
-
-/**
- * Whether the file has a `defaultValue` key outside `args`, where it is a component prop, and the
- * docs `table` of an arg.
- */
-const showsDefaultValue = (program: ESTreeNode) => {
-  const parents = new Map<ESTreeNode, ESTreeNode | null>();
-  let found = false;
-  walk(program, (node, parent) => {
-    parents.set(node, parent);
-    const key = keyOf(node);
-    found ||= key === 'defaultValue';
-    // An arg can be named `args` or `table`, as in `argTypes: { table: {...} }`.
-    const owner = parent && parents.get(parent);
-    const skipped = (key === 'args' || key === 'table') && !(owner && keyOf(owner) === 'argTypes');
-    return !found && !skipped;
-  });
-  return found;
-};
-
-const strip = (object: CsfObject) => {
-  const argTypes = readForEdit(object, ['argTypes']);
-  if (argTypes?.type !== 'ObjectExpression') {
-    return;
-  }
-  for (const property of argTypes.properties) {
-    const name = staticKey(property);
-    if (name !== undefined) {
-      object.remove(['argTypes', name, 'defaultValue']);
-    }
-  }
-};
+// An arg the source does not show a defaultValue for, such as `intl: intlArgType(...)`, is left.
+const strip = (object: CsfObject) => object.remove(['argTypes', anyKey, 'defaultValue']);
 
 export const argtypesDefaultValue: Fix = {
   id: 'argtypes-default-value',
@@ -59,12 +19,7 @@ export const argtypesDefaultValue: Fix = {
     {
       filter: { kind: ['preview', 'story'], code: 'defaultValue' },
       editConfig: strip,
-      editCsf: (csf) => {
-        // `filter.code` also matches a read such as `dir.defaultValue`, and a prop in `args`.
-        if (showsDefaultValue(csf.editor.program)) {
-          csf.objects().forEach(strip);
-        }
-      },
+      editCsf: (csf) => csf.objects().forEach(strip),
     },
   ],
 };

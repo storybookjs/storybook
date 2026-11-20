@@ -312,7 +312,11 @@ describe('argtypes-default-value', () => {
     const result = await migrate({ story });
 
     expect(result.failures).toEqual([
-      { file: storyPath, kind: 'story', message: expect.stringContaining('argTypes.label') },
+      {
+        file: storyPath,
+        kind: 'story',
+        message: expect.stringContaining('argTypes.*.defaultValue'),
+      },
     ]);
     expect(result.story).toBe(story);
   });
@@ -365,6 +369,76 @@ describe('argtypes-default-value', () => {
     expect(result.failures).toEqual([]);
     expect(result.story).toContain("control: 'text'");
     expect(result.story).not.toContain('defaultValue');
+  });
+
+  it('skips a file whose arg named defaultValue has none, beside a story it cannot read', async () => {
+    const story = [
+      "export default { argTypes: { defaultValue: { control: 'text' } } };",
+      'function createVariantsStory(layout: string) { return () => layout; }',
+      "export const Horizontal = createVariantsStory('horizontal');",
+    ].join('\n');
+    const result = await migrate({ story });
+
+    expect(result.failures).toEqual([]);
+    expect(result.story).toBe(story);
+  });
+
+  it('skips a story a helper builds from destructured imports and reassigned locals', async () => {
+    const story = [
+      "import { ATTRIBUTES } from './resources';",
+      'const { dir } = ATTRIBUTES;',
+      'export default { args: { dir: dir.defaultValue } };',
+      'function make(layout: string) {',
+      '  let selected = false;',
+      '  selected = layout === dir.defaultValue;',
+      '  return () => `${selected}`;',
+      '}',
+      "export const Horizontal = make('horizontal');",
+    ].join('\n');
+    const result = await migrate({ story });
+
+    expect(result.failures).toEqual([]);
+    expect(result.story).toBe(story);
+  });
+
+  it('deletes a defaultValue beside a story spread it cannot read', async () => {
+    const result = await migrate({
+      story: [
+        "import { Base } from './base';",
+        "export default { argTypes: { size: { defaultValue: 'M', control: 'text' } } };",
+        'export const A = { ...Base, args: { a: 1 } };',
+      ].join('\n'),
+    });
+
+    expect(result.failures).toEqual([]);
+    expect(result.story).not.toContain('defaultValue');
+    expect(result.story).toContain('...Base');
+  });
+
+  it('deletes a defaultValue from argTypes declared as a constant', async () => {
+    const result = await migrate({
+      story: [
+        "const argTypes = { label: { defaultValue: 'A', control: 'text' } };",
+        'export default { argTypes };',
+      ].join('\n'),
+    });
+
+    expect(result.failures).toEqual([]);
+    expect(result.story).not.toContain('defaultValue');
+    expect(result.story).toContain("control: 'text'");
+  });
+
+  it('fails a local spread in argTypes that shows a defaultValue', async () => {
+    const story = [
+      "const shared = { label: { defaultValue: 'A' } };",
+      'export default { argTypes: { ...shared } };',
+    ].join('\n');
+    const result = await migrate({ story });
+
+    expect(result.failures).toEqual([
+      { file: storyPath, kind: 'story', message: expect.stringContaining('spread field') },
+    ]);
+    expect(result.story).toBe(story);
   });
 
   it('deletes the defaultValue of an arg named table', async () => {

@@ -66,6 +66,7 @@ Changes to `MIGRATION.md` are automatically updated by lint-staged. Use the comm
 
 Always run `cd code && yarn fmt:write` once you are done editing.
 Hand-written formatting is frequently wrong for oxfmt, so do not skip this step.
+It formats the whole repository, including `.md` and `.mdx` files in `docs/`, such as Markdown tables. Run it after docs-only edits too.
 The pre-commit hook detects AI agents (via `std-env`) and switches from check-only to write mode, so formatting is also auto-fixed when agents commit.
 
 ## Troubleshooting

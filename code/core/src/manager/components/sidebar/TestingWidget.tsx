@@ -255,26 +255,18 @@ export const TestingWidget = ({
               : undefined
   );
 
-  const cardRef = useRef<HTMLDivElement>(null);
-  const { landmarkProps } = useLandmark(
-    { 'aria-labelledby': 'storybook-testing-widget-heading', role: 'region' },
-    cardRef
-  );
-
   if (!hasTestProviders && !errorCount && !warningCount) {
     return null;
   }
 
   return (
-    <HoverCard
+    <LandmarkCard
       id="storybook-testing-module"
       data-updated={isUpdated}
       outlineAnimation={isRunning ? 'spin' : 'none'}
       outlineColor={
         isCrashed || (isRunning && errorCount > 0) ? 'negative' : isUpdated ? 'positive' : undefined
       }
-      ref={cardRef}
-      outlineAttrs={landmarkProps}
     >
       <h2 id="storybook-testing-widget-heading" className="sb-sr-only">
         Component tests
@@ -398,6 +390,17 @@ export const TestingWidget = ({
           </Content>
         </Collapsible>
       )}
-    </HoverCard>
+    </LandmarkCard>
   );
 };
+
+/** Mounted only while the widget renders, so its landmark never outlives the card element. */
+function LandmarkCard(props: ComponentProps<typeof HoverCard>): React.ReactElement {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const { landmarkProps } = useLandmark(
+    { 'aria-labelledby': 'storybook-testing-widget-heading', role: 'region' },
+    cardRef
+  );
+
+  return <HoverCard {...props} ref={cardRef} outlineAttrs={landmarkProps} />;
+}

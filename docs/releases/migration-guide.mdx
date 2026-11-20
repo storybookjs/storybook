@@ -97,6 +97,7 @@ Storybook 11 removes support for the following setups. If your project is impact
 
 - **Create React App preset.** `@storybook/preset-create-react-app` is no longer published, and the upgrade stops while it is installed. Use `@storybook/react-vite` instead. See the [Create React App notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#create-react-app-support-removed).
 - **Yarn Plug'n'Play.** Set `nodeLinker: node-modules` in `.yarnrc.yml` and run `yarn install`. See the [Yarn PnP notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#yarn-pnp-support-removed).
+- **Test runner.** `@storybook/test-runner` is incompatible with Storybook 11. Follow the [instructions to migrate to `addon-vitest`](../writing-tests/integrations/vitest-addon/migration-guide.mdx). If your project uses a Webpack-based framework, the [test runner notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#test-runner-support-removed) explain how to switch to Vite first.
 - **Some community addons and builders.** Packages that import `storybook/internal/babel` stop loading until they publish a release for Storybook 11. Check the [list of affected packages](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#community-packages-that-need-a-release).
 
 If any of these requirements block your project, we recommend that you keep using Storybook 10.x.
@@ -149,7 +150,7 @@ These changes need no action, but can affect your project.
 
 ### Server-side docgen is on by default
 
-Storybook 11 reads your components' props on the Storybook server with the TypeScript compiler API. This data is then used to generate [manifests](../ai/manifests.mdx), [Controls](../essentials/controls.mdx), [story snippets](../writing-docs/autodocs.mdx), and [code panels](../writing-docs/code-panel.mdx).
+Storybook 11 reads your components' props on the Storybook server with the TypeScript compiler API. This data is then used to generate [manifests](../ai/reference/manifests.mdx), [Controls](../essentials/controls.mdx), [story snippets](../writing-docs/autodocs.mdx), and [code panels](../writing-docs/code-panel.mdx).
 
 This [`docgenServer`](../api/main-config/main-config-features.mdx#docgenserver) feature is on by default for these frameworks:
 
@@ -272,10 +273,6 @@ The Webpack-based `@storybook/nextjs` framework is deprecated. Follow the [instr
 ### Web Components runtime manifest API to `customElementsManifest`
 
 `setCustomElementsManifest()` and `setCustomElements()` are deprecated. With server-side docgen, Storybook reads your elements from your source files, so you can remove the call from `.storybook/preview.js|ts`. To keep a manifest you generate yourself, set its path in `framework.options.customElementsManifest` in `.storybook/main.js|ts`. The `web-components-runtime-manifest` automigration does both for you. See the [Web Components manifest notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#web-components-the-runtime-custom-elements-manifest-api-is-deprecated).
-
-### `test-runner` to `addon-vitest`
-
-Official support for the `test-runner` has ended. It still runs with Storybook 11, but it no longer receives fixes or compatibility updates. Follow the [instructions to migrate to `addon-vitest`](../writing-tests/integrations/vitest-addon/migration-guide.mdx). If your project uses a Webpack-based framework, the [test runner notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#test-runner-support-ended) explain how to switch to Vite first.
 
 ## New projects
 

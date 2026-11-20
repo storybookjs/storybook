@@ -320,7 +320,6 @@ describe('mcpServerHandler', () => {
       id: 1,
       result: {
         protocolVersion: '2025-06-18',
-        adapter: {},
         capabilities: {
           tools: { listChanged: true },
         },
@@ -340,6 +339,35 @@ describe('mcpServerHandler', () => {
       'Also when the user asks to run or fix story tests'
     );
     expect(parsedResponse.result.instructions).not.toContain('component-docs');
+  });
+
+  it.each([
+    ['a null body', 'null', -32600],
+    ['a message without jsonrpc', { id: 1, method: 'tools/list' }, -32600],
+    ['a batch', [{ jsonrpc: '2.0', id: 1, method: 'tools/list' }], -32600],
+    ['an unparseable body', '{bad', -32700],
+  ])('should answer %s with a 400 JSON-RPC error', async (_, body, code) => {
+    const mockReq = createMockIncomingMessage({
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body,
+    });
+    const { response, getResponseData } = createMockServerResponse();
+
+    await mcpServerHandler({
+      req: mockReq,
+      res: response,
+      origin: 'http://localhost:6006',
+      basePath: '/',
+      options: createMockOptions(),
+      addonOptions: { toolsets: { dev: true, docs: true } },
+      compositionAuth: new CompositionAuth(),
+    });
+
+    expect(response.end).toHaveBeenCalled();
+    const { status, body: responseBody } = getResponseData();
+    expect(status).toBe(400);
+    expect(JSON.parse(responseBody)).toMatchObject({ jsonrpc: '2.0', error: { code } });
   });
 
   it('should include docs-style instructions when docs toolset is selected and manifest is available', async () => {

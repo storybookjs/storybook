@@ -60,20 +60,69 @@ export const FilledIn: StoryFn = () => (
   </Search>
 );
 
+const renderResults: SearchProps['children'] = ({
+  query,
+  results,
+  closeMenu,
+  getMenuProps,
+  getItemProps,
+  highlightedIndex,
+}) => (
+  <SearchResults
+    query={query}
+    results={results}
+    closeMenu={closeMenu}
+    getMenuProps={getMenuProps}
+    getItemProps={getItemProps}
+    highlightedIndex={highlightedIndex}
+  />
+);
+
 export const LastViewed: StoryFn = () => (
   <Search {...baseProps} getLastViewed={getLastViewed}>
-    {({ query, results, closeMenu, getMenuProps, getItemProps, highlightedIndex }) => (
-      <SearchResults
-        query={query}
-        results={results}
-        closeMenu={closeMenu}
-        getMenuProps={getMenuProps}
-        getItemProps={getItemProps}
-        highlightedIndex={highlightedIndex}
-      />
-    )}
+    {renderResults}
   </Search>
 );
+
+const selectStory = fn().mockName('selectStory');
+
+export const LastViewedOpensViewedStory: StoryFn = () => (
+  <Search
+    {...baseProps}
+    getLastViewed={() => [{ storyId: 'emails-buildnotification--with-error', refId }]}
+  >
+    {renderResults}
+  </Search>
+);
+LastViewedOpensViewedStory.decorators = [
+  (storyFn) => (
+    <ManagerContext.Provider
+      value={
+        {
+          api: {
+            getShortcutKeys: () => ({ search: ['/'] }),
+            selectStory,
+            resolveStory: () => undefined,
+            emit: fn(),
+          },
+        } as unknown as React.ContextType<typeof ManagerContext>
+      }
+    >
+      {storyFn()}
+    </ManagerContext.Provider>
+  ),
+];
+LastViewedOpensViewedStory.play = async ({ canvasElement }) => {
+  selectStory.mockClear();
+  const canvas = within(canvasElement);
+  await userEvent.click(canvas.getByRole('searchbox'));
+  await userEvent.click(await canvas.findByText('BuildNotification'));
+  await expect(selectStory).toHaveBeenCalledWith(
+    'emails-buildnotification--with-error',
+    undefined,
+    expect.anything()
+  );
+};
 
 const escapeAbove = fn().mockName('escapeAbove');
 

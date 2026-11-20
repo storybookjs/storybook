@@ -7,7 +7,7 @@
   </a>
 </p>
 
-<p align="center">Build bulletproof UI components faster</p>
+<p align="center">Build, test & document components</p>
 
 <br/>
 
@@ -26,7 +26,10 @@
     <img src="https://img.shields.io/badge/community-join-FF4785.svg?logo=storybook&logoColor=white" alt="Storybook Community" />
   </a>
   <a href="https://bsky.app/profile/storybook.js.org">
-    <img src="https://img.shields.io/badge/bluesky-join-1185FE?style=shield&logo=bluesky&longCache=true&style=flat&logoColor=white" alt="Follow Storybook on BlueSky" />
+    <img src="https://img.shields.io/badge/bluesky-follow-1185FE?style=shield&logo=bluesky&longCache=true&style=flat&logoColor=white" alt="Follow Storybook on BlueSky" />
+  </a>
+  <a href="https://x.com/intent/follow?screen_name=storybookjs">
+    <img src="https://img.shields.io/badge/@storybookjs-follow-000?style=shield&logo=x&longCache=true&style=flat&logoColor=white" alt="Follow Storybook on BlueSky" />
   </a>
 </p>
 <center>
@@ -64,7 +67,7 @@ npm create storybook@latest
 
 Or paste this prompt into your agent:
 
-```sh
+```text
 Set up Storybook for me with npm create storybook@latest and follow its instructions precisely
 ```
 

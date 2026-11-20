@@ -48,6 +48,8 @@ export async function webpackFinal(baseConfig: webpack.Configuration, options: P
 
   webpackConfig.plugins.push(
     new WebpackDefinePlugin({
+      // The Angular CLI defines this global for browser builds; @angular/core reads it unguarded.
+      ngServerMode: 'false',
       STORYBOOK_ANGULAR_OPTIONS: JSON.stringify({
         experimentalZoneless: builderOptions.experimentalZoneless,
       }),

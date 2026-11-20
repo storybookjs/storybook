@@ -1,5 +1,5 @@
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
-import { join, resolve } from 'node:path';
+import { join, normalize, resolve } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -52,7 +52,7 @@ describe('JsPackageManager', () => {
           }
         >;
       };
-      expected: unknown[];
+      expected: { path: string; field: string; overrides: unknown }[];
     }>([
       {
         name: 'no override fields',
@@ -120,13 +120,18 @@ describe('JsPackageManager', () => {
       vi.spyOn(JsPackageManager, 'getPackageJson').mockImplementation((path) => ({
         dependencies: {},
         devDependencies: {},
-        ...input.manifests[path],
+        ...input.manifests[path.replaceAll('\\', '/')],
       }));
       Object.defineProperty(jsPackageManager, 'primaryPackageJson', {
-        value: { packageJsonPath: '/p/app/package.json', operationDir: '/p/app' },
+        value: {
+          packageJsonPath: normalize('/p/app/package.json'),
+          operationDir: normalize('/p/app'),
+        },
       });
 
-      expect(jsPackageManager.getOverrideSources()).toEqual(expected);
+      expect(jsPackageManager.getOverrideSources()).toEqual(
+        expected.map((source) => ({ ...source, path: normalize(source.path) }))
+      );
     });
 
     it('reads the workspace root without a lockfile', async () => {
@@ -181,11 +186,68 @@ describe('JsPackageManager', () => {
       });
       first.findInstallations = vi.fn().mockResolvedValue(installationsOf('6.0.3'));
       second.findInstallations = vi.fn().mockResolvedValue(installationsOf('7.0.2'));
+      first.getModulePackageJSON = vi
+        .fn()
+        .mockResolvedValue({ name: 'typescript', version: '6.0.3' });
+      second.getModulePackageJSON = vi
+        .fn()
+        .mockResolvedValue({ name: 'typescript', version: '7.0.2' });
     });
 
     it('keeps the installed version of each project apart', async () => {
       await expect(first.getInstalledVersion('typescript')).resolves.toBe('6.0.3');
       await expect(second.getInstalledVersion('typescript')).resolves.toBe('7.0.2');
+    });
+
+    it('reports the version that a package installed under another name bundles', async () => {
+      // @ts-expect-error Ignore abstract class error
+      const packageManager = new JsPackageManager({ configDir: '/project-c/.storybook' });
+      packageManager.findInstallations = vi.fn().mockResolvedValue({
+        dependencies: { vitest: [{ version: '0.1.16', location: '' }] },
+        duplicatedDependencies: {},
+        infoCommand: '',
+        dedupeCommand: '',
+      });
+      packageManager.getModulePackageJSON = vi.fn().mockResolvedValue({
+        name: '@voidzero-dev/vite-plus-test',
+        version: '0.1.16',
+        bundledVersions: { vitest: '4.1.2' },
+      });
+
+      await expect(packageManager.getInstalledVersion('vitest')).resolves.toBe('4.1.2');
+    });
+
+    describe('when the installations cannot be listed', () => {
+      beforeEach(() => {
+        first.findInstallations = vi.fn().mockResolvedValue(undefined);
+        first.getModulePackageJSON = vi.fn().mockResolvedValue({ version: '6.0.3' });
+        second.findInstallations = vi.fn().mockResolvedValue(undefined);
+        second.getModulePackageJSON = vi.fn().mockResolvedValue(null);
+      });
+
+      it('returns the version of the package that resolves from the project', async () => {
+        await expect(first.getInstalledVersion('typescript')).resolves.toBe('6.0.3');
+      });
+
+      it('returns null when the package does not resolve either', async () => {
+        await expect(second.getInstalledVersion('typescript')).resolves.toBeNull();
+      });
+    });
+
+    describe('when the listing succeeds without the package', () => {
+      beforeEach(() => {
+        first.findInstallations = vi.fn().mockResolvedValue({
+          dependencies: {},
+          duplicatedDependencies: {},
+          infoCommand: '',
+          dedupeCommand: '',
+        });
+        first.getModulePackageJSON = vi.fn().mockResolvedValue({ version: '6.0.3' });
+      });
+
+      it('returns null, whatever copy resolves from the project', async () => {
+        await expect(first.getInstalledVersion('typescript')).resolves.toBeNull();
+      });
     });
   });
 

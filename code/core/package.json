@@ -439,17 +439,13 @@
   },
   "peerDependencies": {
     "@types/react": "^18.0.0 || ^19.0.0",
-    "prettier": "^2 || ^3",
-    "vite-plus": "^0.1.15 || ^0.2.0 || ^0.3.0"
+    "prettier": "^2 || ^3"
   },
   "peerDependenciesMeta": {
     "@types/react": {
       "optional": true
     },
     "prettier": {
-      "optional": true
-    },
-    "vite-plus": {
       "optional": true
     }
   },

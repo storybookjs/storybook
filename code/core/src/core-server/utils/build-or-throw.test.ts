@@ -128,24 +128,4 @@ describe('buildOrThrow', () => {
     expect(thrown.message).toContain(noMatchingExportBuilderError.text);
     expect(thrown.message).not.toContain('imported from');
   });
-
-  it('keeps the legacy version-skew message when constructed without detail', () => {
-    const thrown = new NoMatchingExportError({ error: new Error('underlying') });
-
-    expect(thrown.message).toMatchInlineSnapshot(`
-      "There was an exports mismatch error when trying to build Storybook.
-      Please check whether the versions of your Storybook packages match whenever possible, as this might be the cause.
-
-      Problematic example:
-      { "@storybook/react-vite": "10.5.0", "storybook": "10.6.4" }
-
-      Correct example:
-      { "@storybook/react-vite": "10.6.4", "storybook": "10.6.4" }
-
-      Please run \`npx storybook doctor\` for guidance on how to fix this issue.
-
-      More info: 
-      "
-    `);
-  });
 });

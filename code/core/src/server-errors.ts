@@ -1012,30 +1012,18 @@ export class SvelteViteWithSvelteKitError extends StorybookError {
 }
 
 export class NoMatchingExportError extends StorybookError {
-  constructor(public data: { error: unknown | Error; detail?: string }) {
+  constructor(public data: { error: unknown | Error; detail: string }) {
     super({
       name: 'NoMatchingExportError',
       category: Category.CORE_SERVER,
       code: 4,
       documentation: '',
-      message: data.detail
-        ? dedent`
+      message: dedent`
           An import in your Storybook setup could not be resolved while building Storybook's UI.
 
           ${data.detail}
 
-          Two common causes: an addon or dependency was built for an older Storybook and imports an API that no longer exists, in which case the package the file above belongs to needs updating or removing; or the installed Storybook core package versions don't match. Run \`npx storybook doctor\` to check for both problems.`
-        : dedent`
-          There was an exports mismatch error when trying to build Storybook.
-          Please check whether the versions of your Storybook packages match whenever possible, as this might be the cause.
-
-          Problematic example:
-          { "@storybook/react-vite": "10.5.0", "storybook": "10.6.4" }
-
-          Correct example:
-          { "@storybook/react-vite": "10.6.4", "storybook": "10.6.4" }
-
-          Please run \`npx storybook doctor\` for guidance on how to fix this issue.`,
+          Two common causes: an addon or dependency was built for an older Storybook and imports an API that no longer exists, in which case the package the file above belongs to needs updating or removing; or the installed Storybook core package versions don't match. Run \`npx storybook doctor\` to check for both problems.`,
     });
   }
 }

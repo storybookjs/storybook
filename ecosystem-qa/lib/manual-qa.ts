@@ -1,5 +1,7 @@
+import { byHarness, type Discussion } from './github.ts';
 import { inlineTitle } from './proposals.ts';
 import { layoutPlan, manualChecksOf, type Plan, prCell } from './qa-plan.ts';
+import { firstLine, qaPrefix, trackingTitle } from './tracking.ts';
 import type { Window } from './window.ts';
 
 const sentenceCase = (text: string) => `${text[0]!.toUpperCase()}${text.slice(1)}`;
@@ -39,4 +41,74 @@ export const renderManualChecklist = (plan: Plan, window: Window): string => {
     ]),
     '',
   ].join('\n');
+};
+
+// GitHub publishes no limit for a discussion body, so this is the one it enforces on an issue body.
+export const DISCUSSION_BODY_LIMIT = 65_536;
+
+const MANUAL_MARKER = /^<!-- sb-qa-manual ([0-9a-f]{12}) \S+ -->$/;
+
+// Anyone can open a discussion in a public repository, so only a discussion of the workflow or of a
+// person with a role in the repository can stand for the manual QA of a plan.
+const TRUSTED_ASSOCIATIONS = new Set(['OWNER', 'MEMBER', 'COLLABORATOR']);
+
+// The discussions that hold the manual QA of the plan with this hash, oldest first.
+export const manualDiscussionsOf = <Thread extends Discussion>(
+  discussions: Thread[],
+  hash: string
+): Thread[] =>
+  discussions
+    .filter(
+      (discussion) =>
+        (byHarness(discussion.author) || TRUSTED_ASSOCIATIONS.has(discussion.authorAssociation)) &&
+        MANUAL_MARKER.exec(firstLine(discussion.body))?.[1] === hash
+    )
+    .toSorted((a, b) => a.number - b.number);
+
+export type ManualPlan = {
+  plan: Plan;
+  window: Window;
+  file: string;
+  hash: string;
+  repo: string;
+  // The commit that the plan file is linked at.
+  commit: string;
+};
+
+export type ManualDiscussion =
+  | { create: { title: string; body: string } }
+  | { skip: string }
+  | { refuse: string };
+
+export const manualDiscussionOf = ({
+  plan,
+  window,
+  file,
+  hash,
+  repo,
+  commit,
+}: ManualPlan): ManualDiscussion => {
+  if (manualChecksOf(plan, layoutPlan(plan).at).length === 0) {
+    return { skip: `${file} has no manual checks, so it gets no manual QA discussion.` };
+  }
+  const body = [
+    `<!-- sb-qa-manual ${hash} ${file} -->`,
+    renderManualChecklist(plan, window),
+    '---',
+    '',
+    `These checks come from the QA plan [\`${file}\`](https://github.com/${repo}/blob/${commit}/ecosystem-qa/plans/${file}).`,
+    `The sweep tests the rest of that plan and reports in the discussion \`${trackingTitle(plan.line, file)}\`.`,
+    '',
+  ].join('\n');
+  if (body.length > DISCUSSION_BODY_LIMIT) {
+    return {
+      refuse: `The manual QA discussion of ${file} would have a body of ${body.length} characters, and GitHub takes at most ${DISCUSSION_BODY_LIMIT}.`,
+    };
+  }
+  return {
+    create: {
+      title: `${qaPrefix(plan.line)} Manual QA for Storybook ${plan.line} at ${plan.version}`,
+      body,
+    },
+  };
 };

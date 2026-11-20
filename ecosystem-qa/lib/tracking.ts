@@ -9,7 +9,7 @@ export const DEFAULT_CAP_USD = 250;
 export type Written = { id: string; url: string; body: string; author: Actor; editor: Actor };
 
 // A body written in the browser comes back with CRLF line ends.
-const firstLine = (body: string) => body.split(/\r?\n/, 1)[0] ?? '';
+export const firstLine = (body: string) => body.split(/\r?\n/, 1)[0] ?? '';
 
 const PLAN_MARKER = /^<!-- sb-qa-plan ([0-9a-f]{12}) \S+ -->$/;
 const BATCH_MARKER = /^<!-- sb-qa-batch ([0-9a-f]{12}) batch=(\d+) version=\S+ runs=[\d,]* -->$/;
@@ -21,18 +21,34 @@ const TOTAL_LINE = /^<!-- sb-qa-total usd=(\d+(?:\.\d+)?) runs=(\d+) -->$/;
 const RESUME_LINE = /^To start batch (\d+) by hand /;
 const SHORT_SPEND = /^Spent on this plan: at least /m;
 
-export type TrackedPlan = { file: string; hash: string; line: string; version: string };
+export const qaPrefix = (line: string): string => `[SB ${line.split('.')[0]} QA]`;
+
+export const trackingTitle = (line: string, file: string): string =>
+  `${qaPrefix(line)} Dynamic sweep ${file}`;
+
+export type TrackedPlan = {
+  file: string;
+  hash: string;
+  line: string;
+  version: string;
+  // The discussion that holds the manual checks of the plan, none when it has none yet.
+  manualDiscussion?: number;
+};
 
 export const renderTrackingThread = ({
   file,
   hash,
   line,
   version,
+  manualDiscussion,
 }: TrackedPlan): { title: string; body: string } => ({
-  title: `[SB ${line.split('.')[0]} QA] Dynamic sweep ${file}`,
+  title: trackingTitle(line, file),
   body: [
     `<!-- sb-qa-plan ${hash} ${file} -->`,
     `The logbook of one QA sweep: the plan \`${file}\` with the hash \`${hash}\`, first run on Storybook ${version}.`,
+    ...(manualDiscussion === undefined
+      ? []
+      : [`The checks of the plan that a person does by hand are in #${manualDiscussion}.`]),
     '',
     'The workflow adds one comment for each batch it runs, with the runs, their dollars, their checks, and their findings, and edits that comment when it collects the batch again.',
     'The spend of the sweep is the sum of those comments. A comment by anyone else is not part of it, and a comment of the workflow that anyone else edits stops the sweep, because its dollars can no longer be read.',

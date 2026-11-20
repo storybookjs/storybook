@@ -19,6 +19,7 @@ import {
   type DiscussionComment,
   type DiscussionPlace,
 } from './lib/github.ts';
+import { manualDiscussionsOf } from './lib/manual-qa.ts';
 import { PLANS_BRANCH } from './lib/plan-push.ts';
 import { readPlanScope } from './lib/plan-scope.ts';
 import { openIssueOf, QA_LABEL } from './lib/proposals.ts';
@@ -234,9 +235,8 @@ const placeOf = (): DiscussionPlace | undefined => {
 };
 
 const place = placeOf();
-const threads = place
-  ? trackingThreadsOf(listDiscussions(repo!, place.categoryId), scope.hash)
-  : [];
+const discussions = place ? listDiscussions(repo!, place.categoryId) : [];
+const threads = trackingThreadsOf(discussions, scope.hash);
 const [thread] = threads;
 const comments: DiscussionComment[] = thread ? listDiscussionComments(thread.id) : [];
 const tracked = trackBatch({
@@ -254,6 +254,7 @@ const newThread = renderTrackingThread({
   hash: scope.hash,
   line: scope.plan.line,
   version: version!,
+  manualDiscussion: manualDiscussionsOf(discussions, scope.hash)[0]?.number,
 });
 
 const dispatch = (batch: number) => [...batchDispatch(report, batch), '--repo', repo!];

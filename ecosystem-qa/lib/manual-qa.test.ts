@@ -2,10 +2,12 @@ import { readFileSync } from 'node:fs';
 
 import { describe, expect, it } from 'vitest';
 
-import { renderManualChecklist } from './manual-qa.ts';
+import type { Actor, Discussion } from './github.ts';
+import { manualDiscussionOf, manualDiscussionsOf, renderManualChecklist } from './manual-qa.ts';
 import { parsePlan } from './qa-plan.ts';
 import { Window } from './window.ts';
 
+const HASH = '090a651bcbd5';
 const PLAN = parsePlan(readFileSync(new URL('./plan.fixture.md', import.meta.url), 'utf8'));
 const WINDOW = Window.parse(
   JSON.parse(readFileSync(new URL('./plan.fixture.window.json', import.meta.url), 'utf8'))
@@ -115,5 +117,128 @@ describe('renderManualChecklist', () => {
     expect(renderManualChecklist(PLAN, window)).toContain(
       '[#37344](https://github.com/storybookjs/storybook/pull/37344) ``Core: Thanks @someone for `x`, fixes #123``'
     );
+  });
+});
+
+describe('manualDiscussionOf', () => {
+  const COMMIT = '772120e5d39e696fc7bb196c482814fea193892b';
+  const discussionOf = (plan = PLAN) =>
+    manualDiscussionOf({
+      plan,
+      window: WINDOW,
+      file: '11.0.md',
+      hash: HASH,
+      repo: 'storybookjs/storybook',
+      commit: COMMIT,
+    });
+  const created = () => {
+    const discussion = discussionOf();
+    if (!('create' in discussion)) {
+      throw new Error(`expected a discussion, got ${JSON.stringify(discussion)}`);
+    }
+    return discussion.create;
+  };
+
+  it('opens the body with the marker of the plan, then the checklist, then where it comes from', () => {
+    expect(created().body).toBe(
+      [
+        `<!-- sb-qa-manual ${HASH} 11.0.md -->`,
+        renderManualChecklist(PLAN, WINDOW),
+        '---',
+        '',
+        `These checks come from the QA plan [\`11.0.md\`](https://github.com/storybookjs/storybook/blob/${COMMIT}/ecosystem-qa/plans/11.0.md).`,
+        'The sweep tests the rest of that plan and reports in the discussion `[SB 11 QA] Dynamic sweep 11.0.md`.',
+        '',
+      ].join('\n')
+    );
+  });
+
+  it('titles the discussion with the prefix of the tracking discussion', () => {
+    expect(created().title).toBe('[SB 11 QA] Manual QA for Storybook 11.0 at 11.0.0-beta.3');
+  });
+
+  it('creates no discussion for a plan without manual checks', () => {
+    const plan = {
+      ...PLAN,
+      manual: [],
+      groups: PLAN.groups.filter(
+        (group) => !('decision' in group && group.decision && 'manual' in group.decision)
+      ),
+    };
+
+    expect(discussionOf(plan)).toEqual({
+      skip: '11.0.md has no manual checks, so it gets no manual QA discussion.',
+    });
+  });
+
+  it('refuses a checklist longer than GitHub takes as a body, naming both sizes', () => {
+    const plan = { ...PLAN, manual: Array.from({ length: 1000 }, () => PLAN.manual[0]!) };
+
+    expect(discussionOf(plan)).toEqual({
+      refuse: expect.stringMatching(
+        /^The manual QA discussion of 11\.0\.md would have a body of \d{6} characters, and GitHub takes at most 65536\.$/
+      ),
+    });
+  });
+});
+
+describe('manualDiscussionsOf', () => {
+  const body = `<!-- sb-qa-manual ${HASH} 11.0.md -->\n# Manual QA`;
+  const discussion = (
+    number: number,
+    {
+      author = { __typename: 'User', login: 'valentinpalkovic' } as Actor,
+      association = 'MEMBER',
+      text = body,
+    } = {}
+  ): Discussion => ({
+    id: `D_${number}`,
+    number,
+    url: `https://github.com/storybookjs/storybook/discussions/${number}`,
+    title: 'Manual QA',
+    body: text,
+    author,
+    authorAssociation: association,
+    editor: null,
+  });
+
+  it('finds the discussion of the hash that a member opened, oldest first', () => {
+    const found = manualDiscussionsOf([discussion(37627), discussion(37000)], HASH);
+
+    expect(found.map(({ number }) => number)).toEqual([37000, 37627]);
+  });
+
+  it('finds the discussion that the workflow opened', () => {
+    const bot = discussion(37700, {
+      author: { __typename: 'Bot', login: 'github-actions' },
+      association: 'NONE',
+    });
+
+    expect(manualDiscussionsOf([bot], HASH)).toEqual([bot]);
+  });
+
+  it('ignores the marker in a discussion of a stranger, also one named like the workflow', () => {
+    const strangers = [
+      discussion(37701, { association: 'CONTRIBUTOR' }),
+      discussion(37702, {
+        author: { __typename: 'User', login: 'github-actions' },
+        association: 'NONE',
+      }),
+    ];
+
+    expect(manualDiscussionsOf(strangers, HASH)).toEqual([]);
+  });
+
+  it('ignores another hash and a marker below the first line, and reads a CRLF body', () => {
+    const found = manualDiscussionsOf(
+      [
+        discussion(1, { text: body.replace(HASH, 'aaaaaaaaaaaa') }),
+        discussion(2, { text: `Notes\n${body}` }),
+        discussion(3, { text: body.replace('\n', '\r\n') }),
+      ],
+      HASH
+    );
+
+    expect(found.map(({ number }) => number)).toEqual([3]);
   });
 });

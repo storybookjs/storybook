@@ -266,6 +266,7 @@ The body holds:
 
 The body names no PR or issue, neither as `#number` nor as a link, because every reference posts a mention on that PR and the plan holds hundreds.
 Never merge the PR. Merging it starts the sweep, so only the reviewer merges it.
+The merge also creates the plan's manual QA discussion from its manual checks, so never open that discussion by hand.
 
 ## Update a plan
 

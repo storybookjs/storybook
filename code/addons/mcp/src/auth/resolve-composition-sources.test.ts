@@ -39,7 +39,7 @@ describe('resolveCompositionSources', () => {
       'https://ds.example.com/manifests/components.json',
       expect.any(Object)
     );
-    expect(result.sources).toEqual([
+    expect(result.compositionAuth.buildSources()).toEqual([
       { id: 'local', title: 'Local' },
       { id: 'design-system', title: 'Design System', url: 'https://ds.example.com' },
     ]);
@@ -69,7 +69,11 @@ describe('resolveCompositionSources', () => {
       'https://first.example.com/manifests/components.json',
       expect.objectContaining({ signal: expect.any(AbortSignal) })
     );
-    expect(result.sources?.map((source) => source.id)).toEqual(['local', 'first', 'second']);
+    expect(result.compositionAuth.buildSources().map((source) => source.id)).toEqual([
+      'local',
+      'first',
+      'second',
+    ]);
   });
 
   it('excludes refs with disable: true, matching the UI', async () => {
@@ -91,7 +95,10 @@ describe('resolveCompositionSources', () => {
       'https://disabled.example.com/manifests/components.json',
       expect.any(Object)
     );
-    expect(result.sources?.map((source) => source.id)).toEqual(['local', 'enabled']);
+    expect(result.compositionAuth.buildSources().map((source) => source.id)).toEqual([
+      'local',
+      'enabled',
+    ]);
   });
 
   it('skips a ref whose manifest probe 404s and warns that the manifest was not found', async () => {
@@ -109,7 +116,7 @@ describe('resolveCompositionSources', () => {
       optionsWithRefs({ ds: { title: 'Design System', url: 'https://ds.example.com' } })
     );
 
-    expect(result.sources?.map((source) => source.id)).toEqual(['local']);
+    expect(result.compositionAuth.buildSources().map((source) => source.id)).toEqual(['local']);
     expect(result.multiSource).toBe(false);
     expect(logger.warn).toHaveBeenCalledTimes(1);
     expect(logger.warn).toHaveBeenCalledWith(
@@ -136,7 +143,7 @@ describe('resolveCompositionSources', () => {
       optionsWithRefs({ ds: { title: 'Design System', url: 'https://ds.example.com' } })
     );
 
-    expect(result.sources?.map((source) => source.id)).toEqual(['local']);
+    expect(result.compositionAuth.buildSources().map((source) => source.id)).toEqual(['local']);
     expect(logger.warn).toHaveBeenCalledTimes(1);
     expect(logger.warn).toHaveBeenCalledWith(
       expect.stringMatching(/"Design System".*manifest.*not found/s)
@@ -163,24 +170,28 @@ describe('resolveCompositionSources', () => {
       optionsWithRefs({ ds: { title: 'Design System', url: 'https://ds.example.com' } })
     );
 
-    expect(result.sources?.map((source) => source.id)).toEqual(['local']);
+    expect(result.compositionAuth.buildSources().map((source) => source.id)).toEqual(['local']);
     expect(logger.warn).toHaveBeenCalledTimes(1);
     expect(logger.warn).toHaveBeenCalledWith(
       expect.stringMatching(/"Design System".*failed validation.*version mismatch/s)
     );
   });
 
-  it('skips an unreachable ref and warns with the network error and a restart hint', async () => {
+  it('keeps an unreachable ref and warns with the network error and that it is checked again', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('ECONNREFUSED')));
 
     const result = await resolveCompositionSources(
       optionsWithRefs({ ds: { title: 'Design System', url: 'https://ds.example.com' } })
     );
 
-    expect(result.sources?.map((source) => source.id)).toEqual(['local']);
+    expect(result.compositionAuth.buildSources().map((source) => source.id)).toEqual([
+      'local',
+      'ds',
+    ]);
+    expect(result.multiSource).toBe(true);
     expect(logger.warn).toHaveBeenCalledTimes(1);
     expect(logger.warn).toHaveBeenCalledWith(
-      expect.stringMatching(/"Design System".*could not be reached.*ECONNREFUSED.*restart/s)
+      expect.stringMatching(/"Design System".*could not be reached.*ECONNREFUSED.*checked again/s)
     );
   });
 
@@ -198,7 +209,10 @@ describe('resolveCompositionSources', () => {
       optionsWithRefs({ ds: { title: 'Design System', url: 'https://ds.example.com' } })
     );
 
-    expect(result.sources?.map((source) => source.id)).toEqual(['local', 'ds']);
+    expect(result.compositionAuth.buildSources().map((source) => source.id)).toEqual([
+      'local',
+      'ds',
+    ]);
     expect(logger.warn).not.toHaveBeenCalled();
   });
 
@@ -241,7 +255,10 @@ describe('resolveCompositionSources', () => {
       optionsWithRefs({ private: { title: 'Private', url: 'https://private.example.com/' } })
     );
 
-    expect(result.sources?.map((source) => source.id)).toEqual(['local', 'private']);
+    expect(result.compositionAuth.buildSources().map((source) => source.id)).toEqual([
+      'local',
+      'private',
+    ]);
     expect(result.compositionAuth.requiresAuth).toBe(true);
     expect(result.compositionAuth.authUrls).toEqual(['https://private.example.com']);
     expect(logger.warn).not.toHaveBeenCalled();

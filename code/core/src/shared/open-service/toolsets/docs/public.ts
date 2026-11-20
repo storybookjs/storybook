@@ -29,6 +29,7 @@ export {
   DOCS_MANIFEST_PATH,
   fetchManifests,
   parseManifestRef,
+  REF_MANIFEST_FETCH_TIMEOUT_MS,
   resolveComponentEntry,
   resolveComponentStories,
   resolveDocEntry,

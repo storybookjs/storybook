@@ -95,6 +95,8 @@ type McpServerHandlerParams = {
   endpoint?: string;
   /** Sources for multi-source mode (when refs are configured) */
   sources?: Source[];
+  /** Whether to register the composition tools; defaults to whether `sources` has a remote one */
+  multiSource?: boolean;
   /** Optional custom manifest provider, receives source as third param in multi-source mode */
   manifestProvider?: (
     request: Request | undefined,
@@ -120,16 +122,14 @@ export const mcpServerHandler = async ({
   basePath,
   endpoint = DEFAULT_MCP_ENDPOINT,
   sources,
+  multiSource = sources?.some((s) => s.url),
   manifestProvider,
   localAccess,
   compositionAuth,
 }: McpServerHandlerParams) => {
   // Initialize MCP server and transport on first request, with concurrency safety
   if (!initialize) {
-    initialize = initializeMCPServer(
-      options,
-      sources?.some((s) => s.url)
-    );
+    initialize = initializeMCPServer(options, multiSource);
   }
   await initialize;
 

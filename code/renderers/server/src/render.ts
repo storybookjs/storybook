@@ -2,8 +2,6 @@ import type { RenderContext } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
-import { getStoryArgTypes } from 'storybook/internal/preview-api';
-
 import { simulateDOMContentLoaded, simulatePageLoad } from 'storybook/preview-api';
 import { dedent } from 'ts-dedent';
 
@@ -62,13 +60,13 @@ export async function renderToCanvas(
     forceRemount,
     storyFn,
     storyContext,
-    storyContext: { parameters, args },
+    storyContext: { parameters, args, argTypes },
   }: RenderContext<ServerRenderer>,
   canvasElement: ServerRenderer['canvasElement']
 ) {
   // Some addons wrap the storyFn so we need to call it even though Server doesn't need the answer
   storyFn();
-  const storyArgs = buildStoryArgs(args, getStoryArgTypes(storyContext));
+  const storyArgs = buildStoryArgs(args, argTypes);
 
   const {
     server: { url, id: storyId, fetchStoryHtml = defaultFetchStoryHtml, params },

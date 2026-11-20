@@ -220,15 +220,20 @@ describe('ProjectTypeService', () => {
       expect(result).toBe(ProjectType.PREACT);
     });
 
-    it('detects EMBER via ember-cli', async () => {
+    // Ember is deferred in SB11 — init no longer detects Ember projects.
+    // TODO(SB 11.1): re-enable Ember support once the community ember-storybook package supports SB11 — https://github.com/ember-integrations/ember-storybook/issues/123 (also merge https://github.com/ember-integrations/ember-storybook/pull/122) and it is released.
+    it('does not detect EMBER via ember-cli (undetected)', async () => {
       (pm as any).primaryPackageJson.packageJson = {
         dependencies: { 'ember-cli': '^5.0.0' },
       };
       const service = new ProjectTypeService(pm);
       // @ts-expect-error private method spy
       vi.spyOn(service, 'isNxProject').mockReturnValue(false);
-      const result = await service.autoDetectProjectType({ html: false } as CommandOptions);
-      expect(result).toBe(ProjectType.EMBER);
+      // Ember detection is disabled in SB11: an ember-cli project falls through to undetected
+      // and init errors out with the standard "failed to detect" message.
+      await expect(
+        service.autoDetectProjectType({ html: false } as CommandOptions)
+      ).rejects.toThrowError('Storybook failed to detect your project type');
     });
 
     it('detects QWIK via @builder.io/qwik', async () => {
@@ -421,6 +426,11 @@ describe('ProjectTypeService', () => {
         ProjectType.REACT
       );
       await expect(service.validateProvidedType(ProjectType.UNSUPPORTED)).rejects.toThrow(
+        /Unknown project type supplied/
+      );
+      // Ember init support is deferred to SB 11.1: explicit selection is rejected cleanly
+      // instead of reaching the generator registry and crashing with an internal error.
+      await expect(service.validateProvidedType(ProjectType.EMBER)).rejects.toThrow(
         /Unknown project type supplied/
       );
     });

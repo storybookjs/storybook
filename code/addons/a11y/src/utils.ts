@@ -15,3 +15,15 @@ export function getIsVitestRunning() {
     return false;
   }
 }
+
+export function isHttpUrl(url: unknown): url is string {
+  if (typeof url !== 'string') {
+    return false;
+  }
+  try {
+    const { protocol } = new URL(url);
+    return protocol === 'https:' || protocol === 'http:';
+  } catch {
+    return false;
+  }
+}

@@ -215,6 +215,22 @@ export const ComponentTestsFailed: Story = {
   },
 };
 
+export const RanTwiceAfterViteReoptimized: Story = {
+  args: {
+    testProviderState: 'test-provider-state:succeeded',
+    storeState: {
+      ...meta.args.storeState,
+      currentRun: {
+        ...meta.args.storeState.currentRun,
+        totalTestCount: 24,
+        componentTestCount: { success: 24, error: 0 },
+        finishedAt: Date.now() - 2 * 60 * 1000,
+        depsReoptimized: 'repeated',
+      },
+    },
+  },
+};
+
 export const CoverageEnabled: Story = {
   args: {
     storeState: {

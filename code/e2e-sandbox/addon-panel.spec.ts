@@ -104,6 +104,25 @@ test.describe('addon panel', () => {
 
     await sbPage.deepLinkToStory(storybookUrl, 'core/parameters-actions', 'basic');
     await sbPage.waitUntilLoaded();
+
+    // The withActions decorator attaches its DOM listeners via the preview's hook system, which
+    // runs effects on the storyRendered event - after the story is already painted and clickable.
+    // A click in that window is silently dropped (the Actions badge then counts too low), which
+    // made this test flaky under CI load. The channel calls its storyRendered listeners before
+    // recording the event in last(), so once last('storyRendered') reports this story's id the
+    // listeners are guaranteed to be attached. Poll through the iframe element: the frame object
+    // identity changes when the manager re-navigates the preview during a deep link.
+    await page.waitForFunction((storyId) => {
+      const iframe = document.querySelector<HTMLIFrameElement>('#storybook-preview-iframe');
+      const channel = (
+        iframe?.contentWindow as
+          | (Window & { __STORYBOOK_ADDONS_CHANNEL__?: { last: (name: string) => unknown[] } })
+          | null
+          | undefined
+      )?.__STORYBOOK_ADDONS_CHANNEL__;
+      return channel?.last('storyRendered')?.[0] === storyId;
+    }, 'core-parameters-actions--basic');
+
     await sbPage.viewAddonPanel('Actions');
 
     const button = sbPage.previewRoot().getByRole('button');

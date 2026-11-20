@@ -103,15 +103,26 @@ test.describe('addon panel', () => {
     const sbPage = new SbPage(page, expect);
 
     await sbPage.deepLinkToStory(storybookUrl, 'core/parameters-actions', 'basic');
+    await sbPage.waitUntilLoaded();
     await sbPage.viewAddonPanel('Actions');
 
     const button = sbPage.previewRoot().getByRole('button');
+    const actionsTab = page.getByRole('tab', { name: /^Actions/ });
+    const badgeCount = async () => Number((await actionsTab.textContent())?.replace(/\D/g, ''));
+
+    await expect(async () => {
+      await button.click();
+      await expect(sbPage.panelContent()).toContainText('clicked', { timeout: 1000 });
+    }).toPass();
+    await sbPage.panelContent().getByRole('button', { name: 'Clear' }).click();
+    await expect(actionsTab).not.toContainText(/\d/);
+
     await button.click();
     await button.click();
     await button.click();
 
-    const actionsTab = page.getByRole('tab', { name: /^Actions/ });
-    await expect(actionsTab).toContainText('3');
+    // Frameworks whose Button also has an onClick action log two events per click
+    await expect.poll(async () => [3, 6].includes(await badgeCount())).toBe(true);
     await expect(sbPage.panelContent()).toContainText('clicked');
 
     await sbPage.navigateToStory('core/argtype', 'string');

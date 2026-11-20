@@ -51,6 +51,7 @@ export async function webpackFinal(baseConfig: webpack.Configuration, options: P
       STORYBOOK_ANGULAR_OPTIONS: JSON.stringify({
         experimentalZoneless: builderOptions.experimentalZoneless,
       }),
+      ngServerMode: false,
     })
   );
 

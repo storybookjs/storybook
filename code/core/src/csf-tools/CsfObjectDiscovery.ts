@@ -633,13 +633,26 @@ const discoverStories = (
           return [{ target: storyTarget(binding), root: literalRoot(csf.editor, argumentNode) }];
         }
       }
-      // A factory story's value is its configuration; any other call may return anything.
+      // A factory story's value is its configuration; any other call may return anything. Its
+      // `Story.name = value` assignments are fields too, and any other write is refused.
       const factory = node.type === 'CallExpression' && isFactoryStory(csf, node);
+      const { assignments, write } = assignmentsOf(csf, binding);
+      if (write) {
+        report({
+          code: write.code,
+          target: storyTarget(binding),
+          path: write.path,
+          message: write.message,
+          ...loc(csf, write.node),
+        });
+        return [];
+      }
       return [
         {
           target: storyTarget(binding),
           root: opaqueRoot({
             node: factory && node.arguments.length === 1 && argumentNode ? argumentNode : node,
+            assignments: assignments.map(({ property }) => property),
             code: 'unsupported-initializer',
             message: `Cannot mutate CSF factory story ${binding.exportName} because its configuration is not an inline object literal`,
           }),

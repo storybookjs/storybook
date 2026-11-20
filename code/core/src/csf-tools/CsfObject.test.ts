@@ -851,11 +851,10 @@ describe('CsfObject', () => {
     `...make()`,
     `...format(translations)`,
     `...new Types()`,
-    `...picked`,
     `...settings.dir`,
     `...flag`,
   ])('removes nothing where %s reads a local value without the field', (member) => {
-    const source = `import { format } from './format';\nconst types = { parameters: { componentSubtitle: 'A' }, other: {} }; const list = [{ other: {} }];\nconst translations = { label: 'Label' };\nfunction make() { return { other: {} }; }\nclass Types { other = 1; }\nconst { picked } = types;\nconst { settings } = format;\nlet flag = {}; flag = { other: 1 }; flag++;\nexport default { parameters: { ${member} } };`;
+    const source = `import { format } from './format';\nconst types = { parameters: { componentSubtitle: 'A' }, other: {} }; const list = [{ other: {} }];\nconst translations = { label: 'Label' };\nfunction make() { return { other: {} }; }\nclass Types { other = 1; }\nconst { settings } = format;\nlet flag = {}; flag = { other: 1 }; flag++;\nexport default { parameters: { ${member} } };`;
     const csf = parse(source);
     const [meta] = csf.objects({ meta: true, stories: false });
 
@@ -872,6 +871,18 @@ describe('CsfObject', () => {
       (_, index) => `const a${index + 1} = { ...a${index}, ...a${index} };`
     );
     const source = `const a0 = { other: 1 };\n${chain.join('\n')}\nexport default { parameters: { ...a40 } };`;
+    const csf = parse(source);
+    const [meta] = csf.objects({ meta: true, stories: false });
+
+    expect(meta.remove(['parameters', 'componentSubtitle'])).toEqual({ ok: true, changed: false });
+  });
+
+  it('reads each helper function once', () => {
+    const chain = Array.from(
+      { length: 40 },
+      (_, index) => `function h${index + 1}(c) { return c ? h${index}(c) : h${index}(!c); }`
+    );
+    const source = `function h0() { return { other: 1 }; }\n${chain.join('\n')}\nexport default { parameters: { ...h40(true) } };`;
     const csf = parse(source);
     const [meta] = csf.objects({ meta: true, stories: false });
 

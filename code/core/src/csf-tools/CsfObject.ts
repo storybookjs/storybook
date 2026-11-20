@@ -9,7 +9,7 @@ import {
   listAt,
   locate,
   type CsfPattern,
-  anyKey,
+  expandPattern,
   patternPath,
   printCsfPath,
   refusedKey,
@@ -595,51 +595,15 @@ class Editor implements CsfObject {
     return this.atomic(path, () => this.removeMatching(path), 'remove');
   }
 
-  // Removes the path at each key an `anyKey` stands for. A member without a key it can read, a
-  // spread or a computed key, is refused only when it shows the rest of the path.
+  // Removes each path a pattern stands for, all found before the first edit.
   private removeMatching(path: CsfPattern): CsfMutationResult {
-    const index = path.indexOf(anyKey);
-    if (index < 0) {
-      return this.removeValue(path as CsfPath);
+    const expanded = expandPattern(this.editor, this.root(), path);
+    if (expanded.ok === false) {
+      return this.failure(expanded.code, path, expanded.node, expanded.message);
     }
-    const prefix = path.slice(0, index) as CsfPath;
-    const rest = path.slice(index + 1);
-    let members: readonly E.ObjectPropertyKind[] = this.root().properties;
-    if (prefix.length > 0) {
-      const located = this.locate(prefix);
-      if (located.ok === false) {
-        return showsPath(this.editor, this.root().properties, path)
-          ? this.failure(located.code, path, located.node)
-          : { ok: true, changed: false };
-      }
-      const slot = valueAt(this.editor, located);
-      const value = slot?.expression && resolveExpression(this.editor.scopes, slot.expression);
-      if (!slot) {
-        return { ok: true, changed: false };
-      }
-      if (value?.type !== 'ObjectExpression') {
-        return showsPath(this.editor, this.root().properties, path)
-          ? this.failure('unsupported-member', path, slot.node)
-          : { ok: true, changed: false };
-      }
-      members = value.properties;
-    }
-    // Before any edit, which parses the file again.
-    const unread = members.find(
-      (member) =>
-        staticKey(member) === undefined && showsPath(this.editor, [member], [anyKey, ...rest])
-    );
-    if (unread) {
-      return this.failure(
-        unread.type === 'SpreadElement' ? 'spread-field' : 'dynamic-key',
-        path,
-        unread
-      );
-    }
-    const keys = new Set(members.flatMap((member) => staticKey(member) ?? []));
     let changed = false;
-    for (const key of keys) {
-      const removed = this.removeMatching([...prefix, key, ...rest]);
+    for (const each of expanded.paths) {
+      const removed = this.removeValue(each);
       if (!removed.ok) {
         return removed;
       }

@@ -471,6 +471,50 @@ describe('argtypes-default-value', () => {
     }
   );
 
+  it('fails a story a helper builds from one of several destructured names', async () => {
+    const story = [
+      'const { base, config } = {',
+      '  base: {},',
+      "  config: { argTypes: { label: { defaultValue: 'A' } } },",
+      '};',
+      'export default {};',
+      'export const Primary = makeStory(base, config);',
+    ].join('\n');
+    const result = await migrate({ story });
+
+    expect(result.failures).toEqual([
+      { file: storyPath, kind: 'story', message: expect.stringContaining('Primary') },
+    ]);
+    expect(result.story).toBe(story);
+  });
+
+  it('fails an annotation on a factory-shaped story it cannot read', async () => {
+    const story = [
+      "import { helpers } from './helpers';",
+      'export default {};',
+      'export const Primary = helpers.variants.story();',
+      "Primary.argTypes = { label: { defaultValue: 'A' } };",
+    ].join('\n');
+    const result = await migrate({ story });
+
+    expect(result.failures).toEqual([
+      { file: storyPath, kind: 'story', message: expect.stringContaining('Primary') },
+    ]);
+    expect(result.story).toBe(story);
+  });
+
+  it('skips an arg a class builds without a defaultValue', async () => {
+    const story = [
+      "class Arg { constructor() { this.control = 'text'; } }",
+      "export default { argTypes: { label: new Arg(), size: { defaultValue: 'M' } } };",
+    ].join('\n');
+    const result = await migrate({ story });
+
+    expect(result.failures).toEqual([]);
+    expect(result.story).toContain('label: new Arg()');
+    expect(result.story).not.toContain("defaultValue: 'M'");
+  });
+
   it('deletes the defaultValue of an arg named table', async () => {
     const result = await migrate({
       story: "export default { argTypes: { table: { defaultValue: 'x', control: 'text' } } };",

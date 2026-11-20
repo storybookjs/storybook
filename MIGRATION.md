@@ -22,6 +22,7 @@
     - [Angular: read the inputs from the component](#angular-read-the-inputs-from-the-component)
     - [Angular: every arg reaches the story](#angular-every-arg-reaches-the-story)
     - [Server: object and date args are serialized by value](#server-object-and-date-args-are-serialized-by-value)
+    - [Vue: slots come from the component's props](#vue-slots-come-from-the-components-props)
   - [Deprecated CSF and manager type aliases removed](#deprecated-csf-and-manager-type-aliases-removed)
   - [`docgenServer` is stable and enabled by default](#docgenserver-is-stable-and-enabled-by-default)
     - [Temporary regressions on source snippet generation](#temporary-regressions-on-source-snippet-generation)
@@ -1203,6 +1204,26 @@ To keep such a value away from the story, remove it from `args`.
 `@storybook/server` used to send an arg as JSON only when its arg type had an `object` control.
 It now sends every object and array arg as JSON, and every `Date` arg as an ISO string, whatever its arg type.
 An arg with a `date` control is still sent as an ISO string.
+
+#### Vue: slots come from the component's props
+
+The default Vue `render` used to pass an arg as a slot when its arg type was in the `slots` category.
+It now passes every arg as a slot unless the component declares it as a prop or it is an event listener (`onClick`, `onUpdate:modelValue`).
+Those args still reach the component as props or attributes too.
+
+An arg named like a declared prop always goes to the prop, even with a `slots` arg type.
+To fill a slot that shares its name with a prop, write a `render` function with a template:
+
+```ts
+export const WithTitleSlot: Story = {
+  args: { title: 'Prop value' },
+  render: (args) => ({
+    components: { Card },
+    setup: () => ({ args }),
+    template: '<Card v-bind="args"><template #title>Slot content</template></Card>',
+  }),
+};
+```
 
 ### Deprecated CSF and manager type aliases removed
 

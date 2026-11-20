@@ -142,7 +142,8 @@ export function getGroupStatus(
   },
   allStatuses: StatusesByStoryIdAndTypeId
 ): Record<string, StatusValue> {
-  const result: Record<string, StatusValue> = {};
+  // Without a prototype, so an entry id such as `constructor` is not already set.
+  const result: Record<string, StatusValue> = Object.create(null);
 
   for (const item of Object.values(index)) {
     if (item.type !== 'story') {
@@ -193,7 +194,8 @@ export function getGroupDualStatus(
   index: API_IndexHash,
   allStatuses: StatusesByStoryIdAndTypeId
 ): Record<string, { change: Status; test: Status }> {
-  const result: Record<string, { change: Status; test: Status }> = {};
+  // Without a prototype, so an entry id such as `constructor` is not already set.
+  const result: Record<string, { change: Status; test: Status }> = Object.create(null);
 
   const promote = (id: string, status: Status, slot: 'change' | 'test') => {
     // Root rows never display aggregate statuses.

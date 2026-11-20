@@ -17,6 +17,15 @@ describe('createStatusStore', () => {
     });
   });
 
+  it('has no status for a component titled Constructor', () => {
+    const store = createStatusStore();
+
+    expect(store.getRowStatus('constructor')).toEqual({
+      change: 'status-value:unknown',
+      test: 'status-value:unknown',
+    });
+  });
+
   it('keeps the snapshot of a row whose own values are unchanged', () => {
     const store = createStatusStore();
     store.setState({

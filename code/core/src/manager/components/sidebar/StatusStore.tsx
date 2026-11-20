@@ -34,7 +34,7 @@ export const createStatusStore = (initial: Record<StoryId, RowStatus> = {}): Sta
   let state: Record<StoryId, RowStatus> = initial;
   const listeners = new Set<() => void>();
   return {
-    getRowStatus: (itemId: StoryId) => state[itemId] ?? NO_STATUS,
+    getRowStatus: (itemId: StoryId) => (Object.hasOwn(state, itemId) ? state[itemId] : NO_STATUS),
     setState: (next: Record<StoryId, RowStatus>) => {
       const merged: Record<StoryId, RowStatus> = {};
       for (const [itemId, value] of Object.entries(next)) {

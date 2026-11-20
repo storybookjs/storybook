@@ -122,7 +122,15 @@ export const csfFactories: CommandFix = {
       });
     }
 
-    const { packageJson, operationDir } = packageManager.primaryPackageJson;
+    const { packageJson, operationDir, packageJsonPath } = packageManager.primaryPackageJson;
+    const writeImportsMap = () => {
+      if (dryRun) {
+        logger.step(`Would add an imports map in ${picocolors.cyan(packageJsonPath)}`);
+        return;
+      }
+      logger.step(`Adding imports map in ${picocolors.cyan(packageJsonPath)}`);
+      packageManager.writePackageJson(packageJson, operationDir);
+    };
 
     if (isReactNativePreview) {
       const nativePreviewFile = previewConfigPath ?? join(configDir, 'preview.tsx');
@@ -130,20 +138,14 @@ export const csfFactories: CommandFix = {
       if (previewImportTarget(previewFile, operationDir) == null) {
         useSubPathImports = false;
       } else if (applyPreviewImportsMap(packageJson, previewFile, operationDir)) {
-        logger.step(
-          `Adding imports map in ${picocolors.cyan(packageManager.primaryPackageJson.packageJsonPath)}`
-        );
-        packageManager.writePackageJson(packageJson, operationDir);
+        writeImportsMap();
       }
     } else if (useSubPathImports && !packageJson.imports?.['#*']) {
-      logger.step(
-        `Adding imports map in ${picocolors.cyan(packageManager.primaryPackageJson.packageJsonPath)}`
-      );
       packageJson.imports = {
         ...packageJson.imports,
         '#*': ['./*', './*.ts', './*.tsx', './*.js', './*.jsx'],
       };
-      packageManager.writePackageJson(packageJson, operationDir);
+      writeImportsMap();
     }
 
     await runStoriesCodemod({
@@ -165,6 +167,10 @@ export const csfFactories: CommandFix = {
     await runCodemod([previewConfigPath!], (fileInfo) =>
       configToCsfFactory(fileInfo, { configType: 'preview', frameworkPackage }, { dryRun })
     );
+
+    if (dryRun) {
+      return;
+    }
 
     await syncStorybookAddons(mainConfig, previewConfigPath!, configDir);
 

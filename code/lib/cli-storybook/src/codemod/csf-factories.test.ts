@@ -1,10 +1,18 @@
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { posix } from 'node:path';
 
-import { expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import type { JsPackageManager } from 'storybook/internal/common';
+import { prompt } from 'storybook/internal/node-logger';
+
+import { dirname, join } from 'pathe';
 import { dedent } from 'ts-dedent';
 
-import { SANDBOX_STORIES_GLOB, storyToCsf4 } from './csf-factories.ts';
+import { SANDBOX_STORIES_GLOB, csfFactories, storyToCsf4 } from './csf-factories.ts';
+
+vi.mock('storybook/internal/node-logger', { spy: true });
 
 const options = { previewConfigPath: '#.storybook/preview', useSubPathImports: true };
 const path = 'Button.stories.tsx';
@@ -169,4 +177,107 @@ it.each([
   'src/Button.stories.ts',
 ])('does not match %s in a sandbox', (file) => {
   expect(posix.matchesGlob(file, SANDBOX_STORIES_GLOB)).toBe(false);
+});
+
+describe('csfFactories', () => {
+  let root: string;
+
+  afterEach(() => {
+    rmSync(root, { recursive: true, force: true });
+  });
+
+  const mainConfig = {
+    stories: ['../src/**/*.stories.js'],
+    addons: ['my-addon'],
+    framework: '@storybook/react-vite',
+  };
+
+  // The preview is already a factory and lacks the annotations of an addon in the main config, as
+  // when the codemod runs a second time, so a run edits the preview, the story and package.json.
+  const createProject = () => {
+    root = mkdtempSync(join(tmpdir(), 'storybook-csf-factories-'));
+    const files = {
+      'package.json': JSON.stringify({ name: 'app' }),
+      '.storybook/main.js': `export default ${JSON.stringify(mainConfig)};`,
+      '.storybook/preview.js': dedent`
+        import { definePreview } from '@storybook/react-vite';
+
+        export default definePreview({});
+      `,
+      'src/Button.stories.js': dedent`
+        export default { component: Button };
+        export const Primary = { args: { label: 'Button' } };
+      `,
+      'node_modules/my-addon/package.json': JSON.stringify({
+        name: 'my-addon',
+        exports: { './preview': './preview.js' },
+      }),
+      'node_modules/my-addon/preview.js': 'export default {};',
+    };
+    for (const [file, content] of Object.entries(files)) {
+      mkdirSync(dirname(join(root, file)), { recursive: true });
+      writeFileSync(join(root, file), content);
+    }
+
+    const packageManager = {
+      primaryPackageJson: {
+        packageJson: { name: 'app' },
+        operationDir: root,
+        packageJsonPath: join(root, 'package.json'),
+      },
+      writePackageJson: vi.fn(),
+    };
+
+    return { files, packageManager };
+  };
+
+  const readFiles = (files: Record<string, string>) =>
+    Object.fromEntries(
+      Object.keys(files).map((file) => [file, readFileSync(join(root, file), 'utf-8')])
+    );
+
+  const run = (
+    packageManager: ReturnType<typeof createProject>['packageManager'],
+    dryRun: boolean
+  ) => {
+    // The user picks subpath imports, which adds an imports map to package.json.
+    vi.mocked(prompt.select).mockResolvedValue(true);
+    return csfFactories.run({
+      dryRun,
+      glob: join(root, 'src/**/*.stories.js'),
+      mainConfig,
+      mainConfigPath: join(root, '.storybook/main.js'),
+      previewConfigPath: join(root, '.storybook/preview.js'),
+      configDir: join(root, '.storybook'),
+      packageManager: packageManager as unknown as JsPackageManager,
+      result: null,
+      storybookVersion: '11.0.0',
+      storiesPaths: [join(root, 'src/Button.stories.js')],
+    });
+  };
+
+  it('changes no file in a dry run', async () => {
+    const { files, packageManager } = createProject();
+
+    await run(packageManager, true);
+
+    expect(packageManager.writePackageJson).not.toHaveBeenCalled();
+    expect(readFiles(files)).toEqual(files);
+  });
+
+  it('writes the imports map, the preview and the stories in a normal run', async () => {
+    const { files, packageManager } = createProject();
+
+    await run(packageManager, false);
+
+    expect(packageManager.writePackageJson).toHaveBeenCalledWith(
+      expect.objectContaining({ imports: { '#*': expect.any(Array) } }),
+      root
+    );
+    const output = readFiles(files);
+    expect(output['.storybook/preview.js']).toContain(
+      "import * as myAddon from 'my-addon/preview'"
+    );
+    expect(output['src/Button.stories.js']).toContain('export const Primary = meta.story(');
+  });
 });

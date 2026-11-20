@@ -25,8 +25,8 @@ test.describe('tags', () => {
     const preview = sbPage.previewRoot();
 
     await expect(preview.locator('#anchor--core-tags-add--dev')).toHaveCount(0);
-    // FIXME: shows as primary story and also in stories, inconsistent btw dev/CI?
-    await expect(preview.locator('#anchor--core-tags-add--autodocs')).not.toHaveCount(0);
+    await expect(preview.locator('#anchor--primary--core-tags-add--autodocs')).toHaveCount(1);
+    await expect(preview.locator('#anchor--core-tags-add--autodocs')).toHaveCount(0);
     await expect(preview.locator('#anchor--core-tags-add--test')).toHaveCount(0);
   });
 

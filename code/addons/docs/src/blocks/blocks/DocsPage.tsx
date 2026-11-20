@@ -7,19 +7,20 @@ import { Primary } from './Primary';
 import { Stories } from './Stories';
 import { Subtitle } from './Subtitle';
 import { Title } from './Title';
-import { useOf } from './useOf';
+import { useDocsStories } from './useDocsStories.ts';
+import { usePrimaryStory } from './usePrimaryStory.ts';
 
 export const DocsPage: FC = () => {
-  const resolvedOf = useOf('meta', ['meta']);
-  const { stories } = resolvedOf.csfFile;
-  const isSingleStory = Object.keys(stories).length === 1;
+  const primaryStory = usePrimaryStory();
+  const otherStories = useDocsStories().filter((story) => story.id !== primaryStory?.id);
+  const isSingleStory = otherStories.length === 0;
 
   return (
     <>
       <Title />
       <Subtitle />
       <Description of="meta" />
-      {isSingleStory ? <Description of="story" /> : null}
+      {isSingleStory && primaryStory ? <Description of={primaryStory.moduleExport} /> : null}
       <Primary />
       <Controls />
       {isSingleStory ? null : <Stories />}

@@ -395,6 +395,17 @@ describe('story-sort-to-main', () => {
     await expectUntouched(main, legacy);
   });
 
+  it('names the preview file when the preview cannot be edited', async () => {
+    const migrated = await migrate(
+      'export default { stories: [] }',
+      `export const loaders = []; export default { parameters: { options: { storySort: { order: ['Intro'] } } } }`
+    );
+
+    expect(migrated.failures[0].message).toContain(
+      `Cannot mutate mixed default and named config exports in ${previewConfigPath}.`
+    );
+  });
+
   it('does not apply again once storySort lives in the main storySorts', async () => {
     const { main, preview } = await expectMoved(`export default { stories: [] }`, legacy, {
       order: ['Legacy'],

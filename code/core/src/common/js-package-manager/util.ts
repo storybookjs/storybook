@@ -26,6 +26,25 @@ export const hasStorybookMinimumAgeExclusions = (configuredPatterns: string[]) =
   );
 };
 
+type DependencyTree<Node> = Record<string, Node & { dependencies?: DependencyTree<Node> }>;
+
+// Breadth-first, so the version a project depends on comes before those its dependencies bring in.
+export const findPackagesInDependencyTree = <Node>(
+  tree: DependencyTree<Node>,
+  pattern: string[]
+): [name: string, node: Node][] => {
+  const regexes = pattern.map(packagePatternToRegex);
+  let found: [string, Node][] = [];
+  for (
+    let level = Object.entries(tree);
+    level.length > 0;
+    level = level.flatMap(([, node]) => Object.entries(node.dependencies ?? {}))
+  ) {
+    found = found.concat(level.filter(([name]) => regexes.some((regex) => regex.test(name))));
+  }
+  return found;
+};
+
 // input: @storybook/addon-essentials@npm:7.0.0
 // output: { name: '@storybook/addon-essentials', value: { version : '7.0.0', location: '' } }
 export const parsePackageData = (packageName = '') => {

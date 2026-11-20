@@ -18,6 +18,7 @@ import { JsPackageManager, PackageManagerName } from './JsPackageManager.ts';
 import type { PackageJson } from './PackageJson.ts';
 import type { InstallationMetadata, PackageMetadata } from './types.ts';
 import {
+  findPackagesInDependencyTree,
   getErrorLogs,
   getLatestStableVersionAdheringToMinimumAgeGate,
   getStorybookRerunCommand,
@@ -421,12 +422,7 @@ export class BUNProxy extends JsPackageManager {
     const existingVersions: Record<string, string[]> = {};
     const duplicatedDependencies: Record<string, string[]> = {};
 
-    const recurse = ([name, packageInfo]: [string, NpmDependency]): void => {
-      // transform pattern into regex where `*` is replaced with `.*`
-      if (!name || !pattern.some((p) => new RegExp(`^${p.replace(/\*/g, '.*')}$`).test(name))) {
-        return;
-      }
-
+    findPackagesInDependencyTree(input.dependencies, pattern).forEach(([name, packageInfo]) => {
       const value = {
         version: packageInfo.version,
         location: '',
@@ -444,13 +440,7 @@ export class BUNProxy extends JsPackageManager {
           duplicatedDependencies[name] = existingVersions[name];
         }
       }
-
-      if (packageInfo.dependencies) {
-        Object.entries(packageInfo.dependencies).forEach(recurse);
-      }
-    };
-
-    Object.entries(input.dependencies).forEach(recurse);
+    });
 
     return {
       dependencies: acc,

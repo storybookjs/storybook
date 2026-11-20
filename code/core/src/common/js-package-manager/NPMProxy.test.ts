@@ -369,6 +369,29 @@ describe('NPM Proxy', () => {
       });
     });
 
+    it('lists the version the project depends on before the versions its dependencies bring in', async () => {
+      mockedExecuteCommand.mockResolvedValue({
+        stdout: JSON.stringify({
+          dependencies: {
+            chalk: {
+              version: '4.1.2',
+              dependencies: { 'supports-color': { version: '7.2.0' } },
+            },
+            'supports-color': { version: '9.4.0' },
+          },
+        }),
+      } as any);
+
+      const installations = await npmProxy.findInstallations(['supports-color']);
+
+      expect(installations?.dependencies).toEqual({
+        'supports-color': [
+          { version: '9.4.0', location: '' },
+          { version: '7.2.0', location: '' },
+        ],
+      });
+    });
+
     it('retries with --depth=0 when the deep listing exits non-zero (e.g. peer dependency issues)', async () => {
       mockedExecuteCommand.mockReset();
       mockedExecuteCommand

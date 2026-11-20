@@ -23,6 +23,7 @@ import { type OverrideSource, toOverrides } from './overrides.ts';
 import { hasAllowBuildsDecision, hasPnpm10ListDecision } from './pnpm-build-approvals.ts';
 import type { InstallationMetadata, PackageMetadata } from './types.ts';
 import {
+  findPackagesInDependencyTree,
   getAgeInMinutes,
   getErrorLogs,
   getLatestStableVersionAdheringToMinimumAgeGate,
@@ -668,12 +669,7 @@ export class PNPMProxy extends JsPackageManager {
       return Object.assign(curr, allDependencies);
     }, {} as PnpmDependencies);
 
-    const recurse = ([name, packageInfo]: [string, PnpmDependency]): void => {
-      // transform pattern into regex where `*` is replaced with `.*`
-      if (!name || !pattern.some((p) => new RegExp(`^${p.replace(/\*/g, '.*')}$`).test(name))) {
-        return;
-      }
-
+    findPackagesInDependencyTree(items, pattern).forEach(([name, packageInfo]) => {
       const value = {
         version: packageInfo.version,
         location: '',
@@ -691,12 +687,7 @@ export class PNPMProxy extends JsPackageManager {
           duplicatedDependencies[name] = existingVersions[name];
         }
       }
-
-      if (packageInfo.dependencies) {
-        Object.entries(packageInfo.dependencies).forEach(recurse);
-      }
-    };
-    Object.entries(items).forEach(recurse);
+    });
 
     return {
       dependencies: acc,

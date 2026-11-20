@@ -182,7 +182,9 @@ export class ProjectTypeService {
   async validateProvidedType(projectTypeProvided: ProjectType): Promise<ProjectType> {
     // Allow only installable types according to core list
     const installable = Object.values(ProjectType).filter(
-      (t) => !['undetected', 'unsupported', 'nx'].includes(String(t))
+      (t) =>
+        // TODO(SB 11.1): re-enable Ember support once the community ember-storybook package supports SB11 — https://github.com/ember-integrations/ember-storybook/issues/123 (also merge https://github.com/ember-integrations/ember-storybook/pull/122) and it is released.
+        !['undetected', 'unsupported', 'nx', 'ember'].includes(String(t))
     );
     if (installable.includes(projectTypeProvided)) {
       return projectTypeProvided;

@@ -7,6 +7,7 @@ import type { AutoblockOptions } from './types.ts';
 
 describe('ember blocker', () => {
   const mockPackageManager = {
+    isDependencyInstalled: vi.fn(),
     getInstalledVersion: vi.fn(),
   };
 
@@ -20,23 +21,42 @@ describe('ember blocker', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-  });
-
-  test('should return true when @storybook/ember is installed', async () => {
-    mockPackageManager.getInstalledVersion.mockResolvedValue('7.6.0');
-
-    const result = await blocker.check(createOptions());
-
-    expect(result).toBe(true);
-    expect(mockPackageManager.getInstalledVersion).toHaveBeenCalledWith('@storybook/ember');
-  });
-
-  test('should return false when @storybook/ember is not installed', async () => {
+    mockPackageManager.isDependencyInstalled.mockReturnValue(false);
     mockPackageManager.getInstalledVersion.mockResolvedValue(null);
+  });
 
-    const result = await blocker.check(createOptions());
+  describe('when package.json lists @storybook/ember', () => {
+    beforeEach(() => {
+      mockPackageManager.isDependencyInstalled.mockReturnValue(true);
+    });
 
-    expect(result).toBe(false);
+    test('should return true, even if no installation is found', async () => {
+      const result = await blocker.check(createOptions());
+
+      expect(result).toBe(true);
+      expect(mockPackageManager.isDependencyInstalled).toHaveBeenCalledWith('@storybook/ember');
+    });
+  });
+
+  describe('when @storybook/ember is installed without being listed', () => {
+    beforeEach(() => {
+      mockPackageManager.getInstalledVersion.mockResolvedValue('7.6.0');
+    });
+
+    test('should return true', async () => {
+      const result = await blocker.check(createOptions());
+
+      expect(result).toBe(true);
+      expect(mockPackageManager.getInstalledVersion).toHaveBeenCalledWith('@storybook/ember');
+    });
+  });
+
+  describe('when @storybook/ember is neither listed nor installed', () => {
+    test('should return false', async () => {
+      const result = await blocker.check(createOptions());
+
+      expect(result).toBe(false);
+    });
   });
 
   test('should log the migration guidance with the ember-storybook compatibility link', () => {

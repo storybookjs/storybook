@@ -5,9 +5,12 @@ import { createBlocker } from './types.ts';
 export const blocker = createBlocker({
   id: 'ember',
   async check({ packageManager }) {
-    const emberVersion = await packageManager.getInstalledVersion('@storybook/ember');
+    // A listed-but-uninstalled @storybook/ember reports no installed version; treat the listing as intent to upgrade.
+    if (packageManager.isDependencyInstalled('@storybook/ember')) {
+      return true;
+    }
 
-    return emberVersion !== null;
+    return (await packageManager.getInstalledVersion('@storybook/ember')) !== null;
   },
   log() {
     return {

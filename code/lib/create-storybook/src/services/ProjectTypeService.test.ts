@@ -428,6 +428,11 @@ describe('ProjectTypeService', () => {
       await expect(service.validateProvidedType(ProjectType.UNSUPPORTED)).rejects.toThrow(
         /Unknown project type supplied/
       );
+      // Ember init support is deferred to SB 11.1: explicit selection is rejected cleanly
+      // instead of reaching the generator registry and crashing with an internal error.
+      await expect(service.validateProvidedType(ProjectType.EMBER)).rejects.toThrow(
+        /Unknown project type supplied/
+      );
     });
   });
 

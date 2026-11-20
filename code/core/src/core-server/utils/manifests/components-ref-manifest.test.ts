@@ -177,6 +177,20 @@ describe('components-ref-manifest', () => {
     expect(Object.keys(button.stories)).toEqual(['button--primary', 'button--hidden']);
   });
 
+  it('leaves out the stories ref of a payload without stories', () => {
+    const button: StoryDocsPayload = {
+      id: 'button',
+      name: 'Button',
+      path: './button.stories.tsx',
+      import: 'import { Button } from "./Button";',
+      stories: {},
+    };
+    const index = buildComponentManifestIndex(['button'], new Set(), {}, { button });
+
+    expect(index.entries.button).not.toHaveProperty('stories');
+    expect(index.storyFiles).toEqual({});
+  });
+
   it('merges docgen and story-docs payloads with Record-shaped stories', () => {
     const docgen: DocgenPayload = {
       id: 'button',

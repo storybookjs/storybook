@@ -174,22 +174,15 @@ export function createServiceDocsAccess({
     const components: Record<string, ComponentManifestV1> = {};
     for (const id of classification.componentIds) {
       const payload = readComponent(allDocgen, id);
+      const stories = adaptCoreStories(
+        selectManifestStories(storiesById.get(id)?.stories ?? {}, classification.manifestStoryIds)
+      );
       components[id] = {
         id,
         name: payload?.name ?? id,
         ...(payload?.description !== undefined ? { description: payload.description } : {}),
         ...(payload?.summary !== undefined ? { summary: payload.summary } : {}),
-        ...(classification.storyBasedIds.has(id) && withStoryIds
-          ? {
-              stories:
-                adaptCoreStories(
-                  selectManifestStories(
-                    storiesById.get(id)?.stories ?? {},
-                    classification.manifestStoryIds
-                  )
-                ) ?? [],
-            }
-          : {}),
+        ...(stories ? { stories } : {}),
       };
     }
 
@@ -238,19 +231,17 @@ export function createServiceDocsAccess({
         : undefined;
     const docs = selectAttachedDocs(classification, id, mdxPayload);
 
+    const stories =
+      storyDocsPayload?.stories &&
+      selectManifestStories(storyDocsPayload.stories, classification.manifestStoryIds);
+
     const core: CoreDocgenComponent = {
       ...docgenPayload,
       id,
       name: docgenPayload?.name ?? id,
-      ...(storyDocsPayload?.stories
-        ? {
-            stories: selectManifestStories(
-              storyDocsPayload.stories,
-              classification.manifestStoryIds
-            ),
-          }
-        : {}),
-      ...(storyDocsPayload?.import ? { import: storyDocsPayload.import } : {}),
+      ...(stories ? { stories } : {}),
+      // As in a build, the import comes with the stories.
+      ...(stories && storyDocsPayload?.import ? { import: storyDocsPayload.import } : {}),
       ...(docs ? { docs } : {}),
     };
 

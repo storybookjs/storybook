@@ -143,12 +143,12 @@ export function buildComponentManifestIndex(
     const payload = getOwn(docgenPayloads, id);
     const storyDocs = getOwn(storyDocsPayloads, id);
     const docs = getOwn(docsByComponentId, id);
+    const stories = storyDocs && selectManifestStories(storyDocs.stories, manifestStoryIds);
     let storiesRef: JsonRef | undefined;
-    if (storyDocs) {
-      const stories = selectManifestStories(storyDocs.stories, manifestStoryIds);
+    if (storyDocs && stories) {
       if (Object.keys(stories).length === Object.keys(storyDocs.stories).length) {
         storiesRef = { $ref: storyDocsManifestRef(id) };
-      } else if (Object.keys(stories).length > 0) {
+      } else {
         // The service snapshot also supplies Code panel snippets for excluded stories.
         const ref = storyDocsFilteredManifestRef(id);
         storyFiles[ref] = { ...storyDocs, stories };

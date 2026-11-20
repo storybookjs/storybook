@@ -316,6 +316,18 @@ describe('createServiceDocsAccess resolve', () => {
     expect(resolved).not.toHaveProperty('component.import');
   });
 
+  it('leaves out stories and their import when the story docs hold no stories', async () => {
+    storyDocs.mockResolvedValue({ ...alphaStoryDocs, stories: {} });
+    const access = createAccess();
+
+    const listing = await access.list({ withStoryIds: true });
+    expect(listing.componentManifest.components.alpha).not.toHaveProperty('stories');
+    const resolved = await access.resolve('alpha');
+    expect(resolved).toMatchObject({ component: { id: 'alpha', name: 'Alpha' } });
+    expect(resolved).not.toHaveProperty('component.stories');
+    expect(resolved).not.toHaveProperty('component.import');
+  });
+
   it('filters individual stories using the current index without changing the shared payload', async () => {
     const access = createAccess();
     index = {

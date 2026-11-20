@@ -72,7 +72,7 @@ function mergeServicePayloads(
       const payload = getOwn(storyDocsPayloads, id);
       const storyDocs = payload && {
         ...payload,
-        stories: selectManifestStories(payload.stories, manifestStoryIds),
+        stories: selectManifestStories(payload.stories, manifestStoryIds) ?? {},
       };
       if (!docgen) {
         // A componentless component (its story file names no `meta.component`, so no docgen

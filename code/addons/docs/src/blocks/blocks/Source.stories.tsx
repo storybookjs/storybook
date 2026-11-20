@@ -342,6 +342,24 @@ export const OfTransformProp: Story = {
   },
 };
 
+export const OfTransformPropReadingArgTypes: Story = {
+  args: {
+    of: ParametersStories.NoParameters,
+    transform: (src, storyContext) => {
+      try {
+        return `read ${Object.keys(storyContext.argTypes).length} argTypes`;
+      } catch (error) {
+        return (error as Error).message.split('\n')[0];
+      }
+    },
+  },
+  play: async ({ canvasElement }) => {
+    await expect(
+      await within(canvasElement).findByText(/no longer part of the story context/)
+    ).toBeInTheDocument();
+  },
+};
+
 export const OfTransformParameter: Story = {
   args: {
     of: ParametersStories.Transform,

@@ -1104,9 +1104,8 @@ No automigration is needed. Existing boolean settings retain their meaning, and 
 
 ### `argTypes` removed from the story context
 
-The story context no longer contains `argTypes`.
-This applies to `render` functions, decorators, loaders, `beforeEach`, `play`, `afterEach` and `step` callbacks, and to `useStoryContext()`.
-Reading `context.argTypes` throws an error that links here.
+The story context passed to `render` functions, decorators, loaders, `beforeEach`, `play`, `afterEach`, `step`, `parameters.docs.source.transform` and `useStoryContext()` no longer contains `argTypes`.
+Reading `context.argTypes` there throws an error that links here.
 
 With server-side docgen (`features.docgenServer`), the preview no longer infers arg types from components or args.
 `context.argTypes` only ever contained the arg types you declared by hand, so it looked complete but was not.

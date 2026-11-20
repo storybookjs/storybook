@@ -35,6 +35,8 @@ export const PACKED_NODE_MODULES_ARCHIVE = 'workspace-node_modules.tar.zst';
 
 const ZSTD_STREAM = `${WORKING_DIR}/scripts/ci/zstd-stream.mjs`;
 
+const CHECK_PORTABLE_ENTRY_NAMES = `${WORKING_DIR}/scripts/ci/check-portable-entry-names.ts`;
+
 /**
  * The generated sandboxes get the same treatment: they are mostly
  * node_modules, so persisting them raw pays the same single-threaded workspace
@@ -146,6 +148,10 @@ export const workspace = {
         // ctime headers are dropped as they only add archive size.
         command: [
           'node --version',
+          // Fails the job before the archive exists if any entry name contains a
+          // character the Windows ANSI code page cannot encode — tar.exe would
+          // drop such entries and fail the unpack with a cryptic error.
+          `node ${CHECK_PORTABLE_ENTRY_NAMES} ${SANDBOX_DIR}/${id}`,
           `tar --create --format=posix --pax-option=delete=atime,delete=ctime ${SANDBOX_DIR}/${id} | node ${ZSTD_STREAM} compress 3 > ${sandboxArchive(id)}`,
           `ls -la ${sandboxArchive(id)}`,
         ].join('\n'),

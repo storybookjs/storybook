@@ -1,4 +1,3 @@
-import { getStoryArgTypes } from 'storybook/internal/preview-api';
 import { sanitizeStoryContextUpdate } from 'storybook/preview-api';
 import type { DecoratorFunction, LegacyStoryFn, StoryContext } from 'storybook/internal/types';
 
@@ -9,7 +8,7 @@ export default function decorateStory(
   mainStoryFn: LegacyStoryFn<AngularRenderer>,
   decorators: DecoratorFunction<AngularRenderer>[]
 ): LegacyStoryFn<AngularRenderer> {
-  const returnDecorators = [cleanArgsDecorator, ...decorators].reduce(
+  const returnDecorators = decorators.reduce(
     (previousStoryFn: LegacyStoryFn<AngularRenderer>, decorator) =>
       (context: StoryContext<AngularRenderer>) => {
         const decoratedStory = decorator((update) => {
@@ -50,24 +49,3 @@ const prepareMain = (
 function hasNoTemplate(template: string | null | undefined): template is undefined {
   return template === null || template === undefined;
 }
-
-const cleanArgsDecorator: DecoratorFunction<AngularRenderer> = (storyFn, context) => {
-  const argTypes = getStoryArgTypes(context);
-  if (!argTypes || !context.args) {
-    return storyFn();
-  }
-
-  const argsToClean = context.args;
-
-  context.args = Object.entries(argsToClean).reduce((obj, [key, arg]) => {
-    const argType = argTypes[key];
-
-    // Only keeps args with a control or an action in argTypes
-    if (argType?.action || argType?.control) {
-      return { ...obj, [key]: arg };
-    }
-    return obj;
-  }, {});
-
-  return storyFn();
-};

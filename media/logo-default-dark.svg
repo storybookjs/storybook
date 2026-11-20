@@ -4,8 +4,12 @@
     :where([data-theme="light"]) { --storybook-logo-text-color: #333; }
     .storybook-wordmark {
       color-scheme: dark light;
-      fill: #fff;
-      fill: var(--storybook-logo-text-color, light-dark(#333, #fff));
+      fill: var(--storybook-logo-text-color, #fff);
+    }
+    @supports (fill: light-dark(#333, #fff)) {
+      .storybook-wordmark {
+        fill: var(--storybook-logo-text-color, light-dark(#333, #fff));
+      }
     }
   </style>
   <defs>

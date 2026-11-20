@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 
 import {
+  type API_PreparedStoryIndex,
+  type API_Provider,
   type Addon_Collection,
   type Addon_TestProviderType,
   Addon_TypesEnum,
@@ -15,15 +17,16 @@ import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test';
 
 import { PRELOAD_ENTRIES, SIDEBAR_OPEN_CONTEXT_MENU } from 'storybook/internal/core-events';
 
+import { transformStoryIndexToStoriesHash } from '../../../manager-api/lib/stories.ts';
 import { defaultShortcuts } from '../../settings/defaultShortcuts.tsx';
 import { storyRowId } from '../../utils/tree.ts';
 import { IconSymbols } from './IconSymbols.tsx';
+import { index } from './mockdata.large.ts';
+import { mockDataset } from './mockdata.ts';
 import { DEFAULT_REF_ID } from './Sidebar.tsx';
 import { SidebarScrollArea } from './SidebarScrollArea.tsx';
 import { Tree } from './Tree.tsx';
 import { TREE_ROW_HEIGHT } from './treeGeometry.ts';
-import { index } from './mockdata.large.ts';
-import { mockDataset } from './mockdata.ts';
 
 const managerContext: any = {
   state: {
@@ -404,6 +407,83 @@ export const ComponentWithOnlyDocsLeft: Story = {
     await expect(docsItem).toHaveAttribute('data-nodetype', 'document');
     await expect(docsItem).toHaveTextContent('Docs Only');
     await expect(canvasElement.querySelector('[data-item-id="docs-only"]')).toBeNull();
+  },
+};
+
+const noConfigProvider: Parameters<typeof transformStoryIndexToStoriesHash>[1]['provider'] = {
+  getConfig: () => ({}),
+} as API_Provider<unknown>;
+
+export const ComponentsWithSubcomponents: Story = {
+  render: () => {
+    const [hideSubcomponents, setHideSubcomponents] = useState(false);
+    const [selectedId, setSelectedId] = useState('components-with-children--primary');
+    const entries: API_PreparedStoryIndex['entries'] = Object.fromEntries(
+      [
+        ['components-with-children--primary', 'Components/With children'],
+        ['components-with-children-child--primary', 'Components/With children/Child'],
+        ['components-no-children--primary', 'Components/No children'],
+        ['components-group-child--primary', 'Components/Group/Child'],
+      ].map(([id, title]) => [
+        id,
+        {
+          id,
+          title,
+          type: 'story',
+          subtype: 'story',
+          name: 'Primary',
+          importPath: `./${id}.stories.ts`,
+          tags: [],
+        },
+      ])
+    );
+    const data = transformStoryIndexToStoriesHash(
+      { v: 5, entries },
+      {
+        provider: noConfigProvider,
+        docsOptions: { docsMode: false },
+        filters: {
+          subcomponents: (entry) =>
+            !hideSubcomponents || entry.title !== 'Components/With children/Child',
+        },
+        allStatuses: {},
+      }
+    );
+
+    return (
+      <div style={{ width: '100%' }}>
+        <label>
+          <input
+            type="checkbox"
+            checked={hideSubcomponents}
+            onChange={(event) => setHideSubcomponents(event.target.checked)}
+          />
+          Hide subcomponents
+        </label>
+        <Tree
+          refId={DEFAULT_REF_ID}
+          data={data}
+          selectedStoryId={selectedId}
+          onSelectStoryId={setSelectedId}
+        />
+      </div>
+    );
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const row = (id: string) => canvasElement.querySelector(`[data-item-id="${id}"]`);
+    const component = () => row('components-with-children')?.querySelector('use');
+
+    await waitFor(() => expect(component()).toHaveAttribute('xlink:href', '#icon--component'));
+    await expect(row('components-group')?.querySelector('use')).toHaveAttribute(
+      'xlink:href',
+      '#icon--group'
+    );
+    await expect(row('components-with-children-child')).toBeInTheDocument();
+
+    await userEvent.click(canvas.getByRole('checkbox', { name: 'Hide subcomponents' }));
+    await waitFor(() => expect(row('components-with-children-child')).not.toBeInTheDocument());
+    await expect(component()).toHaveAttribute('xlink:href', '#icon--component');
   },
 };
 

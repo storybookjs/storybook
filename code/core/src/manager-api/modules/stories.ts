@@ -60,6 +60,7 @@ import {
   addPreparedStories,
   getComponentLookupList,
   getStoriesLookupList,
+  isOwnEntry,
   transformStoryIndexToStoriesHash,
 } from '../lib/stories.ts';
 import type { ModuleFn } from '../lib/types.tsx';
@@ -720,6 +721,15 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       }
       if (entry.type === 'docs' || entry.type === 'story') {
         return entry;
+      }
+
+      if (entry.type === 'component') {
+        const ownEntry = entry.children
+          .map((id) => index[id])
+          .find((child) => isOwnEntry(entry, child));
+        if (ownEntry) {
+          return ownEntry;
+        }
       }
 
       const childStoryId = entry.children.find((childId) => index[childId]);

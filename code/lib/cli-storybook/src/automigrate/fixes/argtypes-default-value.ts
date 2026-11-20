@@ -21,13 +21,24 @@ const argName = (property: E.ObjectProperty): string | undefined => {
   return undefined;
 };
 
-/** Whether the file has a `defaultValue` key outside `table`. */
+// `argTypes: {...}` or `Story.argTypes = {...}`.
+const isArgTypes = (node: ESTreeNode | null | undefined) =>
+  !!node &&
+  (staticKey(node) === 'argTypes' ||
+    (node.type === 'AssignmentExpression' &&
+      node.left.type === 'MemberExpression' &&
+      node.left.property.type === 'Identifier' &&
+      node.left.property.name === 'argTypes'));
+
+/** Whether the file has a `defaultValue` key outside the docs `table` of an arg. */
 const showsDefaultValue = (program: ESTreeNode) => {
+  const parents = new Map<ESTreeNode, ESTreeNode | null>();
   let found = false;
-  walk(program, (node) => {
+  walk(program, (node, parent) => {
+    parents.set(node, parent);
     const key = staticKey(node);
     found ||= key === 'defaultValue';
-    return !found && key !== 'table';
+    return !found && !(key === 'table' && !isArgTypes(parent && parents.get(parent)));
   });
   return found;
 };

@@ -4,7 +4,6 @@ import { join } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { hasStorybookSkills, installSkills } from 'storybook/internal/cli';
 import type * as sbcc from 'storybook/internal/common';
 import {
   HandledError,
@@ -58,9 +57,8 @@ vi.mock('storybook/internal/telemetry');
 // An upgrade refreshes the skills and AGENTS.md of the working directory, which tests must not touch.
 vi.mock(import('storybook/internal/cli'), async (importOriginal) => ({
   ...(await importOriginal()),
-  hasStorybookSkills: vi.fn(async () => false),
-  installSkills: vi.fn(async () => ({ result: 'skipped' as const, source: 'refresh' as const })),
-  refreshAgentInstructions: vi.fn(async () => {}),
+  hasStorybookSkills: async () => false,
+  refreshAgentInstructions: async () => {},
 }));
 vi.mock('./autoblock/index.ts', () => ({
   autoblock: vi.fn(async () => null),
@@ -720,16 +718,6 @@ describe('upgrade', () => {
     expect(packageManager.precheckStorybookPackageInstall).not.toHaveBeenCalled();
     expect(packageManager.installDependencies).not.toHaveBeenCalled();
     expect(packageManager.dedupeDependencies).not.toHaveBeenCalled();
-  });
-
-  it('names the skills refresh in a dry run of a project with the skills', async () => {
-    vi.mocked(hasStorybookSkills).mockResolvedValueOnce(true);
-
-    await runUpgrade({ dryRun: true });
-
-    expect(installSkills).toHaveBeenCalledWith(
-      expect.objectContaining({ source: 'refresh', dryRun: true })
-    );
   });
 
   it('installs and dedupes dependencies in a normal upgrade', async () => {

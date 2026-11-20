@@ -143,6 +143,7 @@ describe('upgrade: refreshing the skills', () => {
     expect(installSkills).toHaveBeenCalledWith({
       packageManager: expect.objectContaining({ type: 'npm' }),
       source: 'refresh',
+      dryRun: false,
     });
     expect(skillsInUpgradeEvents()).toEqual([
       { result: 'installed', source: 'refresh' },
@@ -171,9 +172,12 @@ describe('upgrade: refreshing the skills', () => {
     expect(installSkills).not.toHaveBeenCalled();
   });
 
-  it('does not refresh on a dry run', async () => {
+  it('only names the refresh on a dry run', async () => {
     await upgrade({ ...baseOptions, dryRun: true });
 
-    expect(installSkills).not.toHaveBeenCalled();
+    expect(installSkills).toHaveBeenCalledTimes(1);
+    expect(installSkills).toHaveBeenCalledWith(
+      expect.objectContaining({ source: 'refresh', dryRun: true })
+    );
   });
 });

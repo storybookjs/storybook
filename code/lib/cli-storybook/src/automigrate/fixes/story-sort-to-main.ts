@@ -12,6 +12,7 @@ interface StorySortToMainOptions {
 }
 
 const storySortPath = ['parameters', 'options', 'storySort'];
+const storySortKeys = ['method', 'order', 'locales', 'includeNames'];
 
 const fail = (reason: string): never => {
   throw new HandledError(
@@ -60,7 +61,14 @@ export const storySortToMain: Fix<StorySortToMainOptions> = {
         if (storySort === null || typeof storySort !== 'object') {
           fail('storySort must be a statically readable object or array');
         }
-        main.set(['storySorts'], [storySort]);
+        const sorter = Array.isArray(storySort)
+          ? storySort
+          : Object.fromEntries(
+              Object.entries(storySort as Record<string, CsfValue>).filter(([key]) =>
+                storySortKeys.includes(key)
+              )
+            );
+        main.set(['storySorts'], [sorter]);
         const mainProblem = firstProblem(main);
         if (mainProblem) {
           fail(mainProblem);

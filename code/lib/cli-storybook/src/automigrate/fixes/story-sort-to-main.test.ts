@@ -108,6 +108,14 @@ describe('story-sort-to-main', () => {
     expect(preview).toContain('docs: { source: {} }');
   });
 
+  it('drops object keys that storySorts does not accept', async () => {
+    await expectMoved(
+      `export default { stories: [] }`,
+      `export default { parameters: { options: { storySort: { method: 'alphabetical', order: ['Intro'], includeName: true } } } }`,
+      { method: 'alphabetical', order: ['Intro'] }
+    );
+  });
+
   it('moves a literal array and prunes the containers it empties', async () => {
     const { preview } = await expectMoved(
       `export default { stories: [] }`,

@@ -2,6 +2,7 @@ import type { ToolsetCtx } from 'storybook/open-service';
 
 import { isAbsolute, relative } from 'pathe';
 
+import type { ErrorLike } from '../../types.ts';
 import type { TestRunData, TestRunResult, TestRunSelection } from './definition.ts';
 
 type ComponentTestStatus = TestRunResult['componentTestStatuses'][number];
@@ -480,6 +481,24 @@ ${notFoundMessages.join('\n')}`;
 }
 
 /**
+ * The run's error with its causes: a failure to start or run Vitest is reported as a generic message
+ * (such as "Failed to start Vitest"), and only its cause says what went wrong.
+ */
+function formatRunError(error: Extract<TestRunData, { status: 'error' }>['error']): string {
+  const lines = [`Error: ${error.message}`];
+  for (let cause = error.error as ErrorLike | undefined; cause; cause = cause.cause) {
+    if (cause.message) {
+      lines.push(cause.message);
+    }
+  }
+  if (lines.length > 1) {
+    // A summary that ends in a newline would otherwise leave two blank lines before its cause.
+    lines[0] = lines[0].trimEnd();
+  }
+  return lines.join('\n\n');
+}
+
+/**
  * Per-story rendering shared by every transport — the `test-run` MCP tool and the tools CLI.
  *
  * Failed and cancelled runs read as `Error: …` because the MCP tool surfaced them by throwing; the
@@ -502,7 +521,7 @@ export function formatTestRun(
         ctx,
       });
     case 'error':
-      return `Error: ${data.error.message}`;
+      return formatRunError(data.error);
     case 'cancelled':
       return 'Error: Test run was cancelled';
     default: {

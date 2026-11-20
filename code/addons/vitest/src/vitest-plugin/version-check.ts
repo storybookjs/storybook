@@ -23,6 +23,11 @@ function getMajor(version: string): number | undefined {
   return Number.isNaN(major) ? undefined : major;
 }
 
+/** Whether a version is a canary release such as `0.0.0-pr-12345-sha-1a2b3c4d`. */
+function isCanary(version: string): boolean {
+  return version.startsWith('0.0.0');
+}
+
 /**
  * Checks the `storybook` package this addon resolved against the addon's own version.
  *
@@ -33,6 +38,9 @@ function getMajor(version: string): number | undefined {
  * A `storybook` of another major throws, as the addon can't work with it. Any other difference
  * only logs a warning: the versions are meant to be the same, but a mismatch within a major often
  * works.
+ *
+ * Canary releases are skipped: they are versioned `0.0.0-…`, which says nothing about the release
+ * they were built from, and they are installed on purpose next to other versions.
  *
  * It can only run once this module has loaded, so it doesn't cover a `storybook` so old that it
  * lacks one of the exports this plugin imports.
@@ -46,7 +54,7 @@ export function checkStorybookVersion({
   coreVersion: string;
   resolveCoreLocation?: () => string | undefined;
 }) {
-  if (coreVersion === addonVersion) {
+  if (coreVersion === addonVersion || isCanary(addonVersion) || isCanary(coreVersion)) {
     return;
   }
 

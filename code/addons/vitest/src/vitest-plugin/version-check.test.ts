@@ -26,6 +26,16 @@ describe('checkStorybookVersion', () => {
   });
 
   it.each([
+    ['the addon', '0.0.0-pr-37356-sha-1a2b3c4d', '11.0.3'],
+    ['storybook', '11.0.3', '0.0.0-pr-37356-sha-1a2b3c4d'],
+    ['both, from different builds', '0.0.0-pr-37356-sha-1a2b3c4d', '0.0.0-pr-37619-sha-5e6f7a8b'],
+  ])('skips the check when %s is a canary release', (_kind, addonVersion, coreVersion) => {
+    checkStorybookVersion({ addonVersion, coreVersion, resolveCoreLocation });
+
+    expect(logger.warn).not.toHaveBeenCalled();
+  });
+
+  it.each([
     ['an older major', '11.0.0-beta.1', '10.6.6'],
     ['a newer major', '11.0.3', '12.0.0'],
   ])('throws a handled error when storybook is %s', (_kind, addonVersion, coreVersion) => {

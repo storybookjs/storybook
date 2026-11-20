@@ -20,30 +20,35 @@ const defaultFetchStoryHtml: FetchStoryHtmlType = async (url, path, params, stor
   return response.text();
 };
 
-const buildStoryArgs = (args: Args, argTypes: ArgTypes) => {
-  const storyArgs = { ...args };
-
-  Object.keys(argTypes).forEach((key: string) => {
-    const argType = argTypes[key];
-    const { control } = argType;
-    const controlType =
-      control && typeof control === 'object' && 'type' in control && control.type?.toLowerCase();
-    const argValue = storyArgs[key];
-    switch (controlType) {
-      case 'date':
-        // For cross framework & language support we pick a consistent representation of Dates as strings
-        storyArgs[key] = new Date(argValue).toISOString();
-        break;
-      case 'object':
-        // send objects as JSON strings
-        storyArgs[key] = JSON.stringify(argValue);
-        break;
-      default:
-    }
-  });
-
-  return storyArgs;
+// Strings keep dates and objects readable by servers in any language. A date control holds a
+// timestamp, which only its control type tells apart from a number.
+const serializeArg = (value: unknown, isDateControl: boolean) => {
+  if (value instanceof Date || isDateControl) {
+    return new Date(value as Date | number | string).toISOString();
+  }
+  if (typeof value === 'object') {
+    return JSON.stringify(value);
+  }
+  return value;
 };
+
+const isDateControl = (argType: ArgTypes[string] | undefined) => {
+  const control = argType?.control;
+  return (
+    !!control &&
+    typeof control === 'object' &&
+    'type' in control &&
+    control.type?.toLowerCase() === 'date'
+  );
+};
+
+const buildStoryArgs = (args: Args, argTypes: ArgTypes) =>
+  Object.fromEntries(
+    Object.entries(args).map(([key, value]) => [
+      key,
+      serializeArg(value, isDateControl(argTypes[key])),
+    ])
+  );
 
 export const render: StoryFn<ServerRenderer> = (args: Args) => {};
 

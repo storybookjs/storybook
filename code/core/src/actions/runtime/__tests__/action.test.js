@@ -1,3 +1,4 @@
+import { JSDOM } from 'jsdom';
 import { stringify } from 'telejson';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -28,9 +29,9 @@ const createStoryStoreProxy = (onAccess) =>
   );
 
 const createWindowWithStoryStore = (onAccess) => {
-  function Window() {}
-  const win = Object.create(Window.prototype);
-  Object.defineProperty(win, 'constructor', { value: Window });
+  const { window: win } = new JSDOM('<!doctype html><html><body></body></html>', {
+    url: 'http://localhost/',
+  });
   win.__STORYBOOK_STORY_STORE__ = createStoryStoreProxy(onAccess);
   return win;
 };
@@ -38,12 +39,26 @@ const createWindowWithStoryStore = (onAccess) => {
 const createReactSyntheticEvent = (win) => {
   function SyntheticEvent() {}
   const event = Object.create(SyntheticEvent.prototype);
+  const target = win.document.createElement('button');
   event.persist = vi.fn();
   event.view = win;
-  event.nativeEvent = { view: win, type: 'click', target: {} };
+  event.nativeEvent = new win.MouseEvent('click', { bubbles: true, view: win });
   event.type = 'click';
-  event.target = { tagName: 'BUTTON' };
+  event.target = target;
   return event;
+};
+
+const assertNoStoryStoreAccessViaChannel = (channel, storyStoreAccesses) => {
+  const emitted = getEmittedAction(channel);
+  stringify(
+    {
+      key: 'storybook-channel',
+      event: { type: 'storybook/actions/action-event', args: [emitted] },
+    },
+    { maxDepth: emitted.options.maxDepth }
+  );
+  expect(storyStoreAccesses).toEqual([]);
+  return emitted;
 };
 
 describe('Action', () => {
@@ -173,50 +188,32 @@ describe('Implicit actions during rendering', () => {
 });
 
 describe('React event serialization', () => {
-  it('does not touch the deprecated story store when serializing a synthetic event', () => {
+  it.each([
+    {
+      name: 'a synthetic event',
+      invoke: (handler, event) => handler(event),
+      getSerialized: (emitted) => emitted.data.args,
+    },
+    {
+      // loaders.ts calls `action(name)(args)` with the mock's args array
+      name: 'the loaders.ts mock args array',
+      invoke: (handler, event) => handler([event]),
+      getSerialized: (emitted) => emitted.data.args[0],
+    },
+  ])('does not touch the deprecated story store for $name', ({ invoke, getSerialized }) => {
     const channel = createChannel();
     const storyStoreAccesses = [];
     const win = createWindowWithStoryStore((method) => storyStoreAccesses.push(method));
+    expect(win.constructor.name).toBe('Window');
     const event = createReactSyntheticEvent(win);
 
-    action('clicked')(event);
+    invoke(action('onClick'), event);
 
-    const emitted = getEmittedAction(channel);
-    expect(emitted.data.args.view).not.toBe(win);
-    expect(emitted.data.args.nativeEvent.view).not.toBe(win);
+    const emitted = assertNoStoryStoreAccessViaChannel(channel, storyStoreAccesses);
+    const serialized = getSerialized(emitted);
 
-    stringify(
-      {
-        key: 'storybook-channel',
-        event: { type: 'storybook/actions/action-event', args: [emitted] },
-      },
-      { maxDepth: 10 }
-    );
-
-    expect(storyStoreAccesses).toEqual([]);
-  });
-
-  it('does not touch the deprecated story store when a mock passes args as an array', () => {
-    const channel = createChannel();
-    const storyStoreAccesses = [];
-    const win = createWindowWithStoryStore((method) => storyStoreAccesses.push(method));
-    const event = createReactSyntheticEvent(win);
-
-    // loaders call `action(name)(args)` with the mock's args array
-    action('onClick')([event]);
-
-    const emitted = getEmittedAction(channel);
-    expect(emitted.data.args[0].view).not.toBe(win);
-    expect(emitted.data.args[0].nativeEvent.view).not.toBe(win);
-
-    stringify(
-      {
-        key: 'storybook-channel',
-        event: { type: 'storybook/actions/action-event', args: [emitted] },
-      },
-      { maxDepth: 10 }
-    );
-
-    expect(storyStoreAccesses).toEqual([]);
+    expect(serialized.view).not.toBe(win);
+    expect(serialized.nativeEvent.type).toBe('click');
+    expect(serialized.nativeEvent.view).not.toBe(win);
   });
 });

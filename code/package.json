@@ -104,6 +104,7 @@
     "esbuild-loader": "^4.3.0",
     "happy-dom": "^17.6.3",
     "http-server": "^14.1.1",
+    "jsdom": "^31.0.1",
     "knip": "^6.38.0",
     "mock-require": "^3.0.3",
     "oxlint": "1.85.0",

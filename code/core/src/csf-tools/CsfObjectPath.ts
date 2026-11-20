@@ -15,8 +15,16 @@ import {
   listRoot,
   literalRoot,
 } from './ObjectRoot.ts';
-import type { E, Node, Property } from './estree/ast.ts';
+import {
+  type E,
+  type Node,
+  type Property,
+  children,
+  staticKey,
+  unwrapExpression,
+} from './estree/ast.ts';
 import { type SourceEditor, detachedSource, printKey, printObject } from './estree/editor.ts';
+import { constantInit } from './estree/scope.ts';
 import { resolveExpression, valueSource } from './estree/values.ts';
 
 /**
@@ -181,6 +189,69 @@ export const locate = (
     }
     step = next;
   }
+};
+
+// Whether the source shows a value at `path` below `properties`, through spreads, local constants,
+// member reads and call arguments. A value from another module, or one only running code could
+// build, is out of sight. An index is always in sight: positions are not followed.
+export const showsPath = (
+  editor: SourceEditor,
+  properties: readonly E.ObjectPropertyKind[],
+  path: CsfPath,
+  expanding = new Set<Node>()
+): boolean => {
+  const [segment, ...rest] = path;
+  if (!isKey(segment)) {
+    return true;
+  }
+  return properties.some((member) => {
+    if (member.type === 'SpreadElement') {
+      return showsValue(editor, member.argument, path, expanding);
+    }
+    const key = staticKey(member);
+    if (key !== undefined && key !== segment) {
+      return false;
+    }
+    return rest.length === 0 || showsValue(editor, member.value, rest, expanding);
+  });
+};
+
+const showsValue = (
+  editor: SourceEditor,
+  node: Node | undefined,
+  path: CsfPath,
+  expanding: Set<Node>
+): boolean => {
+  const value = unwrapExpression(node);
+  if (!value) {
+    return false;
+  }
+  if (!isKey(path[0])) {
+    return true;
+  }
+  if (value.type === 'ObjectExpression') {
+    return showsPath(editor, value.properties, path, expanding);
+  }
+  if (
+    value.type === 'MemberExpression' &&
+    !value.computed &&
+    value.property.type === 'Identifier'
+  ) {
+    return showsValue(editor, value.object, [value.property.name, ...path], expanding);
+  }
+  if (value.type === 'Identifier') {
+    const init = constantInit(editor.scopes.bindingOf(value));
+    if (!init || expanding.has(init)) {
+      return false;
+    }
+    expanding.add(init);
+    const shown = showsValue(editor, init, path, expanding);
+    expanding.delete(init);
+    return shown;
+  }
+  return children(value, { skipTypes: true }).some((child) =>
+    showsValue(editor, child, path, expanding)
+  );
 };
 
 // Why `parent` refuses a new member `key`, such as a function story's `name`.

@@ -304,6 +304,19 @@ describe('argtypes-default-value', () => {
     }
   });
 
+  it('fails an arg a later local spread shows a defaultValue for', async () => {
+    const story = [
+      "const shared = { label: { defaultValue: 'A' } };",
+      "export default { argTypes: { label: { control: 'text' }, ...shared } };",
+    ].join('\n');
+    const result = await migrate({ story });
+
+    expect(result.failures).toEqual([
+      { file: storyPath, kind: 'story', message: expect.stringContaining('argTypes.label') },
+    ]);
+    expect(result.story).toBe(story);
+  });
+
   it('skips a file that only reads a defaultValue', async () => {
     const story = [
       "import { shared } from './shared';",

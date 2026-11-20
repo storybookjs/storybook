@@ -788,10 +788,11 @@ describe('CsfObject', () => {
   });
 
   it.each([
-    ['spread-field', `...base`],
-    ['dynamic-key', `[field]: true`],
-  ])('rejects a field only %s could provide', (code, member) => {
-    const source = `export default { parameters: { ${member} } };`;
+    ['spread-field', `...base`, `const base = { componentSubtitle: 'A' };`],
+    ['spread-field', `...make(base)`, `const base = { componentSubtitle: 'A' };`],
+    ['dynamic-key', `[field]: true`, ''],
+  ])('rejects a field only %s could provide', (code, member, declaration) => {
+    const source = `${declaration}export default { parameters: { ${member} } };`;
     const csf = parse(source);
     const [meta] = csf.objects({ meta: true, stories: false });
 
@@ -803,6 +804,22 @@ describe('CsfObject', () => {
     expect(csf.changed).toBe(false);
     expect(printCsf(csf).code).toBe(source);
   });
+
+  it.each([`...base`, `...make(options)`, `...shared.parameters`])(
+    'removes nothing where only %s, which the source does not show, could provide the field',
+    (member) => {
+      const source = `import { base, make, shared } from './shared';\nconst options = { layout: 'centered' };\nexport default { parameters: { ${member} } };`;
+      const csf = parse(source);
+      const [meta] = csf.objects({ meta: true, stories: false });
+
+      expect(meta.remove(['parameters', 'componentSubtitle'])).toEqual({
+        ok: true,
+        changed: false,
+      });
+      expect(csf.changed).toBe(false);
+      expect(printCsf(csf).code).toBe(source);
+    }
+  );
 
   describe('spreads', () => {
     const storyEdits = {

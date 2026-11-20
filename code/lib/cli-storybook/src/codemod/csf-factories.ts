@@ -20,6 +20,7 @@ import {
   previewImportTarget,
 } from '../../../../core/src/shared/constants/config-folder.ts';
 import { type FileInfo, runCodemod } from '../automigrate/codemod.ts';
+import { editParsedFile } from '../automigrate/helpers/edit-parsed-file.ts';
 import { getFrameworkPackageName } from '../automigrate/helpers/mainConfigFile.ts';
 import type { CommandFix } from '../automigrate/types.ts';
 import { configToCsfFactory } from './helpers/config-to-csf-factory.ts';
@@ -196,11 +197,9 @@ export const csfFactories: CommandFix = {
         ),
         info.path
       ).parse();
-      await syncPreviewAddonsWithMainConfig(mainConfig, preview, configDir);
-      const [diagnostic] = preview.mutationDiagnostics;
-      if (diagnostic) {
-        throw new Error(diagnostic.message);
-      }
+      await editParsedFile(preview, (config) =>
+        syncPreviewAddonsWithMainConfig(mainConfig, config, configDir)
+      );
       const output = formatConfig(preview);
       return output === info.source ? output : formatFileContent(info.path, output);
     });

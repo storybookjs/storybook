@@ -343,6 +343,30 @@ describe('argtypes-default-value', () => {
     expect(result.story).toBe(story);
   });
 
+  it('skips a file whose only defaultValue is a prop in args', async () => {
+    const story = [
+      "import { shared } from './shared';",
+      "export default { ...shared, args: { defaultValue: 'hello' } };",
+      'function createVariantsStory(layout: string) { return () => layout; }',
+      "export const Horizontal = createVariantsStory('horizontal');",
+      "Horizontal.args = { defaultValue: 'bye' };",
+    ].join('\n');
+    const result = await migrate({ story });
+
+    expect(result.failures).toEqual([]);
+    expect(result.story).toBe(story);
+  });
+
+  it('deletes the defaultValue of an arg named args', async () => {
+    const result = await migrate({
+      story: "export default { argTypes: { args: { defaultValue: 'x', control: 'text' } } };",
+    });
+
+    expect(result.failures).toEqual([]);
+    expect(result.story).toContain("control: 'text'");
+    expect(result.story).not.toContain('defaultValue');
+  });
+
   it('deletes the defaultValue of an arg named table', async () => {
     const result = await migrate({
       story: "export default { argTypes: { table: { defaultValue: 'x', control: 'text' } } };",

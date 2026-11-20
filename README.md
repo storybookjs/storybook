@@ -29,7 +29,7 @@
     <img src="https://img.shields.io/badge/bluesky-follow-1185FE?style=shield&logo=bluesky&longCache=true&style=flat&logoColor=white" alt="Follow Storybook on BlueSky" />
   </a>
   <a href="https://x.com/intent/follow?screen_name=storybookjs">
-    <img src="https://img.shields.io/badge/@storybookjs-follow-000?style=shield&logo=x&longCache=true&style=flat&logoColor=white" alt="Follow Storybook on BlueSky" />
+    <img src="https://img.shields.io/badge/@storybookjs-follow-000?style=shield&logo=x&longCache=true&style=flat&logoColor=white" alt="Follow Storybook on X" />
   </a>
 </p>
 <center>

@@ -19,7 +19,7 @@ import {
   type E,
   type Node,
   type Property,
-  walk,
+  children,
   isNumericLiteral,
   isStringLiteral,
   staticKey,
@@ -328,29 +328,29 @@ const showsConstant = (editor: SourceEditor, init: Node, path: CsfPattern, seen:
 const mentions = (editor: SourceEditor, code: Node, keys: ReadonlySet<string>): boolean => {
   const missing = new Set(keys);
   const searched = new Set<Node>();
-  const search = (node: Node) =>
-    walk(node, (child) => {
-      if (missing.size === 0) {
-        return false;
-      }
-      const named = namedKey(child);
-      if (isAnyKey(named)) {
-        missing.clear();
-      } else if (named !== undefined) {
-        missing.delete(named);
-      }
-      const binding = child.type === 'Identifier' ? editor.scopes.bindingOf(child) : undefined;
-      if (
-        binding &&
-        binding.kind !== 'import' &&
-        binding.kind !== 'param' &&
-        !searched.has(binding.node)
-      ) {
-        searched.add(binding.node);
-        searchBinding(binding);
-      }
-      return missing.size > 0;
-    });
+  // Types do not change what code returns, so they are not read.
+  const search = (child: Node): void => {
+    if (missing.size === 0) {
+      return;
+    }
+    const named = namedKey(child);
+    if (isAnyKey(named)) {
+      missing.clear();
+    } else if (named !== undefined) {
+      missing.delete(named);
+    }
+    const binding = child.type === 'Identifier' ? editor.scopes.bindingOf(child) : undefined;
+    if (
+      binding &&
+      binding.kind !== 'import' &&
+      binding.kind !== 'param' &&
+      !searched.has(binding.node)
+    ) {
+      searched.add(binding.node);
+      searchBinding(binding);
+    }
+    children(child, { skipTypes: true }).forEach(search);
+  };
   const searchBinding = (binding: Binding) => {
     if (writtenThrough(editor, binding)) {
       missing.clear();

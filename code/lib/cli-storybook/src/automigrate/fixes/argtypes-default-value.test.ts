@@ -515,6 +515,19 @@ describe('argtypes-default-value', () => {
     expect(result.story).not.toContain("defaultValue: 'M'");
   });
 
+  it('skips an arg whose helper refers to a defaultValue only in a type', async () => {
+    const story = [
+      "const defaults = { defaultValue: 'unused' };",
+      "function arg<T = typeof defaults>() { return { control: 'text' }; }",
+      "export default { argTypes: { label: arg(), size: { defaultValue: 'M' } } };",
+    ].join('\n');
+    const result = await migrate({ story });
+
+    expect(result.failures).toEqual([]);
+    expect(result.story).toContain('label: arg()');
+    expect(result.story).not.toContain("defaultValue: 'M'");
+  });
+
   it('deletes the defaultValue of an arg named table', async () => {
     const result = await migrate({
       story: "export default { argTypes: { table: { defaultValue: 'x', control: 'text' } } };",

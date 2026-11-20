@@ -206,6 +206,62 @@ export const ComponentWithSubcomponents: StoryObj<Meta<typeof Search>> = {
   },
 };
 
+export const SubcomponentResults: StoryObj<Meta<typeof Search>> = {
+  // A single canvas keeps searchbox queries unambiguous.
+  globals: { sb_theme: 'light' },
+  decorators: ComponentWithSubcomponents.decorators,
+  render: () => {
+    const ref = {
+      id: refId,
+      url: '/',
+      index: nestedIndex,
+      previewInitialized: true,
+      allStatuses: {},
+    };
+
+    return (
+      <Search
+        dataset={{ hash: { [refId]: ref }, entries: [[refId, ref]] }}
+        getLastViewed={() => []}
+        initialQuery="Button"
+      >
+        {({ query, results, closeMenu, getMenuProps, getItemProps, highlightedIndex }) => (
+          <SearchResults
+            query={query}
+            results={results}
+            closeMenu={closeMenu}
+            getMenuProps={getMenuProps}
+            getItemProps={getItemProps}
+            highlightedIndex={highlightedIndex}
+          />
+        )}
+      </Search>
+    );
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole('searchbox'));
+
+    const resultIds = () =>
+      canvas.getAllByRole('option').map((option) => option.getAttribute('data-id'));
+
+    // Subcomponents and hoisted nested docs are their own results, but the component's own
+    // entries are folded into the component result.
+    await waitFor(() =>
+      expect(resultIds()).toEqual(
+        expect.arrayContaining([
+          'components-button',
+          'components-button-icon',
+          'custom-guide--docs',
+        ])
+      )
+    );
+    await expect(resultIds()).not.toContain('components-button--docs');
+    await expect(resultIds()).not.toContain('components-button--primary');
+    await expect(resultIds()).not.toContain('components-button-icon--primary');
+  },
+};
+
 export const LastViewed: StoryFn = () => (
   <Search {...baseProps} getLastViewed={getLastViewed}>
     {({ query, results, closeMenu, getMenuProps, getItemProps, highlightedIndex }) => (

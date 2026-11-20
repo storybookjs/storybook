@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 
 import {
+  type API_PreparedStoryIndex,
+  type API_Provider,
   type Addon_Collection,
   type Addon_TestProviderType,
-  type API_PreparedStoryIndex,
   Addon_TypesEnum,
   type StatusValue,
   type StatusesByStoryIdAndTypeId,
@@ -20,12 +21,12 @@ import { transformStoryIndexToStoriesHash } from '../../../manager-api/lib/stori
 import { defaultShortcuts } from '../../settings/defaultShortcuts.tsx';
 import { storyRowId } from '../../utils/tree.ts';
 import { IconSymbols } from './IconSymbols.tsx';
+import { index } from './mockdata.large.ts';
+import { mockDataset } from './mockdata.ts';
 import { DEFAULT_REF_ID } from './Sidebar.tsx';
 import { SidebarScrollArea } from './SidebarScrollArea.tsx';
 import { Tree } from './Tree.tsx';
 import { TREE_ROW_HEIGHT } from './treeGeometry.ts';
-import { index } from './mockdata.large.ts';
-import { mockDataset } from './mockdata.ts';
 
 const managerContext: any = {
   state: {
@@ -409,6 +410,10 @@ export const ComponentWithOnlyDocsLeft: Story = {
   },
 };
 
+const noConfigProvider: Parameters<typeof transformStoryIndexToStoriesHash>[1]['provider'] = {
+  getConfig: () => ({}),
+} as API_Provider<unknown>;
+
 export const ComponentsWithSubcomponents: Story = {
   render: () => {
     const [hideSubcomponents, setHideSubcomponents] = useState(false);
@@ -435,9 +440,7 @@ export const ComponentsWithSubcomponents: Story = {
     const data = transformStoryIndexToStoriesHash(
       { v: 5, entries },
       {
-        provider: { getConfig: () => ({}) } as Parameters<
-          typeof transformStoryIndexToStoriesHash
-        >[1]['provider'],
+        provider: noConfigProvider,
         docsOptions: { docsMode: false },
         filters: {
           subcomponents: (entry) =>
@@ -468,23 +471,18 @@ export const ComponentsWithSubcomponents: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const component = () =>
-      canvasElement.querySelector('[data-item-id="components-with-children"] use');
+    const row = (id: string) => canvasElement.querySelector(`[data-item-id="${id}"]`);
+    const component = () => row('components-with-children')?.querySelector('use');
 
     await waitFor(() => expect(component()).toHaveAttribute('xlink:href', '#icon--component'));
-    await expect(
-      canvasElement.querySelector('[data-item-id="components-group"] use')
-    ).toHaveAttribute('xlink:href', '#icon--group');
-    await expect(
-      canvasElement.querySelector('[data-item-id="components-with-children-child"]')
-    ).toBeInTheDocument();
+    await expect(row('components-group')?.querySelector('use')).toHaveAttribute(
+      'xlink:href',
+      '#icon--group'
+    );
+    await expect(row('components-with-children-child')).toBeInTheDocument();
 
     await userEvent.click(canvas.getByRole('checkbox', { name: 'Hide subcomponents' }));
-    await waitFor(() =>
-      expect(
-        canvasElement.querySelector('[data-item-id="components-with-children-child"]')
-      ).not.toBeInTheDocument()
-    );
+    await waitFor(() => expect(row('components-with-children-child')).not.toBeInTheDocument());
     await expect(component()).toHaveAttribute('xlink:href', '#icon--component');
   },
 };

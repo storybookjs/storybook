@@ -3,7 +3,9 @@ import type {
   API_ComponentEntry,
   API_DocsEntry,
   API_GroupEntry,
+  API_HashEntry,
   API_IndexHash,
+  API_LeafEntry,
   API_PreparedIndexEntry,
   API_PreparedStoryIndex,
   API_Provider,
@@ -11,7 +13,6 @@ import type {
   API_StoryEntry,
   DocsOptions,
   IndexEntry,
-  Parameters,
   StatusesByStoryIdAndTypeId,
   StoryId,
   StoryIndexV3,
@@ -51,6 +52,19 @@ export const titleToPath = (title: string): { name: string; id: string }[] =>
       paths.push({ name, id });
       return paths;
     }, []);
+
+/**
+ * Whether an entry is one of a component's own docs or stories. A component's children can also
+ * hold a subcomponent (`Components/Button/Icon` under `Components/Button`) or a docs entry hoisted
+ * from a nested title because it is the only entry there (`Components/Button/Guide`, whose parent
+ * is `components-button`). Only titles tell these apart: `type` and `parent` match in both cases.
+ */
+export const isOwnEntry = (
+  component: Pick<API_ComponentEntry, 'id'>,
+  entry: API_HashEntry | undefined
+): entry is API_LeafEntry =>
+  (entry?.type === 'docs' || entry?.type === 'story') &&
+  titleToPath(entry.title).at(-1)?.id === component.id;
 
 export const transformStoryIndexV3toV4 = (index: StoryIndexV3): API_PreparedStoryIndex => {
   const countByTitle = countBy(Object.values(index.stories), (item) => item.title);
@@ -309,7 +323,9 @@ export const transformStoryIndexToStoriesHash = (
       .map((id) => storiesHash[id].tags)
       .reduce(intersect);
     if (entry.type === 'component') {
-      const childId = node.children.find((id) => entriesById.has(id))!;
+      // Prefer the first visible own entry; fall back to a hidden one when only subcomponents pass the filters
+      const isOwnEntry = (id: StoryId) => entriesById.has(id);
+      const childId = includedChildren.find(isOwnEntry) ?? node.children.find(isOwnEntry)!;
       entry.importPath = entriesById.get(childId)!.importPath;
     }
   };
@@ -345,24 +361,40 @@ export const addPreparedStories = (newHash: API_IndexHash, oldHash?: API_IndexHa
   );
 };
 
+/**
+ * Lists the groups that component jumps (Alt+arrow) move between, in sidebar order. A component's
+ * own entries form one group, a subcomponent or hoisted nested docs page forms its own.
+ */
 export const getComponentLookupList = memoize(1)((hash: API_IndexHash) => {
-  return Object.entries(hash).reduce((acc, i) => {
-    const value = i[1];
-    if (value.type === 'component') {
-      const children = value.children.filter(
-        (id) => hash[id].type === 'story' || hash[id].type === 'docs'
-      );
-      if (children.length) {
-        acc.push(children);
+  const lists: StoryId[][] = [];
+  const visit = (id: StoryId) => {
+    const entry = hash[id];
+    if (entry.type === 'component') {
+      let ownEntries: StoryId[] = [];
+      entry.children.forEach((childId) => {
+        if (isOwnEntry(entry, hash[childId])) {
+          ownEntries.push(childId);
+          return;
+        }
+        if (ownEntries.length) {
+          lists.push(ownEntries);
+          ownEntries = [];
+        }
+        visit(childId);
+      });
+      if (ownEntries.length) {
+        lists.push(ownEntries);
       }
-    } else if (
-      value.type === 'docs' &&
-      (!value.parent || hash[value.parent].type !== 'component')
-    ) {
-      acc.push([value.id]);
+    } else if (entry.type === 'docs') {
+      lists.push([entry.id]);
+    } else if (entry.type === 'root' || entry.type === 'group') {
+      entry.children.forEach(visit);
     }
-    return acc;
-  }, [] as StoryId[][]);
+  };
+  Object.values(hash)
+    .filter((entry) => !('parent' in entry && entry.parent))
+    .forEach((entry) => visit(entry.id));
+  return lists;
 });
 
 export const getStoriesLookupList = memoize(1)((hash: API_IndexHash) => {

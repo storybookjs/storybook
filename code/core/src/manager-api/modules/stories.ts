@@ -58,7 +58,7 @@ import {
   addPreparedStories,
   getComponentLookupList,
   getStoriesLookupList,
-  titleToPath,
+  isOwnEntry,
   transformStoryIndexToStoriesHash,
 } from '../lib/stories.ts';
 import type { ModuleFn } from '../lib/types.tsx';
@@ -722,14 +722,9 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       }
 
       if (entry.type === 'component') {
-        // Hoisted nested docs can share this parent without belonging to its title.
         const ownEntry = entry.children
           .map((id) => index[id])
-          .find(
-            (child): child is API_LeafEntry =>
-              (child?.type === 'docs' || child?.type === 'story') &&
-              titleToPath(child.title).at(-1)?.id === entry.id
-          );
+          .find((child) => isOwnEntry(entry, child));
         if (ownEntry) {
           return ownEntry;
         }

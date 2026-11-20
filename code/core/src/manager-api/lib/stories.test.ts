@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  type API_PreparedIndexEntry,
   type API_PreparedStoryIndex,
   type StatusesByStoryIdAndTypeId,
   type StoryIndexV3,
@@ -450,6 +451,41 @@ describe('transformStoryIndexToStoriesHash', () => {
       expect(filtered['guides-button-icon']).toBeUndefined();
     });
 
+    it.each([
+      ['no filter', undefined, './guides-button--docs.mdx'],
+      [
+        'docs hidden',
+        (entry: API_PreparedIndexEntry) => entry.type !== 'docs',
+        './button.stories.ts',
+      ],
+      [
+        'subcomponent and docs hidden',
+        (entry: API_PreparedIndexEntry) =>
+          entry.type !== 'docs' && entry.title !== 'Guides/Button/Icon',
+        './button.stories.ts',
+      ],
+    ])(
+      'takes the component import path from its first visible own entry (%s)',
+      (_, filter, path) => {
+        const filtered = transformStoryIndexToStoriesHash(nestedIndex, {
+          ...options,
+          ...(filter ? { filters: { filter } } : {}),
+        });
+        expect(filtered['guides-button']).toMatchObject({ type: 'component', importPath: path });
+      }
+    );
+
+    it('takes the import path from the first visible entry of a component without subcomponents', () => {
+      const filtered = transformStoryIndexToStoriesHash(index, {
+        ...options,
+        filters: { hideDocs: (entry) => entry.type !== 'docs' },
+      });
+      expect(filtered['guides-button']).toMatchObject({
+        type: 'component',
+        importPath: './button.stories.ts',
+      });
+    });
+
     it('keeps the component source when only a subcomponent passes the filter', () => {
       const filtered = transformStoryIndexToStoriesHash(nestedIndex, {
         ...options,
@@ -465,13 +501,36 @@ describe('transformStoryIndexToStoriesHash', () => {
       expect(getComponentLookupList(filtered)).toEqual([['guides-button-icon--primary']]);
     });
 
+    it('keeps hoisted nested docs out of the component jump group', () => {
+      const nested = transformStoryIndexToStoriesHash(
+        {
+          v: 5,
+          entries: {
+            ...index.entries,
+            'guides-button-guide--docs': docs('guides-button-guide--docs', 'Guides/Button/Guide'),
+          },
+        },
+        options
+      );
+
+      expect(nested['guides-button']).toMatchObject({
+        type: 'component',
+        children: ['guides-button--docs', 'guides-button--primary', 'guides-button-guide--docs'],
+      });
+      expect(getComponentLookupList(nested)).toContainEqual([
+        'guides-button--docs',
+        'guides-button--primary',
+      ]);
+      expect(getComponentLookupList(nested)).toContainEqual(['guides-button-guide--docs']);
+    });
+
     it('keeps component navigation on leaf entries when a component has subcomponents', () => {
       const nested = transformStoryIndexToStoriesHash(nestedIndex, options);
 
       expect(getComponentLookupList(nested)).toEqual([
         ['welcome--docs'],
-        ['guides-button--docs', 'guides-button--primary'],
         ['guides-button-icon--primary'],
+        ['guides-button--docs', 'guides-button--primary'],
         ['guides-intro--docs'],
         ['guides-faq--setup'],
         ['guides-faq--usage'],

@@ -1050,6 +1050,46 @@ describe('stories API', () => {
       const result = api.findSiblingStoryId('a--1', store.getState().index!, 1, true);
       expect(result).toBe('b-c--1');
     });
+    describe('toSiblingGroup with subcomponents', () => {
+      const story = (id: string, title: string) => ({
+        ...navigationEntries['a--1'],
+        id,
+        title,
+      });
+      const entries: StoryIndex['entries'] = {
+        'components-button-icon--primary': story(
+          'components-button-icon--primary',
+          'Components/Button/Icon'
+        ),
+        'components-button--primary': story('components-button--primary', 'Components/Button'),
+        'components-button--secondary': story('components-button--secondary', 'Components/Button'),
+        'components-button-guide--docs': {
+          type: 'docs',
+          id: 'components-button-guide--docs',
+          title: 'Components/Button/Guide',
+          name: 'Docs',
+          importPath: './guide.mdx',
+          storiesImports: [],
+        },
+        'components-card--primary': story('components-card--primary', 'Components/Card'),
+      };
+
+      it.each<[string, -1 | 1, string]>([
+        ['components-button-icon--primary', 1, 'components-button--primary'],
+        ['components-button--secondary', 1, 'components-button-guide--docs'],
+        ['components-button-guide--docs', 1, 'components-card--primary'],
+        ['components-card--primary', -1, 'components-button-guide--docs'],
+        ['components-button--primary', -1, 'components-button-icon--primary'],
+      ])('jumps from %s in direction %i to %s, in sidebar order', (from, direction, to) => {
+        const moduleArgs = createMockModuleArgs({});
+        const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+        api.setIndex({ v: 5, entries });
+
+        expect(
+          api.findSiblingStoryId(from, moduleArgs.store.getState().index!, direction, true)
+        ).toBe(to);
+      });
+    });
   });
   describe('findAllLeafStoryIds', () => {
     it('work for a leaf story', () => {

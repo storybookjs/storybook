@@ -76,8 +76,7 @@
     "pathe": "^2.0.3",
     "probe-image-size": "^7.3.0",
     "semver": "^7.7.3",
-    "ts-dedent": "^2.2.0",
-    "vite-tsconfig-paths": "^5.1.4"
+    "ts-dedent": "^2.2.0"
   },
   "devDependencies": {
     "@types/node": "^22.19.1",
@@ -88,11 +87,13 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "typescript": "^6.0.3",
-    "vite": "^7.0.4"
+    "vite": "^7.0.4",
+    "vite-tsconfig-paths": "^6.1.1"
   },
   "peerDependencies": {
     "next": "^15.0.0 || ^16.0.0",
     "storybook": "workspace:^",
+    "typescript": "^5.9.0 || ^6.0.0 || ^7.0.0",
     "vite": "^6.3.0 || ^7.0.0 || ^8.0.0"
   },
   "publishConfig": {

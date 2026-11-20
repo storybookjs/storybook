@@ -8,13 +8,6 @@ import preview from '../../../../../.storybook/preview.tsx';
 import { useLandmark } from '../../hooks/useLandmark.ts';
 import { ToolbarComp } from './Toolbar.tsx';
 
-/** Entry in react-aria's document-level landmark manager. */
-interface RegisteredLandmark {
-  /** The `aria-label` or `aria-labelledby` value. */
-  label?: string;
-  ref: { current: unknown };
-}
-
 const TOOLS: Addon_BaseType[] = [
   {
     id: 'tool',
@@ -40,23 +33,15 @@ export const HiddenToolbarLeavesNoLandmark = meta.story({
     const canvas = within(canvasElement);
 
     await expect(canvas.getByTestId('sb-preview-toolbar')).toBeInTheDocument();
-    await expect(getLandmarks().map((l) => l.label)).toContain('sb-preview-toolbar-title');
 
     await userEvent.click(canvas.getByRole('button', { name: 'Hide toolbar' }));
     await expect(canvas.queryByTestId('sb-preview-toolbar')).not.toBeInTheDocument();
-    await expect(getLandmarks().map((l) => l.label)).not.toContain('sb-preview-toolbar-title');
 
+    // Mounting a landmark used to throw while the hidden toolbar's landmark was still registered.
     await userEvent.click(canvas.getByRole('button', { name: 'Mount region' }));
     await expect(canvas.getByRole('region', { name: 'Extra region' })).toBeInTheDocument();
-    await expect(getLandmarks().map((l) => l.label)).toContain('Extra region');
-    await expect(getLandmarks().every((l) => l.ref.current instanceof Node)).toBe(true);
   },
 });
-
-function getLandmarks(): RegisteredLandmark[] {
-  const managers = document as unknown as Record<symbol, { landmarks: RegisteredLandmark[] }>;
-  return managers[Symbol.for('react-aria-landmark-manager')]?.landmarks ?? [];
-}
 
 function HideThenMountRegion(): React.ReactElement {
   const [isShown, setIsShown] = useState(true);

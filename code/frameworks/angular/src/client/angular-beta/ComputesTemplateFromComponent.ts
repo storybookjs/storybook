@@ -7,6 +7,7 @@ import type { ComponentInputsOutputs } from './utils/NgComponentAnalyzer.ts';
 import {
   getComponentDecoratorMetadata,
   getComponentInputsOutputs,
+  resolveInputArgs,
 } from './utils/NgComponentAnalyzer.ts';
 
 /**
@@ -25,20 +26,12 @@ export const formatPropInTemplate = (propertyName: string) =>
 const separateInputsOutputsAttributes = (
   ngComponentInputsOutputs: ComponentInputsOutputs,
   props: ICollection = {}
-) => {
-  const inputs = ngComponentInputsOutputs.inputs
-    .filter((i) => i.templateName in props)
-    .map((i) => i.templateName);
-  const outputs = ngComponentInputsOutputs.outputs
+) => ({
+  inputs: resolveInputArgs(ngComponentInputsOutputs.inputs, props).bindings,
+  outputs: ngComponentInputsOutputs.outputs
     .filter((o) => o.templateName in props)
-    .map((o) => o.templateName);
-
-  return {
-    inputs,
-    outputs,
-    otherProps: Object.keys(props).filter((k) => ![...inputs, ...outputs].includes(k)),
-  };
-};
+    .map((o) => o.templateName),
+});
 
 /**
  * Converts a component into a template with inputs/outputs present in initial props
@@ -71,7 +64,7 @@ export const computesTemplateFromComponent = (
 
   const templateInputs =
     initialInputs.length > 0
-      ? ` ${initialInputs.map((i) => `[${i}]="${formatPropInTemplate(i)}"`).join(' ')}`
+      ? ` ${initialInputs.map((i) => `[${i.bindingName}]="${formatPropInTemplate(i.propKey)}"`).join(' ')}`
       : '';
   const templateOutputs =
     initialOutputs.length > 0
@@ -163,11 +156,11 @@ export const computesTemplateSourceFromComponent = (
   const templateInputs =
     initialInputs.length > 0
       ? ` ${initialInputs
-          .map((propertyName) =>
+          .map(({ bindingName, propKey }) =>
             createAngularInputProperty({
-              propertyName,
-              value: initialProps?.[propertyName],
-              argType: argTypes?.[propertyName],
+              propertyName: bindingName,
+              value: initialProps?.[propKey],
+              argType: argTypes?.[propKey],
             })
           )
           .join(' ')}`

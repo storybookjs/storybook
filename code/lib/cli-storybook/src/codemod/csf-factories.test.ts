@@ -273,14 +273,15 @@ describe('csfFactories', () => {
       expect(readFiles(files)).toEqual(files);
     });
 
-    it('reports the preview a run would write, addons included, in a dry run', async () => {
+    it('names the preview a run would write and the addons it would sync, in a dry run', async () => {
       const { packageManager } = createProject(preview);
 
       await run(packageManager, true);
 
       const output = vi.mocked(logger.log).mock.calls.flat().join('\n');
-      expect(output).toContain('export default definePreview(');
-      expect(output).toMatch(addonImport);
+      expect(output).toMatch(/Would write to .*\.storybook\/preview\.js/);
+      expect(output).toContain('my-addon');
+      expect(output).not.toContain('definePreview(');
     });
 
     it('writes the imports map, the preview and the stories in a normal run', async () => {

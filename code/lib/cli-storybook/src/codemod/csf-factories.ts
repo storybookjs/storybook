@@ -1,11 +1,7 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
-import {
-  formatFileContent,
-  optionalEnvToBoolean,
-  syncPreviewAddonsWithMainConfig,
-} from 'storybook/internal/common';
+import { optionalEnvToBoolean, syncPreviewAddonsWithMainConfig } from 'storybook/internal/common';
 import { formatConfig, loadConfig } from 'storybook/internal/csf-tools';
 import { logger, prompt } from 'storybook/internal/node-logger';
 
@@ -164,25 +160,22 @@ export const csfFactories: CommandFix = {
 
     const frameworkPackage =
       getFrameworkPackageName(mainConfig) || '@storybook/your-framework-here';
-    // Config transforms return formatted code, so a dry run shows a file as a run writes it.
     const runConfigCodemod = (path: string, transform: (info: FileInfo) => Promise<string>) =>
       runCodemod(
         [path],
         async (info) => {
           const output = await transform(info);
           if (dryRun && output !== info.source) {
-            logger.log(
-              `Would write to ${picocolors.yellow(info.path)}:\n${picocolors.green(output)}`
-            );
+            logger.log(`Would write to ${picocolors.yellow(info.path)}`);
           }
           return output;
         },
-        { dryRun, skipFormatting: true }
+        { dryRun }
       );
 
     logger.step('Applying codemod on your main config...');
     await runConfigCodemod(mainConfigPath!, (info) =>
-      configToCsfFactory(info, { configType: 'main', frameworkPackage })
+      configToCsfFactory(info, { configType: 'main', frameworkPackage }, { skipFormatting: true })
     );
 
     logger.step('Applying codemod on your preview config...');
@@ -200,8 +193,7 @@ export const csfFactories: CommandFix = {
       await editParsedFile(preview, (config) =>
         syncPreviewAddonsWithMainConfig(mainConfig, config, configDir)
       );
-      const output = formatConfig(preview);
-      return output === info.source ? output : formatFileContent(info.path, output);
+      return formatConfig(preview);
     });
 
     if (dryRun) {

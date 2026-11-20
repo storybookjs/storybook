@@ -866,6 +866,26 @@ describe('CsfObject', () => {
     expect(printCsf(csf).code).toBe(source);
   });
 
+  it('follows a constant spread more than once only once', () => {
+    const chain = Array.from(
+      { length: 40 },
+      (_, index) => `const a${index + 1} = { ...a${index}, ...a${index} };`
+    );
+    const source = `const a0 = { other: 1 };\n${chain.join('\n')}\nexport default { parameters: { ...a40 } };`;
+    const csf = parse(source);
+    const [meta] = csf.objects({ meta: true, stories: false });
+
+    expect(meta.remove(['parameters', 'componentSubtitle'])).toEqual({ ok: true, changed: false });
+  });
+
+  it('still finds a field behind a cycle of functions after a miss', () => {
+    const source = `function a(n) { return n ? b(n) : { other: 1 }; }\nfunction b(n) { return n ? a(n) : { componentSubtitle: 'A' }; }\nexport default { parameters: { ...a(1) } };`;
+    const csf = parse(source);
+    const [meta] = csf.objects({ meta: true, stories: false });
+
+    expect(meta.remove(['parameters', 'componentSubtitle'])).toMatchObject({ ok: false });
+  });
+
   describe('remove with anyKey', () => {
     const removeEach = (source: string) => {
       const csf = parse(source);

@@ -209,6 +209,20 @@ export const locate = (
 // `anyKey` also stands for a member read whose key only running code knows, such as `types[key]`.
 type ShownPath = CsfPattern;
 
+// The bindings being followed, where a cycle stops, and the paths each binding does not show, so
+// a constant spread twice is followed once. A miss found after stopping at a cycle is not kept,
+// as the binding it stopped at may still show the path.
+interface Visits {
+  following: Set<Node>;
+  misses: Map<Node, Set<string>>;
+  cycles: number;
+}
+
+const visits = (): Visits => ({ following: new Set(), misses: new Map(), cycles: 0 });
+
+const pathKey = (path: ShownPath) =>
+  path.map((segment) => (segment === anyKey ? '*' : JSON.stringify(segment))).join('.');
+
 // Whether the source shows a value at `path` below `properties`, through spreads, local constants,
 // member reads and call arguments. A value from another module, or one only running code could
 // build, is out of sight. An index is always in sight: positions are not followed.
@@ -216,17 +230,17 @@ export const showsPath = (
   editor: SourceEditor,
   properties: readonly E.ObjectPropertyKind[],
   path: CsfPattern
-): boolean => showsMembers(editor, properties, path, new Set());
+): boolean => showsMembers(editor, properties, path, visits());
 
 /** Whether the source shows a value at `path` below the value `node`, as `showsPath` does. */
 export const showsPathIn = (editor: SourceEditor, node: Node, path: CsfPattern): boolean =>
-  path.length === 0 || showsValue(editor, node, path, new Set());
+  path.length === 0 || showsValue(editor, node, path, visits());
 
 const showsMembers = (
   editor: SourceEditor,
   properties: readonly E.ObjectPropertyKind[],
   path: ShownPath,
-  expanding: Set<Node>
+  seen: Visits
 ): boolean => {
   const [segment, ...rest] = path;
   if (typeof segment === 'number') {
@@ -234,13 +248,13 @@ const showsMembers = (
   }
   return properties.some((member) => {
     if (member.type === 'SpreadElement') {
-      return showsValue(editor, member.argument, path, expanding);
+      return showsValue(editor, member.argument, path, seen);
     }
     const key = staticKey(member);
     if (key !== undefined && segment !== anyKey && key !== segment) {
       return false;
     }
-    return rest.length === 0 || showsValue(editor, member.value, rest, expanding);
+    return rest.length === 0 || showsValue(editor, member.value, rest, seen);
   });
 };
 
@@ -266,7 +280,7 @@ const showsValue = (
   editor: SourceEditor,
   node: Node | undefined,
   path: ShownPath,
-  expanding: Set<Node>
+  seen: Visits
 ): boolean => {
   const value = unwrapExpression(node);
   if (!value) {
@@ -276,7 +290,7 @@ const showsValue = (
     return true;
   }
   if (value.type === 'ObjectExpression') {
-    return showsMembers(editor, value.properties, path, expanding);
+    return showsMembers(editor, value.properties, path, seen);
   }
   const [segment, ...rest] = path;
   if (value.type === 'ArrayExpression' && (segment === anyKey || /^\d+$/.test(segment))) {
@@ -285,20 +299,20 @@ const showsValue = (
         !!element &&
         (rest.length === 0 ||
           (element.type === 'SpreadElement'
-            ? showsValue(editor, element.argument, [anyKey, ...rest], expanding)
-            : showsValue(editor, element, rest, expanding)))
+            ? showsValue(editor, element.argument, [anyKey, ...rest], seen)
+            : showsValue(editor, element, rest, seen)))
     );
   }
   if (value.type === 'MemberExpression') {
-    return showsValue(editor, value.object, [memberKey(value), ...path], expanding);
+    return showsValue(editor, value.object, [memberKey(value), ...path], seen);
   }
   if (value.type === 'Identifier') {
-    return showsBinding(editor, editor.scopes.bindingOf(value), path, expanding);
+    return showsBinding(editor, editor.scopes.bindingOf(value), path, seen);
   }
   if (value.type === 'ClassBody') {
     return value.body.some((member) => {
       if (!('key' in member)) {
-        return showsValue(editor, member, path, expanding);
+        return showsValue(editor, member, path, seen);
       }
       const key = member.key as Node;
       const name =
@@ -314,18 +328,17 @@ const showsValue = (
         name === segment ||
         (member.type === 'MethodDefinition' && member.kind === 'constructor');
       return (
-        reads &&
-        (rest.length === 0 || showsValue(editor, member.value ?? undefined, rest, expanding))
+        reads && (rest.length === 0 || showsValue(editor, member.value ?? undefined, rest, seen))
       );
     });
   }
   // A method can return its receiver or part of it, as in `list.at(0)`.
   const callee = value.type === 'CallExpression' ? unwrapExpression(value.callee) : undefined;
-  if (callee?.type === 'MemberExpression' && showsValue(editor, callee.object, path, expanding)) {
+  if (callee?.type === 'MemberExpression' && showsValue(editor, callee.object, path, seen)) {
     return true;
   }
   return children(value, { skipTypes: true }).some((child) =>
-    showsValue(editor, child, path, expanding)
+    showsValue(editor, child, path, seen)
   );
 };
 
@@ -336,33 +349,54 @@ const showsBinding = (
   editor: SourceEditor,
   binding: Binding | undefined,
   path: ShownPath,
-  expanding: Set<Node>
+  seen: Visits
 ): boolean => {
   if (!binding || binding.kind === 'import' || binding.kind === 'param') {
     return false;
   }
-  if (expanding.has(binding.node)) {
+  const key = pathKey(path);
+  if (seen.misses.get(binding.node)?.has(key)) {
     return false;
   }
-  expanding.add(binding.node);
-  try {
-    if (binding.kind === 'function' || binding.kind === 'class') {
-      return showsValue(editor, binding.node, path, expanding);
-    }
-    if (writtenThrough(editor, binding)) {
-      return true;
-    }
-    const init = constantInit(binding);
-    if (init) {
-      return showsValue(editor, init, path, expanding);
-    }
-    if (!binding.constant && binding.identifier === (binding.node as E.VariableDeclarator).id) {
-      return showsAssigned(editor, binding, path, expanding);
-    }
-    return showsDestructured(editor, binding, path, expanding);
-  } finally {
-    expanding.delete(binding.node);
+  if (seen.following.has(binding.node)) {
+    seen.cycles++;
+    return false;
   }
+  const { cycles } = seen;
+  seen.following.add(binding.node);
+  let shown: boolean;
+  try {
+    shown = followBinding(editor, binding, path, seen);
+  } finally {
+    seen.following.delete(binding.node);
+  }
+  if (!shown && seen.cycles === cycles) {
+    const misses = seen.misses.get(binding.node) ?? new Set();
+    seen.misses.set(binding.node, misses.add(key));
+  }
+  return shown;
+};
+
+const followBinding = (
+  editor: SourceEditor,
+  binding: Binding,
+  path: ShownPath,
+  seen: Visits
+): boolean => {
+  if (binding.kind === 'function' || binding.kind === 'class') {
+    return showsValue(editor, binding.node, path, seen);
+  }
+  if (writtenThrough(editor, binding)) {
+    return true;
+  }
+  const init = constantInit(binding);
+  if (init) {
+    return showsValue(editor, init, path, seen);
+  }
+  if (!binding.constant && binding.identifier === (binding.node as E.VariableDeclarator).id) {
+    return showsAssigned(editor, binding, path, seen);
+  }
+  return showsDestructured(editor, binding, path, seen);
 };
 
 // A variable written after its declaration, as in `let selected = false; selected = true`, holds
@@ -371,7 +405,7 @@ const showsAssigned = (
   editor: SourceEditor,
   binding: Binding,
   path: ShownPath,
-  expanding: Set<Node>
+  seen: Visits
 ): boolean => {
   const values: (Node | null | undefined)[] = [(binding.node as E.VariableDeclarator).init];
   for (const reference of binding.references) {
@@ -385,7 +419,7 @@ const showsAssigned = (
       return true;
     }
   }
-  return values.some((value) => showsValue(editor, value ?? undefined, path, expanding));
+  return values.some((value) => showsValue(editor, value ?? undefined, path, seen));
 };
 
 // A name a constant pattern declares, as `dir` in `const { dir } = ATTRIBUTES`, reads its path in
@@ -394,7 +428,7 @@ const showsDestructured = (
   editor: SourceEditor,
   binding: Binding,
   path: ShownPath,
-  expanding: Set<Node>
+  seen: Visits
 ): boolean => {
   const declarator = binding.node;
   if (!binding.constant || declarator.type !== 'VariableDeclarator' || !declarator.init) {
@@ -408,7 +442,7 @@ const showsDestructured = (
       return true;
     }
     if (parent.type === 'AssignmentPattern') {
-      if (parent.left === node && showsValue(editor, parent.right, keys, expanding)) {
+      if (parent.left === node && showsValue(editor, parent.right, keys, seen)) {
         return true;
       }
     } else if (parent.type === 'Property') {
@@ -426,7 +460,7 @@ const showsDestructured = (
     }
     node = parent;
   }
-  return showsValue(editor, declarator.init, keys, expanding);
+  return showsValue(editor, declarator.init, keys, seen);
 };
 
 // Whether the source changes a constant's value through it, as in `base.label = value`,

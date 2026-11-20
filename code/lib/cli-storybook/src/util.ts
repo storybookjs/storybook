@@ -522,6 +522,21 @@ export const generateUpgradeSpecs = async (
 };
 
 /**
+ * The Storybook dependencies of a package.json file that an upgrade sets, as `name@version`
+ * specifiers by dependency type.
+ */
+export const getStorybookDependencyUpgrades = async (
+  packageJson: PackageJsonWithDepsAndDevDeps,
+  config: UpgradeConfig
+): Promise<[DependencyType, string[]][]> => {
+  const types = ['dependencies', 'devDependencies', 'peerDependencies'] as const;
+  const specifiers = await Promise.all(
+    types.map((type) => generateUpgradeSpecs(packageJson[type], config))
+  );
+  return types.map((type, index) => [type, specifiers[index]]);
+};
+
+/**
  * Upgrades Storybook dependencies across all package.json files
  *
  * @example
@@ -544,23 +559,8 @@ export const upgradeStorybookDependencies = async (config: UpgradeConfig): Promi
 
   for (const packageJsonPath of packageManager.packageJsonPaths) {
     const packageJson = JsPackageManager.getPackageJson(packageJsonPath);
-
-    const [upgradedDependencies, upgradedDevDependencies, upgradedPeerDependencies] =
-      await Promise.all([
-        generateUpgradeSpecs(packageJson.dependencies, config),
-        generateUpgradeSpecs(packageJson.devDependencies, config),
-        generateUpgradeSpecs(packageJson.peerDependencies, config),
-      ]);
-
-    logger.debug(JSON.stringify({ upgradedDependencies }, null, 2));
-    logger.debug(JSON.stringify({ upgradedDevDependencies }, null, 2));
-    logger.debug(JSON.stringify({ upgradedPeerDependencies }, null, 2));
-
-    const upgrades: [DependencyType, string[]][] = [
-      ['dependencies', upgradedDependencies],
-      ['devDependencies', upgradedDevDependencies],
-      ['peerDependencies', upgradedPeerDependencies],
-    ];
+    const upgrades = await getStorybookDependencyUpgrades(packageJson, config);
+    logger.debug(JSON.stringify({ packageJsonPath, upgrades }, null, 2));
 
     for (const [type, specifiers] of upgrades) {
       const directSpecifiers = packageManager.writeCatalogUpgrades(

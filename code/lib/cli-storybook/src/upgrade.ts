@@ -6,8 +6,9 @@ import {
 import { PackageManagerName } from 'storybook/internal/common';
 import {
   HandledError,
-  type JsPackageManager,
+  JsPackageManager,
   JsPackageManagerFactory,
+  type PackageJsonWithDepsAndDevDeps,
   isCI,
   isCorePackage,
   isNpmPeerResolutionError,
@@ -47,6 +48,7 @@ import type { ProjectDoctorData, ProjectDoctorResults } from './doctor/types.ts'
 import {
   type CollectProjectsSuccessResult,
   getProjects,
+  getStorybookDependencyUpgrades,
   shortenPath,
   upgradeStorybookDependencies,
 } from './util.ts';
@@ -92,6 +94,21 @@ const deprecatedPackages = [
 ];
 
 const formatPackage = (pkg: Package) => `${pkg.package}@${pkg.version}`;
+
+/** The versions that upgrade specifiers change in a package.json file, one `name: from → to` line each. */
+const describeVersionChanges = (
+  packageJson: PackageJsonWithDepsAndDevDeps,
+  upgrades: Awaited<ReturnType<typeof getStorybookDependencyUpgrades>>
+) =>
+  upgrades.flatMap(([type, specifiers]) =>
+    specifiers.flatMap((specifier) => {
+      const at = specifier.indexOf('@', 1);
+      const name = specifier.slice(0, at);
+      const version = specifier.slice(at + 1);
+      const current = packageJson[type]?.[name];
+      return current === version ? [] : [`  ${name}: ${current} → ${version}`];
+    })
+  );
 
 const getStorybookVersionSpecifierFromCli = (): string | undefined => {
   try {
@@ -386,13 +403,13 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
 
   const { allProjects, selectedProjects: storybookProjects } = projectsResult;
 
-  const dryRunNote = options.dryRun ? ' (dry run, no files will be changed)' : '';
+  const dryRunNote = options.dryRun ? ' (no files will be changed)' : '';
   if (storybookProjects.length > 1) {
-    logger.info(`${options.dryRun ? 'Checking the upgrade of' : 'Upgrading'} the following projects${dryRunNote}:
+    logger.info(`${options.dryRun ? 'Dry-running upgrade of' : 'Upgrading'} the following projects${dryRunNote}:
           ${storybookProjects.map((p) => `${picocolors.cyan(shortenPath(p.configDir))}: ${picocolors.bold(p.beforeVersion)} -> ${picocolors.bold(p.currentCLIVersion)}`).join('\n')}`);
   } else {
     logger.info(
-      `${options.dryRun ? 'Checking the upgrade' : 'Upgrading'} from ${picocolors.bold(storybookProjects[0].beforeVersion)} to ${picocolors.bold(storybookProjects[0].currentCLIVersion)}${dryRunNote}`
+      `${options.dryRun ? 'Dry-running upgrade' : 'Upgrading'} from ${picocolors.bold(storybookProjects[0].beforeVersion)} to ${picocolors.bold(storybookProjects[0].currentCLIVersion)}${dryRunNote}`
     );
   }
 
@@ -460,36 +477,67 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
           );
         }
       }
+    }
 
-      const task = prompt.taskLog({
-        id: 'upgrade-dependencies',
-        title: `Fetching versions to update package.json files..`,
-      });
-      try {
-        const loggedPaths: string[] = [];
-        for (const project of storybookProjects) {
-          logger.debug(`Updating dependencies in ${shortenPath(project.configDir)}...`);
-          const packageJsonPaths = project.packageManager.packageJsonPaths.map(shortenPath);
-          const newPaths = packageJsonPaths.filter((path) => !loggedPaths.includes(path));
-          if (newPaths.length > 0) {
-            task.message(newPaths.join('\n'));
-            loggedPaths.push(...newPaths);
-          }
-          await upgradeStorybookDependencies({
-            packageManager: project.packageManager,
-            isCanary: project.isCanary,
-            isCLIOutdated: project.isCLIOutdated,
-            isCLIPrerelease: project.isCLIPrerelease,
-            isCLIExactLatest: project.isCLIExactLatest,
-            isCLIExactPrerelease: project.isCLIExactPrerelease,
-            storybookVersionSpecifier:
-              storybookVersionSpecifier ?? project.storybookVersionSpecifier,
-          });
+    const task = prompt.taskLog({
+      id: 'upgrade-dependencies',
+      title: `Fetching versions to update package.json files..`,
+    });
+    try {
+      const loggedPaths: string[] = [];
+      // A dry run reports the versions it would set, once per package.json file.
+      const plannedPaths = new Set<string>();
+      const plannedUpgrades: string[] = [];
+      for (const project of storybookProjects) {
+        logger.debug(`Updating dependencies in ${shortenPath(project.configDir)}...`);
+        const packageJsonPaths = project.packageManager.packageJsonPaths.map(shortenPath);
+        const newPaths = packageJsonPaths.filter((path) => !loggedPaths.includes(path));
+        if (newPaths.length > 0) {
+          task.message(newPaths.join('\n'));
+          loggedPaths.push(...newPaths);
         }
-        task.success(`Updated package versions in package.json files`);
-      } catch (err) {
-        task.error(`Failed to upgrade dependencies: ${String(err)}`);
+        const config = {
+          packageManager: project.packageManager,
+          isCanary: project.isCanary,
+          isCLIOutdated: project.isCLIOutdated,
+          isCLIPrerelease: project.isCLIPrerelease,
+          isCLIExactLatest: project.isCLIExactLatest,
+          isCLIExactPrerelease: project.isCLIExactPrerelease,
+          storybookVersionSpecifier: storybookVersionSpecifier ?? project.storybookVersionSpecifier,
+        };
+        if (!options.dryRun) {
+          await upgradeStorybookDependencies(config);
+          continue;
+        }
+        for (const packageJsonPath of project.packageManager.packageJsonPaths) {
+          if (plannedPaths.has(packageJsonPath)) {
+            continue;
+          }
+          plannedPaths.add(packageJsonPath);
+          const packageJson = JsPackageManager.getPackageJson(packageJsonPath);
+          const changes = describeVersionChanges(
+            packageJson,
+            await getStorybookDependencyUpgrades(packageJson, config)
+          );
+          if (changes.length > 0) {
+            plannedUpgrades.push(
+              `Would update ${shortenPath(packageJsonPath)}:\n${changes.join('\n')}`
+            );
+          }
+        }
       }
+      task.success(
+        options.dryRun
+          ? 'Fetched the versions to update package.json files'
+          : `Updated package versions in package.json files`
+      );
+      plannedUpgrades.forEach((message) => logger.log(message));
+    } catch (err) {
+      task.error(
+        options.dryRun
+          ? `Failed to fetch the versions to update package.json files: ${String(err)}`
+          : `Failed to upgrade dependencies: ${String(err)}`
+      );
     }
 
     // Read before the automigrations, so skills that the skills automigration installs are not

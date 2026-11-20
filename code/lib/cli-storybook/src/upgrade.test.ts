@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -665,10 +665,16 @@ describe('withNpmForceFallback', () => {
 
 describe('upgrade', () => {
   // A single pnpm project in a monorepo, so a normal upgrade both installs and dedupes.
-  const runUpgrade = async ({ dryRun }: { dryRun: boolean }) => {
+  const runUpgrade = async ({
+    dryRun,
+    packageJsonPaths = [],
+  }: {
+    dryRun: boolean;
+    packageJsonPaths?: string[];
+  }) => {
     const packageManager = {
       type: PackageManagerName.PNPM,
-      packageJsonPaths: [],
+      packageJsonPaths,
       latestVersion: async () => '9.0.0',
       getAllDependencies: () => ({ storybook: '8.0.0' }),
       getModulePackageJSON: async () => null,
@@ -679,6 +685,8 @@ describe('upgrade', () => {
       precheckStorybookPackageInstall: vi.fn(async () => {}),
       installDependencies: vi.fn(async () => {}),
       dedupeDependencies: vi.fn(async () => {}),
+      writeCatalogUpgrades: vi.fn((specifiers: string[]) => specifiers),
+      addDependencies: vi.fn(async () => {}),
     };
     getStorybookDataMock.mockResolvedValue({
       configDir: '/project/.storybook',
@@ -738,7 +746,31 @@ describe('upgrade', () => {
       await runUpgrade({ dryRun: true });
 
       expect(logged()).not.toMatch(/Upgrading from|upgraded successfully/);
-      expect(logged()).toMatch(/no files (will be|were) changed/);
+      expect(logged()).toContain(
+        'Dry-running upgrade from 8.0.0 to 9.0.0 (no files will be changed)'
+      );
+      expect(logged()).toContain('no files were changed');
+    });
+
+    it('names the package versions a dry run would set, without setting them', async () => {
+      const dir = await mkdtemp(join(tmpdir(), 'sb-upgrade-dry-run-'));
+      const packageJsonPath = join(dir, 'package.json');
+      const packageJson = JSON.stringify({ devDependencies: { storybook: '8.0.0' } });
+      await writeFile(packageJsonPath, packageJson);
+
+      try {
+        const packageManager = await runUpgrade({
+          dryRun: true,
+          packageJsonPaths: [packageJsonPath],
+        });
+
+        expect(logged()).toMatch(/storybook: 8\.0\.0 → \^?9\.0\.0/);
+        expect(packageManager.writeCatalogUpgrades).not.toHaveBeenCalled();
+        expect(packageManager.addDependencies).not.toHaveBeenCalled();
+        expect(await readFile(packageJsonPath, 'utf8')).toBe(packageJson);
+      } finally {
+        await rm(dir, { recursive: true, force: true });
+      }
     });
 
     it('reports the upgrade of a normal run', async () => {

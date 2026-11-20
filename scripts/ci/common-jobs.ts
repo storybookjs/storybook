@@ -411,6 +411,15 @@ export const node26Smoke = defineJob('Node 26 smoke', () => ({
 const UNIT_TEST_REPORTERS =
   '--reporter=junit --reporter=default --outputFile=./test-results/junit.xml';
 
+/**
+ * The Linux unit job records which test files reach an OS-dependent API (see
+ * scripts/ci/os-probe/probe.ts); the Windows unit job runs only those, plus files the manifest
+ * cannot vouch for. Both paths are gitignored, so `git.check()` stays clean.
+ */
+const OS_PROBE_RECORDS_DIR = '.cache/os-probe/records';
+const OS_PROBE_MANIFEST = '.cache/os-probe/manifest.json';
+const OS_PROBE_CACHE_PREFIX = 'v1-os-probe-manifest';
+
 export const testsUnit_linux = defineJob(
   'Tests (linux)',
   () => ({
@@ -423,6 +432,7 @@ export const testsUnit_linux = defineJob(
       {
         run: {
           name: 'Run tests',
+          environment: { STORYBOOK_OS_PROBE_DIR: OS_PROBE_RECORDS_DIR },
           command: [
             'TEST_FILES=$(circleci tests glob "code/**/*.{test,spec,test-d}.{ts,tsx,js,jsx,cjs}" "scripts/**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" "agent-eval/**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" "ecosystem-qa/**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" | sed "/e2e-sandbox\\//d" | sed "/e2e-internal\\//d" | sed "/node_modules\\//d")',
             `echo "$TEST_FILES" | circleci tests run --command="xargs yarn test ${UNIT_TEST_REPORTERS}"`,
@@ -430,6 +440,14 @@ export const testsUnit_linux = defineJob(
         },
       },
       testResults.persist(`test-results`),
+      {
+        run: {
+          name: 'Build OS-sensitivity manifest',
+          command: `node scripts/ci/os-probe/manifest.ts build ${OS_PROBE_RECORDS_DIR} ${OS_PROBE_MANIFEST}`,
+        },
+      },
+      cache.persist([OS_PROBE_MANIFEST], `${OS_PROBE_CACHE_PREFIX}-{{ .Branch }}-{{ .Revision }}`),
+      artifact.persist(OS_PROBE_MANIFEST, 'os-probe-manifest.json'),
 
       git.check(),
       ...workflow.cancelOnFailure(),
@@ -629,11 +647,20 @@ export const testUnit_windows = defineJob(
           command: 'yarn install --mode=skip-build',
         },
       },
+      // The manifest comes from an earlier Linux run, as this workflow's runs in parallel. Without
+      // one, every test file runs.
+      cache.attach([`${OS_PROBE_CACHE_PREFIX}-{{ .Branch }}-`, `${OS_PROBE_CACHE_PREFIX}-next-`]),
       {
         run: {
-          command:
-            "yarn test --project '!agent-eval' --reporter=junit --reporter=default --outputFile=./test-results/junit.xml",
-          name: 'Run unit tests',
+          name: 'Run OS-sensitive unit tests',
+          environment: { NODE_OPTIONS: '--max_old_space_size=4096' },
+          command: `node scripts/ci/os-probe/manifest.ts run ${OS_PROBE_MANIFEST} '${JSON.stringify(
+            {
+              project: ['!agent-eval'],
+              reporters: ['junit', 'default'],
+              outputFile: './test-results/junit.xml',
+            }
+          )}'`,
         },
       },
       testResults.persist(`test-results`),

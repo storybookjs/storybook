@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { ArgTypesRemovedFromStoryContextError } from 'storybook/internal/preview-errors';
 import type { StoryContextForRender } from 'storybook/internal/types';
 
-import { hideArgTypes } from './hideArgTypes.ts';
+import { getStoryArgTypes, hideArgTypes } from './hideArgTypes.ts';
 
 const createContext = () => {
   const context = {
@@ -47,5 +47,53 @@ describe('hideArgTypes', () => {
 
     expect(hidden.context).toBe(hidden);
     expect(() => hidden.context.argTypes).toThrow(ArgTypesRemovedFromStoryContextError);
+  });
+
+  it('returns the same hidden context for the same context', () => {
+    const context = createContext();
+    const hidden = hideArgTypes(context);
+
+    expect(hideArgTypes(context)).toBe(hidden);
+    expect(hideArgTypes(hidden)).toBe(hidden);
+  });
+
+  it('hides argTypes on a frozen context', () => {
+    const hidden = hideArgTypes(Object.freeze(createContext()));
+
+    expect(() => hidden.argTypes).toThrow(ArgTypesRemovedFromStoryContextError);
+    expect('argTypes' in hidden).toBe(false);
+    expect(Object.keys(hidden)).toEqual(['id', 'args', 'loaded', 'context']);
+    expect(hidden.args).toEqual({ label: 'hello' });
+  });
+});
+
+describe('getStoryArgTypes', () => {
+  const argTypes = { label: { name: 'label' } };
+
+  it('reads the argTypes of a context that was never hidden', () => {
+    expect(getStoryArgTypes(createContext())).toEqual(argTypes);
+  });
+
+  it('reads the argTypes of a hidden context', () => {
+    expect(getStoryArgTypes(hideArgTypes(createContext()))).toEqual(argTypes);
+  });
+
+  it('reads the argTypes of a hidden frozen context', () => {
+    expect(getStoryArgTypes(hideArgTypes(Object.freeze(createContext())))).toEqual(argTypes);
+  });
+
+  it('reads the argTypes of a copy of a hidden context', () => {
+    const copy = { ...hideArgTypes(createContext()), args: { label: 'updated' } };
+
+    expect(copy).not.toHaveProperty('argTypes');
+    expect(getStoryArgTypes(copy)).toEqual(argTypes);
+  });
+
+  it('reads the argTypes of a copy that was hidden again', () => {
+    const hidden = hideArgTypes({ ...hideArgTypes(createContext()) });
+
+    expect(() => hidden.argTypes).toThrow(ArgTypesRemovedFromStoryContextError);
+    expect(getStoryArgTypes(hidden)).toEqual(argTypes);
+    expect(getStoryArgTypes({ ...hidden })).toEqual(argTypes);
   });
 });

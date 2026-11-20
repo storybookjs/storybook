@@ -12,12 +12,15 @@ import type {
   StoryContextForRender,
 } from 'storybook/internal/types';
 
+import { ArgTypesRemovedFromStoryContextError } from 'storybook/internal/preview-errors';
+
 import type { UserEventObject } from 'storybook/test';
 
 import { Tag } from '../../../../shared/constants/tags.ts';
 import { HooksContext, addons } from '../../addons/index.ts';
 import { UNTARGETED } from '../args.ts';
 import { composeConfigs } from './composeConfigs.ts';
+import { getStoryArgTypes } from './hideArgTypes.ts';
 import { normalizeProjectAnnotations } from './normalizeProjectAnnotations.ts';
 import { prepareContext, prepareMeta, prepareStory as realPrepareStory } from './prepareStory.ts';
 
@@ -562,6 +565,110 @@ describe('prepareStory', () => {
       expect(ctx3).toMatchObject({ unmappedArgs: { one: 1 }, args: { one: 'mapped-1' } });
 
       hooks.clean();
+    });
+  });
+
+  describe('argTypes in the context of decorators and render functions', () => {
+    const argTypes = { one: { name: 'one', type: { name: 'string' as const } } };
+
+    const renderStory = (
+      story: PreparedStory,
+      render: (context: StoryContextForRender) => unknown = story.unboundStoryFn
+    ) => {
+      const hooks = new HooksContext();
+      const context = prepareContext({ args: story.initialArgs, globals: {}, ...story });
+      try {
+        return render({ ...addExtraContext(context), hooks });
+      } finally {
+        hooks.clean();
+      }
+    };
+
+    beforeEach(() => {
+      addons.setChannel({ on: vi.fn(), removeListener: vi.fn() } as any);
+    });
+
+    it('throws when a decorator reads argTypes', () => {
+      const story = prepareStory(
+        { id, name, argTypes, decorators: [(storyFn, context) => context.argTypes], moduleExport },
+        { id, title },
+        { render }
+      );
+
+      expect(() => renderStory(story)).toThrow(ArgTypesRemovedFromStoryContextError);
+    });
+
+    it('throws when a render function reads argTypes', () => {
+      const story = prepareStory(
+        { id, name, argTypes, render: (args, context) => context.argTypes, moduleExport },
+        { id, title },
+        {}
+      );
+
+      expect(() => renderStory(story)).toThrow(ArgTypesRemovedFromStoryContextError);
+      expect(() => renderStory(story, story.undecoratedStoryFn)).toThrow(
+        ArgTypesRemovedFromStoryContextError
+      );
+    });
+
+    it('throws when a decorator reads argTypes under a framework decorator applicator', () => {
+      const story = prepareStory(
+        { id, name, argTypes, decorators: [(storyFn, context) => context.argTypes], moduleExport },
+        { id, title },
+        {
+          render,
+          applyDecorators: (storyFn, decorators) =>
+            decorators.reduce(
+              (decorated, decorator) => (context) =>
+                decorator((update) => decorated({ ...context, ...update }), context),
+              storyFn
+            ),
+        }
+      );
+
+      expect(() => renderStory(story)).toThrow(ArgTypesRemovedFromStoryContextError);
+    });
+
+    it('gives the argTypes to decorators and render functions that use getStoryArgTypes', () => {
+      const story = prepareStory(
+        {
+          id,
+          name,
+          argTypes,
+          decorators: [(storyFn, context) => [getStoryArgTypes(context), storyFn()]],
+          render: (args, context) => getStoryArgTypes(context),
+          moduleExport,
+        },
+        { id, title },
+        {}
+      );
+
+      expect(renderStory(story)).toEqual([argTypes, argTypes]);
+    });
+
+    it('keeps the argTypes when an outer decorator updates the context', () => {
+      const story = prepareStory(
+        {
+          id,
+          name,
+          argTypes,
+          args: { one: 'initial' },
+          decorators: [
+            (storyFn, context) => [context.args, getStoryArgTypes(context), storyFn()],
+            (storyFn) => storyFn({ args: { one: 'updated' } }),
+          ],
+          render: (args, context) => [args, getStoryArgTypes(context)],
+          moduleExport,
+        },
+        { id, title },
+        {}
+      );
+
+      expect(renderStory(story)).toEqual([
+        { one: 'updated' },
+        argTypes,
+        [{ one: 'updated' }, argTypes],
+      ]);
     });
   });
 

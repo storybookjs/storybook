@@ -7,6 +7,7 @@ import {
   UPDATE_GLOBALS,
   UPDATE_STORY_ARGS,
 } from 'storybook/internal/core-events';
+import { ArgTypesRemovedFromStoryContextError } from 'storybook/internal/preview-errors';
 import type { DecoratorFunction, StoryContextForRender } from 'storybook/internal/types';
 
 import {
@@ -260,6 +261,17 @@ describe('Preview hooks', () => {
         [],
         context
       );
+    });
+    it('hides argTypes from the returned context', () => {
+      let context: any;
+      run(
+        () => {
+          context = useStoryContext();
+        },
+        [],
+        { argTypes: { label: { name: 'label' } } }
+      );
+      expect(() => context.argTypes).toThrow(ArgTypesRemovedFromStoryContextError);
     });
   });
   describe('useParameter', () => {

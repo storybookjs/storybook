@@ -14,6 +14,7 @@ import { definePreview } from '../../../../csf/csf-factories.ts';
 import { Tag } from '../../../../shared/constants/tags.ts';
 import * as defaultExportAnnotations from './__mocks__/defaultExportAnnotations.mockfile.ts';
 import * as namedExportAnnotations from './__mocks__/namedExportAnnotations.mockfile.ts';
+import { getStoryArgTypes } from './hideArgTypes.ts';
 import { composeStories, composeStory, setProjectAnnotations } from './portable-stories.ts';
 
 type StoriesModule = Store_CSFExports & Record<string, any>;
@@ -182,7 +183,7 @@ describe('composeStory', () => {
     );
   });
 
-  it('hides argTypes from the play function but passes them to the render function', async () => {
+  it('hides argTypes from the play function and the render function', async () => {
     const hookContexts: any[] = [];
     const renderContexts: any[] = [];
     const Story: Story = {
@@ -209,7 +210,8 @@ describe('composeStory', () => {
     expect(hookContexts).toHaveLength(1);
     expect(() => hookContexts[0].argTypes).toThrow(ArgTypesRemovedFromStoryContextError);
     expect(renderContexts).toHaveLength(1);
-    expect(renderContexts[0].argTypes).toMatchObject({ label: { name: 'label' } });
+    expect(() => renderContexts[0].argTypes).toThrow(ArgTypesRemovedFromStoryContextError);
+    expect(getStoryArgTypes(renderContexts[0])).toMatchObject({ label: { name: 'label' } });
   });
 
   it('should merge parameters with correct precedence in all combinations', async () => {

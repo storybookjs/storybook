@@ -1,8 +1,9 @@
-import type { FC, FocusEvent, SyntheticEvent } from 'react';
+import type { FC, SyntheticEvent } from 'react';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { Button, Form, ToggleButton } from 'storybook/internal/components';
+import { Button, Form } from 'storybook/internal/components';
 
+import { announce } from '@react-aria/live-announcer';
 import { AddIcon, EditIcon, SubtractIcon } from '@storybook/icons';
 
 import { cloneDeep } from 'es-toolkit/object';
@@ -126,7 +127,7 @@ const Input = styled.input(({ theme, placeholder }) => ({
   },
 }));
 
-const RawButton = styled(ToggleButton)({
+const EditorSwitchButton = styled(Button)({
   alignSelf: 'flex-start',
   order: 2,
   marginRight: -10,
@@ -147,6 +148,18 @@ const RawInput = styled(Form.Textarea)(({ theme }) => ({
   },
 }));
 
+const RawInputWrapper = styled.div({
+  flex: 1,
+  display: 'grid',
+  gap: 6,
+});
+
+const ErrorMessage = styled.p(({ theme }) => ({
+  margin: 0,
+  color: theme.base === 'dark' ? theme.color.negative : theme.color.negativeText,
+  fontSize: theme.typography.size.s2,
+}));
+
 const ENTER_EVENT = {
   bubbles: true,
   cancelable: true,
@@ -159,6 +172,124 @@ const dispatchEnterKey = (event: SyntheticEvent<HTMLInputElement>) => {
 };
 const selectValue = (event: SyntheticEvent<HTMLInputElement>) => {
   event.currentTarget.select();
+};
+
+const parseJson = (raw: string): { value: unknown } | { error: string } => {
+  try {
+    return { value: JSON.parse(raw) };
+  } catch (e) {
+    return { error: (e as Error).message };
+  }
+};
+
+/**
+ * The text being edited in the raw JSON editor, and the error raised when it last failed to parse.
+ *
+ * @param jsonString The serialized arg value. The draft is replaced whenever it changes.
+ */
+const useJsonDraft = (jsonString: string, onChange: ObjectProps['onChange']) => {
+  const [draft, setDraft] = useState(jsonString);
+  const [parseError, setParseError] = useState<string | null>(null);
+
+  const reset = () => {
+    setDraft(jsonString);
+    setParseError(null);
+  };
+
+  // Reset during render rather than in an effect, so that a new arg value never paints next to
+  // the draft and error of the previous one.
+  const [syncedJsonString, setSyncedJsonString] = useState(jsonString);
+  if (syncedJsonString !== jsonString) {
+    setSyncedJsonString(jsonString);
+    reset();
+  }
+
+  // Typing JSON goes through invalid states on almost every keystroke, so an error is only raised
+  // when the draft is committed. An error that is already shown clears as soon as the draft is
+  // valid again.
+  const edit = (raw: string) => {
+    setDraft(raw);
+    if (parseError && (!raw || 'value' in parseJson(raw))) {
+      setParseError(null);
+    }
+  };
+
+  const commit = () => {
+    if (!draft) {
+      setParseError(null);
+      return;
+    }
+    const result = parseJson(draft);
+    if ('error' in result) {
+      setParseError(result.error);
+      // The draft is committed when focus leaves the editor, so the message the editor is
+      // described by would go unheard.
+      announce(`Invalid JSON: ${result.error}`, 'polite');
+      return;
+    }
+    setParseError(null);
+    onChange(result.value);
+  };
+
+  return { draft, parseError, edit, commit, reset };
+};
+
+interface RawJsonEditorProps {
+  id: string;
+  name: string;
+  draft: string;
+  parseError: string | null;
+  onEdit: (raw: string) => void;
+  onCommit: () => void;
+  selectOnMount: boolean;
+  readOnly: boolean;
+  required?: boolean;
+}
+
+const RawJsonEditor: FC<RawJsonEditorProps> = ({
+  id,
+  name,
+  draft,
+  parseError,
+  onEdit,
+  onCommit,
+  selectOnMount,
+  readOnly,
+  required,
+}) => {
+  const errorId = `${id}-error`;
+
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    if (selectOnMount) {
+      textareaRef.current?.select();
+    }
+  }, [selectOnMount]);
+
+  return (
+    <RawInputWrapper>
+      <label htmlFor={id} className="sb-sr-only">
+        Edit {name} as JSON
+      </label>
+      <RawInput
+        ref={textareaRef}
+        id={id}
+        minRows={3}
+        name={name}
+        value={draft}
+        onChange={(event) => onEdit(event.target.value)}
+        onBlur={onCommit}
+        placeholder="Edit JSON string..."
+        autoFocus={selectOnMount}
+        valid={parseError ? 'error' : undefined}
+        readOnly={readOnly}
+        aria-required={required || undefined}
+        aria-invalid={parseError ? true : undefined}
+        aria-describedby={parseError ? errorId : undefined}
+      />
+      {parseError && <ErrorMessage id={errorId}>Invalid JSON: {parseError}</ErrorMessage>}
+    </RawInputWrapper>
+  );
 };
 
 export type ObjectProps = ControlProps<ObjectValue> & ObjectConfig;
@@ -177,22 +308,8 @@ export const ObjectControl: FC<ObjectProps> = ({
   const [showRaw, setShowRaw] = useState(!hasData);
   const hadDataRef = useRef(hasData);
 
-  const [parseError, setParseError] = useState<Error | null>(null);
   const readonly = !!argType?.table?.readonly;
   const isArray = argType?.type?.name === 'array';
-  const updateRaw: (raw: string) => void = useCallback(
-    (raw) => {
-      try {
-        if (raw) {
-          onChange(JSON.parse(raw));
-        }
-        setParseError(null);
-      } catch (e) {
-        setParseError(e as Error);
-      }
-    },
-    [onChange]
-  );
 
   const [forceVisible, setForceVisible] = useState(false);
   const onForceVisible = useCallback(() => {
@@ -207,17 +324,9 @@ export const ObjectControl: FC<ObjectProps> = ({
     hadDataRef.current = hasData;
   }, [forceVisible, hasData, showRaw]);
 
-  const htmlElRef = useRef<HTMLTextAreaElement>(null);
-  useEffect(() => {
-    if (forceVisible && htmlElRef.current) {
-      htmlElRef.current.select();
-    }
-  }, [forceVisible]);
-
-  // Use string value as key to force re-render on Arg value reset.
-  const jsonString = useMemo(() => {
-    return JSON.stringify(data ?? '', null, 2);
-  }, [data]);
+  // JSON.stringify returns undefined for values it cannot serialize, such as functions.
+  const jsonString = useMemo(() => JSON.stringify(data ?? '', null, 2) ?? '', [data]);
+  const jsonDraft = useJsonDraft(jsonString, onChange);
 
   if (!hasData) {
     return (
@@ -232,41 +341,39 @@ export const ObjectControl: FC<ObjectProps> = ({
     );
   }
 
-  const rawInputId = getControlId(name, storyId, controlsId);
   const rawJSONForm = (
-    <>
-      <label htmlFor={rawInputId} className="sb-sr-only">
-        Edit {name} as JSON
-      </label>
-      <RawInput
-        ref={htmlElRef}
-        id={rawInputId}
-        minRows={3}
-        name={name}
-        key={jsonString}
-        defaultValue={jsonString}
-        onBlur={(event: FocusEvent<HTMLTextAreaElement>) => updateRaw(event.target.value)}
-        placeholder="Edit JSON string..."
-        autoFocus={forceVisible}
-        valid={parseError ? 'error' : undefined}
-        readOnly={readonly}
-        aria-required={required || undefined}
-      />
-    </>
+    <RawJsonEditor
+      id={getControlId(name, storyId, controlsId)}
+      name={name}
+      draft={jsonDraft.draft}
+      parseError={jsonDraft.parseError}
+      onEdit={jsonDraft.edit}
+      onCommit={jsonDraft.commit}
+      selectOnMount={forceVisible}
+      readOnly={readonly}
+      required={required}
+    />
   );
 
   const isObjectOrArray =
     Array.isArray(value) || (typeof value === 'object' && value?.constructor === Object);
 
+  // Leaving the raw editor drops its draft, so a draft that does not parse keeps the user there.
+  const isLockedInRaw = !!jsonDraft.parseError;
+  const lockedLabel = `Fix the invalid JSON in ${name} to switch editors`;
+  const switchLabel = showRaw
+    ? `Edit ${name} with the ${Array.isArray(value) ? 'array' : 'object'} editor`
+    : `Edit ${name} as JSON`;
+
   return (
     <Wrapper>
       {isObjectOrArray && (
-        <RawButton
-          disabled={readonly}
-          pressed={showRaw}
-          ariaLabel={`Edit ${name} as JSON`}
+        <EditorSwitchButton
+          disabled={readonly || isLockedInRaw}
+          ariaLabel={isLockedInRaw ? lockedLabel : switchLabel}
           onClick={(e: SyntheticEvent) => {
             e.preventDefault();
+            jsonDraft.reset();
             setShowRaw((isRaw) => !isRaw);
           }}
           variant="ghost"
@@ -274,7 +381,7 @@ export const ObjectControl: FC<ObjectProps> = ({
           size="small"
         >
           <EditIcon />
-        </RawButton>
+        </EditorSwitchButton>
       )}
       {!showRaw ? (
         <JsonTree

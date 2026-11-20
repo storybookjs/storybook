@@ -108,7 +108,8 @@ test.describe('addon panel', () => {
 
     const button = sbPage.previewRoot().getByRole('button');
     const actionsTab = page.getByRole('tab', { name: /^Actions/ });
-    const badgeCount = async () => Number((await actionsTab.textContent())?.replace(/\D/g, ''));
+    // The Angular webpack sandbox also logs the Button's onClick output
+    const eventsPerClick = templateName.startsWith('angular-cli/') ? 2 : 1;
 
     await expect(async () => {
       await button.click();
@@ -121,8 +122,7 @@ test.describe('addon panel', () => {
     await button.click();
     await button.click();
 
-    // Frameworks whose Button also has an onClick action log two events per click
-    await expect.poll(async () => [3, 6].includes(await badgeCount())).toBe(true);
+    await expect(actionsTab).toHaveText(`Actions${3 * eventsPerClick}`);
     await expect(sbPage.panelContent()).toContainText('clicked');
 
     await sbPage.navigateToStory('core/argtype', 'string');

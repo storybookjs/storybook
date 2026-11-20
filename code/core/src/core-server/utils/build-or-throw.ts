@@ -44,8 +44,6 @@ export async function buildOrThrow<T>(callback: () => Promise<T>): Promise<T> {
       if (noMatchingExportErrors.length > 0) {
         throw new NoMatchingExportError({
           error: err,
-          // Every matched error gets its own block, so a user fixing several removed imports
-          // (or several outdated addons) sees all of them at once instead of one per rebuild.
           detail: noMatchingExportErrors.map(formatNoMatchingExportDetail).join('\n\n'),
         });
       }

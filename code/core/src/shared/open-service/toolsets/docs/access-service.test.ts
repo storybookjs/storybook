@@ -308,12 +308,12 @@ describe('createServiceDocsAccess resolve', () => {
     const access = createAccess();
     const listing = await access.list({ withStoryIds: true });
     expect(listing.componentManifest.components.alpha).not.toHaveProperty('stories');
-    expect(await access.resolve('alpha')).toMatchObject({
-      component: {
-        stories: [],
-        docs: { 'alpha--docs': { content: '# Alpha' } },
-      },
+    const resolved = await access.resolve('alpha');
+    expect(resolved).toMatchObject({
+      component: { docs: { 'alpha--docs': { content: '# Alpha' } } },
     });
+    expect(resolved).not.toHaveProperty('component.stories');
+    expect(resolved).not.toHaveProperty('component.import');
   });
 
   it('filters individual stories using the current index without changing the shared payload', async () => {

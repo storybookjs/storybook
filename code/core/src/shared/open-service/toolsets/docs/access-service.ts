@@ -14,8 +14,8 @@ import type { StoryIndex } from 'storybook/internal/types';
 
 import { getComponentIdFromEntry } from '../../../../common/utils/component-id.ts';
 import {
-  selectManifestStoryIds,
   selectComponentEntriesByComponentId,
+  selectManifestStoryIds,
 } from '../../../../common/utils/select-component-entry.ts';
 import {
   OpenServiceDocgenMissingComponentError,
@@ -225,7 +225,10 @@ export function createServiceDocsAccess({
     const mdx = getMdx();
     const [docgenPayload, storyDocsPayload] = await Promise.all([
       loadOptionalComponentPayload(getDocgen().queries.docgen.loaded({ id })),
-      loadOptionalComponentPayload(getStoryDocs().queries.storyDocs.loaded({ id })),
+      // If a component has !manifest on all its stories, it gets no `stories`, as in a build.
+      classification.storyBasedIds.has(id)
+        ? loadOptionalComponentPayload(getStoryDocs().queries.storyDocs.loaded({ id }))
+        : undefined,
     ]);
 
     const hasAttachedDocs = (classification.attachedDocsByComponent.get(id)?.length ?? 0) > 0;

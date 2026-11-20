@@ -354,6 +354,9 @@ export async function runFixes({
 
     logger.step(`${getTitle()}: ${picocolors.cyan(f.id)}`);
     logger.logBox(f.prompt(result));
+    if (dryRun) {
+      await f.reportDryRun?.({ ...project, result });
+    }
 
     let runAnswer: { fix: boolean } | undefined;
 

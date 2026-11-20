@@ -193,6 +193,21 @@ describe('runFixes', () => {
     expect(vi.mocked(logger.log).mock.calls.flat().join('\n')).not.toMatch(/Skipped/);
   });
 
+  it('lets a fix report what its run would do, in a dry run', async () => {
+    const reportDryRun = vi.fn(async () => {});
+
+    await runFixes({
+      ...common,
+      fixes: [{ ...fixes[0], reportDryRun }],
+      dryRun: true,
+      storybookVersion: '7.0.0',
+    });
+
+    expect(reportDryRun).toHaveBeenCalledWith(
+      expect.objectContaining({ configDir, result: { some: 'result' } })
+    );
+  });
+
   it('should fail if an error is thrown by migration', async () => {
     check1.mockRejectedValue(new Error('check1 error'));
 

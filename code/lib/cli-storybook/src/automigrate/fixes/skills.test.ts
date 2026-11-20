@@ -139,6 +139,18 @@ describe('skills', () => {
     });
   });
 
+  describe('reportDryRun', () => {
+    it('names the skills install that a run would do', async () => {
+      await skills.reportDryRun!({ ...checkOptions('@storybook/react-vite'), result: {} });
+
+      expect(installSkills).toHaveBeenCalledWith({
+        packageManager,
+        source: 'automigration',
+        dryRun: true,
+      });
+    });
+  });
+
   describe('run', () => {
     it('installs the skills', async () => {
       await runSkills();

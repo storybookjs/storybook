@@ -23,6 +23,7 @@ import { getData } from './utils/data.ts';
 import { readOrderedFiles } from './utils/files.ts';
 import { buildFrameworkGlobalsFromOptions } from './utils/framework.ts';
 import { wrapManagerEntries } from './utils/managerEntries.ts';
+import { preserveManagerEntrySideEffectsPlugin } from './utils/managerEntrySideEffects.ts';
 import { getTemplatePath, renderHTML } from './utils/template.ts';
 
 export { BROWSER_TARGETS, NODE_TARGET } from '../shared/constants/environments-support.ts';
@@ -49,16 +50,17 @@ export const getConfig: ManagerBuilder['getConfig'] = async (options) => {
     // no manager entry found in config directory, that's fine
   }
 
-  const entryPoints = configDirManagerEntry
+  const managerEntryPoints = configDirManagerEntry
     ? [...managerEntriesFromPresets, configDirManagerEntry]
     : managerEntriesFromPresets;
 
+  const wrappedEntryPoints = await wrapManagerEntries(managerEntryPoints, options.cacheKey);
+
   return {
-    entryPoints: await wrapManagerEntries(entryPoints, options.cacheKey),
+    entryPoints: wrappedEntryPoints,
     outdir: join(options.outputDir || './', 'sb-addons'),
     format: 'iife',
     write: false,
-    ignoreAnnotations: true,
     resolveExtensions: ['.ts', '.tsx', '.mjs', '.js', '.jsx'],
     outExtension: { '.js': '.js' },
     loader: {
@@ -102,7 +104,10 @@ export const getConfig: ManagerBuilder['getConfig'] = async (options) => {
     tsconfig: tsconfigPath,
 
     legalComments: 'external',
-    plugins: [globalExternals(globalsModuleInfoMap)],
+    plugins: [
+      globalExternals(globalsModuleInfoMap),
+      preserveManagerEntrySideEffectsPlugin(wrappedEntryPoints),
+    ],
 
     banner: {
       js: 'try{',

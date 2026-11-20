@@ -33,7 +33,16 @@
     "url": "https://opencollective.com/storybook"
   },
   "license": "MIT",
-  "sideEffects": false,
+  "sideEffects": [
+    "./src/manager/globals-runtime.ts",
+    "./dist/manager/globals-runtime.js",
+    "./src/manager/runtime.tsx",
+    "./dist/manager/runtime.js",
+    "./src/manager-api/index.ts",
+    "./dist/manager-api/index.js",
+    "./src/preview/runtime.ts",
+    "./dist/preview/runtime.js"
+  ],
   "type": "module",
   "imports": {
     "#manager-stores": {

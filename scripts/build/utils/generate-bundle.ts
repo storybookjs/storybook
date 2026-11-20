@@ -157,7 +157,6 @@ export async function generateBundle({
     format: 'esm',
     bundle: true,
     legalComments: 'none',
-    ignoreAnnotations: true,
     splitting: true,
     metafile: true,
     outbase: 'src',

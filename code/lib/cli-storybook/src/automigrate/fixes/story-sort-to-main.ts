@@ -1,5 +1,6 @@
 import { HandledError } from 'storybook/internal/common';
 import { type ConfigFile, type CsfValue, loadConfig } from 'storybook/internal/csf-tools';
+import type { Addon_StorySortObjectParameter } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
 
@@ -12,13 +13,18 @@ interface StorySortToMainOptions {
 }
 
 const storySortPath = ['parameters', 'options', 'storySort'];
-const storySortKeys = ['method', 'order', 'locales', 'includeNames'];
+const storySortKeys = {
+  method: true,
+  order: true,
+  locales: true,
+  includeNames: true,
+} satisfies Record<keyof Addon_StorySortObjectParameter, true>;
 
-const fail = (reason: string): never => {
+function fail(reason: string): never {
   throw new HandledError(
     `Cannot automigrate storySort: ${reason}. Storybook no longer reads parameters.options.storySort from the preview. Move it to storySorts in the main config manually and remove the preview property.`
   );
-};
+}
 
 const firstProblem = (config: ConfigFile) => config.mutationDiagnostics[0]?.message;
 
@@ -64,9 +70,7 @@ export const storySortToMain: Fix<StorySortToMainOptions> = {
         const sorter = Array.isArray(storySort)
           ? storySort
           : Object.fromEntries(
-              Object.entries(storySort as Record<string, CsfValue>).filter(([key]) =>
-                storySortKeys.includes(key)
-              )
+              Object.entries(storySort).filter(([key]) => key in storySortKeys)
             );
         main.set(['storySorts'], [sorter]);
         const mainProblem = firstProblem(main);

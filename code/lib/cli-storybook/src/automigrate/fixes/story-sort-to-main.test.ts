@@ -111,8 +111,8 @@ describe('story-sort-to-main', () => {
   it('drops object keys that storySorts does not accept', async () => {
     await expectMoved(
       `export default { stories: [] }`,
-      `export default { parameters: { options: { storySort: { method: 'alphabetical', order: ['Intro'], includeName: true } } } }`,
-      { method: 'alphabetical', order: ['Intro'] }
+      `export default { parameters: { options: { storySort: { method: 'alphabetical', order: ['Intro'], locales: 'en', includeNames: true, includeName: true } } } }`,
+      { method: 'alphabetical', order: ['Intro'], locales: 'en', includeNames: true }
     );
   });
 

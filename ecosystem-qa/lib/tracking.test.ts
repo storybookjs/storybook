@@ -126,6 +126,20 @@ describe('renderTrackingThread and trackingThreadsOf', () => {
     ).toEqual([]);
   });
 
+  it('names the manual QA discussion of the plan in a new discussion only when it has one', () => {
+    const linked = renderTrackingThread({
+      file: '11.0.md',
+      hash: HASH,
+      line: '11.0',
+      version: '11.0.0-beta.3',
+      manualDiscussion: 37627,
+    });
+
+    expect(linked.body).toContain('by hand are in #37627.');
+    expect(thread.body).not.toContain('by hand');
+    expect(trackingThreadsOf([discussion(5, linked.body)], HASH)[0]?.number).toBe(5);
+  });
+
   it('reads a marker in a body that an edit in the browser saved with CRLF', () => {
     expect(
       trackingThreadsOf([discussion(4, thread.body.replaceAll('\n', '\r\n'))], HASH)[0]?.number

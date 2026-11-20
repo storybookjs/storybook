@@ -422,6 +422,44 @@ jobs:
             echo "job_minutes=$(( ${QA_BUDGET_MINUTES:-90} + 90 ))"
           } | tee -a "$GITHUB_OUTPUT"
 
+  manual-discussion:
+    name: Create the manual QA discussion of the plan
+    needs: plan
+    # Only the push that merges a plan, so a chained or dispatched batch never creates one.
+    if: ${{ github.event_name == 'push' && needs.plan.outputs.skip != 'true' && needs.plan.outputs.plan != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Two pushes of the same plan at once would each find no discussion and each create one.
+    concurrency:
+      group: ecosystem-qa-manual-${{ needs.plan.outputs.plan_hash }}
+      cancel-in-progress: false
+    permissions:
+      discussions: write # create the manual QA discussion
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Install the ecosystem-qa workspace
+        run: |
+          corepack enable
+          yarn workspaces focus ecosystem-qa
+
+      - name: Create the discussion unless the plan has one
+        env:
+          GH_TOKEN: ${{ github.token }}
+          QA_PLAN: ${{ needs.plan.outputs.plan }}
+        run: >-
+          node ecosystem-qa/manual-discussion.ts --plan "$QA_PLAN" --window "${QA_PLAN%.md}.window.json"
+          --repo "$GITHUB_REPOSITORY" --commit "$GITHUB_SHA"
+
   runner:
     name: QA ${{ matrix.repo }} on ${{ matrix.os }} with ${{ matrix.engine }}
     needs: plan

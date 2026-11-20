@@ -20,6 +20,8 @@
   - [Docs Code panel enabled by default](#docs-code-panel-enabled-by-default)
   - [`argTypes` removed from the story context](#argtypes-removed-from-the-story-context)
     - [Angular: read the inputs from the component](#angular-read-the-inputs-from-the-component)
+    - [Angular: every arg reaches the story](#angular-every-arg-reaches-the-story)
+    - [Server: object and date args are serialized by value](#server-object-and-date-args-are-serialized-by-value)
   - [Deprecated CSF and manager type aliases removed](#deprecated-csf-and-manager-type-aliases-removed)
   - [`docgenServer` is stable and enabled by default](#docgenserver-is-stable-and-enabled-by-default)
     - [Temporary regressions on source snippet generation](#temporary-regressions-on-source-snippet-generation)
@@ -1183,6 +1185,24 @@ export const Primary: Story = {
 
 `inputs` includes signal inputs declared with `input()` and `model()`.
 A `model('x')` also appears in `outputs` as `xChange`.
+
+#### Angular: every arg reaches the story
+
+`@storybook/angular` used to drop each arg whose arg type had neither a control nor an action before the story rendered.
+It no longer does, which matches `@storybook/angular-vite`.
+These args now reach your `render` function, your decorators and the component:
+
+- Args whose arg type sets `control: false`.
+- Function args that are not outputs and have no `action`.
+- Args that `parameters.controls.include` or `parameters.controls.exclude` hide from the Controls panel.
+
+To keep such a value away from the story, remove it from `args`.
+
+#### Server: object and date args are serialized by value
+
+`@storybook/server` used to send an arg as JSON only when its arg type had an `object` control.
+It now sends every object and array arg as JSON, and every `Date` arg as an ISO string, whatever its arg type.
+An arg with a `date` control is still sent as an ISO string.
 
 ### Deprecated CSF and manager type aliases removed
 

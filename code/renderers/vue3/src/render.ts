@@ -7,8 +7,6 @@ import {
   type StoryContext,
 } from 'storybook/internal/types';
 
-import { getStoryArgTypes } from 'storybook/internal/preview-api';
-
 import type { PreviewWeb } from 'storybook/preview-api';
 import type { App, ComponentPropsOptions } from 'vue';
 import { camelize, createApp, h, isReactive, isVNode, reactive } from 'vue';
@@ -23,7 +21,7 @@ export const render: ArgsStoryFn<VueRenderer> = (props, context) => {
     );
   }
 
-  return () => h(Component, props, getSlots(props, context));
+  return () => h(Component, props, getSlots(props, Component));
 };
 
 export const setup = <AppHostElement = any>(
@@ -124,21 +122,16 @@ export async function renderToCanvas(
   };
 }
 
-/** Generate slots for default story without render function template */
-function getSlots(props: Args, context: StoryContext<VueRenderer, Args>) {
-  const { component } = context;
-  const argTypes = getStoryArgTypes(context);
-  // Server docgen keeps docgen argTypes out of the preview, so the slot category is unknown here.
-  // Every arg that is neither a runtime-declared prop nor an event listener is then a slot.
-  const runtimeProps = (component as { props?: ComponentPropsOptions } | undefined)?.props;
-  const declaredProps = globalThis.FEATURES?.docgenServer
-    ? new Set(
-        (Array.isArray(runtimeProps) ? runtimeProps : Object.keys(runtimeProps ?? {})).map(camelize)
-      )
-    : undefined;
-  const isSlot = (key: string) =>
-    argTypes[key]?.table?.category === 'slots' ||
-    (declaredProps !== undefined && !declaredProps.has(key) && !/^on[A-Z]/.test(key));
+/**
+ * Passes every arg that is neither a runtime-declared prop nor an event listener as a slot. An arg
+ * named like a declared prop always goes to the prop.
+ */
+function getSlots(props: Args, component: VueRenderer['component']) {
+  const runtimeProps = (component as { props?: ComponentPropsOptions }).props;
+  const declaredProps = new Set(
+    (Array.isArray(runtimeProps) ? runtimeProps : Object.keys(runtimeProps ?? {})).map(camelize)
+  );
+  const isSlot = (key: string) => !declaredProps.has(key) && !/^on[A-Z]/.test(key);
 
   const slots = Object.entries(props)
     .filter(([key]) => isSlot(key))

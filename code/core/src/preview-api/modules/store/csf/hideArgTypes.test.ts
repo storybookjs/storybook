@@ -1,9 +1,9 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { ArgTypesRemovedFromStoryContextError } from 'storybook/internal/preview-errors';
 import type { StoryContext } from 'storybook/internal/types';
 
-import { getStoryArgTypes, hideArgTypes } from './hideArgTypes.ts';
+import { hideArgTypes } from './hideArgTypes.ts';
 
 const createContext = () => {
   const context = {
@@ -65,45 +65,12 @@ describe('hideArgTypes', () => {
     expect(Object.keys(hidden)).toEqual(['id', 'args', 'loaded', 'context']);
     expect(hidden.args).toEqual({ label: 'hello' });
   });
-});
 
-describe('getStoryArgTypes', () => {
-  const argTypes = { label: { name: 'label' } };
-
-  it('reads the argTypes of a context that was never hidden', () => {
-    expect(getStoryArgTypes(createContext())).toEqual(argTypes);
-  });
-
-  it('reads the argTypes of a hidden context', () => {
-    expect(getStoryArgTypes(hideArgTypes(createContext()))).toEqual(argTypes);
-  });
-
-  it('reads the argTypes of a hidden frozen context', () => {
-    expect(getStoryArgTypes(hideArgTypes(Object.freeze(createContext())))).toEqual(argTypes);
-  });
-
-  it('reads the argTypes of a copy of a hidden context', () => {
-    const copy = { ...hideArgTypes(createContext()), args: { label: 'updated' } };
-
-    expect(copy).not.toHaveProperty('argTypes');
-    expect(getStoryArgTypes(copy)).toEqual(argTypes);
-  });
-
-  it('reads the argTypes of a copy that was hidden again', () => {
-    const hidden = hideArgTypes({ ...hideArgTypes(createContext()) });
+  it('keeps argTypes hidden on a copy that is hidden again', () => {
+    const hidden = hideArgTypes({ ...hideArgTypes(createContext()), args: { label: 'updated' } });
 
     expect(() => hidden.argTypes).toThrow(ArgTypesRemovedFromStoryContextError);
-    expect(getStoryArgTypes(hidden)).toEqual(argTypes);
-    expect(getStoryArgTypes({ ...hidden })).toEqual(argTypes);
-  });
-
-  it('reads the argTypes of a context hidden by another copy of the module', async () => {
-    vi.resetModules();
-    const otherCopy = await import('./hideArgTypes.ts');
-    const hiddenTwice = hideArgTypes(otherCopy.hideArgTypes(createContext()));
-
-    expect(() => hiddenTwice.argTypes).toThrow(ArgTypesRemovedFromStoryContextError);
-    expect(getStoryArgTypes(hiddenTwice)).toEqual(argTypes);
-    expect(otherCopy.getStoryArgTypes(hiddenTwice)).toEqual(argTypes);
+    expect(Object.keys(hidden)).toEqual(['id', 'args', 'loaded', 'context']);
+    expect(hidden.args).toEqual({ label: 'updated' });
   });
 });

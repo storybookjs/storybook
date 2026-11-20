@@ -19,7 +19,6 @@ import { Tag } from '../../../../shared/constants/tags.ts';
 import { HooksContext, addons } from '../../addons/index.ts';
 import { UNTARGETED } from '../args.ts';
 import { composeConfigs } from './composeConfigs.ts';
-import { getStoryArgTypes } from './hideArgTypes.ts';
 import { normalizeProjectAnnotations } from './normalizeProjectAnnotations.ts';
 import { prepareContext, prepareMeta, prepareStory as realPrepareStory } from './prepareStory.ts';
 
@@ -646,27 +645,6 @@ describe('prepareStory', () => {
       expect(received).toEqual([expect.objectContaining({ originalFn: decorator })]);
     });
 
-    it('gives the argTypes to decorators and render functions that use getStoryArgTypes', () => {
-      const story = prepareStory(
-        {
-          id,
-          name,
-          argTypes,
-          decorators: [(storyFn, context) => [getStoryArgTypes(context), storyFn()]],
-          render: (args, context) => getStoryArgTypes(context),
-          moduleExport,
-        },
-        { id, title },
-        {}
-      );
-
-      const [decoratorArgTypes, renderArgTypes] = renderStory(story) as unknown[];
-
-      expect(story.argTypes).toMatchObject(argTypes);
-      expect(decoratorArgTypes).toBe(story.argTypes);
-      expect(renderArgTypes).toBe(story.argTypes);
-    });
-
     it('lets a decorator pass its context on to the story function', () => {
       const story = prepareStory(
         {
@@ -675,17 +653,17 @@ describe('prepareStory', () => {
           argTypes,
           args: { one: 'initial' },
           decorators: [(storyFn, context) => storyFn(context)],
-          render: (args, context) => [args, getStoryArgTypes(context)],
+          render: (args, context) => [args, 'argTypes' in context],
           moduleExport,
         },
         { id, title },
         {}
       );
 
-      expect(renderStory(story)).toEqual([{ one: 'initial' }, story.argTypes]);
+      expect(renderStory(story)).toEqual([{ one: 'initial' }, false]);
     });
 
-    it('keeps the argTypes when an outer decorator updates the context', () => {
+    it('keeps argTypes hidden when an outer decorator updates the context', () => {
       const story = prepareStory(
         {
           id,
@@ -693,21 +671,17 @@ describe('prepareStory', () => {
           argTypes,
           args: { one: 'initial' },
           decorators: [
-            (storyFn, context) => [context.args, getStoryArgTypes(context), storyFn()],
+            (storyFn, context) => [context.args, 'argTypes' in context, storyFn()],
             (storyFn) => storyFn({ args: { one: 'updated' } }),
           ],
-          render: (args, context) => [args, getStoryArgTypes(context)],
+          render: (args, context) => [args, 'argTypes' in context],
           moduleExport,
         },
         { id, title },
         {}
       );
 
-      expect(renderStory(story)).toEqual([
-        { one: 'updated' },
-        story.argTypes,
-        [{ one: 'updated' }, story.argTypes],
-      ]);
+      expect(renderStory(story)).toEqual([{ one: 'updated' }, false, [{ one: 'updated' }, false]]);
     });
   });
 

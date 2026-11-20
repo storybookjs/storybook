@@ -14,7 +14,6 @@ import { definePreview } from '../../../../csf/csf-factories.ts';
 import { Tag } from '../../../../shared/constants/tags.ts';
 import * as defaultExportAnnotations from './__mocks__/defaultExportAnnotations.mockfile.ts';
 import * as namedExportAnnotations from './__mocks__/namedExportAnnotations.mockfile.ts';
-import { getStoryArgTypes } from './hideArgTypes.ts';
 import { composeStories, composeStory, setProjectAnnotations } from './portable-stories.ts';
 
 type StoriesModule = Store_CSFExports & Record<string, any>;
@@ -211,7 +210,6 @@ describe('composeStory', () => {
     expect(() => hookContexts[0].argTypes).toThrow(ArgTypesRemovedFromStoryContextError);
     expect(renderContexts).toHaveLength(1);
     expect(() => renderContexts[0].argTypes).toThrow(ArgTypesRemovedFromStoryContextError);
-    expect(getStoryArgTypes(renderContexts[0])).toMatchObject({ label: { name: 'label' } });
   });
 
   it('should merge parameters with correct precedence in all combinations', async () => {

@@ -1,24 +1,9 @@
 import { ArgTypesRemovedFromStoryContextError } from 'storybook/internal/preview-errors';
-import type { Renderer, StoryContext, StrictArgTypes } from 'storybook/internal/types';
+import type { Renderer, StoryContext } from 'storybook/internal/types';
 
 const HIDDEN_KEY = 'argTypes';
 
-const STORY_ARG_TYPES = Symbol.for('storybook.internal.storyArgTypes');
-
 const hiddenContexts = new WeakMap<object, object>();
-
-/**
- * Read the story's argTypes from a story context, including one that hides `argTypes`.
- *
- * Under server docgen (`features.docgenServer`) it returns only the argTypes declared by hand.
- */
-export function getStoryArgTypes<TRenderer extends Renderer, TArgs>(
-  context: StoryContext<TRenderer, TArgs>
-): StrictArgTypes<TArgs> {
-  return STORY_ARG_TYPES in context
-    ? (context[STORY_ARG_TYPES] as StrictArgTypes<TArgs>)
-    : context[HIDDEN_KEY];
-}
 
 export function hideArgTypes<TRenderer extends Renderer>(
   context: StoryContext<TRenderer>
@@ -36,31 +21,19 @@ export function hideArgTypes<TRenderer extends Renderer>(
       if (key === HIDDEN_KEY) {
         throw new ArgTypesRemovedFromStoryContextError({ storyId: target.id });
       }
-      if (key === STORY_ARG_TYPES) {
-        return getStoryArgTypes(target);
-      }
       if (key === 'context') {
         return receiver;
       }
       return Reflect.get(target, key, receiver);
     },
     has(target, key) {
-      return key === STORY_ARG_TYPES || (key !== HIDDEN_KEY && Reflect.has(target, key));
+      return key !== HIDDEN_KEY && Reflect.has(target, key);
     },
     ownKeys(target) {
-      return [
-        ...Reflect.ownKeys(target).filter((key) => key !== HIDDEN_KEY && key !== STORY_ARG_TYPES),
-        STORY_ARG_TYPES,
-      ];
+      return Reflect.ownKeys(target).filter((key) => key !== HIDDEN_KEY);
     },
     getOwnPropertyDescriptor(target, key) {
-      if (key === HIDDEN_KEY) {
-        return undefined;
-      }
-      if (key === STORY_ARG_TYPES) {
-        return { value: getStoryArgTypes(target), enumerable: true, configurable: true };
-      }
-      return Reflect.getOwnPropertyDescriptor(target, key);
+      return key === HIDDEN_KEY ? undefined : Reflect.getOwnPropertyDescriptor(target, key);
     },
   });
 

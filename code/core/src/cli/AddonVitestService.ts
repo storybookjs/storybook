@@ -27,6 +27,11 @@ type Result = {
 export interface AddonVitestCompatibilityOptions {
   builder?: SupportedBuilder;
   framework?: SupportedFramework | null;
+  /**
+   * Directory where the upward `vitest.config.*` search starts (bounded by `getProjectRoot()`).
+   * When set, a found config that cannot be auto-updated is reported as incompatible.
+   * When omitted, the config-file check is skipped.
+   */
   projectRoot?: string;
 }
 

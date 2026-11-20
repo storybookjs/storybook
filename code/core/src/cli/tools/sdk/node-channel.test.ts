@@ -166,6 +166,16 @@ describe('createNodeChannel', () => {
     await expect(disconnected).rejects.toThrow('Storybook dev server disconnected');
   });
 
+  it('keeps the socket error as the cause when the channel never opens', async () => {
+    await new Promise<void>((resolve) => httpServer.close(() => resolve()));
+
+    const { connected } = openChannel();
+
+    await expect(connected).rejects.toMatchObject({
+      cause: { code: 'ECONNREFUSED', syscall: 'connect' },
+    });
+  });
+
   it('restores the process channel and UniversalStore on close', async () => {
     const previousChannel = getChannel();
     const previousEnvironment = UniversalStore.preparedEnvironment;

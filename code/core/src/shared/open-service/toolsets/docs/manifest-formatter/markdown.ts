@@ -579,6 +579,29 @@ export function formatMultiSourceManifestsToLists(
   return parts.join('\n').trim();
 }
 
+const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ? '' : 's'}`;
+
+/**
+ * Formats one line per composed source: its id, its title, and its entry counts or the reason it
+ * has none. Opens the first page of a listing that needs several, so every `storybookId` is known
+ * before the entries are.
+ */
+export function formatSourceIndex(sources: SourceListing[]): string {
+  const lines = sources.map(({ source, manifests, error, notice }) => {
+    const detail = error
+      ? `error: ${error.split('\n')[0]}`
+      : notice
+        ? `private, read it through its own MCP endpoint: ${notice.endpoint}`
+        : `${plural(Object.keys(manifests?.componentManifest.components ?? {}).length, 'component')}, ${plural(Object.keys(manifests?.docsManifest?.docs ?? {}).length, 'doc')}`;
+    return `- ${source.id}: ${source.title} (${detail})`;
+  });
+  return [
+    `${plural(sources.length, 'Storybook source')}, listed over several pages. To list only some, pass their ids as storybookIds.`,
+    '',
+    ...lines,
+  ].join('\n');
+}
+
 /**
  * Format a single story's documentation.
  */

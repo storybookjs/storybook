@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { invokeToolsetMethod, type ToolsetCtx } from '../../toolset-definition.ts';
 import type { DocsAccess } from './access.ts';
 import { estimateTokens } from '../estimate-tokens.ts';
-import { createDocsToolset } from './definition.ts';
+import { createDocsToolset, type DocsListOutput } from './definition.ts';
 import { RequiresOwnMcpError } from './sources.ts';
 
 const button = {
@@ -54,7 +54,9 @@ describe('docs.list', () => {
     const outcome = await toolset.methods.list.handler({ withStoryIds: false }, mcpCtx);
 
     expect(outcome.ok).toBe(true);
-    expect(Object.keys(outcome.data.manifests!.componentManifest.components)).toEqual(['button']);
+    expect(
+      Object.keys((outcome.data as DocsListOutput).manifests!.componentManifest.components)
+    ).toEqual(['button']);
     expect(outcome.markdown).toContain('button');
     expect(outcome.markdown).toContain('Guide');
     expect(outcome.markdown).not.toContain('button--primary');
@@ -242,6 +244,29 @@ describe('docs.list over a composition too large for one result', () => {
       expect(page).not.toContain('listed over several pages');
     }
     expect(pages.at(-1)).not.toContain('More entries follow');
+  });
+
+  it('reads no source that a continuation page starts after', async () => {
+    const read: string[] = [];
+    const counted = createDocsToolset({
+      sources: ['ds1', 'ds2', 'ds3'].map((id, index) => ({
+        source: { id, title: `Design system ${index + 1}`, url: `https://${id}.example.com` },
+        access: { ...bulkAccess, list: (query) => (read.push(id), bulkAccess.list(query)) },
+      })),
+    });
+    const first = await counted.methods.list.handler({ withStoryIds: false }, mcpCtx);
+    const { nextCursor } = first.data as Listed;
+    read.length = 0;
+
+    const second = await counted.methods.list.handler(
+      { withStoryIds: false, cursor: nextCursor },
+      mcpCtx
+    );
+    const startsIn = (second.data as Listed).sources[0].source.id;
+
+    expect(second.ok).toBe(true);
+    expect(startsIn).not.toBe('ds1');
+    expect(read).toEqual(['ds1', 'ds2', 'ds3'].slice(['ds1', 'ds2', 'ds3'].indexOf(startsIn)));
   });
 });
 

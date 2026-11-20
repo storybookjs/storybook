@@ -8,10 +8,18 @@ import {
   formatDocsManifest,
   formatManifestsToLists,
   formatMultiSourceManifestsToLists,
+  formatSourceIndex,
   formatStoryDocumentation,
   MAX_STORIES_TO_SHOW,
 } from './manifest-formatter/markdown.ts';
 import type { AllManifests } from './manifest-formatter/manifest-types.ts';
+import {
+  pageListing,
+  readListRequest,
+  type ListQuery,
+  type ListRequest,
+  type ListSection,
+} from './list-page.ts';
 import { listSources, type DocsSource } from './multi-source.ts';
 import { RequiresOwnMcpError, type SourceListing } from './sources.ts';
 import { suggestEntries, type DocsListedEntry } from './suggest.ts';
@@ -48,12 +56,37 @@ export type CreateDocsToolsetOptions =
       docsAccess?: never;
     };
 
+// Under Claude Code's default 25,000-token cap on MCP tool output, with room for estimateTokens
+// counting fewer characters per token than a model tokenizer.
+const LIST_PAGE_TOKEN_BUDGET = 20_000;
+
 export type DocsListOutput = {
   withStoryIds: boolean;
-  /** Single-source listing. */
+  /** Single-source listing: the entries on this page. */
   manifests?: AllManifests;
-  /** Per-source listings, in composition. */
+  /** Per-source listings, in composition: the sources on this page, each with the entries on it. */
   sources?: SourceListing[];
+  /** The sources the listing was narrowed to. */
+  storybookIds?: string[];
+  /** Pass it as `cursor` to get the next page. Absent on the last page. */
+  nextCursor?: string;
+};
+
+/** Why `docs.list` listed nothing. */
+export type DocsListRefusal =
+  | { kind: 'unknown-sources'; unknown: string[]; available: string[] }
+  | { kind: 'cursor-unreadable' }
+  | { kind: 'cursor-conflict' }
+  | { kind: 'cursor-stale'; query: ListQuery };
+
+export type DocsListFailure = { refusal: DocsListRefusal };
+
+type Listing<TSection extends ListSection> = {
+  sections: TSection[];
+  keyOf: (section: TSection) => string | undefined;
+  format: (sections: TSection[]) => string;
+  index?: () => string;
+  toData: (sections: TSection[]) => Pick<DocsListOutput, 'manifests' | 'sources'>;
 };
 
 export type DocsShowOutput = {
@@ -189,7 +222,7 @@ export function isDocsShowStoryError(output: DocsShowStoryOutput): boolean {
 }
 
 function describeList(ctx: ToolsetCtx): string {
-  return `List all available UI components and documentation entries from the Storybook, returning the IDs the other documentation tools take as input. Call this first for any UI task — before writing a new component, check what the design system already provides and build on it instead of hand-rolling a duplicate; before answering any question about props, API, or usage, discover the relevant IDs here rather than reading component source. Then fetch the entries with ${getToolName(ctx)(DOCS_METHOD_REFS.show)}, referencing only IDs returned here — never guess IDs. When multiple Storybook sources are configured, entries from every source are included; scope follow-up calls to one source via their storybookId input. Pass withStoryIds: true only when you need the story IDs of many components; the show tool already lists the story IDs of one component.`;
+  return `List all available UI components and documentation entries from the Storybook, returning the IDs the other documentation tools take as input. Call this first for any UI task — before writing a new component, check what the design system already provides and build on it instead of hand-rolling a duplicate; before answering any question about props, API, or usage, discover the relevant IDs here rather than reading component source. Then fetch the entries with ${getToolName(ctx)(DOCS_METHOD_REFS.show)}, referencing only IDs returned here — never guess IDs. When multiple Storybook sources are configured, entries from every source are included; pass storybookIds to list only some of them, and scope follow-up calls to one source via their storybookId input. A listing too long for one result comes in pages: the first page of a composition opens with an index of every source, and each page that has a next one ends with the ready-to-run call for it, which passes its nextCursor as cursor. Pass withStoryIds: true only when you need the story IDs of many components; the show tool already lists the story IDs of one component.`;
 }
 
 function describeShow(ctx: ToolsetCtx): string {
@@ -200,12 +233,175 @@ Returns the first ${MAX_STORIES_TO_SHOW} stories (including story IDs) with code
 Example: id="button" returns Primary, Secondary, Large stories with code like <Button variant="primary" size="large"> showing actual prop combinations.`;
 }
 
-// A ready-to-run `show` call, so a correction never has to be pieced together from prose.
+function formatCall(
+  method: ToolsetMethodId,
+  args: Record<string, string | boolean | string[] | undefined>,
+  ctx: ToolsetCtx
+): string {
+  const tool = getToolName(ctx)(method);
+  const given = Object.entries(args).filter(
+    (entry): entry is [string, string | true | string[]] =>
+      entry[1] !== undefined && entry[1] !== false
+  );
+  if (ctx.transport !== 'cli') {
+    return `${tool} ${JSON.stringify(Object.fromEntries(given))}`;
+  }
+  return [
+    tool,
+    ...given.map(([key, value]) =>
+      value === true
+        ? `--${key}`
+        : typeof value === 'string'
+          ? `--${key} ${value}`
+          : `--${key} '${JSON.stringify(value)}'`
+    ),
+  ].join(' ');
+}
+
 function formatShowCall({ id, storybookId }: DocsListedEntry, ctx: ToolsetCtx) {
-  const tool = getToolName(ctx)(DOCS_METHOD_REFS.show);
-  return ctx.transport === 'cli'
-    ? `${tool} --id ${id}${storybookId ? ` --storybookId ${storybookId}` : ''}`
-    : `${tool} ${JSON.stringify({ id, storybookId })}`;
+  return formatCall(DOCS_METHOD_REFS.show, { id, storybookId }, ctx);
+}
+
+function formatSourceNotFound(unknown: string[], available: string[], ctx: ToolsetCtx): string {
+  return `Storybook source not found: ${unknown.map((id) => `"${id}"`).join(', ')}. Available sources: ${available.join(', ')}. Use the ${getToolName(ctx)(DOCS_METHOD_REFS.list)} tool to see available sources.`;
+}
+
+function formatNextPage(
+  nextCursor: string,
+  options: { narrowable: boolean },
+  ctx: ToolsetCtx
+): string {
+  return [
+    `More entries follow. Next page: ${formatCall(DOCS_METHOD_REFS.list, { cursor: nextCursor }, ctx)}`,
+    ...(options.narrowable
+      ? [
+          `To list only some sources: ${formatCall(DOCS_METHOD_REFS.list, { storybookIds: ['<id>'] }, ctx)}`,
+        ]
+      : []),
+  ].join('\n');
+}
+
+function renderListRefusal(refusal: DocsListRefusal, ctx: ToolsetCtx): string {
+  const startAgain = (query: ListQuery) =>
+    `Start again without a cursor: ${formatCall(DOCS_METHOD_REFS.list, query, ctx)}`;
+  switch (refusal.kind) {
+    case 'unknown-sources':
+      return formatSourceNotFound(refusal.unknown, refusal.available, ctx);
+    case 'cursor-unreadable':
+      return `This cursor was not issued by ${getToolName(ctx)(DOCS_METHOD_REFS.list)}. ${startAgain({ withStoryIds: false })}`;
+    case 'cursor-conflict':
+      return 'This cursor continues a listing with other inputs. Pass the cursor on its own, or leave it out to start a new listing.';
+    case 'cursor-stale':
+      return `The listing changed since this cursor was issued. ${startAgain(refusal.query)}`;
+    default: {
+      const exhaustive: never = refusal;
+      return exhaustive;
+    }
+  }
+}
+
+function refuseList(
+  refusal: DocsListRefusal,
+  ctx: ToolsetCtx
+): ToolsetOutcome<DocsListOutput, DocsListFailure> {
+  return { ok: false, data: { refusal }, markdown: renderListRefusal(refusal, ctx) };
+}
+
+async function readSingleListing(
+  access: DocsAccess,
+  query: ListQuery
+): Promise<Listing<{ manifests: AllManifests }>> {
+  return {
+    sections: [{ manifests: await access.list(query) }],
+    keyOf: () => undefined,
+    format: ([only]) => formatManifestsToLists(only.manifests, query),
+    toData: ([only]) => ({ manifests: only.manifests }),
+  };
+}
+
+async function readComposedListing(
+  sources: DocsSource[],
+  query: ListQuery
+): Promise<Listing<SourceListing>> {
+  const listings = await listSources(sources, query);
+  let index: string | undefined;
+  return {
+    sections: listings,
+    keyOf: (listing) => listing.source.id,
+    format: (sections) => formatMultiSourceManifestsToLists(sections, query),
+    index: () => (index ??= formatSourceIndex(listings)),
+    toData: (sections) => ({ sources: sections }),
+  };
+}
+
+function selectSources(
+  sources: DocsSource[],
+  storybookIds: string[] | undefined
+): { sources: DocsSource[] } | { unknown: string[] } {
+  if (!storybookIds) {
+    return { sources };
+  }
+  const unknown = storybookIds.filter((id) => !sources.some(({ source }) => source.id === id));
+  return unknown.length > 0
+    ? { unknown }
+    : { sources: sources.filter(({ source }) => storybookIds.includes(source.id)) };
+}
+
+function listOutcome<TSection extends ListSection>(
+  listing: Listing<TSection>,
+  request: ListRequest,
+  ctx: ToolsetCtx
+): ToolsetOutcome<DocsListOutput, DocsListFailure> {
+  const { query } = request;
+  const first = request.resume === undefined;
+  const paged = pageListing(listing.sections, {
+    request,
+    keyOf: listing.keyOf,
+    tokenBudget: LIST_PAGE_TOKEN_BUDGET,
+    render: (page) =>
+      [
+        first && page.nextCursor ? listing.index?.() : undefined,
+        listing.format(page.sections),
+        page.nextCursor
+          ? formatNextPage(page.nextCursor, { narrowable: listing.index !== undefined }, ctx)
+          : undefined,
+      ]
+        .filter((block) => block !== undefined)
+        .join('\n\n'),
+  });
+  if (!paged.ok) {
+    return refuseList({ kind: paged.refusal, query }, ctx);
+  }
+
+  const { page, markdown, tokenCount } = paged;
+  const data: DocsListOutput = {
+    withStoryIds: query.withStoryIds,
+    ...listing.toData(page.sections),
+    ...(query.storybookIds ? { storybookIds: query.storybookIds } : {}),
+    ...(page.nextCursor ? { nextCursor: page.nextCursor } : {}),
+  };
+
+  // A listing of nothing but errors is not a usage signal, so nothing is counted then.
+  const counted = selectReportedManifests(data);
+  return {
+    ok: true,
+    data,
+    markdown,
+    ...(counted
+      ? {
+          telemetry: {
+            payload: {
+              componentCount: Object.keys(counted.componentManifest.components).length,
+              docsCount: Object.keys(counted.docsManifest?.docs ?? {}).length,
+              resultTokenCount: tokenCount,
+              sourceCount: data.sources?.length,
+              paged: !first || page.nextCursor !== undefined,
+              filtered: query.storybookIds !== undefined,
+            },
+          },
+        }
+      : {}),
+  };
 }
 
 /** Not-found message for an unknown component or docs id. */
@@ -325,17 +521,15 @@ function renderShowStory(
   }
 }
 
-const storybookIdField = {
-  storybookId: v.optional(
-    v.pipe(
-      v.string(),
-      v.description(
-        'The ID of the Storybook source to query (e.g., "local", "design-system"). Defaults to "local", this Storybook.'
-      )
-    ),
-    'local'
-  ),
-};
+function storybookIdField(defaultSourceId: string | undefined) {
+  const description =
+    defaultSourceId === undefined
+      ? 'The ID of the Storybook source to query (e.g., "design-system"), as listed by the docs list tool. This composition has no Storybook of its own, so there is no default.'
+      : `The ID of the Storybook source to query (e.g., "${defaultSourceId}", "design-system"). Defaults to "${defaultSourceId}", this Storybook.`;
+  return {
+    storybookId: v.optional(v.pipe(v.string(), v.description(description)), defaultSourceId),
+  };
+}
 
 type SourceAccess = { storybookId?: string; access: DocsAccess };
 
@@ -386,14 +580,17 @@ function selectSource(
     return {};
   }
 
-  const available = sources.map(({ source }) => source.id).join(', ');
-  const listRef = `Use the ${getToolName(ctx)(DOCS_METHOD_REFS.list)} tool to see available sources.`;
+  const available = sources.map(({ source }) => source.id);
+
+  if (storybookId === undefined) {
+    return {
+      sourceError: `No storybookId was given, and this composition has no Storybook of its own to default to. Available sources: ${available.join(', ')}. Use the ${getToolName(ctx)(DOCS_METHOD_REFS.list)} tool to see available sources.`,
+    };
+  }
 
   const match = sources.find(({ source }) => source.id === storybookId);
   if (!match) {
-    return {
-      sourceError: `Storybook source not found: "${storybookId}". Available sources: ${available}. ${listRef}`,
-    };
+    return { sourceError: formatSourceNotFound([storybookId], available, ctx) };
   }
 
   return { access: match.access };
@@ -416,12 +613,13 @@ export function createDocsToolset(options: CreateDocsToolsetOptions) {
     throw new Error('createDocsToolset requires a docsAccess or at least one source.');
   }
 
-  // A composition lets the caller name the Storybook, defaulting to this one; a single one must
-  // not ask.
+  // A composition lets the caller name the Storybook, defaulting to the one without a url when
+  // there is one; a single one must not ask.
+  const defaultSourceId = sources?.find(({ source }) => !source.url)?.source.id;
   const showSchema = multiSource
     ? v.strictObject({
         id: v.pipe(v.string(), v.description('The component or docs entry ID (e.g., "button")')),
-        ...storybookIdField,
+        ...storybookIdField(defaultSourceId),
       })
     : v.strictObject({
         id: v.pipe(v.string(), v.description('The component or docs entry ID (e.g., "button")')),
@@ -452,8 +650,45 @@ export function createDocsToolset(options: CreateDocsToolsetOptions) {
     ),
   };
   const showStorySchema = multiSource
-    ? v.strictObject({ ...showStoryFields, ...storybookIdField })
+    ? v.strictObject({ ...showStoryFields, ...storybookIdField(defaultSourceId) })
     : v.strictObject(showStoryFields);
+
+  const listFields = {
+    withStoryIds: v.optional(
+      v.pipe(
+        v.boolean(),
+        v.description(
+          'When true, includes story sub-bullets under each component with story name and story ID. This makes the list much longer: leave it off to look up components, and use it only to discover story IDs for downstream story-focused workflows without filesystem lookup.'
+        )
+      ),
+      false
+    ),
+  };
+  const cursorField = {
+    cursor: v.optional(
+      v.pipe(
+        v.string(),
+        v.description(
+          "Continues a listing that did not fit in one result. Take it from the next-page call at the end of that result and pass it on its own: it already carries that listing's other inputs."
+        )
+      )
+    ),
+  };
+  const listSchema = multiSource
+    ? v.strictObject({
+        ...listFields,
+        storybookIds: v.optional(
+          v.pipe(
+            v.array(v.string()),
+            v.minLength(1),
+            v.description(
+              'List only these Storybook sources, by ID (e.g., ["design-system"]). Leave it out to list every source.'
+            )
+          )
+        ),
+        ...cursorField,
+      })
+    : v.strictObject({ ...listFields, ...cursorField });
 
   /** The access for a lookup, plus the id it was scoped to. */
   const access = (storybookId: string | undefined, ctx: ToolsetCtx) =>
@@ -522,48 +757,44 @@ export function createDocsToolset(options: CreateDocsToolsetOptions) {
     description: 'Storybook component and docs documentation.',
     methods: {
       [DOCS_METHOD_NAMES.list]: {
-        input: v.strictObject({
-          withStoryIds: v.optional(
-            v.pipe(
-              v.boolean(),
-              v.description(
-                'When true, includes story sub-bullets under each component with story name and story ID. This makes the list much longer: leave it off to look up components, and use it only to discover story IDs for downstream story-focused workflows without filesystem lookup.'
-              )
-            ),
-            false
-          ),
-        }),
+        input: listSchema,
         title: 'List All Documentation',
         description: describeList,
-        handler: async (input): Promise<ToolsetOutcome<DocsListOutput, never>> => {
-          const { withStoryIds } = input;
-          const data: DocsListOutput = multiSource
-            ? { withStoryIds, sources: await listSources(sources!, { withStoryIds }) }
-            : { withStoryIds, manifests: await docsAccess!.list({ withStoryIds }) };
+        handler: async (input, ctx): Promise<ToolsetOutcome<DocsListOutput, DocsListFailure>> => {
+          const parsed = readListRequest(input);
+          if (!parsed.ok) {
+            return refuseList({ kind: parsed.refusal }, ctx);
+          }
+          const { request } = parsed;
 
-          const markdown = data.sources
-            ? formatMultiSourceManifestsToLists(data.sources, { withStoryIds })
-            : formatManifestsToLists(data.manifests!, { withStoryIds });
+          if (!multiSource) {
+            return listOutcome(await readSingleListing(docsAccess!, request.query), request, ctx);
+          }
 
-          // A listing of nothing but errors is not a usage signal, so nothing is counted then.
-          const counted = selectReportedManifests(data);
-          return {
-            ok: true,
-            data,
-            markdown,
-            ...(counted
-              ? {
-                  telemetry: {
-                    payload: {
-                      componentCount: Object.keys(counted.componentManifest.components).length,
-                      docsCount: Object.keys(counted.docsManifest?.docs ?? {}).length,
-                      resultTokenCount: estimateTokens(markdown),
-                      sourceCount: data.sources?.length,
-                    },
+          const selected = selectSources(sources!, request.query.storybookIds);
+          if ('unknown' in selected) {
+            return refuseList(
+              request.resume
+                ? { kind: 'cursor-stale', query: request.query }
+                : {
+                    kind: 'unknown-sources',
+                    unknown: selected.unknown,
+                    available: sources!.map(({ source }) => source.id),
                   },
-                }
-              : {}),
-          };
+              ctx
+            );
+          }
+          const resumeAt = request.resume
+            ? selected.sources.findIndex(({ source }) => source.id === request.resume!.source)
+            : 0;
+          if (resumeAt === -1) {
+            return refuseList({ kind: 'cursor-stale', query: request.query }, ctx);
+          }
+          return listOutcome(
+            await readComposedListing(selected.sources.slice(resumeAt), request.query),
+            request,
+            ctx
+          );
         },
       },
       [DOCS_METHOD_NAMES.show]: {

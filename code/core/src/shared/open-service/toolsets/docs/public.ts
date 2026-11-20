@@ -17,7 +17,9 @@ export { selectReportedManifests } from './definition.ts';
 export { createDocsToolset, isDocsShowError, isDocsShowStoryError } from './definition.ts';
 export type {
   CreateDocsToolsetOptions,
+  DocsListFailure,
   DocsListOutput,
+  DocsListRefusal,
   DocsShowOutput,
   DocsShowStoryOutput,
   DocsToolset,

@@ -180,7 +180,7 @@ function manifestToolset() {
 }
 
 async function renderList(toolset: ReturnType<typeof createDocsToolset>, withStoryIds: boolean) {
-  return (await toolset.methods.list.handler({ withStoryIds })).markdown;
+  return (await toolset.methods.list.handler({ withStoryIds }, ctx)).markdown;
 }
 
 async function renderShow(toolset: ReturnType<typeof createDocsToolset>, id: string) {

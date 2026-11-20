@@ -93,17 +93,27 @@ function toolsetFor(context: StorybookContext | undefined): DocsToolset {
   });
 }
 
+const PLACEHOLDER_SOURCES: Source[] = [{ id: 'local', title: 'Local' }];
+
 /**
- * Metadata is read from a toolset with no access behind it: names, titles, descriptions and schemas
- * are static, and only `multiSource` changes them.
+ * Metadata is read from a toolset with no access behind it. Only the sources shape the schemas:
+ * whether there are any, and whether one of them is this Storybook.
  */
-function metadataToolset(multiSource: boolean): DocsToolset {
+function metadataToolset(sources: Source[] | undefined): DocsToolset {
   const unavailable = { list: async () => emptyManifests(), resolve: async () => undefined };
-  return multiSource
-    ? createDocsToolset({
-        sources: [{ source: { id: 'local', title: 'Local' }, access: unavailable }],
-      })
+  return sources
+    ? createDocsToolset({ sources: sources.map((source) => ({ source, access: unavailable })) })
     : createDocsToolset({ docsAccess: unavailable });
+}
+
+function schemaSources(
+  requestSources: Source[] | undefined,
+  options: { multiSource?: boolean } | undefined
+): Source[] | undefined {
+  if (!(options?.multiSource ?? isComposition(requestSources))) {
+    return undefined;
+  }
+  return isComposition(requestSources) ? requestSources : PLACEHOLDER_SOURCES;
 }
 
 /**
@@ -122,10 +132,10 @@ export type DocsToolMetadata = {
 
 function toolMetadata(
   method: 'docs.list' | 'docs.show' | 'docs.showStory',
-  multiSource: boolean
+  sources: Source[] | undefined
 ): DocsToolMetadata {
   const [, methodName] = method.split('.') as [string, 'list' | 'show' | 'showStory'];
-  const definition = metadataToolset(multiSource).methods[methodName];
+  const definition = metadataToolset(sources).methods[methodName];
   const outputSchema = outputSchemaOf(definition);
 
   return {
@@ -140,19 +150,19 @@ function toolMetadata(
 export function getListAllDocumentationToolMetadata(options?: {
   multiSource?: boolean;
 }): DocsToolMetadata {
-  return toolMetadata('docs.list', !!options?.multiSource);
+  return toolMetadata('docs.list', options?.multiSource ? PLACEHOLDER_SOURCES : undefined);
 }
 
 export function getDocumentationToolMetadata(options?: {
   multiSource?: boolean;
 }): DocsToolMetadata {
-  return toolMetadata('docs.show', !!options?.multiSource);
+  return toolMetadata('docs.show', options?.multiSource ? PLACEHOLDER_SOURCES : undefined);
 }
 
 export function getStoryDocumentationToolMetadata(options?: {
   multiSource?: boolean;
 }): DocsToolMetadata {
-  return toolMetadata('docs.showStory', !!options?.multiSource);
+  return toolMetadata('docs.showStory', options?.multiSource ? PLACEHOLDER_SOURCES : undefined);
 }
 
 // tmcp reads a registered tool's schema on every `tools/list` and `tools/call`, inside the request's
@@ -162,10 +172,7 @@ function requestMetadata(
   method: 'docs.list' | 'docs.show' | 'docs.showStory',
   options: { multiSource?: boolean } | undefined
 ): DocsToolMetadata {
-  const single = toolMetadata(method, false);
-  const composed = toolMetadata(method, true);
-  const current = () =>
-    (options?.multiSource ?? isComposition(server.ctx.custom?.sources)) ? composed : single;
+  const current = () => toolMetadata(method, schemaSources(server.ctx.custom?.sources, options));
   const { name, title, description } = current();
 
   return {

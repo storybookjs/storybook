@@ -11,7 +11,7 @@ import {
   type CsfObject,
   type CsfValue,
 } from './CsfObject.ts';
-import { printCsfPath } from './CsfObjectPath.ts';
+import { anyKey, printCsfPath } from './CsfObjectPath.ts';
 import {
   type E as ESTree,
   parseExpression,
@@ -804,7 +804,11 @@ describe('CsfObject', () => {
       [`...new Types()`, `class Types { componentSubtitle = 'A'; }`],
       [`...new Types()`, `class Types { constructor() { this.componentSubtitle = 'A'; } }`],
       [`...base`, `const { base } = { base: { componentSubtitle: 'A' } };`],
+      [`...base`, `const [base] = [{ componentSubtitle: 'A' }];`],
+      [`...base`, `const { base = { componentSubtitle: 'A' } } = imported;`],
+      [`...rest`, `const { other, ...rest } = { other: 1, componentSubtitle: 'A' };`],
       [`...base`, `let base = {}; base = { componentSubtitle: 'A' };`],
+      [`...base`, `let base = {}; [base] = [{ componentSubtitle: 'A' }];`],
       [`...base`, `const base = {}; base.componentSubtitle = 'A';`],
       [`...base`, `const base = {}; Object.assign(base, { componentSubtitle: 'A' });`],
       [`...list.at(0)`, `const list = [{ componentSubtitle: 'A' }];`],
@@ -847,8 +851,11 @@ describe('CsfObject', () => {
     `...make()`,
     `...format(translations)`,
     `...new Types()`,
+    `...picked`,
+    `...settings.dir`,
+    `...flag`,
   ])('removes nothing where %s reads a local value without the field', (member) => {
-    const source = `import { format } from './format';\nconst types = { parameters: { componentSubtitle: 'A' }, other: {} }; const list = [{ other: {} }];\nconst translations = { label: 'Label' };\nfunction make() { return { other: {} }; }\nclass Types { other = 1; }\nexport default { parameters: { ${member} } };`;
+    const source = `import { format } from './format';\nconst types = { parameters: { componentSubtitle: 'A' }, other: {} }; const list = [{ other: {} }];\nconst translations = { label: 'Label' };\nfunction make() { return { other: {} }; }\nclass Types { other = 1; }\nconst { picked } = types;\nconst { settings } = format;\nlet flag = {}; flag = { other: 1 }; flag++;\nexport default { parameters: { ${member} } };`;
     const csf = parse(source);
     const [meta] = csf.objects({ meta: true, stories: false });
 
@@ -857,6 +864,60 @@ describe('CsfObject', () => {
       changed: false,
     });
     expect(printCsf(csf).code).toBe(source);
+  });
+
+  describe('remove with anyKey', () => {
+    const removeEach = (source: string) => {
+      const csf = parse(source);
+      const objects = csf.objects();
+      const results = objects.map((object) => object.remove(['argTypes', anyKey, 'defaultValue']));
+      return { results, code: printCsf(csf).code, csf };
+    };
+
+    it('removes the path under each key, also through a constant only it reads', () => {
+      const { results, code } = removeEach(
+        `const argTypes = { a: { defaultValue: 1, control: 'text' }, b: { control: 'text' } };\nexport default { argTypes };\nexport const Primary = { argTypes: { c: { defaultValue: 2 }, d: { table: { defaultValue: { summary: '3' } } } } };`
+      );
+
+      expect(results).toEqual([
+        { ok: true, changed: true },
+        { ok: true, changed: true },
+      ]);
+      expect(code).not.toMatch(/defaultValue: [12]/);
+      expect(code).toContain(`summary: '3'`);
+    });
+
+    it.each([
+      [`import { shared } from './shared';\nexport default { argTypes: { ...shared } };`],
+      [`import { shared } from './shared';\nexport default { ...shared };`],
+      [`export default {};\nexport const Made = makeStory({ args: { defaultValue: 1 } });`],
+      [`export default { argTypes: { defaultValue: { control: 'text' } } };`],
+    ])('removes nothing that the source does not show: %s', (source) => {
+      const { results, code, csf } = removeEach(source);
+
+      expect(results.every((result) => result.ok)).toBe(true);
+      expect(csf.mutationDiagnostics).toEqual([]);
+      expect(code).toBe(source);
+    });
+
+    it.each([
+      [
+        'spread-field',
+        `const shared = { a: { defaultValue: 1 } };\nexport default { argTypes: { ...shared } };`,
+      ],
+      ['dynamic-key', `export default { argTypes: { [name]: { defaultValue: 1 } } };`],
+      [
+        'unsupported-initializer',
+        `export default {};\nexport const Made = makeStory({ argTypes: { a: { defaultValue: 1 } } });`,
+      ],
+    ])('refuses a %s that shows the path', (code, source) => {
+      const { results, code: printed } = removeEach(source);
+
+      expect(results.find((result) => !result.ok)).toMatchObject({
+        diagnostic: { code, path: ['argTypes', '*', 'defaultValue'] },
+      });
+      expect(printed).toBe(source);
+    });
   });
 
   describe('spreads', () => {
@@ -1739,7 +1800,11 @@ describe('CsfObject', () => {
   ])('reports an unsupported CSF4 %s', (_kind, code, target) => {
     const csf = parse(`import preview from './preview';\n${code}`);
 
-    csf.objects();
+    // A story it cannot read is refused on a write, a meta already on discovery.
+    csf
+      .objects()
+      .find((object) => JSON.stringify(object.target) === JSON.stringify(target))
+      ?.set(['args', 'label'], 'Changed');
 
     expect(csf.mutationDiagnostics).toContainEqual(
       expect.objectContaining({ code: 'unsupported-initializer', target })
@@ -1781,7 +1846,13 @@ describe('CsfObject', () => {
       export const Basic = helper.story({ parameters: { a11y: { element: '#root' } } });
     `);
 
-    expect(csf.objects({ meta: false, stories: true })).toEqual([]);
+    const [basic] = csf.objects({ meta: false, stories: true });
+    const source = printCsf(csf).code;
+
+    expect(csf.mutationDiagnostics).toEqual([]);
+    expect(basic.remove(['parameters', 'a11y', 'element'])).toMatchObject({ ok: false });
+    expect(basic.set(['args', 'label'], 'Changed')).toMatchObject({ ok: false });
+    expect(printCsf(csf).code).toBe(source);
     expect(csf.mutationDiagnostics).toContainEqual(
       expect.objectContaining({
         code: 'unsupported-initializer',
@@ -1799,7 +1870,13 @@ describe('CsfObject', () => {
       export const Basic = Base.extend({ parameters: { a11y: { element: '#root' } } });
     `);
 
-    expect(csf.objects({ meta: false, stories: true })).toEqual([]);
+    const [basic] = csf.objects({ meta: false, stories: true });
+    const source = printCsf(csf).code;
+
+    expect(csf.mutationDiagnostics).toEqual([]);
+    expect(basic.remove(['parameters', 'a11y', 'element'])).toMatchObject({ ok: false });
+    expect(basic.set(['args', 'label'], 'Changed')).toMatchObject({ ok: false });
+    expect(printCsf(csf).code).toBe(source);
     expect(csf.mutationDiagnostics).toContainEqual(
       expect.objectContaining({
         code: 'unsupported-initializer',

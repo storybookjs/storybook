@@ -35,9 +35,22 @@ import { resolveExpression, valueSource } from './estree/values.ts';
  */
 export type CsfPath = readonly (string | number)[];
 
+/**
+ * A path segment for every key of an object, as in `remove(['argTypes', anyKey, 'defaultValue'])`,
+ * which removes `defaultValue` from each arg.
+ */
+export const anyKey: unique symbol = Symbol('anyKey');
+
+/** A path that may hold `anyKey` segments. */
+export type CsfPattern = readonly (string | number | typeof anyKey)[];
+
+/** A pattern as a path, with `*` for each `anyKey`. */
+export const patternPath = (pattern: CsfPattern): (string | number)[] =>
+  pattern.map((segment) => (segment === anyKey ? '*' : segment));
+
 /** Print a path as `parameters.msw.handlers[0]`. */
-export const printCsfPath = (path: CsfPath) =>
-  path
+export const printCsfPath = (path: CsfPattern) =>
+  patternPath(path)
     .map((segment, index) =>
       typeof segment === 'number' ? `[${segment}]` : index === 0 ? segment : `.${segment}`
     )
@@ -193,9 +206,8 @@ export const locate = (
   }
 };
 
-// A member read whose key only running code knows, such as `types[key]`: it may read any member.
-const ANY_KEY = Symbol('any key');
-type ShownPath = readonly (string | number | typeof ANY_KEY)[];
+// `anyKey` also stands for a member read whose key only running code knows, such as `types[key]`.
+type ShownPath = CsfPattern;
 
 // Whether the source shows a value at `path` below `properties`, through spreads, local constants,
 // member reads and call arguments. A value from another module, or one only running code could
@@ -203,8 +215,12 @@ type ShownPath = readonly (string | number | typeof ANY_KEY)[];
 export const showsPath = (
   editor: SourceEditor,
   properties: readonly E.ObjectPropertyKind[],
-  path: CsfPath
+  path: CsfPattern
 ): boolean => showsMembers(editor, properties, path, new Set());
+
+/** Whether the source shows a value at `path` below the value `node`, as `showsPath` does. */
+export const showsPathIn = (editor: SourceEditor, node: Node, path: CsfPattern): boolean =>
+  path.length === 0 || showsValue(editor, node, path, new Set());
 
 const showsMembers = (
   editor: SourceEditor,
@@ -221,7 +237,7 @@ const showsMembers = (
       return showsValue(editor, member.argument, path, expanding);
     }
     const key = staticKey(member);
-    if (key !== undefined && segment !== ANY_KEY && key !== segment) {
+    if (key !== undefined && segment !== anyKey && key !== segment) {
       return false;
     }
     return rest.length === 0 || showsValue(editor, member.value, rest, expanding);
@@ -229,10 +245,10 @@ const showsMembers = (
 };
 
 // The key a member read such as `types.label` or `types['label']` reads.
-const memberKey = (member: E.MemberExpression): string | typeof ANY_KEY => {
+const memberKey = (member: E.MemberExpression): string | typeof anyKey => {
   const property = member.property as Node;
   if (!member.computed) {
-    return property.type === 'Identifier' ? property.name : ANY_KEY;
+    return property.type === 'Identifier' ? property.name : anyKey;
   }
   if (isStringLiteral(property)) {
     return property.value;
@@ -241,9 +257,9 @@ const memberKey = (member: E.MemberExpression): string | typeof ANY_KEY => {
     return String(property.value);
   }
   if (property.type === 'TemplateLiteral' && property.expressions.length === 0) {
-    return property.quasis[0]?.value.cooked ?? ANY_KEY;
+    return property.quasis[0]?.value.cooked ?? anyKey;
   }
-  return ANY_KEY;
+  return anyKey;
 };
 
 const showsValue = (
@@ -263,13 +279,13 @@ const showsValue = (
     return showsMembers(editor, value.properties, path, expanding);
   }
   const [segment, ...rest] = path;
-  if (value.type === 'ArrayExpression' && (segment === ANY_KEY || /^\d+$/.test(segment))) {
+  if (value.type === 'ArrayExpression' && (segment === anyKey || /^\d+$/.test(segment))) {
     return value.elements.some(
       (element) =>
         !!element &&
         (rest.length === 0 ||
           (element.type === 'SpreadElement'
-            ? showsValue(editor, element.argument, [ANY_KEY, ...rest], expanding)
+            ? showsValue(editor, element.argument, [anyKey, ...rest], expanding)
             : showsValue(editor, element, rest, expanding)))
     );
   }
@@ -294,7 +310,7 @@ const showsValue = (
       // A constructor can assign any field, as in `this.label = value`.
       const reads =
         name === undefined ||
-        segment === ANY_KEY ||
+        segment === anyKey ||
         name === segment ||
         (member.type === 'MethodDefinition' && member.kind === 'constructor');
       return (
@@ -333,11 +349,84 @@ const showsBinding = (
     if (binding.kind === 'function' || binding.kind === 'class') {
       return showsValue(editor, binding.node, path, expanding);
     }
+    if (writtenThrough(editor, binding)) {
+      return true;
+    }
     const init = constantInit(binding);
-    return !init || writtenThrough(editor, binding) || showsValue(editor, init, path, expanding);
+    if (init) {
+      return showsValue(editor, init, path, expanding);
+    }
+    if (!binding.constant && binding.identifier === (binding.node as E.VariableDeclarator).id) {
+      return showsAssigned(editor, binding, path, expanding);
+    }
+    return showsDestructured(editor, binding, path, expanding);
   } finally {
     expanding.delete(binding.node);
   }
+};
+
+// A variable written after its declaration, as in `let selected = false; selected = true`, holds
+// its initializer or a value assigned to it. One written another way may hold anything.
+const showsAssigned = (
+  editor: SourceEditor,
+  binding: Binding,
+  path: ShownPath,
+  expanding: Set<Node>
+): boolean => {
+  const values: (Node | null | undefined)[] = [(binding.node as E.VariableDeclarator).init];
+  for (const reference of binding.references) {
+    const parent = editor.parentOf(reference);
+    if (parent?.type === 'AssignmentExpression' && parent.left === reference) {
+      values.push(parent.right);
+    } else if (
+      parent?.type !== 'UpdateExpression' &&
+      (parent?.type?.endsWith('Pattern') || parent?.type === 'RestElement')
+    ) {
+      return true;
+    }
+  }
+  return values.some((value) => showsValue(editor, value ?? undefined, path, expanding));
+};
+
+// A name a constant pattern declares, as `dir` in `const { dir } = ATTRIBUTES`, reads its path in
+// the declarator's value, or a default in the pattern. Any other may hold anything.
+const showsDestructured = (
+  editor: SourceEditor,
+  binding: Binding,
+  path: ShownPath,
+  expanding: Set<Node>
+): boolean => {
+  const declarator = binding.node;
+  if (!binding.constant || declarator.type !== 'VariableDeclarator' || !declarator.init) {
+    return true;
+  }
+  let keys: ShownPath = path;
+  let rest = false;
+  for (let node: Node = binding.identifier; node !== declarator.id;) {
+    const parent = editor.parentOf(node);
+    if (!parent) {
+      return true;
+    }
+    if (parent.type === 'AssignmentPattern') {
+      if (parent.left === node && showsValue(editor, parent.right, keys, expanding)) {
+        return true;
+      }
+    } else if (parent.type === 'Property') {
+      keys = [staticKey(parent) ?? anyKey, ...keys];
+    } else if (parent.type === 'RestElement') {
+      // `...rest` holds the members or elements of the value itself.
+      rest = true;
+    } else if (parent.type === 'ArrayPattern') {
+      keys = rest ? keys : [anyKey, ...keys];
+      rest = false;
+    } else if (parent.type === 'ObjectPattern') {
+      rest = false;
+    } else {
+      return true;
+    }
+    node = parent;
+  }
+  return showsValue(editor, declarator.init, keys, expanding);
 };
 
 // Whether the source changes a constant's value through it, as in `base.label = value`,

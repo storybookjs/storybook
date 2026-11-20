@@ -49,7 +49,7 @@ describe('SearchResults.utils', () => {
       ]);
     });
 
-    it('should drop a match in which neither the input nor its tokens occur', () => {
+    it("should keep Fuse's ranges for a match in which neither the input nor its tokens occur", () => {
       const matches: Match[] = [
         {
           key: 'name',
@@ -68,7 +68,39 @@ describe('SearchResults.utils', () => {
         },
       ];
 
-      expect(resolveHighlightRanges(matches, 'buton')).toEqual([]);
+      expect(resolveHighlightRanges(matches, 'buton')).toEqual(matches);
+    });
+
+    it('should resolve each match on its own', () => {
+      const matches: Match[] = [
+        {
+          key: 'name',
+          value: 'Primary',
+          indices: [[0, 6]],
+          arrayIndex: 0,
+        },
+        {
+          key: 'path',
+          value: 'Button',
+          indices: [[0, 5]],
+          arrayIndex: 1,
+        },
+      ];
+
+      expect(resolveHighlightRanges(matches, 'buton prim')).toEqual([
+        {
+          key: 'name',
+          value: 'Primary',
+          indices: [[0, 3]],
+          arrayIndex: 0,
+        },
+        {
+          key: 'path',
+          value: 'Button',
+          indices: [[0, 5]],
+          arrayIndex: 1,
+        },
+      ]);
     });
 
     it('should resolve each token of a multi-word input', () => {

@@ -114,11 +114,11 @@ EscapeWithQueryStaysInSearch.play = async ({ canvasElement }) => {
 };
 
 /**
- * Fuse matches fuzzily, and matches each space-separated token of the query on its own. Only the
- * literal occurrences of the query or of its tokens are highlighted, and a result that has none
- * still shows its name.
+ * Fuse matches fuzzily, and matches each space-separated token of the query on its own. A name that
+ * contains the query or one of its tokens highlights those occurrences only. A name that Fuse only
+ * matched fuzzily, such as through a typo, keeps the ranges Fuse reports.
  */
-export const HighlightsLiteralOccurrences: StoryFn = () => (
+export const HighlightsSearchResults: StoryFn = () => (
   <Search {...baseProps} initialQuery="buid error">
     {({ query, results, closeMenu, getMenuProps, getItemProps, highlightedIndex }) => (
       <SearchResults
@@ -132,19 +132,29 @@ export const HighlightsLiteralOccurrences: StoryFn = () => (
     )}
   </Search>
 );
-HighlightsLiteralOccurrences.play = async ({ canvasElement }) => {
-  await userEvent.click(within(canvasElement).getByRole('searchbox'));
+HighlightsSearchResults.play = async ({ canvasElement }) => {
+  const input = within(canvasElement).getByRole('searchbox');
+  const findTitles = (name: string) =>
+    waitFor(() => {
+      const titles = [...canvasElement.querySelectorAll('.search-result-item--label')]
+        .map((label) => label.firstElementChild)
+        .filter((title) => title?.textContent === name);
+      expect(titles.length).toBeGreaterThan(0);
+      return titles;
+    });
+  const highlightsOf = (title: Element | null) =>
+    [...(title?.querySelectorAll('mark') ?? [])].map((mark) => mark.textContent);
 
-  const labels = await waitFor(() => {
-    const found = [...canvasElement.querySelectorAll('.search-result-item--label')];
-    expect(found.length).toBeGreaterThan(0);
-    return found;
-  });
-  labels.forEach((label) => expect(label.firstElementChild).not.toHaveTextContent(/^$/));
+  await userEvent.click(input);
+  (await findTitles('Build Error')).forEach((title) =>
+    expect(highlightsOf(title)).toEqual(['Error'])
+  );
 
-  const highlights = [...canvasElement.querySelectorAll('mark')].map((mark) => mark.textContent);
-  expect(highlights.length).toBeGreaterThan(0);
-  highlights.forEach((highlight) => expect(highlight).toMatch(/^error$/i));
+  await userEvent.clear(input);
+  await userEvent.type(input, 'onbording');
+  (await findTitles('Default Onboarding')).forEach((title) =>
+    expect(highlightsOf(title).length).toBeGreaterThan(0)
+  );
 };
 
 export const ShortcutsDisabled: StoryFn = () => (

@@ -3,7 +3,16 @@ import { join } from 'node:path';
 
 import { describe, expect, test } from 'vitest';
 
-import { loadCsf, parseExpression, printCsf, readCsf } from 'storybook/internal/csf-tools';
+import type { CsfValue, ESTree } from 'storybook/internal/csf-tools';
+import {
+  loadCsf,
+  parseExpression,
+  parseModule,
+  printCsf,
+  readCsf,
+  staticKey,
+  walk,
+} from 'storybook/internal/csf-tools';
 
 import { format } from 'prettier';
 
@@ -21,6 +30,8 @@ const FILES = {
   csf2Variances: join(__dirname, 'mocks/csf2-variances.stories.tsx'),
   exportVariances: join(__dirname, 'mocks/export-variances.stories.tsx'),
   dataVariances: join(__dirname, 'mocks/data-variances.stories.tsx'),
+  kebabCaseArgs: join(__dirname, 'mocks/kebab-case-args.stories.tsx'),
+  kebabCaseArgsCsf4: join(__dirname, 'mocks/kebab-case-args-csf4.stories.tsx'),
 };
 
 describe('success', () => {
@@ -512,6 +523,253 @@ describe('success', () => {
         ..."
     `);
   });
+  test('Kebab-case args', async () => {
+    const newArgs = {
+      'data-testid': 'after',
+      'aria-label': 'button',
+      label: 'bar',
+      '123': 'baz',
+      default: 'reserved',
+      '123abc': 'mixed',
+    };
+
+    const before = await format(await readFile(FILES.kebabCaseArgs, 'utf-8'), {
+      parser: 'typescript',
+    });
+    const CSF = await readCsf(FILES.kebabCaseArgs, { makeTitle });
+
+    const parsed = CSF.parse();
+    const names = Object.keys(parsed._stories);
+    names.forEach((name) => {
+      updateArgsInCsfFile(parsed, name, newArgs);
+    });
+
+    const rawAfter = printCsf(parsed).code;
+
+    // formatting would throw if the generated keys were emitted unquoted
+    const after = await format(rawAfter, {
+      parser: 'typescript',
+    });
+
+    // check if the code was updated at all
+    expect(after).not.toBe(before);
+
+    // check if the code was updated correctly
+    expect(getDiff(before, after)).toMatchInlineSnapshot(`
+      "  ...
+          123: string;
+        }> = (props) => <pre>{JSON.stringify(props)}</pre>;
+        
+        
+      - export const NoArgs = {} satisfies Story;
+      - 
+      + export const NoArgs = {
+      +   args: {
+      +     "123": "baz",
+      +     "data-testid": "after",
+      +     "aria-label": "button",
+      +     label: "bar",
+      +     default: "reserved",
+      +     "123abc": "mixed",
+      +   },
+      + } satisfies Story;
+      + 
+        
+        export const QuotedKebabArg = {
+          args: {
+        
+      -     "data-testid": "before",
+      -     label: "foo",
+      - 
+      +     "data-testid": "after",
+      +     label: "bar",
+      +     "123": "baz",
+      +     "aria-label": "button",
+      +     default: "reserved",
+      +     "123abc": "mixed",
+      + 
+          },
+        } satisfies Story;
+        
+        export const NumericKeyArg = {
+          args: {
+        
+      -     123: "before",
+      - 
+      +     123: "baz",
+      +     "data-testid": "after",
+      +     "aria-label": "button",
+      +     label: "bar",
+      +     default: "reserved",
+      +     "123abc": "mixed",
+      + 
+          },
+        } satisfies Story;
+        "
+    `);
+  });
+  test.each(['a: 1}); globalThis.pwned = 1; ({b', 'x = alert(1)'])(
+    'Malicious arg key is emitted as a string literal: %s',
+    async (key) => {
+      const CSF = await readCsf(FILES.kebabCaseArgs, { makeTitle });
+      const parsed = CSF.parse();
+      const name = Object.keys(parsed._stories)[0];
+
+      updateArgsInCsfFile(parsed, name, { [key]: true });
+
+      const code = printCsf(parsed).code;
+      const ast = parseModule(code, 'story.tsx').program;
+      const identifiers = new Set<string>();
+      const keys: string[] = [];
+      walk(ast, (node) => {
+        if (node.type === 'Identifier') {
+          identifiers.add(node.name);
+        }
+        if (node.type === 'Property' && node.key.type === 'Literal') {
+          keys.push(String(node.key.value));
+        }
+      });
+      expect(keys).toContain(key);
+      // the key text must only exist inside a string literal, never as code
+      expect(identifiers.has('alert')).toBe(false);
+      expect(identifiers.has('pwned')).toBe(false);
+    }
+  );
+  test('Kebab-case args (CSF4)', async () => {
+    const newArgs = { 'aria-label': 'button' };
+
+    const before = await format(await readFile(FILES.kebabCaseArgsCsf4, 'utf-8'), {
+      parser: 'typescript',
+    });
+    const CSF = await readCsf(FILES.kebabCaseArgsCsf4, { makeTitle });
+
+    const parsed = CSF.parse();
+    const names = Object.keys(parsed._stories);
+    names.forEach((name) => {
+      updateArgsInCsfFile(parsed, name, newArgs);
+    });
+
+    const after = await format(printCsf(parsed).code, {
+      parser: 'typescript',
+    });
+
+    // check if the code was updated at all
+    expect(after).not.toBe(before);
+
+    // check if the code was updated correctly: the nested 'aria-label' must stay
+    // untouched and the new arg must be added at the top level
+    expect(getDiff(before, after)).toMatchInlineSnapshot(`
+      "  ...
+        export const QuotedKebabArg = meta.story({
+          args: {
+            "data-testid": "before",
+        
+      +     "aria-label": "button",
+      + 
+          },
+        });
+        export const NestedCollision = meta.story({
+          args: {
+            nested: {
+              "aria-label": "inner",
+            },
+        
+      +     "aria-label": "button",
+      + 
+          },
+        });
+        "
+    `);
+  });
+  describe.each([
+    ['plain', 'export const Example: Story ='],
+    ['satisfies', 'export const Example ='],
+  ])('%s story', (shape, declaration) => {
+    test.each([false, true])(
+      'preserves inherited-name args unless supplied (update: %s)',
+      async (update) => {
+        const csf = loadCsf(
+          `
+        export default { title: 'Example' };
+        ${declaration} {
+          args: { toString: 'keep', "constructor": 'keep', label: 'before' }
+        } ${shape === 'satisfies' ? 'satisfies Story' : ''};
+      `,
+          { makeTitle }
+        ).parse();
+        const args: Record<string, CsfValue<ESTree.Expression>> = update
+          ? { label: 'after', toString: 'updated', constructor: 'updated' }
+          : { label: 'after' };
+
+        updateArgsInCsfFile(csf, 'Example', args);
+
+        const code = await format(printCsf(csf).code, { parser: 'typescript' });
+        const expected = update ? 'updated' : 'keep';
+        expect(code).toContain(`toString: "${expected}"`);
+        expect(code).toContain(`constructor: "${expected}"`);
+        expect(code).toContain('label: "after"');
+      }
+    );
+  });
+
+  describe.each([
+    ['without args', '{}'],
+    ['with args', '{ args: { label: "keep", "data-testid": "before", 123: "before" } }'],
+  ])('plain annotated story %s', (_, object) => {
+    test.each([
+      'data-testid',
+      'aria-label',
+      '123',
+      'default',
+      '123abc',
+      'a: 1}); globalThis.pwned = 1; ({b',
+      'x = alert(1)',
+    ])('saves key %s as data', async (key) => {
+      const csf = loadCsf(
+        `
+        export default { title: 'Example' };
+        export const Example: Story = ${object};
+      `,
+        { makeTitle }
+      ).parse();
+
+      updateArgsInCsfFile(csf, 'Example', { [key]: 'after' });
+
+      const code = printCsf(csf).code;
+      const ast = parseModule(code, 'story.ts').program;
+      const identifiers = new Set<string>();
+      const savedValues: string[] = [];
+      walk(ast, (node) => {
+        if (node.type === 'Identifier') {
+          identifiers.add(node.name);
+        }
+        if (node.type === 'Property' && staticKey(node) === key && node.value.type === 'Literal') {
+          savedValues.push(String(node.value.value));
+        }
+      });
+      expect(savedValues).toEqual(['after']);
+      expect(identifiers.has('alert')).toBe(false);
+      expect(identifiers.has('pwned')).toBe(false);
+      if (object !== '{}') {
+        expect(await format(code, { parser: 'typescript' })).toContain('label: "keep"');
+      }
+    });
+  });
+
+  test.each([
+    ['prototype key', { ['__proto__']: { polluted: true } }],
+    ['untrusted AST node', { node: { type: 'Identifier', name: 'injected', start: 0, end: 8 } }],
+  ])('rolls back earlier arg edits when rejecting %s', (_, unsafeArgs) => {
+    const source = `export default { title: 'X' };\nexport const A = { args: { label: 'before' } };`;
+    const parsed = loadCsf(source, { makeTitle }).parse();
+
+    expect(() =>
+      updateArgsInCsfFile(parsed, 'A', { 'aria-label': 'button', label: 'after', ...unsafeArgs })
+    ).toThrow(SaveStoryError);
+    expect(printCsf(parsed).code).toBe(source);
+    expect(parsed.changed).toBe(false);
+  });
+
   test('Data Variances', async () => {
     const newArgs = {
       myArray: ['FOO', 'BAR'],

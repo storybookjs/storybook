@@ -11,6 +11,7 @@ import {
   SAVE_STORY_RESPONSE,
   STORY_RENDERED,
 } from 'storybook/internal/core-events';
+import { parseModule, walk } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 import type { Options } from 'storybook/internal/types';
 
@@ -66,17 +67,57 @@ describe('save-story', () => {
     expect(writeFile).not.toHaveBeenCalled();
   });
 
-  it('rejects a top-level arg name that is not a valid identifier', async () => {
+  it.each(['x: globalThis.alert(1), y', 'a: 1}); globalThis.pwned = 1; ({b', 'x = alert(1)'])(
+    'writes a top-level arg name that is not a valid identifier as a quoted string: %s',
+    async (key) => {
+      const response = await saveStory({ args: JSON.stringify({ [key]: true }) });
+
+      expect(response).toMatchObject({ success: true });
+      const written = vi.mocked(writeFile).mock.calls[0][1] as string;
+      expect(written).toContain(`${JSON.stringify(key)}: true`);
+
+      // the output must still parse, and the key must not have become code
+      const ast = parseModule(written, 'story.tsx').program;
+      const identifiers = new Set<string>();
+      walk(ast, (node) => {
+        if (node.type === 'Identifier') {
+          identifiers.add(node.name);
+        }
+      });
+      // the key text must only exist inside a string literal, never as code
+      expect(identifiers.has('alert')).toBe(false);
+      expect(identifiers.has('pwned')).toBe(false);
+    }
+  );
+
+  it.each([undefined, 'NewStory'])('saves kebab-case args (new story: %s)', async (name) => {
     const response = await saveStory({
-      args: JSON.stringify({ 'x: globalThis.alert(1), y': true }),
+      args: JSON.stringify({ 'data-testid': 'button', 'aria-label': 'Submit' }),
+      name,
     });
 
-    expect(response).toMatchObject({
-      success: false,
-      error: expect.stringMatching(/^Invalid arg name/),
-    });
-    expect(writeFile).not.toHaveBeenCalled();
+    expect(response).toMatchObject({ success: true });
+    const written = vi.mocked(writeFile).mock.calls[0][1] as string;
+    expect(written).toContain('"data-testid": "button"');
+    expect(written).toContain('"aria-label": "Submit"');
+    expect(() => parseModule(written, 'story.tsx')).not.toThrow();
   });
+
+  it.each([undefined, 'NewStory'])(
+    'does not write a prototype key (new story: %s)',
+    async (name) => {
+      const response = await saveStory({
+        args: JSON.stringify({ 'aria-label': 'button', ['__proto__']: { polluted: true } }),
+        name,
+      });
+
+      expect(response).toMatchObject({
+        success: false,
+        error: expect.stringContaining('__proto__'),
+      });
+      expect(writeFile).not.toHaveBeenCalled();
+    }
+  );
 
   it('saves a new story with identifier names, including reserved words as arg names', async () => {
     const response = await saveStory({

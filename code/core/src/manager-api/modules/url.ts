@@ -43,7 +43,11 @@ const parseSerializedParam = (param: string) =>
   Object.fromEntries(
     param
       .split(';')
-      .map((pair) => pair.split(':'))
+      // Only the first `:` separates the key: values such as `!date(...)` contain colons too.
+      .map((pair) => {
+        const separator = pair.indexOf(':');
+        return separator === -1 ? [pair] : [pair.slice(0, separator), pair.slice(separator + 1)];
+      })
       // Drop pairs without a key or without a `:` separator. An empty value (`key:`) is valid: it is
       // how an empty string arg or global is serialized, so it must be kept.
       .filter(([key, value]) => key && value !== undefined)

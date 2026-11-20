@@ -6,6 +6,7 @@ import { webComponentsRuntimeManifest } from './web-components-runtime-manifest.
 import { csfNextMockedArgs } from './csf-next-mocked-args.ts';
 import { addonSvelteCsfToCore } from './addon-svelte-csf-to-core.ts';
 import { argtypesDefaultValue } from './argtypes-default-value.ts';
+import { globaltypesDefaultValue } from './globaltypes-default-value.ts';
 import { componentSubtitle } from './component-subtitle.ts';
 import { eslintPlugin } from './eslint-plugin.ts';
 import { docgenServer } from './docgen-server.ts';
@@ -40,6 +41,7 @@ export const allFixes: Fix[] = [
   vitestSetupFile,
   componentSubtitle,
   argtypesDefaultValue,
+  globaltypesDefaultValue,
   rnOndeviceAddonsToDeviceAddons,
   nextjsToNextjsVite,
   angularToAngularVite,

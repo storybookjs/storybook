@@ -451,6 +451,9 @@ const findPreviewSite = (config: ConfigFile) => {
     const site = findObjectSite(config.node);
     return site && { kind: 'object' as const, site };
   }
+  if (config.hasDefaultExport) {
+    return undefined;
+  }
   const field = config.getFieldNode(['parameters']);
   const params = field && unwrapExpression(field);
   const sveltekit = params?.type === 'ObjectExpression' ? objectProperty(params, KEY) : undefined;

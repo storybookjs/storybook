@@ -260,6 +260,18 @@ describe('ConfigFile', () => {
           expect(getField(['core', 'builder'], source)).toEqual('webpack5');
         }
       });
+      it('finds fields through a chain of local aliases', () => {
+        const config = loadConfig(dedent`
+          const defaults = { builder: 'webpack5' };
+          const settings = defaults;
+          export const core = settings;
+        `).parse();
+
+        expect(config.getFieldNode(['core', 'builder'])).toMatchObject({
+          type: 'Literal',
+          value: 'webpack5',
+        });
+      });
     });
 
     describe('module exports', () => {

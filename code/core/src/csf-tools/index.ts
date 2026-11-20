@@ -40,6 +40,7 @@ export {
 export { SourceEditor, type GeneratedMap, type SourceEdits } from './estree/editor.ts';
 export type { ImportBindings } from './estree/imports.ts';
 export { generateUid, type Binding, type ScopeInfo } from './estree/scope.ts';
+export { resolveExpression } from './estree/values.ts';
 export {
   appendStatement,
   appendToList,

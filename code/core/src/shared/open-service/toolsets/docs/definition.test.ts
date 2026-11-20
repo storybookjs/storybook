@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { invokeToolsetMethod, type ToolsetCtx } from '../../toolset-definition.ts';
 import type { DocsAccess } from './access.ts';
+import { estimateTokens } from '../estimate-tokens.ts';
 import { createDocsToolset } from './definition.ts';
 import { RequiresOwnMcpError } from './sources.ts';
 
@@ -50,7 +51,7 @@ const cliCtx: ToolsetCtx = { transport: 'cli', getService: () => ({}) as never }
 
 describe('docs.list', () => {
   it('returns the manifests from the access and renders the list Markdown', async () => {
-    const outcome = await toolset.methods.list.handler({ withStoryIds: false });
+    const outcome = await toolset.methods.list.handler({ withStoryIds: false }, mcpCtx);
 
     expect(outcome.ok).toBe(true);
     expect(Object.keys(outcome.data.manifests!.componentManifest.components)).toEqual(['button']);
@@ -60,7 +61,7 @@ describe('docs.list', () => {
   });
 
   it('includes story ids only when requested', async () => {
-    const outcome = await toolset.methods.list.handler({ withStoryIds: true });
+    const outcome = await toolset.methods.list.handler({ withStoryIds: true }, mcpCtx);
 
     expect(outcome.markdown).toContain('button--primary');
   });
@@ -72,6 +73,216 @@ describe('docs.list', () => {
 
     expect(resolved).toContain('docs-show');
     expect(resolvedCli).toContain('npx storybook tools docs show');
+  });
+
+  it('takes no storybookIds for a single Storybook', async () => {
+    const validated = await toolset.methods.list.input['~standard'].validate({
+      storybookIds: ['local'],
+    });
+
+    expect(validated.issues).toBeDefined();
+  });
+});
+
+describe('docs.list in a composition', () => {
+  const remoteAccess: DocsAccess = {
+    list: async () => ({
+      componentManifest: {
+        v: 1,
+        components: { badge: { id: 'badge', name: 'Badge', summary: 'A badge' } },
+      },
+    }),
+    resolve: async () => undefined,
+  };
+  const composed = createDocsToolset({
+    sources: [
+      { source: { id: 'local', title: 'Local' }, access: docsAccess },
+      {
+        source: { id: 'remote', title: 'Remote', url: 'https://remote.example.com' },
+        access: remoteAccess,
+      },
+      {
+        source: { id: 'other', title: 'Other', url: 'https://other.example.com' },
+        access: remoteAccess,
+      },
+    ],
+  });
+
+  it('lists only the sources named in storybookIds', async () => {
+    const outcome = await composed.methods.list.handler(
+      { withStoryIds: false, storybookIds: ['remote'] },
+      mcpCtx
+    );
+
+    expect(outcome.ok).toBe(true);
+    expect(outcome.data).toMatchObject({ storybookIds: ['remote'] });
+    expect(
+      (outcome.data as { sources: { source: { id: string } }[] }).sources.map(
+        ({ source }) => source.id
+      )
+    ).toEqual(['remote']);
+    expect(outcome.markdown).toBe(`# Remote
+id: remote
+
+## Components
+
+- Badge (badge): A badge`);
+  });
+
+  it('refuses storybookIds that name no source, listing the available ones', async () => {
+    const outcome = await composed.methods.list.handler(
+      { withStoryIds: false, storybookIds: ['remote', 'nope'] },
+      mcpCtx
+    );
+
+    expect(outcome.ok).toBe(false);
+    expect(outcome.markdown).toBe(
+      'Storybook source not found: "nope". Available sources: local, remote, other. Use the docs-list tool to see available sources.'
+    );
+  });
+
+  it('refuses a cursor it did not issue, saying how to start again', async () => {
+    const outcome = await composed.methods.list.handler(
+      { withStoryIds: false, cursor: 'not-a-cursor' },
+      mcpCtx
+    );
+
+    expect(outcome.ok).toBe(false);
+    expect(outcome.markdown).toBe(
+      'This cursor was not issued by docs-list. Start again without a cursor: docs-list {}'
+    );
+  });
+});
+
+describe('docs.list over a composition too large for one result', () => {
+  const COMPONENTS_PER_SOURCE = 600;
+  const bulkAccess: DocsAccess = {
+    list: async () => ({
+      componentManifest: {
+        v: 1,
+        components: Object.fromEntries(
+          Array.from({ length: COMPONENTS_PER_SOURCE }, (_, index) => [
+            `item-${index}`,
+            { id: `item-${index}`, name: `Item ${index}`, summary: 'A component that fills pages' },
+          ])
+        ),
+      },
+    }),
+    resolve: async () => undefined,
+  };
+  const large = createDocsToolset({
+    sources: ['ds1', 'ds2', 'ds3'].map((id, index) => ({
+      source: { id, title: `Design system ${index + 1}`, url: `https://${id}.example.com` },
+      access: bulkAccess,
+    })),
+  });
+
+  type Listed = {
+    sources: {
+      source: { id: string };
+      manifests?: { componentManifest: { components: object } };
+    }[];
+    nextCursor?: string;
+  };
+
+  it('opens with an index of the sources and ends with the next-page call', async () => {
+    const outcome = await large.methods.list.handler({ withStoryIds: false }, mcpCtx);
+    const { nextCursor } = outcome.data as Listed;
+
+    expect(outcome.ok).toBe(true);
+    expect(nextCursor).toEqual(expect.any(String));
+    expect(outcome.markdown).toMatch(
+      /^3 Storybook sources, listed over several pages\. To list only some, pass their ids as storybookIds\.\n\n- ds1: Design system 1 \(600 components, 0 docs\)\n- ds2: Design system 2 \(600 components, 0 docs\)\n- ds3: Design system 3 \(600 components, 0 docs\)\n\n# Design system 1\nid: ds1\n/
+    );
+    expect(outcome.markdown).toMatch(
+      new RegExp(
+        `\\n\\nMore entries follow\\. Next page: docs-list \\{"cursor":"${nextCursor}"\\}\\nTo list only some sources: docs-list \\{"storybookIds":\\["<id>"\\]\\}$`
+      )
+    );
+    expect(estimateTokens(outcome.markdown as string)).toBeLessThanOrEqual(20_000);
+    expect(outcome.telemetry?.payload).toMatchObject({ paged: true, filtered: false });
+  });
+
+  it('spells the next-page call as a command on the CLI', async () => {
+    const outcome = await large.methods.list.handler({ withStoryIds: false }, cliCtx);
+    const { nextCursor } = outcome.data as Listed;
+
+    expect(outcome.markdown).toContain(
+      `\n\nMore entries follow. Next page: npx storybook tools docs list --cursor ${nextCursor}\nTo list only some sources: npx storybook tools docs list --storybookIds '["<id>"]'`
+    );
+  });
+
+  it('walks to the end with the cursor alone, listing every component once', async () => {
+    const seen: string[] = [];
+    const pages: string[] = [];
+    let cursor: string | undefined;
+    do {
+      const outcome = await large.methods.list.handler(
+        { withStoryIds: false, ...(cursor ? { cursor } : {}) },
+        mcpCtx
+      );
+      expect(outcome.ok).toBe(true);
+      const data = outcome.data as Listed;
+      for (const { source, manifests } of data.sources) {
+        seen.push(
+          ...Object.keys(manifests!.componentManifest.components).map((id) => `${source.id}/${id}`)
+        );
+      }
+      pages.push(outcome.markdown as string);
+      cursor = data.nextCursor;
+    } while (cursor !== undefined);
+
+    expect(pages.length).toBeGreaterThan(1);
+    expect(seen).toEqual(
+      ['ds1', 'ds2', 'ds3'].flatMap((id) =>
+        Array.from({ length: COMPONENTS_PER_SOURCE }, (_, index) => `${id}/item-${index}`)
+      )
+    );
+    for (const page of pages.slice(1)) {
+      expect(page).not.toContain('listed over several pages');
+    }
+    expect(pages.at(-1)).not.toContain('More entries follow');
+  });
+});
+
+describe('the storybookId default in a composition', () => {
+  it('defaults to the composed Storybook that has no url', async () => {
+    const composed = createDocsToolset({
+      sources: [
+        {
+          source: { id: 'remote', title: 'Remote', url: 'https://remote.example.com' },
+          access: docsAccess,
+        },
+        { source: { id: 'main', title: 'Main' }, access: docsAccess },
+      ],
+    });
+
+    const show = await composed.methods.show.input['~standard'].validate({ id: 'button' });
+    const showStory = await composed.methods.showStory.input['~standard'].validate({
+      storyId: 'button--primary',
+    });
+
+    expect(show).toMatchObject({ value: { id: 'button', storybookId: 'main' } });
+    expect(showStory).toMatchObject({ value: { storybookId: 'main' } });
+  });
+
+  it('has no default when every source has a url, and names the sources when none is given', async () => {
+    const composed = createDocsToolset({
+      sources: ['ds1', 'ds2'].map((id) => ({
+        source: { id, title: id, url: `https://${id}.example.com` },
+        access: docsAccess,
+      })),
+    });
+
+    const validated = await composed.methods.show.input['~standard'].validate({ id: 'button' });
+    expect(validated.issues).toBeUndefined();
+    expect((validated as { value: object }).value).toStrictEqual({ id: 'button' });
+
+    const outcome = await composed.methods.show.handler({ id: 'button' }, mcpCtx);
+    expect(outcome.ok).toBe(false);
+    expect(outcome.markdown).toBe(
+      'No storybookId was given, and this composition has no Storybook of its own to default to. Available sources: ds1, ds2. Use the docs-list tool to see available sources.'
+    );
   });
 });
 
@@ -528,6 +739,8 @@ describe('usage reporting', () => {
         docsCount: 1,
         resultTokenCount: expect.any(Number),
         sourceCount: undefined,
+        paged: false,
+        filtered: false,
       },
     });
   });

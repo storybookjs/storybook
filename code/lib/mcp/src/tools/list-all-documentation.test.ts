@@ -1,7 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { McpServer } from 'tmcp';
 import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
-import { addListAllDocumentationTool, LIST_TOOL_NAME } from './register.ts';
+import {
+  addGetDocumentationTool,
+  addListAllDocumentationTool,
+  GET_TOOL_NAME,
+  LIST_TOOL_NAME,
+} from './register.ts';
 import type { ComponentManifestMap, DocsManifestMap, Source, StorybookContext } from '../types.ts';
 import smallManifestFixtureRaw from '../../fixtures/small-manifest.fixture.json' with { type: 'json' };
 import smallDocsManifestFixtureRaw from '../../fixtures/small-docs-manifest.fixture.json' with { type: 'json' };
@@ -340,6 +345,43 @@ describe('listAllDocumentationTool', () => {
       );
       expect(text).toContain('https://tetra.chromatic.com/mcp');
       expect(text).not.toContain('error:');
+    });
+
+    async function publishedSchemas(requestSources: Source[]) {
+      await addGetDocumentationTool(server);
+      const response = await server.receive(
+        { jsonrpc: '2.0' as const, id: 3, method: 'tools/list', params: {} },
+        { custom: { request: new Request('https://example.com/mcp'), sources: requestSources } }
+      );
+      const tools = (response as any).result.tools as Array<{
+        name: string;
+        inputSchema: { properties: Record<string, Record<string, unknown>> };
+      }>;
+      return Object.fromEntries(tools.map((tool) => [tool.name, tool.inputSchema.properties]));
+    }
+
+    it('publishes no local default when no request source is this Storybook', async () => {
+      const schemas = await publishedSchemas([
+        { id: 'pkg-1', title: 'Package 1', url: 'https://pkg-1.example.com' },
+        { id: 'pkg-2', title: 'Package 2', url: 'https://pkg-2.example.com' },
+      ]);
+
+      expect(schemas[GET_TOOL_NAME].storybookId).not.toHaveProperty('default');
+      expect(schemas[GET_TOOL_NAME].storybookId.description).not.toContain('local');
+      expect(Object.keys(schemas[LIST_TOOL_NAME])).toEqual([
+        'withStoryIds',
+        'storybookIds',
+        'cursor',
+      ]);
+    });
+
+    it('publishes the request source without a url as the storybookId default', async () => {
+      const schemas = await publishedSchemas([
+        { id: 'main', title: 'Main' },
+        { id: 'remote', title: 'Remote', url: 'https://remote.example.com' },
+      ]);
+
+      expect(schemas[GET_TOOL_NAME].storybookId).toMatchObject({ default: 'main' });
     });
   });
 

@@ -2,7 +2,8 @@ import { readFileSync } from 'node:fs';
 
 import { describe, expect, it } from 'vitest';
 
-import { manualIssueOf, manualIssuesOf, renderManualChecklist } from './manual-qa.ts';
+import type { Actor, Discussion } from './github.ts';
+import { manualDiscussionOf, manualDiscussionsOf, renderManualChecklist } from './manual-qa.ts';
 import { parsePlan } from './qa-plan.ts';
 import { Window } from './window.ts';
 
@@ -119,10 +120,10 @@ describe('renderManualChecklist', () => {
   });
 });
 
-describe('manualIssueOf', () => {
+describe('manualDiscussionOf', () => {
   const COMMIT = '772120e5d39e696fc7bb196c482814fea193892b';
-  const issueOf = (plan = PLAN) =>
-    manualIssueOf({
+  const discussionOf = (plan = PLAN) =>
+    manualDiscussionOf({
       plan,
       window: WINDOW,
       file: '11.0.md',
@@ -131,11 +132,11 @@ describe('manualIssueOf', () => {
       commit: COMMIT,
     });
   const created = () => {
-    const issue = issueOf();
-    if (!('create' in issue)) {
-      throw new Error(`expected an issue, got ${JSON.stringify(issue)}`);
+    const discussion = discussionOf();
+    if (!('create' in discussion)) {
+      throw new Error(`expected a discussion, got ${JSON.stringify(discussion)}`);
     }
-    return issue.create;
+    return discussion.create;
   };
 
   it('opens the body with the marker of the plan, then the checklist, then where it comes from', () => {
@@ -152,14 +153,11 @@ describe('manualIssueOf', () => {
     );
   });
 
-  it('titles the issue with the prefix of the tracking discussion, in the milestone of findings', () => {
-    expect(created()).toMatchObject({
-      title: '[SB 11 QA] Manual QA for Storybook 11.0 at 11.0.0-beta.3',
-      milestone: '11',
-    });
+  it('titles the discussion with the prefix of the tracking discussion', () => {
+    expect(created().title).toBe('[SB 11 QA] Manual QA for Storybook 11.0 at 11.0.0-beta.3');
   });
 
-  it('creates no issue for a plan without manual checks', () => {
+  it('creates no discussion for a plan without manual checks', () => {
     const plan = {
       ...PLAN,
       manual: [],
@@ -168,53 +166,75 @@ describe('manualIssueOf', () => {
       ),
     };
 
-    expect(issueOf(plan)).toEqual({
-      skip: '11.0.md has no manual checks, so it gets no manual QA issue.',
+    expect(discussionOf(plan)).toEqual({
+      skip: '11.0.md has no manual checks, so it gets no manual QA discussion.',
     });
   });
 
-  it('refuses a checklist longer than GitHub takes as an issue body, naming both sizes', () => {
+  it('refuses a checklist longer than GitHub takes as a body, naming both sizes', () => {
     const plan = { ...PLAN, manual: Array.from({ length: 1000 }, () => PLAN.manual[0]!) };
 
-    expect(issueOf(plan)).toEqual({
+    expect(discussionOf(plan)).toEqual({
       refuse: expect.stringMatching(
-        /^The manual QA issue of 11\.0\.md would have a body of \d{6} characters, and GitHub takes at most 65536\.$/
+        /^The manual QA discussion of 11\.0\.md would have a body of \d{6} characters, and GitHub takes at most 65536\.$/
       ),
     });
   });
 });
 
-describe('manualIssuesOf', () => {
+describe('manualDiscussionsOf', () => {
   const body = `<!-- sb-qa-manual ${HASH} 11.0.md -->\n# Manual QA`;
-  const issue = (
+  const discussion = (
     number: number,
-    { login = 'valentinpalkovic', association = 'MEMBER', text = body, state = 'open' } = {}
-  ) => ({ number, body: text, user: { login }, author_association: association, state });
-
-  it('finds the issue of the hash that a member opened, and one that is closed', () => {
-    const found = manualIssuesOf([issue(37625), issue(37000, { state: 'closed' })], HASH);
-
-    expect(found.map(({ number }) => number)).toEqual([37000, 37625]);
+    {
+      author = { __typename: 'User', login: 'valentinpalkovic' } as Actor,
+      association = 'MEMBER',
+      text = body,
+    } = {}
+  ): Discussion => ({
+    id: `D_${number}`,
+    number,
+    url: `https://github.com/storybookjs/storybook/discussions/${number}`,
+    title: 'Manual QA',
+    body: text,
+    author,
+    authorAssociation: association,
+    editor: null,
   });
 
-  it('finds the issue that the workflow opened, once when two lookups return it', () => {
-    const bot = issue(37700, { login: 'github-actions[bot]', association: 'NONE' });
+  it('finds the discussion of the hash that a member opened, oldest first', () => {
+    const found = manualDiscussionsOf([discussion(37627), discussion(37000)], HASH);
 
-    expect(manualIssuesOf([bot, bot], HASH)).toEqual([bot]);
+    expect(found.map(({ number }) => number)).toEqual([37000, 37627]);
   });
 
-  it('ignores the marker in an issue of a stranger', () => {
-    expect(manualIssuesOf([issue(37701, { login: 'someone', association: 'NONE' })], HASH)).toEqual(
-      []
-    );
+  it('finds the discussion that the workflow opened', () => {
+    const bot = discussion(37700, {
+      author: { __typename: 'Bot', login: 'github-actions' },
+      association: 'NONE',
+    });
+
+    expect(manualDiscussionsOf([bot], HASH)).toEqual([bot]);
+  });
+
+  it('ignores the marker in a discussion of a stranger, also one named like the workflow', () => {
+    const strangers = [
+      discussion(37701, { association: 'CONTRIBUTOR' }),
+      discussion(37702, {
+        author: { __typename: 'User', login: 'github-actions' },
+        association: 'NONE',
+      }),
+    ];
+
+    expect(manualDiscussionsOf(strangers, HASH)).toEqual([]);
   });
 
   it('ignores another hash and a marker below the first line, and reads a CRLF body', () => {
-    const found = manualIssuesOf(
+    const found = manualDiscussionsOf(
       [
-        issue(1, { text: body.replace(HASH, 'aaaaaaaaaaaa') }),
-        issue(2, { text: `Notes\n${body}` }),
-        issue(3, { text: body.replace('\n', '\r\n') }),
+        discussion(1, { text: body.replace(HASH, 'aaaaaaaaaaaa') }),
+        discussion(2, { text: `Notes\n${body}` }),
+        discussion(3, { text: body.replace('\n', '\r\n') }),
       ],
       HASH
     );

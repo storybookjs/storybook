@@ -1,8 +1,7 @@
-import { majorOf } from './cycle.ts';
-import { HARNESS_LOGIN } from './github.ts';
+import { byHarness, type Discussion } from './github.ts';
 import { inlineTitle } from './proposals.ts';
 import { layoutPlan, manualChecksOf, type Plan, prCell } from './qa-plan.ts';
-import { qaPrefix, trackingTitle } from './tracking.ts';
+import { firstLine, qaPrefix, trackingTitle } from './tracking.ts';
 import type { Window } from './window.ts';
 
 const sentenceCase = (text: string) => `${text[0]!.toUpperCase()}${text.slice(1)}`;
@@ -44,37 +43,29 @@ export const renderManualChecklist = (plan: Plan, window: Window): string => {
   ].join('\n');
 };
 
-// GitHub refuses an issue whose body holds more characters than this.
-export const ISSUE_BODY_LIMIT = 65_536;
+// GitHub publishes no limit for a discussion body, so this is the one it enforces on an issue body.
+export const DISCUSSION_BODY_LIMIT = 65_536;
 
 const MANUAL_MARKER = /^<!-- sb-qa-manual ([0-9a-f]{12}) \S+ -->$/;
 
-// Anyone can open an issue in a public repository, so only an issue of the workflow or of a person
-// with a role in the repository can stand for the manual QA of a plan.
+// Anyone can open a discussion in a public repository, so only a discussion of the workflow or of a
+// person with a role in the repository can stand for the manual QA of a plan.
 const TRUSTED_ASSOCIATIONS = new Set(['OWNER', 'MEMBER', 'COLLABORATOR']);
 
-export const manualIssueMarker = (hash: string, file: string): string =>
-  `<!-- sb-qa-manual ${hash} ${file} -->`;
-
-export type ListedIssue = {
-  number: number;
-  body: string | null;
-  user: { login: string } | null;
-  author_association: string;
-};
-
-// The issues that hold the manual QA of the plan with this hash, open or closed, oldest first.
-export const manualIssuesOf = <Issue extends ListedIssue>(issues: Issue[], hash: string): Issue[] =>
-  [...new Map(issues.map((issue) => [issue.number, issue])).values()]
+// The discussions that hold the manual QA of the plan with this hash, oldest first.
+export const manualDiscussionsOf = <Thread extends Discussion>(
+  discussions: Thread[],
+  hash: string
+): Thread[] =>
+  discussions
     .filter(
-      (issue) =>
-        (issue.user?.login === HARNESS_LOGIN ||
-          TRUSTED_ASSOCIATIONS.has(issue.author_association)) &&
-        MANUAL_MARKER.exec((issue.body ?? '').split(/\r?\n/, 1)[0]!)?.[1] === hash
+      (discussion) =>
+        (byHarness(discussion.author) || TRUSTED_ASSOCIATIONS.has(discussion.authorAssociation)) &&
+        MANUAL_MARKER.exec(firstLine(discussion.body))?.[1] === hash
     )
     .toSorted((a, b) => a.number - b.number);
 
-export type ManualIssuePlan = {
+export type ManualPlan = {
   plan: Plan;
   window: Window;
   file: string;
@@ -84,24 +75,24 @@ export type ManualIssuePlan = {
   commit: string;
 };
 
-export type ManualIssue =
-  | { create: { title: string; body: string; milestone: string } }
+export type ManualDiscussion =
+  | { create: { title: string; body: string } }
   | { skip: string }
   | { refuse: string };
 
-export const manualIssueOf = ({
+export const manualDiscussionOf = ({
   plan,
   window,
   file,
   hash,
   repo,
   commit,
-}: ManualIssuePlan): ManualIssue => {
+}: ManualPlan): ManualDiscussion => {
   if (manualChecksOf(plan, layoutPlan(plan).at).length === 0) {
-    return { skip: `${file} has no manual checks, so it gets no manual QA issue.` };
+    return { skip: `${file} has no manual checks, so it gets no manual QA discussion.` };
   }
   const body = [
-    manualIssueMarker(hash, file),
+    `<!-- sb-qa-manual ${hash} ${file} -->`,
     renderManualChecklist(plan, window),
     '---',
     '',
@@ -109,16 +100,15 @@ export const manualIssueOf = ({
     `The sweep tests the rest of that plan and reports in the discussion \`${trackingTitle(plan.line, file)}\`.`,
     '',
   ].join('\n');
-  if (body.length > ISSUE_BODY_LIMIT) {
+  if (body.length > DISCUSSION_BODY_LIMIT) {
     return {
-      refuse: `The manual QA issue of ${file} would have a body of ${body.length} characters, and GitHub takes at most ${ISSUE_BODY_LIMIT}.`,
+      refuse: `The manual QA discussion of ${file} would have a body of ${body.length} characters, and GitHub takes at most ${DISCUSSION_BODY_LIMIT}.`,
     };
   }
   return {
     create: {
       title: `${qaPrefix(plan.line)} Manual QA for Storybook ${plan.line} at ${plan.version}`,
       body,
-      milestone: majorOf(plan.line),
     },
   };
 };

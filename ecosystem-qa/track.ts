@@ -14,13 +14,12 @@ import {
   ghParse,
   listDiscussionComments,
   listDiscussions,
-  listMarkedIssues,
   listQaIssues,
   updateDiscussionComment,
   type DiscussionComment,
   type DiscussionPlace,
 } from './lib/github.ts';
-import { manualIssuesOf } from './lib/manual-qa.ts';
+import { manualDiscussionsOf } from './lib/manual-qa.ts';
 import { PLANS_BRANCH } from './lib/plan-push.ts';
 import { readPlanScope } from './lib/plan-scope.ts';
 import { openIssueOf, QA_LABEL } from './lib/proposals.ts';
@@ -236,9 +235,8 @@ const placeOf = (): DiscussionPlace | undefined => {
 };
 
 const place = placeOf();
-const threads = place
-  ? trackingThreadsOf(listDiscussions(repo!, place.categoryId), scope.hash)
-  : [];
+const discussions = place ? listDiscussions(repo!, place.categoryId) : [];
+const threads = trackingThreadsOf(discussions, scope.hash);
 const [thread] = threads;
 const comments: DiscussionComment[] = thread ? listDiscussionComments(thread.id) : [];
 const tracked = trackBatch({
@@ -251,24 +249,12 @@ const tracked = trackBatch({
 });
 const settled = 'refuse' in tracked ? fail(tracked.refuse) : tracked;
 const { existing, next, body } = settled;
-// The lookup only adds a link, so a failed one must not stop the sweep.
-const manualIssue = (): number | undefined => {
-  try {
-    return manualIssuesOf(listMarkedIssues(repo!, `sb-qa-manual ${scope.hash}`), scope.hash)[0]
-      ?.number;
-  } catch (error) {
-    warn(
-      `The discussion names no manual QA issue, because looking it up failed: ${error instanceof Error ? error.message : String(error)}`
-    );
-    return undefined;
-  }
-};
 const newThread = renderTrackingThread({
   file: scope.file,
   hash: scope.hash,
   line: scope.plan.line,
   version: version!,
-  manualIssue: thread ? undefined : manualIssue(),
+  manualDiscussion: manualDiscussionsOf(discussions, scope.hash)[0]?.number,
 });
 
 const dispatch = (batch: number) => [...batchDispatch(report, batch), '--repo', repo!];

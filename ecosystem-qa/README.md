@@ -203,8 +203,7 @@ It refuses a plan that fails `check` with that window, and it creates nothing on
 node ecosystem-qa/qa-plan.ts manual ecosystem-qa/plans/11.0.md --window ecosystem-qa/plans/11.0.window.json --out manual.md
 ```
 
-Merging the plan into `qa/plans` creates the issue of this checklist, as [Sweep a plan from `qa/plans`](#sweep-a-plan-from-qaplans) describes.
-Never put the label `internal-qa` on that issue: `collect.ts` reads every issue with that label as a finding of the sweep.
+Merging the plan into `qa/plans` creates a discussion of this checklist, as [Sweep a plan from `qa/plans`](#sweep-a-plan-from-qaplans) describes.
 
 An entry under `## Steps` is a block of lines:
 
@@ -363,31 +362,31 @@ Two requests over the same findings can group a borderline pair differently, so 
 ### Sweep a plan from `qa/plans`
 
 A plan that is merged into the branch `qa/plans` starts its sweep, and each batch starts the next one once its numbers are in the tracking discussion.
-The same push creates the plan's manual QA issue.
+The same push creates the plan's manual QA discussion.
 
 ```text
 push to qa/plans ──> plan job ─────────> runner jobs ──────> collect ──> track ──> gh workflow run
                      plan.ts --push      one per repo and               track.ts   batch n+1, same
                      plan.ts --outputs   part, tier gate                           plan_hash
                           │
-                          └────────────> manual-issue job: manual-issue.ts, one issue per plan hash
+                          └────────────> manual-discussion job: manual-discussion.ts,
+                                         one discussion per plan hash in "QA sweeps"
 ```
 
-The `manual-issue` job creates the issue `[SB 11 QA] Manual QA for Storybook 11.0 at 11.0.0-beta.3`, in the milestone `11` that the findings of the line go into, and without a label.
+The `manual-discussion` job creates the discussion `[SB 11 QA] Manual QA for Storybook 11.0 at 11.0.0-beta.3` in the category `QA sweeps`, next to the sweep's tracking discussion.
+A discussion is never read as a finding and stays out of every issue search.
 Its body starts with the hidden line `<!-- sb-qa-manual <hash> 11.0.md -->`, then holds the checklist that `qa-plan.ts manual` prints, and ends with a link to the plan at the pushed commit and the title of the sweep's discussion.
-It runs only for a push that adds or changes a plan, with `issues: write`, no environment, and no secret, and no other job waits for it, so the sweep and the issue fail apart.
-It creates nothing when an issue of the plan's hash exists, open or closed, whose first line is that hidden line and whose author is the workflow or an owner, member, or collaborator of the repository, since anyone can open an issue with that line.
-It finds such an issue through the issue search and through the list of the workflow's own issues, which the search index sees only some time after they are created.
-It never edits an issue, because people tick its boxes.
-A plan without manual checks gets no issue, and the job says so in a notice.
-When the milestone does not exist or is closed, the job fails, names it, and creates nothing, as the filing does: create the milestone and run the job again.
-A checklist longer than the 65536 characters that GitHub takes as an issue body fails the job with both sizes.
-When the issue exists by the time the first batch creates the discussion, the discussion names it.
+It runs only for a push that adds or changes a plan, with `discussions: write`, no environment, and no secret, and no other job waits for it, so the sweep and the discussion fail apart.
+It creates nothing when a discussion of the plan's hash exists in that category whose first line is that hidden line and whose author is the workflow or an owner, member, or collaborator of the repository, since anyone can open a discussion with that line.
+It never edits a discussion, because people tick its boxes.
+A plan without manual checks gets no discussion, and the job says so in a notice.
+GitHub publishes no limit for the body of a discussion, so a checklist longer than the 65536 characters it takes as an issue body fails the job with both sizes.
+When the manual QA discussion exists by the time the first batch creates the tracking discussion, the tracking discussion names it.
 
 To see what the job would do without writing, run it with `--print` on the plan and its window:
 
 ```sh
-node ecosystem-qa/manual-issue.ts --print --plan ecosystem-qa/plans/11.0.md \
+node ecosystem-qa/manual-discussion.ts --print --plan ecosystem-qa/plans/11.0.md \
   --window ecosystem-qa/plans/11.0.window.json --repo storybookjs/storybook --commit "$(git rev-parse HEAD)"
 ```
 
@@ -450,7 +449,7 @@ The `track` jobs of one plan share a concurrency group of the plan's hash, so tw
 A third report that queues while one waits cancels the waiting one, and its run then reports nothing.
 The workflow never writes over a comment that someone else edited, so the `track` job of that batch fails and names the comment.
 Edit nothing the workflow wrote in the discussion, and write notes as comments of your own.
-The `track` job uses the job token with `discussions: write`, `actions: write` to start the next batch, and `issues: read` to find the manual QA issue, and no environment.
+The `track` job uses the job token with `discussions: write` and `actions: write` to start the next batch, and no environment.
 
 A chained batch is always a dry run, so a person files each batch by hand with the dispatch that its comment prints.
 That dispatch carries the plan's hash, so it runs nothing once the plan changed.

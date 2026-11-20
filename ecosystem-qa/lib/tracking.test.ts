@@ -121,16 +121,16 @@ describe('renderTrackingThread and trackingThreadsOf', () => {
     ).toEqual([]);
   });
 
-  it('names the manual QA issue of the plan in a new discussion only when it has one', () => {
+  it('names the manual QA discussion of the plan in a new discussion only when it has one', () => {
     const linked = renderTrackingThread({
       file: '11.0.md',
       hash: HASH,
       line: '11.0',
       version: '11.0.0-beta.3',
-      manualIssue: 37625,
+      manualDiscussion: 37627,
     });
 
-    expect(linked.body).toContain('by hand are in #37625.');
+    expect(linked.body).toContain('by hand are in #37627.');
     expect(thread.body).not.toContain('by hand');
     expect(trackingThreadsOf([discussion(5, linked.body)], HASH)[0]?.number).toBe(5);
   });

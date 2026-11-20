@@ -4,7 +4,7 @@ import { existsSync, statSync } from 'node:fs';
 import { join } from 'pathe';
 
 import { loadEntries } from './catalog.ts';
-import { cycleRef, majorOf, versionLine } from './cycle.ts';
+import { cycleRef, versionLine } from './cycle.ts';
 import { fingerprint } from './fingerprint.ts';
 import type { PlanScope } from './plan-scope.ts';
 import { isProbeCheck, planCheckId, prCell, probeCopyDir, type Plan } from './qa-plan.ts';
@@ -639,7 +639,7 @@ export const toProposal = (
   const { primary } = lead;
   const { version } = primary.result.request;
   const line = versionLine(version);
-  const major = majorOf(line);
+  const [major = line] = line.split('.');
   const allWindows = members
     .flatMap((member) => member.occurrences)
     .every(({ result }) => result.request.os === 'windows');

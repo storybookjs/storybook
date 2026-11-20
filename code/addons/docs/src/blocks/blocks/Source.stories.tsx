@@ -354,9 +354,10 @@ export const OfTransformPropReadingArgTypes: Story = {
     },
   },
   play: async ({ canvasElement }) => {
-    await expect(
-      await within(canvasElement).findByText(/no longer part of the story context/)
-    ).toBeInTheDocument();
+    // The syntax highlighter splits the message into one span per token.
+    await waitFor(() =>
+      expect(canvasElement).toHaveTextContent(/no longer part of the story context/)
+    );
   },
 };
 

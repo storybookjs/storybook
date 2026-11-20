@@ -169,7 +169,7 @@ describe('components-ref-manifest', () => {
     expect(entries.button.stories).toEqual({ $ref: './stories/button.json' });
     expect(entries.card.stories).toEqual({ $ref: storyDocsManifestRef('card') });
     expect(storyFiles).toEqual({
-      'stories/button.json': {
+      './stories/button.json': {
         ...button,
         stories: { 'button--primary': button.stories['button--primary'] },
       },

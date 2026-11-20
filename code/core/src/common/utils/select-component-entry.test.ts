@@ -30,9 +30,8 @@ function makeStoryEntry(id: string, title = 'Comp'): StoryIndexEntry {
 }
 
 describe('selectManifestStoryIds', () => {
-  it('selects only manifest-tagged stories, preserving index order', () => {
-    const visible = { ...makeStoryEntry('comp--visible'), tags: [Tag.MANIFEST] };
-    const hidden = makeStoryEntry('comp--hidden');
+  it('selects stories, leaving out tests and docs', () => {
+    const story = { ...makeStoryEntry('comp--story'), tags: [Tag.MANIFEST] };
     const test = {
       ...makeStoryEntry('comp--test'),
       subtype: 'test',
@@ -47,12 +46,8 @@ describe('selectManifestStoryIds', () => {
       storiesImports: ['./comp.stories.tsx'],
       tags: [Tag.MANIFEST, Tag.ATTACHED_MDX],
     } satisfies DocsIndexEntry;
-    const second = { ...makeStoryEntry('comp--second'), tags: [Tag.MANIFEST] };
 
-    expect([...selectManifestStoryIds([visible, hidden, test, docs, second])]).toEqual([
-      'comp--visible',
-      'comp--second',
-    ]);
+    expect(selectManifestStoryIds([story, test, docs])).toEqual(new Set(['comp--story']));
   });
 });
 

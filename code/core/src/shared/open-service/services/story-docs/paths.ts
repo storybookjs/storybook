@@ -33,3 +33,9 @@ export function storyDocsPayloadJsonPointer(id: string): string {
 export function storyDocsManifestRef(id: string): string {
   return `../services/${storyDocsStaticStorePath(id)}#${storyDocsPayloadJsonPointer(id)}`;
 }
+
+// `$ref` target in `manifests/components.json`, relative to `manifests/`, for a component with
+// stories excluded from manifests. The file is a copy of its payload without those stories.
+export function storyDocsFilteredManifestRef(id: string): string {
+  return `./stories/${storyDocsQueryStaticPath(id)}`;
+}

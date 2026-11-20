@@ -100,6 +100,15 @@ from the file the component selection picks, which is also the only file `core/d
 the import block of its own file. A file whose extraction throws keeps its stories in the payload, each with
 that `error`; a file the provider returns nothing for contributes no stories.
 
+## Stories excluded from manifests
+
+Manifests exclude stories that have the `!manifest` tag. This service keeps every story of a component,
+included those tagged `!manifest`, because it is also consumed by the Code panel to show story snippets.
+The Code panel does not filter based on `!manifest`.
+
+When the docs tools and the components HTML debugger consume this service, they are responsible for filtering
+out stories. A built Storybook is read through `manifests/components.json`, so the build does the filtering.
+
 ## Import snippets
 
 Story-docs builds import statements from CSF import analysis, shared across providers by

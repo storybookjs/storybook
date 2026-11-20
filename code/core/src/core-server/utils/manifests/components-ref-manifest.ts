@@ -6,8 +6,8 @@ import {
 } from '../../../shared/open-service/services/docgen/paths.ts';
 import type { DocgenPayload } from '../../../shared/open-service/services/docgen/types.ts';
 import {
+  storyDocsFilteredManifestRef,
   storyDocsManifestRef,
-  storyDocsQueryStaticPath,
   storyDocsStaticStorePath,
 } from '../../../shared/open-service/services/story-docs/paths.ts';
 import type { StoryDocsPayload } from '../../../shared/open-service/services/story-docs/types.ts';
@@ -150,9 +150,9 @@ export function buildComponentManifestIndex(
         storiesRef = { $ref: storyDocsManifestRef(id) };
       } else if (Object.keys(stories).length > 0) {
         // The service snapshot also supplies Code panel snippets for excluded stories.
-        const path = `stories/${storyDocsQueryStaticPath(id)}`;
-        storyFiles[path] = { ...storyDocs, stories };
-        storiesRef = { $ref: `./${path}` };
+        const ref = storyDocsFilteredManifestRef(id);
+        storyFiles[ref] = { ...storyDocs, stories };
+        storiesRef = { $ref: ref };
       }
     }
     entries[id] = {

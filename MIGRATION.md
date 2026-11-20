@@ -22,6 +22,7 @@
     - [Angular: read the inputs from the component](#angular-read-the-inputs-from-the-component)
     - [Angular: every arg reaches the story](#angular-every-arg-reaches-the-story)
     - [Server: object and date args are serialized by value](#server-object-and-date-args-are-serialized-by-value)
+    - [Svelte: the source snippet leaves out action args by value](#svelte-the-source-snippet-leaves-out-action-args-by-value)
     - [Vue: slots come from the component's props](#vue-slots-come-from-the-components-props)
   - [Deprecated CSF and manager type aliases removed](#deprecated-csf-and-manager-type-aliases-removed)
   - [`docgenServer` is stable and enabled by default](#docgenserver-is-stable-and-enabled-by-default)
@@ -1204,6 +1205,12 @@ To keep such a value away from the story, remove it from `args`.
 `@storybook/server` used to send an arg as JSON only when its arg type had an `object` control.
 It now sends every object and array arg as JSON, and every `Date` arg as an ISO string, whatever its arg type.
 An arg with a `date` control is still sent as an ISO string.
+
+#### Svelte: the source snippet leaves out action args by value
+
+With `features.docgenServer: false`, the Svelte source snippet used to leave out every arg whose arg type had an `action`.
+It now leaves out every arg whose value was created by `action()`, which includes the args Storybook fills in for arg types with an `action`.
+An arg you set to your own function now shows as `{<handler>}`, even when its arg type has an `action`.
 
 #### Vue: slots come from the component's props
 

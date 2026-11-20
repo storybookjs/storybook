@@ -1,5 +1,9 @@
 import type { Channel } from 'storybook/internal/channels';
-import { createFileSystemCache, resolvePathInStorybookCache } from 'storybook/internal/common';
+import {
+  createFileSystemCache,
+  getProjectRoot,
+  resolvePathInStorybookCache,
+} from 'storybook/internal/common';
 import { internal_UniversalStore } from 'storybook/internal/core-server';
 import {
   AI_SETUP_ANALYTICS_REQUEST,
@@ -12,7 +16,11 @@ import { telemetry } from 'storybook/internal/telemetry';
 import { throttle } from 'es-toolkit/function';
 import { toMerged } from 'es-toolkit/object';
 
-import { globalSettings } from '../../cli/index.ts';
+import {
+  globalSettings,
+  hasStorybookAgentInstructions,
+  hasStorybookSkills,
+} from '../../cli/index.ts';
 import { universalTestProviderStore } from '../stores/test-provider.ts';
 import { get as getEventCacheEntry } from '../../telemetry/event-cache.ts';
 import { isStoryCreatedByAISetup } from '../../telemetry/ai-setup-utils.ts';
@@ -93,6 +101,14 @@ export async function initializeChecklist(
     hasAiInitOptIn(configDir!)
       .then((hasOptedIn) => {
         store.setState((state) => ({ ...state, aiOptIn: hasOptedIn }));
+      })
+      .catch(() => {});
+
+    // The same test as `storybook doctor`: skills in the lock, or Storybook's section for skills
+    // that came from a plugin. The review hint in the sidebar shows only then.
+    Promise.all([hasStorybookSkills(), hasStorybookAgentInstructions(getProjectRoot())])
+      .then(([inLock, inSection]) => {
+        store.setState((state) => ({ ...state, hasSkills: inLock || inSection }));
       })
       .catch(() => {});
 

@@ -14,6 +14,7 @@ vi.mock('storybook/internal/common', () => ({
     set: vi.fn().mockResolvedValue(undefined),
   })),
   resolvePathInStorybookCache: vi.fn(() => '/tmp/test-cache'),
+  getProjectRoot: vi.fn(() => '/project'),
 }));
 
 // The two AI-related flags read from the regular fs cache. Mocking the small
@@ -46,6 +47,8 @@ vi.mock('es-toolkit/object', async () => {
 
 vi.mock('../../cli/index.ts', () => ({
   globalSettings: vi.fn(),
+  hasStorybookSkills: vi.fn().mockResolvedValue(false),
+  hasStorybookAgentInstructions: vi.fn().mockResolvedValue(false),
 }));
 
 const testProviderStateChangeListeners: Array<(...args: any[]) => void> = [];
@@ -240,6 +243,28 @@ describe('initializeChecklist', () => {
 
       expect(mockStore.getState().aiOptIn).toBe(false);
     });
+  });
+
+  describe('hasSkills flag', () => {
+    it.each([
+      { inLock: false, inSection: false, hasSkills: false },
+      { inLock: true, inSection: false, hasSkills: true },
+      { inLock: false, inSection: true, hasSkills: true },
+    ])(
+      'is $hasSkills with skills in the lock: $inLock, Storybook section: $inSection',
+      async ({ inLock, inSection, hasSkills }) => {
+        const cli = await import('../../cli/index.ts');
+        vi.mocked(cli.hasStorybookSkills).mockResolvedValue(inLock);
+        vi.mocked(cli.hasStorybookAgentInstructions).mockResolvedValue(inSection);
+
+        const { initializeChecklist } = await import('./checklist.ts');
+        await initializeChecklist(undefined, undefined, '/p');
+        await vi.advanceTimersByTimeAsync(0);
+
+        expect(cli.hasStorybookAgentInstructions).toHaveBeenCalledWith('/project');
+        expect(mockStore.getState().hasSkills).toBe(hasSkills);
+      }
+    );
   });
 
   describe('aiSetupRun flag', () => {

@@ -222,7 +222,13 @@ describe('local tools', () => {
     // itself lives in addon-mcp (core tests cannot reach it); its own suite asserts it renders
     // handler markdown verbatim as text blocks, so comparing against the handler's markdown is
     // the same contract expressed from this side of the package boundary.
-    const mcpOutcome = await getToolset('docs').methods.list.handler({});
+    const mcpOutcome = await getToolset('docs').methods.list.handler(
+      {},
+      {
+        transport: 'cli',
+        getService: () => ({}) as never,
+      }
+    );
     expect(result.exitCode).toBe(0);
     expect(result.outcome).toEqual({ kind: 'success' });
     expect(result.output).toContain('Button');

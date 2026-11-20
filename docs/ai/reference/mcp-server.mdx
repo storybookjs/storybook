@@ -95,6 +95,8 @@ Type: `boolean`
 Default: `true`
 
 Turns on the docs tools, which look up components and their documentation. They're available only when your framework generates a [components manifest](./manifests.mdx) and the `componentsManifest` feature is on. If your Storybook [composes](../../sharing/storybook-composition.mdx) other Storybooks that have manifests, these tools include their components too.
+The `docs-list` tool can list only some of the composed Storybooks through its `storybookIds` input.
+When a listing is too long for one tool result, it comes in pages, and each page ends with the call that gets the next one.
 
 #### `test`
 

@@ -79,7 +79,10 @@ describe('services preset hook: docs toolset', () => {
       await services(undefined, optionsWithRefs(RESHAPED));
       expect(fetch).not.toHaveBeenCalled();
 
-      const outcome = await getToolset('docs').methods.list.handler({ withStoryIds: false });
+      const outcome = await getToolset('docs').methods.list.handler(
+        { withStoryIds: false },
+        cliCtx
+      );
 
       expect(outcome.markdown).toContain('# Local');
       expect(outcome.markdown).toContain('id: local');
@@ -118,7 +121,10 @@ describe('services preset hook: docs toolset', () => {
         undefined,
         optionsWithRefs({ reshaped: { title: 'Reshaped', url: 'https://no-manifest.example.com' } })
       );
-      const outcome = await getToolset('docs').methods.list.handler({ withStoryIds: false });
+      const outcome = await getToolset('docs').methods.list.handler(
+        { withStoryIds: false },
+        cliCtx
+      );
 
       expect(outcome.markdown).toContain('card');
       expect(outcome.markdown).toMatch(/# Reshaped\nid: reshaped\n\nerror: .*404/);
@@ -129,7 +135,10 @@ describe('services preset hook: docs toolset', () => {
       vi.mocked(fetch).mockRejectedValue(new Error('ECONNREFUSED'));
 
       await services(undefined, optionsWithRefs(RESHAPED));
-      const outcome = await getToolset('docs').methods.list.handler({ withStoryIds: false });
+      const outcome = await getToolset('docs').methods.list.handler(
+        { withStoryIds: false },
+        cliCtx
+      );
 
       expect(outcome.markdown).toContain('card');
       expect(outcome.markdown).toMatch(/# Reshaped\nid: reshaped\n\nerror: .*ECONNREFUSED/);
@@ -143,7 +152,7 @@ describe('services preset hook: docs toolset', () => {
 
       expect(show.input.entries).not.toHaveProperty('storybookId');
 
-      const outcome = await list.handler({ withStoryIds: false });
+      const outcome = await list.handler({ withStoryIds: false }, cliCtx);
       expect(outcome.markdown).toContain('card');
       expect(outcome.markdown).not.toContain('# Local');
       expect(fetch).not.toHaveBeenCalled();

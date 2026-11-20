@@ -213,6 +213,7 @@ Type:
 ```
 
 Optional callback after `docs-list` resolves successfully.
+When a listing comes in pages, each call reports one page: `manifests`, `sources` and `resultText` describe that page, not the whole listing.
 
 ##### `onGetDocumentation`
 
@@ -346,6 +347,12 @@ Type:
 
 Registers the [list tool](https://storybook.js.org/docs/next/ai/reference/mcp-server/#docs) that returns all component/docs IDs from manifests.
 
+A listing that does not fit in one tool result (about 20,000 estimated tokens) comes in pages.
+Each page that has a next one returns a `nextCursor` and ends with the ready-to-run call for the next page, which passes it as the `cursor` input.
+The cursor carries the inputs of the first call, so it is passed on its own, and it needs no server-side session.
+In a composition, the first page opens with an index of every source, and the `storybookIds` input lists only the named sources.
+A cursor the tool did not issue, or one issued before an entry it already delivered was removed, returns an error result that says to start again without a cursor.
+
 #### `addGetDocumentationTool`
 
 Type:
@@ -360,7 +367,9 @@ Type:
 
 Registers [documentation lookup](https://storybook.js.org/docs/next/ai/reference/mcp-server/#docs) by component/docs `id`.
 
-When `options.multiSource` is `true`, the tool schema takes an optional `storybookId` input, defaulting to `local`. When it is omitted, the schema follows the request's `sources`.
+When `options.multiSource` is `true`, the tool schema takes an optional `storybookId` input. When it is omitted, the schema follows the request's `sources`.
+The `storybookId` defaults to the id of the request source that has no `url`, this Storybook, or to `local` when the request has no `sources`.
+When every source has a `url`, there is no default, and a call that leaves `storybookId` out returns an error that lists the available sources.
 
 #### `addGetStoryDocumentationTool`
 

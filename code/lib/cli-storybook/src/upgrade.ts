@@ -622,10 +622,13 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
       }
     }
 
-    const skills =
-      !options.dryRun && hadSkills
-        ? await installSkills({ packageManager: rootPackageManager, source: 'refresh' })
-        : undefined;
+    const skills = hadSkills
+      ? await installSkills({
+          packageManager: rootPackageManager,
+          source: 'refresh',
+          dryRun: options.dryRun,
+        })
+      : undefined;
     // The skills of a plugin, or installed by hand, come with an AGENTS.md section that promises
     // the same updates.
     if (!options.dryRun && !hadSkills) {

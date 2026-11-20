@@ -237,6 +237,26 @@ describe('installSkills', () => {
     expect(logger.log).not.toHaveBeenCalledWith(expect.stringContaining('Storybook section'));
   });
 
+  it('names the commands a refresh would run in a dry run, without running them', async () => {
+    vol.fromNestedJSON({
+      [LOCK_PATH]: JSON.stringify({
+        version: 1,
+        skills: { stories: { source: 'storybookjs/skills' } },
+      }),
+    });
+
+    const result = await installSkills({ packageManager, source: 'refresh', dryRun: true });
+
+    expect(packageManager.runPackageCommand).not.toHaveBeenCalled();
+    expect(addStorybookAgentInstructions).not.toHaveBeenCalled();
+    const output = vi.mocked(logger.log).mock.calls.flat().join('\n');
+    expect(output).toContain(
+      'npx skills@latest add storybookjs/skills#v10.6.0 --yes --agent claude-code universal --copy'
+    );
+    expect(output).toContain('npx skills@latest remove stories --yes');
+    expect(result).toEqual({ result: 'skipped', source: 'refresh' });
+  });
+
   it('replaces the skills of an 11.0 prerelease on a refresh', async () => {
     vol.fromNestedJSON({
       [LOCK_PATH]: JSON.stringify({

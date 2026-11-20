@@ -209,6 +209,10 @@ const formatProjectDirs = (list: AutomigrationCheckResult['reports']) => {
   return `${relativeDirs.slice(0, amountOfProjectsShown).join(', ')}${remaining > 0 ? ` and ${remaining} more...` : ''}`;
 };
 
+/** The text the selection prompt shows under a fix. */
+const describeFix = (fix: Fix) =>
+  [fix.prompt(), fix.link && `More info: ${fix.link}`].filter(Boolean).join('\n');
+
 // A fix's prompt can say more with its check result, such as the files it changes, than the
 // one-line hint in the selection shows.
 export const logAutomigrationDetails = (automigrations: AutomigrationCheckResult[]) => {
@@ -232,17 +236,26 @@ export async function promptForAutomigrations(
     return [];
   }
 
-  const logSelection = (title: string, selection: AutomigrationCheckResult[]) => {
+  const logSelection = (
+    title: string,
+    selection: AutomigrationCheckResult[],
+    { withDescriptions = false } = {}
+  ) => {
     logger.log(title);
     selection.forEach(({ fix, reports: list }) => {
       logger.log(`  - ${fix.id} (${formatProjectDirs(list)})`);
+      if (withDescriptions) {
+        logger.log(describeFix(fix).replace(/^/gm, '    '));
+      }
     });
   };
 
   const preselectedIds = new Set(options.preselectedIds ?? []);
 
   if (options.dryRun) {
-    logSelection('Detected automigrations (dry run - no changes will be made):', automigrations);
+    logSelection('Detected automigrations (dry run - no changes will be made):', automigrations, {
+      withDescriptions: true,
+    });
     logAutomigrationDetails(automigrations);
     return [];
   }
@@ -270,21 +283,13 @@ export async function promptForAutomigrations(
 
   // Create choices for multiselect prompt
   const choices = automigrations.map((am) => {
-    const hint = [];
-
-    hint.push(`${am.fix.prompt()}`);
-
-    if (am.fix.link) {
-      hint.push(`More info: ${am.fix.link}`);
-    }
-
     const label =
       am.reports.length > 1 ? `${am.fix.id} (${formatProjectDirs(am.reports)})` : am.fix.id;
 
     return {
       value: am.fix.id,
       label,
-      hint: hint.join('\n'),
+      hint: describeFix(am.fix),
       defaultSelected: preselectedIds.has(am.fix.id) || (am.fix.defaultSelected ?? true),
     };
   });

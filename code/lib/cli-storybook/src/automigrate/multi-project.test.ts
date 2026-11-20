@@ -388,6 +388,19 @@ describe('multi-project automigrations', () => {
         'Detected automigrations (dry run - no changes will be made):'
       );
     });
+
+    it('describes each detected fix in a dry run, as the selection prompt does', async () => {
+      const { logger } = await import('storybook/internal/node-logger');
+      const fix = createMockFix('described-fix', {}, { link: 'https://example.com/described-fix' });
+
+      await promptForAutomigrations([asAutomigration(fix, createMockProject('/repo/.storybook'))], {
+        dryRun: true,
+      });
+
+      const output = vi.mocked(logger.log).mock.calls.flat().join('\n');
+      expect(output).toContain('Prompt for described-fix');
+      expect(output).toContain('More info: https://example.com/described-fix');
+    });
   });
 
   describe('logAutomigrationDetails', () => {

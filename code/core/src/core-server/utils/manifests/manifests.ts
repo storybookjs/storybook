@@ -1,10 +1,13 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 
-import { selectComponentEntriesByComponentId } from 'storybook/internal/common';
+import {
+  selectManifestStoryIds,
+  selectComponentEntriesByComponentId,
+} from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import type { Manifests, Presets } from 'storybook/internal/types';
 
-import { join } from 'pathe';
+import { dirname, join } from 'pathe';
 import type { Polka } from 'polka';
 import invariant from 'tiny-invariant';
 
@@ -15,13 +18,14 @@ import { getOwn } from '../../../shared/open-service/plain-object.ts';
 import { readAllComponents } from '../../../shared/open-service/services/component-state-key.ts';
 import type { DocgenPayload } from '../../../shared/open-service/services/docgen/types.ts';
 import type { StoryDocsPayload } from '../../../shared/open-service/services/story-docs/types.ts';
+import { selectManifestStories } from '../../../shared/open-service/services/story-docs/select-manifest-stories.ts';
 import {
   buildComponentsRefManifest,
   type ComponentManifestWithStoryDocs,
   loadDocgenPayloadsFromDisk,
   loadStoryDocsPayloadsFromDisk,
   mergeManifestPayloads,
-  toComponentManifestIndexEntries,
+  buildComponentManifestIndex,
 } from './components-ref-manifest.ts';
 import {
   createDiskLoader,
@@ -59,12 +63,17 @@ function buildComponentsManifest(
 function mergeServicePayloads(
   docgenPayloads: Record<string, DocgenPayload>,
   storyDocsPayloads: Record<string, StoryDocsPayload>,
-  componentIds: string[]
+  componentIds: string[],
+  manifestStoryIds: ReadonlySet<string>
 ): Record<string, ComponentManifestWithStoryDocs> {
   return Object.fromEntries(
     componentIds.flatMap((id) => {
       const docgen = getOwn(docgenPayloads, id);
-      const storyDocs = getOwn(storyDocsPayloads, id);
+      const payload = getOwn(storyDocsPayloads, id);
+      const storyDocs = payload && {
+        ...payload,
+        stories: selectManifestStories(payload.stories, manifestStoryIds) ?? {},
+      };
       if (!docgen) {
         // A componentless component (its story file names no `meta.component`, so no docgen
         // provider claims it) still has stories to show. Without a stub row here it would disappear
@@ -192,9 +201,10 @@ function withDocsOnlyComponents(
  */
 async function renderComponentsHtmlFromService(
   manifests: Manifests,
-  manifestComponentIds: string[],
+  manifestEntries: ManifestEntries,
   docsManifest?: DocsManifest
 ) {
+  const manifestComponentIds = getManifestComponentIds(manifestEntries);
   const docgenService = getService('core/docgen', { internal: true });
   const storyDocsService = getService('core/story-docs', { internal: true });
   const startTime = performance.now();
@@ -211,7 +221,8 @@ async function renderComponentsHtmlFromService(
     mergeServicePayloads(
       readAllComponents(allDocgenPayloads),
       readAllComponents(allStoryDocsPayloads),
-      manifestComponentIds
+      manifestComponentIds,
+      selectManifestStoryIds(manifestEntries)
     ),
     manifestComponentIds,
     docsByComponentId
@@ -254,9 +265,11 @@ async function writeManifestJsonFiles(
 async function writeDocgenServerManifests(
   outputDir: string,
   manifests: Manifests,
-  manifestComponentIds: string[],
+  manifestEntries: ManifestEntries,
   docsManifest?: DocsManifest
 ) {
+  const manifestComponentIds = getManifestComponentIds(manifestEntries);
+  const manifestStoryIds = selectManifestStoryIds(manifestEntries);
   const hasOtherManifests = Object.keys(manifests).some((name) => name !== 'components');
   const shouldWriteHtml = manifestComponentIds.length > 0 || !!docsManifest;
 
@@ -275,7 +288,7 @@ async function writeDocgenServerManifests(
   const durationMs = Math.round(performance.now() - startTime);
   const docsByComponentId = getAttachedDocsByComponent(manifests.components);
   const mergedComponents = withDocsOnlyComponents(
-    mergeServicePayloads(docgenPayloads, storyDocsPayloads, manifestComponentIds),
+    mergeServicePayloads(docgenPayloads, storyDocsPayloads, manifestComponentIds, manifestStoryIds),
     manifestComponentIds,
     docsByComponentId
   );
@@ -288,21 +301,23 @@ async function writeDocgenServerManifests(
   ]);
 
   if (manifestComponentIds.length > 0) {
+    const { entries, storyFiles } = buildComponentManifestIndex(
+      manifestComponentIds,
+      manifestStoryIds,
+      docgenPayloads,
+      storyDocsPayloads,
+      attachedDocsWithSummaries
+    );
+    await Promise.all(
+      Object.entries(storyFiles).map(async ([path, payload]) => {
+        const outputPath = join(manifestsDir, path);
+        await mkdir(dirname(outputPath), { recursive: true });
+        await writeFile(outputPath, JSON.stringify(payload, null, 2));
+      })
+    );
     await writeFile(
       join(manifestsDir, 'components.json'),
-      JSON.stringify(
-        buildComponentsRefManifest(
-          toComponentManifestIndexEntries(
-            manifestComponentIds,
-            docgenPayloads,
-            storyDocsPayloads,
-            attachedDocsWithSummaries
-          ),
-          manifests.components?.meta
-        ),
-        null,
-        2
-      )
+      JSON.stringify(buildComponentsRefManifest(entries, manifests.components?.meta), null, 2)
     );
   }
 
@@ -361,12 +376,7 @@ export async function writeManifests(outputDir: string, presets: Presets) {
     const docsManifest = isDocsManifest(manifests.docs) ? manifests.docs : undefined;
 
     if (isDocgenServerManifestMode(features)) {
-      await writeDocgenServerManifests(
-        outputDir,
-        manifests,
-        getManifestComponentIds(manifestEntries),
-        docsManifest
-      );
+      await writeDocgenServerManifests(outputDir, manifests, manifestEntries, docsManifest);
       return;
     }
 
@@ -432,13 +442,7 @@ export function registerManifests({ app, presets }: { app: Polka; presets: Prese
 
       if (await isDocgenServerEnabled()) {
         res.setHeader('Content-Type', 'text/html; charset=utf-8');
-        res.end(
-          await renderComponentsHtmlFromService(
-            manifests,
-            getManifestComponentIds(manifestEntries),
-            docsManifest
-          )
-        );
+        res.end(await renderComponentsHtmlFromService(manifests, manifestEntries, docsManifest));
         return;
       }
 

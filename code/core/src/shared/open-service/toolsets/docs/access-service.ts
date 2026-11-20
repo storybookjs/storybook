@@ -13,7 +13,10 @@
 import type { StoryIndex } from 'storybook/internal/types';
 
 import { getComponentIdFromEntry } from '../../../../common/utils/component-id.ts';
-import { selectComponentEntriesByComponentId } from '../../../../common/utils/select-component-entry.ts';
+import {
+  selectComponentEntriesByComponentId,
+  selectManifestStoryIds,
+} from '../../../../common/utils/select-component-entry.ts';
 import {
   OpenServiceDocgenMissingComponentError,
   OpenServiceMissingServiceError,
@@ -22,6 +25,7 @@ import { Tag } from '../../../constants/tags.ts';
 import { readComponent } from '../../services/component-state-key.ts';
 import type { DocgenService } from '../../services/docgen/definition.ts';
 import type { StoryDocsService } from '../../services/story-docs/definition.ts';
+import { selectManifestStories } from '../../services/story-docs/select-manifest-stories.ts';
 import type { ToolsetGetService } from '../../toolset-definition.ts';
 import { toShallowManifests, type DocsAccess, type ResolvedDocsEntry } from './access.ts';
 import type { DocsClassification } from './classify-services.ts';
@@ -96,6 +100,7 @@ function classifyIndex(index: StoryIndex): DocsClassification {
   return {
     componentIds: [...selected.keys()],
     storyBasedIds,
+    manifestStoryIds: selectManifestStoryIds(entries),
     unattachedDocs,
     attachedDocsByComponent,
   };
@@ -169,14 +174,15 @@ export function createServiceDocsAccess({
     const components: Record<string, ComponentManifestV1> = {};
     for (const id of classification.componentIds) {
       const payload = readComponent(allDocgen, id);
+      const stories = adaptCoreStories(
+        selectManifestStories(storiesById.get(id)?.stories ?? {}, classification.manifestStoryIds)
+      );
       components[id] = {
         id,
         name: payload?.name ?? id,
         ...(payload?.description !== undefined ? { description: payload.description } : {}),
         ...(payload?.summary !== undefined ? { summary: payload.summary } : {}),
-        ...(classification.storyBasedIds.has(id) && withStoryIds
-          ? { stories: adaptCoreStories(storiesById.get(id)?.stories) ?? [] }
-          : {}),
+        ...(stories ? { stories } : {}),
       };
     }
 
@@ -212,7 +218,10 @@ export function createServiceDocsAccess({
     const mdx = getMdx();
     const [docgenPayload, storyDocsPayload] = await Promise.all([
       loadOptionalComponentPayload(getDocgen().queries.docgen.loaded({ id })),
-      loadOptionalComponentPayload(getStoryDocs().queries.storyDocs.loaded({ id })),
+      // If a component has !manifest on all its stories, it gets no `stories`, as in a build.
+      classification.storyBasedIds.has(id)
+        ? loadOptionalComponentPayload(getStoryDocs().queries.storyDocs.loaded({ id }))
+        : undefined,
     ]);
 
     const hasAttachedDocs = (classification.attachedDocsByComponent.get(id)?.length ?? 0) > 0;
@@ -222,12 +231,17 @@ export function createServiceDocsAccess({
         : undefined;
     const docs = selectAttachedDocs(classification, id, mdxPayload);
 
+    const stories =
+      storyDocsPayload?.stories &&
+      selectManifestStories(storyDocsPayload.stories, classification.manifestStoryIds);
+
     const core: CoreDocgenComponent = {
       ...docgenPayload,
       id,
       name: docgenPayload?.name ?? id,
-      ...(storyDocsPayload?.stories ? { stories: storyDocsPayload.stories } : {}),
-      ...(storyDocsPayload?.import ? { import: storyDocsPayload.import } : {}),
+      ...(stories ? { stories } : {}),
+      // As in a build, the import comes with the stories.
+      ...(stories && storyDocsPayload?.import ? { import: storyDocsPayload.import } : {}),
       ...(docs ? { docs } : {}),
     };
 

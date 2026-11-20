@@ -19,7 +19,7 @@ import {
   loadDocgenPayloadsFromDisk,
   loadStoryDocsPayloadsFromDisk,
   mergeManifestPayloads,
-  toComponentManifestIndexEntries,
+  buildComponentManifestIndex,
 } from './components-ref-manifest.ts';
 
 vi.mock('node:fs/promises', { spy: true });
@@ -122,7 +122,12 @@ describe('components-ref-manifest', () => {
     };
 
     expect(
-      toComponentManifestIndexEntries(['button'], { button: docgen }, { button: storyDocs })
+      buildComponentManifestIndex(
+        ['button'],
+        new Set(['button--primary']),
+        { button: docgen },
+        { button: storyDocs }
+      ).entries
     ).toEqual({
       button: {
         id: 'button',
@@ -133,6 +138,57 @@ describe('components-ref-manifest', () => {
         stories: { $ref: storyDocsManifestRef('button') },
       },
     });
+  });
+
+  it('returns filtered story files with matching refs while preserving shared snapshots', () => {
+    const button: StoryDocsPayload = {
+      id: 'button',
+      name: 'Button',
+      path: './button.stories.tsx',
+      import: 'import { Button } from "./Button";',
+      stories: {
+        'button--primary': { id: 'button--primary', name: 'Primary', snippet: '<Button />' },
+        'button--hidden': { id: 'button--hidden', name: 'Hidden', snippet: '<Button />' },
+      },
+    };
+    const card: StoryDocsPayload = {
+      id: 'card',
+      name: 'Card',
+      path: './card.stories.tsx',
+      stories: {
+        'card--primary': { id: 'card--primary', name: 'Primary' },
+      },
+    };
+    const { entries, storyFiles } = buildComponentManifestIndex(
+      ['button', 'card'],
+      new Set(['button--primary', 'card--primary']),
+      {},
+      { button, card }
+    );
+
+    expect(entries.button.stories).toEqual({ $ref: './stories/button.json' });
+    expect(entries.card.stories).toEqual({ $ref: storyDocsManifestRef('card') });
+    expect(storyFiles).toEqual({
+      './stories/button.json': {
+        ...button,
+        stories: { 'button--primary': button.stories['button--primary'] },
+      },
+    });
+    expect(Object.keys(button.stories)).toEqual(['button--primary', 'button--hidden']);
+  });
+
+  it('leaves out the stories ref of a payload without stories', () => {
+    const button: StoryDocsPayload = {
+      id: 'button',
+      name: 'Button',
+      path: './button.stories.tsx',
+      import: 'import { Button } from "./Button";',
+      stories: {},
+    };
+    const index = buildComponentManifestIndex(['button'], new Set(), {}, { button });
+
+    expect(index.entries.button).not.toHaveProperty('stories');
+    expect(index.storyFiles).toEqual({});
   });
 
   it('merges docgen and story-docs payloads with Record-shaped stories', () => {
@@ -270,19 +326,21 @@ describe('components-ref-manifest', () => {
       jsDocTags: {},
     };
 
-    expect(toComponentManifestIndexEntries(['button'], { button: payload })).toEqual({
-      button: {
-        id: 'button',
-        name: 'Button',
-        description: 'A button',
-        summary: 'Click me',
-        docgen: { $ref: docgenManifestRef('button') },
-      },
-    });
+    expect(buildComponentManifestIndex(['button'], new Set(), { button: payload }).entries).toEqual(
+      {
+        button: {
+          id: 'button',
+          name: 'Button',
+          description: 'A button',
+          summary: 'Click me',
+          docgen: { $ref: docgenManifestRef('button') },
+        },
+      }
+    );
   });
 
   it('builds a minimal index entry (no docgen ref) when a payload is missing', () => {
-    expect(toComponentManifestIndexEntries(['button'], {})).toEqual({
+    expect(buildComponentManifestIndex(['button'], new Set(), {}).entries).toEqual({
       button: { id: 'button', name: 'button' },
     });
   });
@@ -301,11 +359,12 @@ describe('components-ref-manifest', () => {
     };
 
     expect(
-      toComponentManifestIndexEntries(
+      buildComponentManifestIndex(
         ['abstractions-billboard'],
+        new Set(['abstractions-billboard--default']),
         {},
         { 'abstractions-billboard': storyDocs }
-      )
+      ).entries
     ).toEqual({
       'abstractions-billboard': {
         id: 'abstractions-billboard',

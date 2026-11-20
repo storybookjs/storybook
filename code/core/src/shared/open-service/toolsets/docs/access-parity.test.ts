@@ -16,7 +16,7 @@ import { Tag } from '../../../constants/tags.ts';
 import type { ToolsetCtx } from '../../toolset-definition.ts';
 import {
   buildComponentsRefManifest,
-  toComponentManifestIndexEntries,
+  buildComponentManifestIndex,
 } from '../../../../core-server/utils/manifests/components-ref-manifest.ts';
 import { createManifestDocsAccess } from './access-manifest.ts';
 import { createProviderDocsAccess } from './access-provider.ts';
@@ -45,6 +45,15 @@ const storyIndex = {
       importPath: './src/Guide.mdx',
       type: 'docs',
       tags: [Tag.MANIFEST, Tag.UNATTACHED_MDX],
+    },
+    'button--dark': {
+      id: 'button--dark',
+      title: 'Button',
+      name: 'Dark',
+      importPath: './src/Button.stories.tsx',
+      type: 'story',
+      subtype: 'story',
+      tags: ['dev', 'test'],
     },
   },
 } as unknown as StoryIndex;
@@ -86,6 +95,7 @@ const storyDocsPayload = {
   import: "import { Button } from './Button'",
   stories: {
     'button--primary': { id: 'button--primary', name: 'Primary', snippet: '<Button />' },
+    'button--dark': { id: 'button--dark', name: 'Dark', snippet: '<Button dark />' },
   },
 };
 
@@ -188,6 +198,21 @@ async function renderShow(toolset: ReturnType<typeof createDocsToolset>, id: str
 }
 
 describe('docs tools render the same text in both docgen modes', () => {
+  it.each(['cli', 'mcp'] as const)(
+    'does not expose an excluded story through %s',
+    async (transport) => {
+      const toolset = serviceToolset();
+      const context = { ...ctx, transport };
+      const shown = await toolset.methods.show.handler({ id: 'button' }, context);
+      expect(shown.markdown).toContain('Primary');
+      expect(shown.markdown).not.toContain('Dark');
+      const story = await toolset.methods.showStory.handler({ storyId: 'button--dark' }, context);
+      expect(story.ok).toBe(false);
+      expect(story.markdown).not.toContain('<Button dark />');
+      expect(story.markdown).toContain('Primary');
+    }
+  );
+
   it.each([false, true])('list with withStoryIds=%s', async (withStoryIds) => {
     expect(await renderList(serviceToolset(), withStoryIds)).toBe(
       await renderList(manifestToolset(), withStoryIds)
@@ -320,11 +345,12 @@ describe('docs tools render the same text in dev and from a built Storybook', ()
   function staticAccess() {
     const files: Record<string, object> = {
       './manifests/components.json': buildComponentsRefManifest(
-        toComponentManifestIndexEntries(
+        buildComponentManifestIndex(
           [componentId],
+          new Set(Object.keys(componentlessIndex.entries)),
           {},
           { [componentId]: componentlessStoryDocs }
-        )
+        ).entries
       ),
       [`./services/core/story-docs/${componentId}.json`]: {
         components: { [componentId]: componentlessStoryDocs },

@@ -6,12 +6,14 @@ import {
 } from '../../../shared/open-service/services/docgen/paths.ts';
 import type { DocgenPayload } from '../../../shared/open-service/services/docgen/types.ts';
 import {
+  storyDocsFilteredManifestRef,
   storyDocsManifestRef,
   storyDocsStaticStorePath,
 } from '../../../shared/open-service/services/story-docs/paths.ts';
 import type { StoryDocsPayload } from '../../../shared/open-service/services/story-docs/types.ts';
 import { getOwn } from '../../../shared/open-service/plain-object.ts';
 import { readComponent } from '../../../shared/open-service/services/component-state-key.ts';
+import { selectManifestStories } from '../../../shared/open-service/services/story-docs/select-manifest-stories.ts';
 import type { ComponentManifest, ComponentsManifest } from '../../../types/modules/core-common.ts';
 
 import { join } from 'pathe';
@@ -124,21 +126,35 @@ export async function loadStoryDocsPayloadsFromDisk(
   return Object.fromEntries(entries.filter((entry) => entry !== null));
 }
 
-/**
- * Builds `manifests/components.json` index rows for the given component ids.
- */
-export function toComponentManifestIndexEntries(
+export function buildComponentManifestIndex(
   componentIds: string[],
+  manifestStoryIds: ReadonlySet<string>,
   docgenPayloads: Record<string, DocgenPayload>,
   storyDocsPayloads: Record<string, StoryDocsPayload> = {},
   docsByComponentId: Record<string, Record<string, DocsManifestEntry>> = {}
-): Record<string, ComponentManifestIndexEntry> {
+): {
+  entries: Record<string, ComponentManifestIndexEntry>;
+  storyFiles: Record<string, StoryDocsPayload>;
+} {
   const entries: Record<string, ComponentManifestIndexEntry> = {};
+  const storyFiles: Record<string, StoryDocsPayload> = {};
 
   for (const id of componentIds) {
     const payload = getOwn(docgenPayloads, id);
     const storyDocs = getOwn(storyDocsPayloads, id);
     const docs = getOwn(docsByComponentId, id);
+    const stories = storyDocs && selectManifestStories(storyDocs.stories, manifestStoryIds);
+    let storiesRef: JsonRef | undefined;
+    if (storyDocs && stories) {
+      if (Object.keys(stories).length === Object.keys(storyDocs.stories).length) {
+        storiesRef = { $ref: storyDocsManifestRef(id) };
+      } else {
+        // The service snapshot also supplies Code panel snippets for excluded stories.
+        const ref = storyDocsFilteredManifestRef(id);
+        storyFiles[ref] = { ...storyDocs, stories };
+        storiesRef = { $ref: ref };
+      }
+    }
     entries[id] = {
       id: payload?.id ?? id,
       name: payload?.name ?? id,
@@ -147,12 +163,12 @@ export function toComponentManifestIndexEntries(
       ...(payload ? { docgen: { $ref: docgenManifestRef(id) } } : {}),
       // Stories are indexed whether or not a component was extracted, so the ref does not hang off
       // the docgen payload: dropping it hid every story of a componentless component.
-      ...(storyDocs ? { stories: { $ref: storyDocsManifestRef(id) } } : {}),
+      ...(storiesRef ? { stories: storiesRef } : {}),
       ...(docs ? { docs } : {}),
     };
   }
 
-  return entries;
+  return { entries, storyFiles };
 }
 
 /** Builds a ref-based components manifest index (paths relative to `manifests/`). */

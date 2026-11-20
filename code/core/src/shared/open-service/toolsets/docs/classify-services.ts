@@ -11,6 +11,7 @@ export type DocsClassification = {
   componentIds: string[];
   /** Component ids backed by a story-docs payload. */
   storyBasedIds: Set<string>;
+  manifestStoryIds: Set<string>;
   /** Standalone MDX docs keyed by docs id → index entry name and title. */
   unattachedDocs: Map<string, { name: string; title: string }>;
   /** Attached MDX docs ids grouped by owning component id. */

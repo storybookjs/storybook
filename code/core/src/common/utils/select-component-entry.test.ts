@@ -3,10 +3,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { once } from 'storybook/internal/node-logger';
 
 import { Tag } from '../../shared/constants/tags.ts';
-import type { DocsIndexEntry, IndexEntry } from '../../types/modules/indexer.ts';
+import type { DocsIndexEntry, IndexEntry, StoryIndexEntry } from '../../types/modules/indexer.ts';
 
 import {
   getStoryImportPathFromEntry,
+  selectManifestStoryIds,
   selectComponentEntriesByComponentId,
 } from './select-component-entry.ts';
 
@@ -17,7 +18,7 @@ beforeEach(() => {
   vi.mocked(once.warn).mockImplementation(() => undefined);
 });
 
-function makeStoryEntry(id: string, title = 'Comp'): IndexEntry {
+function makeStoryEntry(id: string, title = 'Comp'): StoryIndexEntry {
   return {
     id,
     name: 'Default',
@@ -27,6 +28,28 @@ function makeStoryEntry(id: string, title = 'Comp'): IndexEntry {
     importPath: `./${title.toLowerCase()}.stories.tsx`,
   };
 }
+
+describe('selectManifestStoryIds', () => {
+  it('selects stories, leaving out tests and docs', () => {
+    const story = { ...makeStoryEntry('comp--story'), tags: [Tag.MANIFEST] };
+    const test = {
+      ...makeStoryEntry('comp--test'),
+      subtype: 'test',
+      tags: [Tag.MANIFEST],
+    } satisfies IndexEntry;
+    const docs = {
+      id: 'comp--docs',
+      name: 'Docs',
+      title: 'Comp',
+      type: 'docs',
+      importPath: './comp.mdx',
+      storiesImports: ['./comp.stories.tsx'],
+      tags: [Tag.MANIFEST, Tag.ATTACHED_MDX],
+    } satisfies DocsIndexEntry;
+
+    expect(selectManifestStoryIds([story, test, docs])).toEqual(new Set(['comp--story']));
+  });
+});
 
 describe('selectComponentEntriesByComponentId', () => {
   it('prefers stories over attached docs for the same componentId', () => {

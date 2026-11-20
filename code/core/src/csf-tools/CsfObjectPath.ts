@@ -39,14 +39,20 @@ export type CsfPath = readonly (string | number)[];
  * A path segment for every key of an object, as in `remove(['argTypes', anyKey, 'defaultValue'])`,
  * which removes `defaultValue` from each arg.
  */
-export const anyKey: unique symbol = Symbol('anyKey');
+export const anyKey = Symbol.for('storybook/csf-tools/anyKey') as AnyKey;
+
+// Branded by its description, not declared `unique symbol`: the types of the source and of a
+// build of it, which a check of the source can see both of, are then the same.
+export type AnyKey = symbol & { readonly description: 'storybook/csf-tools/anyKey' };
+
+const isAnyKey = (segment: unknown): segment is AnyKey => segment === anyKey;
 
 /** A path that may hold `anyKey` segments. */
-export type CsfPattern = readonly (string | number | typeof anyKey)[];
+export type CsfPattern = readonly (string | number | AnyKey)[];
 
 /** A pattern as a path, with `*` for each `anyKey`. */
 export const patternPath = (pattern: CsfPattern): (string | number)[] =>
-  pattern.map((segment) => (segment === anyKey ? '*' : segment));
+  pattern.map((segment) => (isAnyKey(segment) ? '*' : segment));
 
 /** Print a path as `parameters.msw.handlers[0]`. */
 export const printCsfPath = (path: CsfPattern) =>
@@ -259,7 +265,7 @@ const showsMembers = (
 };
 
 // The key a member read such as `types.label` or `types['label']` reads.
-const memberKey = (member: E.MemberExpression): string | typeof anyKey => {
+const memberKey = (member: E.MemberExpression): string | AnyKey => {
   const property = member.property as Node;
   if (!member.computed) {
     return property.type === 'Identifier' ? property.name : anyKey;
@@ -293,7 +299,7 @@ const showsValue = (
     return showsMembers(editor, value.properties, path, seen);
   }
   const [segment, ...rest] = path;
-  if (value.type === 'ArrayExpression' && (segment === anyKey || /^\d+$/.test(segment))) {
+  if (value.type === 'ArrayExpression' && (isAnyKey(segment) || /^\d+$/.test(segment))) {
     return value.elements.some(
       (element) =>
         !!element &&

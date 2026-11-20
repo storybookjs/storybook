@@ -441,6 +441,36 @@ describe('argtypes-default-value', () => {
     expect(result.story).toBe(story);
   });
 
+  it.each(['satisfies object', 'as const'])(
+    'deletes a defaultValue from argTypes written with %s',
+    async (suffix) => {
+      const result = await migrate({
+        story: `export default { argTypes: { label: { defaultValue: 'A', control: 'text' } } ${suffix} };`,
+      });
+
+      expect(result.failures).toEqual([]);
+      expect(result.story).not.toContain('defaultValue');
+      expect(result.story).toContain(suffix);
+    }
+  );
+
+  it.each(["cond ? { label: { defaultValue: 'A' } } : {}", "mk({ label: { defaultValue: 'A' } })"])(
+    'fails argTypes written as %s, which shows a defaultValue',
+    async (argTypes) => {
+      const story = `export default { argTypes: ${argTypes} };`;
+      const result = await migrate({ story });
+
+      expect(result.failures).toEqual([
+        {
+          file: storyPath,
+          kind: 'story',
+          message: expect.stringContaining('argTypes.*.defaultValue'),
+        },
+      ]);
+      expect(result.story).toBe(story);
+    }
+  );
+
   it('deletes the defaultValue of an arg named table', async () => {
     const result = await migrate({
       story: "export default { argTypes: { table: { defaultValue: 'x', control: 'text' } } };",

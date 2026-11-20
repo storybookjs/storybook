@@ -13,23 +13,34 @@ import {
   planFiling,
   renderDry,
   renderFilingReport,
+  skipsReport,
   type FilingOutcome,
   type FilingStep,
+  type KnownIssue,
 } from './lib/filing.ts';
 import { cycleRef } from './lib/cycle.ts';
-import { ghParse, ghText, searchFingerprint } from './lib/github.ts';
+import { listQaIssues, ghText, pages } from './lib/github.ts';
 import { copyRedacted } from './lib/redact.ts';
+import { hitsFor, openHit, QA_LABEL, writtenOn, type QaIssue } from './lib/proposals.ts';
+import { pushTokenEnv } from './lib/push-targets.ts';
 import { Proposal } from './lib/schema.ts';
 import { writeStepSummary } from './lib/step-summary.ts';
 
 const HELP = `Usage: node ecosystem-qa/file.ts --proposals <proposals.json> --repo <owner/name> [--dry]
 
---dry writes each proposal to $GITHUB_STEP_SUMMARY (stdout when unset) and changes nothing.
+--dry writes each proposal to $GITHUB_STEP_SUMMARY (stdout when unset) and changes nothing. It
+reads the internal-qa issues with gh, so it shows what filing now would do, skips included.
 Without --dry it checks that the milestones and labels exist, then for each proposal pushes the
-cycle branch to the catalog repo with ECOSYSTEM_QA_PUSH_TOKEN, pushes evidence to the qa-assets
-branch of --repo and creates the issue or comment with GH_TOKEN. A failed proposal does not stop
-the others; the filed and failed table goes to the Step Summary and the exit code is 1 if any failed.
-Rerunning is safe: a filed fingerprint, an identical comment and pushed evidence are skipped.`;
+cycle branch to the catalog repo with the push token of that repo's org, pushes evidence to the
+qa-assets branch of --repo and creates the issue or comment with GH_TOKEN. A failed proposal does
+not stop the others; the filed and failed table goes to the Step Summary and the exit code is 1 if
+any failed.
+An issue counts as already filed only while it is open and carries the internal-qa label.
+Rerunning is safe: an issue it already created, an identical comment and pushed evidence are
+skipped. When an open issue with one of a proposal's fingerprints appeared after the collect, what
+that issue lacks goes on it as a comment and no second issue is created. A comment is skipped as a
+repeat when the issue already has a sighting on every Storybook version, repo, system and engine
+that the comment reports.`;
 
 const EVIDENCE_PUSH_ATTEMPTS = 3;
 
@@ -91,7 +102,7 @@ const writeBody = (body: string) => {
 };
 
 const pushCycle = (step: Extract<FilingStep, { kind: 'push-cycle' }>) => {
-  const token = requireToken('ECOSYSTEM_QA_PUSH_TOKEN');
+  const token = requireToken(pushTokenEnv(step.repo));
   const dir = mkdtempSync(join(tmpdir(), 'qa-cycle-'));
   const remote = `https://github.com/${step.repo}`;
   git(dir, ['init', '--quiet']);
@@ -185,29 +196,36 @@ const runStep = (step: FilingStep): string | undefined => {
   }
 };
 
-const pages = <T extends z.ZodType>(item: T, path: string): z.infer<T>[] =>
-  ghParse(z.array(z.array(item)), ['api', '--paginate', '--slurp', path]).flat();
-
-const commentsOn = (issue: number): string[] =>
-  pages(z.object({ body: z.string() }), `repos/${repo}/issues/${issue}/comments`).map(
-    (comment) => comment.body
-  );
-
 const firstLine = (error: unknown) =>
   (error instanceof Error ? error.message : String(error)).split('\n')[0]!.slice(0, 160);
 
-const fileProposal = (proposal: Proposal): FilingOutcome => {
+const reportedOn = (proposal: Proposal, issues: QaIssue[]): QaIssue | undefined => {
+  if (proposal.kind === 'issue') {
+    return openHit(
+      hitsFor(issues, [
+        proposal.fingerprint,
+        ...proposal.related.map((related) => related.fingerprint),
+      ]).map((hit) => hit.issue)
+    );
+  }
+  return proposal.kind === 'comment'
+    ? issues.find((issue) => issue.number === proposal.existingIssue)
+    : undefined;
+};
+
+const knownIssue = (proposal: Proposal, issues: QaIssue[]): KnownIssue => {
+  const target = reportedOn(proposal, issues);
+  return {
+    ...(proposal.kind === 'issue' && target ? { filedAs: target.number } : {}),
+    existing: target ? writtenOn(target) : [],
+  };
+};
+
+const fileProposal = (proposal: Proposal, issues: QaIssue[]): FilingOutcome => {
   const steps = planFiling(proposal, {
     repo,
     evidenceLinks: 'assets',
-    ...(proposal.kind === 'issue'
-      ? {
-          // A closed hit is why collect proposed a new issue, so only an open one counts as filed.
-          filedAs: searchFingerprint(repo, proposal.fingerprint).find((hit) => hit.state === 'open')
-            ?.number,
-        }
-      : {}),
-    ...(proposal.kind === 'comment' ? { comments: commentsOn(proposal.existingIssue) } : {}),
+    ...knownIssue(proposal, issues),
   });
   let detail = '';
   for (const step of steps) {
@@ -241,23 +259,31 @@ const checkPrerequisites = () => {
 };
 
 if (values.dry) {
-  const counts = ['issue', 'comment', 'suppressed']
+  const counts = ['issue', 'comment', 'suppressed', 'skipped']
     .map((kind) => `${proposals.filter((proposal) => proposal.kind === kind).length} ${kind}`)
     .join(', ');
+  const issues = listQaIssues(repo, QA_LABEL);
+  const known = proposals.map((proposal) => knownIssue(proposal, issues));
+  const reports = proposals.filter(({ kind }) => kind === 'issue' || kind === 'comment').length;
+  const skipped = proposals.filter((proposal, index) =>
+    skipsReport(proposal, planFiling(proposal, { repo, evidenceLinks: 'local', ...known[index] }))
+  ).length;
   writeStepSummary(
     [
       '## Ecosystem QA proposals (dry run, nothing was filed)',
       '',
       `${proposals.length} proposals: ${counts}.`,
+      `Filing now would skip ${skipped} of the ${reports} issues and comments, each with its reason below.`,
       '',
-      ...proposals.map((proposal) => renderDry(proposal, repo)),
+      ...proposals.map((proposal, index) => renderDry(proposal, repo, known[index])),
     ].join('\n')
   );
 } else {
   checkPrerequisites();
+  const issues = listQaIssues(repo, QA_LABEL);
   const outcomes = proposals.map((proposal): FilingOutcome => {
     try {
-      return fileProposal(proposal);
+      return fileProposal(proposal, issues);
     } catch (error) {
       console.error(`${proposal.fingerprint} failed:`, error);
       return { proposal, state: 'failed', detail: firstLine(error) };

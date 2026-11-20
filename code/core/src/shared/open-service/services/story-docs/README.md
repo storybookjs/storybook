@@ -13,10 +13,10 @@ snippet to the manager Code panel and the docs blocks via `SNIPPET_RENDERED`, re
 The goal: after you change a control, the snippet shows code you can copy into your project, and
 it reads like code you would write. It does not have to be perfect; it has to be logical.
 
-Live snippets are behind `features.experimentalLiveServerSnippets`. While it is off, the service
-leaves every `template` out of the story docs, so agents and the components manifest read what they
-read before live snippets, and `storyArgsChanged` never reports a change, so the preview shows the
-static snippet.
+Live snippets are on by default; `features.experimentalLiveServerSnippets: false` opts out. While
+it is off, the service leaves every `template` out of the story docs, so agents and the components
+manifest read what they read before live snippets, and `storyArgsChanged` never reports a change,
+so the preview shows the static snippet.
 
 A story's `snippet` is static: it shows the args written in the story file, and it is what agents
 and the components manifest read. So that the snippet follows the controls with `docgenServer` on,

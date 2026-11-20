@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { JsPackageManager, PackageJson } from 'storybook/internal/common';
-import { prompt } from 'storybook/internal/node-logger';
+import { logger, prompt } from 'storybook/internal/node-logger';
 
 import * as mainConfigFile from './helpers/mainConfigFile.ts';
 import { doAutomigrate, runFixes } from './index.ts';
@@ -184,6 +184,13 @@ describe('runFixes', () => {
     });
     expect(named.fixResults).toEqual({ 'opt-in': 'succeeded' });
     expect(run1).toHaveBeenCalled();
+  });
+
+  it('runs no fix in a dry run, and does not report the ones it would run as skipped', async () => {
+    await runFixes({ ...common, dryRun: true, storybookVersion: '7.0.0' });
+
+    expect(run1).not.toHaveBeenCalled();
+    expect(vi.mocked(logger.log).mock.calls.flat().join('\n')).not.toMatch(/Skipped/);
   });
 
   it('should fail if an error is thrown by migration', async () => {

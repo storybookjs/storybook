@@ -17,6 +17,9 @@ export const versionLine = (version: string): string => {
   return `${match[1]}.${match[2]}`;
 };
 
+// The issues of a line go into the milestone of its major, such as 11 for 11.0.
+export const majorOf = (line: string): string => line.split('.')[0]!;
+
 // The full version keeps each prerelease on its own branch: a later prerelease starts from a fresh
 // clone, so its head never descends from the previous one and could not fast-forward.
 export const cycleBranchName = (version: string, os: Os, engine: Engine): string =>

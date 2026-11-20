@@ -29,7 +29,7 @@ export const pages = <T extends z.ZodType>(item: T, path: string): z.infer<T>[] 
 
 // The filing job writes with the workflow token, so its comments come from this account. Anyone can
 // comment on an issue, so no other comment may tie a fingerprint to it.
-const HARNESS_LOGIN = 'github-actions[bot]';
+export const HARNESS_LOGIN = 'github-actions[bot]';
 
 export const IssueComment = z.object({
   body: z.string(),
@@ -69,6 +69,36 @@ export const listQaIssues = (repo: string, label: string): QaIssue[] =>
     pages(IssueItem, `repos/${repo}/issues?labels=${label}&state=all&per_page=100`),
     (issue) =>
       harnessComments(pages(IssueComment, `repos/${repo}/issues/${issue}/comments?per_page=100`))
+  );
+
+const MarkedIssue = z.object({
+  number: z.number(),
+  html_url: z.string(),
+  state: z.enum(['open', 'closed']),
+  body: z.string().nullable(),
+  user: z.object({ login: z.string() }).nullable(),
+  author_association: z.string(),
+  pull_request: z.unknown().optional(),
+});
+export type MarkedIssue = z.infer<typeof MarkedIssue>;
+
+// List the issues of `repo`, open or closed, whose body may hold `marker`: those the search finds
+// it in, and every issue of the workflow, because the search index lags behind a new issue.
+export const listMarkedIssues = (repo: string, marker: string): MarkedIssue[] =>
+  [
+    ...ghParse(z.array(z.object({ items: z.array(MarkedIssue) })), [
+      ...['api', '--method', 'GET', '--paginate', '--slurp', 'search/issues'],
+      ...['-f', `q=repo:${repo} is:issue in:body "${marker}"`, '-f', 'per_page=100'],
+    ]).flatMap((page) => page.items),
+    ...pages(
+      MarkedIssue,
+      `repos/${repo}/issues?creator=${encodeURIComponent(HARNESS_LOGIN)}&state=all&per_page=100`
+    ),
+  ].filter((issue) => issue.pull_request === undefined);
+
+export const openMilestones = (repo: string): string[] =>
+  pages(z.object({ title: z.string() }), `repos/${repo}/milestones?state=open&per_page=100`).map(
+    (milestone) => milestone.title
   );
 
 const RELEASE_QUERY =

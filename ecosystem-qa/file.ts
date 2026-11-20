@@ -19,7 +19,7 @@ import {
   type KnownIssue,
 } from './lib/filing.ts';
 import { cycleRef } from './lib/cycle.ts';
-import { listQaIssues, ghText, pages } from './lib/github.ts';
+import { listQaIssues, ghText, openMilestones, pages } from './lib/github.ts';
 import { copyRedacted } from './lib/redact.ts';
 import { hitsFor, openHit, QA_LABEL, writtenOn, type QaIssue } from './lib/proposals.ts';
 import { pushTokenEnv } from './lib/push-targets.ts';
@@ -244,10 +244,7 @@ const checkPrerequisites = () => {
     return;
   }
   const problems = missingPrerequisites(proposals, {
-    openMilestones: pages(
-      z.object({ title: z.string() }),
-      `repos/${repo}/milestones?state=open`
-    ).map((milestone) => milestone.title),
+    openMilestones: openMilestones(repo),
     labels: pages(z.object({ name: z.string() }), `repos/${repo}/labels`).map(
       (label) => label.name
     ),

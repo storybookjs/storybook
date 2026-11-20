@@ -1,5 +1,8 @@
+import { majorOf } from './cycle.ts';
+import { HARNESS_LOGIN } from './github.ts';
 import { inlineTitle } from './proposals.ts';
 import { layoutPlan, manualChecksOf, type Plan, prCell } from './qa-plan.ts';
+import { qaPrefix, trackingTitle } from './tracking.ts';
 import type { Window } from './window.ts';
 
 const sentenceCase = (text: string) => `${text[0]!.toUpperCase()}${text.slice(1)}`;
@@ -39,4 +42,83 @@ export const renderManualChecklist = (plan: Plan, window: Window): string => {
     ]),
     '',
   ].join('\n');
+};
+
+// GitHub refuses an issue whose body holds more characters than this.
+export const ISSUE_BODY_LIMIT = 65_536;
+
+const MANUAL_MARKER = /^<!-- sb-qa-manual ([0-9a-f]{12}) \S+ -->$/;
+
+// Anyone can open an issue in a public repository, so only an issue of the workflow or of a person
+// with a role in the repository can stand for the manual QA of a plan.
+const TRUSTED_ASSOCIATIONS = new Set(['OWNER', 'MEMBER', 'COLLABORATOR']);
+
+export const manualIssueMarker = (hash: string, file: string): string =>
+  `<!-- sb-qa-manual ${hash} ${file} -->`;
+
+export type ListedIssue = {
+  number: number;
+  body: string | null;
+  user: { login: string } | null;
+  author_association: string;
+};
+
+// The issues that hold the manual QA of the plan with this hash, open or closed, oldest first.
+export const manualIssuesOf = <Issue extends ListedIssue>(issues: Issue[], hash: string): Issue[] =>
+  [...new Map(issues.map((issue) => [issue.number, issue])).values()]
+    .filter(
+      (issue) =>
+        (issue.user?.login === HARNESS_LOGIN ||
+          TRUSTED_ASSOCIATIONS.has(issue.author_association)) &&
+        MANUAL_MARKER.exec((issue.body ?? '').split(/\r?\n/, 1)[0]!)?.[1] === hash
+    )
+    .toSorted((a, b) => a.number - b.number);
+
+export type ManualIssuePlan = {
+  plan: Plan;
+  window: Window;
+  file: string;
+  hash: string;
+  repo: string;
+  // The commit that the plan file is linked at.
+  commit: string;
+};
+
+export type ManualIssue =
+  | { create: { title: string; body: string; milestone: string } }
+  | { skip: string }
+  | { refuse: string };
+
+export const manualIssueOf = ({
+  plan,
+  window,
+  file,
+  hash,
+  repo,
+  commit,
+}: ManualIssuePlan): ManualIssue => {
+  if (manualChecksOf(plan, layoutPlan(plan).at).length === 0) {
+    return { skip: `${file} has no manual checks, so it gets no manual QA issue.` };
+  }
+  const body = [
+    manualIssueMarker(hash, file),
+    renderManualChecklist(plan, window),
+    '---',
+    '',
+    `These checks come from the QA plan [\`${file}\`](https://github.com/${repo}/blob/${commit}/ecosystem-qa/plans/${file}).`,
+    `The sweep tests the rest of that plan and reports in the discussion \`${trackingTitle(plan.line, file)}\`.`,
+    '',
+  ].join('\n');
+  if (body.length > ISSUE_BODY_LIMIT) {
+    return {
+      refuse: `The manual QA issue of ${file} would have a body of ${body.length} characters, and GitHub takes at most ${ISSUE_BODY_LIMIT}.`,
+    };
+  }
+  return {
+    create: {
+      title: `${qaPrefix(plan.line)} Manual QA for Storybook ${plan.line} at ${plan.version}`,
+      body,
+      milestone: majorOf(plan.line),
+    },
+  };
 };

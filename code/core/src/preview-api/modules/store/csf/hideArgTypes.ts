@@ -7,7 +7,11 @@ const STORY_ARG_TYPES = Symbol.for('storybook.internal.storyArgTypes');
 
 const hiddenContexts = new WeakMap<object, object>();
 
-/** Read the story's argTypes from a story context, including one that hides `argTypes`. */
+/**
+ * Read the story's argTypes from a story context, including one that hides `argTypes`.
+ *
+ * Under server docgen (`features.docgenServer`) it returns only the argTypes declared by hand.
+ */
 export function getStoryArgTypes<TRenderer extends Renderer, TArgs>(
   context: StoryContext<TRenderer, TArgs>
 ): StrictArgTypes<TArgs> {

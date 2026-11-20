@@ -13,11 +13,6 @@ function isEsbuildBuildError(err: unknown): err is { errors: Message[] } {
   );
 }
 
-/**
- * Formats the underlying builder error ("No matching export in <module> for import <name>") plus
- * the importing file, when esbuild reported a location, into the detail block shown in the
- * NoMatchingExportError card.
- */
 function formatNoMatchingExportDetail(builderError: Message): string {
   const lines = [builderError.text.trim()];
   const file = builderError.location?.file;

@@ -1,7 +1,7 @@
-import type { FC, FocusEvent, SyntheticEvent } from 'react';
+import type { FC, SyntheticEvent } from 'react';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { Button, Form, ToggleButton } from 'storybook/internal/components';
+import { Button, Form } from 'storybook/internal/components';
 
 import { announce } from '@react-aria/live-announcer';
 import { AddIcon, EditIcon, SubtractIcon } from '@storybook/icons';
@@ -127,7 +127,7 @@ const Input = styled.input(({ theme, placeholder }) => ({
   },
 }));
 
-const RawButton = styled(ToggleButton)({
+const EditorSwitchButton = styled(Button)({
   alignSelf: 'flex-start',
   order: 2,
   marginRight: -10,
@@ -182,12 +182,65 @@ const parseJson = (raw: string): { value: unknown } | { error: string } => {
   }
 };
 
+/**
+ * The text being edited in the raw JSON editor, and the error raised when it last failed to parse.
+ *
+ * @param jsonString The serialized arg value. The draft is replaced whenever it changes.
+ */
+const useJsonDraft = (jsonString: string, onChange: ObjectProps['onChange']) => {
+  const [draft, setDraft] = useState(jsonString);
+  const [parseError, setParseError] = useState<string | null>(null);
+
+  const reset = () => {
+    setDraft(jsonString);
+    setParseError(null);
+  };
+
+  // Reset during render rather than in an effect, so that a new arg value never paints next to
+  // the draft and error of the previous one.
+  const [syncedJsonString, setSyncedJsonString] = useState(jsonString);
+  if (syncedJsonString !== jsonString) {
+    setSyncedJsonString(jsonString);
+    reset();
+  }
+
+  // Typing JSON goes through invalid states on almost every keystroke, so an error is only raised
+  // when the draft is committed. An error that is already shown clears as soon as the draft is
+  // valid again.
+  const edit = (raw: string) => {
+    setDraft(raw);
+    if (parseError && (!raw || 'value' in parseJson(raw))) {
+      setParseError(null);
+    }
+  };
+
+  const commit = () => {
+    if (!draft) {
+      setParseError(null);
+      return;
+    }
+    const result = parseJson(draft);
+    if ('error' in result) {
+      setParseError(result.error);
+      // The draft is committed when focus leaves the editor, so the message the editor is
+      // described by would go unheard.
+      announce(`Invalid JSON: ${result.error}`, 'polite');
+      return;
+    }
+    setParseError(null);
+    onChange(result.value);
+  };
+
+  return { draft, parseError, edit, commit, reset };
+};
+
 interface RawJsonEditorProps {
   id: string;
   name: string;
-  /** The serialized arg value. The draft is replaced whenever it changes. */
-  jsonString: string;
-  onChange: ObjectProps['onChange'];
+  draft: string;
+  parseError: string | null;
+  onEdit: (raw: string) => void;
+  onCommit: () => void;
   selectOnMount: boolean;
   readOnly: boolean;
   required?: boolean;
@@ -196,24 +249,15 @@ interface RawJsonEditorProps {
 const RawJsonEditor: FC<RawJsonEditorProps> = ({
   id,
   name,
-  jsonString,
-  onChange,
+  draft,
+  parseError,
+  onEdit,
+  onCommit,
   selectOnMount,
   readOnly,
   required,
 }) => {
-  const [draft, setDraft] = useState(jsonString);
-  const [parseError, setParseError] = useState<string | null>(null);
   const errorId = `${id}-error`;
-
-  // Reset during render rather than in an effect, so that a new arg value never paints next to
-  // the draft and error of the previous one.
-  const [syncedJsonString, setSyncedJsonString] = useState(jsonString);
-  if (syncedJsonString !== jsonString) {
-    setSyncedJsonString(jsonString);
-    setDraft(jsonString);
-    setParseError(null);
-  }
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
@@ -221,32 +265,6 @@ const RawJsonEditor: FC<RawJsonEditorProps> = ({
       textareaRef.current?.select();
     }
   }, [selectOnMount]);
-
-  // Typing JSON goes through invalid states on almost every keystroke, so an error is only raised
-  // when the draft is committed on blur. An error that is already shown clears as soon as the
-  // draft is valid again.
-  const onDraftChange = (raw: string) => {
-    setDraft(raw);
-    if (parseError && (!raw || 'value' in parseJson(raw))) {
-      setParseError(null);
-    }
-  };
-
-  const commit = (raw: string) => {
-    if (!raw) {
-      setParseError(null);
-      return;
-    }
-    const result = parseJson(raw);
-    if ('error' in result) {
-      setParseError(result.error);
-      // Focus has left the field, so the message it is described by would go unheard.
-      announce(`Invalid JSON: ${result.error}`, 'polite');
-      return;
-    }
-    setParseError(null);
-    onChange(result.value);
-  };
 
   return (
     <RawInputWrapper>
@@ -259,8 +277,8 @@ const RawJsonEditor: FC<RawJsonEditorProps> = ({
         minRows={3}
         name={name}
         value={draft}
-        onChange={(event) => onDraftChange(event.target.value)}
-        onBlur={(event: FocusEvent<HTMLTextAreaElement>) => commit(event.target.value)}
+        onChange={(event) => onEdit(event.target.value)}
+        onBlur={onCommit}
         placeholder="Edit JSON string..."
         autoFocus={selectOnMount}
         valid={parseError ? 'error' : undefined}
@@ -308,6 +326,7 @@ export const ObjectControl: FC<ObjectProps> = ({
 
   // JSON.stringify returns undefined for values it cannot serialize, such as functions.
   const jsonString = useMemo(() => JSON.stringify(data ?? '', null, 2) ?? '', [data]);
+  const jsonDraft = useJsonDraft(jsonString, onChange);
 
   if (!hasData) {
     return (
@@ -326,8 +345,10 @@ export const ObjectControl: FC<ObjectProps> = ({
     <RawJsonEditor
       id={getControlId(name, storyId, controlsId)}
       name={name}
-      jsonString={jsonString}
-      onChange={onChange}
+      draft={jsonDraft.draft}
+      parseError={jsonDraft.parseError}
+      onEdit={jsonDraft.edit}
+      onCommit={jsonDraft.commit}
       selectOnMount={forceVisible}
       readOnly={readonly}
       required={required}
@@ -337,15 +358,22 @@ export const ObjectControl: FC<ObjectProps> = ({
   const isObjectOrArray =
     Array.isArray(value) || (typeof value === 'object' && value?.constructor === Object);
 
+  // Leaving the raw editor drops its draft, so a draft that does not parse keeps the user there.
+  const isLockedInRaw = !!jsonDraft.parseError;
+  const lockedLabel = `Fix the invalid JSON in ${name} to switch editors`;
+  const switchLabel = showRaw
+    ? `Edit ${name} with the ${Array.isArray(value) ? 'array' : 'object'} editor`
+    : `Edit ${name} as JSON`;
+
   return (
     <Wrapper>
       {isObjectOrArray && (
-        <RawButton
-          disabled={readonly}
-          pressed={showRaw}
-          ariaLabel={`Edit ${name} as JSON`}
+        <EditorSwitchButton
+          disabled={readonly || isLockedInRaw}
+          ariaLabel={isLockedInRaw ? lockedLabel : switchLabel}
           onClick={(e: SyntheticEvent) => {
             e.preventDefault();
+            jsonDraft.reset();
             setShowRaw((isRaw) => !isRaw);
           }}
           variant="ghost"
@@ -353,7 +381,7 @@ export const ObjectControl: FC<ObjectProps> = ({
           size="small"
         >
           <EditIcon />
-        </RawButton>
+        </EditorSwitchButton>
       )}
       {!showRaw ? (
         <JsonTree

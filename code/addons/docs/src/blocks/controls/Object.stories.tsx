@@ -68,12 +68,6 @@ export const Undefined: Story = {
   args: {
     value: undefined,
   },
-  play: async ({ canvas, args, userEvent }) => {
-    const button = canvas.getByRole('button', { name: 'Set object' });
-    await expect(button).toBeVisible();
-    await userEvent.click(button);
-    await expect(args.onChange).toHaveBeenCalledWith({});
-  },
 };
 
 export const UndefinedArray: Story = {
@@ -81,11 +75,39 @@ export const UndefinedArray: Story = {
     value: undefined,
     argType: { type: { name: 'array', value: { name: 'string' } } },
   },
+};
+
+/** Setting an undefined value opens the raw editor on the seeded value, selected for overtyping. */
+export const SetObject: Story = {
+  args: Undefined.args,
   play: async ({ canvas, args, userEvent }) => {
-    const button = canvas.getByRole('button', { name: 'Set array' });
-    await expect(button).toBeVisible();
-    await userEvent.click(button);
+    await userEvent.click(canvas.getByRole('button', { name: 'Set object' }));
+    await expect(args.onChange).toHaveBeenCalledWith({});
+
+    const rawInput = await canvas.findByRole<HTMLTextAreaElement>('textbox', {
+      name: 'Edit object as JSON',
+    });
+    await expect(rawInput).toHaveValue('{}');
+    await expect(rawInput).toHaveFocus();
+    await expect([rawInput.selectionStart, rawInput.selectionEnd]).toEqual([0, 2]);
+    await expect(
+      canvas.getByRole('button', { name: 'Edit object with the object editor' })
+    ).toBeVisible();
+  },
+};
+
+export const SetArray: Story = {
+  args: UndefinedArray.args,
+  play: async ({ canvas, args, userEvent }) => {
+    await userEvent.click(canvas.getByRole('button', { name: 'Set array' }));
     await expect(args.onChange).toHaveBeenCalledWith([]);
+
+    await expect(await canvas.findByRole('textbox', { name: 'Edit object as JSON' })).toHaveValue(
+      '[]'
+    );
+    await expect(
+      canvas.getByRole('button', { name: 'Edit object with the array editor' })
+    ).toBeVisible();
   },
 };
 
@@ -207,7 +229,7 @@ export const JsonEditorValidation: Story = {
     onChange: fn(),
   },
   play: async ({ args, canvas, step, userEvent }) => {
-    await userEvent.click(canvas.getByRole('switch', { name: 'Edit object as JSON' }));
+    await userEvent.click(canvas.getByRole('button', { name: 'Edit object as JSON' }));
     const rawInput = canvas.getByRole('textbox', { name: 'Edit object as JSON' });
 
     await step('Typing invalid JSON raises no error', async () => {
@@ -253,35 +275,49 @@ export const JsonEditorValidation: Story = {
   },
 };
 
-/** Closing the raw editor discards a draft that failed to parse, along with its error. */
-export const JsonEditorErrorReset: Story = {
+/**
+ * Switching to the other editor drops the raw draft, so the switch is disabled for as long as the
+ * draft does not parse.
+ */
+export const JsonEditorInvalidDraftLocksSwitch: Story = {
   args: {
     value: { label: 'value' },
     onChange: fn(),
   },
-  play: async ({ args, canvas, step, userEvent }) => {
-    const toggle = canvas.getByRole('switch', { name: 'Edit object as JSON' });
+  play: async ({ canvas, step, userEvent }) => {
+    await userEvent.click(canvas.getByRole('button', { name: 'Edit object as JSON' }));
+    const rawInput = canvas.getByRole('textbox', { name: 'Edit object as JSON' });
+    const lockedName = 'Fix the invalid JSON in object to switch editors';
 
-    await step('Raise a parse error', async () => {
-      await userEvent.click(toggle);
-      const rawInput = canvas.getByRole('textbox', { name: 'Edit object as JSON' });
+    await step('Clicking the switch while the draft is invalid keeps the draft', async () => {
       await userEvent.clear(rawInput);
       await userEvent.type(rawInput, '{{"label":');
-      await userEvent.tab();
+      // The click itself moves focus out of the editor, which is what raises the error.
+      await userEvent.click(
+        canvas.getByRole('button', { name: 'Edit object with the object editor' })
+      );
 
+      await expect(canvas.getByRole('button', { name: lockedName })).toHaveAttribute(
+        'aria-disabled',
+        'true'
+      );
+      await expect(rawInput).toBeVisible();
+      await expect(rawInput).toHaveValue('{"label":');
       await expect(rawInput).toHaveAttribute('aria-invalid', 'true');
     });
 
-    await step('Close and reopen the raw editor', async () => {
-      await userEvent.click(toggle);
-      await expect(canvas.queryByText(invalidJson)).not.toBeInTheDocument();
-      await userEvent.click(toggle);
+    await step('The switch works again once the draft is valid', async () => {
+      await userEvent.type(rawInput, '"updated"}');
 
-      const rawInput = canvas.getByRole('textbox', { name: 'Edit object as JSON' });
-      await expect(rawInput).toHaveValue(JSON.stringify(args.value, null, 2));
-      await expect(rawInput).not.toHaveAttribute('aria-invalid');
-      await expect(rawInput).not.toHaveAccessibleDescription();
-      await expect(canvas.queryByText(invalidJson)).not.toBeInTheDocument();
+      const switchButton = canvas.getByRole('button', {
+        name: 'Edit object with the object editor',
+      });
+      await expect(switchButton).not.toHaveAttribute('aria-disabled');
+      await userEvent.click(switchButton);
+
+      await expect(rawInput).not.toBeInTheDocument();
+      await expect(canvas.getByRole('button', { name: 'Edit object as JSON' })).toBeVisible();
+      await expect(await canvas.findByText('"updated"')).toBeVisible();
     });
   },
 };

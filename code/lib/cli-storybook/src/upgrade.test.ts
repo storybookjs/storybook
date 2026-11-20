@@ -719,4 +719,33 @@ describe('upgrade', () => {
     expect(packageManager.installDependencies).toHaveBeenCalledTimes(1);
     expect(packageManager.dedupeDependencies).toHaveBeenCalledTimes(1);
   });
+
+  describe('output', () => {
+    const methods = ['info', 'log', 'step', 'warn'] as const;
+
+    beforeEach(() => {
+      methods.forEach((method) => vi.spyOn(logger, method));
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    const logged = () =>
+      methods.flatMap((method) => vi.mocked(logger[method]).mock.calls.flat()).join('\n');
+
+    it('says that a dry run changed no file, instead of reporting an upgrade', async () => {
+      await runUpgrade({ dryRun: true });
+
+      expect(logged()).not.toMatch(/Upgrading from|upgraded successfully/);
+      expect(logged()).toMatch(/no files (will be|were) changed/);
+    });
+
+    it('reports the upgrade of a normal run', async () => {
+      await runUpgrade({ dryRun: false });
+
+      expect(logged()).toMatch(/Upgrading from/);
+      expect(logged()).toMatch(/upgraded successfully/);
+    });
+  });
 });

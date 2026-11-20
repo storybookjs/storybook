@@ -202,7 +202,9 @@ command('upgrade')
       async () => {
         logger.intro(`Storybook upgrade - v${versions.storybook}`);
         await upgrade(options);
-        logger.outro('Storybook upgrade completed!');
+        logger.outro(
+          options.dryRun ? 'Storybook upgrade dry run completed!' : 'Storybook upgrade completed!'
+        );
       }
     ).catch(handleCommandFailure(options.logfile));
   });

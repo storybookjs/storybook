@@ -235,18 +235,21 @@ function getUpgradeResults(
 function logUpgradeResults(
   projectResults: Record<string, AutomigrationResult>,
   detectedAutomigrations: AutomigrationCheckResult[],
-  doctorResults: Record<string, ProjectDoctorResults>
+  doctorResults: Record<string, ProjectDoctorResults>,
+  { dryRun }: { dryRun: boolean }
 ) {
   const { successfulProjects, failedProjects, projectsWithNoFixes } = getUpgradeResults(
     projectResults,
     doctorResults
   );
 
-  // If there are any failures, show detailed summary
+  // A dry run applies no automigration, so its only failures are automigration checks.
   if (failedProjects.length > 0) {
     logTracker.enableLogWriting();
     logger.step(
-      'The upgrade is complete, but some projects failed to upgrade or migrate completely. Please see the debug logs for more details.'
+      dryRun
+        ? 'Dry run finished: no files were changed, but some automigration checks failed. Please see the debug logs for more details.'
+        : 'The upgrade is complete, but some projects failed to upgrade or migrate completely. Please see the debug logs for more details.'
     );
     // Display appropriate messages based on results
     if (successfulProjects.length > 0) {
@@ -258,7 +261,9 @@ function logUpgradeResults(
 
     const failedProjectsList = failedProjects.map((dir) => `  • ${shortenPath(dir)}`).join('\n');
     logger.log(
-      `${CLI_COLORS.error('Failed to upgrade:')}\nSome automigrations failed or skipped files. Review the upgrade output for details.\n${failedProjectsList}`
+      dryRun
+        ? `${CLI_COLORS.error('Failed automigration checks:')}\nReview the upgrade output for details.\n${failedProjectsList}`
+        : `${CLI_COLORS.error('Failed to upgrade:')}\nSome automigrations failed or skipped files. Review the upgrade output for details.\n${failedProjectsList}`
     );
 
     if (projectsWithNoFixes.length > 0) {
@@ -266,7 +271,17 @@ function logUpgradeResults(
       logger.log(`${CLI_COLORS.info('No applicable migrations:')}\n${projectList}`);
     }
   } else {
-    if (Object.values(doctorResults).every((result) => result.status === 'healthy')) {
+    const isHealthy = Object.values(doctorResults).every((result) => result.status === 'healthy');
+    if (dryRun) {
+      // The doctor checked the dependencies as they are installed, before any upgrade.
+      logger.step(
+        isHealthy
+          ? CLI_COLORS.success('Dry run finished: no files were changed.')
+          : picocolors.yellow(
+              'Dry run finished: no files were changed. Storybook doctor found issues in your current setup, please check its logs above.'
+            )
+      );
+    } else if (isHealthy) {
       logger.step(`${CLI_COLORS.success('Your project(s) have been upgraded successfully! 🎉')}`);
     } else {
       logger.step(
@@ -288,7 +303,9 @@ function logUpgradeResults(
 
   if (automigrationLinks.length > 0) {
     const automigrationLinksMessage = [
-      'If you want to learn more about the automigrations that executed in your project(s), please check the following links:',
+      dryRun
+        ? 'If you want to learn more about the automigrations whose checks failed, please check the following links:'
+        : 'If you want to learn more about the automigrations that executed in your project(s), please check the following links:',
       ...automigrationLinks,
     ].join('\n');
 
@@ -369,12 +386,13 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
 
   const { allProjects, selectedProjects: storybookProjects } = projectsResult;
 
+  const dryRunNote = options.dryRun ? ' (dry run, no files will be changed)' : '';
   if (storybookProjects.length > 1) {
-    logger.info(`Upgrading the following projects:
+    logger.info(`${options.dryRun ? 'Checking the upgrade of' : 'Upgrading'} the following projects${dryRunNote}:
           ${storybookProjects.map((p) => `${picocolors.cyan(shortenPath(p.configDir))}: ${picocolors.bold(p.beforeVersion)} -> ${picocolors.bold(p.currentCLIVersion)}`).join('\n')}`);
   } else {
     logger.info(
-      `Upgrading from ${picocolors.bold(storybookProjects[0].beforeVersion)} to ${picocolors.bold(storybookProjects[0].currentCLIVersion)}`
+      `${options.dryRun ? 'Checking the upgrade' : 'Upgrading'} from ${picocolors.bold(storybookProjects[0].beforeVersion)} to ${picocolors.bold(storybookProjects[0].currentCLIVersion)}${dryRunNote}`
     );
   }
 
@@ -582,7 +600,9 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
     }
 
     // Display upgrade results summary
-    logUpgradeResults(automigrationResults, detectedAutomigrations, doctorResults);
+    logUpgradeResults(automigrationResults, detectedAutomigrations, doctorResults, {
+      dryRun: options.dryRun,
+    });
 
     // TELEMETRY
     for (const project of storybookProjects) {
@@ -636,7 +656,9 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
 
     if (getUpgradeResults(automigrationResults, doctorResults).failedProjects.length > 0) {
       throw new HandledError(
-        'Some automigrations failed or skipped files. Review the upgrade output.'
+        options.dryRun
+          ? 'Some automigration checks failed. Review the upgrade output.'
+          : 'Some automigrations failed or skipped files. Review the upgrade output.'
       );
     }
   } finally {

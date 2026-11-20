@@ -1,3 +1,5 @@
+import { defineToolset, registerToolset } from 'storybook/open-service';
+import * as v from 'valibot';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { registerCoreToolsetsForTest } from './test-support/register-core-toolsets.ts';
 import {
@@ -8,6 +10,7 @@ import {
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { PassThrough } from 'node:stream';
 import { CompositionAuth } from './auth/index.ts';
+import { PREVIEW_STORIES_RESOURCE_URI } from './tools/preview-stories.ts';
 
 // Test helpers to reduce boilerplate
 function createMockIncomingMessage(options: {
@@ -242,7 +245,7 @@ describe('mcpServerHandler', () => {
     handlerOptions: { sources?: any[] } = {}
   ): Promise<string[]> {
     const host = `localhost:${port}`;
-    const addonOptions = { toolsets: { dev: true, docs: true } };
+    const addonOptions = { toolsets: { dev: true, docs: true, test: true } };
 
     const initReq = createMockIncomingMessage({
       method: 'POST',
@@ -303,6 +306,7 @@ describe('mcpServerHandler', () => {
         toolsets: {
           dev: true,
           docs: true,
+          test: true,
         },
       },
       compositionAuth: new CompositionAuth(),
@@ -360,7 +364,7 @@ describe('mcpServerHandler', () => {
       origin: 'http://localhost:6006',
       basePath: '/',
       options: createMockOptions(),
-      addonOptions: { toolsets: { dev: true, docs: true } },
+      addonOptions: { toolsets: { dev: true, docs: true, test: true } },
       compositionAuth: new CompositionAuth(),
     });
 
@@ -461,6 +465,7 @@ describe('mcpServerHandler', () => {
         toolsets: {
           dev: true,
           docs: true,
+          test: true,
         },
       },
       compositionAuth: new CompositionAuth(),
@@ -507,7 +512,7 @@ describe('mcpServerHandler', () => {
       basePath: '/',
       options: mockOptions as any,
       addonOptions: {
-        toolsets: { dev: true, docs: true },
+        toolsets: { dev: true, docs: true, test: true },
       },
       compositionAuth: new CompositionAuth(),
     });
@@ -532,7 +537,7 @@ describe('mcpServerHandler', () => {
       basePath: '/',
       options: mockOptions as any,
       addonOptions: {
-        toolsets: { dev: true, docs: true },
+        toolsets: { dev: true, docs: true, test: true },
       },
       compositionAuth: new CompositionAuth(),
     });
@@ -579,6 +584,214 @@ describe('mcpServerHandler', () => {
 
     expect(toolNames).toContain('stories-changed');
     expect(toolNames).toContain('review-create');
+  });
+
+  describe('toolsets turned off in addonOptions', () => {
+    const port = 6013;
+    const host = `localhost:${port}`;
+    const addonOptions = { toolsets: { dev: false, docs: true, test: false } };
+    const allToolsetsOn = { toolsets: { dev: true, docs: true, test: true } };
+    const docsToolsetOff = { toolsets: { dev: true, docs: false, test: true } };
+
+    // The `test` toolset belongs to `@storybook/addon-vitest`, so the shared setup leaves it out.
+    // Register a stub and report that addon as enabled (below), so `test-run` is registered
+    // whenever the `test` toolset is on and its absence here is down to the option alone.
+    beforeEach(() => {
+      registerToolset(
+        defineToolset({
+          id: 'test',
+          description: 'stub',
+          methods: {
+            run: {
+              input: v.strictObject({}),
+              title: 'Storybook Tests',
+              description: 'run',
+              handler: async () => ({ ok: true, data: {}, markdown: '' }),
+            },
+          },
+        })
+      );
+    });
+
+    function createDocsEnabledOptions() {
+      const applyMock = vi.fn(async (key: string, defaultValue?: unknown) => {
+        if (key === 'core') {
+          return { disableTelemetry: false };
+        }
+        if (key === 'isAddonVitestEnabled') {
+          return true;
+        }
+        if (key === 'features') {
+          return { componentsManifest: true };
+        }
+        if (key === 'experimental_manifests') {
+          return { components: { v: 1, components: {} } };
+        }
+        return defaultValue;
+      });
+      return createMockOptions({ port, presets: { apply: applyMock } });
+    }
+
+    // Sends one JSON-RPC request through the handler and returns the parsed response.
+    async function send(
+      mockOptions: unknown,
+      body: object,
+      toolsetsHeader?: string,
+      options: typeof addonOptions = addonOptions
+    ) {
+      const req = createMockIncomingMessage({
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          host,
+          ...(toolsetsHeader ? { 'X-MCP-Toolsets': toolsetsHeader } : {}),
+        },
+        body,
+      });
+      const { response, getResponseData } = createMockServerResponse();
+      await mcpServerHandler({
+        req,
+        res: response,
+        origin: `http://${host}`,
+        basePath: '/',
+        options: mockOptions,
+        addonOptions: options,
+        compositionAuth: new CompositionAuth(),
+      });
+      const line = getResponseData()
+        .body.split('\n')
+        .find((l) => l.startsWith('data: '));
+      return JSON.parse(line!.replace(/^data: /, '').trim());
+    }
+
+    it('registers every tool, and lists every workflow step, when all toolsets are on', async () => {
+      const mockOptions = createDocsEnabledOptions();
+      const init = await send(mockOptions, createMCPInitializeRequest(), undefined, allToolsetsOn);
+      expect(init.result.instructions).toContain('ui-review');
+      expect(init.result.instructions).toContain('test-stories');
+
+      const tools = await send(
+        mockOptions,
+        { jsonrpc: '2.0', id: 2, method: 'tools/list', params: {} },
+        undefined,
+        allToolsetsOn
+      );
+      const toolNames = tools.result.tools.map((t: { name: string }) => t.name);
+      expect(toolNames).toContain('stories-changed');
+      expect(toolNames).toContain('review-create');
+      expect(toolNames).toContain('test-run');
+    });
+
+    it.each([undefined, 'dev', 'dev,test,docs'])(
+      'does not register their tools or resources (X-MCP-Toolsets: %s)',
+      async (toolsetsHeader) => {
+        const mockOptions = createDocsEnabledOptions();
+        await send(mockOptions, createMCPInitializeRequest(), toolsetsHeader);
+
+        const tools = await send(
+          mockOptions,
+          { jsonrpc: '2.0', id: 2, method: 'tools/list', params: {} },
+          toolsetsHeader
+        );
+        const toolNames = tools.result.tools.map((t: { name: string }) => t.name);
+        expect(toolNames).not.toContain('stories-preview');
+        expect(toolNames).not.toContain('stories-changed');
+        expect(toolNames).not.toContain('review-create');
+        expect(toolNames).not.toContain('test-run');
+
+        // `tools/list` hides a tool whose toolset is off; `tools/call` must refuse it as well.
+        const call = await send(
+          mockOptions,
+          {
+            jsonrpc: '2.0',
+            id: 3,
+            method: 'tools/call',
+            params: { name: 'stories-changed', arguments: {} },
+          },
+          toolsetsHeader
+        );
+        expect(call.result.isError).toBe(true);
+        expect(call.result.content[0].text).toContain('stories-changed not found');
+
+        const testCall = await send(
+          mockOptions,
+          {
+            jsonrpc: '2.0',
+            id: 5,
+            method: 'tools/call',
+            params: { name: 'test-run', arguments: {} },
+          },
+          toolsetsHeader
+        );
+        expect(testCall.result.isError).toBe(true);
+        expect(testCall.result.content[0].text).toContain('test-run not found');
+
+        const resources = await send(
+          mockOptions,
+          { jsonrpc: '2.0', id: 4, method: 'resources/list', params: {} },
+          toolsetsHeader
+        );
+        const resourceUris = resources.result.resources.map((r: { uri: string }) => r.uri);
+        expect(resourceUris).not.toContain(PREVIEW_STORIES_RESOURCE_URI);
+      }
+    );
+
+    it.each([undefined, 'dev,test,docs'])(
+      'does not register the docs tools when only the docs toolset is off (X-MCP-Toolsets: %s)',
+      async (toolsetsHeader) => {
+        const mockOptions = createDocsEnabledOptions();
+        await send(mockOptions, createMCPInitializeRequest(), toolsetsHeader, docsToolsetOff);
+
+        const tools = await send(
+          mockOptions,
+          { jsonrpc: '2.0', id: 2, method: 'tools/list', params: {} },
+          toolsetsHeader,
+          docsToolsetOff
+        );
+        const toolNames = tools.result.tools.map((t: { name: string }) => t.name);
+        expect(toolNames).toContain('stories-changed');
+        expect(toolNames).not.toContain('docs-list');
+        expect(toolNames).not.toContain('docs-show');
+        expect(toolNames).not.toContain('docs-show-story');
+
+        const call = await send(
+          mockOptions,
+          {
+            jsonrpc: '2.0',
+            id: 3,
+            method: 'tools/call',
+            params: { name: 'docs-list', arguments: {} },
+          },
+          toolsetsHeader,
+          docsToolsetOff
+        );
+        expect(call.result.isError).toBe(true);
+        expect(call.result.content[0].text).toContain('docs-list not found');
+      }
+    );
+
+    it('leaves their workflow steps out of the instructions, whatever the header asks for', async () => {
+      const mockOptions = createDocsEnabledOptions();
+      const init = await send(mockOptions, createMCPInitializeRequest(), 'dev,test,docs');
+
+      expect(init.result.instructions).toContain('component-docs');
+      expect(init.result.instructions).not.toContain('ui-review');
+      expect(init.result.instructions).not.toContain('test-stories');
+    });
+
+    it('keeps the tools of the toolsets that stay on', async () => {
+      const mockOptions = createDocsEnabledOptions();
+      await send(mockOptions, createMCPInitializeRequest());
+
+      const tools = await send(mockOptions, {
+        jsonrpc: '2.0',
+        id: 2,
+        method: 'tools/list',
+        params: {},
+      });
+      const toolNames = tools.result.tools.map((t: { name: string }) => t.name);
+      expect(toolNames).toEqual(['docs-list', 'docs-show', 'docs-show-story']);
+    });
   });
 });
 
@@ -631,9 +844,9 @@ describe('getToolsets', () => {
     });
     const addonOptions = {
       toolsets: {
-        dev: false,
-        docs: false,
-        test: false,
+        dev: true,
+        docs: true,
+        test: true,
       },
     };
 
@@ -654,9 +867,9 @@ describe('getToolsets', () => {
     });
     const addonOptions = {
       toolsets: {
-        dev: false,
-        docs: false,
-        test: false,
+        dev: true,
+        docs: true,
+        test: true,
       },
     };
 
@@ -677,9 +890,9 @@ describe('getToolsets', () => {
     });
     const addonOptions = {
       toolsets: {
-        dev: false,
-        docs: false,
-        test: false,
+        dev: true,
+        docs: true,
+        test: true,
       },
     };
 
@@ -690,6 +903,26 @@ describe('getToolsets', () => {
       docs: true,
       test: false,
     });
+  });
+
+  it('should not turn on a toolset that addonOptions turns off', () => {
+    const addonOptions = {
+      toolsets: {
+        dev: false,
+        docs: true,
+        test: false,
+      },
+    };
+
+    const all = new Request('http://localhost:6006/mcp', {
+      headers: { 'X-MCP-Toolsets': 'dev,test,docs' },
+    });
+    expect(getToolsets(all, addonOptions)).toEqual({ dev: false, docs: true, test: false });
+
+    const devOnly = new Request('http://localhost:6006/mcp', {
+      headers: { 'X-MCP-Toolsets': 'dev' },
+    });
+    expect(getToolsets(devOnly, addonOptions)).toEqual({ dev: false, docs: false, test: false });
   });
 
   it('should return addon options when header is present with empty value', () => {

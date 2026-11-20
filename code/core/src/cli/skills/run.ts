@@ -250,7 +250,7 @@ function buildProjectSkill(
   const docsSupported = (mcp ? inputs.docsEnabled : inputs.docsEnabledForCli) || inputs.composed;
   const docsEnabled = toolsets.docs && docsSupported;
   // A skill names the tools of its own toolset also when `main.ts` turns that toolset off, and
-  // says so: a client that turns it on with the `X-MCP-Toolsets` header has those tools.
+  // says so: the server does not register those tools, and the skill tells the agent to skip.
   if (id === 'component-docs') {
     return buildComponentDocsSkill({ transport, docsSupported, toolsetOff: !toolsets.docs });
   }

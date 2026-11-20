@@ -103,7 +103,7 @@ that `error`; a file the provider returns nothing for contributes no stories.
 ## Stories excluded from manifests
 
 Manifests exclude stories that have the `!manifest` tag. This service keeps every story of a component,
-included those tagged `!manifest`, because it is also consumed by the Code panel to show story snippets.
+including those tagged `!manifest`, because it is also consumed by the Code panel to show story snippets.
 The Code panel does not filter based on `!manifest`.
 
 When the docs tools and the components HTML debugger consume this service, they are responsible for filtering

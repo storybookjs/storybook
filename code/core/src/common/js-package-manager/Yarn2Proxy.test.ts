@@ -39,21 +39,32 @@ describe('Yarn 2 Proxy', () => {
   });
 
   describe('installDependencies', () => {
-    it('should run `yarn`', async () => {
-      // sort of un-mock part of the function so executeCommand (also mocked) is called
-      vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (fn: any) => {
-        await Promise.resolve(fn());
-      });
-      const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({
-        stdout: '',
-      } as any);
-
-      await yarn2Proxy.installDependencies();
-
-      expect(executeCommandSpy).toHaveBeenCalledWith(
-        expect.objectContaining({ command: 'yarn', args: ['install'] })
-      );
+    afterEach(() => {
+      vi.unstubAllEnvs();
     });
+
+    it.each([
+      ['set', 'true'],
+      ['unset', ''],
+    ])(
+      'runs `yarn install --no-immutable` when CI is %s, so the lockfile can change',
+      async (_, ci) => {
+        vi.stubEnv('CI', ci);
+        // sort of un-mock part of the function so executeCommand (also mocked) is called
+        vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (fn: any) => {
+          await Promise.resolve(fn());
+        });
+        const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({
+          stdout: '',
+        } as any);
+
+        await yarn2Proxy.installDependencies();
+
+        expect(executeCommandSpy).toHaveBeenCalledWith(
+          expect.objectContaining({ command: 'yarn', args: ['install', '--no-immutable'] })
+        );
+      }
+    );
 
     it('keeps the original error when Yarn 6 finds no candidates', async () => {
       vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (fn: any) => {

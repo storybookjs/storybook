@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, realpath, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -9,7 +9,8 @@ import { devPublicEnv } from './dev-public-env.ts';
 
 // The module that SvelteKit writes for `$app/env/public` in development
 async function evaluateDevPublicEnv() {
-  const root = await mkdtemp(join(tmpdir(), 'sveltekit-env-'));
+  // Vite loads modules by their real path, and macOS's temp directory is reached through a symlink
+  const root = await mkdtemp(join(await realpath(tmpdir()), 'sveltekit-env-'));
   await mkdir(join(root, '.svelte-kit/generated/dev/env/public'), { recursive: true });
   await writeFile(
     join(root, '.svelte-kit/generated/dev/env/public/client.js'),

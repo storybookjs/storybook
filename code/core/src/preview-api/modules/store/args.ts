@@ -12,6 +12,9 @@ import { isEqual as deepEqual, isPlainObject } from 'es-toolkit/predicate';
 import { dedent } from 'ts-dedent';
 
 const INCOMPATIBLE = Symbol('incompatible');
+const isValidDate = (value: unknown): value is Date =>
+  value instanceof Date && !Number.isNaN(value.getTime());
+
 const map = (arg: unknown, argType: InputType): any => {
   const type = argType.type as SBType;
 
@@ -30,6 +33,11 @@ const map = (arg: unknown, argType: InputType): any => {
       return Number(arg);
     case 'boolean':
       return String(arg) === 'true';
+    case 'date':
+      if (isValidDate(arg) || (typeof arg === 'number' && Number.isFinite(arg))) {
+        return arg;
+      }
+      return INCOMPATIBLE;
     case 'array':
       if (!type.value || !Array.isArray(arg)) {
         return INCOMPATIBLE;
@@ -45,6 +53,9 @@ const map = (arg: unknown, argType: InputType): any => {
     case 'object':
       if (typeof arg === 'string' || typeof arg === 'number') {
         return arg;
+      }
+      if (arg instanceof Date) {
+        return isValidDate(arg) ? arg : INCOMPATIBLE;
       }
 
       if (!type.value || typeof arg !== 'object') {
@@ -63,6 +74,15 @@ const map = (arg: unknown, argType: InputType): any => {
       // would otherwise be dropped from the URL and lost on reload / "open in new tab" (#29076).
       // Non-primitive `other` values stay incompatible; option validity is enforced by validateOptions.
       if (isPrimitiveArg) {
+        return arg;
+      }
+      if (
+        isValidDate(arg) &&
+        (type.value === 'Date' ||
+          type.value === 'instanceOf(Date)' ||
+          argType.control === 'date' ||
+          (typeof argType.control === 'object' && argType.control?.type === 'date'))
+      ) {
         return arg;
       }
 

@@ -63,6 +63,23 @@ test.describe('Svelte', () => {
   test.describe('SvelteKit', () => {
     test.skip(!templateName?.includes('svelte-kit'), 'Only run this test on SvelteKit');
 
+    test('serves the manifest debugger and returns 404 for missing dev routes', async ({
+      request,
+    }) => {
+      test.skip(process.env.STORYBOOK_TYPE === 'build', 'Requires the Storybook dev server');
+
+      const debuggerPage = await request.get(`${storybookUrl}/manifests/components.html`);
+      await expect(debuggerPage).toBeOK();
+      expect(await debuggerPage.text()).toContain('Manifest Debugger');
+
+      const missingManifest = await request.get(`${storybookUrl}/manifests/missing.json`);
+      expect(missingManifest.status()).toBe(404);
+      expect(await missingManifest.text()).toBe('Manifest "missing" not found');
+
+      const missing = await request.get(`${storybookUrl}/does-not-exist`);
+      expect(missing.status()).toBe(404);
+    });
+
     test('Links are logged in Actions panel', async ({ page }) => {
       const sbPage = new SbPage(page, expect);
 

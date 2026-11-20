@@ -4,6 +4,7 @@ import { basename, dirname, relative, resolve } from 'node:path';
 import { InvalidStoriesEntryError } from 'storybook/internal/server-errors';
 import type { NormalizedStoriesSpecifier, StoriesEntry } from 'storybook/internal/types';
 
+import * as pathe from 'pathe';
 import * as pico from 'picomatch';
 // eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
@@ -34,6 +35,49 @@ export const getDirectoryFromWorkingDir = ({
   // but we want `./src` to match importPaths
   return normalizeStoryPath(directoryFromWorking);
 };
+
+type SpecifierPathPrefix = [importPathPrefix: string, specifierPathPrefix: string];
+
+/**
+ * Map import path prefixes to their form through the specifier directory, longest first.
+ *
+ * Only a working dir inside the directory has any: with the working dir `core` inside the directory
+ * `..`, `./` maps to `../core/` and `../` to itself.
+ */
+export const getSpecifierPathPrefixes = (
+  { directory }: Pick<NormalizedStoriesSpecifier, 'directory'>,
+  workingDir: string
+): SpecifierPathPrefix[] => {
+  const segments = pathe.relative(pathe.resolve(workingDir, directory), workingDir).split('/');
+  if (segments[0] === '' || segments[0] === '..') {
+    return [];
+  }
+  return [...segments, ''].map((_, i): SpecifierPathPrefix => {
+    const up = segments.length - i;
+    return [up ? '../'.repeat(up) : './', `${[directory, ...segments.slice(0, i)].join('/')}/`];
+  });
+};
+
+/**
+ * Write an import path through the specifier directory, as `importPathMatcher` and auto-titles
+ * expect.
+ */
+export const toSpecifierPath = (
+  specifier: Pick<NormalizedStoriesSpecifier, 'directory'>,
+  importPath: string,
+  workingDir: string
+) => {
+  const prefix = getSpecifierPathPrefixes(specifier, workingDir).find(([from]) =>
+    importPath.startsWith(from)
+  );
+  return prefix ? prefix[1] + importPath.slice(prefix[0].length) : importPath;
+};
+
+export const matchesSpecifier = (
+  specifier: NormalizedStoriesSpecifier,
+  importPath: string,
+  workingDir: string
+) => specifier.importPathMatcher.test(toSpecifierPath(specifier, importPath, workingDir));
 
 export const normalizeStoriesEntry = (
   entry: StoriesEntry,

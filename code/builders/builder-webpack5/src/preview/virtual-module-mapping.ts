@@ -61,7 +61,7 @@ export const getVirtualModules = async (options: Options) => {
     !isProd &&
     !!webpackVersion &&
     semver.lt(webpackVersion, '5.101.3');
-  virtualModules[storiesPath] = toImportFn(stories, { needPipelinedImport });
+  virtualModules[storiesPath] = toImportFn(stories, { needPipelinedImport, workingDir });
   // Resolve the csf module from this builder's own core copy rather than by bare specifier, which
   // webpack would walk up to the user's project root for — a different Storybook version than the
   // builder in multi-version workspaces (SB-1981). Same convention as the corePath in index.ts.

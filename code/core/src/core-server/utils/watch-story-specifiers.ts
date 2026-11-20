@@ -1,3 +1,4 @@
+import { matchesSpecifier } from 'storybook/internal/common';
 import type { NormalizedStoriesSpecifier, Path } from 'storybook/internal/types';
 
 import { relative, resolve } from 'pathe';
@@ -15,7 +16,7 @@ export function watchStorySpecifiers(
   };
   const isStoryFile = (absolutePath: Path) => {
     const importPath = toImportPath(absolutePath);
-    return specifiers.some((ns) => ns.importPathMatcher.exec(importPath));
+    return specifiers.some((ns) => matchesSpecifier(ns, importPath, options.workingDir));
   };
 
   // Batch rapid file events to avoid redundant processing.

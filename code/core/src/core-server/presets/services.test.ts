@@ -1,13 +1,18 @@
+import { join } from 'node:path';
+
+import { normalizeStoriesEntry } from 'storybook/internal/common';
 import type { Options } from 'storybook/internal/types';
 import * as v from 'valibot';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ToolsetCtx } from '../../shared/open-service/toolset-definition.ts';
 import { clearToolsetRegistry, getToolset } from '../../shared/open-service/toolset-registry.ts';
+import { createStoriesToolset } from '../../shared/open-service/toolsets/stories/definition.ts';
 import { loadManifests } from '../utils/manifests/manifests.ts';
 import { services } from './common-preset.ts';
 
 vi.mock('../utils/manifests/manifests.ts', { spy: true });
+vi.mock('../../shared/open-service/toolsets/stories/definition.ts', { spy: true });
 
 const REMOTE_MANIFEST = JSON.stringify({
   v: 1,
@@ -148,5 +153,40 @@ describe('services preset hook: docs toolset', () => {
       expect(outcome.markdown).not.toContain('# Local');
       expect(fetch).not.toHaveBeenCalled();
     });
+  });
+});
+
+describe('services preset hook: stories toolset', () => {
+  beforeEach(() => {
+    clearToolsetRegistry();
+    vi.stubGlobal('STORYBOOK_SERVICES_LOADED', false);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('matches story files of a working dir nested in the specifier directory', async () => {
+    const mockDir = join(__dirname, '..', 'utils', '__mockdata__');
+    const workingDir = join(mockDir, 'src', 'nested');
+    const specifier = normalizeStoriesEntry('./src/@(nested|second-nested)/*.stories.ts', {
+      configDir: mockDir,
+      workingDir,
+    });
+    const options = optionsWithRefs({});
+    const { apply } = options.presets;
+    options.configDir = mockDir;
+    options.presets.apply = (async (extension: string, config?: unknown) =>
+      extension === 'storyIndexGenerator'
+        ? { specifiers: [specifier], options: { workingDir } }
+        : apply(extension, config)) as typeof apply;
+
+    await services(undefined, options);
+
+    const { storybookDirs } = vi.mocked(createStoriesToolset).mock.lastCall![0];
+    const isStoryFile = await storybookDirs.getStoriesMatcher();
+    expect(isStoryFile(join(workingDir, 'Button.stories.ts'))).toBe(true);
+    expect(isStoryFile(join(mockDir, 'src', 'second-nested', 'G.stories.ts'))).toBe(true);
+    expect(isStoryFile(join(workingDir, 'Button.ts'))).toBe(false);
   });
 });

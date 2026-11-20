@@ -238,6 +238,26 @@ describe('BUN Proxy', () => {
     });
   });
 
+  describe('findInstallations', () => {
+    it('lists devDependencies even when NODE_ENV is production', async () => {
+      mockedExecuteCommand.mockResolvedValue({
+        stdout: JSON.stringify({ dependencies: { storybook: { version: '10.2.1' } } }),
+      } as any);
+
+      const installations = await bunProxy.findInstallations(['storybook']);
+
+      expect(mockedExecuteCommand).toHaveBeenCalledWith(
+        expect.objectContaining({
+          command: 'npm',
+          args: ['ls', '--json', '--depth=99', '--include=dev'],
+        })
+      );
+      expect(installations).toMatchObject({
+        dependencies: { storybook: [{ version: '10.2.1' }] },
+      });
+    });
+  });
+
   describe('getPublishedPeerDependencies', () => {
     const readPeers = () =>
       bunProxy.getPublishedPeerDependencies('@storybook/react-native', '11.0.0-next.0');

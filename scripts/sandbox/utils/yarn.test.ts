@@ -9,6 +9,8 @@ import yml from 'yaml';
 import { ROOT_DIRECTORY } from '../../utils/constants.ts';
 import { runCommand } from '../generate.ts';
 import {
+  BEFORE_SANDBOX_MIN_AGE_GATE,
+  BEFORE_SANDBOX_NPM_MIN_RELEASE_AGE_DAYS,
   BEFORE_SANDBOX_NPM_MIN_VERSION,
   LOCALLY_PUBLISHED_PACKAGE_PATTERNS,
   ensureNpmSupportsMinReleaseAge,
@@ -148,7 +150,7 @@ describe('refreshBeforeStorybookLockfile', () => {
     await refreshBeforeStorybookLockfile({ cwd: SANDBOX });
 
     const scripts = vi.mocked(runCommand).mock.calls.map(([script]) => script);
-    expect(scripts).toContain('yarn config set npmMinimalAgeGate 7d');
+    expect(scripts).toContain(`yarn config set npmMinimalAgeGate ${BEFORE_SANDBOX_MIN_AGE_GATE}`);
   });
 
   it('upgrades only the quarantined package, leaving every other range alone', async () => {
@@ -295,7 +297,7 @@ describe('writeScaffoldNpmrc', () => {
     await writeScaffoldNpmrc(SANDBOX, ['@react-native-community/*', 'multitars']);
 
     expect(vol.readFileSync(`${SANDBOX}/.npmrc`, 'utf-8')).toBe(
-      'min-release-age=7\nmin-release-age-exclude[]=@react-native-community/*\nmin-release-age-exclude[]=multitars\n'
+      `min-release-age=${BEFORE_SANDBOX_NPM_MIN_RELEASE_AGE_DAYS}\nmin-release-age-exclude[]=@react-native-community/*\nmin-release-age-exclude[]=multitars\n`
     );
   });
 

@@ -134,7 +134,7 @@ const addStorybook = async ({
     }
 
     // This install is the only step that runs package code, so it keeps the
-    // 7-day gate inherited from before-storybook. The locally published
+    // 3-day gate inherited from before-storybook. The locally published
     // Storybook packages are seconds old and can never satisfy it, so they are
     // allowlisted by name rather than the gate being switched off.
     await preapproveLocallyPublishedPackages(tmpDir);
@@ -341,7 +341,7 @@ const runGenerators = async (
 
           await localizeYarnConfigFiles(createBaseDir, createBeforeDir);
 
-          // Refresh the lockfile to a Yarn 4 one with a 7-day npmMinimalAgeGate
+          // Refresh the lockfile to a Yarn 4 one with a 3-day npmMinimalAgeGate
           // so consumers who clone the published sandbox install a reproducible,
           // non-freshly-quarantined dependency tree.
           //

@@ -104,7 +104,14 @@ describe('upgrade: refreshing the skills', () => {
             'argtypes-default-value': FixStatus.SUCCEEDED,
           },
           automigrationErrors: { 'story-sort-to-main': 'Comparator requires manual migration' },
-          fileFailures: [],
+          fileFailures: [
+            {
+              fixId: 'story-sort-to-main',
+              file: '/repo/a/.storybook/preview.ts',
+              kind: 'preview',
+              message: 'Comparator requires manual migration',
+            },
+          ],
         },
       },
       detectedAutomigrations: [],
@@ -131,6 +138,12 @@ describe('upgrade: refreshing the skills', () => {
             {
               fixId: 'argtypes-default-value',
               file: '/repo/a/src/Stack.stories.tsx',
+              kind: 'story',
+              message: 'Cannot mutate spread field',
+            },
+            {
+              fixId: 'argtypes-default-value',
+              file: '/repo/a/src/Button.stories.tsx',
               kind: 'story',
               message: 'Cannot mutate spread field',
             },

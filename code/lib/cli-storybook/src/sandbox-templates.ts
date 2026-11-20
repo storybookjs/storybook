@@ -946,6 +946,10 @@ export const baseTemplates = {
     },
     modifications: {
       skipMocking: true,
+      // @rspack/core 2.3.2+ minifies Lit so a class name shadows a helper it calls.
+      resolutions: {
+        '@rspack/core': '2.3.1',
+      },
     },
     skipTasks: ['e2e-tests', 'e2e-tests-dev', 'bench', 'vitest-integration'],
   },

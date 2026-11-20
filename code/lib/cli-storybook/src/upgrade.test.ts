@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -16,7 +16,12 @@ import { logger } from 'storybook/internal/node-logger';
 import { getStorybookData as sourceGetStorybookData } from '../../../core/src/cli/getStorybookData.ts';
 import { getStorybookData } from './automigrate/helpers/mainConfigFile.ts';
 import type { UpgradeOptions } from './upgrade.ts';
-import { checkVersionConsistency, getStorybookVersion, withNpmForceFallback } from './upgrade.ts';
+import {
+  checkVersionConsistency,
+  getStorybookVersion,
+  upgrade,
+  withNpmForceFallback,
+} from './upgrade.ts';
 import { collectProjects, generateUpgradeSpecs, isSuccessResult } from './util.ts';
 
 const findInstallationsMock =
@@ -49,6 +54,12 @@ vi.mock(import('storybook/internal/node-logger'), async (importOriginal) => {
 // importModule instead of the stub from vitest-setup.ts.
 vi.unmock('../../../core/src/shared/utils/module.ts');
 vi.mock('storybook/internal/telemetry');
+// An upgrade refreshes the skills and AGENTS.md of the working directory, which tests must not touch.
+vi.mock(import('storybook/internal/cli'), async (importOriginal) => ({
+  ...(await importOriginal()),
+  hasStorybookSkills: async () => false,
+  refreshAgentInstructions: async () => {},
+}));
 vi.mock('./autoblock/index.ts', () => ({
   autoblock: vi.fn(async () => null),
 }));
@@ -649,5 +660,124 @@ describe('withNpmForceFallback', () => {
       'yarn install failed'
     );
     expect(installDependencies).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('upgrade', () => {
+  // A single pnpm project in a monorepo, so a normal upgrade both installs and dedupes.
+  const runUpgrade = async ({
+    dryRun,
+    packageJsonPaths = [],
+  }: {
+    dryRun: boolean;
+    packageJsonPaths?: string[];
+  }) => {
+    const packageManager = {
+      type: PackageManagerName.PNPM,
+      packageJsonPaths,
+      latestVersion: async () => '9.0.0',
+      getAllDependencies: () => ({ storybook: '8.0.0' }),
+      getModulePackageJSON: async () => null,
+      findInstallations: async () => undefined,
+      getOverrideSources: () => [],
+      isStorybookInMonorepo: () => true,
+      getRunCommand: (command: string) => `pnpm ${command}`,
+      precheckStorybookPackageInstall: vi.fn(async () => {}),
+      installDependencies: vi.fn(async () => {}),
+      dedupeDependencies: vi.fn(async () => {}),
+      writeCatalogUpgrades: vi.fn((specifiers: string[]) => specifiers),
+      addDependencies: vi.fn(async () => {}),
+    };
+    getStorybookDataMock.mockResolvedValue({
+      configDir: '/project/.storybook',
+      mainConfig: { stories: [] },
+      mainConfigPath: '/project/.storybook/main.js',
+      previewConfigPath: undefined,
+      packageManager,
+      storiesPaths: [],
+      versionInstalled: '8.0.0',
+    });
+
+    await upgrade({
+      configDir: ['/project/.storybook'],
+      dryRun,
+      yes: true,
+      force: false,
+      skipCheck: false,
+      disableTelemetry: true,
+      // Automigration checks would otherwise run against the partial package manager above.
+      skipAutomigrations: true,
+    });
+
+    return packageManager;
+  };
+
+  it('leaves dependencies untouched in a dry run', async () => {
+    const packageManager = await runUpgrade({ dryRun: true });
+
+    expect(packageManager.precheckStorybookPackageInstall).not.toHaveBeenCalled();
+    expect(packageManager.installDependencies).not.toHaveBeenCalled();
+    expect(packageManager.dedupeDependencies).not.toHaveBeenCalled();
+  });
+
+  it('installs and dedupes dependencies in a normal upgrade', async () => {
+    const packageManager = await runUpgrade({ dryRun: false });
+
+    expect(packageManager.precheckStorybookPackageInstall).toHaveBeenCalledTimes(1);
+    expect(packageManager.installDependencies).toHaveBeenCalledTimes(1);
+    expect(packageManager.dedupeDependencies).toHaveBeenCalledTimes(1);
+  });
+
+  describe('output', () => {
+    const methods = ['info', 'log', 'step', 'warn'] as const;
+
+    beforeEach(() => {
+      methods.forEach((method) => vi.spyOn(logger, method));
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    const logged = () =>
+      methods.flatMap((method) => vi.mocked(logger[method]).mock.calls.flat()).join('\n');
+
+    it('says that a dry run changed no file, instead of reporting an upgrade', async () => {
+      await runUpgrade({ dryRun: true });
+
+      expect(logged()).not.toMatch(/Upgrading from|upgraded successfully/);
+      expect(logged()).toContain(
+        'Dry-running upgrade from 8.0.0 to 9.0.0 (no files will be changed)'
+      );
+      expect(logged()).toContain('no files were changed');
+    });
+
+    it('names the package versions a dry run would set, without setting them', async () => {
+      const dir = await mkdtemp(join(tmpdir(), 'sb-upgrade-dry-run-'));
+      const packageJsonPath = join(dir, 'package.json');
+      const packageJson = JSON.stringify({ devDependencies: { storybook: '8.0.0' } });
+      await writeFile(packageJsonPath, packageJson);
+
+      try {
+        const packageManager = await runUpgrade({
+          dryRun: true,
+          packageJsonPaths: [packageJsonPath],
+        });
+
+        expect(logged()).toMatch(/storybook: 8\.0\.0 → \^?9\.0\.0/);
+        expect(packageManager.writeCatalogUpgrades).not.toHaveBeenCalled();
+        expect(packageManager.addDependencies).not.toHaveBeenCalled();
+        expect(await readFile(packageJsonPath, 'utf8')).toBe(packageJson);
+      } finally {
+        await rm(dir, { recursive: true, force: true });
+      }
+    });
+
+    it('reports the upgrade of a normal run', async () => {
+      await runUpgrade({ dryRun: false });
+
+      expect(logged()).toMatch(/Upgrading from/);
+      expect(logged()).toMatch(/upgraded successfully/);
+    });
   });
 });

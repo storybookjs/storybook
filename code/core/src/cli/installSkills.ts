@@ -94,11 +94,14 @@ export async function installSkills({
   packageManager,
   source,
   stdio = 'inherit',
+  dryRun = false,
 }: {
   packageManager: JsPackageManager;
   source: SkillsSource;
   /** `pipe` keeps the `skills` CLI output out of a running task log. */
   stdio?: 'inherit' | 'pipe';
+  /** Print the commands an install would run, and run none of them. */
+  dryRun?: boolean;
 }): Promise<SkillsInstallResult> {
   if (isCI()) {
     return { result: 'skipped', source: 'ci' };
@@ -118,6 +121,18 @@ export async function installSkills({
     'universal',
     '--copy',
   ];
+
+  if (dryRun) {
+    logger.log(
+      `Would ${source === 'refresh' ? 'refresh' : 'install'} the Storybook skills: ${CLI_COLORS.cta(packageManager.getRemoteRunCommand(args))}`
+    );
+    if (removedSkills.length > 0) {
+      logger.log(
+        `Would remove the replaced Storybook skills: ${CLI_COLORS.cta(packageManager.getRemoteRunCommand(removeSkillsArgs(removedSkills)))}`
+      );
+    }
+    return { result: 'skipped', source };
+  }
 
   logger.log(CLI_COLORS.cta(packageManager.getRemoteRunCommand(args)));
   try {
@@ -158,12 +173,14 @@ export async function installSkills({
   return { result: 'installed', source };
 }
 
+const removeSkillsArgs = (names: string[]) => ['skills@latest', 'remove', ...names, '--yes'];
+
 async function removeSkills(
   packageManager: JsPackageManager,
   names: string[],
   stdio: 'inherit' | 'pipe'
 ): Promise<void> {
-  const args = ['skills@latest', 'remove', ...names, '--yes'];
+  const args = removeSkillsArgs(names);
   try {
     await packageManager.runPackageCommand({
       args,

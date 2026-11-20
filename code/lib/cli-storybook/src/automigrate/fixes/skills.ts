@@ -43,6 +43,10 @@ export const skills: Fix<{ afterAngularViteMigration?: boolean }> = {
       : null;
   },
 
+  async reportDryRun({ packageManager }) {
+    await installSkills({ packageManager, source: 'automigration', dryRun: true });
+  },
+
   async run({ packageManager, result }) {
     // The skills live in the project root, which every Storybook of a monorepo shares.
     if (await hasStorybookSkills()) {

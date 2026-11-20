@@ -1,7 +1,8 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { optionalEnvToBoolean, syncStorybookAddons } from 'storybook/internal/common';
+import { optionalEnvToBoolean, syncPreviewAddonsWithMainConfig } from 'storybook/internal/common';
+import { formatConfig, loadConfig } from 'storybook/internal/csf-tools';
 import { logger, prompt } from 'storybook/internal/node-logger';
 
 import picocolors from 'picocolors';
@@ -15,6 +16,7 @@ import {
   previewImportTarget,
 } from '../../../../core/src/shared/constants/config-folder.ts';
 import { type FileInfo, runCodemod } from '../automigrate/codemod.ts';
+import { editParsedFile } from '../automigrate/helpers/edit-parsed-file.ts';
 import { getFrameworkPackageName } from '../automigrate/helpers/mainConfigFile.ts';
 import type { CommandFix } from '../automigrate/types.ts';
 import { configToCsfFactory } from './helpers/config-to-csf-factory.ts';
@@ -122,7 +124,15 @@ export const csfFactories: CommandFix = {
       });
     }
 
-    const { packageJson, operationDir } = packageManager.primaryPackageJson;
+    const { packageJson, operationDir, packageJsonPath } = packageManager.primaryPackageJson;
+    const writeImportsMap = () => {
+      if (dryRun) {
+        logger.step(`Would add an imports map in ${picocolors.cyan(packageJsonPath)}`);
+        return;
+      }
+      logger.step(`Adding imports map in ${picocolors.cyan(packageJsonPath)}`);
+      packageManager.writePackageJson(packageJson, operationDir);
+    };
 
     if (isReactNativePreview) {
       const nativePreviewFile = previewConfigPath ?? join(configDir, 'preview.tsx');
@@ -130,20 +140,14 @@ export const csfFactories: CommandFix = {
       if (previewImportTarget(previewFile, operationDir) == null) {
         useSubPathImports = false;
       } else if (applyPreviewImportsMap(packageJson, previewFile, operationDir)) {
-        logger.step(
-          `Adding imports map in ${picocolors.cyan(packageManager.primaryPackageJson.packageJsonPath)}`
-        );
-        packageManager.writePackageJson(packageJson, operationDir);
+        writeImportsMap();
       }
     } else if (useSubPathImports && !packageJson.imports?.['#*']) {
-      logger.step(
-        `Adding imports map in ${picocolors.cyan(packageManager.primaryPackageJson.packageJsonPath)}`
-      );
       packageJson.imports = {
         ...packageJson.imports,
         '#*': ['./*', './*.ts', './*.tsx', './*.js', './*.jsx'],
       };
-      packageManager.writePackageJson(packageJson, operationDir);
+      writeImportsMap();
     }
 
     await runStoriesCodemod({
@@ -154,19 +158,47 @@ export const csfFactories: CommandFix = {
       glob,
     });
 
-    logger.step('Applying codemod on your main config...');
     const frameworkPackage =
       getFrameworkPackageName(mainConfig) || '@storybook/your-framework-here';
-    await runCodemod([mainConfigPath!], (fileInfo) =>
-      configToCsfFactory(fileInfo, { configType: 'main', frameworkPackage }, { dryRun })
+    const runConfigCodemod = (path: string, transform: (info: FileInfo) => Promise<string>) =>
+      runCodemod(
+        [path],
+        async (info) => {
+          const output = await transform(info);
+          if (dryRun && output !== info.source) {
+            logger.log(`Would write to ${picocolors.yellow(info.path)}`);
+          }
+          return output;
+        },
+        { dryRun }
+      );
+
+    logger.step('Applying codemod on your main config...');
+    await runConfigCodemod(mainConfigPath!, (info) =>
+      configToCsfFactory(info, { configType: 'main', frameworkPackage }, { skipFormatting: true })
     );
 
     logger.step('Applying codemod on your preview config...');
-    await runCodemod([previewConfigPath!], (fileInfo) =>
-      configToCsfFactory(fileInfo, { configType: 'preview', frameworkPackage }, { dryRun })
-    );
+    // The addons of the main config are synced into the converted preview within the same
+    // transform, so a dry run reports them too.
+    await runConfigCodemod(previewConfigPath!, async (info) => {
+      const preview = loadConfig(
+        await configToCsfFactory(
+          info,
+          { configType: 'preview', frameworkPackage },
+          { skipFormatting: true }
+        ),
+        info.path
+      ).parse();
+      await editParsedFile(preview, (config) =>
+        syncPreviewAddonsWithMainConfig(mainConfig, config, configDir)
+      );
+      return formatConfig(preview);
+    });
 
-    await syncStorybookAddons(mainConfig, previewConfigPath!, configDir);
+    if (dryRun) {
+      return;
+    }
 
     logger.logBox(
       dedent`

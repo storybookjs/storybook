@@ -354,6 +354,9 @@ export async function runFixes({
 
     logger.step(`${getTitle()}: ${picocolors.cyan(f.id)}`);
     logger.logBox(f.prompt(result));
+    if (dryRun) {
+      await f.reportDryRun?.({ ...project, result });
+    }
 
     let runAnswer: { fix: boolean } | undefined;
 
@@ -431,7 +434,10 @@ export async function runFixes({
       } else {
         fixResults[f.id] = FixStatus.SKIPPED;
         fixSummary.skipped.push(f.id);
-        logger.log(`Skipped ${picocolors.cyan(f.id)} migration`);
+        // The summary of a dry run lists these fixes as the ones a run would apply.
+        if (!dryRun) {
+          logger.log(`Skipped ${picocolors.cyan(f.id)} migration`);
+        }
       }
     }
   }

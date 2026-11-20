@@ -390,6 +390,34 @@ describe('multi-project automigrations', () => {
     });
   });
 
+  describe('reportDryRun', () => {
+    it('lets each detected fix report what its run would do, in a dry run', async () => {
+      const reportDryRun = vi.fn(async () => {});
+      const fix = createMockFix('reporting-fix', {}, { reportDryRun });
+
+      await promptForAutomigrations([asAutomigration(fix, createMockProject('/repo/.storybook'))], {
+        dryRun: true,
+      });
+
+      expect(reportDryRun).toHaveBeenCalledTimes(1);
+      expect(reportDryRun).toHaveBeenCalledWith(
+        expect.objectContaining({ configDir: '/repo/.storybook', result: { needsFix: true } })
+      );
+    });
+
+    it('does not call it outside a dry run', async () => {
+      const reportDryRun = vi.fn(async () => {});
+      const fix = createMockFix('reporting-fix', {}, { reportDryRun });
+
+      await promptForAutomigrations([asAutomigration(fix, createMockProject('/repo/.storybook'))], {
+        dryRun: false,
+        yes: true,
+      });
+
+      expect(reportDryRun).not.toHaveBeenCalled();
+    });
+  });
+
   describe('logAutomigrationDetails', () => {
     const detailedFix = () =>
       createMockFix(

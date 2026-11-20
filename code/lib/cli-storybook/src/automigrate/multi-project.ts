@@ -244,6 +244,12 @@ export async function promptForAutomigrations(
   if (options.dryRun) {
     logSelection('Detected automigrations (dry run - no changes will be made):', automigrations);
     logAutomigrationDetails(automigrations);
+    for (const { fix, reports } of automigrations) {
+      const report = reports.find(({ status }) => status === 'check_succeeded');
+      if (fix.reportDryRun && report) {
+        await fix.reportDryRun({ ...report.project, result: report.result });
+      }
+    }
     return [];
   }
 

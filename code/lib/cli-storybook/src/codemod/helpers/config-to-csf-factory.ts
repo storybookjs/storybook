@@ -15,8 +15,6 @@ import {
 } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 
-import picocolors from 'picocolors';
-
 import type { FileInfo } from '../../automigrate/codemod.ts';
 import {
   cleanupTypeImports,
@@ -27,7 +25,7 @@ import {
 export async function configToCsfFactory(
   info: FileInfo,
   { configType, frameworkPackage }: { configType: 'main' | 'preview'; frameworkPackage: string },
-  { dryRun = false, skipFormatting = false }: { dryRun?: boolean; skipFormatting?: boolean } = {}
+  { skipFormatting = false }: { skipFormatting?: boolean } = {}
 ) {
   const config = loadConfig(info.source, info.path);
   try {
@@ -206,11 +204,6 @@ export async function configToCsfFactory(
   cleanupTypeImports(editor, disallowList);
 
   const output = printConfig(config).code;
-
-  if (dryRun) {
-    logger.log(`Would write to ${picocolors.yellow(info.path)}:\n${picocolors.green(output)}`);
-    return info.source;
-  }
 
   return skipFormatting ? output : formatFileContent(info.path, output);
 }

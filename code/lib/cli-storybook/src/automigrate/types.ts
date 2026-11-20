@@ -69,6 +69,11 @@ type BaseFix<ResultType = any> = {
   /** Whether the automigration is selected by default when the user is prompted. */
   defaultSelected?: boolean;
   link?: string;
+  /**
+   * In a dry run, print what `run` would do that the fix's description leaves out, such as a command
+   * it runs. Called once per detected fix, with the first project its check applies to.
+   */
+  reportDryRun?: (options: TransformOptions<ResultType>) => Promise<void>;
 };
 
 type PromptType<ResultType = any, T = Prompt> =

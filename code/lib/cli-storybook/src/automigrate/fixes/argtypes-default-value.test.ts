@@ -317,6 +317,19 @@ describe('argtypes-default-value', () => {
     expect(result.story).toBe(story);
   });
 
+  it('fails an arg read with brackets from a local constant that shows a defaultValue', async () => {
+    const story = [
+      "const types = { label: { defaultValue: 'A' } };",
+      "export default { argTypes: { label: types['label'] } };",
+    ].join('\n');
+    const result = await migrate({ story });
+
+    expect(result.failures).toEqual([
+      { file: storyPath, kind: 'story', message: expect.stringContaining('argTypes.label') },
+    ]);
+    expect(result.story).toBe(story);
+  });
+
   it('deletes the defaultValue of an arg named table', async () => {
     const result = await migrate({
       story: "export default { argTypes: { table: { defaultValue: 'x', control: 'text' } } };",

@@ -791,6 +791,13 @@ describe('CsfObject', () => {
     ['spread-field', `...base`, `const base = { componentSubtitle: 'A' };`],
     ['spread-field', `...make(base)`, `const base = { componentSubtitle: 'A' };`],
     ['dynamic-key', `[field]: true`, ''],
+    ...[`types['parameters']`, `types[\`parameters\`]`, `types[key]`, `list[0]`, `list[index]`].map(
+      (read) => [
+        'spread-field',
+        `...${read}`,
+        `const types = { parameters: { componentSubtitle: 'A' } }; const list = [{ componentSubtitle: 'A' }];`,
+      ]
+    ),
   ])('rejects a field only %s could provide', (code, member, declaration) => {
     const source = `${declaration}export default { parameters: { ${member} } };`;
     const csf = parse(source);
@@ -817,6 +824,21 @@ describe('CsfObject', () => {
         changed: false,
       });
       expect(csf.changed).toBe(false);
+      expect(printCsf(csf).code).toBe(source);
+    }
+  );
+
+  it.each([`...types['other']`, `...list[0].other`])(
+    'removes nothing where %s reads a local value without the field',
+    (member) => {
+      const source = `const types = { parameters: { componentSubtitle: 'A' }, other: {} }; const list = [{ other: {} }];\nexport default { parameters: { ${member} } };`;
+      const csf = parse(source);
+      const [meta] = csf.objects({ meta: true, stories: false });
+
+      expect(meta.remove(['parameters', 'componentSubtitle'])).toEqual({
+        ok: true,
+        changed: false,
+      });
       expect(printCsf(csf).code).toBe(source);
     }
   );

@@ -20,6 +20,8 @@ import {
   type Node,
   type Property,
   children,
+  isNumericLiteral,
+  isStringLiteral,
   staticKey,
   unwrapExpression,
 } from './estree/ast.ts';
@@ -191,17 +193,27 @@ export const locate = (
   }
 };
 
+// A member read whose key only running code knows, such as `types[key]`: it may read any member.
+const ANY_KEY = Symbol('any key');
+type ShownPath = readonly (string | number | typeof ANY_KEY)[];
+
 // Whether the source shows a value at `path` below `properties`, through spreads, local constants,
 // member reads and call arguments. A value from another module, or one only running code could
 // build, is out of sight. An index is always in sight: positions are not followed.
 export const showsPath = (
   editor: SourceEditor,
   properties: readonly E.ObjectPropertyKind[],
-  path: CsfPath,
-  expanding = new Set<Node>()
+  path: CsfPath
+): boolean => showsMembers(editor, properties, path, new Set());
+
+const showsMembers = (
+  editor: SourceEditor,
+  properties: readonly E.ObjectPropertyKind[],
+  path: ShownPath,
+  expanding: Set<Node>
 ): boolean => {
   const [segment, ...rest] = path;
-  if (!isKey(segment)) {
+  if (typeof segment === 'number') {
     return true;
   }
   return properties.some((member) => {
@@ -209,35 +221,60 @@ export const showsPath = (
       return showsValue(editor, member.argument, path, expanding);
     }
     const key = staticKey(member);
-    if (key !== undefined && key !== segment) {
+    if (key !== undefined && segment !== ANY_KEY && key !== segment) {
       return false;
     }
     return rest.length === 0 || showsValue(editor, member.value, rest, expanding);
   });
 };
 
+// The key a member read such as `types.label` or `types['label']` reads.
+const memberKey = (member: E.MemberExpression): string | typeof ANY_KEY => {
+  const property = member.property as Node;
+  if (!member.computed) {
+    return property.type === 'Identifier' ? property.name : ANY_KEY;
+  }
+  if (isStringLiteral(property)) {
+    return property.value;
+  }
+  if (isNumericLiteral(property)) {
+    return String(property.value);
+  }
+  if (property.type === 'TemplateLiteral' && property.expressions.length === 0) {
+    return property.quasis[0]?.value.cooked ?? ANY_KEY;
+  }
+  return ANY_KEY;
+};
+
 const showsValue = (
   editor: SourceEditor,
   node: Node | undefined,
-  path: CsfPath,
+  path: ShownPath,
   expanding: Set<Node>
 ): boolean => {
   const value = unwrapExpression(node);
   if (!value) {
     return false;
   }
-  if (!isKey(path[0])) {
+  if (typeof path[0] === 'number') {
     return true;
   }
   if (value.type === 'ObjectExpression') {
-    return showsPath(editor, value.properties, path, expanding);
+    return showsMembers(editor, value.properties, path, expanding);
   }
-  if (
-    value.type === 'MemberExpression' &&
-    !value.computed &&
-    value.property.type === 'Identifier'
-  ) {
-    return showsValue(editor, value.object, [value.property.name, ...path], expanding);
+  const [segment, ...rest] = path;
+  if (value.type === 'ArrayExpression' && (segment === ANY_KEY || /^\d+$/.test(segment))) {
+    return value.elements.some(
+      (element) =>
+        !!element &&
+        (rest.length === 0 ||
+          (element.type === 'SpreadElement'
+            ? showsValue(editor, element.argument, [ANY_KEY, ...rest], expanding)
+            : showsValue(editor, element, rest, expanding)))
+    );
+  }
+  if (value.type === 'MemberExpression') {
+    return showsValue(editor, value.object, [memberKey(value), ...path], expanding);
   }
   if (value.type === 'Identifier') {
     const init = constantInit(editor.scopes.bindingOf(value));

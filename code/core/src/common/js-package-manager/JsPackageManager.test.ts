@@ -1,5 +1,5 @@
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
-import { join, resolve } from 'node:path';
+import { join, normalize, resolve } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -52,7 +52,7 @@ describe('JsPackageManager', () => {
           }
         >;
       };
-      expected: unknown[];
+      expected: { path: string; field: string; overrides: unknown }[];
     }>([
       {
         name: 'no override fields',
@@ -120,13 +120,18 @@ describe('JsPackageManager', () => {
       vi.spyOn(JsPackageManager, 'getPackageJson').mockImplementation((path) => ({
         dependencies: {},
         devDependencies: {},
-        ...input.manifests[path],
+        ...input.manifests[path.replaceAll('\\', '/')],
       }));
       Object.defineProperty(jsPackageManager, 'primaryPackageJson', {
-        value: { packageJsonPath: '/p/app/package.json', operationDir: '/p/app' },
+        value: {
+          packageJsonPath: normalize('/p/app/package.json'),
+          operationDir: normalize('/p/app'),
+        },
       });
 
-      expect(jsPackageManager.getOverrideSources()).toEqual(expected);
+      expect(jsPackageManager.getOverrideSources()).toEqual(
+        expected.map((source) => ({ ...source, path: normalize(source.path) }))
+      );
     });
 
     it('reads the workspace root without a lockfile', async () => {

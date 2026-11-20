@@ -1,3 +1,6 @@
 if [ -z "$SKIP_STORYBOOK_GIT_HOOKS" ]; then
   yarn lint-staged
+  if [ -n "$(git diff --cached --name-only -- .agents/skills .agents/guidelines)" ]; then
+    node scripts/sync-obvious.ts && git add -A .obvious
+  fi
 fi

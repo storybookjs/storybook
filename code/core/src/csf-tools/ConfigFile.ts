@@ -560,13 +560,30 @@ export class ConfigFile implements CsfObject {
         if (decl?.type === 'ObjectExpression') {
           this._parseExportsObject(decl);
         } else {
+          const exported = unwrapExpression(node.declaration as Node);
+          const binding =
+            isTopLevel && exported.type === 'Identifier'
+              ? this.editor.scopes.bindingOf(exported)
+              : undefined;
+          const imported =
+            binding?.kind === 'import' &&
+            binding.declaration?.type === 'ImportDeclaration' &&
+            binding.declaration.importKind !== 'type' &&
+            (binding.node.type !== 'ImportSpecifier' || binding.node.importKind !== 'type')
+              ? binding.declaration
+              : undefined;
           logger.debug(
-            getCsfParsingErrorMessage({
-              fileName: this.fileName,
-              expectedType: 'ObjectExpression',
-              foundType: decl?.type,
-              node: decl || node.declaration,
-            })
+            imported
+              ? dedent`
+                  Cannot statically read the default export in ${this.fileName ? `'${this.fileName}'` : 'a config file'}: its value comes from '${imported.source.value}'.
+                  Storybook does not follow imports when analyzing this config file.
+                `
+              : getCsfParsingErrorMessage({
+                  fileName: this.fileName,
+                  expectedType: 'ObjectExpression',
+                  foundType: decl?.type,
+                  node: decl || node.declaration,
+                })
           );
         }
       } else if (node.type === 'ExportNamedDeclaration') {

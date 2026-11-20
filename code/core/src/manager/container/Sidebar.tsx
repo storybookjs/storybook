@@ -13,6 +13,9 @@ interface SidebarProps {
   onMenuClick?: SidebarComponentProps['onMenuClick'];
 }
 
+export const isWhatsNewNotificationsEnabled = (state: Pick<Combo['state'], 'whatsNewData'>) =>
+  state.whatsNewData?.status === 'SUCCESS' && !state.whatsNewData.disableWhatsNewNotifications;
+
 const Sidebar = React.memo(function Sideber({ onMenuClick }: SidebarProps) {
   const mapper = ({ state, api }: Combo) => {
     const {
@@ -31,8 +34,7 @@ const Sidebar = React.memo(function Sideber({ onMenuClick }: SidebarProps) {
       refs,
     } = state;
 
-    const whatsNewNotificationsEnabled =
-      state.whatsNewData?.status === 'SUCCESS' && !state.disableWhatsNewNotifications;
+    const whatsNewNotificationsEnabled = isWhatsNewNotificationsEnabled(state);
 
     return {
       api,

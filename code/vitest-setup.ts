@@ -130,3 +130,8 @@ vi.mock('./core/src/shared/utils/module.ts', async (importOriginal) => {
     }),
   };
 });
+
+// The real lookup spawns a process per ancestor (`wmic` on Windows, which takes seconds).
+vi.mock('./core/src/common/utils/process-ancestry.ts', () => ({
+  getProcessAncestry: vi.fn(() => []),
+}));

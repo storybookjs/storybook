@@ -25,7 +25,7 @@ function getCgroupCpuLimit(): number | undefined {
 // large resource class has 8 vCPUs.
 const getCiThreadCount = () => {
   if (process.platform === 'win32') {
-    return 8;
+    return 7;
   }
   const cpus = getCgroupCpuLimit();
   return cpus ? Math.max(1, cpus - 1) : 7;

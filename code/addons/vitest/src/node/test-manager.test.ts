@@ -761,6 +761,44 @@ describe('TestManager', () => {
     expect(regex?.test('Parent story  Test name')).toBe(false);
   });
 
+  // SB-2557: Svelte CSF names a story's test after its export, the index after its display name.
+  it('matches a story by its name or its export name', async () => {
+    vitest.globTestSpecifications.mockImplementation(() => tests);
+    const testManager = await startWithIndex();
+    const story = (exportName: string, name: string) => ({
+      type: 'story' as const,
+      subtype: 'story' as const,
+      id: `timestamp--${exportName.toLowerCase()}`,
+      name,
+      exportName,
+      title: 'timestamp',
+      importPath: 'path/to/file',
+      tags: [Tag.TEST],
+    });
+    const entries = [
+      story('HoverShowsFullDate', 'Hover Shows Full Date'),
+      story('Today', 'Today'),
+      story('FromAString', 'From A String'),
+    ];
+    testManager.storyIndex = {
+      v: 5,
+      entries: Object.fromEntries(entries.map((entry) => [entry.id, entry])),
+    } as StoryIndex;
+
+    await testManager.handleTriggerRunEvent({
+      type: 'TRIGGER_RUN',
+      payload: { storyIds: [entries[0].id, entries[1].id], triggeredBy: 'global' },
+    });
+
+    const regex = setTestNamePattern.mock.calls.find(([arg]) => arg instanceof RegExp)?.[0] as
+      | RegExp
+      | undefined;
+    expect(regex?.test('HoverShowsFullDate')).toBe(true);
+    expect(regex?.test('Hover Shows Full Date')).toBe(true);
+    expect(regex?.test('Today')).toBe(true);
+    expect(regex?.test('FromAString')).toBe(false);
+  });
+
   it('should trigger only selected stories across multiple files', async () => {
     vitest.globTestSpecifications.mockImplementation(() => tests);
     const testManager = await startWithIndex();

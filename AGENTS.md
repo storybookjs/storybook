@@ -36,7 +36,6 @@ Both start long-running dev servers.
 
 Contributor skills live in `.agents/skills/`.
 Claude Code does not read `.agents/`, so each skill has a symlink in `.claude/skills/`; add one when you add a skill.
-Obvious reads `.obvious/` instead, through git and without following symlinks, so a pre-commit hook copies `.agents/skills/` and `.agents/guidelines/` there; `yarn sync-obvious` does it by hand.
 
 ## Code Review
 

@@ -33,7 +33,6 @@
     "svelte-ecosystem-ci:before-test": "./scripts/ecosystem-ci/before-test.sh svelte-kit/skeleton-ts",
     "svelte-ecosystem-ci:build": "./scripts/ecosystem-ci/build.sh svelte-kit/skeleton-ts svelte",
     "svelte-ecosystem-ci:test": "./scripts/ecosystem-ci/test.sh svelte-kit/skeleton-ts",
-    "sync-obvious": "node scripts/sync-obvious.ts",
     "task": "yarn --cwd=./scripts task",
     "test": "NODE_OPTIONS=--max_old_space_size=4096 vitest run",
     "test:watch": "NODE_OPTIONS=--max_old_space_size=4096 vitest watch",

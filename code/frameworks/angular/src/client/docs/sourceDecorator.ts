@@ -1,5 +1,4 @@
 import { SourceType } from 'storybook/internal/docs-tools';
-import { getStoryArgTypes } from 'storybook/internal/preview-api';
 import { useRef, emitTransformCode, useEffect } from 'storybook/preview-api';
 import type { ArgsStoryFn, PartialStoryFn } from 'storybook/internal/types';
 
@@ -43,11 +42,7 @@ export const sourceDecorator = (
       : story.template;
 
     if (component && !userDefinedTemplate) {
-      const sourceFromComponent = computesTemplateSourceFromComponent(
-        component,
-        props,
-        getStoryArgTypes(context)
-      );
+      const sourceFromComponent = computesTemplateSourceFromComponent(component, props);
 
       // We might have a story with a Directive or Service defined as the component
       // In these cases there might exist a template, even if we aren't able to create source from component

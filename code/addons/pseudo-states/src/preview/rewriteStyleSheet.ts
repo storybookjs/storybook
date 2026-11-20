@@ -23,22 +23,66 @@ type IndexRange = {
   end: number;
 };
 
-const isEscaped = (selector: string, index: number) => {
-  let precedingBackslashes = 0;
-  for (let cursor = index - 1; cursor >= 0 && selector[cursor] === '\\'; cursor--) {
-    precedingBackslashes++;
+const isInRanges = (index: number, ranges: IndexRange[]) =>
+  ranges.some(({ start, end }) => index >= start && index < end);
+
+// \X escapes and quoted strings
+const literalPattern = /\\[\s\S]|"(?:\\[\s\S]|[^"\\])*"|'(?:\\[\s\S]|[^'\\])*'/g;
+
+const findLiteralRanges = (selector: string): IndexRange[] =>
+  Array.from(selector.matchAll(literalPattern), ({ index, 0: text }) => ({
+    start: index,
+    end: index + text.length,
+  }));
+
+const findClosingParenthesis = (
+  selector: string,
+  openIndex: number,
+  literalRanges = findLiteralRanges(selector)
+) => {
+  let depth = 0;
+  for (let index = openIndex; index < selector.length; index++) {
+    if (isInRanges(index, literalRanges)) {
+      continue;
+    }
+    if (selector[index] === '(') {
+      depth++;
+    } else if (selector[index] === ')' && --depth === 0) {
+      return index;
+    }
   }
-  return precedingBackslashes % 2 === 1;
+  return selector.length;
 };
 
-const findPseudoStates = (selector: string) => {
+const findNegationRanges = (selector: string, literalRanges: IndexRange[]) => {
+  const ranges: IndexRange[] = [];
+  let start = selector.indexOf(':not(');
+  while (start !== -1) {
+    if (isInRanges(start, literalRanges)) {
+      start = selector.indexOf(':not(', start + 1);
+      continue;
+    }
+    const end = findClosingParenthesis(selector, start + ':not'.length, literalRanges) + 1;
+    ranges.push({ start, end });
+    start = selector.indexOf(':not(', end);
+  }
+  return ranges;
+};
+
+// Skips escaped and quoted states, and states inside :not() unless includeNegated is set, as
+// rewriteNegatedPseudoStates handles those in place.
+const findPseudoStates = (selector: string, includeNegated = false) => {
   const matches: PseudoStateMatch[] = [];
+  const literalRanges = findLiteralRanges(selector);
+  const skippedRanges = includeNegated
+    ? literalRanges
+    : [...literalRanges, ...findNegationRanges(selector, literalRanges)];
   pseudoStatePattern.lastIndex = 0;
 
   let match = pseudoStatePattern.exec(selector);
   while (match) {
     const index = match.index;
-    if (!isEscaped(selector, index)) {
+    if (!isInRanges(index, skippedRanges)) {
       matches.push({ index, state: match[1], text: match[0] });
     }
     match = pseudoStatePattern.exec(selector);
@@ -63,14 +107,14 @@ const findExcludedPseudoElementRanges = (selector: string) => {
 const replacePseudoStateMatches = (
   selector: string,
   matches: PseudoStateMatch[],
-  replacement: (state: string) => string
+  replacement: (match: PseudoStateMatch) => string
 ) => {
   let result = '';
   let cursor = 0;
 
   matches.forEach((match) => {
     result += selector.slice(cursor, match.index);
-    result += replacement(match.state);
+    result += replacement(match);
     cursor = match.index + match.text.length;
   });
 
@@ -97,18 +141,16 @@ const replacePseudoStates = (
   pseudoStateMatches = findPseudoStates(selector)
 ) => {
   const excludedRanges = findExcludedPseudoElementRanges(selector);
-  const matches = pseudoStateMatches.filter(
-    ({ index }) => !excludedRanges.some(({ start, end }) => index >= start && index < end)
-  );
+  const matches = pseudoStateMatches.filter(({ index }) => !isInRanges(index, excludedRanges));
 
   return replacePseudoStateMatches(
     selector,
     matches,
-    (state) => `.pseudo-${state}${allClass ? '-all' : ''}`
+    ({ state }) => `.pseudo-${state}${allClass ? '-all' : ''}`
   );
 };
 
-// Does not handle :host() or :not() containing pseudo-states. Need to call replaceNotSelectors on the input first.
+// Does not handle :host() or :not() containing pseudo-states. Need to call rewriteNegatedPseudoStates on the input first.
 const replacePseudoStatesWithAncestorSelector = (
   selector: string,
   forShadowDOM: boolean,
@@ -159,76 +201,82 @@ const extractPseudoStates = (selector: string) => {
   };
 };
 
-const rewriteNotSelectors = (selector: string, forShadowDOM: boolean) => {
-  // Accept up to 3 levels of nested parentheses.
-  return [...selector.matchAll(/:not\((?:[^()]|\([^()]+\)|\((?:[^()]|\([^()]+\))+\))+\)/g)].reduce(
-    (acc, [originalNot]) => {
-      const selectorList = originalNot.match(/^:not\((.+)\)$/)?.[1] ?? '';
-      const rewrittenNot = rewriteNotSelector(selectorList, forShadowDOM);
-      return acc.replace(originalNot, rewrittenNot);
-    },
-    selector
-  );
-};
+const findHostEnd = (selector: string) =>
+  selector.startsWith(':host(') ? findClosingParenthesis(selector, ':host'.length) : -1;
 
-const rewriteNotSelector = (negatedSelectorList: string, forShadowDOM: boolean) => {
-  const rewrittenSelectors: string[] = [];
-  // For each negated selector
-  for (const negatedSelector of negatedSelectorList.split(/,\s*/)) {
-    // :not cannot be nested and cannot contain pseudo-elements, so no need to worry about that.
-    // Also, there's no compelling use case for :host() inside :not(), so we don't handle that.
-    rewrittenSelectors.push(replacePseudoStatesWithAncestorSelector(negatedSelector, forShadowDOM));
-  }
-  return `:not(${rewrittenSelectors.join(', ')})`;
+// Negated states must also match forced states, or the negation holds whenever nothing is forced.
+const rewriteNegatedPseudoStates = (
+  selector: string,
+  pseudoStateMatches: PseudoStateMatch[],
+  forShadowDOM: boolean
+) => {
+  const hostEnd = findHostEnd(selector);
+  const negationRanges = findNegationRanges(selector, findLiteralRanges(selector));
+  const excludedRanges = findExcludedPseudoElementRanges(selector);
+  const matches = pseudoStateMatches.filter(
+    ({ index }) => isInRanges(index, negationRanges) && !isInRanges(index, excludedRanges)
+  );
+
+  return replacePseudoStateMatches(selector, matches, ({ state, index }) => {
+    const forcedAncestor =
+      index < hostEnd
+        ? `.pseudo-${state}-all`
+        : `:where(${replacePseudoStatesWithAncestorSelector(`:${state}`, forShadowDOM)})`;
+    return `:is(:${state}, .pseudo-${state}, ${forcedAncestor})`;
+  });
 };
 
 const rewriteRules = ({ cssText, selectorText }: CSSStyleRule, forShadowDOM: boolean) => {
   let didRewrite = false;
   const rewrittenSelectors = splitSelectors(selectorText).flatMap((selector) => {
-    if (selector.includes('.pseudo-')) {
+    const allPseudoStateMatches = selector.includes('.pseudo-')
+      ? []
+      : findPseudoStates(selector, true);
+    if (allPseudoStateMatches.length === 0) {
       return [selector];
-    }
-    const replacementSelectors = [selector];
-    const pseudoStateMatches = findPseudoStates(selector);
-    if (pseudoStateMatches.length === 0) {
-      return replacementSelectors;
     }
     didRewrite = true;
 
-    const classSelector = replacePseudoStates(selector, false, pseudoStateMatches);
-    if (classSelector !== selector) {
+    const nativeSelector = rewriteNegatedPseudoStates(
+      selector,
+      allPseudoStateMatches,
+      forShadowDOM
+    );
+    const replacementSelectors = [nativeSelector];
+    const pseudoStateMatches = findPseudoStates(nativeSelector);
+    if (pseudoStateMatches.length === 0) {
+      return replacementSelectors;
+    }
+
+    const classSelector = replacePseudoStates(nativeSelector, false, pseudoStateMatches);
+    if (classSelector !== nativeSelector) {
       replacementSelectors.push(classSelector);
     }
 
     let ancestorSelector = '';
 
-    if (selector.startsWith(':host(')) {
-      const matches = selector.match(/^:host\((\S+)\)\s+(.+)$/);
-      if (matches && findPseudoStates(matches[2]).length > 0) {
+    if (nativeSelector.startsWith(':host(')) {
+      const hostEnd = findHostEnd(nativeSelector);
+      const matches = nativeSelector.slice(hostEnd + 1).match(/^\s+(.+)$/);
+      if (matches && findPseudoStates(matches[1]).length > 0) {
         // Simple replacement won't work on pseudo-state selectors outside of :host().
         // E.g. :host(.foo) .bar:hover -> :host(.foo.pseudo-hover-all) .bar
         // E.g. :host(.foo:focus) .bar:hover -> :host(.foo.pseudo-focus-all.pseudo-hover-all) .bar
-        let hostInnerSelector = matches[1];
-        let descendantSelector = matches[2];
-        // Simple replacement is fine for pseudo-state selectors inside :host() (even if inside :not()).
-        hostInnerSelector = replacePseudoStates(hostInnerSelector, true);
-        // Rewrite any :not selectors in the descendant selector.
-        descendantSelector = rewriteNotSelectors(descendantSelector, true);
+        const hostInnerSelector = replacePseudoStates(
+          nativeSelector.slice(':host('.length, hostEnd),
+          true
+        );
         // Any remaining pseudo-states in the descendant selector need to be moved into the host selector.
         ancestorSelector = replacePseudoStatesWithAncestorSelector(
-          descendantSelector,
+          matches[1],
           true,
           hostInnerSelector
         );
       } else {
-        // Don't need to specially handle :not() because:
-        //  - if inside :host(), simple replacement is sufficient
-        //  - if outside :host(), didn't match any pseudo-states
-        ancestorSelector = replacePseudoStates(selector, true);
+        ancestorSelector = replacePseudoStates(nativeSelector, true);
       }
     } else {
-      const withNotsReplaced = rewriteNotSelectors(selector, forShadowDOM);
-      ancestorSelector = replacePseudoStatesWithAncestorSelector(withNotsReplaced, forShadowDOM);
+      ancestorSelector = replacePseudoStatesWithAncestorSelector(nativeSelector, forShadowDOM);
     }
     replacementSelectors.push(ancestorSelector);
 
@@ -272,6 +320,7 @@ const replaceRule = (
 };
 
 // Rewrites the style sheet to add alternative selectors for any rule that targets a pseudo state.
+// Pseudo states inside :not() are rewritten in place instead, so they also respect forced states.
 // A sheet can only be rewritten once, and may carry over between stories.
 export const rewriteStyleSheet = (sheet: CSSStyleSheet, forShadowDOM = false): boolean => {
   try {

@@ -2,6 +2,7 @@ import React from 'react';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
+import type { API_IndexHash } from 'storybook/internal/types';
 import { ManagerContext } from 'storybook/manager-api';
 import { expect, fn, screen, userEvent, within } from 'storybook/test';
 import { dedent } from 'ts-dedent';
@@ -70,6 +71,79 @@ const indexError: Error = (() => {
     return e;
   }
 })();
+
+// One unattached docs page, and one component with an attached docs page, two stories and a test.
+const indexWithDocsAndTests: API_IndexHash = {
+  'introduction--docs': {
+    type: 'docs',
+    id: 'introduction--docs',
+    name: 'Docs',
+    title: 'Introduction',
+    importPath: './introduction.mdx',
+    prepared: true,
+    depth: 0,
+    tags: [],
+  },
+  button: {
+    type: 'component',
+    id: 'button',
+    name: 'Button',
+    children: ['button--docs', 'button--primary', 'button--secondary'],
+    depth: 0,
+    tags: [],
+  },
+  'button--docs': {
+    type: 'docs',
+    id: 'button--docs',
+    name: 'Docs',
+    title: 'Button',
+    parent: 'button',
+    importPath: './button.stories.tsx',
+    prepared: true,
+    depth: 1,
+    tags: [],
+  },
+  'button--primary': {
+    type: 'story',
+    subtype: 'story',
+    id: 'button--primary',
+    name: 'Primary',
+    title: 'Button',
+    parent: 'button',
+    children: ['button--primary:renders'],
+    importPath: './button.stories.tsx',
+    exportName: 'Primary',
+    prepared: true,
+    depth: 1,
+    tags: [],
+  },
+  'button--primary:renders': {
+    type: 'story',
+    subtype: 'test',
+    id: 'button--primary:renders',
+    name: 'renders',
+    title: 'Button',
+    parent: 'button--primary',
+    importPath: './button.stories.tsx',
+    exportName: 'Primary',
+    prepared: true,
+    depth: 2,
+    tags: [],
+  },
+  'button--secondary': {
+    type: 'story',
+    subtype: 'story',
+    id: 'button--secondary',
+    name: 'Secondary',
+    title: 'Button',
+    parent: 'button',
+    importPath: './button.stories.tsx',
+    exportName: 'Secondary',
+    prepared: true,
+    depth: 1,
+    tags: [],
+  },
+};
 
 const refs: Record<string, RefType> = {
   optimized: {
@@ -185,6 +259,16 @@ const refs: Record<string, RefType> = {
     filteredIndex,
     allStatuses: {},
   },
+  docsAndTests: {
+    id: 'docsAndTests',
+    title: 'It has docs pages and tests',
+    url: 'https://example.com',
+    type: 'lazy',
+    previewInitialized: true,
+    index: indexWithDocsAndTests,
+    filteredIndex: indexWithDocsAndTests,
+    allStatuses: {},
+  },
 };
 
 export const Optimized = () => (
@@ -266,3 +350,17 @@ export const Long = () => (
 export const WithSourceCode = () => (
   <Ref {...refs.withSourceCode} hasEntries={true} isLoading={false} selectedStoryId="" />
 );
+
+/** The indicator counts only stories: docs pages and test entries are not stories. */
+export const ReadyWithDocsAndTestsCounts: StoryObj = {
+  render: () => (
+    <Ref {...refs.docsAndTests} hasEntries={true} isLoading={false} selectedStoryId="" />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(await canvas.findByRole('button', { name: 'Extra actions' }));
+    await expect(
+      await screen.findByText(/Explore 1 components and 2 stories in a new browser tab\./)
+    ).toBeInTheDocument();
+  },
+};

@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import type {
   Args,
@@ -145,20 +145,15 @@ describe('render slots', () => {
     return Object.keys((vnode.children ?? {}) as object).filter((key) => !key.startsWith('_'));
   };
 
-  afterEach(() => {
-    vi.unstubAllGlobals();
+  it('passes every arg that is neither a declared prop nor a listener as a slot', () => {
+    expect(slotNames()).toEqual(['default', 'footer']);
   });
 
-  it('passes args documented as slots by docgen', () => {
-    expect(slotNames({ footer: { name: 'footer', table: { category: 'slots' } } })).toEqual([
+  it('passes an arg named like a declared prop to the prop, even with a slot argType', () => {
+    expect(slotNames({ label: { name: 'label', table: { category: 'slots' } } })).toEqual([
+      'default',
       'footer',
     ]);
-  });
-
-  it('passes every undeclared, non-listener arg as a slot under server docgen', () => {
-    vi.stubGlobal('FEATURES', { docgenServer: true });
-
-    expect(slotNames()).toEqual(['default', 'footer']);
   });
 });
 

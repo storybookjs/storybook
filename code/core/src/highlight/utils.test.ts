@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import type { HighlightOptions } from './types.ts';
-import { useStore, normalizeOptions } from './utils.ts';
+import type { Highlight, HighlightOptions } from './types.ts';
+import { isSameElementMap, useStore, normalizeOptions } from './utils.ts';
 
 describe('useStore', () => {
   it('should return the initial value', () => {
@@ -93,5 +93,50 @@ describe('normalizeOptions', () => {
   it('should set menu to undefined when it is not an array', () => {
     const options = { selectors: ['#button'], menu: 'not-a-menu' } as unknown as HighlightOptions;
     expect(normalizeOptions(options)).toEqual(expect.objectContaining({ menu: undefined }));
+  });
+});
+
+describe('isSameElementMap', () => {
+  const first = {} as HTMLElement;
+  const second = {} as HTMLElement;
+  const styles = { outline: '1px solid red' };
+  const highlight = (selectors: string[]): Highlight => ({
+    id: 'test',
+    priority: 0,
+    selectors,
+    styles,
+  });
+
+  it('should treat freshly built maps with the same elements and data as the same', () => {
+    expect(
+      isSameElementMap(
+        new Map([[first, highlight(['a', 'b'])]]),
+        new Map([[first, highlight(['a', 'b'])]])
+      )
+    ).toBe(true);
+  });
+
+  it('should see a different element set', () => {
+    expect(
+      isSameElementMap(new Map([[first, highlight(['a'])]]), new Map([[second, highlight(['a'])]]))
+    ).toBe(false);
+    expect(
+      isSameElementMap(
+        new Map([[first, highlight(['a'])]]),
+        new Map([
+          [first, highlight(['a'])],
+          [second, highlight(['a'])],
+        ])
+      )
+    ).toBe(false);
+  });
+
+  it('should see a different highlight id or different selectors for an element', () => {
+    const current = new Map([[first, highlight(['a'])]]);
+    expect(isSameElementMap(current, new Map([[first, highlight(['a', 'b'])]]))).toBe(false);
+    expect(isSameElementMap(current, new Map([[first, highlight(['b'])]]))).toBe(false);
+    expect(
+      isSameElementMap(current, new Map([[first, { ...highlight(['a']), id: 'other' }]]))
+    ).toBe(false);
   });
 });

@@ -20,6 +20,7 @@ import {
   getEventDetails,
   hidePopover,
   isOverMenu,
+  isSameElementMap,
   isTargeted,
   keepInViewport,
   mapBoxes,
@@ -65,13 +66,26 @@ export const useHighlights = (channel: Channel) => {
 
   // Update tracked elements when highlights change or the DOM tree changes
   highlights.subscribe((value) => {
+    // RESET_HIGHLIGHT sends an empty list on every story render. With nothing to highlight there is
+    // nothing to track, so do not observe the story root at all.
+    if (!value.length) {
+      elements.set((current) => (current.size ? new Map() : current));
+      return;
+    }
+
     const storybookRoot = document.getElementById(storybookRootId) ?? document.body;
 
     elements.set(mapElements(value));
 
     const observer = new MutationObserver((records) => {
       if (records.some((record) => !root?.contains(record.target))) {
-        elements.set(mapElements(value));
+        const next = mapElements(value);
+        if (isSameElementMap(elements.get(), next)) {
+          // Same elements: keep the subscribers below in place, but a mutation can still move them.
+          requestAnimationFrame(() => boxes.set(mapBoxes(elements.get())));
+        } else {
+          elements.set(next);
+        }
       }
     });
     observer.observe(storybookRoot, { subtree: true, childList: true });
@@ -81,27 +95,46 @@ export const useHighlights = (channel: Channel) => {
     };
   });
 
-  // Update highlight boxes when elements are resized or scrollable elements are scrolled
+  // Update highlight boxes when elements are resized or any element is scrolled
   elements.subscribe((value) => {
-    const updateBoxes = () => requestAnimationFrame(() => boxes.set(mapBoxes(value)));
+    if (!value.size) {
+      boxes.set((current) => (current.length ? [] : current));
+      return;
+    }
+
+    const updateBoxes = () =>
+      requestAnimationFrame(() => {
+        // A frame queued before these elements were replaced or cleared must not restore them.
+        if (elements.get() === value) {
+          boxes.set(mapBoxes(value));
+        }
+      });
     const observer = new ResizeObserver(updateBoxes);
     observer.observe(document.body);
     Array.from(value.keys()).forEach((element) => observer.observe(element));
 
-    const scrollers = Array.from(document.body.querySelectorAll('*')).filter((el) => {
-      const { overflow, overflowX, overflowY } = window.getComputedStyle(el);
-      return ['auto', 'scroll'].some((o) => [overflow, overflowX, overflowY].includes(o));
-    });
-    scrollers.forEach((element) => element.addEventListener('scroll', updateBoxes));
+    // Scroll events do not bubble, but a capturing listener on the document receives the scroll of
+    // every element, including scroll containers that appear later. Scrolling the page itself is
+    // left to the sticky handler below, which keeps the other boxes as they are.
+    const onScroll = (event: Event) => {
+      if (event.target !== document) {
+        updateBoxes();
+      }
+    };
+    const scrollOptions = { capture: true, passive: true };
+    document.addEventListener('scroll', onScroll, scrollOptions);
 
     return () => {
       observer.disconnect();
-      scrollers.forEach((element) => element.removeEventListener('scroll', updateBoxes));
+      document.removeEventListener('scroll', onScroll, scrollOptions);
     };
   });
 
   // Update highlight boxes for sticky elements when scrolling the window
   elements.subscribe((value) => {
+    if (!value.size) {
+      return;
+    }
     const sticky = Array.from(value.keys()).filter(({ style }) => style.position === 'sticky');
     const updateBoxes = () =>
       requestAnimationFrame(() => {

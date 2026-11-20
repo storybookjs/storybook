@@ -2516,6 +2516,65 @@ describe('CsfFile', () => {
       `);
     });
 
+    it('adds the meta altNames to every index input', () => {
+      const { indexInputs } = loadCsf(
+        dedent`
+      export default {
+        title: 'Overlay/Modal',
+        altNames: ['Dialog', 'Popup'],
+      };
+
+      export const A = {};
+      export const B = {};
+    `,
+        { makeTitle, fileName: 'foo/bar.stories.js' }
+      ).parse();
+
+      expect(indexInputs.map((input) => input.altNames)).toEqual([
+        ['Dialog', 'Popup'],
+        ['Dialog', 'Popup'],
+      ]);
+    });
+
+    it('reads altNames from a CSF factory meta', () => {
+      const { meta } = loadCsf(
+        dedent`
+      import preview from '#.storybook/preview';
+      const meta = preview.meta({ title: 'Overlay/Modal', altNames: ['Dialog'] });
+      export const A = meta.story();
+    `,
+        { makeTitle, fileName: 'foo/bar.stories.js' }
+      ).parse();
+
+      expect(meta?.altNames).toEqual(['Dialog']);
+    });
+
+    it('reads altNames from a variable', () => {
+      const { meta } = loadCsf(
+        dedent`
+      const altNames = ['Dialog'];
+      export default { title: 'Overlay/Modal', altNames };
+      export const A = {};
+    `,
+        { makeTitle, fileName: 'foo/bar.stories.js' }
+      ).parse();
+
+      expect(meta?.altNames).toEqual(['Dialog']);
+    });
+
+    it('throws if altNames are not string literals', () => {
+      expect(() =>
+        loadCsf(
+          dedent`
+        const name = 'Dialog';
+        export default { title: 'Overlay/Modal', altNames: [name] };
+        export const A = {};
+      `,
+          { makeTitle, fileName: 'foo/bar.stories.js' }
+        ).parse()
+      ).toThrow('CSF: Expected altNames to be string literals');
+    });
+
     it('throws if getting indexInputs without filename option', () => {
       const csf = loadCsf(
         dedent`

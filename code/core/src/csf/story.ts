@@ -488,6 +488,12 @@ export interface ComponentAnnotations<
   id?: ComponentId;
 
   /**
+   * Other names for the component that the sidebar search also matches, so that searching "Dialog"
+   * can find a component titled "Modal".
+   */
+  altNames?: string[];
+
+  /**
    * Used to only include certain named exports as stories. Useful when you want to have non-story
    * exports such as mock data or ignore a few stories.
    *

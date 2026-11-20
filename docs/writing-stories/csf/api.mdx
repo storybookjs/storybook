@@ -273,6 +273,22 @@ Do not use this for cleanup operations. Instead, perform any necessary cleanup i
 
 <CodeSnippets path="after-each-in-meta.md" />
 
+<If notRenderer="svelte">
+
+### `altNames`
+
+Type: `string[]`
+
+Valid within: [Meta](#previewmeta)
+
+Other names for the component that the sidebar search also matches, so that searching "Dialog" can find a component titled "Modal". Must be statically analyzable.
+
+See [Alternative names](../naming-components-and-hierarchy.mdx#alternative-names) for more details.
+
+<CodeSnippets path="button-story-alt-names.md" />
+
+</If>
+
 ### `args`
 
 Type: `{ [argName: string]: any }`

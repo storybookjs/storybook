@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   type API_PreparedStoryIndex,
+  type API_StoryEntry,
   type StatusesByStoryIdAndTypeId,
   type StoryIndexV3,
 } from 'storybook/internal/types';
@@ -9,6 +10,7 @@ import {
 import type { State } from '../root.tsx';
 import { mockEntries } from '../tests/mockStoriesEntries.ts';
 import {
+  addPreparedStories,
   transformStoryIndexToStoriesHash,
   transformStoryIndexV3toV4,
   transformStoryIndexV4toV5,
@@ -332,5 +334,65 @@ describe('transformStoryIndexToStoriesHash', () => {
       });
       expect(filtered['guides-button--primary']).toBeUndefined();
     });
+  });
+
+  it('gives a component the altNames of its stories', () => {
+    const story = (id: string, name: string) => ({
+      id,
+      type: 'story' as const,
+      subtype: 'story' as const,
+      title: 'Overlay/Modal',
+      name,
+      importPath: './modal.stories.ts',
+      tags: [],
+      altNames: ['Dialog', 'Popup'],
+    });
+    const result = transformStoryIndexToStoriesHash(
+      {
+        v: 5,
+        entries: {
+          'overlay-modal--basic': story('overlay-modal--basic', 'Basic'),
+          'overlay-modal--large': story('overlay-modal--large', 'Large'),
+        },
+      },
+      {
+        provider: { getConfig: () => ({ sidebar: {} }) } as any,
+        docsOptions: { docsMode: false },
+        filters: {},
+        allStatuses: {},
+      }
+    );
+
+    expect(result['overlay-modal']).toMatchObject({
+      type: 'component',
+      altNames: ['Dialog', 'Popup'],
+    });
+    expect(result['overlay-modal--basic']).toMatchObject({ altNames: ['Dialog', 'Popup'] });
+  });
+});
+
+describe('addPreparedStories', () => {
+  it('drops altNames that were removed from a prepared story', () => {
+    const story: API_StoryEntry = {
+      type: 'story',
+      subtype: 'story',
+      id: 'overlay-modal--basic',
+      name: 'Basic',
+      title: 'Overlay/Modal',
+      importPath: './modal.stories.ts',
+      exportName: 'Basic',
+      parent: 'overlay-modal',
+      depth: 2,
+      tags: [],
+      prepared: false,
+    };
+
+    const result = addPreparedStories(
+      { [story.id]: story },
+      { [story.id]: { ...story, prepared: true, altNames: ['Dialog'] } }
+    );
+
+    expect(result[story.id]).toMatchObject({ prepared: true });
+    expect(result[story.id]).not.toHaveProperty('altNames');
   });
 });

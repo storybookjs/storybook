@@ -313,6 +313,10 @@ export const transformStoryIndexToStoriesHash = (
       .reduce(intersect);
     if (entry.type === 'component') {
       entry.importPath = (storiesHash[children[0]] as API_LeafEntry).importPath;
+      const altNames = [...new Set(children.flatMap((id) => storiesHash[id].altNames ?? []))];
+      if (altNames.length) {
+        entry.altNames = altNames;
+      }
     }
   };
 
@@ -339,6 +343,8 @@ export const addPreparedStories = (newHash: API_IndexHash, oldHash?: API_IndexHa
           // Prevent old entry from re-adding children if the story no longer has any (e.g. due to filters)
           delete oldEntry.children;
         }
+        // altNames come from the index, so drop the old ones in case they were removed
+        delete oldEntry.altNames;
         return [id, { ...oldEntry, ...newEntry, prepared: true }];
       }
 

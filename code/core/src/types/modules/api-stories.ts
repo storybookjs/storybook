@@ -8,6 +8,7 @@ export interface API_BaseEntry {
   depth: number;
   name: string;
   tags: Tag[];
+  altNames?: string[];
   refId?: string;
   renderAriaLabel?: API_SidebarOptions['renderAriaLabel'];
   renderLabel?: API_SidebarOptions['renderLabel'];

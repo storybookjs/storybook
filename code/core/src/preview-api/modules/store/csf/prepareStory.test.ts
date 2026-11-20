@@ -9,8 +9,9 @@ import type {
   Renderer,
   SBScalarType,
   StoryContext,
-  StoryContextForRender,
 } from 'storybook/internal/types';
+
+import { ArgTypesRemovedFromStoryContextError } from 'storybook/internal/preview-errors';
 
 import type { UserEventObject } from 'storybook/test';
 
@@ -48,8 +49,8 @@ export function prepareStory<TRenderer extends Renderer>(
 // Extra fields that must be added to the story context after enhancers
 const addExtraContext = (
   context: PreparedStory & Pick<StoryContext, 'args' | 'globals'>
-): StoryContextForRender => {
-  const extraContext: StoryContextForRender = {
+): StoryContext => {
+  const extraContext: StoryContext = {
     ...context,
     hooks: new HooksContext(),
     viewMode: 'story' as const,
@@ -62,7 +63,7 @@ const addExtraContext = (
     abortSignal: new AbortController().signal,
     canvasElement: {},
     step: vi.fn(),
-    context: null! as StoryContextForRender,
+    context: null! as StoryContext,
     canvas: null!,
     userEvent: {} as UserEventObject,
     globalTypes: {},
@@ -562,6 +563,125 @@ describe('prepareStory', () => {
       expect(ctx3).toMatchObject({ unmappedArgs: { one: 1 }, args: { one: 'mapped-1' } });
 
       hooks.clean();
+    });
+  });
+
+  describe('argTypes in the context of decorators and render functions', () => {
+    const argTypes = { one: { name: 'one', type: { name: 'string' as const } } };
+
+    const renderStory = (
+      story: PreparedStory,
+      render: (context: StoryContext) => unknown = story.unboundStoryFn
+    ) => {
+      const hooks = new HooksContext();
+      const context = prepareContext({ args: story.initialArgs, globals: {}, ...story });
+      try {
+        return render({ ...addExtraContext(context), hooks });
+      } finally {
+        hooks.clean();
+      }
+    };
+
+    beforeEach(() => {
+      addons.setChannel({ on: vi.fn(), removeListener: vi.fn() } as any);
+    });
+
+    it('throws when a decorator reads argTypes', () => {
+      const story = prepareStory(
+        { id, name, argTypes, decorators: [(storyFn, context) => context.argTypes], moduleExport },
+        { id, title },
+        { render }
+      );
+
+      expect(() => renderStory(story)).toThrow(ArgTypesRemovedFromStoryContextError);
+    });
+
+    it('throws when a render function reads argTypes', () => {
+      const story = prepareStory(
+        { id, name, argTypes, render: (args, context) => context.argTypes, moduleExport },
+        { id, title },
+        {}
+      );
+
+      expect(() => renderStory(story)).toThrow(ArgTypesRemovedFromStoryContextError);
+      expect(() => renderStory(story, story.undecoratedStoryFn)).toThrow(
+        ArgTypesRemovedFromStoryContextError
+      );
+    });
+
+    it('throws when a decorator reads argTypes under a framework decorator applicator', () => {
+      const story = prepareStory(
+        { id, name, argTypes, decorators: [(storyFn, context) => context.argTypes], moduleExport },
+        { id, title },
+        {
+          render,
+          applyDecorators: (storyFn, decorators) =>
+            decorators.reduce(
+              (decorated, decorator) => (context) =>
+                decorator((update) => decorated({ ...context, ...update }), context),
+              storyFn
+            ),
+        }
+      );
+
+      expect(() => renderStory(story)).toThrow(ArgTypesRemovedFromStoryContextError);
+    });
+
+    it('lets a framework decorator applicator identify a decorator by its originalFn', () => {
+      const decorator = vi.fn((storyFn) => storyFn());
+      let received: unknown[] = [];
+      prepareStory(
+        { id, name, decorators: [decorator], moduleExport },
+        { id, title },
+        {
+          render,
+          applyDecorators: (storyFn, decorators) => {
+            received = decorators;
+            return storyFn;
+          },
+        }
+      );
+
+      expect(received).toEqual([expect.objectContaining({ originalFn: decorator })]);
+    });
+
+    it('lets a decorator pass its context on to the story function', () => {
+      const story = prepareStory(
+        {
+          id,
+          name,
+          argTypes,
+          args: { one: 'initial' },
+          decorators: [(storyFn, context) => storyFn(context)],
+          render: (args, context) => [args, 'argTypes' in context],
+          moduleExport,
+        },
+        { id, title },
+        {}
+      );
+
+      expect(renderStory(story)).toEqual([{ one: 'initial' }, false]);
+    });
+
+    it('keeps argTypes hidden when an outer decorator updates the context', () => {
+      const story = prepareStory(
+        {
+          id,
+          name,
+          argTypes,
+          args: { one: 'initial' },
+          decorators: [
+            (storyFn, context) => [context.args, 'argTypes' in context, storyFn()],
+            (storyFn) => storyFn({ args: { one: 'updated' } }),
+          ],
+          render: (args, context) => [args, 'argTypes' in context],
+          moduleExport,
+        },
+        { id, title },
+        {}
+      );
+
+      expect(renderStory(story)).toEqual([{ one: 'updated' }, false, [{ one: 'updated' }, false]]);
     });
   });
 

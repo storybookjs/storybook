@@ -19,7 +19,6 @@ import type {
   RenderToCanvas,
   Renderer,
   StoryContext,
-  StoryContextForRender,
   StoryId,
   StoryRenderOptions,
   TeardownRenderToCanvas,
@@ -231,7 +230,7 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
     const isMountDestructured = story.usesMount;
 
     try {
-      const context: StoryContextForRender<TRenderer> = {
+      const context: StoryContext<TRenderer> = {
         ...this.storyContext(),
         viewMode: this.viewMode,
         abortSignal,

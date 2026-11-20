@@ -60,6 +60,7 @@ import {
   addPreparedStories,
   getComponentLookupList,
   getStoriesLookupList,
+  titleToPathIds,
   transformStoryIndexToStoriesHash,
 } from '../lib/stories.ts';
 import type { ModuleFn } from '../lib/types.tsx';
@@ -104,6 +105,10 @@ const normalizeSelectStoryPayload = (payload: SelectStoryEvent): SelectStoryPayl
 };
 
 const { fetch } = global;
+
+/** The id of the component (or group) entry for a title, as the sidebar builds it. */
+const titleToId = (title: string) => titleToPathIds(title).at(-1)!;
+
 const STORY_INDEX_PATH = './index.json';
 
 const TAGS_FILTER = 'tags-filter';
@@ -680,7 +685,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
         // Find the entry (group, component, story or docs) that is referred to
         const entry = titleOrId
           ? hash[titleOrId] ||
-            hash[sanitize(titleOrId)] ||
+            hash[titleToId(titleOrId)] ||
             // Unattached docs pages have no entry keyed by their title
             Object.values(hash).find(
               (e) => e.type === 'docs' && sanitize(e.title) === sanitize(titleOrId)
@@ -705,7 +710,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
           gotoStory(hash[id]);
         } else {
           // Support legacy API with component permalinks, where kind is `x/y` but permalink is 'z'
-          const entry = hash[sanitize(titleOrId)];
+          const entry = hash[titleToId(titleOrId)];
           if (entry?.type === 'component') {
             const foundId = entry.children.find((childId) => hash[childId].name === name);
             gotoStory(foundId ? hash[foundId] : undefined);

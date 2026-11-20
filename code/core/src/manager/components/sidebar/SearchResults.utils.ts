@@ -1,8 +1,6 @@
-import type { Match } from './types.ts';
+import { escapeRegExp } from 'es-toolkit/string';
 
-const escapeRegExp = (value: string) => {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-};
+import type { Match } from './types.ts';
 
 /**
  * Replaces the ranges Fuse reports with the ranges where the input literally occurs.

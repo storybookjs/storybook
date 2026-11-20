@@ -757,7 +757,7 @@ export const baseTemplates = {
     },
     modifications: {
       skipMocking: true,
-      // @rspack/core 2.3.2+ minifies Lit so a class name shadows a helper it calls.
+      // Remove once @rspack/core ships the fix for https://github.com/web-infra-dev/rspack/issues/16695
       resolutions: {
         '@rspack/core': '2.3.1',
       },

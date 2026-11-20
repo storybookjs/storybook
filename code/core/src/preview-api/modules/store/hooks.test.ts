@@ -8,7 +8,7 @@ import {
   UPDATE_STORY_ARGS,
 } from 'storybook/internal/core-events';
 import { ArgTypesRemovedFromStoryContextError } from 'storybook/internal/preview-errors';
-import type { DecoratorFunction, StoryContextForRender } from 'storybook/internal/types';
+import type { DecoratorFunction, StoryContext } from 'storybook/internal/types';
 
 import {
   HooksContext,
@@ -66,7 +66,7 @@ beforeEach(() => {
 const decorateStory = applyHooks(defaultDecorateStory);
 
 const run = (storyFn: any, decorators: DecoratorFunction[] = [], context = {}) =>
-  decorateStory(storyFn, decorators)({ ...context, hooks } as StoryContextForRender);
+  decorateStory(storyFn, decorators)({ ...context, hooks } as StoryContext);
 
 describe('Preview hooks', () => {
   describe('useEffect', () => {
@@ -256,7 +256,7 @@ describe('Preview hooks', () => {
       const context = {};
       run(
         () => {
-          expect(useStoryContext()).toEqual({ ...context, hooks });
+          expect(useStoryContext()).toMatchObject({ ...context, hooks });
         },
         [],
         context

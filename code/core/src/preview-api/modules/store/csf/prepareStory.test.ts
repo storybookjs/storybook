@@ -9,7 +9,6 @@ import type {
   Renderer,
   SBScalarType,
   StoryContext,
-  StoryContextForRender,
 } from 'storybook/internal/types';
 
 import { ArgTypesRemovedFromStoryContextError } from 'storybook/internal/preview-errors';
@@ -51,8 +50,8 @@ export function prepareStory<TRenderer extends Renderer>(
 // Extra fields that must be added to the story context after enhancers
 const addExtraContext = (
   context: PreparedStory & Pick<StoryContext, 'args' | 'globals'>
-): StoryContextForRender => {
-  const extraContext: StoryContextForRender = {
+): StoryContext => {
+  const extraContext: StoryContext = {
     ...context,
     hooks: new HooksContext(),
     viewMode: 'story' as const,
@@ -65,7 +64,7 @@ const addExtraContext = (
     abortSignal: new AbortController().signal,
     canvasElement: {},
     step: vi.fn(),
-    context: null! as StoryContextForRender,
+    context: null! as StoryContext,
     canvas: null!,
     userEvent: {} as UserEventObject,
     globalTypes: {},
@@ -573,7 +572,7 @@ describe('prepareStory', () => {
 
     const renderStory = (
       story: PreparedStory,
-      render: (context: StoryContextForRender) => unknown = story.unboundStoryFn
+      render: (context: StoryContext) => unknown = story.unboundStoryFn
     ) => {
       const hooks = new HooksContext();
       const context = prepareContext({ args: story.initialArgs, globals: {}, ...story });
@@ -629,6 +628,24 @@ describe('prepareStory', () => {
       expect(() => renderStory(story)).toThrow(ArgTypesRemovedFromStoryContextError);
     });
 
+    it('lets a framework decorator applicator identify a decorator by its originalFn', () => {
+      const decorator = vi.fn((storyFn) => storyFn());
+      let received: unknown[] = [];
+      prepareStory(
+        { id, name, decorators: [decorator], moduleExport },
+        { id, title },
+        {
+          render,
+          applyDecorators: (storyFn, decorators) => {
+            received = decorators;
+            return storyFn;
+          },
+        }
+      );
+
+      expect(received).toEqual([expect.objectContaining({ originalFn: decorator })]);
+    });
+
     it('gives the argTypes to decorators and render functions that use getStoryArgTypes', () => {
       const story = prepareStory(
         {
@@ -643,7 +660,29 @@ describe('prepareStory', () => {
         {}
       );
 
-      expect(renderStory(story)).toEqual([argTypes, argTypes]);
+      const [decoratorArgTypes, renderArgTypes] = renderStory(story) as unknown[];
+
+      expect(story.argTypes).toMatchObject(argTypes);
+      expect(decoratorArgTypes).toBe(story.argTypes);
+      expect(renderArgTypes).toBe(story.argTypes);
+    });
+
+    it('lets a decorator pass its context on to the story function', () => {
+      const story = prepareStory(
+        {
+          id,
+          name,
+          argTypes,
+          args: { one: 'initial' },
+          decorators: [(storyFn, context) => storyFn(context)],
+          render: (args, context) => [args, getStoryArgTypes(context)],
+          moduleExport,
+        },
+        { id, title },
+        {}
+      );
+
+      expect(renderStory(story)).toEqual([{ one: 'initial' }, story.argTypes]);
     });
 
     it('keeps the argTypes when an outer decorator updates the context', () => {
@@ -666,8 +705,8 @@ describe('prepareStory', () => {
 
       expect(renderStory(story)).toEqual([
         { one: 'updated' },
-        argTypes,
-        [{ one: 'updated' }, argTypes],
+        story.argTypes,
+        [{ one: 'updated' }, story.argTypes],
       ]);
     });
   });

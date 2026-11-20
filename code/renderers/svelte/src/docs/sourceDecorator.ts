@@ -7,6 +7,8 @@ import type {
   StoryContext,
 } from 'storybook/internal/types';
 
+import { getStoryArgTypes } from 'storybook/internal/preview-api';
+
 import { emitTransformCode, useEffect, useRef } from 'storybook/preview-api';
 import type { SvelteComponentDoc } from 'sveltedoc-parser';
 
@@ -177,7 +179,12 @@ export const sourceDecorator: DecoratorFunction<SvelteRenderer> = (storyFn, cont
       component = ctxComponent;
     }
 
-    const generated = generateSvelteSource(component, args, context?.argTypes, slotProperty);
+    const generated = generateSvelteSource(
+      component,
+      args,
+      getStoryArgTypes(context),
+      slotProperty
+    );
 
     if (generated && source.current !== generated) {
       emitTransformCode(generated, context);

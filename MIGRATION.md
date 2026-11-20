@@ -18,7 +18,8 @@
   - [`argTypes` `defaultValue` removed](#argtypes-defaultvalue-removed)
   - [Toolbar `globalTypes` entries: index signature and `defaultValue` removed](#toolbar-globaltypes-entries-index-signature-and-defaultvalue-removed)
   - [Docs Code panel enabled by default](#docs-code-panel-enabled-by-default)
-  - [`argTypes` removed from loaders, `beforeEach`, `play` and `afterEach`](#argtypes-removed-from-loaders-beforeeach-play-and-aftereach)
+  - [`argTypes` removed from the story context](#argtypes-removed-from-the-story-context)
+    - [Angular: read the inputs from the component](#angular-read-the-inputs-from-the-component)
   - [Deprecated CSF and manager type aliases removed](#deprecated-csf-and-manager-type-aliases-removed)
   - [`docgenServer` is stable and enabled by default](#docgenserver-is-stable-and-enabled-by-default)
     - [Temporary regressions on source snippet generation](#temporary-regressions-on-source-snippet-generation)
@@ -1101,11 +1102,15 @@ You can also set this parameter at the component or story level. An explicit `tr
 
 No automigration is needed. Existing boolean settings retain their meaning, and projects with no setting receive the new default.
 
-### `argTypes` removed from loaders, `beforeEach`, `play` and `afterEach`
+### `argTypes` removed from the story context
 
-The story context passed to loaders, `beforeEach`, `play`, `afterEach` and `step` callbacks no longer contains `argTypes`. Reading it throws an error that links here.
+The story context no longer contains `argTypes`.
+This applies to `render` functions, decorators, loaders, `beforeEach`, `play`, `afterEach` and `step` callbacks, and to `useStoryContext()`.
+Reading `context.argTypes` throws an error that links here.
 
-With server-side docgen (`features.docgenServer`), the preview no longer infers arg types from components or args. `context.argTypes` in these hooks only ever contained the arg types you declared by hand, so it looked complete but was not.
+With server-side docgen (`features.docgenServer`), the preview no longer infers arg types from components or args.
+`context.argTypes` only ever contained the arg types you declared by hand, so it looked complete but was not.
+A story must also render the same way before and after docgen finishes, so rendering cannot depend on its result.
 
 ```ts
 // Before
@@ -1128,10 +1133,57 @@ export const Primary: Story = {
 ```
 
 - Use `args` for the values passed to the story. Iterate `Object.keys(args)` instead of `Object.keys(argTypes)`.
+- To read component metadata while rendering, such as the inputs or props a component declares, use the reflection API of your framework.
 - To see the resolved arg types, including those inferred from your component, use the Controls panel or the `ArgTypes` doc block.
-- In portable stories, `composeStory(Story, meta).argTypes` still exposes the story's declared arg types outside of the lifecycle hooks.
+- In portable stories, `composeStory(Story, meta).argTypes` still exposes the story's declared arg types outside of the story context.
 
-Decorators and `render` functions keep receiving `argTypes`, because renderers rely on them while rendering. Their context type is the new `StoryContextForRender`; the `StoryContext` type no longer declares `argTypes`. Custom decorator or render helpers that annotate their context parameter as `StoryContext` and read `argTypes` should switch to `StoryContextForRender`.
+The `StoryContextForRender` type from earlier 11.0 prereleases is removed.
+Use `StoryContext` instead.
+
+#### Angular: read the inputs from the component
+
+A `render` helper that builds a template from `argTypes` skips every input that you did not declare by hand.
+For a required input, Angular then throws NG0950.
+Read the inputs from the component with `reflectComponentType` from `@angular/core` instead.
+
+```ts
+// Before
+function generateInputs(args: Args, argTypes: ArgTypes) {
+  return Object.keys(args)
+    .filter((name) => argTypes[name]?.table?.category === 'inputs')
+    .map((name) => `[${name}]="${name}"`)
+    .join(' ');
+}
+
+export const Primary: Story = {
+  render: (args, { argTypes }) => ({
+    props: args,
+    template: `<app-button ${generateInputs(args, argTypes)}></app-button>`,
+  }),
+};
+
+// After
+import { reflectComponentType, type Type } from '@angular/core';
+
+function generateInputs(args: Args, component: Type<unknown>) {
+  const inputs = reflectComponentType(component)?.inputs ?? [];
+  const inputNames = new Set(inputs.map((input) => input.templateName));
+  return Object.keys(args)
+    .filter((name) => inputNames.has(name))
+    .map((name) => `[${name}]="${name}"`)
+    .join(' ');
+}
+
+export const Primary: Story = {
+  render: (args) => ({
+    props: args,
+    template: `<app-button ${generateInputs(args, ButtonComponent)}></app-button>`,
+  }),
+};
+```
+
+`inputs` includes signal inputs declared with `input()` and `model()`.
+A `model('x')` also appears in `outputs` as `xChange`.
 
 ### Deprecated CSF and manager type aliases removed
 

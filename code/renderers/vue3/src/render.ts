@@ -5,8 +5,9 @@ import {
   type ArgsStoryFn,
   type RenderContext,
   type StoryContext,
-  type StoryContextForRender,
 } from 'storybook/internal/types';
+
+import { getStoryArgTypes } from 'storybook/internal/preview-api';
 
 import type { PreviewWeb } from 'storybook/preview-api';
 import type { App, ComponentPropsOptions } from 'vue';
@@ -124,8 +125,9 @@ export async function renderToCanvas(
 }
 
 /** Generate slots for default story without render function template */
-function getSlots(props: Args, context: StoryContextForRender<VueRenderer, Args>) {
-  const { argTypes, component } = context;
+function getSlots(props: Args, context: StoryContext<VueRenderer, Args>) {
+  const { component } = context;
+  const argTypes = getStoryArgTypes(context);
   // Server docgen keeps docgen argTypes out of the preview, so the slot category is unknown here.
   // Every arg that is neither a runtime-declared prop nor an event listener is then a slot.
   const runtimeProps = (component as { props?: ComponentPropsOptions } | undefined)?.props;

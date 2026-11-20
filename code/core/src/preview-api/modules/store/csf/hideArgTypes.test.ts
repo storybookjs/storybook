@@ -1,7 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { ArgTypesRemovedFromStoryContextError } from 'storybook/internal/preview-errors';
-import type { StoryContextForRender } from 'storybook/internal/types';
+import type { StoryContext } from 'storybook/internal/types';
 
 import { getStoryArgTypes, hideArgTypes } from './hideArgTypes.ts';
 
@@ -11,7 +11,7 @@ const createContext = () => {
     args: { label: 'hello' },
     argTypes: { label: { name: 'label' } },
     loaded: {},
-  } as unknown as StoryContextForRender;
+  } as unknown as StoryContext;
   context.context = context;
   return context;
 };
@@ -95,5 +95,15 @@ describe('getStoryArgTypes', () => {
     expect(() => hidden.argTypes).toThrow(ArgTypesRemovedFromStoryContextError);
     expect(getStoryArgTypes(hidden)).toEqual(argTypes);
     expect(getStoryArgTypes({ ...hidden })).toEqual(argTypes);
+  });
+
+  it('reads the argTypes of a context hidden by another copy of the module', async () => {
+    vi.resetModules();
+    const otherCopy = await import('./hideArgTypes.ts');
+    const hiddenTwice = hideArgTypes(otherCopy.hideArgTypes(createContext()));
+
+    expect(() => hiddenTwice.argTypes).toThrow(ArgTypesRemovedFromStoryContextError);
+    expect(getStoryArgTypes(hiddenTwice)).toEqual(argTypes);
+    expect(otherCopy.getStoryArgTypes(hiddenTwice)).toEqual(argTypes);
   });
 });

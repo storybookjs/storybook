@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { formatExistingFile } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
 
 import prettier from 'prettier';
 import ansiRegex from 'ansi-regex';
@@ -28,6 +29,10 @@ const tsTransform = async (source: string) =>
   (await _transform({ source, path: 'Component.stories.tsx' })).trim();
 
 describe('csf-2-to-3', () => {
+  beforeEach(() => {
+    vi.mocked(logger.warn).mockClear();
+  });
+
   it('lifts a story whose play function calls a later binding', async () => {
     const output = await jsTransform(dedent`
       export default { component: Button };
@@ -415,6 +420,163 @@ describe('csf-2-to-3', () => {
           parameters: { foo: 2 },
         };
       `);
+    });
+
+    it('moves the declarations that annotations read above the story', async () => {
+      await expect(
+        jsTransform(dedent`
+          export default { title: 'Cat' };
+
+          export const A = (args) => <Cat {...args} />;
+          // Shared by every story
+          const base = { name: 'Fluffy' };
+          const withAge = (age) => ({ ...base, age });
+          const defaultArgs = withAge(2);
+          A.args = defaultArgs;
+          A.play = async () => {
+            await meow();
+          };
+          const meow = async () => {};
+        `)
+      ).resolves.toMatchInlineSnapshot(`
+        export default { title: "Cat" };
+
+        // Shared by every story
+        const base = { name: "Fluffy" };
+        const withAge = (age) => ({ ...base, age });
+        const defaultArgs = withAge(2);
+        export const A = {
+          render: (args) => <Cat {...args} />,
+          args: defaultArgs,
+          play: async () => {
+            await meow();
+          },
+        };
+        const meow = async () => {};
+      `);
+    });
+
+    it('moves a declaration above the first story that reads it', async () => {
+      await expect(
+        jsTransform(dedent`
+          export default { title: 'Cat', excludeStories: ['sharedArgs'] };
+          const Template = (args) => <Cat {...args} />;
+
+          export const A = Template.bind({});
+          export const B = Template.bind({});
+
+          export const sharedArgs = { name: 'Fluffy' };
+          class Theme {}
+
+          A.args = sharedArgs;
+          B.args = sharedArgs;
+          B.parameters = { theme: new Theme() };
+        `)
+      ).resolves.toMatchInlineSnapshot(`
+        export default { title: "Cat", excludeStories: ["sharedArgs"] };
+        const Template = (args) => <Cat {...args} />;
+
+        export const sharedArgs = { name: "Fluffy" };
+        export const A = {
+          render: Template,
+          args: sharedArgs,
+        };
+        class Theme {}
+        export const B = {
+          render: Template,
+          args: sharedArgs,
+          parameters: { theme: new Theme() },
+        };
+      `);
+    });
+
+    it('keeps a story as a function when its annotations read a story below it', async () => {
+      await expect(
+        jsTransform(dedent`
+          export default { title: 'Cat' };
+          const Template = (args) => <Cat {...args} />;
+          export const A = Template.bind({});
+          export const B = Template.bind({});
+          B.args = { name: 'Fluffy' };
+          A.args = { ...B.args };
+        `)
+      ).resolves.toMatchInlineSnapshot(`
+        export default { title: "Cat" };
+        const Template = (args) => <Cat {...args} />;
+        export const A = Template.bind({});
+        export const B = {
+          render: Template,
+          args: { name: "Fluffy" },
+        };
+        A.args = { ...B.args };
+      `);
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.stringContaining('Kept A in Component.stories.jsx as a CSF 2 story')
+      );
+    });
+
+    it('keeps a story as a function when code below it changes what its annotations read', async () => {
+      await expect(
+        jsTransform(dedent`
+          export default { title: 'Cat' };
+          export const A = (args) => <Cat {...args} />;
+          const defaultArgs = { name: 'Fluffy' };
+          defaultArgs.age = 2;
+          A.args = { ...defaultArgs };
+        `)
+      ).resolves.toMatchInlineSnapshot(`
+        export default { title: "Cat" };
+        export const A = (args) => <Cat {...args} />;
+        const defaultArgs = { name: "Fluffy" };
+        defaultArgs.age = 2;
+        A.args = { ...defaultArgs };
+      `);
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.stringContaining('Kept A in Component.stories.jsx as a CSF 2 story')
+      );
+    });
+
+    it('moves what a function called by the annotations reads above the story', async () => {
+      await expect(
+        jsTransform(dedent`
+          export default { title: 'Cat' };
+          export const A = (args) => <Cat {...args} />;
+          A.args = makeArgs();
+          function makeArgs() {
+            return { age };
+          }
+          const age = 2;
+        `)
+      ).resolves.toMatchInlineSnapshot(`
+        export default { title: "Cat" };
+        function makeArgs() {
+          return { age };
+        }
+        const age = 2;
+        export const A = {
+          render: (args) => <Cat {...args} />,
+          args: makeArgs(),
+        };
+      `);
+    });
+
+    it('keeps a story as a function when its annotations read the story itself', async () => {
+      await expect(
+        jsTransform(dedent`
+          export default { title: 'Cat' };
+          export const A = (args) => <Cat {...args} />;
+          A.args = { name: 'Fluffy' };
+          A.parameters = { copy: { ...A.args } };
+        `)
+      ).resolves.toMatchInlineSnapshot(`
+        export default { title: "Cat" };
+        export const A = (args) => <Cat {...args} />;
+        A.args = { name: "Fluffy" };
+        A.parameters = { copy: { ...A.args } };
+      `);
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.stringContaining('Kept A in Component.stories.jsx as a CSF 2 story')
+      );
     });
   });
 

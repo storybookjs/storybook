@@ -1,5 +1,6 @@
 import { formatExistingFile } from 'storybook/internal/common';
 import {
+  type Binding,
   type CsfFile,
   type ESTree as E,
   type ESTreeNode as Node,
@@ -11,6 +12,7 @@ import {
   printMembers,
   removeFromList,
   removeStatement,
+  statementSpan,
   walk,
 } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
@@ -104,6 +106,72 @@ const isReactGlobalRenderFn = (csf: CsfFile, storyFn: Node | undefined) => {
   return false;
 };
 
+const MOVABLE_KINDS = new Set<Binding['kind']>(['var', 'let', 'const', 'class', 'function']);
+const MOVABLE_DECLARATIONS = new Set([
+  'VariableDeclaration',
+  'ClassDeclaration',
+  'FunctionDeclaration',
+]);
+
+const isDeclaration = (statement: Node) =>
+  MOVABLE_DECLARATIONS.has(
+    (statement.type === 'ExportNamedDeclaration' ? statement.declaration : statement)?.type ?? ''
+  );
+
+// The top-level declarations below a story that its annotations read as the file loads,
+// transitively. Undefined when one cannot move above the story, such as a story or a reassigned
+// variable, or when a statement left between them, such as `defaultArgs.age = 2`, reads one.
+const eagerDependencies = (csf: CsfFile, key: string): Node[] | undefined => {
+  const { program, scopes } = csf.editor;
+  const story = csf._storyStatements[key];
+  const annotations = Object.values(csf._storyAnnotations[key]);
+  const stories = new Set(Object.values(csf._storyStatements));
+  const storyNames = new Set(Object.keys(csf._storyExports));
+  const statementOf = (binding: Binding) =>
+    program.body.find((it) => it.start <= binding.node.start && binding.node.end <= it.end);
+  // `lazy` skips function bodies: an annotation's own run later, but it may call a moved one, as
+  // in `args: makeArgs()`.
+  const reads = (root: Node, lazy: boolean) => {
+    const bindings: Binding[] = [];
+    walk(root, (node) => {
+      if (lazy && (node.type === 'ArrowFunctionExpression' || node.type === 'FunctionExpression')) {
+        return false;
+      }
+      const binding = scopes.bindingOf(node);
+      if (binding?.scope === scopes.program && MOVABLE_KINDS.has(binding.kind)) {
+        bindings.push(binding);
+      }
+    });
+    return bindings;
+  };
+
+  const moved = new Set<Node>();
+  const queue = [...annotations];
+  for (const root of queue) {
+    for (const binding of reads(root, !moved.has(root))) {
+      const statement = statementOf(binding);
+      if (!statement || statement.start < story.start || moved.has(statement)) {
+        continue;
+      }
+      if (stories.has(statement) || !binding.constant || !isDeclaration(statement)) {
+        return undefined;
+      }
+      moved.add(statement);
+      queue.push(statement);
+    }
+  }
+  const end = Math.max(...annotations.map((it) => it.end));
+  const isChangedBelow = program.body.some(
+    (it) =>
+      story.start < it.start &&
+      it.start < end &&
+      !isDeclaration(it) &&
+      !isStoryAnnotation(it, storyNames) &&
+      reads(it, true).some((binding) => moved.has(statementOf(binding)!))
+  );
+  return isChangedBelow ? undefined : [...moved].sort((a, b) => a.start - b.start);
+};
+
 // A simple CSF story is a no-arg story without any extra annotations (params, args, etc.)
 const isSimpleCSFStory = (init: Node, annotations: string[]) =>
   annotations.length === 0 && init.type === 'ArrowFunctionExpression' && init.params.length === 0;
@@ -123,13 +191,19 @@ const isCalledRightAway = (editor: SourceEditor, fn: Node) => {
 };
 
 // `A.args = { x }` can follow `const x`, and `const x` can follow `export const A`. Moving those
-// args into the story would read `x` before it is initialized.
-const readsLaterBinding = (editor: SourceEditor, story: Node, annotations: Node[]) => {
+// args into the story would read `x` before it is initialized, unless `const x` is one of the
+// `moved` declarations that go above the story with them.
+const readsLaterBinding = (
+  editor: SourceEditor,
+  story: Node,
+  annotations: Node[],
+  moved: Node[] = []
+) => {
   const later = new Set<string>();
   for (const statement of editor.program.body) {
     const declaration =
       statement.type === 'ExportNamedDeclaration' ? statement.declaration : statement;
-    if (statement.start < story.end) {
+    if (statement.start < story.end || moved.includes(statement)) {
       continue;
     }
     if (declaration?.type === 'VariableDeclaration') {
@@ -231,6 +305,7 @@ export default async function transform(
   const templates = Object.keys(csf._templates);
 
   const objectExports = new Set<string>();
+  const movedAbove = new Map<Node, Node>();
   Object.entries(csf._storyExports).forEach(([key, decl]) => {
     const annotations = annotationProperties(csf._storyAnnotations[key]);
 
@@ -245,9 +320,13 @@ export default async function transform(
     if (init.type !== 'ArrowFunctionExpression' && !template) {
       return;
     }
+    const isSingle = isSingleConstExport(csf._storyStatements[key]);
+    // The annotations move up into the story, so what they read has to be declared above it. The
+    // declarations that can move there do, and a story that would still read a later one is kept.
+    const dependencies = isSingle ? eagerDependencies(csf, key) : undefined;
     const replaceExport =
-      isSingleConstExport(csf._storyStatements[key]) &&
-      !readsLaterBinding(editor, decl, Object.values(csf._storyAnnotations[key]));
+      !!dependencies &&
+      !readsLaterBinding(editor, decl, Object.values(csf._storyAnnotations[key]), dependencies);
     const updateType = replaceExport && !keepStoryTypes;
 
     // Do change the type of no-arg stories without annotations to StoryFn when applicable
@@ -255,11 +334,23 @@ export default async function transform(
       importHelper.updateTypeTo(id, 'StoryFn', updateType);
       return;
     }
+    if (isSingle && !replaceExport) {
+      logger.warn(
+        `Kept ${key} in ${info.path} as a CSF 2 story, as its annotations read code below it that cannot move above it.`
+      );
+    }
     importHelper.updateTypeTo(id, 'StoryObj', updateType);
-    if (!replaceExport) {
+    if (!replaceExport || !dependencies) {
       return;
     }
     objectExports.add(key);
+    const statement = csf._storyStatements[key];
+    for (const dependency of dependencies) {
+      const story = movedAbove.get(dependency);
+      if (!story || statement.start < story.start) {
+        movedAbove.set(dependency, statement);
+      }
+    }
 
     // Remove the render function when we can hoist the template
     // const Template = (args) => <Cat {...args} />;
@@ -276,8 +367,18 @@ export default async function transform(
     );
   });
 
+  // In source order, so a declaration still follows the ones it reads.
+  [...movedAbove]
+    .sort(([a], [b]) => a.start - b.start)
+    .forEach(([dependency, story]) => {
+      editor.edits.appendRight(
+        statementSpan(editor, story).start,
+        `${editor.source(statementSpan(editor, dependency))}\n`
+      );
+    });
+
   for (const statement of editor.program.body) {
-    if (isStoryAnnotation(statement, objectExports)) {
+    if (isStoryAnnotation(statement, objectExports) || movedAbove.has(statement)) {
       removeStatement(editor, statement);
     }
   }

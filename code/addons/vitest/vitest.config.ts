@@ -5,6 +5,8 @@ import { vitestCommonConfig } from '../../vitest.shared.ts';
 export default mergeConfig(
   vitestCommonConfig,
   defineConfig({
-    // Add custom config here
+    test: {
+      server: { deps: { inline: ['empathic'] } },
+    },
   })
 );

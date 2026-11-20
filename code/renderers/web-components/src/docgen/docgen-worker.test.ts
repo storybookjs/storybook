@@ -1,4 +1,4 @@
-import type { IndexEntry } from 'storybook/internal/types';
+import type { DocgenPayload, DocgenProvider, IndexEntry } from 'storybook/internal/types';
 
 import { readFileSync } from 'node:fs';
 import { readFile, stat } from 'node:fs/promises';
@@ -54,6 +54,19 @@ const entry: IndexEntry = {
   importPath: './input.stories.ts',
 };
 
+const returning =
+  (payload: Partial<DocgenPayload> | undefined): DocgenProvider =>
+  async (inputs) =>
+    inputs.map(() => ({ status: 'fulfilled', value: payload as DocgenPayload | undefined }));
+
+const extractOne = async (provider: DocgenProvider) => {
+  const [result] = await provider([{ entry }]);
+  if (result.status === 'rejected') {
+    throw result.reason;
+  }
+  return result.value;
+};
+
 describe('createDocgenProvider', () => {
   it('loads manifests once and merges its payload over downstream', async () => {
     vol.fromNestedJSON({
@@ -68,17 +81,17 @@ describe('createDocgenProvider', () => {
       }),
       '/workspace/input.stories.ts': "export default { title: 'Fixture', component: 'x-card' };",
     });
-    const next = vi.fn(async () => ({ id: 'downstream' }));
+    const next = vi.fn(returning({ id: 'downstream' }));
     const provider = createDocgenProvider({
       manifestPaths: ['/workspace/custom-elements.json'],
-    })(next as never);
+    })(next);
 
-    await expect(provider({ entry })).resolves.toMatchObject({
+    await expect(extractOne(provider)).resolves.toMatchObject({
       id: 'fixture',
       name: 'x-card',
       renderer: 'web-components',
     });
-    await expect(provider({ entry })).resolves.toMatchObject({
+    await expect(extractOne(provider)).resolves.toMatchObject({
       id: 'fixture',
       name: 'x-card',
       renderer: 'web-components',
@@ -102,9 +115,9 @@ describe('createDocgenProvider', () => {
     });
     const provider = createDocgenProvider({
       manifestPaths: ['/workspace/custom-elements.json'],
-    })(async () => undefined);
+    })(returning(undefined));
 
-    await expect(provider({ entry })).resolves.toMatchObject({
+    await expect(extractOne(provider)).resolves.toMatchObject({
       name: 'x-card',
       customElementsManifest: { manifestPath: 'custom-elements.json' },
     });
@@ -124,13 +137,13 @@ describe('createDocgenProvider', () => {
     vol.fromNestedJSON({
       '/workspace/input.stories.ts': "export default { title: 'Fixture', component: 'x-card' };",
     });
-    const next = vi.fn(async () => ({ id: 'downstream' }));
+    const next = vi.fn(returning({ id: 'downstream' }));
     const provider = createDocgenProvider({
       manifestPaths: [],
       previewFilePath: '/workspace/.storybook/preview.ts',
-    })(next as never);
+    })(next);
 
-    await expect(provider({ entry })).resolves.toMatchObject({
+    await expect(extractOne(provider)).resolves.toMatchObject({
       id: 'fixture',
       name: 'x-card',
       renderer: 'web-components',
@@ -164,9 +177,9 @@ describe('createDocgenProvider', () => {
     });
     const provider = createDocgenProvider({
       manifestPaths: ['/workspace/custom-elements.json'],
-    })(async () => undefined);
+    })(returning(undefined));
 
-    await expect(provider({ entry })).resolves.toMatchObject({ name: 'x-card' });
+    await expect(extractOne(provider)).resolves.toMatchObject({ name: 'x-card' });
     expect(logger.warn).not.toHaveBeenCalled();
     expect(logger.debug).toHaveBeenCalledWith(
       'Web components docgen cannot generate declarations from sources: broken install'
@@ -175,10 +188,10 @@ describe('createDocgenProvider', () => {
 
   it('passes through when the source tools fail to load and no manifest is configured', async () => {
     vi.mocked(loadGenerator).mockRejectedValue(new Error('broken install'));
-    const next = vi.fn(async () => ({ id: 'downstream' }));
-    const provider = createDocgenProvider({ manifestPaths: [] })(next as never);
+    const next = vi.fn(returning({ id: 'downstream' }));
+    const provider = createDocgenProvider({ manifestPaths: [] })(next);
 
-    await expect(provider({ entry })).resolves.toEqual({ id: 'downstream' });
+    await expect(extractOne(provider)).resolves.toEqual({ id: 'downstream' });
     expect(logger.warn).toHaveBeenCalledWith(
       'Web components docgen cannot generate declarations from sources: broken install'
     );

@@ -1,4 +1,4 @@
-import type { DocgenPayload, IndexEntry } from 'storybook/internal/types';
+import type { DocgenPayload, DocgenProviderInput, IndexEntry } from 'storybook/internal/types';
 import { toId } from 'storybook/internal/csf';
 
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
@@ -58,7 +58,17 @@ const entries = new Map(
   )
 );
 
-const provider = createDocgenProvider()(async () => undefined);
+const chain = createDocgenProvider()(async (inputs) =>
+  inputs.map(() => ({ status: 'fulfilled', value: undefined }))
+);
+
+const provider = async (input: DocgenProviderInput) => {
+  const [result] = await chain([input]);
+  if (result.status === 'rejected') {
+    throw result.reason;
+  }
+  return result.value;
+};
 
 const withoutOwnSnapshots = (
   payload: DocgenPayload | undefined

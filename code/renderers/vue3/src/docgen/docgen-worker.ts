@@ -8,7 +8,11 @@
  *
  * The renderer preset contributes the descriptor that points here.
  */
-import { createLazyDocgenMiddleware, loadTypeScriptCompilerApi } from 'storybook/internal/common';
+import {
+  createLazyDocgenMiddleware,
+  extractEach,
+  loadTypeScriptCompilerApi,
+} from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import type { DocgenMiddleware } from 'storybook/internal/types';
 
@@ -40,14 +44,15 @@ export const createDocgenProvider = (): DocgenMiddleware =>
         return undefined;
       }
     },
-    extract: async (manager, input) => {
-      const ours = await buildDocgenPayload(input, {
-        getChecker: (componentPath) => manager.getCheckerForFile(componentPath),
-        typescript: manager.typeScriptModule,
-      });
-      // Volar programs hold large type caches; check heap pressure after each extraction since Vue
-      // has no batch surface to hang this on.
-      manager.recycleIfHeapPressured();
-      return ours;
-    },
+    extract: (manager, inputs) =>
+      extractEach(inputs, async (input) => {
+        const ours = await buildDocgenPayload(input, {
+          getChecker: (componentPath) => manager.getCheckerForFile(componentPath),
+          typescript: manager.typeScriptModule,
+        });
+        // Volar programs hold large type caches and a batch can hold every component, so heap
+        // pressure is checked after each extraction.
+        manager.recycleIfHeapPressured();
+        return ours;
+      }),
   });

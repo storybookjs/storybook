@@ -83,17 +83,24 @@ const errored: DocgenPayload = {
   error: { name: 'AngularComponentMetaNotFound', message: 'no metadata' },
 };
 
-const passthrough: DocgenProvider = async () => undefined;
+const fulfilled = (value: DocgenPayload | undefined) => ({ status: 'fulfilled' as const, value });
+
+const returning =
+  (payload: DocgenPayload | undefined): DocgenProvider =>
+  async (inputs) =>
+    inputs.map(() => fulfilled(payload));
+
+const passthrough = returning(undefined);
 
 describe('createDocgenProvider', () => {
   it('falls through for a file that is not a story, without creating the analyzer', async () => {
     const next = vi.fn(passthrough);
 
     await expect(
-      createDocgenProvider({ propsTable: 'api' })(next)({
-        entry: { ...entry, importPath: './button.component.ts' },
-      })
-    ).resolves.toBeUndefined();
+      createDocgenProvider({ propsTable: 'api' })(next)([
+        { entry: { ...entry, importPath: './button.component.ts' } },
+      ])
+    ).resolves.toEqual([fulfilled(undefined)]);
 
     expect(next).toHaveBeenCalledOnce();
     expect(buildDocgenPayload).not.toHaveBeenCalled();
@@ -103,11 +110,11 @@ describe('createDocgenProvider', () => {
   it('merges over downstream output on success', async () => {
     vi.mocked(buildDocgenPayload).mockReturnValue(ours);
 
-    const payload = await createDocgenProvider({ propsTable: 'api' })(async () => ({
-      ...downstream,
-      somethingElse: 'kept',
-    }))({ entry });
+    const [result] = await createDocgenProvider({ propsTable: 'api' })(
+      returning({ ...downstream, somethingElse: 'kept' })
+    )([{ entry }]);
 
+    const payload = result.status === 'fulfilled' ? result.value : undefined;
     expect(payload).toMatchObject({ name: 'ButtonComponent', somethingElse: 'kept' });
     expect(payload?.argTypes?.label).toBeDefined();
     expect(payload?.argTypes?.caption).toBeUndefined();
@@ -115,11 +122,11 @@ describe('createDocgenProvider', () => {
 
   it('keeps another provider`s payload when our own extraction fails', async () => {
     vi.mocked(buildDocgenPayload).mockReturnValue(errored);
-    const next = vi.fn<DocgenProvider>(async () => downstream);
+    const next = vi.fn(returning(downstream));
 
-    await expect(createDocgenProvider({ propsTable: 'api' })(next)({ entry })).resolves.toEqual(
-      downstream
-    );
+    await expect(createDocgenProvider({ propsTable: 'api' })(next)([{ entry }])).resolves.toEqual([
+      fulfilled(downstream),
+    ]);
     expect(next).toHaveBeenCalledOnce();
   });
 
@@ -127,42 +134,55 @@ describe('createDocgenProvider', () => {
     vi.mocked(buildDocgenPayload).mockReturnValue(errored);
 
     await expect(
-      createDocgenProvider({ propsTable: 'api' })(passthrough)({ entry })
-    ).resolves.toEqual(errored);
+      createDocgenProvider({ propsTable: 'api' })(passthrough)([{ entry }])
+    ).resolves.toEqual([fulfilled(errored)]);
   });
 
   it('delegates downstream when it has no payload for the component', async () => {
     vi.mocked(buildDocgenPayload).mockReturnValue(undefined);
-    const next = vi.fn<DocgenProvider>(async () => downstream);
+    const next = vi.fn(returning(downstream));
 
-    await expect(createDocgenProvider({ propsTable: 'api' })(next)({ entry })).resolves.toEqual(
-      downstream
-    );
+    await expect(createDocgenProvider({ propsTable: 'api' })(next)([{ entry }])).resolves.toEqual([
+      fulfilled(downstream),
+    ]);
     expect(next).toHaveBeenCalledOnce();
   });
 
-  it('lets an unexpected failure propagate, since core records it against this component', async () => {
+  it('settles an unexpected failure against its own component only, since core records it there', async () => {
     const failure = new TypeError('unexpected');
-    vi.mocked(buildDocgenPayload).mockImplementation(() => {
-      throw failure;
-    });
+    vi.mocked(buildDocgenPayload)
+      .mockImplementationOnce(() => {
+        throw failure;
+      })
+      .mockReturnValueOnce(ours);
 
-    await expect(createDocgenProvider({ propsTable: 'api' })(passthrough)({ entry })).rejects.toBe(
-      failure
-    );
+    await expect(
+      createDocgenProvider({ propsTable: 'api' })(passthrough)([{ entry }, { entry }])
+    ).resolves.toEqual([{ status: 'rejected', reason: failure }, fulfilled(ours)]);
+  });
+
+  it('extracts the matching inputs one after another and passes every input downstream in one call', async () => {
+    vi.mocked(buildDocgenPayload).mockReturnValue(ours);
+    const next = vi.fn(passthrough);
+    const other = { entry: { ...entry, importPath: './button.component.ts' } };
+
+    await createDocgenProvider({ propsTable: 'api' })(next)([{ entry }, other, { entry }]);
+
+    expect(buildDocgenPayload).toHaveBeenCalledTimes(2);
+    expect(next).toHaveBeenCalledExactlyOnceWith([{ entry }, other, { entry }]);
   });
 
   it('owns one watching analyzer for its lifetime and recycles after each extraction', async () => {
     vi.mocked(buildDocgenPayload).mockReturnValue(ours);
     const provider = createDocgenProvider({ propsTable: 'api' })(passthrough);
 
-    await provider({ entry });
-    await provider({ entry });
+    await provider([{ entry }, { entry }]);
+    await provider([{ entry }]);
 
     expect(analyzer.constructions).toBe(1);
     const [manager] = analyzer.instances;
     expect(manager.startWatching).toHaveBeenCalledOnce();
-    expect(manager.recycleIfHeapPressured).toHaveBeenCalledTimes(2);
+    expect(manager.recycleIfHeapPressured).toHaveBeenCalledTimes(3);
     expect(manager.typescript).toMatchObject({
       api: 'compiler',
       typescript: { version: expect.any(String) },
@@ -180,7 +200,7 @@ describe('createDocgenProvider', () => {
         typeScriptSpecifier: { specifier: 'typescript-native', configDir: import.meta.dirname },
       })(passthrough);
 
-      await provider({ entry });
+      await provider([{ entry }]);
 
       expect(analyzer.instances[0].typescript).toMatchObject({ api: 'native' });
     });
@@ -189,9 +209,9 @@ describe('createDocgenProvider', () => {
   it('threads a structured-cloneable options bag and the manager into the payload builder', async () => {
     vi.mocked(buildDocgenPayload).mockReturnValue(ours);
 
-    await createDocgenProvider(structuredClone({ propsTable: 'inputs' } as const))(passthrough)({
-      entry,
-    });
+    await createDocgenProvider(structuredClone({ propsTable: 'inputs' } as const))(passthrough)([
+      { entry },
+    ]);
 
     expect(buildDocgenPayload).toHaveBeenCalledExactlyOnceWith(
       { entry },
@@ -209,11 +229,11 @@ describe('createDocgenProvider', () => {
   it('passes through permanently when the analyzer cannot be created', async () => {
     analyzer.failConstruction = true;
     vi.mocked(logger.warn).mockImplementation(() => {});
-    const next = vi.fn<DocgenProvider>(async () => downstream);
+    const next = vi.fn(returning(downstream));
     const provider = createDocgenProvider({ propsTable: 'api' })(next);
 
-    await expect(provider({ entry })).resolves.toEqual(downstream);
-    await expect(provider({ entry })).resolves.toEqual(downstream);
+    await expect(provider([{ entry }])).resolves.toEqual([fulfilled(downstream)]);
+    await expect(provider([{ entry }])).resolves.toEqual([fulfilled(downstream)]);
 
     expect(analyzer.constructions).toBe(1);
     expect(next).toHaveBeenCalledTimes(2);

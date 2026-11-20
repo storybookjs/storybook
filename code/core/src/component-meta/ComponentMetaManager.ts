@@ -49,6 +49,9 @@ export class ComponentMetaManager<
   private inferredProject: P | undefined;
   private rootTsConfigs = new Set<string>();
   private searchedDirs = new Set<string>();
+  // Per root tsconfig, the tsconfigs its project references reach, in the order a lookup tries
+  // them. Walking the references stats every referenced path, which is too slow per lookup.
+  private referencedTsConfigs = new Map<string, string[]>();
 
   // Our own file watching layer
   private watching = false;
@@ -99,16 +102,48 @@ export class ComponentMetaManager<
   }
 
   /**
+   * Group the files of a batch by the project that extracts them: the project of each group's
+   * `projectFile`.
+   *
+   * A file a project has not seen invalidates its program and its type checker's cache. A caller
+   * that knows every file of a batch gives a project all of its files in one `ensureFiles` call,
+   * just before that project's first extraction, so the project rebuilds its program once and not
+   * once per new file.
+   *
+   * A file goes to the project that extracts it, which is not always the project it belongs to: a
+   * component can live under another tsconfig than the story that imports it.
+   */
+  groupFilesByProject(groups: { projectFile: string; files: string[] }[]): Map<P, string[]> {
+    const groupsByProjectFile = Map.groupBy(groups, (g) => g.projectFile);
+    // A tsconfig is found only when a file below it is looked up, and it can include files outside
+    // its directory. Find every tsconfig of the batch first, so each file gets the project its
+    // extraction picks, whatever the order of the groups.
+    for (const projectFile of groupsByProjectFile.keys()) {
+      this.findMatchTSConfig(projectFile);
+    }
+    const filesByProject = new Map<P, Set<string>>();
+    for (const [projectFile, projectFileGroups] of groupsByProjectFile) {
+      const project = this.getProjectForFile(projectFile);
+      const files = filesByProject.get(project) ?? new Set<string>();
+      filesByProject.set(project, files);
+      for (const group of projectFileGroups) {
+        group.files.forEach((file) => files.add(file));
+      }
+    }
+    return new Map(Array.from(filesByProject, ([project, files]) => [project, [...files]]));
+  }
+
+  /**
    * Reclaim the shared program(s)' resident type-resolution cache when heap usage approaches the V8
    * limit, preventing the next extraction's spike from OOMing the dev server. Callers with a
-   * batch-extraction surface invoke this after each batch.
+   * batch-extraction surface invoke this after each batch. Returns whether it recycled.
    */
-  protected recycleProjectsIfHeapPressured(): void {
+  protected recycleProjectsIfHeapPressured(): boolean {
     if (this.configProjects.size === 0 && !this.inferredProject) {
-      return;
+      return false;
     }
     if (process.memoryUsage().heapUsed < this.heapRecycleThresholdBytes) {
-      return;
+      return false;
     }
 
     // We crossed the heap-pressure threshold. Recycling reclaims the type cache and usually prevents
@@ -127,8 +162,11 @@ export class ComponentMetaManager<
     }
     this.inferredProject?.dispose();
     this.configProjects.clear();
+    // Walking the references is also what creates the referenced projects.
+    this.referencedTsConfigs.clear();
     this.inferredProject = undefined;
     this.factory.recycle?.();
+    return true;
   }
 
   // ---------------------------------------------------------------------------
@@ -210,23 +248,26 @@ export class ComponentMetaManager<
       )) {
         const project = this.configProjects.get(rootTsConfig);
         if (project) {
-          let chains = getReferencesChains(project.getCommandLine(), rootTsConfig, []);
+          let referenced = this.referencedTsConfigs.get(rootTsConfig);
+          if (!referenced) {
+            // This is to be consistent with tsserver behavior
+            const chains = getReferencesChains(
+              project.getCommandLine(),
+              rootTsConfig,
+              []
+            ).reverse();
+            referenced = [...new Set(chains.flatMap((chain) => chain.toReversed()))];
+            this.referencedTsConfigs.set(rootTsConfig, referenced);
+          }
 
-          // This is to be consistent with tsserver behavior
-          chains = chains.reverse();
+          for (const tsconfig of referenced) {
+            if (checked.has(tsconfig)) {
+              continue;
+            }
+            checked.add(tsconfig);
 
-          for (const chain of chains) {
-            for (let i = chain.length - 1; i >= 0; i--) {
-              const tsconfig = chain[i];
-
-              if (checked.has(tsconfig)) {
-                continue;
-              }
-              checked.add(tsconfig);
-
-              if (match(tsconfig)) {
-                return tsconfig;
-              }
+            if (match(tsconfig)) {
+              return tsconfig;
             }
           }
         }
@@ -372,6 +413,7 @@ export class ComponentMetaManager<
     // Clear searchedDirs so findMatchTSConfig re-scans directories.
     // Without this, new tsconfigs in previously-scanned dirs would be invisible.
     this.searchedDirs.clear();
+    this.referencedTsConfigs.clear();
   }
 
   // ---------------------------------------------------------------------------
@@ -583,6 +625,7 @@ export class ComponentMetaManager<
     this.factory.dispose?.();
     this.searchedDirs.clear();
     this.rootTsConfigs.clear();
+    this.referencedTsConfigs.clear();
   }
 }
 

@@ -1,4 +1,8 @@
-import { createLazyDocgenMiddleware, loadTypeScriptCompilerApi } from 'storybook/internal/common';
+import {
+  createLazyDocgenMiddleware,
+  extractEach,
+  loadTypeScriptCompilerApi,
+} from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import type { DocgenMiddleware } from 'storybook/internal/types';
 
@@ -23,7 +27,8 @@ export const createDocgenProvider = ({
       ];
       return first ? firstMatch([first, ...rest]) : undefined;
     },
-    extract: async (resolver, input) => buildDocgenPayload(input, { resolver }),
+    extract: (resolver, inputs) =>
+      extractEach(inputs, async (input) => buildDocgenPayload(input, { resolver })),
   });
 
 /**

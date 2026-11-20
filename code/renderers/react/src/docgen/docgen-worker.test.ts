@@ -48,16 +48,21 @@ it(
     });
     const cwd = vi.spyOn(process, 'cwd').mockReturnValue(tempDir);
 
-    const docgen = await createDocgenProvider()(async () => undefined)({
-      entry: {
-        type: 'story',
-        subtype: 'story',
-        id: 'forms-button--primary',
-        name: 'Primary',
-        title: 'Forms/Button',
-        importPath: `./${path.relative(tempDir, files['Button.stories.tsx'])}`,
-      } as IndexEntry,
-    });
+    const [result] = await createDocgenProvider()(async (inputs) =>
+      inputs.map(() => ({ status: 'fulfilled', value: undefined }))
+    )([
+      {
+        entry: {
+          type: 'story',
+          subtype: 'story',
+          id: 'forms-button--primary',
+          name: 'Primary',
+          title: 'Forms/Button',
+          importPath: `./${path.relative(tempDir, files['Button.stories.tsx'])}`,
+        } as IndexEntry,
+      },
+    ]);
+    const docgen = result.status === 'fulfilled' ? result.value : undefined;
 
     cwd.mockRestore();
     expect(Object.keys(docgen?.argTypes ?? {})).toEqual(['label']);

@@ -36,7 +36,6 @@ export function sanitizeStoryContextUpdate({
   initialArgs,
   ...update
 }: StoryContextUpdate = {}): StoryContextUpdate {
-  // Not destructured: a decorator may pass on its own context, which throws on `argTypes`.
   delete update.argTypes;
   return update;
 }

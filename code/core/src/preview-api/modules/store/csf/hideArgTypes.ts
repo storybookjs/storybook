@@ -3,7 +3,6 @@ import type { Renderer, StoryContext, StrictArgTypes } from 'storybook/internal/
 
 const HIDDEN_KEY = 'argTypes';
 
-// Registered globally: a preview can hold two copies of this module, which must share the key.
 const STORY_ARG_TYPES = Symbol.for('storybook.internal.storyArgTypes');
 
 const hiddenContexts = new WeakMap<object, object>();

@@ -220,9 +220,9 @@ describe('ProjectTypeService', () => {
       expect(result).toBe(ProjectType.PREACT);
     });
 
-    // Ember is deferred in SB11 — init no longer detects Ember projects and they fall through to unsupported.
+    // Ember is deferred in SB11 — init no longer detects Ember projects.
     // TODO(SB 11.1): re-enable Ember support once the community ember-storybook package supports SB11 — https://github.com/ember-integrations/ember-storybook/issues/123 (also merge https://github.com/ember-integrations/ember-storybook/pull/122) and it is released.
-    it('does not detect EMBER via ember-cli and falls through to unsupported', async () => {
+    it('does not detect EMBER via ember-cli (undetected)', async () => {
       (pm as any).primaryPackageJson.packageJson = {
         dependencies: { 'ember-cli': '^5.0.0' },
       };

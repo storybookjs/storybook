@@ -41,6 +41,14 @@ type TemplateConfiguration = {
   matcherFunction: (matcher: TemplateMatcher) => boolean;
 };
 
+/**
+ * Project types deferred from init/upgrade in this release. Filtering both the
+ * `--type` choices (bin/run.ts) and `validateProvidedType` on this single set keeps
+ * them in sync; restoring a type is a one-line removal here.
+ */
+// TODO(SB 11.1): re-enable Ember support once the community ember-storybook package supports SB11 — https://github.com/ember-integrations/ember-storybook/issues/123 (also merge https://github.com/ember-integrations/ember-storybook/pull/122) and it is released.
+export const deferredProjectTypes: ReadonlySet<ProjectType> = new Set([ProjectType.EMBER]);
+
 /** Service encapsulating helpers for ProjectType usage */
 export class ProjectTypeService {
   constructor(private readonly jsPackageManager: JsPackageManager) {}
@@ -183,8 +191,8 @@ export class ProjectTypeService {
     // Allow only installable types according to core list
     const installable = Object.values(ProjectType).filter(
       (t) =>
-        // TODO(SB 11.1): re-enable Ember support once the community ember-storybook package supports SB11 — https://github.com/ember-integrations/ember-storybook/issues/123 (also merge https://github.com/ember-integrations/ember-storybook/pull/122) and it is released.
-        !['undetected', 'unsupported', 'nx', 'ember'].includes(String(t))
+        ![ProjectType.UNDETECTED, ProjectType.UNSUPPORTED, ProjectType.NX].includes(t) &&
+        !deferredProjectTypes.has(t)
     );
     if (installable.includes(projectTypeProvided)) {
       return projectTypeProvided;

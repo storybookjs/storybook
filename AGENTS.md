@@ -27,6 +27,7 @@ Both start long-running dev servers.
 | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
 | install, compile, lint, run commands, or debug a build                | [Development workflow](.agents/guidelines/development.md)                                                                 |
 | write or edit code                                                    | [Code authoring](.agents/guidelines/code-authoring.md) and [Comments and JSDoc](.agents/guidelines/comments-and-jsdoc.md) |
+| make a design, debugging, testing, or verification decision           | [Principles](.agents/guidelines/principles.md)                                                                            |
 | write or run tests                                                    | [Testing](.agents/guidelines/testing.md)                                                                                  |
 | open or update a PR                                                   | [Pull requests](.agents/guidelines/pull-requests.md)                                                                      |
 | touch `code/core` internals, presets, open services, or the tools CLI | [Architecture](.agents/guidelines/architecture.md)                                                                        |

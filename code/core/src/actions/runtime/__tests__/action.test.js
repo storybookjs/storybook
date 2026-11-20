@@ -1,4 +1,4 @@
-import { JSDOM } from 'jsdom';
+import { Window } from 'happy-dom';
 import { stringify } from 'telejson';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -29,9 +29,7 @@ const createStoryStoreProxy = (onAccess) =>
   );
 
 const createWindowWithStoryStore = (onAccess) => {
-  const { window: win } = new JSDOM('<!doctype html><html><body></body></html>', {
-    url: 'http://localhost/',
-  });
+  const win = new Window({ url: 'http://localhost/' });
   win.__STORYBOOK_STORY_STORE__ = createStoryStoreProxy(onAccess);
   return win;
 };

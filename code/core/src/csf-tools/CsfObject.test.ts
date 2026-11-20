@@ -798,6 +798,18 @@ describe('CsfObject', () => {
         `const types = { parameters: { componentSubtitle: 'A' } }; const list = [{ componentSubtitle: 'A' }];`,
       ]
     ),
+    ...[
+      [`...make()`, `function make() { return { componentSubtitle: 'A' }; }`],
+      [`...Types.subtitle`, `class Types { static subtitle = { componentSubtitle: 'A' }; }`],
+      [`...new Types()`, `class Types { componentSubtitle = 'A'; }`],
+      [`...new Types()`, `class Types { constructor() { this.componentSubtitle = 'A'; } }`],
+      [`...base`, `const { base } = { base: { componentSubtitle: 'A' } };`],
+      [`...base`, `let base = {}; base = { componentSubtitle: 'A' };`],
+      [`...base`, `const base = {}; base.componentSubtitle = 'A';`],
+      [`...base`, `const base = {}; Object.assign(base, { componentSubtitle: 'A' });`],
+      [`...list.at(0)`, `const list = [{ componentSubtitle: 'A' }];`],
+      [`...list.find(Boolean)`, `const list = [{ componentSubtitle: 'A' }];`],
+    ].map(([member, declaration]) => ['spread-field', member, `${declaration}\n`]),
   ])('rejects a field only %s could provide', (code, member, declaration) => {
     const source = `${declaration}export default { parameters: { ${member} } };`;
     const csf = parse(source);
@@ -828,20 +840,24 @@ describe('CsfObject', () => {
     }
   );
 
-  it.each([`...types['other']`, `...list[0].other`])(
-    'removes nothing where %s reads a local value without the field',
-    (member) => {
-      const source = `const types = { parameters: { componentSubtitle: 'A' }, other: {} }; const list = [{ other: {} }];\nexport default { parameters: { ${member} } };`;
-      const csf = parse(source);
-      const [meta] = csf.objects({ meta: true, stories: false });
+  it.each([
+    `...types['other']`,
+    `...list[0].other`,
+    `...list.at(0)`,
+    `...make()`,
+    `...format(translations)`,
+    `...new Types()`,
+  ])('removes nothing where %s reads a local value without the field', (member) => {
+    const source = `import { format } from './format';\nconst types = { parameters: { componentSubtitle: 'A' }, other: {} }; const list = [{ other: {} }];\nconst translations = { label: 'Label' };\nfunction make() { return { other: {} }; }\nclass Types { other = 1; }\nexport default { parameters: { ${member} } };`;
+    const csf = parse(source);
+    const [meta] = csf.objects({ meta: true, stories: false });
 
-      expect(meta.remove(['parameters', 'componentSubtitle'])).toEqual({
-        ok: true,
-        changed: false,
-      });
-      expect(printCsf(csf).code).toBe(source);
-    }
-  );
+    expect(meta.remove(['parameters', 'componentSubtitle'])).toEqual({
+      ok: true,
+      changed: false,
+    });
+    expect(printCsf(csf).code).toBe(source);
+  });
 
   describe('spreads', () => {
     const storyEdits = {

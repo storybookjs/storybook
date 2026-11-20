@@ -234,8 +234,8 @@ export interface CsfObject {
    * Remove a property and recursively clean up the objects it leaves empty. At an index, remove
    * that one element or argument and keep the list, also when it is left empty. Missing fields are
    * a no-op, also one the source does not show where only code it cannot read, such as an imported
-   * spread or a call, could provide it. An index on a field that holds a call addresses the call's arguments, whatever the
-   * callee, such as `filter` in `[...].filter(Boolean)`.
+   * spread or a call, could provide it. An index on a field that holds a call addresses the call's
+   * arguments, whatever the callee, such as `filter` in `[...].filter(Boolean)`.
    *
    * @example
    * ```ts

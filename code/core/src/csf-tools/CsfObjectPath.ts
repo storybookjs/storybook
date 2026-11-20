@@ -26,7 +26,7 @@ import {
   unwrapExpression,
 } from './estree/ast.ts';
 import { type SourceEditor, detachedSource, printKey, printObject } from './estree/editor.ts';
-import { constantInit } from './estree/scope.ts';
+import { type Binding, constantInit } from './estree/scope.ts';
 import { resolveExpression, valueSource } from './estree/values.ts';
 
 /**
@@ -277,19 +277,95 @@ const showsValue = (
     return showsValue(editor, value.object, [memberKey(value), ...path], expanding);
   }
   if (value.type === 'Identifier') {
-    const init = constantInit(editor.scopes.bindingOf(value));
-    if (!init || expanding.has(init)) {
-      return false;
-    }
-    expanding.add(init);
-    const shown = showsValue(editor, init, path, expanding);
-    expanding.delete(init);
-    return shown;
+    return showsBinding(editor, editor.scopes.bindingOf(value), path, expanding);
+  }
+  if (value.type === 'ClassBody') {
+    return value.body.some((member) => {
+      if (!('key' in member)) {
+        return showsValue(editor, member, path, expanding);
+      }
+      const key = member.key as Node;
+      const name =
+        !member.computed && key.type === 'Identifier'
+          ? key.name
+          : isStringLiteral(key)
+            ? key.value
+            : undefined;
+      // A constructor can assign any field, as in `this.label = value`.
+      const reads =
+        name === undefined ||
+        segment === ANY_KEY ||
+        name === segment ||
+        (member.type === 'MethodDefinition' && member.kind === 'constructor');
+      return (
+        reads &&
+        (rest.length === 0 || showsValue(editor, member.value ?? undefined, rest, expanding))
+      );
+    });
+  }
+  // A method can return its receiver or part of it, as in `list.at(0)`.
+  const callee = value.type === 'CallExpression' ? unwrapExpression(value.callee) : undefined;
+  if (callee?.type === 'MemberExpression' && showsValue(editor, callee.object, path, expanding)) {
+    return true;
   }
   return children(value, { skipTypes: true }).some((child) =>
     showsValue(editor, child, path, expanding)
   );
 };
+
+// An import or a global is out of sight, and a parameter is checked where a call passes it. A
+// function or class is followed into its body. Any other local value that the source does not
+// declare as one constant expression, or writes through after it, may hold anything.
+const showsBinding = (
+  editor: SourceEditor,
+  binding: Binding | undefined,
+  path: ShownPath,
+  expanding: Set<Node>
+): boolean => {
+  if (!binding || binding.kind === 'import' || binding.kind === 'param') {
+    return false;
+  }
+  if (expanding.has(binding.node)) {
+    return false;
+  }
+  expanding.add(binding.node);
+  try {
+    if (binding.kind === 'function' || binding.kind === 'class') {
+      return showsValue(editor, binding.node, path, expanding);
+    }
+    const init = constantInit(binding);
+    return !init || writtenThrough(editor, binding) || showsValue(editor, init, path, expanding);
+  } finally {
+    expanding.delete(binding.node);
+  }
+};
+
+// Whether the source changes a constant's value through it, as in `base.label = value`,
+// `delete base.label` or `Object.assign(base, value)`.
+const writtenThrough = (editor: SourceEditor, binding: Binding) =>
+  binding.references.some((reference) => {
+    let target: Node = reference;
+    let parent = editor.parentOf(target);
+    while (parent?.type === 'MemberExpression' && parent.object === target) {
+      target = parent;
+      parent = editor.parentOf(target);
+    }
+    if (parent?.type === 'CallExpression' && parent.arguments[0] === target) {
+      const callee = unwrapExpression(parent.callee);
+      return (
+        callee.type === 'MemberExpression' &&
+        callee.object.type === 'Identifier' &&
+        callee.object.name === 'Object' &&
+        memberKey(callee) === 'assign'
+      );
+    }
+    return (
+      target !== reference &&
+      ((parent?.type === 'AssignmentExpression' && parent.left === target) ||
+        parent?.type === 'UpdateExpression' ||
+        (parent?.type === 'UnaryExpression' && parent.operator === 'delete'))
+    );
+  });
 
 // Why `parent` refuses a new member `key`, such as a function story's `name`.
 export const refusedKey = (

@@ -15,6 +15,7 @@ import type { SourceProps } from '.';
 import { Source } from '.';
 import { DocsContext } from '../blocks/DocsContext';
 import { getStoryId } from '../blocks/Story';
+import { useGlobalsParam } from '../blocks/useGlobalsParam';
 import { getBlockBackgroundStyle } from './BlockBackgroundStyles';
 import { SnippetWarning } from './SnippetWarning';
 import { StorySkeleton } from './Story';
@@ -198,6 +199,9 @@ export const Preview: FC<PreviewProps> = ({
   const childProps = getChildProps(children);
 
   const { warning: sourceWarning, ...sourceProps } = withSource ?? {};
+  const storyId = !isLoading && childProps ? getStoryId(childProps, context) : undefined;
+  const globalsParam = useGlobalsParam(storyId, context);
+
   const hasSourceError = !!(withSource && withSource.error);
   const hasValidSource = !!(withSource && !withSource.error);
 
@@ -214,7 +218,8 @@ export const Preview: FC<PreviewProps> = ({
             border
             zoom={(z: number) => setScale(scale * z)}
             resetZoom={() => setScale(1)}
-            storyId={!isLoading && childProps ? getStoryId(childProps, context) : undefined}
+            storyId={storyId}
+            globals={globalsParam}
             onReloadStory={onReloadStory}
           />
         )}

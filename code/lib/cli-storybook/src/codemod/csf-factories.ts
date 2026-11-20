@@ -1,7 +1,12 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { optionalEnvToBoolean, syncStorybookAddons } from 'storybook/internal/common';
+import {
+  formatFileContent,
+  optionalEnvToBoolean,
+  syncPreviewAddonsWithMainConfig,
+} from 'storybook/internal/common';
+import { formatConfig, loadConfig } from 'storybook/internal/csf-tools';
 import { logger, prompt } from 'storybook/internal/node-logger';
 
 import picocolors from 'picocolors';
@@ -156,23 +161,53 @@ export const csfFactories: CommandFix = {
       glob,
     });
 
-    logger.step('Applying codemod on your main config...');
     const frameworkPackage =
       getFrameworkPackageName(mainConfig) || '@storybook/your-framework-here';
-    await runCodemod([mainConfigPath!], (fileInfo) =>
-      configToCsfFactory(fileInfo, { configType: 'main', frameworkPackage }, { dryRun })
+    // Config transforms return formatted code, so a dry run shows a file as a run writes it.
+    const runConfigCodemod = (path: string, transform: (info: FileInfo) => Promise<string>) =>
+      runCodemod(
+        [path],
+        async (info) => {
+          const output = await transform(info);
+          if (dryRun && output !== info.source) {
+            logger.log(
+              `Would write to ${picocolors.yellow(info.path)}:\n${picocolors.green(output)}`
+            );
+          }
+          return output;
+        },
+        { dryRun, skipFormatting: true }
+      );
+
+    logger.step('Applying codemod on your main config...');
+    await runConfigCodemod(mainConfigPath!, (info) =>
+      configToCsfFactory(info, { configType: 'main', frameworkPackage })
     );
 
     logger.step('Applying codemod on your preview config...');
-    await runCodemod([previewConfigPath!], (fileInfo) =>
-      configToCsfFactory(fileInfo, { configType: 'preview', frameworkPackage }, { dryRun })
-    );
+    // The addons of the main config are synced into the converted preview within the same
+    // transform, so a dry run reports them too.
+    await runConfigCodemod(previewConfigPath!, async (info) => {
+      const preview = loadConfig(
+        await configToCsfFactory(
+          info,
+          { configType: 'preview', frameworkPackage },
+          { skipFormatting: true }
+        ),
+        info.path
+      ).parse();
+      await syncPreviewAddonsWithMainConfig(mainConfig, preview, configDir);
+      const [diagnostic] = preview.mutationDiagnostics;
+      if (diagnostic) {
+        throw new Error(diagnostic.message);
+      }
+      const output = formatConfig(preview);
+      return output === info.source ? output : formatFileContent(info.path, output);
+    });
 
     if (dryRun) {
       return;
     }
-
-    await syncStorybookAddons(mainConfig, previewConfigPath!, configDir);
 
     logger.logBox(
       dedent`

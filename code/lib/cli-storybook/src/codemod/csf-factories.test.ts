@@ -5,7 +5,7 @@ import { posix } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { JsPackageManager } from 'storybook/internal/common';
-import { prompt } from 'storybook/internal/node-logger';
+import { logger, prompt } from 'storybook/internal/node-logger';
 
 import { dirname, join } from 'pathe';
 import { dedent } from 'ts-dedent';
@@ -192,18 +192,25 @@ describe('csfFactories', () => {
     framework: '@storybook/react-vite',
   };
 
-  // The preview is already a factory and lacks the annotations of an addon in the main config, as
-  // when the codemod runs a second time, so a run edits the preview, the story and package.json.
-  const createProject = () => {
+  // A preview still in CSF 3, and one that is already a factory, as when the codemod runs a second
+  // time. Neither has the annotations of the addon in the main config.
+  const previews = {
+    'a CSF 3 preview': 'export default {};',
+    'a factory preview': dedent`
+      import { definePreview } from '@storybook/react-vite';
+
+      export default definePreview({});
+    `,
+  };
+
+  const addonImport = /import \* as myAddon from ['"]my-addon\/preview['"]/;
+
+  const createProject = (preview: string) => {
     root = mkdtempSync(join(tmpdir(), 'storybook-csf-factories-'));
     const files = {
       'package.json': JSON.stringify({ name: 'app' }),
       '.storybook/main.js': `export default ${JSON.stringify(mainConfig)};`,
-      '.storybook/preview.js': dedent`
-        import { definePreview } from '@storybook/react-vite';
-
-        export default definePreview({});
-      `,
+      '.storybook/preview.js': preview,
       'src/Button.stories.js': dedent`
         export default { component: Button };
         export const Primary = { args: { label: 'Button' } };
@@ -256,28 +263,55 @@ describe('csfFactories', () => {
     });
   };
 
-  it('changes no file in a dry run', async () => {
-    const { files, packageManager } = createProject();
+  describe.each(Object.entries(previews))('with %s', (_, preview) => {
+    it('changes no file in a dry run', async () => {
+      const { files, packageManager } = createProject(preview);
 
-    await run(packageManager, true);
+      await run(packageManager, true);
 
-    expect(packageManager.writePackageJson).not.toHaveBeenCalled();
-    expect(readFiles(files)).toEqual(files);
+      expect(packageManager.writePackageJson).not.toHaveBeenCalled();
+      expect(readFiles(files)).toEqual(files);
+    });
+
+    it('reports the preview a run would write, addons included, in a dry run', async () => {
+      const { packageManager } = createProject(preview);
+
+      await run(packageManager, true);
+
+      const output = vi.mocked(logger.log).mock.calls.flat().join('\n');
+      expect(output).toContain('export default definePreview(');
+      expect(output).toMatch(addonImport);
+    });
+
+    it('writes the imports map, the preview and the stories in a normal run', async () => {
+      const { files, packageManager } = createProject(preview);
+
+      await run(packageManager, false);
+
+      expect(packageManager.writePackageJson).toHaveBeenCalledWith(
+        expect.objectContaining({ imports: { '#*': expect.any(Array) } }),
+        root
+      );
+      const output = readFiles(files);
+      expect(output['.storybook/preview.js']).toContain('export default definePreview(');
+      expect(output['.storybook/preview.js']).toMatch(addonImport);
+      expect(output['src/Button.stories.js']).toContain('export const Primary = meta.story(');
+    });
   });
 
-  it('writes the imports map, the preview and the stories in a normal run', async () => {
-    const { files, packageManager } = createProject();
+  it('leaves a preview that needs no change as it is written', async () => {
+    const preview = dedent`
+      import { definePreview } from '@storybook/react-vite'
+      import * as myAddon from 'my-addon/preview'
+
+      export default definePreview({ addons: [myAddon] })
+    `;
+    const { packageManager } = createProject(preview);
+    // Formatting the preview would add semicolons.
+    writeFileSync(join(root, '.prettierrc'), JSON.stringify({ semi: true }));
 
     await run(packageManager, false);
 
-    expect(packageManager.writePackageJson).toHaveBeenCalledWith(
-      expect.objectContaining({ imports: { '#*': expect.any(Array) } }),
-      root
-    );
-    const output = readFiles(files);
-    expect(output['.storybook/preview.js']).toContain(
-      "import * as myAddon from 'my-addon/preview'"
-    );
-    expect(output['src/Button.stories.js']).toContain('export const Primary = meta.story(');
+    expect(readFileSync(join(root, '.storybook/preview.js'), 'utf-8')).toBe(preview);
   });
 });

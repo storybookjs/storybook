@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs';
-import { dirname, relative, sep } from 'node:path';
+import { dirname, extname, normalize, relative, sep } from 'node:path';
 
 import { findTsconfigPathForFile, getTsconfigPathsBaseDir } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
@@ -36,12 +36,44 @@ type Options = {
   exclude?: string | RegExp | (string | RegExp)[];
 };
 
+type ImporterCacheOptions = NonNullable<Parameters<typeof makeFsImporter>[1]>;
+
+class ResolveCache extends Map<string, string | null> {
+  #onResolvedFile: ((filename: string) => void) | undefined;
+
+  override get(key: string) {
+    const resolvedFile = super.get(key);
+    if (resolvedFile) {
+      this.#onResolvedFile?.(resolvedFile);
+    }
+    return resolvedFile;
+  }
+
+  override set(key: string, resolvedFile: string | null) {
+    if (resolvedFile) {
+      this.#onResolvedFile?.(resolvedFile);
+    }
+    return super.set(key, resolvedFile);
+  }
+
+  withWatchFile<T>(onResolvedFile: (filename: string) => void, callback: () => T) {
+    this.#onResolvedFile = onResolvedFile;
+    try {
+      return callback();
+    } finally {
+      this.#onResolvedFile = undefined;
+    }
+  }
+}
+
 export async function reactDocgen({
   include = /\.(mjs|tsx?|jsx?)$/,
   exclude = [/node_modules\/.*/],
 }: Options = {}): Promise<PluginOption> {
   const cwd = process.cwd();
   const filter = createFilter(include, exclude);
+  const parseCache: NonNullable<ImporterCacheOptions['parseCache']> = new Map();
+  const resolveCaches = new Map<TsconfigPaths.MatchPath | undefined, ResolveCache>();
 
   return {
     name: 'storybook:react-docgen-plugin',
@@ -52,7 +84,16 @@ export async function reactDocgen({
       }
 
       try {
-        const docgenResults = parseDocgen(src, id, createTsconfigMatchPath(id));
+        const { matchPath, tsconfigPath } = createTsconfigMatchPath(id);
+        if (tsconfigPath) {
+          this.addWatchFile(tsconfigPath);
+        }
+        const resolveCache = resolveCaches.get(matchPath) ?? new ResolveCache();
+        resolveCaches.set(matchPath, resolveCache);
+        const docgenResults = resolveCache.withWatchFile(
+          (filename) => this.addWatchFile(filename),
+          () => parseDocgen(src, id, matchPath, { parseCache, resolveCache })
+        );
         const s = new MagicString(src);
 
         docgenResults.forEach((info) => {
@@ -75,6 +116,19 @@ export async function reactDocgen({
         throw e;
       }
     },
+    watchChange(id, change) {
+      const normalizedId = normalize(id);
+      parseCache.delete(normalizedId);
+
+      if (change.event === 'create' || change.event === 'delete') {
+        resolveCaches.forEach((cache) => cache.clear());
+      }
+
+      if (extname(normalizedId) === '.json') {
+        matchPathByTsconfigPath.clear();
+        resolveCaches.clear();
+      }
+    },
   };
 }
 
@@ -84,11 +138,21 @@ export async function reactDocgen({
  * docgen. If that fails, retries once with the project Babel config, which keeps configs that add
  * parser syntax react-docgen lacks working. If both fail, the first error is thrown.
  */
-function parseDocgen(src: string, id: string, matchPath: TsconfigPaths.MatchPath | undefined) {
+type ImporterCaches = {
+  parseCache: NonNullable<ImporterCacheOptions['parseCache']>;
+  resolveCache: ResolveCache;
+};
+
+function parseDocgen(
+  src: string,
+  id: string,
+  matchPath: TsconfigPaths.MatchPath | undefined,
+  caches?: ImporterCaches
+) {
   const options = {
     resolver: defaultResolver,
     handlers,
-    importer: getReactDocgenImporter(matchPath),
+    importer: getReactDocgenImporter(matchPath, caches),
     filename: id,
   };
 
@@ -115,38 +179,44 @@ function parseDocgen(src: string, id: string, matchPath: TsconfigPaths.MatchPath
   }
 }
 
-export function getReactDocgenImporter(matchPath: TsconfigPaths.MatchPath | undefined) {
-  return makeFsImporter((filename, basedir) => {
-    const mappedFilenameByPaths = (() => {
-      if (matchPath) {
-        // Without extensions, tsconfig-paths only tries `.js`, `.json` and `.node`, so an alias to a
-        // TypeScript file such as `@/components/types` would never match.
-        const match = matchPath(filename, undefined, undefined, RESOLVE_EXTENSIONS);
-        return match || filename;
-      } else {
-        return filename;
-      }
-    })();
+export function getReactDocgenImporter(
+  matchPath: TsconfigPaths.MatchPath | undefined,
+  caches?: ImporterCaches
+) {
+  return makeFsImporter(
+    (filename, basedir) => {
+      const mappedFilenameByPaths = (() => {
+        if (matchPath) {
+          // Without extensions, tsconfig-paths only tries `.js`, `.json` and `.node`, so an alias to a
+          // TypeScript file such as `@/components/types` would never match.
+          const match = matchPath(filename, undefined, undefined, RESOLVE_EXTENSIONS);
+          return match || filename;
+        } else {
+          return filename;
+        }
+      })();
 
-    const result = defaultLookupModule(mappedFilenameByPaths, basedir);
+      const result = defaultLookupModule(mappedFilenameByPaths, basedir);
 
-    if (result.includes(`${sep}react-native${sep}index.js`)) {
-      const replaced = result.replace(
-        `${sep}react-native${sep}index.js`,
-        `${sep}react-native-web${sep}dist${sep}index.js`
-      );
-      if (existsSync(replaced)) {
-        if (RESOLVE_EXTENSIONS.find((ext) => result.endsWith(ext))) {
-          return replaced;
+      if (result.includes(`${sep}react-native${sep}index.js`)) {
+        const replaced = result.replace(
+          `${sep}react-native${sep}index.js`,
+          `${sep}react-native-web${sep}dist${sep}index.js`
+        );
+        if (existsSync(replaced)) {
+          if (RESOLVE_EXTENSIONS.find((ext) => result.endsWith(ext))) {
+            return replaced;
+          }
         }
       }
-    }
-    if (RESOLVE_EXTENSIONS.find((ext) => result.endsWith(ext))) {
-      return result;
-    }
+      if (RESOLVE_EXTENSIONS.find((ext) => result.endsWith(ext))) {
+        return result;
+      }
 
-    throw new ReactDocgenResolveError(filename);
-  });
+      throw new ReactDocgenResolveError(filename);
+    },
+    caches && { parseCache: caches.parseCache, resolveCache: caches.resolveCache }
+  );
 }
 
 const matchPathByTsconfigPath = new Map<string, TsconfigPaths.MatchPath>();
@@ -154,18 +224,18 @@ const matchPathByTsconfigPath = new Map<string, TsconfigPaths.MatchPath>();
 function createTsconfigMatchPath(filePath: string) {
   const tsconfigPath = findTsconfigPathForFile(dirname(filePath), filePath);
   if (!tsconfigPath) {
-    return undefined;
+    return { matchPath: undefined };
   }
 
   const cached = matchPathByTsconfigPath.get(tsconfigPath);
   if (cached) {
-    return cached;
+    return { matchPath: cached, tsconfigPath };
   }
 
   const tsconfig = TsconfigPaths.loadConfig(tsconfigPath);
 
   if (tsconfig.resultType !== 'success') {
-    return undefined;
+    return { matchPath: undefined, tsconfigPath };
   }
 
   logger.debug('Using tsconfig paths for react-docgen');
@@ -175,5 +245,5 @@ function createTsconfigMatchPath(filePath: string) {
     ['browser', 'module', 'main']
   );
   matchPathByTsconfigPath.set(tsconfigPath, matchPath);
-  return matchPath;
+  return { matchPath, tsconfigPath };
 }

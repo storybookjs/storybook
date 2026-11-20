@@ -4,13 +4,13 @@ sidebar:
   order: 1
 ---
 
-<If notRenderer={['react', 'vue', 'angular', 'svelte', 'web-components']}>
+<If notRenderer={['react', 'vue', 'angular', 'svelte', 'web-components', 'solid']}>
 
 Manifests describe your components and docs in a structured format that AI agents read, so they can reuse your components. Your framework doesn't generate them yet.
 
 </If>
 
-<If renderer={['react', 'vue', 'angular', 'svelte', 'web-components']}>
+<If renderer={['react', 'vue', 'angular', 'svelte', 'web-components', 'solid']}>
 
 Your Storybook holds a wealth of information about your components: their names, descriptions, API, usage examples, and more. Manifests are JSON objects that describe the contents of your Storybook in a concise, structured way that is easy for AI agents to understand and use. The manifests are generated automatically from your Storybook's CSF and MDX files, and they are designed to be comprehensive and up-to-date representations of your Storybook's contents.
 
@@ -64,6 +64,14 @@ On `@storybook/svelte-vite` and `@storybook/sveltekit`, the default [`docgenServ
 <If renderer="web-components">
 
 On `@storybook/web-components-vite`, Storybook reads your elements from your [Custom Elements Manifest](../../get-started/frameworks/web-components-vite.mdx#custom-elements-manifest), if your project has one. Otherwise, it reads them from your source code with the TypeScript compiler, including Lit elements. The components manifest is off by default for Web Components. See [framework support](#framework-support).
+
+</If>
+
+<If renderer="solid">
+
+On [`storybook-solidjs-vite`](https://github.com/solidjs-community/storybook), the components manifest requires [`componentsManifest`](../../api/main-config/main-config-features.mdx#componentsmanifest), which the framework preset enables by default.
+Prop types come from **solid-component-meta** on the [`docgenServer`](../../api/main-config/main-config-features.mdx#docgenserver), which is also on by default, aligned with Storybook's `react-component-meta` format.
+Set `docgenServer: false` to inject `__docgenInfo` into the preview instead.
 
 </If>
 
@@ -136,6 +144,29 @@ A docblock sitting on its own at the top of the block is not picked up.
 
 </If>
 
+<If renderer="solid">
+
+```tsx title="Button.tsx"
+type ButtonProps = {
+  /**
+   * Optional click handler
+   */
+  onClick?: () => void;
+  /** Text on the button */
+  label: string;
+};
+
+/**
+ * Button is used for user interactions that do not navigate to another route.
+ * For navigation, use [Link](?path=/docs/link--default) instead.
+ */
+export function Button(props: ButtonProps) {
+  //...
+}
+```
+
+</If>
+
 <Callout variant="info" icon="💡">
 
 Check the [best practices](../best-practices.mdx) guide for tips on writing effective JSDoc comments for your components and other ways to provide helpful context for the agents.
@@ -150,7 +181,7 @@ The raw JSON components manifest can be accessed at `http://localhost:6006/manif
 
 With [`docgenServer`](../../api/main-config/main-config-features.mdx#docgenserver) enabled, the dev server returns a 404 for both JSON routes.
 The manifest is assembled on demand from the docgen service rather than written to disk, so read it from a built Storybook, or use the [debugger](#debugging), which works in both modes.
-This affects every React framework, `@storybook/angular-vite`, and `@storybook/vue3-vite` by default.
+This affects every React framework, `@storybook/angular-vite`, `@storybook/vue3-vite`, and `storybook-solidjs-vite` by default.
 
 </Callout>
 
@@ -456,6 +487,7 @@ The docs manifest is generated for every framework. The components manifest is g
 | `@storybook/vue3-vite`                                                                                                     | On by default               |
 | `@storybook/svelte-vite`, `@storybook/sveltekit`                                                                           | On by default               |
 | `@storybook/web-components-vite`                                                                                           | Enable `componentsManifest` |
+| `storybook-solidjs-vite`                                                                                                   | On by default               |
 | `@storybook/angular` (Webpack)                                                                                             | Not supported               |
 | Every other framework                                                                                                      | Not supported               |
 

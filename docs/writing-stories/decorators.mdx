@@ -88,6 +88,20 @@ The same applies to Storybook hooks you want to call in your decorator. For inst
 
 </If>
 
+<If renderer="solid">
+
+## JSX decorators in SolidJS
+
+SolidJS uses fine-grained reactivity. When args or globals change, Storybook re-runs decorators and story functions (similar to React). JSX decorators that re-run can leave duplicate DOM nodes in the canvas.
+
+Use `createJSXDecorator` for decorators that return JSX. The decorator runs once per story mount — `context.globals` and `context.args` are reactive stores, so bindings in JSX still update without re-running the decorator:
+
+<CodeSnippets path="solid-create-jsx-decorator.md" />
+
+For side effects that should run on every story update (for example, syncing `document.body` when globals change), use `createDecorator` from `storybook-solidjs-vite` instead.
+
+</If>
+
 ### Using decorators to provide data
 
 If your components are “connected” and require side-loaded data to render, you can use decorators to provide that data in a mocked way without having to refactor your components to take that data as an arg. There are several techniques to achieve this. Depending on exactly how you are loading that data. Read more in the [building pages in Storybook](./build-pages-with-storybook.mdx) section.

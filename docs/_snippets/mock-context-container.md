@@ -65,9 +65,9 @@ const context = {
 
 export const Normal = {
   render: () => (
-    <ProfilePageContext.Provider value={context}>
+    <ProfilePageContext value={context}>
       <ProfilePage {...ProfilePageProps} />
-    </ProfilePageContext.Provider>
+    </ProfilePageContext>
   ),
 };
 ```

@@ -8,3 +8,11 @@ export default defineMain({
   addons: ['@storybook/addon-a11y'],
 });
 ```
+
+```ts filename=".storybook/main.ts" renderer="solid" language="ts"
+import { defineMain } from 'storybook-solidjs-vite/node';
+
+export default defineMain({
+  framework: { name: 'storybook-solidjs-vite' },
+});
+```

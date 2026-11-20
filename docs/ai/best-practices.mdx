@@ -5,13 +5,13 @@ sidebar:
   title: Best practices
 ---
 
-<If notRenderer={['react', 'vue', 'angular', 'svelte', 'web-components']}>
+<If notRenderer={['react', 'vue', 'angular', 'svelte', 'web-components', 'solid']}>
 
 These practices help your agent reuse your components, by improving the [manifests](./reference/manifests.mdx) that it reads. Storybook's AI features aren't available for your framework yet. See [supported frameworks](./connect.mdx#supported-frameworks).
 
 </If>
 
-<If renderer={['react', 'vue', 'angular', 'svelte', 'web-components']}>
+<If renderer={['react', 'vue', 'angular', 'svelte', 'web-components', 'solid']}>
 
 Your agent reads your stories and component docs from the [manifests](./reference/manifests.mdx) that Storybook generates. The better you document your components, the better your agent reuses them. These practices apply to [skills](./connect.mdx#install-the-skills), the [MCP server](./reference/mcp-server.mdx), and [published Storybooks](./published-storybook.mdx).
 
@@ -86,7 +86,23 @@ A docblock sitting on its own at the top of the block is not picked up.
 
 </If>
 
-<If renderer={['react', 'vue']}>
+<If renderer="solid">
+
+```tsx title="Button.tsx"
+/**
+ * Button is used for user interactions that do not navigate to another route.
+ * For navigation, use [Link](?path=/docs/link--default) instead.
+ *
+ * @summary for user interactions that do not navigate to another route
+ */
+export function Button(props: ButtonProps) {
+  // ...
+}
+```
+
+</If>
+
+<If renderer={['react', 'vue', 'solid']}>
 
 You can also write the JSDoc comment above the `meta` declaration in the stories file.
 If both have a description, the one on `meta` is used.
@@ -148,6 +164,17 @@ defineProps<{
   icon?: string;
 }>();
 </script>
+```
+
+</If>
+
+<If renderer="solid">
+
+```tsx title="Button.tsx"
+export interface ButtonProps {
+  /** The icon to render before the button text */
+  icon?: string;
+}
 ```
 
 </If>

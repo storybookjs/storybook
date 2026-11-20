@@ -200,7 +200,7 @@ export function DocumentScreen() {
       <Match when={status() === 'error'}>
         <p>There was an error fetching the data!</p>
       </Match>
-      <Match when={user} keyed>
+      <Match when={status() === 'success'}>
         <PageLayout user={data().user}>
           <DocumentHeader document={data().document} />
           <DocumentList documents={data().subdocuments} />
@@ -465,4 +465,61 @@ class DocumentScreen extends LitElement {
 }
 
 customElements.define('demo-document-screen', DocumentScreen);
+```
+
+```ts filename="YourPage.tsx" renderer="solid" language="ts"
+import { createSignal, Match, Switch } from 'solid-js';
+
+import { PageLayout } from './PageLayout';
+import { DocumentHeader } from './DocumentHeader';
+import { DocumentList } from './DocumentList';
+
+// Example hook to retrieve data from an external endpoint
+function useFetchData() {
+  const [status, setStatus] = createSignal<string>('idle');
+  const [data, setData] = createSignal<any>({});
+
+  setStatus('loading');
+  fetch('https://your-restful-endpoint')
+    .then((res) => {
+      if (!res.ok) {
+        throw new Error(res.statusText);
+      }
+      return res;
+    })
+    .then((res) => res.json())
+    .then((data) => {
+      setStatus('success');
+      setData(data);
+    })
+    .catch(() => {
+      setStatus('error');
+    });
+
+  return {
+    status,
+    data,
+  };
+}
+
+export function DocumentScreen() {
+  const { status, data } = useFetchData();
+
+  return (
+    <Switch>
+      <Match when={status() === 'loading'}>
+        <p>Loading...</p>
+      </Match>
+      <Match when={status() === 'error'}>
+        <p>There was an error fetching the data!</p>
+      </Match>
+      <Match when={status() === 'success'}>
+        <PageLayout user={data().user}>
+          <DocumentHeader document={data().document} />
+          <DocumentList documents={data().subdocuments} />
+        </PageLayout>
+      </Match>
+    </Switch>
+  );
+}
 ```

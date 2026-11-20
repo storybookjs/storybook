@@ -157,7 +157,7 @@ export const ExampleStory = meta.story({
 ```
 
 ```jsx filename="YourComponent.stories.js|jsx" renderer="solid" language="js"
-import { createSignal, createEffect } from 'solid-js';
+import { createMemo } from 'solid-js';
 
 import { YourComponent } from './your-component';
 
@@ -181,12 +181,8 @@ const someFunction = (valuePropertyA, valuePropertyB) => {
 
 export const ExampleStory = {
   render: (args) => {
-    const [someFunctionResult, setSomeFunctionResult] = createSignal();
-
-    //👇 Assigns the function result to a signal
-    createEffect(() => {
-      setSomeFunctionResult(someFunction(args.propertyA, args.propertyB));
-    });
+    //👇 Derives the function result from the args
+    const someFunctionResult = createMemo(() => someFunction(args.propertyA, args.propertyB));
 
     return <YourComponent {...args} someProperty={someFunctionResult()} />;
   },
@@ -200,7 +196,7 @@ export const ExampleStory = {
 ```tsx filename="YourComponent.stories.ts|tsx" renderer="solid" language="ts"
 import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
-import { createSignal, createEffect } from 'solid-js';
+import { createMemo } from 'solid-js';
 
 import { YourComponent } from './your-component';
 
@@ -227,12 +223,8 @@ const someFunction = (valuePropertyA, valuePropertyB) => {
 
 export const ExampleStory: Story = {
   render: (args) => {
-    const [someFunctionResult, setSomeFunctionResult] = createSignal();
-
-    //👇 Assigns the function result to a signal
-    createEffect(() => {
-      setSomeFunctionResult(someFunction(args.propertyA, args.propertyB));
-    });
+    //👇 Derives the function result from the args
+    const someFunctionResult = createMemo(() => someFunction(args.propertyA, args.propertyB));
 
     return <YourComponent {...args} someProperty={someFunctionResult()} />;
   },

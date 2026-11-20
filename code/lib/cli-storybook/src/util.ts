@@ -13,6 +13,7 @@ import {
   getStoriesPathsFromConfig,
 } from 'storybook/internal/core-server';
 import { logTracker, logger, prompt } from 'storybook/internal/node-logger';
+import { normalize as posixNormalize } from 'pathe';
 import {
   UpgradeStorybookConfigDirNotFoundError,
   UpgradeStorybookToLowerVersionError,
@@ -608,7 +609,9 @@ const formatProjectDirectories = (
  */
 export const shortenPath = (path: string) => {
   const gitRoot = getProjectRoot();
-  return path.replace(gitRoot, '');
+  // getProjectRoot is platform-native on Windows while callers pass POSIX-normalized paths, so
+  // normalize both sides (pathe normalize converts separators) or the prefix never matches.
+  return posixNormalize(path).replace(posixNormalize(gitRoot), '');
 };
 
 /**

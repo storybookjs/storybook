@@ -38,11 +38,37 @@ beforeEach(async () => {
   const memfs = await vi.importActual<typeof import('memfs')>('memfs');
   const actualGlob = await vi.importActual<typeof import('tinyglobby')>('tinyglobby');
   vol.reset();
+  // tinyglobby resolves `cwd` through node:path before crawling, which on win32 re-roots a
+  // POSIX-style cwd like '/docs' to a drive path ('C:\docs') with backslashed separators —
+  // and memfs rejects both drive letters and backslash separators, so the crawl yields
+  // nothing and every check silently finds zero errors. Inject an fs whose lookups are
+  // translated back into the POSIX memfs volume; on POSIX this is a no-op.
+  type VolumeFsMethod = (p: string, ...rest: unknown[]) => unknown;
+  const toVolumePath = (p: string) =>
+    String(p)
+      .replace(/\\/g, '/')
+      .replace(/^[A-Za-z]:/, '');
+  const wrap =
+    (fn: VolumeFsMethod): VolumeFsMethod =>
+    (p, ...rest) =>
+      fn(toVolumePath(p), ...rest);
   for (const method of ['access', 'mkdir', 'readFile', 'writeFile'] as const) {
     vi.mocked(fs[method]).mockImplementation(memfs.fs.promises[method] as any);
   }
-  vi.mocked(glob).mockImplementation(((patterns: string[], options: GlobOptions) =>
-    actualGlob.glob(patterns, { ...options, fs: memfs.fs as any })) as typeof glob);
+  vi.mocked(glob).mockImplementation((async (patterns: string[], options: GlobOptions) => {
+    const files = await actualGlob.glob(patterns, {
+      ...options,
+      fs: {
+        readdir: wrap(memfs.fs.readdir.bind(memfs.fs)),
+        readdirSync: wrap(memfs.fs.readdirSync.bind(memfs.fs)),
+        realpath: wrap(memfs.fs.realpath.bind(memfs.fs)),
+        realpathSync: wrap(memfs.fs.realpathSync.bind(memfs.fs)),
+        stat: wrap(memfs.fs.stat.bind(memfs.fs)),
+        statSync: wrap(memfs.fs.statSync.bind(memfs.fs)),
+      } as GlobOptions['fs'],
+    });
+    return files.map((file) => toVolumePath(file));
+  }) as typeof glob);
 });
 
 describe('check-docs', () => {

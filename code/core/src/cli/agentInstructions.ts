@@ -10,13 +10,21 @@ import { buildAgentInstructions } from './skills/content/build-workflow-instruct
 const BEGIN_MARKER = '<!-- BEGIN:storybook-skills -->';
 const END_MARKER = '<!-- END:storybook-skills -->';
 
-export const STORYBOOK_AGENT_INSTRUCTIONS = `${BEGIN_MARKER}
+export type AgentInstructionsInputs = {
+  /** A Storybook of the project has `@storybook/addon-vitest`, so the section has a test step. */
+  testSupported: boolean;
+};
+
+export const storybookAgentInstructions = ({ testSupported }: AgentInstructionsInputs) =>
+  `${BEGIN_MARKER}
 <!-- Storybook updates this section on upgrade. Remove both markers to keep your own edits. -->
 
-${buildAgentInstructions()}
+${buildAgentInstructions({ testSupported })}
 
 ${END_MARKER}
 `;
+
+export const STORYBOOK_AGENT_INSTRUCTIONS = storybookAgentInstructions({ testSupported: true });
 
 // One block, from a BEGIN marker on its own line to the next END marker on its own line, with the
 // line break after it. A marker mentioned in prose does not match, and a second BEGIN ends the
@@ -34,8 +42,13 @@ const CLAUDE_FILES = [
   { file: 'CLAUDE.local.md', importsAgentsMd: /(^|\s)@(\.\/)?AGENTS\.md\b/m },
 ];
 
-// Also matches a section the user customized, so it is not added a second time.
-const NAMES_A_STORYBOOK_SKILL = /\b(component-docs|write-stories|test-stories|ui-review)\b/;
+// The test step of this section, or of the 11.0 prereleases, which named the `test-stories` skill.
+const TEST_STEP = /storybook tools test run|`test-stories`/;
+
+// Also matches a section the user customized, so it is not added a second time: one written by
+// an 11.0 prerelease, which named every skill, or one that keeps only the test command.
+const NAMES_A_STORYBOOK_SKILL =
+  /\b(component-docs|write-stories|test-stories|ui-review)\b|\bstorybook tools test run\b/;
 
 // The block between the markers, when the file has one.
 const findSection = (content: string | undefined): string | undefined =>
@@ -125,10 +138,11 @@ export type AgentInstructionsChange = { file: string; change: 'added' | 'updated
 
 export async function addStorybookAgentInstructions(
   root: string,
-  mode: AgentInstructionsMode = 'install'
+  mode: AgentInstructionsMode = 'install',
+  inputs: AgentInstructionsInputs = { testSupported: true }
 ): Promise<AgentInstructionsChange[]> {
   const existing = new Map<string, string | undefined>();
-  const files = await planStorybookAgentInstructions(async (file) => {
+  const read = async (file: string) => {
     try {
       const content = await readFile(join(root, file), 'utf8');
       existing.set(file, content);
@@ -139,7 +153,17 @@ export async function addStorybookAgentInstructions(
       }
       throw error;
     }
-  }, mode);
+  };
+  // Every Storybook of a monorepo shares this file. An install for one without addon-vitest keeps
+  // the test step another one put there; only an upgrade, which checks every Storybook, drops it.
+  const testSupported =
+    inputs.testSupported ||
+    (mode === 'install' && TEST_STEP.test(findSection(await read('AGENTS.md')) ?? ''));
+  const files = await planStorybookAgentInstructions(
+    read,
+    mode,
+    storybookAgentInstructions({ testSupported })
+  );
   const changes: AgentInstructionsChange[] = [];
   for (const [file, content] of Object.entries(files)) {
     await writeFile(join(root, file), content);

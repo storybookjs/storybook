@@ -1,7 +1,8 @@
 import {
-  expectDisplayReviewForBrowseRequest,
-  expectDevServerLeftRunning,
   expectAnyWorkflowSkillInvoked,
+  expectDevServerLeftRunning,
+  expectDisplayReviewForBrowseRequest,
+  expectNoReviewHint,
   expectStoryIdsInDisplayReview,
   expectWorkflowCalls,
   getEvalContext,
@@ -9,7 +10,7 @@ import {
 import { describe, test } from 'vitest';
 
 describe('browsing existing ReviewCard Storybook states', () => {
-  test('publishes a display review for a browse request without changed files', () => {
+  test('creates a display review for a browse request without changed files', () => {
     expectDisplayReviewForBrowseRequest();
   });
 
@@ -21,6 +22,10 @@ describe('browsing existing ReviewCard Storybook states', () => {
       'reviewcard--with-long-comment',
       'reviewcard--low-rating',
     ]);
+  });
+
+  test('leaves out the review line: nothing changed', () => {
+    expectNoReviewHint();
   });
 
   describe('depending on the current agent and integration', () => {

@@ -2,7 +2,7 @@ import * as fs from 'node:fs/promises';
 import { writeFile } from 'node:fs/promises';
 import os from 'node:os';
 
-import { AddonVitestService } from 'storybook/internal/cli';
+import { AddonVitestService, refreshAgentInstructions } from 'storybook/internal/cli';
 import {
   JsPackageManagerFactory,
   formatFileContent,
@@ -326,6 +326,9 @@ export default async function postInstall(options: PostinstallOptions) {
   const runCommand = rootConfig ? `npx vitest --project=storybook` : `npx vitest`;
 
   if (errors.length === 0) {
+    // The Storybook section of AGENTS.md has a test step only with this addon, so a project that
+    // adds it later gets the step now instead of on its next upgrade.
+    await refreshAgentInstructions({ testSupported: true });
     logger.step(CLI_COLORS.success('@storybook/addon-vitest setup completed successfully'));
     logger.log(dedent`
         @storybook/addon-vitest is now configured and you're ready to run your tests!

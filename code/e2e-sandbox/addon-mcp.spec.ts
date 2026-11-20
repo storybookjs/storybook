@@ -197,7 +197,8 @@ test.describe('addon-mcp', () => {
           result: {
             protocolVersion: '2025-06-18',
             capabilities: {
-              tools: { listChanged: true },
+              tools: { listChanged: false },
+              resources: { listChanged: false },
             },
             serverInfo: {
               name: '@storybook/addon-mcp',

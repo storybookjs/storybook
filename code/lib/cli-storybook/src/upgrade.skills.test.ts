@@ -16,6 +16,7 @@ vi.mock('storybook/internal/telemetry');
 vi.mock('storybook/internal/node-logger', { spy: true });
 vi.mock('./automigrate/multi-project.ts', { spy: true });
 vi.mock('./doctor/index.ts', { spy: true });
+vi.mock('./postinstallAddon.ts');
 vi.mock('./util.ts', { spy: true });
 vi.mock(import('storybook/internal/common'), async (importOriginal) => {
   const actual = await importOriginal();
@@ -143,11 +144,43 @@ describe('upgrade: refreshing the skills', () => {
     expect(installSkills).toHaveBeenCalledWith({
       packageManager: expect.objectContaining({ type: 'npm' }),
       source: 'refresh',
+      testSupported: false,
     });
     expect(skillsInUpgradeEvents()).toEqual([
       { result: 'installed', source: 'refresh' },
       { result: 'installed', source: 'refresh' },
     ]);
+  });
+
+  it('gives the section a test step when the main config of one Storybook lists addon-vitest', async () => {
+    useProjects(
+      project('/repo/a/.storybook'),
+      project('/repo/b/.storybook', {
+        mainConfig: { stories: [], addons: ['@storybook/addon-vitest'] },
+      })
+    );
+
+    await upgrade(baseOptions);
+
+    expect(installSkills).toHaveBeenCalledWith(expect.objectContaining({ testSupported: true }));
+  });
+
+  it('gives the section a test step when an automigration adds addon-vitest', async () => {
+    vi.mocked(runAutomigrations).mockResolvedValue({
+      automigrationResults: {
+        '/repo/a/.storybook': {
+          automigrationStatuses: { 'angular-to-angular-vite': FixStatus.SUCCEEDED },
+          automigrationErrors: {},
+          fileFailures: [],
+          addonsToPostinstall: ['@storybook/addon-vitest'],
+        },
+      },
+      detectedAutomigrations: [],
+    });
+
+    await upgrade(baseOptions);
+
+    expect(installSkills).toHaveBeenCalledWith(expect.objectContaining({ testSupported: true }));
   });
 
   it('installs nothing when the project has no skills', async () => {

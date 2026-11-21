@@ -86,10 +86,24 @@ export const LastViewed: StoryFn = () => (
 
 const selectStory = fn().mockName('selectStory');
 
+const anchorIndex = {
+  ...index,
+  'emails-introduction': {
+    ...index['emails-introduction'],
+    anchors: [{ id: 'usage', title: 'Usage' }],
+  },
+};
+const anchorData = { [refId]: { ...data[refId], index: anchorIndex } };
+const anchorDataset = { hash: anchorData, entries: Object.entries(anchorData) };
+
 export const LastViewedOpensViewedStory: StoryFn = () => (
   <Search
     {...baseProps}
-    getLastViewed={() => [{ storyId: 'emails-buildnotification--with-error', refId }]}
+    dataset={anchorDataset}
+    getLastViewed={() => [
+      { storyId: 'emails-buildnotification--with-error', refId },
+      { storyId: 'emails-introduction', refId, anchor: 'usage' },
+    ]}
   >
     {renderResults}
   </Search>
@@ -121,6 +135,16 @@ LastViewedOpensViewedStory.play = async ({ canvasElement }) => {
     'emails-buildnotification--with-error',
     undefined,
     expect.anything()
+  );
+
+  // Docs entries keep opening the docs page at the viewed anchor
+  selectStory.mockClear();
+  await userEvent.click(canvas.getByRole('searchbox'));
+  await userEvent.click(await canvas.findByText('Introduction / Usage'));
+  await expect(selectStory).toHaveBeenCalledWith(
+    'emails-introduction',
+    undefined,
+    expect.objectContaining({ scrollTo: 'usage' })
   );
 };
 

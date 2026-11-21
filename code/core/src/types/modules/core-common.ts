@@ -227,6 +227,11 @@ export interface ModuleResolveConfig {
    * `import` included and placeholders such as Vite's `development|production` replaced.
    */
   conditions?: string[];
+  /**
+   * The conditions the builder applies to a CommonJS `require()`, with `require` in place of
+   * `import`. Defaults to `conditions`.
+   */
+  requireConditions?: string[];
 }
 
 export type PackageJson = PackageJsonFromTypeFest & Record<string, any>;

@@ -43,12 +43,12 @@ export const storySortToMain: Fix<StorySortToMainOptions> = {
   prompt: () =>
     `Move ${picocolors.cyan('parameters.options.storySort')} from preview to ${picocolors.cyan('storySorts')} in main?`,
 
-  transform: ({ result: { storySort, previewProblem } }) => [
+  transform: ({ previewConfigPath, result: { storySort, previewProblem } }) => [
     {
       filter: { kind: ['main'] },
       editConfig: (main) => {
         if (previewProblem) {
-          fail(previewProblem);
+          fail(`${previewProblem} in ${previewConfigPath}`);
         }
         const existing = main.inspect(['storySorts']);
         if (existing.kind === 'unreadable') {

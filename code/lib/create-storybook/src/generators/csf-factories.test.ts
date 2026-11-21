@@ -138,7 +138,7 @@ describe('native CLI templates', () => {
     ['renderers/react/template/cli/ts/Button.stories.ts', true],
     ['renderers/vue3/template/cli/ts/Button.stories.ts', true],
     ['renderers/web-components/template/cli/ts/Button.stories.ts', true],
-    ['frameworks/react-vite/template/cli/ts/Button.stories.ts', true],
+    ['frameworks/react-vite/template/cli/ts/Button.stories.tsx', true],
     ['frameworks/angular/template/cli/button.stories.ts', true],
     ['frameworks/sveltekit/template/cli/ts/Button.stories.svelte', true],
     ['renderers/preact/template/cli/Button.stories.jsx', false],

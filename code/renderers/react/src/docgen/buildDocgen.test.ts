@@ -115,6 +115,12 @@ describe('buildDocgenPayload', () => {
            * @returns {boolean} Whether the change was accepted.
            */
           onChange: (value: string, committed: boolean) => boolean;
+          /**
+           * Called when the value resets.
+           * @param {React.SyntheticEvent} event React's original event.
+           * @returns {void}
+           */
+          onReset: (event: React.SyntheticEvent) => void;
         }
         interface ButtonProps extends Callbacks {
           /** The button label. */
@@ -149,6 +155,10 @@ describe('buildDocgenPayload', () => {
             returns: { description: 'Whether the change was accepted.' },
           },
         },
+      });
+      expect(payload?.argTypes?.onReset.table?.jsDocTags).toEqual({
+        params: [{ name: 'event', description: "React's original event." }],
+        returns: { description: null },
       });
       expect(payload?.argTypes?.label.description).toBe('The button label.');
       expect(payload?.argTypes?.label.table?.jsDocTags).toBeUndefined();

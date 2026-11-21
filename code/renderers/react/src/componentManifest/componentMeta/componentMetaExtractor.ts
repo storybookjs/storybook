@@ -49,6 +49,7 @@ export interface PropItem {
   required: boolean;
   type: PropItemType;
   description: string;
+  // Args-table callback tags; component-level jsDocTags stores raw tags.
   jsDocTags?: JsDocTags;
   defaultValue: { value: string } | null;
   parent?: ParentType;

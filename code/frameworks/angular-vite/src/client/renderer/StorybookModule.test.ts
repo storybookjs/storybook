@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import type { NgModule, Type } from '@angular/core';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, Directive, EventEmitter, Input, Output, inject } from '@angular/core';
 import { describe, expect, it } from 'vitest';
 
 import { TestBed } from '@angular/core/testing';
@@ -292,6 +292,61 @@ describe('StorybookModule', () => {
         fixture.detectChanges();
 
         expect(fixture.nativeElement.querySelector('p#setterCallNb').innerHTML).toEqual('2');
+      });
+    });
+
+    describe('with host directive inputs', () => {
+      @Directive({ standalone: true })
+      class HostDirective {
+        @Input() value = 'unset';
+        @Input('directiveAlias') aliasedValue = 'unset';
+      }
+
+      @Component({
+        selector: 'host-inputs',
+        template:
+          '<p id="value">{{ directive.value }}</p><p id="alias">{{ directive.aliasedValue }}</p>',
+        hostDirectives: [
+          { directive: HostDirective, inputs: ['value', 'directiveAlias: publicValue'] },
+        ],
+      })
+      class HostComponent {
+        directive = inject(HostDirective);
+      }
+
+      @Component({
+        selector: 'inherited-host-inputs',
+        template:
+          '<p id="value">{{ directive.value }}</p><p id="alias">{{ directive.aliasedValue }}</p>',
+      })
+      class ChildComponent extends HostComponent {}
+
+      it.each([
+        { component: HostComponent, label: 'direct' },
+        { component: ChildComponent, label: 'inherited' },
+      ])('initializes and updates $label host directive inputs', async ({ component }) => {
+        const props = { value: 'initial', publicValue: 'initial alias' };
+        const storyProps$ = new BehaviorSubject<ICollection | undefined>(props);
+        const analyzedMetadata = new PropertyExtractor({}, component);
+        await analyzedMetadata.init();
+        const application = getApplication({
+          storyFnAngular: { props },
+          component,
+          targetSelector: 'my-selector',
+          analyzedMetadata,
+        });
+        const { fixture } = await configureTestingModule({
+          imports: [application],
+          providers: [storyPropsProvider(storyProps$)],
+        });
+        fixture.detectChanges();
+        expect(fixture.nativeElement.querySelector('#value').textContent).toEqual('initial');
+        expect(fixture.nativeElement.querySelector('#alias').textContent).toEqual('initial alias');
+
+        storyProps$.next({ value: 'updated', publicValue: 'updated alias' });
+        fixture.detectChanges();
+        expect(fixture.nativeElement.querySelector('#value').textContent).toEqual('updated');
+        expect(fixture.nativeElement.querySelector('#alias').textContent).toEqual('updated alias');
       });
     });
 

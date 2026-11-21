@@ -276,6 +276,7 @@ function logUpgradeResults(
   }
 
   const automigrationLinks = detectedAutomigrations
+    .filter((am) => am.fix.link)
     .filter((am) =>
       Object.entries(projectResults).some(
         ([_, resultData]) =>

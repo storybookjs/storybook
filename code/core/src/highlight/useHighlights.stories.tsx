@@ -5,12 +5,7 @@ import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 
 import preview from '../../../.storybook/preview.tsx';
 import { StoryContent } from './StoryContent.tsx';
-import {
-  HIGHLIGHT,
-  HIGHLIGHT_MENU_CLICK,
-  REMOVE_HIGHLIGHT,
-  SCROLL_INTO_VIEW,
-} from './constants.ts';
+import { HIGHLIGHT, HIGHLIGHT_MENU, REMOVE_HIGHLIGHT, SCROLL_INTO_VIEW } from './constants.ts';
 
 const highlight = (
   selectors: string[],
@@ -145,11 +140,22 @@ export const Selectable = meta.story({
     highlights: [{ selectors: ['div', 'input'], options: { menu: [] } }],
   },
   play: async () => {
+    const onMenuState = fn();
+    addons.getChannel().on(HIGHLIGHT_MENU, onMenuState);
+
     await new Promise((resolve) => setTimeout(resolve, 200));
     await userEvent.pointer({
       coords: { pageX: 470, pageY: 240 },
       keys: '[MouseLeft]',
     });
+
+    await waitFor(() => expect(onMenuState).toHaveBeenCalled());
+    const state = onMenuState.mock.calls.at(-1)?.[0];
+    expect(state.targets.length).toBeGreaterThan(0);
+    expect(state.coords).not.toBeNull();
+    expect(typeof state.coords.x).toBe('number');
+
+    addons.getChannel().off(HIGHLIGHT_MENU, onMenuState);
   },
 });
 
@@ -190,8 +196,8 @@ export const Menu = meta.story({
     ],
   },
   play: async ({ canvasElement }) => {
-    const onMenuClick = fn();
-    addons.getChannel().on(HIGHLIGHT_MENU_CLICK, onMenuClick);
+    const onMenuState = fn();
+    addons.getChannel().on(HIGHLIGHT_MENU, onMenuState);
     const clickAt = (element: Element) => {
       const { left, top, width, height } = element.getBoundingClientRect();
       return userEvent.pointer({
@@ -207,22 +213,16 @@ export const Menu = meta.story({
     await new Promise((resolve) => setTimeout(resolve, 200));
     await clickAt(canvasElement.querySelector('#inner')!);
 
-    const menu = await waitFor(() => {
-      const element = document.getElementById('storybook-highlights-menu')!;
-      expect(element.querySelector('.element-list button')).not.toBeNull();
-      return element;
-    });
-    await clickAt(menu.querySelector('.element-list button')!);
+    await waitFor(() => expect(onMenuState).toHaveBeenCalled());
+    const state = onMenuState.mock.calls.at(-1)?.[0];
+    expect(state.targets.length).toBeGreaterThan(0);
+    const target = state.targets.find(({ id }: { id: string }) => id === 'menu-highlight');
+    expect(target).toBeDefined();
+    expect(target.label).toContain('div');
+    // The preview only reports the target; menu content is rendered by the manager.
+    expect(document.getElementById('storybook-highlights-menu')).toBeNull();
 
-    const menuItem = await waitFor(() => within(menu).getByText('Insufficient color contrast'));
-    await clickAt(menuItem);
-
-    addons.getChannel().off(HIGHLIGHT_MENU_CLICK, onMenuClick);
-    await expect(onMenuClick).toHaveBeenCalledWith(
-      'menu-highlight',
-      'color-contrast',
-      expect.objectContaining({ selectors: ['div'] })
-    );
+    addons.getChannel().off(HIGHLIGHT_MENU, onMenuState);
   },
 });
 

@@ -1,6 +1,5 @@
 /* eslint-env browser */
 import { MIN_TOUCH_AREA_SIZE } from './constants.ts';
-import { type IconName, iconPaths } from './icons.ts';
 import type { Box, ClickEventDetails, Highlight, HighlightOptions } from './types.ts';
 
 const svgElements = 'svg,path,rect,circle,line,polyline,polygon,ellipse,text'.split(',');
@@ -45,21 +44,6 @@ export const createElement = (type: string, props: Record<string, any> = {}, chi
 
   return element;
 };
-
-export const createIcon = (name: IconName) =>
-  iconPaths[name] &&
-  createElement(
-    'svg',
-    { width: '14', height: '14', viewBox: '0 0 14 14', xmlns: 'http://www.w3.org/2000/svg' },
-    iconPaths[name].map((d) =>
-      createElement('path', {
-        fill: 'currentColor',
-        'fill-rule': 'evenodd',
-        'clip-rule': 'evenodd',
-        d,
-      })
-    )
-  );
 
 export const normalizeOptions = (options: HighlightOptions): Highlight => {
   const { menu, ...rest } = options;
@@ -173,19 +157,6 @@ export const mapBoxes = (elements: Map<HTMLElement, Highlight>): Box[] =>
     })
     .sort((a, b) => b.width * b.height - a.width * a.height);
 
-export const isOverMenu = (menuElement: HTMLElement, coordinates: { x: number; y: number }) => {
-  const menu = menuElement.getBoundingClientRect();
-  const { x, y } = coordinates;
-  return (
-    menu?.top &&
-    menu?.left &&
-    x >= menu.left &&
-    x <= menu.left + menu.width &&
-    y >= menu.top &&
-    y <= menu.top + menu.height
-  );
-};
-
 export const isTargeted = (
   box: Box,
   boxElement: HTMLElement,
@@ -211,44 +182,9 @@ export const isTargeted = (
   return x >= left && x <= left + width && y >= top && y <= top + height;
 };
 
-export const keepInViewport = (
-  element: HTMLElement,
-  targetCoordinates: { x: number; y: number },
-  options: { margin?: number; topOffset?: number; centered?: boolean } = {}
-) => {
-  const { x, y } = targetCoordinates;
-  const { margin = 5, topOffset = 0, centered = false } = options;
-  const { scrollX, scrollY, innerHeight: windowHeight, innerWidth: windowWidth } = window;
-
-  const top = Math.min(
-    element.style.position === 'fixed' ? y - scrollY : y,
-    windowHeight - element.clientHeight - margin - topOffset + scrollY
-  );
-
-  const leftOffset = centered ? element.clientWidth / 2 : 0;
-  const left =
-    element.style.position === 'fixed'
-      ? Math.max(Math.min(x - scrollX, windowWidth - leftOffset - margin), leftOffset + margin)
-      : Math.max(
-          Math.min(x, windowWidth - leftOffset - margin + scrollX),
-          leftOffset + margin + scrollX
-        );
-
-  Object.assign(element.style, {
-    ...(left !== x && { left: `${left}px` }),
-    ...(top !== y && { top: `${top}px` }),
-  });
-};
-
 export const showPopover = (element: HTMLElement) => {
   if (window.HTMLElement.prototype.hasOwnProperty('showPopover')) {
     element.showPopover();
-  }
-};
-
-export const hidePopover = (element: HTMLElement) => {
-  if (window.HTMLElement.prototype.hasOwnProperty('showPopover')) {
-    element.hidePopover();
   }
 };
 
@@ -263,3 +199,28 @@ export const getEventDetails = (target: Box): ClickEventDetails => ({
     tagName: target.element.tagName,
   },
 });
+
+/**
+ * A short, non-content label identifying an element (e.g. `div#id.class`), derived from the tag
+ * name, id and class names only. Used by the manager to render the highlight menu's element list
+ * without the preview sending renderable DOM content over the channel.
+ */
+export const getTargetLabel = (element: {
+  localName?: string;
+  tagName?: string;
+  id?: string;
+  classList?: ArrayLike<string>;
+}) => {
+  const tag = (element.localName || element.tagName || '').toLowerCase();
+  const id = element.id ? `#${element.id}` : '';
+  const classes = element.classList?.length
+    ? `.${Array.from(element.classList as ArrayLike<string>).join('.')}`
+    : '';
+  return `${tag}${id}${classes}`;
+};
+
+/** Menu groups containing at least one item applicable to the given selectors. */
+export const filterMenuGroups = (menu: Highlight['menu'], selectors: string[]): Highlight['menu'] =>
+  menu?.filter((group) =>
+    group.some((item) => !item.selectors || item.selectors.some((s) => selectors.includes(s)))
+  );

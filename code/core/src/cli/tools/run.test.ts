@@ -28,6 +28,7 @@ import { parseToolsetMethodId } from '../../shared/open-service/toolset-names.ts
 import { toCatalogEntry } from './sdk/catalog.ts';
 import {
   AttachUnavailableError,
+  createTools as createToolsSdk,
   ToolsRuntimeError,
   type AttachedTools,
   type LocalTools,
@@ -353,16 +354,43 @@ describe('local tools', () => {
     });
   });
 
-  it('threads a valid --port to the SDK host', async () => {
+  it('threads --host and --port to the SDK host', async () => {
     const { deps, createTools } = makeDeps();
 
     await runToolsCommand(
-      { toolset: 'docs', tool: 'list', tokens: [], target: { cwd: '/repo' }, port: '6006' },
+      {
+        toolset: 'docs',
+        tool: 'list',
+        tokens: [],
+        target: { cwd: '/repo', host: '::1' },
+        port: '6006',
+      },
       deps
     );
 
-    expect(createTools).toHaveBeenCalledWith(expect.objectContaining({ port: 6006 }));
+    expect(createTools).toHaveBeenCalledWith(expect.objectContaining({ port: 6006, host: '::1' }));
   });
+
+  it.each([
+    { host: '127.0.0.1', port: undefined, message: '--port' },
+    { host: '', port: '6006', message: 'Invalid host' },
+    { host: '127.0.0.1:80', port: '6006', message: 'Invalid host' },
+    { host: 'http://localhost/path', port: '6006', message: 'Invalid host' },
+  ])(
+    'rejects an invalid host target before discovery: $host / $port',
+    async ({ host, port, message }) => {
+      const attach = vi.fn();
+      const result = await runToolsCommand(
+        { toolset: 'docs', tool: 'list', tokens: [], target: { host }, port },
+        { createTools: (options) => createToolsSdk(options, { attach }) }
+      );
+
+      expect(result.exitCode).toBe(1);
+      expect(result.outcome).toEqual({ kind: 'intercept', reason: 'invalid-arguments' });
+      expect(result.output).toContain(message);
+      expect(attach).not.toHaveBeenCalled();
+    }
+  );
 
   it('preserves a port given directly on the target when no raw --port value exists', async () => {
     const { deps, createTools } = makeDeps();

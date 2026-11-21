@@ -30,6 +30,8 @@ export type CreateToolsOptions = {
   configDir?: string;
   /** Port of a running Storybook; a known port targets that instance without cwd or config dir. */
   port?: number;
+  /** Hostname from a running Storybook URL; requires `port` and disambiguates shared ports. */
+  host?: string;
   /** Defaults to `auto`. */
   mode?: ToolsMode;
   /** Whether the SDK may start a child host in the target project's own environment. */

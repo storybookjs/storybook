@@ -24,7 +24,7 @@ import { useStorybookMetadata } from './utils/metadata.ts';
 import { getSecurityHeadersMiddleware } from './utils/getSecurityHeadersMiddleware.ts';
 import { getMiddleware } from './utils/middleware.ts';
 import { openInBrowser } from './utils/open-browser/open-in-browser.ts';
-import { addLoopbackListener, getListenHost } from './utils/server-address.ts';
+import { getListenHost } from './utils/server-address.ts';
 import type { getServer } from './utils/server-init.ts';
 import { useStatics } from './utils/server-statics.ts';
 import { summarizeIndex } from './utils/summarizeIndex.ts';
@@ -173,15 +173,13 @@ export async function storybookDevServer(
     // makes Storybook accessible on LAN (e.g. conference WiFi). `localhost` is not used because
     // Node binds it to one address only, often ::1, which refuses clients that connect to 127.0.0.1.
     app.listen({ port: options.port, host: getListenHost(options.host) }, resolve);
-  }).then(() => addLoopbackListener(server));
+  });
 
   try {
     const [indexGenerator] = await Promise.all([storyIndexGeneratorPromise, listening]);
 
     if (indexGenerator && !options.ci && !options.smokeTest && options.open) {
-      // Origin checks only trust loopback hostnames, and 0.0.0.0 also listens on 127.0.0.1.
-      const url =
-        options.host && options.host !== '0.0.0.0' ? options.networkAddress : options.localAddress;
+      const url = options.localAddress;
       openInBrowser(options.previewOnly ? `${url}iframe.html?navigator=true` : url!).catch(() => {
         // the browser window could not be opened, this is non-critical, we just ignore the error
       });

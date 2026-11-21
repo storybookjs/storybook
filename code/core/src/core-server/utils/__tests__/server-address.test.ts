@@ -32,7 +32,7 @@ const mockedOs = vi.mocked(os);
 describe('getServerAddresses', () => {
   it('builds addresses with a specified host', () => {
     const { address, networkAddress } = getServerAddresses(9009, '192.168.89.89', 'http');
-    expect(address).toEqual('http://127.0.0.1:9009/');
+    expect(address).toEqual('http://192.168.89.89:9009/');
     expect(networkAddress).toEqual('http://192.168.89.89:9009/');
   });
 

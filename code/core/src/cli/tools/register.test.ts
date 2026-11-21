@@ -380,10 +380,15 @@ describe('tools-command telemetry', () => {
 
   it('hands a --port before the toolset name to the command as the raw port', async () => {
     const { program } = buildProgram();
-    await parse(program, ['tools', '--port', '6006', 'docs', 'list']);
+    await parse(program, ['tools', '--port', '6006', '--host', '::1', 'docs', 'list']);
 
     expect(runToolsCommand).toHaveBeenCalledWith(
-      expect.objectContaining({ toolset: 'docs', tool: 'list', port: '6006' })
+      expect.objectContaining({
+        toolset: 'docs',
+        tool: 'list',
+        port: '6006',
+        target: expect.objectContaining({ host: '::1' }),
+      })
     );
   });
 

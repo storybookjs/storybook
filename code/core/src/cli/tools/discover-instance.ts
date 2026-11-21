@@ -4,6 +4,7 @@ import { detectAgent } from '../../telemetry/detect-agent.ts';
 import { resolveStorybookConfigDir } from './config-dir.ts';
 import { readRegistry } from './instances/registry.ts';
 import { selectInstances } from './instances/resolve.ts';
+import { parseHost } from './sdk/parse-host.ts';
 import type { StorybookInstanceRecord } from './instances/types.ts';
 
 export type ToolsTarget = {
@@ -13,6 +14,8 @@ export type ToolsTarget = {
   configDir?: string;
   /** Port of a running Storybook; a known port targets that instance without cwd or config dir. */
   port?: number;
+  /** Hostname from the registered Storybook URL; requires a port. */
+  host?: string;
 };
 
 export type InstanceDiscovery = {
@@ -34,6 +37,7 @@ export async function discoverRunningInstance(
   target: ToolsTarget,
   deps: { registryDir?: string } = {}
 ): Promise<InstanceDiscovery> {
+  const host = parseHost(target.host, target.port);
   const cwd = resolve(target.cwd ?? process.cwd());
   const configDir = resolveStorybookConfigDir({ cwd, configDir: target.configDir });
 
@@ -43,6 +47,7 @@ export async function discoverRunningInstance(
     configDir,
     configDirExplicit: target.configDir != null,
     port: target.port,
+    host,
     agent: detectAgent()?.name,
   });
 

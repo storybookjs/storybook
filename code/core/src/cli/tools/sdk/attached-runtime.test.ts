@@ -104,6 +104,28 @@ afterEach(() => {
 });
 
 describe('bootstrapAttachedRuntime', () => {
+  it('rejects a shared port until a host selects one instance', async () => {
+    const other = { ...OTHER, port: RECORD.port, url: 'http://127.0.0.2:6006' };
+    const { deps } = makeRuntimeDeps([RECORD, other]);
+    const error = await rejectedAttachUnavailable(
+      bootstrapAttachedRuntime({ cwd: '/repo', port: 6006 }, deps)
+    );
+    expect(error.data.reason).toBe('ambiguous-instance');
+    expect(error.message).toContain('--host');
+    expect(error.message).toContain(other.url);
+    expect(deps.createNodeChannel).not.toHaveBeenCalled();
+    await bootstrapAttachedRuntime({ cwd: '/repo', port: 6006, host: '127.0.0.2' }, deps);
+    expect(deps.createNodeChannel).toHaveBeenCalledWith({ url: other.url, token: other.token });
+  });
+
+  it('reports a host mismatch without opening a channel', async () => {
+    const { deps } = makeRuntimeDeps([RECORD]);
+    const error = await rejectedAttachUnavailable(
+      bootstrapAttachedRuntime({ port: 6006, host: '127.0.0.2' }, deps)
+    );
+    expect(error.data.reason).toBe('host-mismatch');
+    expect(deps.createNodeChannel).not.toHaveBeenCalled();
+  });
   it('connects, enables delegated mode, then loads the instance configuration', async () => {
     const { connection, deps } = makeRuntimeDeps([RECORD]);
 

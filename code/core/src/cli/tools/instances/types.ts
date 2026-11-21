@@ -29,7 +29,7 @@ export const StorybookInstanceRecordSchema = v.object({
    * records written by Storybooks older than 10.5 lack it.
    */
   configDir: v.optional(v.string()),
-  url: v.string(),
+  url: v.pipe(v.string(), v.url()),
   port: v.pipe(v.number(), v.minValue(1), v.maxValue(65535), v.integer()),
   /**
    * Token authenticating clients against the instance's WebSocket channel. Optional: records

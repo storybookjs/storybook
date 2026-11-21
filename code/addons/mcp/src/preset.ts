@@ -89,7 +89,9 @@ export const experimental_devServer: PresetPropertyFn<
   });
 
   const basePath = options.basePath ?? '/';
-  const origin = `http://localhost:${options.port}`;
+  const origin = options.localAddress
+    ? new URL(options.localAddress).origin
+    : `http://localhost:${options.port}`;
   const baseUrl = toBaseUrl(origin, basePath);
   logger.debug(`MCP server base URL: ${baseUrl}`);
   const endpoint = addonOptions.endpoint ?? DEFAULT_MCP_ENDPOINT;

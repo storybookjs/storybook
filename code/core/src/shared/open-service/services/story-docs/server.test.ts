@@ -1,11 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 
 import { STORY_INDEX_INVALIDATED } from 'storybook/internal/core-events';
+import { logger } from 'storybook/internal/node-logger';
 
 import { getChannel } from '../../../../channels/channel-slot.ts';
 import { createTestChannel, type SpiedTestChannel } from '../../../../channels/test-channel.ts';
 import type { IndexEntry, StoryIndex } from '../../../../types/modules/indexer.ts';
-import { clearRegistry, getService } from '../../server.ts';
+import { buildStaticFiles, clearRegistry, getService } from '../../server.ts';
 import { SERVICE_ENTRY, type EntryPayload } from '../../service-channel.ts';
 import { serviceRegistryApi } from '../../service-registry.ts';
 import { createServiceRuntime } from '../../service-runtime.ts';
@@ -27,6 +28,8 @@ const buttonTemplate = (
   ' />',
 ];
 const vegaTemplate: SnippetTemplate = ['<Vega', { kind: 'attrs', spread: true, text: '' }, ' />'];
+
+vi.mock('storybook/internal/node-logger', { spy: true });
 
 afterEach(() => {
   clearRegistry();
@@ -79,6 +82,38 @@ describe('story-docs open service', () => {
     await expect(service.commands.extractStoryDocs({ id: 'button' })).resolves.toEqual(payload);
     expect(service.queries.storyDocs.get({ id: 'button' })).toEqual(payload);
     expect(provider).toHaveBeenCalledWith({ entry });
+  });
+
+  it('builds an error payload into the static snapshot when the provider throws', async () => {
+    vi.mocked(logger.warn).mockImplementation(() => {});
+    registerStoryDocsService({
+      getIndex: makeGetIndex([
+        makeStoryEntry('button--primary', 'Button'),
+        makeStoryEntry('card--default', 'Card'),
+      ]),
+      storyDocsProvider: async ({ entry }) => {
+        if (entry.title === 'Button') {
+          throw new Error('provider blew up');
+        }
+        return makeStoryDocsPayload({ id: 'card', name: 'Card', path: entry.importPath });
+      },
+    });
+
+    const store = await buildStaticFiles();
+
+    expect(store['core/story-docs/button.json']).toEqual({
+      components: {
+        button: makeStoryDocsPayload({
+          error: { name: 'Error', message: 'provider blew up' },
+        }),
+      },
+    });
+    expect(store['core/story-docs/card.json']).toEqual({
+      components: {
+        card: makeStoryDocsPayload({ id: 'card', name: 'Card', path: './card.stories.tsx' }),
+      },
+    });
+    expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('provider blew up'));
   });
 
   it('keeps a template only while it prints the snippet and has the shape of one', async () => {
@@ -639,12 +674,36 @@ describe('story-docs open service', () => {
       await changeButtonStoryFile(() => {
         entries = original;
       });
-      await vi.waitFor(() => expect(provider).toHaveBeenCalledTimes(2));
-      expect(emitted.at(-1)).toBeUndefined();
+      await vi.waitFor(() =>
+        expect(emitted.at(-1)).toEqual(
+          makeStoryDocsPayload({ error: { name: 'Error', message: 'The docgen worker exited' } })
+        )
+      );
       await changeButtonStoryFile(() => {});
 
       await vi.waitFor(() => expect(emitted.at(-1)).toEqual(makeStoryDocsPayload()));
       unsubscribe();
+    });
+
+    it('stores no error payload for a component deleted while its first extraction fails', async () => {
+      let entries = [makeStoryEntry('button--primary', 'Button')];
+      const getIndex = () => makeGetIndex(entries)();
+      const firstExtraction = Promise.withResolvers<StoryDocsPayload>();
+      const provider = vi
+        .fn<StoryDocsProvider>(async () => makeStoryDocsPayload())
+        .mockReturnValueOnce(firstExtraction.promise);
+      const service = registerStoryDocsService({ getIndex, storyDocsProvider: provider });
+      subscribeStoryDocsToModuleGraphChanges({ channel, getIndex, workingDir: process.cwd() });
+      const extracting = service.commands.extractStoryDocs({ id: 'button' });
+      await vi.waitFor(() => expect(provider).toHaveBeenCalledTimes(1));
+
+      await changeButtonStoryFile(() => {
+        entries = [];
+      });
+      firstExtraction.reject(new Error('The docgen worker exited'));
+
+      await expect(extracting).rejects.toThrow();
+      expect(service.queries.storyDocs.get({ id: 'button' })).toBeUndefined();
     });
 
     it('gives an open subscriber the payload when a file deleted during its first extraction is restored', async () => {

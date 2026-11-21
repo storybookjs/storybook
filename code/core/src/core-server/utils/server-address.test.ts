@@ -123,6 +123,49 @@ describe('getServerPort', () => {
     }
   });
 
+  it('should probe 127.0.0.1 too when the network interfaces cannot be read and a custom host is set', async () => {
+    const taken = net.createServer();
+    await new Promise<void>((resolve) => taken.listen(0, '127.0.0.1', resolve));
+    const takenPort = (taken.address() as net.AddressInfo).port;
+    vi.mocked(os.networkInterfaces).mockImplementationOnce(() => {
+      throw new Error('uv_interface_addresses returned Unknown system error 1');
+    });
+
+    try {
+      const result = await getServerPort(takenPort, { host: 'localhost' });
+
+      expect(result).not.toBe(takenPort);
+    } finally {
+      taken.close();
+    }
+  });
+
+  it('should try port 65535 when the network interfaces cannot be read', async () => {
+    vi.mocked(os.networkInterfaces).mockImplementationOnce(() => {
+      throw new Error('uv_interface_addresses returned Unknown system error 1');
+    });
+    const listen = vi.spyOn(net.Server.prototype, 'listen').mockImplementation(function (
+      this: net.Server,
+      ...args: unknown[]
+    ) {
+      const callback = args.find((arg) => typeof arg === 'function') as () => void;
+      vi.spyOn(this, 'address').mockReturnValue({
+        address: '127.0.0.1',
+        family: 'IPv4',
+        port: 65535,
+      });
+      process.nextTick(callback);
+      return this;
+    });
+
+    try {
+      await expect(getServerPort(65535, { exactPort: true })).resolves.toBe(65535);
+      expect(listen).toHaveBeenCalledWith(65535, '127.0.0.1', expect.any(Function));
+    } finally {
+      listen.mockRestore();
+    }
+  });
+
   it('should reject when the network interfaces cannot be read and no port can be bound', async () => {
     vi.mocked(os.networkInterfaces).mockImplementationOnce(() => {
       throw new Error('uv_interface_addresses returned Unknown system error 1');

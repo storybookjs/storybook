@@ -83,7 +83,11 @@ const tryListen = async (port: number, hosts: string[]) => {
         server.listen(freePort, host, resolve);
       });
       servers.push(server);
-      freePort = (server.address() as AddressInfo).port;
+      const bound = server.address() as AddressInfo;
+      freePort = bound.port;
+      if (COVERS_LOOPBACK.has(bound.address)) {
+        break;
+      }
     }
     return freePort;
   } finally {

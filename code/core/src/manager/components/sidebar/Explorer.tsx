@@ -39,7 +39,13 @@ export const Explorer: FC<ExplorerProps> = React.memo(function Explorer({
       className={isBrowsing ? undefined : 'sb-sr-only'}
       ref={containerRef}
       id="storybook-explorer-tree"
-      style={{ flex: '1 1 auto', minHeight: 0, display: 'flex', flexDirection: 'column' }}
+      style={{
+        flex: '1 1 auto',
+        minHeight: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        visibility: isHidden ? 'hidden' : undefined,
+      }}
       {...landmarkProps}
       {...restProps}
     >

@@ -3,7 +3,7 @@ import React from 'react';
 import type { IndexHash } from 'storybook/manager-api';
 import { expect } from 'storybook/test';
 
-import { searchItem } from '../../utils/tree.ts';
+import { recentlyOpenedItem, searchItem } from '../../utils/tree.ts';
 import { IconSymbols } from './IconSymbols.tsx';
 import { SearchResults } from './SearchResults.tsx';
 import { mockDataset } from './mockdata.ts';
@@ -64,9 +64,13 @@ const results = stories
     return { item, matches: [{ value: item.name, indices: [[i, i + 1]] }], score: 0 };
   });
 
-const recents = stories
-  .filter((item) => item.type === 'component') // even though we track stories, we display them grouped by component
-  .map((story) => ({ item: story, matches: [], score: 0 }));
+const internalIndex = mockDataset.withRoot as IndexHash;
+const recents = Object.keys(internalIndex)
+  .map((storyId) =>
+    recentlyOpenedItem({ storyId, refId: 'internal' }, { id: 'internal', index: internalIndex })
+  )
+  .filter((item): item is SearchItem => item !== undefined)
+  .map((item) => ({ item, matches: [], score: 0 }));
 
 // We need this to prevent react key warnings
 const passKey: any = (props = { key: '' }) => ({ key: props.key });
@@ -74,6 +78,7 @@ const passKey: any = (props = { key: '' }) => ({ key: props.key });
 export const searching = {
   query: 'query',
   results,
+  isRecentlyOpened: false,
   closeMenu: () => {},
   getMenuProps: passKey,
   getItemProps: passKey,
@@ -86,6 +91,7 @@ export const noResults = {
 export const lastViewed = {
   query: '',
   results: recents,
+  isRecentlyOpened: true,
   closeMenu: () => {},
   getMenuProps: passKey,
   getItemProps: passKey,
@@ -98,8 +104,7 @@ export const NoResults = () => <SearchResults {...noResults} />;
 
 export const LastViewed = () => <SearchResults {...lastViewed} />;
 
-// A recently opened story lists its parent, which is a group when the component has nested
-// stories. Every entry type shows its own icon, as in the tree.
+// Every entry type shows its own icon, as in the tree.
 const recentsOfEveryType = stories
   .filter((item) => ['group', 'component', 'docs', 'story'].includes(item.type))
   .map((item) => ({ item, matches: [], score: 0 }));

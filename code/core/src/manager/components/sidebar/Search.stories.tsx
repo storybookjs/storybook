@@ -1,6 +1,6 @@
 import React from 'react';
 
-import type { Meta, StoryFn } from '@storybook/react-vite';
+import type { Decorator, Meta, StoryFn } from '@storybook/react-vite';
 
 import type { API } from 'storybook/manager-api';
 import { ManagerContext } from 'storybook/manager-api';
@@ -111,6 +111,122 @@ EscapeWithQueryStaysInSearch.play = async ({ canvasElement }) => {
 
   await userEvent.keyboard('{Escape}');
   await waitFor(() => expect(escapeAbove).toHaveBeenCalledOnce());
+};
+
+const selectStory = fn().mockName('selectStory');
+
+// Renders the search results only while they are open, as the sidebar does.
+const renderOpenResults: SearchProps['children'] = ({
+  query,
+  results,
+  isSearchResultRendered,
+  closeMenu,
+  getMenuProps,
+  getItemProps,
+  highlightedIndex,
+}) =>
+  isSearchResultRendered ? (
+    <SearchResults
+      query={query}
+      results={results}
+      closeMenu={closeMenu}
+      getMenuProps={getMenuProps}
+      getItemProps={getItemProps}
+      highlightedIndex={highlightedIndex}
+    />
+  ) : null;
+
+const SearchWithResults: StoryFn = () => <Search {...baseProps}>{renderOpenResults}</Search>;
+
+const selectStoryContext = {
+  api: {
+    getShortcutKeys: () => ({ search: ['/'] }),
+    selectStory,
+    resolveStory: () => undefined,
+    emit: () => {},
+  },
+} as unknown as React.ContextType<typeof ManagerContext>;
+
+const withSelectStoryApi: Decorator = (storyFn) => (
+  <ManagerContext.Provider value={selectStoryContext}>{storyFn()}</ManagerContext.Provider>
+);
+
+/**
+ * Selecting a search result opens it and keeps both the query and the results, so the next result
+ * is one click away. Clearing the query removes them.
+ */
+export const KeepsResultsAfterSelecting: StoryFn = SearchWithResults.bind({});
+KeepsResultsAfterSelecting.decorators = [withSelectStoryApi];
+KeepsResultsAfterSelecting.play = async ({ canvasElement }) => {
+  selectStory.mockClear();
+  const canvas = within(canvasElement);
+  const input = canvas.getByRole('searchbox');
+
+  await userEvent.type(input, 'Default');
+  const [firstResult] = await canvas.findAllByRole('option');
+  const firstResultId = firstResult.getAttribute('data-id');
+  await userEvent.click(firstResult);
+
+  await waitFor(() => expect(selectStory).toHaveBeenCalledOnce());
+  await waitFor(() => expect(input).not.toHaveFocus());
+  expect(input).toHaveValue('Default');
+  expect(canvasElement.querySelector(`[data-id="${firstResultId}"]`)).toBeInTheDocument();
+
+  await userEvent.click(canvas.getByRole('button', { name: 'Clear search' }));
+  await waitFor(() => expect(input).toHaveValue(''));
+  expect(canvas.queryAllByRole('option')).toHaveLength(0);
+};
+
+/**
+ * "Show more" stays expanded after selecting a result, so a result beyond the first 50 stays in the
+ * list once it is opened. A new query collapses the list again.
+ */
+export const KeepsShowMoreAfterSelecting: StoryFn = SearchWithResults.bind({});
+KeepsShowMoreAfterSelecting.decorators = [withSelectStoryApi];
+KeepsShowMoreAfterSelecting.play = async ({ canvasElement }) => {
+  selectStory.mockClear();
+  const canvas = within(canvasElement);
+  const input = canvas.getByRole('searchbox');
+
+  await userEvent.type(input, 'Default');
+  await userEvent.click(await canvas.findByRole('option', { name: /more results/ }));
+  await waitFor(() => expect(canvas.getAllByRole('option').length).toBeGreaterThan(51));
+
+  const laterResult = canvas.getAllByRole('option')[60];
+  const laterResultId = laterResult.getAttribute('data-id');
+  await userEvent.click(laterResult);
+
+  await waitFor(() => expect(selectStory).toHaveBeenCalledOnce());
+  await waitFor(() => expect(input).not.toHaveFocus());
+  expect(canvasElement.querySelector(`[data-id="${laterResultId}"]`)).toBeInTheDocument();
+  expect(canvas.queryByRole('option', { name: /more results/ })).not.toBeInTheDocument();
+
+  await userEvent.type(input, '{backspace}');
+  await waitFor(() =>
+    expect(canvas.getByRole('option', { name: /more results/ })).toBeInTheDocument()
+  );
+};
+
+/**
+ * A query of only spaces lists the recently opened items, as an empty query does. Opening one
+ * returns to the tree view, because the trimmed query is empty.
+ */
+export const RecentlyOpenedFromSpacesOnlyQuery: StoryFn = () => (
+  <Search {...baseProps} getLastViewed={getLastViewed}>
+    {renderOpenResults}
+  </Search>
+);
+RecentlyOpenedFromSpacesOnlyQuery.decorators = [withSelectStoryApi];
+RecentlyOpenedFromSpacesOnlyQuery.play = async ({ canvasElement }) => {
+  selectStory.mockClear();
+  const canvas = within(canvasElement);
+
+  await userEvent.type(canvas.getByRole('searchbox'), '  ');
+  const [firstRecentItem] = await canvas.findAllByRole('option');
+  await userEvent.click(firstRecentItem);
+
+  await waitFor(() => expect(selectStory).toHaveBeenCalledOnce());
+  await waitFor(() => expect(canvas.queryAllByRole('option')).toHaveLength(0));
 };
 
 export const ShortcutsDisabled: StoryFn = () => (

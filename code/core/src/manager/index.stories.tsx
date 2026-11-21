@@ -179,6 +179,53 @@ export const FullScreen = meta.story({
   },
 });
 
+export const SidebarResizeAfterFullscreen = meta.story({
+  play: async ({ canvas, userEvent, step }) => {
+    const handle = await canvas.findByRole('separator', { name: 'Sidebar resize handle' });
+    const initialWidth = Number(handle.getAttribute('aria-valuenow'));
+
+    await step('Resize the sidebar with the keyboard', async () => {
+      handle.focus();
+      await userEvent.keyboard('{ArrowRight}');
+      await waitFor(() => expect(handle).toHaveAttribute('aria-valuenow', `${initialWidth + 10}`));
+    });
+
+    await step('Enter and leave fullscreen', async () => {
+      await userEvent.click(await canvas.findByRole('button', { name: /Enter full screen/i }));
+      await waitFor(() => expect(handle).not.toBeInTheDocument());
+      await userEvent.click(await canvas.findByRole('button', { name: /Exit full screen/i }));
+    });
+
+    const restoredHandle = await canvas.findByRole('separator', { name: 'Sidebar resize handle' });
+
+    await step('Resize the restored sidebar with the mouse', async () => {
+      await expect(restoredHandle).toHaveAttribute('aria-valuenow', `${initialWidth + 10}`);
+
+      const { x, y, width, height } = restoredHandle.getBoundingClientRect();
+      const start = { clientX: x + width / 2, clientY: y + height / 2 };
+      await userEvent.pointer([
+        { keys: '[MouseLeft>]', target: restoredHandle, coords: start },
+        { coords: { ...start, clientX: start.clientX + 40 } },
+        { keys: '[/MouseLeft]' },
+      ]);
+      await waitFor(() =>
+        expect(Number(restoredHandle.getAttribute('aria-valuenow'))).toBeGreaterThan(
+          initialWidth + 10
+        )
+      );
+    });
+
+    await step('Resize the restored sidebar with the keyboard', async () => {
+      const draggedWidth = Number(restoredHandle.getAttribute('aria-valuenow'));
+      restoredHandle.focus();
+      await userEvent.keyboard('{ArrowRight}');
+      await waitFor(() =>
+        expect(restoredHandle).toHaveAttribute('aria-valuenow', `${draggedWidth + 10}`)
+      );
+    });
+  },
+});
+
 export const ConnectionLost = meta.story({
   play: async () => {
     channel.emit(CHANNEL_WS_DISCONNECT, { code: 1006 });

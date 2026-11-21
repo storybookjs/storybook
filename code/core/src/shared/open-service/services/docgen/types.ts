@@ -37,6 +37,12 @@ export interface DocgenPayload {
   /** CSF story file import path from the index entry (same as component manifest `path`). */
   path: string;
   description?: string;
+  /**
+   * Markdown the Docs `Description` block shows instead of `description`, for content that belongs
+   * on the docs page but not in the description other consumers read (for example `@example`
+   * blocks, which the manifest already renders from `jsDocTags`).
+   */
+  docsDescription?: string;
   summary?: string;
   jsDocTags: DocgenJsDocTags;
   /** Renderer-converted argTypes derived from integration-specific docgen data at write time. */

@@ -168,7 +168,7 @@ const Result: FC<
   SearchResult & {
     isHighlighted: boolean;
   } & React.DetailedHTMLProps<React.LiHTMLAttributes<HTMLLIElement>, HTMLLIElement>
-> = React.memo(function Result({ item, matches, onClick, ...props }) {
+> = React.memo(function Result({ item, matches, onClick, lastViewedStoryId, ...props }) {
   const theme = useTheme();
   const click: MouseEventHandler<HTMLLIElement> = useCallback(
     (event) => {
@@ -182,12 +182,12 @@ const Result: FC<
   useEffect(() => {
     if (api && props.isHighlighted && item.type === 'component') {
       api.emit(PRELOAD_ENTRIES, {
-        ids: [item.children[0]],
+        ids: [lastViewedStoryId ?? item.children[0]],
         source: 'search',
         options: { target: item.refId },
       });
     }
-  }, [api, props.isHighlighted, item]);
+  }, [api, props.isHighlighted, item, lastViewedStoryId]);
 
   const nameMatch = matches.find((match: Match) => match.key === 'name');
   const pathMatches = matches.filter((match: Match) => match.key === 'path');
@@ -269,13 +269,14 @@ export const SearchResults: FC<{
     const currentTarget = event.currentTarget as HTMLElement;
     const storyId = currentTarget.getAttribute('data-id');
     const refId = currentTarget.getAttribute('data-refid');
+    const lastViewedStoryId = currentTarget.getAttribute('data-last-viewed-id');
     // @ts-expect-error (non strict)
     const item = api.resolveStory(storyId, refId === 'storybook_internal' ? undefined : refId);
 
     if (item?.type === 'component') {
       api.emit(PRELOAD_ENTRIES, {
         // @ts-expect-error (TODO)
-        ids: [item.isLeaf ? item.id : item.children[0]],
+        ids: [lastViewedStoryId ?? (item.isLeaf ? item.id : item.children[0])],
         source: 'search',
         options: { target: refId },
       });
@@ -335,6 +336,7 @@ export const SearchResults: FC<{
             key={key}
             data-id={result.item.id}
             data-refid={result.item.refId}
+            data-last-viewed-id={result.lastViewedStoryId}
             onMouseOver={mouseOverHandler}
             className="search-result-item"
           />

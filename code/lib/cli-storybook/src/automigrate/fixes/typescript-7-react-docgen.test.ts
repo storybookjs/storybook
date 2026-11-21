@@ -19,6 +19,7 @@ const packageManagerWith = (dependencies: Record<string, string>) =>
   ({
     isDependencyInstalled: (name: string) => name in dependencies,
     getDeclaredVersionSpecifier: async (name: string) => dependencies[name] ?? null,
+    getNearestDeclaredRange: (name: string) => dependencies[name] ?? null,
     addDependencies: vi.fn().mockResolvedValue(undefined),
   }) as unknown as JsPackageManager;
 

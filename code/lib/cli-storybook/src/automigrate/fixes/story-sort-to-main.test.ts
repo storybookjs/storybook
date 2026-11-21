@@ -97,6 +97,58 @@ describe('story-sort-to-main', () => {
     );
   });
 
+  it('names the preview file when the preview blocks the edit', async () => {
+    const main = `export default { stories: [] }`;
+    const preview = `export default { [key]: { options: { storySort: { order: ['Intro'] } } } }`;
+    const migrated = await migrate(main, preview);
+
+    expect(migrated.failures).toEqual([
+      {
+        file: mainConfigPath,
+        kind: 'main',
+        message: expect.stringContaining(`Cannot automigrate storySort from ${previewConfigPath}:`),
+      },
+    ]);
+    expect(migrated.main).toBe(main);
+    expect(migrated.preview).toBe(preview);
+  });
+
+  it('names the preview file when storySort is not statically readable', async () => {
+    const main = `export default { stories: [] }`;
+    const preview = `export default { parameters: { options: { storySort: someVariable } } }`;
+    const migrated = await migrate(main, preview);
+
+    expect(migrated.failures).toEqual([
+      {
+        file: mainConfigPath,
+        kind: 'main',
+        message: expect.stringContaining(
+          `Cannot automigrate storySort from ${previewConfigPath}: storySort must be a statically readable object or array.`
+        ),
+      },
+    ]);
+    expect(migrated.main).toBe(main);
+    expect(migrated.preview).toBe(preview);
+  });
+
+  it('does not name the preview when the main config already defines storySorts', async () => {
+    const migrated = await migrate(
+      `export default { stories: [], storySorts: [{ order: ['Existing'] }] }`,
+      legacy
+    );
+
+    expect(migrated.failures).toHaveLength(1);
+    expect(migrated.failures[0].message).not.toContain(previewConfigPath);
+  });
+
+  it('moves storySort from the #37381 fixture: a computed key inside parameters, next to options', async () => {
+    await expectMoved(
+      `export default { stories: [] }`,
+      `export default { parameters: { [SOME_CONST]: 'value', options: { storySort: { order: ['A'] } } } }`,
+      { order: ['A'] }
+    );
+  });
+
   it('moves a literal object and keeps unrelated configuration', async () => {
     const { preview } = await expectMoved(
       `export default { stories: ['./src/**/*.stories.ts'] }`,

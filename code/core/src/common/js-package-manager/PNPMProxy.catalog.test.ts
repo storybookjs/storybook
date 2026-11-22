@@ -26,6 +26,15 @@ const WORKSPACE_YAML = '/root/pnpm-workspace.yaml';
 
 const writtenYaml = () => vol.toJSON()[WORKSPACE_YAML] as string;
 
+const FOUR_SPACE_YAML = `packages:
+    - "apps/*"
+
+catalog:
+    # Storybook
+    "@storybook/react-vite": ^10.6.1
+    storybook: ^10.6.1
+`;
+
 describe('PNPMProxy catalogs', () => {
   let pnpmProxy: PNPMProxy;
 
@@ -237,14 +246,16 @@ describe('PNPMProxy catalogs', () => {
       expect(writtenYaml()).toContain('"@vitest/coverage-v8": ^3.2.0');
     });
 
-    it('reuses the anchor catalog entry format instead of the resolved exact version', () => {
+    it('adds the catalog entry with the same version range and indentation as the anchor', () => {
       vi.spyOn(pnpmProxy, 'getAllDependencies').mockReturnValue({ vitest: 'catalog:' });
-      vol.fromJSON({ [WORKSPACE_YAML]: 'catalog:\n  vitest: ^3.2.0\n' });
+      vol.fromJSON({ [WORKSPACE_YAML]: 'catalog:\n    vitest: ^3.2.0\n' });
 
       // 3.2.4 is the installed version; the catalog entry should keep the user's range style.
       pnpmProxy.applyVersionToRelatedPackages(['@vitest/coverage-v8'], '3.2.4', 'vitest');
 
-      expect(writtenYaml()).toContain('"@vitest/coverage-v8": ^3.2.0');
+      expect(writtenYaml()).toBe(
+        ['catalog:', '    vitest: ^3.2.0', '    "@vitest/coverage-v8": ^3.2.0', ''].join('\n')
+      );
     });
 
     it('does not override an entry the user already pinned', () => {
@@ -329,6 +340,123 @@ describe('PNPMProxy catalogs', () => {
         '# Storybook\ncatalog:\n  storybook: ^11.0.0\ncatalogs:\n  sb:\n    "@storybook/react-vite": 11.0.0\n'
       );
     });
+
+    it('changes only the upgraded entries of a workspace file indented by four spaces', () => {
+      vol.fromJSON({ [WORKSPACE_YAML]: FOUR_SPACE_YAML });
+
+      pnpmProxy.writeCatalogUpgrades(['storybook@11.0.0', '@storybook/react-vite@11.0.0'], {
+        storybook: 'catalog:',
+        '@storybook/react-vite': 'catalog:',
+      });
+
+      expect(writtenYaml()).toBe(FOUR_SPACE_YAML.replaceAll('^10.6.1', '^11.0.0'));
+    });
+
+    it.each([
+      {
+        name: 'next to a comment indented deeper than the entries',
+        inputLines: [
+          'catalog:',
+          '  storybook: ^10.6.1',
+          '      # shared with packages/ui',
+          '  vitest: ^3.2.0',
+          '',
+        ],
+        expectedLines: [
+          'catalog:',
+          '  storybook: ^11.0.0 # shared with packages/ui',
+          '  vitest: ^3.2.0',
+          '',
+        ],
+      },
+      {
+        name: 'next to a bracketed list split across lines',
+        inputLines: [
+          'packages: [',
+          '    "packages/*",',
+          '    "apps/*",',
+          ']',
+          'catalog:',
+          '  storybook: ^10.6.1',
+          '  vitest: ^3.2.0',
+          '',
+        ],
+        expectedLines: [
+          'packages: [ "packages/*", "apps/*" ]',
+          'catalog:',
+          '  storybook: ^11.0.0',
+          '  vitest: ^3.2.0',
+          '',
+        ],
+      },
+      {
+        name: 'next to a shorter list indented by one space',
+        inputLines: [
+          'packages:',
+          ' - "packages/*"',
+          'catalog:',
+          '  storybook: ^10.6.1',
+          '  vitest: ^3.2.0',
+          '',
+        ],
+        expectedLines: [
+          'packages:',
+          '  - "packages/*"',
+          'catalog:',
+          '  storybook: ^11.0.0',
+          '  vitest: ^3.2.0',
+          '',
+        ],
+      },
+      {
+        name: 'next to a longer list written flush with its key',
+        inputLines: [
+          'packages:',
+          '- "a"',
+          '- "b"',
+          '- "c"',
+          'catalog:',
+          '  storybook: ^10.6.1',
+          '  vitest: ^3.2.0',
+          '',
+        ],
+        expectedLines: [
+          'packages:',
+          '  - "a"',
+          '  - "b"',
+          '  - "c"',
+          'catalog:',
+          '  storybook: ^11.0.0',
+          '  vitest: ^3.2.0',
+          '',
+        ],
+      },
+      {
+        name: 'under top-level keys that are indented too',
+        inputLines: ['  catalog:', '    storybook: ^10.6.1', '    vitest: ^3.2.0', ''],
+        expectedLines: ['catalog:', '  storybook: ^11.0.0', '  vitest: ^3.2.0', ''],
+      },
+    ])('keeps the two-space indentation of entries $name', ({ inputLines, expectedLines }) => {
+      vol.fromJSON({ [WORKSPACE_YAML]: inputLines.join('\n') });
+
+      pnpmProxy.writeCatalogUpgrades(['storybook@11.0.0'], { storybook: 'catalog:' });
+
+      expect(writtenYaml()).toBe(expectedLines.join('\n'));
+    });
+
+    it('falls back to two spaces to preserve the text of a block scalar', () => {
+      const source = `catalog:
+    storybook: ^10.6.1
+notes: |2
+      indented
+     text
+`;
+      vol.fromJSON({ [WORKSPACE_YAML]: source });
+
+      pnpmProxy.writeCatalogUpgrades(['storybook@11.0.0'], { storybook: 'catalog:' });
+
+      expect(writtenYaml()).toBe(source.replace('    storybook: ^10.6.1', '  storybook: ^11.0.0'));
+    });
   });
 
   describe('upgradeDeclaredDependency', () => {
@@ -398,6 +526,17 @@ describe('PNPMProxy catalogs', () => {
         '# ws\npackages:\n  - "packages/*"\nallowBuilds:\n  esbuild: true\n'
       );
       expect(vol.toJSON()[createdYaml()]).toBeUndefined();
+    });
+
+    it.each([
+      ['a workspace with a catalog', FOUR_SPACE_YAML],
+      ['a workspace with only a packages list', 'packages:\n    - "apps/*"\n'],
+    ])('adds `allowBuilds` with the indentation of %s', (_, yaml) => {
+      vol.fromJSON({ [WORKSPACE_YAML]: yaml });
+
+      allowBuildScripts();
+
+      expect(writtenYaml()).toBe(`${yaml}allowBuilds:\n    esbuild: true\n`);
     });
 
     it('does not create a workspace file for readers that only look up catalogs', async () => {

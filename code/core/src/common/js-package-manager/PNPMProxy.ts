@@ -12,7 +12,7 @@ import * as find from 'empathic/find';
 import type { ResultPromise } from 'execa';
 import { coerce, gte, prerelease } from 'semver';
 import { dedent } from 'ts-dedent';
-import { Document, isMap, parseDocument } from 'yaml';
+import { Document, isCollection, isMap, parseDocument } from 'yaml';
 
 import type { ExecuteCommandOptions } from '../utils/command.ts';
 import { executeCommand, executeCommandSync } from '../utils/command.ts';
@@ -370,7 +370,35 @@ export class PNPMProxy extends JsPackageManager {
 
   #writeWorkspaceYaml({ path, doc }: { path: string; doc: Document }): void {
     logger.debug(`Writing pnpm workspace file ${path}`);
-    writeFileSync(path, doc.toString(), 'utf8');
+    writeFileSync(path, this.#stringifyKeepingIndent(doc), 'utf8');
+  }
+
+  #stringifyKeepingIndent(doc: Document): string {
+    const root = isMap(doc.contents) ? doc.contents : undefined;
+    const rootIndent = root?.srcToken?.type === 'block-map' ? root.srcToken.indent : 0;
+    let indent = 2;
+    let largestBlockSize = 0;
+
+    // The YAML writer accepts one indent width even when the workspace file mixes styles.
+    for (const { value } of root?.items ?? []) {
+      const token = isCollection(value) ? value.srcToken : undefined;
+      const isBlock = token?.type === 'block-map' || token?.type === 'block-seq';
+      if (isBlock && token.indent > rootIndent && token.items.length > largestBlockSize) {
+        largestBlockSize = token.items.length;
+        indent = token.indent - rootIndent;
+      }
+    }
+
+    const twoSpaceYaml = doc.toString();
+    if (indent === 2) {
+      return twoSpaceYaml;
+    }
+
+    // Some strings change value when written at another indent width.
+    const indentedYaml = doc.toString({ indent });
+    const reparsed = parseDocument(indentedYaml);
+    const canKeepIndent = reparsed.errors.length === 0 && reparsed.toString() === twoSpaceYaml;
+    return canKeepIndent ? indentedYaml : twoSpaceYaml;
   }
 
   // pnpm reads the nearest file above the package, even past the VCS and Storybook project roots.
@@ -385,7 +413,7 @@ export class PNPMProxy extends JsPackageManager {
       return null;
     }
     try {
-      const doc = parseDocument(readFileSync(path, 'utf8'));
+      const doc = parseDocument(readFileSync(path, 'utf8'), { keepSourceTokens: true });
       if (doc.errors.length > 0) {
         throw doc.errors[0];
       }

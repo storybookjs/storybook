@@ -1414,6 +1414,38 @@ describe('stories API', () => {
 
       expect(preloads).toEqual([]);
     });
+
+    it('falls back to setTimeout to preload siblings when requestIdleCallback is unavailable', async () => {
+      Reflect.deleteProperty(global, 'requestIdleCallback');
+      try {
+        const initialState = { storyId: 'component-a--story-1', viewMode: 'story' };
+        const moduleArgs = createMockModuleArgs({
+          initialState,
+          fullAPI: { setOptions: vi.fn() },
+        });
+        const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+        const { provider } = moduleArgs;
+        await api.setIndex({ v: 5, entries: mockEntries });
+        const preloads: unknown[] = [];
+        provider.channel.on(PRELOAD_ENTRIES, (payload) => preloads.push(payload));
+
+        vi.useFakeTimers();
+        provider.channel.emit(STORY_FINISHED, {
+          storyId: 'component-a--story-1',
+          status: 'success',
+          reporters: [],
+        });
+        expect(preloads).toEqual([]);
+
+        await vi.advanceTimersByTimeAsync(1);
+        expect(preloads).toEqual([
+          { ids: ['component-b--story-3'], source: 'sibling', options: { target: undefined } },
+        ]);
+      } finally {
+        vi.useRealTimers();
+        global.requestIdleCallback = requestIdleCallback;
+      }
+    });
   });
 
   describe('STORY_PREPARED', () => {

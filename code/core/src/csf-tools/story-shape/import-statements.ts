@@ -230,15 +230,15 @@ function printBucket({ source, defaults, namespaces, named }: Bucket): string[] 
  *
  * References are bucketed by their final source, which is the `importOverride` source when one
  * parses, else `packageName` when the original source is not already a package, else the source as
- * written. Sources keep first-seen order and declarations keep a fixed order within a source, so
- * repeated runs produce byte-identical output.
+ * written. A package name resolver can select a different source for each reference. Sources keep
+ * first-seen order and declarations keep a fixed order within a source.
  */
 export function buildImportStatements({
   refs,
   packageName,
 }: {
   refs: ImportRef[];
-  packageName?: string;
+  packageName?: string | ((ref: ImportRef) => string | undefined);
 }): string[] {
   const buckets = new Map<string, Bucket>();
 
@@ -248,7 +248,9 @@ export function buildImportStatements({
     }
 
     const override = ref.importOverride ? parseImportOverride(ref.importOverride) : undefined;
-    const source = override?.source ?? (packageName && !ref.isPackage ? packageName : ref.importId);
+    const resolvedPackage = typeof packageName === 'function' ? packageName(ref) : packageName;
+    const source =
+      override?.source ?? (resolvedPackage && !ref.isPackage ? resolvedPackage : ref.importId);
 
     let bucket = buckets.get(source);
     if (!bucket) {

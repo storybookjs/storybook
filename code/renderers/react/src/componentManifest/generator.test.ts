@@ -286,11 +286,13 @@ test('manifests generates correct id, name, description and examples ', async ()
 
 async function getManifestForStory(
   code: string,
-  packageJson: Record<string, unknown> = { name: 'some-package' }
+  packageJson: Record<string, unknown> = { name: 'some-package' },
+  packageFiles: Record<string, string> = {}
 ) {
   vol.fromJSON(
     {
       ['./package.json']: JSON.stringify(packageJson),
+      ...packageFiles,
       ['./src/stories/Button.stories.tsx']: code,
       ['./src/stories/Button.tsx']: dedent`
         import React from 'react';
@@ -431,13 +433,65 @@ test('imports a component in a private workspace package by its package name', a
 test('imports a component in a private package that exports its root by its package name', async () => {
   const code = withCSF3('export const Primary = () => <Button />;');
 
-  const manifest = await getManifestForStory(code, {
-    name: '@acme/ui',
-    private: true,
-    exports: { '.': './src/index.ts' },
-  });
+  const manifest = await getManifestForStory(
+    code,
+    {
+      name: '@acme/ui',
+      private: true,
+      exports: { '.': './src/index.ts' },
+    },
+    { './src/index.ts': "export { Button } from './stories/Button';" }
+  );
 
   expect(manifest?.import).toBe("import { Button } from '@acme/ui';");
+});
+
+test('selects the public subpath that exports a relative component', async () => {
+  const code = withCSF3('export const Primary = () => <Button />;');
+  const manifest = await getManifestForStory(
+    code,
+    {
+      name: '@acme/ui',
+      exports: {
+        '.': { types: './dist/index.d.ts', default: './dist/index.js' },
+        './experimental': { types: './dist/experimental/index.d.ts' },
+      },
+    },
+    {
+      './dist/index.d.ts': 'export declare const Other: unknown;',
+      './dist/experimental/index.d.ts': "export { Button } from '../Button.js';",
+    }
+  );
+  expect(manifest?.import).toBe("import { Button } from '@acme/ui/experimental';");
+});
+
+test('uses mirrored source entry points when package declarations have not been built', async () => {
+  const code = withCSF3('export const Primary = () => <Button />;');
+  const manifest = await getManifestForStory(
+    code,
+    {
+      name: '@acme/ui',
+      exports: {
+        '.': { types: './dist/index.d.ts' },
+        './experimental': { types: './dist/experimental/index.d.ts' },
+      },
+    },
+    {
+      './src/index.ts': 'export const Other = 1;',
+      './src/experimental/index.ts': "export { Button } from '../stories/Button';",
+    }
+  );
+  expect(manifest?.import).toBe("import { Button } from '@acme/ui/experimental';");
+});
+
+test('keeps the relative import when no public entry exports the component', async () => {
+  const code = withCSF3('export const Primary = () => <Button />;');
+  const manifest = await getManifestForStory(
+    code,
+    { name: '@acme/ui', exports: { '.': './dist/index.d.ts' } },
+    { './dist/index.d.ts': 'export type { Button } from "./Button";' }
+  );
+  expect(manifest?.import).toBe("import { Button } from './Button';");
 });
 
 test('keeps the story import for a private package that exports only subpaths', async () => {

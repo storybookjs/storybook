@@ -142,6 +142,23 @@ Check the [best practices](../best-practices.mdx) guide for tips on writing effe
 
 </Callout>
 
+<If renderer="react">
+
+### Override a component import
+
+The manifest includes an import for each component so agents can use it in their code. If Storybook cannot determine the public import, add an `@import` tag to the component's JSDoc with a complete import declaration:
+
+```tsx
+/**
+ * @import import { Button } from '@acme/ui/experimental';
+ */
+export const Button = () => <button>Click me</button>;
+```
+
+The tag overrides the import in generated documentation; it does not change how the story imports the component. For relative story imports, Storybook checks the package's export entry points for the component. If the entry points cannot be inspected or don't export it, the story's relative import is retained. When a `dist` entry hasn't been built, Storybook also checks the corresponding `src` entry as a best-effort fallback.
+
+</If>
+
 If a story file declares [`subcomponents`](../../writing-stories/stories-for-multiple-components.mdx#subcomponents), the components manifest will also include a `subcomponents` object for that component. This gives agents supplemental API documentation for child components, even when those subcomponents are only meant to be used together with the parent.
 
 The raw JSON components manifest can be accessed at `http://localhost:6006/manifests/components.json` (your port may vary) when your Storybook is running or at the `/manifests/components.json` route in a built Storybook.

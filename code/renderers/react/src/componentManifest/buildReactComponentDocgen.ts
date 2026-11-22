@@ -81,7 +81,8 @@ function hasRootEntry(pkg: Record<string, unknown>) {
 function getImportablePackageName(
   componentPath: string | undefined,
   fallbackPath: string,
-  exportName?: string
+  exportName?: string,
+  namespace?: string
 ) {
   const nearestPkg = cachedFindUp('package.json', {
     cwd: path.dirname(componentPath ?? fallbackPath),
@@ -97,7 +98,7 @@ function getImportablePackageName(
       return undefined;
     }
     if (parsed.exports !== undefined) {
-      return exportName
+      return exportName && !namespace
         ? getPackageExport(nearestPkg, parsed.name, parsed.exports, exportName)
         : undefined;
     }
@@ -114,7 +115,7 @@ function getComponentPackageName(component: ComponentRef, storyPath: string) {
   }
   const exportName =
     component.importName === 'default' ? component.localImportName : component.importName;
-  return getImportablePackageName(component.path, storyPath, exportName);
+  return getImportablePackageName(component.path, storyPath, exportName, component.namespace);
 }
 
 function getFallbackImport(packageName: string | undefined, componentName: string | undefined) {

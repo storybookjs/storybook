@@ -23,6 +23,21 @@ function entryTarget(entry: unknown): string | undefined {
   return undefined;
 }
 
+function hasRuntimeTarget(entry: unknown): boolean {
+  if (typeof entry === 'string') {
+    return entry.startsWith('./') && !/\.d\.[cm]?ts$/.test(entry);
+  }
+  if (Array.isArray(entry)) {
+    return entry.some(hasRuntimeTarget);
+  }
+  if (entry && typeof entry === 'object') {
+    return Object.entries(entry).some(
+      ([condition, target]) => condition !== 'types' && hasRuntimeTarget(target)
+    );
+  }
+  return false;
+}
+
 function exportsName(file: string, name: string, visited = new Set<string>()): boolean {
   if (visited.has(file)) {
     return false;
@@ -113,6 +128,9 @@ export function getPackageExport(
   entries.sort(([a], [b]) => (a === '.' ? -1 : b === '.' ? 1 : 0));
   for (const [subpath, entry] of entries) {
     if ((subpath !== '.' && !subpath.startsWith('./')) || subpath.includes('*')) {
+      continue;
+    }
+    if (!hasRuntimeTarget(entry)) {
       continue;
     }
     const target = entryTarget(entry);

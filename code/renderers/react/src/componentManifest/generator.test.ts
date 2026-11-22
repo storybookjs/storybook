@@ -454,7 +454,10 @@ test('selects the public subpath that exports a relative component', async () =>
       name: '@acme/ui',
       exports: {
         '.': { types: './dist/index.d.ts', default: './dist/index.js' },
-        './experimental': { types: './dist/experimental/index.d.ts' },
+        './experimental': {
+          types: './dist/experimental/index.d.ts',
+          default: './dist/experimental/index.js',
+        },
       },
     },
     {
@@ -472,8 +475,11 @@ test('uses mirrored source entry points when package declarations have not been 
     {
       name: '@acme/ui',
       exports: {
-        '.': { types: './dist/index.d.ts' },
-        './experimental': { types: './dist/experimental/index.d.ts' },
+        '.': { types: './dist/index.d.ts', default: './dist/index.js' },
+        './experimental': {
+          types: './dist/experimental/index.d.ts',
+          default: './dist/experimental/index.js',
+        },
       },
     },
     {
@@ -488,10 +494,27 @@ test('keeps the relative import when no public entry exports the component', asy
   const code = withCSF3('export const Primary = () => <Button />;');
   const manifest = await getManifestForStory(
     code,
-    { name: '@acme/ui', exports: { '.': './dist/index.d.ts' } },
+    {
+      name: '@acme/ui',
+      exports: { '.': { types: './dist/index.d.ts', default: './dist/index.js' } },
+    },
     { './dist/index.d.ts': 'export type { Button } from "./Button";' }
   );
   expect(manifest?.import).toBe("import { Button } from './Button';");
+});
+
+test('preserves namespace bindings in story snippets', async () => {
+  const code = dedent`
+    import * as Parts from './Button';
+    export default { title: 'Example/Button', component: Parts.Button };
+    export const Primary = () => <Parts.Button />;
+  `;
+  const manifest = await getManifestForStory(
+    code,
+    { name: '@acme/ui', exports: { '.': './src/index.ts' } },
+    { './src/index.ts': "export { Button } from './stories/Button';" }
+  );
+  expect(manifest?.import).toBe("import * as Parts from './Button';");
 });
 
 test('keeps the story import for a private package that exports only subpaths', async () => {

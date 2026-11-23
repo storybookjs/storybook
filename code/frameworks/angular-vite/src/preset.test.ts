@@ -434,6 +434,32 @@ describe('angularOptionsPlugin global styles', () => {
     }>;
   };
 
+  // The addon-vitest child has no builder context, and its Vite root is the project folder. The
+  // parent builder bridges the workspace root through the options so `styles` still resolve.
+  it('resolves styles against the bridged workspace root when there is no builder context', async () => {
+    const options = {
+      configDir: resolve(WORKSPACE_ROOT, 'apps/ui-storybook/.storybook'),
+      angularBuilderOptions: {
+        styles: ['apps/ui-storybook/.storybook/tailwind.css'],
+        workspaceRoot: WORKSPACE_ROOT,
+      },
+    } as unknown as StandaloneOptions;
+    const projectPreview = resolve(WORKSPACE_ROOT, 'apps/ui-storybook/.storybook/preview.ts');
+    vi.mocked(findConfigFile).mockReturnValue(projectPreview);
+
+    const plugin = angularOptionsPlugin(options, { normalizePath, zoneless: true });
+    (plugin.config as (userConfig: unknown) => unknown)({
+      root: resolve(WORKSPACE_ROOT, 'apps/ui-storybook'),
+    });
+    const { code } = (await (plugin.transform as any).call({}, '// preview', projectPreview)) as {
+      code: string;
+    };
+
+    expect(code).toContain(
+      `import '${normalizePath(resolve(WORKSPACE_ROOT, 'apps/ui-storybook/.storybook/tailwind.css'))}';`
+    );
+  });
+
   it('imports both `styles` spellings the builder schema accepts', async () => {
     const { code } = await runTransform([
       'src/styles.scss',

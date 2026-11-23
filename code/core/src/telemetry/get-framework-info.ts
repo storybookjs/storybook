@@ -12,13 +12,9 @@ import { isAbsolute, normalize, resolve } from 'pathe';
 import type { PackageJson } from 'type-fest';
 
 import { matchPackageName } from '../common/utils/match-package-name.ts';
-import { TELEMETRY_ONLY_RENDERER_PACKAGES } from './get-renderer-packages.ts';
 import { cleanPaths } from './sanitize.ts';
 
-const knownRendererPackages = () => [
-  ...Object.keys(rendererPackages),
-  ...Object.keys(TELEMETRY_ONLY_RENDERER_PACKAGES),
-];
+const knownRendererPackages = () => Object.keys(rendererPackages);
 
 const cleanAndSanitizePath = (path: string) => {
   const cleaned = cleanPaths(path).replace(/.*node_modules[\\/]/, '');

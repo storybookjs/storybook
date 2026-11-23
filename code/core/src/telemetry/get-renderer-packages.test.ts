@@ -7,7 +7,7 @@ describe('getRendererPackages', () => {
     expect(getRendererPackages('@storybook/react')).toEqual(['react', 'react-dom']);
   });
 
-  it('returns the runtime packages of a renderer only telemetry recognizes', () => {
+  it('returns the runtime packages of a community renderer', () => {
     expect(getRendererPackages('@storybook-astro/renderer')).toEqual(['astro']);
   });
 

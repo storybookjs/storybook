@@ -5,7 +5,7 @@ import type {
   StrictArgTypes,
 } from 'storybook/internal/types';
 
-import { getStoryImportPathFromEntry } from 'storybook/internal/common';
+import { type DocgenResult, getStoryImportPathFromEntry } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import path from 'pathe';
 
@@ -135,8 +135,6 @@ const resolveStoryPath = (
   storyFilePath: string,
   { resolvePath }: Pick<BuildDocgenContext, 'resolvePath'>
 ) => (resolvePath ? resolvePath(storyFilePath) : path.join(process.cwd(), storyFilePath));
-
-type DocgenResult = PromiseSettledResult<DocgenPayload | undefined>;
 
 async function extractEach(
   inputs: DocgenProviderInput[],

@@ -43,7 +43,7 @@ interface ExtractBatchOption<TManager> {
 export type LazyDocgenMiddlewareOptions<TManager> = BaseOptions<TManager> &
   (ExtractOption<TManager> | ExtractBatchOption<TManager>);
 
-type DocgenResult = PromiseSettledResult<DocgenPayload | undefined>;
+export type DocgenResult = PromiseSettledResult<DocgenPayload | undefined>;
 
 interface Queued {
   input: DocgenProviderInput;

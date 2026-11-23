@@ -156,11 +156,6 @@ export async function installSkills({
   if (removedSkills.length > 0) {
     await removeSkills(packageManager, removedSkills, stdio);
   }
-  logger.log(
-    source === 'refresh'
-      ? 'Updated the Storybook skills for AI agents.'
-      : 'Installed the Storybook skills for AI agents. They are part of Storybook 11: they teach coding agents to reuse your components, write stories for what they change, and run the story tests.'
-  );
   // The `stories` skill had no section yet. `ui-workflow` came with one, so a project without it
   // removed it.
   await addAgentInstructions(
@@ -206,7 +201,7 @@ async function addAgentInstructions(mode: AgentInstructionsMode): Promise<void> 
     const updated = changes.filter(({ change }) => change === 'updated').map(({ file }) => file);
     if (added.length > 0) {
       logger.log(
-        `Added a Storybook section to ${listFiles(added)} that tells agents when to use them. Storybook keeps that section current on upgrade.`
+        `Added a Storybook section to ${listFiles(added)} that tells agents when to use the skills. Storybook keeps it current on upgrade: remove its markers to keep your own edits, or remove the section to opt out of the workflow.`
       );
     }
     if (updated.length > 0) {

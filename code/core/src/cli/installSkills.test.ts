@@ -198,23 +198,17 @@ describe('installSkills', () => {
     });
   });
 
-  it('says what it installed, why, and how to remove the skills', async () => {
+  it('prints the literal command and how to remove the skills', async () => {
     await installSkills({ packageManager, source: 'ai-feature' });
 
-    expect(vi.mocked(logger.log).mock.calls.map(([message]) => String(message))).toEqual([
+    expect(logger.log).toHaveBeenCalledWith(
       expect.stringContaining(
         'npx skills@latest add storybookjs/skills#v10.6.0 --yes --agent claude-code universal --copy'
-      ),
-      'Installed the Storybook skills for AI agents. They are part of Storybook 11: they teach coding agents to reuse your components, write stories for what they change, and run the story tests.',
-      'Added a Storybook section to AGENTS.md that tells agents when to use them. Storybook keeps that section current on upgrade.',
-      'If you want to remove the Storybook skills, run "npx skills@latest remove"',
-    ]);
-  });
-
-  it('says it updated the skills on a refresh', async () => {
-    await installSkills({ packageManager, source: 'refresh' });
-
-    expect(logger.log).toHaveBeenCalledWith('Updated the Storybook skills for AI agents.');
+      )
+    );
+    expect(logger.log).toHaveBeenCalledWith(
+      'If you want to remove the Storybook skills, run "npx skills@latest remove"'
+    );
   });
 
   it('adds the section that tells agents when to use the skills', async () => {

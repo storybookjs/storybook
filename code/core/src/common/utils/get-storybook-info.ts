@@ -6,11 +6,7 @@ import type {
   PackageJson,
   StorybookConfigRaw,
 } from 'storybook/internal/types';
-import {
-  CoreWebpackCompiler,
-  SupportedBuilder,
-  SupportedFramework,
-} from 'storybook/internal/types';
+import { CoreWebpackCompiler, SupportedRenderer } from 'storybook/internal/types';
 
 import invariant from 'tiny-invariant';
 
@@ -18,10 +14,10 @@ import { RN_STORYBOOK_DIR } from '../../shared/constants/config-folder.ts';
 import { storybookConfigExtensions } from '../../shared/constants/extensions.ts';
 import { JsPackageManager } from '../js-package-manager/JsPackageManager.ts';
 import {
-  builderPackages,
+  builderRegistry,
   frameworkPackages,
   frameworkToBuilder,
-  rendererPackages,
+  rendererRegistry,
 } from './framework.ts';
 import { getAddonNames } from './get-addon-names.ts';
 import { extractFrameworkPackageName } from './get-framework-name.ts';
@@ -121,7 +117,9 @@ export const getStorybookInfo = async (
       `metadata.framework.name` is populated for existing projects (scoped to the
       RN config dir to avoid mis-attributing web Storybooks in the same monorepo).
     */
-    (basename(configInfo.configDir) === RN_STORYBOOK_DIR ? '@storybook/react-native' : undefined);
+    (basename(configInfo.configDir) === RN_STORYBOOK_DIR
+      ? rendererRegistry[SupportedRenderer.REACT_NATIVE].packageName
+      : undefined);
   const addons = getAddonNames(mainConfig);
   const versionSpecifier = getStorybookVersionSpecifier(configDir);
 
@@ -143,13 +141,8 @@ export const getStorybookInfo = async (
   const renderer = await extractRenderer(frameworkPackage);
   const builder = frameworkToBuilder[framework];
 
-  const rendererPackage = Object.entries(rendererPackages).find(
-    ([, value]) => value === renderer
-  )?.[0];
-
-  const builderPackage = Object.entries(builderPackages).find(
-    ([, value]) => value === builder
-  )?.[0];
+  const rendererPackage = renderer ? rendererRegistry[renderer].packageName : undefined;
+  const builderPackage = builder ? builderRegistry[builder].packageName : undefined;
 
   return {
     ...configInfo,

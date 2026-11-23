@@ -39,7 +39,7 @@ export async function extractRenderer(frameworkName: string) {
   const framework = frameworkPackages[extractedFrameworkName];
 
   if (framework) {
-    return frameworkToRenderer[framework as keyof typeof frameworkToRenderer];
+    return frameworkToRenderer[framework];
   }
 
   // Some renderers, such as React Native, are configured as the framework themselves

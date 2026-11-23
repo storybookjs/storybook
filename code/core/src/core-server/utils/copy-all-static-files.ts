@@ -1,11 +1,10 @@
 import { cp } from 'node:fs/promises';
-import { join, relative, resolve } from 'node:path';
+import { join, resolve } from 'node:path';
 
 import { logger } from 'storybook/internal/node-logger';
 
+import { relative } from 'pathe';
 import picocolors from 'picocolors';
-// eslint-disable-next-line depend/ban-dependencies
-import slash from 'slash';
 
 import { mapStaticDir } from './server-statics.ts';
 
@@ -38,5 +37,5 @@ export async function copyAllStaticFilesRelativeToMain(
   }, Promise.resolve());
 }
 function print(p: string): string {
-  return slash(relative(process.cwd(), p));
+  return relative(process.cwd(), p);
 }

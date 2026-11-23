@@ -1,22 +1,24 @@
 import React from 'react';
 
-import type { DecoratorFunction, LegacyStoryFn } from 'storybook/internal/types';
+import type {
+  DecoratorFunction,
+  LegacyStoryFn,
+  StoryContextForRender,
+} from 'storybook/internal/types';
 
 import { defaultDecorateStory } from 'storybook/preview-api';
 
 import type { ReactRenderer } from './types.ts';
 
-/*
- * With RSC on, the story's output gets its own Suspense boundary. If the only boundary sat above
- * the story function, React would call the story function again once a suspended child resolves.
- * By then Storybook has cleared the hooks context, so hooks like useArgs would throw.
- */
-const SuspendedStory = ({
+// The story function is called here, outside the boundary, so a suspended child that resumes does
+// not make React call it again after Storybook has cleared the hooks context. The outer RSC
+// boundary in entry-preview.tsx is separate and catches suspending decorators.
+const StoryWithSuspenseBoundary = ({
   storyFn,
   context,
 }: {
   storyFn: LegacyStoryFn<ReactRenderer>;
-  context: Parameters<LegacyStoryFn<ReactRenderer>>[0];
+  context: StoryContextForRender<ReactRenderer>;
 }) => React.createElement(React.Suspense, null, storyFn(context));
 
 export const applyDecorators = (
@@ -26,7 +28,7 @@ export const applyDecorators = (
   return defaultDecorateStory(
     (context) =>
       context.parameters?.react?.rsc
-        ? React.createElement(SuspendedStory, { storyFn, context })
+        ? React.createElement(StoryWithSuspenseBoundary, { storyFn, context })
         : React.createElement(storyFn, context),
     decorators
   );

@@ -68,7 +68,7 @@ const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
 
   await registerAddonMcpTools(server, { availability, multiSource });
 
-  transport = new HttpTransport(server, { path: null });
+  transport = new HttpTransport(server, { path: null, allowedOrigins: true });
 
   return server;
 };

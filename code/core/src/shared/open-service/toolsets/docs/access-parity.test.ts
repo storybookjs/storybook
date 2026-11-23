@@ -40,8 +40,8 @@ const storyIndex = {
     },
     'guide--docs': {
       id: 'guide--docs',
-      title: 'Guide',
-      name: 'Guide',
+      title: 'Guides/Spacing',
+      name: 'Docs',
       importPath: './src/Guide.mdx',
       type: 'docs',
       tags: [Tag.MANIFEST, Tag.UNATTACHED_MDX],
@@ -93,7 +93,13 @@ const mdxPayload = {
   id: 'guide--docs',
   name: 'Guide',
   docs: {
-    'guide--docs': { id: 'guide--docs', name: 'Guide', summary: 'How to', content: '# Guide' },
+    'guide--docs': {
+      id: 'guide--docs',
+      name: 'Docs',
+      title: 'Guides/Spacing',
+      summary: 'How to',
+      content: '# Guide',
+    },
   },
 };
 
@@ -161,7 +167,8 @@ function manifestToolset() {
           docs: {
             'guide--docs': {
               id: 'guide--docs',
-              name: 'Guide',
+              name: 'Docs',
+              title: 'Guides/Spacing',
               summary: 'How to',
               content: '# Guide',
             },
@@ -185,6 +192,18 @@ describe('docs tools render the same text in both docgen modes', () => {
     expect(await renderList(serviceToolset(), withStoryIds)).toBe(
       await renderList(manifestToolset(), withStoryIds)
     );
+  });
+
+  it('lists a standalone doc by its title in both modes', async () => {
+    for (const toolset of [serviceToolset(), manifestToolset()]) {
+      expect(await renderList(toolset, false)).toContain('- Guides/Spacing (guide--docs): How to');
+    }
+  });
+
+  it('suggests a standalone doc by its title in both modes', async () => {
+    for (const toolset of [serviceToolset(), manifestToolset()]) {
+      expect(await renderShow(toolset, 'guide')).toContain('- Guides/Spacing: ');
+    }
   });
 
   it.each(['button', 'guide--docs', 'unknown-id'])('show %s', async (id) => {

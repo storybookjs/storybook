@@ -106,7 +106,7 @@ describe('buildTestStoriesSkill', () => {
 
       Run this after every change: focused runs with \`--stories\` while you iterate, then one full run without \`--stories\` before you finish. It is the only way to run story tests: never a \`package.json\` test script (such as \`npm run test:stories\`) or \`vitest\` directly, also when the user asks you to run the tests. Fix failures and rerun; never finish with failing tests. When you fix a failing test or an accessibility violation, change only what it needs.
 
-      The run lists accessibility violations under \`## Accessibility Violations\`. Fix semantic ones yourself (roles, labels, alt text, keyboard access). For visual ones such as color contrast, do not change the design: describe the problem, offer two or three options and ask the user. Never change the accessibility test level (\`parameters.a11y.test\`) to make violations fail or pass.
+      The run lists accessibility violations under \`## Accessibility Violations\`. Fix only what your change caused, and report the rest. For visual ones such as color contrast, ask before changing the design. Never change the accessibility test level (\`parameters.a11y.test\`) to make violations fail or pass.
 
       ## Find the stories
 
@@ -130,7 +130,7 @@ describe('buildTestStoriesSkill', () => {
 
       Call \`test-run\` after every change: focused runs with \`stories\` while you iterate, then one full run without \`stories\` before you finish. It is the only way to run story tests: never a \`package.json\` test script (such as \`npm run test:stories\`) or \`vitest\` directly, also when the user asks you to run the tests. Fix failures and rerun; never finish with failing tests. When you fix a failing test or an accessibility violation, change only what it needs.
 
-      The run lists accessibility violations under \`## Accessibility Violations\`. Fix semantic ones yourself (roles, labels, alt text, keyboard access). For visual ones such as color contrast, do not change the design: describe the problem, offer two or three options and ask the user. Never change the accessibility test level (\`parameters.a11y.test\`) to make violations fail or pass.
+      The run lists accessibility violations under \`## Accessibility Violations\`. Fix only what your change caused, and report the rest. For visual ones such as color contrast, ask before changing the design. Never change the accessibility test level (\`parameters.a11y.test\`) to make violations fail or pass.
 
       ## Find the stories
 

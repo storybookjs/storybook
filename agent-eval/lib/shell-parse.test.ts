@@ -12,10 +12,18 @@ import {
 // Not a static import: tsc would then check the core source against this
 // package's stricter `noUncheckedIndexedAccess`.
 const toolTokensUrl = new URL('../../code/core/src/cli/tools/tool-tokens.ts', import.meta.url);
-const { parseToolsTokens } = (await import(toolTokensUrl.href)) as {
-  parseToolsTokens: (
-    tokens: string[]
-  ) => { ok: true; help: boolean; args: Record<string, unknown> } | { ok: false };
+type ParsedTokens = {
+  ok: true;
+  help: boolean;
+  args: Record<string, unknown>;
+  positionals: string[];
+};
+const { parseToolsTokens, withPositionals } = (await import(toolTokensUrl.href)) as {
+  parseToolsTokens: (tokens: string[]) => ParsedTokens | { ok: false };
+  withPositionals: (
+    parsed: ParsedTokens,
+    key: string | undefined
+  ) => { ok: true; args: Record<string, unknown> } | { ok: false };
 };
 
 function shellQuote(token: string): string {
@@ -30,6 +38,12 @@ describe('storybook tools arguments after the tool name', () => {
     { tokens: ['--a11y', 'false'], input: { a11y: false } },
     { tokens: ['--a11y=false'], input: { a11y: false } },
     { tokens: ['--verbose'], input: { verbose: true } },
+    { tokens: ['--changed'], input: { changed: true } },
+    { tokens: ['Button', '--changed'], input: { changed: true, files: ['Button'] } },
+    {
+      tokens: ['--input', '{"files":["A"]}', 'B'],
+      input: { files: ['A', 'B'] },
+    },
     { tokens: ['--delta', '-1'], input: { delta: -1 } },
     { tokens: ['--grep', '-h'], input: { grep: '-h' } },
     { tokens: ['--title', 'plain text'], input: { title: 'plain text' } },
@@ -74,9 +88,19 @@ describe('storybook tools arguments after the tool name', () => {
     { tokens: ['--a11y', 'false', '--help'], input: undefined },
     { tokens: ['-a11y', 'false'], input: undefined },
     { tokens: ['-p', '6006'], input: undefined },
-    { tokens: ['stories.json'], input: undefined },
-    { tokens: ['--componentPaths', 'src/A.tsx', 'src/B.tsx'], input: undefined },
-    { tokens: ['--'], input: undefined },
+    { tokens: ['src/A.stories.tsx'], input: { files: ['src/A.stories.tsx'] } },
+    // A single flag value is a list of one, as one bare argument is.
+    { tokens: ['--files', 'src/A.stories.tsx'], input: { files: ['src/A.stories.tsx'] } },
+    {
+      tokens: ['src/A.stories.tsx', '--a11y', 'false', 'src/B.tsx'],
+      input: { a11y: false, files: ['src/A.stories.tsx', 'src/B.tsx'] },
+    },
+    {
+      tokens: ['--componentPaths', 'src/A.tsx', 'src/B.tsx'],
+      input: { componentPaths: 'src/A.tsx', files: ['src/B.tsx'] },
+    },
+    { tokens: ['--', '-weird.tsx'], input: { files: ['-weird.tsx'] } },
+    { tokens: ['--'], input: {} },
     { tokens: ['--=x'], input: undefined },
     { tokens: ['--json=true'], input: undefined },
     { tokens: ['--attach', '--no-attach'], input: undefined },
@@ -95,9 +119,12 @@ describe('storybook tools arguments after the tool name', () => {
         ['npx storybook tools test run', ...tokens.map(shellQuote)].join(' '),
       ]);
       const parsed = parseToolsTokens(tokens);
+      // `files` is the `positional` key of `test run`.
+      const merged = parsed.ok ? withPositionals(parsed, 'files') : undefined;
+      const args = merged?.ok ? merged.args : undefined;
 
       expect(calls.map((call) => call.input)).toEqual(input === undefined ? [] : [input]);
-      expect(parsed.ok && !parsed.help ? parsed.args : undefined).toEqual(input);
+      expect(parsed.ok && !parsed.help ? args : undefined).toEqual(input);
     });
   }
 });
@@ -136,6 +163,21 @@ describe('parseStorybookWorkflowShellCommands', () => {
       {},
       { a11y: false, stories: [] },
       { stories: [] },
+    ]);
+  });
+
+  test('records file arguments only for a tool that takes them', () => {
+    const calls = parseStorybookWorkflowShellCommands([
+      'npx storybook tools test run src/Button.stories.tsx src/Card.tsx',
+      'npx storybook tools stories preview src/Button.stories.tsx',
+    ]);
+
+    expect(calls).toEqual([
+      {
+        name: 'test-run',
+        input: { files: ['src/Button.stories.tsx', 'src/Card.tsx'] },
+        source: 'cli',
+      },
     ]);
   });
 

@@ -1,0 +1,5 @@
+<script>
+  import Tag from './Tag.svelte';
+</script>
+
+<Tag label="Meta label" tone="success" removable />

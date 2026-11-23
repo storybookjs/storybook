@@ -330,6 +330,31 @@ Invalid key: Expected "components" but received undefined]`);
       expect(global.fetch).toHaveBeenCalledWith('https://example.com/manifests/docs.json');
     });
 
+    it('should keep the title of a shallow docs row', async () => {
+      const docsManifest = {
+        v: 1,
+        docs: {
+          'guides-spacing--docs': {
+            id: 'guides-spacing--docs',
+            name: 'Docs',
+            title: 'Guides/Spacing',
+            mdx: { $ref: '../services/addon-docs/mdx/guides-spacing--docs.json#/components/x' },
+          },
+        },
+      };
+      vi.stubGlobal(
+        'fetch',
+        createFetchMock({
+          components: { v: 1, components: { button: { id: 'button', name: 'Button' } } },
+          docs: docsManifest,
+        })
+      );
+
+      const result = await getManifests(createMockRequest('https://example.com/mcp'));
+
+      expect(result.docsManifest).toEqual(docsManifest);
+    });
+
     it.each([
       ['https://example.com/mcp', 'https://example.com'],
       ['https://example.com/mcp/', 'https://example.com'],

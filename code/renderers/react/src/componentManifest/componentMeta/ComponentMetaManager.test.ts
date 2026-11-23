@@ -474,6 +474,71 @@ describe('multi-project management', () => {
   });
 
   it(
+    'project references: extracts props when the component lives in a referenced project',
+    { timeout: 30_000 },
+    () => {
+      tempDir = createTempDir();
+      const compilerOptions = {
+        target: 'ES2020',
+        module: 'ESNext',
+        jsx: 'react-jsx',
+        strict: true,
+        esModuleInterop: true,
+        moduleResolution: 'bundler',
+      };
+
+      const files = writeFiles(tempDir, {
+        'tsconfig.json': tsconfigJSON({
+          compilerOptions,
+          include: ['src/**/*'],
+          references: [{ path: './tsconfig.src.json' }],
+        }),
+        'tsconfig.src.json': tsconfigJSON({
+          compilerOptions: {
+            ...compilerOptions,
+            composite: true,
+            emitDeclarationOnly: true,
+            outDir: 'dist-types',
+          },
+          include: ['src/**/*'],
+          exclude: ['src/**/*.stories.tsx'],
+        }),
+        'src/Button.tsx': dedent`
+          import React from 'react';
+          export interface ButtonProps {
+            label: string;
+            variant?: 'primary' | 'secondary';
+          }
+          export const Button = (_props: ButtonProps) => <button />;
+        `,
+        'src/Button.stories.tsx': dedent`
+          import { Button } from './Button';
+          export default { component: Button };
+        `,
+      });
+
+      manager = new ComponentMetaManager(typescript);
+      const entries: StoryRef[] = [
+        {
+          storyPath: files['src/Button.stories.tsx'],
+          component: {
+            componentName: 'Button',
+            importId: './Button',
+            importName: 'Button',
+            path: files['src/Button.tsx'],
+            isPackage: false,
+          },
+        },
+      ];
+      manager.batchExtract(entries);
+
+      expect(entries[0].component?.reactComponentMeta).toMatchObject({
+        props: { label: expect.anything(), variant: expect.anything() },
+      });
+    }
+  );
+
+  it(
     'recycles the shared program when heap usage crosses the threshold',
     { timeout: 30_000 },
     () => {

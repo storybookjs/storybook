@@ -1,5 +1,5 @@
 /** @vitest-environment happy-dom */
-import type { StoryContextForRender } from 'storybook/internal/types';
+import type { StoryContext } from 'storybook/internal/types';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -19,7 +19,7 @@ if (!customElements.get(X_CARD_TAG)) {
 const CONTEXT = {
   id: 'x-card--a',
   component: X_CARD_TAG,
-} as StoryContextForRender<WebComponentsRenderer>;
+} as StoryContext<WebComponentsRenderer>;
 
 describe('render', () => {
   afterEach(() => {

@@ -25,6 +25,6 @@
     "@vitest/browser-playwright": "4.0.6",
     "storybook": "workspace:*",
     "typescript": "5.9.3",
-    "vite": "7.2.2"
+    "vite": "7.3.8"
   }
 }

@@ -12,7 +12,7 @@ import type {
 } from 'storybook/manager-api';
 
 import { DEFAULT_REF_ID } from '../components/sidebar/Sidebar.tsx';
-import type { Dataset, Item, RefType } from '../components/sidebar/types.ts';
+import type { Dataset, Item, RefType, SearchItem, StoryRef } from '../components/sidebar/types.ts';
 
 const { document, window: globalWindow } = global;
 
@@ -92,31 +92,74 @@ export const removeNoiseFromName = (storyName: string) => storyName.replaceAll(/
 export const isStoryHoistable = (storyName: string, componentName: string) =>
   removeNoiseFromName(storyName) === removeNoiseFromName(componentName);
 
+export const isHoistableComponent = (
+  entry: HashEntry,
+  data: IndexHash
+): entry is ComponentEntry => {
+  if (entry.type !== 'component') {
+    return false;
+  }
+
+  const { children = [], name } = entry;
+
+  if (children.length !== 1) {
+    return false;
+  }
+
+  const onlyChild = data[children[0]];
+
+  if (onlyChild.type === 'docs') {
+    return true;
+  }
+
+  if (onlyChild.type === 'story' && onlyChild.subtype === 'story') {
+    return isStoryHoistable(onlyChild.name, name);
+  }
+  return false;
+};
+
+export const recentlyOpenedItem = (
+  { storyId, anchor }: StoryRef,
+  ref: Pick<RefType, 'id' | 'title' | 'index'>
+): SearchItem | undefined => {
+  const { index } = ref;
+  const entry = index?.[storyId];
+  if (!index || (entry?.type !== 'story' && entry?.type !== 'docs')) {
+    return undefined;
+  }
+
+  const rows: HashEntry[] = [entry];
+  let parent = entry.parent ? index[entry.parent] : undefined;
+  while (parent && parent.type !== 'root') {
+    rows.unshift(parent);
+    if (parent.type !== 'story') {
+      break;
+    }
+    parent = index[parent.parent];
+  }
+  if (isHoistableComponent(rows[0], index)) {
+    rows.splice(1, 1);
+  }
+
+  const item = {
+    ...searchItem(entry, ref),
+    name: rows.map((row) => row.name).join(' / '),
+    path: getPath(rows[0], ref),
+  };
+  const matchingAnchor =
+    anchor && entry.type === 'docs' ? entry.anchors?.find(({ id }) => id === anchor) : undefined;
+  if (!matchingAnchor) {
+    return item;
+  }
+  const namePostfix =
+    getPath(entry, ref)[0] === matchingAnchor.title ? '' : ` / ${matchingAnchor.title}`;
+  return { ...item, id: `${item.id}#${anchor}`, name: `${item.name}${namePostfix}` };
+};
+
 export const hoistSingleStoryComponents = (data: IndexHash): IndexHash => {
   // Collect the components that must collapse into their only child.
-  const singleStoryComponents: ComponentEntry[] = Object.values(data).filter(
-    (entry): entry is ComponentEntry => {
-      if (entry.type !== 'component') {
-        return false;
-      }
-
-      const { children = [], name } = entry;
-
-      if (children.length !== 1) {
-        return false;
-      }
-
-      const onlyChild = data[children[0]];
-
-      if (onlyChild.type === 'docs') {
-        return true;
-      }
-
-      if (onlyChild.type === 'story' && onlyChild.subtype === 'story') {
-        return isStoryHoistable(onlyChild.name, name);
-      }
-      return false;
-    }
+  const singleStoryComponents = Object.values(data).filter((entry) =>
+    isHoistableComponent(entry, data)
   );
 
   return singleStoryComponents.reduce(

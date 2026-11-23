@@ -134,7 +134,7 @@ export const Sidebar = React.memo(function Sidebar({
   const dataset = useCombination(index, indexError, previewInitialized, allStatuses, refs);
   const isLoading = !index && !indexError;
   const hasEntries = Object.keys(indexJson?.entries ?? {}).length > 0;
-  const lastViewedProps = useLastViewed(selected);
+  const { lastViewed, clearLastViewed } = useLastViewed(selected);
   const { isMobile } = useLayout();
   const api = useStorybookApi();
   const { viewMode } = api.getUrlState();
@@ -184,11 +184,12 @@ export const Sidebar = React.memo(function Sidebar({
           enableShortcuts={enableShortcuts}
           searchFieldContent={<Filter />}
           belowSearchContent={<ShowChangesButton />}
-          {...lastViewedProps}
+          lastViewed={lastViewed}
         >
           {({
             query,
             results,
+            isRecentlyOpened,
             isNavVisible,
             isNavReachable,
             isSearchResultRendered,
@@ -215,13 +216,14 @@ export const Sidebar = React.memo(function Sidebar({
                   <SearchResults
                     query={query}
                     results={results}
+                    isRecentlyOpened={isRecentlyOpened}
                     closeMenu={closeMenu}
                     getMenuProps={getMenuProps}
                     getItemProps={getItemProps}
                     highlightedIndex={highlightedIndex}
                     enableShortcuts={enableShortcuts}
                     isLoading={isLoading}
-                    clearLastViewed={lastViewedProps.clearLastViewed}
+                    clearLastViewed={clearLastViewed}
                   />
                 </SidebarScrollArea>
               )}

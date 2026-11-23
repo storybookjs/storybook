@@ -633,3 +633,42 @@ export const StatusesChangeDetectionPriority: Story = {
   },
   play: waitForChecklistWidget,
 };
+
+export const RecentlyOpened: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const toggle = await canvas.findByRole('switch', { name: 'Recently opened' });
+
+    await userEvent.click(toggle);
+    const [current] = await canvas.findAllByRole('option');
+    await expect(current).toHaveAccessibleName('Child A2 / GrandChild A1.1 Root 1');
+
+    await userEvent.tab();
+    await expect(canvas.getByRole('button', { name: 'Tag filters' })).toHaveFocus();
+    await userEvent.tab();
+    await expect(canvas.getByRole('button', { name: 'Clear recently opened items' })).toHaveFocus();
+    await expect(canvasElement.querySelector('#storybook-explorer-tree')).not.toContainElement(
+      document.activeElement as HTMLElement
+    );
+
+    await userEvent.click(toggle);
+    await expect(canvas.queryByRole('option')).not.toBeInTheDocument();
+    await expect(canvasElement.querySelector('#storybook-explorer-tree')).toBeVisible();
+  },
+};
+
+export const RecentlyOpenedWithoutShortcuts: Story = {
+  args: { enableShortcuts: false },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const toggle = await canvas.findByRole('switch', { name: 'Recently opened' });
+
+    await userEvent.click(toggle);
+    await expect(toggle).toBeChecked();
+
+    await userEvent.keyboard('{Escape}');
+    await expect(toggle).not.toBeChecked();
+    await expect(canvas.queryByRole('option')).not.toBeInTheDocument();
+    await expect(canvasElement.querySelector('#storybook-explorer-tree')).toBeVisible();
+  },
+};

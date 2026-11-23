@@ -250,3 +250,184 @@ describe('hoistSingleStoryComponents with sibling hoists', () => {
     expect(collapsed['b--b'].parent).toBe('root');
   });
 });
+
+describe('recentlyOpenedItem', () => {
+  const leaf = (type, id, name, parent, extra = {}) => ({
+    type,
+    ...(type === 'story' && { subtype: 'story' }),
+    id,
+    name,
+    title: '',
+    depth: 0,
+    parent,
+    prepared: true,
+    importPath: './x.ts',
+    tags: [],
+    ...extra,
+  });
+  const index = {
+    example: { type: 'root', id: 'example', name: 'Example', depth: 0, children: [] },
+    'example-forms': {
+      type: 'group',
+      id: 'example-forms',
+      name: 'Forms',
+      depth: 1,
+      parent: 'example',
+      children: ['example-forms-button'],
+    },
+    'example-forms-button': {
+      type: 'component',
+      id: 'example-forms-button',
+      name: 'Button',
+      depth: 2,
+      parent: 'example-forms',
+      children: [
+        'example-forms-button--docs',
+        'example-forms-button--primary',
+        'example-forms-button--secondary',
+      ],
+    },
+    'example-forms-button--docs': leaf(
+      'docs',
+      'example-forms-button--docs',
+      'Docs',
+      'example-forms-button',
+      {
+        anchors: [
+          { id: 'anchor--primary', title: 'Primary' },
+          { id: 'anchor--example', title: 'Example' },
+        ],
+      }
+    ),
+    'example-forms-button--primary': leaf(
+      'story',
+      'example-forms-button--primary',
+      'Primary',
+      'example-forms-button',
+      { children: ['example-forms-button--primary:renders'] }
+    ),
+    'example-forms-button--primary:renders': leaf(
+      'story',
+      'example-forms-button--primary:renders',
+      'renders',
+      'example-forms-button--primary',
+      { subtype: 'test' }
+    ),
+    'example-forms-button--secondary': leaf(
+      'story',
+      'example-forms-button--secondary',
+      'Secondary',
+      'example-forms-button'
+    ),
+    'example-header': {
+      type: 'component',
+      id: 'example-header',
+      name: 'Header',
+      depth: 1,
+      parent: 'example',
+      children: ['example-header--header'],
+    },
+    'example-header--header': leaf('story', 'example-header--header', 'Header', 'example-header'),
+    'example-introduction--docs': leaf(
+      'docs',
+      'example-introduction--docs',
+      'Introduction',
+      'example'
+    ),
+    guides: { type: 'group', id: 'guides', name: 'Guides', depth: 0, children: [] },
+    'guides-theming--docs': leaf('docs', 'guides-theming--docs', 'Theming', 'guides'),
+    card: { type: 'group', id: 'card', name: 'Card', depth: 0, children: ['card--default'] },
+    'card--default': leaf('story', 'card--default', 'Default', 'card'),
+  };
+  const ref = { id: 'storybook_internal', index };
+  const itemFor = (storyId, from = ref, anchor) =>
+    utils.recentlyOpenedItem({ storyId, refId: from.id, anchor }, from);
+
+  it('names a story after its component, then the story', () => {
+    expect(itemFor('example-forms-button--primary')).toMatchObject({
+      id: 'example-forms-button--primary',
+      type: 'story',
+      refId: 'storybook_internal',
+      name: 'Button / Primary',
+      path: ['Example', 'Forms'],
+    });
+  });
+
+  it('names a docs page after its component, then the docs page', () => {
+    expect(itemFor('example-forms-button--docs')).toMatchObject({
+      name: 'Button / Docs',
+      path: ['Example', 'Forms'],
+    });
+  });
+
+  it('names a test after its component and its story', () => {
+    expect(itemFor('example-forms-button--primary:renders')).toMatchObject({
+      name: 'Button / Primary / renders',
+      path: ['Example', 'Forms'],
+    });
+  });
+
+  it('names a story the tree hoists into its component after the component only', () => {
+    expect(itemFor('example-header--header')).toMatchObject({
+      name: 'Header',
+      path: ['Example'],
+    });
+  });
+
+  it('names a story of a group that also nests components after the group', () => {
+    expect(itemFor('card--default')).toMatchObject({ name: 'Card / Default', path: [] });
+  });
+
+  it('names an unattached docs page after its folder, never after a root', () => {
+    expect(itemFor('guides-theming--docs')).toMatchObject({ name: 'Guides / Theming', path: [] });
+    expect(itemFor('example-introduction--docs')).toMatchObject({
+      name: 'Introduction',
+      path: ['Example'],
+    });
+  });
+
+  it('names a docs heading after its docs page, then the heading', () => {
+    expect(itemFor('example-forms-button--docs', ref, 'anchor--primary')).toMatchObject({
+      id: 'example-forms-button--docs#anchor--primary',
+      name: 'Button / Docs / Primary',
+      path: ['Example', 'Forms'],
+    });
+  });
+
+  it('leaves out a heading named like the first group of its docs page', () => {
+    expect(itemFor('example-forms-button--docs', ref, 'anchor--example')).toMatchObject({
+      id: 'example-forms-button--docs#anchor--example',
+      name: 'Button / Docs',
+    });
+  });
+
+  it('opens the docs page itself when its heading no longer exists', () => {
+    expect(itemFor('example-forms-button--docs', ref, 'anchor--removed')).toMatchObject({
+      id: 'example-forms-button--docs',
+      name: 'Button / Docs',
+    });
+  });
+
+  it('ignores an anchor on a story', () => {
+    expect(itemFor('example-forms-button--primary', ref, 'anchor--primary')).toMatchObject({
+      id: 'example-forms-button--primary',
+      name: 'Button / Primary',
+    });
+  });
+
+  it('skips entries that are missing or are not a story or docs page', () => {
+    expect(itemFor('example-forms-button--removed')).toBeUndefined();
+    expect(itemFor('example-forms-button')).toBeUndefined();
+    expect(itemFor('example-forms')).toBeUndefined();
+    expect(itemFor('example-forms-button--primary', { id: 'design-system' })).toBeUndefined();
+  });
+
+  it('starts the path of a composed Storybook entry with the Storybook title', () => {
+    const composed = { id: 'design-system', title: 'Design System', index };
+    expect(itemFor('example-forms-button--secondary', composed)).toMatchObject({
+      refId: 'design-system',
+      name: 'Button / Secondary',
+      path: ['Design System', 'Example', 'Forms'],
+    });
+  });
+});

@@ -19,9 +19,10 @@ function formatRule({
   typescript,
 }: WriteStoriesSkillInputs): string {
   if (svelteCsf) {
+    const script = typescript ? '<script module lang="ts">' : '<script module>';
     const meta = csfFactories
-      ? `Because \`${previewFile}\` uses \`definePreview\`, the \`<script module>\` of a story file has \`import preview from '../.storybook/preview'\` (the path to that file) and \`const { Story } = preview.meta({ component: Button })\`.`
-      : `The \`<script module>\` of a story file has \`import { defineMeta } from '${framework}'\` and \`const { Story } = defineMeta({ component: Button })\`.`;
+      ? `Because \`${previewFile}\` uses \`definePreview\`, the \`${script}\` of a story file has \`import preview from '../.storybook/preview'\` (the path to that file) and \`const { Story } = preview.meta({ component: Button })\`.`
+      : `The \`${script}\` of a story file has \`import { defineMeta } from '${framework}'\` and \`const { Story } = defineMeta({ component: Button })\`.`;
     return `This project writes stories in Svelte CSF: a new story file is a \`.stories.svelte\` file, never a \`.stories.ts\` or \`.stories.js\` file, and has no \`export const\` stories. ${meta} Each story is a \`<Story name="Primary" args={{ ... }} />\` element; every other story property, such as \`play\`, \`beforeEach\`, \`parameters\` and \`tags\`, is a prop of it, and the description of a story is an HTML comment right above its \`<Story>\`. Import`;
   }
   if (csfFactories) {

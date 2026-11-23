@@ -78,6 +78,7 @@ describe('buildWriteStoriesSkill', () => {
   it('teaches Svelte CSF instead of meta.story() exports when the stories are Svelte CSF', () => {
     const text = buildWriteStoriesSkill(svelteKit);
 
+    expect(text).toContain('the `<script module lang="ts">` of a story file');
     expect(text).toContain('const { Story } = preview.meta({ component: Button })');
     expect(text).toContain('`<Story name="Primary" args={{ ... }} />`');
     expect(text).toContain('an HTML comment right above its `<Story>`');
@@ -90,8 +91,9 @@ describe('buildWriteStoriesSkill', () => {
   });
 
   it('teaches defineMeta for Svelte CSF without definePreview', () => {
-    const text = buildWriteStoriesSkill({ ...svelteKit, csfFactories: false });
+    const text = buildWriteStoriesSkill({ ...svelteKit, csfFactories: false, typescript: false });
 
+    expect(text).toContain('The `<script module>` of a story file');
     expect(text).toContain(
       "`import { defineMeta } from '@storybook/sveltekit'` and `const { Story } = defineMeta({ component: Button })`"
     );

@@ -97,6 +97,100 @@ function getImportablePackageName(componentPath: string | undefined, fallbackPat
   }
 }
 
+// Every string an `exports` target can resolve to, through condition objects and fallback arrays.
+function getExportTargets(target: unknown): string[] {
+  if (typeof target === 'string') {
+    return [target];
+  }
+  if (Array.isArray(target)) {
+    return target.flatMap(getExportTargets);
+  }
+  if (typeof target === 'object' && target !== null) {
+    return Object.values(target).flatMap(getExportTargets);
+  }
+  return [];
+}
+
+// The subpath whose target is `file` (relative to the package root), expanding a `*` pattern.
+function matchExportSubpath(subpath: string, target: string, file: string) {
+  const normalizedTarget = target.replace(/^\.\//, '');
+  const star = normalizedTarget.indexOf('*');
+  if (star === -1) {
+    return normalizedTarget === file ? subpath : undefined;
+  }
+  const prefix = normalizedTarget.slice(0, star);
+  const suffix = normalizedTarget.slice(star + 1);
+  const matches =
+    subpath.includes('*') &&
+    file.length >= prefix.length + suffix.length &&
+    file.startsWith(prefix) &&
+    file.endsWith(suffix);
+  return matches
+    ? subpath.replace('*', file.slice(prefix.length, file.length - suffix.length))
+    : undefined;
+}
+
+// The package import of a component file, when its package exports only subpaths and one of them
+// targets the file, e.g. `@acme/ui/button` for `src/button.tsx`.
+function getExportSubpathImport(componentPath: string) {
+  const nearestPkg = cachedFindUp('package.json', {
+    cwd: path.dirname(componentPath),
+  });
+  if (!nearestPkg) {
+    return undefined;
+  }
+
+  try {
+    const parsed = JSON.parse(cachedReadTextFileSync(nearestPkg));
+    if (
+      typeof parsed !== 'object' ||
+      !parsed ||
+      typeof parsed.name !== 'string' ||
+      typeof parsed.exports !== 'object' ||
+      !parsed.exports ||
+      Array.isArray(parsed.exports) ||
+      hasRootEntry(parsed)
+    ) {
+      return undefined;
+    }
+
+    const file = path.relative(path.dirname(nearestPkg), componentPath);
+    for (const [subpath, target] of Object.entries(parsed.exports)) {
+      for (const candidate of getExportTargets(target)) {
+        const match = matchExportSubpath(subpath, candidate, file);
+        if (match) {
+          return `${parsed.name}${match.slice(1)}`;
+        }
+      }
+    }
+    return undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * A package that exports only subpaths cannot be imported by its bare name. Each component its
+ * `exports` reaches imports from the subpath that targets its file instead. An `@import` tag still
+ * wins, and a component no subpath targets keeps the import it had.
+ */
+function withExportSubpaths(refs: ComponentRef[]): ComponentRef[] {
+  return refs.map((ref) => {
+    if (
+      ref.importOverride ||
+      ref.isPackage ||
+      !ref.path ||
+      ref.namespace ||
+      !ref.importName ||
+      ref.importName === 'default'
+    ) {
+      return ref;
+    }
+    const importId = getExportSubpathImport(ref.path);
+    return importId ? { ...ref, importId, isPackage: true } : ref;
+  });
+}
+
 function getFallbackImport(packageName: string | undefined, componentName: string | undefined) {
   const exportName = componentName?.split('.').at(-1);
   return packageName && exportName
@@ -183,7 +277,7 @@ function createSubcomponentDocgen({
   storyFilePath: string;
 }): ReactSubcomponentManifest {
   const imports =
-    buildImportStatements({ refs: component ? [component] : [], packageName })
+    buildImportStatements({ refs: component ? withExportSubpaths([component]) : [], packageName })
       .join('\n')
       .trim() || getFallbackImport(packageName, component?.componentName);
   const {
@@ -267,7 +361,7 @@ export function buildStoryDocsFromResolved({
   // names that module too. `packageName` rewriting is for the component, so those refs opt out of it.
   const argRefs = storyEntries.imports.map((ref) => ({ ...ref, isPackage: true }));
   const imports =
-    buildImportStatements({ refs: [...allComponents, ...argRefs], packageName })
+    buildImportStatements({ refs: [...withExportSubpaths(allComponents), ...argRefs], packageName })
       .join('\n')
       .trim() || fallbackImport;
 

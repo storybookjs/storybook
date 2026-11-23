@@ -452,6 +452,57 @@ test('keeps the story import for a private package that exports only subpaths', 
   expect(manifest?.import).toBe("import { Button } from './Button';");
 });
 
+test('imports a component from the subpath that exports its file', async () => {
+  const code = withCSF3('export const Primary = () => <Button />;');
+
+  const manifest = await getManifestForStory(code, {
+    name: '@acme/ui',
+    private: true,
+    exports: { './button': './src/stories/Button.tsx' },
+  });
+
+  expect(manifest?.import).toBe("import { Button } from '@acme/ui/button';");
+});
+
+test('imports a component from the subpath pattern that exports its file', async () => {
+  const code = withCSF3('export const Primary = () => <Button />;');
+
+  const manifest = await getManifestForStory(code, {
+    name: '@acme/ui',
+    private: true,
+    exports: { './components/*': './src/stories/*.tsx' },
+  });
+
+  expect(manifest?.import).toBe("import { Button } from '@acme/ui/components/Button';");
+});
+
+test('imports a component from the subpath whose conditions export its file', async () => {
+  const code = withCSF3('export const Primary = () => <Button />;');
+
+  const manifest = await getManifestForStory(code, {
+    name: '@acme/ui',
+    exports: {
+      './button': {
+        types: './dist/Button.d.ts',
+        import: './src/stories/Button.tsx',
+      },
+    },
+  });
+
+  expect(manifest?.import).toBe("import { Button } from '@acme/ui/button';");
+});
+
+test('imports a component by its package name when the package also exports its root', async () => {
+  const code = withCSF3('export const Primary = () => <Button />;');
+
+  const manifest = await getManifestForStory(code, {
+    name: '@acme/ui',
+    exports: { '.': './src/index.ts', './button': './src/stories/Button.tsx' },
+  });
+
+  expect(manifest?.import).toBe("import { Button } from '@acme/ui';");
+});
+
 test('component exported from other file', async () => {
   const code = withCSF3(dedent`
     export { Primary } from './other-file';

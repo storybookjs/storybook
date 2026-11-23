@@ -2,7 +2,7 @@ import type { Options } from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';
 
-import { frameworkPackages } from './get-storybook-info.ts';
+import { frameworkPackages } from './framework.ts';
 import { matchPackageName } from './match-package-name.ts';
 
 /** Framework can be a string or an object. This utility always returns the string name. */

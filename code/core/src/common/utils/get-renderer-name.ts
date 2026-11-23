@@ -1,8 +1,7 @@
 import type { Options } from 'storybook/internal/types';
 
-import { frameworkToRenderer } from './framework.ts';
+import { frameworkPackages, frameworkToRenderer, rendererPackages } from './framework.ts';
 import { extractFrameworkPackageName, getFrameworkName } from './get-framework-name.ts';
-import { frameworkPackages, rendererPackages } from './get-storybook-info.ts';
 import { matchPackageName } from './match-package-name.ts';
 
 /**

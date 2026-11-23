@@ -128,6 +128,7 @@ const managerContext: any = {
     getCurrentStoryData: fn().mockName('api::getCurrentStoryData'),
     getElements: fn(() => ({})).mockName('api::getElements'),
     getData: fn().mockName('api::getData'),
+    resolveLeafEntry: fn().mockName('api::resolveLeafEntry'),
   },
 };
 

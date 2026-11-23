@@ -1,10 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { registerCoreToolsetsForTest } from './test-support/register-core-toolsets.ts';
-import {
-  incomingMessageToWebRequest,
-  webResponseToServerResponse,
-  getToolsets,
-} from './mcp-handler.ts';
+import { incomingMessageToWebRequest, webResponseToServerResponse } from './mcp-handler.ts';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { PassThrough } from 'node:stream';
 import { CompositionAuth } from './auth/index.ts';
@@ -242,7 +238,6 @@ describe('mcpServerHandler', () => {
     handlerOptions: { sources?: any[] } = {}
   ): Promise<string[]> {
     const host = `localhost:${port}`;
-    const addonOptions = { toolsets: { dev: true, docs: true } };
 
     const initReq = createMockIncomingMessage({
       method: 'POST',
@@ -256,7 +251,6 @@ describe('mcpServerHandler', () => {
       origin: 'http://localhost:6006',
       basePath: '/',
       options: mockOptions,
-      addonOptions,
       compositionAuth: new CompositionAuth(),
       ...handlerOptions,
     });
@@ -273,7 +267,6 @@ describe('mcpServerHandler', () => {
       origin: 'http://localhost:6006',
       basePath: '/',
       options: mockOptions,
-      addonOptions,
       compositionAuth: new CompositionAuth(),
       ...handlerOptions,
     });
@@ -299,12 +292,6 @@ describe('mcpServerHandler', () => {
       origin: 'http://localhost:6006',
       basePath: '/',
       options: mockOptions as any,
-      addonOptions: {
-        toolsets: {
-          dev: true,
-          docs: true,
-        },
-      },
       compositionAuth: new CompositionAuth(),
     });
 
@@ -360,7 +347,6 @@ describe('mcpServerHandler', () => {
       origin: 'http://localhost:6006',
       basePath: '/',
       options: createMockOptions(),
-      addonOptions: { toolsets: { dev: true, docs: true } },
       compositionAuth: new CompositionAuth(),
     });
 
@@ -370,7 +356,7 @@ describe('mcpServerHandler', () => {
     expect(JSON.parse(responseBody)).toMatchObject({ jsonrpc: '2.0', error: { code } });
   });
 
-  it('should include docs-style instructions when docs toolset is selected and manifest is available', async () => {
+  it('should include component-docs instructions when manifest is available', async () => {
     const applyMock = vi.fn(async (key: string, defaultValue?: any) => {
       if (key === 'core') {
         return { disableTelemetry: false };
@@ -393,7 +379,6 @@ describe('mcpServerHandler', () => {
       headers: {
         'content-type': 'application/json',
         host: 'localhost:6011',
-        'X-MCP-Toolsets': 'docs',
       },
       body: createMCPInitializeRequest(),
     });
@@ -405,13 +390,6 @@ describe('mcpServerHandler', () => {
       origin: 'http://localhost:6006',
       basePath: '/',
       options: mockOptions as any,
-      addonOptions: {
-        toolsets: {
-          dev: true,
-          docs: true,
-          test: true,
-        },
-      },
       compositionAuth: new CompositionAuth(),
     });
 
@@ -423,9 +401,8 @@ describe('mcpServerHandler', () => {
     expect(parsedResponse.result.instructions).toContain(
       '1. `npx storybook skills component-docs --mcp`'
     );
-    expect(parsedResponse.result.instructions).not.toContain('write-stories');
-    expect(parsedResponse.result.instructions).not.toContain('ui-review');
-    expect(parsedResponse.result.instructions).not.toContain('test-stories');
+    expect(parsedResponse.result.instructions).toContain('write-stories');
+    expect(parsedResponse.result.instructions).toContain('ui-review');
   });
 
   it('should respect disableTelemetry setting', async () => {
@@ -457,12 +434,6 @@ describe('mcpServerHandler', () => {
       origin: 'http://localhost:6006',
       basePath: '/',
       options: mockOptions as any,
-      addonOptions: {
-        toolsets: {
-          dev: true,
-          docs: true,
-        },
-      },
       compositionAuth: new CompositionAuth(),
     });
 
@@ -506,9 +477,6 @@ describe('mcpServerHandler', () => {
       origin: 'http://localhost:6006',
       basePath: '/',
       options: mockOptions as any,
-      addonOptions: {
-        toolsets: { dev: true, docs: true },
-      },
       compositionAuth: new CompositionAuth(),
     });
 
@@ -531,9 +499,6 @@ describe('mcpServerHandler', () => {
       origin: 'http://localhost:6006',
       basePath: '/',
       options: mockOptions as any,
-      addonOptions: {
-        toolsets: { dev: true, docs: true },
-      },
       compositionAuth: new CompositionAuth(),
     });
 
@@ -579,137 +544,5 @@ describe('mcpServerHandler', () => {
 
     expect(toolNames).toContain('stories-changed');
     expect(toolNames).toContain('review-create');
-  });
-});
-
-describe('getToolsets', () => {
-  it('should return addon options when no header is present', () => {
-    const request = new Request('http://localhost:6006/mcp');
-    const addonOptions = {
-      toolsets: {
-        dev: true,
-        docs: false,
-        test: true,
-      },
-    };
-
-    const result = getToolsets(request, addonOptions);
-
-    expect(result).toEqual({
-      dev: true,
-      docs: false,
-      test: true,
-    });
-  });
-
-  it('should enable only toolsets specified in header', () => {
-    const request = new Request('http://localhost:6006/mcp', {
-      headers: { 'X-MCP-Toolsets': 'dev' },
-    });
-    const addonOptions = {
-      toolsets: {
-        dev: true,
-        docs: true,
-        test: true,
-      },
-    };
-
-    const result = getToolsets(request, addonOptions);
-
-    expect(result).toEqual({
-      dev: true,
-      docs: false,
-      test: false,
-    });
-  });
-
-  it('should enable multiple toolsets from comma-separated header', () => {
-    const request = new Request('http://localhost:6006/mcp', {
-      headers: {
-        'X-MCP-Toolsets': 'dev,docs',
-      },
-    });
-    const addonOptions = {
-      toolsets: {
-        dev: false,
-        docs: false,
-        test: false,
-      },
-    };
-
-    const result = getToolsets(request, addonOptions);
-
-    expect(result).toEqual({
-      dev: true,
-      docs: true,
-      test: false,
-    });
-  });
-
-  it('should handle whitespace in header values', () => {
-    const request = new Request('http://localhost:6006/mcp', {
-      headers: {
-        'X-MCP-Toolsets': ' dev , docs ',
-      },
-    });
-    const addonOptions = {
-      toolsets: {
-        dev: false,
-        docs: false,
-        test: false,
-      },
-    };
-
-    const result = getToolsets(request, addonOptions);
-
-    expect(result).toEqual({
-      dev: true,
-      docs: true,
-      test: false,
-    });
-  });
-
-  it('should ignore invalid toolset names in header', () => {
-    const request = new Request('http://localhost:6006/mcp', {
-      headers: {
-        'X-MCP-Toolsets': 'dev,invalidToolset,docs',
-      },
-    });
-    const addonOptions = {
-      toolsets: {
-        dev: false,
-        docs: false,
-        test: false,
-      },
-    };
-
-    const result = getToolsets(request, addonOptions);
-
-    expect(result).toEqual({
-      dev: true,
-      docs: true,
-      test: false,
-    });
-  });
-
-  it('should return addon options when header is present with empty value', () => {
-    const request = new Request('http://localhost:6006/mcp', {
-      headers: { 'X-MCP-Toolsets': '' },
-    });
-    const addonOptions = {
-      toolsets: {
-        dev: true,
-        docs: true,
-        test: true,
-      },
-    };
-
-    const result = getToolsets(request, addonOptions);
-
-    expect(result).toEqual({
-      dev: true,
-      docs: true,
-      test: true,
-    });
   });
 });

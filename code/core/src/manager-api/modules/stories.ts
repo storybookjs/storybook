@@ -1261,7 +1261,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       if (sourceType !== 'local') {
         return;
       }
-      global.requestIdleCallback(() => {
+      const preloadSiblings = () => {
         const { storyId, refId } = store.getState();
         if (storyId !== finishedStoryId) {
           return;
@@ -1276,7 +1276,12 @@ export const init: ModuleFn<SubAPI, SubState> = ({
             options: { target: refId },
           });
         }
-      });
+      };
+      if (typeof global.requestIdleCallback === 'function') {
+        global.requestIdleCallback(preloadSiblings);
+      } else {
+        setTimeout(preloadSiblings, 1);
+      }
     }
   );
 

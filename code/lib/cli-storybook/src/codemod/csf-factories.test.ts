@@ -182,7 +182,7 @@ it.each([
 
 const projectDir = resolve('/project');
 
-async function migrateProject(configFolder: string) {
+async function migrateProject(configFolder: string, storyFiles = ['stories/Button.stories.tsx']) {
   const configDir = resolve(projectDir, configFolder);
   const paths = {
     main: resolve(configDir, 'main.ts'),
@@ -210,7 +210,7 @@ async function migrateProject(configFolder: string) {
   vi.mocked(syncStorybookAddons).mockResolvedValue(undefined);
   vi.mocked(runCodemod).mockImplementation(async (globOrFiles = [], transform) => {
     const files = [globOrFiles].flat();
-    for (const file of files) {
+    for (const file of files.filter((file) => file in sources)) {
       written.set(file, await transform({ path: file, source: sources[file] }));
     }
     return { files, errorCount: 0 };
@@ -221,7 +221,7 @@ async function migrateProject(configFolder: string) {
     mainConfigPath: paths.main,
     previewConfigPath: paths.preview,
     mainConfig: { stories: ['./stories/**/*.stories.?(ts|tsx|js|jsx)'] },
-    storiesPaths: [paths.story, resolve(configDir, 'Introduction.mdx')],
+    storiesPaths: storyFiles.map((file) => resolve(configDir, file)),
     packageManager: {
       primaryPackageJson: {
         packageJson: {},
@@ -239,8 +239,11 @@ async function migrateProject(configFolder: string) {
 }
 
 describe('a .rnstorybook config without a framework', () => {
-  it('migrates the story files of the main config inside the config folder', async () => {
-    const { paths, written } = await migrateProject('.rnstorybook');
+  it('migrates the story files of the main config without its MDX files', async () => {
+    const { paths, written } = await migrateProject('.rnstorybook', [
+      'stories/Button.stories.tsx',
+      'Introduction.mdx',
+    ]);
 
     expect(vi.mocked(runCodemod).mock.calls[0][0]).toEqual([paths.story]);
     expect(written.get(paths.story)).toContain("import preview from '#.storybook/preview';");
@@ -256,6 +259,14 @@ describe('a .rnstorybook config without a framework', () => {
       /import { definePreview } from ['"]@storybook\/react-native['"]/
     );
   });
+});
+
+it('falls back to the default stories glob when the main config only has MDX files', async () => {
+  await migrateProject('.storybook', ['Introduction.mdx']);
+
+  expect(vi.mocked(runCodemod).mock.calls[0][0]).toBe(
+    '**/*.{stories,story}.{js,jsx,ts,tsx,mjs,mjsx,mts,mtsx,svelte}'
+  );
 });
 
 describe('a .storybook config without a framework next to a .rnstorybook folder', () => {

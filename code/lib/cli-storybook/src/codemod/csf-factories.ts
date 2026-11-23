@@ -43,15 +43,28 @@ export async function storyToCsf4(
 export const SANDBOX_STORIES_GLOB =
   '{stories,src/stories}/{Button,Header,Page,button,header,page}.stories.*';
 
+const CODEMOD_STORY_EXTENSION = /\.(js|jsx|ts|tsx|mjs|mjsx|mts|mtsx|svelte)$/;
+
 async function runStoriesCodemod(options: {
   dryRun: boolean | undefined;
   useSubPathImports: boolean;
   previewConfigPath: string;
   yes: boolean | undefined;
   glob: string | undefined;
+  storiesPaths: string[];
 }) {
-  const { dryRun, yes, glob, ...codemodOptions } = options;
+  const { dryRun, yes, glob, storiesPaths, ...codemodOptions } = options;
   const inSandbox = optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX) ?? false;
+  const configuredStoryFiles = storiesPaths.filter((file) => CODEMOD_STORY_EXTENSION.test(file));
+
+  if (!glob && !inSandbox && configuredStoryFiles.length > 0) {
+    logger.step('Applying codemod on the stories of your main config...');
+    await runCodemod(configuredStoryFiles, (info) => storyToCsf4(info, codemodOptions), {
+      dryRun,
+    });
+    return;
+  }
+
   const promptsForGlob = !glob && !inSandbox && !yes;
   try {
     let globString = glob ?? '**/*.{stories,story}.{js,jsx,ts,tsx,mjs,mjsx,mts,mtsx,svelte}';
@@ -69,9 +82,9 @@ async function runStoriesCodemod(options: {
     logger.step('Applying codemod on your stories, this might take some time...');
 
     await runCodemod(globString, (info) => storyToCsf4(info, codemodOptions), { dryRun });
-  } catch (err: any) {
+  } catch (err) {
     // Ask for another glob. Without a prompt, the same glob would match nothing again.
-    if (err.message === 'No files matched' && promptsForGlob) {
+    if (err instanceof Error && err.message === 'No files matched' && promptsForGlob) {
       await runStoriesCodemod(options);
     } else {
       throw err;
@@ -89,6 +102,7 @@ export const csfFactories: CommandFix = {
     previewConfigPath,
     packageManager,
     configDir,
+    storiesPaths,
     yes,
     glob,
   }) {
@@ -152,11 +166,13 @@ export const csfFactories: CommandFix = {
       previewConfigPath: previewConfigPath!,
       yes,
       glob,
+      storiesPaths,
     });
 
     logger.step('Applying codemod on your main config...');
     const frameworkPackage =
-      getFrameworkPackageName(mainConfig) || '@storybook/your-framework-here';
+      getFrameworkPackageName(mainConfig) ??
+      (isReactNativePreview ? '@storybook/react-native' : '@storybook/your-framework-here');
     await runCodemod([mainConfigPath!], (fileInfo) =>
       configToCsfFactory(fileInfo, { configType: 'main', frameworkPackage }, { dryRun })
     );

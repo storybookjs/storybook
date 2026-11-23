@@ -20,6 +20,9 @@ You can automatically upgrade all of your project's stories from CSF 3 to CSF 4 
 
 <CodeSnippets path="csf-factories-automigrate.md" />
 
+The command upgrades the story files that the `stories` field of your main configuration points to.
+To upgrade a different set of files, pass a glob with the `--glob` flag, for example `--glob "src/**/*.stories.tsx"`.
+
 ### Monorepos
 
 If your project has multiple Storybook configurations, run the command with the `--config-dir` flag pointing to each config directory:

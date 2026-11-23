@@ -1,10 +1,17 @@
-import { posix } from 'node:path';
+import { posix, resolve } from 'node:path';
 
-import { expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { syncStorybookAddons } from 'storybook/internal/common';
+import type { JsPackageManager } from 'storybook/internal/common';
 
 import { dedent } from 'ts-dedent';
 
-import { SANDBOX_STORIES_GLOB, storyToCsf4 } from './csf-factories.ts';
+import { runCodemod } from '../automigrate/codemod.ts';
+import { SANDBOX_STORIES_GLOB, csfFactories, storyToCsf4 } from './csf-factories.ts';
+
+vi.mock('../automigrate/codemod.ts', { spy: true });
+vi.mock('storybook/internal/common', { spy: true });
 
 const options = { previewConfigPath: '#.storybook/preview', useSubPathImports: true };
 const path = 'Button.stories.tsx';
@@ -169,4 +176,77 @@ it.each([
   'src/Button.stories.ts',
 ])('does not match %s in a sandbox', (file) => {
   expect(posix.matchesGlob(file, SANDBOX_STORIES_GLOB)).toBe(false);
+});
+
+describe('React Native project', () => {
+  const projectDir = resolve('/project');
+  const configDir = resolve(projectDir, '.rnstorybook');
+  const mainConfigPath = resolve(configDir, 'main.ts');
+  const previewConfigPath = resolve(configDir, 'preview.tsx');
+  const storyPath = resolve(configDir, 'stories/Button.stories.tsx');
+  const sources: Record<string, string> = {
+    [mainConfigPath]: dedent`
+      import type { StorybookConfig } from '@storybook/react-native';
+      const main: StorybookConfig = { stories: ['./stories/**/*.stories.?(ts|tsx|js|jsx)'] };
+      export default main;
+    `,
+    [previewConfigPath]: dedent`
+      import type { Preview } from '@storybook/react-native';
+      const preview: Preview = {};
+      export default preview;
+    `,
+    [storyPath]: dedent`
+      import type { Meta, StoryObj } from '@storybook/react-native';
+      import { Button } from './Button';
+      const meta = { component: Button } satisfies Meta<typeof Button>;
+      export default meta;
+      export const Primary: StoryObj<typeof meta> = { args: { title: 'Button' } };
+    `,
+  };
+  const written = new Map<string, string>();
+
+  beforeEach(async () => {
+    written.clear();
+    vi.mocked(syncStorybookAddons).mockResolvedValue(undefined);
+    vi.mocked(runCodemod).mockImplementation(async (globOrFiles = [], transform) => {
+      const files = [globOrFiles].flat();
+      for (const file of files) {
+        written.set(file, await transform({ path: file, source: sources[file] }));
+      }
+      return { files, errorCount: 0 };
+    });
+
+    await csfFactories.run({
+      configDir,
+      mainConfigPath,
+      previewConfigPath,
+      mainConfig: { stories: ['./stories/**/*.stories.?(ts|tsx|js|jsx)'] },
+      storiesPaths: [storyPath, resolve(configDir, 'Introduction.mdx')],
+      packageManager: {
+        primaryPackageJson: {
+          packageJson: {},
+          operationDir: projectDir,
+          packageJsonPath: resolve(projectDir, 'package.json'),
+        },
+        writePackageJson: vi.fn(),
+      } as unknown as JsPackageManager,
+      result: null,
+      storybookVersion: '11.0.0',
+      yes: true,
+    });
+  });
+
+  it('migrates the story files of the main config inside the config folder', () => {
+    expect(vi.mocked(runCodemod).mock.calls[0][0]).toEqual([storyPath]);
+    expect(written.get(storyPath)).toContain("import preview from '#.storybook/preview';");
+  });
+
+  it('imports the factories from the React Native framework without a framework field', () => {
+    expect(written.get(mainConfigPath)).toContain(
+      "import { defineMain } from '@storybook/react-native/node';"
+    );
+    expect(written.get(previewConfigPath)).toContain(
+      "import { definePreview } from '@storybook/react-native';"
+    );
+  });
 });

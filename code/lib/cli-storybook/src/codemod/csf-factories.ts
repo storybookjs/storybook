@@ -3,7 +3,7 @@ import { join } from 'node:path';
 
 import { optionalEnvToBoolean, syncPreviewAddonsWithMainConfig } from 'storybook/internal/common';
 import { formatConfig, loadConfig } from 'storybook/internal/csf-tools';
-import { logger, prompt } from 'storybook/internal/node-logger';
+import { CLI_COLORS, logger, prompt } from 'storybook/internal/node-logger';
 
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
@@ -19,6 +19,7 @@ import { type FileInfo, runCodemod } from '../automigrate/codemod.ts';
 import { editParsedFile } from '../automigrate/helpers/edit-parsed-file.ts';
 import { getFrameworkPackageName } from '../automigrate/helpers/mainConfigFile.ts';
 import type { CommandFix } from '../automigrate/types.ts';
+import { highlightChange } from '../dry-run.ts';
 import { configToCsfFactory } from './helpers/config-to-csf-factory.ts';
 import { storyToCsfFactory } from './helpers/story-to-csf-factory.ts';
 import { svelteCsfToCsfFactory } from './helpers/svelte-csf-to-csf-factory.ts';
@@ -68,9 +69,16 @@ async function runStoriesCodemod(options: {
       });
     }
 
-    logger.step('Applying codemod on your stories, this might take some time...');
+    logger.step(
+      dryRun
+        ? 'Checking how codemods would apply on your stories'
+        : 'Applying codemod on your stories, this might take some time...'
+    );
 
-    await runCodemod(globString, (info) => storyToCsf4(info, codemodOptions), { dryRun });
+    await runCodemod(globString, (info) => storyToCsf4(info, codemodOptions), {
+      dryRun,
+      announceDryRun: false,
+    });
   } catch (err: any) {
     // Ask for another glob. Without a prompt, the same glob would match nothing again.
     if (err.message === 'No files matched' && promptsForGlob) {
@@ -127,7 +135,7 @@ export const csfFactories: CommandFix = {
     const { packageJson, operationDir, packageJsonPath } = packageManager.primaryPackageJson;
     const writeImportsMap = () => {
       if (dryRun) {
-        logger.step(`Would add an imports map in ${picocolors.cyan(packageJsonPath)}`);
+        logger.step(`Would add an imports map in ${highlightChange(packageJsonPath)}`);
         return;
       }
       logger.step(`Adding imports map in ${picocolors.cyan(packageJsonPath)}`);
@@ -166,11 +174,11 @@ export const csfFactories: CommandFix = {
         async (info) => {
           const output = await transform(info);
           if (dryRun && output !== info.source) {
-            logger.log(`Would write to ${picocolors.yellow(info.path)}`);
+            logger.log(`Would write to ${highlightChange(info.path)}`);
           }
           return output;
         },
-        { dryRun }
+        { dryRun, announceDryRun: false }
       );
 
     logger.step('Applying codemod on your main config...');
@@ -197,6 +205,7 @@ export const csfFactories: CommandFix = {
     });
 
     if (dryRun) {
+      logger.step(CLI_COLORS.success('Dry run finished: no files were changed.'));
       return;
     }
 

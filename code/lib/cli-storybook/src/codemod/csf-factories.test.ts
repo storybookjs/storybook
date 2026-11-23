@@ -264,6 +264,20 @@ describe('csfFactories', () => {
   };
 
   describe.each(Object.entries(previews))('with %s', (_, preview) => {
+    it('says once that it was a dry run, and that it checks the stories', async () => {
+      const { packageManager } = createProject(preview);
+
+      await run(packageManager, true);
+
+      const output = [logger.step, logger.log]
+        .flatMap((method) => vi.mocked(method).mock.calls.flat())
+        .join('\n');
+      expect(output).toContain('Checking how codemods would apply on your stories');
+      expect(output).not.toContain('Applying codemod on your stories');
+      expect(output).not.toContain('This was a dry run');
+      expect(output.match(/Dry run finished/g) ?? []).toHaveLength(1);
+    });
+
     it('changes no file in a dry run', async () => {
       const { files, packageManager } = createProject(preview);
 

@@ -35,7 +35,16 @@ export async function runCodemod(
   // A list of files is used as is, so a path with `(` or `[` in it is not read as a glob.
   globPattern: string | string[] = '**/*.{stories,story}.{js,jsx,ts,tsx,mjs,mjsx,mts,mtsx}',
   transform: (source: FileInfo, ...rest: any) => string | Promise<string>,
-  { dryRun = false, skipFormatting = false }: { dryRun?: boolean; skipFormatting?: boolean } = {}
+  {
+    dryRun = false,
+    skipFormatting = false,
+    announceDryRun = true,
+  }: {
+    dryRun?: boolean;
+    skipFormatting?: boolean;
+    /** End a dry run with a line that says it was one. A command running several codemods says it once itself. */
+    announceDryRun?: boolean;
+  } = {}
 ) {
   let modifiedCount = 0;
   let unmodifiedCount = 0;
@@ -109,7 +118,7 @@ export async function runCodemod(
     `Summary: ${picocolors.green(`${modifiedCount} transformed`)}, ${picocolors.yellow(`${unmodifiedCount} unmodified`)}, ${picocolors.red(`${errorCount} errors`)}`
   );
 
-  if (dryRun) {
+  if (dryRun && announceDryRun) {
     logger.log(
       picocolors.bold(
         `This was a dry run. Run without --dry-run to apply the transformation to ${modifiedCount} files.`

@@ -34,13 +34,11 @@ export const findPackagesInDependencyTree = <Node>(
   pattern: string[]
 ): [name: string, node: Node][] => {
   const regexes = pattern.map(packagePatternToRegex);
-  let found: [string, Node][] = [];
-  for (
-    let level = Object.entries(tree);
-    level.length > 0;
-    level = level.flatMap(([, node]) => Object.entries(node.dependencies ?? {}))
-  ) {
-    found = found.concat(level.filter(([name]) => regexes.some((regex) => regex.test(name))));
+  const found: [name: string, node: Node][] = [];
+  let level = Object.entries(tree);
+  while (level.length > 0) {
+    found.push(...level.filter(([name]) => regexes.some((regex) => regex.test(name))));
+    level = level.flatMap(([, node]) => Object.entries(node.dependencies ?? {}));
   }
   return found;
 };

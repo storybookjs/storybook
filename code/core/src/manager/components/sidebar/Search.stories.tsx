@@ -60,20 +60,93 @@ export const FilledIn: StoryFn = () => (
   </Search>
 );
 
+const renderResults: SearchProps['children'] = ({
+  query,
+  results,
+  closeMenu,
+  getMenuProps,
+  getItemProps,
+  highlightedIndex,
+}) => (
+  <SearchResults
+    query={query}
+    results={results}
+    closeMenu={closeMenu}
+    getMenuProps={getMenuProps}
+    getItemProps={getItemProps}
+    highlightedIndex={highlightedIndex}
+  />
+);
+
 export const LastViewed: StoryFn = () => (
   <Search {...baseProps} getLastViewed={getLastViewed}>
-    {({ query, results, closeMenu, getMenuProps, getItemProps, highlightedIndex }) => (
-      <SearchResults
-        query={query}
-        results={results}
-        closeMenu={closeMenu}
-        getMenuProps={getMenuProps}
-        getItemProps={getItemProps}
-        highlightedIndex={highlightedIndex}
-      />
-    )}
+    {renderResults}
   </Search>
 );
+
+const selectStory = fn().mockName('selectStory');
+
+const anchorIndex = {
+  ...index,
+  'emails-introduction': {
+    ...index['emails-introduction'],
+    anchors: [{ id: 'usage', title: 'Usage' }],
+  },
+};
+const anchorData = { [refId]: { ...data[refId], index: anchorIndex } };
+const anchorDataset = { hash: anchorData, entries: Object.entries(anchorData) };
+
+export const LastViewedOpensViewedStory: StoryFn = () => (
+  <Search
+    {...baseProps}
+    dataset={anchorDataset}
+    getLastViewed={() => [
+      { storyId: 'emails-buildnotification--with-error', refId },
+      { storyId: 'emails-introduction', refId, anchor: 'usage' },
+    ]}
+  >
+    {renderResults}
+  </Search>
+);
+LastViewedOpensViewedStory.decorators = [
+  (storyFn) => (
+    <ManagerContext.Provider
+      value={
+        {
+          api: {
+            getShortcutKeys: () => ({ search: ['/'] }),
+            selectStory,
+            resolveStory: () => undefined,
+            emit: fn(),
+          },
+        } as unknown as React.ContextType<typeof ManagerContext>
+      }
+    >
+      {storyFn()}
+    </ManagerContext.Provider>
+  ),
+];
+LastViewedOpensViewedStory.play = async ({ canvasElement }) => {
+  selectStory.mockClear();
+  const canvas = within(canvasElement);
+  await userEvent.click(canvas.getByRole('searchbox'));
+  await userEvent.click(await canvas.findByText('BuildNotification'));
+  await expect(selectStory).toHaveBeenCalledWith(
+    'emails-buildnotification--with-error',
+    undefined,
+    expect.anything()
+  );
+
+  // Docs entries keep opening the docs page at the viewed anchor
+  selectStory.mockClear();
+  await userEvent.click(canvas.getByRole('searchbox'));
+  await userEvent.click(await canvas.findByText('Introduction / Usage'));
+  await expect(selectStory).toHaveBeenCalledWith(
+    'emails-introduction',
+    undefined,
+    expect.objectContaining({ scrollTo: 'usage' })
+  );
+};
 
 const escapeAbove = fn().mockName('escapeAbove');
 

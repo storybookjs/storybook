@@ -55,7 +55,10 @@ export interface ExpandType {
 export type SearchItem = Item & { refId: string; path: string[]; status?: StatusValue };
 
 export type SearchResult = Fuse.FuseResultWithMatches<SearchItem> &
-  Fuse.FuseResultWithScore<SearchItem>;
+  Fuse.FuseResultWithScore<SearchItem> & {
+    // A component in "Recently opened" opens the story that was viewed, not its first story
+    lastViewedStoryId?: string;
+  };
 
 export type DownshiftItem = SearchResult | ExpandType;
 

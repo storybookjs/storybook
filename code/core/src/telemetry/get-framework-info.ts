@@ -1,5 +1,5 @@
 import { getStorybookInfo } from 'storybook/internal/common';
-import type { StorybookConfig } from 'storybook/internal/types';
+import { type StorybookConfig, SupportedRenderer } from 'storybook/internal/types';
 
 import { cleanPaths } from './sanitize.ts';
 
@@ -19,12 +19,12 @@ export async function getFrameworkInfo(mainConfig: StorybookConfig, configDir: s
   const frameworkOptions =
     typeof mainConfig.framework === 'object' ? mainConfig.framework.options : {};
   const frameworkName = frameworkPackage ? cleanAndSanitizePath(frameworkPackage) : undefined;
-  const frameworkRenderer =
-    frameworkName === '@storybook/react-native'
-      ? '@storybook/react-native'
-      : frameworkName === '@storybook-astro/framework'
-        ? '@storybook-astro/renderer'
-        : undefined;
+  const frameworkRenderers: Record<string, SupportedRenderer> = {
+    '@storybook/react-native': SupportedRenderer.REACT_NATIVE,
+    '@storybook-astro/framework': SupportedRenderer.ASTRO,
+    '@analogjs/storybook-angular': SupportedRenderer.ANGULAR,
+  };
+  const frameworkRenderer = frameworkName ? frameworkRenderers[frameworkName] : undefined;
 
   return {
     framework: {

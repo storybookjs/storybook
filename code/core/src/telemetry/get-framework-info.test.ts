@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { StorybookConfig } from 'storybook/internal/types';
+import { type StorybookConfig, SupportedRenderer } from 'storybook/internal/types';
 
 import { getFrameworkInfo } from './get-framework-info.ts';
 
@@ -37,10 +37,12 @@ describe('getFrameworkInfo', () => {
   });
 
   it.each([
-    ['@storybook/react-native', '@storybook/react-native'],
-    ['@storybook-astro/framework', '@storybook-astro/renderer'],
-    ['/repo/node_modules/@storybook/react-native', '@storybook/react-native'],
-    ['/repo/node_modules/@storybook-astro/framework', '@storybook-astro/renderer'],
+    ['@storybook/react-native', SupportedRenderer.REACT_NATIVE],
+    ['@storybook-astro/framework', SupportedRenderer.ASTRO],
+    ['/repo/node_modules/@storybook/react-native', SupportedRenderer.REACT_NATIVE],
+    ['/repo/node_modules/@storybook-astro/framework', SupportedRenderer.ASTRO],
+    ['@analogjs/storybook-angular', SupportedRenderer.ANGULAR],
+    ['/repo/node_modules/@analogjs/storybook-angular', SupportedRenderer.ANGULAR],
   ])('reports renderer %s as %s', async (frameworkPackage, renderer) => {
     const { getStorybookInfo } = await import('storybook/internal/common');
     vi.mocked(getStorybookInfo).mockResolvedValue({

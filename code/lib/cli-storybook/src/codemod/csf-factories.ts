@@ -8,6 +8,7 @@ import {
 } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 
+import { normalize } from 'pathe';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
@@ -68,7 +69,9 @@ async function runStoriesCodemod({
     return;
   }
 
-  const storyFiles = [...new Set(storiesPaths)].filter((file) => !file.endsWith('.mdx'));
+  const storyFiles = [...new Set(storiesPaths)].filter(
+    (file) => !file.endsWith('.mdx') && !normalize(file).includes('/node_modules/')
+  );
 
   if (storyFiles.length === 0) {
     logger.warn(

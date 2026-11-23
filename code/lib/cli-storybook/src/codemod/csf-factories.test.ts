@@ -300,6 +300,14 @@ it('skips the stories but migrates main and preview when the main config only ha
   expect(written.get(paths.preview)).toContain('definePreview');
 });
 
+it('skips the story files of the main config inside node_modules', async () => {
+  const { paths } = await migrateProject('.storybook', {
+    storyFiles: ['stories/Button.stories.tsx', 'node_modules/ui/Card.stories.tsx'],
+  });
+
+  expect(vi.mocked(runCodemod).mock.calls[0][0]).toEqual([paths.story]);
+});
+
 it('migrates a story once when overlapping stories entries both match it', async () => {
   const { paths } = await migrateProject('.storybook', {
     storyFiles: ['stories/Button.stories.tsx', 'stories/Button.stories.tsx'],

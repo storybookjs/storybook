@@ -4,7 +4,7 @@ import type {
   DocgenPayload,
   DocgenProviderInput,
 } from '../../shared/open-service/services/docgen/types.ts';
-import { createLazyDocgenMiddleware } from './lazy-docgen-middleware.ts';
+import { type DocgenResult, createLazyDocgenMiddleware } from './lazy-docgen-middleware.ts';
 
 const DOWNSTREAM: DocgenPayload = {
   id: 'button',
@@ -125,6 +125,28 @@ describe('createLazyDocgenMiddleware', () => {
       await Promise.all([first, ...late]);
 
       expect(calls).toEqual([['Button'], ['Card', 'Input']]);
+    });
+
+    it('fails every request of a batch that throws, and runs the next batch', async () => {
+      const extractBatch = vi
+        .fn<(manager: object, inputs: DocgenProviderInput[]) => Promise<DocgenResult[]>>()
+        .mockRejectedValueOnce(new Error('batch failed'))
+        .mockImplementation(async (_manager, inputs) =>
+          inputs.map(({ entry }) => ({ status: 'fulfilled', value: payload(entry.title) }))
+        );
+      const provider = createLazyDocgenMiddleware({
+        createManager: async () => ({}),
+        extractBatch,
+      })(async () => undefined);
+
+      const failed = await Promise.allSettled(['Button', 'Card'].map((t) => provider(input(t))));
+      const later = await provider(input('Input'));
+
+      expect(failed).toMatchObject([
+        { status: 'rejected', reason: new Error('batch failed') },
+        { status: 'rejected', reason: new Error('batch failed') },
+      ]);
+      expect(later?.name).toBe('Input');
     });
 
     it('fails only the request whose result is rejected', async () => {

@@ -240,6 +240,26 @@ describe('prop extraction', () => {
       });
     });
 
+    it.each([{ earlier: '' }, { earlier: 'pre: E2.C;' }])(
+      'lists the members of two enums in one order, with the earlier prop "$earlier"',
+      async ({ earlier }) => {
+        const entry = await extract(
+          'Row',
+          dedent`
+            import React from 'react';
+            enum E1 { A = 3, B = 1 }
+            enum E2 { C = 2, D = 0 }
+            interface Props { ${earlier} kind: E1 | E2 }
+            export const Row = (props: Props) => <div />;
+          `
+        );
+
+        expect(
+          entry.component?.reactComponentMeta?.props.kind.type.value?.map(({ value }) => value)
+        ).toEqual(['3', '1', '2', '0']);
+      }
+    );
+
     it('lists computed enum members by value', async () => {
       const entry = await extract(
         'Button',

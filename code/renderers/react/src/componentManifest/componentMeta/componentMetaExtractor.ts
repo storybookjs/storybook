@@ -736,11 +736,24 @@ function compareNumericOrByCodeUnit(
   return textA < textB ? -1 : textA > textB ? 1 : 0;
 }
 
-function compareEnumMembers(a: ts.LiteralType, b: ts.LiteralType): number {
-  const [declarationA, declarationB] = [a.symbol?.declarations?.[0], b.symbol?.declarations?.[0]];
-  return declarationA && declarationB && declarationA.parent === declarationB.parent
-    ? declarationA.pos - declarationB.pos
-    : 0;
+function compareEnumMembers(
+  typescript: DocgenTypeScript,
+  a: ts.LiteralType,
+  b: ts.LiteralType
+): number {
+  const [memberA, memberB] = [a, b].map((type) => {
+    const declaration = type.symbol?.declarations?.[0];
+    return declaration && typescript.isEnumMember(declaration) ? declaration : undefined;
+  });
+  if (!memberA || !memberB) {
+    return Number(!memberA) - Number(!memberB);
+  }
+  const [enumA, enumB] = [memberA.parent, memberB.parent];
+  return (
+    compareNumericOrByCodeUnit(enumA.getSourceFile().fileName, enumB.getSourceFile().fileName) ||
+    enumA.pos - enumB.pos ||
+    memberA.pos - memberB.pos
+  );
 }
 
 function serializeType(
@@ -785,7 +798,7 @@ function serializeType(
       .toSorted(
         (a, b) =>
           declaredPosition(a) - declaredPosition(b) ||
-          compareEnumMembers(a, b) ||
+          compareEnumMembers(typescript, a, b) ||
           compareNumericOrByCodeUnit(a.value, b.value)
       );
 

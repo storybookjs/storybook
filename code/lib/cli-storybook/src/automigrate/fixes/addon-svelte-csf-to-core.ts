@@ -1,4 +1,4 @@
-import { relative, resolve } from 'node:path';
+import { resolve } from 'node:path';
 
 import { getProjectRoot, normalizeAddonName, removeAddon } from 'storybook/internal/common';
 import {
@@ -9,6 +9,7 @@ import {
 } from 'storybook/internal/csf-tools';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
+import { relative } from 'pathe';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 

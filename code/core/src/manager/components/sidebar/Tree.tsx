@@ -45,6 +45,7 @@ import {
   createContextMenuStore,
   type ContextMenuStore,
 } from './ContextMenuStore.tsx';
+import { DEFAULT_REF_ID } from './Sidebar.tsx';
 import { ScrollAreaContext } from './SidebarScrollArea.tsx';
 import {
   createStatusStore,
@@ -550,7 +551,11 @@ export const Tree = React.memo<TreeProps>(function Tree({
       if (!item || next!.id === preloadedId) {
         return;
       }
-      const entry = isBranch(item) ? hoistedDataRef.current[item.children[0]] : item;
+      // A component stands for the entry that selecting it opens. A root or group opens nothing.
+      const entry =
+        item.type === 'component'
+          ? api.resolveLeafEntry(item.id, refId === DEFAULT_REF_ID ? undefined : refId)
+          : item;
       if (entry?.type !== 'story' && entry?.type !== 'docs') {
         return;
       }
@@ -788,6 +793,51 @@ export const Tree = React.memo<TreeProps>(function Tree({
     [setExpanded]
   );
 
+  // The react-aria tree re-renders every visible row whenever it renders, and it renders whenever
+  // it receives new props. The element is therefore built only from the inputs the tree reads, so
+  // that this component's own state (the focused row, the sticky rows) leaves the rows alone.
+  const ariaTree = useMemo(
+    () => (
+      <Virtualizer layout={treeLayout} layoutOptions={treeLayoutOptions}>
+        <StyledAriaTree
+          ref={containerRef}
+          aria-label="Stories"
+          selectionMode="single"
+          // With the default 'toggle' behavior react-aria treats Enter as a no-op while a
+          // selection exists; 'replace' keeps Enter firing onAction on every row.
+          selectionBehavior="replace"
+          // The selection mirrors the current story, so it is never empty and clearing it
+          // must not be offered.
+          disallowEmptySelection
+          // Stop react-aria from consuming Escape to clear the selection, which swallowed
+          // the key before ancestors (like the mobile menu drawer) could act on it.
+          escapeKeyBehavior="none"
+          expandedKeys={expanded}
+          onExpandedChange={handleExpandedChange}
+          selectedKeys={selectedKeys}
+          onSelectionChange={handleSelectionChange}
+          onAction={handleAction}
+        >
+          <Collection items={tree} dependencies={collectionDependencies}>
+            {nodeRenderer}
+          </Collection>
+        </StyledAriaTree>
+      </Virtualizer>
+    ),
+    [
+      treeLayout,
+      treeLayoutOptions,
+      expanded,
+      handleExpandedChange,
+      selectedKeys,
+      handleSelectionChange,
+      handleAction,
+      tree,
+      collectionDependencies,
+      nodeRenderer,
+    ]
+  );
+
   return (
     <StatusStoreContext.Provider value={statusStoreRef.current}>
       <ContextMenuStoreContext.Provider value={contextMenuStoreRef.current}>
@@ -808,31 +858,7 @@ export const Tree = React.memo<TreeProps>(function Tree({
               openContextMenu={openContextMenu}
               hasTestProviders={hasTestProviders}
             />
-            <Virtualizer layout={treeLayout} layoutOptions={treeLayoutOptions}>
-              <StyledAriaTree
-                ref={containerRef}
-                aria-label="Stories"
-                selectionMode="single"
-                // With the default 'toggle' behavior react-aria treats Enter as a no-op while a
-                // selection exists; 'replace' keeps Enter firing onAction on every row.
-                selectionBehavior="replace"
-                // The selection mirrors the current story, so it is never empty and clearing it
-                // must not be offered.
-                disallowEmptySelection
-                // Stop react-aria from consuming Escape to clear the selection, which swallowed
-                // the key before ancestors (like the mobile menu drawer) could act on it.
-                escapeKeyBehavior="none"
-                expandedKeys={expanded}
-                onExpandedChange={handleExpandedChange}
-                selectedKeys={selectedKeys}
-                onSelectionChange={handleSelectionChange}
-                onAction={handleAction}
-              >
-                <Collection items={tree} dependencies={collectionDependencies}>
-                  {nodeRenderer}
-                </Collection>
-              </StyledAriaTree>
-            </Virtualizer>
+            {ariaTree}
           </TreeWrapper>
           {focusedItemShortcutLabel && (
             <FocusTooltipNote note={focusedItemShortcutLabel} shortcut={contextMenuShortcut} />

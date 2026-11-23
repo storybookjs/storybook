@@ -22,6 +22,7 @@ vi.mock(import('storybook/internal/common'), async (importOriginal) => {
   return {
     ...actual,
     isCI: vi.fn(),
+    getProcessAncestry: () => [],
     JsPackageManagerFactory: Object.assign(actual.JsPackageManagerFactory, {
       getPackageManager: () => ({
         type: 'npm',
@@ -98,9 +99,20 @@ describe('upgrade: refreshing the skills', () => {
     vi.mocked(runAutomigrations).mockResolvedValue({
       automigrationResults: {
         '/repo/a/.storybook': {
-          automigrationStatuses: { 'story-sort-to-main': FixStatus.FAILED },
+          automigrationStatuses: {
+            'story-sort-to-main': FixStatus.FAILED,
+            'csf-factories': FixStatus.CHECK_FAILED,
+            'argtypes-default-value': FixStatus.SUCCEEDED,
+          },
           automigrationErrors: { 'story-sort-to-main': 'Comparator requires manual migration' },
-          fileFailures: [],
+          fileFailures: [
+            {
+              fixId: 'story-sort-to-main',
+              file: '/repo/a/.storybook/preview.ts',
+              kind: 'preview',
+              message: 'Comparator requires manual migration',
+            },
+          ],
         },
       },
       detectedAutomigrations: [],
@@ -108,6 +120,11 @@ describe('upgrade: refreshing the skills', () => {
 
     await expect(upgrade(baseOptions)).rejects.toThrow(
       'Some automigrations failed or skipped files'
+    );
+    expect(logger.log).toHaveBeenCalledWith(
+      expect.stringMatching(
+        /Failed to upgrade:[\s\S]*a\/\.storybook \(story-sort-to-main, csf-factories\)/
+      )
     );
     expect(telemetry).toHaveBeenCalled();
   });
@@ -125,6 +142,12 @@ describe('upgrade: refreshing the skills', () => {
               kind: 'story',
               message: 'Cannot mutate spread field',
             },
+            {
+              fixId: 'argtypes-default-value',
+              file: '/repo/a/src/Button.stories.tsx',
+              kind: 'story',
+              message: 'Cannot mutate spread field',
+            },
           ],
         },
       },
@@ -133,6 +156,9 @@ describe('upgrade: refreshing the skills', () => {
 
     await expect(upgrade(baseOptions)).rejects.toThrow(
       'Some automigrations failed or skipped files'
+    );
+    expect(logger.log).toHaveBeenCalledWith(
+      expect.stringMatching(/Failed to upgrade:[\s\S]*a\/\.storybook \(argtypes-default-value\)/)
     );
   });
 

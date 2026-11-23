@@ -182,7 +182,7 @@ describe('composeStory', () => {
     );
   });
 
-  it('hides argTypes from the play function but passes them to the render function', async () => {
+  it('hides argTypes from the play function and the render function', async () => {
     const hookContexts: any[] = [];
     const renderContexts: any[] = [];
     const Story: Story = {
@@ -209,7 +209,7 @@ describe('composeStory', () => {
     expect(hookContexts).toHaveLength(1);
     expect(() => hookContexts[0].argTypes).toThrow(ArgTypesRemovedFromStoryContextError);
     expect(renderContexts).toHaveLength(1);
-    expect(renderContexts[0].argTypes).toMatchObject({ label: { name: 'label' } });
+    expect(() => renderContexts[0].argTypes).toThrow(ArgTypesRemovedFromStoryContextError);
   });
 
   it('should merge parameters with correct precedence in all combinations', async () => {

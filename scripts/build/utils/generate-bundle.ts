@@ -8,7 +8,6 @@ import { basename, dirname, join, relative } from 'pathe';
 import picocolors from 'picocolors';
 import type { Plugin as RolldownPlugin } from 'rolldown';
 import { rolldown } from 'rolldown';
-import { dedent } from 'ts-dedent';
 
 import { globalsModuleInfoMap } from '../../../code/core/src/manager/globals/globals-module-info.ts';
 import {
@@ -23,6 +22,7 @@ import {
   type EsbuildContextOptions,
   getExternal,
 } from './entry-utils.ts';
+import { cjsRequirePlugin } from './cjs-require-plugin.ts';
 import { tiePreviewRuntimeSetup } from './preview-runtime-entry.ts';
 
 // repo root/bench/esbuild-metafiles/core
@@ -307,6 +307,7 @@ export async function generateBundle({
         ...sharedOptions,
         entryPoints: entries.node.map(({ entryPoint }) => entryPoint),
         platform: 'node',
+        ignoreAnnotations: false,
         target: NODE_TARGET,
         external: [
           ...external,
@@ -326,33 +327,15 @@ export async function generateBundle({
           'jsonc-parser': join(resolvePackageDir('jsonc-parser'), 'lib/esm/main.js'),
         },
         chunkNames: '_node-chunks/[name]-[hash]',
-        banner: {
-          /*
-          This banner injects CJS compatibility code into the bundle, for when
-          dependencies need require, __filename, or __dirname.
-
-          We're adding unique names to the imports to avoid collisions
-          when one of our packages bundles in another of our packages,
-          like create-storybook bundling in parts of storybook core.
-          Similarly we're using var definitions as they can be redefined
-          without causing errors.
-          */
-          js: dedent`
-            import CJS_COMPAT_NODE_URL_${uid} from 'node:url';
-            import CJS_COMPAT_NODE_PATH_${uid} from 'node:path';
-            import CJS_COMPAT_NODE_MODULE_${uid} from "node:module";
-
-            var __filename = CJS_COMPAT_NODE_URL_${uid}.fileURLToPath(import.meta.url);
-            var __dirname = CJS_COMPAT_NODE_PATH_${uid}.dirname(__filename);
-            var require = CJS_COMPAT_NODE_MODULE_${uid}.createRequire(import.meta.url);
-
-            // ------------------------------------------------------------
-            // end of CJS compatibility banner, injected by Storybook's esbuild configuration
-            // ------------------------------------------------------------
-            `,
+        define: {
+          ...sharedOptions.define,
+          // Only free references are replaced, so a local `const __dirname` keeps working.
+          __dirname: 'import.meta.dirname',
+          __filename: 'import.meta.filename',
         },
         plugins: [
           ...sharedOptions.plugins,
+          cjsRequirePlugin(uid),
           metafileWriterPlugin('node', join(DIR_METAFILE_BASE, PACKAGE_DIR_NAME)),
         ],
       })

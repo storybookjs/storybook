@@ -198,7 +198,7 @@ describe('installSkills', () => {
     });
   });
 
-  it('says what it installed, why, and how to opt out', async () => {
+  it('says what it installed, why, and how to remove the skills', async () => {
     await installSkills({ packageManager, source: 'ai-feature' });
 
     expect(vi.mocked(logger.log).mock.calls.map(([message]) => String(message))).toEqual([
@@ -207,7 +207,7 @@ describe('installSkills', () => {
       ),
       'Installed the Storybook skills for AI agents. They are part of Storybook 11: they teach coding agents to reuse your components, write stories for what they change, and run the story tests.',
       'Added a Storybook section to AGENTS.md that tells agents when to use them. Storybook keeps that section current on upgrade.',
-      'To opt out: npx skills@latest remove',
+      'If you want to remove the Storybook skills, run "npx skills@latest remove"',
     ]);
   });
 

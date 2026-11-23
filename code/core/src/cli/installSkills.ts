@@ -170,7 +170,9 @@ export async function installSkills({
     source === 'refresh' && !removedSkills.includes('stories') ? 'update' : 'install'
   );
 
-  logger.log(`To opt out: ${packageManager.getRemoteRunCommand(['skills@latest', 'remove'])}`);
+  logger.log(
+    `If you want to remove the Storybook skills, run "${packageManager.getRemoteRunCommand(['skills@latest', 'remove'])}"`
+  );
   return { result: 'installed', source };
 }
 

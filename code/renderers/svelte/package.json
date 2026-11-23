@@ -101,7 +101,7 @@
     "svelte-check": "^4.4.8",
     "sveltedoc-parser": "^4.2.1",
     "typescript": "^6.0.3",
-    "vite": "^7.0.4",
+    "vite": "^7.3.8",
     "zimmerframe": "^1.1.2"
   },
   "peerDependencies": {

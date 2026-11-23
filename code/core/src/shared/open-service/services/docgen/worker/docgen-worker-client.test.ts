@@ -61,6 +61,10 @@ function ackInit(worker: FakeWorker, error?: { name: string; message: string }) 
   );
 }
 
+// Waits past the client's scheduling microtasks (p-limit and beyond), so assertions read state
+// only once the queue has drained rather than exactly one dependency-scheduled hop in.
+const flush = () => new Promise<void>((resolve) => setImmediate(resolve));
+
 beforeEach(() => {
   fakeWorkers.length = 0;
 });
@@ -95,6 +99,7 @@ describe('createDocgenWorkerClient', () => {
     const { createDocgenWorkerClient } = await loadModule();
     const client = createDocgenWorkerClient(DESCRIPTORS)!;
     client.extract({ id: 'button--primary' } as any).catch(() => undefined);
+    await flush();
 
     expect(fakeWorkers[0].posted[0]).toEqual({
       type: 'init',
@@ -108,6 +113,7 @@ describe('createDocgenWorkerClient', () => {
     const client = createDocgenWorkerClient(DESCRIPTORS)!;
 
     const promise = client.extract({ id: 'button--primary' } as any);
+    await flush();
     const worker = fakeWorkers[0];
 
     expect(fakeWorkers).toHaveLength(1);
@@ -115,7 +121,7 @@ describe('createDocgenWorkerClient', () => {
     expect(worker.unref).not.toHaveBeenCalled();
 
     ackInit(worker);
-    await Promise.resolve();
+    await flush();
     const extractMsg = worker.posted.find((m) => m.type === 'extract') as { id: number };
     // Loose on purpose: a transient unref can land before the extract continuation runs.
     expect(worker.ref).toHaveBeenCalled();
@@ -141,11 +147,12 @@ describe('DocgenWorkerClient.extract', () => {
 
     const entry = { id: 'button--primary', importPath: './button.stories.tsx' } as any;
     const promise = client.extract(entry);
+    await flush();
     const worker = fakeWorkers[0];
 
     expect(worker.posted.filter((m) => m.type === 'extract')).toHaveLength(0);
     ackInit(worker);
-    await Promise.resolve();
+    await flush();
 
     const extractMsg = worker.posted.find((m) => m.type === 'extract');
     expect(extractMsg).toMatchObject({ type: 'extract', entry });
@@ -164,6 +171,7 @@ describe('DocgenWorkerClient.extract', () => {
     const client = createDocgenWorkerClient(DESCRIPTORS)!;
 
     const promise = client.extract({ id: 'x' } as any);
+    await flush();
     const worker = fakeWorkers[0];
     ackInit(worker, { name: 'Error', message: 'boom' });
 
@@ -175,6 +183,7 @@ describe('DocgenWorkerClient.extract', () => {
     const client = createDocgenWorkerClient(DESCRIPTORS)!;
 
     const promise = client.extract({ id: 'x' } as any);
+    await flush();
     const worker = fakeWorkers[0];
     worker.emit('exit', 1);
 
@@ -186,9 +195,10 @@ describe('DocgenWorkerClient.extract', () => {
     const client = createDocgenWorkerClient(DESCRIPTORS)!;
 
     const promise = client.extract({ id: 'x' } as any);
+    await flush();
     const worker = fakeWorkers[0];
     ackInit(worker);
-    await Promise.resolve();
+    await flush();
 
     const extractMsg = worker.posted.find((m) => m.type === 'extract') as { id: number };
     worker.emit('message', {
@@ -207,9 +217,10 @@ describe('DocgenWorkerClient.extract', () => {
     const client = createDocgenWorkerClient(DESCRIPTORS)!;
 
     const promise = client.extract({ id: 'x' } as any);
+    await flush();
     const worker = fakeWorkers[0];
     ackInit(worker);
-    await Promise.resolve();
+    await flush();
 
     worker.emit('exit', 1);
 
@@ -221,8 +232,9 @@ describe('DocgenWorkerClient.extract', () => {
     const client = createDocgenWorkerClient(DESCRIPTORS)!;
 
     const first = client.extract({ id: 'x' } as any);
+    await flush();
     ackInit(fakeWorkers[0]);
-    await Promise.resolve();
+    await flush();
     fakeWorkers[0].emit('error', new Error('worker ran out of memory'));
     await expect(first).rejects.toThrow('worker ran out of memory');
 
@@ -239,8 +251,9 @@ describe('DocgenWorkerClient.extract', () => {
     const client = createDocgenWorkerClient(DESCRIPTORS)!;
 
     const first = client.extract({ id: 'x' } as any);
+    await flush();
     ackInit(fakeWorkers[0]);
-    await Promise.resolve();
+    await flush();
     const extractMsg = fakeWorkers[0].posted.find((m) => m.type === 'extract') as { id: number };
     fakeWorkers[0].emit('message', {
       type: 'extract',
@@ -252,9 +265,10 @@ describe('DocgenWorkerClient.extract', () => {
     fakeWorkers[0].emit('error', new Error('worker ran out of memory'));
 
     const second = client.extract({ id: 'y' } as any);
+    await flush();
     expect(fakeWorkers).toHaveLength(2);
     ackInit(fakeWorkers[1]);
-    await Promise.resolve();
+    await flush();
     const retryMsg = fakeWorkers[1].posted.find((m) => m.type === 'extract') as { id: number };
     fakeWorkers[1].emit('message', {
       type: 'extract',
@@ -262,5 +276,102 @@ describe('DocgenWorkerClient.extract', () => {
       payload: { id: 'y', name: 'Y', path: './y.stories.ts', jsDocTags: {} },
     } satisfies DocgenWorkerResponse);
     await expect(second).resolves.toMatchObject({ id: 'y' });
+  });
+});
+
+describe('extract timeout semantics', () => {
+  const payloadFor = (id: string) => ({ id, name: id, path: `./${id}.stories.ts`, jsDocTags: {} });
+
+  const respondToLastExtract = (worker: FakeWorker, id = 'responded') => {
+    const extractMsg = worker.posted.filter((m) => m.type === 'extract').at(-1) as {
+      id: number;
+    };
+    worker.emit('message', {
+      type: 'extract',
+      id: extractMsg.id,
+      payload: payloadFor(id),
+    } satisfies DocgenWorkerResponse);
+  };
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('does not time out extracts that are queued behind healthy, progressing work', async () => {
+    vi.useFakeTimers();
+    const { createDocgenWorkerClient } = await loadModule();
+    const client = createDocgenWorkerClient(DESCRIPTORS)!;
+
+    const promises = ['a', 'b', 'c'].map((id) => client.extract({ id } as any));
+    await vi.advanceTimersByTimeAsync(0);
+    const worker = fakeWorkers[0];
+    ackInit(worker);
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(worker.posted.filter((m) => m.type === 'extract')).toHaveLength(1);
+    for (const id of ['a', 'b', 'c']) {
+      await vi.advanceTimersByTimeAsync(119_000);
+      respondToLastExtract(worker, id);
+      await vi.advanceTimersByTimeAsync(0);
+    }
+
+    const payloads = await Promise.all(promises);
+    expect(payloads.map((payload) => payload?.id)).toEqual(['a', 'b', 'c']);
+    expect(worker.terminate).not.toHaveBeenCalled();
+  });
+
+  it('terminates a wedged worker on an active-extract timeout and finishes the queue on a replacement', async () => {
+    vi.useFakeTimers();
+    const { createDocgenWorkerClient } = await loadModule();
+    const client = createDocgenWorkerClient(DESCRIPTORS)!;
+
+    const first = client.extract({ id: 'fast' } as any);
+    await vi.advanceTimersByTimeAsync(0);
+    const worker = fakeWorkers[0];
+    ackInit(worker);
+    await vi.advanceTimersByTimeAsync(0);
+    respondToLastExtract(worker, 'fast');
+    await expect(first).resolves.toMatchObject({ id: 'fast' });
+
+    // Attach the rejection handler before advancing the clock: the timeout fires inside the
+    // advance, and a later-attached handler would read as an unhandled rejection.
+    const stuck = client.extract({ id: 'wedge' } as any);
+    const queued = client.extract({ id: 'after' } as any);
+    const stuckAssertion = expect(stuck).rejects.toThrow(
+      'docgen worker extract 1 timed out after 120000ms'
+    );
+    await vi.advanceTimersByTimeAsync(120_000);
+
+    await stuckAssertion;
+    expect(worker.terminate).toHaveBeenCalled();
+
+    expect(fakeWorkers).toHaveLength(2);
+    ackInit(fakeWorkers[1]);
+    await vi.advanceTimersByTimeAsync(0);
+    respondToLastExtract(fakeWorkers[1], 'after');
+    await expect(queued).resolves.toMatchObject({ id: 'after' });
+  });
+
+  it('does not respawn a worker that times out before serving its first extract', async () => {
+    vi.useFakeTimers();
+    const { createDocgenWorkerClient } = await loadModule();
+    const client = createDocgenWorkerClient(DESCRIPTORS)!;
+
+    // Attach the rejection handler before advancing the clock: the timeout fires inside the
+    // advance, and a later-attached handler would read as an unhandled rejection.
+    const cold = client.extract({ id: 'cold' } as any);
+    await vi.advanceTimersByTimeAsync(0);
+    ackInit(fakeWorkers[0]);
+    const coldAssertion = expect(cold).rejects.toThrow(
+      'docgen worker extract 0 timed out after 120000ms'
+    );
+    await vi.advanceTimersByTimeAsync(120_000);
+
+    await coldAssertion;
+    expect(fakeWorkers[0].terminate).toHaveBeenCalled();
+    expect(fakeWorkers).toHaveLength(1);
+    await expect(client.extract({ id: 'after' } as any)).rejects.toThrow(
+      'docgen worker is no longer running: docgen worker extract 0 timed out after 120000ms'
+    );
   });
 });

@@ -134,6 +134,9 @@ describe('resolveSkillInputs', () => {
       true,
     ],
     ['@storybook/sveltekit', ['../src/*/*.stories.ts'], false],
+    ['@storybook/sveltekit', ['../src/{*.stories.svelte,nested/*.stories.svelte}'], true],
+    ['@storybook/sveltekit', ['../src/**/*.stories.{ts,svelte}'], true],
+    ['@storybook/sveltekit', ['../src/{a,b/c}/*.stories.{js,ts}'], false],
     ['@storybook/sveltekit', ['../src/Button.stories.svelte'], true],
     ['@storybook/react-vite', ['../src/**/*.stories.@(tsx|svelte)'], false],
   ])('detects Svelte CSF for %s with stories %j: %s', async (framework, stories, svelteCsf) => {

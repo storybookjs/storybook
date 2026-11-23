@@ -61,12 +61,36 @@ async function resolvePreview(configDir = '.storybook') {
   };
 }
 
+// `{a,b/c}` becomes `a` and `b/c`, so a `/` inside braces does not cut the file name part.
+function expandBraces(glob: string): string[] {
+  const open = glob.indexOf('{');
+  const commas: number[] = [];
+  let depth = 0;
+  for (let i = open; open !== -1 && i < glob.length; i++) {
+    if (glob[i] === '{') {
+      depth++;
+    } else if (glob[i] === ',' && depth === 1) {
+      commas.push(i);
+    } else if (glob[i] === '}' && --depth === 0) {
+      const bounds = [open, ...commas, i];
+      return bounds
+        .slice(1)
+        .flatMap((end, n) =>
+          expandBraces(glob.slice(0, open) + glob.slice(bounds[n] + 1, end) + glob.slice(i + 1))
+        );
+    }
+  }
+  return [glob];
+}
+
 // Only the file name part decides, so a glob that needs a folder (`*/*.stories.svelte`) counts.
 function allowsSvelteFile(files: string): boolean {
-  const name = files.slice(files.lastIndexOf('/') + 1);
-  return pico.scan(name).isGlob
-    ? pico.isMatch('Button.stories.svelte', name)
-    : name.endsWith('.svelte');
+  return expandBraces(files).some((glob) => {
+    const name = glob.slice(glob.lastIndexOf('/') + 1);
+    return pico.scan(name).isGlob
+      ? pico.isMatch('Button.stories.svelte', name)
+      : name.endsWith('.svelte');
+  });
 }
 
 // A string without a glob is a directory, whose default files are not `.svelte`, or one file.

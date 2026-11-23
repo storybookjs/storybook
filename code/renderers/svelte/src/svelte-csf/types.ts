@@ -10,7 +10,7 @@ import type { SvelteRenderer } from '../types.ts';
 
 export type { StoryContext, SvelteRenderer };
 
-export type Cmp = Component<any>;
+export type Cmp = Component<any, any, any>;
 
 export type ComponentAnnotations<
   TCmp extends Cmp,

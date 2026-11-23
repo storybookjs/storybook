@@ -2,11 +2,14 @@ import { existsSync } from 'node:fs';
 import { mkdir, readdir, rm } from 'node:fs/promises';
 import { isAbsolute } from 'node:path';
 
-import { PackageManagerName } from 'storybook/internal/common';
 import {
   JsPackageManagerFactory,
+  PackageManagerName,
+  getProcessAncestry,
+  getRemotePackageRunnerArgs,
   isCI,
   optionalEnvToBoolean,
+  resolveStorybookVersionSpecifier,
   versions,
 } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
@@ -31,6 +34,36 @@ interface SandboxOptions {
 type Choice = keyof typeof TEMPLATES;
 
 const toChoices = (c: Choice) => ({ label: TEMPLATES[c].name, value: c });
+
+export const getStorybookVersionSpecifierFromCli = (): string | undefined => {
+  try {
+    return resolveStorybookVersionSpecifier(getProcessAncestry());
+  } catch {
+    return resolveStorybookVersionSpecifier([]);
+  }
+};
+
+export const getSandboxInitMessage = ({
+  init,
+  versionSpecifier,
+}: {
+  init?: boolean;
+  versionSpecifier?: string;
+}) => {
+  if (init) {
+    return picocolors.yellow(dedent`
+      yarn install
+      yarn storybook
+    `);
+  }
+
+  const cleanVersion = versionSpecifier?.replace(/^@/, '') || 'latest';
+  const runnerArgs = getRemotePackageRunnerArgs(PackageManagerName.NPM, 'storybook', cleanVersion, [
+    'init',
+  ]);
+
+  return `Recreate your setup, then ${picocolors.yellow(`npx ${runnerArgs.join(' ')}`)}`;
+};
 
 export const sandbox = async ({
   output: outputDirectory,
@@ -238,12 +271,11 @@ export const sandbox = async ({
       throw err;
     }
 
-    const initMessage = init
-      ? picocolors.yellow(dedent`
-          yarn install
-          yarn storybook
-        `)
-      : `Recreate your setup, then ${picocolors.yellow(`npx storybook@latest init`)}`;
+    const versionSpecifier = getStorybookVersionSpecifierFromCli() ?? currentVersion;
+    const initMessage = getSandboxInitMessage({
+      init,
+      versionSpecifier,
+    });
 
     logger.logBox(
       dedent`

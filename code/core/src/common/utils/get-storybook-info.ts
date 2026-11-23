@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs';
-import { basename, dirname, join } from 'node:path';
+import { dirname, join } from 'node:path';
 
 import type {
   CoreCommon_StorybookInfo,
@@ -15,12 +15,11 @@ import {
 
 import invariant from 'tiny-invariant';
 
-import { RN_STORYBOOK_DIR } from '../../shared/constants/config-folder.ts';
 import { storybookConfigExtensions } from '../../shared/constants/extensions.ts';
 import { JsPackageManager } from '../js-package-manager/JsPackageManager.ts';
 import { frameworkToBuilder } from './framework.ts';
 import { getAddonNames } from './get-addon-names.ts';
-import { extractFrameworkPackageName } from './get-framework-name.ts';
+import { getFrameworkPackageName } from './get-framework-name.ts';
 import { extractRenderer } from './get-renderer-name.ts';
 import { getStorybookConfiguration } from './get-storybook-configuration.ts';
 import { loadMainConfig } from './load-main-config.ts';
@@ -161,33 +160,11 @@ export const getStorybookInfo = async (
 
   invariant(mainConfig, `Unable to find or evaluate ${configInfo.mainConfigPath}`);
 
-  const frameworkValue = mainConfig.framework;
-  const frameworkField = typeof frameworkValue === 'string' ? frameworkValue : frameworkValue?.name;
+  const frameworkPackage = getFrameworkPackageName(mainConfig, configInfo.configDir);
   const addons = getAddonNames(mainConfig);
   const versionSpecifier = getStorybookVersionSpecifier(configDir);
 
-  if (!frameworkField) {
-    /*
-      React Native on-device Storybook historically omitted `framework` from main.ts.
-      When the config lives in `.rnstorybook`, infer the framework so telemetry
-      `metadata.framework.name` is populated for existing projects (scoped to the
-      RN config dir to avoid mis-attributing web Storybooks in the same monorepo).
-    */
-    if (basename(configInfo.configDir) === RN_STORYBOOK_DIR) {
-      return {
-        ...configInfo,
-        versionSpecifier,
-        addons,
-        mainConfig,
-        frameworkPackage: '@storybook/react-native',
-        rendererPackage: '@storybook/react-native',
-        renderer: SupportedRenderer.REACT_NATIVE,
-        mainConfigPath: configInfo.mainConfigPath ?? undefined,
-        previewConfigPath: configInfo.previewConfigPath ?? undefined,
-        managerConfigPath: configInfo.managerConfigPath ?? undefined,
-      };
-    }
-
+  if (!frameworkPackage) {
     return {
       ...configInfo,
       versionSpecifier,
@@ -199,7 +176,20 @@ export const getStorybookInfo = async (
     };
   }
 
-  const frameworkPackage = extractFrameworkPackageName(frameworkField);
+  if (!mainConfig.framework) {
+    return {
+      ...configInfo,
+      versionSpecifier,
+      addons,
+      mainConfig,
+      frameworkPackage,
+      rendererPackage: '@storybook/react-native',
+      renderer: SupportedRenderer.REACT_NATIVE,
+      mainConfigPath: configInfo.mainConfigPath ?? undefined,
+      previewConfigPath: configInfo.previewConfigPath ?? undefined,
+      managerConfigPath: configInfo.managerConfigPath ?? undefined,
+    };
+  }
 
   const framework = frameworkPackages[frameworkPackage];
   const renderer = await extractRenderer(frameworkPackage);

@@ -1,7 +1,11 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { optionalEnvToBoolean, syncStorybookAddons } from 'storybook/internal/common';
+import {
+  getFrameworkPackageName,
+  optionalEnvToBoolean,
+  syncStorybookAddons,
+} from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 
 import picocolors from 'picocolors';
@@ -15,7 +19,6 @@ import {
   previewImportTarget,
 } from '../../../../core/src/shared/constants/config-folder.ts';
 import { type FileInfo, runCodemod } from '../automigrate/codemod.ts';
-import { getFrameworkPackageName } from '../automigrate/helpers/mainConfigFile.ts';
 import type { CommandFix } from '../automigrate/types.ts';
 import { configToCsfFactory } from './helpers/config-to-csf-factory.ts';
 import { storyToCsfFactory } from './helpers/story-to-csf-factory.ts';
@@ -171,8 +174,7 @@ export const csfFactories: CommandFix = {
 
     logger.step('Applying codemod on your main config...');
     const frameworkPackage =
-      getFrameworkPackageName(mainConfig) ??
-      (isReactNativePreview ? '@storybook/react-native' : '@storybook/your-framework-here');
+      getFrameworkPackageName(mainConfig, configDir) ?? '@storybook/your-framework-here';
     await runCodemod([mainConfigPath!], (fileInfo) =>
       configToCsfFactory(fileInfo, { configType: 'main', frameworkPackage }, { dryRun })
     );

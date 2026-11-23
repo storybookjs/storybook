@@ -1,9 +1,9 @@
+import { getFrameworkPackageName } from 'storybook/internal/common';
 import { SourceEditor } from 'storybook/internal/csf-tools';
 
 import { dirname, resolve } from 'pathe';
 import picocolors from 'picocolors';
 
-import { getFrameworkPackageName } from '../helpers/mainConfigFile.ts';
 import {
   type PreviewMocks,
   findUnmigrated,

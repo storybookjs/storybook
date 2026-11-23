@@ -1,11 +1,10 @@
 import { existsSync } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
 
-import { findConfigFile, loadMainConfig } from 'storybook/internal/common';
+import { findConfigFile, getFrameworkPackageName, loadMainConfig } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
-import { getFrameworkPackageName } from '../helpers/mainConfigFile.ts';
 import type { Fix } from '../types.ts';
 import { RN_STORYBOOK_DIR } from '../../../../../core/src/shared/constants/config-folder.ts';
 

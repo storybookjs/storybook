@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import { posix, resolve } from 'node:path';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -10,6 +11,7 @@ import { dedent } from 'ts-dedent';
 import { runCodemod } from '../automigrate/codemod.ts';
 import { SANDBOX_STORIES_GLOB, csfFactories, storyToCsf4 } from './csf-factories.ts';
 
+vi.mock('node:fs', { spy: true });
 vi.mock('../automigrate/codemod.ts', { spy: true });
 vi.mock('storybook/internal/common', { spy: true });
 
@@ -178,75 +180,99 @@ it.each([
   expect(posix.matchesGlob(file, SANDBOX_STORIES_GLOB)).toBe(false);
 });
 
-describe('React Native project', () => {
-  const projectDir = resolve('/project');
-  const configDir = resolve(projectDir, '.rnstorybook');
-  const mainConfigPath = resolve(configDir, 'main.ts');
-  const previewConfigPath = resolve(configDir, 'preview.tsx');
-  const storyPath = resolve(configDir, 'stories/Button.stories.tsx');
+const projectDir = resolve('/project');
+
+async function migrateProject(configFolder: string) {
+  const configDir = resolve(projectDir, configFolder);
+  const paths = {
+    main: resolve(configDir, 'main.ts'),
+    preview: resolve(configDir, 'preview.tsx'),
+    story: resolve(configDir, 'stories/Button.stories.tsx'),
+  };
   const sources: Record<string, string> = {
-    [mainConfigPath]: dedent`
-      import type { StorybookConfig } from '@storybook/react-native';
-      const main: StorybookConfig = { stories: ['./stories/**/*.stories.?(ts|tsx|js|jsx)'] };
+    [paths.main]: dedent`
+      const main = { stories: ['./stories/**/*.stories.?(ts|tsx|js|jsx)'] };
       export default main;
     `,
-    [previewConfigPath]: dedent`
-      import type { Preview } from '@storybook/react-native';
-      const preview: Preview = {};
+    [paths.preview]: dedent`
+      const preview = {};
       export default preview;
     `,
-    [storyPath]: dedent`
-      import type { Meta, StoryObj } from '@storybook/react-native';
+    [paths.story]: dedent`
       import { Button } from './Button';
-      const meta = { component: Button } satisfies Meta<typeof Button>;
+      const meta = { component: Button };
       export default meta;
-      export const Primary: StoryObj<typeof meta> = { args: { title: 'Button' } };
+      export const Primary = { args: { title: 'Button' } };
     `,
   };
   const written = new Map<string, string>();
 
-  beforeEach(async () => {
-    written.clear();
-    vi.mocked(syncStorybookAddons).mockResolvedValue(undefined);
-    vi.mocked(runCodemod).mockImplementation(async (globOrFiles = [], transform) => {
-      const files = [globOrFiles].flat();
-      for (const file of files) {
-        written.set(file, await transform({ path: file, source: sources[file] }));
-      }
-      return { files, errorCount: 0 };
-    });
-
-    await csfFactories.run({
-      configDir,
-      mainConfigPath,
-      previewConfigPath,
-      mainConfig: { stories: ['./stories/**/*.stories.?(ts|tsx|js|jsx)'] },
-      storiesPaths: [storyPath, resolve(configDir, 'Introduction.mdx')],
-      packageManager: {
-        primaryPackageJson: {
-          packageJson: {},
-          operationDir: projectDir,
-          packageJsonPath: resolve(projectDir, 'package.json'),
-        },
-        writePackageJson: vi.fn(),
-      } as unknown as JsPackageManager,
-      result: null,
-      storybookVersion: '11.0.0',
-      yes: true,
-    });
+  vi.mocked(syncStorybookAddons).mockResolvedValue(undefined);
+  vi.mocked(runCodemod).mockImplementation(async (globOrFiles = [], transform) => {
+    const files = [globOrFiles].flat();
+    for (const file of files) {
+      written.set(file, await transform({ path: file, source: sources[file] }));
+    }
+    return { files, errorCount: 0 };
   });
 
-  it('migrates the story files of the main config inside the config folder', () => {
-    expect(vi.mocked(runCodemod).mock.calls[0][0]).toEqual([storyPath]);
-    expect(written.get(storyPath)).toContain("import preview from '#.storybook/preview';");
+  await csfFactories.run({
+    configDir,
+    mainConfigPath: paths.main,
+    previewConfigPath: paths.preview,
+    mainConfig: { stories: ['./stories/**/*.stories.?(ts|tsx|js|jsx)'] },
+    storiesPaths: [paths.story, resolve(configDir, 'Introduction.mdx')],
+    packageManager: {
+      primaryPackageJson: {
+        packageJson: {},
+        operationDir: projectDir,
+        packageJsonPath: resolve(projectDir, 'package.json'),
+      },
+      writePackageJson: vi.fn(),
+    } as unknown as JsPackageManager,
+    result: null,
+    storybookVersion: '11.0.0',
+    yes: true,
   });
 
-  it('imports the factories from the React Native framework without a framework field', () => {
-    expect(written.get(mainConfigPath)).toContain(
-      "import { defineMain } from '@storybook/react-native/node';"
+  return { paths, written };
+}
+
+describe('a .rnstorybook config without a framework', () => {
+  it('migrates the story files of the main config inside the config folder', async () => {
+    const { paths, written } = await migrateProject('.rnstorybook');
+
+    expect(vi.mocked(runCodemod).mock.calls[0][0]).toEqual([paths.story]);
+    expect(written.get(paths.story)).toContain("import preview from '#.storybook/preview';");
+  });
+
+  it('imports the factories from @storybook/react-native', async () => {
+    const { paths, written } = await migrateProject('.rnstorybook');
+
+    expect(written.get(paths.main)).toMatch(
+      /import { defineMain } from ['"]@storybook\/react-native\/node['"]/
     );
-    expect(written.get(previewConfigPath)).toContain(
-      "import { definePreview } from '@storybook/react-native';"
+    expect(written.get(paths.preview)).toMatch(
+      /import { definePreview } from ['"]@storybook\/react-native['"]/
+    );
+  });
+});
+
+describe('a .storybook config without a framework next to a .rnstorybook folder', () => {
+  beforeEach(() => {
+    vi.mocked(existsSync).mockImplementation(
+      (file) => resolve(String(file)) === resolve(projectDir, '.rnstorybook')
+    );
+  });
+
+  it('keeps the placeholder framework', async () => {
+    const { paths, written } = await migrateProject('.storybook');
+
+    expect(written.get(paths.main)).toMatch(
+      /import { defineMain } from ['"]@storybook\/your-framework-here\/node['"]/
+    );
+    expect(written.get(paths.preview)).toMatch(
+      /import { definePreview } from ['"]@storybook\/your-framework-here['"]/
     );
   });
 });

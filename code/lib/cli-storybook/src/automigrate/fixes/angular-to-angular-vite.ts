@@ -9,6 +9,7 @@ import {
 import {
   type JsPackageManager,
   formatFileContent,
+  getFrameworkPackageName,
   getProjectRoot,
   transformImports,
 } from 'storybook/internal/common';
@@ -23,7 +24,6 @@ import { dedent } from 'ts-dedent';
 import { add } from '../../add.ts';
 import type { FixFiles } from '../fix-files.ts';
 import { automigrationLogger } from '../helpers/automigration-logger.ts';
-import { getFrameworkPackageName } from '../helpers/mainConfigFile.ts';
 import type { FixTransform } from '../pipeline.ts';
 import { assertMainConfigNamesFramework } from '../helpers/main-config-framework.ts';
 import { readJsonFile } from '../helpers/workspace-files.ts';

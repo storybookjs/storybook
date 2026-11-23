@@ -1,66 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { getFrameworkPackageName, getRendererName } from './mainConfigFile.ts';
-
-describe('getFrameworkPackageName', () => {
-  it('should return null when mainConfig is undefined or null', () => {
-    const packageName = getFrameworkPackageName(undefined);
-    expect(packageName).toBeNull();
-
-    // @ts-expect-error (Argument of type 'null' is not assignable)
-    const packageName2 = getFrameworkPackageName(null);
-    expect(packageName2).toBeNull();
-  });
-
-  it('should return null when framework package name or path is not found', () => {
-    const mainConfig = {};
-
-    const packageName = getFrameworkPackageName(mainConfig as any);
-    expect(packageName).toBeNull();
-  });
-
-  it('should return framework package name when framework is a string', () => {
-    const frameworkPackage = '@storybook/react';
-    const mainConfig = {
-      framework: frameworkPackage,
-    };
-
-    const packageName = getFrameworkPackageName(mainConfig as any);
-    expect(packageName).toBe(frameworkPackage);
-  });
-
-  it('should return framework package name when framework.name contains valid framework package name', () => {
-    const frameworkPackage = '@storybook/react-vite';
-    const packageNameOrPath = `/path/to/${frameworkPackage}`;
-    const mainConfig = {
-      framework: { name: packageNameOrPath },
-    };
-
-    const packageName = getFrameworkPackageName(mainConfig as any);
-    expect(packageName).toBe(frameworkPackage);
-  });
-
-  it('should return builder package name when framework.name contains windows backslash paths', () => {
-    const builderPackage = '@storybook/react-vite';
-    const packageNameOrPath = 'c:\\path\\to\\@storybook\\react-vite';
-    const mainConfig = {
-      framework: { name: packageNameOrPath },
-    };
-
-    const packageName = getFrameworkPackageName(mainConfig as any);
-    expect(packageName).toBe(builderPackage);
-  });
-
-  it(`should return package name or path when framework does not contain the name of a valid framework package`, () => {
-    const packageNameOrPath = '@my-org/storybook-framework';
-    const mainConfig = {
-      framework: packageNameOrPath,
-    };
-
-    const packageName = getFrameworkPackageName(mainConfig as any);
-    expect(packageName).toBe(packageNameOrPath);
-  });
-});
+import { getRendererName } from './mainConfigFile.ts';
 
 describe('getRendererName', () => {
   it('should return null when mainConfig is undefined', () => {

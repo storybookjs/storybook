@@ -1,8 +1,12 @@
 import { hasStorybookSkills, installSkills, supportsSkills } from 'storybook/internal/cli';
-import { frameworkPackages, frameworkToRenderer, isCI } from 'storybook/internal/common';
+import {
+  frameworkPackages,
+  frameworkToRenderer,
+  getFrameworkPackageName,
+  isCI,
+} from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
-import { getFrameworkPackageName } from '../helpers/mainConfigFile.ts';
 import { crossesVersionBoundary } from '../helpers/versionBoundary.ts';
 import type { Fix } from '../types.ts';
 import { ANGULAR_VITE_PACKAGE, offersAngularViteMigration } from './angular-to-angular-vite.ts';

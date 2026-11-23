@@ -1,5 +1,5 @@
 import { editJsonText, isStorybookTarget, type JSONEditPath } from 'storybook/internal/cli';
-import type { JsPackageManager } from 'storybook/internal/common';
+import { type JsPackageManager, getFrameworkPackageName } from 'storybook/internal/common';
 import {
   type ConfigFile,
   type ESTree as E,
@@ -14,7 +14,6 @@ import { dirname } from 'pathe';
 import { dedent } from 'ts-dedent';
 
 import type { FixFiles } from '../fix-files.ts';
-import { getFrameworkPackageName } from '../helpers/mainConfigFile.ts';
 import { countReferences, removeTopLevelCall } from '../helpers/preview-call.ts';
 import { findWorkspaceFiles, readJsonFile } from '../helpers/workspace-files.ts';
 import type { FixTransform } from '../pipeline.ts';

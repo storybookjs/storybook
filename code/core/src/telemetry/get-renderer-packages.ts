@@ -19,6 +19,14 @@ const RENDERER_RUNTIME_PACKAGES: Record<string, string[]> = {
 };
 
 /**
+ * Renderers telemetry recognizes even where the framework tables do not list them, mapped to their
+ * runtime packages.
+ */
+export const TELEMETRY_ONLY_RENDERER_PACKAGES: Record<string, string[]> = {
+  '@storybook-astro/renderer': ['astro'],
+};
+
+/**
  * @param renderer The renderer package name as reported by `getFrameworkInfo` (e.g.
  *   `@storybook/react`)
  * @returns The runtime package names whose installed versions telemetry should resolve; empty when
@@ -28,5 +36,5 @@ export function getRendererPackages(renderer: string | undefined): string[] {
   if (!renderer) {
     return [];
   }
-  return RENDERER_RUNTIME_PACKAGES[renderer] ?? [];
+  return RENDERER_RUNTIME_PACKAGES[renderer] ?? TELEMETRY_ONLY_RENDERER_PACKAGES[renderer] ?? [];
 }

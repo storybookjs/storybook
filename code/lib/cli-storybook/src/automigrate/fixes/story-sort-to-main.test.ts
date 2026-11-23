@@ -395,10 +395,20 @@ describe('story-sort-to-main', () => {
     await expectUntouched(main, legacy);
   });
 
+  it('moves storySort from a preview that also has unrelated named exports', async () => {
+    const { preview } = await expectMoved(
+      'export default { stories: [] }',
+      `export const loaders = []; export const decorators = []; export default { parameters: { options: { storySort: { order: ['Intro'] } } } }`,
+      { order: ['Intro'] }
+    );
+
+    expect(preview).toContain('export const loaders = []; export const decorators = [];');
+  });
+
   it('names the preview file when the preview cannot be edited', async () => {
     const migrated = await migrate(
       'export default { stories: [] }',
-      `export const loaders = []; export default { parameters: { options: { storySort: { order: ['Intro'] } } } }`
+      `export const parameters = {}; export default { parameters: { options: { storySort: { order: ['Intro'] } } } }`
     );
 
     expect(migrated.failures[0].message).toContain(

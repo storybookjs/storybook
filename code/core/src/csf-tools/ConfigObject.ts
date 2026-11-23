@@ -5,6 +5,7 @@ import {
   type CsfObjectHost,
   createCsfObject,
 } from './CsfObject.ts';
+import type { CsfPath } from './CsfObjectPath.ts';
 import { type MemberInsert, type ObjectRoot, detachedMember, literalRoot } from './ObjectRoot.ts';
 import {
   type E,
@@ -77,7 +78,8 @@ type Rejection = { ok: false; diagnostic: CsfMutationDiagnostic };
 
 export const locateConfigRoot = (
   config: ConfigFile,
-  mode: 'read' | 'mutate'
+  mode: 'read' | 'mutate',
+  paths?: readonly CsfPath[]
 ): { ok: true; root: ObjectRoot } | Rejection => {
   const editor = config.editor;
   const { program } = editor;
@@ -144,9 +146,13 @@ export const locateConfigRoot = (
     const declaration = chain.find(
       (node): node is E.VariableDeclarator => node.type === 'VariableDeclarator'
     );
+    const named = Object.keys(config._exportDecls).filter(
+      (name) => config._exportDecls[name] !== declaration
+    );
     if (
       mode === 'mutate' &&
-      Object.values(config._exportDecls).some((exported) => exported !== declaration)
+      named.length > 0 &&
+      (!paths || paths.some((path) => path.length === 0 || named.includes(String(path[0]))))
     ) {
       return reject(
         root,
@@ -472,16 +478,17 @@ export function createConfigObject(
   config: ConfigFile,
   mode: 'read' | 'mutate',
   report: (diagnostic: CsfMutationDiagnostic) => void,
-  markChanged: () => void
+  markChanged: () => void,
+  paths?: readonly CsfPath[]
 ): { ok: true; object: CsfObject } | { ok: false; diagnostic: CsfMutationDiagnostic } {
-  const located = locateConfigRoot(config, mode);
+  const located = locateConfigRoot(config, mode, paths);
   if (located.ok === false) {
     return located;
   }
   const host: CsfObjectHost = {
     editor: config.editor,
     root: () => {
-      const current = locateConfigRoot(config, mode);
+      const current = locateConfigRoot(config, mode, paths);
       return current.ok ? current.root : undefined;
     },
   };

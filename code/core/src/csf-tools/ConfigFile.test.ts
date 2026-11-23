@@ -2205,13 +2205,26 @@ describe('ConfigFile', () => {
       expect(printConfig(config).code).toBe(source);
     });
 
-    it('refuses, like append, a config that mixes a default export with named exports', () => {
-      const config = loadConfig('export const tags = [];\nexport default { addons: [] };').parse();
+    it('refuses, like append, a field that the config also exports by name', () => {
+      const config = loadConfig(
+        'export const addons = [];\nexport default { addons: [] };'
+      ).parse();
       const list = config.inspectList(['addons']);
 
       expect(list).toMatchObject({ kind: 'refused', diagnostic: { code: 'ambiguous-binding' } });
       expect(config.append(['addons'], 'b')).toMatchObject({
         diagnostic: list.kind === 'refused' && list.diagnostic,
+      });
+    });
+
+    it('edits a default export field that no named export shadows', () => {
+      const config = loadConfig('export const tags = [];\nexport default { addons: [] };').parse();
+
+      expect(config.inspectList(['addons'])).toMatchObject({ kind: 'list' });
+      expect(config.append(['addons'], 'b')).toMatchObject({ ok: true, changed: true });
+      expect(config.append(['tags'], 'b')).toMatchObject({
+        ok: false,
+        diagnostic: { code: 'ambiguous-binding' },
       });
     });
 
@@ -2333,8 +2346,8 @@ describe('ConfigFile', () => {
         "Cannot edit 'addons' because it is a constant that other code refers to as well",
       ],
       [
-        'a config that mixes a default export with named exports',
-        "export const tags = [];\nexport default { addons: ['a'] };",
+        'a config that also exports it by name',
+        "export const addons = [];\nexport default { addons: ['a'] };",
         undefined,
       ],
     ])('refuses, like append, an array in %s, also without the entry', (_case, source, message) => {

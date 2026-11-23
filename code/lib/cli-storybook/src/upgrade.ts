@@ -42,6 +42,7 @@ import {
   runAutomigrations,
 } from './automigrate/multi-project.ts';
 import { FixStatus } from './automigrate/types.ts';
+import { highlightChange } from './dry-run.ts';
 import { displayDoctorResults, runMultiProjectDoctor } from './doctor/index.ts';
 import type { ProjectDoctorData, ProjectDoctorResults } from './doctor/types.ts';
 import { configureDeferredAddons } from './postinstallAddon.ts';
@@ -106,7 +107,7 @@ const describeVersionChanges = (
       const name = specifier.slice(0, at);
       const version = specifier.slice(at + 1);
       const current = packageJson[type]?.[name];
-      return current === version ? [] : [`  ${name}: ${current} → ${version}`];
+      return current === version ? [] : [`  ${highlightChange(name)}: ${current} → ${version}`];
     })
   );
 
@@ -520,7 +521,9 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
             await getStorybookDependencyUpgrades(packageJson, config)
           );
           if (changes.length > 0) {
-            plannedUpgrades.push(`${shortenPath(packageJsonPath)}:\n  ${changes.join('\n  ')}`);
+            plannedUpgrades.push(
+              `${highlightChange(shortenPath(packageJsonPath))}:\n  ${changes.join('\n  ')}`
+            );
           }
         }
       }

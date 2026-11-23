@@ -43,7 +43,7 @@ describe.each([
 ])('getStorybookInfo renderer detection for %s', (framework, renderer, rendererPackage) => {
   beforeEach(() => {
     vi.spyOn(JsPackageManager, 'listAllPackageJsonPaths').mockReturnValue([]);
-    vi.mocked(loadMainConfig).mockResolvedValue({ framework });
+    vi.mocked(loadMainConfig).mockResolvedValue({ framework, stories: [] });
   });
 
   it('detects the renderer and its package', async () => {

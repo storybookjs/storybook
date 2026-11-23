@@ -33,7 +33,12 @@ import {
   type StatusesByStoryIdAndTypeId,
 } from 'storybook/internal/types';
 
-import { shortcutToHumanString, useStorybookApi, type IndexHash } from 'storybook/manager-api';
+import {
+  shortcutToHumanString,
+  useStorybookApi,
+  type HashEntry,
+  type IndexHash,
+} from 'storybook/manager-api';
 import { styled } from 'storybook/theming/emotion';
 
 import { getGroupDualStatus, shouldShowChangeStatus } from '../../utils/status.tsx';
@@ -45,6 +50,7 @@ import {
   createContextMenuStore,
   type ContextMenuStore,
 } from './ContextMenuStore.tsx';
+import { DEFAULT_REF_ID } from './Sidebar.tsx';
 import { ScrollAreaContext } from './SidebarScrollArea.tsx';
 import {
   createStatusStore,
@@ -550,7 +556,13 @@ export const Tree = React.memo<TreeProps>(function Tree({
       if (!item || next!.id === preloadedId) {
         return;
       }
-      const entry = isBranch(item) ? hoistedDataRef.current[item.children[0]] : item;
+      let entry: HashEntry | undefined = item;
+      if (item.type === 'component') {
+        // Its first child can be a subcomponent or a nested docs page instead of one of its own.
+        entry = api.resolveLeafEntry(item.id, refId === DEFAULT_REF_ID ? undefined : refId);
+      } else if (isBranch(item)) {
+        entry = hoistedDataRef.current[item.children[0]];
+      }
       if (entry?.type !== 'story' && entry?.type !== 'docs') {
         return;
       }

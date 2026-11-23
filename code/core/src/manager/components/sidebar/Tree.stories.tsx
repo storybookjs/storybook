@@ -61,6 +61,7 @@ const managerContext: any = {
         }) satisfies Addon_Collection<Addon_TestProviderType>
     ),
     getData: fn().mockName('api::getData'),
+    resolveLeafEntry: fn().mockName('api::resolveLeafEntry'),
   },
 };
 
@@ -1550,8 +1551,8 @@ export const KeyboardNavigation: Story = {
 
 /**
  * Hovering a row asks the preview to load the story a press on it would most likely open: a leaf
- * loads itself, a story with tests and its "Story" row load the story, a branch loads its first
- * story (a component's first story, a group's hoisted story). A root or group whose first child is
+ * loads itself, a story with tests and its "Story" row load the story, a root or group loads its
+ * first child when that is a story (a hoisted one included). A root or group whose first child is
  * another branch has nothing to load.
  */
 export const HoverPreloadsFirstStory: Story = {
@@ -1580,7 +1581,6 @@ export const HoverPreloadsFirstStory: Story = {
     await userEvent.hover(row('root-1-child-a2--grandchild-a1-1:test1'));
     await userEvent.hover(row('group-1'));
     await userEvent.hover(row('root-3'));
-    await userEvent.hover(row('root-3-child-a2'));
     await waitFor(() =>
       expect(preloadedIds()).toEqual([
         ['root-1-child-a2--grandchild-a1-2'],
@@ -1589,13 +1589,90 @@ export const HoverPreloadsFirstStory: Story = {
         ['root-1-child-a2--grandchild-a1-1:test1'],
         ['group-1--child-b1'],
         ['root-3--child-a1'],
-        ['root-3-child-a2--grandchild-a1-1'],
       ])
     );
     expect(emit).toHaveBeenLastCalledWith(PRELOAD_ENTRIES, {
-      ids: ['root-3-child-a2--grandchild-a1-1'],
+      ids: ['root-3--child-a1'],
       source: 'hover',
       options: { target: DEFAULT_REF_ID },
     });
+  },
+};
+
+const nestedData = transformStoryIndexToStoriesHash(
+  {
+    v: 5,
+    entries: {
+      'custom-guide--docs': {
+        type: 'docs',
+        id: 'custom-guide--docs',
+        title: 'Components/Button/Guide',
+        name: 'Docs',
+        importPath: './guide.mdx',
+        storiesImports: [],
+      },
+      'components-button-icon--primary': {
+        type: 'story',
+        subtype: 'story',
+        id: 'components-button-icon--primary',
+        title: 'Components/Button/Icon',
+        name: 'Primary',
+        importPath: './icon.stories.ts',
+      },
+      'components-button--docs': {
+        type: 'docs',
+        id: 'components-button--docs',
+        title: 'Components/Button',
+        name: 'Docs',
+        importPath: './button.stories.ts',
+        storiesImports: [],
+      },
+      'components-button--primary': {
+        type: 'story',
+        subtype: 'story',
+        id: 'components-button--primary',
+        title: 'Components/Button',
+        name: 'Primary',
+        importPath: './button.stories.ts',
+      },
+    },
+  },
+  { provider: noConfigProvider, docsOptions: { docsMode: false }, filters: {}, allStatuses: {} }
+);
+
+/**
+ * Hovering a component asks the preview to load the entry that selecting the component opens: one
+ * of its own, even when the sidebar lists a nested docs page or a subcomponent before it.
+ */
+export const HoverPreloadsTheEntryAComponentOpens: Story = {
+  args: {
+    refId: DEFAULT_REF_ID,
+    onSelectStoryId: fn(),
+    data: nestedData,
+    selectedStoryId: 'components-button--primary',
+  },
+  beforeEach: () => {
+    // The stories API resolves an entry of the main Storybook only when it is given no ref id.
+    managerContext.api.resolveLeafEntry.mockImplementation((id: string, refId?: string) =>
+      id === 'components-button' && !refId ? nestedData['components-button--docs'] : undefined
+    );
+  },
+  play: async ({ canvasElement }) => {
+    const emit = managerContext.api.emit;
+    emit.mockClear();
+
+    await userEvent.hover(canvasElement.querySelector('[data-item-id="components-button"]')!);
+
+    await waitFor(() =>
+      expect(emit).toHaveBeenCalledWith(PRELOAD_ENTRIES, {
+        ids: ['components-button--docs'],
+        source: 'hover',
+        options: { target: DEFAULT_REF_ID },
+      })
+    );
+    expect(emit).not.toHaveBeenCalledWith(
+      PRELOAD_ENTRIES,
+      expect.objectContaining({ ids: ['custom-guide--docs'] })
+    );
   },
 };

@@ -5,7 +5,7 @@ import {
   type CsfObjectHost,
   createCsfObject,
 } from './CsfObject.ts';
-import type { CsfPath } from './CsfObjectPath.ts';
+import { type CsfPath, type CsfPattern, anyKey } from './CsfObjectPath.ts';
 import { type MemberInsert, type ObjectRoot, detachedMember, literalRoot } from './ObjectRoot.ts';
 import {
   type E,
@@ -76,11 +76,91 @@ type NamedEntry = {
 
 type Rejection = { ok: false; diagnostic: CsfMutationDiagnostic };
 
+// The names a file exports besides `default`, each with the node that exports it. `unknown` holds
+// an export, such as `export * from './x'`, whose names cannot be listed.
+type NamedExports = { names: ReadonlyMap<string, Node>; unknown?: Node };
+
+const namedExports = (program: E.Program, own: Node | undefined): NamedExports => {
+  const names = new Map<string, Node>();
+  for (const statement of program.body) {
+    if (statement.type === 'ExportAllDeclaration' && statement.exportKind !== 'type') {
+      return { names, unknown: statement };
+    }
+    if (statement.type !== 'ExportNamedDeclaration' || statement.exportKind === 'type') {
+      continue;
+    }
+    const { declaration } = statement;
+    if (declaration?.type === 'VariableDeclaration') {
+      for (const declarator of declaration.declarations) {
+        if (declarator.id.type !== 'Identifier') {
+          return { names, unknown: declarator };
+        }
+        if (declarator !== own) {
+          names.set(declarator.id.name, statement);
+        }
+      }
+    } else if (
+      declaration &&
+      declaration.type !== 'TSTypeAliasDeclaration' &&
+      declaration.type !== 'TSInterfaceDeclaration' &&
+      declaration.id?.type === 'Identifier'
+    ) {
+      names.set(declaration.id.name, statement);
+    }
+    for (const specifier of statement.specifiers) {
+      const name = exportedName(specifier.exported);
+      if (specifier.exportKind !== 'type' && name !== 'default') {
+        names.set(name, specifier);
+      }
+    }
+  }
+  return { names };
+};
+
+// The default export wins field by field at runtime, so only an edit to a field that a named export
+// also provides is ambiguous.
+const refuseShadowed = (
+  config: ConfigFile,
+  { names, unknown }: NamedExports,
+  paths: readonly CsfPattern[]
+): Rejection | undefined => {
+  const reject = (node: Node, path: CsfPath, message: string): Rejection => ({
+    ok: false,
+    diagnostic: {
+      code: 'ambiguous-binding',
+      target: { kind: 'config' },
+      path,
+      message,
+      loc: locationOf(config.editor.code, node.start, node.end),
+    },
+  });
+  if (unknown) {
+    return reject(unknown, [], 'Cannot mutate a default config next to exports it cannot list');
+  }
+  for (const [key] of paths) {
+    if (key === undefined || key === anyKey) {
+      const [first] = names.values();
+      if (first) {
+        return reject(first, [], 'Cannot mutate mixed default and named config exports');
+      }
+      continue;
+    }
+    const node = names.get(String(key));
+    if (node) {
+      return reject(
+        node,
+        [String(key)],
+        `Cannot edit '${String(key)}' because the config also exports it by name`
+      );
+    }
+  }
+  return undefined;
+};
+
 export const locateConfigRoot = (
   config: ConfigFile,
-  mode: 'read' | 'mutate',
-  paths?: readonly CsfPath[]
-): { ok: true; root: ObjectRoot } | Rejection => {
+  mode: 'read' | 'mutate'
+): { ok: true; root: ObjectRoot; named?: NamedExports } | Rejection => {
   const editor = config.editor;
   const { program } = editor;
   const reject = (
@@ -146,20 +226,6 @@ export const locateConfigRoot = (
     const declaration = chain.find(
       (node): node is E.VariableDeclarator => node.type === 'VariableDeclarator'
     );
-    const named = Object.keys(config._exportDecls).filter(
-      (name) => config._exportDecls[name] !== declaration
-    );
-    if (
-      mode === 'mutate' &&
-      named.length > 0 &&
-      (!paths || paths.some((path) => path.length === 0 || named.includes(String(path[0]))))
-    ) {
-      return reject(
-        root,
-        'ambiguous-binding',
-        'Cannot mutate mixed default and named config exports'
-      );
-    }
     for (const parent of chain) {
       if (parent.type !== 'CallExpression') {
         continue;
@@ -233,7 +299,7 @@ export const locateConfigRoot = (
         'Cannot mutate conditional, repeated, or shadowed module.exports'
       );
     }
-    return { ok: true, root: literalRoot(editor, root) };
+    return { ok: true, root: literalRoot(editor, root), named: namedExports(program, declaration) };
   }
 
   if (config.hasDefaultExport || assignments.length > 0) {
@@ -479,16 +545,21 @@ export function createConfigObject(
   mode: 'read' | 'mutate',
   report: (diagnostic: CsfMutationDiagnostic) => void,
   markChanged: () => void,
-  paths?: readonly CsfPath[]
+  paths: readonly CsfPattern[] = []
 ): { ok: true; object: CsfObject } | { ok: false; diagnostic: CsfMutationDiagnostic } {
-  const located = locateConfigRoot(config, mode, paths);
+  const located = locateConfigRoot(config, mode);
   if (located.ok === false) {
     return located;
+  }
+  const shadowed =
+    mode === 'mutate' && located.named && refuseShadowed(config, located.named, paths);
+  if (shadowed) {
+    return shadowed;
   }
   const host: CsfObjectHost = {
     editor: config.editor,
     root: () => {
-      const current = locateConfigRoot(config, mode, paths);
+      const current = locateConfigRoot(config, mode);
       return current.ok ? current.root : undefined;
     },
   };

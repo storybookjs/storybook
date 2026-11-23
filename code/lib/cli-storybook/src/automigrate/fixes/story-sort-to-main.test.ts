@@ -48,13 +48,17 @@ const expectMoved = async (main: string, preview: string, storySort: unknown) =>
   return migrated;
 };
 
-const expectUntouched = async (main: string, preview: string) => {
+const expectUntouched = async (
+  main: string,
+  preview: string,
+  message = 'Cannot automigrate storySort'
+) => {
   const migrated = await migrate(main, preview);
   expect(migrated.failures).toEqual([
     {
       file: mainConfigPath,
       kind: 'main',
-      message: expect.stringContaining('Cannot automigrate storySort'),
+      message: expect.stringContaining(message),
     },
   ]);
   expect(migrated.main).toBe(main);
@@ -406,13 +410,10 @@ describe('story-sort-to-main', () => {
   });
 
   it('names the preview file when the preview cannot be edited', async () => {
-    const migrated = await migrate(
+    await expectUntouched(
       'export default { stories: [] }',
-      `export const parameters = {}; export default { parameters: { options: { storySort: { order: ['Intro'] } } } }`
-    );
-
-    expect(migrated.failures[0].message).toContain(
-      `Cannot mutate mixed default and named config exports in ${previewConfigPath}.`
+      `export const parameters = {}; export default { parameters: { options: { storySort: { order: ['Intro'] } } } }`,
+      `${previewConfigPath} cannot be edited: Cannot edit 'parameters' because the config also exports it by name.`
     );
   });
 

@@ -37,18 +37,22 @@ export const storySortToMain: Fix<StorySortToMainOptions> = {
     const storySort = preview.getValue(storySortPath);
     // The main config is visited first, so its hook learns here whether the preview edit will fail.
     preview.remove(storySortPath);
-    return { storySort, previewProblem: firstProblem(preview) };
+    const problem = firstProblem(preview);
+    return {
+      storySort,
+      previewProblem: problem && `${previewConfigPath} cannot be edited: ${problem}`,
+    };
   },
 
   prompt: () =>
     `Move ${picocolors.cyan('parameters.options.storySort')} from preview to ${picocolors.cyan('storySorts')} in main?`,
 
-  transform: ({ previewConfigPath, result: { storySort, previewProblem } }) => [
+  transform: ({ result: { storySort, previewProblem } }) => [
     {
       filter: { kind: ['main'] },
       editConfig: (main) => {
         if (previewProblem) {
-          fail(`${previewProblem} in ${previewConfigPath}`);
+          fail(previewProblem);
         }
         const existing = main.inspect(['storySorts']);
         if (existing.kind === 'unreadable') {

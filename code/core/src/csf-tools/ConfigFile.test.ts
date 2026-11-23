@@ -2211,10 +2211,34 @@ describe('ConfigFile', () => {
       ).parse();
       const list = config.inspectList(['addons']);
 
-      expect(list).toMatchObject({ kind: 'refused', diagnostic: { code: 'ambiguous-binding' } });
+      expect(list).toMatchObject({
+        kind: 'refused',
+        diagnostic: {
+          code: 'ambiguous-binding',
+          path: ['addons'],
+          message: "Cannot edit 'addons' because the config also exports it by name",
+        },
+      });
       expect(config.append(['addons'], 'b')).toMatchObject({
         diagnostic: list.kind === 'refused' && list.diagnostic,
       });
+    });
+
+    it.each([
+      ['re-exports from another module', "export { decorators } from './decorators';"],
+      ['imports and exports', "import { decorators } from './decorators';\nexport { decorators };"],
+      ['declares as a class', 'export class decorators {}'],
+      ['declares as a function', 'export function decorators() {}'],
+      ['may export with export *', "export * from './decorators';"],
+    ])('refuses a field that the config also %s', (_case, named) => {
+      const source = `${named}\nexport default { parameters: {} };`;
+      const config = loadConfig(source).parse();
+
+      expect(config.set(['decorators'], [])).toMatchObject({
+        ok: false,
+        diagnostic: { code: 'ambiguous-binding' },
+      });
+      expect(printConfig(config).code).toBe(source);
     });
 
     it('edits a default export field that no named export shadows', () => {

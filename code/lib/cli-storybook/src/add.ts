@@ -1,10 +1,9 @@
-import { relative } from 'node:path';
-
 import { type PackageManagerName, setupAddonInConfig, versions } from 'storybook/internal/common';
 import { readConfig } from 'storybook/internal/csf-tools';
 import { logger as nodeLogger, prompt } from 'storybook/internal/node-logger';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
+import { relative } from 'pathe';
 import SemVer from 'semver';
 import { dedent } from 'ts-dedent';
 

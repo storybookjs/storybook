@@ -103,15 +103,38 @@ test.describe('addon panel', () => {
     const sbPage = new SbPage(page, expect);
 
     await sbPage.deepLinkToStory(storybookUrl, 'core/parameters-actions', 'basic');
+    await sbPage.waitUntilLoaded();
+
+    await page.waitForFunction((storyId) => {
+      const iframe = document.querySelector<HTMLIFrameElement>('#storybook-preview-iframe');
+      const channel = (
+        iframe?.contentWindow as
+          | (Window & { __STORYBOOK_ADDONS_CHANNEL__?: { last: (name: string) => unknown[] } })
+          | null
+          | undefined
+      )?.__STORYBOOK_ADDONS_CHANNEL__;
+      return channel?.last('storyRendered')?.[0] === storyId;
+    }, 'core-parameters-actions--basic');
+
     await sbPage.viewAddonPanel('Actions');
 
     const button = sbPage.previewRoot().getByRole('button');
+    const actionsTab = page.getByRole('tab', { name: /^Actions/ });
+    // The Angular webpack sandbox also logs the Button's onClick output
+    const eventsPerClick = templateName.startsWith('angular-cli/') ? 2 : 1;
+
+    await expect(async () => {
+      await button.click();
+      await expect(sbPage.panelContent()).toContainText('clicked', { timeout: 1000 });
+    }).toPass();
+    await sbPage.panelContent().getByRole('button', { name: 'Clear' }).click();
+    await expect(actionsTab).not.toContainText(/\d/);
+
     await button.click();
     await button.click();
     await button.click();
 
-    const actionsTab = page.getByRole('tab', { name: /^Actions/ });
-    await expect(actionsTab).toContainText('3');
+    await expect(actionsTab).toHaveText(`Actions${3 * eventsPerClick}`);
     await expect(sbPage.panelContent()).toContainText('clicked');
 
     await sbPage.navigateToStory('core/argtype', 'string');

@@ -45,6 +45,7 @@ import {
   createContextMenuStore,
   type ContextMenuStore,
 } from './ContextMenuStore.tsx';
+import { DEFAULT_REF_ID } from './Sidebar.tsx';
 import { ScrollAreaContext } from './SidebarScrollArea.tsx';
 import {
   createStatusStore,
@@ -550,7 +551,11 @@ export const Tree = React.memo<TreeProps>(function Tree({
       if (!item || next!.id === preloadedId) {
         return;
       }
-      const entry = isBranch(item) ? hoistedDataRef.current[item.children[0]] : item;
+      // A component stands for the entry that selecting it opens. A root or group opens nothing.
+      const entry =
+        item.type === 'component'
+          ? api.resolveLeafEntry(item.id, refId === DEFAULT_REF_ID ? undefined : refId)
+          : item;
       if (entry?.type !== 'story' && entry?.type !== 'docs') {
         return;
       }

@@ -18,7 +18,7 @@ import {
   type CsfValue,
   createCsfObject,
 } from './CsfObject.ts';
-import type { CsfPath } from './CsfObjectPath.ts';
+import type { CsfPath, CsfPattern } from './CsfObjectPath.ts';
 import { literalRoot } from './ObjectRoot.ts';
 import {
   type E,
@@ -285,8 +285,10 @@ export class ConfigFile implements CsfObject {
   /**
    * Remove a property and recursively clean up the objects it leaves empty. At an index, remove
    * that one element or argument and keep the list, also when it is left empty. Missing fields are
-   * a no-op. An index on a field that holds a call addresses the call's arguments, whatever the
-   * callee, such as `filter` in `[...].filter(Boolean)`.
+   * a no-op, also one the source does not show where only code it cannot read, such as an imported
+   * spread or a call, could provide it. An index on a field that holds a call addresses the call's
+   * arguments, whatever the callee, such as `filter` in `[...].filter(Boolean)`. An `anyKey`
+   * segment stands for each key of the object there.
    *
    * @example
    * ```ts
@@ -294,9 +296,10 @@ export class ConfigFile implements CsfObject {
    * object.remove(['parameters', 'a11y', 'disable']); // { ok: true, changed: true }
    * object.getValue(['parameters']); // undefined
    * object.remove(['parameters']); // { ok: true, changed: false }
+   * object.remove(['argTypes', anyKey, 'defaultValue']); // removes it from each arg
    * ```
    */
-  remove(path: CsfPath): CsfMutationResult {
+  remove(path: CsfPattern): CsfMutationResult {
     return this._mutate([path], (object) => object.remove(path));
   }
 
@@ -445,7 +448,7 @@ export class ConfigFile implements CsfObject {
   }
 
   _mutate(
-    paths: readonly CsfPath[],
+    paths: readonly CsfPattern[],
     operation: (object: CsfObject) => CsfMutationResult
   ): CsfMutationResult {
     const editor = createConfigObject(

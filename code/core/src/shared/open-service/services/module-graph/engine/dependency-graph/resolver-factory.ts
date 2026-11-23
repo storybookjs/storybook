@@ -7,6 +7,7 @@ import { defaultResolveConditionNames } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
 import type { ModuleResolveConfig } from '../adapters/types.ts';
+import type { ImportEdge } from '../parser-registry/types.ts';
 
 const DEFAULT_EXTENSIONS = ['.tsx', '.ts', '.d.ts', '.jsx', '.js', '.mjs', '.cjs', '.json'];
 
@@ -80,11 +81,15 @@ class AliasNormalizer {
  * converts resolver errors to `null` (with a debug log) — the caller treats
  * unresolvable specifiers as opaque-leaf edges.
  */
+interface Resolvers {
+  // Aliases, tsconfig `paths` and relative files, without `node_modules` or `NODE_PATH` lookup.
+  paths: OxcResolverFactory;
+  packages: OxcResolverFactory;
+}
+
 export class ChangeDetectionResolverFactory {
-  private readonly factory: OxcResolverFactory;
-  // The same options without `node_modules` or `NODE_PATH` lookup: aliases, tsconfig `paths` and
-  // relative files.
-  private readonly pathsFactory: OxcResolverFactory;
+  private readonly importResolvers: Resolvers;
+  private readonly requireResolvers: Resolvers;
   private readonly aliasNormalizer = new AliasNormalizer();
   /**
    * Virtual entry point placed directly in the project root.
@@ -106,14 +111,27 @@ export class ChangeDetectionResolverFactory {
       conditionNames,
       extensions: DEFAULT_EXTENSIONS,
     };
-    this.factory = new OxcResolverFactory(options);
-    this.pathsFactory = this.factory.cloneWithOptions({ ...options, modules: [], nodePath: false });
+    const cache = new OxcResolverFactory(options);
+    const resolversFor = (conditions: string[]): Resolvers => ({
+      paths: cache.cloneWithOptions({
+        ...options,
+        conditionNames: conditions,
+        modules: [],
+        nodePath: false,
+      }),
+      packages: cache.cloneWithOptions({ ...options, conditionNames: conditions }),
+    });
+    this.importResolvers = resolversFor(conditionNames);
+    this.requireResolvers = config.requireConditions
+      ? resolversFor(config.requireConditions)
+      : this.importResolvers;
 
     this.projectRootEntry = join(config.projectRoot, '__sb_resolver_root__.ts');
   }
 
   /**
-   * Resolves `specifier` from the file at `from` (must be an absolute path).
+   * Resolves `specifier` from the file at `from` (must be an absolute path), with the conditions
+   * the builder applies to an edge of this `kind`.
    *
    * Aliases and tsconfig `paths` win over package resolution: first those of `from`, then those
    * of the project root, which maps workspace packages to their sources even when the
@@ -124,11 +142,16 @@ export class ChangeDetectionResolverFactory {
    * Never throws — internal errors are converted to `null` and a debug-level log
    * line is emitted.
    */
-  async resolve(from: string, specifier: string): Promise<string | null> {
+  async resolve(
+    from: string,
+    specifier: string,
+    kind: ImportEdge['kind'] = 'static'
+  ): Promise<string | null> {
+    const { paths, packages } = kind === 'require' ? this.requireResolvers : this.importResolvers;
     const origins = from === this.projectRootEntry ? [from] : [from, this.projectRootEntry];
     try {
       for (const origin of origins) {
-        const { path } = await this.pathsFactory.resolveFileAsync(origin, specifier);
+        const { path } = await paths.resolveFileAsync(origin, specifier);
         if (path) {
           return path;
         }
@@ -136,7 +159,7 @@ export class ChangeDetectionResolverFactory {
 
       let error: string | undefined;
       for (const origin of origins) {
-        const result = await this.factory.resolveFileAsync(origin, specifier);
+        const result = await packages.resolveFileAsync(origin, specifier);
         if (result.path) {
           return result.path;
         }

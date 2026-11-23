@@ -1,6 +1,6 @@
 import { globalSettings } from 'storybook/internal/cli';
 import {
-  HandledError,
+  isHandledError,
   JsPackageManagerFactory,
   PackageManagerName,
   optionalEnvToBoolean,
@@ -32,7 +32,7 @@ addToGlobalContext('cliVersion', versions.storybook);
 const handleCommandFailure =
   (logFilePath: string | boolean | undefined) =>
   async (error: unknown): Promise<never> => {
-    if (!(error instanceof HandledError)) {
+    if (!isHandledError(error)) {
       logger.error(String(error));
     }
 

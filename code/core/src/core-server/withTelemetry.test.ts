@@ -11,6 +11,7 @@ import {
 } from 'storybook/internal/telemetry';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
+import { MinimumReleaseAgeHandledError } from '../server-errors.ts';
 import { getErrorLevel, sendTelemetryError, withTelemetry } from './withTelemetry.ts';
 
 vi.mock('storybook/internal/common', { spy: true });
@@ -274,6 +275,29 @@ describe('withTelemetry', () => {
           isErrorInstance: true,
         }),
         expect.objectContaining({ enableCrashReports: true })
+      );
+    });
+
+    it('does not prompt for crash reports when init stops with a handled error', async () => {
+      const handledError = new MinimumReleaseAgeHandledError({
+        message: 'Please rerun Storybook creation with: npx create-storybook@10.6.6',
+      });
+      vi.mocked(isCI).mockReturnValue(false);
+      vi.mocked(cache.get).mockResolvedValueOnce(undefined);
+      vi.mocked(prompt.confirm).mockResolvedValueOnce(true);
+      setStdoutIsTTY(true);
+
+      await expect(
+        withTelemetry('init', { cliOptions, printError: vi.fn() }, async () => {
+          throw handledError;
+        })
+      ).rejects.toThrow(handledError);
+
+      expect(prompt.confirm).not.toHaveBeenCalled();
+      expect(telemetry).toHaveBeenCalledWith(
+        'error',
+        expect.objectContaining({ eventType: 'init', error: undefined }),
+        expect.objectContaining({ enableCrashReports: false })
       );
     });
 

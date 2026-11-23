@@ -1,9 +1,9 @@
 import {
-  HandledError,
   cache,
-  loadMainConfig,
   isCI,
+  isHandledError,
   loadAllPresets,
+  loadMainConfig,
 } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 import {
@@ -18,7 +18,7 @@ import {
 import type { EventType } from 'storybook/internal/telemetry';
 import type { CLIOptions, StorybookConfigRaw } from 'storybook/internal/types';
 
-import { StorybookError } from '../storybook-error.ts';
+import type { StorybookError } from '../storybook-error.ts';
 
 type TelemetryOptions = {
   cliOptions: CLIOptions;
@@ -263,15 +263,17 @@ export async function withTelemetry<T>(
       return undefined;
     }
 
-    const isHandledError =
-      error instanceof HandledError || (error instanceof StorybookError && error.isHandledError);
+    const handled = isHandledError(error);
 
-    if (!isHandledError) {
+    if (!handled) {
       const { printError = logger.error } = options;
       printError(error);
     }
 
-    await sendTelemetryError(error, eventType, options);
+    await sendTelemetryError(error, eventType, {
+      ...options,
+      skipPrompt: options.skipPrompt || handled,
+    });
 
     throw error;
   } finally {

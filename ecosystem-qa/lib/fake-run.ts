@@ -48,6 +48,7 @@ export const runFake = (request: RunRequest): Outcome => {
     startSha: NULL_SHA,
     headSha: null,
     output: {
+      storybookVersionBefore: '10.6.0',
       storybookVersionInstalled: request.version,
       checks: checksFor(request.tier).map(({ id, label }) =>
         id === failing

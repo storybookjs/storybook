@@ -427,6 +427,29 @@ describe('multi-project automigrations', () => {
       );
     });
 
+    it("adds the fix's link to the details", async () => {
+      const { logger } = await import('storybook/internal/node-logger');
+      const fix = { ...detailedFix(), link: 'https://storybook.js.org/docs/guide#section' };
+
+      logAutomigrationDetails([
+        {
+          fix,
+          reports: [
+            {
+              result: { files: ['a.ts'] },
+              status: 'check_succeeded' as const,
+              project: createMockProject('/repo/.storybook'),
+            },
+          ],
+        },
+      ]);
+
+      expect(logger.logBox).toHaveBeenCalledWith(
+        'Migrate\n\nFiles:\na.ts\n\nMore info: https://storybook.js.org/docs/guide#section',
+        expect.anything()
+      );
+    });
+
     it('shows nothing for a fix whose prompt does not depend on the check result', async () => {
       const { logger } = await import('storybook/internal/node-logger');
 

@@ -1,6 +1,14 @@
 import { cycleRef } from './cycle.ts';
-import { fence, renderCommentBody, renderIssueBody } from './proposals.ts';
-import type { Cycle, EvidenceFile, Proposal } from './schema.ts';
+import {
+  alreadyReported,
+  combinationsOf,
+  fence,
+  recordsEveryCombination,
+  relatedLines,
+  renderCommentBody,
+  renderIssueBody,
+} from './proposals.ts';
+import type { CommentProposal, Cycle, EvidenceFile, Proposal } from './schema.ts';
 
 export const ASSETS_BRANCH = 'qa-assets';
 // Well under GitHub's 100 MB push limit, and small enough that a release cycle's evidence does not
@@ -25,17 +33,33 @@ export interface FilingOptions {
   repo: string;
   // `assets` links evidence on the qa-assets branch of `repo`; `local` links the downloaded files.
   evidenceLinks: 'assets' | 'local';
+  // The open issue that carries a finding of an issue proposal since the collect.
   filedAs?: number;
-  // Bodies of the comments already on the issue a comment proposal targets.
-  comments?: string[];
+  // What the issue named by `filedAs` or by a comment proposal already says: its body and comments.
+  existing?: string[];
 }
 
-const METADATA_MARKER = '<!-- sb-qa-metadata -->';
+const suppressedBecause = ({
+  reason,
+  existingIssue,
+  sources,
+}: Extract<Proposal, { kind: 'suppressed' }>): string =>
+  reason === 'known'
+    ? `#${existingIssue} is labelled qa:known`
+    : `fixed in #${existingIssue} after ${sources[0]!.version} was published`;
+
+const combinationList = (proposal: CommentProposal): string =>
+  combinationsOf(proposal)
+    .map(({ version, repo, os, engine }) => `${version} on ${repo} (${os}, ${engine})`)
+    .join(', ');
 
 // Return the ordered steps that file one proposal; a skip step is always the only step.
 export const planFiling = (proposal: Proposal, options: FilingOptions): FilingStep[] => {
   if (proposal.kind === 'suppressed') {
-    return [{ kind: 'skip', reason: `#${proposal.existingIssue} is labelled qa:known` }];
+    return [{ kind: 'skip', reason: suppressedBecause(proposal) }];
+  }
+  if (proposal.kind === 'skipped') {
+    return [{ kind: 'skip', reason: `skipped by hand: ${proposal.reason}` }];
   }
   // The cycle ref is pushed for a comment too: its metadata names this run's head, and a "seen
   // again" on a new prerelease is when someone wants to fetch the upgraded state.
@@ -43,16 +67,39 @@ export const planFiling = (proposal: Proposal, options: FilingOptions): FilingSt
     cycle.headSha && cycle.bundle
       ? [{ kind: 'push-cycle' as const, ...cycle, headSha: cycle.headSha, bundle: cycle.bundle }]
       : [];
-  if (proposal.kind === 'comment') {
-    const body = renderCommentBody(proposal);
-    const metadata = body.slice(body.indexOf(METADATA_MARKER)).trim();
-    if (options.comments?.some((comment) => comment.includes(metadata))) {
-      return [{ kind: 'skip', reason: `#${proposal.existingIssue} already has this comment` }];
+  const commentSteps = (
+    comment: CommentProposal,
+    alreadyThere: string,
+    repeated: string
+  ): FilingStep[] => {
+    const existing = options.existing ?? [];
+    if (alreadyReported(comment, existing)) {
+      return [{ kind: 'skip', reason: alreadyThere }];
     }
-    return [...pushCycle(proposal.cycle), { kind: 'comment', issue: proposal.existingIssue, body }];
+    if (recordsEveryCombination(comment, existing)) {
+      return [{ kind: 'skip', reason: `${repeated}: ${combinationList(comment)}` }];
+    }
+    return [
+      ...pushCycle(comment.cycle),
+      { kind: 'comment', issue: comment.existingIssue, body: renderCommentBody(comment) },
+    ];
+  };
+  const everyCombination = 'a sighting on every version, repo, system and engine it reports';
+  if (proposal.kind === 'comment') {
+    return commentSteps(
+      proposal,
+      `#${proposal.existingIssue} already has this sighting`,
+      `repeat: #${proposal.existingIssue} already has ${everyCombination}`
+    );
   }
   if (options.filedAs !== undefined) {
-    return [{ kind: 'skip', reason: `already filed as #${options.filedAs}` }];
+    // An issue that appeared since the collect may hold only some of the group, so what it lacks
+    // is reported on it like any later sighting.
+    return commentSteps(
+      { ...proposal, kind: 'comment', existingIssue: options.filedAs },
+      `already filed as #${options.filedAs}`,
+      `already filed as #${options.filedAs}, which has ${everyCombination}`
+    );
   }
   const { cycle, evidence, assetDir } = proposal;
   // A file over the cap stays out of the push, which would otherwise fail and take the issue with
@@ -102,18 +149,29 @@ export const describeStep = (step: FilingStep, repo: string): string => {
   }
 };
 
-export const renderDry = (proposal: Proposal, repo: string): string => {
-  const steps = planFiling(proposal, { repo, evidenceLinks: 'local' });
+export type KnownIssue = Pick<FilingOptions, 'filedAs' | 'existing'>;
+
+// Whether a proposal to file something comes to nothing because the issue already says it all.
+export const skipsReport = (proposal: Proposal, steps: FilingStep[]): boolean =>
+  (proposal.kind === 'comment' || proposal.kind === 'issue') && steps[0]?.kind === 'skip';
+
+export const renderDry = (proposal: Proposal, repo: string, known: KnownIssue = {}): string => {
+  const steps = planFiling(proposal, { repo, evidenceLinks: 'local', ...known });
   const body = steps.flatMap((step) =>
     step.kind === 'create-issue' || step.kind === 'comment' ? [fence(step.body, 'markdown')] : []
   );
+  // A suppressed group has no body, so without this a finding merged into it by mistake would
+  // leave no trace in the dry run.
+  const silenced =
+    proposal.kind === 'suppressed' || proposal.kind === 'skipped' ? proposal.related : [];
   return [
-    `<details><summary><b>${proposal.kind}</b> ${proposal.title} <code>${proposal.fingerprint}</code></summary>`,
+    `<details><summary><b>${proposal.kind}</b>${skipsReport(proposal, steps) ? ', skipped' : ''} ${proposal.title} <code>${proposal.fingerprint}</code>${silenced.length > 0 ? ` and ${silenced.length} more` : ''}</summary>`,
     '',
     `Sources: ${proposal.sources.map((source) => `${source.os}/${source.engine}${source.fake ? ' (fake)' : ''} (\`${source.resultPath}\`)`).join(', ')}`,
     '',
     ...steps.map((step, index) => `${index + 1}. ${describeStep(step, repo)}`),
     '',
+    ...relatedLines(silenced, 'Silenced with it:'),
     ...body.flatMap((block) => [block, '']),
     '</details>',
     '',

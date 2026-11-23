@@ -15,6 +15,8 @@ import {
 } from 'storybook/internal/csf-tools';
 import { logger, prompt } from 'storybook/internal/node-logger';
 
+import { relative } from 'pathe';
+
 export const METRO_CONFIG_CANDIDATES = ['metro.config.ts', 'metro.config.js', 'metro.config.cjs'];
 export const METRO_SETUP_DOCS_LINK =
   'https://storybookjs.github.io/react-native/docs/intro/configuration/metro-configuration';
@@ -339,7 +341,7 @@ const resolveMetroConfigPath = async ({
   if (candidates.length > 1) {
     if (yes) {
       logger.warn(
-        `Multiple Metro config files detected. Non-interactive mode selected ${path.relative(
+        `Multiple Metro config files detected. Non-interactive mode selected ${relative(
           process.cwd(),
           candidates[0]
         )}.`
@@ -350,7 +352,7 @@ const resolveMetroConfigPath = async ({
     const selected = await prompt.select({
       message: 'Multiple Metro config files found. Which one should Storybook update?',
       options: candidates.map((candidate) => ({
-        label: path.relative(process.cwd(), candidate),
+        label: relative(process.cwd(), candidate),
         value: candidate,
       })),
     });

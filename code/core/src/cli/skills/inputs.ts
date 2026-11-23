@@ -1,5 +1,7 @@
 import { relative } from 'node:path';
 
+import * as pico from 'picomatch';
+
 import type { Options, StoriesEntry } from '../../types/index.ts';
 import { extractFrameworkPackageName } from '../../common/utils/get-framework-name.ts';
 import { findConfigFile } from '../../common/utils/get-storybook-info.ts';
@@ -59,10 +61,13 @@ async function resolvePreview(configDir = '.storybook') {
   };
 }
 
-// Only the file part of a glob: a directory such as `packages/svelte-ui` says nothing of the format.
+// A string without a glob is a directory, whose default files are not `.svelte`, or one file.
 function matchesSvelteFiles(entry: StoriesEntry): boolean {
-  const files = typeof entry === 'string' ? entry : (entry.files ?? '');
-  return /\bsvelte\b/.test(files.slice(files.lastIndexOf('/') + 1));
+  if (typeof entry !== 'string') {
+    return !!entry.files && pico.isMatch('Button.stories.svelte', entry.files);
+  }
+  const { isGlob, glob } = pico.scan(entry);
+  return isGlob ? pico.isMatch('Button.stories.svelte', glob) : entry.endsWith('.svelte');
 }
 
 /**

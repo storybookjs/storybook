@@ -261,7 +261,7 @@ describe('a .rnstorybook config without a framework', () => {
   });
 });
 
-it('falls back to the default stories glob when the main config only has MDX files', async () => {
+it('falls back to the default stories glob when every story file of the main config is MDX', async () => {
   await migrateProject('.storybook', ['Introduction.mdx']);
 
   expect(vi.mocked(runCodemod).mock.calls[0][0]).toBe(

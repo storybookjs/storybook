@@ -46,9 +46,6 @@ export async function storyToCsf4(
 export const SANDBOX_STORIES_GLOB =
   '{stories,src/stories}/{Button,Header,Page,button,header,page}.stories.*';
 
-const STORY_EXTENSIONS = ['js', 'jsx', 'ts', 'tsx', 'mjs', 'mjsx', 'mts', 'mtsx', 'svelte'];
-const DEFAULT_STORIES_GLOB = `**/*.{stories,story}.{${STORY_EXTENSIONS.join(',')}}`;
-
 async function runStoriesCodemod(options: {
   dryRun: boolean | undefined;
   useSubPathImports: boolean;
@@ -59,9 +56,7 @@ async function runStoriesCodemod(options: {
 }) {
   const { dryRun, yes, glob, storiesPaths, ...codemodOptions } = options;
   const inSandbox = optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX) ?? false;
-  const configuredStoryFiles = storiesPaths.filter((file) =>
-    STORY_EXTENSIONS.some((extension) => file.endsWith(`.${extension}`))
-  );
+  const configuredStoryFiles = storiesPaths.filter((file) => !file.endsWith('.mdx'));
 
   if (!glob && !inSandbox && configuredStoryFiles.length > 0) {
     logger.step('Applying codemod on the stories of your main config...');
@@ -73,7 +68,7 @@ async function runStoriesCodemod(options: {
 
   const promptsForGlob = !glob && !inSandbox && !yes;
   try {
-    let globString = glob ?? DEFAULT_STORIES_GLOB;
+    let globString = glob ?? '**/*.{stories,story}.{js,jsx,ts,tsx,mjs,mjsx,mts,mtsx,svelte}';
 
     if (!glob && inSandbox) {
       globString = SANDBOX_STORIES_GLOB;

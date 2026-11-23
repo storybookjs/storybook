@@ -79,5 +79,5 @@
   "id": "example-button",
   "jsDocTags": {},
   "name": "Button",
-  "path": "./src/stories/Button.stories.ts"
+  "path": "./src/stories/Button.stories.tsx"
 }

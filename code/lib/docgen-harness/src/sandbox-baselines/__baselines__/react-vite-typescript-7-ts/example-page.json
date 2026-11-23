@@ -3,5 +3,5 @@
   "id": "example-page",
   "jsDocTags": {},
   "name": "Page",
-  "path": "./src/stories/Page.stories.ts"
+  "path": "./src/stories/Page.stories.tsx"
 }

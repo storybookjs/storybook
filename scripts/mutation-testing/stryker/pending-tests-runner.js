@@ -114,7 +114,10 @@ class PendingTestsRunner {
 
     this.#options.vitest.related = runsAtModuleLoad && tryEveryImportingTest;
     const result = await this.#vitestRunner.mutantRun({ ...options, testFilter: pending });
-    appendLines(testedMutantsFile, [mutant]);
+    // A mutant that breaks a test file while it loads says nothing about the tests in that run.
+    if (result.status !== MutantRunStatus.Error) {
+      appendLines(testedMutantsFile, [mutant]);
+    }
     if (result.status === MutantRunStatus.Killed) {
       appendLines(
         killingTestsFile,

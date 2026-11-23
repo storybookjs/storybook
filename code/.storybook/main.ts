@@ -117,7 +117,7 @@ const config = defineMain({
     {
       directory: '../renderers/react/src/__test__',
       titlePrefix: 'renderer/react',
-      files: '@(ReactDomClient|RenderToCanvas).stories.tsx',
+      files: '@(ReactDomClient|RenderToCanvas|RscHooks).stories.tsx',
     },
   ],
   addons: [

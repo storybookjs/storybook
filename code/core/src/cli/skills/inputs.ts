@@ -64,7 +64,7 @@ async function resolvePreview(configDir = '.storybook') {
 }
 
 // Reads the story files on disk, as the index does, so a Svelte project whose stories are all `.ts`
-// keeps the CSF text. Before the first story, it asks the index whether it would load one.
+// keeps the CSF text. Before the first story, it asks the index whether it would load a `.svelte` one.
 async function writesSvelteCsf(stories: StoriesEntry[], configDir: string): Promise<boolean> {
   if (stories.length === 0) {
     return false;
@@ -87,8 +87,51 @@ async function writesSvelteCsf(stories: StoriesEntry[], configDir: string): Prom
   if (paths.length > 0) {
     return paths.some((path) => path.endsWith('.svelte'));
   }
-  return specifiers.some(({ directory, importPathMatcher }) =>
-    importPathMatcher.test(`${directory}/Example.stories.svelte`)
+  return specifiers.some(({ directory, files, importPathMatcher }) =>
+    examplePaths(`${directory}/${files}`).some(
+      (path) => path.endsWith('.svelte') && importPathMatcher.test(path)
+    )
+  );
+}
+
+// `{a,b/c}` becomes `a` and `b/c`.
+function expandBraces(glob: string): string[] {
+  const open = glob.indexOf('{');
+  const commas: number[] = [];
+  let depth = 0;
+  for (let i = open; open !== -1 && i < glob.length; i++) {
+    if (glob[i] === '{') {
+      depth++;
+    } else if (glob[i] === ',' && depth === 1) {
+      commas.push(i);
+    } else if (glob[i] === '}' && --depth === 0) {
+      const bounds = [open, ...commas, i];
+      return bounds
+        .slice(1)
+        .flatMap((end, n) =>
+          expandBraces(glob.slice(0, open) + glob.slice(bounds[n] + 1, end) + glob.slice(i + 1))
+        );
+    }
+  }
+  return [glob];
+}
+
+// Paths a glob could match, with every wildcard filled by `svelte`, so that a `.svelte` story can
+// show up; the index's matcher then decides whether it would load them.
+function examplePaths(glob: string): string[] {
+  const braced = glob
+    .replace(/!\([^()]*\)/g, 'svelte')
+    .replace(
+      /[@+?*]\(([^()]*)\)/g,
+      (_, alternatives: string) => `{${alternatives.replaceAll('|', ',')}}`
+    );
+  return expandBraces(braced).map((path) =>
+    path
+      .replaceAll('**/', '')
+      .replaceAll('/**', '')
+      .replace(/\[[^\]]*\]/g, 's')
+      .replaceAll('*', 'svelte')
+      .replaceAll('?', 's')
   );
 }
 

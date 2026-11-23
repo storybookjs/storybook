@@ -124,7 +124,7 @@ export const AllControls = {
   },
 };
 
-/** Setting an empty Object control opens its raw editor with the seeded value selected. */
+/** Setting an empty Object control opens its raw editor with the caret inside the brackets. */
 export const AllControlsObjectSet: Story = {
   args: AllControls.args,
   play: async ({ canvas, canvasElement, userEvent }) => {
@@ -136,7 +136,7 @@ export const AllControlsObjectSet: Story = {
     });
     await expect(rawInput).toHaveValue('{}');
     await expect(rawInput).toHaveFocus();
-    await expect([rawInput.selectionStart, rawInput.selectionEnd]).toEqual([0, 2]);
+    await expect([rawInput.selectionStart, rawInput.selectionEnd]).toEqual([1, 1]);
   },
 };
 

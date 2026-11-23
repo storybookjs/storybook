@@ -241,7 +241,7 @@ interface RawJsonEditorProps {
   parseError: string | null;
   onEdit: (raw: string) => void;
   onCommit: () => void;
-  selectOnMount: boolean;
+  focusOnMount: boolean;
   readOnly: boolean;
   required?: boolean;
 }
@@ -253,7 +253,7 @@ const RawJsonEditor: FC<RawJsonEditorProps> = ({
   parseError,
   onEdit,
   onCommit,
-  selectOnMount,
+  focusOnMount,
   readOnly,
   required,
 }) => {
@@ -261,10 +261,11 @@ const RawJsonEditor: FC<RawJsonEditorProps> = ({
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
-    if (selectOnMount) {
-      textareaRef.current?.select();
+    if (focusOnMount) {
+      // Inside the brackets of the seeded `{}` or `[]`, where the first entry goes.
+      textareaRef.current?.setSelectionRange(1, 1);
     }
-  }, [selectOnMount]);
+  }, [focusOnMount]);
 
   return (
     <RawInputWrapper>
@@ -280,7 +281,7 @@ const RawJsonEditor: FC<RawJsonEditorProps> = ({
         onChange={(event) => onEdit(event.target.value)}
         onBlur={onCommit}
         placeholder="Edit JSON string..."
-        autoFocus={selectOnMount}
+        autoFocus={focusOnMount}
         valid={parseError ? 'error' : undefined}
         readOnly={readOnly}
         aria-required={required || undefined}
@@ -349,7 +350,7 @@ export const ObjectControl: FC<ObjectProps> = ({
       parseError={jsonDraft.parseError}
       onEdit={jsonDraft.edit}
       onCommit={jsonDraft.commit}
-      selectOnMount={forceVisible}
+      focusOnMount={forceVisible}
       readOnly={readonly}
       required={required}
     />

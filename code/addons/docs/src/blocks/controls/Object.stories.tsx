@@ -77,7 +77,7 @@ export const UndefinedArray: Story = {
   },
 };
 
-/** Setting an undefined value opens the raw editor on the seeded value, selected for overtyping. */
+/** Setting an undefined value opens the raw editor with the caret inside the seeded brackets. */
 export const SetObject: Story = {
   args: Undefined.args,
   play: async ({ canvas, args, userEvent }) => {
@@ -89,10 +89,13 @@ export const SetObject: Story = {
     });
     await expect(rawInput).toHaveValue('{}');
     await expect(rawInput).toHaveFocus();
-    await expect([rawInput.selectionStart, rawInput.selectionEnd]).toEqual([0, 2]);
+    await expect([rawInput.selectionStart, rawInput.selectionEnd]).toEqual([1, 1]);
     await expect(
       canvas.getByRole('button', { name: 'Edit object with the object editor' })
     ).toBeVisible();
+
+    await userEvent.keyboard('"a": 1');
+    await expect(rawInput).toHaveValue('{"a": 1}');
   },
 };
 

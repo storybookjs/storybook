@@ -39,6 +39,22 @@ export interface Assertion<T> extends Matchers<T> {
   toHaveBeenCalledExactlyOnceWith<E extends any[]>(...args: E): Promise<void>;
   toHaveBeenCalledBefore(mock: MockInstance, failIfNoFirstInvocation?: boolean): Promise<void>;
   toHaveBeenCalledAfter(mock: MockInstance, failIfNoFirstInvocation?: boolean): Promise<void>;
+  toHaveResolved(): Promise<void>;
+  toHaveResolvedTimes(times: number): Promise<void>;
+  toHaveResolvedWith<E>(value: E): Promise<void>;
+  toHaveLastResolvedWith<E>(value: E): Promise<void>;
+  toHaveNthResolvedWith<E>(nthCall: number, value: E): Promise<void>;
+  toBeTypeOf(
+    expected:
+      | 'bigint'
+      | 'boolean'
+      | 'function'
+      | 'number'
+      | 'object'
+      | 'string'
+      | 'symbol'
+      | 'undefined'
+  ): Promise<void>;
   toSatisfy<E>(matcher: (value: E) => boolean, message?: string): Promise<void>;
   resolves: Assertion<T>;
   rejects: Assertion<T>;

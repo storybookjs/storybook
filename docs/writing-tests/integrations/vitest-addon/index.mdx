@@ -222,35 +222,6 @@ To connect those tags to our test behavior, we can adjust the plugin configurati
 
 If the same tag is in both the `include` and `exclude` arrays, the `exclude` behavior takes precedence.
 
-## Comparison to the test runner
-
-The [test runner](../test-runner.mdx) requires a running Storybook instance to test your stories, because it visits each one, executes the play function, and listens for results. The Vitest plugin, however, transforms your stories into tests using Vite and portable stories, so it does not need to run Storybook to test your stories. Because of this reliance on Vite, the plugin can only be used with Storybook frameworks that use Vite (and [Next.js](../../../get-started/frameworks/nextjs-vite.mdx)). The test runner, on the other hand, can be used with any Storybook framework.
-
-| Feature                                                  | Vitest addon       | test-runner              |
-| -------------------------------------------------------- | ------------------ | ------------------------ |
-| **Test types**                                           |
-| - [Interaction tests](../../interaction-testing.mdx)     | ✅                 | ✅                       |
-| - [Accessibility tests](../../accessibility-testing.mdx) | ✅                 | ✅                       |
-| - [Visual tests](../../visual-testing.mdx)               | ✅                 | ❌                       |
-| - [Snapshot tests](../../snapshot-testing.mdx)           | ❌                 | ✅                       |
-| **Testing contexts**                                     |
-| - Storybook UI                                           | ✅                 | ❌                       |
-| - Editor extensions                                      | ✅                 | ❌                       |
-| - CLI                                                    | ✅                 | ✅                       |
-| - In CI                                                  | ✅                 | ✅                       |
-| Tests run via                                            | Vitest             | Jest                     |
-| Works with all Storybook frameworks                      | ❌ (requires Vite) | ✅                       |
-| Runs tests in a real browser environment                 | ✅                 | ✅                       |
-| Calculates code coverage                                 | ✅                 | ✅ (with addon-coverage) |
-| Requires a running or published Storybook                | ❌                 | ✅                       |
-| Extensible to other addons                               | ✅                 | ❌                       |
-
-The test runner is only a CLI tool. It does not have a UI for running tests, nor does it have an editor extension. The addon, however, provides a UI in Storybook for running tests, and it enables you to run and debug tests using Vitest IDE integrations.
-
-Additionally, the test runner ran your stories as orchestrated tests in Jest, and that orchestration came with some complexity. By comparison, this plugin transforms your stories into real tests and then runs them using Vitest, which is simpler and more configurable.
-
-Finally, because of the simpler architecture and the use of Vitest, this plugin should be faster than the test runner for most projects. We'll do more benchmarking to quantify this in the future.
-
 ## FAQ
 
 ### What happens if Vitest itself has an error?

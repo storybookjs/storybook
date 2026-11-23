@@ -67,11 +67,10 @@ function formatComponentLine(component: ComponentManifestEntry): string {
 }
 
 function formatDocLine(doc: DocEntry): string {
-  // `title`/`content` only exist on inline (v0) docs; v1 index rows carry just a summary.
-  const title = 'title' in doc ? doc.title : undefined;
+  // `content` only exists on inline (v0) docs; v1 index rows carry just a summary.
   const content = 'content' in doc ? doc.content : undefined;
   const summary = doc.summary ?? extractDocsSummary(content ?? '');
-  return `- ${title ?? doc.name} (${doc.id})${summary ? `: ${summary}` : ''}`;
+  return `- ${doc.title ?? doc.name} (${doc.id})${summary ? `: ${summary}` : ''}`;
 }
 
 function formatStorySubLine(story: Story): string {

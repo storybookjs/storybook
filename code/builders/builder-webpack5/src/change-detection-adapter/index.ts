@@ -12,7 +12,8 @@ import type { Compiler } from 'webpack';
 /**
  * Webpack implementation of {@link ChangeDetectionAdapter}.
  *
- * - `getResolveConfig()` reads `compiler.options.resolve` and `compiler.context` once at startup.
+ * - `getResolveConfig()` reads `compiler.options.resolve`, `compiler.context` and the conditions
+ *   webpack matches for an ESM import and a CommonJS `require()` once at startup.
  * - `onFileChange()` taps `compiler.hooks.watchRun` and forwards `modifiedFiles` as `add`/`change`
  *   and `removedFiles` as `unlink` events. File kind (add vs change) is inferred by tracking which
  *   paths webpack has reported at least once.
@@ -23,11 +24,16 @@ import type { Compiler } from 'webpack';
 export function createWebpackChangeDetectionAdapter(compiler: Compiler): ChangeDetectionAdapter {
   return {
     async getResolveConfig(): Promise<ModuleResolveConfig> {
-      const resolveOpts = compiler.options.resolve;
+      // `resolve.conditionNames` lacks what webpack adds per dependency type: `import` for ESM,
+      // `require` for CommonJS.
+      const conditionsFor = (dependencyType: 'esm' | 'commonjs') => [
+        ...compiler.resolverFactory.get('normal', { dependencyType }).options.conditionNames,
+      ];
       return {
         projectRoot: compiler.context,
-        alias: normaliseWebpackAlias(resolveOpts.alias),
-        conditions: resolveOpts.conditionNames,
+        alias: normaliseWebpackAlias(compiler.options.resolve.alias),
+        conditions: conditionsFor('esm'),
+        requireConditions: conditionsFor('commonjs'),
       };
     },
 

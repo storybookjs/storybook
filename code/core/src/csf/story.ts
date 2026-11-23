@@ -275,13 +275,7 @@ export interface StoryContext<TRenderer extends Renderer = Renderer, TArgs = Arg
   abortSignal: AbortSignal;
   canvasElement: TRenderer['canvasElement'];
   hooks: unknown;
-  // Declared as a method rather than `originalStoryFn: ArgsStoryFn<TRenderer>`: as a property, the
-  // context parameter would make StoryContext invariant in TRenderer, so a generic
-  // PlayFunction<Renderer> could no longer be assigned to a framework-specific story.
-  originalStoryFn(
-    args: Args,
-    context: StoryContextForRender<TRenderer>
-  ): (TRenderer & { T: Args })['storyResult'];
+  originalStoryFn: ArgsStoryFn<TRenderer>;
   viewMode: ViewMode;
   step: StepFunction<TRenderer, TArgs>;
   context: this;
@@ -289,19 +283,6 @@ export interface StoryContext<TRenderer extends Renderer = Renderer, TArgs = Arg
   userEvent: ReturnType<typeof userEvent.setup>;
   mount: TRenderer['mount'];
   reporting: ReportingAPI;
-}
-
-/**
- * The story context as decorators and render functions receive it.
- *
- * Unlike the context passed to loaders, `beforeEach`, `play` and `afterEach`, it carries the
- * story's `argTypes`, because renderers read them while rendering.
- */
-export interface StoryContextForRender<
-  TRenderer extends Renderer = Renderer,
-  TArgs = Args,
-> extends StoryContext<TRenderer, TArgs> {
-  argTypes: StrictArgTypes<TArgs>;
 }
 
 export type StepLabel = string;
@@ -326,13 +307,13 @@ export type PartialStoryFn<TRenderer extends Renderer = Renderer, TArgs = Args> 
 
 // This is a passArgsFirst: false user story function
 export type LegacyStoryFn<TRenderer extends Renderer = Renderer, TArgs = Args> = (
-  context: StoryContextForRender<TRenderer, TArgs>
+  context: StoryContext<TRenderer, TArgs>
 ) => TRenderer['storyResult'];
 
 // This is a passArgsFirst: true user story function
 export type ArgsStoryFn<TRenderer extends Renderer = Renderer, TArgs = Args> = (
   args: TArgs,
-  context: StoryContextForRender<TRenderer, TArgs>
+  context: StoryContext<TRenderer, TArgs>
 ) => (TRenderer & { T: TArgs })['storyResult'];
 
 // This is either type of user story function
@@ -342,7 +323,7 @@ export type StoryFn<TRenderer extends Renderer = Renderer, TArgs = Args> =
 
 export type DecoratorFunction<TRenderer extends Renderer = Renderer, TArgs = Args> = (
   fn: PartialStoryFn<TRenderer, TArgs>,
-  c: StoryContextForRender<TRenderer, TArgs>
+  c: StoryContext<TRenderer, TArgs>
 ) => TRenderer['storyResult'];
 
 export type DecoratorApplicator<TRenderer extends Renderer = Renderer, TArgs = Args> = (

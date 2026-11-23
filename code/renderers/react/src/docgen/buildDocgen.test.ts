@@ -368,7 +368,6 @@ describe('buildDocgenPayload', () => {
 });
 
 describe('buildDocgenPayloads', () => {
-  // No tsconfig, so each file joins the inferred project only when something adds it.
   const setup = (names: string[]) => {
     tempDir = createTempDir('docgen-batch');
     const dir = tempDir;

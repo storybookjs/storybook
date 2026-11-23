@@ -100,8 +100,6 @@ class DocgenWorker implements DocgenWorkerClient {
     await this.ready;
     return new Promise<DocgenPayload | undefined>((resolve, reject) => {
       const id = this.nextId++;
-      // No time limit: the requests of a static build wait behind each other, so a limit cannot
-      // tell a slow project from a hung worker. A worker that crashes rejects what is pending.
       this.pending.set(id, { resolve, reject });
       this.keepProcessAliveWhileBusy();
       this.post({ type: 'extract', id, entry });

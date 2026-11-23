@@ -114,7 +114,6 @@ describe('createLazyDocgenMiddleware', () => {
           if (calls.length === 1) {
             late = ['Card', 'Input'].map((t) => provider(input(t)));
             release();
-            // Let the late requests reach the queue while this batch still runs.
             await new Promise((resolve) => setImmediate(resolve));
           }
           return inputs.map(({ entry }) => ({ status: 'fulfilled', value: payload(entry.title) }));

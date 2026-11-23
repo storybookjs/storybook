@@ -140,10 +140,6 @@ export class ComponentMetaManager extends BaseComponentMetaManager<
   /**
    * Batch-extract component props across all entries, grouping by tsconfig project so each project
    * builds its TS program only once.
-   *
-   * `batchFiles` holds the files of a larger batch that these entries are part of, from
-   * {@link groupFilesByProject}. A project gets its files before its first extraction, and its entry
-   * is then removed from the map.
    */
   batchExtract(entries: StoryRef[], batchFiles?: Map<ManagedProject, string[]>): void {
     const byProject = groupByToMap(entries.filter(isExtractable), (storyRef) =>
@@ -159,15 +155,11 @@ export class ComponentMetaManager extends BaseComponentMetaManager<
       }
     }
 
-    // The batch's projects are disposed, and holding them keeps their language service hosts.
     if (this.recycleProjectsIfHeapPressured()) {
       batchFiles?.clear();
     }
   }
 
-  // Not before the project's first extraction: the projects share their source files, and a
-  // program built between this project's program and its first type check leaves imports of those
-  // files unresolved.
   private addBatchFiles(
     project: ManagedProject,
     batchFiles: Map<ManagedProject, string[]> | undefined

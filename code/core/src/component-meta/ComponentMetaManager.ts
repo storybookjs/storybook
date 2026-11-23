@@ -49,8 +49,6 @@ export class ComponentMetaManager<
   private inferredProject: P | undefined;
   private rootTsConfigs = new Set<string>();
   private searchedDirs = new Set<string>();
-  // Per root tsconfig, the tsconfigs its project references reach, in the order a lookup tries
-  // them. Walking the references stats every referenced path, which is too slow per lookup.
   private referencedTsConfigs = new Map<string, string[]>();
 
   // Our own file watching layer
@@ -105,22 +103,12 @@ export class ComponentMetaManager<
    * Group the files of a batch by the project that extracts them: the project of each group's
    * `projectFile`.
    *
-   * A file a project has not seen invalidates its program and its type checker's cache. A caller
-   * that knows every file of a batch gives a project all of its files in one `ensureFiles` call,
-   * just before that project's first extraction, so the project rebuilds its program once and not
-   * once per new file.
-   *
    * A file goes to the project that extracts it, which is not always the project it belongs to: a
    * component can live under another tsconfig than the story that imports it.
    */
   groupFilesByProject(groups: { projectFile: string; files: string[] }[]): Map<P, string[]> {
     const groupsByProjectFile = Map.groupBy(groups, (g) => g.projectFile);
-    // A tsconfig is found only when a file below it is looked up, and it can include files outside
-    // its directory. Find every tsconfig of the batch first, so each file gets the project its
-    // extraction picks, whatever the order of the groups.
-    for (const projectFile of groupsByProjectFile.keys()) {
-      this.findMatchTSConfig(projectFile);
-    }
+    this.discoverTsConfigsAbove(groupsByProjectFile.keys());
     const filesByProject = new Map<P, Set<string>>();
     for (const [projectFile, projectFileGroups] of groupsByProjectFile) {
       const project = this.getProjectForFile(projectFile);
@@ -133,10 +121,16 @@ export class ComponentMetaManager<
     return new Map(Array.from(filesByProject, ([project, files]) => [project, [...files]]));
   }
 
+  private discoverTsConfigsAbove(files: Iterable<string>): void {
+    for (const file of files) {
+      this.findMatchTSConfig(file);
+    }
+  }
+
   /**
    * Reclaim the shared program(s)' resident type-resolution cache when heap usage approaches the V8
    * limit, preventing the next extraction's spike from OOMing the dev server. Callers with a
-   * batch-extraction surface invoke this after each batch. Returns whether it recycled.
+   * batch-extraction surface invoke this after each batch.
    */
   protected recycleProjectsIfHeapPressured(): boolean {
     if (this.configProjects.size === 0 && !this.inferredProject) {
@@ -162,7 +156,6 @@ export class ComponentMetaManager<
     }
     this.inferredProject?.dispose();
     this.configProjects.clear();
-    // Walking the references is also what creates the referenced projects.
     this.referencedTsConfigs.clear();
     this.inferredProject = undefined;
     this.factory.recycle?.();

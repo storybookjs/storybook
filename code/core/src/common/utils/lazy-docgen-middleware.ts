@@ -51,20 +51,13 @@ interface Queued {
   reject: (reason: unknown) => void;
 }
 
-/**
- * Groups requests into batches by when they arrive.
- *
- * A static build and an extract-all ask for every component at once, as separate requests. The
- * first batch holds the requests that arrived before the event loop came back to this thread.
- * Extraction blocks the thread, so the requests that arrive during a batch wait and form the next
- * one. Batches run one after another. A request that misses its batch costs the renderer its shared
- * setup once more, and never a different payload.
- */
+const startAfterThisEventLoopTurn = (start: () => void) => setImmediate(start);
+
 function createBatcher(extractBatch: (inputs: DocgenProviderInput[]) => Promise<DocgenResult[]>) {
   let queue: Queued[] = [];
   let running = false;
 
-  const run = async () => {
+  const runBatchesUntilQueueIsEmpty = async () => {
     while (queue.length > 0) {
       const batch = queue;
       queue = [];
@@ -90,7 +83,7 @@ function createBatcher(extractBatch: (inputs: DocgenProviderInput[]) => Promise<
       queue.push({ input, resolve, reject });
       if (!running) {
         running = true;
-        setImmediate(run);
+        startAfterThisEventLoopTurn(runBatchesUntilQueueIsEmpty);
       }
     });
 }

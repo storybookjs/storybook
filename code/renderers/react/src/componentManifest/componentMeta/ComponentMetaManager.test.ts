@@ -665,7 +665,6 @@ describe('multi-project management', () => {
       const project = manager.getProjectForFile(button.storyPath);
       const ensureFiles = project.ensureFiles.bind(project);
       vi.spyOn(project, 'ensureFiles').mockImplementation((files) => {
-        // The lookup of a file in the inferred project adds that one file.
         if (files.length > 1) {
           throw new Error('TypeScript dropped the program');
         }

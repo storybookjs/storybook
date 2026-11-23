@@ -682,7 +682,6 @@ function getAllDeclarationParents(
 // Type serialization
 // ---------------------------------------------------------------------------
 
-// The literals a type node spells out, in source order, following type aliases.
 function getDeclaredLiterals(
   typescript: DocgenTypeScript,
   checker: DocgenTypeChecker,
@@ -726,8 +725,10 @@ function getDeclaredLiterals(
   return [];
 }
 
-// Code unit order, so the result does not depend on the machine's locale.
-function compareLiteralValues(a: ts.LiteralType['value'], b: ts.LiteralType['value']): number {
+function compareNumericOrByCodeUnit(
+  a: ts.LiteralType['value'],
+  b: ts.LiteralType['value']
+): number {
   if (typeof a === 'number' && typeof b === 'number') {
     return a - b;
   }
@@ -735,7 +736,6 @@ function compareLiteralValues(a: ts.LiteralType['value'], b: ts.LiteralType['val
   return textA < textB ? -1 : textA > textB ? 1 : 0;
 }
 
-// Members of the same `enum` in the order it declares them; 0 for anything else.
 function compareEnumMembers(a: ts.LiteralType, b: ts.LiteralType): number {
   const [declarationA, declarationB] = [a.symbol?.declarations?.[0], b.symbol?.declarations?.[0]];
   return declarationA && declarationB && declarationA.parent === declarationB.parent
@@ -774,8 +774,7 @@ function serializeType(
     }
 
     // TypeScript orders union members by when its checker first met each type, which depends on
-    // what was extracted before. Members the declaration spells out follow the declaration; computed
-    // ones (`keyof`, template literals) have no position of their own and follow by value.
+    // what was extracted before.
     const declaredLiterals = getDeclaredLiterals(typescript, checker, declaredTypeNode);
     const declaredPosition = (member: ts.LiteralType) => {
       const index = declaredLiterals.indexOf(member.value as string | number);
@@ -787,7 +786,7 @@ function serializeType(
         (a, b) =>
           declaredPosition(a) - declaredPosition(b) ||
           compareEnumMembers(a, b) ||
-          compareLiteralValues(a.value, b.value)
+          compareNumericOrByCodeUnit(a.value, b.value)
       );
 
     if (literalMembers.length > 0 && literalMembers.length === nonUndefinedTypes.length) {
@@ -1401,8 +1400,7 @@ function extractPropItem(
 }
 
 // Props reached through a mapped type (`Omit`, `Pick`) come in the order of a key union, which
-// TypeScript sorts by when its checker first met each key. Props declared together are put back in
-// source order; the groups keep the order TypeScript gave them.
+// TypeScript sorts by when its checker first met each key.
 function orderByDeclaration(properties: ts.Symbol[]): ts.Symbol[] {
   const groups = groupByToMap(properties, (prop) => prop.declarations?.[0]?.parent ?? prop);
   return [...groups.values()].flatMap((group) =>

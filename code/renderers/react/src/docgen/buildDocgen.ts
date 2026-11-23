@@ -31,7 +31,6 @@ export interface BuildDocgenContext {
   typescriptOptions?: Partial<TypescriptOptions>;
   /** Resolve a CSF import path to an absolute file path. Defaults to `process.cwd()` join. */
   resolvePath?: (importPath: string) => string;
-  /** The files of the batch this extraction is part of, by the project that extracts them. */
   batchFiles?: ReturnType<ComponentMetaManager['groupFilesByProject']>;
 }
 
@@ -101,7 +100,6 @@ function addArgTypesFromComponentMeta(payload: ReactDocgenPayload): DocgenPayloa
   };
 }
 
-/** The refs extraction needs for one story file: its component and its resolvable subcomponents. */
 export function toStoryRefs(
   storyPath: string,
   { component, subcomponents }: Pick<ResolvedStoryFile, 'component' | 'subcomponents'>
@@ -111,7 +109,6 @@ export function toStoryRefs(
     .map((ref) => ({ storyPath, component: ref }));
 }
 
-// `undefined` when the entry has no story file, or the file cannot be read or parsed.
 async function resolveStory(
   { entry }: DocgenProviderInput,
   context: Pick<BuildDocgenContext, 'typescriptOptions' | 'resolvePath'>
@@ -141,7 +138,6 @@ const resolveStoryPath = (
 
 type DocgenResult = PromiseSettledResult<DocgenPayload | undefined>;
 
-/** Extract the inputs one after another, settling each on its own. */
 async function extractEach(
   inputs: DocgenProviderInput[],
   extractOne: (input: DocgenProviderInput) => Promise<DocgenPayload | undefined>
@@ -157,19 +153,13 @@ async function extractEach(
   return results;
 }
 
-// Each project gets the story and component files of every input before its first extraction, so
-// it rebuilds its program once for the batch and not once per component. When the programs do not
-// fit the heap, the manager recycles its projects, and the rest of the batch adds files as it
-// reaches them.
 export async function buildDocgenPayloads(
   inputs: DocgenProviderInput[],
   context: BuildDocgenContext
 ): Promise<DocgenResult[]> {
-  // One input has no batch files to share, so it skips the second parse.
   if (inputs.length === 1) {
     return extractEach(inputs, (input) => buildDocgenPayload(input, context));
   }
-  // Keep only the refs: parsed story files held for the whole batch take heap the programs need.
   const refs = (
     await Promise.all(
       inputs.map(async (input) => {
@@ -179,8 +169,7 @@ export async function buildDocgenPayloads(
     )
   ).flat();
   let batchFiles: BuildDocgenContext['batchFiles'];
-  // The batch files are an optimization: without them, each extraction adds its own files. The
-  // native TypeScript backend can throw when a file joins the inferred project.
+  // The native TypeScript backend can throw when a file joins the inferred project.
   try {
     batchFiles = context.componentMetaManager.groupFilesByProject(
       refs.filter(isExtractable).map(({ storyPath, component }) => ({

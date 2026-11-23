@@ -3,7 +3,7 @@ import type { Options, StorybookConfigRaw } from 'storybook/internal/types';
 import { basename } from 'pathe';
 import { dedent } from 'ts-dedent';
 
-import { RN_STORYBOOK_DIR } from '../../shared/constants/config-folder.ts';
+import { RN_FRAMEWORK_PACKAGE, RN_STORYBOOK_DIR } from '../../shared/constants/config-folder.ts';
 import { frameworkPackages } from './get-storybook-info.ts';
 import { normalizePath } from './normalize-path.ts';
 
@@ -51,7 +51,7 @@ export const extractFrameworkPackageName = (framework: string) => {
  * Returns the framework package of a main config, or null when it has none.
  *
  * A React Native on-device config in `.rnstorybook` may omit `framework`; it resolves to
- * `@storybook/react-native`.
+ * `@storybook/react-native`. Omit `configDir` to skip that folder fallback.
  */
 export const getFrameworkPackageName = (
   mainConfig: StorybookConfigRaw | undefined,
@@ -64,5 +64,5 @@ export const getFrameworkPackageName = (
     return extractFrameworkPackageName(framework);
   }
 
-  return configDir && basename(configDir) === RN_STORYBOOK_DIR ? '@storybook/react-native' : null;
+  return configDir && basename(configDir) === RN_STORYBOOK_DIR ? RN_FRAMEWORK_PACKAGE : null;
 };

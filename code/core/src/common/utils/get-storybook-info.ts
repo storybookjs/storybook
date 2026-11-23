@@ -15,6 +15,7 @@ import {
 
 import invariant from 'tiny-invariant';
 
+import { RN_FRAMEWORK_PACKAGE } from '../../shared/constants/config-folder.ts';
 import { storybookConfigExtensions } from '../../shared/constants/extensions.ts';
 import { JsPackageManager } from '../js-package-manager/JsPackageManager.ts';
 import { frameworkToBuilder } from './framework.ts';
@@ -178,11 +179,11 @@ export const getStorybookInfo = async (
     return base;
   }
 
-  if (frameworkPackage === '@storybook/react-native') {
+  if (frameworkPackage === RN_FRAMEWORK_PACKAGE) {
     return {
       ...base,
       frameworkPackage,
-      rendererPackage: '@storybook/react-native',
+      rendererPackage: RN_FRAMEWORK_PACKAGE,
       renderer: SupportedRenderer.REACT_NATIVE,
     };
   }

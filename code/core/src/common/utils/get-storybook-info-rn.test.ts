@@ -4,9 +4,12 @@ import { tmpdir } from 'node:os';
 
 import { SupportedRenderer } from 'storybook/internal/types';
 
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getStorybookInfo } from './get-storybook-info.ts';
+import { loadMainConfig } from './load-main-config.ts';
+
+vi.mock('./load-main-config.ts', { spy: true });
 
 describe('getStorybookInfo React Native framework inference', () => {
   let dir: string;
@@ -40,29 +43,6 @@ describe('getStorybookInfo React Native framework inference', () => {
     expect(info.renderer).toBe(SupportedRenderer.REACT_NATIVE);
   });
 
-  it('resolves the React Native renderer when framework is set to @storybook/react-native', async () => {
-    dir = join(tmpdir(), `sb-rn-explicit-info-${Date.now()}`);
-    mkdirSync(join(dir, '.rnstorybook'), { recursive: true });
-    writeFileSync(
-      join(dir, 'package.json'),
-      JSON.stringify({
-        name: 'rn-app',
-        private: true,
-        devDependencies: { '@storybook/react-native': '10.5.1', storybook: '10.5.3' },
-      })
-    );
-    writeFileSync(
-      join(dir, '.rnstorybook/main.js'),
-      `module.exports = { framework: '@storybook/react-native', stories: ['**/*.stories.tsx'] };`
-    );
-
-    const info = await getStorybookInfo(join(dir, '.rnstorybook'), dir);
-
-    expect(info.frameworkPackage).toBe('@storybook/react-native');
-    expect(info.rendererPackage).toBe('@storybook/react-native');
-    expect(info.renderer).toBe(SupportedRenderer.REACT_NATIVE);
-  });
-
   it('does not infer RN framework for a plain .storybook without framework', async () => {
     dir = join(tmpdir(), `sb-web-info-${Date.now()}`);
     mkdirSync(join(dir, '.storybook'), { recursive: true });
@@ -79,5 +59,22 @@ describe('getStorybookInfo React Native framework inference', () => {
     const info = await getStorybookInfo(join(dir, '.storybook'), dir);
 
     expect(info.frameworkPackage).toBeUndefined();
+  });
+});
+
+describe('getStorybookInfo with framework @storybook/react-native in main', () => {
+  beforeEach(() => {
+    vi.mocked(loadMainConfig).mockResolvedValue({
+      stories: [],
+      framework: '@storybook/react-native',
+    });
+  });
+
+  it('resolves the React Native renderer', async () => {
+    const info = await getStorybookInfo(join(tmpdir(), '.storybook'));
+
+    expect(info.frameworkPackage).toBe('@storybook/react-native');
+    expect(info.rendererPackage).toBe('@storybook/react-native');
+    expect(info.renderer).toBe(SupportedRenderer.REACT_NATIVE);
   });
 });

@@ -68,7 +68,7 @@ async function runStoriesCodemod({
     return;
   }
 
-  const storyFiles = storiesPaths.filter((file) => !file.endsWith('.mdx'));
+  const storyFiles = [...new Set(storiesPaths)].filter((file) => !file.endsWith('.mdx'));
 
   if (storyFiles.length === 0) {
     logger.warn(

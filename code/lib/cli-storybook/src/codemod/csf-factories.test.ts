@@ -181,6 +181,29 @@ it.each([
 });
 
 const projectDir = resolve('/project');
+const sources = new Map<string, string>();
+const written = new Map<string, string>();
+
+beforeEach(() => {
+  vi.stubEnv('IN_STORYBOOK_SANDBOX', 'false');
+  sources.clear();
+  written.clear();
+  vi.mocked(syncStorybookAddons).mockResolvedValue(undefined);
+  vi.mocked(runCodemod).mockImplementation(async (globOrFiles = [], transform) => {
+    const files = [globOrFiles].flat();
+    for (const file of files) {
+      const source = sources.get(file);
+      if (source !== undefined) {
+        written.set(file, await transform({ path: file, source }));
+      }
+    }
+    return { files, errorCount: 0 };
+  });
+});
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
 
 async function migrateProject(
   configFolder: string,
@@ -195,32 +218,29 @@ async function migrateProject(
     preview: resolve(configDir, 'preview.tsx'),
     story: resolve(configDir, 'stories/Button.stories.tsx'),
   };
-  const sources: Record<string, string> = {
-    [paths.main]: dedent`
+  sources.set(
+    paths.main,
+    dedent`
       const main = { stories: ['./stories/**/*.stories.?(ts|tsx|js|jsx)'] };
       export default main;
-    `,
-    [paths.preview]: dedent`
+    `
+  );
+  sources.set(
+    paths.preview,
+    dedent`
       const preview = {};
       export default preview;
-    `,
-    [paths.story]: dedent`
+    `
+  );
+  sources.set(
+    paths.story,
+    dedent`
       import { Button } from './Button';
       const meta = { component: Button };
       export default meta;
       export const Primary = { args: { title: 'Button' } };
-    `,
-  };
-  const written = new Map<string, string>();
-
-  vi.mocked(syncStorybookAddons).mockResolvedValue(undefined);
-  vi.mocked(runCodemod).mockImplementation(async (globOrFiles = [], transform) => {
-    const files = [globOrFiles].flat();
-    for (const file of files.filter((file) => file in sources)) {
-      written.set(file, await transform({ path: file, source: sources[file] }));
-    }
-    return { files, errorCount: 0 };
-  });
+    `
+  );
 
   await csfFactories.run({
     configDir,
@@ -280,6 +300,14 @@ it('skips the stories but migrates main and preview when the main config only ha
   expect(written.get(paths.preview)).toContain('definePreview');
 });
 
+it('migrates a story once when overlapping stories entries both match it', async () => {
+  const { paths } = await migrateProject('.storybook', {
+    storyFiles: ['stories/Button.stories.tsx', 'stories/Button.stories.tsx'],
+  });
+
+  expect(vi.mocked(runCodemod).mock.calls[0][0]).toEqual([paths.story]);
+});
+
 it('migrates the files of --glob instead of the main config stories', async () => {
   await migrateProject('.storybook', { glob: 'src/**/*.stories.tsx' });
 
@@ -295,10 +323,6 @@ it('passes an empty --glob to the codemod instead of reading the main config sto
 describe('in a sandbox', () => {
   beforeEach(() => {
     vi.stubEnv('IN_STORYBOOK_SANDBOX', 'true');
-  });
-
-  afterEach(() => {
-    vi.unstubAllEnvs();
   });
 
   it('migrates only the starter stories', async () => {

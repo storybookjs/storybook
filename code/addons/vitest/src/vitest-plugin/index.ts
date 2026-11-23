@@ -53,7 +53,7 @@ import {
 import type { InternalOptions, UserOptions } from './types.ts';
 import { AgentTelemetryReporter } from './agent-telemetry-reporter.ts';
 import { isStorybookInternalFrame } from './stack-frames.ts';
-import { checkStorybookVersion } from './version-check.ts';
+import { getIncompatibleStorybookMessage } from './version-check.ts';
 
 const WORKING_DIR = process.cwd();
 
@@ -203,7 +203,10 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
   }
 
   // Fail early with a clear message instead of crashing on a missing internal API later on
-  checkStorybookVersion({ addonVersion, coreVersion: versions.storybook });
+  const incompatible = getIncompatibleStorybookMessage(addonVersion, versions.storybook);
+  if (incompatible) {
+    throw new HandledError(incompatible);
+  }
 
   const finalOptions = {
     ...defaultOptions,

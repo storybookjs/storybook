@@ -357,15 +357,6 @@ describe('installSkills', () => {
     expect(result).toEqual({ result: 'installed', source: 'automigration' });
   });
 
-  it('installs under CI when the caller allows it', async () => {
-    vi.mocked(isCI).mockReturnValue(true);
-
-    const result = await installSkills({ packageManager, source: 'automigration', allowCI: true });
-
-    expect(packageManager.runPackageCommand).toHaveBeenCalled();
-    expect(result).toEqual({ result: 'installed', source: 'automigration' });
-  });
-
   it.each([
     ['npx', ExecaCommandFailedError],
     ['pnpm', PackageInstallFailedError],

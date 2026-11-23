@@ -97,23 +97,20 @@ export async function hasStorybookSkills(): Promise<boolean> {
  *
  * A refresh only updates a section that still has Storybook's markers, so a section without them
  * and a removed section stay that way, unless the refresh replaces the `stories` skill of an 11.0
- * prerelease. Skips CI (see {@link skipsSkillsInCI}) unless `allowCI` is set, and a
- * failed install is reported in the result instead of thrown.
+ * prerelease. Skips CI (see {@link skipsSkillsInCI}), and a failed install is reported in the result
+ * instead of thrown.
  */
 export async function installSkills({
   packageManager,
   source,
   stdio = 'inherit',
-  allowCI = false,
 }: {
   packageManager: JsPackageManager;
   source: SkillsSource;
   /** `pipe` keeps the `skills` CLI output out of a running task log. */
   stdio?: 'inherit' | 'pipe';
-  /** Install in CI too, because the caller already decided, for example on the user's request. */
-  allowCI?: boolean;
 }): Promise<SkillsInstallResult> {
-  if (!allowCI && skipsSkillsInCI()) {
+  if (skipsSkillsInCI()) {
     return { result: 'skipped', source: 'ci' };
   }
 

@@ -1554,7 +1554,7 @@ export const KeyboardNavigation: Story = {
  * test loads itself, and a story with tests and its "Story" row load the story. A press on a root
  * or group opens nothing, so hovering one loads nothing.
  */
-export const HoverPreloadsTheHoveredStory: Story = {
+export const HoverPreloadsFirstStory: Story = {
   args: {
     refId: DEFAULT_REF_ID,
     onSelectStoryId: fn(),

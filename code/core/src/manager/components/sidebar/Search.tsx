@@ -13,6 +13,7 @@ import Fuse from 'fuse.js';
 import { shortcutToHumanString, useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming/emotion';
 
+import { isOwnEntry } from '../../../manager-api/lib/stories.ts';
 import { useLandmark } from '../../hooks/useLandmark.ts';
 import { getGroupStatus, getMostCriticalStatusValue } from '../../utils/status.tsx';
 import { scrollIntoView, searchItem } from '../../utils/tree.ts';
@@ -260,11 +261,16 @@ export const Search = React.memo<SearchProps>(function Search({
       const resultIds: Set<string> = new Set();
 
       const distinctResults = (fuse.search(input) as SearchResult[]).filter(({ item }) => {
-        if (
-          !(item.type === 'component' || item.type === 'docs' || item.type === 'story') ||
-          // @ts-expect-error (non strict)
-          resultIds.has(item.parent)
-        ) {
+        if (!(item.type === 'component' || item.type === 'docs' || item.type === 'story')) {
+          return false;
+        }
+        // A matching result already stands for the entries under it, except for subcomponents and
+        // docs hoisted from a nested title (e.g. `Components/Button/Guide`), which are results of
+        // their own.
+        const isNested =
+          item.type === 'component' ||
+          (item.type === 'docs' && !!item.parent && !isOwnEntry({ id: item.parent }, item));
+        if (item.parent && resultIds.has(item.parent) && !isNested) {
           return false;
         }
         resultIds.add(item.id);

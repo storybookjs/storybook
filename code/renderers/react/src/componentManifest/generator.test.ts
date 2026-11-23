@@ -503,6 +503,28 @@ test('imports a component by its package name when the package also exports its 
   expect(manifest?.import).toBe("import { Button } from '@acme/ui';");
 });
 
+test('keeps a namespace import when it moves to the subpath that exports its file', async () => {
+  const code = dedent`
+    import type { Meta } from '@storybook/react';
+    import * as UI from './Button';
+
+    const meta = {
+      title: 'Example/Button',
+      component: UI.Button,
+    } satisfies Meta<typeof UI.Button>;
+    export default meta;
+
+    export const Primary = () => <UI.Button />;
+  `;
+
+  const manifest = await getManifestForStory(code, {
+    name: '@acme/ui',
+    exports: { './button': './src/stories/Button.tsx' },
+  });
+
+  expect(manifest?.import).toBe("import * as UI from '@acme/ui/button';");
+});
+
 test('component exported from other file', async () => {
   const code = withCSF3(dedent`
     export { Primary } from './other-file';

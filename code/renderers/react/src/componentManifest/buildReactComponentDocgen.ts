@@ -17,6 +17,7 @@ import path from 'pathe';
 
 import type { ComponentDoc, PropItem } from './componentMeta/componentMetaExtractor.ts';
 import type { ComponentRef } from './getComponentImports.ts';
+import { findExportSubpath } from './packageExports.ts';
 import type { DocObj } from './reactDocgen.ts';
 import type { ComponentDocWithExportName } from './reactDocgenTypescript.ts';
 import {
@@ -74,12 +75,14 @@ function hasRootEntry(pkg: Record<string, unknown>) {
   return subpaths.length === 0 || subpaths.includes('.');
 }
 
-// An app's own package (private, with no root entry) cannot be imported by name, so its
-// components keep the import the story wrote.
-function getImportablePackageName(componentPath: string | undefined, fallbackPath: string) {
-  const nearestPkg = cachedFindUp('package.json', {
-    cwd: path.dirname(componentPath ?? fallbackPath),
-  });
+interface NearestPackage {
+  root: string;
+  pkg: Record<string, unknown> & { name: string };
+}
+
+// The package.json that owns `fromPath`, when it has a name.
+function readNearestPackage(fromPath: string): NearestPackage | undefined {
+  const nearestPkg = cachedFindUp('package.json', { cwd: path.dirname(fromPath) });
 
   try {
     if (!nearestPkg) {
@@ -90,100 +93,54 @@ function getImportablePackageName(componentPath: string | undefined, fallbackPat
     if (typeof parsed !== 'object' || !parsed || typeof parsed.name !== 'string') {
       return undefined;
     }
-    const importable = parsed.private !== true || hasRootEntry(parsed);
-    return importable ? parsed.name : undefined;
+    return { root: path.dirname(nearestPkg), pkg: parsed };
   } catch {
     return undefined;
   }
 }
 
-// Every string an `exports` target can resolve to, through condition objects and fallback arrays.
-function getExportTargets(target: unknown): string[] {
-  if (typeof target === 'string') {
-    return [target];
+// An app's own package (private, with no root entry) cannot be imported by name, so its
+// components keep the import the story wrote.
+function getImportablePackageName(componentPath: string | undefined, fallbackPath: string) {
+  const nearest = readNearestPackage(componentPath ?? fallbackPath);
+  if (!nearest) {
+    return undefined;
   }
-  if (Array.isArray(target)) {
-    return target.flatMap(getExportTargets);
-  }
-  if (typeof target === 'object' && target !== null) {
-    return Object.values(target).flatMap(getExportTargets);
-  }
-  return [];
+  const importable = nearest.pkg.private !== true || hasRootEntry(nearest.pkg);
+  return importable ? nearest.pkg.name : undefined;
 }
 
-// The subpath whose target is `file` (relative to the package root), expanding a `*` pattern.
-function matchExportSubpath(subpath: string, target: string, file: string) {
-  const normalizedTarget = target.replace(/^\.\//, '');
-  const star = normalizedTarget.indexOf('*');
-  if (star === -1) {
-    return normalizedTarget === file ? subpath : undefined;
-  }
-  const prefix = normalizedTarget.slice(0, star);
-  const suffix = normalizedTarget.slice(star + 1);
-  const matches =
-    subpath.includes('*') &&
-    file.length >= prefix.length + suffix.length &&
-    file.startsWith(prefix) &&
-    file.endsWith(suffix);
-  return matches
-    ? subpath.replace('*', file.slice(prefix.length, file.length - suffix.length))
-    : undefined;
-}
-
-// The package import of a component file, when its package exports only subpaths and one of them
-// targets the file, e.g. `@acme/ui/button` for `src/button.tsx`.
+// The package import of a component file when its package exports only subpaths and one of them
+// resolves to the file, e.g. `@acme/ui/button` for `src/button.tsx`.
 function getExportSubpathImport(componentPath: string) {
-  const nearestPkg = cachedFindUp('package.json', {
-    cwd: path.dirname(componentPath),
-  });
-  if (!nearestPkg) {
+  const nearest = readNearestPackage(componentPath);
+  const exportsMap = nearest?.pkg.exports;
+  if (
+    !nearest ||
+    typeof exportsMap !== 'object' ||
+    exportsMap === null ||
+    Array.isArray(exportsMap) ||
+    hasRootEntry(nearest.pkg)
+  ) {
     return undefined;
   }
-
-  try {
-    const parsed = JSON.parse(cachedReadTextFileSync(nearestPkg));
-    if (
-      typeof parsed !== 'object' ||
-      !parsed ||
-      typeof parsed.name !== 'string' ||
-      typeof parsed.exports !== 'object' ||
-      !parsed.exports ||
-      Array.isArray(parsed.exports) ||
-      hasRootEntry(parsed)
-    ) {
-      return undefined;
-    }
-
-    const file = path.relative(path.dirname(nearestPkg), componentPath);
-    for (const [subpath, target] of Object.entries(parsed.exports)) {
-      for (const candidate of getExportTargets(target)) {
-        const match = matchExportSubpath(subpath, candidate, file);
-        if (match) {
-          return `${parsed.name}${match.slice(1)}`;
-        }
-      }
-    }
-    return undefined;
-  } catch {
-    return undefined;
-  }
+  const subpath = findExportSubpath(
+    exportsMap as Record<string, unknown>,
+    path.resolve(nearest.root),
+    path.resolve(componentPath)
+  );
+  return subpath ? `${nearest.pkg.name}${subpath.slice(1)}` : undefined;
 }
 
 /**
  * A package that exports only subpaths cannot be imported by its bare name. Each component its
- * `exports` reaches imports from the subpath that targets its file instead. An `@import` tag still
- * wins, and a component no subpath targets keeps the import it had.
+ * `exports` reaches imports from the subpath that resolves to its file instead, keeping the import
+ * form (named, default or namespace). An `@import` tag still wins, and a component no subpath
+ * reaches keeps the import it had.
  */
 function withExportSubpaths(refs: ComponentRef[]): ComponentRef[] {
   return refs.map((ref) => {
-    if (
-      ref.importOverride ||
-      ref.isPackage ||
-      !ref.path ||
-      ref.namespace ||
-      !ref.importName ||
-      ref.importName === 'default'
-    ) {
+    if (ref.importOverride || ref.isPackage || !ref.path) {
       return ref;
     }
     const importId = getExportSubpathImport(ref.path);

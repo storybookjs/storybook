@@ -202,7 +202,13 @@ export const getStorybookInfo = async (
   const frameworkPackage = extractFrameworkPackageName(frameworkField);
 
   const framework = frameworkPackages[frameworkPackage];
-  const renderer = await extractRenderer(frameworkPackage);
+  const frameworkRenderers: Record<string, SupportedRenderer> = {
+    '@storybook/react-native': SupportedRenderer.REACT_NATIVE,
+    '@storybook-astro/framework': SupportedRenderer.ASTRO,
+    '@analogjs/storybook-angular': SupportedRenderer.ANGULAR,
+  };
+  const renderer =
+    frameworkRenderers[frameworkPackage] ?? (await extractRenderer(frameworkPackage));
   const builder = frameworkToBuilder[framework];
 
   const rendererPackage = Object.entries(rendererPackages).find(

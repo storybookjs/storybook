@@ -1,5 +1,7 @@
 import type { PreparedStory, TagOptions } from 'storybook/internal/types';
 
+import { DocsRenderer } from './DocsRenderer.ts';
+
 const excludeTags = Object.entries<Partial<TagOptions>>(globalThis.TAGS_OPTIONS ?? {}).reduce(
   (acc, [tag, option]) => {
     if (option.hideFromAutodocs) {
@@ -12,10 +14,7 @@ const excludeTags = Object.entries<Partial<TagOptions>>(globalThis.TAGS_OPTIONS 
 
 export const parameters: any = {
   docs: {
-    renderer: async () => {
-      const { DocsRenderer } = (await import('./DocsRenderer')) as any;
-      return new DocsRenderer();
-    },
+    renderer: async () => new DocsRenderer(),
     stories: {
       filter: (story: PreparedStory) => {
         const tags = story.tags || [];

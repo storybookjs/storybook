@@ -29,6 +29,8 @@ import type {
 } from './types.ts';
 import { isExpandType, isSearchResult } from './types.ts';
 
+import { resolveHighlightRanges } from './SearchResults.utils.ts';
+
 const { document } = global;
 
 const DEFAULT_MAX_SEARCH_RESULTS = 50;
@@ -278,7 +280,12 @@ export const Search = React.memo<SearchProps>(function Search({
       });
 
       if (distinctResults.length) {
-        results = distinctResults.slice(0, allComponents ? 1000 : DEFAULT_MAX_SEARCH_RESULTS);
+        results = distinctResults
+          .slice(0, allComponents ? 1000 : DEFAULT_MAX_SEARCH_RESULTS)
+          .map((result) => ({
+            ...result,
+            matches: resolveHighlightRanges(result.matches, input),
+          }));
         if (distinctResults.length > DEFAULT_MAX_SEARCH_RESULTS && !allComponents) {
           results.push({
             showAll: () => showAllComponents(true),

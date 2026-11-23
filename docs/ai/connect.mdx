@@ -1,0 +1,121 @@
+---
+title: Connect your agent
+sidebar:
+  order: 1
+---
+
+<If notRenderer={['react', 'vue', 'angular', 'svelte', 'web-components']}>
+
+Storybook's skills and MCP server let your agent set up Storybook, reuse your components, write and test stories, and publish a review of its work. Neither is available for your framework yet.
+
+</If>
+
+<If renderer={['react', 'vue', 'angular', 'svelte', 'web-components']}>
+
+Connect your coding agent to Storybook so it can use your components, stories, and tests. We recommend [skills](#install-the-skills), which work with any agent that can run shell commands. Use the [MCP server](#mcp-server) if you want your agent to call Storybook through MCP tools instead of CLI commands.
+
+<Callout variant="info">
+
+Some skills aren't available for every framework. See [supported frameworks](#supported-frameworks) to check yours.
+
+</Callout>
+
+## Install the skills
+
+Skills are short instruction files in your repository. Each one tells your agent what it does and gets its full instructions from your installed Storybook. The [Storybook section in `AGENTS.md`](#tell-your-agent-when-to-use-the-skills) tells your agent when to use them. Because skills live in your repository, every person and agent working on the project gets the same version, and that version matches your Storybook.
+
+When you run [`storybook init`](../api/cli-options.mdx#init), it asks whether to install the skills. The default answer is yes.
+
+When you [upgrade](../releases/upgrading.mdx) from Storybook 10, the `skills` automigration offers to install them. It asks only once.
+
+To install the skills at any other time, run this command from the root of your project:
+
+<CodeSnippets path="storybook-automigrate-skills.md" />
+
+Every install method adds the same files:
+
+- The skills: `storybook-init`, [`storybook-setup`](./skills/setup.mdx), `storybook-upgrade`, and the skills of the [UI workflow](./skills/ui-workflow.mdx): [`component-docs`](./skills/component-docs.mdx), [`write-stories`](./skills/write-stories.mdx), [`test-stories`](./skills/test-stories.mdx), and [`ui-review`](./skills/ui-review.mdx). They're installed for Claude Code (`.claude/skills/`) and for other agents (`.agents/skills/`).
+- `skills-lock.json`, which records the installed version.
+- A Storybook section in `AGENTS.md` (see below)
+
+Commit these files so everyone on your team gets them. When you run [`storybook upgrade`](../releases/upgrading.mdx), Storybook updates the skills to match the new version.
+
+<details>
+<summary>Plugins</summary>
+
+Storybook also has plugins for [Claude Code](https://github.com/storybookjs/storybook/tree/next/code/lib/claude-plugin#readme) and [Codex](https://github.com/storybookjs/storybook/tree/next/code/lib/codex-plugin#readme). A plugin installs the same skills once for every project on your machine. We recommend the skills in your repository instead, because they always match the Storybook version of each project, and your whole team gets them.
+
+</details>
+
+## Tell your agent when to use the skills
+
+The section that Storybook adds to `AGENTS.md` is the [UI workflow](./skills/ui-workflow.mdx). For every UI change, it tells your agent which skill to use at each step:
+
+```md title="AGENTS.md"
+<!-- BEGIN:storybook-skills -->
+<!-- Storybook updates this section on upgrade. Remove both markers to keep your own edits. -->
+
+## Storybook
+
+For every change to how the UI looks (you create, change, or delete a component, story, style, theme, or design token), follow these steps in order. Each step has a Storybook skill. First invoke the skills of all the steps, before you edit any file. Then follow each skill at its step.
+
+1. `component-docs`: look up the components to reuse, with their props and usage examples, before you edit any file. Also when the user asks about a component's props, API, or usage.
+2. `write-stories`: every component you create or change gets stories.
+3. `test-stories`: run the story tests after every change, the way this skill says, never with a `package.json` test script, and fix what fails. Also when the user asks to run or fix story tests.
+4. `ui-review`: publish a review that shows the user what changed, as your last step. Also when the user asks to see components or stories.
+
+<!-- END:storybook-skills -->
+```
+
+Storybook replaces the text between the markers when you upgrade. To change the workflow, for example to leave out the review, remove both markers, then edit the steps. Storybook doesn't change a section without markers. To stop your agent from following the workflow, remove the whole section. Your agent then uses a skill only when you ask for it by name, for example "Use the write-stories skill to add stories for the user list", or when it finds one that fits its task.
+
+If your project has a `CLAUDE.md`, `.claude/CLAUDE.md`, or `CLAUDE.local.md` that doesn't import `AGENTS.md`, Storybook adds the same section to that file, so Claude Code sees it too.
+
+## MCP server
+
+While we recommend using the skills for most agents, Storybook also provides an MCP server as an alternative way for your agent to interact with your Storybook instance.
+
+**Upgrade to skills**
+
+If you used the [MCP server](./reference/mcp-server.mdx) in Storybook 10, the `skills` automigration installs the skills but keeps your MCP setup. To prevent your agent from getting two sets of instructions for the same work, remove `@storybook/addon-mcp` with [`storybook remove`](../api/cli-options.mdx#remove), and remove the Storybook MCP server from your agent's configuration. Also remove any instructions about the MCP server from `AGENTS.md`.
+
+**Alternative: the MCP server**
+
+If you want your agent to call Storybook through MCP tools instead of CLI commands, [connect it to the MCP server instead](./reference/mcp-server.mdx). The MCP server gives your agent the same capabilities as the skills, but it needs a running Storybook dev server. Your agent still needs to run shell commands: the server tells it to read each step of the workflow with `npx storybook skills <id> --mcp`.
+
+## Connect to a published Storybook
+
+You can also connect your agent to a published Storybook instead of running it locally. To give your agent access to component docs from a Storybook that doesn't run on your machine, such as your team's design system, see [Use a published Storybook](./published-storybook.mdx).
+
+</If>
+{/* End supported renderers */}
+
+## Supported frameworks
+
+Skills are available for these frameworks:
+
+| Renderer                | Frameworks                                          | [Setup](./skills/setup.mdx) | [UI workflow](./skills/ui-workflow.mdx) |
+| ----------------------- | --------------------------------------------------- | --------------------------- | --------------------------------------- |
+| React (Setup supported) | `react-vite`, `nextjs-vite`, `tanstack-react`       | Yes                         | Yes                                     |
+| React (other)           | `react-webpack5`, `nextjs`, `react-native-web-vite` | No                          | Yes                                     |
+| Vue 3                   | `vue3-vite`                                         | Yes                         | Yes                                     |
+| Angular                 | `angular-vite`                                      | Yes                         | Yes                                     |
+| Svelte                  | `svelte-vite`, `sveltekit`                          | No                          | Yes                                     |
+| Web Components          | `web-components-vite`                               | No                          | Yes                                     |
+
+The UI workflow column covers its four skills: `component-docs`, `write-stories`, `test-stories`, and `ui-review`. `test-stories` also needs the [Vitest addon](../writing-tests/integrations/vitest-addon/index.mdx), which needs the Vite builder.
+The `storybook-init` and `storybook-upgrade` skills work with every framework in this table.
+The [MCP server](./reference/mcp-server.mdx) supports the same renderers.
+
+**More AI resources**
+
+- [Setup](./skills/setup.mdx)
+- [UI workflow](./skills/ui-workflow.mdx)
+- [Component docs](./skills/component-docs.mdx)
+- [Write stories](./skills/write-stories.mdx)
+- [Test stories](./skills/test-stories.mdx)
+- [UI review](./skills/ui-review.mdx)
+- [Use a published Storybook](./published-storybook.mdx)
+- [Best practices for using Storybook with AI](./best-practices.mdx)
+- [Manifests](./reference/manifests.mdx)
+- [MCP server](./reference/mcp-server.mdx)

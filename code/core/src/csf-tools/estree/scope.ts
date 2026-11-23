@@ -31,6 +31,15 @@ export interface Binding {
   references: Node[];
 }
 
+// The value a constant binding was declared with, as in `const name = value`. A destructured name
+// holds only part of its initializer, so it has none.
+export const constantInit = (binding: Binding | undefined) =>
+  binding?.constant &&
+  binding.node.type === 'VariableDeclarator' &&
+  binding.node.id.type === 'Identifier'
+    ? (binding.node.init ?? undefined)
+    : undefined;
+
 export class Scope {
   readonly bindings = new Map<string, Binding>();
 

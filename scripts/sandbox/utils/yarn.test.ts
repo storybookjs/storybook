@@ -148,7 +148,7 @@ describe('refreshBeforeStorybookLockfile', () => {
     await refreshBeforeStorybookLockfile({ cwd: SANDBOX });
 
     const scripts = vi.mocked(runCommand).mock.calls.map(([script]) => script);
-    expect(scripts).toContain('yarn config set npmMinimalAgeGate 7d');
+    expect(scripts).toContain('yarn config set npmMinimalAgeGate 3d');
   });
 
   it('upgrades only the quarantined package, leaving every other range alone', async () => {
@@ -295,7 +295,7 @@ describe('writeScaffoldNpmrc', () => {
     await writeScaffoldNpmrc(SANDBOX, ['@react-native-community/*', 'multitars']);
 
     expect(vol.readFileSync(`${SANDBOX}/.npmrc`, 'utf-8')).toBe(
-      'min-release-age=7\nmin-release-age-exclude[]=@react-native-community/*\nmin-release-age-exclude[]=multitars\n'
+      'min-release-age=3\nmin-release-age-exclude[]=@react-native-community/*\nmin-release-age-exclude[]=multitars\n'
     );
   });
 

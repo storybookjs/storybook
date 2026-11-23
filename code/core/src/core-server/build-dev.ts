@@ -100,7 +100,7 @@ export async function buildDevStandalone(
   }
   // updateInfo are cached, so this is typically pretty fast
   const [port, versionCheck] = await Promise.all([
-    getServerPort(options.port, { exactPort: options.exactPort }),
+    getServerPort(options.port, { exactPort: options.exactPort, host: options.host }),
     versionUpdates
       ? updateCheck(storybookVersion)
       : Promise.resolve({ success: false, cached: false, data: {}, time: Date.now() }),

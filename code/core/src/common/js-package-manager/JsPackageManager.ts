@@ -1085,7 +1085,7 @@ export abstract class JsPackageManager {
       return join(dirname(lockfilePath), 'package.json');
     }
     const { packageJsonPath } = this.primaryPackageJson;
-    return this.findWorkspaceRootPackageJsonPath(packageJsonPath) ?? packageJsonPath;
+    return normalize(this.findWorkspaceRootPackageJsonPath(packageJsonPath) ?? packageJsonPath);
   }
 
   /** List all package.json files starting from the given directory and stopping at the project root. */

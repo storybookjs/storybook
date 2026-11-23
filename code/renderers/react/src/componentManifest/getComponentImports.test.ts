@@ -684,7 +684,7 @@ test('Does not rewrite scoped package subpath (valid bare specifier)', async () 
         },
       ],
       "imports": [
-        "import { Button } from 'pkg';",
+        "import { Button } from '@scope/ui/components';",
       ],
     }
   `
@@ -713,7 +713,7 @@ test('Does not rewrite unscoped package subpath (valid bare specifier)', async (
         },
       ],
       "imports": [
-        "import { Button } from 'pkg';",
+        "import { Button } from 'ui/components';",
       ],
     }
   `

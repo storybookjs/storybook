@@ -269,6 +269,122 @@ describe('buildImportStatements', () => {
       `);
     });
 
+    it('keeps an unresolved package specifier', () => {
+      expect(
+        buildImportStatements({
+          refs: [
+            {
+              importId: 'react-router-dom',
+              importName: 'MemoryRouter',
+              localImportName: 'MemoryRouter',
+            },
+          ],
+          packageName: 'shared',
+        })
+      ).toMatchInlineSnapshot(`
+        [
+          "import { MemoryRouter } from 'react-router-dom';",
+        ]
+      `);
+    });
+
+    it('keeps an unresolved mixed-case package specifier', () => {
+      expect(
+        buildImportStatements({
+          refs: [
+            {
+              importId: '@Company/ui',
+              importName: 'Button',
+              localImportName: 'Button',
+            },
+            {
+              importId: 'JSONStream',
+              importName: 'default',
+              localImportName: 'JSONStream',
+            },
+          ],
+          packageName: 'shared',
+        })
+      ).toMatchInlineSnapshot(`
+        [
+          "import { Button } from '@Company/ui';",
+          "import JSONStream from 'JSONStream';",
+        ]
+      `);
+    });
+
+    it('keeps an unresolved package subpath', () => {
+      expect(
+        buildImportStatements({
+          refs: [
+            {
+              importId: 'date-fns/format',
+              importName: 'default',
+              localImportName: 'format',
+            },
+          ],
+          packageName: 'shared',
+        })
+      ).toMatchInlineSnapshot(`
+        [
+          "import format from 'date-fns/format';",
+        ]
+      `);
+    });
+
+    it('rewrites an absolute path to the package name', () => {
+      expect(
+        buildImportStatements({
+          refs: [
+            {
+              importId: '/Users/me/Button',
+              importName: 'default',
+              localImportName: 'Button',
+            },
+            {
+              importId: 'C:/Users/me/Button',
+              importName: 'Button',
+              localImportName: 'Button',
+            },
+            {
+              importId: 'c:/users/me/button',
+              importName: 'Button',
+              localImportName: 'Button',
+            },
+          ],
+          packageName: 'shared',
+        })
+      ).toMatchInlineSnapshot(`
+        [
+          "import { Button } from 'shared';",
+        ]
+      `);
+    });
+
+    it('rewrites a tilde or hash alias to the package name', () => {
+      expect(
+        buildImportStatements({
+          refs: [
+            {
+              importId: '~/components/Button',
+              importName: 'Button',
+              localImportName: 'Button',
+            },
+            {
+              importId: '#Button',
+              importName: 'default',
+              localImportName: 'Btn',
+            },
+          ],
+          packageName: 'shared',
+        })
+      ).toMatchInlineSnapshot(`
+        [
+          "import { Button, Btn } from 'shared';",
+        ]
+      `);
+    });
+
     it('leaves a source that already resolves as a package alone', () => {
       expect(
         buildImportStatements({

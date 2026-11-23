@@ -224,14 +224,26 @@ function printBucket({ source, defaults, namespaces, named }: Bucket): string[] 
   return [printImport(source, { defaultName: defaults[0], named }), ...extraDefaults];
 }
 
+function isPathOrAlias(importId: string): boolean {
+  const windowsAbsolutePath = /^[a-zA-Z]:[\\/]/.test(importId);
+  return (
+    importId.startsWith('.') ||
+    importId.startsWith('/') ||
+    importId.startsWith('~') ||
+    importId.startsWith('#') ||
+    windowsAbsolutePath
+  );
+}
+
 /**
  * Build the minimal, deduplicated set of import declarations the given references need.
  *
  * References are bucketed by their final source, which is the `importOverride` source when one
- * parses, else `packageName` when the original source is not already a package, else the source as
- * written. Sources keep first-seen order and declarations keep a fixed order within a source, so
- * repeated runs produce byte-identical output. A local name is declared once: the first ref that
- * binds it wins, so callers pass the refs whose source should win first.
+ * parses, else `packageName` when the original source is not already a resolved package and is a
+ * relative path, an absolute path, or a `~` or `#` alias, else the source as written. Sources keep
+ * first-seen order and declarations keep a fixed order within a source, so repeated runs produce
+ * byte-identical output. A local name is declared once: the first ref that binds it wins, so
+ * callers pass the refs whose source should win first.
  */
 export function buildImportStatements({
   refs,
@@ -249,7 +261,9 @@ export function buildImportStatements({
     }
 
     const override = ref.importOverride ? parseImportOverride(ref.importOverride) : undefined;
-    const source = override?.source ?? (packageName && !ref.isPackage ? packageName : ref.importId);
+    const source =
+      override?.source ??
+      (packageName && !ref.isPackage && isPathOrAlias(ref.importId) ? packageName : ref.importId);
 
     let bucket = buckets.get(source);
     if (!bucket) {

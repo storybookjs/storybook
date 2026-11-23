@@ -190,10 +190,12 @@ const parseJson = (raw: string): { value: unknown } | { error: string } => {
 const useJsonDraft = (jsonString: string, onChange: ObjectProps['onChange']) => {
   const [draft, setDraft] = useState(jsonString);
   const [parseError, setParseError] = useState<string | null>(null);
+  const [hasUncommittedEdits, setHasUncommittedEdits] = useState(false);
 
   const reset = () => {
     setDraft(jsonString);
     setParseError(null);
+    setHasUncommittedEdits(false);
   };
 
   // Reset during render rather than in an effect, so that a new arg value never paints next to
@@ -209,26 +211,39 @@ const useJsonDraft = (jsonString: string, onChange: ObjectProps['onChange']) => 
   // valid again.
   const edit = (raw: string) => {
     setDraft(raw);
+    setHasUncommittedEdits(true);
     if (parseError && (!raw || 'value' in parseJson(raw))) {
       setParseError(null);
     }
   };
 
-  const commit = () => {
+  /**
+   * Passes the draft on as the new arg value. It can be called from several places for the same
+   * edit, such as the editor losing focus and then a button being clicked, and passes the value on
+   * once.
+   *
+   * @returns Whether the draft is safe to drop: it was passed on, or it holds nothing to pass on.
+   */
+  const commit = (): boolean => {
+    if (!hasUncommittedEdits) {
+      return true;
+    }
     if (!draft) {
       setParseError(null);
-      return;
+      return true;
     }
     const result = parseJson(draft);
     if ('error' in result) {
       setParseError(result.error);
-      // The draft is committed when focus leaves the editor, so the message the editor is
+      // The draft is usually committed when focus leaves the editor, so the message the editor is
       // described by would go unheard.
       announce(`Invalid JSON: ${result.error}`, 'polite');
-      return;
+      return false;
     }
     setParseError(null);
+    setHasUncommittedEdits(false);
     onChange(result.value);
+    return true;
   };
 
   return { draft, parseError, edit, commit, reset };
@@ -374,6 +389,11 @@ export const ObjectControl: FC<ObjectProps> = ({
           ariaLabel={isLockedInRaw ? lockedLabel : switchLabel}
           onClick={(e: SyntheticEvent) => {
             e.preventDefault();
+            // Losing focus commits the draft, but not every click moves focus out of the editor:
+            // a screen reader's virtual cursor, voice control and some touch browsers do not.
+            if (showRaw && !jsonDraft.commit()) {
+              return;
+            }
             jsonDraft.reset();
             setShowRaw((isRaw) => !isRaw);
           }}

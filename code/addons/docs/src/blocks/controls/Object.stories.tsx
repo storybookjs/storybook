@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { destroyAnnouncer } from '@react-aria/live-announcer';
 
-import { expect, fn, waitFor } from 'storybook/test';
+import { expect, fireEvent, fn, waitFor } from 'storybook/test';
 
 import { ObjectControl } from './Object';
 
@@ -287,7 +287,7 @@ export const JsonEditorInvalidDraftLocksSwitch: Story = {
     value: { label: 'value' },
     onChange: fn(),
   },
-  play: async ({ canvas, step, userEvent }) => {
+  play: async ({ args, canvas, step, userEvent }) => {
     await userEvent.click(canvas.getByRole('button', { name: 'Edit object as JSON' }));
     const rawInput = canvas.getByRole('textbox', { name: 'Edit object as JSON' });
     const lockedName = 'Fix the invalid JSON in object to switch editors';
@@ -320,6 +320,51 @@ export const JsonEditorInvalidDraftLocksSwitch: Story = {
 
       await expect(rawInput).not.toBeInTheDocument();
       await expect(canvas.getByRole('button', { name: 'Edit object as JSON' })).toBeVisible();
+      await expect(await canvas.findByText('"updated"')).toBeVisible();
+      // Leaving the editor and clicking the switch both commit, and the value is passed on once.
+      await expect(args.onChange).toHaveBeenCalledTimes(1);
+    });
+  },
+};
+
+/**
+ * A screen reader's virtual cursor, voice control and some touch browsers click the switch without
+ * moving focus out of the raw editor, so the click itself checks the draft.
+ */
+export const JsonEditorSwitchWithoutLeavingEditor: Story = {
+  args: {
+    value: { label: 'value' },
+    onChange: fn(),
+  },
+  play: async ({ args, canvas, step, userEvent }) => {
+    await userEvent.click(canvas.getByRole('button', { name: 'Edit object as JSON' }));
+    const rawInput = canvas.getByRole('textbox', { name: 'Edit object as JSON' });
+    // fireEvent dispatches the click alone, where userEvent would move focus to the button first.
+    const clickSwitchWithoutMovingFocus = () =>
+      fireEvent.click(canvas.getByRole('button', { name: 'Edit object with the object editor' }));
+
+    await step('An invalid draft keeps the raw editor open and raises the error', async () => {
+      await userEvent.clear(rawInput);
+      await userEvent.type(rawInput, '{{"label":');
+      await clickSwitchWithoutMovingFocus();
+
+      await expect(rawInput).toHaveFocus();
+      await expect(rawInput).toHaveValue('{"label":');
+      await expect(rawInput).toHaveAttribute('aria-invalid', 'true');
+      await expect(rawInput).toHaveAccessibleDescription(invalidJson);
+      await expect(
+        canvas.getByRole('button', { name: 'Fix the invalid JSON in object to switch editors' })
+      ).toHaveAttribute('aria-disabled', 'true');
+      await expect(args.onChange).not.toHaveBeenCalled();
+    });
+
+    await step('A valid draft is committed before the editors switch', async () => {
+      await userEvent.type(rawInput, '"updated"}');
+      await clickSwitchWithoutMovingFocus();
+
+      await expect(args.onChange).toHaveBeenCalledTimes(1);
+      await expect(args.onChange).toHaveBeenCalledWith({ label: 'updated' });
+      await expect(rawInput).not.toBeInTheDocument();
       await expect(await canvas.findByText('"updated"')).toBeVisible();
     });
   },

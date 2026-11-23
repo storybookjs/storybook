@@ -1550,12 +1550,11 @@ export const KeyboardNavigation: Story = {
 };
 
 /**
- * Hovering a row asks the preview to load the story a press on it would most likely open: a leaf
- * loads itself, a story with tests and its "Story" row load the story, a root or group loads its
- * first child when that is a story (a hoisted one included). A root or group whose first child is
- * another branch has nothing to load.
+ * Hovering a row asks the preview to load the story a press on it opens: a story, docs page or
+ * test loads itself, and a story with tests and its "Story" row load the story. A press on a root
+ * or group opens nothing, so hovering one loads nothing.
  */
-export const HoverPreloadsFirstStory: Story = {
+export const HoverPreloadsTheHoveredStory: Story = {
   args: {
     refId: DEFAULT_REF_ID,
     onSelectStoryId: fn(),
@@ -1572,27 +1571,24 @@ export const HoverPreloadsFirstStory: Story = {
         .map(([, payload]: [string, { ids: string[] }]) => payload.ids);
 
     await userEvent.hover(row('root-1'));
-    await userEvent.hover(row('root-1-child-a1'));
+    await userEvent.hover(row('group-1'));
+    await userEvent.hover(row('root-3'));
     expect(preloadedIds()).toEqual([]);
 
     await userEvent.hover(row('root-1-child-a2--grandchild-a1-2'));
     await userEvent.hover(row('root-1-child-a2--grandchild-a1-1'));
     await userEvent.hover(row(storyRowId('root-1-child-a2--grandchild-a1-1')));
     await userEvent.hover(row('root-1-child-a2--grandchild-a1-1:test1'));
-    await userEvent.hover(row('group-1'));
-    await userEvent.hover(row('root-3'));
     await waitFor(() =>
       expect(preloadedIds()).toEqual([
         ['root-1-child-a2--grandchild-a1-2'],
         ['root-1-child-a2--grandchild-a1-1'],
         ['root-1-child-a2--grandchild-a1-1'],
         ['root-1-child-a2--grandchild-a1-1:test1'],
-        ['group-1--child-b1'],
-        ['root-3--child-a1'],
       ])
     );
     expect(emit).toHaveBeenLastCalledWith(PRELOAD_ENTRIES, {
-      ids: ['root-3--child-a1'],
+      ids: ['root-1-child-a2--grandchild-a1-1:test1'],
       source: 'hover',
       options: { target: DEFAULT_REF_ID },
     });

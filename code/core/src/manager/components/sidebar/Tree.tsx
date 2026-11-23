@@ -33,12 +33,7 @@ import {
   type StatusesByStoryIdAndTypeId,
 } from 'storybook/internal/types';
 
-import {
-  shortcutToHumanString,
-  useStorybookApi,
-  type HashEntry,
-  type IndexHash,
-} from 'storybook/manager-api';
+import { shortcutToHumanString, useStorybookApi, type IndexHash } from 'storybook/manager-api';
 import { styled } from 'storybook/theming/emotion';
 
 import { getGroupDualStatus, shouldShowChangeStatus } from '../../utils/status.tsx';
@@ -556,13 +551,11 @@ export const Tree = React.memo<TreeProps>(function Tree({
       if (!item || next!.id === preloadedId) {
         return;
       }
-      let entry: HashEntry | undefined = item;
-      if (item.type === 'component') {
-        // Its first child can be a subcomponent or a nested docs page instead of one of its own.
-        entry = api.resolveLeafEntry(item.id, refId === DEFAULT_REF_ID ? undefined : refId);
-      } else if (isBranch(item)) {
-        entry = hoistedDataRef.current[item.children[0]];
-      }
+      // A component stands for the entry that selecting it opens. A root or group opens nothing.
+      const entry =
+        item.type === 'component'
+          ? api.resolveLeafEntry(item.id, refId === DEFAULT_REF_ID ? undefined : refId)
+          : item;
       if (entry?.type !== 'story' && entry?.type !== 'docs') {
         return;
       }

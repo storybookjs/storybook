@@ -1,6 +1,6 @@
 import { relative } from 'node:path';
 
-import type { Options } from '../../types/index.ts';
+import type { Options, StoriesEntry } from '../../types/index.ts';
 import { extractFrameworkPackageName } from '../../common/utils/get-framework-name.ts';
 import { findConfigFile } from '../../common/utils/get-storybook-info.ts';
 import { isCsfFactoryPreview, readConfig } from '../../csf-tools/ConfigFile.ts';
@@ -12,6 +12,7 @@ import {
   type McpToolsets,
   type ToolAvailability,
 } from './availability.ts';
+import { frameworkToRendererMap } from './content/framework-renderer.ts';
 
 export type SkillInputs = ToolAvailability & {
   framework: string;
@@ -19,6 +20,8 @@ export type SkillInputs = ToolAvailability & {
   csfFactories: boolean;
   /** Path of the preview file relative to the working directory; a default name when there is none. */
   previewFile: string;
+  /** A Svelte project whose `stories` globs match `.svelte` files, which Svelte CSF writes. */
+  svelteCsf: boolean;
   /** The preview file, or `main` when there is none, is TypeScript. */
   typescript: boolean;
   // The toolsets of addon-mcp that `main.ts` turns on; all of them without addon-mcp.
@@ -56,14 +59,21 @@ async function resolvePreview(configDir = '.storybook') {
   };
 }
 
+// Only the file part of a glob: a directory such as `packages/svelte-ui` says nothing of the format.
+function matchesSvelteFiles(entry: StoriesEntry): boolean {
+  const files = typeof entry === 'string' ? entry : (entry.files ?? '');
+  return /\bsvelte\b/.test(files.slice(files.lastIndexOf('/') + 1));
+}
+
 /**
  * The one probing path for skill-content assembly: everything the pure builders need, resolved
  * from the target Storybook's presets.
  */
 export async function resolveSkillInputs(options: Options): Promise<SkillInputs> {
-  const [availability, frameworkPreset, preview, mcpToolsets, refs] = await Promise.all([
+  const [availability, frameworkPreset, stories, preview, mcpToolsets, refs] = await Promise.all([
     getToolAvailability(options),
     options.presets.apply('framework'),
+    options.presets.apply('stories', []),
     resolvePreview(options.configDir),
     resolveMcpToolsets(options),
     getRefsFromConfig(options),
@@ -71,5 +81,14 @@ export async function resolveSkillInputs(options: Options): Promise<SkillInputs>
   const framework = extractFrameworkPackageName(
     typeof frameworkPreset === 'string' ? frameworkPreset : (frameworkPreset?.name ?? '')
   );
-  return { ...availability, ...preview, framework, mcpToolsets, composed: refs.length > 0 };
+  const svelteCsf =
+    frameworkToRendererMap[framework] === '@storybook/svelte' && stories.some(matchesSvelteFiles);
+  return {
+    ...availability,
+    ...preview,
+    framework,
+    svelteCsf,
+    mcpToolsets,
+    composed: refs.length > 0,
+  };
 }

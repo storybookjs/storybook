@@ -9,6 +9,15 @@ const reactTs: WriteStoriesSkillInputs = {
   framework: '@storybook/react-vite',
   csfFactories: false,
   previewFile: '.storybook/preview.ts',
+  svelteCsf: false,
+  typescript: true,
+};
+
+const svelteKit: WriteStoriesSkillInputs = {
+  framework: '@storybook/sveltekit',
+  csfFactories: true,
+  previewFile: '.storybook/preview.ts',
+  svelteCsf: true,
   typescript: true,
 };
 
@@ -64,6 +73,31 @@ describe('buildWriteStoriesSkill', () => {
       "`addons: [addonMsw()]` (`import addonMsw from 'msw-storybook-addon'`"
     );
     expect(factories).not.toContain('mswLoader');
+  });
+
+  it('teaches Svelte CSF instead of meta.story() exports when the stories are Svelte CSF', () => {
+    const text = buildWriteStoriesSkill(svelteKit);
+
+    expect(text).toContain('const { Story } = preview.meta({ component: Button })');
+    expect(text).toContain('`<Story name="Primary" args={{ ... }} />`');
+    expect(text).toContain('an HTML comment right above its `<Story>`');
+    expect(text).toContain('`play={async ({ canvas, userEvent }) => { ... }}`');
+    expect(text).toContain('`<Story name="Error" exportName="ErrorState" />`');
+    expect(text).toContain('`beforeEach={({ msw }) => {');
+    expect(text).toContain('`parameters={{ msw: { handlers: [...] } }}`');
+    expect(text).toContain('`addons: [addonMsw()]`');
+    expect(text).not.toMatch(/meta\.story\(|StoryObj|play: async|set `name: 'Error'`/);
+  });
+
+  it('teaches defineMeta for Svelte CSF without definePreview', () => {
+    const text = buildWriteStoriesSkill({ ...svelteKit, csfFactories: false });
+
+    expect(text).toContain(
+      "`import { defineMeta } from '@storybook/sveltekit'` and `const { Story } = defineMeta({ component: Button })`"
+    );
+    expect(text).not.toContain('preview.meta(');
+    expect(text).not.toContain('addon-svelte-csf');
+    expect(text).toContain('`loaders: [mswLoader()]`');
   });
 
   it('names no command and no other skill', () => {

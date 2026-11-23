@@ -119,6 +119,20 @@ describe('resolveSkillInputs', () => {
     });
   });
 
+  it.each([
+    ['@storybook/sveltekit', ['../src/**/*.stories.@(js|ts|svelte)'], true],
+    ['@storybook/svelte-vite', [{ directory: '../src', files: '**/*.stories.svelte' }], true],
+    ['@storybook/sveltekit', ['../src/**/*.stories.@(js|ts)'], false],
+    ['@storybook/sveltekit', ['../packages/svelte-ui/**/*.stories.ts'], false],
+    ['@storybook/sveltekit', [{ directory: '../src' }], false],
+    ['@storybook/react-vite', ['../src/**/*.stories.@(tsx|svelte)'], false],
+  ])('detects Svelte CSF for %s with stories %j: %s', async (framework, stories, svelteCsf) => {
+    const inputs = await resolveSkillInputs(
+      createMockOptions({ framework, presets: { stories: () => stories } })
+    );
+    expect(inputs.svelteCsf).toBe(svelteCsf);
+  });
+
   it('reads the MCP toolsets that main.ts turns on, and all of them without addon-mcp', async () => {
     const toolsets = { dev: false, docs: true, test: true };
     const withAddon = await resolveSkillInputs(

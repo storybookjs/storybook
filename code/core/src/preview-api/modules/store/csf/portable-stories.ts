@@ -19,6 +19,7 @@ import type {
   Renderer,
   Store_CSFExports,
   StoryContext,
+  StoryContextWithArgTypes,
   StrictArgTypes,
 } from 'storybook/internal/types';
 
@@ -132,7 +133,7 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
   const reporting = new ReporterAPI();
 
   const initializeContext = () => {
-    const context: StoryContext<TRenderer> & { argTypes: StrictArgTypes } = prepareContext({
+    const context: StoryContextWithArgTypes<TRenderer> = prepareContext({
       hooks: new HooksContext(),
       globals,
       args: { ...story.initialArgs },

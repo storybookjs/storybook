@@ -1,12 +1,16 @@
 import { ArgTypesRemovedFromStoryContextError } from 'storybook/internal/preview-errors';
-import type { Renderer, StoryContext } from 'storybook/internal/types';
+import type { Renderer, StoryContext, StoryContextWithArgTypes } from 'storybook/internal/types';
 
 const HIDDEN_KEY = 'argTypes';
 
 const hiddenContexts = new WeakMap<object, object>();
 
+/**
+ * Wraps a story context so that reading `argTypes` throws. Accepts a context that still holds
+ * `argTypes` or a copy of one that was hidden already.
+ */
 export function hideArgTypes<TRenderer extends Renderer>(
-  context: StoryContext<TRenderer>
+  context: StoryContextWithArgTypes<TRenderer> | StoryContext<TRenderer>
 ): StoryContext<TRenderer> {
   const known = hiddenContexts.get(context) as StoryContext<TRenderer> | undefined;
   if (known) {

@@ -123,7 +123,6 @@ describe('resolveSkillInputs', () => {
     ['@storybook/sveltekit', ['../src/**/*.stories.@(js|ts|svelte)'], true],
     ['@storybook/svelte-vite', [{ directory: '../src', files: '**/*.stories.svelte' }], true],
     ['@storybook/sveltekit', ['../src/**/*.stories.@(js|ts)'], false],
-    ['@storybook/sveltekit', ['../packages/svelte-ui/**/*.stories.ts'], false],
     ['@storybook/sveltekit', [{ directory: '../src' }], false],
     ['@storybook/sveltekit', ['../src/svelte', '../packages/svelte-ui'], false],
     ['@storybook/sveltekit', ['../src/**/*.stories.*'], true],

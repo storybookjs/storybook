@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 
 import type { Args, StoryContext } from 'storybook/internal/csf';
 import { logger } from 'storybook/internal/client-logger';
-import { hideArgTypes } from 'storybook/preview-api';
+import { hideArgTypes } from 'storybook/internal/docs-tools';
 
 import type { SourceItem } from './SourceContainer.tsx';
 

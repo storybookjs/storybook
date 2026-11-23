@@ -52,7 +52,6 @@ export {
   composeStory,
   decorateStory,
   defaultDecorateStory,
-  hideArgTypes,
   prepareStory,
   prepareMeta,
   normalizeArrays,

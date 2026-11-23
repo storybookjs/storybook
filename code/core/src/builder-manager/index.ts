@@ -8,6 +8,7 @@ import { resolveModulePath } from 'exsolve';
 import { join, parse } from 'pathe';
 import sirv from 'sirv';
 
+import { getRefs } from '../common/utils/get-storybook-refs.ts';
 import { globalsModuleInfoMap } from '../manager/globals/globals-module-info.ts';
 import { BROWSER_TARGETS, SUPPORTED_FEATURES } from '../shared/constants/environments-support.ts';
 import { resolvePackageDir } from '../shared/utils/module.ts';
@@ -142,13 +143,13 @@ const starter: StarterFunction = async function* starterGeneratorFn({
     logger.info('Starting...');
   }
 
+  const refs = getRefs(options);
   const {
     config,
     favicon,
     customHead,
     features,
     instance,
-    refs,
     template,
     title,
     logLevel,
@@ -257,13 +258,13 @@ const builder: BuilderFunction = async function* builderGeneratorFn({ startTime,
     throw new Error('outputDir is required');
   }
   logger.step('Building manager..');
+  const refs = getRefs(options);
   const {
     config,
     customHead,
     favicon,
     features,
     instance,
-    refs,
     template,
     title,
     logLevel,

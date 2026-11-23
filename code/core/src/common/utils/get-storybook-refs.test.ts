@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { checkRef, getRefs } from './get-storybook-refs.ts';
+import { checkRef, getRefs, readRefs } from './get-storybook-refs.ts';
 
 // getAutoRefs walks upward from configDir looking for a package manifest to auto-discover refs
 // from. Pin it to nothing so the test cannot pick up refs from the host filesystem.
@@ -123,5 +123,56 @@ describe('getRefs', () => {
       title: 'QA',
       url: 'http://localhost:6007',
     });
+  });
+
+  it('marks each ref with the result of its check, in config order', async () => {
+    vi.spyOn(global, 'fetch').mockImplementation(async (url) =>
+      String(url).startsWith('http://localhost:6007/')
+        ? ({ ok: true, status: 200, json: async () => ({}) } as Response)
+        : ({ ok: false, status: 401 } as Response)
+    );
+
+    const refs = await getRefs({
+      configDir: 'storybook-get-refs-config-dir',
+      presets: {
+        apply: async () => ({
+          private: { title: 'Private', url: 'http://localhost:6008' },
+          public: { title: 'Public', url: 'http://localhost:6007' },
+        }),
+      },
+    } as unknown as Parameters<typeof getRefs>[0]);
+
+    expect(Object.entries(refs)).toEqual([
+      [
+        'private',
+        { id: 'private', title: 'Private', url: 'http://localhost:6008', type: 'unknown' },
+      ],
+      [
+        'public',
+        { id: 'public', title: 'Public', url: 'http://localhost:6007', type: 'server-checked' },
+      ],
+    ]);
+  });
+});
+
+describe('readRefs', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it('reads the refs without a request to them', async () => {
+    const fetchSpy = vi.spyOn(global, 'fetch').mockRejectedValue(new TypeError('fetch failed'));
+
+    const refs = await readRefs({
+      configDir: 'storybook-get-refs-config-dir',
+      presets: {
+        apply: async () => ({
+          qaWorking: { title: 'QA', url: 'http://localhost:6007/' },
+        }),
+      },
+    } as unknown as Parameters<typeof readRefs>[0]);
+
+    expect(refs).toEqual({
+      qaworking: { id: 'qaworking', title: 'QA', url: 'http://localhost:6007' },
+    });
+    expect(fetchSpy).not.toHaveBeenCalled();
   });
 });

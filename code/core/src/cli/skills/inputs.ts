@@ -61,13 +61,21 @@ async function resolvePreview(configDir = '.storybook') {
   };
 }
 
+// Only the file name part decides, so a glob that needs a folder (`*/*.stories.svelte`) counts.
+function allowsSvelteFile(files: string): boolean {
+  const name = files.slice(files.lastIndexOf('/') + 1);
+  return pico.scan(name).isGlob
+    ? pico.isMatch('Button.stories.svelte', name)
+    : name.endsWith('.svelte');
+}
+
 // A string without a glob is a directory, whose default files are not `.svelte`, or one file.
 function matchesSvelteFiles(entry: StoriesEntry): boolean {
   if (typeof entry !== 'string') {
-    return !!entry.files && pico.isMatch('Button.stories.svelte', entry.files);
+    return !!entry.files && allowsSvelteFile(entry.files);
   }
   const { isGlob, glob } = pico.scan(entry);
-  return isGlob ? pico.isMatch('Button.stories.svelte', glob) : entry.endsWith('.svelte');
+  return allowsSvelteFile(isGlob ? glob : entry);
 }
 
 /**

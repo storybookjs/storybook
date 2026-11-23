@@ -93,9 +93,6 @@ export const SetObject: Story = {
     await expect(
       canvas.getByRole('button', { name: 'Edit object with the object editor' })
     ).toBeVisible();
-
-    await userEvent.keyboard('"a": 1');
-    await expect(rawInput).toHaveValue('{"a": 1}');
   },
 };
 

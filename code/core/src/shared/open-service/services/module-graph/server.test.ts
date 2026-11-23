@@ -529,12 +529,8 @@ describe('module-graph open service', () => {
       });
 
       resolveChangeDetectionAdapter(adapter);
-      await vi.waitFor(() => {
-        expect(runtime.queries.status.get(undefined)).toEqual({ value: 'ready' });
-      });
-      expect(getAdapter).not.toHaveBeenCalled();
 
-      await runtime.queries.status.loaded(undefined);
+      expect(await runtime.queries.status.loaded(undefined)).toEqual({ value: 'ready' });
       expect(getAdapter).not.toHaveBeenCalled();
     });
 
@@ -709,9 +705,7 @@ describe('module-graph open service', () => {
 
       resolveChangeDetectionAdapter(adapter);
 
-      await vi.waitFor(() => {
-        expect(runtime.queries.status.get(undefined)).toEqual({ value: 'ready' });
-      });
+      expect(await runtime.queries.status.loaded(undefined)).toEqual({ value: 'ready' });
 
       await expect(
         runtime.commands.storiesForFiles({ files: ['/repo/src/Button.tsx'] })

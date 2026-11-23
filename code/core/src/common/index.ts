@@ -21,7 +21,7 @@ export * from './utils/get-framework-name.ts';
 export * from './utils/get-renderer-name.ts';
 export * from './utils/get-storybook-configuration.ts';
 export * from './utils/get-storybook-info.ts';
-export * from './utils/get-storybook-refs.ts';
+export { checkRef, getAutoRefs, getRefs, toTitle } from './utils/get-storybook-refs.ts';
 export * from './utils/glob-to-regexp.ts';
 export * from './utils/HandledError.ts';
 export * from './utils/interpolate.ts';

@@ -1,13 +1,13 @@
 import React from 'react';
 
-import type { API_Provider, StoryIndex } from 'storybook/internal/types';
-
-import type { Meta, StoryFn, StoryObj } from '@storybook/react-vite';
+import { PRELOAD_ENTRIES } from 'storybook/internal/core-events';
+import type { API_LeafEntry, API_Provider, StoryIndex } from 'storybook/internal/types';
 
 import type { API, State } from 'storybook/manager-api';
 import { ManagerContext } from 'storybook/manager-api';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 
+import preview from '../../../../../.storybook/preview.tsx';
 import { transformStoryIndexToStoriesHash } from '../../../manager-api/lib/stories.ts';
 import { defaultShortcuts } from '../../settings/defaultShortcuts.tsx';
 import { IconSymbols } from './IconSymbols.tsx';
@@ -27,13 +27,13 @@ const getLastViewed = () =>
     .filter((item, i) => item.type === 'component' && item.parent && i % 20 === 0)
     .map((component) => ({ storyId: component.id, refId }));
 
-const meta = {
+const meta = preview.meta({
   component: Search,
   title: 'Sidebar/Search',
   parameters: { layout: 'fullscreen' },
   globals: { sb_theme: 'side-by-side' },
   decorators: [
-    (storyFn: any) => (
+    (storyFn) => (
       <div
         style={{
           display: 'flex',
@@ -48,7 +48,7 @@ const meta = {
       </div>
     ),
   ],
-} satisfies Meta<typeof Search>;
+});
 export default meta;
 
 const baseProps: Omit<SearchProps, 'children'> = {
@@ -56,13 +56,13 @@ const baseProps: Omit<SearchProps, 'children'> = {
   getLastViewed: () => [] as Selection[],
 };
 
-export const Simple: StoryFn = () => <Search {...baseProps}>{() => null}</Search>;
+export const Simple = meta.story(() => <Search {...baseProps}>{() => null}</Search>);
 
-export const FilledIn: StoryFn = () => (
+export const FilledIn = meta.story(() => (
   <Search {...baseProps} initialQuery="Foo bar">
     {() => <SearchResults {...noResults} />}
   </Search>
-);
+));
 
 const nestedEntries: StoryIndex['entries'] = {
   'custom-guide--docs': {
@@ -103,19 +103,27 @@ const nestedIndex = transformStoryIndexToStoriesHash(
   { v: 5, entries: nestedEntries },
   { provider, docsOptions: {}, filters: {}, allStatuses: {} }
 );
+// The entry that selecting each component opens, as the stories API resolves it
+const openedEntryIds: Record<string, string> = {
+  'components-button': 'components-button--docs',
+  'components-button-icon': 'components-button-icon--primary',
+};
 const selectNestedStory = fn().mockName('api::selectStory');
+const emitNested = fn().mockName('api::emit');
 const nestedApi: Partial<API> = {
   selectStory: selectNestedStory,
   resolveStory: (id) => nestedIndex[id],
-  emit: fn(),
+  resolveLeafEntry: (id) => nestedIndex[openedEntryIds[id] ?? id] as API_LeafEntry,
+  emit: emitNested,
   getShortcutKeys: () => defaultShortcuts,
 };
 
-export const ComponentWithSubcomponents: StoryObj<Meta<typeof Search>> = {
+export const ComponentWithSubcomponents = meta.story({
   // A single canvas keeps keyboard focus and searchbox queries unambiguous.
   globals: { sb_theme: 'light' },
   beforeEach: () => {
     selectNestedStory.mockClear();
+    emitNested.mockClear();
   },
   decorators: [
     (Story) => (
@@ -204,40 +212,9 @@ export const ComponentWithSubcomponents: StoryObj<Meta<typeof Search>> = {
       scrollTo: undefined,
     });
   },
-};
+});
 
-export const SubcomponentResults: StoryObj<Meta<typeof Search>> = {
-  // A single canvas keeps searchbox queries unambiguous.
-  globals: { sb_theme: 'light' },
-  decorators: ComponentWithSubcomponents.decorators,
-  render: () => {
-    const ref = {
-      id: refId,
-      url: '/',
-      index: nestedIndex,
-      previewInitialized: true,
-      allStatuses: {},
-    };
-
-    return (
-      <Search
-        dataset={{ hash: { [refId]: ref }, entries: [[refId, ref]] }}
-        getLastViewed={() => []}
-        initialQuery="Button"
-      >
-        {({ query, results, closeMenu, getMenuProps, getItemProps, highlightedIndex }) => (
-          <SearchResults
-            query={query}
-            results={results}
-            closeMenu={closeMenu}
-            getMenuProps={getMenuProps}
-            getItemProps={getItemProps}
-            highlightedIndex={highlightedIndex}
-          />
-        )}
-      </Search>
-    );
-  },
+export const SubcomponentResults = ComponentWithSubcomponents.extend({
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await userEvent.click(canvas.getByRole('searchbox'));
@@ -260,9 +237,38 @@ export const SubcomponentResults: StoryObj<Meta<typeof Search>> = {
     await expect(resultIds()).not.toContain('components-button--primary');
     await expect(resultIds()).not.toContain('components-button-icon--primary');
   },
-};
+});
 
-export const LastViewed: StoryFn = () => (
+export const PreloadsTheEntryThatSelectingOpens = ComponentWithSubcomponents.extend({
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const preload = (id: string) => [
+      PRELOAD_ENTRIES,
+      { ids: [id], source: 'search', options: { target: refId } },
+    ];
+    // The first entry under Button is the hoisted Guide docs, which selecting Button does not open
+    const notOpened = [PRELOAD_ENTRIES, expect.objectContaining({ ids: ['custom-guide--docs'] })];
+
+    await userEvent.click(canvas.getByRole('searchbox'));
+    await userEvent.keyboard('{ArrowDown}');
+    await waitFor(() =>
+      expect(canvas.getByRole('option', { selected: true })).toHaveAttribute(
+        'data-id',
+        'components-button'
+      )
+    );
+    await waitFor(() =>
+      expect(emitNested).toHaveBeenCalledWith(...preload('components-button--docs'))
+    );
+
+    emitNested.mockClear();
+    await userEvent.hover(canvasElement.querySelector('[data-id="components-button"]')!);
+    await expect(emitNested).toHaveBeenCalledWith(...preload('components-button--docs'));
+    await expect(emitNested).not.toHaveBeenCalledWith(...notOpened);
+  },
+});
+
+export const LastViewed = meta.story(() => (
   <Search {...baseProps} getLastViewed={getLastViewed}>
     {({ query, results, closeMenu, getMenuProps, getItemProps, highlightedIndex }) => (
       <SearchResults
@@ -275,7 +281,7 @@ export const LastViewed: StoryFn = () => (
       />
     )}
   </Search>
-);
+));
 
 const escapeAbove = fn().mockName('escapeAbove');
 
@@ -285,56 +291,59 @@ const escapeAbove = fn().mockName('escapeAbove');
  * menu drawer closes on it. Without this ladder the drawer closed on the first press, or kept the
  * focus trapped in the empty field (the drawer's focus scope returns it there after a blur).
  */
-export const EscapeWithQueryStaysInSearch: StoryFn = () => (
-  <div
-    onKeyDown={(event) => {
-      if (event.key === 'Escape') {
-        escapeAbove();
-      }
-    }}
-  >
-    <Search {...baseProps} initialQuery="Foo">
-      {() => null}
-    </Search>
-  </div>
-);
-EscapeWithQueryStaysInSearch.play = async ({ canvasElement }) => {
-  escapeAbove.mockClear();
-  const input = within(canvasElement).getByRole('searchbox');
-  await userEvent.click(input);
-  await userEvent.keyboard('{Escape}');
-  await waitFor(() => expect(input).toHaveValue(''));
-  expect(escapeAbove).not.toHaveBeenCalled();
+export const EscapeWithQueryStaysInSearch = meta.story({
+  render: () => (
+    <div
+      onKeyDown={(event) => {
+        if (event.key === 'Escape') {
+          escapeAbove();
+        }
+      }}
+    >
+      <Search {...baseProps} initialQuery="Foo">
+        {() => null}
+      </Search>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    escapeAbove.mockClear();
+    const input = within(canvasElement).getByRole('searchbox');
+    await userEvent.click(input);
+    await userEvent.keyboard('{Escape}');
+    await waitFor(() => expect(input).toHaveValue(''));
+    expect(escapeAbove).not.toHaveBeenCalled();
 
-  const explorer = canvasElement.querySelector('#storybook-explorer-menu');
-  await userEvent.keyboard('{Escape}');
-  await waitFor(() => expect(explorer).toHaveFocus());
-  expect(escapeAbove).not.toHaveBeenCalled();
+    const explorer = canvasElement.querySelector('#storybook-explorer-menu');
+    await userEvent.keyboard('{Escape}');
+    await waitFor(() => expect(explorer).toHaveFocus());
+    expect(escapeAbove).not.toHaveBeenCalled();
 
-  await userEvent.keyboard('{Escape}');
-  await waitFor(() => expect(escapeAbove).toHaveBeenCalledOnce());
-};
+    await userEvent.keyboard('{Escape}');
+    await waitFor(() => expect(escapeAbove).toHaveBeenCalledOnce());
+  },
+});
 
-export const ShortcutsDisabled: StoryFn = () => (
+export const ShortcutsDisabled = meta.story(() => (
   <Search {...baseProps} enableShortcuts={false}>
     {() => null}
   </Search>
-);
+));
 
-export const CustomShortcuts: StoryFn = () => <Search {...baseProps}>{() => null}</Search>;
-
-CustomShortcuts.decorators = [
-  (storyFn) => (
-    <ManagerContext.Provider
-      value={
-        {
-          api: {
-            getShortcutKeys: () => ({ search: ['control', 'shift', 's'] }),
-          } as API,
-        } as any
-      }
-    >
-      {storyFn()}
-    </ManagerContext.Provider>
-  ),
-];
+export const CustomShortcuts = meta.story({
+  render: () => <Search {...baseProps}>{() => null}</Search>,
+  decorators: [
+    (storyFn) => (
+      <ManagerContext.Provider
+        value={
+          {
+            api: {
+              getShortcutKeys: () => ({ search: ['control', 'shift', 's'] }),
+            } as API,
+          } as any
+        }
+      >
+        {storyFn()}
+      </ManagerContext.Provider>
+    ),
+  ],
+});

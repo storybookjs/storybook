@@ -1,4 +1,4 @@
-import { sanitize } from 'storybook/internal/csf';
+import { titleToPath } from 'storybook/internal/csf';
 import type {
   API_ComponentEntry,
   API_DocsEntry,
@@ -20,38 +20,10 @@ import type {
 
 import { countBy } from 'es-toolkit/array';
 import memoize from 'memoizerific';
-import { dedent } from 'ts-dedent';
 
 import { Tag } from '../../shared/constants/tags.ts';
 import { type API, type State } from '../root.tsx';
 import intersect from './intersect.ts';
-
-const TITLE_PATH_SEPARATOR = /\s*\/\s*/;
-
-export const titleToPath = (title: string): { name: string; id: string }[] =>
-  title
-    .trim()
-    .split(TITLE_PATH_SEPARATOR)
-    .reduce<{ name: string; id: string }[]>((paths, name) => {
-      const parent = paths.at(-1)?.id;
-      const id = sanitize(parent ? `${parent}-${name}` : name);
-
-      if (name.trim() === '') {
-        throw new Error(dedent`Invalid title ${title} ending in slash.`);
-      }
-
-      if (parent === id) {
-        throw new Error(
-          dedent`
-          Invalid part '${name}', leading to id === parentId ('${id}'), inside title '${title}'
-
-          Did you create a path that uses the separator char accidentally, such as 'Vue <docs/>' where '/' is a separator char? See https://github.com/storybookjs/storybook/issues/6128
-          `
-        );
-      }
-      paths.push({ name, id });
-      return paths;
-    }, []);
 
 /**
  * Whether an entry is one of a component's own docs or stories. A component's children can also

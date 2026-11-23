@@ -1195,28 +1195,77 @@ describe('stories API', () => {
       expect(navigate).not.toHaveBeenCalled();
     });
   });
-  describe('selectStory', () => {
-    const nestedEntries: StoryIndex['entries'] = {
-      'components-button-icon--primary': {
-        ...navigationEntries['a--1'],
-        id: 'components-button-icon--primary',
-        title: 'Components/Button/Icon',
-      },
-      'components-button--docs': {
-        type: 'docs',
-        id: 'components-button--docs',
-        title: 'Components/Button',
-        name: 'Docs',
-        importPath: './button.stories.ts',
-        storiesImports: [],
-      },
-      'components-button--primary': {
-        ...navigationEntries['a--1'],
-        id: 'components-button--primary',
-        title: 'Components/Button',
-      },
-    };
+  const nestedEntries: StoryIndex['entries'] = {
+    'components-button-icon--primary': {
+      ...navigationEntries['a--1'],
+      id: 'components-button-icon--primary',
+      title: 'Components/Button/Icon',
+    },
+    'components-button--docs': {
+      type: 'docs',
+      id: 'components-button--docs',
+      title: 'Components/Button',
+      name: 'Docs',
+      importPath: './button.stories.ts',
+      storiesImports: [],
+    },
+    'components-button--primary': {
+      ...navigationEntries['a--1'],
+      id: 'components-button--primary',
+      title: 'Components/Button',
+    },
+  };
 
+  describe('resolveLeafEntry', () => {
+    const hideDocs = (entry: API_PreparedIndexEntry) => entry.type !== 'docs';
+
+    it.each([
+      {
+        name: 'a story to itself',
+        id: 'components-button--primary',
+        filter: () => true,
+        expected: 'components-button--primary',
+      },
+      {
+        name: 'a filtered-out docs page to itself',
+        id: 'components-button--docs',
+        filter: hideDocs,
+        expected: 'components-button--docs',
+      },
+      {
+        name: 'a component to its own docs before a subcomponent',
+        id: 'components-button',
+        filter: () => true,
+        expected: 'components-button--docs',
+      },
+      {
+        name: 'a component to its own story when its docs are filtered out',
+        id: 'components-button',
+        filter: hideDocs,
+        expected: 'components-button--primary',
+      },
+    ])('resolves $name', ({ id, filter, expected }) => {
+      const moduleArgs = createMockModuleArgs({ initialState: { filters: { visible: filter } } });
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      api.setIndex({ v: 5, entries: nestedEntries });
+
+      expect(api.resolveLeafEntry(id)?.id).toBe(expected);
+    });
+
+    it('resolves in the index of a ref', () => {
+      const moduleArgs = createMockModuleArgs({});
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      api.setIndex({ v: 5, entries: nestedEntries });
+      const { index, filteredIndex } = moduleArgs.store.getState();
+      api.setIndex({ v: 5, entries: navigationEntries });
+      moduleArgs.store.setState({ refs: { ref: { id: 'ref', index, filteredIndex } } } as any);
+
+      expect(api.resolveLeafEntry('components-button')).toBeUndefined();
+      expect(api.resolveLeafEntry('components-button', 'ref')?.id).toBe('components-button--docs');
+    });
+  });
+
+  describe('selectStory', () => {
     it.each([
       {
         name: 'its docs before a nested component',

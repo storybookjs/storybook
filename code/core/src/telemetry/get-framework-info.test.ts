@@ -6,23 +6,21 @@ import { readFile } from 'node:fs/promises';
 
 import * as pkg from 'empathic/package';
 
+import { readDependencyManifest } from 'storybook/internal/common';
+
+import { resolve } from 'pathe';
+
 import { getFrameworkInfo } from './get-framework-info.ts';
-import { getActualPackageJson } from './package-json.ts';
 
 vi.mock('node:fs/promises', { spy: true });
 vi.mock('empathic/package', { spy: true });
-vi.mock('./package-json.ts', { spy: true });
-vi.mock('storybook/internal/common', () => ({
+vi.mock('storybook/internal/common', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('storybook/internal/common')>()),
   getStorybookInfo: vi.fn(),
-  rendererPackages: {
-    '@storybook/angular': 'angular',
-    '@storybook/html': 'html',
-    '@storybook/react': 'react',
-    '@storybook/react-native': 'react-native',
-    '@storybook/svelte': 'svelte',
-    '@storybook/vue3': 'vue3',
-  },
+  readDependencyManifest: vi.fn(),
 }));
+
+const configDir = '/tmp/.storybook';
 
 describe('getFrameworkInfo', () => {
   const defaultInfo = {
@@ -93,24 +91,27 @@ describe('getFrameworkInfo', () => {
       const result = await getFrameworkInfo({} as StorybookConfig, '/tmp/.storybook');
 
       expect(result.renderer).toBe('@storybook/react-native');
-      expect(getActualPackageJson).not.toHaveBeenCalled();
+      expect(readDependencyManifest).not.toHaveBeenCalled();
     });
 
     it('reports the renderer it depends on', async () => {
       await mockFrameworkPackage('@acme/storybook-framework');
-      vi.mocked(getActualPackageJson).mockResolvedValue({
+      vi.mocked(readDependencyManifest).mockResolvedValueOnce({
         dependencies: { '@storybook/react': '^10.0.0', react: '^19.0.0' },
       });
 
       const result = await getFrameworkInfo({} as StorybookConfig, '/tmp/.storybook');
 
-      expect(getActualPackageJson).toHaveBeenCalledWith('@acme/storybook-framework');
+      expect(readDependencyManifest).toHaveBeenCalledWith(
+        resolve(configDir),
+        '@acme/storybook-framework'
+      );
       expect(result.renderer).toBe('@storybook/react');
     });
 
     it('reports its only renderer peer dependency, as Analog has', async () => {
       await mockFrameworkPackage('@analogjs/storybook-angular');
-      vi.mocked(getActualPackageJson).mockResolvedValue({
+      vi.mocked(readDependencyManifest).mockResolvedValueOnce({
         peerDependencies: { '@storybook/angular': '^10.0.0' },
       });
 
@@ -121,7 +122,7 @@ describe('getFrameworkInfo', () => {
 
     it('reports the Astro renderer over the renderers Astro lists as peers', async () => {
       await mockFrameworkPackage('@storybook-astro/framework');
-      vi.mocked(getActualPackageJson).mockResolvedValue({
+      vi.mocked(readDependencyManifest).mockResolvedValueOnce({
         dependencies: { '@storybook-astro/renderer': '1.18.0' },
         peerDependencies: { '@storybook/react': '^10.0.0', '@storybook/vue3': '^10.0.0' },
       });
@@ -133,7 +134,7 @@ describe('getFrameworkInfo', () => {
 
     it('reports no renderer when several are peer dependencies', async () => {
       await mockFrameworkPackage('@acme/storybook-framework');
-      vi.mocked(getActualPackageJson).mockResolvedValue({
+      vi.mocked(readDependencyManifest).mockResolvedValueOnce({
         peerDependencies: { '@storybook/react': '^10.0.0', '@storybook/svelte': '^10.0.0' },
       });
 
@@ -144,7 +145,7 @@ describe('getFrameworkInfo', () => {
 
     it('reports no renderer for a dependency named like an object property', async () => {
       await mockFrameworkPackage('@acme/storybook-framework');
-      vi.mocked(getActualPackageJson).mockResolvedValue({
+      vi.mocked(readDependencyManifest).mockResolvedValueOnce({
         dependencies: { constructor: '1.0.0' },
       });
 
@@ -155,7 +156,7 @@ describe('getFrameworkInfo', () => {
 
     it('reports no renderer when its package.json cannot be read', async () => {
       await mockFrameworkPackage('@acme/storybook-framework');
-      vi.mocked(getActualPackageJson).mockResolvedValue(undefined);
+      vi.mocked(readDependencyManifest).mockResolvedValueOnce(undefined);
 
       const result = await getFrameworkInfo({} as StorybookConfig, '/tmp/.storybook');
 
@@ -164,8 +165,8 @@ describe('getFrameworkInfo', () => {
 
     it('reads the nearest package.json of a framework given as a path', async () => {
       await mockFrameworkPackage('/repo/packages/storybook-framework/dist/index.js');
-      vi.mocked(pkg.up).mockReturnValue('/repo/packages/storybook-framework/package.json');
-      vi.mocked(readFile).mockResolvedValue(
+      vi.mocked(pkg.up).mockReturnValueOnce('/repo/packages/storybook-framework/package.json');
+      vi.mocked(readFile).mockResolvedValueOnce(
         JSON.stringify({ peerDependencies: { '@storybook/vue3': '^10.0.0' } })
       );
 
@@ -179,21 +180,42 @@ describe('getFrameworkInfo', () => {
 
     it('resolves a framework given as a pnpm virtual-store path by its package name', async () => {
       await mockFrameworkPackage('/repo/node_modules/.pnpm/@acme+storybook-framework@1.0.0');
-      vi.mocked(getActualPackageJson).mockResolvedValue({
+      vi.mocked(readDependencyManifest).mockResolvedValueOnce({
         dependencies: { '@storybook/html': '^10.0.0' },
       });
 
       const result = await getFrameworkInfo({} as StorybookConfig, '/tmp/.storybook');
 
       expect(pkg.up).not.toHaveBeenCalled();
-      expect(getActualPackageJson).toHaveBeenCalledWith('@acme/storybook-framework');
+      expect(readDependencyManifest).toHaveBeenCalledWith(
+        resolve(configDir),
+        '@acme/storybook-framework'
+      );
       expect(result.renderer).toBe('@storybook/html');
     });
+  });
+
+  it('resolves a framework given as a Windows pnpm virtual-store path by its package name', async () => {
+    const { getStorybookInfo } = await import('storybook/internal/common');
+    vi.mocked(getStorybookInfo).mockResolvedValue({
+      frameworkPackage: 'C:\\repo\\node_modules\\.pnpm\\@acme+storybook-framework@1.0.0',
+    } as any);
+    vi.mocked(readDependencyManifest).mockResolvedValueOnce({
+      dependencies: { '@storybook/html': '^10.0.0' },
+    });
+
+    const result = await getFrameworkInfo({} as StorybookConfig, configDir);
+
+    expect(readDependencyManifest).toHaveBeenCalledWith(
+      resolve(configDir),
+      '@acme/storybook-framework'
+    );
+    expect(result.renderer).toBe('@storybook/html');
   });
 
   it('does not read the package.json of a framework the framework tables know', async () => {
     await getFrameworkInfo({} as StorybookConfig, '/tmp/.storybook');
 
-    expect(getActualPackageJson).not.toHaveBeenCalled();
+    expect(readDependencyManifest).not.toHaveBeenCalled();
   });
 });

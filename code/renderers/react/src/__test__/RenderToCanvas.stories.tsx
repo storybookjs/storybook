@@ -2,7 +2,7 @@ import React, { useLayoutEffect, useState } from 'react';
 
 import { expect } from 'storybook/test';
 
-import type { StoryContextForRender } from 'storybook/internal/types';
+import type { StoryContextWithArgTypes } from 'storybook/internal/types';
 
 import type { Meta, StoryObj } from '../index.ts';
 import type { ReactRenderer } from '../types.ts';
@@ -50,7 +50,7 @@ export const AwaitsDocsLayoutEffects: Story = {
             ...context,
             argTypes: {},
             viewMode: 'docs',
-          } as StoryContextForRender<ReactRenderer>,
+          } as StoryContextWithArgTypes<ReactRenderer>,
           storyFn: () => <LayoutEffectContent />,
           unboundStoryFn: LayoutEffectContent,
         },

@@ -165,7 +165,7 @@ function getUpgradeResults(
   doctorResults: Record<string, ProjectDoctorResults>
 ) {
   const successfulProjects: string[] = [];
-  const failedProjects: string[] = [];
+  const failedProjects: { configDir: string; failedFixIds: string[] }[] = [];
   const projectsWithNoFixes: string[] = [];
 
   const allProjects = Object.entries(projectResults).map(([configDir, resultData]) => {
@@ -180,10 +180,13 @@ function getUpgradeResults(
       }
     );
 
-    const hasFailures =
-      automigrationResults.some(
-        (fix) => fix.status === FixStatus.FAILED || fix.status === FixStatus.CHECK_FAILED
-      ) || resultData.fileFailures.length > 0;
+    const failedFixIds = new Set([
+      ...automigrationResults
+        .filter((fix) => fix.status === FixStatus.FAILED || fix.status === FixStatus.CHECK_FAILED)
+        .map((fix) => fix.fixId),
+      ...resultData.fileFailures.map((failure) => failure.fixId),
+    ]);
+    const hasFailures = failedFixIds.size > 0;
     const hasSuccessfulFixes = automigrationResults.some(
       (fix) => fix.status === FixStatus.SUCCEEDED || fix.status === FixStatus.MANUAL_SUCCEEDED
     );
@@ -197,7 +200,7 @@ function getUpgradeResults(
 
     // Categorize this project
     if (hasFailures) {
-      failedProjects.push(configDir);
+      failedProjects.push({ configDir, failedFixIds: [...failedFixIds] });
     } else if (migratedSuccessfully) {
       successfulProjects.push(configDir);
     } else if (noFixesNeeded) {
@@ -256,7 +259,12 @@ function logUpgradeResults(
       logger.log(`${CLI_COLORS.success('Successfully upgraded:')}\n${successfulProjectsList}`);
     }
 
-    const failedProjectsList = failedProjects.map((dir) => `  • ${shortenPath(dir)}`).join('\n');
+    const failedProjectsList = failedProjects
+      .map(
+        ({ configDir, failedFixIds }) =>
+          `  • ${shortenPath(configDir)} (${failedFixIds.join(', ')})`
+      )
+      .join('\n');
     logger.log(
       `${CLI_COLORS.error('Failed to upgrade:')}\nSome automigrations failed or skipped files. Review the upgrade output for details.\n${failedProjectsList}`
     );

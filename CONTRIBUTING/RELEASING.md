@@ -232,6 +232,8 @@ When either a non-patch release or a patch release branch is merged into `latest
 
 The publish workflow runs in the "release" GitHub environment, which has the npm token required to publish packages to the `@storybook` npm organization. For security reasons, this environment can only be accessed from the four "core" branches: `main`, `next`, `latest-release` and `next-release`.
 
+The git pushes in the publish and prepare workflows use a token of the Storybook bot GitHub App (the same app as in [Syncing the skills](#syncing-the-skills)). Each job creates its token, and the token is revoked when the job ends. A push with `GITHUB_TOKEN` would not start other workflows, and it could not bypass the rulesets on `main` and `next`. The app needs access to `storybookjs/storybook` with **Contents: Read and write** and **Workflows: Read and write**, and it must be a bypass actor in the "Require PR" and "Require status check" rulesets.
+
 #### Syncing the skills
 
 The canonical skills live in [`code/lib/claude-plugin/skills/`](../code/lib/claude-plugin/skills/). [`storybookjs/skills`](https://github.com/storybookjs/skills) makes them installable without the Claude Code plugin, with Vercel's `skills` CLI, and [skills.sh](https://skills.sh) counts those installs. `storybook init` and `storybook upgrade` install them from there, at the tag of the project's Storybook version. That repository is release output: nobody edits its files directly, and a skill change ships with the next Storybook release. The publish workflow writes to it, and after a failed sync a maintainer runs the same script by hand (see below).

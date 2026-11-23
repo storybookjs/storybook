@@ -60,6 +60,7 @@ import {
   addPreparedStories,
   getComponentLookupList,
   getStoriesLookupList,
+  isOwnEntry,
   transformStoryIndexToStoriesHash,
 } from '../lib/stories.ts';
 import type { ModuleFn } from '../lib/types.tsx';
@@ -153,6 +154,15 @@ export interface SubAPI {
    * @returns {API_HashEntry} - The hash entry corresponding to the given story ID.
    */
   resolveStory: (storyId: StoryId, refsId?: string) => API_HashEntry | undefined;
+  /**
+   * Resolves an entry ID to the first docs or story entry that qualifies as its child.
+   * Use this to implement preloading or navigating from a group/component entry.
+   *
+   * @param {StoryId} entryId - The ID of the entry to resolve.
+   * @param {string} [refId] - The ID of the ref the entry belongs to.
+   * @returns {API_LeafEntry | undefined} The first qualifying child for `entryId`.
+   */
+  resolveLeafEntry: (entryId: StoryId, refId?: string) => API_LeafEntry | undefined;
   /**
    * Selects the first story to display in the Storybook UI.
    *
@@ -551,6 +561,15 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       }
       return index ? index[storyId] : undefined;
     },
+    resolveLeafEntry: (entryId, refId) => {
+      const { refs, index, filteredIndex } = store.getState();
+      const entry = (refId ? refs[refId]?.index : index)?.[entryId];
+      if (entry?.type === 'docs' || entry?.type === 'story') {
+        return entry;
+      }
+      const filteredHash = refId ? refs[refId]?.filteredIndex : filteredIndex;
+      return entry && filteredHash ? api.findLeafEntry(filteredHash, entryId) : undefined;
+    },
     getCurrentStoryData: () => {
       const { storyId, refId } = store.getState();
 
@@ -691,10 +710,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
           throw new Error(`Unknown id or title: '${titleOrId}'`);
         }
 
-        if (!gotoStory(entry)) {
-          // If the entry is not a story or docs, find the first descendant entry that is
-          gotoStory(api.findLeafEntry(filteredHash, entry.id));
-        }
+        gotoStory(api.resolveLeafEntry(entry.id, ref));
       } else if (!titleOrId) {
         // Navigate to a named story/docs within the current component (i.e. "kind")
         // This is a slugified version of the kind, but that's OK, our toId function is idempotent
@@ -722,8 +738,12 @@ export const init: ModuleFn<SubAPI, SubState> = ({
         return entry;
       }
 
-      const childStoryId = entry.children.find((childId) => index[childId]);
-      return childStoryId ? api.findLeafEntry(index, childStoryId) : undefined;
+      const ownEntryId =
+        entry.type === 'component'
+          ? entry.children.find((childId) => isOwnEntry(entry, index[childId]))
+          : undefined;
+      const childId = ownEntryId ?? entry.children.find((childId) => index[childId]);
+      return childId ? api.findLeafEntry(index, childId) : undefined;
     },
     findLeafStoryId(index, storyId) {
       return api.findLeafEntry(index, storyId)?.id;

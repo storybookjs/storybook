@@ -88,7 +88,7 @@ async function writesSvelteCsf(stories: StoriesEntry[], configDir: string): Prom
     return paths.some((path) => path.endsWith('.svelte'));
   }
   return specifiers.some(({ directory, files, importPathMatcher }) =>
-    examplePaths(`${directory}/${files}`).some(
+    [`${directory}/Example.stories.svelte`, ...examplePaths(`${directory}/${files}`)].some(
       (path) => path.endsWith('.svelte') && importPathMatcher.test(path)
     )
   );
@@ -119,17 +119,20 @@ function expandBraces(glob: string): string[] {
 // Paths a glob could match, with every wildcard filled by `svelte`, so that a `.svelte` story can
 // show up; the index's matcher then decides whether it would load them.
 function examplePaths(glob: string): string[] {
-  const braced = glob
-    .replace(/!\([^()]*\)/g, 'svelte')
-    .replace(
+  let braced = glob.replace(/!\([^()]*\)/g, 'svelte');
+  // Innermost groups first, so `@(mdx|stories.@(ts|svelte))` takes two passes.
+  for (let previous = ''; previous !== braced;) {
+    previous = braced;
+    braced = braced.replace(
       /[@+?*]\(([^()]*)\)/g,
       (_, alternatives: string) => `{${alternatives.replaceAll('|', ',')}}`
     );
+  }
   return expandBraces(braced).map((path) =>
     path
       .replaceAll('**/', '')
       .replaceAll('/**', '')
-      .replace(/\[[^\]]*\]/g, 's')
+      .replace(/\[[!^]?(.)[^\]]*\]/g, (_, first: string) => first)
       .replaceAll('*', 'svelte')
       .replaceAll('?', 's')
   );

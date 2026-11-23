@@ -182,6 +182,8 @@ describe('resolveSkillInputs', () => {
       ['no stories yet', ['../src/Button.stories.svelte'], [], true],
       ['no stories yet', ['../packages/*/src/**/*.stories.@(ts|tsx)'], [], false],
       ['no stories yet', ['../src/**/*.stories.!(svelte)'], [], false],
+      ['no stories yet', ['../src/**/*.@(mdx|stories.@(ts|svelte))'], [], true],
+      ['no stories yet', ['../src/**/[A-Z]*.stories.svelte'], [], true],
       ['no stories entries', [], [], false],
     ])('a Svelte project with %s: %s', async (_, stories, files, expected) => {
       expect(await svelteCsf('@storybook/sveltekit', stories, files)).toBe(expected);

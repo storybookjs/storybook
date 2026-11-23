@@ -1,12 +1,14 @@
 import type { StoryDoc, StoryDocsPayload } from './types.ts';
 
+/** The code a CSF file import block puts before a story snippet: the block and a blank line. */
+export function importPrefix(importBlock: string | undefined): string {
+  const trimmedImport = importBlock?.trim();
+  return trimmedImport ? `${trimmedImport}\n\n` : '';
+}
+
 /** Prepends a CSF file import block to a story snippet for display in docs and the Code panel. */
 export function prependImportToSnippet(importBlock: string | undefined, snippet: string): string {
-  const trimmedImport = importBlock?.trim();
-  if (!trimmedImport) {
-    return snippet;
-  }
-  return `${trimmedImport}\n\n${snippet}`;
+  return importPrefix(importBlock) + snippet;
 }
 
 /** Resolves the story-docs entry for one story from a story-docs payload. */

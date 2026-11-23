@@ -6,7 +6,7 @@ import { extractModuleNodes } from './module-nodes.ts';
 import { getSvelteAST } from '../../ast.ts';
 
 describe(extractFragmentNodes.name, () => {
-  it("extracts '<Story />' AST nodes correctly", async () => {
+  it("extracts each '<Story />' component without a comment", async () => {
     const ast = getSvelteAST({
       code: `
         <script module>
@@ -33,7 +33,7 @@ describe(extractFragmentNodes.name, () => {
     expect(fragmentNodes.snippetBlocks).toHaveLength(0);
   });
 
-  it("extracts '<Story />' leading HTML comments correctly", async () => {
+  it("extracts the HTML comment before each '<Story />' component", async () => {
     const ast = getSvelteAST({
       code: `
         <script module>
@@ -64,7 +64,7 @@ describe(extractFragmentNodes.name, () => {
     }
   });
 
-  it('extracts first level snippet blocks (at the root of fragment) correctly', async () => {
+  it('extracts the snippet blocks at the root of the fragment', async () => {
     const ast = getSvelteAST({
       code: `
         <script module>

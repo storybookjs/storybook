@@ -2,6 +2,7 @@ import type { ChangeDetectionAdapter, ModuleResolveConfig } from 'storybook/inte
 import type { Options } from 'storybook/internal/types';
 
 import { commonConfig } from '../vite-config.ts';
+import { getImportConditions } from './import-conditions.ts';
 
 /**
  * Headless implementation of {@link ChangeDetectionAdapter}, for consumers that host the module
@@ -27,7 +28,7 @@ export function createHeadlessViteChangeDetectionAdapter(options: Options): Chan
       return {
         projectRoot: resolved.root,
         alias: resolved.resolve.alias as ModuleResolveConfig['alias'],
-        conditions: resolved.resolve.conditions,
+        conditions: getImportConditions(resolved),
       };
     },
 

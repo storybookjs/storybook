@@ -5,7 +5,7 @@ import MagicString from 'magic-string';
 import { parseAst } from 'rollup/parseAst';
 import { compile } from 'svelte/compiler';
 import { dedent } from 'ts-dedent';
-import { beforeEach, describe, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { transformStoriesCode } from './post-transform/index.ts';
 import { getSvelteAST } from '../parser/ast.ts';
@@ -52,7 +52,7 @@ async function transform(originalCode: string) {
 }
 
 describe('vitestTransform of a CSF factories stories file', () => {
-  it('tests the stories with the meta of the file', async ({ expect }) => {
+  it('tests the stories with the meta of the file', async () => {
     const output = await transform(dedent`
       <script module>
         import preview from '#.storybook/preview';
@@ -79,7 +79,7 @@ describe('vitestTransform of a CSF factories stories file', () => {
     `);
   });
 
-  it('tests the stories of the Story components from meta.type<>()', async ({ expect }) => {
+  it('tests the stories of the Story components from meta.type<>()', async () => {
     const output = await transform(dedent`
       <script module lang="ts">
         import preview from '#.storybook/preview';
@@ -105,7 +105,7 @@ describe('vitestTransform of a CSF factories stories file', () => {
     `);
   });
 
-  it('tests the Story components declared together with Story', async ({ expect }) => {
+  it('tests the Story components declared together with Story', async () => {
     const output = await transform(dedent`
       <script module lang="ts">
         import preview from '#.storybook/preview';

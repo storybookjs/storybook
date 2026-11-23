@@ -13,11 +13,10 @@ Reproduce it locally against a real PR with `DANGER_GITHUB_API_TOKEN="$(gh auth 
 - **Body** must contain a `#### Manual testing` heading followed by steps a maintainer can follow. The check bypasses `OWNER` and `MEMBER` authors, but private org membership resolves to `CONTRIBUTOR` for the CI token, so write the section even when you are a member.
 - **For non-release PRs targeting `next`, labels** must satisfy the exactly-one rules in [`scripts/dangerfile.ts`](../../scripts/dangerfile.ts). The valid change types come from the `pr-log` configuration in [`code/package.json`](../../code/package.json); the `qa:` label set is defined in the dangerfile. Check those sources instead of copying their current values into agent guidance. The dangerfile also defines the separate release-PR rule. `other` is listed in the PR template but is not a valid change type for Danger, and `BREAKING CHANGE` is rejected while the dangerfile pins the branch version to minor.
 - **Do not add a `ci:*` label.** The review bot or a maintainer adds it once automated review has finished, so CI does not run on work that is still changing.
-
 For a pkg.pr.new canary, follow the [canary skill](../skills/canary/SKILL.md) and [`CONTRIBUTING/RELEASING.md`](../../CONTRIBUTING/RELEASING.md).
 
 ## Greptile review
 
-Greptile does not review a draft PR by itself. To ask for a review, comment `@greptileai review` on the PR (`gh pr comment <number> --body "@greptileai review"`). Greptile reacts with 👀, starts a "Greptile Review" check on the head commit, and posts a summary comment and inline comments after about five minutes. It reviews the head at the time of the comment, so push first. A local `greptile review` CLI run does not replace the review on the PR.
+Greptile reviews a PR by itself when the PR leaves draft, and again on each push after that. It does not review a draft PR by itself. To ask for a review of a draft, comment `@greptileai review` on the PR (`gh pr comment <number> --body "@greptileai review"`). Greptile reacts with 👀, starts a "Greptile Review" check on the head commit, and posts a summary comment and inline comments after about five minutes. It reviews the head at the time of the comment, so push first. A local `greptile review` CLI run does not replace the review on the PR.
 
-To wait for the review and see what is left on the PR, use the [`check-pr` skill](../skills/check-pr/SKILL.md). It does not ask Greptile for a review, so comment first.
+To wait for the review and see what is left on the PR, use the [`check-pr` skill](../skills/check-pr/SKILL.md). It does not ask Greptile for a review, so on a draft, comment first.

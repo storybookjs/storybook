@@ -1,6 +1,7 @@
 import { html, nothing } from 'lit';
 import { classMap } from 'lit/directives/class-map.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
+import { styleMap } from 'lit/directives/style-map.js';
 
 import type { Meta, Story } from '../../../csf-types.ts';
 
@@ -93,6 +94,32 @@ export const ClassMap: Story = {
   render: (args) =>
     html`<lit-template-shapes
       class=${classMap({ active: Boolean(args.active) })}
+    ></lit-template-shapes>`,
+};
+
+export const ClassMapKeys: Story = {
+  args: { active: false, enabled: false },
+  render: (args) =>
+    html`<lit-template-shapes
+      class="card ${classMap({ active: args.active as boolean, muted: !args.enabled, round: true })}"
+    ></lit-template-shapes>`,
+};
+
+const isLarge = (size: unknown) => size === 'large';
+
+export const ClassMapCall: Story = {
+  args: { size: 'large' },
+  render: (args) =>
+    html`<lit-template-shapes
+      class=${classMap({ large: isLarge(args.size) })}
+    ></lit-template-shapes>`,
+};
+
+export const StyleMap: Story = {
+  args: { color: 'red', fontSize: '' },
+  render: (args) =>
+    html`<lit-template-shapes
+      style=${styleMap({ color: args.color as string, fontSize: args.fontSize as string, '--gap': '4px' })}
     ></lit-template-shapes>`,
 };
 

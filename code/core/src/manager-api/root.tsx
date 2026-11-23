@@ -159,19 +159,12 @@ class ManagerProvider extends Component<ManagerProviderProps, State> {
           // Before mount (e.g. during addon registration in the constructor) React's setState is a
           // no-op, so apply the patch directly to this.state and resolve synchronously. This ensures
           // register-time writes (like setFilters) land in the first render.
-          const patch =
-            typeof stateChange === 'function'
-              ? (stateChange as (s: State) => Partial<State>)(this.state)
-              : stateChange;
-          this.state = { ...this.state, ...patch };
-          callback?.(this.state);
-
-          return this.state;
+          this.state = { ...this.state, ...stateChange };
+          callback(this.state);
+          return;
         }
 
         this.setState(stateChange, () => callback(this.state));
-
-        return this.state;
       },
     });
 

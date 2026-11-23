@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { parseHtml, printHtml } from './html-tree.ts';
+import { parseHtml } from '../../html-parse.ts';
+import { printHtml } from './html-tree.ts';
 
 const formatHtml = (html: string): string => printHtml(parseHtml(html));
 

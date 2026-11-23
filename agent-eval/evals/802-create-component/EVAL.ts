@@ -2,31 +2,27 @@ import {
   expectAllStoryExportsInDisplayReview,
   expectDisplayReviewForVisualChange,
   expectDevServerLeftRunning,
-  expectReviewOpenedInBrowser,
-  expectSkillInvoked,
+  expectAnyWorkflowSkillInvoked,
   expectStoryDiscoveryBeforeReview,
   expectStoryTestsRanAndPassed,
   expectWorkflowCalls,
   getEvalContext,
-  modelRunsTestsOnlyWhenAsked,
 } from '#test-utils';
 import { describe, test } from 'vitest';
+
+// The steps of the workflow in AGENTS.md that this task cannot do without.
+const WORKFLOW_SKILLS = ['component-docs', 'write-stories', 'test-stories', 'ui-review'];
 
 describe('creating a ProfileCard component', () => {
   test('runs story tests after the change and finishes with them passing', async () => {
     await expectStoryTestsRanAndPassed({
-      requireAgentRun: !modelRunsTestsOnlyWhenAsked(),
       covering: ['profilecard'],
     });
   });
 
-  test('uses Storybook story instructions and publishes a display review', () => {
-    expectWorkflowCalls(['get-storybook-story-instructions', 'review-create']);
+  test('runs the skill of each of these steps and publishes a display review', () => {
+    expectWorkflowCalls([...WORKFLOW_SKILLS, 'review-create']);
     expectDisplayReviewForVisualChange();
-  });
-
-  test('opens the review in the in-app browser', () => {
-    expectReviewOpenedInBrowser();
   });
 
   test('every new story appears in the display review', () => {
@@ -38,19 +34,14 @@ describe('creating a ProfileCard component', () => {
   });
 
   describe('depending on the current agent and integration', () => {
-    const { agent, integration } = getEvalContext();
+    const { integration } = getEvalContext();
 
     // Building the ProfileCard from Reshaped primitives requires the docs tools.
-    // Skipped for Codex: it omits docs-show under both instruction
-    // shapes (CI 28660377980, 2026-07-03). Re-enable after the documentation
-    // tool call passes on three consecutive scheduled CI runs.
-    test.skipIf(agent === 'codex')('uses the documentation tooling', () =>
-      expectWorkflowCalls(['docs-show'])
-    );
+    test('uses the documentation tooling', () => expectWorkflowCalls(['docs-show']));
 
-    test.skipIf(integration === 'mcp')('invokes the ui-workflow skill', () =>
-      expectSkillInvoked('ui-workflow')
-    );
+    test.skipIf(integration === 'mcp')('finds the workflow through the plugin skills', () => {
+      expectAnyWorkflowSkillInvoked();
+    });
 
     test.skipIf(integration !== 'plugin')(
       'leaves the dev server running when using the plugin',

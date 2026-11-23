@@ -27,30 +27,15 @@ export interface SubAPI {
 }
 
 export const init: ModuleFn = ({ store }) => {
-  const api: SubAPI = {
-    addNotification: (newNotification) => {
-      store.setState(({ notifications }) => {
-        const [existing, others] = partition(notifications, (n) => n.id === newNotification.id);
-        existing.forEach((notification) => {
-          if (notification.onClear) {
-            notification.onClear({ dismissed: false, timeout: false });
-          }
-        });
-        return { notifications: [...others, newNotification] };
-      });
-    },
+  const replace = (id: string, replacement: API_Notification[]) => {
+    const [removed, others] = partition(store.getState().notifications, (n) => n.id === id);
+    store.setState({ notifications: [...others, ...replacement] });
+    removed.forEach((notification) => notification.onClear?.({ dismissed: false, timeout: false }));
+  };
 
-    clearNotification: (notificationId) => {
-      store.setState(({ notifications }) => {
-        const [matching, others] = partition(notifications, (n) => n.id === notificationId);
-        matching.forEach((notification) => {
-          if (notification.onClear) {
-            notification.onClear({ dismissed: false, timeout: false });
-          }
-        });
-        return { notifications: others };
-      });
-    },
+  const api: SubAPI = {
+    addNotification: (newNotification) => replace(newNotification.id, [newNotification]),
+    clearNotification: (notificationId) => replace(notificationId, []),
   };
 
   const state: SubState = { notifications: [] };

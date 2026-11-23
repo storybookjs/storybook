@@ -1,0 +1,3 @@
+html`<lit-template-shapes
+  class="card ${classMap({ active: false as boolean, muted: !(false), round: true })}"
+></lit-template-shapes>`

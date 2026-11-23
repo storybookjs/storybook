@@ -31,9 +31,13 @@ describe('browsing existing ReviewCard Storybook states', () => {
   describe('depending on the current agent and integration', () => {
     const { integration } = getEvalContext();
 
-    test('runs the ui-review skill for a request to see stories', () => {
-      expectWorkflowCalls(['ui-review']);
-    });
+    // Over MCP the review is what counts, not that the agent read the skill first.
+    test.skipIf(integration === 'mcp')(
+      'runs the ui-review skill for a request to see stories',
+      () => {
+        expectWorkflowCalls(['ui-review']);
+      }
+    );
 
     test.skipIf(integration === 'mcp')('finds the workflow through the plugin skills', () => {
       expectAnyWorkflowSkillInvoked();

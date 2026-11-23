@@ -104,6 +104,18 @@ test.describe('addon panel', () => {
 
     await sbPage.deepLinkToStory(storybookUrl, 'core/parameters-actions', 'basic');
     await sbPage.waitUntilLoaded();
+
+    await page.waitForFunction((storyId) => {
+      const iframe = document.querySelector<HTMLIFrameElement>('#storybook-preview-iframe');
+      const channel = (
+        iframe?.contentWindow as
+          | (Window & { __STORYBOOK_ADDONS_CHANNEL__?: { last: (name: string) => unknown[] } })
+          | null
+          | undefined
+      )?.__STORYBOOK_ADDONS_CHANNEL__;
+      return channel?.last('storyRendered')?.[0] === storyId;
+    }, 'core-parameters-actions--basic');
+
     await sbPage.viewAddonPanel('Actions');
 
     const button = sbPage.previewRoot().getByRole('button');

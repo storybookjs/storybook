@@ -347,6 +347,36 @@ describe('ModuleGraphEngine', () => {
     expect(callbacks.onBump).toHaveBeenCalledWith(['./src/B.stories.tsx'], expect.any(Number));
   });
 
+  it('replays add for a story that the index gained while the initial build ran', async () => {
+    const reverseIndex = buildReverseIndex([]);
+    const buildDeferred = createDeferred<void>();
+    const { patchSpy, buildSpy } = installDependencyGraphMocks(reverseIndex);
+    buildSpy.mockImplementation(async () => {
+      await buildDeferred.promise;
+      return { reverseIndex, graph: new Map() };
+    });
+    const initialIndex = createStoryIndex([
+      { storyId: 'a--default', importPath: './src/A.stories.tsx', title: 'A' },
+    ]);
+    const updatedIndex = createStoryIndex([
+      { storyId: 'a--default', importPath: './src/A.stories.tsx', title: 'A' },
+      { storyId: 'b--default', importPath: './src/B.stories.tsx', title: 'B' },
+    ]);
+    const getIndex = vi.fn().mockResolvedValueOnce(initialIndex).mockResolvedValue(updatedIndex);
+    const { service, adapter, callbacks } = setup({ getIndex });
+
+    service.start(adapter);
+    service.onStoryIndexInvalidated();
+    buildDeferred.resolve();
+    await vi.runAllTimersAsync();
+
+    expect(patchSpy).toHaveBeenCalledExactlyOnceWith({
+      kind: 'add',
+      path: '/repo/src/B.stories.tsx',
+    });
+    expect(callbacks.onBump).toHaveBeenCalledWith(['./src/B.stories.tsx'], expect.any(Number));
+  });
+
   it('does not emit an update when an invalidation leaves the story set unchanged', async () => {
     // A content-only story edit (or a config invalidation) re-fires the index without changing the
     // set of story files. The builder's own file-change event carries any content change; the

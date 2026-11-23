@@ -534,6 +534,27 @@ describe('module-graph open service', () => {
       expect(getAdapter).not.toHaveBeenCalled();
     });
 
+    it('leaves the graph unbuilt when the host resolves the adapter, until it is first asked for', async () => {
+      const { buildSpy } = installDependencyGraphMocks(buildReverseIndex([]));
+      const { adapter } = createMockAdapter({ resolveConfig: { projectRoot: '/repo' } });
+      const runtime = registerModuleGraphService({
+        channel: { on: vi.fn(() => () => undefined), emit: vi.fn() } as never,
+        getIndex: vi.fn().mockResolvedValue(createStoryIndex([])),
+        workingDir: '/repo',
+      });
+
+      resolveChangeDetectionAdapter(adapter);
+      await new Promise((resolve) => setImmediate(resolve));
+
+      expect(buildSpy).not.toHaveBeenCalled();
+      expect(runtime.queries.status.get(undefined)).toEqual({ value: 'booting' });
+
+      await runtime.commands.storiesForFiles({ files: [] });
+
+      expect(buildSpy).toHaveBeenCalledOnce();
+      expect(runtime.queries.status.get(undefined)).toEqual({ value: 'ready' });
+    });
+
     it('calls getAdapter once when two settle waits overlap', async () => {
       const reverseIndex = buildReverseIndex([
         ['/repo/src/Button.tsx', '/repo/src/Button.stories.tsx', 1],

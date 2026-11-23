@@ -103,8 +103,7 @@ function installTraps(state: ProbeState) {
       // loads, only calls it makes, directly or through repository code, count; once hooks and
       // tests run, every call does.
       const counts =
-        frame &&
-        (state.phase === 'run' || frames.some((candidate) => candidate.file === file));
+        frame && (state.phase === 'run' || frames.some((candidate) => candidate.file === file));
       if (counts && !hits.some((hit) => hit.api === api)) {
         hits.push({ api, frame: `${frame.file.slice(repoRoot.length + 1)}:${frame.line}` });
         state.hits.set(file, hits);

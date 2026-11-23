@@ -413,12 +413,11 @@ const UNIT_TEST_REPORTERS =
 
 /**
  * The Linux unit job records which test files reach an OS-dependent API (see
- * scripts/ci/os-probe/probe.ts); the Windows unit job runs only those, plus files the manifest
- * cannot vouch for. Both paths are gitignored, so `git.check()` stays clean.
+ * scripts/ci/os-probe/probe.ts) and hands the manifest to the Windows unit job of the same run
+ * through the workspace. Both paths are gitignored, so `git.check()` stays clean.
  */
 const OS_PROBE_RECORDS_DIR = '.cache/os-probe/records';
 const OS_PROBE_MANIFEST = '.cache/os-probe/manifest.json';
-const OS_PROBE_CACHE_PREFIX = 'v1-os-probe-manifest';
 
 export const testsUnit_linux = defineJob(
   'Tests (linux)',
@@ -446,7 +445,8 @@ export const testsUnit_linux = defineJob(
           command: `node scripts/ci/os-probe/manifest.ts build ${OS_PROBE_RECORDS_DIR} ${OS_PROBE_MANIFEST}`,
         },
       },
-      cache.persist([OS_PROBE_MANIFEST], `${OS_PROBE_CACHE_PREFIX}-{{ .Branch }}-{{ .Revision }}`),
+      // Rooted at the checkout, so it lands in the checkout where the Windows job attaches.
+      workspace.persist([OS_PROBE_MANIFEST], `${LINUX_ROOT_DIR}/${WORKING_DIR}`),
       artifact.persist(OS_PROBE_MANIFEST, 'os-probe-manifest.json'),
 
       git.check(),
@@ -647,9 +647,6 @@ export const testUnit_windows = defineJob(
           command: 'yarn install --mode=skip-build',
         },
       },
-      // The manifest comes from an earlier Linux run, as this workflow's runs in parallel. Without
-      // one, every test file runs.
-      cache.attach([`${OS_PROBE_CACHE_PREFIX}-{{ .Branch }}-`, `${OS_PROBE_CACHE_PREFIX}-next-`]),
       {
         run: {
           name: 'Run OS-sensitive unit tests',
@@ -666,7 +663,8 @@ export const testUnit_windows = defineJob(
       testResults.persist(`test-results`),
     ],
   }),
-  [build_windows]
+  // `tests--linux` writes the manifest this job selects test files from.
+  [build_windows, testsUnit_linux]
 );
 
 export const defineCircleciCompletion = (requires: JobOrNoOpJob[]) =>

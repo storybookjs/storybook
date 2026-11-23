@@ -164,30 +164,26 @@ export const getStorybookInfo = async (
   const addons = getAddonNames(mainConfig);
   const versionSpecifier = getStorybookVersionSpecifier(configDir);
 
+  const base = {
+    ...configInfo,
+    versionSpecifier,
+    addons,
+    mainConfig,
+    mainConfigPath: configInfo.mainConfigPath ?? undefined,
+    previewConfigPath: configInfo.previewConfigPath ?? undefined,
+    managerConfigPath: configInfo.managerConfigPath ?? undefined,
+  };
+
   if (!frameworkPackage) {
-    return {
-      ...configInfo,
-      versionSpecifier,
-      addons,
-      mainConfig,
-      mainConfigPath: configInfo.mainConfigPath ?? undefined,
-      previewConfigPath: configInfo.previewConfigPath ?? undefined,
-      managerConfigPath: configInfo.managerConfigPath ?? undefined,
-    };
+    return base;
   }
 
-  if (!mainConfig.framework) {
+  if (frameworkPackage === '@storybook/react-native') {
     return {
-      ...configInfo,
-      versionSpecifier,
-      addons,
-      mainConfig,
+      ...base,
       frameworkPackage,
       rendererPackage: '@storybook/react-native',
       renderer: SupportedRenderer.REACT_NATIVE,
-      mainConfigPath: configInfo.mainConfigPath ?? undefined,
-      previewConfigPath: configInfo.previewConfigPath ?? undefined,
-      managerConfigPath: configInfo.managerConfigPath ?? undefined,
     };
   }
 
@@ -204,18 +200,12 @@ export const getStorybookInfo = async (
   )?.[0];
 
   return {
-    ...configInfo,
-    addons,
-    mainConfig,
+    ...base,
     framework,
-    versionSpecifier,
     renderer: renderer ?? undefined,
     builder: builder ?? undefined,
     frameworkPackage,
     rendererPackage,
     builderPackage,
-    mainConfigPath: configInfo.mainConfigPath ?? undefined,
-    previewConfigPath: configInfo.previewConfigPath ?? undefined,
-    managerConfigPath: configInfo.managerConfigPath ?? undefined,
   };
 };

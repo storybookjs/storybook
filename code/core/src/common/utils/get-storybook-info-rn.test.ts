@@ -40,6 +40,29 @@ describe('getStorybookInfo React Native framework inference', () => {
     expect(info.renderer).toBe(SupportedRenderer.REACT_NATIVE);
   });
 
+  it('resolves the React Native renderer when framework is set to @storybook/react-native', async () => {
+    dir = join(tmpdir(), `sb-rn-explicit-info-${Date.now()}`);
+    mkdirSync(join(dir, '.rnstorybook'), { recursive: true });
+    writeFileSync(
+      join(dir, 'package.json'),
+      JSON.stringify({
+        name: 'rn-app',
+        private: true,
+        devDependencies: { '@storybook/react-native': '10.5.1', storybook: '10.5.3' },
+      })
+    );
+    writeFileSync(
+      join(dir, '.rnstorybook/main.js'),
+      `module.exports = { framework: '@storybook/react-native', stories: ['**/*.stories.tsx'] };`
+    );
+
+    const info = await getStorybookInfo(join(dir, '.rnstorybook'), dir);
+
+    expect(info.frameworkPackage).toBe('@storybook/react-native');
+    expect(info.rendererPackage).toBe('@storybook/react-native');
+    expect(info.renderer).toBe(SupportedRenderer.REACT_NATIVE);
+  });
+
   it('does not infer RN framework for a plain .storybook without framework', async () => {
     dir = join(tmpdir(), `sb-web-info-${Date.now()}`);
     mkdirSync(join(dir, '.storybook'), { recursive: true });

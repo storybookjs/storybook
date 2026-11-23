@@ -58,10 +58,17 @@ async function runStoriesCodemod({
   glob: string | undefined;
   storiesPaths: string[];
 }) {
+  const transform = (info: FileInfo) => storyToCsf4(info, codemodOptions);
   const inSandbox = optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX) ?? false;
-  const storyFiles =
-    glob ??
-    (inSandbox ? SANDBOX_STORIES_GLOB : storiesPaths.filter((file) => !file.endsWith('.mdx')));
+  const storiesGlob = glob ?? (inSandbox ? SANDBOX_STORIES_GLOB : undefined);
+
+  if (storiesGlob !== undefined) {
+    logger.step('Applying codemod on your stories, this might take some time...');
+    await runCodemod(storiesGlob, transform, { dryRun });
+    return;
+  }
+
+  const storyFiles = storiesPaths.filter((file) => !file.endsWith('.mdx'));
 
   if (storyFiles.length === 0) {
     logger.warn(
@@ -71,7 +78,7 @@ async function runStoriesCodemod({
   }
 
   logger.step('Applying codemod on your stories, this might take some time...');
-  await runCodemod(storyFiles, (info) => storyToCsf4(info, codemodOptions), { dryRun });
+  await runCodemod(storyFiles, transform, { dryRun });
 }
 
 export const csfFactories: CommandFix = {

@@ -286,6 +286,12 @@ it('migrates the files of --glob instead of the main config stories', async () =
   expect(vi.mocked(runCodemod).mock.calls[0][0]).toBe('src/**/*.stories.tsx');
 });
 
+it('passes an empty --glob to the codemod instead of reading the main config stories', async () => {
+  await migrateProject('.storybook', { glob: '' });
+
+  expect(vi.mocked(runCodemod).mock.calls[0][0]).toBe('');
+});
+
 describe('in a sandbox', () => {
   beforeEach(() => {
     vi.stubEnv('IN_STORYBOOK_SANDBOX', 'true');

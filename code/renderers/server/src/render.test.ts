@@ -46,6 +46,10 @@ describe('renderToCanvas', () => {
     });
   });
 
+  it('sends a null arg as the JSON string null, the value the URL query receives either way', async () => {
+    expect(await paramsSentToServer({ empty: null })).toEqual({ empty: 'null' });
+  });
+
   it('sends the timestamp a date control holds as an ISO string', async () => {
     const timestamp = Date.parse('2024-05-06T07:08:09.000Z');
 

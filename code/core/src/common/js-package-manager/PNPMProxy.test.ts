@@ -983,6 +983,28 @@ describe('PNPM Proxy', () => {
       });
     });
 
+    it('reports a workspace package next to the registry copy a dependency brings in', async () => {
+      mockedExecuteCommand.mockResolvedValue({
+        stdout: JSON.stringify([
+          {
+            devDependencies: {
+              'has-flag': { version: 'link:packages/has-flag' },
+              'supports-color': {
+                version: '7.2.0',
+                dependencies: { 'has-flag': { version: '4.0.0' } },
+              },
+            },
+          },
+        ]),
+      } as any);
+
+      const installations = await pnpmProxy.findInstallations(['has-flag']);
+
+      expect(installations?.duplicatedDependencies).toEqual({
+        'has-flag': ['link:packages/has-flag', '4.0.0'],
+      });
+    });
+
     it('lists the version the project depends on before the versions its dependencies bring in', async () => {
       mockedExecuteCommand.mockResolvedValue({
         stdout: JSON.stringify([

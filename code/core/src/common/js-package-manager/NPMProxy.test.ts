@@ -657,9 +657,9 @@ describe('NPM Proxy', () => {
           },
           "duplicatedDependencies": {
             "@storybook/package": [
-              "5.4.2-alpha.0",
-              "7.0.0-alpha.21",
               "7.0.0-beta.11",
+              "7.0.0-alpha.21",
+              "5.4.2-alpha.0",
             ],
           },
           "infoCommand": "npm ls --depth=1",

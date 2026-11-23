@@ -9,16 +9,15 @@ import {
 
 // eslint-disable-next-line depend/ban-dependencies
 import type { ResultPromise } from 'execa';
-import sort from 'semver/functions/sort.js';
 import { dedent } from 'ts-dedent';
 
 import type { ExecuteCommandOptions } from '../utils/command.ts';
 import { executeCommand } from '../utils/command.ts';
 import { JsPackageManager, PackageManagerName } from './JsPackageManager.ts';
 import type { PackageJson } from './PackageJson.ts';
-import type { InstallationMetadata, PackageMetadata } from './types.ts';
+import type { InstallationMetadata } from './types.ts';
 import {
-  findPackagesInDependencyTree,
+  findInstallationsInDependencyTree,
   getErrorLogs,
   getLatestStableVersionAdheringToMinimumAgeGate,
   getStorybookRerunCommand,
@@ -418,33 +417,8 @@ export class BUNProxy extends JsPackageManager {
    * @param pattern A list of package names to filter the result. * can be used as a placeholder
    */
   protected mapDependencies(input: NpmListOutput, pattern: string[]): InstallationMetadata {
-    const acc: Record<string, PackageMetadata[]> = {};
-    const existingVersions: Record<string, string[]> = {};
-    const duplicatedDependencies: Record<string, string[]> = {};
-
-    findPackagesInDependencyTree(input.dependencies, pattern).forEach(([name, packageInfo]) => {
-      const value = {
-        version: packageInfo.version,
-        location: '',
-      };
-
-      if (!existingVersions[name]?.includes(value.version)) {
-        if (acc[name]) {
-          acc[name].push(value);
-        } else {
-          acc[name] = [value];
-        }
-        existingVersions[name] = sort([...(existingVersions[name] || []), value.version]);
-
-        if (existingVersions[name].length > 1) {
-          duplicatedDependencies[name] = existingVersions[name];
-        }
-      }
-    });
-
     return {
-      dependencies: acc,
-      duplicatedDependencies,
+      ...findInstallationsInDependencyTree(input.dependencies, pattern),
       infoCommand: 'npm ls --depth=1',
       dedupeCommand: 'npm dedupe',
     };

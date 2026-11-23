@@ -10,7 +10,6 @@ import {
   CoreWebpackCompiler,
   SupportedBuilder,
   SupportedFramework,
-  SupportedRenderer,
 } from 'storybook/internal/types';
 
 import invariant from 'tiny-invariant';
@@ -114,32 +113,19 @@ export const getStorybookInfo = async (
   invariant(mainConfig, `Unable to find or evaluate ${configInfo.mainConfigPath}`);
 
   const frameworkValue = mainConfig.framework;
-  const frameworkField = typeof frameworkValue === 'string' ? frameworkValue : frameworkValue?.name;
-  const addons = getAddonNames(mainConfig);
-  const versionSpecifier = getStorybookVersionSpecifier(configDir);
-
-  if (!frameworkField) {
+  const frameworkField =
+    (typeof frameworkValue === 'string' ? frameworkValue : frameworkValue?.name) ||
     /*
       React Native on-device Storybook historically omitted `framework` from main.ts.
       When the config lives in `.rnstorybook`, infer the framework so telemetry
       `metadata.framework.name` is populated for existing projects (scoped to the
       RN config dir to avoid mis-attributing web Storybooks in the same monorepo).
     */
-    if (basename(configInfo.configDir) === RN_STORYBOOK_DIR) {
-      return {
-        ...configInfo,
-        versionSpecifier,
-        addons,
-        mainConfig,
-        frameworkPackage: '@storybook/react-native',
-        rendererPackage: '@storybook/react-native',
-        renderer: SupportedRenderer.REACT_NATIVE,
-        mainConfigPath: configInfo.mainConfigPath ?? undefined,
-        previewConfigPath: configInfo.previewConfigPath ?? undefined,
-        managerConfigPath: configInfo.managerConfigPath ?? undefined,
-      };
-    }
+    (basename(configInfo.configDir) === RN_STORYBOOK_DIR ? '@storybook/react-native' : undefined);
+  const addons = getAddonNames(mainConfig);
+  const versionSpecifier = getStorybookVersionSpecifier(configDir);
 
+  if (!frameworkField) {
     return {
       ...configInfo,
       versionSpecifier,

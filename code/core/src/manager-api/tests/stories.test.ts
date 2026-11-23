@@ -1578,6 +1578,44 @@ describe('stories API', () => {
       ]);
     });
 
+    it('preloads the component that a jump lands on when a filter hides the neighbour', async () => {
+      const initialState: Partial<State> = {
+        storyId: 'component-a--story-1',
+        viewMode: 'story',
+        filters: { visible: (entry) => entry.title !== 'Component B' },
+      };
+      const moduleArgs = createMockModuleArgs({ initialState, fullAPI: { setOptions: vi.fn() } });
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { provider, navigate } = moduleArgs;
+      await api.setIndex({
+        v: 5,
+        entries: {
+          ...mockEntries,
+          'component-c--story-4': {
+            ...mockEntries['component-b--story-3'],
+            id: 'component-c--story-4',
+            title: 'Component C',
+          },
+        },
+      });
+      const preloads: unknown[] = [];
+      provider.channel.on(PRELOAD_ENTRIES, (payload) => preloads.push(payload));
+      requestIdleCallback.mockClear();
+
+      provider.channel.emit(STORY_FINISHED, {
+        storyId: 'component-a--story-1',
+        status: 'success',
+        reporters: [],
+      });
+      requestIdleCallback.mock.calls[0][0]({ didTimeout: false, timeRemaining: () => 50 });
+      api.jumpToSubtree(1);
+
+      expect(navigate).toHaveBeenCalledWith('/story/component-c--story-4', undefined);
+      expect(preloads).toEqual([
+        { ids: ['component-c--story-4'], source: 'sibling', options: { target: undefined } },
+      ]);
+    });
+
     it('skips the preload when another story was selected before the browser went idle', async () => {
       const initialState = { storyId: 'component-b--story-3', viewMode: 'story' };
       const moduleArgs = createMockModuleArgs({ initialState, fullAPI: { setOptions: vi.fn() } });

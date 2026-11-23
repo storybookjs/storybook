@@ -12,7 +12,7 @@ import { findConfigFile, getStorybookInfo } from './get-storybook-info.ts';
 import { loadMainConfig } from './load-main-config.ts';
 
 vi.mock('node:fs', { spy: true });
-vi.mock('./load-main-config.ts', () => ({ loadMainConfig: vi.fn() }));
+vi.mock('./load-main-config.ts', { spy: true });
 
 const configDir = join('/project', '.storybook');
 
@@ -35,19 +35,18 @@ describe('findConfigFile', () => {
   });
 });
 
-describe('getStorybookInfo renderer detection', () => {
+describe.each([
+  ['@storybook/react-native', SupportedRenderer.REACT_NATIVE, '@storybook/react-native'],
+  ['@storybook-astro/framework', SupportedRenderer.ASTRO, '@storybook-astro/renderer'],
+  ['@analogjs/storybook-angular', SupportedRenderer.ANGULAR, '@storybook/angular'],
+  ['@storybook/react-vite', SupportedRenderer.REACT, '@storybook/react'],
+])('getStorybookInfo renderer detection for %s', (framework, renderer, rendererPackage) => {
   beforeEach(() => {
     vi.spyOn(JsPackageManager, 'listAllPackageJsonPaths').mockReturnValue([]);
+    vi.mocked(loadMainConfig).mockResolvedValue({ framework });
   });
 
-  it.each([
-    ['@storybook/react-native', SupportedRenderer.REACT_NATIVE, '@storybook/react-native'],
-    ['@storybook-astro/framework', SupportedRenderer.ASTRO, '@storybook-astro/renderer'],
-    ['@analogjs/storybook-angular', SupportedRenderer.ANGULAR, '@storybook/angular'],
-    ['@storybook/react-vite', SupportedRenderer.REACT, '@storybook/react'],
-  ])('detects the renderer for %s', async (framework, renderer, rendererPackage) => {
-    vi.mocked(loadMainConfig).mockResolvedValue({ framework } as any);
-
+  it('detects the renderer and its package', async () => {
     const info = await getStorybookInfo(configDir);
 
     expect(info.renderer).toBe(renderer);

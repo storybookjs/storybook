@@ -1,5 +1,6 @@
 import {
   hasAddonVitest,
+  hasAgentTestStep,
   hasStorybookSkills,
   installSkills,
   refreshAgentInstructions,
@@ -565,12 +566,14 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
 
     // Every Storybook of a monorepo shares the AGENTS.md of the project root, so the section has a
     // test step when one of them can run story tests. The main configs were read before the
-    // automigrations, so an addon-vitest that one of them added counts too.
+    // automigrations, so an addon-vitest that one of them added counts too. With `--config-dir`
+    // only those Storybooks were read, so a test step that another one put in the section stays.
     const testSupported =
       allProjects.some(({ mainConfig }) => hasAddonVitest(mainConfig)) ||
       storybookProjects.some(({ configDir }) =>
         automigrationResults[configDir]?.addonsToPostinstall?.includes('@storybook/addon-vitest')
-      );
+      ) ||
+      (Boolean(options.configDir?.length) && (await hasAgentTestStep()));
     const skills =
       !options.dryRun && hadSkills
         ? await installSkills({

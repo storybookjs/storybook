@@ -8,6 +8,7 @@ import { vol } from 'memfs';
 import {
   STORYBOOK_AGENT_INSTRUCTIONS,
   addStorybookAgentInstructions,
+  hasStorybookTestStep,
   planStorybookAgentInstructions,
   storybookAgentInstructions,
 } from './agentInstructions.ts';
@@ -80,6 +81,29 @@ describe('addStorybookAgentInstructions', () => {
       { file: 'AGENTS.md', change: 'updated' },
     ]);
     expect(read('AGENTS.md')).toBe(storybookAgentInstructions({ testSupported: false }));
+  });
+
+  it('keeps the test step of a section that is only in a Claude file', async () => {
+    vol.writeFileSync(join(ROOT, 'AGENTS.md'), '# Agents\n\nUse the write-stories skill.\n');
+    vol.writeFileSync(join(ROOT, 'CLAUDE.md'), STORYBOOK_AGENT_INSTRUCTIONS);
+
+    expect(await addStorybookAgentInstructions(ROOT, 'install', { testSupported: false })).toEqual(
+      []
+    );
+    expect(read('CLAUDE.md')).toBe(STORYBOOK_AGENT_INSTRUCTIONS);
+  });
+
+  it('says whether a section of the project has the test step', async () => {
+    expect(await hasStorybookTestStep(ROOT)).toBe(false);
+
+    vol.writeFileSync(
+      join(ROOT, 'AGENTS.md'),
+      storybookAgentInstructions({ testSupported: false })
+    );
+    expect(await hasStorybookTestStep(ROOT)).toBe(false);
+
+    vol.writeFileSync(join(ROOT, 'CLAUDE.md'), STORYBOOK_AGENT_INSTRUCTIONS);
+    expect(await hasStorybookTestStep(ROOT)).toBe(true);
   });
 
   // The section that 11.0.0-beta.2 wrote, word for word.

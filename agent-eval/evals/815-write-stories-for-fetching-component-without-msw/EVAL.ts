@@ -45,11 +45,18 @@ describe('writing stories for a fetching OrderHistory in a project without MSW',
       /fetch\(\s*['"`]\/api\/orders/
     );
     // Every story of a component that fetches needs a network mock, so without MSW there is none.
-    for (const file of readdirSync('src/components').filter((name) => name.includes('.stories.'))) {
-      const stories = readFileSync(`src/components/${file}`, 'utf8');
+    // The main config loads stories from `src` and from `stories`.
+    const storyFiles = ['src', 'stories']
+      .filter((dir) => existsSync(dir))
+      .flatMap((dir) =>
+        readdirSync(dir, { recursive: true, encoding: 'utf8' }).map((name) => `${dir}/${name}`)
+      )
+      .filter((file) => file.includes('.stories.'));
+    for (const file of storyFiles) {
+      const stories = readFileSync(file, 'utf8');
       // A file with only a meta renders nothing.
       const rendersOrderHistory =
-        /from ['"]\.\/OrderHistory(?:\.[jt]sx?)?['"]/.test(stories) &&
+        /from ['"][^'"]*\/OrderHistory(?:\.[jt]sx?)?['"]/.test(stories) &&
         /^export const /m.test(stories);
       expect(
         rendersOrderHistory,

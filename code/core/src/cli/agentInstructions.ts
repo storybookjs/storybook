@@ -136,6 +136,36 @@ export async function planStorybookAgentInstructions(
 
 export type AgentInstructionsChange = { file: string; change: 'added' | 'updated' };
 
+const readOptional = async (path: string): Promise<string | undefined> => {
+  try {
+    return await readFile(path, 'utf8');
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      return undefined;
+    }
+    throw error;
+  }
+};
+
+// The section can be in `AGENTS.md` and in a Claude file, and a project can keep it in only one.
+const SECTION_FILES = ['AGENTS.md', ...CLAUDE_FILES.map(({ file }) => file)];
+
+async function hasTestStep(read: (file: string) => Promise<string | undefined>): Promise<boolean> {
+  for (const file of SECTION_FILES) {
+    if (TEST_STEP.test(findSection(await read(file)) ?? '')) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Whether a Storybook section of the project has the test step. For a caller that did not check
+ * every Storybook of the project, such as an upgrade with `--config-dir`.
+ */
+export const hasStorybookTestStep = (root: string): Promise<boolean> =>
+  hasTestStep((file) => readOptional(join(root, file)));
+
 export async function addStorybookAgentInstructions(
   root: string,
   mode: AgentInstructionsMode = 'install',
@@ -143,22 +173,16 @@ export async function addStorybookAgentInstructions(
 ): Promise<AgentInstructionsChange[]> {
   const existing = new Map<string, string | undefined>();
   const read = async (file: string) => {
-    try {
-      const content = await readFile(join(root, file), 'utf8');
+    const content = await readOptional(join(root, file));
+    if (content !== undefined) {
       existing.set(file, content);
-      return content;
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-        return undefined;
-      }
-      throw error;
     }
+    return content;
   };
-  // Every Storybook of a monorepo shares this file. An install for one without addon-vitest keeps
-  // the test step another one put there; only an upgrade, which checks every Storybook, drops it.
-  const testSupported =
-    inputs.testSupported ||
-    (mode === 'install' && TEST_STEP.test(findSection(await read('AGENTS.md')) ?? ''));
+  // Every Storybook of a monorepo shares these files. An install for one without addon-vitest
+  // keeps the test step another one put there; only an upgrade, which checks every Storybook,
+  // drops it.
+  const testSupported = inputs.testSupported || (mode === 'install' && (await hasTestStep(read)));
   const files = await planStorybookAgentInstructions(
     read,
     mode,

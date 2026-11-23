@@ -7,7 +7,11 @@ import { CLI_COLORS, logger } from 'storybook/internal/node-logger';
 import { isTelemetryModuleEnabled } from 'storybook/internal/telemetry';
 import { SupportedBuilder, SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
 
-import { type AgentInstructionsMode, addStorybookAgentInstructions } from './agentInstructions.ts';
+import {
+  type AgentInstructionsMode,
+  addStorybookAgentInstructions,
+  hasStorybookTestStep,
+} from './agentInstructions.ts';
 
 const SKILLS_REPO = 'storybookjs/skills';
 
@@ -232,6 +236,12 @@ export async function refreshAgentInstructions({
   }
   await addAgentInstructions('update', testSupported);
 }
+
+/**
+ * Whether the Storybook section for agents in this project has the test step, for an upgrade that
+ * did not read every Storybook of the project.
+ */
+export const hasAgentTestStep = (): Promise<boolean> => hasStorybookTestStep(getProjectRoot());
 
 /**
  * Whether the main config lists `@storybook/addon-vitest`. Without it a Storybook runs no story

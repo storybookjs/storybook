@@ -343,7 +343,7 @@ describe('mcpServerHandler', () => {
       /^\d\. `npx storybook skills ui-review/m
     );
     expect(parsedResponse.result.instructions).toContain(
-      'Inform the user about the `/ui-review` skill after a change the user can see: "Use the /ui-review skill to see the changed components in Storybook"'
+      'ALWAYS inform the user about the `/ui-review` skill after a change the user can see: "Use the /ui-review skill to see the changed components in Storybook"'
     );
     expect(parsedResponse.result.instructions).not.toContain('component-docs');
   });

@@ -260,8 +260,10 @@ export function expectReviewHint(): void {
 // agent left the review out ("I didn't suggest `/ui-review`", "`/ui-review` isn't needed"), or
 // would make one on request ("tell me if you want a `/ui-review` anyway"). Clauses, not
 // sentences: "the UI didn't change, but you can use /ui-review" recommends it.
-const DECLINES = /\b(?:not|no|without|if|unless|skipped)\b|n['’]t\b/i;
-const CLAUSE_END = /(?<=[.!?])\s+|\n+|[,;:]\s+|\s+[—–]\s+|\s+(?=but\b)/i;
+const DECLINES = /\b(?:not|no|without|if|unless|skipped|left out)\b|n['’]t\b/i;
+// A comma inside a list of skills ("`/write-stories`, or `/ui-review`") does not end the clause.
+const CLAUSE_END =
+  /(?<=[.!?])\s+|\n+|,\s+(?!(?:(?:or|and)\s+)?`?[/$])|[;:]\s+|\s+[—–]\s+|\s+(?=but\b)/i;
 
 export const recommendsReviewSkill = (answer: string): boolean =>
   answer.split(CLAUSE_END).some((clause) => REVIEW_HINT.test(clause) && !DECLINES.test(clause));

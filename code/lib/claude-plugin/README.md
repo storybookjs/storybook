@@ -113,7 +113,7 @@ For every change to how the UI looks (you create, change, or delete a component,
    npx storybook tools test run [files...]   # every story, or these story files
    npx storybook tools test run --changed    # the stories your changes affect
    ```
-4. Inform the user about the `/ui-review` skill after a change the user can see: "Use the /ui-review skill to see the changed components in Storybook"
+4. ALWAYS inform the user about the `/ui-review` skill after a change the user can see: "Use the /ui-review skill to see the changed components in Storybook"
 
 <!-- END:storybook-skills -->
 ````

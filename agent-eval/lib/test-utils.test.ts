@@ -579,7 +579,7 @@ describe('recommendsReviewSkill', () => {
     expect(recommendsReviewSkill(answer)).toBe(true);
   });
 
-  // What agents wrote after a change nobody can see (eval runs of 2026-11-17).
+  // What agents wrote after a change nobody can see (eval runs of 2026-11-17 and 2026-11-23).
   test.each([
     'I renamed the helper in its definition and in its only caller.',
     "I didn't suggest `/ui-review`, since this change adds no visible UI yet.",
@@ -587,6 +587,9 @@ describe('recommendsReviewSkill', () => {
     'Nothing visible changed, so no `/ui-review` is needed.',
     "`/ui-review` isn't needed, since nothing visible changed.",
     'I skipped /ui-review because the change is not visible.',
+    "This change renders the same output, so I didn't run `/component-docs`, `/write-stories` or `/ui-review`.",
+    "This is a pure rename with no visual change, so I didn't run `/component-docs`, `/write-stories`, or `/ui-review`.",
+    "They apply to changes that alter how the UI looks, and this rename doesn't, so I left out the `/ui-review` line.",
   ])('does not count %j', async (answer) => {
     const { recommendsReviewSkill } = await import('./test-utils.ts');
     expect(recommendsReviewSkill(answer)).toBe(false);

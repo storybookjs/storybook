@@ -54,7 +54,7 @@ function testStep(number: number, transport: SkillTextTransport): string {
 export const REVIEW_HINT_LINE =
   'Use the /ui-review skill to see the changed components in Storybook';
 const reviewStep = (number: number) =>
-  `${number}. Inform the user about the \`/ui-review\` skill after a change the user can see: "${REVIEW_HINT_LINE}"`;
+  `${number}. ALWAYS inform the user about the \`/ui-review\` skill after a change the user can see: "${REVIEW_HINT_LINE}"`;
 
 // The workflow that ties the skills together, in the order an agent takes the steps. A project
 // edits it to change the workflow.

@@ -46,51 +46,32 @@ export async function storyToCsf4(
 export const SANDBOX_STORIES_GLOB =
   '{stories,src/stories}/{Button,Header,Page,button,header,page}.stories.*';
 
-async function runStoriesCodemod(options: {
+async function runStoriesCodemod({
+  dryRun,
+  glob,
+  storiesPaths,
+  ...codemodOptions
+}: {
   dryRun: boolean | undefined;
   useSubPathImports: boolean;
   previewConfigPath: string;
-  yes: boolean | undefined;
   glob: string | undefined;
   storiesPaths: string[];
 }) {
-  const { dryRun, yes, glob, storiesPaths, ...codemodOptions } = options;
   const inSandbox = optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX) ?? false;
-  const configuredStoryFiles = storiesPaths.filter((file) => !file.endsWith('.mdx'));
+  const storyFiles =
+    glob ??
+    (inSandbox ? SANDBOX_STORIES_GLOB : storiesPaths.filter((file) => !file.endsWith('.mdx')));
 
-  if (!glob && !inSandbox && configuredStoryFiles.length > 0) {
-    logger.step('Applying codemod on the stories of your main config...');
-    await runCodemod(configuredStoryFiles, (info) => storyToCsf4(info, codemodOptions), {
-      dryRun,
-    });
+  if (storyFiles.length === 0) {
+    logger.warn(
+      'The stories field of your main config matches no story files, so no stories were migrated.'
+    );
     return;
   }
 
-  const promptsForGlob = !glob && !inSandbox && !yes;
-  try {
-    let globString = glob ?? '**/*.{stories,story}.{js,jsx,ts,tsx,mjs,mjsx,mts,mtsx,svelte}';
-
-    if (!glob && inSandbox) {
-      globString = SANDBOX_STORIES_GLOB;
-    } else if (promptsForGlob) {
-      logger.log('Please enter the glob for your stories to migrate');
-      globString = await prompt.text({
-        message: 'glob',
-        initialValue: globString,
-      });
-    }
-
-    logger.step('Applying codemod on your stories, this might take some time...');
-
-    await runCodemod(globString, (info) => storyToCsf4(info, codemodOptions), { dryRun });
-  } catch (err) {
-    // Ask for another glob. Without a prompt, the same glob would match nothing again.
-    if (err instanceof Error && err.message === 'No files matched' && promptsForGlob) {
-      await runStoriesCodemod(options);
-    } else {
-      throw err;
-    }
-  }
+  logger.step('Applying codemod on your stories, this might take some time...');
+  await runCodemod(storyFiles, (info) => storyToCsf4(info, codemodOptions), { dryRun });
 }
 
 export const csfFactories: CommandFix = {
@@ -165,7 +146,6 @@ export const csfFactories: CommandFix = {
       dryRun,
       useSubPathImports,
       previewConfigPath: previewConfigPath!,
-      yes,
       glob,
       storiesPaths,
     });

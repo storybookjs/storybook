@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
 import { posix, resolve } from 'node:path';
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { syncStorybookAddons } from 'storybook/internal/common';
 import type { JsPackageManager } from 'storybook/internal/common';
@@ -182,7 +182,13 @@ it.each([
 
 const projectDir = resolve('/project');
 
-async function migrateProject(configFolder: string, storyFiles = ['stories/Button.stories.tsx']) {
+async function migrateProject(
+  configFolder: string,
+  {
+    storyFiles = ['stories/Button.stories.tsx'],
+    glob,
+  }: { storyFiles?: string[]; glob?: string } = {}
+) {
   const configDir = resolve(projectDir, configFolder);
   const paths = {
     main: resolve(configDir, 'main.ts'),
@@ -233,6 +239,7 @@ async function migrateProject(configFolder: string, storyFiles = ['stories/Butto
     result: null,
     storybookVersion: '11.0.0',
     yes: true,
+    glob,
   });
 
   return { paths, written };
@@ -240,10 +247,9 @@ async function migrateProject(configFolder: string, storyFiles = ['stories/Butto
 
 describe('a .rnstorybook config without a framework', () => {
   it('migrates the story files of the main config without its MDX files', async () => {
-    const { paths, written } = await migrateProject('.rnstorybook', [
-      'stories/Button.stories.tsx',
-      'Introduction.mdx',
-    ]);
+    const { paths, written } = await migrateProject('.rnstorybook', {
+      storyFiles: ['stories/Button.stories.tsx', 'Introduction.mdx'],
+    });
 
     expect(vi.mocked(runCodemod).mock.calls[0][0]).toEqual([paths.story]);
     expect(written.get(paths.story)).toContain("import preview from '#.storybook/preview';");
@@ -261,12 +267,45 @@ describe('a .rnstorybook config without a framework', () => {
   });
 });
 
-it('falls back to the default stories glob when every story file of the main config is MDX', async () => {
-  await migrateProject('.storybook', ['Introduction.mdx']);
+it('skips the stories but migrates main and preview when the main config only has MDX files', async () => {
+  const { paths, written } = await migrateProject('.storybook', {
+    storyFiles: ['Introduction.mdx'],
+  });
 
-  expect(vi.mocked(runCodemod).mock.calls[0][0]).toBe(
-    '**/*.{stories,story}.{js,jsx,ts,tsx,mjs,mjsx,mts,mtsx,svelte}'
-  );
+  expect(vi.mocked(runCodemod).mock.calls.map(([files]) => files)).toEqual([
+    [paths.main],
+    [paths.preview],
+  ]);
+  expect(written.get(paths.main)).toContain('defineMain');
+  expect(written.get(paths.preview)).toContain('definePreview');
+});
+
+it('migrates the files of --glob instead of the main config stories', async () => {
+  await migrateProject('.storybook', { glob: 'src/**/*.stories.tsx' });
+
+  expect(vi.mocked(runCodemod).mock.calls[0][0]).toBe('src/**/*.stories.tsx');
+});
+
+describe('in a sandbox', () => {
+  beforeEach(() => {
+    vi.stubEnv('IN_STORYBOOK_SANDBOX', 'true');
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('migrates only the starter stories', async () => {
+    await migrateProject('.storybook');
+
+    expect(vi.mocked(runCodemod).mock.calls[0][0]).toBe(SANDBOX_STORIES_GLOB);
+  });
+
+  it('migrates the files of --glob', async () => {
+    await migrateProject('.storybook', { glob: 'src/**/*.stories.tsx' });
+
+    expect(vi.mocked(runCodemod).mock.calls[0][0]).toBe('src/**/*.stories.tsx');
+  });
 });
 
 describe('a .storybook config without a framework next to a .rnstorybook folder', () => {

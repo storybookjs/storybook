@@ -113,7 +113,7 @@
     "tocbot": "^4.20.1",
     "ts-dedent": "^2.2.0",
     "typescript": "^6.0.3",
-    "vite": "^7.0.4"
+    "vite": "^7.3.8"
   },
   "peerDependencies": {
     "@types/react": "^18.0.0 || ^19.0.0",

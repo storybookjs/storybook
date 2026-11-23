@@ -232,4 +232,22 @@ describe('file failures', () => {
       "| `src/B.stories.ts` | EACCES: permission denied, open 'src/B.stories.ts' |"
     );
   });
+
+  it('logs the report path with forward slashes on Windows', async () => {
+    // Simulates `relative` from a Windows cwd nested above the project root.
+    vi.mocked(relative).mockImplementation((from, to) =>
+      win32.relative(win32.join('C:\\work', from), win32.join('C:\\work', to))
+    );
+    vi.spyOn(process, 'cwd').mockReturnValue('/');
+
+    await reportFileFailures(
+      [{ fixId: 'rename-legacy', file: stories[1], kind: 'story', message: 'failed' }],
+      ['rename-legacy']
+    );
+
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.stringContaining(`project/${REPORT_FILE_NAME}`)
+    );
+    expect(vi.mocked(logger.warn).mock.lastCall?.[0]).not.toContain('\\');
+  });
 });

@@ -18,13 +18,21 @@ export async function getFrameworkInfo(mainConfig: StorybookConfig, configDir: s
 
   const frameworkOptions =
     typeof mainConfig.framework === 'object' ? mainConfig.framework.options : {};
+  const frameworkName = frameworkPackage ? cleanAndSanitizePath(frameworkPackage) : undefined;
+  const frameworkRenderer =
+    frameworkName === '@storybook/react-native'
+      ? '@storybook/react-native'
+      : frameworkName === '@storybook-astro/framework'
+        ? '@storybook-astro/renderer'
+        : undefined;
 
   return {
     framework: {
-      name: frameworkPackage ? cleanAndSanitizePath(frameworkPackage) : undefined,
+      name: frameworkName,
       options: frameworkOptions,
     },
     builder: builderPackage ? cleanAndSanitizePath(builderPackage) : undefined,
-    renderer: rendererPackage ? cleanAndSanitizePath(rendererPackage) : undefined,
+    renderer:
+      frameworkRenderer ?? (rendererPackage ? cleanAndSanitizePath(rendererPackage) : undefined),
   };
 }

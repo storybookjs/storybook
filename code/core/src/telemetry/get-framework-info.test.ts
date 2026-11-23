@@ -36,6 +36,24 @@ describe('getFrameworkInfo', () => {
     expect(getStorybookInfo).toHaveBeenCalledWith(configDir);
   });
 
+  it.each([
+    ['@storybook/react-native', '@storybook/react-native'],
+    ['@storybook-astro/framework', '@storybook-astro/renderer'],
+    ['/repo/node_modules/@storybook/react-native', '@storybook/react-native'],
+    ['/repo/node_modules/@storybook-astro/framework', '@storybook-astro/renderer'],
+  ])('reports renderer %s as %s', async (frameworkPackage, renderer) => {
+    const { getStorybookInfo } = await import('storybook/internal/common');
+    vi.mocked(getStorybookInfo).mockResolvedValue({
+      ...defaultInfo,
+      frameworkPackage,
+      rendererPackage: undefined,
+    } as any);
+
+    const result = await getFrameworkInfo({} as StorybookConfig, '/repo/.storybook');
+
+    expect(result.renderer).toBe(renderer);
+  });
+
   it('decodes pnpm virtual-store paths so no version-bearing fragment leaks', async () => {
     const { getStorybookInfo } = await import('storybook/internal/common');
     vi.mocked(getStorybookInfo).mockResolvedValue({

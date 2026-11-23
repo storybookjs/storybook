@@ -7,6 +7,8 @@ import { type JsPackageManager, getProjectRoot, removeAddon } from 'storybook/in
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import { fs, vol } from 'memfs';
+// eslint-disable-next-line depend/ban-dependencies
+import slash from 'slash';
 import { dedent } from 'ts-dedent';
 
 import { createFixFiles } from '../fix-files.ts';
@@ -59,7 +61,7 @@ const readWritten = () =>
   Object.fromEntries([...written].map((path) => [path, fs.readFileSync(path, 'utf8')]));
 
 // File lists show paths relative to the project root.
-const listed = (path: string) => `- ${relative(resolve('/project'), path)}`;
+const listed = (path: string) => `- ${slash(relative(resolve('/project'), path))}`;
 
 const STORY_FILE = dedent`
   <script module>

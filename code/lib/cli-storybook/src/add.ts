@@ -6,6 +6,8 @@ import { logger as nodeLogger, prompt } from 'storybook/internal/node-logger';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import SemVer from 'semver';
+// eslint-disable-next-line depend/ban-dependencies
+import slash from 'slash';
 import { dedent } from 'ts-dedent';
 
 import { getStorybookData } from './automigrate/helpers/mainConfigFile.ts';
@@ -174,7 +176,7 @@ export async function add(
 
   if (shouldAddToMain) {
     logger.log(
-      `Adding '${addon}' to the "addons" field in ${relative(process.cwd(), mainConfigPath)}`
+      `Adding '${addon}' to the "addons" field in ${slash(relative(process.cwd(), mainConfigPath))}`
     );
 
     await setupAddonInConfig({

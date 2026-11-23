@@ -1,5 +1,5 @@
 import { mkdir } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
+import { dirname, join, posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
@@ -297,7 +297,7 @@ export async function baseGenerator(
     extensions,
     language,
     csfFactories,
-    ...(staticDir ? { staticDirs: [join('..', staticDir)] } : null),
+    ...(staticDir ? { staticDirs: [posix.join('..', staticDir)] } : null),
     ...extraMain,
   });
 

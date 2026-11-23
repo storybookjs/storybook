@@ -5,6 +5,8 @@ import { optionalEnvToBoolean, syncStorybookAddons } from 'storybook/internal/co
 import { logger, prompt } from 'storybook/internal/node-logger';
 
 import picocolors from 'picocolors';
+// eslint-disable-next-line depend/ban-dependencies
+import slash from 'slash';
 import { dedent } from 'ts-dedent';
 
 import {
@@ -103,7 +105,7 @@ export const csfFactories: CommandFix = {
     if (!yes && !inSandbox && !isReactNativePreview) {
       // prompt whether the user wants to use imports map
       logger.logBox(dedent`
-        The CSF 4 format can benefit from using absolute imports of your ${picocolors.cyan(previewConfigPath)} file. We can configure that for you, using subpath imports (a node standard), by adjusting the imports property of your package.json.
+        The CSF 4 format can benefit from using absolute imports of your ${picocolors.cyan(previewConfigPath && slash(previewConfigPath))} file. We can configure that for you, using subpath imports (a node standard), by adjusting the imports property of your package.json.
         
         However, we cannot broadly recommend it for all projects, because it might not work in some monorepo setups or if you have an outdated tsconfig, use custom paths, or have type alias plugins configured in your project. You can always rerun this codemod and select another option to update your code later.
         
@@ -131,13 +133,13 @@ export const csfFactories: CommandFix = {
         useSubPathImports = false;
       } else if (applyPreviewImportsMap(packageJson, previewFile, operationDir)) {
         logger.step(
-          `Adding imports map in ${picocolors.cyan(packageManager.primaryPackageJson.packageJsonPath)}`
+          `Adding imports map in ${picocolors.cyan(slash(packageManager.primaryPackageJson.packageJsonPath))}`
         );
         packageManager.writePackageJson(packageJson, operationDir);
       }
     } else if (useSubPathImports && !packageJson.imports?.['#*']) {
       logger.step(
-        `Adding imports map in ${picocolors.cyan(packageManager.primaryPackageJson.packageJsonPath)}`
+        `Adding imports map in ${picocolors.cyan(slash(packageManager.primaryPackageJson.packageJsonPath))}`
       );
       packageJson.imports = {
         ...packageJson.imports,

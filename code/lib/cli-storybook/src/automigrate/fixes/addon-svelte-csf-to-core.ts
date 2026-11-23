@@ -10,6 +10,8 @@ import {
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
+// eslint-disable-next-line depend/ban-dependencies
+import slash from 'slash';
 import { dedent } from 'ts-dedent';
 
 import { getFrameworkPackageName } from '../helpers/mainConfigFile.ts';
@@ -264,7 +266,10 @@ const usesDefineMeta = (code: string) =>
 
 const fileList = (paths: string[], notes: Record<string, string> = {}) =>
   paths
-    .map((path) => `- ${relative(getProjectRoot(), path)}${notes[path] ? ` (${notes[path]})` : ''}`)
+    .map(
+      (path) =>
+        `- ${slash(relative(getProjectRoot(), path))}${notes[path] ? ` (${notes[path]})` : ''}`
+    )
     .join('\n');
 
 const legacyWarning = ({ legacyStoryFiles, legacySyntax }: AddonSvelteCsfToCoreResult) => {

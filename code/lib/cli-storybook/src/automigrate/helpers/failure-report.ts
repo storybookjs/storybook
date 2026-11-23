@@ -71,7 +71,7 @@ export const reportFileFailures = async (failures: FixFileFailure[], ran: Iterab
   const count = failures.length;
   logger.warn(
     count > 0
-      ? `${pluralFiles(count)} could not be migrated automatically. See ${picocolors.cyan(relative(process.cwd(), reportPath))} for which ones and why.`
-      : `${picocolors.cyan(relative(process.cwd(), reportPath))} still lists files that earlier runs could not migrate.`
+      ? `${pluralFiles(count)} could not be migrated automatically. See ${picocolors.cyan(slash(relative(process.cwd(), reportPath)))} for which ones and why.`
+      : `${picocolors.cyan(slash(relative(process.cwd(), reportPath)))} still lists files that earlier runs could not migrate.`
   );
 };

@@ -4,6 +4,8 @@ import { join, relative, resolve } from 'node:path';
 import { logger } from 'storybook/internal/node-logger';
 
 import picocolors from 'picocolors';
+// eslint-disable-next-line depend/ban-dependencies
+import slash from 'slash';
 
 import { mapStaticDir } from './server-statics.ts';
 
@@ -36,5 +38,5 @@ export async function copyAllStaticFilesRelativeToMain(
   }, Promise.resolve());
 }
 function print(p: string): string {
-  return relative(process.cwd(), p);
+  return slash(relative(process.cwd(), p));
 }

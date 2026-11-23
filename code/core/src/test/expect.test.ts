@@ -74,3 +74,16 @@ it('supports the Jest aliases of the mock matchers', async () => {
   await expect(mock).nthReturnedWith(1, 2);
   await expect(mock).not.lastCalledWith(1);
 });
+
+it('supports the Vitest mock matchers that check order and a single call', async () => {
+  const first = fn();
+  const second = fn();
+  first(1);
+  second(2);
+
+  await expect(first).toHaveBeenCalledExactlyOnceWith(1);
+  await expect(first).not.toHaveBeenCalledExactlyOnceWith(2);
+  await expect(first).toHaveBeenCalledBefore(second);
+  await expect(second).toHaveBeenCalledAfter(first);
+  await expect(second).not.toHaveBeenCalledBefore(first);
+});

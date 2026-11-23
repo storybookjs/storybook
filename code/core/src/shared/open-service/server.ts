@@ -79,10 +79,7 @@ export async function buildStaticFiles(): Promise<StaticStore> {
 
       buildTasks.push(
         (async () => {
-          const inputsRuntime = createServiceRuntime(service, {
-            registryApi: serviceRegistryApi,
-            isStaticBuild: true,
-          });
+          const inputsRuntime = createServiceRuntime(service, { registryApi: serviceRegistryApi });
           const inputs = await staticInputs(inputsRuntime.loadCtxForStatic);
 
           return Promise.all(
@@ -91,7 +88,6 @@ export async function buildStaticFiles(): Promise<StaticStore> {
               // the one path this task is responsible for.
               const buildRuntime = createServiceRuntime(service, {
                 registryApi: serviceRegistryApi,
-                isStaticBuild: true,
               });
               const validatedInput = await validateSchema(query.input, input, {
                 kind: 'query',

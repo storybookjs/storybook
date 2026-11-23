@@ -47,6 +47,6 @@ export const createDocgenProvider = ({
         return undefined;
       }
     },
-    extract: (componentMetaManager, inputs) =>
+    extractBatch: (componentMetaManager, inputs) =>
       buildDocgenPayloads(inputs, { componentMetaManager }),
   });

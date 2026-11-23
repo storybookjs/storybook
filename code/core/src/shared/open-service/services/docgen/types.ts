@@ -72,13 +72,9 @@ export interface DocgenSubcomponent {
   [key: string]: unknown;
 }
 
-/** The outcome of one input of a {@link DocgenProvider} call. */
-export type DocgenResult = PromiseSettledResult<DocgenPayload | undefined>;
-
 /**
- * A docgen provider: given the index entries of several components, settles one result per input in
- * the same order. Each result is a complete {@link DocgenPayload}, or `undefined` when no docgen is
- * available for the file. A provider that has setup shared by the inputs does it once per call.
+ * A docgen provider: given a component's index entry, returns a complete {@link DocgenPayload} or
+ * `undefined` when no docgen is available for the file.
  *
  * Providers are composed middleware-style inside the docgen worker — each wraps the previous one in
  * the chain and may delegate to it to merge with downstream output.
@@ -90,7 +86,7 @@ export type DocgenResult = PromiseSettledResult<DocgenPayload | undefined>;
  * values from downstream — including empty strings — so providers that intentionally set a field
  * are not overridden by a later provider's defaults.
  */
-export type DocgenProvider = (inputs: DocgenProviderInput[]) => Promise<DocgenResult[]>;
+export type DocgenProvider = (input: DocgenProviderInput) => Promise<DocgenPayload | undefined>;
 
 /**
  * Middleware that wraps the next provider in the docgen chain.

@@ -1,12 +1,11 @@
 import type {
   DocgenPayload,
   DocgenProviderInput,
-  DocgenResult,
   DocgenSubcomponent,
   StrictArgTypes,
 } from 'storybook/internal/types';
 
-import { extractEach, getStoryImportPathFromEntry } from 'storybook/internal/common';
+import { getStoryImportPathFromEntry } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import path from 'pathe';
 
@@ -139,6 +138,24 @@ const resolveStoryPath = (
   storyFilePath: string,
   { resolvePath }: Pick<BuildDocgenContext, 'resolvePath'>
 ) => (resolvePath ? resolvePath(storyFilePath) : path.join(process.cwd(), storyFilePath));
+
+type DocgenResult = PromiseSettledResult<DocgenPayload | undefined>;
+
+/** Extract the inputs one after another, settling each on its own. */
+async function extractEach(
+  inputs: DocgenProviderInput[],
+  extractOne: (input: DocgenProviderInput) => Promise<DocgenPayload | undefined>
+): Promise<DocgenResult[]> {
+  const results: DocgenResult[] = [];
+  for (const input of inputs) {
+    try {
+      results.push({ status: 'fulfilled', value: await extractOne(input) });
+    } catch (reason) {
+      results.push({ status: 'rejected', reason });
+    }
+  }
+  return results;
+}
 
 // Each project gets the story and component files of every input before its first extraction, so
 // it rebuilds its program once for the batch and not once per component. When the programs do not

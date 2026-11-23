@@ -3,11 +3,10 @@ import type {
   DocgenPayload,
   DocgenProvider,
   DocgenProviderInput,
-  DocgenResult,
 } from '../../shared/open-service/services/docgen/types.ts';
 import { STORY_FILE_TEST_REGEXP, getStoryImportPathFromEntry } from './select-component-entry.ts';
 
-export interface LazyDocgenMiddlewareOptions<TManager> {
+interface BaseOptions<TManager> {
   /**
    * Story file paths this middleware extracts from; any other path passes through.
    * Defaults to CSF story files, so a renderer with its own story format (e.g. `.stories.svelte`)
@@ -20,66 +19,118 @@ export interface LazyDocgenMiddlewareOptions<TManager> {
    * Return `undefined` to permanently pass through to the rest of the chain.
    */
   createManager: () => Promise<TManager | undefined>;
-  /**
-   * Extracts every input whose story file matched, settling one result per input in the same
-   * order. A fulfilled `undefined` delegates that input downstream. Setup that the inputs share
-   * goes at the start of this one call.
-   */
-  extract: (manager: TManager, inputs: DocgenProviderInput[]) => Promise<DocgenResult[]>;
-  /**
-   * Combines this middleware's payload with the payload of the rest of the chain.
-   * Defaults to `{ ...downstream, ...own }`.
-   */
-  merge?: (own: DocgenPayload, downstream: DocgenPayload | undefined) => DocgenPayload;
 }
 
-/** Extract the inputs one after another, settling each on its own. */
-export async function extractEach<TInput>(
-  inputs: TInput[],
-  extractOne: (input: TInput) => Promise<DocgenPayload | undefined>
-): Promise<DocgenResult[]> {
-  const results: DocgenResult[] = [];
-  for (const input of inputs) {
-    try {
-      results.push({ status: 'fulfilled', value: await extractOne(input) });
-    } catch (reason) {
-      results.push({ status: 'rejected', reason });
+interface ExtractOption<TManager> {
+  /**
+   * Extracts one payload
+   * Returns `undefined` to delegate the request downstream
+   */
+  extract: (manager: TManager, input: DocgenProviderInput) => Promise<DocgenPayload | undefined>;
+  extractBatch?: undefined;
+}
+
+interface ExtractBatchOption<TManager> {
+  extract?: undefined;
+  /**
+   * Extracts the requests that arrived close together in one call. Settles one result per input,
+   * in the same order; a fulfilled `undefined` delegates that request downstream. For a renderer
+   * with setup that the components of a static build or an extract-all share.
+   */
+  extractBatch: (manager: TManager, inputs: DocgenProviderInput[]) => Promise<DocgenResult[]>;
+}
+
+export type LazyDocgenMiddlewareOptions<TManager> = BaseOptions<TManager> &
+  (ExtractOption<TManager> | ExtractBatchOption<TManager>);
+
+type DocgenResult = PromiseSettledResult<DocgenPayload | undefined>;
+
+interface Queued {
+  input: DocgenProviderInput;
+  resolve: (payload: DocgenPayload | undefined) => void;
+  reject: (reason: unknown) => void;
+}
+
+/**
+ * Groups requests into batches by when they arrive.
+ *
+ * A static build and an extract-all ask for every component at once, as separate requests. The
+ * first batch holds the requests that arrived before the event loop came back to this thread.
+ * Extraction blocks the thread, so the requests that arrive during a batch wait and form the next
+ * one. Batches run one after another. A request that misses its batch costs the renderer its shared
+ * setup once more, and never a different payload.
+ */
+function createBatcher(extractBatch: (inputs: DocgenProviderInput[]) => Promise<DocgenResult[]>) {
+  let queue: Queued[] = [];
+  let running = false;
+
+  const run = async () => {
+    while (queue.length > 0) {
+      const batch = queue;
+      queue = [];
+      try {
+        const results = await extractBatch(batch.map(({ input }) => input));
+        batch.forEach(({ resolve, reject }, index) => {
+          const result = results[index];
+          if (result.status === 'fulfilled') {
+            resolve(result.value);
+          } else {
+            reject(result.reason);
+          }
+        });
+      } catch (error) {
+        batch.forEach(({ reject }) => reject(error));
+      }
     }
-  }
-  return results;
+    running = false;
+  };
+
+  return (input: DocgenProviderInput) =>
+    new Promise<DocgenPayload | undefined>((resolve, reject) => {
+      queue.push({ input, resolve, reject });
+      if (!running) {
+        running = true;
+        setImmediate(run);
+      }
+    });
 }
 
 export function createLazyDocgenMiddleware<TManager>({
   storyFileTest = STORY_FILE_TEST_REGEXP,
   createManager,
   extract,
-  merge = (own, downstream) => ({ ...downstream, ...own }),
+  extractBatch,
 }: LazyDocgenMiddlewareOptions<TManager>): DocgenMiddleware {
   let managerPromise: Promise<TManager | undefined> | undefined;
   const getManager = () => (managerPromise ??= createManager());
+  let batcher: ReturnType<typeof createBatcher> | undefined;
+
+  const extractOne = (manager: TManager, input: DocgenProviderInput) => {
+    if (extract) {
+      return extract(manager, input);
+    }
+    batcher ??= createBatcher((inputs) => extractBatch(manager, inputs));
+    return batcher(input);
+  };
 
   return (nextDocgen: DocgenProvider): DocgenProvider =>
-    async (inputs) => {
-      const matched = inputs.filter((input) => {
-        const storyImportPath = getStoryImportPathFromEntry(input.entry);
-        return !!storyImportPath && storyFileTest.test(storyImportPath);
-      });
-      const manager = matched.length > 0 ? await getManager() : undefined;
-      const ourResults = manager ? await extract(manager, matched) : [];
-      const ours = new Map(matched.map((input, index) => [input, ourResults[index]]));
+    async (input) => {
+      const storyImportPath = getStoryImportPathFromEntry(input.entry);
+      if (!storyImportPath || !storyFileTest.test(storyImportPath)) {
+        return nextDocgen(input);
+      }
 
-      const downstream = await nextDocgen(inputs);
-      return inputs.map((input, index): DocgenResult => {
-        const own = ours.get(input);
-        const next = downstream[index];
-        if (own?.status === 'rejected') {
-          return own;
-        }
-        const payload = own?.value;
-        if (!payload || next.status === 'rejected') {
-          return next;
-        }
-        return { status: 'fulfilled', value: merge(payload, next.value) };
-      });
+      const manager = await getManager();
+      if (!manager) {
+        return nextDocgen(input);
+      }
+
+      const ours = await extractOne(manager, input);
+      if (!ours) {
+        return nextDocgen(input);
+      }
+
+      const downstream = await nextDocgen(input);
+      return { ...downstream, ...ours };
     };
 }

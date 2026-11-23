@@ -20,11 +20,11 @@ export interface DocgenWorkerInitRequest {
   logLevel: LogLevel;
 }
 
-/** Sent per batch of components to extract their docgen payloads. `id` correlates the response. */
+/** Sent per component to extract its docgen payload. `id` correlates the response. */
 export interface DocgenWorkerExtractRequest {
   type: 'extract';
   id: number;
-  entries: IndexEntry[];
+  entry: IndexEntry;
 }
 
 export type DocgenWorkerRequest = DocgenWorkerInitRequest | DocgenWorkerExtractRequest;
@@ -43,20 +43,15 @@ export interface DocgenWorkerInitFailure {
 
 export type DocgenWorkerInitResponse = DocgenWorkerInitSuccess | DocgenWorkerInitFailure;
 
-/** One entry's extraction; `payload` is absent when no provider produced docgen. */
-export type DocgenWorkerEntryResult =
-  | { payload?: DocgenPayload; error?: undefined }
-  | { payload?: undefined; error: ErrorLike };
-
-/** The provider chain ran; `results` holds one result per requested entry, in the same order. */
+/** Extraction succeeded; `payload` is the result (absent when no provider produced docgen). */
 export interface DocgenWorkerExtractSuccess {
   type: 'extract';
   id: number;
-  results: DocgenWorkerEntryResult[];
+  payload?: DocgenPayload;
   error?: undefined;
 }
 
-/** The provider chain threw for the whole batch; `error` describes the failure. */
+/** Extraction threw; `error` describes the failure. */
 export interface DocgenWorkerExtractFailure {
   type: 'extract';
   id: number;

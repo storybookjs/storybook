@@ -118,12 +118,7 @@ function withStoriesFromEveryFile(provider: StoryDocsProvider, liveSnippets: boo
 export function registerStoryDocsService(options: RegisterStoryDocsServiceOptions) {
   return registerExtractionService(storyDocsServiceDef, {
     getIndex: options.getIndex,
-    provider: (inputs) =>
-      Promise.allSettled(
-        inputs.map(
-          withStoriesFromEveryFile(options.storyDocsProvider, Boolean(options.liveSnippets))
-        )
-      ),
+    provider: withStoriesFromEveryFile(options.storyDocsProvider, Boolean(options.liveSnippets)),
     buildErrorPayload: ({ id, entry, error }) => ({
       id,
       name: entry.title,

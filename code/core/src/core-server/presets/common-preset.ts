@@ -448,17 +448,17 @@ export const services = async (_value: void, options: Options): Promise<void> =>
     ]);
 
     // Docgen extraction runs in a long-lived worker so its CPU-bound TypeScript work never starves
-    // the dev-server event loop. The worker composes the descriptor chain; here we forward each
-    // batch of components to it in one request. When the compiled worker script is unavailable
-    // (e.g. running from source without a build) the client is undefined and we skip docgen
-    // registration rather than extracting on the main thread.
+    // the dev-server event loop. The worker composes the descriptor chain; here we forward one
+    // component to it. When the compiled worker script is unavailable (e.g. running from source
+    // without a build) the client is undefined and we skip docgen registration rather than
+    // extracting on the main thread.
     const docgenWorker =
       docgenDescriptors.length > 0 ? createDocgenWorkerClient(docgenDescriptors) : undefined;
 
     if (docgenWorker) {
       registerDocgenService({
         getIndex,
-        docgenProvider: (inputs) => docgenWorker.extract(inputs.map(({ entry }) => entry)),
+        docgenProvider: (input) => docgenWorker.extract(input.entry),
       });
       devServerSubscriptions.push(() =>
         subscribeDocgenToModuleGraphChanges({

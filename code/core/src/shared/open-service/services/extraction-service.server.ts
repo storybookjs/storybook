@@ -48,10 +48,7 @@ export type ExtractionInput = {
   storyEntries: IndexEntry[];
 };
 
-/** Extracts every input and settles one result per input, in the same order. */
-type ExtractionProvider<TPayload> = (
-  inputs: ExtractionInput[]
-) => Promise<PromiseSettledResult<TPayload | undefined>[]>;
+type ExtractionProvider<TPayload> = (input: ExtractionInput) => Promise<TPayload | undefined>;
 
 /** The `{ name, message }` shape both extraction payloads carry under `error`. */
 export type ExtractionError = { name: string; message: string };
@@ -284,39 +281,20 @@ export function registerExtractionService<
     }
   };
 
-  type Result = PromiseSettledResult<TState['components'][string] | undefined>;
-
-  const extractOne = async (id: string): Promise<Result | undefined> => {
-    const input = (await resolveInputs()).get(id);
-    return input && (await provider([input]))[0];
-  };
-
-  // A static build loads every component on a runtime of its own, so the first load extracts all of
-  // them in one provider call and every load takes its own result from it.
-  let staticBuildResults: Promise<Map<string, Result>> | undefined;
-  const extractStaticBuild = () =>
-    (staticBuildResults ??= resolveInputs().then(async (inputs) => {
-      const results = await provider([...inputs.values()]);
-      return new Map(Array.from(inputs.keys(), (id, index) => [id, results[index]]));
-    }));
-
   const extractComponent = async (
     id: string,
     ctx: CommandCtx<TState>,
     isLatestRun: () => boolean
   ) => {
-    const result = ctx.isStaticBuild ? (await extractStaticBuild()).get(id) : await extractOne(id);
-    if (!result) {
+    const extractionInput = (await resolveInputs()).get(id);
+    if (!extractionInput) {
       if (isLatestRun()) {
         pendingIds.add(id);
         ctx.self.setState((state) => writePayload(state, id, undefined));
       }
       throw new OpenServiceDocgenMissingComponentError({ id });
     }
-    if (result.status === 'rejected') {
-      throw result.reason;
-    }
-    const payload = result.value;
+    const payload = await provider(extractionInput);
     // The file can be deleted or the title renamed while the provider runs. When the index cannot
     // be read, keep the payload.
     const indexed = await resolveInputs().then(
@@ -344,20 +322,20 @@ export function registerExtractionService<
     ctx: CommandCtx<TState>,
     isLatestRun: (id: string) => boolean
   ) => {
-    const settled = await provider([...inputs.values()]).catch((error: unknown) =>
-      Array.from(inputs, (): Result => ({ status: 'rejected', reason: error }))
+    const results = await Promise.all(
+      Array.from(inputs, async ([id, input]) => {
+        try {
+          return [id, await provider(input)] as const;
+        } catch (error) {
+          // A provider is not required to be total, so one component's failure must not
+          // discard every other component's payload.
+          return [
+            id,
+            buildErrorPayload({ id, entry: input.entry, error: toExtractionError(error) }),
+          ] as const;
+        }
+      })
     );
-    // A provider is not required to be total, so one component's failure must not discard every
-    // other component's payload.
-    const results = Array.from(inputs, ([id, input], index) => {
-      const result = settled[index];
-      return [
-        id,
-        result.status === 'fulfilled'
-          ? result.value
-          : buildErrorPayload({ id, entry: input.entry, error: toExtractionError(result.reason) }),
-      ] as const;
-    });
     // A component that left the index while the providers ran does not get its payload back.
     const current = await resolveInputs().catch(() => inputs);
     const latestResults = results.filter(([id]) => isLatestRun(id));
@@ -378,7 +356,10 @@ export function registerExtractionService<
   const service = registerService(definition, {
     queries: {
       [queryName]: {
-        staticInputs: async () => Array.from((await resolveInputs()).keys(), (id) => ({ id })),
+        staticInputs: async () => {
+          const inputs = await resolveInputs();
+          return Array.from(inputs.keys(), (id) => ({ id }));
+        },
       },
     },
     commands: {

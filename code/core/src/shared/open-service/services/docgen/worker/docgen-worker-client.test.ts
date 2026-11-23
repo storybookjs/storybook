@@ -54,24 +54,6 @@ const DESCRIPTORS: DocgenProviderDescriptor[] = [
   { moduleSpecifier: '/fake/react/docgen-worker.js' },
 ];
 
-const payload = (id: string) => ({
-  id,
-  name: id.toUpperCase(),
-  path: `./${id}.stories.ts`,
-  jsDocTags: {},
-});
-
-const extractRequests = (worker: FakeWorker) =>
-  worker.posted.filter((m) => m.type === 'extract') as { id: number; entries: { id: string }[] }[];
-
-function answer(worker: FakeWorker, results: { payload?: ReturnType<typeof payload> }[]) {
-  worker.emit('message', {
-    type: 'extract',
-    id: extractRequests(worker)[0].id,
-    results,
-  } satisfies DocgenWorkerResponse);
-}
-
 function ackInit(worker: FakeWorker, error?: { name: string; message: string }) {
   worker.emit(
     'message',
@@ -112,7 +94,7 @@ describe('createDocgenWorkerClient', () => {
 
     const { createDocgenWorkerClient } = await loadModule();
     const client = createDocgenWorkerClient(DESCRIPTORS)!;
-    client.extract([{ id: 'button--primary' } as any]).catch(() => undefined);
+    client.extract({ id: 'button--primary' } as any).catch(() => undefined);
 
     expect(fakeWorkers[0].posted[0]).toEqual({
       type: 'init',
@@ -125,7 +107,7 @@ describe('createDocgenWorkerClient', () => {
     const { createDocgenWorkerClient } = await loadModule();
     const client = createDocgenWorkerClient(DESCRIPTORS)!;
 
-    const promise = client.extract([{ id: 'button--primary' } as any]);
+    const promise = client.extract({ id: 'button--primary' } as any);
     const worker = fakeWorkers[0];
 
     expect(fakeWorkers).toHaveLength(1);
@@ -134,10 +116,15 @@ describe('createDocgenWorkerClient', () => {
 
     ackInit(worker);
     await Promise.resolve();
+    const extractMsg = worker.posted.find((m) => m.type === 'extract') as { id: number };
     // Loose on purpose: a transient unref can land before the extract continuation runs.
     expect(worker.ref).toHaveBeenCalled();
-    answer(worker, [{ payload: payload('button') }]);
-    await expect(promise).resolves.toMatchObject([{ value: { id: 'button' } }]);
+    worker.emit('message', {
+      type: 'extract',
+      id: extractMsg.id,
+      payload: { id: 'button', name: 'Button', path: './button.stories.tsx', jsDocTags: {} },
+    } satisfies DocgenWorkerResponse);
+    await expect(promise).resolves.toMatchObject({ id: 'button' });
     const lastRef = Math.max(...worker.ref.mock.invocationCallOrder);
     const lastUnref = Math.max(...worker.unref.mock.invocationCallOrder);
     expect(lastUnref).toBeGreaterThan(lastRef);
@@ -148,70 +135,35 @@ describe('createDocgenWorkerClient', () => {
 });
 
 describe('DocgenWorkerClient.extract', () => {
-  it('sends every entry in one request once init is done', async () => {
+  it('waits for init, dispatches the entry, and resolves the payload', async () => {
     const { createDocgenWorkerClient } = await loadModule();
     const client = createDocgenWorkerClient(DESCRIPTORS)!;
 
-    const entries = [{ id: 'a--default' }, { id: 'b--default' }, { id: 'c--default' }] as any;
-    client.extract(entries).catch(() => undefined);
+    const entry = { id: 'button--primary', importPath: './button.stories.tsx' } as any;
+    const promise = client.extract(entry);
     const worker = fakeWorkers[0];
 
-    expect(extractRequests(worker)).toHaveLength(0);
+    expect(worker.posted.filter((m) => m.type === 'extract')).toHaveLength(0);
     ackInit(worker);
     await Promise.resolve();
 
-    expect(extractRequests(worker)).toEqual([{ type: 'extract', id: expect.any(Number), entries }]);
-  });
+    const extractMsg = worker.posted.find((m) => m.type === 'extract');
+    expect(extractMsg).toMatchObject({ type: 'extract', entry });
 
-  it('settles each result against the entry at its position', async () => {
-    const { createDocgenWorkerClient } = await loadModule();
-    const client = createDocgenWorkerClient(DESCRIPTORS)!;
-
-    const promise = client.extract([{ id: 'a' }, { id: 'b' }, { id: 'c' }] as any);
-    const worker = fakeWorkers[0];
-    ackInit(worker);
-    await Promise.resolve();
     worker.emit('message', {
       type: 'extract',
-      id: extractRequests(worker)[0].id,
-      results: [
-        { payload: payload('a') },
-        { error: { name: 'DocgenError', message: 'b exploded' } },
-        {},
-      ],
+      id: (extractMsg as { id: number }).id,
+      payload: { id: 'button', name: 'Button', path: './button.stories.tsx', jsDocTags: {} },
     } satisfies DocgenWorkerResponse);
 
-    const [a, b, c] = await promise;
-    expect(a).toEqual({ status: 'fulfilled', value: payload('a') });
-    expect(b).toMatchObject({
-      status: 'rejected',
-      reason: expect.objectContaining({ name: 'DocgenError', message: 'b exploded' }),
-    });
-    expect(c).toEqual({ status: 'fulfilled', value: undefined });
-  });
-
-  it('starts no timer while a request is pending', async () => {
-    vi.useFakeTimers();
-    try {
-      const { createDocgenWorkerClient } = await loadModule();
-      const client = createDocgenWorkerClient(DESCRIPTORS)!;
-
-      client.extract([{ id: 'a' }] as any).catch(() => undefined);
-      ackInit(fakeWorkers[0]);
-      await vi.advanceTimersByTimeAsync(0);
-
-      expect(extractRequests(fakeWorkers[0])).toHaveLength(1);
-      expect(vi.getTimerCount()).toBe(0);
-    } finally {
-      vi.useRealTimers();
-    }
+    await expect(promise).resolves.toMatchObject({ id: 'button', name: 'Button' });
   });
 
   it('rejects extract calls when init fails', async () => {
     const { createDocgenWorkerClient } = await loadModule();
     const client = createDocgenWorkerClient(DESCRIPTORS)!;
 
-    const promise = client.extract([{ id: 'x' } as any]);
+    const promise = client.extract({ id: 'x' } as any);
     const worker = fakeWorkers[0];
     ackInit(worker, { name: 'Error', message: 'boom' });
 
@@ -222,25 +174,26 @@ describe('DocgenWorkerClient.extract', () => {
     const { createDocgenWorkerClient } = await loadModule();
     const client = createDocgenWorkerClient(DESCRIPTORS)!;
 
-    const promise = client.extract([{ id: 'x' } as any]);
+    const promise = client.extract({ id: 'x' } as any);
     const worker = fakeWorkers[0];
     worker.emit('exit', 1);
 
     await expect(promise).rejects.toThrow(/exited unexpectedly/);
   });
 
-  it('rejects the whole call with the error name/message when the provider chain throws', async () => {
+  it('rejects with the error name/message from a failed extraction', async () => {
     const { createDocgenWorkerClient } = await loadModule();
     const client = createDocgenWorkerClient(DESCRIPTORS)!;
 
-    const promise = client.extract([{ id: 'x' } as any]);
+    const promise = client.extract({ id: 'x' } as any);
     const worker = fakeWorkers[0];
     ackInit(worker);
     await Promise.resolve();
 
+    const extractMsg = worker.posted.find((m) => m.type === 'extract') as { id: number };
     worker.emit('message', {
       type: 'extract',
-      id: extractRequests(worker)[0].id,
+      id: extractMsg.id,
       error: { name: 'DocgenError', message: 'extraction exploded' },
     } satisfies DocgenWorkerResponse);
 
@@ -249,11 +202,11 @@ describe('DocgenWorkerClient.extract', () => {
     );
   });
 
-  it('rejects the pending call when the worker exits unexpectedly', async () => {
+  it('rejects in-flight extractions when the worker exits unexpectedly', async () => {
     const { createDocgenWorkerClient } = await loadModule();
     const client = createDocgenWorkerClient(DESCRIPTORS)!;
 
-    const promise = client.extract([{ id: 'x' }, { id: 'y' }] as any);
+    const promise = client.extract({ id: 'x' } as any);
     const worker = fakeWorkers[0];
     ackInit(worker);
     await Promise.resolve();
@@ -263,25 +216,11 @@ describe('DocgenWorkerClient.extract', () => {
     await expect(promise).rejects.toThrow(/exited unexpectedly/);
   });
 
-  it('rejects the pending call when the worker errors', async () => {
-    const { createDocgenWorkerClient } = await loadModule();
-    const client = createDocgenWorkerClient(DESCRIPTORS)!;
-
-    const promise = client.extract([{ id: 'x' }, { id: 'y' }] as any);
-    const worker = fakeWorkers[0];
-    ackInit(worker);
-    await Promise.resolve();
-
-    worker.emit('error', new Error('worker ran out of memory'));
-
-    await expect(promise).rejects.toThrow('worker ran out of memory');
-  });
-
   it('names the death in every extract that follows it', async () => {
     const { createDocgenWorkerClient } = await loadModule();
     const client = createDocgenWorkerClient(DESCRIPTORS)!;
 
-    const first = client.extract([{ id: 'x' } as any]);
+    const first = client.extract({ id: 'x' } as any);
     ackInit(fakeWorkers[0]);
     await Promise.resolve();
     fakeWorkers[0].emit('error', new Error('worker ran out of memory'));
@@ -289,7 +228,7 @@ describe('DocgenWorkerClient.extract', () => {
 
     // Never served a request, so the next extract reuses the corpse rather than respawning into
     // the same failure - and says what that failure was.
-    await expect(client.extract([{ id: 'y' } as any])).rejects.toThrow(
+    await expect(client.extract({ id: 'y' } as any)).rejects.toThrow(
       'docgen worker is no longer running: worker ran out of memory'
     );
     expect(fakeWorkers).toHaveLength(1);
@@ -299,37 +238,29 @@ describe('DocgenWorkerClient.extract', () => {
     const { createDocgenWorkerClient } = await loadModule();
     const client = createDocgenWorkerClient(DESCRIPTORS)!;
 
-    const first = client.extract([{ id: 'x' } as any]);
+    const first = client.extract({ id: 'x' } as any);
     ackInit(fakeWorkers[0]);
     await Promise.resolve();
-    answer(fakeWorkers[0], [{ payload: payload('x') }]);
-    await expect(first).resolves.toMatchObject([{ value: { id: 'x' } }]);
+    const extractMsg = fakeWorkers[0].posted.find((m) => m.type === 'extract') as { id: number };
+    fakeWorkers[0].emit('message', {
+      type: 'extract',
+      id: extractMsg.id,
+      payload: { id: 'x', name: 'X', path: './x.stories.ts', jsDocTags: {} },
+    } satisfies DocgenWorkerResponse);
+    await expect(first).resolves.toMatchObject({ id: 'x' });
 
     fakeWorkers[0].emit('error', new Error('worker ran out of memory'));
 
-    const second = client.extract([{ id: 'y' } as any]);
+    const second = client.extract({ id: 'y' } as any);
     expect(fakeWorkers).toHaveLength(2);
     ackInit(fakeWorkers[1]);
     await Promise.resolve();
-    answer(fakeWorkers[1], [{ payload: payload('y') }]);
-    await expect(second).resolves.toMatchObject([{ value: { id: 'y' } }]);
-  });
-
-  it('spawns a replacement when the worker died during a request for several components', async () => {
-    const { createDocgenWorkerClient } = await loadModule();
-    const client = createDocgenWorkerClient(DESCRIPTORS)!;
-
-    const batch = client.extract([{ id: 'x' }, { id: 'y' }] as any);
-    ackInit(fakeWorkers[0]);
-    await Promise.resolve();
-    fakeWorkers[0].emit('error', new Error('worker ran out of memory'));
-    await expect(batch).rejects.toThrow('worker ran out of memory');
-
-    const single = client.extract([{ id: 'x' } as any]);
-    expect(fakeWorkers).toHaveLength(2);
-    ackInit(fakeWorkers[1]);
-    await Promise.resolve();
-    answer(fakeWorkers[1], [{ payload: payload('x') }]);
-    await expect(single).resolves.toMatchObject([{ value: { id: 'x' } }]);
+    const retryMsg = fakeWorkers[1].posted.find((m) => m.type === 'extract') as { id: number };
+    fakeWorkers[1].emit('message', {
+      type: 'extract',
+      id: retryMsg.id,
+      payload: { id: 'y', name: 'Y', path: './y.stories.ts', jsDocTags: {} },
+    } satisfies DocgenWorkerResponse);
+    await expect(second).resolves.toMatchObject({ id: 'y' });
   });
 });

@@ -108,12 +108,8 @@ const runProvider = async (testDir: string, entry: IndexEntry) => {
   vi.spyOn(process, 'cwd').mockReturnValue(testDir);
   const provider = createDocgenProvider({
     manifestPaths: [],
-  })(async (inputs) => inputs.map(() => ({ status: 'fulfilled', value: undefined })));
-  const [result] = await provider([{ entry }]);
-  if (result.status === 'rejected') {
-    throw result.reason;
-  }
-  return result.value;
+  })(async () => undefined);
+  return provider({ entry });
 };
 
 const withoutWaived = <T extends object>(argTypes: T, fixtureCase: string): Partial<T> => {

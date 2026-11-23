@@ -81,12 +81,8 @@ const runProvider = async (testDir: string, entry: IndexEntry, manifestPath: str
   vi.spyOn(process, 'cwd').mockReturnValue(testDir);
   const provider = createDocgenProvider({
     manifestPaths: [manifestPath],
-  })(async (inputs) => inputs.map(() => ({ status: 'fulfilled', value: undefined })));
-  const [result] = await provider([{ entry }]);
-  if (result.status === 'rejected') {
-    throw result.reason;
-  }
-  return result.value;
+  })(async () => undefined);
+  return provider({ entry });
 };
 
 const payloadSnapshotSlice = (payload: WebComponentsDocgenPayload | undefined) => {

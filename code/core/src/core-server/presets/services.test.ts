@@ -4,13 +4,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ToolsetCtx } from '../../shared/open-service/toolset-definition.ts';
 import { clearToolsetRegistry, getToolset } from '../../shared/open-service/toolset-registry.ts';
-import { clearRegistry } from '../../shared/open-service/server.ts';
-import { createDocgenWorkerClient } from '../../shared/open-service/services/docgen/worker/docgen-worker-client.ts';
 import { loadManifests } from '../utils/manifests/manifests.ts';
 import { services } from './common-preset.ts';
 
 vi.mock('../utils/manifests/manifests.ts', { spy: true });
-vi.mock('../../shared/open-service/services/docgen/worker/docgen-worker-client.ts', { spy: true });
 
 const REMOTE_MANIFEST = JSON.stringify({
   v: 1,
@@ -151,41 +148,5 @@ describe('services preset hook: docs toolset', () => {
       expect(outcome.markdown).not.toContain('# Local');
       expect(fetch).not.toHaveBeenCalled();
     });
-  });
-});
-
-describe('services preset hook: docgen worker', () => {
-  const DESCRIPTORS = [{ moduleSpecifier: '/fake/react/docgen-worker.js' }];
-
-  beforeEach(() => {
-    clearToolsetRegistry();
-    vi.stubGlobal('STORYBOOK_SERVICES_LOADED', false);
-    vi.mocked(createDocgenWorkerClient).mockReturnValue({ extract: vi.fn() });
-  });
-
-  afterEach(() => {
-    clearRegistry();
-    vi.unstubAllGlobals();
-  });
-
-  it('creates the worker client with the provider descriptors', async () => {
-    await services(undefined, {
-      configType: 'PRODUCTION',
-      channel: { on: vi.fn(), off: vi.fn(), emit: vi.fn() },
-      presets: {
-        apply: async (extension: string, config?: unknown) => {
-          switch (extension) {
-            case 'features':
-              return { docgenServer: true };
-            case 'experimental_docgenProvider':
-              return DESCRIPTORS;
-            default:
-              return config;
-          }
-        },
-      },
-    } as unknown as Options);
-
-    expect(createDocgenWorkerClient).toHaveBeenCalledWith(DESCRIPTORS);
   });
 });

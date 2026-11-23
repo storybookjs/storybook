@@ -4,7 +4,7 @@ import type {
   DocgenPayload,
   DocgenProviderInput,
 } from '../../shared/open-service/services/docgen/types.ts';
-import { createLazyDocgenMiddleware, extractEach } from './lazy-docgen-middleware.ts';
+import { createLazyDocgenMiddleware } from './lazy-docgen-middleware.ts';
 
 const DOWNSTREAM: DocgenPayload = {
   id: 'button',
@@ -31,19 +31,6 @@ const MERGED: DocgenPayload = {
   renderer: 'svelte',
 };
 
-const input = (name: string, importPath = `./${name}.stories.ts`): DocgenProviderInput => ({
-  entry: {
-    id: `${name.toLowerCase()}--primary`,
-    name: 'Primary',
-    title: name,
-    type: 'story',
-    subtype: 'story',
-    importPath,
-  },
-});
-
-const fulfilled = (value: DocgenPayload | undefined) => ({ status: 'fulfilled' as const, value });
-
 describe('createLazyDocgenMiddleware', () => {
   it.each([
     { importPath: './Button.stories.ts', storyFileTest: undefined, expected: MERGED },
@@ -56,118 +43,118 @@ describe('createLazyDocgenMiddleware', () => {
       const provider = createLazyDocgenMiddleware({
         storyFileTest,
         createManager: async () => ({}),
-        extract: async (_manager, inputs) => inputs.map(() => fulfilled(OURS)),
-      })(async (inputs) => inputs.map(() => fulfilled(DOWNSTREAM)));
+        extract: async () => OURS,
+      })(async () => DOWNSTREAM);
 
-      await expect(provider([input('Button', importPath)])).resolves.toEqual([fulfilled(expected)]);
+      await expect(
+        provider({
+          entry: {
+            id: 'button--primary',
+            name: 'Primary',
+            title: 'Button',
+            type: 'story',
+            subtype: 'story',
+            importPath,
+          },
+        })
+      ).resolves.toEqual(expected);
     }
   );
 
-  it('extracts only the matching inputs, in one call, and passes every input downstream once', async () => {
-    const extract = vi.fn(async (_manager: object, inputs: DocgenProviderInput[]) =>
-      inputs.map(() => fulfilled(OURS))
-    );
-    const downstream = vi.fn(async (inputs: DocgenProviderInput[]) =>
-      inputs.map(() => fulfilled(DOWNSTREAM))
-    );
-    const button = input('Button');
-    const icon = input('Icon', './Icon.stories.svelte');
-    const card = input('Card');
+  describe('extractBatch', () => {
+    const input = (title: string): DocgenProviderInput => ({
+      entry: {
+        id: `${title.toLowerCase()}--primary`,
+        name: 'Primary',
+        title,
+        type: 'story',
+        subtype: 'story',
+        importPath: `./${title}.stories.ts`,
+      },
+    });
+    const payload = (name: string): DocgenPayload => ({
+      id: name.toLowerCase(),
+      name,
+      path: `./${name}.stories.ts`,
+      jsDocTags: {},
+    });
+    const titles = (inputs: DocgenProviderInput[]) => inputs.map(({ entry }) => entry.title);
 
-    const results = await createLazyDocgenMiddleware({
-      createManager: async () => ({}),
-      extract,
-    })(downstream)([button, icon, card]);
+    it('extracts the requests that arrive together in one call', async () => {
+      const extractBatch = vi.fn(async (_manager: object, inputs: DocgenProviderInput[]) =>
+        inputs.map(({ entry }) => ({ status: 'fulfilled' as const, value: payload(entry.title) }))
+      );
+      const provider = createLazyDocgenMiddleware({
+        createManager: async () => ({}),
+        extractBatch,
+      })(async () => undefined);
 
-    expect(extract).toHaveBeenCalledOnce();
-    expect(extract).toHaveBeenCalledWith({}, [button, card]);
-    expect(downstream).toHaveBeenCalledOnce();
-    expect(downstream).toHaveBeenCalledWith([button, icon, card]);
-    expect(results).toEqual([fulfilled(MERGED), fulfilled(DOWNSTREAM), fulfilled(MERGED)]);
-  });
+      const results = await Promise.all(['Button', 'Card', 'Input'].map((t) => provider(input(t))));
 
-  it('does not create the manager when no input matches', async () => {
-    const createManager = vi.fn(async () => ({}));
-
-    const results = await createLazyDocgenMiddleware({
-      createManager,
-      extract: async () => [],
-    })(async (inputs) => inputs.map(() => fulfilled(DOWNSTREAM)))([
-      input('Icon', './Icon.stories.svelte'),
-    ]);
-
-    expect(createManager).not.toHaveBeenCalled();
-    expect(results).toEqual([fulfilled(DOWNSTREAM)]);
-  });
-
-  it('keeps one failing entry from failing the others', async () => {
-    const error = new Error('Card exploded');
-    const results = await createLazyDocgenMiddleware({
-      createManager: async () => ({}),
-      extract: async () => [
-        fulfilled(OURS),
-        { status: 'rejected', reason: error },
-        fulfilled(undefined),
-      ],
-    })(async (inputs) => inputs.map(() => fulfilled(DOWNSTREAM)))([
-      input('Button'),
-      input('Card'),
-      input('Icon'),
-    ]);
-
-    expect(results).toEqual([
-      fulfilled(MERGED),
-      { status: 'rejected', reason: error },
-      fulfilled(DOWNSTREAM),
-    ]);
-  });
-
-  it('combines the two payloads with the merge option', async () => {
-    const provider = createLazyDocgenMiddleware({
-      createManager: async () => ({}),
-      extract: async (_manager, inputs) => inputs.map(() => fulfilled(OURS)),
-      merge: (own, downstream) => ({ ...own, description: downstream?.name }),
-    })(async (inputs) => inputs.map(() => fulfilled(DOWNSTREAM)));
-
-    expect(await provider([input('Button')])).toEqual([
-      fulfilled({ ...OURS, description: 'Downstream' }),
-    ]);
-  });
-
-  it('keeps a downstream failure on its own entry', async () => {
-    const error = new Error('downstream exploded');
-    const results = await createLazyDocgenMiddleware({
-      createManager: async () => ({}),
-      extract: async (_manager, inputs) => inputs.map(() => fulfilled(OURS)),
-    })(async () => [{ status: 'rejected', reason: error }, fulfilled(DOWNSTREAM)])([
-      input('Button'),
-      input('Card'),
-    ]);
-
-    expect(results).toEqual([{ status: 'rejected', reason: error }, fulfilled(MERGED)]);
-  });
-});
-
-describe('extractEach', () => {
-  it('extracts one input after another and settles each on its own', async () => {
-    const order: string[] = [];
-    const error = new Error('b exploded');
-
-    const results = await extractEach(['a', 'b', 'c'], async (name) => {
-      order.push(`start ${name}`);
-      await Promise.resolve();
-      order.push(`end ${name}`);
-      if (name === 'b') {
-        throw error;
-      }
-      return name === 'a' ? OURS : undefined;
+      expect(extractBatch.mock.calls.map(([, inputs]) => titles(inputs))).toEqual([
+        ['Button', 'Card', 'Input'],
+      ]);
+      expect(results.map((result) => result?.name)).toEqual(['Button', 'Card', 'Input']);
     });
 
-    expect(order).toEqual(['start a', 'end a', 'start b', 'end b', 'start c', 'end c']);
-    expect(results).toEqual([
-      fulfilled(OURS),
-      { status: 'rejected', reason: error },
-      fulfilled(undefined),
-    ]);
+    it('puts the requests that arrive during a batch in the next batch', async () => {
+      let release = () => {};
+      const firstBatchRuns = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      const calls: string[][] = [];
+      let provider = (async () => undefined) as ReturnType<
+        ReturnType<typeof createLazyDocgenMiddleware>
+      >;
+      let late: Promise<unknown>[] = [];
+      provider = createLazyDocgenMiddleware({
+        createManager: async () => ({}),
+        extractBatch: async (_manager, inputs) => {
+          calls.push(titles(inputs));
+          if (calls.length === 1) {
+            late = ['Card', 'Input'].map((t) => provider(input(t)));
+            release();
+            // Let the late requests reach the queue while this batch still runs.
+            await new Promise((resolve) => setImmediate(resolve));
+          }
+          return inputs.map(({ entry }) => ({ status: 'fulfilled', value: payload(entry.title) }));
+        },
+      })(async () => undefined);
+
+      const first = provider(input('Button'));
+      await firstBatchRuns;
+      await Promise.all([first, ...late]);
+
+      expect(calls).toEqual([['Button'], ['Card', 'Input']]);
+    });
+
+    it('fails only the request whose result is rejected', async () => {
+      const provider = createLazyDocgenMiddleware({
+        createManager: async () => ({}),
+        extractBatch: async (_manager, inputs) =>
+          inputs.map(({ entry }) =>
+            entry.title === 'Card'
+              ? { status: 'rejected', reason: new Error('no props') }
+              : { status: 'fulfilled', value: payload(entry.title) }
+          ),
+      })(async () => undefined);
+
+      const results = await Promise.allSettled(['Button', 'Card'].map((t) => provider(input(t))));
+
+      expect(results).toEqual([
+        { status: 'fulfilled', value: payload('Button') },
+        { status: 'rejected', reason: new Error('no props') },
+      ]);
+    });
+
+    it('delegates a request downstream when its result is undefined', async () => {
+      const provider = createLazyDocgenMiddleware({
+        createManager: async () => ({}),
+        extractBatch: async (_manager, inputs) =>
+          inputs.map(() => ({ status: 'fulfilled', value: undefined })),
+      })(async () => DOWNSTREAM);
+
+      await expect(provider(input('Button'))).resolves.toEqual(DOWNSTREAM);
+    });
   });
 });

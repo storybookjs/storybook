@@ -307,7 +307,6 @@ export type QueryRuntimeRefs<TState> = {
   /** Deep reactive proxy backing this service's state; reads inside a computed track fine-grained. */
   state: TState;
   registryApi: ServiceRegistryApi;
-  isStaticBuild: boolean;
   queryDefinitions: Map<string, RuntimeQueryDefinition<TState>>;
   defaultQueries: Record<string, Query<unknown, unknown>>;
   /**
@@ -558,11 +557,7 @@ export async function runLoadBody<TState>(
     queries: wrappedQueries,
     commands: refs.getLoadCommands() as LoadSelf<TState>['commands'],
   };
-  const loadCtx: LoadCtx<TState> = {
-    self: loadSelf,
-    getService: refs.registryApi.getService,
-    isStaticBuild: refs.isStaticBuild,
-  };
+  const loadCtx: LoadCtx<TState> = { self: loadSelf, getService: refs.registryApi.getService };
 
   await Promise.resolve(queryDef.load(validatedInput, loadCtx));
   await drainCollector(collector, undefined, refs.serviceId, queryName);
@@ -613,11 +608,7 @@ async function runReactiveLoad<TState>(
     queries: refs.reactiveLoadQueries,
     commands: refs.buildGatedCommands(gate) as LoadSelf<TState>['commands'],
   };
-  const loadCtx: LoadCtx<TState> = {
-    self: loadSelf,
-    getService: refs.registryApi.getService,
-    isStaticBuild: refs.isStaticBuild,
-  };
+  const loadCtx: LoadCtx<TState> = { self: loadSelf, getService: refs.registryApi.getService };
 
   await Promise.resolve(queryDef.load(validatedInput, loadCtx));
 }

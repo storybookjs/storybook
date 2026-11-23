@@ -70,3 +70,31 @@ Vitest type-checks `*.test-d.ts` files with the TypeScript 7 native compiler, th
 - A package with type tests sets `test.typecheck.enabled: true` in its `vitest.config.ts`; the checker itself comes from `code/vitest.shared.ts`.
 - Run them from the repo root with `yarn vitest run --project <project> test-d`, where `<project>` is the config's `test.name` or else the package name (e.g. `core`, `@storybook/angular`).
 - Assert with `expectTypeOf` and use `// @ts-expect-error` for inputs that must be rejected; an unused directive fails the test.
+
+## Mutation testing: finding idle tests
+
+`scripts/mutation-testing` runs [Stryker](https://stryker-mutator.io) on the unit tests of one package at a time.
+It reports _idle_ tests: tests that pass on the original sources and fail for no mutant they reach, so they would not notice the regressions Stryker can simulate in the code they run.
+
+| Step                 | Command                                                       |
+| -------------------- | ------------------------------------------------------------- |
+| Install Stryker once | `yarn --cwd scripts/mutation-testing/stryker install`         |
+| Run on packages      | `node scripts/mutation-testing/run.ts code/core code/lib/mcp` |
+| Print every report   | `node scripts/mutation-testing/report.ts`                     |
+
+How it runs:
+
+- Stryker has its own Yarn project in `scripts/mutation-testing/stryker`. Its instrumenter needs Babel 8, and the root `resolutions` hold `@babel/traverse` and `@babel/types` at 7 for every workspace. The project links to the workspace's `vitest`, so the tests and the runner load the same copy.
+- Stryker rewrites the package's sources in place while it runs, because workspace packages resolve to their real sources and a copy would be tested against unmutated code. The package must have no uncommitted changes: an interrupted run is undone with `git checkout`. Do not edit, build or test that package, or run a second package, until the run ends.
+- Most packages take a few minutes on four cores, and `code/core` about an hour and a half.
+- `--mutate <glob>` limits the mutated files (the default is the package's `src`), and `--resume` continues an interrupted run. Results live in `.cache/mutation-testing/<package>`, and `report.ts` also reads those of an interrupted run once its first pass has finished.
+- A mutant in code that runs while a module loads is only tried against the tests that run that code again themselves. `--module-load-mutants` tries it against every pending test of the files that import the module, which is what a change to a module-level constant needs. That adds hours for `code/core`.
+- `--pool forks` runs the tests in child processes. Use it when a test runner crashes with `SIGSEGV`, as `code/frameworks/angular-vite` does in worker threads.
+
+How to read the report:
+
+- It is not a mutation score. A test stops running once it has failed for one mutant, so most mutants are never tried against most tests and count as survived.
+- An idle test that reaches mutants fails for no change Stryker can make to the code it runs. It may assert too little, or it may guard an absence, such as `returns undefined when there is no config`: no mutant adds behaviour, so such a test is idle and still worth keeping.
+- An idle test that reaches no mutant only depends on something outside the mutated sources: a type, another package, a built `dist` file, a fixture, or a module-level constant without `--module-load-mutants`. Mutation testing cannot judge it. A test that only asserts types belongs in a `*.test-d.ts` file.
+- Each package is judged against its own sources only, so a package whose tests exercise other packages, such as `code/lib/docgen-harness`, reports most of its tests as idle.
+- Story tests and type tests are not covered: the Stryker Vitest runner does not support browser mode, and a type test cannot fail for a mutant.

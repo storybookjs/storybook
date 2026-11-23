@@ -28,6 +28,13 @@
     "noFallthroughCasesInSwitch": true,
     "resolveJsonModule": true
   },
-  "exclude": ["dist", "**/dist", "node_modules", "**/node_modules", "sandbox/fixtures"],
+  "exclude": [
+    "dist",
+    "**/dist",
+    "node_modules",
+    "**/node_modules",
+    "sandbox/fixtures",
+    "mutation-testing/stryker"
+  ],
   "include": ["./**/*", "./.eslintrc.cjs"]
 }

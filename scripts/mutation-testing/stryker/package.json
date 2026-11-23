@@ -1,0 +1,11 @@
+{
+  "name": "@storybook/mutation-testing-stryker",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@stryker-mutator/core": "10.1.1",
+    "@stryker-mutator/vitest-runner": "10.1.1",
+    "vitest": "link:../../../node_modules/vitest"
+  }
+}

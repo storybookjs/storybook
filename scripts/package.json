@@ -22,6 +22,8 @@
     "lint:js:cmd": "oxlint --report-unused-disable-directives-severity=error --no-error-on-unmatched-pattern",
     "lint:package": "sort-package-json",
     "local-registry": "jiti ./run-registry.ts",
+    "mutation-test": "node ./mutation-testing/run.ts",
+    "mutation-test:report": "node ./mutation-testing/report.ts",
     "publish": "jiti ./sandbox/publish.ts",
     "release:cancel-preparation-runs": "jiti ./release/cancel-preparation-runs.ts",
     "release:generate-pr-description": "jiti ./release/generate-pr-description.ts",

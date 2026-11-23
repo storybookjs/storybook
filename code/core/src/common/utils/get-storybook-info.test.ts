@@ -16,12 +16,12 @@ vi.mock('./load-main-config.ts', { spy: true });
 
 const configDir = join('/project', '.storybook');
 
-describe('findConfigFile', () => {
-  beforeEach(() => {
-    vol.reset();
-    vi.mocked(existsSync).mockImplementation(fs.existsSync as typeof existsSync);
-  });
+beforeEach(() => {
+  vol.reset();
+  vi.mocked(existsSync).mockImplementation(fs.existsSync as typeof existsSync);
+});
 
+describe('findConfigFile', () => {
   it.each(['main.mts', 'main.cts', 'main.ts', 'main.js'])('finds %s', (file) => {
     vol.fromJSON({ [join(configDir, file)]: '' });
 

@@ -78,7 +78,9 @@ async function writesSvelteCsf(stories: StoriesEntry[], configDir: string): Prom
       workingDir,
       true
     );
-    paths = matches.flatMap(([, files]) => Object.keys(files));
+    paths = matches
+      .flatMap(([, files]) => Object.keys(files))
+      .filter((path) => !path.endsWith('.mdx'));
   } catch (error) {
     logger.debug(`Could not list story files for the write-stories skill: ${error}`);
   }

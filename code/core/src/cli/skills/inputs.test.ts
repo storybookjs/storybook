@@ -160,6 +160,12 @@ describe('resolveSkillInputs', () => {
         false,
       ],
       ['no stories yet, entries that load .svelte', ['../src/**/*.stories.svelte'], [], true],
+      [
+        'only docs pages, entries that load .svelte',
+        ['../src/**/*.mdx', '../src/**/*.stories.svelte'],
+        ['/project/src/Configure.mdx'],
+        true,
+      ],
       ['no stories yet, entries that load only .ts', ['../src/**/*.stories.ts'], [], false],
       [
         'an unreadable folder, entries that load .svelte',

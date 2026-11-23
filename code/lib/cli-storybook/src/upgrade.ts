@@ -3,18 +3,19 @@ import {
   installSkills,
   refreshAgentInstructions,
 } from 'storybook/internal/cli';
-import { PackageManagerName } from 'storybook/internal/common';
 import {
   HandledError,
   JsPackageManager,
   JsPackageManagerFactory,
   type PackageJsonWithDepsAndDevDeps,
+  PackageManagerName,
+  getProcessAncestry,
   isCI,
   isCorePackage,
   isNpmPeerResolutionError,
   resolveStorybookVersionSpecifier,
-  getProcessAncestry,
 } from 'storybook/internal/common';
+import type { LogLevel } from 'storybook/internal/node-logger';
 import {
   CLI_COLORS,
   createHyperlink,
@@ -22,7 +23,6 @@ import {
   logger,
   prompt,
 } from 'storybook/internal/node-logger';
-import type { LogLevel } from 'storybook/internal/node-logger';
 import {
   MinimumReleaseAgeHandledError,
   UpgradeStorybookToLowerVersionError,
@@ -43,8 +43,8 @@ import {
 } from './automigrate/multi-project.ts';
 import { FixStatus } from './automigrate/types.ts';
 import { displayDoctorResults, runMultiProjectDoctor } from './doctor/index.ts';
-import { configureDeferredAddons } from './postinstallAddon.ts';
 import type { ProjectDoctorData, ProjectDoctorResults } from './doctor/types.ts';
+import { configureDeferredAddons } from './postinstallAddon.ts';
 import {
   type CollectProjectsSuccessResult,
   getProjects,
@@ -520,15 +520,13 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
             await getStorybookDependencyUpgrades(packageJson, config)
           );
           if (changes.length > 0) {
-            plannedUpgrades.push(
-              `Would update ${shortenPath(packageJsonPath)}:\n${changes.join('\n')}`
-            );
+            plannedUpgrades.push(`${shortenPath(packageJsonPath)}:\n  ${changes.join('\n  ')}`);
           }
         }
       }
       task.success(
         options.dryRun
-          ? 'Fetched the versions to update package.json files'
+          ? 'Would update package versions in package.json files to:'
           : `Updated package versions in package.json files`
       );
       plannedUpgrades.forEach((message) => logger.log(message));

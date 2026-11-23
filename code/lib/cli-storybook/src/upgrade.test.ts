@@ -764,7 +764,7 @@ describe('upgrade', () => {
           packageJsonPaths: [packageJsonPath],
         });
 
-        expect(logged()).toMatch(/storybook: 8\.0\.0 → \^?9\.0\.0/);
+        expect(logged()).toMatch(/^storybook: 8\.0\.0 → \^?9\.0\.0$/m);
         expect(packageManager.writeCatalogUpgrades).not.toHaveBeenCalled();
         expect(packageManager.addDependencies).not.toHaveBeenCalled();
         expect(await readFile(packageJsonPath, 'utf8')).toBe(packageJson);

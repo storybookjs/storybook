@@ -273,7 +273,9 @@ describe('csfFactories', () => {
         .flatMap((method) => vi.mocked(method).mock.calls.flat())
         .join('\n');
       expect(output).toContain('Checking how codemods would apply on your stories');
-      expect(output).not.toContain('Applying codemod on your stories');
+      expect(output).toContain('Checking how codemods would apply on your main config');
+      expect(output).toContain('Checking how codemods would apply on your preview config');
+      expect(output).not.toContain('Applying codemod');
       expect(output).not.toContain('This was a dry run');
       expect(output.match(/Dry run finished/g) ?? []).toHaveLength(1);
     });
@@ -294,7 +296,7 @@ describe('csfFactories', () => {
 
       const output = vi.mocked(logger.log).mock.calls.flat().join('\n');
       expect(output).toMatch(/Would write to .*\.storybook\/preview\.js/);
-      expect(output).toContain('my-addon');
+      expect(output).toMatch(/Would sync addons from main config into .*: my-addon/);
       expect(output).not.toContain('definePreview(');
     });
 

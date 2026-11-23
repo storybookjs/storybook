@@ -5,7 +5,7 @@ import {
   readConfig,
   writeConfig,
 } from 'storybook/internal/csf-tools';
-import { logger } from 'storybook/internal/node-logger';
+import { CLI_COLORS, logger } from 'storybook/internal/node-logger';
 import type { StorybookConfig } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
@@ -31,7 +31,9 @@ export async function syncStorybookAddons(
 export async function syncPreviewAddonsWithMainConfig(
   mainConfig: StorybookConfig,
   previewConfig: ConfigFile,
-  configDir: string
+  configDir: string,
+  /** `dryRun` words the report of the synced addons as what a run would do. */
+  { dryRun = false }: { dryRun?: boolean } = {}
 ): Promise<ConfigFile> {
   const isCsfFactory = isCsfFactoryPreview(previewConfig);
 
@@ -94,7 +96,9 @@ export async function syncPreviewAddonsWithMainConfig(
 
   if (syncedAddons.length > 0) {
     logger.log(
-      `Synchronizing addons from main config in ${picocolors.cyan(previewConfig.fileName)}:\n${syncedAddons.map(picocolors.magenta).join(', ')}`
+      dryRun
+        ? `Would sync addons from main config into ${CLI_COLORS.change(String(previewConfig.fileName))}: ${syncedAddons.map(CLI_COLORS.change).join(', ')}`
+        : `Synchronizing addons from main config in ${picocolors.cyan(previewConfig.fileName)}:\n${syncedAddons.map(picocolors.magenta).join(', ')}`
     );
   }
 

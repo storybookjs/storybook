@@ -42,7 +42,6 @@ import {
   runAutomigrations,
 } from './automigrate/multi-project.ts';
 import { FixStatus } from './automigrate/types.ts';
-import { highlightChange } from './dry-run.ts';
 import { displayDoctorResults, runMultiProjectDoctor } from './doctor/index.ts';
 import type { ProjectDoctorData, ProjectDoctorResults } from './doctor/types.ts';
 import { configureDeferredAddons } from './postinstallAddon.ts';
@@ -107,7 +106,7 @@ const describeVersionChanges = (
       const name = specifier.slice(0, at);
       const version = specifier.slice(at + 1);
       const current = packageJson[type]?.[name];
-      return current === version ? [] : [`  ${highlightChange(name)}: ${current} → ${version}`];
+      return current === version ? [] : [`${CLI_COLORS.change(name)}: ${current} → ${version}`];
     })
   );
 
@@ -522,7 +521,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
           );
           if (changes.length > 0) {
             plannedUpgrades.push(
-              `${highlightChange(shortenPath(packageJsonPath))}:\n  ${changes.join('\n  ')}`
+              `${CLI_COLORS.change(shortenPath(packageJsonPath))}:\n${changes.join('\n')}`
             );
           }
         }

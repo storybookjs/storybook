@@ -115,7 +115,7 @@ export async function runCodemod(
   }
 
   logger.log(
-    `Summary: ${picocolors.green(`${modifiedCount} transformed`)}, ${picocolors.yellow(`${unmodifiedCount} unmodified`)}, ${picocolors.red(`${errorCount} errors`)}`
+    `Summary: ${picocolors.green(`${modifiedCount} ${dryRun ? 'to transform' : 'transformed'}`)}, ${picocolors.yellow(`${unmodifiedCount} unmodified`)}, ${picocolors.red(`${errorCount} errors`)}`
   );
 
   if (dryRun && announceDryRun) {

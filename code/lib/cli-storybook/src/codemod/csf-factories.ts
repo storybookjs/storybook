@@ -19,7 +19,6 @@ import { type FileInfo, runCodemod } from '../automigrate/codemod.ts';
 import { editParsedFile } from '../automigrate/helpers/edit-parsed-file.ts';
 import { getFrameworkPackageName } from '../automigrate/helpers/mainConfigFile.ts';
 import type { CommandFix } from '../automigrate/types.ts';
-import { highlightChange } from '../dry-run.ts';
 import { configToCsfFactory } from './helpers/config-to-csf-factory.ts';
 import { storyToCsfFactory } from './helpers/story-to-csf-factory.ts';
 import { svelteCsfToCsfFactory } from './helpers/svelte-csf-to-csf-factory.ts';
@@ -135,7 +134,7 @@ export const csfFactories: CommandFix = {
     const { packageJson, operationDir, packageJsonPath } = packageManager.primaryPackageJson;
     const writeImportsMap = () => {
       if (dryRun) {
-        logger.step(`Would add an imports map in ${highlightChange(packageJsonPath)}`);
+        logger.step(`Would add an imports map in ${CLI_COLORS.change(packageJsonPath)}`);
         return;
       }
       logger.step(`Adding imports map in ${picocolors.cyan(packageJsonPath)}`);
@@ -174,19 +173,27 @@ export const csfFactories: CommandFix = {
         async (info) => {
           const output = await transform(info);
           if (dryRun && output !== info.source) {
-            logger.log(`Would write to ${highlightChange(info.path)}`);
+            logger.log(`Would write to ${CLI_COLORS.change(info.path)}`);
           }
           return output;
         },
         { dryRun, announceDryRun: false }
       );
 
-    logger.step('Applying codemod on your main config...');
+    logger.step(
+      dryRun
+        ? 'Checking how codemods would apply on your main config'
+        : 'Applying codemod on your main config...'
+    );
     await runConfigCodemod(mainConfigPath!, (info) =>
       configToCsfFactory(info, { configType: 'main', frameworkPackage }, { skipFormatting: true })
     );
 
-    logger.step('Applying codemod on your preview config...');
+    logger.step(
+      dryRun
+        ? 'Checking how codemods would apply on your preview config'
+        : 'Applying codemod on your preview config...'
+    );
     // The addons of the main config are synced into the converted preview within the same
     // transform, so a dry run reports them too.
     await runConfigCodemod(previewConfigPath!, async (info) => {
@@ -199,7 +206,7 @@ export const csfFactories: CommandFix = {
         info.path
       ).parse();
       await editParsedFile(preview, (config) =>
-        syncPreviewAddonsWithMainConfig(mainConfig, config, configDir)
+        syncPreviewAddonsWithMainConfig(mainConfig, config, configDir, { dryRun })
       );
       return formatConfig(preview);
     });

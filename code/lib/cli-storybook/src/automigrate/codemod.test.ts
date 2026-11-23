@@ -47,3 +47,14 @@ it.each([
   expect(output.match(/This was a dry run/g) ?? []).toHaveLength(times);
   expect(readFileSync(file, 'utf-8')).toBe('export default {};');
 });
+
+it('counts the files a dry run would transform', async () => {
+  root = mkdtempSync(join(tmpdir(), 'storybook-run-codemod-'));
+  const file = join(root, 'main.ts');
+  writeFileSync(file, 'export default {};');
+
+  await runCodemod([file], (info) => `${info.source}\n// migrated`, { dryRun: true });
+
+  const output = vi.mocked(logger.log).mock.calls.flat().join('\n');
+  expect(output).toContain('Summary: 1 to transform, 0 unmodified, 0 errors');
+});

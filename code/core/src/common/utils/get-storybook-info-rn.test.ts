@@ -70,6 +70,10 @@ describe('getStorybookInfo with framework @storybook/react-native in main', () =
     });
   });
 
+  afterEach(() => {
+    vi.mocked(loadMainConfig).mockReset();
+  });
+
   it('resolves the React Native renderer', async () => {
     const info = await getStorybookInfo(join(tmpdir(), '.storybook'));
 

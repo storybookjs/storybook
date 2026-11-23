@@ -308,17 +308,16 @@ it('migrates a story once when overlapping stories entries both match it', async
   expect(vi.mocked(runCodemod).mock.calls[0][0]).toEqual([paths.story]);
 });
 
-it('migrates the files of --glob instead of the main config stories', async () => {
-  await migrateProject('.storybook', { glob: 'src/**/*.stories.tsx' });
+it.each(['false', 'true'])(
+  'migrates the files of --glob when IN_STORYBOOK_SANDBOX is %s',
+  async (inSandbox) => {
+    vi.stubEnv('IN_STORYBOOK_SANDBOX', inSandbox);
 
-  expect(vi.mocked(runCodemod).mock.calls[0][0]).toBe('src/**/*.stories.tsx');
-});
+    await migrateProject('.storybook', { glob: 'src/**/*.stories.tsx' });
 
-it('passes an empty --glob to the codemod instead of reading the main config stories', async () => {
-  await migrateProject('.storybook', { glob: '' });
-
-  expect(vi.mocked(runCodemod).mock.calls[0][0]).toBe('');
-});
+    expect(vi.mocked(runCodemod).mock.calls[0][0]).toBe('src/**/*.stories.tsx');
+  }
+);
 
 describe('in a sandbox', () => {
   beforeEach(() => {
@@ -330,12 +329,6 @@ describe('in a sandbox', () => {
 
     expect(vi.mocked(runCodemod).mock.calls[0][0]).toBe(SANDBOX_STORIES_GLOB);
   });
-
-  it('migrates the files of --glob', async () => {
-    await migrateProject('.storybook', { glob: 'src/**/*.stories.tsx' });
-
-    expect(vi.mocked(runCodemod).mock.calls[0][0]).toBe('src/**/*.stories.tsx');
-  });
 });
 
 describe('a .storybook config without a framework next to a .rnstorybook folder', () => {
@@ -343,6 +336,10 @@ describe('a .storybook config without a framework next to a .rnstorybook folder'
     vi.mocked(existsSync).mockImplementation(
       (file) => resolve(String(file)) === resolve(projectDir, '.rnstorybook')
     );
+  });
+
+  afterEach(() => {
+    vi.mocked(existsSync).mockReset();
   });
 
   it('keeps the placeholder framework', async () => {

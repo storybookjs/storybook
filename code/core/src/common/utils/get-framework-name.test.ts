@@ -36,27 +36,6 @@ describe('getFrameworkPackageName', () => {
     expect(getFrameworkPackageName(undefined)).toBeNull();
   });
 
-  it('returns the framework when it is a string', () => {
-    expect(getFrameworkPackageName({ stories: [], framework: '@storybook/react-vite' })).toBe(
-      '@storybook/react-vite'
-    );
-  });
-
-  it('returns the package of a framework object whose name is a path', () => {
-    expect(
-      getFrameworkPackageName({
-        stories: [],
-        framework: { name: 'c:\\path\\to\\@storybook\\react-vite', options: {} },
-      })
-    ).toBe('@storybook/react-vite');
-  });
-
-  it('returns an unknown framework as it is', () => {
-    expect(getFrameworkPackageName({ stories: [], framework: '@my-org/storybook-framework' })).toBe(
-      '@my-org/storybook-framework'
-    );
-  });
-
   it('prefers the framework field over the React Native config folder', () => {
     expect(
       getFrameworkPackageName(

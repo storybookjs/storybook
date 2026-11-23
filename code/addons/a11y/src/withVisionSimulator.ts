@@ -3,6 +3,8 @@ import type { DecoratorFunction } from 'storybook/internal/types';
 
 import { useCallback, useEffect } from 'storybook/preview-api';
 
+import { VISION_SIMULATOR_PARAM_KEY } from './constants.ts';
+import type { A11yParameters } from './types.ts';
 import { filterDefs, filters } from './visionSimulatorFilters.ts';
 
 const knownFilters = Object.values(filters).map((f) => f.filter);
@@ -12,14 +14,16 @@ const knownFiltersRegExp = new RegExp(
   'g'
 );
 
-export const withVisionSimulator: DecoratorFunction = (StoryFn, { globals }) => {
+export const withVisionSimulator: DecoratorFunction = (StoryFn, { globals, parameters }) => {
   const { vision } = globals;
+  const { disable } = (parameters as A11yParameters)[VISION_SIMULATOR_PARAM_KEY] ?? {};
 
   const applyVisionFilter = useCallback(() => {
     const existingFilters = document.body.style.filter.replaceAll(knownFiltersRegExp, '').trim();
 
-    const visionFilter = filters[vision as keyof typeof filters]?.filter;
-    if (vision !== undefined && !visionFilter) {
+    const visionFilter = disable ? undefined : filters[vision as keyof typeof filters]?.filter;
+
+    if (!disable && vision !== undefined && !visionFilter) {
       once.warn(
         `The vision simulation "${vision}" is not available. Remove or replace the "globals.vision" value. Available values: ${Object.keys(filters).join(', ')}.`
       );
@@ -36,7 +40,7 @@ export const withVisionSimulator: DecoratorFunction = (StoryFn, { globals }) => 
     }
 
     return () => (document.body.style.filter = existingFilters || 'none');
-  }, [vision]);
+  }, [disable, vision]);
 
   useEffect(() => {
     const cleanup = applyVisionFilter();

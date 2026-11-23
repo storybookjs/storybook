@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { once } from 'storybook/internal/client-logger';
 import type { StoryContextForRender } from 'storybook/internal/types';
@@ -15,8 +16,9 @@ vi.mock('storybook/preview-api', { spy: true });
 const mockedWarn = vi.mocked(once.warn);
 const mockedUseCallback = vi.mocked(useCallback);
 const mockedUseEffect = vi.mocked(useEffect);
+const cleanups: Array<() => void> = [];
 
-const createContext = (vision?: string): StoryContextForRender => {
+const createContext = (vision?: string, disable = false): StoryContextForRender => {
   const context: StoryContextForRender = {
     componentId: 'test',
     title: 'Test',
@@ -25,7 +27,7 @@ const createContext = (vision?: string): StoryContextForRender => {
     name: 'Story',
     story: 'Story',
     tags: [],
-    parameters: {},
+    parameters: disable ? { visionSimulator: { disable: true } } : {},
     initialArgs: {},
     argTypes: {},
     args: {},
@@ -52,23 +54,37 @@ const createContext = (vision?: string): StoryContextForRender => {
   return context;
 };
 
-const runDecorator = (vision?: string) => withVisionSimulator(vi.fn(), createContext(vision));
+const runDecorator = (vision?: string, disable = false) =>
+  withVisionSimulator(vi.fn(), createContext(vision, disable));
 
 describe('withVisionSimulator', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockedWarn.mockReturnValue(undefined);
+    cleanups.length = 0;
+
+    document.body.innerHTML = '';
+    document.body.removeAttribute('style');
+    document.body.className = 'sb-show-main';
+
     mockedUseCallback.mockImplementation(<T>(callback: T) => callback);
     mockedUseEffect.mockImplementation((effect) => {
       const cleanup = effect();
 
       if (typeof cleanup === 'function') {
-        cleanup();
+        cleanups.push(cleanup);
       }
     });
+  });
+
+  afterEach(() => {
+    while (cleanups.length > 0) {
+      cleanups.pop()?.();
+    }
 
     document.body.innerHTML = '';
     document.body.removeAttribute('style');
+    document.body.className = '';
   });
 
   it('does not warn when globals.vision is unset', () => {
@@ -98,5 +114,19 @@ describe('withVisionSimulator', () => {
     expect(mockedWarn).toHaveBeenCalledWith(
       `The vision simulation "protanomaly" is not available. Remove or replace the "globals.vision" value. Available values: ${Object.keys(filters).join(', ')}.`
     );
+  });
+
+  it('applies the selected vision filter when enabled', () => {
+    runDecorator('achromatopsia');
+
+    expect(document.body.style.filter).toBe(filters.achromatopsia.filter);
+  });
+
+  it('does not apply the selected vision filter when disabled', () => {
+    document.body.style.filter = 'brightness(80%)';
+
+    runDecorator('achromatopsia', true);
+
+    expect(document.body.style.filter).toBe('brightness(80%)');
   });
 });

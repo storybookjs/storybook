@@ -590,6 +590,7 @@ describe('recommendsReviewSkill', () => {
     "This change renders the same output, so I didn't run `/component-docs`, `/write-stories` or `/ui-review`.",
     "This is a pure rename with no visual change, so I didn't run `/component-docs`, `/write-stories`, or `/ui-review`.",
     "They apply to changes that alter how the UI looks, and this rename doesn't, so I left out the `/ui-review` line.",
+    'For that reason I also left off the `/ui-review` closing line.',
   ])('does not count %j', async (answer) => {
     const { recommendsReviewSkill } = await import('./test-utils.ts');
     expect(recommendsReviewSkill(answer)).toBe(false);

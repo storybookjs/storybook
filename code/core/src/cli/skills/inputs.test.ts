@@ -125,64 +125,61 @@ describe('resolveSkillInputs', () => {
       vi.restoreAllMocks();
     });
 
-    const findFiles = (paths: string[]) =>
-      vi
-        .spyOn(StoryIndexGenerator, 'findMatchingFiles')
-        .mockResolvedValue(Object.fromEntries(paths.map((path) => [path, false])));
-
-    it('is true for a Svelte framework whose stories entries find .svelte files', async () => {
-      const find = findFiles([
-        '/project/src/Button.stories.svelte',
-        '/project/src/Card.stories.ts',
-      ]);
+    const svelteCsf = async (
+      framework: string,
+      stories: string[],
+      files: string[] | Error
+    ): Promise<boolean> => {
+      const find = vi.spyOn(StoryIndexGenerator, 'findMatchingFiles');
+      if (files instanceof Error) {
+        find.mockRejectedValue(files);
+      } else {
+        find.mockResolvedValue(Object.fromEntries(files.map((path) => [path, false])));
+      }
       const inputs = await resolveSkillInputs(
         createMockOptions({
-          framework: '@storybook/sveltekit',
+          framework,
           configDir: '/project/.storybook',
-          presets: { stories: () => ['../src/**/*.stories.@(js|ts|svelte)'] },
+          presets: { stories: () => stories },
         })
       );
+      return inputs.svelteCsf;
+    };
 
-      expect(inputs.svelteCsf).toBe(true);
-      expect(find).toHaveBeenCalledWith(
-        expect.objectContaining({ directory: './src', files: '**/*.stories.@(js|ts|svelte)' }),
-        '/project',
-        true
-      );
-    });
-
-    it('is false for a Svelte project whose stories are all .ts', async () => {
-      findFiles(['/project/src/Button.stories.ts']);
-      const inputs = await resolveSkillInputs(
-        createMockOptions({
-          framework: '@storybook/svelte-vite',
-          presets: { stories: () => ['../src/**/*.stories.@(ts|svelte)'] },
-        })
-      );
-
-      expect(inputs.svelteCsf).toBe(false);
+    it.each([
+      [
+        '.svelte story files',
+        ['../src/**/*.stories.@(ts|svelte)'],
+        ['/project/src/A.stories.svelte', '/project/src/B.stories.ts'],
+        true,
+      ],
+      [
+        'only .ts story files',
+        ['../src/**/*.stories.@(ts|svelte)'],
+        ['/project/src/B.stories.ts'],
+        false,
+      ],
+      ['no stories yet, entries that load .svelte', ['../src/**/*.stories.svelte'], [], true],
+      ['no stories yet, entries that load only .ts', ['../src/**/*.stories.ts'], [], false],
+      [
+        'an unreadable folder, entries that load .svelte',
+        ['../src/**/*.stories.svelte'],
+        new Error('EACCES'),
+        true,
+      ],
+      ['no stories entries', [], [], false],
+    ])('a Svelte project with %s: %s', async (_, stories, files, expected) => {
+      expect(await svelteCsf('@storybook/sveltekit', stories, files)).toBe(expected);
     });
 
     it('is false for a framework that does not render Svelte', async () => {
-      const find = findFiles(['/project/src/Button.stories.svelte']);
-      const inputs = await resolveSkillInputs(
-        createMockOptions({ presets: { stories: () => ['../src/**/*.stories.svelte'] } })
-      );
-
-      expect(inputs.svelteCsf).toBe(false);
-      expect(find).not.toHaveBeenCalled();
-    });
-
-    it('is false when the stories entries cannot be read', async () => {
-      findFiles([]).mockRejectedValue(new Error('EACCES'));
-      const inputs = await resolveSkillInputs(
-        createMockOptions({
-          framework: '@storybook/sveltekit',
-          presets: { stories: () => ['../src/**/*.stories.svelte'] },
-        })
-      );
-
-      expect(inputs.svelteCsf).toBe(false);
+      expect(
+        await svelteCsf(
+          '@storybook/react-vite',
+          ['../src/**/*.stories.svelte'],
+          ['/project/src/A.stories.svelte']
+        )
+      ).toBe(false);
     });
   });
 

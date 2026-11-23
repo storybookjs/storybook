@@ -1,12 +1,13 @@
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { fs as memfs, vol } from 'memfs';
 
 import type { Options } from '../../types/index.ts';
 
+import { StoryIndexGenerator } from '../../core-server/utils/StoryIndexGenerator.ts';
 import { resolveSkillInputs } from './inputs.ts';
 
 vi.mock('node:fs', { spy: true });
@@ -119,31 +120,70 @@ describe('resolveSkillInputs', () => {
     });
   });
 
-  it.each([
-    ['@storybook/sveltekit', ['../src/**/*.stories.@(js|ts|svelte)'], true],
-    ['@storybook/svelte-vite', [{ directory: '../src', files: '**/*.stories.svelte' }], true],
-    ['@storybook/sveltekit', ['../src/**/*.stories.@(js|ts)'], false],
-    ['@storybook/sveltekit', [{ directory: '../src' }], false],
-    ['@storybook/sveltekit', ['../src/svelte', '../packages/svelte-ui'], false],
-    ['@storybook/sveltekit', ['../src/**/*.stories.*'], true],
-    ['@storybook/sveltekit', ['../src/**/*.stories.!(svelte)'], false],
-    ['@storybook/sveltekit', ['../src/*/*.stories.svelte'], true],
-    [
-      '@storybook/svelte-vite',
-      [{ directory: '../src', files: 'components/*.stories.svelte' }],
-      true,
-    ],
-    ['@storybook/sveltekit', ['../src/*/*.stories.ts'], false],
-    ['@storybook/sveltekit', ['../src/{*.stories.svelte,nested/*.stories.svelte}'], true],
-    ['@storybook/sveltekit', ['../src/**/*.stories.{ts,svelte}'], true],
-    ['@storybook/sveltekit', ['../src/{a,b/c}/*.stories.{js,ts}'], false],
-    ['@storybook/sveltekit', ['../src/Button.stories.svelte'], true],
-    ['@storybook/react-vite', ['../src/**/*.stories.@(tsx|svelte)'], false],
-  ])('detects Svelte CSF for %s with stories %j: %s', async (framework, stories, svelteCsf) => {
-    const inputs = await resolveSkillInputs(
-      createMockOptions({ framework, presets: { stories: () => stories } })
-    );
-    expect(inputs.svelteCsf).toBe(svelteCsf);
+  describe('svelteCsf', () => {
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    const findFiles = (paths: string[]) =>
+      vi
+        .spyOn(StoryIndexGenerator, 'findMatchingFiles')
+        .mockResolvedValue(Object.fromEntries(paths.map((path) => [path, false])));
+
+    it('is true for a Svelte framework whose stories entries find .svelte files', async () => {
+      const find = findFiles([
+        '/project/src/Button.stories.svelte',
+        '/project/src/Card.stories.ts',
+      ]);
+      const inputs = await resolveSkillInputs(
+        createMockOptions({
+          framework: '@storybook/sveltekit',
+          configDir: '/project/.storybook',
+          presets: { stories: () => ['../src/**/*.stories.@(js|ts|svelte)'] },
+        })
+      );
+
+      expect(inputs.svelteCsf).toBe(true);
+      expect(find).toHaveBeenCalledWith(
+        expect.objectContaining({ directory: './src', files: '**/*.stories.@(js|ts|svelte)' }),
+        '/project',
+        true
+      );
+    });
+
+    it('is false for a Svelte project whose stories are all .ts', async () => {
+      findFiles(['/project/src/Button.stories.ts']);
+      const inputs = await resolveSkillInputs(
+        createMockOptions({
+          framework: '@storybook/svelte-vite',
+          presets: { stories: () => ['../src/**/*.stories.@(ts|svelte)'] },
+        })
+      );
+
+      expect(inputs.svelteCsf).toBe(false);
+    });
+
+    it('is false for a framework that does not render Svelte', async () => {
+      const find = findFiles(['/project/src/Button.stories.svelte']);
+      const inputs = await resolveSkillInputs(
+        createMockOptions({ presets: { stories: () => ['../src/**/*.stories.svelte'] } })
+      );
+
+      expect(inputs.svelteCsf).toBe(false);
+      expect(find).not.toHaveBeenCalled();
+    });
+
+    it('is false when the stories entries cannot be read', async () => {
+      findFiles([]).mockRejectedValue(new Error('EACCES'));
+      const inputs = await resolveSkillInputs(
+        createMockOptions({
+          framework: '@storybook/sveltekit',
+          presets: { stories: () => ['../src/**/*.stories.svelte'] },
+        })
+      );
+
+      expect(inputs.svelteCsf).toBe(false);
+    });
   });
 
   it('reads the MCP toolsets that main.ts turns on, and all of them without addon-mcp', async () => {

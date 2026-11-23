@@ -1,13 +1,13 @@
 import { relative } from 'node:path';
 
-import * as pico from 'picomatch';
-
 import type { Options, StoriesEntry } from '../../types/index.ts';
 import { extractFrameworkPackageName } from '../../common/utils/get-framework-name.ts';
 import { findConfigFile } from '../../common/utils/get-storybook-info.ts';
+import { normalizeStories } from '../../common/utils/normalize-stories.ts';
 import { isCsfFactoryPreview, readConfig } from '../../csf-tools/ConfigFile.ts';
 
 import { getRefsFromConfig } from '../../core-server/utils/get-refs-from-config.ts';
+import { StoryIndexGenerator } from '../../core-server/utils/StoryIndexGenerator.ts';
 import {
   ALL_MCP_TOOLSETS,
   getToolAvailability,
@@ -22,7 +22,7 @@ export type SkillInputs = ToolAvailability & {
   csfFactories: boolean;
   /** Path of the preview file relative to the working directory; a default name when there is none. */
   previewFile: string;
-  /** A Svelte project whose `stories` globs match `.svelte` files, which Svelte CSF writes. */
+  /** A Svelte project whose `stories` entries find `.svelte` story files, which Svelte CSF writes. */
   svelteCsf: boolean;
   /** The preview file, or `main` when there is none, is TypeScript. */
   typescript: boolean;
@@ -61,45 +61,21 @@ async function resolvePreview(configDir = '.storybook') {
   };
 }
 
-// `{a,b/c}` becomes `a` and `b/c`, so a `/` inside braces does not cut the file name part.
-function expandBraces(glob: string): string[] {
-  const open = glob.indexOf('{');
-  const commas: number[] = [];
-  let depth = 0;
-  for (let i = open; open !== -1 && i < glob.length; i++) {
-    if (glob[i] === '{') {
-      depth++;
-    } else if (glob[i] === ',' && depth === 1) {
-      commas.push(i);
-    } else if (glob[i] === '}' && --depth === 0) {
-      const bounds = [open, ...commas, i];
-      return bounds
-        .slice(1)
-        .flatMap((end, n) =>
-          expandBraces(glob.slice(0, open) + glob.slice(bounds[n] + 1, end) + glob.slice(i + 1))
-        );
-    }
+// Reads the story files on disk, as the index does, so every glob the index accepts works, and a
+// Svelte project whose stories are all `.ts` keeps the CSF text.
+async function hasSvelteStoryFiles(stories: StoriesEntry[], configDir: string): Promise<boolean> {
+  try {
+    const workingDir = process.cwd();
+    const specifiers = normalizeStories(stories, { configDir, workingDir });
+    const matches = await Promise.all(
+      specifiers.map((specifier) =>
+        StoryIndexGenerator.findMatchingFiles(specifier, workingDir, true)
+      )
+    );
+    return matches.some((files) => Object.keys(files).some((path) => path.endsWith('.svelte')));
+  } catch {
+    return false;
   }
-  return [glob];
-}
-
-// Only the file name part decides, so a glob that needs a folder (`*/*.stories.svelte`) counts.
-function allowsSvelteFile(files: string): boolean {
-  return expandBraces(files).some((glob) => {
-    const name = glob.slice(glob.lastIndexOf('/') + 1);
-    return pico.scan(name).isGlob
-      ? pico.isMatch('Button.stories.svelte', name)
-      : name.endsWith('.svelte');
-  });
-}
-
-// A string without a glob is a directory, whose default files are not `.svelte`, or one file.
-function matchesSvelteFiles(entry: StoriesEntry): boolean {
-  if (typeof entry !== 'string') {
-    return !!entry.files && allowsSvelteFile(entry.files);
-  }
-  const { isGlob, glob } = pico.scan(entry);
-  return allowsSvelteFile(isGlob ? glob : entry);
 }
 
 /**
@@ -119,7 +95,8 @@ export async function resolveSkillInputs(options: Options): Promise<SkillInputs>
     typeof frameworkPreset === 'string' ? frameworkPreset : (frameworkPreset?.name ?? '')
   );
   const svelteCsf =
-    frameworkToRendererMap[framework] === '@storybook/svelte' && stories.some(matchesSvelteFiles);
+    frameworkToRendererMap[framework] === '@storybook/svelte' &&
+    (await hasSvelteStoryFiles(stories, options.configDir ?? '.storybook'));
   return {
     ...availability,
     ...preview,

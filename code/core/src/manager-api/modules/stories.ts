@@ -535,6 +535,18 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     });
   };
 
+  // The one lookup behind a component jump and its preload, so that the two cannot drift apart.
+  const findSubtreeJumpTarget = (direction: Direction): StoryId | undefined => {
+    const { filteredIndex, storyId, refs, refId } = store.getState();
+    const hash = refId ? refs[refId]?.filteredIndex : filteredIndex;
+
+    // cannot navigate when there's no current selection
+    if (!hash || !api.getData(storyId, refId)) {
+      return undefined;
+    }
+    return api.findSiblingStoryId(storyId, hash, direction, true);
+  };
+
   const api: SubAPI = {
     storyId: toId,
     getData: (storyId, refId): any => {
@@ -604,24 +616,10 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       return parameters || undefined;
     },
     jumpToSubtree: (direction) => {
-      const { filteredIndex, storyId, refs, refId } = store.getState();
-      const story = api.getData(storyId, refId);
-
-      // cannot navigate when there's no current selection
-      if (!story) {
-        return;
-      }
-
-      const hash = refId ? refs[refId].filteredIndex || {} : filteredIndex;
-
-      if (!hash) {
-        return;
-      }
-
-      const result = api.findSiblingStoryId(storyId, hash, direction, true);
+      const result = findSubtreeJumpTarget(direction);
 
       if (result) {
-        api.selectStory(result, undefined, { ref: refId });
+        api.selectStory(result, undefined, { ref: store.getState().refId });
       }
     },
     jumpToStory: (direction) => {
@@ -1263,16 +1261,13 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       if (sourceType !== 'local') {
         return;
       }
-      global.requestIdleCallback(() => {
-        const { storyId, index, refId } = store.getState();
-        if (!index || storyId !== finishedStoryId) {
+      const preloadSiblings = () => {
+        const { storyId, refId } = store.getState();
+        if (storyId !== finishedStoryId) {
           return;
         }
         const toBePreloaded = Array.from(
-          new Set([
-            api.findSiblingStoryId(storyId, index, 1, true),
-            api.findSiblingStoryId(storyId, index, -1, true),
-          ])
+          new Set([findSubtreeJumpTarget(1), findSubtreeJumpTarget(-1)])
         ).filter(Boolean);
         if (toBePreloaded.length > 0) {
           provider.channel?.emit(PRELOAD_ENTRIES, {
@@ -1281,7 +1276,12 @@ export const init: ModuleFn<SubAPI, SubState> = ({
             options: { target: refId },
           });
         }
-      });
+      };
+      if (typeof global.requestIdleCallback === 'function') {
+        global.requestIdleCallback(preloadSiblings);
+      } else {
+        setTimeout(preloadSiblings, 1);
+      }
     }
   );
 

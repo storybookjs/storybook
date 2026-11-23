@@ -323,6 +323,52 @@ export const EscapeWithQueryStaysInSearch = meta.story({
   },
 });
 
+/**
+ * Fuse matches fuzzily, and matches each space-separated token of the query on its own. A name that
+ * contains the query or one of its tokens highlights those occurrences only. A name that Fuse only
+ * matched fuzzily, such as through a typo, keeps the ranges Fuse reports.
+ */
+export const HighlightsSearchResults = meta.story({
+  render: () => (
+    <Search {...baseProps} initialQuery="buid error">
+      {({ query, results, closeMenu, getMenuProps, getItemProps, highlightedIndex }) => (
+        <SearchResults
+          query={query}
+          results={results}
+          closeMenu={closeMenu}
+          getMenuProps={getMenuProps}
+          getItemProps={getItemProps}
+          highlightedIndex={highlightedIndex}
+        />
+      )}
+    </Search>
+  ),
+  play: async ({ canvasElement }) => {
+    const input = within(canvasElement).getByRole('searchbox');
+    const findTitles = (name: string) =>
+      waitFor(() => {
+        const titles = [...canvasElement.querySelectorAll('.search-result-item--label')]
+          .map((label) => label.firstElementChild)
+          .filter((title) => title?.textContent === name);
+        expect(titles.length).toBeGreaterThan(0);
+        return titles;
+      });
+    const highlightsOf = (title: Element | null) =>
+      [...(title?.querySelectorAll('mark') ?? [])].map((mark) => mark.textContent);
+
+    await userEvent.click(input);
+    (await findTitles('Build Error')).forEach((title) =>
+      expect(highlightsOf(title)).toEqual(['Error'])
+    );
+
+    await userEvent.clear(input);
+    await userEvent.type(input, 'onbording');
+    (await findTitles('Default Onboarding')).forEach((title) =>
+      expect(highlightsOf(title).length).toBeGreaterThan(0)
+    );
+  },
+});
+
 export const ShortcutsDisabled = meta.story(() => (
   <Search {...baseProps} enableShortcuts={false}>
     {() => null}

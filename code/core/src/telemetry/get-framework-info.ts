@@ -3,11 +3,19 @@ import { readFile } from 'node:fs/promises';
 import { getStorybookInfo, rendererPackages } from 'storybook/internal/common';
 import type { StorybookConfig } from 'storybook/internal/types';
 
-import { isAbsolute, join } from 'pathe';
+import * as pkg from 'empathic/package';
+import { isAbsolute, normalize } from 'pathe';
 import type { PackageJson } from 'type-fest';
 
+import { matchPackageName } from '../common/utils/match-package-name.ts';
+import { TELEMETRY_ONLY_RENDERER_PACKAGES } from './get-renderer-packages.ts';
 import { getActualPackageJson } from './package-json.ts';
 import { cleanPaths } from './sanitize.ts';
+
+const knownRendererPackages = () => [
+  ...Object.keys(rendererPackages),
+  ...Object.keys(TELEMETRY_ONLY_RENDERER_PACKAGES),
+];
 
 const cleanAndSanitizePath = (path: string) => {
   const cleaned = cleanPaths(path).replace(/.*node_modules[\\/]/, '');
@@ -22,11 +30,16 @@ const cleanAndSanitizePath = (path: string) => {
 const readFrameworkPackageJson = async (
   frameworkPackage: string
 ): Promise<PackageJson | undefined> => {
-  if (!isAbsolute(frameworkPackage)) {
-    return getActualPackageJson(frameworkPackage);
+  // A pnpm virtual-store dir holds no package.json of its own, so resolve its package by name
+  if (!isAbsolute(frameworkPackage) || /\/\.pnpm\/[^/]+$/.test(normalize(frameworkPackage))) {
+    return getActualPackageJson(cleanAndSanitizePath(frameworkPackage));
+  }
+  const packageJsonPath = pkg.up({ cwd: frameworkPackage });
+  if (!packageJsonPath) {
+    return undefined;
   }
   try {
-    return JSON.parse(await readFile(join(frameworkPackage, 'package.json'), 'utf-8'));
+    return JSON.parse(await readFile(packageJsonPath, 'utf-8'));
   } catch {
     return undefined;
   }
@@ -39,7 +52,7 @@ const readFrameworkPackageJson = async (
  */
 const findRendererDependency = (packageJson: PackageJson | undefined) => {
   const knownRenderers = (dependencies: Partial<Record<string, string>> | undefined) =>
-    Object.keys(dependencies ?? {}).filter((name) => name in rendererPackages);
+    Object.keys(dependencies ?? {}).filter((name) => knownRendererPackages().includes(name));
 
   const dependencies = knownRenderers(packageJson?.dependencies);
   if (dependencies.length > 0) {
@@ -49,18 +62,23 @@ const findRendererDependency = (packageJson: PackageJson | undefined) => {
   return peerDependencies.length === 1 ? peerDependencies[0] : undefined;
 };
 
+/**
+ * Finds the renderer of a framework that the framework tables do not map to one: a renderer
+ * configured as its own framework, such as React Native, or the renderer a framework depends on.
+ */
+const findUnlistedRenderer = async (frameworkPackage: string) =>
+  matchPackageName(frameworkPackage, knownRendererPackages()) ??
+  findRendererDependency(await readFrameworkPackageJson(frameworkPackage));
+
 export async function getFrameworkInfo(mainConfig: StorybookConfig, configDir: string) {
   const { frameworkPackage, rendererPackage, builderPackage } = await getStorybookInfo(configDir);
 
   const frameworkOptions =
     typeof mainConfig.framework === 'object' ? mainConfig.framework.options : {};
 
-  // A framework missing from the framework registry still names its renderer in its dependencies
   const renderer =
     rendererPackage ??
-    (frameworkPackage
-      ? findRendererDependency(await readFrameworkPackageJson(frameworkPackage))
-      : undefined);
+    (frameworkPackage ? await findUnlistedRenderer(frameworkPackage) : undefined);
 
   return {
     framework: {

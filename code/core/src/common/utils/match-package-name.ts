@@ -14,7 +14,8 @@ export const matchPackageName = (nameOrPath: string, packageNames: string[]) => 
   const normalizedPath = normalizePath(nameOrPath);
   return packageNames.find(
     (pkg) =>
-      normalizedPath.endsWith(pkg) ||
+      normalizedPath === pkg ||
+      normalizedPath.endsWith(`/${pkg}`) ||
       // pnpm virtual-store dirs encode the scope slash as '+' and append '@<version>',
       // e.g. .../node_modules/.pnpm/@storybook+react-vite@9.0.0 — the trailing '@' keeps
       // '@storybook/react' from matching '@storybook+react-vite@...'.

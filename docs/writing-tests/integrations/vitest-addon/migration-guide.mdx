@@ -6,7 +6,13 @@ tab:
   title: Migrating from test-runner
 ---
 
-The [test-runner](../test-runner.mdx) was created back in 2021 to enable users to run stories as tests. It is a solution that uses Jest as a runner and Playwright as a browser environment. Over the years, Storybook has evolved and introduced many testing-related concepts, including a [Vitest-based testing solution](./index.mdx), a spiritual successor to the test-runner. Alongside it, we released a testing widget, allowing users to run tests directly from Storybook's UI and get reports such as a11y and coverage.
+<Callout variant="info">
+
+The test-runner is incompatible with Storybook 11. Follow this guide to replace it with the Vitest addon.
+
+</Callout>
+
+The [test-runner](https://github.com/storybookjs/test-runner) was created back in 2021 to enable users to run stories as tests. It is a solution that uses Jest as a runner and Playwright as a browser environment. Over the years, Storybook has evolved and introduced many testing-related concepts, including a [Vitest-based testing solution](./index.mdx), a spiritual successor to the test-runner. Alongside it, we released a testing widget, allowing users to run tests directly from Storybook's UI and get reports such as a11y and coverage.
 
 You **do not** have to change how you write your stories between the test-runner and the Vitest addon.
 
@@ -25,7 +31,38 @@ Migrating to the Vitest addon replaces the previous Jest-based test-runner with 
 - Accessibility testing comes out of the box and integrates with the Storybook testing widget and Accessibility addon panel.
 - Code coverage is enabled via Vitest's built-in coverage support. You no longer need instrumentation from the `@storybook/addon-coverage` package, which can make your stories render faster.
 
-For more, please refer to the comparison table in the [Vitest addon guide](./index.mdx#comparison-to-the-test-runner).
+### Comparison to the Vitest addon
+
+The test-runner required a running Storybook instance to test your stories, because it visited each one, executed the play function, and listened for results.
+
+The Vitest addon uses a Vitest plugin to transform your stories into tests using Vite and portable stories, so it does not need a running Storybook to test them.
+
+Because of this reliance on Vite, the Vitest addon only works with Storybook frameworks that use Vite, whereas the test-runner could be used with any Storybook framework.
+
+| Feature                                                  | test-runner              | Vitest addon       |
+| -------------------------------------------------------- | ------------------------ | ------------------ |
+| **Test types**                                           |
+| - [Interaction tests](../../interaction-testing.mdx)     | ✅                       | ✅                 |
+| - [Accessibility tests](../../accessibility-testing.mdx) | ✅                       | ✅                 |
+| - [Visual tests](../../visual-testing.mdx)               | ❌                       | ✅                 |
+| - [Snapshot tests](../../snapshot-testing.mdx)           | ✅                       | ❌                 |
+| **Testing contexts**                                     |
+| - Storybook UI                                           | ❌                       | ✅                 |
+| - Editor extensions                                      | ❌                       | ✅                 |
+| - CLI                                                    | ✅                       | ✅                 |
+| - In CI                                                  | ✅                       | ✅                 |
+| Tests run via                                            | Jest                     | Vitest             |
+| Works with all Storybook frameworks                      | ✅                       | ❌ (requires Vite) |
+| Runs tests in a real browser environment                 | ✅                       | ✅                 |
+| Calculates code coverage                                 | ✅ (with addon-coverage) | ✅                 |
+| Requires a running or published Storybook                | ✅                       | ❌                 |
+| Extensible to other addons                               | ❌                       | ✅                 |
+
+The test-runner was only a CLI tool. It did not have a UI for running tests, nor did it have an editor extension. The Vitest addon provides a UI in Storybook for running tests, and it enables you to run and debug tests using Vitest IDE integrations.
+
+Additionally, the test-runner ran your stories as orchestrated tests in Jest, and that orchestration came with some complexity. The Vitest addon transforms your stories into real tests and then runs them using Vitest, which is simpler and more configurable.
+
+Finally, because of the simpler architecture and the use of Vitest, the Vitest addon is faster than the test-runner for most projects.
 
 ## Is my project eligible to upgrade?
 
@@ -115,14 +152,14 @@ For other CI providers and for more detailed configuration info, check the [test
 
 The Vitest addon relies on Vite to transform and run your stories as tests. Which means it only works with Storybook frameworks that use Vite.
 
-Official support for the test runner has ended, so if your Storybook project uses a non-Vite builder like Webpack or Rspack, switch to a Vite-based framework before migrating:
+The test-runner is incompatible with Storybook 11, so if your Storybook project uses a non-Vite builder like Webpack or Rspack, switch to a Vite-based framework before migrating:
 
 - If you are using Next.js, migrate to the [`@storybook/nextjs-vite` framework](../../../get-started/frameworks/nextjs-vite.mdx#how-do-i-migrate-from-the-nextjs-webpack-5-addon).
 - If you are using Angular, migrate to the [`@storybook/angular-vite` framework](../../../get-started/frameworks/angular-vite.mdx#migration-from-storybookangular).
 - If you are using React with Webpack, migrate to the [`@storybook/react-vite` framework](../../../get-started/frameworks/react-vite.mdx#how-do-i-migrate-from-the-react-webpack-framework).
 - For other frameworks, follow the steps to [migrate from Webpack to Vite](../../../builders/vite.mdx#migrating-from-webpack).
 
-If you cannot switch to Vite, the [test runner migration notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#test-runner-support-ended) describe the alternatives, including a Playwright setup that runs your stories as tests.
+If you cannot switch to Vite, keep using Storybook 10.x, or follow the [test-runner migration notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#test-runner-support-removed) to set up Playwright to run your stories as tests.
 
 ### What if I am using Jest for my unit tests?
 

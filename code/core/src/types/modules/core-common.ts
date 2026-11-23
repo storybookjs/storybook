@@ -227,6 +227,11 @@ export interface ModuleResolveConfig {
    * `import` included and placeholders such as Vite's `development|production` replaced.
    */
   conditions?: string[];
+  /**
+   * The conditions the builder applies to a CommonJS `require()`, with `require` in place of
+   * `import`. Defaults to `conditions`.
+   */
+  requireConditions?: string[];
 }
 
 export type PackageJson = PackageJsonFromTypeFest & Record<string, any>;
@@ -681,9 +686,10 @@ export interface StorybookFeatures {
 
   /**
    * Let story snippets follow the controls. With `docgenServer` on, a snippet in the Code panel,
-   * Canvas › Show code and the MDX `<Source>` block shows the args a control changed.
+   * Canvas › Show code and the MDX `<Source>` block shows the args a control changed. Set it to
+   * `false` to keep snippets static.
    *
-   * @default false
+   * @default true
    * @experimental
    */
   experimentalLiveServerSnippets?: boolean;

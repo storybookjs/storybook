@@ -70,6 +70,57 @@ describe('ChangeDetectionResolverFactory', () => {
       });
       expect(await r.resolve(from, 'tones')).toBe(target);
     });
+
+    function dualPackage() {
+      const esm = write('node_modules/dual/esm.mjs');
+      const cjs = write('node_modules/dual/cjs.cjs');
+      writeFileSync(
+        join(dir, 'node_modules/dual/package.json'),
+        JSON.stringify({
+          name: 'dual',
+          exports: { '.': { import: './esm.mjs', default: './cjs.cjs' } },
+        })
+      );
+      return { esm, cjs, from: write('src/a.ts') };
+    }
+
+    it('resolves a `require()` with the require conditions and an import with the ESM ones', async () => {
+      const { esm, cjs, from } = dualPackage();
+      const r = new ChangeDetectionResolverFactory({
+        projectRoot: dir,
+        conditions: ['import', 'module'],
+        requireConditions: ['require', 'module'],
+      });
+      expect(await r.resolve(from, 'dual', 'static')).toBe(esm);
+      expect(await r.resolve(from, 'dual', 'dynamic')).toBe(esm);
+      expect(await r.resolve(from, 'dual', 'require')).toBe(cjs);
+    });
+
+    it('resolves a `require()` with the ESM conditions when the builder gives no require conditions', async () => {
+      const { esm, from } = dualPackage();
+      const r = new ChangeDetectionResolverFactory({ projectRoot: dir, conditions: ['import'] });
+      expect(await r.resolve(from, 'dual', 'require')).toBe(esm);
+    });
+
+    it('resolves a `require()` of a package import with the require conditions', async () => {
+      const esm = write('src/esm.mjs');
+      const cjs = write('src/cjs.cjs');
+      writeFileSync(
+        join(dir, 'package.json'),
+        JSON.stringify({
+          name: 'app',
+          imports: { '#tone': { import: './src/esm.mjs', default: './src/cjs.cjs' } },
+        })
+      );
+      const from = write('src/a.ts');
+      const r = new ChangeDetectionResolverFactory({
+        projectRoot: dir,
+        conditions: ['import'],
+        requireConditions: ['require'],
+      });
+      expect(await r.resolve(from, '#tone')).toBe(esm);
+      expect(await r.resolve(from, '#tone', 'require')).toBe(cjs);
+    });
   });
 
   describe('explicit alias (Record form)', () => {

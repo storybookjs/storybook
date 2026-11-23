@@ -1,0 +1,5 @@
+branches:
+  defaultBase: next
+reviews:
+  botFeedback:
+    releaseBranchMaxRounds: 0

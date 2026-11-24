@@ -9,7 +9,6 @@ import {
   getToolAvailability,
   isValidHost,
   loadManifests,
-  type McpToolsets,
 } from 'storybook/internal/core-server';
 import { isWebContainer } from 'storybook/internal/common';
 import htmlTemplate from './template.html';
@@ -81,11 +80,8 @@ export const experimental_devServer: PresetPropertyFn<
   StorybookConfigRaw,
   AddonOptionsInput
 > = async (app, options) => {
-  // There is no error handling here. This can make the whole storybook app crash with:
-  // ValiError: Invalid type: Expected boolean but received "false"
   const addonOptions = v.parse(AddonOptions, {
     endpoint: options.endpoint,
-    toolsets: options.toolsets ?? {},
   });
 
   const basePath = options.basePath ?? '/';
@@ -202,7 +198,6 @@ export const experimental_devServer: PresetPropertyFn<
       req,
       res,
       options,
-      addonOptions,
       origin,
       basePath,
       endpoint,
@@ -211,8 +206,6 @@ export const experimental_devServer: PresetPropertyFn<
       compositionAuth,
     });
   });
-
-  const isDevEnabled = addonOptions.toolsets?.dev ?? true;
 
   app!.get(endpoint, async (req, res) => {
     if (rejectDisallowedOrigin(req, res)) return;
@@ -224,7 +217,6 @@ export const experimental_devServer: PresetPropertyFn<
         req,
         res,
         options,
-        addonOptions,
         origin,
         basePath,
         endpoint,
@@ -242,8 +234,6 @@ export const experimental_devServer: PresetPropertyFn<
       testSupported,
       a11yEnabled,
     } = availability;
-    const isDocsEnabled = docsEnabled && (addonOptions.toolsets?.docs ?? true);
-    const isTestEnabled = testSupported && (addonOptions.toolsets?.test ?? true);
 
     // Browser request - send HTML
     res.writeHead(200, { 'Content-Type': 'text/html' });
@@ -283,29 +273,16 @@ export const experimental_devServer: PresetPropertyFn<
       ? ' <span class="toolset-status enabled">+ accessibility</span>'
       : '';
 
-    // `stories-find-by-component` also needs the dependency graph, so it shows its own badge.
-    // When the whole `dev` toolset is turned off via addon options every dev tool is
-    // disabled regardless of its own gate, so explain that instead of the per-tool reason.
-    const devNoticeLines = !isDevEnabled
-      ? [`The <code>dev</code> toolset is disabled via addon options.`]
-      : [
-          !moduleGraphSupported &&
-            `<code>stories-find-by-component</code> requires a dev server with a builder that supports the module graph (Vite or Webpack 5).`,
-        ].filter(Boolean);
-    const devNotice = devNoticeLines.length
-      ? `<div class="toolset-notice">${devNoticeLines.join('<br>')}</div>`
-      : '';
+    const devNotice = moduleGraphSupported
+      ? ''
+      : `<div class="toolset-notice"><code>stories-find-by-component</code> requires a dev server with a builder that supports the module graph (Vite or Webpack 5).</div>`;
 
     const html = htmlTemplate
-      .replaceAll('{{DEV_STATUS}}', isDevEnabled ? 'enabled' : 'disabled')
-      .replaceAll(
-        '{{STORIES_BY_COMPONENT_STATUS}}',
-        isDevEnabled && moduleGraphSupported ? 'enabled' : 'disabled'
-      )
+      .replaceAll('{{STORIES_BY_COMPONENT_STATUS}}', moduleGraphSupported ? 'enabled' : 'disabled')
       .replace('{{DEV_NOTICE}}', devNotice)
-      .replaceAll('{{DOCS_STATUS}}', isDocsEnabled ? 'enabled' : 'disabled')
+      .replaceAll('{{DOCS_STATUS}}', docsEnabled ? 'enabled' : 'disabled')
       .replace('{{DOCS_NOTICE}}', docsNotice)
-      .replaceAll('{{TEST_STATUS}}', isTestEnabled ? 'enabled' : 'disabled')
+      .replaceAll('{{TEST_STATUS}}', testSupported ? 'enabled' : 'disabled')
       .replace('{{TEST_NOTICE}}', testNotice)
       .replace(
         '{{MANIFEST_DEBUGGER_LINK}}',
@@ -318,15 +295,6 @@ export const experimental_devServer: PresetPropertyFn<
   });
   return app;
 };
-
-/**
- * The toolsets this server registers, as `main.ts` sets them. `npx storybook skills --mcp` reads
- * this, so its text names only the tools of this server.
- */
-export const mcpToolsets = async (
-  _value: unknown,
-  options: AddonOptionsInput
-): Promise<McpToolsets> => v.parse(AddonOptions, { toolsets: options.toolsets ?? {} }).toolsets;
 
 export const features: PresetPropertyFn<'features'> = async (existingFeatures) => {
   return {

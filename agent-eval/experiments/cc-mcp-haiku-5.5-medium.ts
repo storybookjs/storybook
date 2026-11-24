@@ -13,7 +13,7 @@ export default {
   ...DEFAULT_EXPERIMENT_CONFIG,
   agent: 'claude-code', // direct Anthropic API, requires ANTHROPIC_API_KEY
   model,
-  agentOptions: { effort: 'low' },
+  agentOptions: { effort: 'medium' },
   evals: WORKFLOW_STORYBOOK_EVALS,
   setup: async (sandbox) => {
     await setupSandbox(sandbox, { agent: 'claude-code', integration: 'mcp', model });

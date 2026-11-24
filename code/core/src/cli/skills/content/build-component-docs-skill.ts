@@ -4,8 +4,6 @@ export type ComponentDocsSkillInputs = {
   transport: SkillTextTransport;
   // Storybook has component manifests for this project, or composes a Storybook that has them.
   docsSupported: boolean;
-  // `main.ts` turns the `docs` toolset of the MCP server off. Never for the CLI.
-  toolsetOff?: boolean;
 };
 
 export function buildComponentDocsSkill(inputs: ComponentDocsSkillInputs): string {
@@ -16,10 +14,6 @@ export function buildComponentDocsSkill(inputs: ComponentDocsSkillInputs): strin
 This Storybook has no component docs to look up. Skip this step, and read the source files of the components you use instead.`;
   }
   const list = v.name('docs.list');
-  // A client can turn the toolset on for itself with a request header, which this text cannot see.
-  const toolsetOff = inputs.toolsetOff
-    ? `\n\nThe \`main.ts\` of this project turns the \`docs\` toolset of the Storybook MCP server off. When the server does not give you ${list}, skip this step.`
-    : '';
   const show = v.name('docs.show');
   const tools = v.cli
     ? `\`\`\`sh
@@ -38,7 +32,7 @@ ${v.ref('docs.showStory')} --storyId <id>   # the code of a story that docs show
     : `as \`storybookId: "acme"\` to ${show} and ${v.name('docs.showStory')}`;
   return `# Storybook component docs
 
-${v.notes}${toolsetOff}
+${v.notes}
 
 ${tools}
 

@@ -16,12 +16,14 @@ vi.mock('storybook/internal/telemetry');
 vi.mock('storybook/internal/node-logger', { spy: true });
 vi.mock('./automigrate/multi-project.ts', { spy: true });
 vi.mock('./doctor/index.ts', { spy: true });
+vi.mock('./postinstallAddon.ts');
 vi.mock('./util.ts', { spy: true });
 vi.mock(import('storybook/internal/common'), async (importOriginal) => {
   const actual = await importOriginal();
   return {
     ...actual,
     isCI: vi.fn(),
+    getProcessAncestry: () => [],
     JsPackageManagerFactory: Object.assign(actual.JsPackageManagerFactory, {
       getPackageManager: () => ({
         type: 'npm',
@@ -63,31 +65,35 @@ const baseOptions: UpgradeOptions = {
 };
 
 const useProjects = (...projects: CollectProjectsSuccessResult[]) =>
-  vi.mocked(getProjects).mockResolvedValue({ allProjects: projects, selectedProjects: projects });
-
-describe('upgrade: refreshing the skills', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    useProjects(project('/repo/a/.storybook'), project('/repo/b/.storybook'));
-    vi.mocked(runAutomigrations).mockResolvedValue({
-      automigrationResults: {},
-      detectedAutomigrations: [],
-    });
-    vi.mocked(runMultiProjectDoctor).mockResolvedValue({});
-    vi.mocked(displayDoctorResults).mockReturnValue(false);
-    vi.mocked(isCI).mockReturnValue(false);
-    for (const method of ['info', 'step', 'log', 'warn', 'debug'] as const) {
-      vi.mocked(logger[method]).mockImplementation(() => {});
-    }
-    vi.mocked(prompt.taskLog).mockReturnValue({
-      message: vi.fn(),
-      success: vi.fn(),
-      error: vi.fn(),
-    } as unknown as ReturnType<typeof prompt.taskLog>);
-    vi.mocked(hasStorybookSkills).mockResolvedValue(true);
-    vi.mocked(installSkills).mockResolvedValue({ result: 'installed', source: 'refresh' });
+  vi.mocked(getProjects).mockResolvedValue({
+    allProjects: projects,
+    selectedProjects: projects,
+    unreadProjects: 0,
   });
 
+beforeEach(() => {
+  vi.clearAllMocks();
+  useProjects(project('/repo/a/.storybook'), project('/repo/b/.storybook'));
+  vi.mocked(runAutomigrations).mockResolvedValue({
+    automigrationResults: {},
+    detectedAutomigrations: [],
+  });
+  vi.mocked(runMultiProjectDoctor).mockResolvedValue({});
+  vi.mocked(displayDoctorResults).mockReturnValue(false);
+  vi.mocked(isCI).mockReturnValue(false);
+  for (const method of ['info', 'step', 'log', 'warn', 'debug'] as const) {
+    vi.mocked(logger[method]).mockImplementation(() => {});
+  }
+  vi.mocked(prompt.taskLog).mockReturnValue({
+    message: vi.fn(),
+    success: vi.fn(),
+    error: vi.fn(),
+  } as unknown as ReturnType<typeof prompt.taskLog>);
+  vi.mocked(hasStorybookSkills).mockResolvedValue(true);
+  vi.mocked(installSkills).mockResolvedValue({ result: 'installed', source: 'refresh' });
+});
+
+describe('upgrade: refreshing the skills', () => {
   const skillsInUpgradeEvents = () =>
     vi
       .mocked(telemetry)
@@ -168,11 +174,71 @@ describe('upgrade: refreshing the skills', () => {
     expect(installSkills).toHaveBeenCalledWith({
       packageManager: expect.objectContaining({ type: 'npm' }),
       source: 'refresh',
+      testSupported: false,
+      sawEveryStorybook: true,
     });
     expect(skillsInUpgradeEvents()).toEqual([
       { result: 'installed', source: 'refresh' },
       { result: 'installed', source: 'refresh' },
     ]);
+  });
+
+  it('says that a Storybook could not be read, so the section keeps its test step', async () => {
+    const projects = [project('/repo/a/.storybook')];
+    vi.mocked(getProjects).mockResolvedValue({
+      allProjects: projects,
+      selectedProjects: projects,
+      unreadProjects: 1,
+    });
+
+    await upgrade(baseOptions);
+
+    expect(installSkills).toHaveBeenLastCalledWith(
+      expect.objectContaining({ testSupported: false, sawEveryStorybook: false })
+    );
+  });
+
+  it('says that --config-dir leaves Storybooks unread, so the section keeps its test step', async () => {
+    await upgrade(baseOptions);
+    expect(installSkills).toHaveBeenLastCalledWith(
+      expect.objectContaining({ testSupported: false, sawEveryStorybook: true })
+    );
+
+    await upgrade({ ...baseOptions, configDir: ['/repo/a/.storybook'] });
+    expect(installSkills).toHaveBeenLastCalledWith(
+      expect.objectContaining({ testSupported: false, sawEveryStorybook: false })
+    );
+  });
+
+  it('gives the section a test step when the main config of one Storybook lists addon-vitest', async () => {
+    useProjects(
+      project('/repo/a/.storybook'),
+      project('/repo/b/.storybook', {
+        mainConfig: { stories: [], addons: ['@storybook/addon-vitest'] },
+      })
+    );
+
+    await upgrade(baseOptions);
+
+    expect(installSkills).toHaveBeenCalledWith(expect.objectContaining({ testSupported: true }));
+  });
+
+  it('gives the section a test step when an automigration adds addon-vitest', async () => {
+    vi.mocked(runAutomigrations).mockResolvedValue({
+      automigrationResults: {
+        '/repo/a/.storybook': {
+          automigrationStatuses: { 'angular-to-angular-vite': FixStatus.SUCCEEDED },
+          automigrationErrors: {},
+          fileFailures: [],
+          addonsToPostinstall: ['@storybook/addon-vitest'],
+        },
+      },
+      detectedAutomigrations: [],
+    });
+
+    await upgrade(baseOptions);
+
+    expect(installSkills).toHaveBeenCalledWith(expect.objectContaining({ testSupported: true }));
   });
 
   it('installs nothing when the project has no skills', async () => {
@@ -201,4 +267,30 @@ describe('upgrade: refreshing the skills', () => {
 
     expect(installSkills).not.toHaveBeenCalled();
   });
+});
+
+describe('upgrade: --dry-run', () => {
+  it.each([
+    { dryRun: true, calls: 0 },
+    { dryRun: false, calls: 1 },
+  ])(
+    'installs and dedupes $calls time(s) in a monorepo when dryRun is $dryRun',
+    async ({ dryRun, calls }) => {
+      const installDependencies = vi.fn(async () => {});
+      const dedupeDependencies = vi.fn(async () => {});
+      const monorepo = project('/repo/a/.storybook');
+      Object.assign(monorepo.packageManager, {
+        type: 'pnpm',
+        installDependencies,
+        dedupeDependencies,
+        isStorybookInMonorepo: () => true,
+      });
+      useProjects(monorepo);
+
+      await upgrade({ ...baseOptions, dryRun, yes: true });
+
+      expect(installDependencies).toHaveBeenCalledTimes(calls);
+      expect(dedupeDependencies).toHaveBeenCalledTimes(calls);
+    }
+  );
 });

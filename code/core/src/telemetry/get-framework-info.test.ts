@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getStorybookInfo, readDependencyManifest } from 'storybook/internal/common';
-import type { StorybookConfig } from 'storybook/internal/types';
+import type { PackageJson, StorybookConfig } from 'storybook/internal/types';
 
 import * as pkg from 'empathic/package';
 import { resolve } from 'pathe';
@@ -100,7 +100,12 @@ describe('getFrameworkInfo', () => {
     });
   });
 
-  describe.each([
+  describe.each<{
+    reports: string;
+    frameworkPackage: string;
+    manifest: PackageJson | undefined;
+    renderer: string | undefined;
+  }>([
     {
       reports: 'its only renderer dependency',
       frameworkPackage: '@acme/storybook-framework',

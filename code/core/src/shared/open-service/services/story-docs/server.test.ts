@@ -5,7 +5,7 @@ import { STORY_INDEX_INVALIDATED } from 'storybook/internal/core-events';
 import { getChannel } from '../../../../channels/channel-slot.ts';
 import { createTestChannel, type SpiedTestChannel } from '../../../../channels/test-channel.ts';
 import type { IndexEntry, StoryIndex } from '../../../../types/modules/indexer.ts';
-import { clearRegistry, getService } from '../../server.ts';
+import { buildStaticFiles, clearRegistry, getService } from '../../server.ts';
 import { SERVICE_ENTRY, type EntryPayload } from '../../service-channel.ts';
 import { serviceRegistryApi } from '../../service-registry.ts';
 import { createServiceRuntime } from '../../service-runtime.ts';
@@ -16,6 +16,7 @@ import { storyDocsServiceDef } from './definition.ts';
 import { registerStoryDocsService, subscribeStoryDocsToModuleGraphChanges } from './server.ts';
 import type { SnippetTemplate } from '../../../../docs-tools/snippetTemplate.ts';
 import type { StoryDocsPayload, StoryDocsProvider } from './types.ts';
+import { Tag } from '../../../constants/tags.ts';
 
 // `<Button label="…" />` with its label in a hole.
 const buttonTemplate = (
@@ -40,6 +41,7 @@ function makeStoryEntry(id: string, title = 'Comp'): IndexEntry {
     type: 'story',
     subtype: 'story',
     importPath: `./${title.toLowerCase()}.stories.tsx`,
+    tags: [Tag.MANIFEST],
   };
 }
 
@@ -77,7 +79,7 @@ describe('story-docs open service', () => {
     });
 
     await expect(service.commands.extractStoryDocs({ id: 'button' })).resolves.toEqual(payload);
-    expect(service.queries.storyDocs.get({ id: 'button' })).toEqual(payload);
+    expect(service.queries.storyDocs.get({ id: 'button', scope: 'all' })).toEqual(payload);
     expect(provider).toHaveBeenCalledWith({ entry });
   });
 
@@ -143,7 +145,7 @@ describe('story-docs open service', () => {
     await service.commands.extractStoryDocs({ id: 'button' });
     const selected: unknown[] = [];
     const unsubscribe = service.queries.storyDocs.subscribe(
-      { id: 'button' },
+      { id: 'button', scope: 'all' },
       (payload) => payload?.stories['button--primary']?.template,
       (state) => selected.push(state.data)
     );
@@ -166,8 +168,9 @@ describe('story-docs open service', () => {
       });
       const emitted: Array<StoryDocsPayload | undefined> = [];
 
-      const unsubscribe = service.queries.storyDocs.subscribe({ id: 'button' }, (state) =>
-        emitted.push(state.data)
+      const unsubscribe = service.queries.storyDocs.subscribe(
+        { id: 'button', scope: 'all' },
+        (state) => emitted.push(state.data)
       );
       extracted.resolve(payload);
 
@@ -181,7 +184,7 @@ describe('story-docs open service', () => {
         storyDocsProvider: async () => undefined,
       });
 
-      expect(service.queries.storyDocs.get({ id: 'constructor' })).toBeUndefined();
+      expect(service.queries.storyDocs.get({ id: 'constructor', scope: 'all' })).toBeUndefined();
     });
 
     it.each(['Constructor', 'Prototype'])(
@@ -195,7 +198,7 @@ describe('story-docs open service', () => {
         });
         const emitted: Array<StoryDocsPayload | undefined> = [];
 
-        const unsubscribe = service.queries.storyDocs.subscribe({ id }, (state) =>
+        const unsubscribe = service.queries.storyDocs.subscribe({ id, scope: 'all' }, (state) =>
           emitted.push(state.data)
         );
 
@@ -228,7 +231,62 @@ describe('story-docs open service', () => {
         }
       }
 
-      expect(peer.queries.storyDocs.get({ id: 'constructor' })).toEqual(payload);
+      expect(peer.queries.storyDocs.get({ id: 'constructor', scope: 'all' })).toEqual(payload);
+    });
+  });
+
+  describe('a story without the manifest tag', () => {
+    const primary = { id: 'button--primary', name: 'Primary', snippet: '<Button />' };
+    const dark = { id: 'button--dark', name: 'Dark', snippet: '<Button dark />' };
+    const entries = [
+      makeStoryEntry('button--primary', 'Button'),
+      { ...makeStoryEntry('button--dark', 'Button'), tags: ['dev', 'test'] },
+    ];
+    const register = () =>
+      registerStoryDocsService({
+        getIndex: makeGetIndex(entries),
+        storyDocsProvider: async () =>
+          makeStoryDocsPayload({ stories: { [primary.id]: primary, [dark.id]: dark } }),
+      });
+
+    it('is read with the scope all, and left out with the scope manifest', async () => {
+      const service = register();
+      await service.commands.extractStoryDocs({ id: 'button' });
+
+      expect(service.queries.storyDocs.get({ id: 'button', scope: 'all' })?.stories).toEqual({
+        [primary.id]: primary,
+        [dark.id]: dark,
+      });
+      expect(service.queries.storyDocs.get({ id: 'button', scope: 'manifest' })?.stories).toEqual({
+        [primary.id]: primary,
+      });
+      expect(
+        readAllComponents(service.queries.storyDocsForAllComponents.get()).button?.stories
+      ).toEqual({ [primary.id]: primary });
+    });
+
+    it('is written once in the static build, apart from the manifest stories the components manifest points at', async () => {
+      register();
+
+      expect(await buildStaticFiles()).toEqual({
+        'core/story-docs/button.json': {
+          components: { button: makeStoryDocsPayload({ stories: { [primary.id]: primary } }) },
+          nonManifestStories: { button: { [dark.id]: dark } },
+        },
+      });
+    });
+
+    it('gives the scope manifest no story docs, so no import either, when no story has the tag', async () => {
+      const service = registerStoryDocsService({
+        getIndex: makeGetIndex([{ ...makeStoryEntry('button--dark', 'Button'), tags: ['dev'] }]),
+        storyDocsProvider: async () => makeStoryDocsPayload({ stories: { [dark.id]: dark } }),
+      });
+      await service.commands.extractStoryDocs({ id: 'button' });
+
+      expect(service.queries.storyDocs.get({ id: 'button', scope: 'manifest' })).toBeUndefined();
+      expect(service.queries.storyDocs.get({ id: 'button', scope: 'all' })?.stories).toEqual({
+        [dark.id]: dark,
+      });
     });
   });
 
@@ -383,6 +441,30 @@ describe('story-docs open service', () => {
       channel.emitExternal(STORY_INDEX_INVALIDATED);
     };
 
+    it('re-extracts a component when only the manifest tag of a story changes, with no story file change', async () => {
+      let entries = [makeStoryEntry('button--primary', 'Button')];
+      const getIndex = () => makeGetIndex(entries)();
+      const service = registerStoryDocsService({
+        getIndex,
+        storyDocsProvider: async () =>
+          makeStoryDocsPayload({
+            stories: { 'button--primary': { id: 'button--primary', name: 'Primary' } },
+          }),
+      });
+      subscribeStoryDocsToModuleGraphChanges({ channel, getIndex, workingDir: process.cwd() });
+      await service.queries.storyDocs.loaded({ id: 'button', scope: 'manifest' });
+
+      entries = [{ ...makeStoryEntry('button--primary', 'Button'), tags: ['dev'] }];
+      channel.emitExternal(STORY_INDEX_INVALIDATED);
+
+      await vi.waitFor(() =>
+        expect(service.queries.storyDocs.get({ id: 'button', scope: 'manifest' })).toBeUndefined()
+      );
+      expect(service.queries.storyDocs.get({ id: 'button', scope: 'all' })?.stories).toHaveProperty(
+        'button--primary'
+      );
+    });
+
     it('re-extracts a component when any of its story files changes', async () => {
       const entries = [
         { ...makeStoryEntry('vega--bar', 'Vega'), importPath: './chart.stories.tsx' },
@@ -393,7 +475,7 @@ describe('story-docs open service', () => {
       const service = registerStoryDocsService({ getIndex, storyDocsProvider: provider });
       subscribeStoryDocsToModuleGraphChanges({ channel, getIndex, workingDir: process.cwd() });
 
-      await service.queries.storyDocs.loaded({ id: 'vega' });
+      await service.queries.storyDocs.loaded({ id: 'vega', scope: 'all' });
       expect(provider).toHaveBeenCalledTimes(2);
 
       const moduleGraph = getService('core/module-graph', { internal: true });
@@ -413,7 +495,7 @@ describe('story-docs open service', () => {
       const service = registerStoryDocsService({ getIndex, storyDocsProvider: provider });
       subscribeStoryDocsToModuleGraphChanges({ channel, getIndex, workingDir: process.cwd() });
 
-      await service.queries.storyDocs.loaded({ id: 'button' });
+      await service.queries.storyDocs.loaded({ id: 'button', scope: 'all' });
       expect(provider).toHaveBeenCalledTimes(1);
 
       const moduleGraph = getService('core/module-graph', { internal: true });
@@ -464,8 +546,9 @@ describe('story-docs open service', () => {
       });
       subscribeStoryDocsToModuleGraphChanges({ channel, getIndex, workingDir: process.cwd() });
       const emitted: Array<StoryDocsPayload | undefined> = [];
-      const unsubscribe = service.queries.storyDocs.subscribe({ id: 'button' }, (state) =>
-        emitted.push(state.data)
+      const unsubscribe = service.queries.storyDocs.subscribe(
+        { id: 'button', scope: 'all' },
+        (state) => emitted.push(state.data)
       );
       await vi.waitFor(() =>
         expect(emitted.at(-1)).toEqual(makeStoryDocsPayload({ id: 'button' }))
@@ -505,7 +588,7 @@ describe('story-docs open service', () => {
         extraction.resolve(makeStoryDocsPayload());
         await extracting;
 
-        expect(service.queries.storyDocs.get({ id: 'button' })).toBeUndefined();
+        expect(service.queries.storyDocs.get({ id: 'button', scope: 'all' })).toBeUndefined();
       }
     );
 
@@ -563,9 +646,9 @@ describe('story-docs open service', () => {
       }, './more.stories.tsx');
 
       await vi.waitFor(() =>
-        expect(Object.keys(service.queries.storyDocs.get({ id: 'button' })!.stories)).toEqual([
-          'button--primary',
-        ])
+        expect(
+          Object.keys(service.queries.storyDocs.get({ id: 'button', scope: 'all' })!.stories)
+        ).toEqual(['button--primary'])
       );
     });
 
@@ -606,16 +689,16 @@ describe('story-docs open service', () => {
         ];
       }, './more.stories.tsx');
       await vi.waitFor(() =>
-        expect(Object.keys(service.queries.storyDocs.get({ id: 'button' })!.stories)).toEqual([
-          'button--primary',
-        ])
+        expect(
+          Object.keys(service.queries.storyDocs.get({ id: 'button', scope: 'all' })!.stories)
+        ).toEqual(['button--primary'])
       );
       olderExtraction.resolve(makeStoryDocsPayload());
       await new Promise((resolve) => setTimeout(resolve, 20));
 
-      expect(Object.keys(service.queries.storyDocs.get({ id: 'button' })!.stories)).toEqual([
-        'button--primary',
-      ]);
+      expect(
+        Object.keys(service.queries.storyDocs.get({ id: 'button', scope: 'all' })!.stories)
+      ).toEqual(['button--primary']);
     });
 
     it('retries a restore whose extraction failed on the next index change', async () => {
@@ -626,8 +709,9 @@ describe('story-docs open service', () => {
       const service = registerStoryDocsService({ getIndex, storyDocsProvider: provider });
       subscribeStoryDocsToModuleGraphChanges({ channel, getIndex, workingDir: process.cwd() });
       const emitted: Array<StoryDocsPayload | undefined> = [];
-      const unsubscribe = service.queries.storyDocs.subscribe({ id: 'button' }, (state) =>
-        emitted.push(state.data)
+      const unsubscribe = service.queries.storyDocs.subscribe(
+        { id: 'button', scope: 'all' },
+        (state) => emitted.push(state.data)
       );
       await vi.waitFor(() => expect(emitted.at(-1)).toEqual(makeStoryDocsPayload()));
       await changeButtonStoryFile(() => {
@@ -658,8 +742,9 @@ describe('story-docs open service', () => {
       const service = registerStoryDocsService({ getIndex, storyDocsProvider: provider });
       subscribeStoryDocsToModuleGraphChanges({ channel, getIndex, workingDir: process.cwd() });
       const emitted: Array<StoryDocsPayload | undefined> = [];
-      const unsubscribe = service.queries.storyDocs.subscribe({ id: 'button' }, (state) =>
-        emitted.push(state.data)
+      const unsubscribe = service.queries.storyDocs.subscribe(
+        { id: 'button', scope: 'all' },
+        (state) => emitted.push(state.data)
       );
       await vi.waitFor(() => expect(provider).toHaveBeenCalledTimes(1));
 
@@ -668,7 +753,7 @@ describe('story-docs open service', () => {
       });
       firstExtraction.resolve(makeStoryDocsPayload());
       await new Promise((resolve) => setTimeout(resolve, 20));
-      expect(service.queries.storyDocs.get({ id: 'button' })).toBeUndefined();
+      expect(service.queries.storyDocs.get({ id: 'button', scope: 'all' })).toBeUndefined();
       await changeButtonStoryFile(() => {
         entries = original;
       });
@@ -696,8 +781,9 @@ describe('story-docs open service', () => {
       });
       subscribeStoryDocsToModuleGraphChanges({ channel, getIndex, workingDir: process.cwd() });
       const emitted: Array<StoryDocsPayload | undefined> = [];
-      const unsubscribe = service.queries.storyDocs.subscribe({ id: 'button' }, (state) =>
-        emitted.push(state.data)
+      const unsubscribe = service.queries.storyDocs.subscribe(
+        { id: 'button', scope: 'all' },
+        (state) => emitted.push(state.data)
       );
       await vi.waitFor(() =>
         expect(emitted.at(-1)).toEqual(makeStoryDocsPayload({ id: 'button' }))
@@ -730,7 +816,7 @@ describe('story-docs open service', () => {
 
     await service.commands.extractAllStoryDocs(undefined);
 
-    expect(service.queries.storyDocs.get({ id: 'constructor' })).toEqual(
+    expect(service.queries.storyDocs.get({ id: 'constructor', scope: 'all' })).toEqual(
       makeStoryDocsPayload({ id: 'constructor' })
     );
     expect(readAllComponents(service.queries.storyDocsForAllComponents.get())).toEqual({

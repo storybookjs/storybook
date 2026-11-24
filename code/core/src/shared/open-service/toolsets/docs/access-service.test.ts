@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { IndexEntry, StoryIndex } from 'storybook/internal/types';
 
@@ -6,8 +6,13 @@ import {
   OpenServiceDocgenMissingComponentError,
   OpenServiceMissingServiceError,
 } from '../../../../server-errors.ts';
-import type { ToolsetGetService } from '../../toolset-definition.ts';
+import { Tag } from '../../../constants/tags.ts';
+import { clearRegistry, getService as getRegisteredService } from '../../server.ts';
+import { registerDocgenService } from '../../services/docgen/server.ts';
+import { registerStoryDocsService } from '../../services/story-docs/server.ts';
+import type { ToolsetCtx, ToolsetGetService } from '../../toolset-definition.ts';
 import { createServiceDocsAccess } from './access-service.ts';
+import { createDocsToolset } from './definition.ts';
 
 const storyEntry = (id: string, name: string, tags: string[]): IndexEntry => ({
   type: 'story',
@@ -253,10 +258,10 @@ describe('createServiceDocsAccess list', () => {
       { id: 'alpha--primary', name: 'Primary', snippet: '<Alpha />' },
       { id: 'alpha--secondary', name: 'Secondary' },
     ]);
-    expect(storyDocs).toHaveBeenCalledWith({ id: 'alpha' });
-    expect(storyDocs).toHaveBeenCalledWith({ id: 'zebra' });
+    expect(storyDocs).toHaveBeenCalledWith({ id: 'alpha', scope: 'manifest' });
+    expect(storyDocs).toHaveBeenCalledWith({ id: 'zebra', scope: 'manifest' });
     // A docs-only component has no stories to resolve.
-    expect(storyDocs).not.toHaveBeenCalledWith({ id: 'only-docs' });
+    expect(storyDocs).not.toHaveBeenCalledWith({ id: 'only-docs', scope: 'manifest' });
     expect(manifests.componentManifest.components['only-docs']).not.toHaveProperty('stories');
   });
 
@@ -313,6 +318,7 @@ describe('createServiceDocsAccess resolve', () => {
       },
     });
     expect(docgen).toHaveBeenCalledWith({ id: 'alpha' });
+    expect(storyDocs).toHaveBeenCalledWith({ id: 'alpha', scope: 'manifest' });
     expect(mdxForAllComponents).not.toHaveBeenCalled();
   });
 
@@ -355,5 +361,69 @@ describe('createServiceDocsAccess resolve', () => {
     mdxAvailable = false;
 
     await expect(createAccess().resolve('guide--docs')).resolves.toBeUndefined();
+  });
+});
+
+describe('a story without the manifest tag, read from the registered services', () => {
+  const primary = { id: 'button--primary', name: 'Primary', snippet: '<Button />' };
+  const dark = { id: 'button--dark', name: 'Dark', snippet: '<Button dark />' };
+  const manifestIndex: StoryIndex = {
+    v: 5,
+    entries: {
+      [primary.id]: { ...storyEntry(primary.id, 'Primary', [Tag.MANIFEST]), title: 'Button' },
+      [dark.id]: { ...storyEntry(dark.id, 'Dark', ['dev', 'test']), title: 'Button' },
+    },
+  };
+
+  afterEach(() => clearRegistry());
+
+  const toolset = () => {
+    const getIndex = async () => manifestIndex;
+    registerDocgenService({
+      getIndex,
+      docgenProvider: async () => ({
+        id: 'button',
+        name: 'Button',
+        path: './button.tsx',
+        jsDocTags: {},
+      }),
+    });
+    registerStoryDocsService({
+      getIndex,
+      storyDocsProvider: async () => ({
+        id: 'button',
+        name: 'Button',
+        path: './button.stories.tsx',
+        stories: { [primary.id]: primary, [dark.id]: dark },
+      }),
+    });
+    return createDocsToolset({
+      docsAccess: createServiceDocsAccess({
+        storyIndex: { getIndex },
+        getService: getRegisteredService as ToolsetGetService,
+      }),
+    });
+  };
+
+  it.each(['cli', 'mcp'] as const)('is not shown through %s', async (transport) => {
+    const docs = toolset();
+    const ctx: ToolsetCtx = { transport, getService: () => ({}) as never };
+
+    const shown = await docs.methods.show.handler({ id: 'button' }, ctx);
+    expect(shown.markdown).toContain('Primary');
+    expect(shown.markdown).not.toContain('Dark');
+    const listed = await docs.methods.list.handler({ withStoryIds: true });
+    expect(listed.markdown).not.toContain(dark.id);
+    const story = await docs.methods.showStory.handler({ storyId: dark.id }, ctx);
+    expect(story.markdown).not.toContain('<Button dark />');
+  });
+
+  it('is still read by the Storybook UI', async () => {
+    toolset();
+    const storyDocs = getRegisteredService('core/story-docs', { internal: true });
+
+    expect(
+      (await storyDocs.queries.storyDocs.loaded({ id: 'button', scope: 'all' }))?.stories
+    ).toEqual({ [primary.id]: primary, [dark.id]: dark });
   });
 });

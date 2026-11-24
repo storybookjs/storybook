@@ -68,6 +68,8 @@ export const skills: Fix<{ afterAngularViteMigration?: boolean }> = {
       source: 'automigration',
       stdio: 'pipe',
       testSupported: hasAddonVitest(mainConfig),
+      // This fix runs for one Storybook of the project.
+      sawEveryStorybook: false,
     });
     // `installSkills` already warned how to install them later; the upgrade itself succeeded.
     if (install.result === 'failed') {

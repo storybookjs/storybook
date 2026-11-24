@@ -219,6 +219,8 @@ export async function doInitiate(options: CommandOptions): Promise<
         packageManager,
         source: 'ai-feature',
         testSupported: mainConfig ? hasAddonVitest(mainConfig) : selectedFeatures.has(Feature.TEST),
+        // This is one Storybook of the project.
+        sawEveryStorybook: false,
       })
     );
   }

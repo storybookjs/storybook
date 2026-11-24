@@ -1,6 +1,5 @@
 import {
   hasAddonVitest,
-  hasAgentTestStep,
   hasStorybookSkills,
   installSkills,
   refreshAgentInstructions,
@@ -568,24 +567,26 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
     // test step when one of them can run story tests. The main configs were read before the
     // automigrations, so an addon-vitest that one of them added counts too. With `--config-dir`
     // only those Storybooks were read, so a test step that another one put in the section stays.
-    const testSupported =
-      allProjects.some(({ mainConfig }) => hasAddonVitest(mainConfig)) ||
-      storybookProjects.some(({ configDir }) =>
-        automigrationResults[configDir]?.addonsToPostinstall?.includes('@storybook/addon-vitest')
-      ) ||
-      (Boolean(options.configDir?.length) && (await hasAgentTestStep()));
+    const agentInstructions = {
+      testSupported:
+        allProjects.some(({ mainConfig }) => hasAddonVitest(mainConfig)) ||
+        storybookProjects.some(({ configDir }) =>
+          automigrationResults[configDir]?.addonsToPostinstall?.includes('@storybook/addon-vitest')
+        ),
+      sawEveryStorybook: !options.configDir?.length,
+    };
     const skills =
       !options.dryRun && hadSkills
         ? await installSkills({
             packageManager: rootPackageManager,
             source: 'refresh',
-            testSupported,
+            ...agentInstructions,
           })
         : undefined;
     // The skills of a plugin, or installed by hand, come with an AGENTS.md section that promises
     // the same updates.
     if (!options.dryRun && !hadSkills) {
-      await refreshAgentInstructions({ testSupported });
+      await refreshAgentInstructions(agentInstructions);
     }
 
     // Run doctor for each project

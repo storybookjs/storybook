@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { hasAgentTestStep, hasStorybookSkills, installSkills } from 'storybook/internal/cli';
+import { hasStorybookSkills, installSkills } from 'storybook/internal/cli';
 import { type JsPackageManager, isCI } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
@@ -88,7 +88,6 @@ describe('upgrade: refreshing the skills', () => {
     } as unknown as ReturnType<typeof prompt.taskLog>);
     vi.mocked(hasStorybookSkills).mockResolvedValue(true);
     vi.mocked(installSkills).mockResolvedValue({ result: 'installed', source: 'refresh' });
-    vi.mocked(hasAgentTestStep).mockResolvedValue(false);
   });
 
   const skillsInUpgradeEvents = () =>
@@ -172,6 +171,7 @@ describe('upgrade: refreshing the skills', () => {
       packageManager: expect.objectContaining({ type: 'npm' }),
       source: 'refresh',
       testSupported: false,
+      sawEveryStorybook: true,
     });
     expect(skillsInUpgradeEvents()).toEqual([
       { result: 'installed', source: 'refresh' },
@@ -179,17 +179,15 @@ describe('upgrade: refreshing the skills', () => {
     ]);
   });
 
-  it('keeps the test step of the section when --config-dir leaves Storybooks unread', async () => {
-    vi.mocked(hasAgentTestStep).mockResolvedValue(true);
-
+  it('says that --config-dir leaves Storybooks unread, so the section keeps its test step', async () => {
     await upgrade(baseOptions);
     expect(installSkills).toHaveBeenLastCalledWith(
-      expect.objectContaining({ testSupported: false })
+      expect.objectContaining({ testSupported: false, sawEveryStorybook: true })
     );
 
     await upgrade({ ...baseOptions, configDir: ['/repo/a/.storybook'] });
     expect(installSkills).toHaveBeenLastCalledWith(
-      expect.objectContaining({ testSupported: true })
+      expect.objectContaining({ testSupported: false, sawEveryStorybook: false })
     );
   });
 

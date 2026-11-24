@@ -19,7 +19,7 @@ const everything = { testSupported: true, docsEnabled: true };
 
 describe('buildAgentInstructions', () => {
   it('is the workflow: two skills, then the test command itself', () => {
-    expect(buildAgentInstructions()).toMatchInlineSnapshot(`
+    expect(buildAgentInstructions({ testSupported: true })).toMatchInlineSnapshot(`
       "## Storybook
 
       For every change to how the UI looks (you create, change, or delete a component, story, style, theme, or design token), follow these steps in order. First invoke the Storybook skills of steps 1 and 2, before you edit any file. Then follow each skill at its step.
@@ -44,7 +44,7 @@ describe('buildAgentInstructions', () => {
   });
 
   it('tells the user about the review as its last step, without creating one', () => {
-    const instructions = buildAgentInstructions();
+    const instructions = buildAgentInstructions({ testSupported: true });
 
     expect(instructions.split('\n').at(-1)).toBe(
       `4. ALWAYS inform the user about the \`/ui-review\` skill after a change the user can see: "${REVIEW_HINT_LINE}"`
@@ -91,14 +91,14 @@ describe('buildServerInstructions', () => {
     const skillSteps = (text: string) => text.split('\n').filter((line) => /^\d\. `/.test(line));
 
     expect(skillSteps(buildServerInstructions(everything)).map(stepText)).toEqual(
-      skillSteps(buildAgentInstructions()).map(stepText)
+      skillSteps(buildAgentInstructions({ testSupported: true })).map(stepText)
     );
   });
 
   it('states the test step and the review step of the AGENTS.md section', () => {
     const step = (text: string, n: number) =>
       text.split('\n').find((line) => line.startsWith(`${n}. `));
-    const cli = buildAgentInstructions();
+    const cli = buildAgentInstructions({ testSupported: true });
     const mcp = buildServerInstructions(everything);
 
     expect(step(cli, 3)).toBe('3. To test stories in the CLI run:');
@@ -132,6 +132,8 @@ describe('buildServerInstructions', () => {
       'Also run `npx storybook skills ui-review --mcp` when the user asks for a review, or to see or be shown components, stories, or their states in Storybook.'
     );
     // The AGENTS.md section leaves both to the skill descriptions.
-    expect(buildAgentInstructions()).not.toMatch(/asks for a review|asks about a component/);
+    expect(buildAgentInstructions({ testSupported: true })).not.toMatch(
+      /asks for a review|asks about a component/
+    );
   });
 });

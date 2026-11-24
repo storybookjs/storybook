@@ -7,9 +7,9 @@ export type ServerInstructionsInputs = {
   docsEnabled: boolean;
 };
 
-// A step either opens a skill or, for the tests, names the command itself: an agent runs the
-// tests right from that line, without a skill in between.
-type Step = { skill: SkillId; does: string } | { tests: true };
+// A step opens a skill, names the test command itself (an agent runs the tests right from that
+// line, without a skill in between), or tells the user about the review.
+type Step = { skill: SkillId; does: string } | { tests: true } | { review: true };
 
 function workflowSteps({ testSupported, docsEnabled }: ServerInstructionsInputs) {
   const steps: (Step | false)[] = [
@@ -24,8 +24,7 @@ function workflowSteps({ testSupported, docsEnabled }: ServerInstructionsInputs)
       does: 'every component you create or change gets stories, written with the current best practices for this Storybook version and this project',
     },
     testSupported && { tests: true },
-    // No review step: publishing one after every change costs tokens also when nobody looks at
-    // it, and it needs a running dev server. The `ui-review` skill stays for when the user asks.
+    { review: true },
   ];
   return steps.filter((step): step is Step => Boolean(step));
 }
@@ -33,15 +32,15 @@ function workflowSteps({ testSupported, docsEnabled }: ServerInstructionsInputs)
 // The test step names the command that tests stories in this project, and nothing more: when to
 // test and that failures get fixed is what the agent and its harness already do.
 function testStep(number: number, transport: SkillTextTransport): string {
+  const run = getToolName({ transport })('test.run');
   if (transport === 'mcp') {
-    const run = `\`${getToolName({ transport })('test.run')}\``;
-    return `${number}. To test stories, call ${run}: with neither for every story, with \`files\` for these story files, with \`changed: true\` for the stories your changes affect.`;
+    return `${number}. To test stories, call \`${run}\`: with neither for every story, with \`files\` for these story files, with \`changed: true\` for the stories your changes affect.`;
   }
   // `[files...]` as `test run --help` writes it.
   return `${number}. To test stories in the CLI run:
    \`\`\`sh
-   npx storybook tools test run [files...]   # every story, or these story files
-   npx storybook tools test run --changed    # the stories your changes affect
+   ${run} [files...]   # every story, or these story files
+   ${run} --changed    # the stories your changes affect
    \`\`\``;
 }
 
@@ -59,12 +58,16 @@ const reviewStep = (number: number) =>
 function buildWorkflow(inputs: ServerInstructionsInputs, transport: SkillTextTransport): string {
   const cli = transport === 'cli';
   const steps = workflowSteps(inputs);
-  const lines = steps.map((step, index) =>
-    'tests' in step
-      ? testStep(index + 1, transport)
-      : `${index + 1}. \`${cli ? `/${step.skill}` : `npx storybook skills ${step.skill} --mcp`}\`: ${step.does}.`
-  );
-  lines.push(reviewStep(lines.length + 1));
+  const lines = steps.map((step, index) => {
+    const number = index + 1;
+    if ('tests' in step) {
+      return testStep(number, transport);
+    }
+    if ('review' in step) {
+      return reviewStep(number);
+    }
+    return `${number}. \`${cli ? `/${step.skill}` : `npx storybook skills ${step.skill} --mcp`}\`: ${step.does}.`;
+  });
   const skillSteps = steps.flatMap((step, index) => ('skill' in step ? [index + 1] : []));
   const inOwnCommand =
     'in a command of its own, from the package where Storybook is installed, and read its whole output, without `head` or `tail`';
@@ -90,7 +93,7 @@ ${lines.join('\n')}`;
  * The `## Storybook` section that `create storybook` and `storybook upgrade` write in `AGENTS.md`.
  * Without `@storybook/addon-vitest` the project cannot run story tests, so it gets no test step.
  */
-export function buildAgentInstructions({ testSupported = true } = {}): string {
+export function buildAgentInstructions({ testSupported }: { testSupported: boolean }): string {
   return buildWorkflow({ testSupported, docsEnabled: true }, 'cli');
 }
 
@@ -106,7 +109,8 @@ export function buildServerInstructions(inputs: ServerInstructionsInputs): strin
   // only published when the user asks for one, through the `ui-review` skill.
   const review = `\n\nWhen you create a review with \`${getToolName({ transport: 'mcp' })('review.create')}\`, end your final answer with the three lines its result gives you, unchanged, and mention the review link nowhere else in it.`;
   // The tools are at hand over MCP, so an agent can do a step without its skill. It did for a
-  // request that is one step, where no file edit comes first.
+  // request that is one step, where no file edit comes first. With `component-docs` the workflow
+  // has two skill steps, without it one.
   const skillFirst = inputs.docsEnabled
     ? '\n\nRun the skill of a step before you call a tool of that step, also when the request is only that step.'
     : '\n\nRun the skill before you call a tool of its step, also when the request is only that step.';

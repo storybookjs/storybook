@@ -1,7 +1,9 @@
 import { readFile, writeFile } from 'node:fs/promises';
 
+import { escapeRegExp } from 'es-toolkit/string';
 import { join } from 'pathe';
 
+import { toCliPath } from '../shared/open-service/toolset-names.ts';
 import { buildAgentInstructions } from './skills/content/build-workflow-instructions.ts';
 
 // The same marker convention as Next.js (`BEGIN:nextjs-agent-rules`) and Nx: Storybook owns the
@@ -11,11 +13,18 @@ const BEGIN_MARKER = '<!-- BEGIN:storybook-skills -->';
 const END_MARKER = '<!-- END:storybook-skills -->';
 
 export type AgentInstructionsInputs = {
-  /** A Storybook of the project has `@storybook/addon-vitest`, so the section has a test step. */
+  /** A Storybook the caller checked has `@storybook/addon-vitest`, so the section has a test step. */
   testSupported: boolean;
+  /**
+   * The caller checked every Storybook of the project. Every Storybook of a monorepo shares these
+   * files, so a caller that checked only some keeps a test step that another one put there.
+   */
+  sawEveryStorybook: boolean;
 };
 
-export const storybookAgentInstructions = ({ testSupported }: AgentInstructionsInputs) =>
+export const storybookAgentInstructions = ({
+  testSupported,
+}: Pick<AgentInstructionsInputs, 'testSupported'>) =>
   `${BEGIN_MARKER}
 <!-- Storybook updates this section on upgrade. Remove both markers to keep your own edits. -->
 
@@ -42,13 +51,17 @@ const CLAUDE_FILES = [
   { file: 'CLAUDE.local.md', importsAgentsMd: /(^|\s)@(\.\/)?AGENTS\.md\b/m },
 ];
 
+// The test command as the section names it, without `npx`.
+const TEST_COMMAND = escapeRegExp(`storybook tools ${toCliPath('test.run')}`);
+
 // The test step of this section, or of the 11.0 prereleases, which named the `test-stories` skill.
-const TEST_STEP = /storybook tools test run|`test-stories`/;
+const TEST_STEP = new RegExp(`${TEST_COMMAND}|\`test-stories\``);
 
 // Also matches a section the user customized, so it is not added a second time: one written by
 // an 11.0 prerelease, which named every skill, or one that keeps only the test command.
-const NAMES_A_STORYBOOK_SKILL =
-  /\b(component-docs|write-stories|test-stories|ui-review)\b|\bstorybook tools test run\b/;
+const NAMES_A_STORYBOOK_SKILL = new RegExp(
+  `\\b(component-docs|write-stories|test-stories|ui-review)\\b|\\b${TEST_COMMAND}\\b`
+);
 
 // The block between the markers, when the file has one.
 const findSection = (content: string | undefined): string | undefined =>
@@ -159,17 +172,10 @@ async function hasTestStep(read: (file: string) => Promise<string | undefined>):
   return false;
 }
 
-/**
- * Whether a Storybook section of the project has the test step. For a caller that did not check
- * every Storybook of the project, such as an upgrade with `--config-dir`.
- */
-export const hasStorybookTestStep = (root: string): Promise<boolean> =>
-  hasTestStep((file) => readOptional(join(root, file)));
-
 export async function addStorybookAgentInstructions(
   root: string,
-  mode: AgentInstructionsMode = 'install',
-  inputs: AgentInstructionsInputs = { testSupported: true }
+  mode: AgentInstructionsMode,
+  inputs: AgentInstructionsInputs
 ): Promise<AgentInstructionsChange[]> {
   const existing = new Map<string, string | undefined>();
   const read = async (file: string) => {
@@ -179,10 +185,8 @@ export async function addStorybookAgentInstructions(
     }
     return content;
   };
-  // Every Storybook of a monorepo shares these files. An install for one without addon-vitest
-  // keeps the test step another one put there; only an upgrade, which checks every Storybook,
-  // drops it.
-  const testSupported = inputs.testSupported || (mode === 'install' && (await hasTestStep(read)));
+  const testSupported =
+    inputs.testSupported || (!inputs.sawEveryStorybook && (await hasTestStep(read)));
   const files = await planStorybookAgentInstructions(
     read,
     mode,

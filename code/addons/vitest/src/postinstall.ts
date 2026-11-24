@@ -328,7 +328,7 @@ export default async function postInstall(options: PostinstallOptions) {
   if (errors.length === 0) {
     // The Storybook section of AGENTS.md has a test step only with this addon, so a project that
     // adds it later gets the step now instead of on its next upgrade.
-    await refreshAgentInstructions({ testSupported: true });
+    await refreshAgentInstructions({ testSupported: true, sawEveryStorybook: false });
     logger.step(CLI_COLORS.success('@storybook/addon-vitest setup completed successfully'));
     logger.log(dedent`
         @storybook/addon-vitest is now configured and you're ready to run your tests!

@@ -2,15 +2,15 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import type { JsPackageManager } from 'storybook/internal/common';
-import { getAddonNames, getProjectRoot, isCI, versions } from 'storybook/internal/common';
+import { getProjectRoot, isCI, versions } from 'storybook/internal/common';
 import { CLI_COLORS, logger } from 'storybook/internal/node-logger';
 import { isTelemetryModuleEnabled } from 'storybook/internal/telemetry';
 import { SupportedBuilder, SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
 
 import {
+  type AgentInstructionsInputs,
   type AgentInstructionsMode,
   addStorybookAgentInstructions,
-  hasStorybookTestStep,
 } from './agentInstructions.ts';
 
 const SKILLS_REPO = 'storybookjs/skills';
@@ -99,6 +99,7 @@ export async function installSkills({
   source,
   stdio = 'inherit',
   testSupported,
+  sawEveryStorybook,
 }: {
   packageManager: JsPackageManager;
   source: SkillsSource;
@@ -109,6 +110,8 @@ export async function installSkills({
    * `AGENTS.md` section gets its test step.
    */
   testSupported: boolean;
+  /** The caller read the main config of every Storybook of the project. */
+  sawEveryStorybook: boolean;
 }): Promise<SkillsInstallResult> {
   if (isCI()) {
     return { result: 'skipped', source: 'ci' };
@@ -160,7 +163,7 @@ export async function installSkills({
   // removed it.
   await addAgentInstructions(
     source === 'refresh' && !removedSkills.includes('stories') ? 'update' : 'install',
-    testSupported
+    { testSupported, sawEveryStorybook }
   );
 
   logger.log(
@@ -197,10 +200,10 @@ const listFiles = (files: string[]) =>
 
 async function addAgentInstructions(
   mode: AgentInstructionsMode,
-  testSupported: boolean
+  inputs: AgentInstructionsInputs
 ): Promise<void> {
   try {
-    const changes = await addStorybookAgentInstructions(getProjectRoot(), mode, { testSupported });
+    const changes = await addStorybookAgentInstructions(getProjectRoot(), mode, inputs);
     const added = changes.filter(({ change }) => change === 'added').map(({ file }) => file);
     const updated = changes.filter(({ change }) => change === 'updated').map(({ file }) => file);
     if (added.length > 0) {
@@ -226,27 +229,9 @@ async function addAgentInstructions(
  * skills, for `storybook upgrade` in a project that got the skills from a plugin or by hand. Adds
  * nothing, and never runs in CI.
  */
-export async function refreshAgentInstructions({
-  testSupported,
-}: {
-  testSupported: boolean;
-}): Promise<void> {
+export async function refreshAgentInstructions(inputs: AgentInstructionsInputs): Promise<void> {
   if (isCI()) {
     return;
   }
-  await addAgentInstructions('update', testSupported);
-}
-
-/**
- * Whether the Storybook section for agents in this project has the test step, for an upgrade that
- * did not read every Storybook of the project.
- */
-export const hasAgentTestStep = (): Promise<boolean> => hasStorybookTestStep(getProjectRoot());
-
-/**
- * Whether the main config lists `@storybook/addon-vitest`. Without it a Storybook runs no story
- * tests, so the `AGENTS.md` section leaves the test step out.
- */
-export function hasAddonVitest(mainConfig: Parameters<typeof getAddonNames>[0]): boolean {
-  return getAddonNames(mainConfig).includes('@storybook/addon-vitest');
+  await addAgentInstructions('update', inputs);
 }

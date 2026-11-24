@@ -85,6 +85,7 @@ describe('init: the skills step', () => {
       packageManager,
       source: 'ai-feature',
       testSupported: false,
+      sawEveryStorybook: false,
     });
     expect(telemetry).toHaveBeenCalledWith('init-step', {
       step: 'skills',
@@ -160,6 +161,7 @@ describe('init: the skills step', () => {
       packageManager,
       source: 'ai-feature',
       testSupported: false,
+      sawEveryStorybook: false,
     });
     expect(executeFinalization).toHaveBeenCalledWith(
       expect.objectContaining({ showAiInstructions: false })

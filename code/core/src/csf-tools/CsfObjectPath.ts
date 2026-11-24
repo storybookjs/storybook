@@ -302,7 +302,30 @@ const showsValue = (
   const keys = path.filter(
     (segment): segment is string => typeof segment === 'string' && !/^\d+$/.test(segment)
   );
-  return keys.length === 0 || mentions(editor, value, new Set(keys));
+  return keys.length === 0 || mentions(editor, value, new Set(keys), path);
+};
+
+// Whether the object literals around `member` leave room for it at the end of `path`, as
+// `table.defaultValue` under `label` does not for `argTypes.<name>.defaultValue`.
+const canEndPath = (editor: SourceEditor, member: Node, path: CsfPattern): boolean => {
+  let inner = member;
+  for (const segment of path.slice(0, -1).reverse()) {
+    const object = editor.parentOf(inner);
+    const outer = object?.type === 'ObjectExpression' ? editor.parentOf(object) : undefined;
+    if (
+      outer?.type !== 'Property' ||
+      outer.value !== object ||
+      editor.parentOf(outer)?.type !== 'ObjectExpression'
+    ) {
+      return true;
+    }
+    const key = namedKey(outer);
+    if (typeof segment === 'string' && typeof key === 'string' && key !== segment) {
+      return false;
+    }
+    inner = outer;
+  }
+  return true;
 };
 
 // A constant spread more than once is followed once per path. A constant whose value refers to
@@ -324,9 +347,16 @@ const showsConstant = (editor: SourceEditor, init: Node, path: CsfPattern, seen:
 // Whether code, with the local code it refers to, has a member or a member write with each of
 // `keys`, or one whose key only running code knows. The local code is the declarations of the names
 // it reads and the values assigned to them, each read once; a name written through a pattern, as
-// in `[base] = list`, may hold anything.
-const mentions = (editor: SourceEditor, code: Node, keys: ReadonlySet<string>): boolean => {
+// in `[base] = list`, may hold anything. A member with the last key of `path` counts only where the
+// literals around it leave room for the path.
+const mentions = (
+  editor: SourceEditor,
+  code: Node,
+  keys: ReadonlySet<string>,
+  path: CsfPattern
+): boolean => {
   const missing = new Set(keys);
+  const last = path.at(-1);
   const searched = new Set<Node>();
   // Types do not change what code returns, so they are not read.
   const search = (child: Node): void => {
@@ -336,7 +366,7 @@ const mentions = (editor: SourceEditor, code: Node, keys: ReadonlySet<string>): 
     const named = namedKey(child);
     if (isAnyKey(named)) {
       missing.clear();
-    } else if (named !== undefined) {
+    } else if (named !== undefined && (named !== last || canEndPath(editor, child, path))) {
       missing.delete(named);
     }
     const binding = child.type === 'Identifier' ? editor.scopes.bindingOf(child) : undefined;

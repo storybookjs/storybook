@@ -1,0 +1,186 @@
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+[90m┌[39m  Storybook upgrade - v11.0.0-beta.5
+[90m│[39m
+[90m│[39m  Detecting projects...
+[90m│[39m
+[90m│[39m  Detecting projects: 1 projects
+[90m│[39m
+[90m│[39m  1 project detected
+[90m│[39m
+[34m●[39m  Upgrading from [1m11.0.0-beta.5[22m to [1m11.0.0-beta.5[22m
+[90m│[39m
+[90m│[39m  /package.json
+[90m│[39m
+[90m│[39m  Updated package versions in package.json files
+[90m│[39m
+[90m│[39m  Checking automigrations for /.storybook...
+[90m│[39m
+
+[90m│[39m  Automigrations detected:
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m argtypes-default-value[39m
+[90m│[39m
+[90m│[39m  1 automigration(s) detected
+[90m│[39m
+[90m│[39m  Running all detected automigrations:
+[90m│[39m
+[90m│[39m  - argtypes-default-value (/.storybook)
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m argtypes-default-value (3 files skipped)[39m
+[90m│[39m
+[90m│[39m  Completed automigrations for /.storybook
+[90m│[39m
+[33m▲[39m  3 files could not be migrated automatically. See
+[90m│[39m  [36mautomigrations-summary.md[39m for which ones and why.
+[90m│[39m
+[90m│[39m  Installing dependencies...
+[90m│[39m
+[90m│[39m  Installing dependencies...: > prepare
+[90m│[39m  > node scripts/
+[90m│[39m
+[90m│[39m  Installing dependencies...: up to date, audited 1132
+[90m│[39m
+[90m│[39m  Installing dependencies...: 231 packages are looking
+[90m│[39m
+[90m│[39m  Installing dependencies...: 31 moderate severity vuln
+[90m│[39m
+[90m│[39m  Dependencies installed
+[90m│[39m
+[33m▲[39m  Since you are in a monorepo, we advise you to deduplicate your
+[90m│[39m  dependencies. We can do this for you but it might take some time.
+[90m│[39m
+[90m│[39m  Deduplicating dependencies...
+[90m│[39m
+[90m│[39m  added 1 package, removed 28 packages, changed 3 packages, and audited
+[90m│[39m  1105 packages in 18s
+[90m│[39m
+[90m│[39m  228 packages are looking for funding
+[90m│[39m  run `npm fund` for details
+[90m│[39m
+[90m│[39m  31 moderate severity vulnerabilities
+
+[90m│[39m  To address all issues (including breaking changes), run:
+[90m│[39m  npm audit fix --force
+
+[90m│[39m  Run `npm audit` for details.
+[90m│[39m
+[90m│[39m  [32mDependencies deduplicated[39m
+[90m│[39m
+[90m│[39m  [36mnpx skills@latest add storybookjs/skills#v11.0.0-beta.5 --yes --agent[39m
+[90m│[39m  [36mclaude-code universal --copy[39m
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+│
+●  [46m[30m[1m claude-code_2-1-312_agent [22m[39m[49m Agent detected — installing non-interactively
+[?25l│
+◇  Source: https://github.com/storybookjs/skills.git @ [33mv11.0.0-beta.5[39m
+[?25h[?25l│
+◒  Cloning repository…[1G[J◐  Cloning repository…[1G[J◓  Cloning repository…[1G[J◑  Cloning repository…[1G[J◒  Cloning repository…[1G[J◇  Repository cloned
+[?25h[?25l│
+[1G[J◇  Found [32m7[39m skills
+[?25h│
+●  Installing all 7 skills
+
+│
+◇  Installation Summary ─────────────────────────╮
+│                                                │
+│  [36m~/workspace/.agents/skills/component-docs[39m     │
+│    [32muniversal:[39m Universal                        │
+│    [2mcopy →[22m Claude Code                          │
+│    [33moverwrites:[39m Claude Code, Universal          │
+│                                                │
+│  [36m~/workspace/.agents/skills/storybook-init[39m     │
+│    [32muniversal:[39m Universal                        │
+│    [2mcopy →[22m Claude Code                          │
+│    [33moverwrites:[39m Claude Code, Universal          │
+│                                                │
+│  [36m~/workspace/.agents/skills/storybook-setup[39m    │
+│    [32muniversal:[39m Universal                        │
+│    [2mcopy →[22m Claude Code                          │
+│    [33moverwrites:[39m Claude Code, Universal          │
+│                                                │
+│  [36m~/workspace/.agents/skills/storybook-upgrade[39m  │
+│    [32muniversal:[39m Universal                        │
+│    [2mcopy →[22m Claude Code                          │
+│    [33moverwrites:[39m Claude Code, Universal          │
+│                                                │
+│  [36m~/workspace/.agents/skills/test-stories[39m       │
+│    [32muniversal:[39m Universal                        │
+│    [2mcopy →[22m Claude Code                          │
+│    [33moverwrites:[39m Claude Code, Universal          │
+│                                                │
+│  [36m~/workspace/.agents/skills/ui-review[39m          │
+│    [32muniversal:[39m Universal                        │
+│    [2mcopy →[22m Claude Code                          │
+│    [33moverwrites:[39m Claude Code, Universal          │
+│                                                │
+│  [36m~/workspace/.agents/skills/write-stories[39m      │
+│    [32muniversal:[39m Universal                        │
+│    [2mcopy →[22m Claude Code                          │
+│    [33moverwrites:[39m Claude Code, Universal          │
+│                                                │
+├────────────────────────────────────────────────╯
+[?25l│
+[1G[J◇  Installation complete
+[?25h
+│
+◇  [32mInstalled 7 skills[39m ───────────────────────────────╮
+│                                                    │
+│  [32m✓[39m component-docs [2m(copied)[22m                         │
+│    [2m→[22m ~/workspace/.claude/skills/component-docs     │
+│    [2m→[22m ~/workspace/.agents/skills/component-docs     │
+│  [32m✓[39m storybook-init [2m(copied)[22m                         │
+│    [2m→[22m ~/workspace/.claude/skills/storybook-init     │
+│    [2m→[22m ~/workspace/.agents/skills/storybook-init     │
+│  [32m✓[39m storybook-setup [2m(copied)[22m                        │
+│    [2m→[22m ~/workspace/.claude/skills/storybook-setup    │
+│    [2m→[22m ~/workspace/.agents/skills/storybook-setup    │
+│  [32m✓[39m storybook-upgrade [2m(copied)[22m                      │
+│    [2m→[22m ~/workspace/.claude/skills/storybook-upgrade  │
+│    [2m→[22m ~/workspace/.agents/skills/storybook-upgrade  │
+│  [32m✓[39m test-stories [2m(copied)[22m                           │
+│    [2m→[22m ~/workspace/.claude/skills/test-stories       │
+│    [2m→[22m ~/workspace/.agents/skills/test-stories       │
+│  [32m✓[39m ui-review [2m(copied)[22m                              │
+│    [2m→[22m ~/workspace/.claude/skills/ui-review          │
+│    [2m→[22m ~/workspace/.agents/skills/ui-review          │
+│  [32m✓[39m write-stories [2m(copied)[22m                          │
+│    [2m→[22m ~/workspace/.claude/skills/write-stories      │
+│    [2m→[22m ~/workspace/.agents/skills/write-stories      │
+│                                                    │
+├────────────────────────────────────────────────────╯
+
+│
+└  [32mDone![39m[2m  Review skills before use; they run with full agent permissions.[22m
+
+[90m│[39m
+[90m│[39m  If you want to remove the Storybook skills, run "npx skills@latest
+[90m│[39m  remove"
+[90m│[39m
+[32m◇[39m  Checking the health of your project(s)..
+[90m│[39m
+[90m│[39m  Your Storybook project looks good!
+[90m│[39m
+[32m◇[39m  The upgrade is complete, but some projects failed to upgrade or
+[90m│[39m  migrate completely. Please see the debug logs for more details.
+[90m│[39m
+[90m│[39m  [31mFailed to upgrade:[39m
+[90m│[39m  Some automigrations failed or skipped files. Review the upgrade output
+[90m│[39m  for details.
+[90m│[39m  • /.storybook (argtypes-default-value)
+[90m│[39m
+[90m│[39m  If you want to learn more about the automigrations that executed in
+[90m│[39m  your project(s), please check the following links:
+[90m│[39m  • argtypes-default-value:
+[90m│[39m  https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#argtypes-defaultvalue-removed
+[90m│[39m
+[90m│[39m  For a full list of changes, please check our migration guide:
+[90m│[39m  [36mhttps://storybook.js.org/docs/releases/migration-guide?ref=upgrade[39m
+[90m│[39m
+[90m│[39m  Debug logs are written to: /home/agent/workspace/debug-storybook.log
+[90m│[39m
+[90m└[39m  
+
+exit=1

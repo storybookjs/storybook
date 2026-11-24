@@ -93,6 +93,10 @@ const hasEntry = (
   templateName: string
 ) => list.some((e) => e.propName === propName || e.templateName === templateName);
 
+// Angular compiles `inputs: ['inner: outer']` into flat `[inner, outer, ...]` pairs.
+const hostNamesFromBindingPairs = (pairs: string[]): string[] =>
+  pairs.filter((_, index) => index % 2 === 1);
+
 const addCompiledInputsOutputs = (
   component: any,
   base: ComponentInputsOutputs
@@ -136,7 +140,7 @@ const addCompiledInputsOutputs = (
     const configs = typeof entry === 'function' ? entry() : [entry];
     for (const config of configs) {
       const publicNames: string[] = Array.isArray(config.inputs)
-        ? config.inputs.filter((_: string, index: number) => index % 2 === 1)
+        ? hostNamesFromBindingPairs(config.inputs)
         : Object.values(config.inputs ?? {});
       for (const templateName of publicNames) {
         if (!result.inputs.some((input) => input.templateName === templateName)) {

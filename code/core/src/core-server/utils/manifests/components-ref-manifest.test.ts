@@ -209,7 +209,7 @@ describe('components-ref-manifest', () => {
       }),
     });
 
-    await expect(loadStoryDocsPayloadsFromDisk('/output', ['button'])).resolves.toEqual({
+    await expect(loadStoryDocsPayloadsFromDisk('/output', ['button'], 'all')).resolves.toEqual({
       button: payload,
     });
   });
@@ -255,9 +255,11 @@ describe('components-ref-manifest', () => {
     await expect(loadDocgenPayloadsFromDisk('/output', ['constructor'])).resolves.toEqual({
       constructor: docgen,
     });
-    await expect(loadStoryDocsPayloadsFromDisk('/output', ['constructor'])).resolves.toEqual({
-      constructor: storyDocs,
-    });
+    await expect(loadStoryDocsPayloadsFromDisk('/output', ['constructor'], 'all')).resolves.toEqual(
+      {
+        constructor: storyDocs,
+      }
+    );
   });
 
   it('builds index entries with a nested docgen ref when a payload exists', () => {

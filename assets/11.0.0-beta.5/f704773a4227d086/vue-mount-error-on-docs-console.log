@@ -1,0 +1,14 @@
+Page: http://localhost:6006/iframe.html?id=probe-vuethrow--docs&viewMode=docs (loaded twice, same result)
+[ERROR] SB_PREVIEW_API_0017 (ArgTypesRemovedFromStoryContextError): `argTypes` is no longer part of the story context passed to render functions, decorators, loaders, beforeEach, play and afterEach.
+Story: probe-vuethrow--throws
+  at Object.get (.../chunk-ET7FJWAS.js)
+  at en (http://localhost:6006/node_modules/storybook-addon-vue-slots/dist/preview.mjs?v=295d3093:17:159683)
+  at useTransformCode (...)
+  at useCode (...)
+  at useSourceProps (...)
+  at CanvasImpl (...)
+[ERROR] Error rendering story 'probe-vuethrow--docs'
+Page: http://localhost:6006/iframe.html?id=probe-vuethrow--throws&viewMode=story
+[ERROR] Error rendering story 'probe-vuethrow--throws'
+[ERROR] Error: Story did something wrong
+    at Throws.decorators (http://localhost:6006/src/VueThrowProbe.stories.js:9:13)

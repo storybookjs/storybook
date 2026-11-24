@@ -15,6 +15,7 @@ import {
   PlanDraft,
   planHash,
   planRuns,
+  readStep,
   renderLedger,
   renderPlan,
   USD_PER_RUN,
@@ -36,7 +37,8 @@ changed and rendered again. It exits 1 when the plan is not what render writes f
 
 check accepts a plan only in the form that render writes and when every rule holds against the
 catalog, among them that a batch holds probes only or no probe, and then prints its entries,
-batches, runs, and an estimate of its cost. With --window it also checks that every PR of that window marked qa:needed or without a QA label is in the PRs of an
+how many of its entries with more than one PR name the PR behind each step, its batches, runs,
+and an estimate of its cost. With --window it also checks that every PR of that window marked qa:needed or without a QA label is in the PRs of an
 entry or in one row of manual QA or of no QA, that every PR marked qa:skip is in one group, and
 that the plan names no other PR. Without --window it cannot tell a PR that has no place. It exits 1
 with the line of each problem.
@@ -126,8 +128,15 @@ if (files.length > fileCount) {
   const batches = planBatches(plan);
   const runs = batches.map((batch) => planRuns(plan, batch));
   const total = runs.flat().length;
+  const bundles = plan.entries.filter((entry) => entry.prs.length > 1);
+  const named = bundles.filter((entry) =>
+    entry.steps.every((step) => readStep(step).prs.length > 0)
+  );
   console.log(
     `${basename(file)}: plan ${planHash(bytes)} for ${plan.line} at ${plan.version}, ${plural(plan.entries.length, 'entry', 'entries')}, ${plural(batches.length, 'batch', 'batches')}, ${plural(plan.discovered.length, 'discovered repo')}.`
+  );
+  console.log(
+    `Entries with more than one PR whose every step names the PRs it tests: ${named.length} of ${bundles.length}.`
   );
   for (const [index, batch] of batches.entries()) {
     const batchRuns = runs[index]!;

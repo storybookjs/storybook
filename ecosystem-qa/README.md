@@ -240,7 +240,10 @@ An entry under `## Steps` is a block of lines:
 - Expected: The order of `/index.json` is the order of the baseline, and the upgrade output names a sort that it could not move.
 ```
 
-Its check id is `plan.` with the slug, and its batch decides when it runs: batch 1 first, and the batches are numbered without a gap.
+A step may start with the PRs whose change it tests, as `- Step: #36436: Find the Vitest process ...` or `- Step: #36421, #36436: ...`.
+An entry with more than one PR names them in every step, so the author of a PR finds the step that tests it in the issue of a finding.
+The checklist gives the agent the step as it is, and `prompts/plan-checks.md` tells it that the leading PRs are nothing to do.
+The check id of an entry is `plan.` with the slug, and its batch decides when it runs: batch 1 first, and the batches are numbered without a gap.
 A repo with more entries in one batch than `Entries per run` runs them in several parts, in parallel.
 
 A probe is an entry with a line `- Probe:` after `- Batch:`, the draft's `probe`, which says in one line what the run adds to the project after the upgrade and where:
@@ -278,6 +281,7 @@ It then holds the plan against these rules and prints each problem as `<file>:<l
 - Every row of manual QA has a check and a reason why the sweep cannot test it, every row of no QA has a reason, every PR marked `qa:skip` is in a group, every group has a decision, and every decision names entries that exist. A cell that still says `skip:` is refused.
 - A manual check and its reason name no person, PR, or issue, in a code span either, because the checklist of `manual` goes into an issue, where `@name` or `@org/team` notifies people and `#123` or `GH-123` posts on a PR, and because a check that points to a PR cannot be followed without that PR open. `check` refuses every `@` that does not follow a letter or a digit, whatever comes after it, since `_@name_` is a mention in emphasis, and every `#`, `GH-`, `pull/`, or `issues/` before a digit, since `storybookjs/storybook/pull/123` links that PR. Name a package in words, such as the Storybook Vitest addon; `npx storybook@11.0.0` and `qa@example.org` stay, since an issue links no `@` after a letter or a digit.
 - The batches are numbered from 1 without a gap, and a batch holds probes only or no probe, so a run that tests the project itself never holds the files of a probe.
+- A PR that a step names is a PR of its entry, and when one step of an entry names its PRs, every step of that entry does.
 - The file holds no link to `linear.app`, `notion.so`, `notion.site`, `notion.com`, or a `slack.com` host.
 - No entry title, probe line, repo reason, step, expected outcome, manual check, reason of a manual check, or reason of no QA holds a URL with a scheme whose host is other than `localhost`, `127.0.0.1`, or `[::1]`. The runner prints the first five into the agent's prompt, and the others are read by the person who follows them. `check` takes every URL that starts with a scheme, also one glued to other text such as `see:http://example.com` or `-xhttp://example.com`, apart with Node's URL parser, and refuses it when the host is another one or when the parser cannot read it: `https://example.com`, `http:/example.com`, `http://localhost;.example.com`, and `http://localhost].example.com` are refused. It reads a backslash once as the parser does, as a slash, and once as curl does, as a character, so `http://localhost\@example.com` is refused too. It does not look for a host without a scheme, such as `example.com/x` or `//example.com`. A scheme glued to letters before it takes them in, so `-xhttp:/example.com` has the scheme `xhttp`, which the parser does not know, and no host, and passes. The check is one layer of four: the reviewer reads every plan before it is merged, the prompt of a plan run forbids every URL other than `localhost`, and the browser tool of the sandbox image blocks direct requests to another host, although it follows a redirect and lets a WebSocket through.
 - With `--window`, every PR of the window marked `qa:needed` or without a QA label is in the PRs of an entry or in one row of manual QA or of no QA, every PR marked `qa:skip` is in one group, and the plan names no PR that the window does not hold in that role.
@@ -288,7 +292,7 @@ Without `--window`, `check` knows no PR's QA status, so it accepts a plan in whi
 `render` refuses a draft whose decision of a PR names other entries than the ones that list it, or gives no QA to a PR that an entry lists, because the file decides a PR by its place and cannot hold both.
 A manual decision of a PR that an entry lists puts the PR into that entry and into the row of its check.
 
-A plan that passes prints its hash, which names the cycle, its batches with their runs, and about what it costs, priced at the most expensive static run so far.
+A plan that passes prints its hash, which names the cycle, how many of its entries with more than one PR name the PRs behind each step, its batches with their runs, and about what it costs, priced at the most expensive static run so far.
 A run of plan entries can cost more than that.
 
 A repo that no catalog entry covers goes into "Discovered repos".
@@ -332,6 +336,7 @@ A plan check tests the project as it is after the upgrade, and the agent never c
 
 So a repo is listed for an entry only when it has that state at its pinned commit.
 A plan check reported as `skip` opens no proposal: the answer schema accepts a finding only for a check that is `fail`, and `collect.ts` makes proposals from findings alone.
+A failure whose cause is a third-party package that the upgrade or `doctor` named under `Incompatible Packages` is no finding either, also when it shows in a Storybook package that the third-party one holds on an older major: Storybook already told the user, so the prompts have the agent report such a check as `blocked`, with the package and its line of the log in the note.
 `--repo` may name a discovered repo of the plan, which the runner resolves through `loadEntries(plan)`.
 
 The run ends with exit 1 before anything is cloned when the plan is not in its rendered form or fails `checkPlan`, when the plan has no such batch, when the batch lists no entry or no such part for the repo, or when `--version` is not on the plan's line.
@@ -356,6 +361,8 @@ These records are ignored with a warning:
 
 The plan file and the flags of the collect decide which runs, tier and entries a batch has, never `request`, because a run that executed code of a public repository wrote the record.
 For the same reason the issue body of a plan check takes the entry and its PRs from the plan file, in a line above the list of related findings.
+Under that line a collapsed block `What the plan asked the agent to do` lists the steps and the expected outcome of the entry, so a triager can tell a wrong plan from a wrong product.
+Each step and the outcome are a code span, where GitHub renders no mention or reference, and the PRs a step starts with are links before its code span.
 `collect.ts` prints the plan checks of each result by state, so a tail of checks that the budget left as `skip` is visible.
 A job of a plan run in the matrix that `missing-runs.ts` reads names its `part`, and a missing one is named by its repo and part.
 

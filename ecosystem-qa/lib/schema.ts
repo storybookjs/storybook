@@ -388,6 +388,10 @@ const ReportBase = {
         prs: PlanRecord.shape.entries.element.shape.prs,
         // A code span of the plan's probe line, safe to print inline like the title.
         probe: z.string().min(1).optional(),
+        // The plan's steps and expected outcome, each a code span safe to print inline, a step
+        // after the links of the PRs it names.
+        steps: z.array(z.string().min(1)).min(1),
+        expected: z.string().min(1),
       })
     )
     .min(1)

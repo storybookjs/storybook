@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'pathe';
 
-import { logger, prompt } from 'storybook/internal/node-logger';
+import { CLI_COLORS, logger, prompt } from 'storybook/internal/node-logger';
 import {
   FindPackageVersionsError,
   MinimumReleaseAgeHandledError,
@@ -330,6 +330,14 @@ export class PNPMProxy extends JsPackageManager {
   // From pnpm 11, an unreviewed build script fails a non-interactive install outright, and
   // `pnpm install` has no flag to approve one, so record the approval like `pnpm approve-builds`.
   protected allowStorybookBuildScripts(): void {
+    this.#approveStorybookBuildScripts({ dryRun: false });
+  }
+
+  public override reportInstallSettingChanges(): void {
+    this.#approveStorybookBuildScripts({ dryRun: true });
+  }
+
+  #approveStorybookBuildScripts({ dryRun }: { dryRun: boolean }): void {
     if (!this.#pnpmGte(PNPM_ALLOW_BUILDS_MIN)) {
       return;
     }
@@ -364,6 +372,12 @@ export class PNPMProxy extends JsPackageManager {
           !pnpm10Settings.some(([source, dir]) => hasPnpm10ListDecision(source, pkg, dir))
       );
       if (pending.length === 0) {
+        return;
+      }
+      if (dryRun) {
+        logger.info(
+          `Would approve build scripts for ${pending.join(', ')} in ${CLI_COLORS.change(path)}`
+        );
         return;
       }
       // `setIn` cannot descend into an `allowBuilds:` key that was left empty.

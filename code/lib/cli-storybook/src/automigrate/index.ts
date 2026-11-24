@@ -1,6 +1,6 @@
 import { type JsPackageManager } from 'storybook/internal/common';
 import { versions } from 'storybook/internal/common';
-import { logTracker, logger, prompt } from 'storybook/internal/node-logger';
+import { CLI_COLORS, logTracker, logger, prompt } from 'storybook/internal/node-logger';
 import { AutomigrateError } from 'storybook/internal/server-errors';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
@@ -97,7 +97,14 @@ export const doAutomigrate = async (options: AutofixOptionsFromCLI) => {
   }
 
   if (outcome && !options.skipDoctor) {
-    await doctor({ configDir, packageManager: options.packageManager });
+    // The doctor checks the installed dependencies, which a dry run leaves as they were.
+    if (options.dryRun) {
+      logger.log(
+        `Would run ${CLI_COLORS.cta('npx storybook doctor')} to verify the automigrations went well`
+      );
+    } else {
+      await doctor({ configDir, packageManager: options.packageManager });
+    }
   }
 
   const failedMigrations = Object.entries(outcome?.fixResults ?? {})

@@ -252,3 +252,27 @@ describe('runFixes', () => {
     expect(run1).not.toHaveBeenCalled();
   });
 });
+
+describe('doAutomigrate', () => {
+  beforeEach(() => {
+    check1.mockResolvedValue({ some: 'result' });
+    getStorybookData.mockResolvedValue({
+      ...common,
+      beforeVersion,
+      versionInstalled: '7.0.0',
+      isLatest: true,
+    });
+  });
+
+  it('names the doctor instead of running it, in a dry run', async () => {
+    await doAutomigrate({ configDir, fixes, dryRun: true });
+
+    const output = [logger.log, logger.step]
+      .flatMap((method) => vi.mocked(method).mock.calls.flat())
+      .join('\n');
+    expect(output).toMatch(
+      /Would run .*npx storybook doctor.* to verify the automigrations went well/
+    );
+    expect(output).not.toContain('Checking the health');
+  });
+});

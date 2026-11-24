@@ -27,6 +27,7 @@ vi.mock('storybook/internal/node-logger', () => ({
     warn: vi.fn(),
     error: vi.fn(),
   },
+  CLI_COLORS: { change: (text: string) => text },
 }));
 
 vi.mock(import('../utils/command.ts'), { spy: true });
@@ -230,6 +231,24 @@ describe('PNPM Proxy', () => {
       expect(mockedExecuteCommand).toHaveBeenCalledWith(
         expect.objectContaining({ command: 'pnpm', args: ['install'] })
       );
+    });
+
+    it('names the build scripts an install would approve, without writing pnpm-workspace.yaml', () => {
+      pnpmProxy.reportInstallSettingChanges();
+
+      expect(workspaceYaml()).toBeUndefined();
+      expect(logger.info).toHaveBeenCalledWith(
+        'Would approve build scripts for esbuild in /project/pnpm-workspace.yaml'
+      );
+    });
+
+    it('names no approval when pnpm-workspace.yaml already decides the build script', () => {
+      vol.fromJSON({ [WORKSPACE_YAML]: 'allowBuilds:\n  esbuild: false\n' });
+
+      pnpmProxy.reportInstallSettingChanges();
+
+      expect(logger.info).not.toHaveBeenCalled();
+      expect(workspaceYaml()).toBe('allowBuilds:\n  esbuild: false\n');
     });
 
     it('also allows esbuild before `pnpm add`', async () => {

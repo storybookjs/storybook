@@ -27,6 +27,7 @@ vi.mock(import('storybook/internal/common'), async (importOriginal) => {
         type: 'npm',
         installDependencies: async () => {},
         isStorybookInMonorepo: () => false,
+        reportInstallSettingChanges: () => {},
       }),
     }),
   };
@@ -50,6 +51,7 @@ const project = (
       precheckStorybookPackageInstall: async () => {},
       installDependencies: async () => {},
       isStorybookInMonorepo: () => false,
+      reportInstallSettingChanges: () => {},
     } as Partial<JsPackageManager> as JsPackageManager,
     ...overrides,
   }) as unknown as CollectProjectsSuccessResult;

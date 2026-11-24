@@ -290,14 +290,7 @@ function logUpgradeResults(
   } else {
     const isHealthy = Object.values(doctorResults).every((result) => result.status === 'healthy');
     if (dryRun) {
-      // The doctor checked the dependencies as they are installed, before any upgrade.
-      logger.step(
-        isHealthy
-          ? CLI_COLORS.success('Dry run finished: no files were changed.')
-          : picocolors.yellow(
-              'Dry run finished: no files were changed. Storybook doctor found issues in your current setup, please check its logs above.'
-            )
-      );
+      logger.step(CLI_COLORS.success('Dry run finished: no files were changed.'));
     } else if (isHealthy) {
       logger.step(`${CLI_COLORS.success('Your project(s) have been upgraded successfully! 🎉')}`);
     } else {
@@ -592,6 +585,8 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
           );
         }
       }
+    } else {
+      rootPackageManager.reportInstallSettingChanges();
     }
 
     // Configure addons that automigrations added but deferred (e.g. addon-vitest from the
@@ -635,19 +630,25 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
       await refreshAgentInstructions();
     }
 
-    // Run doctor for each project
-    const doctorProjects: ProjectDoctorData[] = storybookProjects.map((project) => ({
-      configDir: project.configDir,
-      packageManager: project.packageManager,
-      storybookVersion: project.currentCLIVersion,
-      mainConfig: project.mainConfig,
-    }));
+    // The doctor checks the installed dependencies, which a dry run leaves as they were.
+    if (options.dryRun) {
+      logger.step(
+        `Would run ${CLI_COLORS.cta('npx storybook doctor')} to verify the upgrade went well`
+      );
+    } else {
+      const doctorProjects: ProjectDoctorData[] = storybookProjects.map((project) => ({
+        configDir: project.configDir,
+        packageManager: project.packageManager,
+        storybookVersion: project.currentCLIVersion,
+        mainConfig: project.mainConfig,
+      }));
 
-    logger.step('Checking the health of your project(s)..');
-    doctorResults = await runMultiProjectDoctor(doctorProjects);
-    const hasIssues = displayDoctorResults(doctorResults);
-    if (hasIssues) {
-      logTracker.enableLogWriting();
+      logger.step('Checking the health of your project(s)..');
+      doctorResults = await runMultiProjectDoctor(doctorProjects);
+      const hasIssues = displayDoctorResults(doctorResults);
+      if (hasIssues) {
+        logTracker.enableLogWriting();
+      }
     }
 
     // Display upgrade results summary

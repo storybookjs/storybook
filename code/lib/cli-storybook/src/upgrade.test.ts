@@ -686,6 +686,7 @@ describe('upgrade', () => {
       installDependencies: vi.fn(async () => {}),
       dedupeDependencies: vi.fn(async () => {}),
       writeCatalogUpgrades: vi.fn((specifiers: string[]) => specifiers),
+      reportInstallSettingChanges: vi.fn(),
       addDependencies: vi.fn(async () => {}),
     };
     getStorybookDataMock.mockResolvedValue({
@@ -720,6 +721,12 @@ describe('upgrade', () => {
     expect(packageManager.dedupeDependencies).not.toHaveBeenCalled();
   });
 
+  it('names the package manager settings an install would change, in a dry run', async () => {
+    const packageManager = await runUpgrade({ dryRun: true });
+
+    expect(packageManager.reportInstallSettingChanges).toHaveBeenCalledTimes(1);
+  });
+
   it('installs and dedupes dependencies in a normal upgrade', async () => {
     const packageManager = await runUpgrade({ dryRun: false });
 
@@ -750,6 +757,10 @@ describe('upgrade', () => {
         'Dry-running upgrade from 8.0.0 to 9.0.0 (no files will be changed)'
       );
       expect(logged()).toContain('no files were changed');
+      expect(logged()).toMatch(
+        /Would run .*npx storybook doctor.* to verify the upgrade went well/
+      );
+      expect(logged()).not.toContain('Checking the health');
     });
 
     it('names the package versions a dry run would set, without setting them', async () => {
@@ -778,6 +789,7 @@ describe('upgrade', () => {
 
       expect(logged()).toMatch(/Upgrading from/);
       expect(logged()).toMatch(/upgraded successfully/);
+      expect(logged()).toContain('Checking the health');
     });
   });
 });

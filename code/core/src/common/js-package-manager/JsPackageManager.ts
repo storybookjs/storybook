@@ -288,6 +288,12 @@ export abstract class JsPackageManager {
     }
   }
 
+  /**
+   * Print the package manager settings that installing the dependencies would change, for a dry run
+   * that skips the install. Most package managers change none.
+   */
+  public reportInstallSettingChanges(): void {}
+
   writePackageJson(packageJson: PackageJson, directory = this.cwd) {
     const packageJsonToWrite = { ...packageJson };
     const dependencyTypes = ['dependencies', 'devDependencies', 'peerDependencies'] as const;

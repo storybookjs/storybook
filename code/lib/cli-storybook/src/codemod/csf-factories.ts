@@ -177,17 +177,7 @@ export const csfFactories: CommandFix = {
     const frameworkPackage =
       getFrameworkPackageName(mainConfig) || '@storybook/your-framework-here';
     const runConfigCodemod = (path: string, transform: (info: FileInfo) => Promise<string>) =>
-      runCodemod(
-        [path],
-        async (info) => {
-          const output = await transform(info);
-          if (dryRun && output !== info.source) {
-            logger.log(`Would write to ${CLI_COLORS.change(info.path)}`);
-          }
-          return output;
-        },
-        { dryRun, announceDryRun: false }
-      );
+      runCodemod([path], transform, { dryRun, announceDryRun: false });
 
     logger.step(
       dryRun

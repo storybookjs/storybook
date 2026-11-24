@@ -1,7 +1,7 @@
 import os from 'node:os';
 
-import { HandledError, formatFileContent } from 'storybook/internal/common';
-import { logger } from 'storybook/internal/node-logger';
+import { HandledError, formatFileContent, getProjectRelativePath } from 'storybook/internal/common';
+import { CLI_COLORS, logger } from 'storybook/internal/node-logger';
 
 import { promises as fs } from 'fs';
 import picocolors from 'picocolors';
@@ -49,6 +49,8 @@ export async function runCodemod(
   let modifiedCount = 0;
   let unmodifiedCount = 0;
   let errorCount = 0;
+  // The files a dry run would write, named after the run because files are transformed in parallel.
+  const wouldWrite: string[] = [];
 
   // Dynamically import these packages because they are pure ESM modules
   // eslint-disable-next-line depend/ban-dependencies
@@ -92,7 +94,9 @@ export async function runCodemod(
             const transformedSource = await transform(fileInfo);
 
             if (transformedSource !== source) {
-              if (!dryRun) {
+              if (dryRun) {
+                wouldWrite.push(getProjectRelativePath(file));
+              } else {
                 const fileContent = skipFormatting
                   ? transformedSource
                   : await formatFileContent(file, transformedSource);
@@ -112,6 +116,10 @@ export async function runCodemod(
   } catch (error) {
     logger.error(`Error applying transform: ${String(error)}`);
     errorCount++;
+  }
+
+  for (const file of wouldWrite.sort()) {
+    logger.log(`Would write to ${CLI_COLORS.change(file)}`);
   }
 
   logger.log(

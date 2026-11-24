@@ -7,6 +7,8 @@ import {
   promptForAutomigrations,
   runAutomigrationsForProjects,
 } from './multi-project.ts';
+import { logger } from 'storybook/internal/node-logger';
+
 import type { Fix } from './types.ts';
 
 vi.mock('storybook/internal/node-logger', async (importOriginal) => {
@@ -20,6 +22,7 @@ vi.mock('storybook/internal/node-logger', async (importOriginal) => {
     logger: {
       log: vi.fn(),
       logBox: vi.fn(),
+      warn: vi.fn(),
       error: vi.fn(),
       debug: vi.fn(),
       SYMBOLS: {
@@ -407,6 +410,44 @@ describe('multi-project automigrations', () => {
       expect(reportDryRun).toHaveBeenCalledWith(
         expect.objectContaining({ configDir: '/repo/.storybook', result: { needsFix: true } })
       );
+    });
+
+    it('does not let a fix the user did not select report, in a dry run', async () => {
+      const reportDryRun = vi.fn(async () => {});
+      const fix = createMockFix('reporting-fix', {}, { reportDryRun });
+      const automigrations = [asAutomigration(fix, createMockProject('/repo/.storybook'))];
+
+      await runAutomigrationsForProjects(automigrations, {
+        automigrations: [],
+        yes: false,
+        dryRun: true,
+      });
+
+      expect(reportDryRun).not.toHaveBeenCalled();
+    });
+
+    it('goes on with the dry run when a fix fails to report', async () => {
+      const failing = createMockFix(
+        'failing-report',
+        {},
+        { reportDryRun: vi.fn(async () => Promise.reject(new Error('no network'))) }
+      );
+      const reportDryRun = vi.fn(async () => {});
+      const reporting = createMockFix('reporting-fix', {}, { reportDryRun });
+      const project = createMockProject('/repo/.storybook');
+      const automigrations = [
+        asAutomigration(failing, project),
+        asAutomigration(reporting, project),
+      ];
+
+      await runAutomigrationsForProjects(automigrations, {
+        automigrations,
+        yes: true,
+        dryRun: true,
+      });
+
+      expect(reportDryRun).toHaveBeenCalledTimes(1);
+      expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('failing-report'));
     });
 
     it('does not call it outside a dry run', async () => {

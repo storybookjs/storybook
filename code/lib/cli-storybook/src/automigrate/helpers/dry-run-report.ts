@@ -1,8 +1,9 @@
-import { CLI_COLORS } from 'storybook/internal/node-logger';
+import { CLI_COLORS, logger } from 'storybook/internal/node-logger';
 
 import picocolors from 'picocolors';
 
 import { type SimulatedOutcome, describeFileFailures } from '../pipeline.ts';
+import type { Fix, TransformOptions } from '../types.ts';
 import { pluralFiles } from './failure-report.ts';
 
 type ReasonedFix = { fixId: string; reason: string };
@@ -75,4 +76,23 @@ export const formatDryRunReport = ({ apply, fail, skip, manual }: DryRunReport) 
     ]);
   }
   return sections.flatMap(([title, list]) => [picocolors.bold(title), list]).join('\n\n');
+};
+
+/**
+ * Let each fix print what its run would do that the report leaves out. A fix that fails to report
+ * is named in a warning, and the dry run goes on.
+ */
+export const reportFixDryRuns = async (
+  reports: { fix: Fix; options: TransformOptions<unknown> }[]
+) => {
+  for (const { fix, options } of reports) {
+    try {
+      await fix.reportDryRun?.(options);
+    } catch (error) {
+      logger.warn(
+        `Could not report what the ${fix.id} migration would do: ${error instanceof Error ? error.message : String(error)}`
+      );
+      logger.debug(error);
+    }
+  }
 };

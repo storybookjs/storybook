@@ -22,6 +22,7 @@ import type {
 import { type FixFileFailure, pluralFiles, reportFileFailures } from './helpers/failure-report.ts';
 import {
   addSimulatedOutcomes,
+  reportFixDryRuns,
   createDryRunReport,
   type DryRunReport,
 } from './helpers/dry-run-report.ts';
@@ -490,9 +491,11 @@ export async function runFixes({
       dryRunReport,
       await simulateFixes({ ...project, skipInstall, yes, addonsToPostinstall }, selected)
     );
-    for (const { fix, result } of selected) {
-      await fix.reportDryRun?.({ ...project, result });
-    }
+    await reportFixDryRuns(
+      selected
+        .filter(({ fix }) => dryRunReport.apply.includes(fix.id))
+        .map(({ fix, result }) => ({ fix, options: { ...project, result } }))
+    );
     return { fixResults, fixSummary, addonsToPostinstall, fileFailures, verified, dryRunReport };
   }
 

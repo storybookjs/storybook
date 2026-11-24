@@ -11,6 +11,7 @@ import { allFixes } from './fixes/index.ts';
 import { type FixFileFailure, pluralFiles, reportFileFailures } from './helpers/failure-report.ts';
 import {
   addSimulatedOutcomes,
+  reportFixDryRuns,
   createDryRunReport,
   type DryRunReport,
   formatDryRunReport,
@@ -511,12 +512,18 @@ export async function runAutomigrationsForProjects(
     for (const [configDir, text] of reports) {
       logger.log(reports.length > 1 ? `${shortenPath(configDir) || '.'}:\n${text}` : text);
     }
-    for (const { fix, reports: checks } of applicableAutomigrations) {
-      const check = checks.find(({ status }) => status === 'check_succeeded');
-      if (fix.reportDryRun && check) {
-        await fix.reportDryRun({ ...check.project, result: check.result });
-      }
-    }
+    // Once per fix, with the first project where the dry run predicts it would succeed.
+    const wouldApply = (fixId: string, configDir: string) =>
+      projectResults[configDir]?.dryRunReport?.apply.includes(fixId) ?? false;
+    await reportFixDryRuns(
+      applicableAutomigrations.flatMap(({ fix, reports: checks }) => {
+        const check = checks.find(
+          ({ status, project }) =>
+            status === 'check_succeeded' && wouldApply(fix.id, project.configDir)
+        );
+        return check ? [{ fix, options: { ...check.project, result: check.result } }] : [];
+      })
+    );
   }
 
   return projectResults;

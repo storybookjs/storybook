@@ -241,6 +241,21 @@ describe('runFixes', () => {
     );
   });
 
+  it('goes on with a dry run when a fix fails to report what its run would do', async () => {
+    const reportDryRun = vi.fn(async () => Promise.reject(new Error('no network')));
+
+    await expect(
+      runFixes({
+        ...common,
+        fixes: [{ ...fixes[0], reportDryRun }],
+        dryRun: true,
+        storybookVersion: '7.0.0',
+      })
+    ).resolves.toEqual(expect.objectContaining({ dryRunReport: expect.anything() }));
+
+    expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('fix-1'));
+  });
+
   it('should fail if an error is thrown by migration', async () => {
     check1.mockRejectedValue(new Error('check1 error'));
 

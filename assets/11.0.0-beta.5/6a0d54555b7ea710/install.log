@@ -1,0 +1,133 @@
+No Node version asked for. Node v24.22.2 is active.
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn ERESOLVE overriding peer dependency
+npm warn While resolving: @napi-rs/wasm-runtime@1.2.6
+npm warn Found: @emnapi/core@2.0.0-alpha.3
+npm warn node_modules/@angular/build/node_modules/@emnapi/core
+npm warn   @emnapi/core@"2.0.0-alpha.3" from @oxc-parser/binding-wasm32-wasi@0.150.0
+npm warn   node_modules/@angular/build/node_modules/@oxc-parser/binding-wasm32-wasi
+npm warn     optional @oxc-parser/binding-wasm32-wasi@"0.150.0" from @angular/build@22.2.5
+npm warn     node_modules/@angular/build
+npm warn
+npm warn Could not resolve dependency:
+npm warn peer @emnapi/core@"^1.7.1 || 2.0.0-beta.2" from @napi-rs/wasm-runtime@1.2.6
+npm warn node_modules/@angular/build/node_modules/@napi-rs/wasm-runtime
+npm warn   @napi-rs/wasm-runtime@"~1.2.4" from @oxc-parser/binding-wasm32-wasi@0.150.0
+npm warn   node_modules/@angular/build/node_modules/@oxc-parser/binding-wasm32-wasi
+npm warn ERESOLVE overriding peer dependency
+npm warn While resolving: @napi-rs/wasm-runtime@1.2.6
+npm warn Found: @emnapi/runtime@2.0.0-alpha.3
+npm warn node_modules/@angular/build/node_modules/@emnapi/runtime
+npm warn   @emnapi/runtime@"2.0.0-alpha.3" from @oxc-parser/binding-wasm32-wasi@0.150.0
+npm warn   node_modules/@angular/build/node_modules/@oxc-parser/binding-wasm32-wasi
+npm warn     optional @oxc-parser/binding-wasm32-wasi@"0.150.0" from @angular/build@22.2.5
+npm warn     node_modules/@angular/build
+npm warn
+npm warn Could not resolve dependency:
+npm warn peer @emnapi/runtime@"^1.7.1 || 2.0.0-beta.2" from @napi-rs/wasm-runtime@1.2.6
+npm warn node_modules/@angular/build/node_modules/@napi-rs/wasm-runtime
+npm warn   @napi-rs/wasm-runtime@"~1.2.4" from @oxc-parser/binding-wasm32-wasi@0.150.0
+npm warn   node_modules/@angular/build/node_modules/@oxc-parser/binding-wasm32-wasi
+npm warn deprecated whatwg-encoding@3.1.1: Use @exodus/bytes instead for a more spec-conformant and faster implementation
+npm warn deprecated rimraf@3.0.2: Rimraf versions prior to v4 are no longer supported
+npm warn deprecated jest-process-manager@0.4.0: ⚠️ The 'jest-process-manager' package is deprecated. Please migrate to Playwright's built-in test runner (@playwright/test) which now includes full Jest-style features and parallel testing. See https://playwright.dev/docs/intro for details.
+npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+npm warn deprecated expect-playwright@0.8.0: ⚠️ The 'expect-playwright' package is deprecated. The Playwright core assertions (via @playwright/test) now cover the same functionality. Please migrate to built-in expect. See https://playwright.dev/docs/test-assertions for migration.
+npm warn deprecated @angular/animations@22.2.3: @angular/animations is deprecated. Use `animate.enter` and `animate.leave` instead. For more information see: https://v22.angular.dev/guide/animations.
+npm warn deprecated glob@10.5.0: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+npm warn deprecated eslint@9.28.0: This version is no longer supported. Please see https://eslint.org/version-support for other options.
+
+> prepare
+> node scripts/install-hooks.mjs
+
+
+added 1434 packages, and audited 1441 packages in 1m
+
+302 packages are looking for funding
+  run `npm fund` for details
+
+40 vulnerabilities (36 moderate, 2 high, 2 critical)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+npm warn install-scripts 7 packages have install scripts not yet covered by allowScripts:
+npm warn install-scripts   @parcel/watcher@2.6.0 (install: node scripts/build-from-source.js)
+npm warn install-scripts   @swc/core@1.16.1 (postinstall: node postinstall.js)
+npm warn install-scripts   esbuild@0.28.2 (postinstall: node install.js)
+npm warn install-scripts   lmdb@3.5.6 (install: node-gyp-build-optional-packages)
+npm warn install-scripts   msgpackr-extract@3.0.4 (install: node-gyp-build-optional-packages)
+npm warn install-scripts   msw@2.15.0 (postinstall: node -e "import('./config/scripts/postinstall.js').catch(() => void 0)")
+npm warn install-scripts   unrs-resolver@1.12.2 (postinstall: node postinstall.js)
+npm warn install-scripts
+npm warn install-scripts Run `npm install-scripts ls` to review, or `npm install-scripts approve <pkg>` to allow.
+--- reinstall after overrides unblock: npm install
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm error code ERESOLVE
+npm error ERESOLVE could not resolve
+npm error
+npm error While resolving: @storybook/test-runner@0.26.1
+npm error Found: storybook@11.0.0-beta.5
+npm error node_modules/storybook
+npm error   dev storybook@"^11.0.0-beta.5" from the root project
+npm error   peer storybook@"^11.0.0-beta.5" from @storybook/addon-a11y@11.0.0-beta.5
+npm error   node_modules/@storybook/addon-a11y
+npm error     dev @storybook/addon-a11y@"^11.0.0-beta.5" from the root project
+npm error   5 more (@storybook/addon-docs, @storybook/addon-mcp, ...)
+npm error
+npm error Could not resolve dependency:
+npm error peer storybook@"^0.0.0-0 || ^10.0.0 || ^10.0.0-0 || ^10.1.0-0 || ^10.2.0-0 || ^10.3.0-0 || ^10.4.0-0 || ^10.5.0-0 || ^10.6.0-0" from @storybook/test-runner@0.26.1
+npm error node_modules/@storybook/test-runner
+npm error   dev @storybook/test-runner@"^0.26.1" from the root project
+npm error
+npm error Conflicting peer dependency: storybook@10.6.8
+npm error node_modules/storybook
+npm error   peer storybook@"^0.0.0-0 || ^10.0.0 || ^10.0.0-0 || ^10.1.0-0 || ^10.2.0-0 || ^10.3.0-0 || ^10.4.0-0 || ^10.5.0-0 || ^10.6.0-0" from @storybook/test-runner@0.26.1
+npm error   node_modules/@storybook/test-runner
+npm error     dev @storybook/test-runner@"^0.26.1" from the root project
+npm error
+npm error Fix the upstream dependency conflict, or retry this command with --force or --legacy-peer-deps to accept an incorrect (and potentially broken) dependency resolution.
+npm error
+npm error
+npm error For a full report see:
+npm error /home/agent/.npm/_logs/2026-11-24T07_22_17_498Z-eresolve-report.txt
+npm error A complete log of this run can be found in: /home/agent/.npm/_logs/2026-11-24T07_22_17_498Z-debug-0.log
+exit 1
+--- retry: npm install --legacy-peer-deps (one-off flag; @storybook/test-runner@0.26.1 peer range excludes storybook 11)
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> prepare
+> node scripts/install-hooks.mjs
+
+
+up to date, audited 1288 packages in 3s
+
+246 packages are looking for funding
+  run `npm fund` for details
+
+32 vulnerabilities (30 moderate, 2 high)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+npm warn install-scripts 7 packages have install scripts not yet covered by allowScripts:
+npm warn install-scripts   @parcel/watcher@2.6.0 (install: node-gyp rebuild)
+npm warn install-scripts   @swc/core@1.16.1 (postinstall: node postinstall.js)
+npm warn install-scripts   esbuild@0.28.2 (postinstall: node install.js)
+npm warn install-scripts   lmdb@3.5.6 (install: node-gyp rebuild)
+npm warn install-scripts   msgpackr-extract@3.0.4 (install: node-gyp rebuild)
+npm warn install-scripts   msw@2.15.0 (postinstall: node -e "import('./config/scripts/postinstall.js').catch(() => void 0)")
+npm warn install-scripts   unrs-resolver@1.12.2 (postinstall: node postinstall.js)
+npm warn install-scripts
+npm warn install-scripts Run `npm install-scripts ls` to review, or `npm install-scripts approve <pkg>` to allow.
+exit 0

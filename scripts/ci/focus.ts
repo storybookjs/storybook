@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import {
   allTemplates,
   daily,
+  docgenServerTemplates,
   type TemplateKey,
 } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
 import { isGlobalInput, isTestFixture } from './global-inputs.ts';
@@ -128,6 +129,31 @@ export function selectChromaticSiblings(
   );
 }
 
+const DOCGEN_SHARED_PATHS = [
+  'code/core/src/component-meta/',
+  'code/lib/docgen-harness/src/sandbox-baselines/',
+];
+
+/**
+ * Select the docgen server templates whose baselines the diff can move and that no other focus job
+ * creates. A sandbox verifies its docgen baselines when it is created, and the only React one is an
+ * internal template, which neither the focused nor the sibling selection ever picks.
+ */
+export function selectDocgenBaselineSandboxes(
+  created: readonly TemplateKey[],
+  changedFiles: readonly string[]
+): TemplateKey[] {
+  const sharedDocgenChanged = isChanged(DOCGEN_SHARED_PATHS, changedFiles);
+
+  return docgenServerTemplates().filter(
+    (key) =>
+      daily.includes(key) &&
+      !key.includes('prerelease') &&
+      !created.includes(key) &&
+      (sharedDocgenChanged || isChanged(Object.values(templateDirs(key)).flat(), changedFiles))
+  );
+}
+
 const INIT_PATHS = [
   'code/lib/create-storybook/',
   'code/lib/cli-storybook/',
@@ -155,7 +181,10 @@ const portableStoryTest = (directory: string, sourcePaths: readonly string[]) =>
 });
 
 /** Jobs a focused run adds when the diff touches one of their paths or any global input. */
-export const PATH_TRIGGERED_JOBS: readonly { job: JobOrNoOpJob; paths: readonly string[] }[] = [
+export const PATH_TRIGGERED_JOBS: readonly {
+  job: JobOrNoOpJob;
+  paths: readonly string[];
+}[] = [
   { job: defineEmptyInitFlow('react-vite-ts'), paths: INIT_PATHS },
   {
     job: defineEmptyInitFeatures(),
@@ -190,7 +219,12 @@ export function getChangedFiles(baseRef: string): string[] {
 /** Select the jobs a diff can affect. */
 export function getFocusJobs(changedFiles: readonly string[]): JobOrNoOpJob[] {
   const focused = selectFocusSandboxes(changedFiles);
-  const siblings = selectChromaticSiblings(focused, changedFiles).map(defineSandboxFlow);
+  const siblingKeys = selectChromaticSiblings(focused, changedFiles);
+  const siblings = siblingKeys.map(defineSandboxFlow);
+  const docgenSandboxes = selectDocgenBaselineSandboxes(
+    [...focused, ...siblingKeys],
+    changedFiles
+  ).map(defineSandboxFlow);
 
   return [
     build_linux,
@@ -205,5 +239,6 @@ export function getFocusJobs(changedFiles: readonly string[]): JobOrNoOpJob[] {
     sandboxesNoOpJob,
     ...focused.flatMap((template) => defineSandboxFlow(template).jobs),
     ...siblings.flatMap(({ createJob, chromaticJob }) => [createJob, chromaticJob]),
+    ...docgenSandboxes.map(({ createJob }) => createJob),
   ];
 }

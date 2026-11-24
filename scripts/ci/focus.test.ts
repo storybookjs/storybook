@@ -6,7 +6,13 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'pathe';
 import { describe, expect, it } from 'vitest';
 
-import { allTemplates, daily, normal } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
+import {
+  allTemplates,
+  daily,
+  docgenServerTemplates,
+  normal,
+  type TemplateKey,
+} from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
 import { getCheckedWorkspaces } from '../tasks/check.ts';
 import {
   FOCUS_TEMPLATES,
@@ -221,6 +227,32 @@ describe('getFocusJobs', () => {
   });
 });
 
+describe('docgen baseline coverage', () => {
+  const ciDocgenTemplates = docgenServerTemplates().filter(
+    (key) => daily.includes(key) && !key.includes('prerelease')
+  );
+  const createsSandbox = (changedFiles: string[], key: TemplateKey) =>
+    getFocusJobs(changedFiles).some(({ id }) => id === defineSandboxFlow(key).createJob.id);
+
+  it.each(
+    ciDocgenTemplates.flatMap((key) =>
+      [...new Set(Object.values(templateDirs(key)).flat())].map((dir) => ({
+        key,
+        dir,
+      }))
+    )
+  )('creates the $key sandbox when $dir changes', ({ key, dir }) => {
+    expect(createsSandbox([`${dir}src/index.ts`], key)).toBe(true);
+  });
+
+  it.each([
+    'code/core/src/component-meta/ComponentMetaManager.ts',
+    'code/lib/docgen-harness/src/sandbox-baselines/run.ts',
+  ])('creates every docgen sandbox when %s changes', (file) => {
+    expect(ciDocgenTemplates.filter((key) => !createsSandbox([file], key))).toEqual([]);
+  });
+});
+
 describe('selectPathTriggeredJobs', () => {
   const triggeredIds = (...changedFiles: string[]) =>
     selectPathTriggeredJobs(changedFiles).map(({ id }) => id);
@@ -283,7 +315,9 @@ describe('defineAffectedLintAndFormat', () => {
     (
       getFocusJobs(changedFiles)
         .find(({ id }) => id === 'lint-and-format--affected')!
-        .implementation('focus') as { steps: { run?: { name: string; command: string } }[] }
+        .implementation('focus') as {
+        steps: { run?: { name: string; command: string } }[];
+      }
     ).steps.flatMap(({ run }) => (run && /Format|Lint/.test(run.name) ? [run] : []));
 
   it('checks only the changed files, linting each directory with paths relative to it', () => {

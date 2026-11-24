@@ -14,13 +14,19 @@ import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 
 import { dirname, join, normalize, resolve } from 'pathe';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('../../common/utils/pid-namespace.ts', () => ({
-  getPidNamespace: () => 'pid:[2]',
-  isAnotherPidNamespace: (pidNamespace?: string) =>
-    pidNamespace != null && pidNamespace !== 'pid:[2]',
-}));
+import { getPidNamespace, isAnotherPidNamespace } from '../../common/utils/pid-namespace.ts';
+
+vi.mock('../../common/utils/pid-namespace.ts', { spy: true });
+
+beforeEach(() => {
+  // This process runs in namespace `pid:[2]`.
+  vi.mocked(getPidNamespace).mockReturnValue('pid:[2]');
+  vi.mocked(isAnotherPidNamespace).mockImplementation(
+    (pidNamespace) => pidNamespace != null && pidNamespace !== 'pid:[2]'
+  );
+});
 
 import {
   createRuntimeInstanceRecord,
@@ -311,6 +317,7 @@ describe('getRuntimeInstanceRegistryCleanupDecision', () => {
     instanceId: 'recent-instance',
     now: NOW,
     pid: 12345,
+    pidNamespace: 'pid:[2]',
     port: 6006,
     storybookVersion: '10.5.0-alpha.0',
   });

@@ -100,10 +100,7 @@ export async function bootstrapAttachedRuntime(
     });
   }
 
-  // A record whose pid could be checked beats one from another process namespace, which may be gone.
-  const [record, ...siblings] = [...selection.matches].sort(
-    (a, b) => Number(isProcessHidden(a)) - Number(isProcessHidden(b))
-  );
+  const [record, ...siblings] = selection.matches;
   const callerVersion = deps.version ?? versions.storybook;
 
   if (!record.token) {

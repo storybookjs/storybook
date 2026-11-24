@@ -6,13 +6,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { NodeChannelConnection } from './node-channel.ts';
 import type { StorybookInstanceRecord } from '../instances/types.ts';
+import { isAnotherPidNamespace } from '../../../common/utils/pid-namespace.ts';
 import { bootstrapAttachedRuntime } from './attached-runtime.ts';
 import { AttachUnavailableError, EnvironmentMismatchError, ToolsRuntimeError } from './errors.ts';
 
-vi.mock('../../../common/utils/pid-namespace.ts', () => ({
-  isAnotherPidNamespace: (pidNamespace?: string) =>
-    pidNamespace != null && pidNamespace !== 'pid:[2]',
-}));
+vi.mock('../../../common/utils/pid-namespace.ts', { spy: true });
 vi.mock('node:fs', { spy: true });
 
 const STORYBOOK_PATH = '/repo/node_modules/storybook';
@@ -90,6 +88,10 @@ async function rejectedAttachUnavailable(
 }
 
 beforeEach(async () => {
+  // This process runs in namespace `pid:[2]`.
+  vi.mocked(isAnotherPidNamespace).mockImplementation(
+    (pidNamespace) => pidNamespace != null && pidNamespace !== 'pid:[2]'
+  );
   vi.unstubAllGlobals();
   vol.reset();
   vol.fromNestedJSON({
@@ -416,20 +418,6 @@ describe('bootstrapAttachedRuntime', () => {
     await expect(failure).rejects.toMatchObject({ data: { reason: 'connection-failed' } });
     await expect(failure).rejects.toThrow('its process is in another process namespace');
     await expect(failure).rejects.not.toThrow('may be stale');
-  });
-
-  it('attaches to a record whose pid could be checked before one from another process namespace', async () => {
-    const hidden = { ...RECORD, instanceId: 'hidden', url: 'http://localhost:6007', port: 6007 };
-    const { deps } = makeRuntimeDeps([
-      { ...hidden, pidNamespace: 'pid:[1]', startedAt: '2026-05-19T00:00:00.000Z' },
-      { ...RECORD, startedAt: '2026-05-18T00:00:00.000Z' },
-    ]);
-
-    await bootstrapAttachedRuntime({ cwd: '/repo' }, deps);
-
-    expect(deps.createNodeChannel).toHaveBeenCalledWith(
-      expect.objectContaining({ url: 'http://localhost:6006' })
-    );
   });
 
   it('rejects when the handshake never completes', async () => {

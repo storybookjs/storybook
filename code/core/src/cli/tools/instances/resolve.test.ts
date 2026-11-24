@@ -1,10 +1,19 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { isAnotherPidNamespace } from '../../../common/utils/pid-namespace.ts';
 import { mockNodePath } from '../test-support/mock-node-path.ts';
 import { selectInstances } from './resolve.ts';
 import type { McpStatus, StorybookInstanceRecord } from './types.ts';
 
 vi.mock('node:path', { spy: true });
+vi.mock('../../../common/utils/pid-namespace.ts', { spy: true });
+
+beforeEach(() => {
+  // This process runs in namespace `pid:[2]`.
+  vi.mocked(isAnotherPidNamespace).mockImplementation(
+    (pidNamespace) => pidNamespace != null && pidNamespace !== 'pid:[2]'
+  );
+});
 
 let nextInstance = 0;
 
@@ -205,6 +214,38 @@ describe('selectInstances', () => {
     });
     const result = selectInstances([noStamp, stamped], { cwd: '/Users/x/projects/foo' });
     expect(result).toEqual({ kind: 'match', matches: [stamped, noStamp] });
+  });
+
+  it('prefers a record whose pid could be checked over one from another process namespace', () => {
+    const hidden = record('/Users/x/projects/foo', 'ready', {
+      pidNamespace: 'pid:[1]',
+      startedAt: '2026-06-09T11:00:00.000Z',
+    });
+    const checkable = record('/Users/x/projects/foo', 'ready', {
+      pidNamespace: 'pid:[2]',
+      startedAt: '2026-06-09T10:00:00.000Z',
+    });
+    const result = selectInstances([hidden, checkable], { cwd: '/Users/x/projects/foo' });
+    expect(result).toEqual({ kind: 'match', matches: [checkable] });
+  });
+
+  it("keeps a checkable record when a hidden one is in the invoking agent's bucket", () => {
+    const hiddenPreview = record('/Users/x/projects/foo', 'ready', {
+      agent: 'claude-preview',
+      pidNamespace: 'pid:[1]',
+    });
+    const checkable = record('/Users/x/projects/foo', 'ready');
+    const result = selectInstances([hiddenPreview, checkable], {
+      cwd: '/Users/x/projects/foo',
+      agent: 'claude',
+    });
+    expect(result).toEqual({ kind: 'match', matches: [checkable] });
+  });
+
+  it('falls back to records from another process namespace when there are no others', () => {
+    const hidden = record('/Users/x/projects/foo', 'ready', { pidNamespace: 'pid:[1]' });
+    const result = selectInstances([hidden], { cwd: '/Users/x/projects/foo', port: hidden.port });
+    expect(result).toEqual({ kind: 'match', matches: [hidden] });
   });
 
   it('prefers the invoking agent bucket over recency across buckets', () => {

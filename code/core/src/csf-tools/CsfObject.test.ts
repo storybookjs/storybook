@@ -940,6 +940,19 @@ describe('CsfObject', () => {
       [
         `const shared = { position: { table: { defaultValue: { summary: 'right' } } }, size: {} }; export default {}; export const P = mk({ argTypes: shared, args: { size: shared.size } });`,
       ],
+      [
+        `const docs = { table: { defaultValue: 'M' } }; export default {}; export const Both = mk({ argTypes: { size: docs, width: docs } });`,
+      ],
+      [
+        `const story = options => options; export default {}; export const S = story({ argTypes: { size: { table: { defaultValue: 'M' } } } });`,
+      ],
+      ...['as const', 'satisfies Record<string, unknown>'].map((wrapper) => [
+        `export default {}; export const P = mk({ argTypes: { size: { table: { defaultValue: 'M' } ${wrapper} } } });`,
+      ]),
+      [
+        `import { shared } from './h'; const make = mk({ argTypes: { ...shared.argTypes, size: { table: { defaultValue: 'M' } } } }); export default {}; export const P = make({});`,
+      ],
+      [`const loop = loop.next; export default {}; export const S = mk({ argTypes: loop });`],
       [`export default { argTypes: { defaultValue: { control: 'text' } } };`],
     ])('removes nothing that the source does not show: %s', (source) => {
       const { results, code, csf } = removeEach(source);
@@ -970,6 +983,19 @@ describe('CsfObject', () => {
         'unsupported-initializer',
         `const shared = { position: { table: { defaultValue: 'right' } } }; export default {}; export const P = mk({ argTypes: shared, defaults: shared.position.table });`,
       ],
+      [
+        'unsupported-initializer',
+        `const promote = (x) => ({ argTypes: { size: x.argTypes.size.table } }); export default {}; export const P = promote({ argTypes: { size: { table: { defaultValue: 'M' } } } });`,
+      ],
+      [
+        'unsupported-initializer',
+        `import { memoize } from './h'; const promote = memoize(x => ({ argTypes: { size: x.argTypes.size.table } })); export default {}; export const S = promote({ argTypes: { size: { table: { defaultValue: 'M' } } } });`,
+      ],
+      ...[
+        `const make = x => ({ argTypes: x.types }); export default {}; export const P = make({ types: { size: { defaultValue: 'M' } } });`,
+        `const input = { argTypes: { size: { table: { defaultValue: 'M' } } } }; export default {}; export const P = mk({ argTypes: { size: input.argTypes.size.table } });`,
+        `const toArgType = x => ({ ...x.table }); export default {}; export const P = mk({ storyPartial: { argTypes: { size: toArgType({ table: { defaultValue: 'M' } }) } } });`,
+      ].map((source) => ['unsupported-initializer', source]),
       ['dynamic-key', `export default { argTypes: { [name]: { defaultValue: 1 } } };`],
       [
         'unsupported-initializer',

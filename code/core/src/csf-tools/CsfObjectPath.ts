@@ -230,9 +230,10 @@ export const showsPathIn = (editor: SourceEditor, node: Node, path: CsfPattern):
 // Each constant's answer per path, so a constant spread more than once is followed once per path.
 interface Sight {
   constants: Map<Node, Map<string, boolean>>;
+  reading: Set<Node>;
 }
 
-const sight = (): Sight => ({ constants: new Map() });
+const sight = (): Sight => ({ constants: new Map(), reading: new Set() });
 
 const showsMembers = (
   editor: SourceEditor,
@@ -298,98 +299,7 @@ const showsValue = (
       return showsConstant(editor, init, path, seen);
     }
   }
-  // A position, as `0` in `list[0]`, is no key a member could name.
-  const keys = path.filter(
-    (segment): segment is string => typeof segment === 'string' && !/^\d+$/.test(segment)
-  );
-  return keys.length === 0 || mentions(editor, value, new Set(keys), path);
-};
-
-// Whether the object literals around `member` leave room for it at the end of `path`, as
-// `table.defaultValue` under `label` does not for `argTypes.<name>.defaultValue`.
-const canEndPath = (editor: SourceEditor, member: Node, path: CsfPattern): boolean => {
-  let inner = member;
-  let depth = 0;
-  let mismatch = false;
-  let hasRoot = false;
-  const segments = path.slice(0, -1).reverse();
-  const visited = new Set<Node>();
-  const enclosingKeys = new Set<string>();
-  while (!visited.has(inner)) {
-    visited.add(inner);
-    const object = editor.parentOf(inner);
-    let value = object;
-    let outer = value?.type === 'ObjectExpression' ? editor.parentOf(value) : undefined;
-    while (outer && unwrapExpression(outer) === object) {
-      value = outer;
-      outer = editor.parentOf(outer);
-    }
-    if (
-      outer?.type === 'VariableDeclarator' &&
-      outer.init === value &&
-      outer.id.type === 'Identifier'
-    ) {
-      const binding = editor.scopes.bindingOf(outer.id);
-      if (!binding?.constant) {
-        return true;
-      }
-      const references = binding.references.filter((reference) => {
-        const parent = editor.parentOf(reference);
-        if (parent?.type !== 'MemberExpression' || parent.object !== reference) {
-          return true;
-        }
-        const key = memberKey(parent);
-        return key === undefined || enclosingKeys.has(key);
-      });
-      if (references.length !== 1) {
-        return true;
-      }
-      const reference = references[0];
-      const parent = editor.parentOf(reference);
-      if (parent?.type === 'Property' && parent.value === reference) {
-        const key = namedKey(parent);
-        const segment = segments[depth++];
-        if (typeof key === 'string' && typeof segment === 'string' && key !== segment) {
-          mismatch = true;
-        }
-        if (key === path[0]) {
-          hasRoot = true;
-        }
-        inner = parent;
-      } else if (parent?.type === 'SpreadElement' && parent.argument === reference) {
-        inner = parent;
-      } else {
-        return true;
-      }
-      continue;
-    }
-    if (
-      outer?.type === 'CallExpression' &&
-      outer.arguments.some((argument) => argument === value)
-    ) {
-      return !(mismatch && hasRoot);
-    }
-    if (
-      outer?.type !== 'Property' ||
-      outer.value !== value ||
-      editor.parentOf(outer)?.type !== 'ObjectExpression'
-    ) {
-      return true;
-    }
-    const key = namedKey(outer);
-    if (typeof key === 'string') {
-      enclosingKeys.add(key);
-    }
-    const segment = segments[depth++];
-    if (typeof key === 'string' && typeof segment === 'string' && key !== segment) {
-      mismatch = true;
-    }
-    if (key === path[0]) {
-      hasRoot = true;
-    }
-    inner = outer;
-  }
-  return true;
+  return mentions(editor, value, path, seen);
 };
 
 // A constant spread more than once is followed once per path. A constant whose value refers to
@@ -402,35 +312,96 @@ const showsConstant = (editor: SourceEditor, init: Node, path: CsfPattern, seen:
   if (known !== undefined) {
     return known;
   }
+  // A member-read cycle can keep prepending keys (x = x.next). Once a read returns to the
+  // same initializer by a different path, use the bounded search of its reachable source.
+  if (seen.reading.has(init)) {
+    return mentions(editor, init, path);
+  }
   answers.set(key, false);
+  seen.reading.add(init);
   const shown = showsValue(editor, init, path, seen);
+  seen.reading.delete(init);
   answers.set(key, shown);
   return shown;
 };
 
+// A local mapper can move a value out of its literal nesting, including when a helper such
+// as memoize wraps it. Passing an argument straight through preserves its shape.
+const mayMapInput = (editor: SourceEditor, callee: Node): boolean => {
+  const visited = new Set<Node>();
+  const visit = (node: Node): boolean => {
+    if (visited.has(node)) {
+      return false;
+    }
+    visited.add(node);
+    if (
+      node.type === 'ArrowFunctionExpression' ||
+      node.type === 'FunctionExpression' ||
+      node.type === 'FunctionDeclaration'
+    ) {
+      const body = node.body;
+      const result =
+        body?.type === 'BlockStatement' &&
+        body.body.length === 1 &&
+        body.body[0].type === 'ReturnStatement'
+          ? body.body[0].argument
+          : body;
+      const param = node.params[0];
+      return !(
+        node.params.length === 1 &&
+        param.type === 'Identifier' &&
+        result?.type === 'Identifier' &&
+        result.name === param.name
+      );
+    }
+    if (node.type === 'Identifier') {
+      const binding = editor.scopes.bindingOf(node);
+      if (!binding || binding.kind === 'import') {
+        return false;
+      }
+      const init =
+        constantInit(binding) ?? (binding.kind === 'function' ? binding.node : undefined);
+      return !init || visit(init);
+    }
+    return children(node, { skipTypes: true }).some(visit);
+  };
+  return visit(callee);
+};
+
 // Whether code, with the local code it refers to, has a member or a member write with each of
-// `keys`, or one whose key only running code knows. The local code is the declarations of the names
+// the named keys of `path`, or one whose key only running code knows. The local code is the declarations of the names
 // it reads and the values assigned to them, each read once; a name written through a pattern, as
-// in `[base] = list`, may hold anything. A member with the last key of `path` counts only where the
-// literals around it leave room for the path.
-const mentions = (
-  editor: SourceEditor,
-  code: Node,
-  keys: ReadonlySet<string>,
-  path: CsfPattern
-): boolean => {
-  const missing = new Set(keys);
-  const last = path.at(-1);
+// in `[base] = list`, may hold anything.
+const mentions = (editor: SourceEditor, code: Node, path: CsfPattern, seen?: Sight): boolean => {
+  // A position, as `0` in `list[0]`, is no key a member could name.
+  const missing = new Set(
+    path.filter(
+      (segment): segment is string => typeof segment === 'string' && !/^\d+$/.test(segment)
+    )
+  );
+  const [root, ...rest] = path;
+  // Only narrow the search when the root and leaf are its two named keys. Other patterns can
+  // collect evidence for intermediate names from separate factory inputs.
+  const matchInput =
+    seen &&
+    typeof root === 'string' &&
+    typeof rest.at(-1) === 'string' &&
+    rest.slice(0, -1).every(isAnyKey);
   const searched = new Set<Node>();
   // Types do not change what code returns, so they are not read.
   const search = (child: Node): void => {
     if (missing.size === 0) {
       return;
     }
+    if (child.type === 'CallExpression' && matchInput && !mayMapInput(editor, child.callee)) {
+      search(child.callee);
+      child.arguments.forEach(searchInput);
+      return;
+    }
     const named = namedKey(child);
     if (isAnyKey(named)) {
       missing.clear();
-    } else if (named !== undefined && (named !== last || canEndPath(editor, child, path))) {
+    } else if (named !== undefined) {
       missing.delete(named);
     }
     const binding = child.type === 'Identifier' ? editor.scopes.bindingOf(child) : undefined;
@@ -444,6 +415,65 @@ const mentions = (
       searchBinding(binding);
     }
     children(child, { skipTypes: true }).forEach(search);
+  };
+  // Follow the literal structure of factory arguments, including nested story options. Once the
+  // path starts, the same matcher used for editable objects can check the rest of it.
+  const inputs = new Set<Node>();
+  const searchInput = (node: Node): void => {
+    const value = unwrapExpression(node);
+    if (inputs.has(value) || missing.size === 0) {
+      return;
+    }
+    inputs.add(value);
+    if (value.type === 'Identifier') {
+      const binding = editor.scopes.bindingOf(value);
+      const init = constantInit(binding);
+      if (binding && init && !writtenThrough(editor, binding)) {
+        searchInput(init);
+        return;
+      }
+    }
+    if (value.type === 'MemberExpression') {
+      const key = memberKey(value);
+      const receiver = unwrapExpression(value.object);
+      const binding =
+        receiver.type === 'Identifier' ? editor.scopes.bindingOf(receiver) : undefined;
+      const literal = unwrapExpression(constantInit(binding) ?? receiver);
+      if (
+        key !== undefined &&
+        literal.type === 'ObjectExpression' &&
+        !(binding && writtenThrough(editor, binding))
+      ) {
+        const field = lookupMember(editor, literal.properties, key);
+        if (field.ok && field.property && !field.property.method) {
+          searchInput(field.property.value);
+          return;
+        }
+      }
+    }
+    if (value.type !== 'ObjectExpression') {
+      search(value);
+      return;
+    }
+    for (const member of value.properties) {
+      if (member.type === 'SpreadElement') {
+        searchInput(member.argument);
+        continue;
+      }
+      const key = staticKey(member);
+      if (key === undefined || member.method || member.kind !== 'init') {
+        search(member);
+        continue;
+      }
+      missing.delete(key);
+      if (seen && key === root) {
+        if (showsValue(editor, member.value, rest, seen)) {
+          missing.clear();
+        }
+      } else {
+        searchInput(member.value);
+      }
+    }
   };
   const searchBinding = (binding: Binding) => {
     if (writtenThrough(editor, binding)) {

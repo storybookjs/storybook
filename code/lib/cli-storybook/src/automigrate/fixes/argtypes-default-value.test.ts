@@ -584,65 +584,6 @@ describe('argtypes-default-value', () => {
     expect(result.story).toBe(story);
   });
 
-  it.each(['as const', 'satisfies Record<string, unknown>'])(
-    'skips a factory story with a docs table wrapped in %s',
-    async (wrapper) => {
-      const story = [
-        "import { makeStory } from './helpers';",
-        'export default {};',
-        `export const Primary = makeStory({ argTypes: { size: { table: { defaultValue: { summary: 'M' } } ${wrapper} } } });`,
-      ].join('\n');
-      const result = await migrate({ story });
-
-      expect(result.failures).toEqual([]);
-      expect(result.story).toBe(story);
-    }
-  );
-
-  it('reports defaults that a local helper can move into argTypes', async () => {
-    const story = [
-      'function makeStory(x) { return { argTypes: x.types }; }',
-      'export default {};',
-      "export const Primary = makeStory({ types: { size: { defaultValue: 'M' } } });",
-    ].join('\n');
-    const result = await migrate({ story });
-
-    expect(result.failures).toEqual([
-      { file: storyPath, kind: 'story', message: expect.stringContaining('Primary') },
-    ]);
-    expect(result.story).toBe(story);
-  });
-
-  it('reports defaults moved by a member read from a separate binding', async () => {
-    const story = [
-      "import { makeStory } from './helpers';",
-      "const input = { argTypes: { size: { table: { defaultValue: 'M' } } } };",
-      'export default {};',
-      'export const Primary = makeStory({ argTypes: { size: input.argTypes.size.table } });',
-    ].join('\n');
-    const result = await migrate({ story });
-
-    expect(result.failures).toEqual([
-      { file: storyPath, kind: 'story', message: expect.stringContaining('Primary') },
-    ]);
-    expect(result.story).toBe(story);
-  });
-
-  it('skips a docs table default when the factory reads unrelated members', async () => {
-    const story = [
-      "import { getStoryGenerator, shared } from './helpers';",
-      'const generateStory = getStoryGenerator({',
-      "  argTypes: { ...shared.argTypes, size: { table: { defaultValue: { summary: 'M' } } } },",
-      '});',
-      'export default {};',
-      'export const Primary = generateStory({});',
-    ].join('\n');
-    const result = await migrate({ story });
-
-    expect(result.failures).toEqual([]);
-    expect(result.story).toBe(story);
-  });
-
   it('fails a factory story whose argTypes show a defaultValue', async () => {
     const story = [
       "import { getStoryGenerator } from './helpers';",
@@ -650,24 +591,6 @@ describe('argtypes-default-value', () => {
       'export default {};',
       'export const Primary = generateStory({',
       "  storyPartial: { argTypes: { size: { defaultValue: 'M', table: { category: 'inputs' } } } },",
-      '});',
-    ].join('\n');
-    const result = await migrate({ story });
-
-    expect(result.failures).toEqual([
-      { file: storyPath, kind: 'story', message: expect.stringContaining('Primary') },
-    ]);
-    expect(result.story).toBe(story);
-  });
-
-  it('fails a factory story that may place a table defaultValue under argTypes', async () => {
-    const story = [
-      "import { getStoryGenerator } from './helpers';",
-      "const toArgType = (input) => ({ control: 'text', ...input.table });",
-      'const generateStory = getStoryGenerator({});',
-      'export default {};',
-      'export const Primary = generateStory({',
-      "  storyPartial: { argTypes: { size: toArgType({ table: { defaultValue: 'M' } }) } },",
       '});',
     ].join('\n');
     const result = await migrate({ story });

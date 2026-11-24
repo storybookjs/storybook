@@ -648,6 +648,24 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@anthropic-ai/sdk@npm:1.4.0":
+  version: 1.4.0
+  resolution: "@anthropic-ai/sdk@npm:1.4.0"
+  dependencies:
+    "@opentelemetry/api": "npm:^1.4.1"
+    json-schema-to-ts: "npm:^3.1.1"
+    standardwebhooks: "npm:^1.0.0"
+  peerDependencies:
+    zod: ^3.25.0 || ^4.0.0
+  peerDependenciesMeta:
+    zod:
+      optional: true
+  bin:
+    anthropic-ai-sdk: bin/cli
+  checksum: 10c0/ba6c9623a9954416fe0e9b79d6b67352d646ba3d770366517e92622ebbbbb3cea9ecd09f3dce673c9bb7065a53753e7f0bda03222efbf98e50e2cea63f0506da
+  languageName: node
+  linkType: hard
+
 "@anthropic-ai/sdk@npm:^0.117.1":
   version: 0.117.1
   resolution: "@anthropic-ai/sdk@npm:0.117.1"
@@ -5768,6 +5786,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@opentelemetry/api@npm:^1.4.1":
+  version: 1.10.0
+  resolution: "@opentelemetry/api@npm:1.10.0"
+  checksum: 10c0/c666f89d882e2e3ea3780b4e419de3ba7e00a80bf334269c3c8507a5e2b4e453e2bc8368f6230f894d789b206c14dde313ea6f51fa7bc629f0eff8480b5d356b
+  languageName: node
+  linkType: hard
+
 "@oxc-parser/binding-android-arm-eabi@npm:0.121.0":
   version: 0.121.0
   resolution: "@oxc-parser/binding-android-arm-eabi@npm:0.121.0"
@@ -9959,7 +9984,7 @@ __metadata:
     ts-dedent: "npm:^2.2.0"
     typescript: "npm:^6.0.3"
     unplugin: "npm:^2.3.5"
-    vite: "npm:^7.0.4"
+    vite: "npm:^7.3.8"
   peerDependencies:
     "@types/react": ^18.0.0 || ^19.0.0
     storybook: "workspace:^"
@@ -10236,7 +10261,7 @@ __metadata:
     magic-string: "npm:^1.1.0"
     pathe: "npm:^1.1.2"
     ts-dedent: "npm:^2.2.0"
-    vite: "npm:^7.0.4"
+    vite: "npm:^7.3.8"
   peerDependencies:
     storybook: "workspace:^"
     vite: ^6.3.0 || ^7.0.0 || ^8.0.0
@@ -10396,7 +10421,7 @@ __metadata:
     typescript: "npm:^6.0.3"
     typescript-native: "npm:typescript@7.1.0-beta"
     uuid: "npm:^11.1.0"
-    vite: "npm:^7.0.4"
+    vite: "npm:^7.3.8"
     vite-plugin-inspect: "npm:^11.0.0"
     vitest: "npm:5.0.5"
     wait-on: "npm:^8.0.3"
@@ -10709,7 +10734,7 @@ __metadata:
     "@storybook/preact": "workspace:*"
     "@types/node": "npm:^22.19.1"
     typescript: "npm:^6.0.3"
-    vite: "npm:^7.0.4"
+    vite: "npm:^7.3.8"
   peerDependencies:
     preact: ^10.9.0 || >= 11.0.0-0
     storybook: "workspace:^"
@@ -10844,7 +10869,7 @@ __metadata:
     resolve: "npm:^1.22.8"
     tsconfig-paths: "npm:^4.2.0"
     typescript: "npm:^6.0.3"
-    vite: "npm:^7.0.4"
+    vite: "npm:^7.3.8"
   peerDependencies:
     "@joshwooding/vite-plugin-react-docgen-typescript": ^0.7.0
     react: ^18.0.0 || ^19.0.0
@@ -10957,7 +10982,7 @@ __metadata:
     nx: "npm:^22.6.1"
     oxfmt: "npm:0.70.0"
     std-env: "npm:^4.0.0"
-    vite: "npm:^7.0.4"
+    vite: "npm:^7.3.8"
     vitest: "npm:5.0.5"
   languageName: unknown
   linkType: soft
@@ -11130,7 +11155,7 @@ __metadata:
     magic-string: "npm:^1.1.0"
     svelte: "npm:^5.39.5"
     sveltedoc-parser: "npm:^4.2.1"
-    vite: "npm:^7.0.4"
+    vite: "npm:^7.3.8"
   peerDependencies:
     "@sveltejs/vite-plugin-svelte": ^2.0.0 || ^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0
     storybook: "workspace:^"
@@ -11159,7 +11184,7 @@ __metadata:
     ts-dedent: "npm:^2.2.0"
     type-fest: "npm:^5.6.0"
     typescript: "npm:^6.0.3"
-    vite: "npm:^7.0.4"
+    vite: "npm:^7.3.8"
     zimmerframe: "npm:^1.1.2"
   peerDependencies:
     storybook: "workspace:^"
@@ -11178,7 +11203,7 @@ __metadata:
     "@types/node": "npm:^22.19.1"
     memfs: "npm:^4.11.1"
     typescript: "npm:^6.0.3"
-    vite: "npm:^7.0.4"
+    vite: "npm:^7.3.8"
   peerDependencies:
     "@sveltejs/kit": ^3.0.0
     storybook: "workspace:^"
@@ -11201,7 +11226,7 @@ __metadata:
     "@tanstack/start-client-core": "npm:^1.167.9"
     "@types/node": "npm:^22.19.1"
     typescript: "npm:^6.0.3"
-    vite: "npm:^7.0.4"
+    vite: "npm:^7.3.8"
   peerDependencies:
     "@joshwooding/vite-plugin-react-docgen-typescript": ^0.7.0
     "@tanstack/react-router": ^1.168.10
@@ -11238,7 +11263,7 @@ __metadata:
     "@types/node": "npm:^22.19.1"
     magic-string: "npm:^1.1.0"
     typescript: "npm:^6.0.3"
-    vite: "npm:^7.0.4"
+    vite: "npm:^7.3.8"
     vue-component-meta: "npm:^3.3.9"
     vue-docgen-api: "npm:^4.75.1"
   peerDependencies:
@@ -19248,6 +19273,7 @@ __metadata:
   resolution: "ecosystem-qa@workspace:ecosystem-qa"
   dependencies:
     "@ai-hero/sandcastle": "npm:0.13.0"
+    "@anthropic-ai/sdk": "npm:1.4.0"
     "@types/node": "npm:^22.19.1"
     gifenc: "npm:1.0.3"
     memfs: "npm:^4.11.1"
@@ -19255,7 +19281,7 @@ __metadata:
     playwright: "npm:1.58.2"
     pngjs: "npm:^7.0.0"
     typescript: "npm:^6.0.3"
-    vite: "npm:^7.0.4"
+    vite: "npm:^7.3.8"
     vitest: "npm:5.0.5"
     zod: "npm:^4.4.3"
   languageName: unknown
@@ -33696,13 +33722,10 @@ __metadata:
   peerDependencies:
     "@types/react": ^18.0.0 || ^19.0.0
     prettier: ^2 || ^3
-    vite-plus: ^0.1.15 || ^0.2.0 || ^0.3.0
   peerDependenciesMeta:
     "@types/react":
       optional: true
     prettier:
-      optional: true
-    vite-plus:
       optional: true
   bin:
     storybook: ./dist/bin/dispatcher.js
@@ -36340,7 +36363,7 @@ __metadata:
     semver: "npm:^7.7.3"
     ts-dedent: "npm:^2.2.0"
     typescript: "npm:^6.0.3"
-    vite: "npm:^7.0.4"
+    vite: "npm:^7.3.8"
     vite-tsconfig-paths: "npm:^6.1.1"
   peerDependencies:
     next: ^15.0.0 || ^16.0.0
@@ -36363,9 +36386,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vite@npm:7.3.6, vite@npm:^7.0.4":
-  version: 7.3.6
-  resolution: "vite@npm:7.3.6"
+"vite@npm:7.3.8, vite@npm:^7.3.8":
+  version: 7.3.8
+  resolution: "vite@npm:7.3.8"
   dependencies:
     esbuild: "npm:^0.27.0 || ^0.28.0"
     fdir: "npm:^6.5.0"
@@ -36414,7 +36437,7 @@ __metadata:
       optional: true
   bin:
     vite: bin/vite.js
-  checksum: 10c0/c6d359f84ad362f5c97ff7988b77c90add04162c60cdf6059375a7d9e3217848c53a8cb6b6c48517bef84b6bba4c9bc85319a889b5236acb7d5a2bc8cb7b9a8d
+  checksum: 10c0/e08583f065ca3bfd5620120d04829dcc1dd11af0807ddce64fa3fb3fec553179bed95903c64895d164537f97ca91604eecb287221ff5aeaf26438f807880e7a8
   languageName: node
   linkType: hard
 

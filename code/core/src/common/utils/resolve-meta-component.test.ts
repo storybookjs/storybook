@@ -165,11 +165,17 @@ describe('createMetaComponentResolver', () => {
       ).toMatchObject({ component: { path: join(FIXTURES, 'button.component.ts') } });
     });
 
-    it('does not follow an `export *` that a destructured export of the same name shadows', () => {
+    it('follows a destructured export that shadows an `export *` to the file that declares the member', () => {
       expect(
         resolveInFixtures(`import { UI } from './barrel/destructured';
                            export default { component: UI.Button };`)
-      ).toEqual({ reason: 'unreadable-component-expression', expression: 'UI.Button' });
+      ).toMatchObject({
+        component: {
+          importId: '../button.component',
+          importer: join(FIXTURES, 'barrel', 'destructured.ts'),
+          path: join(FIXTURES, 'button.component.ts'),
+        },
+      });
     });
 
     it('reports a named import that is not a namespace as unreadable', () => {

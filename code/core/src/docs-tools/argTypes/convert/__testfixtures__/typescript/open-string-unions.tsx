@@ -9,6 +9,7 @@ interface Props {
   closedUnion?: 'a' | 'b';
   withNull?: 'a' | 'b' | null;
   mixedUnion?: 'a' | Custom;
+  mixedOpen?: 'sm' | 42 | (string & {});
 }
 
 export const Component: FC<Props> = (props: Props) => <>JSON.stringify(props)</>;

@@ -2,7 +2,7 @@ import { UnknownArgTypesError } from 'storybook/internal/preview-errors';
 import type { SBType } from 'storybook/internal/types';
 
 import { parseLiteral } from '../utils.ts';
-import type { TSSigType, TSType } from './types.ts';
+import type { TSIntersectionType, TSSigType, TSType } from './types.ts';
 
 // Type guards for narrowing TSType discriminant unions
 type TSLiteralType = Extract<TSType, { name: 'literal' }>;
@@ -36,8 +36,6 @@ const convertSig = (type: TSSigType) => {
 // `intersection` of `string` and an empty object signature, or as an `unknown`
 // member inside a union. Both shapes mean `string`, so they collapse to a text
 // control instead of an unusable object control.
-type TSIntersectionType = Extract<TSType, { name: 'intersection' }>;
-
 const isEmptyObjectSignature = (type: TSType): boolean =>
   type.name === 'signature' && type.type === 'object' && type.signature.properties.length === 0;
 
@@ -87,10 +85,17 @@ export const convert = (type: TSType): SBType | void => {
           ),
         };
       }
-      // A union of literals and a `string & {}` member (emitted as `unknown`)
-      // accepts any string, so it is a text control, not a closed enum.
+      // A union of string literals and a `string & {}` member (emitted as
+      // `unknown`) accepts any string, so it is a text control, not a closed
+      // enum. Mixed unions like `'sm' | 42 | (string & {})` keep their type.
       if (
         nonUndefinedElements.some((element) => element.name === 'unknown') &&
+        nonUndefinedElements.every(
+          (element) =>
+            element.name === 'unknown' ||
+            element.name === 'null' ||
+            (isLiteral(element) && /^['"]/.test(element.value))
+        ) &&
         typeof raw === 'string' &&
         /\bstring\s*&\s*\{\s*\}/.test(raw)
       ) {

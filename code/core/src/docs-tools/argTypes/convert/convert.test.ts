@@ -356,6 +356,24 @@ describe('storybook type system', () => {
                 ]
               }
             ]
+          },
+          "mixedOpen": {
+            "raw": "'sm' | 42 | (string & {})",
+            "name": "union",
+            "value": [
+              {
+                "name": "other",
+                "value": "literal"
+              },
+              {
+                "name": "other",
+                "value": "literal"
+              },
+              {
+                "name": "other",
+                "value": "unknown"
+              }
+            ]
           }
         }
       `);

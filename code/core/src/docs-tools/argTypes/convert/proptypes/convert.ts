@@ -19,10 +19,12 @@ export const convert = (type: PTType): SBType | any => {
     case 'enum': {
       // A `T | (string & {})` union arrives as an enum with an open string member;
       // it accepts any string, so it is a text control rather than a closed list.
+      // Mixed members like `42` keep the enum so numeric options stay intact.
       if (
         !computed &&
         Array.isArray(value) &&
-        value.some((v: PTType) => v.value === 'string & {}')
+        value.some((v: PTType) => v.value === 'string & {}') &&
+        value.every((v: PTType) => v.value === 'string & {}' || /^['"]/.test(v.value))
       ) {
         return { ...base, name: 'string' };
       }

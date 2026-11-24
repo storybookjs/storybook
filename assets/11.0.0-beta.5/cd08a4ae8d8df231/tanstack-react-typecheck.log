@@ -1,0 +1,5 @@
+.storybook/preview.tsx(114,7): error TS2353: Object literal may only specify known properties, and 'defaultValue' does not exist in type 'ToolbarArgType'.
+.storybook/preview.tsx(126,7): error TS2353: Object literal may only specify known properties, and 'defaultValue' does not exist in type 'ToolbarArgType'.
+.storybook/preview.tsx(138,7): error TS2353: Object literal may only specify known properties, and 'defaultValue' does not exist in type 'ToolbarArgType'.
+e2e/scripts/gen-library-versions.ts(5,27): error TS2307: Cannot find module '@schema-benchmarks/schemas/libraries' or its corresponding type declarations.
+e2e/scripts/gen-library-versions.ts(18,29): error TS18046: 'getConfig' is of type 'unknown'.

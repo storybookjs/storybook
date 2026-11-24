@@ -1,0 +1,162 @@
+.../mwueyt3a-ln                          | Progress: resolved 0, reused 1, downloaded 0, added 0
+Packages are copied from the content-addressable store to the virtual store.
+  Content-addressable store is at: /home/agent/workspace/node_modules/.pnpm-store/v11
+  Virtual store is at:             ../../.cache/pnpm/dlx/c34ecf94f99e763e0211fc16a51e6b3c/mwueyt3a-ln/node_modules/.pnpm
+.../mwueyt3a-ln                          | Progress: resolved 11, reused 6, downloaded 11, added 11, done
+Ignored build scripts: esbuild@0.28.2.
+Run "pnpm approve-builds" to pick which dependencies should be allowed to run scripts.
+
+dependencies:
++ storybook 11.0.0-beta.5
+
+.../mwueytyi-pg                          | Progress: resolved 0, reused 1, downloaded 0, added 0
+Packages are copied from the content-addressable store to the virtual store.
+  Content-addressable store is at: /home/agent/workspace/node_modules/.pnpm-store/v11
+  Virtual store is at:             ../../.cache/pnpm/dlx/c1ce838a1ca03766268868dd4d76986c/mwueytyi-pg/node_modules/.pnpm
+.../mwueytyi-pg                          | Progress: resolved 13, reused 17, downloaded 2, added 13, done
+.../esbuild@0.28.2/node_modules/esbuild postinstall$ node install.js
+.../esbuild@0.28.2/node_modules/esbuild postinstall: Done
+
+dependencies:
++ @storybook/cli 11.0.0-beta.5
+
+
+[90m┌[39m  Storybook upgrade - v11.0.0-beta.5
+[90m│[39m
+[90m│[39m  Detecting projects...
+[90m│[39m
+[90m│[39m  Detecting projects: 1 projects
+[90m│[39m
+[90m│[39m  1 project detected
+[90m│[39m
+[34m●[39m  Upgrading from [1m10.6.7[22m to [1m11.0.0-beta.5[22m
+[90m│[39m
+[90m│[39m  /website/package.json
+[90m│[39m  /package.json
+[90m│[39m
+[90m│[39m  Updated package versions in package.json files
+[90m│[39m
+[90m│[39m  Checking automigrations for /website/.storybook...
+[90m│[39m
+
+[90m│[39m  Automigrations detected:
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m story-sort-to-main[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m skills[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m typescript-compiler-api[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m typescript-7-react-docgen[39m
+[90m│[39m
+[90m│[39m  4 automigration(s) detected
+[90m│[39m
+[90m│[39m  Running all detected automigrations:
+[90m│[39m
+[90m│[39m  - story-sort-to-main (/website/.storybook)
+[90m│[39m
+[90m│[39m  - skills (/website/.storybook)
+[90m│[39m
+[90m│[39m  - typescript-compiler-api (/website/.storybook)
+[90m│[39m
+[90m│[39m  - typescript-7-react-docgen (/website/.storybook)
+│ ┌─typescript-compiler-api (/website/.storybook)──────────────────────────────┐
+│ │  TypeScript 7 has no compiler API, so Storybook cannot read your           │
+│ │  component types. In package.json, replace the [36mtypescript[39m devDependency    │
+│ │  with [36m"@typescript/native": "npm:typescript@^7.0.2"[39m and [36m"typescript": [39m     │
+│ │  [36m"npm:@typescript/typescript6@^6.0.2"[39m. This is not automigrated.           │
+│ │                                                                            │
+│ │  More info: https://storybook.js.org/docs/configure/integration/typescrip  │
+│ │  t#typescript-7                                                            │
+│ └────────────────────────────────────────────────────────────────────────────┘
+[90m│[39m
+[90m│[39m  [36mpnpm --allow-build=esbuild dlx skills@latest add[39m
+[90m│[39m  [36mstorybookjs/skills#v11.0.0-beta.5 --yes --agent claude-code universal[39m
+[90m│[39m  [36m--copy[39m
+[90m│[39m
+[90m│[39m  Added a Storybook section to AGENTS.md and CLAUDE.md that tells agents
+[90m│[39m  when to use the skills. Storybook keeps it current on upgrade: remove
+[90m│[39m  its markers to keep your own edits, or remove the section to opt out
+[90m│[39m  of the workflow.
+[90m│[39m
+[90m│[39m  If you want to remove the Storybook skills, run "pnpm
+[90m│[39m  --allow-build=esbuild dlx skills@latest remove"
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m story-sort-to-main[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m skills[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m typescript-7-react-docgen[39m
+[90m│[39m
+[90m│[39m  Completed automigrations for /website/.storybook
+[90m│[39m
+[90m│[39m  Installing dependencies...
+[90m│[39m
+[90m│[39m  Installing dependencies...: Scope: all 6 workspace pr
+[90m│[39m
+[90m│[39m  Installing dependencies...: ✓ Lockfile at ../pnpm-loc
+[90m│[39m
+[90m│[39m  Installing dependencies...: ..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ..
+[90m│[39m
+[90m│[39m  Installing dependencies...: [WARN] 4 deprecated subde
+[90m│[39m
+[90m│[39m  Installing dependencies...: ..
+[90m│[39m
+[90m│[39m  Installing dependencies...: .. postinstall$ vp config
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../json-schema-tests post
+[90m│[39m
+[90m│[39m  Installing dependencies...: .. postinstall: skip inst
+[90m│[39m
+[90m│[39m  Installing dependencies...: .. postinstall: Done
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../json-schema-tests post
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../json-schema-tests post
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../json-schema-tests post
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../json-schema-tests post
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../json-schema-tests post
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../json-schema-tests post
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../json-schema-tests post
+[90m│[39m
+[90m│[39m  Installing dependencies...: [WARN] Issues with peer d
+[90m│[39m
+[90m│[39m  Installing dependencies...: devDependencies:
+[90m│[39m  - @story
+[90m│[39m
+[90m│[39m  Installing dependencies...: Done in 3s using pnpm v12
+[90m│[39m
+[90m│[39m  Dependencies installed
+[90m│[39m
+[32m◇[39m  Checking the health of your project(s)..
+[90m│[39m
+[90m│[39m  Your Storybook project looks good!
+[90m│[39m
+[32m◇[39m  [32mYour project(s) have been upgraded successfully! 🎉[39m
+[90m│[39m
+[90m│[39m  If you want to learn more about the automigrations that executed in
+[90m│[39m  your project(s), please check the following links:
+[90m│[39m  • story-sort-to-main:
+[90m│[39m  https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storysort-in-the-preview-replaced-by-storysorts-in-main
+[90m│[39m  • skills: https://github.com/storybookjs/skills
+[90m│[39m  • typescript-7-react-docgen:
+[90m│[39m  https://storybook.js.org/docs/configure/integration/typescript#typescript-7
+[90m│[39m
+[90m│[39m  For a full list of changes, please check our migration guide:
+[90m│[39m  [36mhttps://storybook.js.org/docs/releases/migration-guide?ref=upgrade[39m
+[90m│[39m
+[34m●[39m  Storybook collects completely anonymous usage telemetry. We use it to
+[90m│[39m  shape Storybook's roadmap and prioritize features. You can learn more,
+[90m│[39m  including how to opt out, at https://storybook.js.org/telemetry
+[90m│[39m
+[90m└[39m  Storybook upgrade completed!
+
+Done in 8s using pnpm v12.21.0
+Done in 9.1s using pnpm v12.21.0

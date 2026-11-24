@@ -1,0 +1,185 @@
+
+[90m┌[39m  storybook v11.0.0-beta.5
+[90m│[39m
+[34m●[39m  Starting...
+Starting content-collections with config content-collections.ts
+Start watching
+Start initial build
+build started ...
+... finished build of 1 collection and 2 documents in 14ms
+│ [38;2;255;71;133m╭[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m╮[39m
+│ [38;2;255;71;133m│[39m   Storybook ready!                                                         [38;2;255;71;133m│[39m
+│ [38;2;255;71;133m│[39m                                                                            [38;2;255;71;133m│[39m
+│ [38;2;255;71;133m│[39m   - Local:                http://127.0.0.1:6006/                           [38;2;255;71;133m│[39m
+│ [38;2;255;71;133m│[39m   - On your network:      run with --host <ip> to expose to local          [38;2;255;71;133m│[39m
+│ [38;2;255;71;133m│[39m   network                                                                  [38;2;255;71;133m│[39m
+│ [38;2;255;71;133m│[39m                                                                            [38;2;255;71;133m│[39m
+│ [38;2;255;71;133m╰[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m╯[39m
+[90m│[39m
+[34m●[39m  [4m360 ms[24m for manager and [4m2.25 s[24m for preview
+[90m│[39m  [43mVite[49m [optimizer] bundling dependencies...
+[90m│[39m  [43mVite[49m [optimizer] bundling dependencies...
+[90m│[39m  [43mVite[49m [32mdependencies optimized: [33mprismjs/components/prism-abap,[39m
+[90m│[39m  [33mprismjs/components/prism-abnf, prismjs/components/prism-actionscript,[39m
+[90m│[39m  [33mprismjs/components/prism-ada, prismjs/components/prism-agda,[39m
+[90m│[39m  [33mprismjs/components/prism-al, prismjs/components/prism-antlr4,[39m
+[90m│[39m  [33mprismjs/components/prism-apacheconf, prismjs/components/prism-apex,[39m
+[90m│[39m  [33mprismjs/components/prism-apl, prismjs/components/prism-applescript,[39m
+[90m│[39m  [33mprismjs/components/prism-aql, prismjs/components/prism-arduino,[39m
+[90m│[39m  [33mprismjs/components/prism-arff, prismjs/components/prism-armasm,[39m
+[90m│[39m  [33mprismjs/components/prism-arturo, prismjs/components/prism-asciidoc,[39m
+[90m│[39m  [33mprismjs/components/prism-asm6502, prismjs/components/prism-asmatmel,[39m
+[90m│[39m  [33mprismjs/components/prism-aspnet, prismjs/components/prism-autohotkey,[39m
+[90m│[39m  [33mprismjs/components/prism-autoit, prismjs/components/prism-avisynth,[39m
+[90m│[39m  [33mprismjs/components/prism-avro-idl, prismjs/components/prism-awk,[39m
+[90m│[39m  [33mprismjs/components/prism-bash, prismjs/components/prism-basic,[39m
+[90m│[39m  [33mprismjs/components/prism-batch, prismjs/components/prism-bbcode,[39m
+[90m│[39m  [33mprismjs/components/prism-bbj, prismjs/components/prism-bicep,[39m
+[90m│[39m  [33mprismjs/components/prism-birb, prismjs/components/prism-bison,[39m
+[90m│[39m  [33mprismjs/components/prism-bnf, prismjs/components/prism-bqn,[39m
+[90m│[39m  [33mprismjs/components/prism-brainfuck,[39m
+[90m│[39m  [33mprismjs/components/prism-brightscript, prismjs/components/prism-bro,[39m
+[90m│[39m  [33mprismjs/components/prism-bsl, prismjs/components/prism-c,[39m
+[90m│[39m  [33mprismjs/components/prism-cfscript,[39m
+[90m│[39m  [33mprismjs/components/prism-chaiscript, prismjs/components/prism-cil,[39m
+[90m│[39m  [33mprismjs/components/prism-cilkc, prismjs/components/prism-cilkcpp,[39m
+[90m│[39m  [33mprismjs/components/prism-clike, prismjs/components/prism-clojure,[39m
+[90m│[39m  [33mprismjs/components/prism-cmake, prismjs/components/prism-cobol,[39m
+[90m│[39m  [33mprismjs/components/prism-coffeescript,[39m
+[90m│[39m  [33mprismjs/components/prism-concurnas, prismjs/components/prism-cooklang,[39m
+[90m│[39m  [33mprismjs/components/prism-coq, prismjs/components/prism-core,[39m
+[90m│[39m  [33mprismjs/components/prism-cpp, prismjs/components/prism-crystal,[39m
+[90m│[39m  [33mprismjs/components/prism-csharp, prismjs/components/prism-cshtml,[39m
+[90m│[39m  [33mprismjs/components/prism-csp, prismjs/components/prism-css-extras,[39m
+[90m│[39m  [33mprismjs/components/prism-css, prismjs/components/prism-csv,[39m
+[90m│[39m  [33mprismjs/components/prism-cue, prismjs/components/prism-cypher,[39m
+[90m│[39m  [33mprismjs/components/prism-d, prismjs/components/prism-dart,[39m
+[90m│[39m  [33mprismjs/components/prism-dataweave, prismjs/components/prism-dax,[39m
+[90m│[39m  [33mprismjs/components/prism-dhall, prismjs/components/prism-diff,[39m
+[90m│[39m  [33mprismjs/components/prism-django,[39m
+[90m│[39m  [33mprismjs/components/prism-dns-zone-file,[39m
+[90m│[39m  [33mprismjs/components/prism-docker, prismjs/components/prism-dot,[39m
+[90m│[39m  [33mprismjs/components/prism-ebnf, prismjs/components/prism-editorconfig,[39m
+[90m│[39m  [33mprismjs/components/prism-eiffel, prismjs/components/prism-ejs,[39m
+[90m│[39m  [33mprismjs/components/prism-elixir, prismjs/components/prism-elm,[39m
+[90m│[39m  [33mprismjs/components/prism-erb, prismjs/components/prism-erlang,[39m
+[90m│[39m  [33mprismjs/components/prism-etlua,[39m
+[90m│[39m  [33mprismjs/components/prism-excel-formula,[39m
+[90m│[39m  [33mprismjs/components/prism-factor, prismjs/components/prism-false,[39m
+[90m│[39m  [33mprismjs/components/prism-firestore-security-rules,[39m
+[90m│[39m  [33mprismjs/components/prism-flow, prismjs/components/prism-fortran,[39m
+[90m│[39m  [33mprismjs/components/prism-fsharp, prismjs/components/prism-ftl,[39m
+[90m│[39m  [33mprismjs/components/prism-gap, prismjs/components/prism-gcode,[39m
+[90m│[39m  [33mprismjs/components/prism-gdscript, prismjs/components/prism-gedcom,[39m
+[90m│[39m  [33mprismjs/components/prism-gettext, prismjs/components/prism-gherkin,[39m
+[90m│[39m  [33mprismjs/components/prism-git, prismjs/components/prism-glsl,[39m
+[90m│[39m  [33mprismjs/components/prism-gml, prismjs/components/prism-gn,[39m
+[90m│[39m  [33mprismjs/components/prism-go-module, prismjs/components/prism-go,[39m
+[90m│[39m  [33mprismjs/components/prism-gradle, prismjs/components/prism-graphql,[39m
+[90m│[39m  [33mprismjs/components/prism-groovy, prismjs/components/prism-haml,[39m
+[90m│[39m  [33mprismjs/components/prism-handlebars, prismjs/components/prism-haskell,[39m
+[90m│[39m  [33mprismjs/components/prism-haxe, prismjs/components/prism-hcl,[39m
+[90m│[39m  [33mprismjs/components/prism-hlsl, prismjs/components/prism-hoon,[39m
+[90m│[39m  [33mprismjs/components/prism-hpkp, prismjs/components/prism-hsts,[39m
+[90m│[39m  [33mprismjs/components/prism-http, prismjs/components/prism-ichigojam,[39m
+[90m│[39m  [33mprismjs/components/prism-icon,[39m
+[90m│[39m  [33mprismjs/components/prism-icu-message-format,[39m
+[90m│[39m  [33mprismjs/components/prism-idris, prismjs/components/prism-iecst,[39m
+[90m│[39m  [33mprismjs/components/prism-ignore, prismjs/components/prism-inform7,[39m
+[90m│[39m  [33mprismjs/components/prism-ini, prismjs/components/prism-io,[39m
+[90m│[39m  [33mprismjs/components/prism-j, prismjs/components/prism-java,[39m
+[90m│[39m  [33mprismjs/components/prism-javadoc,[39m
+[90m│[39m  [33mprismjs/components/prism-javadoclike,[39m
+[90m│[39m  [33mprismjs/components/prism-javascript,[39m
+[90m│[39m  [33mprismjs/components/prism-javastacktrace,[39m
+[90m│[39m  [33mprismjs/components/prism-jexl, prismjs/components/prism-jolie,[39m
+[90m│[39m  [33mprismjs/components/prism-jq, prismjs/components/prism-js-extras,[39m
+[90m│[39m  [33mprismjs/components/prism-js-templates, prismjs/components/prism-jsdoc,[39m
+[90m│[39m  [33mprismjs/components/prism-json, prismjs/components/prism-json5,[39m
+[90m│[39m  [33mprismjs/components/prism-jsonp, prismjs/components/prism-jsstacktrace,[39m
+[90m│[39m  [33mprismjs/components/prism-jsx, prismjs/components/prism-julia,[39m
+[90m│[39m  [33mprismjs/components/prism-keepalived, prismjs/components/prism-keyman,[39m
+[90m│[39m  [33mprismjs/components/prism-kotlin, prismjs/components/prism-kumir,[39m
+[90m│[39m  [33mprismjs/components/prism-kusto, prismjs/components/prism-latex,[39m
+[90m│[39m  [33mprismjs/components/prism-latte, prismjs/components/prism-less,[39m
+[90m│[39m  [33mprismjs/components/prism-lilypond,[39m
+[90m│[39m  [33mprismjs/components/prism-linker-script,[39m
+[90m│[39m  [33mprismjs/components/prism-liquid, prismjs/components/prism-lisp,[39m
+[90m│[39m  [33mprismjs/components/prism-livescript, prismjs/components/prism-llvm,[39m
+[90m│[39m  [33mprismjs/components/prism-log, prismjs/components/prism-lolcode,[39m
+[90m│[39m  [33mprismjs/components/prism-lua, prismjs/components/prism-magma,[39m
+[90m│[39m  [33mprismjs/components/prism-makefile, prismjs/components/prism-markdown,[39m
+[90m│[39m  [33mprismjs/components/prism-markup-templating,[39m
+[90m│[39m  [33mprismjs/components/prism-markup, prismjs/components/prism-mata,[39m
+[90m│[39m  [33mprismjs/components/prism-matlab, prismjs/components/prism-maxscript,[39m
+[90m│[39m  [33mprismjs/components/prism-mel, prismjs/components/prism-mermaid,[39m
+[90m│[39m  [33mprismjs/components/prism-metafont, prismjs/components/prism-mizar,[39m
+[90m│[39m  [33mprismjs/components/prism-mongodb, prismjs/components/prism-monkey,[39m
+[90m│[39m  [33mprismjs/components/prism-moonscript, prismjs/components/prism-n1ql,[39m
+[90m│[39m  [33mprismjs/components/prism-n4js,[39m
+[90m│[39m  [33mprismjs/components/prism-nand2tetris-hdl,[39m
+[90m│[39m  [33mprismjs/components/prism-naniscript, prismjs/components/prism-nasm,[39m
+[90m│[39m  [33mprismjs/components/prism-neon, prismjs/components/prism-nevod,[39m
+[90m│[39m  [33mprismjs/components/prism-nginx, prismjs/components/prism-nim,[39m
+[90m│[39m  [33mprismjs/components/prism-nix, prismjs/components/prism-nsis,[39m
+[90m│[39m  [33mprismjs/components/prism-objectivec, prismjs/components/prism-ocaml,[39m
+[90m│[39m  [33mprismjs/components/prism-odin, prismjs/components/prism-opencl,[39m
+[90m│[39m  [33mprismjs/components/prism-openqasm, prismjs/components/prism-oz,[39m
+[90m│[39m  [33mprismjs/components/prism-parigp, prismjs/components/prism-parser,[39m
+[90m│[39m  [33mprismjs/components/prism-pascal, prismjs/components/prism-pascaligo,[39m
+[90m│[39m  [33mprismjs/components/prism-pcaxis, prismjs/components/prism-peoplecode,[39m
+[90m│[39m  [33mprismjs/components/prism-perl, prismjs/components/prism-php-extras,[39m
+[90m│[39m  [33mprismjs/components/prism-php, prismjs/components/prism-phpdoc,[39m
+[90m│[39m  [33mprismjs/components/prism-plant-uml, prismjs/components/prism-plsql,[39m
+[90m│[39m  [33mprismjs/components/prism-powerquery,[39m
+[90m│[39m  [33mprismjs/components/prism-powershell,[39m
+[90m│[39m  [33mprismjs/components/prism-processing, prismjs/components/prism-prolog,[39m
+[90m│[39m  [33mprismjs/components/prism-promql, prismjs/components/prism-properties,[39m
+[90m│[39m  [33mprismjs/components/prism-protobuf, prismjs/components/prism-psl,[39m
+[90m│[39m  [33mprismjs/components/prism-pug, prismjs/components/prism-puppet,[39m
+[90m│[39m  [33mprismjs/components/prism-pure, prismjs/components/prism-purebasic,[39m
+[90m│[39m  [33mprismjs/components/prism-purescript, prismjs/components/prism-python,[39m
+[90m│[39m  [33mprismjs/components/prism-q, prismjs/components/prism-qml,[39m
+[90m│[39m  [33mprismjs/components/prism-qore, prismjs/components/prism-qsharp,[39m
+[90m│[39m  [33mprismjs/components/prism-r, prismjs/components/prism-racket,[39m
+[90m│[39m  [33mprismjs/components/prism-reason, prismjs/components/prism-regex,[39m
+[90m│[39m  [33mprismjs/components/prism-rego, prismjs/components/prism-renpy,[39m
+[90m│[39m  [33mprismjs/components/prism-rescript, prismjs/components/prism-rest,[39m
+[90m│[39m  [33mprismjs/components/prism-rip, prismjs/components/prism-roboconf,[39m
+[90m│[39m  [33mprismjs/components/prism-robotframework,[39m
+[90m│[39m  [33mprismjs/components/prism-ruby, prismjs/components/prism-rust,[39m
+[90m│[39m  [33mprismjs/components/prism-sas, prismjs/components/prism-sass,[39m
+[90m│[39m  [33mprismjs/components/prism-scala, prismjs/components/prism-scheme,[39m
+[90m│[39m  [33mprismjs/components/prism-scss, prismjs/components/prism-shell-session,[39m
+[90m│[39m  [33mprismjs/components/prism-smali, prismjs/components/prism-smalltalk,[39m
+[90m│[39m  [33mprismjs/components/prism-smarty, prismjs/components/prism-sml,[39m
+[90m│[39m  [33mprismjs/components/prism-solidity,[39m
+[90m│[39m  [33mprismjs/components/prism-solution-file, prismjs/components/prism-soy,[39m
+[90m│[39m  [33mprismjs/components/prism-sparql, prismjs/components/prism-splunk-spl,[39m
+[90m│[39m  [33mprismjs/components/prism-sqf, prismjs/components/prism-sql,[39m
+[90m│[39m  [33mprismjs/components/prism-squirrel, prismjs/components/prism-stan,[39m
+[90m│[39m  [33mprismjs/components/prism-stata, prismjs/components/prism-stylus,[39m
+[90m│[39m  [33mprismjs/components/prism-supercollider,[39m
+[90m│[39m  [33mprismjs/components/prism-swift, prismjs/components/prism-systemd,[39m
+[90m│[39m  [33mprismjs/components/prism-t4-cs,[39m
+[90m│[39m  [33mprismjs/components/prism-t4-templating,[39m
+[90m│[39m  [33mprismjs/components/prism-t4-vb, prismjs/components/prism-tap,[39m
+[90m│[39m  [33mprismjs/components/prism-tcl, prismjs/components/prism-textile,[39m
+[90m│[39m  [33mprismjs/components/prism-toml, prismjs/components/prism-tremor,[39m
+[90m│[39m  [33mprismjs/components/prism-tsx, prismjs/components/prism-tt2,[39m
+[90m│[39m  [33mprismjs/components/prism-turtle, prismjs/components/prism-twig,[39m
+[90m│[39m  [33mprismjs/components/prism-typescript,[39m
+[90m│[39m  [33mprismjs/components/prism-typoscript,[39m
+[90m│[39m  [33mprismjs/components/prism-unrealscript,[39m
+[90m│[39m  [33mprismjs/components/prism-uorazor, prismjs/components/prism-uri,[39m
+[90m│[39m  [33mprismjs/components/prism-v, prismjs/components/prism-vala,[39m
+[90m│[39m  [33mprismjs/components/prism-vbnet, prismjs/components/prism-velocity,[39m
+[90m│[39m  [33mprismjs/components/prism-verilog, prismjs/components/prism-vhdl,[39m
+[90m│[39m  [33mprismjs/components/prism-vim, prismjs/components/prism-visual-basic,[39m
+[90m│[39m  [33mprismjs/components/prism-warpscript, prismjs/components/prism-wasm,[39m
+[90m│[39m  [33mprismjs/components/prism-web-idl, prismjs/components/prism-wgsl,[39m
+[90m│[39m  [33mprismjs/components/prism-wiki, prismjs/components/prism-wolfram,[39m
+[90m│[39m  [33mprismjs/components/prism-wren, prismjs/components/prism-xeora,[39m
+[90m│[39m  [33mprismjs/components/prism-xml-doc, prismjs/components/prism-xojo,[39m
+[90m│[39m  [33mprismjs/components/prism-xquery, prismjs/components/prism-yaml,[39m
+[90m│[39m  [33mprismjs/components/prism-yang, prismjs/components/prism-zig[32m[39m

@@ -85,8 +85,8 @@ describe('getFrameworkInfo', () => {
       renderer: '@storybook/react',
     },
     {
-      reports: 'its only renderer peer dependency, as Analog has',
-      frameworkPackage: '@analogjs/storybook-angular',
+      reports: 'its only renderer peer dependency',
+      frameworkPackage: '@acme/storybook-angular-framework',
       manifest: { peerDependencies: { '@storybook/angular': '^10.0.0' } },
       renderer: '@storybook/angular',
     },
@@ -108,9 +108,12 @@ describe('getFrameworkInfo', () => {
       renderer: undefined,
     },
     {
-      reports: 'no renderer for a dependency named like an object property',
+      reports: 'no renderer when several are dependencies, whatever its peers',
       frameworkPackage: '@acme/storybook-framework',
-      manifest: { dependencies: { constructor: '1.0.0' } },
+      manifest: {
+        dependencies: { '@storybook/react': '^10.0.0', '@storybook/vue3': '^10.0.0' },
+        peerDependencies: { '@storybook/svelte': '^10.0.0' },
+      },
       renderer: undefined,
     },
     {
@@ -181,6 +184,22 @@ describe('getFrameworkInfo', () => {
 
       expect(pkg.up).toHaveBeenCalledWith({ cwd: frameworkPath });
       expect(result.renderer).toBe('@storybook/vue3');
+    });
+  });
+
+  describe('for an unlisted framework given as a file path whose package.json cannot be read', () => {
+    beforeEach(() => {
+      vi.mocked(getStorybookInfo).mockResolvedValue({
+        frameworkPackage: '/repo/packages/storybook-framework/dist/index.js',
+      } as any);
+      vi.mocked(pkg.up).mockReturnValue('/repo/packages/storybook-framework/package.json');
+      vi.mocked(readFile).mockRejectedValue(new Error('EACCES'));
+    });
+
+    it('reports no renderer instead of throwing', async () => {
+      const result = await getFrameworkInfo({} as StorybookConfig, configDir);
+
+      expect(result.renderer).toBeUndefined();
     });
   });
 });

@@ -40,4 +40,16 @@ describe('getMismatchingVersionsWarnings', () => {
       )
     ).toBeUndefined();
   });
+
+  it('still warns about a mismatched Storybook framework listed after a community one', () => {
+    expect(
+      getMismatchingVersionsWarnings(
+        installation({
+          '@analogjs/storybook-angular': '2.9.7',
+          '@storybook/angular': '10.0.0',
+          storybook: '10.1.0',
+        })
+      )
+    ).toContain('mismatch');
+  });
 });

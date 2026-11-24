@@ -35,34 +35,34 @@ describe('findConfigFile', () => {
   });
 });
 
-const rendererCases = [
-  ['@storybook/react-native', SupportedRenderer.REACT_NATIVE, '@storybook/react-native'],
-  ['@storybook-astro/framework', SupportedRenderer.ASTRO, '@storybook-astro/renderer'],
-  ['@analogjs/storybook-angular', SupportedRenderer.ANGULAR, '@storybook/angular'],
-  ['@storybook/react-vite', SupportedRenderer.REACT, '@storybook/react'],
-] as const;
-
-const frameworkFieldForms = [
-  ['package name', (pkg: string) => pkg],
-  ['POSIX path', (pkg: string) => `/project/node_modules/${pkg}`],
-  ['Windows path', (pkg: string) => `C:\\project\\node_modules\\${pkg.replace('/', '\\')}`],
-  [
-    'pnpm virtual-store path',
-    (pkg: string) => `/project/node_modules/.pnpm/${pkg.replace('/', '+')}@1.0.0`,
-  ],
-] as const;
-
-describe.each(
-  rendererCases.flatMap(([pkg, renderer, rendererPackage]) =>
-    frameworkFieldForms.map(([form, toField]) => ({
-      pkg,
-      form,
-      framework: toField(pkg),
-      renderer,
-      rendererPackage,
-    }))
-  )
-)('getStorybookInfo for $pkg given as a $form', ({ framework, renderer, rendererPackage }) => {
+describe.each([
+  {
+    framework: '@storybook/react-native',
+    renderer: SupportedRenderer.REACT_NATIVE,
+    rendererPackage: '@storybook/react-native',
+  },
+  {
+    // The renderer-as-framework lookup matches paths too; path forms are covered by matchPackageName
+    framework: '/project/node_modules/.pnpm/@storybook+react-native@1.0.0',
+    renderer: SupportedRenderer.REACT_NATIVE,
+    rendererPackage: '@storybook/react-native',
+  },
+  {
+    framework: '@storybook-astro/framework',
+    renderer: SupportedRenderer.ASTRO,
+    rendererPackage: '@storybook-astro/renderer',
+  },
+  {
+    framework: '@analogjs/storybook-angular',
+    renderer: SupportedRenderer.ANGULAR,
+    rendererPackage: '@storybook/angular',
+  },
+  {
+    framework: '@storybook/react-vite',
+    renderer: SupportedRenderer.REACT,
+    rendererPackage: '@storybook/react',
+  },
+])('getStorybookInfo for $framework', ({ framework, renderer, rendererPackage }) => {
   beforeEach(() => {
     vi.spyOn(JsPackageManager, 'listAllPackageJsonPaths').mockReturnValue([]);
     vi.mocked(loadMainConfig).mockResolvedValue({ framework, stories: [] });

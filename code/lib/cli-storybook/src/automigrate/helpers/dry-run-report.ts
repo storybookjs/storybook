@@ -43,15 +43,15 @@ export const addSimulatedOutcomes = (
 };
 
 /**
- * The report laid out like the summary of a run: a header and a list for each group that has fixes.
- * Fixes that would succeed have the color of a change, fixes that would fail the color of an error.
+ * The report laid out like the summary of a run: a header and a list for each group that has fixes,
+ * in the colors of that summary.
  */
 export const formatDryRunReport = ({ apply, fail, skip, manual }: DryRunReport) => {
   const sections: [title: string, list: string][] = [];
   if (apply.length > 0) {
     sections.push([
       'Migrations that would succeed:',
-      apply.map((fixId) => CLI_COLORS.change(fixId)).join(', '),
+      apply.map((fixId) => picocolors.green(fixId)).join(', '),
     ]);
   }
   if (fail.length > 0) {

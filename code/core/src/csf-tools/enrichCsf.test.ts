@@ -755,7 +755,7 @@ const source = (csfExport: string) => {
   `;
   const csf = loadCsf(code, { makeTitle: (userTitle) => userTitle }).parse();
   const exportNode = Object.values(csf._storyExports)[0];
-  return extractSource(exportNode, csf._code);
+  return extractSource(exportNode, csf.editor);
 };
 
 describe('extractSource', () => {
@@ -791,6 +791,79 @@ describe('extractSource', () => {
         export const Basic =  (args) => <Button {...args} />;
       `)
     ).toMatchInlineSnapshot(`(args) => <Button {...args} />`);
+  });
+  it('resolves a constant local function alias', () => {
+    expect(
+      source(dedent`
+        const ParagraphStory = () => <Button />;
+        export const Basic = ParagraphStory;
+      `)
+    ).toMatchInlineSnapshot(`() => <Button />`);
+  });
+  it.each(['as', 'satisfies'])('resolves a function alias wrapped in TypeScript %s', (wrapper) => {
+    expect(
+      source(dedent`
+        const ParagraphStory = (() => <Button />) ${wrapper} StoryFn;
+        export const Basic = ParagraphStory;
+      `)
+    ).toMatchInlineSnapshot(`() => <Button />`);
+  });
+  it('resolves a local function declaration alias', () => {
+    expect(
+      source(dedent`
+        function ParagraphStory() {
+          return <Button />;
+        }
+        export const Basic = ParagraphStory;
+      `)
+    ).toBe(
+      dedent`
+        function ParagraphStory() {
+          return <Button />;
+        }
+      `
+    );
+  });
+  it('keeps unresolved identifiers as written', () => {
+    expect(
+      source(dedent`
+        export const Basic = MissingStory;
+      `)
+    ).toMatchInlineSnapshot(`MissingStory`);
+  });
+  it('keeps imported identifiers as written', () => {
+    expect(
+      source(dedent`
+        import { ParagraphStory } from './stories';
+        export const Basic = ParagraphStory;
+      `)
+    ).toMatchInlineSnapshot(`ParagraphStory`);
+  });
+  it('keeps mutable local identifiers as written', () => {
+    expect(
+      source(dedent`
+        let ParagraphStory = () => <Button />;
+        ParagraphStory = () => <Button primary />;
+        export const Basic = ParagraphStory;
+      `)
+    ).toMatchInlineSnapshot(`ParagraphStory`);
+  });
+  it('keeps non-function aliases as written', () => {
+    expect(
+      source(dedent`
+        const ParagraphStory = { args: { label: 'text' } };
+        export const Basic = ParagraphStory;
+      `)
+    ).toMatchInlineSnapshot(`ParagraphStory`);
+  });
+  it('stops circular local aliases', () => {
+    expect(
+      source(dedent`
+        const First = Second;
+        const Second = First;
+        export const Basic = First;
+      `)
+    ).toMatchInlineSnapshot(`First`);
   });
   it('csf3', () => {
     expect(

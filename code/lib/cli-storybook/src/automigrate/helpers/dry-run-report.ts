@@ -2,7 +2,7 @@ import { CLI_COLORS } from 'storybook/internal/node-logger';
 
 import picocolors from 'picocolors';
 
-import type { SimulatedOutcome } from '../pipeline.ts';
+import { type SimulatedOutcome, describeFileFailures } from '../pipeline.ts';
 import { pluralFiles } from './failure-report.ts';
 
 type ReasonedFix = { fixId: string; reason: string };
@@ -33,7 +33,7 @@ export const addSimulatedOutcomes = (
 ) => {
   for (const [fixId, { status, fileFailures }] of outcomes) {
     if (status === 'fail') {
-      report.fail.push({ fixId, reason: fileFailures.map(({ message }) => message).join('; ') });
+      report.fail.push({ fixId, reason: describeFileFailures(fileFailures) });
     } else if (fileFailures.length > 0) {
       report.fail.push({ fixId, reason: `could not migrate ${pluralFiles(fileFailures.length)}` });
     } else {

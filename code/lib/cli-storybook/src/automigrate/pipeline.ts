@@ -346,11 +346,13 @@ export type FixOutcome =
 
 type ProjectRunOptions = Omit<RunOptions<unknown>, 'result' | 'files'>;
 
+/** The reason a fix failed, one line for each file it could not migrate. */
+export const describeFileFailures = (fileFailures: FileFailure[]) =>
+  fileFailures.map(({ file, message }) => `${file}: ${message}`).join('\n');
+
 const failed = (fileFailures: FileFailure[]): FixOutcome => ({
   status: 'failed',
-  error: new HandledError(
-    fileFailures.map(({ file, message }) => `${file}: ${message}`).join('\n')
-  ),
+  error: new HandledError(describeFileFailures(fileFailures)),
   fileFailures,
 });
 

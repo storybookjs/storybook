@@ -18,6 +18,7 @@ import type {
 
 import { global } from '@storybook/global';
 
+import { hideArgTypes } from '../store/csf/hideArgTypes.ts';
 import { addons } from './main.ts';
 
 interface Hook {
@@ -136,8 +137,8 @@ function hookify<TRenderer extends Renderer>(
 ): DecoratorFunction<TRenderer>;
 function hookify<TRenderer extends Renderer>(fn: AbstractFunction) {
   const hookified = (...args: any[]) => {
-    const { hooks }: { hooks: HooksContext<TRenderer> } =
-      typeof args[0] === 'function' ? args[1] : args[0];
+    const isDecorator = typeof args[0] === 'function';
+    const { hooks }: { hooks: HooksContext<TRenderer> } = isDecorator ? args[1] : args[0];
 
     const prevPhase = hooks.currentPhase;
     const prevHooks = hooks.currentHooks;
@@ -158,7 +159,7 @@ function hookify<TRenderer extends Renderer>(fn: AbstractFunction) {
 
     const prevContext = global.STORYBOOK_HOOKS_CONTEXT;
     global.STORYBOOK_HOOKS_CONTEXT = hooks;
-    const result = fn(...args);
+    const result = isDecorator ? fn(args[0], hideArgTypes(args[1])) : fn(...args);
     global.STORYBOOK_HOOKS_CONTEXT = prevContext;
 
     if (hooks.currentPhase === 'UPDATE' && hooks.getNextHook() != null) {
@@ -566,7 +567,7 @@ export function useStoryContext<
     throw invalidHooksError();
   }
 
-  return currentContext;
+  return hideArgTypes(currentContext);
 }
 
 /**

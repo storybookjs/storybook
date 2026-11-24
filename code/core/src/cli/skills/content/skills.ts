@@ -16,17 +16,18 @@ export type SkillId = (typeof SKILL_IDS)[number];
 export const SKILLS: Record<SkillId, { blurb: string }> = {
   'component-docs': {
     blurb:
-      'Look up components, with their props and usage, to answer questions about them or to reuse them instead of building duplicates.',
+      "Look up components, with their props and usage examples, to reuse them instead of building duplicates or to answer a question about a component's props, API, or usage.",
   },
   'write-stories': {
     blurb:
       'How to write the stories of a component in this project: imports, play functions and mocks.',
   },
   'test-stories': {
-    blurb: 'Run the story tests, with their accessibility checks, and fix what fails.',
+    blurb: 'Run the story tests, with their accessibility checks.',
   },
   'ui-review': {
-    blurb: 'Find the stories a change affects and publish a review that shows them to the user.',
+    blurb:
+      'When the user asks for a review, or to see components, stories, or their states: find the stories and create a review that shows them.',
   },
   setup: {
     blurb: 'Setup instructions to write stories for the real components in this project.',

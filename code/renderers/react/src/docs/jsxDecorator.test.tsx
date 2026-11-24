@@ -8,7 +8,7 @@ import React, { Profiler, StrictMode, createElement } from 'react';
 import PropTypes from 'prop-types';
 import { addons, emitTransformCode, useState } from 'storybook/preview-api';
 
-import type { StoryContextForRender } from 'storybook/internal/types';
+import type { StoryContext } from 'storybook/internal/types';
 
 import type { ReactRenderer } from '../types';
 import { getReactSymbolName, jsxDecorator, renderJsx } from './jsxDecorator';
@@ -346,7 +346,7 @@ const makeContext = (
   args: any,
   extra?: object
   // @ts-expect-error (Converted from ts-ignore)
-): StoryContextForRender<ReactRenderer> => ({
+): StoryContext<ReactRenderer> => ({
   id: `jsx-test--${name}`,
   kind: 'js-text',
   name,
@@ -358,7 +358,7 @@ const makeContext = (
 
 describe('jsxDecorator', () => {
   const channel = { emit: vi.fn() };
-  let mockContext: StoryContextForRender<ReactRenderer>;
+  let mockContext: StoryContext<ReactRenderer>;
   let mockStoryFn: Mock;
 
   const mockSetSource = vi.fn();

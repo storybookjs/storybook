@@ -1,18 +1,17 @@
 import { existsSync } from 'node:fs';
 import { describe, expect, test } from 'vitest';
 import {
-  expectDisplayReviewForVisualChange,
-  expectDevServerLeftRunning,
   expectAnyWorkflowSkillInvoked,
-  getEvalContext,
-  expectStoryDiscoveryBeforeReview,
-  expectStoryIdsInDisplayReview,
+  expectNoDisplayReview,
+  expectReviewHint,
   expectStoryTestsRanAndPassed,
   expectWorkflowCalls,
+  getEvalContext,
 } from '#test-utils';
 
-// The steps of the workflow in AGENTS.md that this task cannot do without.
-const WORKFLOW_SKILLS = ['write-stories', 'test-stories', 'ui-review'];
+// The skills of the workflow in AGENTS.md that this task cannot do without. The tests are a
+// command of the workflow, not a skill, and a review only comes when the user asks for one.
+const WORKFLOW_SKILLS = ['write-stories'];
 
 describe('creating a Callout in a monorepo UI package', () => {
   // Workflow asserts are enabled. The skills direct the dev server and
@@ -34,17 +33,13 @@ describe('creating a Callout in a monorepo UI package', () => {
     });
   });
 
-  test('runs the skill of each of these steps and publishes a display review', () => {
-    expectWorkflowCalls([...WORKFLOW_SKILLS, 'review-create']);
-    expectDisplayReviewForVisualChange();
+  test('runs the skills of the workflow, and creates no review unasked', () => {
+    expectWorkflowCalls(WORKFLOW_SKILLS);
+    expectNoDisplayReview();
   });
 
-  test('the review covers the new Callout stories', () => {
-    expectStoryIdsInDisplayReview(['callout']);
-  });
-
-  test('discovers stories through the workflow tools before publishing the review', () => {
-    expectStoryDiscoveryBeforeReview();
+  test('tells the user about the /ui-review skill', () => {
+    expectReviewHint();
   });
 
   describe('depending on the current agent and integration', () => {
@@ -53,12 +48,5 @@ describe('creating a Callout in a monorepo UI package', () => {
     test.skipIf(integration === 'mcp')('finds the workflow through the plugin skills', () => {
       expectAnyWorkflowSkillInvoked();
     });
-
-    test.skipIf(integration !== 'plugin')(
-      'leaves the dev server running when using the plugin',
-      () => {
-        expectDevServerLeftRunning();
-      }
-    );
   });
 });

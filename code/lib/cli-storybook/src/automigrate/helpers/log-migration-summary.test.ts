@@ -11,7 +11,7 @@ const summary = { succeeded: [], failed: {}, manual: [], skipped: ['some-fix'] }
 const fixResults = { 'some-fix': FixStatus.SKIPPED };
 
 // The summary of the first `logger.log` call, without colors.
-const logged = () => stripVTControlCharacters(vi.mocked(logger.log).mock.calls[0][0]);
+const logged = () => stripVTControlCharacters(String(vi.mocked(logger.log).mock.calls[0][0]));
 
 describe('logMigrationSummary', () => {
   beforeEach(() => {

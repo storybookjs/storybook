@@ -194,19 +194,25 @@ export const csfFactories: CommandFix = {
         : 'Applying codemod on your preview config...'
     );
     // The addons of the main config are synced into the converted preview within the same
-    // transform, so a dry run reports them too.
+    // transform, so a dry run reports them too. The conversion does not depend on them, so a
+    // refused sync leaves the preview converted, without the addons.
     await runConfigCodemod(previewConfigPath!, async (info) => {
-      const preview = loadConfig(
-        await configToCsfFactory(
-          info,
-          { configType: 'preview', frameworkPackage },
-          { skipFormatting: true }
-        ),
-        info.path
-      ).parse();
-      await editParsedFile(preview, (config) =>
-        syncPreviewAddonsWithMainConfig(mainConfig, config, configDir, { dryRun })
+      const converted = await configToCsfFactory(
+        info,
+        { configType: 'preview', frameworkPackage },
+        { skipFormatting: true }
       );
+      const preview = loadConfig(converted, info.path).parse();
+      try {
+        await editParsedFile(preview, (config) =>
+          syncPreviewAddonsWithMainConfig(mainConfig, config, configDir, { dryRun })
+        );
+      } catch (error) {
+        logger.warn(
+          `Could not sync the addons of the main config into ${getProjectRelativePath(info.path)}: ${error instanceof Error ? error.message : String(error)}`
+        );
+        return converted;
+      }
       return formatConfig(preview);
     });
 

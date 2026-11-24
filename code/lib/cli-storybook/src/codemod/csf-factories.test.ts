@@ -5,7 +5,7 @@ import { stripVTControlCharacters } from 'node:util';
 
 import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 
-import type { JsPackageManager } from 'storybook/internal/common';
+import { type JsPackageManager, syncPreviewAddonsWithMainConfig } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 
 import { dirname, join } from 'pathe';
@@ -14,6 +14,7 @@ import { dedent } from 'ts-dedent';
 import { runCodemod } from '../automigrate/codemod.ts';
 import { SANDBOX_STORIES_GLOB, csfFactories, storyToCsf4 } from './csf-factories.ts';
 
+vi.mock('storybook/internal/common', { spy: true });
 vi.mock('storybook/internal/node-logger', { spy: true });
 vi.mock('../automigrate/codemod.ts', { spy: true });
 
@@ -317,6 +318,24 @@ describe('csfFactories', () => {
       expect(output['.storybook/preview.js']).toMatch(addonImport);
       expect(output['src/Button.stories.js']).toContain('export const Primary = meta.story(');
     });
+  });
+
+  it('converts the preview when the addons of the main config cannot be synced into it', async () => {
+    const { files, packageManager } = createProject('export default { old: 1, current: 2 };');
+    // A refused edit, as the sync could meet in a preview it cannot change.
+    vi.mocked(syncPreviewAddonsWithMainConfig).mockImplementationOnce(async (_, config) => {
+      config.rename(['old'], 'current');
+      return config;
+    });
+
+    await run(packageManager, false);
+
+    expect(readFiles(files)['.storybook/preview.js']).toContain('export default definePreview(');
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.stringMatching(
+        /^Could not sync the addons of the main config into .*\.storybook\/preview\.js: .*occupied/
+      )
+    );
   });
 
   it('leaves a preview that needs no change as it is written', async () => {

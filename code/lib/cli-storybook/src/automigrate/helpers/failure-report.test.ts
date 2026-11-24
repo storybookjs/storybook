@@ -93,8 +93,8 @@ describe('file failures', () => {
 
       ## rename-legacy
 
-      | File | Reason |
-      | ---- | ------ |
+      | File               | Reason                              |
+      | ------------------ | ----------------------------------- |
       | \`src/B.stories.ts\` | legacy is computed \\| cannot rename |
       "
     `);
@@ -183,14 +183,14 @@ describe('file failures', () => {
 
       ## swap-framework
 
-      | File | Reason |
-      | ---- | ------ |
+      | File               | Reason     |
+      | ------------------ | ---------- |
       | \`src/A.stories.ts\` | unreadable |
 
       ## rename-legacy
 
-      | File | Reason |
-      | ---- | ------ |
+      | File               | Reason             |
+      | ------------------ | ------------------ |
       | \`src/B.stories.ts\` | legacy is computed |
       "
     `);

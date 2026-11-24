@@ -109,8 +109,12 @@ export class ComponentMetaProject
       (s) => s, // asScriptId - identity for React (no URI mapping needed)
       projectHost
     );
-
-    this.service = typescript.createLanguageService(languageServiceHost, this.documentRegistry);
+    // Like tsserver, read a referenced project's sources instead of its .d.ts output, so its
+    // components stay in the program. The flag is internal on LanguageServiceHost's typings.
+    this.service = typescript.createLanguageService(
+      Object.assign(languageServiceHost, { useSourceOfProjectReferenceRedirect: () => true }),
+      this.documentRegistry
+    );
   }
 
   getCommandLine(): ts.ParsedCommandLine {

@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os';
 import { posix } from 'node:path';
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 
 import type { JsPackageManager } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
@@ -10,9 +10,11 @@ import { logger, prompt } from 'storybook/internal/node-logger';
 import { dirname, join } from 'pathe';
 import { dedent } from 'ts-dedent';
 
+import { runCodemod } from '../automigrate/codemod.ts';
 import { SANDBOX_STORIES_GLOB, csfFactories, storyToCsf4 } from './csf-factories.ts';
 
 vi.mock('storybook/internal/node-logger', { spy: true });
+vi.mock('../automigrate/codemod.ts', { spy: true });
 
 const options = { previewConfigPath: '#.storybook/preview', useSubPathImports: true };
 const path = 'Button.stories.tsx';
@@ -331,4 +333,37 @@ describe('csfFactories', () => {
 
     expect(readFileSync(join(root, '.storybook/preview.js'), 'utf-8')).toBe(preview);
   });
+});
+
+it('logs Windows preview and package.json paths with forward slashes', async () => {
+  vi.stubEnv('IN_STORYBOOK_SANDBOX', '');
+  vi.mocked(prompt.select).mockResolvedValue(true);
+  vi.mocked(runCodemod).mockResolvedValue({ files: [], errorCount: 0 });
+  onTestFinished(() => vi.mocked(runCodemod).mockRestore());
+  const logBox = vi.mocked(logger.logBox).mockImplementation(() => {});
+  const step = vi.mocked(logger.step).mockImplementation(() => {});
+
+  await csfFactories.run({
+    dryRun: true,
+    yes: false,
+    glob: '**/*.stories.tsx',
+    mainConfig: {} as any,
+    mainConfigPath: '.storybook\\main.ts',
+    previewConfigPath: '.storybook\\preview.tsx',
+    configDir: '.storybook',
+    packageManager: {
+      primaryPackageJson: {
+        packageJson: {},
+        operationDir: 'C:\\project',
+        packageJsonPath: 'C:\\project\\package.json',
+      },
+      writePackageJson: vi.fn(),
+    } as any,
+  } as any);
+
+  expect(logBox.mock.calls[0][0]).toContain('.storybook/preview.tsx');
+  expect(step.mock.calls.map(([message]) => message)).toContainEqual(
+    expect.stringContaining('C:/project/package.json')
+  );
+  vi.unstubAllEnvs();
 });

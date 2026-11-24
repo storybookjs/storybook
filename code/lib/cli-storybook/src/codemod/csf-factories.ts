@@ -5,6 +5,7 @@ import { optionalEnvToBoolean, syncPreviewAddonsWithMainConfig } from 'storybook
 import { formatConfig, loadConfig } from 'storybook/internal/csf-tools';
 import { CLI_COLORS, logger, prompt } from 'storybook/internal/node-logger';
 
+import { normalize } from 'pathe';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
@@ -112,7 +113,7 @@ export const csfFactories: CommandFix = {
     if (!yes && !inSandbox && !isReactNativePreview) {
       // prompt whether the user wants to use imports map
       logger.logBox(dedent`
-        The CSF 4 format can benefit from using absolute imports of your ${picocolors.cyan(previewConfigPath)} file. We can configure that for you, using subpath imports (a node standard), by adjusting the imports property of your package.json.
+        The CSF 4 format can benefit from using absolute imports of your ${picocolors.cyan(previewConfigPath && normalize(previewConfigPath))} file. We can configure that for you, using subpath imports (a node standard), by adjusting the imports property of your package.json.
         
         However, we cannot broadly recommend it for all projects, because it might not work in some monorepo setups or if you have an outdated tsconfig, use custom paths, or have type alias plugins configured in your project. You can always rerun this codemod and select another option to update your code later.
         
@@ -134,10 +135,10 @@ export const csfFactories: CommandFix = {
     const { packageJson, operationDir, packageJsonPath } = packageManager.primaryPackageJson;
     const writeImportsMap = () => {
       if (dryRun) {
-        logger.step(`Would add an imports map in ${CLI_COLORS.change(packageJsonPath)}`);
+        logger.step(`Would add an imports map in ${CLI_COLORS.change(normalize(packageJsonPath))}`);
         return;
       }
-      logger.step(`Adding imports map in ${picocolors.cyan(packageJsonPath)}`);
+      logger.step(`Adding imports map in ${picocolors.cyan(normalize(packageJsonPath))}`);
       packageManager.writePackageJson(packageJson, operationDir);
     };
 

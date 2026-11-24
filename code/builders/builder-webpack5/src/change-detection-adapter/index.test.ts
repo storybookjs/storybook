@@ -2,6 +2,9 @@
 // and watchRun-based file-change event normalisation.
 import { describe, expect, it, vi } from 'vitest';
 
+import webpack from 'webpack';
+import type { Configuration } from 'webpack';
+
 import { createWebpackChangeDetectionAdapter } from './index.ts';
 
 interface FakeTapable {
@@ -9,13 +12,6 @@ interface FakeTapable {
 }
 
 interface FakeCompiler {
-  context: string;
-  options: {
-    resolve: {
-      alias?: unknown;
-      conditionNames?: string[];
-    };
-  };
   hooks: {
     watchRun: FakeTapable;
   };
@@ -23,17 +19,17 @@ interface FakeCompiler {
   removedFiles?: ReadonlySet<string>;
 }
 
-function createFakeCompiler(overrides: Partial<FakeCompiler> = {}): {
+function createCompiler(config: Configuration = {}) {
+  return webpack({ mode: 'development', target: 'web', context: '/repo', ...config });
+}
+
+function createFakeCompiler(): {
   compiler: FakeCompiler;
   triggerWatchRun: (modifiedFiles?: string[], removedFiles?: string[]) => void;
 } {
   let watchRunCallback: ((c: FakeCompiler) => void) | undefined;
 
   const compiler: FakeCompiler = {
-    context: '/repo',
-    options: {
-      resolve: {},
-    },
     hooks: {
       watchRun: {
         tap(_pluginName, fn) {
@@ -41,7 +37,6 @@ function createFakeCompiler(overrides: Partial<FakeCompiler> = {}): {
         },
       },
     },
-    ...overrides,
   };
 
   function triggerWatchRun(modifiedFiles: string[] = [], removedFiles: string[] = []): void {
@@ -59,35 +54,72 @@ function createFakeCompiler(overrides: Partial<FakeCompiler> = {}): {
 describe('createWebpackChangeDetectionAdapter', () => {
   describe('getResolveConfig()', () => {
     it('returns projectRoot from compiler.context', async () => {
-      const { compiler } = createFakeCompiler({ context: '/my/project' });
-      const adapter = createWebpackChangeDetectionAdapter(compiler as any);
+      const adapter = createWebpackChangeDetectionAdapter(
+        createCompiler({ context: '/my/project' })
+      );
       const config = await adapter.getResolveConfig();
       expect(config.projectRoot).toBe('/my/project');
     });
 
-    it('returns conditions from resolve.conditionNames', async () => {
-      const { compiler } = createFakeCompiler({
-        options: { resolve: { conditionNames: ['import', 'module'] } },
-      });
-      const adapter = createWebpackChangeDetectionAdapter(compiler as any);
-      const config = await adapter.getResolveConfig();
-      expect(config.conditions).toEqual(['import', 'module']);
-    });
+    it.each([
+      {
+        name: 'the Storybook preview conditions',
+        resolve: { conditionNames: ['storybook', 'stories', 'test', '...'] },
+        conditions: [
+          'storybook',
+          'stories',
+          'test',
+          'import',
+          'module',
+          'webpack',
+          'development',
+          'browser',
+        ],
+        requireConditions: [
+          'storybook',
+          'stories',
+          'test',
+          'require',
+          'module',
+          'webpack',
+          'development',
+          'browser',
+        ],
+      },
+      {
+        name: 'a top-level list without "..."',
+        resolve: { conditionNames: ['custom'] },
+        conditions: ['custom'],
+        requireConditions: ['custom'],
+      },
+      {
+        name: 'an ESM list without "..."',
+        resolve: { byDependency: { esm: { conditionNames: ['esm-only'] } } },
+        conditions: ['esm-only'],
+        requireConditions: ['require', 'module', 'webpack', 'development', 'browser'],
+      },
+    ])(
+      'returns the conditions webpack matches for an ESM import and a `require()`, given $name',
+      async ({ resolve, conditions, requireConditions }) => {
+        const adapter = createWebpackChangeDetectionAdapter(createCompiler({ resolve }));
+        const config = await adapter.getResolveConfig();
+        expect(config.conditions).toEqual(conditions);
+        expect(config.requireConditions).toEqual(requireConditions);
+      }
+    );
 
     it('normalises object-form alias to Record<string, string>', async () => {
-      const { compiler } = createFakeCompiler({
-        options: {
-          resolve: {
-            alias: {
-              '@': '/repo/src',
-              utils: '/repo/utils',
-              disabled: false,
-              multi: ['/repo/multi-a', '/repo/multi-b'],
-            },
+      const compiler = createCompiler({
+        resolve: {
+          alias: {
+            '@': '/repo/src',
+            utils: '/repo/utils',
+            disabled: false,
+            multi: ['/repo/multi-a', '/repo/multi-b'],
           },
         },
       });
-      const adapter = createWebpackChangeDetectionAdapter(compiler as any);
+      const adapter = createWebpackChangeDetectionAdapter(compiler);
       const config = await adapter.getResolveConfig();
       expect(config.alias).toEqual({
         '@': '/repo/src',
@@ -98,18 +130,16 @@ describe('createWebpackChangeDetectionAdapter', () => {
     });
 
     it('normalises array-form alias to Array<{ find, replacement }>', async () => {
-      const { compiler } = createFakeCompiler({
-        options: {
-          resolve: {
-            alias: [
-              { name: '@', alias: '/repo/src' },
-              { name: 'utils', alias: ['/repo/utils-a'] },
-              { name: 'gone', alias: false },
-            ],
-          },
+      const compiler = createCompiler({
+        resolve: {
+          alias: [
+            { name: '@', alias: '/repo/src' },
+            { name: 'utils', alias: ['/repo/utils-a'] },
+            { name: 'gone', alias: false },
+          ],
         },
       });
-      const adapter = createWebpackChangeDetectionAdapter(compiler as any);
+      const adapter = createWebpackChangeDetectionAdapter(compiler);
       const config = await adapter.getResolveConfig();
       expect(config.alias).toEqual([
         { find: '@', replacement: '/repo/src' },
@@ -119,8 +149,7 @@ describe('createWebpackChangeDetectionAdapter', () => {
     });
 
     it('returns undefined alias when resolve has no alias', async () => {
-      const { compiler } = createFakeCompiler({ options: { resolve: {} } });
-      const adapter = createWebpackChangeDetectionAdapter(compiler as any);
+      const adapter = createWebpackChangeDetectionAdapter(createCompiler());
       const config = await adapter.getResolveConfig();
       expect(config.alias).toBeUndefined();
     });

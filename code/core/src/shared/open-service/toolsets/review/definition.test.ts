@@ -141,7 +141,7 @@ describe('review.create', () => {
 
       expect(error).not.toBeInstanceOf(OpenServiceUnknownStoryIdsError);
       expect((error as Error).message)
-        .toBe(`Refusing to publish review: 2 story IDs are not backed by a story entry in the live Storybook index (docs entries cannot be review slots):
+        .toBe(`Refusing to create review: 2 story IDs are not backed by a story entry in the live Storybook index (docs entries cannot be review slots):
 - \`button--ghost\`
 - \`card--imagined\`
 
@@ -163,7 +163,7 @@ This usually means the IDs were inferred from file paths or naming conventions r
       const error = await createReview().catch((reason: unknown) => reason);
 
       expect((error as Error).message).toContain(
-        'Refusing to publish review: 1 story ID is not backed by a story entry in the live Storybook index (docs entries cannot be review slots)'
+        'Refusing to create review: 1 story ID is not backed by a story entry in the live Storybook index (docs entries cannot be review slots)'
       );
     });
   });
@@ -226,14 +226,14 @@ The review shows the 1 story you asked to see. Because this is AI-curated, resul
       );
     });
 
-    it('makes the review the last step and the three lines the end of the answer', () => {
+    it('says that an edit after the review needs a new one, and ends the answer with the three lines', () => {
       const description = resolveToolsetDescription(
         reviewToolset.methods.create.description,
         mcpCtx
       );
 
       expect(description).toContain(
-        '- Last: publish it after your tests and other checks (type check, lint), then end your answer with the three lines it returns.'
+        '- A review shows the stories as they are when it is created: an edit after it needs a new review. End your answer with the three lines it returns.'
       );
       expect(description).not.toContain('browser');
     });

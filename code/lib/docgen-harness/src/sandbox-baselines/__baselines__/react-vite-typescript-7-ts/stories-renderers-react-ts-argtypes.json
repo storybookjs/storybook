@@ -468,14 +468,14 @@
               "summary": "'Code Yellow'"
             },
             "type": {
-              "summary": "\"Code Green\" | \"Code Red\" | \"Code Yellow\""
+              "summary": "\"Code Red\" | \"Code Yellow\" | \"Code Green\""
             }
           },
           "type": {
             "name": "enum",
-            "raw": "\"Code Green\" | \"Code Red\" | \"Code Yellow\"",
+            "raw": "\"Code Red\" | \"Code Yellow\" | \"Code Green\"",
             "required": true,
-            "value": ["Code Green", "Code Red", "Code Yellow"]
+            "value": ["Code Red", "Code Yellow", "Code Green"]
           }
         }
       },

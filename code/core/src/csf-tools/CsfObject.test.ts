@@ -897,6 +897,18 @@ describe('CsfObject', () => {
     expect(meta.remove(['parameters', 'componentSubtitle'])).toMatchObject({ ok: false });
   });
 
+  it('follows concrete keys in the options of a spread call in a config', () => {
+    const source = `export default { ...mk({ parameters: { docs: { layout: 'centered' }, panel: {} } }) };`;
+    const config = loadConfig(source).parse();
+    expect(config.remove(['parameters', 'panel', 'layout'])).toEqual({ ok: true, changed: false });
+    expect(config.remove(['parameters', 'docs', 'layout'])).toMatchObject({
+      ok: false,
+      changed: false,
+      diagnostic: { code: 'spread-field' },
+    });
+    expect(printConfig(config).code).toBe(source);
+  });
+
   describe('remove with anyKey', () => {
     const removeEach = (source: string) => {
       const csf = parse(source);
@@ -916,6 +928,31 @@ describe('CsfObject', () => {
       ]);
       expect(code).not.toMatch(/defaultValue: [12]/);
       expect(code).toContain(`summary: '3'`);
+    });
+
+    it.each([anyKey, 'size'])('checks the same factory option with %s', (arg) => {
+      const source = `export default {};
+export const Docs = mk({ argTypes: { size: { table: { defaultValue: 'M' } } } });
+export const Deprecated = mk({ argTypes: { size: { defaultValue: 'M' } } });`;
+      const csf = parse(source);
+      const [docs, deprecated] = csf.objects({ meta: false });
+      expect(docs.remove(['argTypes', arg, 'defaultValue'])).toEqual({ ok: true, changed: false });
+      expect(deprecated.remove(['argTypes', arg, 'defaultValue'])).toMatchObject({
+        ok: false,
+        changed: false,
+        diagnostic: { code: 'unsupported-initializer' },
+      });
+      expect(printCsf(csf).code).toBe(source);
+    });
+
+    it('refuses a leaf supplied separately from a literal ancestor', () => {
+      const source = `export default {}; export const P = mk({ parameters: { docs: {} }, defaults: { layout: 'centered' } });`;
+      const csf = parse(source);
+      const [story] = csf.objects({ meta: false });
+      expect(story.remove(['parameters', 'docs', 'layout'])).toMatchObject({
+        ok: false,
+        changed: false,
+      });
     });
 
     it.each([
@@ -952,6 +989,22 @@ describe('CsfObject', () => {
       [
         `import { shared } from './h'; const make = mk({ argTypes: { ...shared.argTypes, size: { table: { defaultValue: 'M' } } } }); export default {}; export const P = make({});`,
       ],
+      [
+        `const shared = { nested: { size: {} }, docs: { defaultValue: 'M' } }; export default {}; export const P = mk({ argTypes: {}, args: shared.nested.size });`,
+      ],
+      [
+        `import { options } from './h'; const shared = { docs: { defaultValue: 'M' }, chosen: options }; export default {}; export const P = mk({ argTypes: {}, args: shared.chosen });`,
+      ],
+      ...['as StoryObj', 'satisfies StoryObj'].map((wrapper) => [
+        `const story = (options) => options ${wrapper}; export default {}; export const S = story({ argTypes: { size: { table: { defaultValue: 'M' } } } });`,
+      ]),
+      [
+        `export default {}; export const P = mk(flag ? { argTypes: { size: { table: { defaultValue: 'M' } } } } : {});`,
+      ],
+      [
+        `export default {}; export const P = mk(flag && { argTypes: { size: { table: { defaultValue: 'M' } } } });`,
+      ],
+      [`const loop = loop.next; export default { argTypes: loop };`],
       [`const loop = loop.next; export default {}; export const S = mk({ argTypes: loop });`],
       [`export default { argTypes: { defaultValue: { control: 'text' } } };`],
     ])('removes nothing that the source does not show: %s', (source) => {
@@ -992,10 +1045,15 @@ describe('CsfObject', () => {
         `import { memoize } from './h'; const promote = memoize(x => ({ argTypes: { size: x.argTypes.size.table } })); export default {}; export const S = promote({ argTypes: { size: { table: { defaultValue: 'M' } } } });`,
       ],
       ...[
+        `import { getStoryGenerator } from './h'; const gen = getStoryGenerator({ argTypes: {}, render: args => ({}) }); export default {}; export const P = gen({ argTypes: { size: { table: { defaultValue: 'M' } } } });`,
         `const make = x => ({ argTypes: x.types }); export default {}; export const P = make({ types: { size: { defaultValue: 'M' } } });`,
         `const input = { argTypes: { size: { table: { defaultValue: 'M' } } } }; export default {}; export const P = mk({ argTypes: { size: input.argTypes.size.table } });`,
         `const toArgType = x => ({ ...x.table }); export default {}; export const P = mk({ storyPartial: { argTypes: { size: toArgType({ table: { defaultValue: 'M' } }) } } });`,
       ].map((source) => ['unsupported-initializer', source]),
+      [
+        'unsupported-initializer',
+        `export default {}; export const P = mk(flag ? { argTypes: { size: { defaultValue: 'M' } } } : {});`,
+      ],
       ['dynamic-key', `export default { argTypes: { [name]: { defaultValue: 1 } } };`],
       [
         'unsupported-initializer',

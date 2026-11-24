@@ -227,7 +227,7 @@ export const showsPath = (
 export const showsPathIn = (editor: SourceEditor, node: Node, path: CsfPattern): boolean =>
   path.length === 0 || showsValue(editor, node, path, sight());
 
-// Each constant's answer per path, so a constant spread more than once is followed once per path.
+// Cache answers per initializer and path. Active initializers also catch cycles that grow the path.
 interface Sight {
   constants: Map<Node, Map<string, boolean>>;
   reading: Set<Node>;
@@ -269,6 +269,34 @@ const memberKey = (member: E.MemberExpression): string | undefined => {
   return isNumericLiteral(property) ? String(property.value) : undefined;
 };
 
+// Follow immutable aliases and static member reads up to the first expression we cannot resolve.
+const staticValue = (editor: SourceEditor, node: Node, reading = new Set<Node>()): Node => {
+  const value = unwrapExpression(node);
+  if (reading.has(value)) {
+    return value;
+  }
+  reading.add(value);
+  if (value.type === 'Identifier') {
+    const binding = editor.scopes.bindingOf(value);
+    const init = constantInit(binding);
+    if (binding && init && !writtenThrough(editor, binding)) {
+      return staticValue(editor, init, reading);
+    }
+  } else if (value.type === 'MemberExpression') {
+    const key = memberKey(value);
+    if (key !== undefined) {
+      const object = staticValue(editor, value.object, reading);
+      if (object.type === 'ObjectExpression') {
+        const field = lookupMember(editor, object.properties, key);
+        if (field.ok && field.property && !field.property.method) {
+          return staticValue(editor, field.property.value, reading);
+        }
+      }
+    }
+  }
+  return value;
+};
+
 const showsValue = (
   editor: SourceEditor,
   node: Node | undefined,
@@ -285,21 +313,23 @@ const showsValue = (
   if (value.type === 'ObjectExpression') {
     return showsMembers(editor, value.properties, path, seen);
   }
-  const key = value.type === 'MemberExpression' ? memberKey(value) : undefined;
-  if (key !== undefined) {
-    return showsValue(editor, (value as E.MemberExpression).object, [key, ...path], seen);
+  const resolved = staticValue(editor, value);
+  if (resolved !== value) {
+    return showsConstant(editor, resolved, path, seen);
+  }
+  if (value.type === 'MemberExpression') {
+    const key = memberKey(value);
+    if (key !== undefined) {
+      return showsValue(editor, value.object, [key, ...path], seen);
+    }
   }
   if (value.type === 'Identifier') {
     const binding = editor.scopes.bindingOf(value);
     if (!binding || binding.kind === 'import' || binding.kind === 'param') {
       return false;
     }
-    const init = constantInit(binding);
-    if (init && !writtenThrough(editor, binding)) {
-      return showsConstant(editor, init, path, seen);
-    }
   }
-  return mentions(editor, value, path, seen);
+  return showsInSource(editor, value, path, seen);
 };
 
 // A constant spread more than once is followed once per path. A constant whose value refers to
@@ -326,7 +356,7 @@ const showsConstant = (editor: SourceEditor, init: Node, path: CsfPattern, seen:
 };
 
 // A local mapper can move a value out of its literal nesting, including when a helper such
-// as memoize wraps it. Passing an argument straight through preserves its shape.
+// as memoize wraps it. Callbacks in a factory configuration can also map later inputs.
 const mayMapInput = (editor: SourceEditor, callee: Node): boolean => {
   const visited = new Set<Node>();
   const visit = (node: Node): boolean => {
@@ -340,12 +370,13 @@ const mayMapInput = (editor: SourceEditor, callee: Node): boolean => {
       node.type === 'FunctionDeclaration'
     ) {
       const body = node.body;
-      const result =
+      const result = unwrapExpression(
         body?.type === 'BlockStatement' &&
-        body.body.length === 1 &&
-        body.body[0].type === 'ReturnStatement'
+          body.body.length === 1 &&
+          body.body[0].type === 'ReturnStatement'
           ? body.body[0].argument
-          : body;
+          : body
+      );
       const param = node.params[0];
       return !(
         node.params.length === 1 &&
@@ -368,43 +399,41 @@ const mayMapInput = (editor: SourceEditor, callee: Node): boolean => {
   return visit(callee);
 };
 
-// Whether code, with the local code it refers to, has a member or a member write with each of
-// the named keys of `path`, or one whose key only running code knows. The local code is the declarations of the names
-// it reads and the values assigned to them, each read once; a name written through a pattern, as
-// in `[base] = list`, may hold anything.
-const mentions = (editor: SourceEditor, code: Node, path: CsfPattern, seen?: Sight): boolean => {
-  // A position, as `0` in `list[0]`, is no key a member could name.
-  const missing = new Set(
-    path.filter(
-      (segment): segment is string => typeof segment === 'string' && !/^\d+$/.test(segment)
-    )
+const namedKeys = (path: CsfPattern) =>
+  path.filter(
+    (segment): segment is string => typeof segment === 'string' && !/^\d+$/.test(segment)
   );
-  const [root, ...rest] = path;
-  // Only narrow the search when the root and leaf are its two named keys. Other patterns can
-  // collect evidence for intermediate names from separate factory inputs.
-  const matchInput =
-    seen &&
-    typeof root === 'string' &&
-    typeof rest.at(-1) === 'string' &&
-    rest.slice(0, -1).every(isAnyKey);
+
+// A cycle can only use this bounded search. It never re-enters the path matcher.
+const mentions = (editor: SourceEditor, code: Node, path: CsfPattern) =>
+  findKeys(editor, code, new Set(namedKeys(path)));
+
+type SearchCall = (call: E.CallExpression, search: (node: Node) => void) => void;
+
+// Collect member names from the source and its local bindings. A computed write or a write
+// through a binding can supply every missing key.
+const findKeys = (
+  editor: SourceEditor,
+  code: Node,
+  missing: Set<string>,
+  searchCall?: SearchCall
+): boolean => {
   const searched = new Set<Node>();
-  // Types do not change what code returns, so they are not read.
-  const search = (child: Node): void => {
-    if (missing.size === 0) {
+  const search = (node: Node): void => {
+    if (!missing.size) {
       return;
     }
-    if (child.type === 'CallExpression' && matchInput && !mayMapInput(editor, child.callee)) {
-      search(child.callee);
-      child.arguments.forEach(searchInput);
+    if (searchCall && node.type === 'CallExpression' && !mayMapInput(editor, node.callee)) {
+      searchCall(node, search);
       return;
     }
-    const named = namedKey(child);
-    if (isAnyKey(named)) {
+    const key = namedKey(node);
+    if (isAnyKey(key)) {
       missing.clear();
-    } else if (named !== undefined) {
-      missing.delete(named);
+    } else if (key !== undefined) {
+      missing.delete(key);
     }
-    const binding = child.type === 'Identifier' ? editor.scopes.bindingOf(child) : undefined;
+    const binding = node.type === 'Identifier' ? editor.scopes.bindingOf(node) : undefined;
     if (
       binding &&
       binding.kind !== 'import' &&
@@ -412,44 +441,56 @@ const mentions = (editor: SourceEditor, code: Node, path: CsfPattern, seen?: Sig
       !searched.has(binding.node)
     ) {
       searched.add(binding.node);
-      searchBinding(binding);
+      if (writtenThrough(editor, binding)) {
+        missing.clear();
+        return;
+      }
+      search(binding.node);
+      for (const reference of binding.references) {
+        const parent = editor.parentOf(reference);
+        if (parent?.type === 'AssignmentExpression' && parent.left === reference) {
+          search(parent.right);
+        } else if (parent && (parent.type.endsWith('Pattern') || parent.type === 'RestElement')) {
+          missing.clear();
+        }
+      }
     }
-    children(child, { skipTypes: true }).forEach(search);
+    children(node, { skipTypes: true }).forEach(search);
   };
-  // Follow the literal structure of factory arguments, including nested story options. Once the
-  // path starts, the same matcher used for editable objects can check the rest of it.
+  search(code);
+  return missing.size === 0;
+};
+
+const showsInSource = (
+  editor: SourceEditor,
+  code: Node,
+  path: CsfPattern,
+  seen: Sight
+): boolean => {
+  const [root, ...rest] = path;
+  if (typeof root !== 'string') {
+    return mentions(editor, code, path);
+  }
+  const keys = namedKeys(path);
+  const missing = new Set(keys);
+  const ancestors = keys.slice(0, -1).filter((key) => key !== keys.at(-1));
   const inputs = new Set<Node>();
-  const searchInput = (node: Node): void => {
-    const value = unwrapExpression(node);
-    if (inputs.has(value) || missing.size === 0) {
+  const searchInput = (node: Node, search: (node: Node) => void): void => {
+    const value = staticValue(editor, node);
+    if (inputs.has(value) || !missing.size) {
       return;
     }
     inputs.add(value);
-    if (value.type === 'Identifier') {
-      const binding = editor.scopes.bindingOf(value);
-      const init = constantInit(binding);
-      if (binding && init && !writtenThrough(editor, binding)) {
-        searchInput(init);
-        return;
-      }
+    if (value.type === 'ConditionalExpression') {
+      search(value.test);
+      searchInput(value.consequent, search);
+      searchInput(value.alternate, search);
+      return;
     }
-    if (value.type === 'MemberExpression') {
-      const key = memberKey(value);
-      const receiver = unwrapExpression(value.object);
-      const binding =
-        receiver.type === 'Identifier' ? editor.scopes.bindingOf(receiver) : undefined;
-      const literal = unwrapExpression(constantInit(binding) ?? receiver);
-      if (
-        key !== undefined &&
-        literal.type === 'ObjectExpression' &&
-        !(binding && writtenThrough(editor, binding))
-      ) {
-        const field = lookupMember(editor, literal.properties, key);
-        if (field.ok && field.property && !field.property.method) {
-          searchInput(field.property.value);
-          return;
-        }
-      }
+    if (value.type === 'LogicalExpression') {
+      searchInput(value.left, search);
+      searchInput(value.right, search);
+      return;
     }
     if (value.type !== 'ObjectExpression') {
       search(value);
@@ -457,41 +498,37 @@ const mentions = (editor: SourceEditor, code: Node, path: CsfPattern, seen?: Sig
     }
     for (const member of value.properties) {
       if (member.type === 'SpreadElement') {
-        searchInput(member.argument);
+        searchInput(member.argument, search);
         continue;
       }
       const key = staticKey(member);
       if (key === undefined || member.method || member.kind !== 'init') {
         search(member);
-        continue;
-      }
-      missing.delete(key);
-      if (seen && key === root) {
-        if (showsValue(editor, member.value, rest, seen)) {
-          missing.clear();
-        }
-      } else {
-        searchInput(member.value);
-      }
-    }
-  };
-  const searchBinding = (binding: Binding) => {
-    if (writtenThrough(editor, binding)) {
-      missing.clear();
-      return;
-    }
-    search(binding.node);
-    for (const reference of binding.references) {
-      const parent = editor.parentOf(reference);
-      if (parent?.type === 'AssignmentExpression' && parent.left === reference) {
-        search(parent.right);
-      } else if (parent && (parent.type.endsWith('Pattern') || parent.type === 'RestElement')) {
+      } else if (key !== root) {
+        missing.delete(key);
+        searchInput(member.value, search);
+      } else if (!rest.length || showsValue(editor, member.value, rest, seen)) {
         missing.clear();
+        return;
+      } else {
+        // A sibling input can supply the leaf for ancestors already present in this option.
+        for (const ancestor of ancestors) {
+          if (
+            missing.has(ancestor) &&
+            (ancestor === root || mentions(editor, member.value, [ancestor]))
+          ) {
+            missing.delete(ancestor);
+          }
+        }
       }
     }
   };
-  search(code);
-  return missing.size === 0;
+  return findKeys(editor, code, missing, (call, search) => {
+    search(call.callee);
+    for (const arg of call.arguments) {
+      searchInput(arg, search);
+    }
+  });
 };
 
 // The key of a member of an object or a class, or of a write to a member, `anyKey` when only

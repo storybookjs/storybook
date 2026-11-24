@@ -273,7 +273,8 @@ command('automigrate [fixId]')
   .option('--glob <pattern>', 'Glob pattern for story files (for csf-factories codemod)')
   .action(async (fixId, options) => {
     withTelemetry('automigrate', { cliOptions: options }, async () => {
-      logger.intro(fixId ? `Running ${fixId} automigration` : 'Running automigrations');
+      const running = options.dryRun ? 'Dry-running' : 'Running';
+      logger.intro(fixId ? `${running} ${fixId} automigration` : `${running} automigrations`);
       await doAutomigrate({ fixId, ...options });
       logger.outro('Done');
     }).catch(handleCommandFailure(options.logfile));

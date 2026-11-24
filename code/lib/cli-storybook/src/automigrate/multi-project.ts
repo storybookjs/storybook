@@ -242,7 +242,7 @@ export async function promptForAutomigrations(
   const preselectedIds = new Set(options.preselectedIds ?? []);
 
   if (options.dryRun) {
-    logSelection('Detected automigrations (dry run - no changes will be made):', automigrations);
+    logSelection('Detected automigrations (no files will be changed):', automigrations);
     logAutomigrationDetails(automigrations);
     for (const { fix, reports } of automigrations) {
       const report = reports.find(({ status }) => status === 'check_succeeded');

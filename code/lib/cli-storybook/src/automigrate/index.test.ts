@@ -4,7 +4,7 @@ import type { JsPackageManager, PackageJson } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 
 import * as mainConfigFile from './helpers/mainConfigFile.ts';
-import { doAutomigrate, runFixes } from './index.ts';
+import { automigrate, doAutomigrate, runFixes } from './index.ts';
 import type { Fix } from './types.ts';
 
 const check1 = vi.fn();
@@ -73,6 +73,11 @@ const coreCommonMock = vi.hoisted(() => {
   };
 });
 
+vi.mock(import('./fixes/index.ts'), async (importOriginal) => ({
+  ...(await importOriginal()),
+  commandFixes: [{ id: 'command-fix', promptType: 'command' as const, run: async () => {} }],
+}));
+
 vi.mock('storybook/internal/common', async (importOriginal) => ({
   ...(await importOriginal<typeof import('storybook/internal/common')>()),
   loadMainConfig: coreCommonMock.loadMainConfig,
@@ -134,6 +139,23 @@ const runAutomigrateWrapper = async ({
   });
   return doAutomigrate({ configDir, fixes });
 };
+
+describe('automigrate', () => {
+  it.each([
+    [true, /^Dry-running migration command-fix/],
+    [false, /^Running migration command-fix/],
+  ])('announces a command fix when dryRun is %s', async (dryRun, announcement) => {
+    await automigrate({
+      ...common,
+      fixId: 'command-fix',
+      dryRun,
+      storybookVersion: '7.0.0',
+      isLatest: false,
+    });
+
+    expect(logger.step).toHaveBeenCalledWith(expect.stringMatching(announcement));
+  });
+});
 
 describe('runFixes', () => {
   beforeEach(() => {

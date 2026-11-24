@@ -384,9 +384,7 @@ describe('multi-project automigrations', () => {
       const result = await promptForAutomigrations(automigrations, { dryRun: true, yes: false });
 
       expect(result).toEqual([]);
-      expect(logSpy).toHaveBeenCalledWith(
-        'Detected automigrations (dry run - no changes will be made):'
-      );
+      expect(logSpy).toHaveBeenCalledWith('Detected automigrations (no files will be changed):');
     });
   });
 

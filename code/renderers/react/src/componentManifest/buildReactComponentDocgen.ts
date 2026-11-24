@@ -264,7 +264,8 @@ export function buildStoryDocsFromResolved({
     withTemplate
   );
   // An arg value that kept the name another module gave it only compiles once the import block
-  // names that module too. `packageName` rewriting is for the component, so those refs opt out of it.
+  // names that module too. `packageName` rewriting is for the component, so those refs opt out of
+  // it. They come after the component refs, so a name both declare keeps the package import.
   const argRefs = storyEntries.imports.map((ref) => ({ ...ref, isPackage: true }));
   const imports =
     buildImportStatements({ refs: [...allComponents, ...argRefs], packageName })

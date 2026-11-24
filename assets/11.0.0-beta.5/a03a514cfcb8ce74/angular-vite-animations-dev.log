@@ -1,0 +1,396 @@
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> start
+> npm run typography:update-font-coverage & ng run ng:storybook
+
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> typography:update-font-coverage
+> ts-node --project scripts/generate-typography-font-coverage/tsconfig.json scripts/generate-typography-font-coverage/index.ts
+
+
+[90m┌[39m  Starting Storybook
+SourceSans-400-normal: 68 / 346 corpus characters missing (2 font file(s))
+SourceSans-600-normal: 68 / 346 corpus characters missing (2 font file(s))
+SourceSans-700-normal: 68 / 346 corpus characters missing (2 font file(s))
+SourceSans-800-normal: 68 / 346 corpus characters missing (2 font file(s))
+LuccaSans-400-normal: 134 / 346 corpus characters missing (1 font file(s))
+LuccaSans-400-italic: 134 / 346 corpus characters missing (1 font file(s))
+LuccaSans-700-normal: 133 / 346 corpus characters missing (1 font file(s))
+LuccaSans-700-italic: 135 / 346 corpus characters missing (1 font file(s))
+LuccaSans-800-normal: 134 / 346 corpus characters missing (1 font file(s))
+LuccaSans-800-italic: 133 / 346 corpus characters missing (1 font file(s))
+Written to /home/agent/workspace/stories/qa/typography/typography-font-coverage.generated.ts
+[90m│[39m
+[33m▲[39m  Multiple story files share the component id
+[90m│[39m  'documentation-feedback-callout-disclosure-html-css':
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/feedback/callout-disclosure/html&css/basic.stories.ts
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/feedback/callout-disclosure/html&css/iconless.stories.ts
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/feedback/callout-disclosure/html&css/size.stories.ts
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/feedback/callout-disclosure/html&css/status.stories.ts
+[90m│[39m  The props table and description for this id are generated from
+[90m│[39m  './stories/documentation/feedback/callout-disclosure/html&css/status.stories.ts'
+[90m│[39m  only. If these files document different components, give each file a
+[90m│[39m  unique title so every component keeps its docs.
+[90m│[39m
+[33m▲[39m  Multiple story files share the component id
+[90m│[39m  'documentation-feedback-callout-feedback-list-html-css':
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/feedback/callout-feedback-list/html&css/basic.stories.ts
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/feedback/callout-feedback-list/html&css/size.stories.ts
+[90m│[39m  The props table and description for this id are generated from
+[90m│[39m  './stories/documentation/feedback/callout-feedback-list/html&css/size.stories.ts'
+[90m│[39m  only. If these files document different components, give each file a
+[90m│[39m  unique title so every component keeps its docs.
+[90m│[39m
+[33m▲[39m  Multiple story files share the component id
+[90m│[39m  'documentation-feedback-callout-popover-html-css':
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/feedback/callout-popover/html&css/basic.stories.ts
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/feedback/callout-popover/html&css/custom.stories.ts
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/feedback/callout-popover/html&css/size.stories.ts
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/feedback/callout-popover/html&css/status.stories.ts
+[90m│[39m  The props table and description for this id are generated from
+[90m│[39m  './stories/documentation/feedback/callout-popover/html&css/status.stories.ts'
+[90m│[39m  only. If these files document different components, give each file a
+[90m│[39m  unique title so every component keeps its docs.
+[90m│[39m
+[33m▲[39m  Multiple story files share the component id
+[90m│[39m  'documentation-feedback-callout-angular-ai':
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/feedback/callout/angular/callout-ai-action.stories.ts
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/feedback/callout/angular/callout-ai-event.stories.ts
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/feedback/callout/angular/callout-ai-suggestion.stories.ts
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/feedback/callout/angular/callout-ai.stories.ts
+[90m│[39m  The props table and description for this id are generated from
+[90m│[39m  './stories/documentation/feedback/callout/angular/callout-ai.stories.ts'
+[90m│[39m  only. If these files document different components, give each file a
+[90m│[39m  unique title so every component keeps its docs.
+[90m│[39m
+[33m▲[39m  Multiple story files share the component id
+[90m│[39m  'documentation-forms-date2-calendar':
+[90m│[39m  - ./stories/documentation/forms/date2/basic-decade.stories.ts
+[90m│[39m  - ./stories/documentation/forms/date2/basic-week.stories.ts
+[90m│[39m  - ./stories/documentation/forms/date2/basic-year.stories.ts
+[90m│[39m  - ./stories/documentation/forms/date2/basic.stories.ts
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/forms/date2/option-overflow-disabled.stories.ts
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/forms/date2/option-overflow-hidden.stories.ts
+[90m│[39m  - ./stories/documentation/forms/date2/option-today-hidden.stories.ts
+[90m│[39m  - ./stories/documentation/forms/date2/option-weekend-hidden.stories.ts
+[90m│[39m  - ./stories/documentation/forms/date2/select-day.stories.ts
+[90m│[39m  - ./stories/documentation/forms/date2/select-in-progress.stories.ts
+[90m│[39m  - ./stories/documentation/forms/date2/select-range.stories.ts
+[90m│[39m  The props table and description for this id are generated from
+[90m│[39m  './stories/documentation/forms/date2/select-range.stories.ts' only. If
+[90m│[39m  these files document different components, give each file a unique
+[90m│[39m  title so every component keeps its docs.
+[90m│[39m
+[33m▲[39m  Multiple story files share the component id
+[90m│[39m  'documentation-forms-date2-calendar-html':
+[90m│[39m  - ./stories/documentation/forms/date2/basic-html.stories.ts
+[90m│[39m  - ./stories/documentation/forms/date2/week-html.stories.ts
+[90m│[39m  The props table and description for this id are generated from
+[90m│[39m  './stories/documentation/forms/date2/week-html.stories.ts' only. If
+[90m│[39m  these files document different components, give each file a unique
+[90m│[39m  title so every component keeps its docs.
+[90m│[39m
+[33m▲[39m  Multiple story files share the component id
+[90m│[39m  'documentation-forms-fields-checkboxfield-html-css':
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/forms/fields/checkbox/html&css/checkbox-field-checklist.stories.ts
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/forms/fields/checkbox/html&css/checkbox-field-disabled.stories.ts
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/forms/fields/checkbox/html&css/checkbox-field-group.stories.ts
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/forms/fields/checkbox/html&css/checkbox-field-invalid.stories.ts
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/forms/fields/checkbox/html&css/checkbox-field-mixed.stories.ts
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/forms/fields/checkbox/html&css/checkbox-field-option.stories.ts
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/forms/fields/checkbox/html&css/checkbox-field-size.stories.ts
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/forms/fields/checkbox/html&css/checkbox-field.stories.ts
+[90m│[39m  The props table and description for this id are generated from
+[90m│[39m  './stories/documentation/forms/fields/checkbox/html&css/checkbox-field.stories.ts'
+[90m│[39m  only. If these files document different components, give each file a
+[90m│[39m  unique title so every component keeps its docs.
+[90m│[39m
+[33m▲[39m  Multiple story files share the component id
+[90m│[39m  'documentation-forms-fields-radiofield-html-css':
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/forms/fields/radio/html&css/radio-field-disabled.stories.ts
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/forms/fields/radio/html&css/radio-field-inline.stories.ts
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/forms/fields/radio/html&css/radio-field-invalid.stories.ts
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/forms/fields/radio/html&css/radio-field-size.stories.ts
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/forms/fields/radio/html&css/radio-field.stories.ts
+[90m│[39m  The props table and description for this id are generated from
+[90m│[39m  './stories/documentation/forms/fields/radio/html&css/radio-field.stories.ts'
+[90m│[39m  only. If these files document different components, give each file a
+[90m│[39m  unique title so every component keeps its docs.
+[90m│[39m
+[33m▲[39m  Multiple story files share the component id
+[90m│[39m  'documentation-forms-fields-switchfield-html-css':
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/forms/fields/switch/html&css/switch-field-disabled.stories.ts
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/forms/fields/switch/html&css/switch-field-invalid.stories.ts
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/forms/fields/switch/html&css/switch-field-size.stories.ts
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/forms/fields/switch/html&css/switch-field.stories.ts
+[90m│[39m  The props table and description for this id are generated from
+[90m│[39m  './stories/documentation/forms/fields/switch/html&css/switch-field.stories.ts'
+[90m│[39m  only. If these files document different components, give each file a
+[90m│[39m  unique title so every component keeps its docs.
+[90m│[39m
+[33m▲[39m  Multiple story files share the component id
+[90m│[39m  'documentation-forms-fields-textfield-html-css':
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/forms/fields/text/html&css/text-field-AI.stories.ts
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/forms/fields/text/html&css/text-field-counter.stories.ts
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/forms/fields/text/html&css/text-field-disabled.stories.ts
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/forms/fields/text/html&css/text-field-info.stories.ts
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/forms/fields/text/html&css/text-field-invalid.stories.ts
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/forms/fields/text/html&css/text-field-prefix-suffix.stories.ts
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/forms/fields/text/html&css/text-field-required.stories.ts
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/forms/fields/text/html&css/text-field-search-clear.stories.ts
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/forms/fields/text/html&css/text-field-sizes.stories.ts
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/forms/fields/text/html&css/text-field-valueAlignRight.stories.ts
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/forms/fields/text/html&css/text-field-width.stories.ts
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/forms/fields/text/html&css/text-field.stories.ts
+[90m│[39m  The props table and description for this id are generated from
+[90m│[39m  './stories/documentation/forms/fields/text/html&css/text-field.stories.ts'
+[90m│[39m  only. If these files document different components, give each file a
+[90m│[39m  unique title so every component keeps its docs.
+[90m│[39m
+[33m▲[39m  Multiple story files share the component id
+[90m│[39m  'documentation-loaders-skeleton-skeleton-datatable':
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/loaders/skeleton-data-table/angular/skeleton-data-table-body.stories.ts
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/loaders/skeleton-data-table/angular/skeleton-data-table.stories.ts
+[90m│[39m  The props table and description for this id are generated from
+[90m│[39m  './stories/documentation/loaders/skeleton-data-table/angular/skeleton-data-table.stories.ts'
+[90m│[39m  only. If these files document different components, give each file a
+[90m│[39m  unique title so every component keeps its docs.
+[90m│[39m
+[33m▲[39m  Multiple story files share the component id
+[90m│[39m  'documentation-loaders-skeleton-skeleton-indextable':
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/loaders/skeleton-index-table/angular/skeleton-index-table-body.stories.ts
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/loaders/skeleton-index-table/angular/skeleton-index-table.stories.ts
+[90m│[39m  The props table and description for this id are generated from
+[90m│[39m  './stories/documentation/loaders/skeleton-index-table/angular/skeleton-index-table.stories.ts'
+[90m│[39m  only. If these files document different components, give each file a
+[90m│[39m  unique title so every component keeps its docs.
+[90m│[39m
+[33m▲[39m  Multiple story files share the component id
+[90m│[39m  'documentation-loaders-skeleton-skeleton-table':
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/loaders/skeleton-table/angular/skeleton-table-body.stories.ts
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/loaders/skeleton-table/angular/skeleton-table.stories.ts
+[90m│[39m  The props table and description for this id are generated from
+[90m│[39m  './stories/documentation/loaders/skeleton-table/angular/skeleton-table.stories.ts'
+[90m│[39m  only. If these files document different components, give each file a
+[90m│[39m  unique title so every component keeps its docs.
+[90m│[39m
+[33m▲[39m  Multiple story files share the component id
+[90m│[39m  'documentation-loaders-skeleton':
+[90m│[39m  - ./stories/documentation/loaders/skeleton/skeleton-align.stories.ts
+[90m│[39m  - ./stories/documentation/loaders/skeleton/skeleton-circle.stories.ts
+[90m│[39m  - ./stories/documentation/loaders/skeleton/skeleton-dark.stories.ts
+[90m│[39m  - ./stories/documentation/loaders/skeleton/skeleton-square.stories.ts
+[90m│[39m  - ./stories/documentation/loaders/skeleton/skeleton-texts.stories.ts
+[90m│[39m  - ./stories/documentation/loaders/skeleton/skeleton-titles.stories.ts
+[90m│[39m  - ./stories/documentation/loaders/skeleton/skeleton-width.stories.ts
+[90m│[39m  The props table and description for this id are generated from
+[90m│[39m  './stories/documentation/loaders/skeleton/skeleton-width.stories.ts'
+[90m│[39m  only. If these files document different components, give each file a
+[90m│[39m  unique title so every component keeps its docs.
+[90m│[39m
+[33m▲[39m  Multiple story files share the component id
+[90m│[39m  'documentation-structure-approbation-inbox-html-css-detail-basic':
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/structure/approbationInbox/html&css/detail-basic.stories.ts
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/structure/approbationInbox/html&css/detail-insideDialog.stories.ts
+[90m│[39m  The props table and description for this id are generated from
+[90m│[39m  './stories/documentation/structure/approbationInbox/html&css/detail-insideDialog.stories.ts'
+[90m│[39m  only. If these files document different components, give each file a
+[90m│[39m  unique title so every component keeps its docs.
+[90m│[39m
+[33m▲[39m  Multiple story files share the component id
+[90m│[39m  'documentation-structure-approbation-inbox-html-css-detail-block':
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/structure/approbationInbox/html&css/detail-block-insideDialog.stories.ts
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/structure/approbationInbox/html&css/detail-block.stories.ts
+[90m│[39m  The props table and description for this id are generated from
+[90m│[39m  './stories/documentation/structure/approbationInbox/html&css/detail-block.stories.ts'
+[90m│[39m  only. If these files document different components, give each file a
+[90m│[39m  unique title so every component keeps its docs.
+[90m│[39m
+[33m▲[39m  Multiple story files share the component id
+[90m│[39m  'documentation-structure-approbation-inbox-html-css-detail-header':
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/structure/approbationInbox/html&css/detail-header-all.stories.ts
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/structure/approbationInbox/html&css/detail-header-delegation.stories.ts
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/structure/approbationInbox/html&css/detail-header-description.stories.ts
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/structure/approbationInbox/html&css/detail-header-illustration.stories.ts
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/structure/approbationInbox/html&css/detail-header-insideDialog.stories.ts
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/structure/approbationInbox/html&css/detail-header-moreActions.stories.ts
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/structure/approbationInbox/html&css/detail-header-overdue.stories.ts
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/structure/approbationInbox/html&css/detail-header.stories.ts
+[90m│[39m  The props table and description for this id are generated from
+[90m│[39m  './stories/documentation/structure/approbationInbox/html&css/detail-header.stories.ts'
+[90m│[39m  only. If these files document different components, give each file a
+[90m│[39m  unique title so every component keeps its docs.
+[90m│[39m
+[33m▲[39m  Multiple story files share the component id
+[90m│[39m  'documentation-structure-approbation-inbox-html-css-list-basic':
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/structure/approbationInbox/html&css/list-basic.stories.ts
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/structure/approbationInbox/html&css/list-filterable.stories.ts
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/structure/approbationInbox/html&css/list-selectable.stories.ts
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/structure/approbationInbox/html&css/list-selected.stories.ts
+[90m│[39m  The props table and description for this id are generated from
+[90m│[39m  './stories/documentation/structure/approbationInbox/html&css/list-selected.stories.ts'
+[90m│[39m  only. If these files document different components, give each file a
+[90m│[39m  unique title so every component keeps its docs.
+[90m│[39m
+[33m▲[39m  Multiple story files share the component id
+[90m│[39m  'documentation-structure-approbation-inbox-html-css-list-group':
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/structure/approbationInbox/html&css/list-group-basic.stories.ts
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/structure/approbationInbox/html&css/list-group-collapsed.stories.ts
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/structure/approbationInbox/html&css/list-group-selectable.stories.ts
+[90m│[39m  The props table and description for this id are generated from
+[90m│[39m  './stories/documentation/structure/approbationInbox/html&css/list-group-selectable.stories.ts'
+[90m│[39m  only. If these files document different components, give each file a
+[90m│[39m  unique title so every component keeps its docs.
+[90m│[39m
+[33m▲[39m  Multiple story files share the component id
+[90m│[39m  'documentation-structure-approbation-inbox-html-css-list-item':
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/structure/approbationInbox/html&css/list-item-centered.stories.ts
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/structure/approbationInbox/html&css/list-item-current.stories.ts
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/structure/approbationInbox/html&css/list-item-data.stories.ts
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/structure/approbationInbox/html&css/list-item-selectable.stories.ts
+[90m│[39m  -
+[90m│[39m  ./stories/documentation/structure/approbationInbox/html&css/list-item.stories.ts
+[90m│[39m  The props table and description for this id are generated from
+[90m│[39m  './stories/documentation/structure/approbationInbox/html&css/list-item.stories.ts'
+[90m│[39m  only. If these files document different components, give each file a
+[90m│[39m  unique title so every component keeps its docs.
+[90m│[39m
+[33m▲[39m  Multiple story files share the component id
+[90m│[39m  'documentation-texts-icons-html-css':
+[90m│[39m  - ./stories/documentation/texts/icons/HTML&CSS/icon-basic.stories.ts
+[90m│[39m  - ./stories/documentation/texts/icons/HTML&CSS/icon-colors.stories.ts
+[90m│[39m  - ./stories/documentation/texts/icons/HTML&CSS/icon-ia.stories.ts
+[90m│[39m  - ./stories/documentation/texts/icons/HTML&CSS/icon-sizes.stories.ts
+[90m│[39m  The props table and description for this id are generated from
+[90m│[39m  './stories/documentation/texts/icons/HTML&CSS/icon-sizes.stories.ts'
+[90m│[39m  only. If these files document different components, give each file a
+[90m│[39m  unique title so every component keeps its docs.
+[90m│[39m
+[34m●[39m  Starting...
+│ [38;2;255;71;133m╭[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m╮[39m
+│ [38;2;255;71;133m│[39m   Storybook ready!                                 [38;2;255;71;133m│[39m
+│ [38;2;255;71;133m│[39m                                                    [38;2;255;71;133m│[39m
+│ [38;2;255;71;133m│[39m   - Local:                http://127.0.0.1:6006/   [38;2;255;71;133m│[39m
+│ [38;2;255;71;133m│[39m   - On your network:      http://localhost:6006/   [38;2;255;71;133m│[39m
+│ [38;2;255;71;133m│[39m                                                    [38;2;255;71;133m│[39m
+│ [38;2;255;71;133m╰[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m╯[39m
+[90m│[39m
+[34m●[39m  [4m272 ms[24m for manager and [4m3.91 s[24m for preview
+[90m│[39m
+[31m■[39m  [43mVite[49m [2m[console.error] [22mError rendering story
+[90m│[39m  'documentation-feedback-callout-popover-angular-basic--template':
+[90m│[39m
+[31m■[39m  [43mVite[49m [2m[console.error] [22mSB_PREVIEW_API_0017
+[90m│[39m  (ArgTypesRemovedFromStoryContextError): `argTypes` is no longer part
+[90m│[39m  of the story context passed to render functions, decorators, loaders,
+[90m│[39m  beforeEach, play and afterEach.
+
+[90m│[39m  Story: documentation-feedback-callout-popover-angular-basic--template
+
+[90m│[39m  With server-side docgen the preview only holds the arg types you
+[90m│[39m  declared yourself, so this object was incomplete while looking
+[90m│[39m  complete.
+[90m│[39m  - Read `args` for the values passed to the story.
+[90m│[39m  - Read component metadata, such as the inputs or props a component
+[90m│[39m  declares, with the reflection API of your framework.
+[90m│[39m  - Inspect the resolved arg types in the Controls panel or the ArgTypes
+[90m│[39m  doc block.
+
+[90m│[39m  More info:
+[90m│[39m  https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#argtypes-removed-from-the-story-context
+
+[90m│[39m  at Object.get
+[90m│[39m  (http://localhost:6006/node_modules/storybook/dist/preview/_chunks/runtime-Iyl32JOW.js?v=c584ee8d:530:34)
+[90m│[39m  at Object.render [as originalStoryFn]
+[90m│[39m  (http://localhost:6006/stories/documentation/feedback/callout-popover/angular/callout-popover.stories.ts:24:45)
+[90m│[39m  at undecoratedStoryFn
+[90m│[39m  (http://localhost:6006/node_modules/storybook/dist/preview/_chunks/runtime-Iyl32JOW.js?v=c584ee8d:1672:50)
+[90m│[39m  at hookified
+[90m│[39m  (http://localhost:6006/node_modules/storybook/dist/preview/_chunks/runtime-Iyl32JOW.js?v=c584ee8d:577:69)
+[90m│[39m  at
+[90m│[39m  http://localhost:6006/node_modules/@storybook/angular-vite/dist/_browser-chunks/chunk-GVR3YWT3.js?v=c584ee8d:32:30
+[90m│[39m  at
+[90m│[39m  http://localhost:6006/node_modules/@storybook/angular-vite/dist/_browser-chunks/chunk-GVR3YWT3.js?v=c584ee8d:28:72
+[90m│[39m  at
+[90m│[39m  http://localhost:6006/node_modules/.cache/storybook/11.0.0-beta.5/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/chunk-56QYE53C-DKPocLCy.js?v=c584ee8d:4233:14
+[90m│[39m  at hookified
+[90m│[39m  (http://localhost:6006/node_modules/storybook/dist/preview/_chunks/runtime-Iyl32JOW.js?v=c584ee8d:577:32)
+[90m│[39m  at
+[90m│[39m  http://localhost:6006/node_modules/@storybook/angular-vite/dist/_browser-chunks/chunk-GVR3YWT3.js?v=c584ee8d:28:50
+[90m│[39m  at
+[90m│[39m  http://localhost:6006/node_modules/@storybook/angular-vite/dist/_browser-chunks/chunk-GVR3YWT3.js?v=c584ee8d:28:72

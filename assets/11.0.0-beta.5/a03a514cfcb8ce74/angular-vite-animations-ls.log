@@ -1,0 +1,10 @@
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+lucca-front@ /home/agent/workspace
+├── @angular/animations@22.2.3
+├─┬ @angular/platform-browser@22.2.3
+│ └── @angular/animations@22.2.3 deduped
+├─┬ @lucca-front/ng@0.0.0 -> ./packages/ng
+│ └── @angular/animations@22.2.3 deduped
+└─┬ @lucca/prisme@0.0.0 -> ./packages/prisme
+  └── @angular/animations@22.2.3 deduped
+

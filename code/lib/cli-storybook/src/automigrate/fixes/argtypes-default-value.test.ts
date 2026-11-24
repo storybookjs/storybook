@@ -628,6 +628,21 @@ describe('argtypes-default-value', () => {
     expect(result.story).toBe(story);
   });
 
+  it('skips a docs table default when the factory reads unrelated members', async () => {
+    const story = [
+      "import { getStoryGenerator, shared } from './helpers';",
+      'const generateStory = getStoryGenerator({',
+      "  argTypes: { ...shared.argTypes, size: { table: { defaultValue: { summary: 'M' } } } },",
+      '});',
+      'export default {};',
+      'export const Primary = generateStory({});',
+    ].join('\n');
+    const result = await migrate({ story });
+
+    expect(result.failures).toEqual([]);
+    expect(result.story).toBe(story);
+  });
+
   it('fails a factory story whose argTypes show a defaultValue', async () => {
     const story = [
       "import { getStoryGenerator } from './helpers';",

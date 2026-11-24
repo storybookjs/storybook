@@ -307,7 +307,12 @@ const showsValue = (
 
 // Whether the object literals around `member` leave room for it at the end of `path`, as
 // `table.defaultValue` under `label` does not for `argTypes.<name>.defaultValue`.
-const canEndPath = (editor: SourceEditor, member: Node, path: CsfPattern): boolean => {
+const canEndPath = (
+  editor: SourceEditor,
+  member: Node,
+  path: CsfPattern,
+  enclosingKeys: Set<string>
+): boolean => {
   let inner = member;
   for (const segment of path.slice(0, -1).reverse()) {
     const object = editor.parentOf(inner);
@@ -325,6 +330,9 @@ const canEndPath = (editor: SourceEditor, member: Node, path: CsfPattern): boole
       return true;
     }
     const key = namedKey(outer);
+    if (typeof key === 'string') {
+      enclosingKeys.add(key);
+    }
     if (typeof segment === 'string' && typeof key === 'string' && key !== segment) {
       let ancestor: Node | undefined = outer;
       while ((ancestor = editor.parentOf(ancestor))) {
@@ -382,24 +390,31 @@ const mentions = (
   const missing = new Set(keys);
   const last = path.at(-1);
   const searched = new Set<Node>();
-  let hasMemberRead = false;
-  let rejectedLast = false;
+  const memberReads = new Set<string>();
+  const rejectedKeys: Set<string>[] = [];
   // Types do not change what code returns, so they are not read.
   const search = (child: Node): void => {
     if (missing.size === 0) {
       return;
     }
     if (child.type === 'MemberExpression') {
-      hasMemberRead = true;
+      const key = memberKey(child);
+      if (key === undefined) {
+        missing.clear();
+      } else {
+        memberReads.add(key);
+      }
     }
     const named = namedKey(child);
-    if (named === last && !canEndPath(editor, child, path)) {
-      rejectedLast = true;
-    }
     if (isAnyKey(named)) {
       missing.clear();
-    } else if (named !== undefined && (named !== last || canEndPath(editor, child, path))) {
-      missing.delete(named);
+    } else if (named !== undefined) {
+      const enclosingKeys = new Set<string>();
+      if (named !== last || canEndPath(editor, child, path, enclosingKeys)) {
+        missing.delete(named);
+      } else {
+        rejectedKeys.push(enclosingKeys);
+      }
     }
     const binding = child.type === 'Identifier' ? editor.scopes.bindingOf(child) : undefined;
     if (
@@ -429,7 +444,10 @@ const mentions = (
     }
   };
   search(code);
-  if (hasMemberRead && rejectedLast && typeof last === 'string') {
+  if (
+    typeof last === 'string' &&
+    rejectedKeys.some((keys) => [...keys].some((key) => memberReads.has(key)))
+  ) {
     missing.delete(last);
   }
   return missing.size === 0;

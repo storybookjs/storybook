@@ -334,7 +334,7 @@ const canEndPath = (
       enclosingKeys.add(key);
     }
     if (typeof segment === 'string' && typeof key === 'string' && key !== segment) {
-      let ancestor: Node | undefined = outer;
+      let ancestor: Node | null = outer;
       while ((ancestor = editor.parentOf(ancestor))) {
         if (ancestor.type === 'MemberExpression') {
           return true;

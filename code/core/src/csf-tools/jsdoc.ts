@@ -1,4 +1,4 @@
-import type { Spec } from 'comment-parser';
+import type { BlockMarkers, Spec } from 'comment-parser';
 import { parse } from 'comment-parser';
 
 /** Compact JSDoc tag map: tag name → list of tag values (e.g. `@example a` → `{ example: ['a'] }`). */
@@ -41,15 +41,19 @@ function mergeTags(
  */
 export function extractJSDocInfo(jsdocComment: string) {
   const lines = jsdocComment.split('\n');
-  const jsDoc = ['/**', ...lines.map((line) => ` * ${line}`), ' */'].join('\n');
+  // Raw text, such as an HTML comment, can have a line that ends in `*/`. comment-parser checks every
+  // line for the end marker, so only our closing line may carry it. The start marker is only checked
+  // before the block opens, so the default is safe.
+  const markers: BlockMarkers = { start: '/**', nostart: '/***', delim: '*', end: '\u0000*/' };
+  const jsDoc = ['/**', ...lines.map((line) => ` * ${line}`), ` ${markers.end}`].join('\n');
 
   // `comment-parser` applies one `spacing` mode to the whole block, so we parse twice on purpose.
   // `preserve` keeps blank lines and line breaks in the block description so multi-paragraph
   // component comments still render as Markdown (matching react-docgen's legacy `__docgenInfo`).
   // `compact` collapses each tag value onto a single line, which is the shape tag consumers and
   // snapshots already expect — using `preserve` for both would change multi-line tag values too.
-  const description = parse(jsDoc, { spacing: 'preserve' })[0].description;
-  const parsed = parse(jsDoc, { spacing: 'compact' });
+  const description = parse(jsDoc, { spacing: 'preserve', markers })[0].description;
+  const parsed = parse(jsDoc, { spacing: 'compact', markers });
 
   return {
     description,

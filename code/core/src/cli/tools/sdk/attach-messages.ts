@@ -11,7 +11,7 @@ const RESTART_GUIDANCE =
 
 export function formatNoInstance(records: StorybookInstanceRecord[]): string {
   const lines = [
-    'No running Storybook was found for this project. Start it first (for example `npm run storybook`), then retry with `--attach`.',
+    'No running Storybook was found for this project. Start it first with the Storybook script in its `package.json`, then retry with `--attach`.',
   ];
   if (records.length > 0) {
     lines.push(
@@ -52,7 +52,7 @@ export function formatConnectionHidden(record: StorybookInstanceRecord): string 
 }
 
 export function formatConnectionFailed(record: StorybookInstanceRecord): string {
-  return `Could not connect to the Storybook at ${record.url}. The instance registry may be stale — if that Storybook is no longer running, start it again (for example \`npm run storybook\`) and retry.`;
+  return `Could not connect to the Storybook at ${record.url}. The instance registry may be stale — if that Storybook is no longer running, start it again with the Storybook script in the \`package.json\` of its project and retry.`;
 }
 
 // Symmetric fact-only report: every path shown is a stored or compared fact, and no path appears

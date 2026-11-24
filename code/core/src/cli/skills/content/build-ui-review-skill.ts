@@ -22,7 +22,7 @@ const DEV_SERVER = `## Use the running Storybook
 
 Only \`review create\` and \`stories preview\` need a running Storybook dev server, and they find the dev server of this project themselves. Every other command runs without one.
 
-1. Do not probe a URL first: run the command. Only when it says that no running Storybook was found, start one in the background with the project's preferred package manager and existing \`package.json\` Storybook script (e.g. \`npm run storybook\`), without adding flags, wait until its output shows the URL, and run the command again. Never start a second one next to a running one.
+1. Do not probe a URL first: run the command. Only when it says that no running Storybook was found, start one in the background with the project's preferred package manager and existing \`package.json\` Storybook script, without adding flags, wait until its output shows the URL, and run the command again. Never start a second one next to a running one.
 2. The dev server is part of the deliverable, not a temporary verification tool: leave it running when your work is done so the user can keep browsing stories. Never kill it after verification.`;
 
 export function buildUiReviewSkill(inputs: UiReviewSkillInputs): string {

@@ -480,7 +480,7 @@ describe('createTools', () => {
         reason: 'no-instance',
         instances: [],
         remediation:
-          'No running Storybook was found for this project. Start it first (for example `npm run storybook`), then retry with `--attach`.',
+          'No running Storybook was found for this project. Start it first with the Storybook script in its `package.json`, then retry with `--attach`.',
       })
     );
 
@@ -516,7 +516,7 @@ describe('createTools', () => {
         reason: 'no-instance',
         instances: [],
         remediation:
-          'No running Storybook was found for this project. Start it first (for example `npm run storybook`), then retry with `--attach`.',
+          'No running Storybook was found for this project. Start it first with the Storybook script in its `package.json`, then retry with `--attach`.',
       })
     );
     vi.mocked(spawnChild).mockResolvedValue(spawned);

@@ -182,6 +182,9 @@ A window of hundreds of PRs makes a draft of hundreds of decisions and group row
 Write a script that builds `draft.json` from your decisions, for example from a table of PR number, decision, and group, rather than typing the JSON by hand.
 
 Write the steps of an entry from the PR's manual testing section, rewritten for the listed repos.
+In an entry with more than one PR, start each step with the PR or PRs whose change it tests, as `#36436: ` or `#36421, #36436: `, because the issue of a finding links them, and the author of a PR then finds the step that tests it.
+`check` refuses a step that names a PR of another entry, and an entry in which some steps name their PRs and others do not.
+A step that makes a failure happen on purpose says what it stands for, such as "To stand in for a crash of the test runner, find the Vitest process and stop it with `kill -9`", because a reader of the issue otherwise takes it for a strange workflow.
 You do not know the story ids of a repo at its pin, so a step that needs one first takes it from `http://localhost:6006/index.json`, for example the first story, or the first story whose `title` starts with a given word.
 A `needed` PR without usable steps gets steps from its diff, or a manual check.
 
@@ -238,7 +241,7 @@ node ecosystem-qa/qa-plan.ts check /tmp/qa-plan-11.0/11.0.md --window /tmp/qa-pl
 `check` prints each problem as `<file>:<line>: <message>`, one for the row of PRs still undecided and one for the row of PRs marked `qa:skip` without a group, so render and check early with a partial draft to see what is left.
 Fix the draft, never the rendered file, and render again until `check` exits 0.
 Run no formatter on the plan file: `check` refuses every byte that differs from what `render` writes.
-It then prints the plan's hash, its batches with their runs, and what the sweep costs. Keep that output for the PR body.
+It then prints the plan's hash, how many of the entries with more than one PR name the PRs behind each step, its batches with their runs, and what the sweep costs. Keep that output for the PR body.
 Read the rendered plan once as the reviewer will, and merge entries that one test could cover.
 
 ## Step 7: Open the plan PR
@@ -263,6 +266,7 @@ The body holds:
 
 - the output of `check`, as it printed it,
 - the counts of decisions: entries, probes and the probes that add a config option, PRs tested, PRs for manual QA, PRs that need no QA, and the groups of each kind,
+- the count of entries with more than one PR whose every step names its PRs, as `check` printed it,
 - what you were unsure about, each in one line, so the reviewer looks there first.
 
 The body names no PR or issue, neither as `#number` nor as a link, because every reference posts a mention on that PR and the plan holds hundreds.

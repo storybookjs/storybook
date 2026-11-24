@@ -706,10 +706,46 @@ describe('the plan entry of an issue', () => {
     const body = bodyOf('plan.story-sort-in-main');
 
     expect(body).toContain(
-      'Plan entry `story-sort-in-main`, `Story sort moves from the preview file to the main file`: [#36137](https://github.com/storybookjs/storybook/pull/36137)\n\n<!-- sb-qa-metadata -->'
+      'Plan entry `story-sort-in-main`, `Story sort moves from the preview file to the main file`: [#36137](https://github.com/storybookjs/storybook/pull/36137)\n\n<details>'
     );
     expect(body).not.toContain('pull/1)');
   });
+
+  it.each([
+    [
+      'story-sort-in-main',
+      [
+        '1. `Read which automigrations the upgrade ran, and the diff of the main file and the preview file.`',
+        '2. ``Start the dev server and fetch `http://localhost:6006/index.json`.``',
+        '',
+        'Expected by the plan: ``The order of `/index.json` is the order of the baseline, and the upgrade output names a sort that it could not move.``',
+      ],
+    ],
+    [
+      'sidebar-tree',
+      [
+        '1. [#33422](https://github.com/storybookjs/storybook/pull/33422), [#35509](https://github.com/storybookjs/storybook/pull/35509): ``Start the dev server, open `http://localhost:6006`, and take a screenshot of the expanded sidebar.``',
+        '',
+        'Expected by the plan: ``Every group of `/index.json` shows in the sidebar, in the same order.``',
+      ],
+    ],
+  ])(
+    'shows the steps and the expected outcome of %s, with the PRs a step names linked, last before the metadata',
+    (slug, lines) => {
+      expect(bodyOf(`plan.${slug}`)).toContain(
+        [
+          '<details>',
+          '<summary>What the plan asked the agent to do</summary>',
+          '',
+          ...lines,
+          '',
+          '</details>',
+          '',
+          '<!-- sb-qa-metadata -->',
+        ].join('\n')
+      );
+    }
+  );
 
   it('opens the body of a probe finding with what the run added and where its copy is', () => {
     expect(bodyOf('plan.animation-probe').split('\n\n')[0]).toBe(
@@ -797,6 +833,16 @@ describe('the plan entry of an issue', () => {
 
       Plan entry \`story-sort-in-main\`, \`Story sort moves from the preview file to the main file\`: [#36137](https://github.com/storybookjs/storybook/pull/36137)
 
+      <details>
+      <summary>What the plan asked the agent to do</summary>
+
+      1. \`Read which automigrations the upgrade ran, and the diff of the main file and the preview file.\`
+      2. \`\`Start the dev server and fetch \`http://localhost:6006/index.json\`.\`\`
+
+      Expected by the plan: \`\`The order of \`/index.json\` is the order of the baseline, and the upgrade output names a sort that it could not move.\`\`
+
+      </details>
+
       <!-- sb-qa-metadata -->
       \`\`\`yaml
       fingerprint: fc116bca3d94fb6d
@@ -871,6 +917,16 @@ describe('the plan entry of an issue', () => {
 
       Plan entry \`story-sort-in-main\`, \`Story sort moves from the preview file to the main file\`: [#36137](https://github.com/storybookjs/storybook/pull/36137)
 
+      <details>
+      <summary>What the plan asked the agent to do</summary>
+
+      1. \`Read which automigrations the upgrade ran, and the diff of the main file and the preview file.\`
+      2. \`\`Start the dev server and fetch \`http://localhost:6006/index.json\`.\`\`
+
+      Expected by the plan: \`\`The order of \`/index.json\` is the order of the baseline, and the upgrade output names a sort that it could not move.\`\`
+
+      </details>
+
       <!-- sb-qa-metadata -->
       \`\`\`yaml
       fingerprint: fc116bca3d94fb6d
@@ -889,19 +945,25 @@ describe('the plan entry of an issue', () => {
     `);
   });
 
-  it('prints a probe line as one code span, where GitHub renders no mention', () => {
+  it.each([
+    [
+      { probe: 'a story that pings @octocat' },
+      'the run added `a story that pings @octocat` to the project',
+    ],
+    [
+      { steps: ['#31900: Open a story that pings @octocat.'] },
+      '1. [#31900](https://github.com/storybookjs/storybook/pull/31900): `Open a story that pings @octocat.`',
+    ],
+    [{ expected: 'The page pings @octocat.' }, 'Expected by the plan: `The page pings @octocat.`'],
+  ])('prints the plan text %o in a code span, where GitHub renders no mention', (change, line) => {
     const plan = {
       ...fixturePlan,
       entries: fixturePlan.entries.map((entry) =>
-        entry.slug === 'animation-probe'
-          ? { ...entry, probe: 'a story that pings @octocat' }
-          : entry
+        entry.slug === 'animation-probe' ? { ...entry, ...change } : entry
       ),
     };
 
-    expect(bodyOf('plan.animation-probe', plan)).toContain(
-      'the run added `a story that pings @octocat` to the project'
-    );
+    expect(bodyOf('plan.animation-probe', plan)).toContain(line);
   });
 
   it('gives a static finding no entry line', () => {

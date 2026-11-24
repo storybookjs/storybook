@@ -27,6 +27,15 @@ describe('qa-plan.ts check', () => {
     expect(stderr).toContain('expected printable ASCII only');
   });
 
+  it('counts the entries with more than one PR whose steps name their PRs', () => {
+    const { status, stdout } = qaPlan(['check', '/dev/stdin'], FIXTURE);
+
+    expect(status).toBe(0);
+    expect(stdout).toContain(
+      '\nEntries with more than one PR whose every step names the PRs it tests: 1 of 1.\n'
+    );
+  });
+
   it('refuses a second file instead of checking only the first', () => {
     const { status, stderr } = qaPlan(['check', 'a.md', 'b.md']);
 

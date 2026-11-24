@@ -80,7 +80,7 @@
 - Batch: 2
 - Repo `mealdrop`: a small tree with nested groups
 - Repo `primer-react`: a deep tree, and a right-to-left story
-- Step: Start the dev server, open `http://localhost:6006`, and take a screenshot of the expanded sidebar.
+- Step: #33422, #35509: Start the dev server, open `http://localhost:6006`, and take a screenshot of the expanded sidebar.
 - Expected: Every group of `/index.json` shows in the sidebar, in the same order.
 
 ### `animation-probe` A new story's animation pauses in the preview

@@ -887,6 +887,29 @@ const probeTokenMarksProbesOnly: Rule = ({ lines, at }) => {
   });
 };
 
+const stepsNameEntryPrs: Rule = ({ plan, at }) =>
+  plan.entries.flatMap((entry, index) => {
+    const steps = entry.steps.map((step) => readStep(step).prs);
+    const named = steps.some((prs) => prs.length > 0);
+    return steps.flatMap((prs, step) => {
+      const line = at.entries[index]!.steps[step]!;
+      if (named && prs.length === 0) {
+        return [
+          {
+            line,
+            message: `another step of \`${entry.slug}\` names its PRs, so this one does too: start it with the PRs whose change it tests, as "#${entry.prs[0]}: "`,
+          },
+        ];
+      }
+      return prs
+        .filter((pr) => !entry.prs.includes(pr))
+        .map((pr) => ({
+          line,
+          message: `the step names #${pr}, which is no PR of \`${entry.slug}\``,
+        }));
+    });
+  });
+
 const groupsAreDecided: Rule = ({ plan, at }) => {
   const slugs = new Set(plan.entries.map((entry) => entry.slug));
   return plan.groups.flatMap((group, index) => {
@@ -1109,6 +1132,7 @@ const RULES: Rule[] = [
   batchesHaveNoGap,
   probesHaveOwnBatches,
   probeTokenMarksProbesOnly,
+  stepsNameEntryPrs,
   groupsAreDecided,
   noPrivateLinks,
   textStaysOnLocalhost,
@@ -1208,6 +1232,19 @@ export const discoveredEntries = (plan: Plan): CatalogEntry[] =>
 
 export const planHash = (content: string | Uint8Array): string =>
   createHash('sha256').update(content).digest('hex').slice(0, 12);
+
+const STEP_PRS = /^((?:#[1-9]\d*, )*#[1-9]\d*): /;
+
+/** Split a step into the PRs it starts with, as in `#36421, #36436: <text>`, and its text. */
+export const readStep = (step: string): { prs: number[]; text: string } => {
+  const match = STEP_PRS.exec(step);
+  return match
+    ? {
+        prs: match[1]!.split(', ').map((pr) => Number(pr.slice(1))),
+        text: step.slice(match[0].length),
+      }
+    : { prs: [], text: step };
+};
 
 export const planCheckId = (slug: string): string => `plan.${slug}`;
 

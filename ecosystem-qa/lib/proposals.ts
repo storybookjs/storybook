@@ -7,7 +7,7 @@ import { loadEntries } from './catalog.ts';
 import { cycleRef, versionLine } from './cycle.ts';
 import { fingerprint } from './fingerprint.ts';
 import type { PlanScope } from './plan-scope.ts';
-import { isProbeCheck, planCheckId, prCell, probeCopyDir, type Plan } from './qa-plan.ts';
+import { isProbeCheck, planCheckId, prCell, probeCopyDir, readStep, type Plan } from './qa-plan.ts';
 import { loadResults, type LoadedResult } from './results.ts';
 import { redactSecrets } from './redact.ts';
 import { capTitle, sanitizeFinding, sanitizeTitle } from './sanitize.ts';
@@ -478,8 +478,17 @@ export const renderIssueBody = (
     '',
     ...sourceLines(proposal),
     '',
-    ...(proposal.planEntries ?? []).flatMap(({ slug, title, prs }) => [
+    ...(proposal.planEntries ?? []).flatMap(({ slug, title, prs, steps, expected }) => [
       `Plan entry \`${slug}\`, ${title}: ${prs.map(prCell).join(', ')}`,
+      '',
+      '<details>',
+      '<summary>What the plan asked the agent to do</summary>',
+      '',
+      ...steps.map((step, index) => `${index + 1}. ${step}`),
+      '',
+      `Expected by the plan: ${expected}`,
+      '',
+      '</details>',
       '',
     ]),
     ...relatedLines(proposal.related),
@@ -623,11 +632,19 @@ export interface ProposalOptions {
 const planEntriesOf = (members: FindingGroup[], plan: Plan | undefined) =>
   (plan?.entries ?? [])
     .filter((entry) => members.some((member) => member.finding.checkId === planCheckId(entry.slug)))
-    .map(({ slug, title, prs, probe }) => ({
+    .map(({ slug, title, prs, probe, steps, expected }) => ({
       slug,
       title: inlineTitle(title),
       prs,
       ...(probe === undefined ? {} : { probe: codeSpan(probe) }),
+      steps: steps.map((step) => {
+        const { prs: named, text } = readStep(step);
+        return [
+          ...(named.length > 0 ? [`${named.map(prCell).join(', ')}:`] : []),
+          codeSpan(text),
+        ].join(' ');
+      }),
+      expected: codeSpan(expected),
     }));
 
 // Build the one proposal for a cluster from its lead, matching `issues` by any member's fingerprint.

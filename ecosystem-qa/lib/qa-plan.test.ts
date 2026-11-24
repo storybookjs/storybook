@@ -12,6 +12,7 @@ import {
   PlanDraft,
   planFromWindow,
   planRuns,
+  readStep,
   renderLedger,
   renderPlan,
   renderPlanChecks,
@@ -90,6 +91,27 @@ describe('the fixture plan', () => {
   it('is in its rendered form and passes every rule', () => {
     expect(renderPlan(parsePlan(FIXTURE))).toBe(FIXTURE);
     expect(problemsOf(FIXTURE)).toEqual([]);
+  });
+
+  it('reads the PRs that a step starts with, and passes every rule when no step names one', () => {
+    const plan = parsePlan(FIXTURE);
+    const unnamed = edited('- Step: #33422, #35509: Start', '- Step: Start');
+
+    expect(plan.entries.find(({ slug }) => slug === 'sidebar-tree')?.steps).toEqual([
+      '#33422, #35509: Start the dev server, open `http://localhost:6006`, and take a screenshot of the expanded sidebar.',
+    ]);
+    expect(problemsOf(unnamed)).toEqual([]);
+  });
+
+  it.each([
+    ['#36436: Stop Vitest.', [36436], 'Stop Vitest.'],
+    ['#36421, #36436: Stop Vitest.', [36421, 36436], 'Stop Vitest.'],
+    ['Stop Vitest.', [], 'Stop Vitest.'],
+    ['Stop the process of #36436: Vitest.', [], 'Stop the process of #36436: Vitest.'],
+    ['#36436 Stop Vitest.', [], '#36436 Stop Vitest.'],
+    ['#036436: Stop Vitest.', [], '#036436: Stop Vitest.'],
+  ])('reads the step %j as the PRs %j and the text %j', (step, prs, text) => {
+    expect(readStep(step)).toEqual({ prs, text });
   });
 
   it('matches the window it was rendered from', () => {
@@ -793,6 +815,20 @@ describe('checkPlanText', () => {
       `### \`preview-animations-${'x'.repeat(57)}\``,
       '### `preview-animations-',
       'short enough for the check id',
+    ],
+    [
+      'a step that names a PR of another entry',
+      '- Step: #33422, #35509: Start',
+      '- Step: #33422, #36137: Start',
+      '- Step: #33422, #36137: Start',
+      'the step names #36137, which is no PR of `sidebar-tree`',
+    ],
+    [
+      'a step that names no PR in an entry whose other step does',
+      '- Step: #33422, #35509: Start the dev server',
+      '- Step: #33422, #35509: Start the dev server, open `http://localhost:6006`.\n- Step: Take a screenshot',
+      '- Step: Take a screenshot',
+      'another step of `sidebar-tree` names its PRs, so this one does too',
     ],
   ])('refuses %s with its line', (_, from, to, lineNeedle, message) => {
     const text = edited(from, to);

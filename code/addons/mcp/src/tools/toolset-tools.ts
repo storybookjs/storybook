@@ -31,10 +31,6 @@ import { errorToMCPContent } from '../utils/errors.ts';
 import { resolveToolsetOrigin } from './toolset-origin.ts';
 
 type Server = McpServer<any, AddonContext>;
-type ToolEnabled = Parameters<Server['tool']>[0]['enabled'];
-
-// The grouping behind the enable gate and the `X-MCP-Toolsets` header; not a telemetry field.
-export type McpToolsetGroup = keyof NonNullable<AddonContext['toolsets']>;
 
 export type ToolsetToolOptions = {
   /** Which toolset method backs this MCP tool. */
@@ -183,15 +179,11 @@ export function getToolsetToolMetadata(options: ToolsetToolOptions) {
 }
 
 /** Registers one toolset-backed MCP tool. */
-export function registerToolsetTool(
-  server: Server,
-  options: ToolsetToolOptions,
-  enabled: ToolEnabled
-): void {
+export function registerToolsetTool(server: Server, options: ToolsetToolOptions): void {
   // tmcp types the handler from the literal schema generic; toolset schemas resolve at runtime,
   // so both sides step out of that inference.
   server.tool(
-    { ...getToolsetToolMetadata(options), enabled } as never,
+    getToolsetToolMetadata(options) as never,
     ((input: unknown) => callToolsetMethod(server, options, input)) as never
   );
 }

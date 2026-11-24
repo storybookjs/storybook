@@ -211,32 +211,6 @@ describe('resolveSkillInputs', () => {
       ).toBe(false);
     });
   });
-
-  it('reads the MCP toolsets that main.ts turns on, and all of them without addon-mcp', async () => {
-    const toolsets = { dev: false, docs: true, test: true };
-    const withAddon = await resolveSkillInputs(
-      createMockOptions({ presets: { mcpToolsets: () => toolsets } })
-    );
-    expect(withAddon.mcpToolsets).toEqual(toolsets);
-
-    const withoutAddon = await resolveSkillInputs(createMockOptions());
-    expect(withoutAddon.mcpToolsets).toEqual({ dev: true, docs: true, test: true });
-  });
-
-  it('fails when addon-mcp rejects its options, as its server does', async () => {
-    await expect(
-      resolveSkillInputs(
-        createMockOptions({
-          presets: {
-            mcpToolsets: () => {
-              throw new Error('Invalid type: Expected boolean but received "false"');
-            },
-          },
-        })
-      )
-    ).rejects.toThrow('Expected boolean but received "false"');
-  });
-
   it('marks a project that composes other Storybooks', async () => {
     const composed = await resolveSkillInputs(
       createMockOptions({

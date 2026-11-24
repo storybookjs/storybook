@@ -1,3 +1,5 @@
+import { stripVTControlCharacters } from 'node:util';
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { JsPackageManager, PackageJson } from 'storybook/internal/common';
@@ -159,7 +161,10 @@ describe('automigrate', () => {
       isLatest: false,
     });
 
-    expect(logger.step).toHaveBeenCalledWith(expect.stringMatching(announcement));
+    const steps = vi
+      .mocked(logger.step)
+      .mock.calls.map(([message]) => stripVTControlCharacters(message));
+    expect(steps).toContainEqual(expect.stringMatching(announcement));
   });
 });
 

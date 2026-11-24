@@ -1,3 +1,5 @@
+import { stripVTControlCharacters } from 'node:util';
+
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { logger } from 'storybook/internal/node-logger';
@@ -7,6 +9,9 @@ import { logMigrationSummary } from './logMigrationSummary.ts';
 
 const summary = { succeeded: [], failed: {}, manual: [], skipped: ['some-fix'] };
 const fixResults = { 'some-fix': FixStatus.SKIPPED };
+
+// The summary of the first `logger.log` call, without colors.
+const logged = () => stripVTControlCharacters(vi.mocked(logger.log).mock.calls[0][0]);
 
 describe('logMigrationSummary', () => {
   beforeEach(() => {
@@ -28,13 +33,13 @@ describe('logMigrationSummary', () => {
       dryRunReport: dryRunReport(),
     });
 
-    const output = vi.mocked(logger.log).mock.calls[0][0];
+    const output = logged();
     expect(output).toContain('Migrations that would succeed:\n\nsome-fix');
     expect(output).toContain('Migrations that would be skipped:\n\nopt-in-fix (opt-in)');
     expect(output).toContain('Migrations that would need manual changes:\n\nmanual-fix');
     expect(output).not.toContain('Skipped migrations:');
-    expect(vi.mocked(logger.step)).toHaveBeenCalledWith(
-      expect.stringContaining('Dry run finished: no files were changed.')
+    expect(stripVTControlCharacters(vi.mocked(logger.step).mock.calls.flat().join('\n'))).toContain(
+      'Dry run finished: no files were changed.'
     );
   });
 
@@ -50,14 +55,12 @@ describe('logMigrationSummary', () => {
     expect(vi.mocked(logger.step)).not.toHaveBeenCalledWith(
       expect.stringContaining('Dry run finished')
     );
-    expect(vi.mocked(logger.log).mock.calls[0][0]).toContain(
-      'Migrations that would fail:\n\nfailing-fix:\ncannot migrate main'
-    );
+    expect(logged()).toContain('Migrations that would fail:\n\nfailing-fix:\ncannot migrate main');
   });
 
   it('lists skipped migrations outside a dry run', () => {
     logMigrationSummary({ fixResults, fixSummary: summary });
 
-    expect(vi.mocked(logger.log).mock.calls[0][0]).toContain('Skipped migrations:');
+    expect(logged()).toContain('Skipped migrations:');
   });
 });

@@ -1,6 +1,7 @@
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { posix } from 'node:path';
+import { stripVTControlCharacters } from 'node:util';
 
 import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 
@@ -296,7 +297,7 @@ describe('csfFactories', () => {
 
       await run(packageManager, true);
 
-      const output = vi.mocked(logger.log).mock.calls.flat().join('\n');
+      const output = stripVTControlCharacters(vi.mocked(logger.log).mock.calls.flat().join('\n'));
       expect(output).toMatch(/Would write to .*\.storybook\/preview\.js/);
       expect(output).toMatch(/Would sync addons from main config into .*: my-addon/);
       expect(output).not.toContain('definePreview(');

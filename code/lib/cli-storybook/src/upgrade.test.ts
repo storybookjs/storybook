@@ -1,6 +1,7 @@
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { stripVTControlCharacters } from 'node:util';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -747,7 +748,9 @@ describe('upgrade', () => {
     });
 
     const logged = () =>
-      methods.flatMap((method) => vi.mocked(logger[method]).mock.calls.flat()).join('\n');
+      stripVTControlCharacters(
+        methods.flatMap((method) => vi.mocked(logger[method]).mock.calls.flat()).join('\n')
+      );
 
     it('says that a dry run changed no file, instead of reporting an upgrade', async () => {
       await runUpgrade({ dryRun: true });

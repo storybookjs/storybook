@@ -1,5 +1,6 @@
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+import { stripVTControlCharacters } from 'node:util';
 import { afterEach, expect, it, vi } from 'vitest';
 
 import { logger } from 'storybook/internal/node-logger';
@@ -55,6 +56,6 @@ it('counts the files a dry run would transform', async () => {
 
   await runCodemod([file], (info) => `${info.source}\n// migrated`, { dryRun: true });
 
-  const output = vi.mocked(logger.log).mock.calls.flat().join('\n');
+  const output = stripVTControlCharacters(vi.mocked(logger.log).mock.calls.flat().join('\n'));
   expect(output).toContain('Summary: 1 to transform, 0 unmodified, 0 errors');
 });

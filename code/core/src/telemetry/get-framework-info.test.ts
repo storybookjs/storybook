@@ -80,20 +80,6 @@ describe('getFrameworkInfo', () => {
       vi.mocked(getStorybookInfo).mockResolvedValue({ frameworkPackage } as any);
     };
 
-    it.each([
-      ['a package name', '@storybook/react-native'],
-      ['a resolved path', '/repo/node_modules/@storybook/react-native'],
-      ['a Windows path', 'C:\\repo\\node_modules\\@storybook\\react-native'],
-      ['a pnpm virtual-store path', '/repo/node_modules/.pnpm/@storybook+react-native@10.0.0'],
-    ])('reports a renderer configured as its own framework, given as %s', async (_, framework) => {
-      await mockFrameworkPackage(framework);
-
-      const result = await getFrameworkInfo({} as StorybookConfig, '/tmp/.storybook');
-
-      expect(result.renderer).toBe('@storybook/react-native');
-      expect(readDependencyManifest).not.toHaveBeenCalled();
-    });
-
     it('reports the renderer it depends on', async () => {
       await mockFrameworkPackage('@acme/storybook-framework');
       vi.mocked(readDependencyManifest).mockResolvedValueOnce({

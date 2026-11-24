@@ -11,7 +11,7 @@ import { buildAgentInstructions, buildServerInstructions } from './build-workflo
 // the workflow.
 const MCP_CLIENT_INSTRUCTIONS_CHAR_LIMIT = 2048;
 
-const everything = { devEnabled: true, testSupported: true, docsEnabled: true };
+const everything = { testSupported: true, docsEnabled: true };
 
 describe('buildAgentInstructions', () => {
   it('is the workflow: one step per skill, in order', () => {
@@ -31,18 +31,17 @@ describe('buildAgentInstructions', () => {
 describe('buildServerInstructions', () => {
   it('stays under the MCP client truncation limit in every configuration', () => {
     const bools = [true, false] as const;
-    for (const devEnabled of bools)
-      for (const testSupported of bools)
-        for (const docsEnabled of bools) {
-          const options = { devEnabled, testSupported, docsEnabled };
-          const length = buildServerInstructions(options).length;
-          expect
-            .soft(length, `instructions exceed the limit for ${JSON.stringify(options)}`)
-            .toBeLessThanOrEqual(MCP_CLIENT_INSTRUCTIONS_CHAR_LIMIT);
-        }
+    for (const testSupported of bools)
+      for (const docsEnabled of bools) {
+        const options = { testSupported, docsEnabled };
+        const length = buildServerInstructions(options).length;
+        expect
+          .soft(length, `instructions exceed the limit for ${JSON.stringify(options)}`)
+          .toBeLessThanOrEqual(MCP_CLIENT_INSTRUCTIONS_CHAR_LIMIT);
+      }
   });
 
-  it('runs the skills with --mcp, in the words of the AGENTS.md section, when all toolsets are enabled', () => {
+  it('runs the skills with --mcp, in the words of the AGENTS.md section, when all features are enabled', () => {
     expect(buildServerInstructions(everything)).toMatchInlineSnapshot(`
       "## Storybook
 
@@ -68,9 +67,8 @@ describe('buildServerInstructions', () => {
     );
   });
 
-  it('leaves out the steps of toolsets that are off, and numbers the rest', () => {
+  it('leaves out unavailable steps, and numbers the rest', () => {
     const instructions = buildServerInstructions({
-      devEnabled: true,
       testSupported: false,
       docsEnabled: false,
     });
@@ -79,38 +77,5 @@ describe('buildServerInstructions', () => {
     expect(instructions).toContain('2. `npx storybook skills ui-review --mcp`');
     expect(instructions).not.toContain('test-stories');
     expect(instructions).not.toContain('component-docs');
-  });
-
-  it('leaves out writing stories and the review without the dev toolset', () => {
-    const instructions = buildServerInstructions({ ...everything, devEnabled: false });
-
-    expect(instructions).toContain('1. `npx storybook skills component-docs --mcp`');
-    expect(instructions).toContain('2. `npx storybook skills test-stories --mcp`');
-    expect(instructions).not.toContain('write-stories');
-    expect(instructions).not.toContain('ui-review');
-    expect(instructions).not.toContain('review-create');
-  });
-
-  it('names one step for one toolset', () => {
-    expect(buildServerInstructions({ devEnabled: false, testSupported: false, docsEnabled: true }))
-      .toMatchInlineSnapshot(`
-        "## Storybook
-
-        For every change to how the UI looks (you create, change, or delete a component, story, style, theme, or design token), follow this step. It has a Storybook skill. Run it before you edit any file, in a command of its own, from the package where Storybook is installed, and read its whole output, without \`head\` or \`tail\`, and follow it.
-
-        1. \`npx storybook skills component-docs --mcp\`: look up the components to reuse, with their props and usage examples, before you edit any file. Also when the user asks about a component's props, API, or usage.
-
-        Run the skill before you call a tool of this step, also when the request is only this step."
-      `);
-  });
-
-  it('returns empty instructions when all toolsets are disabled', () => {
-    const instructions = buildServerInstructions({
-      devEnabled: false,
-      testSupported: false,
-      docsEnabled: false,
-    });
-
-    expect(instructions).toBe('');
   });
 });

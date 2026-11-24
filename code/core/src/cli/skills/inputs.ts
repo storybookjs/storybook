@@ -10,12 +10,7 @@ import { isCsfFactoryPreview, readConfig } from '../../csf-tools/ConfigFile.ts';
 
 import { getRefsFromConfig } from '../../core-server/utils/get-refs-from-config.ts';
 import { StoryIndexGenerator } from '../../core-server/utils/StoryIndexGenerator.ts';
-import {
-  ALL_MCP_TOOLSETS,
-  getToolAvailability,
-  type McpToolsets,
-  type ToolAvailability,
-} from './availability.ts';
+import { getToolAvailability, type ToolAvailability } from './availability.ts';
 import { frameworkToRendererMap } from './content/framework-renderer.ts';
 
 export type SkillInputs = ToolAvailability & {
@@ -28,21 +23,9 @@ export type SkillInputs = ToolAvailability & {
   svelteCsf: boolean;
   /** The preview file, or `main` when there is none, is TypeScript. */
   typescript: boolean;
-  // The toolsets of addon-mcp that `main.ts` turns on; all of them without addon-mcp.
-  mcpToolsets: McpToolsets;
   // `refs` compose other Storybooks, whose docs the MCP docs tools serve without local manifests.
   composed: boolean;
 };
-
-// Reads the `mcpToolsets` preset property of addon-mcp, so `skills --mcp` names only the tools its
-// server registers. An `X-MCP-Toolsets` request header replaces these toolsets for one client; the
-// CLI cannot see that.
-async function resolveMcpToolsets(options: Options): Promise<McpToolsets> {
-  return (
-    (await options.presets.apply<McpToolsets | undefined>('mcpToolsets', undefined)) ??
-    ALL_MCP_TOOLSETS
-  );
-}
 
 const isTypeScriptFile = (path: string) => /\.[cm]?tsx?$/.test(path);
 
@@ -97,12 +80,11 @@ async function writesSvelteCsf(stories: StoriesEntry[], configDir: string): Prom
  * from the target Storybook's presets.
  */
 export async function resolveSkillInputs(options: Options): Promise<SkillInputs> {
-  const [availability, frameworkPreset, stories, preview, mcpToolsets, refs] = await Promise.all([
+  const [availability, frameworkPreset, stories, preview, refs] = await Promise.all([
     getToolAvailability(options),
     options.presets.apply('framework'),
     options.presets.apply('stories', []),
     resolvePreview(options.configDir),
-    resolveMcpToolsets(options),
     getRefsFromConfig(options),
   ]);
   const framework = extractFrameworkPackageName(
@@ -116,7 +98,6 @@ export async function resolveSkillInputs(options: Options): Promise<SkillInputs>
     ...preview,
     framework,
     svelteCsf,
-    mcpToolsets,
     composed: refs.length > 0,
   };
 }

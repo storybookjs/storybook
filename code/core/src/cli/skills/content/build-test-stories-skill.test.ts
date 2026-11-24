@@ -46,13 +46,14 @@ describe('buildTestStoriesSkill', () => {
   });
 
   it('selects stories by file and export when no command lists story ids', () => {
-    const text = buildTestStoriesSkill({
-      ...everything,
-      docsEnabled: false,
-      moduleGraphSupported: false,
-    });
+    const noIds = { ...everything, docsEnabled: false, moduleGraphSupported: false };
+    const cli = buildTestStoriesSkill(noIds);
+    const mcp = buildTestStoriesSkill({ ...noIds, transport: 'mcp' });
 
-    expect(text).toContain('"absoluteStoryPath"');
+    expect(cli).toContain('This project has no command that lists story ids.');
+    expect(cli).toContain('"absoluteStoryPath"');
+    expect(mcp).toContain('This Storybook has no tool that lists story ids.');
+    expect(mcp).toContain('"absoluteStoryPath"');
   });
 
   it('tells the agent to skip the step when the project cannot run story tests', () => {
@@ -63,18 +64,6 @@ describe('buildTestStoriesSkill', () => {
     `);
     expect(buildTestStoriesSkill({ ...everything, transport: 'mcp', testSupported: false })).toBe(
       buildTestStoriesSkill({ ...everything, testSupported: false })
-    );
-  });
-
-  it('says when to skip the step, and keeps its tool, when main.ts turns the test toolset off', () => {
-    const text = buildTestStoriesSkill({ ...everything, transport: 'mcp', toolsetOff: true });
-
-    expect(text).toContain(
-      'The `main.ts` of this project turns the `test` toolset of the Storybook MCP server off. When the server does not give you `test-run`, skip this step.'
-    );
-    expect(text).toContain('Call `test-run` after every change');
-    expect(buildTestStoriesSkill({ ...everything, transport: 'mcp' })).not.toContain(
-      'skip this step'
     );
   });
 

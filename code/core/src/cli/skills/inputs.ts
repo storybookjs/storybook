@@ -94,30 +94,46 @@ async function writesSvelteCsf(stories: StoriesEntry[], configDir: string): Prom
   );
 }
 
-// `{a,b/c}` becomes `a` and `b/c`.
+// `x{a,b/c}y` becomes `xay` and `xb/cy`.
 function expandBraces(glob: string): string[] {
   const open = glob.indexOf('{');
-  const commas: number[] = [];
+  if (open === -1) {
+    return [glob];
+  }
+  const alternatives: string[] = [];
+  let start = open;
   let depth = 0;
-  for (let i = open; open !== -1 && i < glob.length; i++) {
+  for (let i = open; i < glob.length; i++) {
     if (glob[i] === '{') {
       depth++;
     } else if (glob[i] === ',' && depth === 1) {
-      commas.push(i);
+      alternatives.push(glob.slice(start + 1, i));
+      start = i;
     } else if (glob[i] === '}' && --depth === 0) {
-      const bounds = [open, ...commas, i];
-      return bounds
-        .slice(1)
-        .flatMap((end, n) =>
-          expandBraces(glob.slice(0, open) + glob.slice(bounds[n] + 1, end) + glob.slice(i + 1))
-        );
+      alternatives.push(glob.slice(start + 1, i));
+      return alternatives.flatMap((alternative) =>
+        expandBraces(glob.slice(0, open) + alternative + glob.slice(i + 1))
+      );
     }
   }
   return [glob];
 }
 
-// Paths a glob could match, with every wildcard filled by `svelte`, so that a `.svelte` story can
-// show up; the index's matcher then decides whether it would load them.
+// A character a glob class `[...]` or `[!...]` accepts.
+function classCharacter(negated: string, body: string): string {
+  if (!negated) {
+    return body[0];
+  }
+  try {
+    return [...'sxSX0'].find((character) => !new RegExp(`[${body}]`).test(character)) ?? 's';
+  } catch {
+    return 's';
+  }
+}
+
+// Paths a glob could match, with each `*` filled by `svelte` so that a `.svelte` story can show
+// up; a `?` stays, as the matcher accepts it as any character. The index's matcher checks each one, so a glob feature this does not handle can only
+// miss a Svelte project, never report one.
 function examplePaths(glob: string): string[] {
   let braced = glob.replace(/!\([^()]*\)/g, 'svelte');
   // Innermost groups first, so `@(mdx|stories.@(ts|svelte))` takes two passes.
@@ -130,11 +146,10 @@ function examplePaths(glob: string): string[] {
   }
   return expandBraces(braced).map((path) =>
     path
-      .replaceAll('**/', '')
-      .replaceAll('/**', '')
-      .replace(/\[[!^]?(.)[^\]]*\]/g, (_, first: string) => first)
+      .replace(/\[([!^]?)([^\]]*)\]/g, (_, negated: string, body: string) =>
+        classCharacter(negated, body)
+      )
       .replaceAll('*', 'svelte')
-      .replaceAll('?', 's')
   );
 }
 

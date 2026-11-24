@@ -1,0 +1,8 @@
+{
+  "name": "ecosystem-qa",
+  "$schema": "../node_modules/nx/schemas/project-schema.json",
+  "implicitDependencies": ["agent-eval"],
+  "targets": {
+    "check": { "dependsOn": [] }
+  }
+}

@@ -43,6 +43,8 @@ export function supportsCsfFactories(framework: SupportedFramework): boolean {
     case SupportedFramework.QWIK:
     // already ships definePreview; blocked on exporting defineMain from ./node
     case SupportedFramework.SOLID:
+    // @analogjs/storybook-angular exports no defineMain from ./node
+    case SupportedFramework.ANALOG:
       return false;
     default: {
       const exhaustive: never = framework;

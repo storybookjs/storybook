@@ -217,7 +217,8 @@ export const logAutomigrationDetails = (automigrations: AutomigrationCheckResult
     for (const { result, status, project } of reports) {
       const details = status === 'check_succeeded' ? fix.prompt(result) : hint;
       if (details !== hint) {
-        logger.logBox(details, { title: `${fix.id} (${shortenPath(project.configDir) || '.'})` });
+        const message = fix.link ? `${details}\n\nMore info: ${fix.link}` : details;
+        logger.logBox(message, { title: `${fix.id} (${shortenPath(project.configDir) || '.'})` });
       }
     }
   }

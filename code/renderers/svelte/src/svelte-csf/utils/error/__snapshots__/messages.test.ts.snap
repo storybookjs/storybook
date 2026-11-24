@@ -81,6 +81,24 @@ More info: https://storybook.js.org/docs/writing-stories?renderer=svelte&ref=err
 ]
 `;
 
+exports[`Svelte CSF errors > IndexerParseError (Svelte compile error) 1`] = `
+[SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0009 (IndexerParseError): Storybook stories indexer parser threw an unrecognized error while indexing the file '<cwd>/Button.stories.svelte':
+
+CompileError: Expected whitespace
+https://svelte.dev/e/expected_whitespace
+
+<cwd>/Button.stories.svelte:2:7
+
+1: <Story name="A">
+2:   {#if}
+         ^
+3: </Story>
+
+The indexer doesn't run Svelte preprocessors. It ignores the content of <style> blocks, but the rest of a stories file must be standard Svelte syntax.
+
+If the original error doesn't point to a problem in the stories file, please report it on the issue tracker on GitHub at https://github.com/storybookjs/storybook/issues/new?template=bug_report.yml.]
+`;
+
 exports[`Svelte CSF errors > IndexerParseError 1`] = `
 [SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0009 (IndexerParseError): Storybook stories indexer parser threw an unrecognized error while indexing the file '<cwd>/Button.stories.svelte':
 
@@ -145,15 +163,17 @@ More info: https://storybook.js.org/docs/writing-stories?renderer=svelte&ref=err
 
 exports[`Svelte CSF errors > MissingDefineMetaImportError 1`] = `
 [SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0003 (MissingDefineMetaImportError): The file '<cwd>/Button.stories.svelte'
-does not import defineMeta from "@storybook/svelte-vite" or "@storybook/sveltekit", or the preview from .storybook/preview, inside the module context.
+does not import defineMeta from "@storybook/svelte-vite" or "@storybook/sveltekit", or preview from the preview file of Storybook, in its <script module>.
 
-Make sure to import defineMeta from the package and use it inside the module context like so:
+A Svelte stories file needs a <script module> that calls defineMeta() and uses the Story component that it returns, like so:
 
 <script module>
   import { defineMeta } from "@storybook/svelte-vite";
 
   const { Story } = defineMeta({});
 </script>
+
+<Story name="Primary" />
 
 In a SvelteKit project, import defineMeta from "@storybook/sveltekit".
 With CSF factories, call preview.meta() in place of defineMeta(), with preview imported from '#.storybook/preview'.
@@ -179,6 +199,8 @@ it's return value needs to be stored and destructured for the parsing to succeed
   const { Story } = defineMeta({});
 </script>
 
+<Story name="Primary" />
+
 In a SvelteKit project, import defineMeta from "@storybook/sveltekit".
 With CSF factories, call preview.meta() in place of defineMeta(), with preview imported from '#.storybook/preview'.
 
@@ -194,15 +216,17 @@ This is a bug in Storybook. Please report it at https://github.com/storybookjs/s
 
 exports[`Svelte CSF errors > MissingModuleTagError 1`] = `
 [SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0001 (MissingModuleTagError): The file '<cwd>/Button.stories.svelte'
-does not have a module context (<script module> ... </script>).
+does not have a <script module>.
 
-defineMeta(...) or preview.meta(...) should be called inside a module script tag, like so:
+A Svelte stories file needs a <script module> that calls defineMeta() and uses the Story component that it returns, like so:
 
 <script module>
   import { defineMeta } from "@storybook/svelte-vite";
 
   const { Story } = defineMeta({});
 </script>
+
+<Story name="Primary" />
 
 In a SvelteKit project, import defineMeta from "@storybook/sveltekit".
 With CSF factories, call preview.meta() in place of defineMeta(), with preview imported from '#.storybook/preview'.
@@ -279,6 +303,8 @@ eg.:
 
   const { Story } = defineMeta({});
 </script>
+
+<Story name="Primary" />
 
 In a SvelteKit project, import defineMeta from "@storybook/sveltekit".
 With CSF factories, call preview.meta() in place of defineMeta(), with preview imported from '#.storybook/preview'.

@@ -54,7 +54,7 @@ export function cleanupTypeImports(editor: SourceEditor, disallowList: string[])
         specifier.type !== 'ImportSpecifier' ||
         specifier.imported.type !== 'Identifier' ||
         !disallowList.includes(specifier.imported.name) ||
-        usedIdentifiers.has(specifier.imported.name)
+        usedIdentifiers.has(specifier.local.name)
     );
     if (allowedSpecifiers.length === 0) {
       removed.add(node);

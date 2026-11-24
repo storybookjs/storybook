@@ -1,9 +1,13 @@
-import { existsSync } from 'node:fs';
+import codePackage from '../../code/package.json' with { type: 'json' };
+import scriptsPackage from '../package.json' with { type: 'json' };
+
+import { existsSync, readFileSync } from 'node:fs';
 
 import { join } from 'pathe';
 import { describe, expect, it } from 'vitest';
 
 import { allTemplates, daily, normal } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
+import { getCheckedWorkspaces } from '../tasks/check.ts';
 import {
   FOCUS_TEMPLATES,
   PATH_TRIGGERED_JOBS,
@@ -279,7 +283,7 @@ describe('defineAffectedLintAndFormat', () => {
     (
       getFocusJobs(changedFiles)
         .find(({ id }) => id === 'lint-and-format--affected')!
-        .implementation('focus') as { steps: { run?: { name: string } }[] }
+        .implementation('focus') as { steps: { run?: { name: string; command: string } }[] }
     ).steps.flatMap(({ run }) => (run && /Format|Lint/.test(run.name) ? [run] : []));
 
   it('checks only the changed files, linting each directory with paths relative to it', () => {
@@ -303,6 +307,18 @@ describe('defineAffectedLintAndFormat', () => {
         environment: { FILES: 'ci/focus.ts' },
       }),
     ]);
+  });
+
+  it('passes the unmatched-pattern flag once to each workspace linter', () => {
+    const steps = runSteps('code/core/src/manager/App.tsx', 'scripts/ci/focus.ts');
+    for (const [directory, manifest] of [
+      ['code', codePackage],
+      ['scripts', scriptsPackage],
+    ] as const) {
+      const step = steps.find((step) => step.name === `Lint changed ${directory} files`)!;
+      const expanded = step.command.replace('yarn lint:js:cmd', manifest.scripts['lint:js:cmd']);
+      expect(expanded.match(/--no-error-on-unmatched-pattern/g)).toHaveLength(1);
+    }
   });
 
   it('skips linting when no changed file is under code/ or scripts/', () => {
@@ -380,4 +396,24 @@ describe('ci:normal coverage', () => {
       expect(selectableByFocus.has(id)).toBe(false);
     }
   );
+
+  it('typescript-validation--affected can reach every workspace typescript-validation checks', async () => {
+    const hasTsconfig = (dir: string) =>
+      ['tsconfig.json', 'tsconfig.strict.json'].some((file) => existsSync(join(dir, file)));
+    const hasNxCheckTarget = (dir: string) => {
+      const project = join(dir, 'project.json');
+      return (
+        existsSync(project) && 'check' in (JSON.parse(readFileSync(project, 'utf8')).targets ?? {})
+      );
+    };
+
+    const unreachable = (await getCheckedWorkspaces())
+      .filter(({ location }) => {
+        const dir = join(ROOT, 'code', location);
+        return hasTsconfig(dir) && !hasNxCheckTarget(dir);
+      })
+      .map(({ name }) => name);
+
+    expect(unreachable).toEqual([]);
+  });
 });

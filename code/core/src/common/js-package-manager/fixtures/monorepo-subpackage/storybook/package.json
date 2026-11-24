@@ -1,0 +1,6 @@
+{
+  "name": "monorepo-subpackage-storybook",
+  "devDependencies": {
+    "storybook": "10.0.0"
+  }
+}

@@ -27,7 +27,10 @@ const entry = entryFor(STORY_PATH, 'button', 'Button');
 
 const withRealAnalyzer = async <T>(run: (manager: AngularComponentMetaManager) => T) => {
   const typescript = await import('typescript');
-  const manager = new AngularComponentMetaManager(typescript.default ?? typescript);
+  const manager = new AngularComponentMetaManager({
+    api: 'compiler',
+    typescript: typescript.default ?? typescript,
+  });
   try {
     return run(manager);
   } finally {

@@ -13,6 +13,7 @@ import {
   optionalEnvToBoolean,
   resolvePathInStorybookCache,
   validateConfigurationFiles,
+  versions,
 } from 'storybook/internal/common';
 import {
   StoryIndexGenerator,
@@ -40,6 +41,7 @@ import sirv from 'sirv';
 import { dedent } from 'ts-dedent';
 import type { PluginOption } from 'vite';
 
+import { version as addonVersion } from '../../package.json';
 // Shared plugins from builder-vite (relative import to prebundle without adding a package dependency)
 import { withoutVitePlugins } from '../../../../builders/builder-vite/src/utils/without-vite-plugins.ts';
 import {
@@ -51,6 +53,7 @@ import {
 import type { InternalOptions, UserOptions } from './types.ts';
 import { AgentTelemetryReporter } from './agent-telemetry-reporter.ts';
 import { isStorybookInternalFrame } from './stack-frames.ts';
+import { getIncompatibleStorybookMessage } from './version-check.ts';
 
 const WORKING_DIR = process.cwd();
 
@@ -198,6 +201,13 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
   if (!optionalEnvToBoolean(process.env.VITEST)) {
     return [];
   }
+
+  // Fail early with a clear message instead of crashing on a missing internal API later on
+  const incompatible = getIncompatibleStorybookMessage(addonVersion, versions.storybook);
+  if (incompatible) {
+    throw new HandledError(incompatible);
+  }
+
   const finalOptions = {
     ...defaultOptions,
     ...options,

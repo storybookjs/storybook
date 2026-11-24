@@ -6,24 +6,28 @@ import type { Addon_BaseType } from 'storybook/internal/types';
 import { BottomBarIcon, SidebarAltIcon } from '@storybook/icons';
 
 import { Consumer, types } from 'storybook/manager-api';
-import type { Combo } from 'storybook/manager-api';
+import type { API, Combo } from 'storybook/manager-api';
 
 import { focusableUIElements } from '../../../../manager-api/modules/layout.ts';
 
 const SHOW_ADDON_PANEL_BUTTON_ID = 'storybook-show-addon-panel';
 
+// Only values, so the consumer re-renders the button when one of them changes and not on
+// every store commit.
 const menuMapper = ({ api, state }: Combo) => ({
+  api,
   isVisible: api.getIsPanelShown(),
   singleStory: state.singleStory,
   panelPosition: state.layout.panelPosition,
-  showPanel: async (forceFocus: boolean) => {
-    api.togglePanel(true);
-    api.focusOnUIElement(focusableUIElements.addonPanel, {
-      forceFocus,
-      poll: true,
-    });
-  },
 });
+
+const showPanel = (api: API, forceFocus: boolean) => {
+  api.togglePanel(true);
+  api.focusOnUIElement(focusableUIElements.addonPanel, {
+    forceFocus,
+    poll: true,
+  });
+};
 
 export const addonsTool: Addon_BaseType = {
   title: 'addons',
@@ -33,7 +37,7 @@ export const addonsTool: Addon_BaseType = {
   render: () => {
     return (
       <Consumer filter={menuMapper}>
-        {({ isVisible, showPanel, singleStory, panelPosition }) =>
+        {({ api, isVisible, singleStory, panelPosition }) =>
           !singleStory &&
           !isVisible && (
             <>
@@ -43,11 +47,11 @@ export const addonsTool: Addon_BaseType = {
                 ariaLabel="Show addon panel"
                 id={SHOW_ADDON_PANEL_BUTTON_ID}
                 key="addons"
-                onClick={() => showPanel(false)}
+                onClick={() => showPanel(api, false)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
-                    showPanel(true);
+                    showPanel(api, true);
                   }
                 }}
               >

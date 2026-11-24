@@ -52,6 +52,8 @@ export interface ClassifiedSlotArg {
   value: Node;
   role: 'slot';
   plan: RenderableValuePlan | FunctionSlotPlan;
+  // Whether `value` is what a slot function the story writes returns, which no control changes.
+  returned?: true;
 }
 
 /** Split by role so `arg.role` checks narrow the plans a renderer has to handle. */
@@ -139,7 +141,7 @@ export function classifyArg(
       if (plan.kind === 'inline' || plan.kind === 'hoist') {
         return {
           kind: 'classified',
-          arg: { name, value: returned, role: 'slot', plan },
+          arg: { name, value: returned, role: 'slot', plan, returned: true },
         };
       }
 

@@ -19,7 +19,7 @@
     "get-sandbox-dir": "jiti ./get-sandbox-dir.ts",
     "lint": "yarn lint:js",
     "lint:js": "yarn lint:js:cmd .  --quiet",
-    "lint:js:cmd": "oxlint --report-unused-disable-directives-severity=error",
+    "lint:js:cmd": "oxlint --report-unused-disable-directives-severity=error --no-error-on-unmatched-pattern",
     "lint:package": "sort-package-json",
     "local-registry": "jiti ./run-registry.ts",
     "publish": "jiti ./sandbox/publish.ts",
@@ -154,6 +154,7 @@
     "uuid": "^9.0.1",
     "vitest": "5.0.5",
     "wait-on": "^8.0.3",
+    "watchpack": "^2.5.0",
     "window-size": "^1.1.1",
     "yaml": "^2.8.1",
     "zod": "^3.25.76"

@@ -15,6 +15,15 @@ import { ImportAliasComponent as Alias } from './aliased.component.ts';
   template: `<sb-import-alias [heading]="'Aliased'" />`,
 })
 export class DemoComponent {}",
+      "template": "import { Component } from '@angular/core';
+import { ImportAliasComponent as Alias } from './aliased.component.ts';
+
+@Component({
+  selector: 'app-demo',
+  imports: [Alias],
+  template: `<sb-import-alias [heading]="⟦bind heading⟫'Aliased'⟧" />`,
+})
+export class DemoComponent {}",
     },
   },
 }

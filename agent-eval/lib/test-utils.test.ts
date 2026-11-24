@@ -8,9 +8,7 @@ vi.mock('node:fs', { spy: true });
 
 import {
   expectDevServerLeftRunning,
-  expectReviewOpenedInBrowser,
   findDevServerKillCommands,
-  parseCodexBrowserNavigations,
   parseWorkflowToolResults,
 } from './test-utils.ts';
 
@@ -372,6 +370,21 @@ describe('expectStoryTestsRanAndPassed', () => {
     vi.mocked(execFile).mockRestore();
   });
 
+  test('names the Codex settings that Codex ignored when the agent never ran the tests', async () => {
+    const ignored =
+      'Codex is ignoring 1 unrecognized configuration setting: model_instructions_file is ignored.';
+    givenRun({
+      commands: [],
+      stdout: '',
+      transcript: `${JSON.stringify({ type: 'item.completed', item: { type: 'error', message: ignored } })}\n`,
+    });
+    const { expectStoryTestsRanAndPassed } = await loadTestUtils();
+
+    await expect(expectStoryTestsRanAndPassed()).rejects.toThrow(
+      `Expected test-run to be called. Codex reported: ${ignored}`
+    );
+  });
+
   test('judges the tests by a run in the sandbox, not by the tail-cut transcript output', async () => {
     givenRun({
       commands: [tailCutTestRun],
@@ -525,83 +538,6 @@ describe('expectStoryTestsRanAndPassed', () => {
 
     await expect(expectStoryTestsRanAndPassed()).rejects.toThrow(/Expected test-run to be called/);
   });
-
-  test('lets the agent skip the tests with requireAgentRun false, but still runs them in the sandbox', async () => {
-    givenRun({
-      commands: ['npm run typecheck'],
-      stdout: testRunDocument({ 'example-badge--accent': 'status-value:success' }),
-    });
-    const { expectStoryTestsRanAndPassed } = await loadTestUtils();
-
-    await expectStoryTestsRanAndPassed({ requireAgentRun: false, covering: ['badge'] });
-
-    expect(execFile).toHaveBeenCalled();
-  });
-});
-
-describe('parseCodexBrowserNavigations', () => {
-  const jsToolCallLine = (code: string, itemOverrides: Record<string, unknown> = {}) =>
-    JSON.stringify({
-      type: 'item.completed',
-      item: {
-        type: 'mcp_tool_call',
-        server: 'node_repl',
-        tool: 'js',
-        status: 'completed',
-        error: null,
-        arguments: { code, title: 'test', timeout_ms: 30000 },
-        ...itemOverrides,
-      },
-    });
-
-  test('extracts goto URL literals from successful node_repl js calls', () => {
-    const transcript = [
-      jsToolCallLine(
-        "var tab = (await browser.tabs.selected()) ?? (await browser.tabs.new());\nawait tab.goto('http://localhost:6006/?path=/review/');"
-      ),
-      'not json',
-      jsToolCallLine('await tab.goto("http://localhost:6006/?path=/story/button--primary");'),
-    ].join('\n');
-
-    expect(parseCodexBrowserNavigations(transcript)).toEqual([
-      'http://localhost:6006/?path=/review/',
-      'http://localhost:6006/?path=/story/button--primary',
-    ]);
-  });
-
-  test('counts the URL literals of a call that passes a variable to goto', () => {
-    const transcript = jsToolCallLine(
-      "for (const url of ['http://localhost:6006/?path=/story/a--b','http://localhost:6006/?path=/story/a--c']) { const tab = await browser.tabs.new(); await tab.goto(url); }"
-    );
-
-    expect(parseCodexBrowserNavigations(transcript)).toEqual([
-      'http://localhost:6006/?path=/story/a--b',
-      'http://localhost:6006/?path=/story/a--c',
-    ]);
-  });
-
-  test('yields only the literal base of a composed goto URL', () => {
-    const transcript = jsToolCallLine(
-      "const base = 'http://localhost:6006'; await tab.goto(base + '/?path=/story/a--b');"
-    );
-
-    expect(parseCodexBrowserNavigations(transcript)).toEqual(['http://localhost:6006']);
-  });
-
-  test('ignores failed js calls, other servers, and code without a goto', () => {
-    const transcript = [
-      jsToolCallLine("await tab.goto('http://localhost:6006/');", { status: 'failed' }),
-      jsToolCallLine("await tab.goto('http://localhost:6006/');", { error: 'timed out' }),
-      jsToolCallLine('nodeRepl.write(await browser.documentation());'),
-      jsToolCallLine("await tab.goto('http://localhost:6006/');", { server: 'other-server' }),
-    ].join('\n');
-
-    expect(parseCodexBrowserNavigations(transcript)).toEqual([]);
-  });
-
-  test('returns no navigations for an empty transcript', () => {
-    expect(parseCodexBrowserNavigations('')).toEqual([]);
-  });
 });
 
 describe('findDevServerKillCommands', () => {
@@ -645,265 +581,5 @@ describe('expectDevServerLeftRunning', () => {
     }) as typeof readFileSync);
 
     expect(() => expectDevServerLeftRunning()).toThrow(/only for plugin.*integration=mcp/);
-  });
-});
-
-describe('expectReviewOpenedInBrowser', () => {
-  const agentContextPath = '__agent_eval__/agent.json';
-  const transcriptPath = '__agent_eval__/transcript.txt';
-
-  function mockSandbox(options: { agent: 'claude-code' | 'codex'; transcript: string[] }): void {
-    vi.mocked(readFileSync).mockImplementation(((path: unknown) => {
-      if (String(path) === agentContextPath) {
-        return JSON.stringify({ agent: options.agent, integration: 'plugin' });
-      }
-      if (String(path) === transcriptPath) {
-        return options.transcript.join('\n');
-      }
-      throw new Error(`Unexpected readFileSync path in browser assertion test: ${String(path)}`);
-    }) as typeof readFileSync);
-  }
-
-  function claudeToolUseLine(name: string, input: Record<string, unknown>): string {
-    return JSON.stringify({
-      type: 'assistant',
-      message: { content: [{ type: 'tool_use', id: 'toolu_1', name, input }] },
-    });
-  }
-
-  function codexJsLine(code: string): string {
-    return JSON.stringify({
-      type: 'item.completed',
-      item: {
-        type: 'mcp_tool_call',
-        server: 'node_repl',
-        tool: 'js',
-        status: 'completed',
-        error: null,
-        arguments: { code, title: 'Open review', timeout_ms: 30000 },
-      },
-    });
-  }
-
-  function codexMcpReviewCreateLine(status: 'completed' | 'failed'): string {
-    return JSON.stringify({
-      type: 'item.completed',
-      item: {
-        type: 'mcp_tool_call',
-        server: 'storybook',
-        tool: 'review-create',
-        arguments: {},
-        status,
-        error: status === 'failed' ? { message: 'Refusing to publish review' } : null,
-      },
-    });
-  }
-
-  function codexCliReviewCreateLine(exitCode: number): string {
-    return JSON.stringify({
-      type: 'item.completed',
-      item: {
-        type: 'command_execution',
-        command:
-          "/bin/bash -lc \"npx storybook tools review create --title 'Review' --description 'Check it'\"",
-        exit_code: exitCode,
-      },
-    });
-  }
-
-  const claudeReviewCreate = claudeToolUseLine('mcp__storybook-dev-mcp__review-create', {
-    title: 'Review',
-  });
-  const claudeOpenReview = claudeToolUseLine('mcp__Browser__navigate', {
-    url: 'http://localhost:6006/?path=/review/',
-  });
-  const codexOpenReview = codexJsLine("await tab.goto('http://localhost:6006/?path=/review/');");
-
-  beforeEach(() => {
-    vi.mocked(readFileSync).mockReset();
-  });
-
-  afterEach(() => {
-    vi.mocked(readFileSync).mockRestore();
-  });
-
-  test('passes on a Claude navigate to the review page', () => {
-    mockSandbox({ agent: 'claude-code', transcript: [claudeReviewCreate, claudeOpenReview] });
-
-    expect(() => expectReviewOpenedInBrowser()).not.toThrow();
-  });
-
-  test('passes on a Claude browser_batch that navigates to the review page', () => {
-    mockSandbox({
-      agent: 'claude-code',
-      transcript: [
-        claudeReviewCreate,
-        claudeToolUseLine('mcp__Browser__browser_batch', {
-          actions: [
-            { name: 'navigate', input: { url: 'http://localhost:6006/?path=/review/' } },
-            { name: 'computer', input: { action: 'screenshot' } },
-          ],
-        }),
-      ],
-    });
-
-    expect(() => expectReviewOpenedInBrowser()).not.toThrow();
-  });
-
-  test('passes on a Claude browser_batch whose navigate action carries the tool prefix', () => {
-    mockSandbox({
-      agent: 'claude-code',
-      transcript: [
-        claudeReviewCreate,
-        claudeToolUseLine('mcp__Browser__browser_batch', {
-          actions: [
-            {
-              name: 'mcp__Browser__navigate',
-              input: { url: 'http://localhost:6006/?path=/review/' },
-            },
-          ],
-        }),
-      ],
-    });
-
-    expect(() => expectReviewOpenedInBrowser()).not.toThrow();
-  });
-
-  test('passes on a Claude preview_start to the review page on 127.0.0.1 without a slash', () => {
-    mockSandbox({
-      agent: 'claude-code',
-      transcript: [
-        claudeReviewCreate,
-        claudeToolUseLine('Bash', { command: 'npm run storybook' }),
-        claudeToolUseLine('mcp__Browser__preview_start', {
-          url: 'http://127.0.0.1:6006/?path=/review',
-        }),
-      ],
-    });
-
-    expect(() => expectReviewOpenedInBrowser()).not.toThrow();
-  });
-
-  test('passes on a Codex goto of the review page after an MCP review-create', () => {
-    mockSandbox({
-      agent: 'codex',
-      transcript: [codexMcpReviewCreateLine('completed'), codexOpenReview],
-    });
-
-    expect(() => expectReviewOpenedInBrowser()).not.toThrow();
-  });
-
-  test('fails when the browser opened a remote URL', () => {
-    mockSandbox({
-      agent: 'claude-code',
-      transcript: [
-        claudeReviewCreate,
-        claudeToolUseLine('mcp__Browser__navigate', {
-          url: 'https://storybook.js.org/?path=/review/',
-        }),
-      ],
-    });
-
-    expect(() => expectReviewOpenedInBrowser()).toThrow(/review page on the local dev server/);
-  });
-
-  test('fails when the browser opened a story instead of the review page', () => {
-    mockSandbox({
-      agent: 'codex',
-      transcript: [
-        codexMcpReviewCreateLine('completed'),
-        codexJsLine("await tab.goto('http://localhost:6006/?path=/story/button--primary');"),
-      ],
-    });
-
-    expect(() => expectReviewOpenedInBrowser()).toThrow(/review page on the local dev server/);
-  });
-
-  test('fails on a page whose path only starts with review', () => {
-    mockSandbox({
-      agent: 'claude-code',
-      transcript: [
-        claudeReviewCreate,
-        claudeToolUseLine('mcp__Browser__navigate', {
-          url: 'http://localhost:6006/?path=/reviewer',
-        }),
-      ],
-    });
-
-    expect(() => expectReviewOpenedInBrowser()).toThrow(/review page on the local dev server/);
-  });
-
-  test('fails loud when the transcript holds no browser call', () => {
-    mockSandbox({ agent: 'claude-code', transcript: [claudeReviewCreate] });
-
-    expect(() => expectReviewOpenedInBrowser()).toThrow(/holds no such browser navigation/);
-  });
-
-  test('fails when no review was created', () => {
-    mockSandbox({ agent: 'claude-code', transcript: [claudeOpenReview] });
-
-    expect(() => expectReviewOpenedInBrowser()).toThrow(/successful review-create/);
-  });
-
-  test('ignores a Claude navigation to the review page before review-create', () => {
-    mockSandbox({ agent: 'claude-code', transcript: [claudeOpenReview, claudeReviewCreate] });
-
-    expect(() => expectReviewOpenedInBrowser()).toThrow(/holds no such browser navigation/);
-  });
-
-  test('counts only navigations after a review published through the CLI', () => {
-    const cliReviewCreate = claudeToolUseLine('Bash', {
-      command: "npx storybook tools review create --title 'Review' --description 'Check it'",
-    });
-
-    mockSandbox({ agent: 'claude-code', transcript: [cliReviewCreate, claudeOpenReview] });
-    expect(() => expectReviewOpenedInBrowser()).not.toThrow();
-
-    mockSandbox({ agent: 'claude-code', transcript: [claudeOpenReview, cliReviewCreate] });
-    expect(() => expectReviewOpenedInBrowser()).toThrow(/holds no such browser navigation/);
-  });
-
-  test('counts Codex navigations after its first successful review-create', () => {
-    mockSandbox({ agent: 'codex', transcript: [codexCliReviewCreateLine(0), codexOpenReview] });
-    expect(() => expectReviewOpenedInBrowser()).not.toThrow();
-
-    mockSandbox({ agent: 'codex', transcript: [codexOpenReview, codexCliReviewCreateLine(0)] });
-    expect(() => expectReviewOpenedInBrowser()).toThrow(/holds no such browser navigation/);
-
-    mockSandbox({
-      agent: 'codex',
-      transcript: [
-        codexMcpReviewCreateLine('completed'),
-        codexOpenReview,
-        codexMcpReviewCreateLine('completed'),
-      ],
-    });
-    expect(() => expectReviewOpenedInBrowser()).not.toThrow();
-
-    mockSandbox({
-      agent: 'codex',
-      transcript: [
-        codexMcpReviewCreateLine('failed'),
-        codexOpenReview,
-        codexMcpReviewCreateLine('completed'),
-      ],
-    });
-    expect(() => expectReviewOpenedInBrowser()).toThrow(/holds no such browser navigation/);
-  });
-
-  test('ignores a failed Codex review-create', () => {
-    mockSandbox({
-      agent: 'codex',
-      transcript: [
-        codexMcpReviewCreateLine('completed'),
-        codexOpenReview,
-        codexMcpReviewCreateLine('failed'),
-        codexCliReviewCreateLine(1),
-      ],
-    });
-    expect(() => expectReviewOpenedInBrowser()).not.toThrow();
-
-    mockSandbox({ agent: 'codex', transcript: [codexCliReviewCreateLine(1), codexOpenReview] });
-    expect(() => expectReviewOpenedInBrowser()).toThrow(/successful review-create/);
   });
 });

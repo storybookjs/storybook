@@ -27,6 +27,11 @@ const config: BuildEntries = {
         entryPoint: './src/client/docs/config.ts',
         dts: false,
       },
+      {
+        exportEntries: ['./internal/vitest-compiler-setup'],
+        entryPoint: './src/client/vitest-compiler-setup.ts',
+        dts: false,
+      },
     ],
     node: [
       {

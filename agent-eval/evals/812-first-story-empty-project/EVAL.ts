@@ -3,31 +3,27 @@ import {
   expectAllStoryExportsInDisplayReview,
   expectDisplayReviewForVisualChange,
   expectDevServerLeftRunning,
-  expectReviewOpenedInBrowser,
-  expectSkillInvoked,
+  expectAnyWorkflowSkillInvoked,
   getEvalContext,
   expectStoryDiscoveryBeforeReview,
   expectStoryIdsInDisplayReview,
   expectStoryTestsRanAndPassed,
   expectWorkflowCalls,
-  modelRunsTestsOnlyWhenAsked,
 } from '#test-utils';
+
+// The steps of the workflow in AGENTS.md that this task cannot do without.
+const WORKFLOW_SKILLS = ['write-stories', 'test-stories', 'ui-review'];
 
 describe('writing the first Button stories in an empty Storybook', () => {
   test('runs story tests after the change and finishes with them passing', async () => {
     await expectStoryTestsRanAndPassed({
-      requireAgentRun: !modelRunsTestsOnlyWhenAsked(),
       covering: ['button'],
     });
   });
 
-  test('uses Storybook story instructions and publishes a display review', () => {
-    expectWorkflowCalls(['get-storybook-story-instructions', 'review-create']);
+  test('runs the skill of each of these steps and publishes a display review', () => {
+    expectWorkflowCalls([...WORKFLOW_SKILLS, 'review-create']);
     expectDisplayReviewForVisualChange();
-  });
-
-  test('opens the review in the in-app browser', () => {
-    expectReviewOpenedInBrowser();
   });
 
   test('the review covers the new Button stories', () => {
@@ -45,8 +41,8 @@ describe('writing the first Button stories in an empty Storybook', () => {
   describe('depending on the current agent and integration', () => {
     const { integration } = getEvalContext();
 
-    test.skipIf(integration === 'mcp')('invokes the ui-workflow skill', () => {
-      expectSkillInvoked('ui-workflow');
+    test.skipIf(integration === 'mcp')('finds the workflow through the plugin skills', () => {
+      expectAnyWorkflowSkillInvoked();
     });
 
     test.skipIf(integration !== 'plugin')(

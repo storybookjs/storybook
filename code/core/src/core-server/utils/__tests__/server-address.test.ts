@@ -1,6 +1,6 @@
 import os, { type NetworkInterfaceInfoIPv4 } from 'node:os';
 
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getServerAddresses } from '../server-address.ts';
 
@@ -49,5 +49,19 @@ describe('getServerAddresses', () => {
     const { address, networkAddress } = getServerAddresses(9009, '', 'http');
     expect(address).toEqual('http://127.0.0.1:9009/');
     expect(networkAddress).toEqual('http://0.0.0.0:9009/');
+  });
+
+  describe('when the network interfaces cannot be read', () => {
+    beforeEach(() => {
+      mockedOs.networkInterfaces.mockImplementationOnce(() => {
+        throw new Error('uv_interface_addresses returned Unknown system error 1');
+      });
+    });
+
+    it('builds addresses with default address', () => {
+      const { address, networkAddress } = getServerAddresses(9009, '', 'http');
+      expect(address).toEqual('http://127.0.0.1:9009/');
+      expect(networkAddress).toEqual('http://0.0.0.0:9009/');
+    });
   });
 });

@@ -1,7 +1,13 @@
 // @vitest-environment happy-dom
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
-import type { Args, Globals, RenderContext, StoryContextForRender } from 'storybook/internal/types';
+import type {
+  Args,
+  Globals,
+  RenderContext,
+  StoryContext,
+  StrictArgTypes,
+} from 'storybook/internal/types';
 
 import { expectTypeOf } from 'expect-type';
 import { computed, defineComponent, h, nextTick, reactive, type VNode } from 'vue';
@@ -129,37 +135,32 @@ describe('render slots', () => {
     default: () => 'Default slot',
     footer: h('p', 'Footer'),
   };
-  const slotNames = (argTypes: StoryContextForRender<VueRenderer>['argTypes'] = {}) => {
+  const slotNames = (argTypes: StrictArgTypes = {}) => {
     const storyFn = render(args, {
       id: 'layout--default',
       component: Layout,
       argTypes,
-    } as unknown as StoryContextForRender<VueRenderer>) as () => VNode;
+    } as unknown as StoryContext<VueRenderer>) as () => VNode;
     const vnode = storyFn();
     return Object.keys((vnode.children ?? {}) as object).filter((key) => !key.startsWith('_'));
   };
 
-  afterEach(() => {
-    vi.unstubAllGlobals();
+  it('passes every arg that is neither a declared prop nor a listener as a slot', () => {
+    expect(slotNames()).toEqual(['default', 'footer']);
   });
 
-  it('passes args documented as slots by docgen', () => {
-    expect(slotNames({ footer: { name: 'footer', table: { category: 'slots' } } })).toEqual([
+  it('passes an arg named like a declared prop to the prop, even with a slot argType', () => {
+    expect(slotNames({ label: { name: 'label', table: { category: 'slots' } } })).toEqual([
+      'default',
       'footer',
     ]);
-  });
-
-  it('passes every undeclared, non-listener arg as a slot under server docgen', () => {
-    vi.stubGlobal('FEATURES', { docgenServer: true });
-
-    expect(slotNames()).toEqual(['default', 'footer']);
   });
 });
 
 describe('renderToCanvas', () => {
   it('ends on showException when a decorator throws during mount', async () => {
     const error = new Error('Story did something wrong');
-    const storyContext = { args: {}, globals: {} } as unknown as StoryContextForRender<VueRenderer>;
+    const storyContext = { args: {}, globals: {} } as unknown as StoryContext<VueRenderer>;
     const storyFn = decorateStory(
       () => ({ render: () => null }),
       [
@@ -206,7 +207,7 @@ describe('renderToCanvas', () => {
         args,
         argTypes: {},
         globals: {},
-      } as unknown as StoryContextForRender<VueRenderer>;
+      } as unknown as StoryContext<VueRenderer>;
       return {
         id: 'label--default',
         storyContext,

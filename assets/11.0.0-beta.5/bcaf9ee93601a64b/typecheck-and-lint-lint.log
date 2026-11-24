@@ -1,0 +1,7 @@
+Checking formatting...
+
+automigrations-summary.md (73ms)
+
+Format issues found in above 1 files. Run without `--check` to fix.
+Finished in 471ms on 178 files using 4 threads.
+exit 1

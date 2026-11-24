@@ -74,6 +74,18 @@ export function getPrettyPackageManagerName(packageManager: string | undefined):
  * @param pkg A string like `@storybook/cli`, `react` or `react@^16`
  * @returns A tuple of 2 elements: [packageName, packageVersion]
  */
+/** A dependency version that an upgrade sets in a catalog file instead of a package.json file. */
+export interface CatalogUpgrade {
+  /** The file that defines the catalog. */
+  file: string;
+  /** The name of the catalog, `''` for the default catalog. */
+  catalog: string;
+  name: string;
+  /** The version in the catalog before the upgrade, `undefined` when it has none. */
+  from: string | undefined;
+  to: string;
+}
+
 export function getPackageDetails(pkg: string): [string, string?] {
   const isScopedPackage = pkg.startsWith('@');
   const scopeSeparatorIndex = isScopedPackage ? pkg.indexOf('/') : -1;
@@ -367,16 +379,32 @@ export abstract class JsPackageManager {
   }
 
   /**
+   * Split `name@version` upgrade specifiers into the versions that dependencies `declared` through
+   * a catalog get in the catalog file, and the specifiers left for package.json. Reads files but
+   * writes none. Only PNPMProxy supports catalogs, so the base implementation returns every
+   * specifier for package.json.
+   */
+  public planCatalogUpgrades(
+    specifiers: string[],
+    _declared: Partial<Record<string, string>>
+  ): { direct: string[]; catalogued: CatalogUpgrade[] } {
+    return { direct: specifiers, catalogued: [] };
+  }
+
+  /** Write catalog versions that {@link planCatalogUpgrades} planned. */
+  public applyCatalogUpgrades(_upgrades: CatalogUpgrade[]): void {}
+
+  /**
    * Write `name@version` upgrade specifiers for dependencies that `declared` references through a
-   * catalog into the catalog file, and return the remaining specifiers for package.json. Only
-   * PNPMProxy supports catalogs, so the base implementation writes nothing and returns every
-   * specifier.
+   * catalog into the catalog file, and return the remaining specifiers for package.json.
    */
   public writeCatalogUpgrades(
     specifiers: string[],
-    _declared: Partial<Record<string, string>>
+    declared: Partial<Record<string, string>>
   ): string[] {
-    return specifiers;
+    const { direct, catalogued } = this.planCatalogUpgrades(specifiers, declared);
+    this.applyCatalogUpgrades(catalogued);
+    return direct;
   }
 
   /**

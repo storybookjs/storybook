@@ -4,11 +4,11 @@ import {
   installSkills,
   refreshAgentInstructions,
 } from 'storybook/internal/cli';
+import type {
+  JsPackageManager} from 'storybook/internal/common';
 import {
   HandledError,
-  JsPackageManager,
   JsPackageManagerFactory,
-  type PackageJsonWithDepsAndDevDeps,
   PackageManagerName,
   getProcessAncestry,
   isCI,
@@ -48,10 +48,12 @@ import type { ProjectDoctorData, ProjectDoctorResults } from './doctor/types.ts'
 import { configureDeferredAddons } from './postinstallAddon.ts';
 import {
   type CollectProjectsSuccessResult,
+  type DependencyUpgradePlan,
+  applyStorybookDependencyUpgrades,
+  describeDependencyUpgrades,
   getProjects,
-  getStorybookDependencyUpgrades,
+  planStorybookDependencyUpgrades,
   shortenPath,
-  upgradeStorybookDependencies,
 } from './util.ts';
 
 type Package = {
@@ -95,21 +97,6 @@ const deprecatedPackages = [
 ];
 
 const formatPackage = (pkg: Package) => `${pkg.package}@${pkg.version}`;
-
-/** The versions that upgrade specifiers change in a package.json file, one `name: from → to` line each. */
-const describeVersionChanges = (
-  packageJson: PackageJsonWithDepsAndDevDeps,
-  upgrades: Awaited<ReturnType<typeof getStorybookDependencyUpgrades>>
-) =>
-  upgrades.flatMap(([type, specifiers]) =>
-    specifiers.flatMap((specifier) => {
-      const at = specifier.indexOf('@', 1);
-      const name = specifier.slice(0, at);
-      const version = specifier.slice(at + 1);
-      const current = packageJson[type]?.[name];
-      return current === version ? [] : [`${CLI_COLORS.change(name)}: ${current} → ${version}`];
-    })
-  );
 
 const getStorybookVersionSpecifierFromCli = (): string | undefined => {
   try {
@@ -495,9 +482,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
     });
     try {
       const loggedPaths: string[] = [];
-      // A dry run reports the versions it would set, once per package.json file.
-      const plannedPaths = new Set<string>();
-      const plannedUpgrades: string[] = [];
+      const plans: DependencyUpgradePlan[] = [];
       for (const project of storybookProjects) {
         logger.debug(`Updating dependencies in ${shortenPath(project.configDir)}...`);
         const packageJsonPaths = project.packageManager.packageJsonPaths.map(shortenPath);
@@ -515,33 +500,29 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
           isCLIExactPrerelease: project.isCLIExactPrerelease,
           storybookVersionSpecifier: storybookVersionSpecifier ?? project.storybookVersionSpecifier,
         };
-        if (!options.dryRun) {
-          await upgradeStorybookDependencies(config);
-          continue;
-        }
-        for (const packageJsonPath of project.packageManager.packageJsonPaths) {
-          if (plannedPaths.has(packageJsonPath)) {
-            continue;
-          }
-          plannedPaths.add(packageJsonPath);
-          const packageJson = JsPackageManager.getPackageJson(packageJsonPath);
-          const changes = describeVersionChanges(
-            packageJson,
-            await getStorybookDependencyUpgrades(packageJson, config)
-          );
-          if (changes.length > 0) {
-            plannedUpgrades.push(
-              `${CLI_COLORS.change(shortenPath(packageJsonPath))}:\n${changes.join('\n')}`
-            );
-          }
+        const projectPlans = await planStorybookDependencyUpgrades(config);
+        if (options.dryRun) {
+          plans.push(...projectPlans);
+        } else {
+          await applyStorybookDependencyUpgrades(project.packageManager, projectPlans);
         }
       }
-      task.success(
-        options.dryRun
-          ? 'Would update package versions in package.json files to:'
-          : `Updated package versions in package.json files`
-      );
-      plannedUpgrades.forEach((message) => logger.log(message));
+      if (!options.dryRun) {
+        task.success(`Updated package versions in package.json files`);
+      } else {
+        const files = describeDependencyUpgrades(plans);
+        task.success(
+          files.length > 0
+            ? 'Would update package versions to:'
+            : 'No package versions would change'
+        );
+        for (const { file, changes } of files) {
+          const lines = changes.map(
+            ({ name, from, to }) => `${CLI_COLORS.change(name)}: ${from} → ${to}`
+          );
+          logger.log(`${CLI_COLORS.change(shortenPath(file))}:\n${lines.join('\n')}`);
+        }
+      }
     } catch (err) {
       task.error(
         options.dryRun

@@ -7,12 +7,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type * as sbcc from 'storybook/internal/common';
 import {
+  type CatalogUpgrade,
   HandledError,
   type JsPackageManager,
   PackageManagerName,
   versions,
 } from 'storybook/internal/common';
-import { logger } from 'storybook/internal/node-logger';
+import { logger, prompt } from 'storybook/internal/node-logger';
 
 import { getStorybookData as sourceGetStorybookData } from '../../../core/src/cli/getStorybookData.ts';
 import { getStorybookData } from './automigrate/helpers/mainConfigFile.ts';
@@ -669,9 +670,12 @@ describe('upgrade', () => {
   const runUpgrade = async ({
     dryRun,
     packageJsonPaths = [],
+    catalogUpgrades = [],
   }: {
     dryRun: boolean;
     packageJsonPaths?: string[];
+    /** The catalog versions the package manager plans for every package.json file. */
+    catalogUpgrades?: CatalogUpgrade[];
   }) => {
     const packageManager = {
       type: PackageManagerName.PNPM,
@@ -686,7 +690,15 @@ describe('upgrade', () => {
       precheckStorybookPackageInstall: vi.fn(async () => {}),
       installDependencies: vi.fn(async () => {}),
       dedupeDependencies: vi.fn(async () => {}),
-      writeCatalogUpgrades: vi.fn((specifiers: string[]) => specifiers),
+      planCatalogUpgrades: vi.fn((specifiers: string[]) => ({
+        direct: specifiers.filter(
+          (specifier) => !catalogUpgrades.some(({ name }) => specifier.startsWith(`${name}@`))
+        ),
+        catalogued: catalogUpgrades.filter(({ name }) =>
+          specifiers.some((specifier) => specifier.startsWith(`${name}@`))
+        ),
+      })),
+      applyCatalogUpgrades: vi.fn(),
       reportInstallSettingChanges: vi.fn(),
       addDependencies: vi.fn(async () => {}),
     };
@@ -779,12 +791,68 @@ describe('upgrade', () => {
         });
 
         expect(logged()).toMatch(/^storybook: 8\.0\.0 → \^?9\.0\.0$/m);
-        expect(packageManager.writeCatalogUpgrades).not.toHaveBeenCalled();
+        expect(packageManager.applyCatalogUpgrades).not.toHaveBeenCalled();
         expect(packageManager.addDependencies).not.toHaveBeenCalled();
         expect(await readFile(packageJsonPath, 'utf8')).toBe(packageJson);
       } finally {
         await rm(dir, { recursive: true, force: true });
       }
+    });
+
+    describe('with a dependency declared through a catalog', () => {
+      const catalogUpgrade: CatalogUpgrade = {
+        file: '/project/pnpm-workspace.yaml',
+        catalog: '',
+        name: 'storybook',
+        from: '^8.0.0',
+        to: '^9.0.0',
+      };
+
+      const withCatalog = async (
+        dryRun: boolean,
+        test: (packageManager: Awaited<ReturnType<typeof runUpgrade>>) => void
+      ) => {
+        const dir = await mkdtemp(join(tmpdir(), 'sb-upgrade-catalog-'));
+        const packageJsonPath = join(dir, 'package.json');
+        await writeFile(
+          packageJsonPath,
+          JSON.stringify({ devDependencies: { storybook: 'catalog:' } })
+        );
+        try {
+          test(
+            await runUpgrade({
+              dryRun,
+              packageJsonPaths: [packageJsonPath],
+              catalogUpgrades: [catalogUpgrade],
+            })
+          );
+        } finally {
+          await rm(dir, { recursive: true, force: true });
+        }
+      };
+
+      it('names the catalog file and version a run would write, in a dry run', async () => {
+        await withCatalog(true, (packageManager) => {
+          expect(logged()).toMatch(/pnpm-workspace\.yaml:\nstorybook: \^8\.0\.0 → \^9\.0\.0$/m);
+          expect(logged()).not.toContain('catalog: →');
+          expect(packageManager.applyCatalogUpgrades).not.toHaveBeenCalled();
+        });
+      });
+
+      it('writes the same catalog version in a normal run', async () => {
+        await withCatalog(false, (packageManager) => {
+          expect(packageManager.applyCatalogUpgrades).toHaveBeenCalledWith([catalogUpgrade]);
+        });
+      });
+    });
+
+    it('says that no package version would change, when none would', async () => {
+      const task = { message: vi.fn(), success: vi.fn(), error: vi.fn() };
+      vi.spyOn(prompt, 'taskLog').mockReturnValue(task as never);
+
+      await runUpgrade({ dryRun: true });
+
+      expect(task.success).toHaveBeenCalledWith('No package versions would change');
     });
 
     it('reports the upgrade of a normal run', async () => {

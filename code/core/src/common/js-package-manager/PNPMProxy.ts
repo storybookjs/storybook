@@ -17,7 +17,12 @@ import { Document, isMap, parseDocument } from 'yaml';
 import type { ExecuteCommandOptions } from '../utils/command.ts';
 import { executeCommand, executeCommandSync } from '../utils/command.ts';
 import { getProjectRoot } from '../utils/paths.ts';
-import { JsPackageManager, PackageManagerName } from './JsPackageManager.ts';
+import {
+  type CatalogUpgrade,
+  JsPackageManager,
+  PackageManagerName,
+  getPackageDetails,
+} from './JsPackageManager.ts';
 import type { PackageJson } from './PackageJson.ts';
 import { type OverrideSource, toOverrides } from './overrides.ts';
 import { hasAllowBuildsDecision, hasPnpm10ListDecision } from './pnpm-build-approvals.ts';
@@ -245,34 +250,46 @@ export class PNPMProxy extends JsPackageManager {
     return typeof version === 'string' || typeof version === 'number' ? String(version) : null;
   }
 
-  override writeCatalogUpgrades(
+  override planCatalogUpgrades(
     specifiers: string[],
     declared: Partial<Record<string, string>>
-  ): string[] {
+  ): { direct: string[]; catalogued: CatalogUpgrade[] } {
     const upgrades = specifiers.map((specifier) => {
-      const at = specifier.indexOf('@', 1);
-      const name = specifier.slice(0, at);
-      return {
-        specifier,
-        name,
-        version: specifier.slice(at + 1),
-        catalog: this.#getCatalogName(declared[name]),
-      };
+      const [name, version = ''] = getPackageDetails(specifier);
+      return { specifier, name, version, catalog: this.#getCatalogName(declared[name]) };
     });
-    const catalogued = upgrades.filter(({ catalog }) => catalog !== null);
+    const catalogued = upgrades.filter(
+      (upgrade): upgrade is typeof upgrade & { catalog: string } => upgrade.catalog !== null
+    );
     const workspace = catalogued.length > 0 ? this.#readWorkspaceYaml() : undefined;
     if (!workspace) {
-      return specifiers;
+      return { direct: specifiers, catalogued: [] };
     }
-    for (const { name, version, catalog } of catalogued) {
-      const keyPath = [...this.#catalogKeyPath(workspace.doc, catalog!), name];
-      const current = String(workspace.doc.getIn(keyPath) ?? '');
-      const modifier =
-        /^[~^]/.test(version) || prerelease(version) ? '' : (current.match(/^[~^]/)?.[0] ?? '');
-      workspace.doc.setIn(keyPath, `${modifier}${version}`);
+    return {
+      direct: upgrades.filter(({ catalog }) => catalog === null).map(({ specifier }) => specifier),
+      catalogued: catalogued.map(({ name, version, catalog }) => {
+        const current = workspace.doc.getIn([
+          ...this.#catalogKeyPath(workspace.doc, catalog),
+          name,
+        ]);
+        const from = current === undefined || current === null ? undefined : String(current);
+        // The catalog keeps its range modifier, unless the version brings its own or is a prerelease.
+        const modifier =
+          /^[~^]/.test(version) || prerelease(version) ? '' : (from?.match(/^[~^]/)?.[0] ?? '');
+        return { file: workspace.path, catalog, name, from, to: `${modifier}${version}` };
+      }),
+    };
+  }
+
+  override applyCatalogUpgrades(upgrades: CatalogUpgrade[]): void {
+    const workspace = upgrades.length > 0 ? this.#readWorkspaceYaml() : undefined;
+    if (!workspace) {
+      return;
+    }
+    for (const { name, catalog, to } of upgrades) {
+      workspace.doc.setIn([...this.#catalogKeyPath(workspace.doc, catalog), name], to);
     }
     this.#writeWorkspaceYaml(workspace);
-    return upgrades.filter(({ catalog }) => catalog === null).map(({ specifier }) => specifier);
   }
 
   /** Adds the `overrides` of `pnpm-workspace.yaml`, which pnpm 10 reads alongside package.json. */

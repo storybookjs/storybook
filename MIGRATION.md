@@ -76,6 +76,7 @@
   - [`features.legacyDecoratorFileOrder` removed](#featureslegacydecoratorfileorder-removed)
   - [`experimentalReview` feature flag removed](#experimentalreview-feature-flag-removed)
   - [`changeDetection` feature flag removed](#changedetection-feature-flag-removed)
+  - [`@storybook/addon-mcp`: `toolsets` option and `X-MCP-Toolsets` header removed](#storybookaddon-mcp-toolsets-option-and-x-mcp-toolsets-header-removed)
   - [`storybook ai` command removed](#storybook-ai-command-removed)
   - [`stories` skill split into four skills](#stories-skill-split-into-four-skills)
   - [`--preview-url` and `--force-build-preview` removed](#--preview-url-and---force-build-preview-removed)
@@ -1988,7 +1989,7 @@ A typed main config that still sets the flag fails type-checking until it is rem
 ### `changeDetection` feature flag removed
 
 The `features.changeDetection` flag is removed, and Storybook no longer reads it.
-[Change detection](https://storybook.js.org/docs/configure/user-interface/change-detection) is always on in `storybook dev`: the sidebar shows the new and modified statuses and the Review button, and agents get the `stories-changed` and `review-create` tools whenever the `dev` toolset is on.
+[Change detection](https://storybook.js.org/docs/configure/user-interface/change-detection) is always on in `storybook dev`: the sidebar shows the new and modified statuses and the Review button, and agents get the `stories-changed` and `review-create` tools.
 If you had `changeDetection: false`, change detection and agentic review are now on for your project.
 
 The flag existed as an escape hatch while change detection was new.
@@ -1999,6 +2000,15 @@ You can also run it with `storybook automigrate remove-change-detection-flag`.
 If it cannot edit your main config, for example because `features` contains a spread, remove the flag by hand.
 It does not detect the flag when `features` is computed, for example by a function or a conditional, so remove it by hand there too.
 A typed main config that still sets the flag fails type-checking until it is removed.
+
+### `@storybook/addon-mcp`: `toolsets` option and `X-MCP-Toolsets` header removed
+
+The `toolsets` addon option (`dev`, `docs`, `test`) and the `X-MCP-Toolsets` HTTP request header have been removed from `@storybook/addon-mcp`.
+All supported tools for your Storybook setup are now enabled automatically based on your project's configuration (such as `@storybook/addon-vitest` for test tools and a components manifest for docs tools).
+
+Remove the `toolsets` option from your `@storybook/addon-mcp` configuration in `.storybook/main.js|ts` and any `X-MCP-Toolsets` header from your MCP client configuration.
+Storybook ignores both when they are still set, so tools that you turned off are available again.
+To keep an agent from using some of the tools, restrict them in the agent's own settings, such as its tool permissions.
 
 ### `storybook ai` command removed
 

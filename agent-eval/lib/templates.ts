@@ -941,16 +941,11 @@ export async function writeMcpAgentInstructions(sandbox: Sandbox): Promise<void>
       'code/core/src/cli/skills/content/build-workflow-instructions.ts'
     )
   )) as {
-    buildServerInstructions: (options: {
-      devEnabled: boolean;
-      testSupported: boolean;
-      docsEnabled: boolean;
-    }) => string;
+    buildServerInstructions: (options: { testSupported: boolean; docsEnabled: boolean }) => string;
   };
-  // The MCP fixtures are all react-vite with addon-vitest, docs and MCP, so every toolset is on.
   await writeStorybookAgentInstructions(
     sandbox,
-    `${buildServerInstructions({ devEnabled: true, testSupported: true, docsEnabled: true })}\n`
+    `${buildServerInstructions({ testSupported: true, docsEnabled: true })}\n`
   );
 }
 

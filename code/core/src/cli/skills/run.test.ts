@@ -20,7 +20,6 @@ const deps = () => ({
     testSupported: true,
     a11yEnabled: false,
     docgenServer: false,
-    mcpToolsets: { dev: true, docs: true, test: true },
     composed: false,
   }),
   getProjectInfo: vi.fn().mockResolvedValue({
@@ -212,44 +211,6 @@ describe('runSkillsCommand', () => {
     }
     const uiReview = await runSkillsCommand({ tokens: ['ui-review'], mcp: true, target: {} }, d);
     expect(uiReview.output).toContain('Call `review-create` with:');
-  });
-
-  it('--mcp leaves out the tools of the other toolsets main.ts turns off, and says when its own is off', async () => {
-    const d = deps();
-    d.resolveSkillInputs.mockResolvedValue({
-      ...(await d.resolveSkillInputs()),
-      docsEnabled: true,
-      docsEnabledForCli: true,
-      mcpToolsets: { dev: false, docs: false, test: true },
-    });
-
-    const testStories = await runSkillsCommand(
-      { tokens: ['test-stories'], mcp: true, target: {} },
-      d
-    );
-    expect(testStories.output).toContain('`test-run` with');
-    expect(testStories.output).not.toContain('stories-changed');
-    expect(testStories.output).toContain('This Storybook has no tool that lists story ids.');
-
-    // A client that turns the toolset on with the `X-MCP-Toolsets` header has the tool.
-    const uiReview = await runSkillsCommand({ tokens: ['ui-review'], mcp: true, target: {} }, d);
-    expect(uiReview.output).toContain('When the server does not give you `review-create`, skip');
-    expect(uiReview.output).toContain('Call `review-create` with:');
-
-    const cli = await runSkillsCommand({ tokens: ['ui-review'], target: {} }, d);
-    expect(cli.output).toContain('## Publish the review');
-    expect(cli.output).not.toContain('skip this step');
-
-    d.resolveSkillInputs.mockResolvedValue({
-      ...(await d.resolveSkillInputs()),
-      mcpToolsets: { dev: true, docs: true, test: false },
-    });
-    const withoutTests = await runSkillsCommand(
-      { tokens: ['test-stories'], mcp: true, target: {} },
-      d
-    );
-    expect(withoutTests.output).toContain('When the server does not give you `test-run`, skip');
-    expect(withoutTests.output).toContain('Call `test-run` after every change');
   });
 
   it('--all prints each skill once', async () => {

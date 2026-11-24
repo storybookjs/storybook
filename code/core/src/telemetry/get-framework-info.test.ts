@@ -1,17 +1,12 @@
-import { readFile } from 'node:fs/promises';
-
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getStorybookInfo, readDependencyManifest } from 'storybook/internal/common';
 import type { PackageJson, StorybookConfig } from 'storybook/internal/types';
 
-import * as pkg from 'empathic/package';
 import { resolve } from 'pathe';
 
 import { getFrameworkInfo } from './get-framework-info.ts';
 
-vi.mock('node:fs/promises', { spy: true });
-vi.mock('empathic/package', { spy: true });
 vi.mock('storybook/internal/common', { spy: true });
 
 const configDir = '/tmp/.storybook';
@@ -23,8 +18,6 @@ const defaultInfo = {
 };
 
 beforeEach(() => {
-  vi.mocked(pkg.up).mockReset();
-  vi.mocked(readFile).mockReset();
   vi.mocked(getStorybookInfo).mockResolvedValue(defaultInfo as any);
   vi.mocked(readDependencyManifest).mockResolvedValue(undefined);
 });
@@ -187,7 +180,6 @@ describe('getFrameworkInfo', () => {
     it('resolves its package.json by package name', async () => {
       const result = await getFrameworkInfo({} as StorybookConfig, configDir);
 
-      expect(pkg.up).not.toHaveBeenCalled();
       expect(readDependencyManifest).toHaveBeenCalledWith(
         resolve(configDir),
         '@acme/storybook-framework'
@@ -196,38 +188,41 @@ describe('getFrameworkInfo', () => {
     });
   });
 
+  describe('for a renderer configured by a path outside node_modules', () => {
+    const rendererPath = '/repo/vendor/@storybook/react-native';
+
+    beforeEach(() => {
+      vi.mocked(getStorybookInfo).mockResolvedValue({ frameworkPackage: rendererPath } as any);
+      vi.mocked(readDependencyManifest).mockResolvedValue({
+        name: '@storybook/react-native',
+        dependencies: { react: '^19.0.0' },
+      });
+    });
+
+    it('reports that renderer by its package.json name', async () => {
+      const result = await getFrameworkInfo({} as StorybookConfig, configDir);
+
+      expect(readDependencyManifest).toHaveBeenCalledWith(resolve(configDir), rendererPath);
+      expect(result.renderer).toBe('@storybook/react-native');
+    });
+  });
+
   describe('for an unlisted framework given as a file path', () => {
     const frameworkPath = '/repo/packages/storybook-framework/dist/index.js';
 
     beforeEach(() => {
       vi.mocked(getStorybookInfo).mockResolvedValue({ frameworkPackage: frameworkPath } as any);
-      vi.mocked(pkg.up).mockReturnValue('/repo/packages/storybook-framework/package.json');
-      vi.mocked(readFile).mockResolvedValue(
-        JSON.stringify({ peerDependencies: { '@storybook/vue3': '^10.0.0' } })
-      );
+      vi.mocked(readDependencyManifest).mockResolvedValue({
+        name: '@acme/storybook-framework',
+        peerDependencies: { '@storybook/vue3': '^10.0.0' },
+      });
     });
 
-    it('reads its nearest package.json', async () => {
+    it('reads the package.json of the package the path is in', async () => {
       const result = await getFrameworkInfo({} as StorybookConfig, configDir);
 
-      expect(pkg.up).toHaveBeenCalledWith({ cwd: frameworkPath });
+      expect(readDependencyManifest).toHaveBeenCalledWith(resolve(configDir), frameworkPath);
       expect(result.renderer).toBe('@storybook/vue3');
-    });
-  });
-
-  describe('for an unlisted framework given as a file path whose package.json cannot be read', () => {
-    beforeEach(() => {
-      vi.mocked(getStorybookInfo).mockResolvedValue({
-        frameworkPackage: '/repo/packages/storybook-framework/dist/index.js',
-      } as any);
-      vi.mocked(pkg.up).mockReturnValue('/repo/packages/storybook-framework/package.json');
-      vi.mocked(readFile).mockRejectedValue(new Error('EACCES'));
-    });
-
-    it('reports no renderer instead of throwing', async () => {
-      const result = await getFrameworkInfo({} as StorybookConfig, configDir);
-
-      expect(result.renderer).toBeUndefined();
     });
   });
 });

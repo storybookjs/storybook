@@ -566,6 +566,59 @@ describe('argtypes-default-value', () => {
     expect(result.story).toBe(story);
   });
 
+  it('skips a factory story whose argTypes show only a table defaultValue', async () => {
+    const story = [
+      "import { getStoryGenerator } from './helpers';",
+      'const shared = {',
+      "  position: { control: 'select', table: { defaultValue: { summary: 'right' } } },",
+      '};',
+      'const generateStory = getStoryGenerator({ argTypes: shared });',
+      'export default {};',
+      'export const Primary = generateStory({',
+      "  storyPartial: { argTypes: { size: { table: { defaultValue: { summary: 'M' } } } } },",
+      '});',
+    ].join('\n');
+    const result = await migrate({ story });
+
+    expect(result.failures).toEqual([]);
+    expect(result.story).toBe(story);
+  });
+
+  it('fails a factory story whose argTypes show a defaultValue', async () => {
+    const story = [
+      "import { getStoryGenerator } from './helpers';",
+      'const generateStory = getStoryGenerator({});',
+      'export default {};',
+      'export const Primary = generateStory({',
+      "  storyPartial: { argTypes: { size: { defaultValue: 'M', table: { category: 'inputs' } } } },",
+      '});',
+    ].join('\n');
+    const result = await migrate({ story });
+
+    expect(result.failures).toEqual([
+      { file: storyPath, kind: 'story', message: expect.stringContaining('Primary') },
+    ]);
+    expect(result.story).toBe(story);
+  });
+
+  it('fails a factory story that may place a table defaultValue under argTypes', async () => {
+    const story = [
+      "import { getStoryGenerator } from './helpers';",
+      "const toArgType = (input) => ({ control: 'text', ...input.table });",
+      'const generateStory = getStoryGenerator({});',
+      'export default {};',
+      'export const Primary = generateStory({',
+      "  storyPartial: { argTypes: { size: toArgType({ table: { defaultValue: 'M' } }) } },",
+      '});',
+    ].join('\n');
+    const result = await migrate({ story });
+
+    expect(result.failures).toEqual([
+      { file: storyPath, kind: 'story', message: expect.stringContaining('Primary') },
+    ]);
+    expect(result.story).toBe(story);
+  });
+
   it('does not edit an MDX story', async () => {
     const docsPath = resolve('src/Intro.mdx');
     const source = '<Meta argTypes={{ value: { defaultValue: 0 } }} />';

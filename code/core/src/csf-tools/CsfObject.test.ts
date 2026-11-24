@@ -922,6 +922,9 @@ describe('CsfObject', () => {
       [`import { shared } from './shared';\nexport default { argTypes: { ...shared } };`],
       [`import { shared } from './shared';\nexport default { ...shared };`],
       [`export default {};\nexport const Made = makeStory({ args: { defaultValue: 1 } });`],
+      [
+        `export default {};\nexport const Made = makeStory({ argTypes: { a: { table: { defaultValue: 1 } } } });`,
+      ],
       [`export default { argTypes: { defaultValue: { control: 'text' } } };`],
     ])('removes nothing that the source does not show: %s', (source) => {
       const { results, code, csf } = removeEach(source);

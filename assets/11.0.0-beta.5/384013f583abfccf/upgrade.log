@@ -1,0 +1,488 @@
+
+[90m┌[39m  Storybook upgrade - v11.0.0-beta.5
+[90m│[39m
+[90m│[39m  Detecting projects...
+(node:4551) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+[90m│[39m
+[90m│[39m  Detecting projects: 1 projects
+[90m│[39m
+[90m│[39m  1 project detected
+[90m│[39m
+[34m●[39m  Upgrading from [1m10.6.1[22m to [1m11.0.0-beta.5[22m
+[90m│[39m
+[90m│[39m  /common/storybook/package.json
+[90m│[39m  /package.json
+[90m│[39m  /services/mcp/package.json
+[90m│[39m  /products/workflows/package.json
+[90m│[39m  /products/wizard/package.json
+[90m│[39m  /products/web_analytics/package.json
+[90m│[39m  /products/warehouse_suggestions/package.json
+[90m│[39m  /products/warehouse_sources/package.json
+[90m│[39m  /products/visual_review/package.json
+[90m│[39m  /products/tracing/package.json
+[90m│[39m  /products/tasks/package.json
+[90m│[39m  /products/surveys/package.json
+[90m│[39m  /products/subscriptions/package.json
+[90m│[39m  /products/stamphog/package.json
+[90m│[39m  /products/slack_app/package.json
+[90m│[39m  /products/skills/package.json
+[90m│[39m  /products/signals/package.json
+[90m│[39m  /products/review_hog/package.json
+[90m│[39m  /products/revenue_analytics/package.json
+[90m│[39m  /products/replay_vision/package.json
+[90m│[39m  /products/replay/package.json
+[90m│[39m  /products/product_analytics/package.json
+[90m│[39m  /products/posthog_ai/package.json
+[90m│[39m  /products/persons/package.json
+[90m│[39m  /products/notebooks/package.json
+[90m│[39m  /products/ml_inference/package.json
+[90m│[39m  /products/metrics/package.json
+[90m│[39m  /products/mcp_store/package.json
+[90m│[39m  /products/mcp_analytics/package.json
+[90m│[39m  /products/marketing_analytics/package.json
+[90m│[39m  /products/logs/package.json
+[90m│[39m  /products/legal_documents/package.json
+[90m│[39m  /products/growth/package.json
+[90m│[39m  /products/groups/package.json
+[90m│[39m  /products/games/package.json
+[90m│[39m  /products/feature_flags/package.json
+[90m│[39m  /products/experiments/package.json
+[90m│[39m  /products/error_tracking/package.json
+[90m│[39m  /products/engineering_analytics/package.json
+[90m│[39m  /products/endpoints/package.json
+[90m│[39m  /products/early_access_features/package.json
+[90m│[39m  /products/data_warehouse/package.json
+[90m│[39m  /products/data_quality/package.json
+[90m│[39m  /products/data_modeling/package.json
+[90m│[39m  /products/data_catalog/package.json
+[90m│[39m  /products/dashboards/package.json
+[90m│[39m  /products/customer_analytics/package.json
+[90m│[39m  /products/conversations/package.json
+[90m│[39m  /products/cohorts/package.json
+[90m│[39m  /products/canvas/package.json
+[90m│[39m  /products/business_knowledge/package.json
+[90m│[39m  /products/business_intelligence/package.json
+[90m│[39m  /products/autoresearch/package.json
+[90m│[39m  /products/annotations/package.json
+[90m│[39m  /products/alerts_platform/package.json
+[90m│[39m  /products/alerts/package.json
+[90m│[39m  /products/ai_observability/package.json
+[90m│[39m  /products/actions/package.json
+[90m│[39m  /packages/quill/package.json
+[90m│[39m  /packages/quill/packages/charts/package.json
+[90m│[39m  /frontend/package.json
+[90m│[39m
+[90m│[39m  Updated package versions in package.json files
+[90m│[39m
+[90m│[39m  Checking automigrations for /common/storybook/.storybook...
+[90m│[39m
+
+[90m│[39m  Automigrations detected:
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m upgrade-storybook-related-dependencies[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m wrap-getAbsolutePath[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m story-sort-to-main[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m skills[39m
+[90m│[39m
+[90m│[39m  4 automigration(s) detected
+[90m│[39m
+[90m│[39m  Running all detected automigrations:
+[90m│[39m
+[90m│[39m  - upgrade-storybook-related-dependencies
+[90m│[39m  (/common/storybook/.storybook)
+[90m│[39m
+[90m│[39m  - wrap-getAbsolutePath (/common/storybook/.storybook)
+[90m│[39m
+[90m│[39m  - story-sort-to-main (/common/storybook/.storybook)
+[90m│[39m
+[90m│[39m  - skills (/common/storybook/.storybook)
+[90m│[39m
+[90m│[39m  [36mpnpm --allow-build=esbuild dlx skills@latest add[39m
+[90m│[39m  [36mstorybookjs/skills#v11.0.0-beta.5 --yes --agent claude-code universal[39m
+[90m│[39m  [36m--copy[39m
+[90m│[39m
+[90m│[39m  Added a Storybook section to AGENTS.md and CLAUDE.md that tells agents
+[90m│[39m  when to use the skills. Storybook keeps it current on upgrade: remove
+[90m│[39m  its markers to keep your own edits, or remove the section to opt out
+[90m│[39m  of the workflow.
+[90m│[39m
+[90m│[39m  If you want to remove the Storybook skills, run "pnpm
+[90m│[39m  --allow-build=esbuild dlx skills@latest remove"
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m upgrade-storybook-related-dependencies[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m wrap-getAbsolutePath[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m story-sort-to-main[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m skills[39m
+[90m│[39m
+[90m│[39m  Completed automigrations for /common/storybook/.storybook
+[90m│[39m
+[90m│[39m  Installing dependencies...
+[90m│[39m
+[90m│[39m  Installing dependencies...: Scope: all 135 workspace
+[90m│[39m
+[90m│[39m  Installing dependencies...: [WARN] The store at /home
+[90m│[39m
+[90m│[39m  Installing dependencies...: ✓ Lockfile passes supply-
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../esbuilder
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../../nodejs
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../replay-headless
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../../nodejs
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../../nodejs
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../../services/mcp
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../../nodejs
+[90m│[39m
+[90m│[39m  Installing dependencies...: [WARN] Request took 10418
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: [WARN] Request took 11279
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: [WARN] Request took 10271
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: [WARN] Request took 10052
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: [WARN] Request took 10204
+[90m│[39m
+[90m│[39m  Installing dependencies...: [WARN] Request took 16273
+[90m│[39m
+[90m│[39m  Installing dependencies...: [WARN] Request took 10995
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: [WARN] Request took 11790
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: [WARN] 40 deprecated subd
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../.. postinstall$ git co
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../.. postinstall: Done
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../.. prepare$ husky inst
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../.. prepare: error: cou
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../.. prepare: husky - Gi
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../.. prepare: Done
+[90m│[39m
+[90m│[39m  Installing dependencies...: [WARN] Issues with peer d
+[90m│[39m
+[90m│[39m  Installing dependencies...: dependencies:
+[90m│[39m  - @storyboo
+[90m│[39m
+[90m│[39m  Installing dependencies...: Done in 1m 6.5s using pnp
+[90m│[39m
+[90m│[39m  Dependencies installed
+[90m│[39m
+[33m▲[39m  Since you are in a monorepo, we advise you to deduplicate your
+[90m│[39m  dependencies. We can do this for you but it might take some time.
+[90m│[39m
+[90m│[39m  Deduplicating dependencies...
+[90m│[39m
+[90m│[39m  [WARN] The store at /home/agent/.local/share/pnpm/store/v11 is not
+[90m│[39m  used because packages cannot be hard linked from it into this project.
+[90m│[39m  Using the store at /home/agent/workspace/.pnpm-store/v11 instead. Set
+[90m│[39m  storeDir to choose the store.
+[90m│[39m
+[90m│[39m  ✓ Lockfile passes supply-chain policies (verified 2s ago)
+[90m│[39m
+[90m│[39m  ../..                                    | Progress: resolved 1,
+[90m│[39m  reused 0, downloaded 0, added 0
+[90m│[39m
+[90m│[39m  ../esbuilder                             | [WARN] deprecated
+[90m│[39m  esbuild-plugin-polyfill-node@0.3.0
+[90m│[39m
+[90m│[39m  ../replay-headless                       | [WARN] deprecated
+[90m│[39m  puppeteer@19.0.0
+[90m│[39m
+[90m│[39m  ../..                                    | Progress: resolved 110,
+[90m│[39m  reused 51, downloaded 0, added 0
+[90m│[39m
+[90m│[39m  ../..                                    | Progress: resolved 273,
+[90m│[39m  reused 101, downloaded 0, added 0
+[90m│[39m
+[90m│[39m  ../../nodejs                             | [WARN] deprecated
+[90m│[39m  eslint@8.57.0
+[90m│[39m
+[90m│[39m  ../../nodejs                             | [WARN] deprecated
+[90m│[39m  @opentelemetry/sdk-trace-node@2.7.1
+[90m│[39m
+[90m│[39m  ../..                                    | Progress: resolved 392,
+[90m│[39m  reused 144, downloaded 0, added 0
+[90m│[39m
+[90m│[39m  ../../nodejs                             | [WARN] deprecated
+[90m│[39m  prom-client@15.1.3
+[90m│[39m
+[90m│[39m  ../..                                    | Progress: resolved 407,
+[90m│[39m  reused 156, downloaded 0, added 0
+[90m│[39m
+[90m│[39m  ../../nodejs                             | [WARN] deprecated
+[90m│[39m  aws-sdk@2.1366.0
+[90m│[39m
+[90m│[39m  ../../services/mcp                       | [WARN] deprecated
+[90m│[39m  @cloudflare/vitest-pool-workers@0.16.13
+[90m│[39m
+[90m│[39m  ../..                                    | Progress: resolved 453,
+[90m│[39m  reused 215, downloaded 0, added 0
+[90m│[39m
+[90m│[39m  ../..                                    | Progress: resolved 460,
+[90m│[39m  reused 458, downloaded 0, added 0
+[90m│[39m
+[90m│[39m  ../..                                    | Progress: resolved 460,
+[90m│[39m  reused 459, downloaded 0, added 0
+[90m│[39m
+[90m│[39m  ../..                                    | Progress: resolved 460,
+[90m│[39m  reused 459, downloaded 1, added 0
+[90m│[39m
+[90m│[39m  ../..                                    | Progress: resolved 769,
+[90m│[39m  reused 544, downloaded 1, added 0
+[90m│[39m
+[90m│[39m  ../..                                    | Progress: resolved 1020,
+[90m│[39m  reused 610, downloaded 1, added 0
+[90m│[39m
+[90m│[39m  ../..                                    | Progress: resolved 1233,
+[90m│[39m  reused 677, downloaded 1, added 0
+[90m│[39m
+[90m│[39m  ../..                                    | Progress: resolved 1392,
+[90m│[39m  reused 739, downloaded 1, added 0
+[90m│[39m
+[90m│[39m  ../..                                    | Progress: resolved 1552,
+[90m│[39m  reused 807, downloaded 1, added 0
+[90m│[39m
+[90m│[39m  ../..                                    | Progress: resolved 1790,
+[90m│[39m  reused 859, downloaded 1, added 0
+[90m│[39m
+[90m│[39m  ../..                                    | Progress: resolved 2013,
+[90m│[39m  reused 933, downloaded 1, added 0
+[90m│[39m
+[90m│[39m  ../..                                    | Progress: resolved 2255,
+[90m│[39m  reused 1005, downloaded 1, added 0
+[90m│[39m
+[90m│[39m  ../..                                    | Progress: resolved 2535,
+[90m│[39m  reused 1076, downloaded 1, added 0
+[90m│[39m
+[90m│[39m  ../..                                    | Progress: resolved 2753,
+[90m│[39m  reused 1115, downloaded 1, added 0
+[90m│[39m
+[90m│[39m  ../..                                    | Progress: resolved 2866,
+[90m│[39m  reused 1192, downloaded 1, added 0
+[90m│[39m
+[90m│[39m  ../..                                    | Progress: resolved 3040,
+[90m│[39m  reused 1328, downloaded 1, added 0
+[90m│[39m
+[90m│[39m  ../..                                    | Progress: resolved 3401,
+[90m│[39m  reused 1476, downloaded 1, added 0
+[90m│[39m
+[90m│[39m  ../..                                    | Progress: resolved 3716,
+[90m│[39m  reused 1751, downloaded 1, added 0
+[90m│[39m
+[90m│[39m  ../..                                    | Progress: resolved 3718,
+[90m│[39m  reused 2068, downloaded 1, added 0
+[90m│[39m
+[90m│[39m  ../..                                    | Progress: resolved 3779,
+[90m│[39m  reused 2542, downloaded 1, added 0
+[90m│[39m
+[90m│[39m  [WARN] 35 deprecated subdependencies found:
+[90m│[39m  @clickhouse/client-common@1.12.0, @humanwhocodes/config-array@0.11.14,
+[90m│[39m  @humanwhocodes/object-schema@2.0.3,
+[90m│[39m  @opentelemetry/propagator-jaeger@2.7.1,
+[90m│[39m  @opentelemetry/sdk-trace-base@2.7.1, @smithy/core@3.24.6,
+[90m│[39m  @smithy/smithy-client@4.11.2, @ungap/structured-clone@1.3.0,
+[90m│[39m  @xmldom/xmldom@0.9.10, @zenfs/core@1.11.4, abab@2.0.6,
+[90m│[39m  cron-parser@4.8.1, domexception@2.0.1, domexception@4.0.0,
+[90m│[39m  expect-playwright@0.8.0, fluent-ffmpeg@2.1.3, glob@10.5.0,
+[90m│[39m  glob@11.1.0, glob@7.2.3, google-p12-pem@3.1.4, inflight@1.0.6,
+[90m│[39m  jest-process-manager@0.4.0, node-domexception@1.0.0,
+[90m│[39m  prebuild-install@7.1.3, q@1.5.1, querystring@0.2.0, rimraf@3.0.2,
+[90m│[39m  tsconfck@3.1.6, utilium@1.10.1, uuid@8.0.0, uuid@8.3.2,
+[90m│[39m  w3c-hr-time@1.0.2, whatwg-encoding@1.0.5, whatwg-encoding@2.0.0,
+[90m│[39m  whatwg-encoding@3.1.1
+[90m│[39m
+[90m│[39m  ../..                                    | Progress: resolved 3790,
+[90m│[39m  reused 2706, downloaded 1, added 0
+[90m│[39m
+[90m│[39m  ../..                                    |  +70 -290
+[90m│[39m  +++++----------------------
+[90m│[39m
+[90m│[39m  ../..                                    | Progress: resolved 3790,
+[90m│[39m  reused 3383, downloaded 1, added 70, done
+[90m│[39m
+[90m│[39m  ../.. postinstall$ git config --get blame.ignoreRevsFile > /dev/null
+[90m│[39m  2>&1 || git config blame.ignoreRevsFile .git-blame-ignore-revs >
+[90m│[39m  /dev/null 2>&1 || true; [ ! -f bin/fix-rdkafka-paths ] ||
+[90m│[39m  bin/fix-rdkafka-paths
+[90m│[39m
+[90m│[39m  ../.. postinstall: Done
+[90m│[39m
+[90m│[39m  ../.. prepare$ husky install
+[90m│[39m
+[90m│[39m  ../.. prepare: error: could not write config file
+[90m│[39m  /home/runner/work/_temp/qa-work/posthog/.git/config: Device or
+[90m│[39m  resource busy
+[90m│[39m
+[90m│[39m  ../.. prepare: husky - Git hooks installed
+[90m│[39m
+[90m│[39m  ../.. prepare: Done
+[90m│[39m
+[90m│[39m  [WARN] Issues with peer dependencies found. Run "pnpm peers check" to
+[90m│[39m  list them.
+[90m│[39m
+
+[90m│[39m
+[90m│[39m  [32mDependencies deduplicated[39m
+[90m│[39m
+[32m◇[39m  Checking the health of your project(s)..
+[90m│[39m
+[33m▲[39m  /common/storybook/.storybook: 1 issue found
+│ ┌─[33mIncompatible Packages[39m──────────────────────────────────────────────────────┐
+│ │  You are currently using Storybook [1m11.0.0-beta.5[22m but you have packages     │
+│ │  which are incompatible with it:                                           │
+│ │                                                                            │
+│ │  - @storybook/test-runner@0.26.1 which depends on ^0.0.0-0 || ^10.0.0 ||   │
+│ │  ^10.0.0-0 || ^10.1.0-0 || ^10.2.0-0 || ^10.3.0-0 || ^10.4.0-0 ||          │
+│ │  ^10.5.0-0 || ^10.6.0-0                                                    │
+│ │                                                                            │
+│ │  Please consider updating your packages or contacting the maintainers for  │
+│ │   compatibility details.                                                   │
+│ │                                                                            │
+│ │  For more details on compatibility guidance, see:                          │
+│ │  https://github.com/storybookjs/storybook/issues/36283                     │
+│ └────────────────────────────────────────────────────────────────────────────┘
+[90m│[39m
+[32m◇[39m  Storybook doctor is complete!
+[90m│[39m
+[90m│[39m  You can always recheck the health of your project(s) by running:
+[90m│[39m  [36mnpx storybook doctor[39m
+[90m│[39m
+[32m◇[39m  [33mYour project(s) have been upgraded successfully, but some issues were[39m
+[90m│[39m  [33mfound which need your attention, please check Storybook doctor logs[39m
+[90m│[39m  [33mabove.[39m
+[90m│[39m
+[90m│[39m  If you want to learn more about the automigrations that executed in
+[90m│[39m  your project(s), please check the following links:
+[90m│[39m  • upgrade-storybook-related-dependencies: undefined
+[90m│[39m  • wrap-getAbsolutePath:
+[90m│[39m  https://storybook.js.org/docs/faq#how-do-i-fix-module-resolution-in-special-environments
+[90m│[39m  • story-sort-to-main:
+[90m│[39m  https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storysort-in-the-preview-replaced-by-storysorts-in-main
+[90m│[39m  • skills: https://github.com/storybookjs/skills
+[90m│[39m
+[90m│[39m  For a full list of changes, please check our migration guide:
+[90m│[39m  [36mhttps://storybook.js.org/docs/releases/migration-guide?ref=upgrade[39m
+[90m│[39m
+[90m└[39m  Storybook upgrade completed!
+
+[90m│[39m
+[90m│[39m  Debug logs are written to:
+[90m│[39m  /home/agent/workspace/common/storybook/debug-storybook.log
+[90m│[39m
+[90m└[39m  [32mDone![39m
+

@@ -124,11 +124,11 @@ export async function installSkills({
 
   if (dryRun) {
     logger.log(
-      `Would ${source === 'refresh' ? 'refresh' : 'install'} the Storybook skills: ${CLI_COLORS.cta(packageManager.getRemoteRunCommand(args))}`
+      `Would ${source === 'refresh' ? 'refresh' : 'install'} the Storybook skills: ${CLI_COLORS.change(packageManager.getRemoteRunCommand(args))}`
     );
     if (removedSkills.length > 0) {
       logger.log(
-        `Would remove the replaced Storybook skills: ${CLI_COLORS.cta(packageManager.getRemoteRunCommand(removeSkillsArgs(removedSkills)))}`
+        `Would remove the replaced Storybook skills: ${CLI_COLORS.change(packageManager.getRemoteRunCommand(removeSkillsArgs(removedSkills)))}`
       );
     }
     return { result: 'skipped', source };

@@ -1,3 +1,5 @@
+import { CLI_COLORS } from 'storybook/internal/node-logger';
+
 import picocolors from 'picocolors';
 
 import type { SimulatedOutcome } from '../pipeline.ts';
@@ -42,11 +44,12 @@ export const addSimulatedOutcomes = (
 
 /** The report as grouped lists, one line for each group that has fixes. */
 export const formatDryRunReport = ({ apply, fail, skip, manual }: DryRunReport) => {
-  const ids = (list: string[]) => list.map((fixId) => picocolors.cyan(fixId)).join(', ');
+  const ids = (list: string[], color = picocolors.cyan) =>
+    list.map((fixId) => color(fixId)).join(', ');
   const withReasons = (list: ReasonedFix[]) =>
     list.map(({ fixId, reason }) => `${picocolors.cyan(fixId)} (${reason})`).join(', ');
   return [
-    apply.length > 0 && `Would apply: ${ids(apply)}`,
+    apply.length > 0 && `Would apply: ${ids(apply, CLI_COLORS.change)}`,
     fail.length > 0 && `Would fail: ${withReasons(fail)}`,
     skip.length > 0 && `Would skip: ${withReasons(skip)}`,
     manual.length > 0 && `Would need manual changes: ${ids(manual)}`,

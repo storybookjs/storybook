@@ -1,0 +1,1756 @@
+{
+  "from": "v11.0.0-beta.3",
+  "fromSha": "e0ecb3ec6ba3648e9e5d2cf74002adec6aefe561",
+  "to": "v11.0.0-beta.5",
+  "toSha": "e54111985aa904d6717a685c68ddac6e90f87061",
+  "prs": [
+    {
+      "number": 37113,
+      "title": "Docs: Rewrite AI docs around skills",
+      "area": "Docs",
+      "status": "skip",
+      "labels": [
+        "ci:docs",
+        "documentation",
+        "qa:skip"
+      ],
+      "manualTesting": "This PR changes docs, the `docs:check` script, and the `addon-mcp` notice text. To review it:\n\n1. Run `yarn docs:check` and confirm there are no errors.\n2. Run `yarn --cwd scripts vitest run docs/__tests__/check-docs.test.ts` and `cd code/addons/mcp && npx vitest run src/preset.test.ts`, and confirm the tests pass.\n3. Preview the `docs/ai` pages on the docs site preview: https://deploy-preview-476--storybook-frontpage.netlify.app/docs/11/ai.\n4. Switch the renderer to React, Vue, Svelte, and HTML. Check that each page shows the right callout or intro.",
+      "issues": []
+    },
+    {
+      "number": 37116,
+      "title": "Docs: Correct story description truncation in AI best practices",
+      "area": "Docs",
+      "status": "skip",
+      "labels": [
+        "agent-scan:automated",
+        "ci:docs",
+        "documentation",
+        "qa:skip",
+        "review:verified",
+        "sev:S4"
+      ],
+      "manualTesting": "Docs only, no code changes. To verify:\n\n1. Compare the \"Story summary and descriptions\" paragraph with `code/core/src/shared/open-service/toolsets/docs/manifest-formatter/markdown.ts` (the `## Stories` section and `extractSummary`) and `extract-docs-summary.ts`.\n2. Compare the new meta paragraph with `extractComponentDescription` in `code/core/src/csf-tools/jsdoc.ts` and its callers in `code/renderers/react/src/componentManifest/buildReactComponentDocgen.ts` and `code/renderers/vue3/src/docgen/component-docgen/build-docgen.ts`.\n3. Check the page with the React, Vue and Angular renderers selected: the meta paragraph shows for React and Vue only.\n\n`yarn docs:check` and `yarn fmt:check` pass.",
+      "issues": [
+        {
+          "number": 37110,
+          "title": "[Documentation]: AI best practices: story descriptions are cut at 90 characters, not 60, and meta JSDoc isn't mentioned",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": true,
+          "parent": null
+        }
+      ]
+    },
+    {
+      "number": 37182,
+      "title": "Core: Don't crash when network interfaces cannot be read",
+      "area": "Core",
+      "status": "needed",
+      "labels": [
+        "Stale",
+        "agent-scan:community-flagged",
+        "bug",
+        "ci:focus",
+        "core",
+        "qa:needed",
+        "review:verified",
+        "sev:S2"
+      ],
+      "manualTesting": "1. Clone https://github.com/bodograumann/storybook-network-interfaces-repro and link this branch's `storybook` package\n2. Run `npm run simulate`\n3. On `next` the import fails with `uv_interface_addresses`. With this branch it prints \"Storybook core-server imported successfully.\"",
+      "issues": [
+        {
+          "number": 37180,
+          "title": "[Bug]: Storybook cannot run under reduced os access",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": true,
+          "parent": null
+        }
+      ]
+    },
+    {
+      "number": 37234,
+      "title": "Core: Keep component icons for components with subcomponents",
+      "area": "Core",
+      "status": "needed",
+      "labels": [
+        "agent-scan:human",
+        "bug",
+        "ci:focus",
+        "core",
+        "qa:needed",
+        "review:verified",
+        "sev:S4",
+        "ui"
+      ],
+      "manualTesting": "Run `yarn nx run-many -t compile`, then `cd code && yarn storybook:ui`. Open manager / Sidebar / Tree / Components With Subcomponents and toggle Hide subcomponents. With children should keep its component icon in both states while Group keeps its folder icon.",
+      "issues": [
+        {
+          "number": 37128,
+          "title": "[Bug]: Inconsistent icons in new tree view when filtering",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": true,
+          "parent": null
+        }
+      ]
+    },
+    {
+      "number": 37313,
+      "title": "CSF-Tools: Read destructured local constants in story args",
+      "area": "CSF-Tools",
+      "status": "skip",
+      "labels": [
+        "bug",
+        "ci:focus",
+        "qa:skip"
+      ],
+      "manualTesting": "1. Make a sandbox: `yarn task --task sandbox --start-from auto --template react-vite/default-ts`.\n2. Add `src/stories/Destructured.stories.ts` with the stories from \"What I did\", plus `export default { title: 'QA/Destructured', component: Button };` and `import { Button } from './Button';`.\n3. Run `yarn build-storybook` in the sandbox.\n4. Open `storybook-static/services/core/story-docs/qa-destructured.json`. Check that each story's `snippet` matches the \"after\" column above, and that no story has a `warning`.\n5. Optional: do the same in `vue3-vite/default-ts` (use `import Button from './Button.vue';`).",
+      "issues": []
+    },
+    {
+      "number": 37314,
+      "title": "Docgen: Resolve components and subcomponents the same way in every framework",
+      "area": "Docgen",
+      "status": "needed",
+      "labels": [
+        "bug",
+        "ci:focus",
+        "ci:windows",
+        "qa:needed",
+        "review:changes-requested"
+      ],
+      "manualTesting": "1. Make a sandbox, for example `yarn task --task sandbox --start-from auto --template svelte-vite/default-ts`. The same steps work with `vue3-vite/default-ts`, `react-vite/default-ts` and `angular-vite/default-ts`, with that sandbox's `Button` and `Header` components.\n2. Add a barrel: `src/qa/lib/index.ts` with `export * as UI from './ui/index.js';`, and `src/qa/lib/ui/index.ts` that re-exports the sandbox's `Header` and then its `Button` (`export { default as Header } from '../../../stories/Header.svelte';` and the same for `Button`). Exporting `Header` first shows React's old behaviour.\n3. Add `src/qa/Barrel.stories.ts`:\n   ```ts\n   import { UI } from './lib/index.js';\n\n   export default { title: 'QA/Barrel', component: UI.Button, subcomponents: { Header: UI.Header } };\n   export const Primary = {};\n   ```\n   In Svelte, also try the same meta in a `.stories.svelte` file with `defineMeta`.\n4. Run `yarn build-storybook`. For Angular, run `ng run <project>:build-storybook`.\n5. Open `storybook-static/services/core/docgen/qa-barrel.json`. Expected: the main component has its argTypes, `subcomponents.Header` has the `Header` argTypes, and there is no `error`. On `next`, Vue, Angular and Svelte report an error or no file, and `subcomponents` is missing.\n6. React only: set `features.docgenServer: false` and build again. Open `storybook-static/manifests/components.json`, entry `qa-barrel`. Expected: `reactDocgen.displayName` is `Button`, and `import` is still `import { UI } from './lib/index.js';`. On `next` it is `Header`.\n7. Optional, a real library in Svelte: `yarn add -D bits-ui@2.14.4 @internationalized/date`, and a story with `import { Accordion } from 'bits-ui';`, `component: Accordion.Root`, `subcomponents: { Item: Accordion.Item }`. Expected: 11 argTypes for `Root` and 7 for `Item`.\n\nAreas most likely to regress: React manifests (react-docgen and react-docgen-typescript) for compound components such as `Accordion.Root`, and Svelte stories that import a component through a barrel or a package. In QA, the sandboxes' own stories gave identical docgen on `next` and on this branch: 88 React manifest entries, 95 Svelte and 110 Angular docgen files.",
+      "issues": []
+    },
+    {
+      "number": 37317,
+      "title": "Svelte: Add CSF4 fixtures to the docgen harness",
+      "area": "Svelte",
+      "status": "skip",
+      "labels": [
+        "build",
+        "ci:focus",
+        "qa:skip"
+      ],
+      "manualTesting": "This PR changes only a private test package, so no manual test is needed for the release. To check that the recordings match a real Storybook:\n\n1. Make a sandbox: `yarn task sandbox --template svelte-vite/default-ts --start-from auto`. Its `.storybook/preview.ts` already uses `definePreview`.\n2. Copy the three folders `code/lib/docgen-harness/src/svelte/__testfixtures__/csf4-*` into the `src/` folder of the sandbox. In each story file, change `import preview from './preview.ts'` to an import of `.storybook/preview`. Rename `input.stories.svelte` and `input.stories.ts` to unique story file names.\n3. In the sandbox, run `yarn build-storybook`.\n4. Open `storybook-static/services/core/story-docs/sveltefixtures-csf4*.json`. Each story `snippet` must be the same as the `osa-snippet-*` or `osa-plain-csf-snippet-*` file of the fixture, apart from the import path.\n5. Open `storybook-static/services/core/docgen/sveltefixtures-csf4*.json`. The `argTypes` keys and `description` must be the same as in `osa-argtypes.snapshot` and `osa-description.snapshot`.\n\nI did these steps: all 19 snippets, all argTypes key sets and all descriptions were the same.\n\nTo run the harness: `cd code && yarn vitest run --root lib/docgen-harness src/svelte`. If a new fixture folder fails with `Unknown variable dynamic import`, delete `node_modules/.vitest-cache` at the repo root.",
+      "issues": []
+    },
+    {
+      "number": 37319,
+      "title": "Svelte: Keep state passed to Svelte CSF Story args reactive",
+      "area": "Svelte",
+      "status": "skip",
+      "labels": [
+        "bug",
+        "ci:focus",
+        "qa:skip",
+        "svelte"
+      ],
+      "manualTesting": "1. Open the [Module State story](https://jeppe-sb-2155-svelte-csf-reactive-state-passed-to-story-args--630873996e4e3557791c069c.chromatic.com/?path=/story/stories-renderers-svelte-svelte-csf-reactive-args--module-state) in the published `svelte-vite/default-ts` Storybook, or run `yarn task sandbox --template svelte-vite/default-ts --start-from auto` and open \"stories/renderers/svelte/svelte-csf/reactive-args\".\n2. Click **Increment**. Expected: the story shows \"Count: 1\", and `count` in the Controls panel is 1.\n3. Set `count` to 10 in the Controls panel. Expected: \"Count: 10\".\n4. Click **Increment** again. Expected: \"Count: 2\" (the state was 1), and the control shows 2.\n5. Click **Reset controls**. Expected: \"Count: 0\", and it stays 0.\n6. Regression check: open a story that reads `$state` directly in its template (for example \"stories/renderers/svelte/svelte-csf/interactions\"). It must work as before.",
+      "issues": []
+    },
+    {
+      "number": 37322,
+      "title": "Docs: Rewrite AI docs around the four Storybook skills",
+      "area": "Docs",
+      "status": "skip",
+      "labels": [
+        "ci:docs",
+        "documentation",
+        "qa:skip"
+      ],
+      "manualTesting": "This PR changes docs only.\n\n1. Run `yarn docs:check` and confirm there are no errors.\n2. Read `docs/ai/skills/ui-workflow.mdx`, `write-stories.mdx`, `test-stories.mdx`, `ui-review.mdx` and `component-docs.mdx`. Compare them with the skill texts in `code/core/src/cli/skills/content/build-*-skill.ts`.\n3. Check that the `AGENTS.md` block in `docs/ai/connect.mdx` matches `buildAgentInstructions()` in `code/core/src/cli/skills/content/build-workflow-instructions.ts`.\n4. Preview the `docs/ai` pages and switch the renderer to React, Vue, Svelte, and HTML. Check that each page shows the right callout or intro.",
+      "issues": []
+    },
+    {
+      "number": 37333,
+      "title": "Ecosystem QA: Sweep the tier 1 catalog from one dispatch and file by root cause",
+      "area": "Ecosystem QA",
+      "status": "skip",
+      "labels": [
+        "build",
+        "ci:focus",
+        "qa:skip",
+        "review:1-architecture"
+      ],
+      "manualTesting": "Run from the repository root.\n\n1. `cd ecosystem-qa && yarn vitest run`: 297 tests pass.\n2. `ECOSYSTEM_QA_FAKE=1 node ecosystem-qa/run.ts --repo ring-ui --version 11.0.0-beta.2 --engine claude --fake --sandbox none --out /tmp/qa-fake/ring-ui/<your-os>/claude`, with `<your-os>` being `linux`, `macos` or `windows`.\n3. `node ecosystem-qa/collect.ts --results /tmp/qa-fake --version 11.0.0-beta.2 --out /tmp/qa-fake/proposals.json --repo storybookjs/storybook` prints the publish date of the version and one `issue` proposal for the fake finding. Then `node ecosystem-qa/file.ts --proposals /tmp/qa-fake/proposals.json --repo storybookjs/storybook --dry`: the reproduction link points at `https://github.com/storybook-tmp/ring-ui/...` and the source line ends with `upgraded from 10.6.0`.\n4. Write `/tmp/qa-fake/groups.json` with `{\"groups\": []}` and run the collect command again with `--groups /tmp/qa-fake/groups.json`. It exits 1 and prints `- <fingerprint> is in no group`.\n5. `node ecosystem-qa/plan.ts --repos owned,tier1 --os linux,windows --engines claude | jq '.include | length'` prints `17`: thirteen repos on Linux, and mealdrop, gutenberg, mantine and gitbutler on Windows as well.\n6. `mkdir -p /tmp/timed && (cd ecosystem-qa && node tools/timed.mjs --limit-seconds=2 /tmp/timed/install-seconds.txt sleep 30)` returns after two seconds with exit status 0, `/tmp/timed/install-exit.txt` holds `124` and `/tmp/timed/install-stopped.txt` exists.\n7. `docker build -t sb-ecosystem-qa ecosystem-qa`, then `docker run --rm --entrypoint sh sb-ecosystem-qa -c 'node -v; bun --version; n --version; mise --version; g++ --version | head -1'` prints Node 24.22.2, Bun 1.4.4, n 11.0.0, a mise version and a g++ version.\n8. Actions, \"Ecosystem QA\", Run workflow on this branch with `repo=mealdrop,shadcn-storybook-registry`, `os=linux,windows`, `version=11.0.0-beta.2`, dry on. Three runner jobs start, three `qa-result-*` artifacts appear, each `result.json` has `\"migrationGuide\": \"v11.0.0-beta.2\"`, and \"Propose issues (dry run)\" lists findings of both repos. It takes about 25 minutes and costs about a dollar.\n9. Run the workflow once more with `from_runs` set to the id of that run. No runner starts, and the collect job reads the same three results.\n10. From `ecosystem-qa`, run the command below. It prints `must 13 true` and `extended 26 true`: for each tier, how many ids the answer schema lists, and whether they are the checklist's ids in the checklist's order.\n\n    ```sh\n    node -e \"import('./lib/schema.ts').then(async ({ agentOutput }) => { const { checksFor } = await import('./checks.ts'); const { z } = await import('zod'); for (const tier of ['must', 'extended']) { const ids = checksFor(tier).map((check) => check.id); const listed = z.toJSONSchema(agentOutput(ids)).properties.checks.items.properties.id.enum; console.log(tier, listed.length, JSON.stringify(listed) === JSON.stringify(ids)); } })\"\n    ```",
+      "issues": [
+        {
+          "number": 37350,
+          "title": "[SB 11 QA]: argtypes-default-value automigration lists 43 files as unmigratable with line references that contain no argTypes defaultValue, so /.storybook reports [truncated]",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": false,
+          "parent": null
+        },
+        {
+          "number": 37372,
+          "title": "[SB 11 QA]: Upgrade's dependency install fails with ERESOLVE on the storybook@11.0.0-beta.1 peer and only completes after the upgrade retries with --legacy-peer-d [truncated]",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": false,
+          "parent": null
+        },
+        {
+          "number": 37417,
+          "title": "[SB 11 QA]: Recreating a deleted stories file while the dev server runs never re-adds its entries to index.json",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": false,
+          "parent": null
+        }
+      ]
+    },
+    {
+      "number": 37345,
+      "title": "Ecosystem QA: Group findings by root cause before filing",
+      "area": "Ecosystem QA",
+      "status": "skip",
+      "labels": [
+        "build",
+        "ci:focus",
+        "qa:skip",
+        "review:changes-requested"
+      ],
+      "manualTesting": "1. `cd ecosystem-qa && yarn vitest run`: 236 tests pass.\n2. `ECOSYSTEM_QA_FAKE=1 node ecosystem-qa/run.ts --repo mealdrop --version 11.0.0-beta.1 --engine claude --fake --sandbox none --out /tmp/qa-fake/mealdrop/<your-os>/claude`, with `<your-os>` being `linux`, `macos` or `windows`.\n3. `node ecosystem-qa/collect.ts --results /tmp/qa-fake --version 11.0.0-beta.1 --out /tmp/qa-fake/proposals.json --repo storybookjs/storybook` prints the publish date line and one `issue` proposal for the fake finding.\n4. Write `/tmp/qa-fake/groups.json` with `{\"groups\": []}` and run the same command with `--groups /tmp/qa-fake/groups.json`. It exits 1 and prints `- <fingerprint> is in no group`.\n5. With `ANTHROPIC_API_KEY` unset, run `node ecosystem-qa/group.ts --results /tmp/qa-fake --version 11.0.0-beta.1 --repo storybookjs/storybook --out /tmp/qa-fake/groups.json`. With the one fake finding it writes one group and calls no API.\n6. Start the `Ecosystem QA` workflow from this branch with `version=11.0.0-beta.1`, `dry=true` and `from_runs` set to the ids of earlier runs. The collect job logs one line per multi-member group and the dry job writes the grouped proposals to the Step Summary.",
+      "issues": [
+        {
+          "number": 37284,
+          "title": "[SB 11 QA]: 'storybook dev --no-open' errors with 'unknown option' after upgrade although the migration guide does not say it was removed",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": false,
+          "parent": null
+        },
+        {
+          "number": 37285,
+          "title": "[SB 11 QA]: storybook doctor reports 'looks good' after upgrade while the dev server cannot start",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": false,
+          "parent": null
+        },
+        {
+          "number": 37311,
+          "title": "[SB 11 QA]: `@storybook/addon-designs` 12.0.0, installed by the upgrade, crashes the dev server during dependency optimization after 'Storybook ready!'",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": false,
+          "parent": null
+        },
+        {
+          "number": 37349,
+          "title": "[SB 11 QA]: dev server exits at startup with NoMatchingExportError for removed storybook/internal/components APIs, and the error does not point to the migration g [truncated]",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": false,
+          "parent": null
+        },
+        {
+          "number": 37354,
+          "title": "[SB 11 QA]: npm install fails with ERESOLVE after the 11.0.0-beta.1 upgrade adds Storybook 11 packages to the monorepo",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": false,
+          "parent": null
+        },
+        {
+          "number": 37362,
+          "title": "[SB 11 QA]: Typed prop added to a component's types file does not appear in Controls until the dev server restarts",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": false,
+          "parent": null
+        },
+        {
+          "number": 37365,
+          "title": "[SB 11 QA]: Static build fails when docgen extraction exceeds its worker timeout",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": false,
+          "parent": null
+        },
+        {
+          "number": 37367,
+          "title": "[SB 11 QA]: After upgrading to 11.0.0-beta.1, every story fails to render in the dev preview with a Cannot find module error for its stories file",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": false,
+          "parent": null
+        },
+        {
+          "number": 37369,
+          "title": "[SB 11 QA]: storybook upgrade leaves the storybook CLI at 10.6.3 when a sibling workspace pins it",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": false,
+          "parent": null
+        },
+        {
+          "number": 37370,
+          "title": "[SB 11 QA]: Upgrade bumps storybook-addon-cookie to 5.0.2 whose preset.js points at a missing dist/preset.js, so the dev server fails to start",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": false,
+          "parent": null
+        },
+        {
+          "number": 37372,
+          "title": "[SB 11 QA]: Upgrade's dependency install fails with ERESOLVE on the storybook@11.0.0-beta.1 peer and only completes after the upgrade retries with --legacy-peer-d [truncated]",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": false,
+          "parent": null
+        },
+        {
+          "number": 37373,
+          "title": "[SB 11 QA]: viewport.defaultViewport is removed with no automigration or warning pointing to the migration guide",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": false,
+          "parent": null
+        },
+        {
+          "number": 37375,
+          "title": "[SB 11 QA]: Story page throws __STORYBOOK_MODULE_CLIENT_LOGGER__ is not defined on later loads in a dev session",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": false,
+          "parent": null
+        },
+        {
+          "number": 37379,
+          "title": "[SB 11 QA]: storybook@11.0.0-beta.1 upgrade reports it cannot find the Storybook version when run in a monorepo subpackage",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": false,
+          "parent": null
+        }
+      ]
+    },
+    {
+      "number": 37388,
+      "title": "Ecosystem QA: Run a whole sweep from one dispatch",
+      "area": "Ecosystem QA",
+      "status": "skip",
+      "labels": [
+        "build",
+        "qa:skip"
+      ],
+      "manualTesting": "1. `cd ecosystem-qa && yarn vitest run`: 248 tests pass, eleven of them in `lib/sweep-matrix.test.ts`.\n2. `node ecosystem-qa/plan.ts --repos owned,tier1 --os linux,windows --engines claude | jq '.include | length'` prints `17`: thirteen repos on Linux, and mealdrop, gutenberg, mantine and gitbutler on Windows as well.\n3. The `Ecosystem QA / Smoke-test the harness` check on this PR plans a whole sweep for both engines in its step \"Plan a whole sweep from the catalog\".\n4. Actions, \"Ecosystem QA\", Run workflow on this branch with `repo=mealdrop,shadcn-storybook-registry`, `os=linux,windows`, dry on. Three runner jobs start, three `qa-result-*` artifacts appear, and \"Propose issues (dry run)\" lists findings of both repos. It takes about 25 minutes and costs about a dollar.\n5. Run the workflow once more with `from_runs` set to the id of that run and `repo=n8n`, `os=windows`. The plan job passes, no runner starts, and the collect job reads the same three results.",
+      "issues": []
+    },
+    {
+      "number": 37391,
+      "title": "Addons: Keep transient panel state out of the manager store",
+      "area": "Addons",
+      "status": "needed",
+      "labels": [
+        "ci:focus",
+        "maintenance",
+        "qa:needed"
+      ],
+      "manualTesting": "1. Build and start the internal Storybook:\n   ```bash\n   yarn task compile -s compile && cd code && yarn storybook:ui\n   ```\n2. Open `core/component-test.basics/Step`: the Interactions tab badge shows `1`, the panel shows `PASS` and the `Enter value` step. Click the step to collapse its nested `userEvent.type` call and click again to expand it. Click `Unhandled errors/Default` in the sidebar: the badge turns into the error icon and the panel shows `FAIL` with the unhandled error.\n3. Open the Accessibility tab on the same story: it lists the violations, passes and inconclusive checks; switch between those tabs and toggle the highlight button. Switch story in the sidebar: the results update for the new story and the tab badge shows the number of violations and inconclusive checks where there are any.\n4. Open `core/parameters-actions/Basic` and click `Click Me!` three times in the preview: the Actions tab badge shows `3`. Press <kbd>alt</kbd>+<kbd>→</kbd> to go to the next story: the badge disappears. Then narrow the window below 600px (the mobile layout), open the addons drawer, trigger an action while it is open (for example, run a play function from the Interactions tab, or emit `storybook/actions/action-event` on the channel), close the drawer and open it again: the badge keeps its count. On desktop, hiding the panel with <kbd>A</kbd> only collapses it, so it is not a remount.\n5. Open the Code tab on any story and switch the theme between light and dark in the toolbar: the snippet follows the theme.\n6. With React DevTools' \"highlight updates\" on, click stories in the sidebar: the addon panels no longer flash on every store write; only the selected row, the toolbar and the panel of the story's own addon updates repaint.\n\nAreas most likely to regress: anything that read `storybook/interactions`, `storybook/a11y` or `storybook/actions` through `api.getAddonState()` (nothing in this repository does), the a11y `manual` mode whose initial status comes from an effect on the `manual` global, and the interactions panel during `waitFor` retries (the `revision` bump).",
+      "issues": []
+    },
+    {
+      "number": 37392,
+      "title": "Docgen: Batch React extractions and remove the extraction time limit",
+      "area": "Docgen",
+      "status": "needed",
+      "labels": [
+        "bug",
+        "ci:canary",
+        "ci:focus",
+        "core",
+        "docgen",
+        "performance issue",
+        "qa:needed",
+        "react",
+        "review:3-verification",
+        "sev:S2"
+      ],
+      "manualTesting": "1. Compile, and make a React sandbox: `yarn task --task sandbox --start-from auto --template react-vite/default-ts`.\n2. In the sandbox, run `yarn build-storybook`.\n3. Check that the build passes and that `storybook-static/services/core/docgen/` has one JSON file per component with its props, for example the file for `example-button`.\n4. Run `yarn storybook`, open the Button story, and check that the Controls panel shows the props `primary`, `backgroundColor`, `size`, `label` and `onClick`.\n5. Open `http://localhost:6006/manifests/components.html` and check that it lists every component with its props. This page extracts all components in one call.\n6. Check a component with a union or enum prop: the Controls panel lists the options in the order of the declaration.\n7. With a canary of this branch, build the project of #37365: https://github.com/storybook-tmp/gutenberg/tree/9137ffca2d5fc88e0324dde90c3bd20d4946831c. Expected: the build passes, and it is faster than on 10.6.\n\nAreas most likely to regress:\n\n- Static builds of large React projects with several tsconfig files or project references.\n- Dev: a docs page or the Controls panel that asks for one component while a large batch runs. The request waits for the batch.",
+      "issues": [
+        {
+          "number": 37365,
+          "title": "[SB 11 QA]: Static build fails when docgen extraction exceeds its worker timeout",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": true,
+          "parent": null
+        },
+        {
+          "number": 37450,
+          "title": "Docgen: Register files up front for Vue, Svelte, Angular and Web Components",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": false,
+          "parent": null
+        }
+      ]
+    },
+    {
+      "number": 37393,
+      "title": "Manager: Cut the re-renders left on a story click",
+      "area": "Manager",
+      "status": "needed",
+      "labels": [
+        "ci:focus",
+        "maintenance",
+        "qa:needed"
+      ],
+      "manualTesting": "1. Build and start the internal Storybook:\n   ```bash\n   yarn task compile -s compile && cd code && yarn storybook:ui\n   ```\n2. Sidebar with the mouse: click stories, expand and collapse components and groups, hover a row and open its ⋯ menu, close it with a click outside. The clicked row is selected and painted, the selection line follows the selected story's siblings, status icons show on rows with statuses.\n3. Sidebar with the keyboard: focus the tree, move with <kbd>↑</kbd>/<kbd>↓</kbd>, open and close branches with <kbd>→</kbd>/<kbd>←</kbd>, activate with <kbd>Enter</kbd> and <kbd>Space</kbd>, open the context menu of the focused row with its shortcut and close it with <kbd>Escape</kbd>: focus returns to the row, and the focus ring and the keyboard shortcut note follow the focused row.\n4. Addon panels: switch between stories and check that the Controls, Interactions, Accessibility and Actions tabs show the new story's data. Open `addons/accessibility/parameters/Disabled`: the Accessibility tab disappears, and it comes back on the next story.\n5. Open `core/component-test.basics/Step`: the playback buttons enable while the play function runs and disable once it is done; step through with \"Go back\" and \"Go forward\"; the status badge and \"Scroll to end\" follow the status.\n6. Toolbar: hide the sidebar with <kbd>S</kbd> and bring it back through the menu button, hide the addon panel with <kbd>A</kbd> and bring it back through the addons button, click the remount button.\n7. Sidebar bottom: run the tests from the testing widget and check the counters and the notifications update.\n\nAreas most likely to regress: the context menu, whose open state and focus restoration moved into `TreeRowContent`; the testing widget, whose test providers now re-render through their own hooks and stores rather than with every manager commit.",
+      "issues": [
+        {
+          "number": 32834,
+          "title": "[Bug]: SB10 Play function error state persists for a bit after visiting new stories",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": false,
+          "parent": null
+        },
+        {
+          "number": 33144,
+          "title": "Addon Controls Panel Not Updating When Args Change Programmatically",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": false,
+          "parent": null
+        },
+        {
+          "number": 33339,
+          "title": "[Bug]: interactions tab can not be removed/disabled",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": false,
+          "parent": null
+        },
+        {
+          "number": 33352,
+          "title": "[Bug]: Storybook 10 broken on reload or direct access to pages with Path parameter",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": false,
+          "parent": null
+        },
+        {
+          "number": 35774,
+          "title": "[Bug]: Code Panel Appears when Not Explicitly Enabled",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": false,
+          "parent": null
+        },
+        {
+          "number": 37151,
+          "title": "[Bug]: Addon panels lose state across desktop/mobile layout changes",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": false,
+          "parent": null
+        }
+      ]
+    },
+    {
+      "number": 37394,
+      "title": "CLI: Fix upgrades with --config-dir .",
+      "area": "CLI",
+      "status": "skip",
+      "labels": [
+        "agent-scan:human",
+        "bug",
+        "ci:focus",
+        "cli",
+        "core",
+        "qa:skip",
+        "review:verified",
+        "sev:S3"
+      ],
+      "manualTesting": "1. Create a reproduction with Storybook 10.6.7 installed in `storybook/` and no Storybook dependency in the root package. Keep the stories outside `storybook/` so that story discovery does not hide the bug.\n\n   ```text\n   repro-37379/\n   ├── package.json\n   ├── stories/\n   │   └── Button.stories.js\n   └── storybook/\n       ├── package.json\n       └── main.js\n   ```\n\n   <details>\n   <summary>Create the reproduction</summary>\n\n   Run these commands outside your Storybook repository clone:\n\n   ```sh\n   mkdir repro-37379 && cd repro-37379 && git init -q\n   echo '{ \"name\": \"repro-root\", \"private\": true }' > package.json\n   mkdir stories storybook\n\n   cat > stories/Button.stories.js <<'EOF'\n   export default { title: 'Example/Button' };\n   export const Primary = {\n     render: () => Object.assign(document.createElement('button'), { textContent: 'Hello' }),\n   };\n   EOF\n\n   cat > storybook/package.json <<'EOF'\n   {\n     \"name\": \"repro-storybook\",\n     \"private\": true,\n     \"devDependencies\": {\n       \"@storybook/html-vite\": \"10.6.7\",\n       \"storybook\": \"10.6.7\",\n       \"vite\": \"^6.3.5\"\n     }\n   }\n   EOF\n\n   cat > storybook/main.js <<'EOF'\n   export default {\n     stories: ['../stories/*.stories.js'],\n     framework: { name: '@storybook/html-vite', options: {} },\n   };\n   EOF\n\n   cd storybook\n   npm install --no-audit --no-fund\n   ```\n\n   </details>\n\n2. In your Storybook repository clone, build the base commit:\n\n   ```sh\n   git checkout 59eba98ae2\n   yarn\n   yarn nx compile cli\n   ```\n\n3. From `repro-37379/storybook/`, run the upgrade. Replace `/absolute/path/to/storybook` with the path to your Storybook repository clone.\n\n   ```sh\n   STORYBOOK_DISABLE_TELEMETRY=1 node \"/absolute/path/to/storybook/code/lib/cli-storybook/dist/bin/index.js\" upgrade --config-dir . --dry-run --yes\n   ```\n\n   The command fails with `SB_CLI_UPGRADE_0005` and exits with code 1.\n\n4. In your Storybook repository clone, build this PR:\n\n   ```sh\n   gh pr checkout 37394\n   yarn\n   yarn nx compile cli\n   ```\n\n5. Run the command from step 3 again, from `repro-37379/storybook/`.\n\n   It detects the installed Storybook version, 10.6.7, prints `Storybook upgrade completed!`, and exits with code 0.\n\n`--dry-run` still runs `npm install` in the reproduction package. \n\n> [!NOTE]\n> These manual steps have not been run on Windows.",
+      "issues": [
+        {
+          "number": 37379,
+          "title": "[SB 11 QA]: storybook@11.0.0-beta.1 upgrade reports it cannot find the Storybook version when run in a monorepo subpackage",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": true,
+          "parent": null
+        }
+      ]
+    },
+    {
+      "number": 37395,
+      "title": "Preview API: Keep color args intact when restoring them from the URL",
+      "area": "Preview API",
+      "status": "skip",
+      "labels": [
+        "agent-scan:automated",
+        "args",
+        "bug",
+        "ci:focus",
+        "core",
+        "preview-api",
+        "qa:skip",
+        "review:verified",
+        "sev:S3",
+        "verification:pending"
+      ],
+      "manualTesting": "1. Run a sandbox, e.g. `yarn task --task sandbox --start-from auto --template react-vite/default-ts`, and open Storybook.\n2. Open Example/Button > Primary and type `rgba(255, 71, 133)` into the `backgroundColor` control. The URL now contains `args=backgroundColor:!rgba(255,71,133)`.\n3. Reload the page. Without this change the control is empty again and the browser console shows \"Omitted potentially unsafe URL args\". With it, the control and the button keep `rgba(255, 71, 133)`.\n4. Repeat with `rgb(255, 71, 133, 0.5)`. Without this change it comes back as `rgb(255, 71, 133)`. With it, the alpha is kept.",
+      "issues": []
+    },
+    {
+      "number": 37402,
+      "title": "Ecosystem QA: Give the agent the migration guide of the tested version",
+      "area": "Ecosystem QA",
+      "status": "skip",
+      "labels": [
+        "build",
+        "qa:skip"
+      ],
+      "manualTesting": "1. `cd ecosystem-qa && yarn vitest run`: 251 tests pass, three of them in `lib/migration-guide.test.ts`.\n2. On a branch whose `MIGRATION.md` has no `--no-open` note, such as this one, run `grep -c -- '--no-open' MIGRATION.md`: it prints `0`.\n3. Dispatch \"Ecosystem QA\" on that branch for one repo with `version=11.0.0-beta.2`, dry on. The run's `result.json` has `\"migrationGuide\": \"v11.0.0-beta.2\"`, and the agent does not report the removal of `--no-open` as undocumented.",
+      "issues": []
+    },
+    {
+      "number": 37405,
+      "title": "Docgen: Extract a batch of components in one provider call",
+      "area": "Docgen",
+      "status": "needed",
+      "labels": [
+        "bug",
+        "qa:needed"
+      ],
+      "manualTesting": "1. Compile, and make a React sandbox: `yarn task --task sandbox --start-from auto --template react-vite/default-ts`.\n2. In the sandbox, run `yarn build-storybook`.\n3. Check that the build passes and that `storybook-static/services/core/docgen/` has one JSON file per component with its props, for example the file for `example-button`.\n4. Run `yarn storybook`, open the Button story, and check that the Controls panel shows the props `primary`, `backgroundColor`, `size`, `label` and `onClick`.\n5. Open `http://localhost:6006/manifests/components.html` and check that it lists every component with its props. This page extracts all components in one call.\n6. For the project of #37365, follow the reproduction steps in that issue with a canary of this branch. Expected: the build passes.\n\nAreas most likely to regress:\n\n- Static builds of large React projects with several tsconfig files or project references.\n- Storybooks with a third-party `experimental_docgenProvider`: the provider signature changed.\n- Angular with `@storybook/angular-vite`: its provider moved onto the shared middleware helper.",
+      "issues": [
+        {
+          "number": 37365,
+          "title": "[SB 11 QA]: Static build fails when docgen extraction exceeds its worker timeout",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": false,
+          "parent": null
+        }
+      ]
+    },
+    {
+      "number": 37410,
+      "title": "Build: Cover agent-eval and ecosystem-qa in the focused CI checks",
+      "area": "Build",
+      "status": "skip",
+      "labels": [
+        "build",
+        "ci:focus",
+        "qa:skip"
+      ],
+      "manualTesting": "Run everything from the repository root, after `yarn install`.\n\n1. `echo ecosystem-qa/lib/usage.ts | NX_NO_CLOUD=true yarn nx affected -t check --exclude-task-dependencies --stdin`. It ends with `Successfully ran target check for project ecosystem-qa`. On `next` the same command prints `No tasks were run`.\n2. Append `export const injected: number = 'not a number';` to `ecosystem-qa/lib/usage.ts` and run step 1 again. It fails with `error TS2322`. Revert the line.\n3. `echo agent-eval/lib/usage.ts | NX_NO_CLOUD=true yarn nx affected -t check --exclude-task-dependencies --stdin`. It runs `agent-eval:check` and `ecosystem-qa:check`.\n4. `yarn test scripts/ci/focus.test.ts`. It passes. Move `ecosystem-qa/project.json` away and it fails, naming `ecosystem-qa`. Move the file back.\n5. `yarn nx run-many -t compile`, then `yarn vitest related --run --project '!storybook-ui' ecosystem-qa/lib/usage.ts`. It runs test files of the `ecosystem-qa` project and they pass.\n6. On this PR, once it has a `ci:focus` label: the step \"TypeCheck affected projects\" of `typescript-validation--affected` lists `nx run ecosystem-qa:check` and `nx run agent-eval:check`. Every project is affected here, because the diff touches `scripts/`.",
+      "issues": []
+    },
+    {
+      "number": 37411,
+      "title": "CLI: Run story tests by file or by what changed with `storybook tools test run`",
+      "area": "CLI",
+      "status": "needed",
+      "labels": [
+        "ci:focus",
+        "cli",
+        "feature request",
+        "qa:needed",
+        "review:changes-requested"
+      ],
+      "manualTesting": "1. In a sandbox (`yarn task sandbox --template react-vite/default-ts --start-from auto`) that is a git repository, edit `src/stories/Button.tsx` and add a line to `package.json`.\n2. `npx storybook tools stories changed` lists 8 stories.\n3. `npx storybook tools test run --changed` runs the same 8, not every story.\n4. `npx storybook tools test run src/stories/Button.stories.ts` runs its 4 stories; `test run src/stories/Button.tsx` says no story file matches, exit 1.\n5. Commit the changes. `stories changed` and `test run --changed` now find nothing; `stories changed --since HEAD~1` and `test run --changed HEAD~1` find the stories of step 2 again.\n6. `npx storybook tools test run --changed Button` says `Button` is not a known git ref, exit 1.",
+      "issues": []
+    },
+    {
+      "number": 37412,
+      "title": "Ecosystem QA: Keep the agent's answer when the sandbox cannot be removed",
+      "area": "Ecosystem QA",
+      "status": "skip",
+      "labels": [
+        "build",
+        "qa:skip"
+      ],
+      "manualTesting": "1. `cd ecosystem-qa && yarn vitest run`: 260 tests pass, 18 of them in `lib/answer.test.ts`.\n2. From `ecosystem-qa`, run `mkdir -p /tmp/timed && node tools/timed.mjs --limit-seconds=2 /tmp/timed/install-seconds.txt sleep 30`. It returns after two seconds with exit status 0, and `/tmp/timed/install-exit.txt` holds `124`.\n3. Dispatch \"Ecosystem QA\" on this branch for `mealdrop,gutenberg` on `linux,windows`, dry on. Every job writes a result. In a job whose `run.log` shows `Agent started` twice, the second start follows `Resuming session`, and the `Setting up sandbox` line before it takes under a second, where it took the time of the project install before.",
+      "issues": []
+    },
+    {
+      "number": 37415,
+      "title": "MCP: Bump @tmcp/transport-http to 0.9.1",
+      "area": "MCP",
+      "status": "skip",
+      "labels": [
+        "MCP",
+        "agent-scan:human",
+        "bug",
+        "ci:focus",
+        "qa:skip",
+        "review:verified",
+        "sev:S2"
+      ],
+      "manualTesting": "1. Run a sandbox, e.g. `yarn task --task sandbox --start-from auto --template react-vite/default-ts`, with `@storybook/addon-mcp` enabled.\n2. Send an invalid request: `curl -s -i -H 'content-type: application/json' -H 'accept: application/json, text/event-stream' http://localhost:6006/mcp -d 'null'`\n3. Expect a 400 JSON-RPC error and Storybook still running. Do the same with `-d '{\"id\":1,\"method\":\"tools/list\"}'` and `-d '[{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\"}]'`.\n4. Connect an MCP client and check that `tools/list`, `docs-list` and `docs-show` still work.\n\nBefore this change, step 2 stops the dev server. The repro from the issue shows it: https://github.com/lampmaster/storybook-mcp-malformed-post-repro",
+      "issues": [
+        {
+          "number": 37414,
+          "title": "[Bug]: addon-mcp: one invalid request to /mcp crashes storybook dev",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": true,
+          "parent": null
+        }
+      ]
+    },
+    {
+      "number": 37416,
+      "title": "Ecosystem QA: Give the agent one list of check ids and their number",
+      "area": "Ecosystem QA",
+      "status": "skip",
+      "labels": [
+        "build",
+        "qa:skip"
+      ],
+      "manualTesting": "1. `cd ecosystem-qa && yarn vitest run`: 262 tests pass, two of them new in `lib/schema.test.ts`.\n2. From `ecosystem-qa`, run the command below. It prints `must 13 true` and `extended 26 true`: for each tier, how many ids the answer schema lists, and whether they are the checklist's ids in the checklist's order.\n\n   ```sh\n   node -e \"import('./lib/schema.ts').then(async ({ agentOutput }) => { const { checksFor } = await import('./checks.ts'); const { z } = await import('zod'); for (const tier of ['must', 'extended']) { const ids = checksFor(tier).map((check) => check.id); const listed = z.toJSONSchema(agentOutput(ids)).properties.checks.items.properties.id.enum; console.log(tier, listed.length, JSON.stringify(listed) === JSON.stringify(ids)); } })\"\n   ```\n\n3. `grep -n 'CHECK_COUNT' ecosystem-qa/prompts/upgrade.md ecosystem-qa/run.ts` shows the placeholder twice in the prompt and its value once in `run.ts`.",
+      "issues": []
+    },
+    {
+      "number": 37426,
+      "title": "Angular: Remove destroyed applications from the renderer map",
+      "area": "Angular",
+      "status": "skip",
+      "labels": [
+        "agent-scan:human",
+        "angular",
+        "bug",
+        "ci:focus",
+        "performance issue",
+        "qa:skip",
+        "review:verified",
+        "sev:S2"
+      ],
+      "manualTesting": null,
+      "issues": []
+    },
+    {
+      "number": 37427,
+      "title": "Tests: Reuse Vitest workers across files outside core and svelte",
+      "area": "Tests",
+      "status": "skip",
+      "labels": [
+        "build",
+        "ci:docs",
+        "qa:skip"
+      ],
+      "manualTesting": "1. `cd code && yarn test --project '!storybook-ui' --isolate`: note the duration (everything isolated).\n2. `cd code && yarn test --project '!storybook-ui'`: the duration should be lower, with the same failures as `next`.\n3. Optional, to check the order independence of the non-isolated projects: `cd code && yarn test --project '!core' --project '!storybook-ui' --sequence.shuffle.files --no-sequence.shuffle.tests --sequence.seed=12`.",
+      "issues": []
+    },
+    {
+      "number": 37429,
+      "title": "Preview API: Keep the written form of numeric strings from URL args",
+      "area": "Preview API",
+      "status": "skip",
+      "labels": [
+        "agent-scan:community-flagged",
+        "args",
+        "bug",
+        "ci:focus",
+        "preview-api",
+        "qa:skip",
+        "review:verified",
+        "sev:S3"
+      ],
+      "manualTesting": "1. Open a story with a text control named `code`.\n2. Enter `0612345678` and reload. Before the fix, the control and story show `612345678`. With the fix, both show `0612345678`.",
+      "issues": [
+        {
+          "number": 18190,
+          "title": "Number precision lost when parsing args param",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": false,
+          "parent": null
+        }
+      ]
+    },
+    {
+      "number": 37442,
+      "title": "Next.js: Fix TypeScript 6 peer conflict",
+      "area": "Next.js",
+      "status": "undeclared",
+      "labels": [
+        "agent-scan:human",
+        "bug",
+        "ci:focus",
+        "nextjs",
+        "review:verified",
+        "sev:S2",
+        "typescript"
+      ],
+      "manualTesting": "1. Run `yarn nx compile vite-plugin-storybook-nextjs --skip-nx-cache`.\n2. Pack the framework with `yarn workspace vite-plugin-storybook-nextjs pack -o \"$PWD/vite-plugin-storybook-nextjs.tgz\"`.\n3. In a pnpm fixture that uses TypeScript 6 and Vite 6, 7, or 8, install the tarball with strict peer checks: `pnpm add --save-exact /absolute/path/to/vite-plugin-storybook-nextjs.tgz --strict-peer-dependencies`.\n4. Confirm installation succeeds without a `tsconfck`/TypeScript peer error. Repeat with TypeScript 5.9 if desired.\n5. For path-resolution regression coverage, configure a tsconfig alias and confirm a Vite build resolves an extensionless aliased import.",
+      "issues": [
+        {
+          "number": 36305,
+          "title": "[Bug]: React Native Web has peer dependency errors with typescript 6+",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": false,
+          "parent": null
+        }
+      ]
+    },
+    {
+      "number": 37443,
+      "title": "CLI: Report the real configuration error when doctor cannot read a project",
+      "area": "CLI",
+      "status": "skip",
+      "labels": [
+        "agent-scan:human",
+        "bug",
+        "ci:focus",
+        "cli",
+        "qa:skip",
+        "review:verified",
+        "sev:S4"
+      ],
+      "manualTesting": "1. Create a project with Storybook 10.6.7 installed at the root, its config in `storybook/`, and no `.storybook/` directory.\n\n   ```text\n   repro-37376/\n   ├── package.json\n   └── storybook/\n       ├── main.js\n       └── stories/\n           └── Button.stories.js\n   ```\n\n   <details>\n   <summary>Create the reproduction</summary>\n\n   Run these commands outside your Storybook repository clone:\n\n   ```sh\n   mkdir repro-37376 && cd repro-37376 && git init -q\n\n   cat > package.json <<'EOF'\n   {\n     \"name\": \"repro-doctor\",\n     \"private\": true,\n     \"devDependencies\": {\n       \"@storybook/html-vite\": \"10.6.7\",\n       \"storybook\": \"10.6.7\",\n       \"vite\": \"^6.3.5\"\n     }\n   }\n   EOF\n\n   mkdir -p storybook/stories\n\n   cat > storybook/main.js <<'EOF'\n   export default {\n     stories: ['./stories/*.stories.js'],\n     framework: { name: '@storybook/html-vite', options: {} },\n   };\n   EOF\n\n   cat > storybook/stories/Button.stories.js <<'EOF'\n   export default { title: 'Example/Button' };\n   export const Primary = {\n     render: () => Object.assign(document.createElement('button'), { textContent: 'Hello' }),\n   };\n   EOF\n\n   npm install --no-audit --no-fund\n   ```\n\n   </details>\n\n2. In your Storybook repository clone, build the base commit:\n\n   ```sh\n   git checkout 7c89155f3f\n   yarn\n   yarn nx compile cli\n   ```\n\n3. From `repro-37376/`, run doctor. Replace `/absolute/path/to/storybook` with the path to your Storybook repository clone.\n\n   ```sh\n   STORYBOOK_DISABLE_TELEMETRY=1 node \"/absolute/path/to/storybook/code/lib/cli-storybook/dist/bin/index.js\" doctor\n   ```\n\n   It prints `undefined: 1 problem found` and `Unable to determine Storybook version`.\n\n4. In your Storybook repository clone, build this PR:\n\n   ```sh\n   gh pr checkout 37443\n   yarn\n   yarn nx compile cli\n   ```\n\n5. Run the command from step 3 again, from `repro-37376/`.\n\n   It prints `.storybook: 1 problem found`. The message explains that the main config could not be found and suggests using `--config-dir`.\n\n6. From `repro-37376/`, run doctor with the config directory specified:\n\n   ```sh\n   STORYBOOK_DISABLE_TELEMETRY=1 node \"/absolute/path/to/storybook/code/lib/cli-storybook/dist/bin/index.js\" doctor --config-dir storybook\n   ```\n\n   It prints `Your Storybook project looks good!`.\n\n> [!NOTE]\n> These manual steps have not been run on Windows.",
+      "issues": [
+        {
+          "number": 37376,
+          "title": "[SB 11 QA]: storybook doctor without --config-dir prints 'undefined: 1 problem found' and exits 0 when the config is not in .storybook",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": true,
+          "parent": null
+        }
+      ]
+    },
+    {
+      "number": 37445,
+      "title": "Docs: Clear the inline story error once it renders again",
+      "area": "Docs",
+      "status": "skip",
+      "labels": [
+        "addon: docs",
+        "agent-scan:human",
+        "bug",
+        "ci:focus",
+        "qa:skip",
+        "review:verified",
+        "sev:S3"
+      ],
+      "manualTesting": "1. Run a sandbox: `yarn task --task sandbox --start-from auto --template react-\n2. Start it and open the Docs page for Example/Button.\n3. In the sandbox, add `throw new Error('bla');` at the top of the `Button` comton.tsx` and save. The inline stories show the error.\n4. Remove that line and save. The stories render again without a page reload. Before this change, the error stayed until the page was reloaded.",
+      "issues": [
+        {
+          "number": 22213,
+          "title": "[Bug]: Story docs block does not recover from errors thrown in React",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": true,
+          "parent": null
+        }
+      ]
+    },
+    {
+      "number": 37451,
+      "title": "Build: Inject CJS require shim only where node outputs use it",
+      "area": "Build",
+      "status": "skip",
+      "labels": [
+        "build",
+        "ci:focus",
+        "qa:skip"
+      ],
+      "manualTesting": "1. `yarn nx run-many -t compile --skip-nx-cache`\n2. `grep -c \"import.meta\" code/lib/mcp/dist/index.js` prints `0`.\n3. `grep -rl CJS_COMPAT_CREATE_REQUIRE code --include='*.js' | grep /dist/ | wc -l` prints about 11, and `head -1 code/core/dist/bin/dispatcher.js` is still `#!/usr/bin/env node`.\n4. Run a sandbox, e.g. `yarn task sandbox --template react-vite/default-ts --start-from auto`, and start Storybook. It should run with no `require is not defined`, `__dirname is not defined` or `Dynamic require of ... is not supported` errors.\n5. Repeat for a webpack template (e.g. `react-webpack/18-ts`) and `nextjs-vite`, which have the most inlined CommonJS.",
+      "issues": [
+        {
+          "number": 37397,
+          "title": "[Bug]: @storybook/mcp fails at startup on Cloudflare Workers because of the CJS compatibility banner",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": false,
+          "parent": null
+        }
+      ]
+    },
+    {
+      "number": 37453,
+      "title": "Builder-Vite: Import the preview runtime into pre-bundled deps that read its globals",
+      "area": "Builder-Vite",
+      "status": "skip",
+      "labels": [
+        "bug",
+        "ci:canary",
+        "ci:normal",
+        "qa:skip"
+      ],
+      "manualTesting": "The bug needs Storybook packages installed from a registry, because linked packages are not pre-bundled. Use `--no-link`.\n\n1. Generate the sandbox:\n\n   ```bash\n   yarn task sandbox --template lit-vite/default-ts --no-link --start-from auto\n   ```\n\n2. In `../storybook-sandboxes/lit-vite-default-ts/.storybook/main.ts`, add this to the object that `viteFinal` returns. It injects a head module script the way Lumina does:\n\n   ```ts\n   plugins: [\n     ...(config.plugins ?? []),\n     {\n       name: 'early-import',\n       transformIndexHtml: {\n         order: 'pre',\n         handler: () => [\n           {\n             tag: 'script',\n             attrs: { type: 'module' },\n             children: `import('@storybook/web-components-vite')`,\n           },\n         ],\n       },\n     },\n   ],\n   ```\n\n3. Start Storybook:\n\n   ```bash\n   cd ../storybook-sandboxes/lit-vite-default-ts && yarn storybook\n   ```\n\n4. Open http://localhost:6006/iframe.html?id=example-button--primary&viewMode=story and reload it a few times. The button renders on every load and the console shows no `__STORYBOOK_MODULE_*__ is not defined` error. On `next`, the page stays blank and the console shows that error.\n5. Run `yarn build-storybook` and check that the build succeeds.\n6. Remove the plugin from step 2, then run the end-to-end specs. The new spec covers the classic-script case:\n\n   ```bash\n   yarn task e2e-tests-dev --template lit-vite/default-ts --no-link --start-from auto\n   ```\n\nTo check against the project in the issue, follow its reproduction steps with this PR's canary in place of `11.0.0-beta.1`.\n\nAreas worth extra scrutiny:\n\n- Module mocking (`sb.mock`), since mocked modules and pre-bundled chunks now import the runtime themselves.\n- Source maps of pre-bundled chunks that receive the import: the hook returns `map: null`, as it already does for the modules it rewrites.",
+      "issues": [
+        {
+          "number": 37375,
+          "title": "[SB 11 QA]: Story page throws __STORYBOOK_MODULE_CLIENT_LOGGER__ is not defined on later loads in a dev session",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": true,
+          "parent": null
+        }
+      ]
+    },
+    {
+      "number": 37454,
+      "title": "Addon A11y: Update vision simulators to be more rigorous",
+      "area": "Addon A11y",
+      "status": "skip",
+      "labels": [
+        "a11y: contrast",
+        "bug",
+        "ci:canary",
+        "ci:focus",
+        "qa:skip"
+      ],
+      "manualTesting": "See https://github.com/storybookjs/storybook/pull/36232",
+      "issues": [
+        {
+          "number": 36154,
+          "title": "Addon A11y: Vision simulator uses discredited colorblindness matrices",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": true,
+          "parent": null
+        }
+      ]
+    },
+    {
+      "number": 37461,
+      "title": "CLI: Stop upgrade when overrides pin Storybook packages to another version",
+      "area": "CLI",
+      "status": "skip",
+      "labels": [
+        "automigrations",
+        "bug",
+        "ci:canary",
+        "ci:focus",
+        "qa:skip"
+      ],
+      "manualTesting": "1. In a Storybook 10.5 project using npm, add to package.json:\n   `\"overrides\": { \"@storybook/addon-docs\": { \"storybook\": \"~10.5.3\" } }`\n2. Run this branch's CLI: `npx storybook@<canary> upgrade`.\n   The \"Overrides pin Storybook packages to another version\" blocker should list that entry, and no package.json should change.\n3. Run it again with `--force`: the blocker is skipped and the upgrade goes ahead as before.\n4. Remove the override and run the upgrade: no blocker.\n5. In an upgraded project, add the same override and run `npx storybook@<canary> doctor`: it should report the `Storybook Overrides` issue.\n\n<img width=\"638\" height=\"519\" alt=\"image\" src=\"https://github.com/user-attachments/assets/3f45ef12-01fe-4fe9-8507-78d28d9622c2\" />",
+      "issues": [
+        {
+          "number": 37357,
+          "title": "[SB 11 QA]: Upgrade install fails with ERESOLVE on `@storybook/addon-mcp`@11.0.0-beta.1 because package.json overrides still pin Storybook 10.5",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": true,
+          "parent": null
+        }
+      ]
+    },
+    {
+      "number": 37490,
+      "title": "CLI: Find pnpm-workspace.yaml above STORYBOOK_PROJECT_ROOT",
+      "area": "CLI",
+      "status": "skip",
+      "labels": [
+        "bug",
+        "ci:focus",
+        "pnpm",
+        "qa:skip"
+      ],
+      "manualTesting": "These are the reproduction steps of #37480. Use a canary of this branch (or a local build) in place of `<version>`.\n\n1. Create a pnpm workspace with a catalog and one package:\n\n   ```sh\n   mkdir ws && cd ws && git init\n   npx sv@1.4.0 create --template minimal --types ts --no-add-ons --no-install app\n   echo '{ \"name\": \"ws-root\", \"private\": true, \"packageManager\": \"pnpm@11.26.0\" }' > package.json\n   printf 'packages:\\n  - app\\ncatalog:\\n  svelte: ^5.57.2\\n' > pnpm-workspace.yaml\n   # In app/package.json, set \"svelte\": \"catalog:\"\n   pnpm install\n   ```\n\n2. Add Storybook to the package:\n\n   ```sh\n   cd app\n   pnpm dlx storybook@<version> init --yes --no-dev --features docs\n   cd .. && pnpm install && cd app\n   ```\n\n3. Run an install through the CLI with the project root set to the package:\n\n   ```sh\n   STORYBOOK_PROJECT_ROOT=$PWD pnpm exec storybook automigrate skills --yes\n   git -C .. status --short\n   ```\n\n4. Expect: the install succeeds and there is no `ws/app/pnpm-workspace.yaml`. On `next`, the install fails with `ERR_PNPM_CATALOG_ENTRY_NOT_FOUND_FOR_SPEC` and `app/pnpm-workspace.yaml` is left behind.",
+      "issues": [
+        {
+          "number": 37480,
+          "title": "[Bug]: With `STORYBOOK_PROJECT_ROOT` set to a pnpm workspace package, Storybook writes a second `pnpm-workspace.yaml` and the install fails",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": true,
+          "parent": null
+        }
+      ]
+    },
+    {
+      "number": 37491,
+      "title": "Builder-Vite: Resolve change detection with the conditions Vite matches",
+      "area": "Builder-Vite",
+      "status": "skip",
+      "labels": [
+        "bug",
+        "ci:canary",
+        "ci:focus",
+        "qa:skip"
+      ],
+      "manualTesting": "These steps follow the reproduction in #37481. Replace `<sha>` with the short SHA of this PR's canary (see the canary section below; add `ci:canary` if it has not run).\n\n1. Create a SvelteKit project with Storybook, and switch Storybook to the canary. `@storybook/sveltekit` pulls in the canary `@storybook/builder-vite`, which holds the fix.\n\n   ```sh\n   npx sv@1.4.0 create --template minimal --types ts --no-add-ons --install pnpm repro\n   cd repro\n   git init\n   pnpm dlx storybook@11.0.0-beta.3 init --yes --no-dev --features docs\n   pnpm add -D storybook@https://pkg.pr.new/storybook@<sha> @storybook/sveltekit@https://pkg.pr.new/@storybook/sveltekit@<sha> @storybook/addon-docs@https://pkg.pr.new/@storybook/addon-docs@<sha>\n   ```\n\n2. Add a local package that exports only `import`, and a package that exports only `development` and `production`:\n\n   ```sh\n   mkdir -p libs/tones libs/modes src/lib/repro\n   echo '{ \"name\": \"tones\", \"version\": \"1.0.0\", \"type\": \"module\", \"exports\": { \".\": { \"import\": \"./index.js\" } } }' > libs/tones/package.json\n   echo \"export const defaultTone = 'neutral';\" > libs/tones/index.js\n   echo '{ \"name\": \"modes\", \"version\": \"1.0.0\", \"type\": \"module\", \"exports\": { \".\": { \"development\": \"./dev.js\", \"production\": \"./prod.js\" } } }' > libs/modes/package.json\n   echo \"export const modeTone = 'dev';\" > libs/modes/dev.js\n   echo \"export const modeTone = 'prod';\" > libs/modes/prod.js\n   pnpm add -D tones@link:./libs/tones modes@link:./libs/modes\n   ```\n\n3. Add `src/lib/repro/Toned.svelte` and `src/lib/repro/Toned.stories.svelte` exactly as in the issue. Add `Moded.svelte` and `Moded.stories.svelte` the same way, with `import { modeTone } from 'modes';`, `class={modeTone}` and the title `Repro/Moded`.\n\n4. Commit, change both packages, and ask for the changed stories:\n\n   ```sh\n   git add -A && git commit -m repro\n   echo \"export const defaultTone = 'accent';\" > libs/tones/index.js\n   echo \"export const modeTone = 'dev-accent';\" > libs/modes/dev.js\n   npx storybook tools stories changed\n   ```\n\n   Expected: `Detected 2 changed stories (0 new, 2 modified, 0 related)`, listing `repro-moded--default` and `repro-toned--default`. Without step 1's `pnpm add`, so on `11.0.0-beta.3`, the same command prints `No new, modified, or related stories detected.`\n\n5. Check that the mode follows `NODE_ENV`, as in Vite: `NODE_ENV=production npx storybook tools stories changed` lists only `repro-toned--default` and names `libs/modes/dev.js` as unreachable. After `echo \"export const modeTone = 'prod-accent';\" > libs/modes/prod.js`, it lists both stories again.\n\n6. Check the dev-server adapter: run `pnpm storybook`, and in a second terminal run `npx storybook tools --attach stories changed`. It lists the same two stories as step 4.\n\n7. Check a monorepo whose root tsconfig maps workspace packages to their sources. Use the canary of `storybook` and `@storybook/react-vite`, with Storybook at the root of a pnpm workspace:\n   - The root `tsconfig.json` has `\"p\n[cut at 3000 characters]",
+      "issues": [
+        {
+          "number": 37481,
+          "title": "[Bug]: Change detection drops the `import` and `default` conditions, so `stories changed` misses packages that export only `import`",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": true,
+          "parent": null
+        }
+      ]
+    },
+    {
+      "number": 37492,
+      "title": "Core: Update the stale expectation for a destructured export shadowing an `export *`",
+      "area": "Core",
+      "status": "skip",
+      "labels": [
+        "build",
+        "ci:focus",
+        "core",
+        "qa:skip",
+        "review:verified",
+        "sev:S4"
+      ],
+      "manualTesting": "No manual testing is necessary — this PR changes only a unit test's expectation in `code/core/src/common/utils/resolve-meta-component.test.ts`; there is no runtime code change. To verify locally:\n\n1. `./node_modules/.bin/vitest run --config code/core/vitest.config.ts code/core/src/common/utils/resolve-meta-component.test.ts`\n2. Expected: **30 passed** (previously 1 failed / 29 passed on `next@5aea8b6ab`).",
+      "issues": []
+    },
+    {
+      "number": 37496,
+      "title": "Builder-Vite: Read Vite+ bundled version via package.json",
+      "area": "Builder-Vite",
+      "status": "needed",
+      "labels": [
+        "bug",
+        "builder-vite",
+        "ci:canary",
+        "ci:focus",
+        "qa:needed"
+      ],
+      "manualTesting": "Use the canary from the **Canary Release** section below, replacing `<sha>` with its short SHA. The bug only appears when the CLI runs from outside the project, which is how `npx` runs the canary, so run each command from the project directory as written. `upgrade --dry-run` still runs an install, so work in throwaway clones.\n\n**1. The project from the issue: Vite+ 1.4.0, SvelteKit, addon-vitest**\n\n```sh\ngit clone https://github.com/storybookjs/labs\ncd labs\ngit checkout efa4ef15d65997de13d04fcb50ed7c921feec3ba\npnpm install\ncd packages/vitest-plugin-sveltekit/examples/kit-app\n\nnode -p \"require('vite/package.json').name + '@' + require('vite/package.json').version\"",
+      "issues": [
+        {
+          "number": 37479,
+          "title": "[Bug]: Upgrade blocks with \"Vite 6.3 or newer required\" when `vite` is Vite+ (`@voidzero-dev/vite-plus-core`)",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": true,
+          "parent": null
+        }
+      ]
+    },
+    {
+      "number": 37499,
+      "title": "CLI: Check addon version ranges that start with a canary part",
+      "area": "CLI",
+      "status": "skip",
+      "labels": [
+        "bug",
+        "ci:focus",
+        "qa:skip",
+        "sev:S3"
+      ],
+      "manualTesting": "1. `yarn nx compile cli`\n2. In a Storybook 11 project, add `storybook-addon-test-codegen@3.0.4` as a dev dependency (no need to register it in `main.ts`).\n3. Run the compiled CLI's doctor from that project: `node <repo>/code/lib/cli-storybook/dist/bin/index.js doctor`.\n4. Doctor should report `storybook-addon-test-codegen@3.0.4` as incompatible, depending on `^0.0.0-0 || ^10.0.0 || …`. Before this change it reports \"Your Storybook project looks good!\".",
+      "issues": [
+        {
+          "number": 37285,
+          "title": "[SB 11 QA]: storybook doctor reports 'looks good' after upgrade while the dev server cannot start",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": false,
+          "parent": null
+        },
+        {
+          "number": 37498,
+          "title": "[SB 11 QA]: upgrade leaves a second Storybook on storybook@10 when its config dir isn't .storybook, and doctor hides the extra core",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": false,
+          "parent": null
+        }
+      ]
+    },
+    {
+      "number": 37500,
+      "title": "Builder-Webpack5: Resolve change detection with the conditions webpack matches",
+      "area": "Builder-Webpack5",
+      "status": "skip",
+      "labels": [
+        "bug",
+        "builder-webpack5",
+        "ci:normal",
+        "qa:skip"
+      ],
+      "manualTesting": "Webpack only offers change detection through a running dev server, so the CLI must attach to one.\n\n1. Create a webpack sandbox from this branch and open it:\n\n   ```sh\n   yarn task --task sandbox --start-from auto --template react-webpack/18-ts\n   cd ../storybook-sandboxes/react-webpack-18-ts\n   ```\n\n2. Add a local package that exports only `import`, and a dual package whose `exports` list `import` and `default`, and link them:\n\n   ```sh\n   mkdir -p libs/tones libs/dual src/stories/repro/legacy\n   echo '{ \"name\": \"tones\", \"version\": \"1.0.0\", \"type\": \"module\", \"exports\": { \".\": { \"import\": \"./index.js\" } } }' > libs/tones/package.json\n   echo \"export const defaultTone = 'neutral';\" > libs/tones/index.js\n   echo '{ \"name\": \"dual\", \"version\": \"1.0.0\", \"exports\": { \".\": { \"import\": \"./esm.mjs\", \"default\": \"./cjs.cjs\" } } }' > libs/dual/package.json\n   echo \"export const tone = 'esm';\" > libs/dual/esm.mjs\n   echo \"exports.tone = 'cjs';\" > libs/dual/cjs.cjs\n   ln -s ../libs/tones node_modules/tones\n   ln -s ../libs/dual node_modules/dual\n   ```\n\n3. Add `src/stories/repro/Toned.js`:\n\n   ```js\n   import { createElement } from 'react';\n   import { defaultTone } from 'tones';\n\n   export const Toned = () => createElement('span', { className: defaultTone }, 'Toned');\n   ```\n\n   And `src/stories/repro/Toned.stories.js`:\n\n   ```js\n   import { Toned } from './Toned.js';\n\n   export default { title: 'Repro/Toned', component: Toned };\n   export const Default = {};\n   ```\n\n4. Add a CommonJS component that `require()`s the dual package. `src/stories/repro/legacy/package.json`:\n\n   ```json\n   { \"type\": \"commonjs\" }\n   ```\n\n   `src/stories/repro/legacy/Legacy.js`:\n\n   ```js\n   const { createElement } = require('react');\n   const { tone } = require('dual');\n\n   exports.Legacy = () => createElement('p', null, tone);\n   ```\n\n   And `src/stories/repro/Legacy.stories.js`:\n\n   ```js\n   import { Legacy } from './legacy/Legacy.js';\n\n   export default { title: 'Repro/Legacy', component: Legacy };\n   export const Default = {};\n   ```\n\n5. Commit, then start Storybook:\n\n   ```sh\n   printf 'node_modules\\n' >> .gitignore\n   git init -q && git add -A && git commit -qm repro\n   yarn storybook\n   ```\n\n6. In a second terminal in the sandbox, change the `import`-only package and the CommonJS entry of the dual package, and ask for the changed stories:\n\n   ```sh\n   echo \"export const defaultTone = 'accent';\" > libs/tones/index.js\n   echo \"exports.tone = 'cjs-edited';\" > libs/dual/cjs.cjs\n   npx storybook tools --attach stories changed\n   ```\n\n   Expected: `repro-toned--default` and `repro-legacy--default` are listed as modified. On `next`, only `repro-legacy--default` is listed, and `libs/tones/index.js` is unreachable from any story. The `Legacy` story checks that a `require()` still resolves to the entry webpack loads for it now that the ESM conditions include `import`.",
+      "issues": [
+        {
+          "number": 37481,
+          "title": "[Bug]: Change detection drops the `import` and `default` conditions, so `stories changed` misses packages that export only `import`",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": false,
+          "parent": null
+        }
+      ]
+    },
+    {
+      "number": 37503,
+      "title": "Vue3: Keep exceptions thrown during mount visible",
+      "area": "Vue3",
+      "status": "skip",
+      "labels": [
+        "bug",
+        "ci:focus",
+        "qa:skip"
+      ],
+      "manualTesting": "1. Generate the Vue sandbox and start it:\n   ```bash\n   yarn task sandbox --template vue3-vite/default-ts --start-from auto\n   cd ../storybook-sandboxes/vue3-vite-default-ts && yarn storybook\n   ```\n2. Open http://localhost:6006/?path=/docs/addons-docs-docspage-error--docs. The primary story block should show the \"Story did something wrong\" error. On `next` the block is empty.\n3. Open http://localhost:6006/?path=/story/addons-docs-docspage-error--error-story. The canvas should show the same error.\n4. Look for regressions: open any working Vue story (for example the Button stories) in the canvas and on its docs page. It should render, with no stuck loader and no error overlay.\n5. Optionally, run the e2e spec that caught the regression. `should render errors` should pass:\n   ```bash\n   yarn task e2e-tests-dev --template vue3-vite/default-ts --start-from auto e2e-sandbox/addon-docs.spec.ts\n   ```",
+      "issues": []
+    },
+    {
+      "number": 37506,
+      "title": "E2E: Check the Code tab snippet by the story's label",
+      "area": "E2E",
+      "status": "skip",
+      "labels": [
+        "build",
+        "ci:daily",
+        "qa:skip"
+      ],
+      "manualTesting": "This PR only changes an end-to-end test. Run it against the non-React sandboxes, where it used to fail:\n\n1. Run the spec against the Vue sandbox:\n   ```bash\n   yarn task e2e-tests-dev --template vue3-vite/default-ts --start-from auto e2e-sandbox/addon-panel.spec.ts\n   ```\n   Expect `the Code tab follows docs.codePanel and its snippet follows the story` to pass. On `next` it fails at `addon-panel.spec.ts:154`, with the story object in the Code panel instead of `Button`.\n2. Repeat with `--template html-vite/default-ts`, whose snippet is `<button>e2eStoryDocsBefore</button>`. The Code tab test should pass.\n3. Ignore `the Actions badge counts the events…` if it fails: it is the pre-existing flake mentioned above.\n\nReact, where the test already passed, is covered by the `react-latest--vite---typescript` jobs in CI. To check this PR in CI, use `ci:normal` or `ci:daily` rather than `ci:focus`. `ci:focus` runs only `react-vite/default-ts`, where this test passed before the fix.",
+      "issues": []
+    },
+    {
+      "number": 37507,
+      "title": "Svelte: Show errors from stories without a component and from args updates",
+      "area": "Svelte",
+      "status": "skip",
+      "labels": [
+        "bug",
+        "ci:focus",
+        "qa:skip"
+      ],
+      "manualTesting": "1. Generate the Svelte sandbox. It needs `--no-link`, because a linked Svelte sandbox does not render:\n   ```bash\n   yarn task sandbox --template svelte-vite/default-ts --start-from auto --no-link\n   ```\n2. In `../storybook-sandboxes/svelte-vite-default-ts/src/stories/`, add two story files.\n\n   `RenderErrors.stories.ts` (no `component`, so the story renders nothing):\n   ```ts\n   export default {\n     title: 'Example/RenderErrors',\n     tags: ['autodocs'],\n   };\n\n   export const NoComponent = {\n     render: () => ({}),\n   };\n   ```\n   `ArgsUpdateError.stories.ts`:\n   ```ts\n   import Button from './Button.svelte';\n\n   export default {\n     title: 'Example/ArgsUpdateError',\n     component: Button,\n     args: { label: 'Button', primary: false },\n     decorators: [\n       (storyFn, { args }) => {\n         if (args.primary) {\n           throw new Error('The decorator threw on an args update');\n         }\n         return storyFn();\n       },\n     ],\n   };\n\n   export const Default = {};\n   ```\n3. Start Storybook:\n   ```bash\n   cd ../storybook-sandboxes/svelte-vite-default-ts && yarn storybook\n   ```\n4. Open http://localhost:6006/?path=/docs/example-rendererrors--docs. The story block should show `Expecting a Svelte component from the story: \"No Component\" of \"Example/RenderErrors\".` On `next` the block is empty.\n5. Open http://localhost:6006/?path=/story/example-rendererrors--no-component. The canvas should show the same error. On `next` the canvas is blank.\n6. Open http://localhost:6006/?path=/story/example-argsupdateerror--default and set `primary` to `True` in Controls. The canvas should show the \"The decorator threw on an args update\" error. On `next` the canvas keeps the old button, and the error only appears in the browser console as uncaught. Set `primary` back to `False`: the button should render again.\n7. Check for regressions in the update path: on `Example/Button` stories, change a few controls in the canvas and on the docs page. The button should follow each change with no error and no stuck loader.",
+      "issues": []
+    },
+    {
+      "number": 37510,
+      "title": "Sidebar: Put the scrollbar back at the sidebar's edge",
+      "area": "Sidebar",
+      "status": "skip",
+      "labels": [
+        "bug",
+        "ci:focus",
+        "qa:skip"
+      ],
+      "manualTesting": "1. Run the internal Storybook: `cd code && yarn storybook:ui`, and open it in a desktop-sized window.\n2. Hover the sidebar so its scrollbar appears. The thumb sits right by the sidebar's right edge (3px from it), not 12px in.\n3. Hover a few tree rows. The right end of a row's highlight lines up with the right edge of the search field, 12px from the sidebar's edge, the same inset as on the left.\n4. Type a broad query (e.g. `a`) in the search field. The results line up with the search field, and when they overflow, their scrollbar also sits by the edge.\n5. Drag the sidebar's resize handle to make it wider and narrower. The rows and the thumb keep the same distances from the edge.\n6. Narrow the window to a mobile width and open the menu drawer. The tree rows end 12px from the drawer's edge.",
+      "issues": []
+    },
+    {
+      "number": 37511,
+      "title": "CLI: Update compatibility guidance URL in summary message",
+      "area": "CLI",
+      "status": "skip",
+      "labels": [
+        "bug",
+        "ci:docs",
+        "cli",
+        "qa:skip"
+      ],
+      "manualTesting": "It's such a minor change the only manual test you could do is check whether the link is correct",
+      "issues": [
+        {
+          "number": 32836,
+          "title": "[Tracking]: Storybook 10 addon migrations",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": false,
+          "parent": null
+        },
+        {
+          "number": 36283,
+          "title": "[Tracking]: Storybook 11 addon migrations",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": false,
+          "parent": null
+        }
+      ]
+    },
+    {
+      "number": 37512,
+      "title": "CLI: Make the skills-removal hint optional and quote the command",
+      "area": "CLI",
+      "status": "skip",
+      "labels": [
+        "ci:focus",
+        "cli",
+        "core",
+        "maintenance",
+        "qa:skip",
+        "review:verified",
+        "sev:S4"
+      ],
+      "manualTesting": "Not necessary: this is a log-message copy change in `installSkills`, fully covered by the updated unit test (`code/core/src/cli/installSkills.test.ts`), which asserts the exact rendered line.",
+      "issues": []
+    },
+    {
+      "number": 37513,
+      "title": "CI: Show cancelled CircleCI jobs as pending instead of failed",
+      "area": "CI",
+      "status": "skip",
+      "labels": [
+        "build",
+        "ci:focus",
+        "qa:skip"
+      ],
+      "manualTesting": "After merge to `next`:\n\n1. On a PR with CircleCI running, restart the workflow (or push again) while jobs from the first run are still going, so those jobs are cancelled.\n2. Open the cancelled commit's checks on GitHub. The cancelled jobs should show as pending with \"Cancelled, waiting for a new CircleCI run of this job\", not as failed.\n3. Once the restarted run finishes a job, that job's status should switch to its real result.\n4. In the Actions tab, the \"Show cancelled CircleCI jobs as pending\" runs for those statuses should have run the `mark-pending` job, and the rest should be skipped.",
+      "issues": []
+    },
+    {
+      "number": 37518,
+      "title": "Core: Remove test-runner support",
+      "area": "Core",
+      "status": "skip",
+      "labels": [
+        "ci:focus",
+        "maintenance",
+        "qa:skip"
+      ],
+      "manualTesting": "1. Run `yarn docs:check` and `yarn --cwd scripts update-migration-toc --check`. Both pass.\n2. Read the \"Test runner support removed\" section of `MIGRATION.md` and the \"Check for removed support\" list in `docs/releases/migration-guide.mdx`, and follow their links.\n3. Open `docs/writing-tests/integrations/vitest-addon/migration-guide.mdx` and check that the callout, the moved comparison table and the FAQ read correctly.\n4. Optional: in a sandbox that lists `@storybook/addon-coverage` in `addons`, run `yarn build-storybook --test` and check that the addon now loads. Adding it to `build.test.disabledAddons` turns it off again.",
+      "issues": []
+    },
+    {
+      "number": 37525,
+      "title": "Test: Wait for storyRendered before clicking in the Actions badge e2e",
+      "area": "Test",
+      "status": "skip",
+      "labels": [
+        "ci:focus",
+        "maintenance",
+        "qa:skip",
+        "review:verified",
+        "sev:S4"
+      ],
+      "manualTesting": "Test-only change — no manual QA needed. To verify locally:\n\n1. `yarn j egghead storybook` is not required; instead run a sandbox: `cd code && yarn j sandbox --template react-vite/prerelease-ts` (or any dev server on port 6006).\n2. Start the dev server, then from `code/`: `STORYBOOK_URL=http://localhost:6006 STORYBOOK_TEMPLATE_NAME=react-vite/prerelease-ts yarn playwright test --project=chromium e2e-sandbox/addon-panel.spec.ts` — all six tests pass, including \"the Actions badge counts the events and clears on the next story\".\n3. Without this branch's change, the badge test intermittently fails with `Actions 2` or `Actions 1` under repeated runs.",
+      "issues": []
+    },
+    {
+      "number": 37530,
+      "title": "Tools: List MDX pages by their title in docs list",
+      "area": "Tools",
+      "status": "skip",
+      "labels": [
+        "MCP",
+        "bug",
+        "ci:focus",
+        "cli",
+        "manifest",
+        "qa:skip",
+        "skills and tools"
+      ],
+      "manualTesting": "1. Compile: `yarn nx run-many -t compile`\n2. Run `cd code && node core/dist/bin/dispatcher.js tools --no-attach docs list`\n3. In the `# Docs` section, check that each line starts with the page title, for example `- brand/Typography (brand-typography--docs): …`, and that no line starts with `- Docs (`.\n4. Run `node core/dist/bin/dispatcher.js tools --no-attach docs show --id brand-typo` and check that the \"Closest matches\" list names the page `brand/Typography`, not `Docs`.\n5. Optionally, start the internal Storybook (`yarn storybook:ui`), run the same two commands with `--attach` in a second terminal, and check that the output is the same.",
+      "issues": [
+        {
+          "number": 37472,
+          "title": "[Bug]: `docs list` (CLI and MCP) names every unattached MDX page \"Docs\" instead of its title",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": true,
+          "parent": null
+        }
+      ]
+    },
+    {
+      "number": 37532,
+      "title": "Docs: Refresh README for Storybook 11",
+      "area": "Docs",
+      "status": "skip",
+      "labels": [
+        "ci:docs",
+        "documentation",
+        "qa:skip",
+        "sev:S4"
+      ],
+      "manualTesting": "[GO HERE](https://github.com/storybookjs/storybook/tree/sidnioulz/readme-11?tab=readme-ov-file)",
+      "issues": []
+    },
+    {
+      "number": 37537,
+      "title": "Revert \"Tests: Reuse Vitest workers across files outside core and sve…",
+      "area": "Revert \"Tests",
+      "status": "undeclared",
+      "labels": [
+        "build"
+      ],
+      "manualTesting": null,
+      "issues": []
+    },
+    {
+      "number": 37570,
+      "title": "CLI: Block upgrades while the test-runner is installed",
+      "area": "CLI",
+      "status": "skip",
+      "labels": [
+        "ci:focus",
+        "maintenance",
+        "qa:skip"
+      ],
+      "manualTesting": "1. Create a React Vite project on `storybook@10.6.7` with `@storybook/react-vite@10.6.7` and `@storybook/test-runner@0.24.0`, and install it.\n2. Compile this branch (`yarn nx run-many -t compile -p core cli`) and, from the project, run `node <checkout>/code/lib/cli-storybook/dist/bin/index.js upgrade --yes`. The upgrade stops with \"Test runner: support removed\" and the `MIGRATION.md` link, exits with code 1, and leaves `package.json` untouched.\n3. Run the same command with `--force`. The upgrade proceeds to `11.0.0-beta.3`.\n4. Uninstall `@storybook/test-runner` and run the upgrade again without `--force`. This blocker no longer appears and the upgrade completes.\n5. To exercise the `getInstalledVersion` change: in a copy of the project from step 1, remove `@storybook/test-runner` from `package.json` without uninstalling it, and add a dependency that is not installed, so that `npm ls` exits 1. The upgrade is still blocked.\n\nResults from running these steps with the compiled CLI of this branch. Every project is React Vite on Storybook 10.6.7 with `@storybook/test-runner@0.24.0` unless stated.\n\n| Project | Result |\n| --- | --- |\n| npm, direct dependency | Blocked, exit 1, nothing changed. On `next`: upgrades to `11.0.0-beta.3`, then doctor lists the test runner as incompatible |\n| Same, `--dry-run` | Blocked, exit 1 |\n| Same, started through `storybook`'s dispatcher bin | Blocked, exit 1 |\n| Same, `--force` | Upgrades to `11.0.0-beta.3`; doctor lists the test runner as incompatible |\n| Same, test runner uninstalled | Not blocked, upgrade completes, exit 0 |\n| Project already on `11.0.0-beta.3` with the test runner | Blocked, exit 1 |\n| pnpm 10, direct dependency | Blocked, exit 1 |\n| Yarn 4 (`nodeLinker: node-modules`), direct dependency | Blocked, exit 1 |\n| Yarn 4 project where the `yarn` on `PATH` is 1.22, so Storybook's `yarn` calls fail | Blocked, exit 1. Before the `package.json` check, this case was not blocked |\n| bun, direct dependency | Blocked, exit 1 |\n| npm workspaces with two Storybook projects, `-c` on the one with the test runner | Blocked, lists `packages/a/.storybook` |\n| Same, `-c` on the one without it | Not blocked |\n| npm, test runner on disk but not in `package.json`, `npm ls` exiting 1 | Blocked, exit 1, through the `getInstalledVersion` change |\n| `storybookjs/test-runner` checkout (Yarn 4), `--dry-run` | Blocked, next to the existing \"React 18 or newer required\" blocker |\n\nNot covered: upgrading several monorepo projects in one run (the project picker needs a terminal), Windows, and a canary installed through `npx`.",
+      "issues": []
+    },
+    {
+      "number": 37597,
+      "title": "Core: Set experimentalLiveServerSnippets as opt-out",
+      "area": "Core",
+      "status": "skip",
+      "labels": [
+        "bug",
+        "ci:focus",
+        "qa:skip"
+      ],
+      "manualTesting": "---",
+      "issues": []
+    },
+    {
+      "number": 37602,
+      "title": "Core-Server: Surface the missing export in the NoMatchingExportError card",
+      "area": "Core-Server",
+      "status": "needed",
+      "labels": [
+        "bug",
+        "ci:focus",
+        "core",
+        "qa:needed",
+        "review:verified",
+        "sev:S2"
+      ],
+      "manualTesting": "1. Create a minimal Vite React app and install Storybook 11 with an addon that still imports a removed manager API (e.g. `pnpm add -D storybook@next @storybook/react-vite@next storybook-addon-mock-date`), with `.storybook/main.ts` listing `addons: ['storybook-addon-mock-date']`.\n2. Run `pnpm storybook dev --ci --exact-port -p 6231`.\n3. Expected: the dev server fails with `SB_CORE-SERVER_0004`, and the card names the missing export (`WithTooltip`), the module (`storybook/internal/components`), and the addon's `dist/manager.js` file — instead of only advising version alignment.\n4. Remove the addon from `addons` and rerun: Storybook reaches \"Storybook ready!\" with no error.\n5. Run `npx storybook doctor`: it lists `storybook-addon-mock-date` as incompatible.",
+      "issues": [
+        {
+          "number": 37419,
+          "title": "[SB 11 QA]: storybook-addon-mock-date 3.2.1 (bumped by the upgrade) fails to load on Storybook 11, because its preview imports PreviewAddon, which Storybook 11 do [truncated]",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": true,
+          "parent": null
+        }
+      ]
+    },
+    {
+      "number": 37604,
+      "title": "CLI: Report only argTypes defaultValues the automigration can see",
+      "area": "CLI",
+      "status": "skip",
+      "labels": [
+        "bug",
+        "ci:focus",
+        "qa:skip"
+      ],
+      "manualTesting": "1. `git clone https://github.com/LuccaSA/lucca-front && cd lucca-front && git checkout 8ccdba3 && npm ci`\n2. Run `npx storybook@<canary of this PR> upgrade --yes`\n3. The upgrade exits 0, and `automigrations-summary.md` no longer lists `argtypes-default-value` failures such as `stories/documentation/forms/fields/text/angular/text-field.stories.ts` line 186 (`intl: intlArgType(...)`)\n4. Optionally repeat with `Esri/calcite-design-system`: `packages/components/src/components/tile-group/tile-group.stories.ts` is no longer reported for lines 872–873",
+      "issues": [
+        {
+          "number": 37350,
+          "title": "[SB 11 QA]: argtypes-default-value automigration lists 43 files as unmigratable with line references that contain no argTypes defaultValue, so /.storybook reports [truncated]",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": true,
+          "parent": null
+        }
+      ]
+    },
+    {
+      "number": 37607,
+      "title": "README: Publish new intro image to next branch",
+      "area": "README",
+      "status": "skip",
+      "labels": [
+        "build",
+        "ci:docs",
+        "qa:skip"
+      ],
+      "manualTesting": "N/A",
+      "issues": []
+    },
+    {
+      "number": 37611,
+      "title": "Angular, Sandboxes: Port 10.6.8 CI fixes to next and deflake the Actions badge test",
+      "area": "Angular, Sandboxes",
+      "status": "skip",
+      "labels": [
+        "angular",
+        "ci:normal",
+        "maintenance",
+        "qa:skip"
+      ],
+      "manualTesting": "1. Generate the Angular sandbox: `yarn task sandbox --template angular-cli/default-ts --start-from auto`\n2. Start it and open any story. It should render with no `ngServerMode is not defined` error.\n3. Generate `lit-rsbuild/default-ts`, run `yarn build-storybook`, and check that the stories render.\n4. Run `yarn task --task e2e-tests-dev --template react-vite/default-js` and check that \"the Actions badge counts the events and clears on the next story\" passes.",
+      "issues": []
+    },
+    {
+      "number": 37614,
+      "title": "Core: Remove argTypes from the render and decorator context",
+      "area": "Core",
+      "status": "needed",
+      "labels": [
+        "BREAKING CHANGE",
+        "argtypes",
+        "ci:daily",
+        "qa:needed"
+      ],
+      "manualTesting": "1. `git clone https://github.com/LuccaSA/lucca-front && cd lucca-front && git checkout 8ccdba3`\n2. With Node 24, run `npm ci`, then `npx storybook@<canary of this PR> upgrade --yes`.\n3. Run `npx vitest run --config .storybook/vitest.config.ts --project=storybook stories/e2e/date-input/date-input-field.stories.ts`. Expect one failed test with `SB_PREVIEW_API_0017 (ArgTypesRemovedFromStoryContextError)` and `Story: e2e-dateinput-field--basic-test`, and no `NG0950`.\n4. In `stories/documentation/forms/fields/date/date-input-field.stories.ts`, change `render: (args, { argTypes })` to `render: (args)` and replace the two `generateInputs(..., argTypes)` calls with a helper that takes `FormFieldComponent` and `DateInputComponent` and reads `reflectComponentType(component).inputs`, as in the MIGRATION.md example.\n5. Run the command from step 3 again. Expect `Tests  1 passed (1)`.\n6. In the `vue3-vite/default-ts` sandbox, open a story whose component has slots, with `features.docgenServer` on and off, and check that the slot content renders in both modes.\n7. In the `angular-cli/default-ts` sandbox, add a story with `args: { hidden: 'x' }`, `argTypes: { hidden: { control: false } }` and a `render` that prints `{{ hidden }}`. Expect `x` on the canvas.\n8. Run `yarn vitest run --project @storybook/server` from the repository root and read the expected params in `code/renderers/server/src/render.test.ts`.\n9. In a React sandbox, toggle `features.docgenServer` and check that the Code panel shows a snippet in both modes.",
+      "issues": [
+        {
+          "number": 37358,
+          "title": "[SB 11 QA]: Date input field story throws NG0950 in the dev server and in the Storybook Vitest run after the upgrade, unless docgenServer is disabled",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": true,
+          "parent": null
+        }
+      ]
+    },
+    {
+      "number": 37615,
+      "title": "README: Final changes",
+      "area": "README",
+      "status": "undeclared",
+      "labels": [
+        "build"
+      ],
+      "manualTesting": null,
+      "issues": []
+    },
+    {
+      "number": 37616,
+      "title": "Agents: Add an Obvious config that routes work through build-it",
+      "area": "Agents",
+      "status": "skip",
+      "labels": [
+        "build",
+        "ci:focus",
+        "qa:skip"
+      ],
+      "manualTesting": "1. Check out this branch and run `yarn` from the repository root.\n2. Append a line to `.agents/skills/canary/SKILL.md` and stage it with `git add`.\n3. Run `git commit -m test`. Confirm that `git show --stat HEAD` lists `.obvious/skills/canary/SKILL.md` next to the source file.\n4. Run `git rm .agents/skills/canary/SKILL.md` and commit. Confirm that `.obvious/skills/canary/` is gone from `git ls-tree -r HEAD .obvious/skills`.\n5. Run `git reset --hard @{2}` to drop the two test commits.\n6. After merge: start an Obvious task in this repo and confirm that `repo-build-it` appears in its skill list. Obvious only loads skills from the default branch, so this step cannot run before merge.",
+      "issues": []
+    },
+    {
+      "number": 37617,
+      "title": "README: Fix logo color in GitHub",
+      "area": "README",
+      "status": "skip",
+      "labels": [
+        "build",
+        "ci:docs",
+        "qa:skip"
+      ],
+      "manualTesting": "Go to https://github.com/storybookjs/storybook/tree/sidnioulz/readme-11?tab=readme-ov-file\n\n* Set your browser to light mode and GitHub theme to light mode\n* Set your browser to dark mode and GitHub theme to light mode\n* Set your browser to light mode and GitHub theme to dark mode\n* Set your browser to dark mode and GitHub theme to dark mode\n\nIt should always show the right logo.",
+      "issues": []
+    },
+    {
+      "number": 37618,
+      "title": "CLI: Refactor dep tree search to be breadth-first",
+      "area": "CLI",
+      "status": "needed",
+      "labels": [
+        "ci:focus",
+        "maintenance",
+        "qa:needed",
+        "review:verified"
+      ],
+      "manualTesting": "Not sure how to test this, feels like we'll need to craft repos with specific dependency setups. Best given to our QA bot.",
+      "issues": []
+    },
+    {
+      "number": 37619,
+      "title": "Manager: Fix crash from stale toolbar landmark on first load",
+      "area": "Manager",
+      "status": "skip",
+      "labels": [
+        "bug",
+        "ci:canary",
+        "ci:focus",
+        "qa:skip"
+      ],
+      "manualTesting": "1. Run a sandbox: `yarn task sandbox --template react-vite/default-ts --start-from auto`.\n2. Open a story, for example `?path=/story/example-button--primary`.\n3. Press Alt+T to hide the toolbar, then Alt+A twice to hide and show the addon panel.\n4. Check that the manager does not show the error screen.\n5. Press Alt+T to show the toolbar again.\n6. Press F6 several times and check that focus moves through the sidebar, the testing widget, the toolbar, the preview and the addon panel.\n7. Load a docs entry such as `?path=/docs/example-button--docs` from a fresh tab several times and check that the error screen never appears.",
+      "issues": []
+    },
+    {
+      "number": 37620,
+      "title": "UI: Fix Search Result Highlighting",
+      "area": "UI",
+      "status": "skip",
+      "labels": [
+        "bug",
+        "ci:focus",
+        "core",
+        "qa:skip",
+        "sev:S4",
+        "ui"
+      ],
+      "manualTesting": "* Open Storybook in your browser\n* Use the component search input\n* Search for a substring that occurs continuously in a result, e.g. `ea` in Header\n* Verify that only the continuous substring (ea) is highlighted and that additional fuzzy-matched characters are not highlighted\n* Search with a fuzzy match e.g. `buton`\n* Verify that most but not all of the Button text is highlighted",
+      "issues": [
+        {
+          "number": 30817,
+          "title": "[Bug] Strange highlighting of  search results",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": true,
+          "parent": null
+        }
+      ]
+    },
+    {
+      "number": 37621,
+      "title": "Documentation: Standardize docgen engine docs across frameworks",
+      "area": "Documentation",
+      "status": "skip",
+      "labels": [
+        "ci:docs",
+        "documentation",
+        "qa:skip"
+      ],
+      "manualTesting": "No manual testing needed. These are documentation-only changes that clarify existing functionality without modifying any code behavior.",
+      "issues": []
+    },
+    {
+      "number": 37622,
+      "title": "Renderers: Stop deciding args from argTypes at render time",
+      "area": "Renderers",
+      "status": "needed",
+      "labels": [
+        "BREAKING CHANGE",
+        "qa:needed"
+      ],
+      "manualTesting": "1. Run `yarn task sandbox --template angular-cli/default-ts --start-from auto`.\n2. Add a story with `args: { hidden: 'x' }` and `argTypes: { hidden: { control: false } }` and a `render` that prints `{{ hidden }}`. Expect `x` on the canvas. Before this PR the value was empty.\n3. There is no server sandbox. Run `yarn vitest run --project @storybook/server` from the repository root and read the expected params in `code/renderers/server/src/render.test.ts`.\n4. In a React sandbox, toggle `features.docgenServer` and check that the Code panel still shows a snippet in both modes.",
+      "issues": []
+    },
+    {
+      "number": 37623,
+      "title": "Build: Reduce sandbox npm age gate from 7 days to 3 days",
+      "area": "Build",
+      "status": "skip",
+      "labels": [
+        "build",
+        "ci:focus",
+        "qa:skip",
+        "review:verified",
+        "sev:S4"
+      ],
+      "manualTesting": "No manual testing is necessary beyond CI: the change is a constant value in sandbox-generation scripts, and the generated sandbox / CI sandbox jobs exercise it end to end. A maintainer can optionally verify with:\n\n1. `yarn task --task code --start-from install` then `yarn test --project scripts`\n2. Regenerate a sandbox and confirm `.yarnrc.yml` sets `npmMinimalAgeGate: 3d` (Yarn templates) and npm templates' `.npmrc` sets `min-release-age=3`",
+      "issues": []
+    },
+    {
+      "number": 37624,
+      "title": "React: Read referenced project sources in component docgen",
+      "area": "React",
+      "status": "skip",
+      "labels": [
+        "bug",
+        "ci:focus",
+        "qa:skip"
+      ],
+      "manualTesting": "1. Clone https://github.com/Stanzilla/sb-docgen-project-references.\n2. Point its `storybook` and `@storybook/react-vite` dependencies at a canary of this PR, then run `npm install`.\n3. Run `npm run build-storybook`.\n4. Run `jq '.components.button' storybook-static/services/core/docgen/button.json`.\n5. Confirm `reactComponentMeta.props` contains `label` and `variant`, and that there is no `error`.",
+      "issues": [
+        {
+          "number": 37598,
+          "title": "[Bug]: React docgen returns no props when the component is in a referenced TypeScript project",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": true,
+          "parent": null
+        }
+      ]
+    },
+    {
+      "number": 37626,
+      "title": "Addon Vitest: Report a mismatching storybook version at startup",
+      "area": "Addon Vitest",
+      "status": "skip",
+      "labels": [
+        "addon: vitest",
+        "bug",
+        "ci:canary",
+        "ci:focus",
+        "qa:skip"
+      ],
+      "manualTesting": "1. `git fetch https://github.com/storybook-tmp/gutenberg refs/qa/sb-11.0.0-beta.1/linux-claude-165387d81f && git checkout FETCH_HEAD`\n2. `npm ci`, then link this build of `@storybook/addon-vitest`.\n3. `cd storybook && npx vitest run --project storybook`\n4. The run stops with `@storybook/addon-vitest@… is not compatible with storybook@10.6.6` instead of the `TypeError`.",
+      "issues": [
+        {
+          "number": 37356,
+          "title": "[SB 11 QA]: vitest run --project storybook crashes at startup with previewConfig.inspect is not a function",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": false,
+          "parent": null
+        }
+      ]
+    },
+    {
+      "number": 37630,
+      "title": "Sandboxes: Pin source-map-js and csstype in the Vue 3 prerelease sandbox",
+      "area": "Sandboxes",
+      "status": "skip",
+      "labels": [
+        "ci:daily",
+        "maintenance",
+        "qa:skip"
+      ],
+      "manualTesting": "1. `yarn task sandbox --template vue3-vite/prerelease-ts --no-link --start-from auto`\n2. The sandbox should initialize with `vue@3.6.0-rc.16`, `source-map-js@1.2.2` and `csstype@3.2.3`.\n3. `cd ../storybook-sandboxes/vue3-vite-prerelease-ts && yarn build-storybook` should succeed.",
+      "issues": []
+    },
+    {
+      "number": 37635,
+      "title": "CLI: List failed automigrations in the upgrade summary",
+      "area": "CLI",
+      "status": "needed",
+      "labels": [
+        "agent-scan:human",
+        "automigrations",
+        "bug",
+        "ci:focus",
+        "cli",
+        "qa:needed",
+        "review:verified",
+        "sev:S4"
+      ],
+      "manualTesting": "1. Check out this branch and run `yarn nx compile cli` from the Storybook monorepo.\n2. In the reproduction project from #37564 before the upgrade, run the built CLI with `node /path/to/storybook/code/lib/cli-storybook/dist/bin/index.js upgrade --yes` in place of the published beta CLI.\n3. Compare the migration names in the earlier failure or skipped-file output with the final `Failed to upgrade` block. Each affected project should list the corresponding migration IDs once.",
+      "issues": [
+        {
+          "number": 37564,
+          "title": "[SB 11 QA]: Upgrade's final summary names no failed automigration step",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": true,
+          "parent": null
+        }
+      ]
+    },
+    {
+      "number": 37637,
+      "title": "Angular-Vite: Resolve styles against bridged workspace root in addon-vitest",
+      "area": "Angular-Vite",
+      "status": "needed",
+      "labels": [
+        "addon: vitest",
+        "agent-scan:human",
+        "angular",
+        "bug",
+        "ci:focus",
+        "qa:needed",
+        "review:verified",
+        "sev:S2"
+      ],
+      "manualTesting": "1. In an Nx/Angular workspace, use an app whose serve target has `\"styles\": [\"apps/my-app/src/styles.scss\"]`, with `storybookAngularVitest()` and `storybookTest({ configDir })` in the app's `vitest.config.ts`.\n2. Run `nx serve my-app` and click the test button in the Storybook UI testing panel.\n3. Before: Vitest fails with `Failed to resolve import \"apps/my-app/src/styles.scss\"`. After: tests run and the global styles resolve.",
+      "issues": [
+        {
+          "number": 37600,
+          "title": "[Bug]: @storybook/angular-vite: Vitest addon run fails with \"Failed to resolve import\" for styles set by the serve builder",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": true,
+          "parent": null
+        }
+      ]
+    },
+    {
+      "number": 37640,
+      "title": "CLI: Scaffold React TypeScript stories as .stories.tsx",
+      "area": "CLI",
+      "status": "needed",
+      "labels": [
+        "agent-scan:human",
+        "ci:focus",
+        "cli",
+        "maintenance",
+        "nextjs",
+        "qa:needed",
+        "react",
+        "review:verified",
+        "sev:S4"
+      ],
+      "manualTesting": "1. Scaffold a new project with `npx storybook@next init` using any React + TypeScript framework (for example `react-vite`).\n2. Confirm the generated example stories are `src/stories/Button.stories.tsx`, `Header.stories.tsx`, and `Page.stories.tsx`.\n3. Open `Button.stories.tsx` and add JSX to a story, e.g. `render: () => <button>Hello</button>`.\n4. Run `npm run storybook` and open that story — Vite transforms it without the “failed to find dynamically imported module” error.\n\n(Also verified locally: `vitest run` on `csf-factories.test.ts` and `csf-factories.integration.test.ts` — 2 files / 41 tests pass; `oxfmt --check` on all changed files — clean.)",
+      "issues": [
+        {
+          "number": 21306,
+          "title": "[DX] Favor `.tsx` extension in Vite/React/TS framework",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": true,
+          "parent": null
+        }
+      ]
+    },
+    {
+      "number": 37641,
+      "title": "Core: Guard requestIdleCallback for Safari story preload",
+      "area": "Core",
+      "status": "needed",
+      "labels": [
+        "agent-scan:human",
+        "bug",
+        "ci:focus",
+        "core",
+        "qa:needed",
+        "review:verified",
+        "sev:S3",
+        "ui"
+      ],
+      "manualTesting": "1. From repo root: `yarn task --task sandbox --start-from auto --template react-vite/default-ts`\n2. Open the sandbox Storybook in **Safari** (or Playwright WebKit).\n3. Open `example-button--primary`, then switch to another story.\n4. Confirm the browser console does **not** show `TypeError: requestIdleCallback is not a function`.\n5. Open the **Accessibility** panel and confirm the scan completes (violations/passes), instead of staying on \"Accessibility scan in progress\".\n6. Repeat steps 3–5 in Chrome: sibling preload and a11y should still work as before.",
+      "issues": [
+        {
+          "number": 37639,
+          "title": "[Bug]: Manager throws `requestIdleCallback is not a function` in Safari on every story render; a11y scan never completes (11.0.0-beta.3)",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": true,
+          "parent": null
+        }
+      ]
+    },
+    {
+      "number": 37642,
+      "title": "Security: Update internal Vite to 7.3.8",
+      "area": "Security",
+      "status": "skip",
+      "labels": [
+        "build",
+        "ci:focus",
+        "qa:skip"
+      ],
+      "manualTesting": "Run Vite (e.g. start the dev server) and see if there's any issue.",
+      "issues": []
+    },
+    {
+      "number": 37643,
+      "title": "CLI: Show the fix's link with automigration details",
+      "area": "CLI",
+      "status": "skip",
+      "labels": [
+        "agent-scan:automated",
+        "automigrations",
+        "bug",
+        "ci:focus",
+        "cli",
+        "qa:skip",
+        "review:verified",
+        "sev:S4",
+        "verification:pending"
+      ],
+      "manualTesting": "1. Take a React project on Storybook 10 with `typescript@7.0` installed (for example the repro in #37594).\n2. Run the CLI from this branch: `npx storybook@<canary> upgrade --yes`.\n3. In the `typescript-compiler-api` box, check that the last line is `More info: https://storybook.js.org/docs/configure/integration/typescript#typescript-7`.",
+      "issues": [
+        {
+          "number": 37594,
+          "title": "[SB 11 QA]: typescript-compiler-api automigration is detected but not run, and its message links to no guide section",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": true,
+          "parent": null
+        }
+      ]
+    },
+    {
+      "number": 37651,
+      "title": "CLI: Teach Svelte CSF in the write-stories skill",
+      "area": "CLI",
+      "status": "skip",
+      "labels": [
+        "bug",
+        "ci:focus",
+        "cli",
+        "core",
+        "qa:skip",
+        "review:changes-requested",
+        "sev:S3",
+        "svelte"
+      ],
+      "manualTesting": "1. Make the project from the issue:\n   ```sh\n   npx sv@1.4.0 create --template minimal --types ts --no-add-ons --install pnpm repro\n   cd repro\n   pnpm dlx storybook@11.0.0-beta.3 init --yes --no-dev --features docs\n   ```\n2. Run `npx storybook skills write-stories`. On beta.3 the output says `export const Primary = meta.story(...)` and `play: async …`.\n3. Put this PR into the project: install its canary (add `ci:canary`, then use the version from the canary section below), or compile `code/core` and replace `dist/` of the project's `storybook` package with it.\n4. Run `npx storybook skills write-stories` again. It now says `.stories.svelte`, `const { Story } = preview.meta({ component: Button })`, `<Story name=\"Primary\" args={{ ... }} />`, `play={async ({ canvas, userEvent }) => { ... }}` and `<Story name=\"Error\" exportName=\"ErrorState\" />`.\n5. Optional: write a story as the output describes, for example with `<Story name=\"Error\" exportName=\"ErrorState\" play={…} />` and an HTML comment above it, then run `npx storybook build --test`. The build succeeds, and `index.json` has an entry with `name: \"Error\"` and `exportName: \"ErrorState\"`.",
+      "issues": [
+        {
+          "number": 37477,
+          "title": "[Bug]: `write-stories` skill tells Svelte CSF projects to write `meta.story()` exports",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": true,
+          "parent": null
+        }
+      ]
+    },
+    {
+      "number": 37652,
+      "title": "Windows: Fix backslash path issues",
+      "area": "Windows",
+      "status": "skip",
+      "labels": [
+        "automigrations",
+        "bug",
+        "builder-vite",
+        "ci:focus",
+        "ci:windows",
+        "cli",
+        "core",
+        "qa:skip",
+        "react-native",
+        "review:verified",
+        "sev:S3"
+      ],
+      "manualTesting": "On Windows:\n\n1. Run `storybook init` in a Next.js project and check `staticDirs` in `.storybook/main.ts`.\n2. Run `storybook build` with a static dir and check the \"Copying static files\" log.\n3. Run the csf-factories automigration and check the paths it prints.",
+      "issues": []
+    },
+    {
+      "number": 37656,
+      "title": "Build: Push release branches with a storybook-bot app token",
+      "area": "Build",
+      "status": "skip",
+      "labels": [
+        "build",
+        "ci:docs",
+        "patch:yes",
+        "qa:skip"
+      ],
+      "manualTesting": "No manual test on the PR is possible, because these workflows run only on the release branches. After merge:\n\n1. Start \"Prepare non-patch release\" (or wait for its next run). Check that the token step passes and that the `version-non-patch-from-*` branch is pushed.\n2. On the next publish run, check that \"Create a storybook-bot token\", the bump push, \"Create a new storybook-bot token\", the merge, and (for a stable release) the force pushes pass.\n3. Check that the push to `next` started the usual CI workflows.\n\nThe fix must also reach `main` for patch releases, hence `patch:yes`.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+      "issues": []
+    },
+    {
+      "number": 37660,
+      "title": "Core: Make hover/neighbor preloading follow navigation logic",
+      "area": "Core",
+      "status": "skip",
+      "labels": [
+        "bug",
+        "ci:focus",
+        "core",
+        "qa:skip",
+        "review:2-code-quality",
+        "ui"
+      ],
+      "manualTesting": "1. Run the internal Storybook with `yarn storybook:ui` and open it in the browser with the DevTools Network tab open. A preload shows up as a request for the stories or MDX file of the preloaded entry.\n2. Hover a component row whose stories have not been loaded yet. Its stories file is requested.\n3. Hover a root heading and a group row. Nothing is requested.\n4. Hover a component that has a subcomponent or a nested docs page listed before its own entries. The component's own stories file is requested, not the nested one.\n5. Turn on a sidebar filter that hides the component next to the selected story, then select a story and wait for it to render. The file requested is the one of the next visible component, and Alt+Down lands on that same component.",
+      "issues": []
+    },
+    {
+      "number": 37667,
+      "title": "Core: Register manifest routes before the preview builder starts",
+      "area": "Core",
+      "status": "skip",
+      "labels": [
+        "bug",
+        "ci:focus",
+        "core",
+        "qa:skip",
+        "review:verified",
+        "sev:S3"
+      ],
+      "manualTesting": "1. Run `yarn task --task dev --template svelte-kit/skeleton-ts --start-from auto`.\n2. Open `/manifests/components.html`. The Manifest Debugger shows the sandbox's components. Before this change, it returned 500.\n3. Open `/manifests/missing.json`. It returns 404 `Manifest \"missing\" not found`.\n4. Repeat steps 2 and 3 in a `react-vite/default-ts` sandbox. The results are the same as before this change.",
+      "issues": [
+        {
+          "number": 37471,
+          "title": "[Bug]: SvelteKit: in dev, the manifest routes and every unknown path return 500 \"document is not defined\"",
+          "subIssues": 0,
+          "qaHeading": false,
+          "closes": true,
+          "parent": null
+        }
+      ]
+    },
+    {
+      "number": 37680,
+      "title": "CLI: Stub process ancestry in upgrade skills tests",
+      "area": "CLI",
+      "status": "skip",
+      "labels": [
+        "build",
+        "ci:focus",
+        "ci:windows",
+        "qa:skip"
+      ],
+      "manualTesting": "No manual testing needed: this changes a unit test only.\nTo check it, confirm that the `tests-unit--windows` job passes on this PR, and that `upgrade.skills.test.ts` reports each test in milliseconds rather than seconds.",
+      "issues": []
+    }
+  ]
+}

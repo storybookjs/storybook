@@ -925,6 +925,21 @@ describe('CsfObject', () => {
       [
         `export default {};\nexport const Made = makeStory({ argTypes: { a: { table: { defaultValue: 1 } } } });`,
       ],
+      [
+        `import { makeStory, icons } from './h'; const name = 'x'; export default {}; export const P = makeStory({ argTypes: { size: { control: 'text' } }, args: { icon: icons[name] } });`,
+      ],
+      [
+        `export default {}; export const P = mk({ argTypes: { size: { table: { defaultValue: { summary: 'M' } } } }, render: (args) => ({ template: args.size }) });`,
+      ],
+      [
+        `const docs = { table: { defaultValue: { summary: 'M' } } }; export default {}; export const P = mk({ argTypes: { size: docs } });`,
+      ],
+      [
+        `const docs = { table: { defaultValue: { summary: 'M' } } }; export default {}; export const P = mk({ argTypes: { size: { ...docs } } });`,
+      ],
+      [
+        `const shared = { position: { table: { defaultValue: { summary: 'right' } } }, size: {} }; export default {}; export const P = mk({ argTypes: shared, args: { size: shared.size } });`,
+      ],
       [`export default { argTypes: { defaultValue: { control: 'text' } } };`],
     ])('removes nothing that the source does not show: %s', (source) => {
       const { results, code, csf } = removeEach(source);
@@ -938,6 +953,22 @@ describe('CsfObject', () => {
       [
         'spread-field',
         `const shared = { a: { defaultValue: 1 } };\nexport default { argTypes: { ...shared } };`,
+      ],
+      [
+        'unsupported-initializer',
+        `const groups = { inputs: { size: { defaultValue: 'M' } } }; const { inputs } = groups; export default {}; export const S = mk({ argTypes: inputs });`,
+      ],
+      [
+        'unsupported-initializer',
+        `const make = createFactory(); export default {}; export const P = make({ types: { size: { defaultValue: 'M' } }, argTypes: {} });`,
+      ],
+      [
+        'unsupported-initializer',
+        `export default {}; export const P = mk({ argTypes: { size: { control: 'text' } }, defaults: { size: { defaultValue: 'M' } } });`,
+      ],
+      [
+        'unsupported-initializer',
+        `const shared = { position: { table: { defaultValue: 'right' } } }; export default {}; export const P = mk({ argTypes: shared, defaults: shared.position.table });`,
       ],
       ['dynamic-key', `export default { argTypes: { [name]: { defaultValue: 1 } } };`],
       [

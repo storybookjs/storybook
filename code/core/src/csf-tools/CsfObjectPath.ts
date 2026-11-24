@@ -307,20 +307,67 @@ const showsValue = (
 
 // Whether the object literals around `member` leave room for it at the end of `path`, as
 // `table.defaultValue` under `label` does not for `argTypes.<name>.defaultValue`.
-const canEndPath = (
-  editor: SourceEditor,
-  member: Node,
-  path: CsfPattern,
-  enclosingKeys: Set<string>
-): boolean => {
+const canEndPath = (editor: SourceEditor, member: Node, path: CsfPattern): boolean => {
   let inner = member;
-  for (const segment of path.slice(0, -1).reverse()) {
+  let depth = 0;
+  let mismatch = false;
+  let hasRoot = false;
+  const segments = path.slice(0, -1).reverse();
+  const visited = new Set<Node>();
+  const enclosingKeys = new Set<string>();
+  while (!visited.has(inner)) {
+    visited.add(inner);
     const object = editor.parentOf(inner);
     let value = object;
     let outer = value?.type === 'ObjectExpression' ? editor.parentOf(value) : undefined;
     while (outer && unwrapExpression(outer) === object) {
       value = outer;
       outer = editor.parentOf(outer);
+    }
+    if (
+      outer?.type === 'VariableDeclarator' &&
+      outer.init === value &&
+      outer.id.type === 'Identifier'
+    ) {
+      const binding = editor.scopes.bindingOf(outer.id);
+      if (!binding?.constant) {
+        return true;
+      }
+      const references = binding.references.filter((reference) => {
+        const parent = editor.parentOf(reference);
+        if (parent?.type !== 'MemberExpression' || parent.object !== reference) {
+          return true;
+        }
+        const key = memberKey(parent);
+        return key === undefined || enclosingKeys.has(key);
+      });
+      if (references.length !== 1) {
+        return true;
+      }
+      const reference = references[0];
+      const parent = editor.parentOf(reference);
+      if (parent?.type === 'Property' && parent.value === reference) {
+        const key = namedKey(parent);
+        const segment = segments[depth++];
+        if (typeof key === 'string' && typeof segment === 'string' && key !== segment) {
+          mismatch = true;
+        }
+        if (key === path[0]) {
+          hasRoot = true;
+        }
+        inner = parent;
+      } else if (parent?.type === 'SpreadElement' && parent.argument === reference) {
+        inner = parent;
+      } else {
+        return true;
+      }
+      continue;
+    }
+    if (
+      outer?.type === 'CallExpression' &&
+      outer.arguments.some((argument) => argument === value)
+    ) {
+      return !(mismatch && hasRoot);
     }
     if (
       outer?.type !== 'Property' ||
@@ -333,27 +380,12 @@ const canEndPath = (
     if (typeof key === 'string') {
       enclosingKeys.add(key);
     }
-    if (typeof segment === 'string' && typeof key === 'string' && key !== segment) {
-      let ancestor: Node | null = outer;
-      while ((ancestor = editor.parentOf(ancestor))) {
-        if (ancestor.type === 'MemberExpression') {
-          return true;
-        }
-        if (ancestor.type === 'CallExpression') {
-          const callee = unwrapExpression(ancestor.callee);
-          const binding =
-            callee.type === 'Identifier' ? editor.scopes.bindingOf(callee) : undefined;
-          const init = constantInit(binding);
-          if (
-            binding?.kind === 'function' ||
-            init?.type === 'ArrowFunctionExpression' ||
-            init?.type === 'FunctionExpression'
-          ) {
-            return true;
-          }
-        }
-      }
-      return false;
+    const segment = segments[depth++];
+    if (typeof key === 'string' && typeof segment === 'string' && key !== segment) {
+      mismatch = true;
+    }
+    if (key === path[0]) {
+      hasRoot = true;
     }
     inner = outer;
   }
@@ -390,31 +422,16 @@ const mentions = (
   const missing = new Set(keys);
   const last = path.at(-1);
   const searched = new Set<Node>();
-  const memberReads = new Set<string>();
-  const rejectedKeys: Set<string>[] = [];
   // Types do not change what code returns, so they are not read.
   const search = (child: Node): void => {
     if (missing.size === 0) {
       return;
     }
-    if (child.type === 'MemberExpression') {
-      const key = memberKey(child);
-      if (key === undefined) {
-        missing.clear();
-      } else {
-        memberReads.add(key);
-      }
-    }
     const named = namedKey(child);
     if (isAnyKey(named)) {
       missing.clear();
-    } else if (named !== undefined) {
-      const enclosingKeys = new Set<string>();
-      if (named !== last || canEndPath(editor, child, path, enclosingKeys)) {
-        missing.delete(named);
-      } else {
-        rejectedKeys.push(enclosingKeys);
-      }
+    } else if (named !== undefined && (named !== last || canEndPath(editor, child, path))) {
+      missing.delete(named);
     }
     const binding = child.type === 'Identifier' ? editor.scopes.bindingOf(child) : undefined;
     if (
@@ -444,12 +461,6 @@ const mentions = (
     }
   };
   search(code);
-  if (
-    typeof last === 'string' &&
-    rejectedKeys.some((keys) => [...keys].some((key) => memberReads.has(key)))
-  ) {
-    missing.delete(last);
-  }
   return missing.size === 0;
 };
 

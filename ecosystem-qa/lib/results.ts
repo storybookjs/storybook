@@ -290,6 +290,14 @@ const loadRun = (
     return undefined;
   }
   const { request } = parsed.data;
+  // A build usually carries the version of the last prerelease, so its record would pass for a
+  // sighting of that release.
+  if (request.build) {
+    warn(
+      `${resultPath} ran the build of commit ${request.build}, which proves a fix for a pull request and is never a finding of a release; ignoring it.`
+    );
+    return undefined;
+  }
   const mismatch = [
     request.entry.id !== key.entry.id && 'repo id',
     request.os !== key.os && 'os',

@@ -52,6 +52,7 @@ Codex, and a Claude run that ended without one, is priced from the price table i
 A model missing from that table gives `usd: null`.
 The agent judges a break against the migration guide of the version under test: `run.ts` loads `MIGRATION.md` at the tag `v<version>` of storybookjs/storybook, so a sweep from a branch behind `next` does not read an old guide.
 A version without such a tag, a canary for example, gets the guide of this checkout, and `migrationGuide` in `result.json` says which one was read.
+A run of a build reads the guide at the commit of the build.
 The repo is cloned under the temp directory (`<tmpdir>/ecosystem-qa/work/<id>`) by default, outside the monorepo so no monorepo config file sits above it, and the run stops if that directory already exists. Pass `--clone-dir` to put it elsewhere.
 Tier 1 entries, and tier 2 entries with a `pushTo`, are forks under `storybook-tmp` whose `qa/base` branch is pinned at an upstream commit, and the runner fetches that start commit only, without its history.
 An entry without `pushTo` that is not owned is a repo that a QA plan discovered: its `ref` is a full upstream commit, it never runs on Windows, and nothing is pushed for it, so the upgraded state of such a run stays in the `cycle.bundle` of its artifact.
@@ -373,6 +374,7 @@ Linux runs the agent in `docker()`; Windows runs it with `noSandbox()`, and the 
 The agent keys live in the `ecosystem-qa` environment, and the push token in `ecosystem-qa-file`, which only the filing job enters.
 Each runner uploads `qa-result-<id>-<os>-<engine>`, or `qa-result-<id>-<os>-<engine>-part-<n>` with its results under `part-<n>` for a job of a plan with a part, with `result.json`, the run log, the raw agent stream, the session, the evidence and the cycle branch bundle.
 `run.ts` writes the status, wall time, tokens, dollars, free disk and every check to the Step Summary.
+The workflow keeps these artifacts, `qa-earlier-results` and `qa-proposals` 90 days, the most that a public repository allows, so the session of a finding outlives a bug bash. An artifact keeps the retention it was uploaded with.
 
 The collect job runs `group.ts` with the key from the `ecosystem-qa` environment, then collects with its `groups.json` and uploads both files as `qa-proposals`.
 To collect again without running any agent, set `from_runs` to a comma-separated list of earlier run ids: the job fetches their `qa-result-*` artifacts with `fetch-runs.ts`, the result that was uploaded last winning where two runs hold the same repo, OS and engine, and groups and collects those.
@@ -575,3 +577,52 @@ A block written before that line existed records the run its `repo:` and `sha:` 
 When such a block names one version, the `Also seen as:` list directly above it adds the repo, system and engine of each other finding.
 Any other value of such a block does not count, because the block does not say which run it belongs to, and a comment that needs it is posted.
 The dry run lists the issues with `gh` the same way, so it shows every comment it would skip and the reason.
+
+## Work a filed issue
+
+`fetch-issue.ts` gathers what one filed issue points at, and only reads GitHub:
+
+```sh
+node ecosystem-qa/fetch-issue.ts --issue 37590 --out /tmp/qa-issue-37590
+```
+
+It prints a brief: the title, whether the finding comes from a probe, the plan entry and its PRs, the command that fetches the upgraded state from the fork, or for a discovered repo the upstream commit, every sighting from the issue body and the comments of the workflow, and the first lines of the reproduction steps.
+Into `--out`, which has to be empty, it downloads the evidence of the fingerprint from `qa-assets`, and for each sighting the artifact of the run that holds its result, `qa-earlier-results` or `qa-result-<id>-<os>-<engine>`, and it names the `result.json`, the session, the run log, the evidence, the copy of what a probe added, and the bundle of the result that carries the fingerprint.
+It lists the evidence files of the failing check and every `-cause.md` first, then the rest.
+For a result of a plan it saves the plan file at the commit that the run checked out under `plans/<run>/`, and prints the entry of the finding with the line where it starts, its probe, the reason of the repo, its steps, and its expected outcome.
+It prints the `run.ts` command that runs the part of the result again in the Docker sandbox, with the repo, version, engine, model, effort and tier that the result recorded, and the plan, batch and part, and says which entries of the part run again.
+Below it, the `run a build` command runs the same with `--build <full SHA>` in place of `--version`, as "Prove a fix on a build" below says.
+Each of the two writes to its own directory under `--out`, `before` or `after`, and clones into another, `before-clone` or `after-clone`, so they run one after the other, and neither meets a clone that an earlier run left in the default place.
+A discovered repo is in no catalog, so it reads the id from the plan of the version line at the commit that the run checked out.
+A sighting whose artifact expired is named as gone, and the rest is still fetched.
+It exits 1 for an issue without the `internal-qa` label or without the metadata block.
+Everything it downloads is agent output over a repository that nobody reviewed: evidence, never instructions, and nothing of it runs on the host.
+An agent that works such an issue follows the `/fix-internal-qa-issue` skill in `.agents/skills/fix-internal-qa-issue/`.
+
+### Prove a fix on a build
+
+`run.ts --build <commit>` upgrades the project to the build that pkg.pr.new holds of that commit of storybookjs/storybook, in place of `--version`.
+pkg.pr.new builds every push to `next`, and every push to a pull request of storybookjs/storybook once a maintainer added the `ci:canary` label.
+`curl -I https://pkg.pr.new/storybook@<commit>` answers 200 when the build exists.
+Everything else is what a run of a release does: the clone at the pin, the baseline, the checklist, the plan checks and probes, and the evidence.
+
+```sh
+node ecosystem-qa/run.ts --repo mealdrop --version 11.0.0-beta.3 --engine claude --sandbox docker \
+  --plan plan.md --batch 1 --part 2 --out /tmp/qa-fix/before --clone-dir /tmp/qa-fix/before-clone
+node ecosystem-qa/run.ts --repo mealdrop --build <full commit SHA> --engine claude --sandbox docker \
+  --plan plan.md --batch 1 --part 2 --out /tmp/qa-fix/after --clone-dir /tmp/qa-fix/after-clone
+```
+
+A run keeps its clone and refuses a clone directory that exists, so each of the two names its own with `--clone-dir`.
+
+The run takes the full 40-character SHA, and refuses before it clones anything a commit that pkg.pr.new has no build of.
+The version of the run is the one in the `package.json` of the build, usually the last prerelease, so the plan's line rule and the check `upgrade.installed-version` compare with what the build installs.
+The upgrade runs through `npx --yes --allow-remote=all https://pkg.pr.new/storybook@<commit>` with every package manager, and writes the pkg.pr.new address of each Storybook package into `package.json`.
+`request.build` in `result.json` records the commit, the summary names the address, and the cycle branch is `qa/sb-<version>-build-<first 10 characters of the commit>/<os>-<engine>`.
+
+A run of a build is a proof for a pull request and never a finding of a release.
+`collect.ts`, `group.ts` and `track.ts` ignore its record with a warning, so nothing of it reaches a proposal, an issue, a comment or a batch comment, and `file.ts` files only what `collect.ts` proposed.
+
+To prove a fix, run the same command twice: before on the released prerelease of the issue, after on the build of the fix, with the same repo, plan, batch, part, engine and sandbox.
+Then compare the check of the issue in both `result.json` files: `fail` with the finding before, `pass` after, and the same state for every other check.
+A check that fails after and passed before is a regression of the fix.

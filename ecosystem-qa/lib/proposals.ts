@@ -67,7 +67,7 @@ export interface Hit<Via extends 'body' | 'comment' = 'body' | 'comment'> {
   via: Via;
 }
 
-const carriedBy = (text: string): (string | undefined)[] => {
+export const carriedBy = (text: string): (string | undefined)[] => {
   const fields = metadataOf(text);
   return [fields?.get('fingerprint'), ...(fields?.get('fingerprints')?.split(', ') ?? [])];
 };
@@ -207,7 +207,7 @@ const metadataBlock = (proposal: IssueProposal | CommentProposal): string =>
 
 // The harness ends every text it writes with its metadata block, so the last block is its own even
 // when agent text further up imitates one.
-const metadataOf = (text: string): Map<string, string> | undefined => {
+export const metadataOf = (text: string): Map<string, string> | undefined => {
   const marker = text.lastIndexOf(METADATA_MARKER);
   if (marker === -1) {
     return undefined;
@@ -268,7 +268,7 @@ const RELATED_SOURCE = /([^\s,()]+) \(([a-z]+), ([a-z]+)\)/g;
 // A block written before the seen line existed records the run its repo and commit name, which the
 // harness lists first in each of storybook, os and engine. When the block names one version, the
 // list of other members above it adds the repo, system and engine each member was seen on.
-const combinationsIn = (text: string): string[] => {
+export const combinationsIn = (text: string): string[] => {
   const fields = metadataOf(text);
   if (!fields) {
     return [];

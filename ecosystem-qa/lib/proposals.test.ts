@@ -820,7 +820,7 @@ describe('the plan entry of an issue', () => {
 
       <!-- sb-qa-metadata -->
       \`\`\`yaml
-      fingerprint: fc116bca3d94fb6d
+      fingerprint: 5b0586b7d56b63a3
       storybook: 11.0.0-beta.0
       repo: storybookjs/mealdrop
       sha: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
@@ -828,7 +828,7 @@ describe('the plan entry of an issue', () => {
       os: linux
       engine: claude
       model: claude-sonnet-5-5
-      sightings: 20a0f1c23fda
+      sightings: 8feb3adf3937
       seen: 11.0.0-beta.0 storybookjs/mealdrop linux claude
       run: https://github.com/storybookjs/storybook/actions/runs/1
       \`\`\`
@@ -894,7 +894,7 @@ describe('the plan entry of an issue', () => {
 
       <!-- sb-qa-metadata -->
       \`\`\`yaml
-      fingerprint: fc116bca3d94fb6d
+      fingerprint: 5b0586b7d56b63a3
       storybook: 11.0.0-beta.0
       repo: storybookjs/mealdrop
       sha: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
@@ -902,7 +902,7 @@ describe('the plan entry of an issue', () => {
       os: linux
       engine: claude
       model: claude-sonnet-5-5
-      sightings: b627c7a5cdd7
+      sightings: 8d7dcaea429a
       seen: 11.0.0-beta.0 storybookjs/mealdrop linux claude
       run: https://github.com/storybookjs/storybook/actions/runs/1
       \`\`\`
@@ -957,7 +957,7 @@ describe('the plan entry of an issue', () => {
 
       <!-- sb-qa-metadata -->
       \`\`\`yaml
-      fingerprint: fc116bca3d94fb6d
+      fingerprint: 5b0586b7d56b63a3
       storybook: 11.0.0-beta.0
       repo: storybookjs/mealdrop
       sha: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
@@ -965,7 +965,7 @@ describe('the plan entry of an issue', () => {
       os: linux
       engine: claude
       model: claude-sonnet-5-5
-      sightings: 20a0f1c23fda
+      sightings: 8feb3adf3937
       seen: 11.0.0-beta.0 storybookjs/mealdrop linux claude
       run: https://github.com/storybookjs/storybook/actions/runs/1
       \`\`\`

@@ -102,14 +102,20 @@ export const readPlanScope = (values: {
 // Pick the part of the scope's batch that one run of `repo` on `version` does.
 export const plannedRun = (
   { plan, file, hash, batch }: PlanScope,
-  { repo, version, part = '1' }: { repo: string; version: string; part?: string | undefined }
+  {
+    repo,
+    version,
+    build,
+    part = '1',
+  }: { repo: string; version: string; build?: string | undefined; part?: string | undefined }
 ): PlannedRun | Refusal => {
   const number = wholeNumber('--part', part);
   if (typeof number === 'string') {
     return number;
   }
   if (versionLine(version) !== plan.line) {
-    return `${file} plans line ${plan.line}, and --version ${version} is on line ${versionLine(version)}.`;
+    const target = build ? `--build ${build} installs ${version}, which` : `--version ${version}`;
+    return `${file} plans line ${plan.line}, and ${target} is on line ${versionLine(version)}.`;
   }
   const parts = planRuns(plan, batch).filter((run) => run.repo === repo);
   if (parts.length === 0) {

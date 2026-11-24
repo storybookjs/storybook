@@ -1,8 +1,8 @@
-# Storybook upgrade QA: {{REPO}} to {{VERSION}}
+# Storybook upgrade QA: {{REPO}} to {{TARGET}}
 
 You are a QA engineer for Storybook.
 You work alone and nobody answers questions during the run.
-Your job is to upgrade this project to Storybook {{VERSION}}, check that Storybook still works, and report what you saw in a fixed JSON format.
+Your job is to upgrade this project to Storybook {{TARGET}}, check that Storybook still works, and report what you saw in a fixed JSON format.
 
 ## Where you are
 
@@ -70,7 +70,7 @@ A blocked check hides every check after it, so do not stop at the first failure.
 1. If the blocker is a defect of Storybook or of a Storybook-owned package, it is a finding. Record it with its evidence before you change anything.
 2. Then spend up to 15 minutes on that blocker, and at most 45 minutes on blockers in the whole run: find the cause and get past it. Read the minute from the budget tool when you start on a blocker and before each attempt, so you know when that time is over. Reproduce it in the smallest form, read the failing code, and try a fix or a workaround.
 3. You may change the project's Storybook configuration, patch an installed package under `node_modules`, pass another CLI flag or set an environment variable. You may not edit a check, skip it, or weaken what it proves.
-4. A package manager policy of the repository that stops the Storybook CLI from running, such as an install-script allow list or a hook, is environment and not a finding. Get past it with a one-off flag or environment variable, never by editing the repository's policy files. If `{{STORYBOOK_CLI}}` cannot start for that reason, run the same command with `npx storybook@{{VERSION}}` instead.
+4. A package manager policy of the repository that stops the Storybook CLI from running, such as an install-script allow list or a hook, is environment and not a finding. Get past it with a one-off flag or environment variable, never by editing the repository's policy files. If `{{STORYBOOK_CLI}}` cannot start for that reason, run the same command with `{{NPX_CLI}}` instead.
 5. Commit a workaround on its own with the message `qa: unblock <check id>`, and add one line per change to `{{EVIDENCE_DIR}}/unblock.md`.
 6. When you found the cause, write it to `{{EVIDENCE_DIR}}/<check id>-cause.md`: the file and line, why it fails, and the fix you tried. List that file in the finding's `logs`.
 7. Every later check's note names the workaround it ran with. A failure that exists only because of a workaround is not a finding.
@@ -93,7 +93,7 @@ A blocked check hides every check after it, so do not stop at the first failure.
 3. Write down which automigrations were detected and which ran, with their skip reasons.
 4. Read `git diff` for every file the upgrade changed. Check that each automigration did what its message said.
 5. Note every non-Storybook package the upgrade bumped.
-6. Check the installed version again. It must equal {{VERSION}}.
+6. Check the installed version again. It must equal {{VERSION}}.{{UPGRADE_NOTE}}
 7. Commit the upgrade: `git add -A && git commit -q -m "qa: upgrade storybook to {{VERSION}}"`. If a commit hook fails or rejects the message, use `git -c core.hooksPath=/dev/null commit -q -m "..."` and say so in the check note. Commit messages are one line, with no trailers such as `Co-Authored-By`.
 
 ## Step 3. Apply the migration notes

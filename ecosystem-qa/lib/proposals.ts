@@ -117,7 +117,7 @@ export const groupFindings = (results: LoadedResult[]): FindingGroup[] => {
   const groups = new Map<string, FindingGroup>();
   for (const loaded of [...results].sort(byPrimaryOrder)) {
     for (const finding of loaded.result.findings) {
-      const key = fingerprint(finding, loaded.result.request.entry.class);
+      const key = fingerprint(finding);
       const group = groups.get(key);
       if (group) {
         if (!group.occurrences.includes(loaded)) {

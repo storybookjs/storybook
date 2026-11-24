@@ -665,6 +665,16 @@ export class PNPMProxy extends JsPackageManager {
     return output ? JSON.parse(output) : undefined;
   }
 
+  protected async runGetPublishedManifest(packageSpec: string): Promise<unknown> {
+    const result = await executeCommand({
+      command: 'pnpm',
+      args: ['info', packageSpec, '--json'],
+      cwd: this.cwd,
+      stdio: 'pipe',
+    });
+    return JSON.parse(typeof result.stdout === 'string' ? result.stdout : '');
+  }
+
   protected mapDependencies(input: PnpmListOutput, pattern: string[]): InstallationMetadata {
     const items: PnpmDependencies = input.reduce((curr, item) => {
       const { devDependencies, dependencies, peerDependencies } = item;

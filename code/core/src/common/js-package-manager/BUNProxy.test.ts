@@ -377,4 +377,53 @@ describe('BUN Proxy', () => {
       });
     });
   });
+
+  describe('getPublishedManifest', () => {
+    const published = {
+      version: '11.0.0-next.2',
+      versions: ['11.0.0-next.1', '11.0.0-next.2'],
+      time: { '11.0.0-next.2': '2026-11-15T10:00:00.000Z' },
+      dependencies: { '@storybook/react': '^11.0.0-beta.3' },
+      peerDependencies: { storybook: '^11.0.0-beta.1' },
+    };
+    const readManifest = () =>
+      bunProxy.getPublishedManifest('@storybook/react-native', '11.0.0-next.2');
+
+    describe('when the package manager prints the manifest', () => {
+      beforeEach(() => {
+        mockedExecuteCommand.mockResolvedValue({
+          stdout: JSON.stringify({ name: '@storybook/react-native', ...published }),
+        } as any);
+      });
+
+      it('reads it through the package manager', async () => {
+        await expect(readManifest()).resolves.toEqual(published);
+        expect(mockedExecuteCommand).toHaveBeenCalledWith(
+          expect.objectContaining({
+            command: 'npm',
+            args: ['info', '@storybook/react-native@11.0.0-next.2', '--json'],
+          })
+        );
+      });
+
+      it('reads the latest version when no version is given', async () => {
+        await expect(bunProxy.getPublishedManifest('@storybook/react-native')).resolves.toEqual(
+          published
+        );
+        expect(mockedExecuteCommand).toHaveBeenCalledWith(
+          expect.objectContaining({ args: ['info', '@storybook/react-native', '--json'] })
+        );
+      });
+    });
+
+    describe('when the lookup fails', () => {
+      beforeEach(() => {
+        mockedExecuteCommand.mockRejectedValue(new Error('401 Unauthorized'));
+      });
+
+      it('returns null', async () => {
+        await expect(readManifest()).resolves.toBeNull();
+      });
+    });
+  });
 });

@@ -23,8 +23,8 @@ import { getBundledVersion } from './PackageJson.ts';
 import type { PackageJson, PackageJsonWithDepsAndDevDeps } from './PackageJson.ts';
 import { LOCK_FILES } from './constants.ts';
 import { type OverrideSource, toOverrides } from './overrides.ts';
-import type { InstallationMetadata } from './types.ts';
-import { getInstallErrorTail } from './util.ts';
+import type { InstallationMetadata, PublishedManifest } from './types.ts';
+import { getInstallErrorTail, parsePublishedManifest } from './util.ts';
 
 export enum PackageManagerName {
   NPM = 'npm',
@@ -803,6 +803,26 @@ export abstract class JsPackageManager {
   }
 
   /**
+   * Get the manifest of a published package version, or of its `latest` version when no version
+   * is given. The lookup runs through the package manager, so the user's registry, auth, proxy,
+   * and certificate settings apply. Returns `null` if the lookup failed.
+   */
+  public async getPublishedManifest(
+    packageName: string,
+    version?: string
+  ): Promise<PublishedManifest | null> {
+    const packageSpec = version ? `${packageName}@${version}` : packageName;
+    try {
+      const manifest = parsePublishedManifest(await this.runGetPublishedManifest(packageSpec));
+      invariant(manifest, `No published manifest found for ${packageSpec}`);
+      return manifest;
+    } catch (e) {
+      logger.debug(`Failed to fetch the published manifest of ${packageSpec}: ${e}`);
+      return null;
+    }
+  }
+
+  /**
    * Clear the latest version cache. Useful for testing or when you want to refresh version
    * information.
    *
@@ -919,6 +939,9 @@ export abstract class JsPackageManager {
   protected abstract runGetPeerDependencies(
     packageSpec: string
   ): Promise<Record<string, string> | undefined>;
+
+  /** Read the manifest of a published package version, or of `latest` for a bare package name */
+  protected abstract runGetPublishedManifest(packageSpec: string): Promise<unknown>;
 
   public abstract getRegistryURL(): Promise<string | undefined>;
 

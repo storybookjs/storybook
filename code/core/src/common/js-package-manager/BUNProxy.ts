@@ -413,6 +413,16 @@ export class BUNProxy extends JsPackageManager {
     return output ? JSON.parse(output) : undefined;
   }
 
+  protected async runGetPublishedManifest(packageSpec: string): Promise<unknown> {
+    const result = await executeCommand({
+      command: 'npm',
+      cwd: this.cwd,
+      args: ['info', packageSpec, '--json'],
+      stdio: 'pipe',
+    });
+    return JSON.parse(typeof result.stdout === 'string' ? result.stdout : '');
+  }
+
   /**
    * @param input The output of `npm ls --json`
    * @param pattern A list of package names to filter the result. * can be used as a placeholder

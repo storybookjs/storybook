@@ -721,6 +721,81 @@ describe('PNPM Proxy', () => {
     });
   });
 
+  describe('getPublishedManifest', () => {
+    const published = {
+      version: '11.0.0-next.2',
+      versions: ['11.0.0-next.1', '11.0.0-next.2'],
+      time: { '11.0.0-next.2': '2026-11-15T10:00:00.000Z' },
+      dependencies: { '@storybook/react': '^11.0.0-beta.3' },
+      peerDependencies: { storybook: '^11.0.0-beta.1' },
+    };
+    const readManifest = () =>
+      pnpmProxy.getPublishedManifest('@storybook/react-native', '11.0.0-next.2');
+
+    describe('when the package manager prints the manifest', () => {
+      beforeEach(() => {
+        mockedExecuteCommand.mockResolvedValue({
+          stdout: JSON.stringify({ name: '@storybook/react-native', ...published }),
+        } as any);
+      });
+
+      it('reads it through the package manager', async () => {
+        await expect(readManifest()).resolves.toEqual(published);
+        expect(mockedExecuteCommand).toHaveBeenCalledWith(
+          expect.objectContaining({
+            command: 'pnpm',
+            args: ['info', '@storybook/react-native@11.0.0-next.2', '--json'],
+          })
+        );
+      });
+
+      it('reads the latest version when no version is given', async () => {
+        await expect(pnpmProxy.getPublishedManifest('@storybook/react-native')).resolves.toEqual(
+          published
+        );
+        expect(mockedExecuteCommand).toHaveBeenCalledWith(
+          expect.objectContaining({ args: ['info', '@storybook/react-native', '--json'] })
+        );
+      });
+    });
+
+    describe('when pnpm 10 forwards the lookup to npm 12, which wraps it in an array', () => {
+      beforeEach(() => {
+        mockedExecuteCommand.mockResolvedValue({
+          stdout: JSON.stringify([{ name: '@storybook/react-native', ...published }]),
+        } as any);
+      });
+
+      it('unwraps the manifest', async () => {
+        await expect(readManifest()).resolves.toEqual(published);
+      });
+    });
+
+    describe.each([
+      { shape: 'a bare version', stdout: JSON.stringify('11.0.0-next.2') },
+      { shape: 'several manifests', stdout: JSON.stringify([published, published]) },
+      { shape: 'empty output', stdout: '' },
+    ])('when pnpm prints $shape', ({ stdout }) => {
+      beforeEach(() => {
+        mockedExecuteCommand.mockResolvedValue({ stdout } as any);
+      });
+
+      it('returns null', async () => {
+        await expect(readManifest()).resolves.toBeNull();
+      });
+    });
+
+    describe('when the lookup fails', () => {
+      beforeEach(() => {
+        mockedExecuteCommand.mockRejectedValue(new Error('401 Unauthorized'));
+      });
+
+      it('returns null', async () => {
+        await expect(readManifest()).resolves.toBeNull();
+      });
+    });
+  });
+
   describe('latestVersion', () => {
     it('without constraint it returns the latest version', async () => {
       const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({ stdout: '5.3.19' } as any);

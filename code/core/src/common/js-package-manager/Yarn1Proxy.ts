@@ -222,6 +222,17 @@ export class Yarn1Proxy extends JsPackageManager {
     return parsedOutput.data;
   }
 
+  protected async runGetPublishedManifest(packageSpec: string): Promise<unknown> {
+    const result = await executeCommand({
+      command: 'yarn',
+      args: ['info', packageSpec, '--json'],
+      cwd: this.cwd,
+      stdio: 'pipe',
+    });
+    const parsedOutput = JSON.parse(typeof result.stdout === 'string' ? result.stdout : '');
+    return parsedOutput.type === 'inspect' ? parsedOutput.data : undefined;
+  }
+
   protected mapDependencies(input: Yarn1ListOutput, pattern: string[]): InstallationMetadata {
     if (input.type === 'tree') {
       const { trees } = input.data;

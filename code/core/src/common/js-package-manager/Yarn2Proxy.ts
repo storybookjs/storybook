@@ -397,6 +397,10 @@ export class Yarn2Proxy extends JsPackageManager {
     return JSON.parse(output).peerDependencies;
   }
 
+  protected runGetPublishedManifest(packageSpec: string): Promise<unknown> {
+    return this.queryNpmPackageInfo(packageSpec);
+  }
+
   protected mapDependencies(input: string, pattern: string[]): InstallationMetadata {
     const lines = input.split('\n');
     const acc: Record<string, PackageMetadata[]> = {};

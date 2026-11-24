@@ -1,0 +1,72 @@
+
+[90m┌[39m  storybook v11.0.0-beta.5
+[90m│[39m
+[33m▲[39m  You are currently using Storybook [1m11.0.0-beta.5[22m but you have packages
+[90m│[39m  which are incompatible with it:
+
+[90m│[39m  - @vueless/storybook-dark-mode@10.0.8 which depends on ^10.0.0
+
+[90m│[39m  Please consider updating your packages or contacting the maintainers
+[90m│[39m  for compatibility details.
+
+[90m│[39m  For more details on compatibility guidance, see:
+[90m│[39m  https://github.com/storybookjs/storybook/issues/36283
+[90m│[39m
+[34m●[39m  Starting...
+[90m│[39m
+[33m▲[39m  Multiple story files share the component id
+[90m│[39m  'column-views-correlation-chart':
+[90m│[39m  -
+[90m│[39m  ./packages/column-views/stories/correlation-chart/arbitrary-columns.stories.ts
+[90m│[39m  -
+[90m│[39m  ./packages/column-views/stories/correlation-chart/correlation-chart.stories.ts
+[90m│[39m  -
+[90m│[39m  ./packages/column-views/stories/correlation-chart/fixed-panels.stories.ts
+[90m│[39m  -
+[90m│[39m  ./packages/column-views/stories/correlation-chart/namibia-correlation.stories.ts
+[90m│[39m  -
+[90m│[39m  ./packages/column-views/stories/correlation-chart/timescale-zoom.stories.ts
+[90m│[39m  The props table and description for this id are generated from
+[90m│[39m  './packages/column-views/stories/correlation-chart/timescale-zoom.stories.ts'
+[90m│[39m  only. If these files document different components, give each file a
+[90m│[39m  unique title so every component keeps its docs.
+✘ [ERROR] No matching export in "global-externals:storybook/internal/components" for import "IconButton"
+
+    .storybook/github-link.ts:6:9:
+      6 │ import { IconButton } from "storybook/internal/components";
+        ╵          ~~~~~~~~~~
+
+[90m│[39m
+[31m■[39m  [38;2;241;97;97mSB_CORE-SERVER_0004 (NoMatchingExportError): An import in your
+[90m│[39m  Storybook setup could not be resolved while building Storybook's UI.
+
+[90m│[39m  No matching export in "global-externals:storybook/internal/components"
+[90m│[39m  for import "IconButton"
+[90m│[39m  imported from .storybook/github-link.ts
+
+[90m│[39m  This usually happens because the installed Storybook core package
+[90m│[39m  versions don't match, or an addon you're using is built for an older
+[90m│[39m  Storybook version. Run `npx storybook doctor` to identify version
+[90m│[39m  discrepancies.
+
+[90m│[39m  More info:
+[90m│[39m  [39m
+[90m│[39m  at buildOrThrow
+[90m│[39m  (file://./node_modules/storybook/dist/core-server/index.js:1630:15)
+[90m│[39m  at process.processTicksAndRejections
+[90m│[39m  (node:internal/process/task_queues:104:5)
+[90m│[39m  at async buildDevStandalone
+[90m│[39m  (file://./node_modules/storybook/dist/core-server/index.js:6626:41)
+[90m│[39m  at async withTelemetry
+[90m│[39m  (file://./node_modules/storybook/dist/_node-chunks/chunk-YIQV2HOZ.js:3765:12)
+[90m│[39m  at async dev (file://./node_modules/storybook/dist/bin/core.js:4114:3)
+[90m│[39m  at async _Command.<anonymous>
+[90m│[39m  (file://./node_modules/storybook/dist/bin/core.js:4216:3)
+[90m│[39m
+[33m▲[39m  Broken build, fix the error above.
+[90m│[39m  You may need to refresh the browser.
+[90m│[39m
+[90m│[39m  Debug logs are written to: /home/agent/workspace/debug-storybook.log
+[90m│[39m
+[90m└[39m  Storybook exited with an error
+

@@ -24,7 +24,7 @@ import { DOUBLE_SPACES } from './vitest-manager.ts';
 
 const setTestNamePattern = vi.hoisted(() => vi.fn());
 const vitest = vi.hoisted(() => ({
-  projects: [{}],
+  projects: [{ config: { env: {} }, matchesTestGlob: vi.fn(() => false) }] as any[],
   standalone: vi.fn(),
   init: vi.fn(),
   close: vi.fn(),
@@ -72,7 +72,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   mockVitestVersion.value = '4.1.6';
   mockStore.setState(() => storeOptions.initialState);
-  vitest.projects = [{}];
+  vitest.projects = [{ config: { env: {} }, matchesTestGlob: vi.fn(() => false) }];
   vitest.config.coverage.enabled = false;
   createVitest.mockResolvedValue(vitest);
 });
@@ -264,6 +264,188 @@ describe('TestManager', () => {
     expect(vitest.runTestSpecifications).toHaveBeenCalledWith(tests, true);
   });
 
+  describe('story files Vitest has not picked up yet', () => {
+    // A story file created outside the Vite root after startup: Storybook indexes it, but Vitest's
+    // cached test file list doesn't contain it because its watcher never reported the file.
+    const newFile = path.join(process.cwd(), 'path/to/new/file');
+    const indexWithNewFile = {
+      ...mockIndex,
+      entries: {
+        ...mockIndex.entries,
+        'new--story': {
+          type: 'story',
+          subtype: 'story',
+          id: 'new--story',
+          name: 'Story',
+          title: 'new',
+          importPath: 'path/to/new/file',
+          tags: [Tag.TEST],
+        },
+      },
+    } as StoryIndex;
+
+    /** A project that, like Vitest's, adds matching files to its cached test file list. */
+    const createProject = (
+      env: Record<string, string>,
+      {
+        initialFiles = [],
+        matches = () => true,
+      }: { initialFiles?: string[]; matches?: (moduleId: string) => boolean } = {}
+    ) => {
+      const files = new Set(initialFiles);
+      const project: any = {
+        config: { env, root: process.cwd(), setupFiles: [] },
+        files,
+        matchesTestGlob: vi.fn((moduleId: string) => {
+          if (files.has(moduleId)) {
+            return true;
+          }
+          if (!matches(moduleId)) {
+            return false;
+          }
+          files.add(moduleId);
+          return true;
+        }),
+        vite: {
+          moduleGraph: {
+            getModuleById: vi.fn(),
+            getModulesByFile: vi.fn(() => []),
+            invalidateModule: vi.fn(),
+          },
+          transformRequest: vi.fn(),
+        },
+      };
+      return project;
+    };
+    const storybookEnv = { __STORYBOOK_URL__: 'http://localhost:6006' };
+    const knownFiles = tests.map((test) => test.moduleId);
+
+    const useProjects = (...projects: any[]) => {
+      vitest.projects = projects;
+      // One spec per project and file, like Vitest's own globTestSpecifications
+      vitest.globTestSpecifications.mockImplementation(() =>
+        projects.flatMap((project) =>
+          [...project.files].map((moduleId: string) => ({ project, moduleId }))
+        )
+      );
+    };
+
+    it('runs a story file that was added to the index after startup', async () => {
+      const project = createProject(storybookEnv, { initialFiles: knownFiles });
+      useProjects(project);
+      const testManager = await startWithIndex();
+
+      testManager.storyIndex = indexWithNewFile;
+      expect(project.matchesTestGlob).toHaveBeenCalledWith(newFile);
+
+      await testManager.handleTriggerRunEvent({
+        type: 'TRIGGER_RUN',
+        payload: { storyIds: ['story--one', 'new--story'], triggeredBy: 'global' },
+      });
+
+      expect(vitest.runTestSpecifications).toHaveBeenCalledWith(
+        [
+          { project, moduleId: knownFiles[0] },
+          { project, moduleId: newFile },
+        ],
+        true
+      );
+    });
+
+    it('registers the new file with every Storybook project, not just the first one', async () => {
+      // The file is already cached by the first Storybook project and by a non-Storybook project
+      const first = createProject(storybookEnv, { initialFiles: [...knownFiles, newFile] });
+      const second = createProject(storybookEnv, { initialFiles: knownFiles });
+      const other = createProject({}, { initialFiles: [newFile] });
+      useProjects(first, second, other);
+      const testManager = await startWithIndex();
+
+      testManager.storyIndex = indexWithNewFile;
+      expect(other.matchesTestGlob).not.toHaveBeenCalled();
+
+      await testManager.handleTriggerRunEvent({
+        type: 'TRIGGER_RUN',
+        payload: { storyIds: ['new--story'], triggeredBy: 'global' },
+      });
+
+      expect(vitest.runTestSpecifications).toHaveBeenCalledWith(
+        [
+          { project: first, moduleId: newFile },
+          { project: second, moduleId: newFile },
+        ],
+        true
+      );
+    });
+
+    it('does not run an indexed file that the Vitest test globs exclude', async () => {
+      const project = createProject(storybookEnv, {
+        initialFiles: knownFiles,
+        matches: (moduleId) => moduleId !== newFile,
+      });
+      useProjects(project);
+      const testManager = await startWithIndex();
+
+      testManager.storyIndex = indexWithNewFile;
+
+      await testManager.handleTriggerRunEvent({
+        type: 'TRIGGER_RUN',
+        payload: { storyIds: ['new--story'], triggeredBy: 'global' },
+      });
+
+      expect(vitest.runTestSpecifications).toHaveBeenCalledWith([], true);
+    });
+
+    it('keeps going when checking one file against the test globs throws', async () => {
+      const project = createProject(storybookEnv, { initialFiles: knownFiles });
+      const matchesTestGlob = project.matchesTestGlob;
+      project.matchesTestGlob = vi.fn((moduleId: string) => {
+        if (moduleId === newFile) {
+          throw new Error('ENOENT: no such file or directory');
+        }
+        return matchesTestGlob(moduleId);
+      });
+      useProjects(project);
+      const testManager = await startWithIndex();
+
+      expect(() => {
+        testManager.storyIndex = indexWithNewFile;
+      }).not.toThrow();
+
+      await testManager.handleTriggerRunEvent({
+        type: 'TRIGGER_RUN',
+        payload: { storyIds: ['story--one', 'new--story'], triggeredBy: 'global' },
+      });
+
+      expect(vitest.runTestSpecifications).toHaveBeenCalledWith(
+        [{ project, moduleId: knownFiles[0] }],
+        true
+      );
+    });
+
+    it('includes the new file when a watch-mode change reruns all tests', async () => {
+      const previewFile = path.join(process.cwd(), '.storybook/preview.ts');
+      const project = createProject(storybookEnv, { initialFiles: knownFiles });
+      useProjects(project);
+      const testManager = await TestManager.start({
+        ...options,
+        previewAnnotations: [previewFile],
+      });
+      testManager.storyIndex = mockIndex;
+      mockStore.setState((s) => ({ ...s, watching: true }));
+      vi.spyOn(testManager.vitestManager as any, 'getTestDependencies').mockResolvedValue(
+        new Set()
+      );
+
+      testManager.storyIndex = indexWithNewFile;
+      // Changing a preview annotation affects every story, so all tests rerun
+      await testManager.vitestManager.runAffectedTestsAfterChange(previewFile, 'change');
+
+      expect(vitest.runTestSpecifications).toHaveBeenLastCalledWith(
+        expect.arrayContaining([{ project, moduleId: newFile }]),
+        false
+      );
+    });
+  });
   it('should provide merged config override before running tests', async () => {
     vitest.globTestSpecifications.mockImplementation(() => tests);
     const testManager = await startWithIndex();

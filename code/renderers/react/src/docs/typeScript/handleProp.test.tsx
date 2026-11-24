@@ -92,7 +92,9 @@ describe('enhanceTypeScriptProp', () => {
 
     it('should support long object', () => {
       const component = createTestComponent(
-        createDefaultValue("{ foo: 'foo', bar: 'bar', another: 'another' }")
+        createDefaultValue(
+          "{ foo: 'foo', bar: 'bar', another: 'another', yetAnother: 'yetAnother' }"
+        )
       );
 
       const { defaultValue } = extractPropDef(component);
@@ -102,7 +104,8 @@ describe('enhanceTypeScriptProp', () => {
       const expectedDetail = `{
         foo: 'foo',
         bar: 'bar',
-        another: 'another'
+        another: 'another',
+        yetAnother: 'yetAnother'
       }`;
 
       expect(defaultValue?.detail?.replace(/\s/g, '')).toBe(expectedDetail.replace(/\s/g, ''));
@@ -309,7 +312,7 @@ describe('enhanceTypeScriptProp', () => {
 
         const { defaultValue } = extractPropDef(component, [1, 2, 3]);
 
-        expect(defaultValue?.summary).toBe('[1,    2,    3]');
+        expect(defaultValue?.summary).toBe('[1, 2, 3]');
         expect(defaultValue?.detail).toBeUndefined();
       });
 
@@ -325,14 +328,17 @@ describe('enhanceTypeScriptProp', () => {
       it('should support array of long object', () => {
         const component = createTestComponent(undefined);
 
-        const { defaultValue } = extractPropDef(component, [{ foo: 'bar', bar: 'foo', hey: 'ho' }]);
+        const { defaultValue } = extractPropDef(component, [
+          { foo: 'bar', bar: 'foo', hey: 'ho', another: 'another' },
+        ]);
 
         expect(defaultValue?.summary).toBe('array');
 
         const expectedDetail = `[{
           'foo': 'bar',
           'bar': 'foo',
-          'hey': 'ho'
+          'hey': 'ho',
+          'another': 'another'
         }]`;
 
         expect(defaultValue?.detail?.replace(/\s/g, '')).toBe(expectedDetail.replace(/\s/g, ''));
@@ -350,14 +356,20 @@ describe('enhanceTypeScriptProp', () => {
       it('should support long object', () => {
         const component = createTestComponent(undefined);
 
-        const { defaultValue } = extractPropDef(component, { foo: 'bar', bar: 'foo', hey: 'ho' });
+        const { defaultValue } = extractPropDef(component, {
+          foo: 'bar',
+          bar: 'foo',
+          hey: 'ho',
+          another: 'another',
+        });
 
         expect(defaultValue?.summary).toBe('object');
 
         const expectedDetail = `{
           'foo': 'bar',
           'bar': 'foo',
-          'hey': 'ho'
+          'hey': 'ho',
+          'another': 'another'
         }`;
 
         expect(defaultValue?.detail?.replace(/\s/g, '')).toBe(expectedDetail.replace(/\s/g, ''));

@@ -1,33 +1,14 @@
-import type { CsfObject, ESTree as E } from 'storybook/internal/csf-tools';
+import { type CsfObject, anyKey } from 'storybook/internal/csf-tools';
 
 import picocolors from 'picocolors';
 
-import { readForEdit } from '../helpers/edit-parsed-file.ts';
 import type { Fix } from '../types.ts';
 
-const argName = (property: E.ObjectProperty): string | undefined => {
-  if (property.key.type === 'Identifier' && !property.computed) {
-    return property.key.name;
-  }
-  if (property.key.type === 'Literal' && typeof property.key.value === 'string') {
-    return property.key.value;
-  }
-  return undefined;
-};
-
+// An arg the source does not show a defaultValue for, such as `intl: intlArgType(...)`, is left.
+// `remove` refuses a config with mixed default and named exports even when nothing matches.
 const strip = (object: CsfObject) => {
-  const argTypes = readForEdit(object, ['argTypes']);
-  if (argTypes?.type !== 'ObjectExpression') {
-    return;
-  }
-  for (const property of argTypes.properties) {
-    if (property.type !== 'Property') {
-      continue;
-    }
-    const name = argName(property);
-    if (name) {
-      object.remove(['argTypes', name, 'defaultValue']);
-    }
+  if (object.inspect(['argTypes']).kind !== 'missing') {
+    object.remove(['argTypes', anyKey, 'defaultValue']);
   }
 };
 
@@ -43,9 +24,7 @@ export const argtypesDefaultValue: Fix = {
     {
       filter: { kind: ['preview', 'story'], code: 'defaultValue' },
       editConfig: strip,
-      editCsf: (csf) => {
-        csf.objects().forEach(strip);
-      },
+      editCsf: (csf) => csf.objects().forEach(strip),
     },
   ],
 };

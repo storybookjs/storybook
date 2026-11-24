@@ -2,6 +2,7 @@ import { resolve } from 'node:path';
 
 import {
   ProjectType,
+  hasAddonVitest,
   installSkills,
   supportsSkills,
   supportsAiSetup,
@@ -138,7 +139,7 @@ export async function doInitiate(options: CommandOptions): Promise<
     selectedFeatures.delete(Feature.AI);
   }
 
-  await executeTypeScriptDependency({
+  const typeScriptDependency = await executeTypeScriptDependency({
     options,
     packageManager,
     framework,
@@ -165,6 +166,7 @@ export async function doInitiate(options: CommandOptions): Promise<
     dependencyCollector,
     skipInstall: !!options.skipInstall,
     selectedFeatures,
+    upgradedDependencies: typeScriptDependency === 'upgraded',
   });
 
   // After dependencies are installed, we must not use the dependency collector anymore
@@ -207,8 +209,19 @@ export async function doInitiate(options: CommandOptions): Promise<
   // to use them
   const hasAiFeature = selectedFeatures.has(Feature.AI);
   if (hasAiFeature) {
+    // The section gets its test step only when the main config lists addon-vitest. When it cannot
+    // be read, the test feature the user selected decides.
+    const mainConfig = configDir
+      ? await loadMainConfig({ configDir, skipCache: true }).catch(() => undefined)
+      : undefined;
     await telemetryService.trackSkills(
-      await installSkills({ packageManager, source: 'ai-feature' })
+      await installSkills({
+        packageManager,
+        source: 'ai-feature',
+        testSupported: mainConfig ? hasAddonVitest(mainConfig) : selectedFeatures.has(Feature.TEST),
+        // This is one Storybook of the project.
+        sawEveryStorybook: false,
+      })
     );
   }
 

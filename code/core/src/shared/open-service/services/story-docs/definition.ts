@@ -1,5 +1,7 @@
 import * as v from 'valibot';
 
+import { type SnippetTemplate, isSnippetTemplate } from '../../../../docs-tools/snippetTemplate.ts';
+
 import { defineService } from 'storybook/open-service';
 import type { ServiceInstanceOf } from '../../types.ts';
 import { readComponent } from '../component-state-key.ts';
@@ -13,6 +15,14 @@ const storyDocsErrorSchema = v.object({
   message: v.string(),
 });
 
+// A `SnippetTemplate`: code, and holes whose place only its renderer reads.
+const snippetTemplateSchema = v.custom<SnippetTemplate>(
+  isSnippetTemplate,
+  'Expected a snippet template: code and holes'
+);
+
+// The query output is parsed with these schemas, which drop every key they don't list; the type
+// test next to this file keeps them equal to the hand-written types in `types.ts`.
 const storyDocSchema = v.object({
   id: v.string(),
   name: v.string(),
@@ -21,6 +31,7 @@ const storyDocSchema = v.object({
   summary: v.optional(v.string()),
   warning: v.optional(v.string()),
   error: v.optional(storyDocsErrorSchema),
+  template: v.optional(snippetTemplateSchema),
 });
 
 const storyDocsPayloadSchema = v.object({

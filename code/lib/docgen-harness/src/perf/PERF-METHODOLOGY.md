@@ -305,6 +305,52 @@ And the retained slope is higher on `first-story` for both engines (0.12 and 0.1
 Every save adds a prop to the component it touches, and in this shape that is the same component every time, so its type genuinely grows across the run.
 The slope there measures that growth as well as any leak, which is why its budget is no tighter than the whole-index one.
 
+### The React native-API pair
+
+`react-osa-native` is `react-osa` on the native API of TypeScript 7.1 (the `typescript-native` alias) instead of the compiler API of this package's `typescript`.
+It is the same `ComponentMetaManager`, so the pair `react-native-api` compares the two APIs on equal work, and both children report the props they documented.
+It is in the default run, so the daily gate measures it beside `react-osa`.
+
+Pinned profile on the dev box (8 cores, Node 22, TypeScript 6.0.3 against 7.1.0-beta):
+
+| Engine / scenario            | Cold   | Warm | Peak transient | Retained growth | Retained slope |
+| ---------------------------- | ------ | ---- | -------------- | --------------- | -------------- |
+| react-osa/whole-index        | 2376ms | 37ms | 14.3MB         | -81.6MB         | 0.10MB/save    |
+| react-osa-native/whole-index | 5411ms | 28ms | 6.9MB          | -64.1MB         | 0.01MB/save    |
+| react-osa/first-story        | 1130ms | 44ms | 10.5MB         | 2.8MB           | 0.20MB/save    |
+| react-osa-native/first-story | 183ms  | 30ms | 3.6MB          | 0.6MB           | 0.07MB/save    |
+
+| Pair                             | Scenario    | Cold | Warm | Members      |
+| -------------------------------- | ----------- | ---- | ---- | ------------ |
+| react-osa over react-osa-native  | whole-index | 0.44 | 1.31 | 5100 vs 5100 |
+| react-osa over react-osa-native  | first-story | 6.18 | 1.45 | 17 vs 17     |
+
+The two shapes pull apart because the native API's cost is per request to the compiler process, not per program.
+`first-story` is dominated by the program build, which the native compiler does in a fraction of the LanguageService's time, so it is 6.18 faster cold.
+`whole-index` documents 1,200 stories in one batch; profiling its cold pass counted 34,335 requests before the facades batched the per-property calls and 6,642 after, and the pass stayed near 5.3s either way, because the remaining time is the compiler process's own work per request (903 batched requests at 2.2ms, `getApparentPropertiesOfType` at 2.7ms and `getResolvedSignature` at 1.5ms per component).
+Warm, both shapes favour the native API, and its retained growth and slope are the smaller of the pair.
+
+### The Angular native-API pair
+
+`angular-cm` and `angular-cm-native` run `AngularComponentMetaManager` from `@storybook/angular-cm` over the generated Angular project (100 components, 8 extra inputs each, a stub `@angular/core`), on the compiler API of this package's `typescript` and on the native API of the `typescript-native` alias.
+A save rewrites one component with one more input; the manager notices it through its mtime check, as the docgen server does.
+Both are in the default run, so the daily gate measures the pair.
+
+Pinned profile on the dev box (8 cores, Node 22, TypeScript 6.0.3 against 7.1.0-beta):
+
+| Engine / scenario         | Cold  | Warm | Peak transient | Retained growth | Retained slope |
+| ------------------------- | ----- | ---- | -------------- | --------------- | -------------- |
+| angular-cm/default        | 587ms | 7ms  | 2.0MB          | 0.7MB           | 0.08MB/save    |
+| angular-cm-native/default | 622ms | 8ms  | 0.6MB          | -0.3MB          | 0.02MB/save    |
+
+| Pair                                 | Scenario | Cold | Warm | Members      |
+| ------------------------------------ | -------- | ---- | ---- | ------------ |
+| angular-cm over angular-cm-native    | default  | 0.94 | 0.86 | 1300 vs 1300 |
+
+The generated project is small and flat, so the native compiler's faster program build does not show, and the two APIs come out even.
+On real projects the first request is where they differ: ng-bootstrap (62 components and directives) 1.27s against 0.22s, PrimeNG (247) 4.12s against 1.01s, with the whole project 1.75s against 1.03s and 12.9s against 16.0s.
+PrimeNG's components each extend a generic base with many members, and every instantiated member is a round trip to the compiler process.
+
 ### Budgets
 
 Recorded in `docgen-shared/budgets.ts`, keyed by engine and scenario, above the observed value by whatever margin that metric's own noise demands.
@@ -315,6 +361,10 @@ Recorded in `docgen-shared/budgets.ts`, keyed by engine and scenario, above the 
 | react-legacy/first-story           | 0.60            | 15MB           | 10MB            | 1MB/save       | daily |
 | react-osa/whole-index              | 0.08            | 45MB           | -50MB           | 0.5MB/save     | daily |
 | react-osa/first-story              | 0.15            | 30MB           | 10MB            | 1MB/save       | daily |
+| react-osa-native/whole-index       | 0.05            | 30MB           | -50MB           | 0.3MB/save     | daily |
+| react-osa-native/first-story       | 0.60            | 15MB           | 10MB            | 1MB/save       | daily |
+| angular-cm/default                 | 0.06            | 10MB           | 5MB             | 0.5MB/save     | daily |
+| angular-cm-native/default          | 0.08            | 10MB           | 5MB             | 0.5MB/save     | daily |
 | vue-docgen-api/flat                | 0.08            | 4MB            | 3MB             | 0.2MB/save     | daily |
 | vue-docgen-api/workspace           | 0.10            | 4MB            | 3MB             | 0.2MB/save     | daily |
 | vue-docgen-api/base-type-touch     | 0.25            | 4MB            | 3MB             | 0.2MB/save     | daily |
@@ -330,8 +380,13 @@ Retained growth is a signed ceiling rather than a multiple of what was observed,
 `react-osa/whole-index` measures -82.9MB, and the regression worth catching there is the engine no longer releasing its whole-project state, which would land near 0MB and pass any positive budget.
 Its budget is therefore -50MB: the run has to still drop at least that far to be green.
 
+The four TypeScript 7.1 rows come from the CI run on 2026-11-10 (pull request #37293), in milliseconds 5326/27, 189/33, 737/7 and 516/8 cold/warm.
+`react-osa-native/whole-index` releases its whole-project state like `react-osa` does (-88.0MB), so it carries the same -50MB ceiling.
+`react-osa-native/first-story` has a cold pass of only ~190ms, so its warm/cold ratio (0.17) is budgeted like `react-legacy/first-story`'s.
+
 `react-legacy-rdt` and `vue-component-meta-next` are measurable but carry no budget: neither runs by default, and a budget on something CI never runs would be decoration.
 The `cem` stretch row waits on an engine that does not exist yet.
 
 The docgen-memory gate keeps its own, heavier `react-osa` row (90MB transient, 60MB growth, 3MB/save) over a 600-component project.
+Its `react-osa-native` row (45MB transient, -50MB growth, 0.5MB/save) runs the same project on TypeScript 7.1, observed on CI at 12.6MB, -174.7MB and 0.02MB/save. These figures cover the docgen process only: the TypeScript 7.1 compiler runs in a process of its own, which neither gate measures.
 It measures the same shape and the same save scope as `react-osa/whole-index` above; only the project size differs, which is why its budgets sit so much higher.

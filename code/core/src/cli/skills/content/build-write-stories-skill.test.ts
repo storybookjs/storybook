@@ -1,0 +1,120 @@
+import { describe, expect, it } from 'vitest';
+
+import {
+  buildWriteStoriesSkill,
+  type WriteStoriesSkillInputs,
+} from './build-write-stories-skill.ts';
+
+const reactTs: WriteStoriesSkillInputs = {
+  framework: '@storybook/react-vite',
+  csfFactories: false,
+  previewFile: '.storybook/preview.ts',
+  svelteCsf: false,
+  typescript: true,
+};
+
+const svelteKit: WriteStoriesSkillInputs = {
+  framework: '@storybook/sveltekit',
+  csfFactories: true,
+  previewFile: '.storybook/preview.ts',
+  svelteCsf: true,
+  typescript: true,
+};
+
+describe('buildWriteStoriesSkill', () => {
+  it('teaches CSF Factories instead of Meta and StoryObj when the preview uses definePreview', () => {
+    const text = buildWriteStoriesSkill({
+      ...reactTs,
+      csfFactories: true,
+      previewFile: '.storybook/preview.tsx',
+    });
+
+    expect(text).toContain('preview.meta({');
+    expect(text).toContain('Do not import `Meta` or `StoryObj`');
+    expect(text).not.toContain('Import `Meta` and `StoryObj`');
+  });
+
+  it('teaches Meta and StoryObj from the framework package otherwise', () => {
+    const text = buildWriteStoriesSkill({ ...reactTs, framework: '@storybook/vue3-vite' });
+
+    expect(text).toContain('Import `Meta` and `StoryObj` from `@storybook/vue3-vite`');
+    expect(text).not.toContain('preview.meta({');
+  });
+
+  it('leaves out the Meta and StoryObj types in a JavaScript project', () => {
+    const text = buildWriteStoriesSkill({
+      ...reactTs,
+      previewFile: '.storybook/preview.js',
+      typescript: false,
+    });
+
+    expect(text).not.toContain('StoryObj');
+    expect(text).toContain('- Import `fn`, `expect`, `mocked` and `sb` from `storybook/test`.');
+    expect(text).toContain("sb.mock(import('../src/api.js')");
+  });
+
+  it('puts MSW before module mocks and names the preview file of the project', () => {
+    const text = buildWriteStoriesSkill({ ...reactTs, previewFile: 'config/preview.tsx' });
+
+    expect(text.indexOf('msw.use(')).toBeLessThan(text.indexOf('sb.mock('));
+    expect(text).toContain('register it in `config/preview.tsx`');
+  });
+
+  it('uses MSW only when the project has it set up, and never installs it', () => {
+    const text = buildWriteStoriesSkill({ ...reactTs, previewFile: 'config/preview.tsx' });
+
+    expect(text).toContain('loaded by `config/preview.tsx` directly or through a file it imports');
+    expect(text).toContain('never fakes one with a module mock or a replaced `fetch`');
+    expect(text).toContain(
+      'When the project has no MSW setup, do not add one or any other dependency'
+    );
+    expect(text).not.toMatch(/msw init|install `msw`|mswLoader|addonMsw/);
+  });
+
+  it('teaches Svelte CSF instead of meta.story() exports when the stories are Svelte CSF', () => {
+    const text = buildWriteStoriesSkill(svelteKit);
+
+    expect(text).toContain('the `<script module lang="ts">` of a story file');
+    expect(text).toContain('const { Story } = preview.meta({ component: Button })');
+    expect(text).toContain('`<Story name="Primary" args={{ ... }} />`');
+    expect(text).toContain('an HTML comment right above its `<Story>`');
+    expect(text).toContain('`play={async ({ canvas, userEvent }) => { ... }}`');
+    expect(text).toContain('`<Story name="Error" exportName="ErrorState" />`');
+    expect(text).toContain('`beforeEach={({ msw }) => {');
+    expect(text).toContain('`parameters={{ msw: { handlers: [...] } }}`');
+    expect(text).not.toMatch(/meta\.story\(|StoryObj|play: async|set `name: 'Error'`/);
+  });
+
+  it('teaches defineMeta for Svelte CSF without definePreview', () => {
+    const text = buildWriteStoriesSkill({ ...svelteKit, csfFactories: false, typescript: false });
+
+    expect(text).toContain('The `<script module>` of a story file');
+    expect(text).toContain(
+      "`import { defineMeta } from '@storybook/sveltekit'` and `const { Story } = defineMeta({ component: Button })`"
+    );
+    expect(text).not.toContain('preview.meta(');
+    expect(text).not.toContain('addon-svelte-csf');
+  });
+
+  it('names no command and no other skill', () => {
+    const text = buildWriteStoriesSkill(reactTs);
+
+    expect(text).not.toContain('npx storybook');
+    expect(text).not.toMatch(/component-docs|test-stories|ui-review/);
+  });
+
+  // The text the evals validated, so a wording change shows up here.
+  it('full text', () => {
+    expect(buildWriteStoriesSkill(reactTs)).toMatchInlineSnapshot(`
+      "# Write the component and its stories
+
+      Every component you create or change gets stories: one per distinct state it can reach (variants, loading, empty, error, disabled), with realistic props. Never export a story under the name of a global such as \`Error\`: export \`ErrorState\` and set \`name: 'Error'\`. An interactive component also gets a \`play\` function that drives it and asserts the visible result; for a callback passed as \`fn()\`, assert whether it was called, as that state expects. The rules below are for the stories you write; do not rewrite existing stories only to match them.
+
+      - Import \`Meta\` and \`StoryObj\` from \`@storybook/react-vite\` (in a new story file also when other stories import them from another package; a file you only edit keeps its imports), and \`fn\`, \`expect\`, \`mocked\` and \`sb\` from \`storybook/test\`.
+      - Leave \`title\` out of a new story file, so Storybook derives it from the file path.
+      - \`play: async ({ canvas, userEvent }) => { ... }\`: query \`canvas\` directly, by role or label. Never wrap it in \`within()\`. \`userEvent.click(element)\` takes no options; to check a disabled element, assert \`toBeDisabled()\` instead of clicking it.
+      - A story never calls a real service, and never fakes one with a module mock or a replaced \`fetch\`: leave the code that calls \`fetch\` as it is. Every story of a component that fetches needs a network mock. When the project has MSW set up for Storybook (\`msw-storybook-addon\` installed, in the package or at the root of a monorepo, and loaded by \`.storybook/preview.ts\` directly or through a file it imports), mock the requests with it: give the story \`beforeEach({ msw }) { msw.use(http.get('/api/users', () => HttpResponse.json([...]))) }\`. Read the version of \`msw-storybook-addon\` in the project's \`package.json\`: only before version 3 do stories have no \`msw\` in \`beforeEach\` and take \`parameters: { msw: { handlers: [...] } }\` instead. From version 3 on, never write \`parameters.msw\`. When the project has no MSW setup, do not add one or any other dependency, and do not fake the network another way, also when the user asks for stories that need it: write only the stories that send no request, and in your answer tell the user which stories, such as one for the page, would need a network mock, and that MSW would give them. Without MSW, a component that fetches when it renders gets no story, also not for its loading state. Do not stop to ask.
+      - Mock a module only for a dependency that is not a network call: register it in \`.storybook/preview.ts\` with \`sb.mock(import('../src/api.ts'), { spy: true })\` (path relative to that file, with its extension), then set the result per story in \`beforeEach\` with \`mocked(getUser).mockResolvedValue(...)\`."
+    `);
+  });
+});

@@ -51,7 +51,6 @@ export type {
   StoryAnnotationsOrFn,
   StoryContext,
   StoryContextForEnhancers,
-  StoryContextForRender,
   StoryContextUpdate,
   StoryFn,
   StoryId,

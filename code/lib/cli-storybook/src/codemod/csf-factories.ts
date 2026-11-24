@@ -1,13 +1,10 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
-import {
-  type JsPackageManager,
-  optionalEnvToBoolean,
-  syncStorybookAddons,
-} from 'storybook/internal/common';
+import { optionalEnvToBoolean, syncStorybookAddons } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 
+import { normalize } from 'pathe';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
@@ -18,30 +15,50 @@ import {
   previewFileForImports,
   previewImportTarget,
 } from '../../../../core/src/shared/constants/config-folder.ts';
-import { runCodemod } from '../automigrate/codemod.ts';
+import { type FileInfo, runCodemod } from '../automigrate/codemod.ts';
 import { getFrameworkPackageName } from '../automigrate/helpers/mainConfigFile.ts';
 import type { CommandFix } from '../automigrate/types.ts';
 import { configToCsfFactory } from './helpers/config-to-csf-factory.ts';
 import { storyToCsfFactory } from './helpers/story-to-csf-factory.ts';
 import { svelteCsfToCsfFactory } from './helpers/svelte-csf-to-csf-factory.ts';
+import csf2To3 from './transforms/csf-2-to-3.ts';
+
+export async function storyToCsf4(
+  info: FileInfo,
+  options: Parameters<typeof storyToCsfFactory>[1]
+) {
+  if (info.path.endsWith('.svelte')) {
+    return svelteCsfToCsfFactory(info, options);
+  }
+  // A story csf-2-to-3 refuses, such as one with a namespace import, can already be CSF 3.
+  const source = await csf2To3(info, { keepStoryTypes: true }).catch((error) => {
+    logger.debug(`csf-2-to-3 skipped ${info.path}: ${String(error)}`);
+    return info.source;
+  });
+  const output = await storyToCsfFactory({ ...info, source }, options);
+  // The factory returns its input when it skips a file. Don't write that half-migrated input.
+  return output === source ? info.source : output;
+}
+
+// Not recursive: sandboxes symlink the monorepo template stories into these folders.
+export const SANDBOX_STORIES_GLOB =
+  '{stories,src/stories}/{Button,Header,Page,button,header,page}.stories.*';
 
 async function runStoriesCodemod(options: {
   dryRun: boolean | undefined;
-  packageManager: JsPackageManager;
   useSubPathImports: boolean;
   previewConfigPath: string;
   yes: boolean | undefined;
   glob: string | undefined;
 }) {
-  const { dryRun, packageManager, yes, glob, ...codemodOptions } = options;
+  const { dryRun, yes, glob, ...codemodOptions } = options;
   const inSandbox = optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX) ?? false;
   const promptsForGlob = !glob && !inSandbox && !yes;
   try {
     let globString = glob ?? '**/*.{stories,story}.{js,jsx,ts,tsx,mjs,mjsx,mts,mtsx,svelte}';
 
     if (!glob && inSandbox) {
-      // Sandbox uses limited glob for faster testing (unless glob explicitly provided)
-      globString = '{stories,src}/**/{Button,Header,Page,button,header,page}.stories.*';
+      globString = SANDBOX_STORIES_GLOB;
     } else if (promptsForGlob) {
       logger.log('Please enter the glob for your stories to migrate');
       globString = await prompt.text({
@@ -52,18 +69,7 @@ async function runStoriesCodemod(options: {
 
     logger.step('Applying codemod on your stories, this might take some time...');
 
-    await packageManager.runPackageCommand({
-      args: ['storybook', 'migrate', 'csf-2-to-3', `--glob="${globString}"`],
-    });
-
-    await runCodemod(
-      globString,
-      async (info) =>
-        info.path.endsWith('.svelte')
-          ? svelteCsfToCsfFactory(info, codemodOptions)
-          : storyToCsfFactory(info, codemodOptions),
-      { dryRun }
-    );
+    await runCodemod(globString, (info) => storyToCsf4(info, codemodOptions), { dryRun });
   } catch (err: any) {
     // Ask for another glob. Without a prompt, the same glob would match nothing again.
     if (err.message === 'No files matched' && promptsForGlob) {
@@ -98,7 +104,7 @@ export const csfFactories: CommandFix = {
     if (!yes && !inSandbox && !isReactNativePreview) {
       // prompt whether the user wants to use imports map
       logger.logBox(dedent`
-        The CSF 4 format can benefit from using absolute imports of your ${picocolors.cyan(previewConfigPath)} file. We can configure that for you, using subpath imports (a node standard), by adjusting the imports property of your package.json.
+        The CSF 4 format can benefit from using absolute imports of your ${picocolors.cyan(previewConfigPath && normalize(previewConfigPath))} file. We can configure that for you, using subpath imports (a node standard), by adjusting the imports property of your package.json.
         
         However, we cannot broadly recommend it for all projects, because it might not work in some monorepo setups or if you have an outdated tsconfig, use custom paths, or have type alias plugins configured in your project. You can always rerun this codemod and select another option to update your code later.
         
@@ -126,13 +132,13 @@ export const csfFactories: CommandFix = {
         useSubPathImports = false;
       } else if (applyPreviewImportsMap(packageJson, previewFile, operationDir)) {
         logger.step(
-          `Adding imports map in ${picocolors.cyan(packageManager.primaryPackageJson.packageJsonPath)}`
+          `Adding imports map in ${picocolors.cyan(normalize(packageManager.primaryPackageJson.packageJsonPath))}`
         );
         packageManager.writePackageJson(packageJson, operationDir);
       }
     } else if (useSubPathImports && !packageJson.imports?.['#*']) {
       logger.step(
-        `Adding imports map in ${picocolors.cyan(packageManager.primaryPackageJson.packageJsonPath)}`
+        `Adding imports map in ${picocolors.cyan(normalize(packageManager.primaryPackageJson.packageJsonPath))}`
       );
       packageJson.imports = {
         ...packageJson.imports,
@@ -143,7 +149,6 @@ export const csfFactories: CommandFix = {
 
     await runStoriesCodemod({
       dryRun,
-      packageManager,
       useSubPathImports,
       previewConfigPath: previewConfigPath!,
       yes,
@@ -153,12 +158,12 @@ export const csfFactories: CommandFix = {
     logger.step('Applying codemod on your main config...');
     const frameworkPackage =
       getFrameworkPackageName(mainConfig) || '@storybook/your-framework-here';
-    await runCodemod(mainConfigPath, (fileInfo) =>
+    await runCodemod([mainConfigPath!], (fileInfo) =>
       configToCsfFactory(fileInfo, { configType: 'main', frameworkPackage }, { dryRun })
     );
 
     logger.step('Applying codemod on your preview config...');
-    await runCodemod(previewConfigPath, (fileInfo) =>
+    await runCodemod([previewConfigPath!], (fileInfo) =>
       configToCsfFactory(fileInfo, { configType: 'preview', frameworkPackage }, { dryRun })
     );
 

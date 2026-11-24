@@ -1,0 +1,62 @@
+{
+  "name": {
+    "control": {
+      "type": "text",
+    },
+    "description": "Name shown as the image text alternative.",
+    "name": "name",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": true,
+    },
+  },
+  "size": {
+    "control": {
+      "type": "number",
+    },
+    "description": "Size in pixels.",
+    "name": "size",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": "32",
+      },
+      "type": {
+        "summary": "number",
+      },
+    },
+    "type": {
+      "name": "number",
+      "required": false,
+    },
+  },
+  "src": {
+    "control": {
+      "type": "text",
+    },
+    "description": "Image URL.",
+    "name": "src",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": false,
+    },
+  },
+}

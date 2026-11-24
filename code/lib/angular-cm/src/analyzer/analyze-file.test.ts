@@ -615,6 +615,44 @@ describe('JSDoc', () => {
     ]);
   });
 
+  it('leaves out a line comment above the JSDoc block', () => {
+    const component = componentIn(`
+      import { Component, Input } from '@angular/core';
+
+      @Component({ selector: 'sb-chip', template: '' })
+      export class ChipComponent {
+        // Content
+
+        /** The chip text. */
+        @Input() text = '';
+      }
+    `);
+
+    expect(byName(component.inputsClass, 'text').rawdescription).toBe('The chip text.');
+  });
+
+  it("starts a tag comment after the tag's own arguments", () => {
+    const component = componentIn(`
+      import { Component, Input } from '@angular/core';
+
+      @Component({ selector: 'sb-chip', template: '' })
+      export class ChipComponent {
+        /**
+         * @template T the item type
+         * @augments Base the parent
+         * @param {string} value the value
+         */
+        @Input() text = '';
+      }
+    `);
+
+    expect(byName(component.inputsClass, 'text').jsdoctags?.map((tag) => tag.comment)).toEqual([
+      'the item type',
+      'the parent',
+      'the value',
+    ]);
+  });
+
   it('carries every tag on a member, custom ones included, in source order', () => {
     const component = componentIn(`
       import { Component, Input } from '@angular/core';

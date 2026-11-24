@@ -1,5 +1,7 @@
 # Eval Harness
 
+For upgrade QA of real projects across operating systems, see [`ecosystem-qa/`](../../ecosystem-qa/README.md); for workflow evals on fixture projects, see [`agent-eval/`](../../agent-eval/README.md).
+
 The eval harness benchmarks how well AI coding agents (Claude, Codex) can set up Storybook and write stories for real-world projects. It runs agents against benchmark repos, grades the results, publishes them as draft PRs, and collects the data into a SQLite database for analysis.
 
 ## Prerequisites

@@ -9,6 +9,7 @@ import {
   getTypeScriptForDocgenError,
 } from 'storybook/internal/common';
 import { TypeScriptWithoutCompilerApiError } from 'storybook/internal/server-errors';
+import type { Options } from 'storybook/internal/types';
 
 import { REACT_BUILDER_DOCGEN_PACKAGES, prepareReactBuilderDocgen } from './builder-docgen.ts';
 
@@ -123,7 +124,10 @@ describe('built output', () => {
 });
 
 describe('prepareReactBuilderDocgen', () => {
-  const options = { configDir: '/project/.storybook' };
+  const options = {
+    configDir: '/project/.storybook',
+    presets: { apply: async () => ({}) } as unknown as Options['presets'],
+  };
   const resolve = (specifier: string) => specifier;
 
   beforeEach(() => {
@@ -137,7 +141,7 @@ describe('prepareReactBuilderDocgen', () => {
       'react-docgen-typescript',
       'vite',
       {
-        '@joshwooding/vite-plugin-react-docgen-typescript': '^0.7.0 || ^0.8.0 || ^0.9.0',
+        '@joshwooding/vite-plugin-react-docgen-typescript': '^0.7.0',
         'react-docgen-typescript': '^2.2.2',
       },
     ],
@@ -158,6 +162,7 @@ describe('prepareReactBuilderDocgen', () => {
         packages,
         builderDocgen: `typescript.reactDocgen: '${reactDocgen}'`,
         disableBuilderDocgen: 'typescript.reactDocgen: false',
+        apis: ['compiler', 'native'],
       })
     );
   });

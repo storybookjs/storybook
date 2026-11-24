@@ -10,6 +10,7 @@ import { runTestRunner } from './boot-test-runner.ts';
 const testProviderStore = vi.hoisted(() => ({
   setState: vi.fn(),
   onClearAll: vi.fn(),
+  onRunAll: vi.fn(),
 }));
 
 vi.mock('storybook/internal/core-server', async (importOriginal) => {
@@ -78,6 +79,38 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.unstubAllEnvs();
+});
+
+describe('ensureTestRunnerStore', () => {
+  it('registers Run All once and triggers one run from the shared server store', async () => {
+    const { ensureTestRunnerStore } = await loadResponder();
+    const channel = new Channel({});
+    const options = makeOptions();
+
+    const [store, reusedStore] = await Promise.all([
+      ensureTestRunnerStore({ channel, options }),
+      ensureTestRunnerStore({ channel, options }),
+    ]);
+
+    expect(reusedStore).toBe(store);
+    expect(testProviderStore.onRunAll).toHaveBeenCalledOnce();
+    expect(runTestRunner).not.toHaveBeenCalled();
+
+    const [onRunAll] = testProviderStore.onRunAll.mock.calls[0];
+    onRunAll();
+
+    expect(runTestRunner).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({
+        channel,
+        store,
+        initArgs: [
+          expect.objectContaining({
+            event: { type: 'TRIGGER_RUN', payload: { triggeredBy: 'run-all' } },
+          }),
+        ],
+      })
+    );
+  });
 });
 
 describe('wireTestRunResponder', () => {

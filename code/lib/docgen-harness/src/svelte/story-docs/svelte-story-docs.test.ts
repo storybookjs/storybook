@@ -8,6 +8,8 @@ import { storyNameFromExport, toId } from 'storybook/internal/csf';
 import { loadCsf } from 'storybook/internal/csf-tools';
 import type { IndexEntry } from 'storybook/internal/types';
 
+import { stripHoles } from 'storybook/internal/docs-tools';
+
 import { buildStoryDocsPayload } from '../../../../../renderers/svelte/src/docgen/story-docs/build-story-docs.ts';
 import { createIndexer } from '../../../../../renderers/svelte/src/svelte-csf/indexer/index.ts';
 import { expectCurrentOrBetter } from '../../compare/expect-current-or-better.ts';
@@ -19,6 +21,11 @@ import {
 
 const fixturesDir = join(dirname(fileURLToPath(import.meta.url)), '../__testfixtures__');
 const indexer = createIndexer();
+// The template turns the `initials` arg into the `name` prop. The server snippet prints
+// `name="AL"`; the runtime snippet also prints `initials`, which isn't an Avatar prop.
+const DECLARED_OMISSIONS: Record<string, readonly string[]> = {
+  'csf4-meta-type/Initials (svelte)': ['initials'],
+};
 
 const cases = readdirSync(fixturesDir, { withFileTypes: true })
   .filter((entry) => entry.isDirectory())
@@ -80,7 +87,7 @@ const indexedCases = await Promise.all(
 describe('svelte story-docs server snippets', () => {
   it.each(indexedCases)(
     '$fixtureCase ($extension)',
-    async ({ testDir, storyPath, stories, prefix, legacyPrefix }) => {
+    async ({ fixtureCase, extension, testDir, storyPath, stories, prefix, legacyPrefix }) => {
       expect(stories.length).toBeGreaterThan(0);
       for (const story of stories) {
         const entry: IndexEntry = {
@@ -93,6 +100,12 @@ describe('svelte story-docs server snippets', () => {
         };
         const payload = await buildStoryDocsPayload({ entry });
         const storyDoc = payload?.stories[story.id];
+        if (storyDoc?.snippet !== undefined) {
+          expect(storyDoc.template, `${story.exportName} has no template`).toBeDefined();
+        }
+        if (storyDoc?.template !== undefined) {
+          expect(stripHoles(storyDoc.template)).toBe(storyDoc.snippet);
+        }
         expect(payload?.import).toBeUndefined();
         expect(storyDoc?.snippet).toMatch(/^<script(?: lang="ts")?>\n/);
         if (payload !== undefined) {
@@ -111,6 +124,8 @@ describe('svelte story-docs server snippets', () => {
             ...(storyDoc?.warning === undefined ? [] : [`warning: ${storyDoc.warning}`]),
           ].join('\n\n'),
           legacyParity: true,
+          declaredOmissions:
+            DECLARED_OMISSIONS[`${fixtureCase}/${story.exportName} (${extension})`],
         });
       }
       expectNoStaleSnippets(
@@ -133,6 +148,13 @@ it('every story has its legacy and server snippet baselines', () => {
   }
 });
 
+it('every declared omission names an indexed story', () => {
+  const storyKeys = indexedCases.flatMap(({ fixtureCase, extension, stories }) =>
+    stories.map(({ exportName }) => `${fixtureCase}/${exportName} (${extension})`)
+  );
+  expect(Object.keys(DECLARED_OMISSIONS).filter((key) => !storyKeys.includes(key))).toEqual([]);
+});
+
 describe('svelte server snippets hold the legacy baseline', () => {
   for (const { fixtureCase, extension, testDir, stories, prefix, legacyPrefix } of indexedCases) {
     for (const { exportName } of stories) {
@@ -142,6 +164,7 @@ describe('svelte server snippets hold the legacy baseline', () => {
           framework: 'svelte',
           baseline: readFileSync(join(testDir, `${legacyPrefix}${exportName}.snapshot`), 'utf8'),
           candidate: readFileSync(join(testDir, `${prefix}${exportName}.snapshot`), 'utf8'),
+          declaredOmissions: DECLARED_OMISSIONS[`${fixtureCase}/${exportName} (${extension})`],
         });
       });
     }
@@ -205,3 +228,26 @@ it('keeps every story payload when block bindings are destructured', async () =>
     expect(story.warning ?? '').not.toContain('`name`');
   }
 });
+
+it.each(['Tag.stories.svelte', 'Tag.stories.ts'])(
+  'imports the component as the @import tag of its @component comment says in %s',
+  async (filename) => {
+    const payload = await buildStoryDocsPayload({
+      entry: {
+        id: 'repro-tag--default',
+        name: 'Default',
+        title: 'Repro/Tag',
+        type: 'story',
+        subtype: 'story',
+        importPath: join(
+          dirname(fileURLToPath(import.meta.url)),
+          '__fixtures__/component-import',
+          filename
+        ),
+      },
+    });
+    expect(payload?.stories['repro-tag--default']?.snippet).toBe(
+      '<script>\n  import Tag from \'#lib/repro/Tag.svelte\';\n</script>\n\n<Tag label="Design" />'
+    );
+  }
+);

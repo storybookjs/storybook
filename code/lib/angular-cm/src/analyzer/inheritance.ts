@@ -140,7 +140,7 @@ const typeParameterSubstitutions = (
   }
   const args = clause.typeArguments ?? [];
   for (const [index, parameter] of parameters.entries()) {
-    const argument = args[index] ?? parameter.default;
+    const argument = args[index] ?? ctx.ts.getTypeParameterDefault(parameter);
     const symbol = ctx.checker.getSymbolAtLocation(parameter.name);
     if (!argument || !symbol) {
       continue;

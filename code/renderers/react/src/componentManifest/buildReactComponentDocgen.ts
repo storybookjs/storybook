@@ -6,6 +6,7 @@ import {
   extractDescription,
   storyShapeError,
 } from 'storybook/internal/csf-tools';
+import type { ImportRef } from 'storybook/internal/csf-tools';
 import type {
   ComponentManifest,
   ComponentSubcomponentManifest,
@@ -19,6 +20,7 @@ import type { ComponentDoc, PropItem } from './componentMeta/componentMetaExtrac
 import type { ComponentRef } from './getComponentImports.ts';
 import type { DocObj } from './reactDocgen.ts';
 import type { ComponentDocWithExportName } from './reactDocgenTypescript.ts';
+import { getPackageExport } from './packageExports.ts';
 import {
   type ParsedCsf,
   type ResolvedSubcomponent,
@@ -76,7 +78,12 @@ function hasRootEntry(pkg: Record<string, unknown>) {
 
 // An app's own package (private, with no root entry) cannot be imported by name, so its
 // components keep the import the story wrote.
-function getImportablePackageName(componentPath: string | undefined, fallbackPath: string) {
+function getImportablePackageName(
+  componentPath: string | undefined,
+  fallbackPath: string,
+  exportName?: string,
+  namespace?: string
+) {
   const nearestPkg = cachedFindUp('package.json', {
     cwd: path.dirname(componentPath ?? fallbackPath),
   });
@@ -90,11 +97,25 @@ function getImportablePackageName(componentPath: string | undefined, fallbackPat
     if (typeof parsed !== 'object' || !parsed || typeof parsed.name !== 'string') {
       return undefined;
     }
+    if (parsed.exports !== undefined) {
+      return exportName && !namespace
+        ? getPackageExport(nearestPkg, parsed.name, parsed.exports, exportName)
+        : undefined;
+    }
     const importable = parsed.private !== true || hasRootEntry(parsed);
     return importable ? parsed.name : undefined;
   } catch {
     return undefined;
   }
+}
+
+function getComponentPackageName(component: ComponentRef, storyPath: string) {
+  if (component.isPackage) {
+    return undefined;
+  }
+  const exportName =
+    component.importName === 'default' ? component.localImportName : component.importName;
+  return getImportablePackageName(component.path, storyPath, exportName, component.namespace);
 }
 
 function getFallbackImport(packageName: string | undefined, componentName: string | undefined) {
@@ -173,15 +194,16 @@ function createSubcomponentDocgen({
   component,
   declaredName,
   docgenEngine,
-  packageName,
+  storyPath,
   storyFilePath,
 }: {
   component: ComponentRef | undefined;
   declaredName: string;
   docgenEngine: DocgenEngine;
-  packageName: string | undefined;
+  storyPath: string;
   storyFilePath: string;
 }): ReactSubcomponentManifest {
+  const packageName = component && getComponentPackageName(component, storyPath);
   const imports =
     buildImportStatements({ refs: component ? [component] : [], packageName })
       .join('\n')
@@ -251,7 +273,9 @@ export function buildStoryDocsFromResolved({
   const id = getComponentIdFromEntry(entry);
   const title = entry.title.split('/').at(-1)!.replace(/\s+/g, '');
 
-  const packageName = getImportablePackageName(component?.path, storyPath);
+  const packageName = component
+    ? getComponentPackageName(component, storyPath)
+    : getImportablePackageName(undefined, storyPath, componentName);
   const fallbackImport = getFallbackImport(packageName, componentName);
   const storyEntries = extractStorySnippets(
     csf,
@@ -266,8 +290,14 @@ export function buildStoryDocsFromResolved({
   // An arg value that kept the name another module gave it only compiles once the import block
   // names that module too. `packageName` rewriting is for the component, so those refs opt out of it.
   const argRefs = storyEntries.imports.map((ref) => ({ ...ref, isPackage: true }));
+  const componentPackages = new Map<ImportRef, string | undefined>(
+    allComponents.map((ref) => [ref, getComponentPackageName(ref, storyPath)])
+  );
   const imports =
-    buildImportStatements({ refs: [...allComponents, ...argRefs], packageName })
+    buildImportStatements({
+      refs: [...allComponents, ...argRefs],
+      packageName: (ref) => componentPackages.get(ref),
+    })
       .join('\n')
       .trim() || fallbackImport;
 
@@ -326,8 +356,6 @@ export function buildComponentDocgenFromResolved({
 }): ComponentDocgenFromResolved {
   const id = getComponentIdFromEntry(entry);
   const title = entry.title.split('/').at(-1)!.replace(/\s+/g, '');
-  const packageName = getImportablePackageName(component?.path, storyPath);
-
   const base = {
     id,
     name: componentName ?? title,
@@ -382,7 +410,7 @@ export function buildComponentDocgenFromResolved({
         component: subcomponent.component,
         declaredName: subcomponent.name,
         docgenEngine,
-        packageName,
+        storyPath,
         storyFilePath,
       }),
     ])

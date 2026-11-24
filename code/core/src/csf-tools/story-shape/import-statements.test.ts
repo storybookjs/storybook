@@ -260,6 +260,28 @@ describe('buildImportStatements', () => {
   });
 
   describe('packageName rewriting', () => {
+    it('resolves a separate package source for each reference', () => {
+      expect(
+        buildImportStatements({
+          refs: [
+            { importId: './button', importName: 'Button', localImportName: 'Button' },
+            { importId: './card', importName: 'Card', localImportName: 'Card' },
+            { importId: './local', importName: 'Local', localImportName: 'Local' },
+          ],
+          packageName: (ref) =>
+            ref.importName === 'Button'
+              ? '@acme/ui'
+              : ref.importName === 'Card'
+                ? '@acme/ui/experimental'
+                : undefined,
+        })
+      ).toEqual([
+        "import { Button } from '@acme/ui';",
+        "import { Card } from '@acme/ui/experimental';",
+        "import { Local } from './local';",
+      ]);
+    });
+
     it('rewrites a relative source to the package name', () => {
       expect(statementsFor(`import { Button } from './button';`, ['Button'], 'my-design-system'))
         .toMatchInlineSnapshot(`

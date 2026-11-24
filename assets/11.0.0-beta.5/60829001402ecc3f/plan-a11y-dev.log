@@ -1,0 +1,236 @@
+
+[90m┌[39m  storybook v11.0.0-beta.5
+[90m│[39m
+[33m▲[39m  You are currently using Storybook [1m11.0.0-beta.5[22m but you have packages
+[90m│[39m  which are incompatible with it:
+
+[90m│[39m  - storybook-addon-test-codegen@3.0.4 which depends on ^0.0.0-0 ||
+[90m│[39m  ^10.0.0 || ^10.0.0-0 || ^10.1.0-0 || ^10.2.0-0 || ^10.3.0-0
+[90m│[39m  Repo: https://github.com/igrlk/storybook-addon-test-codegen#readme
+
+[90m│[39m  Please consider updating your packages or contacting the maintainers
+[90m│[39m  for compatibility details.
+
+[90m│[39m  For more details on compatibility guidance, see:
+[90m│[39m  https://github.com/storybookjs/storybook/issues/36283
+[90m│[39m
+[33m▲[39m  No story files found for the specified pattern: [34msrc/docs/*.mdx[39m
+[90m│[39m
+[33m▲[39m  No story files found for the specified pattern:
+[90m│[39m  [34msrc/docs/Introduction.mdx[39m
+[90m│[39m
+[33m▲[39m  No story files found for the specified pattern: [34msrc/**/*.mdx[39m
+[90m│[39m
+[34m●[39m  Starting...
+│ [38;2;255;71;133m╭[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m╮[39m
+│ [38;2;255;71;133m│[39m   Storybook ready!                                                         [38;2;255;71;133m│[39m
+│ [38;2;255;71;133m│[39m                                                                            [38;2;255;71;133m│[39m
+│ [38;2;255;71;133m│[39m   - Local:                http://127.0.0.1:6006/                           [38;2;255;71;133m│[39m
+│ [38;2;255;71;133m│[39m   - On your network:      run with --host <ip> to expose to local          [38;2;255;71;133m│[39m
+│ [38;2;255;71;133m│[39m   network                                                                  [38;2;255;71;133m│[39m
+│ [38;2;255;71;133m│[39m                                                                            [38;2;255;71;133m│[39m
+│ [38;2;255;71;133m╰[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m╯[39m
+[90m│[39m
+[34m●[39m  [4m411 ms[24m for manager and [4m141 ms[24m for preview
+[90m│[39m
+[90m│[39m  [35mstorybook/test[39m: [90m│[39m
+[90m│[39m  [33m▲[39m  No story files found for the specified pattern: [34msrc/docs/*.mdx[39m
+[90m│[39m
+[90m│[39m  [35mstorybook/test[39m: [90m│[39m
+[90m│[39m  [33m▲[39m  No story files found for the specified pattern:
+[90m│[39m  [90m│[39m  [34msrc/docs/Introduction.mdx[39m
+[90m│[39m
+[90m│[39m  [35mstorybook/test[39m: [90m│[39m
+[90m│[39m  [33m▲[39m  No story files found for the specified pattern: [34msrc/**/*.mdx[39m
+[90m│[39m
+[90m│[39m  [35mstorybook/test[39m:
+[90m│[39m
+[90m│[39m  [35mstorybook/test[39m: [1m[30m[44m DEV [49m[39m[22m [34mv4.1.11 [39m[90m/home/agent/workspace[39m
+[90m│[39m
+[90m│[39m  [35mstorybook/test[39m:
+[90m│[39m
+[90m│[39m  [35mstorybook/test[39m: [2m8:18:37 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m Re-optimizing dependencies
+[90m│[39m  because vite config has changed
+[90m│[39m
+[90m│[39m  [35mstorybook/test[39m: [1m[30m[42m PASS [49m[39m[22m [32mWaiting for file changes...[39m
+[90m│[39m
+[90m│[39m  [35mstorybook/test[39m: [2mpress [22m[1mh[22m[2m to show help[22m[2m, [22m[2mpress [22m[1mq[22m[2m to quit[22m
+[90m│[39m
+[90m│[39m  [35mstorybook/test[39m: [32m✓[39m [30m[42m storybook:/home/agent/workspace/.storybook[49m
+[90m│[39m  [42m(chromium) [49m[39m src/pages/UserFlows.stories.tsx [2m([22m[2m7 tests[22m[2m)[22m[33m 3016[2mms[22m[39m
+[90m│[39m
+[90m│[39m  [35mstorybook/test[39m: [33m[2m✓[22m[39m To Checkout Page [33m 367[2mms[22m[39m
+[90m│[39m  [33m[2m✓[22m[39m To Success Page [33m 925[2mms[22m[39m
+[90m│[39m  [33m[2m✓[22m[39m Demo Mode [33m 885[2mms[22m[39m
+[90m│[39m
+[90m│[39m  [35mstorybook/test[39m: [32m✓[39m [30m[42m storybook:/home/agent/workspace/.storybook[49m
+[90m│[39m  [42m(chromium) [49m[39m src/templates/PageTemplate.stories.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 186[2mms[22m[39m
+[90m│[39m
+[90m│[39m  [35mstorybook/test[39m: [32m✓[39m [30m[42m storybook:/home/agent/workspace/.storybook[49m
+[90m│[39m  [42m(chromium)[49m[39m
+[90m│[39m  src/components/AnimatedIllustration/AnimatedIllustration.stories.tsx
+[90m│[39m  [2m([22m[2m2 tests[22m[2m)[22m[32m 119[2mms[22m[39m
+[90m│[39m
+[90m│[39m  [35mstorybook/test[39m: [32m✓[39m [30m[42m storybook:/home/agent/workspace/.storybook[49m
+[90m│[39m  [42m(chromium) [49m[39m src/components/Badge/Badge.stories.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 92[2mms[22m[39m
+[90m│[39m
+[90m│[39m  [35mstorybook/test[39m: [32m✓[39m [30m[42m storybook:/home/agent/workspace/.storybook[49m
+[90m│[39m  [42m(chromium) [49m[39m src/components/Breadcrumb/Breadcrumb.stories.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m[39m
+[90m│[39m  [32m114[2mms[22m[39m
+[90m│[39m
+[90m│[39m  [35mstorybook/test[39m: [32m✓[39m [30m[42m storybook:/home/agent/workspace/.storybook[49m
+[90m│[39m  [42m(chromium) [49m[39m src/components/Button/Button.stories.tsx [2m([22m[2m5 tests[22m[2m)[22m[32m 197[2mms[22m[39m
+[90m│[39m
+[90m│[39m  [35mstorybook/test[39m: [32m✓[39m [30m[42m storybook:/home/agent/workspace/.storybook[49m
+[90m│[39m  [42m(chromium) [49m[39m src/components/Carousel/Carousel.stories.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m[39m
+[90m│[39m  [32m145[2mms[22m[39m
+[90m│[39m
+[90m│[39m  [35mstorybook/test[39m: [32m✓[39m [30m[42m storybook:/home/agent/workspace/.storybook[49m
+[90m│[39m  [42m(chromium) [49m[39m src/components/Category/Category.stories.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m[39m
+[90m│[39m  [32m108[2mms[22m[39m
+[90m│[39m
+[90m│[39m  [35mstorybook/test[39m: [32m✓[39m [30m[42m storybook:/home/agent/workspace/.storybook[49m
+[90m│[39m  [42m(chromium) [49m[39m src/components/ErrorBlock/ErrorBlock.stories.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m[39m
+[90m│[39m  [32m110[2mms[22m[39m
+[90m│[39m
+[90m│[39m  [35mstorybook/test[39m: [32m✓[39m [30m[42m storybook:/home/agent/workspace/.storybook[49m
+[90m│[39m  [42m(chromium) [49m[39m src/components/Footer/Footer.stories.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 84[2mms[22m[39m
+[90m│[39m
+[90m│[39m  [35mstorybook/test[39m: [32m✓[39m [30m[42m storybook:/home/agent/workspace/.storybook[49m
+[90m│[39m  [42m(chromium) [49m[39m src/components/Header/Header.stories.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 136[2mms[22m[39m
+[90m│[39m
+[90m│[39m  [35mstorybook/test[39m: [32m✓[39m [30m[42m storybook:/home/agent/workspace/.storybook[49m
+[90m│[39m  [42m(chromium) [49m[39m src/components/Icon/Icon.stories.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 109[2mms[22m[39m
+[90m│[39m
+[90m│[39m  [35mstorybook/test[39m: [32m✓[39m [30m[42m storybook:/home/agent/workspace/.storybook[49m
+[90m│[39m  [42m(chromium) [49m[39m src/components/IconButton/IconButton.stories.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m[39m
+[90m│[39m  [32m105[2mms[22m[39m
+[90m│[39m
+[90m│[39m  [35mstorybook/test[39m: [32m✓[39m [30m[42m storybook:/home/agent/workspace/.storybook[49m
+[90m│[39m  [42m(chromium) [49m[39m src/components/Logo/Logo.stories.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 167[2mms[22m[39m
+[90m│[39m
+[90m│[39m  [35mstorybook/test[39m: [32m✓[39m [30m[42m storybook:/home/agent/workspace/.storybook[49m
+[90m│[39m  [42m(chromium) [49m[39m src/components/Modal/Modal.stories.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 167[2mms[22m[39m
+[90m│[39m
+[90m│[39m  [35mstorybook/test[39m: [32m✓[39m [30m[42m storybook:/home/agent/workspace/.storybook[49m
+[90m│[39m  [42m(chromium) [49m[39m src/components/PageSection/PageSection.stories.tsx [2m([22m[2m2[22m
+[90m│[39m  [2mtests[22m[2m)[22m[32m 122[2mms[22m[39m
+[90m│[39m
+[90m│[39m  [35mstorybook/test[39m: [32m✓[39m [30m[42m storybook:/home/agent/workspace/.storybook[49m
+[90m│[39m  [42m(chromium) [49m[39m src/components/RestaurantCard/RestaurantCard.stories.tsx
+[90m│[39m  [2m([22m[2m4 tests[22m[2m)[22m[32m 181[2mms[22m[39m
+[90m│[39m
+[90m│[39m  [35mstorybook/test[39m: [32m✓[39m [30m[42m storybook:/home/agent/workspace/.storybook[49m
+[90m│[39m  [42m(chromium) [49m[39m src/components/Review/Review.stories.tsx [2m([22m[2m5 tests[22m[2m)[22m[32m 199[2mms[22m[39m
+[90m│[39m
+[90m│[39m  [35mstorybook/test[39m: [32m✓[39m [30m[42m storybook:/home/agent/workspace/.storybook[49m
+[90m│[39m  [42m(chromium)[49m[39m
+[90m│[39m  src/components/ShoppingCartMenu/ShoppingCartMenu.stories.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m[39m
+[90m│[39m  [32m254[2mms[22m[39m
+[90m│[39m
+[90m│[39m  [35mstorybook/test[39m: [32m✓[39m [30m[42m storybook:/home/agent/workspace/.storybook[49m
+[90m│[39m  [42m(chromium) [49m[39m src/components/Sidebar/Sidebar.stories.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 151[2mms[22m[39m
+[90m│[39m
+[90m│[39m  [35mstorybook/test[39m: [32m✓[39m [30m[42m storybook:/home/agent/workspace/.storybook[49m
+[90m│[39m  [42m(chromium) [49m[39m src/components/Spinner/Spinner.stories.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 87[2mms[22m[39m
+[90m│[39m
+[90m│[39m  [35mstorybook/test[39m: [32m✓[39m [30m[42m storybook:/home/agent/workspace/.storybook[49m
+[90m│[39m  [42m(chromium) [49m[39m src/components/TopBanner/TopBanner.stories.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m[39m
+[90m│[39m  [32m100[2mms[22m[39m
+[90m│[39m
+[90m│[39m  [35mstorybook/test[39m: [32m✓[39m [30m[42m storybook:/home/agent/workspace/.storybook[49m
+[90m│[39m  [42m(chromium) [49m[39m src/components/forms/Input.stories.tsx [2m([22m[2m5 tests[22m[2m)[22m[32m 250[2mms[22m[39m
+[90m│[39m
+[90m│[39m  [35mstorybook/test[39m: [32m✓[39m [30m[42m storybook:/home/agent/workspace/.storybook[49m
+[90m│[39m  [42m(chromium) [49m[39m src/components/forms/Select.stories.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 100[2mms[22m[39m
+[90m│[39m
+[90m│[39m  [35mstorybook/test[39m: [32m✓[39m [30m[42m storybook:/home/agent/workspace/.storybook[49m
+[90m│[39m  [42m(chromium) [49m[39m src/components/typography/Body.stories.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 87[2mms[22m[39m
+[90m│[39m
+[90m│[39m  [35mstorybook/test[39m: [32m✓[39m [30m[42m storybook:/home/agent/workspace/.storybook[49m
+[90m│[39m  [42m(chromium) [49m[39m src/components/typography/Heading.stories.tsx [2m([22m[2m1 test[22m[2m)[22m[32m[39m
+[90m│[39m  [32m90[2mms[22m[39m
+[90m│[39m
+[90m│[39m  [35mstorybook/test[39m: [32m✓[39m [30m[42m storybook:/home/agent/workspace/.storybook[49m
+[90m│[39m  [42m(chromium)[49m[39m
+[90m│[39m  src/pages/CategoryDetailPage/CategoryDetailPage.stories.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m[39m
+[90m│[39m  [32m278[2mms[22m[39m
+[90m│[39m
+[90m│[39m  [35mstorybook/test[39m: [32m✓[39m [30m[42m storybook:/home/agent/workspace/.storybook[49m
+[90m│[39m  [42m(chromium) [49m[39m src/pages/CategoryListPage/CategoryListPage.stories.tsx [2m([22m[2m1[22m
+[90m│[39m  [2mtest[22m[2m)[22m[32m 95[2mms[22m[39m
+[90m│[39m
+[90m│[39m  [35mstorybook/test[39m: [32m✓[39m [30m[42m storybook:/home/agent/workspace/.storybook[49m
+[90m│[39m  [42m(chromium) [49m[39m src/pages/CheckoutPage/CheckoutPage.stories.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m[39m
+[90m│[39m  [32m142[2mms[22m[39m
+[90m│[39m
+[90m│[39m  [35mstorybook/test[39m: [32m✓[39m [30m[42m storybook:/home/agent/workspace/.storybook[49m
+[90m│[39m  [42m(chromium) [49m[39m src/pages/HomePage/HomePage.stories.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 113[2mms[22m[39m
+[90m│[39m
+[90m│[39m  [35mstorybook/test[39m: [32m✓[39m [30m[42m storybook:/home/agent/workspace/.storybook[49m
+[90m│[39m  [42m(chromium)[49m[39m
+[90m│[39m  src/pages/RestaurantDetailPage/RestaurantDetailPage.stories.tsx [2m([22m[2m7[22m
+[90m│[39m  [2mtests[22m[2m)[22m[33m 439[2mms[22m[39m
+[90m│[39m
+[90m│[39m  [35mstorybook/test[39m: [32m✓[39m [30m[42m storybook:/home/agent/workspace/.storybook[49m
+[90m│[39m  [42m(chromium) [49m[39m src/pages/SuccessPage/SuccessPage.stories.tsx [2m([22m[2m1 test[22m[2m)[22m[32m[39m
+[90m│[39m  [32m85[2mms[22m[39m
+[90m│[39m
+[90m│[39m  [35mstorybook/test[39m: [32m✓[39m [30m[42m storybook:/home/agent/workspace/.storybook[49m
+[90m│[39m  [42m(chromium)[49m[39m
+[90m│[39m  src/components/ShoppingCart/OrderSummary/OrderSummary.stories.tsx [2m([22m[2m1[22m
+[90m│[39m  [2mtest[22m[2m)[22m[32m 108[2mms[22m[39m
+[90m│[39m
+[90m│[39m  [35mstorybook/test[39m: [32m✓[39m [30m[42m storybook:/home/agent/workspace/.storybook[49m
+[90m│[39m  [42m(chromium)[49m[39m
+[90m│[39m  src/pages/CategoryListPage/components/CategoryList/CategoryList.stories.tsx
+[90m│[39m  [2m([22m[2m1 test[22m[2m)[22m[32m 86[2mms[22m[39m
+[90m│[39m
+[90m│[39m  [35mstorybook/test[39m: [32m✓[39m [30m[42m storybook:/home/agent/workspace/.storybook[49m
+[90m│[39m  [42m(chromium)[49m[39m
+[90m│[39m  src/pages/CheckoutPage/components/registration-form/MultiStepForm.stories.tsx
+[90m│[39m  [2m([22m[2m1 test[22m[2m)[22m[32m 92[2mms[22m[39m
+[90m│[39m
+[90m│[39m  [35mstorybook/test[39m: [32m✓[39m [30m[42m storybook:/home/agent/workspace/.storybook[49m
+[90m│[39m  [42m(chromium)[49m[39m
+[90m│[39m  src/pages/CheckoutPage/components/registration-form/StepIndicator.stories.tsx
+[90m│[39m  [2m([22m[2m1 test[22m[2m)[22m[32m 92[2mms[22m[39m
+[90m│[39m
+[90m│[39m  [35mstorybook/test[39m: [32m✓[39m [30m[42m storybook:/home/agent/workspace/.storybook[49m
+[90m│[39m  [42m(chromium)[49m[39m
+[90m│[39m  src/pages/HomePage/components/AwardWinningSection/AwardWinningSection.stories.tsx
+[90m│[39m  [2m([22m[2m1 test[22m[2m)[22m[32m 73[2mms[22m[39m
+[90m│[39m
+[90m│[39m  [35mstorybook/test[39m: [32m✓[39m [30m[42m storybook:/home/agent/workspace/.storybook[49m
+[90m│[39m  [42m(chromium) [49m[39m src/pages/HomePage/components/Banner/Banner.stories.tsx [2m([22m[2m2[22m
+[90m│[39m  [2mtests[22m[2m)[22m[32m 117[2mms[22m[39m
+[90m│[39m
+[90m│[39m  [35mstorybook/test[39m: [32m✓[39m [30m[42m storybook:/home/agent/workspace/.storybook[49m
+[90m│[39m  [42m(chromium)[49m[39m
+[90m│[39m  src/pages/HomePage/components/CategoriesSection/CategoriesSection.stories.tsx
+[90m│[39m  [2m([22m[2m1 test[22m[2m)[22m[32m 86[2mms[22m[39m
+[90m│[39m
+[90m│[39m  [35mstorybook/test[39m: [32m✓[39m [30m[42m storybook:/home/agent/workspace/.storybook[49m
+[90m│[39m  [42m(chromium)[49m[39m
+[90m│[39m  src/pages/HomePage/components/RestaurantsSection/RestaurantsSection.stories.tsx
+[90m│[39m  [2m([22m[2m2 tests[22m[2m)[22m[32m 170[2mms[22m[39m
+[90m│[39m
+[90m│[39m  [35mstorybook/test[39m: [32m✓[39m [30m[42m storybook:/home/agent/workspace/.storybook[49m
+[90m│[39m  [42m(chromium)[49m[39m
+[90m│[39m  src/pages/RestaurantDetailPage/components/FoodItem/FoodItem.stories.tsx
+[90m│[39m  [2m([22m[2m2 tests[22m[2m)[22m[32m 150[2mms[22m[39m
+[90m│[39m
+[90m│[39m  [35mstorybook/test[39m: [32m✓[39m [30m[42m storybook:/home/agent/workspace/.storybook[49m
+[90m│[39m  [42m(chromium)[49m[39m
+[90m│[39m  src/pages/RestaurantDetailPage/components/FoodItemModal/FoodItemModal.stories.tsx
+[90m│[39m  [2m([22m[2m2 tests[22m[2m)[22m[32m 138[2mms[22m[39m
+[90m│[39m
+[90m│[39m  [35mstorybook/test[39m:
+[90m│[39m
+[90m│[39m  [35mstorybook/test[39m: [2m Test Files [22m [1m[32m42 passed[39m[22m[90m (42)[39m
+[90m│[39m
+[90m│[39m  [35mstorybook/test[39m: [2m      Tests [22m [1m[32m97 passed[39m[22m[90m (97)[39m
+[90m│[39m  [2mStart at [22m 08:18:39
+[90m│[39m
+[90m│[39m  [35mstorybook/test[39m: [2m   Duration [22m 37.58s[2m (transform 0ms, setup 20.45s,[22m
+[90m│[39m  [2mimport 2.15s, tests 8.74s, environment 0ms)[22m

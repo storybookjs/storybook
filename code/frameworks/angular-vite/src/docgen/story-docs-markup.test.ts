@@ -271,4 +271,15 @@ describe('userTemplate', () => {
       }
     `);
   });
+
+  it('names a destructured template, not the object it comes from', () => {
+    expect(
+      templateOf(dedent`
+        const templates = { save: '<sb-button>Save</sb-button>' };
+        const { save } = templates;
+        export default { title: 'Example/Button' };
+        export const Default = { template: save };
+      `)
+    ).toEqual({ kind: 'unresolvable', source: 'save' });
+  });
 });

@@ -10,23 +10,34 @@ export type StorybookWorkflowCall = {
   source: 'mcp' | 'cli';
 };
 
-// Assertions ask for the workflow document as `ui-workflow`: `storybook skills
-// ui-workflow`, with or without `--mcp`, or `--all` serve it (`write-story`
-// prints only its write section). The stable addon-mcp (EVAL_STORYBOOK_LATEST=1) still serves
-// it as the get-storybook-story-instructions tool; drop that name once 11 is
-// the latest release.
+const SKILL_IDS = ['component-docs', 'write-stories', 'test-stories', 'ui-review', 'setup'];
+
+// Assertions ask for a skill by its id: `storybook skills <id>`, with or without `--mcp`, or
+// `--all` serve it. The stable addon-mcp (EVAL_STORYBOOK_LATEST=1) still serves the story rules
+// as the get-storybook-story-instructions tool; drop that name once 11 is the latest release.
 export function workflowCallMatchesName(call: StorybookWorkflowCall, name: string): boolean {
   if (call.name === name) {
     return true;
   }
-  if (name === 'ui-workflow' && call.name === 'get-storybook-story-instructions') {
+  if (name === 'write-stories' && call.name === 'get-storybook-story-instructions') {
     return true;
   }
   return (
-    name === 'ui-workflow' &&
+    SKILL_IDS.includes(name) &&
     call.name === 'skills-get' &&
-    (call.input.id === 'ui-workflow' || call.input.all === true)
+    (call.input.id === name || call.input.all === true)
   );
+}
+
+// True when the tool was never called: then there is no step to do without its rules.
+export function skillComesBeforeTool(
+  calls: StorybookWorkflowCall[],
+  skill: string,
+  tool: string
+): boolean {
+  const firstTool = calls.findIndex((call) => workflowCallMatchesName(call, tool));
+  const firstSkill = calls.findIndex((call) => workflowCallMatchesName(call, skill));
+  return firstTool === -1 || (firstSkill !== -1 && firstSkill < firstTool);
 }
 
 export const STORYBOOK_WORKFLOW_TOOL_NAMES = [
@@ -171,6 +182,22 @@ function parseSubstitutedCalls(words: ShellWord[]): StorybookWorkflowCall[] {
   return words.flatMap((word) => word.substitutions ?? []).flatMap(parsePluginWorkflowCalls);
 }
 
+const FILE_READERS = new Set(['cat', 'head', 'tail', 'less', 'more', 'bat', 'nl', 'sed', 'awk']);
+
+// A command such as `cat` prints the file whose path ends with `pathSuffix`. A command that only
+// names the path, such as `ls` or `echo`, does not.
+export function shellCommandReadsFile(command: string, pathSuffix: string): boolean {
+  const tokens = tokenizeShellCommand(command);
+  return tokens.some((token, index) => {
+    const isCommand = index === 0 || SHELL_COMMAND_SEPARATORS.has(tokens[index - 1] ?? '');
+    return (
+      isCommand &&
+      FILE_READERS.has(token) &&
+      segmentUntilSeparator(tokens, index + 1).some((argument) => argument.endsWith(pathSuffix))
+    );
+  });
+}
+
 function segmentUntilSeparator(tokens: string[], start: number): string[] {
   const end = tokens.findIndex(
     (token, index) => index >= start && SHELL_COMMAND_SEPARATORS.has(token)
@@ -203,7 +230,9 @@ function parseStorybookToolsInvocation(
   const input = parseToolArguments(
     segment.slice(command.index + 2),
     readCommanderInput(commanderOptions),
-    unresolved
+    unresolved,
+    // The tools whose method declares `positional`: bare arguments fill `files`.
+    command.name === 'test-run'
   );
   if (input === undefined) {
     return undefined;
@@ -322,15 +351,19 @@ function readCommanderInput(options: string[]): string | undefined {
 
 // A copy of parseToolsTokens (code/core/src/cli/tools/tool-tokens.ts) that
 // returns only the tool arguments, or `undefined` where the CLI prints help or
-// rejects the invocation. shell-parse.test.ts runs both on the same tokens.
+// rejects the invocation. Bare arguments are appended to `files` for a tool
+// that takes them, as the CLI dispatcher does.
+// shell-parse.test.ts runs both on the same tokens.
 function parseToolArguments(
   tokens: string[],
   commanderInput: string | undefined,
-  unresolved: ReadonlySet<string>
+  unresolved: ReadonlySet<string>,
+  takesFiles: boolean
 ): Record<string, unknown> | undefined {
   let rawInput = commanderInput;
   let attach: boolean | undefined;
   const flagArgs: Record<string, unknown> = {};
+  const positionals: string[] = [];
 
   let index = 0;
   while (index < tokens.length) {
@@ -359,8 +392,16 @@ function parseToolArguments(
       index += 1;
       continue;
     }
-    if (!token.startsWith('--') || token === '--') {
+    if (token === '--') {
+      positionals.push(...tokens.slice(index));
+      break;
+    }
+    if (token.startsWith('-') && !token.startsWith('--')) {
       return undefined;
+    }
+    if (!token.startsWith('--')) {
+      positionals.push(token);
+      continue;
     }
 
     const equalsIndex = token.indexOf('=');
@@ -391,8 +432,26 @@ function parseToolArguments(
     flagArgs[key] = value === undefined ? true : coerceValue(value);
   }
 
+  if (positionals.length > 0 && !takesFiles) {
+    return undefined;
+  }
+  // Bare arguments are appended to `files`, after `--input` and `--files`, as the CLI does.
+  const withFiles = (args: Record<string, unknown>): Record<string, unknown> => {
+    const given = args.files;
+    if (!takesFiles || (positionals.length === 0 && given === undefined)) {
+      return args;
+    }
+    return {
+      ...args,
+      files: [
+        ...(given === undefined ? [] : Array.isArray(given) ? given : [given]),
+        ...positionals,
+      ],
+    };
+  };
+
   if (rawInput === undefined) {
-    return flagArgs;
+    return withFiles(flagArgs);
   }
   let input: unknown;
   try {
@@ -400,9 +459,9 @@ function parseToolArguments(
   } catch {
     // The CLI saw what the shell made of this (`$(cat file)` from an earlier
     // command, `$VAR`); keep the raw text so a failing assertion shows it.
-    return unresolved.has(rawInput) ? { input: rawInput, ...flagArgs } : undefined;
+    return unresolved.has(rawInput) ? withFiles({ input: rawInput, ...flagArgs }) : undefined;
   }
-  return isRecord(input) ? { ...input, ...flagArgs } : undefined;
+  return isRecord(input) ? withFiles({ ...input, ...flagArgs }) : undefined;
 }
 
 function coerceValue(value: string): unknown {

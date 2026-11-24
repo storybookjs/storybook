@@ -3,6 +3,7 @@ import {
   appendFileSync,
   copyFileSync,
   createWriteStream,
+  type WriteStream,
   existsSync,
   mkdirSync,
   readdirSync,
@@ -24,14 +25,20 @@ import { seatbelt } from '@ai-hero/sandcastle/sandboxes/seatbelt';
 import { basename, dirname, join, relative, resolve } from 'pathe';
 import { z } from 'zod';
 
-import { answerAfterRepairs, answerOfFinishedAgent, type Reading } from './lib/answer.ts';
+import { answerAfterRepairs, answerOfFinishedAgent } from './lib/answer.ts';
 import { checklistOf, type Checklist } from './lib/checklist.ts';
 import { loadEntries } from './lib/catalog.ts';
 import { shipsSandcastleFiles } from './lib/clone-guard.ts';
 import { cycleBranchName, cycleRepo, versionLine } from './lib/cycle.ts';
 import { runFake } from './lib/fake-run.ts';
 import { outputOf, watchHost, type Report } from './lib/host-watch.ts';
-import { credentialFor, proxyTheKey, sandboxAddresses, type ProxiedKey } from './lib/key-proxy.ts';
+import {
+  credentialFor,
+  proxyTheKey,
+  sandboxAddresses,
+  type Credential,
+  type ProxiedKey,
+} from './lib/key-proxy.ts';
 import { forJobLog, liveLine } from './lib/live-log.ts';
 import { memoryGuard } from './lib/memory-guard.ts';
 import { CHECKOUT_GUIDE, guideFor } from './lib/migration-guide.ts';
@@ -440,6 +447,321 @@ const readNumber = (file: string): number | undefined => {
   return Number.isFinite(value) ? value : undefined;
 };
 
+type Sandbox = Awaited<ReturnType<typeof createSandbox>>;
+type AgentAnswer = NonNullable<Outcome['output']>;
+
+// How the agent's part of a run ended. Each kind is one way a run can end, and becomes one status.
+type Ending =
+  | { kind: 'answered'; output: AgentAnswer }
+  | { kind: 'invalid'; problem: string }
+  // The sandbox failed after the agent had answered, so the answer came from the run log.
+  | { kind: 'recovered'; output: AgentAnswer; error: string }
+  // The agent was stopped, and answered when it was asked for what it had.
+  | { kind: 'cut-short'; output: AgentAnswer; stop: Stop }
+  | { kind: 'stopped'; error: string }
+  | { kind: 'failed'; error: string };
+
+const recordOf = (
+  ending: Ending
+): Pick<Outcome, 'status' | 'error' | 'output' | 'recoveredFrom' | 'cutShort'> => {
+  switch (ending.kind) {
+    case 'answered':
+      return { status: 'ok', output: ending.output };
+    case 'invalid':
+      return { status: 'output-invalid', error: ending.problem };
+    case 'recovered':
+      return { status: 'ok', output: ending.output, recoveredFrom: ending.error };
+    case 'cut-short':
+      return {
+        status: 'ok',
+        output: ending.output,
+        cutShort: `${ending.stop.record} Asked for what it had, it gave this answer.`,
+      };
+    case 'stopped':
+      return { status: 'timeout', error: ending.error };
+    case 'failed':
+      return { status: 'agent-failed', error: ending.error };
+  }
+};
+
+// What the readings of the machine and the close need to know about a run while it goes on.
+interface Progress {
+  sandbox?: Sandbox;
+  keyProxy?: ProxiedKey;
+  agentStarted: boolean;
+}
+
+// Create the sandbox with the project installed in it, and hand it to the readings and the close at
+// once. Throws when the install did not run to its end, because createSandbox does not look at how a
+// hook ended.
+const openSandbox = async (
+  cloneDir: string,
+  cycleBranch: string,
+  plan: SandboxPlan,
+  evidenceDir: string,
+  progress: Progress
+): Promise<Sandbox> => {
+  const sandbox = await createSandbox({
+    cwd: cloneDir,
+    branch: cycleBranch,
+    sandbox: plan.provider,
+    hooks: plan.hooks,
+  });
+  progress.sandbox = sandbox;
+  if (readNumber(join(evidenceDir, 'install-exit.txt')) === undefined) {
+    throw new Error('The project install did not run to its end: it left no exit status.');
+  }
+  if (existsSync(join(evidenceDir, 'install-stopped.txt'))) {
+    throw new Error(
+      `The project install did not finish within ${INSTALL_LIMIT_SECONDS / 60} minutes.`
+    );
+  }
+  return sandbox;
+};
+
+interface AgentRun {
+  request: RunRequest;
+  cloneDir: string;
+  sandbox: Sandbox;
+  plan: SandboxPlan;
+  startedAt: Date;
+  budget: RunBudget;
+  logFile: string;
+  stream: WriteStream;
+  progress: Progress;
+  checklist: Checklist;
+  target: ReturnType<typeof upgradeTarget>;
+  credential: Credential;
+}
+
+// Run the agent and have its answer repaired. When the run reaches its hard stop, or the agent
+// prints nothing for too long, end what it runs and ask it once for what it has.
+const runAgent = async ({
+  request,
+  cloneDir,
+  sandbox,
+  plan,
+  startedAt,
+  budget,
+  logFile,
+  stream,
+  progress,
+  checklist,
+  target,
+  credential,
+}: AgentRun): Promise<{ ending: Ending; sessionSource?: string }> => {
+  const { packageManager, storybookDir, repo } = request.entry;
+  const { checks, answerSchema } = checklist;
+  // The same signal goes to every repair turn, so the stop is one moment for the whole run.
+  const hardStop = AbortSignal.timeout(msUntilHardStop(startedAt, budget));
+  const note = (line: string) => {
+    console.log(line);
+    appendFileSync(logFile, `${line}\n`);
+  };
+  if (credential.proxied) {
+    const addresses = sandboxAddresses(
+      await outputOf('docker', ['inspect', sandbox.sandboxId ?? ''])
+    );
+    progress.keyProxy = await proxyTheKey(credential.value, {
+      host: addresses.gateway,
+      callerAddress: addresses.container,
+      upstreamOrigin: 'https://api.anthropic.com',
+      log: note,
+    });
+  }
+  const keyProxy = progress.keyProxy;
+  const agent = agentFor(
+    request,
+    plan.agentEnv,
+    keyProxy?.agentEnv ?? { [credential.name]: credential.value }
+  );
+  if (keyProxy) {
+    const { stdout } = await within(60, 'Reading the sandbox environment', sandbox.exec('env'));
+    if (keyProxy.reaches(stdout, agent)) {
+      throw new Error(
+        'The environment of the sandbox or the variables Sandcastle exports for the agent hold the provider key, so the run stops here.'
+      );
+    }
+    note(
+      'Neither the environment of the sandbox nor the variables Sandcastle exports for the agent hold the provider key.'
+    );
+  }
+  const name = `${request.entry.id}-${request.os}-${request.engine}`;
+  let sessionId: string | undefined;
+  let sessionSource: string | undefined;
+  const logging: LoggingOption = {
+    type: 'file',
+    path: logFile,
+    onAgentStreamEvent: (event) => {
+      if (event.type === 'raw') {
+        stream.write(`${event.line}\n`);
+        const started = agent
+          .parseStreamLine(event.line)
+          .find((parsed) => parsed.type === 'session_id');
+        if (started?.type === 'session_id') {
+          sessionId = started.sessionId;
+        }
+      } else if (event.type === 'text' || event.type === 'toolCall') {
+        console.log(liveLine(event));
+      }
+    },
+  };
+
+  // An agent that is stopped in the middle of a turn has printed no answer. This ends what it runs
+  // and asks it once, in the same session, for the answer with what it has.
+  const askAfterStop = async (why: Stop) => {
+    if (!sessionId) {
+      throw new Error('it had not started a session.');
+    }
+    const hostFile = agent.sessionStorage?.hostSessionFilePath(cloneDir, sessionId);
+    const container = sandbox.sandboxId;
+    if (request.sandbox === 'docker' && request.engine === 'claude' && hostFile && container) {
+      await within(
+        60,
+        'Ending what the agent ran',
+        sandbox.exec('kill -TERM -1; sleep 3; kill -KILL -1; true')
+      );
+      saveStoppedClaudeSession({
+        container,
+        sessionId,
+        sandboxCwd: DOCKER_WORKSPACE,
+        sandboxHome: DOCKER_HOME,
+        hostCwd: cloneDir,
+        hostFile,
+      });
+      sessionSource = hostFile;
+    } else if (request.sandbox === 'none') {
+      stopChildren();
+    } else {
+      throw new Error(
+        'only Claude Code in the Docker sandbox, or an agent without a sandbox, can be asked after a stop.'
+      );
+    }
+    const turn = await sandbox.run({
+      agent,
+      name,
+      resumeSession: sessionId,
+      prompt: wrapUpPrompt(why),
+      signal: AbortSignal.timeout(WRAP_UP_MINUTES * 60_000),
+      idleTimeoutSeconds: 300,
+      logging,
+    });
+    return answerAfterRepairs(turn, answerSchema);
+  };
+
+  const afterStop = async (why: Stop): Promise<Ending> => {
+    try {
+      const { reading, turn } = await askAfterStop(why);
+      sessionSource = turn.iterations.at(-1)?.sessionFilePath ?? sessionSource;
+      return 'answer' in reading
+        ? { kind: 'cut-short', output: reading.answer, stop: why }
+        : {
+            kind: 'stopped',
+            error: `${why.record} Asked for what it had, it gave no answer that could be used: ${reading.problem}`,
+          };
+    } catch (problem) {
+      return {
+        kind: 'stopped',
+        error: `${why.record} It could not be asked for what it had: ${problem instanceof Error ? problem.message : String(problem)}`,
+      };
+    }
+  };
+
+  const ending = await (async (): Promise<Ending> => {
+    try {
+      progress.agentStarted = true;
+      const first = await sandbox.run({
+        agent,
+        signal: hardStop,
+        name,
+        promptFile: PROMPT_FILE,
+        promptArgs: {
+          REPO: repo,
+          TARGET: target.title,
+          VERSION: request.version,
+          MAJOR: versionLine(request.version).split('.')[0]!,
+          STORYBOOK_DIR: storybookDir,
+          PACKAGE_MANAGER: packageManager,
+          INSTALL_COMMAND: INSTALL_COMMAND[packageManager],
+          UPGRADE_COMMAND: `${target.cli} upgrade --yes`,
+          UPGRADE_NOTE: target.upgradeNote,
+          STORYBOOK_CLI: target.cli,
+          NPX_CLI: target.npxCli,
+          OS: request.os,
+          MIGRATION_FILE: plan.migrationFile,
+          TOOLS_DIR: plan.toolsDir,
+          EVIDENCE_DIR: plan.evidenceDir,
+          CHECKLIST: checklist.text,
+          CHECK_COUNT: String(checks.length),
+          BUDGET_MINUTES: String(budget.minutes),
+          HARD_STOP_MINUTES: String(budget.hardStopMinutes),
+          OUTPUT_SCHEMA: JSON.stringify(z.toJSONSchema(answerSchema), null, 2),
+        },
+        idleTimeoutSeconds: IDLE_MINUTES * 60,
+        logging,
+      });
+      sessionSource = first.iterations.at(-1)?.sessionFilePath;
+      // The sandbox is still open here, so a repair is one more turn of the same session.
+      const { reading, turn } = await answerAfterRepairs(first, answerSchema);
+      sessionSource = turn.iterations.at(-1)?.sessionFilePath ?? sessionSource;
+      return 'answer' in reading
+        ? { kind: 'answered', output: reading.answer }
+        : { kind: 'invalid', problem: reading.problem };
+    } catch (error) {
+      // The sandbox can fail after an agent that had already answered, for example while it
+      // collects the commits.
+      const answer = existsSync(logFile)
+        ? answerOfFinishedAgent(readFileSync(logFile, 'utf8'), answerSchema)
+        : undefined;
+      if (answer) {
+        return { kind: 'recovered', output: answer, error: String(error) };
+      }
+      if (hardStop.aborted) {
+        return afterStop(stopAtTimeLimit(budget.hardStopMinutes));
+      }
+      if (isIdleTimeout(error)) {
+        return afterStop(stopAfterSilence(IDLE_MINUTES));
+      }
+      return { kind: 'failed', error: String(error) };
+    }
+  })();
+  return { ending, ...(sessionSource ? { sessionSource } : {}) };
+};
+
+// End what a run leaves behind. The answer is already read, so a sandbox that cannot be removed does
+// not fail the run.
+const closeRun = async (request: RunRequest, sandbox: Sandbox | undefined) => {
+  if (request.sandbox === 'none') {
+    const stopped = stopChildren();
+    if (stopped > 0) {
+      console.warn(`Stopped ${stopped} process(es) that the run had left behind.`);
+    }
+  }
+  if (sandbox) {
+    await within(600, 'Closing the sandbox', sandbox.close()).catch((error: unknown) => {
+      console.warn(forJobLog(`The sandbox could not be closed: ${String(error)}`));
+      // A close that never returns keeps its docker process, and with it this one, alive. The
+      // record is written within seconds from here.
+      setTimeout(() => process.exit(), 60_000).unref();
+    });
+  }
+};
+
+const bundleCommits = (
+  cloneDir: string,
+  cycleBranch: string,
+  startSha: string,
+  outDir: string
+): string | null => {
+  const branchRef = `refs/heads/${cycleBranch}`;
+  const head = git(cloneDir, 'for-each-ref', '--format=%(objectname)', branchRef);
+  const headSha = head && head !== startSha ? head : null;
+  if (headSha) {
+    git(cloneDir, 'bundle', 'create', join(outDir, 'cycle.bundle'), `${startSha}..${branchRef}`);
+  }
+  return headSha;
+};
+
 const runSandcastle = async (
   request: RunRequest,
   cloneDir: string,
@@ -454,32 +776,12 @@ const runSandcastle = async (
   }
   const evidenceDir = join(request.outDir, 'evidence');
   writeFileSync(join(evidenceDir, 'budget.json'), budgetRecord(startedAt, budget));
-  const { packageManager, storybookDir, repo } = request.entry;
-  const target = upgradeTarget(request, packageManager);
+  const target = upgradeTarget(request, request.entry.packageManager);
   const cycleBranch = cycleBranchName(target.cycleName, request.os, request.engine);
   const startSha = clone(request.entry, cloneDir);
-  const stream = createWriteStream(join(request.outDir, 'agent-stream.jsonl'));
-
-  let sessionSource: string | undefined;
-  let output: Outcome['output'];
-  let failure: Pick<Outcome, 'status' | 'error'> | undefined;
-  let recoveredFrom: string | undefined;
-  let migrationGuide: string | undefined;
-  let sandbox: Awaited<ReturnType<typeof createSandbox>> | undefined;
-  let keyProxy: ProxiedKey | undefined;
-  let sessionId: string | undefined;
-  let agentStarted = false;
-  let cutShort: string | undefined;
-  let stop:
-    | {
-        at: AbortSignal;
-        ask: (why: Stop) => Promise<{
-          reading: Reading<NonNullable<Outcome['output']>>;
-          turn: { iterations: { sessionFilePath?: string }[] };
-        }>;
-      }
-    | undefined;
   const logFile = join(request.outDir, 'run.log');
+  const stream = createWriteStream(join(request.outDir, 'agent-stream.jsonl'));
+  const progress: Progress = { agentStarted: false };
   const sandboxNameFile = join(evidenceDir, 'sandbox-container.txt');
   const report = ({ level, line }: Report) =>
     console.log(level === 'warning' && process.env.GITHUB_ACTIONS ? `::warning::${line}` : line);
@@ -490,19 +792,20 @@ const runSandcastle = async (
     // Sandcastle hands the sandbox over only after the project install, and the install is part of
     // what the watch is for.
     container: () =>
-      sandbox?.sandboxId ??
+      progress.sandbox?.sandboxId ??
       (existsSync(sandboxNameFile) ? readFileSync(sandboxNameFile, 'utf8').trim() : undefined),
     report,
     onSample: memoryGuard({
       agent: request.engine,
-      agentStarted: () => agentStarted,
+      agentStarted: () => progress.agentStarted,
       inSandbox: (container, command) => outputOf('docker', ['exec', container, ...command]),
       logFile: join(evidenceDir, 'memory-guard.log'),
       report,
     }),
   });
-  const { checks, answerSchema } = checklist;
 
+  let migrationGuide: string | undefined;
+  let ran: { ending: Ending; sessionSource?: string };
   try {
     const guide = await guideFor(target.guideRef, {
       checkout: join(request.monorepoDir, 'MIGRATION.md'),
@@ -510,233 +813,37 @@ const runSandcastle = async (
     });
     migrationGuide = guide.ref;
     const plan = planSandbox(request, cloneDir, evidenceDir, image, guide.file);
-    sandbox = await createSandbox({
-      cwd: cloneDir,
-      branch: cycleBranch,
-      sandbox: plan.provider,
-      hooks: plan.hooks,
-    });
-    // createSandbox does not look at how a hook ended, so the record of the install has to.
-    const installExit = readNumber(join(evidenceDir, 'install-exit.txt'));
-    if (installExit === undefined) {
-      throw new Error('The project install did not run to its end: it left no exit status.');
-    }
-    if (existsSync(join(evidenceDir, 'install-stopped.txt'))) {
-      throw new Error(
-        `The project install did not finish within ${INSTALL_LIMIT_SECONDS / 60} minutes.`
-      );
-    }
-    // The same signal goes to every repair turn, so the stop is one moment for the whole run.
-    const hardStop = AbortSignal.timeout(msUntilHardStop(startedAt, budget));
-    const note = (line: string) => {
-      console.log(line);
-      appendFileSync(logFile, `${line}\n`);
-    };
-    if (credential.proxied) {
-      const addresses = sandboxAddresses(
-        await outputOf('docker', ['inspect', sandbox.sandboxId ?? ''])
-      );
-      keyProxy = await proxyTheKey(credential.value, {
-        host: addresses.gateway,
-        callerAddress: addresses.container,
-        upstreamOrigin: 'https://api.anthropic.com',
-        log: note,
-      });
-    }
-    const agent = agentFor(
+    const sandbox = await openSandbox(cloneDir, cycleBranch, plan, evidenceDir, progress);
+    ran = await runAgent({
       request,
-      plan.agentEnv,
-      keyProxy?.agentEnv ?? { [credential.name]: credential.value }
-    );
-    if (keyProxy) {
-      const { stdout } = await within(60, 'Reading the sandbox environment', sandbox.exec('env'));
-      if (keyProxy.reaches(stdout, agent)) {
-        throw new Error(
-          'The environment of the sandbox or the variables Sandcastle exports for the agent hold the provider key, so the run stops here.'
-        );
-      }
-      note(
-        'Neither the environment of the sandbox nor the variables Sandcastle exports for the agent hold the provider key.'
-      );
-    }
-    const name = `${request.entry.id}-${request.os}-${request.engine}`;
-    const logging: LoggingOption = {
-      type: 'file',
-      path: logFile,
-      onAgentStreamEvent: (event) => {
-        if (event.type === 'raw') {
-          stream.write(`${event.line}\n`);
-          const started = agent
-            .parseStreamLine(event.line)
-            .find((parsed) => parsed.type === 'session_id');
-          if (started?.type === 'session_id') {
-            sessionId = started.sessionId;
-          }
-        } else if (event.type === 'text' || event.type === 'toolCall') {
-          console.log(liveLine(event));
-        }
-      },
-    };
-    const box = sandbox;
-    // An agent that is stopped in the middle of a turn has printed no answer. This ends what it
-    // runs and asks it once, in the same session, for the answer with what it has.
-    const askAfterStop = async (why: Stop) => {
-      if (!sessionId) {
-        throw new Error('it had not started a session.');
-      }
-      const hostFile = agent.sessionStorage?.hostSessionFilePath(cloneDir, sessionId);
-      const container = box.sandboxId;
-      if (request.sandbox === 'docker' && request.engine === 'claude' && hostFile && container) {
-        await within(
-          60,
-          'Ending what the agent ran',
-          box.exec('kill -TERM -1; sleep 3; kill -KILL -1; true')
-        );
-        saveStoppedClaudeSession({
-          container,
-          sessionId,
-          sandboxCwd: DOCKER_WORKSPACE,
-          sandboxHome: DOCKER_HOME,
-          hostCwd: cloneDir,
-          hostFile,
-        });
-        sessionSource = hostFile;
-      } else if (request.sandbox === 'none') {
-        stopChildren();
-      } else {
-        throw new Error(
-          'only Claude Code in the Docker sandbox, or an agent without a sandbox, can be asked after a stop.'
-        );
-      }
-      const turn = await box.run({
-        agent,
-        name,
-        resumeSession: sessionId,
-        prompt: wrapUpPrompt(why),
-        signal: AbortSignal.timeout(WRAP_UP_MINUTES * 60_000),
-        idleTimeoutSeconds: 300,
-        logging,
-      });
-      return answerAfterRepairs(turn, answerSchema);
-    };
-    stop = { at: hardStop, ask: askAfterStop };
-    agentStarted = true;
-    const first = await sandbox.run({
-      agent,
-      signal: hardStop,
-      name,
-      promptFile: PROMPT_FILE,
-      promptArgs: {
-        REPO: repo,
-        TARGET: target.title,
-        VERSION: request.version,
-        MAJOR: versionLine(request.version).split('.')[0]!,
-        STORYBOOK_DIR: storybookDir,
-        PACKAGE_MANAGER: packageManager,
-        INSTALL_COMMAND: INSTALL_COMMAND[packageManager],
-        UPGRADE_COMMAND: `${target.cli} upgrade --yes`,
-        UPGRADE_NOTE: target.upgradeNote,
-        STORYBOOK_CLI: target.cli,
-        NPX_CLI: target.npxCli,
-        OS: request.os,
-        MIGRATION_FILE: plan.migrationFile,
-        TOOLS_DIR: plan.toolsDir,
-        EVIDENCE_DIR: plan.evidenceDir,
-        CHECKLIST: checklist.text,
-        CHECK_COUNT: String(checks.length),
-        BUDGET_MINUTES: String(budget.minutes),
-        HARD_STOP_MINUTES: String(budget.hardStopMinutes),
-        OUTPUT_SCHEMA: JSON.stringify(z.toJSONSchema(answerSchema), null, 2),
-      },
-      idleTimeoutSeconds: IDLE_MINUTES * 60,
-      logging,
+      cloneDir,
+      sandbox,
+      plan,
+      startedAt,
+      budget,
+      logFile,
+      stream,
+      progress,
+      checklist,
+      target,
+      credential,
     });
-    sessionSource = first.iterations.at(-1)?.sessionFilePath;
-    // The sandbox is still open here, so a repair is one more turn of the same session.
-    const { reading, turn } = await answerAfterRepairs(first, answerSchema);
-    sessionSource = turn.iterations.at(-1)?.sessionFilePath ?? sessionSource;
-    if ('answer' in reading) {
-      output = reading.answer;
-    } else {
-      failure = { status: 'output-invalid', error: reading.problem };
-    }
   } catch (error) {
-    // The sandbox can fail after an agent that had already answered, for example while it collects
-    // the commits.
-    const answer = existsSync(logFile)
-      ? answerOfFinishedAgent(readFileSync(logFile, 'utf8'), answerSchema)
-      : undefined;
-    if (answer) {
-      output = answer;
-      recoveredFrom = String(error);
-    } else if (stop && (stop.at.aborted || isIdleTimeout(error))) {
-      const why = stop.at.aborted
-        ? stopAtTimeLimit(budget.hardStopMinutes)
-        : stopAfterSilence(IDLE_MINUTES);
-      try {
-        const { reading, turn } = await stop.ask(why);
-        sessionSource = turn.iterations.at(-1)?.sessionFilePath ?? sessionSource;
-        if ('answer' in reading) {
-          output = reading.answer;
-          cutShort = `${why.record} Asked for what it had, it gave this answer.`;
-        } else {
-          failure = {
-            status: 'timeout',
-            error: `${why.record} Asked for what it had, it gave no answer that could be used: ${reading.problem}`,
-          };
-        }
-      } catch (problem) {
-        failure = {
-          status: 'timeout',
-          error: `${why.record} It could not be asked for what it had: ${problem instanceof Error ? problem.message : String(problem)}`,
-        };
-      }
-    } else {
-      failure = { status: 'agent-failed', error: String(error) };
-    }
+    ran = { ending: { kind: 'failed', error: String(error) } };
   } finally {
     watch.stop();
-    keyProxy?.close();
-    if (request.sandbox === 'none') {
-      const stopped = stopChildren();
-      if (stopped > 0) {
-        console.warn(`Stopped ${stopped} process(es) that the run had left behind.`);
-      }
-    }
-    // The answer is already read, so a sandbox that cannot be removed does not fail the run.
-    if (sandbox) {
-      await within(600, 'Closing the sandbox', sandbox.close()).catch((error: unknown) => {
-        console.warn(forJobLog(`The sandbox could not be closed: ${String(error)}`));
-        // A close that never returns keeps its docker process, and with it this one, alive. The
-        // record is written within seconds from here.
-        setTimeout(() => process.exit(), 60_000).unref();
-      });
-    }
+    progress.keyProxy?.close();
+    await closeRun(request, progress.sandbox);
     await new Promise((done) => stream.end(done));
   }
 
-  const branchRef = `refs/heads/${cycleBranch}`;
-  const head = git(cloneDir, 'for-each-ref', '--format=%(objectname)', branchRef);
-  const headSha = head && head !== startSha ? head : null;
-  if (headSha) {
-    git(
-      cloneDir,
-      'bundle',
-      'create',
-      join(request.outDir, 'cycle.bundle'),
-      `${startSha}..${branchRef}`
-    );
-  }
+  const headSha = bundleCommits(cloneDir, cycleBranch, startSha, request.outDir);
   return {
-    status: failure?.status ?? 'ok',
-    ...(failure ? { error: failure.error } : {}),
-    ...(recoveredFrom ? { recoveredFrom } : {}),
-    ...(cutShort ? { cutShort } : {}),
+    ...recordOf(ran.ending),
     ...(migrationGuide ? { migrationGuide } : {}),
-    ...(output ? { output } : {}),
     startSha,
     headSha,
-    ...(sessionSource ? { sessionSource } : {}),
+    ...(ran.sessionSource ? { sessionSource: ran.sessionSource } : {}),
     ...(headSha ? { bundle: 'cycle.bundle' } : {}),
   };
 };

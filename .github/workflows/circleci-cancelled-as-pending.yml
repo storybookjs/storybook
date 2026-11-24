@@ -1,0 +1,43 @@
+name: Show cancelled CircleCI jobs as pending
+
+# CircleCI reports a cancelled job as an `error` commit status, which GitHub shows as a failure.
+# A job is cancelled when its workflow is restarted, so this re-posts the same context as
+# `pending` until the new run reports it. Statuses posted with GITHUB_TOKEN do not trigger this
+# workflow again.
+on:
+  status:
+
+permissions: {}
+
+jobs:
+  mark-pending:
+    if: >-
+      github.repository_owner == 'storybookjs' &&
+      github.event.state == 'error' &&
+      startsWith(github.event.context, 'ci/circleci: ') &&
+      contains(github.event.description, 'canceled')
+    runs-on: ubuntu-latest
+    permissions:
+      statuses: write # to re-post the cancelled job's status
+    steps:
+      - name: Re-post status as pending
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.event.sha }}
+          STATUS_ID: ${{ github.event.id }}
+          CONTEXT: ${{ github.event.context }}
+          TARGET_URL: ${{ github.event.target_url }}
+        run: |
+          # A restarted run may have reported this context since; never overwrite its newer status.
+          latest=$(gh api --paginate "repos/$REPO/commits/$SHA/statuses?per_page=100" \
+            --jq '.[] | select(.context == env.CONTEXT) | .id' | head -n 1)
+          if [ "$latest" != "$STATUS_ID" ]; then
+            echo "A newer status replaced the cancellation; leaving it alone."
+            exit 0
+          fi
+          gh api --method POST "repos/$REPO/statuses/$SHA" \
+            -f state=pending \
+            -f context="$CONTEXT" \
+            -f target_url="$TARGET_URL" \
+            -f description='Cancelled, waiting for a new CircleCI run of this job'

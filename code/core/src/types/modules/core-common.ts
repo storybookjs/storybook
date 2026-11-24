@@ -222,8 +222,16 @@ export interface ModuleResolveConfig {
    * terminal.
    */
   alias?: Record<string, string> | Array<{ find: string | RegExp; replacement: string }>;
-  /** Conditions for package `exports` resolution. */
+  /**
+   * Conditions for package `exports` resolution, as the builder applies them to an ESM import:
+   * `import` included and placeholders such as Vite's `development|production` replaced.
+   */
   conditions?: string[];
+  /**
+   * The conditions the builder applies to a CommonJS `require()`, with `require` in place of
+   * `import`. Defaults to `conditions`.
+   */
+  requireConditions?: string[];
 }
 
 export type PackageJson = PackageJsonFromTypeFest & Record<string, any>;
@@ -633,10 +641,12 @@ export interface StorybookFeatures {
   /**
    * Enable component manifest generation for MCP and other tooling integrations.
    *
-   * `@storybook/react`, `@storybook/vue3`, and `@storybook/angular-vite` default this to `true`.
-   * Set it to `false` to opt out.
+   * `@storybook/react`, `@storybook/vue3`, `@storybook/svelte`, and `@storybook/angular-vite` default
+   * this to `true`. Frameworks built on these renderers inherit it, such as `@storybook/nextjs`,
+   * `@storybook/react-vite`, `@storybook/vue3-vite`, and `@storybook/sveltekit`. Set it to `false`
+   * to opt out.
    *
-   * @default false // `true` for React, Vue 3, and `@storybook/angular-vite`
+   * @default false // `true` for React, Vue 3, and Svelte frameworks, and `@storybook/angular-vite`
    */
   componentsManifest?: boolean;
 
@@ -676,9 +686,10 @@ export interface StorybookFeatures {
 
   /**
    * Let story snippets follow the controls. With `docgenServer` on, a snippet in the Code panel,
-   * Canvas › Show code and the MDX `<Source>` block shows the args a control changed.
+   * Canvas › Show code and the MDX `<Source>` block shows the args a control changed. Set it to
+   * `false` to keep snippets static.
    *
-   * @default false
+   * @default true
    * @experimental
    */
   experimentalLiveServerSnippets?: boolean;

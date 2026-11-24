@@ -305,3 +305,51 @@ describe('method inputs', () => {
     });
   });
 });
+
+describe('positional input keys', () => {
+  const handler = async (): Promise<ToolsetOutcome<object, never>> => ({
+    ok: true,
+    data: {},
+    markdown: '',
+  });
+  const input = v.strictObject({
+    files: v.optional(v.array(v.string())),
+    changed: v.optional(v.union([v.boolean(), v.string()])),
+    counts: v.optional(v.array(v.number())),
+  });
+
+  it('accepts a key that takes a list of strings', () => {
+    defineToolset({
+      id: 'positional',
+      description: 'Accepted',
+      methods: {
+        run: { title: 'Run', description: 'Takes files.', input, positional: 'files', handler },
+      },
+    });
+  });
+
+  it('rejects a key that takes one value, or a list of something else', () => {
+    defineToolset({
+      id: 'positional',
+      description: 'Rejected',
+      methods: {
+        scalar: {
+          title: 'Scalar',
+          description: 'The CLI passes a list of strings.',
+          input,
+          // @ts-expect-error — `changed` does not take a list of strings
+          positional: 'changed',
+          handler,
+        },
+        numbers: {
+          title: 'Numbers',
+          description: 'The CLI passes a list of strings.',
+          input,
+          // @ts-expect-error — `counts` takes numbers, and bare arguments are strings
+          positional: 'counts',
+          handler,
+        },
+      },
+    });
+  });
+});

@@ -1,7 +1,10 @@
 import type { Context, FC, PropsWithChildren } from 'react';
 import React, { createContext, useEffect, useState } from 'react';
 
-import type { SyntaxHighlighterFormatTypes } from 'storybook/internal/components';
+import type {
+  SupportedLanguage,
+  SyntaxHighlighterFormatTypes,
+} from 'storybook/internal/components';
 import { SNIPPET_RENDERED } from 'storybook/internal/docs-tools';
 import type { Args, DocsContextProps, StoryId } from 'storybook/internal/types';
 
@@ -15,6 +18,7 @@ export function argsHash(args: Args): ArgsHash {
 export interface SourceItem {
   code: string;
   format?: SyntaxHighlighterFormatTypes;
+  language?: SupportedLanguage;
   /** Why `code` is an incomplete example, when it is one; see `StoryDoc.warning`. */
   warning?: string;
 }
@@ -33,6 +37,7 @@ type SnippetRenderedEvent = {
   source: string;
   args?: Args;
   format?: SyntaxHighlighterFormatTypes;
+  language?: SupportedLanguage;
   warning?: string;
 };
 
@@ -55,6 +60,7 @@ export const SourceContainer: FC<PropsWithChildren<{ channel: DocsContextProps['
         args = undefined,
         source,
         format,
+        language = undefined,
         warning = undefined,
       } = typeof idOrEvent === 'string'
         ? {
@@ -79,7 +85,7 @@ export const SourceContainer: FC<PropsWithChildren<{ channel: DocsContextProps['
           ...current,
           [id]: {
             ...current[id],
-            [hash]: { code: source || '', format, warning },
+            [hash]: { code: source || '', format, language, warning },
           },
         };
 

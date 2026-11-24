@@ -1908,6 +1908,27 @@ describe('MarkdownFormatter - formatManifestsToLists', () => {
       expect(result).toContain('- Theming Guide (theming)');
     });
 
+    it('should list a shallow docs row by its title', () => {
+      const manifests: AllManifests = {
+        componentManifest: { v: 1, components: {} },
+        docsManifest: {
+          v: 1,
+          docs: {
+            'guides-spacing--docs': {
+              id: 'guides-spacing--docs',
+              name: 'Docs',
+              title: 'Guides/Spacing',
+              summary: 'How much space goes between parts of a page.',
+            },
+          },
+        },
+      };
+
+      expect(formatManifestsToLists(manifests)).toContain(
+        '- Guides/Spacing (guides-spacing--docs): How much space goes between parts of a page.'
+      );
+    });
+
     it('should omit docs section when docsManifest is not provided', () => {
       const manifests: AllManifests = {
         componentManifest: {

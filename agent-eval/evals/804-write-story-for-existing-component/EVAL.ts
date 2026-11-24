@@ -1,14 +1,16 @@
 import { describe, test } from 'vitest';
 import {
-  expectDisplayReviewForVisualChange,
-  expectDevServerLeftRunning,
-  expectSkillInvoked,
-  getEvalContext,
-  expectStoryDiscoveryBeforeReview,
-  expectStoryIdsInDisplayReview,
+  expectAnyWorkflowSkillInvoked,
+  expectNoDisplayReview,
+  expectReviewHint,
   expectStoryTestsRanAndPassed,
   expectWorkflowCalls,
+  getEvalContext,
 } from '#test-utils';
+
+// The skills of the workflow in AGENTS.md that this task cannot do without. The tests are a
+// command of the workflow, not a skill, and a review only comes when the user asks for one.
+const WORKFLOW_SKILLS = ['write-stories'];
 
 describe('writing stories for an existing AlertBanner', () => {
   test('runs story tests after the change and finishes with them passing', async () => {
@@ -17,31 +19,20 @@ describe('writing stories for an existing AlertBanner', () => {
     });
   });
 
-  test('uses Storybook story instructions and publishes a display review', () => {
-    expectWorkflowCalls(['ui-workflow', 'review-create']);
-    expectDisplayReviewForVisualChange();
+  test('runs the skills of the workflow, and creates no review unasked', () => {
+    expectWorkflowCalls(WORKFLOW_SKILLS);
+    expectNoDisplayReview();
   });
 
-  test('the review covers the new AlertBanner stories', () => {
-    expectStoryIdsInDisplayReview(['alertbanner']);
-  });
-
-  test('discovers stories through the workflow tools before publishing the review', () => {
-    expectStoryDiscoveryBeforeReview();
+  test('tells the user about the /ui-review skill', () => {
+    expectReviewHint();
   });
 
   describe('depending on the current agent and integration', () => {
     const { integration } = getEvalContext();
 
-    test.skipIf(integration === 'mcp')('invokes the ui-workflow skill', () => {
-      expectSkillInvoked('ui-workflow');
+    test.skipIf(integration === 'mcp')('finds the workflow through the plugin skills', () => {
+      expectAnyWorkflowSkillInvoked();
     });
-
-    test.skipIf(integration !== 'plugin')(
-      'leaves the dev server running when using the plugin',
-      () => {
-        expectDevServerLeftRunning();
-      }
-    );
   });
 });

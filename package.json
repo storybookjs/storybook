@@ -43,6 +43,7 @@
   },
   "resolutions": {
     "@ai-sdk/anthropic": "^2.0.0",
+    "@angular/build/vite": "7.3.8",
     "@babel/runtime": "latest",
     "@babel/traverse": "latest",
     "@babel/types": "^7.28.4",
@@ -88,7 +89,7 @@
     "nx": "^22.6.1",
     "oxfmt": "0.70.0",
     "std-env": "^4.0.0",
-    "vite": "^7.0.4",
+    "vite": "^7.3.8",
     "vitest": "5.0.5"
   },
   "packageManager": "yarn@4.18.0"

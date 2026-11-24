@@ -24,14 +24,12 @@ const StyledAnimatedButton = styled(Button)<
   },
 }));
 
-const menuMapper = ({ api, state }: Combo) => {
-  const { storyId } = state;
-  return {
-    storyId,
-    remount: () => api.emit(FORCE_REMOUNT, { storyId: state.storyId }),
-    api,
-  };
-};
+// Only values, so the consumer re-renders the button when one of them changes and not on
+// every store commit.
+const menuMapper = ({ api, state }: Combo) => ({
+  storyId: state.storyId,
+  api,
+});
 
 export const remountTool: Addon_BaseType = {
   title: 'remount',
@@ -40,13 +38,13 @@ export const remountTool: Addon_BaseType = {
   match: ({ viewMode }) => viewMode === 'story',
   render: () => (
     <Consumer filter={menuMapper}>
-      {({ remount, storyId, api }) => {
+      {({ storyId, api }) => {
         const [isAnimating, setIsAnimating] = useState(false);
         const remountComponent = () => {
           if (!storyId) {
             return;
           }
-          remount();
+          api.emit(FORCE_REMOUNT, { storyId });
         };
 
         useEffect(() => {

@@ -8,8 +8,13 @@ import {
   isKey,
   listAt,
   locate,
+  type CsfPattern,
+  expandPattern,
+  patternPath,
   printCsfPath,
   refusedKey,
+  showsPath,
+  showsPathIn,
   unsafePath,
   valueAt,
 } from './CsfObjectPath.ts';
@@ -232,8 +237,10 @@ export interface CsfObject {
   /**
    * Remove a property and recursively clean up the objects it leaves empty. At an index, remove
    * that one element or argument and keep the list, also when it is left empty. Missing fields are
-   * a no-op. An index on a field that holds a call addresses the call's arguments, whatever the
-   * callee, such as `filter` in `[...].filter(Boolean)`.
+   * a no-op, also one the source does not show where only code it cannot read, such as an imported
+   * spread or a call, could provide it. An index on a field that holds a call addresses the call's
+   * arguments, whatever the callee, such as `filter` in `[...].filter(Boolean)`. An `anyKey`
+   * segment stands for each key of the object there.
    *
    * @example
    * ```ts
@@ -241,9 +248,10 @@ export interface CsfObject {
    * object.remove(['parameters', 'a11y', 'disable']); // { ok: true, changed: true }
    * object.getValue(['parameters']); // undefined
    * object.remove(['parameters']); // { ok: true, changed: false }
+   * object.remove(['argTypes', anyKey, 'defaultValue']); // removes it from each arg
    * ```
    */
-  remove(path: CsfPath): CsfMutationResult;
+  remove(path: CsfPattern): CsfMutationResult;
   /**
    * Rename a property within its parent. An occupied destination produces a diagnostic
    * and leaves the source unchanged.
@@ -440,6 +448,13 @@ class Editor implements CsfObject {
         diagnostic: this.diagnostic('unsupported-member', path, this.anchor()),
       };
     }
+    const { opaque } = this.root();
+    if (opaque) {
+      return {
+        kind: 'unreadable',
+        diagnostic: this.diagnostic(opaque.code, path, opaque.node, opaque.message),
+      };
+    }
     const found = this.locate(path, 'read', false);
     if (found.ok === false) {
       return { kind: 'unreadable', diagnostic: this.diagnostic(found.code, path, found.node) };
@@ -449,7 +464,7 @@ class Editor implements CsfObject {
   }
 
   set(path: CsfPath, value: CsfValue<CsfExpression>): CsfMutationResult {
-    return this.atomic(() => this.setValue(path, value));
+    return this.atomic(path, () => this.setValue(path, value));
   }
 
   private setValue(path: CsfPath, value: CsfValue<CsfExpression>): CsfMutationResult {
@@ -487,11 +502,11 @@ class Editor implements CsfObject {
   }
 
   append(path: CsfPath, value: CsfValue<CsfExpression>): CsfMutationResult {
-    return this.atomic(() => this.addItem(path, value, 'append'));
+    return this.atomic(path, () => this.addItem(path, value, 'append'));
   }
 
   prepend(path: CsfPath, value: CsfValue<CsfExpression>): CsfMutationResult {
-    return this.atomic(() => this.addItem(path, value, 'prepend'));
+    return this.atomic(path, () => this.addItem(path, value, 'prepend'));
   }
 
   private addItem(
@@ -518,6 +533,11 @@ class Editor implements CsfObject {
   }
 
   inspectList(path: CsfPath): CsfListInspection {
+    const { opaque } = this.root();
+    if (opaque) {
+      const diagnostic = this.diagnostic(opaque.code, path, opaque.node, opaque.message);
+      return { kind: 'refused', diagnostic };
+    }
     const list = listAt(this.editor, this.root(), path);
     if (list.ok === false) {
       const diagnostic = this.diagnostic(list.code, path, list.node, list.message);
@@ -536,7 +556,7 @@ class Editor implements CsfObject {
     path: CsfPath,
     derive: (value: CsfExpression) => CsfExpression | undefined
   ): CsfMutationResult {
-    return this.atomic(() => this.transformValue(path, derive));
+    return this.atomic(path, () => this.transformValue(path, derive));
   }
 
   private transformValue(
@@ -571,8 +591,25 @@ class Editor implements CsfObject {
     return this.commit(path);
   }
 
-  remove(path: CsfPath): CsfMutationResult {
-    return this.atomic(() => this.removeValue(path));
+  remove(path: CsfPattern): CsfMutationResult {
+    return this.atomic(path, () => this.removeMatching(path), 'remove');
+  }
+
+  // Removes each path a pattern stands for, all found before the first edit.
+  private removeMatching(path: CsfPattern): CsfMutationResult {
+    const expanded = expandPattern(this.editor, this.root(), path);
+    if (expanded.ok === false) {
+      return this.failure(expanded.code, path, expanded.node, expanded.message);
+    }
+    let changed = false;
+    for (const each of expanded.paths) {
+      const removed = this.removeValue(each);
+      if (!removed.ok) {
+        return removed;
+      }
+      changed ||= removed.changed;
+    }
+    return { ok: true, changed };
   }
 
   private removeValue(path: CsfPath): CsfMutationResult {
@@ -581,7 +618,9 @@ class Editor implements CsfObject {
     }
     const inspected = this.locate(path);
     if (inspected.ok === false) {
-      return this.failure(inspected.code, path, inspected.node);
+      return showsPath(this.editor, this.root().properties, path)
+        ? this.failure(inspected.code, path, inspected.node)
+        : { ok: true, changed: false };
     }
     if (inspected.kind === 'item') {
       // An emptied list stays: `tags: []` is not a missing `tags`.
@@ -609,7 +648,7 @@ class Editor implements CsfObject {
   }
 
   move(from: CsfPath, to: CsfPath): CsfMutationResult {
-    return this.atomic(() => this.moveValue(from, to));
+    return this.atomic(from, () => this.moveValue(from, to));
   }
 
   private moveValue(from: CsfPath, to: CsfPath): CsfMutationResult {
@@ -686,7 +725,7 @@ class Editor implements CsfObject {
   }
 
   group(path: CsfPath, names: readonly string[]): CsfMutationResult {
-    return this.atomic(() => this.groupValues(path, names));
+    return this.atomic(path, () => this.groupValues(path, names));
   }
 
   private groupValues(path: CsfPath, names: readonly string[]): CsfMutationResult {
@@ -918,14 +957,14 @@ class Editor implements CsfObject {
 
   private diagnostic(
     code: CsfMutationDiagnosticCode,
-    path: CsfPath,
+    path: CsfPattern,
     node: Node,
     message = `Cannot mutate ${printCsfPath(path)} because the target contains ${code.replaceAll('-', ' ')}`
   ): CsfMutationDiagnostic {
     return {
       code,
       target: this.target,
-      path: [...path],
+      path: patternPath(path),
       message,
       ...(node !== this.editor.program
         ? { loc: locationOf(this.editor.code, node.start, node.end) }
@@ -933,7 +972,7 @@ class Editor implements CsfObject {
     };
   }
 
-  private failure(code: CsfMutationDiagnosticCode, path: CsfPath, node: Node, message?: string) {
+  private failure(code: CsfMutationDiagnosticCode, path: CsfPattern, node: Node, message?: string) {
     const diagnostic = this.diagnostic(code, path, node, message);
     this.reportDiagnostic(diagnostic);
     // Unlike a read, a refused mutation rolls back the transaction it runs in.
@@ -941,13 +980,34 @@ class Editor implements CsfObject {
     return { ok: false as const, changed: false as const, diagnostic };
   }
 
+  // An opaque story takes no edit, except the removal of a field its value does not show.
+  private refusedOpaque(path: CsfPattern, access?: 'remove'): CsfMutationResult | undefined {
+    const { opaque } = this.root();
+    if (!opaque) {
+      return undefined;
+    }
+    if (
+      access === 'remove' &&
+      !unsafePath(patternPath(path)) &&
+      !showsPathIn(this.editor, opaque.node, path) &&
+      !showsPath(this.editor, opaque.assignments ?? [], path)
+    ) {
+      return { ok: true, changed: false };
+    }
+    return this.failure(opaque.code, path, opaque.node, opaque.message);
+  }
+
   // Runs a mutation in a transaction of its own, so a refused or throwing one leaves the file as
   // it was, also after some of its edits were committed. A refusal still rolls back the
   // transaction around it.
-  private atomic(mutation: () => CsfMutationResult): CsfMutationResult {
+  private atomic(
+    path: CsfPattern,
+    mutation: () => CsfMutationResult,
+    access?: 'remove'
+  ): CsfMutationResult {
     let result = { ok: true, changed: false } as CsfMutationResult;
     this.editor.transaction(() => {
-      result = mutation();
+      result = this.refusedOpaque(path, access) ?? mutation();
     });
     if (!result.ok) {
       this.editor._refuse();

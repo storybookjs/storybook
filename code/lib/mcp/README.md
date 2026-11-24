@@ -88,9 +88,9 @@ A fetch-compatible request handler for your `/mcp` endpoint.
 ##### Behavior
 
 - Registers these MCP tools:
-  - [`docs-list`](https://storybook.js.org/docs/next/ai/mcp/overview/#docs-list)
-  - [`docs-show`](https://storybook.js.org/docs/next/ai/mcp/overview/#docs-show)
-  - [`docs-show-story`](https://storybook.js.org/docs/next/ai/mcp/overview/#docs-show-story)
+  - [`docs-list`](https://storybook.js.org/docs/next/ai/reference/mcp-server/#docs)
+  - [`docs-show`](https://storybook.js.org/docs/next/ai/reference/mcp-server/#docs)
+  - [`docs-show-story`](https://storybook.js.org/docs/next/ai/reference/mcp-server/#docs)
 - Uses HTTP transport from [`@tmcp/transport-http`](https://github.com/paoloricciuti/tmcp/).
 - For each request, the handler always passes the current `Request` as `context.request`.
 - Per-request `context` overrides handler-level `options` for:
@@ -344,7 +344,7 @@ Type:
 	Promise<void>;
 ```
 
-Registers the [list tool](https://storybook.js.org/docs/next/ai/mcp/overview/#docs-list) that returns all component/docs IDs from manifests.
+Registers the [list tool](https://storybook.js.org/docs/next/ai/reference/mcp-server/#docs) that returns all component/docs IDs from manifests.
 
 #### `addGetDocumentationTool`
 
@@ -358,7 +358,7 @@ Type:
 ) => Promise<void>;
 ```
 
-Registers [documentation lookup](https://storybook.js.org/docs/next/ai/mcp/overview/#docs-show) by component/docs `id`.
+Registers [documentation lookup](https://storybook.js.org/docs/next/ai/reference/mcp-server/#docs) by component/docs `id`.
 
 When `options.multiSource` is `true`, the tool schema takes an optional `storybookId` input, defaulting to `local`. When it is omitted, the schema follows the request's `sources`.
 
@@ -374,4 +374,4 @@ Type:
 ) => Promise<void>;
 ```
 
-Registers [story-level documentation lookup](https://storybook.js.org/docs/next/ai/mcp/overview/#docs-show-story) for a specific story variant by `componentId` and `storyName`.
+Registers [story-level documentation lookup](https://storybook.js.org/docs/next/ai/reference/mcp-server/#docs) for a specific story variant by `componentId` and `storyName`.

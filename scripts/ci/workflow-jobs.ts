@@ -5,6 +5,7 @@ import {
   check,
   commonJobsNoOpJob,
   docgenMemoryGate,
+  docgenNativeTypeScriptFixtures,
   docgenPerfGate,
   knip,
   lint,
@@ -37,7 +38,14 @@ export function getJobs(workflow: Workflow, baseRef: string): JobOrNoOpJob[] {
     const initEmpty = getInitEmpty(workflow);
 
     if (isWorkflowOrAbove(workflow, 'daily')) {
-      jobs.push(build_windows, testUnit_windows, docgenMemoryGate, docgenPerfGate, node26Smoke);
+      jobs.push(
+        build_windows,
+        testUnit_windows,
+        docgenMemoryGate,
+        docgenPerfGate,
+        docgenNativeTypeScriptFixtures,
+        node26Smoke
+      );
     }
 
     jobs.push(

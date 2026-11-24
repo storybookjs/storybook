@@ -193,6 +193,25 @@ export const Primary = { args: { label: LABEL } };
     `);
   });
 
+  it('carries the value of an arg that names a destructured local const', async () => {
+    const story = await primaryStory(`
+const defaults = { label: 'Hi', size: 'large' };
+const { label } = defaults;
+const { label: _, ...rest } = defaults;
+export const Primary = { args: { label, ...rest } };
+`);
+    expect(story?.snippet).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
+        <MyButton label="Hi" size="large" />
+      </template>"
+    `);
+    expect(story?.warning).toBeUndefined();
+  });
+
   it('reads an args object the story names instead of writing out', async () => {
     const story = await primaryStory(`
 const primaryArgs = { active: true, label: 'Hi' };

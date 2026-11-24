@@ -4,8 +4,9 @@ import { logger } from 'storybook/internal/client-logger';
 import type { StoryObj } from '@storybook/svelte';
 import { mount, unmount, type Component } from 'svelte';
 
-import type { Cmp, ComponentAnnotations, StoriesRepository } from '../types.ts';
+import type { ArgSources, Cmp, ComponentAnnotations, StoriesRepository } from '../types.ts';
 import { getStoryChain } from '../utils/story-chain.ts';
+import { snapshotArg } from './sync-story-args.ts';
 
 import StoriesExtractor from '@storybook/svelte/internal/svelte-csf/StoriesExtractor.svelte';
 import StoryRenderer from '@storybook/svelte/internal/svelte-csf/StoryRenderer.svelte';
@@ -60,6 +61,12 @@ export const createRuntimeStories = (Stories: Component, meta: ComponentAnnotati
     const [playExportName, playStory] = chain.find(([, { play }]) => play) ?? [];
     const [asChildExportName, asChildStory] =
       chain.find(([, story]) => story.asChild !== undefined) ?? [];
+    const argSources: ArgSources = {};
+    for (const [name, { args }] of [...chain].reverse()) {
+      for (const [key, value] of Object.entries(args ?? {})) {
+        argSources[key] = { exportName: name, value: snapshotArg(value) };
+      }
+    }
     // The props of the `<Story>` component that are not story annotations
     const { template: _template, asChild: _asChild, extend: _extend, ...annotations } = story;
 
@@ -72,6 +79,7 @@ export const createRuntimeStories = (Stories: Component, meta: ComponentAnnotati
           playExportName,
           asChildExportName,
           asChild: asChildStory?.asChild ?? false,
+          argSources,
           Stories,
           storyContext,
           args,

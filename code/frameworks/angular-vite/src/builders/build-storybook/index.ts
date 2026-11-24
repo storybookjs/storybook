@@ -166,9 +166,12 @@ export const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = async (
   // (spawned later inside buildStaticStandalone with extendEnv: true) so
   // its framework preset sees the same Angular config the parent build
   // sees.
-  process.env.STORYBOOK_ANGULAR_BUILDER_OPTIONS_JSON = JSON.stringify(
-    standaloneOptions.angularBuilderOptions
-  );
+  process.env.STORYBOOK_ANGULAR_BUILDER_OPTIONS_JSON = JSON.stringify({
+    ...standaloneOptions.angularBuilderOptions,
+    // Style and load paths in the target options are workspace-root-relative; the addon-vitest
+    // child runs with a different Vite root, so it needs the workspace root to resolve them.
+    workspaceRoot: context.workspaceRoot,
+  });
 
   await runInstance({ ...standaloneOptions, mode: 'static' });
   if (logTracker.shouldWriteLogsToFile) {

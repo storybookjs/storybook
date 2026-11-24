@@ -64,14 +64,14 @@
           "summary": "'medium'"
         },
         "type": {
-          "summary": "\"large\" | \"medium\" | \"small\""
+          "summary": "\"small\" | \"medium\" | \"large\""
         }
       },
       "type": {
         "name": "enum",
-        "raw": "\"large\" | \"medium\" | \"small\"",
+        "raw": "\"small\" | \"medium\" | \"large\"",
         "required": false,
-        "value": ["large", "medium", "small"]
+        "value": ["small", "medium", "large"]
       }
     }
   },
@@ -79,5 +79,5 @@
   "id": "example-button",
   "jsDocTags": {},
   "name": "Button",
-  "path": "./src/stories/Button.stories.ts"
+  "path": "./src/stories/Button.stories.tsx"
 }

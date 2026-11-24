@@ -20,7 +20,8 @@ export const removeLegacyFeatureFlags: Fix = {
   transform: () => [
     {
       filter: { kind: ['main'], code: /argTypeTargetsV7|disallowImplicitActionsInRenderV8/ },
-      // `remove` fails on a spread in `features`, even when the flag is only mentioned in a comment.
+      // `remove` fails on a local spread in `features` that may hold the flag, also when the flag
+      // is only mentioned in a comment.
       editConfig: (main) => {
         if (main.getFieldNode(['features', 'argTypeTargetsV7'])) {
           main.remove(['features', 'argTypeTargetsV7']);

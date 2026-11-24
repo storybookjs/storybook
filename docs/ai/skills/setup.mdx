@@ -27,9 +27,9 @@ Copy this prompt into your agent's chat:
 
 <CodeSnippets path="prompt-install-storybook.md" />
 
-The agent runs [`storybook init`](../../api/cli-options.mdx#init), which adds Storybook and [installs the skills](../connect.mdx#install-the-skills). Then the agent follows the instructions from the `storybook-setup` skill to configure Storybook for your project.
+The agent runs [`storybook init`](../../api/cli-options.mdx#init), which adds Storybook and [installs the skills](../connect.mdx#install-the-skills). Then the agent follows the instructions from the `/storybook-setup` skill to configure Storybook for your project.
 
-If Storybook is already installed, ask your agent to "Use the storybook-setup skill". If your project uses a version of Storybook older than 11, the agent asks you before it upgrades.
+If Storybook is already installed, ask your agent to "Use the /storybook-setup skill". If your project uses a version of Storybook older than 11, the agent asks you before it upgrades.
 
 ## What the agent does
 
@@ -63,7 +63,7 @@ Then:
 
 ## Next steps
 
-- Ask your agent to change some UI. It follows the [UI workflow](./ui-workflow.mdx).
+- Ask your agent to change some UI. It follows the [Storybook section in `AGENTS.md`](../agents-md.mdx).
 - Follow the [best practices](../best-practices.mdx) to make your stories and docs more useful to people and agents.
 
 </If>
@@ -84,7 +84,7 @@ For other frameworks, [install Storybook](../../get-started/install.mdx) yoursel
 **More AI resources**
 
 - [Connect your agent](../connect.mdx)
-- [UI workflow](./ui-workflow.mdx)
+- [The AGENTS.md section](../agents-md.mdx)
 - [Component docs](./component-docs.mdx)
 - [Write stories](./write-stories.mdx)
 - [Test stories](./test-stories.mdx)

@@ -219,14 +219,6 @@ export const CHECKS = [
     probe:
       '`n/a` when a `package.json` of the project lists `@testing-library/dom` as a direct dependency. Otherwise ask the package manager which packages depend on it: `npm ls @testing-library/dom`, `pnpm why @testing-library/dom`, `yarn why @testing-library/dom` or `bun why @testing-library/dom`. `pass` when it is not installed, or when only packages other than `storybook` bring it in, for example `@testing-library/svelte`; name them in the note. `fail` when `storybook` is one of the packages that depend on it.',
   },
-  {
-    id: 'test.test-runner',
-    label: '`@storybook/test-runner` still runs and warns that it is no longer supported',
-    phase: 'test',
-    tier: 'extended',
-    probe:
-      'Check `package.json` for `@storybook/test-runner`. `n/a` when absent. Otherwise run exactly `npx test-storybook --url http://localhost:6008 --ci` against the static build, with a bounded wait, and save the output to `test-runner.log`. Do not add `--index-json`: it skips the preview config that the runner reads. It must finish and print a warning that says the test runner is no longer supported.',
-  },
 ] as const satisfies readonly CheckDefinition[];
 
 export type CheckId = (typeof CHECKS)[number]['id'];
@@ -240,7 +232,7 @@ export const checksFor = (tier: Tier) =>
     )
   );
 
-export const renderChecklist = (tier: Tier): string =>
-  checksFor(tier)
+export const renderChecklist = (checks: ReturnType<typeof checksFor>): string =>
+  checks
     .map((check) => `- \`${check.id}\` (${check.phase}): ${check.label}. ${check.probe}`)
     .join('\n');

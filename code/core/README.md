@@ -18,7 +18,7 @@ Storybook is a frontend workshop for building UI components and pages in isolati
 </p>
 
 <center>
-  <img src="https://raw.githubusercontent.com/storybookjs/storybook/refs/heads/release-6-5/media/storybook-intro.gif" width="100%" />
+  <img src="https://raw.githubusercontent.com/storybookjs/storybook/refs/heads/next/media/storybook-intro.gif" alt="Storybook lets you build UI components and pages in isolation, mock hard-to-reach edge cases as stories, and use stories as tests" width="100%" />
 </center>
 
 ---

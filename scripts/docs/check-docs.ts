@@ -1,5 +1,6 @@
 import path from 'pathe';
 import fs from 'node:fs/promises';
+import { resolve } from 'node:path';
 import {
   getMdxFiles,
   getSnippetFiles,
@@ -387,7 +388,8 @@ export async function checkRedundantSidebarTitle(docsDir: string): Promise<DocLi
 export async function checkResourcesSkillsIndex(docsDir: string): Promise<DocLineError[]> {
   const mdxFiles = await getMdxFiles(docsDir);
   const errors: DocLineError[] = [];
-  const skillsIndex = path.join(docsDir, 'ai/skills/index.mdx');
+  // getMdxFiles returns paths under the glob's resolved cwd, which carries the drive on Windows
+  const skillsIndex = path.join(resolve(docsDir), 'ai/skills/index.mdx');
 
   for (const file of mdxFiles) {
     const lines = await readFileLines(file);

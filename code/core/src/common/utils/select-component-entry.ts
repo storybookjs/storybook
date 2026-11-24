@@ -29,6 +29,11 @@ export function isEligibleStoryEntry(entry: IndexEntry): boolean {
   return entry.type === 'story' && entry.subtype === 'story';
 }
 
+/** Whether an index entry is in the manifests, which the docs tools and the MCP read. */
+export function isManifestEntry(entry: IndexEntry): boolean {
+  return entry.tags?.includes(Tag.MANIFEST) ?? false;
+}
+
 /**
  * CSF story file path used for component resolution — the story entry's `importPath`, or the first
  * `storiesImports` entry for attached MDX docs (same rule as the React component manifest generator).

@@ -13,7 +13,10 @@
 import type { StoryIndex } from 'storybook/internal/types';
 
 import { getComponentIdFromEntry } from '../../../../common/utils/component-id.ts';
-import { selectComponentEntriesByComponentId } from '../../../../common/utils/select-component-entry.ts';
+import {
+  isManifestEntry,
+  selectComponentEntriesByComponentId,
+} from '../../../../common/utils/select-component-entry.ts';
 import {
   OpenServiceDocgenMissingComponentError,
   OpenServiceMissingServiceError,
@@ -54,9 +57,7 @@ export type ServiceDocsAccessOptions = {
 };
 
 function manifestEntries(index: StoryIndex) {
-  return Object.values(index.entries).filter(
-    (entry) => entry.tags?.includes(Tag.MANIFEST) ?? false
-  );
+  return Object.values(index.entries).filter(isManifestEntry);
 }
 
 /**
@@ -160,7 +161,9 @@ export function createServiceDocsAccess({
           async (id) =>
             [
               id,
-              await loadOptionalComponentPayload(storyDocs.queries.storyDocs.loaded({ id })),
+              await loadOptionalComponentPayload(
+                storyDocs.queries.storyDocs.loaded({ id, scope: 'manifest' })
+              ),
             ] as const
         )
       )
@@ -212,7 +215,9 @@ export function createServiceDocsAccess({
     const mdx = getMdx();
     const [docgenPayload, storyDocsPayload] = await Promise.all([
       loadOptionalComponentPayload(getDocgen().queries.docgen.loaded({ id })),
-      loadOptionalComponentPayload(getStoryDocs().queries.storyDocs.loaded({ id })),
+      loadOptionalComponentPayload(
+        getStoryDocs().queries.storyDocs.loaded({ id, scope: 'manifest' })
+      ),
     ]);
 
     const hasAttachedDocs = (classification.attachedDocsByComponent.get(id)?.length ?? 0) > 0;

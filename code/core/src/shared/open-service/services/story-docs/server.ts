@@ -1,5 +1,8 @@
 import type { ChannelLike } from 'storybook/internal/channels';
-import { getStoryImportPathFromEntry } from '../../../../common/utils/select-component-entry.ts';
+import {
+  getStoryImportPathFromEntry,
+  isManifestEntry,
+} from '../../../../common/utils/select-component-entry.ts';
 import type { IndexEntry, StoryIndex } from '../../../../types/modules/indexer.ts';
 import {
   type ExtractionInput,
@@ -7,14 +10,14 @@ import {
   subscribeExtractionServiceToModuleGraphChanges,
   toExtractionError,
 } from '../extraction-service.server.ts';
-import { storyDocsServiceDef } from './definition.ts';
+import { type StoryDocsServiceState, storyDocsServiceDef } from './definition.ts';
 import {
   isSnippetTemplate,
   prependToTemplate,
   stripHoles,
 } from '../../../../docs-tools/snippetTemplate.ts';
 import { importPrefix } from './snippet.ts';
-import type { StoryDoc, StoryDocsPayload, StoryDocsProvider } from './types.ts';
+import type { StoryDoc, StoryDocsById, StoryDocsPayload, StoryDocsProvider } from './types.ts';
 
 export type RegisterStoryDocsServiceOptions = {
   /**
@@ -114,6 +117,34 @@ function withStoriesFromEveryFile(provider: StoryDocsProvider, liveSnippets: boo
   };
 }
 
+// Stores the stories in the manifests in `components`, which the components manifest points at, and
+// the others in `nonManifestStories`, so each story is stored once.
+function writeComponent(
+  state: StoryDocsServiceState,
+  key: string,
+  extracted: { payload: StoryDocsPayload; input: ExtractionInput } | undefined
+) {
+  if (!extracted) {
+    delete state.components[key];
+    delete state.nonManifestStories[key];
+    return;
+  }
+  const { payload, input } = extracted;
+  const manifestStoryIds = new Set(input.storyEntries.filter(isManifestEntry).map(({ id }) => id));
+  const manifestStories: StoryDocsById = {};
+  const nonManifestStories: StoryDocsById = {};
+  for (const [id, story] of Object.entries(payload.stories)) {
+    const target = manifestStoryIds.has(id) ? manifestStories : nonManifestStories;
+    target[id] = story;
+  }
+  state.components[key] = { ...payload, stories: manifestStories };
+  if (Object.keys(nonManifestStories).length > 0) {
+    state.nonManifestStories[key] = nonManifestStories;
+  } else {
+    delete state.nonManifestStories[key];
+  }
+}
+
 /** Registers the `core/story-docs` open service against the process-global registry. */
 export function registerStoryDocsService(options: RegisterStoryDocsServiceOptions) {
   return registerExtractionService(storyDocsServiceDef, {
@@ -129,6 +160,10 @@ export function registerStoryDocsService(options: RegisterStoryDocsServiceOption
     queryName: 'storyDocs',
     extractCommand: 'extractStoryDocs',
     extractAllCommand: 'extractAllStoryDocs',
+    toQueryInput: (id) => ({ id, scope: 'all' as const }),
+    writeComponent,
+    // A change to a story's `manifest` tag moves the story between the two parts of the state.
+    storyKey: (entry) => (isManifestEntry(entry) ? entry.id : `${entry.id}!`),
   });
 }
 
@@ -139,7 +174,6 @@ export function subscribeStoryDocsToModuleGraphChanges(options: {
 }) {
   subscribeExtractionServiceToModuleGraphChanges(storyDocsServiceDef, {
     ...options,
-    queryName: 'storyDocs',
     allQueryName: 'storyDocsForAllComponents',
     extractCommand: 'extractStoryDocs',
   });

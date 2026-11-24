@@ -107,10 +107,11 @@ function getFallbackImport(packageName: string | undefined, componentName: strin
 }
 
 /**
- * Rewrites the absolute `fileName`s the RCM extractor records on each prop's `parent` /
- * `declarations` into paths relative to the current working directory, so the emitted docgen (both
- * the component manifest and the docgen service) stays portable and machine-independent. Returns a
- * new {@link ComponentDoc}; the cached extractor result is left untouched.
+ * Rewrites the absolute `filePath` and the `fileName`s the RCM extractor records on each prop's
+ * `parent` / `declarations` into paths relative to the current working directory, so the emitted
+ * docgen (both the component manifest and the docgen service) stays portable and
+ * machine-independent. Returns a new {@link ComponentDoc}; the cached extractor result is left
+ * untouched.
  */
 function relativizeComponentMetaPaths(doc: ComponentDoc): ComponentDoc {
   const relativize = (fileName: string) => path.relative(process.cwd(), fileName);
@@ -127,6 +128,7 @@ function relativizeComponentMetaPaths(doc: ComponentDoc): ComponentDoc {
 
   return {
     ...doc,
+    filePath: relativize(doc.filePath),
     props: Object.fromEntries(
       Object.entries(doc.props).map(([name, prop]) => [name, relativizeProp(prop)])
     ),

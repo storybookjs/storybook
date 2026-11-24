@@ -12,7 +12,7 @@ export type TestStoriesSkillInputs = {
 // Said before the first run, so an agent in a sandbox does not spend a run on finding out. The
 // command says the same when the port is refused.
 const SANDBOX =
-  '`test run` opens a local port for the browser that runs the tests. In a sandbox that blocks ports, request escalated permissions for it on the first attempt. The other Storybook commands run inside the sandbox.';
+  'In a sandbox, only `test run` needs escalated permissions: it opens a local port for the browser that runs the tests.';
 
 // The `AGENTS.md` section names the command itself, so this skill is for an agent that opens it by
 // name. It names the same forms of the command, and what the result says.

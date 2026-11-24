@@ -85,7 +85,7 @@ describe('buildTestStoriesSkill', () => {
 
       Only story files match a file argument: a component file matches nothing, and \`--changed\` finds the stories that depend on it. Files and \`--changed\` combine, with the files first (the argument after \`--changed\` is its ref): \`test run src/Button.stories.tsx --changed\` runs the changed stories in those files. \`--a11y false\` leaves out the accessibility checks, \`--json\` prints the result as JSON, and \`--help\` lists every argument.
 
-      \`test run\` opens a local port for the browser that runs the tests. In a sandbox that blocks ports, request escalated permissions for it on the first attempt. The other Storybook commands run inside the sandbox.
+      In a sandbox, only \`test run\` needs escalated permissions: it opens a local port for the browser that runs the tests.
 
       A run ends with \`## Result\`: what was selected, then \`Passed: …\` or \`Failed: …\`. Each failing story is under \`## Failing Stories\` with its error, and errors outside a story are under \`## Unhandled Errors\`. When nothing is selected, the output is one line that says so. The command exits with 1 when a story fails, an error occurs outside a story, or a file argument matches no story file; with \`--changed\`, nothing to run exits with 0.
 

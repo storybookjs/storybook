@@ -172,10 +172,16 @@ export async function doInitiate(options: CommandOptions): Promise<
   // After dependencies are installed, we must not use the dependency collector anymore
   dependencyCollector = null;
 
+  // A failed install is blocking: addon configuration, skills and the dev server all need the
+  // dependencies on disk, and callers check the exit code to tell whether init succeeded.
+  if (dependencyInstallationResult.status === 'failed') {
+    throw new HandledError('Dependency installation failed');
+  }
+
   // Generators may need to perform tasks once dependencies are installed (e.g. running a CLI that
   // ships with one of those dependencies). We only run this when the install actually succeeded
   // and we didn't skip it, otherwise the dependency-provided binary likely isn't available.
-  if (postInstall && !options.skipInstall && dependencyInstallationResult.status === 'success') {
+  if (postInstall && !options.skipInstall) {
     try {
       await postInstall();
     } catch (err) {
@@ -191,7 +197,7 @@ export async function doInitiate(options: CommandOptions): Promise<
     options,
   });
 
-  if (configDir && !options.skipInstall && dependencyInstallationResult.status === 'success') {
+  if (configDir && !options.skipInstall) {
     try {
       const { previewConfigPath } = getConfigInfo(configDir);
       if (previewConfigPath) {
@@ -262,11 +268,7 @@ export async function doInitiate(options: CommandOptions): Promise<
   }
 
   return {
-    shouldRunDev:
-      !!options.dev &&
-      !options.skipInstall &&
-      shouldRunDev !== false &&
-      dependencyInstallationResult.status === 'success',
+    shouldRunDev: !!options.dev && !options.skipInstall && shouldRunDev !== false,
     shouldOnboard: newUser,
     projectType,
     packageManager,

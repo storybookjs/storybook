@@ -1,5 +1,3 @@
-import { readFile } from 'node:fs/promises';
-
 import {
   getStorybookInfo,
   readDependencyManifest,
@@ -7,8 +5,7 @@ import {
 } from 'storybook/internal/common';
 import type { StorybookConfig } from 'storybook/internal/types';
 
-import * as pkg from 'empathic/package';
-import { isAbsolute, normalize, resolve } from 'pathe';
+import { normalize, resolve } from 'pathe';
 import type { PackageJson } from 'type-fest';
 
 import { cleanPaths } from './sanitize.ts';
@@ -25,25 +22,14 @@ const cleanAndSanitizePath = (path: string) => {
   return pnpmDir ? pnpmDir[1].replace('+', '/') : cleaned;
 };
 
-const readFrameworkPackageJson = async (
-  frameworkPackage: string,
-  configDir: string
-): Promise<PackageJson | undefined> => {
+const readFrameworkPackageJson = (frameworkPackage: string, configDir: string) => {
   const frameworkPath = normalize(frameworkPackage);
   // A pnpm virtual-store dir holds no package.json of its own, so resolve its package by name
-  if (!isAbsolute(frameworkPath) || /\/\.pnpm\/[^/]+$/.test(frameworkPath)) {
-    // Resolve from the config dir, where Storybook resolves the framework, not from the cwd
-    return readDependencyManifest(resolve(configDir), cleanAndSanitizePath(frameworkPath));
-  }
-  const packageJsonPath = pkg.up({ cwd: frameworkPath });
-  if (!packageJsonPath) {
-    return undefined;
-  }
-  try {
-    return JSON.parse(await readFile(packageJsonPath, 'utf-8'));
-  } catch {
-    return undefined;
-  }
+  const framework = /\/\.pnpm\/[^/]+$/.test(frameworkPath)
+    ? cleanAndSanitizePath(frameworkPath)
+    : frameworkPath;
+  // Resolve from the config dir, where Storybook resolves the framework, not from the cwd
+  return readDependencyManifest(resolve(configDir), framework);
 };
 
 /**

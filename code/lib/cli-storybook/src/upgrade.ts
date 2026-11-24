@@ -260,13 +260,25 @@ function logUpgradeResults(
     doctorResults
   );
 
-  // A dry run applies no automigration, so its only failures are automigration checks.
-  if (failedProjects.length > 0) {
+  if (dryRun) {
+    // A failure the dry run predicts takes precedence over saying that nothing changed.
+    const wouldFail =
+      failedProjects.length > 0 ||
+      Object.values(projectResults).some(
+        ({ dryRunReport }) => (dryRunReport?.fail.length ?? 0) > 0
+      );
+    if (failedProjects.length > 0) {
+      logTracker.enableLogWriting();
+    }
+    if (wouldFail) {
+      logger.error('Some automigrations would fail');
+    } else {
+      logger.step(CLI_COLORS.success('Dry run finished: no files were changed.'));
+    }
+  } else if (failedProjects.length > 0) {
     logTracker.enableLogWriting();
     logger.step(
-      dryRun
-        ? 'Dry run finished: no files were changed, but some automigration checks failed. Please see the debug logs for more details.'
-        : 'The upgrade is complete, but some projects failed to upgrade or migrate completely. Please see the debug logs for more details.'
+      'The upgrade is complete, but some projects failed to upgrade or migrate completely. Please see the debug logs for more details.'
     );
     // Display appropriate messages based on results
     if (successfulProjects.length > 0) {
@@ -278,9 +290,7 @@ function logUpgradeResults(
 
     const failedProjectsList = failedProjects.map((dir) => `  • ${shortenPath(dir)}`).join('\n');
     logger.log(
-      dryRun
-        ? `${CLI_COLORS.error('Failed automigration checks:')}\nReview the upgrade output for details.\n${failedProjectsList}`
-        : `${CLI_COLORS.error('Failed to upgrade:')}\nSome automigrations failed or skipped files. Review the upgrade output for details.\n${failedProjectsList}`
+      `${CLI_COLORS.error('Failed to upgrade:')}\nSome automigrations failed or skipped files. Review the upgrade output for details.\n${failedProjectsList}`
     );
 
     if (projectsWithNoFixes.length > 0) {
@@ -289,9 +299,7 @@ function logUpgradeResults(
     }
   } else {
     const isHealthy = Object.values(doctorResults).every((result) => result.status === 'healthy');
-    if (dryRun) {
-      logger.step(CLI_COLORS.success('Dry run finished: no files were changed.'));
-    } else if (isHealthy) {
+    if (isHealthy) {
       logger.step(`${CLI_COLORS.success('Your project(s) have been upgraded successfully! 🎉')}`);
     } else {
       logger.step(

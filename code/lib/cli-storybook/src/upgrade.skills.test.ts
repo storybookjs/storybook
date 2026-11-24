@@ -182,4 +182,28 @@ describe('upgrade: refreshing the skills', () => {
       expect.objectContaining({ source: 'refresh', dryRun: true })
     );
   });
+
+  it('ends a dry run with an error when an automigration would fail', async () => {
+    vi.mocked(runAutomigrations).mockResolvedValue({
+      automigrationResults: {
+        '/repo/a/.storybook': {
+          automigrationStatuses: {},
+          automigrationErrors: {},
+          fileFailures: [],
+          dryRunReport: {
+            apply: [],
+            fail: [{ fixId: 'story-sort-to-main', reason: 'cannot migrate main' }],
+            skip: [],
+            manual: [],
+          },
+        },
+      },
+      detectedAutomigrations: [],
+    });
+
+    await upgrade({ ...baseOptions, dryRun: true });
+
+    expect(logger.error).toHaveBeenCalledWith('Some automigrations would fail');
+    expect(logger.step).not.toHaveBeenCalledWith(expect.stringContaining('Dry run finished'));
+  });
 });

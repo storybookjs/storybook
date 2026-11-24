@@ -13,19 +13,45 @@ describe('logMigrationSummary', () => {
     vi.clearAllMocks();
   });
 
+  const dryRunReport = (fail: { fixId: string; reason: string }[] = []) => ({
+    apply: ['some-fix'],
+    fail,
+    skip: [{ fixId: 'opt-in-fix', reason: 'opt-in' }],
+    manual: ['manual-fix'],
+  });
+
   it('lists what a run would do instead of the statuses, and says nothing changed, in a dry run', () => {
     logMigrationSummary({
       fixResults,
       fixSummary: summary,
       dryRun: true,
-      dryRunReport: { apply: ['some-fix'], fail: [], skip: [], manual: [] },
+      dryRunReport: dryRunReport(),
     });
 
     const output = vi.mocked(logger.log).mock.calls[0][0];
-    expect(output).toContain('Would apply: some-fix');
+    expect(output).toContain('Migrations that would succeed:\n\nsome-fix');
+    expect(output).toContain('Migrations that would be skipped:\n\nopt-in-fix (opt-in)');
+    expect(output).toContain('Migrations that would need manual changes:\n\nmanual-fix');
     expect(output).not.toContain('Skipped migrations:');
     expect(vi.mocked(logger.step)).toHaveBeenCalledWith(
       expect.stringContaining('Dry run finished: no files were changed.')
+    );
+  });
+
+  it('says that some automigrations would fail, as a failing run does, in a dry run', () => {
+    logMigrationSummary({
+      fixResults,
+      fixSummary: summary,
+      dryRun: true,
+      dryRunReport: dryRunReport([{ fixId: 'failing-fix', reason: 'cannot migrate main' }]),
+    });
+
+    expect(vi.mocked(logger.error)).toHaveBeenCalledWith('Some automigrations would fail');
+    expect(vi.mocked(logger.step)).not.toHaveBeenCalledWith(
+      expect.stringContaining('Dry run finished')
+    );
+    expect(vi.mocked(logger.log).mock.calls[0][0]).toContain(
+      'Migrations that would fail:\n\nfailing-fix:\ncannot migrate main'
     );
   });
 

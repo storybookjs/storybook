@@ -45,6 +45,7 @@ vi.mock('storybook/internal/node-logger', () => ({
     info: vi.fn((text: string) => text),
     debug: vi.fn((text: string) => text),
     cta: vi.fn((text: string) => text),
+    change: vi.fn((text: string) => text),
     dimmed: vi.fn((text: string) => text),
   },
 }));

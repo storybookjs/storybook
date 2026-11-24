@@ -88,8 +88,13 @@ export function logMigrationSummary({
 
   if (hasNoFixes) {
     logger.warn('No migrations were applicable to your project');
-  } else if (dryRun && !hasFailures) {
-    logger.step(CLI_COLORS.success('Dry run finished: no files were changed.'));
+  } else if (dryRun) {
+    // A failure the dry run predicts takes precedence over saying that nothing changed.
+    if (hasFailures || (dryRunReport?.fail.length ?? 0) > 0) {
+      logger.error('Some automigrations would fail');
+    } else {
+      logger.step(CLI_COLORS.success('Dry run finished: no files were changed.'));
+    }
   } else if (hasFailures) {
     logger.error('Migration check ran with failures');
   } else if (skippedFiles > 0) {

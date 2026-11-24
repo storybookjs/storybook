@@ -42,18 +42,37 @@ export const addSimulatedOutcomes = (
   }
 };
 
-/** The report as grouped lists, one line for each group that has fixes. */
+/**
+ * The report laid out like the summary of a run: a header and a list for each group that has fixes.
+ * Fixes that would succeed have the color of a change, fixes that would fail the color of an error.
+ */
 export const formatDryRunReport = ({ apply, fail, skip, manual }: DryRunReport) => {
-  const ids = (list: string[], color = picocolors.cyan) =>
-    list.map((fixId) => color(fixId)).join(', ');
-  const withReasons = (list: ReasonedFix[]) =>
-    list.map(({ fixId, reason }) => `${picocolors.cyan(fixId)} (${reason})`).join(', ');
-  return [
-    apply.length > 0 && `Would apply: ${ids(apply, CLI_COLORS.change)}`,
-    fail.length > 0 && `Would fail: ${withReasons(fail)}`,
-    skip.length > 0 && `Would skip: ${withReasons(skip)}`,
-    manual.length > 0 && `Would need manual changes: ${ids(manual)}`,
-  ]
-    .filter(Boolean)
-    .join('\n');
+  const sections: [title: string, list: string][] = [];
+  if (apply.length > 0) {
+    sections.push([
+      'Migrations that would succeed:',
+      apply.map((fixId) => CLI_COLORS.change(fixId)).join(', '),
+    ]);
+  }
+  if (fail.length > 0) {
+    sections.push([
+      'Migrations that would fail:',
+      fail
+        .map(({ fixId, reason }) => `${picocolors.bold(CLI_COLORS.error(fixId))}:\n${reason}`)
+        .join('\n'),
+    ]);
+  }
+  if (skip.length > 0) {
+    sections.push([
+      'Migrations that would be skipped:',
+      skip.map(({ fixId, reason }) => `${picocolors.cyan(fixId)} (${reason})`).join(', '),
+    ]);
+  }
+  if (manual.length > 0) {
+    sections.push([
+      'Migrations that would need manual changes:',
+      manual.map((fixId) => picocolors.cyan(fixId)).join(', '),
+    ]);
+  }
+  return sections.flatMap(([title, list]) => [picocolors.bold(title), list]).join('\n\n');
 };

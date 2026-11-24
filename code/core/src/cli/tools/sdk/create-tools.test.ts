@@ -341,6 +341,39 @@ describe('createTools', () => {
     );
   });
 
+  it('keeps the notice for a failed connection to the instance that `port` named', async () => {
+    vi.mocked(attach).mockRejectedValueOnce(
+      new AttachUnavailableError({
+        reason: 'connection-failed',
+        instances: [],
+        remediation: 'Could not connect to the Storybook at http://localhost:6007.',
+      })
+    );
+
+    const fallback = await createTools({ port: 6007 }, { attach });
+
+    expect(fallback.fallbackNotice).toContain('Could not connect to the Storybook');
+    expect(fallback.fallbackNotice).toContain('Falling back');
+  });
+
+  it('states the attach failure when a requiresDevServer method runs after a fallback', async () => {
+    vi.mocked(attach).mockRejectedValueOnce(
+      new AttachUnavailableError({
+        reason: 'connection-failed',
+        instances: [],
+        remediation: 'Could not connect to the Storybook at http://localhost:6006.',
+      })
+    );
+    const fallback = await createTools({}, { attach });
+
+    const call = fallback.call('echo.live');
+
+    await expect(call).rejects.toMatchObject({ data: { reason: 'connection-failed' } });
+    await expect(call).rejects.toThrow(
+      '`echo.live` requires the running Storybook dev server, and attaching to it failed:\n\nCould not connect to the Storybook at http://localhost:6006.'
+    );
+  });
+
   it('runs a requiresDevServer method when attached', async () => {
     const attach = vi.fn(async () => ({
       runtime: makeRuntime(),

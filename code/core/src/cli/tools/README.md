@@ -37,7 +37,7 @@ Factory vs `call`:
 | Mode       | Operation                         | Result                                                                                                                                                                                                 |
 | ---------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `attached` | Factory cannot attach or spawn    | Throws `AttachUnavailableError`, `EnvironmentMismatchError` (unverifiable record, or a mismatch that may not spawn), or `SpawnFailedError`                                                              |
-| `auto`     | Factory cannot attach or spawn    | Returns a local host. A missing instance and a failed connection are silent. Other gate failures set `fallbackNotice`. Every gate failure but a missing instance sets `attachFailure`. Those errors are not thrown unless local load also fails                                             |
+| `auto`     | Factory cannot attach or spawn    | Returns a local host. A missing instance and a failed connection are silent (a failed connection is not when `port` named the instance). Other gate failures set `fallbackNotice`. Every gate failure but a missing instance sets `attachFailure`. Those errors are not thrown unless local load also fails                                             |
 | `local`    | Config cannot load                | Throws `ToolsRuntimeError` (`config-load-failed`)                                                                                                                                                      |
 | any        | `call` after a successful factory | `ToolsRuntimeError` on SDK faults (`unknown-method`, `invalid-input`, `closed`, `connection-lost`). Local `requiresDevServer` methods throw `AttachUnavailableError`. A tool that ran returns a `ToolsetOutcome` (`ok: false` is not a throw). Open-service dispatch can still throw its own typed errors. |
 
@@ -56,7 +56,7 @@ set). `--json` keeps only the tool result.
 
 | Flag          | SDK `mode` | On gate failure                  |
 | ------------- | ---------- | -------------------------------- |
-| (none)        | `auto`     | Fall back to local. Notice for a gate failure other than a missing instance or a failed connection |
+| (none)        | `auto`     | Fall back to local. Notice for a gate failure other than a missing instance or, without `--port`, a failed connection |
 | `--attach`    | `attached` | Hard error (no fallback)         |
 | `--no-attach` | `local`    | Never attaches                   |
 

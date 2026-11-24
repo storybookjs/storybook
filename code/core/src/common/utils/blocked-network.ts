@@ -5,9 +5,7 @@ export type BlockedNetwork = {
   detail: string;
 };
 
-// A serialized error keeps only its message, which Node spells `<syscall> <code> …`, for a connect
-// followed by ` - Local (<address>)`. Only `EPERM`: `EACCES` also comes from reserved and
-// privileged ports, outside any sandbox.
+// Only `EPERM`: reserved and privileged ports give `EACCES` outside any sandbox.
 const BLOCKED_MESSAGE = /\b(listen|connect) EPERM\b.*?(?= - Local \(|$)/m;
 
 /**
@@ -41,7 +39,7 @@ function detect(error: unknown, depth: number): BlockedNetwork | undefined {
 }
 
 export function formatBlockedNetwork({ operation, detail }: BlockedNetwork): string {
-  const what = operation === 'listen' ? 'opening a port' : 'connecting to localhost';
+  const what = operation === 'listen' ? 'opening a port' : 'opening a connection';
   return `the system did not permit ${what} (\`${detail}\`)`;
 }
 

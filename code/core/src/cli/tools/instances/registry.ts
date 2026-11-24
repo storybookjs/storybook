@@ -98,8 +98,8 @@ function isProcessAlive(pid: number): boolean {
 
 const CONNECT_PROBE_TIMEOUT_MS = 1000;
 
-// A sandbox with its own process namespace hides a dev server that runs outside it, and answers a
-// connection to that server's port with `EPERM`. A server that is gone refuses the connection.
+// A sandbox with its own process namespace hides a dev server that runs outside it. When it also
+// answers a connection with `EPERM`, a hidden server and a gone one look the same from here.
 function connectIsBlocked({ port }: StorybookInstanceRecord): Promise<boolean> {
   return new Promise((resolve) => {
     const socket = connect({ host: '127.0.0.1', port });

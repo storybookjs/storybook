@@ -108,7 +108,7 @@ describe('attach failure messages', () => {
         detail: 'connect EPERM 127.0.0.1:6006',
       })
     ).toMatchInlineSnapshot(
-      `"Could not connect to the Storybook at http://localhost:6006: the system did not permit connecting to localhost (\`connect EPERM 127.0.0.1:6006\`). Do not start another Storybook. If this command runs in a sandbox, re-run it with escalated permissions, outside the sandbox."`
+      `"Could not connect to the Storybook at http://localhost:6006: the system did not permit opening a connection (\`connect EPERM 127.0.0.1:6006\`). Do not start another Storybook. If this command runs in a sandbox, re-run it with escalated permissions, outside the sandbox."`
     );
   });
 

@@ -17,7 +17,7 @@ import { projectPathsEqual } from '../instances/project-path.ts';
 import type { StorybookInstanceRecord } from '../instances/types.ts';
 import type { AttachedBootstrapResult } from './attached-runtime.ts';
 import { toCatalogEntry } from './catalog.ts';
-import { formatAttachFallback } from './attach-messages.ts';
+import { formatAttachFallback, formatRequiresAttach } from './attach-messages.ts';
 import { spawnChildHost } from './child-client.ts';
 import { reportSdkAttachGate, reportSdkInvocation } from './command-telemetry.ts';
 import {
@@ -81,7 +81,8 @@ export type CreateToolsDeps = {
  *
  * `auto` tries `attached` first and, on a gate failure, loads `local` instead. A missing instance
  * is the expected auto path, and a tool that runs locally has nothing to do about a connection
- * that failed, so both stay silent. Other gate failures carry `fallbackNotice`. Every gate failure
+ * that failed, so both stay silent; with `port`, which can name another project's instance, a
+ * failed connection is not silent. Other gate failures carry `fallbackNotice`. Every gate failure
  * but a missing instance carries `attachFailure`, for a tool that cannot run locally.
  *
  * @throws {ToolsRuntimeError} With reason `config-load-failed` when the target configuration cannot
@@ -137,10 +138,8 @@ export async function createTools(
         }
         const fallbackReason = attachGateReasonFromError(error);
         const attachFailure = fallbackReason === 'no-instance' ? undefined : error.message;
-        const notice =
-          attachFailure && fallbackReason !== 'connection-failed'
-            ? formatAttachFallback(attachFailure)
-            : undefined;
+        const silent = fallbackReason === 'connection-failed' && options.port == null;
+        const notice = attachFailure && !silent ? formatAttachFallback(attachFailure) : undefined;
         try {
           return await createLocalTools(options, deps, clientInfo, mode, {
             ...(notice ? { fallbackNotice: notice } : {}),
@@ -395,10 +394,16 @@ function createToolsHost(args: {
     const method = findMethod(toolset, methodName);
 
     if (mode === 'local' && method.requiresDevServer) {
+      const reason = args.fallbackReason;
       throw new AttachUnavailableError({
-        reason: 'no-instance',
+        reason:
+          reason === 'connection-failed' || reason === 'old-server' || reason === 'port-mismatch'
+            ? reason
+            : 'no-instance',
         instances: [],
-        remediation: `\`${ref}\` needs a running Storybook dev server, and this tools host loaded the project's configuration on its own. Start Storybook (for example \`npm run storybook\`), then retry.`,
+        remediation: args.attachFailure
+          ? formatRequiresAttach(ref, args.attachFailure)
+          : `\`${ref}\` needs a running Storybook dev server, and this tools host loaded the project's configuration on its own. Start Storybook (for example \`npm run storybook\`), then retry.`,
       });
     }
 

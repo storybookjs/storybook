@@ -396,7 +396,7 @@ describe('bootstrapAttachedRuntime', () => {
     const failure = bootstrapAttachedRuntime({ cwd: '/repo' }, deps);
 
     await expect(failure).rejects.toMatchObject({ data: { reason: 'connection-failed' } });
-    await expect(failure).rejects.toThrow('the system did not permit connecting to localhost');
+    await expect(failure).rejects.toThrow('the system did not permit opening a connection');
     await expect(failure).rejects.not.toThrow('may be stale');
   });
 

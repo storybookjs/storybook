@@ -111,7 +111,7 @@ type ToolsBase = {
   host: ToolsHostKind;
   /**
    * Set when `auto` mode loaded locally for a reason the caller should hear with any result. Unset
-   * for a missing instance and for a connection that failed.
+   * for a missing instance, and for a connection that failed unless `port` named the instance.
    */
   fallbackNotice?: string;
   /**

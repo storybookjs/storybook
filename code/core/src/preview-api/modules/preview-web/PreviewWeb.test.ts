@@ -1913,6 +1913,50 @@ describe('PreviewWeb', () => {
       );
     });
 
+    it('applies args from the selection args param', async () => {
+      document.location.search = '?id=component-one--a';
+      const preview = await createAndRenderPreview();
+
+      mockChannel.emit.mockClear();
+      emitter.emit(SET_CURRENT_STORY, {
+        storyId: 'component-one--b',
+        viewMode: 'story',
+        args: 'foo:url',
+      });
+      await waitForSetCurrentStory();
+      await waitForRender();
+
+      expect(
+        // @ts-expect-error Ignore protected property
+        (preview.storyStoreValue as StoryStore<Renderer>)?.args.get('component-one--b')
+      ).toEqual({
+        foo: 'url',
+        one: 1,
+      });
+    });
+
+    it('applies args from the selection args param when navigating to a docs page', async () => {
+      document.location.search = '?id=component-one--a';
+      const preview = await createAndRenderPreview();
+
+      mockChannel.emit.mockClear();
+      emitter.emit(SET_CURRENT_STORY, {
+        storyId: 'component-one--docs',
+        viewMode: 'docs',
+        args: 'foo:url',
+      });
+      await waitForSetCurrentStory();
+      await waitForRender();
+
+      expect(
+        // @ts-expect-error Ignore protected property
+        (preview.storyStoreValue as StoryStore<Renderer>)?.args.get('component-one--a')
+      ).toEqual({
+        foo: 'url',
+        one: 1,
+      });
+    });
+
     it('emits CURRENT_STORY_WAS_SET', async () => {
       document.location.search = '?id=component-one--a';
       await createAndRenderPreview();

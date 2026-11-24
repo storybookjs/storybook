@@ -47,6 +47,7 @@ import type { Selection, SelectionStore } from './SelectionStore.ts';
 import type { View } from './View.ts';
 import { shouldAutoplay } from './embedMode.ts';
 import { getEmbedResizeViewport } from './getEmbedResizeViewport.ts';
+import { parseArgsParam } from './parseArgsParam.ts';
 import { CsfDocsRender } from './render/CsfDocsRender.ts';
 import { MdxDocsRender } from './render/MdxDocsRender.ts';
 import { PREPARE_ABORTED } from './render/Render.ts';
@@ -280,7 +281,14 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
     });
   }
 
-  async onSetCurrentStory(selection: { storyId: StoryId; viewMode?: ViewMode }) {
+  async onSetCurrentStory({
+    args: argsParam,
+    ...selection
+  }: {
+    storyId: StoryId;
+    viewMode?: ViewMode;
+    args?: string;
+  }) {
     /**
      * At the end of the initialization promise we will read the current story from the selection
      * store, so make sure we've updated it with the new selection or we'll lose track of it at the
@@ -291,7 +299,9 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
     await this.storeInitializationPromise;
 
     this.channel.emit(CURRENT_STORY_WAS_SET, this.selectionStore.selection);
-    this.renderSelection();
+    this.renderSelection({
+      persistedArgs: typeof argsParam === 'string' ? parseArgsParam(argsParam) : undefined,
+    });
   }
 
   onUpdateQueryParams(queryParams: any) {
@@ -447,9 +457,18 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
 
     const implementationChanged = !storyIdChanged && lastRender && !render.isEqual(lastRender);
 
-    if (persistedArgs && isStoryRender(render)) {
-      invariant(!!render.story);
-      this.storyStoreValue.args.updateFromPersisted(render.story, persistedArgs);
+    if (persistedArgs) {
+      if (isStoryRender(render)) {
+        invariant(!!render.story);
+        this.storyStoreValue.args.updateFromPersisted(render.story, persistedArgs);
+      } else {
+        render.csfFiles?.forEach((csfFile) =>
+          Object.keys(csfFile.stories).forEach((storyId) => {
+            const story = this.storyStoreValue!.storyFromCSFFile({ storyId, csfFile });
+            this.storyStoreValue!.args.updateFromPersisted(story, persistedArgs);
+          })
+        );
+      }
     }
 
     // Don't re-render the story if nothing has changed to justify it

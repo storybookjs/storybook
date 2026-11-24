@@ -7,10 +7,7 @@ import { dedent } from 'ts-dedent';
 import ts from 'typescript';
 
 import { ComponentMetaManager } from '../componentManifest/componentMeta/ComponentMetaManager.ts';
-import type {
-  ComponentDoc,
-  PropItemType,
-} from '../componentManifest/componentMeta/componentMetaExtractor.ts';
+import type { ComponentDoc } from '../componentManifest/componentMeta/componentMetaExtractor.ts';
 import {
   cleanup,
   createTempDir,
@@ -31,22 +28,6 @@ function makeStoryIndexEntry(importPath: string, title: string): IndexEntry {
     type: 'story',
     subtype: 'story',
     importPath,
-  };
-}
-
-function componentDoc(
-  props: Record<string, { type: PropItemType; required?: boolean }>
-): ComponentDoc {
-  return {
-    exportName: 'List',
-    filePath: '/List.tsx',
-    description: '',
-    props: Object.fromEntries(
-      Object.entries(props).map(([name, { type, required = true }]) => [
-        name,
-        { name, required, description: '', defaultValue: null, type },
-      ])
-    ),
   };
 }
 
@@ -180,101 +161,150 @@ describe('buildDocgenPayload', () => {
     }
   );
 
-  it('gives array props the array type in argTypes', () => {
-    const argTypes = extractArgTypesFromComponentMeta(
-      componentDoc({
-        items: { type: { name: 'string[]', elements: [{ name: 'string' }] } },
-        tags: {
-          type: { name: 'readonly string[]', elements: [{ name: 'string' }] },
-          required: false,
+  it.each([
+    {
+      name: 'string[]',
+      input: { name: 'string[]', element: { name: 'string' } },
+      expected: {
+        type: { name: 'array', raw: 'string[]', value: { name: 'string' } },
+        summary: 'string[]',
+      },
+    },
+    {
+      name: 'readonly string[]',
+      input: { name: 'readonly string[]', element: { name: 'string' } },
+      expected: {
+        type: { name: 'array', raw: 'readonly string[]', value: { name: 'string' } },
+        summary: 'readonly string[]',
+      },
+    },
+    {
+      name: 'string[] | null',
+      input: { name: 'string[] | null', element: { name: 'string' } },
+      expected: {
+        type: { name: 'array', raw: 'string[] | null', value: { name: 'string' } },
+        summary: 'string[] | null',
+      },
+    },
+    {
+      name: 'number[][]',
+      input: { name: 'number[][]', element: { name: 'number[]', element: { name: 'number' } } },
+      expected: {
+        type: {
+          name: 'array',
+          raw: 'number[][]',
+          value: { name: 'array', raw: 'number[]', value: { name: 'number' } },
         },
-        values: { type: { name: '(string | number)[]', elements: [{ name: 'string | number' }] } },
-        matrix: {
-          type: {
-            name: 'number[][]',
-            elements: [{ name: 'number[]', elements: [{ name: 'number' }] }],
-          },
+        summary: 'number[][]',
+      },
+    },
+    {
+      name: '(string | number)[]',
+      input: { name: '(string | number)[]', element: { name: 'string | number' } },
+      expected: {
+        type: {
+          name: 'array',
+          raw: '(string | number)[]',
+          value: { name: 'other', value: 'string | number' },
         },
-        selected: { type: { name: 'string[] | null', elements: [{ name: 'string' }] } },
-        pair: { type: { name: '[string, number]' } },
-      })
+        summary: '(string | number)[]',
+      },
+    },
+    {
+      name: '("a" | "b")[]',
+      input: {
+        name: '("a" | "b")[]',
+        element: { name: 'enum', raw: '"a" | "b"', value: [{ value: '"a"' }, { value: '"b"' }] },
+      },
+      expected: {
+        type: {
+          name: 'array',
+          raw: '("a" | "b")[]',
+          value: { name: 'enum', raw: '"a" | "b"', value: ['a', 'b'] },
+        },
+        summary: '("a" | "b")[]',
+      },
+    },
+    {
+      name: 'boolean[]',
+      input: { name: 'boolean[]', element: { name: 'boolean' } },
+      expected: {
+        type: { name: 'array', raw: 'boolean[]', value: { name: 'boolean' } },
+        summary: 'boolean[]',
+      },
+    },
+    {
+      name: '(() => void)[]',
+      input: { name: '(() => void)[]', element: { name: '() => void' } },
+      expected: {
+        type: {
+          name: 'array',
+          raw: '(() => void)[]',
+          value: { name: 'function', value: '() => void' },
+        },
+        summary: '(() => void)[]',
+      },
+    },
+    {
+      name: '[string, number]',
+      input: { name: '[string, number]' },
+      expected: { type: { name: 'other', value: '[string, number]' }, summary: '[string, number]' },
+    },
+  ])('converts a $name prop to argTypes', ({ input, expected }) => {
+    const argType = extractArgTypesFromComponentMeta({
+      exportName: 'List',
+      filePath: '/List.tsx',
+      description: '',
+      props: {
+        items: { name: 'items', required: false, description: '', defaultValue: null, type: input },
+      },
+    })?.items;
+
+    expect({ type: argType?.type, summary: argType?.table?.type?.summary }).toEqual({
+      type: { required: false, ...expected.type },
+      summary: expected.summary,
+    });
+  });
+
+  it('gives a real array prop the array type', { timeout: 30_000 }, async () => {
+    tempDir = createTempDir('docgen-build');
+
+    const files = writeFiles(tempDir, {
+      'tsconfig.json': tsconfigJSON(),
+      'List.tsx': dedent`
+        import React from 'react';
+        export const List = (_props: { items: string[]; tags?: string[] }) => <ul />;
+      `,
+      'List.stories.tsx': dedent`
+        import { List } from './List';
+        export default { component: List, title: 'Data/List' };
+        export const Primary = () => <List items={[]} />;
+      `,
+    });
+
+    componentMetaManager = new ComponentMetaManager(ts);
+
+    const payload = await buildDocgenPayload(
+      { entry: makeStoryIndexEntry(files['List.stories.tsx'], 'Data/List') },
+      {
+        componentMetaManager,
+        resolvePath: (p) => (path.isAbsolute(p) ? p : path.join(tempDir!, p)),
+      }
     );
 
-    expect(argTypes?.items.type).toEqual({
+    expect(payload!.argTypes?.items.type).toEqual({
       name: 'array',
       raw: 'string[]',
       value: { name: 'string' },
       required: true,
     });
-    expect(argTypes?.tags.type).toEqual({
+    expect(payload!.argTypes?.tags.type).toEqual({
       name: 'array',
-      raw: 'readonly string[]',
+      raw: 'string[]',
       value: { name: 'string' },
       required: false,
     });
-    expect(argTypes?.values.type).toEqual({
-      name: 'array',
-      raw: '(string | number)[]',
-      value: { name: 'other', value: 'string | number' },
-      required: true,
-    });
-    expect(argTypes?.matrix.type).toEqual({
-      name: 'array',
-      raw: 'number[][]',
-      value: { name: 'array', raw: 'number[]', value: { name: 'number' } },
-      required: true,
-    });
-    expect(argTypes?.selected.type).toEqual({
-      name: 'array',
-      raw: 'string[] | null',
-      value: { name: 'string' },
-      required: true,
-    });
-    expect(argTypes?.pair.type).toEqual({
-      name: 'other',
-      value: '[string, number]',
-      required: true,
-    });
-    expect(argTypes?.items.table?.type).toEqual({ summary: 'string[]' });
-    expect(argTypes?.tags.table?.type).toEqual({ summary: 'readonly string[]' });
-    expect(argTypes?.values.table?.type).toEqual({ summary: '(string | number)[]' });
-    expect(argTypes?.selected.table?.type).toEqual({ summary: 'string[] | null' });
-  });
-
-  it('converts the element type of array props', () => {
-    const argTypes = extractArgTypesFromComponentMeta(
-      componentDoc({
-        kinds: {
-          type: {
-            name: '("a" | "b")[]',
-            elements: [
-              { name: 'enum', raw: '"a" | "b"', value: [{ value: '"a"' }, { value: '"b"' }] },
-            ],
-          },
-        },
-        flags: { type: { name: 'boolean[]', elements: [{ name: 'boolean' }] } },
-        handlers: { type: { name: '(() => void)[]', elements: [{ name: '() => void' }] } },
-      })
-    );
-
-    expect(argTypes?.kinds.type).toEqual({
-      name: 'array',
-      raw: '("a" | "b")[]',
-      value: { name: 'enum', raw: '"a" | "b"', value: ['a', 'b'] },
-      required: true,
-    });
-    expect(argTypes?.flags.type).toEqual({
-      name: 'array',
-      raw: 'boolean[]',
-      value: { name: 'boolean' },
-      required: true,
-    });
-    expect(argTypes?.handlers.type).toEqual({
-      name: 'array',
-      raw: '(() => void)[]',
-      value: { name: 'function', value: '() => void' },
-      required: true,
-    });
+    expect(payload!.argTypes?.items.table?.type).toEqual({ summary: 'string[]' });
   });
 
   it(

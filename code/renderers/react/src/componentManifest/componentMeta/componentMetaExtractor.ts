@@ -35,8 +35,8 @@ export interface PropItemType {
   name: string;
   raw?: string;
   value?: { value: string }[];
-  /** Element type of an array, such as `string` for `string[]`. */
-  elements?: PropItemType[];
+  // Array element type, such as `string` for `string[]`.
+  element?: PropItemType;
 }
 
 export interface ParentType {
@@ -749,7 +749,7 @@ function serializeType(
     if (nonNullishTypes.length === 1 && checker.isArrayType(nonNullishTypes[0])) {
       return {
         name: checker.typeToString(type),
-        elements: serializeElements(typescript, checker, nonNullishTypes[0], depth),
+        element: serializeElement(typescript, checker, nonNullishTypes[0], depth),
       };
     }
   }
@@ -762,10 +762,6 @@ function serializeType(
   return serializeLeaf(typescript, checker, type, depth);
 }
 
-/**
- * Names a type as TypeScript prints it. Arrays also get their element type, so args tables can
- * show an array control.
- */
 function serializeLeaf(
   typescript: typeof ts,
   checker: ts.TypeChecker,
@@ -774,19 +770,18 @@ function serializeLeaf(
 ): PropItemType {
   const name = checker.typeToString(type);
   return checker.isArrayType(type)
-    ? { name, elements: serializeElements(typescript, checker, type, depth) }
+    ? { name, element: serializeElement(typescript, checker, type, depth) }
     : { name };
 }
 
-function serializeElements(
+function serializeElement(
   typescript: typeof ts,
   checker: ts.TypeChecker,
   arrayType: ts.Type,
   depth: number
-): PropItemType[] {
-  return checker
-    .getTypeArguments(arrayType as ts.TypeReference)
-    .map((element) => serializeType(typescript, checker, element, true, depth + 1));
+): PropItemType {
+  const [element] = checker.getTypeArguments(arrayType as ts.TypeReference);
+  return serializeType(typescript, checker, element, true, depth + 1);
 }
 
 // ---------------------------------------------------------------------------

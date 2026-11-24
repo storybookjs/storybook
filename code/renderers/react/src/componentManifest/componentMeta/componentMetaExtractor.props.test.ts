@@ -95,25 +95,27 @@ describe('prop extraction', () => {
 
       expect(entry.component?.reactComponentMeta).toMatchObject({
         props: {
-          items: { type: { name: 'string[]', elements: [{ name: 'string' }] } },
+          items: { type: { name: 'string[]', element: { name: 'string' } } },
           matrix: {
             type: {
               name: 'number[][]',
-              elements: [{ name: 'number[]', elements: [{ name: 'number' }] }],
+              element: { name: 'number[]', element: { name: 'number' } },
             },
           },
-          nodes: { type: { name: 'ReactNode[]', elements: [{ name: 'ReactNode' }] } },
-          tags: { type: { name: 'readonly string[]', elements: [{ name: 'string' }] } },
+          nodes: { type: { name: 'ReactNode[]', element: { name: 'ReactNode' } } },
+          tags: { type: { name: 'readonly string[]', element: { name: 'string' } } },
           kinds: {
             type: {
               name: '("a" | "b")[]',
-              elements: [
-                { name: 'enum', raw: '"a" | "b"', value: [{ value: '"a"' }, { value: '"b"' }] },
-              ],
+              element: {
+                name: 'enum',
+                raw: '"a" | "b"',
+                value: [{ value: '"a"' }, { value: '"b"' }],
+              },
             },
           },
-          flags: { type: { name: 'boolean[]', elements: [{ name: 'boolean' }] } },
-          selected: { type: { name: 'string[] | null', elements: [{ name: 'string' }] } },
+          flags: { type: { name: 'boolean[]', element: { name: 'boolean' } } },
+          selected: { type: { name: 'string[] | null', element: { name: 'string' } } },
         },
       });
       expect(entry.component?.reactComponentMeta?.props.pair.type).toEqual({

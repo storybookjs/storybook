@@ -19,6 +19,14 @@ it('should extract @summary tag', () => {
   `);
 });
 
+it('keeps the lines after a line that ends in */, which raw text such as an HTML comment can hold', () => {
+  const { description, tags } = extractJSDocInfo(
+    'Reset the styles with /* reset */\nbefore you add a tag.\n@summary reset first'
+  );
+  expect(description).toBe('Reset the styles with /* reset */\nbefore you add a tag.');
+  expect(tags).toEqual({ summary: ['reset first'] });
+});
+
 it('should extract @param tag with type', () => {
   const code = dedent`
  @param {Object} employee - The employee who is responsible for the project.

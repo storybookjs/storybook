@@ -376,7 +376,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
     return;
   }
 
-  const { allProjects, selectedProjects: storybookProjects } = projectsResult;
+  const { allProjects, selectedProjects: storybookProjects, unreadProjects } = projectsResult;
 
   if (storybookProjects.length > 1) {
     logger.info(`Upgrading the following projects:
@@ -565,15 +565,15 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
 
     // Every Storybook of a monorepo shares the AGENTS.md of the project root, so the section has a
     // test step when one of them can run story tests. The main configs were read before the
-    // automigrations, so an addon-vitest that one of them added counts too. With `--config-dir`
-    // only those Storybooks were read, so a test step that another one put in the section stays.
+    // automigrations, so an addon-vitest that one of them added counts too. With `--config-dir`,
+    // or when a Storybook could not be read, a test step that another one put in the section stays.
     const agentInstructions = {
       testSupported:
         allProjects.some(({ mainConfig }) => hasAddonVitest(mainConfig)) ||
         storybookProjects.some(({ configDir }) =>
           automigrationResults[configDir]?.addonsToPostinstall?.includes('@storybook/addon-vitest')
         ),
-      sawEveryStorybook: !options.configDir?.length,
+      sawEveryStorybook: !options.configDir?.length && unreadProjects === 0,
     };
     const skills =
       !options.dryRun && hadSkills

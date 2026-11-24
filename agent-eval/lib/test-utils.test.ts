@@ -574,6 +574,9 @@ describe('recommendsReviewSkill', () => {
     'If you want to see it, use the /ui-review skill.',
     "The UI didn't change, but you can use /ui-review to double-check.",
     'No visual changes here; use the /ui-review skill to see the components in Storybook.',
+    // A comma before a skill name ends the clause, unless a skill name comes before it too.
+    "The layout didn't change, `/ui-review` still shows the new stories.",
+    'Since the prop is not exposed, `$ui-review` shows the change.',
   ])('counts %j', async (answer) => {
     const { recommendsReviewSkill } = await import('./test-utils.ts');
     expect(recommendsReviewSkill(answer)).toBe(true);

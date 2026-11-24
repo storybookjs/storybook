@@ -51,7 +51,9 @@ const CLAUDE_FILES = [
   { file: 'CLAUDE.local.md', importsAgentsMd: /(^|\s)@(\.\/)?AGENTS\.md\b/m },
 ];
 
-// The test command as the section names it, without `npx`.
+// The test command as the section names it, without `npx`. These patterns also read sections that
+// an older Storybook wrote: when the command is renamed, its old name stays here, as `test-stories`
+// does.
 const TEST_COMMAND = escapeRegExp(`storybook tools ${toCliPath('test.run')}`);
 
 // The test step of this section, or of the 11.0 prereleases, which named the `test-stories` skill.

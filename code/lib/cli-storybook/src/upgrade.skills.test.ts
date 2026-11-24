@@ -65,7 +65,11 @@ const baseOptions: UpgradeOptions = {
 };
 
 const useProjects = (...projects: CollectProjectsSuccessResult[]) =>
-  vi.mocked(getProjects).mockResolvedValue({ allProjects: projects, selectedProjects: projects });
+  vi.mocked(getProjects).mockResolvedValue({
+    allProjects: projects,
+    selectedProjects: projects,
+    unreadProjects: 0,
+  });
 
 describe('upgrade: refreshing the skills', () => {
   beforeEach(() => {
@@ -177,6 +181,21 @@ describe('upgrade: refreshing the skills', () => {
       { result: 'installed', source: 'refresh' },
       { result: 'installed', source: 'refresh' },
     ]);
+  });
+
+  it('says that a Storybook could not be read, so the section keeps its test step', async () => {
+    const projects = [project('/repo/a/.storybook')];
+    vi.mocked(getProjects).mockResolvedValue({
+      allProjects: projects,
+      selectedProjects: projects,
+      unreadProjects: 1,
+    });
+
+    await upgrade(baseOptions);
+
+    expect(installSkills).toHaveBeenLastCalledWith(
+      expect.objectContaining({ testSupported: false, sawEveryStorybook: false })
+    );
   });
 
   it('says that --config-dir leaves Storybooks unread, so the section keeps its test step', async () => {

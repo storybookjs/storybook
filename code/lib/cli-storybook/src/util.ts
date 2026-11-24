@@ -703,6 +703,8 @@ export const getProjects = async (
   | {
       allProjects: CollectProjectsSuccessResult[];
       selectedProjects: CollectProjectsSuccessResult[];
+      /** The Storybooks that were found but could not be read, so they are in neither list. */
+      unreadProjects: number;
     }
   | undefined
 > => {
@@ -743,7 +745,11 @@ export const getProjects = async (
 
     // Handle single project case
     if (validProjects.length === 1) {
-      return { allProjects: validProjects, selectedProjects: validProjects };
+      return {
+        allProjects: validProjects,
+        selectedProjects: validProjects,
+        unreadProjects: errorProjects.length,
+      };
     }
 
     // Handle case with only errors
@@ -768,7 +774,9 @@ export const getProjects = async (
       options.yes
     );
 
-    return selectedProjects ? { allProjects: validProjects, selectedProjects } : undefined;
+    return selectedProjects
+      ? { allProjects: validProjects, selectedProjects, unreadProjects: errorProjects.length }
+      : undefined;
   } catch (error) {
     if (
       !(error instanceof HandledError || error instanceof UpgradeStorybookConfigDirNotFoundError)

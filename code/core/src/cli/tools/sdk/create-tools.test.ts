@@ -374,6 +374,24 @@ describe('createTools', () => {
     );
   });
 
+  it.each([
+    ['environment-mismatch', new EnvironmentMismatchError({ reason: 'Different installations.' })],
+    ['spawn-failed', new SpawnFailedError({ reason: 'Could not start a child host.' })],
+  ] as const)(
+    'keeps the kind of the %s attach error for a requiresDevServer method after a fallback',
+    async (_reason, attachError) => {
+      vi.mocked(attach).mockRejectedValueOnce(attachError);
+      const fallback = await createTools({}, { attach });
+
+      const call = fallback.call('echo.live');
+
+      await expect(call).rejects.toBeInstanceOf(attachError.constructor);
+      await expect(call).rejects.toThrow(
+        `\`echo.live\` requires a running Storybook dev server, and could not attach to one:\n\n${attachError.message}`
+      );
+    }
+  );
+
   it('runs a requiresDevServer method when attached', async () => {
     const attach = vi.fn(async () => ({
       runtime: makeRuntime(),

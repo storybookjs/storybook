@@ -8,7 +8,10 @@ import { readRegistry } from './registry.ts';
 // Spy-only mock: keep the real `node:fs/promises` module shape, then redirect the calls used by
 // the registry reader to `memfs` so disk state stays scoped to `vol`.
 vi.mock('node:fs/promises', { spy: true });
-vi.mock('../../../common/utils/pid-namespace.ts', () => ({ getPidNamespace: () => 'pid:[2]' }));
+vi.mock('../../../common/utils/pid-namespace.ts', () => ({
+  isAnotherPidNamespace: (pidNamespace?: string) =>
+    pidNamespace != null && pidNamespace !== 'pid:[2]',
+}));
 
 const REGISTRY_DIR = '/registry';
 

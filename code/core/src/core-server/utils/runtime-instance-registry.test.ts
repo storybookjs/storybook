@@ -16,6 +16,12 @@ import { promisify } from 'node:util';
 import { dirname, join, normalize, resolve } from 'pathe';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+vi.mock('../../common/utils/pid-namespace.ts', () => ({
+  getPidNamespace: () => 'pid:[2]',
+  isAnotherPidNamespace: (pidNamespace?: string) =>
+    pidNamespace != null && pidNamespace !== 'pid:[2]',
+}));
+
 import {
   createRuntimeInstanceRecord,
   getRuntimeInstanceRegistryCleanupDecision,
@@ -353,6 +359,21 @@ describe('getRuntimeInstanceRegistryCleanupDecision', () => {
         fileModifiedAtMs: daysAgo(8).getTime(),
         nowMs: NOW.getTime(),
         record: { ...recentRecord, updatedAt: hoursAgo(23).toISOString() },
+      },
+      expected: { action: 'keep' },
+    },
+    {
+      name: 'keeps a record of a dev server in another process namespace, whose PID cannot be checked',
+      entry: {
+        kind: 'record' as const,
+        fileModifiedAtMs: daysAgo(8).getTime(),
+        nowMs: NOW.getTime(),
+        record: {
+          ...recentRecord,
+          pid: 202,
+          pidNamespace: 'pid:[1]',
+          updatedAt: hoursAgo(24).toISOString(),
+        },
       },
       expected: { action: 'keep' },
     },

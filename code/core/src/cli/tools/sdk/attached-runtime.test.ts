@@ -9,7 +9,10 @@ import type { StorybookInstanceRecord } from '../instances/types.ts';
 import { bootstrapAttachedRuntime } from './attached-runtime.ts';
 import { AttachUnavailableError, EnvironmentMismatchError, ToolsRuntimeError } from './errors.ts';
 
-vi.mock('../../../common/utils/pid-namespace.ts', () => ({ getPidNamespace: () => 'pid:[2]' }));
+vi.mock('../../../common/utils/pid-namespace.ts', () => ({
+  isAnotherPidNamespace: (pidNamespace?: string) =>
+    pidNamespace != null && pidNamespace !== 'pid:[2]',
+}));
 vi.mock('node:fs', { spy: true });
 
 const STORYBOOK_PATH = '/repo/node_modules/storybook';
@@ -411,8 +414,22 @@ describe('bootstrapAttachedRuntime', () => {
     const failure = bootstrapAttachedRuntime({ cwd: '/repo' }, deps);
 
     await expect(failure).rejects.toMatchObject({ data: { reason: 'connection-failed' } });
-    await expect(failure).rejects.toThrow('it runs in another process namespace than this command');
+    await expect(failure).rejects.toThrow('its process is in another process namespace');
     await expect(failure).rejects.not.toThrow('may be stale');
+  });
+
+  it('attaches to a record whose pid could be checked before one from another process namespace', async () => {
+    const hidden = { ...RECORD, instanceId: 'hidden', url: 'http://localhost:6007', port: 6007 };
+    const { deps } = makeRuntimeDeps([
+      { ...hidden, pidNamespace: 'pid:[1]', startedAt: '2026-05-19T00:00:00.000Z' },
+      { ...RECORD, startedAt: '2026-05-18T00:00:00.000Z' },
+    ]);
+
+    await bootstrapAttachedRuntime({ cwd: '/repo' }, deps);
+
+    expect(deps.createNodeChannel).toHaveBeenCalledWith(
+      expect.objectContaining({ url: 'http://localhost:6006' })
+    );
   });
 
   it('rejects when the handshake never completes', async () => {

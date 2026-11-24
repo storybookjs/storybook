@@ -329,11 +329,11 @@ function requiresDevServerError(
   attachFailure: string | undefined,
   reason: ToolsAttachGateReason | undefined
 ) {
-  if (!attachFailure) {
+  if (!attachFailure || !reason) {
     return new AttachUnavailableError({
       reason: 'no-instance',
       instances: [],
-      remediation: `\`${ref}\` needs a running Storybook dev server, and this tools host loaded the project's configuration on its own. Start Storybook (for example \`npm run storybook\`), then retry.`,
+      remediation: `\`${ref}\` needs a running Storybook dev server, and this tools host loaded the project's configuration on its own. Start Storybook with the Storybook script in the project's \`package.json\`, then retry.`,
     });
   }
   const remediation = formatRequiresAttach(ref, attachFailure);
@@ -343,11 +343,7 @@ function requiresDevServerError(
   if (reason === 'spawn-failed') {
     return new SpawnFailedError({ reason: remediation });
   }
-  return new AttachUnavailableError({
-    reason: reason ?? 'connection-failed',
-    instances: [],
-    remediation,
-  });
+  return new AttachUnavailableError({ reason, instances: [], remediation });
 }
 
 function transportFor(kind: Required<ToolsClientInfo>['kind']): ToolsetTransport {

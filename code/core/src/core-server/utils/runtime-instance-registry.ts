@@ -9,7 +9,7 @@ import type { StorybookConfig } from 'storybook/internal/types';
 
 import { join, resolve } from 'pathe';
 
-import { getPidNamespace } from '../../common/utils/pid-namespace.ts';
+import { getPidNamespace, isAnotherPidNamespace } from '../../common/utils/pid-namespace.ts';
 import { getInstanceRegistryDir } from '../../common/utils/storybook-config-dir.ts';
 
 import { CLAUDE_PREVIEW_AGENT_NAME } from '../../shared/constants/agent-provenance.ts';
@@ -248,6 +248,12 @@ function getRecordPid(record: unknown) {
   return Number.isInteger(record.pid) && record.pid > 0 ? record.pid : undefined;
 }
 
+function getRecordPidNamespace(record: unknown) {
+  return isRecordObject(record) && typeof record.pidNamespace === 'string'
+    ? record.pidNamespace
+    : undefined;
+}
+
 function isErrnoException(error: unknown): error is NodeJS.ErrnoException {
   return typeof error === 'object' && error !== null && 'code' in error;
 }
@@ -279,7 +285,9 @@ export function getRuntimeInstanceRegistryCleanupDecision(
 
   const recordPid = getRecordPid(entry.record);
 
-  return recordPid === undefined ? { action: 'keep' } : { action: 'check-pid', pid: recordPid };
+  return recordPid === undefined || isAnotherPidNamespace(getRecordPidNamespace(entry.record))
+    ? { action: 'keep' }
+    : { action: 'check-pid', pid: recordPid };
 }
 
 function isPidInactive(pid: number) {

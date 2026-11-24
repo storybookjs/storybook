@@ -10,3 +10,8 @@ export function getPidNamespace(): string | undefined {
     return undefined;
   }
 }
+
+export function isAnotherPidNamespace(pidNamespace: string | undefined): boolean {
+  const own = getPidNamespace();
+  return pidNamespace != null && own != null && pidNamespace !== own;
+}

@@ -296,14 +296,12 @@ export async function runStoryTests({
       timeoutMs,
     });
   } catch (error) {
-    return (
-      refusedPort(detectBlockedNetwork(error)) ?? {
-        status: 'error',
-        error: {
-          message: error instanceof Error ? error.message : String(error),
-        },
-      }
-    );
+    return {
+      status: 'error',
+      error: {
+        message: error instanceof Error ? error.message : String(error),
+      },
+    };
   }
 
   switch (response.status) {

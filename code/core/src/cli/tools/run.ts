@@ -347,14 +347,13 @@ async function dispatchTools(
   }
 
   if (tools.mode === 'local' && method.requiresDevServer) {
-    const output =
-      requestedMode !== 'local' && tools.attachFailure
-        ? formatRequiresAttach(commandPath, tools.attachFailure)
-        : formatRequiresDevServer(
-            commandPath,
-            await (deps.discoverInstance ?? discoverRunningInstance)(invocation.target),
-            requestedMode
-          );
+    const output = tools.attachFailure
+      ? formatRequiresAttach(commandPath, tools.attachFailure)
+      : formatRequiresDevServer(
+          commandPath,
+          await (deps.discoverInstance ?? discoverRunningInstance)(invocation.target),
+          requestedMode
+        );
     return result({
       exitCode: 1,
       output,
@@ -441,10 +440,6 @@ function formatRequiresDevServer(
   if (discovery.currentRecord && requestedMode === 'local') {
     return `Found your Storybook running at ${discovery.currentRecord.url}, but \`${commandPath}\` cannot run from a local tools host. Re-run without \`--no-attach\` to attach to that instance.`;
   }
-  if (discovery.currentRecord) {
-    return `Found your Storybook running at ${discovery.currentRecord.url}, but \`${commandPath}\` could not attach to it. Start or restart that Storybook, then re-run this command.`;
-  }
-
   const lines = [
     `\`${commandPath}\` requires a running Storybook dev server, and none was found for this project. Start it first with the Storybook script in its \`package.json\`, then re-run this command.`,
   ];

@@ -3,7 +3,7 @@ import { join } from 'node:path';
 
 import * as v from 'valibot';
 
-import { getPidNamespace } from '../../../common/utils/pid-namespace.ts';
+import { isAnotherPidNamespace } from '../../../common/utils/pid-namespace.ts';
 import {
   getInstanceRegistryDir,
   getLegacyStorybookConfigDir,
@@ -98,6 +98,5 @@ function isProcessAlive(pid: number): boolean {
 // The dev server runs in another process namespace, as it does outside the sandbox or container
 // of this process. Its pid then says nothing here.
 export function isProcessHidden({ pidNamespace }: StorybookInstanceRecord): boolean {
-  const own = getPidNamespace();
-  return pidNamespace != null && own != null && pidNamespace !== own;
+  return isAnotherPidNamespace(pidNamespace);
 }

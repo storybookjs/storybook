@@ -48,7 +48,7 @@ export function formatConnectionBlocked(
 }
 
 export function formatConnectionHidden(record: StorybookInstanceRecord): string {
-  return `Could not connect to the Storybook at ${record.url}: it runs in another process namespace than this command, as outside a sandbox or container, and the connection failed. Do not start another Storybook. ${RERUN_OUTSIDE_SANDBOX}`;
+  return `Could not connect to the Storybook at ${record.url}: its process is in another process namespace than this command, as when one of the two runs in a sandbox or container, and the connection failed. If this command runs in a sandbox, do not start another Storybook: re-run it with escalated permissions, outside the sandbox.`;
 }
 
 export function formatConnectionFailed(record: StorybookInstanceRecord): string {

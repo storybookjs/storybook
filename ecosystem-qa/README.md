@@ -194,7 +194,7 @@ Every PR is a link to the PR, because GitHub links no bare `#36137` in a Markdow
 node ecosystem-qa/qa-plan.ts ledger ecosystem-qa/plans/11.0.md --window ecosystem-qa/plans/11.0.window.json --out ledger.md
 ```
 
-`manual` prints the manual checks of a plan as one Markdown checklist for an issue or a discussion: a title line with the line and the version, two sentences on what the list is and what to do with a finding, and one section for each reason why the sweep cannot test a check, headed by that reason, with one task for each manual check of the PR table and of the groups that gives it, followed by its PRs.
+`manual` prints the manual checks of a plan as one Markdown checklist for an issue or a discussion: a title line with the line and the version, two sentences on what the list is and what to do with a finding, and one section for each reason why the sweep does not test a check, headed by that reason, with one task for each manual check of the PR table and of the groups that gives it, followed by its PRs.
 Checks that share a reason share its words, so write a reason in the words of one already in the plan when it means the same, such as `shows on Windows only` or `no repo of the catalog has the state it acts on`.
 Each PR is a link followed by its title from the window, as one code span, so that a mention or a reference in a title stays text.
 It refuses a plan that fails `check` with that window, and it creates nothing on GitHub:
@@ -210,6 +210,27 @@ gh issue create --repo storybookjs/storybook --title "Manual QA for Storybook 11
 ```
 
 Never put the label `internal-qa` on that issue: `collect.ts` reads every issue with that label as a finding of the sweep.
+
+`diff` prints what differs between a plan before a change and after it, with the window of both: each PR whose place changed, the entries removed, added, and changed, the discovered repos removed and added, and the manual checks and the reasons for no QA removed and added, each with its PRs.
+A place is the kind of decision and the entries or the group that hold the PR, so a reworded check or reason moves no PR and shows as one removed and one added.
+`--moved` names the PRs that the change is meant to move.
+`diff` marks the line of each other PR that moved, and exits 1 with a line for each of them and for each PR that `--moved` names and that did not move.
+An agent changes a plan that exists with the `/qa-plan-iterate` skill in `.agents/skills/qa-plan-iterate/`, which proves every change with this command.
+Striking the discovered repo `wrfcoin-frontend` from the 11.0 plan prints:
+
+```sh
+node ecosystem-qa/qa-plan.ts diff before.md ecosystem-qa/plans/11.0.md --window ecosystem-qa/plans/11.0.window.json
+```
+
+```
+#37064 moved: tested by `remove-legacy-feature-flags`; group `temporary-migration-flags`, tested by `remove-legacy-feature-flags` -> group `temporary-migration-flags`, manual QA, and --moved does not name it
+Entry removed: `remove-legacy-feature-flags` in batch 2 on `wrfcoin-frontend`
+Discovered repo removed: `wrfcoin-frontend` wrfcoin/frontend
+Manual check added: In a project on Storybook 10 whose main file sets `argTypeTargetsV7: true` under `features`, run `npx storybook@11.0.0-beta.3 upgrade`: the upgrade runs the automigration `remove-legacy-feature-flags`, the main file no longer sets `argTypeTargetsV7` and keeps the other flags, and `npx storybook dev` starts. (#37064)
+#37064 moved, and --moved does not name it.
+```
+
+With `--moved 37064` it prints the same lines without the mark and the last line, and exits 0.
 
 An entry under `## Steps` is a block of lines:
 

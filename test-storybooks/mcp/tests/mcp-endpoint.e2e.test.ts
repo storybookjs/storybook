@@ -1125,53 +1125,6 @@ describe('MCP Endpoint E2E Tests', () => {
 		});
 	});
 
-	describe('Toolset Filtering', () => {
-		it('should respect X-MCP-Toolsets header for dev tools only', async () => {
-			const response = await fetch(MCP_ENDPOINT, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					'X-MCP-Toolsets': 'dev',
-				},
-				body: JSON.stringify(createMCPRequestBody('tools/list')),
-			});
-
-			const data = await parseMCPResponse(response);
-			const toolNames = data.result.tools.map((tool: any) => tool.name);
-
-			expect(toolNames).toMatchInlineSnapshot(`
-				[
-				  "stories-preview",
-				  "stories-changed",
-				  "stories-find-by-component",
-				  "review-create",
-				]
-			`);
-		});
-
-		it('should respect X-MCP-Toolsets header for docs tools only', async () => {
-			const response = await fetch(MCP_ENDPOINT, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					'X-MCP-Toolsets': 'docs',
-				},
-				body: JSON.stringify(createMCPRequestBody('tools/list')),
-			});
-
-			const data = await parseMCPResponse(response);
-			const toolNames = data.result.tools.map((tool: any) => tool.name);
-
-			expect(toolNames).toMatchInlineSnapshot(`
-				[
-				  "docs-list",
-				  "docs-show",
-				  "docs-show-story",
-				]
-			`);
-		});
-	});
-
 	describe('HTTP Methods', () => {
 		it('should return HTML when Accept header is text/html', async () => {
 			const response = await fetch(MCP_ENDPOINT, {

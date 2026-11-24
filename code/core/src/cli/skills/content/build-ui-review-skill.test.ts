@@ -43,16 +43,6 @@ describe('buildUiReviewSkill', () => {
     expect(text).not.toContain('find-by-component');
   });
 
-  it('says when to skip the step, and keeps its tools, when main.ts turns the dev toolset off', () => {
-    const text = buildUiReviewSkill({ ...everything, transport: 'mcp', toolsetOff: true });
-
-    expect(text).toContain(
-      'The `main.ts` of this project turns the `dev` toolset of the Storybook MCP server off. When the server does not give you `review-create`, skip the review.'
-    );
-    expect(text).toContain('Call `review-create` with:');
-    expect(buildUiReviewSkill({ ...everything, transport: 'mcp' })).not.toContain('skip this step');
-  });
-
   it('starts the dev server from the package.json script without shell interpolation', () => {
     const text = buildUiReviewSkill(everything);
 

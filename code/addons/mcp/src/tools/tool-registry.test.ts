@@ -122,23 +122,12 @@ describe('the preview app resource', () => {
     registerCoreToolsetsForTest();
   });
 
-  // The resource ships with the preview tool: a client that cannot see the tool must not see the
-  // ui:// resource either.
-  it('is registered exactly when the dev toolset is enabled', async () => {
-    const enabled = makeServer();
-    const enabledResource = vi.fn();
-    enabled.server.resource = enabledResource;
-    await registerAddonMcpTools(enabled.server, { availability: availabilityWith() });
-    expect(enabledResource).toHaveBeenCalledTimes(1);
-
-    const disabled = makeServer();
-    const disabledResource = vi.fn();
-    disabled.server.resource = disabledResource;
-    await registerAddonMcpTools(disabled.server, {
-      availability: availabilityWith(),
-      toolsets: { dev: false, docs: true, test: true },
-    });
-    expect(disabledResource).not.toHaveBeenCalled();
+  it('is registered with the MCP tools', async () => {
+    const { server } = makeServer();
+    const resource = vi.fn();
+    server.resource = resource;
+    await registerAddonMcpTools(server, { availability: availabilityWith() });
+    expect(resource).toHaveBeenCalledTimes(1);
   });
 });
 

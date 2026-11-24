@@ -3,7 +3,6 @@ import type { SkillId } from './skills.ts';
 import type { SkillTextTransport } from './skill-vocabulary.ts';
 
 export type ServerInstructionsInputs = {
-  devEnabled: boolean;
   testSupported: boolean;
   docsEnabled: boolean;
 };
@@ -12,15 +11,14 @@ export type ServerInstructionsInputs = {
 // tests right from that line, without a skill in between.
 type Step = { skill: SkillId; does: string } | { tests: true };
 
-function workflowSteps({ devEnabled, testSupported, docsEnabled }: ServerInstructionsInputs) {
+function workflowSteps({ testSupported, docsEnabled }: ServerInstructionsInputs) {
   const steps: (Step | false)[] = [
     docsEnabled && {
       skill: 'component-docs',
       // When the user asks about a component is in the description of the skill, as for `/ui-review`.
       does: 'look up the components to reuse, with their props and usage examples, before you edit any file',
     },
-    // Without the `dev` toolset the server is for lookups and test runs, not for the story workflow.
-    devEnabled && {
+    {
       skill: 'write-stories',
       // The reason to open the skill: how stories are written now, which training data lags behind.
       does: 'every component you create or change gets stories, written with the current best practices for this Storybook version and this project',
@@ -29,7 +27,7 @@ function workflowSteps({ devEnabled, testSupported, docsEnabled }: ServerInstruc
     // No review step: publishing one after every change costs tokens also when nobody looks at
     // it, and it needs a running dev server. The `ui-review` skill stays for when the user asks.
   ];
-  return steps.filter((step) => step !== false);
+  return steps.filter((step): step is Step => Boolean(step));
 }
 
 // The test step names the command that tests stories in this project, and nothing more: when to
@@ -66,34 +64,24 @@ function buildWorkflow(inputs: ServerInstructionsInputs, transport: SkillTextTra
       ? testStep(index + 1, transport)
       : `${index + 1}. \`${cli ? `/${step.skill}` : `npx storybook skills ${step.skill} --mcp`}\`: ${step.does}.`
   );
-  // Without the `dev` toolset there is no review to tell the user about.
-  if (inputs.devEnabled) {
-    lines.push(reviewStep(lines.length + 1));
-  }
+  lines.push(reviewStep(lines.length + 1));
   const skillSteps = steps.flatMap((step, index) => ('skill' in step ? [index + 1] : []));
   const inOwnCommand =
     'in a command of its own, from the package where Storybook is installed, and read its whole output, without `head` or `tail`';
   // An agent opens the skills it is told to open at the start of its task. One it has to open
   // halfway is the one it skips, so all of them come first, in a sentence of their own.
-  let open =
+  // `write-stories` is always a step, `component-docs` only with a components manifest.
+  const open =
     skillSteps.length > 1
       ? cli
         ? `First invoke the Storybook skills of steps ${skillSteps.join(' and ')}, before you edit any file. Then follow each skill at its step.`
         : `First run the Storybook skills of steps ${skillSteps.join(' and ')}, before you edit any file: each ${inOwnCommand}. Then follow each skill at its step.`
-      : skillSteps.length === 1
-        ? cli
-          ? `First invoke the Storybook skill of step ${skillSteps[0]}, before you edit any file. Then follow it at its step.`
-          : `First run the Storybook skill of step ${skillSteps[0]}, before you edit any file, ${inOwnCommand}. Then follow it at its step.`
-        : '';
-  if (lines.length === 1 && skillSteps.length === 1) {
-    open = cli
-      ? 'It has a Storybook skill. Invoke it before you edit any file, and follow it.'
-      : `It has a Storybook skill. Run it before you edit any file, ${inOwnCommand}, and follow it.`;
-  }
-  const follow = lines.length > 1 ? 'follow these steps in order.' : 'follow this step.';
+      : cli
+        ? `First invoke the Storybook skill of step ${skillSteps[0]}, before you edit any file. Then follow it at its step.`
+        : `First run the Storybook skill of step ${skillSteps[0]}, before you edit any file, ${inOwnCommand}. Then follow it at its step.`;
   return `## Storybook
 
-For every change to how the UI looks (you create, change, or delete a component, story, style, theme, or design token), ${[follow, open].filter(Boolean).join(' ')}
+For every change to how the UI looks (you create, change, or delete a component, story, style, theme, or design token), follow these steps in order. ${open}
 
 ${lines.join('\n')}`;
 }
@@ -103,7 +91,7 @@ ${lines.join('\n')}`;
  * Without `@storybook/addon-vitest` the project cannot run story tests, so it gets no test step.
  */
 export function buildAgentInstructions({ testSupported = true } = {}): string {
-  return buildWorkflow({ devEnabled: true, testSupported, docsEnabled: true }, 'cli');
+  return buildWorkflow({ testSupported, docsEnabled: true }, 'cli');
 }
 
 /**
@@ -113,32 +101,21 @@ export function buildAgentInstructions({ testSupported = true } = {}): string {
  * anything more belongs in the skills and the tool results.
  */
 export function buildServerInstructions(inputs: ServerInstructionsInputs): string {
-  if (!inputs.devEnabled && !inputs.testSupported && !inputs.docsEnabled) {
-    return '';
-  }
   // Persistent context, like the plugin's SKILL.md: by the final answer, the skill and the
   // review-create result are many calls back, and agents left the review lines out. A review is
   // only published when the user asks for one, through the `ui-review` skill.
-  const review = inputs.devEnabled
-    ? `\n\nWhen you create a review with \`${getToolName({ transport: 'mcp' })('review.create')}\`, end your final answer with the three lines its result gives you, unchanged, and mention the review link nowhere else in it.`
-    : '';
+  const review = `\n\nWhen you create a review with \`${getToolName({ transport: 'mcp' })('review.create')}\`, end your final answer with the three lines its result gives you, unchanged, and mention the review link nowhere else in it.`;
   // The tools are at hand over MCP, so an agent can do a step without its skill. It did for a
   // request that is one step, where no file edit comes first.
-  const skillSteps = workflowSteps(inputs).filter((step) => 'skill' in step).length;
-  const skillFirst =
-    skillSteps === 0
-      ? ''
-      : skillSteps > 1
-        ? '\n\nRun the skill of a step before you call a tool of that step, also when the request is only that step.'
-        : '\n\nRun the skill before you call a tool of its step, also when the request is only that step.';
+  const skillFirst = inputs.docsEnabled
+    ? '\n\nRun the skill of a step before you call a tool of that step, also when the request is only that step.'
+    : '\n\nRun the skill before you call a tool of its step, also when the request is only that step.';
   // Over MCP there is no skill description to say when to open a skill, and Claude Code loads tool
   // descriptions only on use, so the triggers that skill descriptions carry are here.
   const triggers = [
-    inputs.devEnabled &&
-      '`npx storybook skills ui-review --mcp` when the user asks for a review, or to see or be shown components, stories, or their states in Storybook',
+    '`npx storybook skills ui-review --mcp` when the user asks for a review, or to see or be shown components, stories, or their states in Storybook',
     inputs.docsEnabled &&
       "`npx storybook skills component-docs --mcp` when the user asks about a component's props, API, or usage",
   ].filter(Boolean);
-  const when = triggers.length > 0 ? `\n\nAlso run ${triggers.join(', and ')}.` : '';
-  return `${buildWorkflow(inputs, 'mcp')}${skillFirst}${when}${review}`;
+  return `${buildWorkflow(inputs, 'mcp')}${skillFirst}\n\nAlso run ${triggers.join(', and ')}.${review}`;
 }

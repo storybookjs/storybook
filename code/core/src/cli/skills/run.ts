@@ -3,7 +3,6 @@ import { relative } from 'node:path';
 import type { Options } from '../../types/index.ts';
 
 import { resolveStorybookConfigDir } from '../tools/config-dir.ts';
-import { ALL_MCP_TOOLSETS } from './availability.ts';
 import { buildComponentDocsSkill } from './content/build-component-docs-skill.ts';
 import { buildTestStoriesSkill } from './content/build-test-stories-skill.ts';
 import { buildUiReviewSkill } from './content/build-ui-review-skill.ts';
@@ -241,30 +240,21 @@ function buildProjectSkill(
   if (id === 'write-stories') {
     return buildWriteStoriesSkill(inputs);
   }
-  // Over MCP, a skill only names the tools the server registers, with the same gates as
-  // addon-mcp's tool registry: the toolsets `main.ts` turns on, and for the docs tools the
-  // `componentsManifest` opt-in or composed Storybooks. The CLI docs commands need manifests or
-  // composed Storybooks.
-  const mcp = transport === 'mcp';
-  const toolsets = mcp ? inputs.mcpToolsets : ALL_MCP_TOOLSETS;
-  const docsSupported = (mcp ? inputs.docsEnabled : inputs.docsEnabledForCli) || inputs.composed;
-  const docsEnabled = toolsets.docs && docsSupported;
-  // A skill names the tools of its own toolset also when `main.ts` turns that toolset off, and
-  // says so: a client that turns it on with the `X-MCP-Toolsets` header has those tools.
+  // Over MCP, match addon-mcp's docs-tool gate; the CLI docs commands need manifests or composed Storybooks.
+  const docsSupported =
+    (transport === 'mcp' ? inputs.docsEnabled : inputs.docsEnabledForCli) || inputs.composed;
   if (id === 'component-docs') {
-    return buildComponentDocsSkill({ transport, docsSupported, toolsetOff: !toolsets.docs });
+    return buildComponentDocsSkill({ transport, docsSupported });
   }
   return id === 'test-stories'
     ? buildTestStoriesSkill({
         transport,
         testSupported: inputs.testSupported,
-        toolsetOff: !toolsets.test,
         a11yEnabled: inputs.a11yEnabled,
       })
     : buildUiReviewSkill({
-        docsEnabled,
+        docsEnabled: docsSupported,
         moduleGraphSupported: inputs.moduleGraphSupported,
         transport,
-        toolsetOff: !toolsets.dev,
       });
 }

@@ -90,20 +90,25 @@ Vue's interop between Vapor and regular components covers props, events and slot
 
 ### Component documentation
 
-<Callout variant="info">
+Storybook reads Vue component props, events, slots, and JSDoc comments, a step called docgen, to generate [controls](../../essentials/controls.mdx) and [documentation](../../writing-docs/autodocs.mdx), and to improve [skill output](../../ai/skills/component-docs.mdx). New projects do not need any docgen configuration.
 
-Storybook 11 reads Vue component props on the server by default. To keep the Storybook 10 bundler-based `docgen` setup, set `features.docgenServer: false`. That old setup will be removed in Storybook 12.
+The Vue framework supports three docgen engines:
 
-</Callout>
+| Docgen engine        | Runs         | Status                         |
+| -------------------- | ------------ | ------------------------------ |
+| `vue-component-meta` | Server-side  | Recommended, AI-ready, default |
+| `vue-component-meta` | Builder-side | Deprecated                     |
+| `vue-docgen-api`     | Builder-side | Deprecated                     |
 
-[`vue-component-meta`](https://github.com/vuejs/language-tools/tree/master/packages/component-meta) is a tool maintained by the Vue team that extracts metadata from Vue components. Storybook can use it to generate the [controls](../../essentials/controls.mdx) for your stories and documentation. It's a more full-featured alternative to `vue-docgen-api` and is recommended for most projects.
-
-New projects do not need any docgen configuration. To migrate an existing project that selects `vue-component-meta`, remove the legacy framework option and let Storybook use the server:
+Builder-side docgen is deprecated and will be removed in Storybook 12. To migrate an existing project to server-side `vue-component-meta`, remove the legacy docgen option and ensure `docgenServer` is not disabled:
 
 ```diff title=".storybook/main.ts"
  import type { StorybookConfig } from '@storybook/vue3-vite';
 
  const config: StorybookConfig = {
+-  features: {
+-    docgenServer: false,
+-  },
 -  framework: {
 -    name: '@storybook/vue3-vite',
 -    options: {
@@ -116,7 +121,9 @@ New projects do not need any docgen configuration. To migrate an existing projec
  export default config;
 ```
 
-`vue-component-meta` comes with many benefits and enables more documentation features, such as:
+### Benefits of `vue-component-meta`
+
+[`vue-component-meta`](https://github.com/vuejs/language-tools/tree/master/packages/component-meta) is maintained by the Vue team. It's a more full-featured alternative to `vue-docgen-api` and is recommended for most projects. It comes with many benefits and enables more documentation features, such as:
 
 #### Support for multiple component types
 

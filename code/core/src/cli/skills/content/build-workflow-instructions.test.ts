@@ -15,7 +15,7 @@ import {
 // the workflow.
 const MCP_CLIENT_INSTRUCTIONS_CHAR_LIMIT = 2048;
 
-const everything = { devEnabled: true, testSupported: true, docsEnabled: true };
+const everything = { testSupported: true, docsEnabled: true };
 
 describe('buildAgentInstructions', () => {
   it('is the workflow: two skills, then the test command itself', () => {
@@ -57,18 +57,17 @@ describe('buildAgentInstructions', () => {
 describe('buildServerInstructions', () => {
   it('stays under the MCP client truncation limit in every configuration', () => {
     const bools = [true, false] as const;
-    for (const devEnabled of bools)
-      for (const testSupported of bools)
-        for (const docsEnabled of bools) {
-          const options = { devEnabled, testSupported, docsEnabled };
-          const length = buildServerInstructions(options).length;
-          expect
-            .soft(length, `instructions exceed the limit for ${JSON.stringify(options)}`)
-            .toBeLessThanOrEqual(MCP_CLIENT_INSTRUCTIONS_CHAR_LIMIT);
-        }
+    for (const testSupported of bools)
+      for (const docsEnabled of bools) {
+        const options = { testSupported, docsEnabled };
+        const length = buildServerInstructions(options).length;
+        expect
+          .soft(length, `instructions exceed the limit for ${JSON.stringify(options)}`)
+          .toBeLessThanOrEqual(MCP_CLIENT_INSTRUCTIONS_CHAR_LIMIT);
+      }
   });
 
-  it('runs the skills with --mcp and the tests with test-run, when all toolsets are enabled', () => {
+  it('runs the skills with --mcp and the tests with test-run, when all features are enabled', () => {
     expect(buildServerInstructions(everything)).toMatchInlineSnapshot(`
       "## Storybook
 
@@ -107,81 +106,32 @@ describe('buildServerInstructions', () => {
     expect(step(mcp, 4)).toBe(step(cli, 4));
   });
 
-  it('leaves out the steps of toolsets that are off, and numbers the rest', () => {
+  it('leaves out unavailable steps, and numbers the rest', () => {
     const instructions = buildServerInstructions({
-      devEnabled: true,
       testSupported: false,
       docsEnabled: false,
     });
 
     expect(instructions).toContain('1. `npx storybook skills write-stories --mcp`');
     expect(instructions).toContain('2. ALWAYS inform the user about the `/ui-review` skill');
+    expect(instructions).toContain(
+      'First run the Storybook skill of step 1, before you edit any file'
+    );
+    expect(instructions).toContain('Run the skill before you call a tool of its step');
     expect(instructions).not.toContain('3.');
     expect(instructions).not.toContain('test-run');
     expect(instructions).not.toContain('component-docs');
   });
 
-  it('leaves out writing stories and the review without the dev toolset', () => {
-    const instructions = buildServerInstructions({ ...everything, devEnabled: false });
-
-    expect(instructions).toContain('1. `npx storybook skills component-docs --mcp`');
-    expect(instructions).toContain('2. To test stories, call `test-run`');
-    expect(instructions).toContain(
-      'First run the Storybook skill of step 1, before you edit any file'
-    );
-    expect(instructions).not.toContain('write-stories');
-    expect(instructions).not.toContain('review-create');
-    expect(instructions).not.toContain('ui-review');
-  });
-
-  it('names one step for one toolset', () => {
-    expect(buildServerInstructions({ devEnabled: false, testSupported: false, docsEnabled: true }))
-      .toMatchInlineSnapshot(`
-        "## Storybook
-
-        For every change to how the UI looks (you create, change, or delete a component, story, style, theme, or design token), follow this step. It has a Storybook skill. Run it before you edit any file, in a command of its own, from the package where Storybook is installed, and read its whole output, without \`head\` or \`tail\`, and follow it.
-
-        1. \`npx storybook skills component-docs --mcp\`: look up the components to reuse, with their props and usage examples, before you edit any file.
-
-        Run the skill before you call a tool of its step, also when the request is only that step.
-
-        Also run \`npx storybook skills component-docs --mcp\` when the user asks about a component's props, API, or usage."
-      `);
-  });
-
-  it('names no skill when only the test toolset is on', () => {
-    expect(buildServerInstructions({ devEnabled: false, testSupported: true, docsEnabled: false }))
-      .toMatchInlineSnapshot(`
-        "## Storybook
-
-        For every change to how the UI looks (you create, change, or delete a component, story, style, theme, or design token), follow this step.
-
-        1. To test stories, call \`test-run\`: with neither for every story, with \`files\` for these story files, with \`changed: true\` for the stories your changes affect."
-      `);
-  });
-
   // Over MCP there is no skill description, so the instructions say when to run these skills.
-  it('says when to run ui-review and component-docs, for the toolsets that are on', () => {
+  it('says when to run ui-review, and component-docs when the project has it', () => {
     expect(buildServerInstructions(everything)).toContain(
       "Also run `npx storybook skills ui-review --mcp` when the user asks for a review, or to see or be shown components, stories, or their states in Storybook, and `npx storybook skills component-docs --mcp` when the user asks about a component's props, API, or usage."
     );
-    expect(buildServerInstructions({ ...everything, devEnabled: false })).not.toContain(
-      'ui-review'
-    );
-    expect(buildServerInstructions({ ...everything, docsEnabled: false })).not.toContain(
-      'component-docs'
+    expect(buildServerInstructions({ ...everything, docsEnabled: false })).toContain(
+      'Also run `npx storybook skills ui-review --mcp` when the user asks for a review, or to see or be shown components, stories, or their states in Storybook.'
     );
     // The AGENTS.md section leaves both to the skill descriptions.
     expect(buildAgentInstructions()).not.toMatch(/asks for a review|asks about a component/);
-  });
-
-  it('returns empty instructions when all toolsets are disabled', () => {
-    const instructions = buildServerInstructions({
-      devEnabled: false,
-      testSupported: false,
-      docsEnabled: false,
-    });
-
-    expect(instructions).toBe('');
   });
 });

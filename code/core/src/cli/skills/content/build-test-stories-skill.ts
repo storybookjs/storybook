@@ -5,8 +5,6 @@ export type TestStoriesSkillInputs = {
   transport: SkillTextTransport;
   // `@storybook/addon-vitest` is enabled.
   testSupported: boolean;
-  // `main.ts` turns the `test` toolset of the MCP server off. Never for the CLI.
-  toolsetOff?: boolean;
   a11yEnabled: boolean;
 };
 
@@ -19,10 +17,6 @@ export function buildTestStoriesSkill(inputs: TestStoriesSkillInputs): string {
 
 This project cannot run story tests: its main config does not list \`@storybook/addon-vitest\`.`;
   }
-  // A client can turn the toolset on for itself with a request header, which this text cannot see.
-  const toolsetOff = inputs.toolsetOff
-    ? `\n\nThe \`main.ts\` of this project turns the \`test\` toolset of the Storybook MCP server off, so the server gives ${v.name('test.run')} only to a client that turns it on.`
-    : '';
   // The accessibility rules stay: they guard against changes to the design or to the project's
   // accessibility test level that nobody asked for.
   const a11y = inputs.a11yEnabled
@@ -55,7 +49,7 @@ Only story files match \`files\`: a component file matches nothing, and \`change
 A run ends with \`## Result\`: what was selected, then \`Passed: …\` or \`Failed: …\`. Each failing story is under \`## Failing Stories\` with its error, and errors outside a story are under \`## Unhandled Errors\`. When nothing is selected, the result is one line that says so.`;
   return `# Test the stories
 
-${v.notes}${toolsetOff}
+${v.notes}
 
 ${usage}${a11y}`;
 }

@@ -22,9 +22,7 @@ describe('buildTestStoriesSkill', () => {
   // harness's. Only the accessibility rules stay.
   it('tells the agent nothing about how to work, apart from the accessibility rules', () => {
     for (const transport of ['cli', 'mcp'] as const) {
-      expect(
-        buildTestStoriesSkill({ ...everything, transport, toolsetOff: true, a11yEnabled: false })
-      ).not.toMatch(
+      expect(buildTestStoriesSkill({ ...everything, transport, a11yEnabled: false })).not.toMatch(
         /after every change|rerun|fix|never|before you finish|full run|skip this step|only way|package\.json/i
       );
     }
@@ -54,13 +52,6 @@ describe('buildTestStoriesSkill', () => {
     expect(buildTestStoriesSkill({ ...everything, transport: 'mcp', testSupported: false })).toBe(
       buildTestStoriesSkill({ ...everything, testSupported: false })
     );
-  });
-
-  it('says that main.ts turns the test toolset off', () => {
-    expect(buildTestStoriesSkill({ ...everything, transport: 'mcp', toolsetOff: true })).toContain(
-      'The `main.ts` of this project turns the `test` toolset of the Storybook MCP server off, so the server gives `test-run` only to a client that turns it on.'
-    );
-    expect(buildTestStoriesSkill({ ...everything, transport: 'mcp' })).not.toContain('main.ts');
   });
 
   it('names no review and no other skill', () => {

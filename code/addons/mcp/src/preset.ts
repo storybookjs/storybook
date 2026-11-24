@@ -1,8 +1,9 @@
 import { mcpServerHandler } from './mcp-handler.ts';
-import type { PresetPropertyFn, StorybookConfigRaw } from 'storybook/internal/types';
+import type { Options, PresetPropertyFn, StorybookConfigRaw } from 'storybook/internal/types';
 import { AddonOptions, type AddonOptionsInput } from './types.ts';
 import * as v from 'valibot';
 import {
+  type ToolAvailability,
   createLocalDocsAccess,
   getEffectiveToolAvailability,
   getToolAvailability,
@@ -12,8 +13,11 @@ import {
 import { isWebContainer } from 'storybook/internal/common';
 import htmlTemplate from './template.html';
 import path from 'node:path';
-import { extractBearerToken, type ManifestProvider } from './auth/index.ts';
-import { resolveCompositionSources } from './auth/resolve-composition-sources.ts';
+import { type CompositionAuth, extractBearerToken } from './auth/index.ts';
+import {
+  type ResolvedCompositionSources,
+  resolveCompositionSources,
+} from './auth/resolve-composition-sources.ts';
 import { logger } from 'storybook/internal/node-logger';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { DEFAULT_MCP_ENDPOINT } from './constants.ts';
@@ -26,16 +30,58 @@ export const previewAnnotations: PresetPropertyFn<'previewAnnotations'> = async 
   return [...existingAnnotations, path.join(import.meta.dirname, 'preview.js')];
 };
 
+/** What the MCP routes need from the probed composition, and how each request reads manifests. */
+function buildComposition(
+  { refs, compositionAuth, sources, multiSource }: ResolvedCompositionSources,
+  {
+    options,
+    baseUrl,
+    rawAvailability,
+  }: { options: Options; baseUrl: string; rawAvailability: ToolAvailability }
+) {
+  // Composition (multi-source) is the only remaining consumer of the manifest-provider plumbing:
+  // single-source docs tools read the registered docs toolset instead. In docgen-server mode core
+  // 404s the local `/manifests/*.json`, so the local source reads this Storybook in-process
+  // through the same registration-based access selection the dev server uses when it is not
+  // composed — the docgen services when they actually registered, the inline manifests otherwise.
+  const localAccess =
+    rawAvailability.docgenServer && refs.length > 0
+      ? createLocalDocsAccess({
+          storyIndex: { getIndex: () => getStoryIndex(options) },
+          getManifests: () => loadManifests(options.presets),
+        })
+      : undefined;
+
+  if (refs.length > 0) {
+    logger.info(`Initialized composition with ${refs.length} remote Storybook(s)`);
+    if (compositionAuth.requiresAuth) {
+      logger.info(`Auth required for: ${compositionAuth.authUrls.join(', ')}`);
+    }
+    logger.info(`Sources: ${(sources ?? []).map((source) => source.id).join(', ')}`);
+  }
+
+  // Remote sources are fetched over HTTP; the local one is read through `localAccess` when
+  // docgen-server mode is on, and over HTTP from this origin otherwise.
+  const manifestProvider =
+    refs.length > 0 ? compositionAuth.createManifestProvider(baseUrl) : undefined;
+
+  return {
+    sources,
+    compositionAuth,
+    manifestAccess: { manifestProvider, localAccess },
+    // Same gates the MCP server uses to register these tools, so the page can't
+    // claim a tool is available when it isn't (and vice versa).
+    availability: getEffectiveToolAvailability(rawAvailability, { multiSource }),
+  };
+}
+
 export const experimental_devServer: PresetPropertyFn<
   'experimental_devServer',
   StorybookConfigRaw,
   AddonOptionsInput
 > = async (app, options) => {
-  // There is no error handling here. This can make the whole storybook app crash with:
-  // ValiError: Invalid type: Expected boolean but received "false"
   const addonOptions = v.parse(AddonOptions, {
     endpoint: options.endpoint,
-    toolsets: options.toolsets ?? {},
   });
 
   const basePath = options.basePath ?? '/';
@@ -96,44 +142,24 @@ export const experimental_devServer: PresetPropertyFn<
     return true;
   };
 
-  const { refs, compositionAuth, sources, multiSource } = await resolveCompositionSources(options);
-
-  // Composition (multi-source) is the only remaining consumer of the manifest-provider plumbing:
-  // single-source docs tools read the registered docs toolset instead. In docgen-server mode core
-  // 404s the local `/manifests/*.json`, so the local source reads this Storybook in-process
-  // through the same registration-based access selection the dev server uses when it is not
-  // composed — the docgen services when they actually registered, the inline manifests otherwise.
   const rawAvailability = await getToolAvailability(options);
-  const localAccess =
-    rawAvailability.docgenServer && refs.length > 0
-      ? createLocalDocsAccess({
-          storyIndex: { getIndex: () => getStoryIndex(options) },
-          getManifests: () => loadManifests(options.presets),
-        })
-      : undefined;
 
-  let createManifestProvider: ((req: IncomingMessage) => ManifestProvider) | undefined;
-
-  if (refs.length > 0) {
-    logger.info(`Initialized composition with ${refs.length} remote Storybook(s)`);
-    if (compositionAuth.requiresAuth) {
-      logger.info(`Auth required for: ${compositionAuth.authUrls.join(', ')}`);
-    }
-
-    logger.info(`Sources: ${(sources ?? []).map((s) => s.id).join(', ')}`);
-
-    // Remote sources are fetched over HTTP; the local one is read through `localAccess` when
-    // docgen-server mode is on, and over HTTP from this base URL otherwise.
-    createManifestProvider = () => compositionAuth.createManifestProvider(baseUrl);
-  }
-
-  const manifestAccessFor = (req: IncomingMessage) => ({
-    manifestProvider: createManifestProvider?.(req),
-    localAccess,
+  // Probing the composed refs is network I/O, so it runs while the builders start instead of
+  // holding up the dev server; the routes below await it, so only a request that arrives before
+  // the probe settles waits for it.
+  const composition = resolveCompositionSources(options).then((resolved) =>
+    buildComposition(resolved, { options, baseUrl, rawAvailability })
+  );
+  // Logged once here; the requests that await it get polka's 500 without a terminal message.
+  composition.catch((error) => {
+    logger.error(
+      `[addon-mcp] Composition setup failed: ${error instanceof Error ? error.message : String(error)}`
+    );
   });
 
   // Serve .well-known/oauth-protected-resource for MCP auth
-  app!.get('/.well-known/oauth-protected-resource', (_req, res) => {
+  app!.get('/.well-known/oauth-protected-resource', async (_req, res) => {
+    const { compositionAuth } = await composition;
     const wellKnown = compositionAuth.buildWellKnown(`${baseUrl}${endpoint}`);
     if (!wellKnown) {
       res.writeHead(404);
@@ -145,7 +171,11 @@ export const experimental_devServer: PresetPropertyFn<
     res.end(JSON.stringify(wellKnown));
   });
 
-  const requireAuth = (req: IncomingMessage, res: ServerResponse): boolean => {
+  const requireAuth = (
+    req: IncomingMessage,
+    res: ServerResponse,
+    compositionAuth: CompositionAuth
+  ): boolean => {
     const token = extractBearerToken(req.headers['authorization']);
     if (compositionAuth.requiresAuth && !token) {
       res.writeHead(401, {
@@ -158,79 +188,74 @@ export const experimental_devServer: PresetPropertyFn<
     return false;
   };
 
-  app!.post(endpoint, (req, res) => {
+  app!.post(endpoint, async (req, res) => {
     if (rejectDisallowedOrigin(req, res)) return;
-    if (requireAuth(req, res)) return;
+    const { sources, compositionAuth, manifestAccess } = await composition;
+    if (requireAuth(req, res, compositionAuth)) return;
     if (rejectNonJsonBody(req, res)) return;
 
     return mcpServerHandler({
       req,
       res,
       options,
-      addonOptions,
       origin,
       basePath,
       endpoint,
       sources,
-      ...manifestAccessFor(req),
+      ...manifestAccess,
       compositionAuth,
     });
   });
 
-  // Same gates the MCP server uses to register these tools, so the page can't
-  // claim a tool is available when it isn't (and vice versa).
-  const {
-    moduleGraphSupported,
-    docsEnabled,
-    docsHasManifests,
-    docsFeatureEnabled,
-    testSupported,
-    a11yEnabled,
-  } = getEffectiveToolAvailability(rawAvailability, { multiSource });
-
-  const isDevEnabled = addonOptions.toolsets?.dev ?? true;
-  const isDocsEnabled = docsEnabled && (addonOptions.toolsets?.docs ?? true);
-  const isTestEnabled = testSupported && (addonOptions.toolsets?.test ?? true);
-
-  app!.get(endpoint, (req, res) => {
+  app!.get(endpoint, async (req, res) => {
     if (rejectDisallowedOrigin(req, res)) return;
+    const { sources, compositionAuth, manifestAccess, availability } = await composition;
     if (!req.headers['accept']?.includes('text/html')) {
-      if (requireAuth(req, res)) return;
+      if (requireAuth(req, res, compositionAuth)) return;
 
       return mcpServerHandler({
         req,
         res,
         options,
-        addonOptions,
         origin,
         basePath,
         endpoint,
         sources,
-        ...manifestAccessFor(req),
+        ...manifestAccess,
         compositionAuth,
       });
     }
+
+    const {
+      moduleGraphSupported,
+      docsEnabled,
+      docsHasManifests,
+      docsFeatureEnabled,
+      testSupported,
+      a11yEnabled,
+    } = availability;
 
     // Browser request - send HTML
     res.writeHead(200, { 'Content-Type': 'text/html' });
 
     let docsNotice = '';
     if (!docsHasManifests) {
-      // Manifests come from the React frameworks, angular-vite and vue3-vite. If the feature is
-      // already on and there is still no manifest, the framework is the reason, not the config.
+      // Manifests come from the React frameworks, angular-vite, vue3-vite, svelte-vite, sveltekit, and
+      // web-components-vite. Outside React, they also need docgenServer. If the feature is already on
+      // and there is still no manifest, the framework or docgenServer is the reason.
       docsNotice = docsFeatureEnabled
         ? `<div class="toolset-notice">
-				This toolset requires a components manifest, which your framework does not generate. On <code>@storybook/vue3-vite</code>, also enable <code>docgenServer</code>.
-				<a target="_blank" href="https://storybook.js.org/docs/ai/mcp/overview#framework-support">See which frameworks are supported</a>
+				This toolset requires a components manifest, which your framework does not generate. On frameworks other than React, also enable <code>docgenServer</code>.
+				<a target="_blank" href="https://storybook.js.org/docs/ai/reference/manifests#framework-support">See which frameworks are supported</a>
 			</div>`
         : `<div class="toolset-notice">
-				This toolset requires a components manifest, which is generated by the React frameworks, <code>@storybook/angular-vite</code> and <code>@storybook/vue3-vite</code>. Enable the <code>componentsManifest</code> feature, plus <code>docgenServer</code> on <code>@storybook/vue3-vite</code>.
-				<a target="_blank" href="https://storybook.js.org/docs/ai/mcp/overview#framework-support">Learn how to enable it</a>
+				This toolset requires a components manifest, which is generated by the React frameworks, <code>@storybook/angular-vite</code>, <code>@storybook/vue3-vite</code>, <code>@storybook/svelte-vite</code>, <code>@storybook/sveltekit</code>, and <code>@storybook/web-components-vite</code>. Enable the <code>componentsManifest</code> feature. On frameworks other than React, also enable <code>docgenServer</code>.
+				<a target="_blank" href="https://storybook.js.org/docs/ai/reference/manifests#framework-support">Learn how to enable it</a>
 			</div>`;
     } else if (!docsFeatureEnabled) {
       docsNotice = `<div class="toolset-notice">
 				This toolset requires enabling the component manifest feature.
-				<a target="_blank" href="https://github.com/storybookjs/storybook/tree/next/code/addons/mcp">Learn how to enable it</a>
+				<a target="_blank" href="https://storybook.js.org/docs/ai/reference/manifests#framework-support">Learn how to enable it</a>
 			</div>`;
     }
 
@@ -248,29 +273,16 @@ export const experimental_devServer: PresetPropertyFn<
       ? ' <span class="toolset-status enabled">+ accessibility</span>'
       : '';
 
-    // `stories-find-by-component` also needs the dependency graph, so it shows its own badge.
-    // When the whole `dev` toolset is turned off via addon options every dev tool is
-    // disabled regardless of its own gate, so explain that instead of the per-tool reason.
-    const devNoticeLines = !isDevEnabled
-      ? [`The <code>dev</code> toolset is disabled via addon options.`]
-      : [
-          !moduleGraphSupported &&
-            `<code>stories-find-by-component</code> requires a dev server with a builder that supports the module graph (Vite or Webpack 5).`,
-        ].filter(Boolean);
-    const devNotice = devNoticeLines.length
-      ? `<div class="toolset-notice">${devNoticeLines.join('<br>')}</div>`
-      : '';
+    const devNotice = moduleGraphSupported
+      ? ''
+      : `<div class="toolset-notice"><code>stories-find-by-component</code> requires a dev server with a builder that supports the module graph (Vite or Webpack 5).</div>`;
 
     const html = htmlTemplate
-      .replaceAll('{{DEV_STATUS}}', isDevEnabled ? 'enabled' : 'disabled')
-      .replaceAll(
-        '{{STORIES_BY_COMPONENT_STATUS}}',
-        isDevEnabled && moduleGraphSupported ? 'enabled' : 'disabled'
-      )
+      .replaceAll('{{STORIES_BY_COMPONENT_STATUS}}', moduleGraphSupported ? 'enabled' : 'disabled')
       .replace('{{DEV_NOTICE}}', devNotice)
-      .replaceAll('{{DOCS_STATUS}}', isDocsEnabled ? 'enabled' : 'disabled')
+      .replaceAll('{{DOCS_STATUS}}', docsEnabled ? 'enabled' : 'disabled')
       .replace('{{DOCS_NOTICE}}', docsNotice)
-      .replaceAll('{{TEST_STATUS}}', isTestEnabled ? 'enabled' : 'disabled')
+      .replaceAll('{{TEST_STATUS}}', testSupported ? 'enabled' : 'disabled')
       .replace('{{TEST_NOTICE}}', testNotice)
       .replace(
         '{{MANIFEST_DEBUGGER_LINK}}',

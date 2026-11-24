@@ -1,3 +1,1 @@
-<csf-shapes label="Fallback"></csf-shapes>
-
-warning: Incomplete snippet: `() => document.createElement('csf-shapes')` could not be resolved statically.
+document.createElement('csf-shapes')

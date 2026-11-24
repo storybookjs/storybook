@@ -1,60 +1,41 @@
 import {
-  expectAllStoryExportsInDisplayReview,
-  expectDisplayReviewForVisualChange,
-  expectDevServerLeftRunning,
-  expectReviewOpenedInBrowser,
-  expectSkillInvoked,
-  expectStoryDiscoveryBeforeReview,
+  expectAnyWorkflowSkillInvoked,
+  expectNoDisplayReview,
+  expectReviewHint,
   expectStoryTestsRanAndPassed,
   expectWorkflowCalls,
   getEvalContext,
-  modelRunsTestsOnlyWhenAsked,
 } from '#test-utils';
 import { describe, test } from 'vitest';
+
+// The skills of the workflow in AGENTS.md that this task cannot do without. The tests are a
+// command of the workflow, not a skill, and a review only comes when the user asks for one.
+const WORKFLOW_SKILLS = ['component-docs', 'write-stories'];
 
 describe('creating a ProfileCard component', () => {
   test('runs story tests after the change and finishes with them passing', async () => {
     await expectStoryTestsRanAndPassed({
-      requireAgentRun: !modelRunsTestsOnlyWhenAsked(),
       covering: ['profilecard'],
     });
   });
 
-  test('uses Storybook story instructions and publishes a display review', () => {
-    expectWorkflowCalls(['get-storybook-story-instructions', 'review-create']);
-    expectDisplayReviewForVisualChange();
+  test('runs the skills of the workflow, and creates no review unasked', () => {
+    expectWorkflowCalls(WORKFLOW_SKILLS);
+    expectNoDisplayReview();
   });
 
-  test('opens the review in the in-app browser', () => {
-    expectReviewOpenedInBrowser();
-  });
-
-  test('every new story appears in the display review', () => {
-    expectAllStoryExportsInDisplayReview();
-  });
-
-  test('discovers stories through the workflow tools before publishing the review', () => {
-    expectStoryDiscoveryBeforeReview();
+  test('tells the user about the /ui-review skill', () => {
+    expectReviewHint();
   });
 
   describe('depending on the current agent and integration', () => {
-    const { agent, integration } = getEvalContext();
+    const { integration } = getEvalContext();
 
     // Building the ProfileCard from Reshaped primitives requires the docs tools.
-    // Skipped for Codex: it omits docs-show under both instruction
-    // shapes (CI 28660377980, 2026-07-03). Re-enable after the documentation
-    // tool call passes on three consecutive scheduled CI runs.
-    test.skipIf(agent === 'codex')('uses the documentation tooling', () =>
-      expectWorkflowCalls(['docs-show'])
-    );
+    test('uses the documentation tooling', () => expectWorkflowCalls(['docs-show']));
 
-    test.skipIf(integration === 'mcp')('invokes the ui-workflow skill', () =>
-      expectSkillInvoked('ui-workflow')
-    );
-
-    test.skipIf(integration !== 'plugin')(
-      'leaves the dev server running when using the plugin',
-      () => expectDevServerLeftRunning()
-    );
+    test.skipIf(integration === 'mcp')('finds the workflow through the plugin skills', () => {
+      expectAnyWorkflowSkillInvoked();
+    });
   });
 });

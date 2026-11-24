@@ -31,7 +31,9 @@ import {
 } from './help.ts';
 import {
   parsePort,
+  keepTypedText,
   parseToolsTokens,
+  withPositionals,
   type ParsedToolsTokens,
   type ToolsOutputFlags,
 } from './tool-tokens.ts';
@@ -329,6 +331,15 @@ async function dispatchTools(
   const toolPath = `${entry.id} ${toCliMethodName(methodName)}`;
   const commandPath = `npx storybook tools ${toolPath}`;
 
+  const args = withPositionals(keepTypedText(parsed, method.input), method.positional);
+  if (!args.ok) {
+    return result({
+      exitCode: 1,
+      output: `Unexpected argument \`${args.unexpected}\`. \`${commandPath}\` takes no bare arguments: pass tool arguments as \`--key value\` flags (or via \`--input '<object>'\`).`,
+      outcome: { kind: 'intercept', reason: 'invalid-arguments' },
+    });
+  }
+
   if (tools.mode === 'local' && method.requiresDevServer) {
     const discovery = await (deps.discoverInstance ?? discoverRunningInstance)(invocation.target);
     return result({
@@ -346,7 +357,7 @@ async function dispatchTools(
     logger.setLogLevel('error');
   }
   try {
-    const outcome = await tools.call(method.ref, parsed.args, {
+    const outcome = await tools.call(method.ref, args.args, {
       ...(tools.storybook.url ? { origin: tools.storybook.url } : {}),
     });
     const output = parsed.json

@@ -99,7 +99,7 @@ export const sourceUrlManifestProvider: ManifestProvider = async (_request, path
   return readManifestText(response, manifestUrl);
 };
 
-// The same budget addon-mcp gives its startup probe of a ref's manifest.
+// A composed source that does not answer in time is reported like an unreachable one.
 const REF_MANIFEST_FETCH_TIMEOUT_MS = 3_000;
 
 async function readManifestText(response: Response, manifestUrl: string): Promise<string> {

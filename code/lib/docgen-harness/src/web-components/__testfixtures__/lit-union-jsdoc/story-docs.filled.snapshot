@@ -1,0 +1,15 @@
+{
+  "ArgsDefaultRender": "<lit-union-jsdoc variant="ghost &amp; &lt;changed>" old-label="Legacy &amp; &lt;changed>" label="Default render &amp; &lt;changed>"></lit-union-jsdoc>",
+  "DomNode": "const DomNode = () => {
+  const el = document.createElement('lit-union-jsdoc');
+  el.setAttribute('variant', String('secondary & <changed>'));
+  el.setAttribute('old-label', String('Old & <changed>'));
+  el.setAttribute('label', String('Current & <changed>'));
+  return el;
+};",
+  "LitTemplate": "html`<lit-union-jsdoc
+  variant=${'secondary & <changed>'}
+  old-label=${'Old & <changed>'}
+  label=${'Current & <changed>'}
+></lit-union-jsdoc>`",
+}

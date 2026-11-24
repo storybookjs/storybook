@@ -1,26 +1,39 @@
 import { readFile, writeFile } from 'node:fs/promises';
 
+import { escapeRegExp } from 'es-toolkit/string';
 import { join } from 'pathe';
+
+import { toCliPath } from '../shared/open-service/toolset-names.ts';
+import { buildAgentInstructions } from './skills/content/build-workflow-instructions.ts';
 
 // The same marker convention as Next.js (`BEGIN:nextjs-agent-rules`) and Nx: Storybook owns the
 // text between the markers and replaces it on upgrade, so a user who wants their own text removes
-// the markers. The skills do not claim UI changes on their own: this section is what makes agents
-// use them.
+// the markers. The section is the workflow that tells agents when to use each skill.
 const BEGIN_MARKER = '<!-- BEGIN:storybook-skills -->';
 const END_MARKER = '<!-- END:storybook-skills -->';
 
-export const STORYBOOK_AGENT_INSTRUCTIONS = `${BEGIN_MARKER}
+export type AgentInstructionsInputs = {
+  /** A Storybook the caller checked has `@storybook/addon-vitest`, so the section has a test step. */
+  testSupported: boolean;
+  /**
+   * The caller checked every Storybook of the project. Every Storybook of a monorepo shares these
+   * files, so a caller that checked only some keeps a test step that another one put there.
+   */
+  sawEveryStorybook: boolean;
+};
+
+export const storybookAgentInstructions = ({
+  testSupported,
+}: Pick<AgentInstructionsInputs, 'testSupported'>) =>
+  `${BEGIN_MARKER}
 <!-- Storybook updates this section on upgrade. Remove both markers to keep your own edits. -->
 
-## Storybook skills
-
-For each of these tasks, invoke its Storybook skill first, before you edit any file, and follow it:
-
-- \`ui-workflow\`: you create, change, or delete a component, story, style, theme, or design token, or otherwise change how the UI looks; you run or fix story tests; or the user asks to see components or stories. It looks up the components to reuse, updates your stories, runs the tests, and publishes a review of the results.
-- \`component-docs\`: you look for an existing component to reuse instead of building a new one, or the user asks about a component's props, API, or usage. It lists the project's components with their props and usage examples.
+${buildAgentInstructions({ testSupported })}
 
 ${END_MARKER}
 `;
+
+export const STORYBOOK_AGENT_INSTRUCTIONS = storybookAgentInstructions({ testSupported: true });
 
 // One block, from a BEGIN marker on its own line to the next END marker on its own line, with the
 // line break after it. A marker mentioned in prose does not match, and a second BEGIN ends the
@@ -38,8 +51,19 @@ const CLAUDE_FILES = [
   { file: 'CLAUDE.local.md', importsAgentsMd: /(^|\s)@(\.\/)?AGENTS\.md\b/m },
 ];
 
-// Also matches a section the user customized, so it is not added a second time.
-const NAMES_A_STORYBOOK_SKILL = /\b(ui-workflow|component-docs)\b/;
+// The test command as the section names it, without `npx`. These patterns also read sections that
+// an older Storybook wrote: when the command is renamed, its old name stays here, as `test-stories`
+// does.
+const TEST_COMMAND = escapeRegExp(`storybook tools ${toCliPath('test.run')}`);
+
+// The test step of this section, or of the 11.0 prereleases, which named the `test-stories` skill.
+const TEST_STEP = new RegExp(`${TEST_COMMAND}|\`test-stories\``);
+
+// Also matches a section the user customized, so it is not added a second time: one written by
+// an 11.0 prerelease, which named every skill, or one that keeps only the test command.
+const NAMES_A_STORYBOOK_SKILL = new RegExp(
+  `\\b(component-docs|write-stories|test-stories|ui-review)\\b|\\b${TEST_COMMAND}\\b`
+);
 
 // The block between the markers, when the file has one.
 const findSection = (content: string | undefined): string | undefined =>
@@ -54,14 +78,16 @@ export type AgentInstructionsMode = 'install' | 'update';
 
 // The section in the line endings of the file it goes into, so a CRLF file stays CRLF and an
 // update of an unchanged section is a no-op there too.
-const sectionFor = (content: string | undefined) =>
-  content?.includes('\r\n')
-    ? STORYBOOK_AGENT_INSTRUCTIONS.replaceAll('\n', '\r\n')
-    : STORYBOOK_AGENT_INSTRUCTIONS;
+const sectionFor = (content: string | undefined, section: string) =>
+  content?.includes('\r\n') ? section.replaceAll('\n', '\r\n') : section;
 
 // The new content of the file, or `undefined` when it needs no change.
-function withSection(content: string | undefined, mode: AgentInstructionsMode): string | undefined {
-  const section = sectionFor(content);
+function withSection(
+  content: string | undefined,
+  mode: AgentInstructionsMode,
+  storybookSection: string
+): string | undefined {
+  const section = sectionFor(content, storybookSection);
   if (content !== undefined && findSection(content) !== undefined) {
     const updated = content.replace(SECTION, () => section);
     return updated === content ? undefined : updated;
@@ -74,13 +100,15 @@ function withSection(content: string | undefined, mode: AgentInstructionsMode): 
 }
 
 // The new content of each file to write, keyed by its path relative to the project root. `read`
-// resolves to `undefined` for a file that does not exist.
+// resolves to `undefined` for a file that does not exist. `section` replaces the skills section,
+// for example with the MCP server instructions in the MCP evals.
 export async function planStorybookAgentInstructions(
   read: (file: string) => Promise<string | undefined>,
-  mode: AgentInstructionsMode = 'install'
+  mode: AgentInstructionsMode = 'install',
+  section = STORYBOOK_AGENT_INSTRUCTIONS
 ): Promise<Record<string, string>> {
   const files: Record<string, string> = {};
-  const agentsMd = withSection(await read('AGENTS.md'), mode);
+  const agentsMd = withSection(await read('AGENTS.md'), mode, section);
   if (agentsMd !== undefined) {
     files['AGENTS.md'] = agentsMd;
   }
@@ -93,13 +121,13 @@ export async function planStorybookAgentInstructions(
     }
   }
   const withMarkers = claudeFiles.filter(({ section }) => section !== undefined);
-  for (const { file, content, importsAgentsMd, section } of withMarkers) {
+  for (const { file, content, importsAgentsMd, section: current } of withMarkers) {
     // A user who replaced the copy with an import of AGENTS.md keeps it (the case nrwl/nx#37181
     // reports Nx gets wrong).
-    if (importsAgentsMd.test(section ?? '')) {
+    if (importsAgentsMd.test(current ?? '')) {
       continue;
     }
-    const updated = withSection(content, mode);
+    const updated = withSection(content, mode, section);
     if (updated !== undefined) {
       files[file] = updated;
     }
@@ -113,7 +141,7 @@ export async function planStorybookAgentInstructions(
   // Claude Code loads every CLAUDE.md, so one copy is enough.
   const [claudeFile] = claudeFiles;
   if (claudeFile && !claudeSeesSection) {
-    const added = withSection(claudeFile.content, mode);
+    const added = withSection(claudeFile.content, mode, section);
     if (added !== undefined) {
       files[claudeFile.file] = added;
     }
@@ -123,23 +151,49 @@ export async function planStorybookAgentInstructions(
 
 export type AgentInstructionsChange = { file: string; change: 'added' | 'updated' };
 
+const readOptional = async (path: string): Promise<string | undefined> => {
+  try {
+    return await readFile(path, 'utf8');
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      return undefined;
+    }
+    throw error;
+  }
+};
+
+// The section can be in `AGENTS.md` and in a Claude file, and a project can keep it in only one.
+const SECTION_FILES = ['AGENTS.md', ...CLAUDE_FILES.map(({ file }) => file)];
+
+async function hasTestStep(read: (file: string) => Promise<string | undefined>): Promise<boolean> {
+  for (const file of SECTION_FILES) {
+    if (TEST_STEP.test(findSection(await read(file)) ?? '')) {
+      return true;
+    }
+  }
+  return false;
+}
+
 export async function addStorybookAgentInstructions(
   root: string,
-  mode: AgentInstructionsMode = 'install'
+  mode: AgentInstructionsMode,
+  inputs: AgentInstructionsInputs
 ): Promise<AgentInstructionsChange[]> {
   const existing = new Map<string, string | undefined>();
-  const files = await planStorybookAgentInstructions(async (file) => {
-    try {
-      const content = await readFile(join(root, file), 'utf8');
+  const read = async (file: string) => {
+    const content = await readOptional(join(root, file));
+    if (content !== undefined) {
       existing.set(file, content);
-      return content;
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-        return undefined;
-      }
-      throw error;
     }
-  }, mode);
+    return content;
+  };
+  const testSupported =
+    inputs.testSupported || (!inputs.sawEveryStorybook && (await hasTestStep(read)));
+  const files = await planStorybookAgentInstructions(
+    read,
+    mode,
+    storybookAgentInstructions({ testSupported })
+  );
   const changes: AgentInstructionsChange[] = [];
   for (const [file, content] of Object.entries(files)) {
     await writeFile(join(root, file), content);

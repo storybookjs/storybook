@@ -19,6 +19,7 @@ import type ts from 'typescript';
 
 import {
   type DeclaredSubcomponent,
+  componentPathFromStory,
   extractDeclaredSubcomponents,
   getComponentIdFromEntry,
   getStoryImportPathFromEntry,
@@ -73,6 +74,10 @@ const UNRESOLVED_COMPONENT_MESSAGES: Record<
   'no-component-import': (subject) => ({
     name: 'No component import found',
     message: `No component file found for the component declared in ${subject}. Import it into the story file.`,
+  }),
+  'missing-export': (subject) => ({
+    name: 'No component found',
+    message: `${subject} names an export that its module does not have. Check the name against the module's exports, and any barrel that re-exports it.`,
   }),
   'unreadable-component-expression': (subject) => ({
     name: 'No component found',
@@ -214,7 +219,8 @@ async function buildSubcomponentDocgen(
 
     return {
       name: declared.componentName,
-      path: extracted.path,
+      // Written like the story's index path, as in the other renderers, not as a machine path.
+      path: componentPathFromStory(storyFilePath, storyPath, extracted.path),
       description: extracted.description,
       summary: extracted.summary,
       jsDocTags: extracted.jsDocTags,

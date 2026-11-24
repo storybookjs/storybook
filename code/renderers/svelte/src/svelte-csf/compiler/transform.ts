@@ -58,6 +58,6 @@ export async function transformSvelteCsf(params: TransformSvelteCsfParams) {
 
   return {
     code: magicCompiledCode.toString(),
-    map: magicCompiledCode.generateMap({ hires: true, source: filename }),
+    map: magicCompiledCode.generateMap({ hires: true, source: filename }).toString(),
   };
 }

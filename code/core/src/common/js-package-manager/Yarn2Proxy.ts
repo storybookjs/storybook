@@ -1,13 +1,9 @@
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
-
 import { prompt } from 'storybook/internal/node-logger';
 import {
   FindPackageVersionsError,
   MinimumReleaseAgeHandledError,
 } from 'storybook/internal/server-errors';
 
-import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
 import type { ResultPromise } from 'execa';
 import { dedent } from 'ts-dedent';
@@ -15,7 +11,6 @@ import { dedent } from 'ts-dedent';
 import { logger } from '../../node-logger/index.ts';
 import type { ExecuteCommandOptions } from '../utils/command.ts';
 import { executeCommand } from '../utils/command.ts';
-import { getProjectRoot } from '../utils/paths.ts';
 import { JsPackageManager, PackageManagerName } from './JsPackageManager.ts';
 import type { PackageJson } from './PackageJson.ts';
 import type { InstallationMetadata, PackageMetadata } from './types.ts';
@@ -180,21 +175,6 @@ export class Yarn2Proxy extends JsPackageManager {
     }
   }
 
-  async getModulePackageJSON(packageName: string): Promise<PackageJson | null> {
-    const wantedPath = join('node_modules', packageName, 'package.json');
-    const packageJsonPath = find.up(wantedPath, {
-      cwd: this.primaryPackageJson.operationDir,
-      last: getProjectRoot(),
-    });
-
-    if (!packageJsonPath) {
-      return null;
-    }
-
-    const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
-    return packageJson;
-  }
-
   protected getResolutions(packageJson: PackageJson, versions: Record<string, string>) {
     return {
       resolutions: {
@@ -207,7 +187,8 @@ export class Yarn2Proxy extends JsPackageManager {
   protected runInstall() {
     return executeCommand({
       command: 'yarn',
-      args: ['install', ...this.getInstallArgs()],
+      // Yarn 3 and 4 freeze the lockfile when CI is set.
+      args: ['install', '--no-immutable', ...this.getInstallArgs()],
       cwd: this.cwd,
       stdio: prompt.getPreferredStdio(),
     });

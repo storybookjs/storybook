@@ -1,5 +1,5 @@
 import { readFile, writeFile } from 'node:fs/promises';
-import { relative, resolve } from 'node:path';
+import { resolve } from 'node:path';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -7,6 +7,7 @@ import { type JsPackageManager, getProjectRoot, removeAddon } from 'storybook/in
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import { fs, vol } from 'memfs';
+import { relative } from 'pathe';
 import { dedent } from 'ts-dedent';
 
 import { createFixFiles } from '../fix-files.ts';

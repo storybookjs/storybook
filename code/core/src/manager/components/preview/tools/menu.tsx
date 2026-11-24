@@ -6,21 +6,25 @@ import type { Addon_BaseType } from 'storybook/internal/types';
 import { MenuIcon } from '@storybook/icons';
 
 import { Consumer, types } from 'storybook/manager-api';
-import type { Combo } from 'storybook/manager-api';
+import type { API, Combo } from 'storybook/manager-api';
 
 import { focusableUIElements } from '../../../../manager-api/modules/layout.ts';
 
+// Only values, so the consumer re-renders the button when one of them changes and not on
+// every store commit.
 const menuMapper = ({ api, state }: Combo) => ({
+  api,
   navAvailability: api.getNavAvailability(),
   singleStory: state.singleStory,
-  showSidebar: async (forceFocus: boolean) => {
-    api.toggleNav(true);
-    api.focusOnUIElement(focusableUIElements.sidebarRegion, {
-      forceFocus,
-      poll: true,
-    });
-  },
 });
+
+const showSidebar = (api: API, forceFocus: boolean) => {
+  api.toggleNav(true);
+  api.focusOnUIElement(focusableUIElements.sidebarRegion, {
+    forceFocus,
+    poll: true,
+  });
+};
 
 export const menuTool: Addon_BaseType = {
   title: 'menu',
@@ -31,7 +35,7 @@ export const menuTool: Addon_BaseType = {
   render: () => {
     return (
       <Consumer filter={menuMapper}>
-        {({ navAvailability, showSidebar, singleStory }) =>
+        {({ api, navAvailability, singleStory }) =>
           !singleStory &&
           navAvailability === 'hidden' && (
             <>
@@ -41,11 +45,11 @@ export const menuTool: Addon_BaseType = {
                 ariaLabel="Show sidebar"
                 id={focusableUIElements.showSidebar}
                 key="menu"
-                onClick={() => showSidebar(false)}
+                onClick={() => showSidebar(api, false)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
-                    showSidebar(true);
+                    showSidebar(api, true);
                   }
                 }}
               >

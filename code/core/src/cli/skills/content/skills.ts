@@ -1,25 +1,33 @@
 /**
- * The Storybook skills: agent-facing instruction documents served by `storybook skills <id>`
- * and, on the MCP side, by addon-mcp (server instructions and the story-instructions tool). The
- * ids are public CLI vocabulary — plugin stubs (M7) will reference them — so treat renames as
- * breaking.
+ * The Storybook skills: agent-facing instruction documents served by `storybook skills <id>`,
+ * which addon-mcp's server instructions run with `--mcp`. The ids are public CLI vocabulary —
+ * the plugin skills and the `AGENTS.md` section reference them — so treat renames as breaking.
  */
-export const SKILL_IDS = ['ui-workflow', 'component-docs', 'write-story', 'setup'] as const;
+export const SKILL_IDS = [
+  'component-docs',
+  'write-stories',
+  'test-stories',
+  'ui-review',
+  'setup',
+] as const;
 
 export type SkillId = (typeof SKILL_IDS)[number];
 
 export const SKILLS: Record<SkillId, { blurb: string }> = {
-  'ui-workflow': {
-    blurb:
-      'The workflow for UI changes, with every command it needs: look up components, write stories, test, and publish a review.',
-  },
   'component-docs': {
     blurb:
-      'Look up components, with their props and usage, to answer questions about them or to reuse them instead of building duplicates.',
+      "Look up components, with their props and usage examples, to reuse them instead of building duplicates or to answer a question about a component's props, API, or usage.",
   },
-  'write-story': {
+  'write-stories': {
     blurb:
-      'How to write, update, and test Storybook stories for this project: imports, patterns, and conventions.',
+      'How to write the stories of a component in this project: imports, play functions and mocks.',
+  },
+  'test-stories': {
+    blurb: 'Run the story tests, with their accessibility checks.',
+  },
+  'ui-review': {
+    blurb:
+      'When the user asks for a review, or to see components, stories, or their states: find the stories and create a review that shows them.',
   },
   setup: {
     blurb: 'Setup instructions to write stories for the real components in this project.',

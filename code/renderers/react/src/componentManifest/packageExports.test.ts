@@ -1,85 +1,115 @@
-import { describe, expect, test } from 'vitest';
+import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 
-import { findExportSubpath, resolveExportSubpath } from './packageExports.ts';
+import { afterEach, describe, expect, test } from 'vitest';
 
-const root = '/app/packages/ui';
-const button = `${root}/src/button.tsx`;
+import path from 'pathe';
 
-describe('resolveExportSubpath', () => {
-  test('prefers an exact key over a pattern key', () => {
-    const exportsMap = { './*': './src/*.tsx', './button': './src/other.tsx' };
+import { findExportSubpathImport } from './packageExports.ts';
+import { invalidateCache } from './utils.ts';
 
-    expect(resolveExportSubpath(exportsMap, './button')).toBe('./src/other.tsx');
-  });
+const roots: string[] = [];
 
-  test('prefers the pattern key with the longest prefix', () => {
-    const exportsMap = { './*': './src/*.tsx', './icons/*': './icons/*.tsx' };
-
-    expect(resolveExportSubpath(exportsMap, './icons/star')).toBe('./icons/star.tsx');
-  });
-
-  test('replaces every `*` of a target', () => {
-    expect(resolveExportSubpath({ './*': './src/*/*.tsx' }, './button')).toBe(
-      './src/button/button.tsx'
-    );
-  });
-
-  test('returns null for an excluded subpath', () => {
-    const exportsMap = { './*': './src/*.tsx', './internal': null };
-
-    expect(resolveExportSubpath(exportsMap, './internal')).toBeNull();
-  });
-
-  test('skips conditions outside the import conditions', () => {
-    const exportsMap = {
-      './button': { require: './cjs/button.js', import: './src/button.tsx' },
-    };
-
-    expect(resolveExportSubpath(exportsMap, './button')).toBe('./src/button.tsx');
-    expect(resolveExportSubpath({ './button': { require: './cjs/button.js' } }, './button')).toBe(
-      undefined
-    );
-  });
+afterEach(() => {
+  roots.splice(0).forEach((root) => rmSync(root, { recursive: true, force: true }));
+  invalidateCache();
 });
 
-describe('findExportSubpath', () => {
+// A package on disk, so the real module resolver checks every subpath.
+function fixture(exportsMap: Record<string, unknown>, files: string[]) {
+  const root = realpathSync(mkdtempSync(path.join(tmpdir(), 'package-exports-')));
+  roots.push(root);
+  writeFileSync(
+    path.join(root, 'package.json'),
+    JSON.stringify({ name: '@acme/ui', exports: exportsMap })
+  );
+  for (const file of files) {
+    mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
+    writeFileSync(path.join(root, file), 'export const Button = () => null;\n');
+  }
+  return (file: string) =>
+    findExportSubpathImport('@acme/ui', exportsMap, root, path.join(root, file));
+}
+
+describe('findExportSubpathImport', () => {
   test('finds the key whose target is the file', () => {
-    expect(findExportSubpath({ './button': './src/button.tsx' }, root, button)).toBe('./button');
+    const importOf = fixture({ './button': './src/button.tsx' }, ['src/button.tsx']);
+
+    expect(importOf('src/button.tsx')).toBe('@acme/ui/button');
   });
 
   test('expands a pattern key', () => {
-    expect(findExportSubpath({ './components/*': './src/*.tsx' }, root, button)).toBe(
-      './components/button'
-    );
+    const importOf = fixture({ './components/*': './src/*.tsx' }, ['src/button.tsx']);
+
+    expect(importOf('src/button.tsx')).toBe('@acme/ui/components/button');
   });
 
   test('expands a pattern whose target repeats `*`', () => {
-    expect(
-      findExportSubpath({ './*': './src/*/*.tsx' }, root, `${root}/src/button/button.tsx`)
-    ).toBe('./button');
+    const importOf = fixture({ './*': './src/*/*.tsx' }, ['src/button/button.tsx', 'src/a/b.tsx']);
+
+    expect(importOf('src/button/button.tsx')).toBe('@acme/ui/button');
+    expect(importOf('src/a/b.tsx')).toBe(undefined);
+  });
+
+  test('prefers an exact key over a pattern key that reaches the same file', () => {
+    const importOf = fixture({ './components/*': './src/*.tsx', './button': './src/button.tsx' }, [
+      'src/button.tsx',
+    ]);
+
+    expect(importOf('src/button.tsx')).toBe('@acme/ui/button');
   });
 
   test('reads targets inside condition objects', () => {
-    const exportsMap = {
-      './button': { types: './dist/button.d.ts', import: './src/button.tsx' },
-    };
-
-    expect(findExportSubpath(exportsMap, root, button)).toBe('./button');
-  });
-
-  test('skips a subpath that an exact key excludes', () => {
-    expect(findExportSubpath({ './*': './src/*.tsx', './button': null }, root, button)).toBe(
-      undefined
+    const importOf = fixture(
+      { './button': { types: './dist/button.d.ts', import: './src/button.tsx' } },
+      ['src/button.tsx']
     );
+
+    expect(importOf('src/button.tsx')).toBe('@acme/ui/button');
   });
 
   test('skips a target that only `require` reaches', () => {
-    expect(findExportSubpath({ './button': { require: './src/button.tsx' } }, root, button)).toBe(
-      undefined
-    );
+    const importOf = fixture({ './button': { require: './src/button.tsx' } }, ['src/button.tsx']);
+
+    expect(importOf('src/button.tsx')).toBe(undefined);
+  });
+
+  test('skips a subpath that an exact key excludes', () => {
+    const importOf = fixture({ './*': './src/*.tsx', './button': null }, ['src/button.tsx']);
+
+    expect(importOf('src/button.tsx')).toBe(undefined);
+  });
+
+  test('skips a target without a leading `./`', () => {
+    const importOf = fixture({ './button': 'src/button.tsx' }, ['src/button.tsx']);
+
+    expect(importOf('src/button.tsx')).toBe(undefined);
+  });
+
+  test('skips an exports map that mixes subpaths and conditions', () => {
+    const importOf = fixture({ './button': './src/button.tsx', import: './src/index.ts' }, [
+      'src/button.tsx',
+      'src/index.ts',
+    ]);
+
+    expect(importOf('src/button.tsx')).toBe(undefined);
+  });
+
+  test('skips a target inside `node_modules`', () => {
+    const importOf = fixture({ './*': './*' }, ['node_modules/x/button.tsx']);
+
+    expect(importOf('node_modules/x/button.tsx')).toBe(undefined);
+  });
+
+  test('follows an array of fallback targets', () => {
+    const importOf = fixture({ './button': ['bad', './src/button.tsx'] }, ['src/button.tsx']);
+
+    expect(importOf('src/button.tsx')).toBe('@acme/ui/button');
   });
 
   test('returns undefined when no subpath reaches the file', () => {
-    expect(findExportSubpath({ './card': './src/card.tsx' }, root, button)).toBe(undefined);
+    const importOf = fixture({ './card': './src/card.tsx' }, ['src/card.tsx', 'src/button.tsx']);
+
+    expect(importOf('src/button.tsx')).toBe(undefined);
   });
 });

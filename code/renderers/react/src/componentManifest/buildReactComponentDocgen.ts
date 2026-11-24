@@ -17,7 +17,7 @@ import path from 'pathe';
 
 import type { ComponentDoc, PropItem } from './componentMeta/componentMetaExtractor.ts';
 import type { ComponentRef } from './getComponentImports.ts';
-import { findExportSubpath } from './packageExports.ts';
+import { getImportablePackageName, withExportSubpaths } from './packageExports.ts';
 import type { DocObj } from './reactDocgen.ts';
 import type { ComponentDocWithExportName } from './reactDocgenTypescript.ts';
 import {
@@ -25,7 +25,6 @@ import {
   type ResolvedSubcomponent,
   extractStorySnippets,
 } from './resolveComponents.ts';
-import { cachedFindUp, cachedReadTextFileSync } from './utils.ts';
 
 export type DocgenEngine = 'react-docgen' | 'react-docgen-typescript' | 'react-component-meta';
 
@@ -52,100 +51,6 @@ export interface ReactComponentManifest extends ComponentManifest {
   reactComponentMeta?: ComponentDoc;
   subcomponents?: Record<string, ReactSubcomponentManifest>;
   [key: string]: unknown;
-}
-
-const ROOT_ENTRY_FIELDS = ['main', 'module', 'types', 'typings', 'browser'];
-
-// Whether the bare package name resolves: `exports` decides when present, the main fields otherwise.
-function hasRootEntry(pkg: Record<string, unknown>) {
-  const { exports } = pkg;
-  if (exports === undefined) {
-    return ROOT_ENTRY_FIELDS.some((field) => field in pkg);
-  }
-  // A string, or an array of fallbacks, is the root entry itself.
-  if (typeof exports !== 'object' || Array.isArray(exports)) {
-    return true;
-  }
-  if (exports === null) {
-    return false;
-  }
-  // An object lists either subpaths (`"."`, `"./button"`) or conditions (`"import"`, `"default"`).
-  // Conditions describe the root.
-  const subpaths = Object.keys(exports).filter((key) => key.startsWith('.'));
-  return subpaths.length === 0 || subpaths.includes('.');
-}
-
-interface NearestPackage {
-  root: string;
-  pkg: Record<string, unknown> & { name: string };
-}
-
-// The package.json that owns `fromPath`, when it has a name.
-function readNearestPackage(fromPath: string): NearestPackage | undefined {
-  const nearestPkg = cachedFindUp('package.json', { cwd: path.dirname(fromPath) });
-
-  try {
-    if (!nearestPkg) {
-      return undefined;
-    }
-
-    const parsed = JSON.parse(cachedReadTextFileSync(nearestPkg));
-    if (typeof parsed !== 'object' || !parsed || typeof parsed.name !== 'string') {
-      return undefined;
-    }
-    return { root: path.dirname(nearestPkg), pkg: parsed };
-  } catch {
-    return undefined;
-  }
-}
-
-// An app's own package (private, with no root entry) cannot be imported by name, so its
-// components keep the import the story wrote.
-function getImportablePackageName(componentPath: string | undefined, fallbackPath: string) {
-  const nearest = readNearestPackage(componentPath ?? fallbackPath);
-  if (!nearest) {
-    return undefined;
-  }
-  const importable = nearest.pkg.private !== true || hasRootEntry(nearest.pkg);
-  return importable ? nearest.pkg.name : undefined;
-}
-
-// The package import of a component file when its package exports only subpaths and one of them
-// resolves to the file, e.g. `@acme/ui/button` for `src/button.tsx`.
-function getExportSubpathImport(componentPath: string) {
-  const nearest = readNearestPackage(componentPath);
-  const exportsMap = nearest?.pkg.exports;
-  if (
-    !nearest ||
-    typeof exportsMap !== 'object' ||
-    exportsMap === null ||
-    Array.isArray(exportsMap) ||
-    hasRootEntry(nearest.pkg)
-  ) {
-    return undefined;
-  }
-  const subpath = findExportSubpath(
-    exportsMap as Record<string, unknown>,
-    path.resolve(nearest.root),
-    path.resolve(componentPath)
-  );
-  return subpath ? `${nearest.pkg.name}${subpath.slice(1)}` : undefined;
-}
-
-/**
- * A package that exports only subpaths cannot be imported by its bare name. Each component its
- * `exports` reaches imports from the subpath that resolves to its file instead, keeping the import
- * form (named, default or namespace). An `@import` tag still wins, and a component no subpath
- * reaches keeps the import it had.
- */
-function withExportSubpaths(refs: ComponentRef[]): ComponentRef[] {
-  return refs.map((ref) => {
-    if (ref.importOverride || ref.isPackage || !ref.path) {
-      return ref;
-    }
-    const importId = getExportSubpathImport(ref.path);
-    return importId ? { ...ref, importId, isPackage: true } : ref;
-  });
 }
 
 function getFallbackImport(packageName: string | undefined, componentName: string | undefined) {
@@ -302,7 +207,7 @@ export function buildStoryDocsFromResolved({
   const id = getComponentIdFromEntry(entry);
   const title = entry.title.split('/').at(-1)!.replace(/\s+/g, '');
 
-  const packageName = getImportablePackageName(component?.path, storyPath);
+  const packageName = getImportablePackageName(component?.path ?? storyPath);
   const fallbackImport = getFallbackImport(packageName, componentName);
   const storyEntries = extractStorySnippets(
     csf,
@@ -377,7 +282,7 @@ export function buildComponentDocgenFromResolved({
 }): ComponentDocgenFromResolved {
   const id = getComponentIdFromEntry(entry);
   const title = entry.title.split('/').at(-1)!.replace(/\s+/g, '');
-  const packageName = getImportablePackageName(component?.path, storyPath);
+  const packageName = getImportablePackageName(component?.path ?? storyPath);
 
   const base = {
     id,

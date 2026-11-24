@@ -525,6 +525,28 @@ test('keeps a namespace import when it moves to the subpath that exports its fil
   expect(manifest?.import).toBe("import * as UI from '@acme/ui/button';");
 });
 
+test('keeps the story import for a public package whose subpaths point elsewhere', async () => {
+  const code = withCSF3('export const Primary = () => <Button />;');
+
+  const manifest = await getManifestForStory(code, {
+    name: '@acme/ui',
+    exports: { './button': './dist/Button.js' },
+  });
+
+  expect(manifest?.import).toBe("import { Button } from './Button';");
+});
+
+test('treats a root entry set to null as no root entry', async () => {
+  const code = withCSF3('export const Primary = () => <Button />;');
+
+  const manifest = await getManifestForStory(code, {
+    name: '@acme/ui',
+    exports: { '.': null, './button': './src/stories/Button.tsx' },
+  });
+
+  expect(manifest?.import).toBe("import { Button } from '@acme/ui/button';");
+});
+
 test('component exported from other file', async () => {
   const code = withCSF3(dedent`
     export { Primary } from './other-file';

@@ -39,6 +39,9 @@ export function setupMemfsMocks() {
       '@design-system/button': './src/stories/Button.tsx',
       '@ds/button': './src/stories/Button.tsx',
       '@ds/header': './src/stories/Header.tsx',
+      // Subpaths of the `@acme/ui` package that the export tests declare.
+      '@acme/ui/button': './src/stories/Button.tsx',
+      '@acme/ui/components/Button': './src/stories/Button.tsx',
       './Button': './src/stories/Button.tsx',
       './Header': './src/stories/Header.tsx',
     };

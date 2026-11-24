@@ -16,6 +16,11 @@ export type StoreState = Required<Omit<ChecklistState, 'items'>> & {
   aiOptIn?: boolean;
   /** True when the user ran the AI setup at some point in the past. Treat empty values as false.*/
   aiSetupRun?: boolean;
+  /**
+   * True when the project has Storybook's skills: an entry in `skills-lock.json`, or Storybook's
+   * section in `AGENTS.md` or a `CLAUDE.md` file (skills from a plugin). Set by the server.
+   */
+  hasSkills?: boolean;
 };
 
 export type ItemId = keyof StoreState['items'];

@@ -1,0 +1,289 @@
+
+┌  storybook v11.0.0-beta.5
+│
+▲  You are currently using Storybook 11.0.0-beta.5 but you have packages
+│  which are incompatible with it:
+
+│  - @storybook/test-runner@0.26.1 which depends on ^0.0.0-0 || ^10.0.0
+│  || ^10.0.0-0 || ^10.1.0-0 || ^10.2.0-0 || ^10.3.0-0 || ^10.4.0-0 ||
+│  ^10.5.0-0 || ^10.6.0-0
+│  - storybook-addon-test-codegen@3.0.4 which depends on ^0.0.0-0 ||
+│  ^10.0.0 || ^10.0.0-0 || ^10.1.0-0 || ^10.2.0-0 || ^10.3.0-0
+│  Repo: https://github.com/igrlk/storybook-addon-test-codegen#readme
+
+│  Please consider updating your packages or contacting the maintainers
+│  for compatibility details.
+
+│  For more details on compatibility guidance, see:
+│  https://github.com/storybookjs/storybook/issues/36283
+│
+▲  Storybook found TypeScript 7.0.2 as the `typescript` package.
+│  TypeScript 7 does not include the compiler API that Storybook uses to
+│  read your component types for Controls and the Docs args table.
+
+│  If package.json has no `typescript` entry, your package manager
+│  installed TypeScript 7 for Storybook's peer dependency. Add
+│  `typescript@^6` to the devDependencies in package.json.
+
+│  If your project uses TypeScript 7, install TypeScript 7 and TypeScript
+│  6 side by side. In package.json, replace the `typescript` entry in
+│  devDependencies with these two entries:
+
+│  "@typescript/native": "npm:typescript@^7.0.2",
+│  "typescript": "npm:@typescript/typescript6@^6.0.2"
+
+│  `tsc` stays on TypeScript 7, and the `typescript` package is
+│  TypeScript 6. Both entries are necessary.
+
+│  Then install dependencies and restart Storybook.
+
+│  Until then, Storybook falls back to the deprecated builder docgen with
+│  `react-docgen`, which will be removed in Storybook 12.
+
+│  More info:
+│  https://storybook.js.org/docs/configure/integration/typescript?ref=error#typescript-7
+
+│
+▲  No story files found for the specified pattern: src/docs/*.mdx
+│
+▲  No story files found for the specified pattern:
+│  src/docs/Introduction.mdx
+│
+▲  No story files found for the specified pattern: src/**/*.mdx
+│
+●  Starting...
+│ ╭────────────────────────────────────────────────────────────────────────────╮
+│ │   Storybook ready!                                                         │
+│ │                                                                            │
+│ │   - Local:                http://127.0.0.1:6006/                           │
+│ │   - On your network:      run with --host <ip> to expose to local          │
+│ │   network                                                                  │
+│ │                                                                            │
+│ ╰────────────────────────────────────────────────────────────────────────────╯
+│
+●  645 ms for manager and 383 ms for preview
+│
+■  Vite [console.error] Error rendering story
+│  'qa-probe-argtypes--in-loader':
+│
+■  Vite [console.error] SB_PREVIEW_API_0017
+│  (ArgTypesRemovedFromStoryContextError): `argTypes` is no longer part
+│  of the story context passed to render functions, decorators, loaders,
+│  beforeEach, play and afterEach.
+
+│  Story: qa-probe-argtypes--in-loader
+
+│  With server-side docgen the preview only holds the arg types you
+│  declared yourself, so this object was incomplete while looking
+│  complete.
+│  - Read `args` for the values passed to the story.
+│  - Read component metadata, such as the inputs or props a component
+│  declares, with the reflection API of your framework.
+│  - Inspect the resolved arg types in the Controls panel or the ArgTypes
+│  doc block.
+
+│  More info:
+│  https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#argtypes-removed-from-the-story-context
+
+│  at Object.get
+│  (http://localhost:6006/node_modules/storybook/dist/preview/_chunks/runtime-Iyl32JOW.js?v=38fb97a7:530:34)
+│  at InLoader.loaders
+│  (http://localhost:6006/src/components/Badge/Badge.qaprobe.stories.tsx:10:46)
+│  at
+│  http://localhost:6006/node_modules/storybook/dist/preview/_chunks/runtime-Iyl32JOW.js?v=38fb97a7:1643:66
+│  at Array.map (<anonymous>)
+│  at applyLoaders
+│  (http://localhost:6006/node_modules/storybook/dist/preview/_chunks/runtime-Iyl32JOW.js?v=38fb97a7:1643:50)
+│  at async
+│  http://localhost:6006/node_modules/storybook/dist/preview/_chunks/runtime-Iyl32JOW.js?v=38fb97a7:2717:23
+│  at async StoryRender.runPhase
+│  (http://localhost:6006/node_modules/storybook/dist/preview/_chunks/runtime-Iyl32JOW.js?v=38fb97a7:2600:5)
+│  at async StoryRender.render
+│  (http://localhost:6006/node_modules/storybook/dist/preview/_chunks/runtime-Iyl32JOW.js?v=38fb97a7:2716:5)
+│
+■  Vite [console.error] Error rendering story
+│  'qa-probe-argtypes--in-loader':
+│
+■  Vite [console.error] SB_PREVIEW_API_0017
+│  (ArgTypesRemovedFromStoryContextError): `argTypes` is no longer part
+│  of the story context passed to render functions, decorators, loaders,
+│  beforeEach, play and afterEach.
+
+│  Story: qa-probe-argtypes--in-loader
+
+│  With server-side docgen the preview only holds the arg types you
+│  declared yourself, so this object was incomplete while looking
+│  complete.
+│  - Read `args` for the values passed to the story.
+│  - Read component metadata, such as the inputs or props a component
+│  declares, with the reflection API of your framework.
+│  - Inspect the resolved arg types in the Controls panel or the ArgTypes
+│  doc block.
+
+│  More info:
+│  https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#argtypes-removed-from-the-story-context
+
+│  at Object.get
+│  (http://localhost:6006/node_modules/storybook/dist/preview/_chunks/runtime-Iyl32JOW.js?v=38fb97a7:530:34)
+│  at InLoader.loaders
+│  (http://localhost:6006/src/components/Badge/Badge.qaprobe.stories.tsx:10:46)
+│  at
+│  http://localhost:6006/node_modules/storybook/dist/preview/_chunks/runtime-Iyl32JOW.js?v=38fb97a7:1643:66
+│  at Array.map (<anonymous>)
+│  at applyLoaders
+│  (http://localhost:6006/node_modules/storybook/dist/preview/_chunks/runtime-Iyl32JOW.js?v=38fb97a7:1643:50)
+│  at async
+│  http://localhost:6006/node_modules/storybook/dist/preview/_chunks/runtime-Iyl32JOW.js?v=38fb97a7:2717:23
+│  at async StoryRender.runPhase
+│  (http://localhost:6006/node_modules/storybook/dist/preview/_chunks/runtime-Iyl32JOW.js?v=38fb97a7:2600:5)
+│  at async StoryRender.render
+│  (http://localhost:6006/node_modules/storybook/dist/preview/_chunks/runtime-Iyl32JOW.js?v=38fb97a7:2716:5)
+│
+■  Vite [console.error] SB_PREVIEW_API_0017
+│  (ArgTypesRemovedFromStoryContextError): `argTypes` is no longer part
+│  of the story context passed to render functions, decorators, loaders,
+│  beforeEach, play and afterEach.
+
+│  Story: qa-probe-argtypes--in-play
+
+│  With server-side docgen the preview only holds the arg types you
+│  declared yourself, so this object was incomplete while looking
+│  complete.
+│  - Read `args` for the values passed to the story.
+│  - Read component metadata, such as the inputs or props a component
+│  declares, with the reflection API of your framework.
+│  - Inspect the resolved arg types in the Controls panel or the ArgTypes
+│  doc block.
+
+│  More info:
+│  https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#argtypes-removed-from-the-story-context
+
+│  at Object.get
+│  (http://localhost:6006/node_modules/storybook/dist/preview/_chunks/runtime-Iyl32JOW.js?v=38fb97a7:530:34)
+│  at play
+│  (http://localhost:6006/src/components/Badge/Badge.qaprobe.stories.tsx:14:40)
+│  at
+│  http://localhost:6006/node_modules/storybook/dist/preview/_chunks/runtime-Iyl32JOW.js?v=38fb97a7:2743:64
+│  at StoryRender.runPhase
+│  (http://localhost:6006/node_modules/storybook/dist/preview/_chunks/runtime-Iyl32JOW.js?v=38fb97a7:2600:11)
+│  at StoryRender.render
+│  (http://localhost:6006/node_modules/storybook/dist/preview/_chunks/runtime-Iyl32JOW.js?v=38fb97a7:2743:19)
+│
+■  Vite [console.error] SB_PREVIEW_API_0017
+│  (ArgTypesRemovedFromStoryContextError): `argTypes` is no longer part
+│  of the story context passed to render functions, decorators, loaders,
+│  beforeEach, play and afterEach.
+
+│  Story: qa-probe-argtypes--in-decorator
+
+│  With server-side docgen the preview only holds the arg types you
+│  declared yourself, so this object was incomplete while looking
+│  complete.
+│  - Read `args` for the values passed to the story.
+│  - Read component metadata, such as the inputs or props a component
+│  declares, with the reflection API of your framework.
+│  - Inspect the resolved arg types in the Controls panel or the ArgTypes
+│  doc block.
+
+│  More info:
+│  https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#argtypes-removed-from-the-story-context
+
+│  at Object.get
+│  (http://localhost:6006/node_modules/storybook/dist/preview/_chunks/runtime-Iyl32JOW.js?v=38fb97a7:530:34)
+│  at InDecorator.decorators
+│  (http://localhost:6006/src/components/Badge/Badge.qaprobe.stories.tsx:17:191)
+│  at hookified
+│  (http://localhost:6006/node_modules/storybook/dist/preview/_chunks/runtime-Iyl32JOW.js?v=38fb97a7:577:32)
+│  at
+│  http://localhost:6006/node_modules/storybook/dist/preview/_chunks/runtime-Iyl32JOW.js?v=38fb97a7:1590:22
+│  at
+│  http://localhost:6006/node_modules/storybook/dist/preview/_chunks/runtime-Iyl32JOW.js?v=38fb97a7:1621:10
+│  at Object.react_stack_bottom_frame
+│  (http://localhost:6006/node_modules/.cache/storybook/11.0.0-beta.5/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/client-C6vs0TM6.js?v=38fb97a7:12866:12)
+│  at renderWithHooks
+│  (http://localhost:6006/node_modules/.cache/storybook/11.0.0-beta.5/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/client-C6vs0TM6.js?v=38fb97a7:4213:19)
+│  at updateFunctionComponent
+│  (http://localhost:6006/node_modules/.cache/storybook/11.0.0-beta.5/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/client-C6vs0TM6.js?v=38fb97a7:5569:16)
+│  at beginWork
+│  (http://localhost:6006/node_modules/.cache/storybook/11.0.0-beta.5/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/client-C6vs0TM6.js?v=38fb97a7:6140:20)
+│  at runWithFiberInDEV
+│  (http://localhost:6006/node_modules/.cache/storybook/11.0.0-beta.5/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/client-C6vs0TM6.js?v=38fb97a7:851:66)
+
+│  The above error occurred in one of your React components.
+
+│  React will try to recreate this component tree from scratch using the
+│  error boundary you provided, ErrorBoundary.
+
+│
+■  Vite [console.error] Error rendering story
+│  'qa-probe-argtypes--in-decorator':
+│
+■  Vite [console.error] SB_PREVIEW_API_0017
+│  (ArgTypesRemovedFromStoryContextError): `argTypes` is no longer part
+│  of the story context passed to render functions, decorators, loaders,
+│  beforeEach, play and afterEach.
+
+│  Story: qa-probe-argtypes--in-decorator
+
+│  With server-side docgen the preview only holds the arg types you
+│  declared yourself, so this object was incomplete while looking
+│  complete.
+│  - Read `args` for the values passed to the story.
+│  - Read component metadata, such as the inputs or props a component
+│  declares, with the reflection API of your framework.
+│  - Inspect the resolved arg types in the Controls panel or the ArgTypes
+│  doc block.
+
+│  More info:
+│  https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#argtypes-removed-from-the-story-context
+
+│  at Object.get
+│  (http://localhost:6006/node_modules/storybook/dist/preview/_chunks/runtime-Iyl32JOW.js?v=38fb97a7:530:34)
+│  at InDecorator.decorators
+│  (http://localhost:6006/src/components/Badge/Badge.qaprobe.stories.tsx:17:191)
+│  at hookified
+│  (http://localhost:6006/node_modules/storybook/dist/preview/_chunks/runtime-Iyl32JOW.js?v=38fb97a7:577:32)
+│  at
+│  http://localhost:6006/node_modules/storybook/dist/preview/_chunks/runtime-Iyl32JOW.js?v=38fb97a7:1590:22
+│  at
+│  http://localhost:6006/node_modules/storybook/dist/preview/_chunks/runtime-Iyl32JOW.js?v=38fb97a7:1621:10
+│  at Object.react_stack_bottom_frame
+│  (http://localhost:6006/node_modules/.cache/storybook/11.0.0-beta.5/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/client-C6vs0TM6.js?v=38fb97a7:12866:12)
+│  at renderWithHooks
+│  (http://localhost:6006/node_modules/.cache/storybook/11.0.0-beta.5/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/client-C6vs0TM6.js?v=38fb97a7:4213:19)
+│  at updateFunctionComponent
+│  (http://localhost:6006/node_modules/.cache/storybook/11.0.0-beta.5/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/client-C6vs0TM6.js?v=38fb97a7:5569:16)
+│  at beginWork
+│  (http://localhost:6006/node_modules/.cache/storybook/11.0.0-beta.5/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/client-C6vs0TM6.js?v=38fb97a7:6140:20)
+│  at runWithFiberInDEV
+│  (http://localhost:6006/node_modules/.cache/storybook/11.0.0-beta.5/1c3385a5d25e538d10b518b310c74d3ca2690b6aaffeadccd74da79736171f86/sb-vite/deps/client-C6vs0TM6.js?v=38fb97a7:851:66)
+│
+■  Vite [console.error] SB_PREVIEW_API_0017
+│  (ArgTypesRemovedFromStoryContextError): `argTypes` is no longer part
+│  of the story context passed to render functions, decorators, loaders,
+│  beforeEach, play and afterEach.
+
+│  Story: qa-probe-argtypes--in-play
+
+│  With server-side docgen the preview only holds the arg types you
+│  declared yourself, so this object was incomplete while looking
+│  complete.
+│  - Read `args` for the values passed to the story.
+│  - Read component metadata, such as the inputs or props a component
+│  declares, with the reflection API of your framework.
+│  - Inspect the resolved arg types in the Controls panel or the ArgTypes
+│  doc block.
+
+│  More info:
+│  https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#argtypes-removed-from-the-story-context
+
+│  at Object.get
+│  (http://localhost:6006/node_modules/storybook/dist/preview/_chunks/runtime-Iyl32JOW.js?v=38fb97a7:530:34)
+│  at play
+│  (http://localhost:6006/src/components/Badge/Badge.qaprobe.stories.tsx:14:40)
+│  at
+│  http://localhost:6006/node_modules/storybook/dist/preview/_chunks/runtime-Iyl32JOW.js?v=38fb97a7:2743:64
+│  at StoryRender.runPhase
+│  (http://localhost:6006/node_modules/storybook/dist/preview/_chunks/runtime-Iyl32JOW.js?v=38fb97a7:2600:11)
+│  at StoryRender.render
+│  (http://localhost:6006/node_modules/storybook/dist/preview/_chunks/runtime-Iyl32JOW.js?v=38fb97a7:2743:19)

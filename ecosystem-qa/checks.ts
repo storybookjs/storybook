@@ -1,7 +1,9 @@
 // The agent-runnable rows of `references/basic-qa.md`, whose Agent column maps each row to one of
 // these ids; `checks.test.ts` keeps the two in sync.
-// `must` runs on every repo of every sweep; `extended` only when a dispatch asks for it.
-export type Tier = 'must' | 'extended';
+// `gate` holds the probes that the prompt's upgrade steps run in any case; `must` runs on every
+// repo of every sweep; `extended` only when a dispatch asks for it.
+export const TIERS = ['gate', 'must', 'extended'] as const;
+export type Tier = (typeof TIERS)[number];
 
 // The order the agent works in: each phase uses what the one before it left installed, running
 // or built.
@@ -20,7 +22,7 @@ export const CHECKS = [
     id: 'upgrade.command',
     label: 'The upgrade command completes without errors',
     phase: 'upgrade',
-    tier: 'must',
+    tier: 'gate',
     probe:
       'Run the upgrade command. Save its full output to `upgrade.log` in the evidence directory.',
   },
@@ -28,7 +30,7 @@ export const CHECKS = [
     id: 'upgrade.automigrations',
     label: 'Automigrations are detected, run, and change the right files',
     phase: 'upgrade',
-    tier: 'must',
+    tier: 'gate',
     probe:
       'List the automigrations the upgrade detected and the ones it ran. Read `git diff` of every file they changed. A link containing `undefined` is a failure.',
   },
@@ -36,7 +38,7 @@ export const CHECKS = [
     id: 'upgrade.installed-version',
     label: 'The installed `storybook` version equals the target version',
     phase: 'upgrade',
-    tier: 'must',
+    tier: 'gate',
     probe:
       'From the Storybook directory run `node -p "require(\'storybook/package.json\').version"`.',
   },
@@ -44,7 +46,7 @@ export const CHECKS = [
     id: 'upgrade.doctor',
     label: '`storybook doctor` after the upgrade describes the project accurately',
     phase: 'upgrade',
-    tier: 'must',
+    tier: 'gate',
     probe:
       'Run doctor with the target version and save the output to `doctor-post.log`. Compare it with what you saw in the project.',
   },
@@ -52,9 +54,9 @@ export const CHECKS = [
     id: 'core.dev-server',
     label: "The dev server starts and `index.json` lists this project's entries",
     phase: 'dev',
-    tier: 'must',
+    tier: 'gate',
     probe:
-      'Start the dev server on port 6006 with `--ci --exact-port --no-open`. Fetch `/index.json` and compare the entry count with the baseline.',
+      'Start the dev server on port 6006 with `--ci --exact-port`, which opens no browser on any version. Fetch `/index.json` and compare the entry count with the baseline.',
   },
   {
     id: 'core.story-render',
@@ -228,7 +230,7 @@ export const CHECK_IDS = CHECKS.map((check) => check.id) as [CheckId, ...CheckId
 export const checksFor = (tier: Tier) =>
   PHASES.flatMap((phase) =>
     CHECKS.filter(
-      (check) => check.phase === phase && (tier === 'extended' || check.tier === 'must')
+      (check) => check.phase === phase && TIERS.indexOf(check.tier) <= TIERS.indexOf(tier)
     )
   );
 

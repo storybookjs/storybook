@@ -25,20 +25,23 @@ const isStorybookLink = (candidate: string): boolean => {
   }
 };
 
+// Cap a title and redact its secrets, for a place where nothing of it renders.
+export const capTitle = (text: string): string => cap(redactSecrets(text), LIMITS.title);
+
 // Make a line of agent prose safe for an issue title: capped, no HTML, no links off storybookjs,
 // and every mention and issue reference inside a code span.
 //
 // Backticks become quotes first, so the only code spans are the ones added here.
 export const sanitizeTitle = (text: string): string =>
-  cap(redactSecrets(text), LIMITS.title)
+  capTitle(text)
     .replaceAll('`', "'")
     .replace(/<[^>]*>/g, '')
     .replace(/\[([^\]]*)\]\(([^)\s]*)\)/g, (match, label: string, url: string) =>
       isStorybookLink(url) ? match : `${label} (link removed)`
     )
     .replace(LINK, (url) => (isStorybookLink(url) ? url : '(link removed)'))
-    .replace(/(^|[^\w`])(@[a-z0-9][\w.-]*(?:\/[\w.-]+)?)/gi, '$1`$2`')
-    .replace(/(^|[^\w`&/])((?:[\w.-]+\/[\w.-]+)?#\d+)\b/g, '$1`$2`');
+    .replace(/(^|[^a-z0-9`])(@[a-z0-9][\w.-]*(?:\/[\w.-]+)?)/gi, '$1`$2`')
+    .replace(/(^|[^a-z0-9`&/])((?:[\w.-]+\/[\w.-]+)?#\d+|GH-\d+)(?![a-z0-9])/gi, '$1`$2`');
 
 // Cap the prose fields of a finding for an issue body, where each one is rendered inside a fence.
 //

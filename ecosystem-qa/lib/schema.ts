@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { CHECK_IDS, type CheckId } from '../checks.ts';
+import { CHECK_IDS, TIERS } from '../checks.ts';
 import { cycleRepo, SEMVER } from './cycle.ts';
 import { canPushTo } from './push-targets.ts';
 
@@ -13,11 +13,66 @@ export const Os = z.enum(['linux', 'windows', 'macos']);
 export type Os = z.infer<typeof Os>;
 export const Effort = z.enum(['low', 'medium', 'high']);
 
+export const FRAMEWORKS = [
+  '@storybook/angular',
+  '@storybook/angular-vite',
+  '@storybook/ember',
+  '@storybook/html-vite',
+  '@storybook/nextjs',
+  '@storybook/nextjs-vite',
+  '@storybook/preact-vite',
+  '@storybook/react-native',
+  '@storybook/react-native-web-vite',
+  '@storybook/react-vite',
+  '@storybook/react-webpack5',
+  '@storybook/server-webpack5',
+  '@storybook/svelte-vite',
+  '@storybook/sveltekit',
+  '@storybook/tanstack-react',
+  '@storybook/vue3-vite',
+  '@storybook/web-components-vite',
+  'storybook-react-rsbuild',
+  'storybook-vue3-rsbuild',
+  'storybook-web-components-rsbuild',
+] as const;
+export const Framework = z.enum(FRAMEWORKS);
+export type Framework = z.infer<typeof Framework>;
+export const Builder = z.enum(['vite', 'webpack5', 'rsbuild', 'metro']);
+export type Builder = z.infer<typeof Builder>;
+export const Feature = z.enum(['vitest', 'docs', 'a11y', 'test-runner', 'msw']);
+export type Feature = z.infer<typeof Feature>;
+
+export const builderOf = (framework: Framework): Builder => {
+  if (framework.endsWith('-rsbuild')) {
+    return 'rsbuild';
+  }
+  if (framework === '@storybook/react-native') {
+    return 'metro';
+  }
+  return framework.endsWith('-vite') || framework === '@storybook/sveltekit' ? 'vite' : 'webpack5';
+};
+
+export const Tags = z
+  .strictObject({
+    framework: Framework,
+    builder: Builder,
+    major: z.int().positive(),
+    features: z.array(Feature),
+  })
+  .refine((tags) => tags.builder === builderOf(tags.framework), {
+    message: 'the builder is not the one the framework package uses',
+    path: ['builder'],
+  });
+
+const FULL_SHA = /^[0-9a-f]{40}$/;
+
+export const pushesCycle = (entry: { class: RepoClass; pushTo?: string }): boolean =>
+  entry.class === 'owned' || entry.pushTo !== undefined;
+
 export const CatalogEntry = z
   .strictObject({
     id: z.string().regex(/^[a-z0-9-]+$/),
     repo: z.string().regex(/^[\w.-]+\/[\w.-]+$/),
-    // Where the cycle branch is pushed: a fork under storybook-tmp for tier 1, the repo itself when owned.
     pushTo: z
       .string()
       .regex(/^[\w.-]+\/[\w.-]+$/)
@@ -32,14 +87,24 @@ export const CatalogEntry = z
       .regex(/^\d+(?:\.\d+){0,2}$/)
       .optional(),
     windows: z.boolean(),
+    tags: Tags.optional(),
   })
   .refine((entry) => entry.class !== 'tier1' || entry.pushTo !== undefined, {
     message: 'a tier 1 entry needs pushTo, the fork that holds its baseline',
     path: ['pushTo'],
   })
-  .refine((entry) => canPushTo(cycleRepo(entry)), {
+  .refine((entry) => !pushesCycle(entry) || canPushTo(cycleRepo(entry)), {
     message: 'no push token is configured for the owner of the repository that receives the cycle',
     path: ['pushTo'],
+  })
+  .refine((entry) => pushesCycle(entry) || FULL_SHA.test(entry.ref), {
+    message: 'an entry without a push target needs a full commit SHA as its ref',
+    path: ['ref'],
+  })
+  .refine((entry) => pushesCycle(entry) || !entry.windows, {
+    message:
+      'an entry without a push target runs on Linux only, because Windows runs the agent without a sandbox',
+    path: ['windows'],
   });
 export type CatalogEntry = z.infer<typeof CatalogEntry>;
 
@@ -49,7 +114,11 @@ export const Catalog = z
     message: 'catalog ids must be unique',
   });
 
-const CheckId = z.enum(CHECK_IDS);
+// A static id of checks.ts or the id of a plan entry; `agentOutput` narrows it to the ids of one run.
+export const CheckId = z
+  .string()
+  .max(80)
+  .regex(/^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$/);
 
 const Version = z.string().regex(SEMVER);
 
@@ -88,14 +157,19 @@ export const Finding = z.strictObject({
 });
 export type Finding = z.infer<typeof Finding>;
 
-export const Tier = z.enum(['must', 'extended']);
+export const Tier = z.enum(TIERS);
+export type Tier = z.infer<typeof Tier>;
 
-// The answer schema for one run: every check of the tier exactly once, findings only on failures.
-//
-// The agent reads the schema next to the checklist, so the schema names the ids of the tier only,
+// The agent reads the schema next to the checklist, so the schema names the ids of the run only,
 // in the order given: one list of ids in one order.
-export const agentOutput = (ids: readonly CheckId[]) => {
-  const id = z.enum(ids);
+//
+// A plan check is read by the person who triages the plan, so each one carries a note, and a
+// `fail` carries a finding even when the agent doubts the plan's expectation.
+export const agentOutput = (
+  ids: readonly [string, ...string[]],
+  planIds: readonly string[] = []
+) => {
+  const id = z.enum(z.tuple([CheckId], CheckId).parse(ids));
   return z
     .strictObject({
       storybookVersionBefore: Version.nullable(),
@@ -115,6 +189,28 @@ export const agentOutput = (ids: readonly CheckId[]) => {
           });
         }
       }
+      for (const [index, check] of output.checks.entries()) {
+        if (!planIds.includes(check.id)) {
+          continue;
+        }
+        if (!check.note?.trim()) {
+          ctx.addIssue({
+            code: 'custom',
+            path: ['checks', index, 'note'],
+            message: `plan check "${check.id}" needs a note with what you saw`,
+          });
+        }
+        if (
+          check.state === 'fail' &&
+          !output.findings.some((finding) => finding.checkId === check.id)
+        ) {
+          ctx.addIssue({
+            code: 'custom',
+            path: ['findings'],
+            message: `plan check "${check.id}" is "fail" and needs a finding`,
+          });
+        }
+      }
       for (const [index, finding] of output.findings.entries()) {
         const check = output.checks.find((candidate) => candidate.id === finding.checkId);
         if (check?.state !== 'fail') {
@@ -130,8 +226,25 @@ export const agentOutput = (ids: readonly CheckId[]) => {
 
 export const AgentOutput = agentOutput(CHECK_IDS);
 
+export const PlanRecord = z.strictObject({
+  file: z.string().regex(/^[\w.-]+\.md$/),
+  hash: z.string().regex(/^[0-9a-f]{12}$/),
+  batch: z.int().min(1),
+  part: z.int().min(1),
+  entries: z
+    .array(
+      z.strictObject({
+        id: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+        prs: z.array(z.int().positive()).min(1),
+      })
+    )
+    .min(1),
+});
+export type PlanRecord = z.infer<typeof PlanRecord>;
+
 export const RunRequestRecord = z.strictObject({
   entry: CatalogEntry,
+  plan: PlanRecord.optional(),
   version: z.string(),
   engine: Engine,
   model: ModelId,
@@ -156,7 +269,7 @@ export const RunResultFile = z.strictObject({
     outputTokens: z.number(),
     cacheReadTokens: z.number().optional(),
     cacheWriteTokens: z.number().optional(),
-    usd: z.number().nullable(),
+    usd: z.number().nonnegative().nullable(),
     model: ModelId,
     priceSource: z.enum(['agent', 'table']),
   }),
@@ -262,6 +375,19 @@ const ReportBase = {
   finding: Finding,
   cycle: Cycle,
   runUrl: z.string(),
+  planEntries: z
+    .array(
+      z.strictObject({
+        slug: PlanRecord.shape.entries.element.shape.id,
+        // Already safe to print inline: the plan's title, sanitized when the proposal was built.
+        title: z.string().min(1),
+        prs: PlanRecord.shape.entries.element.shape.prs,
+        // A code span of the plan's probe line, safe to print inline like the title.
+        probe: z.string().min(1).optional(),
+      })
+    )
+    .min(1)
+    .optional(),
 };
 
 export const Proposal = z.discriminatedUnion('kind', [

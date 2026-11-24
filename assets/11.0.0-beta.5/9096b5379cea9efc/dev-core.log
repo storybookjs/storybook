@@ -1,0 +1,64 @@
+
+[90m┌[39m  storybook v11.0.0-beta.5
+[90m│[39m
+[33m▲[39m  One or more extensionless imports detected: "../support/formatting" in
+[90m│[39m  file "/home/agent/workspace/packages/components/.storybook/main.ts".
+[90m│[39m  For more information on how to resolve the issue:
+[90m│[39m  https://storybook.js.org/docs/faq#extensionless-imports-in-storybookmaints-and-required-ts-extensions
+[90m│[39m
+[33m▲[39m  You are currently using Storybook [1m11.0.0-beta.5[22m but you have packages
+[90m│[39m  which are incompatible with it:
+
+[90m│[39m  - @whitespace/storybook-addon-html@9.0.0 which depends on ^10
+[90m│[39m  - storybook-addon-rtl@3.0.2 which depends on ^10.0.0
+
+[90m│[39m  Please consider updating your packages or contacting the maintainers
+[90m│[39m  for compatibility details.
+
+[90m│[39m  For more details on compatibility guidance, see:
+[90m│[39m  https://github.com/storybookjs/storybook/issues/36283
+[90m│[39m
+[34m●[39m  Starting...
+✘ [ERROR] No matching export in "global-externals:storybook/internal/components" for import "IconButton"
+
+    ../../node_modules/.pnpm/storybook-addon-rtl@3.0.2_storybook@11.0.0-beta.5_@types+react@18.3.12_prettier@3.8.4_react@18.3.1_/node_modules/storybook-addon-rtl/dist/manager.js:3:9:
+      3 │ import { IconButton } from "storybook/internal/components";
+        ╵          ~~~~~~~~~~
+
+[90m│[39m
+[31m■[39m  [38;2;241;97;97mSB_CORE-SERVER_0004 (NoMatchingExportError): An import in your
+[90m│[39m  Storybook setup could not be resolved while building Storybook's UI.
+
+[90m│[39m  No matching export in "global-externals:storybook/internal/components"
+[90m│[39m  for import "IconButton"
+[90m│[39m  imported from
+[90m│[39m  ../../node_modules/.pnpm/storybook-addon-rtl@3.0.2_storybook@11.0.0-beta.5_@types+react@18.3.12_prettier@3.8.4_react@18.3.1_/node_modules/storybook-addon-rtl/dist/manager.js
+
+[90m│[39m  This usually happens because the installed Storybook core package
+[90m│[39m  versions don't match, or an addon you're using is built for an older
+[90m│[39m  Storybook version. Run `npx storybook doctor` to identify version
+[90m│[39m  discrepancies.
+
+[90m│[39m  More info:
+[90m│[39m  [39m
+[90m│[39m  at buildOrThrow
+[90m│[39m  (file:///home/agent/workspace/node_modules/.pnpm/storybook@11.0.0-beta.5_@types+react@18.3.12_prettier@3.8.4_react@18.3.1/node_modules/storybook/dist/core-server/index.js:1630:15)
+[90m│[39m  at process.processTicksAndRejections
+[90m│[39m  (node:internal/process/task_queues:105:5)
+[90m│[39m  at async buildDevStandalone
+[90m│[39m  (file:///home/agent/workspace/node_modules/.pnpm/storybook@11.0.0-beta.5_@types+react@18.3.12_prettier@3.8.4_react@18.3.1/node_modules/storybook/dist/core-server/index.js:6626:41)
+[90m│[39m  at async withTelemetry
+[90m│[39m  (file:///home/agent/workspace/node_modules/.pnpm/storybook@11.0.0-beta.5_@types+react@18.3.12_prettier@3.8.4_react@18.3.1/node_modules/storybook/dist/_node-chunks/chunk-YIQV2HOZ.js:3765:12)
+[90m│[39m  at async dev
+[90m│[39m  (file:///home/agent/workspace/node_modules/.pnpm/storybook@11.0.0-beta.5_@types+react@18.3.12_prettier@3.8.4_react@18.3.1/node_modules/storybook/dist/bin/core.js:4114:3)
+[90m│[39m  at async _Command.<anonymous>
+[90m│[39m  (file:///home/agent/workspace/node_modules/.pnpm/storybook@11.0.0-beta.5_@types+react@18.3.12_prettier@3.8.4_react@18.3.1/node_modules/storybook/dist/bin/core.js:4216:3)
+[90m│[39m
+[33m▲[39m  Broken build, fix the error above.
+[90m│[39m  You may need to refresh the browser.
+[90m│[39m
+[90m│[39m  Debug logs are written to:
+[90m│[39m  /home/agent/workspace/packages/components/debug-storybook.log
+[90m│[39m
+[90m└[39m  Storybook exited with an error
+

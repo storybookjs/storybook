@@ -1,0 +1,286 @@
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Packages: +11
++++++++++++
+Progress: resolved 78, reused 0, downloaded 17, added 11, done
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Packages: +13
++++++++++++++
+Progress: resolved 80, reused 17, downloaded 2, added 3, done
+.../node_modules/esbuild postinstall$ node install.js
+.../node_modules/esbuild postinstall: Done
+[90m│[39m
+[33m▲[39m  One or more extensionless imports detected: "../support/formatting" in
+[90m│[39m  file "/home/agent/workspace/packages/components/.storybook/main.ts".
+[90m│[39m  For more information on how to resolve the issue:
+[90m│[39m  https://storybook.js.org/docs/faq#extensionless-imports-in-storybookmaints-and-required-ts-extensions
+
+[90m┌[39m  Storybook upgrade - v11.0.0-beta.5
+[90m│[39m
+[90m│[39m  Detecting projects...
+[90m│[39m
+[90m│[39m  Detecting projects: 1 projects
+[90m│[39m
+[90m│[39m  1 project detected
+[90m│[39m
+[34m●[39m  Upgrading from [1m10.6.2[22m to [1m11.0.0-beta.5[22m
+[90m│[39m
+[90m│[39m  /packages/components/package.json
+[90m│[39m  /package.json
+[90m│[39m
+[90m│[39m  Updated package versions in package.json files
+[90m│[39m
+[90m│[39m  Checking automigrations for /packages/components/.storybook...
+[90m│[39m
+
+[90m│[39m  Automigrations detected:
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m upgrade-storybook-related-dependencies[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m wrap-getAbsolutePath[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m story-sort-to-main[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m set-config-layout[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m skills[39m
+[90m│[39m
+[90m│[39m  5 automigration(s) detected
+[90m│[39m
+[90m│[39m  Running all detected automigrations:
+[90m│[39m
+[90m│[39m  - upgrade-storybook-related-dependencies
+[90m│[39m  (/packages/components/.storybook)
+[90m│[39m
+[90m│[39m  - wrap-getAbsolutePath (/packages/components/.storybook)
+[90m│[39m
+[90m│[39m  - story-sort-to-main (/packages/components/.storybook)
+[90m│[39m
+[90m│[39m  - set-config-layout (/packages/components/.storybook)
+[90m│[39m
+[90m│[39m  - skills (/packages/components/.storybook)
+[90m│[39m
+[90m│[39m  [36mpnpm --allow-build=esbuild dlx skills@latest add[39m
+[90m│[39m  [36mstorybookjs/skills#v11.0.0-beta.5 --yes --agent claude-code universal[39m
+[90m│[39m  [36m--copy[39m
+[90m│[39m
+[90m│[39m  Added a Storybook section to AGENTS.md that tells agents when to use
+[90m│[39m  the skills. Storybook keeps it current on upgrade: remove its markers
+[90m│[39m  to keep your own edits, or remove the section to opt out of the
+[90m│[39m  workflow.
+[90m│[39m
+[90m│[39m  If you want to remove the Storybook skills, run "pnpm
+[90m│[39m  --allow-build=esbuild dlx skills@latest remove"
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m upgrade-storybook-related-dependencies[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m wrap-getAbsolutePath[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m story-sort-to-main[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m set-config-layout[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m skills[39m
+[90m│[39m
+[90m│[39m  Completed automigrations for /packages/components/.storybook
+[90m│[39m
+[90m│[39m  Installing dependencies...
+[90m│[39m
+[90m│[39m  Installing dependencies...: Scope: all 11 workspace p
+[90m│[39m
+[90m│[39m  Installing dependencies...: ✓ Lockfile passes supply-
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: [WARN] deprecated @arcgis
+[90m│[39m
+[90m│[39m  Installing dependencies...: [WARN] deprecated @arcgis
+[90m│[39m
+[90m│[39m  Installing dependencies...: [WARN] deprecated @arcgis
+[90m│[39m
+[90m│[39m  Installing dependencies...: [WARN] deprecated puppete
+[90m│[39m
+[90m│[39m  Installing dependencies...: [WARN] deprecated @arcgis
+[90m│[39m
+[90m│[39m  Installing dependencies...: [WARN] deprecated @arcgis
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: [WARN] 9 deprecated subde
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../..
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../.. postinstall$ patch-
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../.. postinstall: patch-
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../.. postinstall: Applyi
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../.. postinstall: Done
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../.. prepare$ concurrent
+[90m│[39m
+[90m│[39m  Installing dependencies...: ../.. prepare: HUSKY=0 sk
+[90m│[39m
+[90m│[39m  Installing dependencies...: [WARN] Issues with peer d
+[90m│[39m
+[90m│[39m  Installing dependencies...: devDependencies:
+[90m│[39m  - @story
+[90m│[39m
+[90m│[39m  Installing dependencies...: Done in 8.2s using pnpm v
+[90m│[39m
+[90m│[39m  Dependencies installed
+[90m│[39m
+[33m▲[39m  Since you are in a monorepo, we advise you to deduplicate your
+[90m│[39m  dependencies. We can do this for you but it might take some time.
+[90m│[39m
+[90m│[39m  Deduplicating dependencies...
+[90m│[39m
+[90m│[39m  ✓ Lockfile passes supply-chain policies (verified 1s ago)
+[90m│[39m
+[90m│[39m  ../..                                    | Progress: resolved 1,
+[90m│[39m  reused 0, downloaded 0, added 0
+[90m│[39m
+[90m│[39m  ../..                                    | [WARN] deprecated
+[90m│[39m  @octokit/webhooks-types@7.6.1
+[90m│[39m
+[90m│[39m  [WARN] deprecated @arcgis/toolkit@6.0.0-next.16: This version is no
+[90m│[39m  longer supported. Upgrade to @latest
+[90m│[39m
+[90m│[39m  ../..                                    | Progress: resolved 83,
+[90m│[39m  reused 83, downloaded 0, added 0
+[90m│[39m
+[90m│[39m  [WARN] deprecated @arcgis/lumina@6.0.0-next.16: This version is no
+[90m│[39m  longer supported. Upgrade to @latest
+[90m│[39m
+[90m│[39m  [WARN] deprecated @arcgis/api-extractor@6.0.0-next.16: This version is
+[90m│[39m  no longer supported. Upgrade to @latest
+[90m│[39m
+[90m│[39m  [WARN] deprecated @arcgis/eslint-config@6.0.0-next.16: This version is
+[90m│[39m  no longer supported. Upgrade to @latest
+[90m│[39m
+[90m│[39m  [WARN] deprecated @arcgis/lumina-compiler@6.0.0-next.16: This version
+[90m│[39m  is no longer supported. Upgrade to @latest
+[90m│[39m
+[90m│[39m  [WARN] deprecated puppeteer@23.4.1: < 24.15.0 is no longer supported
+[90m│[39m
+[90m│[39m  ../..                                    | Progress: resolved 114,
+[90m│[39m  reused 114, downloaded 0, added 0
+[90m│[39m
+[90m│[39m  ../..                                    | Progress: resolved 350,
+[90m│[39m  reused 272, downloaded 0, added 0
+[90m│[39m
+[90m│[39m  ../..                                    | Progress: resolved 564,
+[90m│[39m  reused 540, downloaded 0, added 0
+[90m│[39m
+[90m│[39m  ../..                                    | Progress: resolved 673,
+[90m│[39m  reused 588, downloaded 0, added 0
+[90m│[39m
+[90m│[39m  ../..                                    | Progress: resolved 1173,
+[90m│[39m  reused 858, downloaded 0, added 0
+[90m│[39m
+[90m│[39m  ../..                                    | Progress: resolved 1527,
+[90m│[39m  reused 1246, downloaded 0, added 0
+[90m│[39m
+[90m│[39m  ../..                                    | Progress: resolved 1858,
+[90m│[39m  reused 1707, downloaded 0, added 0
+[90m│[39m
+[90m│[39m  [WARN] 9 deprecated subdependencies found:
+[90m│[39m  @arcgis/node-toolkit@6.0.0-next.16, @xmldom/xmldom@0.9.10,
+[90m│[39m  conventional-changelog-core@5.0.1, git-raw-commits@3.0.0,
+[90m│[39m  git-semver-tags@5.0.1, glob@10.5.0, glob@11.1.0, glob@7.2.3,
+[90m│[39m  inflight@1.0.6
+[90m│[39m
+[90m│[39m  ../..                                    |   +2 +
+[90m│[39m
+[90m│[39m  ../..                                    | Progress: resolved 1858,
+[90m│[39m  reused 1707, downloaded 0, added 0, done
+[90m│[39m
+[90m│[39m  ../.. postinstall$ patch-package
+[90m│[39m
+[90m│[39m  ../.. postinstall: patch-package 8.0.1
+[90m│[39m
+[90m│[39m  ../.. postinstall: Applying patches...
+[90m│[39m  ../.. postinstall: No patch files found
+[90m│[39m
+[90m│[39m  ../.. postinstall: Done
+[90m│[39m
+[90m│[39m  ../.. prepare$ concurrently --raw "husky" "node
+[90m│[39m  ./support/check-mise.mts"
+[90m│[39m
+[90m│[39m  ../.. prepare: HUSKY=0 skip install
+[90m│[39m
+[90m│[39m  ../.. prepare: Done
+[90m│[39m
+[90m│[39m  [WARN] Issues with peer dependencies found. Run "pnpm peers check" to
+[90m│[39m  list them.
+[90m│[39m
+
+[90m│[39m
+[90m│[39m  [32mDependencies deduplicated[39m
+[90m│[39m
+[32m◇[39m  Checking the health of your project(s)..
+[90m│[39m
+[33m▲[39m  /packages/components/.storybook: 1 issue found
+│ ┌─[33mIncompatible Packages[39m──────────────────────────────────────────────────────┐
+│ │  You are currently using Storybook [1m11.0.0-beta.5[22m but you have packages     │
+│ │  which are incompatible with it:                                           │
+│ │                                                                            │
+│ │  - @whitespace/storybook-addon-html@9.0.0 which depends on ^10             │
+│ │  - storybook-addon-rtl@3.0.2 which depends on ^10.0.0                      │
+│ │                                                                            │
+│ │  Please consider updating your packages or contacting the maintainers for  │
+│ │   compatibility details.                                                   │
+│ │                                                                            │
+│ │  For more details on compatibility guidance, see:                          │
+│ │  https://github.com/storybookjs/storybook/issues/36283                     │
+│ └────────────────────────────────────────────────────────────────────────────┘
+[90m│[39m
+[32m◇[39m  Storybook doctor is complete!
+[90m│[39m
+[90m│[39m  You can always recheck the health of your project(s) by running:
+[90m│[39m  [36mnpx storybook doctor[39m
+[90m│[39m
+[32m◇[39m  [33mYour project(s) have been upgraded successfully, but some issues were[39m
+[90m│[39m  [33mfound which need your attention, please check Storybook doctor logs[39m
+[90m│[39m  [33mabove.[39m
+[90m│[39m
+[90m│[39m  If you want to learn more about the automigrations that executed in
+[90m│[39m  your project(s), please check the following links:
+[90m│[39m  • upgrade-storybook-related-dependencies: undefined
+[90m│[39m  • wrap-getAbsolutePath:
+[90m│[39m  https://storybook.js.org/docs/faq#how-do-i-fix-module-resolution-in-special-environments
+[90m│[39m  • story-sort-to-main:
+[90m│[39m  https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storysort-in-the-preview-replaced-by-storysorts-in-main
+[90m│[39m  • set-config-layout:
+[90m│[39m  https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#top-level-setconfig-layout-and-ui-options-removed
+[90m│[39m  • skills: https://github.com/storybookjs/skills
+[90m│[39m
+[90m│[39m  For a full list of changes, please check our migration guide:
+[90m│[39m  [36mhttps://storybook.js.org/docs/releases/migration-guide?ref=upgrade[39m
+[90m│[39m
+[34m●[39m  Storybook collects completely anonymous usage telemetry. We use it to
+[90m│[39m  shape Storybook's roadmap and prioritize features. You can learn more,
+[90m│[39m  including how to opt out, at https://storybook.js.org/telemetry
+[90m│[39m
+[90m└[39m  Storybook upgrade completed!
+
+[90m│[39m
+[90m│[39m  Debug logs are written to:
+[90m│[39m  /home/agent/workspace/packages/components/debug-storybook.log
+[90m│[39m
+[90m└[39m  [32mDone![39m
+

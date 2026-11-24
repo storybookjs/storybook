@@ -3,6 +3,7 @@ import {
   HandledError,
   JsPackageManagerFactory,
   PackageManagerName,
+  getProjectRelativePath,
   optionalEnvToBoolean,
   removeAddon as remove,
   versions,
@@ -38,7 +39,7 @@ const handleCommandFailure =
 
     try {
       const logFile = await logTracker.writeToFile(logFilePath);
-      logger.log(`Debug logs are written to: ${logFile}`);
+      logger.log(`Debug logs are written to: ${getProjectRelativePath(logFile)}`);
     } catch {}
     logger.outro('');
     process.exit(1);
@@ -83,7 +84,7 @@ const command = (name: string) =>
       if (logTracker.shouldWriteLogsToFile) {
         try {
           const logFile = await logTracker.writeToFile(command.getOptionValue('logfile'));
-          logger.log(`Debug logs are written to: ${logFile}`);
+          logger.log(`Debug logs are written to: ${getProjectRelativePath(logFile)}`);
         } catch {}
         logger.outro(CLI_COLORS.success('Done!'));
       }

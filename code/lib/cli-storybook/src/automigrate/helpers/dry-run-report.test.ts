@@ -1,9 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
+import { getProjectRoot } from 'storybook/internal/common';
+
+import { join } from 'pathe';
+
 import { addSimulatedOutcomes, createDryRunReport } from './dry-run-report.ts';
 
 describe('addSimulatedOutcomes', () => {
-  it('gives a fix that would fail on the main config the reason a failing run gives', () => {
+  it('gives a fix that would fail on the main config the reason a failing run gives, with the path from the project root', () => {
     const report = createDryRunReport();
 
     addSimulatedOutcomes(
@@ -15,7 +19,11 @@ describe('addSimulatedOutcomes', () => {
             status: 'fail' as const,
             changed: [],
             fileFailures: [
-              { file: '.storybook/main.js', kind: 'main' as const, message: 'cannot migrate' },
+              {
+                file: join(getProjectRoot(), '.storybook/main.js'),
+                kind: 'main' as const,
+                message: 'cannot migrate',
+              },
             ],
           },
         ],

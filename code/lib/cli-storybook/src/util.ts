@@ -4,6 +4,7 @@ import {
   JsPackageManager,
   getPackageDetails,
   getPkgPrNewPackageSpecifier,
+  getProjectRelativePath,
   getProjectRoot,
   isPkgPrNewVersionSpecifier,
   isSatelliteAddon,
@@ -22,7 +23,6 @@ import {
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import * as walk from 'empathic/walk';
-import { normalize } from 'pathe';
 // eslint-disable-next-line depend/ban-dependencies
 import { globby, globbySync } from 'globby';
 import picocolors from 'picocolors';
@@ -296,7 +296,7 @@ const processProject = async ({
 }): Promise<CollectProjectsResult> => {
   try {
     onScanStart();
-    const name = configDir.replace(getProjectRoot(), '');
+    const name = shortenPath(configDir);
 
     logger.debug(`Getting Storybook data...`);
     const {
@@ -638,14 +638,10 @@ const formatProjectDirectories = (
 };
 
 /**
- * Shortens a path to the relative path from the project root
- *
- * @param path - The path to shorten
- * @returns The shortened path
+ * Shortens a path to the relative path from the project root, for display. A path outside the
+ * project stays absolute.
  */
-export const shortenPath = (path: string) => {
-  return normalize(path).replace(normalize(getProjectRoot()), '');
-};
+export const shortenPath = (path: string) => getProjectRelativePath(path);
 
 /**
  * Handles multiple project selection and validation

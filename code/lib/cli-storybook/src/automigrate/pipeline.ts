@@ -1,7 +1,12 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
-import { findConfigFile, formatExistingFile, HandledError } from 'storybook/internal/common';
+import {
+  HandledError,
+  findConfigFile,
+  formatExistingFile,
+  getProjectRelativePath,
+} from 'storybook/internal/common';
 import {
   type ConfigFile,
   type CsfFile,
@@ -348,7 +353,7 @@ type ProjectRunOptions = Omit<RunOptions<unknown>, 'result' | 'files'>;
 
 /** The reason a fix failed, one line for each file it could not migrate. */
 export const describeFileFailures = (fileFailures: FileFailure[]) =>
-  fileFailures.map(({ file, message }) => `${file}: ${message}`).join('\n');
+  fileFailures.map(({ file, message }) => `${getProjectRelativePath(file)}: ${message}`).join('\n');
 
 const failed = (fileFailures: FileFailure[]): FixOutcome => ({
   status: 'failed',

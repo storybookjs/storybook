@@ -16,7 +16,7 @@ import { Document, isMap, parseDocument } from 'yaml';
 
 import type { ExecuteCommandOptions } from '../utils/command.ts';
 import { executeCommand, executeCommandSync } from '../utils/command.ts';
-import { getProjectRoot } from '../utils/paths.ts';
+import { getProjectRelativePath, getProjectRoot } from '../utils/paths.ts';
 import {
   type CatalogUpgrade,
   JsPackageManager,
@@ -380,7 +380,7 @@ export class PNPMProxy extends JsPackageManager {
       }
       if (dryRun) {
         logger.info(
-          `Would approve build scripts for ${pending.join(', ')} in ${CLI_COLORS.change(path)}`
+          `Would approve build scripts for ${pending.join(', ')} in ${CLI_COLORS.change(getProjectRelativePath(path))}`
         );
         return;
       }
@@ -392,7 +392,9 @@ export class PNPMProxy extends JsPackageManager {
         doc.setIn(['allowBuilds', pkg], true);
       }
       this.#writeWorkspaceYaml({ path, doc });
-      logger.info(`Approved build scripts for ${pending.join(', ')} in ${path}`);
+      logger.info(
+        `Approved build scripts for ${pending.join(', ')} in ${getProjectRelativePath(path)}`
+      );
     } catch (e) {
       logger.warn(
         `Could not allow build scripts of ${STORYBOOK_BUILD_SCRIPT_PACKAGES.join(', ')} in ${path}: ${String(e)}`

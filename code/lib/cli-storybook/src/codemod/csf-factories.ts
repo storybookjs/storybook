@@ -1,7 +1,11 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { optionalEnvToBoolean, syncPreviewAddonsWithMainConfig } from 'storybook/internal/common';
+import {
+  getProjectRelativePath,
+  optionalEnvToBoolean,
+  syncPreviewAddonsWithMainConfig,
+} from 'storybook/internal/common';
 import { formatConfig, loadConfig } from 'storybook/internal/csf-tools';
 import { CLI_COLORS, logger, prompt } from 'storybook/internal/node-logger';
 
@@ -135,10 +139,14 @@ export const csfFactories: CommandFix = {
     const { packageJson, operationDir, packageJsonPath } = packageManager.primaryPackageJson;
     const writeImportsMap = () => {
       if (dryRun) {
-        logger.step(`Would add an imports map in ${CLI_COLORS.change(normalize(packageJsonPath))}`);
+        logger.step(
+          `Would add an imports map in ${CLI_COLORS.change(getProjectRelativePath(packageJsonPath))}`
+        );
         return;
       }
-      logger.step(`Adding imports map in ${picocolors.cyan(normalize(packageJsonPath))}`);
+      logger.step(
+        `Adding imports map in ${picocolors.cyan(getProjectRelativePath(packageJsonPath))}`
+      );
       packageManager.writePackageJson(packageJson, operationDir);
     };
 

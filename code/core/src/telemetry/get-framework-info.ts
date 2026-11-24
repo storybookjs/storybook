@@ -1,5 +1,3 @@
-import { readFile } from 'node:fs/promises';
-
 import {
   getStorybookInfo,
   readDependencyManifest,
@@ -7,8 +5,7 @@ import {
 } from 'storybook/internal/common';
 import type { StorybookConfig } from 'storybook/internal/types';
 
-import * as pkg from 'empathic/package';
-import { isAbsolute, normalize, resolve } from 'pathe';
+import { normalize, resolve } from 'pathe';
 import type { PackageJson } from 'type-fest';
 
 import { TELEMETRY_ONLY_RENDERER_PACKAGES } from './get-renderer-packages.ts';
@@ -29,25 +26,14 @@ const cleanAndSanitizePath = (path: string) => {
   return pnpmDir ? pnpmDir[1].replace('+', '/') : cleaned;
 };
 
-const readFrameworkPackageJson = async (
-  frameworkPackage: string,
-  configDir: string
-): Promise<PackageJson | undefined> => {
+const readFrameworkPackageJson = (frameworkPackage: string, configDir: string) => {
   const frameworkPath = normalize(frameworkPackage);
   // A pnpm virtual-store dir holds no package.json of its own, so resolve its package by name
-  if (!isAbsolute(frameworkPath) || /\/\.pnpm\/[^/]+$/.test(frameworkPath)) {
-    // Resolve from the config dir, where Storybook resolves the framework, not from the cwd
-    return readDependencyManifest(resolve(configDir), cleanAndSanitizePath(frameworkPath));
-  }
-  const packageJsonPath = pkg.up({ cwd: frameworkPath });
-  if (!packageJsonPath) {
-    return undefined;
-  }
-  try {
-    return JSON.parse(await readFile(packageJsonPath, 'utf-8'));
-  } catch {
-    return undefined;
-  }
+  const framework = /\/\.pnpm\/[^/]+$/.test(frameworkPath)
+    ? cleanAndSanitizePath(frameworkPath)
+    : frameworkPath;
+  // Resolve from the config dir, where Storybook resolves the framework, not from the cwd
+  return readDependencyManifest(resolve(configDir), framework);
 };
 
 /**
@@ -73,9 +59,14 @@ const findRendererDependency = (packageJson: PackageJson | undefined) => {
  */
 const findUnlistedRenderer = async (frameworkPackage: string, configDir: string) => {
   const frameworkName = cleanAndSanitizePath(normalize(frameworkPackage));
-  return knownRendererPackages.has(frameworkName)
-    ? frameworkName
-    : findRendererDependency(await readFrameworkPackageJson(frameworkPackage, configDir));
+  if (knownRendererPackages.has(frameworkName)) {
+    return frameworkName;
+  }
+  const packageJson = await readFrameworkPackageJson(frameworkPackage, configDir);
+  // A renderer configured by a path outside node_modules is known by its package.json's name
+  return packageJson?.name && knownRendererPackages.has(packageJson.name)
+    ? packageJson.name
+    : findRendererDependency(packageJson);
 };
 
 export async function getFrameworkInfo(mainConfig: StorybookConfig, configDir: string) {

@@ -876,6 +876,7 @@ export abstract class JsPackageManager {
     this.writePackageJson({ ...packageJson, ...resolutions }, operationDir);
   }
 
+  // Must let the lockfile change: every caller installs right after it edited package.json.
   protected abstract runInstall(options?: {
     force?: boolean;
     legacyPeerDeps?: boolean;

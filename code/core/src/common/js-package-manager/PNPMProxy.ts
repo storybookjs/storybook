@@ -468,7 +468,13 @@ export class PNPMProxy extends JsPackageManager {
     this.allowStorybookBuildScripts();
     return executeCommand({
       command: 'pnpm',
-      args: ['install', ...this.getInstallArgs('install'), ...(options?.force ? ['--force'] : [])],
+      args: [
+        'install',
+        // pnpm freezes the lockfile when CI is set.
+        '--no-frozen-lockfile',
+        ...this.getInstallArgs('install'),
+        ...(options?.force ? ['--force'] : []),
+      ],
       stdio: this.installUsesTerminal ? 'inherit' : prompt.getPreferredStdio(),
       cwd: this.cwd,
     });

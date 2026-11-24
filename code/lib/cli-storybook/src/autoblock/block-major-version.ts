@@ -34,8 +34,8 @@ export function validateVersionTransition(
     return 'ok';
   }
 
-  // A downgrade is not checked here: the upgrade rejects it before the blockers run, except for
-  // canaries, where it is allowed on purpose.
+  // A downgrade is not a gap: the upgrade rejects it before the blockers run, and allows it for
+  // canaries.
   const gap = target.major - current.major;
   return gap > 1 ? 'gap-too-large' : 'ok';
 }
@@ -45,8 +45,7 @@ export const blocker = createBlocker<MajorVersionData>({
   async check(options) {
     const { packageManager } = options;
     try {
-      // The installed version, as the upgrade itself uses: the range in package.json
-      // (e.g. `^8.6.15`) is not a version, so it would never be compared.
+      // The installed version: package.json declares a range such as `^8.6.15`, not a version.
       const currentStorybookVersion = (await packageManager.getModulePackageJSON('storybook'))
         ?.version;
       if (!currentStorybookVersion) {

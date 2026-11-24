@@ -60,14 +60,14 @@ describe('validateVersionTransition', () => {
     expect(result).toBe('ok');
   });
 
-  test('should return "ok" for prerelease currentVersion', () => {
-    const result = validateVersionTransition('8.0.0-alpha.1', '9.0.0');
-    expect(result).toBe('ok');
+  test('should return "gap-too-large" for a prerelease currentVersion more than one major behind', () => {
+    const result = validateVersionTransition('8.0.0-alpha.1', '10.0.0');
+    expect(result).toBe('gap-too-large');
   });
 
-  test('should return "ok" for prerelease targetVersion', () => {
-    const result = validateVersionTransition('8.0.0', '9.0.0-alpha.1');
-    expect(result).toBe('ok');
+  test('should return "gap-too-large" for a prerelease targetVersion more than one major ahead', () => {
+    const result = validateVersionTransition('9.2.1', '11.0.0-rc.0');
+    expect(result).toBe('gap-too-large');
   });
 
   test('should return "ok" for version zero currentVersion', () => {

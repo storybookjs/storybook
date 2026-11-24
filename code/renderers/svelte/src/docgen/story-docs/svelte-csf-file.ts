@@ -1,6 +1,7 @@
 import {
   type ESTree,
   SourceEditor,
+  extractComponentDescription,
   generateUid,
   unwrapExpression,
 } from 'storybook/internal/csf-tools';
@@ -30,6 +31,7 @@ export interface StoryMarkup {
   // How the template snippet receives the args, when the story has one.
   parameter?: TemplateParameter;
   description?: string;
+  summary?: string;
 }
 
 export interface StoryFile {
@@ -105,11 +107,17 @@ export async function readSvelteCsfFile(file: string, filename: string): Promise
       filename,
     });
     const parameter = templateParameter(content.component, nodes, filename);
+    // The HTML comment above a story is its docblock, so it resolves like the JSDoc of a CSF story.
+    const { description, summary } = extractComponentDescription(
+      story.comment?.data.trim() || undefined,
+      undefined
+    );
     stories.set(exportName, {
       // Without a meta component, a story with no markup of its own renders nothing static.
       template: template.startsWith('<undefined ') ? undefined : template,
       ...(parameter ? { parameter } : {}),
-      description: story.comment?.data.trim(),
+      description,
+      summary,
     });
   }
 

@@ -127,6 +127,90 @@ export const Primary = {
 };
 ```
 
+```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 4"
+<script module>
+  import preview from '../.storybook/preview';
+
+  import Button from './Button.svelte';
+
+  const { Story } = preview.meta({
+    component: Button,
+  });
+</script>
+
+<!--
+  Primary buttons are used for the main action in a view.
+  There should not be more than one primary button per view.
+
+  @summary for the main action in a view
+-->
+<Story name="Primary" args={{ primary: true }} />
+```
+
+```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 4"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
+
+  import Button from './Button.svelte';
+
+  const { Story } = preview.meta({
+    component: Button,
+  });
+</script>
+
+<!--
+  Primary buttons are used for the main action in a view.
+  There should not be more than one primary button per view.
+
+  @summary for the main action in a view
+-->
+<Story name="Primary" args={{ primary: true }} />
+```
+
+```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 3"
+<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
+<script module>
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
+
+  import Button from './Button.svelte';
+
+  const { Story } = defineMeta({
+    component: Button,
+  });
+</script>
+
+<!--
+  Primary buttons are used for the main action in a view.
+  There should not be more than one primary button per view.
+
+  @summary for the main action in a view
+-->
+<Story name="Primary" args={{ primary: true }} />
+```
+
+```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 3"
+<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
+<script module lang="ts">
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
+
+  import Button from './Button.svelte';
+
+  const { Story } = defineMeta({
+    component: Button,
+  });
+</script>
+
+<!--
+  Primary buttons are used for the main action in a view.
+  There should not be more than one primary button per view.
+
+  @summary for the main action in a view
+-->
+<Story name="Primary" args={{ primary: true }} />
+```
+
 ```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 

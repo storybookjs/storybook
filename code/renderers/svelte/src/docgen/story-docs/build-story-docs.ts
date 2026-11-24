@@ -83,13 +83,13 @@ export async function buildStoryDocsPayload(
     const id = svelte
       ? toId(csf.meta.id ?? csf.meta.title ?? input.entry.title, storyNameFromExport(exportName))
       : story.id;
+    const markup = file.stories.get(exportName);
     const doc: StoryDoc = {
       id,
       name: story.name ?? storyNameFromExport(exportName),
-      ...extractStoryJSDocInfo(csf._storyStatements[exportName], csf.editor),
-      ...(file.stories.get(exportName)?.description
-        ? { description: file.stories.get(exportName)!.description }
-        : {}),
+      ...(markup
+        ? { description: markup.description, summary: markup.summary }
+        : extractStoryJSDocInfo(csf._storyStatements[exportName], csf.editor)),
     };
     try {
       stories[id] = { ...doc, ...storySnippet(exportName, resolver.resolve(exportName), context) };

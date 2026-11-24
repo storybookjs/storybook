@@ -11,14 +11,13 @@ import * as pkg from 'empathic/package';
 import { isAbsolute, normalize, resolve } from 'pathe';
 import type { PackageJson } from 'type-fest';
 
-import { matchPackageName } from '../common/utils/match-package-name.ts';
 import { TELEMETRY_ONLY_RENDERER_PACKAGES } from './get-renderer-packages.ts';
 import { cleanPaths } from './sanitize.ts';
 
-const knownRendererPackages = () => [
+const knownRendererPackages = new Set([
   ...Object.keys(rendererPackages),
   ...Object.keys(TELEMETRY_ONLY_RENDERER_PACKAGES),
-];
+]);
 
 const cleanAndSanitizePath = (path: string) => {
   const cleaned = cleanPaths(path).replace(/.*node_modules[\\/]/, '');
@@ -58,7 +57,7 @@ const readFrameworkPackageJson = async (
  */
 const findRendererDependency = (packageJson: PackageJson | undefined) => {
   const knownRenderers = (dependencies: Partial<Record<string, string>> | undefined) =>
-    Object.keys(dependencies ?? {}).filter((name) => knownRendererPackages().includes(name));
+    Object.keys(dependencies ?? {}).filter((name) => knownRendererPackages.has(name));
 
   const dependencies = knownRenderers(packageJson?.dependencies);
   if (dependencies.length > 0) {
@@ -72,9 +71,12 @@ const findRendererDependency = (packageJson: PackageJson | undefined) => {
  * Finds the renderer of a framework that the framework tables do not map to one: a renderer
  * configured as its own framework, such as React Native, or the renderer a framework depends on.
  */
-const findUnlistedRenderer = async (frameworkPackage: string, configDir: string) =>
-  matchPackageName(frameworkPackage, knownRendererPackages()) ??
-  findRendererDependency(await readFrameworkPackageJson(frameworkPackage, configDir));
+const findUnlistedRenderer = async (frameworkPackage: string, configDir: string) => {
+  const frameworkName = cleanAndSanitizePath(normalize(frameworkPackage));
+  return knownRendererPackages.has(frameworkName)
+    ? frameworkName
+    : findRendererDependency(await readFrameworkPackageJson(frameworkPackage, configDir));
+};
 
 export async function getFrameworkInfo(mainConfig: StorybookConfig, configDir: string) {
   const { frameworkPackage, rendererPackage, builderPackage } = await getStorybookInfo(configDir);

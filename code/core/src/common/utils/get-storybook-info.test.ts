@@ -52,35 +52,40 @@ const frameworkFieldForms = [
   ],
 ] as const;
 
-describe('getStorybookInfo renderer detection', () => {
+describe.each(
+  rendererCases.flatMap(([pkg, renderer, rendererPackage]) =>
+    frameworkFieldForms.map(([form, toField]) => ({
+      pkg,
+      form,
+      framework: toField(pkg),
+      renderer,
+      rendererPackage,
+    }))
+  )
+)('getStorybookInfo for $pkg given as a $form', ({ framework, renderer, rendererPackage }) => {
   beforeEach(() => {
     vi.spyOn(JsPackageManager, 'listAllPackageJsonPaths').mockReturnValue([]);
+    vi.mocked(loadMainConfig).mockResolvedValue({ framework, stories: [] });
   });
 
-  it.each(
-    rendererCases.flatMap(([pkg, renderer, rendererPackage]) =>
-      frameworkFieldForms.map(
-        ([form, toField]) => [pkg, form, toField(pkg), renderer, rendererPackage] as const
-      )
-    )
-  )(
-    'detects the renderer of %s given as a %s',
-    async (_pkg, _form, framework, renderer, rendererPackage) => {
-      vi.mocked(loadMainConfig).mockResolvedValue({ framework, stories: [] });
+  it('detects the renderer and its package', async () => {
+    const info = await getStorybookInfo(configDir);
 
-      const info = await getStorybookInfo(configDir);
+    expect(info.renderer).toBe(renderer);
+    expect(info.rendererPackage).toBe(rendererPackage);
+  });
+});
 
-      expect(info.renderer).toBe(renderer);
-      expect(info.rendererPackage).toBe(rendererPackage);
-    }
-  );
-
-  it('detects the framework and builder of Analog', async () => {
+describe('getStorybookInfo for Analog', () => {
+  beforeEach(() => {
+    vi.spyOn(JsPackageManager, 'listAllPackageJsonPaths').mockReturnValue([]);
     vi.mocked(loadMainConfig).mockResolvedValue({
       framework: '@analogjs/storybook-angular',
       stories: [],
     });
+  });
 
+  it('detects the framework and builder', async () => {
     const info = await getStorybookInfo(configDir);
 
     expect(info.framework).toBe(SupportedFramework.ANALOG);

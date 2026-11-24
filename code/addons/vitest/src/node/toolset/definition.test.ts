@@ -331,16 +331,17 @@ describe('test API', () => {
       expect(description).toContain('Results will include passing/failing status.');
     });
 
-    it('sends the agent to the test-stories skill of its transport first', () => {
-      expect(resolveToolsetDescription(toolset.methods.run.description, mcpCtx)).toContain(
-        'First run npx storybook skills test-stories --mcp once and follow it'
-      );
-      expect(resolveToolsetDescription(toolset.methods.run.description, ctx)).toContain(
-        'First run npx storybook skills test-stories once and follow it'
-      );
-      expect(
-        resolveToolsetDescription(toolset.methods.run.description, { ...ctx, transport: 'sdk' })
-      ).not.toContain('storybook skills');
+    // When to test is up to the agent and its harness; the description says what the tool does.
+    it('says what the tool runs, not when, and sends the agent to no skill', () => {
+      for (const transport of ['mcp', 'cli', 'sdk'] as const) {
+        const description = resolveToolsetDescription(toolset.methods.run.description, {
+          ...ctx,
+          transport,
+        });
+        expect(description).toContain('leave both out to run every story');
+        expect(description).not.toMatch(/package\.json|after editing|continuously/);
+        expect(description).not.toContain('storybook skills');
+      }
     });
   });
 

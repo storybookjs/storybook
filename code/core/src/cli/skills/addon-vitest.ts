@@ -1,3 +1,5 @@
+import { getAddonNames } from 'storybook/internal/common';
+
 import type { Options } from '../../types/index.ts';
 
 /**
@@ -15,4 +17,16 @@ export async function isAddonVitestEnabled(options: Options): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+/**
+ * Whether the main config lists `@storybook/addon-vitest`. Without it a Storybook runs no story
+ * tests, so the `AGENTS.md` section leaves the test step out.
+ *
+ * `create storybook` and `storybook upgrade` write that section without loading the presets, so
+ * they read the main config instead of asking `isAddonVitestEnabled`. An addon-vitest that only a
+ * preset adds is not seen here.
+ */
+export function hasAddonVitest(mainConfig: Parameters<typeof getAddonNames>[0]): boolean {
+  return getAddonNames(mainConfig).includes('@storybook/addon-vitest');
 }

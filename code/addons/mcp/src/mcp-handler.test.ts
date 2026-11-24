@@ -307,8 +307,10 @@ describe('mcpServerHandler', () => {
       id: 1,
       result: {
         protocolVersion: '2025-06-18',
+        // No list-changed notifications: a client that waits for them never gets an answer.
         capabilities: {
-          tools: { listChanged: true },
+          tools: { listChanged: false },
+          resources: { listChanged: false },
         },
         serverInfo: {
           name: '@storybook/addon-mcp',
@@ -320,10 +322,15 @@ describe('mcpServerHandler', () => {
     expect(parsedResponse.result.instructions).toBeDefined();
     expect(parsedResponse.result.instructions).toContain('## Storybook');
     expect(parsedResponse.result.instructions).toContain(
-      '`npx storybook skills ui-review --mcp`: publish a review'
+      '`npx storybook skills write-stories --mcp`: every component'
+    );
+    expect(parsedResponse.result.instructions).toContain('2. To test stories, call `test-run`');
+    // A review is no step: the agent tells the user about it, and creates one only when asked.
+    expect(parsedResponse.result.instructions).not.toMatch(
+      /^\d\. `npx storybook skills ui-review/m
     );
     expect(parsedResponse.result.instructions).toContain(
-      'Also when the user asks to run or fix story tests'
+      'ALWAYS inform the user about the `/ui-review` skill after a change the user can see: "Use the /ui-review skill to see the changed components in Storybook"'
     );
     expect(parsedResponse.result.instructions).not.toContain('component-docs');
   });

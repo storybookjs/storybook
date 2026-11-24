@@ -39,9 +39,12 @@ const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
       testSupported: availability.testSupported,
       docsEnabled: availability.docsEnabled,
     }),
+    // Storybook sends no list-changed notifications, and the handler below buffers each response
+    // before it sends it, so a stream that waits for them never gets an answer. A client that
+    // opens one because the server announces them (Claude Code) waits out its own time limit.
     capabilities: {
-      tools: { listChanged: true },
-      resources: { listChanged: true },
+      tools: { listChanged: false },
+      resources: { listChanged: false },
     },
   };
 

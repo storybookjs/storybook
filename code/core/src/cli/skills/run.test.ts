@@ -65,11 +65,11 @@ describe('resolveSkillsIntent', () => {
     }
   });
 
-  it('names the four skills that replace stories, the skill of Storybook 10.6', () => {
+  it('names the skills that replace stories, the skill of Storybook 10.6', () => {
     expect(resolveSkillsIntent({ tokens: ['stories'] })).toEqual({
       kind: 'error',
       message: expect.stringMatching(
-        /^The `stories` skill is replaced by one skill per step: `component-docs` .*`write-stories` .*`test-stories` .*`ui-review`/
+        /^The `\/stories` skill is replaced by `\/component-docs` .*`\/write-stories` .*When the user asks for a review, run `npx storybook skills ui-review`\.$/
       ),
     });
   });
@@ -78,7 +78,7 @@ describe('resolveSkillsIntent', () => {
     expect(resolveSkillsIntent({ tokens: ['write-story'] })).toEqual({
       kind: 'error',
       message:
-        'The `write-story` skill is renamed to `write-stories`. Run `npx storybook skills write-stories`.',
+        'The `/write-story` skill is renamed to `/write-stories`. Run `npx storybook skills write-stories`.',
     });
   });
 
@@ -86,7 +86,7 @@ describe('resolveSkillsIntent', () => {
     expect(resolveSkillsIntent({ tokens: ['stories'], mcp: true })).toEqual({
       kind: 'error',
       message: expect.stringContaining(
-        'Run `npx storybook skills <id> --mcp` for each of the four now'
+        'Run `npx storybook skills component-docs --mcp` and `npx storybook skills write-stories --mcp` now'
       ),
     });
     expect(resolveSkillsIntent({ tokens: ['write-story'], mcp: true })).toEqual({
@@ -156,12 +156,13 @@ describe('runSkillsCommand', () => {
     const testStories = await runSkillsCommand({ tokens: ['test-stories'], target: {} }, d);
     const uiReview = await runSkillsCommand({ tokens: ['ui-review'], target: {} }, d);
 
-    expect(testStories.output).toContain("npx storybook tools test run --stories '[{");
+    expect(testStories.output).toContain('npx storybook tools test run --changed');
     expect(testStories.output).not.toContain('review create');
+    expect(testStories.output).not.toContain('stories changed');
     expect(uiReview.output).toContain("npx storybook tools review create --input '{");
+    expect(uiReview.output).toContain('npx storybook tools stories changed');
     expect(uiReview.output).not.toContain('test run');
     for (const { output } of [testStories, uiReview]) {
-      expect(output).toContain('npx storybook tools stories changed');
       expect(output).not.toContain('Usage: npx storybook tools');
     }
   });
@@ -193,7 +194,7 @@ describe('runSkillsCommand', () => {
       composed: true,
     });
 
-    const { output } = await runSkillsCommand({ tokens: ['test-stories'], target: {} }, d);
+    const { output } = await runSkillsCommand({ tokens: ['ui-review'], target: {} }, d);
 
     expect(output).toContain('npx storybook tools docs list --withStoryIds true');
   });

@@ -17,6 +17,15 @@ export const convert = (type: PTType): SBType | any => {
 
   switch (name) {
     case 'enum': {
+      // A `T | (string & {})` union arrives as an enum with an open string member;
+      // it accepts any string, so it is a text control rather than a closed list.
+      if (
+        !computed &&
+        Array.isArray(value) &&
+        value.some((v: PTType) => v.value === 'string & {}')
+      ) {
+        return { ...base, name: 'string' };
+      }
       const values = computed ? value : value.map((v: PTType) => parseLiteral(v.value));
       return { ...base, name, value: values };
     }

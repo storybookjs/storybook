@@ -310,6 +310,71 @@ describe('storybook type system', () => {
         }
       `);
     });
+    it('open string unions and intersections', () => {
+      const input = readFixture('typescript/open-string-unions.tsx');
+      expect(convertTs(input)).toMatchInlineSnapshot(`
+        {
+          "openUnion": {
+            "raw": "'sm' | 'md' | (string & {})",
+            "name": "string"
+          },
+          "openIntersection": {
+            "raw": "string & {}",
+            "name": "string"
+          },
+          "closedUnion": {
+            "raw": "'a' | 'b'",
+            "name": "enum",
+            "value": [
+              "a",
+              "b"
+            ]
+          },
+          "withNull": {
+            "raw": "'a' | 'b' | null",
+            "name": "enum",
+            "value": [
+              "a",
+              "b",
+              null
+            ]
+          },
+          "mixedUnion": {
+            "raw": "'a' | Custom",
+            "name": "union",
+            "value": [
+              {
+                "name": "other",
+                "value": "literal"
+              },
+              {
+                "raw": "'x' | 'y'",
+                "name": "enum",
+                "value": [
+                  "x",
+                  "y"
+                ]
+              }
+            ]
+          }
+        }
+      `);
+    });
+    // react-docgen-typescript emits `'sm' | 'md' | (string & {})` as an enum
+    // with a `string & {}` member; the prop accepts any string.
+    it('open string enums from react-docgen-typescript', () => {
+      const converted = convert({
+        type: {
+          name: 'enum',
+          value: [{ value: '"sm"' }, { value: '"md"' }, { value: 'string & {}' }],
+        },
+      } as any);
+      expect(converted).toMatchInlineSnapshot(`
+        {
+          "name": "string"
+        }
+      `);
+    });
     it('arrays', () => {
       const input = readFixture('typescript/arrays.tsx');
       expect(input).toMatchInlineSnapshot(`

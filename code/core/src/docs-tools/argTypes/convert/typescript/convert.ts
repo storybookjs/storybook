@@ -31,6 +31,24 @@ const convertSig = (type: TSSigType) => {
   }
 };
 
+// `string & {}` is the TypeScript idiom for "literal hints plus any string" (used
+// throughout CSSProperties and similar library types). Docgen emits it either as an
+// `intersection` of `string` and an empty object signature, or as an `unknown`
+// member inside a union. Both shapes mean `string`, so they collapse to a text
+// control instead of an unusable object control.
+type TSIntersectionType = Extract<TSType, { name: 'intersection' }>;
+
+const isEmptyObjectSignature = (type: TSType): boolean =>
+  type.name === 'signature' && type.type === 'object' && type.signature.properties.length === 0;
+
+const convertIntersection = (type: TSIntersectionType): SBType | void => {
+  const meaningful = type.elements.filter((element) => !isEmptyObjectSignature(element));
+  if (meaningful.length === 1) {
+    return convert(meaningful[0]);
+  }
+  return { name: 'intersection', value: type.elements.map(convert) };
+};
+
 export const convert = (type: TSType): SBType | void => {
   const { name, raw } = type;
   const base: any = {};
@@ -69,10 +87,21 @@ export const convert = (type: TSType): SBType | void => {
           ),
         };
       }
+      // A union of literals and a `string & {}` member (emitted as `unknown`)
+      // accepts any string, so it is a text control, not a closed enum.
+      if (
+        nonUndefinedElements.some((element) => element.name === 'unknown') &&
+        typeof raw === 'string' &&
+        /\bstring\s*&\s*\{\s*\}/.test(raw)
+      ) {
+        return { ...base, name: 'string' };
+      }
       return { ...base, name, value: type.elements.map(convert) };
     }
-    case 'intersection':
-      return { ...base, name, value: type.elements.map(convert) };
+    case 'intersection': {
+      const converted = convertIntersection(type);
+      return converted ? { ...base, ...converted } : converted;
+    }
     default:
       return { ...base, name: 'other', value: name };
   }

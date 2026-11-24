@@ -311,16 +311,40 @@ const canEndPath = (editor: SourceEditor, member: Node, path: CsfPattern): boole
   let inner = member;
   for (const segment of path.slice(0, -1).reverse()) {
     const object = editor.parentOf(inner);
-    const outer = object?.type === 'ObjectExpression' ? editor.parentOf(object) : undefined;
+    let value = object;
+    let outer = value?.type === 'ObjectExpression' ? editor.parentOf(value) : undefined;
+    while (outer && unwrapExpression(outer) === object) {
+      value = outer;
+      outer = editor.parentOf(outer);
+    }
     if (
       outer?.type !== 'Property' ||
-      outer.value !== object ||
+      outer.value !== value ||
       editor.parentOf(outer)?.type !== 'ObjectExpression'
     ) {
       return true;
     }
     const key = namedKey(outer);
     if (typeof segment === 'string' && typeof key === 'string' && key !== segment) {
+      let ancestor: Node | undefined = outer;
+      while ((ancestor = editor.parentOf(ancestor))) {
+        if (ancestor.type === 'MemberExpression') {
+          return true;
+        }
+        if (ancestor.type === 'CallExpression') {
+          const callee = unwrapExpression(ancestor.callee);
+          const binding =
+            callee.type === 'Identifier' ? editor.scopes.bindingOf(callee) : undefined;
+          const init = constantInit(binding);
+          if (
+            binding?.kind === 'function' ||
+            init?.type === 'ArrowFunctionExpression' ||
+            init?.type === 'FunctionExpression'
+          ) {
+            return true;
+          }
+        }
+      }
       return false;
     }
     inner = outer;
@@ -358,12 +382,20 @@ const mentions = (
   const missing = new Set(keys);
   const last = path.at(-1);
   const searched = new Set<Node>();
+  let hasMemberRead = false;
+  let rejectedLast = false;
   // Types do not change what code returns, so they are not read.
   const search = (child: Node): void => {
     if (missing.size === 0) {
       return;
     }
+    if (child.type === 'MemberExpression') {
+      hasMemberRead = true;
+    }
     const named = namedKey(child);
+    if (named === last && !canEndPath(editor, child, path)) {
+      rejectedLast = true;
+    }
     if (isAnyKey(named)) {
       missing.clear();
     } else if (named !== undefined && (named !== last || canEndPath(editor, child, path))) {
@@ -397,6 +429,9 @@ const mentions = (
     }
   };
   search(code);
+  if (hasMemberRead && rejectedLast && typeof last === 'string') {
+    missing.delete(last);
+  }
   return missing.size === 0;
 };
 

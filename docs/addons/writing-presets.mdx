@@ -101,7 +101,7 @@ However, if you need, you can also customize the template used by Storybook to r
 
 ### Storybook doesn't load files in my preset
 
-As Storybook relies on [esbuild](https://esbuild.github.io/) instead of Webpack to build the UI, presets that depend on the `managerWebpack` API to configure the manager or load additional files other than CSS or images will no longer work. We recommend removing it from your preset and adjusting your configuration to convert any additional files to JavaScript.
+As Storybook relies on [Rolldown](https://rolldown.rs/) instead of Webpack to build the UI, presets that depend on the `managerWebpack` API to configure the manager or load additional files other than CSS or images will no longer work. We recommend removing it from your preset and adjusting your configuration to convert any additional files to JavaScript.
 
 **Learn more about the Storybook addon ecosystem**
 

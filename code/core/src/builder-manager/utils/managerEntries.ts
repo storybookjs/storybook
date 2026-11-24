@@ -24,7 +24,7 @@ const sanitizeFinal = (path: string) => {
 
 /**
  * Manager entries should be **self-invoking** bits of code. They can of-course import from modules,
- * and ESbuild will bundle all of that into a single file. But they should not export anything.
+ * and the bundler will put all of that into a single file. But they should not export anything.
  * However this can't be enforced, so what we do is wrap the given file, in a bit of code like
  * this:
  *
@@ -32,7 +32,7 @@ const sanitizeFinal = (path: string) => {
  * import '<<file>>';
  * ```
  *
- * That way we are indicating to ESbuild that we do not care about this files exports, and they will
+ * That way we are indicating to the bundler that we do not care about this files exports, and they will
  * be dropped in the bundle.
  *
  * We do all of that so we can wrap a try-catch around the code. That would have been invalid syntax

@@ -30,6 +30,7 @@
   - [Builder docgen is deprecated](#builder-docgen-is-deprecated)
     - [React: `react-docgen` and `react-docgen-typescript` are optional peer dependencies](#react-react-docgen-and-react-docgen-typescript-are-optional-peer-dependencies)
     - [Svelte](#svelte)
+  - [Manager entries are bundled with Rolldown](#manager-entries-are-bundled-with-rolldown)
   - [Node.js 22.12 or higher](#nodejs-2212-or-higher)
   - [TypeScript 5.9 or newer](#typescript-59-or-newer)
   - [CSF Next: meta args no longer need `as const`](#csf-next-meta-args-no-longer-need-as-const)
@@ -1323,6 +1324,34 @@ The server output changes the Controls panel:
 - JSDoc tags, the `@component` description and `$bindable` metadata are included.
 
 The Code panel snippet starts with a `<script>` block that imports the components and values it uses, from the paths in the story file. It also copies the story file declarations that the markup reads. Args are printed as you wrote them, for example `onclick={fn()}`.
+
+### Manager entries are bundled with Rolldown
+
+Storybook now bundles `.storybook/manager.*` and the manager entries of addons with [Rolldown](https://rolldown.rs/) instead of esbuild. An addon that publishes its manager entry as compiled JavaScript is only affected by the third point below.
+
+**Decorators and `accessor` fields are no longer compiled.** Rolldown leaves them as written, and the entry then fails to load with a syntax error in a browser that does not run them. Compile such code before Storybook bundles it, as an addon built with tsup or `tsc` does, or avoid the syntax in `.storybook/manager.ts`.
+
+**A TypeScript namespace declared in several blocks must name its own members in full.** A block that reads a member of another block by its bare name fails with a `ReferenceError`:
+
+```diff
+namespace Events { export const CHANGE = 'change'; }
+- namespace Events { export const ALL = [CHANGE]; }
++ namespace Events { export const ALL = [Events.CHANGE]; }
+```
+
+**`require()` of a package with a `main` and a `module` field returns the ES module.** esbuild returned the value of `main`. Import the package instead, or read the `default` property:
+
+```diff
+- const debounce = require('some-package');
++ import debounce from 'some-package';
+```
+
+Other differences that need no change in most projects:
+
+- CSS is bundled with [Lightning CSS](https://lightningcss.dev/). The class names of a `.module.css` file are generated differently. An `@import` of a URL still works, but fails the build when it has a media query, `supports()` or `layer()`.
+- License comments stay in the bundles. Storybook no longer writes `.LEGAL.txt` files next to them.
+- Class static blocks are no longer compiled to older syntax.
+- An `import()` of a package that is not installed is a warning, also without a `catch`.
 
 ### Node.js 22.12 or higher
 

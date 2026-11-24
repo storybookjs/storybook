@@ -30,6 +30,30 @@ const secondNoMatchingExportBuilderError = {
 } satisfies Message;
 
 describe('buildOrThrow', () => {
+  it('throws a NoMatchingExportError for an export that Rolldown reports missing', async () => {
+    const builderError = {
+      errors: [
+        {
+          code: 'MISSING_EXPORT',
+          message:
+            '[MISSING_EXPORT] "WithTooltip" is not exported by "\0storybook-global:storybook/internal/components".\n   ╭─[ manager.js:25:10 ]',
+          id: 'node_modules/storybook-addon-mock-date/dist/manager.js',
+        },
+      ],
+    };
+
+    const thrown = await buildOrThrow(async () => {
+      throw builderError;
+    }).catch((err) => err);
+
+    expect(thrown).toBeInstanceOf(NoMatchingExportError);
+    expect(thrown.data.error).toBe(builderError);
+    expect(thrown.data.detail).toMatchInlineSnapshot(`
+      ""WithTooltip" is not exported by "storybook/internal/components".
+      imported from node_modules/storybook-addon-mock-date/dist/manager.js"
+    `);
+  });
+
   it('throws a NoMatchingExportError including the matched builder error text and importing file', async () => {
     const builderError = {
       errors: [noMatchingExportBuilderError],

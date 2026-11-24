@@ -2,18 +2,14 @@ import { existsSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join, normalize, relative } from 'node:path';
 
-import type { OutputFile } from 'esbuild';
 // eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 
-import type { Compilation } from '../types.ts';
+import type { OutputFile } from './bundle.ts';
 
-export async function readOrderedFiles(
-  addonsDir: string,
-  outputFiles: Compilation['outputFiles'] | undefined
-) {
+export async function readOrderedFiles(addonsDir: string, outputFiles: OutputFile[]) {
   const files = await Promise.all(
-    outputFiles?.map(async (file) => {
+    outputFiles.map(async (file) => {
       // convert deeply nested paths to a single level, also remove special characters
       const { location, url } = sanitizePath(file, addonsDir);
 
@@ -23,7 +19,7 @@ export async function readOrderedFiles(
       }
       await writeFile(location, file.contents);
       return url;
-    }) || []
+    })
   );
 
   const jsFiles = files.filter((file) => file.endsWith('.js'));

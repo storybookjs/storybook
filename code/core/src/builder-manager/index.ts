@@ -3,36 +3,51 @@ import { cp, rm, writeFile } from 'node:fs/promises';
 import { stringifyProcessEnvs } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
-import { globalExternals } from '@fal-works/esbuild-plugin-global-externals';
 import { resolveModulePath } from 'exsolve';
 import { join, parse } from 'pathe';
 import sirv from 'sirv';
 
 import { globalsModuleInfoMap } from '../manager/globals/globals-module-info.ts';
-import { BROWSER_TARGETS, SUPPORTED_FEATURES } from '../shared/constants/environments-support.ts';
+import { BROWSER_TARGETS } from '../shared/constants/environments-support.ts';
 import { resolvePackageDir } from '../shared/utils/module.ts';
 import type {
   BuilderBuildResult,
   BuilderFunction,
   BuilderStartResult,
-  Compilation,
   ManagerBuilder,
   StarterFunction,
 } from './types.ts';
+import { bundleManagerEntries } from './utils/bundle.ts';
 import { getData } from './utils/data.ts';
 import { readOrderedFiles } from './utils/files.ts';
 import { buildFrameworkGlobalsFromOptions } from './utils/framework.ts';
+import { globalExternals } from './utils/global-externals.ts';
 import { wrapManagerEntries } from './utils/managerEntries.ts';
-import { getTemplatePath, renderHTML } from './utils/template.ts';
+import { renderHTML } from './utils/template.ts';
 
 export { BROWSER_TARGETS, NODE_TARGET } from '../shared/constants/environments-support.ts';
-// Exposed so the manager bundler benchmark can add exports that older addons still import
-export { globalsModuleInfoMap };
 
 const CORE_DIR_ORIGIN = join(resolvePackageDir('storybook'), 'dist/manager');
 
+const DATA_URL_EXTENSIONS = [
+  // media
+  '.png',
+  '.gif',
+  '.jpg',
+  '.jpeg',
+  '.svg',
+  '.webp',
+  '.webm',
+  '.mp3',
+  // modern fonts
+  '.woff2',
+  // legacy font formats
+  '.woff',
+  '.eot',
+  '.ttf',
+];
+
 const isRootPath = /^\/($|\?)/;
-let compilation: Compilation;
 let asyncIterator: ReturnType<StarterFunction> | ReturnType<BuilderFunction>;
 
 export const getConfig: ManagerBuilder['getConfig'] = async (options) => {
@@ -40,7 +55,6 @@ export const getConfig: ManagerBuilder['getConfig'] = async (options) => {
     options.presets.apply('managerEntries', []),
     options.presets.apply<Record<string, string>>('env'),
   ]);
-  const tsconfigPath = getTemplatePath('addon.tsconfig.json');
   let configDirManagerEntry;
   try {
     configDirManagerEntry = resolveModulePath('./manager', {
@@ -58,83 +72,39 @@ export const getConfig: ManagerBuilder['getConfig'] = async (options) => {
   return {
     entryPoints: await wrapManagerEntries(entryPoints, options.cacheKey),
     outdir: join(options.outputDir || './', 'sb-addons'),
-    format: 'iife',
-    write: false,
-    ignoreAnnotations: true,
-    resolveExtensions: ['.ts', '.tsx', '.mjs', '.js', '.jsx'],
-    outExtension: { '.js': '.js' },
-    loader: {
-      '.js': 'jsx',
-      // media
-      '.png': 'dataurl',
-      '.gif': 'dataurl',
-      '.jpg': 'dataurl',
-      '.jpeg': 'dataurl',
-      '.svg': 'dataurl',
-      '.webp': 'dataurl',
-      '.webm': 'dataurl',
-      '.mp3': 'dataurl',
-      // modern fonts
-      '.woff2': 'dataurl',
-      // legacy font formats
-      '.woff': 'dataurl',
-      '.eot': 'dataurl',
-      '.ttf': 'dataurl',
-    },
-    target: BROWSER_TARGETS,
-    supported: SUPPORTED_FEATURES,
     platform: 'browser',
-    bundle: true,
-    minify: false,
-    minifyWhitespace: false,
-    minifyIdentifiers: false,
-    minifySyntax: true,
-    metafile: false, // turn this on to assist with debugging the bundling of managerEntries
-
-    // treeShaking: true,
-
-    sourcemap: false,
-    conditions: ['browser', 'module', 'default'],
-
-    jsxFactory: 'React.createElement',
-    jsxFragment: 'React.Fragment',
-    jsx: 'transform',
-    jsxImportSource: 'react',
-
-    tsconfig: tsconfigPath,
-
-    legalComments: 'external',
+    // The tsconfig of a project or of a package must not change how a manager entry compiles.
+    tsconfig: false,
+    resolve: {
+      extensions: ['.ts', '.tsx', '.mjs', '.js', '.jsx'],
+      conditionNames: ['browser', 'module', 'default'],
+    },
+    moduleTypes: {
+      '.js': 'jsx',
+      ...Object.fromEntries(DATA_URL_EXTENSIONS.map((extension) => [extension, 'dataurl'])),
+    },
+    // A manager entry is imported for what it registers, so neither a pure annotation nor a
+    // `sideEffects` field of a package may remove a module.
+    treeshake: { annotations: false, moduleSideEffects: [{ test: /.*/, sideEffects: true }] },
+    transform: {
+      target: BROWSER_TARGETS,
+      jsx: { runtime: 'classic', pragma: 'React.createElement', pragmaFrag: 'React.Fragment' },
+      define: {
+        'process.env': JSON.stringify(envs),
+        ...stringifyProcessEnvs(envs),
+        global: 'window',
+      },
+    },
     plugins: [globalExternals(globalsModuleInfoMap)],
-
-    banner: {
-      js: 'try{',
-    },
-    footer: {
-      js: '}catch(e){ console.error("[Storybook] One of your manager-entries failed: " + import.meta.url, e); }',
-    },
-
-    define: {
-      'process.env': JSON.stringify(envs),
-      ...stringifyProcessEnvs(envs),
-      global: 'window',
-      module: '{}',
+    output: {
+      format: 'iife',
+      minify: { compress: true, mangle: false, codegen: { removeWhitespace: false } },
+      comments: { legal: true, annotation: true, jsdoc: false },
+      // A constant read early in an import cycle is `undefined` instead of an error, which
+      // bundles published for esbuild rely on.
+      topLevelVar: true,
     },
   };
-};
-
-export const executor = {
-  get: async () => {
-    if (process.env.STORYBOOK_MANAGER_BUNDLER === 'rolldown') {
-      const [{ buildWithRolldown }] = await Promise.all([
-        import('./rolldown.ts'),
-        // loads the native binding up front, as importing esbuild does for its own module
-        import('rolldown'),
-      ]);
-      return buildWithRolldown as unknown as typeof import('esbuild').build;
-    }
-    const { build } = await import('esbuild');
-    return build;
-  },
 };
 
 /**
@@ -157,7 +127,6 @@ const starter: StarterFunction = async function* starterGeneratorFn({
     favicon,
     customHead,
     features,
-    instance,
     refs,
     template,
     title,
@@ -175,9 +144,7 @@ const starter: StarterFunction = async function* starterGeneratorFn({
 
   yield;
 
-  compilation = await instance({
-    ...config,
-  });
+  const outputFiles = await bundleManagerEntries(config, false);
 
   yield;
 
@@ -198,14 +165,7 @@ const starter: StarterFunction = async function* starterGeneratorFn({
     })
   );
 
-  const { cssFiles, jsFiles } = await readOrderedFiles(addonsDir, compilation?.outputFiles);
-
-  if (compilation.metafile && options.outputDir) {
-    await writeFile(
-      join(options.outputDir, 'metafile.json'),
-      JSON.stringify(compilation.metafile, null, 2)
-    );
-  }
+  const { cssFiles, jsFiles } = await readOrderedFiles(addonsDir, outputFiles);
 
   // Build additional global values
   const globals: Record<string, any> = await buildFrameworkGlobalsFromOptions(options);
@@ -272,7 +232,6 @@ const builder: BuilderFunction = async function* builderGeneratorFn({ startTime,
     customHead,
     favicon,
     features,
-    instance,
     refs,
     template,
     title,
@@ -285,11 +244,7 @@ const builder: BuilderFunction = async function* builderGeneratorFn({ startTime,
   const addonsDir = config.outdir;
   const coreDirTarget = join(options.outputDir, `sb-manager`);
 
-  // TODO: this doesn't watch, we should change this to use the esbuild watch API: https://esbuild.github.io/api/#watch
-  compilation = await instance({
-    ...config,
-    minify: true,
-  });
+  const outputFiles = await bundleManagerEntries(config, true);
 
   yield;
 
@@ -303,7 +258,7 @@ const builder: BuilderFunction = async function* builderGeneratorFn({ startTime,
     },
     recursive: true,
   });
-  const { cssFiles, jsFiles } = await readOrderedFiles(addonsDir, compilation?.outputFiles);
+  const { cssFiles, jsFiles } = await readOrderedFiles(addonsDir, outputFiles);
 
   // Build additional global values
   const globals: Record<string, any> = await buildFrameworkGlobalsFromOptions(options);

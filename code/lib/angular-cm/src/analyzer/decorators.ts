@@ -87,21 +87,86 @@ export const decoratorStringArg = (
   return arg && ctx.ts.isStringLiteralLike(arg) ? arg.text : undefined;
 };
 
+/** The value of `key`, as the initializer or, for `{ key }`, the identifier `resolveReference` follows. */
 export const objectProperty = (
   ctx: AnalyzerContext,
   object: ts.ObjectLiteralExpression,
   key: string
 ): ts.Expression | undefined => {
+  const { ts } = ctx;
   for (const property of object.properties) {
+    if (ts.isShorthandPropertyAssignment(property) && property.name.text === key) {
+      return property.name;
+    }
     if (
-      ctx.ts.isPropertyAssignment(property) &&
-      (ctx.ts.isIdentifier(property.name) || ctx.ts.isStringLiteralLike(property.name)) &&
+      ts.isPropertyAssignment(property) &&
+      (ts.isIdentifier(property.name) || ts.isStringLiteralLike(property.name)) &&
       property.name.text === key
     ) {
       return property.initializer;
     }
   }
   return undefined;
+};
+
+// Bounds the constant-to-initializer chain, which a self-referencing constant would otherwise loop.
+const MAX_REFERENCE_DEPTH = 10;
+
+/**
+ * Follow a reference to a constant through to its initializer, as decorator metadata allows.
+ *
+ * Anything that is not a constant, such as a class, is returned as it is.
+ */
+export const resolveReference = (
+  ctx: AnalyzerContext,
+  expression: ts.Expression
+): ts.Expression | undefined => {
+  const { ts } = ctx;
+  let current = unwrap(ctx, expression);
+  for (let depth = 0; depth < MAX_REFERENCE_DEPTH; depth++) {
+    if (!ts.isIdentifier(current)) {
+      return current;
+    }
+    const symbol = ts.isShorthandPropertyAssignment(current.parent)
+      ? ctx.checker.getShorthandAssignmentValueSymbol(current.parent)
+      : resolvedSymbol(ctx, current);
+    const declaration = symbol?.valueDeclaration;
+    if (!declaration || !ts.isVariableDeclaration(declaration)) {
+      return current;
+    }
+    if (!declaration.initializer) {
+      return undefined;
+    }
+    current = unwrap(ctx, declaration.initializer);
+  }
+  return undefined;
+};
+
+// `as const`, `satisfies`, parentheses and `!` change nothing Angular reads.
+export const unwrap = (ctx: AnalyzerContext, expression: ts.Expression): ts.Expression => {
+  const { ts } = ctx;
+  let current = expression;
+  while (
+    ts.isParenthesizedExpression(current) ||
+    ts.isAsExpression(current) ||
+    ts.isSatisfiesExpression(current) ||
+    ts.isNonNullExpression(current) ||
+    ts.isTypeAssertionExpression(current)
+  ) {
+    current = current.expression;
+  }
+  return current;
+};
+
+export interface BindingName {
+  name: string;
+  alias?: string;
+}
+
+/** Parse Angular's `'name'` / `'name: alias'` binding string, as `inputs`, `outputs` and `hostDirectives` take it. */
+export const parseBindingName = (text: string): BindingName | undefined => {
+  const [name, alias] = text.split(':').map((part) => part.trim());
+  return name ? { name, ...(alias ? { alias } : {}) } : undefined;
 };
 
 export const stringOption = (
@@ -179,21 +244,22 @@ export const readMetadataInputsOutputs = (
     return [];
   }
   const entries: MetadataIOEntry[] = [];
-  for (const property of metadata.properties) {
-    if (!ts.isPropertyAssignment(property) || !ts.isIdentifier(property.name)) {
+  for (const bucket of ['inputs', 'outputs'] as const) {
+    const initializer = objectProperty(ctx, metadata, bucket);
+    const list = initializer && resolveReference(ctx, initializer);
+    if (!list || !ts.isArrayLiteralExpression(list)) {
       continue;
     }
-    const bucket = property.name.text;
-    if (
-      (bucket !== 'inputs' && bucket !== 'outputs') ||
-      !ts.isArrayLiteralExpression(property.initializer)
-    ) {
-      continue;
-    }
-    for (const element of property.initializer.elements) {
+    for (const listElement of list.elements) {
+      const element = resolveReference(ctx, listElement);
+      if (!element) {
+        continue;
+      }
       if (ts.isStringLiteralLike(element)) {
-        const [name, alias] = element.text.split(':').map((part) => part.trim());
-        entries.push({ bucket, name, ...(alias ? { alias } : {}) });
+        const binding = parseBindingName(element.text);
+        if (binding) {
+          entries.push({ bucket, ...binding });
+        }
       } else if (bucket === 'inputs' && ts.isObjectLiteralExpression(element)) {
         const name = stringOption(ctx, element, 'name');
         if (!name) {

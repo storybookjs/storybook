@@ -26,6 +26,8 @@ import { wrapManagerEntries } from './utils/managerEntries.ts';
 import { getTemplatePath, renderHTML } from './utils/template.ts';
 
 export { BROWSER_TARGETS, NODE_TARGET } from '../shared/constants/environments-support.ts';
+// Exposed so the manager bundler benchmark can add exports that older addons still import
+export { globalsModuleInfoMap };
 
 const CORE_DIR_ORIGIN = join(resolvePackageDir('storybook'), 'dist/manager');
 
@@ -122,6 +124,14 @@ export const getConfig: ManagerBuilder['getConfig'] = async (options) => {
 
 export const executor = {
   get: async () => {
+    if (process.env.STORYBOOK_MANAGER_BUNDLER === 'rolldown') {
+      const [{ buildWithRolldown }] = await Promise.all([
+        import('./rolldown.ts'),
+        // loads the native binding up front, as importing esbuild does for its own module
+        import('rolldown'),
+      ]);
+      return buildWithRolldown as unknown as typeof import('esbuild').build;
+    }
     const { build } = await import('esbuild');
     return build;
   },

@@ -8,6 +8,7 @@ import react from '@vitejs/plugin-react';
 import type { InlineConfig } from 'vite';
 
 import { BROWSER_TARGETS } from '../core/src/shared/constants/environments-support.ts';
+import { benchAddons, benchManagerEntries } from './bench-addons.ts';
 
 const currentFilePath = fileURLToPath(import.meta.url);
 const currentDirPath = dirname(currentFilePath);
@@ -131,7 +132,9 @@ const config = defineMain({
     'storybook-addon-pseudo-states',
     '@chromatic-com/storybook',
     './services-preset.ts',
+    ...benchAddons,
   ],
+  managerEntries: (entries: string[] = []) => [...entries, ...benchManagerEntries],
   previewAnnotations: [
     './core/template/stories/preview.ts',
     './renderers/react/template/components/index.js',

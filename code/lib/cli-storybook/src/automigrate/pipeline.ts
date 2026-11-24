@@ -165,12 +165,13 @@ export const collectFiles = async (project: ProjectPaths, kinds: Set<FileKind>) 
  * the hooks in plugin order, and written at most once before the next file is read.
  *
  * Without `write`, the pass only detects: a plugin stops once it has changed or failed on one
- * file, and the pass stops reading once every plugin has.
+ * file, and the pass stops reading once every plugin has. With `exhaustive` as well, it goes
+ * through every file as a writing pass does, and writes nothing.
  */
 export const runTransforms = async (
   project: ProjectPaths,
   plugins: TransformPlugin[],
-  { write }: { write: boolean }
+  { write, exhaustive = false }: { write: boolean; exhaustive?: boolean }
 ) => {
   const outcomes = new Map<string, TransformOutcome>(
     plugins.map(({ fixId }) => [fixId, { changed: [], errors: [] }])
@@ -188,7 +189,7 @@ export const runTransforms = async (
   for (const context of await collectFiles(project, kinds)) {
     // A fix that failed on the main config fails as a whole, so it leaves the other files alone.
     const pending = plugins.filter(({ fixId }) =>
-      write ? !failedOnMain(fixId) : !detected(fixId)
+      write || exhaustive ? !failedOnMain(fixId) : !detected(fixId)
     );
     if (pending.length === 0) {
       break;
@@ -458,6 +459,49 @@ export const applyFixes = async (
         ? failed(errors)
         : { status: 'succeeded', fileFailures: errors }
     );
+  }
+  return new Map(selected.map(({ fix }) => [fix.id, outcomes.get(fix.id)!]));
+};
+
+/** What applying a fix would do, as predicted without writing. */
+export interface SimulatedOutcome {
+  /** `fail` when the fix would fail as a whole, which a failure on the main config causes. */
+  status: 'apply' | 'fail';
+  changed: string[];
+  fileFailures: FileFailure[];
+}
+
+/**
+ * Predict what `applyFixes` would do with the selected fixes, writing nothing. The hooks of every
+ * fix go through every file as in a run. A fix with `run` is only checked on the main config, as a
+ * run does before running it, since its run changes dependencies, prompts or runs commands.
+ */
+export const simulateFixes = async (
+  project: ProjectRunOptions & ProjectPaths,
+  selected: CheckedFix[]
+): Promise<Map<string, SimulatedOutcome>> => {
+  const outcomes = new Map<string, SimulatedOutcome>();
+  const viable: CheckedFix[] = [];
+  for (const checked of selected) {
+    const mainFailures = checked.fix.run ? await failuresOnMain(project, checked) : [];
+    if (mainFailures.length > 0) {
+      outcomes.set(checked.fix.id, { status: 'fail', changed: [], fileFailures: mainFailures });
+    } else {
+      viable.push(checked);
+    }
+  }
+
+  const simulated = await runTransforms(project, pluginsFor(viable, project), {
+    write: false,
+    exhaustive: true,
+  });
+  for (const { fix } of viable) {
+    const { changed, errors } = simulated.get(fix.id) ?? { changed: [], errors: [] };
+    outcomes.set(fix.id, {
+      status: errors.some(({ kind }) => kind === 'main') ? 'fail' : 'apply',
+      changed,
+      fileFailures: errors,
+    });
   }
   return new Map(selected.map(({ fix }) => [fix.id, outcomes.get(fix.id)!]));
 };

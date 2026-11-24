@@ -228,6 +228,8 @@ When either a non-patch release or a patch release branch is merged into `latest
 
 The publish workflow runs in the "release" GitHub environment, which has the npm token required to publish packages to the `@storybook` npm organization. For security reasons, this environment can only be accessed from the four "core" branches: `main`, `next`, `latest-release` and `next-release`.
 
+The git pushes in the publish and prepare workflows use a token of the Storybook bot GitHub App. Each job creates its token, and the token is revoked when the job ends. A push with `GITHUB_TOKEN` would not start other workflows, and it could not bypass the rulesets on `main` and `next`. The app needs access to `storybookjs/storybook` with **Contents: Read and write** and **Workflows: Read and write**, and it must be a bypass actor in the "Require PR" and "Require status check" rulesets.
+
 ## 👉 How to Release
 
 This section explains what a Releaser should do when it's time to release. The steps are also outlined in the release pull requests, to provide guidance for inexperienced Releasers.

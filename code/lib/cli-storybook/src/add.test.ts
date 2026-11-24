@@ -2,9 +2,9 @@ import { join } from 'node:path';
 
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 
+import { PackageManagerName } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
-import { PackageManagerName } from '../../../core/src/common/index.ts';
 import { add, getVersionSpecifier } from './add.ts';
 
 const MockedConfig = vi.hoisted(() => {
@@ -205,7 +205,7 @@ describe('add (extra)', () => {
     });
 
     expect(logger.log).toHaveBeenCalledWith(
-      `Adding '@storybook/addon-docs' to the "addons" field in ${join('packages', 'ui', '.storybook', 'main.ts')}`
+      `Adding '@storybook/addon-docs' to the "addons" field in packages/ui/.storybook/main.ts`
     );
   });
 });

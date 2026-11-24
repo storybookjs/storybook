@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  type API_PreparedIndexEntry,
   type API_PreparedStoryIndex,
   type StatusesByStoryIdAndTypeId,
   type StoryIndexV3,
@@ -12,6 +13,7 @@ import {
   transformStoryIndexToStoriesHash,
   transformStoryIndexV3toV4,
   transformStoryIndexV4toV5,
+  getComponentLookupList,
 } from './stories.ts';
 
 const baseV3: StoryIndexV3['stories'][0] = {
@@ -331,6 +333,161 @@ describe('transformStoryIndexToStoriesHash', () => {
         children: ['guides-button--docs'],
       });
       expect(filtered['guides-button--primary']).toBeUndefined();
+    });
+
+    const nestedIndex: API_PreparedStoryIndex = {
+      v: 5,
+      entries: {
+        'guides-button-icon--primary': {
+          id: 'guides-button-icon--primary',
+          type: 'story',
+          subtype: 'story',
+          title: 'Guides/Button/Icon',
+          name: 'Primary',
+          importPath: './icon.stories.ts',
+          tags: [],
+        },
+        ...index.entries,
+      },
+    };
+
+    it.each([false, true])(
+      'keeps a title with only nested stories a group (own docs: %s)',
+      (ownDocs) => {
+        const nested = transformStoryIndexToStoriesHash(
+          {
+            v: 5,
+            entries: {
+              'guides-button-icon--primary': nestedIndex.entries['guides-button-icon--primary'],
+              ...(ownDocs ? { 'guides-button--docs': index.entries['guides-button--docs'] } : {}),
+            },
+          },
+          options
+        );
+
+        expect(nested['guides-button']).toMatchObject({
+          type: 'group',
+          children: ownDocs
+            ? ['guides-button-icon', 'guides-button--docs']
+            : ['guides-button-icon'],
+        });
+      }
+    );
+
+    it('keeps a component with subcomponents and its own import path', () => {
+      const nested = transformStoryIndexToStoriesHash(nestedIndex, options);
+
+      expect(nested['guides-button']).toMatchObject({
+        type: 'component',
+        importPath: './guides-button--docs.mdx',
+        children: ['guides-button-icon', 'guides-button--docs', 'guides-button--primary'],
+      });
+      expect(nested['guides-button-icon']).toMatchObject({
+        type: 'component',
+        parent: 'guides-button',
+        importPath: './icon.stories.ts',
+      });
+      expect(nested['guides']).toMatchObject({ type: 'root' });
+      expect(nested['guides-faq']).toMatchObject({ type: 'group' });
+    });
+
+    it('keeps the component type when a filter hides its subcomponents', () => {
+      const filtered = transformStoryIndexToStoriesHash(nestedIndex, {
+        ...options,
+        filters: { hideIcon: (entry) => entry.title !== 'Guides/Button/Icon' },
+      });
+
+      expect(filtered['guides-button']).toMatchObject({
+        type: 'component',
+        children: ['guides-button--docs', 'guides-button--primary'],
+      });
+      expect(filtered['guides-button-icon']).toBeUndefined();
+    });
+
+    it.each([
+      ['no filter', undefined, './guides-button--docs.mdx'],
+      [
+        'docs hidden',
+        (entry: API_PreparedIndexEntry) => entry.type !== 'docs',
+        './button.stories.ts',
+      ],
+      [
+        'subcomponent and docs hidden',
+        (entry: API_PreparedIndexEntry) =>
+          entry.type !== 'docs' && entry.title !== 'Guides/Button/Icon',
+        './button.stories.ts',
+      ],
+    ])(
+      'takes the component import path from its first visible own entry (%s)',
+      (_, filter, path) => {
+        const filtered = transformStoryIndexToStoriesHash(nestedIndex, {
+          ...options,
+          ...(filter ? { filters: { filter } } : {}),
+        });
+        expect(filtered['guides-button']).toMatchObject({ type: 'component', importPath: path });
+      }
+    );
+
+    it('takes the import path from the first visible entry of a component without subcomponents', () => {
+      const filtered = transformStoryIndexToStoriesHash(index, {
+        ...options,
+        filters: { hideDocs: (entry) => entry.type !== 'docs' },
+      });
+      expect(filtered['guides-button']).toMatchObject({
+        type: 'component',
+        importPath: './button.stories.ts',
+      });
+    });
+
+    it('keeps the component source when only a subcomponent passes the filter', () => {
+      const filtered = transformStoryIndexToStoriesHash(nestedIndex, {
+        ...options,
+        filters: { onlyIcon: (entry) => entry.title === 'Guides/Button/Icon' },
+      });
+
+      expect(filtered['guides-button']).toMatchObject({
+        type: 'component',
+        importPath: './guides-button--docs.mdx',
+        children: ['guides-button-icon'],
+      });
+      expect(filtered['guides-button--primary']).toBeUndefined();
+      expect(getComponentLookupList(filtered)).toEqual([['guides-button-icon--primary']]);
+    });
+
+    it('keeps hoisted nested docs out of the component jump group', () => {
+      const nested = transformStoryIndexToStoriesHash(
+        {
+          v: 5,
+          entries: {
+            ...index.entries,
+            'guides-button-guide--docs': docs('guides-button-guide--docs', 'Guides/Button/Guide'),
+          },
+        },
+        options
+      );
+
+      expect(nested['guides-button']).toMatchObject({
+        type: 'component',
+        children: ['guides-button--docs', 'guides-button--primary', 'guides-button-guide--docs'],
+      });
+      expect(getComponentLookupList(nested)).toContainEqual([
+        'guides-button--docs',
+        'guides-button--primary',
+      ]);
+      expect(getComponentLookupList(nested)).toContainEqual(['guides-button-guide--docs']);
+    });
+
+    it('keeps component navigation on leaf entries when a component has subcomponents', () => {
+      const nested = transformStoryIndexToStoriesHash(nestedIndex, options);
+
+      expect(getComponentLookupList(nested)).toEqual([
+        ['welcome--docs'],
+        ['guides-button-icon--primary'],
+        ['guides-button--docs', 'guides-button--primary'],
+        ['guides-intro--docs'],
+        ['guides-faq--setup'],
+        ['guides-faq--usage'],
+      ]);
     });
   });
 });

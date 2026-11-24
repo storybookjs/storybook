@@ -66,7 +66,7 @@ function makeServer(readable: string[]) {
   return { server, tools };
 }
 
-const context = { availability, multiSource: true, toolsets: { docs: true } } as never;
+const context = { availability, multiSource: true } as never;
 
 describe('docs tools in a composition', () => {
   beforeEach(() => {

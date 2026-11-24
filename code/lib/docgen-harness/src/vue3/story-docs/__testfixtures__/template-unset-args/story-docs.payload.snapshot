@@ -22,6 +22,20 @@ const modelValue = ref();
   />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import { ref } from "vue";
+import TemplateUnsetArgs from './TemplateUnsetArgs.vue';
+
+const modelValue = ref(⟦value modelValue in="script"⟫⟧);
+</script>
+
+<template>
+  <TemplateUnsetArgs⟦attr id ~" "⟫⟧⟦attr label ~"\n    "⟫
+    label="Ready"⟧⟦attr hint ~"\n    "⟫
+    hint="Optional hint"⟧
+    v-model="modelValue"
+  />
+</template>",
     },
   },
 }

@@ -67,6 +67,7 @@ const managerContext: any = (
     getChannel: fn().mockName('api::getChannel'),
     getElements: fn(() => ({})),
     navigate: fn().mockName('api::navigate'),
+    resolveLeafEntry: fn().mockName('api::resolveLeafEntry'),
     selectStory: fn().mockName('api::selectStory'),
     setFilter: fn().mockName('api::setFilter'),
     setFilters: fn().mockName('api::setFilters'),

@@ -6,7 +6,7 @@ import { findOutdatedPackage } from './utils.ts';
 const minimalVersionsMap = {
   '@angular/core': '21.0.0',
   next: '15.0.0',
-  preact: '10.8.0',
+  preact: '10.9.0',
   react: '18.0.0',
   'react-dom': '18.0.0',
   svelte: '5.0.0',
@@ -120,6 +120,7 @@ export const blocker = createBlocker({
           title: 'Vite 6.3 or newer required',
           message: dedent`
             Support for Vite < 6.3.0 has been removed.
+            You are currently using Vite ${data.installedVersion}.
             Please see the migration guide for more information:
           `,
           link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#vite-requires-vite-63-or-higher',

@@ -1,8 +1,4 @@
-import type {
-  DecoratorFunction,
-  LegacyStoryFn,
-  StoryContextForRender,
-} from 'storybook/internal/types';
+import type { DecoratorFunction, LegacyStoryFn, StoryContext } from 'storybook/internal/types';
 
 /*
 ! DO NOT change this DecoratorHandler import to a relative path, it will break it.
@@ -42,7 +38,7 @@ function unWrap<T>(obj: { default: T } | T): T {
  * @param innerStory The story decorated by the current story
  */
 function prepareStory(
-  context: StoryContextForRender<SvelteRenderer>,
+  context: StoryContext<SvelteRenderer>,
   rawStory: SvelteRenderer['storyResult'],
   rawInnerStory?: SvelteRenderer['storyResult']
 ) {
@@ -80,14 +76,13 @@ function prepareStory(
     };
   }
 
-  // no innerStory means this is the last story in the decorator chain, so it should create events from argTypes
-  return { ...preparedStory, argTypes: context.argTypes };
+  return preparedStory;
 }
 
 export function decorateStory(storyFn: any, decorators: any[]) {
   return decorators.reduce(
     (decorated: LegacyStoryFn<SvelteRenderer>, decorator: DecoratorFunction<SvelteRenderer>) =>
-      (context: StoryContextForRender<SvelteRenderer>) => {
+      (context: StoryContext<SvelteRenderer>) => {
         let story: SvelteRenderer['storyResult'] | undefined;
 
         const decoratedStory: SvelteRenderer['storyResult'] = decorator((update) => {
@@ -108,6 +103,6 @@ export function decorateStory(storyFn: any, decorators: any[]) {
 
         return prepareStory(context, decoratedStory, story);
       },
-    (context: StoryContextForRender<SvelteRenderer>) => prepareStory(context, storyFn(context))
+    (context: StoryContext<SvelteRenderer>) => prepareStory(context, storyFn(context))
   );
 }

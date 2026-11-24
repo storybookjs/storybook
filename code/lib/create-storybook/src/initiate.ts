@@ -2,6 +2,7 @@ import { resolve } from 'node:path';
 
 import {
   ProjectType,
+  hasAddonVitest,
   installSkills,
   supportsSkills,
   supportsAiSetup,
@@ -11,6 +12,9 @@ import {
   PackageManagerName,
   cache,
   executeCommand,
+  getConfigInfo,
+  loadMainConfig,
+  syncStorybookAddons,
   type JsPackageManager,
 } from 'storybook/internal/common';
 import { getServerPort, withTelemetry } from 'storybook/internal/core-server';
@@ -135,7 +139,7 @@ export async function doInitiate(options: CommandOptions): Promise<
     selectedFeatures.delete(Feature.AI);
   }
 
-  await executeTypeScriptDependency({
+  const typeScriptDependency = await executeTypeScriptDependency({
     options,
     packageManager,
     framework,
@@ -162,6 +166,7 @@ export async function doInitiate(options: CommandOptions): Promise<
     dependencyCollector,
     skipInstall: !!options.skipInstall,
     selectedFeatures,
+    upgradedDependencies: typeScriptDependency === 'upgraded',
   });
 
   // After dependencies are installed, we must not use the dependency collector anymore
@@ -186,12 +191,37 @@ export async function doInitiate(options: CommandOptions): Promise<
     options,
   });
 
+  if (configDir && !options.skipInstall && dependencyInstallationResult.status === 'success') {
+    try {
+      const { previewConfigPath } = getConfigInfo(configDir);
+      if (previewConfigPath) {
+        const mainConfig = await loadMainConfig({ configDir, skipCache: true });
+        await syncStorybookAddons(mainConfig, previewConfigPath, configDir);
+      }
+    } catch (err) {
+      logger.debug(
+        `Could not sync preview addons after init: ${err instanceof Error ? err.message : String(err)}`
+      );
+    }
+  }
+
   // Step 8: Install the official Storybook skills for AI agents, and tell agents in AGENTS.md when
   // to use them
   const hasAiFeature = selectedFeatures.has(Feature.AI);
   if (hasAiFeature) {
+    // The section gets its test step only when the main config lists addon-vitest. When it cannot
+    // be read, the test feature the user selected decides.
+    const mainConfig = configDir
+      ? await loadMainConfig({ configDir, skipCache: true }).catch(() => undefined)
+      : undefined;
     await telemetryService.trackSkills(
-      await installSkills({ packageManager, source: 'ai-feature' })
+      await installSkills({
+        packageManager,
+        source: 'ai-feature',
+        testSupported: mainConfig ? hasAddonVitest(mainConfig) : selectedFeatures.has(Feature.TEST),
+        // This is one Storybook of the project.
+        sawEveryStorybook: false,
+      })
     );
   }
 

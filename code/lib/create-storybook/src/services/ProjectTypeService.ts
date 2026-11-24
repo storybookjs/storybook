@@ -49,6 +49,13 @@ export class ProjectTypeService {
   getSupportedTemplates(): TemplateConfiguration[] {
     return [
       {
+        preset: ProjectType.ASTRO,
+        dependencies: ['astro'],
+        matcherFunction: ({ dependencies }) => {
+          return dependencies?.every(Boolean) ?? true;
+        },
+      },
+      {
         preset: ProjectType.NUXT,
         dependencies: ['nuxt'],
         matcherFunction: ({ dependencies }) => {

@@ -42,7 +42,12 @@ vi.mock('vite', { spy: true });
 vi.mock('node:fs', { spy: true });
 // Spy-only as well: the preprocessor check is the one place that asks node for a package, and the
 // tests below need to say which packages a user's project has without installing any of them.
-vi.mock('node:module', { spy: true });
+// Only `createRequire` is spied: spying on the whole module walks Node's module cache, whose cyclic
+// `children` arrays overflow the stack of Vitest's automocker.
+vi.mock(import('node:module'), async (importOriginal) => {
+  const actual = await importOriginal();
+  return { ...actual, createRequire: vi.fn(actual.createRequire) };
+});
 // The only mock that has to replace the module rather than spy on it: loading the real Angular
 // plugin drags a full Angular toolchain into the run, and none of these tests are about it.
 vi.mock('@analogjs/vite-plugin-angular', () => ({ default: (): unknown[] => [] }));
@@ -428,6 +433,32 @@ describe('angularOptionsPlugin global styles', () => {
       code: string;
     }>;
   };
+
+  // The addon-vitest child has no builder context, and its Vite root is the project folder. The
+  // parent builder bridges the workspace root through the options so `styles` still resolve.
+  it('resolves styles against the bridged workspace root when there is no builder context', async () => {
+    const options = {
+      configDir: resolve(WORKSPACE_ROOT, 'apps/ui-storybook/.storybook'),
+      angularBuilderOptions: {
+        styles: ['apps/ui-storybook/.storybook/tailwind.css'],
+        workspaceRoot: WORKSPACE_ROOT,
+      },
+    } as unknown as StandaloneOptions;
+    const projectPreview = resolve(WORKSPACE_ROOT, 'apps/ui-storybook/.storybook/preview.ts');
+    vi.mocked(findConfigFile).mockReturnValue(projectPreview);
+
+    const plugin = angularOptionsPlugin(options, { normalizePath, zoneless: true });
+    (plugin.config as (userConfig: unknown) => unknown)({
+      root: resolve(WORKSPACE_ROOT, 'apps/ui-storybook'),
+    });
+    const { code } = (await (plugin.transform as any).call({}, '// preview', projectPreview)) as {
+      code: string;
+    };
+
+    expect(code).toContain(
+      `import '${normalizePath(resolve(WORKSPACE_ROOT, 'apps/ui-storybook/.storybook/tailwind.css'))}';`
+    );
+  });
 
   it('imports both `styles` spellings the builder schema accepts', async () => {
     const { code } = await runTransform([

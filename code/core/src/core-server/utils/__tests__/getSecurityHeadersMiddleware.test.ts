@@ -1,7 +1,11 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { isWebContainer } from 'storybook/internal/common';
 
 import type { Middleware, SecurityConfig } from '../../../types/index.ts';
 import { getSecurityHeadersMiddleware } from '../getSecurityHeadersMiddleware.ts';
+
+vi.mock('storybook/internal/common', { spy: true });
 
 const run = (security?: SecurityConfig) => {
   const res = { appendHeader: vi.fn() };
@@ -15,6 +19,10 @@ const run = (security?: SecurityConfig) => {
 };
 
 describe('getSecurityHeadersMiddleware', () => {
+  beforeEach(() => {
+    vi.mocked(isWebContainer).mockReturnValue(false);
+  });
+
   it.each([
     ['security is not configured', undefined],
     ['insecureRemoteIframeEmbed is false', { insecureRemoteIframeEmbed: false }],
@@ -29,6 +37,13 @@ describe('getSecurityHeadersMiddleware', () => {
 
   it('sends no header when insecureRemoteIframeEmbed is true', () => {
     const { res, next } = run({ insecureRemoteIframeEmbed: true });
+    expect(res.appendHeader).not.toHaveBeenCalled();
+    expect(next).toHaveBeenCalled();
+  });
+
+  it('sends no header when running in a WebContainer such as StackBlitz', () => {
+    vi.mocked(isWebContainer).mockReturnValue(true);
+    const { res, next } = run();
     expect(res.appendHeader).not.toHaveBeenCalled();
     expect(next).toHaveBeenCalled();
   });

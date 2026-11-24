@@ -7,12 +7,16 @@ import { CLI_COLORS, logger } from 'storybook/internal/node-logger';
 import { isTelemetryModuleEnabled } from 'storybook/internal/telemetry';
 import { SupportedBuilder, SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
 
-import { type AgentInstructionsMode, addStorybookAgentInstructions } from './agentInstructions.ts';
+import {
+  type AgentInstructionsInputs,
+  type AgentInstructionsMode,
+  addStorybookAgentInstructions,
+} from './agentInstructions.ts';
 
 const SKILLS_REPO = 'storybookjs/skills';
 
 // Skills of 11.0 prereleases that the skills repository no longer has, so a refresh removes them.
-const REMOVED_SKILLS = ['stories'];
+const REMOVED_SKILLS = ['stories', 'ui-workflow'];
 
 export type SkillsSource = 'ai-feature' | 'refresh' | 'automigration';
 
@@ -94,11 +98,20 @@ export async function installSkills({
   packageManager,
   source,
   stdio = 'inherit',
+  testSupported,
+  sawEveryStorybook,
 }: {
   packageManager: JsPackageManager;
   source: SkillsSource;
   /** `pipe` keeps the `skills` CLI output out of a running task log. */
   stdio?: 'inherit' | 'pipe';
+  /**
+   * A Storybook of the project lists `@storybook/addon-vitest` in its main config, so the
+   * `AGENTS.md` section gets its test step.
+   */
+  testSupported: boolean;
+  /** The caller read the main config of every Storybook of the project. */
+  sawEveryStorybook: boolean;
 }): Promise<SkillsInstallResult> {
   if (isCI()) {
     return { result: 'skipped', source: 'ci' };
@@ -146,12 +159,15 @@ export async function installSkills({
   if (removedSkills.length > 0) {
     await removeSkills(packageManager, removedSkills, stdio);
   }
+  // The `stories` skill had no section yet. `ui-workflow` came with one, so a project without it
+  // removed it.
   await addAgentInstructions(
-    source === 'refresh' && removedSkills.length === 0 ? 'update' : 'install'
+    source === 'refresh' && !removedSkills.includes('stories') ? 'update' : 'install',
+    { testSupported, sawEveryStorybook }
   );
 
   logger.log(
-    `Remove the Storybook skills with: ${packageManager.getRemoteRunCommand(['skills@latest', 'remove'])}`
+    `If you want to remove the Storybook skills, run "${packageManager.getRemoteRunCommand(['skills@latest', 'remove'])}"`
   );
   return { result: 'installed', source };
 }
@@ -182,14 +198,17 @@ async function removeSkills(
 const listFiles = (files: string[]) =>
   new Intl.ListFormat('en', { style: 'long', type: 'conjunction' }).format(files);
 
-async function addAgentInstructions(mode: AgentInstructionsMode): Promise<void> {
+async function addAgentInstructions(
+  mode: AgentInstructionsMode,
+  inputs: AgentInstructionsInputs
+): Promise<void> {
   try {
-    const changes = await addStorybookAgentInstructions(getProjectRoot(), mode);
+    const changes = await addStorybookAgentInstructions(getProjectRoot(), mode, inputs);
     const added = changes.filter(({ change }) => change === 'added').map(({ file }) => file);
     const updated = changes.filter(({ change }) => change === 'updated').map(({ file }) => file);
     if (added.length > 0) {
       logger.log(
-        `Added a Storybook section to ${listFiles(added)} that tells agents when to use the skills. Storybook keeps it current on upgrade: remove its markers to keep your own edits, or remove the section to opt out.`
+        `Added a Storybook section to ${listFiles(added)} that tells agents when to use the skills. Storybook keeps it current on upgrade: remove its markers to keep your own edits, or remove the section to opt out of the workflow.`
       );
     }
     if (updated.length > 0) {
@@ -210,9 +229,9 @@ async function addAgentInstructions(mode: AgentInstructionsMode): Promise<void> 
  * skills, for `storybook upgrade` in a project that got the skills from a plugin or by hand. Adds
  * nothing, and never runs in CI.
  */
-export async function refreshAgentInstructions(): Promise<void> {
+export async function refreshAgentInstructions(inputs: AgentInstructionsInputs): Promise<void> {
   if (isCI()) {
     return;
   }
-  await addAgentInstructions('update');
+  await addAgentInstructions('update', inputs);
 }

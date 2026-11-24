@@ -1,13 +1,17 @@
 import {
   type JsPackageManager,
   RENDERERS_WITH_TYPESCRIPT_DOCGEN,
-  TYPESCRIPT_FOR_DOCGEN_PACKAGE,
-  hasTypeScriptCompilerApi,
+  REACT_DOCGEN_FALLBACK_RANGE,
+  getTypeScriptUpgradeForDocgen,
+  isTypeScript71Stable,
+  isTypeScriptUsableForDocgen,
   isCI,
+  recommendedTypeScriptDocgenApis,
+  typeScriptPackageForDocgen,
 } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 import { TypeScriptWithoutCompilerApiError } from 'storybook/internal/server-errors';
-import type { SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
+import { type SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
 
 import { coerce } from 'semver';
 
@@ -18,6 +22,7 @@ import { TelemetryService } from '../services/TelemetryService.ts';
 
 export type TypeScriptDependencyResult =
   | 'added'
+  | 'upgraded'
   | 'declined'
   | 'already-installed'
   | 'without-compiler-api'
@@ -45,9 +50,17 @@ export class TypeScriptDependencyCommand {
     renderer,
     dependencyCollector,
   }: ExecuteTypeScriptDependencyParams): Promise<TypeScriptDependencyResult> {
-    const result = await this.decide(packageManager, framework, renderer);
+    const { result, upgrade } = await this.decide(packageManager, framework, renderer);
     if (result === 'added') {
-      dependencyCollector.addDevDependencies([TYPESCRIPT_FOR_DOCGEN_PACKAGE]);
+      dependencyCollector.addDevDependencies([
+        typeScriptPackageForDocgen(recommendedTypeScriptDocgenApis(renderer)),
+      ]);
+    }
+    if (upgrade) {
+      packageManager.upgradeDeclaredDependency(upgrade.to, upgrade.from);
+    }
+    if (result === 'without-compiler-api') {
+      await this.warnTypeScriptWithoutCompilerApi(packageManager, renderer, dependencyCollector);
     }
     if (result !== 'not-needed') {
       await this.telemetryService.trackTypeScriptDependency(result);
@@ -59,32 +72,76 @@ export class TypeScriptDependencyCommand {
     packageManager: JsPackageManager,
     framework: SupportedFramework | null,
     renderer: SupportedRenderer
-  ): Promise<TypeScriptDependencyResult> {
+  ): Promise<{
+    result: TypeScriptDependencyResult;
+    upgrade?: { from: string; to: string };
+  }> {
     if (!framework || !RENDERERS_WITH_TYPESCRIPT_DOCGEN.includes(renderer)) {
-      return 'not-needed';
+      return { result: 'not-needed' };
     }
 
+    const apis = recommendedTypeScriptDocgenApis(renderer);
     if (packageManager.isDependencyInstalled('typescript')) {
-      const version = coerce(
-        await packageManager.getDeclaredVersionSpecifier('typescript')
-      )?.version;
-      if (version && !hasTypeScriptCompilerApi(version)) {
-        logger.warn(new TypeScriptWithoutCompilerApiError({ version }).message);
-        return 'without-compiler-api';
+      const version = await this.getTypeScriptVersion(packageManager);
+      if (version && !isTypeScriptUsableForDocgen(version, apis)) {
+        const upgrade = getTypeScriptUpgradeForDocgen(apis);
+        if (
+          upgrade &&
+          (await this.shouldInstallTypeScript(
+            `TypeScript ${version} has no API that Storybook can use to read your component types for Controls and the Docs args table. TypeScript 7.1 and newer do. Do you want to upgrade to ${upgrade}?`
+          ))
+        ) {
+          return { result: 'upgraded', upgrade: { from: version, to: upgrade } };
+        }
+        return { result: 'without-compiler-api' };
       }
-      return 'already-installed';
+      return { result: 'already-installed' };
     }
 
-    if (await this.shouldAddTypeScript()) {
-      return 'added';
+    if (
+      await this.shouldInstallTypeScript(
+        'Storybook uses TypeScript to read your component types for Controls and the Docs args table, also in JavaScript projects. Do you want to install TypeScript?'
+      )
+    ) {
+      return { result: 'added' };
     }
     logger.info(
-      `Server-side docgen stays off until you add ${TYPESCRIPT_FOR_DOCGEN_PACKAGE} to your devDependencies.`
+      renderer === SupportedRenderer.REACT
+        ? `Server-side docgen stays off until you add ${typeScriptPackageForDocgen(apis)} to your devDependencies. Until then, Controls and the Docs args table show no props.`
+        : `Server-side docgen stays off until you add ${typeScriptPackageForDocgen(apis)} to your devDependencies.`
     );
-    return 'declined';
+    return { result: 'declined' };
   }
 
-  private async shouldAddTypeScript(): Promise<boolean> {
+  private async getTypeScriptVersion(packageManager: JsPackageManager) {
+    return coerce(await packageManager.getDeclaredVersionSpecifier('typescript'))?.version;
+  }
+
+  private async warnTypeScriptWithoutCompilerApi(
+    packageManager: JsPackageManager,
+    renderer: SupportedRenderer,
+    dependencyCollector: DependencyCollector
+  ) {
+    let builderDocgenFallback;
+    if (renderer === SupportedRenderer.REACT) {
+      let installed = packageManager.isDependencyInstalled('react-docgen');
+      if (!installed && !isTypeScript71Stable()) {
+        dependencyCollector.addDevDependencies([`react-docgen@${REACT_DOCGEN_FALLBACK_RANGE}`]);
+        installed = true;
+      }
+      builderDocgenFallback = { packageName: 'react-docgen', installed };
+    }
+    const version = (await this.getTypeScriptVersion(packageManager)) ?? '';
+    logger.warn(
+      new TypeScriptWithoutCompilerApiError({
+        version,
+        apis: recommendedTypeScriptDocgenApis(renderer),
+        builderDocgenFallback,
+      }).message
+    );
+  }
+
+  private async shouldInstallTypeScript(message: string): Promise<boolean> {
     const { installTypescript, yes } = this.commandOptions;
     if (installTypescript !== undefined) {
       return installTypescript;
@@ -93,11 +150,7 @@ export class TypeScriptDependencyCommand {
       return true;
     }
     return prompt.confirm(
-      {
-        message:
-          'Storybook uses TypeScript to read your component types for Controls and the Docs args table, also in JavaScript projects. Do you want to install TypeScript?',
-        initialValue: true,
-      },
+      { message, initialValue: true },
       createPromptCancelOptions(this.telemetryService, 'typescript-dependency')
     );
   }

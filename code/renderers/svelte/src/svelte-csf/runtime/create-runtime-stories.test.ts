@@ -1,7 +1,3 @@
-/**
- * @vitest-environment happy-dom
- */
-
 import { logger } from 'storybook/internal/client-logger';
 import type { Component } from 'svelte';
 import { beforeEach, describe, expect, it, vi } from 'vitest';

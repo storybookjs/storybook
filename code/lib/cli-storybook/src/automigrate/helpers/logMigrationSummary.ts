@@ -2,6 +2,7 @@ import { CLI_COLORS, logger } from 'storybook/internal/node-logger';
 
 import picocolors from 'picocolors';
 
+import { type DryRunReport, formatDryRunReport } from './dry-run-report.ts';
 import { pluralFiles } from './failure-report.ts';
 import { dedent } from 'ts-dedent';
 
@@ -53,15 +54,22 @@ export function logMigrationSummary({
   fixSummary,
   skippedFiles = 0,
   dryRun = false,
+  dryRunReport,
 }: {
   fixResults: Record<string, FixStatus>;
   fixSummary: FixSummary;
   /** Files that fixes which otherwise succeeded could not migrate. */
   skippedFiles?: number;
   dryRun?: boolean;
+  /** What a run would do with each fix, listed in place of the statuses in a dry run. */
+  dryRunReport?: DryRunReport;
 }) {
   const messages = [];
-  messages.push(getGlossaryMessages(fixSummary, fixResults).join(messageDivider));
+  messages.push(
+    dryRunReport
+      ? formatDryRunReport(dryRunReport)
+      : getGlossaryMessages(fixSummary, fixResults).join(messageDivider)
+  );
 
   messages.push(dedent`If you'd like to run the migrations again, you can do so by running 
     ${picocolors.cyan('npx storybook automigrate')}

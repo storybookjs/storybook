@@ -85,7 +85,11 @@ vi.mock('storybook/internal/common', async (importOriginal) => ({
 
 // Remove the old prompt mock - now handled in the node-logger mock
 
+const reportInstallSettingChanges = vi.fn();
+
 class PackageManager implements Partial<JsPackageManager> {
+  reportInstallSettingChanges = reportInstallSettingChanges;
+
   async getModulePackageJSON(
     packageName: string,
     basePath?: string | undefined
@@ -262,6 +266,22 @@ describe('doAutomigrate', () => {
       versionInstalled: '7.0.0',
       isLatest: true,
     });
+  });
+
+  it('names the install settings a run would change, when it would apply a fix', async () => {
+    vi.mocked(prompt.confirm).mockResolvedValue(true);
+
+    await doAutomigrate({ configDir, fixes, dryRun: true });
+
+    expect(reportInstallSettingChanges).toHaveBeenCalledTimes(1);
+  });
+
+  it('names no install settings when a run would apply no fix', async () => {
+    vi.mocked(prompt.confirm).mockResolvedValue(false);
+
+    await doAutomigrate({ configDir, fixes, dryRun: true });
+
+    expect(reportInstallSettingChanges).not.toHaveBeenCalled();
   });
 
   it('names the doctor instead of running it, in a dry run', async () => {

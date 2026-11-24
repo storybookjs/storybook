@@ -13,10 +13,17 @@ describe('logMigrationSummary', () => {
     vi.clearAllMocks();
   });
 
-  it('lists skipped migrations, and says nothing changed, in a dry run', () => {
-    logMigrationSummary({ fixResults, fixSummary: summary, dryRun: true });
+  it('lists what a run would do instead of the statuses, and says nothing changed, in a dry run', () => {
+    logMigrationSummary({
+      fixResults,
+      fixSummary: summary,
+      dryRun: true,
+      dryRunReport: { apply: ['some-fix'], fail: [], skip: [], manual: [] },
+    });
 
-    expect(vi.mocked(logger.log).mock.calls[0][0]).toContain('Skipped migrations:');
+    const output = vi.mocked(logger.log).mock.calls[0][0];
+    expect(output).toContain('Would apply: some-fix');
+    expect(output).not.toContain('Skipped migrations:');
     expect(vi.mocked(logger.step)).toHaveBeenCalledWith(
       expect.stringContaining('Dry run finished: no files were changed.')
     );

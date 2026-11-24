@@ -13,7 +13,7 @@ import {
   buildReactComponentDocgenFromResolved,
 } from './buildReactComponentDocgen.ts';
 import { getSharedComponentMetaManager } from './componentMetaManagerSingleton.ts';
-import { type ComponentRef, type TypescriptOptions } from './getComponentImports.ts';
+import { type TypescriptOptions } from './getComponentImports.ts';
 import { invalidateParser } from './reactDocgenTypescript.ts';
 import { resolveStoryFileComponents } from './resolveComponents.ts';
 import { invalidateCache } from './utils.ts';
@@ -83,18 +83,12 @@ export const manifests: PresetPropertyFn<
   // Step 2: Batch extract rcm props (one TS program build per tsconfig project)
   if (docgenEngine === 'react-component-meta' && manager) {
     manager.batchExtract(
-      resolvedEntries.flatMap(({ storyPath, component, subcomponents }) => [
-        ...(component ? [{ storyPath, component }] : []),
-        ...subcomponents
-          .filter(
-            (subcomponent): subcomponent is { component: ComponentRef; name: string } =>
-              subcomponent.component !== undefined
-          )
-          .map((subcomponent) => ({
-            storyPath,
-            component: subcomponent.component,
-          })),
-      ])
+      resolvedEntries.flatMap(({ storyPath, allComponents }) =>
+        allComponents.map((component) => ({
+          storyPath,
+          component,
+        }))
+      )
     );
   }
 

@@ -10,7 +10,7 @@ import {
   ExecaCommandFailedError,
   PackageInstallFailedError,
 } from 'storybook/internal/server-errors';
-import { isTelemetryModuleEnabled } from 'storybook/internal/telemetry';
+import { detectAgent, isTelemetryModuleEnabled } from 'storybook/internal/telemetry';
 import { SupportedBuilder, SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
 
 import { vol } from 'memfs';
@@ -20,6 +20,7 @@ import {
   hasStorybookSkills,
   installSkills,
   refreshAgentInstructions,
+  skipsSkillsInCI,
   supportsSkills,
   supportsAiSetup,
 } from './installSkills.ts';
@@ -47,9 +48,24 @@ beforeEach(async () => {
   vol.reset();
   vi.mocked(getProjectRoot).mockReturnValue(PROJECT_ROOT);
   vi.mocked(isCI).mockReturnValue(false);
+  vi.mocked(detectAgent).mockReturnValue(undefined);
   vi.mocked(addStorybookAgentInstructions).mockResolvedValue([
     { file: 'AGENTS.md', change: 'added' },
   ]);
+});
+
+describe('skipsSkillsInCI', () => {
+  it.each([
+    [false, undefined, false],
+    [true, undefined, true],
+    [true, { name: 'claude' }, false],
+    [false, { name: 'claude' }, false],
+  ])('with CI %s and agent %o, returns %s', (ci, agent, expected) => {
+    vi.mocked(isCI).mockReturnValue(ci);
+    vi.mocked(detectAgent).mockReturnValue(agent);
+
+    expect(skipsSkillsInCI()).toBe(expected);
+  });
 });
 
 describe('supportsSkills', () => {
@@ -418,6 +434,25 @@ describe('installSkills', () => {
     expect(result).toEqual({ result: 'skipped', source: 'ci' });
   });
 
+  it('installs when a coding agent set CI', async () => {
+    vi.mocked(isCI).mockReturnValue(true);
+    vi.mocked(detectAgent).mockReturnValue({ name: 'claude' });
+
+    const result = await installSkills({
+      packageManager,
+      source: 'automigration',
+      testSupported: true,
+      sawEveryStorybook: true,
+    });
+
+    expect(packageManager.runPackageCommand).toHaveBeenCalled();
+    expect(addStorybookAgentInstructions).toHaveBeenCalledWith(PROJECT_ROOT, 'install', {
+      testSupported: true,
+      sawEveryStorybook: true,
+    });
+    expect(result).toEqual({ result: 'installed', source: 'automigration' });
+  });
+
   it.each([
     ['npx', ExecaCommandFailedError],
     ['pnpm', PackageInstallFailedError],
@@ -466,5 +501,17 @@ describe('refreshAgentInstructions', () => {
     await refreshAgentInstructions({ testSupported: true, sawEveryStorybook: true });
 
     expect(addStorybookAgentInstructions).not.toHaveBeenCalled();
+  });
+
+  it('updates the section when a coding agent set CI', async () => {
+    vi.mocked(isCI).mockReturnValue(true);
+    vi.mocked(detectAgent).mockReturnValue({ name: 'claude' });
+
+    await refreshAgentInstructions({ testSupported: true, sawEveryStorybook: true });
+
+    expect(addStorybookAgentInstructions).toHaveBeenCalledWith(PROJECT_ROOT, 'update', {
+      testSupported: true,
+      sawEveryStorybook: true,
+    });
   });
 });

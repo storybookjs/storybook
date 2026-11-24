@@ -93,9 +93,18 @@ const hasEntry = (
   templateName: string
 ) => list.some((e) => e.propName === propName || e.templateName === templateName);
 
-// Angular compiles `inputs: ['inner: outer']` into flat `[inner, outer, ...]` pairs.
-const hostNamesFromBindingPairs = (pairs: string[]): string[] =>
-  pairs.filter((_, index) => index % 2 === 1);
+// A deferred `hostDirectives` list is a function, and its configs keep the compiled
+// `['inner', 'outer', ...]` pairs that a resolved definition has already turned into
+// `{ inner: 'outer' }`.
+const hostDirectiveConfigs = (def: any): any[] =>
+  (def.hostDirectives ?? []).flatMap((entry: any) =>
+    typeof entry === 'function' ? entry() : [entry]
+  );
+
+const hostBindingNames = (bindings: string[] | Record<string, string> | undefined): string[] =>
+  Array.isArray(bindings)
+    ? bindings.filter((_, index) => index % 2 === 1)
+    : Object.values(bindings ?? {});
 
 const addCompiledInputsOutputs = (
   component: any,
@@ -136,15 +145,11 @@ const addCompiledInputsOutputs = (
     }
   }
 
-  for (const entry of def.hostDirectives ?? []) {
-    const configs = typeof entry === 'function' ? entry() : [entry];
-    for (const config of configs) {
-      const publicNames: string[] = Array.isArray(config.inputs)
-        ? hostNamesFromBindingPairs(config.inputs)
-        : Object.values(config.inputs ?? {});
-      for (const templateName of publicNames) {
-        if (!result.inputs.some((input) => input.templateName === templateName)) {
-          result.inputs.push({ propName: templateName, templateName });
+  for (const config of hostDirectiveConfigs(def)) {
+    for (const bucket of ['inputs', 'outputs'] as const) {
+      for (const templateName of hostBindingNames(config[bucket])) {
+        if (!result[bucket].some((entry) => entry.templateName === templateName)) {
+          result[bucket].push({ propName: templateName, templateName });
         }
       }
     }

@@ -167,6 +167,44 @@ describe('getComponentInputsOutputs', () => {
     ).toEqual(['publicValue', 'otherValue']);
   });
 
+  it('includes only outputs exposed by host directives under their public names', () => {
+    @Directive({ standalone: true })
+    class HostDirective {
+      @Output() opened = new EventEmitter<void>();
+      @Output('directiveClosed') closed = new EventEmitter<void>();
+      @Output() hidden = new EventEmitter<void>();
+    }
+
+    @Component({
+      template: '',
+      hostDirectives: [
+        { directive: HostDirective, outputs: ['opened', 'directiveClosed: publicClosed'] },
+      ],
+    })
+    class HostComponent {}
+
+    expect(getComponentInputsOutputs(HostComponent)).toEqual({
+      inputs: [],
+      outputs: [
+        { propName: 'opened', templateName: 'opened' },
+        { propName: 'publicClosed', templateName: 'publicClosed' },
+      ],
+    });
+  });
+
+  it('reads deferred compiled host output pairs', () => {
+    class CompiledComponent {
+      static ɵcmp = {
+        inputs: {},
+        outputs: {},
+        hostDirectives: [() => [{ outputs: ['valueChange', 'expandedChange'] }]],
+      };
+    }
+    expect(
+      getComponentInputsOutputs(CompiledComponent).outputs.map((output) => output.templateName)
+    ).toEqual(['expandedChange']);
+  });
+
   it('does not expose inputs from a bare host directive reference', () => {
     @Directive({ standalone: true })
     class HostDirective {

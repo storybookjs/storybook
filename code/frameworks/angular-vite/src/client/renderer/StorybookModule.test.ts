@@ -350,6 +350,48 @@ describe('StorybookModule', () => {
       });
     });
 
+    describe('with host directive outputs', () => {
+      @Directive({ standalone: true, host: { '(click)': "opened.emit('from directive')" } })
+      class HostDirective {
+        @Output() opened = new EventEmitter<string>();
+      }
+
+      @Component({
+        selector: 'host-outputs',
+        template: '<p id="trigger">trigger</p>',
+        hostDirectives: [{ directive: HostDirective, outputs: ['opened: publicOpened'] }],
+      })
+      class HostComponent {}
+
+      @Component({ selector: 'inherited-host-outputs', template: '<p id="trigger">trigger</p>' })
+      class ChildComponent extends HostComponent {}
+
+      it.each([
+        { component: HostComponent, label: 'direct' },
+        { component: ChildComponent, label: 'inherited' },
+      ])('calls the story handler for $label host directive outputs', async ({ component }) => {
+        const emitted: string[] = [];
+        const props = { publicOpened: (value: string) => emitted.push(value) };
+        const analyzedMetadata = new PropertyExtractor({}, component);
+        await analyzedMetadata.init();
+        const application = getApplication({
+          storyFnAngular: { props },
+          component,
+          targetSelector: 'my-selector',
+          analyzedMetadata,
+        });
+        const { fixture } = await configureTestingModule({
+          imports: [application],
+          providers: [storyPropsProvider(new BehaviorSubject<ICollection | undefined>(props))],
+        });
+        fixture.detectChanges();
+
+        fixture.nativeElement.querySelector('#trigger').click();
+
+        expect(emitted).toEqual(['from directive']);
+      });
+    });
+
     describe('with component without selector', () => {
       @Component({
         template: ` The content `,

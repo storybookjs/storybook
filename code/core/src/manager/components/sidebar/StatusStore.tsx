@@ -26,23 +26,27 @@ const NO_STATUS: RowStatus = {
  */
 export interface StatusStore {
   getRowStatus: (itemId: StoryId) => RowStatus;
-  setState: (next: Record<StoryId, RowStatus>) => void;
+  setState: (next: ReadonlyMap<StoryId, RowStatus>) => void;
   subscribe: (listener: () => void) => () => void;
 }
 
-export const createStatusStore = (initial: Record<StoryId, RowStatus> = {}): StatusStore => {
-  let state: Record<StoryId, RowStatus> = initial;
+export const createStatusStore = (
+  initial: ReadonlyMap<StoryId, RowStatus> = new Map()
+): StatusStore => {
+  let state = initial;
   const listeners = new Set<() => void>();
   return {
-    getRowStatus: (itemId: StoryId) => state[itemId] ?? NO_STATUS,
-    setState: (next: Record<StoryId, RowStatus>) => {
-      const merged: Record<StoryId, RowStatus> = {};
-      for (const [itemId, value] of Object.entries(next)) {
-        const previous = state[itemId];
-        merged[itemId] =
+    getRowStatus: (itemId: StoryId) => state.get(itemId) ?? NO_STATUS,
+    setState: (next: ReadonlyMap<StoryId, RowStatus>) => {
+      const merged = new Map<StoryId, RowStatus>();
+      for (const [itemId, value] of next) {
+        const previous = state.get(itemId);
+        merged.set(
+          itemId,
           previous && previous.change === value.change && previous.test === value.test
             ? previous
-            : value;
+            : value
+        );
       }
       state = merged;
       listeners.forEach((listener) => listener());

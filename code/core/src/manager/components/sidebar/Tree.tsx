@@ -199,14 +199,14 @@ export const Tree = React.memo<TreeProps>(function Tree({
   // What each row shows, with the change status already masked by the modified filter. Rows read
   // this from the store, so toggling the filter reaches only the rows whose own icon changes.
   const rowStatuses = useMemo(() => {
-    const result: Record<string, RowStatus> = {};
-    for (const [itemId, { change, test }] of Object.entries(groupDualStatus)) {
-      result[itemId] = {
+    const result = new Map<string, RowStatus>();
+    for (const [itemId, { change, test }] of groupDualStatus) {
+      result.set(itemId, {
         change: shouldShowChangeStatus(change.value, isModifiedFilterActive)
           ? change.value
           : 'status-value:unknown',
         test: test.value,
-      };
+      });
     }
     return result;
   }, [groupDualStatus, isModifiedFilterActive]);
@@ -245,7 +245,7 @@ export const Tree = React.memo<TreeProps>(function Tree({
       return null;
     }
 
-    const itemStatus = groupDualStatus?.[keyboardFocusedItemId];
+    const itemStatus = groupDualStatus.get(keyboardFocusedItemId);
     const changeStatus = itemStatus?.change.value ?? 'status-value:unknown';
     const testStatus = itemStatus?.test.value ?? 'status-value:unknown';
 

@@ -141,8 +141,8 @@ export function getGroupStatus(
     [x: string]: Partial<API_HashEntry>;
   },
   allStatuses: StatusesByStoryIdAndTypeId
-): Record<string, StatusValue> {
-  const result: Record<string, StatusValue> = {};
+): Map<string, StatusValue> {
+  const result = new Map<string, StatusValue>();
 
   for (const item of Object.values(index)) {
     if (item.type !== 'story') {
@@ -166,9 +166,9 @@ export function getGroupStatus(
         break;
       }
 
-      const existing = result[pid];
+      const existing = result.get(pid);
       if (!existing || statusPriority.indexOf(leafStatus) > statusPriority.indexOf(existing)) {
-        result[pid] = leafStatus;
+        result.set(pid, leafStatus);
       }
 
       currentItem = index[pid];
@@ -192,18 +192,22 @@ export function getGroupStatus(
 export function getGroupDualStatus(
   index: API_IndexHash,
   allStatuses: StatusesByStoryIdAndTypeId
-): Record<string, { change: Status; test: Status }> {
-  const result: Record<string, { change: Status; test: Status }> = {};
+): Map<string, { change: Status; test: Status }> {
+  const result = new Map<string, { change: Status; test: Status }>();
 
   const promote = (id: string, status: Status, slot: 'change' | 'test') => {
     // Root rows never display aggregate statuses.
     if (index[id]?.type === 'root') {
       return;
     }
-    const entry = (result[id] ??= {
-      change: { value: 'status-value:unknown' } as Status,
-      test: { value: 'status-value:unknown' } as Status,
-    });
+    let entry = result.get(id);
+    if (!entry) {
+      entry = {
+        change: { value: 'status-value:unknown' } as Status,
+        test: { value: 'status-value:unknown' } as Status,
+      };
+      result.set(id, entry);
+    }
     if (statusPriority.indexOf(status.value) > statusPriority.indexOf(entry[slot].value)) {
       entry[slot] = status;
     }

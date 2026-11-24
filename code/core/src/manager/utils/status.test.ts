@@ -61,9 +61,35 @@ describe('getHighestStatus', () => {
   });
 });
 
+const constructorDataset: any = {
+  constructor: {
+    type: 'component',
+    id: 'constructor',
+    name: 'Constructor',
+    depth: 0,
+    children: ['constructor--primary'],
+  },
+  'constructor--primary': {
+    type: 'story',
+    subtype: 'story',
+    id: 'constructor--primary',
+    name: 'Primary',
+    title: 'Constructor',
+    depth: 1,
+    parent: 'constructor',
+    prepared: true,
+    importPath: './x.ts',
+    tags: [],
+    children: [],
+  },
+};
+
 describe('getGroupStatus', () => {
   it('empty case', () => {
-    expect(getGroupStatus({}, {})).toEqual({});
+    expect(getGroupStatus({}, {})).toEqual(new Map());
+  });
+  it('has no status for a component whose id is an Object.prototype key and whose stories have none', () => {
+    expect(getGroupStatus(constructorDataset, {}).get('constructor')).toBeUndefined();
   });
   it('should return a color', () => {
     expect(
@@ -79,8 +105,8 @@ describe('getGroupStatus', () => {
         },
       })
     ).toMatchInlineSnapshot(`
-      {
-        "group-1": "status-value:warning",
+      Map {
+        "group-1" => "status-value:warning",
       }
     `);
   });
@@ -105,8 +131,8 @@ describe('getGroupStatus', () => {
         },
       })
     ).toMatchInlineSnapshot(`
-      {
-        "group-1": "status-value:error",
+      Map {
+        "group-1" => "status-value:error",
       }
     `);
   });
@@ -124,8 +150,8 @@ describe('getGroupStatus', () => {
         },
       })
     ).toMatchInlineSnapshot(`
-      {
-        "group-1": "status-value:new",
+      Map {
+        "group-1" => "status-value:new",
       }
     `);
   });
@@ -143,8 +169,8 @@ describe('getGroupStatus', () => {
         },
       })
     ).toMatchInlineSnapshot(`
-      {
-        "group-1": "status-value:affected",
+      Map {
+        "group-1" => "status-value:affected",
       }
     `);
   });
@@ -196,8 +222,8 @@ describe('getGroupDualStatus', () => {
         vitest: makeStatus('comp--a', 'vitest', 'status-value:error'),
       },
     });
-    expect(dual['comp--a'].change.value).toBe('status-value:modified');
-    expect(dual['comp--a'].test.value).toBe('status-value:error');
+    expect(dual.get('comp--a')?.change.value).toBe('status-value:modified');
+    expect(dual.get('comp--a')?.test.value).toBe('status-value:error');
   });
 
   it('keeps the review status out of both slots', () => {
@@ -211,8 +237,8 @@ describe('getGroupDualStatus', () => {
         vitest: makeStatus('comp--a', 'vitest', 'status-value:success'),
       },
     });
-    expect(dual['comp--a'].change.value).toBe('status-value:unknown');
-    expect(dual['comp--a'].test.value).toBe('status-value:success');
+    expect(dual.get('comp--a')?.change.value).toBe('status-value:unknown');
+    expect(dual.get('comp--a')?.test.value).toBe('status-value:success');
   });
 
   it('keeps the most critical value inside the change slot: new beats modified beats affected', () => {
@@ -223,16 +249,16 @@ describe('getGroupDualStatus', () => {
         third: makeStatus('comp--a', 'storybook/change-detection', 'status-value:new'),
       },
     });
-    expect(dual['comp--a'].change.value).toBe('status-value:new');
-    expect(dual['comp--a'].test.value).toBe('status-value:unknown');
+    expect(dual.get('comp--a')?.change.value).toBe('status-value:new');
+    expect(dual.get('comp--a')?.test.value).toBe('status-value:unknown');
   });
 
   it("includes a leaf story's own statuses on its own row", () => {
     const dual = getGroupDualStatus(data, {
       'comp--a': { vitest: makeStatus('comp--a', 'vitest', 'status-value:error') },
     });
-    expect(dual['comp--a'].test.value).toBe('status-value:error');
-    expect(dual['comp--a'].change.value).toBe('status-value:unknown');
+    expect(dual.get('comp--a')?.test.value).toBe('status-value:error');
+    expect(dual.get('comp--a')?.change.value).toBe('status-value:unknown');
   });
 
   it('rolls statuses up the ancestor chain but never onto roots', () => {
@@ -247,10 +273,10 @@ describe('getGroupDualStatus', () => {
       },
     });
     for (const id of ['comp--a', 'comp', 'group']) {
-      expect(dual[id].test.value).toBe('status-value:warning');
-      expect(dual[id].change.value).toBe('status-value:new');
+      expect(dual.get(id)?.test.value).toBe('status-value:warning');
+      expect(dual.get(id)?.change.value).toBe('status-value:new');
     }
-    expect(dual.root).toBeUndefined();
+    expect(dual.get('root')).toBeUndefined();
   });
 
   it('keeps the most critical status when multiple stories aggregate', () => {
@@ -263,8 +289,8 @@ describe('getGroupDualStatus', () => {
       'comp--a': { vitest: makeStatus('comp--a', 'vitest', 'status-value:warning') },
       'comp--b': { vitest: makeStatus('comp--b', 'vitest', 'status-value:error') },
     });
-    expect(dual.comp.test.value).toBe('status-value:error');
-    expect(dual.comp.test.storyId).toBe('comp--b');
+    expect(dual.get('comp')?.test.value).toBe('status-value:error');
+    expect(dual.get('comp')?.test.storyId).toBe('comp--b');
   });
 
   it('excludes review-typed statuses from both slots', () => {
@@ -273,6 +299,20 @@ describe('getGroupDualStatus', () => {
         'storybook/review': makeStatus('comp--a', 'storybook/review', 'status-value:reviewing'),
       },
     });
-    expect(dual['comp--a']).toBeUndefined();
+    expect(dual.get('comp--a')).toBeUndefined();
+  });
+
+  it('rolls a status up to a component whose id is an Object.prototype key', () => {
+    const dual = getGroupDualStatus(constructorDataset, {
+      'constructor--primary': {
+        vitest: makeStatus('constructor--primary', 'vitest', 'status-value:error'),
+      },
+    });
+    expect(dual.get('constructor')?.test.value).toBe('status-value:error');
+    expect(dual.get('constructor')?.change.value).toBe('status-value:unknown');
+  });
+
+  it('has no status for a component whose id is an Object.prototype key and whose stories have none', () => {
+    expect(getGroupDualStatus(constructorDataset, {}).get('constructor')).toBeUndefined();
   });
 });

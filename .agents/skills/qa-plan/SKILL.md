@@ -54,6 +54,7 @@ To know what a run does before and around your steps, read `ecosystem-qa/prompts
 - **Step rule.** Steps run in the project after Step 2 and Step 3 of `ecosystem-qa/prompts/upgrade.md`: the upgrade to the plan's version, and then the manual steps of the migration guide that apply to the project, which the agent applies and commits as `qa: apply migration notes`. So a step starts from a project that has those changes already. An entry about a manual step of the guide reads that commit and tests the result, and does not apply the step again. Write them for the repos the entry lists, never as commands of this monorepo (no `yarn task`, no `nx`, no sandbox, no path under `code/`). Use the project's own package manager and `npx storybook`. The dev server runs at `http://localhost:6006`. `check` accepts any URL on `localhost`, so a step that starts a second server on another port may name that port, and it refuses a URL with a scheme and any other host in a title, a repo reason, a step, or an expected outcome. It does not look for a host without a scheme, so never write one: the reviewer has to find it. The expected outcome is something a log, a file, a screenshot, or a snapshot of the page shows.
 - **Baseline.** Before the upgrade the agent records the installed version, the number of entries in `index.json` with the first story id and the first docs id, a screenshot of the first story, and any other check it can run cheaply on the old version (step 1 of `ecosystem-qa/prompts/upgrade.md`). An outcome may compare with those, and with nothing else from before the upgrade.
 - **Repo rule.** Give each entry two or three repos of the catalog when that many fit, chosen by their `tags`, each with a reason of one line that says what this repo shows that the other ones do not. When only one repo fits, one is fine, and its reason says what it has. When one change comes as several PRs, one for each framework or builder, give the entry one repo for each of them, even when that makes more than three, and let each reason name the framework it tests. Never pick a repo whose Storybook major is more than one below the plan's line. Search GitHub only when no catalog entry fits, and list a repo found there only after `pin.ts` probed it.
+- **Community packages.** An entry whose repo runs on a community framework, builder, or addon tests nothing when that package has no release for the plan's version. The upgrade then names the package under `Incompatible Packages`, and the run reports every check that needs it as `blocked`, not as a finding. Before you list such a repo, check on npm that the package has a release whose Storybook range includes the plan's version.
 - **Upgrade blockers.** `storybook upgrade` refuses to start on a project below a version floor of the line, such as an old Vite, Vitest, or SvelteKit, which the migration guide names. On such a repo the run first spends its time on getting past the blocker, and no plan check runs before it is past. Check the versions of step 2 against those floors, and list such a repo only for an entry that tests the blocker itself, with a step that says how to get past it.
 - **A reason is a fact you checked.** List a repo for an entry only when it has, at its pinned commit, what the entry needs. Its reason names that evidence, such as "sets `storySort` in `.storybook/preview.ts`" or "Vitest 3 in the root `package.json`". Check it with the commands of step 2 before you write it. A repo that lacks the state is not listed, and no step creates it.
 - **Fewest entries.** One entry may cover several PRs when one test shows all of them. Aim for the smallest number of entries that still tests every decision, because the reviewer reads the whole plan at once. There is no fixed limit.
@@ -183,6 +184,9 @@ A window of hundreds of PRs makes a draft of hundreds of decisions and group row
 Write a script that builds `draft.json` from your decisions, for example from a table of PR number, decision, and group, rather than typing the JSON by hand.
 
 Write the steps of an entry from the PR's manual testing section, rewritten for the listed repos.
+In an entry with more than one PR, start each step with the PR or PRs whose change it tests, as `#36436: ` or `#36421, #36436: `, because the issue of a finding links them, and the author of a PR then finds the step that tests it.
+`check` refuses a step that names a PR of another entry, and an entry in which some steps name their PRs and others do not.
+A step that makes a failure happen on purpose says what it stands for, such as "To stand in for a crash of the test runner, find the Vitest process and stop it with `kill -9`", because a reader of the issue otherwise takes it for a strange workflow.
 You do not know the story ids of a repo at its pin, so a step that needs one first takes it from `http://localhost:6006/index.json`, for example the first story, or the first story whose `title` starts with a given word.
 A `needed` PR without usable steps gets steps from its diff, or a manual check.
 
@@ -241,7 +245,7 @@ node ecosystem-qa/qa-plan.ts check /tmp/qa-plan-11.0/11.0.md --window /tmp/qa-pl
 `check` prints each problem as `<file>:<line>: <message>`, one for the row of PRs still undecided and one for the row of PRs marked `qa:skip` without a group, so render and check early with a partial draft to see what is left.
 Fix the draft, never the rendered file, and render again until `check` exits 0.
 Run no formatter on the plan file: `check` refuses every byte that differs from what `render` writes.
-It then prints the plan's hash, its batches with their runs, and what the sweep costs. Keep that output for the PR body.
+It then prints the plan's hash, how many of the entries with more than one PR name the PRs behind each step, its batches with their runs, and what the sweep costs. Keep that output for the PR body.
 Read the rendered plan once as the reviewer will, and merge entries that one test could cover.
 
 ## Step 7: Open the plan PR
@@ -266,6 +270,7 @@ The body holds:
 
 - the output of `check`, as it printed it,
 - the counts of decisions: entries, probes and the probes that add a config option, PRs tested, PRs for manual QA, PRs that need no QA, and the groups of each kind,
+- the count of entries with more than one PR whose every step names its PRs, as `check` printed it,
 - what you were unsure about, each in one line, so the reviewer looks there first.
 
 The body names no PR or issue, neither as `#number` nor as a link, because every reference posts a mention on that PR and the plan holds hundreds.

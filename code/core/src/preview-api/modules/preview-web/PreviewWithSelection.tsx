@@ -97,6 +97,10 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
 
   private pendingPreloads = new Map<PreloadSource | undefined, PreloadEntriesPayload>();
 
+  // URL args that arrived with a SET_CURRENT_STORY selection, held until a render for that
+  // selection consumes them. A competing startup render must not discard them.
+  private pendingSelectionArgs?: { selection: Selection; args: Args };
+
   private preloadsDrained: Promise<void> | null = null;
 
   constructor(
@@ -295,13 +299,15 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
      * end of init.
      */
     this.selectionStore.setSelection({ viewMode: 'story', ...selection });
+    this.pendingSelectionArgs =
+      typeof argsParam === 'string' && this.selectionStore.selection
+        ? { selection: this.selectionStore.selection, args: parseArgsParam(argsParam) }
+        : undefined;
 
     await this.storeInitializationPromise;
 
     this.channel.emit(CURRENT_STORY_WAS_SET, this.selectionStore.selection);
-    this.renderSelection({
-      persistedArgs: typeof argsParam === 'string' ? parseArgsParam(argsParam) : undefined,
-    });
+    this.renderSelection();
   }
 
   onUpdateQueryParams(queryParams: any) {
@@ -457,17 +463,23 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
 
     const implementationChanged = !storyIdChanged && lastRender && !render.isEqual(lastRender);
 
-    if (persistedArgs) {
+    const pendingArgs =
+      this.pendingSelectionArgs?.selection === selection
+        ? this.pendingSelectionArgs.args
+        : undefined;
+    this.pendingSelectionArgs = undefined;
+    const argsToApply = persistedArgs ?? pendingArgs;
+    if (argsToApply) {
       if (isStoryRender(render)) {
         invariant(!!render.story);
-        this.storyStoreValue.args.updateFromPersisted(render.story, persistedArgs);
+        this.storyStoreValue.args.setFromPersisted(render.story, argsToApply);
       } else {
-        render.csfFiles?.forEach((csfFile) =>
-          Object.keys(csfFile.stories).forEach((storyId) => {
-            const story = this.storyStoreValue!.storyFromCSFFile({ storyId, csfFile });
-            this.storyStoreValue!.args.updateFromPersisted(story, persistedArgs);
-          })
-        );
+        // URL args describe the docs entry's own story only; applying them to every story in
+        // the referenced CSF files would leak them into sibling stories.
+        const story = isCsfDocsRender(render) ? render.story : render.attachedStory;
+        if (story) {
+          this.storyStoreValue.args.setFromPersisted(story, argsToApply);
+        }
       }
     }
 

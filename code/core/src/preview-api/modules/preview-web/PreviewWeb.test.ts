@@ -1955,6 +1955,52 @@ describe('PreviewWeb', () => {
         foo: 'url',
         one: 1,
       });
+
+      // Sibling stories must not pick up the docs page's args
+      emitter.emit(SET_CURRENT_STORY, {
+        storyId: 'component-one--b',
+        viewMode: 'story',
+      });
+      await waitForSetCurrentStory();
+      await waitForRender();
+
+      expect(
+        // @ts-expect-error Ignore protected property
+        (preview.storyStoreValue as StoryStore<Renderer>)?.args.get('component-one--b')
+      ).toEqual({
+        foo: 'b',
+        one: 1,
+      });
+    });
+
+    it('replaces earlier edits with the args param instead of merging', async () => {
+      document.location.search = '?id=component-one--b';
+      const preview = await createAndRenderPreview();
+
+      // An in-session edit that the restored URL args do not mention
+      emitter.emit(UPDATE_STORY_ARGS, {
+        storyId: 'component-one--b',
+        updatedArgs: { one: 9 },
+      });
+      await waitForEvents([STORY_ARGS_UPDATED]);
+
+      mockChannel.emit.mockClear();
+      emitter.emit(SET_CURRENT_STORY, {
+        storyId: 'component-one--b',
+        viewMode: 'story',
+        args: 'foo:restored',
+      });
+      await waitForSetCurrentStory();
+      // A same-story selection does not re-render
+      await waitForEvents([STORY_UNCHANGED]);
+
+      expect(
+        // @ts-expect-error Ignore protected property
+        (preview.storyStoreValue as StoryStore<Renderer>)?.args.get('component-one--b')
+      ).toEqual({
+        foo: 'restored',
+        one: 1,
+      });
     });
 
     it('emits CURRENT_STORY_WAS_SET', async () => {
@@ -2048,6 +2094,30 @@ describe('PreviewWeb', () => {
           viewMode: 'story',
         });
         expect(mockChannel.emit).toHaveBeenCalledWith(STORY_RENDERED, 'component-one--b');
+      });
+
+      it('applies args that arrived with the selection', async () => {
+        document.location.search = '?id=component-one--a';
+
+        const preview = new PreviewWeb(importFn, getProjectAnnotations);
+        const readyd = preview.ready();
+
+        emitter.emit(SET_CURRENT_STORY, {
+          storyId: 'component-one--b',
+          viewMode: 'story',
+          args: 'foo:url',
+        });
+
+        await readyd;
+        await waitForRender();
+
+        expect(
+          // @ts-expect-error Ignore protected property
+          (preview.storyStoreValue as StoryStore<Renderer>)?.args.get('component-one--b')
+        ).toEqual({
+          foo: 'url',
+          one: 1,
+        });
       });
     });
 

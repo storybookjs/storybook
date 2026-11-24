@@ -128,13 +128,9 @@ const readResult = (dir: string): RunResultFile | undefined => {
 };
 
 // The checks of a result whose findings carry one of the issue's fingerprints.
-const matchingChecks = (
-  result: RunResultFile | undefined,
-  entry: CatalogEntry,
-  fingerprints: string[]
-): string[] =>
+const matchingChecks = (result: RunResultFile | undefined, fingerprints: string[]): string[] =>
   (result?.findings ?? [])
-    .filter((finding) => fingerprints.includes(fingerprint(finding, entry.class)))
+    .filter((finding) => fingerprints.includes(fingerprint(finding)))
     .map((finding) => finding.checkId);
 
 // The agent names the evidence of a check after its id, with the dot kept or turned into a hyphen,
@@ -420,7 +416,7 @@ const reportSighting = (sighting: Sighting, slugs: string[], context: Context): 
   });
   const read = dirs.map((dir) => {
     const result = readResult(dir);
-    return { dir, result, checks: matchingChecks(result, entry, context.fingerprints) };
+    return { dir, result, checks: matchingChecks(result, context.fingerprints) };
   });
   const matched = read.filter(({ checks }) => checks.length > 0);
   const downloaded = live.map(

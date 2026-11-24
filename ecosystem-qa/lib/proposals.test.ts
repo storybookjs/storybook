@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   asIssue,
+  ENTRY,
   finding,
   issueOn,
   loaded,
@@ -134,6 +135,26 @@ describe('groupFindings', () => {
     const body = renderIssueBody(hmr, byName);
     expect(body).toContain(`https://github.com/storybookjs/mealdrop/tree/${'b'.repeat(40)}`);
     expect(body).toMatch(/os: linux, windows\nengine: claude, codex/);
+  });
+
+  it('merges the same failure from an owned and a tier 1 project into one group', () => {
+    const owned = loaded('linux', 'claude', [finding()]);
+    const fork = loaded('linux', 'claude', [finding()]);
+    fork.result = {
+      ...fork.result,
+      request: {
+        ...fork.result.request,
+        entry: {
+          ...ENTRY,
+          id: 'twenty',
+          repo: 'twentyhq/twenty',
+          class: 'tier1',
+          pushTo: 'storybook-tmp/twenty',
+        },
+      },
+    };
+
+    expect(groupFindings([owned, fork])).toHaveLength(1);
   });
 
   it('labels a finding windows only when every run that saw it was on Windows', () => {
@@ -799,7 +820,7 @@ describe('the plan entry of an issue', () => {
 
       <!-- sb-qa-metadata -->
       \`\`\`yaml
-      fingerprint: fc116bca3d94fb6d
+      fingerprint: 5b0586b7d56b63a3
       storybook: 11.0.0-beta.0
       repo: storybookjs/mealdrop
       sha: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
@@ -807,7 +828,7 @@ describe('the plan entry of an issue', () => {
       os: linux
       engine: claude
       model: claude-sonnet-5-5
-      sightings: 20a0f1c23fda
+      sightings: 8feb3adf3937
       seen: 11.0.0-beta.0 storybookjs/mealdrop linux claude
       run: https://github.com/storybookjs/storybook/actions/runs/1
       \`\`\`
@@ -873,7 +894,7 @@ describe('the plan entry of an issue', () => {
 
       <!-- sb-qa-metadata -->
       \`\`\`yaml
-      fingerprint: fc116bca3d94fb6d
+      fingerprint: 5b0586b7d56b63a3
       storybook: 11.0.0-beta.0
       repo: storybookjs/mealdrop
       sha: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
@@ -881,7 +902,7 @@ describe('the plan entry of an issue', () => {
       os: linux
       engine: claude
       model: claude-sonnet-5-5
-      sightings: b627c7a5cdd7
+      sightings: 8d7dcaea429a
       seen: 11.0.0-beta.0 storybookjs/mealdrop linux claude
       run: https://github.com/storybookjs/storybook/actions/runs/1
       \`\`\`
@@ -936,7 +957,7 @@ describe('the plan entry of an issue', () => {
 
       <!-- sb-qa-metadata -->
       \`\`\`yaml
-      fingerprint: fc116bca3d94fb6d
+      fingerprint: 5b0586b7d56b63a3
       storybook: 11.0.0-beta.0
       repo: storybookjs/mealdrop
       sha: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
@@ -944,7 +965,7 @@ describe('the plan entry of an issue', () => {
       os: linux
       engine: claude
       model: claude-sonnet-5-5
-      sightings: 20a0f1c23fda
+      sightings: 8feb3adf3937
       seen: 11.0.0-beta.0 storybookjs/mealdrop linux claude
       run: https://github.com/storybookjs/storybook/actions/runs/1
       \`\`\`

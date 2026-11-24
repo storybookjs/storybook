@@ -1,0 +1,26 @@
+[33m(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - import "./vite.config" without a file extension (vitest.config.ts:4:24). Add the file extension
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.[39m
+[90m│[39m
+[33m▲[39m  No story files found for the specified pattern: [34msrc/docs/*.mdx[39m
+[90m│[39m
+[33m▲[39m  No story files found for the specified pattern:
+[90m│[39m  [34msrc/docs/Introduction.mdx[39m
+[90m│[39m
+[33m▲[39m  No story files found for the specified pattern: [34msrc/**/*.mdx[39m
+[33m(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - import "./vite.config" without a file extension (vitest.config.ts:4:24). Add the file extension
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.[39m
+
+ RUN  v4.1.11 /home/agent/workspace
+
+[33m(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - import "./vite.config" without a file extension (vitest.config.ts:4:24). Add the file extension
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.[39m
+
+ Test Files  2 passed (2)
+      Tests  4 passed (4)
+   Start at  09:32:21
+   Duration  6.06s (transform 0ms, setup 5.95s, import 290ms, tests 1.36s, environment 0ms)
+
+exit=0

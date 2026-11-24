@@ -1,0 +1,12 @@
+diff --git a/vitest.config.ts b/vitest.config.ts
+index 6b4b0b4..24499d3 100644
+--- a/vitest.config.ts
++++ b/vitest.config.ts
+@@ -25,6 +25,7 @@ export default mergeConfig(
+           publicDir: 'public',
+           test: {
+             name: 'storybook',
++            setupFiles: './.storybook/qa-probe-setup.ts',
+             browser: {
+               enabled: true,
+               headless: true,

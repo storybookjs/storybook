@@ -591,6 +591,7 @@ jobs:
     if: ${{ !cancelled() && needs.collect.result == 'success' && needs.plan.outputs.dry == 'true' }}
     runs-on: ubuntu-latest
     permissions:
+      actions: read # name the day the result artifacts expire
       issues: read # list the internal-qa issues
     steps:
       - name: Checkout
@@ -618,9 +619,17 @@ jobs:
       - name: Write proposals to the Step Summary
         env:
           GH_TOKEN: ${{ github.token }}
+          QA_VERSION: ${{ needs.plan.outputs.version }}
+          QA_FROM_RUNS: ${{ needs.plan.outputs.from_runs }}
+          QA_GROUPS: ${{ needs.plan.outputs.groups }}
+          QA_PLAN: ${{ needs.plan.outputs.plan }}
+          QA_BATCH: ${{ needs.plan.outputs.batch }}
+          QA_PLANNED: ${{ needs.plan.outputs.matrix }}
         run: >-
           node ecosystem-qa/file.ts --proposals ecosystem-qa/results/qa-proposals/proposals.json
-          --repo "$GITHUB_REPOSITORY" --dry
+          --repo "$GITHUB_REPOSITORY" --dry --version "$QA_VERSION" --from-runs "$QA_FROM_RUNS"
+          --run-id "$GITHUB_RUN_ID" ${QA_GROUPS:+--groups "$QA_GROUPS"}
+          ${QA_PLAN:+--plan "$QA_PLAN" --batch "$QA_BATCH" --planned "$QA_PLANNED"}
 
   file:
     name: File issues
@@ -672,7 +681,7 @@ jobs:
           ECOSYSTEM_QA_PUSH_TOKEN_STORYBOOK_TMP: ${{ secrets.ECOSYSTEM_QA_PUSH_TOKEN_STORYBOOK_TMP }}
         run: >-
           node ecosystem-qa/file.ts --proposals ecosystem-qa/results/qa-proposals/proposals.json
-          --repo "$GITHUB_REPOSITORY"
+          --repo "$GITHUB_REPOSITORY" --filed "$RUNNER_TEMP/filed.json"
 
       - name: Name the filed issues in the tracking discussion
         if: ${{ !cancelled() && needs.plan.outputs.plan != '' }}
@@ -691,7 +700,8 @@ jobs:
           --proposals ecosystem-qa/results/qa-proposals/proposals.json
           --plan "$QA_PLAN" --batch "$QA_BATCH" --version "$QA_VERSION" --planned "$QA_PLANNED"
           --runs "${QA_FROM_RUNS:-$GITHUB_RUN_ID}" --repo "$GITHUB_REPOSITORY"
-          ${QA_CAP_USD:+--cap-usd "$QA_CAP_USD"} --filing "$QA_FILING" --no-chain
+          ${QA_CAP_USD:+--cap-usd "$QA_CAP_USD"} --filing "$QA_FILING" --filed "$RUNNER_TEMP/filed.json"
+          --no-chain
 
   track:
     name: Report the batch in its tracking discussion

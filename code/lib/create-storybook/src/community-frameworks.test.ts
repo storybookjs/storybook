@@ -25,6 +25,7 @@ describe('COMMUNITY_FRAMEWORK_PACKAGES', () => {
   it('lists every package storybook init installs from outside the monorepo', () => {
     expect([...COMMUNITY_FRAMEWORK_PACKAGES].sort()).toMatchInlineSnapshot(`
       [
+        "@analogjs/storybook-angular",
         "@nuxtjs/storybook",
         "@storybook-astro/framework",
         "@storybook-vue/nuxt",

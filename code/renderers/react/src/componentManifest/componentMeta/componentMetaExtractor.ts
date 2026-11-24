@@ -37,6 +37,8 @@ export interface PropItemType {
   name: string;
   raw?: string;
   value?: { value: string }[];
+  // Array element type, such as `string` for `string[]`.
+  element?: PropItemType;
 }
 
 export interface ParentType {
@@ -80,6 +82,7 @@ const LARGE_SOURCE_THRESHOLD = 30;
 /** Max recursion depth for unwrapping React.memo/forwardRef/Object.assign chains. */
 const MAX_UNWRAP_DEPTH = 5;
 const MAX_SERIALIZATION_DEPTH = 5;
+const ARRAY_SYMBOL_NAMES = new Set(['Array', 'ReadonlyArray']);
 type WrappedExpression =
   | ts.ParenthesizedExpression
   | ts.AsExpression
@@ -827,7 +830,19 @@ function serializeType(
       nonUndefinedTypes.length === 1 &&
       nonUndefinedTypes.length < type.types.length
     ) {
-      return { name: checker.typeToString(nonUndefinedTypes[0]) };
+      return serializeLeaf(typescript, checker, nonUndefinedTypes[0], depth);
+    }
+
+    // A nullable array keeps TypeScript's name, but its array member still supplies the element
+    // type so the args table can offer the array control.
+    const nonNullishTypes = nonUndefinedTypes.filter(
+      (t) => !(t.getFlags() & typescript.TypeFlags.Null)
+    );
+    if (nonNullishTypes.length === 1 && isArrayType(nonNullishTypes[0])) {
+      return {
+        name: checker.typeToString(type),
+        element: serializeElement(typescript, checker, nonNullishTypes[0], depth),
+      };
     }
   }
 
@@ -836,7 +851,34 @@ function serializeType(
     return serializeType(typescript, checker, constraint, isRequired, depth + 1);
   }
 
-  return { name: checker.typeToString(type) };
+  return serializeLeaf(typescript, checker, type, depth);
+}
+
+// The native checker has no `isArrayType`; arrays are references to `Array` or `ReadonlyArray`.
+function isArrayType(type: ts.Type): type is ts.TypeReference {
+  return ARRAY_SYMBOL_NAMES.has(type.getSymbol()?.getName() ?? '');
+}
+
+function serializeLeaf(
+  typescript: DocgenTypeScript,
+  checker: DocgenTypeChecker,
+  type: ts.Type,
+  depth: number
+): PropItemType {
+  const name = checker.typeToString(type);
+  return isArrayType(type)
+    ? { name, element: serializeElement(typescript, checker, type, depth) }
+    : { name };
+}
+
+function serializeElement(
+  typescript: DocgenTypeScript,
+  checker: DocgenTypeChecker,
+  arrayType: ts.TypeReference,
+  depth: number
+): PropItemType {
+  const [element] = checker.getTypeArguments(arrayType);
+  return serializeType(typescript, checker, element, true, depth + 1);
 }
 
 // ---------------------------------------------------------------------------

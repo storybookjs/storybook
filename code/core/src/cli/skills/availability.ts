@@ -30,11 +30,6 @@ export interface ToolAvailability {
   docgenServer: boolean;
 }
 
-/** The toolsets of addon-mcp, as its `mcpToolsets` preset property returns them from `main.ts`. */
-export type McpToolsets = { dev: boolean; docs: boolean; test: boolean };
-
-export const ALL_MCP_TOOLSETS: McpToolsets = { dev: true, docs: true, test: true };
-
 /**
  * Composed Storybooks with component manifests can back docs tools even when the
  * local Storybook has no component manifest. Use this before feeding

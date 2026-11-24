@@ -10,8 +10,6 @@ Prerequisites:
 
 Run the Storybook dev server and every Storybook CLI command from the same working directory: the package where Storybook is installed (in a monorepo often a leaf package such as `packages/ui`).
 
-Starting the Storybook dev server, `npx storybook tools review create` and `npx storybook tools stories preview` open a port or connect to localhost. If the sandbox blocks that, request escalated permissions for these commands on the first attempt; the other Storybook CLI commands run inside the sandbox.
-
 Run `npx storybook skills ui-review` in a command of its own, without `head` or `tail`, and follow its output: how to use the running Storybook dev server, and the commands that find the stories to show, of a change or of the components the user names, and create a review of them.
 
 When you create a review, end your final answer with the three lines `review create` prints, unchanged, and mention the review link nowhere else in it.

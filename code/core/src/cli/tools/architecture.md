@@ -23,8 +23,8 @@ when unset (file `0600`, dir `0700`). The endpoint is `record.url` plus that pat
 handler accepts a missing `Origin` when the token is valid.
 
 CLI default is `auto`: attach when a matching instance is running, otherwise load locally.
-`--attach` requires attachment. `--no-attach` forces local. A missing instance falls back to
-local with no notice. Unexpected factory-time gate failures print the facts of the failed check
+`--attach` requires attachment. `--no-attach` forces local. A missing instance and a failed
+connection (without `--port`) fall back to local with no notice. Other factory-time gate failures print the facts of the failed check
 plus generic recovery guidance (restart Storybook from the project, re-run from there) — never a
 constructed path, and never a path in executable-command position — and then fall back. A later
 `tools.call` failure (disconnect, remote ack timeout) stays on the attached host.
@@ -159,7 +159,7 @@ constructs a path or places one in executable-command position.
 | No instance for this project      | No cwd/configDir match                         | `--attach` only: how to start Storybook; other running instances with `cwd` + `url`. `auto` falls back with no notice |
 | Port mismatch                     | No running instance on `--port`                | Running instances with their `port` + `url`; `--port <port>`                                                  |
 | Old server                        | Token absent                                   | Restart Storybook (vX.Y+) to enable attach                                                                    |
-| Stale record / connection refused | WS connect fails                               | Registry cleanup; fallback note                                                                               |
+| Connection fails | WS connect or handshake fails | `--attach` and dev-server tools only: `EPERM` or another process namespace → re-run outside the sandbox; else the registry may be stale. `auto` falls back with no notice, except with `--port` |
 | Different installation, no spawn  | Mismatch with `autoSpawn: false` / in a child  | Both roots, both versions, the instance's config dir; restart guidance (with `autoSpawn`, this respawns instead) |
 | Unverifiable installation         | No `storybookPath`, or its root gone from disk | Restart guidance                                                                                              |
 | Config drift                      | Instance reports command unhandled             | Attached Storybook has no handler for the command — restart it with a matching configuration                  |

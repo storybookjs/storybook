@@ -10,6 +10,4 @@ Prerequisites:
 
 Run every Storybook CLI command from the package where Storybook is installed (in a monorepo often a leaf package such as `packages/ui`).
 
-`npx storybook tools test run` opens a local port for the browser that runs the tests. If the sandbox blocks ports, request escalated permissions for that command on the first attempt; the other Storybook CLI commands run inside the sandbox.
-
 Run `npx storybook skills test-stories` in a command of its own, without `head` or `tail`, and read its output: how to use the command that runs the story tests of this project.

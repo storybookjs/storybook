@@ -347,10 +347,17 @@ async function dispatchTools(
   }
 
   if (tools.mode === 'local' && method.requiresDevServer) {
-    const discovery = await (deps.discoverInstance ?? discoverRunningInstance)(invocation.target);
+    const output =
+      requestedMode !== 'local' && tools.attachFailure
+        ? formatRequiresAttach(commandPath, tools.attachFailure)
+        : formatRequiresDevServer(
+            commandPath,
+            await (deps.discoverInstance ?? discoverRunningInstance)(invocation.target),
+            requestedMode
+          );
     return result({
       exitCode: 1,
-      output: formatRequiresDevServer(commandPath, discovery, requestedMode, tools.attachFailure),
+      output,
       outcome: { kind: 'intercept', reason: 'requires-dev-server' },
     });
   }
@@ -429,14 +436,10 @@ function joinMarkdown(markdown: string | string[]): string {
 function formatRequiresDevServer(
   commandPath: string,
   discovery: InstanceDiscovery,
-  requestedMode: ToolsMode,
-  attachFailure: string | undefined
+  requestedMode: ToolsMode
 ): string {
   if (discovery.currentRecord && requestedMode === 'local') {
     return `Found your Storybook running at ${discovery.currentRecord.url}, but \`${commandPath}\` cannot run from a local tools host. Re-run without \`--no-attach\` to attach to that instance.`;
-  }
-  if (attachFailure) {
-    return formatRequiresAttach(commandPath, attachFailure);
   }
   if (discovery.currentRecord) {
     return `Found your Storybook running at ${discovery.currentRecord.url}, but \`${commandPath}\` could not attach to it. Start or restart that Storybook, then re-run this command.`;

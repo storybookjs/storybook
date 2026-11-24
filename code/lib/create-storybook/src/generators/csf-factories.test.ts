@@ -36,12 +36,12 @@ describe('supportsCsfFactories', () => {
     [SupportedFramework.VUE3_RSBUILD, true],
     [SupportedFramework.WEB_COMPONENTS_RSBUILD, true],
     [SupportedFramework.ASTRO, true],
+    [SupportedFramework.SOLID, true],
     [SupportedFramework.PREACT_VITE, false],
     [SupportedFramework.HTML_VITE, false],
     [SupportedFramework.EMBER, false],
     [SupportedFramework.SERVER_WEBPACK5, false],
     [SupportedFramework.NUXT, false],
-    [SupportedFramework.SOLID, false],
     [SupportedFramework.QWIK, false],
     [SupportedFramework.HTML_RSBUILD, false],
   ] as const)('%s => %s', (framework, expected) => {

@@ -1795,7 +1795,6 @@ Storybook no longer bundles Babel or recast to read and write story and config f
 
 These packages read `storybook/internal/babel` or Babel-shaped `csf-tools` fields such as `_ast`, so they stop loading on Storybook 11 until they publish a release for it. No release with the fix is known yet; upgrade each once it ships:
 
-- `storybook-solidjs-vite`
 - `msw-storybook-addon`, for its migration CLI
 - `storybook-addon-test-codegen`
 - `@storybook/experimental-devtools`
@@ -1803,6 +1802,8 @@ These packages read `storybook/internal/babel` or Babel-shaped `csf-tools` field
 - `storybook-detox-test-runner`
 - `@parcel/transformer-storybook`, used by `storybook-builder-parcel`
 - `storybook-builder-rsbuild`, which passes the removed `babelParser` to Storybook's mocking utilities
+
+`storybook-solidjs-vite` supports Storybook 11 from its 11.x releases. Until 11.x is published to `latest`, install `storybook-solidjs-vite@next`.
 
 #### Changes for tooling that imports Storybook's internal entry points
 

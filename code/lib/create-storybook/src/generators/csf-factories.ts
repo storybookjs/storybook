@@ -25,6 +25,7 @@ export function supportsCsfFactories(framework: SupportedFramework): boolean {
     case SupportedFramework.VUE3_RSBUILD:
     case SupportedFramework.WEB_COMPONENTS_RSBUILD:
     case SupportedFramework.ASTRO:
+    case SupportedFramework.SOLID:
       return true;
     // on-device RN is not in this enum; its generator skips this helper and stays CSF3 until @storybook/react-native 11 is what init installs
     // no definePreview, and no tracker for adding it
@@ -41,8 +42,6 @@ export function supportsCsfFactories(framework: SupportedFramework): boolean {
     case SupportedFramework.NUXT:
     // https://github.com/literalpie/storybook-framework-qwik/issues/96 — no factories yet
     case SupportedFramework.QWIK:
-    // already ships definePreview; blocked on exporting defineMain from ./node
-    case SupportedFramework.SOLID:
       return false;
     default: {
       const exhaustive: never = framework;

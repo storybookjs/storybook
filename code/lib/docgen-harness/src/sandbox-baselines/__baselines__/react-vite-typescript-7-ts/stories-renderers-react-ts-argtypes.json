@@ -751,14 +751,14 @@
           "name": "inlinedStringLiteralUnion",
           "table": {
             "type": {
-              "summary": "\"bottom-center\" | \"bottom-left\" | \"bottom-right\""
+              "summary": "\"bottom-left\" | \"bottom-right\" | \"bottom-center\""
             }
           },
           "type": {
             "name": "enum",
-            "raw": "\"bottom-center\" | \"bottom-left\" | \"bottom-right\"",
+            "raw": "\"bottom-left\" | \"bottom-right\" | \"bottom-center\"",
             "required": true,
-            "value": ["bottom-center", "bottom-left", "bottom-right"]
+            "value": ["bottom-left", "bottom-right", "bottom-center"]
           }
         },
         "interface": {
@@ -823,14 +823,14 @@
           "name": "namedStringLiteralUnion",
           "table": {
             "type": {
-              "summary": "\"top-center\" | \"top-left\" | \"top-right\""
+              "summary": "\"top-left\" | \"top-right\" | \"top-center\""
             }
           },
           "type": {
             "name": "enum",
-            "raw": "\"top-center\" | \"top-left\" | \"top-right\"",
+            "raw": "\"top-left\" | \"top-right\" | \"top-center\"",
             "required": true,
-            "value": ["top-center", "top-left", "top-right"]
+            "value": ["top-left", "top-right", "top-center"]
           }
         },
         "nullableComplexType": {
@@ -1113,14 +1113,14 @@
               "summary": "'small'"
             },
             "type": {
-              "summary": "\"large\" | \"small\""
+              "summary": "\"small\" | \"large\""
             }
           },
           "type": {
             "name": "enum",
-            "raw": "\"large\" | \"small\"",
+            "raw": "\"small\" | \"large\"",
             "required": false,
-            "value": ["large", "small"]
+            "value": ["small", "large"]
           }
         }
       },
@@ -1734,14 +1734,14 @@
               "summary": "'top'"
             },
             "type": {
-              "summary": "\"left\" | \"top\""
+              "summary": "\"top\" | \"left\""
             }
           },
           "type": {
             "name": "enum",
-            "raw": "\"left\" | \"top\"",
+            "raw": "\"top\" | \"left\"",
             "required": false,
-            "value": ["left", "top"]
+            "value": ["top", "left"]
           }
         },
         "unionGlobalNameMixed": {
@@ -2242,14 +2242,14 @@
               "summary": "'bottom-right'"
             },
             "type": {
-              "summary": "\"bottom-center\" | \"bottom-left\" | \"bottom-right\""
+              "summary": "\"bottom-left\" | \"bottom-right\" | \"bottom-center\""
             }
           },
           "type": {
             "name": "enum",
-            "raw": "\"bottom-center\" | \"bottom-left\" | \"bottom-right\"",
+            "raw": "\"bottom-left\" | \"bottom-right\" | \"bottom-center\"",
             "required": true,
-            "value": ["bottom-center", "bottom-left", "bottom-right"]
+            "value": ["bottom-left", "bottom-right", "bottom-center"]
           }
         },
         "interface": {
@@ -2330,14 +2330,14 @@
               "summary": "'top-right'"
             },
             "type": {
-              "summary": "\"top-center\" | \"top-left\" | \"top-right\""
+              "summary": "\"top-left\" | \"top-right\" | \"top-center\""
             }
           },
           "type": {
             "name": "enum",
-            "raw": "\"top-center\" | \"top-left\" | \"top-right\"",
+            "raw": "\"top-left\" | \"top-right\" | \"top-center\"",
             "required": true,
-            "value": ["top-center", "top-left", "top-right"]
+            "value": ["top-left", "top-right", "top-center"]
           }
         },
         "nullableComplexType": {

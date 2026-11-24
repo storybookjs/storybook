@@ -7,7 +7,7 @@ import { isCI } from '../utils/envs.ts';
 import versions from '../versions.ts';
 import type { JsPackageManager } from './JsPackageManager.ts';
 import { PackageManagerName } from './JsPackageManager.ts';
-import type { InstallationMetadata } from './types.ts';
+import type { InstallationMetadata, PublishedManifest } from './types.ts';
 
 export type StorybookInstallContext = 'create' | 'upgrade';
 
@@ -193,6 +193,36 @@ export const readPackageVersions = (value: unknown): string[] | null => {
   }
 
   return null;
+};
+
+const readDependencyMap = (value: unknown): Record<string, string> =>
+  Object.fromEntries(
+    Object.entries(value && typeof value === 'object' ? value : {}).filter(
+      (entry): entry is [string, string] => typeof entry[1] === 'string'
+    )
+  );
+
+export const parsePublishedManifest = (value: unknown): PublishedManifest | null => {
+  const manifest = Array.isArray(value) && value.length === 1 ? value[0] : value;
+  if (!manifest || typeof manifest !== 'object') {
+    return null;
+  }
+
+  const { version, versions, time, dependencies, peerDependencies } = manifest as Record<
+    string,
+    unknown
+  >;
+  if (typeof version !== 'string' || !valid(version)) {
+    return null;
+  }
+
+  return {
+    version,
+    versions: readPackageVersions(versions) ?? [],
+    time: parsePackageTimeMap(time) ?? {},
+    dependencies: readDependencyMap(dependencies),
+    peerDependencies: readDependencyMap(peerDependencies),
+  };
 };
 
 export const parseReleaseTime = (value: unknown): Date | null => {

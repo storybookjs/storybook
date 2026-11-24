@@ -23,6 +23,7 @@ import {
   parsePackageData,
   parsePackageTimeMap,
   parsePositiveIntegerConfigValue,
+  parsePublishedManifest,
   parseReleaseTime,
   parseYarnMinimalAgeGateMinutes,
   readPackageVersions,
@@ -87,6 +88,59 @@ describe('js package manager util', () => {
       '2.0.0',
     ]);
     expect(readPackageVersions(null)).toBeNull();
+  });
+
+  it('parses published manifests', () => {
+    expect(
+      parsePublishedManifest({
+        name: '@storybook/react',
+        version: '11.0.0-rc.0',
+        versions: ['11.0.0-beta.3', '11.0.0-rc.0'],
+        time: { '11.0.0-rc.0': '2026-11-24T13:46:30.813Z' },
+        dependencies: { '@storybook/global': '^5.0.0', broken: null },
+        peerDependencies: { storybook: '^11.0.0-rc.0' },
+      })
+    ).toEqual({
+      version: '11.0.0-rc.0',
+      versions: ['11.0.0-beta.3', '11.0.0-rc.0'],
+      time: { '11.0.0-rc.0': '2026-11-24T13:46:30.813Z' },
+      dependencies: { '@storybook/global': '^5.0.0' },
+      peerDependencies: { storybook: '^11.0.0-rc.0' },
+    });
+  });
+
+  it('parses a published manifest without versions or dependencies', () => {
+    expect(parsePublishedManifest({ name: '@storybook/global', version: '5.0.0' })).toEqual({
+      version: '5.0.0',
+      versions: [],
+      time: {},
+      dependencies: {},
+      peerDependencies: {},
+    });
+  });
+
+  it('parses a published manifest wrapped in an array', () => {
+    expect(
+      parsePublishedManifest([
+        { version: '11.0.0-next.2', peerDependencies: { storybook: '^11.0.0-beta.1' } },
+      ])
+    ).toEqual({
+      version: '11.0.0-next.2',
+      versions: [],
+      time: {},
+      dependencies: {},
+      peerDependencies: { storybook: '^11.0.0-beta.1' },
+    });
+  });
+
+  it.each([
+    { input: null, description: 'null' },
+    { input: '', description: 'empty output' },
+    { input: { name: '@storybook/react' }, description: 'a manifest without a version' },
+    { input: { version: 'next' }, description: 'a manifest whose version is a dist-tag' },
+    { input: [{ version: '1.0.0' }, { version: '2.0.0' }], description: 'several manifests' },
+  ])('rejects $description as a published manifest', ({ input }) => {
+    expect(parsePublishedManifest(input)).toBeNull();
   });
 
   it('parses release times', () => {

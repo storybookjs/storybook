@@ -5,12 +5,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { logger } from 'storybook/internal/node-logger';
 import type { Options } from 'storybook/internal/types';
 
+import { transform } from 'esbuild';
 import { join } from 'pathe';
 
 import { getConfig } from './index.ts';
 import type { OutputFile } from './utils/bundle.ts';
 import { bundleManagerEntries } from './utils/bundle.ts';
 
+vi.mock('esbuild', { spy: true });
 vi.mock('storybook/internal/node-logger', { spy: true });
 // The real one writes a wrapper for each entry into the cache directory of the project.
 vi.mock('./utils/managerEntries.ts', () => ({
@@ -32,7 +34,9 @@ const bundle = async (entry: string, minify = false) => {
             : fallback,
     },
   } as unknown as Options);
-  return bundleManagerEntries(config, minify);
+  // A fixture package cannot live in a `node_modules` directory, which git ignores.
+  const resolve = { ...config.resolve, modules: ['node_modules', 'packages'] };
+  return bundleManagerEntries({ ...config, resolve }, minify);
 };
 
 const run = (files: OutputFile[], globals: Record<string, unknown> = {}) => {
@@ -48,6 +52,7 @@ const run = (files: OutputFile[], globals: Record<string, unknown> = {}) => {
 describe('bundleManagerEntries', () => {
   beforeEach(() => {
     vi.mocked(logger.warn).mockReset();
+    vi.mocked(transform).mockClear();
   });
 
   it('writes a script per entry into sb-addons', async () => {
@@ -76,6 +81,33 @@ describe('bundleManagerEntries', () => {
     });
 
     expect(result).toEqual(['div', { className: 'panel' }]);
+  });
+
+  it.each([
+    ['decorators', 'decorator.js', 'decorated'],
+    ['accessor fields', 'accessor.js', 1],
+    ['a namespace declared in several blocks', 'namespaces.ts', ['change']],
+  ])('compiles %s as esbuild does', async (_, entry, expected) => {
+    const { result } = run(await bundle(entry));
+
+    expect(result).toEqual(expected);
+  });
+
+  it('leaves a file to Rolldown that only mentions @ in CSS and comments', async () => {
+    expect(run(await bundle('not-decorators.js')).result).toBe(true);
+    expect(transform).not.toHaveBeenCalled();
+  });
+
+  it('gives require() of a package the file of its main field', async () => {
+    const { result } = run(await bundle('require-main.js'));
+
+    expect(result).toBe('function');
+  });
+
+  it('bundles a package once when it is imported and required', async () => {
+    const { result } = run(await bundle('dual-usage.js'));
+
+    expect(result).toEqual({ type: 'function', once: true });
   });
 
   it('replaces process.env and global', async () => {
@@ -144,11 +176,14 @@ describe('bundleManagerEntries', () => {
     expect(result).toEqual({ dependency: { hasModule: true }, module: 'object' });
   });
 
-  it('reads a constant as undefined before its module ran in an import cycle', async () => {
-    const { result } = run(await bundle('cycle.js'));
+  it.each(['cycle.js', 'cycle-literal.js'])(
+    'reads a constant as undefined before its module ran in an import cycle (%s)',
+    async (entry) => {
+      const { result } = run(await bundle(entry));
 
-    expect(result).toBe('B:undefined');
-  });
+      expect(result).toBe('B:undefined');
+    }
+  );
 
   it('logs the URL of an entry that throws', async () => {
     const { errors } = run(await bundle('throws.js'));

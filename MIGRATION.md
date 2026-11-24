@@ -1327,26 +1327,9 @@ The Code panel snippet starts with a `<script>` block that imports the component
 
 ### Manager entries are bundled with Rolldown
 
-Storybook now bundles `.storybook/manager.*` and the manager entries of addons with [Rolldown](https://rolldown.rs/) instead of esbuild. An addon that publishes its manager entry as compiled JavaScript is only affected by the third point below.
+Storybook now bundles `.storybook/manager.*` and the manager entries of addons with [Rolldown](https://rolldown.rs/) instead of esbuild. Most projects need no change. esbuild still compiles the files that use decorators, `accessor` fields or TypeScript namespaces, which Rolldown does not compile the same way, and `require()` of a package still gets the file that its `main` field names.
 
-**Decorators and `accessor` fields are no longer compiled.** Rolldown leaves them as written, and the entry then fails to load with a syntax error in a browser that does not run them. Compile such code before Storybook bundles it, as an addon built with tsup or `tsc` does, or avoid the syntax in `.storybook/manager.ts`.
-
-**A TypeScript namespace declared in several blocks must name its own members in full.** A block that reads a member of another block by its bare name fails with a `ReferenceError`:
-
-```diff
-namespace Events { export const CHANGE = 'change'; }
-- namespace Events { export const ALL = [CHANGE]; }
-+ namespace Events { export const ALL = [Events.CHANGE]; }
-```
-
-**`require()` of a package with a `main` and a `module` field returns the ES module.** esbuild returned the value of `main`. Import the package instead, or read the `default` property:
-
-```diff
-- const debounce = require('some-package');
-+ import debounce from 'some-package';
-```
-
-Other differences that need no change in most projects:
+The known differences:
 
 - CSS is bundled with [Lightning CSS](https://lightningcss.dev/). The class names of a `.module.css` file are generated differently. An `@import` of a URL still works, but fails the build when it has a media query, `supports()` or `layer()`.
 - License comments stay in the bundles. Storybook no longer writes `.LEGAL.txt` files next to them.

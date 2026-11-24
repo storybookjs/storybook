@@ -7,6 +7,7 @@ import { dirname, join, relative } from 'pathe';
 import type { ManagerBuilder } from '../types.ts';
 import type { Stylesheet } from './css.ts';
 import { cssPlugin } from './css.ts';
+import { requireMain } from './require-main.ts';
 
 export interface OutputFile {
   path: string;
@@ -39,40 +40,65 @@ export const bundleManagerEntries = async (
       // An entry is `<directory of the addon>/<name>-bundle.js` in the cache directory.
       const name = relative(dirname(dirname(entry)), entry).replace(/\.[^./]+$/, '');
       const url = `./sb-addons/${name.split('/').map(encodeURIComponent).join('/')}.js`;
-      const stylesheets = new Map<string, Stylesheet>();
 
-      const { output } = await build({
-        ...options,
-        input: entry,
-        plugins: [options.plugins, cssPlugin(stylesheets, dataUrlExtensions, minify)],
-        onLog(level, log, handler) {
-          // Rolldown keeps an import it cannot resolve, for a page that cannot provide it.
-          if (log.code === 'UNRESOLVED_IMPORT' && !isDynamicImport(log)) {
-            handler('error', log);
-          } else if (log.code !== 'PLUGIN_TIMINGS') {
-            logger[level](log.message);
-          }
-        },
-        output: {
-          ...options.output,
-          ...(minify && { minify }),
-          banner: 'try{',
-          // `import.meta.url` cannot name the entry: Rolldown minifies the footer with the chunk,
-          // which it parses as a script.
-          footer: `}catch(e){ console.error("[Storybook] One of your manager-entries failed: " + ${JSON.stringify(url)}, e); }`,
-          // A define of `module` would hide `module.exports` from Rolldown, which then reads a
-          // CommonJS dependency as a module without exports.
-          intro: 'var module = {};',
-        },
-        write: false,
-      });
+      const buildEntry = async (mainEverywhere: ReadonlySet<string>) => {
+        const stylesheets = new Map<string, Stylesheet>();
+        const required = new Map<string, string>();
+        const { output } = await build({
+          ...options,
+          input: entry,
+          plugins: [
+            options.plugins,
+            requireMain(required, mainEverywhere),
+            cssPlugin(stylesheets, dataUrlExtensions, minify),
+          ],
+          onLog(level, log, handler) {
+            // Rolldown keeps an import it cannot resolve, for a page that cannot provide it.
+            if (log.code === 'UNRESOLVED_IMPORT' && !isDynamicImport(log)) {
+              handler('error', log);
+            } else if (log.code !== 'PLUGIN_TIMINGS') {
+              logger[level](log.message);
+            }
+          },
+          output: {
+            ...options.output,
+            ...(minify && { minify }),
+            banner: 'try{',
+            // `import.meta.url` cannot name the entry: Rolldown minifies the footer with the
+            // chunk, which it parses as a script.
+            footer: `}catch(e){ console.error("[Storybook] One of your manager-entries failed: " + ${JSON.stringify(url)}, e); }`,
+            // A define of `module` would hide `module.exports` from Rolldown, which then reads a
+            // CommonJS dependency as a module without exports.
+            intro: 'var module = {};',
+          },
+          write: false,
+        });
+        const moduleIds = output.flatMap((item) => (item.type === 'chunk' ? item.moduleIds : []));
+        return { output, stylesheets, required, moduleIds };
+      };
+
+      // A package that is required must be bundled once, as its `main` file. Which packages are
+      // required is only known after a build, so the entry is built again while one of them is
+      // still bundled as an ES module too.
+      const mainEverywhere = new Set<string>();
+      let built = await buildEntry(mainEverywhere);
+      for (;;) {
+        const twice = [...built.required].filter(
+          ([dir, module]) => !mainEverywhere.has(dir) && built.moduleIds.includes(module)
+        );
+        if (twice.length === 0) {
+          break;
+        }
+        twice.forEach(([dir]) => mainEverywhere.add(dir));
+        built = await buildEntry(mainEverywhere);
+      }
+      const { output, stylesheets, moduleIds: order } = built;
 
       const files = output.flatMap((item) =>
         item.type === 'chunk' ? [{ path: join(outdir, `${name}.js`), contents: item.code }] : []
       );
       if (stylesheets.size > 0) {
         // Stylesheets are joined in the order their modules run.
-        const order = output.flatMap((item) => (item.type === 'chunk' ? item.moduleIds : []));
         const sorted = [...stylesheets.entries()]
           .sort(([a], [b]) => order.indexOf(a) - order.indexOf(b))
           .map(([, stylesheet]) => stylesheet);

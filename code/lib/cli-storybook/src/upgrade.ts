@@ -3,9 +3,10 @@ import {
   hasStorybookSkills,
   installSkills,
   refreshAgentInstructions,
+  reportAgentInstructionsRefresh,
+  reportSkillsInstall,
 } from 'storybook/internal/cli';
-import type {
-  JsPackageManager} from 'storybook/internal/common';
+import type { JsPackageManager } from 'storybook/internal/common';
 import {
   HandledError,
   JsPackageManagerFactory,
@@ -627,17 +628,25 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
         ),
       sawEveryStorybook: !options.configDir?.length && unreadProjects === 0,
     };
-    const skills = hadSkills
-      ? await installSkills({
-          packageManager: rootPackageManager,
-          source: 'refresh',
-          ...agentInstructions,
-          dryRun: options.dryRun,
-        })
-      : undefined;
+    const skills =
+      hadSkills && !options.dryRun
+        ? await installSkills({
+            packageManager: rootPackageManager,
+            source: 'refresh',
+            ...agentInstructions,
+          })
+        : undefined;
     // The skills of a plugin, or installed by hand, come with an AGENTS.md section that promises
     // the same updates.
-    if (!options.dryRun && !hadSkills) {
+    if (options.dryRun) {
+      await (hadSkills
+        ? reportSkillsInstall({
+            packageManager: rootPackageManager,
+            source: 'refresh',
+            ...agentInstructions,
+          })
+        : reportAgentInstructionsRefresh(agentInstructions));
+    } else if (!hadSkills) {
       await refreshAgentInstructions(agentInstructions);
     }
 

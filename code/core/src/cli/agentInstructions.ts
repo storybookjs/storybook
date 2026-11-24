@@ -174,11 +174,15 @@ async function hasTestStep(read: (file: string) => Promise<string | undefined>):
   return false;
 }
 
-export async function addStorybookAgentInstructions(
+/**
+ * The files that {@link addStorybookAgentInstructions} writes, with their new content and whether
+ * the section is added or updated. Reads files but writes none.
+ */
+export async function planStorybookAgentInstructionChanges(
   root: string,
   mode: AgentInstructionsMode,
   inputs: AgentInstructionsInputs
-): Promise<AgentInstructionsChange[]> {
+): Promise<(AgentInstructionsChange & { content: string })[]> {
   const existing = new Map<string, string | undefined>();
   const read = async (file: string) => {
     const content = await readOptional(join(root, file));
@@ -194,13 +198,21 @@ export async function addStorybookAgentInstructions(
     mode,
     storybookAgentInstructions({ testSupported })
   );
-  const changes: AgentInstructionsChange[] = [];
-  for (const [file, content] of Object.entries(files)) {
+  return Object.entries(files).map(([file, content]) => ({
+    file,
+    content,
+    change: findSection(existing.get(file)) !== undefined ? 'updated' : 'added',
+  }));
+}
+
+export async function addStorybookAgentInstructions(
+  root: string,
+  mode: AgentInstructionsMode,
+  inputs: AgentInstructionsInputs
+): Promise<AgentInstructionsChange[]> {
+  const changes = await planStorybookAgentInstructionChanges(root, mode, inputs);
+  for (const { file, content } of changes) {
     await writeFile(join(root, file), content);
-    changes.push({
-      file,
-      change: findSection(existing.get(file)) !== undefined ? 'updated' : 'added',
-    });
   }
-  return changes;
+  return changes.map(({ file, change }) => ({ file, change }));
 }

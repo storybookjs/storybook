@@ -1,6 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { hasStorybookSkills, installSkills } from 'storybook/internal/cli';
+import {
+  hasStorybookSkills,
+  installSkills,
+  refreshAgentInstructions,
+  reportAgentInstructionsRefresh,
+  reportSkillsInstall,
+} from 'storybook/internal/cli';
 import { type JsPackageManager, isCI } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
@@ -93,6 +99,9 @@ beforeEach(() => {
   } as unknown as ReturnType<typeof prompt.taskLog>);
   vi.mocked(hasStorybookSkills).mockResolvedValue(true);
   vi.mocked(installSkills).mockResolvedValue({ result: 'installed', source: 'refresh' });
+  vi.mocked(reportSkillsInstall).mockResolvedValue();
+  vi.mocked(reportAgentInstructionsRefresh).mockResolvedValue();
+  vi.mocked(refreshAgentInstructions).mockResolvedValue();
 });
 
 describe('upgrade: refreshing the skills', () => {
@@ -178,7 +187,6 @@ describe('upgrade: refreshing the skills', () => {
       source: 'refresh',
       testSupported: false,
       sawEveryStorybook: true,
-      dryRun: false,
     });
     expect(skillsInUpgradeEvents()).toEqual([
       { result: 'installed', source: 'refresh' },
@@ -265,13 +273,23 @@ describe('upgrade: refreshing the skills', () => {
     expect(installSkills).not.toHaveBeenCalled();
   });
 
-  it('only names the refresh on a dry run', async () => {
+  it('only names the refresh on a dry run, and sends no skills result', async () => {
     await upgrade({ ...baseOptions, dryRun: true });
 
-    expect(installSkills).toHaveBeenCalledTimes(1);
-    expect(installSkills).toHaveBeenCalledWith(
-      expect.objectContaining({ source: 'refresh', dryRun: true })
+    expect(installSkills).not.toHaveBeenCalled();
+    expect(reportSkillsInstall).toHaveBeenCalledWith(
+      expect.objectContaining({ source: 'refresh' })
     );
+    expect(skillsInUpgradeEvents()).toEqual([undefined, undefined]);
+  });
+
+  it('names the AGENTS.md refresh of a dry run without skills, instead of refreshing', async () => {
+    vi.mocked(hasStorybookSkills).mockResolvedValue(false);
+
+    await upgrade({ ...baseOptions, dryRun: true });
+
+    expect(refreshAgentInstructions).not.toHaveBeenCalled();
+    expect(reportAgentInstructionsRefresh).toHaveBeenCalledTimes(1);
   });
 
   it('fails a dry run with an error when an automigration would fail, as a run would', async () => {

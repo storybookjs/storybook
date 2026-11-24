@@ -5,6 +5,7 @@ import { logger, prompt } from 'storybook/internal/node-logger';
 
 import * as mainConfigFile from './helpers/mainConfigFile.ts';
 import { automigrate, doAutomigrate, runFixes } from './index.ts';
+import * as pipeline from './pipeline.ts';
 import type { Fix } from './types.ts';
 
 const check1 = vi.fn();
@@ -283,6 +284,26 @@ describe('doAutomigrate', () => {
     await doAutomigrate({ configDir, fixes, dryRun: true });
 
     expect(reportInstallSettingChanges).not.toHaveBeenCalled();
+  });
+
+  it('fails a dry run where a run would fail', async () => {
+    vi.mocked(prompt.confirm).mockResolvedValue(true);
+    vi.spyOn(pipeline, 'simulateFixes').mockResolvedValueOnce(
+      new Map([
+        [
+          'fix-1',
+          {
+            status: 'fail',
+            changed: [],
+            fileFailures: [{ file: mainConfigPath, kind: 'main', message: 'cannot migrate' }],
+          },
+        ],
+      ])
+    );
+
+    await expect(doAutomigrate({ configDir, fixes, dryRun: true })).rejects.toThrow(
+      'An error occurred while running the automigrate command.'
+    );
   });
 
   it('names the doctor instead of running it, in a dry run', async () => {

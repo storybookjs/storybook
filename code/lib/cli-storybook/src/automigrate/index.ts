@@ -129,8 +129,13 @@ export const doAutomigrate = async (options: AutofixOptionsFromCLI) => {
   const skippedFiles = [...Map.groupBy(outcome?.fileFailures ?? [], ({ fixId }) => fixId)]
     .filter(([id]) => outcome?.fixResults[id] === FixStatus.SUCCEEDED)
     .map(([id, failures]) => `${picocolors.cyan(id)} (${pluralFiles(failures.length)} skipped)`);
-  if (failedMigrations.length > 0 || skippedFiles.length > 0) {
-    throw new AutomigrateError({ errors: [...failedMigrations, ...skippedFiles] });
+  // A dry run fails where a run would, on the fixes it predicts would fail or skip files.
+  const predictedFailures = (outcome?.dryRunReport?.fail ?? [])
+    .filter(({ fixId }) => outcome?.fixResults[fixId] !== FixStatus.CHECK_FAILED)
+    .map(({ fixId }) => `${picocolors.cyan(fixId)} (would fail)`);
+  const errors = [...failedMigrations, ...skippedFiles, ...predictedFailures];
+  if (errors.length > 0) {
+    throw new AutomigrateError({ errors });
   }
 };
 

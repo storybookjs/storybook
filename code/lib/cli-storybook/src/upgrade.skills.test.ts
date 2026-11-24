@@ -183,7 +183,7 @@ describe('upgrade: refreshing the skills', () => {
     );
   });
 
-  it('ends a dry run with an error when an automigration would fail', async () => {
+  it('fails a dry run with an error when an automigration would fail, as a run would', async () => {
     vi.mocked(runAutomigrations).mockResolvedValue({
       automigrationResults: {
         '/repo/a/.storybook': {
@@ -201,7 +201,9 @@ describe('upgrade: refreshing the skills', () => {
       detectedAutomigrations: [],
     });
 
-    await upgrade({ ...baseOptions, dryRun: true });
+    await expect(upgrade({ ...baseOptions, dryRun: true })).rejects.toThrow(
+      'Some automigrations would fail or skip files'
+    );
 
     expect(logger.error).toHaveBeenCalledWith('Some automigrations would fail');
     expect(logger.step).not.toHaveBeenCalledWith(expect.stringContaining('Dry run finished'));

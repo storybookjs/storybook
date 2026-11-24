@@ -248,6 +248,10 @@ function getUpgradeResults(
   };
 }
 
+/** Whether a dry run predicts that an automigration would fail or skip files in any project. */
+const someAutomigrationWouldFail = (projectResults: Record<string, AutomigrationResult>) =>
+  Object.values(projectResults).some(({ dryRunReport }) => (dryRunReport?.fail.length ?? 0) > 0);
+
 /** Logs the results of the upgrade process, including project categorization and diagnostic messages */
 function logUpgradeResults(
   projectResults: Record<string, AutomigrationResult>,
@@ -262,11 +266,7 @@ function logUpgradeResults(
 
   if (dryRun) {
     // A failure the dry run predicts takes precedence over saying that nothing changed.
-    const wouldFail =
-      failedProjects.length > 0 ||
-      Object.values(projectResults).some(
-        ({ dryRunReport }) => (dryRunReport?.fail.length ?? 0) > 0
-      );
+    const wouldFail = failedProjects.length > 0 || someAutomigrationWouldFail(projectResults);
     if (failedProjects.length > 0) {
       logTracker.enableLogWriting();
     }
@@ -714,10 +714,14 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
       doctorResults,
     });
 
-    if (getUpgradeResults(automigrationResults, doctorResults).failedProjects.length > 0) {
+    // A dry run fails where a run would: on the automigrations it predicts would fail.
+    if (
+      getUpgradeResults(automigrationResults, doctorResults).failedProjects.length > 0 ||
+      (options.dryRun && someAutomigrationWouldFail(automigrationResults))
+    ) {
       throw new HandledError(
         options.dryRun
-          ? 'Some automigration checks failed. Review the upgrade output.'
+          ? 'Some automigrations would fail or skip files. Review the upgrade output.'
           : 'Some automigrations failed or skipped files. Review the upgrade output.'
       );
     }

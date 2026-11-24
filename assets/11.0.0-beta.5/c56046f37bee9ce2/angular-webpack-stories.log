@@ -1,0 +1,5 @@
+Browser console (level error, upgraded dev server, port 6006), after navigating to documentation-icons--status-icons and clicking Bitwarden Objects, Actions, Directional Menu Indicators in the sidebar:
+[ERROR] Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector (github.com brand logo, external image; blocked by browser sandbox)
+[ERROR] Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector (rsms.me inter.css, external font; blocked by browser sandbox)
+No NG0205 and no "Injector has already been destroyed" message in the console after 3 story switches.
+Warnings seen earlier: NG0914 zoneless warning, NG0408 provideZoneChangeDetection warning (not the checked errors).

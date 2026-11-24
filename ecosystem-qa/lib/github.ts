@@ -129,6 +129,7 @@ export const Discussion = z.object({
   title: z.string(),
   body: z.string(),
   author: Actor,
+  authorAssociation: z.string(),
   editor: Actor,
 });
 export type Discussion = z.infer<typeof Discussion>;
@@ -180,7 +181,7 @@ export const discussionPlace = (repo: string, category: string): DiscussionPlace
     category
   );
 
-const DISCUSSIONS_QUERY = `query($owner:String!,$name:String!,$category:ID!,$endCursor:String){repository(owner:$owner,name:$name){discussions(first:100,categoryId:$category,after:$endCursor){pageInfo{hasNextPage endCursor} nodes{id number url title body ${ACTORS}}}}}`;
+const DISCUSSIONS_QUERY = `query($owner:String!,$name:String!,$category:ID!,$endCursor:String){repository(owner:$owner,name:$name){discussions(first:100,categoryId:$category,after:$endCursor){pageInfo{hasNextPage endCursor} nodes{id number url title body authorAssociation ${ACTORS}}}}}`;
 
 const DiscussionPages = z.array(
   z.object({

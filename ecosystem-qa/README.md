@@ -204,13 +204,7 @@ It refuses a plan that fails `check` with that window, and it creates nothing on
 node ecosystem-qa/qa-plan.ts manual ecosystem-qa/plans/11.0.md --window ecosystem-qa/plans/11.0.window.json --out manual.md
 ```
 
-A maintainer turns it into an issue with one command:
-
-```sh
-gh issue create --repo storybookjs/storybook --title "Manual QA for Storybook 11.0 at 11.0.0-beta.3" --body-file manual.md
-```
-
-Never put the label `internal-qa` on that issue: `collect.ts` reads every issue with that label as a finding of the sweep.
+Merging the plan into `qa/plans` creates a discussion of this checklist, as [Sweep a plan from `qa/plans`](#sweep-a-plan-from-qaplans) describes.
 
 `diff` prints what differs between a plan before a change and after it, with the window of both: each PR whose place changed, the entries removed, added, and changed, the discovered repos removed and added, and the manual checks and the reasons for no QA removed and added, each with its PRs.
 A place is the kind of decision and the entries or the group that hold the PR, so a reworded check or reason moves no PR and shows as one removed and one added.
@@ -391,11 +385,32 @@ Two requests over the same findings can group a borderline pair differently, so 
 ### Sweep a plan from `qa/plans`
 
 A plan that is merged into the branch `qa/plans` starts its sweep, and each batch starts the next one once its numbers are in the tracking discussion.
+The same push creates the plan's manual QA discussion.
 
 ```text
 push to qa/plans ──> plan job ─────────> runner jobs ──────> collect ──> track ──> gh workflow run
                      plan.ts --push      one per repo and               track.ts   batch n+1, same
                      plan.ts --outputs   part, tier gate                           plan_hash
+                          │
+                          └────────────> manual-discussion job: manual-discussion.ts,
+                                         one discussion per plan hash in "QA sweeps"
+```
+
+The `manual-discussion` job creates the discussion `[SB 11 QA] Manual QA for Storybook 11.0 at 11.0.0-beta.3` in the category `QA sweeps`, next to the sweep's tracking discussion.
+A discussion is never read as a finding and stays out of every issue search.
+Its body starts with the hidden line `<!-- sb-qa-manual <hash> 11.0.md -->`, then holds the checklist that `qa-plan.ts manual` prints, and ends with a link to the plan at the pushed commit and the title of the sweep's discussion.
+It runs only for a push that adds or changes a plan, with `discussions: write`, no environment, and no secret, and no other job waits for it, so the sweep and the discussion fail apart.
+It creates nothing when a discussion of the plan's hash exists in that category whose first line is that hidden line and whose author is the workflow or an owner, member, or collaborator of the repository, since anyone can open a discussion with that line.
+It never edits a discussion, because people tick its boxes.
+A plan without manual checks gets no discussion, and the job says so in a notice.
+GitHub publishes no limit for the body of a discussion, so a checklist longer than the 65536 characters it takes as an issue body fails the job with both sizes.
+When the manual QA discussion exists by the time the first batch creates the tracking discussion, the tracking discussion names it.
+
+To see what the job would do without writing, run it with `--print` on the plan and its window:
+
+```sh
+node ecosystem-qa/manual-discussion.ts --print --plan ecosystem-qa/plans/11.0.md \
+  --window ecosystem-qa/plans/11.0.window.json --repo storybookjs/storybook --commit "$(git rev-parse HEAD)"
 ```
 
 A maintainer sets up three things once, before the first plan is merged:

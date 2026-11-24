@@ -1,0 +1,13 @@
+diff --git a/src/components/AnimatedIllustration/AnimatedIllustration.tsx b/src/components/AnimatedIllustration/AnimatedIllustration.tsx
+index b5aff07..ed4d700 100644
+--- a/src/components/AnimatedIllustration/AnimatedIllustration.tsx
++++ b/src/components/AnimatedIllustration/AnimatedIllustration.tsx
+@@ -31,7 +31,7 @@ export const AnimatedIllustration = ({ animation }: AnimatedIllustrationProps) =
+ 
+   return (
+     <span className="chromatic-ignore">
+-      <Lottie style={{ minHeight: 450, maxWidth: 450 }} play loop animationData={animationData} />
++      <Lottie style={{ minHeight: 450, maxWidth: 440 }} play loop animationData={animationData} />
+     </span>
+   )
+ }

@@ -43,8 +43,8 @@ export async function assertReactNativeOnDevicePeers(
           return null;
         }
         // A failed lookup skips the check and leaves the outcome to the install itself.
-        const peers = await packageManager.getPublishedPeerDependencies(packageName, version);
-        const storybookPeer = peers?.storybook;
+        const manifest = await packageManager.getPublishedManifest(packageName, version);
+        const storybookPeer = manifest?.peerDependencies.storybook;
         if (!storybookPeer || onDevicePeerAllowsCli(cliVersion, storybookPeer)) {
           return null;
         }

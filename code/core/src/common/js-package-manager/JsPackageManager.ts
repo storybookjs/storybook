@@ -782,27 +782,6 @@ export abstract class JsPackageManager {
   }
 
   /**
-   * Get the `peerDependencies` of a published package version. The lookup runs through the
-   * package manager, so the user's registry, auth, proxy, and certificate settings apply.
-   *
-   * @param packageName Name of the package
-   * @param version Exact version to read
-   * @returns The peer dependencies, an empty object if there are none, or `null` if the lookup
-   *   failed
-   */
-  public async getPublishedPeerDependencies(
-    packageName: string,
-    version: string
-  ): Promise<Record<string, string> | null> {
-    try {
-      return (await this.runGetPeerDependencies(`${packageName}@${version}`)) ?? {};
-    } catch (e) {
-      logger.debug(`Failed to fetch the peer dependencies of ${packageName}@${version}: ${e}`);
-      return null;
-    }
-  }
-
-  /**
    * Get the manifest of a published package version, or of its `latest` version when no version
    * is given. The lookup runs through the package manager, so the user's registry, auth, proxy,
    * and certificate settings apply. Returns `null` if the lookup failed.
@@ -930,15 +909,6 @@ export abstract class JsPackageManager {
     fetchAllVersions: T
   ): // Use generic and conditional type to force `string[]` if fetchAllVersions is true and `string` if false
   Promise<T extends true ? string[] : string>;
-
-  /**
-   * Read the `peerDependencies` field of a published package version from the registry
-   *
-   * @param packageSpec Package name and exact version, e.g. `storybook@11.0.0`
-   */
-  protected abstract runGetPeerDependencies(
-    packageSpec: string
-  ): Promise<Record<string, string> | undefined>;
 
   /** Read the manifest of a published package version, or of `latest` for a bare package name */
   protected abstract runGetPublishedManifest(packageSpec: string): Promise<unknown>;

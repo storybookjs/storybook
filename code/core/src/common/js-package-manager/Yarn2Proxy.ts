@@ -383,20 +383,6 @@ export class Yarn2Proxy extends JsPackageManager {
     }
   }
 
-  protected async runGetPeerDependencies(
-    packageSpec: string
-  ): Promise<Record<string, string> | undefined> {
-    const result = await this.runInternalCommand(
-      'npm',
-      ['info', packageSpec, '--fields', 'peerDependencies', '--json'],
-      undefined,
-      'pipe'
-    );
-    const output = typeof result.stdout === 'string' ? result.stdout : '';
-    // `peerDependencies` is missing when the version has none.
-    return JSON.parse(output).peerDependencies;
-  }
-
   protected runGetPublishedManifest(packageSpec: string): Promise<unknown> {
     return this.queryNpmPackageInfo(packageSpec);
   }

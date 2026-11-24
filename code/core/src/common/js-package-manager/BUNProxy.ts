@@ -399,20 +399,6 @@ export class BUNProxy extends JsPackageManager {
     }
   }
 
-  protected async runGetPeerDependencies(
-    packageSpec: string
-  ): Promise<Record<string, string> | undefined> {
-    const result = await executeCommand({
-      command: 'npm',
-      cwd: this.cwd,
-      args: ['info', packageSpec, 'peerDependencies', '--json'],
-      stdio: 'pipe',
-    });
-    // npm prints nothing when the version has no peer dependencies.
-    const output = typeof result.stdout === 'string' ? result.stdout.trim() : '';
-    return output ? JSON.parse(output) : undefined;
-  }
-
   protected async runGetPublishedManifest(packageSpec: string): Promise<unknown> {
     const result = await executeCommand({
       command: 'npm',

@@ -2,10 +2,12 @@
 import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { FC, PropsWithChildren } from 'react';
+import type { FC, PropsWithChildren, ReactElement } from 'react';
 import React, { Profiler, StrictMode, createElement } from 'react';
 
 import PropTypes from 'prop-types';
+// @ts-expect-error (the ESM build has no types; jsxDecorator imports it the same way)
+import reactElementToJSXString from 'react-element-to-jsx-string/dist/esm/index.js';
 import { addons, emitTransformCode, useState } from 'storybook/preview-api';
 
 import type { StoryContext } from 'storybook/internal/types';
@@ -337,6 +339,61 @@ describe('renderJsx', () => {
         hidden={false}
       />
     `);
+  });
+
+  // React 18 keeps `ref` on the element, not in props. Lock that output so the React 19 fix
+  // below does not change it.
+  it('renders refs on top-level and nested elements', () => {
+    const ref = React.createRef<HTMLDivElement>();
+    expect(renderJsx(<div ref={ref} title="hello" />, {})).toMatchInlineSnapshot(`
+      <div
+        ref={{
+          current: '[Circular]'
+        }}
+        title="hello"
+      />
+    `);
+    expect(
+      renderJsx(
+        <section>
+          <div ref={ref}>nested</div>
+        </section>,
+        {}
+      )
+    ).toMatchInlineSnapshot(`
+      <section>
+        <div
+          ref={{
+            current: '[Circular]'
+          }}
+        >
+          nested
+        </div>
+      </section>
+    `);
+  });
+
+  // React 19 moved `ref` into `element.props.ref` and turned `element.ref` into a getter that logs
+  // "Accessing element.ref was removed in React 19". The stringifier is patched to prefer
+  // `props.ref`. This suite runs React 18, so build a React-19-shaped element and pass it straight
+  // to the stringifier: React 18's own `Children` helpers would read `element.ref` themselves.
+  it('reads ref from props without touching the React 19 element.ref getter', () => {
+    const ref = React.createRef<HTMLDivElement>();
+    const refGetter = vi.fn(() => ref);
+    const element = {
+      $$typeof: Symbol.for('react.element'),
+      type: 'div',
+      key: null,
+      props: { ref, title: 'hello' },
+      _owner: null,
+    };
+    Object.defineProperty(element, 'ref', { enumerable: false, get: refGetter });
+
+    const output = reactElementToJSXString(element as unknown as ReactElement);
+
+    expect(refGetter).not.toHaveBeenCalled();
+    expect(output).toContain('ref={{');
+    expect(output).toContain('title="hello"');
   });
 });
 

@@ -32,6 +32,13 @@ import { shipsSandcastleFiles } from './lib/clone-guard.ts';
 import { cycleBranchName, cycleRepo, versionLine } from './lib/cycle.ts';
 import { runFake } from './lib/fake-run.ts';
 import { outputOf, watchHost, type Report } from './lib/host-watch.ts';
+import {
+  credentialFor,
+  proxyTheKey,
+  sandboxAddresses,
+  type Credential,
+  type ProxiedKey,
+} from './lib/key-proxy.ts';
 import { forJobLog, liveLine } from './lib/live-log.ts';
 import { memoryGuard } from './lib/memory-guard.ts';
 import { CHECKOUT_GUIDE, guideFor } from './lib/migration-guide.ts';
@@ -90,13 +97,6 @@ the result records fake: true and costs $0.`;
 const DEFAULT_MODEL: Record<Engine, string> = {
   claude: 'claude-haiku-5-5',
   codex: 'gpt-6.1-sol',
-};
-
-// The first variable that is set wins. CLAUDE_CODE_OAUTH_TOKEN (from `claude setup-token`) bills a
-// subscription, for local runs; CI passes the API key.
-const CREDENTIAL_ENV: Record<Engine, string[]> = {
-  claude: ['ANTHROPIC_API_KEY', 'CLAUDE_CODE_OAUTH_TOKEN'],
-  codex: ['CODEX_API_KEY'],
 };
 
 const INSTALL_LIMIT_SECONDS = 25 * 60;
@@ -424,14 +424,12 @@ const planSandbox = (
   }
 };
 
-const agentFor = (request: RunRequest, agentEnv: Record<string, string>) => {
-  const names = CREDENTIAL_ENV[request.engine];
-  const keyName =
-    names.find((name) => process.env[name]) ?? fail(`None of ${names.join(', ')} is set.`);
-  const options = {
-    effort: request.effort,
-    env: { ...agentEnv, [keyName]: process.env[keyName]! },
-  };
+const agentFor = (
+  request: RunRequest,
+  agentEnv: Record<string, string>,
+  credential: Record<string, string>
+) => {
+  const options = { effort: request.effort, env: { ...agentEnv, ...credential } };
   return request.engine === 'claude'
     ? claudeCode(request.model, options)
     : codex(request.model, options);
@@ -486,9 +484,10 @@ const recordOf = (
   }
 };
 
-// What the readings of the machine need to know about a run while it goes on.
+// What the readings of the machine and the close need to know about a run while it goes on.
 interface Progress {
   sandbox?: Sandbox;
+  keyProxy?: ProxiedKey;
   agentStarted: boolean;
 }
 
@@ -532,6 +531,7 @@ interface AgentRun {
   progress: Progress;
   checklist: Checklist;
   target: ReturnType<typeof upgradeTarget>;
+  credential: Credential;
 }
 
 // Run the agent and have its answer repaired. When the run reaches its hard stop, or the agent
@@ -548,12 +548,44 @@ const runAgent = async ({
   progress,
   checklist,
   target,
+  credential,
 }: AgentRun): Promise<{ ending: Ending; sessionSource?: string }> => {
   const { packageManager, storybookDir, repo } = request.entry;
   const { checks, answerSchema } = checklist;
   // The same signal goes to every repair turn, so the stop is one moment for the whole run.
   const hardStop = AbortSignal.timeout(msUntilHardStop(startedAt, budget));
-  const agent = agentFor(request, plan.agentEnv);
+  const note = (line: string) => {
+    console.log(line);
+    appendFileSync(logFile, `${line}\n`);
+  };
+  if (credential.proxied) {
+    const addresses = sandboxAddresses(
+      await outputOf('docker', ['inspect', sandbox.sandboxId ?? ''])
+    );
+    progress.keyProxy = await proxyTheKey(credential.value, {
+      host: addresses.gateway,
+      callerAddress: addresses.container,
+      upstreamOrigin: 'https://api.anthropic.com',
+      log: note,
+    });
+  }
+  const keyProxy = progress.keyProxy;
+  const agent = agentFor(
+    request,
+    plan.agentEnv,
+    keyProxy?.agentEnv ?? { [credential.name]: credential.value }
+  );
+  if (keyProxy) {
+    const { stdout } = await within(60, 'Reading the sandbox environment', sandbox.exec('env'));
+    if (keyProxy.reaches(stdout, agent)) {
+      throw new Error(
+        'The environment of the sandbox or the variables Sandcastle exports for the agent hold the provider key, so the run stops here.'
+      );
+    }
+    note(
+      'Neither the environment of the sandbox nor the variables Sandcastle exports for the agent hold the provider key.'
+    );
+  }
   const name = `${request.entry.id}-${request.os}-${request.engine}`;
   let sessionId: string | undefined;
   let sessionSource: string | undefined;
@@ -738,6 +770,10 @@ const runSandcastle = async (
   budget: RunBudget,
   checklist: Checklist
 ): Promise<Outcome> => {
+  const credential = credentialFor(request, process.env);
+  if (typeof credential === 'string') {
+    return fail(credential);
+  }
   const evidenceDir = join(request.outDir, 'evidence');
   writeFileSync(join(evidenceDir, 'budget.json'), budgetRecord(startedAt, budget));
   const target = upgradeTarget(request, request.entry.packageManager);
@@ -790,11 +826,13 @@ const runSandcastle = async (
       progress,
       checklist,
       target,
+      credential,
     });
   } catch (error) {
     ran = { ending: { kind: 'failed', error: String(error) } };
   } finally {
     watch.stop();
+    progress.keyProxy?.close();
     await closeRun(request, progress.sandbox);
     await new Promise((done) => stream.end(done));
   }

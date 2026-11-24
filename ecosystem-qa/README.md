@@ -366,6 +366,18 @@ Start the `Ecosystem QA` workflow by hand and pick the repos, version, engines a
 `plan.ts` turns the inputs into one job for each repo, operating system and engine, and a repo runs on Windows only when the catalog marks it `windows`.
 Linux runs the agent in `docker()`; Windows runs it with `noSandbox()`, and the API key is the only secret in that job.
 The agent keys live in the `ecosystem-qa` environment, and the push token in `ecosystem-qa-file`, which only the filing job enters.
+
+A Claude Code run in the Docker sandbox on Linux with `ANTHROPIC_API_KEY` keeps the key out of the sandbox.
+`run.ts` starts a proxy on the gateway of Docker's default bridge, gives the agent that address as `ANTHROPIC_BASE_URL` and a placeholder as its key, and puts the real key on each request it forwards to the Anthropic API.
+`run.ts` deletes the key from its own environment as soon as it reads it, before the sandbox exists, so neither the docker CLI that runs the project install nor any other process it starts inherits it.
+The proxy forwards only `POST /v1/messages` and `POST /v1/messages/count_tokens`, answers only the sandbox container's address, and writes one line for each request that Node's HTTP parser accepts, with method, path and status, or `closed by the caller` when the caller goes away first, to the job log and to `run.log`.
+Before the agent starts, the runner reads the environment of the sandbox and the variables that Sandcastle exports in front of the agent's command, ends the run when the real key is in either, and writes `Neither the environment of the sandbox nor the variables Sandcastle exports for the agent hold the provider key.` otherwise.
+Where the Docker daemon runs in a VM, as Docker Desktop does on Linux too, the bridge gateway is no address of the host, so the proxy cannot listen there and the run ends with an error that says so.
+Every other run still hands the real key to the agent: Codex, any run on macOS or on Windows (the Windows cells run without a sandbox), a run on Linux in bwrap or without a sandbox, and a run with `CLAUDE_CODE_OAUTH_TOKEN` and no `ANTHROPIC_API_KEY`.
+The proxy limits where the key goes, not what it spends.
+Any code in the sandbox, the project's install scripts and tests included, can send requests on the real key to those two paths for as long as the run lasts, with any model and any body, and the harness does not count that spend.
+The backstop is a spend limit on the key's workspace at the provider, which only the owner of the key can set.
+The `Reach the key proxy from the sandbox` job of a pull request checks on the runner image of the agent job that a container on the default bridge gets through the proxy to a stand-in for the provider.
 Each runner uploads `qa-result-<id>-<os>-<engine>`, or `qa-result-<id>-<os>-<engine>-part-<n>` with its results under `part-<n>` for a job of a plan with a part, with `result.json`, the run log, the raw agent stream, the session, the evidence and the cycle branch bundle.
 `run.ts` writes the status, wall time, tokens, dollars, free disk and every check to the Step Summary.
 The workflow keeps these artifacts, `qa-earlier-results` and `qa-proposals` 90 days, the most that a public repository allows, so the session of a finding outlives a bug bash. An artifact keeps the retention it was uploaded with.

@@ -755,7 +755,7 @@ const source = (csfExport: string) => {
   `;
   const csf = loadCsf(code, { makeTitle: (userTitle) => userTitle }).parse();
   const exportNode = Object.values(csf._storyExports)[0];
-  return extractSource(exportNode, csf.editor);
+  return extractSource(exportNode, csf._code, csf.editor);
 };
 
 describe('extractSource', () => {
@@ -800,6 +800,14 @@ describe('extractSource', () => {
       `)
     ).toMatchInlineSnapshot(`() => <Button />`);
   });
+  it.each(['as', 'satisfies'])('resolves an exported alias wrapped in TypeScript %s', (wrapper) => {
+    expect(
+      source(dedent`
+        const ParagraphStory = () => <Button />;
+        export const Basic = ParagraphStory ${wrapper} StoryFn;
+      `)
+    ).toMatchInlineSnapshot(`() => <Button />`);
+  });
   it.each(['as', 'satisfies'])('resolves a function alias wrapped in TypeScript %s', (wrapper) => {
     expect(
       source(dedent`
@@ -839,6 +847,13 @@ describe('extractSource', () => {
       `)
     ).toMatchInlineSnapshot(`ParagraphStory`);
   });
+  it.each(['as', 'satisfies'])('preserves wrapped unresolved identifiers for %s', (wrapper) => {
+    expect(
+      source(dedent`
+        export const Basic = MissingStory ${wrapper} StoryFn;
+      `)
+    ).toBe(`MissingStory ${wrapper} StoryFn`);
+  });
   it('keeps mutable local identifiers as written', () => {
     expect(
       source(dedent`
@@ -856,6 +871,14 @@ describe('extractSource', () => {
       `)
     ).toMatchInlineSnapshot(`ParagraphStory`);
   });
+  it.each(['as', 'satisfies'])('preserves wrapped non-function aliases for %s', (wrapper) => {
+    expect(
+      source(dedent`
+        const StoryConfig = { args: { label: 'text' } };
+        export const Basic = StoryConfig ${wrapper} StoryFn;
+      `)
+    ).toBe(`StoryConfig ${wrapper} StoryFn`);
+  });
   it('stops circular local aliases', () => {
     expect(
       source(dedent`
@@ -864,6 +887,16 @@ describe('extractSource', () => {
         export const Basic = First;
       `)
     ).toMatchInlineSnapshot(`First`);
+  });
+  it('supports the existing two-argument API', () => {
+    const code = dedent`
+      export default { title: 'Button' };
+      export const Basic = () => <Button />;
+    `;
+    const csf = loadCsf(code, { makeTitle: (userTitle) => userTitle }).parse();
+    const exportNode = Object.values(csf._storyExports)[0];
+
+    expect(extractSource(exportNode, csf._code)).toBe('() => <Button />');
   });
   it('csf3', () => {
     expect(

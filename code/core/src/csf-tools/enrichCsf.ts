@@ -1,7 +1,7 @@
 import { type CsfEnricher } from 'storybook/internal/types';
 
 import type { CsfFile } from './CsfFile.ts';
-import { type E, type Node, isFunction, staticKey, unwrapExpression } from './estree/ast.ts';
+import { type E, type Node, isFunction, staticKey } from './estree/ast.ts';
 import {
   type SourceEditor,
   appendMembers,
@@ -9,6 +9,7 @@ import {
   prependMembers,
   triviaBefore,
 } from './estree/editor.ts';
+import { resolveLocalStory } from './story-shape/utils.ts';
 
 export interface EnrichCsfOptions {
   disableSource?: boolean;
@@ -23,7 +24,8 @@ export const enrichCsfStory = (
   options?: EnrichCsfOptions
 ) => {
   const storyExport = csfSource.getStoryExport(key);
-  const source = !options?.disableSource && extractSource(storyExport, csfSource.editor);
+  const source =
+    !options?.disableSource && extractSource(storyExport, csfSource.editor.code, csfSource.editor);
   const description =
     !options?.disableDescription &&
     extractDescription(csfSource._storyStatements[key], csfSource.editor);
@@ -119,32 +121,11 @@ export const enrichCsf = async (csf: CsfFile, csfSource: CsfFile, options?: Enri
 };
 
 // The story's source text, following constant local aliases to function initializers.
-export const extractSource = (node: Node, editor: SourceEditor) => {
+export const extractSource = (node: Node, code: string, editor?: SourceEditor) => {
   const source = node?.type === 'VariableDeclarator' ? node.init : node;
-  let resolved = source;
-  const visited = new Set<string>();
-
-  while (resolved?.type === 'Identifier' && !visited.has(resolved.name)) {
-    const name = resolved.name;
-    const binding = editor.scopes.program.bindings.get(name);
-    if (!binding?.constant) {
-      break;
-    }
-    visited.add(name);
-    if (binding.node.type === 'VariableDeclarator') {
-      if (binding.node.id.type !== 'Identifier') {
-        break;
-      }
-      resolved = unwrapExpression(binding.node.init);
-    } else if (binding.node.type === 'FunctionDeclaration') {
-      resolved = binding.node;
-    } else {
-      break;
-    }
-  }
-
+  const resolved = source && editor ? resolveLocalStory(editor, source) : source;
   const src = isFunction(resolved) ? resolved : source;
-  return src ? editor.code.slice(src.start, src.end) : '';
+  return src ? code.slice(src.start, src.end) : '';
 };
 
 const leadingComments = (node: Node | undefined, editor: SourceEditor) => {

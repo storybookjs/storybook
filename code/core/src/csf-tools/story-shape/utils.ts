@@ -1,12 +1,6 @@
 import type { CsfFile } from '../CsfFile.ts';
-import {
-  type E,
-  type Node,
-  isFunction,
-  isStringLiteral,
-  staticKey,
-  unwrapExpression,
-} from '../estree/ast.ts';
+import { type E, type Node, isFunction, staticKey } from '../estree/ast.ts';
+import type { SourceEditor } from '../estree/editor.ts';
 
 export {
   csfFactoryReceiver,
@@ -128,6 +122,45 @@ export function resolveIdentifierInit(
   }
 
   return null;
+}
+
+type StoryDeclarationExpression = E.Function | E.Expression;
+
+export function resolveLocalStory(
+  editor: SourceEditor,
+  expression: StoryDeclarationExpression
+): StoryDeclarationExpression;
+export function resolveLocalStory(editor: SourceEditor, expression: Node): Node;
+export function resolveLocalStory(editor: SourceEditor, expression: Node): Node {
+  const visited = new Set<string>();
+  let current = unwrapStoryTypeExpression(expression);
+
+  while (current.type === 'Identifier') {
+    const { name } = current;
+    if (visited.has(name) || !editor.scopes.program.bindings.get(name)?.constant) {
+      break;
+    }
+    visited.add(name);
+    const resolved = resolveIdentifierInit(editor.program, name);
+    if (!resolved) {
+      break;
+    }
+    current = unwrapStoryTypeExpression(resolved);
+  }
+
+  return current;
+}
+
+export function unwrapStoryTypeExpression(
+  node: StoryDeclarationExpression
+): StoryDeclarationExpression;
+export function unwrapStoryTypeExpression(node: Node): Node;
+export function unwrapStoryTypeExpression(node: Node): Node {
+  if (node.type === 'TSSatisfiesExpression' || node.type === 'TSAsExpression') {
+    return node.expression;
+  }
+
+  return node;
 }
 
 /** Object literal of the parsed CSF default meta, when it is part of the file. */

@@ -1,6 +1,12 @@
 import { type E, type Node, codeFrame } from '../estree/ast.ts';
 import type { SourceEditor } from '../estree/editor.ts';
-import { isCanonicalCsf2BindCall, isCsfFactoryCall, resolveIdentifierInit } from './utils.ts';
+import {
+  isCanonicalCsf2BindCall,
+  isCsfFactoryCall,
+  resolveIdentifierInit,
+  resolveLocalStory,
+  unwrapStoryTypeExpression,
+} from './utils.ts';
 
 export type NormalizedStoryDeclaration =
   | { type: 'config'; node: E.ObjectExpression }
@@ -33,33 +39,9 @@ export function normalizeStoryDeclaration(
   const storyNode = resolveLocalStory(editor, declarationExpression(storyDeclaration, editor));
   const resolvedBind = bindInitializer(editor, storyNode);
   const normalized = resolvedBind ?? factoryArgumentExpression(storyNode, editor);
-  const unwrapped = unwrapTypeExpression(normalized);
+  const unwrapped = unwrapStoryTypeExpression(normalized);
 
   return classifyStory(unwrapped, editor);
-}
-
-/** Follows a chain of constant local aliases (`export const A = Impl`) to the story they name. */
-function resolveLocalStory(
-  editor: SourceEditor,
-  expression: StoryDeclarationExpression
-): StoryDeclarationExpression {
-  const visited = new Set<string>();
-  let current = unwrapTypeExpression(expression);
-
-  while (current.type === 'Identifier') {
-    const { name } = current;
-    if (visited.has(name) || !editor.scopes.program.bindings.get(name)?.constant) {
-      break;
-    }
-    visited.add(name);
-    const resolved = resolveIdentifierInit(editor.program, name);
-    if (!resolved) {
-      break;
-    }
-    current = unwrapTypeExpression(resolved);
-  }
-
-  return current;
 }
 
 /** Declaration body that can be classified as a story shape. */
@@ -119,14 +101,6 @@ function factoryArgumentExpression(
   }
 
   return args[0];
-}
-
-function unwrapTypeExpression(storyNode: StoryDeclarationExpression): StoryDeclarationExpression {
-  if (storyNode.type === 'TSSatisfiesExpression' || storyNode.type === 'TSAsExpression') {
-    return storyNode.expression;
-  }
-
-  return storyNode;
 }
 
 function classifyStory(

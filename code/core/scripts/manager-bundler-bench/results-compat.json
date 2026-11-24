@@ -1,0 +1,72 @@
+{
+  "css-plain.js": {
+    "esbuild": "{\"plain\":\"yes\"} (stylesheet file)",
+    "rolldown": "{\"plain\":\"yes\"} (stylesheet file)",
+    "pr37448": "{\"plain\":\"yes\"} (style element)"
+  },
+  "css-import.js": {
+    "esbuild": "{\"main\":\"yes\",\"dep\":\"yes\"} (stylesheet file)",
+    "rolldown": "{\"main\":\"yes\",\"dep\":\"yes\"} (stylesheet file)",
+    "pr37448": "{\"main\":\"yes\",\"dep\":\"yes\"} (style element)"
+  },
+  "css-url.js": {
+    "esbuild": "{\"background\":\"url(\\\"data:image/png;\"} (stylesheet file)",
+    "rolldown": "{\"background\":\"url(\\\"data:image/png;\"} (stylesheet file)",
+    "pr37448": "{\"background\":\"url(\\\"data:image/png;\"} (style element)"
+  },
+  "css-order.js": {
+    "esbuild": "{\"order\":\"second\"} (stylesheet file)",
+    "rolldown": "{\"order\":\"second\"} (stylesheet file)",
+    "pr37448": "{\"order\":\"second\"} (style element)"
+  },
+  "css-modules.js": {
+    "esbuild": "{\"type\":\"string\",\"width\":\"123px\"} (stylesheet file)",
+    "rolldown": "{\"type\":\"string\",\"width\":\"123px\"} (stylesheet file)",
+    "pr37448": "build fails"
+  },
+  "css-modules-named.js": {
+    "esbuild": "{\"type\":\"string\",\"width\":\"123px\"} (stylesheet file)",
+    "rolldown": "{\"type\":\"string\",\"width\":\"123px\"} (stylesheet file)",
+    "pr37448": "build fails"
+  },
+  "css-composes.js": {
+    "esbuild": "{\"width\":\"5px\",\"height\":\"7px\"} (stylesheet file)",
+    "rolldown": "{\"width\":\"5px\",\"height\":\"7px\"} (stylesheet file)",
+    "pr37448": "build fails"
+  },
+  "decorator.ts": {
+    "esbuild": "{\"result\":\"decorated\"}",
+    "rolldown": "entry fails in the browser: Invalid or unexpected token",
+    "pr37448": "entry fails in the browser: Invalid or unexpected token"
+  },
+  "accessor.ts": {
+    "esbuild": "{\"x\":1}",
+    "rolldown": "entry fails in the browser: Unexpected identifier 'x'",
+    "pr37448": "entry fails in the browser: Unexpected identifier 'x'"
+  },
+  "ns-merge.ts": {
+    "esbuild": "{\"y\":2}",
+    "rolldown": "entry fails in the browser: ReferenceError: x is not defined",
+    "pr37448": "entry fails in the browser: ReferenceError: x is not defined"
+  },
+  "dual-require.js": {
+    "esbuild": "{\"type\":\"function\"}",
+    "rolldown": "{\"type\":\"object\"}",
+    "pr37448": "{\"type\":\"object\"}"
+  },
+  "const-cycle.js": {
+    "esbuild": "{\"b\":\"B:undefined\"}",
+    "rolldown": "{\"b\":\"B:undefined\"}",
+    "pr37448": "entry fails in the browser: ReferenceError: Cannot access 'a' before initialization"
+  },
+  "cjs-return.js": {
+    "esbuild": "{\"keys\":\"before\"}",
+    "rolldown": "{\"keys\":\"before\"}",
+    "pr37448": "{\"keys\":\"before\"}"
+  },
+  "umd.js": {
+    "esbuild": "{\"viaImport\":\"umd\",\"viaGlobal\":\"undefined\"}",
+    "rolldown": "{\"viaImport\":\"umd\",\"viaGlobal\":\"undefined\"}",
+    "pr37448": "{\"viaImport\":\"umd\",\"viaGlobal\":\"undefined\"}"
+  }
+}

@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 
 import type { BuildOptions, BuildResult, OutputFile } from 'esbuild';
-import { dirname, join, relative } from 'pathe';
+import { dirname, extname, join, relative } from 'pathe';
 import type { InputOptions, ModuleTypes, OutputOptions, Plugin } from 'rolldown';
 
 import { globalsModuleInfoMap } from '../manager/globals/globals-module-info.ts';
@@ -45,14 +45,78 @@ const globalExternalsPlugin = (): Plugin => ({
   },
 });
 
-/** Collects imported CSS files, which Rolldown refuses to bundle itself. */
-const cssPlugin = (collected: string[]): Plugin => ({
+const MIME_TYPES: Record<string, string> = {
+  '.png': 'image/png',
+  '.gif': 'image/gif',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.svg': 'image/svg+xml',
+  '.webp': 'image/webp',
+  '.webm': 'video/webm',
+  '.mp3': 'audio/mpeg',
+  '.woff2': 'font/woff2',
+  '.woff': 'font/woff',
+  '.eot': 'application/vnd.ms-fontobject',
+  '.ttf': 'font/ttf',
+};
+
+const isIdentifier = (name: string) => /^[A-Za-z_$][\w$]*$/.test(name);
+
+/**
+ * Bundles the stylesheets a manager entry imports with Lightning CSS, because Rolldown bundles no
+ * CSS. It keeps what esbuild's CSS bundling gives an entry: the `@import`s of a stylesheet are
+ * inlined, a `url()` of a local file with a `dataurl` loader becomes a data URL, and a
+ * `.module.css` file exports its class names. The text of each stylesheet is collected by module
+ * id, for the caller to join into the one stylesheet of the entry.
+ */
+const cssPlugin = (
+  collected: Map<string, string>,
+  dataUrlExtensions: Set<string>,
+  minify: boolean
+): Plugin => ({
   name: 'storybook-manager-css',
   load: {
     filter: { id: /\.css$/ },
     handler: async (id) => {
-      collected.push(await readFile(id, 'utf8'));
-      return { code: '', moduleType: 'js', moduleSideEffects: false };
+      const { bundleAsync } = await import('lightningcss');
+      const { code, exports, dependencies } = await bundleAsync({
+        filename: id,
+        cssModules: /\.module\.css$/.test(id),
+        analyzeDependencies: true,
+        minify,
+      });
+
+      let css = code.toString();
+      for (const dependency of dependencies ?? []) {
+        if (dependency.type !== 'url') {
+          continue;
+        }
+        const file = join(dirname(dependency.loc.filePath), dependency.url);
+        const extension = extname(file);
+        const isLocal = !/^(?:[a-z][a-z\d+.-]*:|\/|#)/i.test(dependency.url);
+        const url =
+          isLocal && dataUrlExtensions.has(extension)
+            ? `data:${MIME_TYPES[extension] ?? 'application/octet-stream'};base64,${(await readFile(file)).toString('base64')}`
+            : dependency.url;
+        css = css.replace(dependency.placeholder, url);
+      }
+      collected.set(id, css);
+
+      // A composed class brings the names it composes, as with esbuild's `local-css` loader
+      const classNames = Object.entries(exports ?? {}).map(
+        ([name, { name: local, composes }]) =>
+          [name, [local, ...composes.map((composed) => composed.name)].join(' ')] as const
+      );
+      return {
+        code: [
+          ...classNames
+            .filter(([name]) => isIdentifier(name))
+            .map(([name, value]) => `export const ${name} = ${JSON.stringify(value)};`),
+          `export default ${JSON.stringify(Object.fromEntries(classNames))};`,
+        ].join('\n'),
+        moduleType: 'js',
+        moduleSideEffects: 'no-treeshake',
+      };
     },
   },
 });
@@ -131,8 +195,8 @@ const toOutputFile = (path: string, text: string): OutputFile => ({
  *   emitted as written.
  * - `legalComments: 'external'` is not available; legal comments are dropped and no `.LEGAL.txt`
  *   files are produced.
- * - Rolldown does not bundle CSS. CSS imports are concatenated as-is, so `@import` and `url()` are
- *   not rewritten.
+ * - Rolldown does not bundle CSS, so Lightning CSS does. An `@import` of a URL, and a `url()` of a
+ *   file without a `dataurl` loader, are left as written where esbuild fails the build.
  * - A bare specifier that cannot be resolved is a warning in Rolldown and an error in esbuild.
  */
 export const buildWithRolldown = async (config: ManagerBuildOptions): Promise<BuildResult> => {
@@ -179,22 +243,33 @@ export const buildWithRolldown = async (config: ManagerBuildOptions): Promise<Bu
     banner: config.banner?.js,
     footer: config.footer?.js,
     intro: moduleDefine ? `var module = ${moduleDefine};` : undefined,
+    // esbuild declares top-level bindings with `var`, so a constant read early in an import cycle
+    // is `undefined` instead of an error
+    topLevelVar: true,
     minify: toMinify(config),
     sourcemap: Boolean(config.sourcemap),
     comments: { legal: false, annotation: true, jsdoc: false },
   };
 
   const outbase = getOutbase(config.entryPoints);
+  const dataUrlExtensions = new Set(
+    Object.entries(config.loader ?? {}).flatMap(([extension, loader]) =>
+      loader === 'dataurl' ? [extension] : []
+    )
+  );
 
   const outputs = await Promise.all(
     config.entryPoints.map(async (entry) => {
-      const css: string[] = [];
+      const css = new Map<string, string>();
       const name = relative(outbase, entry).replace(/\.[^./]+$/, '');
       const url = `./sb-addons/${name.split('/').map(encodeURIComponent).join('/')}.js`;
       const { output } = await build({
         ...inputOptions,
         input: entry,
-        plugins: [!nativeExternals && globalExternalsPlugin(), cssPlugin(css)],
+        plugins: [
+          !nativeExternals && globalExternalsPlugin(),
+          cssPlugin(css, dataUrlExtensions, Boolean(config.minify)),
+        ],
         output: {
           ...outputOptions,
           // Rolldown minifies the footer with the chunk and parses an `iife` chunk as a script,
@@ -210,8 +285,11 @@ export const buildWithRolldown = async (config: ManagerBuildOptions): Promise<Bu
       const files = output.flatMap((item) =>
         item.type === 'chunk' ? [toOutputFile(`${base}.js`, item.code)] : []
       );
-      if (css.length > 0) {
-        files.push(toOutputFile(`${base}.css`, css.join('\n')));
+      if (css.size > 0) {
+        // Stylesheets go into the entry's stylesheet in the order their modules run
+        const order = output.flatMap((item) => (item.type === 'chunk' ? item.moduleIds : []));
+        const ids = [...css.keys()].sort((a, b) => order.indexOf(a) - order.indexOf(b));
+        files.push(toOutputFile(`${base}.css`, ids.map((id) => css.get(id)).join('\n')));
       }
       return files;
     })

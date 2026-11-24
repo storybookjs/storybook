@@ -1,6 +1,6 @@
 import {
-  ASK_TO_RUN_OUTSIDE_SANDBOX,
   formatBlockedNetwork,
+  RERUN_OUTSIDE_SANDBOX,
   type BlockedNetwork,
 } from '../../../common/utils/blocked-network.ts';
 import type { StorybookInstanceRecord } from '../instances/types.ts';
@@ -44,7 +44,7 @@ export function formatConnectionBlocked(
   record: StorybookInstanceRecord,
   blocked: BlockedNetwork
 ): string {
-  return `Could not connect to the Storybook at ${record.url}. ${formatBlockedNetwork(blocked)} Do not start another Storybook; if this command cannot finish without that Storybook, ${ASK_TO_RUN_OUTSIDE_SANDBOX}`;
+  return `Could not connect to the Storybook at ${record.url}: ${formatBlockedNetwork(blocked)}. Do not start another Storybook. ${RERUN_OUTSIDE_SANDBOX}`;
 }
 
 export function formatConnectionFailed(record: StorybookInstanceRecord): string {
@@ -78,6 +78,10 @@ export function formatInstallationMismatch({
 
 export function formatUnknownInstallation(): string {
   return `Could not verify that the running Storybook and this CLI are the same \`storybook\` installation. ${RESTART_GUIDANCE}`;
+}
+
+export function formatRequiresAttach(command: string, failure: string): string {
+  return `\`${command}\` requires the running Storybook dev server, and attaching to it failed:\n\n${failure}`;
 }
 
 export function formatAttachFallback(remediation: string): string {

@@ -106,8 +106,9 @@ See [Load](../../shared/open-service/README.md#load).
 
 ## requiresDevServer and telemetry
 
-In local mode, `requiresDevServer` intercepts with start-your-Storybook guidance. In attached mode
-those methods run in the caller. `stories.preview` reads origin from the instance record.
+In local mode, `requiresDevServer` intercepts with start-your-Storybook guidance, or with the
+attach failure when `auto` found an instance and could not attach to it. In attached mode those
+methods run in the caller. `stories.preview` reads origin from the instance record.
 
 The CLI and the SDK fire one `tools-command` record per invocation after a run; help lookups are
 excluded so they cannot skew success rates. The record is the handler's usage report — `toolset`
@@ -126,7 +127,9 @@ consumer amortizes config load across many calls on the live synced runtime.
 ## End-to-end flow (attached)
 
 1. **Discover.** Read instance records from `$XDG_STATE_HOME/storybook/instances`, or
-   `~/.storybook/instances` when unset, both when they differ (pid-liveness-checked). Match by cwd /
+   `~/.storybook/instances` when unset, both when they differ (pid-liveness-checked; a record
+   whose process is not visible stays when connecting to its port gives `EPERM`, as inside a
+   sandbox with its own process namespace). Match by cwd /
    configDir — or, with `--port`, by port alone across all projects (the record supplies the
    project; an explicit `--config-dir` still restricts). Several matches → the invoking agent's
    bucket, then the most recently started; the siblings surface as a stderr warning naming

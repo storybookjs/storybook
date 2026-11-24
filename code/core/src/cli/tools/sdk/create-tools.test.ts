@@ -322,6 +322,25 @@ describe('createTools', () => {
     expect(fallback.fallbackNotice).toContain('port 9999');
   });
 
+  it('falls back without a notice when the connection to the instance failed', async () => {
+    vi.mocked(attach).mockRejectedValueOnce(
+      new AttachUnavailableError({
+        reason: 'connection-failed',
+        instances: [],
+        remediation: 'Could not connect to the Storybook at http://localhost:6006.',
+      })
+    );
+
+    const fallback = await createTools({}, { attach });
+
+    expect(fallback.mode).toBe('local');
+    expect(fallback.fallbackReason).toBe('connection-failed');
+    expect(fallback.fallbackNotice).toBeUndefined();
+    expect(fallback.attachFailure).toBe(
+      'Could not connect to the Storybook at http://localhost:6006.'
+    );
+  });
+
   it('runs a requiresDevServer method when attached', async () => {
     const attach = vi.fn(async () => ({
       runtime: makeRuntime(),
@@ -444,6 +463,7 @@ describe('createTools', () => {
     expect(fallback.host).toBe('in-process');
     expect(fallback.fallbackReason).toBe('no-instance');
     expect(fallback.fallbackNotice).toBeUndefined();
+    expect(fallback.attachFailure).toBeUndefined();
   });
 
   it('falls back to a local child host when auto cannot attach from another cwd', async () => {

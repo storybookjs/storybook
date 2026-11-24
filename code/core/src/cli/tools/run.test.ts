@@ -460,16 +460,24 @@ describe('requires-dev-server contract', () => {
     expect(result.output).toContain('--cwd');
   });
 
-  it('points at the attach failure when auto mode found an instance but could not attach', async () => {
+  it('states the attach failure itself when auto mode found an instance but could not attach', async () => {
+    const tools = makeLocalTools();
+    tools.requestedMode = 'auto';
+    tools.fallbackReason = 'old-server';
+    tools.attachFailure = 'Restart Storybook to enable attach.';
+    tools.fallbackNotice = `${tools.attachFailure}\n\nFalling back to loading this project's Storybook configuration.`;
     const { deps } = makeDeps({
+      createTools: vi.fn(async () => tools),
       discoverInstance: vi.fn(async () => ({ currentRecord: RECORD, records: [RECORD] })),
     });
 
     const result = await run(['review', 'create', '--input', '{}'], deps);
 
     expect(result.outcome).toEqual({ kind: 'intercept', reason: 'requires-dev-server' });
-    expect(result.output).toContain('could not attach to it, for the reason printed above.');
-    expect(result.output).not.toContain('Start or restart');
+    expect(result.output).toBe(
+      '`npx storybook tools review create` requires the running Storybook dev server, and attaching to it failed:\n\nRestart Storybook to enable attach.'
+    );
+    expect(result.fallbackNotice).toBeUndefined();
   });
 
   it('intercepts stories preview in local mode even when an instance is running', async () => {

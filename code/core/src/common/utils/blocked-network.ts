@@ -5,13 +5,15 @@ export type BlockedNetwork = {
   detail: string;
 };
 
-// A serialized error keeps only its message, which Node spells `<syscall> <code> …`. Only `EPERM`:
-// `EACCES` also comes from reserved and privileged ports, outside any sandbox.
-const BLOCKED_MESSAGE = /\b(listen|connect) EPERM\b[^\n]*/;
+// A serialized error keeps only its message, which Node spells `<syscall> <code> …`, for a connect
+// followed by ` - Local (<address>)`. Only `EPERM`: `EACCES` also comes from reserved and
+// privileged ports, outside any sandbox.
+const BLOCKED_MESSAGE = /\b(listen|connect) EPERM\b.*?(?= - Local \(|$)/m;
 
 /**
- * Recognize the error a sandbox, such as a coding agent's, gives for opening a port or connecting
- * to localhost, also as a `cause`, inside an `AggregateError`, or serialized to its message.
+ * Recognize the error of a system that refuses to open a port or to connect to localhost, as a
+ * coding agent's sandbox does, also as a `cause`, inside an `AggregateError`, or serialized to its
+ * message.
  */
 export function detectBlockedNetwork(error: unknown): BlockedNetwork | undefined {
   return detect(error, 0);
@@ -40,7 +42,10 @@ function detect(error: unknown, depth: number): BlockedNetwork | undefined {
 
 export function formatBlockedNetwork({ operation, detail }: BlockedNetwork): string {
   const what = operation === 'listen' ? 'opening a port' : 'connecting to localhost';
-  return `The sandbox this command runs in blocked ${what} (\`${detail}\`); this is not a problem in the code.`;
+  return `the system did not permit ${what} (\`${detail}\`)`;
 }
 
-export const ASK_TO_RUN_OUTSIDE_SANDBOX = 'ask the user to run this command outside the sandbox.';
+// `EPERM` proves a refusal, not a sandbox, so the sandbox is a condition. "Escalated permissions"
+// is what coding agents call a run outside their sandbox.
+export const RERUN_OUTSIDE_SANDBOX =
+  'If this command runs in a sandbox, re-run it with escalated permissions, outside the sandbox.';

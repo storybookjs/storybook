@@ -128,7 +128,7 @@ const LISTEN_EPERM = {
     'Error: listen EPERM: operation not permitted ::1:63315\n    at Server.setupListenHandle [as _listen2] (node:net:1918:21)',
 };
 
-describe('runStoryTests in a sandbox that blocks ports', () => {
+describe('runStoryTests on a system that refuses ports', () => {
   it('fails a run that a blocked port stopped, instead of reporting it as an unhandled error', async () => {
     const result = await runStoryTests({
       channel: channelResponding({
@@ -142,7 +142,7 @@ describe('runStoryTests in a sandbox that blocks ports', () => {
       status: 'error',
       error: {
         message:
-          'The tests did not run. The sandbox this command runs in blocked opening a port (`listen EPERM: operation not permitted ::1:63315`); this is not a problem in the code. To run them, ask the user to run this command outside the sandbox.',
+          'The tests did not run: the system did not permit opening a port (`listen EPERM: operation not permitted ::1:63315`). This is not a problem in the code. If this command runs in a sandbox, re-run it with escalated permissions, outside the sandbox.',
       },
     });
   });

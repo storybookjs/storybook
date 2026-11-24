@@ -80,7 +80,9 @@ export type CreateToolsDeps = {
  * installation the instance recorded and proxies through it.
  *
  * `auto` tries `attached` first and, on a gate failure, loads `local` instead. A missing instance
- * is the expected auto path and stays silent. Unexpected gate failures carry `fallbackNotice`.
+ * is the expected auto path, and a tool that runs locally has nothing to do about a connection
+ * that failed, so both stay silent. Other gate failures carry `fallbackNotice`. Every gate failure
+ * but a missing instance carries `attachFailure`, for a tool that cannot run locally.
  *
  * @throws {ToolsRuntimeError} With reason `config-load-failed` when the target configuration cannot
  *   be loaded, or `mode-unavailable` when a foreign `cwd` needs a child host and `autoSpawn` is
@@ -134,11 +136,15 @@ export async function createTools(
           throw error;
         }
         const fallbackReason = attachGateReasonFromError(error);
+        const attachFailure = fallbackReason === 'no-instance' ? undefined : error.message;
         const notice =
-          fallbackReason === 'no-instance' ? undefined : formatAttachFallback(error.message);
+          attachFailure && fallbackReason !== 'connection-failed'
+            ? formatAttachFallback(attachFailure)
+            : undefined;
         try {
           return await createLocalTools(options, deps, clientInfo, mode, {
             ...(notice ? { fallbackNotice: notice } : {}),
+            ...(attachFailure ? { attachFailure } : {}),
             fallbackReason,
           });
         } catch (localError) {
@@ -233,7 +239,11 @@ async function createLocalTools(
   deps: CreateToolsDeps,
   clientInfo: Required<ToolsClientInfo>,
   requestedMode: ToolsMode,
-  fallback?: { fallbackNotice?: string; fallbackReason?: ToolsAttachGateReason }
+  fallback?: {
+    fallbackNotice?: string;
+    attachFailure?: string;
+    fallbackReason?: ToolsAttachGateReason;
+  }
 ): Promise<LocalTools> {
   delete process.env.STORYBOOK_ATTACHED_TOOLS;
   const cwd = resolve(options.cwd ?? process.cwd());
@@ -322,6 +332,7 @@ function createToolsHost(args: {
   host: ToolsHostKind;
   requestedMode: ToolsMode;
   fallbackNotice?: string;
+  attachFailure?: string;
   fallbackReason?: ToolsAttachGateReason;
   runtime: ToolsRuntime;
   clientInfo: Required<ToolsClientInfo>;
@@ -334,6 +345,7 @@ function createToolsHost(args: {
   host: ToolsHostKind;
   requestedMode: ToolsMode;
   fallbackNotice?: string;
+  attachFailure?: string;
   fallbackReason?: ToolsAttachGateReason;
   runtime: ToolsRuntime;
   clientInfo: Required<ToolsClientInfo>;
@@ -346,6 +358,7 @@ function createToolsHost(args: {
   host: ToolsHostKind;
   requestedMode: ToolsMode;
   fallbackNotice?: string;
+  attachFailure?: string;
   fallbackReason?: ToolsAttachGateReason;
   runtime: ToolsRuntime;
   clientInfo: Required<ToolsClientInfo>;
@@ -415,6 +428,7 @@ function createToolsHost(args: {
     runtime,
     storybook,
     ...(args.fallbackNotice ? { fallbackNotice: args.fallbackNotice } : {}),
+    ...(args.attachFailure ? { attachFailure: args.attachFailure } : {}),
     ...(args.fallbackReason ? { fallbackReason: args.fallbackReason } : {}),
 
     async describe(options: ToolsDescribeOptions = {}): Promise<ToolsetCatalog> {

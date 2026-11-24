@@ -4,6 +4,7 @@ import { logger } from 'storybook/internal/node-logger';
 import type { ToolsetMethodReport } from '../../shared/open-service/toolset-definition.ts';
 import { parseToolsetMethodId, toCliMethodName } from '../../shared/open-service/toolset-names.ts';
 import type { StorybookInstanceRecord } from './instances/types.ts';
+import { formatRequiresAttach } from './sdk/attach-messages.ts';
 import {
   attachGateReasonFromError,
   createTools,
@@ -246,7 +247,8 @@ export async function runToolsCommand(
       requestedMode: tools.requestedMode,
       attachMode: tools.mode,
       host: tools.host,
-      fallbackNotice: tools.fallbackNotice,
+      // The dev-server intercept states the attach failure itself, and nothing fell back.
+      ...(requiresDevServerIntercept(dispatched) ? {} : { fallbackNotice: tools.fallbackNotice }),
       fallbackReason: tools.fallbackReason,
       ...(tools.storybook.siblings?.length
         ? { multiInstanceNotice: formatMultiInstanceNotice(tools.storybook), multipleMatches: true }
@@ -255,6 +257,10 @@ export async function runToolsCommand(
   } finally {
     await tools.close();
   }
+}
+
+function requiresDevServerIntercept({ outcome }: Pick<ToolsRunResult, 'outcome'>): boolean {
+  return outcome.kind === 'intercept' && outcome.reason === 'requires-dev-server';
 }
 
 async function dispatchTools(
@@ -344,7 +350,7 @@ async function dispatchTools(
     const discovery = await (deps.discoverInstance ?? discoverRunningInstance)(invocation.target);
     return result({
       exitCode: 1,
-      output: formatRequiresDevServer(commandPath, discovery, requestedMode),
+      output: formatRequiresDevServer(commandPath, discovery, requestedMode, tools.attachFailure),
       outcome: { kind: 'intercept', reason: 'requires-dev-server' },
     });
   }
@@ -423,13 +429,17 @@ function joinMarkdown(markdown: string | string[]): string {
 function formatRequiresDevServer(
   commandPath: string,
   discovery: InstanceDiscovery,
-  requestedMode: ToolsMode
+  requestedMode: ToolsMode,
+  attachFailure: string | undefined
 ): string {
   if (discovery.currentRecord && requestedMode === 'local') {
     return `Found your Storybook running at ${discovery.currentRecord.url}, but \`${commandPath}\` cannot run from a local tools host. Re-run without \`--no-attach\` to attach to that instance.`;
   }
+  if (attachFailure) {
+    return formatRequiresAttach(commandPath, attachFailure);
+  }
   if (discovery.currentRecord) {
-    return `Found your Storybook running at ${discovery.currentRecord.url}, but \`${commandPath}\` could not attach to it, for the reason printed above.`;
+    return `Found your Storybook running at ${discovery.currentRecord.url}, but \`${commandPath}\` could not attach to it. Start or restart that Storybook, then re-run this command.`;
   }
 
   const lines = [

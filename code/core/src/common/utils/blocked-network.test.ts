@@ -14,7 +14,9 @@ describe('detectBlockedNetwork', () => {
       )
     ).toEqual({ operation: 'listen', detail: 'listen EPERM: operation not permitted ::1:63315' });
     expect(
-      detectBlockedNetwork(systemError('connect EPERM 127.0.0.1:6006', 'EPERM', 'connect'))
+      detectBlockedNetwork(
+        systemError('connect EPERM 127.0.0.1:6006 - Local (0.0.0.0:0)', 'EPERM', 'connect')
+      )
     ).toEqual({ operation: 'connect', detail: 'connect EPERM 127.0.0.1:6006' });
   });
 

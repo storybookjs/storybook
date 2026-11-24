@@ -382,7 +382,7 @@ describe('bootstrapAttachedRuntime', () => {
     expect(inspect(error)).not.toContain('secret');
   });
 
-  it('says the sandbox blocked the connection when the socket error says so', async () => {
+  it('says that the system refused the connection when the socket error says so', async () => {
     const socketError = Object.assign(new Error('connect EPERM 127.0.0.1:6006'), {
       code: 'EPERM',
       syscall: 'connect',
@@ -396,7 +396,7 @@ describe('bootstrapAttachedRuntime', () => {
     const failure = bootstrapAttachedRuntime({ cwd: '/repo' }, deps);
 
     await expect(failure).rejects.toMatchObject({ data: { reason: 'connection-failed' } });
-    await expect(failure).rejects.toThrow('The sandbox this command runs in blocked');
+    await expect(failure).rejects.toThrow('the system did not permit connecting to localhost');
     await expect(failure).rejects.not.toThrow('may be stale');
   });
 

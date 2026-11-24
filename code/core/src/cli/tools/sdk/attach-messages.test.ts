@@ -7,6 +7,7 @@ import {
   formatConnectionFailed,
   formatInstallationMismatch,
   formatMultiInstanceNotice,
+  formatRequiresAttach,
   formatNoInstance,
   formatOldServer,
   formatPortMismatch,
@@ -100,15 +101,24 @@ describe('attach failure messages', () => {
     );
   });
 
-  it('says the sandbox blocked the connection, not that the registry is stale', () => {
+  it('says that the system refused the connection, not that the registry is stale', () => {
     expect(
       formatConnectionBlocked(other, {
         operation: 'connect',
         detail: 'connect EPERM 127.0.0.1:6006',
       })
     ).toMatchInlineSnapshot(
-      `"Could not connect to the Storybook at http://localhost:6006. The sandbox this command runs in blocked connecting to localhost (\`connect EPERM 127.0.0.1:6006\`); this is not a problem in the code. Do not start another Storybook; if this command cannot finish without that Storybook, ask the user to run this command outside the sandbox."`
+      `"Could not connect to the Storybook at http://localhost:6006: the system did not permit connecting to localhost (\`connect EPERM 127.0.0.1:6006\`). Do not start another Storybook. If this command runs in a sandbox, re-run it with escalated permissions, outside the sandbox."`
     );
+  });
+
+  it('puts the attach failure under the command that cannot run without the dev server', () => {
+    expect(formatRequiresAttach('npx storybook tools review create', 'Could not connect.'))
+      .toMatchInlineSnapshot(`
+        "\`npx storybook tools review create\` requires the running Storybook dev server, and attaching to it failed:
+
+        Could not connect."
+      `);
   });
 
   it('points at the unreachable URL and how to start Storybook again', () => {

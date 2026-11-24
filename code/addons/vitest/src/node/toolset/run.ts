@@ -1,8 +1,8 @@
 import type { ChannelLike } from 'storybook/internal/channels';
 import {
-  ASK_TO_RUN_OUTSIDE_SANDBOX,
   detectBlockedNetwork,
   formatBlockedNetwork,
+  RERUN_OUTSIDE_SANDBOX,
 } from 'storybook/internal/common';
 import {
   filterStoryFiles,
@@ -146,7 +146,7 @@ export function triggerTestRun({
   });
 }
 
-// A sandbox that refuses ports stops Vitest before any test runs, which the run reports as an
+// A system that refuses ports stops Vitest before any test runs, which the run reports as an
 // unhandled error, not as a test failure.
 function blockedBeforeAnyTest(result: TestRunResult) {
   const ran = result.componentTestCount.success + result.componentTestCount.error;
@@ -305,7 +305,7 @@ export async function runStoryTests({
         return {
           status: 'error',
           error: {
-            message: `The tests did not run. ${formatBlockedNetwork(blocked)} To run them, ${ASK_TO_RUN_OUTSIDE_SANDBOX}`,
+            message: `The tests did not run: ${formatBlockedNetwork(blocked)}. This is not a problem in the code. ${RERUN_OUTSIDE_SANDBOX}`,
           },
         };
       }

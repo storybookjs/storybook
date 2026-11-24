@@ -10,6 +10,6 @@ Prerequisites:
 
 Run every Storybook CLI command from the package where Storybook is installed (in a monorepo often a leaf package such as `packages/ui`).
 
-If the sandbox blocks network access, request escalated permissions for Storybook CLI commands.
+The docs of a composed Storybook (`refs` in the main config) come from its URL. If a command reports that it could not fetch them and the sandbox blocks network access, request escalated permissions for that command; the other Storybook CLI commands run inside the sandbox.
 
 Run `npx storybook skills component-docs` in a command of its own before you read any component's source, and follow its output: it lists the commands that show this project's components, props, and usage examples, and when to use them.

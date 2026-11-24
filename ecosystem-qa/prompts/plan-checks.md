@@ -17,9 +17,10 @@ The list names why the plan chose this repo, the numbered steps, and the expecte
 6. When the expected outcome compares with the state before the upgrade, run the same step in Step 1 on the baseline, so the comparison is with what you saw and not with what you remember. When you did not, do not install the old version again: judge the rest of the expected outcome, set the `baseline` of a finding to `not-captured`, and name the missing comparison in the note. When the comparison is all that the expected outcome asks for, report the check as `blocked`.
 7. Compare what you saw with the expected outcome, and only then choose the one state of the check. A check whose steps you could not all do takes the state of the step that stopped it.
    - `pass`: what you saw is the expected outcome.
-   - `fail`: you did every step and what you saw is not the expected outcome. Report a finding for it, always. When you think the expected outcome of the plan is wrong for this project, still report the finding and say why in its `actual`: the person who triages it reads the plan's mistakes there.
+   - `fail`: you did every step and what you saw is not the expected outcome. Report a finding for it, always, unless `blocked` below applies. When you think the expected outcome of the plan is wrong for this project, still report the finding and say why in its `actual`: the person who triages it reads the plan's mistakes there.
    - `skip`: this project does not have what the entry describes, as rule 4 says, or as for every other check.
    - `blocked` as for every other check.
+     A plan check that fails only because of a third-party package that the upgrade or `doctor` named under `Incompatible Packages` is `blocked`, not `fail`, and has no finding: its note names the package and quotes its line from the log, as "What is a finding" says.
 8. Write a note for every plan check, also for a `pass`: what you saw, in one or two sentences, quoted from the log or the page, and the evidence file that shows it.
 9. Name the evidence of a plan check after its slug, the part of the id after "plan.", for example `story-sort-in-main.log` or `story-sort-in-main.png`.
 

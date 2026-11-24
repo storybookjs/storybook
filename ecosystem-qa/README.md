@@ -316,6 +316,7 @@ A plan check tests the project as it is after the upgrade, and the agent never c
 
 So a repo is listed for an entry only when it has that state at its pinned commit.
 A plan check reported as `skip` opens no proposal: the answer schema accepts a finding only for a check that is `fail`, and `collect.ts` makes proposals from findings alone.
+A failure whose cause is a third-party package that the upgrade or `doctor` named under `Incompatible Packages` is no finding either, also when it shows in a Storybook package that the third-party one holds on an older major: Storybook already told the user, so the prompts have the agent report such a check as `blocked`, with the package and its line of the log in the note.
 `--repo` may name a discovered repo of the plan, which the runner resolves through `loadEntries(plan)`.
 
 The run ends with exit 1 before anything is cloned when the plan is not in its rendered form or fails `checkPlan`, when the plan has no such batch, when the batch lists no entry or no such part for the repo, or when `--version` is not on the plan's line.

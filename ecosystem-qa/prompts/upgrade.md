@@ -68,6 +68,7 @@ It started before the project was installed, so part of it is already used.
 A blocked check hides every check after it, so do not stop at the first failure.
 
 1. If the blocker is a defect of Storybook or of a Storybook-owned package, it is a finding. Record it with its evidence before you change anything.
+   When its cause is a third-party package that the upgrade or `doctor` named under `Incompatible Packages`, it is no finding, see What is a finding.
 2. Then spend up to 15 minutes on that blocker, and at most 45 minutes on blockers in the whole run: find the cause and get past it. Read the minute from the budget tool when you start on a blocker and before each attempt, so you know when that time is over. Reproduce it in the smallest form, read the failing code, and try a fix or a workaround.
 3. You may change the project's Storybook configuration, patch an installed package under `node_modules`, pass another CLI flag or set an environment variable. You may not edit a check, skip it, or weaken what it proves.
 4. A package manager policy of the repository that stops the Storybook CLI from running, such as an install-script allow list or a hook, is environment and not a finding. Get past it with a one-off flag or environment variable, never by editing the repository's policy files. If `{{STORYBOOK_CLI}}` cannot start for that reason, run the same command with `npx storybook@{{VERSION}}` instead.
@@ -101,7 +102,8 @@ A blocked check hides every check after it, so do not stop at the first failure.
 1. Open `{{MIGRATION_FILE}}`. Its sections are headed `## From version <old> to <new>`. Read every section whose `<new>` is newer than the version you recorded in Step 1 and not newer than {{VERSION}}. For this run that includes the section ending in `{{MAJOR}}.0.0` when the project came from an older major.
 2. Read the parts that apply to this project: its framework, builder, addons, `main` config and test setup.
 3. Apply the manual steps that apply here and that the automigrations did not already do.
-4. If a third-party addon that the guide lists as broken on this version stops Storybook from starting, remove it from the `addons` list in the main config and go on. Record the removal in the note of `upgrade.automigrations`.
+4. If a third-party addon that the guide lists as broken on this version, or that `upgrade.log` names under `Incompatible Packages`, stops Storybook from starting, remove it from the `addons` list in the main config and go on. Record the removal in the note of `upgrade.automigrations`.
+   A third-party package named there that you cannot take out, such as the framework or the builder, blocks every check that needs it: report those checks as `blocked`, as What is a finding says.
 5. If a Storybook-owned package stops Storybook from starting, that is a finding. Record it with its evidence first, then remove the package the same way and go on, so the later checks still run. Every later check's note must say it ran with that package removed, and a later failure that only exists because of the removal is not a finding.
 6. Commit them separately: `git add -A && git commit -q -m "qa: apply migration notes"`. Skip the commit when nothing applied.
 7. Remember each step you applied. Put the list in the note of `upgrade.automigrations`.
@@ -124,7 +126,7 @@ Give each check exactly one state:
 - `pass`: you ran the probe and it worked.
 - `fail`: you ran the probe and it did not work after the migration notes were applied.
 - `n/a`: the feature is not in this project. Say which file or search proved it.
-- `blocked`: an earlier failure stopped you and you could not get past it within the time box. Name that check. Also for a check whose own command was stuck, see Time.
+- `blocked`: an earlier failure stopped you and you could not get past it within the time box. Name that check. Also for a check whose own command was stuck, see Time. Also for a check that fails only because of a third-party package that the upgrade or `doctor` named under `Incompatible Packages`, see What is a finding.
 - `skip`: you did not try it. Give a concrete reason.
 
 Write a short note for every state except a plain `pass`.
@@ -140,7 +142,7 @@ Write a short note for every state except a plain `pass`.
 
 Report a finding for each `fail` that is a Storybook problem.
 Storybook owns every package in the `@storybook/*` scope and every repository under the `storybookjs` organization, addons included.
-A package the upgrade itself installed or bumped is Storybook's responsibility, whoever publishes it.
+A package the upgrade itself installed or bumped is Storybook's responsibility, whoever publishes it, unless it is a third-party package that the run named under `Incompatible Packages`.
 
 These are findings:
 
@@ -155,6 +157,10 @@ These are not findings:
 - A breaking change documented in the migration guide that the project's own code hits, when the automigration or the error message points at the guide.
 - Peer range warnings from third-party addons, unless they cause a real install, build or runtime failure.
 - A third-party addon that the migration guide already lists as broken on this version.
+- A failure whose cause is a third-party package that the upgrade or `doctor` of this run named under `Incompatible Packages`, also when the failure shows in a package that it depends on or holds on an older version, such as `@storybook/vue3@10.6.7` held by a community framework.
+  Storybook already told the user.
+  Report such a check as `blocked`, and in its note name the package and quote its line from `upgrade.log` or `doctor-post.log`, such as `- storybook-vue3-rsbuild@3.6.3 which depends on ^10.6.6`.
+  A Storybook-owned package named there stays under the rules above.
 - Problems caused by this harness: a missing global tool, a killed background process, a port taken by your own server, a read-only git config, a missing Playwright browser. Install a missing browser with `npx playwright install chromium` and say so in the note.
 
 Baseline rule: set `baseline` to `pass` or `fail` only when you ran the same probe in Step 1.

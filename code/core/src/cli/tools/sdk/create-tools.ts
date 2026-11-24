@@ -22,6 +22,7 @@ import { spawnChildHost } from './child-client.ts';
 import { reportSdkAttachGate, reportSdkInvocation } from './command-telemetry.ts';
 import {
   AttachUnavailableError,
+  EnvironmentMismatchError,
   SpawnFailedError,
   ToolsRuntimeError,
   attachGateReasonFromError,
@@ -147,7 +148,7 @@ export async function createTools(
             fallbackReason,
           });
         } catch (localError) {
-          if (shouldWrapAutoLocalFailure(localError)) {
+          if (shouldWrapAutoLocalFailure(localError) && !silent) {
             throw wrapAutoLocalFailure(notice ?? formatAttachFallback(error.message), localError);
           }
           throw localError;
@@ -322,6 +323,33 @@ function wrapAutoLocalFailure(notice: string, localError: SpawnFailedError | Too
   throw exhaustive;
 }
 
+// A dev-server method on a local host fails with the kind of error that kept `auto` from attaching.
+function requiresDevServerError(
+  ref: string,
+  attachFailure: string | undefined,
+  reason: ToolsAttachGateReason | undefined
+) {
+  if (!attachFailure) {
+    return new AttachUnavailableError({
+      reason: 'no-instance',
+      instances: [],
+      remediation: `\`${ref}\` needs a running Storybook dev server, and this tools host loaded the project's configuration on its own. Start Storybook (for example \`npm run storybook\`), then retry.`,
+    });
+  }
+  const remediation = formatRequiresAttach(ref, attachFailure);
+  if (reason === 'environment-mismatch') {
+    return new EnvironmentMismatchError({ reason: remediation });
+  }
+  if (reason === 'spawn-failed') {
+    return new SpawnFailedError({ reason: remediation });
+  }
+  return new AttachUnavailableError({
+    reason: reason ?? 'connection-failed',
+    instances: [],
+    remediation,
+  });
+}
+
 function transportFor(kind: Required<ToolsClientInfo>['kind']): ToolsetTransport {
   return kind === 'cli' ? 'cli' : 'sdk';
 }
@@ -394,17 +422,7 @@ function createToolsHost(args: {
     const method = findMethod(toolset, methodName);
 
     if (mode === 'local' && method.requiresDevServer) {
-      const reason = args.fallbackReason;
-      throw new AttachUnavailableError({
-        reason:
-          reason === 'connection-failed' || reason === 'old-server' || reason === 'port-mismatch'
-            ? reason
-            : 'no-instance',
-        instances: [],
-        remediation: args.attachFailure
-          ? formatRequiresAttach(ref, args.attachFailure)
-          : `\`${ref}\` needs a running Storybook dev server, and this tools host loaded the project's configuration on its own. Start Storybook (for example \`npm run storybook\`), then retry.`,
-      });
+      throw requiresDevServerError(ref, args.attachFailure, args.fallbackReason);
     }
 
     const validation = await method.input['~standard'].validate(input);

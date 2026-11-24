@@ -191,6 +191,7 @@ describe('createRuntimeInstanceRecord', () => {
     instanceId: '00000000-0000-4000-8000-000000000000',
     now: new Date('2026-05-18T12:00:00.000Z'),
     pid: 12345,
+    pidNamespace: 'pid:[1]',
     port: 6006,
     storybookVersion: '10.5.0-alpha.0',
   };
@@ -212,6 +213,7 @@ describe('createRuntimeInstanceRecord', () => {
       port: 6006,
       storybookVersion: '10.5.0-alpha.0',
       storybookPath: corePackageRoot,
+      pidNamespace: 'pid:[1]',
       startedAt: '2026-05-18T12:00:00.000Z',
       updatedAt: '2026-05-18T12:00:00.000Z',
       mcp: { status: 'not-installed' },

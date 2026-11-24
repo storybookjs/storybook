@@ -475,7 +475,7 @@ describe('requires-dev-server contract', () => {
 
     expect(result.outcome).toEqual({ kind: 'intercept', reason: 'requires-dev-server' });
     expect(result.output).toBe(
-      '`npx storybook tools review create` requires the running Storybook dev server, and attaching to it failed:\n\nRestart Storybook to enable attach.'
+      '`npx storybook tools review create` requires a running Storybook dev server, and could not attach to one:\n\nRestart Storybook to enable attach.'
     );
     expect(result.fallbackNotice).toBeUndefined();
   });

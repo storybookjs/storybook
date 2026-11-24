@@ -115,7 +115,7 @@ describe('attach failure messages', () => {
   it('puts the attach failure under the command that cannot run without the dev server', () => {
     expect(formatRequiresAttach('npx storybook tools review create', 'Could not connect.'))
       .toMatchInlineSnapshot(`
-        "\`npx storybook tools review create\` requires the running Storybook dev server, and attaching to it failed:
+        "\`npx storybook tools review create\` requires a running Storybook dev server, and could not attach to one:
 
         Could not connect."
       `);

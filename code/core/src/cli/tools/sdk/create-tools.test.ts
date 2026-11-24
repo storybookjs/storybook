@@ -370,7 +370,7 @@ describe('createTools', () => {
 
     await expect(call).rejects.toMatchObject({ data: { reason: 'connection-failed' } });
     await expect(call).rejects.toThrow(
-      '`echo.live` requires the running Storybook dev server, and attaching to it failed:\n\nCould not connect to the Storybook at http://localhost:6006.'
+      '`echo.live` requires a running Storybook dev server, and could not attach to one:\n\nCould not connect to the Storybook at http://localhost:6006.'
     );
   });
 
@@ -579,6 +579,27 @@ describe('createTools', () => {
     });
     await expect(localLoadFailure).rejects.toThrow(ToolsRuntimeError);
     await expect(localLoadFailure).rejects.toThrow('Falling back');
+  });
+
+  it('reports only the local failure after a silent fallback', async () => {
+    const failure = createTools(
+      {},
+      {
+        attach: async () => {
+          throw new AttachUnavailableError({
+            reason: 'connection-failed',
+            instances: [],
+            remediation: 'Could not connect to the Storybook at http://localhost:6006.',
+          });
+        },
+        bootstrap: async () => {
+          throw new Error('main.ts has a syntax error');
+        },
+      }
+    );
+
+    await expect(failure).rejects.toThrow('main.ts has a syntax error');
+    await expect(failure).rejects.not.toThrow('Could not connect');
   });
 
   it('keeps spawn and mode-unavailable reasons when auto local fallback also fails', async () => {

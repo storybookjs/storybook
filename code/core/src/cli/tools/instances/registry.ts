@@ -1,10 +1,9 @@
 import * as fs from 'node:fs/promises';
-import { connect } from 'node:net';
 import { join } from 'node:path';
 
 import * as v from 'valibot';
 
-import { detectBlockedNetwork } from '../../../common/utils/blocked-network.ts';
+import { getPidNamespace } from '../../../common/utils/pid-namespace.ts';
 import {
   getInstanceRegistryDir,
   getLegacyStorybookConfigDir,
@@ -24,10 +23,10 @@ const SOFT_REGISTRY_ERRORS = new Set(['ENOENT', 'EACCES', 'EPERM', 'ENOTDIR']);
  * older Storybook) still writes there.
  *
  * Each file is expected to be a single JSON object matching {@link StorybookInstanceRecord}.
- * Records whose PID is no longer alive are filtered out (and their files removed), unless the
- * system does not permit connecting to the record's port: then this process cannot tell, and
- * attach reports the refusal. Malformed files are skipped silently — the command should degrade to
- * "no instance" rather than fail loudly.
+ * Records whose PID is no longer alive are filtered out (and their files removed), unless the dev
+ * server runs in another process namespace: then this process cannot check it, and attach finds
+ * out. Malformed files are skipped silently — the command should degrade to "no instance" rather
+ * than fail loudly.
  */
 export async function readRegistry(
   registryDir: string = getInstanceRegistryDir(),
@@ -66,7 +65,7 @@ async function readRegistryDir(registryDir: string): Promise<StorybookInstanceRe
           if (!parsed.success) {
             return null;
           }
-          if (!isProcessAlive(parsed.output.pid) && !(await connectIsBlocked(parsed.output))) {
+          if (!isProcessAlive(parsed.output.pid) && !isProcessHidden(parsed.output)) {
             await fs.rm(join(registryDir, name), { force: true }).catch(() => {});
             return null;
           }
@@ -96,19 +95,9 @@ function isProcessAlive(pid: number): boolean {
   }
 }
 
-const CONNECT_PROBE_TIMEOUT_MS = 1000;
-
-// A sandbox with its own process namespace hides a dev server that runs outside it. When it also
-// answers a connection with `EPERM`, a hidden server and a gone one look the same from here.
-function connectIsBlocked({ port }: StorybookInstanceRecord): Promise<boolean> {
-  return new Promise((resolve) => {
-    const socket = connect({ host: '127.0.0.1', port });
-    const settle = (blocked: boolean) => {
-      socket.destroy();
-      resolve(blocked);
-    };
-    socket.setTimeout(CONNECT_PROBE_TIMEOUT_MS, () => settle(false));
-    socket.once('connect', () => settle(false));
-    socket.once('error', (error) => settle(detectBlockedNetwork(error) !== undefined));
-  });
+// The dev server runs in another process namespace, as it does outside the sandbox or container
+// of this process. Its pid then says nothing here.
+export function isProcessHidden({ pidNamespace }: StorybookInstanceRecord): boolean {
+  const own = getPidNamespace();
+  return pidNamespace != null && own != null && pidNamespace !== own;
 }

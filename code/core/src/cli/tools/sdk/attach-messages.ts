@@ -47,6 +47,10 @@ export function formatConnectionBlocked(
   return `Could not connect to the Storybook at ${record.url}: ${formatBlockedNetwork(blocked)}. Do not start another Storybook. ${RERUN_OUTSIDE_SANDBOX}`;
 }
 
+export function formatConnectionHidden(record: StorybookInstanceRecord): string {
+  return `Could not connect to the Storybook at ${record.url}: it runs in another process namespace than this command, as outside a sandbox or container, and the connection failed. Do not start another Storybook. ${RERUN_OUTSIDE_SANDBOX}`;
+}
+
 export function formatConnectionFailed(record: StorybookInstanceRecord): string {
   return `Could not connect to the Storybook at ${record.url}. The instance registry may be stale — if that Storybook is no longer running, start it again (for example \`npm run storybook\`) and retry.`;
 }
@@ -81,7 +85,7 @@ export function formatUnknownInstallation(): string {
 }
 
 export function formatRequiresAttach(command: string, failure: string): string {
-  return `\`${command}\` requires the running Storybook dev server, and attaching to it failed:\n\n${failure}`;
+  return `\`${command}\` requires a running Storybook dev server, and could not attach to one:\n\n${failure}`;
 }
 
 export function formatAttachFallback(remediation: string): string {

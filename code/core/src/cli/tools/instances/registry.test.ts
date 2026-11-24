@@ -1,6 +1,4 @@
-import { EventEmitter } from 'node:events';
 import { readFile, readdir, rm } from 'node:fs/promises';
-import { connect, type Socket } from 'node:net';
 
 import { vol } from 'memfs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -10,18 +8,7 @@ import { readRegistry } from './registry.ts';
 // Spy-only mock: keep the real `node:fs/promises` module shape, then redirect the calls used by
 // the registry reader to `memfs` so disk state stays scoped to `vol`.
 vi.mock('node:fs/promises', { spy: true });
-vi.mock('node:net', { spy: true });
-
-function fakeSocket(settle: (socket: EventEmitter) => void) {
-  const socket = Object.assign(new EventEmitter(), { setTimeout: vi.fn(), destroy: vi.fn() });
-  queueMicrotask(() => settle(socket));
-  return socket as unknown as Socket;
-}
-
-const socketFailingWith = (code: string) =>
-  fakeSocket((socket) =>
-    socket.emit('error', Object.assign(new Error(`connect ${code}`), { code, syscall: 'connect' }))
-  );
+vi.mock('../../../common/utils/pid-namespace.ts', () => ({ getPidNamespace: () => 'pid:[2]' }));
 
 const REGISTRY_DIR = '/registry';
 
@@ -37,8 +24,6 @@ beforeEach(async () => {
   vi.mocked(rm).mockImplementation(
     memfs.fs.promises.rm as unknown as typeof import('node:fs/promises').rm
   );
-
-  vi.mocked(connect).mockImplementation(() => socketFailingWith('ECONNREFUSED'));
 
   // Deterministic PID liveness: in these tests only the current process counts as alive.
   vi.spyOn(process, 'kill').mockImplementation((pid) => {
@@ -110,19 +95,26 @@ describe('readRegistry', () => {
     expect(vol.toJSON()[`${REGISTRY_DIR}/dead.json`]).toBeUndefined();
   });
 
-  it('keeps a record whose process is not visible when the system does not permit connecting to its port', async () => {
-    vi.mocked(connect).mockImplementation(() => socketFailingWith('EPERM'));
-    const hidden = { ...aliveRecord, instanceId: 'hidden-uuid', pid: 2147483646 };
+  it('keeps a record whose dev server runs in another process namespace', async () => {
+    const hidden = {
+      ...aliveRecord,
+      instanceId: 'hidden-uuid',
+      pid: 2147483646,
+      pidNamespace: 'pid:[1]',
+    };
     vol.fromNestedJSON({ [REGISTRY_DIR]: { 'hidden.json': JSON.stringify(hidden) } });
 
     await expect(readRegistry(REGISTRY_DIR)).resolves.toEqual([hidden]);
-    expect(connect).toHaveBeenCalledWith({ host: '127.0.0.1', port: 6006 });
     expect(vol.toJSON()[`${REGISTRY_DIR}/hidden.json`]).toBeDefined();
   });
 
-  it('removes a record whose process is not visible when another server accepts on its port', async () => {
-    vi.mocked(connect).mockImplementation(() => fakeSocket((socket) => socket.emit('connect')));
-    const dead = { ...aliveRecord, instanceId: 'dead-uuid', pid: 2147483646 };
+  it('removes a record with a dead PID from its own process namespace', async () => {
+    const dead = {
+      ...aliveRecord,
+      instanceId: 'dead-uuid',
+      pid: 2147483646,
+      pidNamespace: 'pid:[2]',
+    };
     vol.fromNestedJSON({ [REGISTRY_DIR]: { 'dead.json': JSON.stringify(dead) } });
 
     await expect(readRegistry(REGISTRY_DIR)).resolves.toEqual([]);

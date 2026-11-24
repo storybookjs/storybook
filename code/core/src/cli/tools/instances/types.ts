@@ -45,6 +45,11 @@ export const StorybookInstanceRecordSchema = v.object({
    * Storybooks lack it, which makes attach refuse.
    */
   storybookPath: v.optional(v.string()),
+  /**
+   * The process namespace of the dev server on Linux. `pid` can only be checked from that
+   * namespace. Optional: other systems and older Storybooks do not record it.
+   */
+  pidNamespace: v.optional(v.string()),
   startedAt: v.optional(v.string()),
   updatedAt: v.optional(v.string()),
   mcp: v.object({

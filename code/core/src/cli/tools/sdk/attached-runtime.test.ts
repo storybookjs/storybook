@@ -9,6 +9,7 @@ import type { StorybookInstanceRecord } from '../instances/types.ts';
 import { bootstrapAttachedRuntime } from './attached-runtime.ts';
 import { AttachUnavailableError, EnvironmentMismatchError, ToolsRuntimeError } from './errors.ts';
 
+vi.mock('../../../common/utils/pid-namespace.ts', () => ({ getPidNamespace: () => 'pid:[2]' }));
 vi.mock('node:fs', { spy: true });
 
 const STORYBOOK_PATH = '/repo/node_modules/storybook';
@@ -397,6 +398,20 @@ describe('bootstrapAttachedRuntime', () => {
 
     await expect(failure).rejects.toMatchObject({ data: { reason: 'connection-failed' } });
     await expect(failure).rejects.toThrow('the system did not permit opening a connection');
+    await expect(failure).rejects.not.toThrow('may be stale');
+  });
+
+  it('says that the Storybook runs in another process namespace when the connection fails', async () => {
+    const { deps } = makeRuntimeDeps([{ ...RECORD, pidNamespace: 'pid:[1]' }], {
+      createNodeChannel: vi.fn(async () => {
+        throw new Error('connect ECONNREFUSED 127.0.0.1:6006');
+      }),
+    });
+
+    const failure = bootstrapAttachedRuntime({ cwd: '/repo' }, deps);
+
+    await expect(failure).rejects.toMatchObject({ data: { reason: 'connection-failed' } });
+    await expect(failure).rejects.toThrow('it runs in another process namespace than this command');
     await expect(failure).rejects.not.toThrow('may be stale');
   });
 

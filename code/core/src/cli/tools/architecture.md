@@ -128,8 +128,8 @@ consumer amortizes config load across many calls on the live synced runtime.
 
 1. **Discover.** Read instance records from `$XDG_STATE_HOME/storybook/instances`, or
    `~/.storybook/instances` when unset, both when they differ (pid-liveness-checked; a record
-   whose process is not visible stays when connecting to its port gives `EPERM`, as inside a
-   sandbox with its own process namespace). Match by cwd /
+   whose dev server runs in another process namespace than this process stays, because a pid can
+   only be checked from the namespace that issued it, and attach finds out whether it answers). Match by cwd /
    configDir — or, with `--port`, by port alone across all projects (the record supplies the
    project; an explicit `--config-dir` still restricts). Several matches → the invoking agent's
    bucket, then the most recently started; the siblings surface as a stderr warning naming

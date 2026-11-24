@@ -147,6 +147,23 @@ describe('runStoryTests on a system that refuses ports', () => {
     });
   });
 
+  it('fails the same way when the refused port arrives as a run error', async () => {
+    const result = await runStoryTests({
+      channel: channelResponding({
+        status: 'error',
+        error: { message: 'Failed to run tests', error: LISTEN_EPERM },
+      }),
+      getIndex: async () => index,
+    });
+
+    expect(result).toMatchObject({
+      status: 'error',
+      error: {
+        message: expect.stringContaining('The tests did not run: the system did not permit'),
+      },
+    });
+  });
+
   it('keeps the report of a run whose tests ran', async () => {
     const ran = {
       ...sampleResult,

@@ -12,13 +12,14 @@ import type { ToolsetGetService } from '../../../shared/open-service/toolset-def
 import { getRegisteredToolsets } from '../../../shared/open-service/toolset-registry.ts';
 import { detectAgent } from '../../../telemetry/detect-agent.ts';
 import { detectBlockedNetwork } from '../../../common/utils/blocked-network.ts';
-import { readRegistry } from '../instances/registry.ts';
+import { isProcessHidden, readRegistry } from '../instances/registry.ts';
 import { selectInstances } from '../instances/resolve.ts';
 import { resolveStorybookConfigDir } from '../config-dir.ts';
 import type { StorybookInstanceRecord } from '../instances/types.ts';
 import {
   formatConnectionBlocked,
   formatConnectionFailed,
+  formatConnectionHidden,
   formatInstallationMismatch,
   formatNoInstance,
   formatOldServer,
@@ -147,7 +148,9 @@ export async function bootstrapAttachedRuntime(
       instances: [record],
       remediation: blocked
         ? formatConnectionBlocked(record, blocked)
-        : formatConnectionFailed(record),
+        : isProcessHidden(record)
+          ? formatConnectionHidden(record)
+          : formatConnectionFailed(record),
     });
   }
 

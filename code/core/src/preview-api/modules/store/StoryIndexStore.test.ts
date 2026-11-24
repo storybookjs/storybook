@@ -110,6 +110,20 @@ describe('StoryIndexStore', () => {
 
         expect(store.entryFromSpecifier('random')).toBeUndefined();
       });
+
+      it('selects the first story for a component whose id is an Object.prototype key', async () => {
+        const store = new StoryIndexStore(makeStoryIndex([['constructor', 'primary']]));
+
+        expect(store.entryFromSpecifier('constructor')).toEqual(
+          store.entries['constructor--primary']
+        );
+      });
+
+      it('selects nothing for an Object.prototype key that no component or group has as id', async () => {
+        const store = new StoryIndexStore(storyIndex);
+
+        expect(store.entryFromSpecifier('constructor')).toBeUndefined();
+      });
     });
     describe('if you use a storyId', () => {
       it('selects a specific story', async () => {

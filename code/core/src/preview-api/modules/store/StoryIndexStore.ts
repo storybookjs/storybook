@@ -32,7 +32,7 @@ export class StoryIndexStore {
 
     if (typeof specifier === 'string') {
       // Find the story with the exact id that matches the specifier (see #11571)
-      if (this.entries[specifier]) {
+      if (Object.hasOwn(this.entries, specifier)) {
         return this.entries[specifier];
       }
       // Fallback to the first story that starts with the specifier

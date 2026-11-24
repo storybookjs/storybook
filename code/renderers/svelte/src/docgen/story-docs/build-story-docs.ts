@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 import { getComponentIdFromEntry, getStoryImportPathFromEntry } from 'storybook/internal/common';
 import { storyNameFromExport, toId } from 'storybook/internal/csf';
 import {
+  type CsfFile,
   type ESTreeNode as Node,
   type ImportBinding,
   type ResolvedStoryArgs,
@@ -22,16 +23,11 @@ import {
   unwrapExpression,
 } from 'storybook/internal/csf-tools';
 import { prependToTemplate } from 'storybook/internal/docs-tools';
-import type {
-  IndexEntry,
-  StoryDoc,
-  StoryDocsPayload,
-  StoryDocsProviderInput,
-} from 'storybook/internal/types';
+import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
 
 import { parseSvelteSource } from '../../svelte-csf/indexer/parser.ts';
 import { extractComponentComment } from '../component-docgen/component-comment.ts';
-import { resolveStoryComponent } from '../component-docgen/resolve-component/resolve-component.ts';
+import { resolveCsfComponent } from '../component-docgen/resolve-component/resolve-component.ts';
 import { printTemplate } from './print-template.ts';
 import { buildSnippetImportBlock } from './snippet-imports.ts';
 import { type StoryFile, readSvelteCsfFile } from './svelte-csf-file.ts';
@@ -70,7 +66,7 @@ export async function buildStoryDocsPayload(
   const importStatement =
     componentName &&
     ((meta && jsDocTagsForNode(meta, csf.editor).import?.[0]) ??
-      (await componentImportTag(input.entry)));
+      (await componentImportTag(filename, csf)));
   const context: StoryContext = {
     file,
     bindings: collectImportBindings(csf.program),
@@ -110,9 +106,9 @@ export async function buildStoryDocsPayload(
   };
 }
 
-async function componentImportTag(entry: IndexEntry): Promise<string | undefined> {
+async function componentImportTag(storyPath: string, csf: CsfFile): Promise<string | undefined> {
   try {
-    const component = await resolveStoryComponent(entry);
+    const component = resolveCsfComponent(storyPath, csf);
     if (!component) return undefined;
     const { ast } = parseSvelteSource(await readFile(component.componentPath, 'utf8'));
     return extractComponentComment(ast)?.tags.import?.[0];

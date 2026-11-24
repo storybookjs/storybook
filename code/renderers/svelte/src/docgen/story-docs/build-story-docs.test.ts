@@ -6,7 +6,7 @@ import { compile } from 'svelte/compiler';
 import { fs as memoryFs, vol } from 'memfs';
 import type { IndexEntry } from 'storybook/internal/types';
 
-import { resolveStoryComponent } from '../component-docgen/resolve-component/resolve-component.ts';
+import { resolveCsfComponent } from '../component-docgen/resolve-component/resolve-component.ts';
 import { buildStoryDocsPayload } from './build-story-docs.ts';
 import { printTemplate } from './print-template.ts';
 
@@ -30,7 +30,7 @@ beforeEach(() => {
     const value = await memoryFs.promises.readFile(path, 'utf8');
     return typeof value === 'string' ? value : value.toString('utf8');
   });
-  vi.mocked(resolveStoryComponent).mockResolvedValue(undefined);
+  vi.mocked(resolveCsfComponent).mockReturnValue(undefined);
 });
 
 afterEach(() => vi.restoreAllMocks());
@@ -120,7 +120,7 @@ A small label for a category.
     (await buildStoryDocsPayload({ entry: svelteEntry }))?.stories['example--default'];
 
   beforeEach(() => {
-    vi.mocked(resolveStoryComponent).mockResolvedValue({
+    vi.mocked(resolveCsfComponent).mockReturnValue({
       componentPath,
       exportName: 'default',
       name: 'Tag',
@@ -201,7 +201,10 @@ A small label for a category.
   it.each([
     [
       'the component does not resolve',
-      () => vi.mocked(resolveStoryComponent).mockRejectedValue(new Error('Could not resolve')),
+      () =>
+        vi.mocked(resolveCsfComponent).mockImplementation(() => {
+          throw new Error('Could not resolve');
+        }),
     ],
     ['the component file is missing', () => vol.unlinkSync(componentPath)],
     ['the component does not parse', () => vol.writeFileSync(componentPath, `${component}\n<div`)],

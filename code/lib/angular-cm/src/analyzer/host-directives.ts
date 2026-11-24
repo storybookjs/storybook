@@ -4,49 +4,51 @@ import type * as ts from 'typescript';
 
 import type { Property } from '../types.ts';
 import { resolvedSymbol, type AnalyzerContext } from './context.ts';
-import { decoratorObjectArg, objectProperty } from './decorators.ts';
+import {
+  type BindingName,
+  decoratorObjectArg,
+  isAngularCoreOrUnresolved,
+  objectProperty,
+  parseBindingName,
+  resolveReference,
+  unwrap,
+} from './decorators.ts';
 import type { ClassMembers, MemberEntry } from './members.ts';
 
 type IOBucket = 'inputs' | 'outputs';
 
-interface ExposedBinding {
-  /** The host directive's own public name for the binding. */
-  name: string;
-  /** The name the host re-exposes it under, when it renames it. */
-  alias?: string;
-}
-
 interface HostDirectiveRef {
   declaration: ts.ClassDeclaration;
-  inputs: ExposedBinding[];
-  outputs: ExposedBinding[];
+  inputs: BindingName[];
+  outputs: BindingName[];
 }
 
 const MODEL_OUTPUT_SUFFIX = 'Change';
 
-// Bounds the variable-to-initializer chain, which a self-referencing constant would otherwise loop.
-const MAX_REFERENCE_DEPTH = 10;
+// Bounds how deeply spreads of `hostDirectives` arrays nest, which a self-spreading constant would
+// otherwise recurse through forever.
+const MAX_SPREAD_DEPTH = 10;
 
 /**
  * Add the inputs and outputs a `@Component`/`@Directive` exposes through `hostDirectives`.
  *
- * They are not class members, so the member visitor never sees them. Angular exposes only the
- * bindings the host lists, under the public name the host gives them, so a bare directive reference
- * contributes nothing. `resolveMembers` is how a host directive's own surface is read, its bases
+ * They are not class members, so the member visitor never sees them. Angular inherits
+ * `hostDirectives`, so `hosts` is the class followed by its bases, and the caller passes `members`
+ * with the whole base chain already merged: a binding the class or a base declares itself then
+ * takes precedence over one a host directive exposes under the same public name. Angular exposes
+ * only the bindings a host lists, under the public name it gives them, so a bare directive
+ * reference contributes nothing. `resolveMembers` reads a host directive's own surface, its bases
  * and its own host directives included.
  */
 export function applyHostDirectives(
   ctx: AnalyzerContext,
-  classNode: ts.ClassLikeDeclaration,
+  hosts: ts.ClassLikeDeclaration[],
   members: ClassMembers,
   resolveMembers: (declaration: ts.ClassDeclaration) => ClassMembers | undefined
 ): void {
-  for (const ref of readHostDirectives(ctx, classNode)) {
+  const hostName = hosts[0]?.name?.text ?? 'an anonymous class';
+  for (const ref of hosts.flatMap((host) => readHostDirectives(ctx, host))) {
     if (!ref.inputs.length && !ref.outputs.length) {
-      continue;
-    }
-    // A declaration file records no decorators or signal calls, so it has no IO to read.
-    if (ref.declaration.getSourceFile().isDeclarationFile) {
       continue;
     }
     const exposed = resolveMembers(ref.declaration);
@@ -54,89 +56,90 @@ export function applyHostDirectives(
       continue;
     }
     const directiveName = ref.declaration.name?.text ?? 'an anonymous directive';
-    exposeBindings(members, exposed, ref.inputs, 'inputs', directiveName, classNode);
-    exposeBindings(members, exposed, ref.outputs, 'outputs', directiveName, classNode);
-  }
-}
-
-function exposeBindings(
-  members: ClassMembers,
-  exposed: ClassMembers,
-  bindings: ExposedBinding[],
-  bucket: IOBucket,
-  directiveName: string,
-  classNode: ts.ClassLikeDeclaration
-): void {
-  for (const binding of bindings) {
-    const match = findExposed(exposed, bucket, binding);
-    const hostName = classNode.name?.text ?? 'an anonymous class';
-    if (!match) {
+    const leaveOut = (binding: BindingName, kind: 'input' | 'output') =>
       logger.debug(
-        `[angular-cm] ${hostName} host directive ${directiveName}.${binding.name} left out of docgen: no such ${bucket.slice(0, -1)}`
+        `[angular-cm] ${hostName} host directive ${directiveName}.${binding.name} left out of docgen: no such ${kind}`
       );
-      continue;
-    }
-    const name = match.publicName(binding.alias ?? binding.name);
-    if (name === undefined) {
-      logger.debug(
-        `[angular-cm] ${hostName} host directive ${directiveName}.${binding.name} left out of docgen: a model output re-exposed without a \`Change\` suffix`
-      );
-      continue;
-    }
-    // The host's own binding of the same public name is the one its docs describe.
-    if (members[bucket].some((entry) => entry.value.name === name)) {
-      continue;
-    }
-    members[bucket].push({
-      ...match.entry,
-      // Not a field of the host, so it must never merge with one by identity.
-      declName: `${directiveName}#${match.entry.declName}`,
-      value: { ...match.entry.value, name },
-    });
-  }
-}
 
-/**
- * Find the binding a host lists, by the host directive's public name.
- *
- * A `model()` is filed under its bare name in both buckets, while Angular lists its output half as
- * `<name>Change`; the match keeps the bare-name convention so the extractor still pairs the two.
- */
-function findExposed(
-  exposed: ClassMembers,
-  bucket: IOBucket,
-  binding: ExposedBinding
-): { entry: MemberEntry<Property>; publicName: (name: string) => string | undefined } | undefined {
-  const plain = exposed[bucket].find(
-    (entry) => !entry.isStatic && entry.value.name === binding.name && !isModel(entry)
-  );
-  if (plain) {
-    return { entry: plain, publicName: (name) => name };
-  }
-  if (bucket === 'inputs') {
-    const model = exposed.inputs.find(
-      (entry) => !entry.isStatic && entry.value.name === binding.name && isModel(entry)
-    );
-    return model && { entry: model, publicName: (name) => name };
-  }
-  if (!binding.name.endsWith(MODEL_OUTPUT_SUFFIX)) {
-    return undefined;
-  }
-  const bareName = binding.name.slice(0, -MODEL_OUTPUT_SUFFIX.length);
-  const model = exposed.outputs.find(
-    (entry) => !entry.isStatic && entry.value.name === bareName && isModel(entry)
-  );
-  return (
-    model && {
-      entry: model,
-      publicName: (name) =>
-        name.endsWith(MODEL_OUTPUT_SUFFIX) ? name.slice(0, -MODEL_OUTPUT_SUFFIX.length) : undefined,
+    // A model's public input name, by the model's own name, for each model whose input half is
+    // exposed; its output half pairs with it only under the matching `Change` name.
+    const exposedModelInputs = new Map<string, string>();
+    for (const binding of ref.inputs) {
+      const entry = exposed.inputs.find((candidate) => isNamed(candidate, binding.name));
+      if (!entry) {
+        leaveOut(binding, 'input');
+        continue;
+      }
+      const name = binding.alias ?? binding.name;
+      if (expose(members, 'inputs', entry, name) && isModel(entry)) {
+        exposedModelInputs.set(entry.value.name, name);
+      }
     }
-  );
+
+    for (const binding of ref.outputs) {
+      const name = binding.alias ?? binding.name;
+      const output = exposed.outputs.find(
+        (candidate) => isNamed(candidate, binding.name) && !isModel(candidate)
+      );
+      if (output) {
+        expose(members, 'outputs', output, name);
+        continue;
+      }
+      const model = binding.name.endsWith(MODEL_OUTPUT_SUFFIX)
+        ? exposed.outputs.find(
+            (candidate) =>
+              isModel(candidate) &&
+              isNamed(candidate, binding.name.slice(0, -MODEL_OUTPUT_SUFFIX.length))
+          )
+        : undefined;
+      if (!model) {
+        leaveOut(binding, 'output');
+        continue;
+      }
+      const pairedInput = exposedModelInputs.get(model.value.name);
+      if (pairedInput !== undefined && name === `${pairedInput}${MODEL_OUTPUT_SUFFIX}`) {
+        // The extractor pairs a model's halves by their shared bare name.
+        expose(members, 'outputs', model, pairedInput);
+      } else {
+        expose(members, 'outputs', asPlainOutput(model), name);
+      }
+    }
+  }
 }
 
 const isModel = (entry: MemberEntry<Property>): boolean =>
   entry.typeSource?.kind === 'signal' && entry.typeSource.signalKind === 'model';
+
+const isNamed = (entry: MemberEntry<Property>, name: string): boolean =>
+  !entry.isStatic && entry.value.name === name;
+
+// A model's output half on its own, typed and shown as an `output()` of the model's value.
+const asPlainOutput = (model: MemberEntry<Property>): MemberEntry<Property> => {
+  const { initializer: _default, ...value } = model.value;
+  return { ...model, typeSource: { kind: 'signal', signalKind: 'output' }, value };
+};
+
+// A model sits in `outputs` under its bare name, but a template binds its output as `<name>Change`.
+const boundName = (entry: MemberEntry<Property>, bucket: IOBucket): string =>
+  bucket === 'outputs' && isModel(entry)
+    ? `${entry.value.name}${MODEL_OUTPUT_SUFFIX}`
+    : entry.value.name;
+
+/** Add `entry` to `members[bucket]` as `name`, unless that bucket already binds the same name. */
+function expose(
+  members: ClassMembers,
+  bucket: IOBucket,
+  entry: MemberEntry<Property>,
+  name: string
+): boolean {
+  const added = { ...entry, value: { ...entry.value, name } };
+  const bound = boundName(added, bucket);
+  if (members[bucket].some((own) => boundName(own, bucket) === bound)) {
+    return false;
+  }
+  members[bucket].push(added);
+  return true;
+}
 
 function readHostDirectives(
   ctx: AnalyzerContext,
@@ -164,7 +167,7 @@ function collectHostDirectives(
 ): void {
   const { ts } = ctx;
   const list = resolveReference(ctx, expression);
-  if (!list || !ts.isArrayLiteralExpression(list) || depth > MAX_REFERENCE_DEPTH) {
+  if (!list || !ts.isArrayLiteralExpression(list) || depth > MAX_SPREAD_DEPTH) {
     return;
   }
   for (const element of list.elements) {
@@ -190,86 +193,50 @@ function collectHostDirectives(
   }
 }
 
-// Angular accepts `'name'` and `'name: alias'` here, and nothing else.
-function readBindings(
-  ctx: AnalyzerContext,
-  expression: ts.Expression | undefined
-): ExposedBinding[] {
+function readBindings(ctx: AnalyzerContext, expression: ts.Expression | undefined): BindingName[] {
   const list = expression && resolveReference(ctx, expression);
   if (!list || !ctx.ts.isArrayLiteralExpression(list)) {
     return [];
   }
-  const bindings: ExposedBinding[] = [];
-  for (const element of list.elements) {
+  return list.elements.flatMap((element) => {
     const value = resolveReference(ctx, element);
-    if (!value || !ctx.ts.isStringLiteralLike(value)) {
-      continue;
-    }
-    const [name, alias] = value.text.split(':').map((part) => part.trim());
-    if (name) {
-      bindings.push({ name, ...(alias ? { alias } : {}) });
-    }
-  }
-  return bindings;
+    const binding = value && ctx.ts.isStringLiteralLike(value) && parseBindingName(value.text);
+    return binding ? [binding] : [];
+  });
 }
 
 function directiveDeclaration(
   ctx: AnalyzerContext,
   expression: ts.Expression
 ): ts.ClassDeclaration | undefined {
-  const { ts } = ctx;
-  let target = unwrap(ctx, expression);
-  // `forwardRef(() => Directive)`, for a directive declared later in the file.
-  if (ts.isCallExpression(target) && target.arguments.length === 1) {
-    const [factory] = target.arguments;
-    if (ts.isArrowFunction(factory) && !ts.isBlock(factory.body)) {
-      target = unwrap(ctx, factory.body);
-    }
-  }
-  if (!ts.isIdentifier(target) && !ts.isPropertyAccessExpression(target)) {
+  const target = unwrapForwardRef(ctx, unwrap(ctx, expression));
+  if (!ctx.ts.isIdentifier(target) && !ctx.ts.isPropertyAccessExpression(target)) {
     return undefined;
   }
   return resolvedSymbol(ctx, target)?.declarations?.find(
-    (candidate): candidate is ts.ClassDeclaration => ts.isClassDeclaration(candidate)
+    (candidate): candidate is ts.ClassDeclaration => ctx.ts.isClassDeclaration(candidate)
   );
 }
 
-/** Follow a reference to a constant through to its initializer, as decorator metadata allows. */
-function resolveReference(
-  ctx: AnalyzerContext,
-  expression: ts.Expression
-): ts.Expression | undefined {
+// `forwardRef(() => Directive)` from `@angular/core`, for a directive declared later in the file.
+function unwrapForwardRef(ctx: AnalyzerContext, expression: ts.Expression): ts.Expression {
   const { ts } = ctx;
-  let current = unwrap(ctx, expression);
-  for (let depth = 0; depth < MAX_REFERENCE_DEPTH; depth++) {
-    if (!ts.isIdentifier(current)) {
-      return current;
-    }
-    const declaration = resolvedSymbol(ctx, current)?.valueDeclaration;
-    if (!declaration || !ts.isVariableDeclaration(declaration)) {
-      // Not a constant, e.g. a class: the reference is the value.
-      return current;
-    }
-    if (!declaration.initializer) {
-      return undefined;
-    }
-    current = unwrap(ctx, declaration.initializer);
+  if (!ts.isCallExpression(expression) || expression.arguments.length !== 1) {
+    return expression;
   }
-  return undefined;
-}
-
-// `as const`, `satisfies HostDirectiveConfig`, parentheses and `!` change nothing Angular reads.
-function unwrap(ctx: AnalyzerContext, expression: ts.Expression): ts.Expression {
-  const { ts } = ctx;
-  let current = expression;
-  while (
-    ts.isParenthesizedExpression(current) ||
-    ts.isAsExpression(current) ||
-    ts.isSatisfiesExpression(current) ||
-    ts.isNonNullExpression(current) ||
-    ts.isTypeAssertionExpression(current)
-  ) {
-    current = current.expression;
+  const callee = expression.expression;
+  const [factory] = expression.arguments;
+  const calleeName = ts.isIdentifier(callee)
+    ? callee.text
+    : ts.isPropertyAccessExpression(callee)
+      ? callee.name.text
+      : undefined;
+  const isForwardRef =
+    calleeName !== undefined &&
+    (resolvedSymbol(ctx, callee)?.name ?? calleeName) === 'forwardRef' &&
+    isAngularCoreOrUnresolved(ctx, callee);
+  if (!isForwardRef || !ts.isArrowFunction(factory) || ts.isBlock(factory.body)) {
+    return expression;
   }
-  return current;
+  return unwrap(ctx, factory.body);
 }

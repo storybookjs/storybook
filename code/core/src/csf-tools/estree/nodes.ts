@@ -65,23 +65,15 @@ export const unwrapExpression = <T extends { type: string } | null | undefined>(
 // Object literal properties written as `key: value`, methods or accessors (not spreads).
 export type Property = E.ObjectProperty;
 
-/**
- * Static key of an object member, or `undefined` for a spread or a key only running the code would
- * produce. A computed key written as a literal is static: `{ ['a']: 1 }` names `a`, `{ [a]: 1 }`
- * does not.
- */
-export const staticKey = (member: Node): string | undefined => {
-  if (member.type !== 'Property') {
-    return undefined;
-  }
-  const key = member.key as Node;
+// The name a key spells out, as `a` in `.a`, `['a']`, `` [`a`] `` and `{ 1: … }`, but not `[a]`.
+const keyName = (key: Node, computed: boolean): string | undefined => {
   if (isStringLiteral(key)) {
     return key.value;
   }
   if (isNumericLiteral(key)) {
     return String(key.value);
   }
-  if (key.type === 'Identifier' && !member.computed) {
+  if (key.type === 'Identifier' && !computed) {
     return key.name;
   }
   if (key.type === 'TemplateLiteral' && key.expressions.length === 0) {
@@ -89,6 +81,20 @@ export const staticKey = (member: Node): string | undefined => {
   }
   return undefined;
 };
+
+// The name of the method a callee calls, as `push` in `lines.push` or `lines['push']`.
+export const calledMethodName = (callee: Node): string | undefined => {
+  const member = unwrapExpression(callee);
+  return member.type === 'MemberExpression' ? keyName(member.property, member.computed) : undefined;
+};
+
+/**
+ * Static key of an object member, or `undefined` for a spread or a key only running the code would
+ * produce. A computed key written as a literal is static: `{ ['a']: 1 }` names `a`, `{ [a]: 1 }`
+ * does not.
+ */
+export const staticKey = (member: Node): string | undefined =>
+  member.type === 'Property' ? keyName(member.key as Node, member.computed) : undefined;
 
 /**
  * The first property of `object` whose `staticKey` is `name`, a method or accessor included: the
@@ -137,6 +143,24 @@ export const isCsfFactoryCall = (node: Node | null | undefined): node is CsfFact
   withoutTypeCalls(node.callee.object).type === 'Identifier' &&
   node.callee.property.type === 'Identifier' &&
   (node.callee.property.name === 'story' || node.callee.property.name === 'extend');
+
+// `preview` in `preview.meta()` and `preview.type<T>().meta()`, the root a CSF factory meta is
+// made from.
+export const metaCallRoot = (node: Node): E.IdentifierReference | undefined => {
+  if (
+    node.type !== 'CallExpression' ||
+    node.callee.type !== 'MemberExpression' ||
+    node.callee.computed ||
+    !isIdentifier(node.callee.property, 'meta')
+  ) {
+    return undefined;
+  }
+  let root: Node = node.callee.object;
+  if (root.type === 'CallExpression' && root.callee.type === 'MemberExpression') {
+    root = root.callee.object;
+  }
+  return root.type === 'Identifier' ? (root as E.IdentifierReference) : undefined;
+};
 
 /** Identifier a CSF factory call is made on: `meta` in `meta.type<T>().story()`. */
 export const csfFactoryReceiver = (node: CsfFactoryCall): E.IdentifierReference =>

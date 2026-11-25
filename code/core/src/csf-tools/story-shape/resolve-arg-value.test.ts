@@ -56,11 +56,33 @@ describe('resolveArgValue', () => {
     });
   });
 
+  it('follows a constant whose copy is given a new value', () => {
+    expect(
+      valueOf(`const LABEL = 'Save';\nlet current = LABEL;\ncurrent = 'Other';`, 'LABEL')
+    ).toEqual({ node: "'Save'", imports: [], unresolved: [] });
+  });
+
   it('follows a chain of local consts', () => {
     expect(valueOf(`const A = B; const B = 42;`, 'A')).toEqual({
       node: '42',
       imports: [],
       unresolved: [],
+    });
+  });
+
+  it.each([
+    ['a method that changes it', `lines.push('b');`],
+    ['a write to a member', `lines[0] = 'b';`],
+    ['Object.assign', `Object.assign(lines, ['b']);`],
+    ['another name for it', `const alias = lines;\nalias.push('b');`],
+    ['a method written with brackets', `lines['push']('b');`],
+    ['a method written with a template key', "lines[`push`]('b');"],
+    ['a method only known at runtime', `const method = 'push';\nlines[method]('b');`],
+  ])('keeps a name whose value the story file changes with %s', (_how, change) => {
+    expect(valueOf(`const lines = ['a'];\n${change}`, 'lines')).toEqual({
+      node: 'lines',
+      imports: [],
+      unresolved: ['lines'],
     });
   });
 

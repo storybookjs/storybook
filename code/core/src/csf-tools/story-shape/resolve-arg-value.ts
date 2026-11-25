@@ -21,6 +21,7 @@ import {
   resolveArgsRecord,
   resolveDestructuredValue,
 } from './resolve-members.ts';
+import { isVisiblyChanged } from './unchanging-binding.ts';
 
 /** An arg value read through to the definition it names, and what printing it still depends on. */
 export interface ResolvedArgValue {
@@ -250,14 +251,17 @@ const objectFrom = (
   );
 };
 
-/** Reads a bare name through to the value it was declared with, as far as the chain goes. */
+// Reads a bare name through to the value it was declared with, as far as the chain goes. A name
+// the file visibly changes later, as `lines.push('b')` does, stays a name.
 const followValue = (node: Node, ctx: ReferenceContext, seen: Set<string>): Node => {
   if (node.type !== 'Identifier' || seen.has(node.name)) {
     return node;
   }
-  const init =
-    constantInit(ctx.editor.scopes.program.bindings.get(node.name)) ??
-    resolveDestructuredValue(ctx, node.name);
+  const binding = ctx.editor.scopes.program.bindings.get(node.name);
+  if (binding && isVisiblyChanged(binding, ctx)) {
+    return node;
+  }
+  const init = constantInit(binding) ?? resolveDestructuredValue(ctx, node.name);
   if (!init) {
     return node;
   }

@@ -1066,6 +1066,72 @@ export const WithNew: Story = {
   },
 };
 
+const constructorData = transformStoryIndexToStoriesHash(
+  {
+    v: 5,
+    entries: Object.fromEntries(
+      ['Primary', 'Secondary'].map((name) => {
+        const id = `constructor--${name.toLowerCase()}`;
+        return [
+          id,
+          {
+            id,
+            title: 'Constructor',
+            type: 'story',
+            subtype: 'story',
+            name,
+            importPath: './Constructor.stories.ts',
+            tags: [],
+          },
+        ];
+      })
+    ),
+  },
+  { provider: noConfigProvider, docsOptions: { docsMode: false }, filters: {}, allStatuses: {} }
+);
+
+/**
+ * A component titled Constructor gets the id `constructor`, a key every plain object inherits. Its
+ * row, its stories and the status rolled up from them render like those of any other component.
+ */
+export const ComponentTitledConstructor: Story = {
+  args: {
+    refId: DEFAULT_REF_ID,
+    allStatuses: {
+      'constructor--primary': {
+        'storybook/vitest': {
+          storyId: 'constructor--primary',
+          typeId: 'storybook/vitest',
+          value: 'status-value:error',
+          title: 'Vitest',
+          description: 'Test failed',
+        },
+      },
+    },
+  },
+  render: (args) => {
+    const [selectedId, setSelectedId] = useState('constructor--primary');
+    return (
+      <Tree
+        {...args}
+        data={constructorData}
+        selectedStoryId={selectedId}
+        onSelectStoryId={setSelectedId}
+      />
+    );
+  },
+  play: async ({ canvasElement }) => {
+    const row = (id: string) => canvasElement.querySelector(`[data-item-id="${id}"]`);
+    const testStatus = (id: string) => row(id)?.querySelector('[data-testid="tree-status-button"]');
+
+    await waitFor(() => expect(row('constructor')).toHaveTextContent('Constructor'));
+    await expect(testStatus('constructor')).toHaveAccessibleName('Test status: Error');
+    await expect(testStatus('constructor--primary')).toHaveAccessibleName('Test status: Error');
+    await expect(row('constructor--secondary')).toHaveTextContent('Secondary');
+    await expect(testStatus('constructor--secondary')).toBeNull();
+  },
+};
+
 // ─── Sticky ancestors of the topmost visible row (VSCode-style sticky scroll) ────────────────────
 
 const stickyStoryId =

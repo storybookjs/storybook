@@ -1,8 +1,6 @@
 import { ImplicitActionsDuringRendering } from 'storybook/internal/preview-errors';
 import type { Renderer } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
-
 import type { PreviewWeb } from 'storybook/preview-api';
 import { addons } from 'storybook/preview-api';
 
@@ -56,8 +54,8 @@ export function action(name: string, options: ActionOptions = {}): HandlerFuncti
   const handler = function actionHandler(...args: any[]) {
     if (options.implicit) {
       const preview =
-        '__STORYBOOK_PREVIEW__' in global
-          ? (global.__STORYBOOK_PREVIEW__ as unknown as PreviewWeb<Renderer>)
+        '__STORYBOOK_PREVIEW__' in globalThis
+          ? (globalThis.__STORYBOOK_PREVIEW__ as unknown as PreviewWeb<Renderer>)
           : undefined;
       const storyRenderer = preview?.storyRenders.find(
         (render) => render.phase === 'playing' || render.phase === 'rendering'

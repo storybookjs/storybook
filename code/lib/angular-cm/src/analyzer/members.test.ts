@@ -1396,6 +1396,24 @@ describe('metadata-declared IO, in the generated-wrapper style', () => {
     expect(names(component.propertiesClass)).toEqual(['plainField']);
   });
 
+  it('follows a metadata array kept in a shared constant', () => {
+    const component = componentIn(`
+      import { Component } from '@angular/core';
+
+      const SHARED_INPUTS = ['disabled', 'design: buttonDesign'] as const;
+
+      @Component({ selector: 'sb-shared-io', template: '', inputs: SHARED_INPUTS })
+      export class SharedIoComponent {
+        disabled = false;
+
+        design = 'Default';
+      }
+    `);
+
+    expect(names(component.inputsClass)).toEqual(['buttonDesign', 'disabled']);
+    expect(component.propertiesClass).toEqual([]);
+  });
+
   it('sorts each bucket after reclassifying, not before', () => {
     // Reclassification appends to the target bucket, so sorting has to be the last pass or a moved
     // field lands past the sorted block. Every member here is declared out of order.

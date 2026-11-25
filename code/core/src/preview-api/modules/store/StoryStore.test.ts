@@ -25,12 +25,6 @@ vi.mock('./csf/processCSFFile', async (importOriginal) => ({
   ),
 }));
 
-vi.mock('@storybook/global', async (importOriginal) => ({
-  global: {
-    ...(await importOriginal<typeof import('@storybook/global')>()),
-  },
-}));
-
 vi.mock('storybook/internal/client-logger');
 
 const componentOneExports = {

@@ -1,15 +1,11 @@
-import { global } from '@storybook/global';
-
 import type { AxeResults, Result } from 'axe-core';
 
 import { PANEL_ID } from './constants.ts';
 import type { EnhancedResults } from './types.ts';
 
-const { document } = global;
-
 // Augment axe results with debuggable links
 export const withLinkPaths = (results: AxeResults, storyId: string) => {
-  const pathname = document.location.pathname.replace(/iframe\.html$/, '');
+  const pathname = globalThis.document.location.pathname.replace(/iframe\.html$/, '');
 
   // Make a copy of the original results
   const enhancedResults = { ...results };

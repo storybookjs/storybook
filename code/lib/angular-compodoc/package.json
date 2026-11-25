@@ -45,7 +45,6 @@
     "!src/**/*"
   ],
   "dependencies": {
-    "@storybook/global": "^5.0.0",
     "entities": "^4.5.0"
   },
   "peerDependencies": {

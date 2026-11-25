@@ -9,6 +9,11 @@ export type TestStoriesSkillInputs = {
   a11yEnabled: boolean;
 };
 
+// Said before the first run, so an agent in a sandbox does not spend a run on finding out. The
+// command says the same when the port is refused.
+const SANDBOX =
+  'In a sandbox, only `test run` needs escalated permissions: it opens a local port for the browser that runs the tests.';
+
 // The `AGENTS.md` section names the command itself, so this skill is for an agent that opens it by
 // name. It names the same forms of the command, and what the result says.
 export function buildTestStoriesSkill(inputs: TestStoriesSkillInputs): string {
@@ -36,7 +41,9 @@ ${run} --changed                # new and modified stories, and the stories that
 ${run} --changed main           # the same since the branch forked from main, plus the uncommitted changes
 \`\`\`
 
-Only story files match a file argument: a component file matches nothing, and \`--changed\` finds the stories that depend on it. Files and \`--changed\` combine, with the files first (the argument after \`--changed\` is its ref): \`${toCliPath('test.run')} src/Button.stories.tsx --changed\` runs the changed stories in those files. \`--a11y false\` leaves out the accessibility checks, \`--json\` prints the result as JSON, and \`--help\` lists every argument.`
+Only story files match a file argument: a component file matches nothing, and \`--changed\` finds the stories that depend on it. Files and \`--changed\` combine, with the files first (the argument after \`--changed\` is its ref): \`${toCliPath('test.run')} src/Button.stories.tsx --changed\` runs the changed stories in those files. \`--a11y false\` leaves out the accessibility checks, \`--json\` prints the result as JSON, and \`--help\` lists every argument.
+
+${SANDBOX}`
     : `${v.name('test.run')} runs the story tests of this Storybook in Vitest:
 
 - with neither \`files\` nor \`changed\`: every story

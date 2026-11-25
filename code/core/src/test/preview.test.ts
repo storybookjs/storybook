@@ -49,10 +49,6 @@ describe('focus instrumentation', () => {
 describe('context userEvent', () => {
   const clipboard = { readText: vi.fn() };
 
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
   it('works in a secure context and keeps the browser clipboard', async () => {
     // Like browsers, put the clipboard on the prototype, not on the navigator itself.
     vi.stubGlobal('navigator', Object.create({ clipboard }));

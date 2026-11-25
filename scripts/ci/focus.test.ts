@@ -19,6 +19,7 @@ import {
   PATH_TRIGGERED_JOBS,
   getFocusJobs,
   selectChromaticSiblings,
+  selectDocgenBaselineSandboxes,
   selectFocusSandboxes,
   selectPathTriggeredJobs,
   templateDirs,
@@ -247,9 +248,34 @@ describe('docgen baseline coverage', () => {
 
   it.each([
     'code/core/src/component-meta/ComponentMetaManager.ts',
+    'code/core/src/csf-tools/jsdoc.ts',
+    'code/core/src/docs-tools/argTypes/docgen/extractDocgenProps.ts',
+    'code/core/src/common/utils/component-id.ts',
+    'code/core/src/common/utils/component-path-from-story.ts',
+    'code/core/src/common/utils/resolve-meta-component.ts',
+    'code/core/src/common/utils/select-component-entry.ts',
+    'code/core/src/common/utils/subcomponents.ts',
+    'code/core/src/shared/open-service/services/docgen/server.ts',
+    'code/core/src/shared/open-service/services/extraction-service.server.ts',
     'code/lib/docgen-harness/src/sandbox-baselines/run.ts',
   ])('creates every docgen sandbox when %s changes', (file) => {
+    expect(existsSync(join(ROOT, file))).toBe(true);
     expect(ciDocgenTemplates.filter((key) => !createsSandbox([file], key))).toEqual([]);
+  });
+
+  it('does not add duplicate creates for shared changes or trigger on unrelated core changes', () => {
+    const file = 'code/core/src/csf-tools/jsdoc.ts';
+    const alreadyCreated = ciDocgenTemplates[0]!;
+
+    expect(selectDocgenBaselineSandboxes([alreadyCreated], [file])).toEqual(
+      ciDocgenTemplates.filter((key) => key !== alreadyCreated)
+    );
+    expect(selectDocgenBaselineSandboxes([], ['code/core/src/manager/App.tsx'])).toEqual([]);
+    for (const key of ciDocgenTemplates) {
+      expect(
+        getFocusJobs([file]).filter(({ id }) => id === defineSandboxFlow(key).createJob.id)
+      ).toHaveLength(1);
+    }
   });
 });
 

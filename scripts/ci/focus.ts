@@ -131,6 +131,14 @@ export function selectChromaticSiblings(
 
 const DOCGEN_SHARED_PATHS = [
   'code/core/src/component-meta/',
+  'code/core/src/csf-tools/',
+  'code/core/src/docs-tools/argTypes/',
+  'code/core/src/common/utils/component-id.ts',
+  'code/core/src/common/utils/component-path-from-story.ts',
+  'code/core/src/common/utils/resolve-meta-component.ts',
+  'code/core/src/common/utils/select-component-entry.ts',
+  'code/core/src/common/utils/subcomponents.ts',
+  'code/core/src/shared/open-service/',
   'code/lib/docgen-harness/src/sandbox-baselines/',
 ];
 

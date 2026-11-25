@@ -212,8 +212,8 @@ function RowLinkHack({
         }
       }}
       onMouseDown={(event) => {
-        // Focus the underlying row rather than the link so RAC styles it correctly and updates
-        // its KB navigation state correctly.
+        // The browser would focus the link, which is hidden from assistive technology. Focus the
+        // row instead, as a press on it would.
         event.preventDefault();
         event.currentTarget.closest<HTMLElement>('[data-item-id]')?.focus({ preventScroll: true });
       }}

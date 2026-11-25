@@ -1,3 +1,5 @@
+import { join } from 'node:path';
+
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
@@ -276,10 +278,15 @@ describe('upgrade: refreshing the skills', () => {
   });
 
   describe('when the skills were offered', () => {
-    const offered = (result: object = {}) =>
+    const offered = (result: object = {}, configDir = '.storybook') =>
       vi.mocked(runAutomigrations).mockResolvedValue({
         automigrationResults: {},
-        detectedAutomigrations: [{ fix: { id: 'skills' }, reports: [{ result }] } as never],
+        detectedAutomigrations: [
+          {
+            fix: { id: 'skills' },
+            reports: [{ result, status: 'check_succeeded', project: { configDir } }],
+          } as never,
+        ],
       });
     const notInstalled = () =>
       vi
@@ -298,6 +305,18 @@ describe('upgrade: refreshing the skills', () => {
       expect(notInstalled()).toEqual([
         [
           'Did not install the Storybook skills for AI agents. Add them with: npx storybook automigrate skills',
+        ],
+      ]);
+    });
+
+    it('names the config folder when it is not .storybook in the working directory', async () => {
+      offered({}, join(process.cwd(), 'packages/a/.storybook'));
+
+      await upgrade(baseOptions);
+
+      expect(notInstalled()).toEqual([
+        [
+          'Did not install the Storybook skills for AI agents. Add them with: npx storybook automigrate skills --config-dir packages/a/.storybook',
         ],
       ]);
     });

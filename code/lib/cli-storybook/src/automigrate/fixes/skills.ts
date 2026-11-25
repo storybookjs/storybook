@@ -8,6 +8,8 @@ import {
 import { frameworkPackages, frameworkToRenderer } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
+import { relative } from 'pathe';
+
 import { getFrameworkPackageName } from '../helpers/mainConfigFile.ts';
 import { crossesVersionBoundary } from '../helpers/versionBoundary.ts';
 import type { Fix } from '../types.ts';
@@ -16,11 +18,19 @@ import { ANGULAR_VITE_PACKAGE, offersAngularViteMigration } from './angular-to-a
 const introducedIn = '11.0.0';
 
 // How to add the skills later. `automigrate skills` alone does not apply until the project uses
-// angular-vite.
-export const addSkillsCommand = (result?: { afterAngularViteMigration?: boolean }) =>
-  result?.afterAngularViteMigration
-    ? 'npx storybook automigrate angular-to-angular-vite, and then npx storybook automigrate skills'
-    : 'npx storybook automigrate skills';
+// angular-vite, and `automigrate` only finds a config folder that is `.storybook` in the working
+// directory.
+export const addSkillsCommand = ({
+  afterAngularViteMigration,
+  configDir = '.storybook',
+}: { afterAngularViteMigration?: boolean; configDir?: string } = {}) => {
+  const dir = relative(process.cwd(), configDir);
+  const automigrate = (id: string) =>
+    `npx storybook automigrate ${id}${dir === '.storybook' ? '' : ` --config-dir ${dir}`}`;
+  return afterAngularViteMigration
+    ? `${automigrate('angular-to-angular-vite')}, and then ${automigrate('skills')}`
+    : automigrate('skills');
+};
 
 export const skills: Fix<{ afterAngularViteMigration?: boolean }> = {
   id: 'skills',

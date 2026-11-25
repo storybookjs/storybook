@@ -611,6 +611,8 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
         afterAngularViteMigration: offeredSkills.reports.some(
           ({ result }) => result?.afterAngularViteMigration
         ),
+        configDir: offeredSkills.reports.find(({ status }) => status === 'check_succeeded')?.project
+          .configDir,
       });
       logger.warn(`Did not install the Storybook skills for AI agents. Add them with: ${command}`);
     }

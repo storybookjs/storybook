@@ -197,9 +197,17 @@ const createTaskLogSession = (options: TaskLogOptions): TaskLogSession => {
   const { output, restore } = interceptStdout(() => {
     if (mode === 'live') mode = 'plain';
   });
-  // A log taller than the terminal is redrawn into the scrollback on every update; the trimmed
-  // lines are retained for a log shown on error.
-  const task = clack.taskLog({ limit: 10, retainLog: true, ...options, output });
+  const createTask = (): ReturnType<typeof clack.taskLog> => {
+    try {
+      // A log taller than the terminal is redrawn into the scrollback on every update; the trimmed
+      // lines are retained for a log shown on error.
+      return clack.taskLog({ limit: 10, retainLog: true, ...options, output });
+    } catch (error) {
+      restore();
+      throw error;
+    }
+  };
+  const task = createTask();
   // Outside live mode, Clack's own task would erase rows it no longer owns, so print plain lines.
   const render = (kind: 'message' | 'success' | 'error', text: string, live: () => void): void => {
     if (mode === 'live') {

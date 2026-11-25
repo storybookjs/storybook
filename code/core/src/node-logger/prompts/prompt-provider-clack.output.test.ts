@@ -1,17 +1,22 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
-vi.mock('../logger/log-tracker.ts', () => ({
-  logTracker: {
-    addLog: vi.fn(),
-  },
-}));
+vi.mock('../logger/log-tracker.ts', { spy: true });
+
+import { logTracker } from '../logger/log-tracker.ts';
 
 import { ClackPromptProvider } from './prompt-provider-clack.ts';
 
 const ORIGINAL_WRITE = process.stdout.write;
 const ORIGINAL_IS_TTY = Object.getOwnPropertyDescriptor(process.stdout, 'isTTY');
+let chunks: string[];
 
 beforeEach((): void => {
+  chunks = [];
+  vi.mocked(logTracker.addLog).mockImplementation((): void => {});
+  vi.spyOn(process.stdout, 'write').mockImplementation((chunk): boolean => {
+    chunks.push(String(chunk));
+    return true;
+  });
   vi.stubGlobal('STORYBOOK_CURRENT_TASK_LOG', null);
   // Clack skips task log redraws when CI is true.
   vi.stubEnv('CI', '');
@@ -46,12 +51,6 @@ it.each([
     expected: { eraseAfterMarker: true, outputAfterMarker: [] },
   },
 ])('$name', ({ outsideWrite, marker, expected }): void => {
-  const chunks: string[] = [];
-  vi.spyOn(process.stdout, 'write').mockImplementation((chunk): boolean => {
-    chunks.push(String(chunk));
-    return true;
-  });
-
   const provider = new ClackPromptProvider();
   const log = provider.taskLog({ id: 'task', title: 'Task' });
   log.message('one');

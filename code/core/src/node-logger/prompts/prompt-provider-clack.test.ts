@@ -253,6 +253,17 @@ describe('ClackPromptProvider', () => {
       expect(getCurrentTaskLog()).toBeNull();
     });
 
+    it('restores stdout when the task log cannot be created', () => {
+      const write = process.stdout.write;
+      vi.mocked(clack.taskLog).mockImplementationOnce(() => {
+        throw new Error('boom');
+      });
+
+      expect(() => provider.taskLog({ id: 'task', title: 'Task' })).toThrow('boom');
+      expect(process.stdout.write).toBe(write);
+      expect(getCurrentTaskLog()).toBeNull();
+    });
+
     it('a group closing does not count as an outside write', () => {
       taskGroup.success.mockImplementation(() => {
         const output = vi.mocked(clack.taskLog).mock.calls[0][0]?.output;

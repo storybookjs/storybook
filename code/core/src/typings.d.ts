@@ -16,7 +16,7 @@ declare var STORYBOOK_FRAMEWORK:
 declare var STORYBOOK_RENDERER: import('./types/modules/renderers').SupportedRenderer | undefined;
 declare var STORYBOOK_HOOKS_CONTEXT: any;
 declare var STORYBOOK_CURRENT_TASK_LOG:
-  | import('./node-logger/prompts/prompt-provider-clack').TaskLogSession
+  | import('./node-logger/prompts/prompt-provider-clack.ts').TaskLogSession
   | null
   | undefined;
 declare var SB_TELEMETRY_STATE: 'enabled' | 'disabled' | undefined;

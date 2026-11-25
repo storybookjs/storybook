@@ -1,7 +1,7 @@
 import { join } from 'node:path';
 
 import { ProjectType, copyTemplateFiles } from 'storybook/internal/cli';
-import { executeCommand, versions } from 'storybook/internal/common';
+import { executeCommand, getPackageDetails, versions } from 'storybook/internal/common';
 import { CLI_COLORS, logger, prompt } from 'storybook/internal/node-logger';
 import { SupportedBuilder, SupportedLanguage, SupportedRenderer } from 'storybook/internal/types';
 import {
@@ -139,9 +139,13 @@ export default defineGeneratorModule({
       'storybook',
     ];
 
-    await assertReactNativeOnDevicePeers(packageManager, versions.storybook);
-
     const versionedPackages = await packageManager.getVersionedPackages(packagesToResolve);
+
+    await assertReactNativeOnDevicePeers(
+      packageManager,
+      versions.storybook,
+      versionedPackages.map(getPackageDetails).find(([name]) => name === 'storybook')?.[1]
+    );
 
     const packages: string[] = [
       ...versionedPackages,

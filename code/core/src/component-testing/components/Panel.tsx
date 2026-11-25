@@ -236,8 +236,32 @@ export const getRenderPhaseState = (
   };
 };
 
-// Module scope: listenForPlayResults updates it while the panel is closed.
+const getInternalRenderCall = (storyId: string, exception?: Call['exception']): Call => ({
+  id: INTERNAL_RENDER_CALL_ID,
+  method: 'render',
+  args: [],
+  cursor: 0,
+  storyId,
+  ancestors: [],
+  path: [],
+  interceptable: true,
+  retain: false,
+  exception,
+});
+
+const getInternalRenderLogItem = (status: CallStates): LogItem => ({
+  callId: INTERNAL_RENDER_CALL_ID,
+  status,
+  ancestors: [],
+});
+
+// Module scope: listenForPlayResults updates these while the panel is closed, and starts a new step
+// log when a render starts.
 let renderTracker: RenderTracker = {};
+const log: { current: LogItem[] } = { current: [getInternalRenderLogItem(CallStates.ACTIVE)] };
+const calls: { current: Map<Call['id'], Omit<Call, 'status'>> } = {
+  current: new Map([[INTERNAL_RENDER_CALL_ID, getInternalRenderCall('')]]),
+};
 
 // Registered once with the addon, so render phases and play results reach panelStore while the
 // panel is closed.
@@ -271,6 +295,10 @@ export const listenForPlayResults = (
     );
     renderTracker = tracker;
     if (isCurrentRender) {
+      if (event.newPhase === 'rendering') {
+        log.current = [getInternalRenderLogItem(CallStates.ACTIVE)];
+        calls.current.set(INTERNAL_RENDER_CALL_ID, getInternalRenderCall(event.storyId));
+      }
       panelStore.setState((state) => getRenderPhaseState(state, event.newPhase, isRerender));
     }
   });
@@ -301,25 +329,6 @@ export const listenForPlayResults = (
     }
   });
 };
-
-const getInternalRenderCall = (storyId: string, exception?: Call['exception']): Call => ({
-  id: INTERNAL_RENDER_CALL_ID,
-  method: 'render',
-  args: [],
-  cursor: 0,
-  storyId,
-  ancestors: [],
-  path: [],
-  interceptable: true,
-  retain: false,
-  exception,
-});
-
-const getInternalRenderLogItem = (status: CallStates): LogItem => ({
-  callId: INTERNAL_RENDER_CALL_ID,
-  status,
-  ancestors: [],
-});
 
 export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>(
   function PanelMemoized({ refId, storyId, storyUrl }) {
@@ -355,11 +364,6 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
       unhandledErrors = undefined,
     } = panelState;
 
-    // Log and calls are tracked in a ref so we don't needlessly rerender.
-    const log = useRef<LogItem[]>([getInternalRenderLogItem(CallStates.ACTIVE)]);
-    const calls = useRef<Map<Call['id'], Omit<Call, 'status'>>>(
-      new Map([[INTERNAL_RENDER_CALL_ID, getInternalRenderCall(storyId)]])
-    );
     const setCall = ({ status, ...call }: Call) => calls.current.set(call.id, call);
     const toggles = useRef(new Map<Call['id'], () => void>()).current;
 
@@ -400,27 +404,6 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
             )
           );
         },
-        [STORY_RENDER_PHASE_CHANGED]: (event) => {
-          // The channel passes the same payload to the addon listener before the mounted panel.
-          if (event !== renderTracker.event) {
-            return;
-          }
-
-          if (event.newPhase === 'rendering') {
-            log.current = [getInternalRenderLogItem(CallStates.ACTIVE)];
-            calls.current.set(INTERNAL_RENDER_CALL_ID, getInternalRenderCall(storyId));
-          } else {
-            set((state) =>
-              getPanelState(state, {
-                log: log.current,
-                calls: calls.current,
-                collapsed,
-                setCollapsed,
-                toggles,
-              })
-            );
-          }
-        },
         [STORY_THREW_EXCEPTION]: (e: { name: string; message: string; stack: string }) => {
           log.current = [getInternalRenderLogItem(CallStates.ERROR)];
           calls.current.set(
@@ -444,6 +427,7 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
       [collapsed, storyId]
     );
 
+    // listenForPlayResults sets the status for each render phase; list the steps for that status.
     useEffect(() => {
       set((state) =>
         getPanelState(state, {
@@ -454,7 +438,7 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
           toggles,
         })
       );
-    }, [set, collapsed, toggles]);
+    }, [set, collapsed, toggles, status]);
 
     const controls = useMemo(
       () => ({

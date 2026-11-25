@@ -271,16 +271,11 @@ describe('buildImportStatements', () => {
 
     it('keeps an unresolved package specifier', () => {
       expect(
-        buildImportStatements({
-          refs: [
-            {
-              importId: 'react-router-dom',
-              importName: 'MemoryRouter',
-              localImportName: 'MemoryRouter',
-            },
-          ],
-          packageName: 'shared',
-        })
+        statementsFor(
+          `import { MemoryRouter } from 'react-router-dom';`,
+          ['MemoryRouter'],
+          'my-design-system'
+        )
       ).toMatchInlineSnapshot(`
         [
           "import { MemoryRouter } from 'react-router-dom';",
@@ -290,21 +285,14 @@ describe('buildImportStatements', () => {
 
     it('keeps an unresolved mixed-case package specifier', () => {
       expect(
-        buildImportStatements({
-          refs: [
-            {
-              importId: '@Company/ui',
-              importName: 'Button',
-              localImportName: 'Button',
-            },
-            {
-              importId: 'JSONStream',
-              importName: 'default',
-              localImportName: 'JSONStream',
-            },
-          ],
-          packageName: 'shared',
-        })
+        statementsFor(
+          dedent`
+            import { Button } from '@Company/ui';
+            import JSONStream from 'JSONStream';
+          `,
+          ['Button', 'JSONStream'],
+          'my-design-system'
+        )
       ).toMatchInlineSnapshot(`
         [
           "import { Button } from '@Company/ui';",
@@ -314,18 +302,8 @@ describe('buildImportStatements', () => {
     });
 
     it('keeps an unresolved package subpath', () => {
-      expect(
-        buildImportStatements({
-          refs: [
-            {
-              importId: 'date-fns/format',
-              importName: 'default',
-              localImportName: 'format',
-            },
-          ],
-          packageName: 'shared',
-        })
-      ).toMatchInlineSnapshot(`
+      expect(statementsFor(`import format from 'date-fns/format';`, ['format'], 'my-design-system'))
+        .toMatchInlineSnapshot(`
         [
           "import format from 'date-fns/format';",
         ]
@@ -334,53 +312,35 @@ describe('buildImportStatements', () => {
 
     it('rewrites an absolute path to the package name', () => {
       expect(
-        buildImportStatements({
-          refs: [
-            {
-              importId: '/Users/me/Button',
-              importName: 'default',
-              localImportName: 'Button',
-            },
-            {
-              importId: 'C:/Users/me/Button',
-              importName: 'Button',
-              localImportName: 'Button',
-            },
-            {
-              importId: 'c:/users/me/button',
-              importName: 'Button',
-              localImportName: 'Button',
-            },
-          ],
-          packageName: 'shared',
-        })
+        statementsFor(
+          dedent`
+            import Button from '/Users/me/Button';
+            import WinButton from 'C:/Users/me/Button';
+            import PosixButton from 'c:/users/me/button';
+          `,
+          ['Button', 'WinButton', 'PosixButton'],
+          'my-design-system'
+        )
       ).toMatchInlineSnapshot(`
         [
-          "import { Button } from 'shared';",
+          "import { Button, WinButton, PosixButton } from 'my-design-system';",
         ]
       `);
     });
 
     it('rewrites a tilde or hash alias to the package name', () => {
       expect(
-        buildImportStatements({
-          refs: [
-            {
-              importId: '~/components/Button',
-              importName: 'Button',
-              localImportName: 'Button',
-            },
-            {
-              importId: '#Button',
-              importName: 'default',
-              localImportName: 'Btn',
-            },
-          ],
-          packageName: 'shared',
-        })
+        statementsFor(
+          dedent`
+            import { Button } from '~/components/Button';
+            import Btn from '#Button';
+          `,
+          ['Button', 'Btn'],
+          'my-design-system'
+        )
       ).toMatchInlineSnapshot(`
         [
-          "import { Button, Btn } from 'shared';",
+          "import { Button, Btn } from 'my-design-system';",
         ]
       `);
     });

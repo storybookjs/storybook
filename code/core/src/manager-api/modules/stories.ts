@@ -813,7 +813,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     },
     fetchIndex: async () => {
       try {
-        const result = await globalThis.fetch(STORY_INDEX_PATH);
+        const result = await fetch(STORY_INDEX_PATH);
 
         if (result.status !== 200) {
           throw new Error(await result.text());

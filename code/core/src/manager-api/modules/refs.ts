@@ -70,7 +70,7 @@ export interface SubAPI {
 }
 
 export const getSourceType = (source: string, refId?: string) => {
-  const { origin: localOrigin, pathname: localPathname } = globalThis.location;
+  const { origin: localOrigin, pathname: localPathname } = location;
   const { origin: sourceOrigin, pathname: sourcePathname } = new URL(source);
 
   const localFull = `${localOrigin + localPathname}`.replace(/\/[^\/]*$/, '');
@@ -180,7 +180,7 @@ const getRedirectedRefUrl = (refUrl: string, indexResponseUrl: string | undefine
   }
   const served = new URL(indexResponseUrl);
   if (
-    served.origin === new URL(refUrl, globalThis.location.href).origin ||
+    served.origin === new URL(refUrl, location.href).origin ||
     !served.pathname.endsWith('/index.json')
   ) {
     return refUrl;
@@ -254,7 +254,7 @@ export const init: ModuleFn<SubAPI, SubState> = (
       }
 
       const [indexRequest, storiesRequest] = ['index.json', 'stories.json'].map((file) =>
-        globalThis.fetch(`${urlParseResult.url}/${file}${query}`, {
+        fetch(`${urlParseResult.url}/${file}${query}`, {
           headers,
           credentials,
         })
@@ -270,13 +270,11 @@ export const init: ModuleFn<SubAPI, SubState> = (
 
       if (!indexResult.indexError || !storiesResult.indexError) {
         const metadata = await handleRequest(
-          globalThis
-            .fetch(`${urlParseResult.url}/metadata.json${query}`, {
-              headers,
-              credentials,
-              cache: 'no-cache',
-            })
-            .catch(() => false)
+          fetch(`${urlParseResult.url}/metadata.json${query}`, {
+            headers,
+            credentials,
+            cache: 'no-cache',
+          }).catch(() => false)
         );
 
         Object.assign(loadedData, {

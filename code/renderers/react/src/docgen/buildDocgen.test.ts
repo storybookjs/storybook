@@ -18,7 +18,11 @@ import {
 } from '../componentManifest/componentMeta/test-helpers.ts';
 import { resolveStoryFileComponents } from '../componentManifest/resolveComponents.ts';
 import { loadTestTypeScript } from '@storybook/component-meta-typescript/testing';
-import { buildDocgenPayload, buildDocgenPayloads } from './buildDocgen.ts';
+import {
+  buildDocgenPayload,
+  buildDocgenPayloads,
+  extractArgTypesFromComponentMeta,
+} from './buildDocgen.ts';
 
 vi.mock('../componentManifest/resolveComponents.ts', { spy: true });
 
@@ -173,6 +177,152 @@ describe('buildDocgenPayload', () => {
       expect(payload!.argTypes?.label.table?.defaultValue).toEqual({ summary: 'imported' });
     }
   );
+
+  it.each([
+    {
+      name: 'string[]',
+      input: { name: 'string[]', element: { name: 'string' } },
+      expected: {
+        type: { name: 'array', raw: 'string[]', value: { name: 'string' } },
+        summary: 'string[]',
+      },
+    },
+    {
+      name: 'readonly string[]',
+      input: { name: 'readonly string[]', element: { name: 'string' } },
+      expected: {
+        type: { name: 'array', raw: 'readonly string[]', value: { name: 'string' } },
+        summary: 'readonly string[]',
+      },
+    },
+    {
+      name: 'string[] | null',
+      input: { name: 'string[] | null', element: { name: 'string' } },
+      expected: {
+        type: { name: 'array', raw: 'string[] | null', value: { name: 'string' } },
+        summary: 'string[] | null',
+      },
+    },
+    {
+      name: 'number[][]',
+      input: { name: 'number[][]', element: { name: 'number[]', element: { name: 'number' } } },
+      expected: {
+        type: {
+          name: 'array',
+          raw: 'number[][]',
+          value: { name: 'array', raw: 'number[]', value: { name: 'number' } },
+        },
+        summary: 'number[][]',
+      },
+    },
+    {
+      name: '(string | number)[]',
+      input: { name: '(string | number)[]', element: { name: 'string | number' } },
+      expected: {
+        type: {
+          name: 'array',
+          raw: '(string | number)[]',
+          value: { name: 'other', value: 'string | number' },
+        },
+        summary: '(string | number)[]',
+      },
+    },
+    {
+      name: '("a" | "b")[]',
+      input: {
+        name: '("a" | "b")[]',
+        element: { name: 'enum', raw: '"a" | "b"', value: [{ value: '"a"' }, { value: '"b"' }] },
+      },
+      expected: {
+        type: {
+          name: 'array',
+          raw: '("a" | "b")[]',
+          value: { name: 'enum', raw: '"a" | "b"', value: ['a', 'b'] },
+        },
+        summary: '("a" | "b")[]',
+      },
+    },
+    {
+      name: 'boolean[]',
+      input: { name: 'boolean[]', element: { name: 'boolean' } },
+      expected: {
+        type: { name: 'array', raw: 'boolean[]', value: { name: 'boolean' } },
+        summary: 'boolean[]',
+      },
+    },
+    {
+      name: '(() => void)[]',
+      input: { name: '(() => void)[]', element: { name: '() => void' } },
+      expected: {
+        type: {
+          name: 'array',
+          raw: '(() => void)[]',
+          value: { name: 'function', value: '() => void' },
+        },
+        summary: '(() => void)[]',
+      },
+    },
+    {
+      name: '[string, number]',
+      input: { name: '[string, number]' },
+      expected: { type: { name: 'other', value: '[string, number]' }, summary: '[string, number]' },
+    },
+  ])('converts a $name prop to argTypes', ({ input, expected }) => {
+    const argType = extractArgTypesFromComponentMeta({
+      exportName: 'List',
+      filePath: '/List.tsx',
+      description: '',
+      props: {
+        items: { name: 'items', required: false, description: '', defaultValue: null, type: input },
+      },
+    })?.items;
+
+    expect({ type: argType?.type, summary: argType?.table?.type?.summary }).toEqual({
+      type: { required: false, ...expected.type },
+      summary: expected.summary,
+    });
+  });
+
+  it('gives a real array prop the array type', { timeout: 30_000 }, async () => {
+    tempDir = createTempDir('docgen-build');
+
+    const files = writeFiles(tempDir, {
+      'tsconfig.json': tsconfigJSON(),
+      'List.tsx': dedent`
+        import React from 'react';
+        export const List = (_props: { items: string[]; tags?: string[] }) => <ul />;
+      `,
+      'List.stories.tsx': dedent`
+        import { List } from './List';
+        export default { component: List, title: 'Data/List' };
+        export const Primary = () => <List items={[]} />;
+      `,
+    });
+
+    componentMetaManager = new ComponentMetaManager(typescript);
+
+    const payload = await buildDocgenPayload(
+      { entry: makeStoryIndexEntry(files['List.stories.tsx'], 'Data/List') },
+      {
+        componentMetaManager,
+        resolvePath: (p) => (path.isAbsolute(p) ? p : path.join(tempDir!, p)),
+      }
+    );
+
+    expect(payload!.argTypes?.items.type).toEqual({
+      name: 'array',
+      raw: 'string[]',
+      value: { name: 'string' },
+      required: true,
+    });
+    expect(payload!.argTypes?.tags.type).toEqual({
+      name: 'array',
+      raw: 'string[]',
+      value: { name: 'string' },
+      required: false,
+    });
+    expect(payload!.argTypes?.items.table?.type).toEqual({ summary: 'string[]' });
+  });
 
   it(
     "leaves React's own ref and key out of argTypes, like builder docgen did",

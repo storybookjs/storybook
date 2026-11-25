@@ -71,29 +71,29 @@ const useProjects = (...projects: CollectProjectsSuccessResult[]) =>
     unreadProjects: 0,
   });
 
-describe('upgrade: refreshing the skills', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    useProjects(project('/repo/a/.storybook'), project('/repo/b/.storybook'));
-    vi.mocked(runAutomigrations).mockResolvedValue({
-      automigrationResults: {},
-      detectedAutomigrations: [],
-    });
-    vi.mocked(runMultiProjectDoctor).mockResolvedValue({});
-    vi.mocked(displayDoctorResults).mockReturnValue(false);
-    vi.mocked(isCI).mockReturnValue(false);
-    for (const method of ['info', 'step', 'log', 'warn', 'debug'] as const) {
-      vi.mocked(logger[method]).mockImplementation(() => {});
-    }
-    vi.mocked(prompt.taskLog).mockReturnValue({
-      message: vi.fn(),
-      success: vi.fn(),
-      error: vi.fn(),
-    } as unknown as ReturnType<typeof prompt.taskLog>);
-    vi.mocked(hasStorybookSkills).mockResolvedValue(true);
-    vi.mocked(installSkills).mockResolvedValue({ result: 'installed', source: 'refresh' });
+beforeEach(() => {
+  vi.clearAllMocks();
+  useProjects(project('/repo/a/.storybook'), project('/repo/b/.storybook'));
+  vi.mocked(runAutomigrations).mockResolvedValue({
+    automigrationResults: {},
+    detectedAutomigrations: [],
   });
+  vi.mocked(runMultiProjectDoctor).mockResolvedValue({});
+  vi.mocked(displayDoctorResults).mockReturnValue(false);
+  vi.mocked(isCI).mockReturnValue(false);
+  for (const method of ['info', 'step', 'log', 'warn', 'debug'] as const) {
+    vi.mocked(logger[method]).mockImplementation(() => {});
+  }
+  vi.mocked(prompt.taskLog).mockReturnValue({
+    message: vi.fn(),
+    success: vi.fn(),
+    error: vi.fn(),
+  } as unknown as ReturnType<typeof prompt.taskLog>);
+  vi.mocked(hasStorybookSkills).mockResolvedValue(true);
+  vi.mocked(installSkills).mockResolvedValue({ result: 'installed', source: 'refresh' });
+});
 
+describe('upgrade: refreshing the skills', () => {
   const skillsInUpgradeEvents = () =>
     vi
       .mocked(telemetry)
@@ -267,4 +267,30 @@ describe('upgrade: refreshing the skills', () => {
 
     expect(installSkills).not.toHaveBeenCalled();
   });
+});
+
+describe('upgrade: --dry-run', () => {
+  it.each([
+    { dryRun: true, calls: 0 },
+    { dryRun: false, calls: 1 },
+  ])(
+    'installs and dedupes $calls time(s) in a monorepo when dryRun is $dryRun',
+    async ({ dryRun, calls }) => {
+      const installDependencies = vi.fn(async () => {});
+      const dedupeDependencies = vi.fn(async () => {});
+      const monorepo = project('/repo/a/.storybook');
+      Object.assign(monorepo.packageManager, {
+        type: 'pnpm',
+        installDependencies,
+        dedupeDependencies,
+        isStorybookInMonorepo: () => true,
+      });
+      useProjects(monorepo);
+
+      await upgrade({ ...baseOptions, dryRun, yes: true });
+
+      expect(installDependencies).toHaveBeenCalledTimes(calls);
+      expect(dedupeDependencies).toHaveBeenCalledTimes(calls);
+    }
+  );
 });

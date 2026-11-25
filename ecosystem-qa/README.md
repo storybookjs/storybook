@@ -528,6 +528,10 @@ The sandbox is closed last, and a worktree that cannot be deleted then is left b
 A run has a time budget, counted from its start, the clone and the project install included: 90 minutes by default (`--budget-minutes`, or the workflow input `budget_minutes`).
 The agent reads the clock with `tools/budget.mjs`, which the prompt tells it to run before every check, and is told to report what it did not get to as `skip` once the budget is used up.
 The prompt also tells it to stop a build or test run that has not ended after 15 minutes and not to start it again.
+The agent stops a server with `tools/free-port.mjs <port>`, never by a process id it saved: that id can belong to a wrapper such as `npx`, which ends while the server keeps the port, and the upgraded server then exits on `--exact-port` while the agent grades the pages of the baseline.
+The tool finds the processes that listen on the port, stops them, and waits until nothing answers there; it exits 1 with one line of reason when the port is still taken after 20 seconds (`--wait-seconds`).
+It finds the listeners in `/proc` on Linux, because the image has neither `lsof` nor `ss`, with `lsof` on macOS, and with `Get-NetTCPConnection` on Windows.
+After it starts a dev server the agent reads the first lines of its log, frees the port and starts again when they say the port is not available, and reports as `blocked` every check that needs a server that still cannot start.
 Fifteen minutes after the budget (`--hard-stop-minutes`), at minute 105 by default, the runner stops the agent and everything it runs.
 It does the same when the agent prints nothing for 15 minutes.
 It then asks the agent once, in the same session, for the answer with what it has, and gives it ten minutes for that.

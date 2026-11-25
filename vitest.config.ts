@@ -21,8 +21,8 @@ function getCgroupCpuLimit(): number | undefined {
   return quota > 0 && period > 0 ? Math.max(1, Math.floor(quota / period)) : undefined;
 }
 
-// One CPU stays free for the main process, as in Vitest's default. Without a cgroup (Windows),
-// assume the 8 vCPUs of the large resource class.
+// One CPU stays free for the main process, as in Vitest's default. Without a cgroup CPU quota
+// (for example on Windows), assume the 8 vCPUs of the large resource class.
 const getCiThreadCount = () => {
   const cpus = getCgroupCpuLimit();
   return cpus ? Math.max(1, cpus - 1) : 7;

@@ -1,4 +1,3 @@
-// stderr is discarded so benign `ps` and PowerShell noise stays out of the CLI's own stderr.
 import { execFileSync } from 'node:child_process';
 import os from 'node:os';
 
@@ -18,6 +17,7 @@ const WINDOWS_PROCESS_LIST = [
     ' | Select-Object ProcessId,ParentProcessId,CommandLine | ConvertTo-Json -Compress',
 ].join('; ');
 
+// stderr is discarded so benign `ps` and PowerShell noise stays out of the CLI's own stderr.
 const run = (file: string, args: string[]) =>
   execFileSync(file, args, {
     encoding: 'utf8',

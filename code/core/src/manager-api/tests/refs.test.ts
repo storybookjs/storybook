@@ -1,8 +1,6 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { StoryIndex } from 'storybook/internal/types';
-
-import { global } from '@storybook/global';
+import type { API_Refs, StoryIndex } from 'storybook/internal/types';
 
 import { transformStoryIndexToStoriesHash } from '../lib/stories.ts';
 import { getSourceType, init as initRefs } from '../modules/refs.ts';
@@ -10,37 +8,20 @@ import type { State } from '../root.tsx';
 import type Store from '../store.ts';
 import { createCommitLaggingStore } from '../test-utils/store.ts';
 
-const { fetch } = global;
+const fetchMock = vi.fn(() => Promise.resolve({})) as unknown as ReturnType<
+  typeof vi.fn<typeof fetch>
+>;
 
-const fetchMock = vi.mocked(fetch);
-
-vi.mock('@storybook/global', () => {
-  const globalMock = {
-    fetch: vi.fn(() => Promise.resolve({})),
-    REFS: {
-      fake: {
-        id: 'fake',
-        url: 'https://example.com',
-        title: 'Fake',
-      },
+beforeEach(() => {
+  vi.stubGlobal('fetch', fetchMock);
+  vi.stubGlobal('REFS', {
+    fake: {
+      id: 'fake',
+      url: 'https://example.com',
+      title: 'Fake',
     },
-  };
-  // Change global.location value to handle edge cases
-  // Add additional variations of global.location mock return values in this array.
-  // NOTE: The order must match the order that global.location is called in the unit tests.
-  const edgecaseLocations = [
-    { origin: 'https://storybook.js.org', pathname: '/storybook/iframe.html' },
-  ];
-  // global.location value after all edgecaseLocations are returned
-  const lastLocation = { origin: 'https://storybook.js.org', pathname: '/storybook/' };
-  const locationMock = vi.fn();
-  edgecaseLocations.forEach((location) => locationMock.mockReturnValueOnce(location));
-  locationMock.mockReturnValue(lastLocation);
-
-  Object.defineProperty(globalMock, 'location', {
-    get: locationMock,
   });
-  return { global: globalMock };
+  vi.stubGlobal('location', { origin: 'https://storybook.js.org', pathname: '/storybook/' });
 });
 
 const provider = {
@@ -142,11 +123,12 @@ const setupResponses = ({
 
 describe('Refs API', () => {
   describe('getSourceType(source)', () => {
-    // These tests must be run first and in correct order.
-    // The order matches the "edgecaseLocations" order in the 'global' mock function above.
     describe('edge cases', () => {
       it('returns "local" when source matches location with /index.html in path', () => {
-        // mockReturnValue(edgecaseLocations[0])
+        vi.stubGlobal('location', {
+          origin: 'https://storybook.js.org',
+          pathname: '/storybook/iframe.html',
+        });
         expect(getSourceType('https://storybook.js.org/storybook/iframe.html')).toEqual([
           'local',
           'https://storybook.js.org/storybook',
@@ -159,7 +141,6 @@ describe('Refs API', () => {
         ]);
       });
     });
-    // Other tests use "lastLocation" for the 'global' mock
     it('returns "local" when source matches location', () => {
       expect(getSourceType('https://storybook.js.org/storybook/iframe.html')).toEqual([
         'local',
@@ -208,14 +189,14 @@ describe('Refs API', () => {
 
     it('passes version when set on the ref', async () => {
       // given
-      global.REFS = {
+      vi.stubGlobal('REFS', {
         fake: {
           id: 'fake',
           url: 'https://example.com',
           title: 'Fake',
           version: '2.1.3-rc.2',
         },
-      };
+      });
       initRefs({ provider, store } as any);
 
       // the `runCheck` is async, so we need to wait for it to finish
@@ -629,12 +610,6 @@ describe('Refs API', () => {
     });
 
     describe('when the index is served from another URL after a redirect', () => {
-      const initialConfigType = global.CONFIG_TYPE;
-
-      afterEach(() => {
-        global.CONFIG_TYPE = initialConfigType;
-      });
-
       const checkRedirectedRef = async (indexUrl: string) => {
         const { api } = initRefs({ provider, store } as any, { runCheck: false });
         setupResponses({
@@ -653,7 +628,7 @@ describe('Refs API', () => {
       };
 
       it('composes the ref from the origin that served its index in dev mode', async () => {
-        global.CONFIG_TYPE = 'DEVELOPMENT';
+        vi.stubGlobal('CONFIG_TYPE', 'DEVELOPMENT');
 
         await expect(
           checkRedirectedRef('https://www.example.com/storybook/index.json')
@@ -661,7 +636,7 @@ describe('Refs API', () => {
       });
 
       it('keeps the configured URL when the index is served from the same origin', async () => {
-        global.CONFIG_TYPE = 'DEVELOPMENT';
+        vi.stubGlobal('CONFIG_TYPE', 'DEVELOPMENT');
 
         await expect(checkRedirectedRef('https://example.com/storybook/index.json')).resolves.toBe(
           'https://example.com'
@@ -669,7 +644,7 @@ describe('Refs API', () => {
       });
 
       it('keeps the configured URL in a built Storybook', async () => {
-        global.CONFIG_TYPE = 'PRODUCTION';
+        vi.stubGlobal('CONFIG_TYPE', 'PRODUCTION');
 
         await expect(
           checkRedirectedRef('https://www.example.com/storybook/index.json')
@@ -1456,25 +1431,21 @@ describe('Refs API', () => {
   });
   describe('updateRef', () => {
     it('keeps an update to another ref that is not committed yet', async () => {
-      const previousRefs = global.REFS;
-      global.REFS = {
-        a: { id: 'a', url: 'https://a.example.com', title: 'A' },
-        b: { id: 'b', url: 'https://b.example.com', title: 'B' },
+      const refs: API_Refs = {
+        a: { id: 'a', url: 'https://a.example.com', title: 'A', previewInitialized: false },
+        b: { id: 'b', url: 'https://b.example.com', title: 'B', previewInitialized: false },
       };
-      try {
-        const store = createCommitLaggingStore({ refs: global.REFS } as Partial<State>);
-        const { api } = initRefs({ provider, store } as any, { runCheck: false });
+      vi.stubGlobal('REFS', refs);
+      const store = createCommitLaggingStore({ refs });
+      const { api } = initRefs({ provider, store } as any, { runCheck: false });
 
-        await Promise.all([
-          api.updateRef('a', { previewInitialized: true }),
-          api.updateRef('b', { previewInitialized: true }),
-        ]);
+      await Promise.all([
+        api.updateRef('a', { previewInitialized: true }),
+        api.updateRef('b', { previewInitialized: true }),
+      ]);
 
-        expect(api.getRefs().a.previewInitialized).toBe(true);
-        expect(api.getRefs().b.previewInitialized).toBe(true);
-      } finally {
-        global.REFS = previousRefs;
-      }
+      expect(api.getRefs().a.previewInitialized).toBe(true);
+      expect(api.getRefs().b.previewInitialized).toBe(true);
     });
   });
 });

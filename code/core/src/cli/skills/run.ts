@@ -244,7 +244,7 @@ function buildProjectSkill(
   const docsSupported =
     (transport === 'mcp' ? inputs.docsEnabled : inputs.docsEnabledForCli) || inputs.composed;
   if (id === 'component-docs') {
-    return buildComponentDocsSkill({ transport, docsSupported });
+    return buildComponentDocsSkill({ transport, docsSupported, composed: inputs.composed });
   }
   return id === 'test-stories'
     ? buildTestStoriesSkill({

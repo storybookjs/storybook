@@ -1,5 +1,3 @@
-import { global } from '@storybook/global';
-
 /**
  * This file includes polyfills needed by Angular and is loaded before the app. You can add your own
  * extra polyfills to this file.
@@ -34,4 +32,4 @@ import { global } from '@storybook/global';
 /** Need to import at least one locale-data with intl. */
 // import 'intl/locale-data/jsonp/en';
 
-global.STORYBOOK_ENV = 'angular';
+globalThis.STORYBOOK_ENV = 'angular';

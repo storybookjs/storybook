@@ -27,7 +27,6 @@ vi.mock(import('storybook/internal/common'), async (importOriginal) => {
   return {
     ...actual,
     isCI: vi.fn(),
-    getProcessAncestry: () => [],
     JsPackageManagerFactory: Object.assign(actual.JsPackageManagerFactory, {
       getPackageManager: () => ({
         type: 'npm',

@@ -101,7 +101,6 @@ describe('PNPM Proxy', () => {
   });
 
   afterEach(() => {
-    vi.unstubAllGlobals();
     vi.unstubAllEnvs();
   });
 

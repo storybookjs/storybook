@@ -4,6 +4,8 @@ export type ComponentDocsSkillInputs = {
   transport: SkillTextTransport;
   // Storybook has component manifests for this project, or composes a Storybook that has them.
   docsSupported: boolean;
+  // `refs` compose other Storybooks, whose docs the commands fetch from their URLs.
+  composed: boolean;
 };
 
 export function buildComponentDocsSkill(inputs: ComponentDocsSkillInputs): string {
@@ -30,11 +32,17 @@ ${v.ref('docs.showStory')} --storyId <id>   # the code of a story that docs show
   const sources = v.cli
     ? 'to both commands that show it: `--storybookId acme`'
     : `as \`storybookId: "acme"\` to ${show} and ${v.name('docs.showStory')}`;
+  // The tools say when a sandbox keeps them from a port or from localhost. A failed fetch of a
+  // composed Storybook's docs looks like any network error, so this text names the sandbox.
+  const remote =
+    v.cli && inputs.composed
+      ? `\n\nThe docs of a composed Storybook come from its URL. When a command reports that it could not fetch them and it runs in a sandbox, re-run it with escalated permissions, outside the sandbox.`
+      : '';
   return `# Storybook component docs
 
 ${v.notes}
 
 ${tools}
 
-Do this before you edit any file: ${v.run} ${list} once and read its ${v.output}, then ${v.run} ${show} with an id from that ${v.output} for every listed component your change uses, even one you only add such as a button, and for each one you are asked about. Never guess an id. Reuse what exists instead of building a duplicate. Use only the props that ${show} documents, never one you assume from a name or another library. ${v.Run} ${show} ${oncePerId}: the props often come after long story examples. Answer props, API and usage questions from these ${v.commands}. Read source files or \`node_modules\` only when the ${v.commands} return nothing relevant. When ${list} groups its entries under sources (\`id: acme\`), pass the source of the entry ${sources}.`;
+Do this before you edit any file: ${v.run} ${list} once and read its ${v.output}, then ${v.run} ${show} with an id from that ${v.output} for every listed component your change uses, even one you only add such as a button, and for each one you are asked about. Never guess an id. Reuse what exists instead of building a duplicate. Use only the props that ${show} documents, never one you assume from a name or another library. ${v.Run} ${show} ${oncePerId}: the props often come after long story examples. Answer props, API and usage questions from these ${v.commands}. Read source files or \`node_modules\` only when the ${v.commands} return nothing relevant. When ${list} groups its entries under sources (\`id: acme\`), pass the source of the entry ${sources}.${remote}`;
 }

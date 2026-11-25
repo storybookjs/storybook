@@ -15,7 +15,6 @@ import {
   isCorePackage,
   isNpmPeerResolutionError,
   resolveStorybookVersionSpecifier,
-  getProcessAncestry,
 } from 'storybook/internal/common';
 import {
   CLI_COLORS,
@@ -94,15 +93,6 @@ const deprecatedPackages = [
 ];
 
 const formatPackage = (pkg: Package) => `${pkg.package}@${pkg.version}`;
-
-const getStorybookVersionSpecifierFromCli = (): string | undefined => {
-  try {
-    return resolveStorybookVersionSpecifier(getProcessAncestry());
-  } catch {
-    // Ignore ancestry lookup failures and fall back to the dispatcher env var or embedded versions.
-    return resolveStorybookVersionSpecifier([]);
-  }
-};
 
 const warnPackages = (pkgs: Package[]) => pkgs.map((pkg) => `- ${formatPackage(pkg)}`).join('\n');
 
@@ -371,7 +361,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
     throw new HandledError('--features cannot be combined with --skip-automigrations');
   }
 
-  const storybookVersionSpecifier = getStorybookVersionSpecifierFromCli();
+  const storybookVersionSpecifier = resolveStorybookVersionSpecifier();
   const projectsResult = await getProjects(options);
 
   if (projectsResult === undefined || projectsResult.selectedProjects.length === 0) {

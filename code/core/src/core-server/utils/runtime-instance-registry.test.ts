@@ -3,6 +3,7 @@ import {
   mkdtempSync,
   readFileSync,
   readdirSync,
+  readlinkSync,
   realpathSync,
   rmSync,
   utimesSync,
@@ -14,7 +15,7 @@ import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 
 import { dirname, join, normalize, resolve } from 'pathe';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   createRuntimeInstanceRecord,
@@ -23,6 +24,13 @@ import {
   writeRuntimeInstanceRecord,
   writeStorybookRuntimeInstanceRecord,
 } from './runtime-instance-registry.ts';
+
+vi.mock('node:fs', { spy: true });
+
+beforeEach(() => {
+  // This process runs in process namespace `pid:[2]`.
+  vi.mocked(readlinkSync).mockReturnValue('pid:[2]');
+});
 
 const tempDirs: string[] = [];
 const NOW = new Date('2026-06-02T12:00:00.000Z');
@@ -191,6 +199,7 @@ describe('createRuntimeInstanceRecord', () => {
     instanceId: '00000000-0000-4000-8000-000000000000',
     now: new Date('2026-05-18T12:00:00.000Z'),
     pid: 12345,
+    pidNamespace: 'pid:[1]',
     port: 6006,
     storybookVersion: '10.5.0-alpha.0',
   };
@@ -212,6 +221,7 @@ describe('createRuntimeInstanceRecord', () => {
       port: 6006,
       storybookVersion: '10.5.0-alpha.0',
       storybookPath: corePackageRoot,
+      pidNamespace: 'pid:[1]',
       startedAt: '2026-05-18T12:00:00.000Z',
       updatedAt: '2026-05-18T12:00:00.000Z',
       mcp: { status: 'not-installed' },
@@ -303,6 +313,7 @@ describe('getRuntimeInstanceRegistryCleanupDecision', () => {
     instanceId: 'recent-instance',
     now: NOW,
     pid: 12345,
+    pidNamespace: 'pid:[2]',
     port: 6006,
     storybookVersion: '10.5.0-alpha.0',
   });
@@ -351,6 +362,21 @@ describe('getRuntimeInstanceRegistryCleanupDecision', () => {
         fileModifiedAtMs: daysAgo(8).getTime(),
         nowMs: NOW.getTime(),
         record: { ...recentRecord, updatedAt: hoursAgo(23).toISOString() },
+      },
+      expected: { action: 'keep' },
+    },
+    {
+      name: 'keeps a record of a dev server in another process namespace, whose PID cannot be checked',
+      entry: {
+        kind: 'record' as const,
+        fileModifiedAtMs: daysAgo(8).getTime(),
+        nowMs: NOW.getTime(),
+        record: {
+          ...recentRecord,
+          pid: 202,
+          pidNamespace: 'pid:[1]',
+          updatedAt: hoursAgo(24).toISOString(),
+        },
       },
       expected: { action: 'keep' },
     },

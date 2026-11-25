@@ -16,12 +16,15 @@ const REVIEW_EXAMPLE = `{
   "changedFiles": ["src/Button.tsx"]
 }`;
 
-// Over MCP the server is the running Storybook, so only the CLI text has this.
+// Over MCP the server is the running Storybook, so only the CLI text has this. The two commands
+// find the dev server in the instance registry; a probe of its URL costs an approval in a sandbox.
 const DEV_SERVER = `## Use the running Storybook
 
-The review needs a running Storybook dev server:
+Only \`review create\` and \`stories preview\` need a running Storybook dev server, and they find the dev server of this project themselves. Every other command runs without one.
 
-1. Probe the URL (usually \`http://localhost:6006\`) in a command of its own. If it serves this project's Storybook, reuse that dev server and never start a second one. Otherwise start one in the background with the project's preferred package manager and existing \`package.json\` Storybook script (e.g. \`npm run storybook\`), without adding flags, and wait until the URL responds before running commands that need it.
+In a sandbox, only these two commands and starting the dev server need escalated permissions: they use a local port.
+
+1. Do not probe a URL first: run the command. Only when it says that no running Storybook was found, start one in the background with the project's preferred package manager and existing \`package.json\` Storybook script, without adding flags, wait until its output shows the URL, and run the command again. Never start a second one next to a running one.
 2. The dev server is part of the deliverable, not a temporary verification tool: leave it running when your work is done so the user can keep browsing stories. Never kill it after verification.`;
 
 export function buildUiReviewSkill(inputs: UiReviewSkillInputs): string {

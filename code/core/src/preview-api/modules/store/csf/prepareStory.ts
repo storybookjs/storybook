@@ -17,9 +17,6 @@ import type {
   StrictArgTypes,
 } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
-import { global as globalThis } from '@storybook/global';
-
 import { Tag } from '../../../../shared/constants/tags.ts';
 import { applyHooks } from '../../addons/index.ts';
 import { mountDestructured } from '../../preview-web/render/mount-utils.ts';
@@ -266,7 +263,7 @@ function preparePartialAnnotations<TRenderer extends Renderer>(
     .filter((enhancer) => {
       // Server docgen merges component prop metadata at UI read time (`mergeServiceArgTypes`).
       // Second-pass enhancers run there instead so `customArgTypes` stays annotation-only.
-      if (global.FEATURES?.docgenServer && enhancer.secondPass) {
+      if (globalThis.FEATURES?.docgenServer && enhancer.secondPass) {
         return false;
       }
       return true;

@@ -45,7 +45,7 @@ const RouteWrapper: FC<{ children: ReactNode; path: string }> = ({ children, pat
   );
 };
 
-const Pages: FC<{
+export const Pages: FC<{
   onClose: () => void;
   enableShortcuts?: boolean;
   changeTab: (tab: string, options?: { replace?: boolean }) => void;

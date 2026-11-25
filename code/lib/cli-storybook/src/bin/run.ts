@@ -42,7 +42,7 @@ const handleCommandFailure =
       logger.error(String(error));
     }
     // A run that fails can still change files before it does.
-    effects.logDryRunChanges();
+    effects.logDryRunChanges({ failed: true });
 
     try {
       const logFile = await logTracker.writeToFile(logFilePath);

@@ -264,11 +264,15 @@ const describeFileChange = (entry: { path: string; shown: string }): string[] =>
   return [`${before === undefined ? 'create' : 'update'} ${file}`, ...details];
 };
 
-/** In a dry run, log what a run would change, if anything, under "Dry run finished. An actual run would:". */
-export const logDryRunChanges = () => {
+/**
+ * In a dry run, log what a run would change, if anything, under "Dry run finished. An actual run
+ * would:", or "Dry run finished with errors. …" for a command that fails.
+ */
+export const logDryRunChanges = ({ failed = false }: { failed?: boolean } = {}) => {
   const changes = state.dryRun ? describeDryRunChanges() : [];
   if (changes.length > 0) {
-    logger.step(CLI_COLORS.dryRun('Dry run finished. An actual run would:'));
+    const finished = failed ? 'Dry run finished with errors.' : 'Dry run finished.';
+    logger.step(CLI_COLORS.dryRun(`${finished} An actual run would:`));
     logger.log(changes.join('\n'));
   }
 };

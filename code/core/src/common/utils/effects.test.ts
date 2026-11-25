@@ -145,6 +145,17 @@ describe('in a dry run', () => {
     );
   });
 
+  it('says that a dry run finished with errors when its command fails', async () => {
+    await effects.writeFile(join(root, 'main.js'), 'new');
+
+    effects.logDryRunChanges({ failed: true });
+
+    const [[heading]] = vi.mocked(logger.step).mock.calls;
+    expect(stripVTControlCharacters(String(heading))).toBe(
+      'Dry run finished with errors. An actual run would:'
+    );
+  });
+
   it('logs nothing when a run would change nothing', () => {
     effects.logDryRunChanges();
 

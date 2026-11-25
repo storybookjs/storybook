@@ -1,6 +1,6 @@
 import React from 'react';
 
-import type { Meta, StoryFn, StoryObj } from '@storybook/react-vite';
+import type { Decorator, Meta, StoryFn, StoryObj } from '@storybook/react-vite';
 
 import { action } from 'storybook/actions';
 import { expect, screen, within } from 'storybook/test';
@@ -149,37 +149,73 @@ export const CustomTitle: Story = () => {
   );
 };
 
+// The `<img>` fails to load without a network request, so an unsanitized `onerror` would run.
+const titleWithScript =
+  '<span style="color:red">My custom title</span><img src="data:image/png;base64," onerror="window.__brandXss = true"><script>window.__brandXss = true</script>';
+
+// The payload sets this flag if any of its scripts run.
+const xssWindow = window as Window & { __brandXss?: boolean };
+
+const withBrand = (brand: Partial<Theme['brand']>): Decorator =>
+  function WithBrand(storyFn) {
+    const theme = useTheme() as Theme;
+    return (
+      <ThemeProvider theme={{ ...theme, brand: { ...theme.brand, ...brand } }}>
+        {storyFn()}
+      </ThemeProvider>
+    );
+  };
+
+const expectTitleSanitized = async (canvasElement: HTMLElement) => {
+  const title = await within(canvasElement).findByText('My custom title');
+
+  await expect(title).toHaveStyle({ color: 'rgb(255, 0, 0)' });
+  await expect(canvasElement.querySelector('script')).toBeNull();
+  await expect(canvasElement.querySelector('[onerror]')).toBeNull();
+  await new Promise((resolve) => setTimeout(resolve, 100));
+  await expect(xssWindow.__brandXss).toBeUndefined();
+};
+
 export const CustomTitleWithScript: StoryObj<typeof Heading> = {
   args: { menu: menuItems, isLoading: false },
   globals: { sb_theme: 'light' },
   decorators: [
-    (storyFn) => {
-      const theme = useTheme() as Theme;
-      return (
-        <ThemeProvider
-          theme={{
-            ...theme,
-            brand: {
-              title:
-                '<span style="color:red">My custom title</span><img src="x" onerror="window.__brandXss = true"><script>window.__brandXss = true</script>',
-              url: null,
-              image: null,
-              target: undefined,
-            },
-          }}
-        >
-          {storyFn()}
-        </ThemeProvider>
-      );
-    },
+    withBrand({
+      title: `${titleWithScript}<a href="https://example.com" target="_blank">Docs</a>`,
+      url: null,
+      image: null,
+      target: undefined,
+    }),
+  ],
+  beforeEach: () => {
+    delete xssWindow.__brandXss;
+  },
+  play: async ({ canvasElement }) => {
+    await expectTitleSanitized(canvasElement);
+    // `target` is kept, so links in a custom title still open in a new tab.
+    await expect(within(canvasElement).getByRole('link', { name: 'Docs' })).toHaveAttribute(
+      'target',
+      '_blank'
+    );
+  },
+};
+
+export const CustomTitleWithScriptAndLink: StoryObj<typeof Heading> = {
+  ...CustomTitleWithScript,
+  decorators: [
+    withBrand({
+      title: titleWithScript,
+      url: 'https://example.com',
+      image: null,
+      target: undefined,
+    }),
   ],
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    const title = await canvas.findByText('My custom title');
-
-    await expect(title).toHaveStyle({ color: 'rgb(255, 0, 0)' });
-    await expect(canvasElement.querySelector('script')).toBeNull();
-    await expect(canvasElement.querySelector('img')).not.toHaveAttribute('onerror');
+    await expectTitleSanitized(canvasElement);
+    await expect(within(canvasElement).getByText('My custom title').closest('a')).toHaveAttribute(
+      'href',
+      'https://example.com'
+    );
   },
 };
 

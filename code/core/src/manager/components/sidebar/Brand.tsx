@@ -46,12 +46,19 @@ export const Brand = withTheme(({ theme }) => {
       return null;
     }
 
-    const __html = DOMPurify.sanitize(title);
+    // Keep `target` so links inside a custom title still open where their author intended.
+    const sanitizedTitle = DOMPurify.sanitize(title, { ADD_ATTR: ['target'] });
 
     if (!url) {
-      return <div dangerouslySetInnerHTML={{ __html }} />;
+      return <div dangerouslySetInnerHTML={{ __html: sanitizedTitle }} />;
     }
-    return <LogoLink href={url} target={targetValue} dangerouslySetInnerHTML={{ __html }} />;
+    return (
+      <LogoLink
+        href={url}
+        target={targetValue}
+        dangerouslySetInnerHTML={{ __html: sanitizedTitle }}
+      />
+    );
   }
 
   const logo = image ? <Img src={image} alt={title} /> : <StorybookLogoStyled alt={title} />;

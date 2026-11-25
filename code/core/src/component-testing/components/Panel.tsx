@@ -204,9 +204,6 @@ export const trackRenderPhase = (
   };
 };
 
-// Module scope like panelStore, so a re-render after the panel remounts is still recognised.
-const renderTracker: { current: RenderTracker } = { current: { renderId: 0 } };
-
 // A re-render does not play again, so it keeps the last play's errors until a new play starts.
 export const getRenderPhaseState = (
   state: PanelState,
@@ -312,6 +309,8 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
       return () => observer?.disconnect();
     }, []);
 
+    // Per mount: a closed panel misses events, so after it reopens it must not trust an older render.
+    const renderTracker = useRef<RenderTracker>({ renderId: 0 });
     const emit = useChannel(
       {
         [EVENTS.CALL]: setCall,
@@ -386,6 +385,12 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
         [UNHANDLED_ERRORS_WHILE_PLAYING]: (unhandledErrors) => {
           set((state) => ({ ...state, unhandledErrors, hasException: true }));
         },
+        [FORCE_REMOUNT]: (event: { storyId: string }) => {
+          // A remount keeps the last play's errors until it plays, which a failed render skips.
+          if (event.storyId === api.getUrlState().storyId) {
+            set((state) => ({ ...state, caughtException: undefined, unhandledErrors: undefined }));
+          }
+        },
       },
       [collapsed, storyId]
     );
@@ -410,12 +415,10 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
         next: () => emit(EVENTS.NEXT, { storyId }),
         end: () => emit(EVENTS.END, { storyId }),
         rerun: () => {
-          // A remount keeps the last play's errors until it plays, which a failed render skips.
-          set((state) => ({ ...state, caughtException: undefined, unhandledErrors: undefined }));
           emit(FORCE_REMOUNT, { storyId });
         },
       }),
-      [emit, set, storyId]
+      [emit, storyId]
     );
 
     const storyFilePath = useParameter('fileName', '');

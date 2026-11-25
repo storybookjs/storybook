@@ -297,6 +297,12 @@ export const listenForPlayResults = (
     if (isCurrentRender) {
       if (event.newPhase === 'rendering') {
         log.current = [getInternalRenderLogItem(CallStates.ACTIVE)];
+        // The new log can only reference this story's calls, so drop other stories' records.
+        calls.current.forEach((call, id) => {
+          if (call.storyId !== event.storyId) {
+            calls.current.delete(id);
+          }
+        });
         calls.current.set(INTERNAL_RENDER_CALL_ID, getInternalRenderCall(event.storyId));
       }
       panelStore.setState((state) => getRenderPhaseState(state, event.newPhase, isRerender));

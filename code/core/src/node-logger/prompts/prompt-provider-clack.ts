@@ -26,7 +26,7 @@ type TaskLogSession = {
   task: ReturnType<typeof clack.taskLog>;
   /** An outside stdout write happened; erasing would clobber it, so fall back to plain log lines. */
   contaminated: boolean;
-  /** Innermost open target (root, or the open group) that logger.ts should write to. */
+  /** Render-only targets for logger.ts, innermost last; they must not track, the logger already did. */
   targets: TaskLogTarget[];
   /** Restores process.stdout.write and ends the session. */
   dispose: () => void;
@@ -201,7 +201,6 @@ export class ClackPromptProvider extends PromptProvider {
         session.finish('success', message, successOptions);
       },
     };
-    session.targets.push(root);
     return root;
   }
 }
@@ -233,7 +232,7 @@ const createTaskLogSession = (options: TaskLogOptions): TaskLogSession => {
       output: output as unknown as Writable,
     }),
     contaminated: false,
-    targets: [],
+    targets: [{ message: (text): void => session.message(formatTaskLogMessage(text)) }],
     dispose: (): void => {
       disposed = true;
       restoreWrite();
@@ -252,7 +251,7 @@ const createTaskLogSession = (options: TaskLogOptions): TaskLogSession => {
       }
       try {
         if (session.contaminated) {
-          // Lines trimmed before the outside write are lost; later lines are on screen, so print only the error.
+          // Plain lines cannot replay the retained log: lines trimmed before the outside write are lost.
           clack.log[status](message);
         } else if (status === 'error') {
           session.task.error(message, { showLog: true });

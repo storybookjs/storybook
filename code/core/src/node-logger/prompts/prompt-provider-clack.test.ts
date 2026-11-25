@@ -94,7 +94,7 @@ describe('ClackPromptProvider', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    globalThis.STORYBOOK_CURRENT_TASK_LOG = null;
+    vi.stubGlobal('STORYBOOK_CURRENT_TASK_LOG', null);
     taskGroup = { message: vi.fn(), success: vi.fn(), error: vi.fn() };
     task.group.mockReturnValue(taskGroup);
     vi.mocked(clack.taskLog).mockReturnValue(task as never);
@@ -104,6 +104,7 @@ describe('ClackPromptProvider', () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
   });
 
   // Vitest workers do not write to a terminal, so the provider assumes 80 columns.
@@ -126,7 +127,7 @@ describe('ClackPromptProvider', () => {
     const root = provider.taskLog({ id: 'root', title: 'Root' });
     const nested = provider.taskLog({ id: 'nested', title: 'Nested' });
 
-    expect(getCurrentTaskLog()).toBe(root);
+    expect(getCurrentTaskLog()).not.toBeNull();
     nested.message('inner line');
     expect(task.message).toHaveBeenCalledTimes(1);
     expect(logTracker.addLog).toHaveBeenCalledWith('info', 'nested-task: inner line');
@@ -141,6 +142,19 @@ describe('ClackPromptProvider', () => {
     root.success('done');
     expect(task.success).not.toHaveBeenCalled();
     expect(clack.taskLog).toHaveBeenCalledTimes(1);
+  });
+
+  it('a logger message sent to the open task log is rendered but not tracked again', () => {
+    const log = provider.taskLog({ id: 'task', title: 'Task' });
+    vi.mocked(logTracker.addLog).mockClear();
+
+    getCurrentTaskLog()?.message('from logger');
+    expect(task.message).toHaveBeenCalledWith('from logger');
+    expect(logTracker.addLog).not.toHaveBeenCalled();
+
+    log.message('direct');
+    expect(logTracker.addLog).toHaveBeenCalledWith('info', 'task-task: direct');
+    log.success('done');
   });
 
   describe('outside stdout writes', () => {
@@ -197,7 +211,8 @@ describe('ClackPromptProvider', () => {
         }
         getCurrentTaskLog()?.message('inside');
         group.error('group failed');
-        expect(getCurrentTaskLog()).toBe(log);
+        expect(getCurrentTaskLog()).not.toBe(group);
+        expect(getCurrentTaskLog()).not.toBeNull();
         log.error('failed');
 
         expect(task.group).toHaveBeenCalledWith('Group');
@@ -234,7 +249,8 @@ describe('ClackPromptProvider', () => {
       expect(getCurrentTaskLog()).toBe(group);
       group.message('inside');
       group.success('group done');
-      expect(getCurrentTaskLog()).toBe(log);
+      expect(getCurrentTaskLog()).not.toBe(group);
+      expect(getCurrentTaskLog()).not.toBeNull();
       log.message('after');
       expect(taskGroup.message).toHaveBeenCalledWith('inside');
       expect(task.message).toHaveBeenCalledWith('after');

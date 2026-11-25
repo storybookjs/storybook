@@ -1,0 +1,48 @@
+{
+  "id": "webcomponentsstorydocs-module-level-constants",
+  "name": "constants-viewer",
+  "path": "__PATH__",
+  "stories": {
+    "webcomponentsstorydocs-module-level-constants--changed-constant": {
+      "id": "webcomponentsstorydocs-module-level-constants--changed-constant",
+      "name": "Changed Constant",
+      "snippet": "<constants-viewer html="&lt;pre>a
+b
+c&lt;/pre>" lines="3"></constants-viewer>",
+      "template": "<constants-viewer⟦attr html mode="field" ~" "⟫ html="&lt;pre>a
+b
+c&lt;/pre>"⟧⟦attr lines mode="field" ~" "⟫ lines="3"⟧⟦attr selectedLine name="selected-line" mode="field" ~" "⟫⟧⟦attr heading mode="field" ~" "⟫⟧></constants-viewer>",
+      "warning": "Incomplete snippet: `changed`, `changed.length` could not be resolved statically.",
+    },
+    "webcomponentsstorydocs-module-level-constants--meta-args": {
+      "id": "webcomponentsstorydocs-module-level-constants--meta-args",
+      "name": "Meta Args",
+      "snippet": "<constants-viewer html="&lt;pre>a
+b
+c&lt;/pre>" lines="3"></constants-viewer>",
+      "template": "<constants-viewer⟦attr html mode="field" ~" "⟫ html="&lt;pre>a
+b
+c&lt;/pre>"⟧⟦attr lines mode="field" ~" "⟫ lines="3"⟧⟦attr selectedLine name="selected-line" mode="field" ~" "⟫⟧⟦attr heading mode="field" ~" "⟫⟧></constants-viewer>",
+    },
+    "webcomponentsstorydocs-module-level-constants--story-args": {
+      "id": "webcomponentsstorydocs-module-level-constants--story-args",
+      "name": "Story Args",
+      "snippet": "<constants-viewer
+  html="&lt;pre>a
+b
+c&lt;/pre>"
+  lines="3"
+  selected-line="2"
+  heading="a"
+></constants-viewer>",
+      "template": "<constants-viewer⟦attr html mode="field" ~"\n  "⟫
+  html="&lt;pre>a
+b
+c&lt;/pre>"⟧⟦attr lines mode="field" ~"\n  "⟫
+  lines="3"⟧⟦attr selectedLine name="selected-line" mode="field" ~"\n  "⟫
+  selected-line="2"⟧⟦attr heading mode="field" ~"\n  "⟫
+  heading="a"⟧
+></constants-viewer>",
+    },
+  },
+}

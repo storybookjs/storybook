@@ -4,10 +4,12 @@ import type {
   CsfFile,
   ESTreeNode as Node,
   StoryArgsResolver,
+  StoryConstants,
   StoryReferences,
 } from 'storybook/internal/csf-tools';
 import {
   authoredSource,
+  collectStoryConstants,
   createStoryArgsResolver,
   createStoryReferenceResolver,
   detachedTextOf,
@@ -254,6 +256,7 @@ const renderedArgsSnippet = (
     deps.docgenPayload.argTypes ?? {},
     deps.tag,
     resolved.unresolved,
+    collectStoryConstants(resolved.args, deps.resolveStoryArgs.ctx),
     render.kind !== 'missing'
   );
   warnings.push(args.warning);
@@ -280,7 +283,8 @@ const argsSnippet = (
   declaration: ManifestDeclaration,
   argTypes: WebComponentsDocgenPayload['argTypes'],
   tag: string,
-  unresolvedArgs: readonly string[],
+  unresolvedArgs: string[],
+  constants: StoryConstants,
   customRender: boolean
 ): SnippetResult => {
   const snippet: ElementSnippet = {
@@ -295,17 +299,24 @@ const argsSnippet = (
   const listeners: string[] = [];
   const properties: string[] = [];
   const unknown: string[] = [];
+  const evaluated = new Set<string>();
+  // Code printed as written, as a listener is, still reads constants by name.
+  const verbatim: string[] = [];
 
   for (const [key, node] of Object.entries(args)) {
-    const value = evaluateArgValue(node);
+    const value = evaluateArgValue(node, constants);
     if (value.kind === 'unset') {
+      // A value worked out to `undefined` sets nothing.
+      constants.readBy(node).forEach((name) => evaluated.add(name));
       continue;
     }
     const binding = classifyArg(key, value.kind === 'function', argTypes ?? {}, declaration);
     switch (binding.kind) {
       case 'listener':
         if (binding.event) {
-          snippet.listeners.push({ event: binding.event, handler: listenerHandler(node), tag });
+          const handler = listenerHandler(node);
+          verbatim.push(handler);
+          snippet.listeners.push({ event: binding.event, handler, tag });
         } else {
           listeners.push(key);
         }
@@ -324,6 +335,7 @@ const argsSnippet = (
       case 'cssPart':
       case 'cssState':
         if (value.kind === 'value') {
+          constants.readBy(node).forEach((name) => evaluated.add(name));
           addBoundValue(snippet, binding, key, value.value, tag);
         } else if (value.kind === 'unresolved') {
           unresolved.push(value.source);
@@ -342,7 +354,13 @@ const argsSnippet = (
     incompleteList(unknown, `args not declared by \`${tag}\``),
     incompleteList(falseDefaultAttributes(snippet), 'false values that HTML cannot express'),
   ];
-  const allUnresolved = [...unresolvedArgs, ...unresolved];
+  // A constant the snippet printed the value of needs no declaration, unless a listener names it.
+  const allUnresolved = [
+    ...unresolvedArgs.filter(
+      (name) => !evaluated.has(name) || verbatim.some((code) => readsName(code, name))
+    ),
+    ...unresolved,
+  ];
   const printed = hasSnippetContent(snippet) || allUnresolved.length === 0;
   warnings.push(printed ? unresolvedWarning(allUnresolved) : noSnippetWarning(allUnresolved));
 
@@ -352,7 +370,7 @@ const argsSnippet = (
   const html = printElementSnippet(snippet);
   return {
     snippet: html,
-    template: elementTemplate(html, snippet, args, argTypes, declaration, customRender),
+    template: elementTemplate(html, snippet, args, argTypes, declaration, customRender, constants),
     ...joinWarnings(warnings),
   };
 };
@@ -368,10 +386,11 @@ const elementTemplate = (
   args: Record<string, Node>,
   argTypes: WebComponentsDocgenPayload['argTypes'],
   declaration: ManifestDeclaration,
-  customRender: boolean
+  customRender: boolean,
+  constants: StoryConstants
 ): HtmlSnippetTemplate | undefined => {
   const kinds = new Map(
-    Object.entries(args).map(([key, node]) => [key, evaluateArgValue(node).kind])
+    Object.entries(args).map(([key, node]) => [key, evaluateArgValue(node, constants).kind])
   );
   const template: ElementSnippet = {
     ...snippet,
@@ -512,6 +531,10 @@ const hasSnippetContent = (snippet: ElementSnippet): boolean =>
 // A handler runs inside the snippet's `<script>`, so it keeps its lines and comments, re-indented
 // from the story file to the snippet.
 const handlerText = (node: Node): string => reindent(detachedTextOf(node), '', '    ');
+
+// A mention in a string or comment counts too.
+const readsName = (code: string, name: string): boolean =>
+  new RegExp(`(?<![\\w$])(?<![^.]\\.)(?<!^\\.)${name.replace(/\$/g, '\\$')}(?![\\w$])`).test(code);
 
 const listenerHandler = (node: Node): string =>
   isFunctionNode(unwrapExpression(node)) ? handlerText(node) : '() => {}';

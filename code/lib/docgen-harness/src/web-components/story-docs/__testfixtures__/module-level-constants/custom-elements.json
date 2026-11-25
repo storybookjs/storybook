@@ -1,0 +1,104 @@
+{
+  "schemaVersion": "1.0.0",
+  "readme": "",
+  "modules": [
+    {
+      "kind": "javascript-module",
+      "path": "module-level-constants.js",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "Element whose args read module-level constants.",
+          "name": "ConstantsViewer",
+          "members": [
+            {
+              "kind": "field",
+              "name": "heading",
+              "type": {
+                "text": "string"
+              },
+              "attribute": "heading"
+            },
+            {
+              "kind": "field",
+              "name": "html",
+              "type": {
+                "text": "string"
+              },
+              "attribute": "html"
+            },
+            {
+              "kind": "field",
+              "name": "lines",
+              "type": {
+                "text": "number"
+              },
+              "attribute": "lines"
+            },
+            {
+              "kind": "field",
+              "name": "selectedLine",
+              "type": {
+                "text": "number"
+              },
+              "attribute": "selected-line"
+            }
+          ],
+          "attributes": [
+            {
+              "name": "heading",
+              "type": {
+                "text": "string"
+              },
+              "fieldName": "heading"
+            },
+            {
+              "name": "html",
+              "type": {
+                "text": "string"
+              },
+              "fieldName": "html"
+            },
+            {
+              "name": "lines",
+              "type": {
+                "text": "number"
+              },
+              "fieldName": "lines"
+            },
+            {
+              "name": "selected-line",
+              "type": {
+                "text": "number"
+              },
+              "fieldName": "selectedLine"
+            }
+          ],
+          "superclass": {
+            "name": "HTMLElement"
+          },
+          "tagName": "constants-viewer",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "ConstantsViewer",
+          "declaration": {
+            "name": "ConstantsViewer",
+            "module": "module-level-constants.js"
+          }
+        },
+        {
+          "kind": "custom-element-definition",
+          "name": "constants-viewer",
+          "declaration": {
+            "name": "ConstantsViewer",
+            "module": "module-level-constants.js"
+          }
+        }
+      ]
+    }
+  ]
+}

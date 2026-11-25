@@ -1,0 +1,16 @@
+{
+  "ChangedConstant": "<constants-viewer html="&lt;pre>a
+b
+c&lt;/pre>" lines="3"></constants-viewer>",
+  "MetaArgs": "<constants-viewer html="&lt;pre>a
+b
+c&lt;/pre>" lines="3"></constants-viewer>",
+  "StoryArgs": "<constants-viewer
+  html="&lt;pre>a
+b
+c&lt;/pre>"
+  lines="3"
+  selected-line="2"
+  heading="a"
+></constants-viewer>",
+}

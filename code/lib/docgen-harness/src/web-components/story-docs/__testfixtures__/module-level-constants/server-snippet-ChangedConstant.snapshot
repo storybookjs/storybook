@@ -1,0 +1,5 @@
+<constants-viewer html="&lt;pre>a
+b
+c&lt;/pre>" lines="3"></constants-viewer>
+
+warning: Incomplete snippet: `changed`, `changed.length` could not be resolved statically.

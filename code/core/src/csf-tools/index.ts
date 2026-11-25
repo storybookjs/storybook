@@ -29,6 +29,7 @@ export type { E as ESTree, Node as ESTreeNode, SourceLocation } from './estree/a
 export {
   isIdentifier,
   isStringLiteral,
+  calledMethodName,
   isTSWrapper,
   locationOf,
   normalizeLineEndings,

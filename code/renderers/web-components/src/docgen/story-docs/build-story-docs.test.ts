@@ -927,3 +927,92 @@ describe('the template', () => {
     expect(template).toBeUndefined();
   });
 });
+
+describe('args that read story-file constants', () => {
+  it('prints the values args work out from the constants they read', async () => {
+    const story = await firstStory(`
+const lines = ['a', 'b', 'c'];
+const heading = \`<\${lines.join('|')}>\`;
+export default { component: 'test-element' };
+export const Primary = { args: { heading, count: lines.length * 2, label: lines[0].toUpperCase() } };
+`);
+    expect(story).toMatchInlineSnapshot(`
+      {
+        "id": "example-testelement--primary",
+        "name": "Primary",
+        "snippet": "<test-element heading="&lt;a|b|c>" count="6" label="A"></test-element>",
+      }
+    `);
+  });
+
+  it('works out a value read through another constant', async () => {
+    const story = await firstStory(`
+const a = 'x';
+const b = \`\${a}!\`;
+export default { component: 'test-element' };
+export const Primary = { args: { count: b.length } };
+`);
+    expect(story.snippet).toBe('<test-element count="2"></test-element>');
+    expect(story.warning).toBeUndefined();
+  });
+
+  it('works out a long chain of constants once each', async () => {
+    const chain = Array.from({ length: 40 }, (_, index) =>
+      index === 0 ? "const s0 = 'ab';" : `const s${index} = s${index - 1} + s${index - 1}[0];`
+    ).join('\n');
+    const started = Date.now();
+    const story = await firstStory(`
+${chain}
+export default { component: 'test-element' };
+export const Primary = { args: { count: s39.length } };
+`);
+    expect(story.snippet).toBe('<test-element count="41"></test-element>');
+    expect(Date.now() - started).toBeLessThan(5000);
+  });
+
+  it('leaves out a value working it out throws for', async () => {
+    const story = await firstStory(`
+const lines = ['a'];
+export default { component: 'test-element' };
+export const Primary = { args: { label: lines[0].repeat(-1), count: 2 } };
+`);
+    expect(story.snippet).toBe('<test-element count="2"></test-element>');
+    expect(story.warning).toContain('lines[0].repeat(-1)');
+  });
+
+  it('works out nothing for a value that reads no constant', async () => {
+    const story = await firstStory(`
+export default { component: 'test-element' };
+export const Primary = { args: { label: 'Hi', count: 'abc'.length } };
+`);
+    expect(story.snippet).toBe('<test-element label="Hi"></test-element>');
+    expect(story.warning).toContain("'abc'.length");
+  });
+
+  it('keeps naming a constant a printed listener reads', async () => {
+    const story = await firstStory(`
+const lines = ['a', 'b', 'c'];
+export default { component: 'test-element' };
+export const Primary = { args: { count: lines.length, onShapeChange: () => console.log(lines) } };
+`);
+    expect(story.snippet).toContain('count="3"');
+    expect(story.warning).toContain('`lines`');
+  });
+
+  it('names an arg that reads a constant the story file changes', async () => {
+    const story = await firstStory(`
+const lines = ['a'];
+lines.push('b');
+export default { component: 'test-element' };
+export const Primary = { args: { label: 'Hi', count: lines.length } };
+`);
+    expect(story).toMatchInlineSnapshot(`
+      {
+        "id": "example-testelement--primary",
+        "name": "Primary",
+        "snippet": "<test-element label="Hi"></test-element>",
+        "warning": "Incomplete snippet: \`lines\`, \`lines.length\` could not be resolved statically.",
+      }
+    `);
+  });
+});

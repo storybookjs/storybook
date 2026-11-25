@@ -1,7 +1,6 @@
 import { getChannel } from 'storybook/internal/channels';
 import { MANAGER_INERT_ATTRIBUTE_CHANGED, TELEMETRY_ERROR } from 'storybook/internal/core-events';
 
-import { global } from '@storybook/global';
 import { globalPackages, globalsNameReferenceMap } from './globals/globals.ts';
 import { globalsNameValueMap } from './globals/runtime.ts';
 import { maybeSetupPreviewNavigator } from './preview-navigator.ts';
@@ -18,23 +17,23 @@ function setInert(inert: boolean) {
 function errorListener(args: any) {
   const error = args.error || args;
   if (error.fromStorybook) {
-    global.sendTelemetryError(error);
+    globalThis.sendTelemetryError(error);
   }
 }
 
 function unhandledRejectionListener({ reason }: any) {
   if (reason.fromStorybook) {
-    global.sendTelemetryError(reason);
+    globalThis.sendTelemetryError(reason);
   }
 }
 
 export function setup() {
   // Apply all the globals
   globalPackages.forEach((key) => {
-    (global as any)[globalsNameReferenceMap[key]] = globalsNameValueMap[key];
+    (globalThis as any)[globalsNameReferenceMap[key]] = globalsNameValueMap[key];
   });
 
-  global.sendTelemetryError = (error: any) => {
+  globalThis.sendTelemetryError = (error: any) => {
     const channel = getChannel();
     if (!channel) {
       return;
@@ -46,7 +45,8 @@ export function setup() {
   // This gate only drives `inert` (interaction blocking) and keys on `freeze`
   // alone. Whether the preview is actually frozen is gated separately (and more
   // strictly, on viewMode=story) in setupStoryFreezer.shouldFreeze.
-  const freeze = new URLSearchParams(global.location?.search ?? '').get('freeze') === 'finished';
+  const freeze =
+    new URLSearchParams(globalThis.location?.search ?? '').get('freeze') === 'finished';
   if (freeze) {
     setInert(true);
   }
@@ -74,8 +74,8 @@ export function setup() {
   });
 
   // handle all uncaught StorybookError at the root of the application and log to telemetry if applicable
-  global.addEventListener('error', errorListener);
-  global.addEventListener('unhandledrejection', unhandledRejectionListener);
+  globalThis.addEventListener('error', errorListener);
+  globalThis.addEventListener('unhandledrejection', unhandledRejectionListener);
   maybeSetupPreviewNavigator();
 }
 

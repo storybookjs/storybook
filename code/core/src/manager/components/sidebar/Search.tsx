@@ -3,7 +3,6 @@ import React, { type ReactNode, useCallback, useRef, useState } from 'react';
 import { Button } from 'storybook/internal/components';
 import { REVIEW_STATUS_TYPE_ID } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
 import { CloseIcon, SearchIcon } from '@storybook/icons';
 
 import type { DownshiftState, StateChangeOptions } from 'downshift';
@@ -30,8 +29,6 @@ import type {
 import { isExpandType, isSearchResult } from './types.ts';
 
 import { resolveHighlightRanges } from './SearchResults.utils.ts';
-
-const { document } = global;
 
 const DEFAULT_MAX_SEARCH_RESULTS = 50;
 

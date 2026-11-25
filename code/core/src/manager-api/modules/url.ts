@@ -9,8 +9,6 @@ import { buildArgsParam, queryFromLocation } from 'storybook/internal/router';
 import type { NavigateOptions } from 'storybook/internal/router';
 import type { API_Layout, API_UI, API_ViewMode, Args } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
-
 import { dequal as deepEqual } from 'dequal';
 import { omit } from 'es-toolkit/object';
 import { stringify } from 'picoquery';
@@ -269,11 +267,11 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
       }
 
       const pathname = location.pathname || '/';
-      const originAddress = global.window.location.origin + pathname;
-      const networkAddress = global.STORYBOOK_NETWORK_ADDRESS ?? originAddress;
+      const originAddress = globalThis.window.location.origin + pathname;
+      const networkAddress = globalThis.STORYBOOK_NETWORK_ADDRESS ?? originAddress;
       const managerBase =
         base === 'origin' ? originAddress : base === 'network' ? networkAddress : pathname;
-      const previewBaseUrl = base ? managerBase : global.document?.baseURI || originAddress;
+      const previewBaseUrl = base ? managerBase : globalThis.document?.baseURI || originAddress;
       const previewBase = refId
         ? refs[refId].url + '/iframe.html'
         : resolveIframeUrl(previewBaseUrl, { absolute: Boolean(base) });
@@ -379,11 +377,11 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
 
   let handleOrId: any;
   provider.channel?.on(STORY_ARGS_UPDATED, () => {
-    if ('requestIdleCallback' in global.window) {
+    if ('requestIdleCallback' in globalThis.window) {
       if (handleOrId) {
-        global.window.cancelIdleCallback(handleOrId);
+        globalThis.window.cancelIdleCallback(handleOrId);
       }
-      handleOrId = global.window.requestIdleCallback(updateArgsParam, { timeout: 1000 });
+      handleOrId = globalThis.window.requestIdleCallback(updateArgsParam, { timeout: 1000 });
     } else {
       if (handleOrId) {
         clearTimeout(handleOrId);

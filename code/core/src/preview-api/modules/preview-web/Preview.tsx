@@ -43,17 +43,17 @@ import type {
   StoryRenderOptions,
 } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
-
 import { StoryStore, composeProjectAnnotationsWithCore } from '../../store.ts';
 import { addons } from '../addons/index.ts';
 import type { CsfDocsRender } from './render/CsfDocsRender.ts';
 import type { MdxDocsRender } from './render/MdxDocsRender.ts';
 import { StoryRender } from './render/StoryRender.ts';
 
-const { fetch } = global;
-
 const STORY_INDEX_PATH = './index.json';
+
+// Read once when the preview runtime loads, before user code such as `.storybook/preview.ts`
+// runs, so a fetch mock in user code can't intercept Storybook's own story index request.
+const { fetch } = globalThis;
 
 export type MaybePromise<T> = Promise<T> | T;
 

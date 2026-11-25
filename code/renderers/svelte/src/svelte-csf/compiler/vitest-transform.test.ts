@@ -51,10 +51,8 @@ async function transform(originalCode: string) {
   return typeof transformed === 'string' ? transformed : transformed.code;
 }
 
-// Characterises how the Vitest transform names Svelte CSF tests today: after the export, while the
-// index has the display name.
 describe('vitestTransform test names of a stories file', () => {
-  it('names each test after the export of the story, not its display name', async () => {
+  it('names each test like the index names its story', async () => {
     const output = await transform(dedent`
       <script module>
         import { defineMeta } from '@storybook/svelte';
@@ -63,17 +61,23 @@ describe('vitestTransform test names of a stories file', () => {
         const { Story } = defineMeta({ component: Button });
       </script>
 
+      <Story name="Today" />
+
       <Story name="Hover Shows Full Date" />
 
-      <Story name="Ünïcode & punctuation!" />
+      <Story name="URL input (loading)" />
 
-      <Story name="Custom" exportName="MyExport" />
+      <Story name="Custom" exportName="DifferentExport" />
+
+      <Story exportName="OnlyExportName" />
     `);
 
     expect([...output.matchAll(/_test\("([^"]*)"/g)].map(([, name]) => name)).toEqual([
-      'HoverShowsFullDate',
-      'ÜnïcodePunctuation',
-      'MyExport',
+      'Today',
+      'Hover Shows Full Date',
+      'URL input (loading)',
+      'Custom',
+      'Only Export Name',
     ]);
   });
 });
@@ -104,6 +108,26 @@ describe('vitestTransform of a CSF factories stories file', () => {
       }
       "
     `);
+  });
+
+  it('names each test like the index names its story', async () => {
+    const output = await transform(dedent`
+      <script module>
+        import preview from '#.storybook/preview';
+        import Button from './Button.svelte';
+
+        const { Story } = preview.meta({ component: Button });
+      </script>
+
+      <Story name="Hover Shows Full Date" />
+
+      <Story name="Without tooltip" extend="Hover Shows Full Date" />
+    `);
+
+    expect([...output.matchAll(/_test\("([^"]*)"/g)].map(([, name]) => name)).toEqual([
+      'Hover Shows Full Date',
+      'Without tooltip',
+    ]);
   });
 
   it('tests the stories of the Story components from meta.type<>()', async () => {

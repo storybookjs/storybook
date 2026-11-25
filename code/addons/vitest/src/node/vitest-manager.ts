@@ -42,19 +42,6 @@ export const DOUBLE_SPACES = '  ';
 export const toModuleId = (importPath: string) => path.join(process.cwd(), importPath);
 const getTestName = (name: string) => `${name}${DOUBLE_SPACES}`;
 
-/**
- * The Vitest transform names a story exported as `export { X as Y }` after its export. Svelte CSF
- * compiles `.stories.svelte` to that form, while its indexer gives the story its display name
- * (index `Hover Shows Full Date`, test `HoverShowsFullDate`). So match either.
- */
-const testNames = (
-  { name, exportName }: Pick<StoryIndexEntry, 'name' | 'exportName'>,
-  toTestName = (value: string) => value
-) =>
-  exportName && exportName !== name
-    ? `(?:${escapeRegExp(toTestName(name))}|${escapeRegExp(toTestName(exportName))})`
-    : escapeRegExp(toTestName(name));
-
 export class VitestManager {
   vitest: Vitest | null = null;
 
@@ -279,7 +266,7 @@ export class VitestManager {
    *
    * - Component entry (has child stories/tests): match the whole describe block prefix
    * - Story-test entry (has parent): match "parent describe + test name" exactly
-   * - Regular story entry: match the story name or export name exactly
+   * - Regular story entry: match the story name exactly
    */
   private buildStoryTestNamePattern(
     story: StoryIndexEntry,
@@ -289,7 +276,7 @@ export class VitestManager {
     const isParentStory = allStories.some((candidate) => story.id === candidate.parent);
 
     if (isParentStory) {
-      return `^${testNames(story, getTestName)}`;
+      return `^${escapeRegExp(getTestName(story.name))}`;
     }
 
     if (story.parent) {
@@ -298,10 +285,10 @@ export class VitestManager {
         throw new Error(`Parent story not found for story ${story.id}`);
       }
 
-      return `^${testNames(parentStory, getTestName)}${this.testNameSeparator}${escapeRegExp(story.name)}$`;
+      return `^${escapeRegExp(getTestName(parentStory.name))}${this.testNameSeparator}${escapeRegExp(story.name)}$`;
     }
 
-    return `^${testNames(story)}$`;
+    return `^${escapeRegExp(story.name)}$`;
   }
 
   /**

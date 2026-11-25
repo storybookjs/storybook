@@ -1032,7 +1032,9 @@ export class CsfFile {
           this._stories[exportName] = {
             exportName,
             id: 'FIXME',
-            name: exportName,
+            name: isStringLiteral(annotations.name)
+              ? annotations.name.value
+              : storyNameFromExport(exportName),
             localName,
             parameters: {},
             factory: storyIsFactory,

@@ -1315,7 +1315,7 @@
         },
         "type": "story",
         "subtype": "story",
-        "name": "UserEventSetup"
+        "name": "User Event Setup"
       }
     ],
     "meta": {
@@ -1378,7 +1378,7 @@
       },
       "UserEventSetup": {
         "id": "untitled--user-event-setup",
-        "name": "UserEventSetup",
+        "name": "User Event Setup",
         "tags": ["play-fn"],
         "localName": "UserEventSetup"
       }

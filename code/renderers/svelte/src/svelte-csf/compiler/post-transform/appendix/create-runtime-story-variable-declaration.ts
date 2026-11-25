@@ -11,6 +11,7 @@ import type { createVariableFromRuntimeStoriesCall } from './create-variable-fro
 
 interface RuntimeStoryVariableDeclarationParams {
   exportName: string;
+  name?: string;
   // The story that this story extends, which creates it with `Parent.extend()`
   parentExportName?: string;
   filename?: string;
@@ -42,6 +43,10 @@ export function createRuntimeStoryVariableDeclaration(
       },
     },
     createASTProperty('tags', tags),
+    // Core reads a story's name from the source, where the spread above hides it
+    ...(params.name === undefined
+      ? []
+      : [createASTProperty('name', { type: 'Literal', value: params.name })]),
   ]);
   const { factoryMeta } = params.nodes;
   const { parentExportName } = params;

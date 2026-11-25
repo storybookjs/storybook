@@ -60,11 +60,35 @@ describe(transformStoriesCode.name, () => {
       	'ChildrenForwared'
       ];
 
-      const $__Default = { ...$__stories['Default'], tags: ['svelte-csf-v5'] };
-      const $__Rounded = { ...$__stories['Rounded'], tags: ['svelte-csf-v5'] };
-      const $__Square = { ...$__stories['Square'], tags: ['svelte-csf-v5'] };
-      const $__AsChild = { ...$__stories['AsChild'], tags: ['svelte-csf-v5'] };
-      const $__ChildrenForwared = { ...$__stories['ChildrenForwared'], tags: ['svelte-csf-v5'] };
+      const $__Default = {
+      	...$__stories['Default'],
+      	tags: ['svelte-csf-v5'],
+      	name: 'Default'
+      };
+
+      const $__Rounded = {
+      	...$__stories['Rounded'],
+      	tags: ['svelte-csf-v5'],
+      	name: 'Rounded'
+      };
+
+      const $__Square = {
+      	...$__stories['Square'],
+      	tags: ['svelte-csf-v5'],
+      	name: 'Square'
+      };
+
+      const $__AsChild = {
+      	...$__stories['AsChild'],
+      	tags: ['svelte-csf-v5'],
+      	name: 'As child'
+      };
+
+      const $__ChildrenForwared = {
+      	...$__stories['ChildrenForwared'],
+      	tags: ['svelte-csf-v5'],
+      	name: 'Children forwared'
+      };
 
       export {
       	$__Default as Default,
@@ -244,10 +268,15 @@ describe('CSF factories', () => {
 
       const $__Primary = $__meta.story({
       	...$__stories['Primary'],
-      	tags: ['autodocs', 'svelte-csf-v5']
+      	tags: ['autodocs', 'svelte-csf-v5'],
+      	name: 'Primary'
       });
 
-      const $__Button = $__meta.story({ ...$__stories['Button'], tags: ['svelte-csf-v5'] });
+      const $__Button = $__meta.story({
+      	...$__stories['Button'],
+      	tags: ['svelte-csf-v5'],
+      	name: 'Button'
+      });
 
       export { $__Primary as Primary, $__Button as Button };"
     `);
@@ -307,7 +336,11 @@ describe('CSF factories', () => {
 
       export const __namedExportsOrder = ['Primary'];
 
-      const $__Primary = $__meta.story({ ...$__stories['Primary'], tags: ['svelte-csf-v5'] });
+      const $__Primary = $__meta.story({
+      	...$__stories['Primary'],
+      	tags: ['svelte-csf-v5'],
+      	name: 'Primary'
+      });
 
       export { $__Primary as Primary };"
     `);
@@ -367,7 +400,11 @@ describe('CSF factories', () => {
 
       export const __namedExportsOrder = ['Primary'];
 
-      const $__Primary = $__meta.story({ ...$__stories['Primary'], tags: ['svelte-csf-v5'] });
+      const $__Primary = $__meta.story({
+      	...$__stories['Primary'],
+      	tags: ['svelte-csf-v5'],
+      	name: 'Primary'
+      });
 
       export { $__Primary as Primary };"
     `);
@@ -488,8 +525,13 @@ describe('CSF factories', () => {
 
       export const __namedExportsOrder = ['Primary', 'Icon'];
 
-      const $__Primary = meta.story({ ...$__stories['Primary'], tags: ['svelte-csf-v5'] });
-      const $__Icon = meta.story({ ...$__stories['Icon'], tags: ['svelte-csf-v5'] });
+      const $__Primary = meta.story({
+      	...$__stories['Primary'],
+      	tags: ['svelte-csf-v5'],
+      	name: 'Primary'
+      });
+
+      const $__Icon = meta.story({ ...$__stories['Icon'], tags: ['svelte-csf-v5'], name: 'Icon' });
 
       export { $__Primary as Primary, $__Icon as Icon };"
     `);
@@ -535,15 +577,29 @@ describe('CSF factories', () => {
       	'PrimaryStatic'
       ];
 
-      const $__Primary = $__meta.story({ ...$__stories['Primary'], tags: ['svelte-csf-v5'] });
-      const $__PrimarySmall = $__Primary.extend({ ...$__stories['PrimarySmall'], tags: ['svelte-csf-v5'] });
+      const $__Primary = $__meta.story({
+      	...$__stories['Primary'],
+      	tags: ['svelte-csf-v5'],
+      	name: 'Primary'
+      });
+
+      const $__PrimarySmall = $__Primary.extend({
+      	...$__stories['PrimarySmall'],
+      	tags: ['svelte-csf-v5'],
+      	name: 'Primary Small'
+      });
 
       const $__PrimarySmallStarred = $__PrimarySmall.extend({
       	...$__stories['PrimarySmallStarred'],
-      	tags: ['starred', 'svelte-csf-v5']
+      	tags: ['starred', 'svelte-csf-v5'],
+      	name: 'Primary Small Starred'
       });
 
-      const $__PrimaryStatic = $__Primary.extend({ ...$__stories['PrimaryStatic'], tags: ['svelte-csf-v5'] });
+      const $__PrimaryStatic = $__Primary.extend({
+      	...$__stories['PrimaryStatic'],
+      	tags: ['svelte-csf-v5'],
+      	name: 'Primary Static'
+      });
 
       export {
       	$__PrimarySmall as PrimarySmall,
@@ -631,7 +687,11 @@ describe('CSF factories', () => {
 
       export const __namedExportsOrder = ['Primary'];
 
-      const $__Primary = meta.story({ ...$__stories['Primary'], tags: ['svelte-csf-v5'] });
+      const $__Primary = meta.story({
+      	...$__stories['Primary'],
+      	tags: ['svelte-csf-v5'],
+      	name: 'Primary'
+      });
 
       export { $__Primary as Primary };"
     `);

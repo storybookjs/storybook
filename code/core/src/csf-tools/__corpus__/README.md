@@ -4,7 +4,8 @@ Frozen story files and two sets of golden outputs, which `corpus.test.ts` compar
 so `vitest -u` cannot re-baseline them.
 
 - `golden.json` holds what the Babel-based `CsfFile` indexed: index inputs, meta, stories and
-  bindings, recorded once from the last `next` commit that still indexed with Babel.
+  bindings, recorded once from the last `next` commit that still indexed with Babel. Where the index
+  changed on purpose since, the file was edited by hand.
 - `transforms.json` holds the `enrichCsf` and `vitestTransform` outputs, formatted with Prettier so
   layout does not count, and each story's `parameters.docs.source.originalSource`. They were
   recorded from the OXC implementation. A Babel build produced the same outputs apart from

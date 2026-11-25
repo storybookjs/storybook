@@ -831,7 +831,7 @@ describe('CsfFile', () => {
           title: foo/bar/baz
         stories:
           - id: foo-bar-baz--a
-            name: A
+            name: Story A
             localName: story1
             parameters:
               __id: foo-bar-baz--a
@@ -846,7 +846,7 @@ describe('CsfFile', () => {
               mount: false
               moduleMock: false
           - id: foo-bar-baz--あ
-            name: あ
+            name: Story B
             localName: story2
             parameters:
               __id: foo-bar-baz--あ
@@ -1942,7 +1942,7 @@ describe('CsfFile', () => {
             - X
         stories:
           - id: foo-bar--exported-name
-            name: exportedName
+            name: Exported Name
             localName: localName
             parameters:
               __id: foo-bar--exported-name

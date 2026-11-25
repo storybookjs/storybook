@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { hasStorybookSkills, installSkills } from 'storybook/internal/cli';
+import {
+  hasStorybookSkills,
+  installSkills,
+  refreshAgentInstructions,
+} from 'storybook/internal/cli';
 import { type JsPackageManager, isCI } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
@@ -23,7 +27,6 @@ vi.mock(import('storybook/internal/common'), async (importOriginal) => {
   return {
     ...actual,
     isCI: vi.fn(),
-    getProcessAncestry: () => [],
     JsPackageManagerFactory: Object.assign(actual.JsPackageManagerFactory, {
       getPackageManager: () => ({
         type: 'npm',
@@ -91,6 +94,7 @@ beforeEach(() => {
   } as unknown as ReturnType<typeof prompt.taskLog>);
   vi.mocked(hasStorybookSkills).mockResolvedValue(true);
   vi.mocked(installSkills).mockResolvedValue({ result: 'installed', source: 'refresh' });
+  vi.mocked(refreshAgentInstructions).mockResolvedValue();
 });
 
 describe('upgrade: refreshing the skills', () => {
@@ -248,6 +252,7 @@ describe('upgrade: refreshing the skills', () => {
 
     expect(installSkills).not.toHaveBeenCalled();
     expect(skillsInUpgradeEvents()).toEqual([undefined, undefined]);
+    expect(refreshAgentInstructions).toHaveBeenCalledTimes(1);
   });
 
   it('does not refresh skills that the skills automigration installed in the same upgrade', async () => {

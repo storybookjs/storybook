@@ -1548,3 +1548,90 @@ describe('template', () => {
     );
   });
 });
+
+describe('args that read story-file constants', () => {
+  test('declares the constants the args read ahead of the story', () => {
+    const input = withCSF3(dedent`
+      const lines = ['a', 'b', 'c'];
+      const html = \`<pre>\${lines.join('\\n')}</pre>\`;
+      export const Default: Story = { args: { html, count: lines.length, selected: null } };
+    `);
+    expect(generateResolved(input)).toMatchInlineSnapshot(`
+      [
+        {
+          "imports": [],
+          "snippet": "const lines = ['a', 'b', 'c'];
+
+      const Default = () => <Button html={\`<pre>\${lines.join('\\n')}</pre>\`} count={lines.length} selected={null}>Click me</Button>;",
+          "unresolved": [],
+        },
+      ]
+    `);
+  });
+
+  test('names a constant a render declares its own name for', () => {
+    const input = withCSF3(dedent`
+      const lines = ['a'];
+      export const Default: Story = {
+        args: { count: lines.length },
+        render: (args) => {
+          const lines = 5;
+          return <Button {...args} label={lines} />;
+        },
+      };
+    `);
+    const [story] = generateResolved(input);
+    expect(story.snippet).not.toContain("const lines = ['a'];");
+    expect(story.unresolved).toEqual(['lines']);
+  });
+
+  test('declares a constant an arg spreads', () => {
+    const input = withCSF3(dedent`
+      const lines = ['a', 'b'];
+      export const Default: Story = { args: { items: [...lines, 'c'] } };
+    `);
+    const [story] = generateResolved(input);
+    expect(story.unresolved).toEqual([]);
+    expect(story.snippet).toContain("const lines = ['a', 'b'];");
+  });
+
+  test('prints an arg written as a declared constant as its name', () => {
+    const input = withCSF3(dedent`
+      const user = { name: 'Ann' };
+      export const Default: Story = { args: { user, users: [user] } };
+    `);
+    const [story] = generateResolved(input);
+    expect(story.unresolved).toEqual([]);
+    expect(story.snippet).toContain('user={user} users={[user]}');
+  });
+
+  test('names a constant that renders a component the snippet cannot declare', () => {
+    const input = withCSF3(dedent`
+      import { Icon } from './Icon';
+      const renderIcon = () => <Icon />;
+      export const Default: Story = { args: { icon: renderIcon() } };
+    `);
+    const [story] = generateResolved(input);
+    expect(story.snippet).not.toContain('const renderIcon');
+    expect(story.unresolved).toEqual(['renderIcon']);
+  });
+
+  test('names a constant the story file changes instead of declaring it', () => {
+    const input = withCSF3(dedent`
+      const lines = ['a'];
+      lines.push('b');
+      export const Default: Story = { args: { count: lines.length } };
+    `);
+    expect(generateResolved(input)).toMatchInlineSnapshot(`
+      [
+        {
+          "imports": [],
+          "snippet": "const Default = () => <Button count={lines.length}>Click me</Button>;",
+          "unresolved": [
+            "lines",
+          ],
+        },
+      ]
+    `);
+  });
+});

@@ -68,6 +68,10 @@ const managerContext: any = (
     getElements: fn(() => ({})),
     navigate: fn().mockName('api::navigate'),
     resolveLeafEntry: fn().mockName('api::resolveLeafEntry'),
+    getStoryHrefs: fn((storyId: string) => ({
+      managerHref: `/?path=/story/${storyId}`,
+      previewHref: `/iframe.html?id=${storyId}`,
+    })).mockName('api::getStoryHrefs'),
     selectStory: fn().mockName('api::selectStory'),
     setFilter: fn().mockName('api::setFilter'),
     setFilters: fn().mockName('api::setFilters'),

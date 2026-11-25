@@ -62,8 +62,19 @@ const managerContext: any = {
     ),
     getData: fn().mockName('api::getData'),
     resolveLeafEntry: fn().mockName('api::resolveLeafEntry'),
+    getStoryHrefs: fn(mockStoryHrefs).mockName('api::getStoryHrefs'),
   },
 };
+
+function mockStoryHrefs(
+  storyId: string,
+  { refId, viewMode = 'story' }: { refId?: string; viewMode?: string } = {}
+) {
+  return {
+    managerHref: `/?path=/${viewMode}/${refId ? `${refId}_` : ''}${storyId}`,
+    previewHref: `/iframe.html?id=${storyId}&viewMode=${viewMode}`,
+  };
+}
 
 const meta = {
   component: Tree,
@@ -1592,5 +1603,106 @@ export const HoverPreloadsFirstStory: Story = {
       source: 'hover',
       options: { target: DEFAULT_REF_ID },
     });
+  },
+};
+
+/**
+ * A row that opens a story, a test or a docs page is a link to that entry, so the browser can open
+ * it in another tab or window. The "Story" row of a story with tests links to the story. A row
+ * that toggles its children opens nothing and is no link. The ⋯ trigger of a row stays above its
+ * link, so a press on it still opens the actions.
+ */
+export const RowsLinkToTheirEntry: Story = {
+  args: {
+    refId: DEFAULT_REF_ID,
+    onSelectStoryId: fn(),
+    data: mockDataset.withRoot as unknown as IndexHash,
+    selectedStoryId: 'root-1-child-a2--grandchild-a1-1',
+  },
+  play: async ({ canvasElement }) => {
+    const row = (id: string) =>
+      canvasElement.querySelector<HTMLElement>(`[data-item-id="${CSS.escape(id)}"]`)!;
+    const href = (id: string) => row(id).querySelector('a[href]')?.getAttribute('href') ?? null;
+    await within(canvasElement).findByRole('row', { name: 'Story' });
+
+    expect(href('root-1-child-a2--grandchild-a1-2')).toBe(
+      '/?path=/story/root-1-child-a2--grandchild-a1-2'
+    );
+    expect(href(storyRowId('root-1-child-a2--grandchild-a1-1'))).toBe(
+      '/?path=/story/root-1-child-a2--grandchild-a1-1'
+    );
+    expect(href('root-1-child-a2--grandchild-a1-1:test1')).toBe(
+      '/?path=/story/root-1-child-a2--grandchild-a1-1:test1'
+    );
+    for (const branch of [
+      'root-1',
+      'group-1',
+      'root-1-child-a2',
+      'root-1-child-a2--grandchild-a1-1',
+    ]) {
+      expect(href(branch)).toBeNull();
+    }
+
+    const leaf = row('root-1-child-a2--grandchild-a1-2');
+    await userEvent.click(leaf);
+    await userEvent.keyboard('{ArrowRight}');
+    const trigger = within(leaf).getByTestId('context-menu');
+    await waitFor(() => expect(trigger).toBeVisible());
+    const { x, y, width, height } = trigger.getBoundingClientRect();
+    const topmost = canvasElement.ownerDocument.elementFromPoint(x + width / 2, y + height / 2);
+    expect(trigger.contains(topmost)).toBe(true);
+  },
+};
+
+/**
+ * A plain press selects the row in place, and focuses it, without reloading the page. A press that
+ * asks the browser to open a link elsewhere (Cmd or Ctrl for a new tab, Shift for a new window)
+ * goes to the browser and leaves the selection alone. The browser opens the row's entry with the
+ * globals of that moment, even when they changed while the row kept focus and did not render.
+ */
+export const ModifiedPressOpensEntryElsewhere: Story = {
+  args: { refId: DEFAULT_REF_ID, onSelectStoryId: fn(), data: index, selectedStoryId: storyId },
+  play: async ({ args, canvasElement }) => {
+    await within(canvasElement).findByText('Introduction');
+    const row = canvasElement.querySelector<HTMLElement>('[data-item-id="emails-introduction"]')!;
+    const link = row.querySelector<HTMLAnchorElement>('a[href]')!;
+    expect(link).toHaveAttribute('href', '/?path=/docs/emails-introduction');
+
+    // React handles events on the canvas, and react-aria stops clicks there, so a listener added to
+    // the canvas after React's is the last to see one. It records what the browser would do with
+    // the click, then cancels it to keep this page in place.
+    const clicks: { href: string | null; opensLink: boolean }[] = [];
+    const recordClick = (event: MouseEvent) => {
+      clicks.push({ href: link.getAttribute('href'), opensLink: !event.defaultPrevented });
+      event.preventDefault();
+    };
+    const getStoryHrefs = managerContext.api.getStoryHrefs;
+    canvasElement.addEventListener('click', recordClick);
+    try {
+      const user = userEvent.setup();
+      await user.click(link);
+      expect(clicks.at(-1)?.opensLink).toBe(false);
+      await waitFor(() => expect(args.onSelectStoryId).toHaveBeenCalledWith('emails-introduction'));
+      expect(row).toHaveFocus();
+
+      getStoryHrefs.mockImplementation((id: string, options?: { viewMode?: string }) => ({
+        ...mockStoryHrefs(id, options),
+        managerHref: `${mockStoryHrefs(id, options).managerHref}&globals=sb_theme:dark`,
+      }));
+      for (const modifier of ['Meta', 'Control', 'Shift']) {
+        await user.keyboard(`{${modifier}>}`);
+        await user.click(link);
+        await user.keyboard(`{/${modifier}}`);
+        expect(clicks.at(-1)).toEqual({
+          href: '/?path=/docs/emails-introduction&globals=sb_theme:dark',
+          opensLink: true,
+        });
+      }
+      expect(args.onSelectStoryId).toHaveBeenCalledTimes(1);
+      expect(row).toHaveFocus();
+    } finally {
+      canvasElement.removeEventListener('click', recordClick);
+      getStoryHrefs.mockImplementation(mockStoryHrefs);
+    }
   },
 };

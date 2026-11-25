@@ -22,6 +22,10 @@ const managerContext = {
     getElements: fn(() => ({})).mockName('api::getElements'),
     getShortcutKeys: fn(() => ({})).mockName('api::getShortcutKeys'),
     resolveLeafEntry: fn().mockName('api::resolveLeafEntry'),
+    getStoryHrefs: fn((storyId: string) => ({
+      managerHref: `/?path=/story/${storyId}`,
+      previewHref: `/iframe.html?id=${storyId}`,
+    })).mockName('api::getStoryHrefs'),
   },
 } as any;
 

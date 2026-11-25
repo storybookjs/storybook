@@ -17,7 +17,7 @@ import { shortcutToHumanString, useStorybookState } from 'storybook/manager-api'
 import { styled, useTheme } from 'storybook/theming/emotion';
 
 import { getStatus } from '../../utils/status.tsx';
-import { isBranch, type TreeEntry } from '../../utils/tree.ts';
+import { isBranch, isStoryRow, type TreeEntry } from '../../utils/tree.ts';
 import {
   ContextMenu,
   hasContextMenu,
@@ -28,6 +28,7 @@ import {
 import { CollapseIcon } from './CollapseIcon.tsx';
 import { IndentLines, useSelectionLineLevel } from './TreeIndentLines.tsx';
 import { ContextMenuStoreContext } from './ContextMenuStore.tsx';
+import { DEFAULT_REF_ID } from './Sidebar.tsx';
 import { useRowStatus } from './StatusStore.tsx';
 import { TypeIconWithSymbol } from './TypeIcon.tsx';
 import type { SidebarLabelContext } from './types.ts';
@@ -163,7 +164,67 @@ const StyledLabel = styled.span(({ theme }) => ({
 
 const MenuTriggerContainer = styled.span({
   margin: -2,
+  zIndex: 2,
 });
+
+// Covers the row's surface, like its `::before` decoration. Only the ⋯ trigger paints above it.
+const RowLinkSurface = styled.a<{ $startsSection: boolean }>(({ $startsSection }) => ({
+  position: 'absolute',
+  left: 0,
+  right: 0,
+  bottom: 0,
+  top: $startsSection ? SECTION_GAP : 0,
+  zIndex: 1,
+}));
+
+// Cmd or Ctrl opens a link in a new tab, Shift in a new window.
+const opensLinkElsewhere = (event: React.MouseEvent) =>
+  event.metaKey || event.ctrlKey || event.shiftKey;
+
+// The link to the entry a leaf row opens, so that the browser can open it in another tab or window:
+// on a modified or middle click, or from the link's context menu. A plain press still goes to
+// react-aria, which selects the row in place.
+function RowLink({
+  item,
+  api,
+  refId,
+  startsSection,
+}: Pick<TreeNodeProps, 'item' | 'api' | 'refId'> & { startsSection: boolean }) {
+  const getHref = () =>
+    api.getStoryHrefs(isStoryRow(item) ? item.storyRowOf : item.id, {
+      refId: refId === DEFAULT_REF_ID ? undefined : refId,
+      viewMode: item.type === 'docs' ? 'docs' : 'story',
+    }).managerHref;
+
+  return (
+    <RowLinkSurface
+      href={getHref()}
+      $startsSection={startsSection}
+      // Keyboard and assistive technology users reach the row itself. React-aria's arrow keys skip
+      // the link, as they skip the chevron of a branch.
+      tabIndex={-1}
+      aria-hidden
+      data-react-aria-prevent-focus
+      onPointerDown={(event) => {
+        // The href carries the current globals, which change without the row rendering again.
+        event.currentTarget.setAttribute('href', getHref());
+        if (event.button === 0 && opensLinkElsewhere(event)) {
+          event.stopPropagation();
+        }
+      }}
+      onMouseDown={(event) => {
+        // A press focuses the row, as it would without the link on top.
+        event.preventDefault();
+        event.currentTarget.closest<HTMLElement>('[data-item-id]')?.focus({ preventScroll: true });
+      }}
+      onClick={(event) => {
+        if (!opensLinkElsewhere(event)) {
+          event.preventDefault();
+        }
+      }}
+    />
+  );
+}
 
 // react-aria requires expandable rows to carry a `slot="chevron"` Button so assistive
 // technology gets a dedicated expand/collapse target; row-level visuals stay in charge, so
@@ -289,6 +350,7 @@ function CustomRowLabel({
 interface TreeRowContentProps extends Pick<
   TreeNodeProps,
   | 'item'
+  | 'refId'
   | 'api'
   | 'labelContext'
   | 'onSelectStoryId'
@@ -299,6 +361,7 @@ interface TreeRowContentProps extends Pick<
   | 'isFullyExpanded'
   | 'onExpandCollapseAll'
 > {
+  startsSection: boolean;
   isFocused: boolean;
   isFocusVisible: boolean;
   leadingIcon: React.ReactNode;
@@ -316,6 +379,7 @@ interface TreeRowContentProps extends Pick<
 // are unchanged, so a tree state change (selection, focus) costs the rows little.
 const TreeRowContent = React.memo<TreeRowContentProps>(function TreeRowContent({
   item,
+  refId,
   api,
   labelContext,
   onSelectStoryId,
@@ -325,6 +389,7 @@ const TreeRowContent = React.memo<TreeRowContentProps>(function TreeRowContent({
   onRowFocus,
   isFullyExpanded,
   onExpandCollapseAll,
+  startsSection,
   isFocused,
   isFocusVisible,
   leadingIcon,
@@ -478,6 +543,9 @@ const TreeRowContent = React.memo<TreeRowContentProps>(function TreeRowContent({
           </StatusIconContainer>
         )}
       </StyledContent>
+      {!isBranch(item) && (item.type === 'story' || item.type === 'docs') && (
+        <RowLink item={item} api={api} refId={refId} startsSection={startsSection} />
+      )}
     </>
   );
 });
@@ -611,6 +679,7 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
         {({ isFocused, isFocusVisible }) => (
           <TreeRowContent
             item={item}
+            refId={refId}
             api={api}
             labelContext={labelContext}
             onSelectStoryId={onSelectStoryId}
@@ -620,6 +689,7 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
             onRowFocus={onRowFocus}
             isFullyExpanded={isFullyExpanded}
             onExpandCollapseAll={onExpandCollapseAll}
+            startsSection={startsSection}
             isFocused={isFocused}
             isFocusVisible={isFocusVisible}
             leadingIcon={leadingIcon}

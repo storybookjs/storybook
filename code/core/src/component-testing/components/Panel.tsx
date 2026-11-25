@@ -297,9 +297,10 @@ export const listenForPlayResults = (
     if (isCurrentRender) {
       if (event.newPhase === 'rendering') {
         log.current = [getInternalRenderLogItem(CallStates.ACTIVE)];
-        // The new log can only reference this story's calls, so drop other stories' records.
+        // The new log can only reference this story's calls and retained calls, which the
+        // instrumenter brings back without resending them.
         calls.current.forEach((call, id) => {
-          if (call.storyId !== event.storyId) {
+          if (call.storyId !== event.storyId && !call.retain) {
             calls.current.delete(id);
           }
         });

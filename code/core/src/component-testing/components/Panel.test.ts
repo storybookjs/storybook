@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from 'vitest';
 
+import { Channel } from 'storybook/internal/channels';
 import {
   FORCE_REMOUNT,
   PLAY_FUNCTION_THREW_EXCEPTION,
@@ -664,7 +665,7 @@ describe('Panel', () => {
       events: { storyId: string; newPhase: RenderPhase; renderId: number }[],
       currentStoryId: string
     ) => {
-      let tracker: RenderTracker = { renderId: 0 };
+      let tracker: RenderTracker = {};
       return events.flatMap((event) => {
         const result = trackRenderPhase(tracker, event, currentStoryId);
         tracker = result.tracker;
@@ -751,7 +752,7 @@ describe('Panel', () => {
         | { caughtException: Error }
       )[]
     ) => {
-      let tracker: RenderTracker = { renderId: 0 };
+      let tracker: RenderTracker = {};
       return events.reduce<PanelState>((state, event) => {
         if ('caughtException' in event) {
           return { ...state, caughtException: event.caughtException, hasException: true };
@@ -796,22 +797,33 @@ describe('Panel', () => {
 
   describe('listenForPlayResults', () => {
     const error = { name: 'Error', message: 'argTypes is gone' } as Error;
-    const listen = (storyId: string) => {
-      const handlers: Record<string, (payload: unknown) => void> = {};
+    const listen = (storyId: string, refId?: string) => {
+      const channel = new Channel({});
+      const selection = { storyId, refId };
       listenForPlayResults({
         on: (type, handler) => {
-          handlers[type] = handler;
-          return () => {};
+          channel.on(type, handler);
+          return () => channel.off(type, handler);
         },
-        getUrlState: () => ({ storyId }),
+        getUrlState: () => ({
+          storyId: selection.storyId,
+          path: `/story/${selection.refId ? `${selection.refId}_` : ''}${selection.storyId}`,
+        }),
       });
       panelStore.setState(INITIAL_PANEL_STATE);
-      const emit = (type: string, payload: unknown) => handlers[type]?.(payload);
-      const phases = (newPhases: RenderPhase[], phaseStoryId = storyId) =>
+      const emit = (type: string, payload: unknown, sender = selection.refId) => {
+        const event = { type, args: [payload], from: sender ?? 'local', refId: sender };
+        channel.receive(event);
+      };
+      const phases = (
+        newPhases: RenderPhase[],
+        render: { storyId: string; renderId?: number } = { storyId, renderId: 1 },
+        sender = selection.refId
+      ) =>
         newPhases.forEach((newPhase) =>
-          emit(STORY_RENDER_PHASE_CHANGED, { storyId: phaseStoryId, newPhase, renderId: 1 })
+          emit(STORY_RENDER_PHASE_CHANGED, { ...render, newPhase }, sender)
         );
-      return { emit, phases };
+      return { emit, phases, selection };
     };
 
     it('keeps a failure recorded without a mounted panel through the next re-render', () => {
@@ -828,11 +840,77 @@ describe('Panel', () => {
       const { emit, phases } = listen('shown--story');
 
       phases(['preparing', 'loading', 'rendering', 'playing', 'played', 'completing', 'completed']);
-      phases(['errored'], 'hidden-ref--story');
+      phases(['errored'], { storyId: 'previous--story', renderId: 1 });
       emit(PLAY_FUNCTION_THREW_EXCEPTION, error);
       emit(UNHANDLED_ERRORS_WHILE_PLAYING, [error]);
       phases(['loading', 'rendering', 'completing', 'completed']);
 
+      expect(panelStore.getState()).toMatchObject({
+        status: 'completed',
+        caughtException: undefined,
+        unhandledErrors: undefined,
+      });
+    });
+
+    it('ignores a late failure after switching refs with the panel closed', () => {
+      const storyId = 'button--primary';
+      const { emit, phases, selection } = listen(storyId, 'first');
+      const firstRender = { storyId, renderId: 2 };
+      phases(['rendering', 'playing'], firstRender);
+
+      selection.refId = 'second';
+      phases(['rendering', 'playing', 'played', 'completed']);
+      phases(['errored'], firstRender, 'first');
+      emit(PLAY_FUNCTION_THREW_EXCEPTION, error, 'first');
+      emit(UNHANDLED_ERRORS_WHILE_PLAYING, [error], 'first');
+      phases(['loading', 'rendering', 'completed']);
+
+      expect(panelStore.getState()).toMatchObject({
+        status: 'completed',
+        caughtException: undefined,
+        unhandledErrors: undefined,
+      });
+    });
+
+    it('keeps the error details from the active preview when both refs fail', () => {
+      const { emit, phases, selection } = listen('button--secondary', 'first');
+      phases(['rendering', 'playing']);
+      selection.refId = 'second';
+      phases(['rendering', 'playing', 'errored']);
+      emit(PLAY_FUNCTION_THREW_EXCEPTION, error);
+      emit(UNHANDLED_ERRORS_WHILE_PLAYING, [error]);
+      const hiddenError = new Error('error in hidden preview');
+      phases(['errored'], { storyId: selection.storyId, renderId: 1 }, 'first');
+      emit(PLAY_FUNCTION_THREW_EXCEPTION, hiddenError, 'first');
+      emit(UNHANDLED_ERRORS_WHILE_PLAYING, [hiddenError], 'first');
+
+      expect(panelStore.getState()).toMatchObject({
+        status: 'errored',
+        caughtException: error,
+        unhandledErrors: [error],
+      });
+    });
+
+    it('keeps a legacy preview failure through a rerender and clears it on a successful play', () => {
+      const legacyRender = { storyId: 'legacy--story' };
+      const { emit, phases } = listen(legacyRender.storyId, 'legacy');
+      phases(['preparing', 'loading', 'rendering', 'playing', 'errored'], legacyRender);
+      emit(PLAY_FUNCTION_THREW_EXCEPTION, error);
+      emit(UNHANDLED_ERRORS_WHILE_PLAYING, [error]);
+
+      expect(panelStore.getState()).toMatchObject({
+        status: 'errored',
+        caughtException: error,
+        unhandledErrors: [error],
+        hasException: true,
+      });
+      phases(['completing', 'completed', 'loading', 'rendering', 'completed'], legacyRender);
+      expect(panelStore.getState()).toMatchObject({
+        status: 'errored',
+        caughtException: error,
+        unhandledErrors: [error],
+      });
+      phases(['loading', 'rendering', 'playing', 'played', 'completed'], legacyRender);
       expect(panelStore.getState()).toMatchObject({
         status: 'completed',
         caughtException: undefined,

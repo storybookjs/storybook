@@ -8,6 +8,7 @@ import {
   STORY_THREW_EXCEPTION,
   UNHANDLED_ERRORS_WHILE_PLAYING,
 } from 'storybook/internal/core-events';
+import { parsePath } from 'storybook/internal/router';
 import type { StatusValue } from 'storybook/internal/types';
 
 import {
@@ -162,48 +163,46 @@ export const getPanelState = (
     }
   );
 
+interface RenderPhaseEvent {
+  storyId: string;
+  renderId?: number;
+  newPhase: RenderPhase;
+}
+
 export interface RenderTracker {
-  storyId?: string;
-  renderId: number;
+  event?: RenderPhaseEvent;
+  refId?: string;
   hasRendered?: boolean;
-  phase?: RenderPhase;
 }
 
 export const trackRenderPhase = (
   tracker: RenderTracker,
-  event: { storyId: string; newPhase: RenderPhase; renderId?: number },
-  currentStoryId: string | undefined
+  event: RenderPhaseEvent,
+  currentStoryId: string | undefined,
+  refId?: string
 ): { tracker: RenderTracker; isCurrentRender: boolean; isRerender: boolean } => {
   // A render torn down by a story switch can still report phases after the new story started.
   if (event.storyId !== currentStoryId) {
     return { tracker, isCurrentRender: false, isRerender: false };
   }
 
-  // A rerender cycle may not actually make it to the rendering phase.
-  // We don't want to update any state until it does.
-  if (tracker.storyId === event.storyId && ['preparing', 'loading'].includes(event.newPhase)) {
+  const sameStory = tracker.refId === refId && tracker.event?.storyId === event.storyId;
+  const previousRenderId = tracker.event?.renderId;
+  // Storybook 9.0 previews send phases without render IDs.
+  const isOlderRender =
+    previousRenderId !== undefined &&
+    event.renderId !== undefined &&
+    event.renderId < previousRenderId;
+  if (sameStory && (isOlderRender || ['preparing', 'loading'].includes(event.newPhase))) {
     return { tracker, isCurrentRender: false, isRerender: false };
   }
 
-  // When we switch stories, the render id might decrease if our users have mocked Date.now()
-  // via addons or manually in their code, so we must reset it.
-  const renderId =
-    tracker.storyId === event.storyId
-      ? Math.max(tracker.renderId, event.renderId || 0)
-      : event.renderId || 0;
-  const isCurrentRender = renderId === event.renderId;
-  const isSameRender = tracker.storyId === event.storyId && tracker.renderId === renderId;
-  const hasRendered = isSameRender && !!tracker.hasRendered;
-  const isRendering = isCurrentRender && event.newPhase === 'rendering';
+  const hasRendered = sameStory && previousRenderId === event.renderId && !!tracker.hasRendered;
+  const isRendering = event.newPhase === 'rendering';
 
   return {
-    tracker: {
-      storyId: event.storyId,
-      renderId,
-      hasRendered: hasRendered || isRendering,
-      phase: isCurrentRender ? event.newPhase : isSameRender ? tracker.phase : undefined,
-    },
-    isCurrentRender,
+    tracker: { event, refId, hasRendered: hasRendered || isRendering },
+    isCurrentRender: true,
     // A re-render or a remount renders the same story render again, unlike a story switch or HMR.
     isRerender: isRendering && hasRendered,
   };
@@ -238,39 +237,59 @@ export const getRenderPhaseState = (
 };
 
 // Module scope: listenForPlayResults updates it while the panel is closed.
-const renderTracker: { current: RenderTracker } = { current: { renderId: 0 } };
+let renderTracker: RenderTracker = {};
 
 // Registered once with the addon, so render phases and play results reach panelStore while the
 // panel is closed.
 export const listenForPlayResults = (
-  api: Pick<API, 'on'> & { getUrlState: () => { storyId?: string } }
+  api: Pick<API, 'on'> & { getUrlState: () => { storyId?: string; path: string } }
 ) => {
+  // The router reads the selected ref from the path, as it does for the manager state.
+  const getSelection = () => {
+    const { storyId, path } = api.getUrlState();
+    return { storyId, refId: parsePath(path).refId };
+  };
+  const isCurrentPlayError = (senderRefId?: string) => {
+    const { storyId, refId } = getSelection();
+    return (
+      senderRefId === refId &&
+      renderTracker.refId === refId &&
+      renderTracker.event?.newPhase === 'errored' &&
+      renderTracker.event.storyId === storyId
+    );
+  };
+  api.on(STORY_RENDER_PHASE_CHANGED, function (this: { refId?: string }, event: RenderPhaseEvent) {
+    const { storyId, refId } = getSelection();
+    if (this.refId !== refId) {
+      return;
+    }
+    const { tracker, isCurrentRender, isRerender } = trackRenderPhase(
+      renderTracker,
+      event,
+      storyId,
+      refId
+    );
+    renderTracker = tracker;
+    if (isCurrentRender) {
+      panelStore.setState((state) => getRenderPhaseState(state, event.newPhase, isRerender));
+    }
+  });
   api.on(
-    STORY_RENDER_PHASE_CHANGED,
-    (event: { storyId: string; newPhase: RenderPhase; renderId?: number }) => {
-      const { tracker, isCurrentRender, isRerender } = trackRenderPhase(
-        renderTracker.current,
-        event,
-        api.getUrlState().storyId
-      );
-      renderTracker.current = tracker;
-      if (isCurrentRender) {
-        panelStore.setState((state) => getRenderPhaseState(state, event.newPhase, isRerender));
+    PLAY_FUNCTION_THREW_EXCEPTION,
+    function (this: { refId?: string }, caughtException: PanelState['caughtException']) {
+      if (isCurrentPlayError(this.refId)) {
+        panelStore.setState((state) => ({ ...state, caughtException, hasException: true }));
       }
     }
   );
-  // A play's errors directly follow its render's 'errored' phase. Errors from a hidden composed
-  // preview or a cancelled play arrive outside it and belong to another render.
-  api.on(PLAY_FUNCTION_THREW_EXCEPTION, (caughtException: PanelState['caughtException']) => {
-    if (renderTracker.current.phase === 'errored') {
-      panelStore.setState((state) => ({ ...state, caughtException, hasException: true }));
+  api.on(
+    UNHANDLED_ERRORS_WHILE_PLAYING,
+    function (this: { refId?: string }, unhandledErrors: PanelState['unhandledErrors']) {
+      if (isCurrentPlayError(this.refId)) {
+        panelStore.setState((state) => ({ ...state, unhandledErrors, hasException: true }));
+      }
     }
-  });
-  api.on(UNHANDLED_ERRORS_WHILE_PLAYING, (unhandledErrors: PanelState['unhandledErrors']) => {
-    if (renderTracker.current.phase === 'errored') {
-      panelStore.setState((state) => ({ ...state, unhandledErrors, hasException: true }));
-    }
-  });
+  );
   api.on(FORCE_REMOUNT, ({ storyId }: { storyId: string }) => {
     // A remount keeps the last play's errors until it plays, which a failed render skips.
     if (storyId === api.getUrlState().storyId) {
@@ -382,9 +401,8 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
           );
         },
         [STORY_RENDER_PHASE_CHANGED]: (event) => {
-          // listenForPlayResults already tracked this event and updated the status.
-          const { storyId: trackedStoryId, renderId } = renderTracker.current;
-          if (event.storyId !== trackedStoryId || event.renderId !== renderId) {
+          // The channel passes the same payload to the addon listener before the mounted panel.
+          if (event !== renderTracker.event) {
             return;
           }
 

@@ -1,5 +1,4 @@
-import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname } from 'node:path';
 
 import { logger, prompt } from 'storybook/internal/node-logger';
 import {
@@ -7,22 +6,17 @@ import {
   MinimumReleaseAgeHandledError,
 } from 'storybook/internal/server-errors';
 
-import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
 import type { ResultPromise } from 'execa';
-// eslint-disable-next-line depend/ban-dependencies
-import { globSync } from 'glob';
-import { normalize } from 'pathe';
-import sort from 'semver/functions/sort.js';
 import { dedent } from 'ts-dedent';
 
 import type { ExecuteCommandOptions } from '../utils/command.ts';
 import { executeCommand } from '../utils/command.ts';
-import { getProjectRoot } from '../utils/paths.ts';
 import { JsPackageManager, PackageManagerName } from './JsPackageManager.ts';
 import type { PackageJson } from './PackageJson.ts';
-import type { InstallationMetadata, PackageMetadata } from './types.ts';
+import type { InstallationMetadata } from './types.ts';
 import {
+  findInstallationsInDependencyTree,
   getAgeInMinutes,
   getErrorLogs,
   getLatestStableVersionAdheringToMinimumAgeGate,
@@ -101,21 +95,6 @@ export class NPMProxy extends JsPackageManager {
 
   getRunCommand(command: string): string {
     return `npm run ${command}`;
-  }
-
-  async getModulePackageJSON(packageName: string): Promise<PackageJson | null> {
-    const wantedPath = join('node_modules', packageName, 'package.json');
-    const packageJsonPath = find.up(wantedPath, {
-      cwd: this.primaryPackageJson.operationDir,
-      last: getProjectRoot(),
-    });
-
-    if (!packageJsonPath) {
-      return null;
-    }
-
-    const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
-    return packageJson;
   }
 
   getInstallArgs(): string[] {
@@ -210,28 +189,8 @@ export class NPMProxy extends JsPackageManager {
 
   protected runInstall(options?: { force?: boolean; legacyPeerDeps?: boolean }) {
     const packageJsonPath = this.packageJsonPaths[0];
-    const workspacePackageJsonPath = this.packageJsonPaths.find((ancestorPath) => {
-      const workspaces = JsPackageManager.getPackageJson(ancestorPath).workspaces;
-      const patterns = Array.isArray(workspaces) ? workspaces : workspaces?.packages;
-      return (
-        packageJsonPath &&
-        patterns?.length &&
-        globSync(
-          patterns
-            .filter((pattern: string) => !pattern.startsWith('!'))
-            .map((pattern: string) => `${pattern}/package.json`),
-          {
-            cwd: dirname(ancestorPath),
-            absolute: true,
-            ignore: patterns
-              .filter((pattern: string) => pattern.startsWith('!'))
-              .map((pattern: string) => `${pattern.slice(1)}/package.json`),
-          }
-        )
-          .map(normalize)
-          .includes(normalize(packageJsonPath))
-      );
-    });
+    const workspacePackageJsonPath =
+      packageJsonPath && this.findWorkspaceRootPackageJsonPath(packageJsonPath);
 
     return executeCommand({
       command: 'npm',
@@ -399,44 +358,8 @@ export class NPMProxy extends JsPackageManager {
    * @param pattern A list of package names to filter the result. * can be used as a placeholder
    */
   protected mapDependencies(input: NpmListOutput, pattern: string[]): InstallationMetadata {
-    const acc: Record<string, PackageMetadata[]> = {};
-    const existingVersions: Record<string, string[]> = {};
-    const duplicatedDependencies: Record<string, string[]> = {};
-
-    const recurse = ([name, packageInfo]: [string, NpmDependency]): void => {
-      // transform pattern into regex where `*` is replaced with `.*`
-      if (name && pattern.some((p) => new RegExp(`^${p.replace(/\*/g, '.*')}$`).test(name))) {
-        const value = {
-          version: packageInfo.version,
-          location: '',
-        };
-
-        if (!existingVersions[name]?.includes(value.version)) {
-          if (acc[name]) {
-            acc[name].push(value);
-          } else {
-            acc[name] = [value];
-          }
-          existingVersions[name] = sort([...(existingVersions[name] || []), value.version]);
-
-          if (existingVersions[name].length > 1) {
-            duplicatedDependencies[name] = existingVersions[name];
-          }
-        }
-      }
-
-      // keep walking non-matching nodes: intermediary entries such as workspace
-      // members hide matching dependencies beneath them
-      if (packageInfo.dependencies) {
-        Object.entries(packageInfo.dependencies).forEach(recurse);
-      }
-    };
-
-    Object.entries(input.dependencies).forEach(recurse);
-
     return {
-      dependencies: acc,
-      duplicatedDependencies,
+      ...findInstallationsInDependencyTree(input.dependencies, pattern),
       infoCommand: 'npm ls --depth=1',
       dedupeCommand: 'npm dedupe',
     };

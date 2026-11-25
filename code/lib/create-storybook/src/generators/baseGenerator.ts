@@ -1,5 +1,4 @@
 import { mkdir } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
@@ -20,6 +19,7 @@ import {
 import { prompt } from 'storybook/internal/node-logger';
 import { SupportedFramework, SupportedLanguage } from 'storybook/internal/types';
 
+import { dirname, join } from 'pathe';
 import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
 

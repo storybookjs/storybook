@@ -721,24 +721,18 @@ describe('layout API', () => {
     let mockGetElementById: ReturnType<typeof vi.fn>;
     let focusLayoutApi: SubAPI;
 
-    beforeEach(async () => {
+    beforeEach(() => {
       mockActiveElement = null;
       mockGetElementById = vi.fn().mockReturnValue(null);
 
-      // Set up mock document on globalThis before re-importing layout module.
-      // @storybook/global resolves to globalThis in Node, so the layout module's
-      // `const { document } = global;` will capture this mock.
-      (globalThis as any).document = {
+      vi.stubGlobal('document', {
         getElementById: mockGetElementById,
         get activeElement() {
           return mockActiveElement;
         },
-      };
+      });
 
-      // Re-import the layout module so it captures our mock document
-      vi.resetModules();
-      const { init: freshInit } = await import('../modules/layout.ts');
-      focusLayoutApi = freshInit({
+      focusLayoutApi = initLayout({
         store,
         provider,
         singleStory: false,
@@ -746,7 +740,6 @@ describe('layout API', () => {
     });
 
     afterEach(() => {
-      delete (globalThis as any).document;
       vi.restoreAllMocks();
     });
 

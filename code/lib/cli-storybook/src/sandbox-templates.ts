@@ -757,6 +757,10 @@ export const baseTemplates = {
     },
     modifications: {
       skipMocking: true,
+      // Remove once @rspack/core ships the fix for https://github.com/web-infra-dev/rspack/issues/16695
+      resolutions: {
+        '@rspack/core': '2.3.1',
+      },
     },
     skipTasks: ['e2e-tests', 'e2e-tests-dev', 'bench', 'vitest-integration'],
   },

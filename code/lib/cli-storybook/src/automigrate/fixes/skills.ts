@@ -1,4 +1,5 @@
 import {
+  hasAddonVitest,
   hasStorybookSkills,
   installSkills,
   skipsSkillsInCI,
@@ -18,23 +19,8 @@ const introducedIn = '11.0.0';
 // angular-vite.
 export const addSkillsCommand = (result?: { afterAngularViteMigration?: boolean }) =>
   result?.afterAngularViteMigration
-    ? 'npx storybook automigrate angular-to-angular-vite --yes, and then npx storybook automigrate skills --yes'
-    : 'npx storybook automigrate skills --yes';
-
-// In real CI the skills are installed only on request. Coding agents set `CI=true` themselves, and
-// `skipsSkillsInCI` does not count their runs.
-const unlessSkippedInCI = <T extends { afterAngularViteMigration?: boolean }>(
-  result: T,
-  requested: boolean | undefined
-): T | null => {
-  if (requested || !skipsSkillsInCI()) {
-    return result;
-  }
-  logger.warn(
-    `Skipped the Storybook skills for AI agents because CI is set. Add them with: ${addSkillsCommand(result)}`
-  );
-  return null;
-};
+    ? 'npx storybook automigrate angular-to-angular-vite, and then npx storybook automigrate skills'
+    : 'npx storybook automigrate skills';
 
 export const skills: Fix<{ afterAngularViteMigration?: boolean }> = {
   id: 'skills',
@@ -44,6 +30,10 @@ export const skills: Fix<{ afterAngularViteMigration?: boolean }> = {
     'Recommended: install the official Storybook skills for AI agents into this project, and add a section to AGENTS.md that tells agents when to use them',
 
   async check({ packageManager, mainConfig, beforeVersion, storybookVersion, requested }) {
+    // `installSkills` skips CI anyway; returning here keeps the no-op out of the list and the report.
+    if (skipsSkillsInCI()) {
+      return null;
+    }
     if (
       !requested &&
       !(beforeVersion && crossesVersionBoundary(beforeVersion, storybookVersion, introducedIn))
@@ -56,17 +46,17 @@ export const skills: Fix<{ afterAngularViteMigration?: boolean }> = {
     const frameworkPackage = getFrameworkPackageName(mainConfig);
     const framework = frameworkPackage ? frameworkPackages[frameworkPackage] : undefined;
     if (framework && supportsSkills(frameworkToRenderer[framework], framework)) {
-      return unlessSkippedInCI({}, requested);
+      return {};
     }
     // Checks see the main config from before the upgrade, so an Angular project that can move to
     // `@storybook/angular-vite` in this upgrade is offered the skills too. This check must not read
     // through `files`: a recheck after the migration would then drop the fix without installing.
     return !requested && (await offersAngularViteMigration(packageManager, mainConfig))
-      ? unlessSkippedInCI({ afterAngularViteMigration: true }, requested)
+      ? { afterAngularViteMigration: true }
       : null;
   },
 
-  async run({ packageManager, result }) {
+  async run({ packageManager, result, mainConfig }) {
     // The skills live in the project root, which every Storybook of a monorepo shares.
     if (await hasStorybookSkills()) {
       return;
@@ -85,8 +75,9 @@ export const skills: Fix<{ afterAngularViteMigration?: boolean }> = {
       packageManager,
       source: 'automigration',
       stdio: 'pipe',
-      // `check` already decided about CI.
-      allowCI: true,
+      testSupported: hasAddonVitest(mainConfig),
+      // This fix runs for one Storybook of the project.
+      sawEveryStorybook: false,
     });
     // `installSkills` already warned how to install them later; the upgrade itself succeeded.
     if (install.result === 'failed') {

@@ -9,11 +9,12 @@ import {
 import {
   type JsPackageManager,
   formatFileContent,
+  frameworkRegistry,
   getProjectRoot,
   transformImports,
 } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
-import type { StorybookConfigRaw } from 'storybook/internal/types';
+import { type StorybookConfigRaw, SupportedFramework } from 'storybook/internal/types';
 
 import * as find from 'empathic/find';
 import { dirname, relative, resolve } from 'pathe';
@@ -36,7 +37,7 @@ import {
 } from './angular-vite-remove-compodoc.ts';
 
 export const ANGULAR_PACKAGE = '@storybook/angular';
-export const ANALOG_PACKAGE = '@analogjs/storybook-angular';
+export const ANALOG_PACKAGE = frameworkRegistry[SupportedFramework.ANALOG].packageName;
 export const ANGULAR_VITE_PACKAGE = '@storybook/angular-vite';
 const ANALOG_VITE_PLUGIN_PACKAGE = '@analogjs/vite-plugin-angular';
 

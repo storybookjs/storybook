@@ -111,37 +111,10 @@ describe('skills', () => {
       ).resolves.toBeNull();
     });
 
-    describe('in real CI', () => {
-      beforeEach(() => {
-        vi.mocked(skipsSkillsInCI).mockReturnValue(true);
-      });
+    it('does not apply in real CI, where the skills are never installed', async () => {
+      vi.mocked(skipsSkillsInCI).mockReturnValue(true);
 
-      it('does not apply, and says how to add the skills', async () => {
-        await expect(checkFix(skills, checkOptions('@storybook/react-vite'))).resolves.toBeNull();
-        expect(logger.warn).toHaveBeenCalledWith(
-          'Skipped the Storybook skills for AI agents because CI is set. Add them with: npx storybook automigrate skills --yes'
-        );
-      });
-
-      it('tells Angular to move to angular-vite first', async () => {
-        useDependencies(angular21);
-
-        await expect(checkFix(skills, checkOptions('@storybook/angular'))).resolves.toBeNull();
-        expect(logger.warn).toHaveBeenCalledWith(
-          'Skipped the Storybook skills for AI agents because CI is set. Add them with: npx storybook automigrate angular-to-angular-vite --yes, and then npx storybook automigrate skills --yes'
-        );
-      });
-
-      it('says nothing on a framework without skills', async () => {
-        await expect(checkFix(skills, checkOptions('@storybook/html-vite'))).resolves.toBeNull();
-        expect(logger.warn).not.toHaveBeenCalled();
-      });
-
-      it('applies when requested by id', async () => {
-        await expect(
-          checkFix(skills, checkOptions('@storybook/react-vite', { requested: true }))
-        ).resolves.toEqual({});
-      });
+      await expect(checkFix(skills, checkOptions('@storybook/react-vite'))).resolves.toBeNull();
     });
 
     it('does not apply when the project has the skills', async () => {
@@ -174,7 +147,8 @@ describe('skills', () => {
         packageManager,
         source: 'automigration',
         stdio: 'pipe',
-        allowCI: true,
+        testSupported: false,
+        sawEveryStorybook: false,
       });
     });
 

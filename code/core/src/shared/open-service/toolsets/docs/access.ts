@@ -40,9 +40,12 @@ export async function listEntryNames(access: DocsAccess): Promise<EntryName[]> {
   }
   const manifests = await access.list({ withStoryIds: false });
   return [
-    ...Object.values(manifests.componentManifest.components),
-    ...Object.values(manifests.docsManifest?.docs ?? {}),
-  ].map(({ id, name }) => ({ id, name }));
+    ...Object.values(manifests.componentManifest.components).map(({ id, name }) => ({ id, name })),
+    ...Object.values(manifests.docsManifest?.docs ?? {}).map(({ id, name, title }) => ({
+      id,
+      name: title ?? name,
+    })),
+  ];
 }
 
 /** A listing with no components and no standalone docs. */

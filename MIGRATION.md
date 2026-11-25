@@ -10,6 +10,7 @@
   - [Legacy highlight object format removed](#legacy-highlight-object-format-removed)
   - [Tag filtering API](#tag-filtering-api)
   - [`storybook/test` is no longer a manager global](#storybooktest-is-no-longer-a-manager-global)
+  - [`@storybook/global` is deprecated](#storybookglobal-is-deprecated)
   - [Addon `TAB` registration removed](#addon-tab-registration-removed)
   - [`useThemeParameters` removed](#usethemeparameters-removed)
   - [`storybook dev` no longer opens a browser by default](#storybook-dev-no-longer-opens-a-browser-by-default)
@@ -18,7 +19,12 @@
   - [`argTypes` `defaultValue` removed](#argtypes-defaultvalue-removed)
   - [Toolbar `globalTypes` entries: index signature and `defaultValue` removed](#toolbar-globaltypes-entries-index-signature-and-defaultvalue-removed)
   - [Docs Code panel enabled by default](#docs-code-panel-enabled-by-default)
-  - [`argTypes` removed from loaders, `beforeEach`, `play` and `afterEach`](#argtypes-removed-from-loaders-beforeeach-play-and-aftereach)
+  - [`argTypes` removed from the story context](#argtypes-removed-from-the-story-context)
+    - [Angular: read the inputs from the component](#angular-read-the-inputs-from-the-component)
+    - [Angular: every arg reaches the story](#angular-every-arg-reaches-the-story)
+    - [Server: object and date args are serialized by value](#server-object-and-date-args-are-serialized-by-value)
+    - [Svelte: the source snippet leaves out action args by value](#svelte-the-source-snippet-leaves-out-action-args-by-value)
+    - [Vue: slots come from the component's props](#vue-slots-come-from-the-components-props)
   - [Deprecated CSF and manager type aliases removed](#deprecated-csf-and-manager-type-aliases-removed)
   - [`docgenServer` is stable and enabled by default](#docgenserver-is-stable-and-enabled-by-default)
     - [Temporary regressions on source snippet generation](#temporary-regressions-on-source-snippet-generation)
@@ -38,7 +44,7 @@
   - [Escape is no longer a configurable shortcut](#escape-is-no-longer-a-configurable-shortcut)
   - ['Create new story' UI feature removed](#create-new-story-ui-feature-removed)
   - [Sidebar: standalone docs pages are no longer wrapped in a component](#sidebar-standalone-docs-pages-are-no-longer-wrapped-in-a-component)
-  - [Test runner support ended](#test-runner-support-ended)
+  - [Test runner support removed](#test-runner-support-removed)
   - [`storybook/test` is based on Vitest 5 and no longer installs its test libraries](#storybooktest-is-based-on-vitest-5-and-no-longer-installs-its-test-libraries)
   - [Vitest Addon: requires Vitest 4.0 or higher](#vitest-addon-requires-vitest-40-or-higher)
   - [Vitest Addon: `setProjectAnnotations` must not be called in setup files](#vitest-addon-setprojectannotations-must-not-be-called-in-setup-files)
@@ -71,6 +77,7 @@
   - [`features.legacyDecoratorFileOrder` removed](#featureslegacydecoratorfileorder-removed)
   - [`experimentalReview` feature flag removed](#experimentalreview-feature-flag-removed)
   - [`changeDetection` feature flag removed](#changedetection-feature-flag-removed)
+  - [`@storybook/addon-mcp`: `toolsets` option and `X-MCP-Toolsets` header removed](#storybookaddon-mcp-toolsets-option-and-x-mcp-toolsets-header-removed)
   - [`storybook ai` command removed](#storybook-ai-command-removed)
   - [`stories` skill split into four skills](#stories-skill-split-into-four-skills)
   - [`--preview-url` and `--force-build-preview` removed](#--preview-url-and---force-build-preview-removed)
@@ -94,6 +101,7 @@
   - [`core/module-graph` query aliases removed](#coremodule-graph-query-aliases-removed)
   - [ExternalDocs and ExternalDocsContainer are removed](#externaldocs-and-externaldocscontainer-are-removed)
   - [CSF `.story` annotations removed](#csf-story-annotations-removed)
+  - [Addon A11y: Removed anomaly vision simulations](#addon-a11y-removed-anomaly-vision-simulations)
   - [`argTypeTargetsV7` feature flag removed](#argtypetargetsv7-feature-flag-removed)
   - [`disallowImplicitActionsInRenderV8` feature flag removed](#disallowimplicitactionsinrenderv8-feature-flag-removed)
   - [JavaScript init templates use JSDoc types instead of `propTypes`](#javascript-init-templates-use-jsdoc-types-instead-of-proptypes)
@@ -779,7 +787,7 @@ import { Button, Modal } from 'storybook/internal/components';
 
 ### Theming imports
 
-End users who only create a theme keep `import { create, themes } from 'storybook/theming'`. That module is the same as `storybook/theming/create`. `ThemeVars` and `ThemeVarsPartial` are exported there too.
+End users who only create a theme can keep `import { create, themes } from 'storybook/theming'`. `ThemeVars` and `ThemeVarsPartial` are exported there too. In Node, `storybook/theming` resolves to the same lightweight module as `storybook/theming/create`, without loading React or Emotion. Use `storybook/theming/create` explicitly when you need that lightweight entry in the browser too.
 
 ```ts
 import { create, themes, type ThemeVars, type ThemeVarsPartial } from 'storybook/theming';
@@ -792,7 +800,7 @@ Addon authors who build manager UI or docs blocks move Emotion and theme-data im
 +import { styled, css, jsx, useTheme, ThemeProvider, color } from 'storybook/theming/emotion';
 ```
 
-In the manager, `storybook/theming` still resolves to the Emotion implementation at runtime, so already-published manager addons keep running. Update the import anyway. TypeScript only knows `create`, `themes`, `ThemeVars`, and `ThemeVarsPartial` on `storybook/theming`, so importing `styled`, `css`, `jsx`, `useTheme`, or the other Emotion and theme-data helpers from that module is a type error. Preview and docs blocks have no runtime alias, so the same old import fails there at runtime.
+For backwards runtime compatibility, `storybook/theming` resolves to the same Emotion implementation as `storybook/theming/emotion` in both the manager and browser previews, including docs blocks. The browser compatibility mapping does not affect Node imports. Already-published addons can keep their existing imports. The TypeScript API of `storybook/theming` remains limited to `create`, `themes`, `ThemeVars`, and `ThemeVarsPartial`, so addon source compiled against Storybook 11 must import Emotion and theme-data helpers from `storybook/theming/emotion`.
 
 ### `storybook dev` now blocks remote iframe embedding
 
@@ -903,6 +911,19 @@ Storybook 11 removes the experimental and undocumented tag filtering names. They
 ### `storybook/test` is no longer a manager global
 
 The manager no longer provides `storybook/test` as a global (`__STORYBOOK_TEST__`), so the browser no longer downloads its test libraries with every manager load. `storybook/test` is for stories and their tests, and no known manager addon imported it. If your addon's manager entry imports `storybook/test` anyway, it still builds, but the addon then bundles its own copy. Move that code to the addon's preview entry, or drop the import.
+
+### `@storybook/global` is deprecated
+
+`@storybook/global` is a pre-ES2020 ponyfill for `globalThis`. Storybook no longer uses it, so use `globalThis` instead:
+
+```diff
+- import { global } from '@storybook/global';
+-
+- const { document } = global;
++ const { document } = globalThis;
+```
+
+`storybook` still depends on the package, so existing imports keep working in Storybook 11. In the Storybook preview, code that imports it logs a deprecation warning in the browser console. Vitest, portable stories and manager code load the package itself and log nothing. Storybook 12 removes the dependency. If you keep importing `@storybook/global`, add it to your own `dependencies`.
 
 ### Addon `TAB` registration removed
 
@@ -1100,11 +1121,14 @@ You can also set this parameter at the component or story level. An explicit `tr
 
 No automigration is needed. Existing boolean settings retain their meaning, and projects with no setting receive the new default.
 
-### `argTypes` removed from loaders, `beforeEach`, `play` and `afterEach`
+### `argTypes` removed from the story context
 
-The story context passed to loaders, `beforeEach`, `play`, `afterEach` and `step` callbacks no longer contains `argTypes`. Reading it throws an error that links here.
+The story context passed to `render` functions, decorators, loaders, `beforeEach`, `play`, `afterEach`, `step`, `parameters.docs.source.transform` and `useStoryContext()` no longer contains `argTypes`.
+Reading `context.argTypes` there throws an error that links here.
 
-With server-side docgen (`features.docgenServer`), the preview no longer infers arg types from components or args. `context.argTypes` in these hooks only ever contained the arg types you declared by hand, so it looked complete but was not.
+With server-side docgen (`features.docgenServer`), the preview no longer infers arg types from components or args.
+`context.argTypes` only ever contained the arg types you declared by hand, so it looked complete but was not.
+A story must also render the same way before and after docgen finishes, so rendering cannot depend on its result.
 
 ```ts
 // Before
@@ -1127,10 +1151,101 @@ export const Primary: Story = {
 ```
 
 - Use `args` for the values passed to the story. Iterate `Object.keys(args)` instead of `Object.keys(argTypes)`.
+- To read component metadata while rendering, such as the inputs or props a component declares, use the reflection API of your framework.
 - To see the resolved arg types, including those inferred from your component, use the Controls panel or the `ArgTypes` doc block.
-- In portable stories, `composeStory(Story, meta).argTypes` still exposes the story's declared arg types outside of the lifecycle hooks.
+- In portable stories, `composeStory(Story, meta).argTypes` still exposes the story's declared arg types outside of the story context.
 
-Decorators and `render` functions keep receiving `argTypes`, because renderers rely on them while rendering. Their context type is the new `StoryContextForRender`; the `StoryContext` type no longer declares `argTypes`. Custom decorator or render helpers that annotate their context parameter as `StoryContext` and read `argTypes` should switch to `StoryContextForRender`.
+The `StoryContextForRender` type from earlier 11.0 prereleases is removed.
+Use `StoryContext` instead.
+
+#### Angular: read the inputs from the component
+
+A `render` helper that builds a template from `argTypes` skips every input that you did not declare by hand.
+For a required input, Angular then throws NG0950.
+Read the inputs from the component with `reflectComponentType` from `@angular/core` instead.
+
+```ts
+// Before
+function generateInputs(args: Args, argTypes: ArgTypes) {
+  return Object.keys(args)
+    .filter((name) => argTypes[name]?.table?.category === 'inputs')
+    .map((name) => `[${name}]="${name}"`)
+    .join(' ');
+}
+
+export const Primary: Story = {
+  render: (args, { argTypes }) => ({
+    props: args,
+    template: `<app-button ${generateInputs(args, argTypes)}></app-button>`,
+  }),
+};
+
+// After
+import { reflectComponentType, type Type } from '@angular/core';
+
+function generateInputs(args: Args, component: Type<unknown>) {
+  const inputs = reflectComponentType(component)?.inputs ?? [];
+  const inputNames = new Set(inputs.map((input) => input.templateName));
+  return Object.keys(args)
+    .filter((name) => inputNames.has(name))
+    .map((name) => `[${name}]="${name}"`)
+    .join(' ');
+}
+
+export const Primary: Story = {
+  render: (args) => ({
+    props: args,
+    template: `<app-button ${generateInputs(args, ButtonComponent)}></app-button>`,
+  }),
+};
+```
+
+`inputs` includes signal inputs declared with `input()` and `model()`.
+A `model('x')` also appears in `outputs` as `xChange`.
+
+#### Angular: every arg reaches the story
+
+`@storybook/angular` used to drop each arg whose arg type had neither a control nor an action before the story rendered.
+It no longer does, which matches `@storybook/angular-vite`.
+These args now reach your `render` function, your decorators and the component:
+
+- Args whose arg type sets `control: false`.
+- Function args that are not outputs and have no `action`.
+- Args that `parameters.controls.include` or `parameters.controls.exclude` hide from the Controls panel.
+
+To keep such a value away from the story, remove it from `args`.
+
+#### Server: object and date args are serialized by value
+
+`@storybook/server` used to send an arg as JSON only when its arg type had an `object` control.
+It now sends every object and array arg as JSON, and every `Date` arg as an ISO string, whatever its arg type.
+An arg with a `date` control is still sent as an ISO string.
+
+#### Svelte: the source snippet leaves out action args by value
+
+With `features.docgenServer: false`, the Svelte source snippet used to leave out every arg whose arg type had an `action`.
+It now leaves out every arg whose value was created by `action()`, which includes the args Storybook fills in for arg types with an `action`.
+An arg you set to your own function now shows as `{<handler>}`, even when its arg type has an `action`.
+
+#### Vue: slots come from the component's props
+
+The default Vue `render` used to pass an arg as a slot when its arg type was in the `slots` category.
+It now passes every arg as a slot unless the component declares it as a prop or it is an event listener (`onClick`, `onUpdate:modelValue`).
+Those args still reach the component as props or attributes too.
+
+An arg named like a declared prop always goes to the prop, even with a `slots` arg type.
+To fill a slot that shares its name with a prop, write a `render` function with a template:
+
+```ts
+export const WithTitleSlot: Story = {
+  args: { title: 'Prop value' },
+  render: (args) => ({
+    components: { Card },
+    setup: () => ({ args }),
+    template: '<Card v-bind="args"><template #title>Slot content</template></Card>',
+  }),
+};
+```
 
 ### Deprecated CSF and manager type aliases removed
 
@@ -1430,9 +1545,9 @@ Sidebar search lists these pages under their own name, for example `Introduction
 Its menu entries and shortcut labels read `Previous component or page` and `Next component or page`.
 The shortcut keys `prevComponent` and `nextComponent` keep their names, so customized shortcuts carry over.
 
-### Test runner support ended
+### Test runner support removed
 
-Official support for [`@storybook/test-runner`](https://github.com/storybookjs/test-runner) has ended. The package stays published and accepts Storybook 11 and later as a peer dependency, so existing setups can keep running it at their own risk, but it no longer receives fixes or compatibility updates and prints a warning on every run.
+[`@storybook/test-runner`](https://github.com/storybookjs/test-runner) is no longer supported and is incompatible with Storybook 11. Replace it before you upgrade.
 
 If your Storybook uses a Vite-based framework, we recommend migrating to the Vitest addon by following the [migration guide](https://storybook.js.org/docs/writing-tests/integrations/vitest-addon/migration-guide).
 
@@ -1443,7 +1558,9 @@ The Vitest addon requires a Vite-based framework. If your Storybook uses Webpack
 - `@storybook/react-webpack5` → `@storybook/react-vite`: follow the [React Vite migration steps](https://storybook.js.org/docs/get-started/frameworks/react-vite#how-do-i-migrate-from-the-react-webpack-framework).
 - Other Webpack-based frameworks: see [migrating from Webpack to Vite](https://storybook.js.org/docs/builders/vite#migrating-from-webpack).
 
-If you cannot switch to a Vite-based framework and Vitest, you can continue using the test runner without official support. Another option is to switch to plain Playwright with [a minimal setup that generates tests from stories](https://gist.github.com/AriPerkkio/99b9eedc7d8f71ff6e6770f9425a4be4).
+If you cannot switch to a Vite-based framework and Vitest, keep using Storybook 10.x, or switch to plain Playwright with [a minimal setup that generates tests from stories](https://gist.github.com/AriPerkkio/99b9eedc7d8f71ff6e6770f9425a4be4).
+
+`storybook build --test` no longer disables `@storybook/addon-coverage` by default. To keep the addon out of test builds, add it to [`build.test.disabledAddons`](https://storybook.js.org/docs/api/main-config/main-config-build#testdisabledaddons).
 
 ### `storybook/test` is based on Vitest 5 and no longer installs its test libraries
 
@@ -1886,7 +2003,7 @@ A typed main config that still sets the flag fails type-checking until it is rem
 ### `changeDetection` feature flag removed
 
 The `features.changeDetection` flag is removed, and Storybook no longer reads it.
-[Change detection](https://storybook.js.org/docs/configure/user-interface/change-detection) is always on in `storybook dev`: the sidebar shows the new and modified statuses and the Review button, and agents get the `stories-changed` and `review-create` tools whenever the `dev` toolset is on.
+[Change detection](https://storybook.js.org/docs/configure/user-interface/change-detection) is always on in `storybook dev`: the sidebar shows the new and modified statuses and the Review button, and agents get the `stories-changed` and `review-create` tools.
 If you had `changeDetection: false`, change detection and agentic review are now on for your project.
 
 The flag existed as an escape hatch while change detection was new.
@@ -1897,6 +2014,15 @@ You can also run it with `storybook automigrate remove-change-detection-flag`.
 If it cannot edit your main config, for example because `features` contains a spread, remove the flag by hand.
 It does not detect the flag when `features` is computed, for example by a function or a conditional, so remove it by hand there too.
 A typed main config that still sets the flag fails type-checking until it is removed.
+
+### `@storybook/addon-mcp`: `toolsets` option and `X-MCP-Toolsets` header removed
+
+The `toolsets` addon option (`dev`, `docs`, `test`) and the `X-MCP-Toolsets` HTTP request header have been removed from `@storybook/addon-mcp`.
+All supported tools for your Storybook setup are now enabled automatically based on your project's configuration (such as `@storybook/addon-vitest` for test tools and a components manifest for docs tools).
+
+Remove the `toolsets` option from your `@storybook/addon-mcp` configuration in `.storybook/main.js|ts` and any `X-MCP-Toolsets` header from your MCP client configuration.
+Storybook ignores both when they are still set, so tools that you turned off are available again.
+To keep an agent from using some of the tools, restrict them in the agent's own settings, such as its tool permissions.
 
 ### `storybook ai` command removed
 
@@ -1910,32 +2036,36 @@ The experimental `storybook ai <tool>` commands behind the `STORYBOOK_FEATURE_AI
 
 ### `stories` skill split into four skills
 
-The `stories` skill is split into one skill per step of the workflow:
+The `stories` skill is split into four skills:
 
-- `component-docs` looks up the components to reuse, with their props and usage examples, and answers questions about them.
-- `write-stories` has the rules for the stories of your project.
-- `test-stories` runs the story tests.
-- `ui-review` finds the stories a change affects and publishes a review of them.
+- `/component-docs` looks up the components to reuse, with their props and usage examples, and answers questions about them.
+- `/write-stories` has the rules for the stories of your project.
+- `/test-stories` runs the story tests.
+- `/ui-review` finds the stories a change affects and creates a review of them.
 
-Run `npx storybook skills <id>` with one of these ids instead of `npx storybook skills stories`, which now exits with code 1. The Claude Code and Codex plugins ship these four skills instead of `stories`. The `write-story` skill is renamed to `write-stories`.
+Run `npx storybook skills <id>` with one of these ids instead of `npx storybook skills stories`, which now exits with code 1. The Claude Code and Codex plugins ship these four skills instead of `/stories`. The `/write-story` skill is renamed to `/write-stories`.
 
-The skills no longer tell agents to run them for every UI change. A section in `AGENTS.md`, between `<!-- BEGIN:storybook-skills -->` and `<!-- END:storybook-skills -->` markers, is the workflow: it tells agents which skill to use at which step. `create storybook` and the `skills` automigration add it when they install the skills, and also to a `CLAUDE.md`, `.claude/CLAUDE.md` or `CLAUDE.local.md` that does not import `AGENTS.md`, because Claude Code reads those instead. `storybook upgrade` replaces the text between the markers when the skills change, and never adds the section back. So remove both markers to keep your own edits, for example to leave out the review, or remove the whole section to opt out of the workflow, in each file that has it. Without the section, an agent uses a skill only when you ask for it or when it finds one that fits its task. When `storybook upgrade` updates skills that still include `stories` from an 11.0 prerelease, it removes that skill and adds the section. If you use the Claude Code or Codex plugin, or install the skills yourself, add the section to the `AGENTS.md` of each project yourself:
+The skills no longer tell agents to run them for every UI change. A section in `AGENTS.md`, between `<!-- BEGIN:storybook-skills -->` and `<!-- END:storybook-skills -->` markers, is the workflow: it tells agents to use `/component-docs` and `/write-stories` for every UI change, and names the command that runs the story tests, `npx storybook tools test run` (a project without `@storybook/addon-vitest` gets no test step). It leaves out `/ui-review`: an agent creates a review when you ask for one, and after a visible change it tells you about the skill. `create storybook` and the `skills` automigration add it when they install the skills, and also to a `CLAUDE.md`, `.claude/CLAUDE.md` or `CLAUDE.local.md` that does not import `AGENTS.md`, because Claude Code reads those instead. `storybook upgrade` replaces the text between the markers when the skills change, and never adds the section back. So remove both markers to keep your own edits, for example to drop that line or to have the agent create a review after every change, or remove the whole section to opt out of the workflow, in each file that has it. Without the section, an agent uses a skill only when you ask for it or when it finds one that fits its task. When `storybook upgrade` updates skills that still include `/stories` from an 11.0 prerelease, it removes that skill and adds the section. If you use the Claude Code or Codex plugin, or install the skills yourself, add the section to the `AGENTS.md` of each project yourself:
 
-```md
+````md
 <!-- BEGIN:storybook-skills -->
 <!-- Storybook updates this section on upgrade. Remove both markers to keep your own edits. -->
 
 ## Storybook
 
-For every change to how the UI looks (you create, change, or delete a component, story, style, theme, or design token), follow these steps in order. Each step has a Storybook skill. First invoke the skills of all the steps, before you edit any file. Then follow each skill at its step.
+For every change to how the UI looks (you create, change, or delete a component, story, style, theme, or design token), follow these steps in order. First invoke the Storybook skills of steps 1 and 2, before you edit any file. Then follow each skill at its step.
 
-1. `component-docs`: look up the components to reuse, with their props and usage examples, before you edit any file. Also when the user asks about a component's props, API, or usage.
-2. `write-stories`: every component you create or change gets stories.
-3. `test-stories`: run the story tests after every change, the way this skill says, never with a `package.json` test script, and fix what fails. Also when the user asks to run or fix story tests.
-4. `ui-review`: publish a review that shows the user what changed, as your last step. Also when the user asks to see components or stories.
+1. `/component-docs`: look up the components to reuse, with their props and usage examples, before you edit any file.
+2. `/write-stories`: every component you create or change gets stories, written with the current best practices for this Storybook version and this project.
+3. To test stories in the CLI run:
+   ```sh
+   npx storybook tools test run [files...]   # every story, or these story files
+   npx storybook tools test run --changed    # the stories your changes affect
+   ```
+4. ALWAYS inform the user about the `/ui-review` skill after a change the user can see: "Use the /ui-review skill to see the changed components in Storybook"
 
 <!-- END:storybook-skills -->
-```
+````
 
 See [Skills and plugins](docs/ai/skills.mdx) for more details.
 
@@ -2667,6 +2797,16 @@ If the value is not a static object, move the fields yourself. This includes a v
 ```
 
 `storybook migrate csf-2-to-3` still lifts a static `Story.story = { ... }` into a CSF 3 story object. It does not rewrite the dynamic cases above. The old `csf-hoist-story-annotations` codemod no longer ships.
+
+### Addon A11y: Removed anomaly vision simulations
+
+The Vision Simulator was updated to match the simulations offered by Chrome DevTool, to use the best available academic research for each simulator and to get rid of redundant entries. The `protanomaly`, `deuteranomaly` and `tritanomaly` entries are less severe forms of `protanopia`, `deuteranopia` and `tritanopia`, so they were removed.
+
+The `tritanopia` simulator is available with both the Brettel et al. (1997) and Machado et al. (2009) projections. Brettel et al. is the most reliable simulator for tritanopia. Machado et al. matches the implementation in Chrome DevTools.
+
+The `achromatopsia` simulator was optimized for sRGB monitors. `protanopia`, and `deuteranopia` now use the Machado et al. implementation, which is the best available for this type of deficiency.
+
+`storybook upgrade` stops when a preview or story file sets one of the removed values through the `vision` global. No automigration is provided, because the replacement renders differently: remove the global, or replace it with a new value. At runtime, an unsupported value produces a warning. Existing visual snapshots that use any of these `globals.vision` values will therefore produce intentional diffs.
 
 ### `argTypeTargetsV7` feature flag removed
 

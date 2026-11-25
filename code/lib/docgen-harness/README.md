@@ -154,9 +154,11 @@ Snapshots must stay deterministic: no timestamps, no absolute paths.
 - angular: one kebab-case `<case>.component.ts` (the class name must match the compodoc capture exactly) plus `input.stories.ts` and a captured `compodoc-input.json`.
   Signal fixtures also commit an `aot-cmp.ts` with the `ɵcmp` input/output maps, captured once from real `ngc` output - JIT leaves them empty.
   Stories import their CSF types from `src/angular/csf-types.ts`; the two runtime test files are excluded from the vue-tsc program because angular-vite client source is not strict-clean.
-- svelte: one component plus `input.stories.svelte`; add supporting component/type files and `input.stories.ts` when the plain CSF snippet path is relevant.
+- svelte: one PascalCase component (the runtime snippet takes its tag from the filename) plus `input.stories.svelte`; add supporting component/type files and `input.stories.ts` when the plain CSF snippet path is relevant.
   `input.stories.ts` imports `Meta`/`StoryObj` from `@storybook/svelte`.
+  CSF4 fixtures (`csf4-*`) add a `preview.ts` with `__definePreview` from the Svelte renderer source and use `preview.meta()` in both story files; `stories-module.ts` reads a CSF3 or CSF4 module into one meta and its stories.
   New fixtures need two focused Svelte test runs: the first creates `toMatchFileSnapshot` files at suite end, and the second proves the stale-file checks and comparator gates.
+  If a new fixture fails with `Unknown variable dynamic import`, delete the Vitest module cache in `node_modules/.vitest-cache` at the repo root: a cached transform of the recorder does not see the new folder.
 - web-components: one component source plus `input.stories.ts` and `custom-elements.json`.
   Lit TypeScript fixtures include a per-case `tsconfig.json` with decorator settings; vanilla fixtures are plain `.js` and do not need one.
   Every story file keeps the default export's `component` as the target tag name string.
@@ -169,7 +171,9 @@ The Svelte harness records two snippet paths because Storybook currently has two
 - `snippet-<Story>.snapshot` is produced from `input.stories.svelte` by Svelte CSF in `@storybook/svelte`.
   The recorder mounts the composed story and captures the `SNIPPET_RENDERED` channel event emitted by the Svelte CSF runtime.
 - `plain-csf-snippet-<Story>.snapshot` is produced from optional `input.stories.ts` files by the Svelte renderer's legacy `generateSvelteSource(component, args, argTypes, null)` path.
-`story-descriptions.snapshot` records the docs description parameters that Svelte CSF creates from JSDoc above `defineMeta` and HTML comments above `<Story>`.
+`story-descriptions.snapshot` records the docs description parameters that Svelte CSF creates from JSDoc above `defineMeta` (or `preview.meta()`) and HTML comments above `<Story>`.
+
+The `csf4-*` fixtures record the same files for CSF4: `preview.meta()` with meta args and a template, story extension (the Svelte CSF `extend` prop and `Story.extend()`), and `meta.type<>()` with an arg that is not a component prop.
 
 `svelte-osa-baselines.test.ts` drives the `@storybook/svelte` docgen provider directly in Node, with index entries built by the Svelte CSF indexer from `input.stories.svelte`.
 It records `osa-argtypes.snapshot`, `osa-payload.snapshot`, and `osa-description.snapshot` even while the provider returns nothing, so each provider PR shows its progress as a snapshot diff; `osa-argtypes.snapshot` is ratcheted against its own previous recording.
@@ -309,6 +313,9 @@ Each has a red marker in `vue3-legacy-gaps.test.ts`.
 - Svelte CSF nested snippet bodies substitute `args.x` references as JSON-stringified values, e.g. `{"Inline error"}`.
 - String arg values containing `args.` followed by an identifier are substituted as if they were references, e.g. `'code args.open done'` records as `code true done`; a reference right before the closing quote also swallows the quote and one resolving to a string nests quotes, so such recordings are kept out of the corpus.
 - Static Svelte CSF templates with no args parameter record their literal markup.
+- A Svelte CSF template that destructures an arg which is not a component prop keeps that arg and the identifier: `{#snippet template({ initials, ...args })}<Avatar {...args} name={initials} />` records as `<Avatar size={48} initials="AL" name={initials} />`.
+  The server snippet records `name="AL"`, so `csf4-meta-type/Initials` declares `initials` as an intended omission.
+- Plain CSF snippets ignore a story's `render` function and print the story args on the meta component, so `csf4-meta-type/Initials` records `initials="AL"`; the server snippet adds a warning that the render function is not reflected.
 
 ## Known legacy gaps (web-components)
 

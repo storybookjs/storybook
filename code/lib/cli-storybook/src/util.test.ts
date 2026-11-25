@@ -5,13 +5,18 @@ import { dirname, join } from 'node:path';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { logger, prompt } from 'storybook/internal/node-logger';
-import { UpgradeStorybookConfigDirNotFoundError } from 'storybook/internal/server-errors';
+import { prompt } from 'storybook/internal/node-logger';
+import {
+  MainFileEvaluationError,
+  UpgradeStorybookConfigDirNotFoundError,
+} from 'storybook/internal/server-errors';
 
 import type { UpgradeOptions } from './upgrade.ts';
 import {
+  type CollectProjectsErrorResult,
   type CollectProjectsSuccessResult,
   findStorybookProjects,
+  formatUnreadableProjects,
   getProjects,
   handleMultipleProjects,
 } from './util.ts';
@@ -145,34 +150,59 @@ describe('handleMultipleProjects', () => {
   const configDirs = projects.map(({ configDir }) => configDir);
 
   it('upgrades every project when nobody can answer, without asking which', async () => {
-    await expect(handleMultipleProjects(projects, [], configDirs, true, false)).resolves.toEqual(
+    await expect(handleMultipleProjects(projects, configDirs, true, false)).resolves.toEqual(
       projects
     );
     expect(prompt.multiselect).not.toHaveBeenCalled();
   });
 
-  it('names the projects it could not read when nobody can answer', async () => {
-    const broken = { configDir: '/repo/c/.storybook', error: new Error('boom') };
-
-    await handleMultipleProjects(
-      projects,
-      [broken],
-      [...configDirs, broken.configDir],
-      true,
-      false
-    );
-
-    expect(vi.mocked(logger.log).mock.calls.at(-1)?.[0]).toContain(
-      'Not upgrading the projects that could not be read:'
-    );
-    expect(vi.mocked(logger.log).mock.calls.at(-1)?.[0]).toContain('/repo/c/.storybook');
-  });
-
   it('asks which projects to upgrade at a terminal, also with --yes', async () => {
     vi.mocked(prompt.multiselect).mockResolvedValue(['/repo/b/.storybook']);
 
-    await expect(handleMultipleProjects(projects, [], configDirs, true)).resolves.toEqual([
+    await expect(handleMultipleProjects(projects, configDirs, true)).resolves.toEqual([
       projects[1],
     ]);
+  });
+});
+
+describe('formatUnreadableProjects', () => {
+  const unreadable = (error: unknown): CollectProjectsErrorResult => ({
+    configDir: 'packages/c/.storybook',
+    error: error as Error,
+  });
+  const reason = (error: unknown) =>
+    formatUnreadableProjects([unreadable(error)])
+      .replaceAll('\\', '/')
+      .split('.storybook: ')[1];
+
+  it('names each project under one heading', () => {
+    expect(
+      formatUnreadableProjects([unreadable(new Error('a')), unreadable(new Error('b'))]).split('\n')
+    ).toEqual([
+      'Not upgrading these Storybook projects, because Storybook could not read them:',
+      expect.stringMatching(/c[\\/]\.storybook: a$/),
+      expect.stringMatching(/c[\\/]\.storybook: b$/),
+    ]);
+  });
+
+  it('gives the first line of the error that the main config threw', () => {
+    expect(
+      reason(
+        new MainFileEvaluationError({
+          location: 'packages/c/.storybook/main.ts',
+          error: new Error("Cannot find package 'shared' imported from main.ts\n    at stack"),
+        })
+      )
+    ).toBe("Cannot find package 'shared' imported from main.ts");
+  });
+
+  it('gives the syntax error, not only the line that announces it', () => {
+    expect(
+      reason(new Error('Transform failed with 1 error:\n<stdin>:1:26: ERROR: Unexpected "}"'))
+    ).toBe('Transform failed with 1 error: <stdin>:1:26: ERROR: Unexpected "}"');
+  });
+
+  it('gives a throw that is not an Error', () => {
+    expect(reason('x')).toBe('x');
   });
 });

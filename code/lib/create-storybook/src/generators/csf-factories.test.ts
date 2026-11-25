@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -135,10 +135,10 @@ describe('rewriteCopiedStoryPreviewImports', () => {
 describe('native CLI templates', () => {
   it.each([
     ['renderers/svelte/template/cli/ts/Button.stories.svelte', true],
-    ['renderers/react/template/cli/ts/Button.stories.ts', true],
+    ['renderers/react/template/cli/ts/Button.stories.tsx', true],
     ['renderers/vue3/template/cli/ts/Button.stories.ts', true],
     ['renderers/web-components/template/cli/ts/Button.stories.ts', true],
-    ['frameworks/react-vite/template/cli/ts/Button.stories.ts', true],
+    ['frameworks/react-vite/template/cli/ts/Button.stories.tsx', true],
     ['frameworks/angular/template/cli/button.stories.ts', true],
     ['frameworks/sveltekit/template/cli/ts/Button.stories.svelte', true],
     ['renderers/preact/template/cli/Button.stories.jsx', false],
@@ -154,6 +154,28 @@ describe('native CLI templates', () => {
       expect(source).not.toContain('defineMeta');
     } else {
       expect(source).not.toContain('preview.meta(');
+    }
+  });
+
+  it('uses .stories.tsx for every React TypeScript template', () => {
+    const templates = [
+      'renderers/react/template/cli/ts',
+      'frameworks/react-vite/template/cli/ts',
+      'frameworks/react-webpack5/template/cli/ts',
+      'frameworks/nextjs/template/cli/ts',
+      'frameworks/nextjs-vite/template/cli/ts',
+      'frameworks/tanstack-react/template/cli/ts',
+    ];
+
+    for (const template of templates) {
+      const stories = readdirSync(join(repoCode, template)).filter((file) =>
+        file.includes('.stories.')
+      );
+
+      expect(
+        stories.every((file) => file.endsWith('.stories.tsx')),
+        `${template}: ${stories}`
+      ).toBe(true);
     }
   });
 });

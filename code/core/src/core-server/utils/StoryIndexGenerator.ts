@@ -206,7 +206,7 @@ export class StoryIndexGenerator {
     if (files.length === 0 && !ignoreWarnings) {
       once.warn(
         `No story files found for the specified pattern: ${picocolors.blue(
-          join(specifier.directory, specifier.files)
+          slash(join(specifier.directory, specifier.files))
         )}`
       );
     }
@@ -214,7 +214,7 @@ export class StoryIndexGenerator {
     files.sort().forEach((absolutePath: Path) => {
       const ext = extname(absolutePath);
       if (ext === '.storyshot') {
-        const relativePath = relative(workingDir, absolutePath);
+        const relativePath = slash(relative(workingDir, absolutePath));
         logger.info(`Skipping ${ext} file ${relativePath}`);
         return;
       }

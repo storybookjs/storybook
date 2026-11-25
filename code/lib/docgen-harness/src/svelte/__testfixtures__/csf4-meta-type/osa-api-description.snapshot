@@ -1,0 +1,12 @@
+## Props
+
+```
+export type AvatarProps = {
+  /** Name shown as the image text alternative. */
+  name: string;
+  /** Image URL. */
+  src?: string;
+  /** Size in pixels. */
+  size?: number = 32;
+}
+```

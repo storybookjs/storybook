@@ -6,6 +6,8 @@ import React from 'react';
 
 import type { Meta } from '@storybook/react';
 
+import { ArgTypesRemovedFromStoryContextError } from 'storybook/internal/preview-errors';
+
 import { expectTypeOf } from 'expect-type';
 import { addons, useEffect } from 'storybook/preview-api';
 
@@ -116,6 +118,61 @@ describe('projectAnnotations', () => {
   it('has action arg from argTypes when addon-actions annotations are added', () => {
     const Story = composeStory(ButtonStories.WithActionArgType, ButtonStories.default);
     expect(Story.args.someActionArg).toHaveProperty('isAction', true);
+  });
+});
+
+describe('argTypes', () => {
+  const meta = {
+    title: 'Example/ArgTypes',
+    argTypes: { label: { control: 'text' } },
+  } satisfies Meta;
+
+  it('throws when a render function reads argTypes', () => {
+    const Story = composeStory(
+      { render: (args, context) => <div>{Object.keys(context.argTypes)}</div> },
+      meta
+    );
+
+    expect(() => render(<Story />)).toThrow(ArgTypesRemovedFromStoryContextError);
+  });
+
+  it('throws when a decorator reads argTypes', () => {
+    const Story = composeStory(
+      {
+        render: () => <div />,
+        decorators: [(StoryFn, context) => <div>{Object.keys(context.argTypes)}</div>],
+      },
+      meta
+    );
+
+    expect(() => render(<Story />)).toThrow(ArgTypesRemovedFromStoryContextError);
+  });
+
+  it('lets a render function and a decorator enumerate the context without argTypes', () => {
+    let renderKeys: string[] = [];
+    let decoratorKeys: string[] = [];
+    const Story = composeStory(
+      {
+        render: (args, context) => {
+          renderKeys = Object.keys(context);
+          return <div />;
+        },
+        decorators: [
+          (StoryFn, context) => {
+            decoratorKeys = Object.keys(context);
+            return <StoryFn />;
+          },
+        ],
+      },
+      meta
+    );
+
+    render(<Story />);
+
+    expect(renderKeys).toContain('args');
+    expect(renderKeys).not.toContain('argTypes');
+    expect(decoratorKeys).toContain('args');
+    expect(decoratorKeys).not.toContain('argTypes');
   });
 });
 

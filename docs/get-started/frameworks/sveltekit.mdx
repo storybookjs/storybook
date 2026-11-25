@@ -231,6 +231,8 @@ The Svelte frameworks ship with built-in support for writing stories for your Sv
 
 Storybook 11 reads Svelte component props on the server by default, with [`svelte2tsx`](https://github.com/sveltejs/language-tools/tree/master/packages/svelte2tsx) and [`typescript`](../../configure/integration/typescript.mdx) 5.9 or 6 (including in JavaScript projects, where it reads JSDoc comments). New projects need no docgen configuration.
 
+The docgen engine generates [controls](../../essentials/controls.mdx) and [documentation](../../writing-docs/autodocs.mdx). When it runs on the server, docgen also improves [skill output](../../ai/skills/component-docs.mdx).
+
 <Callout variant="info">
 
 The Storybook 10 builder-based docgen is still available, but it is deprecated. It will be removed in Storybook 12. To use it, set [`features.docgenServer: false`](../../api/main-config/main-config-features.mdx#docgenserver) in your main config. See the [`docgen`](#docgen) option.

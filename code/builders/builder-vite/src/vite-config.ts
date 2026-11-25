@@ -80,7 +80,7 @@ function reportUnloadedUserViteConfig(configDir: string, projectRoot: string): v
 
   warnOnce(
     dedent`
-      No user Vite config was loaded: Storybook auto-discovers a Vite config file in "${projectRoot}" (the directory above your Storybook config dir "${configDir}"), and none was found there.
+      No user Vite config was loaded: Storybook auto-discovers a Vite config file in "${normalize(projectRoot)}" (the directory above your Storybook config dir "${normalize(configDir)}"), and none was found there.
       A Vite config was found at "${unloadedConfig}", but it is outside of that directory and was not loaded.
       To load it, point the "viteConfigPath" builder option at it, e.g. core: { builder: { options: { viteConfigPath: '${unloadedConfig}' } } }.
       To keep it unloaded and silence this warning, set "viteConfigPath" to null, e.g. core: { builder: { options: { viteConfigPath: null } } }.

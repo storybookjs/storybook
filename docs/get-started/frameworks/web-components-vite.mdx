@@ -42,7 +42,19 @@ You will find the output in the configured `outputDir` (default is `storybook-st
 
 ## Configure
 
-Storybook for Web components with Vite needs no extra configuration. It reads your custom elements from your source code and turns their JSDoc comments into controls and documentation. This needs the [`docgenServer`](../../api/main-config/main-config-features.mdx) feature, which is on by default.
+### Component documentation
+
+Storybook reads your custom elements and their JSDoc comments, a step called docgen, to generate [controls](../../essentials/controls.mdx) and [documentation](../../writing-docs/autodocs.mdx), and to improve [skill output](../../ai/skills/component-docs.mdx). New projects do not need any docgen configuration.
+
+This framework supports three docgen engines:
+
+| Docgen engine                                                                                                                | Runs         | Status                                        |
+| ---------------------------------------------------------------------------------------------------------------------------- | ------------ | --------------------------------------------- |
+| [`@wc-toolkit/cem-generator`](https://www.npmjs.com/package/@wc-toolkit/cem-generator), on your source code                  | Server-side  | Recommended, default                          |
+| Your own [Custom Elements Manifest](#custom-elements-manifest), set with [`customElementsManifest`](#customelementsmanifest) | Server-side  | Recommended if your library already ships one |
+| Your own manifest, passed to `setCustomElementsManifest()` in your preview file                                              | Browser-side | Deprecated                                    |
+
+The server-side engines need the [`docgenServer`](../../api/main-config/main-config-features.mdx#docgenserver) feature, which is on by default. Server-side docgen is necessary for agent skills to contain docgen information. If you turn server-side docgen off, and do not pass a custom elements manifest, control generation will also be disabled.
 
 ### Writing stories
 

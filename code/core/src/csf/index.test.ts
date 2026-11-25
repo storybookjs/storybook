@@ -5,6 +5,7 @@ import {
   isExportStory,
   isValidPreviewPath,
   storyNameFromExport,
+  titleToPath,
   toId,
 } from './index.ts';
 
@@ -141,5 +142,51 @@ describe('isValidPreviewPath', () => {
     ['preview', false],
   ])('isValidPreviewPath("%s") === %s', (path, expected) => {
     expect(isValidPreviewPath(path)).toBe(expected);
+  });
+});
+
+describe('titleToPath', () => {
+  it.each<[string, { name: string; id: string }[]]>([
+    [
+      'Components/Button',
+      [
+        { name: 'Components', id: 'components' },
+        { name: 'Button', id: 'components-button' },
+      ],
+    ],
+    [
+      'Components\t / \tButton',
+      [
+        { name: 'Components', id: 'components' },
+        { name: 'Button', id: 'components-button' },
+      ],
+    ],
+    [
+      'Components/Button\t',
+      [
+        { name: 'Components', id: 'components' },
+        { name: 'Button', id: 'components-button' },
+      ],
+    ],
+    [
+      'Design System/Actions/Button',
+      [
+        { name: 'Design System', id: 'design-system' },
+        { name: 'Actions', id: 'design-system-actions' },
+        { name: 'Button', id: 'design-system-actions-button' },
+      ],
+    ],
+  ])('builds the title path for %j', (title, expected) => {
+    expect(titleToPath(title)).toEqual(expected);
+  });
+
+  it.each(['', 'Components/', 'Components//Button'])('rejects an empty segment in %j', (title) => {
+    expect(() => titleToPath(title)).toThrow(`Invalid title ${title} ending in slash.`);
+  });
+
+  it('rejects a segment that produces the same ID as its parent', () => {
+    expect(() => titleToPath('Components/---')).toThrow(
+      "Invalid part '---', leading to id === parentId ('components')"
+    );
   });
 });

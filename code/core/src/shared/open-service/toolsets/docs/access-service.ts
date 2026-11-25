@@ -77,13 +77,13 @@ function classifyIndex(index: StoryIndex): DocsClassification {
   }
 
   const attachedDocsByComponent = new Map<string, string[]>();
-  const unattachedDocs = new Map<string, string>();
+  const unattachedDocs: DocsClassification['unattachedDocs'] = new Map();
   for (const entry of entries) {
     if (entry.type !== 'docs') {
       continue;
     }
     if (entry.tags?.includes(Tag.UNATTACHED_MDX)) {
-      unattachedDocs.set(entry.id, entry.name);
+      unattachedDocs.set(entry.id, { name: entry.name, title: entry.title });
     } else if (entry.tags?.includes(Tag.ATTACHED_MDX)) {
       const componentId = getComponentIdFromEntry(entry);
       attachedDocsByComponent.set(componentId, [
@@ -191,12 +191,13 @@ export function createServiceDocsAccess({
     const allMdx = (await getMdx()?.queries.mdxForAllComponents.loaded()) ?? {};
 
     const docs: Record<string, DocV1> = {};
-    for (const [docId, name] of classification.unattachedDocs) {
-      // The display name comes from the index entry: it exists even when the MDX service does not.
+    for (const [docId, { name, title }] of classification.unattachedDocs) {
+      // The name and title come from the index entry: it exists even when the MDX service does not.
       const payload = allMdx[docId]?.docs?.[docId];
       docs[docId] = {
         id: docId,
         name,
+        title,
         ...(payload?.summary !== undefined ? { summary: payload.summary } : {}),
       };
     }
@@ -259,7 +260,10 @@ export function createServiceDocsAccess({
       const components = [...selectComponentEntriesByComponentId(manifestEntries(index))].map(
         ([id, entry]) => ({ id, name: entry.title.split('/').at(-1)!.replace(/\s+/g, '') })
       );
-      const docs = [...classifyIndex(index).unattachedDocs].map(([id, name]) => ({ id, name }));
+      const docs = [...classifyIndex(index).unattachedDocs].map(([id, { title }]) => ({
+        id,
+        name: title,
+      }));
       return [...components, ...docs];
     },
 

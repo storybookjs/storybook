@@ -7,7 +7,11 @@ import { CLI_COLORS, logger } from 'storybook/internal/node-logger';
 import { detectAgent, isTelemetryModuleEnabled } from 'storybook/internal/telemetry';
 import { SupportedBuilder, SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
 
-import { type AgentInstructionsMode, addStorybookAgentInstructions } from './agentInstructions.ts';
+import {
+  type AgentInstructionsInputs,
+  type AgentInstructionsMode,
+  addStorybookAgentInstructions,
+} from './agentInstructions.ts';
 
 const SKILLS_REPO = 'storybookjs/skills';
 
@@ -97,23 +101,29 @@ export async function hasStorybookSkills(): Promise<boolean> {
  *
  * A refresh only updates a section that still has Storybook's markers, so a section without them
  * and a removed section stay that way, unless the refresh replaces the `stories` skill of an 11.0
- * prerelease. Skips CI (see {@link skipsSkillsInCI}) unless `allowCI` is set, and a
- * failed install is reported in the result instead of thrown.
+ * prerelease. Skips CI (see {@link skipsSkillsInCI}), and a failed install is reported in the result
+ * instead of thrown.
  */
 export async function installSkills({
   packageManager,
   source,
   stdio = 'inherit',
-  allowCI = false,
+  testSupported,
+  sawEveryStorybook,
 }: {
   packageManager: JsPackageManager;
   source: SkillsSource;
   /** `pipe` keeps the `skills` CLI output out of a running task log. */
   stdio?: 'inherit' | 'pipe';
-  /** Install in CI too, because the caller already decided, for example on the user's request. */
-  allowCI?: boolean;
+  /**
+   * A Storybook of the project lists `@storybook/addon-vitest` in its main config, so the
+   * `AGENTS.md` section gets its test step.
+   */
+  testSupported: boolean;
+  /** The caller read the main config of every Storybook of the project. */
+  sawEveryStorybook: boolean;
 }): Promise<SkillsInstallResult> {
-  if (!allowCI && skipsSkillsInCI()) {
+  if (skipsSkillsInCI()) {
     return { result: 'skipped', source: 'ci' };
   }
 
@@ -159,18 +169,16 @@ export async function installSkills({
   if (removedSkills.length > 0) {
     await removeSkills(packageManager, removedSkills, stdio);
   }
-  logger.log(
-    source === 'refresh'
-      ? 'Updated the Storybook skills for AI agents.'
-      : 'Installed the Storybook skills for AI agents. They are part of Storybook 11: they teach coding agents to reuse your components, write stories for what they change, and run the story tests.'
-  );
   // The `stories` skill had no section yet. `ui-workflow` came with one, so a project without it
   // removed it.
   await addAgentInstructions(
-    source === 'refresh' && !removedSkills.includes('stories') ? 'update' : 'install'
+    source === 'refresh' && !removedSkills.includes('stories') ? 'update' : 'install',
+    { testSupported, sawEveryStorybook }
   );
 
-  logger.log(`To opt out: ${packageManager.getRemoteRunCommand(['skills@latest', 'remove'])}`);
+  logger.log(
+    `If you want to remove the Storybook skills, run "${packageManager.getRemoteRunCommand(['skills@latest', 'remove'])}"`
+  );
   return { result: 'installed', source };
 }
 
@@ -200,14 +208,17 @@ async function removeSkills(
 const listFiles = (files: string[]) =>
   new Intl.ListFormat('en', { style: 'long', type: 'conjunction' }).format(files);
 
-async function addAgentInstructions(mode: AgentInstructionsMode): Promise<void> {
+async function addAgentInstructions(
+  mode: AgentInstructionsMode,
+  inputs: AgentInstructionsInputs
+): Promise<void> {
   try {
-    const changes = await addStorybookAgentInstructions(getProjectRoot(), mode);
+    const changes = await addStorybookAgentInstructions(getProjectRoot(), mode, inputs);
     const added = changes.filter(({ change }) => change === 'added').map(({ file }) => file);
     const updated = changes.filter(({ change }) => change === 'updated').map(({ file }) => file);
     if (added.length > 0) {
       logger.log(
-        `Added a Storybook section to ${listFiles(added)} that tells agents when to use them. Storybook keeps that section current on upgrade.`
+        `Added a Storybook section to ${listFiles(added)} that tells agents when to use the skills. Storybook keeps it current on upgrade: remove its markers to keep your own edits, or remove the section to opt out of the workflow.`
       );
     }
     if (updated.length > 0) {
@@ -228,9 +239,9 @@ async function addAgentInstructions(mode: AgentInstructionsMode): Promise<void> 
  * skills, for `storybook upgrade` in a project that got the skills from a plugin or by hand. Adds
  * nothing, and skips CI like {@link installSkills}.
  */
-export async function refreshAgentInstructions(): Promise<void> {
+export async function refreshAgentInstructions(inputs: AgentInstructionsInputs): Promise<void> {
   if (skipsSkillsInCI()) {
     return;
   }
-  await addAgentInstructions('update');
+  await addAgentInstructions('update', inputs);
 }

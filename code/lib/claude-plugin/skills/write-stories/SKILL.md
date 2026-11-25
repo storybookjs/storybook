@@ -10,6 +10,4 @@ Prerequisites:
 
 Run every Storybook CLI command from the package where Storybook is installed (in a monorepo often a leaf package such as `packages/ui`).
 
-If the sandbox blocks network access, request escalated permissions for Storybook CLI commands.
-
 Run `npx storybook skills write-stories` in a command of its own, without `head` or `tail`, before you write a component or a story, and follow its output: the rules for the stories of this project, with its imports, `play` functions, and mocks.

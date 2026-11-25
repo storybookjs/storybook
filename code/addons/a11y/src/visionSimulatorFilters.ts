@@ -1,43 +1,40 @@
-export const filters: Record<string, { label: string; filter: string; percentage?: number }> = {
+export const filters: Record<string, { label: string; filter: string; description?: string }> = {
   blurred: {
     label: 'Blurred vision',
     filter: 'blur(2px)',
-    percentage: 22.9,
+    description: '22.9% of users',
   },
-  deuteranomaly: {
-    label: 'Deuteranomaly',
-    filter: 'url("#storybook-a11y-vision-deuteranomaly")',
-    percentage: 2.7,
+  reducedContrast: {
+    label: 'Reduced contrast',
+    filter: 'url("#storybook-a11y-vision-reduced-contrast")',
+    description: '10% of users',
   },
   deuteranopia: {
     label: 'Deuteranopia',
     filter: 'url("#storybook-a11y-vision-deuteranopia")',
-    percentage: 0.56,
-  },
-  protanomaly: {
-    label: 'Protanomaly',
-    filter: 'url("#storybook-a11y-vision-protanomaly")',
-    percentage: 0.66,
+    // Includes deuteranomaly, whose severity ranges up to deuteranopia.
+    description: '3.26% of users\nMachado et al. 2009',
   },
   protanopia: {
     label: 'Protanopia',
     filter: 'url("#storybook-a11y-vision-protanopia")',
-    percentage: 0.59,
+    // Includes protanomaly, whose severity ranges up to protanopia.
+    description: '1.25% of users\nMachado et al. 2009',
   },
-  tritanomaly: {
-    label: 'Tritanomaly',
-    filter: 'url("#storybook-a11y-vision-tritanomaly")',
-    percentage: 0.01,
+  tritanopiaMachado: {
+    label: 'Tritanopia (inaccurate)',
+    filter: 'url("#storybook-a11y-vision-tritanopia-machado")',
+    description: '0.016% of users\nMachado et al. 2009',
   },
   tritanopia: {
     label: 'Tritanopia',
     filter: 'url("#storybook-a11y-vision-tritanopia")',
-    percentage: 0.016,
+    description: '0.016% of users\nBrettel et al. 1997',
   },
   achromatopsia: {
     label: 'Achromatopsia',
     filter: 'url("#storybook-a11y-vision-achromatopsia")',
-    percentage: 0.0001,
+    description: '0.0001% of users',
   },
   grayscale: {
     label: 'Grayscale',
@@ -46,56 +43,60 @@ export const filters: Record<string, { label: string; filter: string; percentage
 } as const;
 
 // Firefox ignores CSS `filter: url(#id)` when the SVG defining `#id` is `display: none`.
-// The color matrices above were fit against gamma-encoded sRGB, not the linearRGB filter default.
-export const filterDefs = `<svg id="storybook-a11y-vision-filters" aria-hidden="true" color-interpolation-filters="sRGB" style="position:absolute;width:0;height:0;overflow:hidden">
+// Protanopia, deuteranopia and the inaccurate tritanopia use the Machado et al. (2009) severity 1.0
+// matrices:
+// https://www.inf.ufrgs.br/~oliveira/pubs_files/CVD_Simulation/CVD_Simulation.html
+// Tritanopia projects onto the two half-planes of Brettel, Viénot & Mollon (1997). Its first matrix
+// puts each side of the dividing plane in its own channel, relying on filter results clamping
+// negative values to 0, and its second matrix maps each side onto its half-plane.
+// Achromatopsia uses the sRGB relative luminance weights, which apply to linear light.
+// Reduced contrast adds half of the linear range to every channel, as Chrome DevTools does.
+export const filterDefs = `<svg id="storybook-a11y-vision-filters" aria-hidden="true" color-interpolation-filters="linearRGB" style="position:absolute;width:0;height:0;overflow:hidden">
   <defs>
+    <filter id="storybook-a11y-vision-reduced-contrast">
+      <feComponentTransfer in="SourceGraphic">
+        <feFuncR type="linear" intercept="0.5" />
+        <feFuncG type="linear" intercept="0.5" />
+        <feFuncB type="linear" intercept="0.5" />
+      </feComponentTransfer>
+    </filter>
     <filter id="storybook-a11y-vision-protanopia">
       <feColorMatrix
         in="SourceGraphic"
         type="matrix"
-        values="0.567, 0.433, 0, 0, 0 0.558, 0.442, 0, 0, 0 0, 0.242, 0.758, 0, 0 0, 0, 0, 1, 0"
-      />
-    </filter>
-    <filter id="storybook-a11y-vision-protanomaly">
-      <feColorMatrix
-        in="SourceGraphic"
-        type="matrix"
-        values="0.817, 0.183, 0, 0, 0 0.333, 0.667, 0, 0, 0 0, 0.125, 0.875, 0, 0 0, 0, 0, 1, 0"
+        values="0.152286, 1.052583, -0.204868, 0, 0 0.114503, 0.786281, 0.099216, 0, 0 -0.003882, -0.048116, 1.051998, 0, 0 0, 0, 0, 1, 0"
       />
     </filter>
     <filter id="storybook-a11y-vision-deuteranopia">
       <feColorMatrix
         in="SourceGraphic"
         type="matrix"
-        values="0.625, 0.375, 0, 0, 0 0.7, 0.3, 0, 0, 0 0, 0.3, 0.7, 0, 0 0, 0, 0, 1, 0"
+        values="0.367322, 0.860646, -0.227968, 0, 0 0.280085, 0.672501, 0.047413, 0, 0 -0.011820, 0.042940, 0.968881, 0, 0 0, 0, 0, 1, 0"
       />
     </filter>
-    <filter id="storybook-a11y-vision-deuteranomaly">
+    <filter id="storybook-a11y-vision-tritanopia-machado">
       <feColorMatrix
         in="SourceGraphic"
         type="matrix"
-        values="0.8, 0.2, 0, 0, 0 0.258, 0.742, 0, 0, 0 0, 0.142, 0.858, 0, 0 0, 0, 0, 1, 0"
+        values="1.255528, -0.076749, -0.178779, 0, 0 -0.078411, 0.930809, 0.147602, 0, 0 0.004733, 0.691367, 0.303900, 0, 0 0, 0, 0, 1, 0"
       />
     </filter>
     <filter id="storybook-a11y-vision-tritanopia">
       <feColorMatrix
         in="SourceGraphic"
         type="matrix"
-        values="0.95, 0.05,  0, 0, 0 0,  0.433, 0.567, 0, 0 0,  0.475, 0.525, 0, 0 0,  0, 0, 1, 0"
+        values="1, -0.714810, -0.285190, 0, 0 -1, 0.714810, 0.285190, 0, 0 0.185545, 0.734543, 0.079911, 0, 0 0, 0, 0, 1, 0"
       />
-    </filter>
-    <filter id="storybook-a11y-vision-tritanomaly">
       <feColorMatrix
-        in="SourceGraphic"
         type="matrix"
-        values="0.967, 0.033, 0, 0, 0 0, 0.733, 0.267, 0, 0 0, 0.183, 0.817, 0, 0 0, 0, 0, 1, 0"
+        values="0.827996, -0.747824, 1, 0, 0 -0.197351, 0.127458, 1, 0, 0 -0.108473, 0.564773, 1, 0, 0 0, 0, 0, 1, 0"
       />
     </filter>
     <filter id="storybook-a11y-vision-achromatopsia">
       <feColorMatrix
         in="SourceGraphic"
         type="matrix"
-        values="0.299, 0.587, 0.114, 0, 0 0.299, 0.587, 0.114, 0, 0 0.299, 0.587, 0.114, 0, 0 0, 0, 0, 1, 0"
+        values="0.2126, 0.7152, 0.0722, 0, 0 0.2126, 0.7152, 0.0722, 0, 0 0.2126, 0.7152, 0.0722, 0, 0 0, 0, 0, 1, 0"
       />
     </filter>
   </defs>

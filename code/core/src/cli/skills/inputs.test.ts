@@ -1,12 +1,13 @@
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { fs as memfs, vol } from 'memfs';
 
 import type { Options } from '../../types/index.ts';
 
+import { StoryIndexGenerator } from '../../core-server/utils/StoryIndexGenerator.ts';
 import { resolveSkillInputs } from './inputs.ts';
 
 vi.mock('node:fs', { spy: true });
@@ -119,31 +120,74 @@ describe('resolveSkillInputs', () => {
     });
   });
 
-  it('reads the MCP toolsets that main.ts turns on, and all of them without addon-mcp', async () => {
-    const toolsets = { dev: false, docs: true, test: true };
-    const withAddon = await resolveSkillInputs(
-      createMockOptions({ presets: { mcpToolsets: () => toolsets } })
-    );
-    expect(withAddon.mcpToolsets).toEqual(toolsets);
+  describe('svelteCsf', () => {
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
 
-    const withoutAddon = await resolveSkillInputs(createMockOptions());
-    expect(withoutAddon.mcpToolsets).toEqual({ dev: true, docs: true, test: true });
-  });
-
-  it('fails when addon-mcp rejects its options, as its server does', async () => {
-    await expect(
-      resolveSkillInputs(
+    const svelteCsf = async (
+      framework: string,
+      stories: string[],
+      files: string[] | Error
+    ): Promise<boolean> => {
+      const find = vi.spyOn(StoryIndexGenerator, 'findMatchingFiles');
+      if (files instanceof Error) {
+        find.mockRejectedValue(files);
+      } else {
+        find.mockResolvedValue(Object.fromEntries(files.map((path) => [path, false])));
+      }
+      const inputs = await resolveSkillInputs(
         createMockOptions({
-          presets: {
-            mcpToolsets: () => {
-              throw new Error('Invalid type: Expected boolean but received "false"');
-            },
-          },
+          framework,
+          configDir: '/project/.storybook',
+          presets: { stories: () => stories },
         })
-      )
-    ).rejects.toThrow('Expected boolean but received "false"');
-  });
+      );
+      return inputs.svelteCsf;
+    };
 
+    it.each([
+      [
+        '.svelte story files',
+        ['../src/**/*.stories.@(ts|svelte)'],
+        ['/project/src/A.stories.svelte', '/project/src/B.stories.ts'],
+        true,
+      ],
+      [
+        'only .ts story files',
+        ['../src/**/*.stories.@(ts|svelte)'],
+        ['/project/src/B.stories.ts'],
+        false,
+      ],
+      ['no stories yet, entries that load .svelte', ['../src/**/*.stories.svelte'], [], true],
+      [
+        'only docs pages, entries that load .svelte',
+        ['../src/**/*.mdx', '../src/**/*.stories.svelte'],
+        ['/project/src/Configure.mdx'],
+        true,
+      ],
+      ['no stories yet, entries that load only .ts', ['../src/**/*.stories.ts'], [], false],
+      [
+        'an unreadable folder, entries that load .svelte',
+        ['../src/**/*.stories.svelte'],
+        new Error('EACCES'),
+        true,
+      ],
+      ['no stories entries', [], [], false],
+    ])('a Svelte project with %s: %s', async (_, stories, files, expected) => {
+      expect(await svelteCsf('@storybook/sveltekit', stories, files)).toBe(expected);
+    });
+
+    it('is false for a framework that does not render Svelte', async () => {
+      expect(
+        await svelteCsf(
+          '@storybook/react-vite',
+          ['../src/**/*.stories.svelte'],
+          ['/project/src/A.stories.svelte']
+        )
+      ).toBe(false);
+    });
+  });
   it('marks a project that composes other Storybooks', async () => {
     const composed = await resolveSkillInputs(
       createMockOptions({

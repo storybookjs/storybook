@@ -130,3 +130,8 @@ vi.mock('./core/src/shared/utils/module.ts', async (importOriginal) => {
     }),
   };
 });
+
+// The real lookup spawns `ps`, or PowerShell on Windows, which takes about a second.
+vi.mock('./core/src/common/utils/process-ancestry.ts', () => ({
+  getProcessAncestry: vi.fn(() => []),
+}));

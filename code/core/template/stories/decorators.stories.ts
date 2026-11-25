@@ -3,14 +3,7 @@ import {
   STORY_ARGS_UPDATED,
   UPDATE_STORY_ARGS,
 } from 'storybook/internal/core-events';
-import type {
-  ArgsStoryFn,
-  PartialStoryFn,
-  StoryContext,
-  StoryContextForRender,
-} from 'storybook/internal/types';
-
-import { global as globalThis } from '@storybook/global';
+import type { ArgsStoryFn, PartialStoryFn, StoryContext } from 'storybook/internal/types';
 
 import { useEffect } from 'storybook/preview-api';
 import { expect, within } from 'storybook/test';
@@ -48,7 +41,7 @@ export const Hooks = {
       return storyFn({ args: { ...context.args, text: `story ${context.args.text}` } });
     },
     // conditional decorator, runs before the above
-    (storyFn: PartialStoryFn, context: StoryContextForRender) =>
+    (storyFn: PartialStoryFn, context: StoryContext) =>
       context.args.condition
         ? storyFn()
         : (context.originalStoryFn as ArgsStoryFn)(context.args, context),

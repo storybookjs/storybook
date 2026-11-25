@@ -7,10 +7,11 @@ import {
   type RenderTracker,
   getInteractions,
   getPanelState,
+  getRenderPhaseState,
   pruneToggles,
   trackRenderPhase,
 } from './Panel.tsx';
-import type { PanelState } from './panelStore.ts';
+import { INITIAL_PANEL_STATE, type PanelState } from './panelStore.ts';
 
 describe('Panel', () => {
   const log: LogItem[] = [
@@ -659,7 +660,8 @@ describe('Panel', () => {
       return events.flatMap((event) => {
         const result = trackRenderPhase(tracker, event, currentStoryId);
         tracker = result.tracker;
-        return result.isCurrentRender ? [`${event.storyId}:${event.newPhase}`] : [];
+        const again = result.isRerender ? ' again' : '';
+        return result.isCurrentRender ? [`${event.storyId}:${event.newPhase}${again}`] : [];
       });
     };
 
@@ -697,6 +699,90 @@ describe('Panel', () => {
         'page--logged-in:rendering',
         'page--logged-in:completed',
       ]);
+    });
+
+    it('reports another rendering phase of the same render as rendering it again', () => {
+      const handled = replay(
+        [
+          { storyId: 'page--logged-in', newPhase: 'preparing', renderId: 2 },
+          { storyId: 'page--logged-in', newPhase: 'rendering', renderId: 2 },
+          { storyId: 'page--logged-in', newPhase: 'completed', renderId: 2 },
+          { storyId: 'page--logged-in', newPhase: 'loading', renderId: 2 },
+          { storyId: 'page--logged-in', newPhase: 'rendering', renderId: 2 },
+          { storyId: 'page--logged-in', newPhase: 'rendering', renderId: 3 },
+        ],
+        'page--logged-in'
+      );
+
+      expect(handled).toEqual([
+        'page--logged-in:preparing',
+        'page--logged-in:rendering',
+        'page--logged-in:completed',
+        'page--logged-in:rendering again',
+        'page--logged-in:rendering',
+      ]);
+    });
+  });
+
+  describe('getRenderPhaseState', () => {
+    const storyId = 'story--id';
+    const error = { name: 'Error', message: 'argTypes is gone', stack: 'stack' } as Error;
+    const renderCycle = (renderId: number, phases: RenderPhase[]) =>
+      phases.map((newPhase) => ({ storyId, newPhase, renderId }));
+    // The phases StoryRender reports when the play function throws, then when a re-render follows.
+    const failedPlay = [
+      ...renderCycle(1, ['preparing', 'loading', 'rendering', 'playing', 'errored']),
+      { caughtException: error },
+      ...renderCycle(1, ['completing', 'completed', 'afterEach', 'finished']),
+    ];
+    const rerender = renderCycle(1, ['loading', 'rendering', 'completing', 'completed']);
+
+    const replay = (
+      events: (
+        | { storyId: string; newPhase: RenderPhase; renderId: number }
+        | { caughtException: Error }
+      )[]
+    ) => {
+      let tracker: RenderTracker = { renderId: 0 };
+      return events.reduce<PanelState>((state, event) => {
+        if ('caughtException' in event) {
+          return { ...state, caughtException: event.caughtException, hasException: true };
+        }
+        const result = trackRenderPhase(tracker, event, storyId);
+        tracker = result.tracker;
+        return result.isCurrentRender
+          ? getRenderPhaseState(state, event.newPhase, result.isRerender)
+          : state;
+      }, INITIAL_PANEL_STATE);
+    };
+
+    it('reports the exception of a failed play', () => {
+      expect(replay(failedPlay)).toMatchObject({ status: 'errored', caughtException: error });
+    });
+
+    it('keeps the failure of the last play through a re-render, which does not play again', () => {
+      expect(replay([...failedPlay, ...rerender])).toMatchObject({
+        status: 'errored',
+        caughtException: error,
+      });
+    });
+
+    it('drops the failure of the last play once a remount plays again', () => {
+      const remount = renderCycle(1, ['loading', 'rendering', 'playing', 'played', 'completed']);
+
+      expect(replay([...failedPlay, ...remount])).toMatchObject({
+        status: 'completed',
+        caughtException: undefined,
+      });
+    });
+
+    it('drops the failure of the last play for a new render of the story', () => {
+      const newRender = renderCycle(2, ['preparing', 'loading', 'rendering', 'completed']);
+
+      expect(replay([...failedPlay, ...newRender])).toMatchObject({
+        status: 'completed',
+        caughtException: undefined,
+      });
     });
   });
 });

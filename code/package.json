@@ -63,7 +63,6 @@
     "@storybook/builder-webpack5": "workspace:*",
     "@storybook/core-webpack": "workspace:*",
     "@storybook/ember": "workspace:*",
-    "@storybook/global": "^5.0.0",
     "@storybook/html": "workspace:*",
     "@storybook/html-vite": "workspace:*",
     "@storybook/nextjs": "workspace:*",

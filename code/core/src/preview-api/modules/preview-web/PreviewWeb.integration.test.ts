@@ -5,8 +5,6 @@ import React from 'react';
 
 import type { RenderContext } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
-
 import { addons } from '../addons/index.ts';
 import { PreviewWeb } from './PreviewWeb.tsx';
 import {
@@ -64,24 +62,19 @@ vi.mock('storybook/internal/components', async (importOriginal) => {
 
 vi.mock('./WebView');
 
-const { document } = global;
-vi.mock('@storybook/global', () => ({
-  global: {
-    ...globalThis,
-    history: { replaceState: vi.fn() },
-    document: {
-      createElement: globalThis.document.createElement.bind(globalThis.document),
-      location: {
-        pathname: 'pathname',
-        search: '?id=*',
-      },
-    },
-    fetch: async () => ({ status: 200, json: async () => mockStoryIndex }),
-  },
-}));
+// Preview reads `fetch` once when it loads, so stub it before the imports run. Vitest unstubs
+// globals before each test, but Preview keeps the function it read.
+vi.hoisted(() => {
+  vi.stubGlobal('fetch', async () => ({ status: 200, json: async () => mockStoryIndex }));
+});
 
 beforeEach(() => {
-  document.location.search = '';
+  vi.stubGlobal('history', { replaceState: vi.fn() });
+  vi.stubGlobal('location', { pathname: 'pathname', search: '?id=*' });
+});
+
+beforeEach(() => {
+  location.search = '';
   mockChannel.emit.mockClear();
   emitter.removeAllListeners();
   componentOneExports.default.loaders[0].mockReset().mockImplementation(async () => ({ l: 7 }));
@@ -114,7 +107,7 @@ describe('PreviewWeb', { skip: true }, () => {
       projectAnnotations.renderToCanvas.mockImplementationOnce(({ storyFn }: RenderContext<any>) =>
         storyFn()
       );
-      document.location.search = '?id=component-one--a';
+      location.search = '?id=component-one--a';
       await new PreviewWeb(importFn, getProjectAnnotations).ready();
 
       await waitForRender();
@@ -129,7 +122,7 @@ describe('PreviewWeb', { skip: true }, () => {
       const { DocsRenderer } = await import('../../../../../addons/docs/src/index.ts');
       projectAnnotations.parameters.docs.renderer = () => new DocsRenderer() as any;
 
-      document.location.search = '?id=component-one--docs&viewMode=docs';
+      location.search = '?id=component-one--docs&viewMode=docs';
       const preview = new PreviewWeb(importFn, getProjectAnnotations);
 
       const docsRoot = document.createElement('div');
@@ -161,7 +154,7 @@ describe('PreviewWeb', { skip: true }, () => {
       const { DocsRenderer } = await import('../../../../../addons/docs/src/index.ts');
       projectAnnotations.parameters.docs.renderer = () => new DocsRenderer() as any;
 
-      document.location.search = '?id=component-one--docs&viewMode=docs';
+      location.search = '?id=component-one--docs&viewMode=docs';
       const preview = new PreviewWeb(importFn, getProjectAnnotations);
 
       const docsRoot = document.createElement('div');
@@ -200,7 +193,7 @@ describe('PreviewWeb', { skip: true }, () => {
       const { DocsRenderer } = await import('../../../../../addons/docs/src/index.ts');
       projectAnnotations.parameters.docs.renderer = () => new DocsRenderer() as any;
 
-      document.location.search = '?id=component-one--a';
+      location.search = '?id=component-one--a';
       const preview = new PreviewWeb(importFn, getProjectAnnotations);
       await preview.ready();
       await waitForRender();

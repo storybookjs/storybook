@@ -1,5 +1,5 @@
 import type { Mocked } from 'vitest';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   CONFIG_ERROR,
@@ -26,8 +26,6 @@ import {
   type StoryIndex,
 } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
-
 import { EventEmitter } from 'events';
 
 import { getEventMetadata as getEventMetadataOriginal } from '../lib/events.ts';
@@ -46,8 +44,12 @@ import {
 } from './mockStoriesEntries.ts';
 
 const mockGetEntries = vi.fn();
-const fetch = vi.mocked(global.fetch);
-const requestIdleCallback = vi.mocked(global.requestIdleCallback);
+const fetch = vi.fn(() => ({
+  json: () => ({ v: 5, entries: mockGetEntries() }),
+})) as unknown as ReturnType<typeof vi.fn<typeof globalThis.fetch>>;
+const requestIdleCallback = vi.fn() as unknown as ReturnType<
+  typeof vi.fn<typeof globalThis.requestIdleCallback>
+>;
 const getEventMetadata = vi.mocked(getEventMetadataOriginal);
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -57,14 +59,12 @@ vi.mock('../stores/status.ts');
 vi.mock('../lib/events.ts', () => ({
   getEventMetadata: vi.fn(() => ({ sourceType: 'local' })),
 }));
-vi.mock('@storybook/global', () => ({
-  global: {
-    ...globalThis,
-    fetch: vi.fn(() => ({ json: () => ({ v: 5, entries: mockGetEntries() }) })),
-    CONFIG_TYPE: 'DEVELOPMENT',
-    requestIdleCallback: vi.fn(),
-  },
-}));
+
+beforeEach(() => {
+  vi.stubGlobal('fetch', fetch);
+  vi.stubGlobal('CONFIG_TYPE', 'DEVELOPMENT');
+  vi.stubGlobal('requestIdleCallback', requestIdleCallback);
+});
 
 function createMockStore(initialState: Partial<State> = {}) {
   let state = initialState;
@@ -703,7 +703,7 @@ describe('stories API', () => {
 
       expect(fetch).toHaveBeenCalledTimes(1);
       provider.channel.emit(STORY_INDEX_INVALIDATED);
-      expect(global.fetch).toHaveBeenCalledTimes(2);
+      expect(globalThis.fetch).toHaveBeenCalledTimes(2);
 
       // this side-effect is in an un-awaited promise.
       await wait(16);
@@ -748,7 +748,7 @@ describe('stories API', () => {
       );
 
       provider.channel.emit(STORY_INDEX_INVALIDATED);
-      expect(global.fetch).toHaveBeenCalledTimes(2);
+      expect(globalThis.fetch).toHaveBeenCalledTimes(2);
 
       // this side-effect is in an un-awaited promise.
       await wait(16);
@@ -1637,7 +1637,7 @@ describe('stories API', () => {
     });
 
     it('falls back to setTimeout to preload siblings when requestIdleCallback is unavailable', async () => {
-      Reflect.deleteProperty(global, 'requestIdleCallback');
+      vi.stubGlobal('requestIdleCallback', undefined);
       try {
         const initialState = { storyId: 'component-a--story-1', viewMode: 'story' };
         const moduleArgs = createMockModuleArgs({
@@ -1664,7 +1664,6 @@ describe('stories API', () => {
         ]);
       } finally {
         vi.useRealTimers();
-        global.requestIdleCallback = requestIdleCallback;
       }
     });
   });

@@ -94,7 +94,7 @@ describe('ClackPromptProvider', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.stubGlobal('STORYBOOK_CURRENT_TASK_LOG', null);
+    vi.stubGlobal('STORYBOOK_CURRENT_TASK_LOG_SESSION', null);
     taskGroup = { message: vi.fn(), success: vi.fn(), error: vi.fn() };
     task.group.mockReturnValue(taskGroup);
     vi.mocked(clack.taskLog).mockReturnValue(task as never);
@@ -123,7 +123,7 @@ describe('ClackPromptProvider', () => {
     expect(task.message).toHaveBeenCalledWith(`${short}\n${'x'.repeat(51)} .storybook/preview`);
   });
 
-  it('a nested task log reuses the root task and only its error closes it', () => {
+  it('a nested task log reuses the root task and only the root closes it', (): void => {
     const root = provider.taskLog({ id: 'root', title: 'Root' });
     const nested = provider.taskLog({ id: 'nested', title: 'Nested' });
 
@@ -136,15 +136,16 @@ describe('ClackPromptProvider', () => {
     expect(task.success).not.toHaveBeenCalled();
 
     nested.error('inner failed');
-    expect(task.error).toHaveBeenCalledWith('inner failed', { showLog: true });
-
-    root.message('late');
-    expect(task.message).toHaveBeenCalledTimes(1);
-    expect(clack.log.message).toHaveBeenCalledWith('late');
+    expect(task.error).not.toHaveBeenCalled();
+    expect(task.message).toHaveBeenCalledWith('inner failed');
+    expect(logTracker.addLog).toHaveBeenCalledWith('error', 'nested-task-error: inner failed');
 
     root.success('done');
-    expect(task.success).not.toHaveBeenCalled();
+    expect(task.success).toHaveBeenCalledWith('done', undefined);
     expect(clack.taskLog).toHaveBeenCalledTimes(1);
+
+    root.message('late');
+    expect(clack.log.message).toHaveBeenCalledWith('late');
   });
 
   it('a logger message sent to the open task log is rendered but not tracked again', () => {
@@ -264,8 +265,9 @@ describe('ClackPromptProvider', () => {
       expect(getCurrentTaskLog()).toBeNull();
     });
 
-    it('a group closing does not count as an outside write', () => {
-      taskGroup.success.mockImplementation(() => {
+    it('a group closing does not count as an outside write', (): void => {
+      const write = vi.spyOn(process.stdout, 'write').mockImplementation((): boolean => true);
+      taskGroup.success.mockImplementation((): void => {
         const output = vi.mocked(clack.taskLog).mock.calls[0][0]?.output;
         output?.write('group done');
       });
@@ -276,6 +278,7 @@ describe('ClackPromptProvider', () => {
       log.message('after');
       expect(taskGroup.message).toHaveBeenCalledWith('inside');
       expect(task.message).toHaveBeenCalledWith('after');
+      expect(write).toHaveBeenCalledWith('group done');
       expect(clack.log.message).not.toHaveBeenCalled();
       log.success('done');
     });

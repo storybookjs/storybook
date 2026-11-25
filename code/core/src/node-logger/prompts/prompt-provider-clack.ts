@@ -32,6 +32,24 @@ export type TaskLogSession = {
   group: TaskLogInstance['group'];
 };
 
+export const getCurrentTaskLog = (): TaskLogSession | null =>
+  globalThis.STORYBOOK_CURRENT_TASK_LOG_SESSION ?? null;
+
+// Clack counts the terminal rows of a task log line by its length including color codes, and erases
+// that many rows on the next update. Drop the colors of a line whose codes push it onto an extra row,
+// or the erase reaches into the output above the log.
+const formatTaskLogMessage = (message: string) => {
+  const columns = process.stdout.columns || 80;
+  const rows = (length: number) => Math.ceil((length + 3) / columns);
+  return message
+    .split('\n')
+    .map((line) => {
+      const plain = stripVTControlCharacters(line);
+      return rows(line.length) === rows(plain.length) ? line : plain;
+    })
+    .join('\n');
+};
+
 // One reason→message mapping, shared by the terminal cancel message and PromptAbortedError, so
 // the two cannot drift apart.
 const CANCEL_MESSAGES: Record<PromptCancelReason, string> = {
@@ -39,8 +57,45 @@ const CANCEL_MESSAGES: Record<PromptCancelReason, string> = {
   'stdin-ended': 'Prompt aborted: stdin ended before an answer was received.',
 };
 
-export const getCurrentTaskLog = (): TaskLogSession | null =>
-  globalThis.STORYBOOK_CURRENT_TASK_LOG ?? null;
+// Thrown when a prompt is aborted (user cancel or stdin end) and the onCancel handler returns
+// without terminating the process itself, so the abort can never resolve as the prompt's answer.
+class PromptAbortedError extends Error {
+  readonly reason: PromptCancelReason;
+
+  constructor(reason: PromptCancelReason) {
+    super(CANCEL_MESSAGES[reason]);
+    this.name = 'PromptAbortedError';
+    this.reason = reason;
+  }
+}
+
+// Clack never settles a prompt when stdin ends without input (piped runs with stdin closed at
+// EOF, the common CI condition): the promise stays pending and Node exits 0 once the event loop
+// drains, reporting success for an incomplete init. Hand each prompt clack's own signal support
+// instead — an aborted signal settles the prompt as cancelled and releases its readline — driven
+// by stdin ending, so the cancel path exits non-zero rather than reporting success.
+const stdinEndAbort = (): {
+  signal: AbortSignal;
+  isStdinEnded: () => boolean;
+  dispose: () => void;
+} => {
+  const controller = new AbortController();
+  let stdinEnded = process.stdin.readableEnded;
+  const onStdinEnd = () => {
+    stdinEnded = true;
+    controller.abort();
+  };
+  if (stdinEnded) {
+    controller.abort();
+  } else {
+    process.stdin.once('end', onStdinEnd);
+  }
+  return {
+    signal: controller.signal,
+    isStdinEnded: () => stdinEnded,
+    dispose: () => process.stdin.off('end', onStdinEnd),
+  };
+};
 
 export class ClackPromptProvider extends PromptProvider {
   private async handleAbort(
@@ -170,11 +225,15 @@ export class ClackPromptProvider extends PromptProvider {
       },
       error: (message): void => {
         logTracker.addLog('error', `${taskId}-error: ${message}`);
-        session.finish('error', message);
+        // Only the root closes the task; a nested error is shown as a line.
+        if (isRoot) {
+          session.finish('error', message);
+        } else {
+          session.message(message);
+        }
       },
       success: (message, successOptions): void => {
         logTracker.addLog('info', `${taskId}-success: ${message}`);
-        // A nested success must not close the parent's task; only a nested error is worth surfacing.
         if (isRoot) {
           session.finish('success', message, successOptions);
         }
@@ -189,8 +248,9 @@ export class ClackPromptProvider extends PromptProvider {
 
 // Clack erases rows before each task log redraw, counting only the lines it wrote itself. A
 // direct stdout write in between (logBox, a prompt) shifts the cursor, so the erase eats it.
-// The task log writes through its own output, so any write reaching process.stdout is an
-// outside write and switches the session to plain clack.log lines.
+// The task log writes through its own output, so any call to process.stdout.write is an outside
+// write and switches the session to plain clack.log lines. Writes that bypass it (stderr, a child
+// process with inherited stdio) are not detected.
 const createTaskLogSession = (options: TaskLogOptions): TaskLogSession => {
   // live: Clack redraws in place. plain: an outside write moved the cursor, so no more erasing. closed: finished.
   let mode: 'live' | 'plain' | 'closed' = 'live';
@@ -233,7 +293,7 @@ const createTaskLogSession = (options: TaskLogOptions): TaskLogSession => {
       } finally {
         mode = 'closed';
         restore();
-        globalThis.STORYBOOK_CURRENT_TASK_LOG = null;
+        globalThis.STORYBOOK_CURRENT_TASK_LOG_SESSION = null;
       }
     },
     group: (title): ReturnType<TaskLogInstance['group']> => {
@@ -246,7 +306,7 @@ const createTaskLogSession = (options: TaskLogOptions): TaskLogSession => {
       };
     },
   };
-  globalThis.STORYBOOK_CURRENT_TASK_LOG = session;
+  globalThis.STORYBOOK_CURRENT_TASK_LOG_SESSION = session;
   return session;
 };
 
@@ -259,18 +319,12 @@ const interceptStdout = (onOutsideWrite: () => void): { output: Writable; restor
     columns: process.stdout.columns,
     isTTY: process.stdout.isTTY,
   } as unknown as Writable;
-  const hook: typeof process.stdout.write = (
-    chunk: string | Uint8Array,
-    encodingOrCallback?: BufferEncoding | ((error?: Error | null) => void),
-    callback?: (error?: Error | null) => void
-  ): boolean => {
-    if (chunk.length > 0) {
+  const hook = ((...args: Parameters<typeof original>): boolean => {
+    if (args[0].length > 0) {
       onOutsideWrite();
     }
-    return typeof encodingOrCallback === 'string'
-      ? original(chunk, encodingOrCallback, callback)
-      : original(chunk, encodingOrCallback ?? callback);
-  };
+    return original(...args);
+  }) as typeof process.stdout.write;
   process.stdout.write = hook;
   return {
     output,
@@ -280,60 +334,5 @@ const interceptStdout = (onOutsideWrite: () => void): { output: Writable; restor
         process.stdout.write = previous;
       }
     },
-  };
-};
-
-// Clack counts the terminal rows of a task log line by its length including color codes, and erases
-// that many rows on the next update. Drop the colors of a line whose codes push it onto an extra row,
-// or the erase reaches into the output above the log.
-const formatTaskLogMessage = (message: string) => {
-  const columns = process.stdout.columns || 80;
-  const rows = (length: number) => Math.ceil((length + 3) / columns);
-  return message
-    .split('\n')
-    .map((line) => {
-      const plain = stripVTControlCharacters(line);
-      return rows(line.length) === rows(plain.length) ? line : plain;
-    })
-    .join('\n');
-};
-
-// Thrown when a prompt is aborted (user cancel or stdin end) and the onCancel handler returns
-// without terminating the process itself, so the abort can never resolve as the prompt's answer.
-class PromptAbortedError extends Error {
-  readonly reason: PromptCancelReason;
-
-  constructor(reason: PromptCancelReason) {
-    super(CANCEL_MESSAGES[reason]);
-    this.name = 'PromptAbortedError';
-    this.reason = reason;
-  }
-}
-
-// Clack never settles a prompt when stdin ends without input (piped runs with stdin closed at
-// EOF, the common CI condition): the promise stays pending and Node exits 0 once the event loop
-// drains, reporting success for an incomplete init. Hand each prompt clack's own signal support
-// instead — an aborted signal settles the prompt as cancelled and releases its readline — driven
-// by stdin ending, so the cancel path exits non-zero rather than reporting success.
-const stdinEndAbort = (): {
-  signal: AbortSignal;
-  isStdinEnded: () => boolean;
-  dispose: () => void;
-} => {
-  const controller = new AbortController();
-  let stdinEnded = process.stdin.readableEnded;
-  const onStdinEnd = () => {
-    stdinEnded = true;
-    controller.abort();
-  };
-  if (stdinEnded) {
-    controller.abort();
-  } else {
-    process.stdin.once('end', onStdinEnd);
-  }
-  return {
-    signal: controller.signal,
-    isStdinEnded: () => stdinEnded,
-    dispose: () => process.stdin.off('end', onStdinEnd),
   };
 };

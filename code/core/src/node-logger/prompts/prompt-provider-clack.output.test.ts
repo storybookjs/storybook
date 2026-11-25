@@ -17,7 +17,7 @@ beforeEach((): void => {
     chunks.push(String(chunk));
     return true;
   });
-  vi.stubGlobal('STORYBOOK_CURRENT_TASK_LOG', null);
+  vi.stubGlobal('STORYBOOK_CURRENT_TASK_LOG_SESSION', null);
   // Clack skips task log redraws when CI is true.
   vi.stubEnv('CI', '');
   // Clack skips task log redraws when stdout is not a TTY.

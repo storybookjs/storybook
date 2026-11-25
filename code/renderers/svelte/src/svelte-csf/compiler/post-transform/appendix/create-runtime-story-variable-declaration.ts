@@ -32,6 +32,10 @@ export function createRuntimeStoryVariableDeclaration(
   ]);
 
   const annotations = createASTObjectExpression([
+    // Core reads a story's name from the source. At runtime the spread below carries it.
+    ...(params.name === undefined
+      ? []
+      : [createASTProperty('name', { type: 'Literal', value: params.name })]),
     {
       type: 'SpreadElement',
       argument: {
@@ -43,10 +47,6 @@ export function createRuntimeStoryVariableDeclaration(
       },
     },
     createASTProperty('tags', tags),
-    // Core reads a story's name from the source, where the spread above hides it
-    ...(params.name === undefined
-      ? []
-      : [createASTProperty('name', { type: 'Literal', value: params.name })]),
   ]);
   const { factoryMeta } = params.nodes;
   const { parentExportName } = params;

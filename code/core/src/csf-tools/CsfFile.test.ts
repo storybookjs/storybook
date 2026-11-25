@@ -1101,16 +1101,16 @@ describe('CsfFile', () => {
         parse(
           dedent`
           export default { title: 'foo/bar' };
-          export { default as A } from './A';
-          export { B } from './B';
+          export { default as PrimaryButton } from './A';
+          export { SecondaryButton } from './B';
         `
         )
       ).toMatchInlineSnapshot(`
         meta:
           title: foo/bar
         stories:
-          - id: foo-bar--a
-            name: A
+          - id: foo-bar--primary-button
+            name: Primary Button
             localName: default
             __stats:
               play: false
@@ -1122,9 +1122,9 @@ describe('CsfFile', () => {
               storyFn: false
               mount: false
               moduleMock: false
-          - id: foo-bar--b
-            name: B
-            localName: B
+          - id: foo-bar--secondary-button
+            name: Secondary Button
+            localName: SecondaryButton
             __stats:
               play: false
               render: false

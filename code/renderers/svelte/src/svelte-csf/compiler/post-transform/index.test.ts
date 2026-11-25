@@ -61,33 +61,33 @@ describe(transformStoriesCode.name, () => {
       ];
 
       const $__Default = {
+      	name: 'Default',
       	...$__stories['Default'],
-      	tags: ['svelte-csf-v5'],
-      	name: 'Default'
+      	tags: ['svelte-csf-v5']
       };
 
       const $__Rounded = {
+      	name: 'Rounded',
       	...$__stories['Rounded'],
-      	tags: ['svelte-csf-v5'],
-      	name: 'Rounded'
+      	tags: ['svelte-csf-v5']
       };
 
       const $__Square = {
+      	name: 'Square',
       	...$__stories['Square'],
-      	tags: ['svelte-csf-v5'],
-      	name: 'Square'
+      	tags: ['svelte-csf-v5']
       };
 
       const $__AsChild = {
+      	name: 'As child',
       	...$__stories['AsChild'],
-      	tags: ['svelte-csf-v5'],
-      	name: 'As child'
+      	tags: ['svelte-csf-v5']
       };
 
       const $__ChildrenForwared = {
+      	name: 'Children forwared',
       	...$__stories['ChildrenForwared'],
-      	tags: ['svelte-csf-v5'],
-      	name: 'Children forwared'
+      	tags: ['svelte-csf-v5']
       };
 
       export {
@@ -267,15 +267,15 @@ describe('CSF factories', () => {
       export const __namedExportsOrder = ['Primary', 'Button'];
 
       const $__Primary = $__meta.story({
+      	name: 'Primary',
       	...$__stories['Primary'],
-      	tags: ['autodocs', 'svelte-csf-v5'],
-      	name: 'Primary'
+      	tags: ['autodocs', 'svelte-csf-v5']
       });
 
       const $__Button = $__meta.story({
+      	name: 'Button',
       	...$__stories['Button'],
-      	tags: ['svelte-csf-v5'],
-      	name: 'Button'
+      	tags: ['svelte-csf-v5']
       });
 
       export { $__Primary as Primary, $__Button as Button };"
@@ -337,9 +337,9 @@ describe('CSF factories', () => {
       export const __namedExportsOrder = ['Primary'];
 
       const $__Primary = $__meta.story({
+      	name: 'Primary',
       	...$__stories['Primary'],
-      	tags: ['svelte-csf-v5'],
-      	name: 'Primary'
+      	tags: ['svelte-csf-v5']
       });
 
       export { $__Primary as Primary };"
@@ -401,9 +401,9 @@ describe('CSF factories', () => {
       export const __namedExportsOrder = ['Primary'];
 
       const $__Primary = $__meta.story({
+      	name: 'Primary',
       	...$__stories['Primary'],
-      	tags: ['svelte-csf-v5'],
-      	name: 'Primary'
+      	tags: ['svelte-csf-v5']
       });
 
       export { $__Primary as Primary };"
@@ -526,12 +526,12 @@ describe('CSF factories', () => {
       export const __namedExportsOrder = ['Primary', 'Icon'];
 
       const $__Primary = meta.story({
+      	name: 'Primary',
       	...$__stories['Primary'],
-      	tags: ['svelte-csf-v5'],
-      	name: 'Primary'
+      	tags: ['svelte-csf-v5']
       });
 
-      const $__Icon = meta.story({ ...$__stories['Icon'], tags: ['svelte-csf-v5'], name: 'Icon' });
+      const $__Icon = meta.story({ name: 'Icon', ...$__stories['Icon'], tags: ['svelte-csf-v5'] });
 
       export { $__Primary as Primary, $__Icon as Icon };"
     `);
@@ -578,27 +578,27 @@ describe('CSF factories', () => {
       ];
 
       const $__Primary = $__meta.story({
+      	name: 'Primary',
       	...$__stories['Primary'],
-      	tags: ['svelte-csf-v5'],
-      	name: 'Primary'
+      	tags: ['svelte-csf-v5']
       });
 
       const $__PrimarySmall = $__Primary.extend({
+      	name: 'Primary Small',
       	...$__stories['PrimarySmall'],
-      	tags: ['svelte-csf-v5'],
-      	name: 'Primary Small'
+      	tags: ['svelte-csf-v5']
       });
 
       const $__PrimarySmallStarred = $__PrimarySmall.extend({
+      	name: 'Primary Small Starred',
       	...$__stories['PrimarySmallStarred'],
-      	tags: ['starred', 'svelte-csf-v5'],
-      	name: 'Primary Small Starred'
+      	tags: ['starred', 'svelte-csf-v5']
       });
 
       const $__PrimaryStatic = $__Primary.extend({
+      	name: 'Primary Static',
       	...$__stories['PrimaryStatic'],
-      	tags: ['svelte-csf-v5'],
-      	name: 'Primary Static'
+      	tags: ['svelte-csf-v5']
       });
 
       export {
@@ -688,9 +688,9 @@ describe('CSF factories', () => {
       export const __namedExportsOrder = ['Primary'];
 
       const $__Primary = meta.story({
+      	name: 'Primary',
       	...$__stories['Primary'],
-      	tags: ['svelte-csf-v5'],
-      	name: 'Primary'
+      	tags: ['svelte-csf-v5']
       });
 
       export { $__Primary as Primary };"

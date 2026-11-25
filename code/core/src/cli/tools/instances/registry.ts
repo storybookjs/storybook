@@ -3,6 +3,7 @@ import { join } from 'node:path';
 
 import * as v from 'valibot';
 
+import { isAnotherPidNamespace } from '../../../common/utils/pid-namespace.ts';
 import {
   getInstanceRegistryDir,
   getLegacyStorybookConfigDir,
@@ -22,8 +23,10 @@ const SOFT_REGISTRY_ERRORS = new Set(['ENOENT', 'EACCES', 'EPERM', 'ENOTDIR']);
  * older Storybook) still writes there.
  *
  * Each file is expected to be a single JSON object matching {@link StorybookInstanceRecord}.
- * Records whose PID is no longer alive are filtered out (and their files removed). Malformed files
- * are skipped silently — the command should degrade to "no instance" rather than fail loudly.
+ * Records whose PID is no longer alive are filtered out (and their files removed), unless the dev
+ * server runs in another process namespace: then this process cannot check it, and attach finds
+ * out. Malformed files are skipped silently — the command should degrade to "no instance" rather
+ * than fail loudly.
  */
 export async function readRegistry(
   registryDir: string = getInstanceRegistryDir(),
@@ -62,7 +65,12 @@ async function readRegistryDir(registryDir: string): Promise<StorybookInstanceRe
           if (!parsed.success) {
             return null;
           }
-          if (!isProcessAlive(parsed.output.pid)) {
+          // A dev server in another process namespace, as outside the sandbox or container of
+          // this process, has a pid that says nothing here.
+          if (
+            !isProcessAlive(parsed.output.pid) &&
+            !isAnotherPidNamespace(parsed.output.pidNamespace)
+          ) {
             await fs.rm(join(registryDir, name), { force: true }).catch(() => {});
             return null;
           }

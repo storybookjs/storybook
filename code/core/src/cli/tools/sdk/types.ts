@@ -109,8 +109,16 @@ type ToolsBase = {
   requestedMode: ToolsMode;
   /** `in-process` unless this host is a project-local child. */
   host: ToolsHostKind;
-  /** Set when `auto` mode could not attach for an unexpected reason and loaded locally instead. */
+  /**
+   * Set when `auto` mode loaded locally for a reason the caller should hear with any result. Unset
+   * for a missing instance, and for a connection that failed unless `port` named the instance.
+   */
   fallbackNotice?: string;
+  /**
+   * Why `auto` mode could not attach to the instance it found, for a tool that cannot run
+   * locally. Unset when no instance was found.
+   */
+  attachFailure?: string;
   /** Why `auto` loaded locally instead of attaching. */
   fallbackReason?: ToolsAttachGateReason;
   /** Toolset registry and service accessor for an in-process host. Empty when this host is a child. */

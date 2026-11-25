@@ -23,8 +23,8 @@ when unset (file `0600`, dir `0700`). The endpoint is `record.url` plus that pat
 handler accepts a missing `Origin` when the token is valid.
 
 CLI default is `auto`: attach when a matching instance is running, otherwise load locally.
-`--attach` requires attachment. `--no-attach` forces local. A missing instance falls back to
-local with no notice. Unexpected factory-time gate failures print the facts of the failed check
+`--attach` requires attachment. `--no-attach` forces local. A missing instance and a failed
+connection (without `--port`) fall back to local with no notice. Other factory-time gate failures print the facts of the failed check
 plus generic recovery guidance (restart Storybook from the project, re-run from there) — never a
 constructed path, and never a path in executable-command position — and then fall back. A later
 `tools.call` failure (disconnect, remote ack timeout) stays on the attached host.
@@ -106,8 +106,9 @@ See [Load](../../shared/open-service/README.md#load).
 
 ## requiresDevServer and telemetry
 
-In local mode, `requiresDevServer` intercepts with start-your-Storybook guidance. In attached mode
-those methods run in the caller. `stories.preview` reads origin from the instance record.
+In local mode, `requiresDevServer` intercepts with start-your-Storybook guidance, or with the
+attach failure when `auto` found an instance and could not attach to it. In attached mode those
+methods run in the caller. `stories.preview` reads origin from the instance record.
 
 The CLI and the SDK fire one `tools-command` record per invocation after a run; help lookups are
 excluded so they cannot skew success rates. The record is the handler's usage report — `toolset`
@@ -126,7 +127,9 @@ consumer amortizes config load across many calls on the live synced runtime.
 ## End-to-end flow (attached)
 
 1. **Discover.** Read instance records from `$XDG_STATE_HOME/storybook/instances`, or
-   `~/.storybook/instances` when unset, both when they differ (pid-liveness-checked). Match by cwd /
+   `~/.storybook/instances` when unset, both when they differ (pid-liveness-checked; a record
+   whose dev server runs in another process namespace than this process stays, because a pid can
+   only be checked from the namespace that issued it, and attach finds out whether it answers). Match by cwd /
    configDir — or, with `--port`, by port alone across all projects (the record supplies the
    project; an explicit `--config-dir` still restricts). Several matches → the invoking agent's
    bucket, then the most recently started; the siblings surface as a stderr warning naming
@@ -156,7 +159,7 @@ constructs a path or places one in executable-command position.
 | No instance for this project      | No cwd/configDir match                         | `--attach` only: how to start Storybook; other running instances with `cwd` + `url`. `auto` falls back with no notice |
 | Port mismatch                     | No running instance on `--port`                | Running instances with their `port` + `url`; `--port <port>`                                                  |
 | Old server                        | Token absent                                   | Restart Storybook (vX.Y+) to enable attach                                                                    |
-| Stale record / connection refused | WS connect fails                               | Registry cleanup; fallback note                                                                               |
+| Connection fails | WS connect or handshake fails | `--attach` and dev-server tools only: `EPERM` or another process namespace → re-run outside the sandbox; else the registry may be stale. `auto` falls back with no notice, except with `--port` |
 | Different installation, no spawn  | Mismatch with `autoSpawn: false` / in a child  | Both roots, both versions, the instance's config dir; restart guidance (with `autoSpawn`, this respawns instead) |
 | Unverifiable installation         | No `storybookPath`, or its root gone from disk | Restart guidance                                                                                              |
 | Config drift                      | Instance reports command unhandled             | Attached Storybook has no handler for the command — restart it with a matching configuration                  |

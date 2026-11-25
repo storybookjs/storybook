@@ -9,6 +9,7 @@ import type { StorybookConfig } from 'storybook/internal/types';
 
 import { join, resolve } from 'pathe';
 
+import { getPidNamespace, isAnotherPidNamespace } from '../../common/utils/pid-namespace.ts';
 import { getInstanceRegistryDir } from '../../common/utils/storybook-config-dir.ts';
 
 import { CLAUDE_PREVIEW_AGENT_NAME } from '../../shared/constants/agent-provenance.ts';
@@ -77,6 +78,8 @@ export type RuntimeInstanceRecord = {
    * cannot be derived, which makes attach refuse.
    */
   storybookPath?: string;
+  /** The process namespace of this dev server on Linux, in which `pid` can be checked. */
+  pidNamespace?: string;
   startedAt: string;
   updatedAt: string;
   mcp: { status: 'not-installed' } | { status: 'ready'; endpoint: string };
@@ -141,6 +144,7 @@ export function createRuntimeInstanceRecord({
   mcp = { status: 'not-installed' },
   now = new Date(),
   pid = process.pid,
+  pidNamespace = getPidNamespace(),
   port,
   storybookPath = findStorybookPackageRoot(),
   storybookVersion,
@@ -154,6 +158,7 @@ export function createRuntimeInstanceRecord({
   mcp?: RuntimeInstanceRecord['mcp'];
   now?: Date;
   pid?: number;
+  pidNamespace?: string;
   port: number;
   storybookPath?: string;
   storybookVersion: string;
@@ -174,6 +179,7 @@ export function createRuntimeInstanceRecord({
     ...(agent ? { agent } : {}),
     storybookVersion,
     ...(storybookPath ? { storybookPath } : {}),
+    ...(pidNamespace ? { pidNamespace } : {}),
     startedAt: timestamp,
     updatedAt: timestamp,
     mcp,
@@ -242,6 +248,12 @@ function getRecordPid(record: unknown) {
   return Number.isInteger(record.pid) && record.pid > 0 ? record.pid : undefined;
 }
 
+function getRecordPidNamespace(record: unknown) {
+  return isRecordObject(record) && typeof record.pidNamespace === 'string'
+    ? record.pidNamespace
+    : undefined;
+}
+
 function isErrnoException(error: unknown): error is NodeJS.ErrnoException {
   return typeof error === 'object' && error !== null && 'code' in error;
 }
@@ -273,7 +285,9 @@ export function getRuntimeInstanceRegistryCleanupDecision(
 
   const recordPid = getRecordPid(entry.record);
 
-  return recordPid === undefined ? { action: 'keep' } : { action: 'check-pid', pid: recordPid };
+  return recordPid === undefined || isAnotherPidNamespace(getRecordPidNamespace(entry.record))
+    ? { action: 'keep' }
+    : { action: 'check-pid', pid: recordPid };
 }
 
 function isPidInactive(pid: number) {

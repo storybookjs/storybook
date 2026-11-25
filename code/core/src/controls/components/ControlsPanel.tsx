@@ -3,8 +3,6 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { STORY_FINISHED, STORY_PREPARED } from 'storybook/internal/core-events';
 import type { ArgTypes, DocgenPayload, StoryId } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
-
 import { dequal as deepEqual } from 'dequal';
 import { mergeServiceArgTypes } from '../../docs-tools/argTypes/docgenServiceArgTypes.ts';
 import {
@@ -112,7 +110,7 @@ function ControlsPanelTable({
     storyData.type === 'story' &&
     storyData.subtype !== 'test' &&
     hasUpdatedArgs &&
-    global.CONFIG_TYPE === 'DEVELOPMENT' &&
+    globalThis.CONFIG_TYPE === 'DEVELOPMENT' &&
     disableSaveFromUI !== true;
 
   return (
@@ -187,8 +185,8 @@ function DocgenQuery({
 // env var and injects it into the manager as the DOCGEN_STORY_PREPARED global so it can be evaluated
 // per project.
 function useStoryDocgenGateReady(storyId: StoryId): boolean {
-  const isDevelopment = global.CONFIG_TYPE === 'DEVELOPMENT';
-  const requestAtStoryPrepared = global.DOCGEN_STORY_PREPARED === true;
+  const isDevelopment = globalThis.CONFIG_TYPE === 'DEVELOPMENT';
+  const requestAtStoryPrepared = globalThis.DOCGEN_STORY_PREPARED === true;
   // Key readiness by the story it was opened for (derived during render, not via an effect). On a
   // story switch this is immediately false for the new id, so we never render one frame with a stale
   // `ready=true` that would mount the query before the new story emits its gate event.
@@ -227,7 +225,7 @@ function ServiceControlsPanel({
   const isStory = storyData.type === 'story';
   // In a static build docgen is precomputed and there is no gate, so the loading decision must not
   // hang on `prepared` — treat non-development as always prepared. In dev this is unchanged.
-  const isDevelopment = global.CONFIG_TYPE === 'DEVELOPMENT';
+  const isDevelopment = globalThis.CONFIG_TYPE === 'DEVELOPMENT';
   const isStoryPrepared = !isDevelopment || (isStory ? storyData.prepared : true);
   // Docs entries don't emit the story lifecycle events the gate listens for, so it only applies to
   // actual stories; everything else queries docgen right away.

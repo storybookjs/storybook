@@ -1,6 +1,5 @@
 import type { DecoratorFunction } from 'storybook/internal/types';
 
-import { global as globalThis } from '@storybook/global';
 import type { Meta, StoryObj, VueRenderer } from '@storybook/vue3';
 
 import { useArgs } from 'storybook/preview-api';

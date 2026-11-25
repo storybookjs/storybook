@@ -1,5 +1,11 @@
 import type { ChannelLike } from 'storybook/internal/channels';
 import {
+  type BlockedNetwork,
+  detectBlockedNetwork,
+  formatBlockedNetwork,
+  RERUN_OUTSIDE_SANDBOX,
+} from 'storybook/internal/common';
+import {
   findStoryIds,
   type FoundStory,
   type NotFoundStory,
@@ -158,6 +164,24 @@ function findNotRunStoryIds(storyIds: string[], result: TestRunResult): string[]
   return storyIds.filter((storyId) => !ran.has(storyId));
 }
 
+function blockedRunResult(blocked: BlockedNetwork) {
+  return {
+    status: 'error' as const,
+    error: {
+      message: `The tests did not run: ${formatBlockedNetwork(blocked)}. This is not a problem in the code. ${RERUN_OUTSIDE_SANDBOX}`,
+    },
+  };
+}
+
+// A system that refuses ports stops Vitest before any test runs, which the run reports as an
+// unhandled error, not as a test failure.
+function blockedBeforeAnyTest(result: TestRunResult) {
+  const ran = result.componentTestCount.success + result.componentTestCount.error;
+  return ran === 0
+    ? result.unhandledErrors.map((error) => detectBlockedNetwork(error)).find(Boolean)
+    : undefined;
+}
+
 /** What `stories changed` reports, as far as a test run needs it. */
 export type ChangedStories = {
   storyIds: string[];
@@ -286,7 +310,7 @@ export async function runStoryTests({
   }
 
   switch (response.status) {
-    case 'completed':
+    case 'completed': {
       if (!response.result) {
         return {
           status: 'error',
@@ -294,6 +318,10 @@ export async function runStoryTests({
         };
       }
       const { result } = response;
+      const blocked = blockedBeforeAnyTest(result);
+      if (blocked) {
+        return blockedRunResult(blocked);
+      }
       if (selection?.files) {
         selection.files.storyFileCount = result.matchedFileCount ?? 0;
         // Vitest: "No test files found, exiting with code 1", or code 0 with `--changed`, which
@@ -319,7 +347,13 @@ export async function runStoryTests({
         ...(notFoundMessages.length > 0 ? { notFoundMessages } : {}),
         ...(notRunStoryIds.length > 0 ? { notRunStoryIds } : {}),
       };
-    case 'error':
+    }
+    case 'error': {
+      const blocked =
+        detectBlockedNetwork(response.error) ?? detectBlockedNetwork(response.error?.error);
+      if (blocked) {
+        return blockedRunResult(blocked);
+      }
       return {
         status: 'error',
         error: {
@@ -329,6 +363,7 @@ export async function runStoryTests({
             : {}),
         },
       };
+    }
     case 'cancelled':
       return { status: 'cancelled' };
     default: {

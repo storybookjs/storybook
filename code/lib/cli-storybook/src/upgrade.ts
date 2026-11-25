@@ -50,6 +50,7 @@ import {
   getProjects,
   shortenPath,
   upgradeStorybookDependencies,
+  warnAboutOutdatedStorybookPackageJsons,
 } from './util.ts';
 
 type Package = {
@@ -481,6 +482,12 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
       } catch (err) {
         task.error(`Failed to upgrade dependencies: ${String(err)}`);
       }
+
+      await warnAboutOutdatedStorybookPackageJsons(
+        storybookProjects[0].currentCLIVersion,
+        storybookProjects,
+        allProjects
+      );
     }
 
     // Read before the automigrations, so skills that the skills automigration installs are not

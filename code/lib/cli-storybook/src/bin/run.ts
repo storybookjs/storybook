@@ -44,7 +44,7 @@ const handleCommandFailure =
       const logFile = await logTracker.writeToFile(logFilePath);
       logger.log(`Debug logs are written to: ${getProjectRelativePath(logFile)}`);
     } catch {}
-    logger.outro('');
+    logger.outro(effects.isDryRun() ? 'Dry run failed' : '');
     process.exit(1);
   };
 
@@ -209,7 +209,9 @@ command('upgrade')
       'upgrade',
       { cliOptions: { ...options, configDir: options.configDir?.[0] } },
       async () => {
-        logger.intro(`Storybook upgrade - v${versions.storybook}`);
+        logger.intro(
+          `Storybook upgrade${options.dryRun ? ' (dry run)' : ''} - v${versions.storybook}`
+        );
         await upgrade(options);
         effects.logDryRunChanges();
         logger.outro(
@@ -239,10 +241,10 @@ command('migrate [migration]')
   )
   .action((migration, options) => {
     withTelemetry('migrate', { cliOptions: options }, async () => {
-      logger.intro(`Running ${migration} migration`);
+      logger.intro(`${options.dryRun ? 'Dry-running' : 'Running'} ${migration} migration`);
       await migrate(migration, options);
       effects.logDryRunChanges();
-      logger.outro('Migration completed');
+      logger.outro(options.dryRun ? 'Migration dry run completed' : 'Migration completed');
     }).catch(handleCommandFailure(options.logfile));
   });
 
@@ -288,7 +290,7 @@ command('automigrate [fixId]')
       logger.intro(fixId ? `${running} ${fixId} automigration` : `${running} automigrations`);
       await doAutomigrate({ fixId, ...options });
       effects.logDryRunChanges();
-      logger.outro('Done');
+      logger.outro(options.dryRun ? 'Dry run completed' : 'Done');
     }).catch(handleCommandFailure(options.logfile));
   });
 

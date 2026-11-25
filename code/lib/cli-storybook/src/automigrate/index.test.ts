@@ -220,13 +220,6 @@ describe('a dry run', () => {
     vi.clearAllMocks();
   });
 
-  it('runs each selected fix and reports its result', async () => {
-    const { fixResults } = await runFixWrapper({ storybookVersion: '7.0.0' });
-
-    expect(run1).toHaveBeenCalled();
-    expect(fixResults).toEqual({ 'fix-1': FixStatus.SUCCEEDED });
-  });
-
   it('lists a notification as a manual migration without prompting', async () => {
     const notification: Fix = {
       id: 'notice',

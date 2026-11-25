@@ -237,31 +237,6 @@ function getUpgradeResults(
 }
 
 /** Logs the results of the upgrade process, including project categorization and diagnostic messages */
-/** The summary of an upgrade, which a dry run words as what the upgrade would do. */
-const RESULTS_COPY = {
-  someFailed:
-    'The upgrade is complete, but some projects failed to upgrade or migrate completely. Please see the debug logs for more details.',
-  succeeded: 'Successfully upgraded:',
-  failed: 'Failed to upgrade:',
-  failedReason:
-    'Some automigrations failed or skipped files. Review the upgrade output for details.',
-  success: 'Your project(s) have been upgraded successfully! 🎉',
-  links:
-    'If you want to learn more about the automigrations that executed in your project(s), please check the following links:',
-};
-
-const DRY_RUN_RESULTS_COPY: typeof RESULTS_COPY = {
-  someFailed:
-    'The dry run is complete, but some projects would fail to upgrade or migrate completely. Please see the debug logs for more details.',
-  succeeded: 'Would upgrade:',
-  failed: 'Would fail to upgrade:',
-  failedReason:
-    'Some automigrations would fail or skip files. Review the upgrade output for details.',
-  success: 'Dry run finished: no files were changed.',
-  links:
-    'If you want to learn more about the automigrations that would execute in your project(s), please check the following links:',
-};
-
 function logUpgradeResults(
   projectResults: Record<string, AutomigrationResult>,
   detectedAutomigrations: AutomigrationCheckResult[],
@@ -272,18 +247,18 @@ function logUpgradeResults(
     doctorResults
   );
 
-  const copy = effects.isDryRun() ? DRY_RUN_RESULTS_COPY : RESULTS_COPY;
-
   // If there are any failures, show detailed summary
   if (failedProjects.length > 0) {
     logTracker.enableLogWriting();
-    logger.step(copy.someFailed);
+    logger.step(
+      'The upgrade is complete, but some projects failed to upgrade or migrate completely. Please see the debug logs for more details.'
+    );
     // Display appropriate messages based on results
     if (successfulProjects.length > 0) {
       const successfulProjectsList = successfulProjects
         .map((dir) => `  • ${getProjectRelativePath(dir)}`)
         .join('\n');
-      logger.log(`${CLI_COLORS.success(copy.succeeded)}\n${successfulProjectsList}`);
+      logger.log(`${CLI_COLORS.success('Successfully upgraded:')}\n${successfulProjectsList}`);
     }
 
     const failedProjectsList = failedProjects
@@ -292,7 +267,9 @@ function logUpgradeResults(
           `  • ${getProjectRelativePath(configDir)} (${failedFixIds.join(', ')})`
       )
       .join('\n');
-    logger.log(`${CLI_COLORS.error(copy.failed)}\n${copy.failedReason}\n${failedProjectsList}`);
+    logger.log(
+      `${CLI_COLORS.error('Failed to upgrade:')}\nSome automigrations failed or skipped files. Review the upgrade output for details.\n${failedProjectsList}`
+    );
 
     if (projectsWithNoFixes.length > 0) {
       const projectList = projectsWithNoFixes
@@ -302,7 +279,7 @@ function logUpgradeResults(
     }
   } else {
     if (Object.values(doctorResults).every((result) => result.status === 'healthy')) {
-      logger.step(`${CLI_COLORS.success(copy.success)}`);
+      logger.step(`${CLI_COLORS.success('Your project(s) have been upgraded successfully! 🎉')}`);
     } else {
       logger.step(
         `${picocolors.yellow('Your project(s) have been upgraded successfully, but some issues were found which need your attention, please check Storybook doctor logs above.')}`
@@ -322,7 +299,10 @@ function logUpgradeResults(
     .map((am) => `• ${createHyperlink(am.fix.id, am.fix.link!)}`);
 
   if (automigrationLinks.length > 0) {
-    const automigrationLinksMessage = [copy.links, ...automigrationLinks].join('\n');
+    const automigrationLinksMessage = [
+      'If you want to learn more about the automigrations that executed in your project(s), please check the following links:',
+      ...automigrationLinks,
+    ].join('\n');
 
     logger.log(automigrationLinksMessage);
   }
@@ -401,13 +381,12 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
 
   const { allProjects, selectedProjects: storybookProjects, unreadProjects } = projectsResult;
 
-  const dryRunNote = effects.isDryRun() ? ' (no files will be changed)' : '';
   if (storybookProjects.length > 1) {
-    logger.info(`${effects.isDryRun() ? 'Dry-running upgrade of' : 'Upgrading'} the following projects${dryRunNote}:
+    logger.info(`Upgrading the following projects:
           ${storybookProjects.map((p) => `${picocolors.cyan(getProjectRelativePath(p.configDir))}: ${picocolors.bold(p.beforeVersion)} -> ${picocolors.bold(p.currentCLIVersion)}`).join('\n')}`);
   } else {
     logger.info(
-      `${effects.isDryRun() ? 'Dry-running upgrade' : 'Upgrading'} from ${picocolors.bold(storybookProjects[0].beforeVersion)} to ${picocolors.bold(storybookProjects[0].currentCLIVersion)}${dryRunNote}`
+      `Upgrading from ${picocolors.bold(storybookProjects[0].beforeVersion)} to ${picocolors.bold(storybookProjects[0].currentCLIVersion)}`
     );
   }
 
@@ -500,17 +479,9 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
           storybookVersionSpecifier: storybookVersionSpecifier ?? project.storybookVersionSpecifier,
         });
       }
-      task.success(
-        effects.isDryRun()
-          ? 'Dry-ran the package version updates'
-          : `Updated package versions in package.json files`
-      );
+      task.success(`Updated package versions in package.json files`);
     } catch (err) {
-      task.error(
-        effects.isDryRun()
-          ? `Failed to dry-run dependency upgrades: ${String(err)}`
-          : `Failed to upgrade dependencies: ${String(err)}`
-      );
+      task.error(`Failed to upgrade dependencies: ${String(err)}`);
     }
 
     // Read before the automigrations, so skills that the skills automigration installs are not
@@ -696,9 +667,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
 
     if (getUpgradeResults(automigrationResults, doctorResults).failedProjects.length > 0) {
       throw new HandledError(
-        effects.isDryRun()
-          ? 'Some automigrations would fail or skip files. Review the upgrade output.'
-          : 'Some automigrations failed or skipped files. Review the upgrade output.'
+        'Some automigrations failed or skipped files. Review the upgrade output.'
       );
     }
   } finally {

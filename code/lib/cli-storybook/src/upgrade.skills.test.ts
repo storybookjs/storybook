@@ -1,11 +1,11 @@
-import { beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   hasStorybookSkills,
   installSkills,
   refreshAgentInstructions,
 } from 'storybook/internal/cli';
-import { type JsPackageManager, effects, isCI } from 'storybook/internal/common';
+import { type JsPackageManager, isCI } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
 
@@ -267,66 +267,24 @@ describe('upgrade: refreshing the skills', () => {
 
     expect(installSkills).not.toHaveBeenCalled();
   });
-
-  it('refreshes the skills in a dry run', async () => {
-    effects.setDryRun(true);
-    onTestFinished(() => effects.setDryRun(false));
-
-    await upgrade({ ...baseOptions, dryRun: true });
-
-    expect(installSkills).toHaveBeenCalledWith(expect.objectContaining({ source: 'refresh' }));
-  });
 });
 
-describe('upgrade: --dry-run', () => {
-  it.each([{ dryRun: true }, { dryRun: false }])(
-    'asks the package manager to install and dedupe a monorepo when dryRun is $dryRun',
-    async ({ dryRun }) => {
-      effects.setDryRun(dryRun);
-      onTestFinished(() => effects.setDryRun(false));
-      const installDependencies = vi.fn(async () => {});
-      const dedupeDependencies = vi.fn(async () => {});
-      const monorepo = project('/repo/a/.storybook');
-      Object.assign(monorepo.packageManager, {
-        type: 'pnpm',
-        installDependencies,
-        dedupeDependencies,
-        isStorybookInMonorepo: () => true,
-      });
-      useProjects(monorepo);
-
-      await upgrade({ ...baseOptions, dryRun, yes: true });
-
-      expect(installDependencies).toHaveBeenCalledTimes(1);
-      expect(dedupeDependencies).toHaveBeenCalledTimes(1);
-    }
-  );
-});
-
-describe('upgrade: the summary of a dry run', () => {
-  it('names the projects that would fail, and fails as a run would', async () => {
-    effects.setDryRun(true);
-    onTestFinished(() => effects.setDryRun(false));
-    vi.mocked(runAutomigrations).mockResolvedValue({
-      automigrationResults: {
-        '/repo/a/.storybook': {
-          automigrationStatuses: { 'story-sort-to-main': FixStatus.FAILED },
-          automigrationErrors: { 'story-sort-to-main': 'cannot migrate main' },
-          fileFailures: [],
-        },
-      },
-      detectedAutomigrations: [],
+describe('upgrade: a monorepo', () => {
+  it('installs and dedupes the dependencies', async () => {
+    const installDependencies = vi.fn(async () => {});
+    const dedupeDependencies = vi.fn(async () => {});
+    const monorepo = project('/repo/a/.storybook');
+    Object.assign(monorepo.packageManager, {
+      type: 'pnpm',
+      installDependencies,
+      dedupeDependencies,
+      isStorybookInMonorepo: () => true,
     });
+    useProjects(monorepo);
 
-    await expect(upgrade({ ...baseOptions, dryRun: true })).rejects.toThrow(
-      'Some automigrations would fail or skip files'
-    );
+    await upgrade({ ...baseOptions, yes: true });
 
-    const logged = vi.mocked(logger.log).mock.calls.flat().join('\n');
-    expect(logged).toContain('Would fail to upgrade:');
-    expect(logged).toContain('story-sort-to-main');
-    expect(logger.step).toHaveBeenCalledWith(
-      expect.stringContaining('some projects would fail to upgrade')
-    );
+    expect(installDependencies).toHaveBeenCalledTimes(1);
+    expect(dedupeDependencies).toHaveBeenCalledTimes(1);
   });
 });

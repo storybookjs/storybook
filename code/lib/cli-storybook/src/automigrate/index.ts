@@ -155,9 +155,7 @@ export const automigrate = async ({
   // if an on-command migration is triggered, run it and bail
   const commandFix = commandFixes.find((f) => f.id === fixId);
   if (commandFix) {
-    logger.step(
-      `${effects.isDryRun() ? 'Dry-running' : 'Running'} migration ${picocolors.magenta(fixId)}..`
-    );
+    logger.step(`Running migration ${picocolors.magenta(fixId)}..`);
 
     await commandFix.run({
       mainConfigPath,
@@ -446,13 +444,12 @@ export async function runFixes({
     return { fixResults, fixSummary, addonsToPostinstall, fileFailures, verified };
   }
 
-  const running = effects.isDryRun() ? 'Dry-running' : 'Running';
   const taskLog = prompt.taskLog({
     id: 'automigrate-run',
     title:
       selected.length === 1
-        ? `${running} ${picocolors.cyan(selected[0].fix.id)} migration`
-        : `${running} automigrations`,
+        ? `Running ${picocolors.cyan(selected[0].fix.id)} migration`
+        : 'Running automigrations',
   });
   const outcomes = await applyFixes(
     { ...project, skipInstall, yes, addonsToPostinstall },
@@ -483,17 +480,9 @@ export async function runFixes({
   const ran =
     selected.length === 1 ? `${picocolors.cyan(selected[0].fix.id)} migration` : 'automigrations';
   if (Object.values(fixResults).includes(FixStatus.FAILED)) {
-    taskLog.error(
-      effects.isDryRun()
-        ? selected.length === 1
-          ? `${ran} would fail`
-          : 'Some automigrations would fail'
-        : selected.length === 1
-          ? `Could not run ${ran}`
-          : 'Some automigrations failed'
-    );
+    taskLog.error(selected.length === 1 ? `Could not run ${ran}` : 'Some automigrations failed');
   } else {
-    taskLog.success(`${effects.isDryRun() ? 'Dry-ran' : 'Ran'} ${ran}`);
+    taskLog.success(`Ran ${ran}`);
   }
 
   return { fixResults, fixSummary, addonsToPostinstall, fileFailures, verified };

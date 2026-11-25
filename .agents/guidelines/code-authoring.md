@@ -16,8 +16,8 @@ Apply them when writing or reviewing code, not just when asked.
 - **Keep e2e and long interaction tests as a readable continuous flow.** Do not force DRY with loops or heavy helpers when repetition is clearer.
 - **Change project files through the effects module.** CLI code writes and removes project files with `effects.writeFile` and `effects.removeFile` from `storybook/internal/common`, and reads them with `effects.readFile`, so a dry run stages each change, later reads see it, and the command lists it at the end.
   A step that a file write cannot stage, such as an install or the `skills` CLI, goes through `effects.runCommand` or `effects.runStep`; the package manager's install, add and dedupe methods already do.
-  Do not check `effects.isDryRun()` to skip a write, or to reword or hide a message about a change: the list at the end says what a dry run changed.
-  Read the mode only to word an outcome that a dry run predicts, such as "would fail".
+  Do not check `effects.isDryRun()` to skip a write, or to reword or hide a message: a dry run prints what a run prints, and only the command's intro and outro say it is a dry run.
+  The list at the end says what a run would change.
   Lint rejects the `node:fs` write APIs in the CLI and the core code it calls.
 - **Put a story's human-facing description in JSDoc above the `meta` const**, not in a `description` parameter.
 - **Keep historical telemetry string names stable** when renaming tools or APIs that emit telemetry, unless the field is brand-new and has no existing data.

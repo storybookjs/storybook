@@ -1,4 +1,4 @@
-import { type JsPackageManager, effects, getProjectRelativePath } from 'storybook/internal/common';
+import { type JsPackageManager, getProjectRelativePath } from 'storybook/internal/common';
 import { CLI_COLORS, type TaskLogInstance, logger, prompt } from 'storybook/internal/node-logger';
 import { ErrorCollector, sanitizeError } from 'storybook/internal/telemetry';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
@@ -248,11 +248,9 @@ export async function promptForAutomigrations(
     );
     const optIn = automigrations.filter((am) => !selected.includes(am));
     logSelection(
-      effects.isDryRun()
-        ? 'Detected automigrations (no files will be changed):'
-        : optIn.length > 0
-          ? 'Running these detected automigrations:'
-          : 'Running all detected automigrations:',
+      optIn.length > 0
+        ? 'Running these detected automigrations:'
+        : 'Running all detected automigrations:',
       selected
     );
     if (optIn.length > 0) {
@@ -367,7 +365,7 @@ export async function runAutomigrationsForProjects(
       applicableAutomigrations.length > 0
         ? prompt.taskLog({
             id: `automigrate-${projectName}`,
-            title: `${countPrefix}${effects.isDryRun() ? 'Dry-running' : 'Running'} automigrations for ${projectName}`,
+            title: `${countPrefix}Running automigrations for ${projectName}`,
           })
         : {
             message: (message: string) => {
@@ -454,13 +452,9 @@ export async function runAutomigrationsForProjects(
 
     if (automigrationsWithErrors.length > 0) {
       const count = automigrationsWithErrors.length;
-      taskLog.error(
-        `${countPrefix}${count} automigrations ${effects.isDryRun() ? 'would fail' : 'failed'} for ${projectName}`
-      );
+      taskLog.error(`${countPrefix}${count} automigrations failed for ${projectName}`);
     } else {
-      taskLog.success(
-        `${countPrefix}${effects.isDryRun() ? 'Dry-ran' : 'Completed'} automigrations for ${projectName}`
-      );
+      taskLog.success(`${countPrefix}Completed automigrations for ${projectName}`);
     }
 
     projectResults[configDir] = {

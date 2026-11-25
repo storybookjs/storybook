@@ -2,12 +2,11 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
 import {
-  effects,
   getProjectRelativePath,
   optionalEnvToBoolean,
   syncStorybookAddons,
 } from 'storybook/internal/common';
-import { CLI_COLORS, logger, prompt } from 'storybook/internal/node-logger';
+import { logger, prompt } from 'storybook/internal/node-logger';
 
 import { normalize } from 'pathe';
 import picocolors from 'picocolors';
@@ -71,11 +70,7 @@ async function runStoriesCodemod(options: {
       });
     }
 
-    logger.step(
-      effects.isDryRun()
-        ? 'Checking how codemods would apply on your stories'
-        : 'Applying codemod on your stories, this might take some time...'
-    );
+    logger.step('Applying codemod on your stories, this might take some time...');
 
     await runCodemod(globString, (info) => storyToCsf4(info, codemodOptions));
   } catch (err: any) {
@@ -161,32 +156,19 @@ export const csfFactories: CommandFix = {
       glob,
     });
 
-    logger.step(
-      effects.isDryRun()
-        ? 'Checking how codemods would apply on your main config'
-        : 'Applying codemod on your main config...'
-    );
+    logger.step('Applying codemod on your main config...');
     const frameworkPackage =
       getFrameworkPackageName(mainConfig) || '@storybook/your-framework-here';
     await runCodemod([mainConfigPath!], (fileInfo) =>
       configToCsfFactory(fileInfo, { configType: 'main', frameworkPackage })
     );
 
-    logger.step(
-      effects.isDryRun()
-        ? 'Checking how codemods would apply on your preview config'
-        : 'Applying codemod on your preview config...'
-    );
+    logger.step('Applying codemod on your preview config...');
     await runCodemod([previewConfigPath!], (fileInfo) =>
       configToCsfFactory(fileInfo, { configType: 'preview', frameworkPackage })
     );
 
     await syncStorybookAddons(mainConfig, previewConfigPath!, configDir);
-
-    if (effects.isDryRun()) {
-      logger.step(CLI_COLORS.success('Dry run finished: no files were changed.'));
-      return;
-    }
 
     logger.logBox(
       dedent`

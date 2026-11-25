@@ -1,16 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { global } from '@storybook/global';
-
 import { init as initVersions } from '../modules/versions';
 
 vi.mock('../version', () => ({
   version: '3.0.0',
 }));
 
-vi.mock('@storybook/global', () => ({
-  global: {
-    VERSIONCHECK: JSON.stringify({
+vi.mock('storybook/internal/client-logger');
+
+beforeEach(() => {
+  vi.stubGlobal(
+    'VERSIONCHECK',
+    JSON.stringify({
       success: true,
       data: {
         latest: {
@@ -21,11 +22,9 @@ vi.mock('@storybook/global', () => ({
         },
       },
       time: 1571565216284,
-    }),
-  },
-}));
-
-vi.mock('storybook/internal/client-logger');
+    })
+  );
+});
 
 function createMockStore() {
   let state = {
@@ -152,7 +151,7 @@ describe('versions API', () => {
 
   describe('METHOD: getDocsUrl()', () => {
     beforeEach(() => {
-      global.STORYBOOK_RENDERER = undefined;
+      vi.stubGlobal('STORYBOOK_RENDERER', undefined);
     });
 
     it('returns the latest url when current version is latest', async () => {
@@ -222,7 +221,7 @@ describe('versions API', () => {
 
       await init();
 
-      global.STORYBOOK_RENDERER = 'vue';
+      vi.stubGlobal('STORYBOOK_RENDERER', 'vue');
 
       expect(api.getDocsUrl({ renderer: true })).toEqual(
         'https://storybook.js.org/docs/?renderer=vue&ref=ui'

@@ -1,22 +1,14 @@
-import { describe, expect, it, vi } from 'vitest';
-
-import { global } from '@storybook/global';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getSelectionSpecifierFromPath, pathToId, setPath } from './UrlStore.ts';
 
-const { history, document } = global;
+const history = { replaceState: vi.fn() };
 
-vi.mock('@storybook/global', () => ({
-  global: {
-    history: { replaceState: vi.fn() },
-    document: {
-      location: {
-        pathname: 'pathname',
-        search: '',
-      },
-    },
-  },
-}));
+beforeEach(() => {
+  vi.stubGlobal('history', history);
+  vi.stubGlobal('document', { title: '' });
+  vi.stubGlobal('location', { pathname: 'pathname', search: '', hash: '' });
+});
 
 describe('UrlStore', () => {
   describe('pathToId', () => {
@@ -43,7 +35,7 @@ describe('UrlStore', () => {
       );
     });
     it('should replace legacy parameters but preserve others', () => {
-      document.location.search = '?foo=bar&selectedStory=selStory&selectedKind=selKind';
+      location.search = '?foo=bar&selectedStory=selStory&selectedKind=selKind';
       setPath({ storyId: 'story--id', viewMode: 'story' });
       expect(history.replaceState).toHaveBeenCalledWith(
         {},
@@ -52,8 +44,8 @@ describe('UrlStore', () => {
       );
     });
     it('should ignore + keep hashes', () => {
-      document.location.search = '?foo=bar&selectedStory=selStory&selectedKind=selKind';
-      document.location.hash = '#foobar';
+      location.search = '?foo=bar&selectedStory=selStory&selectedKind=selKind';
+      location.hash = '#foobar';
       setPath({ storyId: 'story--id', viewMode: 'story' });
       expect(history.replaceState).toHaveBeenCalledWith(
         {},
@@ -65,57 +57,57 @@ describe('UrlStore', () => {
 
   describe('getSelectionSpecifierFromPath', () => {
     it('should handle no search', () => {
-      document.location.search = '';
+      location.search = '';
       expect(getSelectionSpecifierFromPath()).toEqual(null);
     });
     it('should handle id queries', () => {
-      document.location.search = '?id=story--id';
+      location.search = '?id=story--id';
       expect(getSelectionSpecifierFromPath()).toEqual({
         storySpecifier: 'story--id',
         viewMode: 'story',
       });
     });
     it('should handle viewMode=story', () => {
-      document.location.search = '?id=story--id&viewMode=story';
+      location.search = '?id=story--id&viewMode=story';
       expect(getSelectionSpecifierFromPath()).toEqual({
         storySpecifier: 'story--id',
         viewMode: 'story',
       });
     });
     it('should handle viewMode=docs', () => {
-      document.location.search = '?id=story--id&viewMode=docs';
+      location.search = '?id=story--id&viewMode=docs';
       expect(getSelectionSpecifierFromPath()).toEqual({
         storySpecifier: 'story--id',
         viewMode: 'docs',
       });
     });
     it('should ignore unsupported viewModes', () => {
-      document.location.search = '?id=about&viewMode=somethingelse';
+      location.search = '?id=about&viewMode=somethingelse';
       expect(getSelectionSpecifierFromPath()).toEqual(null);
     });
     it('should handle story paths', () => {
-      document.location.search = '?path=/story/story--id';
+      location.search = '?path=/story/story--id';
       expect(getSelectionSpecifierFromPath()).toEqual({
         storySpecifier: 'story--id',
         viewMode: 'story',
       });
     });
     it('should handle docs paths', () => {
-      document.location.search = '?path=/docs/story--id';
+      location.search = '?path=/docs/story--id';
       expect(getSelectionSpecifierFromPath()).toEqual({
         storySpecifier: 'story--id',
         viewMode: 'docs',
       });
     });
     it('should handle id queries with *', () => {
-      document.location.search = '?id=*';
+      location.search = '?id=*';
       expect(getSelectionSpecifierFromPath()).toEqual({
         storySpecifier: '*',
         viewMode: 'story',
       });
     });
     it('should parse args', () => {
-      document.location.search = '?id=story--id&args=obj.key:val';
+      location.search = '?id=story--id&args=obj.key:val';
       expect(getSelectionSpecifierFromPath()).toEqual({
         storySpecifier: 'story--id',
         viewMode: 'story',
@@ -123,7 +115,7 @@ describe('UrlStore', () => {
       });
     });
     it('should handle singleStory param', () => {
-      document.location.search = '?id=abc&singleStory=true';
+      location.search = '?id=abc&singleStory=true';
       expect(getSelectionSpecifierFromPath()).toEqual({
         storySpecifier: 'abc',
         viewMode: 'story',

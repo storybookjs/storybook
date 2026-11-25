@@ -1,7 +1,5 @@
 import type { API_UnknownEntries, API_Version, API_Versions } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
-
 import memoize from 'memoizerific';
 // Per-function imports keep the rest of semver out of the browser bundle.
 import diff from 'semver/functions/diff.js';
@@ -14,8 +12,6 @@ import prerelease from 'semver/functions/prerelease.js';
 import type { ModuleFn } from '../lib/types.tsx';
 import { version as currentVersion } from '../version.ts';
 
-const { VERSIONCHECK } = global;
-
 export interface SubState {
   versions: API_Versions & API_UnknownEntries;
   lastVersionCheck: number;
@@ -24,7 +20,7 @@ export interface SubState {
 
 const getVersionCheckData = memoize(1)((): API_Versions => {
   try {
-    return { ...(JSON.parse(VERSIONCHECK).data || {}) };
+    return { ...(JSON.parse(globalThis.VERSIONCHECK).data || {}) };
   } catch (e) {
     return {};
   }
@@ -133,8 +129,8 @@ export const init: ModuleFn = ({ store }) => {
         url += asset ? cleanedSubpath : `${cleanedSubpath}/`;
       }
 
-      if (renderer && typeof global.STORYBOOK_RENDERER !== 'undefined') {
-        const rendererName = global.STORYBOOK_RENDERER as string;
+      if (renderer && typeof globalThis.STORYBOOK_RENDERER !== 'undefined') {
+        const rendererName = globalThis.STORYBOOK_RENDERER as string;
 
         if (rendererName) {
           url += `?renderer=${normalizeRendererName(rendererName)}`;

@@ -8,14 +8,10 @@ import type {
   StoryIndex,
 } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
-
 import { dedent } from 'ts-dedent';
 
 import { transformStoryIndexToStoriesHash } from '../lib/stories.ts';
 import type { ModuleFn } from '../lib/types.tsx';
-
-const { location, fetch } = global;
 
 export interface SubState {
   refs: API_Refs;
@@ -74,7 +70,7 @@ export interface SubAPI {
 }
 
 export const getSourceType = (source: string, refId?: string) => {
-  const { origin: localOrigin, pathname: localPathname } = location;
+  const { origin: localOrigin, pathname: localPathname } = globalThis.location;
   const { origin: sourceOrigin, pathname: sourcePathname } = new URL(source);
 
   const localFull = `${localOrigin + localPathname}`.replace(/\/[^\/]*$/, '');
@@ -184,7 +180,7 @@ const getRedirectedRefUrl = (refUrl: string, indexResponseUrl: string | undefine
   }
   const served = new URL(indexResponseUrl);
   if (
-    served.origin === new URL(refUrl, location.href).origin ||
+    served.origin === new URL(refUrl, globalThis.location.href).origin ||
     !served.pathname.endsWith('/index.json')
   ) {
     return refUrl;
@@ -258,7 +254,7 @@ export const init: ModuleFn<SubAPI, SubState> = (
       }
 
       const [indexRequest, storiesRequest] = ['index.json', 'stories.json'].map((file) =>
-        fetch(`${urlParseResult.url}/${file}${query}`, {
+        globalThis.fetch(`${urlParseResult.url}/${file}${query}`, {
           headers,
           credentials,
         })
@@ -268,17 +264,19 @@ export const init: ModuleFn<SubAPI, SubState> = (
         handleRequest(storiesRequest),
       ]);
       const refUrl =
-        global.CONFIG_TYPE === 'DEVELOPMENT' && indexResult.storyIndex
+        globalThis.CONFIG_TYPE === 'DEVELOPMENT' && indexResult.storyIndex
           ? getRedirectedRefUrl(urlParseResult.url, (await indexRequest).url)
           : urlParseResult.url;
 
       if (!indexResult.indexError || !storiesResult.indexError) {
         const metadata = await handleRequest(
-          fetch(`${urlParseResult.url}/metadata.json${query}`, {
-            headers,
-            credentials,
-            cache: 'no-cache',
-          }).catch(() => false)
+          globalThis
+            .fetch(`${urlParseResult.url}/metadata.json${query}`, {
+              headers,
+              credentials,
+              cache: 'no-cache',
+            })
+            .catch(() => false)
         );
 
         Object.assign(loadedData, {
@@ -376,7 +374,7 @@ export const init: ModuleFn<SubAPI, SubState> = (
     },
   };
 
-  const refs: API_Refs = (!singleStory && global.REFS) || {};
+  const refs: API_Refs = (!singleStory && globalThis.REFS) || {};
 
   const initialState: SubState['refs'] = refs;
 

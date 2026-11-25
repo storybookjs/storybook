@@ -1,9 +1,3 @@
-import { global } from '@storybook/global';
-
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-const { LOGLEVEL } = global;
-
 type LogLevel = 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'silent';
 
 const levels: Record<LogLevel, number> = {
@@ -15,39 +9,39 @@ const levels: Record<LogLevel, number> = {
   silent: 10,
 };
 
-const currentLogLevelString: LogLevel = LOGLEVEL as LogLevel;
-const currentLogLevelNumber: number = levels[currentLogLevelString] || levels.info;
+const getCurrentLogLevelNumber = (): number =>
+  levels[globalThis.LOGLEVEL as LogLevel] || levels.info;
 
 type LoggingFn = (message: any, ...args: any[]) => void;
 
 export const logger = {
   trace: (message: any, ...rest: any[]): void => {
-    if (currentLogLevelNumber <= levels.trace) {
+    if (getCurrentLogLevelNumber() <= levels.trace) {
       console.trace(message, ...rest);
     }
   },
   debug: (message: any, ...rest: any[]): void => {
-    if (currentLogLevelNumber <= levels.debug) {
+    if (getCurrentLogLevelNumber() <= levels.debug) {
       console.debug(message, ...rest);
     }
   },
   info: (message: any, ...rest: any[]): void => {
-    if (currentLogLevelNumber <= levels.info) {
+    if (getCurrentLogLevelNumber() <= levels.info) {
       console.info(message, ...rest);
     }
   },
   warn: (message: any, ...rest: any[]): void => {
-    if (currentLogLevelNumber <= levels.warn) {
+    if (getCurrentLogLevelNumber() <= levels.warn) {
       console.warn(message, ...rest);
     }
   },
   error: (message: any, ...rest: any[]): void => {
-    if (currentLogLevelNumber <= levels.error) {
+    if (getCurrentLogLevelNumber() <= levels.error) {
       console.error(message, ...rest);
     }
   },
   log: (message: any, ...rest: any[]): void => {
-    if (currentLogLevelNumber < levels.silent) {
+    if (getCurrentLogLevelNumber() < levels.silent) {
       console.log(message, ...rest);
     }
   },

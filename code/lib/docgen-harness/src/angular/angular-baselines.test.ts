@@ -3,16 +3,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
-
-// compodoc.ts destructures FEATURES from the global once at first import, so the stub
-// must exist before that import evaluates; only property mutation on this reference is
-// live afterwards (the precedent test's direct globalThis assignment is banned).
-const flags = vi.hoisted(() => {
-  const f = { angularFilterNonInputControls: false };
-  vi.stubGlobal('FEATURES', f);
-  return f;
-});
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   extractArgTypes,
@@ -29,8 +20,11 @@ if (BASELINE_PATH !== 'legacy') {
   );
 }
 
-afterEach(() => {
-  vi.unstubAllGlobals();
+const flags = { angularFilterNonInputControls: false };
+
+beforeEach(() => {
+  flags.angularFilterNonInputControls = false;
+  vi.stubGlobal('FEATURES', flags);
 });
 
 describe('angular legacy baselines', () => {

@@ -1,45 +1,43 @@
-import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { logger } from './index.ts';
 
-vi.mock('@storybook/global', () => ({ global: { ...global, LOGLEVEL: 'debug' } }));
-
 describe('client-logger default LOGLEVEL', () => {
-  const initialConsole = { ...global.console };
   beforeEach(() => {
-    global.console.trace = vi.fn();
-    global.console.debug = vi.fn();
-    global.console.log = vi.fn();
-    global.console.info = vi.fn();
-    global.console.warn = vi.fn();
-    global.console.error = vi.fn();
-  });
-  afterAll(() => {
-    global.console = initialConsole;
+    vi.stubGlobal('LOGLEVEL', 'debug');
+    vi.stubGlobal('console', {
+      ...globalThis.console,
+      trace: vi.fn(),
+      debug: vi.fn(),
+      log: vi.fn(),
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    });
   });
   it('should have an debug method that displays the message in red, with a trace', () => {
     const message = 'debug message';
     logger.debug(message);
-    expect(global.console.debug).toHaveBeenCalledWith(message);
+    expect(globalThis.console.debug).toHaveBeenCalledWith(message);
   });
   it('should have an log method that displays the message in red, with a trace', () => {
     const message = 'log message';
     logger.log(message);
-    expect(global.console.log).toHaveBeenCalledWith(message);
+    expect(globalThis.console.log).toHaveBeenCalledWith(message);
   });
   it('should have an info method that displays the message', () => {
     const message = 'information';
     logger.info(message);
-    expect(global.console.info).toHaveBeenCalledWith(message);
+    expect(globalThis.console.info).toHaveBeenCalledWith(message);
   });
   it('should have a warning method that displays the message in yellow, with a trace', () => {
     const message = 'warning message';
     logger.warn(message);
-    expect(global.console.warn).toHaveBeenCalledWith(message);
+    expect(globalThis.console.warn).toHaveBeenCalledWith(message);
   });
   it('should have an error method that displays the message in red, with a trace', () => {
     const message = 'error message';
     logger.error(message);
-    expect(global.console.error).toHaveBeenCalledWith(message);
+    expect(globalThis.console.error).toHaveBeenCalledWith(message);
   });
 });

@@ -1,14 +1,13 @@
 import type { RenderContext } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
-
 import { simulateDOMContentLoaded, simulatePageLoad } from 'storybook/preview-api';
 import { dedent } from 'ts-dedent';
 
 import type { ArgTypes, Args, StoryFn } from './public-types.ts';
 import type { FetchStoryHtmlType, ServerRenderer } from './types.ts';
 
-const { fetch, Node } = global;
+// Read once at load, so a fetch mock in user code can't intercept the story request.
+const { fetch } = globalThis;
 
 const defaultFetchStoryHtml: FetchStoryHtmlType = async (url, path, params, storyContext) => {
   const fetchUrl = new URL(`${url}/${path}`);
@@ -80,7 +79,7 @@ export async function renderToCanvas(
   if (typeof element === 'string') {
     canvasElement.innerHTML = element;
     simulatePageLoad(canvasElement);
-  } else if (element instanceof Node) {
+  } else if (element instanceof globalThis.Node) {
     // Don't re-mount the element if it didn't change and neither did the story
     if (canvasElement.firstChild === element && forceRemount === false) {
       return;

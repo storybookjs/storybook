@@ -50,7 +50,7 @@ export type CurrentRun = {
   a11yReports: Record<StoryId, A11yRunReport[]>;
   reports: Record<StoryId, Report[]>;
   totalTestCount: number | undefined;
-  // The story files the file filters of the run matched
+  // How many story files the file filters of the run matched
   matchedFileCount: number | undefined;
   storyIds: StoryId[] | undefined;
   startedAt: number | undefined;

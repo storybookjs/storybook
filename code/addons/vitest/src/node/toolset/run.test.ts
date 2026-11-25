@@ -429,7 +429,7 @@ describe('runStoryTests', () => {
       });
     });
 
-    it('still checks the ref and the story ids when no story file matches', async () => {
+    it('fails on an unknown ref or story id before Vitest is asked for the story files', async () => {
       const { channel, requested } = respondingChannel();
       const unknownRef = new Error('`nope` is not a known git ref.');
 

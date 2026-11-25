@@ -311,13 +311,12 @@ export async function runStoryTests({
         return blockedRunResult(blocked);
       }
       if (selection?.files) {
-        const { files: matched } = selection;
-        matched.storyFileCount = result.matchedFileCount ?? 0;
+        selection.files.storyFileCount = result.matchedFileCount ?? 0;
         // Vitest: "No test files found, exiting with code 1", or code 0 with `--changed`, which
         // turns on `passWithNoTests`.
-        if (matched.storyFileCount === 0 && !changed) {
+        if (selection.files.storyFileCount === 0 && !changed) {
           notFoundMessages.push(
-            `No story files found for ${matched.filters.map((file) => `\`${displayPath(file)}\``).join(', ')}.`
+            `No story files found for ${selection.files.filters.map((file) => `\`${displayPath(file)}\``).join(', ')}.`
           );
         }
         if (result.storyIds?.length === 0) {

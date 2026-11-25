@@ -982,4 +982,19 @@ describe('TestManager', () => {
     expect(createVitest).not.toHaveBeenCalled();
     expect(vitest.enableCoverage).not.toHaveBeenCalled();
   });
+
+  it('should not enable coverage for a run of files', async () => {
+    const testManager = await startWithIndex();
+    mockStore.setState((s) => ({
+      ...s,
+      config: { coverage: true, a11y: false },
+    }));
+
+    await testManager.handleTriggerRunEvent({
+      type: 'TRIGGER_RUN',
+      payload: { files: ['to/file'], triggeredBy: 'global' },
+    });
+
+    expect(vitest.enableCoverage).not.toHaveBeenCalled();
+  });
 });

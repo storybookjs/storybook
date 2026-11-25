@@ -77,7 +77,7 @@ const selectionSchema = v.object({
   files: v.optional(
     v.object({
       filters: v.array(v.string()),
-      /** How many story files Vitest matched. Not there when nothing ran. */
+      /** How many story files Vitest matched. Not there when the call stopped before that. */
       storyFileCount: v.optional(v.number()),
     })
   ),

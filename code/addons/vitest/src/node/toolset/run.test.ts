@@ -297,7 +297,7 @@ describe('runStoryTests', () => {
     expect(result).toEqual({
       status: 'no-stories',
       notFoundMessages: ['No story files found for `src/Button.tsx`.'],
-      selection: { files: { filters: ['src/Button.tsx'], storyFileCount: 0 } },
+      selection: { files: { filters: ['src/Button.tsx'], storyFileCount: 0 }, storyCount: 0 },
     });
   });
 
@@ -403,7 +403,7 @@ describe('runStoryTests', () => {
       expect(result).toMatchObject({
         status: 'no-stories',
         notFoundMessages: [],
-        selection: { files: { storyFileCount: 1 } },
+        selection: { files: { storyFileCount: 1 }, storyCount: 0 },
       });
     });
 

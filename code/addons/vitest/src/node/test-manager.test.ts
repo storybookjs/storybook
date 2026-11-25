@@ -699,7 +699,7 @@ describe('TestManager', () => {
     expect(mockComponentTestStatusStore.unset).not.toHaveBeenCalledWith(undefined);
   });
 
-  it('selects stories by test name inside the story files that match', async () => {
+  it('selects by test name only the requested stories inside the story files that match', async () => {
     vitest.globTestSpecifications.mockImplementation((filters?: string[]) =>
       filters ? tests.slice(0, 1) : tests
     );
@@ -714,7 +714,7 @@ describe('TestManager', () => {
       },
     });
 
-    expect(setTestNamePattern).toHaveBeenCalledWith(new RegExp('(?:(?:^One$)|(?:^Two B$))'));
+    expect(setTestNamePattern).toHaveBeenCalledWith(new RegExp('^One$'));
     expect(vitest.runTestSpecifications).toHaveBeenCalledWith(tests.slice(0, 1), true);
     expect(mockStore.getState().currentRun.storyIds).toEqual(['story--one']);
   });

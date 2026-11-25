@@ -319,10 +319,10 @@ export async function runStoryTests({
             `No story files found for ${selection.files.filters.map((file) => `\`${displayPath(file)}\``).join(', ')}.`
           );
         }
+        selection.storyCount = result.storyIds?.length;
         if (result.storyIds?.length === 0) {
           return { status: 'no-stories', notFoundMessages, selection };
         }
-        selection.storyCount = result.storyIds?.length;
       }
       return {
         status: 'completed',

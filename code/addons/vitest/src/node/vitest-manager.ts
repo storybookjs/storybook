@@ -419,10 +419,14 @@ export class VitestManager {
 
     const allStories = this.getStories();
     const testSpecifications = await this.getStorybookTestSpecifications(runPayload.files);
+    const matchedFiles =
+      runPayload.files && new Set(testSpecifications.map(({ moduleId }) => moduleId));
 
-    const filteredStories = runPayload.storyIds
-      ? allStories.filter((story) => runPayload.storyIds?.includes(story.id))
-      : allStories;
+    const filteredStories = allStories.filter(
+      (story) =>
+        (!runPayload.storyIds || runPayload.storyIds.includes(story.id)) &&
+        (!matchedFiles || matchedFiles.has(toModuleId(story.importPath)))
+    );
 
     if (runPayload.storyIds?.length) {
       const regex = this.buildTestNamePatternForStories(filteredStories, allStories);
@@ -436,12 +440,9 @@ export class VitestManager {
       filteredStories
     );
 
-    if (runPayload.files) {
-      const matchedFiles = new Set(testSpecifications.map(({ moduleId }) => moduleId));
+    if (matchedFiles) {
       this.testManager.setRunStories(
-        filteredStories
-          .filter((story) => matchedFiles.has(toModuleId(story.importPath)))
-          .map((story) => story.id),
+        filteredStories.map((story) => story.id),
         matchedFiles.size
       );
     }

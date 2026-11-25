@@ -166,6 +166,7 @@ export interface RenderTracker {
   storyId?: string;
   renderId: number;
   hasRendered?: boolean;
+  phase?: RenderPhase;
 }
 
 export const trackRenderPhase = (
@@ -191,12 +192,17 @@ export const trackRenderPhase = (
       ? Math.max(tracker.renderId, event.renderId || 0)
       : event.renderId || 0;
   const isCurrentRender = renderId === event.renderId;
-  const hasRendered =
-    tracker.storyId === event.storyId && tracker.renderId === renderId && !!tracker.hasRendered;
+  const isSameRender = tracker.storyId === event.storyId && tracker.renderId === renderId;
+  const hasRendered = isSameRender && !!tracker.hasRendered;
   const isRendering = isCurrentRender && event.newPhase === 'rendering';
 
   return {
-    tracker: { storyId: event.storyId, renderId, hasRendered: hasRendered || isRendering },
+    tracker: {
+      storyId: event.storyId,
+      renderId,
+      hasRendered: hasRendered || isRendering,
+      phase: isCurrentRender ? event.newPhase : isSameRender ? tracker.phase : undefined,
+    },
     isCurrentRender,
     // A re-render or a remount renders the same story render again, unlike a story switch or HMR.
     isRerender: isRendering && hasRendered,
@@ -253,11 +259,17 @@ export const listenForPlayResults = (
       }
     }
   );
+  // A play's errors directly follow its render's 'errored' phase. Errors from a hidden composed
+  // preview or a cancelled play arrive outside it and belong to another render.
   api.on(PLAY_FUNCTION_THREW_EXCEPTION, (caughtException: PanelState['caughtException']) => {
-    panelStore.setState((state) => ({ ...state, caughtException, hasException: true }));
+    if (renderTracker.current.phase === 'errored') {
+      panelStore.setState((state) => ({ ...state, caughtException, hasException: true }));
+    }
   });
   api.on(UNHANDLED_ERRORS_WHILE_PLAYING, (unhandledErrors: PanelState['unhandledErrors']) => {
-    panelStore.setState((state) => ({ ...state, unhandledErrors, hasException: true }));
+    if (renderTracker.current.phase === 'errored') {
+      panelStore.setState((state) => ({ ...state, unhandledErrors, hasException: true }));
+    }
   });
   api.on(FORCE_REMOUNT, ({ storyId }: { storyId: string }) => {
     // A remount keeps the last play's errors until it plays, which a failed render skips.

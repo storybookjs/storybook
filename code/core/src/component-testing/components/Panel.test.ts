@@ -5,6 +5,7 @@ import {
   FORCE_REMOUNT,
   PLAY_FUNCTION_THREW_EXCEPTION,
   STORY_RENDER_PHASE_CHANGED,
+  UNHANDLED_ERRORS_WHILE_PLAYING,
 } from 'storybook/internal/core-events';
 
 import { type Call, CallStates, type LogItem, type RenderPhase } from '../../instrumenter/types.ts';
@@ -805,15 +806,16 @@ describe('Panel', () => {
         getUrlState: () => ({ storyId }),
       });
       panelStore.setState(INITIAL_PANEL_STATE);
-      return (type: string, payload: unknown) => handlers[type]?.(payload);
+      const emit = (type: string, payload: unknown) => handlers[type]?.(payload);
+      const phases = (newPhases: RenderPhase[], phaseStoryId = storyId) =>
+        newPhases.forEach((newPhase) =>
+          emit(STORY_RENDER_PHASE_CHANGED, { storyId: phaseStoryId, newPhase, renderId: 1 })
+        );
+      return { emit, phases };
     };
 
     it('keeps a failure recorded without a mounted panel through the next re-render', () => {
-      const emit = listen('closed--story');
-      const phases = (newPhases: RenderPhase[]) =>
-        newPhases.forEach((newPhase) =>
-          emit(STORY_RENDER_PHASE_CHANGED, { storyId: 'closed--story', newPhase, renderId: 1 })
-        );
+      const { emit, phases } = listen('closed--story');
 
       phases(['preparing', 'loading', 'rendering', 'playing', 'errored']);
       emit(PLAY_FUNCTION_THREW_EXCEPTION, error);
@@ -822,9 +824,26 @@ describe('Panel', () => {
       expect(panelStore.getState()).toMatchObject({ status: 'errored', caughtException: error });
     });
 
-    it('stores play errors without a mounted panel and drops them when the story remounts', () => {
-      const emit = listen('story--id');
+    it("ignores play errors that arrive outside the current render's errored phase", () => {
+      const { emit, phases } = listen('shown--story');
 
+      phases(['preparing', 'loading', 'rendering', 'playing', 'played', 'completing', 'completed']);
+      phases(['errored'], 'hidden-ref--story');
+      emit(PLAY_FUNCTION_THREW_EXCEPTION, error);
+      emit(UNHANDLED_ERRORS_WHILE_PLAYING, [error]);
+      phases(['loading', 'rendering', 'completing', 'completed']);
+
+      expect(panelStore.getState()).toMatchObject({
+        status: 'completed',
+        caughtException: undefined,
+        unhandledErrors: undefined,
+      });
+    });
+
+    it('stores play errors without a mounted panel and drops them when the story remounts', () => {
+      const { emit, phases } = listen('story--id');
+
+      phases(['preparing', 'loading', 'rendering', 'playing', 'errored']);
       emit(PLAY_FUNCTION_THREW_EXCEPTION, error);
       expect(panelStore.getState()).toMatchObject({ caughtException: error, hasException: true });
 

@@ -22,10 +22,18 @@ import {
 
 import type { ClassifiedArg } from '../classify-args/classify-args.ts';
 import { isFunctionExpression, printValue, snippetValueOf } from '../../shared/classify-value.ts';
-import { readForwardableSetup, type ForwardableSetup } from './forward-setup.ts';
+import {
+  addBindingNames,
+  declaredNamesIn,
+  readForwardableSetup,
+  type ForwardableSetup,
+} from './forward-setup.ts';
 import {
   attributeHole,
   createRenderContext,
+  shadowedDeclarations,
+  reserveBindings,
+  shadowConstants,
   hoistArgValue,
   hoistModelRef,
   importStatementForBinding,
@@ -257,6 +265,11 @@ export function transformTemplate(
     return undefined;
   }
 
+  // The render uses a constant's name; the caller prints again without that constant.
+  if (shadowedDeclarations(state.ctx).length > 0) {
+    return undefined;
+  }
+
   return {
     snippet: renderPreparedSfcSnippet({
       templateCode: applyEdits(template, state.edits),
@@ -267,8 +280,10 @@ export function transformTemplate(
 
 /** Reserve setup names and route forwarded imports before any hoist can collide with them. */
 function seedForwardedSetup(setup: ForwardableSetup, state: TransformState): boolean {
-  for (const name of setup.bindings) {
-    state.ctx.bindings.add(name);
+  reserveBindings(setup.bindings, state.ctx);
+  // Nested scopes in forwarded statements could capture a printed constant.
+  for (const statement of setup.statements) {
+    shadowConstants(statement.declares, state.ctx);
   }
   for (const { localName, binding } of setup.imports) {
     if (binding.importName === localName) {
@@ -848,6 +863,12 @@ function substituteArgsExpression(
 
 function collectTemplateScopeBindings(nodes: TemplateChildNode[], ctx: RenderContext): boolean {
   for (const node of nodes) {
+    if (
+      node.type === NodeTypes.INTERPOLATION &&
+      node.content.type === NodeTypes.SIMPLE_EXPRESSION
+    ) {
+      shadowExpressionNames(node.content.content, ctx);
+    }
     if (node.type !== NodeTypes.ELEMENT) {
       continue;
     }
@@ -860,6 +881,9 @@ function collectTemplateScopeBindings(nodes: TemplateChildNode[], ctx: RenderCon
       const pattern = bindingPatternForDirective(prop);
       if (pattern && !addBindingPattern(pattern, ctx)) {
         return false;
+      }
+      if (prop.exp?.type === NodeTypes.SIMPLE_EXPRESSION) {
+        shadowExpressionNames(prop.exp.content, ctx);
       }
     }
 
@@ -886,48 +910,30 @@ function bindingPatternForDirective(directive: DirectiveNode): string | undefine
   return directive.name === 'slot' ? expression : undefined;
 }
 
+function shadowExpressionNames(code: string, ctx: RenderContext): void {
+  const expression = parseTemplateExpression(code);
+  if (expression) {
+    shadowConstants(declaredNamesIn(expression), ctx);
+  }
+}
+
 function addBindingPattern(pattern: string, ctx: RenderContext): boolean {
   const ast = parseTemplateExpression(`${arrowParamsForPattern(pattern)} => 0`);
   if (ast?.type !== 'ArrowFunctionExpression') {
     return false;
   }
 
+  const names = new Set<string>();
   for (const param of ast.params) {
-    addBindingNames(param, ctx.bindings);
+    addBindingNames(param, names);
   }
+  reserveBindings(names, ctx);
 
   return true;
 }
 
-// ({ a, b: [c] }, ...rest) -> a, c, rest
-function addBindingNames(pattern: Node, into: Set<string>): void {
-  switch (pattern.type) {
-    case 'Identifier':
-      into.add(pattern.name);
-      break;
-    case 'AssignmentPattern':
-      addBindingNames(pattern.left, into);
-      break;
-    case 'RestElement':
-      addBindingNames(pattern.argument, into);
-      break;
-    case 'ObjectPattern':
-      for (const property of pattern.properties) {
-        addBindingNames(property.type === 'RestElement' ? property.argument : property.value, into);
-      }
-      break;
-    case 'ArrayPattern':
-      for (const element of pattern.elements) {
-        if (element) {
-          addBindingNames(element, into);
-        }
-      }
-      break;
-  }
-}
-
 // Offsets index into `code`; `undefined` unless `code` is exactly one expression.
-function parseTemplateExpression(code: string): E.Expression | undefined {
+export function parseTemplateExpression(code: string): E.Expression | undefined {
   let program: E.Program;
   try {
     ({ program } = parseModule(`(${code}\n)`));

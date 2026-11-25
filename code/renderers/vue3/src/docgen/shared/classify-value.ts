@@ -72,7 +72,7 @@ const UNDEFINED_IDENTIFIER = 'undefined';
 const NO_LOCALS: ReadonlySet<string> = new Set();
 
 /** Classifies one CSF arg value into the single plan both the classifier and the renderer act on. */
-export function classifyValue(node: Node): ValuePlan {
+export function classifyValue(node: Node, declared: ReadonlySet<string> = NO_LOCALS): ValuePlan {
   const value = unwrapExpression(node);
 
   if (isUndefinedIdentifier(value)) {
@@ -88,7 +88,7 @@ export function classifyValue(node: Node): ValuePlan {
     return { kind: 'inline' };
   }
 
-  return isResolvable(value) ? { kind: 'hoist' } : { kind: 'unrepresentable' };
+  return isResolvable(value, declared) ? { kind: 'hoist' } : { kind: 'unrepresentable' };
 }
 
 // An arg value as the snippet prints it: a boolean, string or number literal, or its code.
@@ -159,17 +159,21 @@ function isUndefinedIdentifier(node: Node): boolean {
 
 /**
  * Whether a function arg can be hoisted without dangling references: every binding its body uses is
- * a parameter, a local declaration, or a JavaScript global.
+ * a parameter, a local declaration, a JavaScript global, or one of the `declared` names the snippet
+ * declares itself.
  *
  * @example `(value) => value.toUpperCase()` → true; `(value) => formatHelper(value)` → false
  */
-export function isSelfContainedFunction(node: Node): boolean {
+export function isSelfContainedFunction(
+  node: Node,
+  declared: ReadonlySet<string> = NO_LOCALS
+): boolean {
   const fn = unwrapExpression(node);
   if (fn.type !== 'ArrowFunctionExpression' && fn.type !== 'FunctionExpression') {
     return false;
   }
 
-  const locals = new Set<string>();
+  const locals = new Set<string>(declared);
   if (!fn.params.every((param) => collectPatternNames(param, locals))) {
     return false;
   }

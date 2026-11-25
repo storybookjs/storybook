@@ -167,6 +167,28 @@ describe('classifyArgs', () => {
     });
   });
 
+  it('hoists a value that reads a constant the snippet declares', () => {
+    expect(
+      classify(
+        `{
+          count: lines.length,
+          html: \`<pre>\${lines.join('')}</pre>\`,
+          formatter: (value) => lines.indexOf(value),
+          other: rows.length,
+        }`,
+        { props: ['formatter'] },
+        ['lines']
+      )
+    ).toEqual({
+      args: [
+        'count: lines.length -> prop (hoist)',
+        "html: `<pre>${lines.join('')}</pre>` -> prop (hoist)",
+        'formatter: (value) => lines.indexOf(value) -> prop (hoist)',
+      ],
+      unresolved: ['other: rows.length'],
+    });
+  });
+
   it('reports nothing unresolved when every arg renders', () => {
     expect(classify(`{ label: 'ok' }`)).toEqual({
       args: [`label: 'ok' -> prop (inline)`],
@@ -176,13 +198,18 @@ describe('classifyArgs', () => {
 
 function classify(
   code: string,
-  { props = [], slots = [], events = [] }: DocgenFixture = {}
+  { props = [], slots = [], events = [] }: DocgenFixture = {},
+  declared: string[] = []
 ): ReadableClassifyArgsResult {
-  const result = classifyArgs(parseArgs(code), {
-    props: new Set(props),
-    slots: new Set(slots),
-    events: new Set(events),
-  });
+  const result = classifyArgs(
+    parseArgs(code),
+    {
+      props: new Set(props),
+      slots: new Set(slots),
+      events: new Set(events),
+    },
+    () => new Set(declared)
+  );
 
   return {
     args: result.args.map(formatArg),

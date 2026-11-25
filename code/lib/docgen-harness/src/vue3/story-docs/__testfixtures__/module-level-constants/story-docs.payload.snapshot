@@ -1,0 +1,112 @@
+{
+  "id": "module-level-constants",
+  "name": "ModuleLevelConstants",
+  "path": "__PATH__",
+  "stories": {
+    "forms-module-level-constants--changed-constant": {
+      "description": undefined,
+      "id": "forms-module-level-constants--changed-constant",
+      "name": "Changed Constant",
+      "snippet": "<script lang="ts" setup>
+import ModuleLevelConstants from './ModuleLevelConstants.vue';
+
+const lines = ['a', 'b', 'c'];
+
+const html = `<pre>${lines.join('\n')}</pre>`;
+
+const lines2 = lines.length;
+</script>
+
+<template>
+  <ModuleLevelConstants :html="html" :lines="lines2" />
+</template>",
+      "summary": undefined,
+      "template": "<script lang="ts" setup>
+import ModuleLevelConstants from './ModuleLevelConstants.vue';
+
+const lines = ['a', 'b', 'c'];
+
+const html = ⟦value html in="script"⟫`<pre>${lines.join('\n')}</pre>`⟧;
+
+const lines2 = ⟦value lines in="script"⟫lines.length⟧;
+</script>
+
+<template>
+  <ModuleLevelConstants :html="html" :lines="lines2"⟦props * except=["html","lines"] ~" "⟫⟧ />
+</template>",
+      "warning": "Incomplete snippet: `selectedLine: changed.length`, `changed` could not be resolved statically.",
+    },
+    "forms-module-level-constants--meta-args": {
+      "description": undefined,
+      "id": "forms-module-level-constants--meta-args",
+      "name": "Meta Args",
+      "snippet": "<script lang="ts" setup>
+import ModuleLevelConstants from './ModuleLevelConstants.vue';
+
+const lines = ['a', 'b', 'c'];
+
+const html = `<pre>${lines.join('\n')}</pre>`;
+
+const lines2 = lines.length;
+</script>
+
+<template>
+  <ModuleLevelConstants :html="html" :lines="lines2" />
+</template>",
+      "summary": undefined,
+      "template": "<script lang="ts" setup>
+import ModuleLevelConstants from './ModuleLevelConstants.vue';
+
+const lines = ['a', 'b', 'c'];
+
+const html = ⟦value html in="script"⟫`<pre>${lines.join('\n')}</pre>`⟧;
+
+const lines2 = ⟦value lines in="script"⟫lines.length⟧;
+</script>
+
+<template>
+  <ModuleLevelConstants :html="html" :lines="lines2"⟦props * except=["html","lines"] ~" "⟫⟧ />
+</template>",
+    },
+    "forms-module-level-constants--story-args": {
+      "description": undefined,
+      "id": "forms-module-level-constants--story-args",
+      "name": "Story Args",
+      "snippet": "<script lang="ts" setup>
+import ModuleLevelConstants from './ModuleLevelConstants.vue';
+
+const lines = ['a', 'b', 'c'];
+
+const heading = lines[0];
+
+const html = `<pre>${lines.join('\n')}</pre>`;
+
+const lines2 = lines.length;
+
+const selectedLine = lines.length - 1;
+</script>
+
+<template>
+  <ModuleLevelConstants :heading="heading" :html="html" :lines="lines2" :selectedLine="selectedLine" />
+</template>",
+      "summary": undefined,
+      "template": "<script lang="ts" setup>
+import ModuleLevelConstants from './ModuleLevelConstants.vue';
+
+const lines = ['a', 'b', 'c'];
+
+const heading = ⟦value heading in="script"⟫lines[0]⟧;
+
+const html = ⟦value html in="script"⟫`<pre>${lines.join('\n')}</pre>`⟧;
+
+const lines2 = ⟦value lines in="script"⟫lines.length⟧;
+
+const selectedLine = ⟦value selectedLine in="script"⟫lines.length - 1⟧;
+</script>
+
+<template>
+  <ModuleLevelConstants :heading="heading" :html="html" :lines="lines2" :selectedLine="selectedLine"⟦props * except=["html","lines","selectedLine","heading"] ~" "⟫⟧ />
+</template>",
+    },
+  },
+}

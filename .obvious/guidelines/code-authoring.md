@@ -18,7 +18,8 @@ Apply them when writing or reviewing code, not just when asked.
   A step that a file write cannot stage, such as an install or the `skills` CLI, goes through `effects.runCommand` or `effects.runStep`; the package manager's install, add and dedupe methods already do.
   Do not check `effects.isDryRun()` to skip a write, or to reword or hide a message: a dry run prints what a run prints, and only the command's intro and outro say it is a dry run.
   The list at the end says what a run would change.
-  Lint rejects the `node:fs` write APIs in the CLI and the core code it calls.
+  Lint rejects the `node:fs` write APIs in `lib/cli-storybook`, `core/src/cli`, `core/src/common` and `core/src/csf-tools`.
+  An import for writes that are not project changes, such as a cache, a lock or a temporary file, disables the rule with a reason, for example `// eslint-disable-next-line no-restricted-imports -- cache files, not project files`.
 - **Put a story's human-facing description in JSDoc above the `meta` const**, not in a `description` parameter.
 - **Keep historical telemetry string names stable** when renaming tools or APIs that emit telemetry, unless the field is brand-new and has no existing data.
 - **Use git worktrees for parallel or experimental work.** Keep the primary workspace clean and base feature branches on `origin/next`, not a dirty local `next`.

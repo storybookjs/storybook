@@ -1,6 +1,8 @@
 /** This file is a modified copy from https://git.nfp.is/TheThing/fs-cache-fast */
 import { createHash, randomBytes } from 'node:crypto';
+// eslint-disable-next-line no-restricted-imports -- cache files, not project files
 import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+// eslint-disable-next-line no-restricted-imports -- cache files, not project files
 import { mkdir, readFile, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';

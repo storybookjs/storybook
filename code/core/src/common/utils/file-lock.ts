@@ -9,7 +9,9 @@
 import { logger } from 'storybook/internal/node-logger';
 
 import { randomUUID } from 'node:crypto';
+// eslint-disable-next-line no-restricted-imports -- lock files, not project files
 import { readFileSync, rmSync } from 'node:fs';
+// eslint-disable-next-line no-restricted-imports -- lock files, not project files
 import { mkdir, open, readFile, rm, stat, utimes } from 'node:fs/promises';
 import { dirname } from 'node:path';
 

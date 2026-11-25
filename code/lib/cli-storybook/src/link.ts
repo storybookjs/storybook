@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-restricted-imports -- writes into the reproduction it creates, not the project
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { basename, extname, join } from 'node:path';
 

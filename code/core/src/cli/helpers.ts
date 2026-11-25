@@ -1,4 +1,6 @@
+// eslint-disable-next-line no-restricted-imports -- `storybook init` copies its templates with these, and has no dry run
 import { cpSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
+// eslint-disable-next-line no-restricted-imports -- `storybook init` copies its templates with these, and has no dry run
 import { cp, readFile, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 

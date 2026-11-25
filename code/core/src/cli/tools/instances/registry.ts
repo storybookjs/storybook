@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-restricted-imports -- the instance registry is not a project file
 import * as fs from 'node:fs/promises';
 import { join } from 'node:path';
 

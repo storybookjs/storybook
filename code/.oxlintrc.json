@@ -106,39 +106,37 @@
       }
     },
     {
-      "files": ["core/src/cli/skills/content/**"],
-      "rules": {
-        "no-restricted-imports": [
-          "error",
-          {
-            "patterns": [
-              {
-                "group": ["**/core-server/**"],
-                "message": "`cli/skills/content` is the pure `storybook/internal/skills` entry; probing and anything server-side belongs in `cli/skills/` outside `content/`."
-              }
-            ]
-          }
-        ]
-      }
-    },
-    {
       "files": [
         "lib/cli-storybook/src/**",
-        "core/src/common/js-package-manager/**",
-        "core/src/csf-tools/**",
-        "core/src/cli/agentInstructions.ts",
-        "core/src/cli/installSkills.ts",
-        "core/src/cli/eslintPlugin.ts",
-        "core/src/cli/angular/**",
-        "core/src/common/utils/remove.ts",
-        "core/src/common/utils/setup-addon-in-config.ts",
-        "core/src/common/utils/sync-main-preview-addons.ts"
+        "core/src/cli/**",
+        "core/src/common/**",
+        "core/src/csf-tools/**"
       ],
       "rules": {
         "no-restricted-imports": [
           "error",
           {
             "paths": [
+              {
+                "name": "react-aria",
+                "message": "Don't import from the react-aria root, but use the react-aria/HookOrComponent entrypoints which are optimised for tree-shaking",
+                "allowTypeImports": false
+              },
+              {
+                "name": "react-stately",
+                "message": "Don't import from the react-stately root, but use the react-stately/HookOrComponent entrypoints which are optimised for tree-shaking",
+                "allowTypeImports": false
+              },
+              {
+                "name": "react-aria-components",
+                "message": "Don't import from react-aria-components root, but use the react-aria-components/ComponentX entrypoints which are optimised for tree-shaking. See https://github.com/storybookjs/storybook/pull/32594",
+                "allowTypeImports": true
+              },
+              {
+                "name": "es-toolkit",
+                "message": "Don't import from es-toolkit root, but use the sub-exports like es-toolkit/array entrypoints instead which are optimised for tree-shaking.",
+                "allowTypeImports": true
+              },
               {
                 "name": "node:fs",
                 "importNames": [
@@ -222,17 +220,55 @@
     },
     {
       "files": [
-        "lib/cli-storybook/src/**/*.test.ts",
-        "lib/cli-storybook/src/sandbox.ts",
-        "lib/cli-storybook/src/link.ts",
-        "core/src/common/js-package-manager/**/*.test.ts",
-        "core/src/csf-tools/**/*.test.ts",
+        "**/*.test.ts",
+        "**/*.test.tsx",
         "core/src/csf-tools/__corpus__/**",
-        "core/src/cli/**/*.test.ts",
-        "core/src/common/utils/*.test.ts"
+        "core/src/common/utils/effects.ts"
       ],
       "rules": {
-        "no-restricted-imports": "off"
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "react-aria",
+                "message": "Don't import from the react-aria root, but use the react-aria/HookOrComponent entrypoints which are optimised for tree-shaking",
+                "allowTypeImports": false
+              },
+              {
+                "name": "react-stately",
+                "message": "Don't import from the react-stately root, but use the react-stately/HookOrComponent entrypoints which are optimised for tree-shaking",
+                "allowTypeImports": false
+              },
+              {
+                "name": "react-aria-components",
+                "message": "Don't import from react-aria-components root, but use the react-aria-components/ComponentX entrypoints which are optimised for tree-shaking. See https://github.com/storybookjs/storybook/pull/32594",
+                "allowTypeImports": true
+              },
+              {
+                "name": "es-toolkit",
+                "message": "Don't import from es-toolkit root, but use the sub-exports like es-toolkit/array entrypoints instead which are optimised for tree-shaking.",
+                "allowTypeImports": true
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["core/src/cli/skills/content/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["**/core-server/**"],
+                "message": "`cli/skills/content` is the pure `storybook/internal/skills` entry; probing and anything server-side belongs in `cli/skills/` outside `content/`."
+              }
+            ]
+          }
+        ]
       }
     },
     {

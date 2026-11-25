@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-restricted-imports -- user settings, not project files
 import { access, cp } from 'node:fs/promises';
 import { join } from 'node:path';
 

@@ -590,8 +590,8 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
     }));
 
     // The doctor checks the installed dependencies, so a dry run, which installs nothing, names it.
-    await effects.runStep(
-      `run ${CLI_COLORS.cta('npx storybook doctor')} to verify the upgrade went well`,
+    await effects.runCommand(
+      'npx storybook doctor',
       async () => {
         logger.step('Checking the health of your project(s)..');
         doctorResults = await runMultiProjectDoctor(doctorProjects);
@@ -599,7 +599,8 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
         if (hasIssues) {
           logTracker.enableLogWriting();
         }
-      }
+      },
+      { purpose: 'to verify the upgrade went well' }
     );
 
     // Display upgrade results summary

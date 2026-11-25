@@ -83,10 +83,15 @@ describe('in a dry run', () => {
     const run = vi.fn();
 
     expect(await effects.runCommand('pnpm install', run)).toBeUndefined();
+    await effects.runCommand('npx storybook doctor', run, { purpose: 'to verify the upgrade' });
     await effects.runStep('configure @storybook/addon-vitest', run);
 
     expect(run).not.toHaveBeenCalled();
-    expect(changes()).toEqual(['run pnpm install', 'configure @storybook/addon-vitest']);
+    expect(changes()).toEqual([
+      'run pnpm install',
+      'run npx storybook doctor to verify the upgrade',
+      'configure @storybook/addon-vitest',
+    ]);
   });
 
   it('lists each file a run would create, update or delete once, by path, then the steps', async () => {

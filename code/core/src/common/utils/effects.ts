@@ -26,7 +26,7 @@ import { getProjectRelativePath } from './paths.ts';
 type JournalEntry =
   | { kind: 'file'; path: string }
   | { kind: 'step'; description: string }
-  | { kind: 'command'; command: string };
+  | { kind: 'command'; command: string; purpose?: string };
 
 interface EffectsState {
   dryRun: boolean;
@@ -146,11 +146,15 @@ export const runStep = async <T>(
   run: () => T | Promise<T>
 ): Promise<T | undefined> => record({ kind: 'step', description }, run);
 
-/** {@link runStep} for a shell command, recorded in a dry run as "run <command>". */
+/**
+ * {@link runStep} for a shell command, recorded in a dry run as "run <command>", followed by
+ * `purpose` when given, such as "to verify the upgrade went well".
+ */
 export const runCommand = async <T>(
   command: string,
-  run: () => T | Promise<T>
-): Promise<T | undefined> => record({ kind: 'command', command }, run);
+  run: () => T | Promise<T>,
+  { purpose }: { purpose?: string } = {}
+): Promise<T | undefined> => record({ kind: 'command', command, purpose }, run);
 
 const record = async <T>(entry: JournalEntry, run: () => T | Promise<T>) => {
   if (state.dryRun) {
@@ -244,7 +248,11 @@ export const describeDryRunChanges = (): string[] => {
     if (entry.kind === 'step') {
       return [entry.description];
     }
-    return entry.kind === 'command' ? [`run ${CLI_COLORS.dryRunChange(entry.command)}`] : [];
+    if (entry.kind === 'command') {
+      const purpose = entry.purpose ? ` ${entry.purpose}` : '';
+      return [`run ${CLI_COLORS.dryRunChange(entry.command)}${purpose}`];
+    }
+    return [];
   });
   return [...files.flatMap(describeFileChange), ...steps];
 };

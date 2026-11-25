@@ -258,7 +258,7 @@ export const PrimaryInAlert = {
 ```
 
 ```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 4"
-import html from 'lit';
+import { html } from 'lit';
 
 import preview from '../.storybook/preview';
 
@@ -287,7 +287,7 @@ export const PrimaryInAlert = meta.story({
 ```
 
 ```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 4"
-import html from 'lit';
+import { html } from 'lit';
 
 import preview from '../.storybook/preview';
 
@@ -317,7 +317,7 @@ export const PrimaryInAlert = meta.story({
 
 ```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 // ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
-import html from 'lit';
+import { html } from 'lit';
 
 export default {
   component: 'demo-button',
@@ -346,7 +346,7 @@ export const PrimaryInAlert = {
 ```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 // ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
-import html from 'lit';
+import { html } from 'lit';
 
 const meta: Meta = {
   component: 'demo-button',

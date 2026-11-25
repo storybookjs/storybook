@@ -4,6 +4,7 @@ import type { Options, PresetPropertyFn } from 'storybook/internal/types';
 import type { PluginOption } from 'vite';
 
 import { storybookConfigPlugin } from './plugins/storybook-config-plugin.ts';
+import { storybookDistSourcemapsPlugin } from './plugins/storybook-dist-sourcemaps-plugin.ts';
 import { storybookOptimizeDepsPlugin } from './plugins/storybook-optimize-deps-plugin.ts';
 import { storybookProjectAnnotationsPlugin } from './plugins/storybook-project-annotations-plugin.ts';
 import { storybookSanitizeEnvs } from './plugins/storybook-runtime-plugin.ts';
@@ -28,6 +29,7 @@ export async function viteCorePlugins(
     storybookProjectAnnotationsPlugin(options),
     ...storybookConfigPlugin({ configDir: options.configDir }),
     storybookOptimizeDepsPlugin(options),
+    storybookDistSourcemapsPlugin(),
     ...(await storybookSanitizeEnvs(options)),
     ...(previewConfigPath
       ? [

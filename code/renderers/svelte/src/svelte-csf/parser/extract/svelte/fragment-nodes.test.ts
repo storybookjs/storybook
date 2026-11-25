@@ -64,37 +64,58 @@ describe(extractFragmentNodes.name, () => {
     }
   });
 
-  it("takes only the HTML comment directly before a '<Story />' component", async () => {
-    const ast = getSvelteAST({
-      code: `
-        <!-- File header -->
-        <script module>
-          import { defineMeta } from "@storybook/svelte"
-          const { Story } = defineMeta();
-        </script>
-        <Story name="0" />
-        <!-- Above a snippet -->
-        {#snippet template()}<span />{/snippet}
-        <Story name="1" />
-        <div><!-- Inside an element --></div>
-        <Story name="2" />
-        <!-- Above a story -->
+  describe("the HTML comment of a '<Story />' component", () => {
+    const script = `
+      <script module>
+        import { defineMeta } from "@storybook/svelte"
+        const { Story } = defineMeta();
+      </script>`;
 
-        <Story name="3" />
-      `,
-    });
-    const moduleNodes = await extractModuleNodes({ module: ast.module });
-    const fragmentNodes = await extractFragmentNodes({
-      fragment: ast.fragment,
-      moduleNodes,
-    });
+    it.each([
+      {
+        name: 'takes the comment directly above, also with a blank line between them',
+        code: `${script}
+          <!-- Above a story -->
 
-    expect(fragmentNodes.storyComponents.map((story) => story.comment?.data)).toEqual([
-      undefined,
-      undefined,
-      undefined,
-      ' Above a story ',
-    ]);
+          <Story name="1" />`,
+        expected: ' Above a story ',
+      },
+      {
+        name: 'ignores a comment above a snippet block',
+        code: `${script}
+          <!-- Above a snippet -->
+          {#snippet template()}<span />{/snippet}
+          <Story name="1" />`,
+        expected: undefined,
+      },
+      {
+        name: 'ignores a comment inside the element before the story',
+        code: `${script}
+          <div><!-- Inside an element --></div>
+          <Story name="1" />`,
+        expected: undefined,
+      },
+      {
+        name: "ignores a file-header comment above '<script module>'",
+        code: `
+          <!-- File header -->${script}
+          <Story name="1" />`,
+        expected: undefined,
+      },
+      {
+        name: "ignores a comment above a '<style>' tag",
+        code: `${script}
+          <!-- Above the styles -->
+          <style>p { color: red; }</style><Story name="1" />`,
+        expected: undefined,
+      },
+    ])('$name', async ({ code, expected }) => {
+      const ast = getSvelteAST({ code });
+      const moduleNodes = await extractModuleNodes({ module: ast.module });
+      const fragmentNodes = await extractFragmentNodes({ fragment: ast.fragment, moduleNodes });
+
+      expect(fragmentNodes.storyComponents.map((story) => story.comment?.data)).toEqual([expected]);
+    });
   });
 
   it('extracts the snippet blocks at the root of the fragment', async () => {

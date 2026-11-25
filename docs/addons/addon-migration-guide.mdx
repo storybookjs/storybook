@@ -242,6 +242,19 @@ For backwards runtime compatibility, `storybook/theming` resolves to the same Em
 
 See the [theming imports migration reference](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#theming-imports).
 
+#### `@storybook/global` deprecated
+
+Storybook no longer uses `@storybook/global`, and Storybook 12 stops installing it. Use `globalThis` instead:
+
+```diff
+- import { global } from '@storybook/global';
+-
+- const { document } = global;
++ const { document } = globalThis;
+```
+
+In Storybook 11, an addon that imports it in preview code makes Storybook log a deprecation warning in the browser console of its users. Vitest, portable stories and manager code load the package itself and log nothing. If your addon keeps importing `@storybook/global`, list it in your `dependencies`. See the [`@storybook/global` migration reference](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storybookglobal-is-deprecated).
+
 #### `useThemeParameters` removal
 
 The `useThemeParameters` hook is removed in Storybook 11. You may instead directly access the theme from the `StoryContext` object that the hook took as a parameter:

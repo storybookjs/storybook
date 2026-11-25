@@ -10,6 +10,7 @@
   - [Legacy highlight object format removed](#legacy-highlight-object-format-removed)
   - [Tag filtering API](#tag-filtering-api)
   - [`storybook/test` is no longer a manager global](#storybooktest-is-no-longer-a-manager-global)
+  - [`@storybook/global` is deprecated](#storybookglobal-is-deprecated)
   - [Addon `TAB` registration removed](#addon-tab-registration-removed)
   - [`useThemeParameters` removed](#usethemeparameters-removed)
   - [`storybook dev` no longer opens a browser by default](#storybook-dev-no-longer-opens-a-browser-by-default)
@@ -910,6 +911,19 @@ Storybook 11 removes the experimental and undocumented tag filtering names. They
 ### `storybook/test` is no longer a manager global
 
 The manager no longer provides `storybook/test` as a global (`__STORYBOOK_TEST__`), so the browser no longer downloads its test libraries with every manager load. `storybook/test` is for stories and their tests, and no known manager addon imported it. If your addon's manager entry imports `storybook/test` anyway, it still builds, but the addon then bundles its own copy. Move that code to the addon's preview entry, or drop the import.
+
+### `@storybook/global` is deprecated
+
+`@storybook/global` is a pre-ES2020 ponyfill for `globalThis`. Storybook no longer uses it, so use `globalThis` instead:
+
+```diff
+- import { global } from '@storybook/global';
+-
+- const { document } = global;
++ const { document } = globalThis;
+```
+
+`storybook` still depends on the package, so existing imports keep working in Storybook 11. In the Storybook preview, code that imports it logs a deprecation warning in the browser console. Vitest, portable stories and manager code load the package itself and log nothing. Storybook 12 removes the dependency. If you keep importing `@storybook/global`, add it to your own `dependencies`.
 
 ### Addon `TAB` registration removed
 

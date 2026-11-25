@@ -1,6 +1,8 @@
 // Here we map the name of a module to their REFERENCE in the global scope.
 
 export const globalsNameReferenceMap = {
+  // Deprecated: only for user and addon code that still imports it. Remove in Storybook 12, together
+  // with the dependency in package.json.
   '@storybook/global': '__STORYBOOK_MODULE_GLOBAL__',
 
   'storybook/test': '__STORYBOOK_MODULE_TEST__',

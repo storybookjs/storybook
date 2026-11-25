@@ -220,7 +220,9 @@ command('upgrade')
         await upgrade(options);
         effects.logDryRunChanges();
         logger.outro(
-          options.dryRun ? 'Storybook upgrade dry run completed!' : 'Storybook upgrade completed!'
+          options.dryRun
+            ? picocolors.bold(CLI_COLORS.success('Storybook upgrade dry run completed!'))
+            : 'Storybook upgrade completed!'
         );
       }
     ).catch(handleCommandFailure(options.logfile));
@@ -252,7 +254,11 @@ command('migrate [migration]')
       );
       await migrate(migration, options);
       effects.logDryRunChanges();
-      logger.outro(options.dryRun ? 'Migration dry run completed' : 'Migration completed');
+      logger.outro(
+        options.dryRun
+          ? picocolors.bold(CLI_COLORS.success('Migration dry run completed'))
+          : 'Migration completed'
+      );
     }).catch(handleCommandFailure(options.logfile));
   });
 
@@ -301,7 +307,9 @@ command('automigrate [fixId]')
       );
       await doAutomigrate({ fixId, ...options });
       effects.logDryRunChanges();
-      logger.outro(options.dryRun ? 'Dry run completed' : 'Done');
+      logger.outro(
+        options.dryRun ? picocolors.bold(CLI_COLORS.success('Dry run completed')) : 'Done'
+      );
     }).catch(handleCommandFailure(options.logfile));
   });
 

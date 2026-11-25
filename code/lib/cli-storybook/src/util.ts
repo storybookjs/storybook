@@ -1,12 +1,10 @@
-import { readFileSync } from 'node:fs';
-import { dirname, relative, resolve, sep } from 'node:path';
+import { sep } from 'node:path';
 import { stripVTControlCharacters } from 'node:util';
 
 import type { PackageJsonWithDepsAndDevDeps } from 'storybook/internal/common';
 import {
   HandledError,
   JsPackageManager,
-  getInterpretedFile,
   getPkgPrNewPackageSpecifier,
   getProjectRoot,
   isPkgPrNewVersionSpecifier,
@@ -620,13 +618,11 @@ export const shortenPath = (path: string) => {
  * Handles multiple project selection and validation
  *
  * @param validProjects - Array of valid project results
- * @param errorProjects - Array of error project results
  * @param detectedConfigDirs - Array of detected configuration directories
  * @returns Promise resolving to selected projects or undefined
  */
 const handleMultipleProjects = async (
   validProjects: readonly CollectProjectsSuccessResult[],
-  errorProjects: readonly CollectProjectsErrorResult[],
   detectedConfigDirs: readonly string[],
   yes: boolean
 ): Promise<CollectProjectsSuccessResult[] | undefined> => {
@@ -688,60 +684,15 @@ const unreadableReason = ({ error }: CollectProjectsErrorResult) => {
     .replaceAll(process.cwd() + sep, `.${sep}`);
 };
 
-// Whether the upgrade rewrites this package.json: it lists a package that the upgrade bumps.
-const rewrittenOnUpgrade = (packageJsonPath: string) => {
-  try {
-    const { dependencies, devDependencies } = JSON.parse(readFileSync(packageJsonPath, 'utf8'));
-    return Object.keys({ ...dependencies, ...devDependencies }).some(
-      (name) => name in versions || isSatelliteAddon(name)
-    );
-  } catch {
-    return false;
-  }
-};
-
-const listUnreadable = (projects: readonly CollectProjectsErrorResult[]) =>
-  projects
-    .map(
+/** Names the projects the upgrade leaves alone, and why it could not read each one. */
+export const formatUnreadableProjects = (projects: readonly CollectProjectsErrorResult[]) =>
+  [
+    'Not upgrading these Storybook projects, because Storybook could not read them:',
+    ...projects.map(
       (project) =>
         `${logger.SYMBOLS.error} ${shortenPath(project.configDir)}: ${unreadableReason(project)}`
-    )
-    .join('\n');
-
-/**
- * Stops the upgrade before it changes anything when a project it cannot read shares a package.json
- * with the projects it would upgrade, since upgrading only those would leave that package.json
- * half upgraded. Otherwise it names the projects it leaves alone, and why.
- */
-export const checkUnreadableProjects = (
-  validProjects: readonly CollectProjectsSuccessResult[],
-  errorProjects: readonly CollectProjectsErrorResult[]
-) => {
-  const upgraded = new Set(
-    validProjects
-      .flatMap(({ packageManager }) => packageManager.packageJsonPaths)
-      .filter(rewrittenOnUpgrade)
-  );
-  // A `.storybook` folder without a main file, such as a leftover, is no Storybook to keep in step.
-  const sharing = errorProjects.filter(
-    ({ configDir }) =>
-      getInterpretedFile(resolve(configDir, 'main')) !== undefined &&
-      JsPackageManager.listAllPackageJsonPaths(dirname(resolve(configDir))).some((path) =>
-        upgraded.has(path)
-      )
-  );
-  logTracker.enableLogWriting();
-  if (sharing.length > 0) {
-    const others = validProjects.map(({ configDir }) => relative(process.cwd(), configDir));
-    logger.error(
-      `Storybook could not read these projects, which share a package.json with the others, so it changed nothing:\n${listUnreadable(sharing)}\nFix them and run the upgrade again. To upgrade only the others, which still upgrades the shared package.json and leaves these projects behind: npx storybook@${versions.storybook} upgrade --config-dir ${others.join(' ')}`
-    );
-    throw new HandledError('A project that shares a package.json could not be read');
-  }
-  logger.warn(
-    `Not upgrading these Storybook projects, because Storybook could not read them:\n${listUnreadable(errorProjects)}`
-  );
-};
+    ),
+  ].join('\n');
 
 /**
  * Gets and validates Storybook projects for upgrade
@@ -808,7 +759,9 @@ export const getProjects = async (
     );
 
     if (validProjects.length > 0 && errorProjects.length > 0) {
-      checkUnreadableProjects(validProjects, errorProjects);
+      // The debug log has the full errors.
+      logTracker.enableLogWriting();
+      logger.warn(formatUnreadableProjects(errorProjects));
     }
 
     // Handle single project case
@@ -837,7 +790,6 @@ export const getProjects = async (
     // Handle multiple projects
     const selectedProjects = await handleMultipleProjects(
       validProjects,
-      errorProjects,
       detectedConfigDirs,
       options.yes
     );

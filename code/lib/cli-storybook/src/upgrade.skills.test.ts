@@ -267,7 +267,7 @@ describe('upgrade: refreshing the skills', () => {
     expect(installSkills).not.toHaveBeenCalled();
   });
 
-  it('refreshes on a dry run too, whose effects record the skills CLI instead of running it', async () => {
+  it('refreshes the skills in a dry run', async () => {
     effects.setDryRun(true);
     onTestFinished(() => effects.setDryRun(false));
 
@@ -279,7 +279,7 @@ describe('upgrade: refreshing the skills', () => {
 
 describe('upgrade: --dry-run', () => {
   it.each([{ dryRun: true }, { dryRun: false }])(
-    'asks the package manager to install and dedupe in a monorepo when dryRun is $dryRun, which a dry run records instead',
+    'asks the package manager to install and dedupe a monorepo when dryRun is $dryRun',
     async ({ dryRun }) => {
       effects.setDryRun(dryRun);
       onTestFinished(() => effects.setDryRun(false));

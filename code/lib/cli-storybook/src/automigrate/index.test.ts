@@ -1,11 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { type JsPackageManager, type PackageJson, effects } from 'storybook/internal/common';
-import { logger, prompt } from 'storybook/internal/node-logger';
+import { prompt } from 'storybook/internal/node-logger';
 
 import * as mainConfigFile from './helpers/mainConfigFile.ts';
-import { automigrate, doAutomigrate, runFixes } from './index.ts';
-import type { Fix } from './types.ts';
+import { doAutomigrate, runFixes } from './index.ts';
+import { type Fix, FixStatus } from './types.ts';
 
 const check1 = vi.fn();
 const run1 = vi.fn();
@@ -220,14 +220,14 @@ describe('a dry run', () => {
     vi.clearAllMocks();
   });
 
-  it('runs a fix as a run does, since its effects are only staged', async () => {
+  it('runs each selected fix and reports its result', async () => {
     const { fixResults } = await runFixWrapper({ storybookVersion: '7.0.0' });
 
-    expect(fixResults).toEqual({ 'fix-1': 'succeeded' });
     expect(run1).toHaveBeenCalled();
+    expect(fixResults).toEqual({ 'fix-1': FixStatus.SUCCEEDED });
   });
 
-  it('lists a notification without asking, instead of saying that no migration applies', async () => {
+  it('lists a notification as a manual migration without prompting', async () => {
     const notification: Fix = {
       id: 'notice',
       promptType: 'notification',
@@ -235,19 +235,19 @@ describe('a dry run', () => {
       prompt: () => 'Read this',
     };
 
-    await automigrate({
+    const { fixResults, fixSummary } = await runFixes({
       ...common,
       fixes: [notification],
       yes: false,
       storybookVersion: '7.0.0',
-      isLatest: false,
     });
 
     expect(prompt.confirm).not.toHaveBeenCalled();
-    expect(logger.warn).not.toHaveBeenCalledWith('No migrations were applicable to your project');
+    expect(fixResults).toEqual({ notice: FixStatus.MANUAL_SUCCEEDED });
+    expect(fixSummary.manual).toEqual(['notice']);
   });
 
-  it('fails where a run would, and records the doctor instead of running it', async () => {
+  it('fails when a fix fails, and lists the doctor among the steps of a run', async () => {
     run1.mockImplementationOnce(() => {
       throw new Error('cannot migrate');
     });

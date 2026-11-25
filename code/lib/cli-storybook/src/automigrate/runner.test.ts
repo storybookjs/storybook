@@ -362,7 +362,7 @@ describe('a dry run', () => {
     effects.setDryRun(false);
   });
 
-  it('takes the path of a single-project run, and only stages its edits', async () => {
+  it('reports the result of each fix in a project, and stages its edits', async () => {
     const { fixResults } = await runFixes({ ...project, fixes: [failingSwap, healthy], yes: true });
 
     expect(fixResults).toEqual({ swap: 'failed', healthy: 'succeeded' });
@@ -372,7 +372,7 @@ describe('a dry run', () => {
     );
   });
 
-  it('takes the path of a multi-project run, and only stages its edits', async () => {
+  it('reports the result of each fix across projects, and stages its edits', async () => {
     const detected = await collectAutomigrationsAcrossProjects({
       fixes: [failingSwap, healthy],
       projects: [{ ...project, beforeVersion: '10.0.0' }],

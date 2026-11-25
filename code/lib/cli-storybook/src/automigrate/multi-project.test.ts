@@ -360,7 +360,7 @@ describe('multi-project automigrations', () => {
       expect(result.map(({ fix }) => fix.id)).toEqual(['default-fix', 'requested-fix']);
     });
 
-    it('asks which automigrations to run in a dry run too, as a run does', async () => {
+    it('asks which automigrations to run in a dry run', async () => {
       const { prompt } = await import('storybook/internal/node-logger');
       vi.mocked(prompt.multiselect).mockResolvedValue(['fix1']);
       effects.setDryRun(true);

@@ -30,7 +30,9 @@ const createFixture = (files: Record<string, string>) => {
 
 afterEach(() => {
   vi.restoreAllMocks();
-  rmSync(root, { recursive: true, force: true });
+  if (root) {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 
 describe('findStorybookProjects', () => {
@@ -134,33 +136,43 @@ describe('getProjects', () => {
 });
 
 describe('formatUnreadableProjects', () => {
-  const listed = (projects: CollectProjectsErrorResult[]) =>
-    formatUnreadableProjects(projects).replaceAll('\\', '/');
+  const unreadable = (error: unknown): CollectProjectsErrorResult => ({
+    configDir: 'packages/c/.storybook',
+    error: error as Error,
+  });
+  const reason = (error: unknown) =>
+    formatUnreadableProjects([unreadable(error)])
+      .replaceAll('\\', '/')
+      .split('.storybook: ')[1];
 
-  it('names each project with the first line of the error that made it unreadable', () => {
-    createFixture({ 'package.json': '{}' });
-    vi.spyOn(process, 'cwd').mockReturnValue(root);
-
+  it('names each project under one heading', () => {
     expect(
-      listed([
-        {
-          configDir: join(root, 'packages/c/.storybook'),
-          error: new MainFileEvaluationError({
-            location: 'packages/c/.storybook/main.ts',
-            error: new Error(
-              `Cannot find module 'shared/vite' imported from ${join(root, 'packages/c')}\n    at stack`
-            ),
-          }),
-        },
-      ])
-    ).toMatch(
-      /^Not upgrading these Storybook projects, because Storybook could not read them:\n.*packages\/c\/\.storybook: Cannot find module 'shared\/vite' imported from \.\/packages\/c$/
-    );
+      formatUnreadableProjects([unreadable(new Error('a')), unreadable(new Error('b'))]).split('\n')
+    ).toEqual([
+      'Not upgrading these Storybook projects, because Storybook could not read them:',
+      expect.stringMatching(/c[\\/]\.storybook: a$/),
+      expect.stringMatching(/c[\\/]\.storybook: b$/),
+    ]);
   });
 
-  it('names a throw that is not an Error', () => {
+  it('gives the first line of the error that the main config threw', () => {
     expect(
-      listed([{ configDir: 'packages/c/.storybook', error: 'x' as unknown as Error }])
-    ).toMatch(/packages\/c\/\.storybook: x$/);
+      reason(
+        new MainFileEvaluationError({
+          location: 'packages/c/.storybook/main.ts',
+          error: new Error("Cannot find package 'shared' imported from main.ts\n    at stack"),
+        })
+      )
+    ).toBe("Cannot find package 'shared' imported from main.ts");
+  });
+
+  it('gives the syntax error, not only the line that announces it', () => {
+    expect(
+      reason(new Error('Transform failed with 1 error:\n<stdin>:1:26: ERROR: Unexpected "}"'))
+    ).toBe('Transform failed with 1 error: <stdin>:1:26: ERROR: Unexpected "}"');
+  });
+
+  it('gives a throw that is not an Error', () => {
+    expect(reason('x')).toBe('x');
   });
 });

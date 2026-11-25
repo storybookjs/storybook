@@ -1,4 +1,3 @@
-import { sep } from 'node:path';
 import { stripVTControlCharacters } from 'node:util';
 
 import type { PackageJsonWithDepsAndDevDeps } from 'storybook/internal/common';
@@ -673,15 +672,17 @@ const handleMultipleProjects = async (
   return undefined;
 };
 
-// The first line of the error that made a project unreadable. A main config that failed to
-// evaluate keeps the original error in `data.error`.
+// The error that made a project unreadable, as one line. A main config that failed to evaluate
+// keeps the original error in `data.error`.
 const unreadableReason = ({ error }: CollectProjectsErrorResult) => {
   const original = (error as { data?: { error?: unknown } } | undefined)?.data?.error ?? error;
   const message = original instanceof Error ? original.message : String(original);
-  return stripVTControlCharacters(message)
-    .trim()
-    .split('\n')[0]
-    .replaceAll(process.cwd() + sep, `.${sep}`);
+  const [first = '', second = ''] = stripVTControlCharacters(message)
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
+  // A syntax error comes as "Transform failed with 1 error:", with the error on the next line.
+  return first.endsWith(':') ? `${first} ${second}` : first;
 };
 
 /** Names the projects the upgrade leaves alone, and why it could not read each one. */

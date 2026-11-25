@@ -1,5 +1,4 @@
-import { cp, mkdir } from 'node:fs/promises';
-import { rm } from 'node:fs/promises';
+import { cp, mkdir, rm } from 'node:fs/promises';
 
 import { Channel } from 'storybook/internal/channels';
 import {
@@ -14,16 +13,16 @@ import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook
 
 import { global } from '@storybook/global';
 
-import { join, relative, resolve } from 'pathe';
+import { basename, join, relative, resolve } from 'pathe';
 import picocolors from 'picocolors';
 
 import {
   getRegisteredServices,
   writeOpenServiceStaticFiles,
 } from '../shared/open-service/server.ts';
-import { applyServicesPresetOnce } from './utils/apply-services-preset-once.ts';
 import { resolvePackageDir } from '../shared/utils/module.ts';
 import type { StoryIndexGenerator } from './utils/StoryIndexGenerator.ts';
+import { applyServicesPresetOnce } from './utils/apply-services-preset-once.ts';
 import { buildOrThrow } from './utils/build-or-throw.ts';
 import { copyAllStaticFilesRelativeToMain } from './utils/copy-all-static-files.ts';
 import { getBuilders } from './utils/get-builders.ts';
@@ -148,14 +147,18 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
     );
   }
 
-  if (staticDirs) {
-    effects.push(
-      copyAllStaticFilesRelativeToMain(staticDirs, options.outputDir, options.configDir)
-    );
-  }
+  const staticFilesCopied = Promise.all([
+    presets.apply<string>('favicon'),
+    staticDirs &&
+      copyAllStaticFilesRelativeToMain(staticDirs, options.outputDir, options.configDir),
+  ]);
 
-  const coreServerPublicDir = join(resolvePackageDir('storybook'), 'assets/browser');
-  effects.push(cp(coreServerPublicDir, options.outputDir, { recursive: true, force: true }));
+  effects.push(
+    // Copy favicon once static files are copied to avoid race conditions
+    staticFilesCopied.then(([favicon]) =>
+      cp(favicon, join(options.outputDir, basename(favicon)), { force: true })
+    )
+  );
 
   const hasRegisteredServices = getRegisteredServices().length > 0;
   const shouldWriteManifests = features?.componentsManifest;

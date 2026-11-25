@@ -1,3 +1,4 @@
+import type { DocgenPropType } from 'storybook/internal/docs-tools';
 import type {
   DocgenPayload,
   DocgenProviderInput,
@@ -14,7 +15,10 @@ import {
   type ComponentMetaManager,
   isExtractable,
 } from '../componentManifest/componentMeta/ComponentMetaManager.ts';
-import type { ComponentDoc } from '../componentManifest/componentMeta/componentMetaExtractor.ts';
+import type {
+  ComponentDoc,
+  PropItemType,
+} from '../componentManifest/componentMeta/componentMetaExtractor.ts';
 import type {
   ComponentRef,
   StoryRef,
@@ -50,6 +54,11 @@ function isReactAttribute(prop: ComponentDoc['props'][string]) {
   );
 }
 
+// The shared conversion reads `string[]` as `other`; it needs `array` with the element as `value`.
+function toDocgenType({ element, ...type }: PropItemType): DocgenPropType {
+  return element ? { name: 'array', raw: type.name, value: toDocgenType(element) } : type;
+}
+
 /** Converts one RCM `ComponentDoc` into the `StrictArgTypes` shape consumed by args tables. */
 export function extractArgTypesFromComponentMeta(
   componentMeta: ComponentDoc | undefined
@@ -65,12 +74,21 @@ export function extractArgTypesFromComponentMeta(
       .filter(([, prop]) => !isReactAttribute(prop))
       .map(([name, prop]) => [
         name,
-        prop.defaultValue
-          ? { ...prop, defaultValue: { ...prop.defaultValue, computed: false } }
-          : prop,
+        {
+          ...prop,
+          type: toDocgenType(prop.type),
+          defaultValue: prop.defaultValue && { ...prop.defaultValue, computed: false },
+        },
       ])
   );
   const argTypes = extractArgTypes({ __docgenInfo: { ...componentMeta, props } }) ?? undefined;
+
+  for (const [name, prop] of Object.entries(componentMeta.props)) {
+    const table = argTypes?.[name]?.table;
+    if (prop.type.element && table) {
+      table.type = { summary: prop.type.name };
+    }
+  }
   for (const [name, prop] of Object.entries(props)) {
     if (prop.jsDocTags && argTypes?.[name]) {
       argTypes[name].table = { ...argTypes[name].table, jsDocTags: prop.jsDocTags };

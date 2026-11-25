@@ -1,12 +1,12 @@
 import { versions } from 'storybook/internal/common';
 import { CLI_COLORS } from 'storybook/internal/node-logger';
 
-import { coerce, gt, major, parse } from 'semver';
+import { coerce, major, parse } from 'semver';
 import { dedent } from 'ts-dedent';
 
 import { createBlocker } from './types.ts';
 
-type UpgradeCheckResult = 'downgrade' | 'gap-too-large' | 'ok';
+type UpgradeCheckResult = 'gap-too-large' | 'ok';
 
 interface MajorVersionData {
   currentVersion: string;
@@ -34,12 +34,8 @@ export function validateVersionTransition(
     return 'ok';
   }
 
-  // Check for downgrade (when current version is greater than target)
-  if (gt(currentVersion, targetVersion)) {
-    return 'downgrade';
-  }
-
-  // Check for version gap
+  // A downgrade is not a gap: the upgrade rejects it before the blockers run, and allows it for
+  // canaries.
   const gap = target.major - current.major;
   return gap > 1 ? 'gap-too-large' : 'ok';
 }
@@ -49,7 +45,9 @@ export const blocker = createBlocker<MajorVersionData>({
   async check(options) {
     const { packageManager } = options;
     try {
-      const currentStorybookVersion = packageManager.getAllDependencies().storybook;
+      // The installed version: package.json declares a range such as `^8.6.15`, not a version.
+      const currentStorybookVersion = (await packageManager.getModulePackageJSON('storybook'))
+        ?.version;
       if (!currentStorybookVersion) {
         return false;
       }
@@ -71,16 +69,6 @@ export const blocker = createBlocker<MajorVersionData>({
   },
   log(data) {
     const coercedVersion = coerce(data.currentVersion);
-
-    if (data.reason === 'downgrade') {
-      return {
-        title: 'Downgrade Not Supported',
-        message: dedent`
-          Your Storybook version (v${data.currentVersion}) is newer than the target release (v${versions.storybook}). Downgrading is not supported.
-          `,
-        link: 'https://storybook.js.org/docs/releases/migration-guide?ref=upgrade',
-      };
-    }
 
     if (coercedVersion) {
       const currentMajor = major(coercedVersion);

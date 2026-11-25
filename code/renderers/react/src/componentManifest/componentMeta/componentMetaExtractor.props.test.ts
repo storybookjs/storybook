@@ -83,6 +83,11 @@ describe('prop extraction', () => {
             items: string[];
             matrix: number[][];
             nodes: Array<React.ReactNode>;
+            tags?: readonly string[];
+            kinds: ('a' | 'b')[];
+            flags: boolean[];
+            selected: string[] | null;
+            pair: [string, number];
           }
           export const List = (props: Props) => <ul />;
         `
@@ -90,10 +95,31 @@ describe('prop extraction', () => {
 
       expect(entry.component?.reactComponentMeta).toMatchObject({
         props: {
-          items: { type: { name: 'string[]' } },
-          matrix: { type: { name: 'number[][]' } },
-          nodes: { type: { name: 'ReactNode[]' } },
+          items: { type: { name: 'string[]', element: { name: 'string' } } },
+          matrix: {
+            type: {
+              name: 'number[][]',
+              element: { name: 'number[]', element: { name: 'number' } },
+            },
+          },
+          nodes: { type: { name: 'ReactNode[]', element: { name: 'ReactNode' } } },
+          tags: { type: { name: 'readonly string[]', element: { name: 'string' } } },
+          kinds: {
+            type: {
+              name: '("a" | "b")[]',
+              element: {
+                name: 'enum',
+                raw: '"a" | "b"',
+                value: [{ value: '"a"' }, { value: '"b"' }],
+              },
+            },
+          },
+          flags: { type: { name: 'boolean[]', element: { name: 'boolean' } } },
+          selected: { type: { name: 'string[] | null', element: { name: 'string' } } },
         },
+      });
+      expect(entry.component?.reactComponentMeta?.props.pair.type).toEqual({
+        name: '[string, number]',
       });
     });
 

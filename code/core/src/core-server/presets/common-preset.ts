@@ -11,6 +11,7 @@ import {
   getPreviewBodyTemplate,
   getPreviewHeadTemplate,
   loadEnvs,
+  matchesSpecifier,
   normalizeStories,
   optionalEnvToBoolean,
   removeAddon as removeAddonBase,
@@ -426,7 +427,9 @@ export const services = async (_value: void, options: Options): Promise<void> =>
           return (file) => {
             const relativePath = pathe.relative(workingDir, file);
             const importPath = relativePath.startsWith('.') ? relativePath : `./${relativePath}`;
-            return specifiers.some(({ importPathMatcher }) => importPathMatcher.test(importPath));
+            return specifiers.some((specifier) =>
+              matchesSpecifier(specifier, importPath, workingDir)
+            );
           };
         },
       },

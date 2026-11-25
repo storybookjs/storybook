@@ -159,6 +159,26 @@ describe('watchStorySpecifiers', () => {
     ]);
   });
 
+  it('watches a working dir nested in the specifier directory', async () => {
+    const nestedWorkingDir = join(workingDir, 'src');
+    const specifier = normalizeStoriesEntry('../@(src|complex)/**/*.stories.ts', {
+      ...options,
+      workingDir: nestedWorkingDir,
+    });
+    const onInvalidate = vi.fn();
+    close = watchStorySpecifiers([specifier], { workingDir: nestedWorkingDir }, onInvalidate);
+
+    emit('add', 'src/B.stories.ts');
+    emit('add', 'src/second-nested/G.stories.ts');
+    emit('change', 'src/B.ts');
+    await flushEvents();
+
+    expect(onInvalidate.mock.calls).toEqual([
+      [`./B.stories.ts`, false],
+      [`./second-nested/G.stories.ts`, false],
+    ]);
+  });
+
   it('gives a story file in a dot directory a path that starts with ./', async () => {
     const specifier = normalizeStoriesEntry('./*.mdx', options);
     const onInvalidate = vi.fn();

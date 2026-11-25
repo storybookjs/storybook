@@ -1,3 +1,6 @@
+import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
+
 import { expect, it } from 'vitest';
 
 import type { Options } from 'storybook/internal/types';
@@ -15,14 +18,18 @@ const template = `
 </head>
 `;
 
-const renderManagerHtml = (customHead = '') =>
+const renderManagerHtml = (
+  customHead = '',
+  jsFiles: string[] = [],
+  source = Promise.resolve(template)
+) =>
   renderHTML(
-    Promise.resolve(template),
+    source,
     Promise.resolve('Example'),
     Promise.resolve('favicon.svg'),
     Promise.resolve(customHead),
     [],
-    [],
+    jsFiles,
     Promise.resolve({}),
     Promise.resolve({}),
     Promise.resolve('info'),
@@ -52,4 +59,19 @@ it('does not render the default manager favicon when custom head provides an ico
 it('detects shortcut icon links without treating touch icons as favicons', () => {
   expect(customHeadHasFavicon('<link rel="shortcut icon" href="./favicon.ico" />')).toBe(true);
   expect(customHeadHasFavicon('<link rel="apple-touch-icon" href="./touch.png" />')).toBe(false);
+});
+
+it('loads each manager entry in a module script of its own, between the globals and the runtime', async () => {
+  const html = await renderManagerHtml(
+    '',
+    ['./sb-addons/a/manager-bundle.js', './sb-addons/b/manager-bundle.js'],
+    readFile(join(import.meta.dirname, '../../../assets/server/template.ejs'), 'utf8')
+  );
+
+  expect(html.match(/<script type="module"[^>]*>/g)).toEqual([
+    '<script type="module" src="./sb-manager/globals-runtime.js">',
+    '<script type="module" src="./sb-addons/a/manager-bundle.js">',
+    '<script type="module" src="./sb-addons/b/manager-bundle.js">',
+    '<script type="module" src="./sb-manager/runtime.js">',
+  ]);
 });

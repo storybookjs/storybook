@@ -5,14 +5,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { logger } from 'storybook/internal/node-logger';
 import type { Options } from 'storybook/internal/types';
 
-import { transform } from 'esbuild';
 import { join } from 'pathe';
 
 import { getConfig } from './index.ts';
 import type { OutputFile } from './utils/bundle.ts';
 import { bundleManagerEntries } from './utils/bundle.ts';
 
-vi.mock('esbuild', { spy: true });
 vi.mock('storybook/internal/node-logger', { spy: true });
 // The real one writes a wrapper for each entry into the cache directory of the project.
 vi.mock('./utils/managerEntries.ts', () => ({
@@ -52,7 +50,6 @@ const run = (files: OutputFile[], globals: Record<string, unknown> = {}) => {
 describe('bundleManagerEntries', () => {
   beforeEach(() => {
     vi.mocked(logger.warn).mockReset();
-    vi.mocked(transform).mockClear();
   });
 
   it('writes a script per entry into sb-addons', async () => {
@@ -81,21 +78,6 @@ describe('bundleManagerEntries', () => {
     });
 
     expect(result).toEqual(['div', { className: 'panel' }]);
-  });
-
-  it.each([
-    ['decorators', 'decorator.js', 'decorated'],
-    ['accessor fields', 'accessor.js', 1],
-    ['a namespace declared in several blocks', 'namespaces.ts', ['change']],
-  ])('compiles %s as esbuild does', async (_, entry, expected) => {
-    const { result } = run(await bundle(entry));
-
-    expect(result).toEqual(expected);
-  });
-
-  it('leaves a file to Rolldown that only mentions @ in CSS and comments', async () => {
-    expect(run(await bundle('not-decorators.js')).result).toBe(true);
-    expect(transform).not.toHaveBeenCalled();
   });
 
   it('gives require() of a package the file of its main field', async () => {

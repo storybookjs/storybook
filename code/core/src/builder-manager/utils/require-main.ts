@@ -27,8 +27,8 @@ const findManifest = (file: string): Manifest | undefined => {
 };
 
 // Rolldown gives `require()` of a package the ES module that its `module` field names, which is
-// an object with a `default` property. esbuild gives it the file of `main`, and gives that file
-// to every `import` of the package as well, so that a bundle holds the package once.
+// an object with a `default` property. Published addons expect the file of `main`, and expect
+// every `import` of the package to get that file as well, so that a bundle holds the package once.
 //
 // `required` receives the ES module of each package that got its `main` file, by the directory
 // of the package. An `import` of a package in `everywhere` gets the `main` file too.

@@ -74,14 +74,13 @@
     </script>
     <% } %>
 
-    <script type="module">
-      import './sb-manager/globals-runtime.js';
+    <script type="module" src="./sb-manager/globals-runtime.js"></script>
 
-      <% files.js.forEach(file => { %>
-        import '<%= file %>';
-      <% }); %>
+    <%# A script per entry: one that a browser cannot parse or fetch must not stop the others. %>
+    <% files.js.forEach(file => { %>
+    <script type="module" src="<%= file %>"></script>
+    <% }); %>
 
-      import './sb-manager/runtime.js';
-    </script>
+    <script type="module" src="./sb-manager/runtime.js"></script>
   </body>
 </html>

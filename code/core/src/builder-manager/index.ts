@@ -19,7 +19,6 @@ import type {
 } from './types.ts';
 import { bundleManagerEntries } from './utils/bundle.ts';
 import { getData } from './utils/data.ts';
-import { esbuildSyntax } from './utils/esbuild-syntax.ts';
 import { readOrderedFiles } from './utils/files.ts';
 import { buildFrameworkGlobalsFromOptions } from './utils/framework.ts';
 import { globalExternals } from './utils/global-externals.ts';
@@ -96,13 +95,13 @@ export const getConfig: ManagerBuilder['getConfig'] = async (options) => {
         global: 'window',
       },
     },
-    plugins: [globalExternals(globalsModuleInfoMap), esbuildSyntax()],
+    plugins: [globalExternals(globalsModuleInfoMap)],
     output: {
       format: 'iife',
       minify: { compress: true, mangle: false, codegen: { removeWhitespace: false } },
       comments: { legal: true, annotation: true, jsdoc: false },
-      // With esbuild, a constant that is read early in an import cycle is `undefined`: it is
-      // neither an error, nor already the value that Rolldown would inline.
+      // Published addons expect a constant that is read early in an import cycle to be
+      // `undefined`: neither an error, nor already the value that Rolldown would inline.
       topLevelVar: true,
     },
     optimization: { inlineConst: false },

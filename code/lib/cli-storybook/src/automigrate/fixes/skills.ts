@@ -2,9 +2,10 @@ import {
   hasAddonVitest,
   hasStorybookSkills,
   installSkills,
+  skipsSkillsInCI,
   supportsSkills,
 } from 'storybook/internal/cli';
-import { frameworkPackages, frameworkToRenderer, isCI } from 'storybook/internal/common';
+import { frameworkPackages, frameworkToRenderer } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
 import { getFrameworkPackageName } from '../helpers/mainConfigFile.ts';
@@ -23,7 +24,7 @@ export const skills: Fix<{ afterAngularViteMigration?: boolean }> = {
 
   async check({ packageManager, mainConfig, beforeVersion, storybookVersion, requested }) {
     // `installSkills` skips CI anyway; returning here keeps the no-op out of the list and the report.
-    if (isCI()) {
+    if (skipsSkillsInCI()) {
       return null;
     }
     if (

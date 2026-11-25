@@ -143,6 +143,15 @@ export async function resolveStoryComponent(
   return story && resolveComponentNode(story);
 }
 
+// The meta component of a story file the caller has already parsed as CSF, as
+// `resolveStoryComponent` resolves it.
+export function resolveCsfComponent(
+  storyPath: string,
+  csf: CsfFile
+): ResolvedSvelteComponent | undefined {
+  return resolveComponentNode({ storyPath, csf });
+}
+
 // The components a meta lists in `subcomponents`, by the name it lists them under. They resolve
 // like the meta's own component. One that does not resolve is left out, so it does not cost the
 // main component its docs.

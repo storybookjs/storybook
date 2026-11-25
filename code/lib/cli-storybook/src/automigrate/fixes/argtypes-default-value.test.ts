@@ -99,6 +99,17 @@ describe('argtypes-default-value', () => {
     expect(story).toContain("control: 'number'");
   });
 
+  it('leaves a preview with default and named exports and no argTypes', async () => {
+    const preview = [
+      'export const withTheme = (Story) => Story();',
+      "export default { decorators: [withTheme], globalTypes: { theme: { defaultValue: 'light' } } };",
+    ].join('\n');
+    const result = await migrate({ preview });
+
+    expect(result.failures).toEqual([]);
+    expect(result.preview).toBe(preview);
+  });
+
   it('leaves a factory call unchanged when the editor cannot remove it', async () => {
     const story = [
       'const makeArgType = (argType) => argType;',

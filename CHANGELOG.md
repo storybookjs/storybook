@@ -1,3 +1,7 @@
+## 10.6.9
+
+- Telemetry: Detect renderers of React Native, Astro and unlisted frameworks - [#37678](https://github.com/storybookjs/storybook/pull/37678), thanks @ndelangen!
+
 ## 10.6.8
 
 - Builder-Vite: Write the full bundler graph to preview-stats.json - [#36345](https://github.com/storybookjs/storybook/pull/36345), thanks @codykaup!

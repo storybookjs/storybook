@@ -53,12 +53,31 @@ jobs:
       run:
         working-directory: scripts
     steps:
+      # An app token expires after one hour and a publish can take longer, so the job makes a second
+      # token after the publish step.
+      - name: Create a storybook-bot token
+        id: bot-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.STORYBOOK_BOT_APP_ID }}
+          private-key: ${{ secrets.STORYBOOK_BOT_APP_PRIVATE_KEY }}
+          owner: storybookjs
+          repositories: storybook
+          permission-contents: write
+          # Pushing `next` to `main` and `latest-release` can add changes to .github/workflows
+          permission-workflows: write
+
       - name: Checkout ${{ github.ref_name }}
-        # zizmor: ignore[artipacked]  # git push origin runs at multiple steps using persisted GH_TOKEN
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 100
-          token: ${{ secrets.GH_TOKEN }}
+          persist-credentials: false
+
+      # git asks gh for credentials, and gh answers with the GH_TOKEN of the step that pushes
+      - name: Use gh as the git credential helper
+        env:
+          GH_TOKEN: ${{ steps.bot-token.outputs.token }}
+        run: gh auth setup-git --hostname github.com
 
       - name: Setup Node.js and Install Dependencies
         uses: ./.github/actions/setup-node-and-install
@@ -73,6 +92,7 @@ jobs:
       - name: Apply deferred version bump and commit
         working-directory: .
         env:
+          GH_TOKEN: ${{ steps.bot-token.outputs.token }}
           REF_NAME: ${{ github.ref_name }}
         run: |
           CURRENT_VERSION=$(cat ./code/package.json | jq '.version')
@@ -243,8 +263,20 @@ jobs:
             --notes "$CHANGELOG" \
             $IS_PRERELEASE
 
+      - name: Create a new storybook-bot token
+        id: bot-token-after-publish
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.STORYBOOK_BOT_APP_ID }}
+          private-key: ${{ secrets.STORYBOOK_BOT_APP_PRIVATE_KEY }}
+          owner: storybookjs
+          repositories: storybook
+          permission-contents: write
+          permission-workflows: write
+
       - name: Merge ${{ github.ref_name }} into ${{ steps.target.outputs.target }}
         env:
+          GH_TOKEN: ${{ steps.bot-token-after-publish.outputs.token }}
           REF_NAME: ${{ github.ref_name }}
           TARGET_BRANCH: ${{ steps.target.outputs.target }}
         run: |
@@ -263,6 +295,8 @@ jobs:
             steps.publish-needed.outputs.published == 'false' ||
             (github.event_name == 'workflow_dispatch' && inputs.skip_publish == true)
           )
+        env:
+          GH_TOKEN: ${{ steps.bot-token-after-publish.outputs.token }}
         run: |
           git checkout next
           git pull
@@ -273,6 +307,7 @@ jobs:
         if: steps.target.outputs.target == 'main'
         working-directory: .
         env:
+          GH_TOKEN: ${{ steps.bot-token-after-publish.outputs.token }}
           CURRENT_VERSION: ${{ steps.version.outputs.current-version }}
         run: |
           git fetch origin next

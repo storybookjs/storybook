@@ -90,7 +90,7 @@ interface SidebarBottomProps {
   onRunAll: () => void;
 }
 
-export const SidebarBottomBase = ({
+export const SidebarBottomBase = React.memo(function SidebarBottomBase({
   api,
   notifications = [],
   errorCount,
@@ -101,7 +101,7 @@ export const SidebarBottomBase = ({
   testProviderStates,
   registeredTestProviders,
   onRunAll,
-}: SidebarBottomProps) => {
+}: SidebarBottomProps) {
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const [warningsActive, setWarningsActive] = useState(false);
   const [errorsActive, setErrorsActive] = useState(false);
@@ -169,7 +169,7 @@ export const SidebarBottomBase = ({
       )}
     </Content>
   );
-};
+});
 
 export const SidebarBottom = ({ isDevelopment }: { isDevelopment?: boolean }) => {
   const api = useStorybookApi();

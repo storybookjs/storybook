@@ -1,5 +1,6 @@
 // The object a `CsfObject` edits: an object literal, or members written as separate statements.
-import type { E, Property, Span } from './estree/ast.ts';
+import type { CsfMutationDiagnosticCode } from './CsfObject.ts';
+import type { E, Node, Property, Span } from './estree/ast.ts';
 import {
   type SourceEditor,
   appendMembers,
@@ -47,7 +48,32 @@ export interface ObjectRoot {
   take(member: Property, key: string): MemberInsert;
   // Why the root cannot take a new member named `key`, when it cannot.
   refuseKey?(key: string): string | undefined;
+  // A story whose value the editor cannot read, such as `createStory('primary')`, with the
+  // `Story.name = value` assignments it shows, and why it cannot edit it. It has no members.
+  readonly opaque?: {
+    node: Node;
+    assignments?: readonly Property[];
+    code: CsfMutationDiagnosticCode;
+    message: string;
+  };
 }
+
+const noOpaqueMembers = (): never => {
+  throw new Error('CsfObject: an opaque story has no members to edit');
+};
+
+export const opaqueRoot = (opaque: NonNullable<ObjectRoot['opaque']>): ObjectRoot => ({
+  properties: [],
+  detached: false,
+  opaque,
+  append: noOpaqueMembers,
+  prepend: noOpaqueMembers,
+  remove: noOpaqueMembers,
+  replaceValue: noOpaqueMembers,
+  rename: noOpaqueMembers,
+  group: noOpaqueMembers,
+  take: noOpaqueMembers,
+});
 
 // A member of an `ObjectRoot` that is not written as one, such as a named export or a
 // `Story.name = value` assignment. Its key and value are nodes of the file, so every span read from

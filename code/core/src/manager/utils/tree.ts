@@ -1,7 +1,5 @@
 import type { SyntheticEvent } from 'react';
 
-import { global } from '@storybook/global';
-
 import memoize from 'memoizerific';
 import type {
   ComponentEntry,
@@ -14,7 +12,7 @@ import type {
 import { DEFAULT_REF_ID } from '../components/sidebar/Sidebar.tsx';
 import type { Dataset, Item, RefType } from '../components/sidebar/types.ts';
 
-const { document, window: globalWindow } = global;
+const { document, window: globalWindow } = globalThis;
 
 export const prevent = (e: SyntheticEvent) => {
   e.preventDefault();

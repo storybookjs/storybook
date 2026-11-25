@@ -1,8 +1,4 @@
-import type {
-  DecoratorFunction,
-  LegacyStoryFn,
-  StoryContextForRender,
-} from 'storybook/internal/types';
+import type { DecoratorFunction, LegacyStoryFn, StoryContext } from 'storybook/internal/types';
 
 import { sanitizeStoryContextUpdate } from 'storybook/preview-api';
 import type { Component, ComponentOptions, ConcreteComponent } from 'vue';
@@ -53,33 +49,29 @@ export function decorateStory(
   decorators: DecoratorFunction<VueRenderer>[]
 ): LegacyStoryFn<VueRenderer> {
   return decorators.reduce(
-    (decorated: LegacyStoryFn<VueRenderer>, decorator) =>
-      (context: StoryContextForRender<VueRenderer>) => {
-        let story: VueRenderer['storyResult'] | undefined;
+    (decorated: LegacyStoryFn<VueRenderer>, decorator) => (context: StoryContext<VueRenderer>) => {
+      let story: VueRenderer['storyResult'] | undefined;
 
-        const decoratedStory: VueRenderer['storyResult'] = decorator((update) => {
-          const sanitizedUpdate = sanitizeStoryContextUpdate(update);
-          // update the args in a reactive way
-
-          // update the args in a reactive way
-          if (update) {
-            sanitizedUpdate.args = Object.assign(context.args, sanitizedUpdate.args);
-          }
-          story = decorated({ ...context, ...sanitizedUpdate });
-          return story;
-        }, context);
-
-        if (!story) {
-          story = decorated(context);
+      const decoratedStory: VueRenderer['storyResult'] = decorator((update) => {
+        const sanitizedUpdate = sanitizeStoryContextUpdate(update);
+        if (update) {
+          sanitizedUpdate.args = Object.assign(context.args, sanitizedUpdate.args);
         }
+        story = decorated({ ...context, ...sanitizedUpdate });
+        return story;
+      }, context);
 
-        if (decoratedStory === story) {
-          return story;
-        }
+      if (!story) {
+        story = decorated(context);
+      }
 
-        const innerStory = () => h(story!);
-        return prepare(decoratedStory, innerStory) as VueRenderer['storyResult'];
-      },
+      if (decoratedStory === story) {
+        return story;
+      }
+
+      const innerStory = () => h(story!);
+      return prepare(decoratedStory, innerStory) as VueRenderer['storyResult'];
+    },
     (context) => prepare(storyFn(context)) as LegacyStoryFn<VueRenderer>
   );
 }

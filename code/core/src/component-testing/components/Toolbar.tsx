@@ -101,7 +101,73 @@ const RerunButton = styled(StyledIconButton)<
   },
 }));
 
-export const Toolbar: React.FC<ToolbarProps> = ({
+// The five playback buttons depend on the controls alone. The status, which changes on every
+// render phase of the story, reaches the badge and the scroll button only.
+const PlaybackControls = React.memo<Pick<ToolbarProps, 'controls' | 'controlStates'>>(
+  function PlaybackControls({ controls, controlStates }) {
+    const preventFocusLoss = (e: React.PointerEvent) => e.preventDefault();
+
+    return (
+      <>
+        <RewindButton
+          padding="small"
+          variant="ghost"
+          ariaLabel="Go to start"
+          onClick={controls.start}
+          onPointerDown={preventFocusLoss}
+          disabled={!controlStates.start}
+        >
+          <RewindIcon />
+        </RewindButton>
+
+        <StyledIconButton
+          padding="small"
+          variant="ghost"
+          ariaLabel="Go back"
+          onClick={controls.back}
+          onPointerDown={preventFocusLoss}
+          disabled={!controlStates.back}
+        >
+          <PlayBackIcon />
+        </StyledIconButton>
+
+        <StyledIconButton
+          padding="small"
+          variant="ghost"
+          ariaLabel="Go forward"
+          onClick={controls.next}
+          onPointerDown={preventFocusLoss}
+          disabled={!controlStates.next}
+        >
+          <PlayNextIcon />
+        </StyledIconButton>
+
+        <StyledIconButton
+          padding="small"
+          variant="ghost"
+          ariaLabel="Go to end"
+          onClick={controls.end}
+          onPointerDown={preventFocusLoss}
+          disabled={!controlStates.end}
+        >
+          <FastForwardIcon />
+        </StyledIconButton>
+
+        <RerunButton
+          padding="small"
+          variant="ghost"
+          ariaLabel="Rerun"
+          onClick={controls.rerun}
+          onPointerDown={preventFocusLoss}
+        >
+          <SyncIcon />
+        </RerunButton>
+      </>
+    );
+  }
+);
+
+export const Toolbar = React.memo<ToolbarProps>(function Toolbar({
   controls,
   controlStates,
   status,
@@ -110,7 +176,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   importPath,
   canOpenInEditor,
   api,
-}) => {
+}) {
   const buttonText = status === 'errored' ? 'Scroll to error' : 'Scroll to end';
   const theme = useTheme();
 
@@ -138,59 +204,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 
           <Separator />
 
-          <RewindButton
-            padding="small"
-            variant="ghost"
-            ariaLabel="Go to start"
-            onClick={controls.start}
-            onPointerDown={preventFocusLoss}
-            disabled={!controlStates.start}
-          >
-            <RewindIcon />
-          </RewindButton>
-
-          <StyledIconButton
-            padding="small"
-            variant="ghost"
-            ariaLabel="Go back"
-            onClick={controls.back}
-            onPointerDown={preventFocusLoss}
-            disabled={!controlStates.back}
-          >
-            <PlayBackIcon />
-          </StyledIconButton>
-
-          <StyledIconButton
-            padding="small"
-            variant="ghost"
-            ariaLabel="Go forward"
-            onClick={controls.next}
-            onPointerDown={preventFocusLoss}
-            disabled={!controlStates.next}
-          >
-            <PlayNextIcon />
-          </StyledIconButton>
-
-          <StyledIconButton
-            padding="small"
-            variant="ghost"
-            ariaLabel="Go to end"
-            onClick={controls.end}
-            onPointerDown={preventFocusLoss}
-            disabled={!controlStates.end}
-          >
-            <FastForwardIcon />
-          </StyledIconButton>
-
-          <RerunButton
-            padding="small"
-            variant="ghost"
-            ariaLabel="Rerun"
-            onClick={controls.rerun}
-            onPointerDown={preventFocusLoss}
-          >
-            <SyncIcon />
-          </RerunButton>
+          <PlaybackControls controls={controls} controlStates={controlStates} />
         </ControlsGroup>
         {(importPath || storyFileName) &&
           (canOpenInEditor ? (
@@ -213,4 +227,4 @@ export const Toolbar: React.FC<ToolbarProps> = ({
       </SharedToolbar>
     </ToolbarWrapper>
   );
-};
+});

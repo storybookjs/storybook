@@ -10,7 +10,7 @@ import {
   unwrapExpression,
 } from './estree/ast.ts';
 import { type SourceEditor, printMemberAccess } from './estree/editor.ts';
-import { type Binding, isTSDeclaration } from './estree/scope.ts';
+import { type Binding, constantInit, isTSDeclaration } from './estree/scope.ts';
 
 type PropertyLookup =
   | { ok: true; property?: Property }
@@ -168,10 +168,11 @@ const onlyRead = (editor: SourceEditor, binding: Binding, literal: E.ObjectExpre
 // run with `this` bound to it whenever it is read.
 const trustedLiteral = (editor: SourceEditor, reference: Node) => {
   const binding = reference.type === 'Identifier' ? editor.scopes.bindingOf(reference) : undefined;
-  if (!binding?.constant || binding.node.type !== 'VariableDeclarator') {
+  const declared = constantInit(binding);
+  if (!binding || !declared) {
     return undefined;
   }
-  const init = unwrapExpression(binding.node.init);
+  const init = unwrapExpression(declared);
   return init?.type === 'ObjectExpression' &&
     init.properties.every((member) => member.type !== 'Property' || member.kind === 'init') &&
     onlyRead(editor, binding, init)

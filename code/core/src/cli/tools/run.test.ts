@@ -460,6 +460,26 @@ describe('requires-dev-server contract', () => {
     expect(result.output).toContain('--cwd');
   });
 
+  it('states the attach failure itself when auto mode found an instance but could not attach', async () => {
+    const tools = makeLocalTools();
+    tools.requestedMode = 'auto';
+    tools.fallbackReason = 'old-server';
+    tools.attachFailure = 'Restart Storybook to enable attach.';
+    tools.fallbackNotice = `${tools.attachFailure}\n\nFalling back to loading this project's Storybook configuration.`;
+    const { deps } = makeDeps({
+      createTools: vi.fn(async () => tools),
+      discoverInstance: vi.fn(async () => ({ currentRecord: RECORD, records: [RECORD] })),
+    });
+
+    const result = await run(['review', 'create', '--input', '{}'], deps);
+
+    expect(result.outcome).toEqual({ kind: 'intercept', reason: 'requires-dev-server' });
+    expect(result.output).toBe(
+      '`npx storybook tools review create` requires a running Storybook dev server, and could not attach to one:\n\nRestart Storybook to enable attach.'
+    );
+    expect(result.fallbackNotice).toBeUndefined();
+  });
+
   it('intercepts stories preview in local mode even when an instance is running', async () => {
     const { deps } = makeDeps({
       discoverInstance: vi.fn(async () => ({ currentRecord: RECORD, records: [RECORD] })),
@@ -603,9 +623,24 @@ Run \`npx storybook tools docs show --help\` for the expected arguments.`);
   });
 
   it('rejects any flag for a tool that takes no arguments', async () => {
+    clearToolsetRegistry();
+    registerToolset(
+      defineToolset({
+        id: 'echo',
+        description: 'Echo tools.',
+        methods: {
+          ping: {
+            title: 'Ping',
+            description: 'Takes no arguments.',
+            input: v.strictObject({}),
+            handler: async () => ({ ok: true as const, data: {}, markdown: 'pong' }),
+          },
+        },
+      })
+    );
     const { deps } = makeDeps();
 
-    const result = await run(['stories', 'changed', '--verbose'], deps);
+    const result = await run(['echo', 'ping', '--verbose'], deps);
 
     expect(result.outcome).toEqual({ kind: 'intercept', reason: 'invalid-arguments' });
     expect(result.output).toContain('- Unknown flag `--verbose`.');
@@ -773,6 +808,17 @@ describe('outcome mapping', () => {
               return { ok: true, data: {}, markdown: 'result' };
             },
           },
+          files: {
+            title: 'files',
+            input: v.strictObject({ files: v.optional(v.array(v.string())) }),
+            description: 'file echo',
+            positional: 'files',
+            handler: async (input: { files?: string[] }) => ({
+              ok: true,
+              data: input,
+              markdown: JSON.stringify(input),
+            }),
+          },
           input: {
             title: 'input',
             input: v.strictObject({ a: v.optional(v.number()), b: v.optional(v.number()) }),
@@ -876,6 +922,67 @@ describe('outcome mapping', () => {
     );
 
     expect(JSON.parse(result.output)).toEqual({ a: 1, b: 2 });
+  });
+
+  describe('positional arguments', () => {
+    it('passes bare arguments as the positional key, as typed', async () => {
+      const { deps } = makeDeps();
+
+      // This test file exists, and still reaches the tool as the relative path that was typed.
+      const result = await run(
+        ['echo', 'files', 'src/cli/tools/run.test.ts', './Button/', 'Button', '--json'],
+        deps
+      );
+
+      expect(result.exitCode).toBe(0);
+      expect(JSON.parse(result.output)).toEqual({
+        files: ['src/cli/tools/run.test.ts', './Button/', 'Button'],
+      });
+    });
+
+    it('appends bare arguments to the values given with the flag', async () => {
+      const { deps } = makeDeps();
+
+      const result = await run(
+        ['echo', 'files', '--files', '["/abs/A.tsx"]', '--json', '--', 'B.tsx'],
+        deps
+      );
+
+      expect(JSON.parse(result.output)).toEqual({ files: ['/abs/A.tsx', 'B.tsx'] });
+    });
+
+    it('reads a single flag value as a list of one, as it reads one bare argument', async () => {
+      const { deps } = makeDeps();
+
+      const result = await run(['echo', 'files', '--files', 'A.tsx', '--json'], deps);
+
+      expect(JSON.parse(result.output)).toEqual({ files: ['A.tsx'] });
+    });
+
+    it('rejects bare arguments for a tool without a positional key, without calling it', async () => {
+      const { deps } = makeDeps();
+
+      const result = await run(['echo', 'input', 'button'], deps);
+
+      expect(result).toMatchObject({
+        exitCode: 1,
+        outcome: { kind: 'intercept', reason: 'invalid-arguments' },
+      });
+      expect(result.output).toContain(
+        'Unexpected argument `button`. `npx storybook tools echo input` takes no bare arguments'
+      );
+    });
+
+    it('shows the positional key in the tool help', async () => {
+      const { deps } = makeDeps();
+
+      const result = await run(['echo', 'files', '--help'], deps);
+
+      expect(result.output).toContain(
+        'Usage: npx storybook tools echo files [files...] [--key value ...]'
+      );
+      expect(result.output).toContain('Bare arguments are `--files` values.');
+    });
   });
 });
 
@@ -1030,7 +1137,7 @@ describe('attached tools', () => {
           reason: 'no-instance',
           instances: [],
           remediation:
-            'No running Storybook was found for this project. Start it first (for example `npm run storybook`), then retry with `--attach`.',
+            'No running Storybook was found for this project. Start it first with the Storybook script in its `package.json`, then retry with `--attach`.',
         });
       }),
     });
@@ -1041,7 +1148,7 @@ describe('attached tools', () => {
     expect(result.outcome).toEqual({ kind: 'attach-gate', reason: 'no-instance' });
     expect(result.requestedMode).toBe('attached');
     expect(result.attachMode).toBe('attached');
-    expect(result.output).toContain('npm run storybook');
+    expect(result.output).toContain('Start it first with the Storybook script');
     expect(result.output).toContain('--attach');
   });
 

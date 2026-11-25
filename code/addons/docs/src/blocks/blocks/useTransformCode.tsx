@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 
 import type { Args, StoryContext } from 'storybook/internal/csf';
 import { logger } from 'storybook/internal/client-logger';
+import { hideArgTypes } from 'storybook/internal/docs-tools';
 
 import type { SourceItem } from './SourceContainer.tsx';
 
@@ -22,7 +23,9 @@ export function useTransformCode(
   const [completedSource, setCompletedSource] = useState<TransformedSource>({
     code: 'Transforming...',
   });
-  const transformed = transform ? transform(source.code, storyContext) : source.code;
+  const transformed = transform
+    ? transform(source.code, hideArgTypes(storyContext as StoryContext))
+    : source.code;
 
   useEffect(() => {
     let active = true;

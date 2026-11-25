@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 
 import {
+  type API_PreparedStoryIndex,
+  type API_Provider,
   type Addon_Collection,
   type Addon_TestProviderType,
   Addon_TypesEnum,
@@ -13,17 +15,18 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { type ComponentEntry, type IndexHash, ManagerContext } from 'storybook/manager-api';
 import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test';
 
-import { SIDEBAR_OPEN_CONTEXT_MENU } from 'storybook/internal/core-events';
+import { PRELOAD_ENTRIES, SIDEBAR_OPEN_CONTEXT_MENU } from 'storybook/internal/core-events';
 
+import { transformStoryIndexToStoriesHash } from '../../../manager-api/lib/stories.ts';
 import { defaultShortcuts } from '../../settings/defaultShortcuts.tsx';
 import { storyRowId } from '../../utils/tree.ts';
 import { IconSymbols } from './IconSymbols.tsx';
+import { index } from './mockdata.large.ts';
+import { mockDataset } from './mockdata.ts';
 import { DEFAULT_REF_ID } from './Sidebar.tsx';
 import { SidebarScrollArea } from './SidebarScrollArea.tsx';
 import { Tree } from './Tree.tsx';
 import { TREE_ROW_HEIGHT } from './treeGeometry.ts';
-import { index } from './mockdata.large.ts';
-import { mockDataset } from './mockdata.ts';
 
 const managerContext: any = {
   state: {
@@ -58,6 +61,7 @@ const managerContext: any = {
         }) satisfies Addon_Collection<Addon_TestProviderType>
     ),
     getData: fn().mockName('api::getData'),
+    resolveLeafEntry: fn().mockName('api::resolveLeafEntry'),
   },
 };
 
@@ -404,6 +408,83 @@ export const ComponentWithOnlyDocsLeft: Story = {
     await expect(docsItem).toHaveAttribute('data-nodetype', 'document');
     await expect(docsItem).toHaveTextContent('Docs Only');
     await expect(canvasElement.querySelector('[data-item-id="docs-only"]')).toBeNull();
+  },
+};
+
+const noConfigProvider: Parameters<typeof transformStoryIndexToStoriesHash>[1]['provider'] = {
+  getConfig: () => ({}),
+} as API_Provider<unknown>;
+
+export const ComponentsWithSubcomponents: Story = {
+  render: () => {
+    const [hideSubcomponents, setHideSubcomponents] = useState(false);
+    const [selectedId, setSelectedId] = useState('components-with-children--primary');
+    const entries: API_PreparedStoryIndex['entries'] = Object.fromEntries(
+      [
+        ['components-with-children--primary', 'Components/With children'],
+        ['components-with-children-child--primary', 'Components/With children/Child'],
+        ['components-no-children--primary', 'Components/No children'],
+        ['components-group-child--primary', 'Components/Group/Child'],
+      ].map(([id, title]) => [
+        id,
+        {
+          id,
+          title,
+          type: 'story',
+          subtype: 'story',
+          name: 'Primary',
+          importPath: `./${id}.stories.ts`,
+          tags: [],
+        },
+      ])
+    );
+    const data = transformStoryIndexToStoriesHash(
+      { v: 5, entries },
+      {
+        provider: noConfigProvider,
+        docsOptions: { docsMode: false },
+        filters: {
+          subcomponents: (entry) =>
+            !hideSubcomponents || entry.title !== 'Components/With children/Child',
+        },
+        allStatuses: {},
+      }
+    );
+
+    return (
+      <div style={{ width: '100%' }}>
+        <label>
+          <input
+            type="checkbox"
+            checked={hideSubcomponents}
+            onChange={(event) => setHideSubcomponents(event.target.checked)}
+          />
+          Hide subcomponents
+        </label>
+        <Tree
+          refId={DEFAULT_REF_ID}
+          data={data}
+          selectedStoryId={selectedId}
+          onSelectStoryId={setSelectedId}
+        />
+      </div>
+    );
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const row = (id: string) => canvasElement.querySelector(`[data-item-id="${id}"]`);
+    const component = () => row('components-with-children')?.querySelector('use');
+
+    await waitFor(() => expect(component()).toHaveAttribute('xlink:href', '#icon--component'));
+    await expect(row('components-group')?.querySelector('use')).toHaveAttribute(
+      'xlink:href',
+      '#icon--group'
+    );
+    await expect(row('components-with-children-child')).toBeInTheDocument();
+
+    await userEvent.click(canvas.getByRole('checkbox', { name: 'Hide subcomponents' }));
+    await waitFor(() => expect(row('components-with-children-child')).not.toBeInTheDocument());
+    await expect(component()).toHaveAttribute('xlink:href', '#icon--component');
   },
 };
 
@@ -1465,5 +1546,51 @@ export const KeyboardNavigation: Story = {
 
     await userEvent.keyboard('{ArrowUp}');
     await waitFor(() => expect(focusedId()).toBe('images--marketing-hero'));
+  },
+};
+
+/**
+ * Hovering a row asks the preview to load the story a press on it opens: a story, docs page or
+ * test loads itself, and a story with tests and its "Story" row load the story. A press on a root
+ * or group opens nothing, so hovering one loads nothing.
+ */
+export const HoverPreloadsFirstStory: Story = {
+  args: {
+    refId: DEFAULT_REF_ID,
+    onSelectStoryId: fn(),
+    data: mockDataset.withRoot as unknown as IndexHash,
+    selectedStoryId: 'root-1-child-a2--grandchild-a1-1',
+  },
+  play: async ({ canvasElement }) => {
+    const row = (id: string) => canvasElement.querySelector<HTMLElement>(`[data-item-id="${id}"]`)!;
+    const emit = managerContext.api.emit;
+    emit.mockClear();
+    const preloadedIds = () =>
+      emit.mock.calls
+        .filter(([event]: [string]) => event === PRELOAD_ENTRIES)
+        .map(([, payload]: [string, { ids: string[] }]) => payload.ids);
+
+    await userEvent.hover(row('root-1'));
+    await userEvent.hover(row('group-1'));
+    await userEvent.hover(row('root-3'));
+    expect(preloadedIds()).toEqual([]);
+
+    await userEvent.hover(row('root-1-child-a2--grandchild-a1-2'));
+    await userEvent.hover(row('root-1-child-a2--grandchild-a1-1'));
+    await userEvent.hover(row(storyRowId('root-1-child-a2--grandchild-a1-1')));
+    await userEvent.hover(row('root-1-child-a2--grandchild-a1-1:test1'));
+    await waitFor(() =>
+      expect(preloadedIds()).toEqual([
+        ['root-1-child-a2--grandchild-a1-2'],
+        ['root-1-child-a2--grandchild-a1-1'],
+        ['root-1-child-a2--grandchild-a1-1'],
+        ['root-1-child-a2--grandchild-a1-1:test1'],
+      ])
+    );
+    expect(emit).toHaveBeenLastCalledWith(PRELOAD_ENTRIES, {
+      ids: ['root-1-child-a2--grandchild-a1-1:test1'],
+      source: 'hover',
+      options: { target: DEFAULT_REF_ID },
+    });
   },
 };

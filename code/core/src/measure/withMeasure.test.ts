@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { StoryContextForRender } from 'storybook/internal/types';
+import type { StoryContext } from 'storybook/internal/types';
 
 vi.mock('storybook/preview-api', () => ({
   useEffect: (cb: () => void) => {
@@ -21,11 +21,11 @@ vi.mock('./box-model/visualizer.ts', () => ({
 import * as canvas from './box-model/canvas.ts';
 import { withMeasure } from './withMeasure.ts';
 
-const runDecorator = (context: Partial<StoryContextForRender>) =>
+const runDecorator = (context: Partial<StoryContext>) =>
   withMeasure(() => 'story', {
     viewMode: 'story',
     ...context,
-  } as StoryContextForRender);
+  } as StoryContext);
 
 describe('withMeasure', () => {
   beforeEach(() => {

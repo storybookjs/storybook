@@ -28,6 +28,7 @@ describe('createMetaComponentResolver', () => {
       component: {
         localName: 'Btn',
         importId: './nowhere',
+        importer: '/project/x.stories.ts',
         exportName: 'ButtonComponent',
         path: undefined,
       },
@@ -43,6 +44,7 @@ describe('createMetaComponentResolver', () => {
       component: {
         localName: 'Button',
         importId: './nowhere',
+        importer: '/project/x.stories.ts',
         exportName: 'Button',
         path: undefined,
       },
@@ -66,6 +68,7 @@ describe('createMetaComponentResolver', () => {
       component: {
         localName: 'ButtonComponent',
         importId: './button.component',
+        importer: join(FIXTURES, 'story-config.ts'),
         exportName: 'ButtonComponent',
         path: join(FIXTURES, 'button.component.ts'),
       },
@@ -81,6 +84,7 @@ describe('createMetaComponentResolver', () => {
       component: {
         localName: 'ButtonComponent',
         importId: './button.component',
+        importer: join(FIXTURES, 'x.stories.ts'),
         exportName: 'ButtonComponent',
         path: join(FIXTURES, 'button.component.ts'),
       },
@@ -95,9 +99,111 @@ describe('createMetaComponentResolver', () => {
       component: {
         localName: 'Button',
         importId: './nowhere',
+        importer: '/project/x.stories.ts',
         exportName: 'Button',
         path: undefined,
       },
+    });
+  });
+
+  describe('a namespace a barrel re-exports', () => {
+    it.each([
+      ['`export * as`', 'UI', 'index.ts'],
+      ['a namespace import it exports by name', 'Imported', 'index.ts'],
+      ['a namespace export it forwards by name', 'Forwarded', 'forwarded.ts'],
+      ['a namespace export it forwards with `export *`', 'Starred', 'star.ts'],
+    ])('follows %s to the file that declares the member', (_, namespace, importer) => {
+      expect(
+        resolveInFixtures(`import { ${namespace} } from './barrel';
+                           export default { component: ${namespace}.Button };`)
+      ).toEqual({
+        component: {
+          localName: 'Button',
+          importId: './ui',
+          importer: join(FIXTURES, 'barrel', importer),
+          exportName: 'ButtonComponent',
+          path: join(FIXTURES, 'button.component.ts'),
+        },
+      });
+    });
+
+    it('follows a member a parts module renames to the file that declares it', () => {
+      expect(
+        resolveInFixtures(`import { Accordion } from './barrel/accordion';
+                           export default { component: Accordion.Root };`)
+      ).toMatchObject({
+        component: {
+          exportName: 'AccordionRoot',
+          path: join(FIXTURES, 'barrel', 'accordion', 'accordion-root.ts'),
+        },
+      });
+    });
+
+    it('reports a member the namespace module does not export', () => {
+      expect(
+        resolveInFixtures(`import { UI } from './barrel';
+                           export default { component: UI.Nope };`)
+      ).toEqual({
+        reason: 'missing-export',
+        expression: 'UI.Nope',
+        importId: './ui',
+        exportName: 'Nope',
+      });
+    });
+
+    it('prefers an explicit export over an `export *` written before it', () => {
+      expect(
+        resolveInFixtures(`import { UI } from './barrel/precedence';
+                           export default { component: UI.Button };`)
+      ).toMatchObject({ component: { path: join(FIXTURES, 'button.component.ts') } });
+    });
+
+    it('does not follow an `export *` that a declared export of the same name shadows', () => {
+      expect(
+        resolveInFixtures(`import { UI } from './barrel/declared';
+                           export default { component: UI.Button };`)
+      ).toMatchObject({ component: { path: join(FIXTURES, 'button.component.ts') } });
+    });
+
+    it('follows a destructured export that shadows an `export *` to the file that declares the member', () => {
+      expect(
+        resolveInFixtures(`import { UI } from './barrel/destructured';
+                           export default { component: UI.Button };`)
+      ).toMatchObject({
+        component: {
+          importId: '../button.component',
+          importer: join(FIXTURES, 'barrel', 'destructured.ts'),
+          path: join(FIXTURES, 'button.component.ts'),
+        },
+      });
+    });
+
+    it('reports a named import that is not a namespace as unreadable', () => {
+      expect(
+        resolveInFixtures(`import { ButtonComponent } from './button.component';
+                           export default { component: ButtonComponent.Button };`)
+      ).toEqual({
+        reason: 'unreadable-component-expression',
+        expression: 'ButtonComponent.Button',
+      });
+    });
+  });
+
+  it('follows a `.js` specifier to the TypeScript file it stands for', () => {
+    expect(
+      resolveInFixtures(`import { UI } from './barrel/index.js';
+                         export default { component: UI.Button };`)
+    ).toMatchObject({
+      component: { exportName: 'ButtonComponent', path: join(FIXTURES, 'button.component.ts') },
+    });
+  });
+
+  it('follows a renamed default export to the file that declares it', () => {
+    expect(
+      resolveInFixtures(`import { Button } from './barrel/default-renamed';
+                         export default { component: Button };`)
+    ).toMatchObject({
+      component: { exportName: 'default', path: join(FIXTURES, 'barrel', 'default-const.ts') },
     });
   });
 
@@ -175,6 +281,7 @@ describe('createMetaComponentResolver', () => {
         component: {
           localName: 'ButtonComponent',
           importId: './button.component',
+          importer: join(FIXTURES, 'spread-after.ts'),
           exportName: 'ButtonComponent',
           path: join(FIXTURES, 'button.component.ts'),
         },
@@ -212,6 +319,7 @@ describe('createMetaComponentResolver', () => {
         component: {
           localName: 'Btn',
           importId: './nowhere',
+          importer: '/project/x.stories.ts',
           exportName: 'ButtonComponent',
           path: undefined,
         },
@@ -226,6 +334,7 @@ describe('createMetaComponentResolver', () => {
         component: {
           localName: 'Button',
           importId: './nowhere',
+          importer: '/project/x.stories.ts',
           exportName: 'Button',
           path: undefined,
         },
@@ -241,6 +350,7 @@ describe('createMetaComponentResolver', () => {
         component: {
           localName: 'ButtonComponent',
           importId: './nowhere',
+          importer: '/project/x.stories.ts',
           exportName: 'ButtonComponent',
           path: undefined,
         },
@@ -258,6 +368,7 @@ describe('createMetaComponentResolver', () => {
         component: {
           localName: 'ButtonComponent',
           importId: './button.component',
+          importer: join(FIXTURES, 'x.stories.ts'),
           exportName: 'ButtonComponent',
           path: join(FIXTURES, 'button.component.ts'),
         },

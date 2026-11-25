@@ -11,12 +11,12 @@ function pluralize(count: number, singular: string, plural = `${singular}s`): st
 }
 
 /**
- * Recovery nudge for the review exit ramp: agents that skip the review tool end visual work on
+ * Recovery nudge for the review exit ramp: agents asked for a review or to see stories end on
  * exactly this call, so the result itself has to contradict that while a step remains to recover in.
  */
 function previewReviewNudge(ctx: ToolsetCtx): string {
   const reviewTool = getToolName(ctx)('review.create');
-  return `These preview links are for iterating or sharing a specific story — they are not how visual work or a browse request ends. The ${reviewTool} tool is available in this session: if you are finishing visually observable work or showing a set of stories, publish the review with **${reviewTool}** and link that instead.`;
+  return `These preview links are for iterating or sharing a specific story — they are not how a browse request or a requested review ends. The ${reviewTool} tool is available in this session: when the user (or the agent instructions of the project) asked for a review, or the user asked to see a set of stories, create the review with **${reviewTool}** and link that instead.`;
 }
 
 export function previewInstructions(
@@ -81,8 +81,9 @@ function formatChangedFilesOutsideStories(
 
 export function formatChangedStories(data: ChangedStoriesOutput, ctx: ToolsetCtx): string {
   const { stories, counts } = data;
+  const since = data.since === undefined ? '' : ` since \`${data.since}\``;
   if (stories.length === 0) {
-    return `No new, modified, or related stories detected.${formatChangedFilesOutsideStories(data, ctx)}`;
+    return `No new, modified, or related stories detected${since}.${formatChangedFilesOutsideStories(data, ctx)}`;
   }
 
   const buckets = {
@@ -91,7 +92,7 @@ export function formatChangedStories(data: ChangedStoriesOutput, ctx: ToolsetCtx
     affected: stories.filter((story) => story.statusValue === 'status-value:affected'),
   };
 
-  let text = `Detected ${stories.length} changed stor${pluralize(stories.length, 'y', 'ies')} (${counts.new} new, ${counts.modified} modified, ${counts.affected} related).`;
+  let text = `Detected ${stories.length} changed stor${pluralize(stories.length, 'y', 'ies')}${since} (${counts.new} new, ${counts.modified} modified, ${counts.affected} related).`;
 
   const serializeStory = ({
     storyId,
@@ -120,7 +121,7 @@ export function formatChangedStories(data: ChangedStoriesOutput, ctx: ToolsetCtx
   const skill = getSkillCommand(ctx)('ui-review');
   const openSkill = skill ? `run \`${skill}\` first if you have not yet, then ` : '';
   // Last, so output read through `tail` still ends on this step.
-  text += `\n\nNext: if the change is visually observable, publish the review as your last step, after your remaining tests and checks — ${openSkill}call **${getToolName(ctx)('review.create')}** curating these story IDs${gapStories}. That review link is how you finish; do not substitute individual preview URLs for it. A change with no visible effect, such as to a callback, tests or types, gets no review unless the user asked to see stories: say that nothing visible changed. When the agent instructions of the project leave the review out of their Storybook workflow, skip it. This list covers your edits so far: run it again only after another edit.`;
+  text += `\n\nNext: when the user (or the agent instructions of the project) asked for a review, or the user asked to see the stories of the change, ${openSkill}call **${getToolName(ctx)('review.create')}** curating these story IDs${gapStories}. A review shows the stories as they are when it is created, so an edit after it needs a new review; individual preview URLs do not replace it. A change with no visible effect, such as to a callback, tests or types, gets no review: say that nothing visible changed. This list covers your edits so far.`;
 
   return text;
 }

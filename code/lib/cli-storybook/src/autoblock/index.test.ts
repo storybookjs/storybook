@@ -1,6 +1,9 @@
 import { beforeEach, expect, test, vi } from 'vitest';
 
 import type { JsPackageManager } from 'storybook/internal/common';
+// Load the barrel before autoblock imports the blockers concurrently. Vitest hands a partly
+// evaluated module to concurrent importers of a module in an import cycle, as this barrel is.
+import 'storybook/internal/common';
 
 import { autoblock } from './index.ts';
 import { type BlockerModule, createBlocker } from './types.ts';
@@ -50,6 +53,7 @@ const baseOptions: Parameters<typeof autoblock>[0] = {
   },
   mainConfigPath: '.storybook/main.ts',
   packageManager: mockPackageManager,
+  storiesPaths: [],
 };
 
 beforeEach(() => {
@@ -90,7 +94,10 @@ test('no blocker fires for a @storybook/nextjs project (deprecation stays soft i
     ),
     getInstalledVersion: vi.fn(async () => null),
     isPackageInstalled: vi.fn(async () => false),
+    isDependencyInstalled: vi.fn(() => false),
     getAllDependencies: vi.fn(() => ({ storybook: '10.0.0' })),
+    packageJsonPaths: [],
+    getOverrideSources: () => [],
   } as unknown as JsPackageManager;
 
   const results = await autoblock({

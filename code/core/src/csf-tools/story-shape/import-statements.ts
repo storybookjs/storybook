@@ -107,26 +107,25 @@ interface Bucket {
   named: NamedSpecifier[];
 }
 
-function addUniqueBy<T>(list: T[], item: T, eq: (candidate: T) => boolean) {
-  if (!list.find(eq)) {
-    list.push(item);
+/** Declares `local` unless an earlier specifier, from any source, already declared it. */
+function declare(declared: Set<string>, local: string, add: () => void) {
+  if (!declared.has(local)) {
+    declared.add(local);
+    add();
   }
 }
 
-function addNamed(bucket: Bucket, local: string, imported: string) {
-  addUniqueBy(
-    bucket.named,
-    { local, imported },
-    (n) => n.local === local && n.imported === imported
-  );
+function addNamed(bucket: Bucket, declared: Set<string>, local: string, imported: string) {
+  declare(declared, local, () => bucket.named.push({ local, imported }));
 }
 
-function addSingle(list: string[], name: string) {
-  addUniqueBy(list, name, (n) => n === name);
+function addSingle(list: string[], declared: Set<string>, name: string) {
+  declare(declared, name, () => list.push(name));
 }
 
 function collectSpecifier(
   bucket: Bucket,
+  declared: Set<string>,
   ref: ImportRef,
   source: string,
   override: ParsedOverride | undefined
@@ -136,16 +135,16 @@ function collectSpecifier(
   if (override?.specifier) {
     const { specifier } = override;
     if (specifier.kind === 'namespace') {
-      addSingle(bucket.namespaces, specifier.local);
+      addSingle(bucket.namespaces, declared, specifier.local);
       return;
     }
     if (!ref.localImportName) {
       return;
     }
     if (specifier.kind === 'default') {
-      addSingle(bucket.defaults, ref.localImportName);
+      addSingle(bucket.defaults, declared, ref.localImportName);
     } else {
-      addNamed(bucket, ref.localImportName, specifier.imported);
+      addNamed(bucket, declared, ref.localImportName, specifier.imported);
     }
     return;
   }
@@ -155,9 +154,9 @@ function collectSpecifier(
     // the namespace becomes a named import. A deeper path still needs the module object.
     const member = rewritten ? ref.importName : undefined;
     if (member && member !== '*' && !member.includes('.')) {
-      addNamed(bucket, member, member);
+      addNamed(bucket, declared, member, member);
     } else {
-      addSingle(bucket.namespaces, ref.namespace);
+      addSingle(bucket.namespaces, declared, ref.namespace);
     }
     return;
   }
@@ -168,15 +167,15 @@ function collectSpecifier(
 
   if (ref.importName === 'default') {
     if (rewritten) {
-      addNamed(bucket, ref.localImportName, ref.localImportName);
+      addNamed(bucket, declared, ref.localImportName, ref.localImportName);
     } else {
-      addSingle(bucket.defaults, ref.localImportName);
+      addSingle(bucket.defaults, declared, ref.localImportName);
     }
     return;
   }
 
   if (ref.importName) {
-    addNamed(bucket, ref.localImportName, ref.importName);
+    addNamed(bucket, declared, ref.localImportName, ref.importName);
   }
 }
 
@@ -231,7 +230,8 @@ function printBucket({ source, defaults, namespaces, named }: Bucket): string[] 
  * References are bucketed by their final source, which is the `importOverride` source when one
  * parses, else `packageName` when the original source is not already a package, else the source as
  * written. Sources keep first-seen order and declarations keep a fixed order within a source, so
- * repeated runs produce byte-identical output.
+ * repeated runs produce byte-identical output. A local name is declared once: the first ref that
+ * binds it wins, so callers pass the refs whose source should win first.
  */
 export function buildImportStatements({
   refs,
@@ -241,6 +241,7 @@ export function buildImportStatements({
   packageName?: string;
 }): string[] {
   const buckets = new Map<string, Bucket>();
+  const declared = new Set<string>();
 
   refs.forEach((ref) => {
     if (!ref.importId) {
@@ -256,7 +257,7 @@ export function buildImportStatements({
       buckets.set(source, bucket);
     }
 
-    collectSpecifier(bucket, ref, source, override);
+    collectSpecifier(bucket, declared, ref, source, override);
   });
 
   return Array.from(buckets.values()).flatMap(printBucket);

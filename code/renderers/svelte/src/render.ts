@@ -75,6 +75,8 @@ export async function renderToCanvas(
     unmount(canvasElement);
   }
 
+  showMain();
+
   if (!existingComponent || remount) {
     const props = createReactiveProps({
       storyFn,
@@ -98,10 +100,10 @@ export async function renderToCanvas(
       title,
       showError,
     });
+    // PreviewRender reruns storyFn in the next flush; flushing now makes its errors reject here
+    svelte.flushSync();
     await svelte.tick();
   }
-
-  showMain();
 
   // unmount the component when the story changes
   return () => {

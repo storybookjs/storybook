@@ -211,6 +211,7 @@ describe('build-storybook builder', () => {
       sourceMap: false,
       preserveSymlinks: false,
       zoneless: true,
+      workspaceRoot: '/test/workspace',
     });
   });
 

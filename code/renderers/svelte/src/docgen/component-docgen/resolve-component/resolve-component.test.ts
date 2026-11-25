@@ -24,6 +24,7 @@ const entryFor = (file: string): IndexEntry => ({
 it.each([
   ['a tsconfig.json path', 'alias-tsconfig/Button.stories.ts'],
   ['a package.json subpath import', 'subpath-imports/Button.stories.js'],
+  ['a `storybook` export condition', 'storybook-condition/Button.stories.js'],
 ])('resolves a component imported through %s', async (_, file) => {
   expect(await resolveStoryComponent(entryFor(file))).toEqual({
     componentPath: join(fixtures, dirname(file), 'src/lib/Button.svelte'),
@@ -61,14 +62,14 @@ it('resolves a member expression through a spread that overrides the property', 
   ).toEqual({
     componentPath: join(fixtures, 'svelte-csf/Other.svelte'),
     exportName: 'default',
-    name: 'Select',
+    name: 'Other',
   });
 });
 
-it('declines a member expression an unreadable spread may replace', async () => {
+it('reports a member expression an unreadable spread may replace', async () => {
   await expect(
     resolveStoryComponent(entryFor('svelte-csf/member-expression-opaque-spread.stories.svelte'))
-  ).resolves.toBeUndefined();
+  ).rejects.toThrow('Cannot resolve the component `Input.Select`');
 });
 
 it('declines a member expression whose binding an unrelated export shadows', async () => {
@@ -82,7 +83,25 @@ it('resolves the component of a Svelte CSF file with a member expression of a na
     await resolveStoryComponent(entryFor('svelte-csf/namespace-import.stories.svelte'))
   ).toEqual({
     componentPath: join(fixtures, 'svelte-csf/Button.svelte'),
-    exportName: 'Button',
+    exportName: 'default',
+    name: 'Button',
+  });
+});
+
+it('resolves the component of a Svelte CSF file with a member expression of a namespace a barrel exports', async () => {
+  expect(
+    await resolveStoryComponent(entryFor('svelte-csf/namespace-export.stories.svelte'))
+  ).toEqual({
+    componentPath: join(fixtures, 'barrels/Button.svelte'),
+    exportName: 'default',
+    name: 'Button',
+  });
+});
+
+it('resolves an import that another module writes from that module, not the story file', async () => {
+  expect(await resolveStoryComponent(entryFor('nested/Button.stories.ts'))).toEqual({
+    componentPath: join(fixtures, 'barrels/Button.svelte'),
+    exportName: 'default',
     name: 'Button',
   });
 });
@@ -93,11 +112,14 @@ it('reports an unresolved component import', async () => {
   );
 });
 
-it('reports a component expression it cannot follow', async () => {
-  await expect(resolveStoryComponent(entryFor('unresolved/global.stories.ts'))).rejects.toThrow(
-    'Cannot resolve the component `globalThis.__TEMPLATE_COMPONENTS__.Button`'
-  );
-});
+it.each(['global.stories.ts', 'global.stories.svelte'])(
+  'reports a component expression it cannot follow in %s',
+  async (file) => {
+    await expect(resolveStoryComponent(entryFor(`unresolved/${file}`))).rejects.toThrow(
+      'Cannot resolve the component `globalThis.__TEMPLATE_COMPONENTS__.Button`'
+    );
+  }
+);
 
 it.each([
   'default-as',
@@ -106,12 +128,14 @@ it.each([
   'local',
   'namespace',
   'star-svelte',
+  'star-shadowed',
   'module-svelte',
   'js-extension',
+  'namespace-export',
 ])('resolves a plain CSF component through the %s barrel', async (barrel) => {
   expect(await resolveStoryComponent(entryFor(`barrels/${barrel}.stories.ts`))).toEqual({
     componentPath: join(fixtures, 'barrels/Button.svelte'),
-    exportName: 'Button',
+    exportName: 'default',
     name: 'Button',
   });
 });
@@ -165,3 +189,30 @@ it.each([
     },
   });
 });
+
+it.each(['aliased.stories.svelte', 'as-const.stories.svelte'])(
+  'resolves the subcomponents of %s like a CSF meta',
+  async (file) => {
+    expect(await resolveStorySubcomponents(entryFor(`subcomponents/${file}`))).toEqual({
+      Icon: {
+        componentPath: join(fixtures, 'subcomponents/Icon.svelte'),
+        exportName: 'default',
+        name: 'Icon',
+      },
+    });
+  }
+);
+
+it.each(['namespaces.stories.ts', 'namespaces.stories.svelte'])(
+  'resolves the subcomponents of %s through a namespace import and a barrel namespace',
+  async (file) => {
+    const icon = {
+      componentPath: join(fixtures, 'subcomponents/Icon.svelte'),
+      exportName: 'default',
+    };
+    expect(await resolveStorySubcomponents(entryFor(`subcomponents/${file}`))).toEqual({
+      Barrel: { ...icon, name: 'Barrel' },
+      Namespace: { ...icon, name: 'Namespace' },
+    });
+  }
+);

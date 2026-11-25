@@ -12,7 +12,13 @@ export type {
   CsfObjectTarget,
   CsfValue,
 } from './CsfObject.ts';
-export { type CsfPath, printCsfPath } from './CsfObjectPath.ts';
+export {
+  type AnyKey,
+  type CsfPath,
+  type CsfPattern,
+  anyKey,
+  printCsfPath,
+} from './CsfObjectPath.ts';
 export * from './ConfigFile.ts';
 export * from './jsdoc.ts';
 export * from './enrichCsf.ts';

@@ -8,7 +8,6 @@ import type {
   Tag,
 } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
 import { BeakerIcon, DocumentIcon, PlayHollowIcon } from '@storybook/icons';
 
 import { color } from 'storybook/theming/emotion';
@@ -49,7 +48,7 @@ const BUILT_IN_FILTER_DEFS: Array<{
 ];
 
 export function useTagFilterEntries(indexJson: StoryIndex) {
-  const tagOptions = global.TAGS_OPTIONS;
+  const tagOptions = globalThis.TAGS_OPTIONS;
   return useMemo(() => {
     const entries = Object.values(indexJson.entries);
 

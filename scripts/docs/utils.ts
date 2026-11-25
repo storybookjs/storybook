@@ -24,7 +24,8 @@ export function slugify(text: string): string {
   return text
     .toLowerCase()
     .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1') // Strip markdown links, keep text
-    .replace(/[`*_~\\]/g, '') // Strip inline formatting and MDX escape chars
+    .replace(/[`*~\\]/g, '') // Strip inline formatting and MDX escape chars
+    .replace(/(^|\s)_+|_+(?=\s|$)/g, '$1') // Strip `_emphasis_` delimiters but keep `SNAKE_CASE`
     .replace(/[<>]/g, '') // Remove angle brackets but keep their content
     .trim()
     .replace(/[^\w\s-]/g, '') // Remove non-word chars (except spaces and hyphens)
@@ -99,13 +100,20 @@ export function getLineContexts(lines: string[]): LineContext[] {
  */
 export async function getHeadingSlugs(filePath: string): Promise<Set<string>> {
   const lines = await readFileLines(filePath);
+  const contexts = getLineContexts(lines);
   const slugs = new Set<string>();
+  const counts = new Map<string, number>();
   const headingRegex = /^(#{1,6})\s+(.+)$/;
 
-  for (const line of lines) {
-    const match = headingRegex.exec(line);
+  for (let i = 0; i < lines.length; i++) {
+    if (contexts[i] !== 'content') continue;
+    const match = headingRegex.exec(lines[i]);
     if (match) {
-      slugs.add(slugify(match[2]));
+      // Like rehype-slug, repeated headings get `-1`, `-2`, and so on
+      const slug = slugify(match[2]);
+      const count = counts.get(slug) ?? 0;
+      slugs.add(count === 0 ? slug : `${slug}-${count}`);
+      counts.set(slug, count + 1);
     }
   }
 

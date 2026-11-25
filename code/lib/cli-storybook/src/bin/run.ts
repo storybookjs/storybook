@@ -237,7 +237,7 @@ command('sandbox [filterValue]')
   .alias('repro') // for backwards compatibility
   .description('Create a sandbox from a set of possible templates')
   .option('-o --output <outDir>', 'Define an output directory')
-  .option('--no-init', 'Whether to download a template without an initialized Storybook', false)
+  .option('--no-init', 'Whether to download a template without an initialized Storybook')
   .action((filterValue, options) => {
     logger.intro(`Creating a Storybook sandbox...`);
     return sandbox({ filterValue, ...options })

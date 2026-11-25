@@ -1,6 +1,6 @@
 {
   "name": "@storybook/react-vite",
-  "version": "11.0.0-beta.2",
+  "version": "11.0.0-rc.0",
   "description": "Storybook for React and Vite: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -64,7 +64,7 @@
     "resolve": "^1.22.8",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^6.0.3",
-    "vite": "^7.0.4"
+    "vite": "^7.3.8"
   },
   "peerDependencies": {
     "@joshwooding/vite-plugin-react-docgen-typescript": "^0.7.0",

@@ -16,8 +16,7 @@ import type {
   StoryId,
 } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
-
+import { hideArgTypes } from '../store/csf/hideArgTypes.ts';
 import { addons } from './main.ts';
 
 interface Hook {
@@ -136,8 +135,8 @@ function hookify<TRenderer extends Renderer>(
 ): DecoratorFunction<TRenderer>;
 function hookify<TRenderer extends Renderer>(fn: AbstractFunction) {
   const hookified = (...args: any[]) => {
-    const { hooks }: { hooks: HooksContext<TRenderer> } =
-      typeof args[0] === 'function' ? args[1] : args[0];
+    const isDecorator = typeof args[0] === 'function';
+    const { hooks }: { hooks: HooksContext<TRenderer> } = isDecorator ? args[1] : args[0];
 
     const prevPhase = hooks.currentPhase;
     const prevHooks = hooks.currentHooks;
@@ -156,10 +155,10 @@ function hookify<TRenderer extends Renderer>(fn: AbstractFunction) {
     }
     hooks.nextHookIndex = 0;
 
-    const prevContext = global.STORYBOOK_HOOKS_CONTEXT;
-    global.STORYBOOK_HOOKS_CONTEXT = hooks;
-    const result = fn(...args);
-    global.STORYBOOK_HOOKS_CONTEXT = prevContext;
+    const prevContext = globalThis.STORYBOOK_HOOKS_CONTEXT;
+    globalThis.STORYBOOK_HOOKS_CONTEXT = hooks;
+    const result = isDecorator ? fn(args[0], hideArgTypes(args[1])) : fn(...args);
+    globalThis.STORYBOOK_HOOKS_CONTEXT = prevContext;
 
     if (hooks.currentPhase === 'UPDATE' && hooks.getNextHook() != null) {
       throw new Error(
@@ -227,7 +226,7 @@ function getHooksContextOrNull<
   TRenderer extends Renderer,
   TArgs extends Args = Args,
 >(): HooksContext<TRenderer, TArgs> | null {
-  return global.STORYBOOK_HOOKS_CONTEXT || null;
+  return globalThis.STORYBOOK_HOOKS_CONTEXT || null;
 }
 
 function getHooksContextOrThrow<
@@ -566,7 +565,7 @@ export function useStoryContext<
     throw invalidHooksError();
   }
 
-  return currentContext;
+  return hideArgTypes(currentContext);
 }
 
 /**

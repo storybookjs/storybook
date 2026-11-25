@@ -1,6 +1,6 @@
 // How this framework's `propsTable` mode reaches the legacy Compodoc adapter. The module reads
 // `STORYBOOK_ANGULAR_OPTIONS` at evaluation time, so every case re-imports it fresh.
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { CompodocJson, Directive } from './compodoc-types.ts';
 
@@ -31,10 +31,6 @@ beforeEach(() => {
   vi.resetModules();
   vi.stubGlobal('FEATURES', { angularFilterNonInputControls: false });
   vi.stubGlobal('__STORYBOOK_COMPODOC_JSON__', compodocJson);
-});
-
-afterEach(() => {
-  vi.unstubAllGlobals();
 });
 
 describe('resolving propsTable for the Compodoc pipeline', () => {

@@ -24,13 +24,20 @@ Each step names the skill that does the work. Read that skill when you reach the
 
 5. **Hunt.** Run [`invariants-hunt`](../invariants-hunt/SKILL.md) since the base SHA. Fix what survives the evidence gate. Hold the design-level findings for step 10.
 
-6. **QA in the real world.** Run [`real-world-qa`](../real-world-qa/SKILL.md). Fix and commit the findings, and keep the evidence for the PR body.
+6. **QA in the real world.** Run [`real-world-qa`](../real-world-qa/SKILL.md). Fix and commit the findings, and keep the evidence for the PR body. Capture it on the base and on the head, for the "Before and after" of step 8.
 
 7. **Shape the history.** Rebuild the commits as the [`pr` skill](../pr/SKILL.md) "Commit history" section says.
 
 8. **Open the draft PR, and get two reviews in parallel.**
    - Open the PR with [`open-pr`](../open-pr/SKILL.md), without its questions: choose the type and QA labels yourself with the heuristics of the [`pr` skill](../pr/SKILL.md), and skip the canary. Add no `ci:*` label; see [Pull requests](../../guidelines/pull-requests.md).
    - Start the PR body with each issue the spec comes from, as a link to that issue: `Closes #<number>` for a GitHub issue, `Closes [SB-<number>](<Linear URL>)` for a Linear issue, and the same form for any other tracker. Write `Part of` when the PR does not finish the issue.
+   - Show what changes for the user, before and after. Pick what fits the change:
+     - **Visual change:** before and after screenshots.
+     - **UI behaviour:** before and after recordings, best side by side in one video. Two videos are also an okay fallback.
+     - **Performance a user notices:** a side-by-side recording with the timings or metrics on screen. It can record the UI, the terminal output, or both. This is strongly recommended.
+     - **Code behaviour:** consumer code, such as a story in CSF or a call to a public API, and what it gave before and gives now, or how that code must change. Do not copy the PR's diff.
+
+     Use the tools that work on your system, for example the [`record-video`](../record-video/SKILL.md) skill or headless Playwright. Attach the media with the [`github-attachments`](../github-attachments/SKILL.md) skill when you have it. When you cannot capture something, describe the before and after in words, and say so in the hand-over.
    - Assign the PR to the user who invoked this skill.
    - Ask Greptile for a review, as [Pull requests](../../guidelines/pull-requests.md) says.
    - Run [`second-opinion`](../second-opinion/SKILL.md) on the PR.
@@ -43,6 +50,6 @@ Each step names the skill that does the work. Read that skill when you reach the
 
 The human leads from here:
 
-- **Human review.** Fix the feedback as new commits; the [`pr` skill](../pr/SKILL.md) "Commit history" section says why. After a big change, run steps 3 to 6 again.
+- **Human review.** Before a human other than the author has reviewed the PR, fold feedback fixes into the commit that owns each fix. After that first human review, add each fix as a new commit; the [`pr` skill](../pr/SKILL.md) "Commit history" section says why. After a big change, run steps 3 to 6 again.
 - **CI and the review by a maintainer.** When the user approves the PR, they invoke [`ready-for-review`](../ready-for-review/SKILL.md) and name the reviewer.
 - **The next PR.** When the work needs several PRs, continue in the same conversation and start again at step 1 for the next one.

@@ -65,7 +65,7 @@ export type TriggerTestRunParams = {
   requestEvent: string;
   responseEvent: string;
   storyIds?: string[];
-  files?: string[];
+  fileFilters?: string[];
   storyFiles?: string[];
   config?: Record<string, unknown>;
   actor: string;
@@ -83,7 +83,7 @@ export function triggerTestRun({
   requestEvent,
   responseEvent,
   storyIds,
-  files,
+  fileFilters,
   storyFiles,
   config,
   actor,
@@ -142,7 +142,7 @@ export function triggerTestRun({
         requestId,
         actor,
         storyIds,
-        files,
+        fileFilters,
         storyFiles,
         config,
       });
@@ -295,7 +295,7 @@ export async function runStoryTests({
       requestEvent,
       responseEvent,
       storyIds,
-      files: filters,
+      fileFilters: filters,
       storyFiles,
       config: { a11y },
       actor,
@@ -336,7 +336,9 @@ export async function runStoryTests({
       // A run of story files learns its stories from the files Vitest matched.
       if (selection && (filters || storyFiles)) {
         selection.storyCount = result.storyIds?.length;
-        if (result.storyIds?.length === 0) {
+        // A matched story file runs, so nothing to run means the filters selected no changed or
+        // requested story. Changed story files that Vitest excludes run nothing, as on next.
+        if (filters && result.storyIds?.length === 0) {
           return { status: 'no-stories', notFoundMessages, selection };
         }
       }

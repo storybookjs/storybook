@@ -154,7 +154,7 @@ export class TestManager {
   async handleTriggerRunEvent(event: TriggerRunEvent) {
     await this.runTestsWithState({
       // The stories of a run of files are known once Vitest has matched the files
-      storyIds: event.payload.files || event.payload.storyFiles ? [] : event.payload.storyIds,
+      storyIds: event.payload.fileFilters || event.payload.storyFiles ? [] : event.payload.storyIds,
       triggeredBy: event.payload.triggeredBy,
       configOverride: event.payload.configOverride,
       callback: async () => {

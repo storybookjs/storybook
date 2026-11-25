@@ -402,7 +402,7 @@ export class VitestManager {
     const coverageShouldBeEnabled =
       !!runConfig.coverage &&
       !watching &&
-      !runPayload.files &&
+      !runPayload.fileFilters &&
       !runPayload.storyFiles &&
       (runPayload?.storyIds?.length ?? 0) === 0;
 
@@ -419,13 +419,13 @@ export class VitestManager {
     await this.cancelCurrentRun();
 
     const allStories = this.getStories();
-    const matchedSpecifications = await this.getStorybookTestSpecifications(runPayload.files);
+    const matchedSpecifications = await this.getStorybookTestSpecifications(runPayload.fileFilters);
     const storyFiles = runPayload.storyFiles && new Set(runPayload.storyFiles.map(toModuleId));
     const testSpecifications = storyFiles
       ? matchedSpecifications.filter(({ moduleId }) => storyFiles.has(moduleId))
       : matchedSpecifications;
     const matchedFiles =
-      (runPayload.files || storyFiles) &&
+      (runPayload.fileFilters || storyFiles) &&
       new Set(testSpecifications.map(({ moduleId }) => moduleId));
 
     const filteredStories = allStories.filter(
@@ -449,7 +449,8 @@ export class VitestManager {
     if (matchedFiles) {
       this.testManager.setRunStories(
         filteredStories.map((story) => story.id),
-        runPayload.files && new Set(matchedSpecifications.map(({ moduleId }) => moduleId)).size
+        runPayload.fileFilters &&
+          new Set(matchedSpecifications.map(({ moduleId }) => moduleId)).size
       );
     }
     this.testManager.store.setState((s) => ({

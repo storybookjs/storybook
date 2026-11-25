@@ -680,7 +680,7 @@ describe('TestManager', () => {
 
     await testManager.handleTriggerRunEvent({
       type: 'TRIGGER_RUN',
-      payload: { files: ['to/file'], triggeredBy: 'global' },
+      payload: { fileFilters: ['to/file'], triggeredBy: 'global' },
     });
 
     expect(vitest.globTestSpecifications).toHaveBeenLastCalledWith(['to/file']);
@@ -708,7 +708,7 @@ describe('TestManager', () => {
     await testManager.handleTriggerRunEvent({
       type: 'TRIGGER_RUN',
       payload: {
-        files: ['to/file'],
+        fileFilters: ['to/file'],
         storyIds: ['story--one', 'another--two'],
         triggeredBy: 'global',
       },
@@ -735,6 +735,28 @@ describe('TestManager', () => {
     expect(mockStore.getState().currentRun).toMatchObject({
       storyIds: ['another--one', 'another--two'],
       matchedFileCount: undefined,
+    });
+  });
+
+  it('runs the given story files among the ones the file filters match, and counts the matched ones', async () => {
+    vitest.globTestSpecifications.mockImplementation((filters?: string[]) =>
+      filters ? tests : []
+    );
+    const testManager = await startWithIndex();
+
+    await testManager.handleTriggerRunEvent({
+      type: 'TRIGGER_RUN',
+      payload: {
+        fileFilters: ['file'],
+        storyFiles: ['path/to/another/file'],
+        triggeredBy: 'global',
+      },
+    });
+
+    expect(vitest.runTestSpecifications).toHaveBeenCalledWith(tests.slice(1), true);
+    expect(mockStore.getState().currentRun).toMatchObject({
+      storyIds: ['another--one', 'another--two'],
+      matchedFileCount: 2,
     });
   });
 
@@ -1002,7 +1024,7 @@ describe('TestManager', () => {
     expect(vitest.enableCoverage).not.toHaveBeenCalled();
   });
 
-  it.each([{ files: ['to/file'] }, { storyFiles: ['path/to/file'] }])(
+  it.each([{ fileFilters: ['to/file'] }, { storyFiles: ['path/to/file'] }])(
     'should not enable coverage for a run of story files: %o',
     async (selection) => {
       const testManager = await startWithIndex();

@@ -106,9 +106,10 @@ function respondingChannel(result: TestRunResult = sampleResult) {
   const requestedStoryFiles: unknown[] = [];
   channel.emit = (event, payload) => {
     if (event === TRIGGER_TEST_RUN_REQUEST) {
-      const { requestId, storyIds, files, storyFiles } = payload as TriggerTestRunRequestPayload;
+      const { requestId, storyIds, fileFilters, storyFiles } =
+        payload as TriggerTestRunRequestPayload;
       requested.push(storyIds);
-      requestedFiles.push(files);
+      requestedFiles.push(fileFilters);
       requestedStoryFiles.push(storyFiles);
       queueMicrotask(() => respond(channel, { requestId, status: 'completed', result }));
     }
@@ -443,6 +444,24 @@ describe('runStoryTests', () => {
         notFoundMessages: [],
         selection: { files: { storyFileCount: 0 } },
       });
+    });
+
+    it('completes a run of changed story files that Vitest does not include', async () => {
+      const { channel } = respondingChannel({ ...sampleResult, storyIds: [] });
+
+      const result = await runStoryTests({
+        channel,
+        getIndex: async () => index,
+        changed: true,
+        getChangedStories: async () => ({
+          storyIds: ['button--primary'],
+          storyFiles: ['./src/Button.stories.tsx'],
+          changedConfigFiles: [],
+          pendingFiles: [],
+        }),
+      });
+
+      expect(result).toMatchObject({ status: 'completed', selection: { storyCount: 0 } });
     });
 
     it('narrows stories asked for by id to the changed ones, and sends no story files', async () => {

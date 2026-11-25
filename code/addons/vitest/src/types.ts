@@ -87,7 +87,7 @@ export type TriggerRunEvent = {
   payload: {
     storyIds?: string[] | undefined;
     /** Vitest file filters, as in `vitest Button`: only the story files they match run. */
-    files?: string[];
+    fileFilters?: string[];
     /** Story index import paths: only these story files run. */
     storyFiles?: string[];
     triggeredBy: RunTrigger;

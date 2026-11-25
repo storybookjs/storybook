@@ -2,8 +2,6 @@ import React, { type FC, Fragment, useEffect } from 'react';
 
 import type { Channel } from 'storybook/internal/channels';
 
-import { global } from '@storybook/global';
-
 import type { Decorator, Loader, ReactRenderer } from '@storybook/react-vite';
 import { definePreview } from '@storybook/react-vite';
 
@@ -36,8 +34,6 @@ import '../renderers/react/template/components/index.js';
 import { isChromatic } from './isChromatic.ts';
 import * as vitestPreview from './vitest.preview.ts';
 
-sb.mock(import('@storybook/global'), { spy: true });
-
 // Register custom matchers on storybook/test's expect so play functions can use them
 expect.extend({ toHaveLiveRegion });
 
@@ -53,8 +49,6 @@ sb.mock(import('uuid'));
 /* eslint-enable depend/ban-dependencies */
 
 import '../core/src/shared/open-service/sync-test/preview.ts';
-
-const { document } = global;
 
 // The internal Storybook's manager stories (sidebar context menu, onboarding guide, …) demonstrate
 // DEVELOPMENT-only UI, so they must render as if in development even though this Storybook is itself

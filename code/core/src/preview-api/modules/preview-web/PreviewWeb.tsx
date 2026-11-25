@@ -1,8 +1,6 @@
 import type { ModuleImportFn, ProjectAnnotations } from 'storybook/internal/types';
 import type { Renderer } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
-
 import type { MaybePromise } from './Preview.tsx';
 import { PreviewWithSelection } from './PreviewWithSelection.tsx';
 import { UrlStore } from './UrlStore.ts';
@@ -16,6 +14,6 @@ export class PreviewWeb<TRenderer extends Renderer> extends PreviewWithSelection
   ) {
     super(importFn, getProjectAnnotations, new UrlStore(), new WebView());
 
-    global.__STORYBOOK_PREVIEW__ = this;
+    globalThis.__STORYBOOK_PREVIEW__ = this;
   }
 }

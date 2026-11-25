@@ -1,5 +1,3 @@
-import { global as globalThis } from '@storybook/global';
-
 import { Button } from './Button.jsx';
 import { Form } from './Form.jsx';
 import { Html } from './Html.jsx';

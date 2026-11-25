@@ -3,7 +3,6 @@ import preview from '#.storybook/preview';
 import { expect } from 'storybook/test';
 
 const meta = preview.meta({
-  // @ts-expect-error fix globalThis.__TEMPLATE_COMPONENTS__ type not existing later
   component: globalThis.__TEMPLATE_COMPONENTS__.Button,
   args: { label: 'Hello world!' },
 });

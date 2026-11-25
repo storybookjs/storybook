@@ -4,7 +4,6 @@ import {
   UPDATE_STORY_ARGS,
 } from 'storybook/internal/core-events';
 
-import { global as globalThis } from '@storybook/global';
 import type { Meta, StoryObj } from '@storybook/vue3';
 
 import { userEvent, within } from 'storybook/test';

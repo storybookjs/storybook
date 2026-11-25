@@ -2,8 +2,6 @@ import { createBrowserChannel } from 'storybook/internal/channels';
 import { STORY_HOT_UPDATED } from 'storybook/internal/core-events';
 import { isPreview } from '{{csfImportPath}}';
 
-import { global } from '@storybook/global';
-
 import { PreviewWeb, addons, composeConfigs } from 'storybook/preview-api';
 import { importFn } from '{{storiesFilename}}';
 
@@ -22,7 +20,7 @@ const getProjectAnnotations = () => {
 const channel = createBrowserChannel({ page: 'preview' });
 addons.setChannel(channel);
 
-if (global.CONFIG_TYPE === 'DEVELOPMENT') {
+if (globalThis.CONFIG_TYPE === 'DEVELOPMENT') {
   window.__STORYBOOK_SERVER_CHANNEL__ = channel;
 }
 

@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { act, cleanup, render, waitFor } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import React from 'react';
 
@@ -11,20 +11,10 @@ import { Channel } from 'storybook/internal/channels';
 import type { API, Combo, State } from '../root.tsx';
 import { Provider as ManagerProvider } from '../root.tsx';
 
-// The stories module destructures `fetch` from `@storybook/global` at import time to fetch the
-// index on init. Reject it so the init no-ops (into indexError) instead of hitting the network.
-// Return a fresh `global` object rather than mutating the shared global in place, so the mocked
-// `fetch` cannot leak into other test files. We copy all own property descriptors (a plain spread
-// drops non-enumerable globals like happy-dom's `document`) and keep the prototype, so the other
-// globals that manager modules rely on are preserved.
-vi.mock('@storybook/global', async (importOriginal) => {
-  const mod = await importOriginal<typeof import('@storybook/global')>();
-  const global = Object.create(
-    Object.getPrototypeOf(mod.global),
-    Object.getOwnPropertyDescriptors(mod.global)
-  );
-  global.fetch = vi.fn().mockRejectedValue(new Error('network disabled in test'));
-  return { ...mod, global };
+// The stories module fetches the index on init. Reject `fetch` so init settles into indexError
+// instead of hitting the network.
+beforeEach(() => {
+  vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network disabled in test')));
 });
 
 afterEach(async () => {

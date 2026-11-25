@@ -1,11 +1,8 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from 'vitest';
 
-import { global } from '@storybook/global';
-
 import { eventToShortcut, keyToSymbol } from '../lib/shortcut';
 
-const { KeyboardEvent } = global;
 const ev = (attr) => new KeyboardEvent('keydown', { ...attr });
 
 describe('eventToShortcut', () => {

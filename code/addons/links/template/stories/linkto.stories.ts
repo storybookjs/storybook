@@ -1,5 +1,3 @@
-import { global as globalThis } from '@storybook/global';
-
 import { linkTo } from '@storybook/addon-links';
 
 export default {

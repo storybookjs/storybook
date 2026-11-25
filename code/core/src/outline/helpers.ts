@@ -1,5 +1,3 @@
-import { global } from '@storybook/global';
-
 export const clearStyles = (selector: string | string[]) => {
   const selectors = Array.isArray(selector) ? selector : [selector];
   selectors.forEach(clearStyle);
@@ -7,22 +5,22 @@ export const clearStyles = (selector: string | string[]) => {
 
 const clearStyle = (input: string | string[]) => {
   const selector = typeof input === 'string' ? input : input.join('');
-  const element = global.document.getElementById(selector);
+  const element = globalThis.document.getElementById(selector);
   if (element && element.parentElement) {
     element.parentElement.removeChild(element);
   }
 };
 
 export const addOutlineStyles = (selector: string, css: string) => {
-  const existingStyle = global.document.getElementById(selector);
+  const existingStyle = globalThis.document.getElementById(selector);
   if (existingStyle) {
     if (existingStyle.innerHTML !== css) {
       existingStyle.innerHTML = css;
     }
   } else {
-    const style = global.document.createElement('style');
+    const style = globalThis.document.createElement('style');
     style.setAttribute('id', selector);
     style.innerHTML = css;
-    global.document.head.appendChild(style);
+    globalThis.document.head.appendChild(style);
   }
 };

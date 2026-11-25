@@ -1,5 +1,1 @@
-import { global } from '@storybook/global';
-
-const { window: globalWindow } = global;
-
-globalWindow.STORYBOOK_ENV = 'HTML';
+globalThis.STORYBOOK_ENV = 'HTML';

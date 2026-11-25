@@ -19,8 +19,6 @@ import type {
 } from 'storybook/internal/types';
 import { applyServicesPresetOnce } from './utils/apply-services-preset-once.ts';
 
-import { global } from '@storybook/global';
-
 import { dirname, isAbsolute, join, relative, resolve } from 'pathe';
 
 import { resolvePackageDir, safeResolveModule } from '../shared/utils/module.ts';
@@ -125,7 +123,7 @@ export async function loadStorybook(
   });
 
   const features = await presets.apply('features');
-  global.FEATURES = features;
+  globalThis.FEATURES = features;
 
   await applyServicesPresetOnce(presets);
 

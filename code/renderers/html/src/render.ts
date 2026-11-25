@@ -1,13 +1,9 @@
 import type { ArgsStoryFn, RenderContext } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
-
 import { simulateDOMContentLoaded, simulatePageLoad } from 'storybook/preview-api';
 import { dedent } from 'ts-dedent';
 
 import type { HtmlRenderer } from './types.ts';
-
-const { Node } = global;
 
 export const render: ArgsStoryFn<HtmlRenderer> = (args, context) => {
   const { id, component: Component } = context;
@@ -50,7 +46,7 @@ export function renderToCanvas(
   if (typeof element === 'string') {
     canvasElement.innerHTML = element;
     simulatePageLoad(canvasElement);
-  } else if (element instanceof Node) {
+  } else if (element instanceof globalThis.Node) {
     if (canvasElement.firstChild === element && forceRemount === false) {
       return;
     }

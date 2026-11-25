@@ -3,7 +3,6 @@ import React, { Fragment, useEffect, useState } from 'react';
 
 import { Button, Loader } from 'storybook/internal/components';
 
-import { global } from '@storybook/global';
 import { AlertIcon as AlertIconSvg, EyeCloseIcon, EyeIcon, HeartIcon } from '@storybook/icons';
 
 import { useStorybookApi, useStorybookState } from 'storybook/manager-api';
@@ -197,7 +196,9 @@ const WhatsNewScreen: FC = () => {
       copyContent={whatsNewData.blogUrl ?? whatsNewData.url}
       onToggleNotifications={() => {
         if (isNotificationsEnabled) {
-          if (global.confirm('All update notifications will no longer be shown. Are you sure?')) {
+          if (
+            globalThis.confirm('All update notifications will no longer be shown. Are you sure?')
+          ) {
             api.toggleWhatsNewNotifications();
           }
         } else {

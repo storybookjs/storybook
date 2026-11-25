@@ -2,7 +2,6 @@
   import preview from '#.storybook/preview';
   import { expect } from 'storybook/test';
 
-  // @ts-expect-error fix globalThis.__TEMPLATE_COMPONENTS__ type not existing later
   const Button = globalThis.__TEMPLATE_COMPONENTS__.Button;
 
   const meta = preview.meta({ component: Button, args: { label: 'Hello world!' } });

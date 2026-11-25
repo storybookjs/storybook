@@ -5,7 +5,6 @@ import { createBrowserChannel } from 'storybook/internal/channels';
 import { CHANNEL_CREATED, CHANNEL_WS_DISCONNECT } from 'storybook/internal/core-events';
 import type { Addon_Config, Addon_Types } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
 import { FailedIcon } from '@storybook/icons';
 
 import type { API, AddonStore } from 'storybook/manager-api';
@@ -69,7 +68,6 @@ class ReactProvider extends Provider {
   }
 }
 
-const { document } = global;
 const rootEl = document.getElementById('root');
 
 // We need to wait for the script tag containing the global objects

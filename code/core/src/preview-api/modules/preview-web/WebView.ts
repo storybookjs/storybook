@@ -1,15 +1,13 @@
 import { logger } from 'storybook/internal/client-logger';
 import type { PreparedStory } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
-
 import AnsiToHtml from 'ansi-to-html';
 import { parse } from 'picoquery';
 import { dedent } from 'ts-dedent';
 
 import type { View } from './View.ts';
 
-const { document } = global;
+const { document } = globalThis;
 
 const PREPARING_DELAY = 100;
 

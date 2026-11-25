@@ -1,7 +1,3 @@
-import { global } from '@storybook/global';
-
-const { document } = global;
-
 // https://html.spec.whatwg.org/multipage/scripting.html
 const runScriptTypes = [
   'application/javascript',
@@ -29,13 +25,13 @@ const SCRIPTS_ROOT_ID = 'scripts-root';
 
 // trigger DOMContentLoaded
 export function simulateDOMContentLoaded() {
-  const DOMContentLoadedEvent = document.createEvent('Event');
+  const DOMContentLoadedEvent = globalThis.document.createEvent('Event');
   DOMContentLoadedEvent.initEvent('DOMContentLoaded', true, true);
-  document.dispatchEvent(DOMContentLoadedEvent);
+  globalThis.document.dispatchEvent(DOMContentLoadedEvent);
 }
 
 function insertScript($script: any, callback: any, $scriptRoot: any) {
-  const scriptEl = document.createElement('script');
+  const scriptEl = globalThis.document.createElement('script');
   scriptEl.type = $script.type === 'module' ? 'module' : 'text/javascript';
   if ($script.src) {
     scriptEl.onload = callback;
@@ -51,7 +47,7 @@ function insertScript($script: any, callback: any, $scriptRoot: any) {
   if ($scriptRoot) {
     $scriptRoot.appendChild(scriptEl);
   } else {
-    document.head.appendChild(scriptEl);
+    globalThis.document.head.appendChild(scriptEl);
   }
 
   // clean-up
@@ -81,11 +77,11 @@ function insertScriptsSequentially(scriptsToExecute: any[], callback: any, index
 }
 
 export function simulatePageLoad($container: any) {
-  let $scriptsRoot = document.getElementById(SCRIPTS_ROOT_ID);
+  let $scriptsRoot = globalThis.document.getElementById(SCRIPTS_ROOT_ID);
   if (!$scriptsRoot) {
-    $scriptsRoot = document.createElement('div');
+    $scriptsRoot = globalThis.document.createElement('div');
     $scriptsRoot.id = SCRIPTS_ROOT_ID;
-    document.body.appendChild($scriptsRoot);
+    globalThis.document.body.appendChild($scriptsRoot);
   } else {
     $scriptsRoot.innerHTML = '';
   }

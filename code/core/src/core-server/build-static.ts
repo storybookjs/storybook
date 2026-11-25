@@ -12,8 +12,6 @@ import { logger } from 'storybook/internal/node-logger';
 import { getPrecedingUpgrade, telemetry } from 'storybook/internal/telemetry';
 import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
-
 import { join, relative, resolve } from 'pathe';
 import picocolors from 'picocolors';
 
@@ -139,7 +137,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
 
   const effects: Promise<void>[] = [];
 
-  global.FEATURES = features;
+  globalThis.FEATURES = features;
   await applyServicesPresetOnce(presets);
 
   if (!options.previewOnly) {

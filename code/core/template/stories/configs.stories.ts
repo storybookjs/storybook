@@ -1,5 +1,3 @@
-import { global as globalThis } from '@storybook/global';
-
 import { actions, configureActions } from 'storybook/actions';
 
 const configs = actions('actionA', 'actionB', 'actionC');

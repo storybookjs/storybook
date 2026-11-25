@@ -1,5 +1,3 @@
-import { global as globalThis } from '@storybook/global';
-
 import { LitElement, html } from 'lit';
 import { styleMap } from 'lit/directives/style-map.js';
 

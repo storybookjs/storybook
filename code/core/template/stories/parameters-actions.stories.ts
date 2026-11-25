@@ -1,5 +1,3 @@
-import { global as globalThis } from '@storybook/global';
-
 import { withActions } from 'storybook/actions/decorator';
 
 export default {

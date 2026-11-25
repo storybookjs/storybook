@@ -6,8 +6,6 @@ import {
   STORIES_EXPAND_ALL,
 } from 'storybook/internal/core-events';
 
-import { global } from '@storybook/global';
-
 import copy from 'copy-to-clipboard';
 import { isEqual } from 'es-toolkit/predicate';
 
@@ -17,7 +15,7 @@ import { eventToShortcut, shortcutMatchesShortcut } from '../lib/shortcut.ts';
 import type { ModuleFn } from '../lib/types.tsx';
 import { focusableUIElements, isDesktopViewport } from './layout.ts';
 
-const { navigator, document } = global;
+const { navigator, document } = globalThis;
 
 function wasFocusInElement(element: HTMLElement | null) {
   return document.activeElement && element?.contains(document.activeElement);
@@ -504,7 +502,7 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
           break;
         }
         case 'openInEditor': {
-          if (global.CONFIG_TYPE === 'DEVELOPMENT') {
+          if (globalThis.CONFIG_TYPE === 'DEVELOPMENT') {
             fullAPI.openInEditor({
               file: fullAPI.getCurrentStoryData().importPath,
             });

@@ -16,8 +16,6 @@ import type {
   StoryId,
 } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
-
 import { hideArgTypes } from '../store/csf/hideArgTypes.ts';
 import { addons } from './main.ts';
 
@@ -157,10 +155,10 @@ function hookify<TRenderer extends Renderer>(fn: AbstractFunction) {
     }
     hooks.nextHookIndex = 0;
 
-    const prevContext = global.STORYBOOK_HOOKS_CONTEXT;
-    global.STORYBOOK_HOOKS_CONTEXT = hooks;
+    const prevContext = globalThis.STORYBOOK_HOOKS_CONTEXT;
+    globalThis.STORYBOOK_HOOKS_CONTEXT = hooks;
     const result = isDecorator ? fn(args[0], hideArgTypes(args[1])) : fn(...args);
-    global.STORYBOOK_HOOKS_CONTEXT = prevContext;
+    globalThis.STORYBOOK_HOOKS_CONTEXT = prevContext;
 
     if (hooks.currentPhase === 'UPDATE' && hooks.getNextHook() != null) {
       throw new Error(
@@ -228,7 +226,7 @@ function getHooksContextOrNull<
   TRenderer extends Renderer,
   TArgs extends Args = Args,
 >(): HooksContext<TRenderer, TArgs> | null {
-  return global.STORYBOOK_HOOKS_CONTEXT || null;
+  return globalThis.STORYBOOK_HOOKS_CONTEXT || null;
 }
 
 function getHooksContextOrThrow<

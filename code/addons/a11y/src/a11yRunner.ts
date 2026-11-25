@@ -1,15 +1,11 @@
 import { ElementA11yParameterError } from 'storybook/internal/preview-errors';
 
-import { global } from '@storybook/global';
-
 import type { AxeResults, ContextProp, ContextSpec, RunOptions, Spec } from 'axe-core';
 import { addons, waitForAnimations } from 'storybook/preview-api';
 
 import { withLinkPaths } from './a11yRunnerUtils.ts';
 import { EVENTS } from './constants.ts';
 import type { A11yParameters } from './params.ts';
-
-const { document } = global;
 
 const channel = addons.getChannel();
 
@@ -96,7 +92,7 @@ export const run = async (input: A11yParameters = DEFAULT_PARAMETERS, storyId: s
   }
 
   const context: ContextSpec = {
-    include: document?.body,
+    include: globalThis.document?.body,
     exclude: ['.sb-wrapper', '#storybook-docs', '#storybook-highlights-root'], // Internal Storybook elements that are always in the document
   };
 
@@ -136,7 +132,7 @@ export const run = async (input: A11yParameters = DEFAULT_PARAMETERS, storyId: s
   const optionsWithDisabledRules = mergeDisabledRulesIntoRunOptions(options, configWithDefault);
 
   return new Promise<AxeResults>((resolve, reject) => {
-    const highlightsRoot = document?.getElementById('storybook-highlights-root');
+    const highlightsRoot = globalThis.document?.getElementById('storybook-highlights-root');
     if (highlightsRoot) {
       highlightsRoot.style.display = 'none';
     }

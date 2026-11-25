@@ -44,7 +44,6 @@
     "!src/**/*"
   ],
   "dependencies": {
-    "@storybook/global": "^5.0.0",
     "ts-dedent": "^2.2.0"
   },
   "devDependencies": {

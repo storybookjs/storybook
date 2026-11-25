@@ -54,7 +54,6 @@
     "!src/**/*"
   ],
   "dependencies": {
-    "@storybook/global": "^5.0.0",
     "@types/pug": "2.0.10",
     "@vue/compiler-dom": "^3.2.47",
     "@vue/language-core": "^3.2.7",

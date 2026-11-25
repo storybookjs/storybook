@@ -1,5 +1,3 @@
-import { global as globalThis } from '@storybook/global';
-
 import { expect, mocked } from 'storybook/test';
 
 import { fn } from './ModuleMocking.utils';

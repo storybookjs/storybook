@@ -1,7 +1,5 @@
 import type { ArgsStoryFn, RenderContext } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
-
 import { render as litRender } from 'lit';
 // Keep `.js` extension to avoid issue with Webpack (related to export map?)
 import { isTemplateResult } from 'lit/directive-helpers.js';
@@ -10,8 +8,6 @@ import { dedent } from 'ts-dedent';
 
 import { bindArgs } from './bind-args.ts';
 import type { WebComponentsRenderer } from './types.ts';
-
-const { Node } = global;
 
 /** With `docgenServer`, returns a DocumentFragment so scoped CSS part and state rules can precede the element. */
 export const render: ArgsStoryFn<WebComponentsRenderer> = (args, context) => {
@@ -23,7 +19,7 @@ export const render: ArgsStoryFn<WebComponentsRenderer> = (args, context) => {
   }
 
   const element = document.createElement(component);
-  if (!global.FEATURES?.docgenServer) {
+  if (!globalThis.FEATURES?.docgenServer) {
     return Object.assign(element, args);
   }
 
@@ -61,7 +57,7 @@ export function renderToCanvas(
   } else if (typeof element === 'string') {
     canvasElement.innerHTML = element;
     simulatePageLoad(canvasElement);
-  } else if (element instanceof Node) {
+  } else if (element instanceof globalThis.Node) {
     // Don't re-mount the element if it didn't change and neither did the story
     if (canvasElement.firstChild === element && !forceRemount) {
       return;

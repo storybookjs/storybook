@@ -1,5 +1,3 @@
-import { global } from '@storybook/global';
-
 import invariant from 'tiny-invariant';
 
 interface Size {
@@ -15,7 +13,7 @@ interface CanvasState {
 }
 
 function getDocumentWidthAndHeight() {
-  const container = global.document.documentElement;
+  const container = globalThis.document.documentElement;
 
   const height = Math.max(container.scrollHeight, container.offsetHeight);
   const width = Math.max(container.scrollWidth, container.offsetWidth);
@@ -23,7 +21,7 @@ function getDocumentWidthAndHeight() {
 }
 
 function createCanvas(): CanvasState {
-  const canvas = global.document.createElement('canvas');
+  const canvas = globalThis.document.createElement('canvas');
   canvas.id = 'storybook-addon-measure';
   const context = canvas.getContext('2d');
   invariant(context != null);
@@ -37,7 +35,7 @@ function createCanvas(): CanvasState {
   canvas.style.zIndex = '2147483647';
   // Disable any user interactions
   canvas.style.pointerEvents = 'none';
-  global.document.body.appendChild(canvas);
+  globalThis.document.body.appendChild(canvas);
 
   return { canvas, context, width, height };
 }
@@ -51,7 +49,7 @@ function setCanvasWidthAndHeight(
   canvas.style.height = `${height}px`;
 
   // Scale
-  const scale = global.window.devicePixelRatio;
+  const scale = globalThis.window.devicePixelRatio;
   canvas.width = Math.floor(width * scale);
   canvas.height = Math.floor(height * scale);
 

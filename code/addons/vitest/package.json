@@ -77,7 +77,6 @@
     "!src/**/*"
   ],
   "dependencies": {
-    "@storybook/global": "^5.0.0",
     "@storybook/icons": "^2.0.2"
   },
   "devDependencies": {

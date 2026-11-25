@@ -5,8 +5,6 @@ import { Loader } from 'storybook/internal/components';
 import { PREVIEW_BUILDER_PROGRESS, SET_CURRENT_STORY } from 'storybook/internal/core-events';
 import type { Addon_WrapperType } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
-
 import { Helmet } from 'react-helmet-async';
 import { Consumer, addons, type Combo } from 'storybook/manager-api';
 
@@ -140,7 +138,7 @@ const Canvas: FC<{
 
         const [progress, setProgress] = useState(undefined);
         useEffect(() => {
-          if (global.CONFIG_TYPE === 'DEVELOPMENT') {
+          if (globalThis.CONFIG_TYPE === 'DEVELOPMENT') {
             try {
               const channel = addons.getChannel();
 

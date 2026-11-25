@@ -23,12 +23,6 @@ const { axeMock, documentMock } = vi.hoisted(() => {
   };
 });
 
-vi.mock('@storybook/global', () => ({
-  global: {
-    document: documentMock,
-  },
-}));
-
 vi.mock('axe-core', () => ({
   default: axeMock,
 }));
@@ -49,6 +43,7 @@ describe('a11yRunner', () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
+    vi.stubGlobal('document', documentMock);
 
     documentMock.getElementById.mockReturnValue(null);
     axeMock.run.mockResolvedValue(axeResults);

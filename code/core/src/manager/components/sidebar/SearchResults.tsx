@@ -4,7 +4,6 @@ import React, { useCallback, useEffect } from 'react';
 import { Button } from 'storybook/internal/components';
 import { PRELOAD_ENTRIES } from 'storybook/internal/core-events';
 
-import { global } from '@storybook/global';
 import { TrashIcon } from '@storybook/icons';
 
 import type { ControllerStateAndHelpers } from 'downshift';
@@ -20,8 +19,6 @@ import { TypeIconWithSymbol } from './TypeIcon.tsx';
 import type { DownshiftItem, Match, SearchResult } from './types.ts';
 import { isExpandType } from './types.ts';
 import type { StatusValue } from '../../../types/index.ts';
-
-const { document } = global;
 
 const StatusLabel = styled.div<{ status: StatusValue }>(
   ({ theme, status }: { theme: Theme; status: StatusValue }) => ({

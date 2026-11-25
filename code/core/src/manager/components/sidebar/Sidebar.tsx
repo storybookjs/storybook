@@ -6,8 +6,6 @@ import type {
   StoryIndex,
 } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
-
 import { useStorybookApi, type State } from 'storybook/manager-api';
 import { styled } from 'storybook/theming/emotion';
 
@@ -123,7 +121,7 @@ export const Sidebar = React.memo(function Sidebar({
   menu,
   menuHighlighted = false,
   enableShortcuts = true,
-  isDevelopment = global.CONFIG_TYPE === 'DEVELOPMENT',
+  isDevelopment = globalThis.CONFIG_TYPE === 'DEVELOPMENT',
   refs = {},
   onMenuClick,
 }: SidebarProps) {
@@ -151,8 +149,8 @@ export const Sidebar = React.memo(function Sidebar({
   const showReviewWidget = activeReviewStoryCount > 0;
   const showOnboardingChecklist =
     !isLoading &&
-    global.CONFIG_TYPE === 'DEVELOPMENT' &&
-    global.FEATURES?.sidebarOnboardingChecklist !== false &&
+    globalThis.CONFIG_TYPE === 'DEVELOPMENT' &&
+    globalThis.FEATURES?.sidebarOnboardingChecklist !== false &&
     !showReviewWidget;
 
   return (

@@ -1,7 +1,5 @@
-import { global } from '@storybook/global';
-
 export const getJSONDoc = () => {
-  return global.__EMBER_GENERATED_DOC_JSON__;
+  return globalThis.__EMBER_GENERATED_DOC_JSON__;
 };
 
 export const extractArgTypes = (componentName: string) => {

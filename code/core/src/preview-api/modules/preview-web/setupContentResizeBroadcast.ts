@@ -1,5 +1,3 @@
-import { global } from '@storybook/global';
-
 import {
   IFRAME_RESIZE_CONTEXT,
   IFRAME_RESIZE_REQUEST_CONTEXT,
@@ -421,8 +419,8 @@ export const setupContentResizeBroadcast = (
   options: ContentResizeBroadcastOptions = {}
 ): ContentResizeBroadcast => {
   const { getViewport } = options;
-  const windowRef = global.window;
-  const documentRef = global.document;
+  const windowRef = globalThis.window;
+  const documentRef = globalThis.document;
   if (!windowRef || !documentRef) {
     return {};
   }

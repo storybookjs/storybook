@@ -2,13 +2,9 @@ import { SELECT_STORY, STORY_CHANGED } from 'storybook/internal/core-events';
 import { toId } from 'storybook/internal/csf';
 import type { ComponentTitle, SelectStoryPayload, StoryName } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
-
 import { addons, makeDecorator } from 'storybook/preview-api';
 
 import { PARAM_KEY } from './constants.ts';
-
-const { document, HTMLElement } = global;
 
 function parseQuery(queryString: string) {
   const query: Record<string, string> = {};
@@ -27,7 +23,7 @@ export const navigate = (params: SelectStoryPayload) =>
   addons.getChannel().emit(SELECT_STORY, params);
 
 const generateStoryUrl = (title: ComponentTitle | undefined, name: StoryName): string => {
-  const { location } = document;
+  const { location } = globalThis.document;
   const query = parseQuery(location.search);
   const existingId = query.id ?? query.path?.match(/^\/story\/(.+)$/)?.[1];
   const titleToLink = title || existingId?.split('--', 2)[0] || '';
@@ -78,7 +74,7 @@ export const linkTo =
 
 const linksListener = (e: Event) => {
   const { target } = e;
-  if (!(target instanceof HTMLElement)) {
+  if (!(target instanceof globalThis.HTMLElement)) {
     return;
   }
   const element = target as HTMLElement;
@@ -94,13 +90,13 @@ let hasListener = false;
 const on = () => {
   if (!hasListener) {
     hasListener = true;
-    document.addEventListener('click', linksListener);
+    globalThis.document.addEventListener('click', linksListener);
   }
 };
 const off = () => {
   if (hasListener) {
     hasListener = false;
-    document.removeEventListener('click', linksListener);
+    globalThis.document.removeEventListener('click', linksListener);
   }
 };
 

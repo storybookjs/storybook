@@ -168,6 +168,14 @@ describe('test API', () => {
     expect(v.safeParse(toolset.methods.run.input, { changed: '' }).success).toBe(false);
   });
 
+  it('rejects a line number after a file, which Vitest reads as the test at that line', () => {
+    const parse = (files: string[]) => v.safeParse(toolset.methods.run.input, { files });
+
+    expect(parse(['src/Button.stories.tsx:12']).success).toBe(false);
+    expect(parse(['Button:1-2']).success).toBe(false);
+    expect(parse(['C:\\project\\src\\Button.stories.tsx']).success).toBe(true);
+  });
+
   it('rejects an empty file entry, which would otherwise match every story file', () => {
     expect(v.safeParse(toolset.methods.run.input, { files: [''] }).success).toBe(false);
   });

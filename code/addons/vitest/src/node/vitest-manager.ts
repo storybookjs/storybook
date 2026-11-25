@@ -400,7 +400,10 @@ export class VitestManager {
     const { watching } = this.testManager.store.getState();
     const runConfig = this.getCurrentRunConfig();
     const coverageShouldBeEnabled =
-      !!runConfig.coverage && !watching && (runPayload?.storyIds?.length ?? 0) === 0;
+      !!runConfig.coverage &&
+      !watching &&
+      !runPayload.files &&
+      (runPayload?.storyIds?.length ?? 0) === 0;
 
     if (!this.vitest) {
       await this.startVitest({ coverage: coverageShouldBeEnabled });
@@ -415,7 +418,7 @@ export class VitestManager {
     await this.cancelCurrentRun();
 
     const allStories = this.getStories();
-    const testSpecifications = await this.getStorybookTestSpecifications();
+    const testSpecifications = await this.getStorybookTestSpecifications(runPayload.files);
 
     const filteredStories = runPayload.storyIds
       ? allStories.filter((story) => runPayload.storyIds?.includes(story.id))
@@ -433,6 +436,15 @@ export class VitestManager {
       filteredStories
     );
 
+    if (runPayload.files) {
+      const matchedFiles = new Set(testSpecifications.map(({ moduleId }) => moduleId));
+      this.testManager.setRunStories(
+        filteredStories
+          .filter((story) => matchedFiles.has(toModuleId(story.importPath)))
+          .map((story) => story.id),
+        matchedFiles.size
+      );
+    }
     this.testManager.store.setState((s) => ({
       ...s,
       currentRun: {
@@ -478,8 +490,9 @@ export class VitestManager {
     }
   }
 
-  async getStorybookTestSpecifications() {
-    const globTestSpecifications = (await this.vitest?.globTestSpecifications()) ?? [];
+  // With file filters: the story files they match, as `vitest Button` finds its test files
+  async getStorybookTestSpecifications(fileFilters?: string[]) {
+    const globTestSpecifications = (await this.vitest?.globTestSpecifications(fileFilters)) ?? [];
     return (
       globTestSpecifications.filter((workspaceSpec) =>
         this.isStorybookProject(workspaceSpec.project)

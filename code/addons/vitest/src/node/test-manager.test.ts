@@ -672,6 +672,53 @@ describe('TestManager', () => {
     ]);
   });
 
+  it('runs the story files Vitest matches for file filters, without a test name pattern', async () => {
+    vitest.globTestSpecifications.mockImplementation((filters?: string[]) =>
+      filters ? tests.slice(0, 1) : tests
+    );
+    const testManager = await startWithIndex();
+
+    await testManager.handleTriggerRunEvent({
+      type: 'TRIGGER_RUN',
+      payload: { files: ['to/file'], triggeredBy: 'global' },
+    });
+
+    expect(vitest.globTestSpecifications).toHaveBeenLastCalledWith(['to/file']);
+    expect(vitest.runTestSpecifications).toHaveBeenCalledWith(tests.slice(0, 1), true);
+    expect(setTestNamePattern.mock.calls.map(([pattern]) => pattern)).not.toContainEqual(
+      expect.any(RegExp)
+    );
+    expect(mockStore.getState().currentRun).toMatchObject({
+      storyIds: ['story--one', 'story--two'],
+      matchedFileCount: 1,
+    });
+    expect(mockComponentTestStatusStore.unset).toHaveBeenLastCalledWith([
+      'story--one',
+      'story--two',
+    ]);
+    expect(mockComponentTestStatusStore.unset).not.toHaveBeenCalledWith(undefined);
+  });
+
+  it('selects stories by test name inside the story files that match', async () => {
+    vitest.globTestSpecifications.mockImplementation((filters?: string[]) =>
+      filters ? tests.slice(0, 1) : tests
+    );
+    const testManager = await startWithIndex();
+
+    await testManager.handleTriggerRunEvent({
+      type: 'TRIGGER_RUN',
+      payload: {
+        files: ['to/file'],
+        storyIds: ['story--one', 'another--two'],
+        triggeredBy: 'global',
+      },
+    });
+
+    expect(setTestNamePattern).toHaveBeenCalledWith(new RegExp('(?:(?:^One$)|(?:^Two B$))'));
+    expect(vitest.runTestSpecifications).toHaveBeenCalledWith(tests.slice(0, 1), true);
+    expect(mockStore.getState().currentRun.storyIds).toEqual(['story--one']);
+  });
+
   it('should filter tests', async () => {
     vitest.globTestSpecifications.mockImplementation(() => tests);
     const testManager = await startWithIndex();

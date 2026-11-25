@@ -6,7 +6,11 @@ import { CHANGE_DETECTION_STATUS_TYPE_ID } from 'storybook/internal/types';
 import type { StoryIndex } from 'storybook/internal/types';
 import { clearToolsetRegistry, getToolset, registerToolset } from 'storybook/open-service';
 
-import { TRIGGER_TEST_RUN_REQUEST, TRIGGER_TEST_RUN_RESPONSE } from '../../constants.ts';
+import {
+  TRIGGER_TEST_RUN_REQUEST,
+  TRIGGER_TEST_RUN_RESPONSE,
+  type TriggerTestRunRequestPayload,
+} from '../../constants.ts';
 import { createTestToolset, type TestRunResult } from './definition.ts';
 import {
   createAsyncQueue,
@@ -94,20 +98,20 @@ describe('createAsyncQueue', () => {
   });
 });
 
-// A channel that answers every run request with `sampleResult`, recording the requested ids.
-function respondingChannel() {
+// A channel that answers every run request with `result`, recording the requested ids and files.
+function respondingChannel(result: TestRunResult = sampleResult) {
   const channel = createMockChannel();
   const requested: unknown[] = [];
+  const requestedFiles: unknown[] = [];
   channel.emit = (event, payload) => {
     if (event === TRIGGER_TEST_RUN_REQUEST) {
-      const { requestId, storyIds } = payload as { requestId: string; storyIds?: string[] };
+      const { requestId, storyIds, files } = payload as TriggerTestRunRequestPayload;
       requested.push(storyIds);
-      queueMicrotask(() =>
-        respond(channel, { requestId, status: 'completed', result: sampleResult })
-      );
+      requestedFiles.push(files);
+      queueMicrotask(() => respond(channel, { requestId, status: 'completed', result }));
     }
   };
-  return { channel, requested };
+  return { channel, requested, requestedFiles };
 }
 
 function channelResponding(response: Omit<TriggerTestRunResponse, 'requestId'>) {
@@ -260,8 +264,12 @@ describe('runStoryTests', () => {
     expect(result).toEqual({ status: 'completed', result: sampleResult });
   });
 
-  it('runs the story files a file filter matches', async () => {
-    const { channel, requested } = respondingChannel();
+  it('passes file filters on as they are, and takes what they matched from the run', async () => {
+    const { channel, requested, requestedFiles } = respondingChannel({
+      ...sampleResult,
+      storyIds: ['button--primary'],
+      matchedFileCount: 1,
+    });
 
     const result = await runStoryTests({
       channel,
@@ -269,15 +277,16 @@ describe('runStoryTests', () => {
       files: ['button'],
     });
 
-    expect(requested).toEqual([['button--primary']]);
+    expect(requested).toEqual([undefined]);
+    expect(requestedFiles).toEqual([['button']]);
     expect(result).toMatchObject({
       status: 'completed',
       selection: { files: { filters: ['button'], storyFileCount: 1 }, storyCount: 1 },
     });
   });
 
-  it('fails without running when no story file matches the filters', async () => {
-    const { channel, requested } = respondingChannel();
+  it('fails when the file filters match no story file', async () => {
+    const { channel } = respondingChannel({ ...sampleResult, storyIds: [], matchedFileCount: 0 });
 
     const result = await runStoryTests({
       channel,
@@ -290,7 +299,6 @@ describe('runStoryTests', () => {
       notFoundMessages: ['No story files found for `src/Button.tsx`.'],
       selection: { files: { filters: ['src/Button.tsx'], storyFileCount: 0 } },
     });
-    expect(requested).toEqual([]);
   });
 
   it('treats an empty filter list as no filter, as Vitest does', async () => {
@@ -372,7 +380,11 @@ describe('runStoryTests', () => {
     });
 
     it('runs only the stories both a file filter and the changes select', async () => {
-      const { channel, requested } = respondingChannel();
+      const { channel, requested, requestedFiles } = respondingChannel({
+        ...sampleResult,
+        storyIds: [],
+        matchedFileCount: 1,
+      });
 
       const result = await runStoryTests({
         channel,
@@ -386,12 +398,17 @@ describe('runStoryTests', () => {
         }),
       });
 
-      expect(result).toMatchObject({ status: 'no-stories', notFoundMessages: [] });
-      expect(requested).toEqual([]);
+      expect(requested).toEqual([['header--default']]);
+      expect(requestedFiles).toEqual([['button']]);
+      expect(result).toMatchObject({
+        status: 'no-stories',
+        notFoundMessages: [],
+        selection: { files: { storyFileCount: 1 } },
+      });
     });
 
     it('passes when no story file matches the filters, as Vitest does with --changed', async () => {
-      const { channel, requested } = respondingChannel();
+      const { channel } = respondingChannel({ ...sampleResult, storyIds: [], matchedFileCount: 0 });
 
       const result = await runStoryTests({
         channel,
@@ -405,8 +422,11 @@ describe('runStoryTests', () => {
         }),
       });
 
-      expect(result).toMatchObject({ status: 'no-stories', notFoundMessages: [] });
-      expect(requested).toEqual([]);
+      expect(result).toMatchObject({
+        status: 'no-stories',
+        notFoundMessages: [],
+        selection: { files: { storyFileCount: 0 } },
+      });
     });
 
     it('still checks the ref and the story ids when no story file matches', async () => {

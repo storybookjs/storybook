@@ -41,14 +41,21 @@ describe('computeStaticFilterFn', () => {
     ).toBe(true);
   });
 
-  it('shows CSF autodocs docs without dev tag (meta !dev regression from 15d7ef9)', () => {
+  it('shows autodocs with dev tag and hides autodocs without dev', () => {
     expect(
       filter({
         id: 'core-tags-add--docs',
         type: 'docs',
-        tags: ['manifest', 'story-one', 'play-fn'],
+        tags: ['dev', 'manifest', 'autodocs'],
       })
     ).toBe(true);
+    expect(
+      filter({
+        id: 'core-tags-add--docs',
+        type: 'docs',
+        tags: ['manifest', 'autodocs'],
+      })
+    ).toBe(false);
   });
 
   it('hides entries that carry a tag marked hideFromSidebar', () => {

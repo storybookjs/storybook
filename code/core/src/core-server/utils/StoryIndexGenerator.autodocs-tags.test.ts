@@ -109,7 +109,7 @@ describe('autodocs entry of a CSF file', () => {
         "autodocsCreated": true,
         "autodocsInSidebar": true,
         "autodocsPassesManifestFilter": true,
-        "autodocsTags": "dev, test, manifest",
+        "autodocsTags": "dev, test, manifest, autodocs",
         "componentInManifest": true,
         "sidebarComponentTags": "dev, test, manifest",
         "sidebarEntries": "Docs, Story 1, Story 2",
@@ -145,21 +145,21 @@ describe('autodocs entry of a CSF file', () => {
   it('E: first story excluded from autodocs', async () => {
     expect(await recordAutodocs('default-project', 'E-first-story-excluded'))
       .toMatchInlineSnapshot(`
-      {
-        "autodocsCreated": true,
-        "autodocsInSidebar": true,
-        "autodocsPassesManifestFilter": true,
-        "autodocsTags": "dev, test, manifest",
-        "componentInManifest": true,
-        "sidebarComponentTags": "dev, test, manifest",
-        "sidebarEntries": "Docs, Story 1, Story 2",
-        "storiesOnDocsPage": "Story 2",
-        "storyTags": {
-          "Story 1": "dev, test, manifest",
-          "Story 2": "dev, test, manifest, autodocs",
-        },
-      }
-    `);
+        {
+          "autodocsCreated": true,
+          "autodocsInSidebar": true,
+          "autodocsPassesManifestFilter": true,
+          "autodocsTags": "dev, test, manifest, autodocs",
+          "componentInManifest": true,
+          "sidebarComponentTags": "dev, test, manifest",
+          "sidebarEntries": "Docs, Story 1, Story 2",
+          "storiesOnDocsPage": "Story 2",
+          "storyTags": {
+            "Story 1": "dev, test, manifest",
+            "Story 2": "dev, test, manifest, autodocs",
+          },
+        }
+      `);
   });
 
   it('F: autodocs inherited from project but all stories excluded', async () => {
@@ -185,21 +185,21 @@ describe('autodocs entry of a CSF file', () => {
   it('G: stories remove dev and manifest under project autodocs', async () => {
     expect(await recordAutodocs('autodocs-project', 'G-story-tag-inheritance'))
       .toMatchInlineSnapshot(`
-      {
-        "autodocsCreated": true,
-        "autodocsInSidebar": true,
-        "autodocsPassesManifestFilter": false,
-        "autodocsTags": "test, autodocs",
-        "componentInManifest": false,
-        "sidebarComponentTags": "test, autodocs",
-        "sidebarEntries": "Docs, Story 2",
-        "storiesOnDocsPage": "Story 1, Story 2",
-        "storyTags": {
-          "Story 1": "test, autodocs",
-          "Story 2": "dev, test, autodocs",
-        },
-      }
-    `);
+        {
+          "autodocsCreated": true,
+          "autodocsInSidebar": true,
+          "autodocsPassesManifestFilter": false,
+          "autodocsTags": "dev, test, autodocs",
+          "componentInManifest": false,
+          "sidebarComponentTags": "dev, test, autodocs",
+          "sidebarEntries": "Docs, Story 2",
+          "storiesOnDocsPage": "Story 1, Story 2",
+          "storyTags": {
+            "Story 1": "test, autodocs",
+            "Story 2": "dev, test, autodocs",
+          },
+        }
+      `);
   });
 
   it('H: first story removes dev and manifest', async () => {
@@ -207,10 +207,10 @@ describe('autodocs entry of a CSF file', () => {
       {
         "autodocsCreated": true,
         "autodocsInSidebar": true,
-        "autodocsPassesManifestFilter": false,
-        "autodocsTags": "test, autodocs",
+        "autodocsPassesManifestFilter": true,
+        "autodocsTags": "dev, test, manifest, autodocs",
         "componentInManifest": true,
-        "sidebarComponentTags": "test, autodocs",
+        "sidebarComponentTags": "dev, test, manifest, autodocs",
         "sidebarEntries": "Docs, Story 2",
         "storiesOnDocsPage": "Story 1, Story 2",
         "storyTags": {
@@ -244,12 +244,12 @@ describe('autodocs entry of a CSF file', () => {
     expect(await recordAutodocs('default-project', 'J-docs-only-component')).toMatchInlineSnapshot(`
       {
         "autodocsCreated": true,
-        "autodocsInSidebar": true,
+        "autodocsInSidebar": false,
         "autodocsPassesManifestFilter": true,
         "autodocsTags": "test, manifest, autodocs",
         "componentInManifest": true,
-        "sidebarComponentTags": "test, manifest, autodocs",
-        "sidebarEntries": "Docs",
+        "sidebarComponentTags": null,
+        "sidebarEntries": null,
         "storiesOnDocsPage": "Story 1, Story 2",
         "storyTags": {
           "Story 1": "test, manifest, autodocs",

@@ -51,20 +51,24 @@ export async function extractFragmentNodes(params: Params): Promise<Result> {
   return state;
 }
 
-// The comment that a story directly follows, with only whitespace between them. The fragment leaves
-// out `<script>` and `<style>`, so a gap between two siblings means one of them was there.
+/**
+ * Returns the HTML comment that documents a story: the comment right before the `<Story>`, with only
+ * whitespace between them. Returns `undefined` when anything else comes between them, such as an
+ * element, a snippet block, or a `<script>` or `<style>` tag.
+ */
 function commentBefore(
   node: SvelteAST.Component,
   parent: SvelteAST.SvelteNode | undefined
 ): SvelteAST.Comment | undefined {
   if (parent?.type !== 'Fragment') return undefined;
-  let next: { start: number } = node;
-  for (let index = parent.nodes.indexOf(node) - 1; index >= 0; index--) {
-    const sibling = parent.nodes[index];
-    if (sibling.end !== next.start) return undefined;
-    if (sibling.type === 'Comment') return sibling;
-    if (sibling.type !== 'Text' || sibling.data.trim()) return undefined;
-    next = sibling;
-  }
-  return undefined;
+  const index = parent.nodes.indexOf(node);
+  const previous = parent.nodes[index - 1];
+  const whitespace = previous?.type === 'Text' && !previous.data.trim() ? previous : undefined;
+  const comment = whitespace ? parent.nodes[index - 2] : previous;
+  if (comment?.type !== 'Comment') return undefined;
+  // Whitespace is a `Text` node of its own, so the nodes of a fragment cover the source with no gaps.
+  // The parser leaves `<script>` and `<style>` out of the fragment, so a gap means one of them is
+  // between the comment and the story.
+  const whitespaceLength = whitespace ? whitespace.end - whitespace.start : 0;
+  return node.start - comment.end === whitespaceLength ? comment : undefined;
 }

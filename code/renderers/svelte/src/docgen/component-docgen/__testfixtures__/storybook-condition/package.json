@@ -1,0 +1,10 @@
+{
+  "name": "storybook-condition",
+  "type": "module",
+  "imports": {
+    "#config": {
+      "storybook": "./src/config.storybook.js",
+      "default": "./src/config.js"
+    }
+  }
+}

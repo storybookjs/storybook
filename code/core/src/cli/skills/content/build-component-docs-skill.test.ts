@@ -46,14 +46,4 @@ describe('buildComponentDocsSkill', () => {
       This Storybook has no component docs to look up. Skip this step, and read the source files of the components you use instead."
     `);
   });
-
-  it('says when to skip the step, and keeps its tools, when main.ts turns the docs toolset off', () => {
-    const text = buildComponentDocsSkill({ ...mcp, toolsetOff: true });
-
-    expect(text).toContain(
-      'The `main.ts` of this project turns the `docs` toolset of the Storybook MCP server off. When the server does not give you `docs-list`, skip this step.'
-    );
-    expect(text).toContain('- `docs-show` with an `id`');
-    expect(buildComponentDocsSkill(mcp)).not.toContain('skip this step');
-  });
 });

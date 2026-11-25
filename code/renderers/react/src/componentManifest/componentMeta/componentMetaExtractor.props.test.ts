@@ -83,6 +83,11 @@ describe('prop extraction', () => {
             items: string[];
             matrix: number[][];
             nodes: Array<React.ReactNode>;
+            tags?: readonly string[];
+            kinds: ('a' | 'b')[];
+            flags: boolean[];
+            selected: string[] | null;
+            pair: [string, number];
           }
           export const List = (props: Props) => <ul />;
         `
@@ -90,10 +95,31 @@ describe('prop extraction', () => {
 
       expect(entry.component?.reactComponentMeta).toMatchObject({
         props: {
-          items: { type: { name: 'string[]' } },
-          matrix: { type: { name: 'number[][]' } },
-          nodes: { type: { name: 'ReactNode[]' } },
+          items: { type: { name: 'string[]', element: { name: 'string' } } },
+          matrix: {
+            type: {
+              name: 'number[][]',
+              element: { name: 'number[]', element: { name: 'number' } },
+            },
+          },
+          nodes: { type: { name: 'ReactNode[]', element: { name: 'ReactNode' } } },
+          tags: { type: { name: 'readonly string[]', element: { name: 'string' } } },
+          kinds: {
+            type: {
+              name: '("a" | "b")[]',
+              element: {
+                name: 'enum',
+                raw: '"a" | "b"',
+                value: [{ value: '"a"' }, { value: '"b"' }],
+              },
+            },
+          },
+          flags: { type: { name: 'boolean[]', element: { name: 'boolean' } } },
+          selected: { type: { name: 'string[] | null', element: { name: 'string' } } },
         },
+      });
+      expect(entry.component?.reactComponentMeta?.props.pair.type).toEqual({
+        name: '[string, number]',
       });
     });
 
@@ -192,6 +218,112 @@ describe('prop extraction', () => {
           },
         },
       });
+    });
+
+    it('lists enum members in declared order whatever the checker met first', async () => {
+      const entry = await extract(
+        'Button',
+        dedent`
+          import React from 'react';
+          type Tone = 'neutral' | 'info' | 'error';
+          interface Props {
+            first: 'large' | 'error' | 'small';
+            size: 'small' | 'medium' | 'large';
+            tone: Tone | 'custom';
+            columns: 3 | 1 | 2;
+            offset: 2 | -1 | 0;
+          }
+          export const Button = (props: Props) => <button />;
+        `
+      );
+
+      const props = entry.component?.reactComponentMeta?.props;
+      expect(props?.size.type.raw).toBe('"small" | "medium" | "large"');
+      expect(props?.size.type.value).toEqual([
+        { value: '"small"' },
+        { value: '"medium"' },
+        { value: '"large"' },
+      ]);
+      expect(props?.tone.type.raw).toBe('"neutral" | "info" | "error" | "custom"');
+      expect(props?.columns.type.raw).toBe('3 | 1 | 2');
+      expect(props?.offset.type.raw).toBe('2 | -1 | 0');
+    });
+
+    it('keeps the members of a TypeScript enum', async () => {
+      const entry = await extract(
+        'Row',
+        dedent`
+          import React from 'react';
+          export enum CallStates { DONE = 'done', ERROR = 'error', ACTIVE = 'active' }
+          interface Props { status: CallStates }
+          export const Row = (props: Props) => <div />;
+        `
+      );
+
+      expect(entry.component?.reactComponentMeta?.props.status.type).toMatchObject({
+        name: 'enum',
+        raw: 'CallStates.DONE | CallStates.ERROR | CallStates.ACTIVE',
+      });
+    });
+
+    it.each([{ earlier: '' }, { earlier: 'pre: E2.C;' }])(
+      'lists the members of two enums in one order, with the earlier prop "$earlier"',
+      async ({ earlier }) => {
+        const entry = await extract(
+          'Row',
+          dedent`
+            import React from 'react';
+            enum E1 { A = 3, B = 1 }
+            enum E2 { C = 2, D = 0 }
+            interface Props { ${earlier} kind: E1 | E2 }
+            export const Row = (props: Props) => <div />;
+          `
+        );
+
+        expect(
+          entry.component?.reactComponentMeta?.props.kind.type.value?.map(({ value }) => value)
+        ).toEqual(['3', '1', '2', '0']);
+      }
+    );
+
+    it('lists computed enum members by value', async () => {
+      const entry = await extract(
+        'Button',
+        dedent`
+          import React from 'react';
+          type Side = 'top' | 'bottom';
+          interface Props {
+            first: 'top-start' | 'bottom-end';
+            placement: Side | \`\${Side}-\${'start' | 'end'}\`;
+          }
+          export const Button = (props: Props) => <button />;
+        `
+      );
+
+      expect(entry.component?.reactComponentMeta?.props.placement.type.raw).toBe(
+        '"top" | "bottom" | "bottom-end" | "bottom-start" | "top-end" | "top-start"'
+      );
+    });
+
+    it('lists props picked through a mapped type in source order', async () => {
+      const entry = await extract(
+        'Button',
+        dedent`
+          import React from 'react';
+          type Early = 'gamma' extends string ? { early: string } : never;
+          interface Base { alpha: string; beta: string; gamma: string; delta: string }
+          type Props = Early & Omit<Base, 'delta'> & { own: string };
+          export const Button = (props: Props) => <button />;
+        `
+      );
+
+      expect(Object.keys(entry.component?.reactComponentMeta?.props ?? {})).toEqual([
+        'early',
+        'alpha',
+        'beta',
+        'gamma',
+        'own',
+      ]);
     });
 
     it('extracts optional string literal union as enum', async () => {

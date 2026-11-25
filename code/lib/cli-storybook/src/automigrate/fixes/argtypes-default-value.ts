@@ -5,7 +5,12 @@ import picocolors from 'picocolors';
 import type { Fix } from '../types.ts';
 
 // An arg the source does not show a defaultValue for, such as `intl: intlArgType(...)`, is left.
-const strip = (object: CsfObject) => object.remove(['argTypes', anyKey, 'defaultValue']);
+// `remove` refuses a config with mixed default and named exports even when nothing matches.
+const strip = (object: CsfObject) => {
+  if (object.inspect(['argTypes']).kind !== 'missing') {
+    object.remove(['argTypes', anyKey, 'defaultValue']);
+  }
+};
 
 export const argtypesDefaultValue: Fix = {
   id: 'argtypes-default-value',

@@ -1,3 +1,12 @@
+## 11.0.0-rc.0
+
+- Addon-MCP: Remove toolsets option and X-MCP-Toolsets header - [#37676](https://github.com/storybookjs/storybook/pull/37676), thanks @kasperpeulen!
+- Agent skills: Test command in AGENTS.md, review only when asked - [#37421](https://github.com/storybookjs/storybook/pull/37421), thanks @kasperpeulen!
+- CLI: Install the skills when an agent upgrades with CI=true - [#37404](https://github.com/storybookjs/storybook/pull/37404), thanks @kasperpeulen!
+- CLI: Let installs update the lockfile when CI is set - [#37428](https://github.com/storybookjs/storybook/pull/37428), thanks @kasperpeulen!
+- Core: Derive the framework tables from one registry - [#37655](https://github.com/storybookjs/storybook/pull/37655), thanks @shilman!
+- React: Use the array control for array props in server docgen - [#37103](https://github.com/storybookjs/storybook/pull/37103), thanks @amin0075!
+
 ## 11.0.0-beta.5
 
 - Addon Vitest: Report a mismatching storybook version at startup - [#37626](https://github.com/storybookjs/storybook/pull/37626), thanks @huang-julien!

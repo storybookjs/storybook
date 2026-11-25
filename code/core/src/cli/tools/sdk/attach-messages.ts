@@ -1,3 +1,8 @@
+import {
+  formatBlockedNetwork,
+  RERUN_OUTSIDE_SANDBOX,
+  type BlockedNetwork,
+} from '../../../common/utils/blocked-network.ts';
 import type { StorybookInstanceRecord } from '../instances/types.ts';
 import type { ToolsStorybookInfo } from './types.ts';
 
@@ -6,7 +11,7 @@ const RESTART_GUIDANCE =
 
 export function formatNoInstance(records: StorybookInstanceRecord[]): string {
   const lines = [
-    'No running Storybook was found for this project. Start it first (for example `npm run storybook`), then retry with `--attach`.',
+    'No running Storybook was found for this project. Start it first with the Storybook script in its `package.json`, then retry with `--attach`.',
   ];
   if (records.length > 0) {
     lines.push(
@@ -35,8 +40,19 @@ export function formatOldServer(version: string): string {
   return `Restart Storybook (v${version}+) to enable attach. The running instance was started with an older Storybook that does not publish a channel token.`;
 }
 
+export function formatConnectionBlocked(
+  record: StorybookInstanceRecord,
+  blocked: BlockedNetwork
+): string {
+  return `Could not connect to the Storybook at ${record.url}: ${formatBlockedNetwork(blocked)}. Do not start another Storybook. ${RERUN_OUTSIDE_SANDBOX}`;
+}
+
+export function formatConnectionHidden(record: StorybookInstanceRecord): string {
+  return `Could not connect to the Storybook at ${record.url}: its process is in another process namespace than this command, as when one of the two runs in a sandbox or container, and the connection failed. If this command runs in a sandbox, do not start another Storybook: re-run it with escalated permissions, outside the sandbox.`;
+}
+
 export function formatConnectionFailed(record: StorybookInstanceRecord): string {
-  return `Could not connect to the Storybook at ${record.url}. The instance registry may be stale — if that Storybook is no longer running, start it again (for example \`npm run storybook\`) and retry.`;
+  return `Could not connect to the Storybook at ${record.url}. The instance registry may be stale — if that Storybook is no longer running, start it again with the Storybook script in the \`package.json\` of its project and retry.`;
 }
 
 // Symmetric fact-only report: every path shown is a stored or compared fact, and no path appears
@@ -66,6 +82,10 @@ export function formatInstallationMismatch({
 
 export function formatUnknownInstallation(): string {
   return `Could not verify that the running Storybook and this CLI are the same \`storybook\` installation. ${RESTART_GUIDANCE}`;
+}
+
+export function formatRequiresAttach(command: string, failure: string): string {
+  return `\`${command}\` requires a running Storybook dev server, and could not attach to one:\n\n${failure}`;
 }
 
 export function formatAttachFallback(remediation: string): string {

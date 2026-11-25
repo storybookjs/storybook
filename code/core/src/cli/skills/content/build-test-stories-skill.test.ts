@@ -85,6 +85,8 @@ describe('buildTestStoriesSkill', () => {
 
       Only story files match a file argument: a component file matches nothing, and \`--changed\` finds the stories that depend on it. Files and \`--changed\` combine, with the files first (the argument after \`--changed\` is its ref): \`test run src/Button.stories.tsx --changed\` runs the changed stories in those files. \`--a11y false\` leaves out the accessibility checks, \`--json\` prints the result as JSON, and \`--help\` lists every argument.
 
+      In a sandbox, only \`test run\` needs escalated permissions: it opens a local port for the browser that runs the tests.
+
       A run ends with \`## Result\`: what was selected, then \`Passed: …\` or \`Failed: …\`. Each failing story is under \`## Failing Stories\` with its error, and errors outside a story are under \`## Unhandled Errors\`. When nothing is selected, the output is one line that says so. The command exits with 1 when a story fails, an error occurs outside a story, or a file argument matches no story file; with \`--changed\`, nothing to run exits with 0.
 
       The run lists accessibility violations under \`## Accessibility Violations\`. Fix only what your change caused, and report the rest. For visual ones such as color contrast, ask before changing the design. Never change the accessibility test level (\`parameters.a11y.test\`) to make violations fail or pass."

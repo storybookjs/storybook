@@ -119,9 +119,10 @@ export class ToolsRuntimeError extends StorybookError {
   }
 }
 
-export function isAttachGateError(
-  error: unknown
-): error is AttachUnavailableError | EnvironmentMismatchError | SpawnFailedError {
+/** An error that keeps a tools host from attaching to a running Storybook. */
+export type AttachGateError = AttachUnavailableError | EnvironmentMismatchError | SpawnFailedError;
+
+export function isAttachGateError(error: unknown): error is AttachGateError {
   return (
     error instanceof AttachUnavailableError ||
     error instanceof EnvironmentMismatchError ||
@@ -135,9 +136,7 @@ export type ToolsAttachGateReason =
   | 'environment-mismatch'
   | 'spawn-failed';
 
-export function attachGateReasonFromError(
-  error: AttachUnavailableError | EnvironmentMismatchError | SpawnFailedError
-): ToolsAttachGateReason;
+export function attachGateReasonFromError(error: AttachGateError): ToolsAttachGateReason;
 export function attachGateReasonFromError(error: unknown): ToolsAttachGateReason | undefined;
 export function attachGateReasonFromError(error: unknown): ToolsAttachGateReason | undefined {
   if (error instanceof AttachUnavailableError) {

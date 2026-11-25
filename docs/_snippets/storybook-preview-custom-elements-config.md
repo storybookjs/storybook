@@ -48,6 +48,7 @@ import customElements from '../custom-elements.json';
 setCustomElementsManifest(customElements);
 
 export default definePreview({
+  addons: [/* ... */],
   parameters: {
     controls: {
       matchers: {
@@ -67,6 +68,7 @@ import customElements from '../custom-elements.json';
 setCustomElementsManifest(customElements);
 
 export default definePreview({
+  addons: [/* ... */],
   parameters: {
     controls: {
       matchers: {

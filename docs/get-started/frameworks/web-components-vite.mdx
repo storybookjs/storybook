@@ -107,8 +107,6 @@ A story file with no `component` defined gets no automatic controls. The `Button
 
 For a story with a `render` function, the snippet is the Lit template with the arg values filled in. If the story has event args, the snippet also includes a `<script>` that adds the listeners.
 
-Snippets show the story as you wrote it. When you change a control, the rendered element updates, but the snippet does not.
-
 Some things cannot be shown as HTML, such as a Lit directive or a property that has no matching attribute. In those cases, Storybook shows a warning above the snippet. To write the snippet yourself, set `parameters.docs.source.code`. To hide it, set that parameter to `null`. For all options, see the [Source block](../../api/doc-blocks/doc-block-source.mdx) API.
 
 ### Custom Elements Manifest

@@ -9,6 +9,7 @@ import { MinimumReleaseAgeHandledError } from 'storybook/internal/server-errors'
 import { executeCommand } from '../utils/command.ts';
 import { JsPackageManager } from './JsPackageManager.ts';
 import { NPMProxy } from './NPMProxy.ts';
+import { STORYBOOK_PACKAGE_PATTERNS } from './util.ts';
 
 vi.mock('storybook/internal/node-logger', () => ({
   prompt: {
@@ -162,7 +163,10 @@ describe('NPM Proxy', () => {
     it('throws a handled error with rerun instructions when npm min-release-age blocks the requested version', async () => {
       vi.useFakeTimers();
       vi.setSystemTime(new Date('2025-01-10T00:00:00.000Z'));
-      mockedExecuteCommand.mockResolvedValueOnce({ stdout: '1' } as any).mockResolvedValueOnce({
+      mockedExecuteCommand.mockResolvedValueOnce({
+        stdout: 'min-release-age=1\nmin-release-age-exclude=\nbefore=null\n',
+      } as any);
+      mockedExecuteCommand.mockResolvedValueOnce({
         stdout: JSON.stringify({
           '10.4.0-alpha.17': '2025-01-09T23:30:00.000Z',
           '10.3.9': '2025-01-08T20:00:00.000Z',
@@ -184,6 +188,21 @@ describe('NPM Proxy', () => {
       expect(error).toBeTruthy();
       expect(error?.message).toContain('npx storybook@10.3.9 upgrade');
       expect(error?.message).toContain('min-release-age');
+    });
+
+    it('skips the precheck when min-release-age-exclude covers every Storybook package', async () => {
+      mockedExecuteCommand.mockResolvedValueOnce({
+        stdout: `min-release-age=1\nmin-release-age-exclude=${STORYBOOK_PACKAGE_PATTERNS.join(',')}\nbefore=null\n`,
+      } as any);
+
+      await expect(
+        npmProxy.precheckStorybookPackageInstall({
+          storybookVersion: '10.4.0-alpha.17',
+          nonInteractive: false,
+          installContext: 'upgrade',
+        })
+      ).resolves.toBeUndefined();
+      expect(mockedExecuteCommand).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -432,6 +451,82 @@ describe('NPM Proxy', () => {
       const installations = await npmProxy.findInstallations(['@storybook/*']);
 
       expect(installations).toBeUndefined();
+    });
+  });
+
+  describe('getReleaseAgeGate', () => {
+    describe('when npm sets min-release-age and min-release-age-exclude', () => {
+      beforeEach(() => {
+        mockedExecuteCommand.mockResolvedValue({
+          stdout:
+            'min-release-age=3\nmin-release-age-exclude=@storybook/*,my-pkg,@storybook/react-native@11.0.0-next.2\nbefore=null\n',
+        } as any);
+      });
+
+      it('reads both through one npm config call', async () => {
+        const gate = await npmProxy.getReleaseAgeGate();
+
+        expect(gate?.strict).toBe(true);
+        expect(gate?.getMinutes('@storybook/react')).toBe(3 * 24 * 60);
+        expect(mockedExecuteCommand).toHaveBeenCalledWith(
+          expect.objectContaining({
+            command: 'npm',
+            args: expect.arrayContaining([
+              'config',
+              'get',
+              'min-release-age',
+              'min-release-age-exclude',
+              'before',
+            ]),
+          })
+        );
+      });
+
+      it('excludes package names and globs but ignores versions like npm', async () => {
+        const gate = await npmProxy.getReleaseAgeGate();
+
+        expect(gate?.isExcluded('@storybook/react', '11.0.0-rc.0')).toBe(true);
+        expect(gate?.isExcluded('my-pkg', '1.0.0')).toBe(true);
+        expect(gate?.isExcluded('storybook', '11.0.0-rc.0')).toBe(false);
+        expect(gate?.isExcluded('@chromatic-com/storybook', '5.0.0')).toBe(false);
+      });
+    });
+
+    describe('when npm does not know the settings', () => {
+      beforeEach(() => {
+        mockedExecuteCommand.mockResolvedValue({
+          stdout: 'min-release-age=undefined\nmin-release-age-exclude=undefined\nbefore=null\n',
+        } as any);
+      });
+
+      it('returns no gate', async () => {
+        const gate = await npmProxy.getReleaseAgeGate();
+
+        expect(gate?.getMinutes('@storybook/react')).toBe(0);
+        expect(gate?.isExcluded('undefined', '1.0.0')).toBe(false);
+      });
+    });
+
+    describe('when npm sets before', () => {
+      beforeEach(() => {
+        mockedExecuteCommand.mockResolvedValue({
+          stdout: 'min-release-age=null\nmin-release-age-exclude=\nbefore=Thu Jan 01 2026\n',
+        } as any);
+      });
+
+      it('returns null because the cutoff cannot be modeled', async () => {
+        await expect(npmProxy.getReleaseAgeGate()).resolves.toBeNull();
+      });
+    });
+
+    describe('when npm config fails', () => {
+      beforeEach(() => {
+        mockedExecuteCommand.mockRejectedValue(new Error('npm is broken'));
+      });
+
+      it('returns null', async () => {
+        await expect(npmProxy.getReleaseAgeGate()).resolves.toBeNull();
+      });
     });
   });
 

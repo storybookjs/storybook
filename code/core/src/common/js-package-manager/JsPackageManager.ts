@@ -23,8 +23,8 @@ import { getBundledVersion } from './PackageJson.ts';
 import type { PackageJson, PackageJsonWithDepsAndDevDeps } from './PackageJson.ts';
 import { LOCK_FILES } from './constants.ts';
 import { type OverrideSource, toOverrides } from './overrides.ts';
-import type { InstallationMetadata, PublishedManifest } from './types.ts';
-import { getInstallErrorTail, parsePublishedManifest } from './util.ts';
+import type { InstallationMetadata, PublishedManifest, ReleaseAgeGate } from './types.ts';
+import { NO_RELEASE_AGE_GATE, getInstallErrorTail, parsePublishedManifest } from './util.ts';
 
 export enum PackageManagerName {
   NPM = 'npm',
@@ -108,6 +108,8 @@ export type PackageJsonInfo = {
 
 export abstract class JsPackageManager {
   abstract readonly type: PackageManagerName;
+
+  readonly prefersLatestTag: boolean = true;
 
   /** The path to the primary package.json file (contains the `storybook` dependency). */
   readonly primaryPackageJson: PackageJsonInfo;
@@ -237,6 +239,10 @@ export abstract class JsPackageManager {
     nonInteractive: boolean;
     installContext: 'create' | 'upgrade';
   }): Promise<void> {}
+
+  async getReleaseAgeGate(): Promise<ReleaseAgeGate | null> {
+    return NO_RELEASE_AGE_GATE;
+  }
 
   async dedupeDependencies(options?: { force?: boolean; legacyPeerDeps?: boolean }) {
     await prompt.executeTask(
@@ -1071,12 +1077,25 @@ export abstract class JsPackageManager {
     });
   }
 
-  /** The package.json beside the closest lockfile, else the workspace root, else the primary one. */
-  #findRootPackageJsonPath(): string {
-    const lockfilePath = find.any(LOCK_FILES, {
+  public readLockfile(): string | null {
+    const lockfilePath = this.#findLockfilePath();
+    try {
+      return lockfilePath ? readFileSync(lockfilePath, 'utf-8') : null;
+    } catch {
+      return null;
+    }
+  }
+
+  #findLockfilePath() {
+    return find.any(LOCK_FILES, {
       cwd: this.primaryPackageJson.operationDir,
       last: getProjectRoot(),
     });
+  }
+
+  /** The package.json beside the closest lockfile, else the workspace root, else the primary one. */
+  #findRootPackageJsonPath(): string {
+    const lockfilePath = this.#findLockfilePath();
     if (lockfilePath) {
       return join(dirname(lockfilePath), 'package.json');
     }

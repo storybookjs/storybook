@@ -6,6 +6,8 @@ import {
 
 // eslint-disable-next-line depend/ban-dependencies
 import type { ResultPromise } from 'execa';
+import picomatch from 'picomatch';
+import { satisfies, validRange } from 'semver';
 import { dedent } from 'ts-dedent';
 
 import { logger } from '../../node-logger/index.ts';
@@ -13,14 +15,15 @@ import type { ExecuteCommandOptions } from '../utils/command.ts';
 import { executeCommand } from '../utils/command.ts';
 import { JsPackageManager, PackageManagerName } from './JsPackageManager.ts';
 import type { PackageJson } from './PackageJson.ts';
-import type { InstallationMetadata, PackageMetadata } from './types.ts';
+import type { InstallationMetadata, PackageMetadata, ReleaseAgeGate } from './types.ts';
 import {
-  getAgeInMinutes,
   getErrorLogs,
   getLatestStableVersionAdheringToMinimumAgeGate,
   getStorybookRerunCommand,
   getStorybookRerunInstruction,
-  hasStorybookMinimumAgeExclusions,
+  getStorybookReleaseAgeGateMinutes,
+  isOldEnough,
+  NO_RELEASE_AGE_GATE,
   parsePackageData,
   parsePackageTimeMap,
   parseReleaseTime,
@@ -28,6 +31,20 @@ import {
   readPackageVersions,
   STORYBOOK_PACKAGE_PATTERNS,
 } from './util.ts';
+
+const matchesYarnDescriptor = (pattern: string, packageName: string, version: string) => {
+  const descriptor = pattern.match(/^((?:@[^/]+\/)?[^@/]+)(?:@(.+))?$/);
+  if (!descriptor) {
+    return false;
+  }
+
+  const [, ident, range] = descriptor;
+  if (ident !== packageName && !picomatch.isMatch(packageName, ident)) {
+    return false;
+  }
+
+  return range === undefined || (validRange(range) !== null && satisfies(version, range));
+};
 
 // more info at https://yarnpkg.com/advanced/error-codes
 const CRITICAL_YARN2_ERROR_CODES = {
@@ -89,6 +106,8 @@ const CRITICAL_YARN2_ERROR_CODES = {
 // This encompasses Yarn Berry (v2+)
 export class Yarn2Proxy extends JsPackageManager {
   readonly type = PackageManagerName.YARN2;
+
+  readonly prefersLatestTag = false;
 
   installArgs: string[] | undefined;
 
@@ -229,18 +248,14 @@ export class Yarn2Proxy extends JsPackageManager {
     nonInteractive: boolean;
     installContext: 'create' | 'upgrade';
   }): Promise<void> {
-    const minimumAgeGate = await this.getMinimumAgeGate();
+    const gate = await this.getReleaseAgeGate();
+    if (!gate) {
+      logger.debug('Skipping the age gate precheck: the Yarn age gate settings could not be read.');
+      return;
+    }
 
+    const minimumAgeGate = getStorybookReleaseAgeGateMinutes(gate, storybookVersion);
     if (!minimumAgeGate) {
-      return;
-    }
-
-    const preapprovedPackages = await this.getPreapprovedPackages();
-    if (!preapprovedPackages) {
-      logger.debug('Skipping the age gate precheck: npmPreapprovedPackages could not be read.');
-      return;
-    }
-    if (hasStorybookMinimumAgeExclusions(preapprovedPackages)) {
       return;
     }
 
@@ -259,8 +274,7 @@ export class Yarn2Proxy extends JsPackageManager {
       return;
     }
 
-    const ageMinutes = getAgeInMinutes(publishedAt, new Date());
-    if (ageMinutes >= minimumAgeGate) {
+    if (isOldEnough(publishedAt, minimumAgeGate)) {
       return;
     }
 
@@ -437,6 +451,70 @@ export class Yarn2Proxy extends JsPackageManager {
 
     const [, packageName, version] = match;
     return `${packageName}@${version}`;
+  }
+
+  async getReleaseAgeGate(): Promise<ReleaseAgeGate | null> {
+    const [configuredMinutes, preapprovedPackages, scopeMinutes] = await Promise.all([
+      this.getMinimumAgeGate(),
+      this.getPreapprovedPackages(),
+      this.getScopeMinimumAgeGates(),
+    ]);
+    const minutes = configuredMinutes ?? 0;
+    if (!scopeMinutes) {
+      return null;
+    }
+    if (!preapprovedPackages) {
+      return minutes > 0 || Object.values(scopeMinutes).some((scopeGate) => scopeGate > 0)
+        ? null
+        : NO_RELEASE_AGE_GATE;
+    }
+
+    return {
+      strict: true,
+      getMinutes: (packageName) => {
+        const scope = packageName.match(/^@([^/]+)\//)?.[1];
+        return scope !== undefined && Object.hasOwn(scopeMinutes, scope)
+          ? scopeMinutes[scope]
+          : minutes;
+      },
+      isExcluded: (packageName, version) =>
+        preapprovedPackages.some((pattern) => matchesYarnDescriptor(pattern, packageName, version)),
+    };
+  }
+
+  private async getScopeMinimumAgeGates(): Promise<Record<string, number> | null> {
+    try {
+      const result = await this.runInternalCommand(
+        'config',
+        ['get', 'npmScopes', '--json'],
+        undefined,
+        'pipe'
+      );
+      const output = typeof result.stdout === 'string' ? result.stdout.trim() : '';
+      const scopes: unknown = output && output !== 'undefined' ? JSON.parse(output) : {};
+      return Object.fromEntries(
+        Object.entries(scopes && typeof scopes === 'object' ? scopes : {}).flatMap(
+          ([scope, settings]): [string, number][] => {
+            const gate: unknown =
+              settings && typeof settings === 'object'
+                ? (settings as Record<string, unknown>).npmMinimalAgeGate
+                : undefined;
+            if (gate === undefined || gate === null) {
+              return [];
+            }
+            const gateMinutes =
+              typeof gate === 'number'
+                ? gate
+                : parseYarnMinimalAgeGateMinutes(
+                    typeof gate === 'string' ? gate : JSON.stringify(gate)
+                  );
+            return [[scope, Math.max(gateMinutes ?? 0, 0)]];
+          }
+        )
+      );
+    } catch {
+      return null;
+    }
   }
 
   private async getMinimumAgeGate(): Promise<number | null> {

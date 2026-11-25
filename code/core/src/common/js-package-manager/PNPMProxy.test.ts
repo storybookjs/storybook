@@ -680,6 +680,199 @@ describe('PNPM Proxy', () => {
     });
   });
 
+  describe('getReleaseAgeGate', () => {
+    let config: Record<string, string>;
+
+    beforeEach(() => {
+      config = {
+        minimumReleaseAge: 'undefined',
+        minimumReleaseAgeExclude: 'undefined',
+        minimumReleaseAgeStrict: 'undefined',
+      };
+      mockedExecuteCommand.mockImplementation(
+        ({ args }) => Promise.resolve({ stdout: `${config[String(args?.[2])]}\n` }) as any
+      );
+    });
+
+    describe('when minimumReleaseAge is set', () => {
+      beforeEach(() => {
+        config.minimumReleaseAge = '60';
+        config.minimumReleaseAgeExclude = JSON.stringify([
+          '@storybook/addon-*',
+          '@storybook/react@11.0.0-beta.4 || 11.0.0-rc.0',
+        ]);
+      });
+
+      it('returns a strict gate in minutes', async () => {
+        const gate = await pnpmProxy.getReleaseAgeGate();
+
+        expect(gate?.strict).toBe(true);
+        expect(gate?.getMinutes('@storybook/react')).toBe(60);
+      });
+
+      it('excludes names, globs and exact versions like pnpm', async () => {
+        const gate = await pnpmProxy.getReleaseAgeGate();
+
+        expect(gate?.isExcluded('@storybook/addon-ondevice-actions', '11.0.0-next.2')).toBe(true);
+        expect(gate?.isExcluded('@storybook/react', '11.0.0-rc.0')).toBe(true);
+        expect(gate?.isExcluded('@storybook/react', '11.0.0-beta.5')).toBe(false);
+        expect(gate?.isExcluded('@storybook/react-native', '11.0.0-next.2')).toBe(false);
+      });
+    });
+
+    describe('when minimumReleaseAgeStrict is false', () => {
+      beforeEach(() => {
+        config.minimumReleaseAge = '60';
+        config.minimumReleaseAgeStrict = 'false';
+      });
+
+      it('returns a gate that falls back instead of blocking', async () => {
+        await expect(pnpmProxy.getReleaseAgeGate()).resolves.toMatchObject({ strict: false });
+      });
+
+      describe('on pnpm 10', () => {
+        beforeEach(() => {
+          mockPnpmVersion('10.34.9');
+          pnpmProxy = new PNPMProxy();
+        });
+
+        it('returns a strict gate, since pnpm 10 ignores the setting', async () => {
+          await expect(pnpmProxy.getReleaseAgeGate()).resolves.toMatchObject({ strict: true });
+        });
+      });
+    });
+
+    describe('when several exclusions name the same package', () => {
+      beforeEach(() => {
+        config.minimumReleaseAge = '60';
+        config.minimumReleaseAgeExclude = JSON.stringify([
+          '@storybook/react@11.0.0-beta.3',
+          '@storybook/react',
+        ]);
+      });
+
+      it('combines them like pnpm 11', async () => {
+        const gate = await pnpmProxy.getReleaseAgeGate();
+
+        expect(gate?.isExcluded('@storybook/react', '11.0.0-rc.0')).toBe(true);
+      });
+
+      describe('on pnpm 10', () => {
+        beforeEach(() => {
+          mockPnpmVersion('10.34.9');
+          pnpmProxy = new PNPMProxy();
+        });
+
+        it('uses only the first one like pnpm 10', async () => {
+          const gate = await pnpmProxy.getReleaseAgeGate();
+
+          expect(gate?.isExcluded('@storybook/react', '11.0.0-beta.3')).toBe(true);
+          expect(gate?.isExcluded('@storybook/react', '11.0.0-rc.0')).toBe(false);
+        });
+      });
+    });
+
+    describe('when an exclusion contains a question mark', () => {
+      beforeEach(() => {
+        config.minimumReleaseAge = '60';
+        config.minimumReleaseAgeExclude = JSON.stringify(['@storybook/reac?']);
+      });
+
+      it('reads it as a wildcard like pnpm 11', async () => {
+        const gate = await pnpmProxy.getReleaseAgeGate();
+
+        expect(gate?.isExcluded('@storybook/react', '11.0.0-rc.0')).toBe(true);
+      });
+
+      describe('on pnpm 10', () => {
+        beforeEach(() => {
+          mockPnpmVersion('10.34.9');
+          pnpmProxy = new PNPMProxy();
+        });
+
+        it('reads it literally like pnpm 10', async () => {
+          const gate = await pnpmProxy.getReleaseAgeGate();
+
+          expect(gate?.isExcluded('@storybook/react', '11.0.0-rc.0')).toBe(false);
+          expect(gate?.isExcluded('@storybook/reac?', '11.0.0-rc.0')).toBe(true);
+        });
+      });
+    });
+
+    describe.each([
+      { entry: '!@storybook/react-native', kind: 'a negated scoped name' },
+      { entry: '@storybook/react@^11.0.0', kind: 'a range' },
+    ])('when an exclusion is $kind, which pnpm rejects', ({ entry }) => {
+      beforeEach(() => {
+        config.minimumReleaseAge = '60';
+        config.minimumReleaseAgeExclude = JSON.stringify(['storybook', entry]);
+      });
+
+      it('returns null, since the install fails on its own', async () => {
+        await expect(pnpmProxy.getReleaseAgeGate()).resolves.toBeNull();
+      });
+    });
+
+    describe('when an exclusion is negated', () => {
+      beforeEach(() => {
+        config.minimumReleaseAge = '60';
+        config.minimumReleaseAgeExclude = JSON.stringify(['!storybook']);
+      });
+
+      it('excludes every other package like pnpm', async () => {
+        const gate = await pnpmProxy.getReleaseAgeGate();
+
+        expect(gate?.isExcluded('@storybook/react', '11.0.0-rc.0')).toBe(true);
+        expect(gate?.isExcluded('storybook', '11.0.0-rc.0')).toBe(false);
+      });
+    });
+
+    describe('when minimumReleaseAge is set to 0', () => {
+      beforeEach(() => {
+        config.minimumReleaseAge = '0';
+      });
+
+      it('returns no gate', async () => {
+        const gate = await pnpmProxy.getReleaseAgeGate();
+
+        expect(gate?.getMinutes('@storybook/react')).toBe(0);
+      });
+    });
+
+    describe('when minimumReleaseAge is not set', () => {
+      it('uses the non strict one day default of pnpm 11', async () => {
+        const gate = await pnpmProxy.getReleaseAgeGate();
+
+        expect(gate?.getMinutes('@storybook/react')).toBe(24 * 60);
+        expect(gate?.strict).toBe(false);
+      });
+
+      describe('on pnpm 10', () => {
+        beforeEach(() => {
+          mockPnpmVersion('10.34.9');
+          pnpmProxy = new PNPMProxy();
+        });
+
+        it('returns no gate', async () => {
+          const gate = await pnpmProxy.getReleaseAgeGate();
+
+          expect(gate?.getMinutes('@storybook/react')).toBe(0);
+        });
+      });
+    });
+
+    describe('when pnpm prints an unreadable exclusion list', () => {
+      beforeEach(() => {
+        config.minimumReleaseAge = '60';
+        config.minimumReleaseAgeExclude = '{not json';
+      });
+
+      it('returns null', async () => {
+        await expect(pnpmProxy.getReleaseAgeGate()).resolves.toBeNull();
+      });
+    });
+  });
+
   describe('getPublishedManifest', () => {
     const published = {
       version: '11.0.0-next.2',
@@ -1096,6 +1289,7 @@ describe('PNPM Proxy', () => {
       mockedExecuteCommand
         .mockResolvedValueOnce({ stdout: '1440\n' } as any)
         .mockResolvedValueOnce({ stdout: JSON.stringify(['react', 'webpack']) } as any)
+        .mockResolvedValueOnce({ stdout: 'undefined\n' } as any)
         .mockResolvedValueOnce({ stdout: JSON.stringify(packageTimeMap) } as any)
         .mockResolvedValueOnce({ stdout: JSON.stringify(packageTimeMap) } as any)
         .mockResolvedValueOnce({ stdout: JSON.stringify(['react', 'webpack']) } as any)
@@ -1131,6 +1325,7 @@ describe('PNPM Proxy', () => {
         .mockResolvedValueOnce({
           stdout: JSON.stringify(['react', '@storybook/preset-react-webpack']),
         } as any)
+        .mockResolvedValueOnce({ stdout: 'undefined\n' } as any)
         .mockResolvedValueOnce({ stdout: JSON.stringify(packageTimeMap) } as any)
         .mockResolvedValueOnce({ stdout: JSON.stringify(packageTimeMap) } as any)
         .mockResolvedValueOnce({ stdout: JSON.stringify(['react', 'webpack']) } as any)
@@ -1189,6 +1384,7 @@ describe('PNPM Proxy', () => {
       mockedExecuteCommand
         .mockResolvedValueOnce({ stdout: '1440\n' } as any)
         .mockResolvedValueOnce({ stdout: '[]' } as any)
+        .mockResolvedValueOnce({ stdout: 'undefined\n' } as any)
         .mockResolvedValueOnce({ stdout: JSON.stringify([packageTimeMap]) } as any)
         .mockResolvedValueOnce({ stdout: JSON.stringify([packageTimeMap]) } as any);
       vi.mocked(prompt.select).mockResolvedValue('rerun' as never);
@@ -1212,6 +1408,7 @@ describe('PNPM Proxy', () => {
       mockedExecuteCommand
         .mockResolvedValueOnce({ stdout: '1440\n' } as any)
         .mockResolvedValueOnce({ stdout: '[]' } as any)
+        .mockResolvedValueOnce({ stdout: 'undefined\n' } as any)
         .mockResolvedValueOnce({ stdout: JSON.stringify(packageTimeMap) } as any)
         .mockResolvedValueOnce({ stdout: JSON.stringify(packageTimeMap) } as any);
       vi.mocked(prompt.select).mockImplementationOnce(async (_options: any, promptOptions: any) => {
@@ -1283,7 +1480,8 @@ describe('PNPM Proxy', () => {
         .mockResolvedValueOnce({ stdout: '1440\n' } as any)
         .mockResolvedValueOnce({
           stdout: JSON.stringify(STORYBOOK_PACKAGE_PATTERNS),
-        } as any);
+        } as any)
+        .mockResolvedValueOnce({ stdout: 'undefined\n' } as any);
 
       await expect(
         pnpmProxy.precheckStorybookPackageInstall({
@@ -1296,6 +1494,25 @@ describe('PNPM Proxy', () => {
       expect(vi.mocked(prompt.select)).not.toHaveBeenCalled();
       expect(vi.mocked(logger.warn)).not.toHaveBeenCalled();
       expect(updateSpy).not.toHaveBeenCalled();
+    });
+
+    it('should skip the precheck for the non strict default gate of pnpm 11', async () => {
+      mockedExecuteCommand.mockImplementation(
+        () => Promise.resolve({ stdout: 'undefined\n' }) as ReturnType<typeof executeCommand>
+      );
+
+      await expect(
+        pnpmProxy.precheckStorybookPackageInstall({
+          storybookVersion: '10.4.0-alpha.17',
+          nonInteractive: false,
+          installContext: 'create',
+        })
+      ).resolves.toBeUndefined();
+
+      expect(mockedExecuteCommand).not.toHaveBeenCalledWith(
+        expect.objectContaining({ args: expect.arrayContaining(['time']) })
+      );
+      expect(vi.mocked(prompt.select)).not.toHaveBeenCalled();
     });
   });
 });

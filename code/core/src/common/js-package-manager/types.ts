@@ -6,6 +6,11 @@ export type PublishedManifest = {
   dependencies: Record<string, string>;
   peerDependencies: Record<string, string>;
 };
+export type ReleaseAgeGate = {
+  strict: boolean;
+  getMinutes: (packageName: string) => number;
+  isExcluded: (packageName: string, version: string) => boolean;
+};
 export type InstallationMetadata = {
   dependencies: Record<string, PackageMetadata[]>;
   duplicatedDependencies: Record<string, string[]>;

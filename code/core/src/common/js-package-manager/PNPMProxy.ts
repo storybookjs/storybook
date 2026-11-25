@@ -21,20 +21,30 @@ import { JsPackageManager, PackageManagerName } from './JsPackageManager.ts';
 import type { PackageJson } from './PackageJson.ts';
 import { type OverrideSource, toOverrides } from './overrides.ts';
 import { hasAllowBuildsDecision, hasPnpm10ListDecision } from './pnpm-build-approvals.ts';
-import type { InstallationMetadata } from './types.ts';
+import type { InstallationMetadata, ReleaseAgeGate } from './types.ts';
 import {
   findInstallationsInDependencyTree,
-  getAgeInMinutes,
   getErrorLogs,
   getLatestStableVersionAdheringToMinimumAgeGate,
   getStorybookRerunCommand,
   getStorybookRerunInstruction,
-  hasStorybookMinimumAgeExclusions,
+  getStorybookReleaseAgeGateMinutes,
+  isOldEnough,
+  packagePatternToRegex,
+  parseExactVersionsPattern,
   parsePackageTimeMap,
-  parsePositiveIntegerConfigValue,
   parseReleaseTime,
   STORYBOOK_PACKAGE_PATTERNS,
 } from './util.ts';
+
+const matchesPnpmPackagePattern = (
+  pattern: string,
+  packageName: string,
+  questionMarkWildcard: boolean
+): boolean =>
+  pattern.startsWith('!')
+    ? !matchesPnpmPackagePattern(pattern.slice(1), packageName, questionMarkWildcard)
+    : packagePatternToRegex(pattern, questionMarkWildcard).test(packageName);
 
 type PnpmDependency = {
   from: string;
@@ -515,13 +525,12 @@ export class PNPMProxy extends JsPackageManager {
     nonInteractive: boolean;
     installContext: 'create' | 'upgrade';
   }): Promise<void> {
-    const minimumReleaseAge = await this.getMinimumReleaseAge();
+    const minimumReleaseAge = getStorybookReleaseAgeGateMinutes(
+      await this.getReleaseAgeGate(),
+      storybookVersion
+    );
 
     if (!minimumReleaseAge) {
-      return;
-    }
-
-    if (hasStorybookMinimumAgeExclusions(await this.getMinimumReleaseAgeExclude())) {
       return;
     }
 
@@ -531,8 +540,7 @@ export class PNPMProxy extends JsPackageManager {
       return;
     }
 
-    const ageMinutes = getAgeInMinutes(publishedAt, new Date());
-    if (ageMinutes >= minimumReleaseAge) {
+    if (isOldEnough(publishedAt, minimumReleaseAge)) {
       return;
     }
 
@@ -688,17 +696,45 @@ export class PNPMProxy extends JsPackageManager {
     return `${packageName}@${version}`;
   }
 
-  private async getMinimumReleaseAge(): Promise<number | null> {
-    const result = await this.runInternalCommand(
-      'config',
-      ['get', 'minimumReleaseAge'],
-      undefined,
-      'pipe'
-    );
+  async getReleaseAgeGate(): Promise<ReleaseAgeGate | null> {
+    try {
+      const [configuredMinutes, excludes, configuredStrict] = await Promise.all([
+        this.getConfigValue('minimumReleaseAge'),
+        this.getMinimumReleaseAgeExclude(),
+        this.getConfigValue('minimumReleaseAgeStrict'),
+      ]);
+      const pnpm11 = gte(coerce(await this.getPnpmVersion()) ?? '0.0.0', '11.0.0');
+      const explicitlySet = /^\d+$/.test(configuredMinutes);
+      const minutes = explicitlySet ? Number(configuredMinutes) : pnpm11 ? 24 * 60 : 0;
+      const rules = excludes.flatMap((pattern) => parseExactVersionsPattern(pattern) ?? []);
+      if (rules.length < excludes.length) {
+        logger.debug(
+          'pnpm rejects an entry of minimumReleaseAgeExclude, so the install fails on its own.'
+        );
+        return null;
+      }
+      return {
+        strict:
+          !pnpm11 || configuredStrict === 'true' || (configuredStrict !== 'false' && explicitlySet),
+        getMinutes: () => minutes,
+        isExcluded: (packageName, version) => {
+          const matching = rules.filter((rule) =>
+            matchesPnpmPackagePattern(rule.packageName, packageName, pnpm11)
+          );
+          return (pnpm11 ? matching : matching.slice(0, 1)).some(
+            (rule) => rule.versions.length === 0 || rule.versions.includes(version)
+          );
+        },
+      };
+    } catch (error) {
+      logger.debug(`Could not read the pnpm release age settings: ${String(error)}`);
+      return null;
+    }
+  }
 
-    return parsePositiveIntegerConfigValue(
-      typeof result.stdout === 'string' ? result.stdout : undefined
-    );
+  private async getConfigValue(key: string): Promise<string> {
+    const result = await this.runInternalCommand('config', ['get', key], undefined, 'pipe');
+    return typeof result.stdout === 'string' ? result.stdout.trim() : '';
   }
 
   private async getPackageReleaseTime(packageName: string, version: string): Promise<Date | null> {

@@ -9,7 +9,7 @@ import { fs, vol } from 'memfs';
 
 import { reactViteToTanstackReact } from './fixes/react-vite-to-tanstack-react.ts';
 import { setConfigLayout } from './fixes/set-config-layout.ts';
-import { detectApplicable, pluginsFor, runTransforms, simulateFixes } from './pipeline.ts';
+import { detectApplicable, pluginsFor, runTransforms } from './pipeline.ts';
 import type { Fix } from './types.ts';
 import type { ConfigFile } from 'storybook/internal/csf-tools';
 
@@ -509,109 +509,5 @@ describe('detectApplicable', () => {
     await expect(detectApplicable(project as never, [withRun])).resolves.toEqual([withRun]);
     expect(handler).not.toHaveBeenCalled();
     expect(readFile).not.toHaveBeenCalled();
-  });
-});
-
-describe('simulateFixes', () => {
-  beforeEach(() => {
-    vol.reset();
-    vi.mocked(readFile)
-      .mockClear()
-      .mockImplementation(fs.promises.readFile as typeof readFile);
-    vi.mocked(writeFile)
-      .mockClear()
-      .mockImplementation(fs.promises.writeFile as typeof writeFile);
-    vol.fromJSON({
-      [project.mainConfigPath]: 'main',
-      [project.storiesPaths[0]]: 'a',
-      [project.storiesPaths[1]]: 'b',
-    });
-  });
-
-  afterEach(() => {
-    vi.mocked(readFile).mockRestore();
-    vi.mocked(writeFile).mockRestore();
-  });
-
-  const checked = (id: string, fix: Partial<Fix>) => ({
-    fix: { id, prompt: () => id, ...fix } as Fix,
-    result: {},
-  });
-
-  it('goes through every file a run would change or fail on, and writes nothing', async () => {
-    const before = vol.toJSON();
-
-    const outcomes = await simulateFixes(project as never, [
-      checked('changes', {
-        transform: () => [{ filter: { kind: ['main', 'story'] }, handler: (code) => `${code}!` }],
-      }),
-      checked('skips-a-file', {
-        transform: () => [
-          {
-            filter: { kind: ['story'] },
-            handler: (code) => {
-              if (code.startsWith('b')) {
-                throw new Error('cannot migrate');
-              }
-              return `${code}?`;
-            },
-          },
-        ],
-      }),
-    ]);
-
-    expect(vol.toJSON()).toEqual(before);
-    expect(writeFile).not.toHaveBeenCalled();
-    expect(Object.fromEntries(outcomes)).toEqual({
-      changes: {
-        status: 'apply',
-        changed: [project.mainConfigPath, ...project.storiesPaths],
-        fileFailures: [],
-      },
-      'skips-a-file': {
-        status: 'apply',
-        changed: [project.storiesPaths[0]],
-        fileFailures: [{ file: project.storiesPaths[1], kind: 'story', message: 'cannot migrate' }],
-      },
-    });
-  });
-
-  it('predicts that a fix fails when its hooks fail on the main config, without running it', async () => {
-    const run = vi.fn();
-
-    const outcomes = await simulateFixes(project as never, [
-      checked('fails-on-main', {
-        check: async () => ({}),
-        run,
-        transform: () => [
-          {
-            filter: { kind: ['main'] },
-            handler: () => {
-              throw new Error('cannot migrate main');
-            },
-          },
-        ],
-      }),
-    ]);
-
-    expect(run).not.toHaveBeenCalled();
-    expect(outcomes.get('fails-on-main')).toEqual({
-      status: 'fail',
-      changed: [],
-      fileFailures: [
-        { file: project.mainConfigPath, kind: 'main', message: 'cannot migrate main' },
-      ],
-    });
-  });
-
-  it('predicts that a fix with its own run applies, without running it', async () => {
-    const run = vi.fn();
-
-    const outcomes = await simulateFixes(project as never, [
-      checked('runs', { check: async () => ({}), run }),
-    ]);
-
-    expect(run).not.toHaveBeenCalled();
-    expect(outcomes.get('runs')).toEqual({ status: 'apply', changed: [], fileFailures: [] });
   });
 });

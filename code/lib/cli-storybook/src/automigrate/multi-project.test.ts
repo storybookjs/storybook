@@ -1,14 +1,13 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
+
+import { effects } from 'storybook/internal/common';
 
 import {
   type ProjectAutomigrationData,
   collectAutomigrationsAcrossProjects,
   logAutomigrationDetails,
   promptForAutomigrations,
-  runAutomigrationsForProjects,
 } from './multi-project.ts';
-import { logger } from 'storybook/internal/node-logger';
-
 import type { Fix } from './types.ts';
 
 vi.mock('storybook/internal/node-logger', async (importOriginal) => {
@@ -16,13 +15,11 @@ vi.mock('storybook/internal/node-logger', async (importOriginal) => {
     ...(await importOriginal<typeof import('storybook/internal/node-logger')>()),
     prompt: {
       multiselect: vi.fn(),
-      taskLog: vi.fn(() => ({ message: vi.fn(), success: vi.fn(), error: vi.fn() })),
       error: vi.fn(),
     },
     logger: {
       log: vi.fn(),
       logBox: vi.fn(),
-      warn: vi.fn(),
       error: vi.fn(),
       debug: vi.fn(),
       SYMBOLS: {
@@ -163,7 +160,7 @@ describe('multi-project automigrations', () => {
         },
       ];
 
-      await promptForAutomigrations(automigrations, { dryRun: false, yes: false });
+      await promptForAutomigrations(automigrations, { yes: false });
 
       expect(multiselectMock).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -195,7 +192,6 @@ describe('multi-project automigrations', () => {
       ];
 
       const result = await promptForAutomigrations(automigrations, {
-        dryRun: false,
         yes: false,
       });
 
@@ -233,7 +229,7 @@ describe('multi-project automigrations', () => {
         },
       ];
 
-      const result = await promptForAutomigrations(automigrations, { dryRun: false, yes: true });
+      const result = await promptForAutomigrations(automigrations, { yes: true });
 
       expect(result).toEqual(automigrations);
       expect(logSpy).toHaveBeenCalledWith('Running all detected automigrations:');
@@ -258,7 +254,7 @@ describe('multi-project automigrations', () => {
         asAutomigration(optInFix, project1),
       ];
 
-      const result = await promptForAutomigrations(automigrations, { dryRun: false, yes: true });
+      const result = await promptForAutomigrations(automigrations, { yes: true });
 
       expect(result.map(({ fix }) => fix.id)).toEqual(['default-fix']);
       expect(logSpy).toHaveBeenCalledWith('Running these detected automigrations:');
@@ -281,7 +277,7 @@ describe('multi-project automigrations', () => {
 
       const automigrations = [asAutomigration(autoOptInFix, project1)];
 
-      const result = await promptForAutomigrations(automigrations, { dryRun: false, yes: true });
+      const result = await promptForAutomigrations(automigrations, { yes: true });
 
       expect(result.map(({ fix }) => fix.id)).toEqual(['auto-opt-in-fix']);
     });
@@ -313,7 +309,6 @@ describe('multi-project automigrations', () => {
       ];
 
       const result = await promptForAutomigrations(automigrations, {
-        dryRun: false,
         yes: true,
         preselectedIds: ['requested-fix'],
       });
@@ -351,7 +346,6 @@ describe('multi-project automigrations', () => {
       vi.mocked(prompt.multiselect).mockResolvedValue(['default-fix', 'requested-fix']);
 
       const result = await promptForAutomigrations(automigrations, {
-        dryRun: false,
         yes: false,
         preselectedIds: ['requested-fix'],
       });
@@ -366,98 +360,40 @@ describe('multi-project automigrations', () => {
       expect(result.map(({ fix }) => fix.id)).toEqual(['default-fix', 'requested-fix']);
     });
 
-    it('asks the same question in a dry run', async () => {
+    it('asks which automigrations to run in a dry run too, as a run does', async () => {
       const { prompt } = await import('storybook/internal/node-logger');
       vi.mocked(prompt.multiselect).mockResolvedValue(['fix1']);
-
-      const fix1 = createMockFix('fix1', { needsFix: true });
-      const project1 = createMockProject('/project1/.storybook');
-
+      effects.setDryRun(true);
+      onTestFinished(() => effects.setDryRun(false));
       const automigrations = [
-        {
-          fix: fix1,
-          reports: [
-            {
-              result: { needsFix: true },
-              status: 'check_succeeded' as const,
-              project: project1,
-            },
-          ],
-        },
+        asAutomigration(
+          createMockFix('fix1', { needsFix: true }),
+          createMockProject('/project1/.storybook')
+        ),
       ];
 
-      const result = await promptForAutomigrations(automigrations, { dryRun: true, yes: false });
+      const result = await promptForAutomigrations(automigrations, { yes: false });
 
       expect(prompt.multiselect).toHaveBeenCalledTimes(1);
       expect(result).toEqual(automigrations);
     });
-  });
 
-  describe('reportDryRun', () => {
-    const runSelected = async (fix: Fix, options: { dryRun: boolean }) => {
-      const automigrations = [asAutomigration(fix, createMockProject('/repo/.storybook'))];
-      await runAutomigrationsForProjects(automigrations, { automigrations, yes: true, ...options });
-    };
-
-    it('lets each fix a run would apply report what its run would do, in a dry run', async () => {
-      const reportDryRun = vi.fn(async () => {});
-      const fix = createMockFix('reporting-fix', {}, { reportDryRun });
-
-      await runSelected(fix, { dryRun: true });
-
-      expect(fix.run).not.toHaveBeenCalled();
-      expect(reportDryRun).toHaveBeenCalledTimes(1);
-      expect(reportDryRun).toHaveBeenCalledWith(
-        expect.objectContaining({ configDir: '/repo/.storybook', result: { needsFix: true } })
-      );
-    });
-
-    it('does not let a fix the user did not select report, in a dry run', async () => {
-      const reportDryRun = vi.fn(async () => {});
-      const fix = createMockFix('reporting-fix', {}, { reportDryRun });
-      const automigrations = [asAutomigration(fix, createMockProject('/repo/.storybook'))];
-
-      await runAutomigrationsForProjects(automigrations, {
-        automigrations: [],
-        yes: false,
-        dryRun: true,
-      });
-
-      expect(reportDryRun).not.toHaveBeenCalled();
-    });
-
-    it('goes on with the dry run when a fix fails to report', async () => {
-      const failing = createMockFix(
-        'failing-report',
-        {},
-        { reportDryRun: vi.fn(async () => Promise.reject(new Error('no network'))) }
-      );
-      const reportDryRun = vi.fn(async () => {});
-      const reporting = createMockFix('reporting-fix', {}, { reportDryRun });
-      const project = createMockProject('/repo/.storybook');
+    it('lists the automigrations a dry run with --yes selects, and that it changes no file', async () => {
+      const { logger } = await import('storybook/internal/node-logger');
+      const logSpy = vi.spyOn(logger, 'log');
+      effects.setDryRun(true);
+      onTestFinished(() => effects.setDryRun(false));
       const automigrations = [
-        asAutomigration(failing, project),
-        asAutomigration(reporting, project),
+        asAutomigration(
+          createMockFix('fix1', { needsFix: true }),
+          createMockProject('/project1/.storybook')
+        ),
       ];
 
-      await runAutomigrationsForProjects(automigrations, {
-        automigrations,
-        yes: true,
-        dryRun: true,
-      });
+      const result = await promptForAutomigrations(automigrations, { yes: true });
 
-      expect(reportDryRun).toHaveBeenCalledTimes(1);
-      expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('failing-report'));
-    });
-
-    it('does not call it outside a dry run', async () => {
-      const reportDryRun = vi.fn(async () => {});
-      const fix = createMockFix('reporting-fix', {}, { reportDryRun });
-
-      await runSelected(fix, { dryRun: false });
-
-      expect(fix.run).toHaveBeenCalledTimes(1);
-      expect(reportDryRun).not.toHaveBeenCalled();
+      expect(result).toEqual(automigrations);
+      expect(logSpy).toHaveBeenCalledWith('Detected automigrations (no files will be changed):');
     });
   });
 
@@ -529,30 +465,6 @@ describe('multi-project automigrations', () => {
       ]);
 
       expect(logger.logBox).not.toHaveBeenCalled();
-    });
-
-    it('shows the details of the fixes a dry run would apply', async () => {
-      const { logger } = await import('storybook/internal/node-logger');
-      const automigrations = [
-        {
-          fix: detailedFix(),
-          reports: [
-            {
-              result: { files: ['a.ts'] },
-              status: 'check_succeeded' as const,
-              project: createMockProject('/repo/.storybook'),
-            },
-          ],
-        },
-      ];
-
-      await runAutomigrationsForProjects(automigrations, {
-        automigrations,
-        dryRun: true,
-        yes: true,
-      });
-
-      expect(logger.logBox).toHaveBeenCalledWith('Migrate\n\nFiles:\na.ts', expect.anything());
     });
   });
 });

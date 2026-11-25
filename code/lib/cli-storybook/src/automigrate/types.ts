@@ -69,14 +69,6 @@ type BaseFix<ResultType = any> = {
   /** Whether the automigration is selected by default when the user is prompted. */
   defaultSelected?: boolean;
   link?: string;
-  /**
-   * In a dry run, print what `run` would do that the fix's description leaves out, such as a command
-   * it runs. Called once for each fix the dry run predicts would succeed, with the first project it
-   * would succeed in, so it fits a side effect on the project root such as the skills install. A
-   * fix whose `run` changes each project differently would report the first project only. A
-   * report that throws is named in a warning, and the dry run goes on.
-   */
-  reportDryRun?: (options: TransformOptions<ResultType>) => Promise<void>;
 };
 
 type PromptType<ResultType = any, T = Prompt> =
@@ -125,7 +117,6 @@ export type Fix<ResultType = any> =
     } & BaseFix<ResultType>);
 
 export type CommandFixRunOptions = Omit<RunOptions<null>, 'files' | 'addonsToPostinstall'> & {
-  dryRun?: boolean;
   /** Glob pattern for story files (for csf-factories codemod) */
   glob?: string;
 };

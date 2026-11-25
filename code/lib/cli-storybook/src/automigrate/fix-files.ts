@@ -1,7 +1,6 @@
-import { readFile, unlink, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
-import { HandledError } from 'storybook/internal/common';
+import { HandledError, effects } from 'storybook/internal/common';
 import {
   type ConfigFile,
   formatConfig,
@@ -65,7 +64,7 @@ export const createFixFiles = () => {
     if (stagedFile) {
       return stagedFile.content;
     }
-    const content = await readFile(path, 'utf-8');
+    const content = await effects.readFile(path);
     originals.set(key, content);
     return normalizeLineEndings(content);
   };
@@ -117,7 +116,7 @@ export const createFixFiles = () => {
       return false;
     }
     try {
-      return original !== (await readFile(path, 'utf-8'));
+      return original !== (await effects.readFile(path));
     } catch {
       return true;
     }
@@ -148,8 +147,8 @@ export const createFixFiles = () => {
     for (const [key, { path, content }] of staged) {
       const original = originals.get(key);
       await (content === null
-        ? unlink(path)
-        : writeFile(path, original ? restoreLineEndings(content, original) : content));
+        ? effects.removeFile(path)
+        : effects.writeFile(path, original ? restoreLineEndings(content, original) : content));
     }
   };
 

@@ -1,11 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import {
-  hasStorybookSkills,
-  installSkills,
-  reportSkillsInstall,
-  skipsSkillsInCI,
-} from 'storybook/internal/cli';
+import { hasStorybookSkills, installSkills, skipsSkillsInCI } from 'storybook/internal/cli';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
@@ -66,7 +61,6 @@ describe('skills', () => {
     vi.mocked(skipsSkillsInCI).mockReturnValue(false);
     vi.mocked(hasStorybookSkills).mockResolvedValue(false);
     vi.mocked(installSkills).mockResolvedValue({ result: 'installed', source: 'automigration' });
-    vi.mocked(reportSkillsInstall).mockResolvedValue();
     useDependencies({});
     vi.mocked(logger.warn).mockImplementation(() => {});
   });
@@ -142,20 +136,6 @@ describe('skills', () => {
       await expect(
         checkFix(skills, checkOptions('@storybook/html-vite', { requested: true }))
       ).resolves.toBeNull();
-    });
-  });
-
-  describe('reportDryRun', () => {
-    it('names the skills install that a run would do', async () => {
-      await skills.reportDryRun!({ ...checkOptions('@storybook/react-vite'), result: {} });
-
-      expect(installSkills).not.toHaveBeenCalled();
-      expect(reportSkillsInstall).toHaveBeenCalledWith({
-        packageManager,
-        source: 'automigration',
-        testSupported: false,
-        sawEveryStorybook: false,
-      });
     });
   });
 

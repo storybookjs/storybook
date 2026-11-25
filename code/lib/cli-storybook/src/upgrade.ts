@@ -3,21 +3,18 @@ import {
   hasStorybookSkills,
   installSkills,
   refreshAgentInstructions,
-  reportAgentInstructionsRefresh,
-  reportSkillsInstall,
 } from 'storybook/internal/cli';
-import type { JsPackageManager } from 'storybook/internal/common';
+import { PackageManagerName } from 'storybook/internal/common';
 import {
   HandledError,
+  type JsPackageManager,
   JsPackageManagerFactory,
-  PackageManagerName,
-  getProcessAncestry,
+  effects,
   isCI,
   isCorePackage,
   isNpmPeerResolutionError,
   resolveStorybookVersionSpecifier,
 } from 'storybook/internal/common';
-import type { LogLevel } from 'storybook/internal/node-logger';
 import {
   CLI_COLORS,
   createHyperlink,
@@ -25,6 +22,7 @@ import {
   logger,
   prompt,
 } from 'storybook/internal/node-logger';
+import type { LogLevel } from 'storybook/internal/node-logger';
 import {
   MinimumReleaseAgeHandledError,
   UpgradeStorybookToLowerVersionError,
@@ -45,16 +43,13 @@ import {
 } from './automigrate/multi-project.ts';
 import { FixStatus } from './automigrate/types.ts';
 import { displayDoctorResults, runMultiProjectDoctor } from './doctor/index.ts';
-import type { ProjectDoctorData, ProjectDoctorResults } from './doctor/types.ts';
 import { configureDeferredAddons } from './postinstallAddon.ts';
+import type { ProjectDoctorData, ProjectDoctorResults } from './doctor/types.ts';
 import {
   type CollectProjectsSuccessResult,
-  type DependencyUpgradePlan,
-  applyStorybookDependencyUpgrades,
-  describeDependencyUpgrades,
   getProjects,
-  planStorybookDependencyUpgrades,
   shortenPath,
+  upgradeStorybookDependencies,
 } from './util.ts';
 
 type Package = {
@@ -98,15 +93,6 @@ const deprecatedPackages = [
 ];
 
 const formatPackage = (pkg: Package) => `${pkg.package}@${pkg.version}`;
-
-const getStorybookVersionSpecifierFromCli = (): string | undefined => {
-  try {
-    return resolveStorybookVersionSpecifier(getProcessAncestry());
-  } catch {
-    // Ignore ancestry lookup failures and fall back to the dispatcher env var or embedded versions.
-    return resolveStorybookVersionSpecifier([]);
-  }
-};
 
 const warnPackages = (pkgs: Package[]) => pkgs.map((pkg) => `- ${formatPackage(pkg)}`).join('\n');
 
@@ -240,44 +226,54 @@ function getUpgradeResults(
   };
 }
 
-/** Whether a dry run predicts that an automigration would fail or skip files in any project. */
-const someAutomigrationWouldFail = (projectResults: Record<string, AutomigrationResult>) =>
-  Object.values(projectResults).some(({ dryRunReport }) => (dryRunReport?.fail.length ?? 0) > 0);
-
 /** Logs the results of the upgrade process, including project categorization and diagnostic messages */
+/** The summary of an upgrade, which a dry run words as what the upgrade would do. */
+const RESULTS_COPY = {
+  someFailed:
+    'The upgrade is complete, but some projects failed to upgrade or migrate completely. Please see the debug logs for more details.',
+  succeeded: 'Successfully upgraded:',
+  failed: 'Failed to upgrade:',
+  failedReason:
+    'Some automigrations failed or skipped files. Review the upgrade output for details.',
+  success: 'Your project(s) have been upgraded successfully! 🎉',
+  links:
+    'If you want to learn more about the automigrations that executed in your project(s), please check the following links:',
+};
+
+const DRY_RUN_RESULTS_COPY: typeof RESULTS_COPY = {
+  someFailed:
+    'The dry run is complete, but some projects would fail to upgrade or migrate completely. Please see the debug logs for more details.',
+  succeeded: 'Would upgrade:',
+  failed: 'Would fail to upgrade:',
+  failedReason:
+    'Some automigrations would fail or skip files. Review the upgrade output for details.',
+  success: 'Dry run finished: no files were changed.',
+  links:
+    'If you want to learn more about the automigrations that would execute in your project(s), please check the following links:',
+};
+
 function logUpgradeResults(
   projectResults: Record<string, AutomigrationResult>,
   detectedAutomigrations: AutomigrationCheckResult[],
-  doctorResults: Record<string, ProjectDoctorResults>,
-  { dryRun }: { dryRun: boolean }
+  doctorResults: Record<string, ProjectDoctorResults>
 ) {
   const { successfulProjects, failedProjects, projectsWithNoFixes } = getUpgradeResults(
     projectResults,
     doctorResults
   );
 
-  if (dryRun) {
-    // A failure the dry run predicts takes precedence over saying that nothing changed.
-    const wouldFail = failedProjects.length > 0 || someAutomigrationWouldFail(projectResults);
-    if (failedProjects.length > 0) {
-      logTracker.enableLogWriting();
-    }
-    if (wouldFail) {
-      logger.error('Some automigrations would fail');
-    } else {
-      logger.step(CLI_COLORS.success('Dry run finished: no files were changed.'));
-    }
-  } else if (failedProjects.length > 0) {
+  const copy = effects.isDryRun() ? DRY_RUN_RESULTS_COPY : RESULTS_COPY;
+
+  // If there are any failures, show detailed summary
+  if (failedProjects.length > 0) {
     logTracker.enableLogWriting();
-    logger.step(
-      'The upgrade is complete, but some projects failed to upgrade or migrate completely. Please see the debug logs for more details.'
-    );
+    logger.step(copy.someFailed);
     // Display appropriate messages based on results
     if (successfulProjects.length > 0) {
       const successfulProjectsList = successfulProjects
         .map((dir) => `  • ${shortenPath(dir)}`)
         .join('\n');
-      logger.log(`${CLI_COLORS.success('Successfully upgraded:')}\n${successfulProjectsList}`);
+      logger.log(`${CLI_COLORS.success(copy.succeeded)}\n${successfulProjectsList}`);
     }
 
     const failedProjectsList = failedProjects
@@ -286,18 +282,15 @@ function logUpgradeResults(
           `  • ${shortenPath(configDir)} (${failedFixIds.join(', ')})`
       )
       .join('\n');
-    logger.log(
-      `${CLI_COLORS.error('Failed to upgrade:')}\nSome automigrations failed or skipped files. Review the upgrade output for details.\n${failedProjectsList}`
-    );
+    logger.log(`${CLI_COLORS.error(copy.failed)}\n${copy.failedReason}\n${failedProjectsList}`);
 
     if (projectsWithNoFixes.length > 0) {
       const projectList = projectsWithNoFixes.map((dir) => `  • ${shortenPath(dir)}`).join('\n');
       logger.log(`${CLI_COLORS.info('No applicable migrations:')}\n${projectList}`);
     }
   } else {
-    const isHealthy = Object.values(doctorResults).every((result) => result.status === 'healthy');
-    if (isHealthy) {
-      logger.step(`${CLI_COLORS.success('Your project(s) have been upgraded successfully! 🎉')}`);
+    if (Object.values(doctorResults).every((result) => result.status === 'healthy')) {
+      logger.step(`${CLI_COLORS.success(copy.success)}`);
     } else {
       logger.step(
         `${picocolors.yellow('Your project(s) have been upgraded successfully, but some issues were found which need your attention, please check Storybook doctor logs above.')}`
@@ -317,12 +310,7 @@ function logUpgradeResults(
     .map((am) => `• ${createHyperlink(am.fix.id, am.fix.link!)}`);
 
   if (automigrationLinks.length > 0) {
-    const automigrationLinksMessage = [
-      dryRun
-        ? 'If you want to learn more about the automigrations whose checks failed, please check the following links:'
-        : 'If you want to learn more about the automigrations that executed in your project(s), please check the following links:',
-      ...automigrationLinks,
-    ].join('\n');
+    const automigrationLinksMessage = [copy.links, ...automigrationLinks].join('\n');
 
     logger.log(automigrationLinksMessage);
   }
@@ -391,7 +379,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
     throw new HandledError('--features cannot be combined with --skip-automigrations');
   }
 
-  const storybookVersionSpecifier = getStorybookVersionSpecifierFromCli();
+  const storybookVersionSpecifier = resolveStorybookVersionSpecifier();
   const projectsResult = await getProjects(options);
 
   if (projectsResult === undefined || projectsResult.selectedProjects.length === 0) {
@@ -401,13 +389,13 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
 
   const { allProjects, selectedProjects: storybookProjects, unreadProjects } = projectsResult;
 
-  const dryRunNote = options.dryRun ? ' (no files will be changed)' : '';
+  const dryRunNote = effects.isDryRun() ? ' (no files will be changed)' : '';
   if (storybookProjects.length > 1) {
-    logger.info(`${options.dryRun ? 'Dry-running upgrade of' : 'Upgrading'} the following projects${dryRunNote}:
+    logger.info(`${effects.isDryRun() ? 'Dry-running upgrade of' : 'Upgrading'} the following projects${dryRunNote}:
           ${storybookProjects.map((p) => `${picocolors.cyan(shortenPath(p.configDir))}: ${picocolors.bold(p.beforeVersion)} -> ${picocolors.bold(p.currentCLIVersion)}`).join('\n')}`);
   } else {
     logger.info(
-      `${options.dryRun ? 'Dry-running upgrade' : 'Upgrading'} from ${picocolors.bold(storybookProjects[0].beforeVersion)} to ${picocolors.bold(storybookProjects[0].currentCLIVersion)}${dryRunNote}`
+      `${effects.isDryRun() ? 'Dry-running upgrade' : 'Upgrading'} from ${picocolors.bold(storybookProjects[0].beforeVersion)} to ${picocolors.bold(storybookProjects[0].currentCLIVersion)}${dryRunNote}`
     );
   }
 
@@ -457,23 +445,21 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
     });
 
     // Update dependencies in package.jsons for all projects
-    if (!options.dryRun) {
-      for (const project of storybookProjects) {
-        try {
-          await project.packageManager.precheckStorybookPackageInstall({
-            storybookVersion: project.currentCLIVersion,
-            nonInteractive: !!options.yes || !process.stdout.isTTY || !!isCI(),
-            installContext: 'upgrade',
-          });
-        } catch (error) {
-          if (error instanceof MinimumReleaseAgeHandledError) {
-            throw error;
-          }
-
-          logger.debug(
-            `Skipping minimum-release-age precheck for ${project.configDir} after an unexpected failure: ${error}`
-          );
+    for (const project of storybookProjects) {
+      try {
+        await project.packageManager.precheckStorybookPackageInstall({
+          storybookVersion: project.currentCLIVersion,
+          nonInteractive: !!options.yes || !process.stdout.isTTY || !!isCI(),
+          installContext: 'upgrade',
+        });
+      } catch (error) {
+        if (error instanceof MinimumReleaseAgeHandledError) {
+          throw error;
         }
+
+        logger.debug(
+          `Skipping minimum-release-age precheck for ${project.configDir} after an unexpected failure: ${error}`
+        );
       }
     }
 
@@ -483,7 +469,6 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
     });
     try {
       const loggedPaths: string[] = [];
-      const plans: DependencyUpgradePlan[] = [];
       for (const project of storybookProjects) {
         logger.debug(`Updating dependencies in ${shortenPath(project.configDir)}...`);
         const packageJsonPaths = project.packageManager.packageJsonPaths.map(shortenPath);
@@ -492,7 +477,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
           task.message(newPaths.join('\n'));
           loggedPaths.push(...newPaths);
         }
-        const config = {
+        await upgradeStorybookDependencies({
           packageManager: project.packageManager,
           isCanary: project.isCanary,
           isCLIOutdated: project.isCLIOutdated,
@@ -500,34 +485,17 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
           isCLIExactLatest: project.isCLIExactLatest,
           isCLIExactPrerelease: project.isCLIExactPrerelease,
           storybookVersionSpecifier: storybookVersionSpecifier ?? project.storybookVersionSpecifier,
-        };
-        const projectPlans = await planStorybookDependencyUpgrades(config);
-        if (options.dryRun) {
-          plans.push(...projectPlans);
-        } else {
-          await applyStorybookDependencyUpgrades(project.packageManager, projectPlans);
-        }
+        });
       }
-      if (!options.dryRun) {
-        task.success(`Updated package versions in package.json files`);
-      } else {
-        const files = describeDependencyUpgrades(plans);
-        task.success(
-          files.length > 0
-            ? 'Would update package versions to:'
-            : 'No package versions would change'
-        );
-        for (const { file, changes } of files) {
-          const lines = changes.map(
-            ({ name, from, to }) => `${CLI_COLORS.change(name)}: ${from} → ${to}`
-          );
-          logger.log(`${CLI_COLORS.change(shortenPath(file))}:\n${lines.join('\n')}`);
-        }
-      }
+      task.success(
+        effects.isDryRun()
+          ? 'Dry-ran the package version updates'
+          : `Updated package versions in package.json files`
+      );
     } catch (err) {
       task.error(
-        options.dryRun
-          ? `Failed to fetch the versions to update package.json files: ${String(err)}`
+        effects.isDryRun()
+          ? `Failed to dry-run dependency upgrades: ${String(err)}`
           : `Failed to upgrade dependencies: ${String(err)}`
       );
     }
@@ -554,55 +522,53 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
         ? JsPackageManagerFactory.getPackageManager({ force: options.packageManager })
         : storybookProjects[0].packageManager;
 
-    if (!options.dryRun) {
-      await withNpmForceFallback(rootPackageManager, (installOptions) =>
-        rootPackageManager.installDependencies(installOptions)
+    await withNpmForceFallback(rootPackageManager, (installOptions) =>
+      rootPackageManager.installDependencies(installOptions)
+    );
+
+    if (
+      rootPackageManager.type !== PackageManagerName.YARN1 &&
+      rootPackageManager.isStorybookInMonorepo()
+    ) {
+      logger.warn(
+        `Since you are in a monorepo, we advise you to deduplicate your dependencies. We can do this for you but it might take some time.`
       );
 
-      if (
-        rootPackageManager.type !== PackageManagerName.YARN1 &&
-        rootPackageManager.isStorybookInMonorepo()
-      ) {
-        logger.warn(
-          `Since you are in a monorepo, we advise you to deduplicate your dependencies. We can do this for you but it might take some time.`
+      const dedupe =
+        options.yes ||
+        (await prompt.confirm({
+          message: `Execute ${rootPackageManager.getRunCommand('dedupe')}?`,
+          initialValue: true,
+        }));
+
+      if (dedupe) {
+        await withNpmForceFallback(rootPackageManager, (dedupeOptions) =>
+          rootPackageManager.dedupeDependencies(dedupeOptions)
         );
-
-        const dedupe =
-          options.yes ||
-          (await prompt.confirm({
-            message: `Execute ${rootPackageManager.getRunCommand('dedupe')}?`,
-            initialValue: true,
-          }));
-
-        if (dedupe) {
-          await withNpmForceFallback(rootPackageManager, (dedupeOptions) =>
-            rootPackageManager.dedupeDependencies(dedupeOptions)
-          );
-        } else {
-          logger.log(
-            `If you find any issues running Storybook, you can run ${rootPackageManager.getRunCommand('dedupe')} manually to deduplicate your dependencies and try again.`
-          );
-        }
+      } else {
+        logger.log(
+          `If you find any issues running Storybook, you can run ${rootPackageManager.getRunCommand('dedupe')} manually to deduplicate your dependencies and try again.`
+        );
       }
-    } else {
-      rootPackageManager.reportInstallSettingChanges();
     }
 
     // Configure addons that automigrations added but deferred (e.g. addon-vitest from the
     // angular-to-angular-vite migration). Their postinstall hooks can only be resolved now that
     // dependencies have been installed above, mirroring CLI init's install-then-configure ordering.
-    if (!options.dryRun && !options.skipInstall) {
+    if (!options.skipInstall) {
       for (const project of storybookProjects) {
         const addonsToPostinstall = automigrationResults[project.configDir]?.addonsToPostinstall;
         if (addonsToPostinstall?.length) {
-          logger.step(`Configuring addons: ${addonsToPostinstall.join(', ')}..`);
           try {
-            await configureDeferredAddons(addonsToPostinstall, {
-              packageManager: project.packageManager.type,
-              configDir: project.configDir,
-              yes: options.yes,
-              logger,
-              prompt,
+            await effects.runStep(`configure ${addonsToPostinstall.join(', ')}`, async () => {
+              logger.step(`Configuring addons: ${addonsToPostinstall.join(', ')}..`);
+              await configureDeferredAddons(addonsToPostinstall, {
+                packageManager: project.packageManager.type,
+                configDir: project.configDir,
+                yes: options.yes,
+                logger,
+                prompt,
+              });
             });
           } catch (error) {
             logger.warn(
@@ -628,53 +594,42 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
         ),
       sawEveryStorybook: !options.configDir?.length && unreadProjects === 0,
     };
-    const skills =
-      hadSkills && !options.dryRun
-        ? await installSkills({
-            packageManager: rootPackageManager,
-            source: 'refresh',
-            ...agentInstructions,
-          })
-        : undefined;
+    const skills = hadSkills
+      ? await installSkills({
+          packageManager: rootPackageManager,
+          source: 'refresh',
+          ...agentInstructions,
+        })
+      : undefined;
     // The skills of a plugin, or installed by hand, come with an AGENTS.md section that promises
     // the same updates.
-    if (options.dryRun) {
-      await (hadSkills
-        ? reportSkillsInstall({
-            packageManager: rootPackageManager,
-            source: 'refresh',
-            ...agentInstructions,
-          })
-        : reportAgentInstructionsRefresh(agentInstructions));
-    } else if (!hadSkills) {
+    if (!hadSkills) {
       await refreshAgentInstructions(agentInstructions);
     }
 
-    // The doctor checks the installed dependencies, which a dry run leaves as they were.
-    if (options.dryRun) {
-      logger.step(
-        `Would run ${CLI_COLORS.cta('npx storybook doctor')} to verify the upgrade went well`
-      );
-    } else {
-      const doctorProjects: ProjectDoctorData[] = storybookProjects.map((project) => ({
-        configDir: project.configDir,
-        packageManager: project.packageManager,
-        storybookVersion: project.currentCLIVersion,
-        mainConfig: project.mainConfig,
-      }));
+    // Run doctor for each project
+    const doctorProjects: ProjectDoctorData[] = storybookProjects.map((project) => ({
+      configDir: project.configDir,
+      packageManager: project.packageManager,
+      storybookVersion: project.currentCLIVersion,
+      mainConfig: project.mainConfig,
+    }));
 
-      logger.step('Checking the health of your project(s)..');
-      doctorResults = await runMultiProjectDoctor(doctorProjects);
-      const hasIssues = displayDoctorResults(doctorResults);
-      if (hasIssues) {
-        logTracker.enableLogWriting();
+    // The doctor checks the installed dependencies, so a dry run, which installs nothing, names it.
+    await effects.runStep(
+      `run ${CLI_COLORS.cta('npx storybook doctor')} to verify the upgrade went well`,
+      async () => {
+        logger.step('Checking the health of your project(s)..');
+        doctorResults = await runMultiProjectDoctor(doctorProjects);
+        const hasIssues = displayDoctorResults(doctorResults);
+        if (hasIssues) {
+          logTracker.enableLogWriting();
+        }
       }
-    }
+    );
 
     // Display upgrade results summary
-    logUpgradeResults(automigrationResults, detectedAutomigrations, doctorResults, {
-      dryRun: options.dryRun,
-    });
+    logUpgradeResults(automigrationResults, detectedAutomigrations, doctorResults);
 
     // TELEMETRY
     for (const project of storybookProjects) {
@@ -726,13 +681,9 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
       doctorResults,
     });
 
-    // A dry run fails where a run would: on the automigrations it predicts would fail.
-    if (
-      getUpgradeResults(automigrationResults, doctorResults).failedProjects.length > 0 ||
-      (options.dryRun && someAutomigrationWouldFail(automigrationResults))
-    ) {
+    if (getUpgradeResults(automigrationResults, doctorResults).failedProjects.length > 0) {
       throw new HandledError(
-        options.dryRun
+        effects.isDryRun()
           ? 'Some automigrations would fail or skip files. Review the upgrade output.'
           : 'Some automigrations failed or skipped files. Review the upgrade output.'
       );

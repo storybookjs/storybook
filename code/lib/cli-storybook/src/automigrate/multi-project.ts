@@ -1,4 +1,4 @@
-import type { JsPackageManager } from 'storybook/internal/common';
+import { type JsPackageManager, effects } from 'storybook/internal/common';
 import { CLI_COLORS, type TaskLogInstance, logger, prompt } from 'storybook/internal/node-logger';
 import { ErrorCollector, sanitizeError } from 'storybook/internal/telemetry';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
@@ -9,20 +9,7 @@ import type { CollectProjectsSuccessResult } from '../util.ts';
 import { resolveRequestedFeatures } from './fixes/experimental-features.ts';
 import { allFixes } from './fixes/index.ts';
 import { type FixFileFailure, pluralFiles, reportFileFailures } from './helpers/failure-report.ts';
-import {
-  addSimulatedOutcomes,
-  reportFixDryRuns,
-  createDryRunReport,
-  type DryRunReport,
-  formatDryRunReport,
-} from './helpers/dry-run-report.ts';
-import {
-  applyFixes,
-  type CheckedFix,
-  detectApplicable,
-  runCheck,
-  simulateFixes,
-} from './pipeline.ts';
+import { applyFixes, type CheckedFix, detectApplicable, runCheck } from './pipeline.ts';
 import type { Fix, FixId } from './types.ts';
 import { FixStatus } from './types.ts';
 
@@ -54,7 +41,6 @@ export interface AutomigrationCheckResult<T = any> {
 export interface MultiProjectAutomigrationOptions {
   fixes: Fix[];
   projects: ProjectAutomigrationData[];
-  dryRun?: boolean;
   yes?: boolean;
   skipInstall?: boolean;
   taskLog: TaskLogInstance;
@@ -64,7 +50,6 @@ export interface MultiProjectAutomigrationOptions {
 
 export interface MultiProjectRunAutomigrationOptions {
   automigrations: AutomigrationCheckResult[];
-  dryRun?: boolean;
   yes?: boolean;
   skipInstall?: boolean;
 }
@@ -240,7 +225,7 @@ export const logAutomigrationDetails = (automigrations: AutomigrationCheckResult
 /** Prompts user to select which automigrations to run */
 export async function promptForAutomigrations(
   automigrations: AutomigrationCheckResult[],
-  options: { dryRun?: boolean; yes?: boolean; preselectedIds?: string[] }
+  options: { yes?: boolean; preselectedIds?: string[] }
 ): Promise<AutomigrationCheckResult[]> {
   if (automigrations.length === 0) {
     return [];
@@ -260,15 +245,13 @@ export async function promptForAutomigrations(
       ({ fix }) =>
         preselectedIds.has(fix.id) || fix.defaultSelected !== false || fix.promptType === 'auto'
     );
-    if (options.dryRun) {
-      logSelection('Detected automigrations (no files will be changed):', automigrations);
-      return selected;
-    }
     const optIn = automigrations.filter((am) => !selected.includes(am));
     logSelection(
-      optIn.length > 0
-        ? 'Running these detected automigrations:'
-        : 'Running all detected automigrations:',
+      effects.isDryRun()
+        ? 'Detected automigrations (no files will be changed):'
+        : optIn.length > 0
+          ? 'Running these detected automigrations:'
+          : 'Running all detected automigrations:',
       selected
     );
     if (optIn.length > 0) {
@@ -327,15 +310,13 @@ export type AutomigrationResult = {
   addonsToPostinstall?: string[];
   /** Files that fixes could not transform; the other files of those fixes were migrated. */
   fileFailures: FixFileFailure[];
-  /** What a run would do with each automigration of the project, in a dry run. */
-  dryRunReport?: DryRunReport;
 };
 /** Runs selected automigrations for each project */
 export async function runAutomigrationsForProjects(
   selectedAutomigrations: AutomigrationCheckResult[],
   options: MultiProjectRunAutomigrationOptions
 ): Promise<Record<ConfigDir, AutomigrationResult>> {
-  const { skipInstall, automigrations, yes, dryRun } = options;
+  const { skipInstall, automigrations, yes } = options;
   const projectResults: Record<ConfigDir, AutomigrationResult> = {};
 
   const applicableAutomigrations = selectedAutomigrations.filter((am) =>
@@ -380,12 +361,12 @@ export async function runAutomigrationsForProjects(
 
     const projectName = shortenPath(project.configDir);
 
-    // Without applicable automigrations, or in a dry run, which applies none, no task log is needed
+    // If there isn't any applicable automigrations, we don't need to use the task log
     const taskLog =
-      applicableAutomigrations.length > 0 && !dryRun
+      applicableAutomigrations.length > 0
         ? prompt.taskLog({
             id: `automigrate-${projectName}`,
-            title: `${countPrefix}Running automigrations for ${projectName}`,
+            title: `${countPrefix}${effects.isDryRun() ? 'Dry-running' : 'Running'} automigrations for ${projectName}`,
           })
         : {
             message: (message: string) => {
@@ -411,53 +392,33 @@ export async function runAutomigrationsForProjects(
           am.reports.some((report) => report.project.configDir === project.configDir)
       );
     const selected: CheckedFix[] = [];
-    const dryRunReport = createDryRunReport();
     for (const { fix, result, status, recheck } of projectAutomigration) {
       if (status === 'not_applicable') {
         fixResults[fix.id] = FixStatus.UNNECESSARY;
       } else if (status === 'check_failed') {
         fixResults[fix.id] = FixStatus.CHECK_FAILED;
-        dryRunReport.fail.push({ fixId: fix.id, reason: 'check failed' });
       } else if (!isSelected(fix)) {
         fixResults[fix.id] = FixStatus.SKIPPED;
-        dryRunReport.skip.push({ fixId: fix.id, reason: yes ? 'opt-in' : 'not selected' });
       } else if (fix.run || fix.transform) {
         selected.push({ fix, result, recheck });
-      } else {
-        dryRunReport.manual.push(fix.id);
       }
     }
 
-    const projectOptions = {
-      packageManager: project.packageManager,
-      mainConfigPath: project.mainConfigPath,
-      previewConfigPath: project.previewConfigPath,
-      mainConfig: project.mainConfig,
-      configDir: project.configDir,
-      skipInstall,
-      storybookVersion: project.storybookVersion,
-      storiesPaths: project.storiesPaths,
-      yes,
-      addonsToPostinstall,
-    };
-
-    if (dryRun) {
-      // Fixes a dry run would apply keep the status they had before dry runs predicted outcomes.
-      for (const { fix } of selected) {
-        fixResults[fix.id] = FixStatus.SKIPPED;
-      }
-      addSimulatedOutcomes(dryRunReport, await simulateFixes(projectOptions, selected));
-      projectResults[configDir] = {
-        automigrationStatuses: fixResults,
-        automigrationErrors: fixFailures,
+    const outcomes = await applyFixes(
+      {
+        packageManager: project.packageManager,
+        mainConfigPath: project.mainConfigPath,
+        previewConfigPath: project.previewConfigPath,
+        mainConfig: project.mainConfig,
+        configDir: project.configDir,
+        skipInstall,
+        storybookVersion: project.storybookVersion,
+        storiesPaths: project.storiesPaths,
+        yes,
         addonsToPostinstall,
-        fileFailures,
-        dryRunReport,
-      };
-      continue;
-    }
-
-    const outcomes = await applyFixes(projectOptions, selected);
+      },
+      selected
+    );
     for (const [fixId, outcome] of outcomes) {
       if (outcome.status === 'skipped') {
         fixResults[fixId] = FixStatus.SKIPPED;
@@ -492,9 +453,13 @@ export async function runAutomigrationsForProjects(
 
     if (automigrationsWithErrors.length > 0) {
       const count = automigrationsWithErrors.length;
-      taskLog.error(`${countPrefix}${count} automigrations failed for ${projectName}`);
+      taskLog.error(
+        `${countPrefix}${count} automigrations ${effects.isDryRun() ? 'would fail' : 'failed'} for ${projectName}`
+      );
     } else {
-      taskLog.success(`${countPrefix}Completed automigrations for ${projectName}`);
+      taskLog.success(
+        `${countPrefix}${effects.isDryRun() ? 'Dry-ran' : 'Completed'} automigrations for ${projectName}`
+      );
     }
 
     projectResults[configDir] = {
@@ -503,27 +468,6 @@ export async function runAutomigrationsForProjects(
       addonsToPostinstall,
       fileFailures,
     };
-  }
-
-  if (dryRun) {
-    const reports = Object.entries(projectResults)
-      .map(([configDir, { dryRunReport }]) => [configDir, formatDryRunReport(dryRunReport!)])
-      .filter(([, text]) => text);
-    for (const [configDir, text] of reports) {
-      logger.log(reports.length > 1 ? `${shortenPath(configDir) || '.'}:\n${text}` : text);
-    }
-    // Once per fix, with the first project where the dry run predicts it would succeed.
-    const wouldApply = (fixId: string, configDir: string) =>
-      projectResults[configDir]?.dryRunReport?.apply.includes(fixId) ?? false;
-    await reportFixDryRuns(
-      applicableAutomigrations.flatMap(({ fix, reports: checks }) => {
-        const check = checks.find(
-          ({ status, project }) =>
-            status === 'check_succeeded' && wouldApply(fix.id, project.configDir)
-        );
-        return check ? [{ fix, options: { ...check.project, result: check.result } }] : [];
-      })
-    );
   }
 
   return projectResults;
@@ -563,7 +507,6 @@ export async function runAutomigrations(
   const detectedAutomigrations = await collectAutomigrationsAcrossProjects({
     fixes: allFixes,
     projects: projectAutomigrationData,
-    dryRun: options.dryRun,
     yes: options.yes,
     skipInstall: options.skipInstall,
     taskLog: detectingAutomigrationTask,
@@ -590,33 +533,29 @@ export async function runAutomigrations(
 
   // Prompt user to select which automigrations to run
   const selectedAutomigrations = await promptForAutomigrations(successfulAutomigrations, {
-    dryRun: options.dryRun,
     yes: options.yes,
     preselectedIds: requestedFixIds,
   });
   // Run selected automigrations for each project
   const automigrationResults = await runAutomigrationsForProjects(selectedAutomigrations, {
     automigrations: detectedAutomigrations,
-    dryRun: options.dryRun,
     yes: options.yes,
     skipInstall: options.skipInstall,
   });
 
-  if (!options.dryRun) {
-    const results = Object.values(automigrationResults);
-    const fileFailures = results.flatMap((result) => result.fileFailures);
-    await reportFileFailures(fileFailures, [
-      ...results.flatMap(({ automigrationStatuses }) =>
-        Object.keys(automigrationStatuses).filter(
-          (fixId) => automigrationStatuses[fixId] === FixStatus.SUCCEEDED
-        )
-      ),
-      ...fileFailures.map(({ fixId }) => fixId),
-      ...detectedAutomigrations
-        .filter(({ reports }) => reports.some(({ verified }) => verified))
-        .map(({ fix }) => fix.id),
-    ]);
-  }
+  const results = Object.values(automigrationResults);
+  const fileFailures = results.flatMap((result) => result.fileFailures);
+  await reportFileFailures(fileFailures, [
+    ...results.flatMap(({ automigrationStatuses }) =>
+      Object.keys(automigrationStatuses).filter(
+        (fixId) => automigrationStatuses[fixId] === FixStatus.SUCCEEDED
+      )
+    ),
+    ...fileFailures.map(({ fixId }) => fixId),
+    ...detectedAutomigrations
+      .filter(({ reports }) => reports.some(({ verified }) => verified))
+      .map(({ fix }) => fix.id),
+  ]);
 
   return {
     detectedAutomigrations,

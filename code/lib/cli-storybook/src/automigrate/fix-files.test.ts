@@ -1,4 +1,4 @@
-import { readFile, unlink, writeFile } from 'node:fs/promises';
+import { readFile, rm, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -20,7 +20,7 @@ describe('createFixFiles', () => {
     vol.reset();
     vi.mocked(readFile).mockImplementation(fs.promises.readFile as typeof readFile);
     vi.mocked(writeFile).mockImplementation(fs.promises.writeFile as typeof writeFile);
-    vi.mocked(unlink).mockImplementation(fs.promises.unlink as typeof unlink);
+    vi.mocked(rm).mockImplementation(fs.promises.rm as typeof rm);
     vol.fromJSON({
       [main]: "export default { addons: ['a'] };",
       [story]: "import { fn } from '@storybook/test'; export default {};",

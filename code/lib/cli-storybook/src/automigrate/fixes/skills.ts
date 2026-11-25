@@ -2,7 +2,6 @@ import {
   hasAddonVitest,
   hasStorybookSkills,
   installSkills,
-  reportSkillsInstall,
   skipsSkillsInCI,
   supportsSkills,
 } from 'storybook/internal/cli';
@@ -48,15 +47,6 @@ export const skills: Fix<{ afterAngularViteMigration?: boolean }> = {
     return !requested && (await offersAngularViteMigration(packageManager, mainConfig))
       ? { afterAngularViteMigration: true }
       : null;
-  },
-
-  async reportDryRun({ packageManager, mainConfig }) {
-    await reportSkillsInstall({
-      packageManager,
-      source: 'automigration',
-      testSupported: hasAddonVitest(mainConfig),
-      sawEveryStorybook: false,
-    });
   },
 
   async run({ packageManager, result, mainConfig }) {

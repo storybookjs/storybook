@@ -1,9 +1,9 @@
 import os from 'node:os';
 
-import { HandledError, formatFileContent, getProjectRelativePath } from 'storybook/internal/common';
-import { CLI_COLORS, logger } from 'storybook/internal/node-logger';
+import { HandledError, effects, formatFileContent } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
 
-import { promises as fs } from 'fs';
+import { realpath } from 'node:fs/promises';
 import picocolors from 'picocolors';
 // eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
@@ -35,22 +35,11 @@ export async function runCodemod(
   // A list of files is used as is, so a path with `(` or `[` in it is not read as a glob.
   globPattern: string | string[] = '**/*.{stories,story}.{js,jsx,ts,tsx,mjs,mjsx,mts,mtsx}',
   transform: (source: FileInfo, ...rest: any) => string | Promise<string>,
-  {
-    dryRun = false,
-    skipFormatting = false,
-    announceDryRun = true,
-  }: {
-    dryRun?: boolean;
-    skipFormatting?: boolean;
-    /** End a dry run with a line that says it was one. A command running several codemods says it once itself. */
-    announceDryRun?: boolean;
-  } = {}
+  { skipFormatting = false }: { skipFormatting?: boolean } = {}
 ) {
   let modifiedCount = 0;
   let unmodifiedCount = 0;
   let errorCount = 0;
-  // The files a dry run would write, named after the run because files are transformed in parallel.
-  const wouldWrite: string[] = [];
 
   // Dynamically import these packages because they are pure ESM modules
   // eslint-disable-next-line depend/ban-dependencies
@@ -84,24 +73,20 @@ export async function runCodemod(
           try {
             let filePath = file;
             try {
-              filePath = await fs.realpath(file);
+              filePath = await realpath(file);
             } catch (err) {
               // if anything goes wrong when resolving the file, fallback to original path as is set above
             }
 
-            const source = await fs.readFile(filePath, 'utf-8');
+            const source = await effects.readFile(filePath);
             const fileInfo: FileInfo = { path: filePath, source };
             const transformedSource = await transform(fileInfo);
 
             if (transformedSource !== source) {
-              if (dryRun) {
-                wouldWrite.push(getProjectRelativePath(file));
-              } else {
-                const fileContent = skipFormatting
-                  ? transformedSource
-                  : await formatFileContent(file, transformedSource);
-                await fs.writeFile(file, fileContent, 'utf-8');
-              }
+              const fileContent = skipFormatting
+                ? transformedSource
+                : await formatFileContent(file, transformedSource);
+              await effects.writeFile(file, fileContent);
               modifiedCount++;
             } else {
               unmodifiedCount++;
@@ -118,21 +103,9 @@ export async function runCodemod(
     errorCount++;
   }
 
-  for (const file of wouldWrite.sort()) {
-    logger.log(`Would write to ${CLI_COLORS.change(file)}`);
-  }
-
   logger.log(
-    `Summary: ${picocolors.green(`${modifiedCount} ${dryRun ? 'to transform' : 'transformed'}`)}, ${picocolors.yellow(`${unmodifiedCount} unmodified`)}, ${picocolors.red(`${errorCount} errors`)}`
+    `Summary: ${picocolors.green(`${modifiedCount} ${effects.isDryRun() ? 'to transform' : 'transformed'}`)}, ${picocolors.yellow(`${unmodifiedCount} unmodified`)}, ${picocolors.red(`${errorCount} errors`)}`
   );
-
-  if (dryRun && announceDryRun) {
-    logger.log(
-      picocolors.bold(
-        `This was a dry run. Run without --dry-run to apply the transformation to ${modifiedCount} files.`
-      )
-    );
-  }
 
   return { files, errorCount };
 }

@@ -1,8 +1,7 @@
-import type { CatalogUpgrade, PackageJsonWithDepsAndDevDeps } from 'storybook/internal/common';
+import type { PackageJsonWithDepsAndDevDeps } from 'storybook/internal/common';
 import {
   HandledError,
   JsPackageManager,
-  getPackageDetails,
   getPkgPrNewPackageSpecifier,
   getProjectRelativePath,
   getProjectRoot,
@@ -523,97 +522,62 @@ export const generateUpgradeSpecs = async (
   return [...storybookCoreUpgrades, ...storybookSatelliteUpgrades];
 };
 
-const dependencyTypes = ['dependencies', 'devDependencies', 'peerDependencies'] as const;
-
-/** A version that an upgrade sets for a dependency. */
-export interface VersionChange {
-  name: string;
-  /** The version before the upgrade, `undefined` when the file has none. */
-  from: string | undefined;
-  to: string;
-}
-
-/** What an upgrade writes for the Storybook dependencies of one package.json file. */
-export interface DependencyUpgradePlan {
-  packageJsonPath: string;
-  /** The versions that the package.json file gets. */
-  dependencies: (VersionChange & { type: DependencyType })[];
-  /** The versions that the catalogs the package.json file references get. */
-  catalogUpgrades: CatalogUpgrade[];
-}
-
 /**
- * Plan the upgrade of the Storybook dependencies in every package.json file of the package
- * manager. Reads files but writes none, so a dry run reports the same plan that a run applies.
+ * Upgrades Storybook dependencies across all package.json files
+ *
+ * @example
+ *
+ * ```typescript
+ * await upgradeStorybookDependencies({
+ *   packageManager,
+ *   isCanary: false,
+ *   isCLIOutdated: false,
+ *   isCLIPrerelease: false,
+ *   isCLIExactPrerelease: false,
+ *   isCLIExactLatest: true,
+ * });
+ * ```
+ *
+ * @param config - Upgrade configuration
  */
-export const planStorybookDependencyUpgrades = async (
-  config: UpgradeConfig
-): Promise<DependencyUpgradePlan[]> => {
+export const upgradeStorybookDependencies = async (config: UpgradeConfig): Promise<void> => {
   const { packageManager } = config;
-  const plans: DependencyUpgradePlan[] = [];
+
   for (const packageJsonPath of packageManager.packageJsonPaths) {
     const packageJson = JsPackageManager.getPackageJson(packageJsonPath);
-    const plan: DependencyUpgradePlan = { packageJsonPath, dependencies: [], catalogUpgrades: [] };
-    for (const type of dependencyTypes) {
-      const declared = packageJson[type] ?? {};
-      const { direct, catalogued } = packageManager.planCatalogUpgrades(
-        await generateUpgradeSpecs(packageJson[type], config),
-        declared
-      );
-      for (const specifier of direct) {
-        const [name, to = ''] = getPackageDetails(specifier);
-        plan.dependencies.push({ type, name, from: declared[name], to });
-      }
-      plan.catalogUpgrades.push(...catalogued);
-    }
-    logger.debug(JSON.stringify(plan, null, 2));
-    plans.push(plan);
-  }
-  return plans;
-};
 
-/** Write the plans of {@link planStorybookDependencyUpgrades}. */
-export const applyStorybookDependencyUpgrades = async (
-  packageManager: JsPackageManager,
-  plans: DependencyUpgradePlan[]
-): Promise<void> => {
-  for (const { packageJsonPath, dependencies, catalogUpgrades } of plans) {
-    packageManager.applyCatalogUpgrades(catalogUpgrades);
-    for (const type of dependencyTypes) {
+    const [upgradedDependencies, upgradedDevDependencies, upgradedPeerDependencies] =
+      await Promise.all([
+        generateUpgradeSpecs(packageJson.dependencies, config),
+        generateUpgradeSpecs(packageJson.devDependencies, config),
+        generateUpgradeSpecs(packageJson.peerDependencies, config),
+      ]);
+
+    logger.debug(JSON.stringify({ upgradedDependencies }, null, 2));
+    logger.debug(JSON.stringify({ upgradedDevDependencies }, null, 2));
+    logger.debug(JSON.stringify({ upgradedPeerDependencies }, null, 2));
+
+    const upgrades: [DependencyType, string[]][] = [
+      ['dependencies', upgradedDependencies],
+      ['devDependencies', upgradedDevDependencies],
+      ['peerDependencies', upgradedPeerDependencies],
+    ];
+
+    for (const [type, specifiers] of upgrades) {
+      const directSpecifiers = packageManager.writeCatalogUpgrades(
+        specifiers,
+        packageJson[type] ?? {}
+      );
       await packageManager.addDependencies(
         {
           type,
           skipInstall: true,
           packageJsonInfo: JsPackageManager.getPackageJsonInfo(packageJsonPath),
         },
-        dependencies.filter((dependency) => dependency.type === type).map(toSpecifier)
+        directSpecifiers
       );
     }
   }
-};
-
-const toSpecifier = ({ name, to }: VersionChange) => `${name}@${to}`;
-
-/**
- * The versions that upgrade plans change, by the file a run writes them to. A file or catalog that
- * several plans share lists each change once.
- */
-export const describeDependencyUpgrades = (plans: DependencyUpgradePlan[]) => {
-  const files = new Map<string, Map<string, VersionChange>>();
-  const add = (file: string, key: string, change: VersionChange) => {
-    if (change.from !== change.to) {
-      files.set(file, (files.get(file) ?? new Map()).set(key, change));
-    }
-  };
-  for (const { packageJsonPath, dependencies, catalogUpgrades } of plans) {
-    for (const dependency of dependencies) {
-      add(packageJsonPath, `${dependency.type}:${dependency.name}`, dependency);
-    }
-    for (const upgrade of catalogUpgrades) {
-      add(upgrade.file, `${upgrade.catalog}:${upgrade.name}`, upgrade);
-    }
-  }
-  return [...files].map(([file, changes]) => ({ file, changes: [...changes.values()] }));
 };
 
 /**

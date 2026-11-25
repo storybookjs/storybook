@@ -3,6 +3,7 @@ import {
   HandledError,
   JsPackageManagerFactory,
   PackageManagerName,
+  effects,
   getProjectRelativePath,
   optionalEnvToBoolean,
   removeAddon as remove,
@@ -36,6 +37,8 @@ const handleCommandFailure =
     if (!(error instanceof HandledError)) {
       logger.error(String(error));
     }
+    // A run that fails can still change files before it does.
+    effects.logDryRunChanges();
 
     try {
       const logFile = await logTracker.writeToFile(logFilePath);
@@ -62,6 +65,11 @@ const command = (name: string) =>
     .option('--loglevel <trace | debug | info | warn | error | silent>', 'Define log level', 'info')
     .hook('preAction', async (self) => {
       const options = self.opts();
+      // Code that changes the project reads the mode from the effects module, not from options.
+      effects.setDryRun(Boolean(options.dryRun));
+      if (options.dryRun) {
+        addToGlobalContext('dryRun', true);
+      }
       if (options.debug) {
         logger.setLogLevel('debug');
       }
@@ -203,6 +211,7 @@ command('upgrade')
       async () => {
         logger.intro(`Storybook upgrade - v${versions.storybook}`);
         await upgrade(options);
+        effects.logDryRunChanges();
         logger.outro(
           options.dryRun ? 'Storybook upgrade dry run completed!' : 'Storybook upgrade completed!'
         );
@@ -232,6 +241,7 @@ command('migrate [migration]')
     withTelemetry('migrate', { cliOptions: options }, async () => {
       logger.intro(`Running ${migration} migration`);
       await migrate(migration, options);
+      effects.logDryRunChanges();
       logger.outro('Migration completed');
     }).catch(handleCommandFailure(options.logfile));
   });
@@ -277,6 +287,7 @@ command('automigrate [fixId]')
       const running = options.dryRun ? 'Dry-running' : 'Running';
       logger.intro(fixId ? `${running} ${fixId} automigration` : `${running} automigrations`);
       await doAutomigrate({ fixId, ...options });
+      effects.logDryRunChanges();
       logger.outro('Done');
     }).catch(handleCommandFailure(options.logfile));
   });

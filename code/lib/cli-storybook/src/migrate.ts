@@ -1,5 +1,4 @@
-import { rename as renameFile } from 'node:fs/promises';
-
+import { effects } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
 import { type FileInfo, runCodemod } from './automigrate/codemod.ts';
@@ -16,16 +15,12 @@ const codemods: Record<string, (info: FileInfo) => string | Promise<string>> = {
 type CLIOptions = {
   glob: string;
   configDir?: string;
-  dryRun?: boolean;
   list?: string[];
   /** Rename suffix of matching files after codemod has been applied, e.g. `".js:.ts"` */
   rename?: string;
 };
 
-export async function migrate(
-  migration: string | undefined,
-  { glob, dryRun, list, rename }: CLIOptions
-) {
+export async function migrate(migration: string | undefined, { glob, list, rename }: CLIOptions) {
   if (list) {
     Object.keys(codemods).forEach((key) => logger.log(key));
     return;
@@ -44,11 +39,10 @@ export async function migrate(
   logger.step(`Applying ${migration}`);
   // The transforms format what they change themselves.
   const { files, errorCount } = await runCodemod(glob, codemods[migration], {
-    dryRun,
     skipFormatting: true,
   });
 
-  if (!renameParts || dryRun) {
+  if (!renameParts) {
     return;
   }
   if (errorCount > 0) {
@@ -64,8 +58,14 @@ export async function migrate(
     renamed.map((file) => {
       // Not `slice(0, -from.length)`: with an empty `from`, that would be `slice(0, 0)`.
       const newFile = file.slice(0, file.length - from.length) + to;
-      logger.log(`Rename: ${file} ${newFile}`);
+      effects.logChange(`Rename: ${file} ${newFile}`);
       return renameFile(file, newFile);
     })
   );
 }
+
+// A rename that a dry run stages as a new file and the removal of the old one.
+const renameFile = async (from: string, to: string) => {
+  await effects.writeFile(to, await effects.readFile(from));
+  await effects.removeFile(from);
+};

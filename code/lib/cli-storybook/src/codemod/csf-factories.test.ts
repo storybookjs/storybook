@@ -3,9 +3,9 @@ import { tmpdir } from 'node:os';
 import { posix } from 'node:path';
 import { stripVTControlCharacters } from 'node:util';
 
-import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
+import { expect, it, onTestFinished, vi } from 'vitest';
 
-import { type JsPackageManager, syncPreviewAddonsWithMainConfig } from 'storybook/internal/common';
+import { type JsPackageManager, effects, syncStorybookAddons } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 
 import { dirname, join } from 'pathe';
@@ -183,183 +183,74 @@ it.each([
   expect(posix.matchesGlob(file, SANDBOX_STORIES_GLOB)).toBe(false);
 });
 
-describe('csfFactories', () => {
-  let root: string;
-
-  afterEach(() => {
-    rmSync(root, { recursive: true, force: true });
-  });
-
+it('changes no file in a dry run, and stages each file a run would write', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'storybook-csf-factories-'));
+  onTestFinished(() => rmSync(root, { recursive: true, force: true }));
   const mainConfig = {
     stories: ['../src/**/*.stories.js'],
     addons: ['my-addon'],
     framework: '@storybook/react-vite',
   };
-
-  // A preview still in CSF 3, and one that is already a factory, as when the codemod runs a second
-  // time. Neither has the annotations of the addon in the main config.
-  const previews = {
-    'a CSF 3 preview': 'export default {};',
-    'a factory preview': dedent`
-      import { definePreview } from '@storybook/react-vite';
-
-      export default definePreview({});
+  const files = {
+    'package.json': JSON.stringify({ name: 'app' }),
+    '.storybook/main.js': `export default ${JSON.stringify(mainConfig)};`,
+    '.storybook/preview.js': 'export default {};',
+    'src/Button.stories.js': dedent`
+      export default { component: Button };
+      export const Primary = { args: { label: 'Button' } };
     `,
+    'node_modules/my-addon/package.json': JSON.stringify({
+      name: 'my-addon',
+      exports: { './preview': './preview.js' },
+    }),
+    'node_modules/my-addon/preview.js': 'export default {};',
   };
+  for (const [file, content] of Object.entries(files)) {
+    mkdirSync(dirname(join(root, file)), { recursive: true });
+    writeFileSync(join(root, file), content);
+  }
+  effects.setDryRun(true);
+  onTestFinished(() => effects.setDryRun(false));
+  vi.mocked(prompt.select).mockResolvedValue(true);
 
-  const addonImport = /import \* as myAddon from ['"]my-addon\/preview['"]/;
-
-  const createProject = (preview: string) => {
-    root = mkdtempSync(join(tmpdir(), 'storybook-csf-factories-'));
-    const files = {
-      'package.json': JSON.stringify({ name: 'app' }),
-      '.storybook/main.js': `export default ${JSON.stringify(mainConfig)};`,
-      '.storybook/preview.js': preview,
-      'src/Button.stories.js': dedent`
-        export default { component: Button };
-        export const Primary = { args: { label: 'Button' } };
-      `,
-      'node_modules/my-addon/package.json': JSON.stringify({
-        name: 'my-addon',
-        exports: { './preview': './preview.js' },
-      }),
-      'node_modules/my-addon/preview.js': 'export default {};',
-    };
-    for (const [file, content] of Object.entries(files)) {
-      mkdirSync(dirname(join(root, file)), { recursive: true });
-      writeFileSync(join(root, file), content);
-    }
-
-    const packageManager = {
+  await csfFactories.run({
+    glob: join(root, 'src/**/*.stories.js'),
+    mainConfig,
+    mainConfigPath: join(root, '.storybook/main.js'),
+    previewConfigPath: join(root, '.storybook/preview.js'),
+    configDir: join(root, '.storybook'),
+    packageManager: {
       primaryPackageJson: {
         packageJson: { name: 'app' },
         operationDir: root,
         packageJsonPath: join(root, 'package.json'),
       },
       writePackageJson: vi.fn(),
-    };
-
-    return { files, packageManager };
-  };
-
-  const readFiles = (files: Record<string, string>) =>
-    Object.fromEntries(
-      Object.keys(files).map((file) => [file, readFileSync(join(root, file), 'utf-8')])
-    );
-
-  const run = (
-    packageManager: ReturnType<typeof createProject>['packageManager'],
-    dryRun: boolean
-  ) => {
-    // The user picks subpath imports, which adds an imports map to package.json.
-    vi.mocked(prompt.select).mockResolvedValue(true);
-    return csfFactories.run({
-      dryRun,
-      glob: join(root, 'src/**/*.stories.js'),
-      mainConfig,
-      mainConfigPath: join(root, '.storybook/main.js'),
-      previewConfigPath: join(root, '.storybook/preview.js'),
-      configDir: join(root, '.storybook'),
-      packageManager: packageManager as unknown as JsPackageManager,
-      result: null,
-      storybookVersion: '11.0.0',
-      storiesPaths: [join(root, 'src/Button.stories.js')],
-    });
-  };
-
-  describe.each(Object.entries(previews))('with %s', (_, preview) => {
-    it('says once that it was a dry run, and that it checks the stories', async () => {
-      const { packageManager } = createProject(preview);
-
-      await run(packageManager, true);
-
-      const output = [logger.step, logger.log]
-        .flatMap((method) => vi.mocked(method).mock.calls.flat())
-        .join('\n');
-      expect(output).toContain('Checking how codemods would apply on your stories');
-      expect(output).toContain('Checking how codemods would apply on your main config');
-      expect(output).toContain('Checking how codemods would apply on your preview config');
-      expect(output).not.toContain('Applying codemod');
-      expect(output).not.toContain('This was a dry run');
-      expect(output.match(/Dry run finished/g) ?? []).toHaveLength(1);
-    });
-
-    it('changes no file in a dry run', async () => {
-      const { files, packageManager } = createProject(preview);
-
-      await run(packageManager, true);
-
-      expect(packageManager.writePackageJson).not.toHaveBeenCalled();
-      expect(readFiles(files)).toEqual(files);
-    });
-
-    it('names the preview a run would write and the addons it would sync, in a dry run', async () => {
-      const { packageManager } = createProject(preview);
-
-      await run(packageManager, true);
-
-      const output = stripVTControlCharacters(vi.mocked(logger.log).mock.calls.flat().join('\n'));
-      expect(output).toMatch(/Would write to .*\.storybook\/preview\.js/);
-      expect(output).toMatch(/Would sync addons from main config into .*: my-addon/);
-      expect(output).not.toContain('definePreview(');
-    });
-
-    it('writes the imports map, the preview and the stories in a normal run', async () => {
-      const { files, packageManager } = createProject(preview);
-
-      await run(packageManager, false);
-
-      expect(packageManager.writePackageJson).toHaveBeenCalledWith(
-        expect.objectContaining({ imports: { '#*': expect.any(Array) } }),
-        root
-      );
-      const output = readFiles(files);
-      expect(output['.storybook/preview.js']).toContain('export default definePreview(');
-      expect(output['.storybook/preview.js']).toMatch(addonImport);
-      expect(output['src/Button.stories.js']).toContain('export const Primary = meta.story(');
-    });
+    } as unknown as JsPackageManager,
+    result: null,
+    storybookVersion: '11.0.0',
+    storiesPaths: [join(root, 'src/Button.stories.js')],
   });
 
-  it('converts the preview when the addons of the main config cannot be synced into it', async () => {
-    const { files, packageManager } = createProject('export default { old: 1, current: 2 };');
-    // A refused edit, as the sync could meet in a preview it cannot change.
-    vi.mocked(syncPreviewAddonsWithMainConfig).mockImplementationOnce(async (_, config) => {
-      config.rename(['old'], 'current');
-      return config;
-    });
-
-    await run(packageManager, false);
-
-    expect(readFiles(files)['.storybook/preview.js']).toContain('export default definePreview(');
-    expect(logger.warn).toHaveBeenCalledWith(
-      expect.stringMatching(
-        /^Could not sync the addons of the main config into .*\.storybook\/preview\.js: .*occupied/
-      )
-    );
-  });
-
-  it('leaves a preview that needs no change as it is written', async () => {
-    const preview = dedent`
-      import { definePreview } from '@storybook/react-vite'
-      import * as myAddon from 'my-addon/preview'
-
-      export default definePreview({ addons: [myAddon] })
-    `;
-    const { packageManager } = createProject(preview);
-    // Formatting the preview would add semicolons.
-    writeFileSync(join(root, '.prettierrc'), JSON.stringify({ semi: true }));
-
-    await run(packageManager, false);
-
-    expect(readFileSync(join(root, '.storybook/preview.js'), 'utf-8')).toBe(preview);
-  });
+  for (const [file, content] of Object.entries(files)) {
+    expect(readFileSync(join(root, file), 'utf-8')).toBe(content);
+  }
+  expect(effects.describeDryRunChanges().map((line) => stripVTControlCharacters(line))).toEqual([
+    expect.stringMatching(/^update .*\/\.storybook\/main\.js$/),
+    expect.stringMatching(/^update .*\/\.storybook\/preview\.js$/),
+    expect.stringMatching(/^update .*\/src\/Button\.stories\.js$/),
+  ]);
+  // The addon sync reads the preview that the codemod staged, so it sees the factory.
+  expect(await effects.readFile(join(root, '.storybook/preview.js'))).toMatch(
+    /import \* as myAddon from ['"]my-addon\/preview['"]/
+  );
 });
 
 it('logs Windows preview and package.json paths with forward slashes', async () => {
   vi.stubEnv('IN_STORYBOOK_SANDBOX', '');
   vi.mocked(prompt.select).mockResolvedValue(true);
   vi.mocked(runCodemod).mockResolvedValue({ files: [], errorCount: 0 });
-  onTestFinished(() => vi.mocked(runCodemod).mockRestore());
+  vi.mocked(syncStorybookAddons).mockResolvedValue(undefined);
   const logBox = vi.mocked(logger.logBox).mockImplementation(() => {});
   const step = vi.mocked(logger.step).mockImplementation(() => {});
 

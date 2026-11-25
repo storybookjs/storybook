@@ -1,13 +1,10 @@
-import { stripVTControlCharacters } from 'node:util';
-
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { JsPackageManager, PackageJson } from 'storybook/internal/common';
+import { type JsPackageManager, type PackageJson, effects } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 
 import * as mainConfigFile from './helpers/mainConfigFile.ts';
 import { automigrate, doAutomigrate, runFixes } from './index.ts';
-import * as pipeline from './pipeline.ts';
 import type { Fix } from './types.ts';
 
 const check1 = vi.fn();
@@ -42,13 +39,13 @@ vi.mock('storybook/internal/node-logger', () => ({
     enableLogWriting: vi.fn(),
   },
   CLI_COLORS: {
+    dryRunChange: vi.fn((text: string) => text),
     success: vi.fn((text: string) => text),
     error: vi.fn((text: string) => text),
     warning: vi.fn((text: string) => text),
     info: vi.fn((text: string) => text),
     debug: vi.fn((text: string) => text),
     cta: vi.fn((text: string) => text),
-    change: vi.fn((text: string) => text),
     dimmed: vi.fn((text: string) => text),
   },
 }));
@@ -77,11 +74,6 @@ const coreCommonMock = vi.hoisted(() => {
   };
 });
 
-vi.mock(import('./fixes/index.ts'), async (importOriginal) => ({
-  ...(await importOriginal()),
-  commandFixes: [{ id: 'command-fix', promptType: 'command' as const, run: async () => {} }],
-}));
-
 vi.mock('storybook/internal/common', async (importOriginal) => ({
   ...(await importOriginal<typeof import('storybook/internal/common')>()),
   loadMainConfig: coreCommonMock.loadMainConfig,
@@ -89,11 +81,7 @@ vi.mock('storybook/internal/common', async (importOriginal) => ({
 
 // Remove the old prompt mock - now handled in the node-logger mock
 
-const reportInstallSettingChanges = vi.fn();
-
 class PackageManager implements Partial<JsPackageManager> {
-  reportInstallSettingChanges = reportInstallSettingChanges;
-
   async getModulePackageJSON(
     packageName: string,
     basePath?: string | undefined
@@ -104,7 +92,6 @@ class PackageManager implements Partial<JsPackageManager> {
 
 const packageManager = new PackageManager() as unknown as JsPackageManager;
 
-const dryRun = false;
 const yes = true;
 const skipInstall = false;
 const configDir = '/path/to/config';
@@ -114,7 +101,6 @@ const isUpgrade = true;
 
 const common = {
   fixes,
-  dryRun,
   yes,
   mainConfig: { stories: [] },
   skipInstall,
@@ -147,26 +133,6 @@ const runAutomigrateWrapper = async ({
   });
   return doAutomigrate({ configDir, fixes });
 };
-
-describe('automigrate', () => {
-  it.each([
-    [true, /^Dry-running migration command-fix/],
-    [false, /^Running migration command-fix/],
-  ])('announces a command fix when dryRun is %s', async (dryRun, announcement) => {
-    await automigrate({
-      ...common,
-      fixId: 'command-fix',
-      dryRun,
-      storybookVersion: '7.0.0',
-      isLatest: false,
-    });
-
-    const steps = vi
-      .mocked(logger.step)
-      .mock.calls.map(([message]) => stripVTControlCharacters(message));
-    expect(steps).toContainEqual(expect.stringMatching(announcement));
-  });
-});
 
 describe('runFixes', () => {
   beforeEach(() => {
@@ -219,43 +185,6 @@ describe('runFixes', () => {
     expect(run1).toHaveBeenCalled();
   });
 
-  it('runs no fix in a dry run, and does not report the ones it would run as skipped', async () => {
-    await runFixes({ ...common, dryRun: true, storybookVersion: '7.0.0' });
-
-    expect(run1).not.toHaveBeenCalled();
-    expect(vi.mocked(logger.log).mock.calls.flat().join('\n')).not.toMatch(/Skipped/);
-  });
-
-  it('lets a fix report what its run would do, in a dry run', async () => {
-    const reportDryRun = vi.fn(async () => {});
-
-    await runFixes({
-      ...common,
-      fixes: [{ ...fixes[0], reportDryRun }],
-      dryRun: true,
-      storybookVersion: '7.0.0',
-    });
-
-    expect(reportDryRun).toHaveBeenCalledWith(
-      expect.objectContaining({ configDir, result: { some: 'result' } })
-    );
-  });
-
-  it('goes on with a dry run when a fix fails to report what its run would do', async () => {
-    const reportDryRun = vi.fn(async () => Promise.reject(new Error('no network')));
-
-    await expect(
-      runFixes({
-        ...common,
-        fixes: [{ ...fixes[0], reportDryRun }],
-        dryRun: true,
-        storybookVersion: '7.0.0',
-      })
-    ).resolves.toEqual(expect.objectContaining({ dryRunReport: expect.anything() }));
-
-    expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('fix-1'));
-  });
-
   it('should fail if an error is thrown by migration', async () => {
     check1.mockRejectedValue(new Error('check1 error'));
 
@@ -279,62 +208,62 @@ describe('runFixes', () => {
   });
 });
 
-describe('doAutomigrate', () => {
+describe('a dry run', () => {
   beforeEach(() => {
+    effects.setDryRun(true);
     check1.mockResolvedValue({ some: 'result' });
+    vi.mocked(prompt.confirm).mockResolvedValue(true);
+  });
+
+  afterEach(() => {
+    effects.setDryRun(false);
+    vi.clearAllMocks();
+  });
+
+  it('runs a fix as a run does, since its effects are only staged', async () => {
+    const { fixResults } = await runFixWrapper({ storybookVersion: '7.0.0' });
+
+    expect(fixResults).toEqual({ 'fix-1': 'succeeded' });
+    expect(run1).toHaveBeenCalled();
+  });
+
+  it('lists a notification without asking, instead of saying that no migration applies', async () => {
+    const notification: Fix = {
+      id: 'notice',
+      promptType: 'notification',
+      check: async () => ({}),
+      prompt: () => 'Read this',
+    };
+
+    await automigrate({
+      ...common,
+      fixes: [notification],
+      yes: false,
+      storybookVersion: '7.0.0',
+      isLatest: false,
+    });
+
+    expect(prompt.confirm).not.toHaveBeenCalled();
+    expect(logger.warn).not.toHaveBeenCalledWith('No migrations were applicable to your project');
+  });
+
+  it('fails where a run would, and records the doctor instead of running it', async () => {
+    run1.mockImplementationOnce(() => {
+      throw new Error('cannot migrate');
+    });
     getStorybookData.mockResolvedValue({
       ...common,
       beforeVersion,
       versionInstalled: '7.0.0',
       isLatest: true,
     });
-  });
 
-  it('names the install settings a run would change, when it would apply a fix', async () => {
-    vi.mocked(prompt.confirm).mockResolvedValue(true);
-
-    await doAutomigrate({ configDir, fixes, dryRun: true });
-
-    expect(reportInstallSettingChanges).toHaveBeenCalledTimes(1);
-  });
-
-  it('names no install settings when a run would apply no fix', async () => {
-    vi.mocked(prompt.confirm).mockResolvedValue(false);
-
-    await doAutomigrate({ configDir, fixes, dryRun: true });
-
-    expect(reportInstallSettingChanges).not.toHaveBeenCalled();
-  });
-
-  it('fails a dry run where a run would fail', async () => {
-    vi.mocked(prompt.confirm).mockResolvedValue(true);
-    vi.spyOn(pipeline, 'simulateFixes').mockResolvedValueOnce(
-      new Map([
-        [
-          'fix-1',
-          {
-            status: 'fail',
-            changed: [],
-            fileFailures: [{ file: mainConfigPath, kind: 'main', message: 'cannot migrate' }],
-          },
-        ],
-      ])
-    );
-
-    await expect(doAutomigrate({ configDir, fixes, dryRun: true })).rejects.toThrow(
+    await expect(doAutomigrate({ configDir, fixes })).rejects.toThrow(
       'An error occurred while running the automigrate command.'
     );
-  });
 
-  it('names the doctor instead of running it, in a dry run', async () => {
-    await doAutomigrate({ configDir, fixes, dryRun: true });
-
-    const output = [logger.log, logger.step]
-      .flatMap((method) => vi.mocked(method).mock.calls.flat())
-      .join('\n');
-    expect(output).toMatch(
-      /Would run .*npx storybook doctor.* to verify the automigrations went well/
+    expect(effects.describeDryRunChanges()).toContain(
+      'run npx storybook doctor to verify the automigrations went well'
     );
-    expect(output).not.toContain('Checking the health');
   });
 });

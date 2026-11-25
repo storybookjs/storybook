@@ -1,8 +1,8 @@
+import { effects } from 'storybook/internal/common';
 import { CLI_COLORS, logger } from 'storybook/internal/node-logger';
 
 import picocolors from 'picocolors';
 
-import { type DryRunReport, formatDryRunReport } from './dry-run-report.ts';
 import { pluralFiles } from './failure-report.ts';
 import { dedent } from 'ts-dedent';
 
@@ -12,15 +12,42 @@ import { FixStatus } from '../types.ts';
 export const messageDivider = '\n\n';
 const segmentDivider = '\n\n─────────────────────────────────────────────────\n\n';
 
-function getGlossaryMessages(fixSummary: FixSummary, fixResults: Record<string, FixStatus>) {
+/** The summary of a run, which a dry run words as what the run would do. */
+const SUMMARY_COPY = {
+  succeeded: 'Successful migrations:',
+  failed: 'Failed migrations:',
+  manual: 'Manual migrations:',
+  skipped: 'Skipped migrations:',
+  failures: 'Migration check ran with failures',
+  skippedFiles: (files: string) =>
+    `Migrations ran, but ${files} could not be migrated automatically`,
+  success: CLI_COLORS.success('Migration check ran successfully'),
+};
+
+const DRY_RUN_SUMMARY_COPY: typeof SUMMARY_COPY = {
+  succeeded: 'Migrations that would succeed:',
+  failed: 'Migrations that would fail:',
+  manual: 'Migrations that would need manual changes:',
+  skipped: 'Migrations that would be skipped:',
+  failures: 'Some automigrations would fail',
+  skippedFiles: (files: string) =>
+    `Migrations would run, but ${files} could not be migrated automatically`,
+  success: CLI_COLORS.success('Dry run finished: no files were changed.'),
+};
+
+function getGlossaryMessages(
+  fixSummary: FixSummary,
+  fixResults: Record<string, FixStatus>,
+  copy: typeof SUMMARY_COPY
+) {
   const messages = [];
   if (fixSummary.succeeded.length > 0) {
-    messages.push(picocolors.bold('Successful migrations:'));
+    messages.push(picocolors.bold(copy.succeeded));
     messages.push(fixSummary.succeeded.map((m) => picocolors.green(m)).join(', '));
   }
 
   if (Object.keys(fixSummary.failed).length > 0) {
-    messages.push(picocolors.bold('Failed migrations:'));
+    messages.push(picocolors.bold(copy.failed));
     messages.push(
       Object.entries(fixSummary.failed)
         .map(([id, error]) => {
@@ -31,7 +58,7 @@ function getGlossaryMessages(fixSummary: FixSummary, fixResults: Record<string, 
   }
 
   if (fixSummary.manual.length > 0) {
-    messages.push(picocolors.bold('Manual migrations:'));
+    messages.push(picocolors.bold(copy.manual));
     messages.push(
       fixSummary.manual
         .map((m) =>
@@ -42,7 +69,7 @@ function getGlossaryMessages(fixSummary: FixSummary, fixResults: Record<string, 
   }
 
   if (fixSummary.skipped.length > 0) {
-    messages.push(picocolors.bold('Skipped migrations:'));
+    messages.push(picocolors.bold(copy.skipped));
     messages.push(fixSummary.skipped.map((m) => picocolors.cyan(m)).join(', '));
   }
 
@@ -53,23 +80,15 @@ export function logMigrationSummary({
   fixResults,
   fixSummary,
   skippedFiles = 0,
-  dryRun = false,
-  dryRunReport,
 }: {
   fixResults: Record<string, FixStatus>;
   fixSummary: FixSummary;
   /** Files that fixes which otherwise succeeded could not migrate. */
   skippedFiles?: number;
-  dryRun?: boolean;
-  /** What a run would do with each fix, listed in place of the statuses in a dry run. */
-  dryRunReport?: DryRunReport;
 }) {
+  const copy = effects.isDryRun() ? DRY_RUN_SUMMARY_COPY : SUMMARY_COPY;
   const messages = [];
-  messages.push(
-    dryRunReport
-      ? formatDryRunReport(dryRunReport)
-      : getGlossaryMessages(fixSummary, fixResults).join(messageDivider)
-  );
+  messages.push(getGlossaryMessages(fixSummary, fixResults, copy).join(messageDivider));
 
   messages.push(dedent`If you'd like to run the migrations again, you can do so by running 
     ${picocolors.cyan('npx storybook automigrate')}
@@ -88,21 +107,12 @@ export function logMigrationSummary({
 
   if (hasNoFixes) {
     logger.warn('No migrations were applicable to your project');
-  } else if (dryRun) {
-    // A failure the dry run predicts takes precedence over saying that nothing changed.
-    if (hasFailures || (dryRunReport?.fail.length ?? 0) > 0) {
-      logger.error('Some automigrations would fail');
-    } else {
-      logger.step(CLI_COLORS.success('Dry run finished: no files were changed.'));
-    }
   } else if (hasFailures) {
-    logger.error('Migration check ran with failures');
+    logger.error(copy.failures);
   } else if (skippedFiles > 0) {
-    logger.warn(
-      `Migrations ran, but ${pluralFiles(skippedFiles)} could not be migrated automatically`
-    );
+    logger.warn(copy.skippedFiles(pluralFiles(skippedFiles)));
   } else {
-    logger.step(CLI_COLORS.success('Migration check ran successfully'));
+    logger.step(copy.success);
   }
 
   logger.log(messages.filter(Boolean).join(segmentDivider));

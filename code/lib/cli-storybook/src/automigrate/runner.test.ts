@@ -1,8 +1,8 @@
 import { readFile, writeFile } from 'node:fs/promises';
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { JsPackageManager } from 'storybook/internal/common';
+import { type JsPackageManager, effects } from 'storybook/internal/common';
 import { prompt } from 'storybook/internal/node-logger';
 
 import { fs, vol } from 'memfs';
@@ -345,134 +345,52 @@ describe('a fix whose check read a file that an earlier fix changed', () => {
 });
 
 describe('a dry run', () => {
-  const cannotMigrateStories: Fix = {
-    id: 'stories',
-    prompt: () => 'stories',
-    transform: () => [
-      {
-        filter: { kind: ['story'] },
-        handler: () => {
-          throw new Error('cannot migrate this story');
-        },
-      },
-    ],
-  };
-  const optIn: Fix = { ...renameImports('opt-in'), defaultSelected: false };
-  const manual: Fix = {
-    id: 'manual',
-    prompt: () => 'manual',
-    promptType: 'manual',
-    check: async () => ({}),
-  };
-  const runOnly = vi.fn(async () => {});
-  const changesDependencies: Fix = {
-    id: 'run-only',
-    prompt: () => 'run-only',
-    check: async () => ({}),
-    run: runOnly,
-  };
-
   const files = {
-    [project.mainConfigPath]: "import 'healthy-old'; import 'opt-in-old';",
-    [project.storiesPaths[0]]: "import 'healthy-old'; import 'opt-in-old';",
+    [project.mainConfigPath]: "import 'swap-old'; import 'healthy-old';",
+    [project.storiesPaths[0]]: "import 'swap-old'; import 'healthy-old';",
   };
 
   beforeEach(() => {
     vol.reset();
-    runOnly.mockClear();
     vi.mocked(readFile).mockImplementation(fs.promises.readFile as typeof readFile);
     vi.mocked(writeFile).mockImplementation(fs.promises.writeFile as typeof writeFile);
     vol.fromJSON(files);
+    effects.setDryRun(true);
   });
 
-  const predicted = {
-    apply: ['healthy', 'run-only'],
-    fail: [{ fixId: 'stories', reason: 'could not migrate 1 file' }],
-    skip: [{ fixId: 'opt-in', reason: 'opt-in' }],
-  };
+  afterEach(() => {
+    effects.setDryRun(false);
+  });
 
-  it('predicts what a single-project run would do with each fix, and changes nothing', async () => {
-    const { dryRunReport } = await runFixes({
-      ...project,
-      fixes: [healthy, cannotMigrateStories, optIn, manual, changesDependencies],
-      yes: true,
-      dryRun: true,
-    });
+  it('takes the path of a single-project run, and only stages its edits', async () => {
+    const { fixResults } = await runFixes({ ...project, fixes: [failingSwap, healthy], yes: true });
 
-    expect(dryRunReport).toEqual({ ...predicted, manual: ['manual'] });
-    expect(runOnly).not.toHaveBeenCalled();
+    expect(fixResults).toEqual({ swap: 'failed', healthy: 'succeeded' });
     expect(vol.toJSON()).toEqual(files);
+    expect(await effects.readFile(project.mainConfigPath)).toBe(
+      "import 'swap-old'; import 'healthy-new';"
+    );
   });
 
-  it('asks a single-project question for each fix, and skips the ones declined', async () => {
-    vi.mocked(prompt.confirm).mockResolvedValueOnce(true).mockResolvedValueOnce(false);
-
-    const { dryRunReport } = await runFixes({
-      ...project,
-      fixes: [healthy, optIn, manual],
-      yes: false,
-      dryRun: true,
-    });
-
-    expect(prompt.confirm).toHaveBeenCalledTimes(2);
-    expect(dryRunReport).toEqual({
-      apply: ['healthy'],
-      fail: [],
-      skip: [{ fixId: 'opt-in', reason: 'not selected' }],
-      manual: ['manual'],
-    });
-    expect(vol.toJSON()).toEqual(files);
-  });
-
-  const detect = async () => {
+  it('takes the path of a multi-project run, and only stages its edits', async () => {
     const detected = await collectAutomigrationsAcrossProjects({
-      fixes: [healthy, cannotMigrateStories, optIn, changesDependencies],
+      fixes: [failingSwap, healthy],
       projects: [{ ...project, beforeVersion: '10.0.0' }],
       taskLog: { message: () => {}, error: () => {}, success: () => {} } as never,
     });
-    const offered = detected.filter(({ reports }) =>
-      reports.some(({ status }) => status === 'check_succeeded')
-    );
-    return { detected, offered };
-  };
 
-  it('predicts what a multi-project run would do with each fix, and changes nothing', async () => {
-    const { detected, offered } = await detect();
-
-    const selected = await promptForAutomigrations(offered, { dryRun: true, yes: true });
-    const results = await runAutomigrationsForProjects(selected, {
+    const results = await runAutomigrationsForProjects(detected, {
       automigrations: detected,
-      dryRun: true,
       yes: true,
-    });
+    } as never);
 
-    expect(results[project.configDir].dryRunReport).toEqual({ ...predicted, manual: [] });
-    expect(runOnly).not.toHaveBeenCalled();
-    expect(vol.toJSON()).toEqual(files);
-  });
-
-  it('asks the multi-project selection question, and skips the ones not selected', async () => {
-    vi.mocked(prompt.multiselect).mockResolvedValueOnce(['healthy']);
-    const { detected, offered } = await detect();
-
-    const selected = await promptForAutomigrations(offered, { dryRun: true, yes: false });
-    const results = await runAutomigrationsForProjects(selected, {
-      automigrations: detected,
-      dryRun: true,
-      yes: false,
-    });
-
-    expect(prompt.multiselect).toHaveBeenCalledTimes(1);
-    expect(results[project.configDir].dryRunReport).toEqual({
-      apply: ['healthy'],
-      fail: [],
-      skip: [
-        { fixId: 'stories', reason: 'not selected' },
-        { fixId: 'opt-in', reason: 'not selected' },
-        { fixId: 'run-only', reason: 'not selected' },
-      ],
-      manual: [],
+    expect(results[project.configDir].automigrationStatuses).toEqual({
+      swap: 'failed',
+      healthy: 'succeeded',
     });
     expect(vol.toJSON()).toEqual(files);
+    expect(await effects.readFile(project.storiesPaths[0])).toBe(
+      "import 'swap-old'; import 'healthy-new';"
+    );
   });
 });

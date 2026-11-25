@@ -1,13 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 
 import {
   hasStorybookSkills,
   installSkills,
   refreshAgentInstructions,
-  reportAgentInstructionsRefresh,
-  reportSkillsInstall,
 } from 'storybook/internal/cli';
-import { type JsPackageManager, isCI } from 'storybook/internal/common';
+import { type JsPackageManager, effects, isCI } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
 
@@ -29,13 +27,11 @@ vi.mock(import('storybook/internal/common'), async (importOriginal) => {
   return {
     ...actual,
     isCI: vi.fn(),
-    getProcessAncestry: () => [],
     JsPackageManagerFactory: Object.assign(actual.JsPackageManagerFactory, {
       getPackageManager: () => ({
         type: 'npm',
         installDependencies: async () => {},
         isStorybookInMonorepo: () => false,
-        reportInstallSettingChanges: () => {},
       }),
     }),
   };
@@ -59,7 +55,6 @@ const project = (
       precheckStorybookPackageInstall: async () => {},
       installDependencies: async () => {},
       isStorybookInMonorepo: () => false,
-      reportInstallSettingChanges: () => {},
     } as Partial<JsPackageManager> as JsPackageManager,
     ...overrides,
   }) as unknown as CollectProjectsSuccessResult;
@@ -99,8 +94,6 @@ beforeEach(() => {
   } as unknown as ReturnType<typeof prompt.taskLog>);
   vi.mocked(hasStorybookSkills).mockResolvedValue(true);
   vi.mocked(installSkills).mockResolvedValue({ result: 'installed', source: 'refresh' });
-  vi.mocked(reportSkillsInstall).mockResolvedValue();
-  vi.mocked(reportAgentInstructionsRefresh).mockResolvedValue();
   vi.mocked(refreshAgentInstructions).mockResolvedValue();
 });
 
@@ -259,6 +252,7 @@ describe('upgrade: refreshing the skills', () => {
 
     expect(installSkills).not.toHaveBeenCalled();
     expect(skillsInUpgradeEvents()).toEqual([undefined, undefined]);
+    expect(refreshAgentInstructions).toHaveBeenCalledTimes(1);
   });
 
   it('does not refresh skills that the skills automigration installed in the same upgrade', async () => {
@@ -273,59 +267,22 @@ describe('upgrade: refreshing the skills', () => {
     expect(installSkills).not.toHaveBeenCalled();
   });
 
-  it('only names the refresh on a dry run, and sends no skills result', async () => {
-    await upgrade({ ...baseOptions, dryRun: true });
-
-    expect(installSkills).not.toHaveBeenCalled();
-    expect(reportSkillsInstall).toHaveBeenCalledWith(
-      expect.objectContaining({ source: 'refresh' })
-    );
-    expect(skillsInUpgradeEvents()).toEqual([undefined, undefined]);
-  });
-
-  it('names the AGENTS.md refresh of a dry run without skills, instead of refreshing', async () => {
-    vi.mocked(hasStorybookSkills).mockResolvedValue(false);
+  it('refreshes on a dry run too, whose effects record the skills CLI instead of running it', async () => {
+    effects.setDryRun(true);
+    onTestFinished(() => effects.setDryRun(false));
 
     await upgrade({ ...baseOptions, dryRun: true });
 
-    expect(refreshAgentInstructions).not.toHaveBeenCalled();
-    expect(reportAgentInstructionsRefresh).toHaveBeenCalledTimes(1);
-  });
-
-  it('fails a dry run with an error when an automigration would fail, as a run would', async () => {
-    vi.mocked(runAutomigrations).mockResolvedValue({
-      automigrationResults: {
-        '/repo/a/.storybook': {
-          automigrationStatuses: {},
-          automigrationErrors: {},
-          fileFailures: [],
-          dryRunReport: {
-            apply: [],
-            fail: [{ fixId: 'story-sort-to-main', reason: 'cannot migrate main' }],
-            skip: [],
-            manual: [],
-          },
-        },
-      },
-      detectedAutomigrations: [],
-    });
-
-    await expect(upgrade({ ...baseOptions, dryRun: true })).rejects.toThrow(
-      'Some automigrations would fail or skip files'
-    );
-
-    expect(logger.error).toHaveBeenCalledWith('Some automigrations would fail');
-    expect(logger.step).not.toHaveBeenCalledWith(expect.stringContaining('Dry run finished'));
+    expect(installSkills).toHaveBeenCalledWith(expect.objectContaining({ source: 'refresh' }));
   });
 });
 
 describe('upgrade: --dry-run', () => {
-  it.each([
-    { dryRun: true, calls: 0 },
-    { dryRun: false, calls: 1 },
-  ])(
-    'installs and dedupes $calls time(s) in a monorepo when dryRun is $dryRun',
-    async ({ dryRun, calls }) => {
+  it.each([{ dryRun: true }, { dryRun: false }])(
+    'asks the package manager to install and dedupe in a monorepo when dryRun is $dryRun, which a dry run records instead',
+    async ({ dryRun }) => {
+      effects.setDryRun(dryRun);
+      onTestFinished(() => effects.setDryRun(false));
       const installDependencies = vi.fn(async () => {});
       const dedupeDependencies = vi.fn(async () => {});
       const monorepo = project('/repo/a/.storybook');
@@ -339,8 +296,36 @@ describe('upgrade: --dry-run', () => {
 
       await upgrade({ ...baseOptions, dryRun, yes: true });
 
-      expect(installDependencies).toHaveBeenCalledTimes(calls);
-      expect(dedupeDependencies).toHaveBeenCalledTimes(calls);
+      expect(installDependencies).toHaveBeenCalledTimes(1);
+      expect(dedupeDependencies).toHaveBeenCalledTimes(1);
     }
   );
+});
+
+describe('upgrade: the summary of a dry run', () => {
+  it('names the projects that would fail, and fails as a run would', async () => {
+    effects.setDryRun(true);
+    onTestFinished(() => effects.setDryRun(false));
+    vi.mocked(runAutomigrations).mockResolvedValue({
+      automigrationResults: {
+        '/repo/a/.storybook': {
+          automigrationStatuses: { 'story-sort-to-main': FixStatus.FAILED },
+          automigrationErrors: { 'story-sort-to-main': 'cannot migrate main' },
+          fileFailures: [],
+        },
+      },
+      detectedAutomigrations: [],
+    });
+
+    await expect(upgrade({ ...baseOptions, dryRun: true })).rejects.toThrow(
+      'Some automigrations would fail or skip files'
+    );
+
+    const logged = vi.mocked(logger.log).mock.calls.flat().join('\n');
+    expect(logged).toContain('Would fail to upgrade:');
+    expect(logged).toContain('story-sort-to-main');
+    expect(logger.step).toHaveBeenCalledWith(
+      expect.stringContaining('some projects would fail to upgrade')
+    );
+  });
 });

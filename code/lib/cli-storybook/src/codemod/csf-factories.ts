@@ -2,11 +2,11 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
 import {
+  effects,
   getProjectRelativePath,
   optionalEnvToBoolean,
-  syncPreviewAddonsWithMainConfig,
+  syncStorybookAddons,
 } from 'storybook/internal/common';
-import { formatConfig, loadConfig } from 'storybook/internal/csf-tools';
 import { CLI_COLORS, logger, prompt } from 'storybook/internal/node-logger';
 
 import { normalize } from 'pathe';
@@ -21,7 +21,6 @@ import {
   previewImportTarget,
 } from '../../../../core/src/shared/constants/config-folder.ts';
 import { type FileInfo, runCodemod } from '../automigrate/codemod.ts';
-import { editParsedFile } from '../automigrate/helpers/edit-parsed-file.ts';
 import { getFrameworkPackageName } from '../automigrate/helpers/mainConfigFile.ts';
 import type { CommandFix } from '../automigrate/types.ts';
 import { configToCsfFactory } from './helpers/config-to-csf-factory.ts';
@@ -51,13 +50,12 @@ export const SANDBOX_STORIES_GLOB =
   '{stories,src/stories}/{Button,Header,Page,button,header,page}.stories.*';
 
 async function runStoriesCodemod(options: {
-  dryRun: boolean | undefined;
   useSubPathImports: boolean;
   previewConfigPath: string;
   yes: boolean | undefined;
   glob: string | undefined;
 }) {
-  const { dryRun, yes, glob, ...codemodOptions } = options;
+  const { yes, glob, ...codemodOptions } = options;
   const inSandbox = optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX) ?? false;
   const promptsForGlob = !glob && !inSandbox && !yes;
   try {
@@ -74,15 +72,12 @@ async function runStoriesCodemod(options: {
     }
 
     logger.step(
-      dryRun
+      effects.isDryRun()
         ? 'Checking how codemods would apply on your stories'
         : 'Applying codemod on your stories, this might take some time...'
     );
 
-    await runCodemod(globString, (info) => storyToCsf4(info, codemodOptions), {
-      dryRun,
-      announceDryRun: false,
-    });
+    await runCodemod(globString, (info) => storyToCsf4(info, codemodOptions));
   } catch (err: any) {
     // Ask for another glob. Without a prompt, the same glob would match nothing again.
     if (err.message === 'No files matched' && promptsForGlob) {
@@ -97,7 +92,6 @@ export const csfFactories: CommandFix = {
   id: 'csf-factories',
   promptType: 'command',
   async run({
-    dryRun,
     mainConfig,
     mainConfigPath,
     previewConfigPath,
@@ -137,18 +131,11 @@ export const csfFactories: CommandFix = {
     }
 
     const { packageJson, operationDir, packageJsonPath } = packageManager.primaryPackageJson;
-    const writeImportsMap = () => {
-      if (dryRun) {
-        logger.step(
-          `Would add an imports map in ${CLI_COLORS.change(getProjectRelativePath(packageJsonPath))}`
-        );
-        return;
-      }
-      logger.step(
-        `Adding imports map in ${picocolors.cyan(getProjectRelativePath(packageJsonPath))}`
+    const logImportsMap = () =>
+      effects.logChange(
+        `Adding imports map in ${picocolors.cyan(getProjectRelativePath(packageJsonPath))}`,
+        'step'
       );
-      packageManager.writePackageJson(packageJson, operationDir);
-    };
 
     if (isReactNativePreview) {
       const nativePreviewFile = previewConfigPath ?? join(configDir, 'preview.tsx');
@@ -156,67 +143,48 @@ export const csfFactories: CommandFix = {
       if (previewImportTarget(previewFile, operationDir) == null) {
         useSubPathImports = false;
       } else if (applyPreviewImportsMap(packageJson, previewFile, operationDir)) {
-        writeImportsMap();
+        logImportsMap();
+        packageManager.writePackageJson(packageJson, operationDir);
       }
     } else if (useSubPathImports && !packageJson.imports?.['#*']) {
+      logImportsMap();
       packageJson.imports = {
         ...packageJson.imports,
         '#*': ['./*', './*.ts', './*.tsx', './*.js', './*.jsx'],
       };
-      writeImportsMap();
+      packageManager.writePackageJson(packageJson, operationDir);
     }
 
     await runStoriesCodemod({
-      dryRun,
       useSubPathImports,
       previewConfigPath: previewConfigPath!,
       yes,
       glob,
     });
 
-    const frameworkPackage =
-      getFrameworkPackageName(mainConfig) || '@storybook/your-framework-here';
-    const runConfigCodemod = (path: string, transform: (info: FileInfo) => Promise<string>) =>
-      runCodemod([path], transform, { dryRun, announceDryRun: false });
-
     logger.step(
-      dryRun
+      effects.isDryRun()
         ? 'Checking how codemods would apply on your main config'
         : 'Applying codemod on your main config...'
     );
-    await runConfigCodemod(mainConfigPath!, (info) =>
-      configToCsfFactory(info, { configType: 'main', frameworkPackage }, { skipFormatting: true })
+    const frameworkPackage =
+      getFrameworkPackageName(mainConfig) || '@storybook/your-framework-here';
+    await runCodemod([mainConfigPath!], (fileInfo) =>
+      configToCsfFactory(fileInfo, { configType: 'main', frameworkPackage })
     );
 
     logger.step(
-      dryRun
+      effects.isDryRun()
         ? 'Checking how codemods would apply on your preview config'
         : 'Applying codemod on your preview config...'
     );
-    // The addons of the main config are synced into the converted preview within the same
-    // transform, so a dry run reports them too. The conversion does not depend on them, so a
-    // refused sync leaves the preview converted, without the addons.
-    await runConfigCodemod(previewConfigPath!, async (info) => {
-      const converted = await configToCsfFactory(
-        info,
-        { configType: 'preview', frameworkPackage },
-        { skipFormatting: true }
-      );
-      const preview = loadConfig(converted, info.path).parse();
-      try {
-        await editParsedFile(preview, (config) =>
-          syncPreviewAddonsWithMainConfig(mainConfig, config, configDir, { dryRun })
-        );
-      } catch (error) {
-        logger.warn(
-          `Could not sync the addons of the main config into ${getProjectRelativePath(info.path)}: ${error instanceof Error ? error.message : String(error)}`
-        );
-        return converted;
-      }
-      return formatConfig(preview);
-    });
+    await runCodemod([previewConfigPath!], (fileInfo) =>
+      configToCsfFactory(fileInfo, { configType: 'preview', frameworkPackage })
+    );
 
-    if (dryRun) {
+    await syncStorybookAddons(mainConfig, previewConfigPath!, configDir);
+
+    if (effects.isDryRun()) {
       logger.step(CLI_COLORS.success('Dry run finished: no files were changed.'));
       return;
     }

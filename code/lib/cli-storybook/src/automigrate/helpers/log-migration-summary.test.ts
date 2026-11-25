@@ -1,66 +1,86 @@
 import { stripVTControlCharacters } from 'node:util';
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { effects } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
-import { FixStatus } from '../types.ts';
+import { FixStatus, type FixSummary } from '../types.ts';
 import { logMigrationSummary } from './logMigrationSummary.ts';
 
-const summary = { succeeded: [], failed: {}, manual: [], skipped: ['some-fix'] };
-const fixResults = { 'some-fix': FixStatus.SKIPPED };
+const summary = (overrides: Partial<FixSummary> = {}): FixSummary => ({
+  succeeded: [],
+  failed: {},
+  manual: [],
+  skipped: [],
+  ...overrides,
+});
 
-// The summary of the first `logger.log` call, without colors.
-const logged = () => stripVTControlCharacters(String(vi.mocked(logger.log).mock.calls[0][0]));
+const logged = () =>
+  stripVTControlCharacters(
+    [logger.log, logger.step, logger.warn, logger.error]
+      .flatMap((method) => vi.mocked(method).mock.calls.flat())
+      .join('\n')
+  );
 
 describe('logMigrationSummary', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  const dryRunReport = (fail: { fixId: string; reason: string }[] = []) => ({
-    apply: ['some-fix'],
-    fail,
-    skip: [{ fixId: 'opt-in-fix', reason: 'opt-in' }],
-    manual: ['manual-fix'],
-  });
-
-  it('lists what a run would do instead of the statuses, and says nothing changed, in a dry run', () => {
-    logMigrationSummary({
-      fixResults,
-      fixSummary: summary,
-      dryRun: true,
-      dryRunReport: dryRunReport(),
-    });
-
-    const output = logged();
-    expect(output).toContain('Migrations that would succeed:\n\nsome-fix');
-    expect(output).toContain('Migrations that would be skipped:\n\nopt-in-fix (opt-in)');
-    expect(output).toContain('Migrations that would need manual changes:\n\nmanual-fix');
-    expect(output).not.toContain('Skipped migrations:');
-    expect(stripVTControlCharacters(vi.mocked(logger.step).mock.calls.flat().join('\n'))).toContain(
-      'Dry run finished: no files were changed.'
-    );
-  });
-
-  it('says that some automigrations would fail, as a failing run does, in a dry run', () => {
-    logMigrationSummary({
-      fixResults,
-      fixSummary: summary,
-      dryRun: true,
-      dryRunReport: dryRunReport([{ fixId: 'failing-fix', reason: 'cannot migrate main' }]),
-    });
-
-    expect(vi.mocked(logger.error)).toHaveBeenCalledWith('Some automigrations would fail');
-    expect(vi.mocked(logger.step)).not.toHaveBeenCalledWith(
-      expect.stringContaining('Dry run finished')
-    );
-    expect(logged()).toContain('Migrations that would fail:\n\nfailing-fix:\ncannot migrate main');
+  afterEach(() => {
+    effects.setDryRun(false);
   });
 
   it('lists skipped migrations outside a dry run', () => {
-    logMigrationSummary({ fixResults, fixSummary: summary });
+    logMigrationSummary({
+      fixResults: { 'some-fix': FixStatus.SKIPPED },
+      fixSummary: summary({ skipped: ['some-fix'] }),
+    });
 
     expect(logged()).toContain('Skipped migrations:');
+  });
+
+  describe('in a dry run', () => {
+    beforeEach(() => {
+      effects.setDryRun(true);
+    });
+
+    it('words the summary of a run as what the run would do', () => {
+      logMigrationSummary({
+        fixResults: {
+          applied: FixStatus.SUCCEEDED,
+          manual: FixStatus.MANUAL_SUCCEEDED,
+          declined: FixStatus.SKIPPED,
+        },
+        fixSummary: summary({ succeeded: ['applied'], manual: ['manual'], skipped: ['declined'] }),
+      });
+
+      expect(logged()).toContain('Dry run finished: no files were changed.');
+      expect(logged()).toContain('Migrations that would succeed:\n\napplied');
+      expect(logged()).toContain('Migrations that would need manual changes:\n\nmanual');
+      expect(logged()).toContain('Migrations that would be skipped:\n\ndeclined');
+    });
+
+    it('says that some automigrations would fail, as a failing run does', () => {
+      logMigrationSummary({
+        fixResults: { failing: FixStatus.FAILED },
+        fixSummary: summary({ failed: { failing: 'cannot migrate main' } }),
+      });
+
+      expect(logger.error).toHaveBeenCalledWith('Some automigrations would fail');
+      expect(logged()).toContain('Migrations that would fail:\n\nfailing:\ncannot migrate main');
+      expect(logged()).not.toContain('Dry run finished');
+    });
+
+    it('does not say that no migration applies when only a manual migration does', () => {
+      logMigrationSummary({
+        fixResults: { manual: FixStatus.MANUAL_SUCCEEDED },
+        fixSummary: summary({ manual: ['manual'] }),
+      });
+
+      expect(logged()).not.toContain('No migrations were applicable');
+      expect(logged()).toContain('Migrations that would need manual changes:\n\nmanual');
+    });
   });
 });

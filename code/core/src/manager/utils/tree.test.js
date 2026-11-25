@@ -250,3 +250,38 @@ describe('hoistSingleStoryComponents with sibling hoists', () => {
     expect(collapsed['b--b'].parent).toBe('root');
   });
 });
+
+describe('indexToTree', () => {
+  it('nests the entries of a component whose id is an Object.prototype key', () => {
+    const index = {
+      constructor: {
+        type: 'component',
+        id: 'constructor',
+        name: 'Constructor',
+        depth: 0,
+        children: ['constructor--docs', 'constructor--primary'],
+      },
+      'constructor--docs': {
+        type: 'docs',
+        id: 'constructor--docs',
+        name: 'Docs',
+        depth: 1,
+        parent: 'constructor',
+      },
+      'constructor--primary': {
+        type: 'story',
+        id: 'constructor--primary',
+        name: 'Primary',
+        depth: 1,
+        parent: 'constructor',
+      },
+    };
+
+    const [component] = utils.indexToTree(index);
+
+    expect(component.resolvedChildren.map((child) => child.id)).toEqual([
+      'constructor--docs',
+      'constructor--primary',
+    ]);
+  });
+});

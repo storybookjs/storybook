@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { createStatusStore, type RowStatus } from './StatusStore.tsx';
 
 const rowStatus = (change: string, test: string) => ({ change, test }) as RowStatus;
+const rows = (record: Record<string, RowStatus>) => new Map(Object.entries(record));
 
 describe('createStatusStore', () => {
   it('returns one shared snapshot for a row it has no status for', () => {
@@ -17,41 +18,54 @@ describe('createStatusStore', () => {
     });
   });
 
+  it('has no status for a row whose id is an Object.prototype key', () => {
+    const store = createStatusStore();
+
+    expect(store.getRowStatus('constructor')).toEqual({
+      change: 'status-value:unknown',
+      test: 'status-value:unknown',
+    });
+  });
+
   it('keeps the snapshot of a row whose own values are unchanged', () => {
     const store = createStatusStore();
-    store.setState({
-      a: rowStatus('status-value:unknown', 'status-value:success'),
-      b: rowStatus('status-value:unknown', 'status-value:success'),
-    });
+    store.setState(
+      rows({
+        a: rowStatus('status-value:unknown', 'status-value:success'),
+        b: rowStatus('status-value:unknown', 'status-value:success'),
+      })
+    );
     const before = store.getRowStatus('b');
 
-    store.setState({
-      a: rowStatus('status-value:unknown', 'status-value:error'),
-      b: rowStatus('status-value:unknown', 'status-value:success'),
-    });
+    store.setState(
+      rows({
+        a: rowStatus('status-value:unknown', 'status-value:error'),
+        b: rowStatus('status-value:unknown', 'status-value:success'),
+      })
+    );
 
     expect(store.getRowStatus('b')).toBe(before);
   });
 
   it('gives a row a new snapshot when either of its values changes', () => {
     const store = createStatusStore();
-    store.setState({ a: rowStatus('status-value:unknown', 'status-value:success') });
+    store.setState(rows({ a: rowStatus('status-value:unknown', 'status-value:success') }));
     const beforeTest = store.getRowStatus('a');
 
-    store.setState({ a: rowStatus('status-value:unknown', 'status-value:error') });
+    store.setState(rows({ a: rowStatus('status-value:unknown', 'status-value:error') }));
     const afterTest = store.getRowStatus('a');
     expect(afterTest).not.toBe(beforeTest);
     expect(afterTest.test).toBe('status-value:error');
 
-    store.setState({ a: rowStatus('status-value:new', 'status-value:error') });
+    store.setState(rows({ a: rowStatus('status-value:new', 'status-value:error') }));
     expect(store.getRowStatus('a')).not.toBe(afterTest);
   });
 
   it('drops a row that the next state no longer carries', () => {
     const store = createStatusStore();
-    store.setState({ a: rowStatus('status-value:unknown', 'status-value:success') });
+    store.setState(rows({ a: rowStatus('status-value:unknown', 'status-value:success') }));
 
-    store.setState({});
+    store.setState(rows({}));
 
     expect(store.getRowStatus('a')).toEqual({
       change: 'status-value:unknown',
@@ -64,11 +78,11 @@ describe('createStatusStore', () => {
     const listener = vi.fn();
     const unsubscribe = store.subscribe(listener);
 
-    store.setState({ a: rowStatus('status-value:unknown', 'status-value:success') });
+    store.setState(rows({ a: rowStatus('status-value:unknown', 'status-value:success') }));
     expect(listener).toHaveBeenCalledTimes(1);
 
     unsubscribe();
-    store.setState({ a: rowStatus('status-value:unknown', 'status-value:error') });
+    store.setState(rows({ a: rowStatus('status-value:unknown', 'status-value:error') }));
     expect(listener).toHaveBeenCalledTimes(1);
   });
 });

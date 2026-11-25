@@ -5,7 +5,6 @@ import { describe, expect, it, vi } from 'vitest';
 import { normalizeStoriesEntry } from 'storybook/internal/common';
 import type { API_Provider, IndexEntry } from 'storybook/internal/types';
 
-import { selectComponentEntriesByComponentId } from '../../common/utils/select-component-entry.ts';
 import { transformStoryIndexToStoriesHash } from '../../manager-api/lib/stories.ts';
 import { computeStaticFilterFn } from '../../manager-api/modules/tags.ts';
 import type { API } from '../../manager-api/root.tsx';
@@ -24,15 +23,19 @@ const storiesShownByStoriesBlock = (stories: IndexEntry[]) => {
   return (tagged.length > 0 ? tagged : stories).map((story) => story.name).join(', ');
 };
 
-async function recordAutodocs(project: Project, storiesFile: string) {
+async function indexFiles(project: Project, files: string[]) {
   const projectDir = join(__dirname, '__mockdata__', 'autodocs-tags', project);
   const dirs = { configDir: projectDir, workingDir: projectDir };
   const generator = new StoryIndexGenerator(
-    [normalizeStoriesEntry(`./${storiesFile}.stories.ts`, dirs)],
+    files.map((file) => normalizeStoriesEntry(`./${file}`, dirs)),
     { ...dirs, indexers: [csfIndexer], docs: { defaultName: 'Docs' } }
   );
   await generator.initialize();
-  const index = await generator.getIndex();
+  return generator.getIndex();
+}
+
+async function recordAutodocs(project: Project, storiesFile: string) {
+  const index = await indexFiles(project, [`${storiesFile}.stories.ts`]);
 
   const entries = Object.values(index.entries);
   const stories = entries.filter((entry) => entry.type === 'story');
@@ -49,17 +52,13 @@ async function recordAutodocs(project: Project, storiesFile: string) {
   const sidebarLeaves = sidebar.filter((entry) => entry.type === 'docs' || entry.type === 'story');
   const component = sidebar.find((entry) => entry.type === 'component');
 
-  const manifestEntries = entries.filter((entry) => entry.tags?.includes(Tag.MANIFEST));
-
   return {
     autodocsCreated: !!autodocs,
     autodocsTags: tagsOf(autodocs),
     autodocsInSidebar: sidebarLeaves.some((entry) => entry.id === autodocs?.id),
-    autodocsPassesManifestFilter: manifestEntries.some((entry) => entry.id === autodocs?.id),
     storyTags: Object.fromEntries(stories.map((story) => [story.name, tagsOf(story)])),
     sidebarEntries: sidebarLeaves.map((entry) => entry.name).join(', ') || null,
     sidebarComponentTags: component ? component.tags.join(', ') : null,
-    componentInManifest: selectComponentEntriesByComponentId(manifestEntries).size > 0,
     storiesOnDocsPage: autodocs ? storiesShownByStoriesBlock(stories) : null,
   };
 }
@@ -70,9 +69,7 @@ describe('autodocs entry of a CSF file', () => {
       {
         "autodocsCreated": true,
         "autodocsInSidebar": true,
-        "autodocsPassesManifestFilter": true,
         "autodocsTags": "dev, test, manifest, autodocs",
-        "componentInManifest": true,
         "sidebarComponentTags": "dev, test, manifest, autodocs",
         "sidebarEntries": "Docs, Story 1, Story 2",
         "storiesOnDocsPage": "Story 1, Story 2",
@@ -89,9 +86,7 @@ describe('autodocs entry of a CSF file', () => {
       {
         "autodocsCreated": true,
         "autodocsInSidebar": true,
-        "autodocsPassesManifestFilter": true,
         "autodocsTags": "dev, test, manifest, autodocs",
-        "componentInManifest": true,
         "sidebarComponentTags": "dev, test, manifest, autodocs",
         "sidebarEntries": "Docs, Story 1, Story 2",
         "storiesOnDocsPage": "Story 1, Story 2",
@@ -108,9 +103,7 @@ describe('autodocs entry of a CSF file', () => {
       {
         "autodocsCreated": true,
         "autodocsInSidebar": true,
-        "autodocsPassesManifestFilter": true,
         "autodocsTags": "dev, test, manifest, autodocs",
-        "componentInManifest": true,
         "sidebarComponentTags": "dev, test, manifest",
         "sidebarEntries": "Docs, Story 1, Story 2",
         "storiesOnDocsPage": "Story 2",
@@ -128,9 +121,7 @@ describe('autodocs entry of a CSF file', () => {
       {
         "autodocsCreated": true,
         "autodocsInSidebar": true,
-        "autodocsPassesManifestFilter": true,
         "autodocsTags": "dev, test, manifest, autodocs",
-        "componentInManifest": true,
         "sidebarComponentTags": "dev, test, manifest, autodocs",
         "sidebarEntries": "Docs, Story 1, Story 2",
         "storiesOnDocsPage": "Story 1, Story 2",
@@ -148,9 +139,7 @@ describe('autodocs entry of a CSF file', () => {
         {
           "autodocsCreated": true,
           "autodocsInSidebar": true,
-          "autodocsPassesManifestFilter": true,
           "autodocsTags": "dev, test, manifest, autodocs",
-          "componentInManifest": true,
           "sidebarComponentTags": "dev, test, manifest",
           "sidebarEntries": "Docs, Story 1, Story 2",
           "storiesOnDocsPage": "Story 2",
@@ -168,9 +157,7 @@ describe('autodocs entry of a CSF file', () => {
       {
         "autodocsCreated": false,
         "autodocsInSidebar": false,
-        "autodocsPassesManifestFilter": false,
         "autodocsTags": null,
-        "componentInManifest": true,
         "sidebarComponentTags": "dev, test, manifest",
         "sidebarEntries": "Story 1, Story 2",
         "storiesOnDocsPage": null,
@@ -188,10 +175,8 @@ describe('autodocs entry of a CSF file', () => {
         {
           "autodocsCreated": true,
           "autodocsInSidebar": true,
-          "autodocsPassesManifestFilter": false,
-          "autodocsTags": "dev, test, autodocs",
-          "componentInManifest": false,
-          "sidebarComponentTags": "dev, test, autodocs",
+          "autodocsTags": "test, autodocs",
+          "sidebarComponentTags": "test, autodocs",
           "sidebarEntries": "Docs, Story 2",
           "storiesOnDocsPage": "Story 1, Story 2",
           "storyTags": {
@@ -207,10 +192,8 @@ describe('autodocs entry of a CSF file', () => {
       {
         "autodocsCreated": true,
         "autodocsInSidebar": true,
-        "autodocsPassesManifestFilter": true,
-        "autodocsTags": "dev, test, manifest, autodocs",
-        "componentInManifest": true,
-        "sidebarComponentTags": "dev, test, manifest, autodocs",
+        "autodocsTags": "test, autodocs",
+        "sidebarComponentTags": "test, autodocs",
         "sidebarEntries": "Docs, Story 2",
         "storiesOnDocsPage": "Story 1, Story 2",
         "storyTags": {
@@ -226,10 +209,8 @@ describe('autodocs entry of a CSF file', () => {
       {
         "autodocsCreated": true,
         "autodocsInSidebar": true,
-        "autodocsPassesManifestFilter": true,
-        "autodocsTags": "dev, test, manifest, autodocs",
-        "componentInManifest": true,
-        "sidebarComponentTags": "dev, test, manifest, autodocs",
+        "autodocsTags": "test, autodocs",
+        "sidebarComponentTags": "test, autodocs",
         "sidebarEntries": "Docs, Story 1",
         "storiesOnDocsPage": "Story 1, Story 2",
         "storyTags": {
@@ -244,12 +225,10 @@ describe('autodocs entry of a CSF file', () => {
     expect(await recordAutodocs('default-project', 'J-docs-only-component')).toMatchInlineSnapshot(`
       {
         "autodocsCreated": true,
-        "autodocsInSidebar": false,
-        "autodocsPassesManifestFilter": true,
+        "autodocsInSidebar": true,
         "autodocsTags": "test, manifest, autodocs",
-        "componentInManifest": true,
-        "sidebarComponentTags": null,
-        "sidebarEntries": null,
+        "sidebarComponentTags": "test, manifest, autodocs",
+        "sidebarEntries": "Docs",
         "storiesOnDocsPage": "Story 1, Story 2",
         "storyTags": {
           "Story 1": "test, manifest, autodocs",
@@ -257,5 +236,26 @@ describe('autodocs entry of a CSF file', () => {
         },
       }
     `);
+  });
+
+  it('rejects an MDX docs page that replaces it when only some stories have autodocs', async () => {
+    const error = await indexFiles('default-project', [
+      'C-tag-in-some-stories.stories.ts',
+      'C-tag-in-some-stories.mdx',
+    ]).catch((thrown) => thrown);
+
+    expect(String(error)).toContain("but also tagged the CSF file with 'autodocs'");
+  });
+
+  it('ignores the stories of a subcomponent', async () => {
+    const index = await indexFiles('default-project', [
+      'K-parent.stories.ts',
+      'K-subcomponent.stories.ts',
+    ]);
+
+    const docsEntries = Object.values(index.entries).filter((entry) => entry.type === 'docs');
+    expect(docsEntries.map((entry) => [entry.title, tagsOf(entry)])).toEqual([
+      ['K-parent', 'dev, test, manifest, autodocs'],
+    ]);
   });
 });

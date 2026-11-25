@@ -68,7 +68,20 @@ export const computeStaticFilterFn = (tagPresets: TagsOptions) => {
 
   return (item: API_PreparedIndexEntry) => {
     const tags = item.tags ?? [];
-    return tags.includes(TagEnum.DEV) && tags.filter((tag) => staticExcludeTags[tag]).length === 0;
+    // Docs entry kinds are distinguished by system tags at index time:
+    // - autodocs: type `docs`, no `attached-mdx` / `unattached-mdx` (importPath is the CSF file)
+    // - attached MDX: `attached-mdx`
+    // - unattached MDX: `unattached-mdx`
+    // Autodocs carry the tags their stories share, so they lack `dev` when a story removes it, and
+    // must stay in the sidebar; MDX should respect `!dev` like stories. See 15d7ef9149d.
+    const isCsfAutodocsEntry =
+      item.type === 'docs' &&
+      !tags.includes(TagEnum.ATTACHED_MDX) &&
+      !tags.includes(TagEnum.UNATTACHED_MDX);
+    return (
+      (tags.includes(TagEnum.DEV) || isCsfAutodocsEntry) &&
+      tags.filter((tag) => staticExcludeTags[tag]).length === 0
+    );
   };
 };
 

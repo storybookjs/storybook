@@ -91,17 +91,13 @@ const makeAbsolute = (otherImport: Path, normalizedPath: Path, workingDir: Path)
     ? slash(resolve(workingDir, normalizeStoryPath(join(dirname(normalizedPath), otherImport))))
     : otherImport;
 
-const TAGS_AUTODOCS_TAKES_FROM_ANY_STORY: Tag[] = [Tag.AUTODOCS, Tag.DEV, Tag.MANIFEST];
-
 // An autodocs entry carries the tags all of its stories share, as a component does in the sidebar.
-// It also stays created, visible and in the manifest for as long as one story is.
-const autodocsTags = (projectTags: Tag[], tagsByStory: Tag[][]): Tag[] =>
-  [...new Set([...projectTags, ...tagsByStory.flat()])].filter(
-    (tag) =>
-      tagsByStory.every((tags) => tags.includes(tag)) ||
-      (TAGS_AUTODOCS_TAKES_FROM_ANY_STORY.includes(tag) &&
-        tagsByStory.some((tags) => tags.includes(tag)))
+const autodocsTags = (tagsByStory: Tag[][]): Tag[] => {
+  const sharedByAllStories = tagsByStory.reduce((shared, tags) =>
+    shared.filter((tag) => tags.includes(tag))
   );
+  return [...new Set([...sharedByAllStories, Tag.AUTODOCS])];
+};
 
 type StoriesFilesByImport = Map<Path, { order: number; storiesFile: StoriesFile }[]>;
 
@@ -447,10 +443,7 @@ export class StoryIndexGenerator {
       const { metaId } = indexInputs[0];
       const entry = storyEntries[0];
       const id = toId(metaId ?? entry.title, name);
-      const tags = autodocsTags(
-        projectTags,
-        storyEntries.map((storyEntry) => storyEntry.tags)
-      );
+      const tags = autodocsTags(storyEntries.map((storyEntry) => storyEntry.tags));
 
       const docsEntry: DocsIndexEntry & { tags: Tag[] } = {
         id,

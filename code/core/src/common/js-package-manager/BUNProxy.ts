@@ -1,4 +1,3 @@
-import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { logger, prompt } from 'storybook/internal/node-logger';
@@ -13,6 +12,7 @@ import { dedent } from 'ts-dedent';
 
 import type { ExecuteCommandOptions } from '../utils/command.ts';
 import { executeCommand } from '../utils/command.ts';
+import * as effects from '../utils/effects.ts';
 import { JsPackageManager, PackageManagerName } from './JsPackageManager.ts';
 import type { PackageJson } from './PackageJson.ts';
 import type { InstallationMetadata } from './types.ts';
@@ -281,7 +281,7 @@ export class BUNProxy extends JsPackageManager {
 
     if (nonInteractive) {
       this.updateMinimumReleaseAgeExcludes();
-      logger.info(
+      effects.logChange(
         dedent`
           bun minimumReleaseAge would block storybook@${storybookVersion} from being installed because it was released within the configured minimumReleaseAge window, so Storybook updated minimumReleaseAgeExcludes for this project automatically.
 
@@ -289,7 +289,8 @@ export class BUNProxy extends JsPackageManager {
 
           Read more:
           - https://bun.com/docs/pm/cli/install#minimum-release-age
-        `
+        `,
+        'info'
       );
       return;
     }
@@ -505,7 +506,7 @@ export class BUNProxy extends JsPackageManager {
         ].join('')
       : this.updateMinimumReleaseAgeExcludesInContent(currentContent, replacement, lineEnding);
 
-    writeFileSync(bunfigPath, nextContent);
+    effects.writeFileSync(bunfigPath, nextContent);
   }
 
   private updateMinimumReleaseAgeExcludesInContent(
@@ -559,7 +560,7 @@ export class BUNProxy extends JsPackageManager {
 
   private readBunfig(): string | null {
     try {
-      return readFileSync(join(this.cwd, 'bunfig.toml'), 'utf-8');
+      return effects.readFileSync(join(this.cwd, 'bunfig.toml'));
     } catch {
       return null;
     }

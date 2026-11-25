@@ -5,12 +5,13 @@ import {
   readConfig,
   writeConfig,
 } from 'storybook/internal/csf-tools';
-import { CLI_COLORS, logger } from 'storybook/internal/node-logger';
+import { logger } from 'storybook/internal/node-logger';
 import type { StorybookConfig } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
 
 import { getAddonAnnotations } from './get-addon-annotations.ts';
+import * as effects from './effects.ts';
 import { getAddonNames } from './get-addon-names.ts';
 import { getProjectRelativePath } from './paths.ts';
 
@@ -32,9 +33,7 @@ export async function syncStorybookAddons(
 export async function syncPreviewAddonsWithMainConfig(
   mainConfig: StorybookConfig,
   previewConfig: ConfigFile,
-  configDir: string,
-  /** `dryRun` words the report of the synced addons as what a run would do. */
-  { dryRun = false }: { dryRun?: boolean } = {}
+  configDir: string
 ): Promise<ConfigFile> {
   const isCsfFactory = isCsfFactoryPreview(previewConfig);
 
@@ -96,10 +95,8 @@ export async function syncPreviewAddonsWithMainConfig(
   }
 
   if (syncedAddons.length > 0) {
-    logger.log(
-      dryRun
-        ? `Would sync addons from main config into ${CLI_COLORS.change(getProjectRelativePath(String(previewConfig.fileName)))}: ${syncedAddons.map(CLI_COLORS.change).join(', ')}`
-        : `Synchronizing addons from main config in ${picocolors.cyan(getProjectRelativePath(String(previewConfig.fileName)))}:\n${syncedAddons.map(picocolors.magenta).join(', ')}`
+    effects.logChange(
+      `Synchronizing addons from main config in ${picocolors.cyan(getProjectRelativePath(String(previewConfig.fileName)))}:\n${syncedAddons.map(picocolors.magenta).join(', ')}`
     );
   }
 

@@ -9,7 +9,6 @@ import {
   STORYBOOK_AGENT_INSTRUCTIONS,
   addStorybookAgentInstructions,
   planStorybookAgentInstructions,
-  planStorybookAgentInstructionChanges,
   storybookAgentInstructions,
 } from './agentInstructions.ts';
 
@@ -43,19 +42,6 @@ describe('addStorybookAgentInstructions', () => {
       'EACCES'
     );
     expect(read('AGENTS.md')).toBe('# Rules\n');
-  });
-
-  it('plans the changes it writes, and the plan writes nothing', async () => {
-    vol.writeFileSync(join(ROOT, 'AGENTS.md'), '# Rules\n');
-
-    const plan = await planStorybookAgentInstructionChanges(ROOT, 'install', WITH_TESTS);
-
-    expect(plan).toEqual([
-      { file: 'AGENTS.md', change: 'added', content: expect.stringContaining('# Rules') },
-    ]);
-    expect(read('AGENTS.md')).toBe('# Rules\n');
-    await addStorybookAgentInstructions(ROOT, 'install', WITH_TESTS);
-    expect(read('AGENTS.md')).toBe(plan[0].content);
   });
 
   it('creates AGENTS.md when the project has none', async () => {

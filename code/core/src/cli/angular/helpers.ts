@@ -1,4 +1,3 @@
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 import { prompt } from 'storybook/internal/node-logger';
@@ -13,6 +12,8 @@ import {
   printParseErrorCode,
 } from 'jsonc-parser';
 import semver from 'semver';
+
+import * as effects from '../../common/utils/effects.ts';
 
 export const ANGULAR_JSON_PATH = 'angular.json';
 
@@ -115,12 +116,12 @@ export class AngularJSON {
   private readonly path: string;
 
   constructor(path: string = ANGULAR_JSON_PATH) {
-    if (!existsSync(path)) {
+    if (!effects.existsSync(path)) {
       throw new MissingAngularJsonError({ path: resolve(path) });
     }
 
     this.path = path;
-    this.rawText = readFileSync(path, 'utf8');
+    this.rawText = effects.readFileSync(path);
     this.json = JSON.parse(this.rawText);
   }
 
@@ -238,6 +239,6 @@ export class AngularJSON {
   }
 
   write() {
-    writeFileSync(this.path, this.rawText);
+    effects.writeFileSync(this.path, this.rawText);
   }
 }

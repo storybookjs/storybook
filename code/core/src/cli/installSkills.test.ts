@@ -2,10 +2,10 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { stripVTControlCharacters } from 'node:util';
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 
 import type { JsPackageManager } from 'storybook/internal/common';
-import { getProjectRoot, isCI } from 'storybook/internal/common';
+import { effects, getProjectRoot, isCI } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import {
   ExecaCommandFailedError,
@@ -16,16 +16,11 @@ import { SupportedBuilder, SupportedFramework, SupportedRenderer } from 'storybo
 
 import { vol } from 'memfs';
 
-import {
-  addStorybookAgentInstructions,
-  planStorybookAgentInstructionChanges,
-} from './agentInstructions.ts';
+import { addStorybookAgentInstructions } from './agentInstructions.ts';
 import {
   hasStorybookSkills,
   installSkills,
   refreshAgentInstructions,
-  reportAgentInstructionsRefresh,
-  reportSkillsInstall,
   skipsSkillsInCI,
   supportsSkills,
   supportsAiSetup,
@@ -169,6 +164,23 @@ describe('installSkills', () => {
     vi.mocked(logger.log).mockImplementation(() => {});
     vi.mocked(logger.warn).mockImplementation(() => {});
     vi.mocked(logger.debug).mockImplementation(() => {});
+  });
+
+  it('records the skills CLI instead of running it, in a dry run', async () => {
+    effects.setDryRun(true);
+    onTestFinished(() => effects.setDryRun(false));
+
+    await installSkills({
+      packageManager,
+      source: 'refresh',
+      testSupported: false,
+      sawEveryStorybook: true,
+    });
+
+    expect(packageManager.runPackageCommand).not.toHaveBeenCalled();
+    expect(effects.describeDryRunChanges().map((line) => stripVTControlCharacters(line))).toEqual([
+      'run npx skills@latest add storybookjs/skills#v10.6.0 --yes --agent claude-code universal --copy',
+    ]);
   });
 
   it('installs from the tag of the running Storybook version', async () => {
@@ -519,75 +531,5 @@ describe('refreshAgentInstructions', () => {
       testSupported: true,
       sawEveryStorybook: true,
     });
-  });
-});
-
-describe('reportSkillsInstall', () => {
-  const packageManager = {
-    getRemoteRunCommand: (args: string[]) => `npx ${args.join(' ')}`,
-    runPackageCommand: vi.fn(),
-  } as unknown as JsPackageManager;
-
-  beforeEach(() => {
-    vi.mocked(logger.log).mockImplementation(() => {});
-    vi.mocked(planStorybookAgentInstructionChanges).mockResolvedValue([
-      { file: 'AGENTS.md', change: 'updated', content: '' },
-    ]);
-  });
-
-  it('names the commands and the AGENTS.md change of a refresh, without making them', async () => {
-    vol.fromNestedJSON({
-      [LOCK_PATH]: JSON.stringify({
-        version: 1,
-        skills: { stories: { source: 'storybookjs/skills' } },
-      }),
-    });
-
-    await reportSkillsInstall({
-      packageManager,
-      source: 'refresh',
-      testSupported: false,
-      sawEveryStorybook: true,
-    });
-
-    expect(packageManager.runPackageCommand).not.toHaveBeenCalled();
-    expect(addStorybookAgentInstructions).not.toHaveBeenCalled();
-    const output = stripVTControlCharacters(vi.mocked(logger.log).mock.calls.flat().join('\n'));
-    expect(output).toContain(
-      'Would refresh the Storybook skills: npx skills@latest add storybookjs/skills#v10.6.0 --yes --agent claude-code universal --copy'
-    );
-    expect(output).toContain(
-      'Would remove the replaced Storybook skills: npx skills@latest remove stories --yes'
-    );
-    expect(output).toContain('Would update the Storybook section in AGENTS.md');
-  });
-
-  it('names nothing in CI', async () => {
-    vi.mocked(isCI).mockReturnValue(true);
-
-    await reportSkillsInstall({
-      packageManager,
-      source: 'automigration',
-      testSupported: false,
-      sawEveryStorybook: false,
-    });
-
-    expect(logger.log).not.toHaveBeenCalled();
-  });
-});
-
-describe('reportAgentInstructionsRefresh', () => {
-  it('names the files a refresh would add the section to, without writing them', async () => {
-    vi.mocked(logger.log).mockImplementation(() => {});
-    vi.mocked(planStorybookAgentInstructionChanges).mockResolvedValue([
-      { file: 'CLAUDE.md', change: 'added', content: '' },
-    ]);
-
-    await reportAgentInstructionsRefresh({ testSupported: false, sawEveryStorybook: true });
-
-    expect(addStorybookAgentInstructions).not.toHaveBeenCalled();
-    expect(stripVTControlCharacters(vi.mocked(logger.log).mock.calls.flat().join('\n'))).toContain(
-      'Would add a Storybook section to CLAUDE.md'
-    );
   });
 });

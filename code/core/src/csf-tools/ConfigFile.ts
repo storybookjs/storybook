@@ -1,10 +1,9 @@
-import { readFile, writeFile } from 'node:fs/promises';
-
 import { logger } from 'storybook/internal/node-logger';
 
 import { dedent } from 'ts-dedent';
 import invariant from 'tiny-invariant';
 
+import * as effects from '../common/utils/effects.ts';
 import type { PrintResultType } from './PrintResultType.ts';
 import { createConfigObject, locateConfigRoot } from './ConfigObject.ts';
 import {
@@ -1113,7 +1112,7 @@ export const printConfig = (config: ConfigFile): PrintResultType => {
 };
 
 export const readConfig = async (fileName: string) => {
-  const code = (await readFile(fileName, 'utf-8')).toString();
+  const code = await effects.readFile(fileName);
   return loadConfig(code, fileName).parse();
 };
 
@@ -1125,7 +1124,7 @@ export const writeConfig = async (config: ConfigFile, fileName?: string) => {
   if (!fname) {
     throw new Error('Please specify a fileName for writeConfig');
   }
-  await writeFile(fname, formatConfig(config));
+  await effects.writeFile(fname, formatConfig(config));
 };
 
 export const isCsfFactoryPreview = (previewConfig: ConfigFile) => {

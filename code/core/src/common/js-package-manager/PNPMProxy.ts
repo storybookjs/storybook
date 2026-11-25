@@ -1,7 +1,7 @@
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import { dirname, join } from 'pathe';
 
-import { CLI_COLORS, logger, prompt } from 'storybook/internal/node-logger';
+import { logger, prompt } from 'storybook/internal/node-logger';
 import {
   FindPackageVersionsError,
   MinimumReleaseAgeHandledError,
@@ -16,13 +16,9 @@ import { Document, isMap, parseDocument } from 'yaml';
 
 import type { ExecuteCommandOptions } from '../utils/command.ts';
 import { executeCommand, executeCommandSync } from '../utils/command.ts';
+import * as effects from '../utils/effects.ts';
 import { getProjectRelativePath, getProjectRoot } from '../utils/paths.ts';
-import {
-  type CatalogUpgrade,
-  JsPackageManager,
-  PackageManagerName,
-  getPackageDetails,
-} from './JsPackageManager.ts';
+import { JsPackageManager, PackageManagerName } from './JsPackageManager.ts';
 import type { PackageJson } from './PackageJson.ts';
 import { type OverrideSource, toOverrides } from './overrides.ts';
 import { hasAllowBuildsDecision, hasPnpm10ListDecision } from './pnpm-build-approvals.ts';
@@ -250,46 +246,34 @@ export class PNPMProxy extends JsPackageManager {
     return typeof version === 'string' || typeof version === 'number' ? String(version) : null;
   }
 
-  override planCatalogUpgrades(
+  override writeCatalogUpgrades(
     specifiers: string[],
     declared: Partial<Record<string, string>>
-  ): { direct: string[]; catalogued: CatalogUpgrade[] } {
+  ): string[] {
     const upgrades = specifiers.map((specifier) => {
-      const [name, version = ''] = getPackageDetails(specifier);
-      return { specifier, name, version, catalog: this.#getCatalogName(declared[name]) };
+      const at = specifier.indexOf('@', 1);
+      const name = specifier.slice(0, at);
+      return {
+        specifier,
+        name,
+        version: specifier.slice(at + 1),
+        catalog: this.#getCatalogName(declared[name]),
+      };
     });
-    const catalogued = upgrades.filter(
-      (upgrade): upgrade is typeof upgrade & { catalog: string } => upgrade.catalog !== null
-    );
+    const catalogued = upgrades.filter(({ catalog }) => catalog !== null);
     const workspace = catalogued.length > 0 ? this.#readWorkspaceYaml() : undefined;
     if (!workspace) {
-      return { direct: specifiers, catalogued: [] };
+      return specifiers;
     }
-    return {
-      direct: upgrades.filter(({ catalog }) => catalog === null).map(({ specifier }) => specifier),
-      catalogued: catalogued.map(({ name, version, catalog }) => {
-        const current = workspace.doc.getIn([
-          ...this.#catalogKeyPath(workspace.doc, catalog),
-          name,
-        ]);
-        const from = current === undefined || current === null ? undefined : String(current);
-        // The catalog keeps its range modifier, unless the version brings its own or is a prerelease.
-        const modifier =
-          /^[~^]/.test(version) || prerelease(version) ? '' : (from?.match(/^[~^]/)?.[0] ?? '');
-        return { file: workspace.path, catalog, name, from, to: `${modifier}${version}` };
-      }),
-    };
-  }
-
-  override applyCatalogUpgrades(upgrades: CatalogUpgrade[]): void {
-    const workspace = upgrades.length > 0 ? this.#readWorkspaceYaml() : undefined;
-    if (!workspace) {
-      return;
-    }
-    for (const { name, catalog, to } of upgrades) {
-      workspace.doc.setIn([...this.#catalogKeyPath(workspace.doc, catalog), name], to);
+    for (const { name, version, catalog } of catalogued) {
+      const keyPath = [...this.#catalogKeyPath(workspace.doc, catalog!), name];
+      const current = String(workspace.doc.getIn(keyPath) ?? '');
+      const modifier =
+        /^[~^]/.test(version) || prerelease(version) ? '' : (current.match(/^[~^]/)?.[0] ?? '');
+      workspace.doc.setIn(keyPath, `${modifier}${version}`);
     }
     this.#writeWorkspaceYaml(workspace);
+    return upgrades.filter(({ catalog }) => catalog === null).map(({ specifier }) => specifier);
   }
 
   /** Adds the `overrides` of `pnpm-workspace.yaml`, which pnpm 10 reads alongside package.json. */
@@ -333,15 +317,11 @@ export class PNPMProxy extends JsPackageManager {
 
   // From pnpm 11, an unreviewed build script fails a non-interactive install outright, and
   // `pnpm install` has no flag to approve one, so record the approval like `pnpm approve-builds`.
+  protected override prepareInstall(): void {
+    this.allowStorybookBuildScripts();
+  }
+
   protected allowStorybookBuildScripts(): void {
-    this.#approveStorybookBuildScripts({ dryRun: false });
-  }
-
-  public override reportInstallSettingChanges(): void {
-    this.#approveStorybookBuildScripts({ dryRun: true });
-  }
-
-  #approveStorybookBuildScripts({ dryRun }: { dryRun: boolean }): void {
     if (!this.#pnpmGte(PNPM_ALLOW_BUILDS_MIN)) {
       return;
     }
@@ -378,12 +358,6 @@ export class PNPMProxy extends JsPackageManager {
       if (pending.length === 0) {
         return;
       }
-      if (dryRun) {
-        logger.info(
-          `Would approve build scripts for ${pending.join(', ')} in ${CLI_COLORS.change(getProjectRelativePath(path))}`
-        );
-        return;
-      }
       // `setIn` cannot descend into an `allowBuilds:` key that was left empty.
       if (doc.getIn(['allowBuilds']) == null) {
         doc.setIn(['allowBuilds'], doc.createNode({}));
@@ -392,8 +366,9 @@ export class PNPMProxy extends JsPackageManager {
         doc.setIn(['allowBuilds', pkg], true);
       }
       this.#writeWorkspaceYaml({ path, doc });
-      logger.info(
-        `Approved build scripts for ${pending.join(', ')} in ${getProjectRelativePath(path)}`
+      effects.logChange(
+        `Approved build scripts for ${pending.join(', ')} in ${getProjectRelativePath(path)}`,
+        'info'
       );
     } catch (e) {
       logger.warn(
@@ -404,7 +379,7 @@ export class PNPMProxy extends JsPackageManager {
 
   #writeWorkspaceYaml({ path, doc }: { path: string; doc: Document }): void {
     logger.debug(`Writing pnpm workspace file ${path}`);
-    writeFileSync(path, doc.toString(), 'utf8');
+    effects.writeFileSync(path, doc.toString());
   }
 
   // pnpm reads the nearest file above the package, even past the VCS and Storybook project roots.
@@ -419,7 +394,7 @@ export class PNPMProxy extends JsPackageManager {
       return null;
     }
     try {
-      const doc = parseDocument(readFileSync(path, 'utf8'));
+      const doc = parseDocument(effects.readFileSync(path));
       if (doc.errors.length > 0) {
         throw doc.errors[0];
       }
@@ -498,7 +473,6 @@ export class PNPMProxy extends JsPackageManager {
   }
 
   protected runInstall(options?: { force?: boolean }) {
-    this.allowStorybookBuildScripts();
     return executeCommand({
       command: 'pnpm',
       args: [
@@ -644,7 +618,6 @@ export class PNPMProxy extends JsPackageManager {
 
     const commandArgs = ['add', ...args, ...this.getInstallArgs('add')];
 
-    this.allowStorybookBuildScripts();
     return executeCommand({
       command: 'pnpm',
       args: commandArgs,

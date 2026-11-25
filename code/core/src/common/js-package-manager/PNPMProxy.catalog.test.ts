@@ -174,28 +174,6 @@ describe('PNPMProxy catalogs', () => {
     });
   });
 
-  describe('planCatalogUpgrades', () => {
-    it('plans the catalog versions that writeCatalogUpgrades writes, without writing', () => {
-      const yaml = 'catalog:\n  storybook: ^10.6.0\n';
-      vol.fromJSON({ [WORKSPACE_YAML]: yaml });
-      const declared = { storybook: 'catalog:', react: '^18.0.0' };
-
-      const plan = pnpmProxy.planCatalogUpgrades(['storybook@11.0.0', 'react@19.0.0'], declared);
-
-      expect(plan).toEqual({
-        direct: ['react@19.0.0'],
-        catalogued: [
-          { file: WORKSPACE_YAML, catalog: '', name: 'storybook', from: '^10.6.0', to: '^11.0.0' },
-        ],
-      });
-      expect(writtenYaml()).toBe(yaml);
-
-      pnpmProxy.applyCatalogUpgrades(plan.catalogued);
-
-      expect(writtenYaml()).toContain('storybook: ^11.0.0');
-    });
-  });
-
   describe('applyVersionToRelatedPackages', () => {
     it('pins directly when the anchor is not declared through a catalog', () => {
       vi.spyOn(pnpmProxy, 'getAllDependencies').mockReturnValue({ vitest: '^3.2.0' });

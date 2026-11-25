@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'pathe';
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 
 import { logger, prompt } from 'storybook/internal/node-logger';
 import { MinimumReleaseAgeHandledError } from 'storybook/internal/server-errors';
@@ -10,6 +10,7 @@ import * as find from 'empathic/find';
 import { fs as memfs, vol } from 'memfs';
 
 import { executeCommand, executeCommandSync } from '../utils/command.ts';
+import * as effects from '../utils/effects.ts';
 import { getProjectRoot } from '../utils/paths.ts';
 import { JsPackageManager } from './JsPackageManager.ts';
 import { PNPMProxy } from './PNPMProxy.ts';
@@ -27,7 +28,7 @@ vi.mock('storybook/internal/node-logger', () => ({
     warn: vi.fn(),
     error: vi.fn(),
   },
-  CLI_COLORS: { change: (text: string) => text },
+  CLI_COLORS: { dryRunChange: (text: string) => text },
 }));
 
 vi.mock(import('../utils/command.ts'), { spy: true });
@@ -308,22 +309,21 @@ describe('PNPM Proxy', () => {
       );
     });
 
-    it('names the build scripts an install would approve, without writing pnpm-workspace.yaml', () => {
-      pnpmProxy.reportInstallSettingChanges();
+    it('stages the approval and records the install instead of running it, in a dry run', async () => {
+      effects.setDryRun(true);
+      onTestFinished(() => effects.setDryRun(false));
+
+      await pnpmProxy.installDependencies();
 
       expect(workspaceYaml()).toBeUndefined();
-      expect(logger.info).toHaveBeenCalledWith(
-        'Would approve build scripts for esbuild in /project/pnpm-workspace.yaml'
+      expect(mockedExecuteCommand).not.toHaveBeenCalledWith(
+        expect.objectContaining({ args: expect.arrayContaining(['install']) })
       );
-    });
-
-    it('names no approval when pnpm-workspace.yaml already decides the build script', () => {
-      vol.fromJSON({ [WORKSPACE_YAML]: 'allowBuilds:\n  esbuild: false\n' });
-
-      pnpmProxy.reportInstallSettingChanges();
-
-      expect(logger.info).not.toHaveBeenCalled();
-      expect(workspaceYaml()).toBe('allowBuilds:\n  esbuild: false\n');
+      expect(effects.describeDryRunChanges()).toEqual([
+        expect.stringMatching(/^create .*pnpm-workspace\.yaml$/),
+        '↳ + allowBuilds.esbuild: true',
+        'run pnpm install',
+      ]);
     });
 
     it('also allows esbuild before `pnpm add`', async () => {

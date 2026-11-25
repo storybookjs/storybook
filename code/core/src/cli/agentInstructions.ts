@@ -1,4 +1,4 @@
-import { readFile, writeFile } from 'node:fs/promises';
+import { effects } from 'storybook/internal/common';
 
 import { escapeRegExp } from 'es-toolkit/string';
 import { join } from 'pathe';
@@ -153,7 +153,7 @@ export type AgentInstructionsChange = { file: string; change: 'added' | 'updated
 
 const readOptional = async (path: string): Promise<string | undefined> => {
   try {
-    return await readFile(path, 'utf8');
+    return await effects.readFile(path);
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
       return undefined;
@@ -174,15 +174,11 @@ async function hasTestStep(read: (file: string) => Promise<string | undefined>):
   return false;
 }
 
-/**
- * The files that {@link addStorybookAgentInstructions} writes, with their new content and whether
- * the section is added or updated. Reads files but writes none.
- */
-export async function planStorybookAgentInstructionChanges(
+export async function addStorybookAgentInstructions(
   root: string,
   mode: AgentInstructionsMode,
   inputs: AgentInstructionsInputs
-): Promise<(AgentInstructionsChange & { content: string })[]> {
+): Promise<AgentInstructionsChange[]> {
   const existing = new Map<string, string | undefined>();
   const read = async (file: string) => {
     const content = await readOptional(join(root, file));
@@ -198,21 +194,13 @@ export async function planStorybookAgentInstructionChanges(
     mode,
     storybookAgentInstructions({ testSupported })
   );
-  return Object.entries(files).map(([file, content]) => ({
-    file,
-    content,
-    change: findSection(existing.get(file)) !== undefined ? 'updated' : 'added',
-  }));
-}
-
-export async function addStorybookAgentInstructions(
-  root: string,
-  mode: AgentInstructionsMode,
-  inputs: AgentInstructionsInputs
-): Promise<AgentInstructionsChange[]> {
-  const changes = await planStorybookAgentInstructionChanges(root, mode, inputs);
-  for (const { file, content } of changes) {
-    await writeFile(join(root, file), content);
+  const changes: AgentInstructionsChange[] = [];
+  for (const [file, content] of Object.entries(files)) {
+    await effects.writeFile(join(root, file), content);
+    changes.push({
+      file,
+      change: findSection(existing.get(file)) !== undefined ? 'updated' : 'added',
+    });
   }
-  return changes.map(({ file, change }) => ({ file, change }));
+  return changes;
 }

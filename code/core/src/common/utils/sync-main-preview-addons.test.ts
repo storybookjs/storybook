@@ -315,27 +315,4 @@ describe('syncPreviewAddonsWithMainConfig', () => {
       export default definePreview({ addons: [] });
     `);
   });
-
-  it.each([
-    [false, 'Synchronizing addons from main config in'],
-    [true, 'Would sync addons from main config into'],
-  ])('names the addons it syncs, when dryRun is %s', async (dryRun, wording) => {
-    const log = vi.spyOn(logger, 'log').mockImplementation(() => {});
-    const preview = loadConfig(
-      `import { definePreview } from "@storybook/react/preview";
-      export default definePreview({ addons: [] });`,
-      'preview.ts'
-    ).parse();
-    (getAddonAnnotations as Mock).mockImplementation(() => ({
-      importName: 'addonA11yAnnotations',
-      importPath: '@storybook/addon-a11y/preview',
-    }));
-
-    await syncPreviewAddonsWithMainConfig(mainConfig, preview, configDir, { dryRun });
-
-    const output = log.mock.calls.flat().join('\n');
-    expect(output).toContain(wording);
-    expect(output).toContain('custom-addon');
-    log.mockRestore();
-  });
 });

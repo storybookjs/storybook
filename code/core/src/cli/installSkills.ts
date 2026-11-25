@@ -2,17 +2,15 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import type { JsPackageManager } from 'storybook/internal/common';
-import { getProjectRoot, isCI, versions } from 'storybook/internal/common';
+import { effects, getProjectRoot, isCI, versions } from 'storybook/internal/common';
 import { CLI_COLORS, logger } from 'storybook/internal/node-logger';
 import { detectAgent, isTelemetryModuleEnabled } from 'storybook/internal/telemetry';
 import { SupportedBuilder, SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
 
 import {
-  type AgentInstructionsChange,
   type AgentInstructionsInputs,
   type AgentInstructionsMode,
   addStorybookAgentInstructions,
-  planStorybookAgentInstructionChanges,
 } from './agentInstructions.ts';
 
 const SKILLS_REPO = 'storybookjs/skills';
@@ -97,33 +95,6 @@ export async function hasStorybookSkills(): Promise<boolean> {
   return (await getStorybookSkillNames()).length > 0;
 }
 
-// What an install of the skills runs, so that a dry run reports what a run does.
-async function planSkillsInstall(source: SkillsSource) {
-  const removedSkills = (await getStorybookSkillNames()).filter((name) =>
-    REMOVED_SKILLS.includes(name)
-  );
-  const skillsRef = `${SKILLS_REPO}#v${versions.storybook}`;
-  return {
-    skillsRef,
-    args: [
-      'skills@latest',
-      'add',
-      skillsRef,
-      '--yes',
-      '--agent',
-      'claude-code',
-      'universal',
-      '--copy',
-    ],
-    removedSkills,
-    // The `stories` skill had no section yet. `ui-workflow` came with one, so a project without it
-    // removed it.
-    agentInstructionsMode: (source === 'refresh' && !removedSkills.includes('stories')
-      ? 'update'
-      : 'install') as AgentInstructionsMode,
-  };
-}
-
 /**
  * Install the official Storybook skills into the project root through Vercel's `skills` CLI, and
  * add the section that tells agents when to use them to `AGENTS.md`.
@@ -144,23 +115,46 @@ export async function installSkills({
   source: SkillsSource;
   /** `pipe` keeps the `skills` CLI output out of a running task log. */
   stdio?: 'inherit' | 'pipe';
-} & AgentInstructionsInputs): Promise<SkillsInstallResult> {
+  /**
+   * A Storybook of the project lists `@storybook/addon-vitest` in its main config, so the
+   * `AGENTS.md` section gets its test step.
+   */
+  testSupported: boolean;
+  /** The caller read the main config of every Storybook of the project. */
+  sawEveryStorybook: boolean;
+}): Promise<SkillsInstallResult> {
   if (skipsSkillsInCI()) {
     return { result: 'skipped', source: 'ci' };
   }
 
-  const { skillsRef, args, removedSkills, agentInstructionsMode } = await planSkillsInstall(source);
+  const removedSkills = (await getStorybookSkillNames()).filter((name) =>
+    REMOVED_SKILLS.includes(name)
+  );
+  const skillsRef = `${SKILLS_REPO}#v${versions.storybook}`;
+  const args = [
+    'skills@latest',
+    'add',
+    skillsRef,
+    '--yes',
+    '--agent',
+    'claude-code',
+    'universal',
+    '--copy',
+  ];
 
-  logger.log(CLI_COLORS.cta(packageManager.getRemoteRunCommand(args)));
+  const command = packageManager.getRemoteRunCommand(args);
+  effects.logChange(CLI_COLORS.cta(command));
   try {
-    await packageManager.runPackageCommand({
-      args,
-      useRemotePkg: true,
-      cwd: getProjectRoot(),
-      stdio,
-      env: isTelemetryModuleEnabled() ? {} : { DISABLE_TELEMETRY: '1' },
-      timeout: 120_000,
-    });
+    await effects.runCommand(command, () =>
+      packageManager.runPackageCommand({
+        args,
+        useRemotePkg: true,
+        cwd: getProjectRoot(),
+        stdio,
+        env: isTelemetryModuleEnabled() ? {} : { DISABLE_TELEMETRY: '1' },
+        timeout: 120_000,
+      })
+    );
   } catch (error) {
     logger.warn(
       `Could not install the Storybook skills, continuing without them. Install them later with: ${packageManager.getRemoteRunCommand(['skills@latest', 'add', skillsRef])}`
@@ -178,31 +172,36 @@ export async function installSkills({
   if (removedSkills.length > 0) {
     await removeSkills(packageManager, removedSkills, stdio);
   }
-  await addAgentInstructions(agentInstructionsMode, { testSupported, sawEveryStorybook });
+  // The `stories` skill had no section yet. `ui-workflow` came with one, so a project without it
+  // removed it.
+  await addAgentInstructions(
+    source === 'refresh' && !removedSkills.includes('stories') ? 'update' : 'install',
+    { testSupported, sawEveryStorybook }
+  );
 
-  logger.log(
+  effects.logChange(
     `If you want to remove the Storybook skills, run "${packageManager.getRemoteRunCommand(['skills@latest', 'remove'])}"`
   );
   return { result: 'installed', source };
 }
-
-const removeSkillsArgs = (names: string[]) => ['skills@latest', 'remove', ...names, '--yes'];
 
 async function removeSkills(
   packageManager: JsPackageManager,
   names: string[],
   stdio: 'inherit' | 'pipe'
 ): Promise<void> {
-  const args = removeSkillsArgs(names);
+  const args = ['skills@latest', 'remove', ...names, '--yes'];
   try {
-    await packageManager.runPackageCommand({
-      args,
-      useRemotePkg: true,
-      cwd: getProjectRoot(),
-      stdio,
-      env: isTelemetryModuleEnabled() ? {} : { DISABLE_TELEMETRY: '1' },
-      timeout: 120_000,
-    });
+    await effects.runCommand(packageManager.getRemoteRunCommand(args), () =>
+      packageManager.runPackageCommand({
+        args,
+        useRemotePkg: true,
+        cwd: getProjectRoot(),
+        stdio,
+        env: isTelemetryModuleEnabled() ? {} : { DISABLE_TELEMETRY: '1' },
+        timeout: 120_000,
+      })
+    );
   } catch (error) {
     logger.warn(
       `Could not remove the replaced Storybook skills ${names.join(', ')}. Remove them with: ${packageManager.getRemoteRunCommand(args)}`
@@ -223,12 +222,12 @@ async function addAgentInstructions(
     const added = changes.filter(({ change }) => change === 'added').map(({ file }) => file);
     const updated = changes.filter(({ change }) => change === 'updated').map(({ file }) => file);
     if (added.length > 0) {
-      logger.log(
+      effects.logChange(
         `Added a Storybook section to ${listFiles(added)} that tells agents when to use the skills. Storybook keeps it current on upgrade: remove its markers to keep your own edits, or remove the section to opt out of the workflow.`
       );
     }
     if (updated.length > 0) {
-      logger.log(`Updated the Storybook section in ${listFiles(updated)}.`);
+      effects.logChange(`Updated the Storybook section in ${listFiles(updated)}.`);
     }
   } catch (error) {
     logger.warn(
@@ -250,65 +249,4 @@ export async function refreshAgentInstructions(inputs: AgentInstructionsInputs):
     return;
   }
   await addAgentInstructions('update', inputs);
-}
-
-/**
- * Print the commands that {@link installSkills} would run and the agent instruction files it would
- * change, and run or change none of them.
- */
-export async function reportSkillsInstall({
-  packageManager,
-  source,
-  ...inputs
-}: {
-  packageManager: JsPackageManager;
-  source: SkillsSource;
-} & AgentInstructionsInputs): Promise<void> {
-  if (skipsSkillsInCI()) {
-    return;
-  }
-  const { args, removedSkills, agentInstructionsMode } = await planSkillsInstall(source);
-  logger.log(
-    `Would ${source === 'refresh' ? 'refresh' : 'install'} the Storybook skills: ${CLI_COLORS.change(packageManager.getRemoteRunCommand(args))}`
-  );
-  if (removedSkills.length > 0) {
-    logger.log(
-      `Would remove the replaced Storybook skills: ${CLI_COLORS.change(packageManager.getRemoteRunCommand(removeSkillsArgs(removedSkills)))}`
-    );
-  }
-  await reportAgentInstructions(agentInstructionsMode, inputs);
-}
-
-/** Print the agent instruction files that {@link refreshAgentInstructions} would change. */
-export async function reportAgentInstructionsRefresh(
-  inputs: AgentInstructionsInputs
-): Promise<void> {
-  if (skipsSkillsInCI()) {
-    return;
-  }
-  await reportAgentInstructions('update', inputs);
-}
-
-async function reportAgentInstructions(
-  mode: AgentInstructionsMode,
-  inputs: AgentInstructionsInputs
-): Promise<void> {
-  try {
-    const changes = await planStorybookAgentInstructionChanges(getProjectRoot(), mode, inputs);
-    const files = (change: AgentInstructionsChange['change']) =>
-      listFiles(
-        changes
-          .filter((planned) => planned.change === change)
-          .map(({ file }) => CLI_COLORS.change(file))
-      );
-    if (changes.some(({ change }) => change === 'added')) {
-      logger.log(`Would add a Storybook section to ${files('added')}`);
-    }
-    if (changes.some(({ change }) => change === 'updated')) {
-      logger.log(`Would update the Storybook section in ${files('updated')}`);
-    }
-  } catch (error) {
-    logger.warn('Could not check the Storybook section for agents in AGENTS.md.');
-    logger.debug(error);
-  }
 }

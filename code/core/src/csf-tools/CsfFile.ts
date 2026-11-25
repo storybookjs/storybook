@@ -1,5 +1,3 @@
-import { readFile, writeFile } from 'node:fs/promises';
-
 import {
   isExportStory,
   isValidPreviewPath,
@@ -19,6 +17,7 @@ import type {
 import { dedent } from 'ts-dedent';
 
 import { Tag } from '../shared/constants/tags.ts';
+import * as effects from '../common/utils/effects.ts';
 import type { PrintResultType } from './PrintResultType.ts';
 import {
   type CsfMutationDiagnostic,
@@ -1478,7 +1477,7 @@ export const printCsf = (csf: CsfFile): PrintResultType => {
 };
 
 export const readCsf = async (fileName: string, options: CsfOptions) => {
-  const code = (await readFile(fileName, 'utf-8')).toString();
+  const code = await effects.readFile(fileName);
   return loadCsf(code, { ...options, fileName });
 };
 
@@ -1488,7 +1487,7 @@ export const writeCsf = async (csf: CsfFile, fileName?: string) => {
   if (!fname) {
     throw new Error('Please specify a fileName for writeCsf');
   }
-  await writeFile(fname, printCsf(csf).code);
+  await effects.writeFile(fname, printCsf(csf).code);
 };
 
 export { isFunction };

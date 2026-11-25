@@ -1,11 +1,10 @@
 import type { JsPackageManager } from 'storybook/internal/common';
-import { getBundledVersion } from 'storybook/internal/common';
+import { getBundledVersion, getProjectRelativePath } from 'storybook/internal/common';
 import { CLI_COLORS } from 'storybook/internal/node-logger';
 
 import picocolors from 'picocolors';
 import { lt } from 'semver';
 
-import { shortenPath } from '../util.ts';
 import type { AutoblockerResult } from './types.ts';
 
 type Result<M extends Record<string, string>> = {
@@ -103,7 +102,7 @@ export function processAutoblockerResults<
   if (autoblockerMessages.length > 0) {
     const formatConfigDirs = (configDirs: string[]) => {
       const baseMessage = 'Affected projects:';
-      const relativeDirs = configDirs.map((dir) => shortenPath(dir) || '.');
+      const relativeDirs = configDirs.map((dir) => getProjectRelativePath(dir));
       if (relativeDirs.length <= 3) {
         return `${baseMessage} ${relativeDirs.join(', ')}`;
       }

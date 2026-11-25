@@ -10,6 +10,7 @@ import {
   type JsPackageManager,
   JsPackageManagerFactory,
   effects,
+  getProjectRelativePath,
   isCI,
   isCorePackage,
   isNpmPeerResolutionError,
@@ -48,7 +49,6 @@ import type { ProjectDoctorData, ProjectDoctorResults } from './doctor/types.ts'
 import {
   type CollectProjectsSuccessResult,
   getProjects,
-  shortenPath,
   upgradeStorybookDependencies,
 } from './util.ts';
 
@@ -271,7 +271,7 @@ function logUpgradeResults(
     // Display appropriate messages based on results
     if (successfulProjects.length > 0) {
       const successfulProjectsList = successfulProjects
-        .map((dir) => `  • ${shortenPath(dir)}`)
+        .map((dir) => `  • ${getProjectRelativePath(dir)}`)
         .join('\n');
       logger.log(`${CLI_COLORS.success(copy.succeeded)}\n${successfulProjectsList}`);
     }
@@ -279,13 +279,15 @@ function logUpgradeResults(
     const failedProjectsList = failedProjects
       .map(
         ({ configDir, failedFixIds }) =>
-          `  • ${shortenPath(configDir)} (${failedFixIds.join(', ')})`
+          `  • ${getProjectRelativePath(configDir)} (${failedFixIds.join(', ')})`
       )
       .join('\n');
     logger.log(`${CLI_COLORS.error(copy.failed)}\n${copy.failedReason}\n${failedProjectsList}`);
 
     if (projectsWithNoFixes.length > 0) {
-      const projectList = projectsWithNoFixes.map((dir) => `  • ${shortenPath(dir)}`).join('\n');
+      const projectList = projectsWithNoFixes
+        .map((dir) => `  • ${getProjectRelativePath(dir)}`)
+        .join('\n');
       logger.log(`${CLI_COLORS.info('No applicable migrations:')}\n${projectList}`);
     }
   } else {
@@ -392,7 +394,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
   const dryRunNote = effects.isDryRun() ? ' (no files will be changed)' : '';
   if (storybookProjects.length > 1) {
     logger.info(`${effects.isDryRun() ? 'Dry-running upgrade of' : 'Upgrading'} the following projects${dryRunNote}:
-          ${storybookProjects.map((p) => `${picocolors.cyan(shortenPath(p.configDir))}: ${picocolors.bold(p.beforeVersion)} -> ${picocolors.bold(p.currentCLIVersion)}`).join('\n')}`);
+          ${storybookProjects.map((p) => `${picocolors.cyan(getProjectRelativePath(p.configDir))}: ${picocolors.bold(p.beforeVersion)} -> ${picocolors.bold(p.currentCLIVersion)}`).join('\n')}`);
   } else {
     logger.info(
       `${effects.isDryRun() ? 'Dry-running upgrade' : 'Upgrading'} from ${picocolors.bold(storybookProjects[0].beforeVersion)} to ${picocolors.bold(storybookProjects[0].currentCLIVersion)}${dryRunNote}`
@@ -470,8 +472,9 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
     try {
       const loggedPaths: string[] = [];
       for (const project of storybookProjects) {
-        logger.debug(`Updating dependencies in ${shortenPath(project.configDir)}...`);
-        const packageJsonPaths = project.packageManager.packageJsonPaths.map(shortenPath);
+        logger.debug(`Updating dependencies in ${getProjectRelativePath(project.configDir)}...`);
+        const packageJsonPaths =
+          project.packageManager.packageJsonPaths.map(getProjectRelativePath);
         const newPaths = packageJsonPaths.filter((path) => !loggedPaths.includes(path));
         if (newPaths.length > 0) {
           task.message(newPaths.join('\n'));

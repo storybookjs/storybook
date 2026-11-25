@@ -1,9 +1,14 @@
-import { type JsPackageManager, type Overrides, isCorePackage } from 'storybook/internal/common';
+import {
+  type JsPackageManager,
+  type Overrides,
+  getProjectRelativePath,
+  isCorePackage,
+} from 'storybook/internal/common';
 
 import semver from 'semver';
 import { dedent } from 'ts-dedent';
 
-import { isCanaryVersion, shortenPath } from '../util.ts';
+import { isCanaryVersion } from '../util.ts';
 
 /** An override that pins a Storybook package outside the target version. */
 export interface StorybookOverride {
@@ -59,7 +64,7 @@ export function getStorybookOverridesSummary(
   const list = overrides
     .map(
       ({ path, keyPath, range }) =>
-        `- ${shortenPath(path)}: ${keyPath.join(KEY_PATH_SEPARATOR)} = ${range}`
+        `- ${getProjectRelativePath(path)}: ${keyPath.join(KEY_PATH_SEPARATOR)} = ${range}`
     )
     .join('\n');
 

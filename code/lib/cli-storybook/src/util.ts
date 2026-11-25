@@ -295,7 +295,7 @@ const processProject = async ({
 }): Promise<CollectProjectsResult> => {
   try {
     onScanStart();
-    const name = shortenPath(configDir);
+    const name = getProjectRelativePath(configDir);
 
     logger.debug(`Getting Storybook data...`);
     const {
@@ -597,15 +597,9 @@ const formatProjectDirectories = (
 
   return projectData
     .map((project) => project.configDir)
-    .map((dir) => `${modifier} ${picocolors.cyan(shortenPath(dir))}`)
+    .map((dir) => `${modifier} ${picocolors.cyan(getProjectRelativePath(dir))}`)
     .join('\n');
 };
-
-/**
- * Shortens a path to the relative path from the project root, for display. A path outside the
- * project stays absolute.
- */
-export const shortenPath = (path: string) => getProjectRelativePath(path);
 
 /**
  * Handles multiple project selection and validation
@@ -664,7 +658,7 @@ const handleMultipleProjects = async (
     const selectedConfigDirs = await prompt.multiselect({
       message: 'Select which projects to upgrade',
       options: detectedConfigDirs.map((configDir) => ({
-        label: shortenPath(configDir),
+        label: getProjectRelativePath(configDir),
         value: configDir,
       })),
     });
@@ -752,7 +746,7 @@ export const getProjects = async (
     if (validProjects.length === 0 && errorProjects.length > 0) {
       const errorMessage = errorProjects
         .map((project) => {
-          const relativePath = shortenPath(project.configDir);
+          const relativePath = getProjectRelativePath(project.configDir);
           return `${relativePath}:\n${project.error.stack || project.error.message}`;
         })
         .join('\n');

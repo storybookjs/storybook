@@ -1,10 +1,9 @@
-import { type JsPackageManager, effects } from 'storybook/internal/common';
+import { type JsPackageManager, effects, getProjectRelativePath } from 'storybook/internal/common';
 import { CLI_COLORS, type TaskLogInstance, logger, prompt } from 'storybook/internal/node-logger';
 import { ErrorCollector, sanitizeError } from 'storybook/internal/telemetry';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import type { UpgradeOptions } from '../upgrade.ts';
-import { shortenPath } from '../util.ts';
 import type { CollectProjectsSuccessResult } from '../util.ts';
 import { resolveRequestedFeatures } from './fixes/experimental-features.ts';
 import { allFixes } from './fixes/index.ts';
@@ -85,7 +84,7 @@ export async function collectAutomigrationsAcrossProjects(
 
   // Run check for each fix on each project
   for (const project of projects) {
-    const projectName = shortenPath(project.configDir);
+    const projectName = getProjectRelativePath(project.configDir);
 
     taskLog.message(`Checking automigrations for ${projectName}...`);
     logger.debug(`Processing project: ${projectName}`);
@@ -113,7 +112,7 @@ export async function collectAutomigrationsAcrossProjects(
         checks.push({ fix, result: null, failed: true });
 
         logger.debug(
-          `Failed to check fix ${fix.id} for project ${shortenPath(project.configDir)}.`
+          `Failed to check fix ${fix.id} for project ${getProjectRelativePath(project.configDir)}.`
         );
         logger.debug(`${error instanceof Error ? error.stack : String(error)}`);
         ErrorCollector.addError(error);
@@ -199,7 +198,7 @@ const formatProjectDirs = (list: AutomigrationCheckResult['reports']) => {
   const amountOfProjectsShown = 1;
   const relativeDirs = list
     .filter((p) => p.status === 'check_succeeded')
-    .map((p) => shortenPath(p.project.configDir) || '.');
+    .map((p) => getProjectRelativePath(p.project.configDir));
   if (relativeDirs.length <= amountOfProjectsShown) {
     return relativeDirs.join(', ');
   }
@@ -216,7 +215,9 @@ export const logAutomigrationDetails = (automigrations: AutomigrationCheckResult
       const details = status === 'check_succeeded' ? fix.prompt(result) : hint;
       if (details !== hint) {
         const message = fix.link ? `${details}\n\nMore info: ${fix.link}` : details;
-        logger.logBox(message, { title: `${fix.id} (${shortenPath(project.configDir) || '.'})` });
+        logger.logBox(message, {
+          title: `${fix.id} (${getProjectRelativePath(project.configDir)})`,
+        });
       }
     }
   }
@@ -359,7 +360,7 @@ export async function runAutomigrationsForProjects(
 
     const { project } = projectAutomigration[0];
 
-    const projectName = shortenPath(project.configDir);
+    const projectName = getProjectRelativePath(project.configDir);
 
     // If there isn't any applicable automigrations, we don't need to use the task log
     const taskLog =

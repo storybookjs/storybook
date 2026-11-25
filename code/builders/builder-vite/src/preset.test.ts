@@ -1,10 +1,9 @@
 import type { Options } from 'storybook/internal/types';
 
-import { isAbsolute } from 'pathe';
 import { describe, expect, it, vi } from 'vitest';
 
-import { optimizeViteDeps, staticDirs } from './preset.ts';
-import { previewRuntimePath } from './utils/preview-runtime-path.ts';
+import * as preset from './preset.ts';
+import { staticDirs } from './preset.ts';
 import { resolveVitePublicDir } from './vite-config.ts';
 
 vi.mock('./vite-config.ts', () => ({ resolveVitePublicDir: vi.fn() }));
@@ -37,9 +36,7 @@ describe('staticDirs preset', () => {
 });
 
 describe('optimizeViteDeps preset', () => {
-  it('prebundles the preview runtime resolved from the builder context, not a bare specifier', () => {
-    expect(optimizeViteDeps).toEqual([previewRuntimePath]);
-    expect(isAbsolute(previewRuntimePath)).toBe(true);
-    expect(previewRuntimePath.endsWith('dist/preview/runtime.js')).toBe(true);
+  it('leaves the preview runtime out of the dep optimizer, which never serves its copy for an absolute-path import', () => {
+    expect(preset).not.toHaveProperty('optimizeViteDeps');
   });
 });

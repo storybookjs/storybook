@@ -26,19 +26,19 @@ import {
 } from './ContextMenu.tsx';
 
 import { CollapseIcon } from './CollapseIcon.tsx';
-import { IndentLines, useSelectionLineLevel } from './TreeIndentLines.tsx';
 import { ContextMenuStoreContext } from './ContextMenuStore.tsx';
 import { DEFAULT_REF_ID } from './Sidebar.tsx';
 import { useRowStatus } from './StatusStore.tsx';
-import { TypeIconWithSymbol } from './TypeIcon.tsx';
-import type { SidebarLabelContext } from './types.ts';
-import { iconSwap, truncatedLabel } from './treeRowStyles.ts';
 import {
   SECTION_GAP,
   TREE_CONTENT_INSET,
   TREE_INDENT_STEP,
   TREE_ROW_HEIGHT,
 } from './treeGeometry.ts';
+import { IndentLines, useSelectionLineLevel } from './TreeIndentLines.tsx';
+import { iconSwap, truncatedLabel } from './treeRowStyles.ts';
+import { TypeIconWithSymbol } from './TypeIcon.tsx';
+import type { SidebarLabelContext } from './types.ts';
 
 const StyledTreeItem = styled(TreeItem)<{
   $level: number;
@@ -181,10 +181,10 @@ const RowLinkSurface = styled.a<{ $startsSection: boolean }>(({ $startsSection }
 const opensLinkElsewhere = (event: React.MouseEvent) =>
   event.metaKey || event.ctrlKey || event.shiftKey;
 
-// The link to the entry a leaf row opens, so that the browser can open it in another tab or window:
-// on a modified or middle click, or from the link's context menu. A plain press still goes to
-// react-aria, which selects the row in place.
-function RowLink({
+// Draws a link on top of the tree row, so we get some (but not all) of the native browser behavior.
+// We can't support keyboard navigation until React Aria stabilises NavigationTree. This link hack
+// is temporary. It forwards mouse events to the tree row when they don't match Ctrl/etc + click.
+function RowLinkHack({
   item,
   api,
   refId,
@@ -200,8 +200,7 @@ function RowLink({
     <RowLinkSurface
       href={getHref()}
       $startsSection={startsSection}
-      // Keyboard and assistive technology users reach the row itself. React-aria's arrow keys skip
-      // the link, as they skip the chevron of a branch.
+      // We cannot support KB events without severely messing with the tree's KB nav model.
       tabIndex={-1}
       aria-hidden
       data-react-aria-prevent-focus
@@ -213,7 +212,8 @@ function RowLink({
         }
       }}
       onMouseDown={(event) => {
-        // A press focuses the row, as it would without the link on top.
+        // Focus the underlying row rather than the link so RAC styles it correctly and updates
+        // its KB navigation state correctly.
         event.preventDefault();
         event.currentTarget.closest<HTMLElement>('[data-item-id]')?.focus({ preventScroll: true });
       }}
@@ -544,7 +544,7 @@ const TreeRowContent = React.memo<TreeRowContentProps>(function TreeRowContent({
         )}
       </StyledContent>
       {!isBranch(item) && (item.type === 'story' || item.type === 'docs') && (
-        <RowLink item={item} api={api} refId={refId} startsSection={startsSection} />
+        <RowLinkHack item={item} api={api} refId={refId} startsSection={startsSection} />
       )}
     </>
   );

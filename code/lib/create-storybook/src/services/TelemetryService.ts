@@ -1,8 +1,5 @@
 import type { ProjectType, SkillsInstallResult } from 'storybook/internal/cli';
-import {
-  getProcessAncestry,
-  getStorybookVersionSpecifierFromAncestry,
-} from 'storybook/internal/common';
+import { getProcessAncestry, resolveStorybookVersionSpecifier } from 'storybook/internal/common';
 import { telemetry } from 'storybook/internal/telemetry';
 import { Feature } from 'storybook/internal/types';
 
@@ -101,9 +98,8 @@ export class TelemetryService {
     newUser: boolean,
     configDir?: string
   ): Promise<void> {
-    const ancestry = getProcessAncestry();
-    const versionSpecifier = getStorybookVersionSpecifierFromAncestry(ancestry);
-    const cliIntegration = this.versionService.getCliIntegrationFromAncestry(ancestry);
+    const versionSpecifier = resolveStorybookVersionSpecifier();
+    const cliIntegration = this.versionService.getCliIntegrationFromAncestry(getProcessAncestry());
 
     // Create features object and track
     const telemetryFeatures = {

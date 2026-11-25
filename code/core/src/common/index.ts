@@ -15,7 +15,6 @@ export * from './utils/deep-merge.ts';
 export * from './utils/framework.ts';
 export * from './utils/get-builder-options.ts';
 export * from './utils/get-pkg-pr-new-package-specifier.ts';
-export * from './utils/get-storybook-version-specifier-from-ancestry.ts';
 export * from './utils/resolve-storybook-version-specifier.ts';
 export * from './utils/get-framework-name.ts';
 export * from './utils/get-renderer-name.ts';

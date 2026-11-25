@@ -17,6 +17,7 @@ import { HandledError } from '../utils/HandledError.ts';
 import type { ExecuteCommandOptions } from '../utils/command.ts';
 import { getPkgPrNewPackageSpecifier } from '../utils/get-pkg-pr-new-package-specifier.ts';
 import { findFilesUp, getProjectRoot } from '../utils/paths.ts';
+import { resolveStorybookVersionSpecifier } from '../utils/resolve-storybook-version-specifier.ts';
 import storybookPackagesVersions from '../versions.ts';
 import { getBundledVersion } from './PackageJson.ts';
 import type { PackageJson, PackageJsonWithDepsAndDevDeps } from './PackageJson.ts';
@@ -636,10 +637,8 @@ export abstract class JsPackageManager {
    *
    * @param packages
    */
-  public getVersionedPackages(
-    packages: string[],
-    options?: { storybookVersionSpecifier?: string }
-  ): Promise<string[]> {
+  public getVersionedPackages(packages: string[]): Promise<string[]> {
+    const storybookVersionSpecifier = resolveStorybookVersionSpecifier();
     return Promise.all(
       packages.map(async (pkg) => {
         const [packageName, packageVersion] = getPackageDetails(pkg);
@@ -653,7 +652,7 @@ export abstract class JsPackageManager {
         if (packageName in storybookPackagesVersions) {
           const pkgPrNewSpecifier = getPkgPrNewPackageSpecifier(
             packageName,
-            options?.storybookVersionSpecifier
+            storybookVersionSpecifier
           );
 
           if (pkgPrNewSpecifier) {

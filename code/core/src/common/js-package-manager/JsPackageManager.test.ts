@@ -252,6 +252,10 @@ describe('JsPackageManager', () => {
   });
 
   describe('getVersionedPackages method', () => {
+    afterEach(() => {
+      vi.unstubAllEnvs();
+    });
+
     it('should return the latest stable release version when current version is the latest stable release', async () => {
       mockLatestVersion.mockResolvedValue('8.3.0');
 
@@ -277,18 +281,21 @@ describe('JsPackageManager', () => {
     });
 
     it('should map pkg.pr.new create-storybook specifiers to Storybook packages', async () => {
-      const result = await jsPackageManager.getVersionedPackages(['@storybook/react'], {
-        storybookVersionSpecifier: 'https://pkg.pr.new/create-storybook@abc123',
-      });
+      vi.stubEnv('STORYBOOK_VERSION_SPECIFIER', 'https://pkg.pr.new/create-storybook@abc123');
+
+      const result = await jsPackageManager.getVersionedPackages(['@storybook/react']);
 
       expect(result).toEqual(['@storybook/react@https://pkg.pr.new/@storybook/react@abc123']);
       expect(mockLatestVersion).not.toHaveBeenCalled();
     });
 
     it('should map repo-scoped pkg.pr.new specifiers to Storybook packages', async () => {
-      const result = await jsPackageManager.getVersionedPackages(['@storybook/react'], {
-        storybookVersionSpecifier: 'https://pkg.pr.new/storybookjs/storybook/storybook@deadbeef',
-      });
+      vi.stubEnv(
+        'STORYBOOK_VERSION_SPECIFIER',
+        'https://pkg.pr.new/storybookjs/storybook/storybook@deadbeef'
+      );
+
+      const result = await jsPackageManager.getVersionedPackages(['@storybook/react']);
 
       expect(result).toEqual([
         '@storybook/react@https://pkg.pr.new/storybookjs/storybook/@storybook/react@deadbeef',
@@ -296,20 +303,17 @@ describe('JsPackageManager', () => {
       expect(mockLatestVersion).not.toHaveBeenCalled();
     });
 
-    it('should keep npm tags and prereleases on the CLI version path', async () => {
-      mockLatestVersion.mockResolvedValue('8.3.1');
+    it.each(['next', '10.6.0-alpha.7'])(
+      'should keep the npm tag or prerelease %s on the CLI version path',
+      async (specifier) => {
+        mockLatestVersion.mockResolvedValue('8.3.1');
+        vi.stubEnv('STORYBOOK_VERSION_SPECIFIER', specifier);
 
-      await expect(
-        jsPackageManager.getVersionedPackages(['@storybook/react'], {
-          storybookVersionSpecifier: 'next',
-        })
-      ).resolves.toEqual(['@storybook/react@8.3.0']);
-      await expect(
-        jsPackageManager.getVersionedPackages(['@storybook/react'], {
-          storybookVersionSpecifier: '10.6.0-alpha.7',
-        })
-      ).resolves.toEqual(['@storybook/react@8.3.0']);
-    });
+        await expect(jsPackageManager.getVersionedPackages(['@storybook/react'])).resolves.toEqual([
+          '@storybook/react@8.3.0',
+        ]);
+      }
+    );
 
     it('should return the package name as is if it is not a Storybook package', async () => {
       const result = await jsPackageManager.getVersionedPackages(['some-other-package']);

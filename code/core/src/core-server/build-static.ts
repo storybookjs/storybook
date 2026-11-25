@@ -13,7 +13,7 @@ import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook
 
 import { global } from '@storybook/global';
 
-import { join, relative, resolve } from 'pathe';
+import { basename, join, relative, resolve } from 'pathe';
 import picocolors from 'picocolors';
 
 import {
@@ -24,7 +24,6 @@ import { resolvePackageDir } from '../shared/utils/module.ts';
 import type { StoryIndexGenerator } from './utils/StoryIndexGenerator.ts';
 import { applyServicesPresetOnce } from './utils/apply-services-preset-once.ts';
 import { buildOrThrow } from './utils/build-or-throw.ts';
-import { defaultFavicon } from './utils/constants.ts';
 import { copyAllStaticFilesRelativeToMain } from './utils/copy-all-static-files.ts';
 import { getBuilders } from './utils/get-builders.ts';
 import { writeIndexJson } from './utils/index-json.ts';
@@ -148,14 +147,18 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
     );
   }
 
-  if (staticDirs) {
-    effects.push(
-      copyAllStaticFilesRelativeToMain(staticDirs, options.outputDir, options.configDir)
-    );
-  }
+  const staticFilesCopied = Promise.all([
+    presets.apply<string>('favicon'),
+    staticDirs &&
+      copyAllStaticFilesRelativeToMain(staticDirs, options.outputDir, options.configDir),
+  ]);
 
-  // The rest of `assets/browser` is served from `/sb-common-assets`, see `defaultStaticDirs`.
-  effects.push(cp(defaultFavicon, join(options.outputDir, 'favicon.svg'), { force: true }));
+  effects.push(
+    // Copy favicon once static files are copied to avoid race conditions
+    staticFilesCopied.then(([favicon]) =>
+      cp(favicon, join(options.outputDir, basename(favicon)), { force: true })
+    )
+  );
 
   const hasRegisteredServices = getRegisteredServices().length > 0;
   const shouldWriteManifests = features?.componentsManifest;

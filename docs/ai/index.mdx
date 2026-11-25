@@ -13,12 +13,12 @@ Storybook helps your coding agent build UI that fits your project: it reuses you
 
 <If renderer={['react', 'vue', 'angular', 'svelte', 'web-components']}>
 
-Storybook helps your coding agent build UI that fits your project. Your agent reuses the components you already have, writes stories for what it builds, tests its work, and gives you a review to check the result.
+Storybook helps your coding agent build UI that fits your project. Your agent reuses the components you already have, writes stories for what it builds, knows how to test them, and can show you a review to check the result.
 
 ## What your agent can do
 
 - [**Set up Storybook**](./skills/setup.mdx): configure Storybook for your project and write the first stories.
-- [**Change UI**](./skills/ui-workflow.mdx): look up existing components, write or update stories for each change, run story tests with accessibility checks, and publish a review.
+- [**Change UI**](./agents-md.mdx): look up existing components, write or update stories for each change, know how to run the story tests with accessibility checks, and offer a review.
 - [**Answer questions about components**](./skills/component-docs.mdx): choose the right component and use only the props it documents.
 - [**Show you its work**](./skills/ui-review.mdx): a review groups the stories that a change affects, so you can check them in one place.
 
@@ -26,7 +26,7 @@ Storybook helps your coding agent build UI that fits your project. Your agent re
 
 Storybook gives your agent _skills_: short instruction files in your repository that tell the agent what to do and when. Each skill gets its full instructions from your installed Storybook. The instructions match your framework, renderer, and Storybook version, so they stay correct when you upgrade.
 
-A section in your project's `AGENTS.md` is the [UI workflow](./skills/ui-workflow.mdx): it tells your agent which skill to use at each step of a UI change. You can edit or remove it.
+A [section in your project's `AGENTS.md`](./agents-md.mdx) tells your agent which skills to use and how to run the story tests for a UI change. You can edit or remove it.
 
 Projects that prefer using MCP tools instead of skills can connect to the [Storybook MCP server](./reference/mcp-server.mdx) instead.
 
@@ -34,7 +34,7 @@ Projects that prefer using MCP tools instead of skills can connect to the [Story
 
 1. [Connect your agent](./connect.mdx) to Storybook.
 2. If your project doesn't have stories yet, have your agent [set up Storybook](./skills/setup.mdx).
-3. Ask your agent to build some UI. It follows the [UI workflow](./skills/ui-workflow.mdx) and ends with a link to a [review](./skills/ui-review.mdx).
+3. Ask your agent to build some UI. It follows the [Storybook section in `AGENTS.md`](./agents-md.mdx) and ends with a line that offers a [review](./skills/ui-review.mdx). Ask for it to see the changed components in Storybook.
 
 To get the best results, follow the [best practices](./best-practices.mdx) for documenting your components.
 
@@ -45,7 +45,7 @@ To get the best results, follow the [best practices](./best-practices.mdx) for d
 
 - [Connect your agent](./connect.mdx)
 - [Setup](./skills/setup.mdx)
-- [UI workflow](./skills/ui-workflow.mdx)
+- [The AGENTS.md section](./agents-md.mdx)
 - [Component docs](./skills/component-docs.mdx)
 - [Write stories](./skills/write-stories.mdx)
 - [Test stories](./skills/test-stories.mdx)

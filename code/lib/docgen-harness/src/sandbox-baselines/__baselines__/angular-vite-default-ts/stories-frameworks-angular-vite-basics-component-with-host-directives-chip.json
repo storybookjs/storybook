@@ -1,0 +1,85 @@
+{
+  "argTypes": {
+    "expanded": {
+      "description": "Whether the tooltip is open.",
+      "name": "expanded",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {
+          "summary": false
+        },
+        "type": {
+          "summary": "boolean"
+        }
+      },
+      "type": {
+        "name": "boolean"
+      }
+    },
+    "expandedChange": {
+      "action": "expandedChange",
+      "description": "Whether the tooltip is open.",
+      "name": "expandedChange",
+      "table": {
+        "category": "outputs",
+        "type": {
+          "summary": "(e: boolean) => void"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "void"
+      }
+    },
+    "label": {
+      "name": "label",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {
+          "summary": ""
+        },
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string"
+      }
+    },
+    "shown": {
+      "action": "shown",
+      "name": "shown",
+      "table": {
+        "category": "outputs",
+        "defaultValue": {},
+        "type": {
+          "summary": "void"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "void"
+      }
+    },
+    "tooltip": {
+      "description": "Text the tooltip shows.",
+      "name": "tooltip",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {
+          "summary": ""
+        },
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string"
+      }
+    }
+  },
+  "id": "stories-frameworks-angular-vite-basics-component-with-host-directives-chip",
+  "jsDocTags": {},
+  "name": "ChipComponent",
+  "path": "./src/stories/frameworks/angular-vite/basics/component-with-host-directives/chip.stories.ts"
+}

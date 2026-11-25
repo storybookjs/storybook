@@ -140,6 +140,13 @@ it('does not import the runtime from the bundled preview runtime', () => {
   ).toBe(code);
 });
 
+it('leaves code it cannot parse to the plugins that report syntax errors', async () => {
+  const code =
+    "import { fn } from 'storybook/test';\nexport const Primary = () => <button>Hi</button>;";
+
+  await expect(transform('dev', code, '/src/Button.stories.js')).resolves.toBeUndefined();
+});
+
 it('rewriteImport', () => {
   cases.forEach(({ input, output, globals: caseGlobals, packageName: casePackage }) => {
     expect(rewriteImport(input, caseGlobals, casePackage)).toStrictEqual(output);

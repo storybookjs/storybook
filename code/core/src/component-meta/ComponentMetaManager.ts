@@ -49,6 +49,7 @@ export class ComponentMetaManager<
   private inferredProject: P | undefined;
   private rootTsConfigs = new Set<string>();
   private searchedDirs = new Set<string>();
+  private referencedTsConfigs = new Map<string, string[]>();
 
   // Our own file watching layer
   private watching = false;
@@ -99,16 +100,44 @@ export class ComponentMetaManager<
   }
 
   /**
+   * Group the files of a batch by the project that extracts them: the project of each group's
+   * `projectFile`.
+   *
+   * A file goes to the project that extracts it, which is not always the project it belongs to: a
+   * component can live under another tsconfig than the story that imports it.
+   */
+  groupFilesByProject(groups: { projectFile: string; files: string[] }[]): Map<P, string[]> {
+    const groupsByProjectFile = Map.groupBy(groups, (g) => g.projectFile);
+    this.discoverTsConfigsAbove(groupsByProjectFile.keys());
+    const filesByProject = new Map<P, Set<string>>();
+    for (const [projectFile, projectFileGroups] of groupsByProjectFile) {
+      const project = this.getProjectForFile(projectFile);
+      const files = filesByProject.get(project) ?? new Set<string>();
+      filesByProject.set(project, files);
+      for (const group of projectFileGroups) {
+        group.files.forEach((file) => files.add(file));
+      }
+    }
+    return new Map(Array.from(filesByProject, ([project, files]) => [project, [...files]]));
+  }
+
+  private discoverTsConfigsAbove(files: Iterable<string>): void {
+    for (const file of files) {
+      this.findMatchTSConfig(file);
+    }
+  }
+
+  /**
    * Reclaim the shared program(s)' resident type-resolution cache when heap usage approaches the V8
    * limit, preventing the next extraction's spike from OOMing the dev server. Callers with a
    * batch-extraction surface invoke this after each batch.
    */
-  protected recycleProjectsIfHeapPressured(): void {
+  protected recycleProjectsIfHeapPressured(): boolean {
     if (this.configProjects.size === 0 && !this.inferredProject) {
-      return;
+      return false;
     }
     if (process.memoryUsage().heapUsed < this.heapRecycleThresholdBytes) {
-      return;
+      return false;
     }
 
     // We crossed the heap-pressure threshold. Recycling reclaims the type cache and usually prevents
@@ -127,8 +156,10 @@ export class ComponentMetaManager<
     }
     this.inferredProject?.dispose();
     this.configProjects.clear();
+    this.referencedTsConfigs.clear();
     this.inferredProject = undefined;
     this.factory.recycle?.();
+    return true;
   }
 
   // ---------------------------------------------------------------------------
@@ -210,23 +241,26 @@ export class ComponentMetaManager<
       )) {
         const project = this.configProjects.get(rootTsConfig);
         if (project) {
-          let chains = getReferencesChains(project.getCommandLine(), rootTsConfig, []);
+          let referenced = this.referencedTsConfigs.get(rootTsConfig);
+          if (!referenced) {
+            // This is to be consistent with tsserver behavior
+            const chains = getReferencesChains(
+              project.getCommandLine(),
+              rootTsConfig,
+              []
+            ).reverse();
+            referenced = [...new Set(chains.flatMap((chain) => chain.toReversed()))];
+            this.referencedTsConfigs.set(rootTsConfig, referenced);
+          }
 
-          // This is to be consistent with tsserver behavior
-          chains = chains.reverse();
+          for (const tsconfig of referenced) {
+            if (checked.has(tsconfig)) {
+              continue;
+            }
+            checked.add(tsconfig);
 
-          for (const chain of chains) {
-            for (let i = chain.length - 1; i >= 0; i--) {
-              const tsconfig = chain[i];
-
-              if (checked.has(tsconfig)) {
-                continue;
-              }
-              checked.add(tsconfig);
-
-              if (match(tsconfig)) {
-                return tsconfig;
-              }
+            if (match(tsconfig)) {
+              return tsconfig;
             }
           }
         }
@@ -372,6 +406,7 @@ export class ComponentMetaManager<
     // Clear searchedDirs so findMatchTSConfig re-scans directories.
     // Without this, new tsconfigs in previously-scanned dirs would be invisible.
     this.searchedDirs.clear();
+    this.referencedTsConfigs.clear();
   }
 
   // ---------------------------------------------------------------------------
@@ -583,6 +618,7 @@ export class ComponentMetaManager<
     this.factory.dispose?.();
     this.searchedDirs.clear();
     this.rootTsConfigs.clear();
+    this.referencedTsConfigs.clear();
   }
 }
 

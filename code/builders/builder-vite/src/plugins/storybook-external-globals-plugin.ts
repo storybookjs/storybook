@@ -8,7 +8,7 @@ import type { Options } from 'storybook/internal/types';
 import { previewRuntimePath } from '../utils/preview-runtime-path.ts';
 
 import * as pkg from 'empathic/package';
-import { init, parse } from 'es-module-lexer';
+import { type ImportSpecifier, init, parse } from 'es-module-lexer';
 import MagicString from 'magic-string';
 import type { Alias, Plugin } from 'vite';
 
@@ -102,7 +102,13 @@ export async function storybookExternalGlobalsPlugin(options: Options): Promise<
           this.environment.mode === 'dev' &&
           globalReferences.some((reference) => code.includes(reference));
 
-        const [imports] = parse(code);
+        let imports: readonly ImportSpecifier[];
+        try {
+          [imports] = parse(code);
+        } catch {
+          // Leave invalid code (e.g. JSX in a .js file) to the plugins that report syntax errors
+          return undefined;
+        }
         const src = new MagicString(code);
         let didRewrite = false;
         imports.forEach(({ n: path, ss: startPosition, se: endPosition }) => {

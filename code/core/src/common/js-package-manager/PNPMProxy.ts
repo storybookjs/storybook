@@ -21,8 +21,9 @@ import { JsPackageManager, PackageManagerName } from './JsPackageManager.ts';
 import type { PackageJson } from './PackageJson.ts';
 import { type OverrideSource, toOverrides } from './overrides.ts';
 import { hasAllowBuildsDecision, hasPnpm10ListDecision } from './pnpm-build-approvals.ts';
-import type { InstallationMetadata, PackageMetadata } from './types.ts';
+import type { InstallationMetadata } from './types.ts';
 import {
+  findInstallationsInDependencyTree,
   getAgeInMinutes,
   getErrorLogs,
   getLatestStableVersionAdheringToMinimumAgeGate,
@@ -467,7 +468,13 @@ export class PNPMProxy extends JsPackageManager {
     this.allowStorybookBuildScripts();
     return executeCommand({
       command: 'pnpm',
-      args: ['install', ...this.getInstallArgs('install'), ...(options?.force ? ['--force'] : [])],
+      args: [
+        'install',
+        // pnpm freezes the lockfile when CI is set.
+        '--no-frozen-lockfile',
+        ...this.getInstallArgs('install'),
+        ...(options?.force ? ['--force'] : []),
+      ],
       stdio: this.installUsesTerminal ? 'inherit' : prompt.getPreferredStdio(),
       cwd: this.cwd,
     });
@@ -659,48 +666,14 @@ export class PNPMProxy extends JsPackageManager {
   }
 
   protected mapDependencies(input: PnpmListOutput, pattern: string[]): InstallationMetadata {
-    const acc: Record<string, PackageMetadata[]> = {};
-    const existingVersions: Record<string, string[]> = {};
-    const duplicatedDependencies: Record<string, string[]> = {};
     const items: PnpmDependencies = input.reduce((curr, item) => {
       const { devDependencies, dependencies, peerDependencies } = item;
       const allDependencies = { ...devDependencies, ...dependencies, ...peerDependencies };
       return Object.assign(curr, allDependencies);
     }, {} as PnpmDependencies);
 
-    const recurse = ([name, packageInfo]: [string, PnpmDependency]): void => {
-      // transform pattern into regex where `*` is replaced with `.*`
-      if (!name || !pattern.some((p) => new RegExp(`^${p.replace(/\*/g, '.*')}$`).test(name))) {
-        return;
-      }
-
-      const value = {
-        version: packageInfo.version,
-        location: '',
-      };
-
-      if (!existingVersions[name]?.includes(value.version)) {
-        if (acc[name]) {
-          acc[name].push(value);
-        } else {
-          acc[name] = [value];
-        }
-        existingVersions[name] = [...(existingVersions[name] || []), value.version];
-
-        if (existingVersions[name].length > 1) {
-          duplicatedDependencies[name] = existingVersions[name];
-        }
-      }
-
-      if (packageInfo.dependencies) {
-        Object.entries(packageInfo.dependencies).forEach(recurse);
-      }
-    };
-    Object.entries(items).forEach(recurse);
-
     return {
-      dependencies: acc,
-      duplicatedDependencies,
+      ...findInstallationsInDependencyTree(items, pattern),
       infoCommand: 'pnpm list --depth=1',
       dedupeCommand: 'pnpm dedupe',
     };

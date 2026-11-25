@@ -20,6 +20,7 @@ beforeEach(() => {
   vi.stubEnv('STORYBOOK_PROJECT_ROOT', root);
   invalidateProjectRootCache();
   vi.mocked(logger.log).mockImplementation(() => {});
+  vi.mocked(logger.step).mockImplementation(() => {});
 });
 
 afterEach(() => {
@@ -128,6 +129,27 @@ describe('in a dry run', () => {
       'create pnpm-workspace.yaml',
       '↳ + allowBuilds.esbuild: true',
     ]);
+  });
+
+  it('logs what a run would change under a heading that ends the dry run', async () => {
+    await effects.writeFile(join(root, 'main.js'), 'new');
+
+    effects.logDryRunChanges();
+
+    const [[heading]] = vi.mocked(logger.step).mock.calls;
+    expect(stripVTControlCharacters(String(heading))).toBe(
+      'Dry run finished. An actual run would:'
+    );
+    expect(stripVTControlCharacters(String(vi.mocked(logger.log).mock.calls[0][0]))).toBe(
+      'create main.js'
+    );
+  });
+
+  it('logs nothing when a run would change nothing', () => {
+    effects.logDryRunChanges();
+
+    expect(logger.step).not.toHaveBeenCalled();
+    expect(logger.log).not.toHaveBeenCalled();
   });
 
   it('forgets what it staged when the mode is set again', async () => {

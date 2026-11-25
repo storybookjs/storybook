@@ -13,5 +13,8 @@ export const CLI_COLORS = {
   // Color to highlight, during a dry run, which file paths, package names or commands
   // would be impacted by a real run.
   dryRunChange: picocolors.yellow,
+  // Color of the lines that say a command is a dry run: its intro, and the heading of what an
+  // actual run would change.
+  dryRun: (text: string) => picocolors.bold(picocolors.yellow(text)),
   storybook: (text: string) => `\x1b[38;2;255;71;133m${text}\x1b[39m`,
 };

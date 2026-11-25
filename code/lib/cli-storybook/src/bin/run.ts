@@ -30,6 +30,10 @@ import { type UpgradeOptions, upgrade } from '../upgrade.ts';
 
 addToGlobalContext('cliVersion', versions.storybook);
 
+/** Log a command's intro, which says a dry run is one. */
+const logIntro = (message: string, dryRun: boolean | undefined) =>
+  logger.intro(dryRun ? CLI_COLORS.dryRun(message) : message);
+
 // Return a failed exit code but write the logs to a file first
 const handleCommandFailure =
   (logFilePath: string | boolean | undefined) =>
@@ -209,8 +213,9 @@ command('upgrade')
       'upgrade',
       { cliOptions: { ...options, configDir: options.configDir?.[0] } },
       async () => {
-        logger.intro(
-          `Storybook upgrade${options.dryRun ? ' (dry run)' : ''} - v${versions.storybook}`
+        logIntro(
+          `Storybook upgrade${options.dryRun ? ' (dry run)' : ''} - v${versions.storybook}`,
+          options.dryRun
         );
         await upgrade(options);
         effects.logDryRunChanges();
@@ -241,7 +246,10 @@ command('migrate [migration]')
   )
   .action((migration, options) => {
     withTelemetry('migrate', { cliOptions: options }, async () => {
-      logger.intro(`${options.dryRun ? 'Dry-running' : 'Running'} ${migration} migration`);
+      logIntro(
+        `${options.dryRun ? 'Dry-running' : 'Running'} ${migration} migration`,
+        options.dryRun
+      );
       await migrate(migration, options);
       effects.logDryRunChanges();
       logger.outro(options.dryRun ? 'Migration dry run completed' : 'Migration completed');
@@ -287,7 +295,10 @@ command('automigrate [fixId]')
   .action(async (fixId, options) => {
     withTelemetry('automigrate', { cliOptions: options }, async () => {
       const running = options.dryRun ? 'Dry-running' : 'Running';
-      logger.intro(fixId ? `${running} ${fixId} automigration` : `${running} automigrations`);
+      logIntro(
+        fixId ? `${running} ${fixId} automigration` : `${running} automigrations`,
+        options.dryRun
+      );
       await doAutomigrate({ fixId, ...options });
       effects.logDryRunChanges();
       logger.outro(options.dryRun ? 'Dry run completed' : 'Done');

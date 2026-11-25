@@ -138,8 +138,8 @@ export const removeFileSync = (path: string): void => {
 
 /**
  * Run a step that changes the project in a way a file write cannot stage, such as an install, or
- * that needs such a step first. A dry run records `description` instead, worded to follow "A run
- * would", and resolves to `undefined`.
+ * that needs such a step first. A dry run records `description` instead, worded to follow "An
+ * actual run would", and resolves to `undefined`.
  */
 export const runStep = async <T>(
   description: string,
@@ -230,7 +230,7 @@ const readDisk = (path: string) =>
   diskExistsSync(path) ? diskReadFileSync(path, 'utf8') : undefined;
 
 /**
- * What a run would change, as lines that follow "A run would:": one for each file it would create,
+ * What a run would change, as lines that follow "An actual run would:": one for each file it would create,
  * update or delete, by path, then one for each step it would run, in the order the dry run met them. A JSON or YAML file
  * also lists the keys it would change. Files a run would write with their current content are left
  * out.
@@ -264,11 +264,11 @@ const describeFileChange = (entry: { path: string; shown: string }): string[] =>
   return [`${before === undefined ? 'create' : 'update'} ${file}`, ...details];
 };
 
-/** In a dry run, log what a run would change, if anything, under "A run would:". */
+/** In a dry run, log what a run would change, if anything, under "Dry run finished. An actual run would:". */
 export const logDryRunChanges = () => {
   const changes = state.dryRun ? describeDryRunChanges() : [];
   if (changes.length > 0) {
-    logger.step('A run would:');
+    logger.step(CLI_COLORS.dryRun('Dry run finished. An actual run would:'));
     logger.log(changes.join('\n'));
   }
 };

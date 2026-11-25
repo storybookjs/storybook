@@ -64,6 +64,7 @@ describe('REACT_NATIVE generator module', () => {
       start: 'react-native start',
       test: 'jest',
     });
+    packageManager.getVersionedPackages.mockResolvedValue([`storybook@^${versions.storybook}`]);
 
     await reactNativeGenerator.configure(packageManager, {
       framework: null,
@@ -87,7 +88,11 @@ describe('REACT_NATIVE generator module', () => {
         ),
       ])
     );
-    expect(assertReactNativeOnDevicePeers).toHaveBeenCalledWith(packageManager, versions.storybook);
+    expect(assertReactNativeOnDevicePeers).toHaveBeenCalledWith(
+      packageManager,
+      versions.storybook,
+      `^${versions.storybook}`
+    );
     expect(packageManager.addScripts).toHaveBeenCalledWith({
       'storybook:ios': 'cross-env STORYBOOK_ENABLED=true react-native run-ios',
       'storybook:android': 'cross-env STORYBOOK_ENABLED=true react-native run-android',

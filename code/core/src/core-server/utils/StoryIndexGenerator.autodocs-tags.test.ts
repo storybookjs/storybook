@@ -238,13 +238,28 @@ describe('autodocs entry of a CSF file', () => {
     `);
   });
 
-  it('rejects an MDX docs page that replaces it when only some stories have autodocs', async () => {
-    const error = await indexFiles('default-project', [
-      'C-tag-in-some-stories.stories.ts',
-      'C-tag-in-some-stories.mdx',
-    ]).catch((thrown) => thrown);
+  it.each([
+    ['autodocs is in meta', 'A-tag-only-in-meta'],
+    ['only some stories have autodocs', 'C-tag-in-some-stories'],
+    ['the first story removes autodocs', 'E-first-story-excluded'],
+  ])('rejects an MDX docs page that replaces it when %s', async (_, file) => {
+    const error = await indexFiles('default-project', [`${file}.stories.ts`, `${file}.mdx`]).catch(
+      (thrown) => thrown
+    );
 
     expect(String(error)).toContain("but also tagged the CSF file with 'autodocs'");
+  });
+
+  it('lets an MDX docs page replace it when autodocs comes from the project', async () => {
+    const index = await indexFiles('autodocs-project', [
+      'D-tag-inherited-from-project.stories.ts',
+      'D-tag-inherited-from-project.mdx',
+    ]);
+
+    const docsEntries = Object.values(index.entries).filter((entry) => entry.type === 'docs');
+    expect(docsEntries.map((entry) => [entry.importPath, tagsOf(entry)])).toEqual([
+      ['./D-tag-inherited-from-project.mdx', 'dev, test, manifest, autodocs, attached-mdx'],
+    ]);
   });
 
   it('ignores the stories of a subcomponent', async () => {

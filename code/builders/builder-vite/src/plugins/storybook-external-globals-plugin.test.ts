@@ -6,8 +6,6 @@ import type { Plugin } from 'vite';
 
 vi.mock('storybook/internal/preview/globals', { spy: true });
 
-import type { Options } from 'storybook/internal/types';
-
 import {
   ensurePreviewRuntimePrecedesGlobals,
   rewriteImport,
@@ -143,14 +141,10 @@ it('does not import the runtime from the bundled preview runtime', () => {
 });
 
 it('leaves code it cannot parse to the plugins that report syntax errors', async () => {
-  const plugin = await storybookExternalGlobalsPlugin({
-    presets: { apply: async () => ({}) },
-  } as unknown as Options);
   const code =
     "import { fn } from 'storybook/test';\nexport const Primary = () => <button>Hi</button>;";
 
-  const transform = plugin.transform as { handler: (code: string, id: string) => unknown };
-  await expect(transform.handler(code, '/src/Button.stories.js')).resolves.toBeUndefined();
+  await expect(transform('dev', code, '/src/Button.stories.js')).resolves.toBeUndefined();
 });
 
 it('rewriteImport', () => {

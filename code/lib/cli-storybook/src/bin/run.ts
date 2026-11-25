@@ -48,7 +48,7 @@ const handleCommandFailure =
       const logFile = await logTracker.writeToFile(logFilePath);
       logger.log(`Debug logs are written to: ${getProjectRelativePath(logFile)}`);
     } catch {}
-    logger.outro(effects.isDryRun() ? 'Dry run failed' : '');
+    logger.outro(effects.isDryRun() ? picocolors.bold(CLI_COLORS.error('Dry run failed')) : '');
     process.exit(1);
   };
 

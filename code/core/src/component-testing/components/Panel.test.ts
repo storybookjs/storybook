@@ -1,6 +1,8 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from 'vitest';
 
+import { FORCE_REMOUNT, PLAY_FUNCTION_THREW_EXCEPTION } from 'storybook/internal/core-events';
+
 import { type Call, CallStates, type LogItem, type RenderPhase } from '../../instrumenter/types.ts';
 import { INTERNAL_RENDER_CALL_ID } from '../constants.ts';
 import {
@@ -8,10 +10,11 @@ import {
   getInteractions,
   getPanelState,
   getRenderPhaseState,
+  listenForPlayResults,
   pruneToggles,
   trackRenderPhase,
 } from './Panel.tsx';
-import { INITIAL_PANEL_STATE, type PanelState } from './panelStore.ts';
+import { INITIAL_PANEL_STATE, type PanelState, panelStore } from './panelStore.ts';
 
 describe('Panel', () => {
   const log: LogItem[] = [
@@ -783,6 +786,30 @@ describe('Panel', () => {
         status: 'completed',
         caughtException: undefined,
       });
+    });
+  });
+
+  describe('listenForPlayResults', () => {
+    it('stores play errors without a mounted panel and drops them when the story remounts', () => {
+      const handlers: Record<string, (payload: unknown) => void> = {};
+      listenForPlayResults({
+        on: (type, handler) => {
+          handlers[type] = handler;
+          return () => {};
+        },
+        getUrlState: () => ({ storyId: 'story--id' }),
+      });
+      const error = { name: 'Error', message: 'argTypes is gone' } as Error;
+      panelStore.setState(INITIAL_PANEL_STATE);
+
+      handlers[PLAY_FUNCTION_THREW_EXCEPTION](error);
+      expect(panelStore.getState()).toMatchObject({ caughtException: error, hasException: true });
+
+      handlers[FORCE_REMOUNT]({ storyId: 'other--story' });
+      expect(panelStore.getState().caughtException).toBe(error);
+
+      handlers[FORCE_REMOUNT]({ storyId: 'story--id' });
+      expect(panelStore.getState().caughtException).toBeUndefined();
     });
   });
 });

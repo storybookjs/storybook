@@ -11,6 +11,7 @@ import {
 import type { StatusValue } from 'storybook/internal/types';
 
 import {
+  type API,
   experimental_useStatusStore,
   useChannel,
   useParameter,
@@ -230,6 +231,31 @@ export const getRenderPhaseState = (
   };
 };
 
+// Module scope like panelStore: a hidden panel unmounts, but must still know a render it saw.
+const renderTracker: { current: RenderTracker } = { current: { renderId: 0 } };
+
+// Registered once with the addon, so play results still reach panelStore while the panel is closed.
+export const listenForPlayResults = (
+  api: Pick<API, 'on'> & { getUrlState: () => { storyId?: string } }
+) => {
+  api.on(PLAY_FUNCTION_THREW_EXCEPTION, (caughtException: PanelState['caughtException']) => {
+    panelStore.setState((state) => ({ ...state, caughtException, hasException: true }));
+  });
+  api.on(UNHANDLED_ERRORS_WHILE_PLAYING, (unhandledErrors: PanelState['unhandledErrors']) => {
+    panelStore.setState((state) => ({ ...state, unhandledErrors, hasException: true }));
+  });
+  api.on(FORCE_REMOUNT, ({ storyId }: { storyId: string }) => {
+    // A remount keeps the last play's errors until it plays, which a failed render skips.
+    if (storyId === api.getUrlState().storyId) {
+      panelStore.setState((state) => ({
+        ...state,
+        caughtException: undefined,
+        unhandledErrors: undefined,
+      }));
+    }
+  });
+};
+
 const getInternalRenderCall = (storyId: string, exception?: Call['exception']): Call => ({
   id: INTERNAL_RENDER_CALL_ID,
   method: 'render',
@@ -307,8 +333,6 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
       return () => observer?.disconnect();
     }, []);
 
-    // Per mount: a closed panel misses events, so after it reopens it must not trust an older render.
-    const renderTracker = useRef<RenderTracker>({ renderId: 0 });
     const emit = useChannel(
       {
         [EVENTS.CALL]: setCall,
@@ -376,18 +400,6 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
               { log: log.current, calls: calls.current, collapsed, setCollapsed, toggles }
             )
           );
-        },
-        [PLAY_FUNCTION_THREW_EXCEPTION]: (caughtException) => {
-          set((state) => ({ ...state, caughtException, hasException: true }));
-        },
-        [UNHANDLED_ERRORS_WHILE_PLAYING]: (unhandledErrors) => {
-          set((state) => ({ ...state, unhandledErrors, hasException: true }));
-        },
-        [FORCE_REMOUNT]: (event: { storyId: string }) => {
-          // A remount keeps the last play's errors until it plays, which a failed render skips.
-          if (event.storyId === api.getUrlState().storyId) {
-            set((state) => ({ ...state, caughtException: undefined, unhandledErrors: undefined }));
-          }
         },
       },
       [collapsed, storyId]

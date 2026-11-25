@@ -605,14 +605,15 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
     logUpgradeResults(automigrationResults, detectedAutomigrations, doctorResults);
 
     // When the skills were offered and are not there (unticked, declined or failed), say so last.
-    const offeredSkills = detectedAutomigrations.find(({ fix }) => fix.id === 'skills');
+    // The detected list has every fix, also the ones that did not apply to any project.
+    const [offeredSkills] =
+      detectedAutomigrations
+        .find(({ fix }) => fix.id === 'skills')
+        ?.reports.filter(({ status }) => status === 'check_succeeded') ?? [];
     if (offeredSkills && !options.dryRun && !(await hasStorybookSkills())) {
       const command = addSkillsCommand({
-        afterAngularViteMigration: offeredSkills.reports.some(
-          ({ result }) => result?.afterAngularViteMigration
-        ),
-        configDir: offeredSkills.reports.find(({ status }) => status === 'check_succeeded')?.project
-          .configDir,
+        afterAngularViteMigration: offeredSkills.result?.afterAngularViteMigration,
+        configDir: offeredSkills.project.configDir,
       });
       logger.warn(`Did not install the Storybook skills for AI agents. Add them with: ${command}`);
     }

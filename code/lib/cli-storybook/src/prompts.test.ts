@@ -81,6 +81,17 @@ describe('promptlessReason', () => {
     );
   });
 
+  it('names CI first for an agent that sets CI, and the agent before the missing terminal', () => {
+    vi.mocked(detectAgent).mockReturnValue({ name: 'codex' });
+    setTTY(false, false);
+
+    expect(promptlessReason()).toContain('a coding agent (codex)');
+
+    vi.mocked(isCI).mockReturnValue(true);
+
+    expect(promptlessReason()).toBe('CI is set');
+  });
+
   it('lets a person in a terminal answer with --no-agent, whatever std-env detects', () => {
     vi.mocked(detectAgent).mockReturnValue({ name: 'replit' });
 

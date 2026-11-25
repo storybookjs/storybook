@@ -321,14 +321,38 @@ describe('upgrade: refreshing the skills', () => {
       ]);
     });
 
-    it('tells Angular to move to angular-vite first', async () => {
+    it('says nothing when the skills did not apply, as in CI or on an upgrade within 11', async () => {
+      vi.mocked(runAutomigrations).mockResolvedValue({
+        automigrationResults: {},
+        detectedAutomigrations: [
+          {
+            fix: { id: 'skills' },
+            reports: [{ status: 'not_applicable', project: { configDir: '.storybook' } }],
+          } as never,
+        ],
+      });
+
+      await upgrade(baseOptions);
+
+      expect(notInstalled()).toEqual([]);
+    });
+
+    it('says nothing in a dry run', async () => {
+      offered();
+
+      await upgrade({ ...baseOptions, dryRun: true });
+
+      expect(notInstalled()).toEqual([]);
+    });
+
+    it('tells Angular that the skills need angular-vite', async () => {
       offered({ afterAngularViteMigration: true });
 
       await upgrade(baseOptions);
 
       expect(notInstalled()).toEqual([
         [
-          'Did not install the Storybook skills for AI agents. Add them with: npx storybook automigrate angular-to-angular-vite, and then npx storybook automigrate skills',
+          'Did not install the Storybook skills for AI agents. Add them with: npx storybook automigrate skills, once the project uses @storybook/angular-vite (npx storybook automigrate angular-to-angular-vite)',
         ],
       ]);
     });

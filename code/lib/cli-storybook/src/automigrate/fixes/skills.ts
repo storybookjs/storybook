@@ -17,18 +17,18 @@ import { ANGULAR_VITE_PACKAGE, offersAngularViteMigration } from './angular-to-a
 
 const introducedIn = '11.0.0';
 
-// How to add the skills later. `automigrate skills` alone does not apply until the project uses
-// angular-vite, and `automigrate` only finds a config folder that is `.storybook` in the working
-// directory.
+// How to add the skills later. `automigrate` only finds a config folder that is `.storybook` in
+// the working directory. On Angular the skills need angular-vite; moving to it changes the
+// builder, so that is named as a condition, not as a step to take.
 export const addSkillsCommand = ({
   afterAngularViteMigration,
   configDir = '.storybook',
 }: { afterAngularViteMigration?: boolean; configDir?: string } = {}) => {
-  const dir = relative(process.cwd(), configDir);
+  const dir = relative(process.cwd(), configDir) || '.';
   const automigrate = (id: string) =>
     `npx storybook automigrate ${id}${dir === '.storybook' ? '' : ` --config-dir ${dir}`}`;
   return afterAngularViteMigration
-    ? `${automigrate('angular-to-angular-vite')}, and then ${automigrate('skills')}`
+    ? `${automigrate('skills')}, once the project uses ${ANGULAR_VITE_PACKAGE} (${automigrate('angular-to-angular-vite')})`
     : automigrate('skills');
 };
 

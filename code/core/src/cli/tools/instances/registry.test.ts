@@ -1,23 +1,21 @@
+import { readlinkSync } from 'node:fs';
 import { readFile, readdir, rm } from 'node:fs/promises';
 
 import { vol } from 'memfs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { isAnotherPidNamespace } from '../../../common/utils/pid-namespace.ts';
 import { readRegistry } from './registry.ts';
 
 // Spy-only mock: keep the real `node:fs/promises` module shape, then redirect the calls used by
 // the registry reader to `memfs` so disk state stays scoped to `vol`.
 vi.mock('node:fs/promises', { spy: true });
-vi.mock('../../../common/utils/pid-namespace.ts', { spy: true });
+vi.mock('node:fs', { spy: true });
 
 const REGISTRY_DIR = '/registry';
 
 beforeEach(async () => {
-  // This process runs in namespace `pid:[2]`.
-  vi.mocked(isAnotherPidNamespace).mockImplementation(
-    (pidNamespace) => pidNamespace != null && pidNamespace !== 'pid:[2]'
-  );
+  // This process runs in process namespace `pid:[2]`.
+  vi.mocked(readlinkSync).mockReturnValue('pid:[2]');
   const memfs = await vi.importActual<typeof import('memfs')>('memfs');
 
   vi.mocked(readdir).mockImplementation(

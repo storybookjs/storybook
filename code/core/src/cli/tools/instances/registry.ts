@@ -65,7 +65,12 @@ async function readRegistryDir(registryDir: string): Promise<StorybookInstanceRe
           if (!parsed.success) {
             return null;
           }
-          if (!isProcessAlive(parsed.output.pid) && !isProcessHidden(parsed.output)) {
+          // A dev server in another process namespace, as outside the sandbox or container of
+          // this process, has a pid that says nothing here.
+          if (
+            !isProcessAlive(parsed.output.pid) &&
+            !isAnotherPidNamespace(parsed.output.pidNamespace)
+          ) {
             await fs.rm(join(registryDir, name), { force: true }).catch(() => {});
             return null;
           }
@@ -93,10 +98,4 @@ function isProcessAlive(pid: number): boolean {
   } catch (error) {
     return (error as NodeJS.ErrnoException).code === 'EPERM';
   }
-}
-
-// The dev server runs in another process namespace, as it does outside the sandbox or container
-// of this process. Its pid then says nothing here.
-export function isProcessHidden({ pidNamespace }: StorybookInstanceRecord): boolean {
-  return isAnotherPidNamespace(pidNamespace);
 }

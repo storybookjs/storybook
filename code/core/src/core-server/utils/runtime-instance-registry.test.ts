@@ -3,6 +3,7 @@ import {
   mkdtempSync,
   readFileSync,
   readdirSync,
+  readlinkSync,
   realpathSync,
   rmSync,
   utimesSync,
@@ -16,18 +17,6 @@ import { promisify } from 'node:util';
 import { dirname, join, normalize, resolve } from 'pathe';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { getPidNamespace, isAnotherPidNamespace } from '../../common/utils/pid-namespace.ts';
-
-vi.mock('../../common/utils/pid-namespace.ts', { spy: true });
-
-beforeEach(() => {
-  // This process runs in namespace `pid:[2]`.
-  vi.mocked(getPidNamespace).mockReturnValue('pid:[2]');
-  vi.mocked(isAnotherPidNamespace).mockImplementation(
-    (pidNamespace) => pidNamespace != null && pidNamespace !== 'pid:[2]'
-  );
-});
-
 import {
   createRuntimeInstanceRecord,
   getRuntimeInstanceRegistryCleanupDecision,
@@ -35,6 +24,13 @@ import {
   writeRuntimeInstanceRecord,
   writeStorybookRuntimeInstanceRecord,
 } from './runtime-instance-registry.ts';
+
+vi.mock('node:fs', { spy: true });
+
+beforeEach(() => {
+  // This process runs in process namespace `pid:[2]`.
+  vi.mocked(readlinkSync).mockReturnValue('pid:[2]');
+});
 
 const tempDirs: string[] = [];
 const NOW = new Date('2026-06-02T12:00:00.000Z');

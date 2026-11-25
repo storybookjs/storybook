@@ -1,4 +1,4 @@
-import { realpathSync } from 'node:fs';
+import { readlinkSync, realpathSync } from 'node:fs';
 import { inspect } from 'node:util';
 
 import { vol } from 'memfs';
@@ -6,11 +6,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { NodeChannelConnection } from './node-channel.ts';
 import type { StorybookInstanceRecord } from '../instances/types.ts';
-import { isAnotherPidNamespace } from '../../../common/utils/pid-namespace.ts';
 import { bootstrapAttachedRuntime } from './attached-runtime.ts';
 import { AttachUnavailableError, EnvironmentMismatchError, ToolsRuntimeError } from './errors.ts';
 
-vi.mock('../../../common/utils/pid-namespace.ts', { spy: true });
 vi.mock('node:fs', { spy: true });
 
 const STORYBOOK_PATH = '/repo/node_modules/storybook';
@@ -88,10 +86,8 @@ async function rejectedAttachUnavailable(
 }
 
 beforeEach(async () => {
-  // This process runs in namespace `pid:[2]`.
-  vi.mocked(isAnotherPidNamespace).mockImplementation(
-    (pidNamespace) => pidNamespace != null && pidNamespace !== 'pid:[2]'
-  );
+  // This process runs in process namespace `pid:[2]`.
+  vi.mocked(readlinkSync).mockReturnValue('pid:[2]');
   vi.unstubAllGlobals();
   vol.reset();
   vol.fromNestedJSON({

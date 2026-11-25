@@ -1108,7 +1108,6 @@ export class NoFreePortError extends StorybookError {
       message: dedent`
         Unable to find a free port for Storybook's dev server${data.requestedPort ? ` (requested port: ${data.requestedPort})` : ''}.
         Your environment appears to block Storybook from listening on network ports.
-        If you are running Storybook in a sandboxed or restricted shell, allow binding to localhost ports and try again.
         ${RERUN_OUTSIDE_SANDBOX}`,
     });
   }

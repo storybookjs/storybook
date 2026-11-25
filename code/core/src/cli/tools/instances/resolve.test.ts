@@ -1,18 +1,17 @@
+import { readlinkSync } from 'node:fs';
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { isAnotherPidNamespace } from '../../../common/utils/pid-namespace.ts';
 import { mockNodePath } from '../test-support/mock-node-path.ts';
 import { selectInstances } from './resolve.ts';
 import type { McpStatus, StorybookInstanceRecord } from './types.ts';
 
 vi.mock('node:path', { spy: true });
-vi.mock('../../../common/utils/pid-namespace.ts', { spy: true });
+vi.mock('node:fs', { spy: true });
 
 beforeEach(() => {
-  // This process runs in namespace `pid:[2]`.
-  vi.mocked(isAnotherPidNamespace).mockImplementation(
-    (pidNamespace) => pidNamespace != null && pidNamespace !== 'pid:[2]'
-  );
+  // This process runs in process namespace `pid:[2]`.
+  vi.mocked(readlinkSync).mockReturnValue('pid:[2]');
 });
 
 let nextInstance = 0;

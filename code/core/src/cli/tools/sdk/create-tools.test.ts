@@ -10,6 +10,7 @@ import {
   type AnyToolsetOutcome,
 } from '../../../shared/open-service/toolset-definition.ts';
 import { getToolName } from '../../../shared/open-service/toolset-names.ts';
+import type { StorybookInstanceRecord } from '../instances/types.ts';
 import { createTools } from './create-tools.ts';
 import {
   AttachUnavailableError,
@@ -357,10 +358,11 @@ describe('createTools', () => {
   });
 
   it('states the attach failure when a requiresDevServer method runs after a fallback', async () => {
+    const record = { url: 'http://localhost:6006', port: 6006 } as StorybookInstanceRecord;
     vi.mocked(attach).mockRejectedValueOnce(
       new AttachUnavailableError({
         reason: 'connection-failed',
-        instances: [],
+        instances: [record],
         remediation: 'Could not connect to the Storybook at http://localhost:6006.',
       })
     );
@@ -368,7 +370,9 @@ describe('createTools', () => {
 
     const call = fallback.call('echo.live');
 
-    await expect(call).rejects.toMatchObject({ data: { reason: 'connection-failed' } });
+    await expect(call).rejects.toMatchObject({
+      data: { reason: 'connection-failed', instances: [record] },
+    });
     await expect(call).rejects.toThrow(
       '`echo.live` requires a running Storybook dev server, and could not attach to one:\n\nCould not connect to the Storybook at http://localhost:6006.'
     );
@@ -599,7 +603,7 @@ describe('createTools', () => {
     await expect(localLoadFailure).rejects.toThrow('Falling back');
   });
 
-  it('reports only the local failure after a silent fallback', async () => {
+  it('states the failed connection when the local load also fails', async () => {
     const failure = createTools(
       {},
       {
@@ -617,7 +621,9 @@ describe('createTools', () => {
     );
 
     await expect(failure).rejects.toThrow('main.ts has a syntax error');
-    await expect(failure).rejects.not.toThrow('Could not connect');
+    await expect(failure).rejects.toThrow(
+      'Could not connect to the Storybook at http://localhost:6006.'
+    );
   });
 
   it('keeps spawn and mode-unavailable reasons when auto local fallback also fails', async () => {

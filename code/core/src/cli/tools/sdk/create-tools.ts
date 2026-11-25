@@ -27,6 +27,7 @@ import {
   ToolsRuntimeError,
   attachGateReasonFromError,
   isAttachGateError,
+  type AttachGateError,
   type ToolsAttachGateReason,
 } from './errors.ts';
 import type { ToolsRuntime } from './local-runtime.ts';
@@ -138,17 +139,19 @@ export async function createTools(
           throw error;
         }
         const fallbackReason = attachGateReasonFromError(error);
-        const attachFailure = fallbackReason === 'no-instance' ? undefined : error.message;
+        const attachError = fallbackReason === 'no-instance' ? undefined : error;
         const silent = fallbackReason === 'connection-failed' && options.port == null;
-        const notice = attachFailure && !silent ? formatAttachFallback(attachFailure) : undefined;
+        const notice = attachError && !silent ? formatAttachFallback(error.message) : undefined;
         try {
           return await createLocalTools(options, deps, clientInfo, mode, {
             ...(notice ? { fallbackNotice: notice } : {}),
-            ...(attachFailure ? { attachFailure } : {}),
+            ...(attachError ? { attachError } : {}),
             fallbackReason,
           });
         } catch (localError) {
-          if (shouldWrapAutoLocalFailure(localError) && !silent) {
+          // When the local load fails too, the failed connection is stated after all: it can be
+          // why neither worked.
+          if (shouldWrapAutoLocalFailure(localError)) {
             throw wrapAutoLocalFailure(notice ?? formatAttachFallback(error.message), localError);
           }
           throw localError;
@@ -241,7 +244,7 @@ async function createLocalTools(
   requestedMode: ToolsMode,
   fallback?: {
     fallbackNotice?: string;
-    attachFailure?: string;
+    attachError?: AttachGateError;
     fallbackReason?: ToolsAttachGateReason;
   }
 ): Promise<LocalTools> {
@@ -263,7 +266,11 @@ async function createLocalTools(
       clientInfo,
       requestedMode,
     });
-    return fallback ? { ...child, ...fallback } : child;
+    if (!fallback) {
+      return child;
+    }
+    const { attachError, ...rest } = fallback;
+    return { ...child, ...rest, ...(attachError ? { attachFailure: attachError.message } : {}) };
   }
 
   const { bootstrapToolsRuntime } = await import('./local-runtime.ts');
@@ -324,26 +331,22 @@ function wrapAutoLocalFailure(notice: string, localError: SpawnFailedError | Too
 }
 
 // A dev-server method on a local host fails with the kind of error that kept `auto` from attaching.
-function requiresDevServerError(
-  ref: string,
-  attachFailure: string | undefined,
-  reason: ToolsAttachGateReason | undefined
-) {
-  if (!attachFailure || !reason) {
+function requiresDevServerError(ref: string, attachError: AttachGateError | undefined) {
+  if (!attachError) {
     return new AttachUnavailableError({
       reason: 'no-instance',
       instances: [],
       remediation: `\`${ref}\` needs a running Storybook dev server, and this tools host loaded the project's configuration on its own. Start Storybook with the Storybook script in the project's \`package.json\`, then retry.`,
     });
   }
-  const remediation = formatRequiresAttach(ref, attachFailure);
-  if (reason === 'environment-mismatch') {
+  const remediation = formatRequiresAttach(ref, attachError.message);
+  if (attachError instanceof EnvironmentMismatchError) {
     return new EnvironmentMismatchError({ reason: remediation });
   }
-  if (reason === 'spawn-failed') {
-    return new SpawnFailedError({ reason: remediation });
+  if (attachError instanceof SpawnFailedError) {
+    return new SpawnFailedError({ reason: remediation, cause: attachError.data.cause });
   }
-  return new AttachUnavailableError({ reason, instances: [], remediation });
+  return new AttachUnavailableError({ ...attachError.data, remediation });
 }
 
 function transportFor(kind: Required<ToolsClientInfo>['kind']): ToolsetTransport {
@@ -355,7 +358,7 @@ function createToolsHost(args: {
   host: ToolsHostKind;
   requestedMode: ToolsMode;
   fallbackNotice?: string;
-  attachFailure?: string;
+  attachError?: AttachGateError;
   fallbackReason?: ToolsAttachGateReason;
   runtime: ToolsRuntime;
   clientInfo: Required<ToolsClientInfo>;
@@ -368,7 +371,7 @@ function createToolsHost(args: {
   host: ToolsHostKind;
   requestedMode: ToolsMode;
   fallbackNotice?: string;
-  attachFailure?: string;
+  attachError?: AttachGateError;
   fallbackReason?: ToolsAttachGateReason;
   runtime: ToolsRuntime;
   clientInfo: Required<ToolsClientInfo>;
@@ -381,7 +384,7 @@ function createToolsHost(args: {
   host: ToolsHostKind;
   requestedMode: ToolsMode;
   fallbackNotice?: string;
-  attachFailure?: string;
+  attachError?: AttachGateError;
   fallbackReason?: ToolsAttachGateReason;
   runtime: ToolsRuntime;
   clientInfo: Required<ToolsClientInfo>;
@@ -418,7 +421,7 @@ function createToolsHost(args: {
     const method = findMethod(toolset, methodName);
 
     if (mode === 'local' && method.requiresDevServer) {
-      throw requiresDevServerError(ref, args.attachFailure, args.fallbackReason);
+      throw requiresDevServerError(ref, args.attachError);
     }
 
     const validation = await method.input['~standard'].validate(input);
@@ -447,7 +450,7 @@ function createToolsHost(args: {
     runtime,
     storybook,
     ...(args.fallbackNotice ? { fallbackNotice: args.fallbackNotice } : {}),
-    ...(args.attachFailure ? { attachFailure: args.attachFailure } : {}),
+    ...(args.attachError ? { attachFailure: args.attachError.message } : {}),
     ...(args.fallbackReason ? { fallbackReason: args.fallbackReason } : {}),
 
     async describe(options: ToolsDescribeOptions = {}): Promise<ToolsetCatalog> {

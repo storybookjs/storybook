@@ -147,15 +147,13 @@ export function triggerTestRun({
   });
 }
 
-function refusedPort(blocked: BlockedNetwork | undefined) {
-  return blocked
-    ? {
-        status: 'error' as const,
-        error: {
-          message: `The tests did not run: ${formatBlockedNetwork(blocked)}. This is not a problem in the code. ${RERUN_OUTSIDE_SANDBOX}`,
-        },
-      }
-    : undefined;
+function blockedRunResult(blocked: BlockedNetwork) {
+  return {
+    status: 'error' as const,
+    error: {
+      message: `The tests did not run: ${formatBlockedNetwork(blocked)}. This is not a problem in the code. ${RERUN_OUTSIDE_SANDBOX}`,
+    },
+  };
 }
 
 // A system that refuses ports stops Vitest before any test runs, which the run reports as an
@@ -312,9 +310,9 @@ export async function runStoryTests({
           error: { message: 'Test run completed but no result was returned' },
         };
       }
-      const refused = refusedPort(blockedBeforeAnyTest(response.result));
-      if (refused) {
-        return refused;
+      const blocked = blockedBeforeAnyTest(response.result);
+      if (blocked) {
+        return blockedRunResult(blocked);
       }
       return {
         status: 'completed',
@@ -323,20 +321,22 @@ export async function runStoryTests({
         ...(notFoundMessages.length > 0 ? { notFoundMessages } : {}),
       };
     }
-    case 'error':
-      return (
-        refusedPort(
-          detectBlockedNetwork(response.error) ?? detectBlockedNetwork(response.error?.error)
-        ) ?? {
-          status: 'error',
-          error: {
-            message: response.error?.message ?? 'Test run failed with unknown error',
-            ...(response.error?.error !== undefined
-              ? { error: response.error.error as { message: string } }
-              : {}),
-          },
-        }
-      );
+    case 'error': {
+      const blocked =
+        detectBlockedNetwork(response.error) ?? detectBlockedNetwork(response.error?.error);
+      if (blocked) {
+        return blockedRunResult(blocked);
+      }
+      return {
+        status: 'error',
+        error: {
+          message: response.error?.message ?? 'Test run failed with unknown error',
+          ...(response.error?.error !== undefined
+            ? { error: response.error.error as { message: string } }
+            : {}),
+        },
+      };
+    }
     case 'cancelled':
       return { status: 'cancelled' };
     default: {

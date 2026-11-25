@@ -23,7 +23,6 @@ Fork CI compiles with `--no-link` before unit tests to generate the declarations
 Test runs print console output only for failing tests (`silent: 'passed-only'` in the root `vitest.config.ts`).
 In `code/` packages, `code/vitest-setup.ts` routes direct `process.stdout` and `process.stderr` writes, such as `@clack/prompts` output, through the console, so the same rule applies to them.
 Add `--silent=false` to see the logs of passing tests, for example `yarn test csf-tools --silent=false`.
-`code/vitest-setup.ts` also stubs `getProcessAncestry` to return an empty ancestry; a test that needs the real one calls `vi.unmock`, as `process-ancestry.test.ts` does.
 
 When writing tests for components:
 

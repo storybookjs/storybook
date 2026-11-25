@@ -204,9 +204,14 @@ function RowLinkHack({
       tabIndex={-1}
       aria-hidden
       data-react-aria-prevent-focus
-      onPointerDown={(event) => {
+      onPointerEnter={(event) => {
         // The href carries the current globals, which change without the row rendering again.
-        event.currentTarget.setAttribute('href', getHref());
+        const href = getHref();
+        if (event.currentTarget.getAttribute('href') !== href) {
+          event.currentTarget.setAttribute('href', href);
+        }
+      }}
+      onPointerDown={(event) => {
         if (event.button === 0 && opensLinkElsewhere(event)) {
           event.stopPropagation();
         }

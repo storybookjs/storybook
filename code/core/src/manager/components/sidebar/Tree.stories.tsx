@@ -1658,7 +1658,8 @@ export const RowsLinkToTheirEntry: Story = {
  * A plain press selects the row in place, and focuses it, without reloading the page. A press that
  * asks the browser to open a link elsewhere (Cmd or Ctrl for a new tab, Shift for a new window)
  * goes to the browser and leaves the selection alone. The browser opens the row's entry with the
- * globals of that moment, even when they changed while the row kept focus and did not render.
+ * globals of the moment the pointer entered the row, even when they changed while the row kept
+ * focus and did not render.
  */
 export const ModifiedPressOpensEntryElsewhere: Story = {
   args: { refId: DEFAULT_REF_ID, onSelectStoryId: fn(), data: index, selectedStoryId: storyId },
@@ -1689,6 +1690,8 @@ export const ModifiedPressOpensEntryElsewhere: Story = {
         ...mockStoryHrefs(id, options),
         managerHref: `${mockStoryHrefs(id, options).managerHref}&globals=sb_theme:dark`,
       }));
+      await user.unhover(link);
+      await user.hover(link);
       for (const modifier of ['Meta', 'Control', 'Shift']) {
         await user.keyboard(`{${modifier}>}`);
         await user.click(link);

@@ -138,6 +138,7 @@ jobs:
       from_runs: ${{ steps.matrix.outputs.from_runs }}
       groups: ${{ steps.matrix.outputs.groups }}
       job_minutes: ${{ steps.matrix.outputs.job_minutes }}
+      docker_runner: ${{ steps.matrix.outputs.docker_runner }}
     steps:
       # A run that only collects earlier results starts no agent, so it needs no matrix.
       - name: Checkout
@@ -202,21 +203,58 @@ jobs:
             echo "dry=$QA_DRY"
             echo "from_runs=$QA_FROM_RUNS"
             echo "groups=$groups"
+            echo "docker_runner=$(jq -r '[.include[] | select(.sandbox == "docker") | .runner][0] // ""' <<<"$matrix")"
             # A run stops its agent 15 minutes after the budget and then asks it for its answer. A
             # job that is cancelled before that writes no result at all.
             echo "job_minutes=$(( ${QA_BUDGET_MINUTES:-90} + 90 ))"
           } >> "$GITHUB_OUTPUT"
           echo "$matrix" | jq .
 
+  image:
+    name: Build the sandbox image
+    needs: plan
+    if: ${{ needs.plan.outputs.docker_runner != '' }}
+    runs-on: ${{ needs.plan.outputs.docker_runner }}
+    timeout-minutes: 30
+    permissions:
+      packages: write # push ghcr.io/storybookjs/ecosystem-qa-sandbox
+    outputs:
+      image: ${{ steps.image.outputs.image }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Build and push the image unless its tag exists
+        id: image
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="$(printf '%s\n' "$(sha256sum < ecosystem-qa/Dockerfile)" "$CLAUDE_CODE_VERSION" "$CODEX_VERSION" "$(id -u)" "$(id -g)" | sha256sum | cut -c1-16)"
+          name="ghcr.io/storybookjs/ecosystem-qa-sandbox:$tag"
+          printf '%s' "$GH_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+          if ! docker buildx imagetools inspect "$name" > /dev/null 2>&1; then
+            docker build --build-arg AGENT_UID="$(id -u)" --build-arg AGENT_GID="$(id -g)" \
+              --build-arg CLAUDE_CODE_VERSION="$CLAUDE_CODE_VERSION" --build-arg CODEX_VERSION="$CODEX_VERSION" \
+              -t "$name" - < ecosystem-qa/Dockerfile
+            docker push "$name"
+          fi
+          digest="$(docker buildx imagetools inspect "$name" --format '{{.Manifest.Digest}}')"
+          echo "$name@$digest"
+          echo "image=ghcr.io/storybookjs/ecosystem-qa-sandbox@$digest" >> "$GITHUB_OUTPUT"
+
   runner:
     name: QA ${{ matrix.repo }} on ${{ matrix.os }} with ${{ matrix.engine }}
-    needs: plan
-    if: ${{ needs.plan.outputs.from_runs == '' }}
+    needs: [plan, image]
+    # Not the implicit success(): a failed image job leaves the runner jobs to build the image.
+    if: ${{ !cancelled() && needs.plan.result == 'success' && needs.plan.outputs.from_runs == '' }}
     runs-on: ${{ matrix.runner }}
     timeout-minutes: ${{ fromJSON(needs.plan.outputs.job_minutes) }}
     permissions: {}
-    # The agent keys live in this environment. The push token lives in ecosystem-qa-file, which only
-    # the file job enters, so no job that runs the agent can read it.
+    # The agent keys live in this environment. The App key lives in ecosystem-qa-file, which only the
+    # file job enters, so no job that runs the agent can read it.
     environment: ecosystem-qa
     strategy:
       fail-fast: false
@@ -268,12 +306,30 @@ jobs:
         shell: pwsh
         run: Get-PSDrive -PSProvider FileSystem
 
+      # Without a login, as this job has no package permission: until the package is public the pull
+      # fails and the next step builds the image.
+      - name: Pull the sandbox image
+        id: pull
+        if: ${{ matrix.sandbox == 'docker' && needs.image.outputs.image != '' }}
+        continue-on-error: true
+        env:
+          QA_IMAGE: ${{ needs.image.outputs.image }}
+        # Sandcastle refuses an image of another uid only after the clone, when no build can follow.
+        run: |
+          docker pull "$QA_IMAGE"
+          user="$(docker image inspect --format '{{.Config.User}}' "$QA_IMAGE")"
+          if [ "$user" != "$(id -u):$(id -g)" ]; then
+            echo "::warning::The image runs as $user and this runner as $(id -u):$(id -g), so the runner builds the image."
+            exit 1
+          fi
+          docker tag "$QA_IMAGE" sb-ecosystem-qa
+
       - name: Build the sandbox image
-        if: ${{ matrix.sandbox == 'docker' }}
+        if: ${{ matrix.sandbox == 'docker' && steps.pull.outcome != 'success' }}
         run: >-
           docker build --build-arg AGENT_UID="$(id -u)" --build-arg AGENT_GID="$(id -g)"
           --build-arg CLAUDE_CODE_VERSION="$CLAUDE_CODE_VERSION" --build-arg CODEX_VERSION="$CODEX_VERSION"
-          -t sb-ecosystem-qa ecosystem-qa
+          -t sb-ecosystem-qa - < ecosystem-qa/Dockerfile
 
       - name: Install Chromium for the evidence tools on the host
         if: ${{ matrix.sandbox == 'none' }}
@@ -510,11 +566,40 @@ jobs:
           pattern: qa-*
           path: ecosystem-qa/results
 
+      # A token step without repositories would reach every repository of the org's installation.
+      - name: List the repositories of each org that the filer pushes to
+        id: push-targets
+        run: >-
+          jq -r '[.[] | .pushTo // .repo | split("/")] | group_by(.[0]) | .[]
+          | "\(.[0][0])=\(map(.[1]) | join(","))"' ecosystem-qa/catalog.json | tee -a "$GITHUB_OUTPUT"
+
+      - name: Create a storybookjs token
+        id: storybookjs-token
+        if: ${{ steps.push-targets.outputs.storybookjs != '' }}
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.ECOSYSTEM_QA_APP_ID }}
+          private-key: ${{ secrets.ECOSYSTEM_QA_APP_PRIVATE_KEY }}
+          owner: storybookjs
+          repositories: ${{ steps.push-targets.outputs.storybookjs }}
+          permission-contents: write
+
+      - name: Create a storybook-tmp token
+        id: storybook-tmp-token
+        if: ${{ steps.push-targets.outputs.storybook-tmp != '' }}
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.ECOSYSTEM_QA_APP_ID }}
+          private-key: ${{ secrets.ECOSYSTEM_QA_APP_PRIVATE_KEY }}
+          owner: storybook-tmp
+          repositories: ${{ steps.push-targets.outputs.storybook-tmp }}
+          permission-contents: write
+
       - name: File issues and push evidence
         env:
           GH_TOKEN: ${{ github.token }}
-          ECOSYSTEM_QA_PUSH_TOKEN: ${{ secrets.ECOSYSTEM_QA_PUSH_TOKEN }}
-          ECOSYSTEM_QA_PUSH_TOKEN_STORYBOOK_TMP: ${{ secrets.ECOSYSTEM_QA_PUSH_TOKEN_STORYBOOK_TMP }}
+          ECOSYSTEM_QA_APP_TOKEN_STORYBOOKJS: ${{ steps.storybookjs-token.outputs.token }}
+          ECOSYSTEM_QA_APP_TOKEN_STORYBOOK_TMP: ${{ steps.storybook-tmp-token.outputs.token }}
         run: >-
           node ecosystem-qa/file.ts --proposals ecosystem-qa/results/qa-proposals/proposals.json
           --repo "$GITHUB_REPOSITORY"

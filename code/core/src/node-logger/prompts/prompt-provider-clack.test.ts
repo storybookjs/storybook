@@ -127,7 +127,6 @@ describe('ClackPromptProvider', () => {
     const root = provider.taskLog({ id: 'root', title: 'Root' });
     const nested = provider.taskLog({ id: 'nested', title: 'Nested' });
 
-    expect(getCurrentTaskLog()).not.toBeNull();
     nested.message('inner line');
     expect(task.message).toHaveBeenCalledTimes(1);
     expect(logTracker.addLog).toHaveBeenCalledWith('info', 'nested-task: inner line');
@@ -138,6 +137,10 @@ describe('ClackPromptProvider', () => {
 
     nested.error('inner failed');
     expect(task.error).toHaveBeenCalledWith('inner failed', { showLog: true });
+
+    root.message('late');
+    expect(task.message).toHaveBeenCalledTimes(1);
+    expect(clack.log.message).toHaveBeenCalledWith('late');
 
     root.success('done');
     expect(task.success).not.toHaveBeenCalled();
@@ -198,6 +201,18 @@ describe('ClackPromptProvider', () => {
       expect(process.stdout.write).toBe(other);
     });
 
+    it('keeps colors in plain lines after an outside write', () => {
+      const cyan = (text: string): string => `\x1b[36m${text}\x1b[39m`;
+      const nearlyFull = `${'x'.repeat(51)} ${cyan('.storybook/preview')}`;
+      const log = provider.taskLog({ id: 'task', title: 'Task' });
+
+      process.stdout.write(' ');
+      log.message(nearlyFull);
+
+      expect(clack.log.message).toHaveBeenCalledWith(nearlyFull);
+      log.success('done');
+    });
+
     it.each(['before', 'after'] as const)(
       'routes group output to plain lines when an outside write happens %s group creation',
       (outsideWriteTiming) => {
@@ -209,9 +224,8 @@ describe('ClackPromptProvider', () => {
         if (outsideWriteTiming === 'after') {
           process.stdout.write(' ');
         }
-        getCurrentTaskLog()?.message('inside');
+        group.message('inside');
         group.error('group failed');
-        expect(getCurrentTaskLog()).not.toBe(group);
         expect(getCurrentTaskLog()).not.toBeNull();
         log.error('failed');
 
@@ -246,15 +260,23 @@ describe('ClackPromptProvider', () => {
       });
       const log = provider.taskLog({ id: 'task', title: 'Task' });
       const group = log.group('Group');
-      expect(getCurrentTaskLog()).toBe(group);
       group.message('inside');
       group.success('group done');
-      expect(getCurrentTaskLog()).not.toBe(group);
-      expect(getCurrentTaskLog()).not.toBeNull();
       log.message('after');
       expect(taskGroup.message).toHaveBeenCalledWith('inside');
       expect(task.message).toHaveBeenCalledWith('after');
       expect(clack.log.message).not.toHaveBeenCalled();
+      log.success('done');
+    });
+
+    it('logger lines go to the root while a group is open', () => {
+      const log = provider.taskLog({ id: 'task', title: 'Task' });
+      log.group('Group');
+
+      getCurrentTaskLog()?.message('from logger');
+
+      expect(task.message).toHaveBeenCalledWith('from logger');
+      expect(taskGroup.message).not.toHaveBeenCalled();
       log.success('done');
     });
   });

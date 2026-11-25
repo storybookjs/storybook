@@ -36,14 +36,16 @@ it.each([
   {
     name: 'outside writes preserve later plain lines',
     outsideWrite: true,
+    marker: 'OUTSIDE BOX',
     expected: { eraseAfterMarker: false, outputAfterMarker: ['three', 'done'] },
   },
   {
     name: 'uncontaminated task logs erase before later output',
     outsideWrite: false,
+    marker: 'two',
     expected: { eraseAfterMarker: true, outputAfterMarker: [] },
   },
-])('$name', ({ outsideWrite, expected }): void => {
+])('$name', ({ outsideWrite, marker, expected }): void => {
   const chunks: string[] = [];
   vi.spyOn(process.stdout, 'write').mockImplementation((chunk): boolean => {
     chunks.push(String(chunk));
@@ -60,11 +62,9 @@ it.each([
   log.message('three');
   log.success('done');
 
-  const marker = chunks.findIndex((chunk): boolean =>
-    chunk.includes(outsideWrite ? 'OUTSIDE BOX' : 'two')
-  );
-  expect(marker).toBeGreaterThanOrEqual(0);
-  const laterChunks = chunks.slice(marker + 1);
+  const markerIndex = chunks.findIndex((chunk): boolean => chunk.includes(marker));
+  expect(markerIndex).toBeGreaterThanOrEqual(0);
+  const laterChunks = chunks.slice(markerIndex + 1);
   expect(laterChunks.some((chunk): boolean => chunk.includes('\x1b[2K'))).toBe(
     expected.eraseAfterMarker
   );

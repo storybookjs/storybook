@@ -19,18 +19,11 @@ import type {
 } from './prompt-provider-base.ts';
 import { PromptProvider } from './prompt-provider-base.ts';
 
-/** What logger.ts writes to while a task log is open. */
-export type TaskLogTarget = Pick<TaskLogInstance, 'message'>;
-
-type TaskLogSession = {
-  task: ReturnType<typeof clack.taskLog>;
-  /** An outside stdout write happened; erasing would clobber it, so fall back to plain log lines. */
-  contaminated: boolean;
-  /** Render-only targets for logger.ts, innermost last; they must not track, the logger already did. */
-  targets: TaskLogTarget[];
-  /** Restores process.stdout.write and ends the session. */
-  dispose: () => void;
-  message: TaskLogInstance['message'];
+/** The open task log, as logger.ts and nested taskLog() calls see it. */
+export type TaskLogSession = {
+  /** Renders a line without tracking it; logger.ts has already tracked its own entries. */
+  message: (text: string) => void;
+  /** Closes the task log; a second call is ignored. */
   finish: (
     status: 'success' | 'error',
     message: string,
@@ -46,8 +39,8 @@ const CANCEL_MESSAGES: Record<PromptCancelReason, string> = {
   'stdin-ended': 'Prompt aborted: stdin ended before an answer was received.',
 };
 
-export const getCurrentTaskLog = (): TaskLogTarget | null =>
-  globalThis.STORYBOOK_CURRENT_TASK_LOG?.targets.at(-1) ?? null;
+export const getCurrentTaskLog = (): TaskLogSession | null =>
+  globalThis.STORYBOOK_CURRENT_TASK_LOG ?? null;
 
 export class ClackPromptProvider extends PromptProvider {
   private async handleAbort(
@@ -164,44 +157,33 @@ export class ClackPromptProvider extends PromptProvider {
   }
 
   taskLog(options: TaskLogOptions): TaskLogInstance {
-    const activeSession = globalThis.STORYBOOK_CURRENT_TASK_LOG as
-      | TaskLogSession
-      | null
-      | undefined;
-    const session = activeSession ?? createTaskLogSession(options);
+    const active = getCurrentTaskLog();
+    const session = active ?? createTaskLogSession(options);
+    const isRoot = !active;
     const taskId = `${options.id}-task`;
     logTracker.addLog('info', `${taskId}-start: ${options.title}`);
 
-    const nested: TaskLogInstance = {
+    return {
       message: (message): void => {
         logTracker.addLog('info', `${taskId}: ${message}`);
-        session.message(formatTaskLogMessage(message));
+        session.message(message);
       },
       error: (message): void => {
         logTracker.addLog('error', `${taskId}-error: ${message}`);
         session.finish('error', message);
       },
-      success: (message): void => {
+      success: (message, successOptions): void => {
         logTracker.addLog('info', `${taskId}-success: ${message}`);
         // A nested success must not close the parent's task; only a nested error is worth surfacing.
+        if (isRoot) {
+          session.finish('success', message, successOptions);
+        }
       },
       group: (title): ReturnType<TaskLogInstance['group']> => {
         logTracker.addLog('info', `${taskId}-group: ${title}`);
         return session.group(title);
       },
     };
-    if (activeSession) {
-      return nested;
-    }
-
-    const root: TaskLogInstance = {
-      ...nested,
-      success: (message, successOptions): void => {
-        logTracker.addLog('info', `${taskId}-success: ${message}`);
-        session.finish('success', message, successOptions);
-      },
-    };
-    return root;
   }
 }
 
@@ -210,117 +192,86 @@ export class ClackPromptProvider extends PromptProvider {
 // The task log writes through its own output, so any write reaching process.stdout is an
 // outside write and switches the session to plain clack.log lines.
 const createTaskLogSession = (options: TaskLogOptions): TaskLogSession => {
-  const original = process.stdout.write.bind(process.stdout);
-  const output = {
-    write: original,
-    get columns(): number {
-      return process.stdout.columns;
-    },
-    get isTTY(): boolean {
-      return process.stdout.isTTY;
-    },
+  // live: Clack redraws in place. plain: an outside write moved the cursor, so no more erasing. closed: finished.
+  let mode: 'live' | 'plain' | 'closed' = 'live';
+  const { output, restore } = interceptStdout(() => {
+    if (mode === 'live') mode = 'plain';
+  });
+  // A log taller than the terminal is redrawn into the scrollback on every update; the trimmed
+  // lines are retained for a log shown on error.
+  const task = clack.taskLog({ limit: 10, retainLog: true, ...options, output });
+  // Outside live mode, Clack's own task would erase rows it no longer owns, so print plain lines.
+  const render = (kind: 'message' | 'success' | 'error', text: string, live: () => void): void => {
+    if (mode === 'live') {
+      live();
+    } else {
+      clack.log[kind](text);
+    }
   };
-  let disposed = false;
   const session: TaskLogSession = {
-    // A log taller than the terminal is redrawn into the scrollback on every update; the trimmed
-    // lines are retained for a log shown on error.
-    task: clack.taskLog({
-      limit: 10,
-      retainLog: true,
-      ...options,
-      // Clack only reads write, columns, and isTTY from the output stream.
-      output: output as unknown as Writable,
-    }),
-    contaminated: false,
-    targets: [{ message: (text): void => session.message(formatTaskLogMessage(text)) }],
-    dispose: (): void => {
-      disposed = true;
-      restoreWrite();
-      globalThis.STORYBOOK_CURRENT_TASK_LOG = null;
-    },
-    message: (text): void => {
-      if (session.contaminated) {
-        clack.log.message(text);
-      } else {
-        session.task.message(text);
-      }
-    },
+    message: (text): void =>
+      render('message', text, () => task.message(formatTaskLogMessage(text))),
     finish: (status, message, successOptions): void => {
-      if (disposed) {
+      if (mode === 'closed') {
         return;
       }
       try {
-        if (session.contaminated) {
-          // Plain lines cannot replay the retained log: lines trimmed before the outside write are lost.
-          clack.log[status](message);
-        } else if (status === 'error') {
-          session.task.error(message, { showLog: true });
-        } else {
-          session.task.success(message, successOptions);
-        }
+        // Plain lines cannot replay the retained log: lines trimmed before the outside write are lost.
+        render(status, message, () =>
+          status === 'error'
+            ? task.error(message, { showLog: true })
+            : task.success(message, successOptions)
+        );
       } finally {
-        session.dispose();
+        mode = 'closed';
+        restore();
+        globalThis.STORYBOOK_CURRENT_TASK_LOG = null;
       }
     },
     group: (title): ReturnType<TaskLogInstance['group']> => {
-      const group = session.task.group(title);
-      const target: ReturnType<TaskLogInstance['group']> = {
-        message: (text): void => {
-          if (session.contaminated) {
-            clack.log.message(text);
-          } else {
-            group.message(text);
-          }
-        },
-        success: (message): void => {
-          if (session.contaminated) {
-            clack.log.success(message);
-          } else {
-            group.success(message);
-          }
-          session.targets.pop();
-        },
-        error: (message): void => {
-          if (session.contaminated) {
-            clack.log.error(message);
-          } else {
-            group.error(message);
-          }
-          session.targets.pop();
-        },
+      const group = task.group(title);
+      return {
+        message: (text): void =>
+          render('message', text, () => group.message(formatTaskLogMessage(text))),
+        success: (message): void => render('success', message, () => group.success(message)),
+        error: (message): void => render('error', message, () => group.error(message)),
       };
-      session.targets.push(target);
-      return target;
     },
   };
-  const restoreWrite = installHook(session, original);
   globalThis.STORYBOOK_CURRENT_TASK_LOG = session;
   return session;
 };
 
-const installHook = (
-  session: TaskLogSession,
-  original: typeof process.stdout.write
-): (() => void) => {
+const interceptStdout = (onOutsideWrite: () => void): { output: Writable; restore: () => void } => {
   const previous = process.stdout.write;
+  const original = previous.bind(process.stdout);
+  // Clack only reads write, columns, and isTTY from the output stream.
+  const output = {
+    write: original,
+    columns: process.stdout.columns,
+    isTTY: process.stdout.isTTY,
+  } as unknown as Writable;
   const hook: typeof process.stdout.write = (
     chunk: string | Uint8Array,
     encodingOrCallback?: BufferEncoding | ((error?: Error | null) => void),
     callback?: (error?: Error | null) => void
   ): boolean => {
     if (chunk.length > 0) {
-      session.contaminated = true;
+      onOutsideWrite();
     }
     return typeof encodingOrCallback === 'string'
       ? original(chunk, encodingOrCallback, callback)
       : original(chunk, encodingOrCallback ?? callback);
   };
   process.stdout.write = hook;
-  return (): void => {
-    // Preserve any stdout patch installed after this session's hook.
-    if (process.stdout.write === hook) {
-      process.stdout.write = previous;
-    }
+  return {
+    output,
+    restore: (): void => {
+      // Preserve any stdout patch installed after this session's hook.
+      if (process.stdout.write === hook) {
+        process.stdout.write = previous;
+      }
+    },
   };
 };
 

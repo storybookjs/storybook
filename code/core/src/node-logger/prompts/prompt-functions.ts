@@ -214,16 +214,16 @@ export const taskLog = (options: TaskLogOptions): TaskLogInstance => {
         task.error(message);
       },
       group: function (title: string) {
-        const group = task.group(title);
+        this.message(`\n${title}\n`);
         return {
           message: (message: string) => {
-            group.message(wrapTextForClack(message));
+            task.message(wrapTextForClack(message));
           },
           success: (message: string) => {
-            group.success(message);
+            task.success(message);
           },
           error: (message: string) => {
-            group.error(message);
+            task.error(message);
           },
         };
       },

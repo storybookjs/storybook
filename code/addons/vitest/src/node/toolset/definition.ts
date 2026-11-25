@@ -54,8 +54,10 @@ const testRunResultSchema = v.object({
   a11yReports: v.record(v.string(), v.array(v.any())),
   reports: v.record(v.string(), v.array(v.any())),
   totalTestCount: v.optional(v.number()),
-  /** Tests the run was asked for that neither passed nor failed. */
+  /** The tests Vitest skipped. */
   skippedTestCount: v.optional(v.number()),
+  /** The story files the file filters of the run matched. */
+  matchedFileCount: v.optional(v.number()),
   storyIds: v.optional(v.array(v.string())),
   startedAt: v.optional(v.number()),
   finishedAt: v.optional(v.number()),
@@ -75,7 +77,13 @@ const testRunResultSchema = v.object({
 
 /** What `files`, `changed` and `stories` selected, for the summary line. */
 const selectionSchema = v.object({
-  files: v.optional(v.object({ filters: v.array(v.string()), storyFileCount: v.number() })),
+  files: v.optional(
+    v.object({
+      filters: v.array(v.string()),
+      /** How many story files Vitest matched. Not there when the run never asked Vitest. */
+      storyFileCount: v.optional(v.number()),
+    })
+  ),
   changed: v.optional(
     v.object({
       /** How many stories `stories changed` listed. */
@@ -305,6 +313,7 @@ async function getChangedStories(ctx: ToolsetCtx, since?: string): Promise<Chang
   );
   return {
     storyIds: data.stories.map((story) => story.storyId),
+    storyFiles: [...new Set(data.stories.map((story) => story.importPath))],
     changedConfigFiles: data.changedConfigFiles,
     pendingFiles: [...data.unindexedStoryFiles, ...data.pendingFiles],
   };

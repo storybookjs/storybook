@@ -46,6 +46,8 @@ export class StorybookReporter implements Reporter {
     });
     this.testManager.onTestRunEnd({
       totalTestCount,
+      skippedTestCount: testModules.flatMap((t) => Array.from(t.children.allTests('skipped')))
+        .length,
       unhandledErrors: serializedErrors as unknown as VitestError[],
     });
 

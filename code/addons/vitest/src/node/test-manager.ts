@@ -152,8 +152,10 @@ export class TestManager {
   }
 
   async handleTriggerRunEvent(event: TriggerRunEvent) {
+    const { storyIds, files, changedFiles } = event.payload;
     await this.runTestsWithState({
-      storyIds: event.payload.storyIds,
+      // The stories of a run of files are known once Vitest has matched the files
+      storyIds: storyIds ?? (files || changedFiles ? [] : undefined),
       triggeredBy: event.payload.triggeredBy,
       configOverride: event.payload.configOverride,
       callback: async () => {
@@ -232,6 +234,16 @@ export class TestManager {
         throw new Error('Tests completed but there are unhandled errors');
       }
     });
+  }
+
+  // The stories of a run of files, known once Vitest has matched the files
+  setRunStories(storyIds: string[], matchedFileCount: number | undefined) {
+    this.componentTestStatusStore.unset(storyIds);
+    this.a11yStatusStore.unset(storyIds);
+    this.store.setState((s) => ({
+      ...s,
+      currentRun: { ...s.currentRun, storyIds, matchedFileCount },
+    }));
   }
 
   onTestModuleCollected(collectedTestCount: number) {
@@ -379,7 +391,11 @@ export class TestManager {
     });
   }, 500);
 
-  onTestRunEnd(endResult: { totalTestCount: number; unhandledErrors: VitestError[] }) {
+  onTestRunEnd(endResult: {
+    totalTestCount: number;
+    skippedTestCount?: number;
+    unhandledErrors: VitestError[];
+  }) {
     this.throttledFlushTestCaseResults.flush();
     this.store.setState((s) => {
       const focusedRunTotal =
@@ -389,8 +405,7 @@ export class TestManager {
         ...s,
         currentRun: {
           ...s.currentRun,
-          // Until here the total is the number of tests the run was asked for
-          skippedTestCount: Math.max(0, (s.currentRun.totalTestCount ?? 0) - focusedRunTotal),
+          skippedTestCount: endResult.skippedTestCount,
           // For focused runs, keep totals aligned with filtered case results.
           // For full runs, use Vitest's reported total.
           totalTestCount: s.currentRun.storyIds ? focusedRunTotal : endResult.totalTestCount,

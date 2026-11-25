@@ -313,7 +313,7 @@ function formatChangedConfigFiles(changed: TestRunSelection['changed']): string[
 function formatSelection(selection: TestRunSelection): string | undefined {
   const parts: string[] = [];
   if (selection.files) {
-    const { filters, storyFileCount } = selection.files;
+    const { filters, storyFileCount = 0 } = selection.files;
     parts.push(
       `${pluralize(storyFileCount, 'story file')} ${storyFileCount === 1 ? 'matches' : 'match'} ${filters.map((filter) => code(displayPath(filter))).join(', ')}`
     );
@@ -357,8 +357,9 @@ function formatResultSection(
     ...testFailureParts,
   ];
   const passed = result.componentTestCount.success;
-  const skipped = result.skippedTestCount ?? 0;
-  // As in Vitest's `1 passed | 4 skipped (5)`, a selected test that did not run is counted.
+  // As in Vitest's `1 passed | 4 skipped (5)`. Not for stories asked for by id: there Vitest also
+  // skips the other tests of their files.
+  const skipped = selection?.inputStoryCount === undefined ? (result.skippedTestCount ?? 0) : 0;
   const passedPart = `${pluralize(passed, 'component test')} passed`;
   const notFailedParts = [
     ...(passed > 0 && testFailureParts.length === 0 ? [passedPart] : []),

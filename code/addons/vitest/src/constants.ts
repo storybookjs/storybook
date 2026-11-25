@@ -50,6 +50,7 @@ export const storeOptions = {
       storyIds: undefined,
       totalTestCount: undefined,
       skippedTestCount: undefined,
+      matchedFileCount: undefined,
       startedAt: undefined,
       finishedAt: undefined,
       unhandledErrors: [],
@@ -81,6 +82,8 @@ export type TriggerTestRunRequestPayload = {
   requestId: string;
   actor: string;
   storyIds?: string[];
+  files?: string[];
+  changedFiles?: string[];
   config?: Record<string, unknown>;
 };
 

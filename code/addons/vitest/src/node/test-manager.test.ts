@@ -672,78 +672,77 @@ describe('TestManager', () => {
     ]);
   });
 
-  it('counts the tests a run was asked for that did not run', async () => {
+  it('runs the story files Vitest matches for file filters, without a test name pattern', async () => {
+    vitest.globTestSpecifications.mockImplementation((filters?: string[]) =>
+      filters ? tests.slice(0, 1) : tests
+    );
+    const testManager = await startWithIndex();
+
+    await testManager.handleTriggerRunEvent({
+      type: 'TRIGGER_RUN',
+      payload: { files: ['to/file'], triggeredBy: 'global' },
+    });
+
+    expect(vitest.globTestSpecifications).toHaveBeenLastCalledWith(['to/file']);
+    expect(vitest.runTestSpecifications).toHaveBeenCalledWith(tests.slice(0, 1), true);
+    expect(setTestNamePattern.mock.calls.map(([pattern]) => pattern)).not.toContainEqual(
+      expect.any(RegExp)
+    );
+    expect(mockStore.getState().currentRun).toMatchObject({
+      storyIds: ['story--one', 'story--two'],
+      matchedFileCount: 1,
+    });
+    expect(mockComponentTestStatusStore.unset).toHaveBeenLastCalledWith([
+      'story--one',
+      'story--two',
+    ]);
+    expect(mockComponentTestStatusStore.unset).not.toHaveBeenCalledWith(undefined);
+  });
+
+  it('runs only the changed story files', async () => {
     vitest.globTestSpecifications.mockImplementation(() => tests);
     const testManager = await startWithIndex();
-    vitest.runTestSpecifications.mockImplementationOnce(async () => {
-      testManager.onTestCaseResult({
-        storyId: 'story--one',
-        testResult: { state: 'passed', errors: [] } as unknown as TestResult,
-      });
-      testManager.onTestRunEnd({ totalTestCount: 1, unhandledErrors: [] });
-    });
 
     await testManager.handleTriggerRunEvent({
       type: 'TRIGGER_RUN',
-      payload: { storyIds: ['story--one', 'story--two'], triggeredBy: 'global' },
+      payload: { changedFiles: ['path/to/another/file'], triggeredBy: 'global' },
     });
 
-    expect(mockStore.getState().currentRun).toMatchObject({
-      componentTestCount: { success: 1, error: 0 },
-      skippedTestCount: 1,
-    });
+    expect(vitest.runTestSpecifications).toHaveBeenCalledWith(tests.slice(1), true);
+    expect(mockStore.getState().currentRun.storyIds).toEqual(['another--one', 'another--two']);
   });
 
-  it('counts the tests of a story that was asked for without them', async () => {
-    vitest.globTestSpecifications.mockImplementation(() => [
-      { ...tests[0], moduleId: path.join(process.cwd(), 'path/to/parent/file') },
-    ]);
+  it('selects stories asked for by id by test name, in the story files that match', async () => {
+    vitest.globTestSpecifications.mockImplementation((filters?: string[]) =>
+      filters ? tests.slice(0, 1) : tests
+    );
     const testManager = await startWithIndex();
-    vitest.runTestSpecifications.mockImplementationOnce(async () => {
-      testManager.onTestCaseResult({
-        storyId: 'parent--story:test',
-        testResult: { state: 'passed', errors: [] } as unknown as TestResult,
-      });
-      testManager.onTestRunEnd({ totalTestCount: 1, unhandledErrors: [] });
-    });
 
     await testManager.handleTriggerRunEvent({
       type: 'TRIGGER_RUN',
-      payload: { storyIds: ['parent--story'], triggeredBy: 'global' },
+      payload: {
+        files: ['to/file'],
+        storyIds: ['story--one', 'another--two'],
+        triggeredBy: 'global',
+      },
     });
 
-    expect(mockStore.getState().currentRun.skippedTestCount).toBe(1);
+    expect(setTestNamePattern).toHaveBeenCalledWith(new RegExp('(?:(?:^One$)|(?:^Two B$))'));
+    expect(vitest.runTestSpecifications).toHaveBeenCalledWith(tests.slice(0, 1), true);
+    expect(mockStore.getState().currentRun.storyIds).toEqual(['story--one']);
   });
 
-  it('does not count a selected story that a skip tag skips', async () => {
-    vitest.globTestSpecifications.mockImplementation(() => [
-      {
-        ...tests[0],
-        project: { config: { env: { __VITEST_SKIP_TAGS__: 'skip-me' } } },
-      },
-    ]);
+  it('keeps how many tests Vitest skipped', async () => {
     const testManager = await startWithIndex();
-    testManager.storyIndex = {
-      ...mockIndex,
-      entries: {
-        ...mockIndex.entries,
-        'story--two': { ...mockIndex.entries['story--two'], tags: [Tag.TEST, 'skip-me'] },
+
+    await testManager.runTestsWithState({
+      triggeredBy: 'global',
+      callback: async () => {
+        testManager.onTestRunEnd({ totalTestCount: 3, skippedTestCount: 2, unhandledErrors: [] });
       },
-    } as StoryIndex;
-    vitest.runTestSpecifications.mockImplementationOnce(async () => {
-      testManager.onTestCaseResult({
-        storyId: 'story--one',
-        testResult: { state: 'passed', errors: [] } as unknown as TestResult,
-      });
-      testManager.onTestRunEnd({ totalTestCount: 1, unhandledErrors: [] });
     });
 
-    await testManager.handleTriggerRunEvent({
-      type: 'TRIGGER_RUN',
-      payload: { storyIds: ['story--one', 'story--two'], triggeredBy: 'global' },
-    });
-
-    expect(mockStore.getState().currentRun.skippedTestCount).toBe(0);
+    expect(mockStore.getState().currentRun.skippedTestCount).toBe(2);
   });
 
   it('should filter tests', async () => {

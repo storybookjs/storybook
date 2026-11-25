@@ -397,10 +397,11 @@ export class VitestManager {
   }
 
   async runTests(runPayload: TriggerRunEvent['payload']) {
+    const { storyIds, files, changedFiles } = runPayload;
     const { watching } = this.testManager.store.getState();
     const runConfig = this.getCurrentRunConfig();
     const coverageShouldBeEnabled =
-      !!runConfig.coverage && !watching && (runPayload?.storyIds?.length ?? 0) === 0;
+      !!runConfig.coverage && !watching && !files && !changedFiles && (storyIds?.length ?? 0) === 0;
 
     if (!this.vitest) {
       await this.startVitest({ coverage: coverageShouldBeEnabled });
@@ -415,33 +416,35 @@ export class VitestManager {
     await this.cancelCurrentRun();
 
     const allStories = this.getStories();
-    const testSpecifications = await this.getStorybookTestSpecifications();
+    const matchedTestSpecifications = await this.getStorybookTestSpecifications(files);
+    const changedModuleIds = changedFiles && new Set(changedFiles.map(toModuleId));
+    const testSpecifications = changedModuleIds
+      ? matchedTestSpecifications.filter(({ moduleId }) => changedModuleIds.has(moduleId))
+      : matchedTestSpecifications;
 
-    const filteredStories = runPayload.storyIds
-      ? allStories.filter((story) => runPayload.storyIds?.includes(story.id))
+    const filteredStories = storyIds
+      ? allStories.filter((story) => storyIds.includes(story.id))
       : allStories;
 
-    if (runPayload.storyIds?.length) {
+    // Only a run of stories by id selects tests in a file. A run of files runs the files.
+    if (storyIds?.length) {
       const regex = this.buildTestNamePatternForStories(filteredStories, allStories);
       if (regex) {
         this.vitest!.setGlobalTestNamePattern(regex);
       }
     }
 
-    // The pattern of a story also matches its tests, so they run with it
-    const requestedStoryIds = runPayload.storyIds;
-    const storiesToRun = requestedStoryIds
-      ? allStories.filter(
-          (story) =>
-            requestedStoryIds.includes(story.id) ||
-            (story.parent !== undefined && requestedStoryIds.includes(story.parent))
-        )
-      : allStories;
     const { filteredTestSpecifications, filteredStoryIds } = this.filterTestSpecifications(
       testSpecifications,
-      storiesToRun
+      filteredStories
     );
 
+    if (files || changedFiles) {
+      this.testManager.setRunStories(
+        filteredStoryIds,
+        files && new Set(matchedTestSpecifications.map(({ moduleId }) => moduleId)).size
+      );
+    }
     this.testManager.store.setState((s) => ({
       ...s,
       currentRun: {
@@ -487,8 +490,9 @@ export class VitestManager {
     }
   }
 
-  async getStorybookTestSpecifications() {
-    const globTestSpecifications = (await this.vitest?.globTestSpecifications()) ?? [];
+  // With file filters: the story files they match, as `vitest Button` finds its test files
+  async getStorybookTestSpecifications(fileFilters?: string[]) {
+    const globTestSpecifications = (await this.vitest?.globTestSpecifications(fileFilters)) ?? [];
     return (
       globTestSpecifications.filter((workspaceSpec) =>
         this.isStorybookProject(workspaceSpec.project)

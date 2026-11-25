@@ -123,11 +123,14 @@ describe('test API', () => {
     );
   });
 
-  it('selects for changed exactly the stories that stories changed lists', async () => {
+  it('selects for changed the stories that stories changed lists, and their story files', async () => {
     const changed = vi.fn(async () => ({
       ok: true as const,
       data: {
-        stories: [{ storyId: 'button--primary' }, { storyId: 'header--default' }],
+        stories: [
+          { storyId: 'button--primary', importPath: './src/Button.stories.tsx' },
+          { storyId: 'button--secondary', importPath: './src/Button.stories.tsx' },
+        ],
         changedConfigFiles: ['.storybook/preview.ts'],
         unindexedStoryFiles: ['src/New.stories.tsx'],
         pendingFiles: ['src/Card.tsx'],
@@ -140,7 +143,8 @@ describe('test API', () => {
     const { getChangedStories } = vi.mocked(runStoryTests).mock.lastCall![0];
 
     expect(await getChangedStories!()).toEqual({
-      storyIds: ['button--primary', 'header--default'],
+      storyIds: ['button--primary', 'button--secondary'],
+      storyFiles: ['./src/Button.stories.tsx'],
       changedConfigFiles: ['.storybook/preview.ts'],
       pendingFiles: ['src/New.stories.tsx', 'src/Card.tsx'],
     });
@@ -464,7 +468,7 @@ Failed: 1 argument not used; 1 component test passed.
 Accessibility: not checked.`);
     });
 
-    it('passes a focused run in which none of the selected stories ran, as Vitest does with skipped tests', async () => {
+    it('passes a run of story files in which every test was skipped, as Vitest does', async () => {
       vi.mocked(runStoryTests).mockResolvedValue({
         ...completed({
           storyIds: ['button--primary', 'button--secondary'],
@@ -483,7 +487,7 @@ No component tests ran: 2 skipped.
 Accessibility: not checked.`);
     });
 
-    it('counts the selected tests that did not run next to the ones that passed, as Vitest does', async () => {
+    it('counts the tests Vitest skipped next to the ones that passed, as Vitest does', async () => {
       vi.mocked(runStoryTests).mockResolvedValue({
         ...completed({
           storyIds: ['button--primary', 'button--secondary', 'button--tertiary'],
@@ -503,7 +507,7 @@ Accessibility: not checked.`);
 Passed: 1 component test passed, 2 skipped (3).`);
     });
 
-    it('counts the selected tests that did not run in a failed run', async () => {
+    it('counts the tests Vitest skipped in a failed run', async () => {
       vi.mocked(runStoryTests).mockResolvedValue(
         completed({
           componentTestCount: { success: 1, error: 1 },
@@ -520,13 +524,13 @@ Passed: 1 component test passed, 2 skipped (3).`);
       );
     });
 
-    it('fails a run in which a story asked for by id did not run, and names it', async () => {
+    it('fails a run in which a story asked for by id did not run, names it, and leaves out the tests Vitest skipped next to it', async () => {
       vi.mocked(runStoryTests).mockResolvedValue({
         ...completed({
           storyIds: ['button--primary', 'button--secondary'],
           componentTestCount: { success: 1, error: 0 },
           componentTestStatuses: [componentTest('button--primary', 'status-value:success')],
-          skippedTestCount: 1,
+          skippedTestCount: 5,
         }),
         selection: { inputStoryCount: 2, storyCount: 2 },
         notRunStoryIds: ['button--secondary'],
@@ -538,7 +542,7 @@ Passed: 1 component test passed, 2 skipped (3).`);
       expect(outcome.markdown).toContain(`## Result
 
 Did not run: \`button--secondary\`. A story runs when it has the \`test\` tag, no tag that skips it, and a test that Vitest finds.
-Failed: 1 requested story did not run; 1 component test passed, 1 component test skipped.
+Failed: 1 requested story did not run; 1 component test passed.
 Accessibility: not checked.`);
     });
 

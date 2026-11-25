@@ -39,10 +39,6 @@ describe('experimental_devServer', () => {
     } as unknown as Options;
   });
 
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
   const stubPrivateRefDiscovery = () => {
     vi.stubGlobal(
       'fetch',

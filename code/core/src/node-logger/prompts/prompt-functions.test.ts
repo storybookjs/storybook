@@ -10,7 +10,6 @@ const stubStdoutColumns = (descriptor: PropertyDescriptor) => {
 };
 
 afterEach(() => {
-  vi.unstubAllGlobals();
   vi.resetModules();
 });
 

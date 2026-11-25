@@ -13,7 +13,6 @@ const featureOffCases: [string, Record<string, boolean> | undefined][] = [
 ];
 
 afterEach(() => {
-  vi.unstubAllGlobals();
   vi.resetModules();
 });
 

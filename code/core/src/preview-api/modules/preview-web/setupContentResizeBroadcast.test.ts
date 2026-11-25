@@ -83,7 +83,6 @@ describe('isViewportOverlayUnderlay', () => {
 
   afterEach(() => {
     document.body.innerHTML = '';
-    vi.unstubAllGlobals();
   });
 
   const mockViewportRect = (element: HTMLElement) => {
@@ -215,7 +214,6 @@ describe('setupContentResizeBroadcast', () => {
     document.body.innerHTML = '';
     document.head.querySelector('#storybook-embed-sizing')?.remove();
     document.head.querySelector('#storybook-embed-ui')?.remove();
-    vi.unstubAllGlobals();
   });
 
   describe('when freeze=finished', () => {

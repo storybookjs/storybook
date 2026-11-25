@@ -65,7 +65,6 @@ describe('WebsocketTransport heartbeat', () => {
   afterEach(() => {
     vi.useRealTimers();
     vi.clearAllMocks();
-    vi.unstubAllGlobals();
   });
 
   it('does not close the socket when no message arrives', () => {

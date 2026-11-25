@@ -333,7 +333,6 @@ describe('Yarn 2 Proxy', () => {
 
     afterEach(() => {
       vi.useRealTimers();
-      vi.unstubAllGlobals();
     });
 
     it('should update npmPreapprovedPackages in non-interactive mode when npmMinimalAgeGate blocks Storybook', async () => {

@@ -51,7 +51,6 @@ describe('wrap-utils', () => {
   });
 
   afterEach(() => {
-    vi.unstubAllGlobals();
     vi.unstubAllEnvs();
   });
 

@@ -10,7 +10,6 @@ const loadParameters = async (): Promise<
 
 afterEach((): void => {
   vi.resetModules();
-  vi.unstubAllGlobals();
 });
 
 it('omits runtime docs extractors when docgen server is enabled', async (): Promise<void> => {

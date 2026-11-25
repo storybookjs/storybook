@@ -7,7 +7,6 @@ const decoratorsWith = async (features: Record<string, boolean> | undefined) => 
 };
 
 afterEach(() => {
-  vi.unstubAllGlobals();
   vi.resetModules();
 });
 

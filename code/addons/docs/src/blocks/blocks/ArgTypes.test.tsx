@@ -40,7 +40,6 @@ afterEach(() => cleanup());
 
 describe('with the docgen server on', () => {
   beforeEach(() => vi.stubGlobal('FEATURES', { docgenServer: true }));
-  afterEach(() => vi.unstubAllGlobals());
 
   it('says the component is unreachable from this page, not that no story declares it', () => {
     // `getComponentId` only searches the CSF files this docs page imports (DocsContext.ts), so
@@ -55,7 +54,6 @@ describe('with the docgen server on', () => {
 
 describe('with the docgen server off', () => {
   beforeEach(() => vi.stubGlobal('FEATURES', { docgenServer: false }));
-  afterEach(() => vi.unstubAllGlobals());
 
   it("renders the renderer extractor's rows for the same component", () => {
     renderArgTypes(undefined);

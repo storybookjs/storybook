@@ -1,11 +1,7 @@
 // @vitest-environment happy-dom
-import { afterEach, expect, it, vi } from 'vitest';
+import { expect, it, vi } from 'vitest';
 
 import { composeStory } from './portable-stories.ts';
-
-afterEach(() => {
-  vi.unstubAllGlobals();
-});
 
 it('removes animation listeners when afterEach throws', async () => {
   const canvasElement = document.createElement('div');

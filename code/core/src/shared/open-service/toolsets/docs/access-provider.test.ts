@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   fetchManifests as getManifests,
   parseManifestRef,
@@ -131,10 +131,6 @@ function createManifestProviderMock(responses: {
 describe('getManifest', () => {
   beforeEach(() => {
     vi.stubGlobal('fetch', vi.fn());
-  });
-
-  afterEach(() => {
-    vi.unstubAllGlobals();
   });
 
   describe('error cases', () => {
@@ -713,10 +709,6 @@ describe('sourceUrlManifestProvider', () => {
       'fetch',
       vi.fn(async () => new Response('{}', { headers: { 'content-type': 'application/json' } }))
     );
-  });
-
-  afterEach(() => {
-    vi.unstubAllGlobals();
   });
 
   it('fetches under the source url, keeping its sub-path', async () => {

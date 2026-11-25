@@ -86,7 +86,6 @@ async function rejectedAttachUnavailable(
 }
 
 beforeEach(async () => {
-  vi.unstubAllGlobals();
   vol.reset();
   vol.fromNestedJSON({
     [`${STORYBOOK_PATH}/package.json`]: '{"name":"storybook"}',

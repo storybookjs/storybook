@@ -1,6 +1,6 @@
 import { logger } from 'storybook/internal/node-logger';
 import type { Options } from 'storybook/internal/types';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { resolveCompositionSources } from './resolve-composition-sources.ts';
 
@@ -15,10 +15,6 @@ describe('resolveCompositionSources', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     vi.spyOn(logger, 'warn').mockImplementation(() => {});
-  });
-
-  afterEach(() => {
-    vi.unstubAllGlobals();
   });
 
   it('strips a trailing slash from ref URLs before probing and in the resolved source', async () => {

@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { loadCsf, printCsf } from './CsfFile.ts';
 import type { ConfigFile } from './ConfigFile.ts';
@@ -24,8 +24,6 @@ const parse = (source: string) =>
   loadCsf(source, { makeTitle: (title) => title ?? 'title' }).parse();
 
 describe('CsfObject', () => {
-  afterEach(() => vi.unstubAllGlobals());
-
   it.each(['<T>(value: T) => value', '<number>size'])(
     'reads %s, which only a .ts file allows',
     (expression) => {

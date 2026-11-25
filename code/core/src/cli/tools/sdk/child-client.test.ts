@@ -105,7 +105,6 @@ describe('spawnChildHost', () => {
 
   afterEach(() => {
     vi.useRealTimers();
-    vi.unstubAllGlobals();
   });
 
   const spawn = (

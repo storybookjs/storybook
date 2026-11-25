@@ -98,7 +98,6 @@ describe('Depth config', () => {
 
 describe('Implicit actions during rendering', () => {
   afterEach(() => {
-    vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
 

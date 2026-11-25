@@ -1,15 +1,11 @@
 import { logger } from 'storybook/internal/node-logger';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { CompositionAuth, extractBearerToken } from './composition-auth.ts';
 
 describe('CompositionAuth', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
-  });
-
-  afterEach(() => {
-    vi.unstubAllGlobals();
   });
 
   describe('extractBearerToken', () => {

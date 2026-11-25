@@ -56,7 +56,6 @@ afterEach((): void => {
   setCustomElementsManifest(undefined);
   vi.restoreAllMocks();
   once.clear();
-  vi.unstubAllGlobals();
 });
 
 const readCommitted = (path: string): string | undefined =>

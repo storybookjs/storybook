@@ -43,7 +43,9 @@ const MockedWebsocket = vi.hoisted(() => {
   return { MyMockedWebsocket, ref };
 });
 
-vi.stubGlobal('WebSocket', MockedWebsocket.MyMockedWebsocket);
+beforeEach(() => {
+  vi.stubGlobal('WebSocket', MockedWebsocket.MyMockedWebsocket);
+});
 
 describe('Channel', () => {
   let transport: ChannelTransport;
@@ -363,7 +365,6 @@ describe('createBrowserChannel', () => {
   });
 
   afterEach(() => {
-    vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
 

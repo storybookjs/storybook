@@ -1,6 +1,6 @@
 import type { Options } from 'storybook/internal/types';
 import * as v from 'valibot';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ToolsetCtx } from '../../shared/open-service/toolset-definition.ts';
 import { clearToolsetRegistry, getToolset } from '../../shared/open-service/toolset-registry.ts';
@@ -68,10 +68,6 @@ describe('services preset hook: docs toolset', () => {
         },
       },
     });
-  });
-
-  afterEach(() => {
-    vi.unstubAllGlobals();
   });
 
   describe('with refs', () => {

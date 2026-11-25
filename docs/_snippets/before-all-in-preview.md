@@ -5,6 +5,7 @@ import { definePreview } from '@storybook/your-framework';
 import { init } from '../project-bootstrap';
 
 export default definePreview({
+  addons: [/* ... */],
   async beforeAll() {
     await init();
   },
@@ -18,6 +19,7 @@ import { definePreview } from '@storybook/your-framework';
 import { init } from '../project-bootstrap';
 
 export default definePreview({
+  addons: [/* ... */],
   async beforeAll() {
     await init();
   },
@@ -30,6 +32,7 @@ import { definePreview } from '@storybook/vue3-vite';
 import { init } from '../project-bootstrap';
 
 export default definePreview({
+  addons: [/* ... */],
   async beforeAll() {
     await init();
   },
@@ -42,6 +45,7 @@ import { definePreview } from '@storybook/vue3-vite';
 import { init } from '../project-bootstrap';
 
 export default definePreview({
+  addons: [/* ... */],
   async beforeAll() {
     await init();
   },
@@ -54,6 +58,7 @@ import { definePreview } from '@storybook/angular';
 import { init } from '../project-bootstrap';
 
 export default definePreview({
+  addons: [/* ... */],
   async beforeAll() {
     await init();
   },
@@ -66,6 +71,7 @@ import { definePreview } from '@storybook/web-components-vite';
 import { init } from '../project-bootstrap';
 
 export default definePreview({
+  addons: [/* ... */],
   async beforeAll() {
     await init();
   },
@@ -78,6 +84,7 @@ import { definePreview } from '@storybook/web-components-vite';
 import { init } from '../project-bootstrap';
 
 export default definePreview({
+  addons: [/* ... */],
   async beforeAll() {
     await init();
   },

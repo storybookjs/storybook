@@ -3,6 +3,7 @@
 import { definePreview } from '@storybook/your-framework';
 
 const preview = definePreview({
+  addons: [/* ... */],
   parameters: {
     docs: {
       source: {
@@ -29,6 +30,7 @@ export default preview;
 import { definePreview } from '@storybook/your-framework';
 
 const preview = definePreview({
+  addons: [/* ... */],
   parameters: {
     docs: {
       source: {
@@ -54,6 +56,7 @@ export default preview;
 import { definePreview } from '@storybook/vue3-vite';
 
 const preview = definePreview({
+  addons: [/* ... */],
   parameters: {
     docs: {
       source: {
@@ -79,6 +82,7 @@ export default preview;
 import { definePreview } from '@storybook/vue3-vite';
 
 const preview = definePreview({
+  addons: [/* ... */],
   parameters: {
     docs: {
       source: {
@@ -104,6 +108,7 @@ export default preview;
 import { definePreview } from '@storybook/angular';
 
 const preview = definePreview({
+  addons: [/* ... */],
   parameters: {
     docs: {
       source: {
@@ -129,6 +134,7 @@ export default preview;
 import { definePreview } from '@storybook/web-components-vite';
 
 const preview = definePreview({
+  addons: [/* ... */],
   parameters: {
     docs: {
       source: {
@@ -154,6 +160,7 @@ export default preview;
 import { definePreview } from '@storybook/web-components-vite';
 
 const preview = definePreview({
+  addons: [/* ... */],
   parameters: {
     docs: {
       source: {

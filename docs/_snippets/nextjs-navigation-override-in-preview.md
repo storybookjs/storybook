@@ -6,6 +6,7 @@ import { definePreview } from '@storybook/your-framework';
 import { getRouter } from '@storybook/your-framework/navigation.mock';
 
 const preview = definePreview({
+  addons: [/* ... */],
   parameters: {
     nextjs: {
       // 👇 Override the default navigation properties
@@ -33,6 +34,7 @@ import { definePreview } from '@storybook/your-framework';
 import { getRouter } from '@storybook/your-framework/navigation.mock';
 
 const preview = definePreview({
+  addons: [/* ... */],
   parameters: {
     nextjs: {
       // 👇 Override the default navigation properties

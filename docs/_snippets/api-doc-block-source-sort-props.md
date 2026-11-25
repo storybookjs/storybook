@@ -3,6 +3,7 @@
 import { definePreview } from '@storybook/your-framework';
 
 export default definePreview({
+  addons: [/* ... */],
   parameters: {
     jsx: {
       // 👇 Preserve the order in which props are defined, instead of sorting them alphabetically
@@ -17,6 +18,7 @@ export default definePreview({
 import { definePreview } from '@storybook/your-framework';
 
 export default definePreview({
+  addons: [/* ... */],
   parameters: {
     jsx: {
       // 👇 Preserve the order in which props are defined, instead of sorting them alphabetically

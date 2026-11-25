@@ -38,6 +38,7 @@ setup((app) => {
 });
 
 export default definePreview({
+  addons: [/* ... */],
   decorators: [
     (story) => ({
       components: { story },
@@ -61,6 +62,7 @@ setup((app) => {
 });
 
 export default definePreview({
+  addons: [/* ... */],
   decorators: [
     (story) => ({
       components: { story },
@@ -81,6 +83,7 @@ setup((app) => {
 });
 
 export default definePreview({
+  addons: [/* ... */],
   decorators: [
     (story) => ({
       components: { story },
@@ -104,6 +107,7 @@ setup((app) => {
 });
 
 export default definePreview({
+  addons: [/* ... */],
   decorators: [
     (story) => ({
       components: { story },

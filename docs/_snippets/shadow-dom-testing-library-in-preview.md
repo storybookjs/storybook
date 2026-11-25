@@ -12,6 +12,7 @@ declare module 'storybook/internal/csf' {
 }
 
 export default definePreview({
+  addons: [/* ... */],
   // 👇 Augment the canvas with the shadow DOM queries
   beforeEach({ canvasElement, canvas }) {
     Object.assign(canvas, { ...withinShadow(canvasElement) });
@@ -26,6 +27,7 @@ import { definePreview } from '@storybook/web-components-vite';
 import { within as withinShadow } from 'shadow-dom-testing-library';
 
 export default definePreview({
+  addons: [/* ... */],
   // 👇 Augment the canvas with the shadow DOM queries
   beforeEach({ canvasElement, canvas }) {
     Object.assign(canvas, { ...withinShadow(canvasElement) });

@@ -22,6 +22,7 @@ const kindleViewports = {
 };
 
 export default definePreview({
+  addons: [/* ... */],
   parameters: {
     viewport: {
       options: {
@@ -57,6 +58,7 @@ const kindleViewports = {
 };
 
 export default definePreview({
+  addons: [/* ... */],
   parameters: {
     viewport: {
       options: {
@@ -91,6 +93,7 @@ const kindleViewports = {
 };
 
 export default definePreview({
+  addons: [/* ... */],
   parameters: {
     viewport: {
       options: {
@@ -125,6 +128,7 @@ const kindleViewports = {
 };
 
 export default definePreview({
+  addons: [/* ... */],
   parameters: {
     viewport: {
       options: {
@@ -159,6 +163,7 @@ const kindleViewports = {
 };
 
 export default definePreview({
+  addons: [/* ... */],
   parameters: {
     viewport: {
       options: {
@@ -193,6 +198,7 @@ const kindleViewports = {
 };
 
 export default definePreview({
+  addons: [/* ... */],
   parameters: {
     viewport: {
       options: {
@@ -227,6 +233,7 @@ const kindleViewports = {
 };
 
 export default definePreview({
+  addons: [/* ... */],
   parameters: {
     viewport: {
       options: {

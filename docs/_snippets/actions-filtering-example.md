@@ -8,6 +8,7 @@ import { spyOn } from 'storybook/test';
 const originalConsoleLog = console.log;
 
 export default definePreview({
+  addons: [/* ... */],
   async beforeEach() {
     spyOn(console, 'log')
       // Disable automatic logging in the actions panel
@@ -35,6 +36,7 @@ import { spyOn } from 'storybook/test';
 
 const originalConsoleLog = console.log;
 export default definePreview({
+  addons: [/* ... */],
   async beforeEach() {
     spyOn(console, 'log')
       // Disable automatic logging in the actions panel
@@ -62,6 +64,7 @@ import { spyOn } from 'storybook/test';
 const originalConsoleLog = console.log;
 
 export default definePreview({
+  addons: [/* ... */],
   async beforeEach() {
     spyOn(console, 'log')
       // Disable automatic logging in the actions panel
@@ -88,6 +91,7 @@ import { spyOn } from 'storybook/test';
 
 const originalConsoleLog = console.log;
 export default definePreview({
+  addons: [/* ... */],
   async beforeEach() {
     spyOn(console, 'log')
       // Disable automatic logging in the actions panel
@@ -115,6 +119,7 @@ import { spyOn } from 'storybook/test';
 const originalConsoleLog = console.log;
 
 export default definePreview({
+  addons: [/* ... */],
   async beforeEach() {
     spyOn(console, 'log')
       // Disable automatic logging in the actions panel
@@ -141,6 +146,7 @@ import { spyOn } from 'storybook/test';
 
 const originalConsoleLog = console.log;
 export default definePreview({
+  addons: [/* ... */],
   async beforeEach() {
     spyOn(console, 'log')
       // Disable automatic logging in the actions panel
@@ -168,6 +174,7 @@ import { spyOn } from 'storybook/test';
 const originalConsoleLog = console.log;
 
 export default definePreview({
+  addons: [/* ... */],
   async beforeEach() {
     spyOn(console, 'log')
       // Disable automatic logging in the actions panel

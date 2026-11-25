@@ -7,6 +7,7 @@ import { initialize } from '../lib/your-library';
 initialize();
 
 const preview = definePreview({
+  addons: [/* ... */],
   // ...
 });
 
@@ -22,6 +23,7 @@ import { initialize } from '../lib/your-library';
 initialize();
 
 const preview = definePreview({
+  addons: [/* ... */],
   // ...
 });
 
@@ -36,6 +38,7 @@ import { initialize } from '../lib/your-library';
 initialize();
 
 const preview = definePreview({
+  addons: [/* ... */],
   // ...
 });
 
@@ -50,6 +53,7 @@ import { initialize } from '../lib/your-library';
 initialize();
 
 const preview = definePreview({
+  addons: [/* ... */],
   // ...
 });
 

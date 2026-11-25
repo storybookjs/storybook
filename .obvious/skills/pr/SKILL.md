@@ -67,7 +67,7 @@ Shape the commits so a reviewer can skip the hard implementation and review the 
 - One commit with only the test cases that show the behaviour, for example `test(svelte): the test cases for <feature>`.
 - Snapshots contain no versions and no absolute paths. Use a snapshot serializer with placeholders (see `code/renderers/svelte/vitest-setup.ts`).
 
-Until a human has reviewed the PR, fold each fix into the commit that owns it, also for bot feedback. After the first human review, add each fix for a human's feedback as a new commit on top, and link that commit in the reply on the human's thread: a folded fix is hard for the reviewer to find. A rebase onto the base branch is still fine, but keep those fix commits separate.
+Until a human other than the author has reviewed the PR, fold each fix into the commit that owns it, also for bot feedback and the author's feedback. After the first human review by someone else, add each fix for a human's feedback as a new commit on top, and link that commit in the reply on the human's thread: a folded fix is hard for the reviewer to find. A rebase onto the base branch is still fine, but keep those fix commits separate.
 
 ## PR body
 

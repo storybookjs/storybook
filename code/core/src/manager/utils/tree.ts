@@ -216,7 +216,7 @@ export type IndexTree = TreeEntry[];
 
 export const indexToTree = (index: IndexHash): IndexTree => {
   const tree: IndexTree = [];
-  const children: Record<string, TreeEntry[]> = {};
+  const children = new Map<string, TreeEntry[]>();
   const processingQueue: IndexTree = [];
 
   // Collect the children of every node and add the root nodes to the tree.
@@ -227,8 +227,12 @@ export const indexToTree = (index: IndexHash): IndexTree => {
     if (item.type === 'root' || !item.parent) {
       tree.push(entry);
     } else {
-      children[item.parent] = children[item.parent] || [];
-      children[item.parent].push(entry);
+      const siblings = children.get(item.parent);
+      if (siblings) {
+        siblings.push(entry);
+      } else {
+        children.set(item.parent, [entry]);
+      }
     }
   }
 
@@ -236,7 +240,7 @@ export const indexToTree = (index: IndexHash): IndexTree => {
   processingQueue.push(...tree);
   while (processingQueue.length > 0) {
     const current = processingQueue.shift()!;
-    const currentChildren = children[current.id] || [];
+    const currentChildren = children.get(current.id) ?? [];
     current.resolvedChildren = currentChildren;
     processingQueue.push(...currentChildren);
   }

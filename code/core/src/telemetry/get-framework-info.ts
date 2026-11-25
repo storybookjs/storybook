@@ -1,7 +1,20 @@
-import { getStorybookInfo } from 'storybook/internal/common';
+import {
+  getStorybookInfo,
+  readDependencyManifest,
+  rendererPackages,
+} from 'storybook/internal/common';
 import type { StorybookConfig } from 'storybook/internal/types';
 
+import { normalize, resolve } from 'pathe';
+import type { PackageJson } from 'type-fest';
+
+import { TELEMETRY_ONLY_RENDERER_PACKAGES } from './get-renderer-packages.ts';
 import { cleanPaths } from './sanitize.ts';
+
+const knownRendererPackages = new Set([
+  ...Object.keys(rendererPackages),
+  ...Object.keys(TELEMETRY_ONLY_RENDERER_PACKAGES),
+]);
 
 const cleanAndSanitizePath = (path: string) => {
   const cleaned = cleanPaths(path).replace(/.*node_modules[\\/]/, '');
@@ -13,11 +26,58 @@ const cleanAndSanitizePath = (path: string) => {
   return pnpmDir ? pnpmDir[1].replace('+', '/') : cleaned;
 };
 
+const readFrameworkPackageJson = (frameworkPackage: string, configDir: string) => {
+  const frameworkPath = normalize(frameworkPackage);
+  // A pnpm virtual-store dir holds no package.json of its own, so resolve its package by name
+  const framework = /\/\.pnpm\/[^/]+$/.test(frameworkPath)
+    ? cleanAndSanitizePath(frameworkPath)
+    : frameworkPath;
+  // Resolve from the config dir, where Storybook resolves the framework, not from the cwd
+  return readDependencyManifest(resolve(configDir), framework);
+};
+
+/**
+ * Finds the renderer package a framework package depends on: its only known renderer dependency,
+ * else its only known renderer peer dependency. A framework can list several renderers as peers
+ * (e.g. Astro, for islands), so more than one is ambiguous.
+ */
+const findRendererDependency = (packageJson: PackageJson | undefined) => {
+  const knownRenderers = (dependencies: Partial<Record<string, string>> | undefined) =>
+    Object.keys(dependencies ?? {}).filter((name) => knownRendererPackages.has(name));
+
+  const dependencies = knownRenderers(packageJson?.dependencies);
+  if (dependencies.length > 0) {
+    return dependencies.length === 1 ? dependencies[0] : undefined;
+  }
+  const peerDependencies = knownRenderers(packageJson?.peerDependencies);
+  return peerDependencies.length === 1 ? peerDependencies[0] : undefined;
+};
+
+/**
+ * Finds the renderer of a framework that the framework tables do not map to one: a renderer
+ * configured as its own framework, such as React Native, or the renderer a framework depends on.
+ */
+const findUnlistedRenderer = async (frameworkPackage: string, configDir: string) => {
+  const frameworkName = cleanAndSanitizePath(normalize(frameworkPackage));
+  if (knownRendererPackages.has(frameworkName)) {
+    return frameworkName;
+  }
+  const packageJson = await readFrameworkPackageJson(frameworkPackage, configDir);
+  // A renderer configured by a path outside node_modules is known by its package.json's name
+  return packageJson?.name && knownRendererPackages.has(packageJson.name)
+    ? packageJson.name
+    : findRendererDependency(packageJson);
+};
+
 export async function getFrameworkInfo(mainConfig: StorybookConfig, configDir: string) {
   const { frameworkPackage, rendererPackage, builderPackage } = await getStorybookInfo(configDir);
 
   const frameworkOptions =
     typeof mainConfig.framework === 'object' ? mainConfig.framework.options : {};
+
+  const renderer =
+    rendererPackage ??
+    (frameworkPackage ? await findUnlistedRenderer(frameworkPackage, configDir) : undefined);
 
   return {
     framework: {
@@ -25,6 +85,6 @@ export async function getFrameworkInfo(mainConfig: StorybookConfig, configDir: s
       options: frameworkOptions,
     },
     builder: builderPackage ? cleanAndSanitizePath(builderPackage) : undefined,
-    renderer: rendererPackage ? cleanAndSanitizePath(rendererPackage) : undefined,
+    renderer: renderer ? cleanAndSanitizePath(renderer) : undefined,
   };
 }

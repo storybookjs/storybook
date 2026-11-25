@@ -92,12 +92,8 @@ const makeAbsolute = (otherImport: Path, normalizedPath: Path, workingDir: Path)
     : otherImport;
 
 // An autodocs entry carries the tags all of its stories share, as a component does in the sidebar.
-const autodocsTags = (tagsByStory: Tag[][]): Tag[] => {
-  const sharedByAllStories = tagsByStory.reduce((shared, tags) =>
-    shared.filter((tag) => tags.includes(tag))
-  );
-  return [...new Set([...sharedByAllStories, Tag.AUTODOCS])];
-};
+const tagsSharedByAll = (tagsByStory: Tag[][]): Tag[] =>
+  tagsByStory.reduce((shared, tags) => shared.filter((tag) => tags.includes(tag)));
 
 type StoriesFilesByImport = Map<Path, { order: number; storiesFile: StoriesFile }[]>;
 
@@ -443,7 +439,11 @@ export class StoryIndexGenerator {
       const { metaId } = indexInputs[0];
       const entry = storyEntries[0];
       const id = toId(metaId ?? entry.title, name);
-      const tags = autodocsTags(storyEntries.map((storyEntry) => storyEntry.tags));
+      const tags = tagsSharedByAll(
+        storyEntries
+          .filter((storyEntry) => storyEntry.subtype === 'story')
+          .map((storyEntry) => storyEntry.tags)
+      );
 
       const docsEntry: DocsIndexEntry & { tags: Tag[] } = {
         id,

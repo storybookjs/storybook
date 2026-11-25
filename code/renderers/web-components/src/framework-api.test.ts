@@ -1,8 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { global } from '@storybook/global';
-
 import { logger, once } from 'storybook/internal/client-logger';
 
 import {
@@ -18,15 +16,13 @@ const RUNTIME_MANIFEST_DEPRECATION =
 describe('framework-api', (): void => {
   beforeEach((): void => {
     once.clear();
-    global.__STORYBOOK_CUSTOM_ELEMENTS__ = undefined;
-    global.__STORYBOOK_CUSTOM_ELEMENTS_MANIFEST__ = undefined;
+    vi.stubGlobal('__STORYBOOK_CUSTOM_ELEMENTS__', undefined);
+    vi.stubGlobal('__STORYBOOK_CUSTOM_ELEMENTS_MANIFEST__', undefined);
   });
 
   afterEach((): void => {
     vi.restoreAllMocks();
     once.clear();
-    global.__STORYBOOK_CUSTOM_ELEMENTS__ = undefined;
-    global.__STORYBOOK_CUSTOM_ELEMENTS_MANIFEST__ = undefined;
   });
 
   it.each([
@@ -50,10 +46,10 @@ describe('framework-api', (): void => {
   });
 
   it('prefers the manifest global over the legacy global', (): void => {
-    global.__STORYBOOK_CUSTOM_ELEMENTS__ = { tags: [{ name: 'legacy-element' }] };
-    global.__STORYBOOK_CUSTOM_ELEMENTS_MANIFEST__ = {
+    vi.stubGlobal('__STORYBOOK_CUSTOM_ELEMENTS__', { tags: [{ name: 'legacy-element' }] });
+    vi.stubGlobal('__STORYBOOK_CUSTOM_ELEMENTS_MANIFEST__', {
       modules: [{ declarations: [{ tagName: 'manifest-element' }] }],
-    };
+    });
 
     expect(getCustomElements()).toMatchInlineSnapshot(`
       {

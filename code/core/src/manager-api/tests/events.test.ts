@@ -1,17 +1,15 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getEventMetadata } from '../lib/events.ts';
 import type { API } from '../root.tsx';
 
-vi.mock('@storybook/global', () => ({
-  global: {
-    location: { origin: 'http://localhost:6006', pathname: '/' },
-  },
-}));
-
 describe('getEventMetadata', () => {
   const fullAPIMock = { findRef: vi.fn(), getRefs: vi.fn() };
   const fullAPI = fullAPIMock as unknown as API;
+
+  beforeEach(() => {
+    vi.stubGlobal('location', { origin: 'http://localhost:6006', pathname: '/' });
+  });
 
   it('returns local if the event source is the same current location', () => {
     expect(

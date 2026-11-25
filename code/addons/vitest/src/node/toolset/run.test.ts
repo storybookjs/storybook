@@ -110,6 +110,88 @@ function respondingChannel() {
   return { channel, requested };
 }
 
+function channelResponding(response: Omit<TriggerTestRunResponse, 'requestId'>) {
+  const channel = createMockChannel();
+  channel.emit = (event, payload) => {
+    if (event === TRIGGER_TEST_RUN_REQUEST) {
+      const { requestId } = payload as { requestId: string };
+      queueMicrotask(() => respond(channel, { requestId, ...response }));
+    }
+  };
+  return channel;
+}
+
+const LISTEN_EPERM = {
+  name: 'Error',
+  message: 'listen EPERM: operation not permitted ::1:63315',
+  stack:
+    'Error: listen EPERM: operation not permitted ::1:63315\n    at Server.setupListenHandle [as _listen2] (node:net:1918:21)',
+};
+
+describe('runStoryTests on a system that refuses ports', () => {
+  it('fails a run that a blocked port stopped, instead of reporting it as an unhandled error', async () => {
+    const result = await runStoryTests({
+      channel: channelResponding({
+        status: 'completed',
+        result: { ...sampleResult, unhandledErrors: [LISTEN_EPERM] },
+      }),
+      getIndex: async () => index,
+    });
+
+    expect(result).toEqual({
+      status: 'error',
+      error: {
+        message:
+          'The tests did not run: the system did not permit opening a port (`listen EPERM: operation not permitted ::1:63315`). This is not a problem in the code. If this command runs in a sandbox, re-run it with escalated permissions, outside the sandbox.',
+      },
+    });
+  });
+
+  it('fails the same way when the refused port arrives as a run error', async () => {
+    const result = await runStoryTests({
+      channel: channelResponding({
+        status: 'error',
+        error: { message: 'Failed to run tests', error: LISTEN_EPERM },
+      }),
+      getIndex: async () => index,
+    });
+
+    expect(result).toMatchObject({
+      status: 'error',
+      error: {
+        message: expect.stringContaining('The tests did not run: the system did not permit'),
+      },
+    });
+  });
+
+  it('keeps the report of a run whose tests ran', async () => {
+    const ran = {
+      ...sampleResult,
+      componentTestCount: { success: 1, error: 0 },
+      unhandledErrors: [LISTEN_EPERM],
+    };
+    const result = await runStoryTests({
+      channel: channelResponding({ status: 'completed', result: ran }),
+      getIndex: async () => index,
+    });
+
+    expect(result).toEqual({ status: 'completed', result: ran });
+  });
+
+  it('leaves other unhandled errors to the report', async () => {
+    const other = {
+      ...sampleResult,
+      unhandledErrors: [{ name: 'Error', message: 'listen EADDRINUSE: address already in use' }],
+    };
+    const result = await runStoryTests({
+      channel: channelResponding({ status: 'completed', result: other }),
+      getIndex: async () => index,
+    });
+
+    expect(result).toEqual({ status: 'completed', result: other });
+  });
+});
+
 describe('runStoryTests', () => {
   it('rejects when the story index cannot be loaded', async () => {
     await expect(

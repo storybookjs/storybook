@@ -1,6 +1,5 @@
 import fs from 'node:fs/promises';
 
-import { getStoryTitle } from 'storybook/internal/common';
 import { storyNameFromExport } from 'storybook/internal/csf';
 import { vitestTransform } from 'storybook/internal/csf-tools';
 import type { IndexerOptions } from 'storybook/internal/types';
@@ -18,11 +17,9 @@ import { getSvelteAST } from '../parser/ast.ts';
 import { extractCompiledASTNodes } from '../parser/extract/compiled/nodes.ts';
 import { extractSvelteASTNodes } from '../parser/extract/svelte/nodes.ts';
 
-vi.mock('storybook/internal/common', { spy: true });
 vi.mock('node:fs/promises', { spy: true });
 
 beforeEach(() => {
-  vi.mocked(getStoryTitle).mockReturnValue('Button');
   vi.mocked(fs.readFile).mockImplementation(memfs.promises.readFile as typeof fs.readFile);
   vol.reset();
 });
@@ -64,8 +61,8 @@ async function transform(originalCode: string) {
   const transformed = await vitestTransform({
     code: code.toString(),
     fileName: filename,
-    configDir: '.storybook',
-    stories: [],
+    configDir: '.',
+    stories: [{ directory: './src', files: '*.stories.svelte', titlePrefix: '' }],
     tagsFilter: { include: ['test'], exclude: [], skip: [] },
     previewLevelTags: [],
   });

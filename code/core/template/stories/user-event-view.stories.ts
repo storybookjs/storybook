@@ -1,5 +1,3 @@
-import { global as globalThis } from '@storybook/global';
-
 import { expect, userEvent as globalUserEvent } from 'storybook/test';
 
 /**

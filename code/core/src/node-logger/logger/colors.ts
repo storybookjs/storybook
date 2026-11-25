@@ -10,7 +10,8 @@ export const CLI_COLORS = {
   // Only color a link if it is the primary call to action, otherwise links shouldn't be colored
   cta: picocolors.cyan,
   muted: picocolors.dim,
-  // A file, package or command that a dry run names as one a run would change
+  // Color to highlight, during a dry run, which file paths, package names or commands
+  // would be impacted by a real run.
   dryRunChange: picocolors.yellow,
   storybook: (text: string) => `\x1b[38;2;255;71;133m${text}\x1b[39m`,
 };

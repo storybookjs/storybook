@@ -16,10 +16,18 @@ const bindingsOf = (code: string) =>
 const resolve = (code: string, componentName: string) =>
   resolveComponentImport(componentName, bindingsOf(code));
 
-const statementsFor = (code: string, componentNames: string[], packageName?: string) => {
+const statementsFor = (
+  code: string,
+  componentNames: string[],
+  packageName?: string,
+  options?: { isPackage?: boolean }
+) => {
   const bindings = bindingsOf(code);
   return buildImportStatements({
-    refs: componentNames.map((name) => resolveComponentImport(name, bindings)),
+    refs: componentNames.map((name) => ({
+      ...resolveComponentImport(name, bindings),
+      ...(options?.isPackage === undefined ? {} : { isPackage: options.isPackage }),
+    })),
     packageName,
   });
 };
@@ -274,7 +282,8 @@ describe('buildImportStatements', () => {
         statementsFor(
           `import { MemoryRouter } from 'react-router-dom';`,
           ['MemoryRouter'],
-          'my-design-system'
+          'my-design-system',
+          { isPackage: true }
         )
       ).toMatchInlineSnapshot(`
         [
@@ -291,7 +300,8 @@ describe('buildImportStatements', () => {
             import JSONStream from 'JSONStream';
           `,
           ['Button', 'JSONStream'],
-          'my-design-system'
+          'my-design-system',
+          { isPackage: true }
         )
       ).toMatchInlineSnapshot(`
         [
@@ -302,8 +312,11 @@ describe('buildImportStatements', () => {
     });
 
     it('keeps an unresolved package subpath', () => {
-      expect(statementsFor(`import format from 'date-fns/format';`, ['format'], 'my-design-system'))
-        .toMatchInlineSnapshot(`
+      expect(
+        statementsFor(`import format from 'date-fns/format';`, ['format'], 'my-design-system', {
+          isPackage: true,
+        })
+      ).toMatchInlineSnapshot(`
         [
           "import format from 'date-fns/format';",
         ]

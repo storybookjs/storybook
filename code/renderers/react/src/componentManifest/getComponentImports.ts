@@ -1,4 +1,6 @@
 import { dirname } from 'node:path';
+import { isAbsolute as isPosixAbsolute } from 'node:path/posix';
+import { isAbsolute as isWin32Absolute } from 'node:path/win32';
 
 import {
   type CsfFile,
@@ -38,6 +40,21 @@ const isReactDocgenTypescriptResolvable = () => {
 };
 
 export type { ReactDocgenConfig };
+
+// `~` and `#` are bundler and Node aliases. tsconfig `paths` are whatever `matched` changed.
+function isLocalImport(importId: string, matched: string | undefined): boolean {
+  if (
+    importId.startsWith('.') ||
+    importId.startsWith('~') ||
+    importId.startsWith('#') ||
+    isWin32Absolute(importId) ||
+    isPosixAbsolute(importId)
+  ) {
+    return true;
+  }
+
+  return matched !== undefined && matched !== importId;
+}
 export type DocgenEngine = 'react-docgen' | 'react-docgen-typescript' | 'react-component-meta';
 
 export interface TypescriptOptions extends TypescriptOptionsBase {
@@ -168,11 +185,13 @@ export const getComponents = async ({
           jsxDepth: componentDepth.get(c),
         };
 
+        const { importId } = component;
+        const matched =
+          importId && storyFilePath ? matchPath(importId, dirname(storyFilePath)) : importId;
         let path;
-        let isPackage = false;
         try {
-          if (component.importId && storyFilePath) {
-            path = cachedResolveImport(matchPath(component.importId, dirname(storyFilePath)), {
+          if (matched && storyFilePath) {
+            path = cachedResolveImport(matched, {
               basedir: dirname(storyFilePath),
             });
           }
@@ -180,13 +199,7 @@ export const getComponents = async ({
           logger.debug(e);
         }
 
-        try {
-          if (component.importId && !component.importId.startsWith('.') && storyFilePath) {
-            // throws when it can not be resolved
-            cachedResolveImport(component.importId, { basedir: dirname(storyFilePath) });
-            isPackage = true;
-          }
-        } catch {}
+        const isPackage = !!importId && !isLocalImport(importId, matched);
 
         const componentWithPackage = { ...component, isPackage };
 

@@ -1,8 +1,10 @@
 import { beforeEach, expect, test, vi } from 'vitest';
 
+import { findTsconfigPathForPath } from 'storybook/internal/common';
 import { loadCsf } from 'storybook/internal/csf-tools';
 
 import { dedent } from 'ts-dedent';
+import { createMatchPath, loadConfig } from 'tsconfig-paths';
 
 import { getComponentData } from './getComponentImports.ts';
 import { setupMemfsMocks } from './memfs-test-setup.ts';
@@ -678,7 +680,7 @@ test('Does not rewrite scoped package subpath (valid bare specifier)', async () 
           "componentName": "Button",
           "importId": "@scope/ui/components",
           "importName": "Button",
-          "isPackage": false,
+          "isPackage": true,
           "jsxDepth": 0,
           "localImportName": "Button",
         },
@@ -707,7 +709,7 @@ test('Does not rewrite unscoped package subpath (valid bare specifier)', async (
           "componentName": "Button",
           "importId": "ui/components",
           "importName": "Button",
-          "isPackage": false,
+          "isPackage": true,
           "jsxDepth": 0,
           "localImportName": "Button",
         },
@@ -718,6 +720,104 @@ test('Does not rewrite unscoped package subpath (valid bare specifier)', async (
     }
   `
   );
+});
+
+test('Keeps an unresolved package specifier', async () => {
+  const code = dedent`
+    import { MemoryRouter } from 'react-router-dom';
+
+    const meta = {};
+    export default meta;
+    export const S = <MemoryRouter/>;
+  `;
+  expect(await getImports(code, 'pkg')).toMatchInlineSnapshot(`
+    {
+      "components": [
+        {
+          "componentName": "MemoryRouter",
+          "importId": "react-router-dom",
+          "importName": "MemoryRouter",
+          "isPackage": true,
+          "jsxDepth": 0,
+          "localImportName": "MemoryRouter",
+        },
+      ],
+      "imports": [
+        "import { MemoryRouter } from 'react-router-dom';",
+      ],
+    }
+  `);
+});
+
+test('Rewrites a tsconfig path alias to packageName', async () => {
+  vi.mocked(findTsconfigPathForPath).mockReturnValue('/app/tsconfig.json');
+  vi.mocked(loadConfig).mockReturnValue({
+    resultType: 'success',
+    configFileAbsolutePath: '/app/tsconfig.json',
+    baseUrl: '.',
+    absoluteBaseUrl: '/app',
+    paths: { '@/*': ['src/*'] },
+  });
+  vi.mocked(createMatchPath).mockReturnValue((id) =>
+    typeof id === 'string' && id.startsWith('@/') ? '/app/src/components/Button.tsx' : undefined
+  );
+
+  const code = dedent`
+    import { Button } from '@/components/Button';
+
+    const meta = {};
+    export default meta;
+    export const S = <Button/>;
+  `;
+  try {
+    expect(await getImports(code, 'pkg')).toMatchInlineSnapshot(`
+      {
+        "components": [
+          {
+            "componentName": "Button",
+            "importId": "@/components/Button",
+            "importName": "Button",
+            "isPackage": false,
+            "jsxDepth": 0,
+            "localImportName": "Button",
+          },
+        ],
+        "imports": [
+          "import { Button } from 'pkg';",
+        ],
+      }
+    `);
+  } finally {
+    vi.mocked(findTsconfigPathForPath).mockRestore();
+    vi.mocked(createMatchPath).mockRestore();
+  }
+});
+
+test('Rewrites a Windows network path to packageName', async () => {
+  const code = dedent`
+    import Button from '\\\\\\\\server\\\\share\\\\Button';
+
+    const meta = {};
+    export default meta;
+    export const S = <Button/>;
+  `;
+  expect(await getImports(code, 'pkg')).toMatchInlineSnapshot(`
+    {
+      "components": [
+        {
+          "componentName": "Button",
+          "importId": "\\\\server\\share\\Button",
+          "importName": "default",
+          "isPackage": false,
+          "jsxDepth": 0,
+          "localImportName": "Button",
+        },
+      ],
+      "imports": [
+        "import { Button } from 'pkg';",
+      ],
+    }
+  `);
 });
 
 // Merging imports from same package
@@ -743,7 +843,7 @@ test('Merges multiple imports from the same package (defaults and named)', async
           "componentName": "Banner",
           "importId": "@primer/react",
           "importName": "Banner",
-          "isPackage": false,
+          "isPackage": true,
           "jsxDepth": 1,
           "localImportName": "Banner",
         },
@@ -751,7 +851,7 @@ test('Merges multiple imports from the same package (defaults and named)', async
           "componentName": "CopilotIcon",
           "importId": "@primer/octicons-react",
           "importName": "CopilotIcon",
-          "isPackage": false,
+          "isPackage": true,
           "jsxDepth": 1,
           "localImportName": "CopilotIcon",
         },
@@ -759,7 +859,7 @@ test('Merges multiple imports from the same package (defaults and named)', async
           "componentName": "Dialog",
           "importId": "@primer/react",
           "importName": "Dialog",
-          "isPackage": false,
+          "isPackage": true,
           "jsxDepth": 1,
           "localImportName": "Dialog",
         },
@@ -767,7 +867,7 @@ test('Merges multiple imports from the same package (defaults and named)', async
           "componentName": "Heading",
           "importId": "@primer/react",
           "importName": "Heading",
-          "isPackage": false,
+          "isPackage": true,
           "jsxDepth": 1,
           "localImportName": "Heading",
         },
@@ -775,7 +875,7 @@ test('Merges multiple imports from the same package (defaults and named)', async
           "componentName": "Link",
           "importId": "@primer/react",
           "importName": "default",
-          "isPackage": false,
+          "isPackage": true,
           "jsxDepth": 1,
           "localImportName": "Link",
         },
@@ -783,7 +883,7 @@ test('Merges multiple imports from the same package (defaults and named)', async
           "componentName": "Stack",
           "importId": "@primer/react",
           "importName": "Stack",
-          "isPackage": false,
+          "isPackage": true,
           "jsxDepth": 1,
           "localImportName": "Stack",
         },
@@ -815,7 +915,7 @@ test('Handle namespace with default and separates named for same package', async
           "componentName": "Banner",
           "importId": "@primer/react",
           "importName": "Banner",
-          "isPackage": false,
+          "isPackage": true,
           "jsxDepth": 1,
           "localImportName": "Banner",
         },
@@ -831,7 +931,7 @@ test('Handle namespace with default and separates named for same package', async
           "componentName": "PR.Box",
           "importId": "@primer/react",
           "importName": "Box",
-          "isPackage": false,
+          "isPackage": true,
           "jsxDepth": 1,
           "localImportName": "PR",
           "member": "Box",

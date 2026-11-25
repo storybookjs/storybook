@@ -699,6 +699,29 @@ describe('TestManager', () => {
     expect(mockComponentTestStatusStore.unset).not.toHaveBeenCalledWith(undefined);
   });
 
+  it('counts every story of the matched story files once, also the ones without a test', async () => {
+    const instance = { ...tests[0], project: { config: { env: {} } } };
+    vitest.globTestSpecifications.mockImplementation(() => [tests[0], instance]);
+    const testManager = await startWithIndex();
+    testManager.storyIndex = {
+      ...mockIndex,
+      entries: {
+        ...mockIndex.entries,
+        'story--two': { ...mockIndex.entries['story--two'], tags: [] },
+      },
+    } as StoryIndex;
+
+    await testManager.handleTriggerRunEvent({
+      type: 'TRIGGER_RUN',
+      payload: { files: ['to/file'], triggeredBy: 'global' },
+    });
+
+    expect(mockStore.getState().currentRun).toMatchObject({
+      storyIds: ['story--one', 'story--two'],
+      matchedFileCount: 1,
+    });
+  });
+
   it('runs only the changed story files', async () => {
     vitest.globTestSpecifications.mockImplementation(() => tests);
     const testManager = await startWithIndex();

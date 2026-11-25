@@ -440,8 +440,11 @@ export class VitestManager {
     );
 
     if (files || changedFiles) {
+      const moduleIds = new Set(testSpecifications.map(({ moduleId }) => moduleId));
       this.testManager.setRunStories(
-        filteredStoryIds,
+        filteredStories
+          .filter((story) => moduleIds.has(toModuleId(story.importPath)))
+          .map((story) => story.id),
         files && new Set(matchedTestSpecifications.map(({ moduleId }) => moduleId)).size
       );
     }

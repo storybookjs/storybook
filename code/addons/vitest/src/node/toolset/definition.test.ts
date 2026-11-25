@@ -172,6 +172,14 @@ describe('test API', () => {
     expect(v.safeParse(toolset.methods.run.input, { changed: '' }).success).toBe(false);
   });
 
+  it('rejects a line number after a file, which Vitest reads as a test at that line', () => {
+    const parse = (files: string[]) => v.safeParse(toolset.methods.run.input, { files });
+
+    expect(parse(['src/Button.stories.tsx:12']).success).toBe(false);
+    expect(parse(['Button:1-2']).success).toBe(false);
+    expect(parse(['C:\\project\\src\\Button.stories.tsx']).success).toBe(true);
+  });
+
   it('rejects an empty file entry, which would otherwise match every story file', () => {
     expect(v.safeParse(toolset.methods.run.input, { files: [''] }).success).toBe(false);
   });
@@ -383,7 +391,6 @@ Accessibility: not checked.`);
         selection: {
           files: { filters: ['src/Button.stories.tsx', 'Header'], storyFileCount: 2 },
           changed: { storyCount: 5, changedConfigFiles: [], pendingFiles: [] },
-          storyCount: 2,
         },
       } as TestRunOutput);
 
@@ -402,7 +409,6 @@ Passed: 2 component tests passed.`);
         }),
         selection: {
           changed: { storyCount: 1, changedConfigFiles: [], pendingFiles: [], since: 'next' },
-          storyCount: 1,
         },
       } as TestRunOutput);
 
@@ -436,7 +442,6 @@ Passed: 2 component tests passed.`);
             changedConfigFiles: ['.storybook/preview.ts'],
             pendingFiles: [],
           },
-          storyCount: 1,
         },
       } as TestRunOutput);
 
@@ -454,7 +459,7 @@ Passed: 1 component test passed.`);
           componentTestCount: { success: 1, error: 0 },
           componentTestStatuses: [componentTest('button--primary', 'status-value:success')],
         }),
-        selection: { storyCount: 1 },
+        selection: {},
         notFoundMessages: ['No story found for story ID "missing--story"'],
       } as TestRunOutput);
 
@@ -474,7 +479,7 @@ Accessibility: not checked.`);
           storyIds: ['button--primary', 'button--secondary'],
           skippedTestCount: 2,
         }),
-        selection: { files: { filters: ['Button'], storyFileCount: 1 }, storyCount: 2 },
+        selection: { files: { filters: ['Button'], storyFileCount: 1 } },
       } as TestRunOutput);
 
       const outcome = await runTests();
@@ -495,7 +500,7 @@ Accessibility: not checked.`);
           componentTestStatuses: [componentTest('button--primary', 'status-value:success')],
           skippedTestCount: 2,
         }),
-        selection: { files: { filters: ['Button'], storyFileCount: 1 }, storyCount: 3 },
+        selection: { files: { filters: ['Button'], storyFileCount: 1 } },
       } as TestRunOutput);
 
       const outcome = await runTests();
@@ -532,7 +537,7 @@ Passed: 1 component test passed, 2 skipped (3).`);
           componentTestStatuses: [componentTest('button--primary', 'status-value:success')],
           skippedTestCount: 5,
         }),
-        selection: { inputStoryCount: 2, storyCount: 2 },
+        selection: { inputStoryCount: 2 },
         notRunStoryIds: ['button--secondary'],
       } as TestRunOutput);
 
@@ -541,7 +546,7 @@ Passed: 1 component test passed, 2 skipped (3).`);
       expect(outcome.ok).toBe(false);
       expect(outcome.markdown).toContain(`## Result
 
-Did not run: \`button--secondary\`. A story runs when it has the \`test\` tag, no tag that skips it, and a test that Vitest finds.
+Did not run: \`button--secondary\`. A story runs when its tags make it a test, no tag skips it, and Vitest finds that test.
 Failed: 1 requested story did not run; 1 component test passed.
 Accessibility: not checked.`);
     });

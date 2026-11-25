@@ -361,9 +361,14 @@ function formatResultSection(
   // skips the other tests of their files.
   const skipped = selection?.inputStoryCount === undefined ? (result.skippedTestCount ?? 0) : 0;
   const passedPart = `${pluralize(passed, 'component test')} passed`;
+  const showPassedInFailure = passed > 0 && testFailureParts.length === 0;
+  // The count names its tests once: "1 component test passed, 2 skipped"
+  const skippedPart = showPassedInFailure
+    ? `${skipped} skipped`
+    : `${pluralize(skipped, 'component test')} skipped`;
   const notFailedParts = [
-    ...(passed > 0 && testFailureParts.length === 0 ? [passedPart] : []),
-    ...(skipped > 0 ? [`${pluralize(skipped, 'component test')} skipped`] : []),
+    ...(showPassedInFailure ? [passedPart] : []),
+    ...(skipped > 0 ? [skippedPart] : []),
   ];
   const verdict =
     failureParts.length > 0
@@ -378,7 +383,7 @@ function formatResultSection(
     ...notFound,
     ...(notRunStoryIds.length > 0
       ? [
-          `Did not run: ${notRunStoryIds.map(code).join(', ')}. A story runs when it has the \`test\` tag, no tag that skips it, and a test that Vitest finds.`,
+          `Did not run: ${notRunStoryIds.map(code).join(', ')}. A story runs when its tags make it a test, no tag skips it, and Vitest finds that test.`,
         ]
       : []),
     verdict,

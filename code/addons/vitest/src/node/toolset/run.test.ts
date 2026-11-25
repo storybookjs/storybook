@@ -210,7 +210,24 @@ describe('runStoryTests', () => {
     expect(requested).toEqual([{ files: ['button'] }]);
     expect(result).toMatchObject({
       status: 'completed',
-      selection: { files: { filters: ['button'], storyFileCount: 1 }, storyCount: 1 },
+      selection: { files: { filters: ['button'], storyFileCount: 1 } },
+    });
+  });
+
+  it('completes a run of matched story files in which no test ran', async () => {
+    const { channel } = respondingChannel({
+      ...sampleResult,
+      storyIds: ['button--primary'],
+      matchedFileCount: 1,
+      skippedTestCount: 1,
+    });
+
+    const result = await runStoryTests({ channel, getIndex: async () => index, files: ['button'] });
+
+    expect(result).toMatchObject({
+      status: 'completed',
+      result: { skippedTestCount: 1 },
+      selection: { files: { storyFileCount: 1 } },
     });
   });
 
@@ -284,7 +301,6 @@ describe('runStoryTests', () => {
             changedConfigFiles: ['.storybook/preview.ts'],
             pendingFiles: [],
           },
-          storyCount: 1,
         },
       });
     });

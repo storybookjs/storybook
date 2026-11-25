@@ -303,17 +303,15 @@ export async function runStoryTests({
             `No story files found for ${selection.files.filters.map((file) => `\`${displayPath(file)}\``).join(', ')}.`
           );
         }
-        // The matched story files had no story to run
+        // No story file was left to run, or none of the stories asked for by id is in them
         if (result.storyIds?.length === 0) {
           return { status: 'no-stories', notFoundMessages, selection };
         }
       }
-      // The stories the run covered: the ones asked for by id, or the ones of its story files
-      const coveredStoryIds = result.storyIds ?? storyIds;
-      if (selection) {
-        selection.storyCount = coveredStoryIds?.length;
-      }
-      const notRunStoryIds = stories ? findNotRunStoryIds(coveredStoryIds ?? [], result) : [];
+      // With file filters, the runner keeps the stories asked for by id that are in those files
+      const notRunStoryIds = stories
+        ? findNotRunStoryIds(result.storyIds ?? storyIds ?? [], result)
+        : [];
       return {
         status: 'completed',
         result,

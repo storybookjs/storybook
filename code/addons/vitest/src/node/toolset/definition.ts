@@ -98,8 +98,6 @@ const selectionSchema = v.object({
   ),
   /** How many story ids `stories` gave. */
   inputStoryCount: v.optional(v.number()),
-  /** Stories the run was asked for. */
-  storyCount: v.optional(v.number()),
 });
 
 const testRunOutputSchema = v.variant('status', [
@@ -171,8 +169,18 @@ Use { absoluteStoryPath + exportName } only when you're currently working in a s
   ),
   files: v.optional(
     v.pipe(
-      // An empty entry, as from an unset variable, would match every story file.
-      v.array(v.pipe(v.string(), v.minLength(1))),
+      v.array(
+        v.pipe(
+          v.string(),
+          // An empty entry, as from an unset variable, would match every story file.
+          v.minLength(1),
+          // Vitest reads `Button.stories.tsx:12` as a test at a line, which the runner cannot run.
+          v.check(
+            (file) => !/:\d+(-\d+)?$/.test(file),
+            'A line number after a file is not supported. To test one story, pass it in stories.'
+          )
+        )
+      ),
       v.description(
         `Story files to test: each entry selects the story files whose path contains it (case-insensitive), or that an absolute path or directory points to. Only story files match; to test the stories that depend on a changed component, use \`changed\`.`
       )

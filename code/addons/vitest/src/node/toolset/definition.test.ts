@@ -515,7 +515,9 @@ Passed: 1 component test passed, 2 skipped (3).`);
         })
       );
 
-      expect((await runTests()).markdown).toContain('Failed: 1 component test failed, 2 skipped.');
+      expect((await runTests()).markdown).toContain(
+        'Failed: 1 component test failed; 2 component tests skipped.'
+      );
     });
 
     it('fails a run in which a story asked for by id did not run, and names it', async () => {
@@ -535,8 +537,8 @@ Passed: 1 component test passed, 2 skipped (3).`);
       expect(outcome.ok).toBe(false);
       expect(outcome.markdown).toContain(`## Result
 
-Did not run: \`button--secondary\`.
-Failed: 1 requested story did not run; 1 component test passed, 1 skipped.
+Did not run: \`button--secondary\`. A story runs when it has the \`test\` tag, no tag that skips it, and a test that Vitest finds.
+Failed: 1 requested story did not run; 1 component test passed, 1 component test skipped.
 Accessibility: not checked.`);
     });
 

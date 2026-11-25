@@ -428,9 +428,18 @@ export class VitestManager {
       }
     }
 
+    // The pattern of a story also matches its tests, so they run with it
+    const requestedStoryIds = runPayload.storyIds;
+    const storiesToRun = requestedStoryIds
+      ? allStories.filter(
+          (story) =>
+            requestedStoryIds.includes(story.id) ||
+            (story.parent !== undefined && requestedStoryIds.includes(story.parent))
+        )
+      : allStories;
     const { filteredTestSpecifications, filteredStoryIds } = this.filterTestSpecifications(
       testSpecifications,
-      filteredStories
+      storiesToRun
     );
 
     this.testManager.store.setState((s) => ({

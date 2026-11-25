@@ -694,6 +694,58 @@ describe('TestManager', () => {
     });
   });
 
+  it('counts the tests of a story that was asked for without them', async () => {
+    vitest.globTestSpecifications.mockImplementation(() => [
+      { ...tests[0], moduleId: path.join(process.cwd(), 'path/to/parent/file') },
+    ]);
+    const testManager = await startWithIndex();
+    vitest.runTestSpecifications.mockImplementationOnce(async () => {
+      testManager.onTestCaseResult({
+        storyId: 'parent--story:test',
+        testResult: { state: 'passed', errors: [] } as unknown as TestResult,
+      });
+      testManager.onTestRunEnd({ totalTestCount: 1, unhandledErrors: [] });
+    });
+
+    await testManager.handleTriggerRunEvent({
+      type: 'TRIGGER_RUN',
+      payload: { storyIds: ['parent--story'], triggeredBy: 'global' },
+    });
+
+    expect(mockStore.getState().currentRun.skippedTestCount).toBe(1);
+  });
+
+  it('does not count a selected story that a skip tag skips', async () => {
+    vitest.globTestSpecifications.mockImplementation(() => [
+      {
+        ...tests[0],
+        project: { config: { env: { __VITEST_SKIP_TAGS__: 'skip-me' } } },
+      },
+    ]);
+    const testManager = await startWithIndex();
+    testManager.storyIndex = {
+      ...mockIndex,
+      entries: {
+        ...mockIndex.entries,
+        'story--two': { ...mockIndex.entries['story--two'], tags: [Tag.TEST, 'skip-me'] },
+      },
+    } as StoryIndex;
+    vitest.runTestSpecifications.mockImplementationOnce(async () => {
+      testManager.onTestCaseResult({
+        storyId: 'story--one',
+        testResult: { state: 'passed', errors: [] } as unknown as TestResult,
+      });
+      testManager.onTestRunEnd({ totalTestCount: 1, unhandledErrors: [] });
+    });
+
+    await testManager.handleTriggerRunEvent({
+      type: 'TRIGGER_RUN',
+      payload: { storyIds: ['story--one', 'story--two'], triggeredBy: 'global' },
+    });
+
+    expect(mockStore.getState().currentRun.skippedTestCount).toBe(0);
+  });
+
   it('should filter tests', async () => {
     vitest.globTestSpecifications.mockImplementation(() => tests);
     const testManager = await startWithIndex();

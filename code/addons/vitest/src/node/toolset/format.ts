@@ -359,19 +359,27 @@ function formatResultSection(
   const passed = result.componentTestCount.success;
   const skipped = result.skippedTestCount ?? 0;
   // As in Vitest's `1 passed | 4 skipped (5)`, a selected test that did not run is counted.
-  const skippedPart = skipped > 0 ? `, ${skipped} skipped` : '';
+  const passedPart = `${pluralize(passed, 'component test')} passed`;
+  const notFailedParts = [
+    ...(passed > 0 && testFailureParts.length === 0 ? [passedPart] : []),
+    ...(skipped > 0 ? [`${pluralize(skipped, 'component test')} skipped`] : []),
+  ];
   const verdict =
     failureParts.length > 0
-      ? `Failed: ${failureParts.join(', ')}${passed > 0 && testFailureParts.length === 0 ? `; ${pluralize(passed, 'component test')} passed` : ''}${skippedPart}.`
+      ? `Failed: ${[failureParts.join(', '), notFailedParts.join(', ')].filter(Boolean).join('; ')}.`
       : passed === 0
         ? `No component tests ran${skipped > 0 ? `: ${skipped} skipped` : ''}.`
-        : `Passed: ${pluralize(passed, 'component test')} passed${skipped > 0 ? `${skippedPart} (${passed + skipped})` : ''}.`;
+        : `Passed: ${passedPart}${skipped > 0 ? `, ${skipped} skipped (${passed + skipped})` : ''}.`;
 
   const lines = [
     ...[selection && formatSelection(selection)].filter((line): line is string => Boolean(line)),
     ...formatChangedConfigFiles(selection?.changed),
     ...notFound,
-    ...(notRunStoryIds.length > 0 ? [`Did not run: ${notRunStoryIds.map(code).join(', ')}.`] : []),
+    ...(notRunStoryIds.length > 0
+      ? [
+          `Did not run: ${notRunStoryIds.map(code).join(', ')}. A story runs when it has the \`test\` tag, no tag that skips it, and a test that Vitest finds.`,
+        ]
+      : []),
     verdict,
     formatA11yResult(result, { a11y, a11yEnabled }),
     ...(a11y && countA11yViolations(getA11yReports(result)) > 0 ? [A11Y_GUIDANCE] : []),

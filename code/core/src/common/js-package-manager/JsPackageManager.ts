@@ -204,11 +204,6 @@ export abstract class JsPackageManager {
     return false;
   }
 
-  /** The package manager binary, for the commands a dry run names. */
-  protected get binary(): string {
-    return String(this.type).replace(/^yarn\d$/, 'yarn');
-  }
-
   /**
    * Prepare the files an install reads, such as the build scripts pnpm may run. A dry run stages
    * these changes, and only records the install itself.
@@ -217,7 +212,9 @@ export abstract class JsPackageManager {
 
   async installDependencies(options?: { force?: boolean; legacyPeerDeps?: boolean }) {
     this.prepareInstall();
-    await effects.runCommand(`${this.binary} install`, () => this.#installDependencies(options));
+    await effects.runCommand(`${this.getCommandName()} install`, () =>
+      this.#installDependencies(options)
+    );
   }
 
   async #installDependencies(options?: { force?: boolean; legacyPeerDeps?: boolean }) {
@@ -254,7 +251,9 @@ export abstract class JsPackageManager {
   }): Promise<void> {}
 
   async dedupeDependencies(options?: { force?: boolean; legacyPeerDeps?: boolean }) {
-    await effects.runCommand(`${this.binary} dedupe`, () => this.#dedupeDependencies(options));
+    await effects.runCommand(`${this.getCommandName()} dedupe`, () =>
+      this.#dedupeDependencies(options)
+    );
   }
 
   async #dedupeDependencies(options?: { force?: boolean; legacyPeerDeps?: boolean }) {
@@ -479,9 +478,8 @@ export abstract class JsPackageManager {
     } else {
       const dev = options.type === 'devDependencies';
       this.prepareInstall();
-      return effects.runCommand(
-        `${this.binary} ${this.type === 'npm' ? 'install' : 'add'}${dev ? ' -D' : ''} ${dependencies.join(' ')}`,
-        () => this.#runAddDependencies(dependencies, dev, writeOutputToFile)
+      return effects.runCommand(this.getInstallCommand(dependencies, dev), () =>
+        this.#runAddDependencies(dependencies, dev, writeOutputToFile)
       );
     }
   }

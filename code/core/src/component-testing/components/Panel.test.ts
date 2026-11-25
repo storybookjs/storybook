@@ -1,7 +1,11 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from 'vitest';
 
-import { FORCE_REMOUNT, PLAY_FUNCTION_THREW_EXCEPTION } from 'storybook/internal/core-events';
+import {
+  FORCE_REMOUNT,
+  PLAY_FUNCTION_THREW_EXCEPTION,
+  STORY_RENDER_PHASE_CHANGED,
+} from 'storybook/internal/core-events';
 
 import { type Call, CallStates, type LogItem, type RenderPhase } from '../../instrumenter/types.ts';
 import { INTERNAL_RENDER_CALL_ID } from '../constants.ts';
@@ -790,25 +794,44 @@ describe('Panel', () => {
   });
 
   describe('listenForPlayResults', () => {
-    it('stores play errors without a mounted panel and drops them when the story remounts', () => {
+    const error = { name: 'Error', message: 'argTypes is gone' } as Error;
+    const listen = (storyId: string) => {
       const handlers: Record<string, (payload: unknown) => void> = {};
       listenForPlayResults({
         on: (type, handler) => {
           handlers[type] = handler;
           return () => {};
         },
-        getUrlState: () => ({ storyId: 'story--id' }),
+        getUrlState: () => ({ storyId }),
       });
-      const error = { name: 'Error', message: 'argTypes is gone' } as Error;
       panelStore.setState(INITIAL_PANEL_STATE);
+      return (type: string, payload: unknown) => handlers[type]?.(payload);
+    };
 
-      handlers[PLAY_FUNCTION_THREW_EXCEPTION](error);
+    it('keeps a failure recorded without a mounted panel through the next re-render', () => {
+      const emit = listen('closed--story');
+      const phases = (newPhases: RenderPhase[]) =>
+        newPhases.forEach((newPhase) =>
+          emit(STORY_RENDER_PHASE_CHANGED, { storyId: 'closed--story', newPhase, renderId: 1 })
+        );
+
+      phases(['preparing', 'loading', 'rendering', 'playing', 'errored']);
+      emit(PLAY_FUNCTION_THREW_EXCEPTION, error);
+      phases(['completing', 'completed', 'loading', 'rendering', 'completing', 'completed']);
+
+      expect(panelStore.getState()).toMatchObject({ status: 'errored', caughtException: error });
+    });
+
+    it('stores play errors without a mounted panel and drops them when the story remounts', () => {
+      const emit = listen('story--id');
+
+      emit(PLAY_FUNCTION_THREW_EXCEPTION, error);
       expect(panelStore.getState()).toMatchObject({ caughtException: error, hasException: true });
 
-      handlers[FORCE_REMOUNT]({ storyId: 'other--story' });
+      emit(FORCE_REMOUNT, { storyId: 'other--story' });
       expect(panelStore.getState().caughtException).toBe(error);
 
-      handlers[FORCE_REMOUNT]({ storyId: 'story--id' });
+      emit(FORCE_REMOUNT, { storyId: 'story--id' });
       expect(panelStore.getState().caughtException).toBeUndefined();
     });
   });

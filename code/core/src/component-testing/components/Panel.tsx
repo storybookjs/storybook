@@ -231,13 +231,28 @@ export const getRenderPhaseState = (
   };
 };
 
-// Module scope like panelStore: a hidden panel unmounts, but must still know a render it saw.
+// Module scope: listenForPlayResults updates it while the panel is closed.
 const renderTracker: { current: RenderTracker } = { current: { renderId: 0 } };
 
-// Registered once with the addon, so play results still reach panelStore while the panel is closed.
+// Registered once with the addon, so render phases and play results reach panelStore while the
+// panel is closed.
 export const listenForPlayResults = (
   api: Pick<API, 'on'> & { getUrlState: () => { storyId?: string } }
 ) => {
+  api.on(
+    STORY_RENDER_PHASE_CHANGED,
+    (event: { storyId: string; newPhase: RenderPhase; renderId?: number }) => {
+      const { tracker, isCurrentRender, isRerender } = trackRenderPhase(
+        renderTracker.current,
+        event,
+        api.getUrlState().storyId
+      );
+      renderTracker.current = tracker;
+      if (isCurrentRender) {
+        panelStore.setState((state) => getRenderPhaseState(state, event.newPhase, isRerender));
+      }
+    }
+  );
   api.on(PLAY_FUNCTION_THREW_EXCEPTION, (caughtException: PanelState['caughtException']) => {
     panelStore.setState((state) => ({ ...state, caughtException, hasException: true }));
   });
@@ -355,24 +370,18 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
           );
         },
         [STORY_RENDER_PHASE_CHANGED]: (event) => {
-          // Read the store rather than the `storyId` prop, which lags until this handler is resubscribed.
-          const { tracker, isCurrentRender, isRerender } = trackRenderPhase(
-            renderTracker.current,
-            event,
-            api.getUrlState().storyId
-          );
-          renderTracker.current = tracker;
-          if (!isCurrentRender) {
+          // listenForPlayResults already tracked this event and updated the status.
+          const { storyId: trackedStoryId, renderId } = renderTracker.current;
+          if (event.storyId !== trackedStoryId || event.renderId !== renderId) {
             return;
           }
 
           if (event.newPhase === 'rendering') {
             log.current = [getInternalRenderLogItem(CallStates.ACTIVE)];
             calls.current.set(INTERNAL_RENDER_CALL_ID, getInternalRenderCall(storyId));
-            set((state) => getRenderPhaseState(state, event.newPhase, isRerender));
           } else {
             set((state) =>
-              getPanelState(getRenderPhaseState(state, event.newPhase, isRerender), {
+              getPanelState(state, {
                 log: log.current,
                 calls: calls.current,
                 collapsed,

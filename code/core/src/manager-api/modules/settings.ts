@@ -16,8 +16,10 @@ export interface SubAPI {
    *
    * @param path - The path of the settings page to navigate to. The path NOT should include the
    *   `/settings` prefix.
+   * @param options - Pass `{ replace: true }` to replace the current history entry instead of
+   *   adding one.
    */
-  changeSettingsTab: (path: string) => void;
+  changeSettingsTab: (path: string, options?: { replace?: boolean }) => void;
   /** Closes the settings screen and returns to the last tracked story or the first story. */
   closeSettings: () => void;
   /**
@@ -49,8 +51,8 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, navigate, fullAPI, pat
         fullAPI.selectFirstStory();
       }
     },
-    changeSettingsTab: (path: string) => {
-      navigate(`/settings/${path}`);
+    changeSettingsTab: (path: string, options?: { replace?: boolean }) => {
+      navigate(`/settings/${path}`, options);
     },
     isSettingsScreenActive,
     retrieveSelection() {

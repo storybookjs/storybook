@@ -1,0 +1,818 @@
+➤ YN0000: · Yarn 4.18.1
+➤ YN0000: ┌ Resolution step
+➤ YN0085: │ + storybook@npm:11.0.0-rc.0, @emnapi/core@npm:1.11.0, @emnapi/runtime@npm:1.11.0, @emnapi/wasi-threads@npm:1.2.2, @esbuild/aix-ppc64@npm:0.28.2, and 72 more.
+➤ YN0000: └ Completed in 1s 2ms
+➤ YN0000: ┌ Post-resolution validation
+➤ YN0086: │ Some peer dependencies are incorrectly met by dependencies; run yarn explain peer-requirements for details.
+➤ YN0000: └ Completed
+➤ YN0000: ┌ Fetch step
+➤ YN0013: │ 16 packages were added to the project (+ 38.11 MiB).
+➤ YN0000: └ Completed in 0s 450ms
+➤ YN0000: ┌ Link step
+➤ YN0007: │ esbuild@npm:0.28.2 must be built because it never has been before or the last one failed
+➤ YN0000: └ Completed in 0s 356ms
+➤ YN0000: · Done with warnings in 1s 831ms
+
+➤ YN0000: · Yarn 4.18.1
+➤ YN0000: ┌ Resolution step
+➤ YN0085: │ + @storybook/cli@npm:11.0.0-rc.0, @emnapi/core@npm:1.11.0, @emnapi/runtime@npm:1.11.0, @emnapi/wasi-threads@npm:1.2.2, @esbuild/aix-ppc64@npm:0.28.2, and 74 more.
+➤ YN0000: └ Completed in 0s 586ms
+➤ YN0000: ┌ Post-resolution validation
+➤ YN0086: │ Some peer dependencies are incorrectly met by dependencies; run yarn explain peer-requirements for details.
+➤ YN0000: └ Completed
+➤ YN0000: ┌ Fetch step
+➤ YN0013: │ 18 packages were added to the project (+ 40.04 MiB).
+➤ YN0000: └ Completed
+➤ YN0000: ┌ Link step
+➤ YN0007: │ esbuild@npm:0.28.2 must be built because it never has been before or the last one failed
+➤ YN0000: └ Completed in 0s 376ms
+➤ YN0000: · Done with warnings in 1s 174ms
+
+
+[90m┌[39m  Storybook upgrade - v11.0.0-rc.0
+[90m│[39m
+[90m│[39m  Detecting projects...
+[90m│[39m
+[90m│[39m  Detecting projects: 1 projects
+[90m│[39m
+[90m│[39m  1 project detected
+[90m│[39m
+[34m●[39m  Upgrading from [1m10.6.3[22m to [1m11.0.0-rc.0[22m
+[90m│[39m
+[90m│[39m  /package.json
+[90m│[39m  /packages/@mantinex/mantine-logo/package.json
+[90m│[39m  /packages/@mantinex/dev-icons/package.json
+[90m│[39m  /packages/@mantinex/demo/package.json
+[90m│[39m  /packages/@mantinex/colors-generator/package.json
+[90m│[39m  /packages/@mantine/tiptap/package.json
+[90m│[39m  /packages/@mantine/spotlight/package.json
+[90m│[39m  /packages/@mantine/schedule/package.json
+[90m│[39m  /packages/@mantine/nprogress/package.json
+[90m│[39m  /packages/@mantine/notifications/package.json
+[90m│[39m  /packages/@mantine/modals/package.json
+[90m│[39m  /packages/@mantine/lightbox/package.json
+[90m│[39m  /packages/@mantine/hooks/package.json
+[90m│[39m  /packages/@mantine/form/package.json
+[90m│[39m  /packages/@mantine/emotion/package.json
+[90m│[39m  /packages/@mantine/emoji/package.json
+[90m│[39m  /packages/@mantine/dropzone/package.json
+[90m│[39m  /packages/@mantine/dates/package.json
+[90m│[39m  /packages/@mantine/core/package.json
+[90m│[39m  /packages/@mantine/code-highlight/package.json
+[90m│[39m  /packages/@mantine/charts/package.json
+[90m│[39m  /packages/@mantine/carousel/package.json
+[90m│[39m  /packages/@docs/demos/package.json
+[90m│[39m
+[90m│[39m  Updated package versions in package.json files
+[90m│[39m
+[90m│[39m  Checking automigrations for /.storybook...
+[90m│[39m
+
+[90m│[39m  Automigrations detected:
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m argtypes-default-value[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m nextjs-to-nextjs-vite[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m wrap-getAbsolutePath[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m story-sort-to-main[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m skills[39m
+[90m│[39m
+[90m│[39m  5 automigration(s) detected
+[90m│[39m
+[90m│[39m  Running these detected automigrations:
+[90m│[39m
+[90m│[39m  - argtypes-default-value (/.storybook)
+[90m│[39m
+[90m│[39m  - wrap-getAbsolutePath (/.storybook)
+[90m│[39m
+[90m│[39m  - story-sort-to-main (/.storybook)
+[90m│[39m
+[90m│[39m  - skills (/.storybook)
+[90m│[39m
+[90m│[39m  Not run with --yes because they are opt-in (run `storybook automigrate
+[90m│[39m  <id>` to apply one):
+[90m│[39m
+[90m│[39m  - nextjs-to-nextjs-vite (/.storybook)
+[90m│[39m
+[90m│[39m  [36myarn dlx skills@latest add storybookjs/skills#v11.0.0-rc.0 --yes[39m
+[90m│[39m  [36m--agent claude-code universal --copy[39m
+[90m│[39m
+[90m│[39m  Added a Storybook section to AGENTS.md and CLAUDE.md that tells agents
+[90m│[39m  when to use the skills. Storybook keeps it current on upgrade: remove
+[90m│[39m  its markers to keep your own edits, or remove the section to opt out
+[90m│[39m  of the workflow.
+[90m│[39m
+[90m│[39m  If you want to remove the Storybook skills, run "yarn dlx
+[90m│[39m  skills@latest remove"
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m argtypes-default-value (1 file skipped)[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m wrap-getAbsolutePath[39m
+[90m│[39m
+[90m│[39m  [31m[31m✕[31m story-sort-to-main[39m
+[90m│[39m
+[90m│[39m  /home/agent/workspace/.storybook/main.ts: Cannot automigrate
+[90m│[39m  storySort: Cannot mutate mixed default and named config exports.
+[90m│[39m  Storybook no longer reads parameters.options.storySort from the
+[90m│[39m  preview. Move it to storySorts in the main config manually and remove
+[90m│[39m  the preview property.
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m skills[39m
+[90m│[39m
+[90m│[39m  1 automigrations failed for /.storybook
+[90m│[39m
+[33m▲[39m  2 files could not be migrated automatically. See
+[90m│[39m  [36mautomigrations-summary.md[39m for which ones and why.
+[90m│[39m
+[90m│[39m  Installing dependencies...
+[90m│[39m
+[90m│[39m  Installing dependencies...: ➤ YN0000: · Yarn 4.18.1
+[90m│[39m
+[90m│[39m  Installing dependencies...: ➤ YN0000: ┌ Resolution st
+[90m│[39m
+[90m│[39m  Installing dependencies...: ➤ YN0085: │ + @storybook/
+[90m│[39m
+[90m│[39m  Installing dependencies...: ➤ YN0085: │ - @emnapi/cor
+[90m│[39m
+[90m│[39m  Installing dependencies...: ➤ YN0000: └ Completed in
+[90m│[39m
+[90m│[39m  Installing dependencies...: ➤ YN0000: ┌ Post-resoluti
+[90m│[39m
+[90m│[39m  Installing dependencies...: ➤ YN0086: │ Some peer dep
+[90m│[39m
+[90m│[39m  Installing dependencies...: ➤ YN0000: ┌ Fetch step
+[90m│[39m
+[90m│[39m  Installing dependencies...: ➤ YN0013: │ 45 packages w
+[90m│[39m
+[90m│[39m  Installing dependencies...: ➤ YN0000: └ Completed in
+[90m│[39m
+[90m│[39m  Installing dependencies...: ➤ YN0000: ┌ Link step
+[90m│[39m
+[90m│[39m  Installing dependencies...: ➤ YN0000: └ Completed in
+[90m│[39m
+[90m│[39m  Installing dependencies...: ➤ YN0000: · Done with war
+[90m│[39m
+[90m│[39m  Dependencies installed
+[90m│[39m
+[33m▲[39m  Since you are in a monorepo, we advise you to deduplicate your
+[90m│[39m  dependencies. We can do this for you but it might take some time.
+[90m│[39m
+[90m│[39m  Deduplicating dependencies...
+[90m│[39m
+[90m│[39m  ➤ YN0000: ┌ Deduplication step
+[90m│[39m
+[90m│[39m  ➤ YN0000: │ @babel/compat-data@npm:^7.27.2 can be deduped from
+[90m│[39m  @babel/compat-data@npm:7.28.5 to @babel/compat-data@npm:7.29.7
+[90m│[39m
+[90m│[39m  ➤ YN0000: │ @babel/compat-data@npm:^7.27.7 can be deduped from
+[90m│[39m  @babel/compat-data@npm:7.28.5 to @babel/compat-data@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ @babel/compat-data@npm:^7.28.6 can be deduped from
+[90m│[39m  @babel/compat-data@npm:7.29.0 to @babel/compat-data@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ @babel/compat-data@npm:^7.29.0 can be deduped from
+[90m│[39m  @babel/compat-data@npm:7.29.0 to @babel/compat-data@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ @babel/helper-globals@npm:^7.28.0 can be deduped from
+[90m│[39m  @babel/helper-globals@npm:7.28.0 to @babel/helper-globals@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ @babel/helper-plugin-utils@npm:^7.0.0 can be deduped from
+[90m│[39m  @babel/helper-plugin-utils@npm:7.27.1 to
+[90m│[39m  @babel/helper-plugin-utils@npm:7.28.6
+[90m│[39m  ➤ YN0000: │ @babel/helper-plugin-utils@npm:^7.10.4 can be deduped from
+[90m│[39m  @babel/helper-plugin-utils@npm:7.27.1 to
+[90m│[39m  @babel/helper-plugin-utils@npm:7.28.6
+[90m│[39m  ➤ YN0000: │ @babel/helper-plugin-utils@npm:^7.12.13 can be deduped
+[90m│[39m  from @babel/helper-plugin-utils@npm:7.27.1 to
+[90m│[39m  @babel/helper-plugin-utils@npm:7.28.6
+[90m│[39m
+[90m│[39m  ➤ YN0000: │ @babel/helper-plugin-utils@npm:^7.27.1 can be deduped from
+[90m│[39m  @babel/helper-plugin-utils@npm:7.27.1 to
+[90m│[39m  @babel/helper-plugin-utils@npm:7.28.6
+[90m│[39m  ➤ YN0000: │ @babel/helper-plugin-utils@npm:^7.8.0 can be deduped from
+[90m│[39m  @babel/helper-plugin-utils@npm:7.27.1 to
+[90m│[39m  @babel/helper-plugin-utils@npm:7.28.6
+[90m│[39m  ➤ YN0000: │ @babel/helper-plugin-utils@npm:^7.14.5 can be deduped from
+[90m│[39m  @babel/helper-plugin-utils@npm:7.14.5 to
+[90m│[39m  @babel/helper-plugin-utils@npm:7.28.6
+[90m│[39m  ➤ YN0000: │ @babel/helper-plugin-utils@npm:^7.18.6 can be deduped from
+[90m│[39m  @babel/helper-plugin-utils@npm:7.20.2 to
+[90m│[39m  @babel/helper-plugin-utils@npm:7.28.6
+[90m│[39m  ➤ YN0000: │ @babel/helper-string-parser@npm:^7.19.4 can be deduped
+[90m│[39m  from @babel/helper-string-parser@npm:7.19.4 to
+[90m│[39m  @babel/helper-string-parser@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ @babel/helper-string-parser@npm:^7.22.5 can be deduped
+[90m│[39m  from @babel/helper-string-parser@npm:7.22.5 to
+[90m│[39m  @babel/helper-string-parser@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ @babel/helper-string-parser@npm:^7.27.1 can be deduped
+[90m│[39m  from @babel/helper-string-parser@npm:7.27.1 to
+[90m│[39m  @babel/helper-string-parser@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ @babel/helper-validator-identifier@npm:^7.14.0 can be
+[90m│[39m  deduped from @babel/helper-validator-identifier@npm:7.14.0 to
+[90m│[39m  @babel/helper-validator-identifier@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ @babel/helper-validator-identifier@npm:^7.15.7 can be
+[90m│[39m  deduped from @babel/helper-validator-identifier@npm:7.15.7 to
+[90m│[39m  @babel/helper-validator-identifier@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ @babel/helper-validator-identifier@npm:^7.19.1 can be
+[90m│[39m  deduped from @babel/helper-validator-identifier@npm:7.19.1 to
+[90m│[39m  @babel/helper-validator-identifier@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ @babel/helper-validator-identifier@npm:^7.22.20 can be
+[90m│[39m  deduped from @babel/helper-validator-identifier@npm:7.22.20 to
+[90m│[39m  @babel/helper-validator-identifier@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ @babel/helper-validator-identifier@npm:^7.27.1 can be
+[90m│[39m  deduped from @babel/helper-validator-identifier@npm:7.28.5 to
+[90m│[39m  @babel/helper-validator-identifier@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ @babel/helper-validator-identifier@npm:^7.28.5 can be
+[90m│[39m  deduped from @babel/helper-validator-identifier@npm:7.28.5 to
+[90m│[39m  @babel/helper-validator-identifier@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ @babel/helper-validator-option@npm:^7.27.1 can be deduped
+[90m│[39m  from @babel/helper-validator-option@npm:7.27.1 to
+[90m│[39m  @babel/helper-validator-option@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ @babel/runtime@npm:^7.12.5 can be deduped from
+[90m│[39m  @babel/runtime@npm:7.14.0 to @babel/runtime@npm:7.28.6
+[90m│[39m  ➤ YN0000: │ @babel/runtime@npm:^7.5.5 can be deduped from
+[90m│[39m  @babel/runtime@npm:7.14.0 to @babel/runtime@npm:7.28.6
+[90m│[39m  ➤ YN0000: │ @babel/runtime@npm:^7.8.7 can be deduped from
+[90m│[39m  @babel/runtime@npm:7.14.0 to @babel/runtime@npm:7.28.6
+[90m│[39m  ➤ YN0000: │ @babel/runtime@npm:^7.18.3 can be deduped from
+[90m│[39m  @babel/runtime@npm:7.24.5 to @babel/runtime@npm:7.28.6
+[90m│[39m  ➤ YN0000: │ @csstools/css-calc@npm:^3.2.0 can be deduped from
+[90m│[39m  @csstools/css-calc@npm:3.2.1 to @csstools/css-calc@npm:3.4.1
+[90m│[39m  ➤ YN0000: │ @csstools/css-syntax-patches-for-csstree@npm:^1.1.3 can be
+[90m│[39m  deduped from @csstools/css-syntax-patches-for-csstree@npm:1.1.4 to
+[90m│[39m  @csstools/css-syntax-patches-for-csstree@npm:1.1.14
+[90m│[39m  ➤ YN0000: │ @floating-ui/utils@npm:^0.2.10 can be deduped from
+[90m│[39m  @floating-ui/utils@npm:0.2.10 to @floating-ui/utils@npm:0.2.12
+[90m│[39m  ➤ YN0000: │ @jridgewell/sourcemap-codec@npm:^1.4.10 can be deduped
+[90m│[39m  from @jridgewell/sourcemap-codec@npm:1.5.5 to
+[90m│[39m  @jridgewell/sourcemap-codec@npm:1.6.0
+[90m│[39m  ➤ YN0000: │ @jridgewell/sourcemap-codec@npm:^1.5.0 can be deduped from
+[90m│[39m  @jridgewell/sourcemap-codec@npm:1.5.5 to
+[90m│[39m  @jridgewell/sourcemap-codec@npm:1.6.0
+[90m│[39m  ➤ YN0000: │ @jridgewell/sourcemap-codec@npm:^1.4.14 can be deduped
+[90m│[39m  from @jridgewell/sourcemap-codec@npm:1.4.15 to
+[90m│[39m  @jridgewell/sourcemap-codec@npm:1.6.0
+[90m│[39m  ➤ YN0000: │ @standard-schema/spec@npm:^1.0.0 can be deduped from
+[90m│[39m  @standard-schema/spec@npm:1.0.0 to @standard-schema/spec@npm:1.1.0
+[90m│[39m  ➤ YN0000: │ @types/estree@npm:^1.0.0 can be deduped from
+[90m│[39m  @types/estree@npm:1.0.1 to @types/estree@npm:1.0.8
+[90m│[39m  ➤ YN0000: │ @types/json-schema@npm:* can be deduped from
+[90m│[39m  @types/json-schema@npm:7.0.11 to @types/json-schema@npm:7.0.15
+[90m│[39m  ➤ YN0000: │ @types/json-schema@npm:^7.0.8 can be deduped from
+[90m│[39m  @types/json-schema@npm:7.0.11 to @types/json-schema@npm:7.0.15
+[90m│[39m  ➤ YN0000: │ @types/json-schema@npm:^7.0.9 can be deduped from
+[90m│[39m  @types/json-schema@npm:7.0.9 to @types/json-schema@npm:7.0.15
+[90m│[39m  ➤ YN0000: │ @types/mdx@npm:^2.0.0 can be deduped from
+[90m│[39m  @types/mdx@npm:2.0.13 to @types/mdx@npm:2.0.14
+[90m│[39m  ➤ YN0000: │ @types/unist@npm:^3.0.0 can be deduped from
+[90m│[39m  @types/unist@npm:3.0.2 to @types/unist@npm:3.0.3
+[90m│[39m  ➤ YN0000: │ acorn@npm:^8.4.1 can be deduped from acorn@npm:8.11.3 to
+[90m│[39m  acorn@npm:8.15.0
+[90m│[39m  ➤ YN0000: │ ansi-regex@npm:^5.0.0 can be deduped from
+[90m│[39m  ansi-regex@npm:5.0.0 to ansi-regex@npm:5.0.1
+[90m│[39m  ➤ YN0000: │ baseline-browser-mapping@npm:^2.8.25 can be deduped from
+[90m│[39m  baseline-browser-mapping@npm:2.8.28 to
+[90m│[39m  baseline-browser-mapping@npm:2.10.12
+[90m│[39m  ➤ YN0000: │ baseline-browser-mapping@npm:^2.9.0 can be deduped from
+[90m│[39m  baseline-browser-mapping@npm:2.10.0 to
+[90m│[39m  baseline-browser-mapping@npm:2.10.12
+[90m│[39m  ➤ YN0000: │ caniuse-lite@npm:^1.0.0 can be deduped from
+[90m│[39m  caniuse-lite@npm:1.0.30001754 to caniuse-lite@npm:1.0.30001777
+[90m│[39m  ➤ YN0000: │ caniuse-lite@npm:^1.0.30001754 can be deduped from
+[90m│[39m  caniuse-lite@npm:1.0.30001754 to caniuse-lite@npm:1.0.30001777
+[90m│[39m  ➤ YN0000: │ caniuse-lite@npm:^1.0.30001579 can be deduped from
+[90m│[39m  caniuse-lite@npm:1.0.30001617 to caniuse-lite@npm:1.0.30001777
+[90m│[39m  ➤ YN0000: │ caniuse-lite@npm:^1.0.30001669 can be deduped from
+[90m│[39m  caniuse-lite@npm:1.0.30001677 to caniuse-lite@npm:1.0.30001777
+[90m│[39m  ➤ YN0000: │ colord@npm:^2.9.1 can be deduped from colord@npm:2.9.3 to
+[90m│[39m  colord@npm:2.10.0
+[90m│[39m  ➤ YN0000: │ convert-source-map@npm:^1.4.0 can be deduped from
+[90m│[39m  convert-source-map@npm:1.7.0 to convert-source-map@npm:1.9.0
+[90m│[39m  ➤ YN0000: │ csstype@npm:^3.0.2 can be deduped from csstype@npm:3.2.1
+[90m│[39m  to csstype@npm:3.2.3
+[90m│[39m  ➤ YN0000: │ electron-to-chromium@npm:^1.5.249 can be deduped from
+[90m│[39m  electron-to-chromium@npm:1.5.253 to electron-to-chromium@npm:1.5.307
+[90m│[39m  ➤ YN0000: │ electron-to-chromium@npm:^1.5.41 can be deduped from
+[90m│[39m  electron-to-chromium@npm:1.5.52 to electron-to-chromium@npm:1.5.307
+[90m│[39m  ➤ YN0000: │ es-module-lexer@npm:^1.5.0 can be deduped from
+[90m│[39m  es-module-lexer@npm:1.5.4 to es-module-lexer@npm:1.7.0
+[90m│[39m
+[90m│[39m  ➤ YN0000: │ get-east-asian-width@npm:^1.0.0 can be deduped from
+[90m│[39m  get-east-asian-width@npm:1.4.0 to get-east-asian-width@npm:1.6.0
+[90m│[39m  ➤ YN0000: │ graceful-fs@npm:^4.1.2 can be deduped from
+[90m│[39m  graceful-fs@npm:4.2.6 to graceful-fs@npm:4.2.11
+[90m│[39m  ➤ YN0000: │ graceful-fs@npm:^4.1.6 can be deduped from
+[90m│[39m  graceful-fs@npm:4.2.6 to graceful-fs@npm:4.2.11
+[90m│[39m  ➤ YN0000: │ graceful-fs@npm:^4.2.0 can be deduped from
+[90m│[39m  graceful-fs@npm:4.2.6 to graceful-fs@npm:4.2.11
+[90m│[39m  ➤ YN0000: │ graceful-fs@npm:^4.2.4 can be deduped from
+[90m│[39m  graceful-fs@npm:4.2.6 to graceful-fs@npm:4.2.11
+[90m│[39m  ➤ YN0000: │ ignore@npm:^7.0.5 can be deduped from ignore@npm:7.0.5 to
+[90m│[39m  ignore@npm:7.0.10
+[90m│[39m  ➤ YN0000: │ immer@npm:^11.0.0 can be deduped from immer@npm:11.1.4 to
+[90m│[39m  immer@npm:11.1.15
+[90m│[39m  ➤ YN0000: │ istanbul-lib-coverage@npm:^3.2.0 can be deduped from
+[90m│[39m  istanbul-lib-coverage@npm:3.2.0 to istanbul-lib-coverage@npm:3.2.2
+[90m│[39m  ➤ YN0000: │ lodash@npm:^4.17.20 can be deduped from lodash@npm:4.17.21
+[90m│[39m  to lodash@npm:4.18.1
+[90m│[39m  ➤ YN0000: │ lodash@npm:^4.17.21 can be deduped from lodash@npm:4.17.21
+[90m│[39m  to lodash@npm:4.18.1
+[90m│[39m  ➤ YN0000: │ minimist@npm:^1.2.6 can be deduped from minimist@npm:1.2.6
+[90m│[39m  to minimist@npm:1.2.8
+[90m│[39m  ➤ YN0000: │ minipass@npm:^5.0.0 || ^6.0.2 || ^7.0.0 can be deduped
+[90m│[39m  from minipass@npm:7.1.2 to minipass@npm:7.1.3
+[90m│[39m  ➤ YN0000: │ minipass@npm:^7.0.2 can be deduped from minipass@npm:7.1.2
+[90m│[39m  to minipass@npm:7.1.3
+[90m│[39m  ➤ YN0000: │ minipass@npm:^7.0.3 can be deduped from minipass@npm:7.1.2
+[90m│[39m  to minipass@npm:7.1.3
+[90m│[39m  ➤ YN0000: │ minipass@npm:^7.0.4 can be deduped from minipass@npm:7.1.2
+[90m│[39m  to minipass@npm:7.1.3
+[90m│[39m  ➤ YN0000: │ minipass@npm:^7.1.2 can be deduped from minipass@npm:7.1.2
+[90m│[39m  to minipass@npm:7.1.3
+[90m│[39m  ➤ YN0000: │ nanoid@npm:^3.3.11 can be deduped from nanoid@npm:3.3.11
+[90m│[39m  to nanoid@npm:3.3.20
+[90m│[39m  ➤ YN0000: │ nanoid@npm:^3.3.16 can be deduped from nanoid@npm:3.3.16
+[90m│[39m  to nanoid@npm:3.3.20
+[90m│[39m  ➤ YN0000: │ nanoid@npm:^3.3.17 can be deduped from nanoid@npm:3.3.18
+[90m│[39m  to nanoid@npm:3.3.20
+[90m│[39m  ➤ YN0000: │ nanoid@npm:^3.3.7 can be deduped from nanoid@npm:3.3.7 to
+[90m│[39m  nanoid@npm:3.3.20
+[90m│[39m  ➤ YN0000: │ node-releases@npm:^2.0.18 can be deduped from
+[90m│[39m  node-releases@npm:2.0.18 to node-releases@npm:2.0.27
+[90m│[39m  ➤ YN0000: │ picocolors@npm:^1.0.0 can be deduped from
+[90m│[39m  picocolors@npm:1.0.0 to picocolors@npm:1.1.1
+[90m│[39m  ➤ YN0000: │ picomatch@npm:^2.0.4 can be deduped from
+[90m│[39m  picomatch@npm:2.3.0 to picomatch@npm:2.3.1
+[90m│[39m  ➤ YN0000: │ picomatch@npm:^2.2.3 can be deduped from
+[90m│[39m  picomatch@npm:2.3.0 to picomatch@npm:2.3.1
+[90m│[39m  ➤ YN0000: │ picomatch@npm:^4.0.2 can be deduped from
+[90m│[39m  picomatch@npm:4.0.3 to picomatch@npm:4.0.7
+[90m│[39m  ➤ YN0000: │ picomatch@npm:^4.0.3 can be deduped from
+[90m│[39m  picomatch@npm:4.0.3 to picomatch@npm:4.0.7
+[90m│[39m  ➤ YN0000: │ reselect@npm:^5.1.0 can be deduped from reselect@npm:5.1.1
+[90m│[39m  to reselect@npm:5.2.0
+[90m│[39m  ➤ YN0000: │ semver@npm:^7.3.5 can be deduped from semver@npm:7.7.3 to
+[90m│[39m  semver@npm:7.8.5
+[90m│[39m  ➤ YN0000: │ semver@npm:^7.5.3 can be deduped from semver@npm:7.7.3 to
+[90m│[39m  semver@npm:7.8.5
+[90m│[39m  ➤ YN0000: │ semver@npm:^7.7.3 can be deduped from semver@npm:7.7.3 to
+[90m│[39m  semver@npm:7.8.5
+[90m│[39m  ➤ YN0000: │ semver@npm:^7.5.4 can be deduped from semver@npm:7.5.4 to
+[90m│[39m  semver@npm:7.8.5
+[90m│[39m  ➤ YN0000: │ semver@npm:^7.6.2 can be deduped from semver@npm:7.6.3 to
+[90m│[39m  semver@npm:7.8.5
+[90m│[39m  ➤ YN0000: │ semver@npm:^7.7.2 can be deduped from semver@npm:7.7.2 to
+[90m│[39m  semver@npm:7.8.5
+[90m│[39m  ➤ YN0000: │ source-map-js@npm:^1.0.2 can be deduped from
+[90m│[39m  source-map-js@npm:1.2.1 to source-map-js@npm:1.2.2
+[90m│[39m  ➤ YN0000: │ source-map-js@npm:^1.2.1 can be deduped from
+[90m│[39m  source-map-js@npm:1.2.1 to source-map-js@npm:1.2.2
+[90m│[39m  ➤ YN0000: │ tapable@npm:^2.0.0 can be deduped from tapable@npm:2.3.0
+[90m│[39m  to tapable@npm:2.3.4
+[90m│[39m  ➤ YN0000: │ tapable@npm:^2.3.0 can be deduped from tapable@npm:2.3.0
+[90m│[39m  to tapable@npm:2.3.4
+[90m│[39m  ➤ YN0000: │ tapable@npm:^2.2.0 can be deduped from tapable@npm:2.2.0
+[90m│[39m  to tapable@npm:2.3.4
+[90m│[39m  ➤ YN0000: │ tapable@npm:^2.2.1 can be deduped from tapable@npm:2.2.1
+[90m│[39m  to tapable@npm:2.3.4
+[90m│[39m  ➤ YN0000: │ tslib@npm:^2.0.3 can be deduped from tslib@npm:2.5.0 to
+[90m│[39m  tslib@npm:2.8.1
+[90m│[39m  ➤ YN0000: │ tslib@npm:^2.1.0 can be deduped from tslib@npm:2.4.1 to
+[90m│[39m  tslib@npm:2.8.1
+[90m│[39m  ➤ YN0000: │ tslib@npm:^2.4.0 can be deduped from tslib@npm:2.6.2 to
+[90m│[39m  tslib@npm:2.8.1
+[90m│[39m  ➤ YN0000: │ unicode-match-property-value-ecmascript@npm:^2.1.0 can be
+[90m│[39m  deduped from unicode-match-property-value-ecmascript@npm:2.1.0 to
+[90m│[39m  unicode-match-property-value-ecmascript@npm:2.2.1
+[90m│[39m  ➤ YN0000: │ use-sync-external-store@npm:^1.4.0 can be deduped from
+[90m│[39m  use-sync-external-store@npm:1.5.0 to use-sync-external-store@npm:1.6.0
+[90m│[39m  ➤ YN0000: │ webpack-sources@npm:^3.3.3 can be deduped from
+[90m│[39m  webpack-sources@npm:3.3.3 to webpack-sources@npm:3.7.1
+[90m│[39m  ➤ YN0000: │ ws@npm:^8.18.0 can be deduped from ws@npm:8.18.3 to
+[90m│[39m  ws@npm:8.23.0
+[90m│[39m  ➤ YN0000: │ zod@npm:^4.2.0 can be deduped from zod@npm:4.5.4 to
+[90m│[39m  zod@npm:4.6.7
+[90m│[39m
+[90m│[39m  ➤ YN0000: │ @babel/parser@npm:^7.1.0 can be deduped from
+[90m│[39m  @babel/parser@npm:7.28.5 to @babel/parser@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ @babel/parser@npm:^7.28.5 can be deduped from
+[90m│[39m  @babel/parser@npm:7.28.5 to @babel/parser@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ @babel/parser@npm:^7.14.7 can be deduped from
+[90m│[39m  @babel/parser@npm:7.22.7 to @babel/parser@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ @babel/parser@npm:^7.20.7 can be deduped from
+[90m│[39m  @babel/parser@npm:7.21.2 to @babel/parser@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ @babel/parser@npm:^7.23.9 can be deduped from
+[90m│[39m  @babel/parser@npm:7.28.3 to @babel/parser@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ @babel/parser@npm:^7.27.2 can be deduped from
+[90m│[39m  @babel/parser@npm:7.28.3 to @babel/parser@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ @babel/parser@npm:^7.28.3 can be deduped from
+[90m│[39m  @babel/parser@npm:7.28.3 to @babel/parser@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ @babel/parser@npm:^7.28.4 can be deduped from
+[90m│[39m  @babel/parser@npm:7.28.4 to @babel/parser@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ @babel/parser@npm:^7.28.6 can be deduped from
+[90m│[39m  @babel/parser@npm:7.29.0 to @babel/parser@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ @babel/parser@npm:^7.29.0 can be deduped from
+[90m│[39m  @babel/parser@npm:7.29.0 to @babel/parser@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ @babel/plugin-syntax-import-assertions@npm:^7.27.1 can be
+[90m│[39m  deduped from @babel/plugin-syntax-import-assertions@npm:7.27.1 to
+[90m│[39m  @babel/plugin-syntax-import-assertions@npm:7.28.6
+[90m│[39m  ➤ YN0000: │ @babel/plugin-syntax-import-attributes@npm:^7.24.7 can be
+[90m│[39m  deduped from @babel/plugin-syntax-import-attributes@npm:7.27.1 to
+[90m│[39m  @babel/plugin-syntax-import-attributes@npm:7.28.6
+[90m│[39m  ➤ YN0000: │ @babel/plugin-transform-numeric-separator@npm:^7.27.1 can
+[90m│[39m  be deduped from @babel/plugin-transform-numeric-separator@npm:7.27.1
+[90m│[39m  to @babel/plugin-transform-numeric-separator@npm:7.28.6
+[90m│[39m  ➤ YN0000: │ @floating-ui/core@npm:^1.7.3 can be deduped from
+[90m│[39m  @floating-ui/core@npm:1.7.3 to @floating-ui/core@npm:1.8.0
+[90m│[39m  ➤ YN0000: │ @napi-rs/wasm-runtime@npm:^1.1.4 can be deduped from
+[90m│[39m  @napi-rs/wasm-runtime@npm:1.1.4 to @napi-rs/wasm-runtime@npm:1.2.3
+[90m│[39m  ➤ YN0000: │ @tybys/wasm-util@npm:^0.10.1 can be deduped from
+[90m│[39m  @tybys/wasm-util@npm:0.10.1 to @tybys/wasm-util@npm:0.10.3
+[90m│[39m  ➤ YN0000: │ @types/hast@npm:^3.0.0 can be deduped from
+[90m│[39m  @types/hast@npm:3.0.4 to @types/hast@npm:3.0.5
+[90m│[39m  ➤ YN0000: │ @types/node@npm:* can be deduped from
+[90m│[39m  @types/node@npm:24.10.1 to @types/node@npm:26.6.5
+[90m│[39m  ➤ YN0000: │ babel-plugin-polyfill-regenerator@npm:^0.6.5 can be
+[90m│[39m  deduped from babel-plugin-polyfill-regenerator@npm:0.6.5 to
+[90m│[39m  babel-plugin-polyfill-regenerator@npm:0.6.7
+[90m│[39m  ➤ YN0000: │ braces@npm:^3.0.1 can be deduped from braces@npm:3.0.2 to
+[90m│[39m  braces@npm:3.0.3
+[90m│[39m  ➤ YN0000: │ core-js-compat@npm:^3.43.0 can be deduped from
+[90m│[39m  core-js-compat@npm:3.46.0 to core-js-compat@npm:3.48.0
+[90m│[39m  ➤ YN0000: │ debug@npm:4 can be deduped from debug@npm:4.3.1 to
+[90m│[39m  debug@npm:4.4.3
+[90m│[39m  ➤ YN0000: │ debug@npm:^4.1.0 can be deduped from debug@npm:4.3.1 to
+[90m│[39m  debug@npm:4.4.3
+[90m│[39m  ➤ YN0000: │ debug@npm:^4.1.1 can be deduped from debug@npm:4.3.1 to
+[90m│[39m  debug@npm:4.4.3
+[90m│[39m  ➤ YN0000: │ debug@npm:^4.0.0 can be deduped from debug@npm:4.3.4 to
+[90m│[39m  debug@npm:4.4.3
+[90m│[39m  ➤ YN0000: │ debug@npm:^4.3.1 can be deduped from debug@npm:4.3.4 to
+[90m│[39m  debug@npm:4.4.3
+[90m│[39m  ➤ YN0000: │ debug@npm:^4.3.4 can be deduped from debug@npm:4.3.4 to
+[90m│[39m  debug@npm:4.4.3
+[90m│[39m  ➤ YN0000: │ debug@npm:^4.4.0 can be deduped from debug@npm:4.4.1 to
+[90m│[39m  debug@npm:4.4.3
+[90m│[39m  ➤ YN0000: │ debug@npm:^4.4.1 can be deduped from debug@npm:4.4.1 to
+[90m│[39m  debug@npm:4.4.3
+[90m│[39m  ➤ YN0000: │ domhandler@npm:^4.2.0 can be deduped from
+[90m│[39m  domhandler@npm:4.2.0 to domhandler@npm:4.3.1
+[90m│[39m  ➤ YN0000: │ fill-range@npm:^7.0.1 can be deduped from
+[90m│[39m  fill-range@npm:7.0.1 to fill-range@npm:7.1.1
+[90m│[39m  ➤ YN0000: │ fsevents@npm:^2.1.2 can be deduped from fsevents@npm:2.3.2
+[90m│[39m  to fsevents@npm:2.3.3
+[90m│[39m  ➤ YN0000: │ jackspeak@npm:^4.0.1 can be deduped from
+[90m│[39m  jackspeak@npm:4.0.2 to jackspeak@npm:4.1.1
+[90m│[39m  ➤ YN0000: │ minimatch@npm:^10.0.0 can be deduped from
+[90m│[39m  minimatch@npm:10.0.1 to minimatch@npm:10.2.4
+[90m│[39m  ➤ YN0000: │ minimatch@npm:^10.0.3 can be deduped from
+[90m│[39m  minimatch@npm:10.1.1 to minimatch@npm:10.2.4
+[90m│[39m  ➤ YN0000: │ postcss-modules-scope@npm:^3.2.0 can be deduped from
+[90m│[39m  postcss-modules-scope@npm:3.2.0 to postcss-modules-scope@npm:3.2.1
+[90m│[39m  ➤ YN0000: │ prosemirror-transform@npm:^1.0.0 can be deduped from
+[90m│[39m  prosemirror-transform@npm:1.7.3 to prosemirror-transform@npm:1.12.3
+[90m│[39m  ➤ YN0000: │ prosemirror-transform@npm:^1.1.0 can be deduped from
+[90m│[39m  prosemirror-transform@npm:1.7.3 to prosemirror-transform@npm:1.12.3
+[90m│[39m  ➤ YN0000: │ prosemirror-transform@npm:^1.7.3 can be deduped from
+[90m│[39m  prosemirror-transform@npm:1.7.3 to prosemirror-transform@npm:1.12.3
+[90m│[39m  ➤ YN0000: │ prosemirror-transform@npm:^1.10.2 can be deduped from
+[90m│[39m  prosemirror-transform@npm:1.10.2 to prosemirror-transform@npm:1.12.3
+[90m│[39m  ➤ YN0000: │ prosemirror-transform@npm:^1.10.5 can be deduped from
+[90m│[39m  prosemirror-transform@npm:1.12.0 to prosemirror-transform@npm:1.12.3
+[90m│[39m  ➤ YN0000: │ regenerate-unicode-properties@npm:^10.2.0 can be deduped
+[90m│[39m  from regenerate-unicode-properties@npm:10.2.0 to
+[90m│[39m  regenerate-unicode-properties@npm:10.2.2
+[90m│[39m  ➤ YN0000: │ strip-ansi@npm:^6.0.0 can be deduped from
+[90m│[39m  strip-ansi@npm:6.0.0 to strip-ansi@npm:6.0.1
+[90m│[39m  ➤ YN0000: │ strip-ansi@npm:^7.0.1 can be deduped from
+[90m│[39m  strip-ansi@npm:7.1.2 to strip-ansi@npm:7.2.0
+[90m│[39m  ➤ YN0000: │ strip-ansi@npm:^7.1.0 can be deduped from
+[90m│[39m  strip-ansi@npm:7.1.2 to strip-ansi@npm:7.2.0
+[90m│[39m  ➤ YN0000: │ watchpack@npm:^2.4.4 can be deduped from
+[90m│[39m  watchpack@npm:2.4.4 to watchpack@npm:2.6.4
+[90m│[39m  ➤ YN0000: │ @babel/helper-module-imports@npm:^7.16.7 can be deduped
+[90m│[39m  from @babel/helper-module-imports@npm:7.27.1 to
+[90m│[39m  @babel/helper-module-imports@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ @babel/helper-module-imports@npm:^7.27.1 can be deduped
+[90m│[39m  from @babel/helper-module-imports@npm:7.27.1 to
+[90m│[39m  @babel/helper-module-imports@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ @babel/helper-module-imports@npm:^7.28.6 can be deduped
+[90m│[39m  from @babel/helper-module-imports@npm:7.28.6 to
+[90m│[39m  @babel/helper-module-imports@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ @babel/plugin-transform-class-properties@npm:^7.27.1 can
+[90m│[39m  be deduped from @babel/plugin-transform-class-properties@npm:7.27.1 to
+[90m│[39m  @babel/plugin-transform-class-properties@npm:7.28.6
+[90m│[39m  ➤ YN0000: │ @babel/plugin-transform-modules-commonjs@npm:^7.12.13 can
+[90m│[39m  be deduped from @babel/plugin-transform-modules-commonjs@npm:7.27.1 to
+[90m│[39m  @babel/plugin-transform-modules-commonjs@npm:7.28.6
+[90m│[39m  ➤ YN0000: │ @babel/plugin-transform-modules-commonjs@npm:^7.27.1 can
+[90m│[39m  be deduped from @babel/plugin-transform-modules-commonjs@npm:7.27.1 to
+[90m│[39m  @babel/plugin-transform-modules-commonjs@npm:7.28.6
+[90m│[39m  ➤ YN0000: │ @babel/plugin-transform-optional-chaining@npm:^7.27.1 can
+[90m│[39m  be deduped from @babel/plugin-transform-optional-chaining@npm:7.28.5
+[90m│[39m  to @babel/plugin-transform-optional-chaining@npm:7.28.6
+[90m│[39m  ➤ YN0000: │ @babel/types@npm:^7.0.0 can be deduped from
+[90m│[39m  @babel/types@npm:7.28.5 to @babel/types@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ @babel/types@npm:^7.28.5 can be deduped from
+[90m│[39m  @babel/types@npm:7.28.5 to @babel/types@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ @babel/types@npm:^7.3.3 can be deduped from
+[90m│[39m  @babel/types@npm:7.28.5 to @babel/types@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ @babel/types@npm:^7.20.7 can be deduped from
+[90m│[39m  @babel/types@npm:7.21.2 to @babel/types@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ @babel/types@npm:^7.4.4 can be deduped from
+[90m│[39m  @babel/types@npm:7.21.2 to @babel/types@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ @babel/types@npm:^7.27.1 can be deduped from
+[90m│[39m  @babel/types@npm:7.28.2 to @babel/types@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ @babel/types@npm:^7.27.3 can be deduped from
+[90m│[39m  @babel/types@npm:7.28.2 to @babel/types@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ @babel/types@npm:^7.28.2 can be deduped from
+[90m│[39m  @babel/types@npm:7.28.2 to @babel/types@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ @babel/types@npm:^7.28.4 can be deduped from
+[90m│[39m  @babel/types@npm:7.28.4 to @babel/types@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ @babel/types@npm:^7.28.6 can be deduped from
+[90m│[39m  @babel/types@npm:7.29.0 to @babel/types@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ @babel/types@npm:^7.29.0 can be deduped from
+[90m│[39m  @babel/types@npm:7.29.0 to @babel/types@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ @babel/types@npm:^7.8.3 can be deduped from
+[90m│[39m  @babel/types@npm:7.23.3 to @babel/types@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ @floating-ui/dom@npm:^1.0.0 can be deduped from
+[90m│[39m  @floating-ui/dom@npm:1.7.4 to @floating-ui/dom@npm:1.8.0
+[90m│[39m  ➤ YN0000: │ @jridgewell/gen-mapping@npm:^0.3.5 can be deduped from
+[90m│[39m  @jridgewell/gen-mapping@npm:0.3.5 to
+[90m│[39m  @jridgewell/gen-mapping@npm:0.3.13
+[90m│[39m  ➤ YN0000: │ @jridgewell/trace-mapping@npm:^0.3.12 can be deduped from
+[90m│[39m  @jridgewell/trace-mapping@npm:0.3.17 to
+[90m│[39m  @jridgewell/trace-mapping@npm:0.3.31
+[90m│[39m  ➤ YN0000: │ @jridgewell/trace-mapping@npm:^0.3.23 can be deduped from
+[90m│[39m  @jridgewell/trace-mapping@npm:0.3.30 to
+[90m│[39m  @jridgewell/trace-mapping@npm:0.3.31
+[90m│[39m  ➤ YN0000: │ @jridgewell/trace-mapping@npm:^0.3.28 can be deduped from
+[90m│[39m  @jridgewell/trace-mapping@npm:0.3.30 to
+[90m│[39m  @jridgewell/trace-mapping@npm:0.3.31
+[90m│[39m  ➤ YN0000: │ @jridgewell/trace-mapping@npm:^0.3.24 can be deduped from
+[90m│[39m  @jridgewell/trace-mapping@npm:0.3.25 to
+[90m│[39m  @jridgewell/trace-mapping@npm:0.3.31
+[90m│[39m  ➤ YN0000: │ @jridgewell/trace-mapping@npm:^0.3.25 can be deduped from
+[90m│[39m  @jridgewell/trace-mapping@npm:0.3.25 to
+[90m│[39m  @jridgewell/trace-mapping@npm:0.3.31
+[90m│[39m  ➤ YN0000: │ chalk@npm:^4.0.0 can be deduped from chalk@npm:4.1.1 to
+[90m│[39m  chalk@npm:4.1.2
+[90m│[39m  ➤ YN0000: │ chalk@npm:^4.1.0 can be deduped from chalk@npm:4.1.1 to
+[90m│[39m  chalk@npm:4.1.2
+[90m│[39m  ➤ YN0000: │ enhanced-resolve@npm:^5.17.3 can be deduped from
+[90m│[39m  enhanced-resolve@npm:5.18.3 to enhanced-resolve@npm:5.27.0
+[90m│[39m  ➤ YN0000: │ enhanced-resolve@npm:^5.7.0 can be deduped from
+[90m│[39m  enhanced-resolve@npm:5.8.2 to enhanced-resolve@npm:5.27.0
+[90m│[39m  ➤ YN0000: │ micromatch@npm:^4.0.4 can be deduped from
+[90m│[39m  micromatch@npm:4.0.4 to micromatch@npm:4.0.8
+[90m│[39m  ➤ YN0000: │ path-scurry@npm:^2.0.0 can be deduped from
+[90m│[39m  path-scurry@npm:2.0.1 to path-scurry@npm:2.0.2
+[90m│[39m  ➤ YN0000: │ postcss-selector-parser@npm:^6.0.2 can be deduped from
+[90m│[39m  postcss-selector-parser@npm:6.0.11 to
+[90m│[39m  postcss-selector-parser@npm:6.1.2
+[90m│[39m  ➤ YN0000: │ postcss-selector-parser@npm:^7.0.0 can be deduped from
+[90m│[39m  postcss-selector-parser@npm:7.1.0 to postcss-selector-parser@npm:7.1.6
+[90m│[39m  ➤ YN0000: │ postcss-selector-parser@npm:^7.1.1 can be deduped from
+[90m│[39m  postcss-selector-parser@npm:7.1.1 to postcss-selector-parser@npm:7.1.6
+[90m│[39m  ➤ YN0000: │ rimraf@npm:* can be deduped from rimraf@npm:6.0.1 to
+[90m│[39m  rimraf@npm:6.1.3
+[90m│[39m  ➤ YN0000: │ string-width@npm:^8.2.1 can be deduped from
+[90m│[39m  string-width@npm:8.2.1 to string-width@npm:8.3.0
+[90m│[39m  ➤ YN0000: │ tinyglobby@npm:^0.2.14 can be deduped from
+[90m│[39m  tinyglobby@npm:0.2.14 to tinyglobby@npm:0.2.15
+[90m│[39m  ➤ YN0000: │ update-browserslist-db@npm:^1.1.1 can be deduped from
+[90m│[39m  update-browserslist-db@npm:1.1.1 to update-browserslist-db@npm:1.2.3
+[90m│[39m  ➤ YN0000: │ update-browserslist-db@npm:^1.1.4 can be deduped from
+[90m│[39m  update-browserslist-db@npm:1.1.4 to update-browserslist-db@npm:1.2.3
+[90m│[39m
+[90m│[39m  ➤ YN0000: │ @babel/code-frame@npm:^7.0.0 can be deduped from
+[90m│[39m  @babel/code-frame@npm:7.12.13 to @babel/code-frame@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ @babel/code-frame@npm:^7.10.4 can be deduped from
+[90m│[39m  @babel/code-frame@npm:7.16.0 to @babel/code-frame@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ @babel/code-frame@npm:^7.16.7 can be deduped from
+[90m│[39m  @babel/code-frame@npm:7.27.1 to @babel/code-frame@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ @babel/code-frame@npm:^7.27.1 can be deduped from
+[90m│[39m  @babel/code-frame@npm:7.27.1 to @babel/code-frame@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ @babel/code-frame@npm:^7.28.6 can be deduped from
+[90m│[39m  @babel/code-frame@npm:7.29.0 to @babel/code-frame@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ @babel/code-frame@npm:^7.29.0 can be deduped from
+[90m│[39m  @babel/code-frame@npm:7.29.0 to @babel/code-frame@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ @babel/helper-create-regexp-features-plugin@npm:^7.27.1
+[90m│[39m  can be deduped from
+[90m│[39m  @babel/helper-create-regexp-features-plugin@npm:7.27.1 to
+[90m│[39m  @babel/helper-create-regexp-features-plugin@npm:7.28.5
+[90m│[39m  ➤ YN0000: │ @babel/helper-module-transforms@npm:^7.27.1 can be deduped
+[90m│[39m  from @babel/helper-module-transforms@npm:7.28.3 to
+[90m│[39m  @babel/helper-module-transforms@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ @babel/helper-module-transforms@npm:^7.28.6 can be deduped
+[90m│[39m  from @babel/helper-module-transforms@npm:7.28.6 to
+[90m│[39m  @babel/helper-module-transforms@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ @babel/helper-replace-supers@npm:^7.27.1 can be deduped
+[90m│[39m  from @babel/helper-replace-supers@npm:7.27.1 to
+[90m│[39m  @babel/helper-replace-supers@npm:7.28.6
+[90m│[39m  ➤ YN0000: │ @babel/highlight@npm:^7.12.13 can be deduped from
+[90m│[39m  @babel/highlight@npm:7.14.0 to @babel/highlight@npm:7.16.0
+[90m│[39m  ➤ YN0000: │ @babel/template@npm:^7.27.2 can be deduped from
+[90m│[39m  @babel/template@npm:7.27.2 to @babel/template@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ @babel/template@npm:^7.3.3 can be deduped from
+[90m│[39m  @babel/template@npm:7.27.2 to @babel/template@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ @babel/template@npm:^7.28.6 can be deduped from
+[90m│[39m  @babel/template@npm:7.28.6 to @babel/template@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ babel-plugin-polyfill-corejs2@npm:^0.4.14 can be deduped
+[90m│[39m  from babel-plugin-polyfill-corejs2@npm:0.4.14 to
+[90m│[39m  babel-plugin-polyfill-corejs2@npm:0.4.16
+[90m│[39m  ➤ YN0000: │ fs-extra@npm:^11 can be deduped from fs-extra@npm:11.3.2
+[90m│[39m  to fs-extra@npm:11.4.1
+[90m│[39m  ➤ YN0000: │ fs-extra@npm:^11.1.1 can be deduped from
+[90m│[39m  fs-extra@npm:11.3.2 to fs-extra@npm:11.4.1
+[90m│[39m  ➤ YN0000: │ postcss-loader@npm:^8.1.1 can be deduped from
+[90m│[39m  postcss-loader@npm:8.2.0 to postcss-loader@npm:8.2.1
+[90m│[39m  ➤ YN0000: │ postcss-modules-local-by-default@npm:^4.0.5 can be deduped
+[90m│[39m  from postcss-modules-local-by-default@npm:4.0.5 to
+[90m│[39m  postcss-modules-local-by-default@npm:4.2.0
+[90m│[39m  ➤ YN0000: │ postcss@npm:^8.2.14 can be deduped from postcss@npm:8.5.6
+[90m│[39m  to postcss@npm:8.5.31
+[90m│[39m  ➤ YN0000: │ postcss@npm:^8.4.33 can be deduped from postcss@npm:8.4.33
+[90m│[39m  to postcss@npm:8.5.31
+[90m│[39m  ➤ YN0000: │ postcss@npm:^8.4.38 can be deduped from postcss@npm:8.4.47
+[90m│[39m  to postcss@npm:8.5.31
+[90m│[39m  ➤ YN0000: │ postcss@npm:^8.5.26 can be deduped from postcss@npm:8.5.26
+[90m│[39m  to postcss@npm:8.5.31
+[90m│[39m  ➤ YN0000: │ prosemirror-view@npm:^1.0.0 can be deduped from
+[90m│[39m  prosemirror-view@npm:1.41.3 to prosemirror-view@npm:1.42.7
+[90m│[39m  ➤ YN0000: │ prosemirror-view@npm:^1.1.0 can be deduped from
+[90m│[39m  prosemirror-view@npm:1.41.3 to prosemirror-view@npm:1.42.7
+[90m│[39m  ➤ YN0000: │ prosemirror-view@npm:^1.27.0 can be deduped from
+[90m│[39m  prosemirror-view@npm:1.41.3 to prosemirror-view@npm:1.42.7
+[90m│[39m  ➤ YN0000: │ prosemirror-view@npm:^1.31.0 can be deduped from
+[90m│[39m  prosemirror-view@npm:1.41.3 to prosemirror-view@npm:1.42.7
+[90m│[39m  ➤ YN0000: │ prosemirror-view@npm:^1.41.4 can be deduped from
+[90m│[39m  prosemirror-view@npm:1.41.9 to prosemirror-view@npm:1.42.7
+[90m│[39m  ➤ YN0000: │ resolve@npm:^1.22.10 can be deduped from
+[90m│[39m  resolve@npm:1.22.10 to resolve@npm:1.22.11
+[90m│[39m  ➤ YN0000: │ string-width@npm:^4.1.0 can be deduped from
+[90m│[39m  string-width@npm:4.2.2 to string-width@npm:4.2.3
+[90m│[39m  ➤ YN0000: │ string-width@npm:^4.2.0 can be deduped from
+[90m│[39m  string-width@npm:4.2.2 to string-width@npm:4.2.3
+[90m│[39m  ➤ YN0000: │ unist-util-visit@npm:^5.0.0 can be deduped from
+[90m│[39m  unist-util-visit@npm:5.0.0 to unist-util-visit@npm:5.1.0
+[90m│[39m  ➤ YN0000: │ ajv@npm:^8.0.0 can be deduped from ajv@npm:8.17.1 to
+[90m│[39m  ajv@npm:8.20.0
+[90m│[39m  ➤ YN0000: │ ajv@npm:^8.0.1 can be deduped from ajv@npm:8.17.1 to
+[90m│[39m  ajv@npm:8.20.0
+[90m│[39m  ➤ YN0000: │ ajv@npm:^8.9.0 can be deduped from ajv@npm:8.17.1 to
+[90m│[39m  ajv@npm:8.20.0
+[90m│[39m  ➤ YN0000: │ cosmiconfig@npm:^9.0.0 can be deduped from
+[90m│[39m  cosmiconfig@npm:9.0.0 to cosmiconfig@npm:9.0.2
+[90m│[39m  ➤ YN0000: │ pretty-format@npm:^30.0.0 can be deduped from
+[90m│[39m  pretty-format@npm:30.2.0 to pretty-format@npm:30.5.1
+[90m│[39m  ➤ YN0000: │ schema-utils@npm:^4.0.0 can be deduped from
+[90m│[39m  schema-utils@npm:4.3.3 to schema-utils@npm:4.8.5
+[90m│[39m  ➤ YN0000: │ schema-utils@npm:^4.3.3 can be deduped from
+[90m│[39m  schema-utils@npm:4.3.3 to schema-utils@npm:4.8.5
+[90m│[39m  ➤ YN0000: │ schema-utils@npm:^4.2.0 can be deduped from
+[90m│[39m  schema-utils@npm:4.3.2 to schema-utils@npm:4.8.5
+[90m│[39m  ➤ YN0000: │ schema-utils@npm:^4.3.0 can be deduped from
+[90m│[39m  schema-utils@npm:4.3.2 to schema-utils@npm:4.8.5
+[90m│[39m  ➤ YN0000: │ terser-webpack-plugin@npm:^5.3.11 can be deduped from
+[90m│[39m  terser-webpack-plugin@npm:5.3.14 to terser-webpack-plugin@npm:5.6.0
+[90m│[39m  ➤ YN0000: │ terser@npm:^5.10.0 can be deduped from terser@npm:5.44.1
+[90m│[39m  to terser@npm:5.51.4
+[90m│[39m  ➤ YN0000: │ terser@npm:^5.31.1 can be deduped from terser@npm:5.44.1
+[90m│[39m  to terser@npm:5.51.4
+[90m│[39m  ➤ YN0000: │ @babel/generator@npm:^7.27.5 can be deduped from
+[90m│[39m  @babel/generator@npm:7.28.3 to @babel/generator@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ @babel/generator@npm:^7.28.3 can be deduped from
+[90m│[39m  @babel/generator@npm:7.28.3 to @babel/generator@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ @babel/generator@npm:^7.28.5 can be deduped from
+[90m│[39m  @babel/generator@npm:7.28.5 to @babel/generator@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ @babel/generator@npm:^7.29.0 can be deduped from
+[90m│[39m  @babel/generator@npm:7.29.1 to @babel/generator@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ @babel/helper-compilation-targets@npm:^7.27.1 can be
+[90m│[39m  deduped from @babel/helper-compilation-targets@npm:7.27.2 to
+[90m│[39m  @babel/helper-compilation-targets@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ @babel/helper-compilation-targets@npm:^7.27.2 can be
+[90m│[39m  deduped from @babel/helper-compilation-targets@npm:7.27.2 to
+[90m│[39m  @babel/helper-compilation-targets@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ @babel/helper-compilation-targets@npm:^7.28.6 can be
+[90m│[39m  deduped from @babel/helper-compilation-targets@npm:7.28.6 to
+[90m│[39m  @babel/helper-compilation-targets@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ @babel/helper-define-polyfill-provider@npm:^0.6.5 can be
+[90m│[39m  deduped from @babel/helper-define-polyfill-provider@npm:0.6.5 to
+[90m│[39m  @babel/helper-define-polyfill-provider@npm:0.6.7
+[90m│[39m  ➤ YN0000: │ @babel/plugin-transform-object-rest-spread@npm:^7.28.4 can
+[90m│[39m  be deduped from @babel/plugin-transform-object-rest-spread@npm:7.28.4
+[90m│[39m  to @babel/plugin-transform-object-rest-spread@npm:7.28.6
+[90m│[39m  ➤ YN0000: │ browserslist@npm:^4.0.0 can be deduped from
+[90m│[39m  browserslist@npm:4.28.0 to browserslist@npm:4.28.1
+[90m│[39m  ➤ YN0000: │ browserslist@npm:^4.21.4 can be deduped from
+[90m│[39m  browserslist@npm:4.28.0 to browserslist@npm:4.28.1
+[90m│[39m  ➤ YN0000: │ browserslist@npm:^4.26.3 can be deduped from
+[90m│[39m  browserslist@npm:4.28.0 to browserslist@npm:4.28.1
+[90m│[39m  ➤ YN0000: │ browserslist@npm:^4.24.0 can be deduped from
+[90m│[39m  browserslist@npm:4.24.2 to browserslist@npm:4.28.1
+[90m│[39m  ➤ YN0000: │ fast-glob@npm:^3.2.12 can be deduped from
+[90m│[39m  fast-glob@npm:3.3.2 to fast-glob@npm:3.3.3
+[90m│[39m  ➤ YN0000: │ fast-glob@npm:^3.2.9 can be deduped from
+[90m│[39m  fast-glob@npm:3.2.11 to fast-glob@npm:3.3.3
+[90m│[39m  ➤ YN0000: │ expect@npm:^30.0.0 can be deduped from expect@npm:30.0.5
+[90m│[39m  to expect@npm:30.5.2
+[90m│[39m  ➤ YN0000: │ glob@npm:^11.0.0 can be deduped from glob@npm:11.0.0 to
+[90m│[39m  glob@npm:11.0.3
+[90m│[39m  ➤ YN0000: │ regexpu-core@npm:^6.2.0 can be deduped from
+[90m│[39m  regexpu-core@npm:6.2.0 to regexpu-core@npm:6.4.0
+[90m│[39m  ➤ YN0000: │ @babel/helper-create-class-features-plugin@npm:^7.27.1 can
+[90m│[39m  be deduped from @babel/helper-create-class-features-plugin@npm:7.28.5
+[90m│[39m  to @babel/helper-create-class-features-plugin@npm:7.28.6
+[90m│[39m  ➤ YN0000: │ @babel/helper-create-class-features-plugin@npm:^7.28.5 can
+[90m│[39m  be deduped from @babel/helper-create-class-features-plugin@npm:7.28.5
+[90m│[39m  to @babel/helper-create-class-features-plugin@npm:7.28.6
+[90m│[39m  ➤ YN0000: │ @babel/traverse@npm:^7.27.1 can be deduped from
+[90m│[39m  @babel/traverse@npm:7.28.3 to @babel/traverse@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ @babel/traverse@npm:^7.28.3 can be deduped from
+[90m│[39m  @babel/traverse@npm:7.28.3 to @babel/traverse@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ @babel/traverse@npm:^7.28.4 can be deduped from
+[90m│[39m  @babel/traverse@npm:7.28.4 to @babel/traverse@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ @babel/traverse@npm:^7.28.5 can be deduped from
+[90m│[39m  @babel/traverse@npm:7.28.5 to @babel/traverse@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ @babel/traverse@npm:^7.28.6 can be deduped from
+[90m│[39m  @babel/traverse@npm:7.29.0 to @babel/traverse@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ @babel/traverse@npm:^7.29.0 can be deduped from
+[90m│[39m  @babel/traverse@npm:7.29.0 to @babel/traverse@npm:7.29.7
+[90m│[39m  ➤ YN0000: │ get-intrinsic@npm:^1.3.0 can be deduped from
+[90m│[39m  get-intrinsic@npm:1.3.0 to get-intrinsic@npm:1.3.1
+[90m│[39m  ➤ YN0000: │ webpack@npm:5 can be deduped from webpack@npm:5.102.1 to
+[90m│[39m  webpack@npm:5.113.0
+[90m│[39m  ➤ YN0000: │ esbuild@npm:^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 ||
+[90m│[39m  ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0 || ^0.26.0 || ^0.27.0 ||
+[90m│[39m  ^0.28.0 can be deduped from esbuild@npm:0.28.1 to esbuild@npm:0.28.2
+[90m│[39m  ➤ YN0000: │ esbuild@npm:~0.28.0 can be deduped from esbuild@npm:0.28.0
+[90m│[39m  to esbuild@npm:0.28.2
+[90m│[39m  ➤ YN0000: │ 260 packages can be deduped using the highest strategy
+[90m│[39m  ➤ YN0000: └ Completed
+[90m│[39m  ➤ YN0000: · Yarn 4.18.1
+[90m│[39m  ➤ YN0000: ┌ Resolution step
+[90m│[39m
+[90m│[39m  ➤ YN0085: │ - @babel/code-frame@npm:7.12.13,
+[90m│[39m  @babel/code-frame@npm:7.16.0, @babel/code-frame@npm:7.27.1,
+[90m│[39m  @babel/code-frame@npm:7.29.0, @babel/compat-data@npm:7.28.5, and 269
+[90m│[39m  more.
+[90m│[39m
+[90m│[39m  ➤ YN0000: └ Completed in 0s 229ms
+[90m│[39m
+[90m│[39m  ➤ YN0000: ┌ Post-resolution validation
+[90m│[39m  ➤ YN0086: │ Some peer dependencies are incorrectly met by
+[90m│[39m  dependencies; run yarn explain peer-requirements for details.
+[90m│[39m
+[90m│[39m  ➤ YN0000: └ Completed
+[90m│[39m  ➤ YN0000: ┌ Fetch step
+[90m│[39m
+[90m│[39m  ➤ YN0000: └ Completed in 1s 265ms
+[90m│[39m
+[90m│[39m  ➤ YN0000: ┌ Link step
+[90m│[39m
+[90m│[39m  ➤ YN0008: │ @parcel/watcher@npm:2.6.0 must be rebuilt because its
+[90m│[39m  dependency tree changed
+[90m│[39m
+[90m│[39m  ➤ YN0008: │ unrs-resolver@npm:1.12.2 must be rebuilt because its
+[90m│[39m  dependency tree changed
+[90m│[39m
+[90m│[39m  ➤ YN0000: └ Completed in 5s 240ms
+[90m│[39m
+[90m│[39m  ➤ YN0000: · Done with warnings in 6s 931ms
+[90m│[39m
+[90m│[39m  [32mDependencies deduplicated[39m
+[90m│[39m
+[32m◇[39m  Checking the health of your project(s)..
+[90m│[39m
+[90m│[39m  Your Storybook project looks good!
+[90m│[39m
+[32m◇[39m  The upgrade is complete, but some projects failed to upgrade or
+[90m│[39m  migrate completely. Please see the debug logs for more details.
+[90m│[39m
+[90m│[39m  [31mFailed to upgrade:[39m
+[90m│[39m  Some automigrations failed or skipped files. Review the upgrade output
+[90m│[39m  for details.
+[90m│[39m  • /.storybook (story-sort-to-main, argtypes-default-value)
+[90m│[39m
+[90m│[39m  If you want to learn more about the automigrations that executed in
+[90m│[39m  your project(s), please check the following links:
+[90m│[39m  • argtypes-default-value:
+[90m│[39m  https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#argtypes-defaultvalue-removed
+[90m│[39m  • wrap-getAbsolutePath:
+[90m│[39m  https://storybook.js.org/docs/faq#how-do-i-fix-module-resolution-in-special-environments
+[90m│[39m  • story-sort-to-main:
+[90m│[39m  https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storysort-in-the-preview-replaced-by-storysorts-in-main
+[90m│[39m  • skills: https://github.com/storybookjs/skills
+[90m│[39m
+[90m│[39m  For a full list of changes, please check our migration guide:
+[90m│[39m  [36mhttps://storybook.js.org/docs/releases/migration-guide?ref=upgrade[39m
+[90m│[39m
+[34m●[39m  Storybook collects completely anonymous usage telemetry. We use it to
+[90m│[39m  shape Storybook's roadmap and prioritize features. You can learn more,
+[90m│[39m  including how to opt out, at https://storybook.js.org/telemetry
+[90m│[39m
+[90m│[39m  Debug logs are written to: /home/agent/workspace/debug-storybook.log
+[90m│[39m
+[90m└[39m  
+
+exit 1

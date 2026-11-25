@@ -1,0 +1,30 @@
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn EBADENGINE Unsupported engine {
+npm warn EBADENGINE   package: 'storybook-addon-tag-badges@4.0.0',
+npm warn EBADENGINE   required: { node: '>=26' },
+npm warn EBADENGINE   current: { node: 'v24.20.0', npm: '11.19.0' }
+npm warn EBADENGINE }
+
+> gutenberg@24.4.0-rc.1 postinstall
+> npm run agents:setup -- --if-safe
+
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> gutenberg@24.4.0-rc.1 agents:setup
+> npm run --workspace @wordpress/agent-tools setup -- --if-safe
+
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> @wordpress/agent-tools@0.0.0 setup
+> node ./setup-skills.mjs --if-safe
+
+Generated: .claude/skills
+
+> gutenberg@24.4.0-rc.1 prepare
+> husky install
+
+error: could not write config file /home/runner/work/_temp/qa-work/gutenberg/.git/config: Device or resource busy
+husky - Git hooks installed
+
+added 3 packages, and changed 4 packages in 24s
+exit 0

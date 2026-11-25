@@ -1,0 +1,212 @@
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+[90m┌[39m  Storybook upgrade - v11.0.0-rc.0
+[90m│[39m
+[90m│[39m  Detecting projects...
+[90m│[39m
+[90m│[39m  Detecting projects: 1 projects
+[90m│[39m
+[90m│[39m  1 project detected
+[90m│[39m
+[34m●[39m  Upgrading from [1m10.6.6[22m to [1m11.0.0-rc.0[22m
+[90m│[39m
+[90m│[39m  /storybook/package.json
+[90m│[39m  /package.json
+[90m│[39m  /packages/widget-primitives/package.json
+[90m│[39m  /packages/widget-dashboard/package.json
+[90m│[39m  /packages/ui/package.json
+[90m│[39m  /packages/theme/package.json
+[90m│[39m  /packages/media-fields/package.json
+[90m│[39m  /packages/media-editor/package.json
+[90m│[39m  /packages/image-editor/package.json
+[90m│[39m  /packages/image-cropper/package.json
+[90m│[39m  /packages/icons/package.json
+[90m│[39m  /packages/grid/package.json
+[90m│[39m  /packages/global-styles-ui/package.json
+[90m│[39m  /packages/editor/package.json
+[90m│[39m  /packages/dataviews/package.json
+[90m│[39m  /packages/data/package.json
+[90m│[39m  /packages/components/package.json
+[90m│[39m  /packages/block-editor/package.json
+[90m│[39m  /packages/admin-ui/package.json
+[90m│[39m
+[90m│[39m  Updated package versions in package.json files
+[90m│[39m
+[90m│[39m  Checking automigrations for ....
+[90m│[39m
+
+[90m│[39m  Automigrations detected:
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m upgrade-storybook-related-dependencies[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m story-sort-to-main[39m
+[90m│[39m
+[90m│[39m  2 automigration(s) detected
+[90m│[39m
+[90m│[39m  Running all detected automigrations:
+[90m│[39m
+[90m│[39m  - upgrade-storybook-related-dependencies (.)
+[90m│[39m
+[90m│[39m  - story-sort-to-main (.)
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m upgrade-storybook-related-dependencies[39m
+[90m│[39m
+[90m│[39m  [31m[31m✕[31m story-sort-to-main[39m
+[90m│[39m
+[90m│[39m  main.ts: Cannot automigrate storySort: storySort must be a statically
+[90m│[39m  readable object or array. Storybook no longer reads
+[90m│[39m  parameters.options.storySort from the preview. Move it to storySorts
+[90m│[39m  in the main config manually and remove the preview property.
+[90m│[39m
+[90m│[39m  1 automigrations failed for .
+[90m│[39m
+[33m▲[39m  1 file could not be migrated automatically. See
+[90m│[39m  [36m../automigrations-summary.md[39m for which ones and why.
+[90m│[39m
+[90m│[39m  Installing dependencies...
+[90m│[39m
+[31m■[39m  [31mInstallation of dependencies failed![39m
+[90m│[39m
+[31m■[39m  npm error @storybook/builder-vite@"11.0.0-rc.0" from
+[90m│[39m  @storybook/react-vite@11.0.0-rc.0
+[90m│[39m  npm error packages/dataviews/node_modules/@storybook/react-vite
+[90m│[39m  npm error   dev @storybook/react-vite@"^11.0.0-rc.0" from
+[90m│[39m  @wordpress/dataviews@22.0.0
+[90m│[39m  npm error   packages/dataviews
+[90m│[39m  npm error     @wordpress/dataviews@22.0.0
+[90m│[39m  npm error     node_modules/@wordpress/dataviews
+[90m│[39m  npm error       workspace packages/dataviews from the root project
+[90m│[39m  npm error       29 more (@wordpress/block-editor,
+[90m│[39m  @wordpress/core-actions, ...)
+[90m│[39m  npm error
+[90m│[39m  npm error Fix the upstream dependency conflict, or retry this command
+[90m│[39m  with --no-strict-peer-deps, --force, or --legacy-peer-deps to accept
+[90m│[39m  an incorrect (and potentially broken) dependency resolution.
+[90m│[39m  npm error
+[90m│[39m  npm error
+[90m│[39m  npm error For a full report see:
+[90m│[39m  npm error
+[90m│[39m  /home/agent/.npm/_logs/2026-11-24T20_39_49_636Z-eresolve-report.txt
+[90m│[39m  npm error A complete log of this run can be found in:
+[90m│[39m  /home/agent/.npm/_logs/2026-11-24T20_39_49_636Z-debug-0.log
+[90m│[39m
+[33m▲[39m  Peer dependency conflict detected; retrying with --legacy-peer-deps
+[90m│[39m
+[90m│[39m  Installing dependencies...
+[90m│[39m
+[31m■[39m  [31mInstallation of dependencies failed![39m
+[90m│[39m
+[31m■[39m  npm error engine Not compatible with your version of node/npm:
+[90m│[39m  storybook-addon-tag-badges@4.0.0
+[90m│[39m  npm error notsup Not compatible with your version of node/npm:
+[90m│[39m  storybook-addon-tag-badges@4.0.0
+[90m│[39m  npm error notsup Required: {"node":">=26"}
+[90m│[39m  npm error notsup Actual:   {"node":"v24.20.0","npm":"11.19.0"}
+[90m│[39m  npm error A complete log of this run can be found in:
+[90m│[39m  /home/agent/.npm/_logs/2026-11-24T20_39_59_474Z-debug-0.log
+[90m│[39m  Command failed with exit code 1: npm install --legacy-peer-deps
+
+[90m│[39m  npm warn Unknown env config "frozen-lockfile". This will stop working
+[90m│[39m  in the next major version of npm. See `npm help npmrc` for supported
+[90m│[39m  config options.
+[90m│[39m  npm error code EBADENGINE
+[90m│[39m  npm error engine Unsupported engine
+[90m│[39m  npm error engine Not compatible with your version of node/npm:
+[90m│[39m  storybook-addon-tag-badges@4.0.0
+[90m│[39m  npm error notsup Not compatible with your version of node/npm:
+[90m│[39m  storybook-addon-tag-badges@4.0.0
+[90m│[39m  npm error notsup Required: {"node":">=26"}
+[90m│[39m  npm error notsup Actual:   {"node":"v24.20.0","npm":"11.19.0"}
+[90m│[39m  npm error A complete log of this run can be found in:
+[90m│[39m  /home/agent/.npm/_logs/2026-11-24T20_39_59_474Z-debug-0.log
+[90m│[39m
+[33m▲[39m  Retry with --legacy-peer-deps failed; retrying with --force
+[90m│[39m
+[90m│[39m  Installing dependencies...
+[90m│[39m
+[90m│[39m  Installing dependencies...: > gutenberg@24.4.0-rc.1 p
+[90m│[39m
+[90m│[39m  Installing dependencies...: > gutenberg@24.4.0-rc.1 a
+[90m│[39m
+[90m│[39m  Installing dependencies...: > @wordpress/agent-tools@
+[90m│[39m
+[90m│[39m  Installing dependencies...: Generated: .claude/skills
+[90m│[39m
+[90m│[39m  Installing dependencies...: > gutenberg@24.4.0-rc.1 p
+[90m│[39m
+[90m│[39m  Installing dependencies...: husky - Git hooks install
+[90m│[39m
+[90m│[39m  Installing dependencies...: added 12 packages, change
+[90m│[39m
+[90m│[39m  Installing dependencies...: 585 packages are looking
+[90m│[39m
+[90m│[39m  Installing dependencies...: 83 vulnerabilities (9 low
+[90m│[39m
+[90m│[39m  Dependencies installed
+[90m│[39m
+[33m▲[39m  Since you are in a monorepo, we advise you to deduplicate your
+[90m│[39m  dependencies. We can do this for you but it might take some time.
+[90m│[39m
+[90m│[39m  Deduplicating dependencies...
+[90m│[39m
+[90m│[39m  [31mCommand failed: npm dedupe
+
+[90m│[39m  Command failed with exit code 1: npm dedupe
+[90m│[39m  npm warn Unknown env config "frozen-lockfile". This will stop working
+[90m│[39m  in the next major version of npm. See `npm help npmrc` for supported
+[90m│[39m  config options.
+[90m│[39m  npm error A complete log of this run can be found in:
+[90m│[39m  /home/agent/.npm/_logs/2026-11-24T20_40_24_116Z-debug-0.log
+[90m│[39m  Command failed with exit code 1: npm dedupe
+
+[90m│[39m  npm warn Unknown env config "frozen-lockfile". This will stop working
+[90m│[39m  in the next major version of npm. See `npm help npmrc` for supported
+[90m│[39m  config options.
+[90m│[39m  npm error A complete log of this run can be found in:
+[90m│[39m  /home/agent/.npm/_logs/2026-11-24T20_40_24_116Z-debug-0.log[39m
+[90m│[39m
+[31m■[39m  [38;2;241;97;97mSB_CLI_0003 (ExecaCommandFailedError): Command failed: npm dedupe
+
+[90m│[39m  Command failed with exit code 1: npm dedupe
+[90m│[39m  npm warn Unknown env config "frozen-lockfile". This will stop working
+[90m│[39m  in the next major version of npm. See `npm help npmrc` for supported
+[90m│[39m  config options.
+[90m│[39m  npm error A complete log of this run can be found in:
+[90m│[39m  /home/agent/.npm/_logs/2026-11-24T20_40_24_116Z-debug-0.log
+[90m│[39m  Command failed with exit code 1: npm dedupe
+
+[90m│[39m  npm warn Unknown env config "frozen-lockfile". This will stop working
+[90m│[39m  in the next major version of npm. See `npm help npmrc` for supported
+[90m│[39m  config options.
+[90m│[39m  npm error A complete log of this run can be found in:
+[90m│[39m  /home/agent/.npm/_logs/2026-11-24T20_40_24_116Z-debug-0.log[39m
+[90m│[39m  at categorizeExecaError
+[90m│[39m  (file:///home/agent/.npm/_npx/5f02690fa09ae28b/node_modules/.store/storybook@11.0.0-rc.0-MyYwbK8sDFNG2Vuo9pwv6w/node_modules/storybook/dist/_node-chunks/chunk-TMQGTPEI.js:8722:776)
+[90m│[39m  at categorize
+[90m│[39m  (file:///home/agent/.npm/_npx/5f02690fa09ae28b/node_modules/.store/storybook@11.0.0-rc.0-MyYwbK8sDFNG2Vuo9pwv6w/node_modules/storybook/dist/_node-chunks/chunk-TMQGTPEI.js:8732:31)
+[90m│[39m  at
+[90m│[39m  file:///home/agent/.npm/_npx/5f02690fa09ae28b/node_modules/.store/storybook@11.0.0-rc.0-MyYwbK8sDFNG2Vuo9pwv6w/node_modules/storybook/dist/_node-chunks/chunk-TMQGTPEI.js:8735:61
+[90m│[39m
+[31m■[39m  SB_CLI_0003 (ExecaCommandFailedError): Command failed: npm dedupe
+
+[90m│[39m  Command failed with exit code 1: npm dedupe
+[90m│[39m  npm warn Unknown env config "frozen-lockfile". This will stop working
+[90m│[39m  in the next major version of npm. See `npm help npmrc` for supported
+[90m│[39m  config options.
+[90m│[39m  npm error A complete log of this run can be found in:
+[90m│[39m  /home/agent/.npm/_logs/2026-11-24T20_40_24_116Z-debug-0.log
+[90m│[39m  Command failed with exit code 1: npm dedupe
+
+[90m│[39m  npm warn Unknown env config "frozen-lockfile". This will stop working
+[90m│[39m  in the next major version of npm. See `npm help npmrc` for supported
+[90m│[39m  config options.
+[90m│[39m  npm error A complete log of this run can be found in:
+[90m│[39m  /home/agent/.npm/_logs/2026-11-24T20_40_24_116Z-debug-0.log
+[90m│[39m
+[90m│[39m  Debug logs are written to:
+[90m│[39m  /home/agent/workspace/storybook/debug-storybook.log
+[90m│[39m
+[90m└[39m  
+
+exit 1

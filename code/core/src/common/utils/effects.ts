@@ -160,16 +160,6 @@ const record = async <T>(entry: JournalEntry, run: () => T | Promise<T>) => {
   return run();
 };
 
-/**
- * Log that a change was made. A dry run leaves the message out, because the change was only staged
- * and {@link logDryRunChanges} lists it.
- */
-export const logChange = (message: string, method: 'log' | 'info' | 'step' | 'warn' = 'log') => {
-  if (!state.dryRun) {
-    logger[method](message);
-  }
-};
-
 const MAX_DETAILS = 12;
 const MAX_VALUE_LENGTH = 60;
 

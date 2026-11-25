@@ -11,7 +11,6 @@ import type { StorybookConfig } from 'storybook/internal/types';
 import picocolors from 'picocolors';
 
 import { getAddonAnnotations } from './get-addon-annotations.ts';
-import * as effects from './effects.ts';
 import { getAddonNames } from './get-addon-names.ts';
 import { getProjectRelativePath } from './paths.ts';
 
@@ -95,7 +94,7 @@ export async function syncPreviewAddonsWithMainConfig(
   }
 
   if (syncedAddons.length > 0) {
-    effects.logChange(
+    logger.log(
       `Synchronizing addons from main config in ${picocolors.cyan(getProjectRelativePath(String(previewConfig.fileName)))}:\n${syncedAddons.map(picocolors.magenta).join(', ')}`
     );
   }

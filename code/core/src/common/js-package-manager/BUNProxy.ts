@@ -281,7 +281,7 @@ export class BUNProxy extends JsPackageManager {
 
     if (nonInteractive) {
       this.updateMinimumReleaseAgeExcludes();
-      effects.logChange(
+      logger.info(
         dedent`
           bun minimumReleaseAge would block storybook@${storybookVersion} from being installed because it was released within the configured minimumReleaseAge window, so Storybook updated minimumReleaseAgeExcludes for this project automatically.
 
@@ -289,8 +289,7 @@ export class BUNProxy extends JsPackageManager {
 
           Read more:
           - https://bun.com/docs/pm/cli/install#minimum-release-age
-        `,
-        'info'
+        `
       );
       return;
     }

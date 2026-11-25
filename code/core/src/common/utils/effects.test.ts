@@ -46,12 +46,6 @@ describe('outside a dry run', () => {
     expect(await effects.runCommand('pnpm install', run)).toBe('ran');
     expect(effects.describeDryRunChanges()).toEqual([]);
   });
-
-  it('logs changes', () => {
-    effects.logChange('Updated main.js');
-
-    expect(logger.log).toHaveBeenCalledWith('Updated main.js');
-  });
 });
 
 describe('in a dry run', () => {
@@ -134,12 +128,6 @@ describe('in a dry run', () => {
       'create pnpm-workspace.yaml',
       '↳ + allowBuilds.esbuild: true',
     ]);
-  });
-
-  it('does not log changes, which it lists instead', () => {
-    effects.logChange('Updated main.js');
-
-    expect(logger.log).not.toHaveBeenCalled();
   });
 
   it('forgets what it staged when the mode is set again', async () => {

@@ -69,10 +69,9 @@ export const reportFileFailures = async (failures: FixFileFailure[], ran: Iterab
   }
   await effects.writeFile(reportPath, [HEADER, ...sections].join('\n\n') + '\n');
   const count = failures.length;
-  effects.logChange(
+  logger.warn(
     count > 0
       ? `${pluralFiles(count)} could not be migrated automatically. See ${picocolors.cyan(normalize(relative(process.cwd(), reportPath)))} for which ones and why.`
-      : `${picocolors.cyan(normalize(relative(process.cwd(), reportPath)))} still lists files that earlier runs could not migrate.`,
-    'warn'
+      : `${picocolors.cyan(normalize(relative(process.cwd(), reportPath)))} still lists files that earlier runs could not migrate.`
   );
 };

@@ -58,7 +58,7 @@ export async function migrate(migration: string | undefined, { glob, list, renam
     renamed.map((file) => {
       // Not `slice(0, -from.length)`: with an empty `from`, that would be `slice(0, 0)`.
       const newFile = file.slice(0, file.length - from.length) + to;
-      effects.logChange(`Rename: ${file} ${newFile}`);
+      logger.log(`Rename: ${file} ${newFile}`);
       return renameFile(file, newFile);
     })
   );

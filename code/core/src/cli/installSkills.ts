@@ -143,7 +143,7 @@ export async function installSkills({
   ];
 
   const command = packageManager.getRemoteRunCommand(args);
-  effects.logChange(CLI_COLORS.cta(command));
+  logger.log(CLI_COLORS.cta(command));
   try {
     await effects.runCommand(command, () =>
       packageManager.runPackageCommand({
@@ -179,7 +179,7 @@ export async function installSkills({
     { testSupported, sawEveryStorybook }
   );
 
-  effects.logChange(
+  logger.log(
     `If you want to remove the Storybook skills, run "${packageManager.getRemoteRunCommand(['skills@latest', 'remove'])}"`
   );
   return { result: 'installed', source };
@@ -222,12 +222,12 @@ async function addAgentInstructions(
     const added = changes.filter(({ change }) => change === 'added').map(({ file }) => file);
     const updated = changes.filter(({ change }) => change === 'updated').map(({ file }) => file);
     if (added.length > 0) {
-      effects.logChange(
+      logger.log(
         `Added a Storybook section to ${listFiles(added)} that tells agents when to use the skills. Storybook keeps it current on upgrade: remove its markers to keep your own edits, or remove the section to opt out of the workflow.`
       );
     }
     if (updated.length > 0) {
-      effects.logChange(`Updated the Storybook section in ${listFiles(updated)}.`);
+      logger.log(`Updated the Storybook section in ${listFiles(updated)}.`);
     }
   } catch (error) {
     logger.warn(

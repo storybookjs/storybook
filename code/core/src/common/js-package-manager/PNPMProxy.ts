@@ -366,9 +366,8 @@ export class PNPMProxy extends JsPackageManager {
         doc.setIn(['allowBuilds', pkg], true);
       }
       this.#writeWorkspaceYaml({ path, doc });
-      effects.logChange(
-        `Approved build scripts for ${pending.join(', ')} in ${getProjectRelativePath(path)}`,
-        'info'
+      logger.info(
+        `Approved build scripts for ${pending.join(', ')} in ${getProjectRelativePath(path)}`
       );
     } catch (e) {
       logger.warn(

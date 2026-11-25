@@ -131,11 +131,6 @@ export const csfFactories: CommandFix = {
     }
 
     const { packageJson, operationDir, packageJsonPath } = packageManager.primaryPackageJson;
-    const logImportsMap = () =>
-      effects.logChange(
-        `Adding imports map in ${picocolors.cyan(getProjectRelativePath(packageJsonPath))}`,
-        'step'
-      );
 
     if (isReactNativePreview) {
       const nativePreviewFile = previewConfigPath ?? join(configDir, 'preview.tsx');
@@ -143,11 +138,15 @@ export const csfFactories: CommandFix = {
       if (previewImportTarget(previewFile, operationDir) == null) {
         useSubPathImports = false;
       } else if (applyPreviewImportsMap(packageJson, previewFile, operationDir)) {
-        logImportsMap();
+        logger.step(
+          `Adding imports map in ${picocolors.cyan(getProjectRelativePath(packageJsonPath))}`
+        );
         packageManager.writePackageJson(packageJson, operationDir);
       }
     } else if (useSubPathImports && !packageJson.imports?.['#*']) {
-      logImportsMap();
+      logger.step(
+        `Adding imports map in ${picocolors.cyan(getProjectRelativePath(packageJsonPath))}`
+      );
       packageJson.imports = {
         ...packageJson.imports,
         '#*': ['./*', './*.ts', './*.tsx', './*.js', './*.jsx'],

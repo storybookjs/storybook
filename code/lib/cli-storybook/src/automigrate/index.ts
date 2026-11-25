@@ -487,7 +487,7 @@ export async function runFixes({
       effects.isDryRun()
         ? selected.length === 1
           ? `${ran} would fail`
-          : 'Dry-ran automigrations: some would fail'
+          : 'Some automigrations would fail'
         : selected.length === 1
           ? `Could not run ${ran}`
           : 'Some automigrations failed'

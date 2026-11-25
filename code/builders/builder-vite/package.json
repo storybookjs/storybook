@@ -1,6 +1,6 @@
 {
   "name": "@storybook/builder-vite",
-  "version": "11.0.0-beta.3",
+  "version": "11.0.0-rc.0",
   "description": "A Storybook builder to dev and build with Vite",
   "keywords": [
     "storybook",
@@ -55,7 +55,7 @@
     "magic-string": "^1.1.0",
     "pathe": "^1.1.2",
     "ts-dedent": "^2.2.0",
-    "vite": "^7.0.4"
+    "vite": "^7.3.8"
   },
   "peerDependencies": {
     "storybook": "workspace:^",

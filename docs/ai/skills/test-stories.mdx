@@ -1,0 +1,45 @@
+---
+title: Test stories
+sidebar:
+  order: 5
+---
+
+<If notRenderer={['react', 'vue', 'angular', 'svelte', 'web-components']}>
+
+The `/test-stories` skill tells your agent how to run your story tests, with their accessibility checks. It isn't available for your framework yet. See [supported frameworks](../connect.mdx#supported-frameworks).
+
+</If>
+
+<If renderer={['react', 'vue', 'angular', 'svelte', 'web-components']}>
+
+The `/test-stories` skill tells your agent how to run your [story tests](../../writing-tests/index.mdx), with their [accessibility checks](../../writing-tests/accessibility-testing.mdx), and what the result means.
+
+## When your agent uses it
+
+The [Storybook section in `AGENTS.md`](../agents-md.mdx) names the test command itself (step 3), so your agent can run the story tests without opening this skill. When it runs them, and what it does about a failure, is up to your agent and the tool it runs in: some test after every change, others only when you ask. The skill gives the same commands when you or your agent call it by name.
+
+## What the skill tells your agent
+
+- **The command.** `npx storybook tools test run`: with `--changed` it tests the stories that the uncommitted changes affect, with story files it tests the stories in those files, and without either it tests every story.
+- **The result.** The output lists the passing and failing stories, with the error of each failure.
+
+### Accessibility issues
+
+If you are using the [accessibility addon](../../writing-tests/accessibility-testing.mdx), the agent fixes only the accessibility issues that its change caused, and reports the rest. For visual issues, such as low color contrast, it asks before it changes your design. The agent never changes your accessibility test level to make a test pass.
+
+## Requirements
+
+- The [Vitest addon](../../writing-tests/integrations/vitest-addon/index.mdx), which needs the Vite builder. Without it in your main config, the `AGENTS.md` section has no test step.
+
+To run accessibility checks with the tests, also install the [accessibility addon](../../writing-tests/accessibility-testing.mdx).
+
+</If>
+{/* End supported renderers */}
+
+**More AI resources**
+
+- [Connect your agent](../connect.mdx)
+- [The AGENTS.md section](../agents-md.mdx)
+- [Write stories](./write-stories.mdx)
+- [UI review](./ui-review.mdx)
+- [Best practices for using Storybook with AI](../best-practices.mdx)

@@ -74,7 +74,7 @@ Storybook for Next.js supports many Next.js features including:
 - 🔀 [Routing and navigation](#nextjs-routing)
 - 🌐 [`next/head`](#nextjs-head)
 - ⤵️ [Absolute imports](#imports)
-- 🎨 [Styling](#styling)
+- 🎨 [Styling](#nextjs-styling)
 - 🎭 [Module mocking](#mocking-modules)
 - ☁️ [React Server Component (experimental)](#react-server-components-rsc)
 
@@ -609,7 +609,15 @@ This is because those versions of Yarn have different package resolution rules t
 
 ## Component documentation
 
-Storybook 11 reads React component props on the server by default, with the [`typescript`](../../configure/integration/typescript.mdx) package (TypeScript 5.9 or 6, even in JavaScript projects, where it reads types from JSDoc comments). New projects need no docgen configuration and no extra packages.
+Storybook reads your components' props and JSDoc comments, a step called docgen, to generate [controls](../../essentials/controls.mdx) and [documentation](../../writing-docs/autodocs.mdx), and to improve [skill output](../../ai/skills/component-docs.mdx). New projects need no docgen configuration and no extra packages.
+
+This framework supports three docgen engines:
+
+| Docgen engine             | Runs         | Status                         |
+| ------------------------- | ------------ | ------------------------------ |
+| `react-component-meta`    | Server-side  | Recommended, AI-ready, default |
+| `react-docgen`            | Builder-side | Deprecated                     |
+| `react-docgen-typescript` | Builder-side | Deprecated                     |
 
 <Callout variant="info">
 
@@ -744,7 +752,7 @@ The `@storybook/nextjs` package exports several modules that enable you to [mock
 
 Type: `{ getPackageAliases: ({ useESM?: boolean }) => void }`
 
-`getPackageAliases` is a helper for generating the aliases needed to set up [portable stories](#portable-stories).
+`getPackageAliases` is a helper for generating the aliases needed to set up [portable stories](../../api/portable-stories/portable-stories-jest.mdx).
 
 ```ts title="jest.config.ts"
 import type { Config } from 'jest';

@@ -70,6 +70,7 @@ export {
   type FoundStory,
   type NotFoundStory,
 } from '../shared/open-service/toolsets/stories/find-story-ids.ts';
+export { filterStoryFiles } from '../shared/open-service/toolsets/stories/select-stories.ts';
 export {
   storyInputArraySchema,
   type StoryInput,
@@ -146,7 +147,7 @@ export {
   getToolAvailability,
   isModuleGraphSupported,
 } from '../cli/skills/availability.ts';
-export type { McpToolsets, ToolAvailability } from '../cli/skills/availability.ts';
+export type { ToolAvailability } from '../cli/skills/availability.ts';
 export { isAddonA11yEnabled } from '../cli/skills/addon-a11y.ts';
 export { isAddonVitestEnabled } from '../cli/skills/addon-vitest.ts';
 export { getManifestStatus } from '../cli/skills/manifest-status.ts';

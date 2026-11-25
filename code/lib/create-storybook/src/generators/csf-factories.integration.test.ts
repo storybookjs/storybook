@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 const reactButtonStories = join(
   dirname(fileURLToPath(import.meta.url)),
-  '../../../../frameworks/react-vite/template/cli/ts/Button.stories.ts'
+  '../../../../frameworks/react-vite/template/cli/ts/Button.stories.tsx'
 );
 
 describe('shipped React CLI Button stories', () => {

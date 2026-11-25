@@ -2,6 +2,7 @@ import { compare, gt, prerelease, valid } from 'semver';
 
 import type { JsPackageManager } from './JsPackageManager.ts';
 import { PackageManagerName } from './JsPackageManager.ts';
+import type { InstallationMetadata } from './types.ts';
 
 export type StorybookInstallContext = 'create' | 'upgrade';
 
@@ -24,6 +25,33 @@ export const hasStorybookMinimumAgeExclusions = (configuredPatterns: string[]) =
       packagePatternToRegex(configuredPattern).test(storybookPattern)
     )
   );
+};
+
+type DependencyTree = Record<string, { version: string; dependencies?: DependencyTree }>;
+
+// Breadth-first, so the version a project depends on comes before those its dependencies bring in.
+export const findInstallationsInDependencyTree = (
+  tree: DependencyTree,
+  pattern: string[]
+): Pick<InstallationMetadata, 'dependencies' | 'duplicatedDependencies'> => {
+  const regexes = pattern.map(packagePatternToRegex);
+  const versions: Record<string, string[]> = {};
+  let level = Object.entries(tree);
+  while (level.length > 0) {
+    for (const [name, { version }] of level) {
+      if (regexes.some((regex) => regex.test(name)) && !versions[name]?.includes(version)) {
+        (versions[name] ??= []).push(version);
+      }
+    }
+    level = level.flatMap(([, node]) => Object.entries(node.dependencies ?? {}));
+  }
+  const found = Object.entries(versions);
+  return {
+    dependencies: Object.fromEntries(
+      found.map(([name, list]) => [name, list.map((version) => ({ version, location: '' }))])
+    ),
+    duplicatedDependencies: Object.fromEntries(found.filter(([, list]) => list.length > 1)),
+  };
 };
 
 // input: @storybook/addon-essentials@npm:7.0.0

@@ -26,6 +26,7 @@ import {
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import * as walk from 'empathic/walk';
+import { normalize } from 'pathe';
 // eslint-disable-next-line depend/ban-dependencies
 import { globby, globbySync } from 'globby';
 import picocolors from 'picocolors';
@@ -159,7 +160,7 @@ const getVersionModifier = (versionSpecifier: string): VersionModifier => {
  * @param version - Version string to check
  * @returns True if the version is a canary release
  */
-const isCanaryVersion = (version: string): boolean =>
+export const isCanaryVersion = (version: string): boolean =>
   version.startsWith('0.0.0') ||
   version.startsWith('portal:') ||
   version.startsWith('workspace:') ||
@@ -358,6 +359,8 @@ const processProject = async ({
         configDir: resolvedConfigDir,
         mainConfig,
         mainConfigPath,
+        previewConfigPath,
+        storiesPaths,
       });
     }
 
@@ -610,8 +613,7 @@ const formatProjectDirectories = (
  * @returns The shortened path
  */
 export const shortenPath = (path: string) => {
-  const gitRoot = getProjectRoot();
-  return path.replace(gitRoot, '');
+  return normalize(path).replace(normalize(getProjectRoot()), '');
 };
 
 /**
@@ -765,6 +767,8 @@ export const getProjects = async (
   | {
       allProjects: CollectProjectsSuccessResult[];
       selectedProjects: CollectProjectsSuccessResult[];
+      /** The Storybooks that were found but could not be read, so they are in neither list. */
+      unreadProjects: number;
     }
   | undefined
 > => {
@@ -809,7 +813,11 @@ export const getProjects = async (
 
     // Handle single project case
     if (validProjects.length === 1) {
-      return { allProjects: validProjects, selectedProjects: validProjects };
+      return {
+        allProjects: validProjects,
+        selectedProjects: validProjects,
+        unreadProjects: errorProjects.length,
+      };
     }
 
     // Handle case with only errors
@@ -834,7 +842,9 @@ export const getProjects = async (
       options.yes
     );
 
-    return selectedProjects ? { allProjects: validProjects, selectedProjects } : undefined;
+    return selectedProjects
+      ? { allProjects: validProjects, selectedProjects, unreadProjects: errorProjects.length }
+      : undefined;
   } catch (error) {
     if (
       !(error instanceof HandledError || error instanceof UpgradeStorybookConfigDirNotFoundError)

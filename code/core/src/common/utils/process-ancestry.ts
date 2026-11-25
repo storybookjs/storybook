@@ -1,15 +1,4 @@
-/*
- * Process-ancestry lookup used to enrich CLI commands with their parent process
- * information (version specifiers, CLI integration detection).
- *
- * Vendored from the `process-ancestry` package so the child-process call can
- * pin its stdio: the upstream implementation lets benign stderr noise leak
- * into the CLI's own stderr. Unlike a Yarn patch, a local module also survives
- * being published — patch descriptors reference a patch file path that does
- * not exist inside consuming projects, which breaks `yarn install` for every
- * sandbox created from the published packages.
- */
-
+// stderr is discarded so benign `ps` and PowerShell noise stays out of the CLI's own stderr.
 import { execFileSync } from 'node:child_process';
 import os from 'node:os';
 
@@ -56,7 +45,7 @@ function listProcessesWindows(): ProcessInfo[] {
 }
 
 function listProcessesUnix(): ProcessInfo[] {
-  return run('ps', ['-A', '-ww', '-o', 'pid=,ppid=,command='])
+  return run('ps', ['-A', '-o', 'pid=,ppid=,args='])
     .split('\n')
     .flatMap((line) => {
       const match = line.match(/^\s*(\d+)\s+(\d+)\s?(.*)$/);
@@ -87,7 +76,7 @@ function readAncestry(): ProcessInfo[] {
   return ancestry;
 }
 
-let cachedAncestry: ProcessInfo[] | undefined;
+let cachedAncestry: readonly ProcessInfo[] | undefined;
 
 /**
  * Returns the ancestry of the current process, starting with the process itself, from one
@@ -95,4 +84,4 @@ let cachedAncestry: ProcessInfo[] | undefined;
  * and PID 4 (System) end the walk; on other platforms, PID 0 and PID 1 (init) do. Returns `[]` when
  * the table cannot be read.
  */
-export const getProcessAncestry = (): ProcessInfo[] => (cachedAncestry ??= readAncestry());
+export const getProcessAncestry = (): readonly ProcessInfo[] => (cachedAncestry ??= readAncestry());

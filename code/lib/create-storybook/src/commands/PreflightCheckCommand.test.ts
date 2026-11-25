@@ -5,7 +5,6 @@ import {
   PackageManagerName,
   resolveStorybookVersionSpecifier,
   invalidateProjectRootCache,
-  getProcessAncestry,
 } from 'storybook/internal/common';
 import { logger, once } from 'storybook/internal/node-logger';
 import { MinimumReleaseAgeHandledError } from 'storybook/internal/server-errors';
@@ -56,7 +55,6 @@ describe('PreflightCheckCommand', () => {
     vi.clearAllMocks();
     once.clear();
     vi.mocked(resolveStorybookVersionSpecifier).mockReturnValue(undefined);
-    vi.mocked(getProcessAncestry).mockReturnValue([]);
   });
 
   afterAll(() => {

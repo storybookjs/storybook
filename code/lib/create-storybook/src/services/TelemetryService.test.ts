@@ -157,35 +157,6 @@ describe('TelemetryService', () => {
       );
     });
 
-    it('should handle ancestry errors gracefully', async () => {
-      const telemetryService = new TelemetryService();
-      const selectedFeatures = new Set([]);
-
-      vi.mocked(getProcessAncestry).mockImplementation(() => {
-        throw new Error('Ancestry error');
-      });
-
-      await telemetryService.trackInitWithContext(ProjectType.VUE3, selectedFeatures, false);
-
-      expect(telemetry).toHaveBeenCalledWith(
-        'init',
-        {
-          projectType: ProjectType.VUE3,
-          features: {
-            dev: true,
-            docs: false,
-            test: false,
-            onboarding: false,
-            ai: false,
-          },
-          newUser: false,
-          versionSpecifier: undefined,
-          cliIntegration: undefined,
-        },
-        { configDir: undefined }
-      );
-    });
-
     it('should detect CLI integration from ancestry', async () => {
       const telemetryService = new TelemetryService();
       const selectedFeatures = new Set([]);

@@ -70,7 +70,7 @@ describe('getProcessAncestry', () => {
     expect(execFileSyncMock).toHaveBeenCalledTimes(1);
     expect(execFileSyncMock).toHaveBeenCalledWith(
       'ps',
-      ['-A', '-ww', '-o', 'pid=,ppid=,command='],
+      ['-A', '-o', 'pid=,ppid=,args='],
       expect.objectContaining({ encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })
     );
   });
@@ -111,6 +111,29 @@ describe('getProcessAncestry', () => {
     execFileSyncMock.mockImplementation(() => {
       throw new Error('spawnSync powershell.exe ETIMEDOUT');
     });
+
+    expect(getProcessAncestry()).toEqual([]);
+  });
+
+  it('caches a failed read instead of spawning again', () => {
+    platformMock.mockReturnValue('linux');
+    execFileSyncMock.mockImplementation(() => {
+      throw new Error('spawnSync ps ENOENT');
+    });
+
+    expect(getProcessAncestry()).toEqual([]);
+    expect(getProcessAncestry()).toEqual([]);
+    expect(execFileSyncMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns an empty ancestry when the current process is missing from the table', () => {
+    platformMock.mockReturnValue('linux');
+    execFileSyncMock.mockReturnValue(
+      psOutput([
+        [1, 0, '/sbin/init'],
+        [456, 1, 'yarn start'],
+      ])
+    );
 
     expect(getProcessAncestry()).toEqual([]);
   });

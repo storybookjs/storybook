@@ -1,0 +1,82 @@
+{
+  "heading": {
+    "control": {
+      "type": "text",
+    },
+    "description": "Accessible name of the viewer.",
+    "name": "heading",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": false,
+    },
+  },
+  "html": {
+    "control": {
+      "type": "text",
+    },
+    "description": "Markup shown as is.",
+    "name": "html",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": true,
+    },
+  },
+  "lines": {
+    "control": {
+      "type": "number",
+    },
+    "description": "Number of lines.",
+    "name": "lines",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "number",
+      },
+    },
+    "type": {
+      "name": "number",
+      "required": true,
+    },
+  },
+  "selectedLine": {
+    "control": {
+      "type": "number",
+    },
+    "description": "Index of the selected line.",
+    "name": "selectedLine",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "number",
+      },
+    },
+    "type": {
+      "name": "number",
+      "required": false,
+    },
+  },
+}

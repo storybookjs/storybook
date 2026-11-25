@@ -6,7 +6,10 @@ import {
   SourceEditor,
   buildImportStatements,
   collectImportBindings,
+  calledMethodName,
   detachedTextOf,
+  isChangingMethod,
+  isVisiblyChanged,
   parseModule,
   resolveComponentImport,
   textOf,
@@ -16,6 +19,7 @@ import { walk } from 'zimmerframe';
 
 import type { SvelteAST } from '../../svelte-csf/parser/ast.ts';
 import { parseMarkup, patternNames, scriptFile, span } from './markup.ts';
+import { isFunctionNode, runsWhileLoading } from './runs-while-loading.ts';
 
 export interface SnippetImportBlock {
   block?: string;
@@ -79,9 +83,14 @@ export function buildSnippetImportBlock(
   }
 ): SnippetImportBlock {
   const { components, names } = markupReferences(markup, typescript);
-  const scripts = [instanceScript, moduleScript].map((code) =>
-    code === undefined ? undefined : readScript(code, typescript)
-  );
+  const instanceRead =
+    instanceScript === undefined ? undefined : readScript(instanceScript, typescript);
+  // The instance script can change what the module script declares.
+  const moduleRead =
+    moduleScript === undefined
+      ? undefined
+      : readScript(moduleScript, typescript, instanceRead?.outerChanges);
+  const scripts = [instanceRead, moduleRead];
   const storyImports = new Set<string>();
   const unresolved = new Set<string>();
   const declaredNames = new Set<string>();
@@ -91,6 +100,11 @@ export function buildSnippetImportBlock(
     const script = scripts[level];
     if (level < scripts.length) {
       const found = script?.declarations.get(name);
+      // A changed name is this script's own, not a global.
+      if (!found && script?.changed.has(name)) {
+        unresolved.add(name);
+        return;
+      }
       if (!found) return visit(name, level + 1, type);
       declaredNames.add(name);
       if (found.kind === 'import' && level === 1) {
@@ -350,11 +364,68 @@ type Dependencies = { values: string[]; types: string[] };
 interface Script {
   declarations: Map<string, Declared>;
   selected: Set<Declared>;
+  // Declared but changed while loading, so never copied.
+  changed: Set<string>;
+  // Changed while loading but declared in another script, or a store.
+  outerChanges: Set<string>;
 }
 
-// The top-level names a script declares, each with the source that declares it.
-function readScript(code: string, typescript: boolean): Script {
-  const { program } = new SourceEditor(code, scriptFile(typescript));
+// A name changed while loading is left out, so its starting value is never copied.
+function readScript(
+  code: string,
+  typescript: boolean,
+  changedOutside: ReadonlySet<string> = new Set()
+): Script {
+  const filePath = scriptFile(typescript);
+  const editor = new SourceEditor(code, filePath);
+  const { program } = editor;
+  // Undeclared names this script changes while loading, as `$count = 5` sets the store `count`.
+  const outerChanges = new Set<string>(changedOutside);
+  const rootName = (node: Node): string | undefined => {
+    let root = node;
+    while (root.type === 'MemberExpression') {
+      root = root.object;
+    }
+    return root.type === 'Identifier' && !editor.scopes.bindingOf(root) ? root.name : undefined;
+  };
+  const changeTo = (name: string | undefined) => {
+    if (name !== undefined) {
+      outerChanges.add(name.startsWith('$') ? name.slice(1) : name);
+    }
+  };
+  walkEstree(program, (node) => {
+    if (isFunctionNode(node)) {
+      return false;
+    }
+    if (node.type === 'AssignmentExpression') {
+      changeTo(rootName(node.left));
+    } else if (node.type === 'UpdateExpression') {
+      changeTo(rootName(node.argument));
+    } else if (
+      node.type === 'CallExpression' &&
+      node.callee.type === 'MemberExpression' &&
+      isChangingMethod(calledMethodName(node.callee))
+    ) {
+      changeTo(rootName(node.callee.object));
+    }
+  });
+  const dropped = new Set<string>();
+  const changed = (name: string): boolean => {
+    if (outerChanges.has(name)) {
+      dropped.add(name);
+      return true;
+    }
+    const binding = editor.scopes.program.bindings.get(name);
+    const isChanged =
+      binding !== undefined &&
+      isVisiblyChanged(binding, { editor, filePath }, (reference) =>
+        runsWhileLoading(reference, editor)
+      );
+    if (isChanged) {
+      dropped.add(name);
+    }
+    return isChanged;
+  };
   const declarations = new Map<string, Declared>();
   const declare = (names: string[], text: string, start: number) => {
     const declared: Declared = {
@@ -382,11 +453,13 @@ function readScript(code: string, typescript: boolean): Script {
       item.type === 'ExportNamedDeclaration' && item.declaration ? item.declaration : item;
     if (statement.type === 'VariableDeclaration') {
       for (const declarator of statement.declarations) {
-        declare(
-          patternNames(declarator.id as never),
-          `${statement.kind} ${detachedTextOf(declarator)};`,
-          declarator.start
-        );
+        const names = patternNames(declarator.id as never);
+        if (names.some(changed)) {
+          // The declaration is copied whole or not at all.
+          names.forEach((name) => dropped.add(name));
+          continue;
+        }
+        declare(names, `${statement.kind} ${detachedTextOf(declarator)};`, declarator.start);
       }
     } else if (
       (statement.type === 'FunctionDeclaration' ||
@@ -394,12 +467,13 @@ function readScript(code: string, typescript: boolean): Script {
         statement.type === 'TSTypeAliasDeclaration' ||
         statement.type === 'TSInterfaceDeclaration' ||
         statement.type === 'TSEnumDeclaration') &&
-      statement.id
+      statement.id &&
+      !changed(statement.id.name)
     ) {
       declare([statement.id.name], detachedTextOf(statement), statement.start);
     }
   }
-  return { declarations, selected: new Set() };
+  return { declarations, selected: new Set(), changed: dropped, outerChanges };
 }
 
 // The selected declarations of a script in source order, imports grouped by statement.

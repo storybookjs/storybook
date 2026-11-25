@@ -1,0 +1,14 @@
+## Props
+
+```
+export type ViewerProps = {
+  /** Markup shown as is. */
+  html: string;
+  /** Number of lines. */
+  lines: number;
+  /** Index of the selected line. */
+  selectedLine?: number;
+  /** Accessible name of the viewer. */
+  heading?: string;
+}
+```

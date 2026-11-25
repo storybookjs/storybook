@@ -1,0 +1,13 @@
+<script lang="ts">
+  import Viewer from './Viewer.svelte';
+
+  const lines = ['a', 'b', 'c'];
+</script>
+
+<Viewer
+  html={`<pre>${lines.join('\n')}</pre>`}
+  lines={lines.length}
+  selectedLine={changed.length}
+ />
+
+warning: Identifier not resolved: `changed`.

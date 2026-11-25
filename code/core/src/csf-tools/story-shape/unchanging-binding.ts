@@ -528,23 +528,35 @@ const CHANGING_METHODS = new Set(
   )
 );
 
+/** Whether a method changes what it is called on, as `push` does. */
+export const isChangingMethod = (name: string | undefined): boolean =>
+  name !== undefined && CHANGING_METHODS.has(name);
+
 const CHANGING_FUNCTIONS = new Set(
   'Object.assign Object.defineProperties Object.defineProperty Object.setPrototypeOf Reflect.defineProperty Reflect.set Reflect.deleteProperty'.split(
     ' '
   )
 );
 
-// Whether the story file changes a binding's value where it can see it: directly or through an
-// alias, but not inside a function the value is passed to.
-export function isVisiblyChanged(binding: Binding, ctx: ReferenceContext): boolean {
-  return changes(binding, ctx, new Set(), false);
+/**
+ * Whether the story file changes a binding's value where it can see it: directly or through an
+ * alias, but not inside a function the value is passed to. `counts` limits the references whose
+ * changes count, as a Svelte script counts only the code that runs while it loads.
+ */
+export function isVisiblyChanged(
+  binding: Binding,
+  ctx: ReferenceContext,
+  counts: (reference: Node) => boolean = () => true
+): boolean {
+  return changes(binding, ctx, new Set(), false, counts);
 }
 
 function changes(
   binding: Binding,
   ctx: ReferenceContext,
   visiting: Set<Binding>,
-  alias: boolean
+  alias: boolean,
+  counts: (reference: Node) => boolean
 ): boolean {
   if (visiting.has(binding)) {
     return false;
@@ -552,7 +564,7 @@ function changes(
   visiting.add(binding);
   const { editor } = ctx;
   return binding.references.some((reference) => {
-    if (reference.type !== 'Identifier') {
+    if (reference.type !== 'Identifier' || !counts(reference)) {
       return false;
     }
     const { read, depth, parent } = memberRead(reference, ctx);
@@ -579,7 +591,7 @@ function changes(
       parent.id.type === 'Identifier'
     ) {
       const aliasBinding = editor.scopes.bindingOf(parent.id);
-      return aliasBinding !== undefined && changes(aliasBinding, ctx, visiting, true);
+      return aliasBinding !== undefined && changes(aliasBinding, ctx, visiting, true, counts);
     }
     return false;
   });

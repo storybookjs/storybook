@@ -1,0 +1,5 @@
+<Viewer 
+  html="<pre>a\nb\nc</pre>"
+  lines={3}
+  selectedLine={2}
+ />

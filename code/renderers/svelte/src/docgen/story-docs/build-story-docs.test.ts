@@ -827,3 +827,158 @@ describe('Svelte CSF files with TypeScript expressions', () => {
     expect(await snippets('List<string>')).toEqual(await snippets('List'));
   });
 });
+
+describe('the story-file declarations a snippet copies', () => {
+  const snippetOf = async (source: string) => {
+    vol.fromJSON({ [entry.importPath]: source });
+    const payload = await buildStoryDocsPayload({ entry });
+    return payload?.stories['example--default'];
+  };
+
+  it('copies a constant the args read', async () => {
+    const story = await snippetOf(`import Viewer from './Viewer.svelte';
+const lines = ['a', 'b', 'c'];
+export default { title: 'Example', component: Viewer };
+export const Default = { args: { count: lines.length } };`);
+    expect(story?.snippet).toContain("const lines = ['a', 'b', 'c'];");
+    expect(story?.warning).toBeUndefined();
+  });
+
+  it('copies state only an event handler changes', async () => {
+    const story = await snippetOf(`import Counter from './Counter.svelte';
+let count = 0;
+function increment() {
+  count += 1;
+}
+export default { title: 'Example', component: Counter };
+export const Default = { args: { count, onclick: increment } };`);
+    expect(story?.snippet).toContain('let count = 0;');
+    expect(story?.warning).toBeUndefined();
+  });
+
+  it.each([
+    ['a global it shares a name with', '', 'let history = [1];\n    history.push(2);'],
+    ['the module script', 'const items = [1, 2, 3];', 'let items = [9];\n    items.push(10);'],
+    [
+      'a store it sets',
+      "import { writable } from 'svelte/store';\n    const items = writable(0);",
+      '$items = 5;',
+    ],
+    ['a module value it changes', "let items = ['a'];", "items.push('b');"],
+    [
+      'a module store it sets',
+      "import { writable } from 'svelte/store';\n    const items = writable(0);",
+      'items.set(5);',
+    ],
+    [
+      'a store member it sets',
+      "import { writable } from 'svelte/store';\n    const items = writable({ name: 'a' });",
+      "$items.name = 'b';",
+    ],
+  ])(
+    'names a value the instance script changes instead of reading %s',
+    async (_what, module, instance) => {
+      const svelteEntry = { ...entry, importPath: resolve('input.stories.svelte') };
+      const name = instance.includes('history') ? 'history' : 'items';
+      vol.fromJSON({
+        [svelteEntry.importPath]: `<script module>
+    import { defineMeta } from '@storybook/svelte';
+    import List from './List.svelte';
+    ${module}
+    const { Story } = defineMeta({ title: 'Example', component: List });
+  </script>
+  <script>
+    ${instance}
+  </script>
+  <Story name="Default" asChild><List items={${name}} /></Story>`,
+      });
+      const story = (await buildStoryDocsPayload({ entry: svelteEntry }))?.stories[
+        'example--default'
+      ];
+      expect(story?.snippet).not.toMatch(/const items = \[1, 2, 3\]|writable\(|let items/);
+      expect(story?.warning).toContain(`\`${name}\``);
+    }
+  );
+
+  it('copies instance state a lifecycle hook sets', async () => {
+    const svelteEntry = { ...entry, importPath: resolve('input.stories.svelte') };
+    vol.fromJSON({
+      [svelteEntry.importPath]: `<script module>
+    import { defineMeta } from '@storybook/svelte';
+    import List from './List.svelte';
+    const { Story } = defineMeta({ title: 'Example', component: List });
+  </script>
+  <script>
+    import { onMount } from 'svelte';
+    let items = $state([]);
+    onMount(() => {
+      items = [1, 2];
+    });
+  </script>
+  <Story name="Default" asChild><List {items} /></Story>`,
+    });
+    const story = (await buildStoryDocsPayload({ entry: svelteEntry }))?.stories[
+      'example--default'
+    ];
+    expect(story?.snippet).toContain('let items = $state([]);');
+  });
+
+  it.each([
+    ['module', 'const items = [1];\n    items.push(2);', ''],
+    ['instance', '', 'const items = [1];\n    items.push(2);'],
+  ])(
+    'names a value the %s script of a Svelte story file changes',
+    async (_where, module, instance) => {
+      const svelteEntry = { ...entry, importPath: resolve('input.stories.svelte') };
+      vol.fromJSON({
+        [svelteEntry.importPath]: `<script module>
+    import { defineMeta } from '@storybook/svelte';
+    import List from './List.svelte';
+    ${module}
+    const { Story } = defineMeta({ title: 'Example', component: List });
+  </script>
+  <script>
+    ${instance}
+  </script>
+  <Story name="Default" asChild><List {items} /></Story>`,
+      });
+      const story = (await buildStoryDocsPayload({ entry: svelteEntry }))?.stories[
+        'example--default'
+      ];
+      expect(story?.snippet).not.toContain('const items = [1];');
+      expect(story?.warning).toContain('`items`');
+    }
+  );
+
+  it.each([
+    [
+      'a function the story file gives a property',
+      "function format(v) {\n  return format.prefix + v;\n}\nformat.prefix = 'x';",
+      'format',
+    ],
+    [
+      'a class the story file changes',
+      'class Registry {\n  static items = [1];\n}\nRegistry.items.push(2);',
+      'Registry',
+    ],
+  ])('names %s instead of copying it', async (_what, declaration, name) => {
+    const story = await snippetOf(`import Viewer from './Viewer.svelte';
+${declaration}
+export default { title: 'Example', component: Viewer };
+export const Default = { args: { value: ${name} } };`);
+    expect(story?.snippet).not.toContain(declaration.split('\n')[0]);
+    expect(story?.warning).toContain(`\`${name}\``);
+  });
+
+  it.each([
+    ['changes with a method', "const lines = ['a'];\nlines.push('b');"],
+    ['assigns again', "let lines = ['a'];\nlines = ['a', 'b'];"],
+  ])('names a variable the story file %s instead of copying it', async (_how, declaration) => {
+    const story = await snippetOf(`import Viewer from './Viewer.svelte';
+${declaration}
+export default { title: 'Example', component: Viewer };
+export const Default = { args: { count: lines.length } };`);
+    expect(story?.snippet).not.toContain("['a']");
+    expect(story?.warning).toContain('`lines`');
+  });
+});

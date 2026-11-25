@@ -1,0 +1,9 @@
+{
+  "description": undefined,
+  "id": "sveltefixtures-modulelevelconstants",
+  "jsDocTags": {},
+  "name": "Viewer",
+  "path": "./input.stories.svelte",
+  "renderer": "svelte",
+  "summary": undefined,
+}

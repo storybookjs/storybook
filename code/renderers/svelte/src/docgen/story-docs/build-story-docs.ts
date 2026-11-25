@@ -187,7 +187,12 @@ function storySnippet(
     imported.unresolvedIdentifiers
       ?.map((name) => `Identifier not resolved: \`${name}\`.`)
       .join(' '),
-    unresolvedWarning(resolved.unresolved.filter((name) => !imported.declared.includes(name))),
+    unresolvedWarning(
+      resolved.unresolved.filter(
+        (name) =>
+          !imported.declared.includes(name) && !imported.unresolvedIdentifiers?.includes(name)
+      )
+    ),
     renders ? RENDER_WARNING : undefined,
   ].filter(Boolean);
   const importCode = imported.block ? `${imported.block}\n\n` : '';

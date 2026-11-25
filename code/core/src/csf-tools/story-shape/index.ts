@@ -29,6 +29,7 @@ export {
   type StoryConstant,
   type StoryConstants,
 } from './story-constants.ts';
+export { isChangingMethod, isVisiblyChanged } from './unchanging-binding.ts';
 export {
   resolveArgsRecord,
   resolveBindingMembers,

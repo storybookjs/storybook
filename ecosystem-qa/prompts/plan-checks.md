@@ -3,7 +3,7 @@ Each one tests one change that merged into Storybook for this release, on this p
 The list names why the plan chose this repo, the numbered steps, and the expected outcome.
 
 1. Run them after the checks before them, on the upgraded project, in the order of the list.
-2. Before the first plan check, stop every server that still runs the project from before the upgrade, by its process id, and check that `http://localhost:6006` no longer answers before you start the upgraded one. A page that the baseline serves is no evidence of the upgrade.
+2. Before the first plan check, free every port that a server from before the upgrade may still hold with the free-port tool, never by a saved process id, and start the upgraded server only when the tool exits 0. A page that the baseline serves is no evidence of the upgrade.
 3. Do the steps in their order, as they are written, adapted only to the paths and the story ids of this project.
    A step may start with the PRs it tests, such as `#36436: `, which says where the step comes from and is nothing to do.
 4. A plan check tests the project as it is after the upgrade. Never add a setting, a file, a dependency, or code so that an upgrade step, an automigration, or a removal has something to act on, or so that the project looks as if it used something it does not use. When the project does not have what the entry describes, for example no `storySort` in its preview file, report the check as `skip` and say in the note what the project lacks and which file or search showed it.

@@ -17,9 +17,9 @@ Takes the PR of this conversation from the author's approval to a review request
 
 2. **Mark the PR ready.** Run `gh pr ready <number>`. Two bots then review the PR by themselves:
    - Greptile.
-   - `storybook-contribution-review[bot]`, in three stages: architecture, code quality and runtime verification. It can take some hours. It is done when it posts the PR comment with its final verdict ("stage 3 of 3"). Its inline suggestions are optional, but handle them like any other bot thread.
+   - `storybook-contribution-review[bot]`, in three stages: architecture, code quality and runtime verification. It can take some hours. It is done when it posts its "stage 3 of 3" verdict as a PR comment. The comment's hidden marker names the commit it reviewed. When the verdict asks for changes, fix them and push: the bot checks those items again on the new head by itself. Its inline suggestions are optional, but handle them like any other bot thread.
 
-3. **Make it green.** Wait with [`check-pr`](../check-pr/SKILL.md), fix the failing checks, handle the review threads with [`handle-pr-comments`](../handle-pr-comments/SKILL.md), and push. Repeat until each check on the head commit passed, Greptile reviewed the head commit, the contribution-review bot posted its final verdict, and no bot thread is unresolved. When a decision for the user remains, present it and wait: request no review before the answer.
+3. **Make it green.** Wait with [`check-pr`](../check-pr/SKILL.md), fix the failing checks, handle the review threads with [`handle-pr-comments`](../handle-pr-comments/SKILL.md), and push. Repeat until each check on the head commit passed, Greptile reviewed the head commit, the contribution-review bot's latest verdict asks for no changes, and no bot thread is unresolved. When a decision for the user remains, present it and wait: request no review before the answer.
 
 4. **Request the review.** Run `gh pr edit <number> --add-reviewer <login>`. The reviewer is a member of the Storybook core team:
 

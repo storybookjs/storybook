@@ -175,6 +175,14 @@ describe('StoryIndexStore', () => {
           /Couldn't find story matching id 'random'/
         );
       });
+
+      it('throws for an Object.prototype key that no story has as id', async () => {
+        const store = new StoryIndexStore(storyIndex);
+
+        expect(() => store.storyIdToEntry('constructor')).toThrow(
+          /Couldn't find story matching id 'constructor'/
+        );
+      });
     });
   });
 

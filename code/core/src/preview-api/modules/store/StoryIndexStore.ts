@@ -45,12 +45,11 @@ export class StoryIndexStore {
   }
 
   storyIdToEntry(storyId: StoryId): IndexEntry {
-    const storyEntry = this.entries[storyId];
-    if (!storyEntry) {
+    if (!Object.hasOwn(this.entries, storyId)) {
       throw new MissingStoryAfterHmrError({ storyId });
     }
 
-    return storyEntry;
+    return this.entries[storyId];
   }
 
   importPathToEntry(importPath: Path): IndexEntry {

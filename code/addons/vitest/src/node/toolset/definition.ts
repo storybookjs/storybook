@@ -317,6 +317,7 @@ async function getChangedStories(ctx: ToolsetCtx, since?: string): Promise<Chang
   );
   return {
     storyIds: data.stories.map((story) => story.storyId),
+    storyFiles: [...new Set(data.stories.map((story) => story.importPath))],
     changedConfigFiles: data.changedConfigFiles,
     pendingFiles: [...data.unindexedStoryFiles, ...data.pendingFiles],
   };

@@ -403,6 +403,7 @@ export class VitestManager {
       !!runConfig.coverage &&
       !watching &&
       !runPayload.files &&
+      !runPayload.storyFiles &&
       (runPayload?.storyIds?.length ?? 0) === 0;
 
     if (!this.vitest) {
@@ -418,9 +419,14 @@ export class VitestManager {
     await this.cancelCurrentRun();
 
     const allStories = this.getStories();
-    const testSpecifications = await this.getStorybookTestSpecifications(runPayload.files);
+    const matchedSpecifications = await this.getStorybookTestSpecifications(runPayload.files);
+    const storyFiles = runPayload.storyFiles && new Set(runPayload.storyFiles.map(toModuleId));
+    const testSpecifications = storyFiles
+      ? matchedSpecifications.filter(({ moduleId }) => storyFiles.has(moduleId))
+      : matchedSpecifications;
     const matchedFiles =
-      runPayload.files && new Set(testSpecifications.map(({ moduleId }) => moduleId));
+      (runPayload.files || storyFiles) &&
+      new Set(testSpecifications.map(({ moduleId }) => moduleId));
 
     const filteredStories = allStories.filter(
       (story) =>
@@ -443,7 +449,7 @@ export class VitestManager {
     if (matchedFiles) {
       this.testManager.setRunStories(
         filteredStories.map((story) => story.id),
-        matchedFiles.size
+        runPayload.files && new Set(matchedSpecifications.map(({ moduleId }) => moduleId)).size
       );
     }
     this.testManager.store.setState((s) => ({

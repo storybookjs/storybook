@@ -82,6 +82,7 @@ export type TriggerTestRunRequestPayload = {
   actor: string;
   storyIds?: string[];
   files?: string[];
+  storyFiles?: string[];
   config?: Record<string, unknown>;
 };
 

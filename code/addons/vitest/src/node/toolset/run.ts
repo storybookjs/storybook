@@ -66,6 +66,7 @@ export type TriggerTestRunParams = {
   responseEvent: string;
   storyIds?: string[];
   files?: string[];
+  storyFiles?: string[];
   config?: Record<string, unknown>;
   actor: string;
   /** Max wait for a matching response. Defaults to {@link DEFAULT_TEST_RUN_TIMEOUT_MS}. */
@@ -83,6 +84,7 @@ export function triggerTestRun({
   responseEvent,
   storyIds,
   files,
+  storyFiles,
   config,
   actor,
   timeoutMs = DEFAULT_TEST_RUN_TIMEOUT_MS,
@@ -141,6 +143,7 @@ export function triggerTestRun({
         actor,
         storyIds,
         files,
+        storyFiles,
         config,
       });
     } catch (error) {
@@ -170,6 +173,8 @@ function blockedBeforeAnyTest(result: TestRunResult) {
 /** What `stories changed` reports, as far as a test run needs it. */
 export type ChangedStories = {
   storyIds: string[];
+  /** The story files of those stories, as story index import paths. */
+  storyFiles: string[];
   /** Changed files in the config directory, which can affect every story. */
   changedConfigFiles: string[];
   /** Changed files change detection has not caught up with, so their stories may be missing. */
@@ -215,6 +220,7 @@ export async function runStoryTests({
   timeoutMs = DEFAULT_TEST_RUN_TIMEOUT_MS,
 }: RunStoryTestsParams): Promise<TestRunOutput> {
   let storyIds: string[] | undefined;
+  let storyFiles: string[] | undefined;
   let selection: TestRunSelection | undefined;
   const notFoundMessages: string[] = [];
 
@@ -248,7 +254,13 @@ export async function runStoryTests({
         pendingFiles,
         ...(since === undefined ? {} : { since }),
       };
-      narrow(changedIds);
+      // Stories asked for by id are narrowed to the changed ones here; otherwise the changed story
+      // files run as they are.
+      if (stories) {
+        narrow(changedIds);
+      } else {
+        storyFiles = changedStories.storyFiles;
+      }
     }
 
     if (stories) {
@@ -268,7 +280,7 @@ export async function runStoryTests({
 
     // Nothing to run. An unknown story id fails the call; `--changed` that finds nothing passes, as
     // Vitest's `--changed` does ("No affected test files found, exiting with code 0").
-    if (candidates?.size === 0) {
+    if (candidates?.size === 0 || storyFiles?.length === 0) {
       return { status: 'no-stories', notFoundMessages, selection };
     }
 
@@ -284,6 +296,7 @@ export async function runStoryTests({
       responseEvent,
       storyIds,
       files: filters,
+      storyFiles,
       config: { a11y },
       actor,
       timeoutMs,
@@ -319,6 +332,9 @@ export async function runStoryTests({
             `No story files found for ${selection.files.filters.map((file) => `\`${displayPath(file)}\``).join(', ')}.`
           );
         }
+      }
+      // A run of story files learns its stories from the files Vitest matched.
+      if (selection && (filters || storyFiles)) {
         selection.storyCount = result.storyIds?.length;
         if (result.storyIds?.length === 0) {
           return { status: 'no-stories', notFoundMessages, selection };

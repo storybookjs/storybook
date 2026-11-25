@@ -17,7 +17,7 @@ const storyContext = {
   parameters: {},
 } as unknown as StoryContext;
 
-const source = { code: '<Button />', language: 'vue' as const };
+const source = { code: '<Button />', language: 'jsx' as const };
 
 describe('useTransformCode', () => {
   afterEach(() => {
@@ -29,7 +29,7 @@ describe('useTransformCode', () => {
       useTransformCode(source, (code) => `T:${code}`, storyContext)
     );
 
-    expect(result.current).toEqual({ code: 'T:<Button />', language: 'vue' });
+    expect(result.current).toEqual({ code: 'T:<Button />', language: 'jsx' });
   });
 
   it('falls back to the untransformed code and logs when the transform throws', () => {

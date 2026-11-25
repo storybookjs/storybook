@@ -50,6 +50,8 @@ export type CurrentRun = {
   a11yReports: Record<StoryId, A11yRunReport[]>;
   reports: Record<StoryId, Report[]>;
   totalTestCount: number | undefined;
+  // Tests the run was asked for that neither passed nor failed
+  skippedTestCount: number | undefined;
   storyIds: StoryId[] | undefined;
   startedAt: number | undefined;
   finishedAt: number | undefined;

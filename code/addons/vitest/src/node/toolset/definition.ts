@@ -54,6 +54,8 @@ const testRunResultSchema = v.object({
   a11yReports: v.record(v.string(), v.array(v.any())),
   reports: v.record(v.string(), v.array(v.any())),
   totalTestCount: v.optional(v.number()),
+  /** Tests the run was asked for that neither passed nor failed. */
+  skippedTestCount: v.optional(v.number()),
   storyIds: v.optional(v.array(v.string())),
   startedAt: v.optional(v.number()),
   finishedAt: v.optional(v.number()),
@@ -105,6 +107,8 @@ const testRunOutputSchema = v.variant('status', [
     selection: v.optional(selectionSchema),
     /** Story ids that matched nothing. The rest ran, but they fail the call. */
     notFoundMessages: v.optional(v.array(v.string())),
+    /** Stories that `stories` asked for by id and that did not run. They fail the call. */
+    notRunStoryIds: v.optional(v.array(v.string())),
   }),
   v.object({
     status: v.literal('error'),
@@ -279,7 +283,8 @@ function isFailedRun(data: TestRunData): data is TestRunFailureData {
     case 'completed':
       return (
         Object.values(countTestRunFailures(data.result, data.a11y)).some((count) => count > 0) ||
-        (data.notFoundMessages?.length ?? 0) > 0
+        (data.notFoundMessages?.length ?? 0) > 0 ||
+        (data.notRunStoryIds?.length ?? 0) > 0
       );
     case 'no-stories':
       // A filter or id that matched nothing fails, as in Vitest; `changed` affecting nothing passes.

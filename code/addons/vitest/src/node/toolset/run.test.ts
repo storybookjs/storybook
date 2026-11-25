@@ -156,6 +156,20 @@ describe('runStoryTests', () => {
     });
   });
 
+  it('lists the stories asked for by id that did not run', async () => {
+    const { channel } = respondingChannel();
+
+    const byId = await runStoryTests({
+      channel,
+      getIndex: async () => index,
+      stories: [{ storyId: 'button--primary' }],
+    });
+    const byFile = await runStoryTests({ channel, getIndex: async () => index, files: ['button'] });
+
+    expect(byId).toMatchObject({ status: 'completed', notRunStoryIds: ['button--primary'] });
+    expect(byFile).not.toHaveProperty('notRunStoryIds');
+  });
+
   it('returns no-stories when the focused selector list is empty', async () => {
     const { channel, requested } = respondingChannel();
 
@@ -464,7 +478,18 @@ describe('createTestToolset channel identity', () => {
           respond(channel, {
             requestId,
             status: 'completed',
-            result: sampleResult,
+            result: {
+              ...sampleResult,
+              componentTestStatuses: [
+                {
+                  storyId: 'button--primary',
+                  typeId: 'storybook/component-test',
+                  value: 'status-value:success',
+                  title: 'Component tests',
+                  description: '',
+                },
+              ],
+            },
           })
         );
       }

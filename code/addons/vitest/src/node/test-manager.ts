@@ -389,6 +389,8 @@ export class TestManager {
         ...s,
         currentRun: {
           ...s.currentRun,
+          // Until here the total is the number of tests the run was asked for
+          skippedTestCount: Math.max(0, (s.currentRun.totalTestCount ?? 0) - focusedRunTotal),
           // For focused runs, keep totals aligned with filtered case results.
           // For full runs, use Vitest's reported total.
           totalTestCount: s.currentRun.storyIds ? focusedRunTotal : endResult.totalTestCount,

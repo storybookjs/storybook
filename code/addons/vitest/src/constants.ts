@@ -49,6 +49,7 @@ export const storeOptions = {
       },
       storyIds: undefined,
       totalTestCount: undefined,
+      skippedTestCount: undefined,
       startedAt: undefined,
       finishedAt: undefined,
       unhandledErrors: [],

@@ -672,6 +672,28 @@ describe('TestManager', () => {
     ]);
   });
 
+  it('counts the tests a run was asked for that did not run', async () => {
+    vitest.globTestSpecifications.mockImplementation(() => tests);
+    const testManager = await startWithIndex();
+    vitest.runTestSpecifications.mockImplementationOnce(async () => {
+      testManager.onTestCaseResult({
+        storyId: 'story--one',
+        testResult: { state: 'passed', errors: [] } as unknown as TestResult,
+      });
+      testManager.onTestRunEnd({ totalTestCount: 1, unhandledErrors: [] });
+    });
+
+    await testManager.handleTriggerRunEvent({
+      type: 'TRIGGER_RUN',
+      payload: { storyIds: ['story--one', 'story--two'], triggeredBy: 'global' },
+    });
+
+    expect(mockStore.getState().currentRun).toMatchObject({
+      componentTestCount: { success: 1, error: 0 },
+      skippedTestCount: 1,
+    });
+  });
+
   it('should filter tests', async () => {
     vitest.globTestSpecifications.mockImplementation(() => tests);
     const testManager = await startWithIndex();

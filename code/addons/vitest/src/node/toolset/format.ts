@@ -309,7 +309,7 @@ function formatChangedConfigFiles(changed: TestRunSelection['changed']): string[
   ];
 }
 
-// One line: what each form matched, then what that selected.
+// One line: what each form matched. The verdict counts what ran.
 function formatSelection(selection: TestRunSelection): string | undefined {
   const parts: string[] = [];
   if (selection.files) {
@@ -323,12 +323,7 @@ function formatSelection(selection: TestRunSelection): string | undefined {
       `${pluralize(selection.changed.storyCount, 'changed story', 'changed stories')}${sinceRef(selection.changed)}`
     );
   }
-  const selected = selection.storyCount;
-  if (parts.length === 0 || selected === undefined) {
-    // `stories` alone: the ids say what was selected, and the verdict counts what ran.
-    return undefined;
-  }
-  return `${parts.join('; ')}: selected ${pluralize(selected, 'story', 'stories')}.`;
+  return parts.length === 0 ? undefined : `${parts.join('; ')}.`;
 }
 
 const A11Y_GUIDANCE =
@@ -341,11 +336,13 @@ function formatResultSection(
     a11yEnabled,
     selection,
     notFound = [],
+    notRunStoryIds = [],
   }: {
     a11y: boolean;
     a11yEnabled: boolean;
     selection?: TestRunSelection;
     notFound?: string[];
+    notRunStoryIds?: string[];
   }
 ): string {
   const failures = countTestRunFailures(result, a11y);
@@ -354,20 +351,27 @@ function formatResultSection(
     .map((key) => FAILURE_LABELS[key](failures[key]));
   const failureParts = [
     ...(notFound.length > 0 ? [`${pluralize(notFound.length, 'argument')} not used`] : []),
+    ...(notRunStoryIds.length > 0
+      ? [`${pluralize(notRunStoryIds.length, 'requested story', 'requested stories')} did not run`]
+      : []),
     ...testFailureParts,
   ];
   const passed = result.componentTestCount.success;
+  const skipped = result.skippedTestCount ?? 0;
+  // As in Vitest's `1 passed | 4 skipped (5)`, a selected test that did not run is counted.
+  const skippedPart = skipped > 0 ? `, ${skipped} skipped` : '';
   const verdict =
     failureParts.length > 0
-      ? `Failed: ${failureParts.join(', ')}${passed > 0 && testFailureParts.length === 0 ? `; ${pluralize(passed, 'component test')} passed` : ''}.`
+      ? `Failed: ${failureParts.join(', ')}${passed > 0 && testFailureParts.length === 0 ? `; ${pluralize(passed, 'component test')} passed` : ''}${skippedPart}.`
       : passed === 0
-        ? 'No component tests ran.'
-        : `Passed: ${pluralize(passed, 'component test')} passed.`;
+        ? `No component tests ran${skipped > 0 ? `: ${skipped} skipped` : ''}.`
+        : `Passed: ${pluralize(passed, 'component test')} passed${skipped > 0 ? `${skippedPart} (${passed + skipped})` : ''}.`;
 
   const lines = [
     ...[selection && formatSelection(selection)].filter((line): line is string => Boolean(line)),
     ...formatChangedConfigFiles(selection?.changed),
     ...notFound,
+    ...(notRunStoryIds.length > 0 ? [`Did not run: ${notRunStoryIds.map(code).join(', ')}.`] : []),
     verdict,
     formatA11yResult(result, { a11y, a11yEnabled }),
     ...(a11y && countA11yViolations(getA11yReports(result)) > 0 ? [A11Y_GUIDANCE] : []),
@@ -385,12 +389,14 @@ function formatCompletedRun(
     a11yEnabled,
     selection,
     notFound,
+    notRunStoryIds,
     ctx,
   }: {
     a11y: boolean;
     a11yEnabled: boolean;
     selection?: TestRunSelection;
     notFound?: string[];
+    notRunStoryIds?: string[];
     ctx: ToolsetCtx;
   }
 ): string {
@@ -429,7 +435,9 @@ function formatCompletedRun(
   }
 
   // Last, because agents mostly read this report through `tail`.
-  sections.push(formatResultSection(result, { a11y, a11yEnabled, selection, notFound }));
+  sections.push(
+    formatResultSection(result, { a11y, a11yEnabled, selection, notFound, notRunStoryIds })
+  );
 
   return sections.join('\n\n');
 }
@@ -499,6 +507,7 @@ export function formatTestRun(
         a11yEnabled,
         selection: data.selection,
         notFound: data.notFoundMessages,
+        notRunStoryIds: data.notRunStoryIds,
         ctx,
       });
     case 'error':

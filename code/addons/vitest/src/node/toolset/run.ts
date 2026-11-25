@@ -141,6 +141,16 @@ export function triggerTestRun({
   });
 }
 
+// A story ran when its component test passed or failed.
+function findNotRunStoryIds(storyIds: string[], result: TestRunResult): string[] {
+  const ran = new Set(
+    result.componentTestStatuses
+      .filter(({ value }) => value === 'status-value:success' || value === 'status-value:error')
+      .map(({ storyId }) => storyId)
+  );
+  return storyIds.filter((storyId) => !ran.has(storyId));
+}
+
 /** What `stories changed` reports, as far as a test run needs it. */
 export type ChangedStories = {
   storyIds: string[];
@@ -286,11 +296,14 @@ export async function runStoryTests({
           error: { message: 'Test run completed but no result was returned' },
         };
       }
+      const notRunStoryIds =
+        stories && storyIds ? findNotRunStoryIds(storyIds, response.result) : [];
       return {
         status: 'completed',
         result: response.result,
         ...(selection ? { selection } : {}),
         ...(notFoundMessages.length > 0 ? { notFoundMessages } : {}),
+        ...(notRunStoryIds.length > 0 ? { notRunStoryIds } : {}),
       };
     case 'error':
       return {

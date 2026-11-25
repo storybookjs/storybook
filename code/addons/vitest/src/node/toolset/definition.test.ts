@@ -385,7 +385,7 @@ Accessibility: not checked.`);
 
       expect((await runTests()).markdown).toContain(`## Result
 
-2 story files match \`src/Button.stories.tsx\`, \`Header\`; 5 changed stories: selected 2 stories.
+2 story files match \`src/Button.stories.tsx\`, \`Header\`; 5 changed stories.
 Passed: 2 component tests passed.`);
     });
 
@@ -402,9 +402,7 @@ Passed: 2 component tests passed.`);
         },
       } as TestRunOutput);
 
-      expect((await runTests()).markdown).toContain(
-        '1 changed story since `next`: selected 1 story.'
-      );
+      expect((await runTests()).markdown).toContain('1 changed story since `next`.');
     });
 
     it('says when change detection has not caught up with a changed file', async () => {
@@ -440,7 +438,7 @@ Passed: 2 component tests passed.`);
 
       expect((await runTests()).markdown).toContain(`## Result
 
-1 changed story: selected 1 story.
+1 changed story.
 Changed files in the Storybook config directory, which can affect every story: \`.storybook/preview.ts\`.
 Passed: 1 component test passed.`);
     });
@@ -468,7 +466,10 @@ Accessibility: not checked.`);
 
     it('passes a focused run in which none of the selected stories ran, as Vitest does with skipped tests', async () => {
       vi.mocked(runStoryTests).mockResolvedValue({
-        ...completed({ storyIds: ['button--primary', 'button--secondary'] }),
+        ...completed({
+          storyIds: ['button--primary', 'button--secondary'],
+          skippedTestCount: 2,
+        }),
         selection: { files: { filters: ['Button'], storyFileCount: 1 }, storyCount: 2 },
       } as TestRunOutput);
 
@@ -477,8 +478,65 @@ Accessibility: not checked.`);
       expect(outcome.ok).toBe(true);
       expect(outcome.markdown).toBe(`## Result
 
-1 story file matches \`Button\`: selected 2 stories.
-No component tests ran.
+1 story file matches \`Button\`.
+No component tests ran: 2 skipped.
+Accessibility: not checked.`);
+    });
+
+    it('counts the selected tests that did not run next to the ones that passed, as Vitest does', async () => {
+      vi.mocked(runStoryTests).mockResolvedValue({
+        ...completed({
+          storyIds: ['button--primary', 'button--secondary', 'button--tertiary'],
+          componentTestCount: { success: 1, error: 0 },
+          componentTestStatuses: [componentTest('button--primary', 'status-value:success')],
+          skippedTestCount: 2,
+        }),
+        selection: { files: { filters: ['Button'], storyFileCount: 1 }, storyCount: 3 },
+      } as TestRunOutput);
+
+      const outcome = await runTests();
+
+      expect(outcome.ok).toBe(true);
+      expect(outcome.markdown).toContain(`## Result
+
+1 story file matches \`Button\`.
+Passed: 1 component test passed, 2 skipped (3).`);
+    });
+
+    it('counts the selected tests that did not run in a failed run', async () => {
+      vi.mocked(runStoryTests).mockResolvedValue(
+        completed({
+          componentTestCount: { success: 1, error: 1 },
+          componentTestStatuses: [
+            componentTest('button--primary', 'status-value:success'),
+            componentTest('button--secondary', 'status-value:error', 'boom'),
+          ],
+          skippedTestCount: 2,
+        })
+      );
+
+      expect((await runTests()).markdown).toContain('Failed: 1 component test failed, 2 skipped.');
+    });
+
+    it('fails a run in which a story asked for by id did not run, and names it', async () => {
+      vi.mocked(runStoryTests).mockResolvedValue({
+        ...completed({
+          storyIds: ['button--primary', 'button--secondary'],
+          componentTestCount: { success: 1, error: 0 },
+          componentTestStatuses: [componentTest('button--primary', 'status-value:success')],
+          skippedTestCount: 1,
+        }),
+        selection: { inputStoryCount: 2, storyCount: 2 },
+        notRunStoryIds: ['button--secondary'],
+      } as TestRunOutput);
+
+      const outcome = await runTests();
+
+      expect(outcome.ok).toBe(false);
+      expect(outcome.markdown).toContain(`## Result
+
+Did not run: \`button--secondary\`.
+Failed: 1 requested story did not run; 1 component test passed, 1 skipped.
 Accessibility: not checked.`);
     });
 

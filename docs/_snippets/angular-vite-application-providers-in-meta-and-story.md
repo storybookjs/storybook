@@ -35,7 +35,7 @@ export const WithCustomApplicationProvider = meta.story({
 ```
 
 ```ts filename="ChipsModule.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
-// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/11/writing-stories/csf/upgrade
 import { type Meta, type StoryObj, applicationConfig } from '@storybook/angular-vite';
 
 import { provideHttpClient } from '@angular/common/http';

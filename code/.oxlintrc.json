@@ -122,6 +122,120 @@
       }
     },
     {
+      "files": [
+        "lib/cli-storybook/src/**",
+        "core/src/common/js-package-manager/**",
+        "core/src/csf-tools/**",
+        "core/src/cli/agentInstructions.ts",
+        "core/src/cli/installSkills.ts",
+        "core/src/cli/eslintPlugin.ts",
+        "core/src/cli/angular/**",
+        "core/src/common/utils/remove.ts",
+        "core/src/common/utils/setup-addon-in-config.ts",
+        "core/src/common/utils/sync-main-preview-addons.ts"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "node:fs",
+                "importNames": [
+                  "writeFile",
+                  "writeFileSync",
+                  "appendFile",
+                  "appendFileSync",
+                  "rm",
+                  "rmSync",
+                  "unlink",
+                  "unlinkSync",
+                  "rename",
+                  "renameSync",
+                  "copyFile",
+                  "copyFileSync",
+                  "cp",
+                  "cpSync",
+                  "rmdir",
+                  "rmdirSync",
+                  "createWriteStream",
+                  "promises"
+                ],
+                "message": "Write and remove project files through `effects` from `storybook/internal/common`, so a dry run stages the change and lists it. See .agents/guidelines/code-authoring.md."
+              },
+              {
+                "name": "fs",
+                "importNames": [
+                  "writeFile",
+                  "writeFileSync",
+                  "appendFile",
+                  "appendFileSync",
+                  "rm",
+                  "rmSync",
+                  "unlink",
+                  "unlinkSync",
+                  "rename",
+                  "renameSync",
+                  "copyFile",
+                  "copyFileSync",
+                  "cp",
+                  "cpSync",
+                  "rmdir",
+                  "rmdirSync",
+                  "createWriteStream",
+                  "promises"
+                ],
+                "message": "Write and remove project files through `effects` from `storybook/internal/common`, so a dry run stages the change and lists it. See .agents/guidelines/code-authoring.md."
+              },
+              {
+                "name": "node:fs/promises",
+                "importNames": [
+                  "writeFile",
+                  "appendFile",
+                  "rm",
+                  "unlink",
+                  "rename",
+                  "copyFile",
+                  "cp",
+                  "rmdir"
+                ],
+                "message": "Write and remove project files through `effects` from `storybook/internal/common`, so a dry run stages the change and lists it. See .agents/guidelines/code-authoring.md."
+              },
+              {
+                "name": "fs/promises",
+                "importNames": [
+                  "writeFile",
+                  "appendFile",
+                  "rm",
+                  "unlink",
+                  "rename",
+                  "copyFile",
+                  "cp",
+                  "rmdir"
+                ],
+                "message": "Write and remove project files through `effects` from `storybook/internal/common`, so a dry run stages the change and lists it. See .agents/guidelines/code-authoring.md."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "lib/cli-storybook/src/**/*.test.ts",
+        "lib/cli-storybook/src/sandbox.ts",
+        "lib/cli-storybook/src/link.ts",
+        "core/src/common/js-package-manager/**/*.test.ts",
+        "core/src/csf-tools/**/*.test.ts",
+        "core/src/csf-tools/__corpus__/**",
+        "core/src/cli/**/*.test.ts",
+        "core/src/common/utils/*.test.ts"
+      ],
+      "rules": {
+        "no-restricted-imports": "off"
+      }
+    },
+    {
       "files": ["lib/cli-storybook/src/automigrate/fixes/**"],
       "rules": {
         "no-restricted-imports": [

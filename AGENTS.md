@@ -11,6 +11,7 @@ Storybook is a TypeScript monorepo: code lives in `code/`, build tooling in `scr
 - Log through `storybook/internal/node-logger` or `storybook/internal/client-logger`, not `console.*`.
 - Use explicit extensions on relative TS imports (`./foo.ts`), except framework component files such as `.vue` and `.svelte`.
 - Prefer `pathe` over `node:path`. It normalizes separators to `/`, so path code should not rewrite slashes itself.
+- In CLI code, change project files and run commands that change the project through `effects` from `storybook/internal/common`, never by branching on `--dry-run`. See [Code authoring](.agents/guidelines/code-authoring.md).
 - Do not commit incidental changes to generated files such as `code/core/src/manager/globals/exports.ts`.
 
 ## Never Run

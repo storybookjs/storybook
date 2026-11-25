@@ -4,10 +4,14 @@ import { join } from 'node:path';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { getProjectRoot, isCI, versions } from 'storybook/internal/common';
 import { CLI_COLORS, logger } from 'storybook/internal/node-logger';
-import { isTelemetryModuleEnabled } from 'storybook/internal/telemetry';
+import { detectAgent, isTelemetryModuleEnabled } from 'storybook/internal/telemetry';
 import { SupportedBuilder, SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
 
-import { type AgentInstructionsMode, addStorybookAgentInstructions } from './agentInstructions.ts';
+import {
+  type AgentInstructionsInputs,
+  type AgentInstructionsMode,
+  addStorybookAgentInstructions,
+} from './agentInstructions.ts';
 
 const SKILLS_REPO = 'storybookjs/skills';
 
@@ -59,6 +63,15 @@ export function supportsAiSetup(
   );
 }
 
+/**
+ * Whether the skills step skips this run because it runs in CI. Coding agents set `CI=true` on
+ * their own to avoid prompts, so a run that an agent started is not CI here: it is the agent's
+ * project that would end up without the skills.
+ */
+export function skipsSkillsInCI(): boolean {
+  return !!isCI() && !detectAgent();
+}
+
 // Matches the repository in any form the lock records (`owner/repo`, a URL, or an SSH remote), but
 // not a fork with a longer name such as `storybookjs/skills-fork`.
 const isSkillsRepo = (source: string) =>
@@ -88,19 +101,29 @@ export async function hasStorybookSkills(): Promise<boolean> {
  *
  * A refresh only updates a section that still has Storybook's markers, so a section without them
  * and a removed section stay that way, unless the refresh replaces the `stories` skill of an 11.0
- * prerelease. Never runs in CI, and a failed install is reported in the result instead of thrown.
+ * prerelease. Skips CI (see {@link skipsSkillsInCI}), and a failed install is reported in the result
+ * instead of thrown.
  */
 export async function installSkills({
   packageManager,
   source,
   stdio = 'inherit',
+  testSupported,
+  sawEveryStorybook,
 }: {
   packageManager: JsPackageManager;
   source: SkillsSource;
   /** `pipe` keeps the `skills` CLI output out of a running task log. */
   stdio?: 'inherit' | 'pipe';
+  /**
+   * A Storybook of the project lists `@storybook/addon-vitest` in its main config, so the
+   * `AGENTS.md` section gets its test step.
+   */
+  testSupported: boolean;
+  /** The caller read the main config of every Storybook of the project. */
+  sawEveryStorybook: boolean;
 }): Promise<SkillsInstallResult> {
-  if (isCI()) {
+  if (skipsSkillsInCI()) {
     return { result: 'skipped', source: 'ci' };
   }
 
@@ -149,11 +172,12 @@ export async function installSkills({
   // The `stories` skill had no section yet. `ui-workflow` came with one, so a project without it
   // removed it.
   await addAgentInstructions(
-    source === 'refresh' && !removedSkills.includes('stories') ? 'update' : 'install'
+    source === 'refresh' && !removedSkills.includes('stories') ? 'update' : 'install',
+    { testSupported, sawEveryStorybook }
   );
 
   logger.log(
-    `Remove the Storybook skills with: ${packageManager.getRemoteRunCommand(['skills@latest', 'remove'])}`
+    `If you want to remove the Storybook skills, run "${packageManager.getRemoteRunCommand(['skills@latest', 'remove'])}"`
   );
   return { result: 'installed', source };
 }
@@ -184,9 +208,12 @@ async function removeSkills(
 const listFiles = (files: string[]) =>
   new Intl.ListFormat('en', { style: 'long', type: 'conjunction' }).format(files);
 
-async function addAgentInstructions(mode: AgentInstructionsMode): Promise<void> {
+async function addAgentInstructions(
+  mode: AgentInstructionsMode,
+  inputs: AgentInstructionsInputs
+): Promise<void> {
   try {
-    const changes = await addStorybookAgentInstructions(getProjectRoot(), mode);
+    const changes = await addStorybookAgentInstructions(getProjectRoot(), mode, inputs);
     const added = changes.filter(({ change }) => change === 'added').map(({ file }) => file);
     const updated = changes.filter(({ change }) => change === 'updated').map(({ file }) => file);
     if (added.length > 0) {
@@ -210,11 +237,11 @@ async function addAgentInstructions(mode: AgentInstructionsMode): Promise<void> 
 /**
  * Bring the section between Storybook's markers in `AGENTS.md` up to date without installing the
  * skills, for `storybook upgrade` in a project that got the skills from a plugin or by hand. Adds
- * nothing, and never runs in CI.
+ * nothing, and skips CI like {@link installSkills}.
  */
-export async function refreshAgentInstructions(): Promise<void> {
-  if (isCI()) {
+export async function refreshAgentInstructions(inputs: AgentInstructionsInputs): Promise<void> {
+  if (skipsSkillsInCI()) {
     return;
   }
-  await addAgentInstructions('update');
+  await addAgentInstructions('update', inputs);
 }

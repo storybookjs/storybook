@@ -581,7 +581,7 @@ export class OpenServiceMissingOriginError extends StorybookError {
  */
 export function describeUnknownStoryIds(unknownIds: string[]): string {
   const plural = unknownIds.length === 1 ? 'ID is' : 'IDs are';
-  return `Refusing to publish review: ${unknownIds.length} story ${plural} not backed by a story entry in the live Storybook index (docs entries cannot be review slots):`;
+  return `Refusing to create review: ${unknownIds.length} story ${plural} not backed by a story entry in the live Storybook index (docs entries cannot be review slots):`;
 }
 
 export class OpenServiceUnknownStoryIdsError extends StorybookError {
@@ -1012,23 +1012,18 @@ export class SvelteViteWithSvelteKitError extends StorybookError {
 }
 
 export class NoMatchingExportError extends StorybookError {
-  constructor(public data: { error: unknown | Error }) {
+  constructor(public data: { error: unknown | Error; detail: string }) {
     super({
       name: 'NoMatchingExportError',
       category: Category.CORE_SERVER,
       code: 4,
       documentation: '',
       message: dedent`
-        There was an exports mismatch error when trying to build Storybook.
-        Please check whether the versions of your Storybook packages match whenever possible, as this might be the cause.
-        
-        Problematic example:
-        { "@storybook/react": "7.5.3", "@storybook/react-vite": "7.4.5", "storybook": "7.3.0" }
-        
-        Correct example:
-        { "@storybook/react": "7.5.3", "@storybook/react-vite": "7.5.3", "storybook": "7.5.3" }
-        
-        Please run \`npx storybook doctor\` for guidance on how to fix this issue.`,
+          An import in your Storybook setup could not be resolved while building Storybook's UI.
+
+          ${data.detail}
+
+          This usually happens because the installed Storybook core package versions don't match, or an addon you're using is built for an older Storybook version. Run \`npx storybook doctor\` to identify version discrepancies.`,
     });
   }
 }

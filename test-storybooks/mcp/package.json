@@ -43,7 +43,7 @@
     "react-dom": "^18.2.0",
     "storybook": "^10.0.0",
     "tinyexec": "^1.0.2",
-    "vite": "7.2.2",
+    "vite": "7.3.8",
     "vitest": "4.0.6"
   }
 }

@@ -29,8 +29,6 @@ export default mergeConfig(
     },
     test: {
       name: 'core',
-      // Some files still depend on running in a fresh worker; see `isolate` in vitest.shared.ts.
-      isolate: true,
       typecheck: {
         enabled: true,
       },

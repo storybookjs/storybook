@@ -18,7 +18,6 @@ import type {
   StoryAnnotations,
   StoryContext,
   StoryContextForEnhancers,
-  StoryContextForRender,
   StoryId,
   StoryIdentifier,
   StoryName,
@@ -126,13 +125,20 @@ export type BoundStory<TRenderer extends Renderer = Renderer> = PreparedStory<TR
   storyFn: PartialStoryFn<TRenderer>;
 };
 
+/**
+ * The story context before Storybook hides `argTypes` from render functions, decorators, loaders,
+ * `beforeEach`, `play` and `afterEach`. Framework code such as `renderToCanvas` receives this one.
+ */
+export type StoryContextWithArgTypes<TRenderer extends Renderer = Renderer> =
+  StoryContext<TRenderer> & { argTypes: StrictArgTypes };
+
 // TODO Consolidate this with context for 9.0
 export declare type RenderContext<TRenderer extends Renderer = Renderer> = StoryIdentifier & {
   showMain: () => void;
   showError: (error: { title: string; description: string }) => void;
   showException: (err: Error) => void;
   forceRemount: boolean;
-  storyContext: StoryContextForRender<TRenderer>;
+  storyContext: StoryContextWithArgTypes<TRenderer>;
   storyFn: PartialStoryFn<TRenderer>;
   unboundStoryFn: LegacyStoryFn<TRenderer>;
 };

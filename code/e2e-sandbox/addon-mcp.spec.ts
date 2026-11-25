@@ -197,7 +197,8 @@ test.describe('addon-mcp', () => {
           result: {
             protocolVersion: '2025-06-18',
             capabilities: {
-              tools: { listChanged: true },
+              tools: { listChanged: false },
+              resources: { listChanged: false },
             },
             serverInfo: {
               name: '@storybook/addon-mcp',
@@ -235,7 +236,7 @@ test.describe('addon-mcp', () => {
             stories: [
               {
                 exportName: storyName,
-                absoluteStoryPath: path.join(sandboxDir, 'src', 'stories', 'Button.stories.ts'),
+                absoluteStoryPath: path.join(sandboxDir, 'src', 'stories', 'Button.stories.tsx'),
               },
             ],
           },

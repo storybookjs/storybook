@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mergeConfig } from 'vitest/config';
 import type { InlineConfig } from 'vitest/node';
 
-import { validateConfigurationFiles } from 'storybook/internal/common';
+import { validateConfigurationFiles, versions } from 'storybook/internal/common';
 import { StoryIndexGenerator, experimental_loadStorybook } from 'storybook/internal/core-server';
 import { isTelemetryModuleEnabled } from 'storybook/internal/telemetry';
 
@@ -79,6 +79,23 @@ async function getPluginConfig(invokingRoot: string, inputTestConfig?: InlineCon
 
   return { root: config.root, test: config.test, plugin };
 }
+
+describe('storybook version', () => {
+  it('refuses to start with a storybook package of another major', async () => {
+    const installedVersions: Record<string, string> = versions;
+    const coreVersion = installedVersions.storybook;
+    installedVersions.storybook = '1.0.0';
+
+    try {
+      await expect(storybookTest({ configDir: CONFIG_DIR })).rejects.toThrow(
+        'is not compatible with storybook@1.0.0'
+      );
+      expect(experimental_loadStorybook).not.toHaveBeenCalled();
+    } finally {
+      installedVersions.storybook = coreVersion;
+    }
+  });
+});
 
 describe('story test patterns', () => {
   // The plugin sets the project root itself, so story globs have to be written relative to that

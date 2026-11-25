@@ -175,8 +175,8 @@ Use { absoluteStoryPath + exportName } only when you're currently working in a s
           // An empty entry, as from an unset variable, would match every story file.
           v.minLength(1),
           // Vitest reads `Button.stories.tsx:12` as a test at a line, which the runner cannot run.
-          v.check(
-            (file) => !/:\d+(-\d+)?$/.test(file),
+          v.regex(
+            /^(?![\s\S]*:\d+(-\d+)?$)[\s\S]*$/,
             'A line number after a file is not supported. To test one story, pass it in stories.'
           )
         )

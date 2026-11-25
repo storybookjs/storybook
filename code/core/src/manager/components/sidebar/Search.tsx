@@ -213,7 +213,7 @@ export const Search = React.memo<SearchProps>(function Search({
           ? getMostCriticalStatusValue(ownStatusValues)
           : null;
 
-        const status = mostCriticalStatusValue ?? groupStatus[datasetValue.id] ?? null;
+        const status = mostCriticalStatusValue ?? groupStatus.get(datasetValue.id);
 
         if (datasetValue.type !== 'docs' || !globalThis?.FEATURES?.experimentalSearchDocsHeadings) {
           list.push({

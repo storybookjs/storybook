@@ -41,8 +41,10 @@ function mergeTags(
  */
 export function extractJSDocInfo(jsdocComment: string) {
   const lines = jsdocComment.split('\n');
-  // Raw text, such as an HTML comment, can have a line that ends in `*/`. comment-parser checks every
-  // line for the end marker, so only our closing line may carry it. The start marker is only checked
+  // The text does not always come from a JS comment. The HTML comment above a Svelte story is one
+  // example, and a line in it can end in `*/`. comment-parser closes the block at the first line that
+  // ends in its end marker, so only the closing line that we add carries it: a line of source text
+  // never ends in a NUL (`\u0000`) followed by `*/`. comment-parser checks the start marker only
   // before the block opens, so the default is safe.
   const markers: BlockMarkers = { start: '/**', nostart: '/***', delim: '*', end: '\u0000*/' };
   const jsDoc = ['/**', ...lines.map((line) => ` * ${line}`), ` ${markers.end}`].join('\n');

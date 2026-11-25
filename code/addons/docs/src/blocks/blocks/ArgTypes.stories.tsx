@@ -7,6 +7,7 @@ import { expect } from 'storybook/test';
 
 import * as ExampleStories from '../examples/ArgTypesParameters.stories';
 import * as SubcomponentsExampleStories from '../examples/ArgTypesWithSubcomponentsParameters.stories';
+import * as JsDocTagsStories from '../examples/button-with-jsdoc-tags.stories.tsx';
 import { ArgTypes } from './ArgTypes';
 
 /** Stands in for a component that documentation names but no story file declares. */
@@ -47,6 +48,14 @@ export const OfStory: Story = {
   args: {
     of: ExampleStories.NoParameters,
   },
+};
+
+/** Shows what Autodocs renders for prop docblocks with JSDoc tags today. A baseline, not the wanted output. */
+export const OfComponentWithJsDocTags: Story = {
+  args: {
+    of: JsDocTagsStories.default.component,
+  },
+  parameters: { relativeCsfPaths: ['../examples/button-with-jsdoc-tags.stories'] },
 };
 
 export const OfUndefined: Story = {

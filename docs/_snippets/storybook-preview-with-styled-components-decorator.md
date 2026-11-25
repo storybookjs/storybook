@@ -224,6 +224,7 @@ import { html } from 'lit';
 import { definePreview } from '@storybook/web-components-vite';
 
 export default definePreview({
+  addons: [/* ... */],
   decorators: [
     // The theme can be accessed via the story context's globals
     (story, { globals }) => {
@@ -312,6 +313,7 @@ import { html } from 'lit';
 import { definePreview } from '@storybook/web-components-vite';
 
 export default definePreview({
+  addons: [/* ... */],
   decorators: [
     // The theme can be accessed via the story context's globals
     (story, { globals }) => {
@@ -350,6 +352,7 @@ import { definePreview } from '@storybook/your-framework';
 import { ThemeProvider } from 'styled-components';
 
 export default definePreview({
+  addons: [/* ... */],
   decorators: [
     (Story) => (
       <ThemeProvider theme="default">
@@ -370,6 +373,7 @@ import { definePreview } from '@storybook/your-framework';
 import { ThemeProvider } from 'styled-components';
 
 export default definePreview({
+  addons: [/* ... */],
   decorators: [
     (Story) => (
       <ThemeProvider theme="default">
@@ -475,6 +479,7 @@ import StoryWrapper from './StoryWrapper.vue';
 
 // Registers the Vuetify plugin in Storybook's Vue app instance
 export default definePreview({
+  addons: [/* ... */],
   decorators: [
     (_, { globals }) => {
       // The theme can be accessed via the story context's globals
@@ -508,6 +513,7 @@ import StoryWrapper from './StoryWrapper.vue';
 
 // Registers the Vuetify plugin in Storybook's Vue app instance
 export default definePreview({
+  addons: [/* ... */],
   decorators: [
     (_, { globals }) => {
       // The theme can be accessed via the story context's globals

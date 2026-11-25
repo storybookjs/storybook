@@ -10,6 +10,7 @@ import { ThemeProvider } from 'styled-components';
 import * as themes from '../src/themes';
 
 export default definePreview({
+  addons: [/* ... */],
   decorators: [
     // 👇 Defining the decorator in the preview file applies it to all stories
     (Story, { parameters }) => {
@@ -37,6 +38,7 @@ import { ThemeProvider } from 'styled-components';
 import * as themes from '../src/themes';
 
 export default definePreview({
+  addons: [/* ... */],
   decorators: [
     // 👇 Defining the decorator in the preview file applies it to all stories
     (Story, { parameters }) => {

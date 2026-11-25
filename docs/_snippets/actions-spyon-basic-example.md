@@ -5,6 +5,7 @@ import { definePreview } from '@storybook/your-framework';
 import { spyOn } from 'storybook/test';
 
 export default definePreview({
+  addons: [/* ... */],
   async beforeEach() {
     spyOn(console, 'log').mockName('console.log');
   },
@@ -18,6 +19,7 @@ import { definePreview } from '@storybook/your-framework';
 import { spyOn } from 'storybook/test';
 
 export default definePreview({
+  addons: [/* ... */],
   async beforeEach() {
     spyOn(console, 'log').mockName('console.log');
   },
@@ -30,6 +32,7 @@ import { definePreview } from '@storybook/vue3-vite';
 import { spyOn } from 'storybook/test';
 
 export default definePreview({
+  addons: [/* ... */],
   async beforeEach() {
     spyOn(console, 'log').mockName('console.log');
   },
@@ -42,6 +45,7 @@ import { definePreview } from '@storybook/vue3-vite';
 import { spyOn } from 'storybook/test';
 
 export default definePreview({
+  addons: [/* ... */],
   async beforeEach() {
     spyOn(console, 'log').mockName('console.log');
   },
@@ -54,6 +58,7 @@ import { definePreview } from '@storybook/angular';
 import { spyOn } from 'storybook/test';
 
 export default definePreview({
+  addons: [/* ... */],
   async beforeEach() {
     spyOn(console, 'log').mockName('console.log');
   },
@@ -66,6 +71,7 @@ import { definePreview } from '@storybook/web-components-vite';
 import { spyOn } from 'storybook/test';
 
 export default definePreview({
+  addons: [/* ... */],
   async beforeEach() {
     spyOn(console, 'log').mockName('console.log');
   },
@@ -78,6 +84,7 @@ import { definePreview } from '@storybook/web-components-vite';
 import { spyOn } from 'storybook/test';
 
 export default definePreview({
+  addons: [/* ... */],
   async beforeEach() {
     spyOn(console, 'log').mockName('console.log');
   },

@@ -5,6 +5,7 @@ import { definePreview } from '@storybook/your-framework';
 import '../src/styles/global.css';
 
 export default definePreview({
+  addons: [/* ... */],
   parameters: {},
 });
 ```
@@ -16,6 +17,7 @@ import { definePreview } from '@storybook/your-framework';
 import '../src/styles/global.css';
 
 export default definePreview({
+  addons: [/* ... */],
   parameters: {},
 });
 ```
@@ -26,6 +28,7 @@ import { definePreview } from '@storybook/vue3-vite';
 import '../src/styles/global.css';
 
 export default definePreview({
+  addons: [/* ... */],
   parameters: {},
 });
 ```
@@ -36,6 +39,7 @@ import { definePreview } from '@storybook/vue3-vite';
 import '../src/styles/global.css';
 
 export default definePreview({
+  addons: [/* ... */],
   parameters: {},
 });
 ```
@@ -46,6 +50,7 @@ import { definePreview } from '@storybook/angular';
 import '../src/styles/global.css';
 
 export default definePreview({
+  addons: [/* ... */],
   parameters: {},
 });
 ```
@@ -56,6 +61,7 @@ import { definePreview } from '@storybook/web-components-vite';
 import '../src/styles/global.css';
 
 export default definePreview({
+  addons: [/* ... */],
   parameters: {},
 });
 ```
@@ -66,6 +72,7 @@ import { definePreview } from '@storybook/web-components-vite';
 import '../src/styles/global.css';
 
 export default definePreview({
+  addons: [/* ... */],
   parameters: {},
 });
 ```

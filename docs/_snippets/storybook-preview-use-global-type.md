@@ -19,6 +19,7 @@ export default preview;
 import { componentWrapperDecorator, definePreview } from '@storybook/angular';
 
 export default definePreview({
+  addons: [/* ... */],
   decorators: [
     componentWrapperDecorator(
       (story) => `<div [class]="myTheme">${story}</div>`,
@@ -38,6 +39,7 @@ import { ThemeProvider } from 'styled-components';
 import { MyThemes } from '../my-theme-folder/my-theme-file';
 
 export default definePreview({
+  addons: [/* ... */],
   decorators: [
     (Story, context) => {
       const theme = MyThemes[context.globals.theme];
@@ -60,6 +62,7 @@ import { ThemeProvider } from 'styled-components';
 import { MyThemes } from '../my-theme-folder/my-theme-file';
 
 export default definePreview({
+  addons: [/* ... */],
   decorators: [
     (Story, context) => {
       const theme = MyThemes[context.globals.theme];
@@ -86,6 +89,7 @@ setup((app) => {
 });
 
 export default definePreview({
+  addons: [/* ... */],
   decorators: [
     (story, context) => {
       const theme = context.globals.theme || 'light';
@@ -117,6 +121,7 @@ setup((app) => {
 });
 
 export default definePreview({
+  addons: [/* ... */],
   decorators: [
     (story, context) => {
       const theme = context.globals.theme || 'light';
@@ -256,6 +261,7 @@ import { definePreview } from '@storybook/web-components-vite';
 import { html } from 'lit';
 
 export default definePreview({
+  addons: [/* ... */],
   decorators: [
     (story, context) => {
       const theme = context.globals.theme || 'light';
@@ -271,6 +277,7 @@ import { definePreview } from '@storybook/web-components-vite';
 import { html } from 'lit';
 
 export default definePreview({
+  addons: [/* ... */],
   decorators: [
     (story, context) => {
       const theme = context.globals.theme || 'light';

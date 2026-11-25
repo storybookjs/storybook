@@ -18,6 +18,7 @@ const AppDecorator = (storyFn) => {
 };
 
 export default definePreview({
+  addons: [/* ... */],
   decorators: [AppDecorator],
 });
 ```
@@ -42,6 +43,7 @@ const AppDecorator = (storyFn) => {
 };
 
 export default definePreview({
+  addons: [/* ... */],
   decorators: [AppDecorator],
 });
 ```

@@ -5,6 +5,7 @@ import { definePreview } from '@storybook/your-framework';
 import MockDate from 'mockdate';
 
 export default definePreview({
+  addons: [/* ... */],
   async beforeEach() {
     MockDate.reset();
   },
@@ -18,6 +19,7 @@ import { definePreview } from '@storybook/your-framework';
 import MockDate from 'mockdate';
 
 export default definePreview({
+  addons: [/* ... */],
   async beforeEach() {
     MockDate.reset();
   },
@@ -30,6 +32,7 @@ import { definePreview } from '@storybook/vue3-vite';
 import MockDate from 'mockdate';
 
 export default definePreview({
+  addons: [/* ... */],
   async beforeEach() {
     MockDate.reset();
   },
@@ -42,6 +45,7 @@ import { definePreview } from '@storybook/vue3-vite';
 import MockDate from 'mockdate';
 
 export default definePreview({
+  addons: [/* ... */],
   async beforeEach() {
     MockDate.reset();
   },
@@ -54,6 +58,7 @@ import { definePreview } from '@storybook/angular';
 import MockDate from 'mockdate';
 
 export default definePreview({
+  addons: [/* ... */],
   async beforeEach() {
     MockDate.reset();
   },
@@ -66,6 +71,7 @@ import { definePreview } from '@storybook/web-components-vite';
 import MockDate from 'mockdate';
 
 export default definePreview({
+  addons: [/* ... */],
   async beforeEach() {
     MockDate.reset();
   },
@@ -78,6 +84,7 @@ import { definePreview } from '@storybook/web-components-vite';
 import MockDate from 'mockdate';
 
 export default definePreview({
+  addons: [/* ... */],
   async beforeEach() {
     MockDate.reset();
   },

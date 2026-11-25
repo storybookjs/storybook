@@ -5,6 +5,7 @@ import { definePreview } from '@storybook/your-framework';
 import { INITIAL_VIEWPORTS } from 'storybook/viewport';
 
 export default definePreview({
+  addons: [/* ... */],
   parameters: {
     viewport: {
       options: INITIAL_VIEWPORTS,
@@ -23,6 +24,7 @@ import { definePreview } from '@storybook/your-framework';
 import { INITIAL_VIEWPORTS } from 'storybook/viewport';
 
 export default definePreview({
+  addons: [/* ... */],
   parameters: {
     viewport: {
       options: INITIAL_VIEWPORTS,
@@ -40,6 +42,7 @@ import { definePreview } from '@storybook/vue3-vite';
 import { INITIAL_VIEWPORTS } from 'storybook/viewport';
 
 export default definePreview({
+  addons: [/* ... */],
   parameters: {
     viewport: {
       options: INITIAL_VIEWPORTS,
@@ -57,6 +60,7 @@ import { definePreview } from '@storybook/vue3-vite';
 import { INITIAL_VIEWPORTS } from 'storybook/viewport';
 
 export default definePreview({
+  addons: [/* ... */],
   parameters: {
     viewport: {
       options: INITIAL_VIEWPORTS,
@@ -74,6 +78,7 @@ import { definePreview } from '@storybook/angular';
 import { INITIAL_VIEWPORTS } from 'storybook/viewport';
 
 export default definePreview({
+  addons: [/* ... */],
   parameters: {
     viewport: {
       options: INITIAL_VIEWPORTS,
@@ -91,6 +96,7 @@ import { definePreview } from '@storybook/web-components-vite';
 import { INITIAL_VIEWPORTS } from 'storybook/viewport';
 
 export default definePreview({
+  addons: [/* ... */],
   parameters: {
     viewport: {
       options: INITIAL_VIEWPORTS,
@@ -108,6 +114,7 @@ import { definePreview } from '@storybook/web-components-vite';
 import { INITIAL_VIEWPORTS } from 'storybook/viewport';
 
 export default definePreview({
+  addons: [/* ... */],
   parameters: {
     viewport: {
       options: INITIAL_VIEWPORTS,

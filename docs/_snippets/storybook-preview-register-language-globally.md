@@ -9,6 +9,7 @@ import scss from 'react-syntax-highlighter/dist/esm/languages/prism/scss';
 SyntaxHighlighter.registerLanguage('scss', scss);
 
 export default definePreview({
+  addons: [/* ... */],
   parameters: {
     controls: {
       matchers: {
@@ -31,6 +32,7 @@ import scss from 'react-syntax-highlighter/dist/esm/languages/prism/scss';
 SyntaxHighlighter.registerLanguage('scss', scss);
 
 export default definePreview({
+  addons: [/* ... */],
   parameters: {
     controls: {
       matchers: {
@@ -52,6 +54,7 @@ import scss from 'react-syntax-highlighter/dist/esm/languages/prism/scss';
 SyntaxHighlighter.registerLanguage('scss', scss);
 
 export default definePreview({
+  addons: [/* ... */],
   parameters: {
     controls: {
       matchers: {
@@ -73,6 +76,7 @@ import scss from 'react-syntax-highlighter/dist/esm/languages/prism/scss';
 SyntaxHighlighter.registerLanguage('scss', scss);
 
 export default definePreview({
+  addons: [/* ... */],
   parameters: {
     controls: {
       matchers: {
@@ -94,6 +98,7 @@ import scss from 'react-syntax-highlighter/dist/esm/languages/prism/scss';
 SyntaxHighlighter.registerLanguage('scss', scss);
 
 export default definePreview({
+  addons: [/* ... */],
   parameters: {
     controls: {
       matchers: {
@@ -115,6 +120,7 @@ import scss from 'react-syntax-highlighter/dist/esm/languages/prism/scss';
 SyntaxHighlighter.registerLanguage('scss', scss);
 
 export default definePreview({
+  addons: [/* ... */],
   parameters: {
     controls: {
       matchers: {
@@ -136,6 +142,7 @@ import scss from 'react-syntax-highlighter/dist/esm/languages/prism/scss';
 SyntaxHighlighter.registerLanguage('scss', scss);
 
 export default definePreview({
+  addons: [/* ... */],
   parameters: {
     controls: {
       matchers: {

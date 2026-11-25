@@ -13,6 +13,7 @@ const queryClient = new QueryClient({
 });
 
 export default definePreview({
+  addons: [/* ... */],
   beforeEach: () => {
     // 👇 Clear the cache between stories so each story starts fresh
     queryClient.clear();

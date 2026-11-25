@@ -15,6 +15,7 @@ import React from 'react';
 import { definePreview } from '@storybook/your-framework';
 
 export default definePreview({
+  addons: [/* ... */],
   decorators: [
     (Story) => (
       <div style={{ margin: '3em' }}>
@@ -33,6 +34,7 @@ import React from 'react';
 import { definePreview } from '@storybook/your-framework';
 
 export default definePreview({
+  addons: [/* ... */],
   decorators: [
     (Story) => (
       <div style={{ margin: '3em' }}>
@@ -95,6 +97,7 @@ export default preview;
 import { definePreview } from '@storybook/vue3-vite';
 
 export default definePreview({
+  addons: [/* ... */],
   decorators: [
     (story) => ({
       components: { story },
@@ -108,6 +111,7 @@ export default definePreview({
 import { definePreview } from '@storybook/vue3-vite';
 
 export default definePreview({
+  addons: [/* ... */],
   decorators: [
     (story) => ({
       components: { story },
@@ -148,6 +152,7 @@ export default {
 import { componentWrapperDecorator, definePreview } from '@storybook/angular';
 
 export default definePreview({
+  addons: [/* ... */],
   decorators: [componentWrapperDecorator((story) => `<div style="margin: 3em">${story}</div>`)],
 });
 ```
@@ -215,6 +220,7 @@ import { definePreview } from '@storybook/web-components-vite';
 import { html } from 'lit';
 
 export default definePreview({
+  addons: [/* ... */],
   decorators: [(story) => html`<div style="margin: 3em">${story()}</div>`],
 });
 ```
@@ -225,6 +231,7 @@ import { definePreview } from '@storybook/web-components-vite';
 import { html } from 'lit';
 
 export default definePreview({
+  addons: [/* ... */],
   decorators: [(story) => html`<div style="margin: 3em">${story()}</div>`],
 });
 ```

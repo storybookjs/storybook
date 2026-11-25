@@ -2,6 +2,7 @@
 import { definePreview, componentWrapperDecorator } from '@storybook/angular';
 
 export default definePreview({
+  addons: [/* ... */],
   decorators: [
     // 👇 Defining the decorator in the preview file applies it to all stories
     componentWrapperDecorator((story, { parameters }) => {
@@ -29,6 +30,7 @@ import React from 'react';
 import { definePreview } from '@storybook/your-framework';
 
 export default definePreview({
+  addons: [/* ... */],
   decorators: [
     // 👇 Defining the decorator in the preview file applies it to all stories
     (Story, { parameters }) => {
@@ -64,6 +66,7 @@ import React from 'react';
 import { definePreview } from '@storybook/your-framework';
 
 export default definePreview({
+  addons: [/* ... */],
   decorators: [
     // 👇 Defining the decorator in the preview file applies it to all stories
     (Story, { parameters }) => {
@@ -160,6 +163,7 @@ export default preview;
 import { definePreview } from '@storybook/vue3-vite';
 
 export default definePreview({
+  addons: [/* ... */],
   decorators: [
     // 👇 Defining the decorator in the preview file applies it to all stories
     (_, { parameters }) => {
@@ -184,6 +188,7 @@ export default definePreview({
 import { definePreview } from '@storybook/vue3-vite';
 
 export default definePreview({
+  addons: [/* ... */],
   decorators: [
     // 👇 Defining the decorator in the preview file applies it to all stories
     (_, { parameters }) => {
@@ -286,6 +291,7 @@ import { html } from 'lit';
 import { definePreview } from '@storybook/web-components-vite';
 
 export default definePreview({
+  addons: [/* ... */],
   decorators: [
     // 👇 Defining the decorator in the preview file applies it to all stories
     (story, { parameters }) => {
@@ -312,6 +318,7 @@ import { html } from 'lit';
 import { definePreview } from '@storybook/web-components-vite';
 
 export default definePreview({
+  addons: [/* ... */],
   decorators: [
     // 👇 Defining the decorator in the preview file applies it to all stories
     (story, { parameters }) => {

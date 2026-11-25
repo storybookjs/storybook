@@ -3,6 +3,7 @@
 import { definePreview } from '@storybook/your-framework';
 
 export default definePreview({
+  addons: [/* ... */],
   // ...
   parameters: {
     // ...
@@ -18,6 +19,7 @@ export default definePreview({
 import { definePreview } from '@storybook/your-framework';
 
 export default definePreview({
+  addons: [/* ... */],
   // ...
   parameters: {
     // ...

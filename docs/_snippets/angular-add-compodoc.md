@@ -7,6 +7,7 @@ import docJson from '../documentation.json';
 setCompodocJson(docJson);
 
 const preview = definePreview({
+  addons: [/* ... */],
   // ...
 });
 

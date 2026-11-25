@@ -10,8 +10,6 @@ import {
 } from 'storybook/internal/core-events';
 import type { StatusValue } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
-
 import {
   experimental_useStatusStore,
   useChannel,
@@ -269,7 +267,7 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
     const api = useStorybookApi();
     const data = api.getData(state.storyId, state.refId);
     const importPath = data?.importPath as string | undefined;
-    const canOpenInEditor = global.CONFIG_TYPE === 'DEVELOPMENT' && !state.refId;
+    const canOpenInEditor = globalThis.CONFIG_TYPE === 'DEVELOPMENT' && !state.refId;
 
     const panelState = usePanelState();
     const set = panelStore.setState;
@@ -299,10 +297,10 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
     const endRef = useRef<HTMLDivElement>();
     useEffect(() => {
       let observer: IntersectionObserver;
-      if (global.IntersectionObserver) {
-        observer = new global.IntersectionObserver(
+      if (globalThis.IntersectionObserver) {
+        observer = new globalThis.IntersectionObserver(
           ([end]: any) => setScrollTarget(end.isIntersecting ? undefined : end.target),
-          { root: global.document.querySelector('#storybook-panel-root [role="tabpanel"]') }
+          { root: globalThis.document.querySelector('#storybook-panel-root [role="tabpanel"]') }
         );
 
         if (endRef.current) {

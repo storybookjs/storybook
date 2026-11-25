@@ -3,7 +3,6 @@ import React, { useCallback, useMemo } from 'react';
 import { ActionList, ProgressSpinner } from 'storybook/internal/components';
 import { STORIES_COLLAPSE_ALL } from 'storybook/internal/core-events';
 
-import { global } from '@storybook/global';
 import {
   CheckIcon,
   CommandIcon,
@@ -210,8 +209,8 @@ export const useMenu = ({
       [
         [
           about,
-          ...(global.CONFIG_TYPE === 'DEVELOPMENT' &&
-          global.FEATURES?.menuOnboardingChecklist !== false
+          ...(globalThis.CONFIG_TYPE === 'DEVELOPMENT' &&
+          globalThis.FEATURES?.menuOnboardingChecklist !== false
             ? [guide]
             : []),
           ...(enableShortcuts ? [shortcuts] : []),

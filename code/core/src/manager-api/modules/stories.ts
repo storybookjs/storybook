@@ -50,7 +50,6 @@ import type {
 } from 'storybook/internal/types';
 import { isReviewManagerRoute } from '../../shared/review/routes.ts';
 
-import { global } from '@storybook/global';
 import { throttle } from 'es-toolkit/function';
 
 import { BUILT_IN_FILTERS } from '../../shared/constants/tags.ts';
@@ -104,7 +103,6 @@ const normalizeSelectStoryPayload = (payload: SelectStoryEvent): SelectStoryPayl
   return { title, name, viewMode, scrollTo };
 };
 
-const { fetch } = global;
 const STORY_INDEX_PATH = './index.json';
 
 const TAGS_FILTER = 'tags-filter';
@@ -1277,8 +1275,8 @@ export const init: ModuleFn<SubAPI, SubState> = ({
           });
         }
       };
-      if (typeof global.requestIdleCallback === 'function') {
-        global.requestIdleCallback(preloadSiblings);
+      if (typeof globalThis.requestIdleCallback === 'function') {
+        globalThis.requestIdleCallback(preloadSiblings);
       } else {
         setTimeout(preloadSiblings, 1);
       }
@@ -1365,7 +1363,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
   );
 
   // Compute default tag filter values from presets
-  const tagPresets: TagsOptions = global.TAGS_OPTIONS || {};
+  const tagPresets: TagsOptions = globalThis.TAGS_OPTIONS || {};
   const defaultTags = getDefaultTagsFromPreset(tagPresets);
 
   const { tags, statuses } = queryFromLocation(location ?? ({ search: '' } as any));

@@ -8,8 +8,6 @@ import {
 } from 'storybook/internal/core-events';
 import type { WhatsNewCache, WhatsNewData } from 'storybook/internal/core-events';
 
-import { global } from '@storybook/global';
-
 import type { ModuleFn } from '../lib/types.tsx';
 
 export type SubState = {
@@ -101,7 +99,7 @@ export const init: ModuleFn = ({ fullAPI, store, provider }) => {
 
   const initModule = async () => {
     // The server channel doesn't exist in production, and we don't want to show what's new in production storybooks.
-    if (global.CONFIG_TYPE !== 'DEVELOPMENT') {
+    if (globalThis.CONFIG_TYPE !== 'DEVELOPMENT') {
       return;
     }
 

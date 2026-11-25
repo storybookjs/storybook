@@ -88,7 +88,6 @@ async function rejectedAttachUnavailable(
 beforeEach(async () => {
   // This process runs in process namespace `pid:[2]`.
   vi.mocked(readlinkSync).mockReturnValue('pid:[2]');
-  vi.unstubAllGlobals();
   vol.reset();
   vol.fromNestedJSON({
     [`${STORYBOOK_PATH}/package.json`]: '{"name":"storybook"}',

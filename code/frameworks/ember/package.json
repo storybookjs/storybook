@@ -49,7 +49,6 @@
   ],
   "dependencies": {
     "@storybook/builder-webpack5": "workspace:*",
-    "@storybook/global": "^5.0.0",
     "babel-loader": "9.1.3",
     "empathic": "2.0.0"
   },

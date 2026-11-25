@@ -441,7 +441,7 @@ export class StoryIndexGenerator {
       const id = toId(metaId ?? entry.title, name);
       const tags = tagsSharedByAll(
         storyEntries
-          .filter((storyEntry) => storyEntry.subtype === 'story')
+          .filter((storyEntry) => storyEntry.type === 'story' && storyEntry.subtype === 'story')
           .map((storyEntry) => storyEntry.tags)
       );
 

@@ -119,9 +119,9 @@ describe('ComponentMetaManager heap-pressure recycle', () => {
     recycleIfHeapPressured = () => this.recycleProjectsIfHeapPressured();
   }
 
-  const recyclesAtHeapLimitFractions = (fractions: number[]) => {
-    const file = '/project/src/Button.ts';
-    const manager = new RecyclingManager(
+  const file = '/project/src/Button.ts';
+  const createManager = () =>
+    new RecyclingManager(
       { sys: { fileExists: () => false, directoryExists: () => false } },
       {
         parseCommandLine: () => ({ fileNames: [file] }),
@@ -129,13 +129,19 @@ describe('ComponentMetaManager heap-pressure recycle', () => {
         createInferredProject: () => createProject(file),
       }
     );
-    const heapLimit = getHeapStatistics().heap_size_limit;
+
+  const recycleAtHeapLimitFraction = (manager: RecyclingManager, fraction: number) => {
+    vi.spyOn(process, 'memoryUsage').mockReturnValue({
+      heapUsed: getHeapStatistics().heap_size_limit * fraction,
+    } as NodeJS.MemoryUsage);
+    return manager.recycleIfHeapPressured();
+  };
+
+  const recyclesAtHeapLimitFractions = (fractions: number[]) => {
+    const manager = createManager();
     return fractions.map((fraction) => {
       manager.getProjectForFile(file);
-      vi.spyOn(process, 'memoryUsage').mockReturnValue({
-        heapUsed: heapLimit * fraction,
-      } as NodeJS.MemoryUsage);
-      return manager.recycleIfHeapPressured();
+      return recycleAtHeapLimitFraction(manager, fraction);
     });
   };
 
@@ -152,7 +158,7 @@ describe('ComponentMetaManager heap-pressure recycle', () => {
   });
 
   it('keeps rebuilt projects that fill the heap past the threshold on their own', () => {
-    expect(recyclesAtHeapLimitFractions([0.8, 0.8, 0.82, 0.9])).toEqual([
+    expect(recyclesAtHeapLimitFractions([0.8, 0.8, 0.82, 0.85])).toEqual([
       true,
       false,
       false,
@@ -160,8 +166,22 @@ describe('ComponentMetaManager heap-pressure recycle', () => {
     ]);
   });
 
-  it('recycles again once the heap grows 70% of the way from the rebuilt projects to the limit', () => {
-    expect(recyclesAtHeapLimitFractions([0.8, 0.8, 0.95])).toEqual([true, false, true]);
+  it('recycles again once the heap grows 30% of the way from the rebuilt projects to the limit', () => {
+    expect(recyclesAtHeapLimitFractions([0.8, 0.8, 0.87])).toEqual([true, false, true]);
+  });
+
+  it('measures the rebuilt projects from the lowest heap seen since the recycle', () => {
+    expect(recyclesAtHeapLimitFractions([0.9, 0.9, 0.8, 0.87])).toEqual([true, false, false, true]);
+  });
+
+  it('measures the rebuilt projects at the first check that has projects', () => {
+    const manager = createManager();
+    manager.getProjectForFile(file);
+
+    expect(recycleAtHeapLimitFraction(manager, 0.8)).toBe(true);
+    expect(recycleAtHeapLimitFraction(manager, 0.99)).toBe(false);
+    manager.getProjectForFile(file);
+    expect(recycleAtHeapLimitFraction(manager, 0.8)).toBe(false);
   });
 
   it('recycles at 70% of the limit again after the heap dropped below it', () => {

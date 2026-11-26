@@ -8,15 +8,15 @@ import {
 
 // eslint-disable-next-line depend/ban-dependencies
 import type { ResultPromise } from 'execa';
-import sort from 'semver/functions/sort.js';
 import { dedent } from 'ts-dedent';
 
 import type { ExecuteCommandOptions } from '../utils/command.ts';
 import { executeCommand } from '../utils/command.ts';
 import { JsPackageManager, PackageManagerName } from './JsPackageManager.ts';
 import type { PackageJson } from './PackageJson.ts';
-import type { InstallationMetadata, PackageMetadata } from './types.ts';
+import type { InstallationMetadata } from './types.ts';
 import {
+  findInstallationsInDependencyTree,
   getAgeInMinutes,
   getErrorLogs,
   getLatestStableVersionAdheringToMinimumAgeGate,
@@ -358,44 +358,8 @@ export class NPMProxy extends JsPackageManager {
    * @param pattern A list of package names to filter the result. * can be used as a placeholder
    */
   protected mapDependencies(input: NpmListOutput, pattern: string[]): InstallationMetadata {
-    const acc: Record<string, PackageMetadata[]> = {};
-    const existingVersions: Record<string, string[]> = {};
-    const duplicatedDependencies: Record<string, string[]> = {};
-
-    const recurse = ([name, packageInfo]: [string, NpmDependency]): void => {
-      // transform pattern into regex where `*` is replaced with `.*`
-      if (name && pattern.some((p) => new RegExp(`^${p.replace(/\*/g, '.*')}$`).test(name))) {
-        const value = {
-          version: packageInfo.version,
-          location: '',
-        };
-
-        if (!existingVersions[name]?.includes(value.version)) {
-          if (acc[name]) {
-            acc[name].push(value);
-          } else {
-            acc[name] = [value];
-          }
-          existingVersions[name] = sort([...(existingVersions[name] || []), value.version]);
-
-          if (existingVersions[name].length > 1) {
-            duplicatedDependencies[name] = existingVersions[name];
-          }
-        }
-      }
-
-      // keep walking non-matching nodes: intermediary entries such as workspace
-      // members hide matching dependencies beneath them
-      if (packageInfo.dependencies) {
-        Object.entries(packageInfo.dependencies).forEach(recurse);
-      }
-    };
-
-    Object.entries(input.dependencies).forEach(recurse);
-
     return {
-      dependencies: acc,
-      duplicatedDependencies,
+      ...findInstallationsInDependencyTree(input.dependencies, pattern),
       infoCommand: 'npm ls --depth=1',
       dedupeCommand: 'npm dedupe',
     };

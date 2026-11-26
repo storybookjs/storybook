@@ -17,6 +17,7 @@ import { HandledError } from '../utils/HandledError.ts';
 import type { ExecuteCommandOptions } from '../utils/command.ts';
 import { getPkgPrNewPackageSpecifier } from '../utils/get-pkg-pr-new-package-specifier.ts';
 import { findFilesUp, getProjectRoot } from '../utils/paths.ts';
+import { resolveStorybookVersionSpecifier } from '../utils/resolve-storybook-version-specifier.ts';
 import storybookPackagesVersions from '../versions.ts';
 import { getBundledVersion } from './PackageJson.ts';
 import type { PackageJson, PackageJsonWithDepsAndDevDeps } from './PackageJson.ts';
@@ -634,12 +635,13 @@ export abstract class JsPackageManager {
    * When a package is not in the monorepo, we don't change the package version and return the package name as is.
    * The package manager will resolve the latest version of the package upon installing it.
    *
+   * The Storybook version specifier comes from the `STORYBOOK_VERSION_SPECIFIER` env var, then the
+   * process ancestry, and otherwise the CLI version.
+   *
    * @param packages
    */
-  public getVersionedPackages(
-    packages: string[],
-    options?: { storybookVersionSpecifier?: string }
-  ): Promise<string[]> {
+  public getVersionedPackages(packages: string[]): Promise<string[]> {
+    const storybookVersionSpecifier = resolveStorybookVersionSpecifier();
     return Promise.all(
       packages.map(async (pkg) => {
         const [packageName, packageVersion] = getPackageDetails(pkg);
@@ -653,7 +655,7 @@ export abstract class JsPackageManager {
         if (packageName in storybookPackagesVersions) {
           const pkgPrNewSpecifier = getPkgPrNewPackageSpecifier(
             packageName,
-            options?.storybookVersionSpecifier
+            storybookVersionSpecifier
           );
 
           if (pkgPrNewSpecifier) {
@@ -876,6 +878,7 @@ export abstract class JsPackageManager {
     this.writePackageJson({ ...packageJson, ...resolutions }, operationDir);
   }
 
+  // Must let the lockfile change: every caller installs right after it edited package.json.
   protected abstract runInstall(options?: {
     force?: boolean;
     legacyPeerDeps?: boolean;

@@ -48,7 +48,7 @@ yarn eval
 Run a single experiment:
 
 ```bash
-yarn exec agent-eval cc-mcp-haiku-5.5-low
+yarn exec agent-eval cc-mcp-haiku-5.5-medium
 ```
 
 AI agents validate their changes locally: only the evals affected by the change
@@ -67,10 +67,19 @@ EVAL_ALL=1 yarn eval
 EVAL_ONLY=803-edit-component yarn eval
 ```
 
-A full `EVAL_ALL=1` run (14 workflow evals × 4 experiments + 4
+Every eval runs once, so one result says little about an eval that passes most
+of the time. `EVAL_RUNS=<n>` runs each selected eval `n` times, to the end, and
+the summary gives the pass rate. Measure it before and after a change to a text
+that an eval covers:
+
+```bash
+EVAL_RUNS=5 EVAL_ONLY=803-edit-component yarn exec agent-eval cc-plugin-haiku-5.5-medium
+```
+
+A full `EVAL_ALL=1` run (15 workflow evals × 4 experiments + 4
 lifecycle evals × 2 plugin experiments) costs roughly **$0.45** in agent
 tokens, as measured in November 2026: about $0.007 per eval on
-Haiku 5.5 low and on gpt-6-luna low with Sol's test rules, against about
+Haiku 5.5 medium and on gpt-6-luna low with Sol's test rules, against about
 $0.11 per eval on gpt-6.1-sol low. The budget guardrail is **$75 per full run** — check the
 usage metadata in the results playground before growing the eval set past it
 (see [storybookjs/mcp#324](https://github.com/storybookjs/mcp/pull/324)).
@@ -162,8 +171,8 @@ Configured experiments (Claude Code experiments use the direct Anthropic API
 via `ANTHROPIC_API_KEY`; Codex experiments use the direct Codex API via
 `OPENAI_API_KEY`):
 
-- `cc-mcp-haiku-5.5-low`: Claude Code (Haiku 5.5 at low effort) with project-local Storybook MCP config in `.mcp.json` and the Storybook MCP server instructions in `AGENTS.md` (none with `EVAL_STORYBOOK_LATEST=1`).
-- `cc-plugin-haiku-5.5-low`: Claude Code (Haiku 5.5 at low effort) with Storybook plugin skills copied to `.claude/skills`, and the Storybook section that `create storybook` writes in `AGENTS.md`.
+- `cc-mcp-haiku-5.5-medium`: Claude Code (Haiku 5.5 at medium effort) with project-local Storybook MCP config in `.mcp.json` and the Storybook MCP server instructions in `AGENTS.md` (none with `EVAL_STORYBOOK_LATEST=1`).
+- `cc-plugin-haiku-5.5-medium`: Claude Code (Haiku 5.5 at medium effort) with Storybook plugin skills copied to `.claude/skills`, and the Storybook section that `create storybook` writes in `AGENTS.md`.
 - `codex-mcp-gpt-6-luna-low`: Codex (gpt-6-luna at low reasoning effort) with project-local Storybook MCP config in `.codex/config.toml` and the Storybook MCP server instructions in `AGENTS.md` (none with `EVAL_STORYBOOK_LATEST=1`).
 - `codex-plugin-gpt-6-luna-low`: Codex (gpt-6-luna at low reasoning effort) with Storybook plugin skills copied to `.agents/skills`, and the Storybook section that `create storybook` writes in `AGENTS.md`.
 

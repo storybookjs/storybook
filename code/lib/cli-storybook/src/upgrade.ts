@@ -1,4 +1,5 @@
 import {
+  hasAddonVitest,
   hasStorybookSkills,
   installSkills,
   refreshAgentInstructions,
@@ -8,11 +9,10 @@ import {
   HandledError,
   type JsPackageManager,
   JsPackageManagerFactory,
-  isCI,
   isCorePackage,
   isNpmPeerResolutionError,
   resolveStorybookVersionSpecifier,
-  getProcessAncestry,
+  runStorybookInstallPrecheck,
 } from 'storybook/internal/common';
 import {
   CLI_COLORS,
@@ -23,7 +23,6 @@ import {
 } from 'storybook/internal/node-logger';
 import type { LogLevel } from 'storybook/internal/node-logger';
 import {
-  MinimumReleaseAgeHandledError,
   UpgradeStorybookToLowerVersionError,
   UpgradeStorybookUnknownCurrentVersionError,
 } from 'storybook/internal/server-errors';
@@ -72,35 +71,7 @@ export const getStorybookVersion = (line: string) => {
   };
 };
 
-const deprecatedPackages = [
-  {
-    minVersion: '6.0.0-alpha.0',
-    url: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#60-deprecations',
-    deprecations: [
-      '@storybook/addon-notes',
-      '@storybook/addon-info',
-      '@storybook/addon-contexts',
-      '@storybook/addon-options',
-      '@storybook/addon-centered',
-    ],
-  },
-  {
-    minVersion: '11.0.0',
-    url: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#nextjs-storybooknextjs-is-deprecated',
-    deprecations: ['@storybook/nextjs'],
-  },
-];
-
 const formatPackage = (pkg: Package) => `${pkg.package}@${pkg.version}`;
-
-const getStorybookVersionSpecifierFromCli = (): string | undefined => {
-  try {
-    return resolveStorybookVersionSpecifier(getProcessAncestry());
-  } catch {
-    // Ignore ancestry lookup failures and fall back to the dispatcher env var or embedded versions.
-    return resolveStorybookVersionSpecifier([]);
-  }
-};
 
 const warnPackages = (pkgs: Package[]) => pkgs.map((pkg) => `- ${formatPackage(pkg)}`).join('\n');
 
@@ -128,19 +99,6 @@ export const checkVersionConsistency = () => {
       ${warnPackages(outdated)}`
     );
   }
-
-  deprecatedPackages.forEach(({ minVersion, url, deprecations }) => {
-    if (semver.gte(latestVersion, minVersion)) {
-      const deprecated = storybookPackages.filter((pkg) => deprecations.includes(pkg.package));
-      if (deprecated.length > 0) {
-        logger.warn(
-          dedent`Found ${deprecated.length} deprecated packages since ${minVersion}
-          See ${url}
-          ${warnPackages(deprecated)}`
-        );
-      }
-    }
-  });
   logger.debug('End of version consistency check');
 };
 
@@ -367,7 +325,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
     throw new HandledError('--features cannot be combined with --skip-automigrations');
   }
 
-  const storybookVersionSpecifier = getStorybookVersionSpecifierFromCli();
+  const storybookVersionSpecifier = resolveStorybookVersionSpecifier();
   const projectsResult = await getProjects(options);
 
   if (projectsResult === undefined || projectsResult.selectedProjects.length === 0) {
@@ -375,7 +333,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
     return;
   }
 
-  const { allProjects, selectedProjects: storybookProjects } = projectsResult;
+  const { allProjects, selectedProjects: storybookProjects, unreadProjects } = projectsResult;
 
   if (storybookProjects.length > 1) {
     logger.info(`Upgrading the following projects:
@@ -434,21 +392,11 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
     // Update dependencies in package.jsons for all projects
     if (!options.dryRun) {
       for (const project of storybookProjects) {
-        try {
-          await project.packageManager.precheckStorybookPackageInstall({
-            storybookVersion: project.currentCLIVersion,
-            nonInteractive: !!options.yes || !process.stdout.isTTY || !!isCI(),
-            installContext: 'upgrade',
-          });
-        } catch (error) {
-          if (error instanceof MinimumReleaseAgeHandledError) {
-            throw error;
-          }
-
-          logger.debug(
-            `Skipping minimum-release-age precheck for ${project.configDir} after an unexpected failure: ${error}`
-          );
-        }
+        await runStorybookInstallPrecheck(project.packageManager, {
+          storybookVersion: project.currentCLIVersion,
+          installContext: 'upgrade',
+          yes: !!options.yes,
+        });
       }
 
       const task = prompt.taskLog({
@@ -504,33 +452,35 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
         ? JsPackageManagerFactory.getPackageManager({ force: options.packageManager })
         : storybookProjects[0].packageManager;
 
-    await withNpmForceFallback(rootPackageManager, (installOptions) =>
-      rootPackageManager.installDependencies(installOptions)
-    );
-
-    if (
-      rootPackageManager.type !== PackageManagerName.YARN1 &&
-      rootPackageManager.isStorybookInMonorepo()
-    ) {
-      logger.warn(
-        `Since you are in a monorepo, we advise you to deduplicate your dependencies. We can do this for you but it might take some time.`
+    if (!options.dryRun) {
+      await withNpmForceFallback(rootPackageManager, (installOptions) =>
+        rootPackageManager.installDependencies(installOptions)
       );
 
-      const dedupe =
-        options.yes ||
-        (await prompt.confirm({
-          message: `Execute ${rootPackageManager.getRunCommand('dedupe')}?`,
-          initialValue: true,
-        }));
+      if (
+        rootPackageManager.type !== PackageManagerName.YARN1 &&
+        rootPackageManager.isStorybookInMonorepo()
+      ) {
+        logger.warn(
+          `Since you are in a monorepo, we advise you to deduplicate your dependencies. We can do this for you but it might take some time.`
+        );
 
-      if (dedupe) {
-        await withNpmForceFallback(rootPackageManager, (dedupeOptions) =>
-          rootPackageManager.dedupeDependencies(dedupeOptions)
-        );
-      } else {
-        logger.log(
-          `If you find any issues running Storybook, you can run ${rootPackageManager.getRunCommand('dedupe')} manually to deduplicate your dependencies and try again.`
-        );
+        const dedupe =
+          options.yes ||
+          (await prompt.confirm({
+            message: `Execute ${rootPackageManager.getRunCommand('dedupe')}?`,
+            initialValue: true,
+          }));
+
+        if (dedupe) {
+          await withNpmForceFallback(rootPackageManager, (dedupeOptions) =>
+            rootPackageManager.dedupeDependencies(dedupeOptions)
+          );
+        } else {
+          logger.log(
+            `If you find any issues running Storybook, you can run ${rootPackageManager.getRunCommand('dedupe')} manually to deduplicate your dependencies and try again.`
+          );
+        }
       }
     }
 
@@ -562,14 +512,30 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
       }
     }
 
+    // Every Storybook of a monorepo shares the AGENTS.md of the project root, so the section has a
+    // test step when one of them can run story tests. The main configs were read before the
+    // automigrations, so an addon-vitest that one of them added counts too. With `--config-dir`,
+    // or when a Storybook could not be read, a test step that another one put in the section stays.
+    const agentInstructions = {
+      testSupported:
+        allProjects.some(({ mainConfig }) => hasAddonVitest(mainConfig)) ||
+        storybookProjects.some(({ configDir }) =>
+          automigrationResults[configDir]?.addonsToPostinstall?.includes('@storybook/addon-vitest')
+        ),
+      sawEveryStorybook: !options.configDir?.length && unreadProjects === 0,
+    };
     const skills =
       !options.dryRun && hadSkills
-        ? await installSkills({ packageManager: rootPackageManager, source: 'refresh' })
+        ? await installSkills({
+            packageManager: rootPackageManager,
+            source: 'refresh',
+            ...agentInstructions,
+          })
         : undefined;
     // The skills of a plugin, or installed by hand, come with an AGENTS.md section that promises
     // the same updates.
     if (!options.dryRun && !hadSkills) {
-      await refreshAgentInstructions();
+      await refreshAgentInstructions(agentInstructions);
     }
 
     // Run doctor for each project
@@ -578,6 +544,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
       packageManager: project.packageManager,
       storybookVersion: project.currentCLIVersion,
       mainConfig: project.mainConfig,
+      warnedFixIds: automigrationResults[project.configDir]?.warnedFixIds,
     }));
 
     logger.step('Checking the health of your project(s)..');

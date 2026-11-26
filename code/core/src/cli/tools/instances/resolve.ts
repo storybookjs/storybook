@@ -2,6 +2,7 @@ import {
   CLAUDE_AGENT_NAME,
   CLAUDE_PREVIEW_AGENT_NAME,
 } from '../../../shared/constants/agent-provenance.ts';
+import { isAnotherPidNamespace } from '../../../common/utils/pid-namespace.ts';
 import { projectPathsEqual } from './project-path.ts';
 import type { StorybookInstanceRecord } from './types.ts';
 
@@ -49,8 +50,10 @@ export type InstanceSelection =
 // `target.port` is a complete address: records match on port across all projects, still
 // restricted by an explicit `--config-dir`. Nothing on the port → `port-mismatch`.
 //
-// Competing matches narrow to the invoking agent's bucket when one exists. MCP status plays no
-// role: attaching over the channel works without `@storybook/addon-mcp`.
+// Competing matches narrow to records whose pid this process could check, when there are any: a
+// record from another process namespace may be of a dev server that is gone. Then to the invoking
+// agent's bucket when one exists. MCP status plays no role: attaching over the channel works
+// without `@storybook/addon-mcp`.
 export function selectInstances(
   records: StorybookInstanceRecord[],
   target: ResolveTarget
@@ -61,7 +64,7 @@ export function selectInstances(
     const candidates = target.configDirExplicit
       ? records.filter((record) => matchesTargetConfigDir(record, target))
       : records;
-    const matches = candidates.filter((record) => record.port === targetPort);
+    const matches = preferCheckable(candidates.filter((record) => record.port === targetPort));
     if (matches.length === 0) {
       return candidates.length > 0
         ? { kind: 'port-mismatch', port: targetPort, candidates }
@@ -74,7 +77,15 @@ export function selectInstances(
   if (projectMatches.length === 0) {
     return { kind: 'no-instance', records };
   }
-  return { kind: 'match', matches: selectCompetingBucket(projectMatches, currentAgent) };
+  return {
+    kind: 'match',
+    matches: selectCompetingBucket(preferCheckable(projectMatches), currentAgent),
+  };
+}
+
+function preferCheckable(matches: StorybookInstanceRecord[]): StorybookInstanceRecord[] {
+  const checkable = matches.filter((record) => !isAnotherPidNamespace(record.pidNamespace));
+  return checkable.length > 0 ? checkable : matches;
 }
 
 /** Records whose cwd or configDir matches the target project, ignoring MCP status. */

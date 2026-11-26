@@ -6,11 +6,6 @@ describe('AddonOptions', () => {
   it.each(['/custom-mcp', '/tools/mcp'])('accepts endpoint pathname %s', (endpoint) => {
     expect(v.parse(AddonOptions, { endpoint })).toEqual({
       endpoint,
-      toolsets: {
-        dev: true,
-        docs: true,
-        test: true,
-      },
     });
   });
 

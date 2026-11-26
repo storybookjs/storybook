@@ -8,7 +8,6 @@ import { join } from 'pathe';
 import { dedent } from 'ts-dedent';
 
 import { MIN_SUPPORTED_NODE_DESCRIPTION, isNodeVersionSupported } from '../common/node-version.ts';
-import { getProcessAncestry } from '../common/utils/process-ancestry.ts';
 import versions from '../common/versions.ts';
 import { resolvePackageDir } from '../shared/utils/module.ts';
 
@@ -64,6 +63,8 @@ async function run() {
     getPkgPrNewPackageSpecifier,
     getRemotePackageRunnerArgs,
     resolveStorybookVersionSpecifier,
+    runStorybookInstallPrecheck,
+    STORYBOOK_VERSION_SPECIFIER_ENV,
   } = await import('storybook/internal/common');
 
   const targetCli =
@@ -77,14 +78,9 @@ async function run() {
           args,
         } as const);
 
-  let storybookVersionSpecifier: string | undefined;
-  try {
-    storybookVersionSpecifier = resolveStorybookVersionSpecifier(getProcessAncestry());
-  } catch {
-    storybookVersionSpecifier = resolveStorybookVersionSpecifier([]);
-  }
+  const storybookVersionSpecifier = resolveStorybookVersionSpecifier();
   if (storybookVersionSpecifier) {
-    process.env.STORYBOOK_VERSION_SPECIFIER = storybookVersionSpecifier;
+    process.env[STORYBOOK_VERSION_SPECIFIER_ENV] = storybookVersionSpecifier;
   }
 
   const dispatchedVersion =
@@ -113,6 +109,35 @@ async function run() {
   }
 
   const packageManager = JsPackageManagerFactory.getPackageManager();
+
+  // `upgrade` and `init` run this precheck themselves, but the age gate also blocks downloading them.
+  // The precheck can write the package manager's config, which a dry run or a help call must not do.
+  // Only the package downloaded below knows the command's options, so reading them here is best
+  // effort. Commander also takes short flags from a cluster such as `-yn`, up to `-c`, which takes a value.
+  const hasFlag = (long: string, short: string) =>
+    args.some(
+      (arg) => arg === long || (/^-[^-]/.test(arg) && arg.slice(1).split('c')[0].includes(short))
+    );
+  const installsNothing =
+    hasFlag('--help', 'h') || (args[0] === 'upgrade' && hasFlag('--dry-run', 'n'));
+  if ((args[0] === 'upgrade' || args[0] === 'init') && !installsNothing) {
+    const { detectAgent } = await import('../telemetry/detect-agent.ts');
+    // `init` answers its own prompts in agent mode. Commander lets the last of the two flags win.
+    const agentFlag = args.findLast((arg) => arg === '--agent' || arg === '--no-agent');
+    const isAgentInit =
+      args[0] === 'init' && (agentFlag ? agentFlag === '--agent' : !!detectAgent());
+    try {
+      await runStorybookInstallPrecheck(packageManager, {
+        storybookVersion: versions.storybook,
+        installContext: args[0] === 'init' ? 'create' : 'upgrade',
+        yes: hasFlag('--yes', 'y') || isAgentInit,
+      });
+    } catch {
+      // The precheck has told the user why this Storybook version cannot be installed.
+      process.exit(1);
+    }
+  }
+
   const child = packageManager.runPackageCommand({
     args: getRemotePackageRunnerArgs(
       packageManager.type,

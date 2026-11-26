@@ -6,7 +6,7 @@ sidebar:
 
 <If notRenderer={['react', 'vue', 'angular', 'svelte', 'web-components']}>
 
-The Storybook MCP server lets your agent look up your components, write and test stories, and publish a review of its work. It isn't available for your framework yet. See [supported frameworks](../connect.mdx#supported-frameworks).
+The Storybook MCP server lets your agent look up your components, write and test stories, and create a review of its work. It isn't available for your framework yet. See [supported frameworks](../connect.mdx#supported-frameworks).
 
 </If>
 
@@ -50,59 +50,18 @@ The MCP server tells your agent when to use its tools, so you don't need to add 
 
 To check the connection, start Storybook, then ask your agent to "List all documented components". The agent should call the `docs-list` tool and list the components in your Storybook.
 
-## API
+## Tools
 
-Pass these options when you register `@storybook/addon-mcp` in your `main.js|ts` file:
+The MCP server gives your agent the tools that your project supports. The page at `http://localhost:6006/mcp` shows which ones those are.
 
-<CodeSnippets path="addon-mcp-options.md" />
-
-### `toolsets`
-
-Type:
-
-```ts
-{
-  dev?: boolean;
-  docs?: boolean;
-  test?: boolean;
-}
-```
-
-Default:
-
-```ts
-{
-  dev: true,
-  docs: true,
-  test: true,
-}
-```
-
-Turns each toolset of the MCP server on or off. All toolsets are on by default. The MCP server leaves out the steps of the [UI workflow](../skills/ui-workflow.mdx) whose tools you turn off. Without the `dev` toolset, it also leaves out the step that writes stories.
-
-#### `dev`
-
-Type: `boolean`
-
-Default: `true`
-
-Turns on the development tools, which find the stories that a change affects, preview them, and publish an [agentic review](../skills/ui-review.mdx). Finding affected stories requires a builder that supports the module graph, such as Vite.
-
-#### `docs`
-
-Type: `boolean`
-
-Default: `true`
-
-Turns on the docs tools, which look up components and their documentation. They're available only when your framework generates a [components manifest](./manifests.mdx) and the `componentsManifest` feature is on. If your Storybook [composes](../../sharing/storybook-composition.mdx) other Storybooks that have manifests, these tools include their components too.
-
-#### `test`
-
-Type: `boolean`
-
-Default: `true`
-
-Turns on the testing tool, which runs [story tests](../../writing-tests/index.mdx), with [accessibility checks](../../writing-tests/accessibility-testing.mdx) if they're set up. It's available only when `@storybook/addon-vitest` is installed and enabled.
+| Tool                                        | What it does                                                                                                                                      | Requires                                                                    |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `stories-preview`                           | Gives direct links to stories                                                                                                                     |                                                                             |
+| `stories-changed`                           | Lists the stories that your uncommitted changes affect                                                                                            | A builder that supports the module graph, such as Vite                      |
+| `stories-find-by-component`                 | Finds the stories that use a component                                                                                                            | A builder that supports the module graph, such as Vite                      |
+| `review-create`                             | Publishes an [agentic review](../skills/ui-review.mdx)                                                                                            |                                                                             |
+| `docs-list`, `docs-show`, `docs-show-story` | Look up components and their documentation, including those of [composed Storybooks](../../sharing/storybook-composition.mdx) that have manifests | A [components manifest](./manifests.mdx)                                    |
+| `test-run`                                  | Runs [story tests](../../writing-tests/index.mdx), with [accessibility checks](../../writing-tests/accessibility-testing.mdx) if they're set up   | The [Vitest addon](../../writing-tests/integrations/vitest-addon/index.mdx) |
 
 </If>
 {/* End supported renderers */}

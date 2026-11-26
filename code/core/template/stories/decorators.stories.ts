@@ -5,8 +5,6 @@ import {
 } from 'storybook/internal/core-events';
 import type { ArgsStoryFn, PartialStoryFn, StoryContext } from 'storybook/internal/types';
 
-import { global as globalThis } from '@storybook/global';
-
 import { useEffect } from 'storybook/preview-api';
 import { expect, within } from 'storybook/test';
 

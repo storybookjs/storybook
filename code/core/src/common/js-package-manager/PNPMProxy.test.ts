@@ -13,6 +13,7 @@ import { executeCommand, executeCommandSync } from '../utils/command.ts';
 import { getProjectRoot } from '../utils/paths.ts';
 import { JsPackageManager } from './JsPackageManager.ts';
 import { PNPMProxy } from './PNPMProxy.ts';
+import { STORYBOOK_PACKAGE_PATTERNS } from './util.ts';
 
 vi.mock('storybook/internal/node-logger', () => ({
   prompt: {
@@ -47,11 +48,7 @@ const mockPnpmVersion = (version: string) => {
 const expectedMinimumReleaseAgeExcludePackages = [
   'react',
   'webpack',
-  'storybook',
-  '@storybook/*',
-  'eslint-plugin-storybook',
-  '@chromatic-com/storybook',
-  'chromatic',
+  ...STORYBOOK_PACKAGE_PATTERNS,
 ];
 
 describe('PNPM Proxy', () => {
@@ -99,7 +96,7 @@ describe('PNPM Proxy', () => {
   });
 
   afterEach(() => {
-    vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
   });
 
   it('type should be pnpm', () => {
@@ -216,23 +213,36 @@ describe('PNPM Proxy', () => {
 
       expect(prompt.executeTask).toHaveBeenCalledOnce();
       expect(mockedExecuteCommand).toHaveBeenCalledWith(
-        expect.objectContaining({ command: 'pnpm', args: ['install'], stdio: 'inherit' })
+        expect.objectContaining({
+          command: 'pnpm',
+          args: ['install', '--no-frozen-lockfile'],
+          stdio: 'inherit',
+        })
       );
     });
 
-    it('should run `pnpm install`', async () => {
-      // sort of un-mock part of the function so executeCommand (also mocked) is called
-      vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (fn: any) => {
-        await Promise.resolve(fn());
-      });
-      const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({ stdout: '7.1.0' } as any);
+    it.each([
+      ['set', 'true'],
+      ['unset', undefined],
+    ])(
+      'runs `pnpm install --no-frozen-lockfile` when CI is %s, so the lockfile can change',
+      async (_, ci) => {
+        vi.stubEnv('CI', ci);
+        // sort of un-mock part of the function so executeCommand (also mocked) is called
+        vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (fn: any) => {
+          await Promise.resolve(fn());
+        });
+        const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({
+          stdout: '7.1.0',
+        } as any);
 
-      await pnpmProxy.installDependencies();
+        await pnpmProxy.installDependencies();
 
-      expect(executeCommandSpy).toHaveBeenCalledWith(
-        expect.objectContaining({ command: 'pnpm', args: ['install'] })
-      );
-    });
+        expect(executeCommandSpy).toHaveBeenCalledWith(
+          expect.objectContaining({ command: 'pnpm', args: ['install', '--no-frozen-lockfile'] })
+        );
+      }
+    );
 
     it('installs every workspace project from the workspace root', async () => {
       vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (fn: any) => {
@@ -244,7 +254,7 @@ describe('PNPM Proxy', () => {
       await pnpmProxy.installDependencies();
 
       expect(executeCommandSpy).toHaveBeenCalledWith(
-        expect.objectContaining({ command: 'pnpm', args: ['install'] })
+        expect.objectContaining({ command: 'pnpm', args: ['install', '--no-frozen-lockfile'] })
       );
     });
 
@@ -289,7 +299,7 @@ describe('PNPM Proxy', () => {
         'Approved build scripts for esbuild in /project/pnpm-workspace.yaml'
       );
       expect(mockedExecuteCommand).toHaveBeenCalledWith(
-        expect.objectContaining({ command: 'pnpm', args: ['install'] })
+        expect.objectContaining({ command: 'pnpm', args: ['install', '--no-frozen-lockfile'] })
       );
     });
 
@@ -515,7 +525,7 @@ describe('PNPM Proxy', () => {
         expect.stringContaining('Could not allow build scripts of esbuild')
       );
       expect(mockedExecuteCommand).toHaveBeenCalledWith(
-        expect.objectContaining({ command: 'pnpm', args: ['install'] })
+        expect.objectContaining({ command: 'pnpm', args: ['install', '--no-frozen-lockfile'] })
       );
     });
 
@@ -961,6 +971,74 @@ describe('PNPM Proxy', () => {
         }
       `);
     });
+
+    it('finds a package that only another package depends on', async () => {
+      mockedExecuteCommand.mockResolvedValue({
+        stdout: JSON.stringify([
+          {
+            devDependencies: {
+              'qa-wrapper': {
+                version: '1.0.0',
+                dependencies: { '@storybook/test-runner': { version: '0.24.0' } },
+              },
+            },
+          },
+        ]),
+      } as any);
+
+      const installations = await pnpmProxy.findInstallations(['@storybook/test-runner']);
+
+      expect(installations?.dependencies).toEqual({
+        '@storybook/test-runner': [{ version: '0.24.0', location: '' }],
+      });
+    });
+
+    it('reports a workspace package next to the registry copy a dependency brings in', async () => {
+      mockedExecuteCommand.mockResolvedValue({
+        stdout: JSON.stringify([
+          {
+            devDependencies: {
+              'has-flag': { version: 'link:packages/has-flag' },
+              'supports-color': {
+                version: '7.2.0',
+                dependencies: { 'has-flag': { version: '4.0.0' } },
+              },
+            },
+          },
+        ]),
+      } as any);
+
+      const installations = await pnpmProxy.findInstallations(['has-flag']);
+
+      expect(installations?.duplicatedDependencies).toEqual({
+        'has-flag': ['link:packages/has-flag', '4.0.0'],
+      });
+    });
+
+    it('lists the version the project depends on before the versions its dependencies bring in', async () => {
+      mockedExecuteCommand.mockResolvedValue({
+        stdout: JSON.stringify([
+          {
+            devDependencies: {
+              chalk: {
+                version: '4.1.2',
+                dependencies: { 'supports-color': { version: '7.2.0' } },
+              },
+              'supports-color': { version: '9.4.0' },
+            },
+          },
+        ]),
+      } as any);
+
+      const installations = await pnpmProxy.findInstallations(['supports-color']);
+
+      expect(installations?.dependencies).toEqual({
+        'supports-color': [
+          { version: '9.4.0', location: '' },
+          { version: '7.2.0', location: '' },
+        ],
+      });
+    });
   });
 
   describe('precheckStorybookPackageInstall', () => {
@@ -1170,13 +1248,7 @@ describe('PNPM Proxy', () => {
       mockedExecuteCommand
         .mockResolvedValueOnce({ stdout: '1440\n' } as any)
         .mockResolvedValueOnce({
-          stdout: JSON.stringify([
-            'storybook',
-            '@storybook/*',
-            'eslint-plugin-storybook',
-            '@chromatic-com/storybook',
-            'chromatic',
-          ]),
+          stdout: JSON.stringify(STORYBOOK_PACKAGE_PATTERNS),
         } as any);
 
       await expect(

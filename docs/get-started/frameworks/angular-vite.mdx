@@ -112,8 +112,9 @@ Two engines can read them, and which one you get depends on a single feature fla
 
 |                       | [`docgenServer`](../../api/main-config/main-config-features.mdx#docgenserver) on, the default      | flag off                             |
 | --------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------ |
+| Docgen engine         | `angular-component-meta`                                                                           | Compodoc                             |
 | Reads your components | on the Storybook server, from your TypeScript sources                                              | in the browser, from Compodoc output |
-| Compodoc              | never runs, and is not a dependency                                                                | runs on demand                       |
+| Compodoc              | never runs, never installed                                                                        | runs on demand                       |
 | `documentation.json`  | never generated, never read                                                                        | generated and read                   |
 | Powers                | controls, autodocs, code snippets, and the [components manifest](../../ai/reference/manifests.mdx) | controls and autodocs                |
 
@@ -301,10 +302,6 @@ async viteFinal(config) {
 ## Known limitations
 
 These apply to the default server-side extraction path, which is what you get unless you [turn the feature off](#using-compodoc-instead). They are not opt-in: if you use `@storybook/angular-vite`, they apply to you.
-
-### Code snippets do not follow your controls
-
-The snippets shown in autodocs and the Code panel are generated from your story's source, so they show the story as you wrote it. Changing a value in the controls table updates the rendered component but not the snippet next to it.
 
 ### An input typed `T | undefined` falls back to an object control
 

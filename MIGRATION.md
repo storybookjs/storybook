@@ -10,6 +10,7 @@
   - [Legacy highlight object format removed](#legacy-highlight-object-format-removed)
   - [Tag filtering API](#tag-filtering-api)
   - [`storybook/test` is no longer a manager global](#storybooktest-is-no-longer-a-manager-global)
+  - [`@storybook/global` is deprecated](#storybookglobal-is-deprecated)
   - [Addon `TAB` registration removed](#addon-tab-registration-removed)
   - [`useThemeParameters` removed](#usethemeparameters-removed)
   - [`storybook dev` no longer opens a browser by default](#storybook-dev-no-longer-opens-a-browser-by-default)
@@ -76,6 +77,7 @@
   - [`features.legacyDecoratorFileOrder` removed](#featureslegacydecoratorfileorder-removed)
   - [`experimentalReview` feature flag removed](#experimentalreview-feature-flag-removed)
   - [`changeDetection` feature flag removed](#changedetection-feature-flag-removed)
+  - [`@storybook/addon-mcp`: `toolsets` option and `X-MCP-Toolsets` header removed](#storybookaddon-mcp-toolsets-option-and-x-mcp-toolsets-header-removed)
   - [`storybook ai` command removed](#storybook-ai-command-removed)
   - [`stories` skill split into four skills](#stories-skill-split-into-four-skills)
   - [`--preview-url` and `--force-build-preview` removed](#--preview-url-and---force-build-preview-removed)
@@ -909,6 +911,19 @@ Storybook 11 removes the experimental and undocumented tag filtering names. They
 ### `storybook/test` is no longer a manager global
 
 The manager no longer provides `storybook/test` as a global (`__STORYBOOK_TEST__`), so the browser no longer downloads its test libraries with every manager load. `storybook/test` is for stories and their tests, and no known manager addon imported it. If your addon's manager entry imports `storybook/test` anyway, it still builds, but the addon then bundles its own copy. Move that code to the addon's preview entry, or drop the import.
+
+### `@storybook/global` is deprecated
+
+`@storybook/global` is a pre-ES2020 ponyfill for `globalThis`. Storybook no longer uses it, so use `globalThis` instead:
+
+```diff
+- import { global } from '@storybook/global';
+-
+- const { document } = global;
++ const { document } = globalThis;
+```
+
+`storybook` still depends on the package, so existing imports keep working in Storybook 11. In the Storybook preview, code that imports it logs a deprecation warning in the browser console. Vitest, portable stories and manager code load the package itself and log nothing. Storybook 12 removes the dependency. If you keep importing `@storybook/global`, add it to your own `dependencies`.
 
 ### Addon `TAB` registration removed
 
@@ -1988,7 +2003,7 @@ A typed main config that still sets the flag fails type-checking until it is rem
 ### `changeDetection` feature flag removed
 
 The `features.changeDetection` flag is removed, and Storybook no longer reads it.
-[Change detection](https://storybook.js.org/docs/configure/user-interface/change-detection) is always on in `storybook dev`: the sidebar shows the new and modified statuses and the Review button, and agents get the `stories-changed` and `review-create` tools whenever the `dev` toolset is on.
+[Change detection](https://storybook.js.org/docs/configure/user-interface/change-detection) is always on in `storybook dev`: the sidebar shows the new and modified statuses and the Review button, and agents get the `stories-changed` and `review-create` tools.
 If you had `changeDetection: false`, change detection and agentic review are now on for your project.
 
 The flag existed as an escape hatch while change detection was new.
@@ -1999,6 +2014,15 @@ You can also run it with `storybook automigrate remove-change-detection-flag`.
 If it cannot edit your main config, for example because `features` contains a spread, remove the flag by hand.
 It does not detect the flag when `features` is computed, for example by a function or a conditional, so remove it by hand there too.
 A typed main config that still sets the flag fails type-checking until it is removed.
+
+### `@storybook/addon-mcp`: `toolsets` option and `X-MCP-Toolsets` header removed
+
+The `toolsets` addon option (`dev`, `docs`, `test`) and the `X-MCP-Toolsets` HTTP request header have been removed from `@storybook/addon-mcp`.
+All supported tools for your Storybook setup are now enabled automatically based on your project's configuration (such as `@storybook/addon-vitest` for test tools and a components manifest for docs tools).
+
+Remove the `toolsets` option from your `@storybook/addon-mcp` configuration in `.storybook/main.js|ts` and any `X-MCP-Toolsets` header from your MCP client configuration.
+Storybook ignores both when they are still set, so tools that you turned off are available again.
+To keep an agent from using some of the tools, restrict them in the agent's own settings, such as its tool permissions.
 
 ### `storybook ai` command removed
 
@@ -2012,32 +2036,36 @@ The experimental `storybook ai <tool>` commands behind the `STORYBOOK_FEATURE_AI
 
 ### `stories` skill split into four skills
 
-The `stories` skill is split into one skill per step of the workflow:
+The `stories` skill is split into four skills:
 
-- `component-docs` looks up the components to reuse, with their props and usage examples, and answers questions about them.
-- `write-stories` has the rules for the stories of your project.
-- `test-stories` runs the story tests.
-- `ui-review` finds the stories a change affects and publishes a review of them.
+- `/component-docs` looks up the components to reuse, with their props and usage examples, and answers questions about them.
+- `/write-stories` has the rules for the stories of your project.
+- `/test-stories` runs the story tests.
+- `/ui-review` finds the stories a change affects and creates a review of them.
 
-Run `npx storybook skills <id>` with one of these ids instead of `npx storybook skills stories`, which now exits with code 1. The Claude Code and Codex plugins ship these four skills instead of `stories`. The `write-story` skill is renamed to `write-stories`.
+Run `npx storybook skills <id>` with one of these ids instead of `npx storybook skills stories`, which now exits with code 1. The Claude Code and Codex plugins ship these four skills instead of `/stories`. The `/write-story` skill is renamed to `/write-stories`.
 
-The skills no longer tell agents to run them for every UI change. A section in `AGENTS.md`, between `<!-- BEGIN:storybook-skills -->` and `<!-- END:storybook-skills -->` markers, is the workflow: it tells agents which skill to use at which step. `create storybook` and the `skills` automigration add it when they install the skills, and also to a `CLAUDE.md`, `.claude/CLAUDE.md` or `CLAUDE.local.md` that does not import `AGENTS.md`, because Claude Code reads those instead. `storybook upgrade` replaces the text between the markers when the skills change, and never adds the section back. So remove both markers to keep your own edits, for example to leave out the review, or remove the whole section to opt out of the workflow, in each file that has it. Without the section, an agent uses a skill only when you ask for it or when it finds one that fits its task. When `storybook upgrade` updates skills that still include `stories` from an 11.0 prerelease, it removes that skill and adds the section. If you use the Claude Code or Codex plugin, or install the skills yourself, add the section to the `AGENTS.md` of each project yourself:
+The skills no longer tell agents to run them for every UI change. A section in `AGENTS.md`, between `<!-- BEGIN:storybook-skills -->` and `<!-- END:storybook-skills -->` markers, is the workflow: it tells agents to use `/component-docs` and `/write-stories` for every UI change, and names the command that runs the story tests, `npx storybook tools test run` (a project without `@storybook/addon-vitest` gets no test step). It leaves out `/ui-review`: an agent creates a review when you ask for one, and after a visible change it tells you about the skill. `create storybook` and the `skills` automigration add it when they install the skills, and also to a `CLAUDE.md`, `.claude/CLAUDE.md` or `CLAUDE.local.md` that does not import `AGENTS.md`, because Claude Code reads those instead. `storybook upgrade` replaces the text between the markers when the skills change, and never adds the section back. So remove both markers to keep your own edits, for example to drop that line or to have the agent create a review after every change, or remove the whole section to opt out of the workflow, in each file that has it. Without the section, an agent uses a skill only when you ask for it or when it finds one that fits its task. When `storybook upgrade` updates skills that still include `/stories` from an 11.0 prerelease, it removes that skill and adds the section. If you use the Claude Code or Codex plugin, or install the skills yourself, add the section to the `AGENTS.md` of each project yourself:
 
-```md
+````md
 <!-- BEGIN:storybook-skills -->
 <!-- Storybook updates this section on upgrade. Remove both markers to keep your own edits. -->
 
 ## Storybook
 
-For every change to how the UI looks (you create, change, or delete a component, story, style, theme, or design token), follow these steps in order. Each step has a Storybook skill. First invoke the skills of all the steps, before you edit any file. Then follow each skill at its step.
+For every change to how the UI looks (you create, change, or delete a component, story, style, theme, or design token), follow these steps in order. First invoke the Storybook skills of steps 1 and 2, before you edit any file. Then follow each skill at its step.
 
-1. `component-docs`: look up the components to reuse, with their props and usage examples, before you edit any file. Also when the user asks about a component's props, API, or usage.
-2. `write-stories`: every component you create or change gets stories.
-3. `test-stories`: run the story tests after every change, the way this skill says, never with a `package.json` test script, and fix what fails. Also when the user asks to run or fix story tests.
-4. `ui-review`: publish a review that shows the user what changed, as your last step. Also when the user asks to see components or stories.
+1. `/component-docs`: look up the components to reuse, with their props and usage examples, before you edit any file.
+2. `/write-stories`: every component you create or change gets stories, written with the current best practices for this Storybook version and this project.
+3. To test stories in the CLI run:
+   ```sh
+   npx storybook tools test run [files...]   # every story, or these story files
+   npx storybook tools test run --changed    # the stories your changes affect
+   ```
+4. ALWAYS inform the user about the `/ui-review` skill after a change the user can see: "Use the /ui-review skill to see the changed components in Storybook"
 
 <!-- END:storybook-skills -->
-```
+````
 
 See [Skills and plugins](docs/ai/skills.mdx) for more details.
 

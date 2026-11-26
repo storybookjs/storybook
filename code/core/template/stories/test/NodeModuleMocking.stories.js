@@ -1,5 +1,3 @@
-import { global as globalThis } from '@storybook/global';
-
 // eslint-disable-next-line depend/ban-dependencies
 import lodash from 'lodash-es';
 // eslint-disable-next-line depend/ban-dependencies

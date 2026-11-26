@@ -187,7 +187,8 @@ export class Yarn2Proxy extends JsPackageManager {
   protected runInstall() {
     return executeCommand({
       command: 'yarn',
-      args: ['install', ...this.getInstallArgs()],
+      // Yarn 3 and 4 freeze the lockfile when CI is set.
+      args: ['install', '--no-immutable', ...this.getInstallArgs()],
       cwd: this.cwd,
       stdio: prompt.getPreferredStdio(),
     });

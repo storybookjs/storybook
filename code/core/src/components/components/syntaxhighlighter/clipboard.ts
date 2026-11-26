@@ -1,6 +1,4 @@
-import { global } from '@storybook/global';
-
-const { document, window: globalWindow } = global;
+const { document, window: globalWindow } = globalThis;
 
 async function copyUsingClipboardAPI(text: string) {
   try {

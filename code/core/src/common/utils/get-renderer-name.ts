@@ -1,8 +1,8 @@
 import type { Options } from 'storybook/internal/types';
 
-import { frameworkToRenderer } from './framework.ts';
+import { frameworkPackages, frameworkToRenderer, rendererPackages } from './framework.ts';
 import { extractFrameworkPackageName, getFrameworkName } from './get-framework-name.ts';
-import { frameworkPackages } from './get-storybook-info.ts';
+import { matchPackageName } from './match-package-name.ts';
 
 /**
  * Render is set as a string on core. It must be set by the framework It falls back to the framework
@@ -38,9 +38,11 @@ export async function extractRenderer(frameworkName: string) {
   const extractedFrameworkName = extractFrameworkPackageName(frameworkName);
   const framework = frameworkPackages[extractedFrameworkName];
 
-  if (!framework) {
-    return null;
+  if (framework) {
+    return frameworkToRenderer[framework];
   }
 
-  return frameworkToRenderer[framework as keyof typeof frameworkToRenderer];
+  // Some renderers, such as React Native, are configured as the framework themselves
+  const rendererPackage = matchPackageName(frameworkName, Object.keys(rendererPackages));
+  return rendererPackage ? rendererPackages[rendererPackage] : null;
 }

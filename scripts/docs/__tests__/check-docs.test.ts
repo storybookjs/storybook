@@ -24,7 +24,7 @@ import {
 import { fixSnippets } from '../fix-snippets.ts';
 
 const CSF3_DEPRECATION_COMMENT =
-  '// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4';
+  '// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/11/writing-stories/csf/upgrade';
 
 async function writeFile(filePath: string, content: string) {
   await fs.mkdir(path.dirname(filePath), { recursive: true });
@@ -645,7 +645,7 @@ describe('check-docs', () => {
       await fixSnippets(docsDir);
 
       const message =
-        '⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4';
+        '⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/11/writing-stories/csf/upgrade';
       expect(await fs.readFile(file, 'utf8')).toBe(
         [
           fence('ts', 'CSF 4', 'code'),

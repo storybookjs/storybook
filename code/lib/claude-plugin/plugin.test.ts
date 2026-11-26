@@ -112,7 +112,7 @@ describe('canonical skills', () => {
 
 describe('workflow skills', () => {
   it.each(WORKFLOW_SKILLS)(
-    '%s describes what it does, and leaves when to use it to the agent instructions',
+    '%s describes what it does, and does not tell the agent to use it on its own',
     (name) => {
       const description = readSkillDescription(readSkill(name));
       expect(description).not.toMatch(

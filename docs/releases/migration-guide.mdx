@@ -170,7 +170,6 @@ It replaces React's `typescript.reactDocgen` and Vue's `framework.options.docgen
 
 Check your Controls panel, docs pages, and args tables after you upgrade:
 
-- Story snippets and the code panel are static and do not update after changing controls. Dynamic snippets are expected in Storybook 11.1.
 - Builder docgen options such as `propFilter` have no server-side equivalent. Unlike before, we now read prop types from `node_modules` by default, but we have heuristics in place to avoid picking up unnecessary types.
 - **React** props come from TypeScript types. Defaults come from destructuring and `defaultProps`, with destructuring taking precedence. Storybook no longer reads `propTypes`, so a component that declares props only with `propTypes` shows no props.
 - **Web Components** event, slot, and part argType keys get a suffix, such as `my-change-event`. See [Manual migrations](#web-components).

@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 
 import {
+  type API_PreparedStoryIndex,
+  type API_Provider,
   type Addon_Collection,
   type Addon_TestProviderType,
   Addon_TypesEnum,
@@ -15,15 +17,16 @@ import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test';
 
 import { PRELOAD_ENTRIES, SIDEBAR_OPEN_CONTEXT_MENU } from 'storybook/internal/core-events';
 
+import { transformStoryIndexToStoriesHash } from '../../../manager-api/lib/stories.ts';
 import { defaultShortcuts } from '../../settings/defaultShortcuts.tsx';
 import { storyRowId } from '../../utils/tree.ts';
 import { IconSymbols } from './IconSymbols.tsx';
+import { index } from './mockdata.large.ts';
+import { mockDataset } from './mockdata.ts';
 import { DEFAULT_REF_ID } from './Sidebar.tsx';
 import { SidebarScrollArea } from './SidebarScrollArea.tsx';
 import { Tree } from './Tree.tsx';
 import { TREE_ROW_HEIGHT } from './treeGeometry.ts';
-import { index } from './mockdata.large.ts';
-import { mockDataset } from './mockdata.ts';
 
 const managerContext: any = {
   state: {
@@ -58,6 +61,7 @@ const managerContext: any = {
         }) satisfies Addon_Collection<Addon_TestProviderType>
     ),
     getData: fn().mockName('api::getData'),
+    resolveLeafEntry: fn().mockName('api::resolveLeafEntry'),
   },
 };
 
@@ -407,6 +411,83 @@ export const ComponentWithOnlyDocsLeft: Story = {
   },
 };
 
+const noConfigProvider: Parameters<typeof transformStoryIndexToStoriesHash>[1]['provider'] = {
+  getConfig: () => ({}),
+} as API_Provider<unknown>;
+
+export const ComponentsWithSubcomponents: Story = {
+  render: () => {
+    const [hideSubcomponents, setHideSubcomponents] = useState(false);
+    const [selectedId, setSelectedId] = useState('components-with-children--primary');
+    const entries: API_PreparedStoryIndex['entries'] = Object.fromEntries(
+      [
+        ['components-with-children--primary', 'Components/With children'],
+        ['components-with-children-child--primary', 'Components/With children/Child'],
+        ['components-no-children--primary', 'Components/No children'],
+        ['components-group-child--primary', 'Components/Group/Child'],
+      ].map(([id, title]) => [
+        id,
+        {
+          id,
+          title,
+          type: 'story',
+          subtype: 'story',
+          name: 'Primary',
+          importPath: `./${id}.stories.ts`,
+          tags: [],
+        },
+      ])
+    );
+    const data = transformStoryIndexToStoriesHash(
+      { v: 5, entries },
+      {
+        provider: noConfigProvider,
+        docsOptions: { docsMode: false },
+        filters: {
+          subcomponents: (entry) =>
+            !hideSubcomponents || entry.title !== 'Components/With children/Child',
+        },
+        allStatuses: {},
+      }
+    );
+
+    return (
+      <div style={{ width: '100%' }}>
+        <label>
+          <input
+            type="checkbox"
+            checked={hideSubcomponents}
+            onChange={(event) => setHideSubcomponents(event.target.checked)}
+          />
+          Hide subcomponents
+        </label>
+        <Tree
+          refId={DEFAULT_REF_ID}
+          data={data}
+          selectedStoryId={selectedId}
+          onSelectStoryId={setSelectedId}
+        />
+      </div>
+    );
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const row = (id: string) => canvasElement.querySelector(`[data-item-id="${id}"]`);
+    const component = () => row('components-with-children')?.querySelector('use');
+
+    await waitFor(() => expect(component()).toHaveAttribute('xlink:href', '#icon--component'));
+    await expect(row('components-group')?.querySelector('use')).toHaveAttribute(
+      'xlink:href',
+      '#icon--group'
+    );
+    await expect(row('components-with-children-child')).toBeInTheDocument();
+
+    await userEvent.click(canvas.getByRole('checkbox', { name: 'Hide subcomponents' }));
+    await waitFor(() => expect(row('components-with-children-child')).not.toBeInTheDocument());
+    await expect(component()).toHaveAttribute('xlink:href', '#icon--component');
+  },
+};
+
 export const WithContextContent: Story = {
   ...DocsOnlySingleStoryComponents,
   parameters: {
@@ -641,9 +722,34 @@ export const ContextMenuEnterOnTrigger: Story = {
 };
 
 /**
+ * Focus the dual-slot row with a click and open its context menu through the shortcut, the way
+ * the dismissal stories below start.
+ *
+ * The menu opens through the shortcut rather than through the ⋯ button: a synthetic hover does
+ * not match `:hover`, so the button stays hidden and cannot take focus, and the popover would
+ * then have no element to hand focus back to.
+ */
+const openDualSlotRowMenu = async (canvasElement: HTMLElement) => {
+  const row = canvasElement.querySelector<HTMLElement>(`[data-item-id="${dualSlotStoryId}"]`)!;
+  await waitFor(() => expect(getComputedStyle(row).pointerEvents).not.toBe('none'));
+  await userEvent.click(row);
+  await waitFor(() => expect(row).toHaveFocus());
+  const openMenuHandler = managerContext.api.on.mock.calls
+    .filter(([event]: [string]) => event === SIDEBAR_OPEN_CONTEXT_MENU)
+    .at(-1)?.[1];
+  openMenuHandler();
+  const popover = await screen.findByRole('dialog');
+  await waitFor(() =>
+    expect(within(popover).getByText('Go to story').closest('button')).toHaveFocus()
+  );
+  return { row, trigger: within(row).getByTestId('context-menu') };
+};
+
+/**
  * Dismissing the context menu with a click outside returns the row to its resting state.
- * react-aria restores focus to the row on close, which would keep the ⋯ trigger on screen; a
- * pointer dismissal drops that focus, so the status icon takes the slot back.
+ * react-aria hands focus back to the row as the popover closes, but the pointer stays the input
+ * modality, so the row shows no keyboard focus: no ring, and the status icon takes the ⋯ slot back
+ * once the pointer leaves. Focus is handed back exactly once.
  */
 export const ContextMenuOutsideDismiss: Story = {
   ...makeDualSlotStory({
@@ -658,86 +764,55 @@ export const ContextMenuOutsideDismiss: Story = {
     },
   }),
   play: async ({ canvasElement }) => {
-    const row = canvasElement.querySelector<HTMLElement>(`[data-item-id="${dualSlotStoryId}"]`)!;
-    await waitFor(() => expect(getComputedStyle(row).pointerEvents).not.toBe('none'));
-    await userEvent.click(row);
-    await waitFor(() => {
-      const active = canvasElement.ownerDocument.activeElement;
-      expect(active?.closest('[data-item-id]')).toBeTruthy();
-    });
-    const openMenuHandler = managerContext.api.on.mock.calls
-      .filter(([event]: [string]) => event === SIDEBAR_OPEN_CONTEXT_MENU)
-      .at(-1)?.[1];
-    openMenuHandler();
-    const popover = await screen.findByRole('dialog');
-    await expect(popover).toBeVisible();
-    const trigger = await within(row).findByTestId('context-menu');
+    const { row, trigger } = await openDualSlotRowMenu(canvasElement);
 
-    const outside = canvasElement.querySelector<HTMLElement>(
-      '[data-testid="sidebar-scroll-area"]'
-    )!;
-    await userEvent.click(outside);
-    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-
-    await userEvent.unhover(row);
-    await waitFor(() => expect(getComputedStyle(trigger).display).toBe('none'));
-  },
-};
-
-/**
- * The post-dismissal blur must not recurse through a focus scope that restores focus to the
- * row synchronously inside blur, which otherwise explodes the call stack.
- */
-export const ContextMenuOutsideDismissSurvivesFocusTrap: Story = {
-  ...makeDualSlotStory({
-    [dualSlotStoryId]: {
-      'storybook/vitest': {
-        storyId: dualSlotStoryId,
-        typeId: 'storybook/vitest',
-        value: 'status-value:error',
-        title: 'Vitest',
-        description: 'Test failed',
-      },
-    },
-  }),
-  play: async ({ canvasElement }) => {
-    const row = canvasElement.querySelector<HTMLElement>(`[data-item-id="${dualSlotStoryId}"]`)!;
-    await waitFor(() => expect(getComputedStyle(row).pointerEvents).not.toBe('none'));
-    await userEvent.click(row);
-    const openMenuHandler = managerContext.api.on.mock.calls
-      .filter(([event]: [string]) => event === SIDEBAR_OPEN_CONTEXT_MENU)
-      .at(-1)?.[1];
-    openMenuHandler();
-    await screen.findByRole('dialog');
-
-    // Stand in for a react-aria FocusScope that restores focus to the row synchronously inside
-    // our own blur call: focusout on any element in the row re-focuses the row, which fires
-    // focusin and would recurse through blur → focusout → focus → focusin without the guard.
-    // The sentinel caps restorations so the test returns even against an unpatched handler.
-    const doc = canvasElement.ownerDocument;
-    let restores = 0;
-    const onFocusOut = (event: FocusEvent) => {
-      if (event.target instanceof HTMLElement && row.contains(event.target) && restores < 1000) {
-        restores += 1;
-        row.focus();
+    // A focus loop shows as the row taking focus over and over. The stack overflow it ends in does
+    // not reach a window error listener, so the loop is counted instead.
+    let rowFocusCount = 0;
+    const countRowFocus = (event: FocusEvent) => {
+      if (event.target instanceof Node && row.contains(event.target)) {
+        rowFocusCount += 1;
       }
     };
-    doc.addEventListener('focusout', onFocusOut, true);
+    const doc = canvasElement.ownerDocument;
+    doc.addEventListener('focusin', countRowFocus, true);
     try {
       const outside = canvasElement.querySelector<HTMLElement>(
         '[data-testid="sidebar-scroll-area"]'
       )!;
       await userEvent.click(outside);
       await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-      // Prime the handler: the post-dismissal focusin listener blurs any focus landing back on
-      // the row, which the focusout stand-in refocuses, which recurses without the guard.
-      row.focus();
-      // The handler sees exactly one blur before the sync re-entry stands it down.
-      await waitFor(() => expect(restores).toBeGreaterThanOrEqual(1));
-      expect(restores).toBe(1);
+      await userEvent.unhover(row);
+
+      await waitFor(() => expect(row).toHaveFocus());
+      await expect(rowFocusCount).toBe(1);
+      await waitFor(() => expect(getComputedStyle(trigger).display).toBe('none'));
+      await expect(within(row).getByTestId('tree-status-button')).toBeVisible();
+      await expect(row).not.toHaveAttribute('data-focus-visible');
+      await expect(getComputedStyle(row, '::before').boxShadow).toBe('none');
     } finally {
-      doc.removeEventListener('focusout', onFocusOut, true);
+      doc.removeEventListener('focusin', countRowFocus, true);
     }
+  },
+};
+
+/**
+ * Escape closes the context menu and returns keyboard users to the row, which shows its keyboard
+ * focus: the ring, and the ⋯ trigger in place of the status icon.
+ */
+export const ContextMenuEscapeDismiss: Story = {
+  ...ContextMenuOutsideDismiss,
+  play: async ({ canvasElement }) => {
+    const { row, trigger } = await openDualSlotRowMenu(canvasElement);
+
+    await userEvent.keyboard('{Escape}');
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+
+    await waitFor(() => expect(row).toHaveFocus());
+    await expect(row).toHaveAttribute('data-focus-visible', 'true');
+    await expect(getComputedStyle(row, '::before').boxShadow).not.toBe('none');
+    await expect(getComputedStyle(trigger).display).toBe('inline-flex');
+    await expect(within(row).getByTestId('tree-status-button')).not.toBeVisible();
   },
 };
 
@@ -982,6 +1057,72 @@ export const WithNew: Story = {
     await expect(
       leafRow?.querySelector('[data-testid="tree-change-status-button"]')
     ).not.toBeNull();
+  },
+};
+
+const constructorData = transformStoryIndexToStoriesHash(
+  {
+    v: 5,
+    entries: Object.fromEntries(
+      ['Primary', 'Secondary'].map((name) => {
+        const id = `constructor--${name.toLowerCase()}`;
+        return [
+          id,
+          {
+            id,
+            title: 'Constructor',
+            type: 'story',
+            subtype: 'story',
+            name,
+            importPath: './Constructor.stories.ts',
+            tags: [],
+          },
+        ];
+      })
+    ),
+  },
+  { provider: noConfigProvider, docsOptions: { docsMode: false }, filters: {}, allStatuses: {} }
+);
+
+/**
+ * A component titled Constructor gets the id `constructor`, a key every plain object inherits. Its
+ * row, its stories and the status rolled up from them render like those of any other component.
+ */
+export const ComponentTitledConstructor: Story = {
+  args: {
+    refId: DEFAULT_REF_ID,
+    allStatuses: {
+      'constructor--primary': {
+        'storybook/vitest': {
+          storyId: 'constructor--primary',
+          typeId: 'storybook/vitest',
+          value: 'status-value:error',
+          title: 'Vitest',
+          description: 'Test failed',
+        },
+      },
+    },
+  },
+  render: (args) => {
+    const [selectedId, setSelectedId] = useState('constructor--primary');
+    return (
+      <Tree
+        {...args}
+        data={constructorData}
+        selectedStoryId={selectedId}
+        onSelectStoryId={setSelectedId}
+      />
+    );
+  },
+  play: async ({ canvasElement }) => {
+    const row = (id: string) => canvasElement.querySelector(`[data-item-id="${id}"]`);
+    const testStatus = (id: string) => row(id)?.querySelector('[data-testid="tree-status-button"]');
+
+    await waitFor(() => expect(row('constructor')).toHaveTextContent('Constructor'));
+    await expect(testStatus('constructor')).toHaveAccessibleName('Test status: Error');
+    await expect(testStatus('constructor--primary')).toHaveAccessibleName('Test status: Error');
+    await expect(row('constructor--secondary')).toHaveTextContent('Secondary');
+    await expect(testStatus('constructor--secondary')).toBeNull();
   },
 };
 
@@ -1469,10 +1610,9 @@ export const KeyboardNavigation: Story = {
 };
 
 /**
- * Hovering a row asks the preview to load the story a press on it would most likely open: a leaf
- * loads itself, a story with tests and its "Story" row load the story, a branch loads its first
- * story (a component's first story, a group's hoisted story). A root or group whose first child is
- * another branch has nothing to load.
+ * Hovering a row asks the preview to load the story a press on it opens: a story, docs page or
+ * test loads itself, and a story with tests and its "Story" row load the story. A press on a root
+ * or group opens nothing, so hovering one loads nothing.
  */
 export const HoverPreloadsFirstStory: Story = {
   args: {
@@ -1491,29 +1631,24 @@ export const HoverPreloadsFirstStory: Story = {
         .map(([, payload]: [string, { ids: string[] }]) => payload.ids);
 
     await userEvent.hover(row('root-1'));
-    await userEvent.hover(row('root-1-child-a1'));
+    await userEvent.hover(row('group-1'));
+    await userEvent.hover(row('root-3'));
     expect(preloadedIds()).toEqual([]);
 
     await userEvent.hover(row('root-1-child-a2--grandchild-a1-2'));
     await userEvent.hover(row('root-1-child-a2--grandchild-a1-1'));
     await userEvent.hover(row(storyRowId('root-1-child-a2--grandchild-a1-1')));
     await userEvent.hover(row('root-1-child-a2--grandchild-a1-1:test1'));
-    await userEvent.hover(row('group-1'));
-    await userEvent.hover(row('root-3'));
-    await userEvent.hover(row('root-3-child-a2'));
     await waitFor(() =>
       expect(preloadedIds()).toEqual([
         ['root-1-child-a2--grandchild-a1-2'],
         ['root-1-child-a2--grandchild-a1-1'],
         ['root-1-child-a2--grandchild-a1-1'],
         ['root-1-child-a2--grandchild-a1-1:test1'],
-        ['group-1--child-b1'],
-        ['root-3--child-a1'],
-        ['root-3-child-a2--grandchild-a1-1'],
       ])
     );
     expect(emit).toHaveBeenLastCalledWith(PRELOAD_ENTRIES, {
-      ids: ['root-3-child-a2--grandchild-a1-1'],
+      ids: ['root-1-child-a2--grandchild-a1-1:test1'],
       source: 'hover',
       options: { target: DEFAULT_REF_ID },
     });

@@ -540,6 +540,66 @@ describe('expectStoryTestsRanAndPassed', () => {
   });
 });
 
+describe('mentionsReviewSkill', () => {
+  test.each([
+    // The line of the AGENTS.md section, and the forms agents wrote in eval runs (2026-11-16).
+    'Use the /ui-review skill to see the changed components in Storybook',
+    'Use `/ui-review` to see them in Storybook.',
+    'this is a UI change you can see, so run `/ui-review` to see the changed component in Storybook.',
+    'Use the $ui-review skill to see the changed components in Storybook',
+    'Use `/storybook:ui-review` to see the changed components.',
+    'Use **/ui-review** to see the changed components.',
+    'Use the “/ui-review” skill to see them.',
+    'Run [/ui-review](https://storybook.js.org/docs/ai/skills/ui-review) to see them.',
+  ])('counts %j', async (answer) => {
+    const { mentionsReviewSkill } = await import('./test-utils.ts');
+    expect(mentionsReviewSkill(answer)).toBe(true);
+  });
+
+  test.each([
+    'I created the review with the ui-review skill.',
+    'See docs/ai/skills/ui-review.mdx for details.',
+    'The old /ui-review-old skill is gone.',
+  ])('does not count %j', async (answer) => {
+    const { mentionsReviewSkill } = await import('./test-utils.ts');
+    expect(mentionsReviewSkill(answer)).toBe(false);
+  });
+});
+
+describe('recommendsReviewSkill', () => {
+  test.each([
+    'Use the /ui-review skill to see the changed components in Storybook',
+    'The rename is done. You can use the /ui-review skill to see the changed components in Storybook.',
+    'I did not run `/ui-review`, because nothing visible changed. You can use the /ui-review skill to see the components.',
+    'If you want to see it, use the /ui-review skill.',
+    "The UI didn't change, but you can use /ui-review to double-check.",
+    'No visual changes here; use the /ui-review skill to see the components in Storybook.',
+    // A comma before a skill name ends the clause, unless a skill name comes before it too.
+    "The layout didn't change, `/ui-review` still shows the new stories.",
+    'Since the prop is not exposed, `$ui-review` shows the change.',
+  ])('counts %j', async (answer) => {
+    const { recommendsReviewSkill } = await import('./test-utils.ts');
+    expect(recommendsReviewSkill(answer)).toBe(true);
+  });
+
+  // What agents wrote after a change nobody can see (eval runs of 2026-11-17 and 2026-11-23).
+  test.each([
+    'I renamed the helper in its definition and in its only caller.',
+    "I didn't suggest `/ui-review`, since this change adds no visible UI yet.",
+    "This is a rename with no change to how the UI looks, so those steps don't seem to apply. Tell me if you want stories or a `/ui-review` for it anyway.",
+    'Nothing visible changed, so no `/ui-review` is needed.',
+    "`/ui-review` isn't needed, since nothing visible changed.",
+    'I skipped /ui-review because the change is not visible.',
+    "This change renders the same output, so I didn't run `/component-docs`, `/write-stories` or `/ui-review`.",
+    "This is a pure rename with no visual change, so I didn't run `/component-docs`, `/write-stories`, or `/ui-review`.",
+    "They apply to changes that alter how the UI looks, and this rename doesn't, so I left out the `/ui-review` line.",
+    'For that reason I also left off the `/ui-review` closing line.',
+  ])('does not count %j', async (answer) => {
+    const { recommendsReviewSkill } = await import('./test-utils.ts');
+    expect(recommendsReviewSkill(answer)).toBe(false);
+  });
+});
+
 describe('findDevServerKillCommands', () => {
   test('flags kill commands naming storybook, a pidfile, or the default port', () => {
     expect(findDevServerKillCommands(['pkill -f storybook'])).toEqual(['pkill -f storybook']);

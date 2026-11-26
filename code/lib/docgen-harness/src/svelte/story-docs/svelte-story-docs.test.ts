@@ -228,3 +228,26 @@ it('keeps every story payload when block bindings are destructured', async () =>
     expect(story.warning ?? '').not.toContain('`name`');
   }
 });
+
+it.each(['Tag.stories.svelte', 'Tag.stories.ts'])(
+  'imports the component as the @import tag of its @component comment says in %s',
+  async (filename) => {
+    const payload = await buildStoryDocsPayload({
+      entry: {
+        id: 'repro-tag--default',
+        name: 'Default',
+        title: 'Repro/Tag',
+        type: 'story',
+        subtype: 'story',
+        importPath: join(
+          dirname(fileURLToPath(import.meta.url)),
+          '__fixtures__/component-import',
+          filename
+        ),
+      },
+    });
+    expect(payload?.stories['repro-tag--default']?.snippet).toBe(
+      '<script>\n  import Tag from \'#lib/repro/Tag.svelte\';\n</script>\n\n<Tag label="Design" />'
+    );
+  }
+);

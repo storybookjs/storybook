@@ -125,6 +125,10 @@ describe('docgen open service', () => {
       await expect(service.commands.extractDocgen({ id: 'button' })).rejects.toThrow(
         'provider blew up'
       );
+      expect(service.queries.docgen.get({ id: 'button' })).toMatchObject({
+        id: 'button',
+        error: { name: 'Error', message: 'provider blew up' },
+      });
     });
   });
 
@@ -589,6 +593,45 @@ describe('docgen open service', () => {
       expect(provider).toHaveBeenCalledTimes(1);
       expect(provider.mock.calls[0][0].entry).toEqual(storyEntry);
       expect(Object.keys(store)).toEqual(['core/docgen/button.json']);
+    });
+
+    it('writes an error payload instead of failing the build when the provider throws', async () => {
+      registerDocgenService({
+        getIndex: makeGetIndex([
+          makeStoryEntry('button--primary', 'Button'),
+          makeStoryEntry('card--default', 'Card'),
+        ]),
+        docgenProvider: async ({ entry }) => {
+          if (entry.title === 'Button') {
+            throw new Error(
+              'Worker terminated due to reaching memory limit: JS heap out of memory'
+            );
+          }
+          return makeDocgenPayload({ id: 'card', name: 'Card', path: entry.importPath });
+        },
+      });
+
+      const store = await buildStaticFiles();
+
+      expect(store['core/docgen/button.json']).toEqual({
+        components: {
+          button: {
+            id: 'button',
+            name: 'Button',
+            path: './button.stories.tsx',
+            jsDocTags: {},
+            error: {
+              name: 'Error',
+              message: 'Worker terminated due to reaching memory limit: JS heap out of memory',
+            },
+          },
+        },
+      });
+      expect(store['core/docgen/card.json']).toEqual({
+        components: {
+          card: makeDocgenPayload({ id: 'card', name: 'Card', path: './card.stories.tsx' }),
+        },
+      });
     });
 
     it('writes one docgen JSON per component id whose provider produced a payload', async () => {

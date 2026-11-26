@@ -3,6 +3,8 @@ import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import * as v from 'valibot';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { logger } from 'storybook/internal/node-logger';
+
 import { join } from 'pathe';
 import { vol } from 'memfs';
 
@@ -25,8 +27,11 @@ import { docgenQueryStaticPath } from './services/docgen/paths.ts';
 // the static-files writer (and this test's own `readFile` assertions) to `memfs` so disk state
 // stays scoped to `vol`.
 vi.mock('node:fs/promises', { spy: true });
+vi.mock('storybook/internal/node-logger', { spy: true });
 
 beforeEach(async () => {
+  vi.mocked(logger.warn).mockImplementation(() => {});
+
   const memfs = await vi.importActual<typeof import('memfs')>('memfs');
 
   vi.mocked(mkdir).mockImplementation(
@@ -347,6 +352,57 @@ describe('server static builds', () => {
         'internal-fixture/scoped-static-path-a/state.json': { value: 'a' },
         'internal-fixture/scoped-static-path-b/state.json': { value: 'b' },
       });
+    });
+
+    it('keeps building, and warns, when the load of one static input rejects', async () => {
+      const failingLoadServiceDef = defineService({
+        id: 'internal-fixture/failing-load',
+        description: 'Fails the load of one static input after storing a partial value.',
+        initialState: { values: {} as Record<string, string> },
+        queries: {
+          value: {
+            description: 'Reads the value stored for one key.',
+            input: v.object({ key: v.string() }),
+            output: v.optional(v.string()),
+            handler: (input, ctx) => ctx.self.state.values[input.key],
+            load: async (input, ctx) => {
+              await ctx.self.commands.setValue(input);
+            },
+            staticPath: (input) => `${input.key}.json`,
+            staticInputs: async () => [{ key: 'ok' }, { key: 'broken' }],
+          },
+        },
+        commands: {
+          setValue: {
+            description: 'Stores a value, then fails for the "broken" key.',
+            input: v.object({ key: v.string() }),
+            output: v.undefined(),
+            handler: async (input, ctx) => {
+              ctx.self.setState((state) => {
+                state.values[input.key] = `value-${input.key}`;
+              });
+              if (input.key === 'broken') {
+                throw new Error('load blew up');
+              }
+              return undefined;
+            },
+          },
+        },
+      });
+
+      registerService(failingLoadServiceDef);
+
+      await expect(buildStaticFiles()).resolves.toEqual({
+        'internal-fixture/failing-load/ok.json': { values: { ok: 'value-ok' } },
+        'internal-fixture/failing-load/broken.json': { values: { broken: 'value-broken' } },
+      });
+      expect(logger.warn).toHaveBeenCalledTimes(1);
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.stringContaining(
+          '"internal-fixture/failing-load/broken.json" for query "internal-fixture/failing-load.value"'
+        )
+      );
+      expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('load blew up'));
     });
 
     it('rejects static paths that escape the service output folder', async () => {

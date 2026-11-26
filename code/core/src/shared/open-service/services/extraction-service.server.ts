@@ -62,7 +62,8 @@ export type RegisterExtractionServiceOptions<TPayload, TQueries, TCommands> = {
   getIndex: () => Promise<StoryIndex>;
   provider: ExtractionProvider<TPayload>;
   /**
-   * Builds the payload stored for a component whose provider threw during the fan-out.
+   * Builds the payload stored for a component whose provider threw. `extract` stores it only when
+   * the component has no payload yet, so a failed refresh keeps the last good one.
    *
    * Supplied per service because the payload shapes differ and both are validated against their
    * service's output schema.
@@ -281,6 +282,9 @@ export function registerExtractionService<
     }
   };
 
+  const toErrorPayload = (id: string, entry: IndexEntry, error: unknown) =>
+    buildErrorPayload({ id, entry, error: toExtractionError(error) });
+
   const extractComponent = async (
     id: string,
     ctx: CommandCtx<TState>,
@@ -294,7 +298,10 @@ export function registerExtractionService<
       }
       throw new OpenServiceDocgenMissingComponentError({ id });
     }
-    const payload = await provider(extractionInput);
+    const result = await provider(extractionInput).then(
+      (payload) => ({ ok: true as const, payload }),
+      (error: unknown) => ({ ok: false as const, error })
+    );
     // The file can be deleted or the title renamed while the provider runs. When the index cannot
     // be read, keep the payload.
     const indexed = await resolveInputs().then(
@@ -302,17 +309,32 @@ export function registerExtractionService<
       () => true
     );
     if (isLatestRun()) {
-      ctx.self.setState((state) => writePayload(state, id, indexed ? payload : undefined));
-      if (indexed) {
-        pendingIds.delete(id);
-      } else {
+      ctx.self.setState((state) => {
+        if (!indexed) {
+          writePayload(state, id, undefined);
+        } else if (result.ok) {
+          writePayload(state, id, result.payload);
+        } else if (!(toComponentStateKey(id) in state.components)) {
+          // A failure is stored only when nothing is stored yet: a failed refresh keeps the last
+          // good payload, and a static build, which starts from an empty state, still snapshots
+          // the error.
+          writePayload(state, id, toErrorPayload(id, extractionInput.entry, result.error));
+        }
+      });
+      if (!indexed) {
         pendingIds.add(id);
+      } else if (result.ok) {
+        pendingIds.delete(id);
       }
     }
     if (!indexed) {
       throw new OpenServiceDocgenMissingComponentError({ id });
     }
-    return payload;
+    if (!result.ok) {
+      // Rethrown so the caller sees the failure.
+      throw result.error;
+    }
+    return result.payload;
   };
 
   // Every component is resolved first and the state written once: one sync entry for the whole
@@ -329,10 +351,7 @@ export function registerExtractionService<
         } catch (error) {
           // A provider is not required to be total, so one component's failure must not
           // discard every other component's payload.
-          return [
-            id,
-            buildErrorPayload({ id, entry: input.entry, error: toExtractionError(error) }),
-          ] as const;
+          return [id, toErrorPayload(id, input.entry, error)] as const;
         }
       })
     );

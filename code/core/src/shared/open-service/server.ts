@@ -1,5 +1,7 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 
+import { logger } from 'storybook/internal/node-logger';
+
 import { dirname, join } from 'pathe';
 
 import { toMerged } from 'es-toolkit/object';
@@ -62,6 +64,9 @@ export function registerService<
  * (including transitively triggered self-queries) before the resulting state is captured.
  * Cross-service `ctx.getService(...)` lookups inside a load resolve through the live registry,
  * matching dev-server behavior.
+ *
+ * A load that rejects is reported as a warning and its input keeps the state captured so far, so
+ * one failing input does not fail the build.
  */
 export async function buildStaticFiles(): Promise<StaticStore> {
   const store: StaticStore = {};
@@ -97,7 +102,15 @@ export async function buildStaticFiles(): Promise<StaticStore> {
               });
               const path = resolveStaticPath(service.id, queryName, { staticPath }, validatedInput);
 
-              await buildRuntime.runLoadOnce(queryName, validatedInput);
+              // One failed input must not fail the whole build. Its snapshot keeps whatever the load
+              // stored before it rejected, such as an extraction service's error payload.
+              try {
+                await buildRuntime.runLoadOnce(queryName, validatedInput);
+              } catch (error) {
+                logger.warn(
+                  `Failed to build static file "${path}" for query "${service.id}.${queryName}" with input ${JSON.stringify(validatedInput)}: ${error instanceof Error ? error.message : String(error)}`
+                );
+              }
 
               return { path, state: buildRuntime.getStateSnapshot() };
             })

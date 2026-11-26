@@ -224,24 +224,24 @@ describe('a dry run', () => {
     vi.clearAllMocks();
   });
 
-  it('lists a notification as a manual migration without prompting', async () => {
-    const notification: Fix = {
-      id: 'notice',
-      promptType: 'notification',
+  it('lists a manual migration without asking for its changes', async () => {
+    const manual: Fix = {
+      id: 'by-hand',
+      promptType: 'manual',
       check: async () => ({}),
-      prompt: () => 'Read this',
+      prompt: () => 'Change this by hand',
     };
 
     const { fixResults, fixSummary } = await runFixes({
       ...common,
-      fixes: [notification],
+      fixes: [manual],
       yes: false,
       storybookVersion: '7.0.0',
     });
 
     expect(prompt.confirm).not.toHaveBeenCalled();
-    expect(fixResults).toEqual({ notice: FixStatus.MANUAL_SUCCEEDED });
-    expect(fixSummary.manual).toEqual(['notice']);
+    expect(fixResults).toEqual({ 'by-hand': FixStatus.MANUAL_SUCCEEDED });
+    expect(fixSummary.manual).toEqual(['by-hand']);
   });
 
   it('fails when a fix fails, and lists the doctor with the package manager of the project', async () => {

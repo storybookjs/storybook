@@ -360,9 +360,9 @@ export async function runFixes({
     let runAnswer: { fix: boolean } | undefined;
 
     try {
-      if (effects.isDryRun() && promptType !== 'auto') {
-        // Manual migrations and notifications leave the changes to the user, so a dry run lists
-        // them without asking.
+      if (effects.isDryRun() && promptType === 'manual') {
+        // A manual migration asks the user to make its changes before continuing, which a dry run
+        // cannot use, so it lists the migration without asking.
         fixResults[f.id] = FixStatus.MANUAL_SUCCEEDED;
         fixSummary.manual.push(f.id);
       } else if (yes) {

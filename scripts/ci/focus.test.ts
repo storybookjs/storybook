@@ -288,7 +288,7 @@ describe('selectPathTriggeredJobs', () => {
   });
 
   it('adds nothing for a change outside every trigger path', () => {
-    expect(triggeredIds('code/core/src/core-server/build-dev.ts')).toEqual([]);
+    expect(triggeredIds('code/core/src/core-server/build-dev.ts', 'docs/index.mdx')).toEqual([]);
   });
 
   it('adds every path-triggered job when a global input changed', () => {
@@ -335,16 +335,6 @@ describe('selectPathTriggeredJobs', () => {
       'tests-stories--linux',
     ]);
   });
-
-  it('adds the format and docs check for a docs page, a snippet, or a docs check script change', () => {
-    for (const file of [
-      'docs/index.mdx',
-      'docs/_snippets/story-description-and-summary.md',
-      'scripts/docs/utils.ts',
-    ]) {
-      expect(triggeredIds(file)).toEqual(['format-check']);
-    }
-  });
 });
 
 describe('defineAffectedLintAndFormat', () => {
@@ -355,7 +345,7 @@ describe('defineAffectedLintAndFormat', () => {
         .implementation('focus') as {
         steps: { run?: { name: string; command: string } }[];
       }
-    ).steps.flatMap(({ run }) => (run && /Format|Lint/.test(run.name) ? [run] : []));
+    ).steps.flatMap(({ run }) => (run && /Format|Lint|Docs/.test(run.name) ? [run] : []));
 
   it('checks only the changed files, linting each directory with paths relative to it', () => {
     expect(
@@ -377,6 +367,7 @@ describe('defineAffectedLintAndFormat', () => {
         working_directory: 'scripts',
         environment: { FILES: 'ci/focus.ts' },
       }),
+      { name: 'Docs check', command: 'yarn docs:check' },
     ]);
   });
 
@@ -395,13 +386,24 @@ describe('defineAffectedLintAndFormat', () => {
   it('skips linting when no changed file is under code/ or scripts/', () => {
     expect(runSteps('docs/index.mdx').map(({ name }) => name)).toEqual([
       'Format check changed files',
+      'Docs check',
     ]);
+  });
+
+  it('runs the docs check for a docs checker change but not for a code change', () => {
+    expect(runSteps('scripts/docs/utils.ts')).toContainEqual({
+      name: 'Docs check',
+      command: 'yarn docs:check',
+    });
+    expect(runSteps('code/core/src/manager/App.tsx').map(({ name }) => name)).not.toContain(
+      'Docs check'
+    );
   });
 
   it.each([
     ['.oxfmtrc.json', ['Format check', 'Lint changed code files']],
     ['code/.oxlintrc.json', ['Format check changed files', 'Lint code JS', 'Lint scripts']],
-    ['yarn.lock', ['Format check', 'Lint code JS', 'Lint scripts']],
+    ['yarn.lock', ['Format check', 'Lint code JS', 'Lint scripts', 'Docs check']],
   ])('checks everything it covers when %s changed', (configFile, stepNames) => {
     expect(runSteps('code/core/src/manager/App.tsx', configFile).map(({ name }) => name)).toEqual(
       stepNames
@@ -412,6 +414,7 @@ describe('defineAffectedLintAndFormat', () => {
 /** `ci:normal` jobs that no focused run selects, and why. The nightly `ci:daily` run covers them. */
 const NIGHTLY_ONLY_JOBS: Record<string, string> = {
   eslint: 'replaced by lint-and-format--affected',
+  'format-check': 'replaced by lint-and-format--affected',
   'typescript-validation': 'replaced by typescript-validation--affected',
   'knip-validation': 'runs with --no-exit-code, so it cannot fail a run',
   'benchmark-packages': 'measures bundle sizes, not correctness',

@@ -635,6 +635,9 @@ export abstract class JsPackageManager {
    * When a package is not in the monorepo, we don't change the package version and return the package name as is.
    * The package manager will resolve the latest version of the package upon installing it.
    *
+   * The Storybook version specifier comes from the `STORYBOOK_VERSION_SPECIFIER` env var, then the
+   * process ancestry, and otherwise the CLI version.
+   *
    * @param packages
    */
   public getVersionedPackages(packages: string[]): Promise<string[]> {

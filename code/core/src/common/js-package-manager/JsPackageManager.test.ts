@@ -8,6 +8,7 @@ import { logger, prompt } from 'storybook/internal/node-logger';
 import * as find from 'empathic/find';
 
 import { invalidateProjectRootCache } from '../utils/paths.ts';
+import { STORYBOOK_VERSION_SPECIFIER_ENV } from '../utils/resolve-storybook-version-specifier.ts';
 import { JsPackageManager } from './JsPackageManager.ts';
 
 vi.mock('storybook/internal/node-logger', { spy: true });
@@ -281,7 +282,7 @@ describe('JsPackageManager', () => {
     });
 
     it('should map pkg.pr.new create-storybook specifiers to Storybook packages', async () => {
-      vi.stubEnv('STORYBOOK_VERSION_SPECIFIER', 'https://pkg.pr.new/create-storybook@abc123');
+      vi.stubEnv(STORYBOOK_VERSION_SPECIFIER_ENV, 'https://pkg.pr.new/create-storybook@abc123');
 
       const result = await jsPackageManager.getVersionedPackages(['@storybook/react']);
 
@@ -291,7 +292,7 @@ describe('JsPackageManager', () => {
 
     it('should map repo-scoped pkg.pr.new specifiers to Storybook packages', async () => {
       vi.stubEnv(
-        'STORYBOOK_VERSION_SPECIFIER',
+        STORYBOOK_VERSION_SPECIFIER_ENV,
         'https://pkg.pr.new/storybookjs/storybook/storybook@deadbeef'
       );
 
@@ -307,7 +308,7 @@ describe('JsPackageManager', () => {
       'should keep the npm tag or prerelease %s on the CLI version path',
       async (specifier) => {
         mockLatestVersion.mockResolvedValue('8.3.1');
-        vi.stubEnv('STORYBOOK_VERSION_SPECIFIER', specifier);
+        vi.stubEnv(STORYBOOK_VERSION_SPECIFIER_ENV, specifier);
 
         await expect(jsPackageManager.getVersionedPackages(['@storybook/react'])).resolves.toEqual([
           '@storybook/react@8.3.0',

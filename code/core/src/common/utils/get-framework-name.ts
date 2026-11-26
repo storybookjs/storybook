@@ -34,7 +34,8 @@ export async function getFrameworkName(options: Options) {
  * ```
  */
 export const extractFrameworkPackageName = (framework: string) =>
-  matchPackageName(framework, Object.keys(frameworkPackages)) ?? framework;
+  matchPackageName(framework, [...Object.keys(frameworkPackages), RN_FRAMEWORK_PACKAGE]) ??
+  framework;
 
 /**
  * Returns the framework package of a main config, or null when it has none.

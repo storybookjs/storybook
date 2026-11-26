@@ -18,6 +18,14 @@ export const DOCUMENTATION_FATAL_ERROR_LINK = `${DOCUMENTATION_LINK}#what-happen
 
 export const COVERAGE_DIRECTORY = 'coverage';
 
+/** Why a run was repeated (`currentRun.depsReoptimized`), in the test run output and the UI. */
+export const DEPS_REOPTIMIZED_TEXT = {
+  repeated:
+    'Vite pre-bundled a new dependency during the run, which breaks the tests that are running, so Storybook ran them again. These are the results of the second run.',
+  unresolved:
+    'Vite pre-bundled a new dependency during the run, also when Storybook ran the tests again, so these failures may not be caused by the stories.',
+};
+
 export const storeOptions = {
   id: ADDON_ID,
   initialState: {

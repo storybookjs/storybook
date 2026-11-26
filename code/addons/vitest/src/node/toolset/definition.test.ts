@@ -712,6 +712,52 @@ Failed: 1 component test failed.
 Accessibility: 1 story checked, no violations. Stories with a failing component test get no accessibility result.`);
     });
 
+    it('says when it ran the tests again because Vite re-bundled during the run', async () => {
+      vi.mocked(runStoryTests).mockResolvedValue(
+        completed({
+          componentTestCount: { success: 1, error: 0 },
+          a11yCount: { success: 1, warning: 0, error: 0 },
+          componentTestStatuses: [componentTest('button--primary', 'status-value:success')],
+          depsReoptimized: 'repeated',
+        })
+      );
+
+      const outcome = await runForMcp();
+
+      expect(outcome.ok).toBe(true);
+      expect(outcome.markdown).toContain(`## Result
+
+Passed: 1 component test passed.
+Vite pre-bundled a new dependency during the run, which breaks the tests that are running, so Storybook ran them again. These are the results of the second run.
+`);
+    });
+
+    it('says to run again, not to fix the stories, when the repeat was disrupted too', async () => {
+      vi.mocked(runStoryTests).mockResolvedValue(
+        completed({
+          componentTestCount: { success: 0, error: 1 },
+          a11yCount: { success: 0, warning: 0, error: 0 },
+          componentTestStatuses: [
+            componentTest(
+              'button--secondary',
+              'status-value:error',
+              "Cannot read properties of null (reading 'useContext')"
+            ),
+          ],
+          depsReoptimized: 'unresolved',
+        })
+      );
+
+      const outcome = await runForMcp();
+
+      expect(outcome.ok).toBe(false);
+      expect(outcome.markdown).toContain(`## Result
+
+Failed: 1 component test failed.
+Vite pre-bundled a new dependency during the run, also when Storybook ran the tests again, so these failures may not be caused by the stories. Run the same tests again before you change any code.
+`);
+    });
+
     it('reports accessibility violations with inspect links built from the origin', async () => {
       vi.mocked(runStoryTests).mockResolvedValue(
         completed({

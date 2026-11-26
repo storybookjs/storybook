@@ -2,6 +2,7 @@ import type { ToolsetCtx } from 'storybook/open-service';
 
 import { isAbsolute, relative } from 'pathe';
 
+import { DEPS_REOPTIMIZED_TEXT } from '../../constants.ts';
 import type { TestRunData, TestRunResult, TestRunSelection } from './definition.ts';
 
 type ComponentTestStatus = TestRunResult['componentTestStatuses'][number];
@@ -334,6 +335,12 @@ function formatSelection(selection: TestRunSelection): string | undefined {
 const A11Y_GUIDANCE =
   'Accessibility violations: fix only what your change caused, and report the rest. For visual ones such as color contrast, ask before changing the design.';
 
+const DEPS_REOPTIMIZED = {
+  repeated: DEPS_REOPTIMIZED_TEXT.repeated,
+  // The test panel has its own run button, so only the output says what to do.
+  unresolved: `${DEPS_REOPTIMIZED_TEXT.unresolved} Run the same tests again before you change any code.`,
+};
+
 function formatResultSection(
   result: TestRunResult,
   {
@@ -369,6 +376,7 @@ function formatResultSection(
     ...formatChangedConfigFiles(selection?.changed),
     ...notFound,
     verdict,
+    ...(result.depsReoptimized ? [DEPS_REOPTIMIZED[result.depsReoptimized]] : []),
     formatA11yResult(result, { a11y, a11yEnabled }),
     ...(a11y && countA11yViolations(getA11yReports(result)) > 0 ? [A11Y_GUIDANCE] : []),
   ];

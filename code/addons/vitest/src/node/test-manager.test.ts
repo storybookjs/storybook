@@ -517,6 +517,173 @@ describe('TestManager', () => {
     expect(vitest.runTestSpecifications).toHaveBeenLastCalledWith(tests.slice(0, 1), false);
   });
 
+  describe('when Vite re-bundles dependencies while the tests run', () => {
+    const failed = {
+      state: 'failed',
+      errors: [{ message: "Cannot read properties of null (reading 'useContext')" }],
+    } as unknown as TestResult;
+    const passed = { state: 'passed', errors: [] } as unknown as TestResult;
+
+    // A browser project whose Vite optimizer hash changes when Vite re-bundles.
+    const metadata = { browserHash: 'before' };
+    const project = {
+      config: { env: { __STORYBOOK_URL__: 'http://localhost:6006' } },
+      browser: { vite: { environments: { client: { depsOptimizer: { metadata } } } } },
+    };
+    const browserTests = [{ project, moduleId: path.join(process.cwd(), 'path/to/file') }];
+
+    /** Each attempt reports story--one with the next result, and maybe re-bundles meanwhile. */
+    const attempts = (
+      testManager: TestManager,
+      results: { result: TestResult; rebundles: boolean }[]
+    ) => {
+      vitest.globTestSpecifications.mockImplementation(() => browserTests);
+      vitest.runTestSpecifications.mockImplementation(async () => {
+        const { result, rebundles } = results.shift() ?? { result: passed, rebundles: false };
+        if (rebundles) {
+          metadata.browserHash += '+';
+        }
+        testManager.onTestCaseResult({
+          storyId: 'story--one',
+          testResult: result,
+          reports: [{ type: 'a11y', status: result.state, result: {} } as Report],
+        });
+        testManager.onTestRunEnd({
+          totalTestCount: 1,
+          unhandledErrors: result.state === 'failed' ? [{ message: 'unhandled' } as any] : [],
+        });
+      });
+    };
+    const run = (testManager: TestManager) =>
+      testManager
+        .handleTriggerRunEvent({
+          type: 'TRIGGER_RUN',
+          payload: { triggeredBy: 'global', storyIds: ['story--one'] },
+        })
+        // A run that ends with unhandled errors rejects after reporting its result.
+        .catch(() => {});
+    const completedRun = () => {
+      const event = vi
+        .mocked(mockStore.send)
+        .mock.calls.find(([event]) => event.type === 'TEST_RUN_COMPLETED')?.[0];
+      return (event as Extract<StoreEvent, { type: 'TEST_RUN_COMPLETED' }>).payload;
+    };
+
+    it('discards the results of that run, runs the tests again and says so', async () => {
+      const testManager = await startWithIndex();
+      attempts(testManager, [
+        { result: failed, rebundles: true },
+        { result: passed, rebundles: false },
+      ]);
+
+      await run(testManager);
+
+      expect(vitest.runTestSpecifications).toHaveBeenCalledTimes(2);
+      expect(completedRun()).toEqual(
+        expect.objectContaining({
+          componentTestStatuses: [
+            expect.objectContaining({ storyId: 'story--one', value: 'status-value:success' }),
+          ],
+          a11yStatuses: [
+            expect.objectContaining({ storyId: 'story--one', value: 'status-value:success' }),
+          ],
+          componentTestCount: { success: 1, error: 0 },
+          a11yCount: { success: 1, warning: 0, error: 0 },
+          unhandledErrors: [],
+          totalTestCount: 1,
+          depsReoptimized: 'repeated',
+        })
+      );
+    });
+
+    it('runs the tests again only once', async () => {
+      const testManager = await startWithIndex();
+      attempts(testManager, [
+        { result: failed, rebundles: true },
+        { result: failed, rebundles: true },
+      ]);
+
+      await run(testManager);
+
+      expect(vitest.runTestSpecifications).toHaveBeenCalledTimes(2);
+      expect(completedRun().depsReoptimized).toBe('unresolved');
+      expect(completedRun().componentTestCount).toEqual({ success: 0, error: 1 });
+    });
+
+    it('keeps a run that passed', async () => {
+      const testManager = await startWithIndex();
+      attempts(testManager, [{ result: passed, rebundles: true }]);
+
+      await run(testManager);
+
+      expect(vitest.runTestSpecifications).toHaveBeenCalledTimes(1);
+      expect(completedRun().depsReoptimized).toBeUndefined();
+    });
+
+    it('keeps a failing run when Vite did not re-bundle', async () => {
+      const testManager = await startWithIndex();
+      attempts(testManager, [{ result: failed, rebundles: false }]);
+
+      await run(testManager);
+
+      expect(vitest.runTestSpecifications).toHaveBeenCalledTimes(1);
+      expect(completedRun().depsReoptimized).toBeUndefined();
+    });
+
+    it('does not run a cancelled run again', async () => {
+      const testManager = await startWithIndex();
+      attempts(testManager, [{ result: failed, rebundles: true }]);
+      const attempt = vitest.runTestSpecifications.getMockImplementation()!;
+      vitest.runTestSpecifications.mockImplementation(async (...args) => {
+        await attempt(...args);
+        await testManager.handleCancelEvent();
+      });
+
+      await run(testManager);
+
+      expect(vitest.runTestSpecifications).toHaveBeenCalledTimes(1);
+    });
+
+    it('leaves the store alone when its repeat is cancelled', async () => {
+      const testManager = await startWithIndex();
+      attempts(testManager, [
+        { result: failed, rebundles: true },
+        { result: failed, rebundles: true },
+      ]);
+      const attempt = vitest.runTestSpecifications.getMockImplementation()!;
+      vitest.runTestSpecifications
+        .mockImplementationOnce(attempt)
+        .mockImplementationOnce(async (...args) => {
+          await attempt(...args);
+          await testManager.handleCancelEvent();
+        });
+
+      await run(testManager);
+
+      expect(vitest.runTestSpecifications).toHaveBeenCalledTimes(2);
+      expect(completedRun().depsReoptimized).toBeUndefined();
+    });
+
+    it('notices a re-bundle when Vitest starts the browser during the run', async () => {
+      const testManager = await startWithIndex();
+      const { browser } = project;
+      attempts(testManager, [{ result: failed, rebundles: true }]);
+      const attempt = vitest.runTestSpecifications.getMockImplementation()!;
+      vitest.runTestSpecifications.mockImplementationOnce(async (...args) => {
+        // Vitest 4 creates the browser server on the first run and reports it to the reporters.
+        Object.assign(project, { browser });
+        testManager.vitestManager.recordOptimizerHash(project as any);
+        await attempt(...args);
+      });
+      Object.assign(project, { browser: undefined });
+
+      await run(testManager);
+
+      expect(vitest.runTestSpecifications).toHaveBeenCalledTimes(2);
+      expect(completedRun().depsReoptimized).toBe('repeated');
+    });
+  });
+
   it('should persist all reports on TEST_RUN_COMPLETED without writing them into currentRun', async () => {
     const testManager = await startWithIndex();
     const passedResult = {

@@ -4,7 +4,7 @@ import picocolors from 'picocolors';
 import semver from 'semver';
 
 // A prerelease minVersion (`-alpha.0`) makes the check apply to that major's betas and release candidates too.
-export const deprecatedPackages: {
+const deprecatedPackages: {
   minVersion: string;
   url: string;
   deprecations: string[];

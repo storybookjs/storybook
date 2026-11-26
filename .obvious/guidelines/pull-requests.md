@@ -19,7 +19,7 @@ For a pkg.pr.new canary, follow the [canary skill](../skills/canary/SKILL.md) an
 
 Add an entry to `MIGRATION.md` only for a breaking change or a deprecation: a change after which users have to change their code, config or setup, now or before the next major.
 
-A change is not breaking when the old behavior was a bug, even when users notice it. To decide, ask whether the change could ship in a minor release. If it could, it gets no entry, also while the next major is open on `next`. A user-visible fix belongs in the PR description, which the changelog links to.
+A change is not breaking when the old behavior was a bug, even when users notice it. To decide whether a change is breaking, ask whether it could ship in a minor release, whatever the next release is. If it could, it gets no entry, unless it deprecates something. A user-visible fix belongs in the PR description, which the changelog links to.
 
 An entry is for removing or renaming an API, option or package, raising a supported version, or deprecating something. A fix that makes a name, an output or an error match what the docs or another part of Storybook already said gets none.
 

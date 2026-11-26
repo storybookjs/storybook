@@ -48,17 +48,21 @@ type RefCheckResult = 'public' | NoManifestReason | AuthRequirement;
 // Only `unreachable` is checked again; the other states take a restart to change.
 type RefStatus =
   | { kind: 'public' }
-  | { kind: 'auth' }
+  | { kind: 'auth'; requirement: AuthRequirement }
   | { kind: 'excluded' }
   | { kind: 'unreachable'; failures: number; retryAt: number };
 
 interface RefState {
   ref: ComposedRef;
   status: RefStatus;
+  // The check in flight, shared by concurrent readers
+  check?: Promise<void>;
 }
 
 const RECHECK_BASE_DELAY = 5 * 1000;
 const RECHECK_MAX_DELAY = 60 * 1000;
+// How long a read of an unreachable ref waits for its re-check
+const RECHECK_WAIT = 3 * 1000;
 
 // 501 is how some static hosts answer the POST to /mcp.
 const isTransientStatus = (status: number) =>
@@ -92,8 +96,6 @@ export class AuthenticationError extends Error {
 
 export class CompositionAuth {
   #refStates: RefState[] = [];
-  #recheck: Promise<void> | null = null;
-  #authRequirement: AuthRequirement | null = null;
   #manifestCache = new Map<string, CacheEntry>();
   #lastToken: string | null = null;
   #authErrors = new WeakMap<Request, AuthenticationError>();
@@ -104,89 +106,57 @@ export class CompositionAuth {
       ref,
       status: { kind: 'unreachable', failures: 0, retryAt: 0 },
     }));
-    await this.#checkRefs(this.#refStates);
+    await Promise.all(this.#refStates.map((state) => this.#recheckIfDue(state)));
   }
 
-  // Concurrent callers share one round of checks. With `waitMs`, waits at most that long for it;
-  // the round keeps going in the background. Never rejects.
-  async recheckUnreachableRefs({ waitMs }: { waitMs?: number } = {}): Promise<void> {
-    if (!this.#recheck) {
-      const due = this.#refStates.filter(
-        ({ status }) => status.kind === 'unreachable' && status.retryAt <= Date.now()
-      );
-      if (due.length === 0) return;
-      this.#recheck = this.#checkRefs(due)
-        .catch((error) => {
-          logger.warn(
-            `[addon-mcp] Re-checking composed refs failed: ${error instanceof Error ? error.message : String(error)}`
-          );
-        })
-        .finally(() => {
-          this.#recheck = null;
-        });
-    }
-    if (waitMs === undefined) return this.#recheck;
+  // Never rejects
+  #check(state: RefState): Promise<void> {
+    state.check ??= this.#checkRef(state.ref.url)
+      .then(
+        (result) => this.#applyResult(state, result),
+        (error) => this.#applyFailure(state, error)
+      )
+      .catch((error) => {
+        logger.warn(
+          `[addon-mcp] Checking composed ref "${state.ref.title}" failed: ${error instanceof Error ? error.message : String(error)}`
+        );
+      })
+      .finally(() => {
+        state.check = undefined;
+      });
+    return state.check;
+  }
+
+  /** Re-checks an unreachable ref that is due, waiting at most `RECHECK_WAIT` for it. */
+  async #recheckIfDue(state: RefState): Promise<void> {
+    const { status } = state;
+    if (status.kind !== 'unreachable' || status.retryAt > Date.now()) return;
 
     let timer: ReturnType<typeof setTimeout> | undefined;
     await Promise.race([
-      this.#recheck,
+      this.#check(state),
       new Promise<void>((resolve) => {
-        timer = setTimeout(resolve, waitMs);
+        timer = setTimeout(resolve, RECHECK_WAIT);
       }),
     ]);
     clearTimeout(timer);
   }
 
-  async #checkRefs(states: RefState[]): Promise<void> {
-    const outcomes: Array<PromiseSettledResult<RefCheckResult> | undefined> = [];
-    const applied = new Set<number>();
-    // Each outcome applies as soon as it settles, except that a private ref waits for every ref
-    // before it, so response timing cannot choose the OAuth server.
-    const applySettled = () => {
-      let earlierPending = false;
-      for (const [index, state] of states.entries()) {
-        const outcome = outcomes[index];
-        if (!outcome) {
-          earlierPending = true;
-          continue;
-        }
-        if (applied.has(index)) continue;
-        const isPrivate = outcome.status === 'fulfilled' && typeof outcome.value === 'object';
-        if (isPrivate && earlierPending) continue;
-        this.#applyCheck(state, outcome);
-        applied.add(index);
-      }
-    };
-
-    await Promise.all(
-      states.map(async ({ ref }, index) => {
-        try {
-          outcomes[index] = { status: 'fulfilled', value: await this.#checkRef(ref.url) };
-        } catch (reason) {
-          outcomes[index] = { status: 'rejected', reason };
-        }
-        applySettled();
-      })
-    );
+  #applyFailure(state: RefState, error: unknown): void {
+    const { ref, status } = state;
+    const failures = status.kind === 'unreachable' ? status.failures + 1 : 1;
+    const delay = Math.min(RECHECK_BASE_DELAY * 2 ** (failures - 1), RECHECK_MAX_DELAY);
+    state.status = { kind: 'unreachable', failures, retryAt: Date.now() + delay };
+    if (failures === 1) {
+      logger.warn(
+        `[addon-mcp] Composed ref "${ref.title}" (${ref.url}) could not be reached (${error instanceof Error ? error.message : String(error)}). It is checked again when MCP next reads it.`
+      );
+    }
   }
 
-  #applyCheck(state: RefState, outcome: PromiseSettledResult<RefCheckResult>): void {
+  #applyResult(state: RefState, result: RefCheckResult): void {
     const { ref } = state;
     const previous = state.status;
-    if (outcome.status === 'rejected') {
-      const error = outcome.reason;
-      const failures = previous.kind === 'unreachable' ? previous.failures + 1 : 1;
-      const delay = Math.min(RECHECK_BASE_DELAY * 2 ** (failures - 1), RECHECK_MAX_DELAY);
-      state.status = { kind: 'unreachable', failures, retryAt: Date.now() + delay };
-      if (failures === 1) {
-        logger.warn(
-          `[addon-mcp] Composed ref "${ref.title}" (${ref.url}) could not be reached (${error instanceof Error ? error.message : String(error)}). It will be checked again when the MCP server is next used.`
-        );
-      }
-      return;
-    }
-
-    const result = outcome.value;
     if (previous.kind === 'unreachable' && previous.failures > 0) {
       logger.info(`[addon-mcp] Composed ref "${ref.title}" (${ref.url}) is reachable again.`);
     }
@@ -210,15 +180,24 @@ export class CompositionAuth {
       return;
     }
 
-    state.status = { kind: 'auth' };
-    this.#authRequirement ??= result;
-    const existingServer = this.#authRequirement.resourceMetadata.authorization_servers[0];
-    const newServer = result.resourceMetadata.authorization_servers[0];
-    if (existingServer !== newServer) {
+    const previousFirst = this.#authStates()[0];
+    state.status = { kind: 'auth', requirement: result };
+    const [first] = this.#authStates();
+    // Warns once about the ref whose server is not, or is no longer, the advertised one
+    const other = first.ref === ref ? previousFirst : { ref, requirement: result };
+    const advertised = first.requirement.resourceMetadata.authorization_servers[0];
+    const server = other?.requirement.resourceMetadata.authorization_servers[0];
+    if (other && server !== advertised) {
       logger.warn(
-        `[addon-mcp] Composed ref "${ref.title}" uses a different OAuth server (${newServer}) than the first authenticated ref (${existingServer}). Only the first OAuth server will be used for authentication.`
+        `[addon-mcp] Composed ref "${other.ref.title}" uses a different OAuth server (${server}) than the first authenticated ref (${advertised}). Only the first OAuth server will be used for authentication.`
       );
     }
+  }
+
+  #authStates() {
+    return this.#refStates.flatMap(({ ref, status }) =>
+      status.kind === 'auth' ? [{ ref, requirement: status.requirement }] : []
+    );
   }
 
   get requiresAuth(): boolean {
@@ -226,7 +205,7 @@ export class CompositionAuth {
   }
 
   get authUrls(): string[] {
-    return this.#refStates.filter(({ status }) => status.kind === 'auth').map(({ ref }) => ref.url);
+    return this.#authStates().map(({ ref }) => ref.url);
   }
 
   /** Check if a request encountered an auth error during manifest fetching. */
@@ -234,25 +213,15 @@ export class CompositionAuth {
     return this.#authErrors.has(request);
   }
 
-  #isUnreachable(refUrl: string): boolean {
-    return this.#refStates.some(
-      ({ ref, status }) => ref.url === refUrl && status.kind === 'unreachable'
-    );
-  }
-
-  /** Check if a URL requires authentication based on discovered auth requirements. */
-  #isAuthRequiredUrl(url: string): boolean {
-    return this.authUrls.some((authUrl) => url.startsWith(authUrl));
-  }
-
-  /** Build .well-known/oauth-protected-resource response for the MCP endpoint at `resource`. */
+  /**
+   * Build .well-known/oauth-protected-resource response for the MCP endpoint at `resource`. The
+   * first private ref in config order decides the OAuth server.
+   */
   buildWellKnown(resource: string): object | null {
-    if (!this.#authRequirement) return null;
-    return {
-      resource,
-      authorization_servers: this.#authRequirement.resourceMetadata.authorization_servers,
-      scopes_supported: this.#authRequirement.resourceMetadata.scopes_supported,
-    };
+    const [first] = this.#authStates();
+    if (!first) return null;
+    const { authorization_servers, scopes_supported } = first.requirement.resourceMetadata;
+    return { resource, authorization_servers, scopes_supported };
   }
 
   /** Build WWW-Authenticate header for 401 responses */
@@ -288,16 +257,21 @@ export class CompositionAuth {
         ? { ...source, url: source.url }
         : undefined;
 
-      if (remoteSource && this.#isUnreachable(remoteSource.url)) {
+      const state = remoteSource && this.#refStates.find(({ ref }) => ref.url === remoteSource.url);
+      if (state) await this.#recheckIfDue(state);
+      if (state?.status.kind === 'unreachable') {
         throw new Error(
-          `"${remoteSource.title}" is temporarily unreachable. It is checked again on later requests.`
+          `"${state.ref.title}" is temporarily unreachable. It is checked again when MCP next reads it.`
         );
+      }
+      if (state?.status.kind === 'excluded') {
+        throw new Error(`"${state.ref.title}" has no usable components manifest.`);
       }
 
       const baseUrl = remoteSource?.url ?? localBaseUrl;
       const manifestUrl = `${baseUrl}${path.replace(/^\.\//, '/')}`;
       const isRemote = !!remoteSource;
-      const needsAuth = isRemote && this.#isAuthRequiredUrl(baseUrl);
+      const needsAuth = state?.status.kind === 'auth';
       const tokenForRequest = needsAuth ? token : null;
 
       // New token = user re-authenticated, invalidate all cached manifests

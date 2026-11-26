@@ -25,8 +25,6 @@ import { DEFAULT_MCP_ENDPOINT } from './constants.ts';
 import { getStoryIndex } from './utils/get-story-index.ts';
 import { toBaseUrl } from './utils/base-url.ts';
 
-const RECHECK_WAIT_MS = 3_000;
-
 export const previewAnnotations: PresetPropertyFn<'previewAnnotations'> = async (
   existingAnnotations = []
 ) => {
@@ -74,7 +72,7 @@ function buildComposition(
     refs.length > 0 ? compositionAuth.createManifestProvider(baseUrl) : undefined;
 
   return {
-    // Read per request: background re-checks can add a ref's auth or drop a ref without a manifest.
+    // Read per request, since a re-check can drop a ref that has no manifest
     currentSources: () => (refs.length > 0 ? compositionAuth.buildSources() : undefined),
     multiSource,
     compositionAuth,
@@ -204,7 +202,6 @@ export const experimental_devServer: PresetPropertyFn<
   app!.post(endpoint, async (req, res) => {
     if (rejectDisallowedOrigin(req, res)) return;
     const { currentSources, compositionAuth, manifestAccess, multiSource } = await composition;
-    await compositionAuth.recheckUnreachableRefs({ waitMs: RECHECK_WAIT_MS });
     const sources = currentSources();
     if (requireAuth(req, res, compositionAuth)) return;
     if (rejectNonJsonBody(req, res)) return;
@@ -231,7 +228,6 @@ export const experimental_devServer: PresetPropertyFn<
     const { currentSources, compositionAuth, manifestAccess, availability, multiSource } =
       await composition;
     if (!req.headers['accept']?.includes('text/html')) {
-      await compositionAuth.recheckUnreachableRefs({ waitMs: RECHECK_WAIT_MS });
       const sources = currentSources();
       if (requireAuth(req, res, compositionAuth)) return;
 

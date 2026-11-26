@@ -14,7 +14,7 @@ if (
 
 globalThis.__STORYBOOK_ADDON_VITEST_PROJECT_ANNOTATIONS_APPLIED__ = false;
 
-// With `experimental_moduleImporters`, getProjectAnnotations returns a promise: the preview file
+// With `internal_moduleImporters`, getProjectAnnotations returns a promise: the preview file
 // is imported through the async importers first. Without them it returns the annotations directly.
 setProjectAnnotations(await getProjectAnnotations());
 

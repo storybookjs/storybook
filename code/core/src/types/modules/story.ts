@@ -34,7 +34,7 @@ export type ModuleExports = Record<string, ModuleExport>;
 export type ModuleImportFn = (path: Path) => Promise<ModuleExports>;
 /**
  * The export of a module importer, such as an entry of builder-vite's
- * `experimental_moduleImporters`. It returns the module the preview uses for `importPath`, the path
+ * `internal_moduleImporters`. It returns the module the preview uses for `importPath`, the path
  * as in the story index (for the preview file the same form, e.g. `./.storybook/preview.ts`).
  *
  * - `importFn` imports the file through the importers before this one, and then from the build. An

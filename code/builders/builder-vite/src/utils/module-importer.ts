@@ -11,12 +11,12 @@ import { isAbsolute, normalize } from 'pathe';
 import { dedent } from 'ts-dedent';
 
 /**
- * The module specifiers of the `experimental_moduleImporters` preset, in preset order: absolute paths
+ * The module specifiers of the `internal_moduleImporters` preset, in preset order: absolute paths
  * (normalized, also from a `file:` URL) or package specifiers. A module listed twice is kept at its
  * last place, so the main config, which presets apply last, can move a framework's importer.
  */
 export async function getModuleImporters(options: Options): Promise<string[]> {
-  const moduleImporters = await options.presets.apply<unknown>('experimental_moduleImporters', []);
+  const moduleImporters = await options.presets.apply<unknown>('internal_moduleImporters', []);
   if (!Array.isArray(moduleImporters)) {
     throw new ViteModuleImportersNotArrayError({ moduleImporters: String(moduleImporters) });
   }

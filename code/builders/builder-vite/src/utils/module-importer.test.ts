@@ -74,7 +74,7 @@ describe('getModuleImporters with the preset system', () => {
         {
           type: 'virtual',
           name: 'framework',
-          experimental_moduleImporters: (entries: string[] = []) => [
+          internal_moduleImporters: (entries: string[] = []) => [
             ...entries,
             '/framework/importer.js',
           ],
@@ -87,7 +87,7 @@ describe('getModuleImporters with the preset system', () => {
   }
 
   it('appends a plain array of the main config to the framework importers', async () => {
-    const options = await presetsOf({ experimental_moduleImporters: ['/project/importer.js'] });
+    const options = await presetsOf({ internal_moduleImporters: ['/project/importer.js'] });
 
     expect(await getModuleImporters(options)).toEqual([
       '/framework/importer.js',
@@ -97,7 +97,7 @@ describe('getModuleImporters with the preset system', () => {
 
   it('replaces the framework importers with a function of the main config', async () => {
     const options = await presetsOf({
-      experimental_moduleImporters: () => ['/project/importer.js'],
+      internal_moduleImporters: () => ['/project/importer.js'],
     });
 
     expect(await getModuleImporters(options)).toEqual(['/project/importer.js']);

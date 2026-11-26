@@ -42,13 +42,13 @@ export type StorybookConfigVite = {
    *
    * ```ts
    * // a framework's preset
-   * export const experimental_moduleImporters = (entries = []) => [
+   * export const internal_moduleImporters = (entries = []) => [
    *   ...entries,
    *   fileURLToPath(import.meta.resolve('./importer.js')),
    * ];
    *
    * // .storybook/main.ts
-   * experimental_moduleImporters: [fileURLToPath(import.meta.resolve('./importer.ts'))],
+   * internal_moduleImporters: [fileURLToPath(import.meta.resolve('./importer.ts'))],
    *
    * // .storybook/importer.ts
    * import type { ImportModule, ModuleImportFn } from 'storybook/internal/types';
@@ -67,7 +67,7 @@ export type StorybookConfigVite = {
    * };
    * ```
    */
-  experimental_moduleImporters?: PresetValue<string[]>;
+  internal_moduleImporters?: PresetValue<string[]>;
 };
 
 export type BuilderOptions = {

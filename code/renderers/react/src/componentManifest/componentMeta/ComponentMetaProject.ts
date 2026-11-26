@@ -154,7 +154,7 @@ export class ComponentMetaProject
     );
 
     // Targeted warmup: re-extract in the background so the next request is instant. Only the types
-    // the stories actually need get resolved, and TypeScript caches those on the AST nodes, so the
+    // the stories actually need get resolved, and the type checker caches those, so the
     // real extraction that follows hits cached results.
     if (versionMoved && this.entries.length > 0) {
       clearTimeout(this.warmupTimer);

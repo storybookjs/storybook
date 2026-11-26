@@ -262,10 +262,11 @@ describe('selectPathTriggeredJobs', () => {
     }
   });
 
-  it('adds the React portable stories job, which runs the Vitest plugin, for a Vitest addon change', () => {
+  it('adds the jobs that run the Vitest plugin and the test-run tool for a Vitest addon change', () => {
     expect(triggeredIds('code/addons/vitest/src/vitest-plugin/index.ts')).toEqual([
       'init-features',
       'test-storybooks-portable-react',
+      'test-storybooks-mcp',
     ]);
   });
 

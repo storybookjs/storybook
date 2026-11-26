@@ -123,11 +123,14 @@ describe('test API', () => {
     );
   });
 
-  it('selects for changed exactly the stories that stories changed lists', async () => {
+  it('selects for changed the stories that stories changed lists, and their story files', async () => {
     const changed = vi.fn(async () => ({
       ok: true as const,
       data: {
-        stories: [{ storyId: 'button--primary' }, { storyId: 'header--default' }],
+        stories: [
+          { storyId: 'button--primary', importPath: './src/Button.stories.tsx' },
+          { storyId: 'button--secondary', importPath: './src/Button.stories.tsx' },
+        ],
         changedConfigFiles: ['.storybook/preview.ts'],
         unindexedStoryFiles: ['src/New.stories.tsx'],
         pendingFiles: ['src/Card.tsx'],
@@ -140,7 +143,8 @@ describe('test API', () => {
     const { getChangedStories } = vi.mocked(runStoryTests).mock.lastCall![0];
 
     expect(await getChangedStories!()).toEqual({
-      storyIds: ['button--primary', 'header--default'],
+      storyIds: ['button--primary', 'button--secondary'],
+      storyFiles: ['./src/Button.stories.tsx'],
       changedConfigFiles: ['.storybook/preview.ts'],
       pendingFiles: ['src/New.stories.tsx', 'src/Card.tsx'],
     });
@@ -166,6 +170,14 @@ describe('test API', () => {
 
   it('rejects an empty ref, which would otherwise read as not changed and run every story', () => {
     expect(v.safeParse(toolset.methods.run.input, { changed: '' }).success).toBe(false);
+  });
+
+  it('rejects a line number after a file, which Vitest reads as the test at that line', () => {
+    const parse = (files: string[]) => v.safeParse(toolset.methods.run.input, { files });
+
+    expect(parse(['src/Button.stories.tsx:12']).success).toBe(false);
+    expect(parse(['Button:1-2']).success).toBe(false);
+    expect(parse(['C:\\project\\src\\Button.stories.tsx']).success).toBe(true);
   });
 
   it('rejects an empty file entry, which would otherwise match every story file', () => {

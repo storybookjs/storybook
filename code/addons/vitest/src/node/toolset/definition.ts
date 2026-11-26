@@ -54,6 +54,7 @@ const testRunResultSchema = v.object({
   a11yReports: v.record(v.string(), v.array(v.any())),
   reports: v.record(v.string(), v.array(v.any())),
   totalTestCount: v.optional(v.number()),
+  matchedFileCount: v.optional(v.number()),
   storyIds: v.optional(v.array(v.string())),
   startedAt: v.optional(v.number()),
   finishedAt: v.optional(v.number()),
@@ -73,7 +74,13 @@ const testRunResultSchema = v.object({
 
 /** What `files`, `changed` and `stories` selected, for the summary line. */
 const selectionSchema = v.object({
-  files: v.optional(v.object({ filters: v.array(v.string()), storyFileCount: v.number() })),
+  files: v.optional(
+    v.object({
+      filters: v.array(v.string()),
+      /** How many story files Vitest matched. Not there when the call stopped before that. */
+      storyFileCount: v.optional(v.number()),
+    })
+  ),
   changed: v.optional(
     v.object({
       /** How many stories `stories changed` listed. */
@@ -159,8 +166,18 @@ Use { absoluteStoryPath + exportName } only when you're currently working in a s
   ),
   files: v.optional(
     v.pipe(
-      // An empty entry, as from an unset variable, would match every story file.
-      v.array(v.pipe(v.string(), v.minLength(1))),
+      v.array(
+        v.pipe(
+          v.string(),
+          // An empty entry, as from an unset variable, would match every story file.
+          v.minLength(1),
+          // Vitest reads `Button.stories.tsx:12` as the test at that line, which the runner cannot run.
+          v.regex(
+            /^(?!.*:\d+(-\d+)?$)/,
+            'A line number after a file is not supported. To test one story, pass it in stories.'
+          )
+        )
+      ),
       v.description(
         `Story files to test: each entry selects the story files whose path contains it (case-insensitive), or that an absolute path or directory points to. Only story files match; to test the stories that depend on a changed component, use \`changed\`.`
       )
@@ -171,7 +188,7 @@ Use { absoluteStoryPath + exportName } only when you're currently working in a s
       // An empty ref, as from an unset variable in CI, must not read as "not changed".
       v.union([v.boolean(), v.pipe(v.string(), v.minLength(1))]),
       v.description(
-        'Test the changed stories, exactly as the stories changed tool lists them: new and modified stories, and the stories that depend on changed files. true for the uncommitted changes, or a git ref (a branch, tag or commit) for what this branch committed since it forked from that ref, plus the uncommitted changes. Combined with files or stories, only the stories that match both run.'
+        'Test the story files of the changed stories that the stories changed tool lists: new and modified stories, and the stories that depend on changed files. true for the uncommitted changes, or a git ref (a branch, tag or commit) for what this branch committed since it forked from that ref, plus the uncommitted changes. Combined with files or stories, only the stories that match both run.'
       )
     )
   ),
@@ -300,6 +317,7 @@ async function getChangedStories(ctx: ToolsetCtx, since?: string): Promise<Chang
   );
   return {
     storyIds: data.stories.map((story) => story.storyId),
+    storyFiles: [...new Set(data.stories.map((story) => story.importPath))],
     changedConfigFiles: data.changedConfigFiles,
     pendingFiles: [...data.unindexedStoryFiles, ...data.pendingFiles],
   };

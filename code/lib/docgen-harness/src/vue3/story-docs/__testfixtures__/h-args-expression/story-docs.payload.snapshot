@@ -15,6 +15,13 @@ import HArgsExpression from './HArgsExpression.vue';
   <HArgsExpression :count="2 + 1" :label="`${2} items`" />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import HArgsExpression from './HArgsExpression.vue';
+</script>
+
+<template>
+  <HArgsExpression :count="⟦value count in="attribute" quote="\""⟫2⟧ + 1" :label="`${⟦value count in="attribute" quote="\""⟫2⟧} items`" />
+</template>",
     },
   },
 }

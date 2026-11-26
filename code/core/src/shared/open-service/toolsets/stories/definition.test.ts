@@ -5,10 +5,11 @@ import type { StoryIndex } from 'storybook/internal/types';
 import { toJsonSchema } from '@valibot/to-json-schema';
 import { vol } from 'memfs';
 import { resolve } from 'pathe';
-import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as v from 'valibot';
 
 import {
+  OpenServiceGitRefError,
   OpenServiceMissingOriginError,
   OpenServiceModuleGraphUnavailableError,
 } from '../../../../server-errors.ts';
@@ -18,7 +19,11 @@ import {
   resolveToolsetDescription,
   type ToolsetCtx,
 } from '../../toolset-definition.ts';
-import { createStoriesToolset, type StoriesToolset } from './definition.ts';
+import {
+  createStoriesToolset,
+  type ChangedStoriesOutput,
+  type StoriesToolset,
+} from './definition.ts';
 
 vi.mock('node:fs', { spy: true });
 
@@ -72,12 +77,16 @@ const moduleGraph = {
 const storyIndex = { getIndex };
 const git = { getChangedFiles, getRepoRoot };
 const changeStatuses = { getAll: getStatuses };
+// The matcher of `stories: ['<dir>/**/*.stories.*']`.
+const storiesIn = (dir: string) => (file: string) =>
+  file.startsWith(`${dir}/`) && /\.stories\.[^/]+$/.test(file);
 const storybookDirs = {
   configDir: resolve(storybookWorkingDir, '.storybook'),
   getStaticDirs: async () => [
     resolve(storybookWorkingDir, 'public'),
     resolve(storybookWorkingDir, '.storybook/static'),
   ],
+  getStoriesMatcher: async () => storiesIn(resolve(storybookWorkingDir, 'src')),
 };
 
 let statusesFixture: Record<string, Record<string, unknown>>;
@@ -103,8 +112,12 @@ function runPreview(
   );
 }
 
-function runChanged(ctx: ToolsetCtx = cliCtx, target: StoriesToolset = toolset) {
-  return invokeToolsetMethod(target, 'changed', v.parse(target.methods.changed.input, {}), ctx);
+function runChanged(
+  ctx: ToolsetCtx = cliCtx,
+  target: StoriesToolset = toolset,
+  input: { since?: string } = {}
+) {
+  return invokeToolsetMethod(target, 'changed', v.parse(target.methods.changed.input, input), ctx);
 }
 
 function runFindByComponent(
@@ -175,7 +188,7 @@ describe('stories.preview', () => {
     expect(outcome.ok).toBe(true);
     expect(outcome.data).toEqual({
       stories: [{ title: 'Button', name: 'Primary', previewUrl }],
-      instructions: expect.stringContaining('publish the review with'),
+      instructions: expect.stringContaining('create the review with'),
     });
     expect(getIndex).toHaveBeenCalledOnce();
   });
@@ -217,7 +230,7 @@ describe('stories.preview', () => {
 
       expect(outcome.markdown).toEqual([
         previewUrl,
-        expect.stringContaining('publish the review with **npx storybook tools review create**'),
+        expect.stringContaining('create the review with **npx storybook tools review create**'),
       ]);
     });
 
@@ -242,9 +255,9 @@ describe('stories.preview', () => {
 
       expect(outcome.markdown).toEqual([
         previewUrl,
-        'These preview links are for iterating or sharing a specific story — they are not how visual work or a browse request ends. The review-create tool is available in this session: if you are finishing visually observable work or showing a set of stories, publish the review with **review-create** and link that instead.',
+        'These preview links are for iterating or sharing a specific story — they are not how a browse request or a requested review ends. The review-create tool is available in this session: when the user (or the agent instructions of the project) asked for a review, or the user asked to see a set of stories, create the review with **review-create** and link that instead.',
       ]);
-      expect(outcome.data.instructions).toContain('publish the review with **review-create**');
+      expect(outcome.data.instructions).toContain('create the review with **review-create**');
     });
 
     it('leaves an all-error result unnudged, since there is nothing to curate or open', async () => {
@@ -257,6 +270,127 @@ describe('stories.preview', () => {
 });
 
 describe('stories.changed', () => {
+  describe('since a git ref', () => {
+    const changedStoryFile = 'packages/ui/src/Button.stories.tsx';
+    const storyPath = resolve(storybookWorkingDir, 'src/Button.stories.tsx');
+
+    it('computes the stories from git and the graph, without change detection', async () => {
+      // The status store holds the uncommitted changes only; nothing in it for this ref.
+      getChangedFiles.mockResolvedValue({
+        changed: new Set([changedComponentFile]),
+        new: new Set<string>(),
+      });
+
+      const outcome = await runChanged(cliCtx, toolset, { since: 'next' });
+
+      expect(getChangedFiles).toHaveBeenCalledExactlyOnceWith('next');
+      // The notes and the statuses need the same file; the graph is asked once.
+      expect(storiesForFiles.mock.calls.flatMap(([{ files }]) => files)).toEqual([componentPath]);
+      expect(getStatuses).not.toHaveBeenCalled();
+      expect(changeDetectionReadiness).not.toHaveBeenCalled();
+      expect(outcome.data).toEqual({
+        stories: [
+          {
+            storyId: 'button--primary',
+            statusValue: 'status-value:modified',
+            title: 'Button',
+            name: 'Primary',
+            importPath: './src/Button.stories.tsx',
+          },
+        ],
+        counts: { new: 0, modified: 1, affected: 0 },
+        unreachableFiles: [],
+        unreachableFilesTruncated: false,
+        pendingFiles: [],
+        unindexedStoryFiles: [],
+        changedConfigFiles: [],
+        since: 'next',
+      });
+      expect(String(outcome.markdown)).toMatch(
+        /^Detected 1 changed story since `next` \(0 new, 1 modified, 0 related\)\./
+      );
+      expect(outcome.telemetry?.payload).toMatchObject({ storyCount: 1, since: true });
+    });
+
+    it('marks the stories of a story file added since the ref as new', async () => {
+      getChangedFiles.mockResolvedValue({
+        changed: new Set([changedComponentFile]),
+        new: new Set([changedStoryFile]),
+      });
+      graphMatchesByFile.set(storyPath, [{ storyFile: './src/Button.stories.tsx', depth: 0 }]);
+
+      const outcome = await runChanged(cliCtx, toolset, { since: 'next' });
+
+      expect(outcome.data.counts).toEqual({ new: 1, modified: 0, affected: 0 });
+    });
+
+    it('marks stories further from the changed file as related', async () => {
+      getIndex.mockResolvedValue({
+        ...index,
+        entries: {
+          ...index.entries,
+          'form--default': {
+            ...index.entries['button--primary'],
+            id: 'form--default',
+            title: 'Form',
+            name: 'Default',
+            importPath: './src/Form.stories.tsx',
+          },
+        },
+      });
+      graphMatchesByFile.set(componentPath, [
+        buttonStoryHit,
+        { storyFile: './src/Form.stories.tsx', depth: 2 },
+      ]);
+      getChangedFiles.mockResolvedValue({
+        changed: new Set([changedComponentFile]),
+        new: new Set<string>(),
+      });
+
+      const outcome = await runChanged(cliCtx, toolset, { since: 'next' });
+
+      expect(
+        outcome.data.stories.map((story: ChangedStoriesOutput['stories'][number]) => [
+          story.storyId,
+          story.statusValue,
+        ])
+      ).toEqual([
+        ['button--primary', 'status-value:modified'],
+        ['form--default', 'status-value:affected'],
+      ]);
+    });
+
+    it('says so when nothing changed since the ref', async () => {
+      getChangedFiles.mockResolvedValue({ changed: new Set<string>(), new: new Set<string>() });
+
+      const outcome = await runChanged(cliCtx, toolset, { since: 'next' });
+
+      expect(outcome.data.stories).toEqual([]);
+      expect(outcome.markdown).toBe('No new, modified, or related stories detected since `next`.');
+    });
+
+    it('rejects an empty ref', () => {
+      expect(v.safeParse(toolset.methods.changed.input, { since: '' }).success).toBe(false);
+    });
+
+    it('lets a ref that git cannot compare fail the call', async () => {
+      const error = new OpenServiceGitRefError({ ref: 'nope', reason: 'unknown' });
+      getChangedFiles.mockRejectedValue(error);
+
+      await expect(runChanged(cliCtx, toolset, { since: 'nope' })).rejects.toBe(error);
+      expect(error.message).toContain('`nope` is not a known git ref.');
+      expect(error.agentFacing).toBe(true);
+    });
+
+    it('fails outside a git repository, where a ref cannot be compared', async () => {
+      getChangedFiles.mockRejectedValue(new Error('not a git repository'));
+
+      await expect(runChanged(cliCtx, toolset, { since: 'next' })).rejects.toThrow(
+        'Cannot list the changes since `next`: this project is not in a git repository, or git is not available.'
+      );
+    });
+  });
+
   it('enriches change-detection statuses and lists unreachable working-tree files', async () => {
     markChanged('button--primary', 'status-value:modified');
 
@@ -276,6 +410,8 @@ describe('stories.changed', () => {
       counts: { new: 0, modified: 1, affected: 0 },
       unreachableFiles: [changedThemeFile],
       unreachableFilesTruncated: false,
+      pendingFiles: [],
+      unindexedStoryFiles: [],
       changedConfigFiles: [],
     });
     expect(getStatuses).toHaveBeenCalledOnce();
@@ -339,6 +475,8 @@ describe('stories.changed', () => {
         counts: { new: 0, modified: 0, affected: 0 },
         unreachableFiles: [],
         unreachableFilesTruncated: false,
+        pendingFiles: [],
+        unindexedStoryFiles: [],
         changedConfigFiles: [],
       });
       expect(outcome.markdown).toBe('No new, modified, or related stories detected.');
@@ -381,6 +519,215 @@ describe('stories.changed', () => {
       'packages/ui/src/theme.config.ts',
       'packages/ui/src/Card.vue',
     ]);
+  });
+
+  describe('when change detection has not processed the latest edit yet', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+      getChangedFiles.mockResolvedValue({
+        changed: new Set([changedComponentFile]),
+        new: new Set(),
+      });
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('waits for the scan of a changed file that stories render', async () => {
+      getStatuses.mockImplementationOnce(() => ({})).mockImplementationOnce(() => ({}));
+      markChanged('button--primary', 'status-value:modified');
+
+      const pending = runChanged(mcpCtx);
+      await vi.advanceTimersByTimeAsync(500);
+      const outcome = await pending;
+
+      expect(outcome.data.stories.map((story: { storyId: string }) => story.storyId)).toEqual([
+        'button--primary',
+      ]);
+      expect(outcome.data.pendingFiles).toEqual([]);
+      expect(getStatuses).toHaveBeenCalledTimes(3);
+    });
+
+    it('waits for a story file written a moment ago to reach the index', async () => {
+      const storyFile = 'packages/ui/src/Button.stories.tsx';
+      getChangedFiles.mockResolvedValue({ changed: new Set(), new: new Set([storyFile]) });
+      markReachable(resolve(repoRoot, storyFile));
+      storiesForFiles.mockImplementationOnce(async ({ files }: { files: string[] }) =>
+        files.map(() => [])
+      );
+      markChanged('button--primary', 'status-value:new');
+
+      const pending = runChanged(mcpCtx);
+      await vi.advanceTimersByTimeAsync(500);
+      const outcome = await pending;
+
+      expect(outcome.data.unindexedStoryFiles).toEqual([]);
+      expect(outcome.data.stories.map((story: { storyId: string }) => story.storyId)).toEqual([
+        'button--primary',
+      ]);
+    });
+
+    it('lists a story file the index has not picked up in time apart from unreachable files', async () => {
+      getChangedFiles.mockResolvedValue({
+        changed: new Set(),
+        new: new Set(['packages/ui/src/OrderHistory.stories.tsx']),
+      });
+
+      const pending = runChanged(mcpCtx);
+      await vi.advanceTimersByTimeAsync(5_000);
+      const outcome = await pending;
+
+      expect(outcome.data).toMatchObject({
+        unreachableFiles: [],
+        unindexedStoryFiles: ['packages/ui/src/OrderHistory.stories.tsx'],
+      });
+      expect(outcome.markdown).toBe(`No new, modified, or related stories detected.
+
+Story files that are not in the story index yet: \`packages/ui/src/OrderHistory.stories.tsx\`. A file written a moment ago takes a moment to index: pass it to \`stories-find-by-component\` for its story IDs. If that finds none, check that the file has stories and matches the \`stories\` globs of the main config. Until it is indexed, the files it imports can show up below as unreachable.`);
+    });
+
+    it('lists a story file next to the changed stories it has not reached yet', async () => {
+      getChangedFiles.mockResolvedValue({
+        changed: new Set(),
+        new: new Set(['packages/ui/src/OrderHistory.stories.tsx']),
+      });
+      markChanged('button--primary', 'status-value:modified');
+
+      const pending = runChanged(mcpCtx);
+      await vi.advanceTimersByTimeAsync(5_000);
+      const outcome = await pending;
+
+      expect(outcome.data.stories.map((story: { storyId: string }) => story.storyId)).toEqual([
+        'button--primary',
+      ]);
+      expect(outcome.markdown).toContain(
+        'Story files that are not in the story index yet: `packages/ui/src/OrderHistory.stories.tsx`.'
+      );
+    });
+
+    it('classifies a new story file even when more files are unreachable than it lists', async () => {
+      const utils = Array.from({ length: 12 }, (_, index) => `packages/ui/src/util${index}.ts`);
+      getChangedFiles.mockResolvedValue({
+        changed: new Set(utils),
+        new: new Set(['packages/ui/src/OrderHistory.stories.tsx']),
+      });
+
+      const pending = runChanged(mcpCtx);
+      await vi.advanceTimersByTimeAsync(5_000);
+      const outcome = await pending;
+
+      expect(outcome.data).toMatchObject({
+        unindexedStoryFiles: ['packages/ui/src/OrderHistory.stories.tsx'],
+        unreachableFilesTruncated: true,
+      });
+      expect(outcome.data.unreachableFiles).toHaveLength(10);
+    });
+
+    it('waits for a new story file that the stories globs match under another name', async () => {
+      const storyToolset = createStoriesToolset({
+        storyIndex,
+        git,
+        changeStatuses,
+        storybookDirs: {
+          ...storybookDirs,
+          getStoriesMatcher: async () => (file) => file.endsWith('.story.tsx'),
+        },
+      });
+      getChangedFiles.mockResolvedValue({
+        changed: new Set(),
+        new: new Set(['packages/ui/src/OrderHistory.story.tsx']),
+      });
+
+      const pending = runChanged(mcpCtx, storyToolset);
+      await vi.advanceTimersByTimeAsync(5_000);
+      const outcome = await pending;
+
+      expect(outcome.data).toMatchObject({
+        unreachableFiles: [],
+        unindexedStoryFiles: ['packages/ui/src/OrderHistory.story.tsx'],
+      });
+    });
+
+    it("does not wait for a story file of another package's Storybook", async () => {
+      getChangedFiles.mockResolvedValue({
+        changed: new Set(),
+        new: new Set(['packages/web/src/Page.stories.tsx']),
+      });
+
+      const outcome = await runChanged(mcpCtx);
+
+      expect(outcome.data).toMatchObject({
+        unindexedStoryFiles: [],
+        unreachableFiles: ['packages/web/src/Page.stories.tsx'],
+      });
+      expect(getStatuses).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not wait for a story file the stories globs leave out of a Storybook at the git root', async () => {
+      const rootToolset = createStoriesToolset({
+        storyIndex,
+        git,
+        changeStatuses,
+        storybookDirs: {
+          configDir: resolve(repoRoot, '.storybook'),
+          getStaticDirs: async () => [],
+          getStoriesMatcher: async () => storiesIn(resolve(repoRoot, 'src')),
+        },
+      });
+      getChangedFiles.mockResolvedValue({
+        changed: new Set(),
+        new: new Set(['packages/web/src/Page.stories.tsx']),
+      });
+
+      const outcome = await runChanged(mcpCtx, rootToolset);
+
+      expect(outcome.data).toMatchObject({
+        unindexedStoryFiles: [],
+        unreachableFiles: ['packages/web/src/Page.stories.tsx'],
+      });
+      expect(getStatuses).toHaveBeenCalledTimes(1);
+    });
+
+    it("checks the project's files before story files the stories globs leave out", async () => {
+      const rootToolset = createStoriesToolset({
+        storyIndex,
+        git,
+        changeStatuses,
+        storybookDirs: {
+          configDir: resolve(repoRoot, '.storybook'),
+          getStaticDirs: async () => [],
+          getStoriesMatcher: async () => storiesIn(resolve(repoRoot, 'src')),
+        },
+      });
+      const otherStories = Array.from(
+        { length: 11 },
+        (_, index) => `packages/web/src/Page${index}.stories.tsx`
+      );
+      getChangedFiles.mockResolvedValue({
+        changed: new Set([...otherStories, 'src/Button.tsx']),
+        new: new Set(),
+      });
+      markReachable(resolve(repoRoot, 'src/Button.tsx'));
+
+      const pending = runChanged(mcpCtx, rootToolset);
+      await vi.advanceTimersByTimeAsync(5_000);
+      const outcome = await pending;
+
+      expect(outcome.data.pendingFiles).toEqual(['src/Button.tsx']);
+      expect(outcome.data.unreachableFilesTruncated).toBe(true);
+    });
+
+    it('names the files when the scan does not finish in time', async () => {
+      const pending = runChanged(mcpCtx);
+      await vi.advanceTimersByTimeAsync(5_000);
+      const outcome = await pending;
+
+      expect(outcome.data.pendingFiles).toEqual([changedComponentFile]);
+      expect(outcome.markdown).toBe(`No new, modified, or related stories detected.
+
+Change detection has not processed these changed files yet, although stories render them: \`${changedComponentFile}\`. Pass them to \`stories-find-by-component\` for their story IDs.`);
+    });
   });
 
   it('treats every changed source file as part of the project when Storybook sits at the git root', async () => {
@@ -491,8 +838,19 @@ describe('stories.changed', () => {
       );
       expect(outcome.markdown).toBe(
         String(mcpOutcome.markdown)
+          .replaceAll('skills ui-review --mcp', 'skills ui-review')
           .replaceAll('review-create', 'npx storybook tools review create')
           .replaceAll('stories-find-by-component', 'npx storybook tools stories find-by-component')
+      );
+    });
+
+    it('names no skill command for the SDK, which has no shell', async () => {
+      markChanged('button--primary', 'status-value:new');
+      const outcome = await runChanged({ ...cliCtx, transport: 'sdk' });
+
+      expect(outcome.markdown).not.toContain('storybook skills');
+      expect(outcome.markdown).toContain(
+        'the stories of the change, call **review.create** curating'
       );
     });
 
@@ -507,7 +865,7 @@ describe('stories.changed', () => {
 New stories:
 - \`button--primary\`: Button / Primary (\`./src/Button.stories.tsx\`)
 
-Next: if the change is visually observable, publish the review now — call **review-create** curating these story IDs. That review link is how you finish; do not substitute individual preview URLs for it.`
+Next: when the user (or the agent instructions of the project) asked for a review, or the user asked to see the stories of the change, run \`npx storybook skills ui-review --mcp\` first if you have not yet, then call **review-create** curating these story IDs. A review shows the stories as they are when it is created, so an edit after it needs a new review; individual preview URLs do not replace it. A change with no visible effect, such as to a callback, tests or types, gets no review: say that nothing visible changed. This list covers your edits so far.`
       );
     });
 
@@ -529,7 +887,7 @@ Changed files in the Storybook config directory, which can affect every story: \
 
 Coverage sanity check: the working tree also contains modified file(s) that aren't reachable from any story (no static import path connects them), so this result can miss stories they affect: \`${changedThemeFile}\`. A component: write its stories, or tell the user. A file used without an import, such as a CSS-variable token: pass the components that use it to \`stories-find-by-component\`. Anything else, such as an app entry file: leave it out of the review. Never invent story IDs to fill the gap.
 
-Next: if the change is visually observable, publish the review now — call **review-create** curating these story IDs and any you found for the sanity check. That review link is how you finish; do not substitute individual preview URLs for it.`
+Next: when the user (or the agent instructions of the project) asked for a review, or the user asked to see the stories of the change, run \`npx storybook skills ui-review --mcp\` first if you have not yet, then call **review-create** curating these story IDs and any you found for the files listed above. A review shows the stories as they are when it is created, so an edit after it needs a new review; individual preview URLs do not replace it. A change with no visible effect, such as to a callback, tests or types, gets no review: say that nothing visible changed. This list covers your edits so far.`
       );
     });
 
@@ -658,11 +1016,11 @@ describe('descriptions', () => {
   it('describes preview as a mid-loop tool', () => {
     expect(resolveToolsetDescription(toolset.methods.preview.description, mcpCtx))
       .toBe(`Use this tool to get Storybook preview URLs while iterating on a specific story, or when the user asks for a direct link to one.
-Do not end visual work or browse requests with these links — publish a curated review with review-create instead (passing changedFiles: [] when no code changed) and link that.`);
+Do not end browse requests or a review that was asked for with these links — create a curated review with review-create instead (passing changedFiles: [] when no code changed) and link that.`);
 
     expect(resolveToolsetDescription(toolset.methods.preview.description, cliCtx))
       .toBe(`Use this tool to get Storybook preview URLs while iterating on a specific story, or when the user asks for a direct link to one.
-Do not end visual work or browse requests with these links — publish a curated review with npx storybook tools review create instead (passing changedFiles: [] when no code changed) and link that.`);
+Do not end browse requests or a review that was asked for with these links — create a curated review with npx storybook tools review create instead (passing changedFiles: [] when no code changed) and link that.`);
   });
 
   it('keeps review-create out of the static preview output schema', () => {

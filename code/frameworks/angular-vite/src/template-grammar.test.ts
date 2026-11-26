@@ -141,6 +141,20 @@ describe('formatTemplateMarkup', () => {
     );
   });
 
+  it('breaks attributes written without a space between them one per line', () => {
+    const title = 'a fairly long title attribute value';
+    expect(
+      formatTemplateMarkup(`<sb-button title="${title}"data-test="another long value"></sb-button>`)
+    ).toBe(
+      [
+        '<sb-button',
+        `    title="${title}"`,
+        '    data-test="another long value">',
+        '</sb-button>',
+      ].join('\n')
+    );
+  });
+
   it('keeps a short element with only text content as written', () => {
     expect(formatTemplateMarkup('<sb-button emphasis>hi</sb-button>')).toBe(
       '<sb-button emphasis>hi</sb-button>'

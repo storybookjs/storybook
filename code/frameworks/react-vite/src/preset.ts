@@ -1,9 +1,9 @@
-import {
-  getTypeScriptForDocgenError,
-  isDocgenServerDisabledInMainConfig,
-} from 'storybook/internal/common';
-import { deprecate } from 'storybook/internal/node-logger';
 import type { PresetProperty } from 'storybook/internal/types';
+
+import {
+  isReactBuilderDocgenPackageInstalled,
+  prepareReactBuilderDocgen,
+} from '@storybook/react/internal/builder-docgen';
 
 import type { StorybookConfig } from './types.ts';
 
@@ -11,6 +11,9 @@ export const core: PresetProperty<'core'> = {
   builder: import.meta.resolve('@storybook/builder-vite'),
   renderer: import.meta.resolve('@storybook/react/preset'),
 };
+
+/** Resolve from this package, which declares the builder docgen packages as optional peers. */
+const resolve = (specifier: string) => import.meta.resolve(specifier);
 
 export const viteFinal: NonNullable<StorybookConfig['viteFinal']> = async (config, options) => {
   const { presets } = options;
@@ -22,29 +25,29 @@ export const viteFinal: NonNullable<StorybookConfig['viteFinal']> = async (confi
     return config;
   }
 
-  const plugins = [...(config?.plugins ?? [])];
+  const { reactDocgen: reactDocgenOption, reactDocgenTypescriptOptions } = await presets.apply<{
+    reactDocgen?: 'react-docgen' | 'react-docgen-typescript' | false;
+    reactDocgenTypescriptOptions?: Record<string, unknown>;
+  }>('typescript', {});
 
-  // Add docgen plugin
-  const { reactDocgen: reactDocgenOption, reactDocgenTypescriptOptions } = await presets.apply<any>(
-    'typescript',
-    {}
-  );
-  const typescriptUsable = !getTypeScriptForDocgenError((specifier) =>
-    import.meta.resolve(specifier)
-  );
-
-  if (
-    typeof reactDocgenOption === 'string' &&
-    (await isDocgenServerDisabledInMainConfig(options))
-  ) {
-    deprecate(
-      `Builder docgen (\`typescript.reactDocgen: '${reactDocgenOption}'\`) is deprecated and will be removed in Storybook 12. ` +
-        `It runs because your Storybook main config sets \`features.docgenServer: false\`. Remove that setting to use server-side docgen.`
-    );
+  if (typeof reactDocgenOption !== 'string') {
+    return config;
   }
 
-  const useReactDocgenTypescript =
-    reactDocgenOption === 'react-docgen-typescript' && typescriptUsable;
+  // Builder docgen packages are optional peers: import them only once builder docgen runs, so
+  // projects on the docgen server never resolve them.
+  const mode = await prepareReactBuilderDocgen({
+    reactDocgen: reactDocgenOption,
+    builder: 'vite',
+    resolve,
+    options,
+  });
+  if (!mode) {
+    return config;
+  }
+  const useReactDocgenTypescript = mode === 'react-docgen-typescript';
+
+  const plugins = [...(config?.plugins ?? [])];
 
   if (useReactDocgenTypescript) {
     plugins.push(
@@ -56,12 +59,12 @@ export const viteFinal: NonNullable<StorybookConfig['viteFinal']> = async (confi
     );
   }
 
-  // Add react-docgen so long as the option is not false
-  if (typeof reactDocgenOption === 'string') {
+  // react-docgen reads every file, except TypeScript files when react-docgen-typescript reads them.
+  // In react-docgen-typescript mode, react-docgen is optional and only covers JavaScript files.
+  if (!useReactDocgenTypescript || isReactBuilderDocgenPackageInstalled(resolve, 'react-docgen')) {
     const { reactDocgen } = await import('./plugins/react-docgen.ts');
     // Needs to run before the react plugin, so add to the front
     plugins.unshift(
-      // react-docgen reads every file, except TypeScript files when react-docgen-typescript reads them
       await reactDocgen({
         include: useReactDocgenTypescript ? /\.(mjs|jsx?)$/ : /\.(mjs|tsx?|jsx?)$/,
       })

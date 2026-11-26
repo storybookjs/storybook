@@ -4,7 +4,6 @@ import { win32 } from 'node:path/win32';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { resolveModulePath } from 'exsolve';
-import semver from 'semver';
 import { dirname, join } from 'pathe';
 
 import { jsModuleExtensions } from '../constants/extensions.ts';
@@ -46,12 +45,18 @@ export const resolvePackageDir = (
   }
 };
 
+/**
+ * Whether Storybook loads TypeScript through `module.registerHooks()` on this Node.js version.
+ * A plain major check keeps semver out of this module, which other packages bundle from source.
+ */
+export const usesRegisterHooks = (nodeVersion: string) => Number(nodeVersion.split('.')[0]) >= 26;
+
 let typescriptLoaderRegistration: Promise<void> | null = null;
 let typescriptLoaderRegistrationError: unknown = null;
 
 function registerTypescriptLoader() {
   typescriptLoaderRegistration ??= (async () => {
-    if (semver.gte(process.versions.node, '26.0.0')) {
+    if (usesRegisterHooks(process.versions.node)) {
       try {
         const { load } = await import('storybook/internal/bin/loader');
         nodeModule.registerHooks({ load });

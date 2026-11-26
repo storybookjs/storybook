@@ -7,12 +7,12 @@ import {
   UPDATE_STORY_ARGS,
 } from 'storybook/internal/core-events';
 import type { StoryContext } from 'storybook/internal/csf';
-import type { ModuleExport, WebRenderer } from 'storybook/internal/types';
+import type { ModuleExport, RenderContextCallbacks, WebRenderer } from 'storybook/internal/types';
 
 import type { Meta, ReactRenderer, StoryObj } from '@storybook/react-vite';
 
 import type { PreviewWeb } from 'storybook/preview-api';
-import { within } from 'storybook/test';
+import { expect, waitFor, within } from 'storybook/test';
 
 import type { DocsContextProps } from '../blocks';
 import * as ButtonStories from '../examples/Button.stories';
@@ -75,6 +75,42 @@ export const InlineError: Story = {
     autoplay: false,
     forceInitialArgs: false,
     renderStoryToElement,
+  },
+};
+
+let errorRecoveryCallbacks: RenderContextCallbacks<ReactRenderer> | undefined;
+
+const renderStoryWithCallbacks: DocsContextProps<ReactRenderer>['renderStoryToElement'] = (
+  _story,
+  element,
+  callbacks
+) => {
+  errorRecoveryCallbacks = callbacks;
+  element.textContent = 'Story content';
+  return async () => {};
+};
+
+export const InlineErrorRecovery: Story = {
+  args: {
+    inline: true,
+    // @ts-expect-error getting too complex with props
+    autoplay: false,
+    forceInitialArgs: false,
+    renderStoryToElement: renderStoryWithCallbacks,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText('Story content');
+
+    errorRecoveryCallbacks?.showException(new Error('Story failed'));
+    await canvas.findByText(/Story failed/);
+    await expect(canvas.getByText('Story content').getBoundingClientRect().width).toBeGreaterThan(
+      0
+    );
+
+    errorRecoveryCallbacks?.showMain();
+    await waitFor(() => expect(canvas.getByText('Story content')).toBeVisible());
+    await expect(canvas.queryByText(/Story failed/)).not.toBeInTheDocument();
   },
 };
 

@@ -50,6 +50,12 @@ describe('the engine table', () => {
     expect(ALL_ENGINE_IDS).toContain('react-legacy-rdt');
   });
 
+  it('runs the engines on the native API of TypeScript 7.1 by default, with their pairs', () => {
+    for (const id of ['react-osa-native', 'angular-cm', 'angular-cm-native'] as const) {
+      expect(DEFAULT_ENGINE_IDS).toContain(id);
+    }
+  });
+
   it('names an engine that is not registered', () => {
     expect(() => engineById('svelte' as EngineId)).toThrow('no engine registered for "svelte"');
   });

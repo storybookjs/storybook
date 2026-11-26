@@ -8,7 +8,7 @@ import { vitestCommonConfig } from '../../vitest.shared.ts';
 export default defineConfig(
   mergeConfig(vitestCommonConfig, {
     plugins: [
-      import('@sveltejs/vite-plugin-svelte').then(({ svelte }) => svelte()),
+      import('@sveltejs/vite-plugin-svelte').then(({ svelte }) => svelte({ configFile: false })),
       svelteCsf(),
       // @ts-expect-error -- types don't match our TS module resolution setting
       import('@testing-library/svelte/vite').then(({ svelteTesting }) => svelteTesting()),

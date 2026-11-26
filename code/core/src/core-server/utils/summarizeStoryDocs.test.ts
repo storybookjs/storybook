@@ -140,4 +140,15 @@ describe('summarizeStoryDocs', () => {
       warningCount: 0,
     });
   });
+
+  it('counts a component titled Constructor that has no story-docs snapshot as an error', async () => {
+    const index = toIndex([story('constructor--primary')]);
+
+    expect(await summarizeStoryDocs(index, outputDir)).toEqual({
+      storyCount: 1,
+      errorCount: 1,
+      noSnippetCount: 0,
+      warningCount: 0,
+    });
+  });
 });

@@ -18,7 +18,7 @@ describe('MCP endpoint when git is unusable', () => {
 	beforeAll(async () => {
 		await killPort(PORT);
 		// GIT_DIR pointing nowhere makes every git invocation fail, without touching the repo.
-		storybookProcess = startStorybook('.storybook', PORT, { GIT_DIR: '/nonexistent' });
+		({ storybookProcess } = await startStorybook('.storybook', PORT, { GIT_DIR: '/nonexistent' }));
 		await waitForMcpEndpoint(MCP_ENDPOINT);
 	}, STARTUP_TIMEOUT);
 

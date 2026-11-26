@@ -10,6 +10,8 @@ import {
   storyDocsStaticStorePath,
 } from '../../../shared/open-service/services/story-docs/paths.ts';
 import type { StoryDocsPayload } from '../../../shared/open-service/services/story-docs/types.ts';
+import { getOwn } from '../../../shared/open-service/plain-object.ts';
+import { readComponent } from '../../../shared/open-service/services/component-state-key.ts';
 import type { ComponentManifest, ComponentsManifest } from '../../../types/modules/core-common.ts';
 
 import { join } from 'pathe';
@@ -47,13 +49,13 @@ export type ComponentManifestWithStoryDocs = Omit<ComponentManifest, 'stories'> 
 
 function readDocgenSnapshotPayload(document: unknown, id: string): DocgenPayload | undefined {
   const components = (document as { components?: Record<string, unknown> } | null)?.components;
-  const payload = components?.[id];
+  const payload = components && readComponent(components, id);
   return payload !== null && typeof payload === 'object' ? (payload as DocgenPayload) : undefined;
 }
 
 function readStoryDocsSnapshotPayload(document: unknown, id: string): StoryDocsPayload | undefined {
   const components = (document as { components?: Record<string, unknown> } | null)?.components;
-  const payload = components?.[id];
+  const payload = components && readComponent(components, id);
   return payload !== null && typeof payload === 'object'
     ? (payload as StoryDocsPayload)
     : undefined;
@@ -134,8 +136,9 @@ export function toComponentManifestIndexEntries(
   const entries: Record<string, ComponentManifestIndexEntry> = {};
 
   for (const id of componentIds) {
-    const payload = docgenPayloads[id];
-    const storyDocs = storyDocsPayloads[id];
+    const payload = getOwn(docgenPayloads, id);
+    const storyDocs = getOwn(storyDocsPayloads, id);
+    const docs = getOwn(docsByComponentId, id);
     entries[id] = {
       id: payload?.id ?? id,
       name: payload?.name ?? id,
@@ -145,7 +148,7 @@ export function toComponentManifestIndexEntries(
       // Stories are indexed whether or not a component was extracted, so the ref does not hang off
       // the docgen payload: dropping it hid every story of a componentless component.
       ...(storyDocs ? { stories: { $ref: storyDocsManifestRef(id) } } : {}),
-      ...(docsByComponentId[id] ? { docs: docsByComponentId[id] } : {}),
+      ...(docs ? { docs } : {}),
     };
   }
 

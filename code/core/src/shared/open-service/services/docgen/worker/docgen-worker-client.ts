@@ -13,12 +13,9 @@ import type { DocgenWorkerRequest, DocgenWorkerResponse } from './protocol.ts';
 // Resolved via the export map, not a hard-coded dist path, so strict layouts like pnpm's work.
 const WORKER_SPECIFIER = 'storybook/internal/docgen-worker';
 
-const DEFAULT_TASK_TIMEOUT_MS = 120_000;
-
 interface Pending {
   resolve: (payload: DocgenPayload | undefined) => void;
   reject: (error: unknown) => void;
-  timer?: NodeJS.Timeout;
 }
 
 export interface DocgenWorkerClient {
@@ -47,11 +44,7 @@ class DocgenWorker implements DocgenWorkerClient {
   private death: Error | undefined;
   private served = false;
 
-  constructor(
-    scriptPath: string,
-    descriptors: DocgenProviderDescriptor[],
-    private readonly taskTimeoutMs = DEFAULT_TASK_TIMEOUT_MS
-  ) {
+  constructor(scriptPath: string, descriptors: DocgenProviderDescriptor[]) {
     this.worker = new Worker(scriptPath);
     this.worker.on('message', (msg: DocgenWorkerResponse) => this.handleMessage(msg));
     this.worker.on('error', (error) => this.fail(error));
@@ -107,16 +100,7 @@ class DocgenWorker implements DocgenWorkerClient {
     await this.ready;
     return new Promise<DocgenPayload | undefined>((resolve, reject) => {
       const id = this.nextId++;
-      const pending: Pending = { resolve, reject };
-      if (this.taskTimeoutMs > 0) {
-        pending.timer = setTimeout(() => {
-          this.pending.delete(id);
-          this.keepProcessAliveWhileBusy();
-          reject(new Error(`docgen worker extract ${id} timed out after ${this.taskTimeoutMs}ms`));
-        }, this.taskTimeoutMs);
-        pending.timer.unref?.();
-      }
-      this.pending.set(id, pending);
+      this.pending.set(id, { resolve, reject });
       this.keepProcessAliveWhileBusy();
       this.post({ type: 'extract', id, entry });
     });
@@ -142,9 +126,6 @@ class DocgenWorker implements DocgenWorkerClient {
     if (!pending) {
       return;
     }
-    if (pending.timer) {
-      clearTimeout(pending.timer);
-    }
     this.pending.delete(msg.id);
     this.served = true;
     this.keepProcessAliveWhileBusy();
@@ -169,9 +150,6 @@ class DocgenWorker implements DocgenWorkerClient {
 
   private rejectAllPending(error: Error): void {
     for (const [, pending] of this.pending) {
-      if (pending.timer) {
-        clearTimeout(pending.timer);
-      }
       pending.reject(error);
     }
     this.pending.clear();

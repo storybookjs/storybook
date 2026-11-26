@@ -8,7 +8,6 @@ import { join } from 'pathe';
 import { dedent } from 'ts-dedent';
 
 import { MIN_SUPPORTED_NODE_DESCRIPTION, isNodeVersionSupported } from '../common/node-version.ts';
-import { getProcessAncestry } from '../common/utils/process-ancestry.ts';
 import versions from '../common/versions.ts';
 import { resolvePackageDir } from '../shared/utils/module.ts';
 
@@ -64,6 +63,7 @@ async function run() {
     getPkgPrNewPackageSpecifier,
     getRemotePackageRunnerArgs,
     resolveStorybookVersionSpecifier,
+    STORYBOOK_VERSION_SPECIFIER_ENV,
   } = await import('storybook/internal/common');
 
   const targetCli =
@@ -77,14 +77,9 @@ async function run() {
           args,
         } as const);
 
-  let storybookVersionSpecifier: string | undefined;
-  try {
-    storybookVersionSpecifier = resolveStorybookVersionSpecifier(getProcessAncestry());
-  } catch {
-    storybookVersionSpecifier = resolveStorybookVersionSpecifier([]);
-  }
+  const storybookVersionSpecifier = resolveStorybookVersionSpecifier();
   if (storybookVersionSpecifier) {
-    process.env.STORYBOOK_VERSION_SPECIFIER = storybookVersionSpecifier;
+    process.env[STORYBOOK_VERSION_SPECIFIER_ENV] = storybookVersionSpecifier;
   }
 
   const dispatchedVersion =

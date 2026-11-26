@@ -109,7 +109,7 @@ describe('enhancePropTypesProp', () => {
           const component = createTestComponent({
             type: {
               name: 'custom',
-              raw: '{\n  text: PropTypes.string.isRequired,\n  value1: PropTypes.string.isRequired,\n  value2: PropTypes.string.isRequired,\n  value3: PropTypes.string.isRequired,\n  value4: PropTypes.string.isRequired,\n}',
+              raw: '{\n  text: PropTypes.string.isRequired,\n  value1: PropTypes.string.isRequired,\n  value2: PropTypes.string.isRequired,\n  value3: PropTypes.string.isRequired,\n  value4: PropTypes.string.isRequired,\n  value5: PropTypes.string.isRequired,\n  value6: PropTypes.string.isRequired,\n}',
             },
           });
 
@@ -122,7 +122,9 @@ describe('enhancePropTypesProp', () => {
             value1: string,
             value2: string,
             value3: string,
-            value4: string
+            value4: string,
+            value5: string,
+            value6: string
           }`;
 
           expect(type?.detail?.replace(/\s/g, '')).toBe(expectedDetail.replace(/\s/g, ''));
@@ -395,7 +397,7 @@ describe('enhancePropTypesProp', () => {
             },
             {
               value:
-                '{\n  foo: PropTypes.string,\n  bar: PropTypes.string,\n  hey: PropTypes.string,\n  ho: PropTypes.string,\n}',
+                '{\n  foo: PropTypes.string,\n  bar: PropTypes.string,\n  hey: PropTypes.string,\n  ho: PropTypes.string,\n  another: PropTypes.string,\n  anotherAnother: PropTypes.string,\n}',
               computed: true,
             },
           ],
@@ -413,7 +415,9 @@ describe('enhancePropTypesProp', () => {
           foo: string,
           bar: string,
           hey: string,
-          ho: string
+          ho: string,
+          another: string,
+          anotherAnother: string
         }`;
 
       expect(type?.detail?.replace(/\s/g, '')).toBe(expectedDetail.replace(/\s/g, ''));
@@ -606,7 +610,7 @@ describe('enhancePropTypesProp', () => {
             name: 'objectOf',
             value: {
               name: 'custom',
-              raw: '{\n  foo: PropTypes.string,\n  bar: PropTypes.string,\n  another: PropTypes.string,\n  anotherAnother: PropTypes.string,\n}',
+              raw: '{\n  foo: PropTypes.string,\n  bar: PropTypes.string,\n  another: PropTypes.string,\n  anotherAnother: PropTypes.string,\n  yetAnother: PropTypes.string,\n}',
             },
           },
         });
@@ -619,7 +623,8 @@ describe('enhancePropTypesProp', () => {
           foo: string,
           bar: string,
           another: string,
-          anotherAnother: string
+          anotherAnother: string,
+          yetAnother: string
         })`;
 
         expect(type?.detail?.replace(/\s/g, '')).toBe(expectedDetail.replace(/\s/g, ''));
@@ -686,6 +691,10 @@ describe('enhancePropTypesProp', () => {
                   name: 'string',
                   required: false,
                 },
+                yetAnother: {
+                  name: 'string',
+                  required: false,
+                },
               },
             },
           },
@@ -699,7 +708,8 @@ describe('enhancePropTypesProp', () => {
           foo: string,
           bar: string,
           another: string,
-          anotherAnother: string
+          anotherAnother: string,
+          yetAnother: string
         })`;
 
         expect(type?.detail?.replace(/\s/g, '')).toBe(expectedDetail.replace(/\s/g, ''));
@@ -981,7 +991,9 @@ describe('enhancePropTypesProp', () => {
 
     it('should support long object', () => {
       const component = createTestComponent(
-        createDefaultValue("{ foo: 'foo', bar: 'bar', another: 'another' }")
+        createDefaultValue(
+          "{ foo: 'foo', bar: 'bar', another: 'another', yetAnother: 'yetAnother' }"
+        )
       );
 
       const { defaultValue } = extractPropDef(component);
@@ -991,7 +1003,8 @@ describe('enhancePropTypesProp', () => {
       const expectedDetail = `{
         foo: 'foo',
         bar: 'bar',
-        another: 'another'
+        another: 'another',
+        yetAnother: 'yetAnother'
       }`;
 
       expect(defaultValue?.detail?.replace(/\s/g, '')).toBe(expectedDetail.replace(/\s/g, ''));
@@ -1136,6 +1149,30 @@ describe('enhancePropTypesProp', () => {
       expect(defaultValue?.detail).toBeUndefined();
     });
 
+    it('should separate the items of a short array with a single space', () => {
+      const component = createTestComponent(createDefaultValue("['array', 'optional']"));
+
+      const { defaultValue } = extractPropDef(component);
+
+      expect(defaultValue?.summary).toBe("['array', 'optional']");
+    });
+
+    it('should separate the properties of a short object with a single space', () => {
+      const component = createTestComponent(createDefaultValue("{ foo: 'foo', bar: 'bar' }"));
+
+      const { defaultValue } = extractPropDef(component);
+
+      expect(defaultValue?.summary).toBe("{ foo: 'foo', bar: 'bar' }");
+    });
+
+    it('should separate the items of a nested short array with a single space', () => {
+      const component = createTestComponent(createDefaultValue('[1, [2, 3]]'));
+
+      const { defaultValue } = extractPropDef(component);
+
+      expect(defaultValue?.summary).toBe('[1, [2, 3]]');
+    });
+
     it('should support long array', () => {
       const component = createTestComponent(
         createDefaultValue(
@@ -1200,7 +1237,7 @@ describe('enhancePropTypesProp', () => {
 
         const { defaultValue } = extractPropDef(component, [1, 2, 3]);
 
-        expect(defaultValue?.summary).toBe('[1,    2,    3]');
+        expect(defaultValue?.summary).toBe('[1, 2, 3]');
         expect(defaultValue?.detail).toBeUndefined();
       });
 
@@ -1218,14 +1255,17 @@ describe('enhancePropTypesProp', () => {
         // @ts-expect-error (invalid input)
         const component = createTestComponent(null);
 
-        const { defaultValue } = extractPropDef(component, [{ foo: 'bar', bar: 'foo', hey: 'ho' }]);
+        const { defaultValue } = extractPropDef(component, [
+          { foo: 'bar', bar: 'foo', hey: 'ho', another: 'another' },
+        ]);
 
         expect(defaultValue?.summary).toBe('array');
 
         const expectedDetail = `[{
           'foo': 'bar',
           'bar': 'foo',
-          'hey': 'ho'
+          'hey': 'ho',
+          'another': 'another'
         }]`;
 
         expect(defaultValue?.detail?.replace(/\s/g, '')).toBe(expectedDetail.replace(/\s/g, ''));
@@ -1245,14 +1285,20 @@ describe('enhancePropTypesProp', () => {
         // @ts-expect-error (invalid input)
         const component = createTestComponent(null);
 
-        const { defaultValue } = extractPropDef(component, { foo: 'bar', bar: 'foo', hey: 'ho' });
+        const { defaultValue } = extractPropDef(component, {
+          foo: 'bar',
+          bar: 'foo',
+          hey: 'ho',
+          another: 'another',
+        });
 
         expect(defaultValue?.summary).toBe('object');
 
         const expectedDetail = `{
           'foo': 'bar',
           'bar': 'foo',
-          'hey': 'ho'
+          'hey': 'ho',
+          'another': 'another'
         }`;
 
         expect(defaultValue?.detail?.replace(/\s/g, '')).toBe(expectedDetail.replace(/\s/g, ''));

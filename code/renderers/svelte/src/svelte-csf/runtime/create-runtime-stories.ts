@@ -4,8 +4,9 @@ import { logger } from 'storybook/internal/client-logger';
 import type { StoryObj } from '@storybook/svelte';
 import { mount, unmount, type Component } from 'svelte';
 
-import type { Cmp, ComponentAnnotations, StoriesRepository } from '../types.ts';
+import type { ArgSources, Cmp, ComponentAnnotations, StoriesRepository } from '../types.ts';
 import { getStoryChain } from '../utils/story-chain.ts';
+import { snapshotArg } from './sync-story-args.ts';
 
 import StoriesExtractor from '@storybook/svelte/internal/svelte-csf/StoriesExtractor.svelte';
 import StoryRenderer from '@storybook/svelte/internal/svelte-csf/StoryRenderer.svelte';
@@ -14,18 +15,8 @@ const createFragment = document.createDocumentFragment
   ? () => document.createDocumentFragment()
   : () => document.createElement('div');
 
-/**
- * @module
- * Called from a bundler.
- *
- * It mounts the Stories components in a context which disables
- * the rendering of every `<Story />`,
- * but instead collects names and properties.
- *
- * For every discovered `<Story />`, it creates a `StoryFn` which
- * instantiate the main Stories component: Every Story but
- * the one selected is disabled.
- */
+// Mounts the stories file once, with every `<Story>` collecting its props instead of rendering,
+// then returns one CSF story per collected `<Story>`.
 export const createRuntimeStories = (Stories: Component, meta: ComponentAnnotations<Cmp>) => {
   const repository: StoriesRepository<Cmp> = {
     stories: new Map(),
@@ -70,6 +61,12 @@ export const createRuntimeStories = (Stories: Component, meta: ComponentAnnotati
     const [playExportName, playStory] = chain.find(([, { play }]) => play) ?? [];
     const [asChildExportName, asChildStory] =
       chain.find(([, story]) => story.asChild !== undefined) ?? [];
+    const argSources: ArgSources = {};
+    for (const [name, { args }] of [...chain].reverse()) {
+      for (const [key, value] of Object.entries(args ?? {})) {
+        argSources[key] = { exportName: name, value: snapshotArg(value) };
+      }
+    }
     // The props of the `<Story>` component that are not story annotations
     const { template: _template, asChild: _asChild, extend: _extend, ...annotations } = story;
 
@@ -82,6 +79,7 @@ export const createRuntimeStories = (Stories: Component, meta: ComponentAnnotati
           playExportName,
           asChildExportName,
           asChild: asChildStory?.asChild ?? false,
+          argSources,
           Stories,
           storyContext,
           args,
@@ -119,9 +117,7 @@ export const createRuntimeStories = (Stories: Component, meta: ComponentAnnotati
     meta.parameters.controls = {};
   }
 
-  // Inserts https://storybook.js.org/docs/essentials/controls#disablesavefromui
-  // Ref: https://github.com/storybookjs/addon-svelte-csf/issues/240
-  // TODO: Restore this feature
+  // Saving stories from the controls panel does not support `.stories.svelte` files.
   meta.parameters.controls.disableSaveFromUI = true;
 
   return stories;

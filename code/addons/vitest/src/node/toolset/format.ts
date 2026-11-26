@@ -1,6 +1,8 @@
 import type { ToolsetCtx } from 'storybook/open-service';
 
-import type { TestRunData, TestRunResult } from './definition.ts';
+import { isAbsolute, relative } from 'pathe';
+
+import type { TestRunData, TestRunResult, TestRunSelection } from './definition.ts';
 
 type ComponentTestStatus = TestRunResult['componentTestStatuses'][number];
 
@@ -274,32 +276,125 @@ const FAILURE_LABELS: Record<keyof TestRunFailureCounts, (count: number) => stri
   unhandledErrors: (count) => pluralize(count, 'unhandled error'),
 };
 
+// Short relative paths read better and cost fewer tokens; a path outside the project stays absolute.
+export function displayPath(file: string): string {
+  if (!isAbsolute(file)) {
+    return file;
+  }
+  const fromCwd = relative(process.cwd(), file);
+  return fromCwd.startsWith('..') ? file : fromCwd;
+}
+
+function code(value: string): string {
+  return `\`${value}\``;
+}
+
+function sinceRef({ since }: NonNullable<TestRunSelection['changed']>): string {
+  return since === undefined ? '' : ` since ${code(since)}`;
+}
+
+// The notes `stories changed` gives about what its story list cannot show.
+function formatChangedConfigFiles(changed: TestRunSelection['changed']): string[] {
+  return [
+    ...(changed?.pendingFiles.length
+      ? [
+          `Change detection has not caught up with these changed files yet, so their stories may be missing: ${changed.pendingFiles.map(code).join(', ')}. Run this again in a moment.`,
+        ]
+      : []),
+    ...(changed?.changedConfigFiles.length
+      ? [
+          `Changed files in the Storybook config directory, which can affect every story: ${changed.changedConfigFiles.map(code).join(', ')}.`,
+        ]
+      : []),
+  ];
+}
+
+// One line: what each form matched, then what that selected.
+function formatSelection(selection: TestRunSelection): string | undefined {
+  const parts: string[] = [];
+  if (selection.files) {
+    const { filters, storyFileCount = 0 } = selection.files;
+    parts.push(
+      `${pluralize(storyFileCount, 'story file')} ${storyFileCount === 1 ? 'matches' : 'match'} ${filters.map((filter) => code(displayPath(filter))).join(', ')}`
+    );
+  }
+  if (selection.changed) {
+    parts.push(
+      `${pluralize(selection.changed.storyCount, 'changed story', 'changed stories')}${sinceRef(selection.changed)}`
+    );
+  }
+  const selected = selection.storyCount;
+  if (parts.length === 0 || selected === undefined) {
+    // `stories` alone: the ids say what was selected, and the verdict counts what ran.
+    return undefined;
+  }
+  return `${parts.join('; ')}: selected ${pluralize(selected, 'story', 'stories')}.`;
+}
+
+const A11Y_GUIDANCE =
+  'Accessibility violations: fix only what your change caused, and report the rest. For visual ones such as color contrast, ask before changing the design.';
+
 function formatResultSection(
   result: TestRunResult,
-  { a11y, a11yEnabled }: { a11y: boolean; a11yEnabled: boolean }
+  {
+    a11y,
+    a11yEnabled,
+    selection,
+    notFound = [],
+  }: {
+    a11y: boolean;
+    a11yEnabled: boolean;
+    selection?: TestRunSelection;
+    notFound?: string[];
+  }
 ): string {
   const failures = countTestRunFailures(result, a11y);
-  const failureParts = (Object.keys(FAILURE_LABELS) as (keyof TestRunFailureCounts)[])
+  const testFailureParts = (Object.keys(FAILURE_LABELS) as (keyof TestRunFailureCounts)[])
     .filter((key) => failures[key] > 0)
     .map((key) => FAILURE_LABELS[key](failures[key]));
+  const failureParts = [
+    ...(notFound.length > 0 ? [`${pluralize(notFound.length, 'argument')} not used`] : []),
+    ...testFailureParts,
+  ];
+  const passed = result.componentTestCount.success;
   const verdict =
     failureParts.length > 0
-      ? `Failed: ${failureParts.join(', ')}.`
-      : result.componentTestCount.success === 0
+      ? `Failed: ${failureParts.join(', ')}${passed > 0 && testFailureParts.length === 0 ? `; ${pluralize(passed, 'component test')} passed` : ''}.`
+      : passed === 0
         ? 'No component tests ran.'
-        : `Passed: ${pluralize(result.componentTestCount.success, 'component test')} passed.`;
+        : `Passed: ${pluralize(passed, 'component test')} passed.`;
 
+  const lines = [
+    ...[selection && formatSelection(selection)].filter((line): line is string => Boolean(line)),
+    ...formatChangedConfigFiles(selection?.changed),
+    ...notFound,
+    verdict,
+    formatA11yResult(result, { a11y, a11yEnabled }),
+    ...(a11y && countA11yViolations(getA11yReports(result)) > 0 ? [A11Y_GUIDANCE] : []),
+  ];
   return `## Result
 
-${verdict}
-${formatA11yResult(result, { a11y, a11yEnabled })}`;
+${lines.join('\n')}`;
 }
 
 // Only the sections that carry information are emitted before the closing result.
 function formatCompletedRun(
   result: TestRunResult,
-  { a11y, a11yEnabled, origin }: { a11y: boolean; a11yEnabled: boolean; origin?: string }
+  {
+    a11y,
+    a11yEnabled,
+    selection,
+    notFound,
+    ctx,
+  }: {
+    a11y: boolean;
+    a11yEnabled: boolean;
+    selection?: TestRunSelection;
+    notFound?: string[];
+    ctx: ToolsetCtx;
+  }
 ): string {
+  const { origin } = ctx;
   const sections: string[] = [];
   // An error-level accessibility result fails the run without failing the component test, so the
   // story is listed as failing rather than passing.
@@ -334,9 +429,54 @@ function formatCompletedRun(
   }
 
   // Last, because agents mostly read this report through `tail`.
-  sections.push(formatResultSection(result, { a11y, a11yEnabled }));
+  sections.push(formatResultSection(result, { a11y, a11yEnabled, selection, notFound }));
 
   return sections.join('\n\n');
+}
+
+// How to spell an argument for the transport the agent uses.
+function argument(ctx: ToolsetCtx, cli: string, mcp: string): string {
+  return code(ctx.transport === 'cli' ? cli : mcp);
+}
+
+function formatNoStories(
+  { notFoundMessages, selection }: Extract<TestRunData, { status: 'no-stories' }>,
+  ctx: ToolsetCtx
+): string {
+  if (notFoundMessages.length > 0) {
+    return `No stories found matching the provided input.
+
+${notFoundMessages.join('\n')}`;
+  }
+  if (selection?.files?.storyFileCount === 0) {
+    // Only under `changed`, which passes with no tests, as in Vitest; otherwise it failed above.
+    return `No story files found for ${selection.files.filters.map((filter) => code(displayPath(filter))).join(', ')}, so no tests ran.`;
+  }
+  if (selection?.changed) {
+    const what = `${
+      selection.changed.storyCount > 0
+        ? 'None of the selected stories changed'
+        : 'No stories changed'
+    }${sinceRef(selection.changed)}`;
+    // A run that selected nothing passes, as in Vitest; the last line names what the caller has not
+    // passed yet. Without a ref only the uncommitted changes count, so after a commit nothing has
+    // changed.
+    const more = [
+      ...(selection.changed.since === undefined
+        ? [`a ref (${argument(ctx, '--changed main', 'changed: "main"')})`]
+        : []),
+      ...(selection.files ? [] : ['story files']),
+    ];
+    return [
+      `${what}, so no tests ran.`,
+      ...formatChangedConfigFiles(selection.changed),
+      ...(more.length > 0 ? [`To test more, pass ${more.join(' or ')}.`] : []),
+    ].join('\n');
+  }
+  if (selection?.files && selection.inputStoryCount) {
+    return 'None of the given story IDs is in the matched story files, so no tests ran.';
+  }
+  return 'No stories were given, so no tests ran.';
 }
 
 /**
@@ -352,16 +492,14 @@ export function formatTestRun(
 ): string {
   switch (data.status) {
     case 'no-stories':
-      return data.notFoundMessages.length === 0
-        ? 'No stories were given, so no tests ran. Pass story IDs in `stories`, or omit it to run every story test.'
-        : `No stories found matching the provided input.
-
-${data.notFoundMessages.join('\n')}`;
+      return formatNoStories(data, ctx);
     case 'completed':
       return formatCompletedRun(data.result, {
         a11y: data.a11y,
         a11yEnabled,
-        origin: ctx.origin,
+        selection: data.selection,
+        notFound: data.notFoundMessages,
+        ctx,
       });
     case 'error':
       return `Error: ${data.error.message}`;

@@ -15,6 +15,7 @@ describe('createReactApp blocker', () => {
     mainConfig: { stories: [] },
     mainConfigPath: '',
     configDir: '',
+    storiesPaths: [],
   });
 
   beforeEach(() => {

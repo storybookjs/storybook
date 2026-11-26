@@ -2,6 +2,7 @@ import type { MetaComponentResolution } from 'storybook/internal/common';
 import {
   createMetaComponentResolver,
   createModuleResolver,
+  extractDeclaredSubcomponents,
   jsTsSourceExtensions,
 } from 'storybook/internal/common';
 import type { CsfFile } from 'storybook/internal/csf-tools';
@@ -37,20 +38,32 @@ export function parseStoryFile(storyFilePath: string, title: string): CsfFile | 
   }
 }
 
+// A declared subcomponent, by the name the meta lists it under, and what it resolved to.
+export interface ResolvedStorySubcomponent {
+  name: string;
+  resolution: MetaComponentResolution;
+}
+
 /**
- * Story file → the component it documents.
+ * Story file → the component it documents, and the subcomponents its meta declares.
  *
  * Reports `no-meta-component` when the file cannot be read or parsed, which callers treat the same
  * as "no `meta.component` here": there is no Angular component to document either way.
  */
-export function resolveStoryComponent(
+export function resolveStoryComponents(
   storyFilePath: string,
   title = 'Docgen'
-): MetaComponentResolution {
+): { component: MetaComponentResolution; subcomponents: ResolvedStorySubcomponent[] } {
   const csf = parseStoryFile(storyFilePath, title);
   if (!csf) {
-    return { reason: 'no-meta-component' };
+    return { component: { reason: 'no-meta-component' }, subcomponents: [] };
   }
 
-  return resolveMetaComponent(csf, storyFilePath);
+  return {
+    component: resolveMetaComponent(csf, storyFilePath),
+    subcomponents: extractDeclaredSubcomponents(csf).map(({ name, node }) => ({
+      name,
+      resolution: resolveMetaComponent(csf, storyFilePath, node),
+    })),
+  };
 }

@@ -1,5 +1,3 @@
-import { global as globalThis } from '@storybook/global';
-
 import { LitElement, html } from 'lit';
 
 const { CustomEvent, customElements } = globalThis;

@@ -12,10 +12,15 @@ import {
   unwrapExpression,
 } from '../estree/ast.ts';
 import { detachedTextOf, printMembers } from '../estree/editor.ts';
-import { analyzeScopes } from '../estree/scope.ts';
+import { analyzeScopes, constantInit } from '../estree/scope.ts';
+import { destructuredAccess } from './destructured-access.ts';
 import { type ImportRef } from './import-statements.ts';
 import { type ImportBinding, collectImportBindings } from './imports.ts';
-import { type ReferenceContext, resolveArgsRecord } from './resolve-members.ts';
+import {
+  type ReferenceContext,
+  resolveArgsRecord,
+  resolveDestructuredValue,
+} from './resolve-members.ts';
 
 /** An arg value read through to the definition it names, and what printing it still depends on. */
 export interface ResolvedArgValue {
@@ -37,10 +42,15 @@ export interface ResolvedArgValue {
  */
 export const resolveArgValue = (node: Node, ctx: ReferenceContext): ResolvedArgValue => {
   const unresolved: string[] = [];
+  const followed = followValue(unwrapExpression(node), ctx, new Set());
+  const inlining = new Set<Node>();
+  // A rest element reached through an alias is still read where the arg is, not where the alias is.
+  const position = (node as Node & { start?: number }).start;
   const resolved = inlineSpreads(
-    followValue(unwrapExpression(node), ctx, new Set()),
+    restObject(followed, ctx, unresolved, inlining, position) ?? followed,
     ctx,
-    unresolved
+    unresolved,
+    inlining
   );
   const bindings = importBindingsOf(ctx.editor.program);
   const imports: ImportRef[] = [];
@@ -89,20 +99,41 @@ const importBindingsOf = (program: E.Program): Map<string, ImportBinding> => {
  * A spread this pass cannot read leaves its object exactly as written: printing part of it would
  * claim the value is something it is not, where printing the source at least shows the story.
  */
-const inlineSpreads = (node: Node, ctx: ReferenceContext, unresolved: string[]): Node => {
+const inlineSpreads = (
+  node: Node,
+  ctx: ReferenceContext,
+  unresolved: string[],
+  inlining: Set<Node>
+): Node => {
   // A value with nothing to pull in is returned as it was parsed, so it keeps the story's own
-  // formatting rather than being reprinted from a rebuilt tree.
-  if (!hasNamedSpread(node)) {
+  // formatting rather than being reprinted from a rebuilt tree. A value that spreads itself, as
+  // `var { ...rest } = { a: { ...rest } }` does, stays as written the second time it comes up.
+  if (!hasNamedSpread(node) || inlining.has(node)) {
     return node;
   }
+  inlining.add(node);
+  try {
+    return inlinedSpreads(node, ctx, unresolved, inlining);
+  } finally {
+    inlining.delete(node);
+  }
+};
 
+const inlinedSpreads = (
+  node: Node,
+  ctx: ReferenceContext,
+  unresolved: string[],
+  inlining: Set<Node>
+): Node => {
   if (node.type === 'ArrayExpression') {
     const items = node.elements
       .map((element) =>
         element === null
           ? ''
           : detachedTextOf(
-              element.type === 'SpreadElement' ? element : inlineSpreads(element, ctx, unresolved)
+              element.type === 'SpreadElement'
+                ? element
+                : inlineSpreads(element, ctx, unresolved, inlining)
             )
       )
       .join(', ');
@@ -114,7 +145,7 @@ const inlineSpreads = (node: Node, ctx: ReferenceContext, unresolved: string[]):
     return node;
   }
   if (!node.properties.some((property) => property.type === 'SpreadElement')) {
-    return objectFrom(node.properties as E.ObjectProperty[], ctx, unresolved) ?? node;
+    return objectFrom(node.properties as E.ObjectProperty[], ctx, unresolved, inlining) ?? node;
   }
 
   const members = resolveArgsRecord(node, ctx);
@@ -126,9 +157,32 @@ const inlineSpreads = (node: Node, ctx: ReferenceContext, unresolved: string[]):
     objectFrom(
       Object.entries(members.properties).map(([key, value]) => ({ key, value })),
       ctx,
-      unresolved
+      unresolved,
+      inlining
     ) ?? node
   );
+};
+
+// A rest element holds a copy no source node spells out, so it is written out from its members.
+const restObject = (
+  node: Node,
+  ctx: ReferenceContext,
+  unresolved: string[],
+  inlining: Set<Node>,
+  position: number | undefined
+): Node | undefined => {
+  if (
+    node.type !== 'Identifier' ||
+    destructuredAccess(ctx.editor.scopes.program.bindings.get(node.name))?.rest === undefined
+  ) {
+    return undefined;
+  }
+  const members = resolveArgsRecord(node, ctx, position);
+  if (members.unresolved.length > 0) {
+    return undefined;
+  }
+  const entries = Object.entries(members.properties).map(([key, value]) => ({ key, value }));
+  return objectFrom(entries, ctx, unresolved, inlining);
 };
 
 // A node built from rewritten source; its parts print as written there.
@@ -160,7 +214,8 @@ const hasNamedSpread = (node: Node): boolean => {
 const objectFrom = (
   properties: (E.ObjectProperty | { key: string; value: Node })[],
   ctx: ReferenceContext,
-  unresolved: string[]
+  unresolved: string[],
+  inlining: Set<Node>
 ): Node | undefined => {
   const members: string[] = [];
   for (const property of properties) {
@@ -184,7 +239,7 @@ const objectFrom = (
       key = isValidIdentifier(property.key, false) ? property.key : JSON.stringify(property.key);
       original = property.value;
     }
-    const value = inlineSpreads(original, ctx, unresolved);
+    const value = inlineSpreads(original, ctx, unresolved, inlining);
     // A shorthand prints its key and nothing else, so it may only stay shorthand while its value is
     // still the one the key stands for.
     const shorthand = 'type' in property && property.shorthand && value === property.value;
@@ -200,18 +255,14 @@ const followValue = (node: Node, ctx: ReferenceContext, seen: Set<string>): Node
   if (node.type !== 'Identifier' || seen.has(node.name)) {
     return node;
   }
-  const binding = ctx.editor.scopes.program.bindings.get(node.name);
-  if (
-    !binding ||
-    binding.kind === 'import' ||
-    !binding.constant ||
-    binding.node.type !== 'VariableDeclarator' ||
-    !binding.node.init
-  ) {
+  const init =
+    constantInit(ctx.editor.scopes.program.bindings.get(node.name)) ??
+    resolveDestructuredValue(ctx, node.name);
+  if (!init) {
     return node;
   }
   seen.add(node.name);
-  return followValue(unwrapExpression(binding.node.init), ctx, seen);
+  return followValue(unwrapExpression(init), ctx, seen);
 };
 
 const freeNames = (node: Node): Set<string> => {

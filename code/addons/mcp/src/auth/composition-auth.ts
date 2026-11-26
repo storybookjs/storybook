@@ -66,6 +66,10 @@ export class AuthenticationError extends Error {
   }
 }
 
+// Every probe fetch, OAuth discovery included, gets this budget, so `initialize` always settles and
+// a ref that does not answer in time is skipped like an unreachable one.
+const REF_PROBE_TIMEOUT_MS = 3_000;
+
 export class CompositionAuth {
   #authRequirement: AuthRequirement | null = null;
   #authRequiredUrls: string[] = [];
@@ -76,43 +80,48 @@ export class CompositionAuth {
 
   /** Initialize by checking which refs require authentication and have manifests. */
   async initialize(refs: ComposedRef[]): Promise<void> {
-    for (const ref of refs) {
-      try {
-        const result = await this.#checkRef(ref.url);
-        if (result === 'manifest-not-found') {
-          logger.warn(
-            `[addon-mcp] Skipping composed ref "${ref.title}" (${ref.url}): components manifest not found at ${ref.url}/manifests/components.json. Enable the \`componentsManifest\` feature on that Storybook to compose it into MCP.`
-          );
-          continue;
-        }
-        if (result === 'manifest-invalid') {
-          logger.warn(
-            `[addon-mcp] Skipping composed ref "${ref.title}" (${ref.url}): its components manifest failed validation. This usually means a version mismatch between the composed Storybook and this one — upgrade the older side.`
-          );
-          continue;
-        }
-
-        this.#refsWithManifests.push(ref);
-
-        if (result === 'public') continue;
-
-        // Auth required
-        this.#authRequiredUrls.push(ref.url);
-        if (!this.#authRequirement) {
-          this.#authRequirement = result;
-        } else {
-          const existingServer = this.#authRequirement.resourceMetadata.authorization_servers[0];
-          const newServer = result.resourceMetadata.authorization_servers[0];
-          if (existingServer !== newServer) {
-            logger.warn(
-              `[addon-mcp] Composed ref "${ref.title}" uses a different OAuth server (${newServer}) than the first authenticated ref (${existingServer}). Only the first OAuth server will be used for authentication.`
-            );
-          }
-        }
-      } catch (error) {
+    // Probed concurrently, read in config order: `buildSources` keeps that order and the first
+    // authenticated ref decides the OAuth server.
+    const outcomes = await Promise.allSettled(refs.map((ref) => this.#checkRef(ref.url)));
+    for (const [index, ref] of refs.entries()) {
+      const outcome = outcomes[index];
+      if (outcome.status === 'rejected') {
+        const error = outcome.reason;
         logger.warn(
           `[addon-mcp] Skipping composed ref "${ref.title}" (${ref.url}): the ref could not be reached (${error instanceof Error ? error.message : String(error)}). Refs are only checked at dev-server boot — restart Storybook once the ref is reachable.`
         );
+        continue;
+      }
+      const result = outcome.value;
+      if (result === 'manifest-not-found') {
+        logger.warn(
+          `[addon-mcp] Skipping composed ref "${ref.title}" (${ref.url}): components manifest not found at ${ref.url}/manifests/components.json. Enable the \`componentsManifest\` feature on that Storybook to compose it into MCP.`
+        );
+        continue;
+      }
+      if (result === 'manifest-invalid') {
+        logger.warn(
+          `[addon-mcp] Skipping composed ref "${ref.title}" (${ref.url}): its components manifest failed validation. This usually means a version mismatch between the composed Storybook and this one — upgrade the older side.`
+        );
+        continue;
+      }
+
+      this.#refsWithManifests.push(ref);
+
+      if (result === 'public') continue;
+
+      // Auth required
+      this.#authRequiredUrls.push(ref.url);
+      if (!this.#authRequirement) {
+        this.#authRequirement = result;
+      } else {
+        const existingServer = this.#authRequirement.resourceMetadata.authorization_servers[0];
+        const newServer = result.resourceMetadata.authorization_servers[0];
+        if (existingServer !== newServer) {
+          logger.warn(
+            `[addon-mcp] Composed ref "${ref.title}" uses a different OAuth server (${newServer}) than the first authenticated ref (${existingServer}). Only the first OAuth server will be used for authentication.`
+          );
+        }
       }
     }
   }
@@ -289,6 +298,7 @@ export class CompositionAuth {
   async #checkRef(refUrl: string): Promise<'public' | NoManifestReason | AuthRequirement> {
     const response = await fetch(`${refUrl}/manifests/components.json`, {
       headers: { Accept: 'application/json' },
+      signal: AbortSignal.timeout(REF_PROBE_TIMEOUT_MS),
     });
 
     // 401 with WWW-Authenticate = auth needed
@@ -322,6 +332,7 @@ export class CompositionAuth {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list' }),
+      signal: AbortSignal.timeout(REF_PROBE_TIMEOUT_MS),
     });
     return this.#parseAuthFromResponse(response);
   }
@@ -333,6 +344,7 @@ export class CompositionAuth {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list' }),
+        signal: AbortSignal.timeout(REF_PROBE_TIMEOUT_MS),
       });
       return response.status === 401;
     } catch {
@@ -350,7 +362,9 @@ export class CompositionAuth {
     if (!match?.[1]) return null;
 
     const resourceMetadataUrl = match[1];
-    const resourceResponse = await fetch(resourceMetadataUrl);
+    const resourceResponse = await fetch(resourceMetadataUrl, {
+      signal: AbortSignal.timeout(REF_PROBE_TIMEOUT_MS),
+    });
     if (!resourceResponse.ok) {
       logger.warn(
         `[addon-mcp] Failed to fetch OAuth resource metadata from ${resourceMetadataUrl}: ${resourceResponse.status}`
@@ -367,7 +381,9 @@ export class CompositionAuth {
 
     const authServer = resourceResult.output.authorization_servers[0];
     const serverMetadataUrl = `${authServer}/.well-known/oauth-authorization-server`;
-    const serverResponse = await fetch(serverMetadataUrl);
+    const serverResponse = await fetch(serverMetadataUrl, {
+      signal: AbortSignal.timeout(REF_PROBE_TIMEOUT_MS),
+    });
     if (!serverResponse.ok) {
       logger.warn(
         `[addon-mcp] Failed to fetch OAuth server metadata from ${serverMetadataUrl}: ${serverResponse.status}`

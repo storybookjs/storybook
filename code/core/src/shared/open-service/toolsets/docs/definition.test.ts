@@ -419,6 +419,55 @@ describe('docs.showStory in a composition', () => {
   });
 });
 
+describe('docs.showStory for a component the requested source does not have', () => {
+  const emptyAccess: DocsAccess = { list: docsAccess.list, resolve: async () => undefined };
+  const composed = (...others: DocsAccess[]) =>
+    createDocsToolset({
+      sources: [
+        { source: { id: 'local', title: 'Local' }, access: emptyAccess },
+        ...others.map((access, index) => ({
+          source: { id: `ds${index + 1}`, title: `Design system ${index + 1}` },
+          access,
+        })),
+      ],
+    });
+
+  it('shows the story from the one other source that has it, and says how to ask that source', async () => {
+    const outcome = await composed(docsAccess).methods.showStory.handler(
+      { storyId: 'button--primary', storybookId: 'local' },
+      cliCtx
+    );
+
+    expect(outcome.ok).toBe(true);
+    expect(outcome.data).toMatchObject({ storybookId: 'local', resolvedStorybookId: 'ds1' });
+    expect(outcome.markdown).toMatch(
+      /^> "button" is not in source "local"; showing it from source "ds1"\. Pass --storybookId ds1/
+    );
+    expect(outcome.markdown).toContain('<Button />');
+  });
+
+  it('names the source to pass in MCP words', async () => {
+    const outcome = await composed(docsAccess).methods.showStory.handler(
+      { storyId: 'button--primary', storybookId: 'local' },
+      mcpCtx
+    );
+
+    expect(outcome.markdown).toMatch(
+      /^> "button" is not in source "local"; showing it from source "ds1"\. Pass storybookId "ds1"/
+    );
+  });
+
+  it('still reports the component missing when several sources have it', async () => {
+    const outcome = await composed(docsAccess, docsAccess).methods.showStory.handler(
+      { storyId: 'button--primary', storybookId: 'local' },
+      cliCtx
+    );
+
+    expect(outcome.ok).toBe(false);
+    expect(outcome.markdown).toContain('Story not found: "button--primary"');
+  });
+});
+
 describe('a composed source that requires its own MCP', () => {
   const privateSource = { id: 'private', title: 'Private', url: 'https://private.example.com' };
   const composed = createDocsToolset({
@@ -517,6 +566,7 @@ describe('usage reporting', () => {
         found: true,
         storyId: 'button--primary',
         lookup: 'storyId',
+        resolvedElsewhere: false,
         resultTokenCount: expect.any(Number),
       },
     });
@@ -529,6 +579,7 @@ describe('usage reporting', () => {
       found: true,
       storyId: 'button--primary',
       lookup: 'name',
+      resolvedElsewhere: false,
       resultTokenCount: expect.any(Number),
     });
   });

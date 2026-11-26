@@ -12,9 +12,9 @@ That is where component name collisions, unresolvable imports, and tsconfig cove
 The recorder reads that directory and keeps only the portable `DocgenPayload` fields, so engine-specific extras (the raw Compodoc entry, roughly 117KB of source text across a stock sandbox) stay out of the repository.
 Absolute sandbox paths inside error messages are rewritten to `<sandbox>`, because a sandbox lives somewhere different on every machine and every CI run.
 
-Components referenced through a global rather than an import are skipped.
-The monorepo's shared template stories point at `globalThis.__TEMPLATE_COMPONENTS__.*`, which leaves no import to resolve and no scanned file to find, so all of them error by construction and say nothing about docgen.
-Skipping them takes the Angular sandbox from 111 recorded components to 37, of which 30 are documented and 7 are Angular classes declared inline in story files.
+Components whose docgen failed are skipped.
+Most of them fail by construction: the monorepo's shared template stories point at `globalThis.__TEMPLATE_COMPONENTS__.*` or declare their component in the story file, so there is no component file to read, and the error says nothing about docgen.
+A component that has a baseline and starts to fail is still caught: it disappears from the build, and the comparison reports that as a regression.
 
 ## Which templates are covered
 
@@ -22,14 +22,19 @@ Every supported default-on sandbox template whose main config turns on `componen
 Turning on `componentsManifest` for a supported template is all it takes to bring it into this coverage, and there is nothing to keep in sync.
 A template that is flagged but has nothing recorded yet fails rather than skipping quietly.
 
+A template that sets `docgenBaselinesFrom` records nothing of its own: it is checked against the baselines of the template it names.
+`angular-vite/typescript-7-ts` uses this to require the same docgen on TypeScript 7.1 as `angular-vite/default-ts` records on TypeScript 6.
+
 ## Updating
 
 ```bash
-yarn task build --template <template> --start-from auto
+CI=true yarn task build --template <template> --no-link --start-from auto
 cd code/lib/docgen-harness
 yarn baselines:sandbox            # verify every server-docgen template
 yarn baselines:sandbox --update   # re-record
 ```
+
+Build with `CI=true`, as CI does: it copies the template stories into the sandbox. Without it they are symlinks into this repository, so React records their components as imports from `@storybook/react` and the baselines do not match CI.
 
 Pass `--template <key>` to work on one of them, and `--sandbox <dir>` to point at a sandbox somewhere other than the default location.
 CI runs the verify form after building each covered sandbox.

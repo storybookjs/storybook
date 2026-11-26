@@ -121,6 +121,8 @@ async function generateVersionsFile(): Promise<void> {
 
 async function generateFrameworksFile(): Promise<void> {
   const thirdPartyFrameworks = [
+    'analog',
+    'astro',
     'html-rsbuild',
     'nuxt',
     'qwik',

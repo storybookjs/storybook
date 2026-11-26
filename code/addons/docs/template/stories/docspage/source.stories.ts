@@ -1,7 +1,5 @@
 import type { StoryContext } from 'storybook/internal/types';
 
-import { dedent } from 'ts-dedent';
-
 export default {
   component: globalThis.__TEMPLATE_COMPONENTS__.Button,
   tags: ['autodocs'],
@@ -40,10 +38,11 @@ export const Transform = {
     docs: {
       source: {
         transform(src: string, storyContext: StoryContext) {
-          return dedent`// We transformed this!
-          // The current args are: ${JSON.stringify(storyContext.args)}
-          const example = (${src});
-          `;
+          return [
+            '// We transformed this!',
+            `// The current args are: ${JSON.stringify(storyContext.args)}`,
+            `const example = (${src});`,
+          ].join('\n');
         },
       },
     },
@@ -57,10 +56,13 @@ export const AsyncTransform = {
         async transform(src: string, storyContext: StoryContext) {
           return new Promise<string>((res) =>
             setTimeout(() => {
-              res(dedent`// We transformed this asynchronously!
-                // The current args are: ${JSON.stringify(storyContext.args)}
-                const example = (${src});
-                `);
+              res(
+                [
+                  '// We transformed this asynchronously!',
+                  `// The current args are: ${JSON.stringify(storyContext.args)}`,
+                  `const example = (${src});`,
+                ].join('\n')
+              );
             }, 500)
           );
         },

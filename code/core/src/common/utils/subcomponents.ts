@@ -1,6 +1,7 @@
 import type { CsfFile } from 'storybook/internal/csf-tools';
 
-import { type E, type Node, isStringLiteral } from '../../csf-tools/estree/ast.ts';
+import { type E, type Node } from '../../csf-tools/estree/ast.ts';
+import { staticKey } from '../../csf-tools/estree/nodes.ts';
 
 export type DeclaredSubcomponent = {
   componentName: string;
@@ -14,7 +15,19 @@ export type DeclaredSubcomponent = {
 };
 
 export function extractDeclaredSubcomponents(csf: CsfFile): DeclaredSubcomponent[] {
-  const rawSubcomponents = unwrapSubcomponentNode(csf._metaAnnotations.subcomponents, csf.program);
+  return extractSubcomponents(csf._metaAnnotations.subcomponents, csf.program);
+}
+
+/**
+ * The subcomponents a meta's `subcomponents` value declares, following variable aliases in
+ * `program`, the module that holds the meta. For a meta outside a CSF file, such as a Svelte CSF
+ * `defineMeta` object.
+ */
+export function extractSubcomponents(
+  subcomponents: Node | undefined,
+  program: E.Program
+): DeclaredSubcomponent[] {
+  const rawSubcomponents = unwrapSubcomponentNode(subcomponents, program);
 
   if (rawSubcomponents?.type !== 'ObjectExpression') {
     return [];
@@ -25,9 +38,10 @@ export function extractDeclaredSubcomponents(csf: CsfFile): DeclaredSubcomponent
       return [];
     }
 
-    const name = getObjectKeyName(property.key);
+    // A computed key, as in `{ [label]: Icon }`, has no name that is known before the story runs.
+    const name = staticKey(property);
     const directComponentName = getComponentExpressionName(property.value);
-    const componentExpression = unwrapSubcomponentNode(property.value, csf.program);
+    const componentExpression = unwrapSubcomponentNode(property.value, program);
     const componentName = getComponentExpressionName(componentExpression) ?? directComponentName;
 
     return name && componentName
@@ -81,18 +95,6 @@ function unwrapSubcomponentNode(
     }
 
     return current;
-  }
-
-  return undefined;
-}
-
-function getObjectKeyName(key: Node) {
-  if (key.type === 'Identifier') {
-    return key.name;
-  }
-
-  if (isStringLiteral(key)) {
-    return key.value;
   }
 
   return undefined;

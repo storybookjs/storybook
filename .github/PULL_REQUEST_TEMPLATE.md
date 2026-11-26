@@ -10,7 +10,14 @@ Thank you for contributing to Storybook! Please submit all PRs to the `next` bra
 
 ## What I did
 
-<!-- Briefly describe what your PR does -->
+<!-- List the important changes: those that address the issue and need a reviewer's attention. Write one bullet per change, each on a single line. -->
+
+<details>
+<summary>Detailed changes</summary>
+
+<!-- Describe the changes more broadly: how the important changes work, plus supporting changes such as refactors, renames, and test or fixture updates. -->
+
+</details>
 
 ## Checklist for Contributors
 
@@ -50,7 +57,7 @@ Do not describe how YOU tested the PR code, but how a separate maintainer should
 
 ## Checklist for Maintainers
 
-- [ ] When this PR is ready for testing, add a `ci:focus`, `ci:normal`, or `ci:daily` GitHub label. `ci:focus` runs the typecheck, unit tests, and lint for the changed files, Chromatic on the internal Storybook, the end-to-end jobs whose paths changed, and one sandbox in full for each changed framework, renderer, builder, or library (default `react-vite/default-ts`), plus Chromatic on the other sandboxes that load it, or on every sandbox when a core or addon template story changes. `ci:normal` and `ci:daily` run the sandbox sets in `code/lib/cli-storybook/src/sandbox-templates.ts`. Add `ci:windows` to also run the Windows jobs, or on its own to iterate on Windows failures; it does not report `circleci-completion`, so a PR cannot merge on it alone.
+- [ ] When this PR is ready for testing, add a `ci:focus`, `ci:normal`, or `ci:daily` GitHub label. `ci:focus` runs the typecheck, unit tests, and lint for the changed files, Chromatic on the internal Storybook, the end-to-end jobs whose paths changed, and one sandbox in full for each changed framework, renderer, builder, or library (default `react-vite/default-ts`), plus Chromatic on the other sandboxes that load it, or on every sandbox when a core or addon template story changes, and builds docgen baseline sandboxes that load a changed package or all of them when shared docgen inputs change. `ci:normal` and `ci:daily` run the sandbox sets in `code/lib/cli-storybook/src/sandbox-templates.ts`. Add `ci:windows` to also run the Windows jobs, or on its own to iterate on Windows failures; it does not report `circleci-completion`, so a PR cannot merge on it alone.
 - [ ] Declare whether manual QA will be needed for this PR during the next release, through `qa:needed` or `qa:skip`
 - [ ] Make sure this PR contains **one** of the labels below:
    <details>

@@ -1,0 +1,154 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`node-logger output > writes the same output to the same stream at level "debug" 1`] = `
+[
+  "stdout: │
+│  [DEBUG] trace (1 s)
+",
+  "stdout: │
+│  [DEBUG] verbose
+",
+  "stdout: │
+│  [DEBUG] debug
+",
+  "stdout: │
+│  log
+",
+  "stdout: │
+●  info
+",
+  "stdout: │
+◇  step
+",
+  "stdout: │
+▲  warn
+",
+  "stdout: │
+■  error
+",
+  "stdout: ┌  intro
+",
+  "stdout: │
+└  outro
+
+",
+  "stdout: │
+●  once info
+",
+  "stdout: │
+▲  once warn
+",
+  "stdout: │
+■  once error
+",
+]
+`;
+
+exports[`node-logger output > writes the same output to the same stream at level "error" 1`] = `
+[
+  "stdout: │
+■  error
+",
+  "stdout: │
+■  once error
+",
+]
+`;
+
+exports[`node-logger output > writes the same output to the same stream at level "info" 1`] = `
+[
+  "stdout: │
+│  log
+",
+  "stdout: │
+●  info
+",
+  "stdout: │
+◇  step
+",
+  "stdout: │
+▲  warn
+",
+  "stdout: │
+■  error
+",
+  "stdout: ┌  intro
+",
+  "stdout: │
+└  outro
+
+",
+  "stdout: │
+●  once info
+",
+  "stdout: │
+▲  once warn
+",
+  "stdout: │
+■  once error
+",
+]
+`;
+
+exports[`node-logger output > writes the same output to the same stream at level "silent" 1`] = `[]`;
+
+exports[`node-logger output > writes the same output to the same stream at level "trace" 1`] = `
+[
+  "stdout: │
+│  [DEBUG] trace (1 s)
+",
+  "stdout: │
+│  [DEBUG] verbose
+",
+  "stdout: │
+│  [DEBUG] debug
+",
+  "stdout: │
+│  log
+",
+  "stdout: │
+●  info
+",
+  "stdout: │
+◇  step
+",
+  "stdout: │
+▲  warn
+",
+  "stdout: │
+■  error
+",
+  "stdout: ┌  intro
+",
+  "stdout: │
+└  outro
+
+",
+  "stdout: │
+●  once info
+",
+  "stdout: │
+▲  once warn
+",
+  "stdout: │
+■  once error
+",
+]
+`;
+
+exports[`node-logger output > writes the same output to the same stream at level "warn" 1`] = `
+[
+  "stdout: │
+▲  warn
+",
+  "stdout: │
+■  error
+",
+  "stdout: │
+▲  once warn
+",
+  "stdout: │
+■  once error
+",
+]
+`;

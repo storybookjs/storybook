@@ -1,5 +1,11 @@
-import { hasStorybookSkills, installSkills, supportsSkills } from 'storybook/internal/cli';
-import { frameworkPackages, frameworkToRenderer, isCI } from 'storybook/internal/common';
+import {
+  hasAddonVitest,
+  hasStorybookSkills,
+  installSkills,
+  skipsSkillsInCI,
+  supportsSkills,
+} from 'storybook/internal/cli';
+import { frameworkPackages, frameworkToRenderer } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
 import { getFrameworkPackageName } from '../helpers/mainConfigFile.ts';
@@ -18,7 +24,7 @@ export const skills: Fix<{ afterAngularViteMigration?: boolean }> = {
 
   async check({ packageManager, mainConfig, beforeVersion, storybookVersion, requested }) {
     // `installSkills` skips CI anyway; returning here keeps the no-op out of the list and the report.
-    if (isCI()) {
+    if (skipsSkillsInCI()) {
       return null;
     }
     if (
@@ -43,7 +49,7 @@ export const skills: Fix<{ afterAngularViteMigration?: boolean }> = {
       : null;
   },
 
-  async run({ packageManager, result }) {
+  async run({ packageManager, result, mainConfig }) {
     // The skills live in the project root, which every Storybook of a monorepo shares.
     if (await hasStorybookSkills()) {
       return;
@@ -62,6 +68,9 @@ export const skills: Fix<{ afterAngularViteMigration?: boolean }> = {
       packageManager,
       source: 'automigration',
       stdio: 'pipe',
+      testSupported: hasAddonVitest(mainConfig),
+      // This fix runs for one Storybook of the project.
+      sawEveryStorybook: false,
     });
     // `installSkills` already warned how to install them later; the upgrade itself succeeded.
     if (install.result === 'failed') {

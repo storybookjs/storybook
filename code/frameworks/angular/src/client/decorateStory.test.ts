@@ -1,13 +1,12 @@
 import { Component, Input, Output } from '@angular/core';
-import type { DecoratorFunction, StoryContextForRender } from 'storybook/internal/types';
+import type { DecoratorFunction, StoryContext } from 'storybook/internal/types';
 import { assert, describe, expect, it } from 'vitest';
 import { componentWrapperDecorator } from './decorators.ts';
 
 import decorateStory from './decorateStory.ts';
 import type { AngularRenderer } from './types.ts';
 
-// TODO: Fix. Test is infinitely running.
-describe.skip('decorateStory', () => {
+describe('decorateStory', () => {
   describe('angular behavior', () => {
     it('should use componentWrapperDecorator with args', () => {
       const decorators: DecoratorFunction<AngularRenderer>[] = [
@@ -207,9 +206,9 @@ describe.skip('decorateStory', () => {
       });
     });
 
-    it('should only keeps args with a control or an action in argTypes', () => {
+    it('passes every arg to the story, including ones carrying no control', () => {
       const decorated = decorateStory(
-        (context: StoryContextForRender<AngularRenderer>) => ({
+        (context: StoryContext<AngularRenderer>) => ({
           template: `Args available in the story : ${Object.keys(context.args).join()}`,
         }),
         []
@@ -222,19 +221,37 @@ describe.skip('decorateStory', () => {
             argTypes: {
               withControl: { control: { type: 'object' }, name: 'withControl' },
               withAction: { action: 'onClick', name: 'withAction' },
-              toRemove: { name: 'toRemove' },
+              withoutControl: { control: false, name: 'withoutControl' },
             },
             args: {
               withControl: 'withControl',
               withAction: () => ({}),
-              toRemove: 'toRemove',
+              withoutControl: 'withoutControl',
             },
           })
         )
       ).toEqual({
-        template: 'Args available in the story : withControl,withAction',
+        template: 'Args available in the story : withControl,withAction,withoutControl',
         userDefinedTemplate: true,
       });
+    });
+
+    it('passes the component inputs and outputs when the preview holds no argTypes', () => {
+      const decorated = decorateStory(
+        (context: StoryContext<AngularRenderer>) => ({ props: context.args }),
+        []
+      );
+
+      const onParentOutput = () => {};
+      expect(
+        decorated(
+          makeContext({
+            component: ParentComponent,
+            argTypes: {},
+            args: { parentInput: 'Parent input', parentOutput: onParentOutput },
+          })
+        ).props
+      ).toEqual({ parentInput: 'Parent input', parentOutput: onParentOutput });
     });
   });
 
@@ -281,7 +298,7 @@ describe.skip('decorateStory', () => {
         },
       ];
       const decorated = decorateStory(
-        (c: StoryContextForRender<AngularRenderer>) => ({ props: { a: [c.k] } }),
+        (c: StoryContext<AngularRenderer>) => ({ props: { a: [c.k] } }),
         decorators
       );
 
@@ -316,7 +333,7 @@ describe.skip('decorateStory', () => {
         },
       ];
       const decorated = decorateStory(
-        (c: StoryContextForRender<AngularRenderer>) => ({
+        (c: StoryContext<AngularRenderer>) => ({
           props: { a: [c.k], p: [c.parameters.p] },
         }),
         decorators
@@ -329,14 +346,14 @@ describe.skip('decorateStory', () => {
   });
 });
 
-function makeContext(input: Record<string, unknown>): StoryContextForRender<AngularRenderer> {
+function makeContext(input: Record<string, unknown>): StoryContext<AngularRenderer> {
   return {
     id: 'id',
     name: 'name',
     viewMode: 'story',
     parameters: {},
     ...input,
-  } as StoryContextForRender<AngularRenderer>;
+  } as StoryContext<AngularRenderer>;
 }
 
 @Component({

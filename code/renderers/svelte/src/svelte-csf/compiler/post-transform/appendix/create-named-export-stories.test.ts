@@ -1,10 +1,11 @@
 import { print } from 'esrap';
-import { describe, it } from 'vitest';
+import ts from 'esrap/languages/ts';
+import { describe, expect, it } from 'vitest';
 
 import { createNamedExportStories } from './create-named-export-stories.ts';
 
-describe(createNamedExportStories, () => {
-  it('works', ({ expect }) => {
+describe(createNamedExportStories.name, () => {
+  it('exports each story variable under its export name', () => {
     const namedExportDeclaration = createNamedExportStories({
       storiesIdentifiers: [
         {
@@ -26,7 +27,7 @@ describe(createNamedExportStories, () => {
       ],
     });
 
-    expect(print(namedExportDeclaration).code).toMatchInlineSnapshot(`
+    expect(print(namedExportDeclaration, ts()).code).toMatchInlineSnapshot(`
       "export {
       	$__Default as Default,
       	$__Primary as Primary,

@@ -5,7 +5,9 @@ import {
   type ImportRef,
   SourceEditor,
   buildImportStatements,
+  collectImportBindings,
   detachedTextOf,
+  parseModule,
   resolveComponentImport,
   textOf,
   walk as walkEstree,
@@ -67,7 +69,7 @@ export function buildSnippetImportBlock(
     typescript = false,
   }: {
     bindings: Map<string, ImportBinding>;
-    // The `@import` of the meta, which replaces the import of the meta component only.
+    // The `@import` of the meta or its component, replacing the import of the meta component only.
     importOverride?: { name: string; statement: string };
     instanceScript?: string;
     moduleScript?: string;
@@ -113,15 +115,23 @@ export function buildSnippetImportBlock(
   }
   for (const name of names.types) visit(name, 0, true);
 
+  const readElsewhere = (namespace: string) =>
+    [...components].some(
+      (name) => name !== importOverride?.name && name.split('.')[0] === namespace
+    ) ||
+    [namespace, `$${namespace}`].some((name) => names.values.has(name)) ||
+    scripts.some((script) =>
+      [...(script?.selected ?? [])].some(({ dependencies }) =>
+        [...dependencies.values, ...dependencies.types].some(
+          (name) => name.split('.')[0] === namespace
+        )
+      )
+    );
   const importLines = buildImportStatements({
     refs: [
-      ...[...storyImports].map((name) => {
-        const ref = resolveComponentImport(name, bindings);
-        return {
-          ...ref,
-          ...(name === importOverride?.name ? { importOverride: importOverride.statement } : {}),
-        };
-      }),
+      ...[...storyImports].map((name) =>
+        storyImport(name, bindings, importOverride, readElsewhere)
+      ),
       ...imports,
     ],
   });
@@ -144,6 +154,30 @@ export function buildSnippetImportBlock(
     unresolved: unresolvedComponents,
     ...(unresolved.size ? { unresolvedIdentifiers: [...unresolved] } : {}),
   };
+}
+
+function storyImport(
+  name: string,
+  bindings: Map<string, ImportBinding>,
+  importOverride: { name: string; statement: string } | undefined,
+  readElsewhere: (namespace: string) => boolean
+): ImportRef {
+  const ref = resolveComponentImport(name, bindings);
+  if (name === importOverride?.name) return { ...ref, importOverride: importOverride.statement };
+  if (!importOverride?.name.startsWith(`${name}.`) || readElsewhere(name)) return ref;
+  const member = importOverride.name.slice(name.length + 1);
+  const source = importedBinding(importOverride.statement);
+  return source?.importName === '*' || source?.importName === member
+    ? { importId: source.importId, importName: '*', localImportName: name, namespace: name }
+    : ref;
+}
+
+function importedBinding(statement: string): ImportBinding | undefined {
+  try {
+    return [...collectImportBindings(parseModule(statement).program).values()].at(0);
+  } catch {
+    return undefined;
+  }
 }
 
 function needsTypeScript(markup: string): boolean {

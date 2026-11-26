@@ -27,10 +27,7 @@ interface Params {
   originalCode: string;
 }
 
-/**
- * Insert addon's internal object `__svelteCsf`
- * to `parameters` of every `<Story />` component **into the compiled code**.
- */
+// Adds `parameters.__svelteCsf.rawCode`, the story's Svelte source that the docs code snippet shows.
 export function insertSvelteCSFToStoryParameters(params: Params) {
   const { nodes, filename, originalCode } = params;
   const { component, content, svelte } = nodes;

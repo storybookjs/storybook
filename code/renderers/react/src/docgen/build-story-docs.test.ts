@@ -3,6 +3,7 @@ import * as path from 'node:path';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
+import { formatTemplate } from 'storybook/internal/docs-tools';
 import type { IndexEntry } from 'storybook/internal/types';
 import { dedent } from 'ts-dedent';
 
@@ -107,6 +108,38 @@ describe('buildStoryDocsPayload', () => {
     expect(primaryStory!.snippet).toMatch(/<Button label="hi"/);
   });
 
+  it('carries a template for the preview to fill next to the static snippet', async () => {
+    tempDir = createTempDir('story-docs-build');
+
+    const files = writeFiles(tempDir, {
+      'Button.tsx': dedent`
+        import React from 'react';
+        export const Button = (_props: { label: string; primary?: boolean }) => <button />;
+      `,
+      'Button.stories.tsx': dedent`
+        import { Button } from './Button';
+        export default { component: Button, title: 'Forms/Button' };
+        export const Primary = { args: { label: 'Save', primary: true } };
+        export const Fixed = () => <Button label="Fixed" />;
+      `,
+    });
+
+    const payload = await buildStoryDocsPayload(
+      { entry: makeStoryIndexEntry(files['Button.stories.tsx'], 'Forms/Button') },
+      { resolvePath: (p) => (path.isAbsolute(p) ? p : path.join(tempDir!, p)) }
+    );
+
+    const { primary, fixed } = Object.fromEntries(
+      Object.values(payload!.stories).map((story) => [story.name.toLowerCase(), story])
+    );
+    expect(primary!.snippet).toBe('const Primary = () => <Button label="Save" primary />;');
+    expect(formatTemplate(primary!.template!)).toMatchInlineSnapshot(
+      `"const Primary = () => <Button⟦attr label ~" "⟫ label="Save"⟧⟦attr primary ~" "⟫ primary⟧⟦attrs * except=["label","primary"]⟫⟧ />;"`
+    );
+    expect(fixed!.snippet).toBe('const Fixed = () => <Button label="Fixed" />;');
+    expect(fixed!.template).toEqual(['const Fixed = () => <Button label="Fixed" />;']);
+  });
+
   it('reflects edited story args after the story file changes on disk', async () => {
     tempDir = createTempDir('story-docs-build');
 
@@ -176,6 +209,66 @@ describe('buildStoryDocsPayload', () => {
 
     const after = await buildStoryDocsPayload({ entry }, { resolvePath });
     expect(Object.values(after!.stories).map((s) => s.name)).toEqual(['Secondary']);
+  });
+
+  it('imports a component once when a story arg also renders it', async () => {
+    tempDir = createTempDir('story-docs-arg-component');
+    const files = writeFiles(tempDir, {
+      'package.json': JSON.stringify({ name: 'my-lib' }),
+      'Icon.tsx': dedent`
+        import React from 'react';
+        export const Icon = () => <i />;
+      `,
+      'Button.tsx': dedent`
+        import React from 'react';
+        export const Button = (_props: { children?: React.ReactNode }) => <button />;
+      `,
+      'Button.stories.tsx': dedent`
+        import React from 'react';
+        import { Button } from './Button';
+        import { Icon } from './Icon';
+        export default { component: Button, title: 'Actions/Button' };
+        export const WithIcon = { args: { children: <Icon /> } };
+      `,
+    });
+
+    const payload = await buildStoryDocsPayload(
+      { entry: makeStoryIndexEntry(files['Button.stories.tsx'], 'Actions/Button') },
+      { resolvePath: (p) => (path.isAbsolute(p) ? p : path.join(tempDir!, p)) }
+    );
+
+    expect(payload!.import).toBe(`import { Button, Icon } from 'my-lib';`);
+  });
+
+  it('keeps the namespace import a story arg renders a member through', async () => {
+    tempDir = createTempDir('story-docs-arg-namespace');
+    const files = writeFiles(tempDir, {
+      'package.json': JSON.stringify({ name: 'my-lib' }),
+      'icons.tsx': dedent`
+        import React from 'react';
+        export const Check = () => <i />;
+      `,
+      'Button.tsx': dedent`
+        import React from 'react';
+        export const Button = (_props: { children?: React.ReactNode }) => <button />;
+      `,
+      'Button.stories.tsx': dedent`
+        import React from 'react';
+        import { Button } from './Button';
+        import * as Icons from './icons';
+        export default { component: Button, title: 'Actions/Button' };
+        export const WithIcon = { args: { children: <Icons.Check /> } };
+      `,
+    });
+
+    const payload = await buildStoryDocsPayload(
+      { entry: makeStoryIndexEntry(files['Button.stories.tsx'], 'Actions/Button') },
+      { resolvePath: (p) => (path.isAbsolute(p) ? p : path.join(tempDir!, p)) }
+    );
+
+    expect(payload!.import).toBe(
+      `import { Button, Check } from 'my-lib';\nimport * as Icons from './icons';`
+    );
   });
 
   it('returns undefined when the story file is missing', async () => {

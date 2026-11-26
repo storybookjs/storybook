@@ -8,7 +8,7 @@ import type { Options } from 'storybook/internal/types';
 import { previewRuntimePath } from '../utils/preview-runtime-path.ts';
 
 import * as pkg from 'empathic/package';
-import { init, parse } from 'es-module-lexer';
+import { type ImportSpecifier, init, parse } from 'es-module-lexer';
 import MagicString from 'magic-string';
 import type { Alias, Plugin } from 'vite';
 
@@ -59,7 +59,7 @@ export async function storybookExternalGlobalsPlugin(options: Options): Promise<
   const { mergeAlias } = await import('vite');
 
   const globalsList = Object.keys(externals);
-  const globalsCodeFilter = new RegExp(globalsList.map(escapeKeys).join('|'));
+  const globalReferences = Object.values(externals);
 
   return {
     name: 'storybook:external-globals-plugin',
@@ -95,13 +95,20 @@ export async function storybookExternalGlobalsPlugin(options: Options): Promise<
     },
     // Replace imports with variables destructured from global scope
     transform: {
-      filter: { code: globalsCodeFilter },
+      filter: { code: { include: [...globalsList, ...globalReferences] } },
       async handler(code: string, id: string) {
-        if (globalsList.every((glob) => !code.includes(glob))) {
+        // Optimized deps inline the dev-only alias files, so they read a global without an import.
+        const readsInlinedGlobal =
+          this.environment.mode === 'dev' &&
+          globalReferences.some((reference) => code.includes(reference));
+
+        let imports: readonly ImportSpecifier[];
+        try {
+          [imports] = parse(code);
+        } catch {
+          // Leave invalid code (e.g. JSX in a .js file) to the plugins that report syntax errors
           return undefined;
         }
-
-        const [imports] = parse(code);
         const src = new MagicString(code);
         let didRewrite = false;
         imports.forEach(({ n: path, ss: startPosition, se: endPosition }) => {
@@ -116,7 +123,10 @@ export async function storybookExternalGlobalsPlugin(options: Options): Promise<
 
         const rewritten = src.toString();
         return {
-          code: didRewrite ? ensurePreviewRuntimePrecedesGlobals(rewritten, id) : rewritten,
+          code:
+            didRewrite || readsInlinedGlobal
+              ? ensurePreviewRuntimePrecedesGlobals(rewritten, id)
+              : rewritten,
           map: null,
         };
       },

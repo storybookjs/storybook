@@ -18,7 +18,6 @@ import { Feature } from 'storybook/internal/types';
 import picocolors from 'picocolors';
 import { coerce } from 'semver';
 import stripJsonComments from 'strip-json-comments';
-import invariant from 'tiny-invariant';
 
 import { getRendererDir } from './dirs.ts';
 
@@ -183,12 +182,6 @@ export async function adjustTemplate(templatePath: string, templateData: Record<
   });
 
   await writeFile(templatePath, template);
-}
-
-export function coerceSemver(version: string) {
-  const coercedSemver = coerce(version);
-  invariant(coercedSemver != null, `Could not coerce ${version} into a semver.`);
-  return coercedSemver;
 }
 
 export function hasStorybookDependencies(packageManager: JsPackageManager) {

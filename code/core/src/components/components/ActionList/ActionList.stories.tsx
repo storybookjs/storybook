@@ -22,46 +22,48 @@ export const Default = meta.story({
         </ActionList.Button>
       </ActionList.Item>
       <ActionList.Item>
-        <ActionList.Action>Action item</ActionList.Action>
-        <ActionList.Button>
+        <ActionList.Action ariaLabel={false}>Action item</ActionList.Action>
+        <ActionList.Button ariaLabel={false}>
           <PlayAllHollowIcon />
           Cool
         </ActionList.Button>
       </ActionList.Item>
       <ActionList.HoverItem targetId="some-action">
-        <ActionList.Action>Hover action</ActionList.Action>
-        <ActionList.Button data-target-id="some-action">
+        <ActionList.Action ariaLabel={false}>Hover action</ActionList.Action>
+        <ActionList.Button ariaLabel={false} data-target-id="some-action">
           <PlayAllHollowIcon />
           Cool
         </ActionList.Button>
       </ActionList.HoverItem>
       <ActionList.Item>
         <ActionList.Text>With a button</ActionList.Text>
-        <ActionList.Button variant="solid">Go</ActionList.Button>
+        <ActionList.Button ariaLabel={false} variant="solid">
+          Go
+        </ActionList.Button>
       </ActionList.Item>
       <ActionList.Item>
-        <ActionList.Action>
+        <ActionList.Action ariaLabel={false}>
           With an inline button
-          <ActionList.Button as="div" readOnly padding="none">
+          <ActionList.Button ariaLabel={false} as="div" readOnly padding="none">
             <ProgressSpinner percentage={25} running={false} size={16} width={1.5} />
             25%
           </ActionList.Button>
         </ActionList.Action>
       </ActionList.Item>
       <ActionList.Item>
-        <ActionList.Action>
+        <ActionList.Action ariaLabel={false}>
           With a badge
           <Badge status="positive">Check it out</Badge>
         </ActionList.Action>
       </ActionList.Item>
       <ActionList.Item>
-        <ActionList.Action as="label">
+        <ActionList.Action ariaLabel={false} as="label">
           <Form.Checkbox />
           <ActionList.Text>With a checkbox</ActionList.Text>
         </ActionList.Action>
       </ActionList.Item>
       <ActionList.Item active>
-        <ActionList.Action>
+        <ActionList.Action ariaLabel={false}>
           <ActionList.Icon>
             <CheckIcon />
           </ActionList.Icon>
@@ -80,7 +82,7 @@ export const Default = meta.story({
         </ActionList.Text>
       </ActionList.Item>
       <ActionList.Item>
-        <ActionList.Action>
+        <ActionList.Action ariaLabel={false}>
           <ActionList.Icon>
             <CheckIcon />
           </ActionList.Icon>
@@ -91,7 +93,7 @@ export const Default = meta.story({
         </ActionList.Action>
       </ActionList.Item>
       <ActionList.Item active>
-        <ActionList.Action>
+        <ActionList.Action ariaLabel={false}>
           <ActionList.Icon>
             <CheckIcon />
           </ActionList.Icon>
@@ -137,26 +139,26 @@ export const Groups = meta.story({
     <>
       <ActionList>
         <ActionList.Item>
-          <ActionList.Action>Alpha</ActionList.Action>
+          <ActionList.Action ariaLabel={false}>Alpha</ActionList.Action>
         </ActionList.Item>
         <ActionList.Item>
-          <ActionList.Action>Item</ActionList.Action>
-        </ActionList.Item>
-      </ActionList>
-      <ActionList>
-        <ActionList.Item>
-          <ActionList.Action>Bravo</ActionList.Action>
-        </ActionList.Item>
-        <ActionList.Item>
-          <ActionList.Action>Item</ActionList.Action>
+          <ActionList.Action ariaLabel={false}>Item</ActionList.Action>
         </ActionList.Item>
       </ActionList>
       <ActionList>
         <ActionList.Item>
-          <ActionList.Action>Charlie</ActionList.Action>
+          <ActionList.Action ariaLabel={false}>Bravo</ActionList.Action>
         </ActionList.Item>
         <ActionList.Item>
-          <ActionList.Action>Item</ActionList.Action>
+          <ActionList.Action ariaLabel={false}>Item</ActionList.Action>
+        </ActionList.Item>
+      </ActionList>
+      <ActionList>
+        <ActionList.Item>
+          <ActionList.Action ariaLabel={false}>Charlie</ActionList.Action>
+        </ActionList.Item>
+        <ActionList.Item>
+          <ActionList.Action ariaLabel={false}>Item</ActionList.Action>
         </ActionList.Item>
       </ActionList>
     </>

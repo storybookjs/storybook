@@ -144,9 +144,8 @@ export async function installSkills({
 
   const command = packageManager.getRemoteRunCommand(args);
   logger.log(CLI_COLORS.cta(command));
-  let installed: unknown;
   try {
-    installed = await effects.runCommand(command, () =>
+    await effects.runCommand(command, () =>
       packageManager.runPackageCommand({
         args,
         useRemotePkg: true,
@@ -183,8 +182,7 @@ export async function installSkills({
   logger.log(
     `If you want to remove the Storybook skills, run "${packageManager.getRemoteRunCommand(['skills@latest', 'remove'])}"`
   );
-  // `runCommand` resolves to nothing when it only records the install, so nothing was installed.
-  return { result: installed === undefined ? 'skipped' : 'installed', source };
+  return { result: 'installed', source };
 }
 
 async function removeSkills(

@@ -156,7 +156,7 @@ describe('installSkills', () => {
 
   beforeEach(() => {
     packageManager = {
-      runPackageCommand: vi.fn().mockResolvedValue({ exitCode: 0 }),
+      runPackageCommand: vi.fn().mockResolvedValue(undefined),
       getRemoteRunCommand: vi.fn((args: string[]) => `npx ${args.join(' ')}`),
     } as Partial<JsPackageManager> as JsPackageManager;
 
@@ -166,11 +166,11 @@ describe('installSkills', () => {
     vi.mocked(logger.debug).mockImplementation(() => {});
   });
 
-  it('records the skills CLI instead of running it, and reports it as skipped, in a dry run', async () => {
+  it('records the skills CLI instead of running it, in a dry run', async () => {
     effects.setDryRun(true);
     onTestFinished(() => effects.setDryRun(false));
 
-    const result = await installSkills({
+    await installSkills({
       packageManager,
       source: 'refresh',
       testSupported: false,
@@ -181,7 +181,6 @@ describe('installSkills', () => {
     expect(effects.describeDryRunChanges().map((line) => stripVTControlCharacters(line))).toEqual([
       'run npx skills@latest add storybookjs/skills#v10.6.0 --yes --agent claude-code universal --copy',
     ]);
-    expect(result).toEqual({ result: 'skipped', source: 'refresh' });
   });
 
   it('installs from the tag of the running Storybook version', async () => {
@@ -388,7 +387,7 @@ describe('installSkills', () => {
       }),
     });
     vi.mocked(packageManager.runPackageCommand)
-      .mockResolvedValueOnce({ exitCode: 0 } as never)
+      .mockResolvedValueOnce(undefined as never)
       .mockRejectedValueOnce(new Error('remove failed'));
 
     const result = await installSkills({

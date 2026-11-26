@@ -1113,6 +1113,30 @@ describe('PNPM Proxy', () => {
       );
     });
 
+    it('records the minimumReleaseAgeExclude update instead of running it, in a dry run', async () => {
+      effects.setDryRun(true);
+      onTestFinished(() => effects.setDryRun(false));
+      mockedExecuteCommand
+        .mockResolvedValueOnce({ stdout: '1440\n' } as any)
+        .mockResolvedValueOnce({ stdout: JSON.stringify(['react', 'webpack']) } as any)
+        .mockResolvedValueOnce({ stdout: JSON.stringify(packageTimeMap) } as any)
+        .mockResolvedValueOnce({ stdout: JSON.stringify(packageTimeMap) } as any)
+        .mockResolvedValueOnce({ stdout: JSON.stringify(['react', 'webpack']) } as any);
+
+      await pnpmProxy.precheckStorybookPackageInstall({
+        storybookVersion: '10.4.0-alpha.17',
+        nonInteractive: true,
+        installContext: 'create',
+      });
+
+      expect(mockedExecuteCommand).not.toHaveBeenCalledWith(
+        expect.objectContaining({ args: expect.arrayContaining(['set']) })
+      );
+      expect(effects.describeDryRunChanges()).toEqual([
+        `run pnpm config set --location=project --json minimumReleaseAgeExclude '${JSON.stringify(expectedMinimumReleaseAgeExcludePackages)}'`,
+      ]);
+    });
+
     it('should let the user update minimumReleaseAgeExclude interactively', async () => {
       mockedExecuteCommand
         .mockResolvedValueOnce({ stdout: '1440\n' } as any)

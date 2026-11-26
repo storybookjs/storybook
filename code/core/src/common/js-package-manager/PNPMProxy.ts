@@ -781,26 +781,25 @@ export class PNPMProxy extends JsPackageManager {
       new Set([...currentMinimumReleaseAgeExclude, ...STORYBOOK_PACKAGE_PATTERNS])
     );
 
-    await prompt.executeTaskWithSpinner(
+    const value = JSON.stringify(nextMinimumReleaseAgeExclude);
+    await effects.runCommand(
+      `${this.getCommandName()} config set --location=project --json minimumReleaseAgeExclude '${value}'`,
       () =>
-        this.runInternalCommand(
-          'config',
-          [
-            'set',
-            '--location=project',
-            '--json',
-            'minimumReleaseAgeExclude',
-            JSON.stringify(nextMinimumReleaseAgeExclude),
-          ],
-          undefined,
-          'pipe'
-        ),
-      {
-        id: 'update-pnpm-minimum-release-age-exclude',
-        intro: 'Updating pnpm minimumReleaseAgeExclude...',
-        error: 'Failed to update pnpm minimumReleaseAgeExclude.',
-        success: 'Updated pnpm minimumReleaseAgeExclude',
-      }
+        prompt.executeTaskWithSpinner(
+          () =>
+            this.runInternalCommand(
+              'config',
+              ['set', '--location=project', '--json', 'minimumReleaseAgeExclude', value],
+              undefined,
+              'pipe'
+            ),
+          {
+            id: 'update-pnpm-minimum-release-age-exclude',
+            intro: 'Updating pnpm minimumReleaseAgeExclude...',
+            error: 'Failed to update pnpm minimumReleaseAgeExclude.',
+            success: 'Updated pnpm minimumReleaseAgeExclude',
+          }
+        )
     );
   }
 

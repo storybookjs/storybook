@@ -8,7 +8,6 @@ import { shortenPath } from '../util.ts';
 import type { CollectProjectsSuccessResult } from '../util.ts';
 import { resolveRequestedFeatures } from './fixes/experimental-features.ts';
 import { allFixes } from './fixes/index.ts';
-import { nextjsDeprecationWarning, nextjsToNextjsVite } from './fixes/nextjs-to-nextjs-vite.ts';
 import { type FixFileFailure, pluralFiles, reportFileFailures } from './helpers/failure-report.ts';
 import { applyFixes, type CheckedFix, detectApplicable, runCheck } from './pipeline.ts';
 import type { Fix, FixId } from './types.ts';
@@ -298,12 +297,10 @@ export async function promptForAutomigrations(
     required: false,
   });
 
-  if (
-    automigrations.some(
-      ({ fix }) => fix.id === nextjsToNextjsVite.id && !selectedIds.includes(fix.id)
-    )
-  ) {
-    logger.warn(nextjsDeprecationWarning);
+  for (const { fix } of automigrations) {
+    if (fix.skipWarning && !selectedIds.includes(fix.id)) {
+      logger.warn(fix.skipWarning);
+    }
   }
 
   return automigrations.filter((am) => selectedIds.includes(am.fix.id));

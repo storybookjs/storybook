@@ -69,6 +69,8 @@ type BaseFix<ResultType = any> = {
   /** Whether the automigration is selected by default when the user is prompted. */
   defaultSelected?: boolean;
   link?: string;
+  /** Warning logged when the user skips this fix, e.g. one that migrates off a deprecated package. */
+  skipWarning?: string;
 };
 
 type PromptType<ResultType = any, T = Prompt> =

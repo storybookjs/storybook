@@ -4,6 +4,7 @@ import type { JsPackageManager, PackageJson } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 
 import * as mainConfigFile from './helpers/mainConfigFile.ts';
+import { nextjsDeprecationWarning, nextjsToNextjsVite } from './fixes/nextjs-to-nextjs-vite.ts';
 import { doAutomigrate, runFixes } from './index.ts';
 import type { Fix } from './types.ts';
 
@@ -186,11 +187,43 @@ describe('runFixes', () => {
     expect(run1).toHaveBeenCalled();
   });
 
-  it('warns that @storybook/nextjs is deprecated when the nextjs-vite migration is skipped', async () => {
-    const declined = { ...fixes[0], id: 'nextjs-to-nextjs-vite', defaultSelected: false };
+  it('warns that @storybook/nextjs is deprecated when the nextjs-vite migration is skipped with --yes', async () => {
+    const declined = {
+      ...fixes[0],
+      id: nextjsToNextjsVite.id,
+      defaultSelected: false,
+      skipWarning: nextjsDeprecationWarning,
+    };
 
     await runFixes({ ...common, fixes: [declined], storybookVersion: '7.0.0' });
 
+    expect(vi.mocked(logger.warn)).toHaveBeenCalledWith(
+      expect.stringContaining('@storybook/nextjs is deprecated and will be removed in Storybook 12')
+    );
+    expect(vi.mocked(logger.warn)).toHaveBeenCalledWith(
+      expect.stringContaining('npx storybook automigrate nextjs-to-nextjs-vite')
+    );
+  });
+
+  it('skips the nextjs-vite migration and warns when the user declines it interactively', async () => {
+    vi.mocked(prompt.confirm).mockResolvedValue(false);
+    const declined = {
+      ...fixes[0],
+      id: nextjsToNextjsVite.id,
+      defaultSelected: nextjsToNextjsVite.defaultSelected,
+      skipWarning: nextjsDeprecationWarning,
+    };
+
+    const { fixResults } = await runFixes({
+      ...common,
+      yes: false,
+      fixes: [declined],
+      storybookVersion: '7.0.0',
+    });
+
+    expect(fixResults).toEqual({ 'nextjs-to-nextjs-vite': 'skipped' });
+    expect(run1).not.toHaveBeenCalled();
+    expect(vi.mocked(prompt.confirm)).toHaveBeenCalled();
     expect(vi.mocked(logger.warn)).toHaveBeenCalledWith(
       expect.stringContaining('@storybook/nextjs is deprecated and will be removed in Storybook 12')
     );

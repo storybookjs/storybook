@@ -7,6 +7,7 @@ import {
   promptForAutomigrations,
 } from './multi-project.ts';
 import type { Fix } from './types.ts';
+import { nextjsDeprecationWarning } from './fixes/nextjs-to-nextjs-vite.ts';
 
 vi.mock('storybook/internal/node-logger', async (importOriginal) => {
   return {
@@ -202,7 +203,13 @@ describe('multi-project automigrations', () => {
       const { logger, prompt } = await import('storybook/internal/node-logger');
       vi.mocked(prompt.multiselect).mockResolvedValue([]);
 
-      const fix = createMockFix('nextjs-to-nextjs-vite', { needsFix: true });
+      const fix = createMockFix(
+        'nextjs-to-nextjs-vite',
+        { needsFix: true },
+        {
+          skipWarning: nextjsDeprecationWarning,
+        }
+      );
       const project = createMockProject('/project1/.storybook');
 
       await promptForAutomigrations([asAutomigration(fix, project)], {
@@ -224,7 +231,13 @@ describe('multi-project automigrations', () => {
       const { logger, prompt } = await import('storybook/internal/node-logger');
       vi.mocked(prompt.multiselect).mockResolvedValue(['nextjs-to-nextjs-vite']);
 
-      const fix = createMockFix('nextjs-to-nextjs-vite', { needsFix: true });
+      const fix = createMockFix(
+        'nextjs-to-nextjs-vite',
+        { needsFix: true },
+        {
+          skipWarning: nextjsDeprecationWarning,
+        }
+      );
       const project = createMockProject('/project1/.storybook');
 
       await promptForAutomigrations([asAutomigration(fix, project)], {

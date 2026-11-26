@@ -6,8 +6,8 @@ import { MainFileMissingError } from 'storybook/internal/server-errors';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import * as mainConfigFile from '../automigrate/helpers/mainConfigFile.ts';
-import { doctor, getDoctorDiagnostics } from './index.ts';
-import { DiagnosticType } from './types.ts';
+import { collectDeduplicatedDiagnostics, doctor, getDoctorDiagnostics } from './index.ts';
+import { DiagnosticStatus, DiagnosticType, type ProjectDoctorResults } from './types.ts';
 
 const getStorybookData = vi.spyOn(mainConfigFile, 'getStorybookData');
 
@@ -72,6 +72,40 @@ describe('getDoctorDiagnostics deprecated packages check', () => {
     const deprecated = results.filter(({ type }) => type === DiagnosticType.DEPRECATED_PACKAGES);
     expect(deprecated).toHaveLength(1);
     expect(deprecated[0].message).toContain('@storybook/nextjs@11.0.0');
+  });
+});
+
+describe('collectDeduplicatedDiagnostics', () => {
+  const projectResult = (configDir: string, message: string): ProjectDoctorResults => ({
+    configDir,
+    status: 'has_issues',
+    diagnostics: { [DiagnosticType.DEPRECATED_PACKAGES]: DiagnosticStatus.HAS_ISSUES } as Record<
+      DiagnosticType,
+      DiagnosticStatus
+    >,
+    messages: { [DiagnosticType.DEPRECATED_PACKAGES]: message } as Record<DiagnosticType, string>,
+  });
+
+  it('keeps different messages of the same type apart', () => {
+    const diagnostics = collectDeduplicatedDiagnostics({
+      a: projectResult('a', '- @storybook/nextjs@11.0.0 is deprecated'),
+      b: projectResult('b', '- @storybook/addon-notes@5.3.0 is deprecated'),
+    });
+
+    expect(diagnostics.map(({ message, projects }) => [message, projects])).toEqual([
+      ['- @storybook/nextjs@11.0.0 is deprecated', [{ configDir: 'a' }]],
+      ['- @storybook/addon-notes@5.3.0 is deprecated', [{ configDir: 'b' }]],
+    ]);
+  });
+
+  it('merges projects that report the same message', () => {
+    const diagnostics = collectDeduplicatedDiagnostics({
+      a: projectResult('a', '- @storybook/nextjs@11.0.0 is deprecated'),
+      b: projectResult('b', '- @storybook/nextjs@11.0.0 is deprecated'),
+    });
+
+    expect(diagnostics).toHaveLength(1);
+    expect(diagnostics[0].projects).toEqual([{ configDir: 'a' }, { configDir: 'b' }]);
   });
 });
 

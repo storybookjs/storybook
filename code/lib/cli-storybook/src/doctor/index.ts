@@ -34,7 +34,7 @@ import type {
 export function collectDeduplicatedDiagnostics(
   projectResults: Record<string, ProjectDoctorResults>
 ): DiagnosticResult[] {
-  const diagnosticMap = new Map<DiagnosticType, DiagnosticResult>();
+  const diagnosticMap = new Map<string, DiagnosticResult>();
 
   Object.entries(projectResults).forEach(([configDir, result]) => {
     Object.entries(result.diagnostics).forEach(([type, status]) => {
@@ -43,13 +43,14 @@ export function collectDeduplicatedDiagnostics(
         const message = result.messages[diagnosticType];
 
         if (message) {
-          const existing = diagnosticMap.get(diagnosticType);
+          const key = `${diagnosticType}\n${message}`;
+          const existing = diagnosticMap.get(key);
           if (existing) {
             // Add project to existing diagnostic
             existing.projects.push({ configDir });
           } else {
             // Create new diagnostic entry
-            diagnosticMap.set(diagnosticType, {
+            diagnosticMap.set(key, {
               type: diagnosticType,
               title: type.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()),
               message,

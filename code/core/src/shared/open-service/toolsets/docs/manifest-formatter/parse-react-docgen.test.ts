@@ -592,6 +592,31 @@ describe.each([
     `);
   });
 
+  test('forwards per-prop jsDocTags into prop tags (#37540)', () => {
+    const result = parseComponentDocLike({
+      displayName: 'Stack',
+      filePath: 'src/Stack.tsx',
+      description: '',
+      methods: [],
+      props: {
+        gap: {
+          name: 'gap',
+          description: 'Space between children, from the spacing scale.',
+          type: { name: 'string | Record<string, string>' },
+          defaultValue: { value: '0' },
+          required: false,
+          jsDocTags: {
+            example: ['"4"', '{ initial: "2", md: "4" }'],
+          },
+        },
+      },
+    });
+
+    expect(result.props.gap!.tags).toEqual({
+      example: ['"4"', '{ initial: "2", md: "4" }'],
+    });
+  });
+
   test('renders non-string tag values instead of dropping them', () => {
     const result = parseComponentDocLike({
       displayName: 'Button',

@@ -54,6 +54,8 @@ export interface PropItem {
   defaultValue: { value: string } | null;
   parent?: ParentType;
   declarations?: ParentType[];
+  /** Raw per-prop JSDoc tags (one value per occurrence), same shape as ComponentDoc.jsDocTags. */
+  jsDocTags?: Record<string, string[]>;
 }
 
 export interface ComponentDoc {
@@ -1405,6 +1407,19 @@ function getJSDocDefault(
   return undefined;
 }
 
+/** Collects every per-prop JSDoc tag for the manifest / docs-show consumers. */
+function extractPropJsDocTags(
+  typescript: DocgenTypeScript,
+  prop: ts.Symbol,
+  checker: DocgenTypeChecker
+): Record<string, string[]> | undefined {
+  const jsDocTags: Record<string, string[]> = {};
+  for (const tag of prop.getJsDocTags(checker as ts.TypeChecker)) {
+    (jsDocTags[tag.name] ??= []).push(typescript.displayPartsToString(tag.text ?? []).trim());
+  }
+  return Object.keys(jsDocTags).length > 0 ? jsDocTags : undefined;
+}
+
 // ---------------------------------------------------------------------------
 // Single prop extraction
 // ---------------------------------------------------------------------------
@@ -1442,6 +1457,7 @@ function extractPropItem(
   const destructuringDefault = defaultsMap?.get(propName);
   const jsDocDefault = getJSDocDefault(typescript, prop, checker);
   const defaultStr = destructuringDefault ?? jsDocDefault;
+  const jsDocTags = extractPropJsDocTags(typescript, prop, checker);
 
   return {
     name: propName,
@@ -1451,6 +1467,7 @@ function extractPropItem(
     defaultValue: defaultStr !== undefined ? { value: defaultStr } : null,
     parent,
     declarations,
+    ...(jsDocTags ? { jsDocTags } : {}),
   };
 }
 

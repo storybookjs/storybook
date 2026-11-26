@@ -1293,6 +1293,67 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
       `);
     });
 
+    it('prints prop @example tags from reactComponentMeta (#37540)', () => {
+      const manifest: ComponentManifest = {
+        id: 'stack',
+        name: 'Stack',
+        path: 'src/components/Stack.tsx',
+        reactComponentMeta: {
+          props: {
+            gap: {
+              name: 'gap',
+              description: 'Space between children, from the spacing scale.',
+              type: { name: 'string | Record<string, string>' },
+              defaultValue: { value: '0' },
+              required: false,
+              jsDocTags: {
+                example: ['"4"', '{ initial: "2", md: "4" }'],
+              },
+            },
+            direction: {
+              name: 'direction',
+              description: 'Main axis.',
+              type: { name: '"row" | "column"' },
+              defaultValue: { value: 'row' },
+              required: false,
+              jsDocTags: {
+                example: ['"column"'],
+              },
+            },
+          },
+        },
+      };
+
+      const result = formatComponentManifest(manifest);
+
+      expect(result).toContain('@example "4"');
+      expect(result).toContain('@example { initial: "2", md: "4" }');
+      expect(result).toContain('@example "column"');
+      expect(result).toMatchInlineSnapshot(`
+        "# Stack
+
+        ID: stack
+
+        ## Props
+
+        \`\`\`
+        export type Props = {
+          /**
+            Space between children, from the spacing scale.
+        @example "4"
+        @example { initial: "2", md: "4" }
+          */
+          gap?: string | Record<string, string> = 0;
+          /**
+            Main axis.
+        @example "column"
+          */
+          direction?: "row" | "column" = row;
+        }
+        \`\`\`"
+      `);
+    });
+
     it('should omit props section when reactDocgen is not present', () => {
       const manifest: ComponentManifest = {
         id: 'button',

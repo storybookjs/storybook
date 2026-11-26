@@ -233,13 +233,20 @@ function formatPropsSection(
     const isRequired = propInfo.required ?? true;
     const hasDefault = propInfo.defaultValue !== undefined;
     const { description } = propInfo;
+    const examples = propInfo.tags?.[EXAMPLE_JSDOC_TAG_NAME] ?? [];
+    const hasExamples = examples.length > 0;
 
-    if (description !== undefined) {
-      if (description.includes('\n')) {
+    if (description !== undefined || hasExamples) {
+      if ((description?.includes('\n') ?? false) || hasExamples) {
         parts.push('  /**');
-        parts.push(`    ${description}`);
+        if (description !== undefined) {
+          parts.push(`    ${description}`);
+        }
+        for (const example of examples) {
+          parts.push(`@example ${example}`);
+        }
         parts.push('  */');
-      } else {
+      } else if (description !== undefined) {
         parts.push(`  /** ${description} */`);
       }
     }

@@ -14,6 +14,8 @@ export type ParsedDocgen = {
       type?: string;
       defaultValue?: string;
       required?: boolean;
+      /** Per-prop JSDoc tags from server docgen (`reactComponentMeta`). */
+      tags?: Record<string, string[]>;
     }
   >;
 };
@@ -58,6 +60,8 @@ type ComponentDoc = {
       required?: boolean;
       type?: { name?: string; raw?: string; value?: { value: string }[] };
       defaultValue?: { value?: string } | null;
+      jsDocTags?: Record<string, string[]>;
+      tags?: Record<string, unknown>;
     }
   >;
 };
@@ -172,6 +176,19 @@ const tagValues = (value: unknown): string[] => {
   return [typeof value === 'object' ? JSON.stringify(value) : String(value)];
 };
 
+const parsePropTags = (
+  prop: NonNullable<ComponentDoc['props']>[string]
+): Record<string, string[]> | undefined => {
+  const rawTags = prop.jsDocTags ?? prop.tags;
+  if (!rawTags) {
+    return undefined;
+  }
+  const tags = Object.fromEntries(
+    Object.entries(rawTags).map(([tagName, value]) => [tagName, tagValues(value)])
+  );
+  return Object.keys(tags).length > 0 ? tags : undefined;
+};
+
 const parseComponentDocLike = (componentDoc: ComponentDocLike): ParsedDocgen => {
   const props = componentDoc.props ?? {};
   const tags = Object.fromEntries(
@@ -179,18 +196,22 @@ const parseComponentDocLike = (componentDoc: ComponentDocLike): ParsedDocgen => 
   );
   const parsedDocgen: ParsedDocgen = {
     props: Object.fromEntries(
-      Object.entries(props).map(([propName, prop]) => [
-        propName,
-        {
-          description: prop.description || undefined,
-          // RDT uses prop.type.name as a flat string (e.g. "() => void", "{ id: string }")
-          // For enums, prefer prop.type.raw which has the full union; for a named-alias enum
-          // raw only holds the alias name, so use the expanded members instead (issue #35778)
-          type: docgenTypeString(prop.type),
-          defaultValue: prop.defaultValue?.value,
-          required: prop.required,
-        },
-      ])
+      Object.entries(props).map(([propName, prop]) => {
+        const propTags = parsePropTags(prop);
+        return [
+          propName,
+          {
+            description: prop.description || undefined,
+            // RDT uses prop.type.name as a flat string (e.g. "() => void", "{ id: string }")
+            // For enums, prefer prop.type.raw which has the full union; for a named-alias enum
+            // raw only holds the alias name, so use the expanded members instead (issue #35778)
+            type: docgenTypeString(prop.type),
+            defaultValue: prop.defaultValue?.value,
+            required: prop.required,
+            ...(propTags ? { tags: propTags } : {}),
+          },
+        ];
+      })
     ),
   };
 

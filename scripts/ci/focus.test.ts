@@ -6,13 +6,20 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'pathe';
 import { describe, expect, it } from 'vitest';
 
-import { allTemplates, daily, normal } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
+import {
+  allTemplates,
+  daily,
+  docgenServerTemplates,
+  normal,
+  type TemplateKey,
+} from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
 import { getCheckedWorkspaces } from '../tasks/check.ts';
 import {
   FOCUS_TEMPLATES,
   PATH_TRIGGERED_JOBS,
   getFocusJobs,
   selectChromaticSiblings,
+  selectDocgenBaselineSandboxes,
   selectFocusSandboxes,
   selectPathTriggeredJobs,
   templateDirs,
@@ -221,6 +228,57 @@ describe('getFocusJobs', () => {
   });
 });
 
+describe('docgen baseline coverage', () => {
+  const ciDocgenTemplates = docgenServerTemplates().filter(
+    (key) => daily.includes(key) && !key.includes('prerelease')
+  );
+  const createsSandbox = (changedFiles: string[], key: TemplateKey) =>
+    getFocusJobs(changedFiles).some(({ id }) => id === defineSandboxFlow(key).createJob.id);
+
+  it.each(
+    ciDocgenTemplates.flatMap((key) =>
+      [...new Set(Object.values(templateDirs(key)).flat())].map((dir) => ({
+        key,
+        dir,
+      }))
+    )
+  )('creates the $key sandbox when $dir changes', ({ key, dir }) => {
+    expect(createsSandbox([`${dir}src/index.ts`], key)).toBe(true);
+  });
+
+  it.each([
+    'code/core/src/component-meta/ComponentMetaManager.ts',
+    'code/core/src/csf-tools/jsdoc.ts',
+    'code/core/src/docs-tools/argTypes/docgen/extractDocgenProps.ts',
+    'code/core/src/common/utils/component-id.ts',
+    'code/core/src/common/utils/component-path-from-story.ts',
+    'code/core/src/common/utils/resolve-meta-component.ts',
+    'code/core/src/common/utils/select-component-entry.ts',
+    'code/core/src/common/utils/subcomponents.ts',
+    'code/core/src/shared/open-service/services/docgen/server.ts',
+    'code/core/src/shared/open-service/services/extraction-service.server.ts',
+    'code/lib/docgen-harness/src/sandbox-baselines/run.ts',
+  ])('creates every docgen sandbox when %s changes', (file) => {
+    expect(existsSync(join(ROOT, file))).toBe(true);
+    expect(ciDocgenTemplates.filter((key) => !createsSandbox([file], key))).toEqual([]);
+  });
+
+  it('does not add duplicate creates for shared changes or trigger on unrelated core changes', () => {
+    const file = 'code/core/src/csf-tools/jsdoc.ts';
+    const alreadyCreated = ciDocgenTemplates[0]!;
+
+    expect(selectDocgenBaselineSandboxes([alreadyCreated], [file])).toEqual(
+      ciDocgenTemplates.filter((key) => key !== alreadyCreated)
+    );
+    expect(selectDocgenBaselineSandboxes([], ['code/core/src/manager/App.tsx'])).toEqual([]);
+    for (const key of ciDocgenTemplates) {
+      expect(
+        getFocusJobs([file]).filter(({ id }) => id === defineSandboxFlow(key).createJob.id)
+      ).toHaveLength(1);
+    }
+  });
+});
+
 describe('selectPathTriggeredJobs', () => {
   const triggeredIds = (...changedFiles: string[]) =>
     selectPathTriggeredJobs(changedFiles).map(({ id }) => id);
@@ -284,7 +342,9 @@ describe('defineAffectedLintAndFormat', () => {
     (
       getFocusJobs(changedFiles)
         .find(({ id }) => id === 'lint-and-format--affected')!
-        .implementation('focus') as { steps: { run?: { name: string; command: string } }[] }
+        .implementation('focus') as {
+        steps: { run?: { name: string; command: string } }[];
+      }
     ).steps.flatMap(({ run }) => (run && /Format|Lint/.test(run.name) ? [run] : []));
 
   it('checks only the changed files, linting each directory with paths relative to it', () => {

@@ -34,14 +34,10 @@ import type {
 const rootTsConfigNames = ['tsconfig.json', 'jsconfig.json'];
 
 /**
- * Recycle (dispose + lazily rebuild) the shared TS program(s) once heap usage crosses this fraction
- * of the V8 heap limit.
+ * Recycle (dispose + rebuild) the shared TS program(s) once heap usage crosses this fraction of the
+ * V8 heap limit.
  */
 const RECYCLE_HEAP_PRESSURE_RATIO = 0.7;
-
-// Program(s) that are past that fraction on their own are recycled once the heap has grown by this
-// fraction of the room they leave. It is the smaller of the two, to keep room for an extraction.
-const RECYCLE_GROWTH_RATIO_ABOVE_FLOOR = 0.3;
 
 export class ComponentMetaManager<
   P extends ComponentMetaProjectBase,
@@ -63,10 +59,8 @@ export class ComponentMetaManager<
     { timeout: ReturnType<typeof setTimeout>; renamed: boolean }
   >();
 
-  private readonly heapLimitBytes = v8.getHeapStatistics().heap_size_limit;
-  // The heap the program(s) fill on their own while that is past the recycle threshold, else 0.
-  // `Infinity` after a recycle, until the next check measures the rebuilt program(s).
-  private recycleFloorBytes = 0;
+  // Heap-pressure recycle: bytes of `heapUsed` past which the TS program(s) are disposed and rebuilt.
+  private readonly heapRecycleThresholdBytes: number;
 
   /**
    * @param recycleHeapPressureRatio Fraction of the V8 heap limit at which the shared program(s) are
@@ -80,8 +74,12 @@ export class ComponentMetaManager<
     // pass their own `typescript` module, which satisfies the shape via `ts.sys`.
     private typescript: ComponentMetaFileSystem,
     private factory: ComponentMetaProjectFactory<P, CL>,
-    private recycleHeapPressureRatio: number = RECYCLE_HEAP_PRESSURE_RATIO
-  ) {}
+    recycleHeapPressureRatio: number = RECYCLE_HEAP_PRESSURE_RATIO
+  ) {
+    this.heapRecycleThresholdBytes = Math.floor(
+      v8.getHeapStatistics().heap_size_limit * recycleHeapPressureRatio
+    );
+  }
 
   // ---------------------------------------------------------------------------
   // Adapted from:
@@ -134,34 +132,20 @@ export class ComponentMetaManager<
    * limit, preventing the next extraction's spike from OOMing the dev server. Callers with a
    * batch-extraction surface invoke this after each batch.
    *
-   * Program(s) that stay past the threshold right after a rebuild are kept until the heap has grown
-   * further, because recycling them reclaims nothing.
+   * A factory that shares parsed files keeps those of `batchProjects`, the projects the batch used.
    */
-  protected recycleProjectsIfHeapPressured(): boolean {
+  protected recycleProjectsIfHeapPressured(batchProjects: Iterable<P> = []): boolean {
     if (this.configProjects.size === 0 && !this.inferredProject) {
       return false;
     }
-    const { heapUsed } = process.memoryUsage();
-    if (heapUsed < this.heapLimitBytes * this.recycleHeapPressureRatio) {
-      this.recycleFloorBytes = 0;
-      return false;
-    }
-    // Rebuilt program(s) that are past the threshold on their own would be recycled after every
-    // extraction, which rebuilds them for each component and reclaims nothing.
-    this.recycleFloorBytes = Math.min(this.recycleFloorBytes, heapUsed);
-    const growthRatio = Math.min(this.recycleHeapPressureRatio, RECYCLE_GROWTH_RATIO_ABOVE_FLOOR);
-    const roomAboveFloorBytes = this.heapLimitBytes - this.recycleFloorBytes;
-    if (
-      this.recycleFloorBytes > 0 &&
-      heapUsed < this.recycleFloorBytes + roomAboveFloorBytes * growthRatio
-    ) {
+    if (process.memoryUsage().heapUsed < this.heapRecycleThresholdBytes) {
       return false;
     }
 
     // We crossed the heap-pressure threshold. Recycling reclaims the type cache and usually prevents
     // the crash, but a single extraction can still exceed the cap — warn once so the user can raise
     // their memory limit rather than silently paying repeated rebuilds (or eventually crashing).
-    const heapLimitMb = Math.round(this.heapLimitBytes / (1024 * 1024));
+    const heapLimitMb = Math.round(v8.getHeapStatistics().heap_size_limit / (1024 * 1024));
     once.warn(dedent`
       Storybook's docgen server is nearing the Node.js memory limit (~${heapLimitMb} MB) while extracting component types, and recycled its TypeScript program to avoid an out-of-memory crash. This can briefly slow down the docs and Controls panels.
 
@@ -169,15 +153,25 @@ export class ComponentMetaManager<
         NODE_OPTIONS="--max-old-space-size=${heapLimitMb * 2}"
     `);
 
-    for (const project of this.configProjects.values()) {
+    const recycledProjects = [...this.configProjects];
+    const projectsToRebuild = new Set(this.factory.sharesParsedFiles ? batchProjects : []);
+    this.configProjects.clear();
+    this.referencedTsConfigs.clear();
+    for (const [tsconfig, project] of recycledProjects) {
+      if (projectsToRebuild.has(project)) {
+        try {
+          // The parsed files stay only while a program holds them, so the new program has to exist
+          // before the old one goes. Listing its source files builds it.
+          this.getOrCreateConfiguredProject(tsconfig)?.getSourceFilePaths();
+        } catch (err) {
+          logger.debug(`[component-meta] Failed to rebuild the project of ${tsconfig}: ${err}`);
+        }
+      }
       project.dispose();
     }
     this.inferredProject?.dispose();
-    this.configProjects.clear();
-    this.referencedTsConfigs.clear();
     this.inferredProject = undefined;
     this.factory.recycle?.();
-    this.recycleFloorBytes = Infinity;
     return true;
   }
 

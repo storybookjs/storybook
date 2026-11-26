@@ -8,10 +8,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { getHeapStatistics } from 'node:v8';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
-import { once } from 'storybook/internal/node-logger';
 
 import { join, normalize } from 'pathe';
 
@@ -111,81 +108,5 @@ describe('ComponentMetaManager file watching', () => {
       .filter(({ filename }) => filename === 'src/Card.ts')
       .map(({ eventType }) => eventType);
     expect(cardEvents).toContain('rename');
-  });
-});
-
-describe('ComponentMetaManager heap-pressure recycle', () => {
-  class RecyclingManager extends ComponentMetaManager<ReturnType<typeof createProject>> {
-    recycleIfHeapPressured = () => this.recycleProjectsIfHeapPressured();
-  }
-
-  const file = '/project/src/Button.ts';
-  const createManager = () =>
-    new RecyclingManager(
-      { sys: { fileExists: () => false, directoryExists: () => false } },
-      {
-        parseCommandLine: () => ({ fileNames: [file] }),
-        createConfiguredProject: () => createProject(file),
-        createInferredProject: () => createProject(file),
-      }
-    );
-
-  const recycleAtHeapLimitFraction = (manager: RecyclingManager, fraction: number) => {
-    vi.spyOn(process, 'memoryUsage').mockReturnValue({
-      heapUsed: getHeapStatistics().heap_size_limit * fraction,
-    } as NodeJS.MemoryUsage);
-    return manager.recycleIfHeapPressured();
-  };
-
-  const recyclesAtHeapLimitFractions = (fractions: number[]) => {
-    const manager = createManager();
-    return fractions.map((fraction) => {
-      manager.getProjectForFile(file);
-      return recycleAtHeapLimitFraction(manager, fraction);
-    });
-  };
-
-  beforeEach(() => {
-    vi.spyOn(once, 'warn').mockImplementation(() => undefined);
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
-  it('recycles once the heap passes 70% of the limit', () => {
-    expect(recyclesAtHeapLimitFractions([0.6, 0.8])).toEqual([false, true]);
-  });
-
-  it('keeps rebuilt projects that fill the heap past the threshold on their own', () => {
-    expect(recyclesAtHeapLimitFractions([0.8, 0.8, 0.82, 0.85])).toEqual([
-      true,
-      false,
-      false,
-      false,
-    ]);
-  });
-
-  it('recycles again once the heap grows 30% of the way from the rebuilt projects to the limit', () => {
-    expect(recyclesAtHeapLimitFractions([0.8, 0.8, 0.87])).toEqual([true, false, true]);
-  });
-
-  it('measures the rebuilt projects from the lowest heap seen since the recycle', () => {
-    expect(recyclesAtHeapLimitFractions([0.9, 0.9, 0.8, 0.87])).toEqual([true, false, false, true]);
-  });
-
-  it('measures the rebuilt projects at the first check that has projects', () => {
-    const manager = createManager();
-    manager.getProjectForFile(file);
-
-    expect(recycleAtHeapLimitFraction(manager, 0.8)).toBe(true);
-    expect(recycleAtHeapLimitFraction(manager, 0.99)).toBe(false);
-    manager.getProjectForFile(file);
-    expect(recycleAtHeapLimitFraction(manager, 0.8)).toBe(false);
-  });
-
-  it('recycles at 70% of the limit again after the heap dropped below it', () => {
-    expect(recyclesAtHeapLimitFractions([0.8, 0.8, 0.5, 0.8])).toEqual([true, false, false, true]);
-    expect(recyclesAtHeapLimitFractions([0.8, 0.5, 0.8])).toEqual([true, false, true]);
   });
 });

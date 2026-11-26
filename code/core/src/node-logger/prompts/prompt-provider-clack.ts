@@ -55,9 +55,6 @@ const formatTaskLogMessage = (message: string) => {
 // link that starts its own hint line on that line.
 const CLACK_OPTION_LINE_INSET = 13;
 
-// Clack's key-hint footer wraps outside the guide bar on narrow terminals.
-const LIST_PROMPT_DEFAULTS = { showInstructions: false } as const;
-
 // One reason→message mapping, shared by the terminal cancel message and PromptAbortedError, so
 // the two cannot drift apart.
 const CANCEL_MESSAGES: Record<PromptCancelReason, string> = {
@@ -162,7 +159,6 @@ export class ClackPromptProvider extends PromptProvider {
       const result = await clack.select<T>({
         ...options,
         message: protectUrls(options.message),
-        ...LIST_PROMPT_DEFAULTS,
         signal,
       });
       await this.handleAbort(result, promptOptions, isStdinEnded());
@@ -187,7 +183,6 @@ export class ClackPromptProvider extends PromptProvider {
           hint: option.hint ? protectUrls(option.hint, { maxLineWidth }) : undefined,
         })),
         required: options.required,
-        ...LIST_PROMPT_DEFAULTS,
         signal,
       });
       await this.handleAbort(result, promptOptions, isStdinEnded());

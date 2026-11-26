@@ -160,9 +160,7 @@ describe('ClackPromptProvider', () => {
     await provider.select({ message, options: [{ label: 'A', value: 'a' }] });
 
     expect(vi.mocked(clack.confirm)).toHaveBeenCalledWith(expect.objectContaining({ message }));
-    expect(vi.mocked(clack.select)).toHaveBeenCalledWith(
-      expect.objectContaining({ message, showInstructions: false })
-    );
+    expect(vi.mocked(clack.select)).toHaveBeenCalledWith(expect.objectContaining({ message }));
   });
 
   it('a nested task log reuses the root task and only the root closes it', (): void => {

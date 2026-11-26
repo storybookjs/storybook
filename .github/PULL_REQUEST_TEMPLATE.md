@@ -10,7 +10,14 @@ Thank you for contributing to Storybook! Please submit all PRs to the `next` bra
 
 ## What I did
 
-<!-- Briefly describe what your PR does -->
+<!-- List the important changes: those that address the issue and need a reviewer's attention. Write one bullet per change, each on a single line. -->
+
+<details>
+<summary>Detailed changes</summary>
+
+<!-- Describe the changes more broadly: how the important changes work, plus supporting changes such as refactors, renames, and test or fixture updates. -->
+
+</details>
 
 ## Checklist for Contributors
 

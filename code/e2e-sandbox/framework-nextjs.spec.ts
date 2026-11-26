@@ -33,7 +33,9 @@ test.describe('Next.js', () => {
 
       const img = sbPage.previewRoot().locator('img');
 
-      expect(await img.evaluate<boolean, HTMLImageElement>((image) => image.complete)).toBeFalsy();
+      expect(
+        await img.evaluate<boolean, void, HTMLImageElement>((image) => image.complete)
+      ).toBeFalsy();
     });
 
     // eslint-disable-next-line playwright/no-skipped-test -- test is flaky, investigate why
@@ -42,7 +44,9 @@ test.describe('Next.js', () => {
 
       const img = sbPage.previewRoot().locator('img');
 
-      expect(await img.evaluate<boolean, HTMLImageElement>((image) => image.complete)).toBeTruthy();
+      expect(
+        await img.evaluate<boolean, void, HTMLImageElement>((image) => image.complete)
+      ).toBeTruthy();
     });
   });
 

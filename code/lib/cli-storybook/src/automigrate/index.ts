@@ -21,7 +21,7 @@ import type {
 } from './fixes/index.ts';
 import { type FixFileFailure, pluralFiles, reportFileFailures } from './helpers/failure-report.ts';
 import { applyFixes, type CheckedFix, detectApplicable, runCheck } from './pipeline.ts';
-import { FixStatus, allFixes, commandFixes } from './fixes/index.ts';
+import { FixStatus, allFixes, commandFixes, getWarnedFixIds } from './fixes/index.ts';
 import { upgradeStorybookRelatedDependencies } from './fixes/upgrade-storybook-related-dependencies.ts';
 import { logMigrationSummary } from './helpers/logMigrationSummary.ts';
 import { getStorybookData } from './helpers/mainConfigFile.ts';
@@ -100,12 +100,9 @@ export const doAutomigrate = async (options: AutofixOptionsFromCLI) => {
     await doctor({
       configDir,
       packageManager: options.packageManager,
-      // In a dry run nothing was skipped for real, so the doctor owns the deprecation warning.
-      skippedFixIds: options.dryRun
-        ? undefined
-        : Object.entries(outcome.fixResults ?? {})
-            .filter(([, status]) => status === FixStatus.SKIPPED)
-            .map(([fixId]) => fixId),
+      // Only the fixes whose skip warning was printed this run. A fix that cancelled itself from
+      // `run` printed none, so the doctor still reports its deprecation.
+      warnedFixIds: outcome.warnedFixIds,
     });
   }
 
@@ -147,6 +144,8 @@ export const automigrate = async ({
   /** Core addons added by fixes that must be configured after dependencies are installed. */
   addonsToPostinstall?: string[];
   fileFailures: FixFileFailure[];
+  /** Ids of fixes whose skip warning was printed this run; `undefined` on a dry run. */
+  warnedFixIds: FixId[] | undefined;
 } | null> => {
   if (list) {
     logAvailableMigrations();
@@ -199,22 +198,29 @@ export const automigrate = async ({
 
   logger.step('Checking possible migrations..');
 
-  const { fixResults, fixSummary, preCheckFailure, addonsToPostinstall, fileFailures, verified } =
-    await runFixes({
-      fixes,
-      fixId,
-      packageManager,
-      skipInstall,
-      configDir,
-      previewConfigPath,
-      mainConfig,
-      mainConfigPath,
-      storybookVersion,
-      isUpgrade: !!isUpgrade,
-      dryRun,
-      yes,
-      storiesPaths,
-    });
+  const {
+    fixResults,
+    fixSummary,
+    preCheckFailure,
+    addonsToPostinstall,
+    fileFailures,
+    verified,
+    warnedFixIds,
+  } = await runFixes({
+    fixes,
+    fixId,
+    packageManager,
+    skipInstall,
+    configDir,
+    previewConfigPath,
+    mainConfig,
+    mainConfigPath,
+    storybookVersion,
+    isUpgrade: !!isUpgrade,
+    dryRun,
+    yes,
+    storiesPaths,
+  });
 
   if (!dryRun) {
     await reportFileFailures(fileFailures, [
@@ -239,7 +245,7 @@ export const automigrate = async ({
     });
   }
 
-  return { fixResults, preCheckFailure, addonsToPostinstall, fileFailures };
+  return { fixResults, preCheckFailure, addonsToPostinstall, fileFailures, warnedFixIds };
 };
 
 type RunFixesOptions = {
@@ -280,6 +286,8 @@ export async function runFixes({
   fileFailures: FixFileFailure[];
   /** Fixes whose hooks went through every file and would change none. */
   verified: FixId[];
+  /** Ids of fixes whose skip warning was printed this run; `undefined` on a dry run. */
+  warnedFixIds: FixId[] | undefined;
 }> {
   const fixResults = {} as Record<FixId, FixStatus>;
   const fixSummary: FixSummary = { succeeded: [], failed: {}, manual: [], skipped: [] };
@@ -330,6 +338,8 @@ export async function runFixes({
   }
 
   const fileFailures: FixFileFailure[] = [];
+  // Fixes the user selected but that cancelled themselves from `run`: skipped without a warning.
+  const cancelledFixIds: FixId[] = [];
   const applicable = await detectApplicable(project, checked);
   const verified: FixId[] = [];
   for (const { fix } of checked) {
@@ -450,7 +460,14 @@ export async function runFixes({
   }
 
   if (selected.length === 0) {
-    return { fixResults, fixSummary, addonsToPostinstall, fileFailures, verified };
+    return {
+      fixResults,
+      fixSummary,
+      addonsToPostinstall,
+      fileFailures,
+      verified,
+      warnedFixIds: getWarnedFixIds(fixResults, { dryRun }),
+    };
   }
 
   const taskLog = prompt.taskLog({
@@ -466,6 +483,7 @@ export async function runFixes({
   );
   for (const [fixId, outcome] of outcomes) {
     if (outcome.status === 'skipped') {
+      cancelledFixIds.push(fixId);
       fixResults[fixId] = FixStatus.SKIPPED;
       fixSummary.skipped.push(fixId);
       taskLog.message(`Skipped ${picocolors.cyan(fixId)} migration`);
@@ -494,5 +512,12 @@ export async function runFixes({
     taskLog.success(`Ran ${ran}`);
   }
 
-  return { fixResults, fixSummary, addonsToPostinstall, fileFailures, verified };
+  return {
+    fixResults,
+    fixSummary,
+    addonsToPostinstall,
+    fileFailures,
+    verified,
+    warnedFixIds: getWarnedFixIds(fixResults, { dryRun, cancelledFixIds }),
+  };
 }

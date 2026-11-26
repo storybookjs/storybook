@@ -4,8 +4,8 @@ import type { StorybookConfigRaw } from 'storybook/internal/types';
 export interface DoctorOptions {
   configDir?: string;
   packageManager?: PackageManagerName;
-  /** Automigrations the user or an unattended run skipped this run; their fixes already warned. */
-  skippedFixIds?: string[];
+  /** Automigrations whose skip warning was printed this run; the doctor stays silent about their deprecations. */
+  warnedFixIds?: string[];
 }
 
 export interface DiagnosticMessage {
@@ -19,8 +19,8 @@ export interface ProjectDoctorData {
   storybookVersion?: string;
   mainConfig: StorybookConfigRaw;
   configurationError?: DiagnosticMessage;
-  /** Automigrations the user or an unattended run skipped this run; their fixes already warned. */
-  skippedFixIds?: string[];
+  /** Automigrations whose skip warning was printed this run; the doctor stays silent about their deprecations. */
+  warnedFixIds?: string[];
 }
 
 export enum DiagnosticType {

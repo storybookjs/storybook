@@ -7,6 +7,9 @@ import * as mainConfigFile from './helpers/mainConfigFile.ts';
 import { doAutomigrate, runFixes } from './index.ts';
 import type { Fix } from './types.ts';
 
+vi.mock('../doctor/index.ts', () => ({ doctor: vi.fn() }));
+import { doctor } from '../doctor/index.ts';
+
 const check1 = vi.fn();
 const run1 = vi.fn();
 const getModulePackageJSON = vi.fn();
@@ -260,6 +263,49 @@ describe('runFixes', () => {
     expect(vi.mocked(logger.warn)).not.toHaveBeenCalled();
   });
 
+  it('does not warn for a fix that cancels itself from run, so the doctor still reports its deprecation', async () => {
+    const selfCancelling: Fix = {
+      id: 'self-cancelling',
+      async check() {
+        return check1();
+      },
+      prompt() {
+        return prompt1Message;
+      },
+      run: vi.fn(async () => false as const),
+    };
+
+    const { fixResults, warnedFixIds } = await runFixes({
+      ...common,
+      fixes: [selfCancelling],
+      storybookVersion: '7.0.0',
+    });
+
+    // The fix ran and cancelled: skipped, but no skip warning was printed for it.
+    expect(fixResults).toEqual({ 'self-cancelling': 'skipped' });
+    expect(selfCancelling.run).toHaveBeenCalled();
+    expect(vi.mocked(logger.warn)).not.toHaveBeenCalled();
+    expect(warnedFixIds).toEqual([]);
+  });
+
+  it('returns undefined warned ids on a dry run, where no skip warning was printed', async () => {
+    const optIn = {
+      ...fixes[0],
+      id: 'generic-opt-in',
+      defaultSelected: false,
+      skipWarning: 'The generic-opt-in migration was skipped.',
+    };
+
+    const { warnedFixIds } = await runFixes({
+      ...common,
+      dryRun: true,
+      fixes: [optIn],
+      storybookVersion: '7.0.0',
+    });
+
+    expect(warnedFixIds).toBeUndefined();
+  });
+
   it('should fail if an error is thrown by migration', async () => {
     check1.mockRejectedValue(new Error('check1 error'));
 
@@ -280,5 +326,49 @@ describe('runFixes', () => {
       'An error occurred while running the automigrate command.'
     );
     expect(run1).not.toHaveBeenCalled();
+  });
+
+  it('hands the doctor the ids whose skip warning was printed, not every skipped id', async () => {
+    const declined: Fix = {
+      id: 'declined-fix',
+      defaultSelected: false,
+      async check() {
+        return check1();
+      },
+      prompt() {
+        return prompt1Message;
+      },
+      run: async () => {},
+      skipWarning: 'The declined-fix migration was skipped.',
+    };
+    const selfCancelling: Fix = {
+      id: 'cancelled-fix',
+      async check() {
+        return check1();
+      },
+      prompt() {
+        return prompt1Message;
+      },
+      run: vi.fn(async () => false as const),
+    };
+    getStorybookData.mockResolvedValue({
+      ...common,
+      beforeVersion,
+      versionInstalled: '7.0.0',
+      isLatest: true,
+    });
+
+    await doAutomigrate({
+      configDir,
+      yes: true,
+      skipInstall: true,
+      fixes: [declined, selfCancelling],
+    });
+
+    // The declined fix printed its skip warning; the fix that cancelled itself from `run` did
+    // not, so the doctor still reports that one's deprecation.
+    expect(vi.mocked(doctor)).toHaveBeenCalledWith(
+      expect.objectContaining({ warnedFixIds: ['declined-fix'] })
+    );
   });
 });

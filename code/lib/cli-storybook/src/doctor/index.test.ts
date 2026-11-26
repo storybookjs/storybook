@@ -202,12 +202,28 @@ describe('getDoctorDiagnostics deprecated packages check', () => {
       ...projectData,
       packageManager,
       storybookVersion: '11.0.0',
-      skippedFixIds: ['nextjs-to-nextjs-vite'],
+      warnedFixIds: ['nextjs-to-nextjs-vite'],
     });
 
     expect(deprecationDiagnostics(results)).toHaveLength(1);
     expect(deprecationDiagnostics(results)[0].message).toContain('- @storybook/addon-notes');
     expect(deprecationDiagnostics(results)[0].message).not.toContain('- @storybook/nextjs');
+  });
+
+  it('still warns about a deprecation when its migration cancelled from run, which printed no skip warning', async () => {
+    getAllDependencies.mockReturnValue({ storybook: '^11.0.0', '@storybook/nextjs': '^11.0.0' });
+
+    // A fix that cancelled itself from `run` is skipped but was never warned, so it is not in the
+    // list and the doctor keeps its deprecation warning.
+    const results = await getDoctorDiagnostics({
+      ...projectData,
+      packageManager,
+      storybookVersion: '11.0.0',
+      warnedFixIds: [],
+    });
+
+    expect(deprecationDiagnostics(results)).toHaveLength(1);
+    expect(deprecationDiagnostics(results)[0].message).toContain('- @storybook/nextjs');
   });
 });
 

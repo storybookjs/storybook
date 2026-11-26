@@ -184,7 +184,7 @@ export async function runMultiProjectDoctor(
     storybookVersion: project.storybookVersion,
     mainConfig: project.mainConfig,
     configurationError: project.configurationError,
-    skippedFixIds: project.skippedFixIds,
+    warnedFixIds: project.warnedFixIds,
   }));
 
   // Always return the project-based results structure
@@ -195,7 +195,7 @@ export async function runMultiProjectDoctor(
 export const doctor = async ({
   configDir: userSpecifiedConfigDir,
   packageManager: packageManagerName,
-  skippedFixIds,
+  warnedFixIds,
 }: DoctorOptions) => {
   logger.step('Checking the health of your Storybook..');
 
@@ -232,7 +232,7 @@ export const doctor = async ({
       storybookVersion: versionInstalled,
       mainConfig,
       configurationError,
-      skippedFixIds,
+      warnedFixIds,
     },
   ]);
 
@@ -250,7 +250,7 @@ export async function getDoctorDiagnostics({
   storybookVersion,
   mainConfig,
   configurationError,
-  skippedFixIds,
+  warnedFixIds,
 }: ProjectDoctorData): Promise<DoctorCheckResult[]> {
   const results: DoctorCheckResult[] = [];
 
@@ -305,13 +305,15 @@ export async function getDoctorDiagnostics({
   }
 
   // Deprecations come from the one table in ./deprecatedPackages.ts, applied to the version and the
-  // project's dependencies. A migration the user (or an unattended run) skipped already printed its
-  // skip warning, so its packages stay silent here and the deprecation shows exactly once per run.
+  // project's dependencies. A fix whose skip warning was printed this run already told the user,
+  // so its packages stay silent here and the deprecation shows exactly once per run. A fix that
+  // cancelled itself from `run` printed no warning and is not in the list, so it still gets the
+  // doctor's deprecation.
   const appliedDeprecations = getAppliedDeprecations({
     storybookVersion,
     installedDependencies: packageManager.getAllDependencies(),
   }).filter(
-    ({ entry }) => !(entry.automigrateFixId && skippedFixIds?.includes(entry.automigrateFixId))
+    ({ entry }) => !(entry.automigrateFixId && warnedFixIds?.includes(entry.automigrateFixId))
   );
 
   if (appliedDeprecations.length > 0) {

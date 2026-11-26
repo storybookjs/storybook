@@ -8,6 +8,7 @@ import { logger, prompt } from 'storybook/internal/node-logger';
 import { fs, vol } from 'memfs';
 
 import { checkFix, runFix } from '../helpers/fix-test-utils.ts';
+import { runFixes } from '../index.ts';
 import { applyFixes } from '../pipeline.ts';
 import type { CheckOptions, RunOptions } from '../types.ts';
 import {
@@ -35,6 +36,11 @@ vi.mock('storybook/internal/node-logger', () => ({
   },
   prompt: {
     confirm: vi.fn(),
+    taskLog: vi.fn(() => ({
+      message: vi.fn(),
+      success: vi.fn(),
+      error: vi.fn(),
+    })),
   },
 }));
 
@@ -238,6 +244,39 @@ describe('nextjs-to-nextjs-vite', () => {
       expect(logger.log).toHaveBeenCalledWith(expect.stringContaining('Migration cancelled'));
       expect(mockPackageManager.removeDependencies).not.toHaveBeenCalled();
       expect(mockPackageManager.addDependencies).not.toHaveBeenCalled();
+    });
+
+    it('a cancelled preflight under --yes hands the doctor no warned ids, so its deprecation still shows', async () => {
+      vol.fromJSON({
+        '/project/.storybook/main.ts':
+          "export default { framework: '@storybook/nextjs', webpackFinal: (config) => config };",
+        '/project/.storybook/preview.ts': `import type { Preview } from '@storybook/nextjs';`,
+        '/project/src/Button.stories.tsx': `import type { Meta } from '@storybook/nextjs';`,
+      });
+      mockPackageManager.getAllDependencies = vi.fn().mockReturnValue({
+        '@storybook/nextjs': '^9.0.0',
+      });
+
+      const { fixResults, warnedFixIds } = await runFixes({
+        fixes: [nextjsToNextjsVite],
+        yes: true,
+        skipInstall: true,
+        configDir: '/project/.storybook',
+        packageManager: mockPackageManager,
+        mainConfig: { stories: [] },
+        mainConfigPath: '/project/.storybook/main.ts',
+        storybookVersion: '9.0.0',
+        storiesPaths: ['/project/src/Button.stories.tsx'],
+      } as Parameters<typeof runFixes>[0]);
+
+      // The preflight cancelled the migration under --yes without printing the fix's skip
+      // warning, so the doctor must not treat the fix as warned and still reports the
+      // @storybook/nextjs deprecation (issue #37770).
+      expect(fixResults).toEqual({ 'nextjs-to-nextjs-vite': 'skipped' });
+      expect(vi.mocked(logger.warn)).not.toHaveBeenCalledWith(
+        expect.stringContaining('deprecated')
+      );
+      expect(warnedFixIds).toEqual([]);
     });
 
     it('migrates without prompting when the hook appears only in comments', async () => {

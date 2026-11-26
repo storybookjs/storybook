@@ -549,18 +549,17 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
       await refreshAgentInstructions(agentInstructions);
     }
 
-    // Run doctor for each project. Migrations the user (or an unattended run) skipped already
-    // printed their skip warning, so the doctor stays silent about those deprecations this run.
+    // Run doctor for each project. The runners hand over only the fixes whose skip warning was
+    // printed this run, so the doctor stays silent about those deprecations; a fix that cancelled
+    // itself from `run` printed none and still gets the doctor's deprecation. On a dry run nothing
+    // was skipped for real, so the doctor owns the deprecation warning (`warnedFixIds` is
+    // `undefined`).
     const doctorProjects: ProjectDoctorData[] = storybookProjects.map((project) => ({
       configDir: project.configDir,
       packageManager: project.packageManager,
       storybookVersion: project.currentCLIVersion,
       mainConfig: project.mainConfig,
-      skippedFixIds: options.dryRun
-        ? undefined
-        : Object.entries(automigrationResults[project.configDir]?.automigrationStatuses ?? {})
-            .filter(([, status]) => status === FixStatus.SKIPPED)
-            .map(([fixId]) => fixId),
+      warnedFixIds: automigrationResults[project.configDir]?.warnedFixIds,
     }));
 
     logger.step('Checking the health of your project(s)..');

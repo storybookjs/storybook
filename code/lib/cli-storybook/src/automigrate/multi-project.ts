@@ -11,7 +11,7 @@ import { allFixes } from './fixes/index.ts';
 import { type FixFileFailure, pluralFiles, reportFileFailures } from './helpers/failure-report.ts';
 import { applyFixes, type CheckedFix, detectApplicable, runCheck } from './pipeline.ts';
 import type { Fix, FixId } from './types.ts';
-import { FixStatus } from './types.ts';
+import { FixStatus, getWarnedFixIds } from './types.ts';
 
 export interface ProjectAutomigrationData {
   configDir: string;
@@ -322,6 +322,8 @@ export type AutomigrationResult = {
   addonsToPostinstall?: string[];
   /** Files that fixes could not transform; the other files of those fixes were migrated. */
   fileFailures: FixFileFailure[];
+  /** Ids of fixes whose skip warning was printed this run; `undefined` on a dry run. */
+  warnedFixIds?: FixId[];
 };
 /** Runs selected automigrations for each project */
 export async function runAutomigrationsForProjects(
@@ -396,6 +398,8 @@ export async function runAutomigrationsForProjects(
     // Core addons added by fixes that must be configured after the upgrade installs dependencies.
     const addonsToPostinstall: string[] = [];
     const fileFailures: FixFileFailure[] = [];
+    // Fixes the user selected but that cancelled themselves from `run`: skipped without a warning.
+    const cancelledFixIds: FixId[] = [];
 
     const isSelected = (fix: Fix) =>
       selectedAutomigrations.some(
@@ -433,6 +437,7 @@ export async function runAutomigrationsForProjects(
     );
     for (const [fixId, outcome] of outcomes) {
       if (outcome.status === 'skipped') {
+        cancelledFixIds.push(fixId);
         fixResults[fixId] = FixStatus.SKIPPED;
         taskLog.message(CLI_COLORS.warning(`▲ ${fixId}: cancelled`));
         continue;
@@ -475,6 +480,7 @@ export async function runAutomigrationsForProjects(
       automigrationErrors: fixFailures,
       addonsToPostinstall,
       fileFailures,
+      warnedFixIds: getWarnedFixIds(fixResults, { dryRun: options.dryRun, cancelledFixIds }),
     };
   }
 

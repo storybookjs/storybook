@@ -5,6 +5,7 @@ import {
   collectAutomigrationsAcrossProjects,
   logAutomigrationDetails,
   promptForAutomigrations,
+  runAutomigrationsForProjects,
 } from './multi-project.ts';
 import type { Fix } from './types.ts';
 import { nextjsToNextjsVite } from './fixes/nextjs-to-nextjs-vite.ts';
@@ -15,6 +16,11 @@ vi.mock('storybook/internal/node-logger', async (importOriginal) => {
     prompt: {
       multiselect: vi.fn(),
       error: vi.fn(),
+      taskLog: vi.fn(() => ({
+        message: vi.fn(),
+        success: vi.fn(),
+        error: vi.fn(),
+      })),
     },
     logger: {
       log: vi.fn(),
@@ -531,6 +537,44 @@ describe('multi-project automigrations', () => {
       );
 
       expect(logger.logBox).toHaveBeenCalledWith('Migrate\n\nFiles:\na.ts', expect.anything());
+    });
+  });
+
+  describe('runAutomigrationsForProjects', () => {
+    it('hands the doctor the unselected fixes as warned, not fixes that cancelled from run', async () => {
+      const project = createMockProject('/project1/.storybook');
+      const cancelledFix = createMockFix(
+        'cancelled-fix',
+        {},
+        {
+          run: vi.fn(async () => false as const),
+        }
+      );
+      const unselectedFix = createMockFix(
+        'unselected-fix',
+        {},
+        {
+          skipWarning: 'The unselected-fix migration was skipped.',
+        }
+      );
+
+      // The user selected cancelled-fix but left unselected-fix out of the multi-project prompt.
+      const results = await runAutomigrationsForProjects([asAutomigration(cancelledFix, project)], {
+        automigrations: [
+          asAutomigration(cancelledFix, project),
+          asAutomigration(unselectedFix, project),
+        ],
+        yes: false,
+      });
+
+      const result = results['/project1/.storybook'];
+      expect(result.automigrationStatuses).toEqual({
+        'cancelled-fix': 'skipped',
+        'unselected-fix': 'skipped',
+      });
+      // Only the unselected fix printed its skip warning; the cancelled fix printed none, so the
+      // doctor still reports its deprecation.
+      expect(result.warnedFixIds).toEqual(['unselected-fix']);
     });
   });
 });

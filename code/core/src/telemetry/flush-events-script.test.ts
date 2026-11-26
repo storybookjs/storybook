@@ -28,7 +28,7 @@ let respond: Respond;
 // The script runs in a real process, which sees the real file system and not memfs.
 beforeEach(async () => {
   vi.mocked(saveToCache).mockImplementation(async () => {});
-  vi.mocked(getSessionId).mockImplementation(async () => 'session-id');
+  vi.mocked(getSessionId).mockImplementation(() => 'session-id');
   directory = mkdtempSync(join(tmpdir(), 'storybook-telemetry-test-'));
   requests = [];
   respond = (_attempt, _request, response) => response.end('ok');

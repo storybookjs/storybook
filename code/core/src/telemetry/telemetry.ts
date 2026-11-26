@@ -2,11 +2,11 @@
 import { spawn } from 'node:child_process';
 import { readFileSync, rmSync, writeFileSync } from 'node:fs';
 import * as os from 'node:os';
-import { dirname, join } from 'node:path';
 
 import { isCI } from 'storybook/internal/common';
 
 import { nanoid } from 'nanoid';
+import { dirname, join } from 'pathe';
 
 import { version } from '../../package.json';
 import { resolvePackageDir } from '../shared/utils/module.ts';
@@ -86,7 +86,7 @@ export async function sendTelemetry(data: TelemetryData, options: Partial<Option
       ...rest,
       eventType,
       eventId: nanoid(),
-      sessionId: await getSessionId(),
+      sessionId: getSessionId(),
       metadata,
       payload,
       context,

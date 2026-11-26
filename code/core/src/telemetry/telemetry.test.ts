@@ -4,10 +4,10 @@ import { spawn } from 'node:child_process';
 import { EventEmitter } from 'node:events';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
-import { dirname } from 'node:path';
 
 import * as memfs from 'memfs';
 import { vol } from 'memfs';
+import { dirname } from 'pathe';
 
 import { set as saveToCache } from './event-cache.ts';
 import { flushEventsScript } from './flush-events-script.ts';
@@ -28,7 +28,7 @@ beforeEach(() => {
   vi.mocked(fs.writeFileSync).mockImplementation(memfs.fs.writeFileSync as any);
   vi.mocked(fs.rmSync).mockImplementation(memfs.fs.rmSync as any);
   vi.mocked(saveToCache).mockImplementation(async () => {});
-  vi.mocked(getSessionId).mockImplementation(async () => 'session-id');
+  vi.mocked(getSessionId).mockImplementation(() => 'session-id');
   vi.mocked(spawn).mockImplementation(() => childProcess(1) as any);
 });
 
@@ -68,6 +68,14 @@ it('hands the events to one detached process, with their data and context', asyn
   expect(args).toEqual(['--eval', flushEventsScript, handedOverFile()]);
   expect(options).toMatchObject({ detached: true, stdio: 'ignore', windowsHide: true });
   expect(vi.mocked(spawn).mock.results[0].value.unref).toHaveBeenCalled();
+});
+
+it('queues an event before its first await, so an exit right after the call does not lose it', () => {
+  void sendTelemetry({ eventType: 'dev', payload: {} });
+
+  handOverPendingEvents();
+
+  expect(handedOverEvents()).toEqual([expect.objectContaining({ eventType: 'dev' })]);
 });
 
 it('saves the event it hands over to the local event cache', async () => {
@@ -159,7 +167,9 @@ it('removes the file again when starting the detached process throws', async () 
 });
 
 it('still resolves when the session id cannot be read', async () => {
-  vi.mocked(getSessionId).mockRejectedValueOnce(new Error('disk'));
+  vi.mocked(getSessionId).mockImplementationOnce(() => {
+    throw new Error('disk');
+  });
 
   await expect(sendTelemetry({ eventType: 'dev', payload: {} })).resolves.toBeUndefined();
 

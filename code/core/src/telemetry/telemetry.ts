@@ -95,7 +95,8 @@ export async function sendTelemetry(data: TelemetryData, options: Partial<Option
 // the call would lose the event.
 async function handOver(event: TelemetryEvent) {
   try {
-    // On globalThis, because this module can load more than once in one process.
+    // On globalThis, because this module can load more than once in one process. Every copy sends
+    // an unchanged TelemetryEvent, which the child posts as it is.
     const sender = globalThis.SB_TELEMETRY_SENDER?.connected
       ? globalThis.SB_TELEMETRY_SENDER
       : (globalThis.SB_TELEMETRY_SENDER = startSender());

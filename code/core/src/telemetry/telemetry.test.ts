@@ -166,7 +166,7 @@ it('removes the file again when starting the detached process throws', async () 
   expect(filesLeft()).toEqual([]);
 });
 
-it('still resolves when the session id cannot be read', async () => {
+it('still resolves when building the event throws', async () => {
   vi.mocked(getSessionId).mockImplementationOnce(() => {
     throw new Error('disk');
   });

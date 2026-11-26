@@ -37,7 +37,7 @@ export const makePayload = (
 export function initTelemetryChannel(channel: Channel) {
   channel.on(PREVIEW_INITIALIZED, async ({ userAgent }) => {
     try {
-      const sessionId = await getSessionId();
+      const sessionId = getSessionId();
       const lastEvents = await getLastEvents();
       const lastInit = lastEvents.init;
       const lastPreviewFirstLoad = lastEvents['preview-first-load'];
